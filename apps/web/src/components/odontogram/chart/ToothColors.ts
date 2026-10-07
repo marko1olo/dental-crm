@@ -111,11 +111,11 @@ export const getToothColors = (
 				fill: "url(#composite-fill-gradient)",
 				crownFill: "url(#composite-fill-gradient)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "#3b82f6",
+				stroke: "#0d9488",
 				opacity: "1",
-				badgeColor: "#3b82f6",
-				badgeBg: "rgba(59, 130, 246, 0.15)",
-				badgeText: "#1d4ed8",
+				badgeColor: "#10b981",
+				badgeBg: "rgba(16, 185, 129, 0.15)",
+				badgeText: "#0f766e",
 			};
 		case "Crown":
 		case "crown":
@@ -158,16 +158,41 @@ export const getToothColors = (
 					badgeText: "#0284c7",
 				};
 			}
+			if (material === "zirconia") {
+				return {
+					fill: "url(#zirconia-crown-gradient)",
+					crownFill: "url(#zirconia-crown-gradient)",
+					rootFill: "url(#dente-root-dentin)",
+					stroke: "#10b981",
+					collarFill: "url(#dente-cervical-collar)",
+					opacity: "1",
+					badgeColor: "#10b981",
+					badgeBg: "rgba(16, 185, 129, 0.15)",
+					badgeText: "#059669",
+				};
+			}
 			return {
-				fill: "url(#zirconia-crown-gradient)",
-				crownFill: "url(#zirconia-crown-gradient)",
+				fill: "url(#gold-crown-gradient)",
+				crownFill: "url(#gold-crown-gradient)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "#10b981",
-				collarFill: "url(#dente-cervical-collar)",
+				stroke: "#d97706",
+				collarFill: "url(#gold-ridge-burnish)",
 				opacity: "1",
-				badgeColor: "#10b981",
-				badgeBg: "rgba(16, 185, 129, 0.15)",
-				badgeText: "#059669",
+				badgeColor: "#f59e0b",
+				badgeBg: "rgba(245, 158, 11, 0.15)",
+				badgeText: "#b45309",
+			};
+		case "watch":
+		case "Watch":
+			return {
+				fill: "url(#dente-caries-grad)",
+				crownFill: "url(#dente-caries-grad)",
+				rootFill: "url(#dente-root-dentin)",
+				stroke: "#d97706",
+				opacity: "0.85",
+				badgeColor: "#d97706",
+				badgeBg: "rgba(217, 119, 6, 0.15)",
+				badgeText: "#b45309",
 			};
 		case "Implant":
 			return {

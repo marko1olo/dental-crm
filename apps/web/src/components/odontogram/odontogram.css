@@ -2316,6 +2316,54 @@
 	padding: 0 10px;
 }
 
+/* ── Apple HIG Segmented Bar переключателя прикуса ── */
+.dentition-mode-selector {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px;
+	border-radius: 10px;
+	background: var(--paper-soft, #f1f5f9);
+	border: 1px solid var(--line, #e2e8f0);
+	gap: 3px;
+}
+
+.dentition-mode-selector button {
+	padding: 5px 12px;
+	border-radius: 7px;
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--muted, #64748b);
+	background: transparent;
+	border: 1px solid transparent;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+}
+
+.dentition-mode-selector button:hover {
+	color: var(--ink, #0f172a);
+}
+
+.dentition-mode-selector button.active {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-weight: 700;
+	border-color: var(--line, #e2e8f0);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+:is([data-theme="dark"], html.dark) .dentition-mode-selector {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+:is([data-theme="dark"], html.dark) .dentition-mode-selector button.active {
+	background: var(--paper-strong, #0f172a);
+	color: #ffffff;
+	border-color: var(--line, #334155);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
 .tooth-map-selected {
 	align-items: center;
 	background: var(--paper-strong);

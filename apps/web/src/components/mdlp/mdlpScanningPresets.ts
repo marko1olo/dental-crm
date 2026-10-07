@@ -2,6 +2,9 @@ import {
 	type ChestnyZnakScannedItem,
 	createChestnyZnakScannedItem,
 } from "@dental/shared";
+export { createChestnyZnakScannedItem, type ChestnyZnakScannedItem };
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import {
 	safeLocalStorageGetItem,
 	safeLocalStorageSetItem,
@@ -80,6 +83,16 @@ export const SAMPLE_BARCODES = [
 	},
 ];
 
+/**
+ * Изоляция демонстрационных штрихкодов МДЛП от боевого контура (Mandate 8c Zero Mocks).
+ * В боевом режиме (production) возвращает пустой массив (0% моков), в демо — образцы.
+ */
+export function getMdlpSampleBarcodes(
+	isDemo = isDemoShowcaseMode(),
+): readonly (typeof SAMPLE_BARCODES)[number][] {
+	return isDemo ? SAMPLE_BARCODES : [];
+}
+
 export const EMERGENCY_DISPENSE_PRESETS = [
 	{
 		label: "Ультракаин® Д-С форте 1:100 000 (1 карпула)",
@@ -145,3 +158,157 @@ export function createShiftCarpulesBatch(count = 10): readonly ChestnyZnakScanne
 	}
 	return batch;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FASTIFY BACKEND & POSTGRESQL 18 INTEGRATION (ZERO MOCKS MANDATE 8C/8F)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Отправка отсканированного 2D DataMatrix в Fastify API (/api/mdlp/scan)
+ * с фиксацией в таблице PostgreSQL mdlp_items.
+ */
+export async function submitMdlpBarcodeScan(
+	rawBarcode: string,
+	autoRegister = true,
+): Promise<{
+	success: boolean;
+	item?: Record<string, unknown> | null;
+	parsed?: any;
+	status?: string;
+	error?: string;
+}> {
+	try {
+		const res = await fetch("/api/mdlp/scan", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify({ rawBarcode, autoRegister }),
+		});
+
+		if (!res.ok) {
+			const err = await res.json().catch(() => null);
+			return {
+				success: false,
+				error: err?.message || `Ошибка сканирования в МДЛП (${res.status})`,
+			};
+		}
+
+		const data = await res.json();
+		return {
+			success: true,
+			item: data?.item ?? null,
+			parsed: data?.parsed ?? null,
+			status: data?.status ?? "in_stock",
+		};
+	} catch (err: unknown) {
+		const msg = err instanceof Error ? err.message : "Сетевой сбой при связи с сервером МДЛП";
+		return { success: false, error: msg };
+	}
+}
+
+/**
+ * Честная синхронизация очереди списаний МДЛП с бэкендом Fastify и БД PostgreSQL.
+ * Заменяет фиктивное выставление статуса "synced" в localStorage на реальную отправку в /api/mdlp/dispose-batch.
+ */
+export async function syncMdlpQueueToBackend(
+	queue: readonly MdlpOfflinePackage[],
+): Promise<{
+	syncedCount: number;
+	failedCount: number;
+	updatedQueue: MdlpOfflinePackage[];
+}> {
+	const queuedPackages = queue.filter((p) => p.status !== "synced");
+	if (queuedPackages.length === 0) {
+		return { syncedCount: 0, failedCount: 0, updatedQueue: [...queue] };
+	}
+
+	let syncedCount = 0;
+	let failedCount = 0;
+	const updated = queue.map((pkg) => {
+		if (pkg.status === "synced") return pkg;
+		return { ...pkg };
+	});
+
+	for (let i = 0; i < updated.length; i++) {
+		const current = updated[i];
+		if (!current || current.status === "synced") continue;
+
+		try {
+			const res = await fetch("/api/mdlp/dispose-batch", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					docNum: current.docNum,
+					docDate: current.docDate,
+					patientId: current.patientId ?? undefined,
+					visitId: current.visitId ?? undefined,
+					reason: current.reason || "Оказание медпомощи (синхронизация офлайн-буфера)",
+					items: current.items.map((it) => ({
+						rawBarcode: it.rawBarcode,
+						sgtin: it.sgtin,
+						gtin: it.gtin,
+						serialNumber: it.serialNumber,
+						costRub: it.costRub,
+						patientId: current.patientId ?? undefined,
+						visitId: current.visitId ?? undefined,
+					})),
+				}),
+			});
+
+			if (res.ok) {
+				updated[i] = { ...current, status: "synced" };
+				syncedCount++;
+			} else {
+				failedCount++;
+			}
+		} catch {
+			failedCount++;
+		}
+	}
+
+	saveMdlpOfflineQueue(updated);
+	return { syncedCount, failedCount, updatedQueue: updated };
+}
+
+/**
+ * Получение активной очереди списания МДЛП с бэкенда Fastify (/api/mdlp/queue)
+ */
+export async function fetchMdlpLiveQueue(): Promise<MdlpOfflinePackage[]> {
+	try {
+		const res = await fetch("/api/mdlp/queue", {
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+		});
+
+		if (!res.ok) return [];
+		const data = await res.json();
+		if (!Array.isArray(data?.queue)) return [];
+
+		return data.queue.map((item: any, idx: number) => ({
+			id: item.id || `live-mdlp-q-${idx}`,
+			createdAt: item.queuedAt || new Date().toISOString(),
+			docNum: `АКТ-ОЧЕРЕДЬ-${idx + 1}`,
+			docDate: new Date().toISOString().slice(0, 10),
+			mode: "disposal_531",
+			itemsCount: 1,
+			totalCostRub: Number(item.costRub || 0),
+			items: item.rawBarcode
+				? [createChestnyZnakScannedItem(item.rawBarcode, { costRub: Number(item.costRub || 0) })]
+				: [],
+			status: "queued",
+			reason: "Очередь выбытия карпул анестетиков (кабинет)",
+			patientId: item.patientId,
+			visitId: item.visitId,
+		}));
+	} catch {
+		return [];
+	}
+}
+

@@ -7,6 +7,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import {
 	DEFAULT_EGISZ_CLINIC_PRESET,
 	DEFAULT_EGISZ_DOCTOR_PRESET,
@@ -52,6 +53,7 @@ export function useEgiszRemdState({
 	doctorSig,
 	moSig,
 }: UseEgiszRemdStateProps) {
+	const isDemo = isDemoShowcaseMode();
 	const effectivePayload = (initialPayload || initialXmlPayload) as Partial<EgiszDentalCdaPayload> | undefined;
 
 	// 1. Dental SEMD Payload State
@@ -69,77 +71,77 @@ export function useEgiszRemdState({
 	);
 
 	const [complaints, setComplaints] = useState<string>(
-		effectivePayload?.complaints || SAMPLE_DENTAL_SEMD_105_PRESET.complaints,
+		effectivePayload?.complaints || (isDemo ? SAMPLE_DENTAL_SEMD_105_PRESET.complaints : ""),
 	);
 	const [anamnesisMorbi, setAnamnesisMorbi] = useState<string>(
-		effectivePayload?.anamnesisMorbi || SAMPLE_DENTAL_SEMD_105_PRESET.anamnesisMorbi || "",
+		effectivePayload?.anamnesisMorbi || (isDemo ? SAMPLE_DENTAL_SEMD_105_PRESET.anamnesisMorbi || "" : ""),
 	);
 	const [anamnesisVitae] = useState<string>(
-		effectivePayload?.anamnesisVitae || SAMPLE_DENTAL_SEMD_105_PRESET.anamnesisVitae || "",
+		effectivePayload?.anamnesisVitae || (isDemo ? SAMPLE_DENTAL_SEMD_105_PRESET.anamnesisVitae || "" : ""),
 	);
 	const [toothStates, setToothStates] = useState<Record<number, string>>(
-		effectivePayload?.toothStates || SAMPLE_DENTAL_SEMD_105_PRESET.toothStates,
+		effectivePayload?.toothStates || (isDemo ? SAMPLE_DENTAL_SEMD_105_PRESET.toothStates : {}),
 	);
 	const [toothSurfaces] = useState<Record<number, string[]>>(
-		effectivePayload?.toothSurfaces || SAMPLE_DENTAL_SEMD_105_PRESET.toothSurfaces || {},
+		effectivePayload?.toothSurfaces || (isDemo ? SAMPLE_DENTAL_SEMD_105_PRESET.toothSurfaces || {} : {}),
 	);
 	const [diagnoses, setDiagnoses] = useState<EgiszDiagnosisItem[]>(
-		effectivePayload?.diagnoses || SAMPLE_DENTAL_SEMD_105_PRESET.diagnoses,
+		effectivePayload?.diagnoses || (isDemo ? SAMPLE_DENTAL_SEMD_105_PRESET.diagnoses : []),
 	);
 	const [procedures, setProcedures] = useState<EgiszProcedureItem[]>(
-		effectivePayload?.procedures || SAMPLE_DENTAL_SEMD_105_PRESET.procedures,
+		effectivePayload?.procedures || (isDemo ? SAMPLE_DENTAL_SEMD_105_PRESET.procedures : []),
 	);
 	const [treatmentDesc] = useState<string>(
-		effectivePayload?.treatmentProtocolDescription || SAMPLE_DENTAL_SEMD_105_PRESET.treatmentProtocolDescription || "",
+		effectivePayload?.treatmentProtocolDescription || (isDemo ? SAMPLE_DENTAL_SEMD_105_PRESET.treatmentProtocolDescription || "" : ""),
 	);
 	const [recommendations] = useState<string>(
-		effectivePayload?.recommendations || SAMPLE_DENTAL_SEMD_105_PRESET.recommendations,
+		effectivePayload?.recommendations || (isDemo ? SAMPLE_DENTAL_SEMD_105_PRESET.recommendations : ""),
 	);
 	const [nextVisitDate] = useState<string>(
-		effectivePayload?.nextVisitDate ? String(effectivePayload.nextVisitDate) : "2027-02-28",
+		effectivePayload?.nextVisitDate ? String(effectivePayload.nextVisitDate) : (isDemo ? "2027-02-28" : ""),
 	);
 
 	// 2. FNS Tax Deduction Payload State
 	const [taxDocNumber, setTaxDocNumber] = useState<string>(
-		initialFnsPayload?.documentNumber || SAMPLE_FNS_TAX_1151156_PRESET.documentNumber,
+		initialFnsPayload?.documentNumber || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.documentNumber : ""),
 	);
 	const [taxYear, setTaxYear] = useState<number>(
-		initialFnsPayload?.taxYear || SAMPLE_FNS_TAX_1151156_PRESET.taxYear,
+		initialFnsPayload?.taxYear || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.taxYear : new Date().getFullYear()),
 	);
 	const [taxpayerName, setTaxpayerName] = useState<string>(
-		initialFnsPayload?.taxpayer?.fullName || SAMPLE_FNS_TAX_1151156_PRESET.taxpayer.fullName,
+		initialFnsPayload?.taxpayer?.fullName || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.taxpayer.fullName : ""),
 	);
 	const [taxpayerInn, setTaxpayerInn] = useState<string>(
-		initialFnsPayload?.taxpayer?.inn || SAMPLE_FNS_TAX_1151156_PRESET.taxpayer.inn || "",
+		initialFnsPayload?.taxpayer?.inn || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.taxpayer.inn || "" : ""),
 	);
 	const [taxpayerSnils, setTaxpayerSnils] = useState<string>(
-		initialFnsPayload?.taxpayer?.snils || SAMPLE_FNS_TAX_1151156_PRESET.taxpayer.snils || "",
+		initialFnsPayload?.taxpayer?.snils || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.taxpayer.snils || "" : ""),
 	);
 	const [taxpayerBirthDate] = useState<string>(
-		initialFnsPayload?.taxpayer?.birthDate || SAMPLE_FNS_TAX_1151156_PRESET.taxpayer.birthDate || "",
+		initialFnsPayload?.taxpayer?.birthDate || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.taxpayer.birthDate || "" : ""),
 	);
 	const [taxpayerPassport] = useState<string>(
-		initialFnsPayload?.taxpayer?.docSeriesNumber || SAMPLE_FNS_TAX_1151156_PRESET.taxpayer.docSeriesNumber || "",
+		initialFnsPayload?.taxpayer?.docSeriesNumber || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.taxpayer.docSeriesNumber || "" : ""),
 	);
 
 	const [taxPatientName, setTaxPatientName] = useState<string>(
-		initialFnsPayload?.patient?.fullName || SAMPLE_FNS_TAX_1151156_PRESET.patient.fullName,
+		initialFnsPayload?.patient?.fullName || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.patient.fullName : ""),
 	);
 	const [taxPatientSnils, setTaxPatientSnils] = useState<string>(
-		initialFnsPayload?.patient?.snils || SAMPLE_FNS_TAX_1151156_PRESET.patient.snils || "",
+		initialFnsPayload?.patient?.snils || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.patient.snils || "" : ""),
 	);
 	const [taxRelCode, setTaxRelCode] = useState<"1" | "2" | "3" | "4">(
-		initialFnsPayload?.patient?.relationshipCode || SAMPLE_FNS_TAX_1151156_PRESET.patient.relationshipCode,
+		initialFnsPayload?.patient?.relationshipCode || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.patient.relationshipCode : "1"),
 	);
 
 	const [taxPayments, setTaxPayments] = useState<FnsTaxPaymentItem[]>(
-		initialFnsPayload?.payments || SAMPLE_FNS_TAX_1151156_PRESET.payments,
+		initialFnsPayload?.payments || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.payments : []),
 	);
 	const [taxSignerName, setTaxSignerName] = useState<string>(
-		initialFnsPayload?.signer?.fullName || SAMPLE_FNS_TAX_1151156_PRESET.signer.fullName,
+		initialFnsPayload?.signer?.fullName || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.signer.fullName : ""),
 	);
 	const [taxSignerPos] = useState<string>(
-		initialFnsPayload?.signer?.position || SAMPLE_FNS_TAX_1151156_PRESET.signer.position,
+		initialFnsPayload?.signer?.position || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.signer.position : "Главный врач"),
 	);
 
 	// Odontogram selection state

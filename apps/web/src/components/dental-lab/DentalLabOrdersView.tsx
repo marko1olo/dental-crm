@@ -1011,9 +1011,19 @@ const CANONICAL_DEMO_LAB_ORDERS: DentalLabOrderData[] = [
 												</td>
 
 												<td className="px-2.5 py-0 whitespace-nowrap align-middle">
-													<span className="font-bold truncate max-w-[140px] inline-block align-middle" title={order.patientName}>
-														{order.patientName || "Пациент"}
-													</span>
+													<div className="flex items-center gap-1.5">
+														<span className="font-bold truncate max-w-[140px] inline-block align-middle" title={order.patientName}>
+															{order.patientName || "Пациент"}
+														</span>
+														{order.stageNumber ? (
+															<span
+																className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 shrink-0 inline-block align-middle"
+																title={`План лечения: Этап ${order.stageNumber}${order.stageTitle ? ` · ${order.stageTitle}` : ""}`}
+															>
+																Этап {order.stageNumber}
+															</span>
+														) : null}
+													</div>
 												</td>
 
 												<td className="px-2 py-0 whitespace-nowrap align-middle text-center">
@@ -1254,6 +1264,10 @@ const CANONICAL_DEMO_LAB_ORDERS: DentalLabOrderData[] = [
 					onClose={() => setIsWorkOrderModalOpen(false)}
 					initialOrder={selectedOrderForEdit}
 					initialTab={modalInitialTab}
+					treatmentPlanId={selectedOrderForEdit?.treatmentPlanId ?? undefined}
+					stageNumber={selectedOrderForEdit?.stageNumber ?? undefined}
+					stageTitle={selectedOrderForEdit?.stageTitle ?? undefined}
+					stageId={selectedOrderForEdit?.stageId ?? undefined}
 					onOrderSaved={() => void fetchOrders()}
 				/>
 			)}

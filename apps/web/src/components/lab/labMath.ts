@@ -53,6 +53,11 @@ export interface DentalLabOrderData {
 	frameworkTrialDate?: string | null;
 	ceramicTrialDate?: string | null;
 	deliveryDate?: string | null;
+	treatmentPlanId?: string | null;
+	stageId?: string | null;
+	stageNumber?: number | null;
+	stageTitle?: string | null;
+	includeImpressionBilling?: boolean;
 	clinicalNotes?: string | null;
 	labComments?: string | null;
 	attachedImageUrl?: string | null;
@@ -79,6 +84,13 @@ export interface DentalLabOrderModalProps {
 	readonly doctorId?: string | undefined;
 	readonly doctorName?: string | undefined;
 	readonly initialToothFdi?: string | number | undefined;
+	readonly initialTeeth?: readonly (number | string)[] | undefined;
+	readonly patientChartNumber?: string | undefined;
+	readonly treatmentPlanId?: string | undefined;
+	readonly stageId?: string | undefined;
+	readonly stageNumber?: number | undefined;
+	readonly stageTitle?: string | undefined;
+	readonly includeImpressionBilling?: boolean | undefined;
 	readonly patientDepositRub?: number | undefined;
 	readonly stageTotalRub?: number | undefined;
 	readonly stagePaidRub?: number | undefined;
@@ -90,8 +102,11 @@ export interface DentalLabOrderModalProps {
 	readonly scheduledVisitDate?: string | undefined;
 	readonly fittingDate?: string | undefined;
 	readonly onOrderSaved?: ((order: DentalLabOrderData) => void) | undefined;
+	readonly onSaveOrder?: ((order: DentalLabOrderData) => void) | undefined;
 	readonly onRescheduleAppointment?: ((orderId: string, newDate: string) => void) | undefined;
 	readonly onPartialDelivery?: ((result: any) => void) | undefined;
+	readonly clinicPhone?: string | undefined;
+	readonly clinicName?: string | undefined;
 }
 
 export interface LabTrackingDrawerProps {

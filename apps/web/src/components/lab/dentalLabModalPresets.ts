@@ -1,5 +1,6 @@
 import {
 	type ExpressLabPreset,
+	type DentalLabOrderData,
 	EXPRESS_LAB_PRESETS,
 	EXPRESS_PRESET_ZIRCONIA_CROWN,
 	EXPRESS_PRESET_PFM_DUCERAM,
@@ -93,7 +94,7 @@ declare module "./labMath" {
 		readonly clinicPhone?: string | undefined;
 		readonly initialTeeth?: readonly (number | string)[] | undefined;
 		readonly patientChartNumber?: string | undefined;
-		readonly onSaveOrder?: ((order: any) => void) | undefined;
+		readonly onSaveOrder?: ((order: DentalLabOrderData) => void) | undefined;
 		readonly [key: string]: any;
 	}
 }

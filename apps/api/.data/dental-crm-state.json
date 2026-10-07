@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-10-07T16:27:20.744Z",
+  "savedAt": "2026-10-07T19:26:41.707Z",
   "state": {
     "clinicProfile": {
       "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
@@ -36,7 +36,7 @@
       },
       "networkEnabled": true,
       "egiszEnabled": false,
-      "updatedAt": "2026-10-07T16:27:20.469Z",
+      "updatedAt": "2026-10-07T19:26:27.437Z",
       "currency": "₽",
       "themeColor": "teal",
       "logoUrl": null,
@@ -82,8 +82,8 @@
         "canManageMoney": true,
         "canManageImports": true,
         "color": "#1e293b",
-        "createdAt": "2026-10-07T16:25:57.515Z",
-        "updatedAt": "2026-10-07T16:25:57.515Z",
+        "createdAt": "2026-10-07T19:25:27.056Z",
+        "updatedAt": "2026-10-07T19:25:27.056Z",
         "workingHours": [
           {
             "weekday": 0,
@@ -145,8 +145,8 @@
         "canManageMoney": false,
         "canManageImports": false,
         "color": "#0f766e",
-        "createdAt": "2026-10-07T16:25:57.515Z",
-        "updatedAt": "2026-10-07T16:25:57.515Z",
+        "createdAt": "2026-10-07T19:25:27.056Z",
+        "updatedAt": "2026-10-07T19:25:27.056Z",
         "workingHours": [
           {
             "weekday": 0,
@@ -207,8 +207,8 @@
         "canManageMoney": true,
         "canManageImports": true,
         "color": "#b8781f",
-        "createdAt": "2026-10-07T16:25:57.515Z",
-        "updatedAt": "2026-10-07T16:25:57.515Z",
+        "createdAt": "2026-10-07T19:25:27.056Z",
+        "updatedAt": "2026-10-07T19:25:27.056Z",
         "workingHours": [
           {
             "weekday": 0,
@@ -270,8 +270,8 @@
         "canManageMoney": false,
         "canManageImports": false,
         "color": "#a34f32",
-        "createdAt": "2026-10-07T16:25:57.515Z",
-        "updatedAt": "2026-10-07T16:25:57.515Z",
+        "createdAt": "2026-10-07T19:25:27.056Z",
+        "updatedAt": "2026-10-07T19:25:27.056Z",
         "workingHours": [
           {
             "weekday": 0,
@@ -376,7 +376,7 @@
         ]
       },
       {
-        "id": "41d7edd1-620a-4dcb-990e-b6758ca17d36",
+        "id": "2f7aec3c-9219-45e9-bd1c-29ece8fc5cbb",
         "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "name": "Кресло 2",
         "room": "Кабинет 2",
@@ -386,10 +386,53 @@
         "hasMicroscope": false,
         "hasSurgeryKit": true,
         "notes": null,
-        "workingHours": null
+        "workingHours": [
+          {
+            "weekday": 0,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 1,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 2,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 3,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 4,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 5,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 6,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          }
+        ]
       },
       {
-        "id": "635bd668-ee64-4cbd-8023-5d2d87aec991",
+        "id": "67374f5a-5d5a-42fe-ac6d-50ff2cfd2eef",
         "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "name": "Кресло 3",
         "room": "Кабинет 3",
@@ -399,10 +442,53 @@
         "hasMicroscope": true,
         "hasSurgeryKit": false,
         "notes": null,
-        "workingHours": null
+        "workingHours": [
+          {
+            "weekday": 0,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 1,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 2,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 3,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 4,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 5,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 6,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          }
+        ]
       },
       {
-        "id": "f6b7137c-82e0-4539-821f-e87830e91cc1",
+        "id": "64ce8084-4ead-4bfb-8c46-1d8bf3b35a7d",
         "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "name": "Кресло 4",
         "room": "Кабинет 4",
@@ -412,10 +498,53 @@
         "hasMicroscope": true,
         "hasSurgeryKit": true,
         "notes": null,
-        "workingHours": null
+        "workingHours": [
+          {
+            "weekday": 0,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 1,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 2,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 3,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 4,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 5,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 6,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          }
+        ]
       },
       {
-        "id": "9e29e2e0-783d-4841-961c-95452f4b2131",
+        "id": "2c476c73-9785-45c3-a6f5-6801f13f30d6",
         "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "name": "Кресло 5",
         "room": "Кабинет 5",
@@ -425,7 +554,50 @@
         "hasMicroscope": true,
         "hasSurgeryKit": true,
         "notes": null,
-        "workingHours": null
+        "workingHours": [
+          {
+            "weekday": 0,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 1,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 2,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 3,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 4,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 5,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 6,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          }
+        ]
       }
     ],
     "appointments": [
@@ -452,7 +624,7 @@
         "status": "planned",
         "startsAt": "2026-05-12T10:30:00+04:00",
         "endsAt": "2026-05-12T11:15:00+04:00",
-        "reason": "Профгигиена",
+        "reason": "Посадка из листа ожидания (Администратор 1)",
         "comment": "После оплаты выдать справку для вычета."
       },
       {
@@ -484,8 +656,8 @@
         "anonymousCode": null,
         "administrativeProfile": null,
         "balanceRub": 0,
-        "createdAt": "2026-10-07T16:25:57.515Z",
-        "updatedAt": "2026-10-07T16:25:57.522Z"
+        "createdAt": "2026-10-07T19:25:27.056Z",
+        "updatedAt": "2026-10-07T19:25:27.063Z"
       },
       {
         "id": "fe736762-aef9-46c2-94d8-0ba5ea1bd11a",
@@ -501,8 +673,8 @@
         "anonymousCode": null,
         "administrativeProfile": null,
         "balanceRub": 0,
-        "createdAt": "2026-10-07T16:25:57.515Z",
-        "updatedAt": "2026-10-07T16:25:57.515Z"
+        "createdAt": "2026-10-07T19:25:27.056Z",
+        "updatedAt": "2026-10-07T19:25:27.056Z"
       },
       {
         "id": "46c7b2cb-f4db-49e8-ac4e-ad6b1ecdf1ba",
@@ -518,8 +690,8 @@
         "anonymousCode": null,
         "administrativeProfile": null,
         "balanceRub": 0,
-        "createdAt": "2026-10-07T16:25:57.515Z",
-        "updatedAt": "2026-10-07T16:25:57.515Z"
+        "createdAt": "2026-10-07T19:25:27.056Z",
+        "updatedAt": "2026-10-07T19:25:27.056Z"
       }
     ],
     "documents": [
@@ -655,7 +827,7 @@
         "method": "card",
         "status": "paid",
         "paidAt": "2026-05-12T10:05:00+04:00",
-        "createdAt": "2026-10-07T16:25:57.515Z",
+        "createdAt": "2026-10-07T19:25:27.056Z",
         "fiscalReceiptNumber": "FN-2026-000001",
         "fiscalReceiptIssuedAt": "2026-05-12T10:05:00+04:00",
         "fiscalReceiptUrl": "https://example.com/fiscal/FN-2026-000001",
@@ -693,7 +865,7 @@
         "title": "Отправить ссылку на памятку после приема",
         "body": "Памятка после приема готова в защищенном портале клиники. Не включать диагноз, номера зубов, снимки и детали лечения в Telegram.",
         "lastEventAt": null,
-        "createdAt": "2026-10-07T16:25:57.515Z"
+        "createdAt": "2026-10-07T19:25:27.056Z"
       },
       {
         "id": "31ba633f-64e3-4a50-8a10-dc3d44f81a5a",
@@ -711,7 +883,7 @@
         "title": "Закрыть остаток оплаты и документы",
         "body": "Связать оплату с договором/актом, затем подготовить пакет документов.",
         "lastEventAt": null,
-        "createdAt": "2026-10-07T16:25:57.515Z"
+        "createdAt": "2026-10-07T19:25:27.056Z"
       },
       {
         "id": "16f19699-5b11-45fa-a329-5c53567b7f28",
@@ -729,7 +901,7 @@
         "title": "Предупредить о справке для вычета",
         "body": "После оплаты выдать справку КНД 1151156 и проверить ФИО/ИНН.",
         "lastEventAt": null,
-        "createdAt": "2026-10-07T16:25:57.515Z"
+        "createdAt": "2026-10-07T19:25:27.056Z"
       },
       {
         "id": "b896a902-665d-4b33-9851-53822a04c12a",
@@ -747,7 +919,7 @@
         "title": "Подтвердить первичную консультацию",
         "body": "Уточнить жалобу, предупредить взять паспорт и старые снимки.",
         "lastEventAt": null,
-        "createdAt": "2026-10-07T16:25:57.515Z"
+        "createdAt": "2026-10-07T19:25:27.056Z"
       },
       {
         "id": "d144ac6c-c570-4d0c-b6a6-dc0154130cd6",
@@ -765,7 +937,7 @@
         "title": "Обсудить ОПТГ контроль",
         "body": "Пояснить пациенту, что AI-описание не является диагнозом, врач проверяет снимок.",
         "lastEventAt": null,
-        "createdAt": "2026-10-07T16:25:57.515Z"
+        "createdAt": "2026-10-07T19:25:27.056Z"
       }
     ],
     "communicationEvents": [
@@ -857,44 +1029,54 @@
     "importBatches": [],
     "auditEvents": [
       {
-        "id": "b794e178-ad75-4763-827b-11b9d6e93793",
+        "id": "a61dad21-2440-491c-96f8-0d63032e445b",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "59d16574-5f6e-4cc7-9f49-2da2f126e11d",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-10-07T19:26:41.695Z"
+      },
+      {
+        "id": "a340ed9b-4649-49e5-af4d-d5f663e6667e",
         "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "actorUserId": null,
         "entityType": "clinic_profile",
         "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "action": "clinic_scale_preset_applied",
         "reason": "Применен суверенный пресет масштаба: network_center.",
-        "createdAt": "2026-10-07T16:27:20.469Z"
+        "createdAt": "2026-10-07T19:26:27.437Z"
       },
       {
-        "id": "e3b6db21-1cc0-4413-aa7b-eed43d611b4a",
+        "id": "71dd978a-91ee-481d-8083-2151c7e79194",
         "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "actorUserId": null,
         "entityType": "clinic_profile",
         "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "action": "clinic_scale_preset_applied",
         "reason": "Применен суверенный пресет масштаба: standard_clinic.",
-        "createdAt": "2026-10-07T16:27:20.467Z"
+        "createdAt": "2026-10-07T19:26:27.436Z"
       },
       {
-        "id": "d976306e-f766-44db-9928-3b98452ca026",
+        "id": "14dc1413-43b0-46da-8aba-fbacde890617",
         "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "actorUserId": null,
         "entityType": "clinic_profile",
         "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "action": "clinic_scale_preset_applied",
         "reason": "Применен суверенный пресет масштаба: solo_doctor.",
-        "createdAt": "2026-10-07T16:27:20.465Z"
+        "createdAt": "2026-10-07T19:26:27.434Z"
       },
       {
-        "id": "03b2450e-11ea-48b7-b107-bb3da017b6e7",
+        "id": "8ab0788e-11cd-4af5-9e94-d0165ffb86f9",
         "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "actorUserId": null,
         "entityType": "patient",
         "entityId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
         "action": "patient_core_updated",
         "reason": "Core patient identity and contact facts updated for scheduling, documents, tax, and communication.",
-        "createdAt": "2026-10-07T16:25:57.523Z"
+        "createdAt": "2026-10-07T19:25:27.063Z"
       },
       {
         "id": "cdac781e-6a56-4bbb-a4bd-1e2da6efc047",
@@ -904,7 +1086,7 @@
         "entityId": "af94df45-a669-4cae-b400-6e4f020f9120",
         "action": "visit_opened",
         "reason": "Смена открыта, карта пациента доступна врачу.",
-        "createdAt": "2026-10-07T16:25:57.515Z"
+        "createdAt": "2026-10-07T19:25:27.056Z"
       },
       {
         "id": "5caa31eb-f50e-4d85-aa5e-c328d8d08229",
@@ -914,7 +1096,7 @@
         "entityId": "f9d274b4-3730-4eaa-aeac-20bf5f2f1bc5",
         "action": "document_prepared",
         "reason": "Договор создан как черновик перед приемом.",
-        "createdAt": "2026-10-07T16:25:57.515Z"
+        "createdAt": "2026-10-07T19:25:27.056Z"
       }
     ],
     "aiRecognitionJobs": [],
@@ -977,7 +1159,7 @@
       "allowVoiceIntake": false,
       "staffEscalationChannel": null,
       "privacyMode": "no_phi_by_default",
-      "updatedAt": "2026-10-07T16:25:57.514Z"
+      "updatedAt": "2026-10-07T19:25:27.054Z"
     },
     "denteTelegramLinkCodes": [],
     "denteTelegramChatLinks": [],
@@ -997,9 +1179,9 @@
       "diagnosis": "K02.1 кариес дентина, предварительно.",
       "treatmentPlan": "Анестезия, изоляция, препарирование, восстановление композитом.",
       "doctorSummary": "AI-диктовка должна попадать сюда как черновик, не как подписанный диагноз.",
-      "createdAt": "2026-10-07T16:25:57.515Z",
-      "updatedAt": "2026-10-07T16:25:57.515Z"
+      "createdAt": "2026-10-07T19:25:27.056Z",
+      "updatedAt": "2026-10-07T19:25:27.056Z"
     }
   },
-  "checksum": "886afdd9abfeb9a8fc39400e1c912ac5cfc97b02dfa741e0625bd09843516754"
+  "checksum": "b3364d6e965489458a145e94ca99fa8b431655fb980af7e9d69dbc781c41de8c"
 }

@@ -66,8 +66,8 @@ async function main() {
     console.log(`[OK] demoDataSeeded: ${prodDemoSeeded} (Strictly False)`);
 
     const prodHeaders = {
-        'x-dente-clinic-token': prodClinicToken,
-        'x-dente-staff-token': prodStaffToken,
+        'x-dente-clinic-token': String(prodClinicToken || '').trim(),
+        'x-dente-staff-token': String(prodStaffToken || '').trim(),
     };
 
     console.log('\n--- PHASE 2: VERIFYING ZERO-MOCK EMPTY STATE IN PRODUCTION ---');
@@ -185,8 +185,8 @@ async function main() {
     console.log(`[DEMO AUDIT] demoDataSeeded: ${demoDataSeeded} (Strictly True)`);
 
     const demoHeaders = {
-        'x-dente-clinic-token': demoClinicToken,
-        'x-dente-staff-token': demoStaffToken,
+        'x-dente-clinic-token': String(demoClinicToken || '').trim(),
+        'x-dente-staff-token': String(demoStaffToken || '').trim(),
     };
 
     // 1. Dashboard & Schedule Appointments

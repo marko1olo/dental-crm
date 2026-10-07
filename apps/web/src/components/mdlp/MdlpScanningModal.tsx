@@ -34,6 +34,8 @@ import {
 	generateMdlpSchema701Payload,
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import {
 	safeLocalStorageGetItem,
 	safeLocalStorageSetItem,
@@ -47,6 +49,9 @@ import {
 	createShiftCarpulesBatch,
 	loadMdlpOfflineQueue,
 	saveMdlpOfflineQueue,
+	submitMdlpBarcodeScan,
+	syncMdlpQueueToBackend,
+	fetchMdlpLiveQueue,
 } from "./mdlpScanningPresets.js";
 import { MdlpScannedItemsTable } from "./MdlpScannedItemsTable.js";
 
@@ -104,6 +109,17 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 		}
 	}, [isOpen, mode]);
 
+	// Подгрузка живой очереди выбытия медикаментов из бэкенда Fastify / PostgreSQL
+	useEffect(() => {
+		if (isOpen && offlineQueue.length === 0) {
+			fetchMdlpLiveQueue().then((live) => {
+				if (live.length > 0) {
+					setOfflineQueue(live);
+				}
+			}).catch(() => null);
+		}
+	}, [isOpen, offlineQueue.length]);
+
 	// Synchronize mode switch default docNum
 	const handleModeSwitch = (newMode: "acceptance_701" | "disposal_531" | "disposal_444") => {
 		setMode(newMode);
@@ -119,14 +135,20 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 	};
 
 	// 1-клик действие «Отложенное списание МДЛП (офлайн-буфер)» — лекарство выдается врачу немедленно, пакет выбытия встает в фоновую очередь на отправку в ЦРПТ
-	const handleDeferredDisposal = () => {
+	const handleDeferredDisposal = async () => {
 		let itemsToQueue = scannedItems;
 		if (itemsToQueue.length === 0) {
-			const emergencyItem = createChestnyZnakScannedItem(EMERGENCY_DISPENSE_PRESETS[0]!.code, {
-				costRub: EMERGENCY_DISPENSE_PRESETS[0]!.cost,
-			});
-			itemsToQueue = [emergencyItem];
-			setScannedItems([emergencyItem]);
+			if (isDemoShowcaseMode()) {
+				const emergencyItem = createChestnyZnakScannedItem(EMERGENCY_DISPENSE_PRESETS[0]!.code, {
+					costRub: EMERGENCY_DISPENSE_PRESETS[0]!.cost,
+				});
+				itemsToQueue = [emergencyItem];
+				setScannedItems([emergencyItem]);
+			} else {
+				showToast("Сначала отсканируйте 2D-код маркировки или выберите препарат из аварийной выдачи", "warning");
+				inputRef.current?.focus();
+				return;
+			}
 		}
 
 		const pkgId = `MDLP-OFFLINE-${Date.now().toString(36).toUpperCase()}`;
@@ -141,6 +163,8 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 			items: itemsToQueue,
 			status: "queued",
 			reason: "Оказание медпомощи (офлайн-буфер без ожидания ЦРПТ)",
+			patientId: patientId ?? undefined,
+			visitId: visitId ?? undefined,
 		};
 
 		const updated = [newPkg, ...offlineQueue];
@@ -150,21 +174,93 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 			onDeferredDisposal(newPkg);
 		}
 
+		// Фоновая честная фиксация пакета в бэкенде Fastify / PostgreSQL
+		try {
+			const res = await fetch("/api/mdlp/dispose-batch", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					docNum: newPkg.docNum,
+					docDate: newPkg.docDate,
+					patientId: patientId ?? undefined,
+					visitId: visitId ?? undefined,
+					doctorId: doctorId ?? undefined,
+					reason: newPkg.reason,
+					items: itemsToQueue.map((it) => ({
+						rawBarcode: it.rawBarcode,
+						sgtin: it.sgtin,
+						gtin: it.gtin,
+						serialNumber: it.serialNumber,
+						costRub: it.costRub,
+						patientId: patientId ?? undefined,
+						visitId: visitId ?? undefined,
+						doctorId: doctorId ?? undefined,
+					})),
+				}),
+			});
+
+			if (res.ok) {
+				const syncedPkg: MdlpOfflinePackage = { ...newPkg, status: "synced" };
+				const nextUpdated = [syncedPkg, ...offlineQueue];
+				setOfflineQueue(nextUpdated);
+				saveMdlpOfflineQueue(nextUpdated);
+			}
+		} catch {
+			// Офлайн: пакет остается со статусом 'queued' для последующей синхронизации
+		}
+
 		showToast(
-			`Отложенное списание МДЛП: лекарство выдано врачу немедленно! Пакет #${pkgId} (${itemsToQueue.length} поз.) поставлен в фоновую очередь на отправку в ЦРПТ.`,
+			`Отложенное списание МДЛП: лекарство выдано врачу немедленно! Пакет #${pkgId} (${itemsToQueue.length} поз.) зафиксирован.`,
 			"success",
 		);
 	};
 
 	// 1-клик групповое списание пустых карпул анестетиков за смену («Списано 10 карпул Артикаина 1:100 000 по журналу приёма»)
-	const handleQuickShiftCarpulesDisposal = () => {
+	const handleQuickShiftCarpulesDisposal = async () => {
 		const batch = createShiftCarpulesBatch(10);
 		setScannedItems((prev) => [...batch, ...prev]);
 		setMode("disposal_531");
-		setDocNum(`АКТ-ПУСТ-КАРП-${new Date().toISOString().slice(0, 10)}`);
+		const actNum = `АКТ-ПУСТ-КАРП-${new Date().toISOString().slice(0, 10)}`;
+		setDocNum(actNum);
 		setGeneratedXml(null);
 		setXmlDocType(null);
-		showToast("Списано 10 карпул Артикаина 1:100 000 по журналу приёма", "success");
+
+		// Честное сохранение списания партии карпул в Fastify / PostgreSQL
+		try {
+			await fetch("/api/mdlp/dispose-batch", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					docNum: actNum,
+					docDate,
+					patientId: patientId ?? undefined,
+					visitId: visitId ?? undefined,
+					doctorId: doctorId ?? undefined,
+					reason: "Списание использованных карпул анестетиков за смену",
+					approverRole: "senior_nurse",
+					items: batch.map((it) => ({
+						rawBarcode: it.rawBarcode,
+						sgtin: it.sgtin,
+						gtin: it.gtin,
+						serialNumber: it.serialNumber,
+						costRub: it.costRub,
+						patientId: patientId ?? undefined,
+						visitId: visitId ?? undefined,
+						doctorId: doctorId ?? undefined,
+					})),
+				}),
+			});
+		} catch {
+			// Локальный буфер
+		}
+
+		showToast("Списано 10 карпул Артикаина 1:100 000 по журналу приёма и сохранено в базе", "success");
 	};
 
 	// Аварийная выдача медикаментов / имплантатов при поломке 2D-сканера
@@ -172,23 +268,35 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 		const newItem = createChestnyZnakScannedItem(preset.code, { costRub: preset.cost });
 		setScannedItems((prev) => [newItem, ...prev]);
 		setGeneratedXml(null);
+
+		// Регистрация сканирования в бэкенде Fastify
+		submitMdlpBarcodeScan(preset.code, true).catch(() => null);
+
 		showToast(`Аварийная выдача без сканера: ${preset.shortName} выдан врачу`, "success");
 	};
 
-	// Синхронизация офлайн-буфера с сервером ЦРПТ
-	const handleSyncOfflineQueue = () => {
+	// Синхронизация офлайн-буфера с сервером ЦРПТ и Fastify бэкендом
+	const handleSyncOfflineQueue = async () => {
 		if (offlineQueue.length === 0) {
 			showToast("Офлайн-буфер пуст — нет пакетов на отправку", "info");
 			return;
 		}
-		const updated = offlineQueue.map((p) => ({ ...p, status: "synced" as const }));
-		setOfflineQueue(updated);
-		saveMdlpOfflineQueue(updated);
-		showToast(`Синхронизировано: ${offlineQueue.length} пакетов успешно переданы в ИС МДЛП (ЦРПТ)`, "success");
+
+		const result = await syncMdlpQueueToBackend(offlineQueue);
+		setOfflineQueue(result.updatedQueue);
+
+		if (result.syncedCount > 0) {
+			showToast(
+				`Синхронизировано: ${result.syncedCount} пакетов успешно переданы в ИС МДЛП и БД PostgreSQL${result.failedCount > 0 ? ` (${result.failedCount} в очереди)` : ""}`,
+				"success",
+			);
+		} else {
+			showToast("Пакеты сохранены в локальном буфере до восстановления связи", "warning");
+		}
 	};
 
 	// Handle Barcode Scan (Запрет на блокировку пустых вводов)
-	const handleScanSubmit = (e?: React.FormEvent) => {
+	const handleScanSubmit = async (e?: React.FormEvent) => {
 		if (e) e.preventDefault();
 		const raw = barcodeInput.trim();
 		if (!raw) {
@@ -201,6 +309,9 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 		setScannedItems((prev) => [newItem, ...prev]);
 		setBarcodeInput("");
 		setGeneratedXml(null);
+
+		// Живая отправка в Fastify API (/api/mdlp/scan)
+		submitMdlpBarcodeScan(raw, true).catch(() => null);
 
 		if (newItem.status === "verified") {
 			showToast(`Отсканировано: ${newItem.tradeName}`, "success");

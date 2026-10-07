@@ -2,6 +2,8 @@ import {
 	Activity,
 	Calendar,
 	CheckCircle2,
+	ChevronDown,
+	ChevronUp,
 	Clock,
 	FileText,
 	Lock,
@@ -14,11 +16,10 @@ import {
 	Stethoscope,
 	User,
 	X,
-	ArrowRight,
 	Save,
 } from "lucide-react";
 import type React from "react";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { DiaryState } from "../useVisitDiaryLogic";
 import { AppointmentModal } from "../schedule/AppointmentModal";
@@ -149,6 +150,8 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 	const [isProtocolGeneratorOpen, setIsProtocolGeneratorOpen] = useState(false);
 	const [synthesizedDiaryPreview, setSynthesizedDiaryPreview] = useState<VisitDiaryEntry043 | null>(null);
 	const [isMemoModalOpen, setIsMemoModalOpen] = useState(false);
+	const [isDocsDropupOpen, setIsDocsDropupOpen] = useState(false);
+	const docsDropupRef = useRef<HTMLDivElement>(null);
 
 	const mappedOdontogramTeeth = useMemo<FdiToothRecord[]>(() => {
 		return (teethData ?? []).map((t) => ({
@@ -160,13 +163,14 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 		}));
 	}, [teethData]);
 
-
 	useEffect(() => {
 		if (!isOpen) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
 				if (zoomImage) {
 					setZoomImage(null);
+				} else if (isDocsDropupOpen) {
+					setIsDocsDropupOpen(false);
 				} else {
 					onClose();
 				}
@@ -174,7 +178,22 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, onClose, zoomImage]);
+	}, [isOpen, onClose, zoomImage, isDocsDropupOpen]);
+
+	useEffect(() => {
+		if (!isDocsDropupOpen) return;
+		const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+			if (docsDropupRef.current && !docsDropupRef.current.contains(e.target as Node)) {
+				setIsDocsDropupOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handlePointerDown);
+		document.addEventListener("touchstart", handlePointerDown);
+		return () => {
+			document.removeEventListener("mousedown", handlePointerDown);
+			document.removeEventListener("touchstart", handlePointerDown);
+		};
+	}, [isDocsDropupOpen]);
 
 	const formattedPatientName = useMemo(() => {
 		return patient ? formatPatientFullName(patient) : "Пациент";
@@ -351,6 +370,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 			role="dialog"
 			aria-modal="true"
 			aria-label="Клиническая сводка приёма"
+			data-testid="visit-summary-modal"
 			onClick={(e) => {
 				if (e.target === e.currentTarget) onClose();
 			}}
@@ -394,23 +414,15 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 
 				{/* Modal Scrollable Content */}
 				<div className="flex-1 overflow-y-auto p-6 space-y-6">
-					{/* Step-by-Step Guidance Ribbon & Autosave Status */}
-					<div className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs flex-wrap">
-						<div className="flex items-center gap-1.5 font-bold text-[var(--teal,var(--brand-primary))]">
-							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] text-xs font-bold">1</span>
-							<span>Шаг 1: Проверка диагноза и данных</span>
+					{/* Status Line & Autosave Status */}
+					<div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs flex-wrap">
+						<div className="flex items-center gap-2">
+							<div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+							<span className="font-semibold text-[var(--ink)] text-sm">
+								Клинический протокол готов к финализации
+							</span>
 						</div>
-						<ArrowRight size={12} className="text-[var(--muted)]" />
-						<div className="flex items-center gap-1.5 font-bold text-[var(--teal,var(--brand-primary))]">
-							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] text-xs font-bold">2</span>
-							<span>Шаг 2: Дневник приёма</span>
-						</div>
-						<ArrowRight size={12} className="text-[var(--muted)]" />
-						<div className="flex items-center gap-1.5 font-bold text-[var(--ok-fg)]">
-							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--ok-fg)] text-white text-xs font-bold">3</span>
-							<span>Шаг 3: Печать медицинской карты</span>
-						</div>
-						<div className="ml-auto flex items-center gap-2">
+						<div className="ml-auto flex items-center gap-2.5">
 							<button
 								type="button"
 								onClick={() => {
@@ -437,15 +449,15 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 										setIsNextStageModalOpen(true);
 									}
 								}}
-								className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-black shadow-xs transition-all cursor-pointer touch-manipulation active:scale-95"
+								className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-xs transition-all cursor-pointer touch-manipulation active:scale-95"
 								title="Записать пациента на следующий этап через 5-7 дней"
 								data-testid="ribbon-schedule-next-stage-btn"
 							>
 								<Calendar size={14} />
 								<span>Записать на след. этап (+5 дней)</span>
 							</button>
-							<div className="flex items-center gap-1 text-[var(--muted)] text-xs">
-								<Save size={12} className="text-[var(--ok-fg)]" />
+							<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)] text-xs font-medium">
+								<Save size={12} className="text-emerald-500" />
 								<span>Автосохранено</span>
 							</div>
 						</div>
@@ -679,80 +691,114 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="inline-flex items-center justify-center px-5 py-2.5 min-h-[48px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-bold hover:bg-[var(--paper-strong)] transition-colors cursor-pointer"
+						className="inline-flex items-center justify-center px-5 py-2.5 min-h-[48px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-strong)] text-sm font-bold transition-colors cursor-pointer"
 					>
 						Закрыть
 					</button>
-					<div className="flex flex-wrap items-center gap-2">
-						<button
-							type="button"
-							onClick={() => {
-								if (onOpenProtocolGenerator) {
-									onClose();
-									onOpenProtocolGenerator();
-								} else {
-									setIsProtocolGeneratorOpen(true);
-								}
-							}}
-							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-[var(--teal,var(--line))]/40 bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] text-sm font-bold hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors cursor-pointer"
-							title="Сформировать дневник приёма по диагнозу и зубной формуле"
-							data-testid="summary-open-protocol-generator-btn"
-						>
-							<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
-							<span>Дневник приёма</span>
-						</button>
-						{onOpenPrescription ? (
+					<div className="flex flex-wrap items-center gap-3">
+						{/* Dropup Menu: Документы и справки ▾ */}
+						<div className="relative" ref={docsDropupRef}>
 							<button
 								type="button"
-								onClick={() => {
-									onClose();
-									onOpenPrescription();
-								}}
-								className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300 text-sm font-bold hover:bg-blue-500/20 transition-colors cursor-pointer"
-								data-testid="summary-prescription-btn"
+								onClick={() => setIsDocsDropupOpen((prev) => !prev)}
+								className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] text-sm font-semibold transition-colors cursor-pointer shadow-xs"
+								data-testid="summary-docs-dropup-btn"
+								aria-haspopup="true"
+								aria-expanded={isDocsDropupOpen}
+								title="Сопутствующие документы и справки"
 							>
-								<Pill className="w-4 h-4" />
-								Рецепт (107-1/у)
+								<FileText className="w-4 h-4 text-[var(--muted)]" />
+								<span>Документы и справки</span>
+								{isDocsDropupOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
 							</button>
-						) : null}
-						{onOpenRadiologyReferral ? (
-							<button
-								type="button"
-								onClick={() => {
-									onClose();
-									onOpenRadiologyReferral();
-								}}
-								className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] text-sm font-bold hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors cursor-pointer"
-								data-testid="summary-radiology-btn"
-							>
-								<Scan className="w-4 h-4" />
-								Направление КЛКТ/ОПТГ
-							</button>
-						) : null}
-						{onOpenEgiszExport ? (
-							<button
-								type="button"
-								onClick={() => {
-									onClose();
-									onOpenEgiszExport();
-								}}
-								className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-[var(--ok-fg)]/30 bg-[var(--ok-bg)] text-[var(--ok-fg)] text-sm font-bold hover:opacity-90 transition-colors cursor-pointer"
-								data-testid="summary-egisz-btn"
-							>
-								<ShieldCheck className="w-4 h-4" />
-								Электронная карта (Госуслуги)
-							</button>
-						) : null}
-						<button
-							type="button"
-							onClick={() => setIsMemoModalOpen(true)}
-							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 text-sm font-bold hover:bg-indigo-500/20 transition-colors cursor-pointer"
-							data-testid="summary-print-memo-btn"
-							title="Распечатать памятку пациенту с рекомендациями после приёма"
-						>
-							<FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-							<span>Памятка пациенту</span>
-						</button>
+
+							{isDocsDropupOpen && (
+								<div
+									className="absolute right-0 bottom-full mb-2 z-30 flex flex-col p-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl min-w-[280px] animate-in fade-in slide-in-from-bottom-2 duration-150"
+									data-testid="summary-docs-dropup-menu"
+								>
+									<div className="px-3 py-1.5 text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider border-b border-[var(--line)]">
+										Документы и направления
+									</div>
+									<button
+										type="button"
+										onClick={() => {
+											setIsDocsDropupOpen(false);
+											if (onOpenProtocolGenerator) {
+												onClose();
+												onOpenProtocolGenerator();
+											} else {
+												setIsProtocolGeneratorOpen(true);
+											}
+										}}
+										className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-strong)] transition-colors text-left cursor-pointer"
+										data-testid="summary-open-protocol-generator-btn"
+									>
+										<Sparkles className="w-4 h-4 text-[var(--teal)] shrink-0" />
+										<span>Дневник приёма (по диагнозу)</span>
+									</button>
+									{onOpenPrescription ? (
+										<button
+											type="button"
+											onClick={() => {
+												setIsDocsDropupOpen(false);
+												onClose();
+												onOpenPrescription();
+											}}
+											className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-strong)] transition-colors text-left cursor-pointer"
+											data-testid="summary-prescription-btn"
+										>
+											<Pill className="w-4 h-4 text-blue-500 shrink-0" />
+											<span>Рецепт (107-1/у)</span>
+										</button>
+									) : null}
+									{onOpenRadiologyReferral ? (
+										<button
+											type="button"
+											onClick={() => {
+												setIsDocsDropupOpen(false);
+												onClose();
+												onOpenRadiologyReferral();
+											}}
+											className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-strong)] transition-colors text-left cursor-pointer"
+											data-testid="summary-radiology-btn"
+										>
+											<Scan className="w-4 h-4 text-teal-500 shrink-0" />
+											<span>Направление на снимок (КЛКТ/ОПТГ)</span>
+										</button>
+									) : null}
+									<button
+										type="button"
+										onClick={() => {
+											setIsDocsDropupOpen(false);
+											setIsMemoModalOpen(true);
+										}}
+										className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-strong)] transition-colors text-left cursor-pointer"
+										data-testid="summary-print-memo-btn"
+									>
+										<FileText className="w-4 h-4 text-indigo-500 shrink-0" />
+										<span>Памятка пациенту</span>
+									</button>
+									{onOpenEgiszExport ? (
+										<button
+											type="button"
+											onClick={() => {
+												setIsDocsDropupOpen(false);
+												onClose();
+												onOpenEgiszExport();
+											}}
+											className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-strong)] transition-colors text-left cursor-pointer"
+											data-testid="summary-egisz-btn"
+										>
+											<ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+											<span>Электронная карта (Госуслуги)</span>
+										</button>
+									) : null}
+								</div>
+							)}
+						</div>
+
+						{/* Secondary CTA: Печать карты 043/у */}
 						<button
 							type="button"
 							onClick={() => {
@@ -765,12 +811,14 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							}}
 							className="inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-[48px] rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-sm sm:text-base font-extrabold hover:bg-[var(--teal-dark)] transition-colors shadow-md cursor-pointer"
 							data-testid="summary-print-btn"
-							title="Печать медицинской карты"
-							aria-label="Печать медицинской карты"
+							title="Печать карты 043/у"
+							aria-label="Печать карты 043/у"
 						>
 							<Printer className="w-4 h-4" />
-							Печать медицинской карты
+							<span>Печать карты 043/у</span>
 						</button>
+
+						{/* Primary CTA: Завершить приём */}
 						<button
 							type="button"
 							onClick={async () => {
@@ -786,7 +834,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 								}
 							}}
 							disabled={isCompleting}
-							className="inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-[48px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm sm:text-base font-black transition-colors shadow-md cursor-pointer disabled:opacity-50"
+							className="inline-flex items-center justify-center gap-2 px-6 py-2.5 min-h-[48px] min-w-[200px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm sm:text-base font-black transition-colors shadow-md cursor-pointer disabled:opacity-50"
 							data-testid="summary-complete-visit-btn"
 							title="Завершить приём и сформировать чек"
 						>

@@ -76,6 +76,12 @@ export function toOdontogramToothState(visitState: string): string {
 	return "Healthy";
 }
 
+export {
+	infer804nServiceFromStamp,
+	type Inferred804nService,
+} from "./infer804nService";
+import { infer804nServiceFromStamp } from "./infer804nService";
+
 export interface UseVisitEmkToothSyncParams {
 	readonly patientId: string | null | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: visitNoteForm is dynamic
@@ -295,6 +301,29 @@ export function useVisitEmkToothSync({
 					diagnosisIcd10: soap.diagnosisIcd10,
 					treatmentPlan: soap.treatmentDescription,
 				});
+
+				const matchingService = infer804nServiceFromStamp(detail.state, num);
+				if (matchingService) {
+					window.dispatchEvent(
+						new CustomEvent("dente-add-services-to-invoice", {
+							detail: {
+								services: [
+									{
+										id: matchingService.id,
+										name: matchingService.title,
+										title: matchingService.title,
+										code: matchingService.code804n,
+										code804n: matchingService.code804n,
+										price: matchingService.priceRub,
+										priceRub: matchingService.priceRub,
+										toothNumber: num,
+										toothCode: String(num),
+									},
+								],
+							},
+						}),
+					);
+				}
 			}
 		};
 

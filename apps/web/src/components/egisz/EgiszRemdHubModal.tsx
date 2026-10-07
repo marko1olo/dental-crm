@@ -31,7 +31,6 @@ import {
 	validateXmlStructure,
 } from "./egiszRemdEngine";
 import {
-	SAMPLE_REMD_JOURNAL_RECORDS,
 	type RemdDocumentRecord,
 	type RemdDocumentStatus,
 } from "./egiszJournalData";
@@ -68,6 +67,7 @@ export interface EgiszRemdHubModalProps {
 	initialTab?: EgiszHubModalTab | undefined;
 	initialJournalFilter?: RemdDocumentStatus | "all" | undefined;
 	initialJournalSelectedId?: string | undefined;
+	initialJournalRecords?: RemdDocumentRecord[] | undefined;
 	onSentSuccess?: ((result: { type: string; documentId: string; timestamp: string }) => void) | undefined;
 	onSignJournalDocument?: ((record: RemdDocumentRecord) => void) | undefined;
 	onExportJournalZip?: ((record: RemdDocumentRecord) => void) | undefined;
@@ -83,6 +83,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 	initialTab,
 	initialJournalFilter,
 	initialJournalSelectedId,
+	initialJournalRecords,
 	onSentSuccess,
 	onSignJournalDocument,
 	onExportJournalZip,
@@ -112,19 +113,15 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 		setCollapsedSections((prev) => ({ ...prev, [key]: !prev[key] }));
 	};
 
-	// Journal State
-	const [records, setRecords] = useState<RemdDocumentRecord[]>(SAMPLE_REMD_JOURNAL_RECORDS);
+	// Journal State — Mandate 8f (Real Persistence, Zero Static Mocks)
+	const [records, setRecords] = useState<RemdDocumentRecord[]>(initialJournalRecords || []);
+	const [isLoadingJournal, setIsLoadingJournal] = useState<boolean>(false);
 	const [journalFilter, setJournalFilter] = useState<RemdDocumentStatus | "all">(
 		initialJournalFilter || "all",
 	);
-	const [selectedJournalId, setSelectedJournalId] = useState<string>(() => {
-		if (initialJournalSelectedId) return initialJournalSelectedId;
-		if (initialJournalFilter && initialJournalFilter !== "all") {
-			const match = SAMPLE_REMD_JOURNAL_RECORDS.find((r) => r.status === initialJournalFilter);
-			if (match) return match.id;
-		}
-		return SAMPLE_REMD_JOURNAL_RECORDS[0]?.id || "";
-	});
+	const [selectedJournalId, setSelectedJournalId] = useState<string>(
+		initialJournalSelectedId || (initialJournalRecords?.[0]?.id || ""),
+	);
 
 	// Domain & Payload State Hook
 	const state = useEgiszRemdState({
@@ -216,14 +213,56 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 		);
 	}, [state.activePreflight, state.generatedXml]);
 
-	// Refresh outbox documents from backend route /api/clinical/egisz/outbox
+	// Auto-load outbox records from PostgreSQL on open — Mandate 8f (Real Persistence)
+	useEffect(() => {
+		if (!isOpen) return;
+		let isMounted = true;
+		setIsLoadingJournal(true);
+		fetchOutboxRecordsFromBackend(state.clinic)
+			.then((outboxDocs) => {
+				if (!isMounted) return;
+				setRecords(outboxDocs || []);
+				setIsLoadingJournal(false);
+			})
+			.catch(() => {
+				if (!isMounted) return;
+				setIsLoadingJournal(false);
+			});
+		return () => {
+			isMounted = false;
+		};
+	}, [isOpen, state.clinic]);
+
+	// Auto-select first matching journal item if none selected
+	useEffect(() => {
+		if (!selectedJournalId && records.length > 0) {
+			const match =
+				journalFilter !== "all"
+					? records.find((r) => r.status === journalFilter)
+					: records[0];
+			if (match) {
+				setSelectedJournalId(match.id);
+			} else if (records[0]) {
+				setSelectedJournalId(records[0].id);
+			}
+		}
+	}, [records, selectedJournalId, journalFilter]);
+
+	// Refresh outbox documents from backend route /api/egisz/journal
 	const handleRefreshOutbox = useCallback(async () => {
-		const outboxDocs = await fetchOutboxRecordsFromBackend(state.clinic);
-		if (outboxDocs && outboxDocs.length > 0) {
-			setRecords(outboxDocs);
-			showToast("Журнал РЭМД синхронизирован с сервером", "success");
-		} else {
-			showToast("Журнал РЭМД обновлен", "info");
+		setIsLoadingJournal(true);
+		try {
+			const outboxDocs = await fetchOutboxRecordsFromBackend(state.clinic);
+			setRecords(outboxDocs || []);
+			if (outboxDocs && outboxDocs.length > 0) {
+				showToast(`Журнал РЭМД синхронизирован (${outboxDocs.length} записей из БД)`, "success");
+			} else {
+				showToast("Журнал РЭМД пуст (в базе нет исходящих СЭМД)", "info");
+			}
+		} catch {
+			showToast("Ошибка синхронизации журнала с сервером", "error");
+		} finally {
+			setIsLoadingJournal(false);
 		}
 	}, [state.clinic]);
 
@@ -604,6 +643,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 							onExportJournalZip={onExportJournalZip}
 							onSwitchToSignatureTab={() => setActiveTab("signature")}
 							onRefreshOutbox={handleRefreshOutbox}
+							isLoading={isLoadingJournal}
 						/>
 					)}
 				</div>

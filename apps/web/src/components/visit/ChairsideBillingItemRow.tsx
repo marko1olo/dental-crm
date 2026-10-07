@@ -235,7 +235,7 @@ export const ChairsideBillingItemRow: React.FC<ChairsideBillingItemRowProps> = (
 			}`}
 			data-testid={`chairside-service-row-${item.id}`}
 		>
-			<div className="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap">
+			<div className="flex items-start justify-between gap-3 flex-wrap xl:flex-nowrap">
 				{/* Service info */}
 				<div className="min-w-0 flex-1 space-y-1">
 					<div className="flex items-center gap-2 flex-wrap">
@@ -315,7 +315,7 @@ export const ChairsideBillingItemRow: React.FC<ChairsideBillingItemRowProps> = (
 				</div>
 
 				{/* Controls: Quantity + Inline Price Editing (+500 ₽ / -500 ₽) */}
-				<div className="flex items-center gap-3 flex-wrap shrink-0">
+				<div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap shrink-0 self-end sm:self-auto">
 					{/* Quantity */}
 					<div className="flex items-center border border-[var(--line,#e2e8f0)] rounded-lg bg-[var(--paper,#ffffff)] overflow-hidden">
 						<button
@@ -347,7 +347,7 @@ export const ChairsideBillingItemRow: React.FC<ChairsideBillingItemRowProps> = (
 							type="button"
 							onClick={() => onStepPrice(item.id, -500)}
 							title={item.unitPriceRub <= 0 ? "Минимальная цена 0 ₽" : "Снизить цену на 500 ₽"}
-							className="h-7 px-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-bold font-mono cursor-pointer transition-all active:scale-95 shrink-0 flex items-center justify-center"
+							className="h-7 px-1.5 sm:px-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-bold font-mono cursor-pointer transition-all active:scale-95 shrink-0 flex items-center justify-center"
 							data-testid={`btn-step-minus-500-${item.id}`}
 						>
 							-500 ₽
@@ -360,11 +360,11 @@ export const ChairsideBillingItemRow: React.FC<ChairsideBillingItemRowProps> = (
 								step={100}
 								value={item.unitPriceRub}
 								onChange={(e) => onPriceChange(item.id, Number(e.target.value) || 0)}
-								className="h-7 w-20 px-2 text-xs font-bold font-mono text-right bg-transparent border-0 outline-none text-[var(--ink,#0f172a)]"
+								className="h-7 w-16 sm:w-20 px-1 sm:px-2 text-xs font-bold font-mono text-right bg-transparent border-0 outline-none text-[var(--ink,#0f172a)]"
 								data-testid={`input-unit-price-${item.id}`}
 								title="Прямое редактирование цены услуги"
 							/>
-							<span className="text-xs font-mono font-bold text-[var(--muted,#64748b)] pr-1.5">
+							<span className="text-xs font-mono font-bold text-[var(--muted,#64748b)] pr-1">
 								₽
 							</span>
 						</div>
@@ -373,7 +373,7 @@ export const ChairsideBillingItemRow: React.FC<ChairsideBillingItemRowProps> = (
 							type="button"
 							onClick={() => onStepPrice(item.id, 500)}
 							title="Увеличить цену на 500 ₽"
-							className="h-7 px-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold font-mono cursor-pointer transition-all active:scale-95 shrink-0 flex items-center justify-center"
+							className="h-7 px-1.5 sm:px-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold font-mono cursor-pointer transition-all active:scale-95 shrink-0 flex items-center justify-center"
 							data-testid={`btn-step-plus-500-${item.id}`}
 						>
 							+500 ₽
@@ -381,7 +381,7 @@ export const ChairsideBillingItemRow: React.FC<ChairsideBillingItemRowProps> = (
 					</div>
 
 					{/* Total for row */}
-					<div className="w-24 text-right">
+					<div className="w-20 sm:w-24 text-right">
 						{item.isWarranty || isWarranty100 ? (
 							<div className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">
 								0 ₽

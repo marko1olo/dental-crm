@@ -413,10 +413,10 @@ export function WorkspaceSidebar({
 	 */
 	const navSlotClass = collapsed
 		? "flex w-full min-w-0 flex-col items-center gap-[0.1875rem] text-center"
-		: "flex w-full min-w-0 items-center gap-[0.5rem] max-[1140px]:flex-col max-[1140px]:gap-[0.1875rem] max-[1140px]:text-center";
+		: "flex w-full min-w-0 items-center gap-[0.5rem]";
 	const navCaptionClass = collapsed
-		? "block max-w-full text-[0.625rem] font-semibold leading-[1.15] break-words"
-		: "hidden max-w-full text-[0.625rem] font-semibold leading-[1.15] break-words max-[1140px]:block";
+		? "block max-w-full text-[0.625rem] font-semibold leading-[1.15] truncate"
+		: "hidden";
 
 	return (
 		<aside

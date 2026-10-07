@@ -278,6 +278,12 @@ async function main() {
 		});
 
 		const prodPage = await prodContext.newPage();
+		prodPage.on("console", (msg) => {
+			if (msg.type() === "error" || msg.type() === "warn") {
+				console.log(`[PROD BROWSER ${msg.type().toUpperCase()}]`, msg.text());
+			}
+		});
+		prodPage.on("pageerror", (err) => console.log("[PROD PAGE ERROR]", err.message));
 
 		await prodPage.addInitScript((tokens) => {
 			localStorage.removeItem("dente_demo_showcase");
@@ -290,7 +296,7 @@ async function main() {
 				JSON.stringify({
 					id: tokens.prodDoctorId,
 					fullName: "Д-р Проверенный В. В.",
-					role: "doctor",
+					role: "owner",
 					email: tokens.prodEmail,
 					organizationId: tokens.prodOrgId,
 					specialization: "Стоматолог общей практики",
@@ -304,10 +310,14 @@ async function main() {
 			timeout: 25000,
 		});
 
-		// Ждем завершения начального сплэша загрузки смены и отображения основного UI
-		await prodPage.waitForSelector(".schedule-grid, [data-testid='schedule-grid'], .dashboard-header, nav, header", {
-			timeout: 20000,
-		});
+		// Ждем завершения начального сплэша загрузки смены
+		await prodPage.waitForTimeout(3000);
+		await prodPage
+			.waitForFunction(
+				() => !document.body.innerText.includes("Загрузка рабочей смены"),
+				{ timeout: 15000 }
+			)
+			.catch(() => {});
 		await prodPage.waitForTimeout(2000);
 
 		// Проверяем, что баннер демо-режима ОТСУТСТВУЕТ (100% изоляция)

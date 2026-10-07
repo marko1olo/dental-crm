@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
 	Activity,
 	AlertTriangle,
@@ -29,6 +29,162 @@ import { showToast } from "../../GlobalToast";
 import { formatCompletedServiceLine } from "../completedServicesPlan";
 
 export type ClinicalTabType = "diagnosis" | "therapy" | "endo" | "surgery";
+
+export interface ToothClinicalProtocolService {
+	serviceId: string;
+	code804n: string;
+	name: string;
+	priceRub: number;
+	quantity?: number;
+	category?: string;
+}
+
+export interface ToothClinicalProtocol {
+	key: "caries" | "pulpitis" | "extraction" | "hygiene";
+	title: string;
+	diagnosisCode: string;
+	diagnosisText: string;
+	toothState: "treatment" | "done" | "missing" | "watch";
+	totalPriceRub: number;
+	services: ToothClinicalProtocolService[];
+}
+
+export const TOOTH_CLINICAL_PROTOCOLS: Record<
+	"caries" | "pulpitis" | "extraction" | "hygiene",
+	ToothClinicalProtocol
+> = {
+	caries: {
+		key: "caries",
+		title: "Кариес",
+		diagnosisCode: "K02.1",
+		diagnosisText: "K02.1 Кариес дентина: препарирование, пломба светового отверждения",
+		toothState: "done",
+		totalPriceRub: 6700,
+		services: [
+			{
+				serviceId: "anesth-inf",
+				code804n: "A16.07.004",
+				name: "Анестезия инфильтрационная / проводниковая",
+				priceRub: 1200,
+				category: "anesthesia",
+			},
+			{
+				serviceId: "prep-cavity",
+				code804n: "A16.07.002",
+				name: "Препарирование кариозной полости",
+				priceRub: 1000,
+				category: "therapy",
+			},
+			{
+				serviceId: "filling-light",
+				code804n: "A16.07.002.001",
+				name: "Восстановление зуба пломбой световой",
+				priceRub: 4500,
+				category: "therapy",
+			},
+		],
+	},
+	pulpitis: {
+		key: "pulpitis",
+		title: "Пульпит",
+		diagnosisCode: "K04.0",
+		diagnosisText: "K04.0 Острый пульпит: экстирпация, эндодонтия каналов, пломба",
+		toothState: "treatment",
+		totalPriceRub: 12700,
+		services: [
+			{
+				serviceId: "anesth-inf",
+				code804n: "A16.07.004",
+				name: "Анестезия инфильтрационная / проводниковая",
+				priceRub: 1200,
+				category: "anesthesia",
+			},
+			{
+				serviceId: "prep-canals",
+				code804n: "A16.07.030",
+				name: "Инструментальная и медикаментозная обработка корневого канала",
+				priceRub: 3500,
+				category: "endo",
+			},
+			{
+				serviceId: "obtur-canals",
+				code804n: "A16.07.008",
+				name: "Пломбирование корневого канала",
+				priceRub: 3500,
+				category: "endo",
+			},
+			{
+				serviceId: "filling-light",
+				code804n: "A16.07.002.001",
+				name: "Восстановление зуба пломбой световой",
+				priceRub: 4500,
+				category: "therapy",
+			},
+		],
+	},
+	extraction: {
+		key: "extraction",
+		title: "Удаление",
+		diagnosisCode: "K08.1",
+		diagnosisText: "K08.1 Удаление зуба по клиническим показаниям, ревизия лунки",
+		toothState: "missing",
+		totalPriceRub: 5500,
+		services: [
+			{
+				serviceId: "anesth-inf",
+				code804n: "A16.07.004",
+				name: "Анестезия инфильтрационная / проводниковая",
+				priceRub: 1200,
+				category: "anesthesia",
+			},
+			{
+				serviceId: "extract-perm",
+				code804n: "A16.07.001",
+				name: "Удаление постоянного зуба",
+				priceRub: 3500,
+				category: "surgery",
+			},
+			{
+				serviceId: "hemostasis-socket",
+				code804n: "A16.07.001.002",
+				name: "Остановка луночного кровотечения / местный гемостаз",
+				priceRub: 800,
+				category: "surgery",
+			},
+		],
+	},
+	hygiene: {
+		key: "hygiene",
+		title: "Гигиена",
+		diagnosisCode: "K05.3",
+		diagnosisText: "K05.3 Хронический пародонтит: профессиональная гигиена и УЗ-скейлинг",
+		toothState: "done",
+		totalPriceRub: 7800,
+		services: [
+			{
+				serviceId: "prof-hygiene",
+				code804n: "A16.07.051",
+				name: "Профессиональная гигиена полости рта и зубов",
+				priceRub: 4500,
+				category: "hygiene",
+			},
+			{
+				serviceId: "scaling-us",
+				code804n: "A16.07.020",
+				name: "Ультразвуковое удаление зубных отложений",
+				priceRub: 2500,
+				category: "hygiene",
+			},
+			{
+				serviceId: "polish-paste",
+				code804n: "A16.07.053",
+				name: "Полировка зубов пастами",
+				priceRub: 800,
+				category: "hygiene",
+			},
+		],
+	},
+};
 
 export interface VisitClinicalToothTabsProps {
 	activeTab: ClinicalTabType;
@@ -81,6 +237,93 @@ export function VisitClinicalToothTabs({
 		(sum, s) => sum + (s.priceRub || 0) * (s.quantity || 1),
 		0,
 	);
+
+	const [selectedProtocolKey, setSelectedProtocolKey] = useState<
+		"caries" | "pulpitis" | "extraction" | "hygiene"
+	>("caries");
+
+	const currentProtocol = TOOTH_CLINICAL_PROTOCOLS[selectedProtocolKey];
+
+	const handleAddClinicalProtocol = (proto: ToothClinicalProtocol) => {
+		const toothNum = Number.parseInt(code, 10) || undefined;
+		const addedPayloads: ToothClinicalServicePayload[] = proto.services.map(
+			(svc, idx) => ({
+				serviceId: `${svc.serviceId}-${code}-${Date.now()}-${idx}`,
+				code804n: svc.code804n,
+				name: svc.name,
+				priceRub: svc.priceRub,
+				priceKopecks: Math.round(svc.priceRub * 100),
+				quantity: svc.quantity || 1,
+				category: svc.category || "therapy",
+				toothNumber: toothNum,
+				toothCode: code,
+			}),
+		);
+
+		handleSelectDiagnosis(proto.toothState, proto.diagnosisText, "diagnosis");
+
+		for (const payload of addedPayloads) {
+			useVisitStore.getState().addCompletedService(payload);
+			onAddServiceToTooth?.(payload);
+		}
+
+		useVisitStore.getState().applyServicesToToothState({
+			toothNumber: toothNum,
+			toothCode: code,
+			services: addedPayloads.map((p) => ({
+				code804n: p.code804n,
+				title: p.name,
+				price: p.priceRub,
+				toothNumber: toothNum,
+				toothCode: code,
+			})),
+		});
+
+		try {
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-add-services-to-invoice", {
+						detail: {
+							services: addedPayloads.map((p) => ({
+								code: p.code804n,
+								code804n: p.code804n,
+								title: p.name,
+								name: p.name,
+								price: p.priceRub,
+								unitPriceRub: p.priceRub,
+								quantity: p.quantity,
+								toothNumber: toothNum,
+								toothCode: code,
+							})),
+							toothNumber: toothNum,
+							toothCode: code,
+							source: "chairside_clinical_protocol",
+						},
+					}),
+				);
+			}
+		} catch (err) {
+			console.warn("dente-add-services-to-invoice dispatch error:", err);
+		}
+
+		const lines = addedPayloads
+			.map((p) =>
+				formatCompletedServiceLine({
+					code804n: p.code804n,
+					title: p.name,
+					priceRub: p.priceRub,
+					toothCode: code,
+				}),
+			)
+			.join("\n");
+		appendToEMKField("treatmentPlan", lines);
+
+		showToast(
+			`Протокол лечения зуба ${code} добавлен в счёт (${addedPayloads.length} услуг)`,
+			"success",
+			3000,
+		);
+	};
 
 	const handleAdd804nService = (preset: {
 		serviceId: string;
@@ -301,6 +544,76 @@ export function VisitClinicalToothTabs({
 						</button>
 					</div>
 
+					<div className="_ccm-sub-label">Клинический протокол лечения</div>
+					<div
+						className="_ccm-protocol-card"
+						data-testid="clinical-treatment-protocol-card"
+					>
+						<div className="_ccm-protocol-header">
+							<span className="_ccm-protocol-title">
+								<ClipboardList className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+								Пакет лечения
+							</span>
+							<span className="_ccm-protocol-total-badge">
+								{currentProtocol.totalPriceRub.toLocaleString("ru-RU")} ₽
+							</span>
+						</div>
+
+						<div
+							className="_ccm-protocol-selector"
+							role="group"
+							aria-label="Выбор клинического протокола"
+						>
+							{(
+								Object.keys(
+									TOOTH_CLINICAL_PROTOCOLS,
+								) as (keyof typeof TOOTH_CLINICAL_PROTOCOLS)[]
+							).map((key) => {
+								const proto = TOOTH_CLINICAL_PROTOCOLS[key];
+								const isSel = selectedProtocolKey === proto.key;
+								return (
+									<button
+										key={proto.key}
+										type="button"
+										className={`_ccm-protocol-seg-btn${isSel ? " active" : ""}`}
+										data-testid={`protocol-select-${proto.key}`}
+										onClick={() => setSelectedProtocolKey(proto.key)}
+									>
+										{proto.title}
+									</button>
+								);
+							})}
+						</div>
+
+						<div className="_ccm-protocol-services-list">
+							{currentProtocol.services.map((svc) => (
+								<div key={svc.serviceId} className="_ccm-protocol-svc-item">
+									<div className="flex items-center gap-1.5 truncate">
+										<span className="_ccm-protocol-code-badge font-mono">
+											{svc.code804n}
+										</span>
+										<span className="truncate text-[var(--text)]">
+											{svc.name}
+										</span>
+									</div>
+									<span className="font-semibold text-[var(--text-strong)] shrink-0 ml-2">
+										{svc.priceRub.toLocaleString("ru-RU")} ₽
+									</span>
+								</div>
+							))}
+						</div>
+
+						<button
+							type="button"
+							data-testid="btn-add-clinical-protocol-to-billing"
+							className="_ccm-protocol-add-btn"
+							onClick={() => handleAddClinicalProtocol(currentProtocol)}
+						>
+							<Plus className="w-4 h-4 shrink-0" />
+							<span>+ Добавить протокол лечения в счет визита</span>
+						</button>
+					</div>
+
 					<div className="_ccm-sub-label">Клинические пакеты услуг</div>
 					<div className="_ccm-items-grid">
 						{[
@@ -451,6 +764,20 @@ export function VisitClinicalToothTabs({
 
 							<button
 								type="button"
+								data-testid="quick-add-protocol-caries"
+								className="_ccm-action-item highlight"
+								onClick={() => handleAddClinicalProtocol(TOOTH_CLINICAL_PROTOCOLS.caries)}
+							>
+								<Sparkles className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+								<div className="flex flex-col text-left truncate">
+									<span className="_ccm-item-title font-semibold">+ Пакет: Лечение кариеса</span>
+									<span className="text-[10px] text-[var(--muted)] font-mono">3 услуги · 6 700 ₽</span>
+								</div>
+								<Plus className="w-3.5 h-3.5 text-[var(--teal)] ml-auto shrink-0" />
+							</button>
+
+							<button
+								type="button"
 								data-testid="preset-therapy-filling"
 								className="_ccm-action-item highlight"
 								onClick={() => handleAdd804nService(TOOTH_804N_PRESETS.cariesFilling)}
@@ -587,6 +914,20 @@ export function VisitClinicalToothTabs({
 
 						<button
 							type="button"
+							data-testid="quick-add-protocol-pulpitis"
+							className="_ccm-action-item highlight"
+							onClick={() => handleAddClinicalProtocol(TOOTH_CLINICAL_PROTOCOLS.pulpitis)}
+						>
+							<Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+							<div className="flex flex-col text-left truncate">
+								<span className="_ccm-item-title font-semibold">+ Пакет: Лечение пульпита</span>
+								<span className="text-[10px] text-[var(--muted)] font-mono">4 услуги · 12 700 ₽</span>
+							</div>
+							<Plus className="w-3.5 h-3.5 text-amber-500 ml-auto shrink-0" />
+						</button>
+
+						<button
+							type="button"
 							data-testid="preset-endo-canals"
 							className="_ccm-action-item highlight"
 							onClick={() => handleAdd804nService(TOOTH_804N_PRESETS.endoCanals)}
@@ -688,6 +1029,20 @@ export function VisitClinicalToothTabs({
 
 					<div className="_ccm-sub-label">Хирургия & Имплантация</div>
 					<div className="_ccm-items-grid">
+						<button
+							type="button"
+							data-testid="quick-add-protocol-extraction"
+							className="_ccm-action-item highlight"
+							onClick={() => handleAddClinicalProtocol(TOOTH_CLINICAL_PROTOCOLS.extraction)}
+						>
+							<Scissors className="w-3.5 h-3.5 text-red-500 shrink-0" />
+							<div className="flex flex-col text-left truncate">
+								<span className="_ccm-item-title font-semibold">+ Пакет: Удаление зуба</span>
+								<span className="text-[10px] text-[var(--muted)] font-mono">3 услуги · 5 500 ₽</span>
+							</div>
+							<Plus className="w-3.5 h-3.5 text-red-500 ml-auto shrink-0" />
+						</button>
+
 						<button
 							type="button"
 							data-testid="preset-surgery-extraction"

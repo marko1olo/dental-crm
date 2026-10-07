@@ -6,7 +6,6 @@ const ARTIFACTS_DIR = "C:/Users/Admin/.gemini/antigravity/brain/aebb3e14-928e-41
 const LOCAL_DIR = "C:/Clinic_MVP/dental-crm/apps/web/public/screenshots/stage_handoff";
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 const todayDate = new Date().toISOString().split("T")[0];
 
 const mockTreatmentPlanData = {
@@ -235,28 +234,20 @@ async function run() {
   const browser = await chromium.launch({
     channel: "chrome",
     headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"]
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 
   try {
     const context = await browser.newContext({
-      viewport: { width: 1440, height: 900 }
+      viewport: { width: 1440, height: 900 },
     });
 
-    // Intercept API routes
     await context.route("**/api/**", async (route) => {
       const url = route.request().url();
       if (url.includes("/src/")) return route.continue();
 
-      if (url.includes("/api/dashboard")) {
-        return route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(mockDashboard),
-        });
-      }
-
       if (url.includes("/treatment-plans")) {
+        console.log("[MOCK] treatment-plans -> 200 OK");
         return route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -264,7 +255,17 @@ async function run() {
         });
       }
 
+      if (url.includes("/api/dashboard")) {
+        console.log("[MOCK] dashboard -> 200 OK");
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(mockDashboard),
+        });
+      }
+
       if (url.includes("/api/auth/user/me") || url.includes("/api/auth/session") || url.includes("/api/auth/verify")) {
+        console.log("[MOCK] auth user -> 200 OK");
         return route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -287,15 +288,22 @@ async function run() {
     });
 
     await context.addInitScript(() => {
-      localStorage.setItem("dente_auth_token", "live-inquisition-token");
-      localStorage.setItem("dente_clinic_token", "live-clinic-token");
-      localStorage.setItem("dente_staff_token", "live-staff-token");
+      const staffUser = {
+        id: "doc-1",
+        fullName: "Д-р Воронов Алексей Владимирович",
+        role: "owner",
+        organizationId: "00000000-0000-0000-0000-000000000001",
+      };
+      localStorage.setItem("dente_auth_token", "dente-offline-auth-token");
+      localStorage.setItem("dente_clinic_token", "dente-offline-clinic-token");
+      localStorage.setItem("dente_staff_token", "dente-offline-staff-token");
       localStorage.setItem("dente_active_role", "owner");
       localStorage.setItem("dente_user_id", "doc-1");
       localStorage.setItem("dente_user_role", "owner");
       localStorage.setItem("dente_clinic_tenant_id", "00000000-0000-0000-0000-000000000001");
       localStorage.setItem("dente_onboarding_completed", "true");
       localStorage.setItem("dente_tour_completed", "true");
+      localStorage.setItem("dente_cached_active_staff_user", JSON.stringify(staffUser));
       localStorage.setItem(
         "dental-crm:onboarding-state:v1",
         JSON.stringify({ completed: true, onboardingDismissed: true, onboardingStep: "done", version: 1 })
@@ -325,32 +333,42 @@ async function run() {
     });
 
     const page = await context.newPage();
+    page.on("console", (msg) => console.log("[BROWSER LOG]", msg.type(), msg.text()));
+    page.on("pageerror", (err) => console.log("[BROWSER ERROR]", err.stack || err.message));
+    page.on("requestfailed", (r) => console.log("[REQ FAILED]", r.url(), r.failure()?.errorText));
 
     console.log("Navigating to http://127.0.0.1:5173/#visit ...");
     await page.goto("http://127.0.0.1:5173/#visit", {
       waitUntil: "domcontentloaded",
-      timeout: 25000,
+      timeout: 30000,
     });
-    await wait(2500);
 
-    // Clean up overlays
+    console.log("Waiting for boot-state to detach...");
+    await page.waitForSelector("main.boot-state", { state: "detached", timeout: 30000 });
+    console.log("Boot state detached!");
+
+    // Clean up any overlays if present
     await page.evaluate(() => {
-      const startBtn = Array.from(document.querySelectorAll("button")).find(b => b.textContent?.includes("0-клик старт"));
-      if (startBtn) startBtn.click();
       document.querySelectorAll('.fixed.inset-0, .onboarding-modal, [role="dialog"], .tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], .tour-backdrop-clickable-zone, [data-testid="demo-mode-banner"], .interactive-guide-tour-card').forEach((el) => {
         el.remove();
       });
     });
-    await wait(1500);
 
     // Wait for the targeted stage banner to appear
     console.log("Waiting for targeted stage banner selector...");
     await page.waitForSelector('[data-testid="visit-treatment-plan-handoff-banner"]', {
       state: "visible",
-      timeout: 12000,
+      timeout: 15000,
     });
     console.log("Found [data-testid=\"visit-treatment-plan-handoff-banner\"]!");
 
+    // Scroll banner into view smoothly so it is prominently visible in the screenshot
+    await page.evaluate(() => {
+      const banner = document.querySelector('[data-testid="visit-treatment-plan-handoff-banner"]');
+      if (banner) {
+        banner.scrollIntoView({ behavior: "instant", block: "center" });
+      }
+    });
     await wait(1000);
 
     // ── PROOF 1: Real Visit Targeted Stage Banner (PC Light, 1440x900) ──
@@ -369,7 +387,7 @@ async function run() {
       document.documentElement.style.colorScheme = "dark";
       localStorage.setItem("dente_theme_mode", "dark");
     });
-    await wait(1500);
+    await wait(1200);
 
     const pcDarkPath = path.join(LOCAL_DIR, "proof_visit_plan_stage_handoff_pc_dark.png");
     const pcDarkArtifact = path.join(ARTIFACTS_DIR, "proof_visit_plan_stage_handoff_pc_dark.png");

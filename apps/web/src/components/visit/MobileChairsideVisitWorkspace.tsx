@@ -25,6 +25,7 @@ import {
   CreditCard,
   FileText,
   FlaskConical,
+  Layers,
   Mic,
   MicOff,
   Phone,
@@ -42,6 +43,7 @@ import { triggerHaptic } from "../../native/mobileBridge";
 import { showToast } from "../GlobalToast";
 import { MobileBottomSheet } from "../mobile/MobileBottomSheet";
 import { VisitTimer } from "./VisitTimer";
+import { VisitPlanStageHandoffBanner } from "./VisitPlanStageHandoffBanner";
 import "./mobile-chairside-visit.css";
 
 export type MobileChairsideStep =
@@ -57,7 +59,7 @@ export interface MobileChairsideBillingItem {
   title: string;
   priceRub: number;
   quantity: number;
-  toothCode?: string;
+  toothCode?: string | undefined;
 }
 
 export interface MobileChairsideVisitWorkspaceProps {
@@ -77,6 +79,8 @@ export interface MobileChairsideVisitWorkspaceProps {
   setToothState?: (code: string, state: string) => void;
   onClose?: () => void;
   testId?: string;
+  loadedTreatmentPlan?: any;
+  initialStep?: MobileChairsideStep;
 }
 
 const COMMON_DENTAL_DIAGNOSES = [
@@ -111,13 +115,16 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
   setToothState,
   onClose,
   testId = "mobile-chairside-workspace",
+  loadedTreatmentPlan,
+  initialStep = "complaints",
 }) => {
-  const [currentStep, setCurrentStep] = useState<MobileChairsideStep>("complaints");
+  const [currentStep, setCurrentStep] = useState<MobileChairsideStep>(initialStep);
   const [isNormApplied, setIsNormApplied] = useState(false);
   const [activeQuadrant, setActiveQuadrant] = useState<1 | 2 | 3 | 4>(1);
   const [selectedToothModal, setSelectedToothModal] = useState<string | null>(null);
   const [isCheckoutSheetOpen, setIsCheckoutSheetOpen] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"sbp" | "card" | "cash">("sbp");
+  const [isStageTaken, setIsStageTaken] = useState(false);
 
   // Speech Recognition state for SmartMicrophone
   const [isRecording, setIsRecording] = useState(false);
@@ -152,8 +159,66 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
     { id: "exam", label: "Осмотр", number: 2 },
     { id: "diagnosis", label: "Диагноз", number: 3 },
     { id: "treatment", label: "Лечение", number: 4 },
-    { id: "checkout", label: "Чек", number: 5 },
+    { id: "checkout", label: "Итог и Чек", number: 5 },
   ];
+
+  // Callback to take treatment plan stage into active visit
+  const handleTakeStageFromBanner = useCallback(
+    (stage: any, items: any[]) => {
+      triggerHaptic("success");
+      setIsStageTaken(true);
+      const stageTitle = stage?.title || "План лечения";
+      showToast(`Этап «${stageTitle}» взят в работу (${items.length} услуг)`, "success");
+
+      if (updateVisitNoteField && items.length > 0) {
+        const stageDiaryText = `Взят в работу этап: «${stageTitle}»:\n${items
+          .map((it: any, idx: number) => `${idx + 1}. ${it.title || it.name || "Услуга"}${it.toothNumber ? ` (зуб ${it.toothNumber})` : ""}`)
+          .join("\n")}`;
+        const currentPlan = visitNoteForm?.treatmentPlan || "";
+        updateVisitNoteField("treatmentPlan", currentPlan ? `${currentPlan}\n\n${stageDiaryText}` : stageDiaryText);
+      }
+
+      const newItems: MobileChairsideBillingItem[] = items.map((it: any, idx: number) => ({
+        id: `stage-item-${Date.now()}-${idx}`,
+        code804n: it.code || it.code804n || "A16.07.002",
+        title: it.name || it.title || "Услуга плана",
+        priceRub: Number(it.price || it.priceRub || it.unitPriceRub || 0),
+        quantity: Number(it.quantity || 1),
+        toothCode: it.toothNumber ? String(it.toothNumber) : undefined,
+      }));
+      setBillingItems((prev) => [...prev, ...newItems]);
+
+      for (const it of items) {
+        window.dispatchEvent(
+          new CustomEvent("dente-add-billing-item", {
+            detail: {
+              item: {
+                code804n: it.code || it.code804n || "A16.07.002",
+                title: it.name || it.title || "Услуга плана",
+                quantity: Number(it.quantity || 1),
+                unitPriceRub: Number(it.price || it.priceRub || it.unitPriceRub || 0),
+                discountRub: 0,
+              },
+            },
+          }),
+        );
+      }
+    },
+    [updateVisitNoteField, visitNoteForm?.treatmentPlan],
+  );
+
+  // 1-Tap Take active plan stage (Floating Bottom Bar action)
+  const handleTakeActivePlanStage = useCallback(() => {
+    if (!loadedTreatmentPlan) return;
+    const stages = loadedTreatmentPlan.stages || [];
+    const activeStage = stages[0] || {
+      title: loadedTreatmentPlan.name || loadedTreatmentPlan.title || "План лечения",
+      stageNumber: 1,
+      items: loadedTreatmentPlan.items || [],
+    };
+    const items = activeStage.items || loadedTreatmentPlan.items || [];
+    handleTakeStageFromBanner(activeStage, items);
+  }, [loadedTreatmentPlan, handleTakeStageFromBanner]);
 
   // 1-Tap Somatic Norm Action
   const onApplyChairsideNorm = useCallback(() => {
@@ -171,7 +236,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
         "Соматически здоров. Хронические заболевания, гепатит, ВИЧ, туберкулез отрицает. Аллергоанамнез не отягощен.",
       );
     }
-    showToast("✓ Физиологическая норма 043/у успешно внесена", "success");
+    showToast("✓ Соматическая норма успешно внесена", "success");
   }, [handleApplySomaticNormQuick, updateVisitNoteField]);
 
   // Smart Microphone toggler with Web Speech API fallback
@@ -348,7 +413,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
     if (flushPendingVisitSaves) {
       await flushPendingVisitSaves();
     }
-    showToast("Приём закрыт, чек фискализирован (54-ФЗ)", "success");
+    showToast("Приём завершён, счёт сформирован", "success");
     if (onClose) onClose();
   };
 
@@ -404,7 +469,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
                 type="button"
                 onClick={handlePrintForm043uFast}
                 className="mobile-chairside-icon-btn"
-                aria-label="Печать дневника 043/у"
+                aria-label="Печать дневника приёма"
                 title="Печать дневника"
                 data-testid={`${testId}-print-btn`}
               >
@@ -494,7 +559,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
                 }`}
                 data-testid={`${testId}-step-${step.id}`}
               >
-                <span className="truncate">{step.label}</span>
+                <span className="truncate">{`${step.number}. ${step.label}`}</span>
                 {isCompleted && !isActive && <Check size={11} className="stroke-[2.5] shrink-0" />}
               </button>
             );
@@ -517,7 +582,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 size={22} className="shrink-0" />
                 <span className="text-[15px] font-bold">
-                  {isNormApplied ? "✓ Норма 043/у внесена" : "✓ Соматически здоров / Норма"}
+                  {isNormApplied ? "✓ Норма внесена" : "✓ Соматически здоров / Норма"}
                 </span>
               </div>
               <span className="text-[12px] opacity-90 font-medium">1 тап</span>
@@ -583,7 +648,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
         {currentStep === "complaints" && (
           <div className="space-y-3" data-testid={`${testId}-step1-content`}>
             <div className="mobile-chairside-grouped-card">
-              <div className="mobile-chairside-card-title">Жалобы пациента (Форма 043/у)</div>
+              <div className="mobile-chairside-card-title">Жалобы пациента</div>
               <textarea
                 value={visitNoteForm?.complaint || ""}
                 onChange={(e) => updateVisitNoteField("complaint", e.target.value)}
@@ -725,17 +790,17 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
           </div>
         )}
 
-        {/* ═══ STEP 3: ДИАГНОЗ (МКБ-10) ═══ */}
+        {/* ═══ STEP 3: ДИАГНОЗ ═══ */}
         {currentStep === "diagnosis" && (
           <div className="space-y-3" data-testid={`${testId}-step3-content`}>
             <div className="mobile-chairside-grouped-card">
-              <div className="mobile-chairside-card-title">Клинический диагноз (МКБ-10)</div>
+              <div className="mobile-chairside-card-title">Клинический диагноз</div>
               <div className="p-3">
                 <input
                   type="text"
                   value={visitNoteForm?.diagnosis || ""}
                   onChange={(e) => updateVisitNoteField("diagnosis", e.target.value)}
-                  placeholder="Код МКБ-10 и формулировка диагноза..."
+                  placeholder="Диагноз и клиническое описание..."
                   className="w-full min-h-[48px] px-3.5 text-[15px] font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] focus:outline-none"
                   data-testid={`${testId}-diagnosis-input`}
                 />
@@ -772,6 +837,14 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
         {/* ═══ STEP 4: ЛЕЧЕНИЕ И ПРОТОКОЛ ═══ */}
         {currentStep === "treatment" && (
           <div className="space-y-3" data-testid={`${testId}-step4-content`}>
+            {/* Treatment plan stage handoff banner */}
+            <VisitPlanStageHandoffBanner
+              loadedTreatmentPlan={loadedTreatmentPlan}
+              activeAppointment={activeAppointment}
+              activePatient={activePatient}
+              onTakeStage={handleTakeStageFromBanner}
+            />
+
             <div className="mobile-chairside-grouped-card">
               <div className="mobile-chairside-card-title">
                 Протокол лечения и выполненные манипуляции
@@ -808,13 +881,13 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
           </div>
         )}
 
-        {/* ═══ STEP 5: ИТОГ И ЧЕК (54-ФЗ) ═══ */}
+        {/* ═══ STEP 5: ИТОГ И ЧЕК ═══ */}
         {currentStep === "checkout" && (
           <div className="space-y-3" data-testid={`${testId}-step5-content`}>
             {/* Total Due Hero Card */}
             <div className="mobile-billing-hero-card">
               <div className="text-[12px] font-bold text-[var(--muted)] uppercase tracking-wider">
-                К оплате по приёму (54-ФЗ)
+                К оплате по приёму
               </div>
               <div
                 className="mobile-billing-total-amount"
@@ -901,6 +974,18 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
           </button>
         )}
 
+        {currentStep === "treatment" && loadedTreatmentPlan && !isStageTaken && (
+          <button
+            type="button"
+            onClick={handleTakeActivePlanStage}
+            className="mobile-chairside-stage-cta"
+            data-testid={`${testId}-bottom-take-stage-btn`}
+          >
+            <Layers size={18} />
+            <span>Взять этап в работу</span>
+          </button>
+        )}
+
         <button
           type="button"
           onClick={handleNextStep}
@@ -910,7 +995,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
           {currentStep === "checkout" ? (
             <>
               <CreditCard size={20} />
-              <span>Завершить приём и в кассу (54-ФЗ)</span>
+              <span>Завершить приём и сформировать счёт</span>
             </>
           ) : (
             <>
@@ -964,11 +1049,11 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
         </div>
       </MobileBottomSheet>
 
-      {/* ─── 6. NATIVE BOTTOM SHEET: ФИСКАЛИЗАЦИЯ И КАССА ─── */}
+      {/* ─── 6. NATIVE BOTTOM SHEET: ОПЛАТА И СЧЁТ ─── */}
       <MobileBottomSheet
         isOpen={isCheckoutSheetOpen}
         onClose={() => setIsCheckoutSheetOpen(false)}
-        title="Оплата и фискализация чека"
+        title="Оплата и формирование счёта"
         subtitle={`Пациент: ${activePatient?.fullName || "Пациент"}`}
         testId={`${testId}-final-checkout-sheet`}
         footer={
@@ -995,7 +1080,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
 
           <div className="space-y-2">
             <div className="text-[13px] font-bold text-[var(--muted)] uppercase px-1">
-              Способ оплаты (54-ФЗ)
+              Способ оплаты
             </div>
             {[
               { id: "sbp", label: "СБП (QR-код)", desc: "Комиссия 0.4%, мгновенный чек" },

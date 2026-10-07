@@ -59,6 +59,8 @@ export interface DentalLabRestorationTabProps {
 	setClinicalNotes: (notes: string) => void;
 	impressionType?: string;
 	setImpressionType?: (type: string) => void;
+	includeImpressionBilling?: boolean;
+	setIncludeImpressionBilling?: (val: boolean) => void;
 	// Jaw scope for full arch orders (splints, guards, full dentures)
 	jawScope?: JawScope | null;
 	setJawScope?: (scope: JawScope | null) => void;
@@ -100,6 +102,8 @@ export function DentalLabRestorationTab({
 	setClinicalNotes,
 	impressionType = "a_silicone",
 	setImpressionType,
+	includeImpressionBilling = true,
+	setIncludeImpressionBilling,
 	jawScope = null,
 	setJawScope,
 	shadeSystem = "classical",
@@ -161,7 +165,7 @@ export function DentalLabRestorationTab({
 
 	return (
 		<div className="space-y-6">
-			{/* ─── ОБЩЕЧЕЛЮСТНОЙ ТУМБЛЕР / ЧИПЫ ВЫБОРА ЧЕЛЮСТИ (Мандат 8e / Без блокировок) ─── */}
+			{/* ─── ОБЩЕЧЕЛЮСТНОЙ ТУМБЛЕР / ЧИПЫ ВЫБОРА ЧЕЛЮСТИ (Без блокировок врача) ─── */}
 			<div
 				className={`p-4 rounded-2xl border transition-all ${
 					jawScope
@@ -345,6 +349,33 @@ export function DentalLabRestorationTab({
 							</button>
 						);
 					})}
+				</div>
+
+				{/* 1-Click Action: Include Impression Service into Visit Bill (Clean Clinical Russian) */}
+				<div
+					className="mt-2.5 p-3 rounded-xl border border-teal-500/30 bg-teal-500/5 dark:bg-teal-950/20 flex items-center justify-between gap-3 flex-wrap"
+					data-testid="lab-order-impression-billing-row"
+				>
+					<label className="flex items-center gap-2.5 cursor-pointer text-xs select-none min-h-[32px]">
+						<input
+							type="checkbox"
+							checked={includeImpressionBilling}
+							onChange={(e) => setIncludeImpressionBilling?.(e.target.checked)}
+							className="w-4 h-4 rounded text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)] border-slate-300 dark:border-slate-600 cursor-pointer"
+							data-testid="lab-order-include-impression-billing-checkbox"
+						/>
+						<div className="flex flex-col">
+							<span className="font-bold text-slate-800 dark:text-slate-200">
+								Включить снятие слепка (оттиска) в счёт
+							</span>
+							<span className="text-[11px] text-slate-500 dark:text-slate-400">
+								Клиническое снятие оттиска с челюсти для лаборатории
+							</span>
+						</div>
+					</label>
+					<span className="text-xs font-extrabold text-[var(--teal,#0d9488)] whitespace-nowrap px-2.5 py-1 rounded-lg bg-[var(--teal,#0d9488)]/10">
+						2 500 ₽
+					</span>
 				</div>
 			</div>
 

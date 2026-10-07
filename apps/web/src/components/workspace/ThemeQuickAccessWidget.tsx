@@ -99,7 +99,7 @@ export function ThemeQuickAccessWidget({
 					/>
 					<Icon size={12} className="shrink-0 opacity-75" aria-hidden="true" />
 					{!collapsed && (
-						<span className="truncate max-w-[65px] text-[11px] font-medium leading-none">
+						<span className="truncate flex-1 min-w-0 text-[11px] font-medium leading-none text-left">
 							{currentMeta?.shortLabel || label}
 						</span>
 					)}

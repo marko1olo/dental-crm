@@ -85,11 +85,21 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 									id="dental-lab-modal-title"
 									className="text-xs sm:text-base md:text-lg font-bold text-slate-900 dark:text-white m-0 leading-tight truncate"
 								>
-									Заказ-наряд в зуботехническую лабораторию (ЗТЛ)
+									Заказ в лабораторию (ЗТЛ)
 								</h2>
 								<span className="px-2 py-0.5 text-xs font-bold rounded-md bg-teal-500/15 text-teal-400 border border-teal-500/30 whitespace-nowrap shrink-0 inline-flex items-center">
 									CAD/CAM Pro
 								</span>
+								{(form.treatmentPlanId || props.treatmentPlanId || form.stageTitle || props.stageTitle || form.stageNumber != null || props.stageNumber != null) && (
+									<span
+										className="px-2.5 py-0.5 text-[11px] sm:text-xs font-semibold rounded-md bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30 whitespace-nowrap shrink-0 inline-flex items-center gap-1 shadow-2xs"
+										data-testid="lab-order-treatment-stage-chip"
+									>
+										<span>
+											План лечения: Этап {form.stageNumber ?? props.stageNumber ?? 1} · {form.stageTitle || props.stageTitle || "Ортопедический этап"}
+										</span>
+									</span>
+								)}
 							</div>
 							<p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5 truncate">
 								Пациент: <span className="font-bold text-slate-800 dark:text-slate-200">{form.formPatientName}</span>{patientChartNumber ? ` (${patientChartNumber})` : ""} · Врач: <span className="font-bold text-slate-800 dark:text-slate-200">{form.formDoctorName}</span>
@@ -287,6 +297,8 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 								setMaterial={form.setMaterial}
 								impressionType={form.impressionType}
 								setImpressionType={form.setImpressionType}
+								includeImpressionBilling={form.includeImpressionBilling}
+								setIncludeImpressionBilling={form.setIncludeImpressionBilling}
 								dueDate={form.dueDate}
 								setDueDate={form.setDueDate}
 								clinicalNotes={form.clinicalNotes}

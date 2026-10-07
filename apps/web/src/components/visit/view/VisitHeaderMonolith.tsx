@@ -2,10 +2,12 @@ import React from "react";
 import {
 	AlertOctagon,
 	AlertTriangle,
+	Calculator,
 	CalendarCheck,
 	Check,
 	CheckCircle2,
 	Clock,
+	FileText,
 	FlaskConical,
 	Lock,
 	MoreHorizontal,
@@ -61,6 +63,8 @@ export interface VisitHeaderMonolithProps {
 	setIsDoctorShiftModalOpen: (v: boolean) => void;
 	setIsPriceValidatorModalOpen: (v: boolean) => void;
 	setIsStagePaymentModalOpen: (v: boolean) => void;
+	handlePrintCompletedActFast?: () => void;
+	handlePrintEstimateFast?: () => void;
 	onOpenLabOrderModal?: () => void;
 }
 
@@ -90,6 +94,8 @@ export function VisitHeaderMonolith({
 	setIsDoctorShiftModalOpen,
 	setIsPriceValidatorModalOpen,
 	setIsStagePaymentModalOpen,
+	handlePrintCompletedActFast,
+	handlePrintEstimateFast,
 	onOpenLabOrderModal,
 }: VisitHeaderMonolithProps) {
 	const visitId = activeAppointment?.id || activeAppointment?.appointmentId;
@@ -291,24 +297,60 @@ export function VisitHeaderMonolith({
 						<span className="sm:hidden">Норма</span>
 					</button>
 
-					{/* Печать дневника приёма (Мандат 8e) */}
-					<button
-						type="button"
-						onClick={handlePrintForm043uFast}
-						data-testid="btn-visit-fast-print-043u"
-						className={`secondary-button h-7.5 min-h-0 sm:h-7.5 px-2.5 py-0 text-[12.5px] font-medium text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg shadow-2xs ${
-							visitSubViewTab === "odontogram"
-								? "!hidden"
-								: "!hidden sm:!inline-flex"
-						}`}
-						title="Печать дневника приёма"
+					{/* Единый кластер быстрой печати документов (Мандат 8e, Apple HIG) */}
+					<div
+						className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0 gap-0.5"
+						role="group"
+						aria-label="Быстрая печать документов"
 					>
-						<Printer
-							className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0"
-							aria-hidden="true"
-						/>
-						<span className="hidden lg:inline">Печать дневника</span>
-					</button>
+						{/* Печать дневника приёма (Мандат 8e) */}
+						<button
+							type="button"
+							onClick={handlePrintForm043uFast}
+							data-testid="btn-visit-fast-print-043u"
+							className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 w-7 sm:w-7.5 p-0 text-xs font-semibold text-sky-700 dark:text-sky-300 hover:bg-[var(--paper-strong)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
+							title="Печать дневника приёма (Форма 043/у)"
+							aria-label="Печать дневника"
+						>
+							<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
+						</button>
+
+						{/* Печать Акта выполненных работ 804н (Мандат 8e) */}
+						<button
+							type="button"
+							onClick={() => {
+								if (typeof handlePrintCompletedActFast === "function") {
+									handlePrintCompletedActFast();
+								} else {
+									showToast("Печать Акта выполненных работ", "info");
+								}
+							}}
+							data-testid="btn-visit-fast-print-act"
+							className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 w-7 sm:w-7.5 p-0 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-[var(--paper-strong)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
+							title="Печать Акта выполненных работ (804н)"
+							aria-label="Печать Акта выполненных работ"
+						>
+							<FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" aria-hidden="true" />
+						</button>
+
+						{/* Печать Сметы и плана лечения (Мандат 8e) */}
+						<button
+							type="button"
+							onClick={() => {
+								if (typeof handlePrintEstimateFast === "function") {
+									handlePrintEstimateFast();
+								} else {
+									showToast("Печать Сметы и плана лечения", "info");
+								}
+							}}
+							data-testid="btn-visit-fast-print-estimate"
+							className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 w-7 sm:w-7.5 p-0 text-xs font-semibold text-violet-700 dark:text-violet-300 hover:bg-[var(--paper-strong)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
+							title="Печать Сметы и плана лечения"
+							aria-label="Печать Сметы и плана лечения"
+						>
+							<Calculator className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400 shrink-0" aria-hidden="true" />
+						</button>
+					</div>
 
 					{/* Наряд ЗТЛ для ортопеда у кресла */}
 					<button
@@ -579,6 +621,58 @@ export function VisitHeaderMonolith({
 										<span className="font-semibold">Печать дневника</span>
 										<span className="text-[10px] text-[var(--muted)]">
 											С текущим штампом (черновик/подписано)
+										</span>
+									</div>
+								</button>
+
+								<button
+									type="button"
+									onClick={() => {
+										setIsHeaderMoreMenuOpen(false);
+										if (typeof handlePrintCompletedActFast === "function") {
+											handlePrintCompletedActFast();
+										} else {
+											showToast("Печать Акта выполненных работ", "info");
+										}
+									}}
+									data-testid="visit-more-action-print-act"
+									className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+									role="menuitem"
+								>
+									<FileText
+										size={14}
+										className="text-blue-600 dark:text-blue-400 shrink-0"
+									/>
+									<div className="flex flex-col">
+										<span className="font-semibold">Печать Акта выполненных работ</span>
+										<span className="text-[10px] text-[var(--muted)]">
+											Реестр оказанных медицинских услуг (804н)
+										</span>
+									</div>
+								</button>
+
+								<button
+									type="button"
+									onClick={() => {
+										setIsHeaderMoreMenuOpen(false);
+										if (typeof handlePrintEstimateFast === "function") {
+											handlePrintEstimateFast();
+										} else {
+											showToast("Печать Сметы и плана лечения", "info");
+										}
+									}}
+									data-testid="visit-more-action-print-estimate"
+									className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+									role="menuitem"
+								>
+									<Calculator
+										size={14}
+										className="text-violet-600 dark:text-violet-400 shrink-0"
+									/>
+									<div className="flex flex-col">
+										<span className="font-semibold">Печать Сметы и плана лечения</span>
+										<span className="text-[10px] text-[var(--muted)]">
+											Финансовый расчёт и гарантийные сроки
 										</span>
 									</div>
 								</button>

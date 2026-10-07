@@ -3,6 +3,7 @@ import {
 	PRIMARY_TO_PERMANENT_SUCCESSOR_MAP,
 	PERMANENT_TO_PRIMARY_PREDECESSOR_MAP,
 } from "@dental/shared";
+import { DenteToothSvgDefs } from "../../odontogram/chart/DenteToothSvgDefs";
 import { VisitOdontogramToothItem } from "./VisitOdontogramToothItem";
 
 export type DentitionMode = "adult" | "mixed" | "pediatric";
@@ -62,8 +63,8 @@ export const PATHOLOGY_STAMPS: readonly PathologyStampItem[] = [
 	{
 		id: "done",
 		label: "Пломба",
-		color: "#16a34a",
-		dotColor: "#16a34a",
+		color: "#0d9488",
+		dotColor: "#10b981",
 		description: "Пломбирование зуба композитом (A16.07.002)",
 	},
 	{
@@ -151,7 +152,6 @@ export function VisitEmbeddedOdontogram({
 
 	const [localDentitionMode, setLocalDentitionMode] = useState<DentitionMode>(() => {
 		if (externalDentitionMode) return externalDentitionMode;
-		// Determine initial mode from passed tooth rows if any
 		const allCodes = (toothRows || []).flat();
 		const hasPediatric = allCodes.some((c) => {
 			const n = Number(c);
@@ -178,7 +178,6 @@ export function VisitEmbeddedOdontogram({
 		[onDentitionModeChange],
 	);
 
-	// Custom tooth replacements to allow granular toggling between primary and permanent teeth in mixed dentition
 	const [customReplacements, setCustomReplacements] = useState<Record<string, string>>({});
 
 	const handleToggleTooth = useCallback(
@@ -207,7 +206,6 @@ export function VisitEmbeddedOdontogram({
 		[onToggleToothDentition],
 	);
 
-	// Compute active tooth rows based on dentition mode
 	const { upperRow, lowerRow } = useMemo(() => {
 		let baseUpper: string[];
 		let baseLower: string[];
@@ -228,14 +226,12 @@ export function VisitEmbeddedOdontogram({
 				break;
 		}
 
-		// Apply individual tooth toggles if present
 		const mappedUpper = baseUpper.map((c) => customReplacements[c] ?? c);
 		const mappedLower = baseLower.map((c) => customReplacements[c] ?? c);
 
 		return { upperRow: mappedUpper, lowerRow: mappedLower };
 	}, [effectiveDentition, toothRows, customReplacements]);
 
-	// Split quadrants strictly by FDI quadrant numbering, preventing root geometry and array distortions
 	const upperRightTeeth = useMemo(() => {
 		const filtered = upperRow.filter(isUpperRightTooth);
 		return filtered.length > 0 ? filtered : upperRow.slice(0, Math.ceil(upperRow.length / 2));
@@ -256,37 +252,39 @@ export function VisitEmbeddedOdontogram({
 		return filtered.length > 0 ? filtered : lowerRow.slice(Math.ceil(lowerRow.length / 2));
 	}, [lowerRow]);
 
+	// Scale factor: full arch fits 16 teeth across 1440x900 viewport comfortably
+	const toothScale = activeQuadrant !== null ? 0.92 : 0.74;
+
 	return (
 		<section
-			className="tooth-map"
+			className="tooth-map select-none"
 			aria-label="Зубная формула"
 			data-tour="odontogram-formula"
 			data-testid="odontogram-formula"
 		>
-			{/* Шапка зубной формулы с человеческой терминологией и переключателем прикуса (Мандаты 8c, 8z) */}
+			{/* Shared SVG Shaders & Gradients for realistic enamel and pathology shaders */}
+			<DenteToothSvgDefs />
+
+			{/* Шапка зубной формулы с лаконичной терминологией и переключателем прикуса (Apple HIG Segmented Bar) */}
 			<div className="tooth-map-head flex flex-wrap items-center justify-between gap-3 mb-2">
 				<div>
-					<h3 className="text-base font-bold text-[var(--odontogram-ink,#0f172a)] m-0">
+					<h3 className="text-sm font-bold text-[var(--odontogram-ink,#0f172a)] m-0">
 						Зубная формула приёма
 					</h3>
 					<p className="text-xs text-[var(--odontogram-ink-muted,#64748b)] m-0">
-						Отметки зубов и состояние зубного ряда текущего приёма.
+						Анатомический статус зубов и состояние зубного ряда текущего приёма
 					</p>
 				</div>
 
-				{/* Сегментированный переключатель прикуса: Постоянные / Сменный / Молочные */}
+				{/* Сегментированный переключатель прикуса: Постоянные зубы | Сменный прикус | Молочные зубы (Apple HIG) */}
 				<div
-					className="dentition-mode-selector flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold"
+					className="dentition-mode-selector"
 					role="radiogroup"
 					aria-label="Тип прикуса"
 				>
 					<button
 						type="button"
-						className={`px-3 py-1.5 rounded-md transition-all ${
-							effectiveDentition === "adult"
-								? "bg-teal-600 text-white shadow-sm font-bold"
-								: "text-slate-600 dark:text-slate-300 hover:text-slate-900"
-						}`}
+						className={effectiveDentition === "adult" ? "active" : ""}
 						onClick={() => handleDentitionChange("adult")}
 						title="Постоянные зубы: 32 зуба (нотация FDI 11–48)"
 					>
@@ -294,11 +292,7 @@ export function VisitEmbeddedOdontogram({
 					</button>
 					<button
 						type="button"
-						className={`px-3 py-1.5 rounded-md transition-all ${
-							effectiveDentition === "mixed"
-								? "bg-teal-600 text-white shadow-sm font-bold"
-								: "text-slate-600 dark:text-slate-300 hover:text-slate-900"
-						}`}
+						className={effectiveDentition === "mixed" ? "active" : ""}
 						onClick={() => handleDentitionChange("mixed")}
 						title="Сменный прикус: одновременное сосуществование молочных (51–85) и постоянных зубов (11–48)"
 					>
@@ -306,11 +300,7 @@ export function VisitEmbeddedOdontogram({
 					</button>
 					<button
 						type="button"
-						className={`px-3 py-1.5 rounded-md transition-all ${
-							effectiveDentition === "pediatric"
-								? "bg-teal-600 text-white shadow-sm font-bold"
-								: "text-slate-600 dark:text-slate-300 hover:text-slate-900"
-						}`}
+						className={effectiveDentition === "pediatric" ? "active" : ""}
 						onClick={() => handleDentitionChange("pediatric")}
 						title="Молочные зубы: 20 зубов (нотация FDI 51–85)"
 					>
@@ -319,13 +309,13 @@ export function VisitEmbeddedOdontogram({
 				</div>
 			</div>
 
-			{/* Панель выбора клинического статуса (Мандат 8c, 8e): Кариес, Пульпит, Пломба, Коронка, Удален, Наблюдение */}
-			<div className="tooth-map-selected flex flex-wrap items-center justify-between gap-2 p-2 mb-3 bg-[var(--paper-strong,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-lg">
+			{/* Аккуратная полоса клинического статуса и штампов в единой гамме */}
+			<div className="tooth-map-selected flex flex-wrap items-center justify-between gap-2 p-2 mb-2 bg-[var(--paper-strong,#ffffff)] dark:bg-[var(--paper-strong,#1e293b)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] rounded-lg">
 				<div className="flex items-center gap-2 shrink-0">
-					<strong className="text-xs uppercase tracking-wider text-teal-800 dark:text-teal-400 font-bold whitespace-nowrap shrink-0">
+					<span className="text-xs font-semibold text-[var(--muted,#64748b)] whitespace-nowrap shrink-0">
 						Клинический статус:
-					</strong>
-					<span className="text-xs text-slate-500 dark:text-slate-400">
+					</span>
+					<span className="text-xs text-[var(--muted,#64748b)] hidden sm:inline">
 						{PATHOLOGY_STAMPS.find((s) => s.id === activeStamp)?.description ||
 							"Выберите клинический статус для нанесения на формулу"}
 					</span>
@@ -338,10 +328,10 @@ export function VisitEmbeddedOdontogram({
 							<button
 								key={stamp.id}
 								type="button"
-								className={`px-2.5 py-1 text-xs font-bold rounded-full transition-all border flex items-center gap-1.5 min-h-[32px] ${
+								className={`px-2.5 py-1 text-xs rounded-full transition-all border flex items-center gap-1.5 min-h-[30px] cursor-pointer ${
 									isActive
-										? "active bg-teal-600 border-teal-600 text-white shadow-sm ring-2 ring-teal-500/30"
-										: "bg-[var(--paper,#f8fafc)] border-[var(--line,#e2e8f0)] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+										? "active bg-teal-600/10 dark:bg-teal-500/20 border-teal-600 dark:border-teal-400 text-teal-800 dark:text-teal-200 font-bold shadow-xs ring-1 ring-teal-500/30"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium"
 								}`}
 								onClick={() => {
 									setActiveStamp(stamp.id);
@@ -368,10 +358,10 @@ export function VisitEmbeddedOdontogram({
 			>
 				<button
 					type="button"
-					className={`quadrant-nav-btn shrink-0 min-h-[34px] px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+					className={`quadrant-nav-btn shrink-0 min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
 						activeQuadrant === null
-							? "active bg-teal-600 text-white border-teal-600 shadow-sm"
-							: "bg-[var(--paper,#ffffff)] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+							? "active bg-teal-600 text-white border-teal-600 shadow-xs font-bold"
+							: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
 					}`}
 					onClick={() => setActiveQuadrant(null)}
 					title="Обе челюсти целиком"
@@ -380,10 +370,10 @@ export function VisitEmbeddedOdontogram({
 				</button>
 				<button
 					type="button"
-					className={`quadrant-nav-btn shrink-0 min-h-[34px] px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+					className={`quadrant-nav-btn shrink-0 min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
 						activeQuadrant === 1
-							? "active bg-teal-600 text-white border-teal-600 shadow-sm"
-							: "bg-[var(--paper,#ffffff)] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+							? "active bg-teal-600 text-white border-teal-600 shadow-xs font-bold"
+							: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
 					}`}
 					onClick={() => setActiveQuadrant(1)}
 					title="Первый сектор: верх справа (11–18, 51–55)"
@@ -392,10 +382,10 @@ export function VisitEmbeddedOdontogram({
 				</button>
 				<button
 					type="button"
-					className={`quadrant-nav-btn shrink-0 min-h-[34px] px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+					className={`quadrant-nav-btn shrink-0 min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
 						activeQuadrant === 2
-							? "active bg-teal-600 text-white border-teal-600 shadow-sm"
-							: "bg-[var(--paper,#ffffff)] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+							? "active bg-teal-600 text-white border-teal-600 shadow-xs font-bold"
+							: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
 					}`}
 					onClick={() => setActiveQuadrant(2)}
 					title="Второй сектор: верх слева (21–28, 61–65)"
@@ -404,10 +394,10 @@ export function VisitEmbeddedOdontogram({
 				</button>
 				<button
 					type="button"
-					className={`quadrant-nav-btn shrink-0 min-h-[34px] px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+					className={`quadrant-nav-btn shrink-0 min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
 						activeQuadrant === 3
-							? "active bg-teal-600 text-white border-teal-600 shadow-sm"
-							: "bg-[var(--paper,#ffffff)] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+							? "active bg-teal-600 text-white border-teal-600 shadow-xs font-bold"
+							: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
 					}`}
 					onClick={() => setActiveQuadrant(3)}
 					title="Третий сектор: низ слева (31–38, 71–75)"
@@ -416,10 +406,10 @@ export function VisitEmbeddedOdontogram({
 				</button>
 				<button
 					type="button"
-					className={`quadrant-nav-btn shrink-0 min-h-[34px] px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+					className={`quadrant-nav-btn shrink-0 min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
 						activeQuadrant === 4
-							? "active bg-teal-600 text-white border-teal-600 shadow-sm"
-							: "bg-[var(--paper,#ffffff)] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+							? "active bg-teal-600 text-white border-teal-600 shadow-xs font-bold"
+							: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
 					}`}
 					onClick={() => setActiveQuadrant(4)}
 					title="Четвёртый сектор: низ справа (41–48, 81–85)"
@@ -428,35 +418,18 @@ export function VisitEmbeddedOdontogram({
 				</button>
 			</nav>
 
-			{/* Зубная схема с челюстями и квадрантами */}
+			{/* Зубная схема с челюстями и квадрантами — анатомический рендеринг без мусорных плашек */}
 			<div
-				className={`tooth-arch-wrapper ${activeQuadrant !== null ? "zoom-active" : ""}`}
+				className={`tooth-arch-wrapper w-full max-w-full flex flex-col items-center overflow-x-auto ${activeQuadrant !== null ? "zoom-active" : ""}`}
 			>
-				{activeQuadrant === null && (
-					<div className="tooth-quadrant-labels upper-labels flex justify-between px-2 text-[11px] font-semibold text-slate-400">
-						<span
-							className="quadrant-label"
-							title="Первый сектор: верх справа (11–18, 51–55)"
-						>
-							верх справа
-						</span>
-						<span
-							className="quadrant-label"
-							title="Второй сектор: верх слева (21–28, 61–65)"
-						>
-							верх слева
-						</span>
-					</div>
-				)}
-
 				{/* Верхняя челюсть */}
 				{(activeQuadrant === null ||
 					activeQuadrant === 1 ||
 					activeQuadrant === 2) && (
-					<div className="tooth-jaw upper-jaw">
+					<div className="tooth-jaw upper-jaw flex items-end justify-center gap-0">
 						{/* Правая половина верхней челюсти: Q1 / Q5 */}
 						{(activeQuadrant === null || activeQuadrant === 1) && (
-							<div className="tooth-half tooth-row">
+							<div className="tooth-half tooth-row flex items-end justify-end gap-1">
 								{upperRightTeeth.map((code) => (
 									<VisitOdontogramToothItem
 										key={code}
@@ -465,14 +438,25 @@ export function VisitEmbeddedOdontogram({
 										isDetected={detectedCodes.includes(code)}
 										onClick={handleToothClick}
 										onToggleDentition={handleToggleTooth}
+										scale={toothScale}
 									/>
 								))}
 							</div>
 						)}
 
+						{/* Центральная сагиттальная граница */}
+						{activeQuadrant === null && (
+							<div
+								className="tooth-arch-midline-guide top-guide mx-1 self-stretch flex items-center justify-center opacity-40 select-none pointer-events-none"
+								title="Сагиттальная линия"
+							>
+								<div className="w-[1.5px] h-full bg-teal-500/40 rounded-full" />
+							</div>
+						)}
+
 						{/* Левая половина верхней челюсти: Q2 / Q6 */}
 						{(activeQuadrant === null || activeQuadrant === 2) && (
-							<div className="tooth-half tooth-row">
+							<div className="tooth-half tooth-row flex items-end justify-start gap-1">
 								{upperLeftTeeth.map((code) => (
 									<VisitOdontogramToothItem
 										key={code}
@@ -481,6 +465,7 @@ export function VisitEmbeddedOdontogram({
 										isDetected={detectedCodes.includes(code)}
 										onClick={handleToothClick}
 										onToggleDentition={handleToggleTooth}
+										scale={toothScale}
 									/>
 								))}
 							</div>
@@ -488,14 +473,21 @@ export function VisitEmbeddedOdontogram({
 					</div>
 				)}
 
+				{/* Окклюзионная линия смыкания между челюстями */}
+				{activeQuadrant === null && (
+					<div className="tooth-occlusion-line w-full max-w-4xl flex items-center justify-center my-1 select-none pointer-events-none opacity-30">
+						<div className="flex-1 h-px bg-[var(--line,#e2e8f0)]" />
+					</div>
+				)}
+
 				{/* Нижняя челюсть */}
 				{(activeQuadrant === null ||
 					activeQuadrant === 3 ||
 					activeQuadrant === 4) && (
-					<div className="tooth-jaw lower-jaw">
+					<div className="tooth-jaw lower-jaw flex items-start justify-center gap-0">
 						{/* Правая половина нижней челюсти: Q4 / Q8 */}
 						{(activeQuadrant === null || activeQuadrant === 4) && (
-							<div className="tooth-half tooth-row">
+							<div className="tooth-half tooth-row flex items-start justify-end gap-1">
 								{lowerRightTeeth.map((code) => (
 									<VisitOdontogramToothItem
 										key={code}
@@ -504,14 +496,25 @@ export function VisitEmbeddedOdontogram({
 										isDetected={detectedCodes.includes(code)}
 										onClick={handleToothClick}
 										onToggleDentition={handleToggleTooth}
+										scale={toothScale}
 									/>
 								))}
 							</div>
 						)}
 
+						{/* Центральная сагиттальная граница */}
+						{activeQuadrant === null && (
+							<div
+								className="tooth-arch-midline-guide bottom-guide mx-1 self-stretch flex items-center justify-center opacity-40 select-none pointer-events-none"
+								title="Сагиттальная линия"
+							>
+								<div className="w-[1.5px] h-full bg-teal-500/40 rounded-full" />
+							</div>
+						)}
+
 						{/* Левая половина нижней челюсти: Q3 / Q7 */}
 						{(activeQuadrant === null || activeQuadrant === 3) && (
-							<div className="tooth-half tooth-row">
+							<div className="tooth-half tooth-row flex items-start justify-start gap-1">
 								{lowerLeftTeeth.map((code) => (
 									<VisitOdontogramToothItem
 										key={code}
@@ -520,27 +523,11 @@ export function VisitEmbeddedOdontogram({
 										isDetected={detectedCodes.includes(code)}
 										onClick={handleToothClick}
 										onToggleDentition={handleToggleTooth}
+										scale={toothScale}
 									/>
 								))}
 							</div>
 						)}
-					</div>
-				)}
-
-				{activeQuadrant === null && (
-					<div className="tooth-quadrant-labels lower-labels flex justify-between px-2 text-[11px] font-semibold text-slate-400">
-						<span
-							className="quadrant-label"
-							title="Четвёртый сектор: низ справа (41–48, 81–85)"
-						>
-							низ справа
-						</span>
-						<span
-							className="quadrant-label"
-							title="Третий сектор: низ слева (31–38, 71–75)"
-						>
-							низ слева
-						</span>
 					</div>
 				)}
 			</div>

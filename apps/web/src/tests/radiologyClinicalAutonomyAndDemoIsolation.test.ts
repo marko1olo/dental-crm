@@ -143,7 +143,7 @@ describe("Radiology Clinical Autonomy & Demo Isolation Mandate (8c, 8e, 8n)", ()
 		);
 	});
 
-	it("verifies VisitDiagnosticsTab attached scans gallery renders 200x200px previews without layout shift (CLS = 0)", () => {
+	it("verifies VisitDiagnosticsTab attached scans gallery renders compact grid previews without horizontal scroll", () => {
 		const sourcePath = path.resolve(getWebRoot(), "src/components/visit/VisitDiagnosticsTab.tsx");
 		const source = fs.readFileSync(sourcePath, "utf-8");
 
@@ -151,10 +151,10 @@ describe("Radiology Clinical Autonomy & Demo Isolation Mandate (8c, 8e, 8n)", ()
 			"VisitDiagnosticsTab defines visit-diagnostics-attached-scans-gallery",
 		);
 		assert.ok(source.includes('data-testid="attached-scans-empty-placeholder"'),
-			"VisitDiagnosticsTab includes attached scans empty placeholder with 200x200px dimension",
+			"VisitDiagnosticsTab includes attached scans empty placeholder",
 		);
-		assert.ok(source.includes('width: "200px"') && source.includes('height: "200px"'),
-			"VisitDiagnosticsTab reserves explicit 200x200px dimensions to guarantee CLS = 0",
+		assert.ok(source.includes('grid-cols-2') && source.includes('data-testid="attached-scans-list"'),
+			"VisitDiagnosticsTab renders adaptive CSS grid without horizontal scroll",
 		);
 		assert.ok(source.includes('aspectRatio: "1 / 1"'),
 			"VisitDiagnosticsTab enforces 1/1 square aspect ratio for all radiology/photo thumbnails",

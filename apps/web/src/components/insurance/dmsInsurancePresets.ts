@@ -6,6 +6,9 @@
  * ============================================================================
  */
 
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
+
 export type DmsInsurerId =
 	| "sogaz"
 	| "ingosstrakh"
@@ -633,6 +636,17 @@ export const SAMPLE_DMS_GUARANTEE_LETTERS: readonly DmsGuaranteeLetterRecord[] =
 ];
 
 /**
+ * Получение гарантийных писем с обязательной изоляцией от боевого контура (Mandate 8c Zero Mocks).
+ * В боевом режиме (production) возвращает пустой массив (0% фейковых записей, честный EmptyState),
+ * в демо-режиме — демонстрационные письма.
+ */
+export function getStatutoryGuaranteeLetters(
+	isDemo = isDemoShowcaseMode(),
+): readonly DmsGuaranteeLetterRecord[] {
+	return isDemo ? SAMPLE_DMS_GUARANTEE_LETTERS : [];
+}
+
+/**
  * Хелперы поиска страховых компаний и программ
  */
 export function getStatutoryInsurerById(id: string): DmsInsurerMetadata | undefined {
@@ -645,6 +659,100 @@ export function getStatutoryProgramByKey(key: DmsProgramKey): DmsProgramPolicyDe
 
 export function getNomenclature804nByCode(code: string): DmsNomenclature804nItem | undefined {
 	return STATUTORY_804N_NOMENCLATURE.find((item) => item.code === code);
+}
+
+/**
+ * Сохранение гарантийного письма ДМС в боевую базу данных PostgreSQL через Fastify API (POST/PUT).
+ */
+export async function saveGuaranteeLetterToApi(letter: {
+	readonly id?: string | undefined;
+	readonly patientId: string;
+	readonly patientFullName: string;
+	readonly patientBirthDate?: string | null | undefined;
+	readonly policyNumber: string;
+	readonly insurerKey: string;
+	readonly insurerName: string;
+	readonly letterNumber: string;
+	readonly issueDate: string;
+	readonly validFrom: string;
+	readonly validUntil: string;
+	readonly maxCoverageRub: number;
+	readonly usedAmountRub?: number | undefined;
+	readonly franchisePct?: number | undefined;
+	readonly franchiseType?: "percent" | "fixed_rub" | undefined;
+	readonly franchiseFixedRub?: number | undefined;
+	readonly programExclusions?: readonly string[] | undefined;
+	readonly approvedServiceCodes?: readonly string[] | undefined;
+	readonly approvedTeethFdi?: readonly string[] | undefined;
+	readonly approvedDiagnosisCodes?: readonly string[] | undefined;
+	readonly notes?: string | undefined;
+	readonly status?: "active" | "exhausted" | "expired" | "cancelled" | undefined;
+}): Promise<{ ok: boolean; letter?: any; error?: string }> {
+	try {
+		const isUuid = typeof letter.id === "string" && /^[0-9a-fA-F-]{36}$/.test(letter.id);
+		const method = isUuid ? "PUT" : "POST";
+		const url = isUuid ? `/api/insurance/guarantee-letters/${letter.id}` : "/api/insurance/guarantee-letters";
+
+		const payload = {
+			...letter,
+			usedAmountRub: letter.usedAmountRub ?? 0,
+			franchisePct: letter.franchisePct ?? 0,
+			franchiseType: letter.franchiseType ?? "percent",
+			franchiseFixedRub: letter.franchiseFixedRub ?? 0,
+			programExclusions: letter.programExclusions ? [...letter.programExclusions] : [],
+			approvedServiceCodes: letter.approvedServiceCodes ? [...letter.approvedServiceCodes] : [],
+			approvedTeethFdi: letter.approvedTeethFdi ? [...letter.approvedTeethFdi] : [],
+			approvedDiagnosisCodes: letter.approvedDiagnosisCodes ? [...letter.approvedDiagnosisCodes] : [],
+			notes: letter.notes ?? "",
+			status: letter.status ?? "active",
+		};
+
+		const res = await fetch(url, {
+			method,
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify(payload),
+		});
+
+		if (!res.ok) {
+			const errBody = await res.json().catch(() => null);
+			return {
+				ok: false,
+				error: errBody?.message || `Ошибка сохранения гарантийного письма (${res.status})`,
+			};
+		}
+
+		const data = await res.json();
+		return { ok: true, letter: data };
+	} catch (err: unknown) {
+		const msg = err instanceof Error ? err.message : "Сетевой сбой при сохранении гарантийного письма";
+		return { ok: false, error: msg };
+	}
+}
+
+/**
+ * Получение живого списка гарантийных писем пациента из PostgreSQL через Fastify API.
+ */
+export async function fetchPatientGuaranteeLettersFromApi(
+	patientId?: string,
+): Promise<any[]> {
+	try {
+		const query = patientId ? `?patientId=${encodeURIComponent(patientId)}` : "";
+		const res = await fetch(`/api/insurance/guarantee-letters${query}`, {
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+		});
+
+		if (!res.ok) return [];
+		const data = await res.json();
+		return Array.isArray(data) ? data : [];
+	} catch {
+		return [];
+	}
 }
 
 export * from "./dmsExpressPresets";

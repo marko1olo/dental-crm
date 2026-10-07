@@ -19,7 +19,10 @@ import {
 	generateEgiszDentalCdaXml,
 	generateEgiszXmlFilename,
 } from "./egiszRemdEngine";
-import type { RemdDocumentRecord } from "./egiszJournalData";
+import {
+	type RemdDocumentRecord,
+	mapOutboxRowToRemdRecord,
+} from "./egiszJournalData";
 
 export interface PackageZipExportOptions {
 	readonly filenamePrefix: string;
@@ -164,49 +167,35 @@ export function buildDeferredRemdRecord({
 	};
 }
 
-export async function fetchOutboxRecordsFromBackend(clinic: EgiszClinicInfo): Promise<RemdDocumentRecord[] | null> {
-	try {
-		const res = await fetch("/api/clinical/egisz/outbox", {
-			headers: denteAdminSecretRequestHeaders(),
-		});
-		if (!res.ok) return null;
-		const data = (await res.json()) as { items?: Array<any> } | Array<any>;
-		const rawItems = Array.isArray(data) ? data : (data.items || []);
-		if (!rawItems.length) return null;
+export async function fetchOutboxRecordsFromBackend(
+	clinic: EgiszClinicInfo,
+): Promise<RemdDocumentRecord[]> {
+	const endpoints = [
+		"/api/egisz/journal",
+		"/api/egisz/outbox",
+		"/api/clinical/egisz/outbox",
+	];
 
-		return rawItems.map((item, idx) => ({
-			id: item.id || `OUT-${idx}-${Date.now()}`,
-			documentUuid: item.documentId || item.id || `UUID-${idx}`,
-			docTypeCode: (item.docType || "105") as any,
-			docTypeName: "СЭМД ЕГИСЗ",
-			createdAt: item.createdAt || new Date().toISOString(),
-			updatedAt: item.updatedAt || new Date().toISOString(),
-			encounterDate: (item.createdAt || new Date().toISOString()).slice(0, 10),
-			status: item.status === "Registered" ? "registered" : item.status === "Failed" ? "error" : "draft",
-			patient: {
-				id: item.patientId || "pat",
-				fullName: item.patientName || "Пациент",
-				snils: item.patientSnils || "",
-				birthDate: "1990-01-01",
-				cardNumber: "043/у",
-			},
-			doctor: {
-				id: item.doctorId || "doc",
-				fullName: item.doctorName || "Врач",
-				snils: "",
-				position: "Врач",
-				specialty: "Стоматолог",
-			},
-			clinic: {
-				name: clinic.clinicName,
-				oid: clinic.clinicOid,
-				ogrn: clinic.clinicOgrn,
-				inn: clinic.clinicInn,
-			},
-		}));
-	} catch {
-		return null;
+	for (const endpoint of endpoints) {
+		try {
+			const res = await fetch(endpoint, {
+				headers: denteAdminSecretRequestHeaders(),
+			});
+			if (!res.ok) continue;
+
+			const data = (await res.json()) as
+				| { items?: unknown[]; success?: boolean }
+				| unknown[];
+			const rawItems = Array.isArray(data) ? data : data.items || [];
+			if (!Array.isArray(rawItems)) continue;
+
+			return rawItems.map((item) => mapOutboxRowToRemdRecord(item, clinic));
+		} catch {
+			// Try fallback endpoint
+		}
 	}
+
+	return [];
 }
 
 export async function submitCdaPackageToRemd({

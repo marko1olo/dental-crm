@@ -22,6 +22,7 @@ import {
 	treatmentPlanItemsNew,
 	treatmentPlans,
 	users,
+	visits,
 } from "../db/schema.js";
 import {
 	chargeLineKopecks,
@@ -952,6 +953,187 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 	);
 
 	app.get(
+		"/api/treatment-plans/:id",
+		async (request, reply) => {
+			const organizationId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"treatment plan read",
+			);
+			if (!organizationId) return;
+
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.treatment_plan.read",
+					role: staffRole,
+					message: `Отказ в доступе к плану лечения (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+				});
+			}
+
+			const { id } = request.params as { id: string };
+			if (!UUID_SHAPE.test(id)) {
+				return reply.code(400).send({ error: "InvalidTreatmentPlanId" });
+			}
+
+			const [plan] = await db
+				.select()
+				.from(treatmentPlans)
+				.where(
+					and(
+						eq(treatmentPlans.id, id),
+						eq(treatmentPlans.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+
+			if (!plan) {
+				return reply.code(404).send({ error: "TreatmentPlanNotFound" });
+			}
+
+			const [patientRow] = await db
+				.select()
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, plan.patientId),
+						eq(patients.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+
+			const items = await db
+				.select()
+				.from(treatmentPlanItemsNew)
+				.where(
+					and(
+						eq(treatmentPlanItemsNew.planId, plan.id),
+						eq(treatmentPlanItemsNew.organizationId, organizationId),
+					),
+				)
+				.orderBy(treatmentPlanItemsNew.createdAt);
+
+			const doctorIds = [
+				...new Set(
+					items
+						.map((item) => item.doctorId)
+						.filter((dId): dId is string => Boolean(dId)),
+				),
+			];
+			const doctorsById = new Map<
+				string,
+				{ fullName: string; specialty: string | null }
+			>();
+			if (doctorIds.length > 0) {
+				const docRows = await db
+					.select({
+						id: users.id,
+						fullName: users.fullName,
+						role: users.role,
+						specialties: users.specialties,
+					})
+					.from(users)
+					.where(
+						and(
+							eq(users.organizationId, organizationId),
+							inArray(users.id, doctorIds),
+						),
+					);
+				for (const doc of docRows) {
+					const specList = Array.isArray(doc.specialties)
+						? doc.specialties.join(", ")
+						: null;
+					doctorsById.set(doc.id, {
+						fullName: doc.fullName,
+						specialty:
+							specList ||
+							(doc.role === "doctor" ? "Врач-стоматолог" : doc.role),
+					});
+				}
+			}
+
+			const ledgerRows = await db
+				.select({
+					id: treatmentItems.id,
+					status: treatmentItems.status,
+					visitId: treatmentItems.visitId,
+				})
+				.from(treatmentItems)
+				.where(
+					and(
+						eq(treatmentItems.organizationId, organizationId),
+						eq(treatmentItems.patientId, plan.patientId),
+					),
+				);
+
+			const ledgerMap = new Map<string, { status: string; visitId: string | null }>();
+			for (const lr of ledgerRows) {
+				ledgerMap.set(lr.id.toLowerCase(), { status: lr.status, visitId: lr.visitId });
+			}
+
+			const serialized = serializeTreatmentPlan(
+				plan,
+				items,
+				doctorsById,
+				ledgerMap,
+			);
+
+			const primaryDoctorId = doctorIds[0] ?? "";
+			const primaryDoctor = primaryDoctorId ? doctorsById.get(primaryDoctorId) : undefined;
+
+			const validationPayload = {
+				planId: plan.id,
+				planNumber: plan.id.slice(0, 8).toUpperCase(),
+				planTitle: plan.name,
+				patientId: plan.patientId,
+				patientChartNumber: patientRow
+					? patientRow.administrativeProfile?.insurancePolicyNumber ||
+						`К-${patientRow.id.slice(0, 8).toUpperCase()}`
+					: undefined,
+				doctorId: primaryDoctorId,
+				doctorFullName: primaryDoctor?.fullName ?? "Лечащий врач",
+				createdAtIso: plan.createdAt.toISOString(),
+				validUntilIso: plan.priceFrozenUntil ? plan.priceFrozenUntil.toISOString() : undefined,
+				items: items.map((item) => {
+					const { priceId, name } = splitStoredPriceId(item.priceId);
+					const unitPrice = numeric(item.price);
+					const discountRub = numeric(item.discount);
+					const quantity = item.quantity || 1;
+					const lineTotal = Math.max(0, unitPrice * quantity - discountRub);
+					const discountPercent =
+						unitPrice > 0 ? Math.round((discountRub / (unitPrice * quantity)) * 100) : 0;
+					return {
+						itemId: item.id,
+						toothNumber: item.toothNumber ?? undefined,
+						code804n: priceId || "A16.07.002",
+						serviceTitle: name || "Медицинская услуга",
+						category: "therapy",
+						planUnitPriceRub: unitPrice,
+						planDiscountRub: discountRub,
+						planDiscountPercent: discountPercent,
+						quantity,
+						planLineTotalRub: lineTotal,
+						serviceId: priceId,
+						phase: item.phase || 1,
+					};
+				}),
+			};
+
+			return reply.send({
+				success: true,
+				plan: serialized,
+				validationPayload,
+			});
+		},
+	);
+
+	app.get(
 		"/api/patients/:patientId/treatment-plans",
 		async (request, reply) => {
 			const organizationId = await requireResolvedOrganizationId(
@@ -1640,6 +1822,23 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 
 			// Записываем статус completed в treatmentItems
 			await withTenantCtx(organizationId, async (tx) => {
+				let validVisitId: string | null = null;
+				if (body.visitId) {
+					const [visRow] = await tx
+						.select({ id: visits.id })
+						.from(visits)
+						.where(
+							and(
+								eq(visits.id, body.visitId),
+								eq(visits.organizationId, organizationId),
+							),
+						)
+						.limit(1);
+					if (visRow) {
+						validVisitId = visRow.id;
+					}
+				}
+
 				for (const idx of targetIndices) {
 					const item = planItems[idx];
 					if (!item) continue;
@@ -1661,7 +1860,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 							.update(treatmentItems)
 							.set({
 								status: "completed",
-								visitId: body.visitId ?? null,
+								visitId: validVisitId,
 								isSynced: false,
 								version: sql`${treatmentItems.version} + 1`,
 							})
@@ -1677,7 +1876,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 							id: ledgerId,
 							organizationId,
 							patientId,
-							visitId: body.visitId ?? null,
+							visitId: validVisitId,
 							serviceId: UUID_SHAPE.test(item.priceId) ? item.priceId : null,
 							toothCode:
 								item.toothNumber !== null && item.toothNumber !== undefined

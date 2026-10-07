@@ -77,41 +77,78 @@ async function run() {
     const url = route.request().url();
     if (url.includes("/src/")) return route.continue();
     if (url.includes("/treatment-plans")) {
-      console.log("Mocking treatment plans:", url);
+      console.log("[ROUTE] treatment plans intercepted:", url);
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mockTreatmentPlanData) });
     }
     if (url.includes("/api/dashboard")) {
-      console.log("Mocking dashboard:", url);
+      console.log("[ROUTE] dashboard intercepted:", url);
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mockDashboard) });
+    }
+    if (url.includes("/api/auth/user/me") || url.includes("/api/auth/session") || url.includes("/api/auth/verify")) {
+      console.log("[ROUTE] auth user me intercepted:", url);
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            id: "doc-1",
+            fullName: "Д-р Воронов Алексей Владимирович",
+            role: "owner",
+            organizationId: "00000000-0000-0000-0000-000000000001",
+          },
+        }),
+      });
     }
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true }) });
   });
 
   await context.addInitScript(() => {
-    localStorage.setItem("dente_auth_token", "token-123");
-    localStorage.setItem("dente_clinic_token", "live-clinic-token");
-    localStorage.setItem("dente_staff_token", "live-staff-token");
+    const staffUser = {
+      id: "doc-1",
+      fullName: "Д-р Воронов Алексей Владимирович",
+      role: "owner",
+      organizationId: "00000000-0000-0000-0000-000000000001",
+    };
+    localStorage.setItem("dente_auth_token", "dente-offline-auth-token");
+    localStorage.setItem("dente_clinic_token", "dente-offline-clinic-token");
+    localStorage.setItem("dente_staff_token", "dente-offline-staff-token");
     localStorage.setItem("dente_active_role", "owner");
     localStorage.setItem("dente_user_id", "doc-1");
     localStorage.setItem("dente_user_role", "owner");
     localStorage.setItem("dente_clinic_tenant_id", "00000000-0000-0000-0000-000000000001");
     localStorage.setItem("dente_onboarding_completed", "true");
     localStorage.setItem("dente_tour_completed", "true");
+    localStorage.setItem("dente_cached_active_staff_user", JSON.stringify(staffUser));
     localStorage.setItem("dental-crm:web-ui-preferences:v1", JSON.stringify({
       version: 1, selectedWorkspaceRole: "owner", selectedPatientId: "pat-1", onboardingDismissed: true, onboardingStep: "done"
     }));
   });
 
   const page = await context.newPage();
-  page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+  page.on("console", msg => console.log("[PAGE LOG]", msg.type(), msg.text()));
+  page.on("pageerror", err => console.log("[PAGE ERROR]", err.stack || err.message));
+  page.on("requestfailed", r => console.log("[REQ FAILED]", r.url(), r.failure()?.errorText));
+
+  console.log("Navigating to http://127.0.0.1:5173/#visit ...");
   await page.goto("http://127.0.0.1:5173/#visit", { waitUntil: "domcontentloaded" });
-  await new Promise(r => setTimeout(r, 4000));
   
-  const elExists = await page.$('[data-testid="visit-treatment-plan-handoff-banner"]');
-  console.log("Banner found?", !!elExists);
+  console.log("Waiting for boot-state detach...");
+  await page.waitForSelector("main.boot-state", { state: "detached", timeout: 30000 });
+  console.log("Boot state detached!");
+
+  console.log("Waiting for visit panel or banner...");
+  try {
+    await page.waitForSelector('[data-testid="visit-view"], [data-testid="visit-treatment-plan-handoff-banner"]', { timeout: 15000 });
+    console.log("Found visit view or banner!");
+  } catch (e) {
+    console.log("Wait for visit-view timed out:", e.message);
+  }
+
+  const html = await page.evaluate(() => document.querySelector(".content-area, main, #root")?.innerHTML?.slice(0, 500));
+  console.log("HTML snippet of main area:", html);
 
   const testIds = await page.evaluate(() => Array.from(document.querySelectorAll("[data-testid]")).map(e => e.getAttribute("data-testid")));
-  console.log("Visible TestIDs count:", testIds.length, testIds.slice(0, 20));
+  console.log("Visible TestIDs count:", testIds.length, testIds);
 
   await page.screenshot({ path: "apps/web/public/screenshots/stage_handoff/test_banner.png" });
   await browser.close();

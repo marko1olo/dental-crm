@@ -6,6 +6,7 @@ import {
 import {
 	Activity,
 	AlertTriangle,
+	ArrowUpRight,
 	Award,
 	Calendar,
 	Check,
@@ -116,6 +117,8 @@ import { useVisitSave } from "./useVisitSave";
 import {
 	useVisitEmkToothSync,
 	toOdontogramToothState,
+	infer804nServiceFromStamp,
+	type Inferred804nService,
 } from "./useVisitEmkToothSync";
 import { VisitFlowProgress } from "./VisitFlowProgress";
 import { VisitSpecialtyFocus } from "./VisitSpecialtyFocus";
@@ -152,55 +155,6 @@ const OrthopedicsChairsidePanel = lazy(() =>
 
 // Re-export DebouncedEmkTextarea from canonical SSOT (Mandate 8s)
 export { DebouncedEmkTextarea, type DebouncedEmkTextareaProps } from "./emk/DebouncedEmkTextarea";
-
-function infer804nServiceFromStamp(stamp: string, toothNumber: number) {
-	switch (stamp) {
-		case "caries":
-			return {
-				id: `srv-caries-${toothNumber}`,
-				title: `Лечение кариеса зуба ${toothNumber} со световой пломбой`,
-				code804n: "A16.07.002",
-				priceRub: 4500,
-			};
-		case "pulpitis":
-			return {
-				id: `srv-pulpitis-${toothNumber}`,
-				title: `Эндодонтическое лечение пульпита зуба ${toothNumber}`,
-				code804n: "A16.07.030",
-				priceRub: 6500,
-			};
-		case "treatment":
-			return {
-				id: `srv-perio-${toothNumber}`,
-				title: `Лечение периодонтита зуба ${toothNumber}`,
-				code804n: "A16.07.008",
-				priceRub: 7500,
-			};
-		case "done":
-			return {
-				id: `srv-fill-${toothNumber}`,
-				title: `Восстановление зуба ${toothNumber} пломбой из фотокомпозита`,
-				code804n: "A16.07.002.011",
-				priceRub: 4000,
-			};
-		case "crown":
-			return {
-				id: `srv-crown-${toothNumber}`,
-				title: `Восстановление зуба ${toothNumber} коронкой`,
-				code804n: "A16.07.004",
-				priceRub: 18000,
-			};
-		case "missing":
-			return {
-				id: `srv-extract-${toothNumber}`,
-				title: `Удаление зуба ${toothNumber}`,
-				code804n: "A16.07.001",
-				priceRub: 3500,
-			};
-		default:
-			return null;
-	}
-}
 
 export function VisitEmkTab() {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -283,6 +237,22 @@ export function VisitEmkTab() {
 		if (age !== null && age < 12) return "mixed";
 		return "adult";
 	});
+
+	const formulaSummary = React.useMemo(() => {
+		const totalTeeth = dentitionMode === "pediatric" ? 20 : 32;
+		const pathologyEntries = Object.entries(visitToothStateByCode || {}).filter(
+			([_code, state]) =>
+				state &&
+				(state as string) !== "Healthy" &&
+				(state as string) !== "healthy" &&
+				state !== "idle",
+		);
+		if (pathologyEntries.length === 0) {
+			return `${totalTeeth} ${dentitionMode === "pediatric" ? "молочных зубов интактны" : "зуба интактны"}`;
+		}
+		const intactCount = Math.max(0, totalTeeth - pathologyEntries.length);
+		return `${intactCount} интактно, ${pathologyEntries.length} с патологией`;
+	}, [dentitionMode, visitToothStateByCode]);
 
 	const toothRows = React.useMemo(
 		() => [
@@ -1104,87 +1074,124 @@ export function VisitEmkTab() {
 			<div className="space-y-4 mt-2.5 w-full min-w-0" data-testid="emk-clinical-canvas">
 				{/* ═══ ТРАЕКТОРИЯ ВРАЧА У КРЕСЛА (CHAIRSIDE COCKPIT PIPELINE) — COMPACT 1-LINE STRIP ═══ */}
 				<div
-					className="chairside-cockpit-pipeline bg-teal-500/5 dark:bg-teal-500/10 border border-teal-500/20 rounded-lg px-2.5 h-7 min-h-[28px] max-h-7 text-xs text-[var(--ink)] flex items-center justify-between gap-2 overflow-x-auto overflow-y-hidden"
+					className="chairside-cockpit-pipeline bg-teal-500/5 dark:bg-teal-500/10 border border-teal-500/20 rounded-lg px-2.5 h-8 min-h-[32px] max-h-8 text-xs text-[var(--ink)] flex items-center justify-between gap-1.5 overflow-x-auto overflow-y-hidden"
 					data-testid="chairside-cockpit-pipeline-banner"
 				>
-					<div className="flex items-center gap-1.5 flex-nowrap min-w-0 font-medium text-[11px] shrink truncate">
-						<span className="inline-flex items-center gap-1 text-teal-800 dark:text-teal-300 font-semibold shrink-0">
-							<Activity size={12} className="text-teal-600 dark:text-teal-400 shrink-0" />
-							1. Осмотр & Одонтограмма
-						</span>
-						<ChevronRight size={11} className="text-[var(--muted)] shrink-0 opacity-60" />
-						<span className="inline-flex items-center gap-1 text-amber-800 dark:text-amber-300 font-semibold shrink-0">
-							<FileText size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
-							2. Дневник
-						</span>
-						<ChevronRight size={11} className="text-[var(--muted)] shrink-0 opacity-60" />
-						<span className="inline-flex items-center gap-1 text-blue-800 dark:text-blue-300 font-semibold shrink-0">
-							<Tag size={12} className="text-blue-600 dark:text-blue-400 shrink-0" />
-							3. Услуги
-						</span>
-						<ChevronRight size={11} className="text-[var(--muted)] shrink-0 opacity-60" />
-						<span className="inline-flex items-center gap-1 text-emerald-800 dark:text-emerald-300 font-semibold shrink-0">
-							<Receipt size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-							4. Смета & Чек
-						</span>
-					</div>
-					<div className="flex items-center gap-1.5 shrink-0">
+					<div className="flex items-center gap-1 sm:gap-2 flex-nowrap min-w-0 font-medium text-[11px]">
 						<button
 							type="button"
-							onClick={handleApplyPhysiologicalNorm}
-							data-testid="btn-cockpit-quick-norm"
-							className="px-2 h-5 rounded text-[10px] font-semibold bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1 cursor-pointer transition-colors"
-							title="Заполнить осмотр физиологической нормой Z01.2"
+							onClick={() => {
+								window.dispatchEvent(
+									new CustomEvent("dente:visit-tab-change", { detail: { tab: "odontogram" } }),
+								);
+							}}
+							data-testid="stepper-step-1"
+							className="inline-flex items-center gap-1 text-teal-800 dark:text-teal-300 font-semibold shrink-0 hover:underline cursor-pointer px-1 py-0.5 rounded hover:bg-teal-500/10 transition-colors"
+							title="Перейти к осмотру и детальной зубной формуле"
 						>
-							<Check size={11} className="text-emerald-600 dark:text-emerald-400" />
-							<span>Норма (Z01.2)</span>
+							<Activity size={12} className="text-teal-600 dark:text-teal-400 shrink-0" />
+							<span>1. Осмотр & Одонтограмма</span>
 						</button>
+						<ChevronRight size={11} className="text-[var(--muted)] shrink-0 opacity-60" />
+						<button
+							type="button"
+							onClick={() => {
+								document.querySelector('[data-testid="emk-complaints-section"]')?.scrollIntoView({ behavior: "smooth" });
+							}}
+							data-testid="stepper-step-2"
+							className="inline-flex items-center gap-1 text-amber-800 dark:text-amber-300 font-semibold shrink-0 hover:underline cursor-pointer px-1 py-0.5 rounded hover:bg-amber-500/10 transition-colors"
+							title="Перейти к SOAP дневнику приёма"
+						>
+							<FileText size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
+							<span>2. Дневник</span>
+						</button>
+						<ChevronRight size={11} className="text-[var(--muted)] shrink-0 opacity-60" />
+						<button
+							type="button"
+							onClick={() => {
+								document.querySelector('[data-testid="emk-treatment-section"]')?.scrollIntoView({ behavior: "smooth" });
+							}}
+							data-testid="stepper-step-3"
+							className="inline-flex items-center gap-1 text-blue-800 dark:text-blue-300 font-semibold shrink-0 hover:underline cursor-pointer px-1 py-0.5 rounded hover:bg-blue-500/10 transition-colors"
+							title="Перейти к номенклатуре и услугам 804н"
+						>
+							<Tag size={12} className="text-blue-600 dark:text-blue-400 shrink-0" />
+							<span>3. Услуги</span>
+						</button>
+						<ChevronRight size={11} className="text-[var(--muted)] shrink-0 opacity-60" />
 						<button
 							type="button"
 							onClick={handleCompleteVisitAndGenerateReceipt}
 							disabled={isCompletingVisit}
 							data-testid="btn-cockpit-quick-complete"
-							className="px-2 h-5 rounded text-[10px] font-bold bg-teal-600 hover:bg-teal-700 text-white inline-flex items-center gap-1 cursor-pointer transition-colors"
-							title="1-клик смета и фискальный чек с СБП QR"
+							className="inline-flex items-center gap-1 text-emerald-800 dark:text-emerald-300 font-bold shrink-0 hover:bg-emerald-500/20 cursor-pointer px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 transition-colors"
+							title="Завершить приём, сформировать смету и чек 54-ФЗ"
 						>
-							<QrCode size={11} />
-							<span>Смета & Чек</span>
+							<Receipt size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+							<span>4. Смета & Чек</span>
 						</button>
 					</div>
 				</div>
 
-				{/* Интерактивная одонтограмма приёма */}
+				{/* Интерактивная одонтограмма приёма — collapsed by default into 32px bar */}
 				<div
-					className="visit-emk-embedded-odontogram-wrap bg-[var(--paper)] border border-[var(--line)] rounded-xl p-2.5 sm:p-3 shadow-2xs"
+					className={`visit-emk-embedded-odontogram-wrap bg-[var(--paper)] border border-[var(--line)] rounded-xl transition-all shadow-2xs ${
+						isOdontogramCollapsed ? "px-2.5 sm:px-3 py-1.5" : "p-2.5 sm:p-3"
+					}`}
 					data-testid="visit-emk-embedded-odontogram"
 				>
-					<div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-[var(--line)]/60">
-						<div className="flex items-center gap-2">
+					<div
+						className={`flex items-center justify-between gap-2 ${
+							isOdontogramCollapsed ? "" : "mb-2 pb-1.5 border-b border-[var(--line)]/60"
+						}`}
+					>
+						<div className="flex items-center gap-2 min-w-0">
 							<span className="w-2.5 h-2.5 rounded-full bg-teal-500 shrink-0" />
-							<span className="text-xs font-bold text-[var(--ink)]">
-								Интерактивная одонтограмма приёма
+							<span className="text-xs font-bold text-[var(--ink)] truncate">
+								Интерактивная зубная формула
+								<span className="font-normal text-[var(--muted)] ml-1.5">
+									• {formulaSummary}
+								</span>
 							</span>
-							<span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-[var(--teal-soft)] text-[var(--teal-dark,var(--teal))] font-bold">
+							<span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-[var(--teal-soft)] text-[var(--teal-dark,var(--teal))] font-bold shrink-0">
 								Активный зуб: {effectiveActiveTooth}
 							</span>
 						</div>
-						<button
-							type="button"
-							onClick={() => setIsOdontogramCollapsed((v) => !v)}
-							className="text-xs text-[var(--muted)] hover:text-[var(--ink)] px-2 py-1 rounded-md hover:bg-[var(--paper-soft)] transition-colors cursor-pointer inline-flex items-center gap-1 font-medium"
-						>
-							{isOdontogramCollapsed ? (
-								<>
-									<span>Развернуть формулу</span>
-									<ChevronDown size={13} />
-								</>
-							) : (
-								<>
-									<span>Свернуть формулу</span>
-									<ChevronUp size={13} />
-								</>
-							)}
-						</button>
+						<div className="flex items-center gap-1.5 shrink-0">
+							<button
+								type="button"
+								onClick={() => {
+									window.dispatchEvent(
+										new CustomEvent("dente:visit-tab-change", { detail: { tab: "odontogram" } }),
+									);
+								}}
+								data-testid="btn-open-odontogram-tab"
+								className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 hover:text-teal-800 dark:hover:text-teal-200 px-2 py-0.5 rounded hover:bg-teal-500/10 transition-colors cursor-pointer inline-flex items-center gap-1"
+								title="Перейти во вкладку полной зубной формулы"
+							>
+								<span>Зубная формула</span>
+								<ArrowUpRight size={13} className="shrink-0" />
+							</button>
+							<button
+								type="button"
+								onClick={() => setIsOdontogramCollapsed((v) => !v)}
+								data-testid="btn-toggle-odontogram-collapse"
+								className="text-xs text-[var(--muted)] hover:text-[var(--ink)] px-2 py-0.5 rounded hover:bg-[var(--paper-soft)] transition-colors cursor-pointer inline-flex items-center gap-1 font-medium"
+								title={isOdontogramCollapsed ? "Развернуть одонтограмму" : "Свернуть одонтограмму"}
+							>
+								{isOdontogramCollapsed ? (
+									<>
+										<span>Развернуть</span>
+										<ChevronDown size={13} />
+									</>
+								) : (
+									<>
+										<span>Свернуть</span>
+										<ChevronUp size={13} />
+									</>
+								)}
+							</button>
+						</div>
 					</div>
 					{!isOdontogramCollapsed && (
 						<VisitEmbeddedOdontogram
@@ -1791,7 +1798,7 @@ export function VisitEmkTab() {
 							<button
 								type="button"
 								onClick={() => setIsSbpQrModalOpen(false)}
-								className="min-h-[48px] px-4 py-2.5 rounded-xl text-sm font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[var(--ink)] transition-colors cursor-pointer"
+								className="min-h-[48px] px-4 py-2.5 rounded-xl text-sm font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)] transition-colors cursor-pointer"
 							>
 								Закрыть
 							</button>

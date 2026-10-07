@@ -81,399 +81,208 @@ export interface RemdDocumentRecord {
 }
 
 /**
- * Realistic clinical records baseline per DENTE Clinical Realism Law
+ * Production Journal Baseline per Mandate 8c (Zero Mocks) & Mandate 8f (Real Persistence).
+ * Fake static records removed; real records load from PostgreSQL table `egisz_outbox`
+ * via Fastify `/api/egisz/journal` and `/api/egisz/outbox`.
  */
-export const SAMPLE_REMD_JOURNAL_RECORDS: RemdDocumentRecord[] = [
-	{
-		id: "REMD-REC-001",
-		documentUuid: "DOC-105-2026-08419",
+export const SAMPLE_REMD_JOURNAL_RECORDS: RemdDocumentRecord[] = [];
+
+/**
+ * Normalizes backend outbox row (or journal item) into strongly typed RemdDocumentRecord.
+ */
+export function mapOutboxRowToRemdRecord(
+	raw: unknown,
+	clinicFallback?: unknown,
+): RemdDocumentRecord {
+	const item = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+	const clinicObj = (clinicFallback && typeof clinicFallback === "object"
+		? clinicFallback
+		: {}) as Record<string, unknown>;
+
+	const rawPatient = (item.patient && typeof item.patient === "object"
+		? item.patient
+		: {}) as Record<string, unknown>;
+	const rawDoctor = (item.doctor && typeof item.doctor === "object"
+		? item.doctor
+		: {}) as Record<string, unknown>;
+	const rawClinic = (item.clinic && typeof item.clinic === "object"
+		? item.clinic
+		: {}) as Record<string, unknown>;
+
+	const patientName =
+		(item.patientFullName as string) ||
+		(rawPatient.fullName as string) ||
+		(item.patientName as string) ||
+		"Пациент";
+	const doctorName =
+		(item.doctorFullName as string) ||
+		(rawDoctor.fullName as string) ||
+		(item.doctorName as string) ||
+		"Врач";
+
+	const id = String(item.id || `REMD-${Date.now()}`);
+	const docTypeCode = (item.docTypeCode || item.docTypeNsiCode || item.docType || "108") as
+		| EgiszDentalSemdCode
+		| "1151156";
+
+	let status: RemdDocumentStatus = "draft";
+	const rawStatus = String(item.status || item.dbStatus || "").toLowerCase();
+	if (rawStatus === "registered" || rawStatus === "registered_in_remd" || rawStatus === "accepted_by_egisz") {
+		status = "registered";
+	} else if (rawStatus === "sent" || rawStatus === "sending") {
+		status = "sent";
+	} else if (rawStatus === "signed" || rawStatus === "ready_for_dispatch") {
+		status = "signed";
+	} else if (rawStatus === "rejected_by_egisz" || rawStatus === "rejected_by_remd") {
+		status = "rejected_by_egisz";
+	} else if (rawStatus === "error" || rawStatus === "failed") {
+		status = "error";
+	} else {
+		status = "draft";
+	}
+
+	const createdAt = String(item.createdAt || new Date().toISOString());
+	const updatedAt = String(item.updatedAt || createdAt);
+	const encounterDate = String(item.encounterDate || createdAt.slice(0, 10));
+
+	let validationError: RemdValidationError | undefined = undefined;
+	if (item.validationError && typeof item.validationError === "object") {
+		validationError = item.validationError as RemdValidationError;
+	} else if (item.lastErrorMessage || item.lastErrorClass || status === "error" || status === "rejected_by_egisz") {
+		const errCode = String(item.lastErrorClass || "ERR_REMD_TRANSMISSION");
+		const isFrmr = errCode.toLowerCase().includes("frmr");
+		const is804n = errCode.toLowerCase().includes("804n");
+		validationError = {
+			errorCode: errCode,
+			errorCategory: isFrmr ? "frmr" : is804n ? "804n" : "schema",
+			errorMessage: String(item.lastErrorMessage || "Ошибка валидации документа в РЭМД ЕГИСЗ"),
+			actionableHint: isFrmr
+				? "Проверьте СНИЛС врача в ФРМР Минздрава РФ и справочнике сотрудников клиники."
+				: is804n
+				? "Укажите номенклатурный код медицинской услуги по Приказу 804н."
+				: "Исправьте клинические данные и повторите отправку.",
+			occurredAt: updatedAt,
+		};
+	}
+
+	let registrationInfo: RemdRegistrationInfo | undefined = undefined;
+	if (item.registrationInfo && typeof item.registrationInfo === "object") {
+		registrationInfo = item.registrationInfo as RemdRegistrationInfo;
+	} else if (item.remdDocumentId || item.remdTransactionId || status === "registered") {
+		registrationInfo = {
+			remdDocId: String(item.remdDocumentId || id),
+			regNumber: String(item.remdTransactionId || item.remdDocumentId || "РЭМД-77-ПРИНЯТО"),
+			registeredAt: updatedAt,
+			registryOid: "1.2.643.5.1.13.13.11.1527",
+			documentHashGost: String(item.payloadHashSha256 || ""),
+			channel: "EGISZ_INTEGRATION_GATEWAY_V3",
+		};
+	}
+
+	let doctorSignature: GostSignatureInfo | undefined = undefined;
+	if (item.doctorSignature && typeof item.doctorSignature === "object") {
+		doctorSignature = item.doctorSignature as GostSignatureInfo;
+	} else if (item.doctorSignaturePkcs7) {
+		doctorSignature = {
+			signatureBase64: String(item.doctorSignaturePkcs7),
+			certificateSerialNumber: String(item.doctorCertSerial || "00E4A28B12345678"),
+			certificateSubject: String(item.doctorCertSubject || doctorName),
+			signedAt: String(item.doctorSignedAt || new Date().toISOString()),
+			algorithmOid: "1.2.643.7.1.1.1.1",
+			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+		};
+	}
+
+	let moSignature: GostSignatureInfo | undefined = undefined;
+	if (item.moSignature && typeof item.moSignature === "object") {
+		moSignature = item.moSignature as GostSignatureInfo;
+	} else if (item.moSignaturePkcs7) {
+		moSignature = {
+			signatureBase64: String(item.moSignaturePkcs7),
+			certificateSerialNumber: String(item.moCertSerial || ""),
+			certificateSubject: String(item.moCertSubject || "Клиника"),
+			signedAt: String(item.moSignedAt || new Date().toISOString()),
+			algorithmOid: "1.2.643.7.1.1.1.1",
+			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+		};
+	}
+
+	return {
+		id,
+		documentUuid: String(item.documentUuid || item.remdDocumentId || item.dedupeKey || id),
+		docTypeCode,
+		docTypeName: String(item.docTypeName || `СЭМД ${docTypeCode}`),
+		createdAt,
+		updatedAt,
+		encounterDate,
+		patient: {
+			id: String(rawPatient.id || item.patientId || "patient"),
+			fullName: patientName,
+			birthDate: String(rawPatient.birthDate || item.patientBirthDate || "1990-01-01"),
+			snils: rawPatient.snils ? String(rawPatient.snils) : undefined,
+			cardNumber: String(rawPatient.cardNumber || "043/у"),
+			polisOms: rawPatient.polisOms ? String(rawPatient.polisOms) : undefined,
+		},
+		doctor: {
+			id: String(rawDoctor.id || item.doctorId || "doctor"),
+			fullName: doctorName,
+			snils: String(rawDoctor.snils || item.doctorSnils || ""),
+			position: String(rawDoctor.position || item.doctorRole || "Врач-стоматолог"),
+			specialty: String(rawDoctor.specialty || "Стоматология терапевтическая"),
+		},
+		clinic: {
+			name: String(rawClinic.name || clinicObj.clinicName || "Стоматологический Центр ДЕНТЕ"),
+			oid: String(rawClinic.oid || clinicObj.clinicOid || "1.2.643.5.1.13.13.12.2.77.10425"),
+			ogrn: String(rawClinic.ogrn || clinicObj.clinicOgrn || "1157746123457"),
+			inn: String(rawClinic.inn || clinicObj.clinicInn || "7701234560"),
+		},
+		status,
+		doctorSignature,
+		moSignature,
+		clinicSignature: moSignature,
+		cdaPayload: (item.cdaPayload && typeof item.cdaPayload === "object"
+			? (item.cdaPayload as EgiszDentalCdaPayload)
+			: undefined),
+		registrationInfo,
+		validationError,
+	};
+}
+
+/**
+ * Creates a standalone clean test fixture record for unit tests without polluting production state.
+ */
+export function createFixtureRemdRecord(
+	overrides?: Partial<RemdDocumentRecord>,
+): RemdDocumentRecord {
+	return {
+		id: "REMD-FIXTURE-001",
+		documentUuid: "DOC-105-2026-FIXTURE",
 		docTypeCode: "105",
 		docTypeName: "Протокол консультации стоматолога (СЭМД 105)",
 		createdAt: "2026-08-28T09:15:00+03:00",
 		updatedAt: "2026-08-28T09:30:00+03:00",
 		encounterDate: "2026-08-28",
 		patient: {
-			id: "PAT-001",
-			fullName: "Соколова Анна Владимировна",
+			id: "PAT-FIXTURE",
+			fullName: "Тестовый Пациент",
 			birthDate: "1988-06-14",
 			snils: "123-456-789 64",
 			cardNumber: "К-2026/0841",
-			polisOms: "7754123456789012",
 		},
 		doctor: {
-			id: "DOC-001",
-			fullName: "Иванов Сергей Владимирович",
+			id: "DOC-FIXTURE",
+			fullName: "Тестовый Врач",
 			snils: "123-456-789 64",
 			position: "Врач-стоматолог-терапевт",
 			specialty: "Стоматология терапевтическая",
 		},
 		clinic: {
-			name: 'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
+			name: 'ООО "Стоматологический Центр ДЕНТЕ"',
 			oid: "1.2.643.5.1.13.13.12.2.77.10425",
 			ogrn: "1157746123457",
 			inn: "7701234560",
 		},
 		status: "registered",
-		doctorSignature: {
-			signatureBase64: "U0VNRF8xMDVfRE9DVE9SX1NJR05BVFVSRQ==",
-			certificateSerialNumber: "00E4A28B12345678",
-			certificateSubject: "CN=Иванов Сергей Владимирович, SNILS=123-456-789 64, O=ООО \"Стоматологический Центр ДЕНТЕ Премиум\", C=RU",
-			certificateIssuer: "CN=Головной Удостоверяющий Центр Минцифры РФ, C=RU",
-			validFrom: "2026-01-01T00:00:00.000Z",
-			validTo: "2027-12-31T23:59:59.000Z",
-			signedAt: "2026-08-28T09:30:00+03:00",
-			algorithmOid: "1.2.643.7.1.1.1.1",
-			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
-		},
-		moSignature: {
-			signatureBase64: "U0VNRF8xMDVfTU9fU0lHTkFUVVJFCg==",
-			certificateSerialNumber: "00B17F9A11577461",
-			certificateSubject: "CN=ООО \"Стоматологический Центр ДЕНТЕ Премиум\", OGRN=1157746123457, C=RU",
-			certificateIssuer: "CN=Федеральное Казначейство, C=RU",
-			validFrom: "2026-01-01T00:00:00.000Z",
-			validTo: "2027-12-31T23:59:59.000Z",
-			signedAt: "2026-08-28T09:31:00+03:00",
-			algorithmOid: "1.2.643.7.1.1.1.1",
-			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
-		},
-		cdaPayload: SAMPLE_DENTAL_SEMD_105_PRESET,
-		registrationInfo: {
-			remdDocId: "REMD-2026-08419-RU",
-			regNumber: "РЭМД-77-2026-99120",
-			registeredAt: "2026-08-28T09:32:15+03:00",
-			registryOid: "1.2.643.5.1.13.13.11.1527",
-			documentHashGost: "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08",
-			channel: "EGISZ_INTEGRATION_GATEWAY_V3",
-		},
-	},
-	{
-		id: "REMD-REC-002",
-		documentUuid: "DOC-303-2026-08422",
-		docTypeCode: "303",
-		docTypeName: "Протокол стоматологического лечения (СЭМД 303)",
-		createdAt: "2026-08-28T10:45:00+03:00",
-		updatedAt: "2026-08-28T11:00:00+03:00",
-		encounterDate: "2026-08-28",
-		patient: {
-			id: "PAT-002",
-			fullName: "Пациент клиники",
-			birthDate: "1979-11-23",
-			snils: "112-233-445 95",
-			cardNumber: "К-2026/0842",
-			polisOms: "7754987654321098",
-		},
-		doctor: {
-			id: "DOC-002",
-			fullName: "Смирнова Елена Александровна",
-			snils: "112-233-445 00",
-			position: "Врач-стоматолог-хирург",
-			specialty: "Стоматология хирургическая",
-		},
-		clinic: {
-			name: 'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
-			oid: "1.2.643.5.1.13.13.12.2.77.10425",
-			ogrn: "1157746123457",
-			inn: "7701234560",
-		},
-		status: "error",
-		doctorSignature: undefined,
-		cdaPayload: {
-			...SAMPLE_DENTAL_SEMD_105_PRESET,
-			docTypeCode: "303",
-			documentUuid: "DOC-303-2026-08422",
-			patient: {
-				...SAMPLE_043U_PATIENT_PRESET,
-				patientFullName: "Пациент клиники",
-				patientSnils: "112-233-445 95",
-				cardNumber: "К-2026/0842",
-			},
-			doctor: {
-				...DEFAULT_EGISZ_DOCTOR_PRESET,
-				doctorFullName: "Смирнова Елена Александровна",
-				doctorSnils: "112-233-445 00",
-				doctorPosition: "Врач-стоматолог-хирург",
-			},
-		},
-		validationError: {
-			errorCode: "ERR_FRMR_SNILS_NOT_FOUND",
-			errorCategory: "frmr",
-			errorMessage: "СНИЛС врача (112-233-445 00) не найден в Федеральном регистре медицинских работников (ФРМР).",
-			actionableHint: "1. Проверьте правильность ввода СНИЛС врача в справочнике сотрудников клиники. 2. Убедитесь, что сотрудник зарегистрирован в регистре ФРМР Минздрава РФ с актуальным профилем. 3. Исправьте данные врача и повторите подписание.",
-			occurredAt: "2026-08-28T11:02:10+03:00",
-		},
-	},
-	{
-		id: "REMD-REC-003",
-		documentUuid: "DOC-303-2026-08425",
-		docTypeCode: "303",
-		docTypeName: "Протокол стоматологического лечения (СЭМД 303)",
-		createdAt: "2026-08-28T12:00:00+03:00",
-		updatedAt: "2026-08-28T12:15:00+03:00",
-		encounterDate: "2026-08-28",
-		patient: {
-			id: "PAT-003",
-			fullName: "Кузнецов Михаил Петрович",
-			birthDate: "1992-03-05",
-			snils: "145-678-901 23",
-			cardNumber: "К-2026/0845",
-			polisOms: "7754332211009988",
-		},
-		doctor: {
-			id: "DOC-001",
-			fullName: "Иванов Сергей Владимирович",
-			snils: "123-456-789 64",
-			position: "Врач-стоматолог-терапевт",
-			specialty: "Стоматология терапевтическая",
-		},
-		clinic: {
-			name: 'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
-			oid: "1.2.643.5.1.13.13.12.2.77.10425",
-			ogrn: "1157746123457",
-			inn: "7701234560",
-		},
-		status: "signed",
-		doctorSignature: {
-			signatureBase64: "U0VNRF8zMDNfRE9DVE9SX1NJR05BVFVSRQ==",
-			certificateSerialNumber: "00E4A28B12345678",
-			certificateSubject: "CN=Иванов Сергей Владимирович, SNILS=123-456-789 64, O=ООО \"Стоматологический Центр ДЕНТЕ Премиум\", C=RU",
-			certificateIssuer: "CN=Головной Удостоверяющий Центр Минцифры РФ, C=RU",
-			validFrom: "2026-01-01T00:00:00.000Z",
-			validTo: "2027-12-31T23:59:59.000Z",
-			signedAt: "2026-08-28T12:10:00+03:00",
-			algorithmOid: "1.2.643.7.1.1.1.1",
-			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
-		},
-		cdaPayload: {
-			...SAMPLE_DENTAL_SEMD_105_PRESET,
-			docTypeCode: "303",
-			documentUuid: "DOC-303-2026-08425",
-			patient: {
-				...SAMPLE_043U_PATIENT_PRESET,
-				patientFullName: "Кузнецов Михаил Петрович",
-				cardNumber: "К-2026/0845",
-			},
-		},
-	},
-	{
-		id: "REMD-REC-004",
-		documentUuid: "DOC-302-2026-08428",
-		docTypeCode: "302",
-		docTypeName: "Консультация стоматолога (СЭМД 302)",
-		createdAt: "2026-08-28T13:30:00+03:00",
-		updatedAt: "2026-08-28T13:40:00+03:00",
-		encounterDate: "2026-08-28",
-		patient: {
-			id: "PAT-004",
-			fullName: "Морозова Ольга Николаевна",
-			birthDate: "1985-09-17",
-			snils: "156-789-012 34",
-			cardNumber: "К-2026/0848",
-		},
-		doctor: {
-			id: "DOC-002",
-			fullName: "Смирнова Елена Александровна",
-			snils: "123-456-789 64",
-			position: "Врач-стоматолог-ортопед",
-			specialty: "Стоматология ортопедическая",
-		},
-		clinic: {
-			name: 'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
-			oid: "1.2.643.5.1.13.13.12.2.77.10425",
-			ogrn: "1157746123457",
-			inn: "7701234560",
-		},
-		status: "sent",
-		doctorSignature: {
-			signatureBase64: "U0VNRF8zMDJfRE9DVE9SX1NJR05BVFVSRQ==",
-			certificateSerialNumber: "00E4A28B11223344",
-			certificateSubject: "CN=Смирнова Елена Александровна, SNILS=123-456-789 64, O=ООО \"Стоматологический Центр ДЕНТЕ Премиум\", C=RU",
-			certificateIssuer: "CN=Головной Удостоверяющий Центр Минцифры РФ, C=RU",
-			validFrom: "2026-01-01T00:00:00.000Z",
-			validTo: "2027-12-31T23:59:59.000Z",
-			signedAt: "2026-08-28T13:38:00+03:00",
-			algorithmOid: "1.2.643.7.1.1.1.1",
-			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
-		},
-		moSignature: {
-			signatureBase64: "U0VNRF8zMDJfTU9fU0lHTkFUVVJFCg==",
-			certificateSerialNumber: "00B17F9A11577461",
-			certificateSubject: "CN=ООО \"Стоматологический Центр ДЕНТЕ Премиум\", OGRN=1157746123457, C=RU",
-			certificateIssuer: "CN=Федеральное Казначейство, C=RU",
-			validFrom: "2026-01-01T00:00:00.000Z",
-			validTo: "2027-12-31T23:59:59.000Z",
-			signedAt: "2026-08-28T13:39:00+03:00",
-			algorithmOid: "1.2.643.7.1.1.1.1",
-			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
-		},
-		cdaPayload: {
-			...SAMPLE_DENTAL_SEMD_105_PRESET,
-			docTypeCode: "302",
-			documentUuid: "DOC-302-2026-08428",
-			patient: {
-				...SAMPLE_043U_PATIENT_PRESET,
-				patientFullName: "Морозова Ольга Николаевна",
-				cardNumber: "К-2026/0848",
-			},
-		},
-	},
-	{
-		id: "REMD-REC-005",
-		documentUuid: "DOC-102-2026-08431",
-		docTypeCode: "102",
-		docTypeName: "Амбулаторный стоматологический протокол (СЭМД 102)",
-		createdAt: "2026-08-28T14:10:00+03:00",
-		updatedAt: "2026-08-28T14:10:00+03:00",
-		encounterDate: "2026-08-28",
-		patient: {
-			id: "PAT-005",
-			fullName: "Васильев Дмитрий Андреевич",
-			birthDate: "1995-12-01",
-			snils: "167-890-123 45",
-			cardNumber: "К-2026/0851",
-		},
-		doctor: {
-			id: "DOC-001",
-			fullName: "Иванов Сергей Владимирович",
-			snils: "123-456-789 64",
-			position: "Врач-стоматолог-терапевт",
-			specialty: "Стоматология терапевтическая",
-		},
-		clinic: {
-			name: 'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
-			oid: "1.2.643.5.1.13.13.12.2.77.10425",
-			ogrn: "1157746123457",
-			inn: "7701234560",
-		},
-		status: "draft",
-		cdaPayload: {
-			...SAMPLE_DENTAL_SEMD_105_PRESET,
-			docTypeCode: "102",
-			documentUuid: "DOC-102-2026-08431",
-			patient: {
-				...SAMPLE_043U_PATIENT_PRESET,
-				patientFullName: "Васильев Дмитрий Андреевич",
-				cardNumber: "К-2026/0851",
-			},
-		},
-	},
-	{
-		id: "REMD-REC-006",
-		documentUuid: "DOC-303-2026-08435",
-		docTypeCode: "303",
-		docTypeName: "Протокол стоматологического лечения (СЭМД 303)",
-		createdAt: "2026-08-27T16:00:00+03:00",
-		updatedAt: "2026-08-27T16:20:00+03:00",
-		encounterDate: "2026-08-27",
-		patient: {
-			id: "PAT-006",
-			fullName: "Попова Татьяна Сергеевна",
-			birthDate: "2001-07-29",
-			snils: "178-901-234 56",
-			cardNumber: "К-2026/0835",
-		},
-		doctor: {
-			id: "DOC-002",
-			fullName: "Смирнова Елена Александровна",
-			snils: "123-456-789 64",
-			position: "Врач-стоматолог-терапевт",
-			specialty: "Стоматология терапевтическая",
-		},
-		clinic: {
-			name: 'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
-			oid: "1.2.643.5.1.13.13.12.2.77.10425",
-			ogrn: "1157746123457",
-			inn: "7701234560",
-		},
-		status: "error",
-		doctorSignature: undefined,
-		cdaPayload: {
-			...SAMPLE_DENTAL_SEMD_105_PRESET,
-			docTypeCode: "303",
-			documentUuid: "DOC-303-2026-08435",
-			patient: {
-				...SAMPLE_043U_PATIENT_PRESET,
-				patientFullName: "Попова Татьяна Сергеевна",
-				cardNumber: "К-2026/0835",
-			},
-			procedures: [],
-		},
-		validationError: {
-			errorCode: "ERR_804N_SERVICE_CODE_MISSING",
-			errorCategory: "804n",
-			errorMessage: "Для протокола стоматологического вмешательства (СЭМД 303) обязателен минимум один код услуги по Номенклатуре 804н.",
-			actionableHint: "1. Откройте протокол лечения пациента. 2. Добавьте оказанную номенклатурную услугу (например: A16.07.002.001 - Восстановление зуба пломбой). 3. Переподпишите документ УКЭП.",
-			occurredAt: "2026-08-27T16:22:45+03:00",
-		},
-	},
-	{
-		id: "REMD-REC-007",
-		documentUuid: "DOC-105-2026-08438",
-		docTypeCode: "105",
-		docTypeName: "Протокол консультации стоматолога (СЭМД 105)",
-		createdAt: "2026-08-27T11:20:00+03:00",
-		updatedAt: "2026-08-27T11:40:00+03:00",
-		encounterDate: "2026-08-27",
-		patient: {
-			id: "PAT-007",
-			fullName: "Григорьев Артем Павлович",
-			birthDate: "1983-04-19",
-			snils: "189-012-345 67",
-			cardNumber: "К-2026/0838",
-			polisOms: "7754445566778899",
-		},
-		doctor: {
-			id: "DOC-001",
-			fullName: "Иванов Сергей Владимирович",
-			snils: "123-456-789 64",
-			position: "Врач-стоматолог-терапевт",
-			specialty: "Стоматология терапевтическая",
-		},
-		clinic: {
-			name: 'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
-			oid: "1.2.643.5.1.13.13.12.2.77.10425",
-			ogrn: "1157746123457",
-			inn: "7701234560",
-		},
-		status: "registered",
-		doctorSignature: {
-			signatureBase64: "U0VNRF8xMDVfRE9DVE9SX1NJR05BVFVSRQ==",
-			certificateSerialNumber: "00E4A28B12345678",
-			certificateSubject: "CN=Иванов Сергей Владимирович, SNILS=123-456-789 64, O=ООО \"Стоматологический Центр ДЕНТЕ Премиум\", C=RU",
-			certificateIssuer: "CN=Головной Удостоверяющий Центр Минцифры РФ, C=RU",
-			validFrom: "2026-01-01T00:00:00.000Z",
-			validTo: "2027-12-31T23:59:59.000Z",
-			signedAt: "2026-08-27T11:39:00+03:00",
-			algorithmOid: "1.2.643.7.1.1.1.1",
-			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
-		},
-		moSignature: {
-			signatureBase64: "U0VNRF8xMDVfTU9fU0lHTkFUVVJFCg==",
-			certificateSerialNumber: "00B17F9A11577461",
-			certificateSubject: "CN=ООО \"Стоматологический Центр ДЕНТЕ Премиум\", OGRN=1157746123457, C=RU",
-			certificateIssuer: "CN=Федеральное Казначейство, C=RU",
-			validFrom: "2026-01-01T00:00:00.000Z",
-			validTo: "2027-12-31T23:59:59.000Z",
-			signedAt: "2026-08-27T11:40:00+03:00",
-			algorithmOid: "1.2.643.7.1.1.1.1",
-			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
-		},
-		cdaPayload: {
-			...SAMPLE_DENTAL_SEMD_105_PRESET,
-			docTypeCode: "105",
-			documentUuid: "DOC-105-2026-08438",
-			patient: {
-				...SAMPLE_043U_PATIENT_PRESET,
-				patientFullName: "Григорьев Артем Павлович",
-				cardNumber: "К-2026/0838",
-			},
-		},
-		registrationInfo: {
-			remdDocId: "REMD-2026-08438-RU",
-			regNumber: "РЭМД-77-2026-99411",
-			registeredAt: "2026-08-27T11:42:00+03:00",
-			registryOid: "1.2.643.5.1.13.13.11.1527",
-			documentHashGost: "A1B2C3D4E5F67890123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0",
-			channel: "EGISZ_INTEGRATION_GATEWAY_V3",
-		},
-	},
-];
+		...overrides,
+	};
+}

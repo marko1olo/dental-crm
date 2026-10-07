@@ -13,7 +13,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { strToU8, zipSync } from "fflate";
 import { EgiszRemdHubModal } from "../EgiszRemdHubModal";
 import { EgiszJournalTab } from "../tabs/EgiszJournalTab";
-import { SAMPLE_REMD_JOURNAL_RECORDS } from "../egiszJournalData";
+import {
+	createFixtureRemdRecord,
+	SAMPLE_REMD_JOURNAL_RECORDS,
+} from "../egiszJournalData";
 import {
 	DEFAULT_EGISZ_CLINIC_PRESET,
 	DEFAULT_EGISZ_DOCTOR_PRESET,
@@ -195,11 +198,39 @@ describe("2. EgiszRemdHubModal — Documents Journal (REMD Document Registry and
 	});
 
 	it("2.3 displays document records with patient, doctor, status and action buttons", () => {
+		const fixtureRecord = createFixtureRemdRecord({
+			id: "REMD-REC-001",
+			patient: {
+				id: "P1",
+				fullName: "Соколова Анна Владимировна",
+				birthDate: "1989-05-12",
+				snils: "112-233-445 95",
+				cardNumber: "043/у-104",
+			},
+			doctor: {
+				id: "D1",
+				fullName: "Иванов Сергей Владимирович",
+				snils: "123-456-789 64",
+				position: "Врач-стоматолог-терапевт",
+				specialty: "Стоматология терапевтическая",
+			},
+			registrationInfo: {
+				remdDocId: "DOC-001",
+				regNumber: "РЭМД-77-2026-99120",
+				registeredAt: "2026-08-28T10:00:00Z",
+				registryOid: "1.2.643.5.1.13.13.11.1527",
+				documentHashGost: "gost-hash",
+				channel: "EGISZ_INTEGRATION_GATEWAY_V3",
+			},
+			status: "registered",
+		});
+
 		const html = renderToStaticMarkup(
 			createElement(EgiszRemdHubModal, {
 				isOpen: true,
 				onClose: () => {},
 				initialTab: "journal",
+				initialJournalRecords: [fixtureRecord],
 			}),
 		);
 
@@ -229,6 +260,18 @@ describe("2. EgiszRemdHubModal — Documents Journal (REMD Document Registry and
 	});
 
 	it("2.4 displays actionable remediation instructions for validation errors (e.g. FRMR SNILS missing)", () => {
+		const errorRecord = createFixtureRemdRecord({
+			id: "REMD-REC-002",
+			status: "error",
+			validationError: {
+				errorCode: "ERR_FRMR_SNILS_NOT_FOUND",
+				errorCategory: "frmr",
+				errorMessage: "СНИЛС врача не найден в Федеральном регистре медицинских работников (ФРМР)",
+				actionableHint: "Проверьте правильность ввода СНИЛС врача в карточке сотрудника и статус синхронизации с ФРМР.",
+				occurredAt: "2026-08-28T10:00:00Z",
+			},
+		});
+
 		const html = renderToStaticMarkup(
 			createElement(EgiszRemdHubModal, {
 				isOpen: true,
@@ -236,6 +279,7 @@ describe("2. EgiszRemdHubModal — Documents Journal (REMD Document Registry and
 				initialTab: "journal",
 				initialJournalFilter: "error",
 				initialJournalSelectedId: "REMD-REC-002",
+				initialJournalRecords: [errorRecord],
 			}),
 		);
 
@@ -254,8 +298,24 @@ describe("2. EgiszRemdHubModal — Documents Journal (REMD Document Registry and
 	});
 
 	it("2.5 generates valid single-document and batch ZIP archives with XML and .p7s signatures", () => {
-		const record = SAMPLE_REMD_JOURNAL_RECORDS[0];
-		assert.ok(record, "Sample record exists");
+		const record = createFixtureRemdRecord({
+			doctorSignature: {
+				signatureBase64: "MIIBagYJKoZIhvcNAQcCoIIBWzCCAVcCAQExDzANBglghkgBZQMEAgEFADALBgkqhkiG9w0BAwGgggEIMI...",
+				certificateSerialNumber: "01D8A9F3000200004567",
+				certificateSubject: "Иванов С.В.",
+				signedAt: "2026-08-28T10:00:00Z",
+				algorithmOid: "1.2.643.7.1.1.1.1",
+				digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+			},
+			registrationInfo: {
+				remdDocId: "REMD-77-2026-99120",
+				regNumber: "РЭМД-77-2026-99120",
+				registeredAt: "2026-08-28T10:00:00Z",
+				registryOid: "1.2.643.5.1.13.13.11.1527",
+				documentHashGost: "c4ca4238a0b923820dcc509a6f75849b",
+				channel: "EGISZ_INTEGRATION_GATEWAY_V3",
+			},
+		});
 
 		const payload = record.cdaPayload || SAMPLE_DENTAL_SEMD_105_PRESET;
 		const xml = generateEgiszDentalCdaXml({
@@ -286,7 +346,7 @@ describe("2. EgiszRemdHubModal — Documents Journal (REMD Document Registry and
 	});
 
 	it("2.6 honest status badges correctly label accepted_by_egisz, rejected_by_egisz, signed, and sent without masquerading as draft", () => {
-		const baseRec = SAMPLE_REMD_JOURNAL_RECORDS[0]!;
+		const baseRec = createFixtureRemdRecord({ id: "T0" });
 		const testRecords = [
 			{ ...baseRec, id: "T1", status: "accepted_by_egisz" as const },
 			{ ...baseRec, id: "T2", status: "rejected_by_egisz" as const },
@@ -317,5 +377,21 @@ describe("2. EgiszRemdHubModal — Documents Journal (REMD Document Registry and
 		assert.ok(html.includes("Зарегистрирован"), "Contains honest label 'Зарегистрирован'");
 		assert.ok(html.includes("Ошибка"), "Contains honest label 'Ошибка'");
 		assert.ok(html.includes("Черновик"), "Contains honest label 'Черновик'");
+	});
+
+	it("2.7 renders honest empty state in journal when records list is empty (Mandate 8c Zero Mocks)", () => {
+		const html = renderToStaticMarkup(
+			createElement(EgiszRemdHubModal, {
+				isOpen: true,
+				onClose: () => {},
+				initialTab: "journal",
+				initialJournalRecords: [],
+			}),
+		);
+
+		assert.ok(
+			html.includes("В базе данных нет документов РЭМД"),
+			"Displays honest empty state when 0 records exist in DB",
+		);
 	});
 });

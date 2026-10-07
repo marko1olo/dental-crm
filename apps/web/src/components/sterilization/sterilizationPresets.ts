@@ -9,6 +9,8 @@
  */
 
 import type { ParsedKraftBarcode } from "@dental/shared";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import {
 	KRAFT_PACKAGE_SIZES,
 	type KraftPackageSizeDefinition,
@@ -68,6 +70,16 @@ function getDynamicSampleBarcodes(): readonly SampleKraftBarcode[] {
 }
 
 export const SAMPLE_TEST_BARCODES: readonly SampleKraftBarcode[] = getDynamicSampleBarcodes();
+
+/**
+ * Получение тестовых крафт-штрихкодов со строгой изоляцией от боевого контура (Mandate 8c Zero Mocks).
+ * В боевом режиме (production) возвращает пустой массив (0% моков), в демо — образцы.
+ */
+export function getSampleKraftBarcodes(
+	isDemo = isDemoShowcaseMode(),
+): readonly SampleKraftBarcode[] {
+	return isDemo ? SAMPLE_TEST_BARCODES : [];
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. ДАННЫЕ И ТИПЫ ДЛЯ ЖУРНАЛА АВТОКЛАВИРОВАНИЯ (ФОРМА № 257/У)
@@ -786,3 +798,135 @@ export function createQuickDailyShiftPsoRecords(
 		},
 	];
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8. ЖИВОЕ СОХРАНЕНИЕ В FASTIFY БЭКЕНД И POSTGRESQL 18 (ZERO MOCKS MANDATE 8C/8F)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Сохранение цикла автоклавирования в боевую базу данных PostgreSQL через Fastify API.
+ */
+export async function saveQuickAutoclaveCycleToApi(
+	cycle: AutoclaveCycleRecord,
+): Promise<{ ok: boolean; id?: string; error?: string }> {
+	try {
+		const payload = {
+			deviceName: cycle.autoclaveModel,
+			autoclaveId: cycle.autoclaveCode,
+			cycleNumber: cycle.cycleNumber,
+			temperatureCelsius: cycle.temperatureC,
+			pressureBar: cycle.pressureBar,
+			durationMin: cycle.exposureMinutes,
+			itemsDescription: cycle.loadDescription,
+			packagingType: cycle.kraftSize === "150x250" ? "kraft_heat_sealed" : "kraft_self_adhesive",
+			indicatorType: cycle.indicatorClass === 5 ? "class5_integrating" : "class4_multivariable",
+			passedIndicator: cycle.batchVerdict === "ГОДНА",
+			operatorName: cycle.operatorName,
+			notes: `${cycle.programName || ""} • ${cycle.indicatorPointsStatus || ""}`.trim(),
+		};
+
+		const res = await fetch("/api/registers/sterilization", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify(payload),
+		});
+
+		if (!res.ok) {
+			const errBody = await res.json().catch(() => null);
+			return {
+				ok: false,
+				error: errBody?.message || `Ошибка сохранения цикла автоклава (${res.status})`,
+			};
+		}
+
+		const data = await res.json();
+		return { ok: true, id: data?.id };
+	} catch (err: unknown) {
+		const msg = err instanceof Error ? err.message : "Сетевой сбой при сохранении цикла";
+		return { ok: false, error: msg };
+	}
+}
+
+/**
+ * Сохранение контроля качества ПСО (Форма 366/у) в боевую базу данных PostgreSQL.
+ */
+export async function saveQuickPsoRecordToApi(
+	pso: PsoQualityRecord,
+): Promise<{ ok: boolean; id?: string; error?: string }> {
+	try {
+		const payload = {
+			instrumentName: pso.instrumentName,
+			batchItemCount: pso.batchItemCount,
+			testedSampleCount: pso.testedSampleCount,
+			detergentBrand: pso.detergentBrand,
+			azopyramPassed: pso.azopyramResult === "negative",
+			phenolphthaleinPassed: pso.phenolphthaleinResult === "negative",
+			notes: `${pso.notes || ""} • [СанПиН 3.3686-21: ${pso.operatorName}]`.trim(),
+		};
+
+		const res = await fetch("/api/registers/pso", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify(payload),
+		});
+
+		if (!res.ok) {
+			const errBody = await res.json().catch(() => null);
+			return {
+				ok: false,
+				error: errBody?.message || `Ошибка сохранения пробы ПСО (${res.status})`,
+			};
+		}
+
+		const data = await res.json();
+		return { ok: true, id: data?.id };
+	} catch (err: unknown) {
+		const msg = err instanceof Error ? err.message : "Сетевой сбой при сохранении пробы ПСО";
+		return { ok: false, error: msg };
+	}
+}
+
+/**
+ * Получение живого списка циклов стерилизации из базы данных Fastify/PostgreSQL.
+ */
+export async function fetchSterilizationLogsFromApi(): Promise<any[]> {
+	try {
+		const res = await fetch("/api/registers/sterilization", {
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+		});
+		if (!res.ok) return [];
+		const data = await res.json();
+		return Array.isArray(data) ? data : [];
+	} catch {
+		return [];
+	}
+}
+
+/**
+ * Получение живого списка проб ПСО из базы данных Fastify/PostgreSQL.
+ */
+export async function fetchPsoLogsFromApi(): Promise<any[]> {
+	try {
+		const res = await fetch("/api/registers/pso", {
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+		});
+		if (!res.ok) return [];
+		const data = await res.json();
+		return Array.isArray(data) ? data : [];
+	} catch {
+		return [];
+	}
+}
+

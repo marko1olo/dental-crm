@@ -5,6 +5,7 @@ import {
 	Calendar,
 	Check,
 	ChevronDown,
+	Clock,
 	Printer,
 	Redo2,
 	ShieldCheck,
@@ -382,6 +383,40 @@ export function EmkToolbar({
 									<span>Печать Формы 043/у</span>
 								</button>
 							)}
+
+							<div className="h-px bg-[var(--line)] my-1" />
+
+							<button
+								type="button"
+								onClick={() => {
+									handleUndo();
+									setIsExtraMenuOpen(false);
+								}}
+								disabled={!canUndo}
+								className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center justify-between cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+							>
+								<span className="flex items-center gap-2">
+									<Undo2 size={13} className="shrink-0" />
+									<span>Отменить ввод</span>
+								</span>
+								<kbd className="text-[10px] font-mono text-[var(--muted)]">Ctrl+Z</kbd>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => {
+									handleRedo();
+									setIsExtraMenuOpen(false);
+								}}
+								disabled={!canRedo}
+								className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center justify-between cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+							>
+								<span className="flex items-center gap-2">
+									<Redo2 size={13} className="shrink-0" />
+									<span>Вернуть ввод</span>
+								</span>
+								<kbd className="text-[10px] font-mono text-[var(--muted)]">Ctrl+Y</kbd>
+							</button>
 						</div>,
 						document.body
 					)}
@@ -410,7 +445,7 @@ export function EmkToolbar({
 					</button>
 				</div>
 
-				{/* ПРАВАЯ ГРУППА: Специализированный бланк, Отмена/Повтор, След. визит, Статус автосохранения */}
+				{/* ПРАВАЯ ГРУППА: Специализированный бланк, След. визит, Статус автосохранения (<= 7 элементов в ряду) */}
 				<div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
 					{/* Интегрированный чип Фокуса специальности / Бланка */}
 					{specialtyFocusNode && (
@@ -418,46 +453,6 @@ export function EmkToolbar({
 							{specialtyFocusNode}
 						</div>
 					)}
-
-					{/* Панель Undo / Redo */}
-					<div className="flex items-center gap-1 shrink-0" data-testid="emk-undo-redo-group">
-						<button
-							type="button"
-							data-testid="btn-visit-undo"
-							onClick={() => {
-								const ok = handleUndo();
-								if (ok) showToast("Действие отменено (Undo)", "info", 2000);
-							}}
-							disabled={!canUndo}
-							className={`h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg text-[12.5px] font-medium border transition-all inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap touch-manipulation shadow-2xs ${
-								canUndo
-									? "border-[var(--line-subtle)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] hover:text-[var(--teal-ink,var(--teal))] cursor-pointer active:scale-95"
-									: "border border-[var(--line-subtle)]/40 bg-[var(--paper)]/30 text-[var(--muted)]/50 cursor-not-allowed"
-							}`}
-							title="Отменить последнее действие (Ctrl+Z)"
-							aria-label="Отменить последнее действие в приёме"
-						>
-							<Undo2 size={13} className={`shrink-0 ${canUndo ? "text-amber-600 dark:text-amber-400" : "text-[var(--muted)]/50"}`} />
-							<span className="hidden xl:inline">Отменить</span>
-						</button>
-
-						{canRedo && (
-							<button
-								type="button"
-								data-testid="btn-visit-redo"
-								onClick={() => {
-									const ok = handleRedo();
-									if (ok) showToast("Действие возвращено (Redo)", "info", 2000);
-								}}
-								className="h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg text-[12.5px] font-medium border border-[var(--line-subtle)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] hover:text-[var(--teal-ink,var(--teal))] transition-all inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap shadow-2xs cursor-pointer active:scale-95 touch-manipulation"
-								title="Повторить отмененное действие (Ctrl+Y)"
-								aria-label="Повторить отмененное действие"
-							>
-								<Redo2 size={13} className="shrink-0 text-blue-500" />
-								<span className="hidden xl:inline">Вернуть</span>
-							</button>
-						)}
-					</div>
 
 					{/* Запись на следующий этап */}
 					<button
@@ -472,33 +467,16 @@ export function EmkToolbar({
 						<span className="sm:hidden">+5д</span>
 					</button>
 
-					{/* Печать Формы 043/у (Мандат 8e) */}
-					{onPrint043 && (
-						<button
-							type="button"
-							onClick={onPrint043}
-							className="h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg text-[12.5px] font-medium border border-[var(--line-subtle)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] hover:text-[var(--teal-ink,var(--teal))] text-[var(--ink)] shadow-2xs transition-all inline-flex items-center gap-1.5 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
-							data-testid="btn-toolbar-print-043u"
-							title="Печать медицинской карты Форма 043/у"
-							aria-label="Печать медицинской карты Форма 043/у"
-						>
-							<Printer size={13} className="shrink-0 text-teal-600 dark:text-teal-400" />
-							<span className="hidden sm:inline">043/у</span>
-						</button>
-					)}
-
-					{/* Статус сохранения (Гарантия отсутствия обрезки текста) */}
+					{/* Статус сохранения (Тихая телеметрия без цветных прыщей) */}
 					<span
-						className={`visit-note-status-badge text-[12px] font-medium h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg border transition-all shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 shadow-2xs ${
-							hasUnsavedChanges
-								? "bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30"
-								: "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line-subtle)]"
-						}`}
+						data-testid="emk-autosave-status-badge"
+						className="visit-note-status-badge text-[12px] font-medium h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg border border-[var(--line-subtle)] bg-[var(--paper)] text-[var(--muted)] transition-all shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 shadow-2xs"
+						title={hasUnsavedChanges ? "В черновике есть изменения (автосохранение активно)" : "Все изменения сохранены"}
 					>
 						{hasUnsavedChanges ? (
 							<>
-								<span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0 animate-pulse" />
-								<span>Есть правки</span>
+								<Clock size={12} className="text-[var(--muted)] shrink-0 opacity-70" />
+								<span>Автосохранение</span>
 							</>
 						) : (
 							<>

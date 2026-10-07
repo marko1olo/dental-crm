@@ -104,7 +104,7 @@ export function VisitPlanStageHandoffBanner({
 		selectedStageKey === appointmentStageTarget.stageNumber,
 	);
 
-	if (!loadedTreatmentPlan || !Array.isArray(loadedTreatmentPlan.items) || loadedTreatmentPlan.items.length === 0) {
+	if (!loadedTreatmentPlan || allPlanItems.length === 0) {
 		return null;
 	}
 
@@ -135,7 +135,7 @@ export function VisitPlanStageHandoffBanner({
 	return (
 		<div
 			data-testid="visit-treatment-plan-handoff-banner"
-			className="my-2 p-3 rounded-xl border border-[var(--teal,#0d9488)]/40 bg-[var(--teal,#0d9488)]/5 flex flex-col gap-2.5 text-xs shadow-2xs"
+			className="my-2 p-3 rounded-xl border border-teal-500/30 bg-teal-500/5 dark:bg-teal-950/30 dark:border-teal-500/30 flex flex-col gap-2.5 text-xs shadow-2xs overflow-x-clip max-w-full box-border"
 			style={style}
 		>
 			{/* Top row: Status info + Primary action */}
@@ -202,31 +202,31 @@ export function VisitPlanStageHandoffBanner({
 					</div>
 				</div>
 
-				{/* Primary action CTA button */}
+				{/* Primary action CTA button (Apple HIG >= 44px touch target) */}
 				<button
 					type="button"
 					data-testid="take-stage-to-visit-btn"
 					onClick={handleExecuteTakeStage}
-					className="h-9 min-h-[36px] md:min-h-[36px] min-w-[44px] px-4 rounded-lg text-xs font-bold text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] cursor-pointer transition-all flex items-center gap-1.5 shadow-2xs active:scale-95 shrink-0"
+					className="primary-button min-h-[44px] h-11 w-full sm:w-auto px-4 rounded-xl text-sm font-bold cursor-pointer transition-all flex items-center justify-center gap-2 shadow-2xs active:scale-95 shrink-0"
 					title="Перенести выбранный этап плана лечения в текущий визит и счет"
 				>
-					<CheckCircle2 size={15} />
+					<CheckCircle2 size={16} />
 					<span>
 						{typeof selectedStageKey === "number"
-							? `Взять Этап ${selectedStageKey} в работу визита`
-							: "Взять этап в работу визита"}
+							? `Взять этап ${selectedStageKey} в работу`
+							: "Взять этап в работу"}
 					</span>
 				</button>
 			</div>
 
-			{/* Stage Selector Chips (Apple HIG Segmented Bar pattern) */}
+			{/* Stage Selector Chips (Apple HIG Segmented Bar pattern >= 44px tap zone) */}
 			{hasMultipleStages && (
 				<div
 					data-testid="handoff-stage-chips-selector"
-					className="pt-1 border-t border-[var(--teal,#0d9488)]/20 flex items-center gap-1.5 flex-wrap"
+					className="pt-1.5 border-t border-[var(--teal,#0d9488)]/20 flex items-center gap-1.5 flex-wrap"
 				>
-					<span className="text-[10px] font-semibold text-[var(--muted,#64748b)] mr-1 flex items-center gap-1">
-						<Layers size={11} />
+					<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] mr-1 flex items-center gap-1">
+						<Layers size={13} />
 						<span>Этап визита:</span>
 					</span>
 
@@ -240,26 +240,27 @@ export function VisitPlanStageHandoffBanner({
 								type="button"
 								data-testid={`handoff-stage-chip-${stg.stageNumber}`}
 								onClick={() => setSelectedStageKey(stg.stageNumber)}
-								className={`min-h-[28px] px-2.5 py-1 rounded-md text-[11px] font-medium transition-all flex items-center gap-1 cursor-pointer border ${
-									isSelected
-										? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-2xs font-semibold"
-										: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal,#0d9488)]/50"
-								}`}
+								style={{
+									backgroundColor: isSelected ? "var(--teal-fill)" : "var(--paper)",
+									color: isSelected ? "var(--on-teal)" : "var(--ink)",
+									borderColor: isSelected ? "var(--teal-fill)" : "var(--line)",
+								}}
+								className="min-h-[38px] sm:min-h-[28px] px-3 sm:px-2.5 py-1.5 sm:py-1 rounded-lg text-xs sm:text-[11px] font-medium transition-all flex items-center gap-1 cursor-pointer border shadow-2xs touch-manipulation"
 							>
 								<span>Этап {stg.stageNumber}</span>
 								{isTarget && (
 									<span
-										className={`text-[9px] px-1 py-0.2 rounded font-bold ${
-											isSelected
-												? "bg-white/20 text-white"
-												: "bg-[var(--teal,#0d9488)]/15 text-[var(--teal-dark,#0f766e)] dark:text-teal-300"
-										}`}
+										style={{
+											backgroundColor: isSelected ? "rgba(255,255,255,0.25)" : "var(--teal-surface, rgba(13,148,136,0.12))",
+											color: isSelected ? "var(--on-teal)" : "var(--teal-dark, var(--teal))",
+										}}
+										className="text-[9px] px-1 py-0.5 rounded font-bold"
 										title="Целевой этап из записи расписания"
 									>
 										Запись
 									</span>
 								)}
-								<span className="opacity-75 text-[10px]">
+								<span className="opacity-80 text-[10px]">
 									({stg.items.length})
 								</span>
 							</button>
@@ -270,14 +271,15 @@ export function VisitPlanStageHandoffBanner({
 						type="button"
 						data-testid="handoff-stage-chip-all"
 						onClick={() => setSelectedStageKey("all")}
-						className={`min-h-[28px] px-2.5 py-1 rounded-md text-[11px] font-medium transition-all flex items-center gap-1 cursor-pointer border ${
-							selectedStageKey === "all"
-								? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-2xs font-semibold"
-								: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal,#0d9488)]/50"
-						}`}
+						style={{
+							backgroundColor: selectedStageKey === "all" ? "var(--teal-fill)" : "var(--paper)",
+							color: selectedStageKey === "all" ? "var(--on-teal)" : "var(--ink)",
+							borderColor: selectedStageKey === "all" ? "var(--teal-fill)" : "var(--line)",
+						}}
+						className="min-h-[38px] sm:min-h-[28px] px-3 sm:px-2.5 py-1.5 sm:py-1 rounded-lg text-xs sm:text-[11px] font-medium transition-all flex items-center gap-1 cursor-pointer border shadow-2xs touch-manipulation"
 					>
 						<span>Все услуги</span>
-						<span className="opacity-75 text-[10px]">
+						<span className="opacity-80 text-[10px]">
 							({allPlanItems.length})
 						</span>
 					</button>

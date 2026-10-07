@@ -480,6 +480,38 @@ export function parseCsvToMatrix(text: string): string[][] {
 
 export async function registerPricelistRoutes(app: FastifyInstance) {
 	/**
+	 * GET /api/pricelists & GET /api/pricelist
+	 * Получение каталога услуг прейскуранта организации из PostgreSQL.
+	 */
+	const handleGetPricelists = async (request: FastifyRequest, reply: FastifyReply) => {
+		if (
+			!(await requireClinicalReadAccess(
+				request,
+				reply,
+				"pricelist get",
+			))
+		)
+			return;
+
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"pricelist get",
+		);
+		if (!orgId) return;
+
+		const catalog = await getServiceCatalogForOrganization(orgId);
+		return reply.code(200).send({
+			success: true,
+			items: catalog,
+			count: catalog.length,
+		});
+	};
+
+	app.get("/api/pricelists", handleGetPricelists);
+	app.get("/api/pricelist", handleGetPricelists);
+
+	/**
 	 * GET /api/pricelist/categories
 	 * Справочник валидных клинических категорий услуг со статьями 804н и описанием.
 	 */

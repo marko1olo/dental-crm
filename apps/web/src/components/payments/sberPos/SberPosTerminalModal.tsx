@@ -27,6 +27,7 @@ import {
 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { sberbankTerminal } from "../../../services/hardware/sberbankTerminal";
+import { hardwarePrinter } from "../../../services/hardware/HardwarePrinter.js";
 import {
 	DEFAULT_SBER_TERMINAL_CONFIG,
 	SBER_HARDWARE_PROFILES,
@@ -234,15 +235,32 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 		setTimeout(() => setIsCopied(false), 2000);
 	};
 
-	const handlePrintSlip = () => {
+	const handlePrintSlip = async () => {
 		if (!lastResponse) {
 			showToast("Слип-чек будет доступен после авторизации платежа на терминале", "info");
 			return;
 		}
+		const slipText = activeSlipTab === "customer" ? lastResponse.customerSlip : lastResponse.merchantSlip;
+		if (!slipText || !slipText.trim()) {
+			showToast("Текст слип-чека пуст", "warning");
+			return;
+		}
 		setIsPrinting(true);
-		setTimeout(() => {
+		try {
+			const res = await hardwarePrinter.printBankSlip(slipText, {
+				title: `Банковский слип #${lastResponse.rrn || lastResponse.authCode || ""}`,
+			});
+			if (res.success) {
+				showToast("Слип-чек отправлен на термопринтер", "success");
+			} else {
+				showToast(res.error || "Сбой вывода слип-чека на печать", "warning");
+			}
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Ошибка печати банковского слипа";
+			showToast(msg, "error");
+		} finally {
 			setIsPrinting(false);
-		}, 1500);
+		}
 	};
 
 	const pilotCommandText = buildPilotNtCommandPacket(config, {

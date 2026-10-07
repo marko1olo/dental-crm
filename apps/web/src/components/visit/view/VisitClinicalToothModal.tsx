@@ -211,6 +211,11 @@ export function VisitClinicalToothModal({
 				aria-modal="true"
 				aria-label={`Клиническая карта: Зуб ${code}`}
 			>
+				{/* ── NATIVE APPLE HIG DRAG HANDLE FOR MOBILE BOTTOM SHEET ── */}
+				<div className="_ccm-drag-handle-wrap" aria-hidden="true">
+					<div className="_ccm-drag-handle" />
+				</div>
+
 				{/* ── 1. STUDIO HEADER ── */}
 				<div className="_ccm-header">
 					<div className="_ccm-header-left">

@@ -46,6 +46,11 @@ export function useDentalLabOrderForm({
 	skipFinancialGate,
 	treatmentPlanAgeDays,
 	isPlanExpired,
+	treatmentPlanId: propTreatmentPlanId,
+	stageId: propStageId,
+	stageNumber: propStageNumber,
+	stageTitle: propStageTitle,
+	includeImpressionBilling: propIncludeImpressionBilling,
 	onOrderSaved,
 	onSaveOrder,
 	clinicPhone = "",
@@ -68,6 +73,25 @@ export function useDentalLabOrderForm({
 		timestampIso: string;
 		reason: string;
 	} | null>(null);
+
+	// Treatment Plan & Orthopedic Stage Context
+	const [treatmentPlanId, setTreatmentPlanId] = useState<string | null>(
+		propTreatmentPlanId || initialOrder?.treatmentPlanId || null,
+	);
+	const [stageId, setStageId] = useState<string | null>(
+		propStageId || initialOrder?.stageId || null,
+	);
+	const [stageNumber, setStageNumber] = useState<number | null>(
+		propStageNumber ?? initialOrder?.stageNumber ?? null,
+	);
+	const [stageTitle, setStageTitle] = useState<string | null>(
+		propStageTitle || initialOrder?.stageTitle || null,
+	);
+
+	// Chairside Clinical Impression Billing (A02.07.010)
+	const [includeImpressionBilling, setIncludeImpressionBilling] = useState<boolean>(
+		propIncludeImpressionBilling ?? initialOrder?.includeImpressionBilling ?? true,
+	);
 
 	// Form State
 	const [formPatientId, setFormPatientId] = useState(patientId || initialOrder?.patientId || "");
@@ -206,11 +230,21 @@ export function useDentalLabOrderForm({
 			setDoctorSharePct(initialOrder.doctorSharePct ?? 50);
 			setAttachedImageUrl(initialOrder.attachedImageUrl || null);
 			setSecureToken(initialOrder.secureToken || crypto.randomUUID());
+			setTreatmentPlanId(initialOrder.treatmentPlanId || propTreatmentPlanId || null);
+			setStageId(initialOrder.stageId || propStageId || null);
+			setStageNumber(initialOrder.stageNumber ?? propStageNumber ?? null);
+			setStageTitle(initialOrder.stageTitle || propStageTitle || null);
+			setIncludeImpressionBilling(initialOrder.includeImpressionBilling ?? propIncludeImpressionBilling ?? true);
 		} else {
 			setFormPatientId(patientId || "");
 			setFormPatientName(patientName || "Пациент");
 			setFormDoctorId(doctorId || "");
 			setFormDoctorName(doctorName || "Лечащий врач");
+			setTreatmentPlanId(propTreatmentPlanId || null);
+			setStageId(propStageId || null);
+			setStageNumber(propStageNumber ?? null);
+			setStageTitle(propStageTitle || null);
+			setIncludeImpressionBilling(propIncludeImpressionBilling ?? true);
 			setMamelons(false);
 			setCalcifications(false);
 			setOpalescence(false);
@@ -242,7 +276,22 @@ export function useDentalLabOrderForm({
 			dCeramic.setDate(dCeramic.getDate() + 5);
 			setCeramicTrialDate(dCeramic.toISOString().slice(0, 10));
 		}
-	}, [isOpen, initialOrder, patientId, patientName, doctorId, doctorName, initialToothFdi, initialTeeth, propScheduledVisitDate]);
+	}, [
+		isOpen,
+		initialOrder,
+		patientId,
+		patientName,
+		doctorId,
+		doctorName,
+		initialToothFdi,
+		initialTeeth,
+		propScheduledVisitDate,
+		propTreatmentPlanId,
+		propStageId,
+		propStageNumber,
+		propStageTitle,
+		propIncludeImpressionBilling,
+	]);
 
 	// ─── TOOTH PICKER HELPERS ──────────────────────────────────────────────────
 	const toggleTooth = (tooth: number) => {
@@ -519,6 +568,11 @@ export function useDentalLabOrderForm({
 				doctorSharePct,
 				doctorDeductionRub: doctorAmountRub,
 				attachedImageUrl: attachedImageUrl || null,
+				treatmentPlanId,
+				stageId,
+				stageNumber,
+				stageTitle,
+				includeImpressionBilling,
 			};
 
 			if (onOrderSaved) {
@@ -789,5 +843,15 @@ export function useDentalLabOrderForm({
 		handlePrint,
 		handleCopyZtl1Protocol,
 		handleCopyMessengerSummary,
+		treatmentPlanId,
+		setTreatmentPlanId,
+		stageId,
+		setStageId,
+		stageNumber,
+		setStageNumber,
+		stageTitle,
+		setStageTitle,
+		includeImpressionBilling,
+		setIncludeImpressionBilling,
 	};
 }

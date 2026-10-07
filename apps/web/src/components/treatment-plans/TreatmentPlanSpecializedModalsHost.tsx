@@ -587,8 +587,9 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 								: null
 						}
 						onSaveOrder={(order) => {
+							const amount = order.priceRub ?? (order as any).financials?.patientPriceTotalRub ?? 0;
 							showToast(
-								`Наряд-заказ №${order.orderNumber} в зуботехническую лабораторию на сумму ${order.financials.patientPriceTotalRub.toLocaleString("ru-RU")} ₽ успешно сохранен!`,
+								`Наряд-заказ №${order.orderNumber || ""} в зуботехническую лабораторию на сумму ${amount.toLocaleString("ru-RU")} ₽ успешно сохранен!`,
 								"success",
 								5000,
 							);

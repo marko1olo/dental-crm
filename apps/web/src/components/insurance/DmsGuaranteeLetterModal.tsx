@@ -15,7 +15,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import React, { useId, useMemo, useState } from "react";
+import React, { useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../GlobalToast";
 import "./insurance.css";
@@ -29,6 +29,7 @@ import { DmsExclusionsSelectorCard } from "./DmsExclusionsSelectorCard";
 import { DmsNomenclatureSelectorCard } from "./DmsNomenclatureSelectorCard";
 import { DmsLimitsAndFranchiseSection } from "./DmsLimitsAndFranchiseSection";
 import { DmsQuickActionBanners } from "./DmsQuickActionBanners";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 
 import {
 	type PatientGuaranteeLetter,
@@ -39,6 +40,10 @@ import {
 	FDI_ADULT_TEETH_LOWER,
 	DEFAULT_BILL_ITEMS_TO_SPLIT,
 	EXPRESS_GUARANTEE_LETTER_PRESETS,
+	getActiveBillItemsToSplit,
+	fetchPatientGuaranteeLettersFromApi,
+	saveGuaranteeLetterToApi,
+	mapBackendLetterToPatientGuaranteeLetter,
 } from "./dmsInsurancePresets";
 
 export type { DmsGuaranteeLetter, PatientGuaranteeLetter, BillItemToSplit, ExpressDmsGuaranteePreset };
@@ -48,6 +53,10 @@ export {
 	FDI_ADULT_TEETH_LOWER,
 	DEFAULT_BILL_ITEMS_TO_SPLIT,
 	EXPRESS_GUARANTEE_LETTER_PRESETS,
+	getActiveBillItemsToSplit,
+	fetchPatientGuaranteeLettersFromApi,
+	saveGuaranteeLetterToApi,
+	mapBackendLetterToPatientGuaranteeLetter,
 };
 
 export interface PatientDmsProfile {
@@ -64,44 +73,8 @@ export interface DmsGuaranteeLetterModalProps {
 	readonly onClose: () => void;
 	readonly patient?: PatientDmsProfile | undefined;
 	readonly initialLetter?: DmsGuaranteeLetter | null | undefined;
+	readonly billItems?: readonly BillItemToSplit[] | undefined;
 	readonly onSave?: ((letter: DmsGuaranteeLetter) => void) | undefined;
-}
-
-/** Преобразование ответа бэкенда в модель интерфейса гарантийного письма */
-export function mapBackendLetterToPatientGuaranteeLetter(item: any): PatientGuaranteeLetter {
-	return {
-		id: String(item.id),
-		letterNumber: String(item.letterNumber || ""),
-		insurerKey: String(item.insurerKey || "custom"),
-		insurerName: String(item.insurerName || "Страховая компания ДМС"),
-		patientId: String(item.patientId || ""),
-		patientFullName: String(item.patientFullName || ""),
-		policyNumber: String(item.policyNumber || ""),
-		issueDate: String(item.issueDate || "").slice(0, 10),
-		validFrom: String(item.validFrom || "").slice(0, 10),
-		validUntil: String(item.validUntil || "").slice(0, 10),
-		maxCoverageKopecks: Math.round(Number(item.maxCoverageRub || 0) * 100),
-		usedAmountKopecks: Math.round(Number(item.usedAmountRub || 0) * 100),
-		franchisePct: Number(item.franchisePct) || 0,
-		franchiseType: item.franchiseType === "fixed_rub" ? "fixed_kopecks" : "percent",
-		franchiseFixedKopecks: Math.round(Number(item.franchiseFixedRub || 0) * 100),
-		approvedTeethFdi: Array.isArray(item.approvedTeethFdi) ? item.approvedTeethFdi : [],
-		approvedServiceCodes804n: Array.isArray(item.approvedServiceCodes)
-			? item.approvedServiceCodes
-			: Array.isArray(item.approvedServiceCodes804n)
-			? item.approvedServiceCodes804n
-			: [],
-		approvedDiagnosisMkb10: Array.isArray(item.approvedDiagnosisCodes)
-			? item.approvedDiagnosisCodes
-			: Array.isArray(item.approvedDiagnosisMkb10)
-			? item.approvedDiagnosisMkb10
-			: [],
-		curatorFullName: String(item.curatorFullName || ""),
-		curatorPhone: String(item.curatorPhone || ""),
-		curatorEmail: item.curatorEmail ? String(item.curatorEmail) : undefined,
-		notes: String(item.notes || ""),
-		status: (item.status as PatientGuaranteeLetter["status"]) || "active",
-	};
 }
 
 export function DmsGuaranteeLetterModal({
@@ -109,6 +82,7 @@ export function DmsGuaranteeLetterModal({
 	onClose,
 	patient,
 	initialLetter,
+	billItems,
 	onSave,
 }: DmsGuaranteeLetterModalProps) {
 	const insurerSelectId = useId();
@@ -155,7 +129,7 @@ export function DmsGuaranteeLetterModal({
 
 	// Лимиты и франшиза
 	const [maxCoverageRub, setMaxCoverageRub] = useState<number>(
-		initialLetter?.maxCoverageRub ?? 50000,
+		initialLetter?.maxCoverageRub ?? (isDemoShowcaseMode() ? 50000 : 0),
 	);
 	const [usedAmountRub, setUsedAmountRub] = useState<number>(
 		initialLetter?.usedAmountRub ?? 0,
@@ -170,37 +144,79 @@ export function DmsGuaranteeLetterModal({
 		initialLetter?.franchiseFixedRub ?? 0,
 	);
 
-	// Исключения и одобренные услуги
+	// Исключения и одобренные услуги (Zero Mocks Mandate 8c: в боевом режиме 0% выдуманных услуг)
 	const [selectedExclusions, setSelectedExclusions] = useState<string[]>(
 		initialLetter?.programExclusions
 			? [...initialLetter.programExclusions]
-			: [
+			: isDemoShowcaseMode()
+			? [
 					"orthodontics",
 					"implantology",
 					"whitening",
 					"veneers",
 					"prosthetics_precious",
-				],
+				]
+			: [],
 	);
 	const [approvedServiceCodes, setApprovedServiceCodes] = useState<string[]>(
 		initialLetter?.approvedServiceCodes
 			? [...initialLetter.approvedServiceCodes]
-			: [
+			: isDemoShowcaseMode()
+			? [
 					"A16.07.002.001",
 					"A16.07.030.001",
 					"A16.07.008.001",
 					"B01.003.004.001",
-				],
+				]
+			: [],
 	);
 	const [approvedDiagnosisCodes, setApprovedDiagnosisCodes] = useState<string[]>(
 		initialLetter?.approvedDiagnosisCodes
 			? [...initialLetter.approvedDiagnosisCodes]
-			: ["K02.1", "K04.0"],
+			: isDemoShowcaseMode()
+			? ["K02.1", "K04.0"]
+			: [],
 	);
 	const [notes, setNotes] = useState<string>(initialLetter?.notes || "");
 	const [status, setStatus] = useState<"active" | "expired" | "exhausted" | "cancelled">(
 		initialLetter?.status || "active",
 	);
+
+	// Гидратация существующего гарантийного письма пациента из PostgreSQL через Fastify API
+	useEffect(() => {
+		if (!isOpen || initialLetter || !patient?.id) return;
+		let isCancelled = false;
+
+		fetchPatientGuaranteeLettersFromApi(patient.id)
+			.then((letters) => {
+				if (isCancelled || !letters || letters.length === 0) return;
+				const active = letters.find((l: any) => l.status === "active") || letters[0];
+				if (!active) return;
+
+				if (active.letterNumber) setLetterNumber(String(active.letterNumber));
+				if (active.insurerKey) setInsurerKey(String(active.insurerKey));
+				if (active.insurerName) setCustomInsurerName(String(active.insurerName));
+				if (active.policyNumber) setPolicyNumber(String(active.policyNumber));
+				if (active.issueDate) setIssueDate(String(active.issueDate).slice(0, 10));
+				if (active.validFrom) setValidFrom(String(active.validFrom).slice(0, 10));
+				if (active.validUntil) setValidUntil(String(active.validUntil).slice(0, 10));
+				if (active.maxCoverageRub !== undefined) setMaxCoverageRub(Number(active.maxCoverageRub));
+				if (active.usedAmountRub !== undefined) setUsedAmountRub(Number(active.usedAmountRub));
+				if (active.franchisePct !== undefined) setFranchisePct(Number(active.franchisePct));
+				if (active.franchiseType) setFranchiseType(active.franchiseType);
+				if (active.franchiseFixedRub !== undefined) setFranchiseFixedRub(Number(active.franchiseFixedRub));
+				if (Array.isArray(active.approvedServiceCodes)) setApprovedServiceCodes(active.approvedServiceCodes);
+				if (Array.isArray(active.approvedDiagnosisCodes)) setApprovedDiagnosisCodes(active.approvedDiagnosisCodes);
+				if (Array.isArray(active.programExclusions)) setSelectedExclusions(active.programExclusions);
+				if (active.notes) setNotes(String(active.notes));
+				if (active.status) setStatus(active.status);
+			})
+			.catch(() => {});
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [isOpen, initialLetter, patient?.id]);
 
 	if (!isOpen) return null;
 
@@ -386,6 +402,33 @@ export function DmsGuaranteeLetterModal({
 			notes: resolvedNotes,
 			status,
 		};
+
+		// Асинхронное сохранение в PostgreSQL через Fastify API (без блокировки UI)
+		if (patient?.id) {
+			saveGuaranteeLetterToApi({
+				id: initialLetter?.id,
+				patientId: patient.id,
+				patientFullName: patient.fullName || "Пациент",
+				patientBirthDate: patient.birthDate,
+				policyNumber: resolvedPolicy,
+				insurerKey,
+				insurerName: insurerDisplayName,
+				letterNumber: resolvedLetterNum,
+				issueDate,
+				validFrom,
+				validUntil,
+				maxCoverageRub: resolvedCoverage,
+				usedAmountRub,
+				franchisePct: franchiseType === "percent" ? franchisePct : 0,
+				franchiseType,
+				franchiseFixedRub: franchiseType === "fixed_rub" ? franchiseFixedRub : 0,
+				programExclusions: selectedExclusions,
+				approvedServiceCodes,
+				approvedDiagnosisCodes,
+				notes: resolvedNotes,
+				status,
+			}).catch(() => {});
+		}
 
 		if (onSave) {
 			onSave(letter);
@@ -720,7 +763,7 @@ export function DmsGuaranteeLetterModal({
 					{/* 5. Интерактивный калькулятор распределения счета визита (ДМС / Пациент) */}
 					<DmsBillSplitCalculatorSection
 						letter={letterForSplit}
-						billItems={DEFAULT_BILL_ITEMS_TO_SPLIT}
+						billItems={billItems ?? getActiveBillItemsToSplit()}
 					/>
 
 					{/* Примечания */}

@@ -3,6 +3,8 @@
  * Избавляет врача и регистратуру от ручного заполнения 20 полей.
  */
 
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+
 /**
  * Модель гарантийного письма пациента для UI-компонентов и калькулятора ДМС
  */
@@ -30,6 +32,43 @@ export interface PatientGuaranteeLetter {
 	readonly curatorEmail?: string | undefined;
 	readonly notes?: string | undefined;
 	readonly status: "active" | "exhausted" | "expired" | "cancelled";
+}
+
+/** Преобразование ответа бэкенда в модель интерфейса гарантийного письма */
+export function mapBackendLetterToPatientGuaranteeLetter(item: any): PatientGuaranteeLetter {
+	return {
+		id: String(item.id),
+		letterNumber: String(item.letterNumber || ""),
+		insurerKey: String(item.insurerKey || "custom"),
+		insurerName: String(item.insurerName || "Страховая компания ДМС"),
+		patientId: String(item.patientId || ""),
+		patientFullName: String(item.patientFullName || ""),
+		policyNumber: String(item.policyNumber || ""),
+		issueDate: String(item.issueDate || "").slice(0, 10),
+		validFrom: String(item.validFrom || "").slice(0, 10),
+		validUntil: String(item.validUntil || "").slice(0, 10),
+		maxCoverageKopecks: Math.round(Number(item.maxCoverageRub || 0) * 100),
+		usedAmountKopecks: Math.round(Number(item.usedAmountRub || 0) * 100),
+		franchisePct: Number(item.franchisePct) || 0,
+		franchiseType: item.franchiseType === "fixed_rub" ? "fixed_kopecks" : "percent",
+		franchiseFixedKopecks: Math.round(Number(item.franchiseFixedRub || 0) * 100),
+		approvedTeethFdi: Array.isArray(item.approvedTeethFdi) ? item.approvedTeethFdi : [],
+		approvedServiceCodes804n: Array.isArray(item.approvedServiceCodes)
+			? item.approvedServiceCodes
+			: Array.isArray(item.approvedServiceCodes804n)
+			? item.approvedServiceCodes804n
+			: [],
+		approvedDiagnosisMkb10: Array.isArray(item.approvedDiagnosisCodes)
+			? item.approvedDiagnosisCodes
+			: Array.isArray(item.approvedDiagnosisMkb10)
+			? item.approvedDiagnosisMkb10
+			: [],
+		curatorFullName: String(item.curatorFullName || ""),
+		curatorPhone: String(item.curatorPhone || ""),
+		curatorEmail: item.curatorEmail ? String(item.curatorEmail) : undefined,
+		notes: String(item.notes || ""),
+		status: (item.status as PatientGuaranteeLetter["status"]) || "active",
+	};
 }
 
 /**
@@ -96,6 +135,16 @@ export const DEFAULT_BILL_ITEMS_TO_SPLIT: readonly BillItemToSplit[] = [
 		unitPriceKopecks: 2600000,
 	},
 ];
+
+/**
+ * Изоляция демо-позиций сплит-калькулятора от боевого режима (Mandate 8c Zero Mocks).
+ * В боевом режиме возвращает пустой массив (0% моков), ожидая реальные услуги визита.
+ */
+export function getActiveBillItemsToSplit(
+	isDemo = isDemoShowcaseMode(),
+): readonly BillItemToSplit[] {
+	return isDemo ? DEFAULT_BILL_ITEMS_TO_SPLIT : [];
+}
 
 /**
  * 1-клик шаблоны экспресс-прикрепления гарантийного письма ДМС

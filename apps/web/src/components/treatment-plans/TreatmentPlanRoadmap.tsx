@@ -699,14 +699,11 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 											Прогресс процедур:
 										</span>
 										<span className="font-semibold text-[var(--ink)]">
-											Выполнено {stage.procedures.filter((p) => p.isCompleted).length} из{" "}
-											{stage.procedures.length} процедур (
-											{Math.round(
+											{`Выполнено ${stage.procedures.filter((p) => p.isCompleted).length} из ${stage.procedures.length} процедур (${Math.round(
 												(stage.procedures.filter((p) => p.isCompleted).length /
 													stage.procedures.length) *
 													100,
-											)}
-											%)
+											)}%)`}
 										</span>
 									</div>
 									<div className="w-full h-1.5 rounded-full bg-[var(--paper-soft,#1e293b)] overflow-hidden border border-[var(--line-subtle,rgba(255,255,255,0.05))]">
@@ -851,7 +848,7 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 									>
 										<CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
 										<span>
-											✓ Пройден на приеме {todayRu || new Date().toLocaleDateString("ru-RU")}
+											{`✓ Пройден на приеме ${todayRu || new Date().toLocaleDateString("ru-RU")}`}
 										</span>
 									</div>
 								) : (

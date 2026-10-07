@@ -117,6 +117,14 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	const [showTemplatesModal, setShowTemplatesModal] = useState(false);
 	const [showBrandingCustomizer, setShowBrandingCustomizer] = useState(false);
 
+	useEffect(() => {
+		const handleOpenSummary = () => setShowSummaryModal(true);
+		window.addEventListener("dente:open-visit-summary-modal", handleOpenSummary);
+		return () => {
+			window.removeEventListener("dente:open-visit-summary-modal", handleOpenSummary);
+		};
+	}, []);
+
 	const [isExtraActionsOpen, setIsExtraActionsOpen] = useState(false);
 	const moreActionsRef = useRef<HTMLDivElement>(null);
 	useEffect(() => {

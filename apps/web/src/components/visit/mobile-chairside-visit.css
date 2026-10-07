@@ -656,6 +656,31 @@
   transform: scale(0.93);
 }
 
+.mobile-chairside-stage-cta {
+  min-height: 52px;
+  height: 52px;
+  border-radius: 16px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  border: 1.5px solid var(--teal, #0d9488);
+  background: color-mix(in srgb, var(--teal, #0d9488) 12%, var(--paper, #ffffff));
+  color: var(--teal, #0d9488);
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.mobile-chairside-stage-cta:active {
+  transform: scale(0.97);
+  background: color-mix(in srgb, var(--teal, #0d9488) 22%, var(--paper, #ffffff));
+}
+
 /* ─── 11. DARK MODE PURGE OF BLINDING SPOTS ─── */
 [data-theme="dark"] .mobile-chairside-container,
 .dark .mobile-chairside-container {
@@ -745,4 +770,11 @@
   background: #1e293b;
   border-color: rgba(255, 255, 255, 0.1);
   color: #f1f5f9;
+}
+
+[data-theme="dark"] .mobile-chairside-stage-cta,
+.dark .mobile-chairside-stage-cta {
+  background: rgba(13, 148, 136, 0.2);
+  border-color: rgba(13, 148, 136, 0.6);
+  color: #2dd4bf;
 }

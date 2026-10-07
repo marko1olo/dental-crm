@@ -167,7 +167,21 @@ export function groupTreatmentPlanByStages(
 	hasMultipleStages: boolean;
 	totalPlanPriceRub: number;
 } {
-	if (!loadedPlan || !Array.isArray(loadedPlan.items) || loadedPlan.items.length === 0) {
+	let allPlanItems: any[] = [];
+	if (Array.isArray(loadedPlan?.items) && loadedPlan.items.length > 0) {
+		allPlanItems = loadedPlan.items;
+	} else if (Array.isArray(loadedPlan?.stages)) {
+		allPlanItems = loadedPlan.stages.flatMap((st: any, sIdx: number) => {
+			const sNum = typeof st.stageNumber === "number" ? st.stageNumber : sIdx + 1;
+			return (st.items || []).map((it: any) => ({
+				...it,
+				stageNumber: typeof it.stageNumber === "number" ? it.stageNumber : sNum,
+				stageTitle: it.stageTitle || st.title,
+			}));
+		});
+	}
+
+	if (!loadedPlan || allPlanItems.length === 0) {
 		return {
 			stages: [],
 			allPlanItems: [],
@@ -175,8 +189,6 @@ export function groupTreatmentPlanByStages(
 			totalPlanPriceRub: 0,
 		};
 	}
-
-	const allPlanItems: any[] = loadedPlan.items;
 	const totalPlanPriceRub = allPlanItems.reduce((sum, it) => {
 		const price = Number(it.unitPriceRub ?? it.price ?? it.priceRub ?? 0);
 		const qty = Number(it.quantity || 1);

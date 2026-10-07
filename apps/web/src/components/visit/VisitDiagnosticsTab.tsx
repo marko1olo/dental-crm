@@ -234,14 +234,14 @@ export function VisitDiagnosticsTab(props?: {
 	return (
 		<div
 			data-testid="visit-diagnostics-tab"
-			className="visit-diagnostics-tab bg-[var(--paper-strong)] border border-[var(--glass-border)] text-[var(--ink)] rounded-xl p-4 flex flex-col gap-4 shadow-sm"
+			className="visit-diagnostics-tab bg-[var(--paper)] border border-[var(--line-subtle)] text-[var(--ink)] rounded-xl p-3.5 sm:p-4 flex flex-col gap-3.5 shadow-2xs"
 		>
 			{/* ═══════════════════════════════════════════════════════════════════════
 			    КЛИНИЧЕСКИЙ КОКПИТ: СЕГМЕНТИРОВАННЫЙ ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМОВ ДИАГНОСТИКИ И НАПРАВЛЕНИЕ
 			    ═══════════════════════════════════════════════════════════════════════ */}
 			<div className="flex items-center justify-between gap-3 flex-wrap">
 				<div
-					className="inline-flex items-center p-[3px] rounded-[10px] bg-[var(--paper-soft)] border border-[var(--line-subtle)] gap-[2px] overflow-x-auto shadow-2xs"
+					className="inline-flex items-center p-[3px] rounded-[10px] bg-[var(--paper-soft)] border border-[var(--line-subtle)] gap-[2px] shadow-2xs"
 					role="tablist"
 					aria-label="Режимы визуальной диагностики"
 				>
@@ -251,7 +251,7 @@ export function VisitDiagnosticsTab(props?: {
 						aria-selected={diagnosticMode === "rvg"}
 						onClick={() => setDiagnosticMode("rvg")}
 						data-testid="tab-diagnostic-mode-rvg"
-						className={`h-7.5 px-3 rounded-[7px] text-[12.5px] flex items-center gap-1.5 transition-all cursor-pointer shrink-0 select-none ${
+						className={`h-8 px-3 rounded-[7px] text-[12.5px] flex items-center gap-1.5 transition-all cursor-pointer shrink-0 select-none ${
 							diagnosticMode === "rvg"
 								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] border border-[var(--line-subtle)] shadow-xs font-semibold"
 								: "bg-transparent border border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/60 font-medium"
@@ -267,7 +267,7 @@ export function VisitDiagnosticsTab(props?: {
 						aria-selected={diagnosticMode === "photo"}
 						onClick={() => setDiagnosticMode("photo")}
 						data-testid="tab-diagnostic-mode-photo"
-						className={`h-7.5 px-3 rounded-[7px] text-[12.5px] flex items-center gap-1.5 transition-all cursor-pointer shrink-0 select-none ${
+						className={`h-8 px-3 rounded-[7px] text-[12.5px] flex items-center gap-1.5 transition-all cursor-pointer shrink-0 select-none ${
 							diagnosticMode === "photo"
 								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] border border-[var(--line-subtle)] shadow-xs font-semibold"
 								: "bg-transparent border border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/60 font-medium"
@@ -288,7 +288,7 @@ export function VisitDiagnosticsTab(props?: {
 						aria-selected={diagnosticMode === "cbct"}
 						onClick={() => setDiagnosticMode("cbct")}
 						data-testid="tab-diagnostic-mode-cbct"
-						className={`h-7.5 px-3 rounded-[7px] text-[12.5px] flex items-center gap-1.5 transition-all cursor-pointer shrink-0 select-none ${
+						className={`h-8 px-3 rounded-[7px] text-[12.5px] flex items-center gap-1.5 transition-all cursor-pointer shrink-0 select-none ${
 							diagnosticMode === "cbct"
 								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] border border-[var(--line-subtle)] shadow-xs font-semibold"
 								: "bg-transparent border border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/60 font-medium"
@@ -303,12 +303,12 @@ export function VisitDiagnosticsTab(props?: {
 					<button
 						type="button"
 						onClick={() => setIsRadiologyModalOpen(true)}
-						className="h-8 px-3 rounded-lg text-[13px] font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 flex items-center gap-1.5"
+						className="h-8 px-3 rounded-lg text-[13px] font-semibold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 flex items-center gap-1.5"
 						data-testid="btn-open-radiology-referral-modal"
 						title="Выписать направление на КЛКТ / ОПТГ / ТРГ"
 					>
-						<FileText size={14} className="text-[var(--teal)]" />
-						<span>Направление</span>
+						<Plus size={14} className="text-[var(--teal)]" />
+						<span>+ Направление на КЛКТ/ОПТГ</span>
 					</button>
 				</div>
 			</div>
@@ -367,12 +367,12 @@ export function VisitDiagnosticsTab(props?: {
 			) : null}
 
 			{/* ═══════════════════════════════════════════════════════════════════════
-			    ПРИКРЕПЛЕННЫЕ СНИМКИ И КТ-СРЕЗЫ ПАЦИЕНТА (200×200px ПРЕВЬЮ, CLS = 0)
+			    ПРИКРЕПЛЕННЫЕ СНИМКИ И КТ-СРЕЗЫ ПАЦИЕНТА (КОМПАКТНАЯ ГАЛЕРЕЯ-СЕТКА)
 			    Мгновенный визуальный доступ к RVG, 3D КЛКТ, ОПТГ и фотопротоколу
 			    ═══════════════════════════════════════════════════════════════════════ */}
 			<div
 				data-testid="visit-diagnostics-attached-scans-gallery"
-				className="p-3 sm:p-4 rounded-xl bg-[var(--paper)] border border-[var(--glass-border)] shadow-2xs flex flex-col gap-3"
+				className="p-3 sm:p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] shadow-2xs flex flex-col gap-2.5"
 			>
 				<div className="flex items-center justify-between gap-2 flex-wrap">
 					<div className="flex items-center gap-2">
@@ -380,9 +380,6 @@ export function VisitDiagnosticsTab(props?: {
 						<h4 className="text-xs sm:text-sm font-bold text-[var(--ink)] m-0">
 							Прикрепленные снимки и КТ-срезы ({patientStudies.length + photoAttachments.length})
 						</h4>
-						<span className="text-[10px] font-semibold text-[var(--teal)] bg-[var(--teal-soft,#0d948815)] px-2 py-0.5 rounded border border-[var(--teal)]/20">
-							200×200px · CLS = 0
-						</span>
 					</div>
 					<span className="text-[11px] text-[var(--muted)]">
 						Кликните по снимку для мгновенного открытия в просмотрщике
@@ -392,29 +389,18 @@ export function VisitDiagnosticsTab(props?: {
 				{patientStudies.length === 0 && photoAttachments.length === 0 ? (
 					<div
 						data-testid="attached-scans-empty-placeholder"
-						className="flex items-center gap-3 overflow-x-auto pb-1"
+						className="w-full py-6 px-4 rounded-xl border border-dashed border-[var(--line-subtle)] bg-[var(--paper)] flex flex-col items-center justify-center text-center text-xs text-[var(--muted)] gap-1.5 select-none"
 					>
-						<div
-							style={{
-								width: "200px",
-								height: "200px",
-								minWidth: "200px",
-								minHeight: "200px",
-								maxWidth: "200px",
-								maxHeight: "200px",
-								aspectRatio: "1 / 1",
-							}}
-							className="rounded-xl border border-dashed border-[var(--glass-border)] bg-[var(--paper-soft)] flex flex-col items-center justify-center p-3 text-center text-xs text-[var(--muted)] shrink-0 gap-2 select-none"
-						>
-							<Camera size={28} className="text-[var(--muted)] opacity-60" />
-							<span className="font-semibold text-[var(--ink)]">Снимки не прикреплены</span>
-							<span className="text-[10px] leading-tight">Сделайте захват с датчика визиографа или импортируйте КТ</span>
-						</div>
+						<Camera size={24} className="text-[var(--muted)] opacity-50" />
+						<span className="font-semibold text-[var(--ink)]">Снимки не прикреплены</span>
+						<span className="text-[11px] text-[var(--muted)] max-w-sm">
+							Сделайте захват с датчика визиографа, привяжите фотопротокол или импортируйте КТ / ОПТГ
+						</span>
 					</div>
 				) : (
 					<div
 						data-testid="attached-scans-list"
-						className="flex items-center gap-3 overflow-x-auto pb-2 pt-1"
+						className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2.5 pt-0.5"
 					>
 						{patientStudies.map((study: any) => {
 							const isCbct = study.kind === "cbct" || study.modality === "cbct_3d";
@@ -422,16 +408,8 @@ export function VisitDiagnosticsTab(props?: {
 							return (
 								<div
 									key={study.id}
-									className="group relative rounded-xl overflow-hidden border border-[var(--glass-border)] bg-[#030712] cursor-pointer shrink-0 shadow-2xs hover:border-[var(--teal)] transition-all"
-									style={{
-										width: "200px",
-										height: "200px",
-										minWidth: "200px",
-										minHeight: "200px",
-										maxWidth: "200px",
-										maxHeight: "200px",
-										aspectRatio: "1 / 1",
-									}}
+									className="group relative rounded-xl overflow-hidden border border-[var(--line-subtle)] bg-[#030712] cursor-pointer shadow-2xs hover:border-[var(--teal)] hover:shadow-md transition-all aspect-square select-none"
+									style={{ aspectRatio: "1 / 1" }}
 									data-testid={`visit-scan-thumbnail-${study.id}`}
 									onClick={() => {
 										if (isCbct) {
@@ -451,32 +429,34 @@ export function VisitDiagnosticsTab(props?: {
 										className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
 										style={{ width: "100%", height: "100%", objectFit: "cover" }}
 									/>
-									{/* Modality & Tooth Badge */}
-									<div className="absolute top-2 left-2 flex flex-col gap-1 items-start pointer-events-none">
-										<span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-black/75 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/40 shadow-xs backdrop-blur-xs">
+									{/* Modality, Tooth & Dose Badges */}
+									<div className="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between pointer-events-none gap-1">
+										<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-black/80 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/40 shadow-xs backdrop-blur-xs leading-none">
 											{study.kind === "cbct"
-												? "3D КЛКТ"
+												? "3D КТ"
 												: study.kind === "opg"
 													? "ОПТГ"
 													: study.kind === "cephalometric" || study.kind === "trg"
 														? "ТРГ"
 														: "RVG"}
+											{study.toothCode ? ` #${study.toothCode}` : ""}
 										</span>
-										{study.toothCode && (
-											<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-black/75 text-white border border-white/20 shadow-xs">
-												#{study.toothCode}
+										{study.effectiveDoseMicrosv ? (
+											<span className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-md bg-black/80 text-zinc-300 border border-white/15 shadow-xs leading-none">
+												{study.effectiveDoseMicrosv} мкЗв
 											</span>
-										)}
+										) : null}
 									</div>
-									{/* Bottom Overlay with Dose and Action */}
-									<div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/95 via-black/60 to-transparent flex items-center justify-between text-white text-[10px]">
-										<span className="truncate max-w-[110px] opacity-90">
-											{study.capturedAt ? new Date(study.capturedAt).toLocaleDateString("ru-RU") : "Приём"}
-											{study.effectiveDoseMicrosv ? ` · ${study.effectiveDoseMicrosv} мкЗв` : ""}
+									{/* Bottom Overlay with Date and Action */}
+									<div className="absolute bottom-0 inset-x-0 p-1.5 bg-gradient-to-t from-black/95 via-black/65 to-transparent flex items-center justify-between text-white text-[10px]">
+										<span className="truncate max-w-[70px] opacity-90 text-[10px]">
+											{study.capturedAt
+												? new Date(study.capturedAt).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })
+												: "Приём"}
 										</span>
-										<span className="text-[var(--teal,#0d9488)] font-semibold flex items-center gap-0.5 group-hover:underline">
-											<Eye size={12} />
-											<span>Открыть</span>
+										<span className="text-[var(--teal,#0d9488)] font-semibold flex items-center gap-0.5 group-hover:text-white transition-colors">
+											<Eye size={11} />
+											<span className="text-[9.5px]">Открыть</span>
 										</span>
 									</div>
 								</div>
@@ -486,16 +466,8 @@ export function VisitDiagnosticsTab(props?: {
 						{photoAttachments.map((photo) => (
 							<div
 								key={photo.id}
-								className="group relative rounded-xl overflow-hidden border border-[var(--glass-border)] bg-[#030712] cursor-pointer shrink-0 shadow-2xs hover:border-[var(--teal)] transition-all"
-								style={{
-									width: "200px",
-									height: "200px",
-									minWidth: "200px",
-									minHeight: "200px",
-									maxWidth: "200px",
-									maxHeight: "200px",
-									aspectRatio: "1 / 1",
-								}}
+								className="group relative rounded-xl overflow-hidden border border-[var(--line-subtle)] bg-[#030712] cursor-pointer shadow-2xs hover:border-[var(--teal)] hover:shadow-md transition-all aspect-square select-none"
+								style={{ aspectRatio: "1 / 1" }}
 								data-testid={`visit-scan-thumbnail-${photo.id}`}
 								onClick={() => setIsPhotoProtocolModalOpen(true)}
 								title="Открыть фотопротокол"
@@ -503,17 +475,17 @@ export function VisitDiagnosticsTab(props?: {
 								{photo.photoUrl ? (
 									<img
 										src={photo.photoUrl}
-										alt={`Фото протокола: зуб ${photo.toothNumber || "общий"}`}
+										alt={`Фото: ${photo.toothNumber ? `зуб ${photo.toothNumber}` : "общий"}`}
 										loading="lazy"
 										decoding="async"
 										className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
 										style={{ width: "100%", height: "100%", objectFit: "cover" }}
 									/>
 								) : (
-									<div className="w-full h-full flex flex-col items-center justify-center p-3 text-center text-xs text-[var(--muted)] gap-1.5">
-										<ImageIcon size={28} className="text-[var(--teal)] opacity-70" />
-										<span className="font-semibold text-white">Фотопротокол</span>
-										<span className="text-[10px] text-zinc-400">
+									<div className="w-full h-full flex flex-col items-center justify-center p-2 text-center text-xs text-[var(--muted)] gap-1">
+										<ImageIcon size={22} className="text-[var(--teal)] opacity-70" />
+										<span className="font-semibold text-white text-[11px]">Фотопротокол</span>
+										<span className="text-[9.5px] text-zinc-400">
 											{photo.photoType === "before"
 												? "До лечения"
 												: photo.photoType === "after"
@@ -522,19 +494,9 @@ export function VisitDiagnosticsTab(props?: {
 										</span>
 									</div>
 								)}
-								<div className="absolute top-2 left-2 flex flex-col gap-1 items-start pointer-events-none">
-									<span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-black/75 text-amber-400 border border-amber-400/40 shadow-xs backdrop-blur-xs">
-										Фото
-									</span>
-									{photo.toothNumber ? (
-										<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-black/75 text-white border border-white/20 shadow-xs">
-											#{photo.toothNumber}
-										</span>
-									) : null}
-								</div>
-								<div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/95 via-black/60 to-transparent flex items-center justify-between text-white text-[10px]">
-									<span className="truncate max-w-[120px] opacity-90">
-										{photo.description || (photo.photoType === "before" ? "До лечения" : photo.photoType === "after" ? "После лечения" : "В процессе")}
+								<div className="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between gap-1 pointer-events-none">
+									<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-black/80 text-amber-400 border border-amber-400/40 shadow-xs backdrop-blur-xs leading-none">
+										Фото{photo.toothNumber ? ` #${photo.toothNumber}` : ""}
 									</span>
 									<button
 										type="button"
@@ -542,11 +504,20 @@ export function VisitDiagnosticsTab(props?: {
 											e.stopPropagation();
 											handleRemovePhoto(photo.id);
 										}}
-										className="p-1 rounded bg-black/60 hover:bg-rose-600 text-rose-300 hover:text-white transition-colors cursor-pointer"
+										className="pointer-events-auto p-1 rounded-md bg-black/70 hover:bg-rose-600 text-rose-300 hover:text-white transition-colors cursor-pointer"
 										title="Удалить снимок"
 									>
-										<Trash2 size={12} />
+										<Trash2 size={11} />
 									</button>
+								</div>
+								<div className="absolute bottom-0 inset-x-0 p-1.5 bg-gradient-to-t from-black/95 via-black/65 to-transparent flex items-center justify-between text-white text-[10px]">
+									<span className="truncate max-w-[70px] opacity-90 text-[10px]">
+										{photo.description || (photo.photoType === "before" ? "До" : photo.photoType === "after" ? "После" : "В процессе")}
+									</span>
+									<span className="text-[var(--teal,#0d9488)] font-semibold flex items-center gap-0.5 group-hover:text-white transition-colors">
+										<Eye size={11} />
+										<span className="text-[9.5px]">Открыть</span>
+									</span>
 								</div>
 							</div>
 						))}
@@ -559,7 +530,7 @@ export function VisitDiagnosticsTab(props?: {
 			    Строка быстрых действий текущего зуба & VisiographAnalyzer
 			    ═══════════════════════════════════════════════════════════════════════ */}
 			<div className={diagnosticMode === "rvg" ? "flex flex-col gap-3" : "hidden"}>
-				<div className="flex items-center justify-between gap-3 flex-wrap p-2.5 sm:p-3 rounded-xl bg-[var(--paper)] border border-[var(--glass-border)] shadow-2xs">
+				<div className="flex items-center justify-between gap-3 flex-wrap p-2.5 sm:p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] shadow-2xs">
 					<div className="flex items-center gap-2.5 flex-wrap">
 						<span className="text-xs font-bold text-[var(--teal)] bg-[var(--teal-soft,#0d948815)] px-2.5 py-1 rounded-lg border border-[var(--teal)]/20 shadow-2xs flex items-center gap-1.5">
 							<Scan size={14} />
@@ -591,7 +562,7 @@ export function VisitDiagnosticsTab(props?: {
 							type="button"
 							onClick={() => setIsHotFolderModalOpen(true)}
 							data-testid="btn-open-hot-folder-modal"
-							className="h-8 px-2.5 rounded-lg text-[13px] font-medium bg-[var(--paper-strong)] hover:bg-[var(--glass-hover,var(--paper-soft))] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 flex items-center gap-1.5"
+							className="h-8 px-2.5 rounded-lg text-[13px] font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 flex items-center gap-1.5"
 							title="Папка автозахвата снимков: автоматический импорт из каталога визиографа"
 						>
 							<FolderInput size={14} className="text-[var(--teal)]" />
@@ -601,7 +572,7 @@ export function VisitDiagnosticsTab(props?: {
 							type="button"
 							onClick={() => setIsDicomViewerModalOpen(true)}
 							data-testid="btn-open-dicom-viewer-modal"
-							className="h-8 px-2.5 rounded-lg text-[13px] font-medium bg-[var(--paper-strong)] hover:bg-[var(--glass-hover,var(--paper-soft))] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 flex items-center gap-1.5"
+							className="h-8 px-2.5 rounded-lg text-[13px] font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 flex items-center gap-1.5"
 							title="Открыть DICOM / ОПТГ панораму"
 						>
 							<ImageIcon size={14} className="text-[var(--teal)]" />
@@ -628,11 +599,11 @@ export function VisitDiagnosticsTab(props?: {
 			<div className={diagnosticMode === "photo" ? "flex flex-col gap-3" : "hidden"}>
 				<div
 					data-testid="visit-photo-protocol-card"
-					className="p-4 rounded-xl bg-[var(--paper)] border border-[var(--glass-border)] hover:border-[var(--teal)]/40 flex flex-col gap-3 shadow-2xs transition-all"
+					className="p-3.5 sm:p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 flex flex-col gap-3 shadow-2xs transition-all"
 				>
 					<div className="flex items-center justify-between gap-3 flex-wrap">
 						<div className="flex items-center gap-3">
-							<div className="w-9 h-9 rounded-lg bg-[var(--paper-soft)] border border-[var(--glass-border)] text-[var(--teal)] flex items-center justify-center shrink-0 shadow-2xs">
+							<div className="w-9 h-9 rounded-lg bg-[var(--paper)] border border-[var(--line-subtle)] text-[var(--teal)] flex items-center justify-center shrink-0 shadow-2xs">
 								<Camera size={18} />
 							</div>
 							<div>
@@ -640,7 +611,7 @@ export function VisitDiagnosticsTab(props?: {
 									<strong className="text-xs sm:text-sm font-bold text-[var(--ink)]">
 										Дентальный фотопротокол («До / После»)
 									</strong>
-									<span className="text-[10px] font-semibold text-[var(--muted)] bg-[var(--paper-soft)] px-1.5 py-0.5 rounded border border-[var(--glass-border)]">
+									<span className="text-[10px] font-semibold text-[var(--muted)] bg-[var(--paper)] px-1.5 py-0.5 rounded border border-[var(--line-subtle)]">
 										Фотоприложения
 									</span>
 								</div>
@@ -665,14 +636,14 @@ export function VisitDiagnosticsTab(props?: {
 					</div>
 
 					{/* Quick-Attach Form */}
-					<div className="pt-2.5 border-t border-[var(--glass-border)] flex flex-wrap items-center gap-2">
+					<div className="pt-2.5 border-t border-[var(--line-subtle)] flex flex-wrap items-center gap-2">
 						<div className="flex items-center gap-1.5 text-xs text-[var(--muted)] font-medium">
 							<span>Зуб:</span>
 							<select
 								id="photo-tooth-select"
 								value={selectedToothForPhoto}
 								onChange={(e) => setSelectedToothForPhoto(Number(e.target.value))}
-								className="h-8 text-xs font-semibold rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] px-2 focus:outline-none focus:border-[var(--teal)] cursor-pointer"
+								className="h-8 text-xs font-semibold rounded-lg border border-[var(--line-subtle)] bg-[var(--paper)] text-[var(--ink)] px-2 focus:outline-none focus:border-[var(--teal)] cursor-pointer"
 							>
 								<option value={0}>Общий вид</option>
 								{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28, 48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
@@ -689,7 +660,7 @@ export function VisitDiagnosticsTab(props?: {
 								id="photo-stage-select"
 								value={selectedPhotoType}
 								onChange={(e) => setSelectedPhotoType(e.target.value as any)}
-								className="h-8 text-xs font-semibold rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] px-2 focus:outline-none focus:border-[var(--teal)] cursor-pointer"
+								className="h-8 text-xs font-semibold rounded-lg border border-[var(--line-subtle)] bg-[var(--paper)] text-[var(--ink)] px-2 focus:outline-none focus:border-[var(--teal)] cursor-pointer"
 							>
 								<option value="before">До лечения</option>
 								<option value="process">В процессе (коффердам/преп)</option>
@@ -706,7 +677,7 @@ export function VisitDiagnosticsTab(props?: {
 								placeholder="Клинический комментарий (цвет, анатомическая моделировка)..."
 								value={photoComment}
 								onChange={(e) => setPhotoComment(e.target.value)}
-								className="w-full h-8 px-2.5 text-xs font-medium rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--teal)]"
+								className="w-full h-8 px-2.5 text-xs font-medium rounded-lg border border-[var(--line-subtle)] bg-[var(--paper)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--teal)]"
 							>
 							</input>
 						</div>
@@ -723,24 +694,16 @@ export function VisitDiagnosticsTab(props?: {
 
 					{/* List of Attached Photos or Quiet State */}
 					{photoAttachments.length > 0 ? (
-						<div className="pt-2 border-t border-[var(--glass-border)] space-y-2">
+						<div className="pt-2 border-t border-[var(--line-subtle)] space-y-2">
 							<div className="text-[11px] font-bold text-[var(--muted)]">
-								Прикрепленные снимки фотопротокола ({photoAttachments.length}) — превью 200×200px (CLS = 0):
+								Прикрепленные снимки фотопротокола ({photoAttachments.length}):
 							</div>
-							<div className="flex items-center gap-3 overflow-x-auto pb-2 pt-1 flex-wrap sm:flex-nowrap">
+							<div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 pt-1">
 								{photoAttachments.map((photo) => (
 									<div
 										key={photo.id}
-										className="group relative rounded-xl overflow-hidden border border-[var(--glass-border)] bg-[#030712] shrink-0 shadow-2xs hover:border-[var(--teal)] transition-all cursor-pointer"
-										style={{
-											width: "200px",
-											height: "200px",
-											minWidth: "200px",
-											minHeight: "200px",
-											maxWidth: "200px",
-											maxHeight: "200px",
-											aspectRatio: "1 / 1",
-										}}
+										className="group relative rounded-xl overflow-hidden border border-[var(--line-subtle)] bg-[#030712] shadow-2xs hover:border-[var(--teal)] hover:shadow-md transition-all cursor-pointer aspect-square select-none"
+										style={{ aspectRatio: "1 / 1" }}
 										onClick={() => setIsPhotoProtocolModalOpen(true)}
 										title="Нажмите для открытия сетки фотопротокола"
 										data-testid={`photo-attachment-card-${photo.id}`}
@@ -755,12 +718,12 @@ export function VisitDiagnosticsTab(props?: {
 												style={{ width: "100%", height: "100%", objectFit: "cover" }}
 											/>
 										) : (
-											<div className="w-full h-full flex flex-col items-center justify-center p-3 text-center text-xs text-[var(--muted)] gap-1.5 select-none">
-												<Camera size={28} className="text-[var(--teal)] opacity-70" />
-												<span className="font-semibold text-white">
+											<div className="w-full h-full flex flex-col items-center justify-center p-2 text-center text-xs text-[var(--muted)] gap-1 select-none">
+												<Camera size={22} className="text-[var(--teal)] opacity-70" />
+												<span className="font-semibold text-white text-[11px]">
 													{photo.toothNumber ? `Зуб ${photo.toothNumber}` : "Общий вид"}
 												</span>
-												<span className="text-[10px] text-zinc-400">
+												<span className="text-[9.5px] text-zinc-400">
 													{photo.photoType === "before"
 														? "До лечения"
 														: photo.photoType === "after"
@@ -773,8 +736,8 @@ export function VisitDiagnosticsTab(props?: {
 												</span>
 											</div>
 										)}
-										<div className="absolute top-2 left-2 flex flex-col gap-1 items-start pointer-events-none">
-											<span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-black/75 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/40 shadow-xs backdrop-blur-xs">
+										<div className="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between gap-1 pointer-events-none">
+											<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-black/80 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/40 shadow-xs backdrop-blur-xs leading-none">
 												{photo.photoType === "before"
 													? "До лечения"
 													: photo.photoType === "after"
@@ -783,34 +746,33 @@ export function VisitDiagnosticsTab(props?: {
 															? "В процессе"
 															: "Макро"}
 											</span>
-											{photo.toothNumber ? (
-												<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-black/75 text-white border border-white/20 shadow-xs">
-													#{photo.toothNumber}
-												</span>
-											) : null}
-										</div>
-										<div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/95 via-black/60 to-transparent flex items-center justify-between text-white text-[10px]">
-											<span className="truncate max-w-[130px] opacity-90">
-												{photo.description || (photo.toothNumber ? `Зуб ${photo.toothNumber}` : "Снимок")}
-											</span>
 											<button
 												type="button"
 												onClick={(e) => {
 													e.stopPropagation();
 													handleRemovePhoto(photo.id);
 												}}
-												className="p-1 rounded bg-black/60 hover:bg-rose-600 text-rose-300 hover:text-white transition-colors cursor-pointer"
+												className="pointer-events-auto p-1 rounded-md bg-black/70 hover:bg-rose-600 text-rose-300 hover:text-white transition-colors cursor-pointer"
 												title="Удалить снимок"
 											>
-												<Trash2 size={12} />
+												<Trash2 size={11} />
 											</button>
+										</div>
+										<div className="absolute bottom-0 inset-x-0 p-1.5 bg-gradient-to-t from-black/95 via-black/65 to-transparent flex items-center justify-between text-white text-[10px]">
+											<span className="truncate max-w-[70px] opacity-90 text-[10px]">
+												{photo.description || (photo.toothNumber ? `Зуб ${photo.toothNumber}` : "Снимок")}
+											</span>
+											<span className="text-[var(--teal,#0d9488)] font-semibold flex items-center gap-0.5 group-hover:text-white transition-colors">
+												<Eye size={11} />
+												<span className="text-[9.5px]">Открыть</span>
+											</span>
 										</div>
 									</div>
 								))}
 							</div>
 						</div>
 					) : (
-						<div className="pt-2 border-t border-[var(--glass-border)]/50 text-[11px] text-[var(--muted)] flex items-center justify-between">
+						<div className="pt-2 border-t border-[var(--line-subtle)] text-[11px] text-[var(--muted)] flex items-center justify-between">
 							<span>Снимки не прикреплены. Заполните форму выше для быстрой привязки к зубу или откройте сетку на 12 слотов.</span>
 						</div>
 					)}
@@ -824,11 +786,11 @@ export function VisitDiagnosticsTab(props?: {
 			<div className={diagnosticMode === "cbct" ? "flex flex-col gap-3" : "hidden"}>
 				<div
 					data-testid="visit-cbct-optg-card"
-					className="p-4 rounded-xl bg-[var(--paper)] border border-[var(--glass-border)] hover:border-[var(--teal)]/40 flex flex-col gap-4 shadow-2xs transition-all relative"
+					className="p-3.5 sm:p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 flex flex-col gap-3 shadow-2xs transition-all relative"
 				>
 					<div className="flex items-start justify-between gap-3 flex-wrap">
 						<div className="flex items-start gap-3">
-							<div className="w-10 h-10 rounded-xl bg-[var(--paper-soft)] border border-[var(--glass-border)] text-[var(--teal)] flex items-center justify-center shrink-0 shadow-2xs">
+							<div className="w-10 h-10 rounded-xl bg-[var(--paper)] border border-[var(--line-subtle)] text-[var(--teal)] flex items-center justify-center shrink-0 shadow-2xs">
 								<Activity size={20} />
 							</div>
 							<div className="min-w-0 flex-1">
@@ -847,7 +809,7 @@ export function VisitDiagnosticsTab(props?: {
 							<button
 								type="button"
 								onClick={() => setIsRadiologyModalOpen(true)}
-								className="h-8 px-3 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 font-medium text-[13px] flex items-center gap-1.5 shadow-2xs active:scale-98 transition-all cursor-pointer"
+								className="h-8 px-3 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 font-medium text-[13px] flex items-center gap-1.5 shadow-2xs active:scale-98 transition-all cursor-pointer"
 								title="Выписать направление на КЛКТ / ОПТГ / ТРГ"
 							>
 								<Scan size={14} className="text-[var(--teal)]" />
@@ -856,7 +818,7 @@ export function VisitDiagnosticsTab(props?: {
 						</div>
 					</div>
 
-					<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] flex flex-col sm:flex-row items-center justify-between gap-3">
+					<div className="p-3 rounded-lg bg-[var(--paper)] border border-[var(--line-subtle)] flex flex-col sm:flex-row items-center justify-between gap-2.5">
 						<div className="text-xs text-[var(--ink)]">
 							<span className="font-semibold block sm:inline">3D КЛКТ и MPR-просмотр:</span>
 							<span className="text-[var(--muted)] ml-0 sm:ml-1">Полноэкранный мультипланарный анализ (аксиальный, сагиттальный, корональный срезы).</span>
@@ -883,7 +845,7 @@ export function VisitDiagnosticsTab(props?: {
 							<button
 								type="button"
 								onClick={() => setIsDicomViewerModalOpen(true)}
-								className="h-8 px-2.5 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 font-medium text-[13px] flex items-center gap-1 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
+								className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 font-medium text-[13px] flex items-center gap-1 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
 								title="Просмотр DICOM / КТ-серии"
 							>
 								<ImageIcon size={13} className="text-[var(--teal)]" />
@@ -910,23 +872,23 @@ export function VisitDiagnosticsTab(props?: {
 			    СПЕЦИАЛИЗИРОВАННАЯ ДИАГНОСТИКА:
 			    Ортодонтия и цефалометрия ТРГ (сворачиваемая секция)
 			    ═══════════════════════════════════════════════════════════════════════ */}
-			<div className="border border-[var(--glass-border)] rounded-xl overflow-hidden bg-[var(--paper)] hover:border-[var(--teal)]/40 shadow-2xs transition-all">
+			<div className="border border-[var(--line-subtle)] rounded-xl overflow-hidden bg-[var(--paper-soft)] hover:border-[var(--teal)]/40 shadow-2xs transition-all">
 				<button
 					type="button"
 					onClick={() => setIsAdvancedDiagnosticsOpen((prev) => !prev)}
 					data-testid="toggle-advanced-diagnostics-btn"
-					className="w-full p-3 flex items-center justify-between gap-3 text-left bg-transparent border-0 hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
+					className="w-full p-3 flex items-center justify-between gap-3 text-left bg-transparent border-0 hover:bg-[var(--paper)]/50 transition-colors cursor-pointer"
 					aria-expanded={isAdvancedDiagnosticsOpen}
 				>
 					<div className="flex items-center gap-2.5">
-						<div className="w-6 h-6 rounded-md bg-[var(--paper-soft)] border border-[var(--glass-border)] text-[var(--muted)] flex items-center justify-center shrink-0">
+						<div className="w-6 h-6 rounded-md bg-[var(--paper)] border border-[var(--line-subtle)] text-[var(--muted)] flex items-center justify-center shrink-0">
 							{isAdvancedDiagnosticsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
 						</div>
 						<div className="flex items-center gap-2 flex-wrap">
 							<span className="text-xs font-bold text-[var(--ink)]">
 								Расширенная и ортодонтическая диагностика (ТРГ / Цефалометрия)
 							</span>
-							<span className="text-[10px] font-semibold text-[var(--muted)] bg-[var(--paper-soft)] px-2 py-0.5 rounded-md border border-[var(--glass-border)]">
+							<span className="text-[10px] font-semibold text-[var(--muted)] bg-[var(--paper)] px-2 py-0.5 rounded-md border border-[var(--line-subtle)]">
 								Для ортодонтии и челюстно-лицевой хирургии
 							</span>
 						</div>
@@ -940,11 +902,11 @@ export function VisitDiagnosticsTab(props?: {
 
 				<div
 					data-testid="visit-ceph-diagnostic-card"
-					className={`p-3 pt-0 border-t border-[var(--glass-border)]/60 ${isAdvancedDiagnosticsOpen ? "block" : "hidden"}`}
+					className={`p-3 pt-0 border-t border-[var(--line-subtle)] ${isAdvancedDiagnosticsOpen ? "block" : "hidden"}`}
 				>
-					<div className="p-3.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--glass-border)] hover:border-[var(--teal)]/40 flex flex-col justify-between gap-3 shadow-2xs transition-all mt-2">
+					<div className="p-3 rounded-lg bg-[var(--paper)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 flex flex-col justify-between gap-2.5 shadow-2xs transition-all mt-2">
 						<div className="flex items-start gap-3">
-							<div className="w-9 h-9 rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] text-[var(--teal)] flex items-center justify-center shrink-0 shadow-2xs">
+							<div className="w-9 h-9 rounded-lg bg-[var(--paper-soft)] border border-[var(--line-subtle)] text-[var(--teal)] flex items-center justify-center shrink-0 shadow-2xs">
 								<Activity size={18} />
 							</div>
 							<div className="min-w-0 flex-1">
@@ -952,7 +914,7 @@ export function VisitDiagnosticsTab(props?: {
 									<strong className="text-xs sm:text-sm font-bold text-[var(--ink)]">
 										Цефалометрический анализ ТРГ
 									</strong>
-									<span className="text-[10px] font-semibold text-[var(--muted)] bg-[var(--paper)] px-1.5 py-0.5 rounded border border-[var(--glass-border)]">
+									<span className="text-[10px] font-semibold text-[var(--muted)] bg-[var(--paper-soft)] px-1.5 py-0.5 rounded border border-[var(--line-subtle)]">
 										Протокол ТРГ
 									</span>
 								</div>
@@ -962,12 +924,12 @@ export function VisitDiagnosticsTab(props?: {
 							</div>
 						</div>
 
-						<div className="flex items-center justify-end pt-1 border-t border-[var(--glass-border)]/50">
+						<div className="flex items-center justify-end pt-1 border-t border-[var(--line-subtle)]">
 							<button
 								type="button"
 								onClick={() => setIsCephModalOpen(true)}
 								data-testid="open-visit-ceph-modal-btn"
-								className="h-8 px-3.5 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 font-semibold text-[13px] flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
+								className="h-8 px-3.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 font-semibold text-[13px] flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
 							>
 								<Activity size={14} className="text-[var(--teal)]" />
 								<span>Открыть анализ ТРГ</span>
@@ -1005,7 +967,7 @@ export function VisitDiagnosticsTab(props?: {
 				/>
 			)}
 
-			{/* Clinical 12/8/6/3-Slot Photo Protocol Studio Modal (Tier 2 on-demand) */}
+			{/* Clinical 12/8/6/3-Slot Photo Protocol Studio Modal */}
 			{isPhotoProtocolModalOpen && (
 				<ClinicalPhotoProtocolModal
 					isOpen={isPhotoProtocolModalOpen}
@@ -1052,7 +1014,7 @@ export function VisitDiagnosticsTab(props?: {
 				/>
 			)}
 
-			{/* 3D CBCT / MPR Fullscreen Studio Modal (Tier 3 on-demand) */}
+			{/* 3D CBCT / MPR Fullscreen Studio Modal */}
 			{isCbctModalOpen && (
 				<CbctMprImplantStudioModal
 					isOpen={isCbctModalOpen}

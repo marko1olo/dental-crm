@@ -210,7 +210,9 @@ html.dark .sidebar .nav-item.active,
 }
 
 /* Ensure pill in sidebar footer stays compact and icon-only */
-.sidebar-footer .dnt-clinic-control-pill .dnt-pill-segment > span:not(.dnt-pill-dot):not([class*="animate-pulse"]) {
+.sidebar-footer .dnt-clinic-control-pill .dnt-pill-segment > span:not(.dnt-pill-dot):not([class*="animate-pulse"]),
+.sidebar-footer .dnt-clinic-control-pill span[class*="2xl:inline"],
+.sidebar-footer .dnt-clinic-control-pill span[class*="font-mono"] {
 	display: none !important;
 }
 
@@ -283,7 +285,9 @@ html.dark .sidebar .nav-item.active,
 	color: var(--ink) !important;
 	cursor: pointer !important;
 	transition: background 0.15s ease, border-color 0.15s ease !important;
-	flex: 0 1 auto !important;
+	flex: 1 1 0% !important;
+	min-width: 0 !important;
+	justify-content: flex-start !important;
 }
 
 .sidebar-footer .theme-footer-control:hover {

@@ -12,7 +12,7 @@
  */
 
 import type React from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Award, CheckCircle2 } from "lucide-react";
 import {
 	type CatalogServiceItem,
@@ -51,6 +51,7 @@ export type PriceValidatorActiveTab = "prices" | "star_protocols" | "summary";
 export interface TreatmentPlanPriceValidatorModalProps {
 	readonly isOpen?: boolean | undefined;
 	readonly onClose?: (() => void) | undefined;
+	readonly planId?: string | undefined;
 	readonly planPayload?: TreatmentPlanValidationPayload | undefined;
 	readonly stages?: readonly TreatmentPlanStage[] | undefined;
 	readonly catalogPricelist?: readonly CatalogServiceItem[] | undefined;
@@ -74,6 +75,7 @@ const EMPTY_PLAN_PAYLOAD: TreatmentPlanValidationPayload = {
 export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValidatorModalProps> = ({
 	isOpen = true,
 	onClose,
+	planId,
 	planPayload: propPlanPayload,
 	stages,
 	catalogPricelist: propCatalogPricelist,
@@ -82,18 +84,75 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 	onExportCompletedAct,
 }) => {
 	const isDemo = isDemoShowcaseMode();
+	const demoFallbackPlan: TreatmentPlanValidationPayload | undefined =
+		isDemo ? SAMPLE_TREATMENT_PLAN_FOR_VALIDATION : undefined;
+	const demoFallbackCatalog: readonly CatalogServiceItem[] =
+		isDemo ? SAMPLE_CURRENT_PRICELIST : [];
+
+	const [liveCatalog, setLiveCatalog] = useState<CatalogServiceItem[] | null>(null);
+	const [livePlan, setLivePlan] = useState<TreatmentPlanValidationPayload | null>(null);
+
+	useEffect(() => {
+		if (isDemo) return;
+		let isCancelled = false;
+
+		const fetchPricelist = async () => {
+			if (propCatalogPricelist && propCatalogPricelist.length > 0) return;
+			try {
+				const res = await fetch("/api/pricelists");
+				if (!res.ok) return;
+				const data = (await res.json()) as { success?: boolean; items?: any[] };
+				if (!isCancelled && data.items && Array.isArray(data.items)) {
+					const mapped: CatalogServiceItem[] = data.items.map((it) => ({
+						id: String(it.id ?? ""),
+						code804n: String(it.code ?? ""),
+						title: String(it.title ?? ""),
+						category: String(it.category ?? "other"),
+						basePriceRub: Number(it.basePriceRub ?? 0),
+						active: Boolean(it.active ?? it.isActive ?? true),
+						isArchived: it.active === false || it.isActive === false,
+					}));
+					setLiveCatalog(mapped);
+				}
+			} catch (err) {
+				console.error("[PriceValidator] Failed to fetch live catalog from PostgreSQL:", err);
+			}
+		};
+
+		const fetchPlan = async () => {
+			if (propPlanPayload || !planId) return;
+			try {
+				const res = await fetch(`/api/treatment-plans/${encodeURIComponent(planId)}`);
+				if (!res.ok) return;
+				const data = (await res.json()) as {
+					success?: boolean;
+					validationPayload?: TreatmentPlanValidationPayload;
+				};
+				if (!isCancelled && data.validationPayload) {
+					setLivePlan(data.validationPayload);
+				}
+			} catch (err) {
+				console.error("[PriceValidator] Failed to fetch live treatment plan from PostgreSQL:", err);
+			}
+		};
+
+		void fetchPricelist();
+		void fetchPlan();
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [isDemo, planId, propCatalogPricelist, propPlanPayload]);
+
 	const planPayload: TreatmentPlanValidationPayload =
-		propPlanPayload !== undefined
-			? propPlanPayload
-			: isDemo
-				? SAMPLE_TREATMENT_PLAN_FOR_VALIDATION
-				: EMPTY_PLAN_PAYLOAD;
-	const catalogPricelist =
-		propCatalogPricelist !== undefined
-			? propCatalogPricelist
-			: isDemo
-				? SAMPLE_CURRENT_PRICELIST
-				: [];
+		propPlanPayload ??
+		livePlan ??
+		(demoFallbackPlan ?? EMPTY_PLAN_PAYLOAD);
+
+	const catalogPricelist: readonly CatalogServiceItem[] =
+		propCatalogPricelist ??
+		liveCatalog ??
+		demoFallbackCatalog;
 	const [activeTab, setActiveTab] = useState<PriceValidatorActiveTab>("prices");
 	const [selectedPresetId, setSelectedPresetId] =
 		useState<PlanPricePolicyPresetId>(initialPresetId);

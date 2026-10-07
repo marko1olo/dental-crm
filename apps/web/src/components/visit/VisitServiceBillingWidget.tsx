@@ -3,8 +3,8 @@
  * DENTE Dental CRM — Chairside Visit Service Billing & 54-FZ Cash Register Widget (Mandates 8b, 8d, 8e, 8n).
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
-import { Plus, Minus, Trash2, Percent, ShieldCheck, Check, CreditCard, Printer, Tag, Zap } from "lucide-react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { Plus, Minus, Trash2, Percent, ShieldCheck, Check, CreditCard, Printer, Tag, Zap, ChevronDown, ChevronUp } from "lucide-react";
 import { kopecksToRub, rubToKopecks } from "@dental/shared";
 import { showToast } from "../GlobalToast.js";
 import { PaymentModal } from "../finance/PaymentModal.js";
@@ -51,6 +51,23 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 	const [globalDiscountReason, setGlobalDiscountReason] = useState<string>("");
 	const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
+	const [isDiscountPopoverOpen, setIsDiscountPopoverOpen] = useState<boolean>(false);
+	const discountPopoverRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!isDiscountPopoverOpen) return;
+		const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+			if (discountPopoverRef.current && !discountPopoverRef.current.contains(e.target as Node)) {
+				setIsDiscountPopoverOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handlePointerDown);
+		document.addEventListener("touchstart", handlePointerDown);
+		return () => {
+			document.removeEventListener("mousedown", handlePointerDown);
+			document.removeEventListener("touchstart", handlePointerDown);
+		};
+	}, [isDiscountPopoverOpen]);
 
 	const [activeDmsLetter, setActiveDmsLetter] = useState<{
 		id: string;
@@ -505,54 +522,6 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 				</div>
 			</div>
 
-			{/* Doctor Autonomy Discount Bar (Mandate 8e Item 7: No Admin Password Barrier) */}
-			<div
-				className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 space-y-2"
-				data-testid="doctor-discount-bar"
-			>
-				<div className="flex items-center justify-between flex-wrap gap-2 text-xs">
-					<div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-200">
-						<Percent size={14} className="text-amber-600 shrink-0" />
-						<span>Свобода скидок врача (без паролей и согласований):</span>
-					</div>
-					{globalDiscountPercent > 0 && (
-						<span
-							className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-200/60 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200"
-							data-testid="active-global-discount-badge"
-						>
-							Активна скидка {globalDiscountPercent}% {globalDiscountReason ? `(${globalDiscountReason})` : ""}
-						</span>
-					)}
-				</div>
-
-				<div className="flex items-center gap-1.5 flex-wrap">
-					{DOCTOR_DISCOUNT_PRESETS.map((preset) => {
-						const isSelected =
-							(preset.percent === 100 && isGlobalWarranty100) ||
-							(!isGlobalWarranty100 && globalDiscountPercent === preset.percent);
-						return (
-							<button
-								key={preset.percent}
-								type="button"
-								onClick={() => applyGlobalDiscount(preset.percent, preset.reason)}
-								title={preset.reason ? `Применить скидку: ${preset.reason}` : "Сбросить скидку"}
-								className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
-									isSelected
-										? preset.percent === 100
-											? "bg-emerald-600 text-white shadow-2xs"
-											: "bg-amber-600 text-white shadow-2xs"
-										: "bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
-								}`}
-								data-testid={`btn-discount-preset-${preset.percent}`}
-							>
-								{preset.percent === 100 ? <ShieldCheck size={12} /> : <Zap size={11} />}
-								<span>{preset.label}</span>
-							</button>
-						);
-					})}
-				</div>
-			</div>
-
 			{/* 100% Warranty Banner */}
 			{totals.isWarranty100 && (
 				<div
@@ -629,19 +598,106 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 						)}
 					</div>
 
-					<div className="text-right">
-						<div className="text-xs text-[var(--muted,#64748b)] uppercase tracking-wider font-semibold">
-							Итого к оплате:
+					<div className="flex items-center gap-3 flex-wrap">
+						{/* Doctor Autonomy Discount Chip with Popover */}
+						<div className="relative inline-block" ref={discountPopoverRef}>
+							<button
+								type="button"
+								onClick={() => setIsDiscountPopoverOpen((prev) => !prev)}
+								title="Свобода скидок врача (без паролей и согласований)"
+								className={`h-8 px-2.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
+									isGlobalWarranty100
+										? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500/40 text-emerald-700 dark:text-emerald-300"
+										: globalDiscountPercent > 0
+											? "bg-amber-50 dark:bg-amber-950/40 border-amber-500/40 text-amber-700 dark:text-amber-300"
+											: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="chip-doctor-discount"
+								aria-haspopup="true"
+								aria-expanded={isDiscountPopoverOpen}
+							>
+								<Percent size={12} className={isGlobalWarranty100 ? "text-emerald-600" : globalDiscountPercent > 0 ? "text-amber-600" : "text-[var(--muted,#64748b)]"} />
+								<span>
+									{isGlobalWarranty100
+										? "Гарантия 100%"
+										: globalDiscountPercent > 0
+											? `Скидка: ${globalDiscountPercent}%`
+											: "Скидка: 0%"}
+								</span>
+								{isDiscountPopoverOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+							</button>
+
+							{/* Popover of discount presets */}
+							<div
+								className={`absolute right-0 bottom-full mb-2 z-30 p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] shadow-xl min-w-[240px] space-y-1.5 ${
+									isDiscountPopoverOpen ? "block animate-in fade-in slide-in-from-bottom-2 duration-150" : "hidden"
+								}`}
+								data-testid="doctor-discount-bar"
+							>
+								<div className="flex items-center justify-between text-xs font-bold text-[var(--ink,#0f172a)] px-1 pb-1 border-b border-[var(--line,#e2e8f0)]">
+									<div className="flex items-center gap-1">
+										<Percent size={12} className="text-amber-600" />
+										<span>Свобода скидок врача:</span>
+									</div>
+									<span className="text-[10px] text-[var(--muted,#64748b)] font-normal">без паролей</span>
+								</div>
+								{globalDiscountPercent > 0 && (
+									<div
+										className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200"
+										data-testid="active-global-discount-badge"
+									>
+										Активна: {globalDiscountPercent}% {globalDiscountReason ? `(${globalDiscountReason})` : ""}
+									</div>
+								)}
+								<div className="grid grid-cols-1 gap-1">
+									{DOCTOR_DISCOUNT_PRESETS.map((preset) => {
+										const isSelected =
+											(preset.percent === 100 && isGlobalWarranty100) ||
+											(!isGlobalWarranty100 && globalDiscountPercent === preset.percent);
+										return (
+											<button
+												key={preset.percent}
+												type="button"
+												onClick={() => {
+													applyGlobalDiscount(preset.percent, preset.reason);
+													setIsDiscountPopoverOpen(false);
+												}}
+												title={preset.reason ? `Применить скидку: ${preset.reason}` : "Сбросить скидку"}
+												className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-between gap-1 w-full text-left ${
+													isSelected
+														? preset.percent === 100
+															? "bg-emerald-600 text-white shadow-2xs"
+															: "bg-amber-600 text-white shadow-2xs"
+														: "bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)]"
+												}`}
+												data-testid={`btn-discount-preset-${preset.percent}`}
+											>
+												<span className="flex items-center gap-1.5">
+													{preset.percent === 100 ? <ShieldCheck size={12} /> : <Zap size={11} />}
+													<span>{preset.label}</span>
+												</span>
+												{isSelected && <Check size={12} />}
+											</button>
+										);
+									})}
+								</div>
+							</div>
 						</div>
-						<div
-							className={`text-lg font-black font-mono ${
-								totals.isWarranty100
-									? "text-emerald-600 dark:text-emerald-400"
-									: "text-[var(--ink,#0f172a)]"
-							}`}
-							data-testid="visit-billing-total-due"
-						>
-							{totals.isWarranty100 ? "0 ₽ (Гарантия)" : `${totals.totalDueRub.toLocaleString("ru-RU")} ₽`}
+
+						<div className="text-right">
+							<div className="text-xs text-[var(--muted,#64748b)] uppercase tracking-wider font-semibold">
+								Итого к оплате:
+							</div>
+							<div
+								className={`text-lg font-black font-mono ${
+									totals.isWarranty100
+										? "text-emerald-600 dark:text-emerald-400"
+										: "text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="visit-billing-total-due"
+							>
+								{totals.isWarranty100 ? "0 ₽ (Гарантия)" : `${totals.totalDueRub.toLocaleString("ru-RU")} ₽`}
+							</div>
 						</div>
 					</div>
 				</div>

@@ -14,8 +14,13 @@ import { InformedConsentModal } from "../../consents/InformedConsentModal";
 import { showToast } from "../../GlobalToast";
 import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 import { useVisitStore } from "../../../store/visitStore";
+import {
+	extractAppointmentStageInfo,
+	getStandardStageTitle,
+} from "../visitPlanStageHandoff";
 
 export interface VisitViewModalsProps {
+	loadedTreatmentPlan?: any;
 	endoModalToothNumber: string | null;
 	endoModalToothState?: string;
 	isEndoModalOpen: boolean;
@@ -62,6 +67,7 @@ export interface VisitViewModalsProps {
 }
 
 export function VisitViewModals({
+	loadedTreatmentPlan,
 	endoModalToothNumber,
 	endoModalToothState,
 	isEndoModalOpen,
@@ -97,6 +103,29 @@ export function VisitViewModals({
 	visitNoteForm,
 	activeAppointment,
 }: VisitViewModalsProps) {
+	// ─── STAGE TARGETING FOR DENTAL LAB ORDERS & ORTHOPEDIC HANDOFF ───
+	const appointmentStageTarget = React.useMemo(() => {
+		return extractAppointmentStageInfo(activeAppointment);
+	}, [activeAppointment]);
+
+	const effectiveTreatmentPlanId =
+		loadedTreatmentPlan?.id ||
+		activeAppointment?.treatmentPlanId ||
+		appointmentStageTarget.treatmentPlanId ||
+		undefined;
+	const effectiveStageNumber =
+		activeAppointment?.stageNumber ??
+		appointmentStageTarget.stageNumber ??
+		1;
+	const effectiveStageTitle =
+		activeAppointment?.stageTitle ||
+		appointmentStageTarget.stageTitle ||
+		getStandardStageTitle(effectiveStageNumber);
+	const effectiveStageId =
+		activeAppointment?.stageId ||
+		appointmentStageTarget.stageId ||
+		undefined;
+
 	// Вычисление единственной активной клинической модалки (ИНВАРИАНТ 1: Clinical Visit Exclusivity)
 	// Экстренная помощь (emergency_rescue) имеет абсолютный клинический приоритет при анафилаксии/шоке.
 	const effectiveActiveModal = React.useMemo<string | null>(() => {
@@ -307,6 +336,10 @@ export function VisitViewModals({
 						activeAppointment?.doctorName ||
 						"Лечащий врач"
 					}
+					treatmentPlanId={effectiveTreatmentPlanId}
+					stageId={effectiveStageId}
+					stageNumber={effectiveStageNumber}
+					stageTitle={effectiveStageTitle}
 					initialToothFdi={labOrderModalToothNumber ?? undefined}
 					scheduledVisitDate={
 						activeAppointment?.startTime ||
@@ -376,6 +409,97 @@ export function VisitViewModals({
 								);
 							}
 						}
+
+						// ─── СВЯЗКА СО СНЯТИЕМ СЛЕПКА (ОТТИСКА) В СЧЁТ ПРИЁМА ───
+						if (order.includeImpressionBilling !== false) {
+							const primaryTooth = targetTeeth[0];
+							const primaryToothStr = primaryTooth ? String(primaryTooth) : undefined;
+							const impressionKind =
+								order.impressionType === "digital_scan_stl_ply"
+									? "цифровой оптический оттиск"
+									: order.impressionType === "polyether"
+										? "полиэфирный оттиск"
+										: "прецизионный силиконовый оттиск";
+							const impressionTitle = `Снятие оттиска с челюсти (${impressionKind})`;
+							const impressionPriceRub = 2500;
+
+							useVisitStore.getState().addCompletedService({
+								serviceId: `lab-order-impression-${order.id || Date.now()}`,
+								code804n: "A02.07.010",
+								toothNumber: primaryTooth,
+								toothCode: primaryToothStr,
+								name: impressionTitle,
+								priceRub: impressionPriceRub,
+								quantity: 1,
+								category: "Ортопедия",
+							});
+
+							if (typeof window !== "undefined") {
+								window.dispatchEvent(
+									new CustomEvent("dente-add-billing-item", {
+										detail: {
+											item: {
+												code804n: "A02.07.010",
+												title: impressionTitle,
+												toothCode: primaryToothStr,
+												quantity: 1,
+												unitPriceRub: impressionPriceRub,
+												discountRub: 0,
+											},
+										},
+									}),
+								);
+							}
+
+							appendToEMKField(
+								"treatmentPlan",
+								`Выполнено клиническое снятие оттиска${primaryToothStr ? ` в области зуба ${primaryToothStr}` : ""}.`,
+							);
+						}
+
+						// ─── СВЯЗКА СО СТАТУСОМ ЭТАПА ПЛАНА ЛЕЧЕНИЯ («В работе в ЗТЛ») ───
+						const targetPlanId = order.treatmentPlanId || effectiveTreatmentPlanId;
+						const targetStageNum = order.stageNumber ?? effectiveStageNumber;
+						const targetStageName = order.stageTitle || effectiveStageTitle;
+						const targetStageIdentifier = order.stageId || effectiveStageId;
+
+						if (typeof window !== "undefined") {
+							window.dispatchEvent(
+								new CustomEvent("dente-treatment-plan-stage-status", {
+									detail: {
+										treatmentPlanId: targetPlanId,
+										planId: targetPlanId,
+										stageNumber: targetStageNum,
+										stageId: targetStageIdentifier,
+										stageTitle: targetStageName,
+										status: "in_lab",
+										statusRu: "В работе в ЗТЛ",
+										orderId: order.id,
+										orderNumber: order.orderNumber,
+										timestamp: new Date().toISOString(),
+									},
+								}),
+							);
+
+							if (targetPlanId) {
+								window.dispatchEvent(
+									new CustomEvent("dente-treatment-plans-reload", {
+										detail: {
+											patientId: activePatient?.id,
+											planId: targetPlanId,
+											status: "in_lab",
+										},
+									}),
+								);
+							}
+						}
+
+						showToast(
+							order.includeImpressionBilling !== false
+								? "Наряд ЗТЛ сохранен. Снятие слепка (2 500 ₽) включено в счёт визита"
+								: "Наряд ЗТЛ сохранен",
+							"success",
+						);
 					}}
 				/>
 			)}

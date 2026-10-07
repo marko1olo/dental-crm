@@ -49,12 +49,12 @@ export const CompletedServicesList: React.FC<CompletedServicesListProps> = ({
 									</span>
 								)}
 								<span className="truncate flex-1">
+									<span className="font-medium text-slate-900 dark:text-slate-100 mr-1.5">{entry.title}</span>
 									{entry.code804n && (
-										<span className="font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400 mr-1.5">
+										<span className="font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400">
 											[{entry.code804n}]
 										</span>
 									)}
-									<span className="font-medium text-slate-900 dark:text-slate-100">{entry.title}</span>
 									{entry.quantity > 1 && (
 										<span className="text-slate-500 ml-1 text-[11px]">
 											× {entry.quantity} шт.
