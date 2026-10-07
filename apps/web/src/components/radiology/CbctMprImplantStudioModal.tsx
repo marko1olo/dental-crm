@@ -54,6 +54,7 @@ export const CbctMprImplantStudioModal: React.FC<
 > = ({
 	isOpen, onClose, study, patientName, patientId, onApplyToDiary043, onApplyToPlan,
 	initialStudioMode, initialSidebarOpen, initialCaliper, initialViewLayout, initialVolume, initialImageIds, autoLoadDemo,
+	initialTool, initialNervePoints,
 }) => {
 	const modalId = "cbct-studio-modal";
 
@@ -127,7 +128,7 @@ export const CbctMprImplantStudioModal: React.FC<
 	const [implantEntryXOffsetMm, setImplantEntryXOffsetMm] = useState<number>(0.0), [implantEntryDepthMm, setImplantEntryDepthMm] = useState<number>(2.0);
 	const [implantAngulationDeg, setImplantAngulationDeg] = useState<number>(0.0), [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(false);
 	const [activeNerveSide, setActiveNerveSide] = useState<NerveCanalSide>("right");
-	const [rightNervePoints, setRightNervePoints] = useState<Point3D[]>([]);
+	const [rightNervePoints, setRightNervePoints] = useState<Point3D[]>(() => (initialNervePoints ? [...initialNervePoints] : []));
 	const [leftNervePoints, setLeftNervePoints] = useState<Point3D[]>([]);
 	const [selectedNerveNodeIdx, setSelectedNerveNodeIdx] = useState<number | null>(null);
 	const nervePoints = useMemo(() => (activeNerveSide === "right" ? rightNervePoints : leftNervePoints), [activeNerveSide, rightNervePoints, leftNervePoints]);
@@ -140,7 +141,7 @@ export const CbctMprImplantStudioModal: React.FC<
 	const [canalXOffsetMm, setCanalXOffsetMm] = useState<number>(2.0), [canalYDepthMm, setCanalYDepthMm] = useState<number>(16.5);
 
 	// Measurement tools & transforms
-	const [activeTool, setActiveTool] = useState<CbctToolMode>("crosshair");
+	const [activeTool, setActiveTool] = useState<CbctToolMode>(() => initialTool ?? "crosshair");
 	const [activeViewport, setActiveViewport] = useState<CbctViewportType>("axial");
 	const [rulers, setRulers] = useState<CbctMeasurementRuler[]>([]), [activeRuler, setActiveRuler] = useState<(CbctMeasurementRuler & { currentMm: Point3D }) | null>(null);
 	const [angles, setAngles] = useState<CbctAngleMeasurement[]>([]), [activeAngle, setActiveAngle] = useState<(CbctAngleMeasurement & { currentMm: Point3D }) | null>(null);

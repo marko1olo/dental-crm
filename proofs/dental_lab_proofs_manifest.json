@@ -1,0 +1,42 @@
+[
+  {
+    "filename": "dental_lab_01_orders_view_desktop_light.png",
+    "primaryPath": "C:\\Clinic_MVP\\dental-crm\\proofs\\dental_lab_01_orders_view_desktop_light.png",
+    "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\d4d1db62-9bc2-40af-956e-fdf46ad1706e\\dental_lab_01_orders_view_desktop_light.png",
+    "size": 339240,
+    "hash": "adfcd1a3ac0c5c5a7f73e48dbfe72b32",
+    "description": "Реестр ЗТЛ (DentalLabOrdersView) PC Light: 1-строчный тулбар 36px, курьерская панель, сегментированные фильтры 5 этапов, таблица 32px"
+  },
+  {
+    "filename": "dental_lab_02_orders_view_desktop_dark.png",
+    "primaryPath": "C:\\Clinic_MVP\\dental-crm\\proofs\\dental_lab_02_orders_view_desktop_dark.png",
+    "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\d4d1db62-9bc2-40af-956e-fdf46ad1706e\\dental_lab_02_orders_view_desktop_dark.png",
+    "size": 331617,
+    "hash": "1babb049df8f2932d211acfcfb41fcef",
+    "description": "Реестр ЗТЛ (DentalLabOrdersView) PC Dark: глубокая тёмная тема, высокая контрастность бейджей, курьерская панель, таблица 32px"
+  },
+  {
+    "filename": "dental_lab_03_price_matrix_modal_desktop_light.png",
+    "primaryPath": "C:\\Clinic_MVP\\dental-crm\\proofs\\dental_lab_03_price_matrix_modal_desktop_light.png",
+    "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\d4d1db62-9bc2-40af-956e-fdf46ad1706e\\dental_lab_03_price_matrix_modal_desktop_light.png",
+    "size": 508479,
+    "hash": "0936ddd831c319b7a97181c9a52e318a",
+    "description": "Прейскурант и себестоимость ЗТЛ (DentalLabPriceMatrixModal) PC Light: 8 клинических типов (ZrO2, e.max, элайнеры, бюгели), маржа клиники"
+  },
+  {
+    "filename": "dental_lab_04_work_order_modal_desktop_light.png",
+    "primaryPath": "C:\\Clinic_MVP\\dental-crm\\proofs\\dental_lab_04_work_order_modal_desktop_light.png",
+    "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\d4d1db62-9bc2-40af-956e-fdf46ad1706e\\dental_lab_04_work_order_modal_desktop_light.png",
+    "size": 452705,
+    "hash": "599dc4e5b5430e1817519429d5d70626",
+    "description": "Создание наряд-заказа ЗТЛ (DentalLabWorkOrderModal) PC Light: ортопедические конструкции, расцветка VITA Classical/Bleach, Мандат 8e"
+  },
+  {
+    "filename": "dental_lab_05_work_order_modal_desktop_dark.png",
+    "primaryPath": "C:\\Clinic_MVP\\dental-crm\\proofs\\dental_lab_05_work_order_modal_desktop_dark.png",
+    "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\d4d1db62-9bc2-40af-956e-fdf46ad1706e\\dental_lab_05_work_order_modal_desktop_dark.png",
+    "size": 450470,
+    "hash": "30171eb954721821f79031ae2917bedb",
+    "description": "Создание наряд-заказа ЗТЛ (DentalLabWorkOrderModal) PC Dark: тёмный контрастный интерфейс, выбор оттенков VITA, расчет себестоимости"
+  }
+]

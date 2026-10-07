@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomInt } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
@@ -99,7 +99,7 @@ export class TelegramAccountService {
 
 		// Генерация 5-значного кода (в продакшене отправляется через MTProto auth.sendCode)
 		// Для тестового режима и предсказуемости генерируем криптографический код
-		const randomNum = Math.floor(10000 + Math.random() * 90000);
+		const randomNum = randomInt(10000, 100000);
 		const code = randomNum.toString();
 		const phoneCodeHash = createHash("sha256")
 			.update(`${formattedPhone}:${Date.now()}:${randomBytes(16).toString("hex")}`)

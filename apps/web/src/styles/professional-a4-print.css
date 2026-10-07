@@ -126,7 +126,7 @@
 	font-weight: 600;
 	color: var(--teal, #0f766e);
 	background-color: var(--teal-soft, #ccfbf1);
-	border: 1px solid var(--teal-border, #99f6e4);
+	border: 1px solid var(--teal-line, rgba(13, 148, 136, 0.3));
 	padding: 4px 8px;
 	border-radius: 6px;
 	white-space: nowrap;

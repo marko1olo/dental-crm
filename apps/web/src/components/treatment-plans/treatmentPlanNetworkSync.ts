@@ -39,6 +39,7 @@ export interface LoadedPlanResult {
 export async function fetchPatientTreatmentPlans(
 	patientId: string,
 	catalog?: CatalogServiceLookupItem[],
+	targetPlanId?: string | null,
 ): Promise<LoadedPlanResult | null> {
 	try {
 		const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}/treatment-plans`, {
@@ -47,28 +48,31 @@ export async function fetchPatientTreatmentPlans(
 		if (!res.ok) return null;
 		const data = await res.json();
 		if (data?.success && Array.isArray(data.plans) && data.plans.length > 0) {
-			const latestPlan =
-				data.plans.find((p: any) => p.status === "Approved" || p.status === "Active") ||
-				data.plans[0];
-			if (latestPlan) {
+			const targetPlan = targetPlanId
+				? data.plans.find((p: any) => p.id === targetPlanId) ||
+				  data.plans.find((p: any) => p.status === "Approved" || p.status === "Active") ||
+				  data.plans[0]
+				: data.plans.find((p: any) => p.status === "Approved" || p.status === "Active") ||
+				  data.plans[0];
+			if (targetPlan) {
 				const status: "draft" | "agreed" | "in_progress" | "completed" =
-					latestPlan.status === "Approved"
+					targetPlan.status === "Approved"
 						? "agreed"
-						: latestPlan.status === "Active"
+						: targetPlan.status === "Active"
 							? "in_progress"
-							: latestPlan.status === "Completed"
+							: targetPlan.status === "Completed"
 								? "completed"
 								: "draft";
 
 				let rebuiltStages: TreatmentPlanStage[] | null = null;
-				if (Array.isArray(latestPlan.items) && latestPlan.items.length > 0) {
-					const rebuilt = buildStagesFromPlanItems(latestPlan.items, catalog);
+				if (Array.isArray(targetPlan.items) && targetPlan.items.length > 0) {
+					const rebuilt = buildStagesFromPlanItems(targetPlan.items, catalog);
 					if (rebuilt.length > 0) {
 						rebuiltStages = rebuilt;
 					}
 				}
 				return {
-					planId: latestPlan.id,
+					planId: targetPlan.id,
 					status,
 					rebuiltStages,
 				};
@@ -215,6 +219,7 @@ export function exportPlanToCashier({
 				unitPriceRub: it.unitPriceRub || 0,
 				discountRub: it.discountRub || 0,
 				code804n: it.code804n || undefined,
+				doctorId: it.doctorId ?? null,
 			})),
 			allowUnplannedServices: true,
 			notes: exportData.notes,
@@ -269,6 +274,7 @@ export async function savePlanToPostgres({
 			discount: it.discountRub || 0,
 			phase: it.phase,
 			isAuto: it.isAuto ?? true,
+			doctorId: it.doctorId ?? null,
 		}));
 
 		const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}/treatment-plans`, {
@@ -450,9 +456,17 @@ export function dispatchStageStartEvents(
 			detail: {
 				patientId,
 				patientName,
+				stageId: stage.stageKind || String(stage.stageNumber),
 				stageNumber: stage.stageNumber,
 				stageTitle: stage.title,
 				items: stage.items,
+				services: stage.items,
+				procedures: stage.items,
+				treatmentPlanId: `PLAN-${patientId.slice(0, 6).toUpperCase()}`,
+				planId: `PLAN-${patientId.slice(0, 6).toUpperCase()}`,
+				estimatedDurationMinutes: stage.items?.length
+					? Math.min(120, Math.max(30, stage.items.length * 20))
+					: 30,
 			},
 		}),
 	);

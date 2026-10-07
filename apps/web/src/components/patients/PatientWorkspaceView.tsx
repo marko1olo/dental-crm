@@ -57,6 +57,7 @@ export interface PatientWorkspaceViewProps {
 	onOpenPlan?: (planId: string) => void;
 }
 import { TreatmentPlanCardItem } from "./TreatmentPlanCardItem";
+import { PatientTreatmentPlanDrawerModal } from "./workspace/PatientTreatmentPlanDrawerModal";
 
 const VisitHistoryCardItem: React.FC<{
 	appointment: Appointment;
@@ -323,16 +324,25 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 				[onOpenVisit, patientId],
 			);
 
+			const [selectedPlanIdForModal, setSelectedPlanIdForModal] = useState<string | null>(null);
+			const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+
 			const handleOpenPlanCallback = useCallback(
 				(planId: string) => {
 					if (onOpenPlan) {
 						onOpenPlan(planId);
 					} else {
-						window.location.hash = "#documents";
+						setSelectedPlanIdForModal(planId);
+						setIsPlanModalOpen(true);
 					}
 				},
 				[onOpenPlan],
 			);
+
+			const handleCreateNewPlanCallback = useCallback(() => {
+				setSelectedPlanIdForModal(null);
+				setIsPlanModalOpen(true);
+			}, []);
 
 			const [isDmsLetterOpen, setIsDmsLetterOpen] = useState(false);
 			const [isDmsRegistryOpen, setIsDmsRegistryOpen] = useState(false);
@@ -505,6 +515,8 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 									setActiveTab("plans");
 									if (onOpenPlan) {
 										onOpenPlan("new");
+									} else {
+										handleCreateNewPlanCallback();
 									}
 								}}
 								title="Составить новый план лечения или открыть раздел планов"
@@ -790,6 +802,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 											: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
 									}`}
 									onClick={() => setActiveTab("plans")}
+									data-testid="tab-patient-plans"
 								>
 									<FileText className="w-3 h-3 inline mr-1" />
 									Планы лечения ({patientPlanItems.length})
@@ -863,14 +876,32 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 								</div>
 							</div>
 
-							<div className="flex items-center justify-between">
+							<div className="flex items-center justify-between flex-wrap gap-2">
 								<h4 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] m-0">
 									Позиции плана лечения ({patientPlanItems.length})
 								</h4>
+								<button
+									type="button"
+									onClick={handleCreateNewPlanCallback}
+									className="min-h-[32px] px-3 py-1 text-xs font-bold rounded-lg bg-[var(--teal)] text-[var(--on-teal,#ffffff)] hover:opacity-90 border-0 cursor-pointer inline-flex items-center gap-1.5 shadow-xs transition-transform active:scale-95"
+									data-testid="btn-create-treatment-plan"
+								>
+									<Plus className="w-3.5 h-3.5" />
+									<span>Конструктор планов</span>
+								</button>
 							</div>
 							{patientPlanItems.length === 0 ? (
-								<div className="p-6 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">
-									Планы лечения для пациента пока не составлены.
+								<div className="p-6 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] flex flex-col items-center justify-center gap-3">
+									<p className="m-0">Планы лечения для пациента пока не составлены.</p>
+									<button
+										type="button"
+										onClick={handleCreateNewPlanCallback}
+										className="min-h-[34px] px-4 py-1.5 text-xs font-bold rounded-lg bg-[var(--teal)] text-[var(--on-teal,#ffffff)] hover:opacity-90 border-0 cursor-pointer inline-flex items-center gap-1.5 shadow-xs transition-transform active:scale-95"
+										data-testid="btn-empty-create-plan"
+									>
+										<Plus className="w-3.5 h-3.5" />
+										<span>Создать первый план лечения</span>
+									</button>
 								</div>
 							) : (
 								<>
@@ -1128,6 +1159,21 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 						doctorName={dashboard?.activeDoctor?.fullName || undefined}
 						clinicName={dashboard?.clinicSettings?.profile?.brandName || undefined}
 					/>
+
+					{/* Live Patient Treatment Plan Builder Drawer / Modal */}
+					{isPlanModalOpen && (
+						<PatientTreatmentPlanDrawerModal
+							isOpen={isPlanModalOpen}
+							onClose={() => {
+								setIsPlanModalOpen(false);
+								setSelectedPlanIdForModal(null);
+							}}
+							patientId={patientId}
+							activePatient={currentPatient}
+							organizationId={(dashboard as any)?.organizationId}
+							initialPlanId={selectedPlanIdForModal}
+						/>
+					)}
 
 					{/* FAB clearance bottom spacer */}
 					<div

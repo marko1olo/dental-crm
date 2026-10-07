@@ -149,7 +149,7 @@ const registerBodySchema = z
 		ownerPin: authPinSchema.optional(),
 		practiceType: z.enum(["solo", "clinic"]).optional().default("clinic"),
 		phone: z.string().trim().optional(),
-		withDemoData: z.boolean().optional().default(true),
+		withDemoData: z.boolean().optional().default(false),
 	})
 	.superRefine((data, ctx) => {
 		if (data.password.length < 6) {
@@ -1263,7 +1263,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 				ownerPin,
 				practiceType = "clinic",
 				phone,
-				withDemoData = true,
+				withDemoData = false,
 			} = parsed.data;
 			const loginId = email.toLowerCase().trim();
 

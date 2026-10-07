@@ -964,6 +964,7 @@ export const treatmentPlanItemsNew = pgTable(
 		commissionAmount: numeric("commission_amount", { precision: 12, scale: 2 })
 			.notNull()
 			.default("0"),
+		doctorId: uuid("doctor_id").references(() => users.id),
 		/** `NOT NULL` в базе — с миграции 0146; умолчание `now()` там было и раньше. */
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
@@ -974,6 +975,7 @@ export const treatmentPlanItemsNew = pgTable(
 			t.organizationId,
 		),
 		planIdIdx: index("treatment_plan_items_new_plan_id_idx").on(t.planId),
+		doctorIdIdx: index("treatment_plan_items_new_doctor_id_idx").on(t.doctorId),
 	}),
 );
 

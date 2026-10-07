@@ -216,6 +216,7 @@ export function DentalLabPriceMatrixModal({
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="price-matrix-title"
+			data-testid="dental-lab-price-matrix-modal"
 		>
 			<div className="relative w-full max-w-4xl bg-[var(--paper)] border border-[var(--line)] rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
 				{/* Header */}
@@ -248,6 +249,7 @@ export function DentalLabPriceMatrixModal({
 						<button
 							type="button"
 							onClick={onClose}
+							data-testid="btn-close-price-matrix"
 							className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] h-8 w-8 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
 							aria-label="Закрыть"
 						>

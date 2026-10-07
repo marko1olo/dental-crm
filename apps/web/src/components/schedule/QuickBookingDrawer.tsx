@@ -215,6 +215,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
             selectedPatientName={selectedPatient?.fullName}
             chairDoctorAssignments={props.chairDoctorAssignments}
             dashboard={dashboard}
+            initialSlot={initialSlot}
           />
         </div>
 

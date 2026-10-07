@@ -172,7 +172,8 @@ html.dark .tg-bonus-chip {
 	border: 1px solid var(--tg-border);
 	cursor: pointer;
 	white-space: nowrap;
-	min-height: 36px;
+	min-height: 38px;
+	flex-shrink: 0;
 	transition: all 0.2s ease;
 }
 

@@ -226,4 +226,65 @@ describe("Production Zero-Mock & Demo Mode Quarantine Inquisitor (8c, 8f, 8y)", 
 			"WarehouseInventoryAuditModal initializes items as [] in production mode",
 		);
 	});
+
+	it("TREATMENT PLANS AUDIT: verifies TreatmentPlanPresenterModal and TreatmentPlanPriceValidatorModal quarantine sample teeth and price presets behind isDemoShowcaseMode", () => {
+		const presenterPath = path.resolve(
+			getWebRoot(),
+			"src/components/treatment-plans/TreatmentPlanPresenterModal.tsx",
+		);
+		const presenterSource = fs.readFileSync(presenterPath, "utf-8");
+		assert.ok(
+			presenterSource.includes("isDemoShowcaseMode"),
+			"TreatmentPlanPresenterModal uses isDemoShowcaseMode",
+		);
+		assert.ok(
+			/isDemoShowcaseMode\(\)\s*\?\s*DEFAULT_SAMPLE_TEETH\s*:\s*\[\]/.test(presenterSource),
+			"TreatmentPlanPresenterModal guards DEFAULT_SAMPLE_TEETH strictly behind isDemoShowcaseMode",
+		);
+
+		const validatorPath = path.resolve(
+			getWebRoot(),
+			"src/components/treatment-plans/validation/TreatmentPlanPriceValidatorModal.tsx",
+		);
+		const validatorSource = fs.readFileSync(validatorPath, "utf-8");
+		assert.ok(
+			validatorSource.includes("isDemoShowcaseMode"),
+			"TreatmentPlanPriceValidatorModal uses isDemoShowcaseMode",
+		);
+		assert.ok(
+			/isDemo\s*\?\s*SAMPLE_TREATMENT_PLAN_FOR_VALIDATION\s*:\s*undefined/.test(validatorSource),
+			"TreatmentPlanPriceValidatorModal guards SAMPLE_TREATMENT_PLAN_FOR_VALIDATION behind isDemo",
+		);
+		assert.ok(
+			/isDemo\s*\?\s*SAMPLE_CURRENT_PRICELIST\s*:\s*\[\]/.test(validatorSource),
+			"TreatmentPlanPriceValidatorModal guards SAMPLE_CURRENT_PRICELIST behind isDemo",
+		);
+	});
+
+	it("AUTH PURITY AUDIT: verifies App.tsx uses canonical doctor name and DemoTourSelector uses realistic clinic name", () => {
+		const appPath = path.resolve(getWebRoot(), "src/App.tsx");
+		const appSource = fs.readFileSync(appPath, "utf-8");
+		assert.ok(
+			!appSource.includes("Д-р Демонстрационный А. В."),
+			"App.tsx must not contain absurd placeholder 'Д-р Демонстрационный А. В.'",
+		);
+		assert.ok(
+			appSource.includes("Д-р Соколов А. В."),
+			"App.tsx must use realistic canonical doctor 'Д-р Соколов А. В.'",
+		);
+
+		const tourPath = path.resolve(
+			getWebRoot(),
+			"src/components/auth/DemoTourSelector.tsx",
+		);
+		const tourSource = fs.readFileSync(tourPath, "utf-8");
+		assert.ok(
+			!tourSource.includes("Демонстрационная Клиника DENTE"),
+			"DemoTourSelector must not use absurd 'Демонстрационная Клиника DENTE'",
+		);
+		assert.ok(
+			tourSource.includes("Стоматологическая Клиника DENTE"),
+			"DemoTourSelector must use realistic 'Стоматологическая Клиника DENTE'",
+		);
+	});
 });

@@ -69,6 +69,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="dental-lab-modal-title"
+			data-testid="dental-lab-work-order-modal"
 		>
 			<div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] max-sm:max-h-[96vh]">
 				

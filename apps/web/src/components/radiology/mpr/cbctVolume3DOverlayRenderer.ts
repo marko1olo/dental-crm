@@ -375,9 +375,14 @@ export function drawVolume3DOverlay(
 		ctx.stroke();
 		ctx.setLineDash([]);
 
-		// Midpoint measurement badge
-		const midX = (pApex.screenX + pClosestNerve.screenX) / 2.0;
-		const midY = (pApex.screenY + pClosestNerve.screenY) / 2.0;
+		// Midpoint measurement badge with perpendicular offset to avoid overlapping node labels
+		const dx = pClosestNerve.screenX - pApex.screenX;
+		const dy = pClosestNerve.screenY - pApex.screenY;
+		const lineLen = Math.hypot(dx, dy) || 1;
+		const normX = -dy / lineLen;
+		const normY = dx / lineLen;
+		const badgeCenterX = (pApex.screenX + pClosestNerve.screenX) / 2.0 - normX * 16;
+		const badgeCenterY = (pApex.screenY + pClosestNerve.screenY) / 2.0 - normY * 16;
 		const badgeText = `${netClearance.toFixed(1)} мм`;
 
 		ctx.font = "bold 9.5px monospace";
@@ -387,9 +392,9 @@ export function drawVolume3DOverlay(
 		ctx.lineWidth = 1;
 		ctx.beginPath();
 		if (typeof ctx.roundRect === "function") {
-			ctx.roundRect(midX - bw / 2, midY - 7, bw, 14, 3);
+			ctx.roundRect(badgeCenterX - bw / 2, badgeCenterY - 7, bw, 14, 3);
 		} else {
-			ctx.rect(midX - bw / 2, midY - 7, bw, 14);
+			ctx.rect(badgeCenterX - bw / 2, badgeCenterY - 7, bw, 14);
 		}
 		ctx.fill();
 		ctx.stroke();
@@ -397,7 +402,7 @@ export function drawVolume3DOverlay(
 		ctx.fillStyle = statusStroke;
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
-		ctx.fillText(badgeText, midX, midY);
+		ctx.fillText(badgeText, badgeCenterX, badgeCenterY);
 		ctx.restore();
 	}
 }

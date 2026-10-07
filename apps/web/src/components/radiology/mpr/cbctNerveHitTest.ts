@@ -115,7 +115,7 @@ export function formatNerveStepStatus(
 
 	return {
 		step: 3,
-		titleRu: `✓ Канал IAN: ${totalLengthMm.toFixed(1)} мм (Fast Marching Vatech)`,
+		titleRu: `Канал IAN: ${totalLengthMm.toFixed(1)} мм (Fast Marching Vatech)`,
 		hintRu: `Канал [${sideRu}] сегментирован. Перетащите узел для микроподгонки.`,
 		badgeClass: "bg-cyan-950/80 text-cyan-200 border-cyan-500/60 shadow-[0_0_10px_rgba(6,182,212,0.3)]",
 		isCompleted: true,

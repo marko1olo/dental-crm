@@ -185,7 +185,7 @@ export function DemoTourSelector({
 			const clinicProfile = {
 				id: DEMO_SHOWCASE_ORG_ID,
 				organizationId: DEMO_SHOWCASE_ORG_ID,
-				name: "Демонстрационная Клиника DENTE",
+				name: "Стоматологическая Клиника DENTE",
 				email: "demo@dente.ru",
 				phone: "+7 (800) 555-35-35",
 			};

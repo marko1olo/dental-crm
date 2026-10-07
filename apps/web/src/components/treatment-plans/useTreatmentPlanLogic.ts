@@ -8,6 +8,7 @@ import type {
 	CashierInvoiceExportData,
 	DigitalSignatureAgreementData,
 	ToothData,
+	TreatmentPlanDoctorOption,
 	TreatmentPlanItem,
 	TreatmentPlanStage,
 	TreatmentPlanStatus,
@@ -57,6 +58,8 @@ import {
 	filterStagesBySpecialty,
 	mergeIncomingPlanItem,
 	mergePersistedPlanItems,
+	assignDoctorToStageInStages,
+	assignDoctorToItemInStages,
 } from "./treatmentPlanStageMutations";
 import {
 	fetchPatientTreatmentPlans,
@@ -76,6 +79,7 @@ export interface UseTreatmentPlanLogicProps {
 	readonly planCreatedAtIso?: string | undefined;
 	readonly initialStatus?: TreatmentPlanStatus | undefined;
 	readonly onStatusChange?: ((status: TreatmentPlanStatus) => void) | undefined;
+	readonly initialPlanId?: string | null | undefined;
 }
 
 export function useTreatmentPlanLogic({
@@ -87,6 +91,7 @@ export function useTreatmentPlanLogic({
 	planCreatedAtIso,
 	initialStatus,
 	onStatusChange,
+	initialPlanId,
 }: UseTreatmentPlanLogicProps) {
 	const { dashboard, auth } = useAppLogicContext();
 	const effectiveTeethData = useTreatmentPlanTeeth(patientId, teethData);
@@ -151,7 +156,7 @@ export function useTreatmentPlanLogic({
 		let isCancelled = false;
 
 		async function loadPatientPlans() {
-			const loaded = await fetchPatientTreatmentPlans(patientId, catalog);
+			const loaded = await fetchPatientTreatmentPlans(patientId, catalog, initialPlanId);
 			if (isCancelled || !loaded) return;
 			setCurrentPlanId(loaded.planId);
 			setPlanStatus(loaded.status);
@@ -170,7 +175,7 @@ export function useTreatmentPlanLogic({
 			isCancelled = true;
 			window.removeEventListener("dente-treatment-plans-reload", handleReload);
 		};
-	}, [patientId, catalog]);
+	}, [patientId, catalog, initialPlanId]);
 
 	const patient = (dashboard?.patients as any[] | undefined)?.find(
 		(p: any) => p.id === patientId,
@@ -316,6 +321,80 @@ export function useTreatmentPlanLogic({
 			});
 		}
 		showToast("Процедура удалена из этапа", "info");
+	};
+
+	const doctorOptions: readonly TreatmentPlanDoctorOption[] = useMemo(() => {
+		const staff = (dashboard?.clinicSettings?.staff ?? []) as any[];
+		const activeStaff = staff.filter(
+			(s) =>
+				s.active !== false &&
+				(s.role === "doctor" ||
+					s.role === "owner" ||
+					s.role === "therapist" ||
+					s.role === "surgeon" ||
+					s.role === "orthopedist" ||
+					s.role === "orthodontist"),
+		);
+		if (activeStaff.length > 0) {
+			return activeStaff.map((s) => ({
+				id: s.id,
+				fullName: s.name || s.fullName || "Врач-стоматолог",
+				role: s.role,
+				specialty: Array.isArray(s.specialties)
+					? s.specialties.join(", ")
+					: s.specialty || (s.role === "doctor" ? "Стоматолог" : s.role),
+			}));
+		}
+		return [
+			{ id: "doc-therapist-1", fullName: "Д-р Смирнова Е.А.", role: "doctor", specialty: "Терапевт" },
+			{ id: "doc-surgeon-1", fullName: "Д-р Барабаш С.В.", role: "doctor", specialty: "Хирург-имплантолог" },
+			{ id: "doc-orthopedist-1", fullName: "Д-р Ковалев В.Н.", role: "doctor", specialty: "Ортопед" },
+			{ id: "doc-orthodontist-1", fullName: "Д-р Мельникова А.В.", role: "doctor", specialty: "Ортодонт" },
+		];
+	}, [dashboard?.clinicSettings?.staff]);
+
+	const handleAssignDoctorToStage = (
+		stage: TreatmentPlanStage,
+		doctorId: string | null,
+		doctorName: string | null,
+		doctorSpecialty: string | null,
+	) => {
+		setCustomStages(
+			assignDoctorToStageInStages(
+				stages,
+				stage.stageNumber,
+				doctorId,
+				doctorName,
+				doctorSpecialty,
+			),
+		);
+		if (doctorName) {
+			showToast(`Врач ${doctorName} назначен на этап ${stage.stageNumber}`, "success");
+		} else {
+			showToast(`Назначение врача с этапа ${stage.stageNumber} снято`, "info");
+		}
+	};
+
+	const handleAssignDoctorToItem = (
+		itemId: string,
+		doctorId: string | null,
+		doctorName: string | null,
+		doctorSpecialty: string | null,
+	) => {
+		setCustomStages(
+			assignDoctorToItemInStages(
+				stages,
+				itemId,
+				doctorId,
+				doctorName,
+				doctorSpecialty,
+			),
+		);
+		if (doctorName) {
+			showToast(`Врач ${doctorName} назначен на процедуру`, "success");
+		} else {
+			showToast("Назначение врача на процедуру снято", "info");
+		}
 	};
 
 	const handleExecuteCopilot = (cmdOrText: CopilotCommandType | string) => {
@@ -787,5 +866,8 @@ export function useTreatmentPlanLogic({
 		handleDeleteStage,
 		handleStartStage,
 		handleChangeStageStatus,
+		doctorOptions,
+		handleAssignDoctorToStage,
+		handleAssignDoctorToItem,
 	};
 }

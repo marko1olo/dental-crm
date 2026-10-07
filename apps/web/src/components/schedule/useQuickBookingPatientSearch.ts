@@ -73,8 +73,20 @@ export function useQuickBookingPatientSearch({
         setSearchQuery(found.fullName);
       } else {
         setPatientId(initialSlot.patientId);
-        setSelectedPatient(null);
-        setSearchQuery("");
+        const fallbackName = initialSlot.patientName?.trim() || "";
+        if (fallbackName) {
+          setSelectedPatient({
+            id: initialSlot.patientId,
+            fullName: fallbackName,
+            status: "active",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          } as Patient);
+          setSearchQuery(fallbackName);
+        } else {
+          setSelectedPatient(null);
+          setSearchQuery("");
+        }
       }
       setShowInlineNewPatient(false);
       setNewPatientFullName("");

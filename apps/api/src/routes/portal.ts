@@ -1254,7 +1254,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 		// Generate Queue Ticket
 		const ticketSuffix = appointment
 			? appointment.id.slice(-2).toUpperCase()
-			: Math.floor(10 + Math.random() * 89).toString();
+			: randomInt(10, 100).toString();
 		const queueTicket = `Талон № А-${ticketSuffix}`;
 
 		// 4. Update Appointment status to 'arrived' if found

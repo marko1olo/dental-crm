@@ -21,6 +21,7 @@ import {
 	treatmentItems,
 	treatmentPlanItemsNew,
 	treatmentPlans,
+	users,
 } from "../db/schema.js";
 import {
 	chargeLineKopecks,
@@ -179,6 +180,7 @@ const treatmentPlanItemSchema = z.object({
 	discount: treatmentPlanMoneyRubSchema.default(0),
 	phase: z.number().int().min(1).max(12).default(1),
 	isAuto: z.boolean().optional(),
+	doctorId: z.string().uuid().optional().nullable(),
 });
 
 const treatmentPlanUpsertSchema = z.object({
@@ -266,6 +268,7 @@ function splitStoredPriceId(value: string | null): { priceId: string; name: stri
 function serializeTreatmentPlan(
 	plan: TreatmentPlanRow,
 	items: TreatmentPlanItemRow[],
+	doctorsById?: Map<string, { fullName: string; specialty: string | null }>,
 ) {
 	return {
 		id: plan.id,
@@ -293,6 +296,10 @@ function serializeTreatmentPlan(
 		updatedAt: (plan.updatedAt ?? plan.createdAt).toISOString(),
 		items: items.map((item) => {
 			const { priceId, name } = splitStoredPriceId(item.priceId);
+			const docInfo =
+				item.doctorId && doctorsById
+					? doctorsById.get(item.doctorId)
+					: undefined;
 			return {
 				id: item.id,
 				toothNumber: item.toothNumber ?? undefined,
@@ -303,6 +310,9 @@ function serializeTreatmentPlan(
 				discount: numeric(item.discount),
 				phase: item.phase,
 				isAuto: item.isBundle,
+				doctorId: item.doctorId ?? null,
+				doctorName: docInfo?.fullName ?? null,
+				doctorSpecialty: docInfo?.specialty ?? null,
 			};
 		}),
 	};
@@ -343,8 +353,51 @@ async function loadTreatmentPlansForPatient(
 		itemsByPlanId.set(item.planId, group);
 	}
 
+	const doctorIds = [
+		...new Set(
+			items
+				.map((item) => item.doctorId)
+				.filter((id): id is string => Boolean(id)),
+		),
+	];
+	const doctorsById = new Map<
+		string,
+		{ fullName: string; specialty: string | null }
+	>();
+	if (doctorIds.length > 0) {
+		const docRows = await db
+			.select({
+				id: users.id,
+				fullName: users.fullName,
+				role: users.role,
+				specialties: users.specialties,
+			})
+			.from(users)
+			.where(
+				and(
+					eq(users.organizationId, organizationId),
+					inArray(users.id, doctorIds),
+				),
+			);
+		for (const doc of docRows) {
+			const specList = Array.isArray(doc.specialties)
+				? doc.specialties.join(", ")
+				: null;
+			doctorsById.set(doc.id, {
+				fullName: doc.fullName,
+				specialty:
+					specList ||
+					(doc.role === "doctor" ? "Врач-стоматолог" : doc.role),
+			});
+		}
+	}
+
 	return plans.map((plan) =>
-		serializeTreatmentPlan(plan, itemsByPlanId.get(plan.id) ?? []),
+		serializeTreatmentPlan(
+			plan,
+			itemsByPlanId.get(plan.id) ?? [],
+			doctorsById,
+		),
 	);
 }
 
@@ -1109,6 +1162,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 								discount: item.discount.toString(),
 								phase: item.phase,
 								isBundle: Boolean(item.isAuto),
+								doctorId: item.doctorId ?? null,
 							})),
 						);
 					}
@@ -1288,6 +1342,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 									}),
 								),
 								status: ledgerStatus as "proposed" | "approved",
+								plannedDoctorUserId: item.doctorId ?? null,
 								notes: null,
 							};
 						});

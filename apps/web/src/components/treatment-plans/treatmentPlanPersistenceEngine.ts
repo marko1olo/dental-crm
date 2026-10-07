@@ -136,6 +136,9 @@ export function buildStagesFromPlanItems(
 				priceId: cleanCode,
 				fromCatalog: true,
 				isAuto: Boolean(raw.isAuto),
+				doctorId: raw.doctorId ?? null,
+				doctorName: raw.doctorName ?? null,
+				doctorSpecialty: raw.doctorSpecialty ?? null,
 			};
 		});
 
@@ -182,6 +185,8 @@ export function buildStagesFromPlanItems(
 
 		const order804nCodes = Array.from(new Set(mappedItems.map((it) => it.code804n)));
 
+		const stageDoctor = mappedItems.find((it) => it.doctorId);
+
 		stages.push({
 			stageNumber: phaseNumber,
 			stageKind,
@@ -195,6 +200,9 @@ export function buildStagesFromPlanItems(
 			estimatedWeeks: phaseNumber === 2 ? 12 : phaseNumber === 3 ? 4 : 2,
 			order804nCodes,
 			status: "agreed",
+			doctorId: stageDoctor?.doctorId ?? null,
+			doctorName: stageDoctor?.doctorName ?? null,
+			doctorSpecialty: stageDoctor?.doctorSpecialty ?? null,
 		});
 	}
 

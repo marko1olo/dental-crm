@@ -1181,35 +1181,35 @@ export function generateFnsNdflPrintHtml(
 				? signingOptions
 				: {};
 
-		const certSerial =
-			opts.certificateSerialNumber ||
-			`00E4A28B${payload.documentNumber.replace(/\D/g, "").padStart(12, "0").slice(0, 16).toUpperCase()}`;
-		const certSubject =
-			opts.certificateSubject ||
-			clinic.name ||
-			clinic.directorName ||
-			"ООО СТОМАТОЛОГИЯ ДЕНТЕ";
-		const validFrom =
-			opts.validFrom ||
-			(typeof payload.documentDate === "string"
-				? payload.documentDate
-				: new Date().toISOString());
-		const validToDate = new Date(validFrom);
-		validToDate.setFullYear(validToDate.getFullYear() + 1);
+		if (opts.certificateSerialNumber) {
+			const certSerial = opts.certificateSerialNumber;
+			const certSubject =
+				opts.certificateSubject ||
+				clinic.name ||
+				clinic.directorName ||
+				"ООО СТОМАТОЛОГИЯ ДЕНТЕ";
+			const validFrom =
+				opts.validFrom ||
+				(typeof payload.documentDate === "string"
+					? payload.documentDate
+					: new Date().toISOString());
+			const validToDate = new Date(validFrom);
+			validToDate.setFullYear(validToDate.getFullYear() + 1);
 
-		const stampHtml = renderDigitalSignatureStampHtml({
-			certificateSerialNumber: certSerial,
-			certificateSubject: certSubject,
-			certificateIssuer:
-				opts.certificateIssuer || "Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
-			validFrom,
-			validTo: opts.validTo || validToDate.toISOString(),
-			signedAt: opts.signedAt || validFrom,
-			signatureType: opts.signatureType || "ukep",
-			documentId: payload.documentNumber,
-		});
+			const stampHtml = renderDigitalSignatureStampHtml({
+				certificateSerialNumber: certSerial,
+				certificateSubject: certSubject,
+				certificateIssuer:
+					opts.certificateIssuer || "Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
+				validFrom,
+				validTo: opts.validTo || validToDate.toISOString(),
+				signedAt: opts.signedAt || validFrom,
+				signatureType: opts.signatureType || "ukep",
+				documentId: payload.documentNumber,
+			});
 
-		html = injectVisualSignatureStampIntoHtml(html, stampHtml);
+			html = injectVisualSignatureStampIntoHtml(html, stampHtml);
+		}
 	}
 
 	return html;

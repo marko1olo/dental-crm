@@ -62,25 +62,25 @@ export const SPECIALIST_CATEGORIES: Array<{
 	{
 		id: "therapist",
 		title: "Терапевт",
-		subtitle: "Лечение кариеса, пломбы, каналы",
+		subtitle: "Кариес, пломбы, каналы",
 		icon: Activity,
 	},
 	{
 		id: "surgeon",
 		title: "Хирург / Имплантолог",
-		subtitle: "Удаление зубов, коронки, имплантация",
+		subtitle: "Удаление, имплантация",
 		icon: Crown,
 	},
 	{
 		id: "orthodontist",
 		title: "Ортодонт",
-		subtitle: "Исправление прикуса, брекеты, элайнеры",
+		subtitle: "Прикус, брекеты, элайнеры",
 		icon: Sparkles,
 	},
 	{
 		id: "hygienist",
 		title: "Гигиенист",
-		subtitle: "Профгигиена, чистка Air-Flow, дёсны",
+		subtitle: "Чистка Air-Flow, дёсны",
 		icon: ShieldCheck,
 	},
 ];
@@ -573,7 +573,7 @@ export const TelegramMiniAppBooking: React.FC<TelegramMiniAppBookingProps> = mem
 									</div>
 									<span className="text-xs font-bold text-[var(--tg-text)]">{cat.title}</span>
 								</div>
-								<div className="text-[10px] text-[var(--tg-text-muted)] line-clamp-1 leading-tight">
+								<div className="text-[10px] text-[var(--tg-text-muted)] line-clamp-2 leading-tight">
 									{cat.subtitle}
 								</div>
 							</button>

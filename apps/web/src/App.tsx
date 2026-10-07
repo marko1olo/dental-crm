@@ -80,6 +80,7 @@ import {
 } from "./components/auth/DoctorPrivacyShield";
 import { usePerspectiveStore } from "./store/perspectiveStore";
 import { useUiSurfaceStore } from "./store/uiSurfaceStore";
+import { useScheduleStore } from "./store/scheduleStore";
 import { useAppLogic } from "./useAppLogic";
 import { useOmniPlatform } from "./hooks/useOmniPlatform";
 import { useDesktopShortcuts } from "./hooks/useDesktopShortcuts";
@@ -1109,6 +1110,24 @@ export function App() {
 		window.addEventListener("dente:open-shift", handleOpenShift);
 		return () => window.removeEventListener("dente:open-shift", handleOpenShift);
 	}, [openDoctorShiftCockpit]);
+
+	// DentalPRO Parity: Global event listener for booking treatment plan stage into schedule
+	useEffect(() => {
+		const handleBookStageAppointment = (e: Event) => {
+			const customEvent = e as CustomEvent<any>;
+			const slotInfo = customEvent.detail;
+			if (slotInfo) {
+				useScheduleStore.getState().setPendingStageBooking(slotInfo);
+				setCurrentView("schedule");
+			}
+		};
+		window.addEventListener("dente-book-stage-appointment", handleBookStageAppointment);
+		window.addEventListener("dente:book-stage-appointment", handleBookStageAppointment);
+		return () => {
+			window.removeEventListener("dente-book-stage-appointment", handleBookStageAppointment);
+			window.removeEventListener("dente:book-stage-appointment", handleBookStageAppointment);
+		};
+	}, [setCurrentView]);
 	// --- DUAL-TIER AUTH STATE ---
 	const [clinicAuthed, setClinicAuthed] = useState<boolean>(() => {
 		return !!readDenteClinicToken();
@@ -1398,7 +1417,7 @@ export function App() {
 			setStaffAuthed(true);
 			setActiveStaffUser({
 				id: "01a00000-0000-0000-0003-000000000001",
-				fullName: "Д-р Демонстрационный А. В.",
+				fullName: "Д-р Соколов А. В.",
 				role: "doctor",
 				email: "doctor@clinic.com",
 				organizationId: DEMO_SHOWCASE_ORG_ID,

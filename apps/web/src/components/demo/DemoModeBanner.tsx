@@ -208,8 +208,9 @@ export const DemoModeBanner: React.FC<DemoModeBannerProps> = ({
 									display: "inline-flex",
 									alignItems: "center",
 									gap: "4px",
-									padding: "2px 8px",
-									fontSize: "11px",
+									minHeight: "28px",
+									padding: "0 8px",
+									fontSize: "12px",
 									fontWeight: isSelected ? 700 : 500,
 									borderRadius: "4px",
 									border: isSelected
@@ -222,7 +223,7 @@ export const DemoModeBanner: React.FC<DemoModeBannerProps> = ({
 								}}
 								title={`Переключить на роль: ${r.label}`}
 							>
-								<Icon size={12} />
+								<Icon size={13} />
 								<span>{r.label}</span>
 							</button>
 						);
@@ -240,17 +241,18 @@ export const DemoModeBanner: React.FC<DemoModeBannerProps> = ({
 							color: "var(--brand-accent, #6366f1)",
 							border: "1px solid var(--brand-accent-border, rgba(99, 102, 241, 0.4))",
 							borderRadius: "4px",
-							padding: "3px 9px",
-							fontSize: "11px",
+							minHeight: "28px",
+							padding: "0 10px",
+							fontSize: "12px",
 							fontWeight: 600,
 							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
-							gap: "4px",
+							gap: "5px",
 						}}
 						title="Посмотреть клинический кейс роли, дневник 043/у и смету"
 					>
-						<HelpCircle size={13} aria-hidden="true" />
+						<HelpCircle size={14} aria-hidden="true" />
 						Клинический кейс роли
 					</button>
 
@@ -263,8 +265,9 @@ export const DemoModeBanner: React.FC<DemoModeBannerProps> = ({
 							color: "#ffffff",
 							border: "none",
 							borderRadius: "4px",
-							padding: "4px 12px",
-							fontSize: "11px",
+							minHeight: "28px",
+							padding: "0 12px",
+							fontSize: "12px",
 							fontWeight: 600,
 							cursor: "pointer",
 							display: "inline-flex",
@@ -272,7 +275,7 @@ export const DemoModeBanner: React.FC<DemoModeBannerProps> = ({
 							gap: "5px",
 						}}
 					>
-						<Sparkles size={13} aria-hidden="true" />
+						<Sparkles size={14} aria-hidden="true" />
 						Создать свою клинику бесплатно
 					</button>
 
@@ -285,10 +288,13 @@ export const DemoModeBanner: React.FC<DemoModeBannerProps> = ({
 							color: "#ffffff",
 							border: "none",
 							borderRadius: "4px",
-							padding: "4px 10px",
-							fontSize: "11px",
+							minHeight: "28px",
+							padding: "0 10px",
+							fontSize: "12px",
 							fontWeight: 600,
 							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
 						}}
 					>
 						Выйти из демо
@@ -304,12 +310,17 @@ export const DemoModeBanner: React.FC<DemoModeBannerProps> = ({
 							border: "none",
 							color: "var(--muted, #64748b)",
 							cursor: "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
-							padding: "2px",
+							justifyContent: "center",
+							width: "28px",
+							height: "28px",
+							minWidth: "28px",
+							minHeight: "28px",
+							borderRadius: "4px",
 						}}
 					>
-						<X size={14} />
+						<X size={15} />
 					</button>
 				</div>
 			</aside>

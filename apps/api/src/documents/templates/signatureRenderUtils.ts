@@ -2,6 +2,7 @@ import {
 	type GeneratedDocument,
 	type Patient,
 	type ClinicProfile,
+	extractGostCmsMetadata,
 	injectVisualSignatureStampIntoHtml,
 	renderDigitalSignatureStampHtml,
 } from "@dental/shared";
@@ -59,9 +60,24 @@ export function resolveDocumentDigitalSignatureStamp(
 
 	if (!isSigned) return null;
 
-	const certSerial =
-		document.doctorCertSerial ||
-		`00E4A28B${document.id.replace(/-/g, "").slice(0, 16).toUpperCase()}`;
+	let certSerial = document.doctorCertSerial;
+	if (!certSerial) {
+		const rawPkcs7 =
+			document.doctorSignaturePkcs7 || document.cryptoSignaturePkcs7;
+		if (rawPkcs7) {
+			try {
+				const der = Buffer.from(rawPkcs7, "base64");
+				const meta = extractGostCmsMetadata(der);
+				if (meta.certificateSerialNumber) {
+					certSerial = meta.certificateSerialNumber;
+				}
+			} catch {
+				// DER parsing fallback
+			}
+		}
+	}
+
+	if (!certSerial) return null;
 
 	const certSubject =
 		document.doctorCertSubject ||

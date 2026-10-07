@@ -17,8 +17,77 @@ import {
 	type ClinicalEstimateItem,
 	type ClinicalVisitCompletionInput,
 	type ClinicalVisitCompletionResult,
+	type ProcedureCategory,
 } from "./clinicalVisitWorkflow";
 import type { DiaryState } from "../useVisitDiaryLogic";
+
+/**
+ * Извлекает все фактически выполненные врачом услуги из стора визита
+ * (из completedServices и visitToothRecordsByCode) в формате сметы (Мандаты 8b, 8e, 8n).
+ */
+export function assembleVisitStoreCompletedServices(): ClinicalEstimateItem[] {
+	const visitState = useVisitStore.getState();
+	const assembled: ClinicalEstimateItem[] = [];
+
+	// 1. Из completedServices стора визита
+	for (const [idx, s] of (visitState.completedServices || []).entries()) {
+		const code = s.code804n || s.serviceId || "A16.07.002";
+		let category: ProcedureCategory = "therapy";
+		if (code.startsWith("A11") || code.startsWith("A25")) category = "anesthesia";
+		else if (code.startsWith("A06")) category = "diagnostics";
+		else if (code.startsWith("A16.07.030") || code.startsWith("A16.07.082")) category = "endodontics";
+		else if (code.startsWith("A16.07.001") || code.startsWith("A16.07.097")) category = "surgery";
+		else if (code.startsWith("A16.07.050") || code.startsWith("A16.07.051")) category = "hygiene";
+		else if (code.startsWith("A16.07.004") || code.startsWith("A16.07.006")) category = "orthopedics";
+		else if (code === "A16.07.002.009") category = "isolation";
+
+		assembled.push({
+			id: s.serviceId || `srv-store-${idx}-${code}`,
+			code,
+			name: s.toothNumber ? `${s.name} (зуб ${s.toothNumber})` : s.name,
+			quantity: s.quantity || 1,
+			priceRub: s.priceRub || 0,
+			discountRub: 0,
+			totalRub: (s.priceRub || 0) * (s.quantity || 1),
+			category,
+			toothNumber: s.toothNumber ?? s.toothCode,
+		});
+	}
+
+	// 2. Из visitToothRecordsByCode (если врач добавлял услуги в структурированные записи зуба)
+	for (const [codeStr, rec] of Object.entries(visitState.visitToothRecordsByCode || {})) {
+		if (rec.services && rec.services.length > 0) {
+			for (const s of rec.services) {
+				const isDup = assembled.some(
+					(existing) =>
+						existing.code === s.code && String(existing.toothNumber ?? "") === codeStr,
+				);
+				if (!isDup) {
+					let category: ProcedureCategory = "therapy";
+					if (s.code.startsWith("A11") || s.code.startsWith("A25")) category = "anesthesia";
+					else if (s.code.startsWith("A06")) category = "diagnostics";
+					else if (s.code.startsWith("A16.07.030") || s.code.startsWith("A16.07.082")) category = "endodontics";
+					else if (s.code.startsWith("A16.07.001")) category = "surgery";
+					else if (s.code.startsWith("A16.07.004")) category = "orthopedics";
+
+					assembled.push({
+						id: `tooth-rec-${codeStr}-${s.code}`,
+						code: s.code,
+						name: `${s.title} (зуб ${codeStr})`,
+						quantity: 1,
+						priceRub: s.price || 0,
+						discountRub: 0,
+						totalRub: s.price || 0,
+						category,
+						toothNumber: codeStr,
+					});
+				}
+			}
+		}
+	}
+
+	return assembled;
+}
 import { useAppStore } from "../../store/appStore";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";

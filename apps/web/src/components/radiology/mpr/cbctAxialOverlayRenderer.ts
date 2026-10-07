@@ -13,10 +13,7 @@ import {
 } from "../cbctMprMath";
 import { drawDentalArchControlPointManipulators } from "../dentalCurveEngine";
 import { calculateAxialImplantIntersection } from "../implantSafetyEngine";
-import {
-	calculateNerveDistanceGating,
-	drawMandibularNerveBadge,
-} from "../cbctCaliperNerveMath";
+import { calculateNerveDistanceGating } from "../cbctCaliperNerveMath";
 import type { MprOverlayParams } from "./cbctOverlayTypes";
 
 export function drawAxialMprOverlay(
@@ -343,19 +340,6 @@ export function drawAxialMprOverlay(
 		transform,
 	});
 
-	if (interpolatedNerve3D.length > 1) {
-		const visibleNodes = nervePoints.filter(
-			(pt) => Math.abs(pt.z - crosshairMm.z) <= 3.5,
-		);
-		if (visibleNodes.length > 0) {
-			const midPt = visibleNodes[Math.floor(visibleNodes.length / 2)]!;
-			const pMid = slicePxToScreenPx(
-				worldMmToSlicePx(midPt, "axial", volume),
-				transform,
-			);
-			drawMandibularNerveBadge(ctx, pMid, nerveTotalLengthMm, 2.0);
-		}
-	}
 
 	for (const r of rulers) {
 		if (r.plane === "axial") {

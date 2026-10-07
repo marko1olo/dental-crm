@@ -35,6 +35,13 @@ export function romanizeStageNumber(num: number): string {
 
 export type TreatmentPlanTierId = "economy" | "standard" | "optimum";
 
+export interface TreatmentPlanDoctorOption {
+	readonly id: string;
+	readonly fullName: string;
+	readonly role?: string | undefined;
+	readonly specialty?: string | undefined;
+}
+
 export interface Order804nProcedureDefinition {
 	readonly code: string;
 	readonly title: string;
@@ -82,6 +89,9 @@ export interface TreatmentPlanItem {
 	readonly planStatus?: "draft" | "approved" | "in_progress" | "completed" | undefined;
 	readonly archivedResolution?: "keep_agreed_price" | "replace_from_catalog" | undefined;
 	readonly catalogDriftRub?: number | undefined;
+	readonly doctorId?: string | null | undefined;
+	readonly doctorName?: string | null | undefined;
+	readonly doctorSpecialty?: string | null | undefined;
 }
 
 export type TreatmentPlanStageStatus = "draft" | "agreed" | "in_progress" | "completed";
@@ -126,6 +136,7 @@ export function mapWorkflowStatusToDbStatus(
 }
 
 export interface TreatmentPlanStage {
+	readonly id?: string | undefined;
 	readonly stageNumber: number; // 1, 2, 3
 	readonly stageKind: TreatmentPlanStageKind;
 	readonly title: string;
@@ -138,6 +149,9 @@ export interface TreatmentPlanStage {
 	readonly estimatedWeeks: number;
 	readonly order804nCodes: readonly string[];
 	readonly status?: TreatmentPlanStageStatus | undefined;
+	readonly doctorId?: string | null | undefined;
+	readonly doctorName?: string | null | undefined;
+	readonly doctorSpecialty?: string | null | undefined;
 }
 
 export interface TierInstallmentPlan {
@@ -309,6 +323,12 @@ export interface CompletedWorksActAndWriteOffData {
 	readonly status: "draft" | "signed" | "executed";
 	readonly createdAtIso: string;
 	readonly executedAtIso?: string;
+	readonly isUkepSigned?: boolean;
+	readonly ukepSignedAt?: string;
+	readonly ukepCertThumbprint?: string;
+	readonly ukepCertSubject?: string;
+	readonly ukepCertSerial?: string;
+	readonly signingMethod?: "paper" | "ukep" | "pep_sms" | "stylus";
 }
 
 export type TreatmentPlanStatus =

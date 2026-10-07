@@ -76,6 +76,7 @@ const validatePlanBodySchema = z.object({
 			serviceId: z.string().optional(),
 			stageId: z.string().optional(),
 			stageTitleRu: z.string().optional(),
+			doctorId: z.string().uuid().optional().nullable(),
 		}),
 	),
 	itemResolutionOverrides: z.record(z.string(), z.string()).optional(),
@@ -112,6 +113,7 @@ const generateInvoiceFromPlanSchema = z.object({
 			resolutionPolicy: z.string().default("LOCK_ORIGINAL_PRICE"),
 			serviceId: z.string().optional(),
 			analogueServiceId: z.string().optional(),
+			doctorId: z.string().uuid().optional().nullable(),
 		}),
 	).min(1),
 	adminOverridePin: z.string().optional(),
@@ -720,10 +722,18 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			});
 
 			if (validationReport.items.length > 0) {
-				const itemsToInsert = validationReport.items.map((it) => {
+				const itemsToInsert = validationReport.items.map((it, idx) => {
 					const matchingCatalog = catalogRows.find(
 						(c) => c.code === it.code804n || c.id === it.suggested804nAnalogue?.serviceId,
 					);
+					const reqItem = data.items[idx];
+					const matchingDbPlanItem = targetPlanDbItems.find((pi) => {
+						if (reqItem?.serviceId && pi.priceId?.startsWith(reqItem.serviceId)) return true;
+						if (it.nameRu && pi.priceId?.includes(it.nameRu)) return true;
+						if (it.toothNumber !== null && it.toothNumber !== undefined && pi.toothNumber === it.toothNumber) return true;
+						return false;
+					});
+					const plannedDoctor = reqItem?.doctorId || matchingDbPlanItem?.doctorId || data.doctorUserId || null;
 					return {
 						organizationId: orgId,
 						patientId: data.patientId,
@@ -735,7 +745,7 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 						priceRub: Number((it.effectiveLineNetKopecks / 100).toFixed(2)),
 						discountRub: Number((it.effectiveDiscountKopecks / 100).toFixed(2)),
 						status: "proposed" as const,
-						plannedDoctorUserId: data.doctorUserId ?? null,
+						plannedDoctorUserId: plannedDoctor,
 						notes: `Наряд ${invoiceNumber}. Политика: ${it.selectedResolution}${
 							it.clinicAbsorptionKopecks > 0
 								? ` (Абсорбция клиники: ${(it.clinicAbsorptionKopecks / 100).toFixed(2)} ₽)`

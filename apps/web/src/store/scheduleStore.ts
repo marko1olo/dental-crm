@@ -6,6 +6,7 @@ import type {
 	StaffScheduleDraft,
 	StaffScheduleSaveState,
 } from "../AppConstants";
+import type { QuickBookingSlotInfo } from "../components/schedule/QuickBookingDrawerTypes";
 import { emptyAppointmentScheduleDraft } from "../utils/draftDefaults";
 import {
 	defaultUiPreferences,
@@ -141,9 +142,17 @@ export interface ScheduleStore {
 			| AppointmentScheduleSaveState
 			| ((prev: AppointmentScheduleSaveState) => AppointmentScheduleSaveState),
 	) => void;
+	pendingStageBooking: QuickBookingSlotInfo | null;
+	setPendingStageBooking: (
+		val:
+			| QuickBookingSlotInfo
+			| null
+			| ((prev: QuickBookingSlotInfo | null) => QuickBookingSlotInfo | null),
+	) => void;
 }
 
 export const useScheduleStore = create<ScheduleStore>((set) => ({
+	pendingStageBooking: null,
 	scheduleDoctorFilterId: initialUiPreferences.scheduleDoctorFilterId,
 	scheduleAssistantFilterId: initialUiPreferences.scheduleAssistantFilterId,
 	scheduleChairFilterId: initialUiPreferences.scheduleChairFilterId,
@@ -284,5 +293,9 @@ export const useScheduleStore = create<ScheduleStore>((set) => ({
 				val,
 				state.newAppointmentSaveState,
 			),
+		})),
+	setPendingStageBooking: (val) =>
+		set((state) => ({
+			pendingStageBooking: resolveUpdater(val, state.pendingStageBooking),
 		})),
 }));

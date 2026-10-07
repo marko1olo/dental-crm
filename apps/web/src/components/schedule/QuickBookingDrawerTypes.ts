@@ -1,6 +1,22 @@
 import type { Appointment, Dashboard } from "@dental/shared";
 import type { ChairDoctorShiftAssignment } from "./ScheduleGrid";
 
+export interface QuickBookingStageService {
+  id?: string | undefined;
+  code804n?: string | undefined;
+  name?: string | undefined;
+  title?: string | undefined;
+  medicalTitleRu?: string | undefined;
+  patientFriendlyTitleRu?: string | undefined;
+  price?: number | undefined;
+  unitPriceRub?: number | undefined;
+  priceRub?: number | undefined;
+  quantity?: number | undefined;
+  toothNumber?: number | string | undefined;
+  toothCode?: string | undefined;
+  toothFdi?: string | undefined;
+}
+
 export interface QuickBookingSlotInfo {
   dateKey?: string | undefined;
   startTime?: string | undefined;
@@ -15,6 +31,15 @@ export interface QuickBookingSlotInfo {
   patientId?: string | null | undefined;
   patientName?: string | null | undefined;
   patientPhone?: string | null | undefined;
+  treatmentPlanId?: string | null | undefined;
+  planId?: string | null | undefined;
+  stageId?: string | null | undefined;
+  stageNumber?: number | null | undefined;
+  stageTitle?: string | null | undefined;
+  services?: QuickBookingStageService[] | undefined;
+  items?: QuickBookingStageService[] | undefined;
+  procedures?: QuickBookingStageService[] | undefined;
+  estimatedDurationMinutes?: number | undefined;
 }
 
 export interface QuickBookingDrawerProps {

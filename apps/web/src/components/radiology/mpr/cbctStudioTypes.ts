@@ -131,6 +131,8 @@ export interface CbctMprImplantStudioModalProps {
 	readonly initialCaliper?: AlveolarRidgeCaliperMeasurement | null | undefined;
 	readonly initialImageIds?: readonly string[] | undefined;
 	readonly autoLoadDemo?: boolean | undefined;
+	readonly initialTool?: import("../CbctLeftToolDock.js").CbctToolMode | undefined;
+	readonly initialNervePoints?: readonly Point3D[] | undefined;
 }
 
 export function getDefaultViewportTransforms(): Record<CbctViewportType, ViewportTransform> {

@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "savedAt": "2026-10-07T13:48:12.298Z",
+  "savedAt": "2026-10-07T14:21:05.022Z",
   "health": {
     "cloudflare_whisper:89d9d83a5665": {
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 25,
-      "lastUsedAt": 1791380892292,
+      "successes": 26,
+      "lastUsedAt": 1791382865001,
       "lastStatusCode": null,
       "lastError": null
     },
     "groq_whisper:5510319c53a6": {
-      "cooldownUntil": 1791381372298,
-      "failures": 24,
-      "consecutiveFailures": 24,
+      "cooldownUntil": 1791383345022,
+      "failures": 25,
+      "consecutiveFailures": 25,
       "successes": 0,
-      "lastUsedAt": 1791380892298,
+      "lastUsedAt": 1791382865022,
       "lastStatusCode": 503,
       "lastError": "503 "
     },
@@ -24,8 +24,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 25,
-      "lastUsedAt": 1791380892284,
+      "successes": 26,
+      "lastUsedAt": 1791382864988,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -33,35 +33,35 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 25,
-      "lastUsedAt": 1791380892261,
+      "successes": 26,
+      "lastUsedAt": 1791382864952,
       "lastStatusCode": null,
       "lastError": null
     },
     "groq_whisper:a408a6ddaa5d": {
-      "cooldownUntil": 1791381372279,
-      "failures": 24,
-      "consecutiveFailures": 24,
+      "cooldownUntil": 1791383344979,
+      "failures": 25,
+      "consecutiveFailures": 25,
       "successes": 0,
-      "lastUsedAt": 1791380892279,
+      "lastUsedAt": 1791382864979,
       "lastStatusCode": 500,
       "lastError": "Internal server error"
     },
     "groq_whisper:e1fc3fd8f14e": {
-      "cooldownUntil": 1791381372288,
-      "failures": 24,
-      "consecutiveFailures": 24,
+      "cooldownUntil": 1791383344995,
+      "failures": 25,
+      "consecutiveFailures": 25,
       "successes": 0,
-      "lastUsedAt": 1791380892288,
+      "lastUsedAt": 1791382864995,
       "lastStatusCode": 503,
       "lastError": "503 "
     },
     "openai_transcribe:8234d0fc8e1f": {
-      "cooldownUntil": 1791381852290,
-      "failures": 22,
-      "consecutiveFailures": 22,
+      "cooldownUntil": 1791383824998,
+      "failures": 23,
+      "consecutiveFailures": 23,
       "successes": 0,
-      "lastUsedAt": 1791380892290,
+      "lastUsedAt": 1791382864998,
       "lastStatusCode": 429,
       "lastError": "429 "
     },
@@ -69,8 +69,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 25,
-      "lastUsedAt": 1791380892281,
+      "successes": 26,
+      "lastUsedAt": 1791382864981,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -78,8 +78,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 25,
-      "lastUsedAt": 1791380892285,
+      "successes": 26,
+      "lastUsedAt": 1791382864990,
       "lastStatusCode": null,
       "lastError": null
     }

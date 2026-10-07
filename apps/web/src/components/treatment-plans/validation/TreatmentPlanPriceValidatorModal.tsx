@@ -23,6 +23,7 @@ import {
 	SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
 	type TreatmentPlanValidationPayload,
 } from "./planPriceValidationPresets";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import {
 	type AdminOverrideMetadata,
 	generateWorkOrderExportPayload,
@@ -58,16 +59,41 @@ export interface TreatmentPlanPriceValidatorModalProps {
 	readonly onExportCompletedAct?: ((exportData: WorkOrderValidatedExport) => void) | undefined;
 }
 
+const EMPTY_PLAN_PAYLOAD: TreatmentPlanValidationPayload = {
+	planId: "",
+	planNumber: "",
+	planTitle: "План лечения",
+	patientId: "",
+	patientName: "Пациент",
+	doctorId: "",
+	doctorFullName: "Врач",
+	createdAtIso: new Date().toISOString(),
+	items: [],
+};
+
 export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValidatorModalProps> = ({
 	isOpen = true,
 	onClose,
-	planPayload = SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
+	planPayload: propPlanPayload,
 	stages,
-	catalogPricelist = SAMPLE_CURRENT_PRICELIST,
+	catalogPricelist: propCatalogPricelist,
 	initialPresetId = "standard_30",
 	onExportWorkOrder,
 	onExportCompletedAct,
 }) => {
+	const isDemo = isDemoShowcaseMode();
+	const planPayload: TreatmentPlanValidationPayload =
+		propPlanPayload !== undefined
+			? propPlanPayload
+			: isDemo
+				? SAMPLE_TREATMENT_PLAN_FOR_VALIDATION
+				: EMPTY_PLAN_PAYLOAD;
+	const catalogPricelist =
+		propCatalogPricelist !== undefined
+			? propCatalogPricelist
+			: isDemo
+				? SAMPLE_CURRENT_PRICELIST
+				: [];
 	const [activeTab, setActiveTab] = useState<PriceValidatorActiveTab>("prices");
 	const [selectedPresetId, setSelectedPresetId] =
 		useState<PlanPricePolicyPresetId>(initialPresetId);
@@ -200,7 +226,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 	// Пакетное обновление до актуального прайса
 	const handleBatchUpdateToCurrent = () => {
 		const newResolutions: Record<string, PriceLockResolutionPolicy> = {};
-		for (const item of planPayload.items) {
+		for (const item of planPayload?.items ?? []) {
 			newResolutions[item.itemId] = "UPDATE_TO_CURRENT_PRICE";
 		}
 		setItemResolutions(newResolutions);
@@ -265,11 +291,14 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 			<LabWorkOrderModal
 				isOpen={isLabOrderModalOpen}
 				onClose={() => setIsLabOrderModalOpen(false)}
-				patientId={planPayload.patientId || "pat-001"}
-				patientName={planPayload.patientName || "Пациент"}
-				patientChartNumber={planPayload.planNumber || `К-${(planPayload.patientId || "001").slice(0, 5)}`}
-				doctorId={planPayload.doctorId || "doc-001"}
-				doctorName={planPayload.doctorFullName || "Д-р Ковалев С. П."}
+				patientId={planPayload?.patientId || "pat-001"}
+				patientName={planPayload?.patientName || "Пациент"}
+				patientChartNumber={
+					planPayload?.planNumber ||
+					`К-${(planPayload?.patientId || "001").slice(0, 5)}`
+				}
+				doctorId={planPayload?.doctorId || "doc-001"}
+				doctorName={planPayload?.doctorFullName || "Д-р Ковалев С. П."}
 				initialTeeth={labTeeth}
 			/>
 		);

@@ -65,6 +65,7 @@
 	--border-subtle: var(--line);
 	--border-soft: var(--line);
 	--line-subtle: var(--line);
+	--teal-border: var(--teal-line, rgba(13, 148, 136, 0.3));
 
 	/* Тени */
 	--shadow: var(--shadow-1);

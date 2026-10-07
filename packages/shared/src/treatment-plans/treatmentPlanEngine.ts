@@ -198,6 +198,9 @@ export interface TreatmentPlanItemInput {
 	readonly clinicalRationaleRu?: string;
 	readonly isHighCostCode02?: boolean;
 	readonly status?: PlanItemStatus;
+	readonly doctorId?: string | null;
+	readonly doctorName?: string | null;
+	readonly doctorSpecialty?: string | null;
 }
 
 export interface TreatmentPlanItem {
@@ -222,6 +225,9 @@ export interface TreatmentPlanItem {
 	readonly clinicalRationaleRu: string;
 	readonly isHighCostCode02: boolean;
 	readonly status: PlanItemStatus;
+	readonly doctorId?: string | null;
+	readonly doctorName?: string | null;
+	readonly doctorSpecialty?: string | null;
 }
 
 export interface TreatmentPlanStageSummary {
@@ -233,6 +239,9 @@ export interface TreatmentPlanStageSummary {
 	readonly items: readonly TreatmentPlanItem[];
 	readonly itemCount: number;
 	readonly grossCostKopecks: Kopecks;
+	readonly doctorId?: string | null;
+	readonly doctorName?: string | null;
+	readonly doctorSpecialty?: string | null;
 	readonly discountKopecks: Kopecks;
 	readonly laborKopecks: Kopecks;
 	readonly materialsKopecks: Kopecks;
@@ -594,6 +603,9 @@ export function normalizeTreatmentPlanItem(
 		clinicalRationaleRu: (input.clinicalRationaleRu || "").trim(),
 		isHighCostCode02: isHighCost,
 		status: input.status || "planned",
+		doctorId: input.doctorId ?? null,
+		doctorName: input.doctorName ?? null,
+		doctorSpecialty: input.doctorSpecialty ?? null,
 	};
 }
 

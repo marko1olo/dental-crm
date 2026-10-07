@@ -51,6 +51,7 @@ import { TreatmentPlanRoadmap } from "./TreatmentPlanRoadmap";
 import { showToast } from "../GlobalToast";
 import { isMicroConsumable, type PlanItemLike } from "./treatmentPlanConsumables";
 export { isMicroConsumable, type PlanItemLike };
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import {
 	formatChairsidePrice,
 	recalculateTierTotals,
@@ -147,7 +148,12 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 }) => {
 	const initialCalculatedTiers = useMemo(() => {
 		if (propTiers && propTiers.length > 0) return propTiers;
-		const effectiveTeeth = teeth && teeth.length > 0 ? teeth : DEFAULT_SAMPLE_TEETH;
+		const effectiveTeeth =
+			teeth && teeth.length > 0
+				? teeth
+				: isDemoShowcaseMode()
+					? DEFAULT_SAMPLE_TEETH
+					: [];
 		return generate3TierPlanComparison(effectiveTeeth);
 	}, [propTiers, teeth]);
 
@@ -222,7 +228,12 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 					patientName,
 					doctorName: doctorFullName,
 					selectedTierTitle: selectedTier.title,
-					teeth: teeth && teeth.length > 0 ? teeth : DEFAULT_SAMPLE_TEETH,
+					teeth:
+						teeth && teeth.length > 0
+							? teeth
+							: isDemoShowcaseMode()
+								? DEFAULT_SAMPLE_TEETH
+								: [],
 					totalRub: selectedTier.totalRub,
 					warrantyYears: typeof selectedTier.warrantyYears === "number" ? selectedTier.warrantyYears : 2,
 					monthlyInstallment12Rub: selectedTier.monthlyInstallment12Rub,
@@ -532,6 +543,8 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 						<TreatmentPlanRoadmap
 							tier={selectedTier}
 							patientName={patientName}
+							patientId={patientId}
+							planId={planId}
 							doctorName={doctorFullName}
 							clinicName={clinicName}
 							displayContractNumber={displayContractNumber}

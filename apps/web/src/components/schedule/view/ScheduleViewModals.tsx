@@ -285,6 +285,7 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
         isOpen={quickBookingOpen}
         onClose={() => {
           setQuickBookingOpen(false);
+          setQuickBookingSlot(null);
           useUiSurfaceStore.getState().closeDrawer("quick_booking");
         }}
         initialSlot={quickBookingSlot}

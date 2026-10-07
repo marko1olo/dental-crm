@@ -41,6 +41,7 @@ export interface TreatmentPlanModuleProps {
 	readonly initialOptionsMenuOpen?: boolean;
 	readonly initialStatus?: TreatmentPlanStatus | undefined;
 	readonly onStatusChange?: ((status: TreatmentPlanStatus) => void) | undefined;
+	readonly initialPlanId?: string | null | undefined;
 }
 
 export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
@@ -54,6 +55,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	initialOptionsMenuOpen = false,
 	initialStatus,
 	onStatusChange,
+	initialPlanId,
 }) => {
 	const logic = useTreatmentPlanLogic({
 		patientId,
@@ -64,6 +66,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		planCreatedAtIso,
 		initialStatus,
 		onStatusChange,
+		initialPlanId,
 	});
 
 	return (
@@ -359,6 +362,9 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 									{...(Array.isArray(logic.dashboard?.inventoryItems) && logic.dashboard.inventoryItems.length > 0
 										? { inventoryItems: logic.dashboard.inventoryItems as InventoryItemLookup[] }
 										: {})}
+									doctors={logic.doctorOptions}
+									onAssignStageDoctor={logic.handleAssignDoctorToStage}
+									onAssignItemDoctor={logic.handleAssignDoctorToItem}
 									onUpdateItemQuantity={logic.handleUpdateItemQuantity}
 									onUpdateItemPrice={logic.handleUpdateItemPrice}
 									onUpdateItem={logic.handleUpdateItem}

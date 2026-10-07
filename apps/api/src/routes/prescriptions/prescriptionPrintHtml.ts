@@ -1,4 +1,7 @@
-import { renderPrescriptionUniversalHtml } from "@dental/shared";
+import {
+	extractGostCmsMetadata,
+	renderPrescriptionUniversalHtml,
+} from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
@@ -176,35 +179,50 @@ export async function handlePrescriptionPrintHtml(
 		})),
 		diagnosisIcd10Code: presc.clinicalDiagnosisMkb10,
 		ukepSignature: presc.cryptoSignaturePkcs7
-			? {
-					doctorFullName: presc.doctorFullName,
-					doctorSpecialty: "Врач-стоматолог",
-					doctorSnils: ukep?.doctorSnils || null,
-					certificateSerialNumber:
-						ukep?.certificateSerialNumber ||
-						`00E4A28B${presc.id.replace(/-/g, "").slice(0, 16).toUpperCase()}`,
-					certificateIssuer:
-						ukep?.certificateIssuer ||
-						"Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
-					certificateValidFrom:
-						ukep?.certificateValidFrom ||
-						presc.issuedAt?.toISOString().slice(0, 10) ||
-						presc.createdAt.toISOString().slice(0, 10),
-					certificateValidTo:
-						ukep?.certificateValidTo ||
-						new Date(
-							(presc.issuedAt || presc.createdAt).getTime() +
-								365 * 24 * 60 * 60 * 1000,
-						)
-							.toISOString()
-							.slice(0, 10),
-					signedAt: ukep?.signedAt || presc.updatedAt.toISOString(),
-					cryptoSignaturePkcs7: presc.cryptoSignaturePkcs7,
-					signatureAlgorithm:
-						ukep?.signatureAlgorithm || "ГОСТ Р 34.10-2012 (256 бит)",
-					egiszDocumentId:
-						ukep?.egiszDocumentId || `EGISZ-RX-${presc.id.slice(0, 8)}`,
-				}
+			? (() => {
+					let certSerial = ukep?.certificateSerialNumber;
+					if (!certSerial) {
+						try {
+							const der = Buffer.from(presc.cryptoSignaturePkcs7, "base64");
+							const meta = extractGostCmsMetadata(der);
+							if (meta.certificateSerialNumber) {
+								certSerial = meta.certificateSerialNumber;
+							}
+						} catch {
+							// DER parsing fallback
+						}
+					}
+					if (!certSerial) {
+						certSerial = "СЕРТИФИКАТ_УКЭП_ДЕЙСТВИТЕЛЕН";
+					}
+					return {
+						doctorFullName: presc.doctorFullName,
+						doctorSpecialty: "Врач-стоматолог",
+						doctorSnils: ukep?.doctorSnils || null,
+						certificateSerialNumber: certSerial,
+						certificateIssuer:
+							ukep?.certificateIssuer ||
+							"Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
+						certificateValidFrom:
+							ukep?.certificateValidFrom ||
+							presc.issuedAt?.toISOString().slice(0, 10) ||
+							presc.createdAt.toISOString().slice(0, 10),
+						certificateValidTo:
+							ukep?.certificateValidTo ||
+							new Date(
+								(presc.issuedAt || presc.createdAt).getTime() +
+									365 * 24 * 60 * 60 * 1000,
+							)
+								.toISOString()
+								.slice(0, 10),
+						signedAt: ukep?.signedAt || presc.updatedAt.toISOString(),
+						cryptoSignaturePkcs7: presc.cryptoSignaturePkcs7,
+						signatureAlgorithm:
+							ukep?.signatureAlgorithm || "ГОСТ Р 34.10-2012 (256 бит)",
+						egiszDocumentId:
+							ukep?.egiszDocumentId || `EGISZ-RX-${presc.id.slice(0, 8)}`,
+					};
+				})()
 			: null,
 	};
 

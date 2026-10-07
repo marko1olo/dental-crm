@@ -54,25 +54,27 @@ export const CbctNerveTracingHud: React.FC<CbctNerveTracingHudProps> = ({
 
 	return (
 		<div
-			className={`absolute top-2 left-1/2 -translate-x-1/2 z-40 pointer-events-auto select-none flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-zinc-950/90 border border-zinc-800/90 backdrop-blur-md shadow-2xl transition-all ${className}`}
+			className={`absolute top-8 left-1/2 -translate-x-1/2 z-40 pointer-events-auto select-none flex items-center gap-1.5 px-2 py-1 rounded-lg bg-zinc-950/95 border border-zinc-800 backdrop-blur-md shadow-2xl transition-all w-max max-w-[calc(100%-16px)] shrink-0 ${className}`}
+			style={{ width: "max-content", maxWidth: "calc(100% - 16px)" }}
 			data-testid="cbct-nerve-tracing-hud"
 			data-nerve-step={status.step}
 			data-nerve-side={activeSide}
 		>
 			{/* 1. БИЛАТЕРАЛЬНЫЙ ПЕРЕКЛЮЧАТЕЛЬ СТОРОНЫ (Apple HIG Segmented Bar) */}
 			<div
-				className="flex items-center p-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-[11px]"
+				className="flex items-center gap-1 p-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] shrink-0"
 				role="group"
 				aria-label="Сторона нижнечелюстного канала"
 			>
 				<button
 					type="button"
 					onClick={() => onSwitchSide("right")}
-					className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+					className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 text-[11px] ${
 						activeSide === "right"
 							? "bg-amber-500 text-zinc-950 font-bold shadow-xs"
 							: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
 					}`}
+					style={{ whiteSpace: "nowrap" }}
 					title="Правый нижнечелюстной канал (квадрант 4: 4.4-4.8)"
 					data-testid="cbct-nerve-hud-side-right-btn"
 				>
@@ -81,11 +83,12 @@ export const CbctNerveTracingHud: React.FC<CbctNerveTracingHudProps> = ({
 				<button
 					type="button"
 					onClick={() => onSwitchSide("left")}
-					className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+					className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 text-[11px] ${
 						activeSide === "left"
 							? "bg-amber-500 text-zinc-950 font-bold shadow-xs"
 							: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
 					}`}
+					style={{ whiteSpace: "nowrap" }}
 					title="Левый нижнечелюстной канал (квадрант 3: 3.4-3.8)"
 					data-testid="cbct-nerve-hud-side-left-btn"
 				>
@@ -94,9 +97,10 @@ export const CbctNerveTracingHud: React.FC<CbctNerveTracingHudProps> = ({
 			</div>
 
 			{/* 2. ИНДИКАТОР ТЕКУЩЕГО ШАГА С КЛИНИЧЕСКОЙ ПОДСКАЗКОЙ */}
-			<div className="flex items-center gap-1.5">
+			<div className="flex items-center gap-1.5 shrink-0">
 				<span
-					className={`px-2.5 py-1 rounded-md text-xs font-semibold border flex items-center gap-1.5 transition-all ${status.badgeClass}`}
+					className={`px-2 py-1 rounded-md text-xs font-semibold border flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 ${status.badgeClass}`}
+					style={{ whiteSpace: "nowrap" }}
 					data-testid="cbct-nerve-hud-step-badge"
 					title={status.hintRu}
 				>
@@ -109,19 +113,20 @@ export const CbctNerveTracingHud: React.FC<CbctNerveTracingHudProps> = ({
 					{status.step === 3 && (
 						<Check className="w-3.5 h-3.5 text-cyan-300 shrink-0 stroke-[2.5]" />
 					)}
-					<span>{status.titleRu}</span>
+					<span className="whitespace-nowrap" style={{ whiteSpace: "nowrap" }}>{status.titleRu}</span>
 				</span>
 			</div>
 
 			{/* 3. КНОПКИ УПРАВЛЕНИЯ ТРАССОЙ (1-КЛИК СБРОС И УДАЛЕНИЕ) */}
-			<div className="flex items-center gap-1 pl-1 border-l border-zinc-800">
+			<div className="flex items-center gap-1 pl-1 border-l border-zinc-800 shrink-0">
 				{selectedNerveNodeIdx !== null &&
 					selectedNerveNodeIdx !== undefined &&
 					onDeleteSelectedNode && (
 						<button
 							type="button"
 							onClick={onDeleteSelectedNode}
-							className="h-7 px-2 rounded bg-rose-950/60 hover:bg-rose-900 border border-rose-500/40 text-rose-300 hover:text-rose-100 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+							className="h-7 px-2 rounded bg-rose-950/60 hover:bg-rose-900 border border-rose-500/40 text-rose-300 hover:text-rose-100 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+							style={{ whiteSpace: "nowrap" }}
 							title={`Удалить выбранный узел #${selectedNerveNodeIdx + 1} (Backspace)`}
 							data-testid="cbct-nerve-hud-delete-node-btn"
 						>
@@ -134,7 +139,8 @@ export const CbctNerveTracingHud: React.FC<CbctNerveTracingHudProps> = ({
 					type="button"
 					onClick={onResetNerve}
 					disabled={nervePoints.length === 0}
-					className="h-7 px-2 rounded bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-700/60 text-zinc-300 hover:text-white text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+					className="h-7 px-2 rounded bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-700/60 text-zinc-300 hover:text-white text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+					style={{ whiteSpace: "nowrap" }}
 					title="Очистить и перерисовать канал IAN в 1 клик"
 					data-testid="cbct-nerve-hud-reset-btn"
 				>
@@ -146,11 +152,11 @@ export const CbctNerveTracingHud: React.FC<CbctNerveTracingHudProps> = ({
 			{/* 4. ТИХАЯ ПОДСКАЗКА ВРАЧУ О МИКРОПОДГОНКЕ */}
 			{status.isCompleted && (
 				<div
-					className="hidden xl:flex items-center gap-1 text-[10px] text-zinc-400 pl-1 border-l border-zinc-800"
+					className="hidden 2xl:flex items-center gap-1 text-[10px] text-zinc-400 pl-1 border-l border-zinc-800 shrink-0"
 					title="Перетащите любой узел мышью или кликните на срезе для добавления контрольной точки"
 				>
 					<Info className="w-3 h-3 text-cyan-400 shrink-0" />
-					<span className="whitespace-nowrap">Тяните узел для подгонки</span>
+					<span className="whitespace-nowrap" style={{ whiteSpace: "nowrap" }}>Тяните узел для подгонки</span>
 				</div>
 			)}
 		</div>

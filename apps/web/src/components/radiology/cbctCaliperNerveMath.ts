@@ -39,8 +39,10 @@ export function drawMandibularNerveBadge(
 	const padY = 5; // >= 3px vertical padding
 	const badgeW = tw + padX * 2;
 	const badgeH = 22; // 12px font + 2 * 5px vertical padding
-	const badgeX = posPx.x - badgeW / 2;
-	const badgeY = posPx.y - 24;
+	const canvasW = ctx.canvas?.width || 800;
+	const safeCenterX = Math.max(badgeW / 2 + 10, Math.min(posPx.x, canvasW - badgeW / 2 - 10));
+	const badgeX = safeCenterX - badgeW / 2;
+	const badgeY = posPx.y < 56 ? posPx.y + 16 : Math.max(10, posPx.y - 26);
 
 	ctx.beginPath();
 	if (typeof ctx.roundRect === "function") {
@@ -54,7 +56,7 @@ export function drawMandibularNerveBadge(
 	ctx.fillStyle = "#fbbf24";
 	ctx.textAlign = "center";
 	ctx.textBaseline = "middle";
-	ctx.fillText(text, posPx.x, badgeY + badgeH / 2);
+	ctx.fillText(text, safeCenterX, badgeY + badgeH / 2);
 	ctx.restore();
 }
 

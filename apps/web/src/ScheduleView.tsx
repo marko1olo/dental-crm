@@ -3,7 +3,7 @@ import type {
 } from "@dental/shared";
 import { ShieldCheck } from "lucide-react";
 import type { KeyboardEvent } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { appointmentScheduleMissingFields } from "./AppHelpers";
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { showToast } from "./components/GlobalToast";
@@ -131,7 +131,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     appointmentScheduleDirtyIds, appointmentScheduleSaveStates, appointmentScheduleErrors,
     newAppointmentDraft, newAppointmentSaveState, setScheduleDoctorFilterId,
     setScheduleAssistantFilterId, setScheduleChairFilterId, setScheduleStatusFilter,
-    setScheduleDateFilter,
+    setScheduleDateFilter, pendingStageBooking, setPendingStageBooking,
   } = useScheduleStore();
 
   const {
@@ -180,6 +180,33 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   const [scheduleGridStep, setScheduleGridStep] = useState<15 | 30 | 60>(30);
   const [quickBookingOpen, setQuickBookingOpen] = useState(false);
   const [quickBookingSlot, setQuickBookingSlot] = useState<QuickBookingSlotInfo | null>(null);
+
+  // DentalPRO Parity: Handle incoming stage booking from treatment plan
+  useEffect(() => {
+    if (pendingStageBooking) {
+      setQuickBookingSlot(pendingStageBooking);
+      setQuickBookingOpen(true);
+      setPendingStageBooking(null);
+    }
+  }, [pendingStageBooking, setPendingStageBooking]);
+
+  // Local listener for dente-book-stage-appointment when ScheduleView is active
+  useEffect(() => {
+    const handleBookStageEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<QuickBookingSlotInfo>;
+      if (customEvent.detail) {
+        setQuickBookingSlot(customEvent.detail);
+        setQuickBookingOpen(true);
+      }
+    };
+    window.addEventListener("dente-book-stage-appointment", handleBookStageEvent);
+    window.addEventListener("dente:book-stage-appointment", handleBookStageEvent);
+    return () => {
+      window.removeEventListener("dente-book-stage-appointment", handleBookStageEvent);
+      window.removeEventListener("dente:book-stage-appointment", handleBookStageEvent);
+    };
+  }, []);
+
   const [modalAppointment, setModalAppointment] = useState<Appointment | null>(null);
   const [doctorFreeSlotsOpen, setDoctorFreeSlotsOpen] = useState(false);
   const [preventiveInspectionOpen, setPreventiveInspectionOpen] = useState(false);

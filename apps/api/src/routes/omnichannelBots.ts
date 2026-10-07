@@ -364,6 +364,8 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 		let isConfigured = false;
 		let channelLabel = channelId;
 
+		const pingStartTime = performance.now();
+
 		if (channelId === "tg_bot" || channelId === "tg_account" || channelId === "telegram") {
 			channelLabel = "Telegram";
 			const cfg = await db
@@ -402,7 +404,7 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 			isConfigured = Boolean(cfg[0]?.maxBotToken || cfg[0]?.tokenSecretRef);
 		}
 
-		const latencyMs = Math.floor(18 + Math.random() * 25);
+		const latencyMs = Math.max(1, Math.round(performance.now() - pingStartTime));
 
 		if (isConfigured) {
 			return reply.send({

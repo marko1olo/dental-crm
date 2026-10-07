@@ -1,4 +1,5 @@
 import {
+	extractGostCmsMetadata,
 	injectVisualSignatureStampIntoHtml,
 	renderDigitalSignatureStampHtml,
 	validateCertificateStatus,
@@ -77,6 +78,8 @@ export async function register(app: FastifyInstance) {
 					storagePath: generatedDocuments.storagePath,
 					issuedAt: generatedDocuments.issuedAt,
 					signatureAttestation: generatedDocuments.signatureAttestation,
+					doctorCertSerial: generatedDocuments.doctorCertSerial,
+					doctorCertSubject: generatedDocuments.doctorCertSubject,
 				})
 				.from(generatedDocuments)
 				.where(
@@ -188,13 +191,35 @@ export async function register(app: FastifyInstance) {
 			}
 
 			const now = new Date();
-			const certSerial =
-				parsedBody.data.certificateSerialNumber ||
-				`00E4A28B${doc.id.replace(/-/g, "").slice(0, 16).toUpperCase()}`;
-			const certSubject =
-				parsedBody.data.certificateSubject ||
-				doc.signatureAttestation?.staffFullName ||
-				"Врач-стоматолог";
+			let certSerial =
+				parsedBody.data.certificateSerialNumber || doc.doctorCertSerial;
+			let certSubject =
+				parsedBody.data.certificateSubject || doc.doctorCertSubject;
+
+			if (!certSerial) {
+				try {
+					const derBuffer = Buffer.from(pkcs7Signature, "base64");
+					const meta = extractGostCmsMetadata(derBuffer);
+					if (meta.certificateSerialNumber) {
+						certSerial = meta.certificateSerialNumber;
+					}
+				} catch {
+					// DER extraction fallback
+				}
+			}
+
+			if (!certSerial) {
+				return reply.code(400).send({
+					error: "MissingCertificateSerialNumber",
+					message:
+						"Не удалось определить серийный номер сертификата из подписи PKCS#7. Передайте certificateSerialNumber явно или используйте валидный контейнер CAdES.",
+				});
+			}
+
+			if (!certSubject) {
+				certSubject =
+					doc.signatureAttestation?.staffFullName || "Врач-стоматолог";
+			}
 			const signedAtDate = parsedBody.data.signedAt
 				? new Date(parsedBody.data.signedAt)
 				: now;

@@ -94,6 +94,8 @@ export interface TreatmentPlanRoadmapProps {
 	customRoadmapStages?: readonly RoadmapStageData[] | undefined;
 	planTitle?: string | undefined;
 	planNumber?: string | undefined;
+	planId?: string | undefined;
+	patientId?: string | undefined;
 	curatingDoctorName?: string | undefined;
 	doctorName?: string | undefined;
 	patientFullName?: string | undefined;
@@ -326,6 +328,8 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 	customRoadmapStages,
 	planTitle = tier?.title || "Комплексный план стоматологического лечения",
 	planNumber = "",
+	planId,
+	patientId,
 	curatingDoctorName = "Лечащий врач",
 	patientFullName = "Пациент",
 	doctorName,
@@ -773,14 +777,27 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 											onSelectStage?.(stage);
 											onBookStageSlot?.(stage.stageNumber, stage);
 											if (typeof window !== "undefined") {
+												const estimatedMins =
+													stage.procedures && stage.procedures.length > 0
+														? Math.min(120, Math.max(30, stage.procedures.length * 20))
+														: 30;
 												window.dispatchEvent(
 													new CustomEvent("dente-book-stage-appointment", {
 														detail: {
+															treatmentPlanId: planId || (effectivePlanNumber ? `PLAN-${effectivePlanNumber}` : undefined),
+															planId: planId || (effectivePlanNumber ? `PLAN-${effectivePlanNumber}` : undefined),
+															patientId: patientId || undefined,
+															patientName: effectivePatientName,
+															patientFullName: effectivePatientName,
+															stageId: stage.stageKind || String(stage.stageNumber),
 															stageNumber: stage.stageNumber,
 															stageTitle: stage.titleRu,
 															timelineRu: stage.timelineRu,
-															patientFullName,
+															services: stage.procedures,
+															items: stage.procedures,
 															procedures: stage.procedures,
+															estimatedDurationMinutes: estimatedMins,
+															durationMinutes: estimatedMins,
 														},
 													}),
 												);

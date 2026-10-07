@@ -145,10 +145,35 @@ export const TreatmentPlanActSignatures: React.FC<TreatmentPlanActSignaturesProp
 								<span className="font-mono text-[9px] block truncate max-w-sm text-slate-600 mt-0.5">
 									{verificationHash}
 								</span>
-								<span className="text-emerald-700 font-bold flex items-center gap-1 mt-0.5">
-									<ShieldCheck className="w-3 h-3 inline shrink-0" />
-									<span>Подписано УКЭП медицинской организации • Сертификат действителен</span>
-								</span>
+								{actData.isUkepSigned ? (
+									<span className="text-emerald-700 font-bold flex items-center gap-1 mt-0.5">
+										<ShieldCheck className="w-3 h-3 inline shrink-0" />
+										<span>
+											Подписано УКЭП медицинской организации • Сертификат действителен
+											{actData.ukepCertSerial ? ` (${actData.ukepCertSerial})` : ""}
+										</span>
+									</span>
+								) : actData.signingMethod === "pep_sms" ? (
+									<span className="text-emerald-700 font-bold flex items-center gap-1 mt-0.5">
+										<ShieldCheck className="w-3 h-3 inline shrink-0" />
+										<span>Подписано ПЭП (СМС-код) • Юридическая сила подтверждена</span>
+									</span>
+								) : actData.signingMethod === "stylus" ? (
+									<span className="text-emerald-700 font-bold flex items-center gap-1 mt-0.5">
+										<ShieldCheck className="w-3 h-3 inline shrink-0" />
+										<span>Подписано графической подписью на планшете • Хеш зафиксирован</span>
+									</span>
+								) : actData.status === "signed" || actData.status === "executed" ? (
+									<span className="text-emerald-700 font-semibold flex items-center gap-1 mt-0.5">
+										<ShieldCheck className="w-3 h-3 inline shrink-0" />
+										<span>Подписано на бумажном носителе • Оригинал передан в архив</span>
+									</span>
+								) : (
+									<span className="text-amber-800 font-medium flex items-center gap-1 mt-0.5">
+										<ShieldCheck className="w-3 h-3 inline shrink-0 text-amber-600" />
+										<span>Документ сформирован в ИС • Ожидает подписания (на бумаге или УКЭП)</span>
+									</span>
+								)}
 							</div>
 						</div>
 

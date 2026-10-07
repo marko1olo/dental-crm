@@ -87,6 +87,7 @@ declare global {
 }
 
 export type TelegramTab =
+	| "teeth"
 	| "odontogram"
 	| "booking"
 	| "emr"
@@ -137,9 +138,9 @@ export const TelegramMiniAppView: React.FC<TelegramMiniAppViewProps> = memo(({
 	const [patientName, setPatientName] = useState<string>("Александр");
 	const [bonusPoints, setBonusPoints] = useState<number>(1500);
 	const [familyMembers] = useState<Array<{ id: string; name: string; relation: string; age?: number }>>([
-		{ id: "self", name: "Мой профиль (Александр)", relation: "self" },
-		{ id: "child-1", name: "Сын: Артём (8 лет)", relation: "child", age: 8 },
-		{ id: "child-2", name: "Дочь: София (12 лет)", relation: "child", age: 12 },
+		{ id: "self", name: "Александр (Я)", relation: "self" },
+		{ id: "child-1", name: "Артём (Сын, 8 лет)", relation: "child", age: 8 },
+		{ id: "child-2", name: "София (Дочь, 12 лет)", relation: "child", age: 12 },
 	]);
 	const [activeFamilyMemberId, setActiveFamilyMemberId] = useState<string>("self");
 
@@ -218,6 +219,7 @@ export const TelegramMiniAppView: React.FC<TelegramMiniAppViewProps> = memo(({
 	// Если активна любая из вкладок расширенного Кабинета пациента Pocket Clinic
 	if (
 		activeTab === "cabinet" ||
+		activeTab === "teeth" ||
 		activeTab === "appointments" ||
 		activeTab === "imaging" ||
 		activeTab === "tax" ||

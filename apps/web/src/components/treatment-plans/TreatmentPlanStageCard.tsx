@@ -11,12 +11,14 @@ import {
 	Play,
 	Plus,
 	TrendingUp,
+	UserCheck,
 } from "lucide-react";
 import {
 	type InventoryItemLookup,
 	calculateStageMaterialRequirements,
 } from "./treatmentPlanMaterialEngine";
 import {
+	type TreatmentPlanDoctorOption,
 	type TreatmentPlanItem,
 	type TreatmentPlanStage,
 	type TreatmentPlanStageStatus,
@@ -60,6 +62,9 @@ export interface TreatmentPlanStageCardProps {
 	readonly stage: TreatmentPlanStage;
 	readonly defaultExpanded?: boolean | undefined;
 	readonly inventoryItems?: readonly InventoryItemLookup[] | undefined;
+	readonly doctors?: readonly TreatmentPlanDoctorOption[] | undefined;
+	readonly onAssignStageDoctor?: ((stage: TreatmentPlanStage, doctorId: string | null, doctorName: string | null, doctorSpecialty: string | null) => void) | undefined;
+	readonly onAssignItemDoctor?: ((itemId: string, doctorId: string | null, doctorName: string | null, doctorSpecialty: string | null) => void) | undefined;
 	readonly onUpdateItemQuantity?: ((itemId: string, newQty: number) => void) | undefined;
 	readonly onUpdateItemPrice?: ((itemId: string, newPriceRub: number) => void) | undefined;
 	readonly onUpdateItem?: ((updatedItem: TreatmentPlanItem) => void) | undefined;
@@ -82,6 +87,9 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 	stage,
 	defaultExpanded = true,
 	inventoryItems,
+	doctors,
+	onAssignStageDoctor,
+	onAssignItemDoctor,
 	onUpdateItemQuantity,
 	onUpdateItemPrice,
 	onUpdateItem,
@@ -282,6 +290,67 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 								)}
 							</div>
 
+							{/* Stage Doctor Allocation (Consortium: Doctor per Stage) */}
+							<div
+								className="relative inline-flex items-center"
+								onClick={(e) => e.stopPropagation()}
+							>
+								{stage.doctorName ? (
+									<span
+										className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/25 whitespace-nowrap shadow-2xs"
+										data-testid={`stage-${stage.stageNumber}-doctor-badge`}
+										title={`Врач этапа: ${stage.doctorName}${stage.doctorSpecialty ? ` (${stage.doctorSpecialty})` : ""}`}
+									>
+										<UserCheck size={11} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+										<span>{stage.doctorName}</span>
+										{stage.doctorSpecialty && (
+											<span className="text-[10px] opacity-75 hidden sm:inline">
+												· {stage.doctorSpecialty}
+											</span>
+										)}
+										{onAssignStageDoctor && (
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													onAssignStageDoctor(stage, null, null, null);
+												}}
+												className="ml-0.5 text-[10px] text-indigo-400 hover:text-rose-600 cursor-pointer p-0.5"
+												title="Снять назначение врача с этапа"
+												data-testid={`clear-stage-doctor-btn-${stage.stageNumber}`}
+											>
+												×
+											</button>
+										)}
+									</span>
+								) : onAssignStageDoctor && doctors && doctors.length > 0 ? (
+									<select
+										value=""
+										onChange={(e) => {
+											const docId = e.target.value;
+											if (!docId) return;
+											const found = doctors.find((d) => d.id === docId);
+											onAssignStageDoctor(
+												stage,
+												docId,
+												found?.fullName || "Врач-стоматолог",
+												found?.specialty || (found?.role === "doctor" ? "Стоматолог" : found?.role) || null,
+											);
+										}}
+										className="h-6 text-[10.5px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-500/5 hover:bg-indigo-500/15 border border-indigo-500/20 rounded-full px-2 py-0 cursor-pointer focus:outline-hidden transition-colors"
+										title="Назначить специалиста на все процедуры этапа в 1 клик"
+										data-testid={`assign-stage-doctor-select-${stage.stageNumber}`}
+									>
+										<option value="">+ Врач этапа</option>
+										{doctors.map((doc) => (
+											<option key={doc.id} value={doc.id}>
+												{doc.fullName} {doc.specialty ? `(${doc.specialty})` : ""}
+											</option>
+										))}
+									</select>
+								) : null}
+							</div>
+
 							{materialSummary.hasDeficit && (
 								<span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/30 flex items-center gap-1">
 									<AlertTriangle size={11} /> Дефицит ТМЦ ({materialSummary.deficitCount})
@@ -358,6 +427,8 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 											<TreatmentPlanStageItemRow
 												key={item.id || idx}
 												item={item}
+												doctors={doctors}
+												onAssignDoctor={onAssignItemDoctor}
 												onOpenLabOrder={onOpenLabOrder}
 												onOneClickLabOrder={onOneClickLabOrder}
 												onUpdateItemQuantity={onUpdateItemQuantity}

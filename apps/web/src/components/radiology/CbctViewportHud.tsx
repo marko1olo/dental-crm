@@ -354,6 +354,8 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 				)}
 				<OrientationCube3D viewportType={viewportType} size={isMaximized ? 32 : 22} />
 			</div>
+
+			{children}
 		</div>
 	);
 };

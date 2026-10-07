@@ -77,7 +77,7 @@ export const TreatmentPlanCardItem: React.FC<TreatmentPlanCardItemProps> = React
 					{onOpenPlan ? (
 						<button
 							type="button"
-							onClick={() => onOpenPlan(item.id)}
+							onClick={() => onOpenPlan((item as any).planId || item.id)}
 							className="min-h-[32px] px-1.5 text-[var(--teal)] hover:underline font-bold bg-transparent border-0 cursor-pointer text-xs inline-flex items-center"
 						>
 							Открыть план &rarr;

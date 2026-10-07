@@ -84,7 +84,7 @@ export const TreatmentPlan3TierToolbar: React.FC<TreatmentPlan3TierToolbarProps>
 			</div>
 
 			{/* Right: Streamlined Controls (Segmented Modes + Messenger Share + Params Dropdown) */}
-			<div className="flex items-center gap-1.5 overflow-x-auto max-w-full scrollbar-none overscroll-contain py-0.5 shrink-0">
+			<div className="flex items-center gap-1.5 flex-wrap max-w-full py-0.5">
 				{/* Payment Mode Selector: Segmented Control */}
 				<div
 					className="inline-flex items-center p-[3px] rounded-[10px] bg-[var(--paper-soft)] border border-[var(--line-subtle)] shadow-2xs gap-1 shrink-0"

@@ -975,22 +975,50 @@ export function calculateRequiredConcentrateForVolume(
 // 7. 1-CLICK EXPORT / PRINT GENERATORS (ROSPOTREBNADZOR INSPECTION READY)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function renderSanpinOfficialStampsHtml(clinic: ClinicLegalInfo, roleLabel = "Медсестра ЦСО / Ответственная за стерилизацию"): string {
-	const stampHtml = renderDigitalSignatureStampHtml({
-		certificateSerialNumber: "4A89C190D23F0198E0124B56C7D",
-		certificateSubject: `${clinic.headNurse} (${roleLabel})`,
-		certificateIssuer: "Минцифры России / Федеральное казначейство РФ",
-		validFrom: "2026-01-01T00:00:00Z",
-		validTo: "2027-01-01T23:59:59Z",
-		signedAt: new Date().toISOString(),
-		signatureType: "ukep",
-		organizationName: clinic.name,
-	});
+export function renderSanpinOfficialStampsHtml(
+	clinic: ClinicLegalInfo,
+	roleLabel = "Медсестра ЦСО / Ответственная за стерилизацию",
+	ukepOptions?: {
+		certificateSerialNumber?: string | undefined;
+		certificateSubject?: string | undefined;
+		certificateIssuer?: string | undefined;
+		validFrom?: string | undefined;
+		validTo?: string | undefined;
+		signedAt?: string | undefined;
+	},
+): string {
+	if (ukepOptions?.certificateSerialNumber) {
+		const stampHtml = renderDigitalSignatureStampHtml({
+			certificateSerialNumber: ukepOptions.certificateSerialNumber,
+			certificateSubject: ukepOptions.certificateSubject || `${clinic.headNurse} (${roleLabel})`,
+			certificateIssuer: ukepOptions.certificateIssuer || "Минцифры России / Федеральное казначейство РФ",
+			validFrom: ukepOptions.validFrom || "2026-01-01T00:00:00Z",
+			validTo: ukepOptions.validTo || "2027-01-01T23:59:59Z",
+			signedAt: ukepOptions.signedAt || new Date().toISOString(),
+			signatureType: "ukep",
+			organizationName: clinic.name,
+		});
 
-	return `
+		return `
 	<div style="margin-top: 18px; display: flex; justify-content: space-between; align-items: flex-end; page-break-inside: avoid;">
 		<div>
 			${stampHtml}
+		</div>
+		<div style="text-align: center; border: 2px dashed #003399; border-radius: 50%; width: 115px; height: 115px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #003399; font-size: 6.5pt; line-height: 1.15; padding: 4px; box-sizing: border-box;">
+			<span style="font-size: 5.5pt; text-transform: uppercase;">${clinic.name}</span>
+			<strong style="font-size: 7.5pt; margin: 2px 0;">ДЛЯ МЕДИЦИНСКИХ<br/>ДОКУМЕНТОВ</strong>
+			<span style="font-size: 6pt;">ОГРН ${clinic.ogrn}</span>
+			<span style="font-size: 5.5pt; color: #444;">СанПиН 3.3686-21</span>
+		</div>
+	</div>`;
+	}
+
+	return `
+	<div style="margin-top: 18px; display: flex; justify-content: space-between; align-items: flex-end; page-break-inside: avoid;">
+		<div style="font-size: 8.5pt; line-height: 1.5; color: #1e293b;">
+			<div style="font-weight: 600;">Ответственное лицо: ______________________ / ${clinic.headNurse} /</div>
+			<div style="font-size: 7.5pt; color: #64748b; font-style: italic;">(${roleLabel})</div>
+			<div style="font-size: 8pt; color: #475569; margin-top: 4px;">Дата: «____» ____________ 2026 г.</div>
 		</div>
 		<div style="text-align: center; border: 2px dashed #003399; border-radius: 50%; width: 115px; height: 115px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #003399; font-size: 6.5pt; line-height: 1.15; padding: 4px; box-sizing: border-box;">
 			<span style="font-size: 5.5pt; text-transform: uppercase;">${clinic.name}</span>

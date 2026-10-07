@@ -17,6 +17,7 @@ import {
 	isValidSnils,
 	validateCertificateStatus,
 	validateGostCmsPkcs7Signature,
+	extractGostCmsMetadata,
 } from "@dental/shared";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -609,17 +610,47 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 
 		const currentSnapshot =
 			(doc.safetyAuditSnapshotJson as Record<string, any>) || {};
+
+		let certSerial = parsedBody.data.certificateSerialNumber;
+		let certIssuer = parsedBody.data.certificateIssuer;
+		let certValidFrom = parsedBody.data.certificateValidFrom;
+		let certValidTo = parsedBody.data.certificateValidTo;
+
+		if (!certSerial) {
+			try {
+				const derBuffer = Buffer.from(pkcs7Signature, "base64");
+				const meta = extractGostCmsMetadata(derBuffer);
+				if (meta.certificateSerialNumber) {
+					certSerial = meta.certificateSerialNumber;
+				}
+				if (!certValidFrom && meta.validFromIso) {
+					certValidFrom = meta.validFromIso;
+				}
+				if (!certValidTo && meta.validToIso) {
+					certValidTo = meta.validToIso;
+				}
+			} catch {
+				// DER parsing fallback
+			}
+		}
+
+		if (!certSerial) {
+			return reply.code(400).send({
+				error: "MissingCertificateSerialNumber",
+				message:
+					"Не удалось определить серийный номер сертификата врача из подписи PKCS#7. Передайте certificateSerialNumber явно или используйте валидный контейнер CAdES.",
+			});
+		}
+
 		const ukepSignatureMeta = {
-			certificateSerialNumber:
-				parsedBody.data.certificateSerialNumber ||
-				`00E4A28B${doc.id.replace(/-/g, "").slice(0, 16).toUpperCase()}`,
+			certificateSerialNumber: certSerial,
 			certificateThumbprint: parsedBody.data.certificateThumbprint,
 			certificateIssuer:
-				parsedBody.data.certificateIssuer ||
+				certIssuer ||
 				"Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
 			certificateValidFrom:
-				parsedBody.data.certificateValidFrom || new Date().toISOString(),
-			certificateValidTo: parsedBody.data.certificateValidTo,
+				certValidFrom || new Date().toISOString(),
+			certificateValidTo: certValidTo,
 			doctorSnils: parsedBody.data.doctorSnils,
 			signatureAlgorithm:
 				parsedBody.data.signatureAlgorithm || "ГОСТ Р 34.10-2012 (256 бит)",
