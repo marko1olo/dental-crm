@@ -209,10 +209,22 @@ export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisi
 					options?.completedPlanItems ||
 					[];
 
-				const effectiveAdditionalServices =
+				const storeServices = assembleVisitStoreCompletedServices();
+				const explicitServices =
 					overrideInput?.additionalServices ||
 					options?.additionalServices ||
 					[];
+				const effectiveAdditionalServices: ClinicalEstimateItem[] = [...explicitServices];
+				for (const stItem of storeServices) {
+					const isDup = effectiveAdditionalServices.some(
+						(x) =>
+							(x.id && x.id === stItem.id) ||
+							(x.code && x.code === stItem.code && String(x.toothNumber ?? "") === String(stItem.toothNumber ?? "")),
+					);
+					if (!isDup) {
+						effectiveAdditionalServices.push(stItem);
+					}
+				}
 
 				const effectiveDiscountPercent =
 					overrideInput?.discountPercent !== undefined
@@ -280,6 +292,25 @@ export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisi
 						});
 					} catch {
 						// Не блокируем завершение при сетевой задержке
+					}
+				}
+
+				// Фоновое завершение наряда приёма на бэкенде (списание склада + закрытие наряда)
+				const isUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+				if (isUuid(effectiveVisitId)) {
+					try {
+						await fetchWithHandling(`/api/visits/${effectiveVisitId}/complete-work-order`, {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+								...denteAdminSecretRequestHeaders(),
+							},
+							body: JSON.stringify({ status: "signed" }),
+						}).catch((workErr) => {
+							logger.warn("[useVisitCompletion] Фоновое закрытие наряда на бэкенде:", workErr);
+						});
+					} catch {
+						// Мягкий режим: сбой сети не блокирует работу врача
 					}
 				}
 
