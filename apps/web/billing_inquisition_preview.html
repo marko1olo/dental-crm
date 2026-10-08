@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+    <title>DENTE 54-FZ Cash Register & Split Payments Preview</title>
+    <script>
+      (function() {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var th = params.get('theme') || 'light';
+          document.documentElement.setAttribute('data-theme', th);
+          if (th === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+          } else {
+            document.documentElement.classList.add('light');
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {
+          console.error('Theme inline init error', e);
+        }
+      })();
+    </script>
+  </head>
+  <body class="bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] antialiased min-h-screen">
+    <div id="root"></div>
+    <script type="module" src="/src/billing_inquisition_preview.tsx"></script>
+  </body>
+</html>

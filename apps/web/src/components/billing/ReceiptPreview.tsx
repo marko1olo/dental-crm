@@ -327,7 +327,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 							)}
 							<div className="flex justify-between text-slate-600">
 								<span>ПРИЗНАК РАСЧЕТА:</span>
-								<span className="font-semibold text-slate-950">ПОЛНЫЙ РАСЧЕТ<span className="sr-only"> (Тег 1214)</span></span>
+								<span className="font-semibold text-slate-950">ПОЛНЫЙ РАСЧЕТ (Тег 1214)</span>
 							</div>
 							<div className="flex justify-between text-slate-600">
 								<span>ДАТА И ВРЕМЯ:</span>
@@ -402,7 +402,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 							<div className="space-y-1 pt-1 text-[11px] text-slate-700">
 								{(payments.cardRub ?? 0) > 0 && (
 									<div className="flex justify-between">
-										<span>БЕЗНАЛИЧНЫМИ / КАРТА<span className="sr-only"> (Тег 1081)</span>:</span>
+										<span>БЕЗНАЛИЧНЫМИ / КАРТА (Тег 1081):</span>
 										<span className="font-bold text-slate-950 font-mono">
 											{(payments.cardRub ?? 0).toLocaleString("ru-RU")} ₽
 										</span>
@@ -410,7 +410,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 								)}
 								{(payments.sbpRub ?? 0) > 0 && (
 									<div className="flex justify-between">
-										<span>СБП / ПЛАТИ QR<span className="sr-only"> (Тег 1081)</span>:</span>
+										<span>СБП / ПЛАТИ QR (Тег 1081):</span>
 										<span className="font-bold text-teal-800 font-mono">
 											{(payments.sbpRub ?? 0).toLocaleString("ru-RU")} ₽
 										</span>
@@ -419,7 +419,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 								{(payments.cashRub ?? 0) > 0 && (
 									<>
 										<div className="flex justify-between">
-											<span>НАЛИЧНЫМИ<span className="sr-only"> (Тег 1031)</span>:</span>
+											<span>НАЛИЧНЫМИ (Тег 1031):</span>
 											<span className="font-bold text-slate-950 font-mono">
 												{(payments.cashRub ?? 0).toLocaleString("ru-RU")} ₽
 											</span>

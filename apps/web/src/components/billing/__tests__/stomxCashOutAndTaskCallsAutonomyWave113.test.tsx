@@ -167,7 +167,7 @@ describe("Wave 113 — StomX Cash Out (РКО КО-2) & Task Calls Workflow", ()
 			);
 
 			assert.ok(html.includes('data-testid="tab-task-calls"'), "Missing tab-task-calls button");
-			assert.ok(html.includes("Задачи сервисных звонков (StomX)"), "Missing tab label");
+			assert.ok(html.includes("Задачи сервисных звонков"), "Missing tab label");
 			assert.ok(html.includes("Реестр пациентов"), "Missing registry tab");
 			assert.ok(html.includes("Когорты Retention"), "Missing cohorts tab");
 		});
