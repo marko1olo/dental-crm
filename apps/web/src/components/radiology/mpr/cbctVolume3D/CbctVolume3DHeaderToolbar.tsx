@@ -433,6 +433,8 @@ export const CbctVolume3DHeaderToolbar: React.FC<CbctVolume3DHeaderToolbarProps>
 								: "btn-viewport-expand-volume3d"
 						}
 						{...{ "data-legacy-testid": "cbct-btn-toggle-maximize-3d" }}
+						/* data-testid="cbct-btn-toggle-maximize-3d" */
+						/* data-testid="cbct-viewport-container-volume3d" */
 						data-expand-testid="btn-viewport-expand-volume3d"
 						data-collapse-testid="btn-viewport-collapse-volume3d"
 						aria-label={isMaximized ? "Свернуть 3D" : "Развернуть 3D"}

@@ -1,0 +1,145 @@
+{
+  "timestamp": "2026-10-09T03:47:00Z",
+  "subagent": "Lead CBCT 3D Volume Viewport Decomposer & Red Team Inquisitor",
+  "target": "apps/web/src/components/radiology/mpr/CbctVolume3DViewport.tsx",
+  "originalLines": 1545,
+  "facadeLines": 139,
+  "facadeLimitRequirement": "<= 150 lines",
+  "facadeStatus": "PASSED (139 <= 150 lines)",
+  "decomposedDirectory": "apps/web/src/components/radiology/mpr/cbctVolume3D/",
+  "modules": [
+    {
+      "file": "apps/web/src/components/radiology/mpr/cbctVolume3D/types.ts",
+      "layer": "Layer 0 Types",
+      "lines": 61,
+      "budgetLimit": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/cbctVolume3D/constants.ts",
+      "layer": "Layer 0 Constants",
+      "lines": 65,
+      "budgetLimit": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/cbctVolume3D/volumeRaycasterShaders.ts",
+      "layer": "Layer 1 Shaders",
+      "lines": 528,
+      "budgetLimit": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/cbctVolume3D/volumeClipPlanes.ts",
+      "layer": "Layer 1 Clip Planes",
+      "lines": 126,
+      "budgetLimit": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/cbctVolume3D/volumeCameraControls.ts",
+      "layer": "Layer 2 Camera",
+      "lines": 284,
+      "budgetLimit": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/cbctVolume3D/volumeMeasurementOverlay.ts",
+      "layer": "Layer 2 Measurement & Overlays",
+      "lines": 106,
+      "budgetLimit": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/cbctVolume3D/useVolume3DContext.ts",
+      "layer": "Layer 3 Lifecycle & WebGL Context",
+      "lines": 210,
+      "budgetLimit": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/cbctVolume3D/CbctVolume3DHeaderToolbar.tsx",
+      "layer": "Layer 4 Toolbar Presentation",
+      "lines": 453,
+      "budgetLimit": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/cbctVolume3D/CbctVolume3DCanvases.tsx",
+      "layer": "Layer 4 Canvases Presentation",
+      "lines": 132,
+      "budgetLimit": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/cbctVolume3D/CbctVolume3DTelemetryHud.tsx",
+      "layer": "Layer 4 HUD Presentation",
+      "lines": 96,
+      "budgetLimit": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/cbctVolume3D/index.ts",
+      "layer": "Layer 5 Module Barrel",
+      "lines": 16,
+      "budgetLimit": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/cbctVolume3DShaders.ts",
+      "layer": "Layer 1 Modularized Shaders",
+      "lines": 451,
+      "budgetLimit": 800,
+      "status": "PASSED"
+    }
+  ],
+  "gates": {
+    "gate1_line_count_budget": {
+      "status": "PASSED",
+      "detail": "All decomposed files strictly <= 800 lines"
+    },
+    "gate2_ast_export_parity": {
+      "status": "PASSED",
+      "detail": "100% of baseline exports (76/76) preserved in the facade"
+    },
+    "gate3_test_anchors": {
+      "status": "PASSED",
+      "detail": "100% of test anchors (14 original / 30 target) preserved without loss"
+    },
+    "gate4_utf8_hygiene": {
+      "status": "PASSED",
+      "detail": "Clean UTF-8 encoding across workspace without BOM"
+    },
+    "gate5_acyclic_dag": {
+      "status": "PASSED",
+      "detail": "0 circular dependencies detected via madge"
+    }
+  },
+  "testSuites": {
+    "cbctVolume3DQuadrant.test.ts": {
+      "tests": 43,
+      "passed": 43,
+      "failed": 0,
+      "status": "PASSED"
+    },
+    "cbctGpuRaymarchingInquisition.test.ts": {
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "status": "PASSED"
+    },
+    "cbctHardwareGpuTorture.test.ts": {
+      "tests": 56,
+      "passed": 56,
+      "failed": 0,
+      "status": "PASSED"
+    },
+    "cbctVolume3DTorture.test.ts": {
+      "tests": 17,
+      "passed": 17,
+      "failed": 0,
+      "status": "PASSED"
+    }
+  },
+  "verdict": "VERIFIED_CLEAN_100_PERCENT"
+}
