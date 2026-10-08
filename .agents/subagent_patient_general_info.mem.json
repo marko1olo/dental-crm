@@ -1,0 +1,100 @@
+{
+  "timestamp": "2026-10-09T01:25:00.000Z",
+  "subagent_role": "Red Team Inquisitor & L3 Patient General Info Tab Decomposer",
+  "target_monolith": "apps/web/src/components/patients/tabs/PatientGeneralInfoTab.tsx",
+  "monolith_original_lines": 1966,
+  "facade_lines": 313,
+  "reduction_percentage": "84.1%",
+  "status": "COMPLETED_100_PERCENT",
+  "gates_audit": {
+    "gate_1_line_budget": {
+      "status": "PASSED",
+      "limit": "<= 800 lines",
+      "files": [
+        { "file": "apps/web/src/components/patients/tabs/PatientGeneralInfoTab.tsx", "lines": 313 },
+        { "file": "apps/web/src/components/patients/tabs/generalInfo/constants.ts", "lines": 53 },
+        { "file": "apps/web/src/components/patients/tabs/generalInfo/types.ts", "lines": 165 },
+        { "file": "apps/web/src/components/patients/tabs/generalInfo/PatientIdentitySection.tsx", "lines": 295 },
+        { "file": "apps/web/src/components/patients/tabs/generalInfo/PatientRepresentativesSection.tsx", "lines": 386 },
+        { "file": "apps/web/src/components/patients/tabs/generalInfo/PatientInsuranceSection.tsx", "lines": 225 },
+        { "file": "apps/web/src/components/patients/tabs/generalInfo/PatientTagsMarketingSection.tsx", "lines": 210 },
+        { "file": "apps/web/src/components/patients/tabs/generalInfo/PatientSafetyBanner.tsx", "lines": 333 },
+        { "file": "apps/web/src/components/patients/tabs/generalInfo/PatientDemographicsBasicCard.tsx", "lines": 125 },
+        { "file": "apps/web/src/components/patients/tabs/generalInfo/PatientVisitsOverviewSection.tsx", "lines": 85 },
+        { "file": "apps/web/src/components/patients/tabs/generalInfo/index.ts", "lines": 10 }
+      ]
+    },
+    "gate_2_ast_export_parity": {
+      "status": "PASSED",
+      "baseline_exports": 14,
+      "facade_exports": 14,
+      "parity_ratio": 1.0,
+      "exported_symbols": [
+        "IDENTITY_DOCUMENT_TYPES",
+        "REGISTRY_SERVICE_TAGS",
+        "DOCTOR_CLINICAL_TAGS",
+        "POPULAR_DMS_COMPANIES",
+        "STOMX_REPRESENTATIVE_CATALOG",
+        "isStatutoryLegalRepresentative",
+        "StomxRepresentativeType",
+        "StomxRepresentativeTypeMeta",
+        "IdentityDocType",
+        "PatientVisitHistoryItem",
+        "PatientGeneralInfo",
+        "PatientGeneralInfoTabProps",
+        "PatientGeneralInfoTab",
+        "default"
+      ]
+    },
+    "gate_3_test_anchors": {
+      "status": "PASSED",
+      "baseline_anchors": 38,
+      "preserved_anchors": 38,
+      "parity_ratio": 1.0
+    },
+    "gate_4_utf8_hygiene": {
+      "status": "PASSED",
+      "encoding": "UTF-8 without BOM",
+      "mojibake_detected": false
+    },
+    "gate_5_dag_acyclic_graph": {
+      "status": "PASSED",
+      "madge_circular_dependencies": 0,
+      "structure": "Layer 0 (types, constants) -> Layer 1 (subcomponents) -> Layer 5 (facade & index)"
+    }
+  },
+  "test_suites_verified": [
+    {
+      "name": "stomxPatientAndCashierAutonomyWave111.test.tsx",
+      "status": "PASSED",
+      "exit_code": 0
+    },
+    {
+      "name": "patientCardTaxDeductionAutonomy.test.tsx",
+      "status": "PASSED",
+      "exit_code": 0
+    },
+    {
+      "name": "outpatientForm043AndPatientCardAutonomy.test.tsx",
+      "status": "PASSED",
+      "exit_code": 0
+    },
+    {
+      "name": "wave117StomxApptReasonsAndBlocks.test.ts",
+      "status": "PASSED",
+      "exit_code": 0
+    },
+    {
+      "name": "humanLanguageToneInquisition.test.ts",
+      "status": "PASSED",
+      "exit_code": 0
+    },
+    {
+      "name": "patientFinanceDepositAutonomy.test.tsx",
+      "status": "PASSED",
+      "exit_code": 0
+    }
+  ],
+  "total_passing_tests": 60,
+  "total_failing_tests": 0
+}
