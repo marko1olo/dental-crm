@@ -1,0 +1,71 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Onboarding Wizard Modal Decomposer",
+  "target": "apps/web/src/components/onboarding/OnboardingWizardModal.tsx",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T01:23:00Z",
+  "gates": {
+    "gate1_line_count_budget": {
+      "status": "PASSED",
+      "limit": "<= 800 lines",
+      "files": {
+        "apps/web/src/components/onboarding/OnboardingWizardModal.tsx": 227,
+        "apps/web/src/components/onboarding/wizard/index.ts": 10,
+        "apps/web/src/components/onboarding/wizard/types.ts": 414,
+        "apps/web/src/components/onboarding/wizard/WizardIntroStep.tsx": 22,
+        "apps/web/src/components/onboarding/wizard/WizardRoleStep.tsx": 64,
+        "apps/web/src/components/onboarding/wizard/WizardClinicStep.tsx": 165,
+        "apps/web/src/components/onboarding/wizard/WizardLegalStep.tsx": 120,
+        "apps/web/src/components/onboarding/wizard/WizardTeamStep.tsx": 419,
+        "apps/web/src/components/onboarding/wizard/WizardSourcesStep.tsx": 298,
+        "apps/web/src/components/onboarding/wizard/WizardTelegramStep.tsx": 383,
+        "apps/web/src/components/onboarding/wizard/WizardDoneStep.tsx": 79,
+        "apps/web/src/components/onboarding/wizard/WizardStepperNav.tsx": 38
+      }
+    },
+    "gate2_ast_export_parity": {
+      "status": "PASSED",
+      "baseline_exports_count": 10,
+      "facade_exports_count": 10,
+      "parity_percent": 100
+    },
+    "gate3_test_anchors": {
+      "status": "PASSED",
+      "original_anchors_count": 3,
+      "target_anchors_count": 16,
+      "preserved_percent": 100
+    },
+    "gate4_utf8_hygiene": {
+      "status": "PASSED",
+      "clean_utf8": true
+    },
+    "gate5_acyclic_dag_madge": {
+      "status": "PASSED",
+      "circular_dependencies_count": 0
+    }
+  },
+  "tests": {
+    "suites_passed": 4,
+    "tests_total": 21,
+    "tests_passed": 21,
+    "tests_failed": 0,
+    "suite_names": [
+      "Onboarding Wizard Dismissal Freedom & Autonomy (Mandates 8e, 8n)",
+      "Onboarding Wizard Finish Autonomy (Mandates 8e, 8n)",
+      "Onboarding & Settings Staff/Chair Creation Autonomy (Mandates 8e, 8n)",
+      "Red Team Inquisition: Scanner & Onboarding Frictionless Suite"
+    ]
+  },
+  "constitutional_compliance": {
+    "mandate_8e_doctor_autonomy": "PRESERVED",
+    "mandate_8n_scale_sovereignty": "PRESERVED",
+    "seven_deadly_sins_eradicated": {
+      "sin1_text_overflow": "0 truncated words",
+      "sin2_toolbar_density": "clean 1-line bar",
+      "sin3_card_clutter": "Miller limit strictly observed",
+      "sin4_contrast_theme": "WCAG AAA preserved",
+      "sin5_doctor_autonomy": "0 blocking disabled CTA buttons",
+      "sin6_matryoshka_depth": "depth strictly 1",
+      "sin7_form_sanctity": "0 cartoon emojis, pure Lucide icons"
+    }
+  }
+}
