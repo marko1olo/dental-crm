@@ -23,3 +23,6 @@ export * from "../../offline/offlineAppointmentQueue";
 export * from "../../offline/offlinePricelistCache";
 export * from "../../offline/offlinePaymentQueue";
 export * from "../../offline/networkResilience";
+
+// 152-ФЗ / HIPAA Local Model Storage
+export * from "./opgModelStorage";

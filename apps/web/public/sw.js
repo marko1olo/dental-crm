@@ -27,14 +27,14 @@ function isCacheableShellAsset(url) {
 	if (isForbiddenRuntimeResponse(url)) return false;
 	// 1. Explicit static directories
 	if (
-		/^\/(?:assets|auth-art|fonts|icons|workers|wasm|odontogram|images|static|media|locales)\/[-A-Za-z0-9_./]+(?:\.js|\.mjs|\.css|\.svg|\.png|\.webp|\.avif|\.woff2?|\.ttf|\.otf|\.wasm|\.json|\.webmanifest|\.ico|\.map)$/i.test(
+		/^\/(?:assets|auth-art|fonts|icons|workers|wasm|odontogram|images|static|media|locales|models)\/[-A-Za-z0-9_./]+(?:\.js|\.mjs|\.css|\.svg|\.png|\.webp|\.avif|\.woff2?|\.ttf|\.otf|\.wasm|\.onnx|\.json|\.webmanifest|\.ico|\.map)$/i.test(
 			url.pathname,
 		)
 	) {
 		return true;
 	}
 	// 2. Any local origin request with static asset extensions (excluding forbidden API/DICOM/documents)
-	return /\.(?:js|mjs|css|svg|png|jpg|jpeg|webp|avif|woff2?|ttf|otf|wasm|json|webmanifest|ico|map)$/i.test(
+	return /\.(?:js|mjs|css|svg|png|jpg|jpeg|webp|avif|woff2?|ttf|otf|wasm|onnx|json|webmanifest|ico|map)$/i.test(
 		url.pathname,
 	);
 }

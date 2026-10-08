@@ -57,7 +57,10 @@ function assertNotIncludes(source, marker, label) {
 
 const smokeCommand =
 	packageJson.scripts?.["smoke:web-service-worker-cache-source"];
-if (smokeCommand !== "node scripts/smoke-web-service-worker-cache-source.mjs") {
+if (
+	smokeCommand !== "node scripts/smoke-web-service-worker-cache-source.mjs" &&
+	smokeCommand !== "node --max-old-space-size=2048 scripts/smoke-web-service-worker-cache-source.mjs"
+) {
 	throw new Error("package.json missing smoke:web-service-worker-cache-source");
 }
 

@@ -26,11 +26,30 @@ const __dirname = path.dirname(__filename);
 // Always point to root node_modules to prevent React duplication
 const rootNodeModules = path.resolve(__dirname, "../../node_modules");
 
+function onnxMimePlugin() {
+	return {
+		name: "vite-plugin-onnx-mime",
+		configureServer(server: any) {
+			server.middlewares.use((req: any, res: any, next: any) => {
+				if (req.url && req.url.includes(".onnx")) {
+					res.setHeader("Content-Type", "application/octet-stream");
+					res.setHeader("Accept-Ranges", "bytes");
+				} else if (req.url && req.url.includes(".wasm")) {
+					res.setHeader("Content-Type", "application/wasm");
+					res.setHeader("Accept-Ranges", "bytes");
+				}
+				next();
+			});
+		},
+	};
+}
+
 export default defineConfig({
 	plugins: [
 		react(),
 		tailwindcss(),
 		cbctCasesPlugin(),
+		onnxMimePlugin(),
 		VitePWA({
 			registerType: "autoUpdate",
 			includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg"],
