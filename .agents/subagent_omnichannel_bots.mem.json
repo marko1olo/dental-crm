@@ -1,0 +1,33 @@
+{
+  "agent": "subagent_omnichannel_bots",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T01:48:00+04:00",
+  "parentConversationId": "da920fe7-8cf1-4af3-83bf-33b629e2b869",
+  "targetMonolith": "apps/api/src/routes/omnichannelBots.ts",
+  "linesBefore": 1709,
+  "linesAfter": 11,
+  "summary": "Full safe monolith decomposition of omnichannel bots route (1,709 lines) into modular DAG architecture in apps/api/src/routes/omnichannelBots/ with thin canonical facade.",
+  "decomposedModules": [
+    { "file": "apps/api/src/routes/omnichannelBots/schemas.ts", "layer": 0, "lines": 38, "description": "Layer 0: Zod validation schemas for configs, ping test, operator messages, test incoming" },
+    { "file": "apps/api/src/routes/omnichannelBots/types.ts", "layer": 0, "lines": 62, "description": "Layer 0: TypeScript interfaces for conversations, timeline items, webhook bodies, channel items" },
+    { "file": "apps/api/src/routes/omnichannelBots/webhookAuth.ts", "layer": 1, "lines": 44, "description": "Layer 1: Webhook handshake, challenge validation, and VK/WhatsApp confirmation utilities" },
+    { "file": "apps/api/src/routes/omnichannelBots/channelTelegram.ts", "layer": 2, "lines": 50, "description": "Layer 2: Telegram webhook message and callback_query dispatch handler" },
+    { "file": "apps/api/src/routes/omnichannelBots/channelVk.ts", "layer": 2, "lines": 41, "description": "Layer 2: VK Callback API confirmation and message_new dispatch handler" },
+    { "file": "apps/api/src/routes/omnichannelBots/channelMax.ts", "layer": 2, "lines": 99, "description": "Layer 2: WhatsApp (Cloud API/Green-API) and MAX (1C) inbound event handlers" },
+    { "file": "apps/api/src/routes/omnichannelBots/channelWebWidget.ts", "layer": 2, "lines": 104, "description": "Layer 2: Web widget and operator chat controls (send, takeover, release, test incoming simulation)" },
+    { "file": "apps/api/src/routes/omnichannelBots/triageAndBooking.ts", "layer": 2, "lines": 576, "description": "Layer 2: Inbox conversations, chat timeline, patient linking, and appointment booking logic" },
+    { "file": "apps/api/src/routes/omnichannelBots/channelOverview.ts", "layer": 2, "lines": 309, "description": "Layer 2: Messengers overview status and test-connection ping check" },
+    { "file": "apps/api/src/routes/omnichannelBots/botConfigs.ts", "layer": 2, "lines": 423, "description": "Layer 2: Bot configurations CRUD, AES-256-GCM vault, status telemetry, metrics, and source code export" },
+    { "file": "apps/api/src/routes/omnichannelBots/index.ts", "layer": 5, "lines": 288, "description": "Layer 5: Fastify master plugin assembly registering all omnichannel bot endpoints" },
+    { "file": "apps/api/src/routes/omnichannelBots.ts", "layer": 5, "lines": 11, "description": "Layer 5: Thin canonical facade <= 50 lines re-exporting plugin 1:1" }
+  ],
+  "verification": {
+    "allGates": "PASSED (5/5)",
+    "gate1_lineBudget": "PASSED (all files <= 800 lines)",
+    "gate2_astExportParity": "PASSED (100% of 32 exports preserved)",
+    "gate3_testAnchors": "PASSED (100% anchors preserved)",
+    "gate4_utf8Encoding": "PASSED (Clean UTF-8, 0 mojibake)",
+    "gate5_acyclicDag": "PASSED (0 circular dependencies)",
+    "targeted_tests": "4/4 PASS in apps/api/src/tests/messengersOverviewAndSecurity.test.ts"
+  }
+}
