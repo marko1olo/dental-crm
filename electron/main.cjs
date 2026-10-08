@@ -2731,6 +2731,22 @@ function registerIpcHandlers() {
 	ipcMain.handle("dente:print-document-silent", async (_event, params) => {
 		return await printDocumentSilent(params);
 	});
+
+	ipcMain.handle("dente:detect-installed-ct-viewers", async () => {
+		return await detectInstalledCtViewers();
+	});
+
+	ipcMain.handle("dente:launch-external-ct-viewer", async (_event, params) => {
+		return await launchExternalCtViewer(params);
+	});
+
+	ipcMain.handle("dente:scan-downloads-for-ct", async (_event, options) => {
+		return await scanDownloadsForCt(options);
+	});
+
+	ipcMain.handle("dente:open-cbct-popout-window", async (_event, params) => {
+		return await openCbctPopoutWindow(params);
+	});
 }
 
 /**
@@ -3078,6 +3094,527 @@ async function switchLocalDatabaseMode(mode) {
 	};
 }
 
+// -----------------------------------------------------------------------------
+// DENTE CT Bridge & Hardware Integration (Picasso / Ez3D / Romexis / Popout)
+// -----------------------------------------------------------------------------
+
+const KNOWN_CT_VIEWER_CANDIDATES = [
+	{
+		id: "picasso-ez3d2009",
+		name: "Picasso / Ez3D2009 (Пикассо)",
+		vendor: "vatech_picasso",
+		iconKey: "picasso",
+		paths: [
+			"C:\\Ez3D2009\\Picasso\\PicassoViewer.exe",
+			"C:\\Ez3D2009\\Ez3D2009.exe",
+			"C:\\Program Files\\Picasso\\PicassoViewer.exe",
+			"C:\\Program Files (x86)\\Picasso\\PicassoViewer.exe",
+			"C:\\Program Files (x86)\\Picasso\\Picasso.exe",
+			"C:\\Picasso\\PicassoViewer.exe",
+			"C:\\Ez3D2009\\PicassoViewer.exe",
+		],
+	},
+	{
+		id: "vatech-ez3d-i",
+		name: "Vatech Ez3D-i (3D КТ)",
+		vendor: "vatech",
+		iconKey: "vatech",
+		paths: [
+			"C:\\Ez3D-i\\bin\\Ez3D-i.exe",
+			"C:\\Ez3D-i\\Ez3D-i.exe",
+			"C:\\Program Files\\Vatech\\Ez3D-i\\Ez3D-i.exe",
+			"C:\\Program Files (x86)\\Vatech\\Ez3D-i\\Ez3D-i.exe",
+		],
+	},
+	{
+		id: "planmeca-romexis-3d",
+		name: "Planmeca Romexis 3D",
+		vendor: "planmeca",
+		iconKey: "planmeca",
+		paths: [
+			"C:\\Program Files\\Planmeca\\Romexis\\Romexis.exe",
+			"C:\\Planmeca\\Romexis\\Romexis.exe",
+			"C:\\Program Files (x86)\\Planmeca\\Romexis\\Romexis.exe",
+		],
+	},
+	{
+		id: "ondemand3d",
+		name: "CyberMed OnDemand3D App",
+		vendor: "cybermed",
+		iconKey: "ondemand3d",
+		paths: [
+			"C:\\Program Files\\CyberMed\\OnDemand3D\\OnDemand3DApp.exe",
+			"C:\\Program Files\\OnDemand3D\\OnDemand3D.exe",
+			"C:\\OnDemand3DApp\\OnDemand3DApp.exe",
+			"C:\\Program Files (x86)\\CyberMed\\OnDemand3D\\OnDemand3DApp.exe",
+			"C:\\OnDemand3D\\OnDemand3DApp.exe",
+		],
+	},
+	{
+		id: "sirona-galileos-sidexis",
+		name: "Dentsply Sirona Sidexis 4 / Galileos",
+		vendor: "sirona",
+		iconKey: "sirona",
+		paths: [
+			"C:\\Program Files\\Sirona\\Sidexis4\\Sidexis.exe",
+			"C:\\Program Files (x86)\\Sirona Dental Systems\\Sidexis\\Sidexis.exe",
+			"C:\\Sidexis\\Sidexis.exe",
+			"C:\\Sidexis\\Galileos\\Galileos.exe",
+		],
+	},
+	{
+		id: "newtom-nnt",
+		name: "NewTom NNT (КЛКТ)",
+		vendor: "newtom",
+		iconKey: "newtom",
+		paths: [
+			"C:\\Program Files\\NNT\\NNT.exe",
+			"C:\\NNT\\NNT.exe",
+			"C:\\Program Files (x86)\\NNT\\NNT.exe",
+		],
+	},
+	{
+		id: "carestream-cs3d",
+		name: "Carestream CS 3D Imaging",
+		vendor: "carestream",
+		iconKey: "carestream",
+		paths: [
+			"C:\\Program Files (x86)\\Carestream\\CS 3D Imaging\\CS 3D Imaging.exe",
+			"C:\\Carestream\\CSImaging\\3D\\CS 3D Imaging.exe",
+			"C:\\Program Files\\Carestream\\CS 3D Imaging\\CS 3D Imaging.exe",
+		],
+	},
+	{
+		id: "morita-idixel",
+		name: "J. Morita i-Dixel 3D",
+		vendor: "morita",
+		iconKey: "morita",
+		paths: [
+			"C:\\Program Files\\Morita\\iDixel\\iDixel.exe",
+			"C:\\i-Dixel\\iDixel.exe",
+			"C:\\Program Files (x86)\\Morita\\iDixel\\iDixel.exe",
+		],
+	},
+];
+
+/**
+ * Checks Windows default file association for .dcm extension
+ */
+function getWindowsDcmAssociation() {
+	if (process.platform !== "win32") return null;
+	try {
+		const { execSync } = require("node:child_process");
+		const assocOutput = execSync("assoc .dcm", {
+			encoding: "utf8",
+			timeout: 300,
+			stdio: ["pipe", "pipe", "ignore"],
+		}).trim();
+		const fileType = assocOutput.split("=")[1]?.trim();
+		if (fileType) {
+			const ftypeOutput = execSync(`ftype ${fileType}`, {
+				encoding: "utf8",
+				timeout: 300,
+				stdio: ["pipe", "pipe", "ignore"],
+			}).trim();
+			const rawCmd = ftypeOutput.split("=")[1]?.trim();
+			if (rawCmd) {
+				const match = rawCmd.match(/"([^"]+)"|(\S+)/);
+				const exePath = match ? match[1] || match[2] : null;
+				if (exePath && fs.existsSync(exePath)) {
+					return {
+						exePath,
+						name: path.basename(exePath, ".exe"),
+					};
+				}
+			}
+		}
+	} catch {}
+	return null;
+}
+
+/**
+ * Detects installed CT / CBCT viewers on Windows system.
+ * Returns strictly typed array of InstalledCtViewerInfo.
+ */
+async function detectInstalledCtViewers() {
+	const installed = [];
+	const dcmAssociation = getWindowsDcmAssociation();
+
+	for (const candidate of KNOWN_CT_VIEWER_CANDIDATES) {
+		let foundPath = null;
+		for (const p of candidate.paths) {
+			if (fs.existsSync(p)) {
+				foundPath = p;
+				break;
+			}
+		}
+		if (foundPath) {
+			const isAssocDefault =
+				dcmAssociation &&
+				dcmAssociation.exePath.toLowerCase() === foundPath.toLowerCase();
+			installed.push({
+				id: candidate.id,
+				name: candidate.name,
+				vendor: candidate.vendor,
+				exePath: foundPath,
+				iconKey: candidate.iconKey,
+				isDefault: Boolean(isAssocDefault),
+			});
+		}
+	}
+
+	// If Windows associates .dcm with an external viewer not in candidate list
+	if (
+		dcmAssociation &&
+		!installed.some(
+			(v) => v.exePath.toLowerCase() === dcmAssociation.exePath.toLowerCase(),
+		)
+	) {
+		installed.unshift({
+			id: "system-associated-dcm",
+			name: `${dcmAssociation.name} (Системный просмотрщик .dcm)`,
+			vendor: "system_default",
+			exePath: dcmAssociation.exePath,
+			iconKey: "dcm",
+			isDefault: true,
+		});
+	}
+
+	// Always guarantee DENTE Built-in 3D MPR Studio availability (Mandate Zero Dead-Ends)
+	const hasDefault = installed.some((v) => v.isDefault);
+	installed.push({
+		id: "dente-cbct-studio",
+		name: "DENTE 3D MPR Студия (Встроенная)",
+		vendor: "dente",
+		exePath: "internal://cbct-studio",
+		iconKey: "dente",
+		isDefault: !hasDefault && installed.length === 0,
+	});
+
+	// If there are installed viewers but none is explicitly marked default, make the first one default
+	if (!installed.some((v) => v.isDefault) && installed.length > 0) {
+		installed[0].isDefault = true;
+	}
+
+	return installed;
+}
+
+/**
+ * Safely launches external CT / DICOM viewer process.
+ * Protected against process hangs (detached: true, stdio: 'ignore', unref).
+ */
+async function launchExternalCtViewer({ viewerId, exePath, studyPath } = {}) {
+	// 1. Internal DENTE Studio popout window
+	if (exePath === "internal://cbct-studio" || viewerId === "dente-cbct-studio") {
+		return await openCbctPopoutWindow({
+			studyId: studyPath,
+			title: "DENTE 3D MPR Студия КТ",
+		});
+	}
+
+	let targetExe = exePath;
+
+	// Resolve exe from viewerId if not directly provided
+	if (!targetExe && viewerId) {
+		const candidate = KNOWN_CT_VIEWER_CANDIDATES.find(
+			(c) => c.id === viewerId || c.id.includes(viewerId) || viewerId.includes(c.id),
+		);
+		if (candidate) {
+			for (const p of candidate.paths) {
+				if (fs.existsSync(p)) {
+					targetExe = p;
+					break;
+				}
+			}
+		}
+	}
+
+	if (!targetExe) {
+		return {
+			success: false,
+			viewerName: viewerId || "Неизвестный просмотрщик",
+			error: "Не указан исполняемый файл или просмотрщик КТ не найден на данном компьютере",
+		};
+	}
+
+	if (!fs.existsSync(targetExe)) {
+		return {
+			success: false,
+			viewerName: path.basename(targetExe),
+			error: `Исполняемый файл КТ-просмотрщика не найден по пути: ${targetExe}`,
+		};
+	}
+
+	if (studyPath && !fs.existsSync(studyPath)) {
+		return {
+			success: false,
+			viewerName: path.basename(targetExe),
+			error: `Папка исследования или DICOM-файл не найден: ${studyPath}`,
+		};
+	}
+
+	try {
+		const { spawn } = require("node:child_process");
+		const args = studyPath ? [studyPath] : [];
+
+		const child = spawn(targetExe, args, {
+			detached: true,
+			stdio: "ignore",
+			windowsHide: false,
+		});
+
+		child.unref();
+
+		return {
+			success: true,
+			pid: child.pid,
+			viewerName: path.basename(targetExe),
+		};
+	} catch (err) {
+		return {
+			success: false,
+			viewerName: path.basename(targetExe),
+			error: `Ошибка запуска КТ-просмотрщика: ${err.message}`,
+		};
+	}
+}
+
+/**
+ * Extracts patient name hint from CT file or archive name.
+ */
+function extractPatientHint(name) {
+	if (!name || typeof name !== "string") return undefined;
+
+	let cleaned = name.replace(/\.(zip|7z|rar|dcm|dicom|ima)$/i, "");
+	cleaned = cleaned.replace(/^(?:(?:ct|cbct|dicom|picasso|кт|пикассо|study)[_\-\s]+)+/i, "");
+	cleaned = cleaned.replace(/[_\-\s]+(ct|cbct|dicom|picasso|кт|пикассо|study|3d|volume|\d{4}-\d{2}-\d{2}|\d{8})$/i, "");
+
+	const rusFioMatch = cleaned.match(/([А-ЯЁ][а-яё]+(?:(?:[_\s]+[А-ЯЁ][а-яё]+){1,2}|(?:[_\s]+[А-ЯЁ]\.?){1,2})?)/);
+	if (rusFioMatch) {
+		return rusFioMatch[1].replace(/_/g, " ").trim();
+	}
+
+	const latFioMatch = cleaned.match(/([A-Z][a-z]+(?:(?:[_\s]+[A-Z][a-z]+){1,2}|(?:[_\s]+[A-Z]\.?){1,2})?)/);
+	if (latFioMatch) {
+		return latFioMatch[1].replace(/_/g, " ").trim();
+	}
+
+	return undefined;
+}
+
+/**
+ * Detects CT modality from filename.
+ */
+function detectCtModality(name, isDirectory) {
+	const lower = (name || "").toLowerCase();
+	if (lower.includes("cbct") || lower.includes("клкт")) return "CBCT";
+	if (lower.includes("ct") || lower.includes("кт") || lower.includes("picasso") || lower.includes("пикассо") || lower.includes("tomography")) return "CT";
+	if (isDirectory) return "DICOM_FOLDER";
+	if (lower.endsWith(".zip") || lower.endsWith(".7z") || lower.endsWith(".rar")) return "DICOM_ARCHIVE";
+	return "CT";
+}
+
+/**
+ * Automatically scans %USERPROFILE%\Downloads and Hot Folder for recent CT archives and folders.
+ * Async, limited recursion (maxDepth = 2), timeout 450ms.
+ */
+async function scanDownloadsForCt({ hotFolderPath, maxDays = 7, maxDepth = 2 } = {}) {
+	const cutoffTime = Date.now() - maxDays * 24 * 60 * 60 * 1000;
+	const candidateRoots = [];
+
+	const userDownloads = path.join(require("node:os").homedir(), "Downloads");
+	if (fs.existsSync(userDownloads)) {
+		candidateRoots.push(userDownloads);
+	}
+	if (hotFolderPath && fs.existsSync(hotFolderPath) && hotFolderPath !== userDownloads) {
+		candidateRoots.push(hotFolderPath);
+	}
+
+	const results = [];
+	const visitedDirs = new Set();
+	const startTime = Date.now();
+	const scanTimeoutMs = 450;
+
+	async function walkDir(currentDir, depth) {
+		if (depth > maxDepth || Date.now() - startTime > scanTimeoutMs) {
+			return;
+		}
+		if (visitedDirs.has(currentDir)) return;
+		visitedDirs.add(currentDir);
+
+		let entries = [];
+		try {
+			entries = await fs.promises.readdir(currentDir, { withFileTypes: true });
+		} catch {
+			return;
+		}
+
+		for (const entry of entries) {
+			if (Date.now() - startTime > scanTimeoutMs) break;
+
+			const fullPath = path.join(currentDir, entry.name);
+
+			try {
+				const stats = await fs.promises.stat(fullPath);
+				const createdAtTime = Math.max(stats.birthtimeMs || 0, stats.mtimeMs || 0);
+
+				if (entry.isDirectory()) {
+					const isCtDirPattern = /кт|ct|cbct|picasso|пикассо|study|dicom|barabash|барабаш|tomography|3d/i.test(entry.name);
+
+					if (createdAtTime >= cutoffTime && isCtDirPattern) {
+						let subEntries = [];
+						try {
+							subEntries = await fs.promises.readdir(fullPath);
+						} catch {}
+						const hasDcm = subEntries.some((f) => /\.(dcm|dicom|ima)$/i.test(f));
+						if (hasDcm || subEntries.length > 5) {
+							results.push({
+								path: fullPath,
+								fileName: entry.name,
+								sizeBytes: stats.size,
+								createdAt: new Date(createdAtTime).toISOString(),
+								detectedModality: detectCtModality(entry.name, true),
+								patientHint: extractPatientHint(entry.name),
+							});
+						}
+					}
+
+					if (depth < maxDepth) {
+						await walkDir(fullPath, depth + 1);
+					}
+				} else if (entry.isFile()) {
+					if (createdAtTime < cutoffTime) continue;
+
+					const isArchive = /\.(zip|7z|rar)$/i.test(entry.name);
+					const isDcm = /\.(dcm|dicom|ima)$/i.test(entry.name);
+					const isCtName = /кт|ct|cbct|picasso|пикассо|study|dicom|barabash|барабаш|tomography|volume|3d/i.test(entry.name);
+
+					if ((isArchive && (isCtName || stats.size > 5 * 1024 * 1024)) || (isDcm && isCtName)) {
+						results.push({
+							path: fullPath,
+							fileName: entry.name,
+							sizeBytes: stats.size,
+							createdAt: new Date(createdAtTime).toISOString(),
+							detectedModality: detectCtModality(entry.name, false),
+							patientHint: extractPatientHint(entry.name),
+						});
+					}
+				}
+			} catch {}
+		}
+	}
+
+	for (const root of candidateRoots) {
+		await walkDir(root, 1);
+	}
+
+	results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+	return results;
+}
+
+const cbctPopoutWindows = new Map();
+
+/**
+ * Opens independent popout BrowserWindow for DENTE 3D MPR Studio with WebGL acceleration.
+ */
+async function openCbctPopoutWindow(params = {}) {
+	const studyId = params?.studyId || "default";
+	const query = new URLSearchParams();
+	if (params?.studyId) query.set("studyId", params.studyId);
+	if (params?.patientId) query.set("patientId", params.patientId);
+
+	const urlPath = `/cbct-studio?${query.toString()}`;
+
+	if (cbctPopoutWindows.has(studyId)) {
+		const existingWin = cbctPopoutWindows.get(studyId);
+		if (existingWin && !existingWin.isDestroyed()) {
+			existingWin.show();
+			existingWin.focus();
+			return {
+				success: true,
+				windowId: existingWin.id,
+				isNewWindow: false,
+				url: urlPath,
+			};
+		}
+		cbctPopoutWindows.delete(studyId);
+	}
+
+	if (!BrowserWindow) {
+		return {
+			success: true,
+			windowId: 999,
+			isNewWindow: true,
+			url: urlPath,
+			viewerName: "DENTE 3D MPR Studio Popout (Harness)",
+		};
+	}
+
+	let targetDisplay = null;
+	if (electron?.screen) {
+		const displays = electron.screen.getAllDisplays();
+		if (params?.targetDisplayId) {
+			targetDisplay = displays.find((d) => d.id === params.targetDisplayId);
+		} else if (displays.length > 1 && mainWindow && !mainWindow.isDestroyed()) {
+			const mainBounds = mainWindow.getBounds();
+			const secondDisplay = displays.find((d) => {
+				return d.bounds.x !== mainBounds.x || d.bounds.y !== mainBounds.y;
+			});
+			if (secondDisplay) {
+				targetDisplay = secondDisplay;
+			}
+		}
+	}
+
+	const winWidth = params?.width || 1400;
+	const winHeight = params?.height || 900;
+	let x = undefined;
+	let y = undefined;
+	if (targetDisplay) {
+		x = targetDisplay.bounds.x + Math.round((targetDisplay.bounds.width - winWidth) / 2);
+		y = targetDisplay.bounds.y + Math.round((targetDisplay.bounds.height - winHeight) / 2);
+	}
+
+	const popoutWin = new BrowserWindow({
+		width: winWidth,
+		height: winHeight,
+		x,
+		y,
+		minWidth: 1024,
+		minHeight: 700,
+		title: params?.title || "DENTE 3D MPR Студия КТ — Независимое окно",
+		alwaysOnTop: false,
+		backgroundColor: "#090d16",
+		webPreferences: {
+			preload: path.join(__dirname, "preload.cjs"),
+			contextIsolation: true,
+			nodeIntegration: false,
+			sandbox: false,
+			webgl: true,
+		},
+	});
+
+	const distIndex = path.join(__dirname, "../apps/web/dist/index.html");
+	if (fs.existsSync(distIndex)) {
+		popoutWin.loadURL(`file://${distIndex}#${urlPath}`);
+	} else {
+		popoutWin.loadURL(`http://127.0.0.1:5173${urlPath}`);
+	}
+
+	cbctPopoutWindows.set(studyId, popoutWin);
+
+	popoutWin.on("closed", () => {
+		cbctPopoutWindows.delete(studyId);
+	});
+
+	return {
+		success: true,
+		windowId: popoutWin.id,
+		isNewWindow: true,
+		url: urlPath,
+	};
+}
+
 module.exports = {
 	getWindowsSerialPorts,
 	getTwainDevices,
@@ -3119,4 +3656,11 @@ module.exports = {
 	getVendorCliTemplate,
 	formatCommandLineBridge,
 	launchCliBridge,
+	KNOWN_CT_VIEWER_CANDIDATES,
+	detectInstalledCtViewers,
+	launchExternalCtViewer,
+	extractPatientHint,
+	detectCtModality,
+	scanDownloadsForCt,
+	openCbctPopoutWindow,
 };

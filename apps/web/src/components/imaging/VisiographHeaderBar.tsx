@@ -91,21 +91,7 @@ export function VisiographHeaderBar({
 					onClick={onUploadClick}
 					title="Загрузить снимок с диска (JPG / PNG / DICOM)"
 					aria-label="Загрузить свой снимок"
-					style={{
-						background: "transparent",
-						color: "var(--ink)",
-						border: "1px solid var(--line)",
-						borderRadius: "8px",
-						padding: "4px 10px",
-						height: "30px",
-						minHeight: "30px",
-						cursor: "pointer",
-						display: "flex",
-						alignItems: "center",
-						gap: "6px",
-						fontSize: "0.78rem",
-						transition: "all 0.2s",
-					}}
+					className="diag-btn"
 				>
 					<UploadCloud size={14} style={{ color: "var(--teal)" }} />
 					<span>Загрузить снимок</span>
@@ -117,21 +103,8 @@ export function VisiographHeaderBar({
 							onClick={onPrintClick}
 							title="Печать"
 							aria-label="Печать отчёта снимка"
-							style={{
-								background: "transparent",
-								color: "var(--muted)",
-								border: "1px solid var(--line)",
-								borderRadius: "8px",
-								padding: "4px 8px",
-								height: "30px",
-								minHeight: "30px",
-								minWidth: "30px",
-								cursor: "pointer",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								fontSize: "0.8rem",
-							}}
+							className="diag-btn"
+							style={{ padding: "0 8px", minWidth: "32px" }}
 						>
 							<Printer size={14} />
 						</button>
@@ -139,21 +112,8 @@ export function VisiographHeaderBar({
 							type="button"
 							onClick={onClearClick}
 							title="Закрыть результат"
-							style={{
-								background: "transparent",
-								color: "var(--muted)",
-								border: "1px solid var(--line)",
-								borderRadius: "8px",
-								padding: "4px 6px",
-								height: "30px",
-								minHeight: "30px",
-								width: "30px",
-								cursor: "pointer",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								fontSize: "0.8rem",
-							}}
+							className="diag-btn"
+							style={{ padding: "0 6px", minWidth: "32px" }}
 						>
 							<X size={14} />
 						</button>

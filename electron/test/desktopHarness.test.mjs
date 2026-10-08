@@ -39,6 +39,13 @@ import {
 	getVendorCliTemplate,
 	formatCommandLineBridge,
 	launchCliBridge,
+	KNOWN_CT_VIEWER_CANDIDATES,
+	detectInstalledCtViewers,
+	launchExternalCtViewer,
+	extractPatientHint,
+	detectCtModality,
+	scanDownloadsForCt,
+	openCbctPopoutWindow,
 } from "../main.cjs";
 
 test("Desktop Standalone Windows Runtime Harness", async (t) => {
@@ -486,5 +493,113 @@ FILE=C:\\Temp\\xray_46.dcm`;
 		assert.ok(!preview.includes("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="));
 		assert.ok(preview.includes("FDI%20%2316"));
 		assert.ok(preview.includes("RVG%20INTRAORAL"));
+	});
+
+	await t.test("Detects installed CT viewers & guarantees internal 3D MPR studio (Mandate Zero Dead-Ends)", async () => {
+		assert.ok(Array.isArray(KNOWN_CT_VIEWER_CANDIDATES));
+		assert.ok(KNOWN_CT_VIEWER_CANDIDATES.length >= 4);
+
+		const candidateIds = KNOWN_CT_VIEWER_CANDIDATES.map((c) => c.id);
+		assert.ok(candidateIds.some((id) => id.includes("picasso")));
+		assert.ok(candidateIds.some((id) => id.includes("ez3d")));
+		assert.ok(candidateIds.some((id) => id.includes("romexis")));
+		assert.ok(candidateIds.some((id) => id.includes("ondemand3d")));
+
+		const installed = await detectInstalledCtViewers();
+		assert.ok(Array.isArray(installed));
+		assert.ok(installed.length >= 1);
+
+		// Must always include internal DENTE CBCT Studio
+		const denteStudio = installed.find((v) => v.id === "dente-cbct-studio");
+		assert.ok(denteStudio, "Must contain dente-cbct-studio entry");
+		assert.equal(denteStudio.exePath, "internal://cbct-studio");
+		assert.equal(denteStudio.vendor, "dente");
+
+		// At least one viewer must be marked default
+		assert.ok(installed.some((v) => v.isDefault === true));
+	});
+
+	await t.test("Launches internal 3D MPR studio popout and validates external viewer error handling", async () => {
+		// 1. Launching internal studio routes to popout window
+		const internalRes = await launchExternalCtViewer({
+			viewerId: "dente-cbct-studio",
+			studyPath: "study-ct-99",
+		});
+		assert.equal(internalRes.success, true);
+		assert.ok(internalRes.url.includes("studyId=study-ct-99"));
+
+		// 2. Launching with missing executable returns structured error
+		const missingExeRes = await launchExternalCtViewer({
+			exePath: "C:\\NonExistentPath\\Viewer.exe",
+		});
+		assert.equal(missingExeRes.success, false);
+		assert.ok(missingExeRes.error.includes("не найден"));
+
+		// 3. Launching without target returns structured error
+		const emptyRes = await launchExternalCtViewer({});
+		assert.equal(emptyRes.success, false);
+		assert.ok(emptyRes.error);
+	});
+
+	await t.test("Extracts patient hints and detects CT modalities from archive & folder names", () => {
+		assert.equal(extractPatientHint("Барабаш_И_В_CBCT_2026.zip"), "Барабаш И В");
+		assert.equal(extractPatientHint("Picasso_Ivanov_Petr_16.dcm"), "Ivanov Petr");
+		assert.equal(extractPatientHint("CT_123456_study.zip"), undefined);
+
+		assert.equal(detectCtModality("CBCT_Maxilla.zip", false), "CBCT");
+		assert.equal(detectCtModality("клкт_пациент.rar", false), "CBCT");
+		assert.equal(detectCtModality("picasso_scan.zip", false), "CT");
+		assert.equal(detectCtModality("patient_study", true), "DICOM_FOLDER");
+		assert.equal(detectCtModality("plain_archive.zip", false), "DICOM_ARCHIVE");
+	});
+
+	await t.test("Scans downloads and hot folders for recent CT archives (<7 days, maxDepth 2)", async () => {
+		const tempDir = path.join(os.tmpdir(), `dente-ct-scan-test-${Date.now()}`);
+		fs.mkdirSync(tempDir, { recursive: true });
+
+		// Create a mock CT archive
+		const ctArchive = path.join(tempDir, "Барабаш_И_В_CBCT_Scan.zip");
+		fs.writeFileSync(ctArchive, Buffer.alloc(1024));
+
+		// Create a mock CT folder with dummy dicom
+		const ctFolder = path.join(tempDir, "Picasso_Study_Petrov");
+		fs.mkdirSync(ctFolder, { recursive: true });
+		fs.writeFileSync(path.join(ctFolder, "slice_001.dcm"), Buffer.alloc(512));
+
+		// Scan hot folder
+		const scanResults = await scanDownloadsForCt({
+			hotFolderPath: tempDir,
+			maxDays: 7,
+			maxDepth: 2,
+		});
+
+		assert.ok(Array.isArray(scanResults));
+		assert.ok(scanResults.length >= 2, "Must detect both archive and folder");
+
+		const archiveItem = scanResults.find((r) => r.fileName === "Барабаш_И_В_CBCT_Scan.zip");
+		assert.ok(archiveItem);
+		assert.equal(archiveItem.detectedModality, "CBCT");
+		assert.equal(archiveItem.patientHint, "Барабаш И В");
+
+		const folderItem = scanResults.find((r) => r.fileName === "Picasso_Study_Petrov");
+		assert.ok(folderItem);
+		assert.equal(folderItem.detectedModality, "CT");
+		assert.equal(folderItem.patientHint, "Petrov");
+
+		// Clean up temp dir
+		try {
+			fs.rmSync(tempDir, { recursive: true, force: true });
+		} catch {}
+	});
+
+	await t.test("Opens CBCT popout window and formats URL with study and patient IDs", async () => {
+		const popout = await openCbctPopoutWindow({
+			studyId: "study-vol-101",
+			patientId: "pat-888",
+		});
+		assert.equal(popout.success, true);
+		assert.ok(popout.url.includes("studyId=study-vol-101"));
+		assert.ok(popout.url.includes("patientId=pat-888"));
+		assert.equal(popout.isNewWindow, true);
 	});
 });

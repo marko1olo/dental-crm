@@ -152,4 +152,20 @@ contextBridge.exposeInMainWorld("denteDesktopNative", {
 			ipcRenderer.removeListener("dente:desktop-escape-request", handler);
 		};
 	},
+
+	detectInstalledCtViewers: async () => {
+		return await ipcRenderer.invoke("dente:detect-installed-ct-viewers");
+	},
+
+	launchExternalCtViewer: async (params) => {
+		return await ipcRenderer.invoke("dente:launch-external-ct-viewer", params);
+	},
+
+	scanDownloadsForCt: async (options) => {
+		return await ipcRenderer.invoke("dente:scan-downloads-for-ct", options);
+	},
+
+	openCbctPopoutWindow: async (params) => {
+		return await ipcRenderer.invoke("dente:open-cbct-popout-window", params);
+	},
 });

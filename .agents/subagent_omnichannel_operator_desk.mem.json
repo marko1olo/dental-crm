@@ -1,0 +1,121 @@
+{
+  "agent": "L3 Omnichannel Operator Desk Decomposer & Red Team Inquisitor",
+  "status": "COMPLETED",
+  "started_at": "2026-10-09T03:20:00Z",
+  "completed_at": "2026-10-09T03:46:00Z",
+  "target_monolith": "apps/web/src/components/chat/OmnichannelOperatorDesk.tsx (1,521 lines -> 28 lines facade)",
+  "decomposed_directory": "apps/web/src/components/chat/operatorDesk/",
+  "completed_steps": [
+    "1. Прочитана Высшая Конституция THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md и правила core.md полностью",
+    "2. Прочитан скилл безопасной декомпозиции монолитов /decomposer (C:\\Users\\Admin\\.gemini\\config\\skills\\decomposer\\SKILL.md) полностью",
+    "3. Проведена инвентаризация монолита OmnichannelOperatorDesk.tsx (1,521 строка), выделены слои DAG Layer 0-5",
+    "4. Извлечен Layer 0: types.ts (62 строки) — типы каналов, диалогов, сообщений, бейджей, пропсов стола",
+    "5. Извлечен Layer 0: constants.ts (122 строки) — конфигурации источников SOURCE_BADGE_CONFIG, каналов CHANNEL_CONFIGS, клинических шаблонов CLINICAL_QUICK_REPLIES, функция getSourceBadgeInfo",
+    "6. Извлечен Layer 1: ChannelConversationList.tsx (277 строк) — левая колонка диалогов, поиск, сегментированный бар каналов, фильтры статусов, аватары, чипы",
+    "7. Извлечен Layer 1: OperatorMessageStream.tsx (265 строк) — лента сообщений диалога, шапка пациента, кнопки записи и перехвата, бабблы",
+    "8. Извлечен Layer 2: QuickRepliesDrawer.tsx (31 строка) — шторка быстрых клинических шаблонов клиники DENTE",
+    "9. Извлечен Layer 2: OperatorInputBar.tsx (73 строки) — поле ввода сообщения оператора, отправка по Enter, подпись оператора, бейдж 152-ФЗ / 323-ФЗ",
+    "10. Извлечен Layer 2: QuickBookingModal.tsx (238 строк) — модалка быстрой записи на приём из чата (Мандат 8e)",
+    "11. Извлечен Layer 2: LinkPatientModal.tsx (124 строки) — модалка создания и привязки карты пациента в 1 клик (Мандат 8e)",
+    "12. Извлечен Layer 3: useOmnichannelOperatorDesk.ts (552 строки) — хук логики чата, REST-синхронизация с /api/bots/inbox, перехват, отправка, бронирование",
+    "13. Извлечен Layer 4/5: OmnichannelOperatorDeskView.tsx (188 строк) — чистый координатор представления",
+    "14. Извлечен Layer 5: index.ts (11 строк) — barrel-файл экспорта модулей",
+    "15. Сформирован тонкий канонический фасад OmnichannelOperatorDesk.tsx (28 строк, строго <= 150 строк) со 100% обратной совместимостью",
+    "16. Написан целевой юнит-тест apps/web/src/tests/omnichannelOperatorDeskDecomposition.test.ts",
+    "17. Пройдены все 5 гейтов скрипта scripts/verify-decomposition-health.cjs с вердиктом 100% CLEAN"
+  ],
+  "modules": [
+    {
+      "file": "apps/web/src/components/chat/operatorDesk/types.ts",
+      "layer": "Layer 0 (Types & Contracts)",
+      "lines": 62,
+      "limit": "< 800 lines",
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/chat/operatorDesk/constants.ts",
+      "layer": "Layer 0 (Pure Constants & Helpers)",
+      "lines": 122,
+      "limit": "< 800 lines",
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/chat/operatorDesk/ChannelConversationList.tsx",
+      "layer": "Layer 1 (Presentation Component)",
+      "lines": 277,
+      "limit": "< 800 lines",
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/chat/operatorDesk/OperatorMessageStream.tsx",
+      "layer": "Layer 1 (Presentation Component)",
+      "lines": 265,
+      "limit": "< 800 lines",
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/chat/operatorDesk/QuickRepliesDrawer.tsx",
+      "layer": "Layer 2 (Presentation Component)",
+      "lines": 31,
+      "limit": "< 800 lines",
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/chat/operatorDesk/OperatorInputBar.tsx",
+      "layer": "Layer 2 (Presentation Component)",
+      "lines": 73,
+      "limit": "< 800 lines",
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/chat/operatorDesk/QuickBookingModal.tsx",
+      "layer": "Layer 2 (Modal Component)",
+      "lines": 238,
+      "limit": "< 800 lines",
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/chat/operatorDesk/LinkPatientModal.tsx",
+      "layer": "Layer 2 (Modal Component)",
+      "lines": 124,
+      "limit": "< 800 lines",
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/chat/operatorDesk/useOmnichannelOperatorDesk.ts",
+      "layer": "Layer 3 (Custom Hook & Logic)",
+      "lines": 552,
+      "limit": "< 800 lines",
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/chat/operatorDesk/OmnichannelOperatorDeskView.tsx",
+      "layer": "Layer 4/5 (Coordinator View)",
+      "lines": 188,
+      "limit": "< 800 lines",
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/chat/operatorDesk/index.ts",
+      "layer": "Layer 5 (Barrel Export)",
+      "lines": 11,
+      "limit": "< 800 lines",
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/web/src/components/chat/OmnichannelOperatorDesk.tsx",
+      "layer": "Layer 5 (Canonical Facade)",
+      "lines": 28,
+      "limit": "<= 150 lines",
+      "status": "PASSED"
+    }
+  ],
+  "verification_gates": {
+    "gate_1_line_budget": "PASSED (all files strictly <= 800 lines, facade = 28 lines)",
+    "gate_2_ast_export_parity": "PASSED (100% of baseline exports preserved)",
+    "gate_3_test_anchors": "PASSED (19 of 19 test anchors preserved verbatim)",
+    "gate_4_utf8_hygiene": "PASSED (clean UTF-8 across all files)",
+    "gate_5_acyclic_dag_madge": "PASSED (0 circular dependencies detected)"
+  },
+  "unit_test_result": "PASSED (node --test apps/web/src/tests/omnichannelOperatorDeskDecomposition.test.ts, exit code 0, 3 passing tests)"
+}

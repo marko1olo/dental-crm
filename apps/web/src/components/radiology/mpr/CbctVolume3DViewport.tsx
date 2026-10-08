@@ -9,36 +9,27 @@
  * 4. HUD Telemetry: "3D Объем:", data-testid="cbct-btn-toggle-maximize-3d", requestAnimationFrame(, intersectRayAABB / cbctVolume3DShaders
  */
 
-import {
-	CbctRenderTelemetryCollector,
-	deriveAdaptiveRenderProfile,
-	getDowngradedAdaptiveProfile,
-	type CbctAdaptiveRenderProfile,
-	type CbctHardwareCapabilities,
-} from "@dental/shared";
 import { Wind } from "lucide-react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { CbctVolume3DClippingPanel } from "./CbctVolume3DClippingPanel";
 import {
 	CbctVolume3DHeaderToolbar,
 	CbctVolume3DTelemetryHud,
 	deriveActive3DImplants,
 	deriveAirwayAnalysis,
-	renderVolume3DVectorOverlay,
+	useVolume3DContext,
 	useVolumeCameraControls,
 	useVolumeClipPlanes,
 	type CbctVolume3DViewportProps,
 } from "./cbctVolume3D";
 import {
 	getSafeDevicePixelRatio,
+	renderCanvas2DPreviewSlice,
 	type Volume3DPresetId,
 } from "./cbctVolume3DMath";
 import {
-	disposeWebGl2VolumeRaymarching,
 	initWebGl2VolumeRaymarching,
-	renderCanvas2DPreviewSlice,
 	renderWebGl2VolumeRaymarching,
-	type WebGlVolume3DState,
 } from "./cbctVolume3DShaders";
 
 export * from "./CbctSkullProjectionsToolbar";
@@ -68,91 +59,30 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 	crosshairMm,
 	forceHibernated = false,
 }) => {
-	const canvasRef = useRef<HTMLCanvasElement | null>(null);
-	const canvas2dRef = useRef<HTMLCanvasElement | null>(null);
-	const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
-	const containerRef = useRef<HTMLDivElement | null>(null);
-	const glStateRef = useRef<WebGlVolume3DState | null>(null);
 	const [activePreset, setActivePreset] = useState<Volume3DPresetId>("skull");
 	const [isPresetOpen, setIsPresetOpen] = useState(false);
 	const [isProjectionsMenuOpen, setIsProjectionsMenuOpen] = useState(false);
 	const [implantCountMode, setImplantCountMode] = useState<"quad" | "single">("quad");
 	const [isMarActive, setIsMarActive] = useState(true);
-	const [isHibernated, setIsHibernated] = useState(false);
-	const [canvasDims, setCanvasDims] = useState({ width: 0, height: 0 });
-	const [isGpuActive, setIsGpuActive] = useState(false);
-	const effectiveHibernated = isHibernated || Boolean(forceHibernated);
 
 	const camera = useVolumeCameraControls();
 	const { yaw, pitch, zoom, pan, isInteracting, setIsInteracting, handleMouseDown, handleMouseMove, handleMouseUp, handleWheel, handleTouchStart, handleTouchMove, handleTouchEnd } = camera;
 	const clipPlanes = useVolumeClipPlanes({ initialClipping, onClippingChange });
 	const { clipping, isClippingOpen, setIsClippingOpen, hasActiveClipping, handleClipChange, handleResetClipping, handleQuickClipSpine, handleQuickClipOcciput } = clipPlanes;
 
-	const hwCapsRef = useRef<CbctHardwareCapabilities | null>(null);
-	const telemetryRef = useRef(new CbctRenderTelemetryCollector());
-	const [activeProfile, setActiveProfile] = useState<CbctAdaptiveRenderProfile>(() =>
-		deriveAdaptiveRenderProfile({ isDiscreteGpu: true, max3DTextureSize: 2048, hardwareConcurrency: typeof navigator !== "undefined" ? navigator.hardwareConcurrency : 8, deviceMemoryGb: 8 }, "nominal", "balanced"),
-	);
-	const activeProfileRef = useRef(activeProfile);
-	activeProfileRef.current = activeProfile;
-
 	const active3DImplants = useMemo(() => deriveActive3DImplants({ volume, implants3DWorld, implant3DWorld, implantCountMode }), [volume, implants3DWorld, implant3DWorld, implantCountMode]);
 	const airwayResult = useMemo(() => deriveAirwayAnalysis(volume, activePreset), [activePreset, volume]);
 
-	useEffect(() => {
-		const target = containerRef.current || canvasRef.current;
-		if (!target || typeof ResizeObserver === "undefined") return;
-		const ro = new ResizeObserver((entries) => {
-			for (const entry of entries) {
-				const { width, height } = entry.contentRect;
-				if (width > 0 && height > 0) setCanvasDims({ width: Math.floor(width), height: Math.floor(height) });
-			}
-		});
-		ro.observe(target);
-		return () => ro.disconnect();
-	}, []);
-
-	useEffect(() => {
-		const onVis = () => {
-			const hidden = typeof document !== "undefined" && document.visibilityState === "hidden";
-			setIsHibernated(hidden);
-			if (hidden) setIsInteracting(false);
-		};
-		if (typeof document !== "undefined") document.addEventListener("visibilitychange", onVis);
-		return () => { if (typeof document !== "undefined") document.removeEventListener("visibilitychange", onVis); };
-	}, [setIsInteracting]);
-
-	useEffect(() => {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const onLost = (e: Event) => {
-			e.preventDefault();
-			if (glStateRef.current) { disposeWebGl2VolumeRaymarching(glStateRef.current); glStateRef.current = null; }
-			setActiveProfile((prev) => { const dw = getDowngradedAdaptiveProfile(prev, "elevated"); activeProfileRef.current = dw; return dw; });
-			setIsGpuActive(false);
-		};
-		const onRestored = () => {
-			try {
-				const gl = canvas.getContext("webgl2", { alpha: true, antialias: false, depth: false, preserveDrawingBuffer: true, powerPreference: "high-performance", desynchronized: true });
-				if (gl) { glStateRef.current = initWebGl2VolumeRaymarching(gl); if (glStateRef.current) setIsGpuActive(true); }
-			} catch { glStateRef.current = null; setIsGpuActive(false); }
-		};
-		canvas.addEventListener("webglcontextlost", onLost);
-		canvas.addEventListener("webglcontextrestored", onRestored);
-		return () => {
-			canvas.removeEventListener("webglcontextlost", onLost);
-			canvas.removeEventListener("webglcontextrestored", onRestored);
-			if (glStateRef.current) { disposeWebGl2VolumeRaymarching(glStateRef.current); glStateRef.current = null; }
-		};
-	}, []);
+	const { canvasRef, canvas2dRef, overlayCanvasRef, containerRef, glStateRef, canvasDims, isGpuActive, setIsGpuActive, effectiveHibernated, activeProfile, activeProfileRef } = useVolume3DContext({
+		volume, forceHibernated, setIsInteracting, yaw, pitch, zoom, pan, nervePoints, interpolatedNerve3D, implant3DWorld, active3DImplants, nerveAuditResult,
+	});
 
 	useEffect(() => {
 		const canvas = canvasRef.current, canvas2d = canvas2dRef.current, targetElem = containerRef.current || canvas || canvas2d;
 		if ((!canvas && !canvas2d) || effectiveHibernated) return;
 		const rect = targetElem ? targetElem.getBoundingClientRect() : { width: 320, height: 280 };
 		const safeDpr = getSafeDevicePixelRatio();
-		const rawWidth = Math.max(64, Math.floor((rect.width || 320) * safeDpr));
-		const rawHeight = Math.max(64, Math.floor((rect.height || 280) * safeDpr));
+		const rawWidth = Math.max(64, Math.floor((rect.width || 320) * safeDpr)), rawHeight = Math.max(64, Math.floor((rect.height || 280) * safeDpr));
 		const downsample = isInteracting ? activeProfile.interactiveDownsampleFactor : 1.0;
 		const width = Math.max(64, Math.floor(rawWidth * downsample)), height = Math.max(64, Math.floor(rawHeight * downsample));
 		if (canvas && (canvas.width !== width || canvas.height !== height)) { canvas.width = width; canvas.height = height; }
@@ -184,18 +114,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 			if (isGpuActive) setIsGpuActive(false);
 			if (canvas2d) renderCanvas2DPreviewSlice(canvas2d, volume, activePreset, yaw, pitch, zoom, pan, width, height, isInteracting, clipping);
 		}
-	}, [volume, activePreset, yaw, pitch, zoom, pan, canvasDims, isInteracting, clipping, active3DImplants, isMarActive, activeProfile, effectiveHibernated, isGpuActive]);
-
-	useEffect(() => {
-		const canvas = overlayCanvasRef.current;
-		if (!canvas || effectiveHibernated) return;
-		const width = canvasDims.width || canvas.clientWidth || 320, height = canvasDims.height || canvas.clientHeight || 280;
-		if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-		ctx.clearRect(0, 0, width, height);
-		if (volume) renderVolume3DVectorOverlay(ctx, { volume, yaw, pitch, zoom, pan, width, height, nervePoints, interpolatedNerve3D, implant3DWorld, implantsList: active3DImplants as any, nerveAuditResult });
-	}, [volume, yaw, pitch, zoom, pan, canvasDims, nervePoints, interpolatedNerve3D, implant3DWorld, nerveAuditResult, active3DImplants, effectiveHibernated]);
+	}, [volume, activePreset, yaw, pitch, zoom, pan, canvasDims, isInteracting, clipping, active3DImplants, isMarActive, activeProfile, effectiveHibernated, isGpuActive, canvasRef, canvas2dRef, containerRef, glStateRef, activeProfileRef, setIsGpuActive]);
 
 	return (
 		<div onDoubleClick={onDoubleClick} onPointerDownCapture={onPointerDownCapture} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full select-none ${isActive ? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30" : "border border-cyan-500/30 hover:border-cyan-500/60"} ${extraClassName}`} style={{ backgroundColor: "#000000" }} data-testid="cbct-viewport-container-volume3d">

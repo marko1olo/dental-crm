@@ -1,7 +1,34 @@
 {
   "version": 1,
-  "savedAt": "2026-10-05T14:18:15.378Z",
+  "savedAt": "2026-10-08T20:29:41.534Z",
   "health": {
+    "gemini:086400c4e22a": {
+      "cooldownUntil": 0,
+      "failures": 5,
+      "consecutiveFailures": 5,
+      "successes": 0,
+      "lastUsedAt": 1791491381277,
+      "lastStatusCode": 400,
+      "lastError": "[gemini] Gemini HTTP 400 (model: gemini-3.5-flash-lite): {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Invalid JSON payload received. Unknown name \\\"additionalProperties\\\" at 'tools[0].function_declarations[0].parameters': Cannot find fie"
+    },
+    "gemini:d2f7e7168b58": {
+      "cooldownUntil": 0,
+      "failures": 5,
+      "consecutiveFailures": 5,
+      "successes": 0,
+      "lastUsedAt": 1791491381534,
+      "lastStatusCode": 400,
+      "lastError": "[gemini] Gemini HTTP 400 (model: gemini-3.5-flash-lite): {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Invalid JSON payload received. Unknown name \\\"additionalProperties\\\" at 'tools[0].function_declarations[0].parameters': Cannot find fie"
+    },
+    "gemini:dc3b77f3539e": {
+      "cooldownUntil": 0,
+      "failures": 5,
+      "consecutiveFailures": 5,
+      "successes": 0,
+      "lastUsedAt": 1791491381065,
+      "lastStatusCode": 400,
+      "lastError": "[gemini] Gemini HTTP 400 (model: gemini-3.5-flash-lite): {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Invalid JSON payload received. Unknown name \\\"additionalProperties\\\" at 'tools[0].function_declarations[0].parameters': Cannot find fie"
+    },
     "google_speech:26987e457b44": {
       "cooldownUntil": 0,
       "failures": 0,
@@ -12,67 +39,67 @@
       "lastError": null
     },
     "groq:6058314b22ec": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
+      "cooldownUntil": 1791491619839,
+      "failures": 3,
+      "consecutiveFailures": 3,
       "successes": 1,
-      "lastUsedAt": 1791209890101,
-      "lastStatusCode": null,
-      "lastError": null
+      "lastUsedAt": 1791491379839,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kvq0pcpje21bzaccwx8m7nzk` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 197737, Requested 24772. Please"
     },
     "groq:6ea9f119eff0": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
+      "cooldownUntil": 1791491620047,
+      "failures": 3,
+      "consecutiveFailures": 3,
       "successes": 1,
-      "lastUsedAt": 1791209891842,
-      "lastStatusCode": null,
-      "lastError": null
+      "lastUsedAt": 1791491380047,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kx0pb1jbf59sfvanqbgxk3fd` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 196416, Requested 24704. Please"
     },
     "groq:6eed7e8c3252": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
+      "cooldownUntil": 1791491619640,
+      "failures": 3,
+      "consecutiveFailures": 3,
       "successes": 1,
-      "lastUsedAt": 1791209888972,
-      "lastStatusCode": null,
-      "lastError": null
+      "lastUsedAt": 1791491379640,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kw1wmwr7e3gawf9sjcrnjwe2` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 193124, Requested 24772. Please"
     },
     "groq:83177d60e957": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
+      "cooldownUntil": 1791491619428,
+      "failures": 3,
+      "consecutiveFailures": 3,
       "successes": 1,
-      "lastUsedAt": 1791209887899,
-      "lastStatusCode": null,
-      "lastError": null
+      "lastUsedAt": 1791491379428,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kx0p5e6zf9vb59msp25t3zgh` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 194422, Requested 24790. Please"
     },
     "groq:c50f385b1343": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
+      "cooldownUntil": 1791491620230,
+      "failures": 3,
+      "consecutiveFailures": 3,
       "successes": 1,
-      "lastUsedAt": 1791209894319,
-      "lastStatusCode": null,
-      "lastError": null
+      "lastUsedAt": 1791491380230,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kx0pjm7bfzp8yzyhxwvenyw4` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 194122, Requested 24772. Please"
     },
     "groq:c73b9c86b8c4": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
+      "cooldownUntil": 1791491620422,
+      "failures": 3,
+      "consecutiveFailures": 3,
       "successes": 1,
-      "lastUsedAt": 1791209895378,
-      "lastStatusCode": null,
-      "lastError": null
+      "lastUsedAt": 1791491380422,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kx0ppgmxet9t6p0z1wppd9v9` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 194813, Requested 24772. Please"
     },
     "groq:caf98f576295": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
+      "cooldownUntil": 1791491618863,
+      "failures": 3,
+      "consecutiveFailures": 3,
       "successes": 1,
-      "lastUsedAt": 1791209886876,
-      "lastStatusCode": null,
-      "lastError": null
+      "lastUsedAt": 1791491378863,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kw6zfm8cfaav523xyhct4bs9` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 194475, Requested 24704. Please"
     }
   }
 }

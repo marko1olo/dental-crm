@@ -1,5 +1,6 @@
 import { Activity, Sparkles } from "lucide-react";
 import React from "react";
+import "../visit/VisitDiagnosticsTab.css";
 
 export type VisiographPresetType = "standard" | "invert" | "endo" | "bone" | "enamel";
 
@@ -51,7 +52,7 @@ export function VisiographCockpitPresets({
 				type="button"
 				data-tour="dicom-ruler"
 				onClick={onOpenApexRuler}
-				className="h-8 px-2.5 rounded-lg text-[13px] font-medium border border-[var(--line-strong,var(--line))] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)]/40 cursor-pointer inline-flex items-center gap-1.5 transition-all shadow-2xs active:scale-98 shrink-0"
+				className="diag-btn"
 				title="Эндо-линейка (Апекс)"
 			>
 				<Activity size={14} className="text-[var(--teal)]" />
@@ -62,13 +63,9 @@ export function VisiographCockpitPresets({
 				type="button"
 				onClick={onToggleStudio}
 				title="Инструменты анализа снимка (PACS)"
-				className={`h-8 px-2.5 rounded-lg text-[13px] border cursor-pointer inline-flex items-center gap-1.5 transition-all shadow-2xs active:scale-98 shrink-0 ${
-					isStudioMode
-						? "bg-[var(--teal)] text-[var(--on-teal,white)] border-[var(--teal)] font-semibold"
-						: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line-strong,var(--line))] hover:bg-[var(--paper-soft)] font-medium"
-				}`}
+				className={isStudioMode ? "diag-btn-teal" : "diag-btn"}
 			>
-				<Sparkles size={14} className={isStudioMode ? "text-[var(--on-teal,white)]" : "text-[var(--teal)]"} />
+				<Sparkles size={14} className={isStudioMode ? "text-white" : "text-[var(--teal)]"} />
 				<span>{isStudioMode ? "Закрыть PACS" : "Инструменты"}</span>
 			</button>
 		</div>
