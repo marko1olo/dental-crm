@@ -1,0 +1,102 @@
+{
+  "timestamp": "2026-10-09T02:25:00Z",
+  "subagent": "DoctorRosterMatrix Decomposer",
+  "targetFile": "apps/web/src/components/schedule/roster/DoctorRosterMatrix.tsx",
+  "originalLines": 1761,
+  "status": "COMPLETED",
+  "decomposedDirectory": "apps/web/src/components/schedule/roster/doctorMatrix",
+  "modules": [
+    {
+      "file": "apps/web/src/components/schedule/roster/doctorMatrix/types.ts",
+      "layer": 0,
+      "lines": 137,
+      "description": "Layer 0: Domain types and interfaces for doctor roster matrix"
+    },
+    {
+      "file": "apps/web/src/components/schedule/roster/doctorMatrix/constants.ts",
+      "layer": 0,
+      "lines": 82,
+      "description": "Layer 0: Shift presets, weekly chair binding templates, and labor hours"
+    },
+    {
+      "file": "apps/web/src/components/schedule/roster/doctorMatrix/RosterHeaderToolbar.tsx",
+      "layer": 1,
+      "lines": 73,
+      "description": "Layer 1: Timesheet T-13 header toolbar and export triggers"
+    },
+    {
+      "file": "apps/web/src/components/schedule/roster/doctorMatrix/RosterGridMatrix.tsx",
+      "layer": 1,
+      "lines": 237,
+      "description": "Layer 1: Cabinets and chairs weekly shift grid table"
+    },
+    {
+      "file": "apps/web/src/components/schedule/roster/doctorMatrix/ShiftEditorModal.tsx",
+      "layer": 2,
+      "lines": 704,
+      "description": "Layer 2: 1-click fast shift preset and chair binding popover/modal"
+    },
+    {
+      "file": "apps/web/src/components/schedule/roster/doctorMatrix/RosterStatsBar.tsx",
+      "layer": 2,
+      "lines": 617,
+      "description": "Layer 2: Doctors 33h norms view, Form T-13 timesheet, and chair utilization heatmap"
+    },
+    {
+      "file": "apps/web/src/components/schedule/roster/doctorMatrix/DoctorRosterMatrix.tsx",
+      "layer": 5,
+      "lines": 214,
+      "description": "Layer 5: Coordinator assembling grid, stats, and shift editor popover"
+    },
+    {
+      "file": "apps/web/src/components/schedule/roster/doctorMatrix/index.ts",
+      "layer": 5,
+      "lines": 13,
+      "description": "Layer 5: Barrel exporting all components and types"
+    },
+    {
+      "file": "apps/web/src/components/schedule/roster/DoctorRosterMatrix.tsx",
+      "layer": 5,
+      "lines": 33,
+      "description": "Layer 5: Canonical backwards-compatible facade (<150 lines)"
+    }
+  ],
+  "verificationGates": {
+    "gate1_lineCountBudget": {
+      "status": "PASSED",
+      "maxAllowedLines": 800,
+      "maxActualLines": 704
+    },
+    "gate2_astExportParity": {
+      "status": "PASSED",
+      "preservedExportsCount": 19,
+      "parity": "100%"
+    },
+    "gate3_testAnchors": {
+      "status": "PASSED",
+      "preservedAnchorsCount": 16,
+      "parity": "100%"
+    },
+    "gate4_utf8Hygiene": {
+      "status": "PASSED",
+      "mojibakeErrors": 0
+    },
+    "gate5_acyclicDAG": {
+      "status": "PASSED",
+      "circularDependencies": 0
+    }
+  },
+  "unitTests": {
+    "targetedSuites": [
+      "apps/web/src/components/schedule/roster/DoctorShiftRoster.test.ts",
+      "apps/web/src/components/schedule/roster/__tests__/doctorShiftRosterWave44.test.tsx",
+      "apps/web/src/components/schedule/roster/__tests__/scheduleRosterMatrixAutonomy.test.tsx",
+      "apps/web/src/components/schedule/roster/__tests__/scheduleShiftRosterIntegration.test.tsx",
+      "apps/web/src/components/schedule/roster/__tests__/scheduleWeekCopyAndChairMatrix.test.tsx"
+    ],
+    "totalTests": 75,
+    "passed": 75,
+    "failed": 0,
+    "exitCode": 0
+  }
+}
