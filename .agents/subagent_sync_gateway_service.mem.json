@@ -1,0 +1,90 @@
+{
+  "subagent": "sync_gateway_service_decomposer",
+  "targetMonolith": "apps/api/src/services/sync/syncGatewayService.ts",
+  "initialLines": 1631,
+  "decomposedDirectory": "apps/api/src/services/sync/syncGateway/",
+  "modules": [
+    {
+      "file": "apps/api/src/services/sync/syncGateway/types.ts",
+      "layer": "Layer 0",
+      "lines": 112,
+      "description": "Replication DTOs, CRDT vector contracts, node statuses, and queue telemetry types"
+    },
+    {
+      "file": "apps/api/src/services/sync/syncGateway/constants.ts",
+      "layer": "Layer 0",
+      "lines": 91,
+      "description": "Replication intervals, DDL bootstrap queries, collision codes, and appointment status progression ranks"
+    },
+    {
+      "file": "apps/api/src/services/sync/syncGateway/syncConflictResolver.ts",
+      "layer": "Layer 1",
+      "lines": 225,
+      "description": "Deterministic LWW & CRDT collision algorithms, progression rank guards, and odontogram tooth parsers"
+    },
+    {
+      "file": "apps/api/src/services/sync/syncGateway/syncStreamTransport.ts",
+      "layer": "Layer 1",
+      "lines": 188,
+      "description": "Streaming data transport, node connection registry, chunked broadcasting, and pull changes query pipeline"
+    },
+    {
+      "file": "apps/api/src/services/sync/syncGateway/syncSecurityEnforcer.ts",
+      "layer": "Layer 2",
+      "lines": 47,
+      "description": "Cryptographic payload integrity hash verification, idempotency token validation, and tenant isolation"
+    },
+    {
+      "file": "apps/api/src/services/sync/syncGateway/syncQueueManager.ts",
+      "layer": "Layer 2",
+      "lines": 187,
+      "description": "Offline task queue, idempotent transaction tracking, DDL bootstrap execution, and vector clock persistence"
+    },
+    {
+      "file": "apps/api/src/services/sync/syncGateway/syncAdministrativeHandlers.ts",
+      "layer": "Layer 3",
+      "lines": 418,
+      "description": "Payment double-spending guards, patient profile CRDT mergers, and appointment scheduling mutators"
+    },
+    {
+      "file": "apps/api/src/services/sync/syncGateway/syncClinicalHandlers.ts",
+      "layer": "Layer 3",
+      "lines": 458,
+      "description": "Clinical visit and diary record mergers, multi-tooth odontogram LWW with 043/u audit log trail"
+    },
+    {
+      "file": "apps/api/src/services/sync/syncGateway/syncEntityHandlers.ts",
+      "layer": "Layer 3",
+      "lines": 83,
+      "description": "Unified coordinator facade delegating between administrative and clinical entity mutators"
+    },
+    {
+      "file": "apps/api/src/services/sync/syncGateway/index.ts",
+      "layer": "Layer 5",
+      "lines": 300,
+      "description": "Master sync coordinator and barrel re-exporting 100% of submodules, types, and constants"
+    },
+    {
+      "file": "apps/api/src/services/sync/syncGatewayService.ts",
+      "layer": "Layer 5",
+      "lines": 48,
+      "description": "Canonical slim facade (48 lines <= 50 lines ceiling) preserving 100% backward compatibility"
+    }
+  ],
+  "verificationGates": {
+    "gate1_line_count_budget": "PASSED (all files strictly <= 800 lines)",
+    "gate2_ast_export_parity": "PASSED (100% baseline exports preserved)",
+    "gate3_test_anchors": "PASSED (100% test anchors preserved)",
+    "gate4_utf8_hygiene": "PASSED (clean UTF-8 without BOM across repository)",
+    "gate5_acyclic_dag_madge": "PASSED (0 circular dependencies detected)"
+  },
+  "unitTests": {
+    "testSuite": "apps/api/src/tests/syncGatewayService.test.ts",
+    "total": 9,
+    "passed": 9,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "auditStatus": "VERIFIED_CLEAN",
+  "timestamp": "2026-10-09T03:04:00Z"
+}
