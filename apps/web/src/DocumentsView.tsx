@@ -548,7 +548,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				clinicProfileDraft={clinicProfileDraft}
 				onOpenDocument={setSelectedDocumentKind}
 				onOpenPrimaryIntakePackage={() => setIsPrimaryIntakeOpen(true)}
-				onOpenTaxCertificate={() => setIsTaxAccountingOpen(true)}
 				className="my-3"
 			/>
 
