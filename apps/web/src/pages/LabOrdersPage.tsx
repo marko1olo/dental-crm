@@ -3,6 +3,7 @@ import {
 	DENTAL_LAB_CONSTRUCTIONS,
 	CANONICAL_LAB_WORK_TYPES,
 	type DentalLabConstructionType,
+	formatLabConstructionTitle,
 } from "../components/lab/dentalLabDefinitions";
 import { DentalLabOrdersView } from "../components/dental-lab/DentalLabOrdersView";
 import {
@@ -20,28 +21,8 @@ import {
 	type ReadyInClinicLabOrder,
 } from "../components/lab/DentalLabReadyInClinicModal";
 
-export function formatLabConstructionTitle(type?: string | null, material?: string | null): string {
-	const raw = (type || material || "").trim();
-	if (!raw) return "Конструкция";
-	if (raw in DENTAL_LAB_CONSTRUCTIONS) {
-		return DENTAL_LAB_CONSTRUCTIONS[raw as DentalLabConstructionType].shortNameRu;
-	}
-	const fromCatalog = CANONICAL_LAB_WORK_TYPES.find(
-		(w) => w.id === raw || w.titleRu.toLowerCase() === raw.toLowerCase(),
-	);
-	if (fromCatalog) return fromCatalog.titleRu;
-	const map: Record<string, string> = {
-		crown_zirconia: "Коронка ZrO2",
-		crown_emax: "Коронка e.MAX",
-		metal_ceramic: "Металлокерамика",
-		clasp_denture: "Бюгельный протез",
-		aligner_splint: "Каппа / элайнер",
-		surgical_guide: "Хирургический шаблон",
-	};
-	return map[raw] || raw;
-}
-
 export {
+	formatLabConstructionTitle,
 	LabActionPromptModal,
 	type LabPromptDialogState,
 	LabAttachScanModal,

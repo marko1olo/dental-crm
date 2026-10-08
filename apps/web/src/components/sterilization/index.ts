@@ -14,6 +14,8 @@ export { PsoRegisterTab } from "../sanpin/PsoRegisterTab";
 export { KraftPackageBarcodeModal } from "../sanpin/kraft/KraftPackageBarcodeModal";
 export { SeniorNurseKraftUnsealModal } from "../sanpin/kraft/SeniorNurseKraftUnsealModal";
 export { AutoclaveLog257Modal } from "../sanpin/autoclaveLog/AutoclaveLog257Modal";
+export { SterilizationScanner } from "../sanpin/SterilizationScanner";
+export { SanPinSterilizationJournal } from "../sanpin/SanPinSterilizationJournal";
 export {
 	format043SterilizationRecord,
 	parseAndValidateKraftBarcode,

@@ -123,16 +123,27 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [isWarrantyModalOpen, setIsWarrantyModalOpen] = useState(false); const [isDoctorShiftModalOpen, setIsDoctorShiftModalOpen] = useState(false);
 	const [isInformedConsentModalOpen, setIsInformedConsentModalOpen] = useState(false); const [isHeaderMoreMenuOpen, setIsHeaderMoreMenuOpen] = useState(false);
 
-	const handleOpenLabOrder = useCallback(() => {
+	const handleOpenLabOrder = useCallback((targetTooth?: string | number | null | unknown) => {
 		if (typeof props.onOpenLabOrderModal === "function") {
 			props.onOpenLabOrderModal();
 		}
+		const toothStr = (targetTooth && typeof targetTooth === "string" || typeof targetTooth === "number")
+			? String(targetTooth)
+			: selectedToothForMenu?.code
+			? String(selectedToothForMenu.code)
+			: useVisitStore.getState().activeToothNumber
+			? String(useVisitStore.getState().activeToothNumber)
+			: null;
+		if (toothStr) {
+			setLabOrderModalToothNumber(toothStr);
+		}
 		setIsLabOrderModalOpen(true);
-	}, [props.onOpenLabOrderModal]);
+	}, [props.onOpenLabOrderModal, selectedToothForMenu]);
 
 	useEffect(() => {
-		const handleLabOrderEvent = () => {
-			handleOpenLabOrder();
+		const handleLabOrderEvent = (e: any) => {
+			const customTooth = e?.detail?.toothNumber || e?.detail?.toothFdi;
+			handleOpenLabOrder(customTooth);
 		};
 		window.addEventListener("dente-open-lab-order-modal", handleLabOrderEvent);
 		return () => {
@@ -482,7 +493,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			<div className="panel visit-panel pb-28 sm:pb-8" id="visit" data-testid="visit-view">
 				{/* ═══ 2-ROW COMPACT MONOLITHIC VISIT HEADER (<=85px) ═══ */}
 				<header className="visit-monolithic-header rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs mb-1 sm:mb-1.5 overflow-visible shrink-0 sticky top-0 z-30 backdrop-blur-md" data-testid="visit-header-monolith" aria-label="Шапка текущего приёма">
-					{/* Строка 1: Пациент, возраст, бейдж аллергии, кнопка нормы 043/у, действия */}
+					{/* Строка 1: Пациент, возраст, бейдж аллергии, кнопка нормы ЭМК, действия */}
 					<div className="min-h-[42px] h-[42px] flex items-center justify-between gap-1 sm:gap-2 px-1.5 sm:px-2.5 py-0.5 border-b border-[var(--line)] flex-nowrap min-w-0 max-w-full">
 						<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 min-w-0">
 							<PatientAvatar fullName={activePatient.fullName} size={22} className="!w-5 !h-5 sm:!w-[26px] sm:!h-[26px] shrink-0" />
@@ -511,7 +522,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							<SoftPresenceIndicator activePeers={activePeers} summaryText={summaryText} className="hidden sm:inline-flex shrink-0" />
 
 							{/* Единый компактный и яркий чип аллергии (Tier 1) */}
-							{activePatientCriticalBadges.length > 0 && (
+							{activePatientCriticalBadges.length > 0 ? (
 								<span
 									className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink-0 flex-shrink-0 animate-pulse whitespace-nowrap"
 									data-testid="visit-focus-allergy-alert"
@@ -524,6 +535,17 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									</span>
 									<span className="hidden sm:inline whitespace-nowrap shrink-0">
 										{consolidatedAllergyChip || activePatientCriticalBadges[0]?.fullLabel}
+									</span>
+								</span>
+							) : (
+								<span
+									className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-medium text-xs shadow-xs shrink-0 flex-shrink-0 whitespace-nowrap"
+									data-testid="visit-focus-allergy-clean"
+									title="Отягощенный аллергоанамнез не выявлен"
+								>
+									<ShieldCheck size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+									<span className="text-[11px] whitespace-nowrap">
+										Аллергии не выявлены
 									</span>
 								</span>
 							)}
@@ -555,7 +577,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								/>
 							</div>
 
-							{/* Кнопка физиологической нормы 043/у — ЕДИНСТВЕННЫЙ PRIMARY CTA ШАПКИ ПРИЁМА */}
+							{/* Кнопка физиологической нормы — ЕДИНСТВЕННЫЙ PRIMARY CTA ШАПКИ ПРИЁМА */}
 							<button
 								type="button"
 								onClick={handleApplySomaticNormQuick}
@@ -575,25 +597,25 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								role="group"
 								aria-label="Быстрая печать документов"
 							>
-								{/* Печать дневника приёма (Мандат 8e) */}
+								{/* Печать дневника приёма */}
 								<button
 									type="button"
 									onClick={handlePrintForm043uFast}
 									data-testid="btn-visit-fast-print-043u"
 									className="min-h-[36px] min-w-[36px] h-9 w-9 p-0 text-xs font-semibold text-sky-700 dark:text-sky-300 hover:bg-[var(--paper)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
-									title="Печать дневника приёма (Форма 043/у)"
+									title="Печать дневника приёма"
 									aria-label="Печать дневника"
 								>
 									<Printer className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
 								</button>
 
-								{/* Печать Акта выполненных работ 804н (Мандат 8e) */}
+								{/* Печать Акта выполненных работ */}
 								<button
 									type="button"
 									onClick={handlePrintCompletedActFast}
 									data-testid="btn-visit-fast-print-act"
 									className="min-h-[36px] min-w-[36px] h-9 w-9 p-0 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-[var(--paper)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
-									title="Печать Акта выполненных работ (804н)"
+									title="Печать Акта выполненных работ"
 									aria-label="Печать Акта выполненных работ"
 								>
 									<FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" aria-hidden="true" />
@@ -631,7 +653,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={() => setIsEmergencyModalOpen(true)}
 								data-testid="btn-visit-emergency-rescue"
-								className="hidden 2xl:inline-flex secondary-button min-h-[36px] h-9 px-2.5 py-0 text-xs font-medium text-[var(--muted)] hover:text-rose-600 border border-[var(--line)] hover:border-rose-300 cursor-pointer shrink-0 rounded-lg items-center gap-1"
+								className="visit-emergency-rescue-quiet hidden 2xl:inline-flex secondary-button min-h-[36px] h-9 px-2.5 py-0 text-xs font-medium text-[var(--muted)] hover:text-rose-600 border border-[var(--line)] hover:border-rose-300 cursor-pointer shrink-0 rounded-lg items-center gap-1"
 								title="Экстренная аптечка анти-шок"
 							>
 								<AlertTriangle size={13} className="text-amber-500 shrink-0" />
@@ -698,7 +720,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										>
 											<Printer size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
 											<div className="flex flex-col">
-												<span className="font-semibold">Печать дневника (Форма 043/у)</span>
+												<span className="font-semibold">Печать дневника приёма</span>
 												<span className="text-[10px] text-[var(--muted)]">Амбулаторная карта, статус, зубная формула</span>
 											</div>
 										</button>

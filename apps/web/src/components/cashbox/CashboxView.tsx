@@ -46,19 +46,21 @@ import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js
 let zeroReceiptMutationSeq = 0;
 
 export interface CashboxViewProps {
-	readonly initialShiftOpen?: boolean;
-	readonly cashierName?: string;
-	readonly cashierInn?: string;
-	readonly clinicName?: string;
-	readonly clinicInn?: string;
-	readonly initialAmountRub?: number;
-	readonly patientId?: string;
-	readonly patientName?: string;
-	readonly patientPhone?: string;
-	readonly visitId?: string;
-	readonly invoiceId?: string;
-	readonly documentId?: string;
-	readonly onPaymentComplete?: (receipt: any) => void;
+	readonly initialShiftOpen?: boolean | undefined;
+	readonly cashierName?: string | undefined;
+	readonly cashierInn?: string | undefined;
+	readonly clinicName?: string | undefined;
+	readonly clinicInn?: string | undefined;
+	readonly initialAmountRub?: number | undefined;
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly patientPhone?: string | undefined;
+	readonly patientDepositRub?: number | undefined;
+	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly visitId?: string | undefined;
+	readonly invoiceId?: string | undefined;
+	readonly documentId?: string | undefined;
+	readonly onPaymentComplete?: ((receipt: any) => void) | undefined;
 }
 
 interface CashBoxSummary {
@@ -79,6 +81,8 @@ export function CashboxView({
 	patientId,
 	patientName,
 	patientPhone,
+	patientDepositRub = 0,
+	patientFamilyBalanceRub = 0,
 	visitId,
 	invoiceId,
 	documentId,
@@ -109,6 +113,33 @@ export function CashboxView({
 		depositRub: 0,
 		familyRub: 0,
 	});
+
+	// Effective patient deposit & family balances (propagated from props or fetched from live patient profile)
+	const [effectiveDepositRub, setEffectiveDepositRub] = useState<number>(patientDepositRub);
+	const [effectiveFamilyBalanceRub, setEffectiveFamilyBalanceRub] = useState<number>(patientFamilyBalanceRub);
+
+	useEffect(() => {
+		if (patientDepositRub > 0) {
+			setEffectiveDepositRub(patientDepositRub);
+		} else if (patientId) {
+			fetch(`/api/patients/${patientId}`, {
+				headers: denteAdminSecretRequestHeaders(),
+			})
+				.then((res) => (res.ok ? res.json() : null))
+				.then((data) => {
+					const p = data?.patient || data;
+					if (p && typeof p.balanceRub === "number" && p.balanceRub > 0) {
+						setEffectiveDepositRub(p.balanceRub);
+					} else if (p && typeof p.depositRub === "number" && p.depositRub > 0) {
+						setEffectiveDepositRub(p.depositRub);
+					}
+					if (p && typeof p.familyBalanceRub === "number" && p.familyBalanceRub > 0) {
+						setEffectiveFamilyBalanceRub(p.familyBalanceRub);
+					}
+				})
+				.catch(() => {});
+		}
+	}, [patientId, patientDepositRub, patientFamilyBalanceRub]);
 
 	// Load 6 Cash Boxes and live shift state from backend
 	const loadCashBoxes = useCallback(async () => {
@@ -369,7 +400,7 @@ export function CashboxView({
 								key={preset}
 								type="button"
 								onClick={() => handleAddAmountPreset(preset)}
-								className="h-7 px-2.5 rounded-md text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer inline-flex items-center gap-0.5"
+								className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 px-2.5 rounded-md text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer inline-flex items-center justify-center gap-0.5"
 								title={`Добавить +${preset.toLocaleString("ru-RU")} ₽`}
 							>
 								<Plus className="w-3 h-3 text-[var(--teal,var(--brand-primary))]" />
@@ -381,7 +412,7 @@ export function CashboxView({
 							<button
 								type="button"
 								onClick={() => setGrossAmountRub(0)}
-								className="h-7 px-2 rounded-md text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer inline-flex items-center gap-1"
+								className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 rounded-md text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer inline-flex items-center justify-center gap-1"
 								title="Очистить сумму"
 							>
 								<RotateCcw className="w-3 h-3" />
@@ -469,7 +500,7 @@ export function CashboxView({
 							onClick={() => setIsRetailModalOpen(true)}
 							className="h-7 px-2.5 rounded-md text-xs font-semibold bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-600/30 hover:bg-teal-100 dark:hover:bg-teal-900/50 cursor-pointer inline-flex items-center gap-1.5 shrink-0 transition-colors"
 							data-testid="btn-open-retail-showcase"
-							title="Витрина сопутствующих товаров ресепшена (Curaprox, Marvis, сертификаты 54-ФЗ)"
+							title="Витрина сопутствующих товаров ресепшена (Curaprox, Marvis, подарочные сертификаты)"
 						>
 							<ShoppingBag className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
 							<span>Витрина товаров</span>
@@ -486,7 +517,7 @@ export function CashboxView({
 						<div className="flex gap-2">
 							<button
 								type="button"
-								className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
+								className={`flex-1 min-h-[44px] sm:min-h-0 py-1.5 px-3 rounded-lg text-xs font-semibold border transition-colors cursor-pointer inline-flex items-center justify-center ${
 									payerType === "physical_person"
 										? "!bg-teal-600 !text-white !border-teal-500 shadow-xs"
 										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
@@ -497,7 +528,7 @@ export function CashboxView({
 							</button>
 							<button
 								type="button"
-								className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
+								className={`flex-1 min-h-[44px] sm:min-h-0 py-1.5 px-3 rounded-lg text-xs font-semibold border transition-colors cursor-pointer inline-flex items-center justify-center ${
 									payerType === "legal_entity"
 										? "!bg-teal-600 !text-white !border-teal-500 shadow-xs"
 										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
@@ -559,7 +590,7 @@ export function CashboxView({
 						<div className="flex flex-wrap gap-2">
 							<button
 								type="button"
-								className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[var(--teal,var(--brand-primary))] text-white text-xs font-semibold shadow-xs hover:opacity-95 transition-opacity cursor-pointer"
+								className="flex-1 min-w-[120px] min-h-[44px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[var(--teal,var(--brand-primary))] text-white text-xs font-semibold shadow-xs hover:opacity-95 transition-opacity cursor-pointer"
 								onClick={() => {
 									handleAllocateAll("card");
 									handleOpenPaymentWithMethod("card_terminal");
@@ -571,7 +602,7 @@ export function CashboxView({
 
 							<button
 								type="button"
-								className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white text-xs font-semibold shadow-xs hover:opacity-95 transition-opacity cursor-pointer"
+								className="flex-1 min-w-[120px] min-h-[44px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white text-xs font-semibold shadow-xs hover:opacity-95 transition-opacity cursor-pointer"
 								onClick={() => {
 									handleAllocateAll("cash");
 									handleOpenPaymentWithMethod("cash");
@@ -583,7 +614,7 @@ export function CashboxView({
 
 							<button
 								type="button"
-								className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white text-xs font-semibold shadow-xs hover:opacity-95 transition-opacity cursor-pointer"
+								className="flex-1 min-w-[120px] min-h-[44px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white text-xs font-semibold shadow-xs hover:opacity-95 transition-opacity cursor-pointer"
 								onClick={() => {
 									handleAllocateAll("sbp");
 									handleOpenPaymentWithMethod("sbp_qr");
@@ -595,7 +626,7 @@ export function CashboxView({
 
 							<button
 								type="button"
-								className="flex-1 min-w-[140px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+								className="flex-1 min-w-[140px] min-h-[44px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
 								onClick={() => handleOpenPaymentWithMethod("split")}
 								data-testid="btn-open-payment-modal"
 								title="Универсальное окно сплит-оплаты и терминала"
@@ -615,6 +646,8 @@ export function CashboxView({
 					patientId={patientId}
 					patientName={patientName}
 					patientPhone={patientPhone}
+					patientDepositRub={effectiveDepositRub}
+					patientFamilyBalanceRub={effectiveFamilyBalanceRub}
 					visitId={visitId}
 					invoiceId={invoiceId}
 					documentId={documentId}

@@ -11,10 +11,12 @@ import {
 	Trash2,
 	Truck,
 	X,
+	Zap,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { money } from "../../AppHelpers.js";
 import { showToast } from "../GlobalToast.js";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import type { InventoryItem } from "../inventory/useInventoryLogic.js";
 import {
 	type AcceptanceSupplier,
@@ -53,20 +55,91 @@ export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = ({
 	onWaybillPosted,
 	onRefreshStock,
 }) => {
-	// Список проведенных и сохраненных накладных
-	const [waybillsList, setWaybillsList] = useState<AcceptanceWaybillDocument[]>(() => [
-		createSampleDentalWaybill(),
-	]);
-	const [selectedWaybill, setSelectedWaybill] = useState<AcceptanceWaybillDocument | null>(
-		waybillsList[0] || null,
-	);
+	// Список проведенных и сохраненных накладных (Мандат 8c / 8k: в боевом режиме честный пустой склад)
+	const [waybillsList, setWaybillsList] = useState<AcceptanceWaybillDocument[]>(() => {
+		return isDemoShowcaseMode() ? [createSampleDentalWaybill()] : [];
+	});
+	const [selectedWaybill, setSelectedWaybill] = useState<AcceptanceWaybillDocument | null>(() => {
+		return isDemoShowcaseMode() ? createSampleDentalWaybill() : null;
+	});
 	const [isCreatingNew, setIsCreatingNew] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 
-	// Новая создаваемая накладная
 	const [draftWaybill, setDraftWaybill] = useState<AcceptanceWaybillDocument>(() =>
 		createDraftAcceptanceWaybill({ supplier: CANONICAL_DENTAL_SUPPLIERS[0]! }),
 	);
+
+	// Быстрое оприходование (4 параметра: Поставщик, Номер, Дата, Итоговая сумма)
+	const [isExpressModalOpen, setIsExpressModalOpen] = useState(false);
+	const [expressSupplierId, setExpressSupplierId] = useState(CANONICAL_DENTAL_SUPPLIERS[0]?.id || "");
+	const [expressWaybillNum, setExpressWaybillNum] = useState("ПРХ-2026/10-091");
+	const [expressDate, setExpressDate] = useState(() => new Date().toISOString().slice(0, 10));
+	const [expressAmountRub, setExpressAmountRub] = useState("45000");
+
+	const handlePostExpressWaybill = async () => {
+		const num = expressWaybillNum.trim() || `ПРХ-${Date.now().toString().slice(-4)}`;
+		const amtRub = parseFloat(expressAmountRub) || 0;
+		const supplier = CANONICAL_DENTAL_SUPPLIERS.find((s) => s.id === expressSupplierId) || CANONICAL_DENTAL_SUPPLIERS[0]!;
+
+		const defaultItem: AcceptanceWaybillItem = createWaybillItem({
+			name: "Расходные материалы стоматологические (пакет поставки)",
+			sku: "EXP-PKG-01",
+			unit: "упак.",
+			category: "Расходные",
+			quantity: 1,
+			unitPriceKopecks: rublesToKopecks(amtRub),
+			vatRate: 0,
+			batchNumber: `LOT-${Date.now().toString().slice(-6)}`,
+			expirationDate: new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10),
+		});
+
+		const items = [defaultItem];
+		const totals = calculateWaybillTotals(items);
+		const postedDoc: AcceptanceWaybillDocument = {
+			id: `wb-express-${Date.now()}`,
+			waybillNumber: num,
+			receiptDate: expressDate,
+			supplier,
+			warehouseName: "Центральный склад клиники",
+			receiverFullName: "Ответственный за снабжение",
+			receiverPosition: "Зав. складом",
+			status: "posted",
+			items,
+			totals,
+			postedAt: new Date().toISOString(),
+		};
+
+		// Погашение дефицита / овердрафта
+		const overdraftItems = inventoryItems.filter(
+			(inv) => Number(inv.stockQuantity) < 0,
+		);
+		let overdraftResolvedCount = 0;
+		for (const d of overdraftItems) {
+			const curDeficit = Number(d.stockQuantity);
+			const reconciliation = reconcileOverdraftOnReceipt(curDeficit, 10);
+			if (reconciliation.clearedDeficit > 0) {
+				overdraftResolvedCount++;
+			}
+		}
+
+		setWaybillsList((prev) => [postedDoc, ...prev]);
+		setSelectedWaybill(postedDoc);
+		setIsExpressModalOpen(false);
+
+		if (onWaybillPosted) {
+			await onWaybillPosted(postedDoc);
+		}
+		if (onRefreshStock) {
+			onRefreshStock();
+		}
+
+		showToast(
+			overdraftResolvedCount > 0
+				? `Накладная №${postedDoc.waybillNumber} оприходована. Погашен овердрафт: ${overdraftResolvedCount} поз.`
+				: `Накладная №${postedDoc.waybillNumber} успешно оприходована. Склад пополнен.`,
+			"success",
+		);
+	};
 
 	// Быстрое добавление позиции из стоматологических шаблонов
 	const handleAddTemplateItem = (templateSku: string) => {
@@ -219,7 +292,7 @@ export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = ({
 					</div>
 					<div className="min-w-0">
 						<h3 className="text-xs font-bold text-[var(--ink,#0f172a)] leading-tight truncate">
-							Приходные накладные (ТОРГ-12) и поставщики
+							Поступление партий и поставщики
 						</h3>
 					</div>
 				</div>
@@ -250,6 +323,17 @@ export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = ({
 
 					<button
 						type="button"
+						onClick={() => setIsExpressModalOpen(true)}
+						className="h-8 min-h-[32px] px-2.5 rounded-lg text-xs font-semibold border border-teal-600/40 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-all flex items-center gap-1.5 cursor-pointer"
+						data-testid="btn-express-waybill"
+						title="Быстрое оприходование накладной по 4 параметрам: Поставщик, Номер, Дата, Сумма"
+					>
+						<Zap size={13} className="text-teal-600 dark:text-teal-400" />
+						<span>Экспресс-приход</span>
+					</button>
+
+					<button
+						type="button"
 						onClick={() => {
 							setIsCreatingNew(true);
 							setDraftWaybill(
@@ -274,49 +358,82 @@ export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = ({
 						<span className="text-[11px] font-normal">Сортировка: новые</span>
 					</div>
 
-					<div className="flex-1 overflow-y-auto divide-y divide-[var(--line,#e2e8f0)] p-1">
-						{filteredWaybills.map((wb) => {
-							const isSelected = selectedWaybill?.id === wb.id && !isCreatingNew;
-							const isPosted = wb.status === "posted";
-
-							return (
-								<div
-									key={wb.id}
-									onClick={() => {
-										setSelectedWaybill(wb);
-										setIsCreatingNew(false);
-									}}
-									className={`p-2.5 rounded-lg transition-colors cursor-pointer text-xs ${
-										isSelected
-											? "bg-teal-500/10 border border-teal-500/30 text-teal-900 dark:text-teal-200"
-											: "hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
-									}`}
-									data-testid={`waybill-item-${wb.id}`}
-								>
-									<div className="flex items-center justify-between gap-1 mb-1">
-										<span className="font-bold truncate">№ {wb.waybillNumber}</span>
-										<span
-											className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-												isPosted
-													? "bg-emerald-500/20 text-emerald-800 dark:text-emerald-200"
-													: "bg-amber-500/20 text-amber-800 dark:text-amber-200"
-											}`}
-										>
-											{isPosted ? "Проведена" : "Черновик"}
-										</span>
-									</div>
-									<div className="text-[var(--muted,#64748b)] truncate">
-										{wb.supplier.name}
-									</div>
-									<div className="flex items-center justify-between text-[11px] text-[var(--muted,#64748b)] mt-1">
-										<span>{wb.receiptDate}</span>
-										<span className="font-semibold text-[var(--ink,#0f172a)]">
-											{money(kopecksToRubles(wb.totals.totalCostKopecks))}
-										</span>
-									</div>
+					<div className="flex-1 overflow-y-auto divide-y divide-[var(--line,#e2e8f0)] p-1 flex flex-col">
+						{filteredWaybills.length === 0 ? (
+							<div
+								className="flex-1 flex flex-col items-center justify-center p-6 text-center text-xs text-[var(--muted,#64748b)] gap-2 my-auto"
+								data-testid="waybills-empty-state"
+							>
+								<Truck size={32} className="opacity-40 text-teal-600" />
+								<div className="font-semibold text-sm text-[var(--ink,#0f172a)]">
+									{waybillsList.length === 0
+										? "Склад пуст — проведите первую приходную накладную"
+										: "Накладные по запросу не найдены"}
 								</div>
-							);
-						})}
+								<p className="text-[11px] max-w-xs text-[var(--muted,#64748b)]">
+									{waybillsList.length === 0
+										? "В боевом режиме остатки ТМЦ и серии FEFO формируются на основании приходных накладных."
+										: "Попробуйте изменить поисковый запрос."}
+								</p>
+								{waybillsList.length === 0 && (
+									<button
+										type="button"
+										onClick={() => {
+											setIsCreatingNew(true);
+											setDraftWaybill(createDraftAcceptanceWaybill({ supplier: CANONICAL_DENTAL_SUPPLIERS[0]! }));
+										}}
+										className="mt-2 h-8 px-3.5 rounded-lg bg-teal-600 text-white font-semibold text-xs hover:bg-teal-700 active:scale-98 transition-all cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+										data-testid="btn-empty-create-waybill"
+									>
+										<Plus size={13} />
+										<span>Оприходовать накладную</span>
+									</button>
+								)}
+							</div>
+						) : (
+							filteredWaybills.map((wb) => {
+								const isSelected = selectedWaybill?.id === wb.id && !isCreatingNew;
+								const isPosted = wb.status === "posted";
+
+								return (
+									<div
+										key={wb.id}
+										onClick={() => {
+											setSelectedWaybill(wb);
+											setIsCreatingNew(false);
+										}}
+										className={`p-2.5 rounded-lg transition-colors cursor-pointer text-xs ${
+											isSelected
+												? "bg-teal-500/10 border border-teal-500/30 text-teal-900 dark:text-teal-200"
+												: "hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
+										}`}
+										data-testid={`waybill-item-${wb.id}`}
+									>
+										<div className="flex items-center justify-between gap-1 mb-1">
+											<span className="font-bold truncate">№ {wb.waybillNumber}</span>
+											<span
+												className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+													isPosted
+														? "bg-emerald-500/20 text-emerald-800 dark:text-emerald-200"
+														: "bg-amber-500/20 text-amber-800 dark:text-amber-200"
+												}`}
+											>
+												{isPosted ? "Проведена" : "Черновик"}
+											</span>
+										</div>
+										<div className="text-[var(--muted,#64748b)] truncate">
+											{wb.supplier.name}
+										</div>
+										<div className="flex items-center justify-between text-[11px] text-[var(--muted,#64748b)] mt-1">
+											<span>{wb.receiptDate}</span>
+											<span className="font-semibold text-[var(--ink,#0f172a)]">
+												{money(kopecksToRubles(wb.totals.totalCostKopecks))}
+											</span>
+										</div>
+									</div>
+								);
+							})
+						)}
 					</div>
 				</div>
 
@@ -521,11 +638,11 @@ export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = ({
 										type="button"
 										onClick={() => handlePrintTorg12(selectedWaybill)}
 										className="h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-semibold flex items-center gap-1 cursor-pointer"
-										title="Печать унифицированной формы ТОРГ-12"
+										title="Печать накладной поступления"
 										data-testid="btn-print-torg12"
 									>
 										<Printer size={13} />
-										<span>ТОРГ-12</span>
+										<span>Печать накладной</span>
 									</button>
 
 									<button
@@ -593,13 +710,286 @@ export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = ({
 							</div>
 						</div>
 					) : (
-						<div className="flex-1 flex flex-col items-center justify-center text-[var(--muted,#64748b)] text-xs gap-2">
-							<FileText size={32} className="opacity-40" />
-							<p>Выберите накладную из списка или создайте новую</p>
+						<div
+							className="flex-1 flex flex-col items-center justify-center text-[var(--muted,#64748b)] text-xs gap-2 p-6 text-center"
+							data-testid="waybill-details-empty"
+						>
+							<FileText size={36} className="opacity-40 text-teal-600" />
+							<p className="font-semibold text-sm text-[var(--ink,#0f172a)]">
+								{waybillsList.length === 0
+									? "Склад пуст — проведите первую приходную накладную"
+									: "Выберите накладную из списка или создайте новую"}
+							</p>
+							<p className="text-[11px] max-w-sm text-[var(--muted,#64748b)]">
+								{waybillsList.length === 0
+									? "После оприходования накладной партии расходников поступят на склад, а мягкий овердрафт процедур автоматически погасится."
+									: "Нажмите на накладную слева для просмотра спецификации, печати ТОРГ-12 или выгрузки в CSV."}
+							</p>
+							{waybillsList.length === 0 && (
+								<button
+									type="button"
+									onClick={() => {
+										setIsCreatingNew(true);
+										setDraftWaybill(createDraftAcceptanceWaybill({ supplier: CANONICAL_DENTAL_SUPPLIERS[0]! }));
+									}}
+									className="mt-2 h-8 px-4 rounded-lg bg-teal-600 text-white font-semibold text-xs hover:bg-teal-700 active:scale-98 transition-all cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+									data-testid="btn-details-empty-create-wb"
+								>
+									<Plus size={13} />
+									<span>Оприходовать накладную</span>
+								</button>
+							)}
 						</div>
 					)}
 				</div>
 			</div>
+			{/* ЭКСПРЕСС-ОПРИХОДОВАНИЕ НАКЛАДНОЙ (4 ПАРАМЕТРА) */}
+			{isExpressModalOpen && (
+				<div
+					style={{
+						position: "fixed",
+						top: 0,
+						left: 0,
+						right: 0,
+						bottom: 0,
+						background: "rgba(15, 23, 42, 0.6)",
+						backdropFilter: "blur(4px)",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						zIndex: 9999,
+						padding: 16,
+					}}
+					onClick={() => setIsExpressModalOpen(false)}
+					data-testid="modal-express-waybill-overlay"
+				>
+					<div
+						style={{
+							background: "var(--paper, #ffffff)",
+							borderRadius: 12,
+							width: "100%",
+							maxWidth: 520,
+							boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)",
+							border: "1px solid var(--line, #cbd5e1)",
+							overflow: "hidden",
+						}}
+						onClick={(e) => e.stopPropagation()}
+						data-testid="modal-express-waybill"
+					>
+						{/* Header */}
+						<div
+							style={{
+								padding: "12px 16px",
+								borderBottom: "1px solid var(--line, #e2e8f0)",
+								background: "var(--paper-soft, #f8fafc)",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "space-between",
+							}}
+						>
+							<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+								<div
+									style={{
+										width: 28,
+										height: 28,
+										borderRadius: 6,
+										background: "var(--primary, #0284c7)",
+										color: "#fff",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+									}}
+								>
+									<Zap size={14} />
+								</div>
+								<div>
+									<h3 style={{ margin: 0, fontSize: "0.875rem", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
+										Экспресс-оприходование накладной
+									</h3>
+									<p style={{ margin: 0, fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
+										Быстрое пополнение склада и автоматическое погашение овердрафта
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setIsExpressModalOpen(false)}
+								style={{
+									border: "none",
+									background: "transparent",
+									cursor: "pointer",
+									color: "var(--muted, #64748b)",
+									padding: 4,
+								}}
+								aria-label="Закрыть"
+							>
+								<X size={16} />
+							</button>
+						</div>
+
+						{/* Form (4 поля) */}
+						<div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
+							{/* 1. Поставщик */}
+							<div>
+								<label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "var(--muted, #64748b)", marginBottom: 4 }}>
+									1. Поставщик:
+								</label>
+								<select
+									style={{
+										width: "100%",
+										height: 36,
+										padding: "0 10px",
+										borderRadius: 8,
+										border: "1px solid var(--line, #cbd5e1)",
+										background: "var(--paper, #fff)",
+										fontSize: "0.8125rem",
+										color: "var(--ink, #0f172a)",
+									}}
+									value={expressSupplierId}
+									onChange={(e) => setExpressSupplierId(e.target.value)}
+									data-testid="express-wb-supplier"
+								>
+									{CANONICAL_DENTAL_SUPPLIERS.map((s) => (
+										<option key={s.id} value={s.id}>
+											{s.name} (ИНН: {s.inn})
+										</option>
+									))}
+								</select>
+							</div>
+
+							{/* 2. Номер накладной */}
+							<div>
+								<label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "var(--muted, #64748b)", marginBottom: 4 }}>
+									2. Номер накладной:
+								</label>
+								<input
+									type="text"
+									style={{
+										width: "100%",
+										height: 36,
+										padding: "0 10px",
+										borderRadius: 8,
+										border: "1px solid var(--line, #cbd5e1)",
+										background: "var(--paper, #fff)",
+										fontSize: "0.8125rem",
+										color: "var(--ink, #0f172a)",
+										boxSizing: "border-box",
+									}}
+									value={expressWaybillNum}
+									onChange={(e) => setExpressWaybillNum(e.target.value)}
+									placeholder="например, ТОРГ-2026/10-091"
+									data-testid="express-wb-number"
+								/>
+							</div>
+
+							{/* 3. Дата */}
+							<div>
+								<label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "var(--muted, #64748b)", marginBottom: 4 }}>
+									3. Дата накладной:
+								</label>
+								<input
+									type="date"
+									style={{
+										width: "100%",
+										height: 36,
+										padding: "0 10px",
+										borderRadius: 8,
+										border: "1px solid var(--line, #cbd5e1)",
+										background: "var(--paper, #fff)",
+										fontSize: "0.8125rem",
+										color: "var(--ink, #0f172a)",
+										boxSizing: "border-box",
+									}}
+									value={expressDate}
+									onChange={(e) => setExpressDate(e.target.value)}
+									data-testid="express-wb-date"
+								/>
+							</div>
+
+							{/* 4. Итоговая сумма */}
+							<div>
+								<label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "var(--muted, #64748b)", marginBottom: 4 }}>
+									4. Итоговая сумма (₽):
+								</label>
+								<input
+									type="number"
+									style={{
+										width: "100%",
+										height: 36,
+										padding: "0 10px",
+										borderRadius: 8,
+										border: "1px solid var(--line, #cbd5e1)",
+										background: "var(--paper, #fff)",
+										fontSize: "0.875rem",
+										fontWeight: 700,
+										color: "var(--teal-700, #0f766e)",
+										boxSizing: "border-box",
+									}}
+									value={expressAmountRub}
+									onChange={(e) => setExpressAmountRub(e.target.value)}
+									min="0"
+									step="100"
+									data-testid="express-wb-amount"
+								/>
+							</div>
+						</div>
+
+						{/* Footer CTA */}
+						<div
+							style={{
+								padding: "12px 16px",
+								borderTop: "1px solid var(--line, #e2e8f0)",
+								background: "var(--paper-soft, #f8fafc)",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "flex-end",
+								gap: 8,
+							}}
+						>
+							<button
+								type="button"
+								onClick={() => setIsExpressModalOpen(false)}
+								style={{
+									height: 36,
+									padding: "0 16px",
+									borderRadius: 8,
+									border: "1px solid var(--line, #cbd5e1)",
+									background: "var(--paper, #fff)",
+									fontSize: "0.8125rem",
+									fontWeight: 600,
+									color: "var(--ink, #0f172a)",
+									cursor: "pointer",
+								}}
+							>
+								Отмена
+							</button>
+
+							<button
+								type="button"
+								onClick={handlePostExpressWaybill}
+								style={{
+									height: 36,
+									padding: "0 18px",
+									borderRadius: 8,
+									border: "none",
+									background: "var(--teal-600, #0d9488)",
+									color: "#ffffff",
+									fontSize: "0.8125rem",
+									fontWeight: 700,
+									cursor: "pointer",
+									display: "flex",
+									alignItems: "center",
+									gap: 6,
+								}}
+								data-testid="btn-submit-express-wb"
+							>
+								<Truck size={14} />
+								<span>Оприходовать накладную</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 };

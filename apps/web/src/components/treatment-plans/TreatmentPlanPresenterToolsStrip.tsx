@@ -201,7 +201,7 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 									setCopilotFeedback("Введите команду или выберите готовый сценарий презентации («бюджет 120к», «без имплантации»)");
 								}
 							}}
-							className="p-1.5 min-h-[32px] min-w-[32px] sm:h-8 sm:w-8 flex items-center justify-center rounded-lg bg-[var(--tp-primary)] text-white hover:bg-[var(--tp-primary-hover)] cursor-pointer touch-manipulation"
+							className="p-1.5 min-h-[36px] min-w-[36px] sm:h-9 sm:w-9 flex items-center justify-center rounded-lg bg-[var(--tp-primary)] text-white hover:bg-[var(--tp-primary-hover)] cursor-pointer touch-manipulation"
 							title={isCopilotExecuting ? "Выполняется команда ассистента..." : "Отправить команду"}
 							data-testid="presenter-copilot-send-btn"
 						>

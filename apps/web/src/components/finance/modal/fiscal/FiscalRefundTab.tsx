@@ -77,7 +77,7 @@ export const FiscalRefundTab: React.FC<FiscalRefundTabProps> = ({
 				<div>
 					<h4 className="font-extrabold text-sm text-rose-950 dark:text-rose-200">
 						<span>Оформление чека возврата</span>
-						<span className="sr-only">Формирование чека возврата прихода (ФФД 1.2 Тег 1054 = 2)</span>
+						<span className="sr-only">Формирование чека возврата прихода</span>
 					</h4>
 					<p className="text-xs text-rose-800 dark:text-rose-300 mt-1">
 						Отметьте позиции, от которых пациент отказался, или оформите возврат аванса/депозита. Сумма возврата будет автоматически распределена с сохранением копеечной точности по методу наибольших остатков.

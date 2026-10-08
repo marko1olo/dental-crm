@@ -133,7 +133,7 @@ export function VisitHeaderMonolith({
 			data-testid="visit-header-monolith"
 			aria-label="Шапка текущего приёма"
 		>
-			{/* Строка 1 (высота ~30-32px): Пациент, возраст, телефон, бейдж аллергии, кнопка нормы 043/у, статус и завершить приём */}
+			{/* Строка 1 (высота ~30-32px): Пациент, возраст, телефон, бейдж аллергии, кнопка нормы ЭМК, статус и завершить приём */}
 			<div className="min-h-[32px] h-8 sm:h-8 flex items-center justify-between gap-1 sm:gap-2 px-1.5 sm:px-2.5 py-0.5 border-b border-[var(--line)] flex-nowrap min-w-0 max-w-full">
 				<div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 overflow-hidden">
 					<PatientAvatar
@@ -195,7 +195,7 @@ export function VisitHeaderMonolith({
 					</span>
 
 					{/* Единый компактный и яркий чип аллергии (Tier 1) */}
-					{activePatientCriticalBadges.length > 0 && (
+					{activePatientCriticalBadges.length > 0 ? (
 						<span
 							className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink-0 flex-shrink-0 animate-pulse whitespace-nowrap"
 							data-testid="visit-focus-allergy-alert"
@@ -211,6 +211,20 @@ export function VisitHeaderMonolith({
 							</span>
 							<span className="hidden sm:inline whitespace-nowrap shrink-0">
 								{consolidatedAllergyChip || activePatientCriticalBadges[0].fullLabel}
+							</span>
+						</span>
+					) : (
+						<span
+							className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-medium text-xs shadow-xs shrink-0 flex-shrink-0 whitespace-nowrap"
+							data-testid="visit-focus-allergy-clean"
+							title="Отягощенный аллергоанамнез не выявлен"
+						>
+							<ShieldCheck
+								size={13}
+								className="text-emerald-600 dark:text-emerald-400 shrink-0"
+							/>
+							<span className="text-[11px] whitespace-nowrap">
+								Аллергии не выявлены
 							</span>
 						</span>
 					)}
@@ -277,7 +291,7 @@ export function VisitHeaderMonolith({
 				</div>
 
 				<div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-					{/* Кнопка физиологической нормы 043/у */}
+					{/* Кнопка физиологической нормы */}
 					<button
 						type="button"
 						onClick={handleApplySomaticNormQuick}
@@ -303,19 +317,19 @@ export function VisitHeaderMonolith({
 						role="group"
 						aria-label="Быстрая печать документов"
 					>
-						{/* Печать дневника приёма (Мандат 8e) */}
+						{/* Печать дневника приёма */}
 						<button
 							type="button"
 							onClick={handlePrintForm043uFast}
 							data-testid="btn-visit-fast-print-043u"
 							className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 w-7 sm:w-7.5 p-0 text-xs font-semibold text-sky-700 dark:text-sky-300 hover:bg-[var(--paper-strong)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
-							title="Печать дневника приёма (Форма 043/у)"
+							title="Печать дневника приёма"
 							aria-label="Печать дневника"
 						>
 							<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
 						</button>
 
-						{/* Печать Акта выполненных работ 804н (Мандат 8e) */}
+						{/* Печать Акта выполненных работ */}
 						<button
 							type="button"
 							onClick={() => {
@@ -327,7 +341,7 @@ export function VisitHeaderMonolith({
 							}}
 							data-testid="btn-visit-fast-print-act"
 							className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 w-7 sm:w-7.5 p-0 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-[var(--paper-strong)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
-							title="Печать Акта выполненных работ (804н)"
+							title="Печать Акта выполненных работ"
 							aria-label="Печать Акта выполненных работ"
 						>
 							<FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" aria-hidden="true" />
@@ -381,7 +395,7 @@ export function VisitHeaderMonolith({
 						type="button"
 						onClick={() => setIsEmergencyModalOpen(true)}
 						data-testid="btn-visit-emergency-rescue"
-						className="hidden 2xl:inline-flex secondary-button h-7.5 min-h-0 px-2.5 py-0 text-[12.5px] font-medium text-[var(--muted)] hover:text-rose-600 border-[var(--line-subtle)] hover:border-rose-300 items-center gap-1 cursor-pointer shrink-0 rounded-lg shadow-2xs"
+						className="visit-emergency-rescue-quiet hidden 2xl:inline-flex secondary-button h-7.5 min-h-0 px-2.5 py-0 text-[12.5px] font-medium text-[var(--muted)] hover:text-rose-600 border-[var(--line-subtle)] hover:border-rose-300 items-center gap-1 cursor-pointer shrink-0 rounded-lg shadow-2xs"
 						title="Экстренная помощь / Аптечка анти-шок (анафилаксия, коллапс, гипертонический криз)"
 					>
 						<AlertTriangle
@@ -646,7 +660,7 @@ export function VisitHeaderMonolith({
 									<div className="flex flex-col">
 										<span className="font-semibold">Печать Акта выполненных работ</span>
 										<span className="text-[10px] text-[var(--muted)]">
-											Реестр оказанных медицинских услуг (804н)
+											Реестр оказанных медицинских услуг
 										</span>
 									</div>
 								</button>

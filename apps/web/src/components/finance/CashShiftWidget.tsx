@@ -464,7 +464,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 							<Banknote size={16} className="text-emerald-500" />
 							Наличные в ящике
 						</span>
-						<span className="font-mono text-[10px]">Тег 1031</span>
+						<span className="text-[10px] font-bold">Касса</span>
 					</div>
 					<div className="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
 						{formatMoneyRu(cashInDrawerRub)}
@@ -477,7 +477,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 							<CreditCard size={16} className="text-blue-500" />
 							Эквайринг и Терминал
 						</span>
-						<span className="font-mono text-[10px]">Тег 1081</span>
+						<span className="text-[10px] font-bold">Терминал</span>
 					</div>
 					<div className="text-xl sm:text-2xl font-black font-mono text-blue-600 dark:text-blue-400">
 						{formatMoneyRu(cardSumRub)}
@@ -493,7 +493,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 							<QrCode size={16} className="text-teal-500" />
 							СБП / Плати QR
 						</span>
-						<span className="font-mono text-[10px]">НСПК</span>
+						<span className="text-[10px] font-bold">СБП</span>
 					</div>
 					<div className="text-xl sm:text-2xl font-black font-mono text-teal-600 dark:text-teal-400">
 						{formatMoneyRu(sbpSumRub)}
@@ -509,7 +509,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 							<ShieldCheck size={16} className="text-purple-500" />
 							Общий оборот смены
 						</span>
-						<span className="font-mono text-[10px]">Кассовый чек</span>
+						<span className="text-[10px] font-bold">Итого</span>
 					</div>
 					<div className="text-xl sm:text-2xl font-black font-mono text-[var(--ink,#0f172a)]">
 						{formatMoneyRu(totalTurnoverRub)}

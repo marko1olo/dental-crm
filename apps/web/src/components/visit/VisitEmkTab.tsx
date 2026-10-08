@@ -431,7 +431,7 @@ export function VisitEmkTab() {
 
 				const stampObj = PATHOLOGY_STAMPS.find((s) => s.id === stamp);
 				const stampLabel = stampObj?.label || stamp;
-				showToast(`Зуб ${code}: ${stampLabel}. Дневник 043/у и услуги 804н обновлены`, "success", 2500);
+				showToast(`Зуб ${code}: ${stampLabel}. Дневник и услуги обновлены`, "success", 2500);
 			} else {
 				showToast(`Выбран зуб ${code} для манипуляций`, "info", 1500);
 			}
@@ -538,7 +538,7 @@ export function VisitEmkTab() {
 	const handleApplyPhysiologicalNorm = React.useCallback(() => {
 		useVisitStore
 			.getState()
-			.pushVisitSnapshot("Заполнение физиологической нормой (Z01.2)");
+			.pushVisitSnapshot("Заполнение физиологической нормой");
 
 		updateVisitNoteField(
 			"complaint",
@@ -591,7 +591,7 @@ export function VisitEmkTab() {
 				},
 			}),
 		);
-		showToast("ЭМК заполнена физиологической нормой (Z01.2)", "success", 3000);
+		showToast("ЭМК заполнена физиологической нормой", "success", 3000);
 	}, [updateVisitNoteField]);
 
 	const handleApplySoapPreset = React.useCallback(
@@ -1070,7 +1070,7 @@ export function VisitEmkTab() {
 				</div>
 			)}
 
-			{/* Секции Формы 043/у — Full-Width Clinical Canvas */}
+			{/* Секции ЭМК — Full-Width Clinical Canvas */}
 			<div className="space-y-4 mt-2.5 w-full min-w-0" data-testid="emk-clinical-canvas">
 				{/* ═══ ТРАЕКТОРИЯ ВРАЧА У КРЕСЛА (CHAIRSIDE COCKPIT PIPELINE) — COMPACT 1-LINE STRIP ═══ */}
 				<div
@@ -1113,7 +1113,7 @@ export function VisitEmkTab() {
 							}}
 							data-testid="stepper-step-3"
 							className="inline-flex items-center gap-1 text-blue-800 dark:text-blue-300 font-semibold shrink-0 hover:underline cursor-pointer px-1 py-0.5 rounded hover:bg-blue-500/10 transition-colors"
-							title="Перейти к номенклатуре и услугам 804н"
+							title="Перейти к каталогу услуг"
 						>
 							<Tag size={12} className="text-blue-600 dark:text-blue-400 shrink-0" />
 							<span>3. Услуги</span>
@@ -1125,7 +1125,7 @@ export function VisitEmkTab() {
 							disabled={isCompletingVisit}
 							data-testid="btn-cockpit-quick-complete"
 							className="inline-flex items-center gap-1 text-emerald-800 dark:text-emerald-300 font-bold shrink-0 hover:bg-emerald-500/20 cursor-pointer px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 transition-colors"
-							title="Завершить приём, сформировать смету и чек 54-ФЗ"
+							title="Завершить приём, сформировать смету и чек"
 						>
 							<Receipt size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 							<span>4. Смета & Чек</span>
@@ -1432,13 +1432,13 @@ export function VisitEmkTab() {
 											type="button"
 											onClick={() => {
 												updateVisitNoteField("diagnosis", "Z01.2 Стоматологическое обследование (Здоров)");
-												showToast("Диагноз нормы (Z01.2) установлен", "success", 2000);
+												showToast("Диагноз нормы установлен", "success", 2000);
 											}}
 											className="mobile-norm-action-btn mb-2"
 											data-testid="btn-mobile-norm-step3"
 										>
 											<Check size={16} />
-											<span>Норма: Z01.2 Стоматологический осмотр</span>
+											<span>Норма: Стоматологический осмотр</span>
 										</button>
 										<div className="horizontal-chip-scroller mb-1">
 											{[

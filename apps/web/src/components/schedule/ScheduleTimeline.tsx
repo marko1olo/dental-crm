@@ -75,6 +75,7 @@ export interface ScheduleTimelineProps {
 	resetScheduleFilters?: (() => void) | undefined;
 	setScheduleDateFilter?: ((date: string) => void) | undefined;
 	todayScheduleDate?: (() => string) | undefined;
+	onOpenVisit?: ((appointment?: Appointment) => void) | undefined;
 }
 
 interface TimelineDayGroupProps {
@@ -83,6 +84,7 @@ interface TimelineDayGroupProps {
 	onRowLimitIncrease: () => void;
 	onRowLimitShowAll: () => void;
 	onEmptySlotClick?: ((slot: QuickBookingSlotInfo) => void) | undefined;
+	onOpenVisit?: ((appointment?: Appointment) => void) | undefined;
 	dashboard: Dashboard;
 	appointmentScheduleDrafts: Record<string, any>;
 	appointmentScheduleSaveStates: Record<string, string>;
@@ -144,6 +146,7 @@ const TimelineDayGroup = React.memo(function TimelineDayGroup({
 	toDateTimeLocalValue,
 	fromDateTimeLocalValue,
 	useManualSelects,
+	onOpenVisit,
 }: TimelineDayGroupProps) {
 	const allRows = group?.rows ?? [];
 	const visibleRows = allRows.slice(0, rowLimit);
@@ -369,6 +372,7 @@ const TimelineDayGroup = React.memo(function TimelineDayGroup({
 							activeVisitLockedAppointmentStatuses={
 								activeVisitLockedAppointmentStatuses
 							}
+							onOpenVisit={() => onOpenVisit?.(appointment)}
 						/>
 					</div>
 				);
@@ -437,6 +441,7 @@ function ScheduleTimelineInner(props: ScheduleTimelineProps) {
 		resetScheduleFilters,
 		setScheduleDateFilter,
 		todayScheduleDate,
+		onOpenVisit,
 	} = props;
 
 	const timelineContainerRef = useRef<HTMLDivElement>(null);
@@ -590,6 +595,7 @@ function ScheduleTimelineInner(props: ScheduleTimelineProps) {
 					toDateTimeLocalValue={toDateTimeLocalValue}
 					fromDateTimeLocalValue={fromDateTimeLocalValue}
 					useManualSelects={useManualSelects}
+					onOpenVisit={onOpenVisit}
 				/>
 			))}
 

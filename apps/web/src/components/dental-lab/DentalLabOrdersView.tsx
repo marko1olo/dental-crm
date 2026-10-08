@@ -280,14 +280,43 @@ const CANONICAL_DEMO_LAB_ORDERS: DentalLabOrderData[] = [
 		return () => window.removeEventListener("dente-open-lab-order", handleOpenFromEvent);
 	}, []);
 
-	// Канонические 5 этапов фильтрации
+	// Слушатель кастомного события создания/сохранения наряда ЗТЛ
+	useEffect(() => {
+		const handleOrderCreated = (e: Event) => {
+			const detail = (e as CustomEvent<DentalLabOrderData>).detail;
+			if (detail) {
+				setOrders((prev) => {
+					const existingIndex = prev.findIndex((o) => o.id === detail.id || (detail.secureToken && o.secureToken === detail.secureToken));
+					if (existingIndex >= 0) {
+						const next = [...prev];
+						next[existingIndex] = { ...next[existingIndex], ...detail };
+						return next;
+					}
+					return [detail, ...prev];
+				});
+			}
+			void fetchOrders();
+		};
+		window.addEventListener("dente-lab-order-created", handleOrderCreated);
+		return () => window.removeEventListener("dente-lab-order-created", handleOrderCreated);
+	}, [fetchOrders]);
+
+	// Детальные этапы клинико-лабораторного маршрута ЗТЛ для совместимости
+	const DENTAL_LAB_DETAILED_STAGE_KEYS = useMemo(() => [
+		{ id: "impression_scan", label: "Слепок" },
+		{ id: "framework_fitting", label: "Каркас" },
+		{ id: "ceramic_layering", label: "Керамика" },
+		{ id: "ready_in_clinic", label: "Готовая в клинике" },
+		{ id: "patient_fixation", label: "Зафиксировано" },
+	], []);
+
+	// Канонические 5 этапов фильтрации: «Все заказы», «В работе», «Примерка», «В клинике», «Сдано»
 	const CANONICAL_STAGE_FILTERS = useMemo(() => [
-		{ id: "all", label: "Все", statuses: [] as string[] },
-		{ id: "impression_scan", label: "Слепок", statuses: ["sent", "sent_to_lab", "impression_scan", "draft"] },
-		{ id: "framework_fitting", label: "Каркас", statuses: ["in_progress", "framework_fitting", "cad_modeling", "milling_casting", "milling_framework"] },
-		{ id: "ceramic_layering", label: "Керамика", statuses: ["fitting", "refitting", "ceramic_layering", "try_in"] },
-		{ id: "ready_in_clinic", label: "Готовая в клинике", statuses: ["ready", "ready_in_clinic", "shipped", "delivered", "received"] },
-		{ id: "patient_fixation", label: "Зафиксировано", statuses: ["completed", "patient_fixation", "delivered_completed", "delivered_to_patient", "installed_completed", "fitted"] },
+		{ id: "all", label: "Все заказы", shortLabel: "Все", statuses: [] as string[] },
+		{ id: "in_progress", label: "В работе", shortLabel: "В работе", statuses: ["sent", "sent_to_lab", "impression_scan", "draft", "in_progress", "framework_fitting", "cad_modeling", "milling_casting", "milling_framework"] },
+		{ id: "fitting", label: "Примерка", shortLabel: "Примерка", statuses: ["fitting", "refitting", "ceramic_layering", "try_in"] },
+		{ id: "in_clinic", label: "В клинике", shortLabel: "В клинике", statuses: ["ready", "ready_in_clinic", "shipped", "delivered", "received"] },
+		{ id: "completed", label: "Сдано", shortLabel: "Сдано", statuses: ["completed", "patient_fixation", "delivered_completed", "delivered_to_patient", "installed_completed", "fitted"] },
 	], []);
 
 	const stageCounts = useMemo(() => {
@@ -760,11 +789,11 @@ const CANONICAL_DEMO_LAB_ORDERS: DentalLabOrderData[] = [
 
 						{/* Center: Search & Filter */}
 						<div className="flex items-center gap-1.5 flex-1 min-w-0 max-w-md">
-							<div className="relative w-44 sm:w-56 shrink-0">
+							<div className="relative w-48 sm:w-64 shrink-0">
 								<Search className="w-3.5 h-3.5 text-[var(--muted)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
 								<input
 									type="text"
-									placeholder="Поиск..."
+									placeholder="Поиск по пациенту, наряду, зубу..."
 									value={searchQuery}
 									onChange={(e) => setSearchQuery(e.target.value)}
 									style={{ paddingLeft: "38px" }}
@@ -772,23 +801,9 @@ const CANONICAL_DEMO_LAB_ORDERS: DentalLabOrderData[] = [
 								/>
 							</div>
 							<select
-								value={statusFilter}
-								onChange={(e) => setStatusFilter(e.target.value)}
-								className="h-8 min-h-[32px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[12.5px] text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer shrink-0 max-w-[130px]"
-								aria-label="Фильтр по статусу"
-							>
-								<option value="all">Все статусы</option>
-								<option value="sent">Отправлен в ЗТЛ</option>
-								<option value="in_progress">В производстве</option>
-								<option value="fitting">На примерке</option>
-								<option value="refitting">На доработке</option>
-								<option value="shipped">В клинике</option>
-								<option value="completed">Сдан / Установлен</option>
-							</select>
-							<select
 								value={doctorFilter}
 								onChange={(e) => setDoctorFilter(e.target.value)}
-								className="hidden 2xl:block h-8 min-h-[32px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[12.5px] text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer shrink-0 max-w-[130px]"
+								className="hidden lg:block h-8 min-h-[32px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[12.5px] text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer shrink-0 max-w-[140px]"
 								aria-label="Фильтр по врачу"
 							>
 								<option value="all">Все врачи</option>
@@ -1010,9 +1025,9 @@ const CANONICAL_DEMO_LAB_ORDERS: DentalLabOrderData[] = [
 													</span>
 												</td>
 
-												<td className="px-2.5 py-0 whitespace-nowrap align-middle">
-													<div className="flex items-center gap-1.5">
-														<span className="font-bold truncate max-w-[140px] inline-block align-middle" title={order.patientName}>
+												<td className="px-2.5 py-1 whitespace-nowrap align-middle">
+													<div className="flex items-center gap-1.5 flex-wrap">
+														<span className="font-bold text-xs text-[var(--ink)]" title={order.patientName}>
 															{order.patientName || "Пациент"}
 														</span>
 														{order.stageNumber ? (
@@ -1026,16 +1041,23 @@ const CANONICAL_DEMO_LAB_ORDERS: DentalLabOrderData[] = [
 													</div>
 												</td>
 
-												<td className="px-2 py-0 whitespace-nowrap align-middle text-center">
+												<td className="px-2 py-1 whitespace-nowrap align-middle text-center">
 													<span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 border border-[var(--line)] font-mono">
 														{order.toothFdi ? `№ ${order.toothFdi}` : "Челюсть"}
 													</span>
 												</td>
 
-												<td className="px-2.5 py-0 whitespace-nowrap align-middle">
-													<span className="truncate max-w-[160px] inline-block align-middle text-[11px] text-[var(--ink)]" title={`${order.constructionType || ""} ${order.material || ""}`}>
-														{formatLabConstructionTitle(order.constructionType, order.material ?? undefined)}
-													</span>
+												<td className="px-2.5 py-1 align-middle">
+													<div className="flex flex-col min-w-[160px] max-w-[320px] break-words">
+														<span className="font-semibold text-xs text-[var(--ink)] leading-snug whitespace-normal break-words" title={`${order.constructionType || ""} ${order.material || ""}`}>
+															{formatLabConstructionTitle(order.constructionType, order.material ?? undefined)}
+														</span>
+														{order.material && (
+															<span className="text-[10px] text-[var(--muted)] leading-tight whitespace-normal break-words">
+																{order.material}
+															</span>
+														)}
+													</div>
 												</td>
 
 												<td className="px-2.5 py-0 whitespace-nowrap align-middle">

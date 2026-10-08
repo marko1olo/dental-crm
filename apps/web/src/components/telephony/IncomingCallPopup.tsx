@@ -1,9 +1,10 @@
-import { CalendarCheck, Check, ChevronDown, ChevronUp, Clock, MoreHorizontal, PhoneCall, PhoneOff, UserCheck, X } from "lucide-react";
+import { CalendarCheck, Check, ChevronDown, ChevronUp, Clock, MoreHorizontal, PhoneCall, PhoneOff, UserCheck, X, Zap } from "lucide-react";
 import React, { useEffect, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { captureLeadFromIncomingCall } from "./telephonyAttribution";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { useScheduleStore } from "../../store/scheduleStore";
@@ -110,9 +111,11 @@ export function IncomingCallPopup() {
 		(s) => s.setNewAppointmentDraft,
 	);
 
-	// Absolute doctor immunity: when treating at chair (visit) or role is doctor, calls stay silent/background (Mandates 8e, 8n - zero disruption to Form 043/u drafts or autosave)
+	// Absolute doctor immunity: when treating at chair (visit, odontogram, periodontics) or role is doctor, calls stay silent/background (Mandates 8e, 8n - zero disruption to Form 043/u drafts or autosave)
 	const isDoctorMode =
-		selectedWorkspaceRole === "doctor" || currentView === "visit";
+		selectedWorkspaceRole === "doctor" || currentView === "visit" ||
+		currentView === "odontogram" ||
+		currentView === "periodontics";
 	const isFullScreenStudioActive = useUiSurfaceStore(
 		(s) => s.isFullScreenStudioActive,
 	);
@@ -193,7 +196,7 @@ export function IncomingCallPopup() {
 		if (willBeOpen) {
 			showToast(
 				Boolean(resolvedPatient)
-					? `Карточка ${callerName} открыта в боковой шторке (визит 043/у сохранён)`
+					? `Карточка ${callerName} открыта в боковой шторке (визит сохранён)`
 					: `Регистрация нового пациента (${formattedPhone}) в боковой шторке`,
 				"info",
 			);
@@ -204,7 +207,14 @@ export function IncomingCallPopup() {
 	const handleOpenFullPatientView = () => {
 		if (currentView === "visit") {
 			showToast(
-				"Приём пациента активен (форма 043/у). Карта доступна в текущей шторке без сброса визита.",
+				"Приём пациента активен. Карта доступна в текущей шторке без сброса визита.",
+				"warning",
+			);
+			return;
+		}
+		if (currentView === "odontogram" || currentView === "periodontics") {
+			showToast(
+				"Клинический приём / осмотр активен. Карта доступна в текущей шторке без сброса рабочего экрана.",
 				"warning",
 			);
 			return;
@@ -375,6 +385,20 @@ export function IncomingCallPopup() {
 			clinicName: dashboard?.clinicSettings?.name || "DENTE",
 		});
 		openWhatsAppChat(currentCall.phone, msg);
+		if (resolvedPatient?.id) {
+			fetch("/api/whatsapp/send", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					patientId: resolvedPatient.id,
+					message: msg,
+				}),
+			}).catch((err) => {
+				console.warn("[IncomingCallPopup] WhatsApp direct send API error:", err);
+			});
+		}
 		showToast(`Чат WhatsApp открыт для ${callerName} (${formattedPhone})`, "success");
 	};
 
@@ -555,9 +579,9 @@ export function IncomingCallPopup() {
 										{isCallEnded ? "Завершён" : isCallAnswered ? "Разговор" : "Входящий"}
 									</span>
 									<span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] shrink-0" title={`Провайдер телефонии: ${providerLabel}`}>
-										{activeCall.provider?.toUpperCase() || "SIP"}
+										{activeCall.provider?.toUpperCase() || "АТС"}
 									</span>
-									<span className={`inline-block w-2 h-2 rounded-full shrink-0 ${isConnected ? "bg-emerald-500" : "bg-amber-400 animate-pulse"}`} title={isConnected ? "SIP / WebSocket подключен" : "Тихий реконнект WebSocket..."} />
+									<span className={`inline-block w-2 h-2 rounded-full shrink-0 ${isConnected ? "bg-emerald-500" : "bg-amber-400 animate-pulse"}`} title={isConnected ? "Телефония клиники подключена" : "Подключение к телефонии..."} />
 								</div>
 
 								<div className="flex items-center gap-1 shrink-0">
@@ -568,7 +592,7 @@ export function IncomingCallPopup() {
 
 									{!isCallAnswered ? (
 										<>
-											<button type="button" onClick={handleAnswerCall} className="min-h-[32px] px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer" title="Принять входящий звонок (WebRTC)" data-testid="badge-header-answer-btn">
+											<button type="button" onClick={handleAnswerCall} className="min-h-[32px] px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer" title="Принять входящий звонок" data-testid="badge-header-answer-btn">
 												<PhoneCall size={12} className="animate-pulse" />
 												<span>Ответить</span>
 											</button>
@@ -670,6 +694,26 @@ export function IncomingCallPopup() {
 								callAttribution={callAttribution}
 								compact={true}
 							/>
+
+							{/* Острая боль (Cito) Alert Banner */}
+							{somaticAlerts.some((a) => a.category === "pain") && (
+								<button
+									type="button"
+									onClick={() => handleQuickBook("today_urgent")}
+									className="w-full px-2.5 py-1.5 rounded-lg text-white text-xs font-bold transition-all flex items-center justify-between cursor-pointer shadow-xs active:scale-95"
+									style={{ backgroundColor: "#e11d48", color: "#ffffff" }}
+									data-testid="badge-action-cito-banner"
+									title="Внеочередная экстренная запись пациента с острой болью"
+								>
+									<div className="flex items-center gap-1.5">
+										<Zap size={14} className="text-amber-300 shrink-0" />
+										<span className="font-bold text-white">Острая боль! Внеочередной приём (Cito)</span>
+									</div>
+									<span className="text-[10px] font-mono px-1.5 py-0.5 rounded text-white" style={{ backgroundColor: "#be123c" }}>
+										{quickSlots[0]?.time || "Срочно"}
+									</span>
+								</button>
+							)}
 
 							{/* Action Buttons Row: Strictly <= 2 Primary Direct Action Buttons (Miller's Law & Mandate 8d, 8p) */}
 							<div className="flex items-center gap-2 pt-1 border-t border-[var(--line,#e2e8f0)]">

@@ -10,6 +10,8 @@ import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 import type { AppointmentScheduleDraft } from "./scheduleViewTypes";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 import { ScheduleMobileAgendaView } from "../ScheduleMobileAgendaView";
+import { useAppStore } from "../../../store/appStore";
+import { usePatientStore } from "../../../store/patientStore";
 
 export interface ScheduleViewBodyProps {
   scheduleViewMode: "timeline" | "grid" | "chairs";
@@ -126,6 +128,16 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
 
   const isMobile = useIsMobile(768);
 
+  const handleOpenVisit = (appointment?: Appointment) => {
+    if (appointment?.patientId) {
+      usePatientStore.getState().setSelectedPatientId(appointment.patientId);
+    }
+    if (typeof window !== "undefined") {
+      window.location.hash = "#visit";
+    }
+    useAppStore.getState().setCurrentView("visit");
+  };
+
   if (isMobile && dashboard) {
     return (
       <ScheduleMobileAgendaView
@@ -216,7 +228,7 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
     if (!dashboard) return null;
     return (
       <ChairScheduleView
-        hideToolbar={false}
+        hideToolbar={true}
         gridStepMinutes={scheduleGridStep}
         onGridStepChange={setScheduleGridStep}
         dashboard={dashboard}
@@ -430,6 +442,7 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
       resetScheduleFilters={resetScheduleFilters}
       setScheduleDateFilter={setScheduleDateFilter}
       todayScheduleDate={todayScheduleDate}
+      onOpenVisit={handleOpenVisit}
     />
   );
 }

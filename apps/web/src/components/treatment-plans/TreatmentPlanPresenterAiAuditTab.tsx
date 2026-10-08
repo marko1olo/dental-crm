@@ -9,6 +9,7 @@ import {
 	Check,
 	Coins,
 	Copy,
+	Lightbulb,
 	Percent,
 	Send,
 	Sparkles,
@@ -182,8 +183,9 @@ export const TreatmentPlanPresenterAiAuditTab: React.FC<TreatmentPlanPresenterAi
 												</div>
 												<div className="mt-1 opacity-90 leading-relaxed">{f.message}</div>
 												{f.recommendation && (
-													<div className="mt-1.5 pt-1.5 border-t border-current/20 font-medium">
-														💡 Рекомендация: {f.recommendation}
+													<div className="mt-1.5 pt-1.5 border-t border-current/20 font-medium flex items-center gap-1.5">
+														<Lightbulb size={13} className="shrink-0 text-amber-500 inline" />
+														<span>Рекомендация: {f.recommendation}</span>
 													</div>
 												)}
 											</div>

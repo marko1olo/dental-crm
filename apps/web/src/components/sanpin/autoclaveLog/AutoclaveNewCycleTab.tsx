@@ -135,7 +135,7 @@ export interface AutoclaveNewCycleTabProps {
 export function AutoclaveNewCycleTab({
 	onSaveRecord,
 	defaultOperatorName = "Сотрудник клиники",
-	defaultHeadNurseName = "Ответственный по СанПиН",
+	defaultHeadNurseName = "Старшая медицинская сестра",
 	latestCycleNumber = 1,
 }: AutoclaveNewCycleTabProps) {
 	const [selectedSterilizerId, setSelectedSterilizerId] = useState<string>(
@@ -239,6 +239,30 @@ export function AutoclaveNewCycleTab({
 		setChamberPoints([...filled.chamberPoints]);
 	};
 
+	// Быстрый выбор деликатного режима (121°C / 1.15 бар / 20 мин)
+	const handleExpressDelicateCycle = () => {
+		setSelectedRegimeId("steam_121_20min");
+		setActualTemp(121);
+		setActualPressure(1.15);
+		setActualTime(20);
+		setItemsDescription("Термолабильные полимеры, резина, силикон, слепочные ложки");
+		setPacksCount(packsCount > 0 ? packsCount : 8);
+		setPackagingType("kraft_pouch_sealed");
+		setChamberPoints(createDefault5ChamberPoints(selectedIndicatorId, true));
+	};
+
+	// Быстрый выбор режима наконечников (134°C / 2.1 бар / 3.5 мин)
+	const handleExpressFastCycle = () => {
+		setSelectedRegimeId("steam_134_quick");
+		setActualTemp(134);
+		setActualPressure(2.1);
+		setActualTime(3.5);
+		setItemsDescription("Стоматологические наконечники турбинные и угловые (быстрый цикл)");
+		setPacksCount(packsCount > 0 ? packsCount : 6);
+		setPackagingType("kraft_pouch_sealed");
+		setChamberPoints(createDefault5ChamberPoints(selectedIndicatorId, true));
+	};
+
 	const handleSave = (e: React.FormEvent) => {
 		e.preventDefault();
 
@@ -277,55 +301,128 @@ export function AutoclaveNewCycleTab({
 
 	return (
 		<form onSubmit={handleSave} noValidate style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-			{/* 0. Экспресс-заполнение стандартного цикла (Мандаты 8e, 8k, 8n) */}
+			{/* 0. Быстрые пресеты параметров цикла (Мандаты 8e, 8k, 8n) */}
 			<div
 				style={{
 					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					gap: "1rem",
-					flexWrap: "wrap",
-					padding: "0.875rem 1.25rem",
+					flexDirection: "column",
+					gap: "0.75rem",
+					padding: "1rem 1.25rem",
 					background: "var(--paper-soft, #f8fafc)",
 					border: "1px solid var(--line, #e2e8f0)",
 					borderRadius: "14px",
 				}}
 			>
-				<div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+				<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
 					<span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink, #0f172a)", display: "flex", alignItems: "center", gap: "0.35rem" }}>
 						<Zap size={16} color="var(--teal, #0d9488)" />
-						Стерилизация инструментов
+						Быстрые режимы стерилизации
 					</span>
 					<span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
-						Регистрация типового цикла для смотровых наборов и наконечников
+						Автозаполнение параметров и индикаторов за одно нажатие
 					</span>
 				</div>
 
-				<button
-					type="button"
-					data-testid="express-standard-cycle-btn"
-					onClick={handleExpressStandardCycle}
-					className="autoclave-btn autoclave-btn-primary"
+				<div
 					style={{
-						minHeight: "44px",
-						display: "inline-flex",
-						alignItems: "center",
-						justifyContent: "center",
-						gap: "0.5rem",
-						padding: "0.625rem 1.25rem",
-						fontSize: "0.875rem",
-						fontWeight: 700,
-						background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)",
-						color: "#ffffff",
-						boxShadow: "0 2px 6px rgba(13, 148, 136, 0.35)",
-						cursor: "pointer",
+						display: "grid",
+						gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+						gap: "0.625rem",
 					}}
-					title="Экспресс-заполнение: Стандартный цикл (134°C / 5 мин / 14 упаковок)"
-					aria-label="Экспресс-заполнение: Стандартный цикл (134°C / 5 мин / 14 упаковок)"
 				>
-					<Zap size={18} />
-					<span>Экспресс-заполнение: Стандартный цикл (134°C / 5 мин / 14 упаковок)</span>
-				</button>
+					<button
+						type="button"
+						data-testid="express-standard-cycle-btn"
+						onClick={handleExpressStandardCycle}
+						className="autoclave-btn"
+						style={{
+							minHeight: "44px",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "0.5rem",
+							padding: "0.625rem 1rem",
+							fontSize: "0.8125rem",
+							fontWeight: 700,
+							background: selectedRegimeId === "steam_134_5min" && actualTime === 5
+								? "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)"
+								: "var(--paper, #ffffff)",
+							color: selectedRegimeId === "steam_134_5min" && actualTime === 5
+								? "#ffffff"
+								: "var(--ink, #0f172a)",
+							border: "1px solid " + (selectedRegimeId === "steam_134_5min" && actualTime === 5 ? "transparent" : "var(--line, #cbd5e1)"),
+							boxShadow: selectedRegimeId === "steam_134_5min" && actualTime === 5 ? "0 2px 6px rgba(13, 148, 136, 0.35)" : "none",
+							cursor: "pointer",
+						}}
+						title="Экспресс-заполнение: Стандартный цикл (134°C / 5 мин / 14 упаковок)"
+						aria-label="Экспресс-заполнение: Стандартный цикл (134°C / 5 мин / 14 упаковок)"
+					>
+						<Zap size={16} />
+						<span>Экспресс-заполнение: Стандартный цикл (134°C / 5 мин / 14 упаковок)</span>
+					</button>
+
+					<button
+						type="button"
+						data-testid="express-delicate-cycle-btn"
+						onClick={handleExpressDelicateCycle}
+						className="autoclave-btn"
+						style={{
+							minHeight: "44px",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "0.5rem",
+							padding: "0.625rem 1rem",
+							fontSize: "0.8125rem",
+							fontWeight: 700,
+							background: selectedRegimeId === "steam_121_20min"
+								? "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)"
+								: "var(--paper, #ffffff)",
+							color: selectedRegimeId === "steam_121_20min"
+								? "#ffffff"
+								: "var(--ink, #0f172a)",
+							border: "1px solid " + (selectedRegimeId === "steam_121_20min" ? "transparent" : "var(--line, #cbd5e1)"),
+							boxShadow: selectedRegimeId === "steam_121_20min" ? "0 2px 6px rgba(13, 148, 136, 0.35)" : "none",
+							cursor: "pointer",
+						}}
+						title="Ткани / Резина: 121°C / 1.15 бар / 20 мин (термолабильный режим)"
+						aria-label="Ткани / Резина: 121°C / 1.15 бар / 20 мин"
+					>
+						<Thermometer size={16} />
+						<span>Ткани / Резина (121°C / 1.15 бар / 20 мин)</span>
+					</button>
+
+					<button
+						type="button"
+						data-testid="express-fast-cycle-btn"
+						onClick={handleExpressFastCycle}
+						className="autoclave-btn"
+						style={{
+							minHeight: "44px",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "0.5rem",
+							padding: "0.625rem 1rem",
+							fontSize: "0.8125rem",
+							fontWeight: 700,
+							background: selectedRegimeId === "steam_134_quick"
+								? "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)"
+								: "var(--paper, #ffffff)",
+							color: selectedRegimeId === "steam_134_quick"
+								? "#ffffff"
+								: "var(--ink, #0f172a)",
+							border: "1px solid " + (selectedRegimeId === "steam_134_quick" ? "transparent" : "var(--line, #cbd5e1)"),
+							boxShadow: selectedRegimeId === "steam_134_quick" ? "0 2px 6px rgba(13, 148, 136, 0.35)" : "none",
+							cursor: "pointer",
+						}}
+						title="Быстрый наконечники: 134°C / 2.1 бар / 3.5 мин (экспресс-наконечники)"
+						aria-label="Быстрый наконечники: 134°C / 2.1 бар / 3.5 мин"
+					>
+						<Sparkles size={16} />
+						<span>Быстрый наконечники (134°C / 2.1 бар / 3.5 мин)</span>
+					</button>
+				</div>
 			</div>
 
 			{/* 1. Выбор регламентного режима */}

@@ -15,7 +15,7 @@
  */
 
 import { RotateCcw } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export type SkullProjectionKey =
 	| "anterior" // Фас (0°, 0°)
@@ -43,7 +43,7 @@ export const SKULL_PROJECTIONS: readonly SkullProjectionDefinition[] = [
 		label: "Фас",
 		shortLabel: "Фас",
 		tooltip:
-			"A (Anterior) / Фас: фронтальный вид черепа и резцов (Yaw 0°, Pitch 0°)",
+			"Фас: фронтальный вид черепа и резцов (0°, 0°)",
 		yaw: 0,
 		pitch: 0,
 		ez3dCode: "A",
@@ -53,7 +53,7 @@ export const SKULL_PROJECTIONS: readonly SkullProjectionDefinition[] = [
 		label: "Затылок",
 		shortLabel: "Зат.",
 		tooltip:
-			"P (Posterior) / Затылок: вид сзади, основание черепа и шейный отдел (Yaw 180°, Pitch 0°)",
+			"Затылок: вид сзади, основание черепа (180°, 0°)",
 		yaw: 180,
 		pitch: 0,
 		ez3dCode: "P",
@@ -63,7 +63,7 @@ export const SKULL_PROJECTIONS: readonly SkullProjectionDefinition[] = [
 		label: "Лев. профиль",
 		shortLabel: "Лев.",
 		tooltip:
-			"L (Left) / Левый профиль: латеральный вид левой челюсти и ВНЧС (Yaw -90°, Pitch 0°)",
+			"Левый профиль: латеральный вид левой челюсти и ВНЧС (-90°, 0°)",
 		yaw: -90,
 		pitch: 0,
 		ez3dCode: "L",
@@ -73,7 +73,7 @@ export const SKULL_PROJECTIONS: readonly SkullProjectionDefinition[] = [
 		label: "Пр. профиль",
 		shortLabel: "Пр.",
 		tooltip:
-			"R (Right) / Правый профиль: латеральный вид правой челюсти и ВНЧС (Yaw 90°, Pitch 0°)",
+			"Правый профиль: латеральный вид правой челюсти и ВНЧС (90°, 0°)",
 		yaw: 90,
 		pitch: 0,
 		ez3dCode: "R",
@@ -83,7 +83,7 @@ export const SKULL_PROJECTIONS: readonly SkullProjectionDefinition[] = [
 		label: "Снизу",
 		shortLabel: "Низ",
 		tooltip:
-			"F (Foot/Inferior) / Снизу: вид снизу на базис нижней челюсти (Yaw 0°, Pitch -85°)",
+			"Снизу: базис нижней челюсти (0°, -85°)",
 		yaw: 0,
 		pitch: -85,
 		ez3dCode: "F",
@@ -93,7 +93,7 @@ export const SKULL_PROJECTIONS: readonly SkullProjectionDefinition[] = [
 		label: "Сверху",
 		shortLabel: "Верх",
 		tooltip:
-			"H (Head/Superior) / Сверху: аксиальный вид сверху на зубной ряд (Yaw 0°, Pitch +85°)",
+			"Сверху: окклюзионный срез по зубной дуге (0°, +85°)",
 		yaw: 0,
 		pitch: 85,
 		ez3dCode: "H",
@@ -103,7 +103,7 @@ export const SKULL_PROJECTIONS: readonly SkullProjectionDefinition[] = [
 		label: "3/4 Пр.",
 		shortLabel: "3/4П",
 		tooltip:
-			"3/4R (Right Oblique): изометрический правый ракурс челюсти (Yaw 45°, Pitch 15°)",
+			"3/4 Правый: изометрический правый ракурс челюсти (45°, 15°)",
 		yaw: 45,
 		pitch: 15,
 		ez3dCode: "3/4R",
@@ -113,7 +113,7 @@ export const SKULL_PROJECTIONS: readonly SkullProjectionDefinition[] = [
 		label: "3/4 Лев.",
 		shortLabel: "3/4Л",
 		tooltip:
-			"3/4L (Left Oblique): изометрический левый ракурс челюсти (Yaw -45°, Pitch 15°)",
+			"3/4 Левый: изометрический левый ракурс челюсти (-45°, 15°)",
 		yaw: -45,
 		pitch: 15,
 		ez3dCode: "3/4L",
@@ -293,7 +293,7 @@ export const CbctSkullProjectionsToolbar: React.FC<
 			role="toolbar"
 			aria-label="Проекции 3D объема черепа"
 			data-testid="cbct-skull-projections-toolbar"
-			className={`h-7 inline-flex items-center bg-zinc-950/85 backdrop-blur-md px-1 py-0.5 rounded-lg border border-zinc-800 shadow-xl pointer-events-auto gap-0.5 select-none z-20 ${className}`}
+			className={`h-9 min-h-[34px] max-h-[36px] inline-flex items-center bg-zinc-950/90 backdrop-blur-md px-1.5 py-0.5 rounded-lg border border-zinc-800 shadow-xl pointer-events-auto gap-1 select-none z-20 ${className}`}
 		>
 			{SKULL_PROJECTIONS.map((proj) => {
 				const active = isNear(proj.yaw, proj.pitch);
@@ -305,7 +305,7 @@ export const CbctSkullProjectionsToolbar: React.FC<
 						title={proj.tooltip}
 						aria-label={proj.label}
 						data-testid={`cbct-skull-proj-${proj.key}`}
-						className={`w-7 h-6 rounded flex items-center justify-center transition-all cursor-pointer group ${
+						className={`w-8 h-7 min-w-[32px] min-h-[28px] rounded-md flex items-center justify-center transition-all cursor-pointer group ${
 							active
 								? "bg-cyan-500/25 text-cyan-200 border border-cyan-400/80 shadow-[0_0_10px_rgba(6,182,212,0.35)] font-bold"
 								: "bg-zinc-900/80 text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/80 border border-zinc-800/80"
@@ -335,7 +335,7 @@ export const CbctSkullProjectionsToolbar: React.FC<
 						title="Сброс масштаба и угла камеры (30°, 12°, 1.0x)"
 						aria-label="Сброс камеры черепа"
 						data-testid="cbct-btn-reset-skull-proj"
-						className="w-7 h-6 rounded flex items-center justify-center text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/80 border border-zinc-800/80 bg-zinc-900/80 transition-all cursor-pointer"
+						className="w-8 h-7 min-w-[32px] min-h-[28px] rounded-md flex items-center justify-center text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/80 border border-zinc-800/80 bg-zinc-900/80 transition-all cursor-pointer"
 					>
 						<RotateCcw className="w-3.5 h-3.5" />
 					</button>

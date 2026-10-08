@@ -44,6 +44,7 @@ import {
 import { ToothMolar, DentalForm043 } from "../icons/DentalIcons";
 import { money } from "../../utils/financeUtils";
 import { showToast } from "../GlobalToast";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import type { Appointment, Dashboard } from "@dental/shared";
 import "./PatientHistoryTab.css";
 
@@ -454,7 +455,11 @@ export const PatientHistoryTab: React.FC<PatientHistoryTabProps> = React.memo(
 				});
 			}
 
-			// Fallback to high-grade clinical mock visits
+			if (!isDemoShowcaseMode()) {
+				return [];
+			}
+
+			// Fallback to high-grade clinical mock visits in demo mode
 			return DEFAULT_CLINICAL_VISITS;
 		}, [initialVisits, dashboard, patientId]);
 

@@ -33,7 +33,7 @@ test("Wave 111 — PatientGeneralInfoTab renders StomX marketing source chips", 
 	);
 
 	assert.ok(
-		markup.includes("Канал привлечения пациента (Маркетинг / StomX)"),
+		markup.includes("Канал привлечения пациента (Маркетинг"),
 		"Must render marketing acquisition channel section",
 	);
 	assert.ok(

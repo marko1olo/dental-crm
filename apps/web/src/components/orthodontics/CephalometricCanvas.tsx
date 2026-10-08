@@ -12,6 +12,7 @@ import {
 	type Point2D,
 } from "./cephalometricMath";
 import { showToast } from "../GlobalToast";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import {
 	CephalometricHudStrip,
 	type XrayFilterMode,
@@ -433,18 +434,23 @@ export function CephalometricCanvas({
 						<button
 							type="button"
 							onClick={() => fileInputRef.current?.click()}
+							data-testid="choose-ceph-file-btn"
 							className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs sm:text-sm font-bold shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
 						>
 							<UploadCloud size={16} />
 							<span>Выбрать снимок ТРГ</span>
 						</button>
-						<button
-							type="button"
-							onClick={() => onImageUpload?.(SAMPLE_TRG_CEPHALOGRAM_URL)}
-							className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-bold shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
-						>
-							<span>Загрузить клинический снимок ТРГ пациента</span>
-						</button>
+						{isDemoShowcaseMode() && (
+							<button
+								type="button"
+								data-testid="load-demo-ceph-sample-btn"
+								onClick={() => onImageUpload?.(SAMPLE_TRG_CEPHALOGRAM_URL)}
+								className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-bold shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
+								title="Витринный демонстрационный снимок (только в демо-режиме)"
+							>
+								<span>Загрузить тестовый образец ТРГ (Демо)</span>
+							</button>
+						)}
 					</div>
 
 					<div className="flex items-center gap-2 mt-4 sm:mt-5 text-[11px] text-slate-400 font-medium flex-wrap justify-center">

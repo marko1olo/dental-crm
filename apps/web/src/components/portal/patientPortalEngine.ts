@@ -249,8 +249,8 @@ export function generateFnsTaxCertificateData(
 		patientFullName: profile.fullName,
 		patientBirthDate: profile.birthDate,
 		clinicName: clinic?.name || "ООО «Стоматологическая клиника ДЕНТЕ»",
-		clinicInn: clinic?.inn || "7701234567",
-		clinicKpp: clinic?.kpp || "770101001",
+		clinicInn: clinic?.inn || "",
+		clinicKpp: clinic?.kpp || "",
 		serviceCode: "1", // 1 - обычное лечение
 		totalPaidEligibleRub: paidThisYear,
 		maxDeductionRefundRub: refund13Pct,

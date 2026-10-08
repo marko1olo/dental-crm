@@ -29,7 +29,7 @@ export {
 
 export type Orthopedic6StageKey = CanonicalOrthopedic6StageId;
 
-export {
+import {
 	CANONICAL_LAB_WORK_TYPES,
 	LAB_WORK_TYPES_BY_ID,
 	getLabWorkTypeById,
@@ -39,6 +39,17 @@ export {
 	getVitaShadeHex,
 	type VitaShadePaletteItem,
 } from "@dental/shared";
+
+export {
+	CANONICAL_LAB_WORK_TYPES,
+	LAB_WORK_TYPES_BY_ID,
+	getLabWorkTypeById,
+	type LabWorkTypeCatalogItem,
+	VITA_CLASSICAL_PLUS_BLEACH_PALETTE,
+	VITA_SHADE_HEX_MAP,
+	getVitaShadeHex,
+	type VitaShadePaletteItem,
+};
 
 
 // ─── 1. ВИДЫ КОНСТРУКЦИЙ ЗТЛ ────────────────────────────────────────────────
@@ -369,4 +380,25 @@ export function formatFdiTeethDisplay(teeth: readonly number[] | string | undefi
 	}
 	if (!Array.isArray(teeth) || teeth.length === 0) return "—";
 	return teeth.join(", ");
+}
+
+export function formatLabConstructionTitle(type?: string | null, material?: string | null): string {
+	const raw = (type || material || "").trim();
+	if (!raw) return "Конструкция";
+	if (raw in DENTAL_LAB_CONSTRUCTIONS) {
+		return DENTAL_LAB_CONSTRUCTIONS[raw as DentalLabConstructionType].shortNameRu;
+	}
+	const fromCatalog = CANONICAL_LAB_WORK_TYPES.find(
+		(w) => w.id === raw || w.titleRu.toLowerCase() === raw.toLowerCase(),
+	);
+	if (fromCatalog) return fromCatalog.titleRu;
+	const map: Record<string, string> = {
+		crown_zirconia: "Коронка ZrO2",
+		crown_emax: "Коронка e.MAX",
+		metal_ceramic: "Металлокерамика",
+		clasp_denture: "Бюгельный протез",
+		aligner_splint: "Каппа / элайнер",
+		surgical_guide: "Хирургический шаблон",
+	};
+	return map[raw] || raw;
 }

@@ -424,10 +424,10 @@ describe("RED TEAM INQUISITION: CBCT GPU Raymarching & Enamel Burnout Safeguards
 		it("proves CbctVolume3DViewport dispatches to WebGL2 GPU first and returns before CPU fallback", async () => {
 			const fs = await import("node:fs");
 			const path = await import("node:path");
-			const src = fs.readFileSync(
-				path.resolve("apps/web/src/components/radiology/mpr/CbctVolume3DViewport.tsx"),
-				"utf-8",
-			);
+			const viewportPath = fs.existsSync(path.resolve("apps/web/src/components/radiology/mpr/CbctVolume3DViewport.tsx"))
+				? path.resolve("apps/web/src/components/radiology/mpr/CbctVolume3DViewport.tsx")
+				: path.resolve("src/components/radiology/mpr/CbctVolume3DViewport.tsx");
+			const src = fs.readFileSync(viewportPath, "utf-8");
 
 			const gpuCallIdx = src.indexOf("renderWebGl2VolumeRaymarching(");
 			const returnIdx = src.indexOf("return;", gpuCallIdx);
@@ -449,10 +449,10 @@ describe("RED TEAM INQUISITION: CBCT GPU Raymarching & Enamel Burnout Safeguards
 		it("proves useCbctSliceRenderer returns immediately when WebGL2 GPU is available", async () => {
 			const fs = await import("node:fs");
 			const path = await import("node:path");
-			const src = fs.readFileSync(
-				path.resolve("apps/web/src/components/radiology/mpr/useCbctSliceRenderer.ts"),
-				"utf-8",
-			);
+			const rendererPath = fs.existsSync(path.resolve("apps/web/src/components/radiology/mpr/useCbctSliceRenderer.ts"))
+				? path.resolve("apps/web/src/components/radiology/mpr/useCbctSliceRenderer.ts")
+				: path.resolve("src/components/radiology/mpr/useCbctSliceRenderer.ts");
+			const src = fs.readFileSync(rendererPath, "utf-8");
 
 			const glCheckIdx = src.indexOf("if (glContext.isAvailable())");
 			const glReturnIdx = src.indexOf("return;", glCheckIdx);

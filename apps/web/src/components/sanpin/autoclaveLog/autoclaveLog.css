@@ -315,14 +315,26 @@ html[data-theme="dark"] .autoclave-regime-card.selected {
 .autoclave-textarea {
 	border: 1px solid var(--line, #cbd5e1);
 	border-radius: 10px;
-	padding: 0.625rem 0.875rem;
+	padding: 0.5rem 0.75rem;
 	font-size: 0.875rem;
+	line-height: 1.4;
 	background: var(--paper, #ffffff);
 	color: var(--ink, #0f172a);
-	min-height: 44px;
+	min-height: 42px;
+	height: 42px;
 	outline: none;
 	transition: border-color 0.15s ease;
 	box-sizing: border-box;
+}
+
+.autoclave-select {
+	cursor: pointer;
+}
+
+.autoclave-textarea {
+	height: auto;
+	min-height: 80px;
+	resize: vertical;
 }
 
 [data-theme="dark"] .autoclave-input,

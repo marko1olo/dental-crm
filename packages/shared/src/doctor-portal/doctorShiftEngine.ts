@@ -298,13 +298,13 @@ export function filterDoctorShiftAppointments(
  * Mandate 8e: Guarantees zero fake fallback appointments in empty shifts.
  */
 export function adaptToDoctorShiftAppointments(params: {
-	appointments?: readonly any[];
-	doctorId?: string;
-	doctorName?: string;
-	doctorSpecialty?: string;
-	shiftDateIso?: string;
-	patients?: readonly any[];
-	chairs?: readonly any[];
+	appointments?: readonly any[] | undefined;
+	doctorId?: string | undefined;
+	doctorName?: string | undefined;
+	doctorSpecialty?: string | undefined;
+	shiftDateIso?: string | undefined;
+	patients?: readonly any[] | undefined;
+	chairs?: readonly any[] | undefined;
 }): DoctorShiftAppointment[] {
 	const rawList = Array.isArray(params.appointments) ? params.appointments : [];
 	if (rawList.length === 0) {
@@ -418,7 +418,40 @@ export function adaptToDoctorShiftAppointments(params: {
 				diagnosisIcd10: apt.diagnosisIcd10,
 				diagnosisTooth: apt.diagnosisTooth,
 				treatmentDescription: apt.treatmentDescription || apt.notes,
-				services: Array.isArray(apt.services) ? apt.services : [],
+				services: Array.isArray(apt.services)
+					? apt.services.map((s: any, sIdx: number) => {
+							const finalRev = s.finalRevenueKop !== undefined && s.finalRevenueKop > 0
+								? s.finalRevenueKop
+								: s.totalCostKop !== undefined && s.totalCostKop > 0
+									? Math.max(0, s.totalCostKop - (s.discountKop || 0))
+									: Math.max(0, (s.unitPriceKop || 0) * (s.quantity || 1) - (s.discountKop || 0));
+							const { earnedPayoutKop } = calculateServicePieceRateAccrual(
+								{
+									finalRevenueKop: finalRev,
+									directLabZtlCostKop: s.directLabZtlCostKop || 0,
+									directMaterialCostKop: s.directMaterialCostKop || 0,
+									commissionPercent: s.commissionPercent,
+									category: s.category || "therapy",
+								},
+								25,
+							);
+							return {
+								id: String(s.id || `srv-${appointmentId}-${sIdx + 1}`),
+								code804n: String(s.code804n || "A16.07.001"),
+								nameRu: String(s.nameRu || "Стоматологическая процедура"),
+								category: String(s.category || "therapy"),
+								quantity: Number(s.quantity || 1),
+								unitPriceKop: Number(s.unitPriceKop || finalRev),
+								totalCostKop: Number(s.totalCostKop || finalRev),
+								discountKop: Number(s.discountKop || 0),
+								finalRevenueKop: finalRev,
+								directLabZtlCostKop: Number(s.directLabZtlCostKop || 0),
+								directMaterialCostKop: Number(s.directMaterialCostKop || 0),
+								commissionPercent: s.commissionPercent ?? 25,
+								earnedDoctorPayoutKop: s.earnedDoctorPayoutKop !== undefined ? s.earnedDoctorPayoutKop : earnedPayoutKop,
+							};
+						})
+					: [],
 				emrCard043uStatus: emrStatus,
 				emrSignedAtIso: apt.emrSignedAtIso,
 				emrPepProtocolHash: apt.emrPepProtocolHash,
@@ -452,7 +485,11 @@ export const DEFAULT_CATEGORY_COMMISSION_PERCENT: Record<string, number> = {
  */
 export function calculateServicePieceRateAccrual(
 	item: {
-		finalRevenueKop: Kopecks;
+		finalRevenueKop?: Kopecks | undefined;
+		totalCostKop?: Kopecks | undefined;
+		unitPriceKop?: Kopecks | undefined;
+		quantity?: number | undefined;
+		discountKop?: Kopecks | undefined;
 		directLabZtlCostKop?: Kopecks | undefined;
 		directMaterialCostKop?: Kopecks | undefined;
 		commissionPercent?: number | undefined;
@@ -460,14 +497,25 @@ export function calculateServicePieceRateAccrual(
 	},
 	fallbackCommissionPct = 25,
 ): { dealBaseKop: Kopecks; earnedPayoutKop: Kopecks } {
-	const revenue = Math.max(0, Math.round(item.finalRevenueKop || 0));
+	const effectiveRevenue =
+		item.finalRevenueKop !== undefined && item.finalRevenueKop > 0
+			? item.finalRevenueKop
+			: item.totalCostKop !== undefined && item.totalCostKop > 0
+				? Math.max(0, item.totalCostKop - (item.discountKop || 0))
+				: Math.max(
+						0,
+						(item.unitPriceKop || 0) * (item.quantity || 1) - (item.discountKop || 0),
+					);
+
+	const revenue = Math.max(0, Math.round(effectiveRevenue || 0));
 	const labCost = Math.max(0, Math.round(item.directLabZtlCostKop || 0));
 	const matCost = Math.max(0, Math.round(item.directMaterialCostKop || 0));
-	const pct = typeof item.commissionPercent === "number" && item.commissionPercent >= 0
-		? item.commissionPercent
-		: (item.category && DEFAULT_CATEGORY_COMMISSION_PERCENT[item.category] !== undefined
-			? DEFAULT_CATEGORY_COMMISSION_PERCENT[item.category]!
-			: fallbackCommissionPct);
+	const pct =
+		typeof item.commissionPercent === "number" && item.commissionPercent >= 0
+			? item.commissionPercent
+			: item.category && DEFAULT_CATEGORY_COMMISSION_PERCENT[item.category] !== undefined
+				? DEFAULT_CATEGORY_COMMISSION_PERCENT[item.category]!
+				: fallbackCommissionPct;
 
 	const dealBaseKop = Math.max(0, revenue - labCost - matCost);
 	const earnedPayoutKop = Math.round((dealBaseKop * pct) / 100);

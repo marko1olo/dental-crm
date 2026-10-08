@@ -46,6 +46,18 @@ export type AnamnesisPresetType =
 	| "allergy_nsaid"
 	| "allergy_latex";
 
+export const ANAMNESIS_PRESETS: readonly AnamnesisPresetType[] = [
+	"clean",
+	"cardio",
+	"anticoag",
+	"bisphosphonate",
+	"pregnant_2",
+	"allergy_articaine",
+	"allergy_penicillin",
+	"allergy_nsaid",
+	"allergy_latex",
+] as const;
+
 export interface PresetApplicationResult {
 	readonly updatedProfile: PatientClinicalSafetyProfile;
 	readonly toastMessage: string;

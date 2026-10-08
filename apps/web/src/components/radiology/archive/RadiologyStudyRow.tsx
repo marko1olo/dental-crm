@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import {
 	AlertCircle,
 	Archive,
@@ -108,7 +108,7 @@ export const RadiologyStudyRow: React.FC<RadiologyStudyRowProps> = ({
 
 						{study.dicomPatientName && (
 							<span className="text-xs text-[var(--muted)] font-mono">
-								(DICOM: {study.dicomPatientName})
+								(В снимке: {study.dicomPatientName})
 							</span>
 						)}
 

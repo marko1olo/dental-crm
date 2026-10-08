@@ -249,14 +249,14 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 
 	const handleCopyTiersSummary = async () => {
 		const linesSummary = [
-			`📋 Варианты плана лечения для пациента: ${patientName}`,
+			`Варианты плана лечения для пациента: ${patientName}`,
 			`Клиника: ${clinicName} · Врач: ${doctorFullName}`,
 			`Дата: ${new Date().toLocaleDateString("ru-RU")}`,
 			"----------------------------------------",
 		];
 		allTiers.forEach((tier) => {
 			const letter = getTierLetter(tier.tierId);
-			const isRec = tier.tierId === "standard" ? " ⭐ РЕКОМЕНДАЦИЯ ВРАЧА" : "";
+			const isRec = tier.tierId === "standard" ? " [РЕКОМЕНДАЦИЯ ВРАЧА]" : "";
 			linesSummary.push(`${letter}: ${tier.title}${isRec}`);
 			linesSummary.push(`  Итого: ${tier.totalRub.toLocaleString("ru-RU")} ₽`);
 			linesSummary.push(`  Срок: ~ ${tier.durationWeeks} нед. (${tier.durationVisits} визитов)`);

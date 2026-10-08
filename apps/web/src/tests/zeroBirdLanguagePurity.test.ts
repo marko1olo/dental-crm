@@ -229,5 +229,39 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		const patientSafetyCode = readComponent("components/patients/patientSafetyEvaluation.ts");
 		assert.ok(!patientSafetyCode.includes("амбулаторной карты 043/у"), "patientSafetyEvaluation must not include 043/у");
 	});
+
+	it("18. Visit Header, EMK Toolbar & Guide Tour: purged 043/у, 804н, 54-ФЗ from buttons, toasts & tooltips", () => {
+		const monolithCode = readComponent("components/visit/view/VisitHeaderMonolith.tsx");
+		assert.ok(!monolithCode.includes("Форма 043/у"), "VisitHeaderMonolith must not cite Форма 043/у in print title");
+		assert.ok(!monolithCode.includes("(804н)"), "VisitHeaderMonolith must not cite 804н in act print title");
+		assert.ok(!monolithCode.includes("медицинских услуг (804н)"), "VisitHeaderMonolith must not cite 804н in registry title");
+
+		const emkToolbarCode = readComponent("components/visit/emk/EmkToolbar.tsx");
+		assert.ok(!emkToolbarCode.includes("Формы 043/у"), "EmkToolbar must not cite Формы 043/у in print button");
+		assert.ok(!emkToolbarCode.includes("(Z01.2)"), "EmkToolbar must not expose Z01.2 in norm buttons or tooltips");
+		assert.ok(!emkToolbarCode.includes("1 142 клинических протоколов"), "EmkToolbar must not cite inflated protocol count");
+
+		const visitEmkCode = readComponent("components/visit/VisitEmkTab.tsx");
+		assert.ok(!visitEmkCode.includes("Дневник 043/у"), "VisitEmkTab must not cite 043/у in tooth stamp toast");
+		assert.ok(!visitEmkCode.includes("услуги 804н обновлены"), "VisitEmkTab must not cite 804н in tooth stamp toast");
+		assert.ok(!visitEmkCode.includes("нормой (Z01.2)"), "VisitEmkTab must not cite Z01.2 in physiological norm toast");
+		assert.ok(!visitEmkCode.includes("услугам 804н"), "VisitEmkTab must not cite 804н in stepper step 3");
+		assert.ok(!visitEmkCode.includes("Норма: Z01.2"), "VisitEmkTab must not expose Z01.2 in mobile norm action button");
+
+		const tourCode = readComponent("components/tutorial/InteractiveGuideTour.tsx");
+		assert.ok(!tourCode.includes("54-ФЗ"), "InteractiveGuideTour must not cite 54-ФЗ");
+		assert.ok(!tourCode.includes("043/у"), "InteractiveGuideTour must not cite 043/у");
+		assert.ok(!tourCode.includes("804н"), "InteractiveGuideTour must not cite 804н");
+
+		const visitViewCode = readComponent("VisitView.tsx");
+		assert.ok(!visitViewCode.includes("Форма 043/у"), "VisitView must not cite Форма 043/у in print title or menu");
+		assert.ok(!visitViewCode.includes("(804н)"), "VisitView must not cite 804н in act print title");
+
+		const telephonyPopupCode = readComponent("components/telephony/IncomingCallPopup.tsx");
+		assert.ok(!telephonyPopupCode.includes("043/у"), "IncomingCallPopup must not cite 043/у in toasts");
+
+		const telephonyDrawerCode = readComponent("components/telephony/IncomingCallPatientDrawer.tsx");
+		assert.ok(!telephonyDrawerCode.includes("043/у"), "IncomingCallPatientDrawer must not cite 043/у in badge");
+	});
 });
 

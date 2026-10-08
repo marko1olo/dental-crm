@@ -127,7 +127,7 @@ export function TelephonyDialerModal({
 			className="fixed inset-0 z-[9995] flex items-center justify-center p-3 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200"
 			role="dialog"
 			aria-modal="true"
-			aria-label="SIP Софтфон и номеронабиратель"
+			aria-label="Софтфон клиники и номеронабиратель"
 			data-testid="telephony-dialer-modal"
 		>
 			<div
@@ -142,7 +142,7 @@ export function TelephonyDialerModal({
 						</div>
 						<div>
 							<h3 className="text-xs font-bold uppercase tracking-wider text-[var(--ink)] leading-tight">
-								SIP Софтфон
+								Софтфон клиники
 							</h3>
 							<div className="flex items-center gap-1.5 text-[10px] text-[var(--muted)] mt-0.5">
 								<span
@@ -150,8 +150,8 @@ export function TelephonyDialerModal({
 								/>
 								<span>
 									{isWsConnected
-										? "Шлюз АТС онлайн"
-										: "Ожидание вебхука АТС"}
+										? "Телефония онлайн"
+										: "Ожидание вызова"}
 								</span>
 							</div>
 						</div>

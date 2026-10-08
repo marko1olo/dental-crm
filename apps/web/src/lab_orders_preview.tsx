@@ -554,6 +554,10 @@ function LabOrdersPreviewApp() {
 								onClose={() => {}}
 								initialOrder={DEMO_MODAL_ORDER}
 								initialTab={activeTab === "modal_shades" ? "shades" : "main"}
+								treatmentPlanId="plan-777"
+								stageNumber={3}
+								stageTitle="Ортопедический этап"
+								stageId="stg-3"
 								patientId="pat-1"
 								patientName="Ковалёв Роман Станиславович"
 								doctorName="Д-р Воронов Алексей Владимирович"

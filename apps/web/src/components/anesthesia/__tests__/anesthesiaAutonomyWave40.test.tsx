@@ -36,6 +36,36 @@ describe("Wave 40: Doctor Autonomy & Dead-Ends Elimination (Mandates 8e, 8i, 8k,
 			);
 		});
 
+		it("AnesthesiaQuickBar renders carpule stepper [-] [+] and Primary CTA 'В карту'", () => {
+			const html = renderToString(
+				<AnesthesiaQuickBar
+					targetToothNumberFdi={16}
+					patientWeightKg={70}
+					onApplyAnesthesia={() => {}}
+				/>,
+			);
+			assert.ok(
+				html.includes('data-testid="btn-decrease-carpules"'),
+				"Must render decrease carpules stepper button",
+			);
+			assert.ok(
+				html.includes('data-testid="btn-increase-carpules"'),
+				"Must render increase carpules stepper button",
+			);
+			assert.ok(
+				html.includes('data-testid="selected-carpules-display"'),
+				"Must render selected carpules count display",
+			);
+			assert.ok(
+				html.includes('data-testid="btn-apply-anesthesia-to-card"'),
+				"Must render Primary CTA 'В карту' button",
+			);
+			assert.ok(
+				html.includes("В карту"),
+				"Must show 'В карту' label on Primary CTA button",
+			);
+		});
+
 		it("EmergencyRescueModal renders 1-click resuscitation and anaphylaxis protocols", () => {
 			const html = renderToString(
 				<EmergencyRescueModal

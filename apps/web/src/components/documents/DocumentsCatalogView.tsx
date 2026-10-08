@@ -612,7 +612,7 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 				<FnsTaxCertificateModal
 					isOpen={isLocalTaxModalOpen}
 					onClose={() => setIsLocalTaxModalOpen(false)}
-					patient={patient}
+					patient={patient ?? null}
 					clinicProfileDraft={clinicProfileDraft}
 				/>
 			)}

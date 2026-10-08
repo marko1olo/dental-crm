@@ -3,7 +3,7 @@
  * (DOMAIN: PATIENT-FRIENDLY 804N TRANSLATION, 5-STAGE CLINICAL ROADMAP, TIMELINES, PREPARATION & WARRANTY)
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
 	Activity,
 	AlertCircle,
@@ -86,6 +86,9 @@ export interface RoadmapStageData {
 	remainingKopecks: number;
 	estimatedVisitsCount: number;
 	targetMonthRu?: string;
+	paidRub?: number | undefined;
+	paidKopecks?: number | undefined;
+	isFullyPaid?: boolean | undefined;
 }
 
 export interface TreatmentPlanRoadmapProps {
@@ -357,6 +360,29 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 		5: true,
 	});
 
+	const [paidStageNumbers, setPaidStageNumbers] = useState<Set<number>>(new Set());
+
+	useEffect(() => {
+		const handlePlanReload = (e: Event) => {
+			const detail = (e as CustomEvent)?.detail;
+			if (detail?.stageNumber) {
+				setPaidStageNumbers((prev) => new Set(prev).add(Number(detail.stageNumber)));
+			}
+		};
+		const handlePaymentCompleted = (e: Event) => {
+			const detail = (e as CustomEvent)?.detail;
+			if (detail?.stageNumber) {
+				setPaidStageNumbers((prev) => new Set(prev).add(Number(detail.stageNumber)));
+			}
+		};
+		window.addEventListener("dente-treatment-plans-reload", handlePlanReload);
+		window.addEventListener("dente-payment-completed", handlePaymentCompleted);
+		return () => {
+			window.removeEventListener("dente-treatment-plans-reload", handlePlanReload);
+			window.removeEventListener("dente-payment-completed", handlePaymentCompleted);
+		};
+	}, []);
+
 	const toggleStage = (stageNum: number) => {
 		setExpandedStageNumbers((prev) => ({ ...prev, [stageNum]: !prev[stageNum] }));
 	};
@@ -365,11 +391,16 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 	const roadmapStages: RoadmapStageData[] = useMemo(() => {
 		if (customRoadmapStages && customRoadmapStages.length > 0) {
 			return customRoadmapStages.map((st) => {
-				if (st.status === "completed") {
+				const isPaid = st.status === "completed" || Boolean(st.isFullyPaid) || paidStageNumbers.has(st.stageNumber);
+				if (isPaid) {
 					return {
 						...st,
+						status: "completed" as const,
+						isFullyPaid: true,
 						remainingRub: 0,
 						remainingKopecks: 0,
+						completedKopecks: st.totalKopecks,
+						completedRub: st.totalRub,
 					};
 				}
 				return st;
@@ -463,11 +494,17 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 					(s.stageKind as string) === (kind as string) ||
 					s.stageNumber === meta.stageNumber,
 			);
-			if (matchingInputStage?.status === "completed") {
+			const isFullyPaid =
+				matchingInputStage?.status === "completed" ||
+				Boolean((matchingInputStage as any)?.isFullyPaid) ||
+				paidStageNumbers.has(meta.stageNumber);
+
+			if (isFullyPaid) {
 				status = "completed";
 			}
 
 			const remainingKop = status === "completed" ? 0 : Math.max(0, totalKop - completedKop);
+			const effectiveCompletedKop = status === "completed" ? totalKop : completedKop;
 
 			// Estimated visits: at least 1 visit per 3 procedures or 1
 			const estimatedVisits = Math.max(1, Math.ceil(procs.length / 2));
@@ -486,14 +523,15 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 				procedures: procs,
 				totalRub: kopecksToRub(totalKop),
 				totalKopecks: totalKop,
-				completedRub: kopecksToRub(completedKop),
-				completedKopecks: completedKop,
+				completedRub: kopecksToRub(effectiveCompletedKop),
+				completedKopecks: effectiveCompletedKop,
 				remainingRub: kopecksToRub(remainingKop),
 				remainingKopecks: remainingKop,
 				estimatedVisitsCount: estimatedVisits,
+				isFullyPaid: status === "completed",
 			};
 		});
-	}, [customRoadmapStages, stages]);
+	}, [customRoadmapStages, stages, paidStageNumbers]);
 
 	// Global Metrics
 	const { grandTotalKopecks, completedTotalKopecks, remainingTotalKopecks, progressPercent } = useMemo(() => {
@@ -676,6 +714,16 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 										{stage.status === "planned" && <span>Запланировано</span>}
 									</div>
 
+									{stage.status === "completed" && (
+										<span
+											className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 shrink-0"
+											data-testid={`stage-paid-badge-${stage.stageNumber}`}
+										>
+											<Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400 stroke-[3]" />
+											<span>✓ ОПЛАЧЕНО 100%</span>
+										</span>
+									)}
+
 									<button
 										type="button"
 										onClick={() => toggleStage(stage.stageNumber)}
@@ -722,7 +770,7 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 							)}
 
 							{/* Stage Goal Explanation */}
-							<div className="text-xs font-medium text-[var(--muted,var(--ink-muted))] bg-[var(--paper-soft,#1e293b)]/50 p-3 rounded-xl border border-[var(--line-subtle,rgba(255,255,255,0.03))] mb-3 leading-relaxed">
+							<div className="text-xs font-medium text-[var(--muted,var(--ink-muted))] bg-[var(--paper-soft)] p-3 rounded-xl border border-[var(--line)] mb-3 leading-relaxed">
 								<strong className="text-[var(--ink)] font-bold">Цель этапа: </strong>
 								{stage.patientGoalRu}
 							</div>
@@ -730,7 +778,7 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 							{/* Stage Clinical Highlights: Timelines, Preparation & Warranty */}
 							<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-3 text-xs">
 								{/* 1. Timelines */}
-								<div className="p-3 rounded-xl bg-[var(--paper-soft,#1e293b)]/50 border border-[var(--line-subtle,rgba(255,255,255,0.04))]">
+								<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 									<div className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 uppercase flex items-center gap-1.5 mb-1">
 										<Clock size={13} />
 										<span>Сроки и длительность</span>
@@ -741,7 +789,7 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 								</div>
 
 								{/* 2. Preparation */}
-								<div className="p-3 rounded-xl bg-[var(--paper-soft,#1e293b)]/50 border border-[var(--line-subtle,rgba(255,255,255,0.04))]">
+								<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 									<div className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase flex items-center gap-1.5 mb-1">
 										<AlertCircle size={13} />
 										<span>Подготовка пациента</span>
@@ -752,7 +800,7 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 								</div>
 
 								{/* 3. Warranty */}
-								<div className="p-3 rounded-xl bg-[var(--paper-soft,#1e293b)]/50 border border-[var(--line-subtle,rgba(255,255,255,0.04))]">
+								<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 									<div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1.5 mb-1">
 										<ShieldCheck size={13} />
 										<span>Гарантия клиники</span>
@@ -843,11 +891,17 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 
 								{stage.status === "completed" ? (
 									<div
-										className="roadmap-stage-completed-badge"
+										className="roadmap-stage-completed-badge flex items-center gap-2"
 										data-testid={`stage-completed-badge-${stage.stageNumber}`}
 									>
-										<CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
-										<span>
+										<span
+											className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-600 text-white text-[11px] font-black uppercase tracking-wider shadow-xs"
+											data-testid={`stage-paid-footer-badge-${stage.stageNumber}`}
+										>
+											✓ ОПЛАЧЕНО 100%
+										</span>
+										<span className="flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+											<CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
 											{`✓ Пройден на приеме ${todayRu || new Date().toLocaleDateString("ru-RU")}`}
 										</span>
 									</div>

@@ -20,6 +20,7 @@ import { showToast } from "../GlobalToast";
 import type { DentalLabOrderData } from "./DentalLabOrderModal";
 import { formatLabOrderTeethOrJaw, isJawWideConstruction } from "./labMath";
 import { is3DScanUrl } from "./LabAttachScanModal";
+import { formatLabConstructionTitle } from "./dentalLabDefinitions";
 
 export interface LabOrderCardProps {
 	order: DentalLabOrderData;
@@ -103,9 +104,20 @@ export function LabOrderCard({
 
 				{/* Tech Details */}
 				<div className="p-2.5 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] text-xs space-y-1 text-[var(--ink)]">
-					<div className="flex justify-between">
-						<span className="text-[var(--muted)]">Материал:</span>
-						<span className="font-semibold">{order.material || "Не указан"}</span>
+					{(order.constructionType || (order as unknown as { workType?: string }).workType) && (
+						<div className="flex justify-between gap-2">
+							<span className="text-[var(--muted)] shrink-0">Конструкция:</span>
+							<span className="font-semibold text-right break-words line-clamp-2 leading-tight">
+								{formatLabConstructionTitle(
+									order.constructionType || (order as unknown as { workType?: string }).workType,
+									order.material ?? undefined,
+								)}
+							</span>
+						</div>
+					)}
+					<div className="flex justify-between gap-2">
+						<span className="text-[var(--muted)] shrink-0">Материал:</span>
+						<span className="font-semibold text-right break-words line-clamp-2 leading-tight">{order.material || "Не указан"}</span>
 					</div>
 					<div className="flex justify-between">
 						<span className="text-[var(--muted)]">Цвет VITA:</span>

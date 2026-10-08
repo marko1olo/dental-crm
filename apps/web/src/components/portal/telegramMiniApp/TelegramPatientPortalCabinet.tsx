@@ -48,6 +48,7 @@ import {
 	ZoomOut,
 } from "lucide-react";
 import "./telegramMiniApp.css";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import {
 	TelegramInteractiveToothPicker,
 	type ToothComplaint,
@@ -99,146 +100,172 @@ export interface TelegramPatientPortalCabinetProps {
 	readonly onBack?: () => void;
 }
 
+const DEMO_FAMILY_MEMBERS = [
+	{ id: "self", name: "Александр (Я)", relation: "self" },
+	{ id: "child-1", name: "Артём (Сын, 8 лет)", relation: "child" },
+	{ id: "child-2", name: "София (Дочь, 12 лет)", relation: "child" },
+];
+
+const DEMO_APPOINTMENTS: PatientAppointment[] = [
+	{
+		id: "app-upcoming-1",
+		dateStr: "Четверг, 12 октября 2026",
+		timeStr: "14:00",
+		doctorName: "Д-р Смирнов Алексей Васильевич",
+		doctorRole: "Терапевт-эндодонтист",
+		cabinet: "Кабинет 3 (Терапия)",
+		procedureTitle: "Лечение кариеса дентина зуба 16, реставрация",
+		durationMinutes: 60,
+		isConfirmed: false,
+		isPast: false,
+		toothNumber: 16,
+	},
+	{
+		id: "app-upcoming-2",
+		dateStr: "Понедельник, 19 октября 2026",
+		timeStr: "16:30",
+		doctorName: "Д-р Воронов Алексей Владимирович",
+		doctorRole: "Хирург-имплантолог",
+		cabinet: "Кабинет 1 (Хирургия)",
+		procedureTitle: "Контрольный осмотр имплантата Straumann в обл. 36",
+		durationMinutes: 30,
+		isConfirmed: true,
+		isPast: false,
+		toothNumber: 36,
+	},
+	{
+		id: "app-past-1",
+		dateStr: "28 сентября 2026",
+		timeStr: "11:00",
+		doctorName: "Д-р Романова Елена Сергеевна",
+		doctorRole: "Стоматолог-гигиенист",
+		cabinet: "Кабинет 2 (Профилактика)",
+		procedureTitle: "Комплексная профгигиена полости рта (AirFlow + УЗ)",
+		durationMinutes: 45,
+		isConfirmed: true,
+		isPast: true,
+		costRub: 6500,
+		cashbackEarned: 325,
+	},
+	{
+		id: "app-past-2",
+		dateStr: "14 августа 2026",
+		timeStr: "15:00",
+		doctorName: "Д-р Смирнов Алексей Васильевич",
+		doctorRole: "Терапевт-эндодонтист",
+		cabinet: "Кабинет 3 (Терапия)",
+		procedureTitle: "Прицельная RVG-визиография и эндодонтия зуба 26",
+		durationMinutes: 90,
+		isConfirmed: true,
+		isPast: true,
+		costRub: 18200,
+		cashbackEarned: 910,
+		toothNumber: 26,
+	},
+];
+
+const DEMO_IMAGING_SCANS: PatientImagingScan[] = [
+	{
+		id: "scan-rvg-16",
+		title: "RVG снимок #16",
+		scanType: "rvg_2d",
+		scanTypeLabel: "Радиовизиография 2D",
+		dateStr: "04 октября 2026",
+		doctorName: "Д-р Смирнов А.В.",
+		radiationDoseMsv: 0.002,
+		doctorNotes: "Глубокая кариозная полость жевательно-медиальной поверхности дентина. Периапикальная щель без деструкции.",
+		targetTooth: 16,
+		diagnosisBadge: "Кариес дентина (K02.1)",
+		markerCoords: { x: 54, y: 42 },
+	},
+	{
+		id: "scan-cbct-3d",
+		title: "3D КЛКТ сегмента #36",
+		scanType: "cbct_3d",
+		scanTypeLabel: "3D Томография КЛКТ",
+		dateStr: "28 сентября 2026",
+		doctorName: "Д-р Воронов А.В.",
+		radiationDoseMsv: 0.024,
+		doctorNotes: "Установлен имплантат Straumann BLT 4.1x10mm. Толщина кортикальной пластинки 2.2мм, остеоинтеграция стабильна.",
+		targetTooth: 36,
+		diagnosisBadge: "Контроль имплантации (Z96.5)",
+		markerCoords: { x: 48, y: 58 },
+	},
+	{
+		id: "scan-rvg-26",
+		title: "RVG снимок #26",
+		scanType: "rvg_2d",
+		scanTypeLabel: "Радиовизиография 2D",
+		dateStr: "14 августа 2026",
+		doctorName: "Д-р Смирнов А.В.",
+		radiationDoseMsv: 0.002,
+		doctorNotes: "3 корневых канала обтурированы гуттаперчей до верхушки апекса. Патологических периапикальных изменений нет.",
+		targetTooth: 26,
+		diagnosisBadge: "Обтурация каналов (K04.0)",
+		markerCoords: { x: 62, y: 48 },
+	},
+	{
+		id: "scan-optg-pano",
+		title: "ОПТГ панорама",
+		scanType: "optg_pano",
+		scanTypeLabel: "Панорамный снимок",
+		dateStr: "10 июня 2026",
+		doctorName: "Д-р Романова Е.С.",
+		radiationDoseMsv: 0.015,
+		doctorNotes: "Обзорный снимок обеих челюстей. ВНЧС без выраженной асимметрии, гайморовы пазухи пневматизированы.",
+		diagnosisBadge: "Обзорный статус",
+	},
+];
+
+const DEMO_TOOTH_COMPLAINTS: ToothComplaint[] = [
+	{
+		toothNumber: 16,
+		complaintType: "acute_throbbing",
+		symptomLabel: "Острая пульсирующая боль",
+		painLevel: 4,
+		cito: true,
+		notes: "Реакция на горячее и накусывание 2 дня",
+	},
+];
+
 export const TelegramPatientPortalCabinet: React.FC<TelegramPatientPortalCabinetProps> = memo(({
 	organizationId: propOrgId,
 	patientId: propPatientId,
 	initialTab = "appointments",
 	initialTaxSheetOpen = false,
 }) => {
+	const isDemo = isDemoShowcaseMode();
 	const [activeTab, setActiveTab] = useState<TelegramCabinetTab>(initialTab);
 
 	// Семейный профиль
 	const [activeFamilyMemberId, setActiveFamilyMemberId] = useState<string>("self");
-	const [familyMembers] = useState([
-		{ id: "self", name: "Александр (Я)", relation: "self" },
-		{ id: "child-1", name: "Артём (Сын, 8 лет)", relation: "child" },
-		{ id: "child-2", name: "София (Дочь, 12 лет)", relation: "child" },
-	]);
+	const [familyMembers] = useState(() =>
+		isDemo ? DEMO_FAMILY_MEMBERS : [{ id: "self", name: "Пациент", relation: "self" }],
+	);
 
 	// Финансы & Лояльность
-	const [bonusBalance, setBonusBalance] = useState<number>(2750);
-	const [depositBalance] = useState<number>(15000);
-	const [totalYearExpense] = useState<number>(148500);
+	const [bonusBalance, setBonusBalance] = useState<number>(() => (isDemo ? 2750 : 0));
+	const [depositBalance] = useState<number>(() => (isDemo ? 15000 : 0));
+	const [totalYearExpense] = useState<number>(() => (isDemo ? 148500 : 0));
 
 	// Записи пациента
-	const [appointments, setAppointments] = useState<PatientAppointment[]>([
-		{
-			id: "app-upcoming-1",
-			dateStr: "Четверг, 12 октября 2026",
-			timeStr: "14:00",
-			doctorName: "Д-р Смирнов Алексей Васильевич",
-			doctorRole: "Терапевт-эндодонтист",
-			cabinet: "Кабинет 3 (Терапия)",
-			procedureTitle: "Лечение кариеса дентина зуба 16, реставрация",
-			durationMinutes: 60,
-			isConfirmed: false,
-			isPast: false,
-			toothNumber: 16,
-		},
-		{
-			id: "app-upcoming-2",
-			dateStr: "Понедельник, 19 октября 2026",
-			timeStr: "16:30",
-			doctorName: "Д-р Воронов Алексей Владимирович",
-			doctorRole: "Хирург-имплантолог",
-			cabinet: "Кабинет 1 (Хирургия)",
-			procedureTitle: "Контрольный осмотр имплантата Straumann в обл. 36",
-			durationMinutes: 30,
-			isConfirmed: true,
-			isPast: false,
-			toothNumber: 36,
-		},
-		{
-			id: "app-past-1",
-			dateStr: "28 сентября 2026",
-			timeStr: "11:00",
-			doctorName: "Д-р Романова Елена Сергеевна",
-			doctorRole: "Стоматолог-гигиенист",
-			cabinet: "Кабинет 2 (Профилактика)",
-			procedureTitle: "Комплексная профгигиена полости рта (AirFlow + УЗ)",
-			durationMinutes: 45,
-			isConfirmed: true,
-			isPast: true,
-			costRub: 6500,
-			cashbackEarned: 325,
-		},
-		{
-			id: "app-past-2",
-			dateStr: "14 августа 2026",
-			timeStr: "15:00",
-			doctorName: "Д-р Смирнов Алексей Васильевич",
-			doctorRole: "Терапевт-эндодонтист",
-			cabinet: "Кабинет 3 (Терапия)",
-			procedureTitle: "Прицельная RVG-визиография и эндодонтия зуба 26",
-			durationMinutes: 90,
-			isConfirmed: true,
-			isPast: true,
-			costRub: 18200,
-			cashbackEarned: 910,
-			toothNumber: 26,
-		},
-	]);
+	const [appointments, setAppointments] = useState<PatientAppointment[]>(() =>
+		isDemo ? DEMO_APPOINTMENTS : [],
+	);
 
 	// Фильтр списка записей ("upcoming" | "past")
 	const [appointmentFilter, setAppointmentFilter] = useState<"upcoming" | "past">("upcoming");
 
 	// Снимки пациента
-	const [imagingList] = useState<PatientImagingScan[]>([
-		{
-			id: "scan-rvg-16",
-			title: "RVG снимок #16",
-			scanType: "rvg_2d",
-			scanTypeLabel: "Радиовизиография 2D",
-			dateStr: "04 октября 2026",
-			doctorName: "Д-р Смирнов А.В.",
-			radiationDoseMsv: 0.002,
-			doctorNotes: "Глубокая кариозная полость жевательно-медиальной поверхности дентина. Периапикальная щель без деструкции.",
-			targetTooth: 16,
-			diagnosisBadge: "Кариес дентина (K02.1)",
-			markerCoords: { x: 54, y: 42 },
-		},
-		{
-			id: "scan-cbct-3d",
-			title: "3D КЛКТ сегмента #36",
-			scanType: "cbct_3d",
-			scanTypeLabel: "3D Томография КЛКТ",
-			dateStr: "28 сентября 2026",
-			doctorName: "Д-р Воронов А.В.",
-			radiationDoseMsv: 0.024,
-			doctorNotes: "Установлен имплантат Straumann BLT 4.1x10mm. Толщина кортикальной пластинки 2.2мм, остеоинтеграция стабильна.",
-			targetTooth: 36,
-			diagnosisBadge: "Контроль имплантации (Z96.5)",
-			markerCoords: { x: 48, y: 58 },
-		},
-		{
-			id: "scan-rvg-26",
-			title: "RVG снимок #26",
-			scanType: "rvg_2d",
-			scanTypeLabel: "Радиовизиография 2D",
-			dateStr: "14 августа 2026",
-			doctorName: "Д-р Смирнов А.В.",
-			radiationDoseMsv: 0.002,
-			doctorNotes: "3 корневых канала обтурированы гуттаперчей до верхушки апекса. Патологических периапикальных изменений нет.",
-			targetTooth: 26,
-			diagnosisBadge: "Обтурация каналов (K04.0)",
-			markerCoords: { x: 62, y: 48 },
-		},
-		{
-			id: "scan-optg-pano",
-			title: "ОПТГ панорама",
-			scanType: "optg_pano",
-			scanTypeLabel: "Панорамный снимок",
-			dateStr: "10 июня 2026",
-			doctorName: "Д-р Романова Е.С.",
-			radiationDoseMsv: 0.015,
-			doctorNotes: "Обзорный снимок обеих челюстей. ВНЧС без выраженной асимметрии, гайморовы пазухи пневматизированы.",
-			diagnosisBadge: "Обзорный статус",
-		},
-	]);
+	const [imagingList] = useState<PatientImagingScan[]>(() =>
+		isDemo ? DEMO_IMAGING_SCANS : [],
+	);
 
-	const [selectedScanId, setSelectedScanId] = useState<string>("scan-rvg-16");
+	const [selectedScanId, setSelectedScanId] = useState<string>(() =>
+		isDemo ? "scan-rvg-16" : "",
+	);
 	const activeScan = useMemo(
-		() => imagingList.find((s) => s.id === selectedScanId) ?? imagingList[0]!,
+		() => imagingList.find((s) => s.id === selectedScanId) ?? imagingList[0] ?? null,
 		[imagingList, selectedScanId],
 	);
 
@@ -252,24 +279,21 @@ export const TelegramPatientPortalCabinet: React.FC<TelegramPatientPortalCabinet
 	const [isTaxSheetOpen, setIsTaxSheetOpen] = useState<boolean>(initialTaxSheetOpen);
 	const [taxYear, setTaxYear] = useState<number>(2025);
 	const [payerType, setPayerType] = useState<"self" | "child" | "spouse">("self");
-	const [payerInn, setPayerInn] = useState<string>("772481928301");
-	const [payerFullName, setPayerFullName] = useState<string>("Иванов Александр Сергеевич");
-	const [payerPassport, setPayerPassport] = useState<string>("4512 892341");
+	const [payerInn, setPayerInn] = useState<string>(() => (isDemo ? "772481928301" : ""));
+	const [payerFullName, setPayerFullName] = useState<string>(() =>
+		isDemo ? "Иванов Александр Сергеевич" : "",
+	);
+	const [payerPassport, setPayerPassport] = useState<string>(() =>
+		isDemo ? "4512 892341" : "",
+	);
 	const [serviceCode, setServiceCode] = useState<"1" | "2">("1"); // 1 - обычное, 2 - дорогостоящее
 	const [isTaxCertGenerated, setIsTaxCertGenerated] = useState<boolean>(false);
 	const [taxCopiedNotice, setTaxCopiedNotice] = useState<boolean>(false);
 
 	// Зубные жалобы FDI для вкладки "teeth"
-	const [toothComplaints, setToothComplaints] = useState<ToothComplaint[]>([
-		{
-			toothNumber: 16,
-			complaintType: "acute_throbbing",
-			symptomLabel: "Острая пульсирующая боль",
-			painLevel: 4,
-			cito: true,
-			notes: "Реакция на горячее и накусывание 2 дня",
-		},
-	]);
+	const [toothComplaints, setToothComplaints] = useState<ToothComplaint[]>(() =>
+		isDemo ? DEMO_TOOTH_COMPLAINTS : [],
+	);
 
 	// Haptic Feedback для Telegram
 	const triggerHaptic = useCallback((style: "light" | "medium" | "heavy" = "light") => {
@@ -586,35 +610,46 @@ export const TelegramPatientPortalCabinet: React.FC<TelegramPatientPortalCabinet
 						</div>
 					</div>
 
-					{/* Горизонтальная карусель выбора снимка */}
-					<div className="tg-scans-carousel">
-						{imagingList.map((scan) => {
-							const isSel = scan.id === selectedScanId;
-							return (
-								<button
-									key={scan.id}
-									type="button"
-									className={`tg-scan-card-thumb ${isSel ? "active" : ""}`}
-									onClick={() => {
-										setSelectedScanId(scan.id);
-										setZoomLevel(1);
-										triggerHaptic("light");
-									}}
-								>
-									<div className="tg-thumb-icon">
-										{scan.scanType === "cbct_3d" ? "🧊" : "🦷"}
-									</div>
-									<div className="tg-thumb-info">
-										<div className="tg-thumb-title">{scan.title}</div>
-										<div className="tg-thumb-date">{scan.dateStr}</div>
-									</div>
-									{isSel && <div className="tg-thumb-active-dot" />}
-								</button>
-							);
-						})}
-					</div>
+					{/* Горизонтальная карусель выбора снимка или честный EmptyState */}
+					{imagingList.length === 0 ? (
+						<div className="tg-empty-card">
+							<Eye size={32} className="text-slate-400 mb-2" />
+							<div className="text-sm font-bold">Снимки отсутствуют</div>
+							<div className="text-xs text-slate-400 mt-1">
+								После проведения радиовизиографии или КТ врач прикрепит диагностические снимки к вашей карте
+							</div>
+						</div>
+					) : (
+						<div className="tg-scans-carousel">
+							{imagingList.map((scan) => {
+								const isSel = scan.id === selectedScanId;
+								return (
+									<button
+										key={scan.id}
+										type="button"
+										className={`tg-scan-card-thumb ${isSel ? "active" : ""}`}
+										onClick={() => {
+											setSelectedScanId(scan.id);
+											setZoomLevel(1);
+											triggerHaptic("light");
+										}}
+									>
+										<div className="tg-thumb-icon">
+											{scan.scanType === "cbct_3d" ? "🧊" : "🦷"}
+										</div>
+										<div className="tg-thumb-info">
+											<div className="tg-thumb-title">{scan.title}</div>
+											<div className="tg-thumb-date">{scan.dateStr}</div>
+										</div>
+										{isSel && <div className="tg-thumb-active-dot" />}
+									</button>
+								);
+							})}
+						</div>
+					)}
 
 					{/* Интерактивный визиограф / КТ-вьювер на смартфоне */}
+					{activeScan && (
 					<div className="tg-grouped-card tg-viewer-container">
 						{/* Верхний тулбар вьювера: зум, инверсия, резкость */}
 						<div className="tg-viewer-toolbar">
@@ -817,6 +852,7 @@ export const TelegramPatientPortalCabinet: React.FC<TelegramPatientPortalCabinet
 						</div>
 
 					</div>
+					)}
 				</main>
 			)}
 
@@ -976,31 +1012,37 @@ export const TelegramPatientPortalCabinet: React.FC<TelegramPatientPortalCabinet
 							История начислений и операций:
 						</div>
 
-						<div className="space-y-3">
-							<div className="flex justify-between items-center text-xs pb-2 border-b border-slate-800">
-								<div>
-									<div className="font-bold text-slate-200">+1 250 ₽ — Кэшбэк 5% за профгигиену</div>
-									<div className="text-[11px] text-slate-400">28 сентября 2026</div>
+						{isDemo ? (
+							<div className="space-y-3">
+								<div className="flex justify-between items-center text-xs pb-2 border-b border-slate-800">
+									<div>
+										<div className="font-bold text-slate-200">+1 250 ₽ — Кэшбэк 5% за профгигиену</div>
+										<div className="text-[11px] text-slate-400">28 сентября 2026</div>
+									</div>
+									<span className="text-xs font-bold text-emerald-400">+1 250</span>
 								</div>
-								<span className="text-xs font-bold text-emerald-400">+1 250</span>
-							</div>
 
-							<div className="flex justify-between items-center text-xs pb-2 border-b border-slate-800">
-								<div>
-									<div className="font-bold text-slate-200">+500 ₽ — Бонус за друга (Михаил)</div>
-									<div className="text-[11px] text-slate-400">14 сентября 2026</div>
+								<div className="flex justify-between items-center text-xs pb-2 border-b border-slate-800">
+									<div>
+										<div className="font-bold text-slate-200">+500 ₽ — Бонус за друга (Михаил)</div>
+										<div className="text-[11px] text-slate-400">14 сентября 2026</div>
+									</div>
+									<span className="text-xs font-bold text-emerald-400">+500</span>
 								</div>
-								<span className="text-xs font-bold text-emerald-400">+500</span>
-							</div>
 
-							<div className="flex justify-between items-center text-xs pb-2 border-b border-slate-800">
-								<div>
-									<div className="font-bold text-slate-200">+1 000 ₽ — Приветственный бонус</div>
-									<div className="text-[11px] text-slate-400">01 сентября 2026</div>
+								<div className="flex justify-between items-center text-xs pb-2 border-b border-slate-800">
+									<div>
+										<div className="font-bold text-slate-200">+1 000 ₽ — Приветственный бонус</div>
+										<div className="text-[11px] text-slate-400">01 сентября 2026</div>
+									</div>
+									<span className="text-xs font-bold text-emerald-400">+1 000</span>
 								</div>
-								<span className="text-xs font-bold text-emerald-400">+1 000</span>
 							</div>
-						</div>
+						) : (
+							<div className="text-xs text-slate-400 py-3 text-center">
+								Операций по программе лояльности пока не зарегистрировано
+							</div>
+						)}
 					</div>
 				</main>
 			)}

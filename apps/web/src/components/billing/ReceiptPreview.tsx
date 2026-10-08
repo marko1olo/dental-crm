@@ -87,7 +87,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 	clinicInn = "7707083893",
 	clinicKpp = "770701001",
 	clinicAddress = "г. Москва, ул. Профсоюзная, д. 42",
-	taxationSystemName = "УСН Доходы (ст. 346.20 НК РФ)",
+	taxationSystemName = "УСН Доходы",
 	cashierFullName = "Врач-стоматолог / Кассир",
 	patientName = "Пациент",
 	patientPhone = "",
@@ -302,7 +302,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 								{clinicAddress}
 							</p>
 							<p className="text-[10px] text-slate-600 m-0 font-semibold" style={{ color: "#334155" }}>
-								СНО: {taxationSystemName}
+								Налоговый режим: {taxationSystemName}
 							</p>
 						</div>
 
@@ -327,7 +327,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 							)}
 							<div className="flex justify-between text-slate-600">
 								<span>ПРИЗНАК РАСЧЕТА:</span>
-								<span className="font-semibold text-slate-950">ПОЛНЫЙ РАСЧЕТ (Тег 1214)</span>
+								<span className="font-semibold text-slate-950">ПОЛНЫЙ РАСЧЕТ<span className="sr-only"> (Тег 1214)</span></span>
 							</div>
 							<div className="flex justify-between text-slate-600">
 								<span>ДАТА И ВРЕМЯ:</span>
@@ -343,7 +343,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 							</div>
 							{patientPhone && (
 								<div className="flex justify-between text-slate-600">
-									<span>КОНТАКТ (Тег 1008):</span>
+									<span>КОНТАКТ<span className="sr-only"> (Тег 1008)</span>:</span>
 									<span className="font-mono text-slate-950">{patientPhone}</span>
 								</div>
 							)}
@@ -402,7 +402,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 							<div className="space-y-1 pt-1 text-[11px] text-slate-700">
 								{(payments.cardRub ?? 0) > 0 && (
 									<div className="flex justify-between">
-										<span>БЕЗНАЛИЧНЫМИ / КАРТА (Тег 1081):</span>
+										<span>БЕЗНАЛИЧНЫМИ / КАРТА<span className="sr-only"> (Тег 1081)</span>:</span>
 										<span className="font-bold text-slate-950 font-mono">
 											{(payments.cardRub ?? 0).toLocaleString("ru-RU")} ₽
 										</span>
@@ -410,7 +410,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 								)}
 								{(payments.sbpRub ?? 0) > 0 && (
 									<div className="flex justify-between">
-										<span>СБП / ПЛАТИ QR (Тег 1081):</span>
+										<span>СБП / ПЛАТИ QR<span className="sr-only"> (Тег 1081)</span>:</span>
 										<span className="font-bold text-teal-800 font-mono">
 											{(payments.sbpRub ?? 0).toLocaleString("ru-RU")} ₽
 										</span>
@@ -419,7 +419,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 								{(payments.cashRub ?? 0) > 0 && (
 									<>
 										<div className="flex justify-between">
-											<span>НАЛИЧНЫМИ (Тег 1031):</span>
+											<span>НАЛИЧНЫМИ<span className="sr-only"> (Тег 1031)</span>:</span>
 											<span className="font-bold text-slate-950 font-mono">
 												{(payments.cashRub ?? 0).toLocaleString("ru-RU")} ₽
 											</span>
@@ -440,13 +440,13 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 								)}
 								{(payments.depositRub ?? 0) > 0 && (
 									<div className="flex justify-between">
-										<span>ПРЕДОПЛАТА / АВАНС (Тег 1215):</span>
+										<span>ПРЕДОПЛАТА / АВАНС<span className="sr-only"> (Тег 1215)</span>:</span>
 										<span className="font-bold font-mono">{(payments.depositRub ?? 0).toLocaleString("ru-RU")} ₽</span>
 									</div>
 								)}
 								{(payments.familyWalletRub ?? 0) > 0 && (
 									<div className="flex justify-between">
-										<span>СЕМЕЙНЫЙ БАЛАНС (Тег 1215):</span>
+										<span>СЕМЕЙНЫЙ БАЛАНС<span className="sr-only"> (Тег 1215)</span>:</span>
 										<span className="font-bold font-mono">{(payments.familyWalletRub ?? 0).toLocaleString("ru-RU")} ₽</span>
 									</div>
 								)}
@@ -462,24 +462,24 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 						{/* Fiscal Requisites (54-FZ) */}
 						<div className="space-y-1 text-[10px] text-slate-600 font-mono">
 							<div className="flex justify-between">
-								<span>ЗН ККТ: 089201948</span>
-								<span>РН ККТ: {kktRegNumber}</span>
+								<span>Заводской номер кассы: 089201948</span>
+								<span>Рег. номер кассы: {kktRegNumber}</span>
 							</div>
 							<div className="flex justify-between">
-								<span>ФН: {fnSerial}</span>
-								<span>ФД: {isPrecheck ? "Ожидает фискализации при оплате" : (fiscalDocumentNumber || "Ожидает фискализации")}</span>
+								<span>Фискальный накопитель: {fnSerial}</span>
+								<span>Фискальный документ: {isPrecheck ? "Ожидает фискализации при оплате" : (fiscalDocumentNumber || "Ожидает фискализации")}</span>
 							</div>
 							<div className="flex justify-between">
-								<span>ФПД: {isPrecheck ? "—" : (fiscalSign || "—")}</span>
-								<span>СНО: УСН</span>
+								<span>Фискальный признак: {isPrecheck ? "—" : (fiscalSign || "—")}</span>
+								<span>Налоговый режим: УСН</span>
 							</div>
 							<div className="flex justify-between">
 								<span>ОФД: {ofdName}</span>
-								<span>САЙТ ФНС: {fnsUrl}</span>
+								<span>Сайт ФНС: {fnsUrl}</span>
 							</div>
 							<div className="flex justify-between text-teal-800 font-bold">
-								<span>ВЫЧЕТ 13% (СПРАВКА):</span>
-								<span>КОД 01 (СТАНДАРТНОЕ)</span>
+								<span>Вычет 13% (справка):</span>
+								<span>Код 01 (стандартное)</span>
 							</div>
 						</div>
 
@@ -505,7 +505,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 							</div>
 						) : !isWarranty100 ? (
 							<div className="receipt-qr-box border border-dashed border-slate-300 p-2.5 my-2 text-center rounded bg-slate-50 dark:bg-slate-900/50 text-[10px] text-slate-500 font-mono" data-testid="precheck-qr-placeholder">
-								QR-код фискализации 54-ФЗ формируется после проведения платежа через кассу
+								QR-код проверки чека формируется после проведения платежа через кассу
 							</div>
 						) : null}
 
@@ -534,7 +534,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 							</p>
 						</div>
 						<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-300">
-							54-ФЗ • Квитанция
+							Квитанция об оплате
 						</span>
 					</div>
 

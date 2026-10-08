@@ -22,6 +22,9 @@ import {
 import {
 	getDemoShowcaseAppointments,
 	enableDemoShowcaseMode,
+	isDemoShowcaseMode,
+	isDemoPatientId,
+	isDemoTenant,
 } from "../demoModeEngine.js";
 import {
 	DEMO_THERAPIST_ODONTOGRAM,
@@ -246,48 +249,146 @@ class DemoInteractiveState {
 
 const _demoStateInstance = new DemoInteractiveState();
 
+export const DENTE_LIVE_STAFF_TOKEN_BACKUP_KEY = "dente_live_staff_token_backup";
+export const DENTE_LIVE_ACTIVE_STAFF_USER_BACKUP_KEY = "dente_live_active_staff_user_backup";
+
+function getSimulationStorage(): Storage | null {
+	try {
+		if (typeof window !== "undefined" && window.localStorage) {
+			return window.localStorage;
+		}
+	} catch {
+		// ignore
+	}
+	try {
+		if (typeof globalThis !== "undefined" && (globalThis as unknown as { localStorage?: Storage }).localStorage) {
+			return (globalThis as unknown as { localStorage?: Storage }).localStorage ?? null;
+		}
+	} catch {
+		// ignore
+	}
+	return null;
+}
+
 /**
- * Получить интерактивные приёмы демо-режима.
+ * Проверяет, разрешена ли симуляция (строго в демо-режиме / Мандат 8c Zero Mocks & 8y Fail-Closed).
+ */
+export function isSimulationAllowed(): boolean {
+	return isDemoShowcaseMode();
+}
+
+/**
+ * Восстанавливает боевую сессию сотрудника после выхода из демо-режима.
+ */
+export function restoreLiveStaffSessionAfterDemo(): boolean {
+	const storage = getSimulationStorage();
+	if (!storage) return false;
+	try {
+		const backupToken = storage.getItem(DENTE_LIVE_STAFF_TOKEN_BACKUP_KEY);
+		const backupUser = storage.getItem(DENTE_LIVE_ACTIVE_STAFF_USER_BACKUP_KEY);
+
+		if (backupToken) {
+			storage.setItem("dente_staff_token", backupToken);
+			storage.removeItem(DENTE_LIVE_STAFF_TOKEN_BACKUP_KEY);
+		} else {
+			const currentToken = storage.getItem("dente_staff_token");
+			if (currentToken?.startsWith("demo-")) {
+				storage.removeItem("dente_staff_token");
+			}
+		}
+
+		if (backupUser) {
+			storage.setItem("dente_active_staff_user", backupUser);
+			storage.removeItem(DENTE_LIVE_ACTIVE_STAFF_USER_BACKUP_KEY);
+		} else {
+			const currentUser = storage.getItem("dente_active_staff_user");
+			if (currentUser?.includes("dente-demo.ru")) {
+				storage.removeItem("dente_active_staff_user");
+			}
+		}
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Получить интерактивные приёмы демо-режима (изолировано: пустой массив в боевом режиме).
  */
 export function getLiveDemoAppointments(): Appointment[] {
+	if (!isDemoShowcaseMode()) {
+		return [];
+	}
 	return _demoStateInstance.getAppointments();
 }
 
 /**
  * Мгновенная симуляция смены статуса приёма («В кресле» -> «Завершен») без сетевых ошибок.
+ * В боевом режиме отклоняется (Fail-Closed) для защиты реального расписания врача,
+ * если прием не является изолированным демо-приемом.
  */
 export function simulateDemoAppointmentStatusChange(
 	appointmentId: string,
 	newStatus: Appointment["status"],
-): { success: boolean; appointment?: Appointment } {
+): { success: boolean; appointment?: Appointment; error?: string } {
+	const isDemo = isDemoShowcaseMode() || isDemoTenant(appointmentId) || appointmentId.startsWith("01a0");
+	if (!isDemo) {
+		return { success: false, error: "Simulation rejected: live production appointment is protected" };
+	}
 	return _demoStateInstance.updateAppointmentStatus(appointmentId, newStatus);
 }
 
 /**
- * Получить зубную формулу пациента в демо-режиме.
+ * Получить зубную формулу пациента в демо-режиме (изолировано: пустой массив для реального пациента в боевом режиме).
  */
 export function getLiveDemoOdontogram(patientId: string): DemoOdontogramToothState[] {
+	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
+	if (!isDemo) {
+		return [];
+	}
 	return _demoStateInstance.getOdontogram(patientId);
 }
 
 /**
  * Клик по зубу в одонтограмме: мгновенная мутация состояния в демо-режиме.
+ * В боевом режиме отклоняется для реальных пациентов без вмешательства в их медкарту.
  */
 export function simulateDemoToothClick(
 	patientId: string,
 	toothNumber: number,
 	patch: Partial<DemoOdontogramToothState>,
 ): DemoOdontogramToothState[] {
+	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
+	if (!isDemo) {
+		return [];
+	}
 	return _demoStateInstance.applyToothState(patientId, toothNumber, patch);
 }
 
 /**
  * Добавление услуги в смету в демо-режиме.
+ * В боевом режиме для реального пациента возвращает пустую смету без мутации боевой кассы.
  */
 export function simulateDemoAddServiceToEstimate(
 	patientId: string,
 	item: DemoEstimateItem,
 ): DemoEstimate {
+	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
+	if (!isDemo) {
+		return {
+			estimateNumber: "СМЕТА-ПУСТО",
+			patientId,
+			patientName: "Реальный пациент",
+			doctorId: "",
+			doctorName: "",
+			dateIso: new Date().toISOString(),
+			items: [],
+			totalGrossRub: 0,
+			totalDiscountRub: 0,
+			totalNetRub: 0,
+			status: "draft",
+		};
+	}
 	return _demoStateInstance.addServiceToEstimate(patientId, item);
 }
 
@@ -295,25 +396,83 @@ export function simulateDemoAddServiceToEstimate(
  * Получить текущую смету пациента в демо-режиме.
  */
 export function getLiveDemoEstimate(patientId: string): DemoEstimate {
+	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
+	if (!isDemo) {
+		return {
+			estimateNumber: "СМЕТА-ПУСТО",
+			patientId,
+			patientName: "Реальный пациент",
+			doctorId: "",
+			doctorName: "",
+			dateIso: new Date().toISOString(),
+			items: [],
+			totalGrossRub: 0,
+			totalDiscountRub: 0,
+			totalNetRub: 0,
+			status: "draft",
+		};
+	}
 	return _demoStateInstance.getEstimate(patientId);
 }
 
 /**
  * Быстрое 1-клик переключение между 5 ролями прямо в интерфейсе демо-режима.
+ * Гарантия изоляции: сохраняет резервную копию живого токена и защищает боевое рабочее место.
  */
-export function switchDemoRole(roleKey: string): {
+export function switchDemoRole(
+	roleKey: string,
+	options?: { allowInLiveMode?: boolean },
+): {
 	success: boolean;
 	profile?: DemoRoleProfile;
+	error?: string;
 } {
 	const profile = DEMO_CLINICAL_ROLE_PROFILES[roleKey];
 	if (!profile) {
-		return { success: false };
+		return { success: false, error: "Profile not found" };
+	}
+
+	// Защита рабочего места врача (МАНДАТ 8y: Fail-Closed):
+	// Если активен боевой режим (isDemoShowcaseMode() === false) и в хранилище лежит реальный токен врача
+	// (не demo-), переключение блокируется без явного флага allowInLiveMode!
+	const currentlyInDemo = isDemoShowcaseMode();
+	const storage = getSimulationStorage();
+	if (!currentlyInDemo && !options?.allowInLiveMode) {
+		if (storage) {
+			try {
+				const liveToken = storage.getItem("dente_staff_token");
+				if (liveToken && !liveToken.startsWith("demo-") && !liveToken.startsWith("test-")) {
+					return {
+						success: false,
+						error: "Simulation blocked: live doctor workstation is protected",
+					};
+				}
+			} catch {
+				// ignore
+			}
+		}
+	}
+
+	// Сохраняем резервную копию живого токена перед переключением
+	if (storage) {
+		try {
+			const existingToken = storage.getItem("dente_staff_token");
+			const existingUser = storage.getItem("dente_active_staff_user");
+			if (existingToken && !existingToken.startsWith("demo-") && !existingToken.startsWith("test-")) {
+				storage.setItem(DENTE_LIVE_STAFF_TOKEN_BACKUP_KEY, existingToken);
+			}
+			if (existingUser && !existingUser.includes("dente-demo.ru")) {
+				storage.setItem(DENTE_LIVE_ACTIVE_STAFF_USER_BACKUP_KEY, existingUser);
+			}
+		} catch {
+			// ignore
+		}
 	}
 
 	enableDemoShowcaseMode();
 	_demoStateInstance.setActiveRoleId(roleKey);
 
-	if (typeof window !== "undefined") {
+	if (storage) {
 		try {
 			// Локальное кэширование активного профиля
 			const userProfile = {
@@ -325,22 +484,26 @@ export function switchDemoRole(roleKey: string): {
 				specialization: profile.specialization,
 			};
 
-			localStorage.setItem("dente_demo_active_role", roleKey);
-			localStorage.setItem("dente_staff_token", `demo-token-${profile.id}`);
-			localStorage.setItem("dente_active_staff_user", JSON.stringify(userProfile));
+			storage.setItem("dente_demo_active_role", roleKey);
+			storage.setItem("dente_staff_token", `demo-token-${profile.id}`);
+			storage.setItem("dente_active_staff_user", JSON.stringify(userProfile));
 
-			// Обновление роута / хэша
-			window.location.hash = `#${profile.targetView}`;
+			// Обновление роута / хэша в браузере
+			if (typeof window !== "undefined" && window.location) {
+				window.location.hash = `#${profile.targetView}`;
+			}
 
 			// Диспатч события для синхронизации Zustand и React компонентов
-			window.dispatchEvent(
-				new CustomEvent("dente-demo-role-switched", {
-					detail: {
-						roleKey,
-						profile,
-					},
-				}),
-			);
+			if (typeof window !== "undefined" && window.dispatchEvent) {
+				window.dispatchEvent(
+					new CustomEvent("dente-demo-role-switched", {
+						detail: {
+							roleKey,
+							profile,
+						},
+					}),
+				);
+			}
 		} catch {
 			// restricted storage
 		}

@@ -517,7 +517,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
             />
           </div>
 
-          {consolidatedAllergyChip && (
+          {consolidatedAllergyChip ? (
             <span
               className="mobile-chairside-allergy-pulse"
               data-testid={`${testId}-allergy-badge`}
@@ -525,6 +525,15 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
             >
               <AlertOctagon size={12} className="shrink-0" />
               <span>{consolidatedAllergyChip}</span>
+            </span>
+          ) : (
+            <span
+              className="mobile-chairside-allergy-clean"
+              data-testid={`${testId}-allergy-clean-badge`}
+              title="Отягощенный аллергоанамнез не выявлен"
+            >
+              <ShieldCheck size={12} className="shrink-0" />
+              <span>Аллергии не выявлены</span>
             </span>
           )}
         </div>
@@ -559,7 +568,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
                 }`}
                 data-testid={`${testId}-step-${step.id}`}
               >
-                <span className="truncate">{`${step.number}. ${step.label}`}</span>
+                <span className="whitespace-nowrap">{`${step.number}. ${step.label}`}</span>
                 {isCompleted && !isActive && <Check size={11} className="stroke-[2.5] shrink-0" />}
               </button>
             );
@@ -974,41 +983,53 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
           </button>
         )}
 
-        {currentStep === "treatment" && loadedTreatmentPlan && !isStageTaken && (
+        {currentStep === "treatment" && loadedTreatmentPlan && !isStageTaken ? (
+          <>
+            <button
+              type="button"
+              onClick={handleTakeActivePlanStage}
+              className="mobile-chairside-primary-cta"
+              data-testid={`${testId}-bottom-take-stage-btn`}
+            >
+              <Layers size={20} />
+              <span>Взять этап в работу</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleNextStep}
+              className="mobile-chairside-secondary-cta"
+              aria-label="Далее: 5. Итог и Чек"
+              title="Далее к чеку"
+              data-testid={`${testId}-primary-cta-btn`}
+            >
+              <ArrowRight size={22} />
+            </button>
+          </>
+        ) : (
           <button
             type="button"
-            onClick={handleTakeActivePlanStage}
-            className="mobile-chairside-stage-cta"
-            data-testid={`${testId}-bottom-take-stage-btn`}
+            onClick={handleNextStep}
+            className="mobile-chairside-primary-cta"
+            data-testid={`${testId}-primary-cta-btn`}
           >
-            <Layers size={18} />
-            <span>Взять этап в работу</span>
+            {currentStep === "checkout" ? (
+              <>
+                <CreditCard size={20} />
+                <span>Завершить приём и сформировать счёт</span>
+              </>
+            ) : (
+              <>
+                <span>
+                  {currentStep === "complaints" && "Далее: 2. Осмотр"}
+                  {currentStep === "exam" && "Далее: 3. Диагноз"}
+                  {currentStep === "diagnosis" && "Далее: 4. Лечение"}
+                  {currentStep === "treatment" && "Далее: 5. Итог и Чек"}
+                </span>
+                <ArrowRight size={18} />
+              </>
+            )}
           </button>
         )}
-
-        <button
-          type="button"
-          onClick={handleNextStep}
-          className="mobile-chairside-primary-cta"
-          data-testid={`${testId}-primary-cta-btn`}
-        >
-          {currentStep === "checkout" ? (
-            <>
-              <CreditCard size={20} />
-              <span>Завершить приём и сформировать счёт</span>
-            </>
-          ) : (
-            <>
-              <span>
-                {currentStep === "complaints" && "Далее: 2. Осмотр"}
-                {currentStep === "exam" && "Далее: 3. Диагноз"}
-                {currentStep === "diagnosis" && "Далее: 4. Лечение"}
-                {currentStep === "treatment" && "Далее: 5. Итог и Чек"}
-              </span>
-              <ArrowRight size={18} />
-            </>
-          )}
-        </button>
       </footer>
 
       {/* ─── 5. NATIVE BOTTOM SHEET: ВЫБОР СТАТУСА ЗУБА ─── */}

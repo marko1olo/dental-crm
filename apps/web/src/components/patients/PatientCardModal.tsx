@@ -13,6 +13,7 @@ import {
 	ShieldCheck,
 	User,
 	Users,
+	Wallet,
 	X,
 } from "lucide-react";
 import { TaxDeductionCertificateModal } from "../finance/TaxDeductionCertificateModal";
@@ -28,6 +29,7 @@ import {
 	PatientGeneralInfoTab,
 	type PatientGeneralInfo,
 } from "./tabs/PatientGeneralInfoTab";
+import { PatientFinanceTab } from "./tabs/PatientFinanceTab";
 import { PatientRadiologyTab } from "./tabs/PatientRadiologyTab";
 import { PatientDentalFormulaTab } from "./formula/PatientDentalFormulaTab";
 import { ToothMolar } from "../icons/DentalIcons";
@@ -99,11 +101,12 @@ export function getRepresentativeLegalStatus(type: string | null | undefined): {
 	};
 }
 
-export type PatientCardTab = "general" | "formula" | "anamnesis" | "visits" | "radiology" | "family";
+export type PatientCardTab = "general" | "formula" | "anamnesis" | "visits" | "radiology" | "family" | "finance";
 
 export interface PatientCardModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
+	readonly initialTab?: PatientCardTab | undefined;
 	readonly patient?: PatientGeneralInfo | null | undefined;
 	readonly patientData?: PatientGeneralInfo | null | undefined;
 	readonly initialSafetyProfile?: Partial<PatientClinicalSafetyProfile> | null | undefined;
@@ -130,6 +133,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 	function PatientCardModal({
 		isOpen,
 		onClose,
+		initialTab,
 		patient: initialPatient,
 		patientData: initialPatientDataAlias,
 		initialSafetyProfile,
@@ -150,7 +154,13 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 			initialSafetyProfileAlias ??
 			(isDemo ? DEMO_SHOWCASE_MODAL_SAFETY : undefined);
 
-		const [activeTab, setActiveTab] = useState<PatientCardTab>("general");
+		const [activeTab, setActiveTab] = useState<PatientCardTab>(() => initialTab ?? "general");
+
+		useEffect(() => {
+			if (initialTab) {
+				setActiveTab(initialTab);
+			}
+		}, [initialTab]);
 		const [patientData, setPatientData] = useState<PatientGeneralInfo>(() => effectiveInitialPatient);
 		const [safetyProfile, setSafetyProfile] = useState<PatientClinicalSafetyProfile>(() => {
 			return { ...DEFAULT_SOMATIC_HEALTHY_NORM, ...effectiveInitialSafety };
@@ -236,6 +246,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 				}}
 			>
 				<div
+					data-testid="patient-card-modal"
 					className="patient-card-modal bg-[var(--paper-strong)] border border-[var(--glass-border)] rounded-2xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden text-[var(--ink)] print:border-none print:shadow-none print:max-h-none print:rounded-none"
 					onClick={(e) => e.stopPropagation()}
 				>
@@ -255,7 +266,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								<p className="text-xs text-[var(--muted)] m-0 truncate">
 									{patientData.phone ? `Тел: ${patientData.phone}` : "Паспортная карточка и клинический статус"}
 									{patientData.birthDate ? ` • ${patientData.birthDate}` : ""}
-									{patientData.id ? ` • ID: ${patientData.id.slice(0, 8)}` : ""}
+									{patientData.id ? ` • ID: ${patientData.id.length <= 16 ? patientData.id : `${patientData.id.slice(0, 8)}…`}` : ""}
 								</p>
 							</div>
 						</div>
@@ -284,7 +295,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 										patientData.fullName?.toLowerCase().includes("аноним")
 									) {
 										showToast(
-											"Отказ по ПП РФ №659: формирование справки для налогового вычета на анонимных пациентов запрещено.",
+											"Формирование справки для налогового вычета на анонимных пациентов запрещено: укажите паспортные данные пациента.",
 											"error",
 											5000,
 										);
@@ -382,7 +393,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							<button
 								type="button"
 								data-testid="tab-patient-general"
-								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
+								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
 									activeTab === "general"
 										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
 										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
@@ -390,14 +401,14 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								onClick={() => setActiveTab("general")}
 							>
 								<FileText className="w-3.5 h-3.5 shrink-0" />
-								<span>Основные и паспортные</span>
+								<span>Основные</span>
 							</button>
 
 							{/* Вкладка 2: Зубная формула (Одонтограмма) */}
 							<button
 								type="button"
 								data-testid="tab-patient-formula"
-								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
+								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
 									activeTab === "formula"
 										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
 										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
@@ -405,14 +416,14 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								onClick={() => setActiveTab("formula")}
 							>
 								<ToothMolar className="w-3.5 h-3.5 shrink-0" />
-								<span>Зубная формула</span>
+								<span>Формула</span>
 							</button>
 
 							{/* Вкладка 3: Медицинский статус и соматика */}
 							<button
 								type="button"
 								data-testid="tab-patient-anamnesis"
-								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
+								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
 									activeTab === "anamnesis"
 										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
 										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
@@ -420,14 +431,14 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								onClick={() => setActiveTab("anamnesis")}
 							>
 								<HeartPulse className="w-3.5 h-3.5 shrink-0" />
-								<span>Медицинский статус и соматика</span>
+								<span>Соматика</span>
 							</button>
 
-							{/* Вкладка 3: История визитов и финансы */}
+							{/* Вкладка 4: История визитов */}
 							<button
 								type="button"
 								data-testid="tab-patient-visits"
-								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
+								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
 									activeTab === "visits"
 										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
 										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
@@ -435,14 +446,29 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								onClick={() => setActiveTab("visits")}
 							>
 								<History className="w-3.5 h-3.5 shrink-0" />
-								<span>История визитов и финансы</span>
+								<span>Визиты</span>
 							</button>
 
-							{/* Вкладка 4: Снимки и КТ */}
+							{/* Вкладка 5: Финансы и аванс (Депозиты) */}
+							<button
+								type="button"
+								data-testid="tab-patient-finance"
+								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
+									activeTab === "finance"
+										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
+										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
+								}`}
+								onClick={() => setActiveTab("finance")}
+							>
+								<Wallet className="w-3.5 h-3.5 shrink-0" />
+								<span>Финансы и аванс</span>
+							</button>
+
+							{/* Вкладка 6: Снимки и КТ */}
 							<button
 								type="button"
 								data-testid="tab-patient-radiology"
-								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
+								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
 									activeTab === "radiology"
 										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
 										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
@@ -453,11 +479,11 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								<span>Снимки и КТ</span>
 							</button>
 
-							{/* Вкладка 5: Семья и представители */}
+							{/* Вкладка 7: Семья и представители */}
 							<button
 								type="button"
 								data-testid="tab-patient-family"
-								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
+								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
 									activeTab === "family"
 										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
 										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
@@ -465,7 +491,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								onClick={() => setActiveTab("family")}
 							>
 								<Users className="w-3.5 h-3.5 shrink-0" />
-								<span>Семья и представители</span>
+								<span>Семья</span>
 							</button>
 						</div>
 
@@ -484,7 +510,29 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 
 					{/* Modal Body */}
 					<div className="p-3 sm:p-5 overflow-y-auto flex-1">
-						{activeTab === "formula" ? (
+						{activeTab === "finance" ? (
+							<PatientFinanceTab
+								patient={patientData}
+								onUpdateBalance={(newBal) => handleUpdatePatientField("patientBalanceRub", newBal)}
+								onNavigateToVisit={onNavigateToVisit}
+								onNewAppointment={onNewAppointment}
+								onOpenTaxCertificate={() => {
+									if (
+										patientData.fullName?.startsWith("UUID_ANON") ||
+										patientData.fullName?.toLowerCase().includes("аноним")
+									) {
+										showToast(
+											"Формирование справки для налогового вычета на анонимных пациентов запрещено: укажите паспортные данные пациента.",
+											"error",
+											5000,
+										);
+										return;
+									}
+									setIsTaxDeductionModalOpen(true);
+								}}
+								disabled={disabled}
+							/>
+						) : activeTab === "formula" ? (
 							<PatientDentalFormulaTab
 								patientId={patientData.id || ""}
 								patientBirthDate={patientData.birthDate}
@@ -504,7 +552,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								onUpdateSafetyProfile={setSafetyProfile}
 								onApplySomaticNorm={handleApplyNorm}
 								disabled={disabled}
-								activeSection={activeTab === "anamnesis" ? "somatic" : activeTab}
+								activeSection={activeTab === "anamnesis" ? "somatic" : (activeTab as any)}
 								onNavigateToVisit={onNavigateToVisit}
 								onNewAppointment={onNewAppointment}
 								onOpenDmsLetters={() => setIsDmsLetterModalOpen(true)}
@@ -514,7 +562,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 										patientData.fullName?.toLowerCase().includes("аноним")
 									) {
 										showToast(
-											"Отказ по ПП РФ №659: формирование справки для налогового вычета на анонимных пациентов запрещено.",
+											"Формирование справки для налогового вычета на анонимных пациентов запрещено: укажите паспортные данные пациента.",
 											"error",
 											5000,
 										);
@@ -549,13 +597,12 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							</button>
 						</div>
 					</div>
-					{/* 1-Тап Печать диплома за храбрость для ребенка */}
+					{/* 1-Тап Печать диплома за храбрость для ребенка (Мандат 8e / живые реквизиты) */}
 					{isDiplomaModalOpen && (
 						<PediatricBraveryDiplomaModal
 							isOpen={isDiplomaModalOpen}
 							onClose={() => setIsDiplomaModalOpen(false)}
 							patientName={patientData.fullName || undefined}
-							doctorName="Врач-стоматолог детский"
 						/>
 					)}
 					{/* DMS Guarantee Letter Modal */}

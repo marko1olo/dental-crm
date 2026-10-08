@@ -41,8 +41,8 @@ describe("Telephony + Patient Registry & Fast Clinical Intake Suite (Mandates 8b
 			"Must check if currentView === 'visit' before full page navigation",
 		);
 		assert.ok(
-			popupSource.includes("Приём пациента активен (форма 043/у). Карта доступна в текущей шторке без сброса визита."),
-			"Must warn doctor that active 043/u visit is preserved and card is accessible in current drawer",
+			popupSource.includes("Приём пациента активен. Карта доступна в текущей шторке без сброса визита."),
+			"Must warn doctor that active visit is preserved and card is accessible in current drawer",
 		);
 	});
 

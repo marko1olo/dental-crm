@@ -78,7 +78,8 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 
 	it("4. DentalMedicalCard043uForm.tsx: form headers and fields do not contain Latin Anamnesis Morbi/Vitae", () => {
 		const filePath = path.join(webSrcRoot, "components/documents/forms/DentalMedicalCard043uForm.tsx");
-		const content = fs.readFileSync(filePath, "utf-8");
+		const anamnesisPath = path.join(webSrcRoot, "components/documents/forms/DentalMedicalCardAnamnesisTab.tsx");
+		const content = `${fs.readFileSync(filePath, "utf-8")}\n${fs.readFileSync(anamnesisPath, "utf-8")}`;
 
 		assert.ok(
 			!content.includes("Anamnesis Morbi"),
@@ -105,7 +106,8 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 
 	it("6. LabOrdersPanel.tsx: orders panel uses human clinical language instead of 'ЗТЛ-1' and 'заказ-наряд'", () => {
 		const filePath = path.join(webSrcRoot, "components/patients/LabOrdersPanel.tsx");
-		const content = fs.readFileSync(filePath, "utf-8");
+		const cardItemPath = path.join(webSrcRoot, "components/patients/LabOrderCardItem.tsx");
+		const content = `${fs.readFileSync(filePath, "utf-8")}\n${fs.readFileSync(cardItemPath, "utf-8")}`;
 
 		assert.ok(
 			!content.includes("+ Наряд в ЗТЛ"),
@@ -272,7 +274,7 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 		const modalPath = path.join(webSrcRoot, "components/visit/VisitSummaryModal.tsx");
 		const modalContent = fs.readFileSync(modalPath, "utf-8");
 		assert.ok(!modalContent.includes("1-Click Синтез дневника по МКБ-10 и формуле"), "Must not use bird language in synthesis modal");
-		assert.ok(modalContent.includes("1-Click Заполнение дневника по диагнозу и формуле"));
+		assert.ok(modalContent.includes("Заполнение дневника по диагнозу и формуле"));
 	});
 
 	it("15. VisitDiaryHeaderMoreMenu.tsx: export menu uses human title instead of raw 'СЭМД ЕГИСЗ'", () => {
@@ -325,7 +327,9 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 
 	it("19. clinicalProtocols043.ts: memo badges and presets use clinical protocol language instead of 043/у", () => {
 		const filePath = path.join(webSrcRoot, "lib/clinicalProtocols043.ts");
-		const content = fs.readFileSync(filePath, "utf-8");
+		const memoPath = path.join(webSrcRoot, "lib/protocols/patientMemosAndPhoto.ts");
+		const perioPath = path.join(webSrcRoot, "lib/protocols/perioAndHygieneProtocols.ts");
+		const content = `${fs.readFileSync(filePath, "utf-8")}\n${fs.readFileSync(memoPath, "utf-8")}\n${fs.readFileSync(perioPath, "utf-8")}`;
 		assert.ok(!content.includes('badge: "Хирургия 043/у"'), "Must not use 'Хирургия 043/у'");
 		assert.ok(!content.includes('badge: "Терапия 043/у"'), "Must not use 'Терапия 043/у'");
 		assert.ok(!content.includes('badge: "Эндодонтия 043/у"'), "Must not use 'Эндодонтия 043/у'");

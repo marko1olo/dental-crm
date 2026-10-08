@@ -71,8 +71,8 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 	return (
 						<div className="treatment-appendix-print-doc" data-testid="appendix-print-document">
 							{/* Top Print Actions (hidden on print) */}
-							<div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-300 no-print flex-wrap gap-2">
-								<div className="flex items-center gap-2 text-slate-700">
+							<div className="flex items-center justify-between pb-4 mb-4 border-b border-[var(--line)] no-print flex-wrap gap-2">
+								<div className="flex items-center gap-2 text-[var(--ink)]">
 									<FileText size={18} />
 									<span className="font-bold text-sm">
 										{printDocFormat === "patient_friendly"
@@ -82,14 +82,14 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 								</div>
 								<div className="flex items-center gap-2 flex-wrap">
 									{/* Format Selector: Patient vs Official */}
-									<div className="inline-flex p-0.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs">
+									<div className="inline-flex p-0.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs">
 										<button
 											type="button"
 											onClick={() => setPrintDocFormat("patient_friendly")}
 											className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
 												printDocFormat === "patient_friendly"
-													? "bg-white dark:bg-slate-700 text-teal-800 dark:text-teal-200 shadow-xs"
-													: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+													? "bg-[var(--paper-strong)] text-teal-800 dark:text-teal-200 shadow-xs"
+													: "text-[var(--muted)] hover:text-[var(--ink)]"
 											}`}
 											data-testid="print-format-patient-btn"
 										>
@@ -101,8 +101,8 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 											onClick={() => setPrintDocFormat("official_appendix")}
 											className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
 												printDocFormat === "official_appendix"
-													? "bg-white dark:bg-slate-700 text-teal-800 dark:text-teal-200 shadow-xs"
-													: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+													? "bg-[var(--paper-strong)] text-teal-800 dark:text-teal-200 shadow-xs"
+													: "text-[var(--muted)] hover:text-[var(--ink)]"
 											}`}
 											data-testid="print-format-official-btn"
 										>
@@ -252,12 +252,12 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 																{stage.title}
 															</span>
 														</div>
-														<div className="patient-stage-pill">
+														<div className="patient-stage-pill inline-flex items-center gap-2">
 															<span className="inline-flex items-center gap-1">
 																<Clock size={11} className="shrink-0" />
 																<span>Срок: ~{stage.estimatedWeeks} нед.</span>
 															</span>
-															<span>•</span>
+															<span className="opacity-40">•</span>
 															<span>Визитов: ~{stage.estimatedVisits}</span>
 														</div>
 													</div>
@@ -337,17 +337,17 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 										<div className="patient-finance-card">
 											<div className="patient-finance-card-label">ВОЗВРАТ 13% НДФЛ</div>
 											<div className="patient-finance-card-value text-emerald-700">
-												+{selectedTier.ndflRefundRub.toLocaleString("ru-RU")} ₽
+												+{(selectedTier.ndflRefundRub ?? Math.round((selectedTier.totalRub ?? 0) * 0.13)).toLocaleString("ru-RU")} ₽
 											</div>
 											<div className="patient-finance-card-desc">
-												Фактическая стоимость: <strong>{selectedTier.priceWithNdflRefundRub.toLocaleString("ru-RU")} ₽</strong>. Справку для ФНС клиника выдает бесплатно.
+												Фактическая стоимость: <strong>{(selectedTier.priceWithNdflRefundRub ?? Math.max(0, (selectedTier.totalRub ?? 0) - (selectedTier.ndflRefundRub ?? Math.round((selectedTier.totalRub ?? 0) * 0.13)))).toLocaleString("ru-RU")} ₽</strong>. Справку для ФНС клиника выдает бесплатно.
 											</div>
 										</div>
 
 										<div className="patient-finance-card">
 											<div className="patient-finance-card-label">РАССРОЧКА 0% БЕЗ ПЕРЕПЛАТ</div>
 											<div className="patient-finance-card-value text-indigo-700">
-												от {selectedTier.installments[12].monthlyPaymentRub.toLocaleString("ru-RU")} ₽/мес.
+												от {(selectedTier.installments?.[12]?.monthlyPaymentRub ?? Math.round((selectedTier.totalRub ?? 0) / 12)).toLocaleString("ru-RU")} ₽/мес.
 											</div>
 											<div className="patient-finance-card-desc">
 												На 12 месяцев равными частями без процентов и скрытых комиссий

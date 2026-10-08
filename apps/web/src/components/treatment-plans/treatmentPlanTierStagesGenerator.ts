@@ -32,6 +32,14 @@ export function getDefaultClinicalPresetStages(
 	const validDiscountPct = Math.max(0, Math.min(100, discountPercent));
 	const isDemo = isDemoShowcaseMode(options?.isDemoMode);
 
+	if (!isDemo) {
+		return [
+			makeEmptyStage(1, "stage_1_therapy", "Этап 1: Неотложная терапия и санация", "Устранение очагов острой боли, КЛКТ 3D-диагностика, профессиональная гигиена."),
+			makeEmptyStage(2, "stage_2_surgery", "Этап 2: Хирургия и имплантация", "Хирургическая санация полости рта."),
+			makeEmptyStage(3, "stage_3_orthopedics", "Этап 3: Ортопедическая реабилитация", "Ортопедическое восстановление зубных рядов."),
+		];
+	}
+
 	if (tierId === "economy") {
 		// Эконом: 45 000 ₽, 1 год гарантии, 3 нед / 3 виз.
 		// Базовая санация, световые пломбы

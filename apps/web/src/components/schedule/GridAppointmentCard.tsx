@@ -302,6 +302,17 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 						onAppointmentClick(a);
 					}
 				}}
+				onDoubleClick={(e) => {
+					e.stopPropagation();
+					if (a.patientId) {
+						usePatientStore.getState().setSelectedPatientId(a.patientId);
+						if (typeof window !== "undefined") {
+							window.location.hash = "#visit";
+						}
+						useAppStore.getState().setCurrentView("visit");
+						showToast(`Открыта карта приёма: ${pName}`, "info");
+					}
+				}}
 				className="cursor-pointer w-full h-full min-w-0 flex-1 flex flex-col justify-between gap-1"
 				role="button"
 				tabIndex={0}
@@ -390,21 +401,46 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 							{onQuickStatusChange && (
 								<div className={`items-center gap-1 shrink-0 ${isHovered || densityMode === "expanded" ? "flex" : "hidden"}`} data-testid={`dentalpro-realtime-bar-${a.id}`}>
 									{(a.status === "planned" || a.status === "confirmed") && (
-										<button
-											type="button"
-											onClick={(e) => {
-												e.stopPropagation();
-												onQuickStatusChange(a.id, "arrived");
-												playIntercomChime("urgent");
-												showToast(`Пациент ${pName} прибыл в холл клиники`, "info");
-											}}
-											className="h-[22px] min-h-[22px] w-[22px] min-w-[22px] p-0 rounded text-[10px] font-extrabold bg-amber-500/15 hover:bg-amber-500 text-amber-800 hover:text-white dark:text-amber-200 dark:hover:text-white border border-amber-500/40 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs shrink-0"
-											title="Пациент пришёл — перевести «В холл» и подать сигнал в интерком"
-											data-testid={`dentalpro-quick-arrived-${a.id}`}
-										>
-											<UserCheck size={11} className="shrink-0" />
-											<span className="sr-only">Прибыл</span>
-										</button>
+										<>
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													onQuickStatusChange(a.id, "arrived");
+													playIntercomChime("urgent");
+													showToast(`Пациент ${pName} прибыл в холл клиники`, "info");
+												}}
+												className="h-[22px] min-h-[22px] w-[22px] min-w-[22px] p-0 rounded text-[10px] font-extrabold bg-amber-500/15 hover:bg-amber-500 text-amber-800 hover:text-white dark:text-amber-200 dark:hover:text-white border border-amber-500/40 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs shrink-0"
+												title="Пациент пришёл — перевести «В холл» и подать сигнал в интерком"
+												data-testid={`dentalpro-quick-arrived-${a.id}`}
+											>
+												<UserCheck size={11} className="shrink-0" />
+												<span className="sr-only">Прибыл</span>
+											</button>
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													onQuickStatusChange(a.id, "in_treatment");
+													playIntercomChime("normal");
+													const pid = a.patientId || patObj?.id;
+													if (pid) {
+														usePatientStore.getState().setSelectedPatientId(pid);
+													}
+													if (typeof window !== "undefined") {
+														window.location.hash = "#visit";
+													}
+													useAppStore.getState().setCurrentView("visit");
+													showToast(`Пациент ${pName} в кресле: открыта медкарта`, "info");
+												}}
+												className="h-[22px] min-h-[22px] w-[22px] min-w-[22px] p-0 rounded text-[10px] font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-xs shrink-0"
+												title="Начать приём у кресла (#visit)"
+												data-testid={`dentalpro-quick-start-treatment-${a.id}`}
+											>
+												<Stethoscope size={11} className="shrink-0" />
+												<span className="sr-only">Приём</span>
+											</button>
+										</>
 									)}
 									{(a.status === "arrived" || (a.status as string) === "in_clinic" || (a.status as string) === "waiting") && (
 										<button
@@ -413,13 +449,18 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 												e.stopPropagation();
 												onQuickStatusChange(a.id, "in_treatment");
 												playIntercomChime("normal");
-												if (a.patientId) {
-													usePatientStore.getState().setSelectedPatientId(a.patientId);
+												const pid = a.patientId || patObj?.id;
+												if (pid) {
+													usePatientStore.getState().setSelectedPatientId(pid);
 												}
-												showToast(`Пациент ${pName} приглашен в кресло`, "info");
+												if (typeof window !== "undefined") {
+													window.location.hash = "#visit";
+												}
+												useAppStore.getState().setCurrentView("visit");
+												showToast(`Пациент ${pName} приглашен в кресло: открыта медкарта`, "info");
 											}}
 											className="h-[22px] min-h-[22px] w-[22px] min-w-[22px] p-0 rounded text-[10px] font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-xs shrink-0 animate-pulse"
-											title="Пригласить в кабинет — перевести в статус «В кресле» и начать приём"
+											title="Пригласить в кабинет — перевести в статус «В кресле» и начать приём (#visit)"
 											data-testid={`dentalpro-quick-in-chair-${a.id}`}
 										>
 											<CalendarCheck size={11} className="shrink-0" />
@@ -427,20 +468,43 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 										</button>
 									)}
 									{isAppointmentInChair(a.status) && (
-										<button
-											type="button"
-											onClick={(e) => {
-												e.stopPropagation();
-												onQuickStatusChange(a.id, "completed");
-												showToast(`Приём ${pName} завершён — направлен на кассу`, "success");
-											}}
-											className="h-[22px] min-h-[22px] w-[22px] min-w-[22px] p-0 rounded text-[10px] font-extrabold bg-slate-700 hover:bg-slate-800 text-white border border-slate-600 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs shrink-0"
-											title="Завершить приём у кресла и отправить на оплату"
-											data-testid={`dentalpro-quick-complete-${a.id}`}
-										>
-											<Check size={11} className="stroke-[3]" />
-											<span className="sr-only">Завершить</span>
-										</button>
+										<>
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													const pid = a.patientId || patObj?.id;
+													if (pid) {
+														usePatientStore.getState().setSelectedPatientId(pid);
+													}
+													if (typeof window !== "undefined") {
+														window.location.hash = "#visit";
+													}
+													useAppStore.getState().setCurrentView("visit");
+													showToast(`Открыта карта приёма: ${pName}`, "info");
+												}}
+												className="h-[22px] min-h-[22px] w-[22px] min-w-[22px] p-0 rounded text-[10px] font-extrabold bg-[var(--teal)] hover:opacity-90 text-white border border-[var(--teal)] transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-xs shrink-0"
+												title="Открыть карту приёма пациента у кресла (#visit)"
+												data-testid={`dentalpro-quick-open-visit-${a.id}`}
+											>
+												<Stethoscope size={11} className="shrink-0" />
+												<span className="sr-only">Приём</span>
+											</button>
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													onQuickStatusChange(a.id, "completed");
+													showToast(`Приём ${pName} завершён — направлен на кассу`, "success");
+												}}
+												className="h-[22px] min-h-[22px] w-[22px] min-w-[22px] p-0 rounded text-[10px] font-extrabold bg-slate-700 hover:bg-slate-800 text-white border border-slate-600 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs shrink-0"
+												title="Завершить приём у кресла и отправить на оплату"
+												data-testid={`dentalpro-quick-complete-${a.id}`}
+											>
+												<Check size={11} className="stroke-[3]" />
+												<span className="sr-only">Завершить</span>
+											</button>
+										</>
 									)}
 									{a.status === "completed" && (
 										<button

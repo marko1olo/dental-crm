@@ -23,9 +23,11 @@ import {
 	type ThreeTierTreatmentPlanModel,
 	type TreatmentPlanStage,
 } from "./patientCabinet/patientCabinetEngine.js";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import {
 	calculateDentalHealthIndex,
 	computePatientTeethFromStages,
+	createDefaultHealthyAdultTeeth,
 	DEFAULT_PATIENT_TEETH,
 	PatientFriendlyOdontogram,
 	type PatientToothInfo,
@@ -128,10 +130,10 @@ export interface PatientPlanViewProps {
 export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 	plan,
 	threeTierModel,
-	patientName = "Воронов Алексей Владимирович",
-	cardNumber = "043-8842",
-	phone = "+7 (999) 123-45-67",
-	birthDate = "1984-05-14",
+	patientName,
+	cardNumber,
+	phone,
+	birthDate,
 	fullCabinetData,
 	scans,
 	teeth: teethProp,
@@ -145,8 +147,14 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 	emergencyWhatsappNumber = "",
 	beforeAfterCases,
 }) => {
-	// Diagnostic scans to render (defaults to real clinical samples)
-	const activeScans = scans ?? DEFAULT_PATIENT_SCANS;
+	const isDemo = isDemoShowcaseMode();
+	const effectivePatientName = patientName ?? (isDemo ? "Воронов Алексей Владимирович" : "");
+	const effectiveCardNumber = cardNumber ?? (isDemo ? "043-8842" : "");
+	const effectivePhone = phone ?? (isDemo ? "+7 (999) 123-45-67" : "");
+	const effectiveBirthDate = birthDate ?? (isDemo ? "1984-05-14" : "");
+
+	// Diagnostic scans to render (defaults to real clinical samples in demo, strictly empty in prod)
+	const activeScans = scans ?? (isDemo ? DEFAULT_PATIENT_SCANS : []);
 	// Diagnostic Scans State (Fast pure 2D viewer with zero lag)
 	const [selectedDiagnosticScan, setSelectedDiagnosticScan] = useState<PatientDiagnosticScan | null>(null);
 
@@ -217,8 +225,8 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 				],
 			};
 		}
-		return DEFAULT_THREE_TIER_PLAN_MODEL;
-	}, [threeTierModel, plan]);
+		return isDemo ? DEFAULT_THREE_TIER_PLAN_MODEL : { selectedTier: "standard", tiers: [] };
+	}, [threeTierModel, plan, isDemo]);
 
 	// Selected Tier Tab (Basic / Standard / Premium)
 	const [selectedTierId, setSelectedTierId] = useState<"basic" | "standard" | "premium">(
@@ -263,8 +271,11 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 		if (teethProp && teethProp.length > 0) {
 			return teethProp;
 		}
-		return computePatientTeethFromStages(activeStages, fullCabinetData?.warranties);
-	}, [teethProp, activeStages, fullCabinetData?.warranties]);
+		if (activeStages.length > 0) {
+			return computePatientTeethFromStages(activeStages, fullCabinetData?.warranties);
+		}
+		return isDemo ? DEFAULT_PATIENT_TEETH : createDefaultHealthyAdultTeeth();
+	}, [teethProp, activeStages, fullCabinetData?.warranties, isDemo]);
 
 	// Dental health index
 	const healthIndex = useMemo(() => calculateDentalHealthIndex(dynamicPatientTeeth), [dynamicPatientTeeth]);
@@ -300,19 +311,19 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 	// WhatsApp pre-filled emergency URL (честная привязка к пациенту и карте 043/у)
 	const whatsappUrl = useMemo(() => {
 		const cleanNumber = emergencyWhatsappNumber.replace(/\D/g, "");
-		const effectivePatientName = fullCabinetData?.fullName || patientName;
-		const effectiveCardNumber =
+		const pName = fullCabinetData?.fullName || effectivePatientName;
+		const cNum =
 			fullCabinetData?.cardNumber ||
-			cardNumber ||
+			effectiveCardNumber ||
 			(fullCabinetData?.patientId ? `043-${fullCabinetData.patientId.slice(0, 6).toUpperCase()}` : "043/у");
 		const text = encodeURIComponent(
-			`Здравствуйте! Я пациент клиники DENTE (${effectivePatientName}, карта № ${effectiveCardNumber}). После недавнего лечения у меня возникли болезненные ощущения / вопросы. Проконсультируйте, пожалуйста, дежурного врача.`,
+			`Здравствуйте! Я пациент клиники DENTE (${pName}, карта № ${cNum}). После недавнего лечения у меня возникли болезненные ощущения / вопросы. Проконсультируйте, пожалуйста, дежурного врача.`,
 		);
 		return `https://wa.me/${cleanNumber}?text=${text}`;
 	}, [
 		emergencyWhatsappNumber,
-		patientName,
-		cardNumber,
+		effectivePatientName,
+		effectiveCardNumber,
 		fullCabinetData?.fullName,
 		fullCabinetData?.cardNumber,
 		fullCabinetData?.patientId,
@@ -328,15 +339,15 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 		} else {
 			const fallbackData: PatientPersonalCabinetData = {
 				patientId: "pat-fallback",
-				fullName: patientName,
-				phone,
-				birthDate,
-				cardNumber,
-				curatingDoctor: "Д-р Смирнов А. В.",
-				loyaltyBonusBalance: 10000,
-				loyaltyTierRu: "Золотой (10%)",
-				cashbackEarnedRub: 15000,
-				invoices: [
+				fullName: effectivePatientName || "Пациент клиники",
+				phone: effectivePhone,
+				birthDate: effectiveBirthDate,
+				cardNumber: effectiveCardNumber,
+				curatingDoctor: isDemo ? "Д-р Смирнов А. В." : "Лечащий врач",
+				loyaltyBonusBalance: isDemo ? 10000 : 0,
+				loyaltyTierRu: isDemo ? "Золотой (10%)" : "Базовый",
+				cashbackEarnedRub: isDemo ? 15000 : 0,
+				invoices: paidCostRub > 0 ? [
 					{
 						id: "inv-paid-sample",
 						invoiceNumber: "СЧ-2026/074",
@@ -359,7 +370,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 							},
 						],
 					},
-				],
+				] : [],
 				appointments: [],
 				treatmentPlans: plan ? [plan] : [],
 				warranties: [],

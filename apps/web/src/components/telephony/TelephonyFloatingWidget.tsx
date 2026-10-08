@@ -2,6 +2,8 @@ import { ChevronDown, Headphones, PhoneCall, PhoneIncoming, PhoneOff, X } from "
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { isDemoShowcaseMode, getDemoShowcasePatients } from "../../lib/demoMode";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { useScheduleStore } from "../../store/scheduleStore";
@@ -209,12 +211,27 @@ export function TelephonyFloatingWidget({
 
 	// Resolve Patient Info
 	const resolvedPatient = useMemo(() => {
-		if (!activeCall || !dashboard?.patients) return null;
-		if (activeCall.patientId) {
-			const found = dashboard.patients.find((p) => p.id === activeCall.patientId);
-			if (found) return found;
+		if (!activeCall) return null;
+		if (dashboard?.patients && dashboard.patients.length > 0) {
+			if (activeCall.patientId) {
+				const found = dashboard.patients.find((p) => p.id === activeCall.patientId);
+				if (found) return found;
+			}
+			const foundByPhone = resolvePatientFromPhone(dashboard.patients, activeCall.phone);
+			if (foundByPhone) return foundByPhone;
 		}
-		return resolvePatientFromPhone(dashboard.patients, activeCall.phone);
+		if (isDemoShowcaseMode()) {
+			const demoPatient = dashboard?.patients?.find(
+				(p) =>
+					p.id === "01a00000-0000-0000-0000-000000000001" ||
+					p.fullName === "Смирнова Анна Сергеевна" ||
+					p.phone === "+7 916 234-56-78",
+			);
+			if (demoPatient) return demoPatient;
+			const demoList = getDemoShowcasePatients();
+			return demoList[0] || null;
+		}
+		return null;
 	}, [activeCall, dashboard?.patients]);
 
 	const patientInsight = useMemo(() => {
@@ -243,7 +260,13 @@ export function TelephonyFloatingWidget({
 		return resolveCallAdvertisingAttribution(activeCall);
 	}, [activeCall]);
 
-	const callerName = resolvedPatient?.fullName || activeCall?.patientName || "Неизвестный номер";
+	const callerName = useMemo(() => {
+		if (resolvedPatient?.fullName) return resolvedPatient.fullName;
+		if (isDemoShowcaseMode()) {
+			return "Смирнова Анна Сергеевна";
+		}
+		return activeCall?.patientName || "Неизвестный номер";
+	}, [resolvedPatient?.fullName, activeCall?.patientName]);
 	const formattedPhone = formatPhoneDisplay(activeCall?.phone || dialNumber);
 	const initials = formatPatientInitials(callerName);
 	const avatarColors = getAvatarColor(callerName);
@@ -401,6 +424,20 @@ export function TelephonyFloatingWidget({
 			: `Здравствуйте, ${callerName}! Вас приветствует стоматологическая клиника ${dashboard?.clinicSettings?.name || "DENTE"}.`;
 
 		openWhatsAppChat(activeCall.phone, msg);
+		if (resolvedPatient?.id) {
+			fetch("/api/whatsapp/send", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					patientId: resolvedPatient.id,
+					message: msg,
+				}),
+			}).catch((err) => {
+				console.warn("[TelephonyFloatingWidget] WhatsApp direct send API error:", err);
+			});
+		}
 		setWhatsappSent(true);
 		showToast(`Сообщение сформировано в WhatsApp (${callerName})`, "success");
 	};
@@ -545,10 +582,13 @@ export function TelephonyFloatingWidget({
 		}
 	};
 
-	// Doctor sterile zone immunity: on visit view or for doctor role, telephony never invades chairside (Mandates 8e, 8n)
+	// Doctor sterile zone immunity: on visit view, odontogram, periodontics or for doctor role, telephony never invades chairside (Mandates 8e, 8n)
 	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
 	const isDoctorChairsideMode =
-		selectedWorkspaceRole === "doctor" || crmCurrentView === "visit";
+		selectedWorkspaceRole === "doctor" ||
+		crmCurrentView === "visit" ||
+		crmCurrentView === "odontogram" ||
+		crmCurrentView === "periodontics";
 	if (isDoctorChairsideMode) {
 		return null;
 	}
@@ -586,8 +626,8 @@ export function TelephonyFloatingWidget({
 
 					<div className="flex items-center gap-2 min-w-0 pr-1">
 						<div className="min-w-0 flex items-center gap-1.5 text-xs font-bold text-[var(--ink,#0f172a)]">
-							<span className="truncate max-w-[140px] sm:max-w-[200px]" title={activeCall ? callerName : "SIP Софтфон"}>
-								{activeCall ? callerName : "SIP Софтфон"}
+							<span className="truncate max-w-[140px] sm:max-w-[200px]" title={activeCall ? callerName : "Софтфон клиники"}>
+								{activeCall ? callerName : "Софтфон клиники"}
 							</span>
 							{activeCall && (
 								<span className="font-mono text-[10px] text-[var(--teal)] font-bold shrink-0">

@@ -354,7 +354,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 									onGenerateCbctAutoPlan();
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
 								role="menuitem"
 								data-testid="options-menu-cbct-autoplan-btn"
 							>
@@ -367,7 +367,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 									onExportCashier();
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
 								role="menuitem"
 								data-testid="options-menu-export-cashier-btn"
 							>
@@ -381,7 +381,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 									onOpenInvoiceModal();
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
 								role="menuitem"
 								data-testid="tp-invoice-btn"
 								title="Сформировать наряд / счет на оплату с контролем цен и защитой сметы"
@@ -396,7 +396,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 									onOpenFiscalModal();
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
 								role="menuitem"
 								data-testid="tp-fiscal-btn"
 								title="Принять оплату (карты, СБП QR, наличные) и пробить кассовый чек"
@@ -414,7 +414,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 									setIsDiscountsModalOpen(true);
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
 								role="menuitem"
 								data-testid="options-menu-discount-btn"
 							>
@@ -434,7 +434,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 									setIsCopilotModalOpen(true);
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-amber-900 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-amber-900 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
 								role="menuitem"
 								data-testid="module-copilot-ai-audit-btn"
 								title="Открыть ИИ-Ассистент врача, пресеты СтАР и аудит"
@@ -448,7 +448,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 									onOpenChairsideBundlesModal();
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
 								role="menuitem"
 								data-testid="open-chairside-bundles-modal-btn"
 								title="Открыть клинические пакеты услуг у кресла («Все включено»)"
@@ -462,7 +462,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 									onOpenCuratorModal();
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
 								role="menuitem"
 								data-testid="options-menu-curator-btn"
 							>
@@ -486,7 +486,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 									onOpenPresenterModal();
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-amber-900 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-amber-900 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
 								role="menuitem"
 								data-testid="options-menu-presenter-btn"
 							>
@@ -499,7 +499,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 									onOpenComparatorModal();
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
 								role="menuitem"
 							>
 								<Sparkles size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
@@ -511,7 +511,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 									onOpenStagePaymentModal();
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-900 dark:text-amber-200 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-900 dark:text-amber-200 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
 								role="menuitem"
 							>
 								<Coins size={14} className="text-amber-500" />
@@ -523,7 +523,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 									onOpenPriceValidatorModal();
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
 								role="menuitem"
 							>
 								<FileCheck size={14} className="text-emerald-600" />
@@ -539,7 +539,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 									onOpenContractPrint();
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
 								role="menuitem"
 							>
 								<FileText size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
@@ -551,7 +551,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 									onOpenLabOrder();
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
 								role="menuitem"
 								data-testid="lab-work-order-btn"
 							>
@@ -564,7 +564,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 									onOneClickLabOrder();
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
 								role="menuitem"
 								data-testid="lab-work-order-one-click-btn"
 							>

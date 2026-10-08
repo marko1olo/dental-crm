@@ -125,7 +125,7 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 0.5rem;
-	min-height: 44px;
+	min-height: 48px;
 	box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 	transition: all 0.2s ease;
 	animation: emergencyPulseBtn 1.8s infinite ease-in-out;
@@ -156,8 +156,8 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	min-width: 44px;
-	min-height: 44px;
+	min-width: 48px;
+	min-height: 48px;
 	transition: all 0.15s ease;
 }
 
@@ -671,7 +671,8 @@
 	font-size: 0.8125rem;
 	font-weight: 700;
 	cursor: pointer;
-	min-height: 44px;
+	min-height: 48px;
+	min-width: 48px;
 	transition: all 0.15s ease;
 	display: inline-flex;
 	align-items: center;
@@ -773,10 +774,10 @@
 .emergency-protocol-tab-btn {
 	font-size: 0.75rem;
 	font-weight: 700;
-	padding: 0.4rem 0.75rem;
-	border-radius: 6px;
+	padding: 0.5rem 0.75rem;
+	border-radius: 8px;
 	cursor: pointer;
-	min-height: 36px;
+	min-height: 44px;
 	border: 1px solid var(--line);
 	background: var(--paper-soft);
 	color: var(--muted);
@@ -842,7 +843,7 @@
 	align-items: center;
 	justify-content: center;
 	gap: 0.4rem;
-	min-height: 44px;
+	min-height: 48px;
 	transition: all 0.15s ease;
 	box-sizing: border-box;
 }
@@ -904,13 +905,14 @@
 .emergency-weight-chip {
 	background: var(--paper-soft);
 	color: var(--ink);
-	border: 1px solid var(--line-strong, var(--line));
-	border-radius: 6px;
-	padding: 0.25rem 0.5rem;
-	font-size: 0.75rem;
+	border: 1.5px solid var(--line-strong, var(--line));
+	border-radius: 8px;
+	padding: 0.5rem 0.85rem;
+	font-size: 0.8125rem;
 	font-weight: 700;
 	cursor: pointer;
-	min-height: 28px;
+	min-height: 48px;
+	min-width: 48px;
 	transition: all 0.15s ease;
 	display: inline-flex;
 	align-items: center;

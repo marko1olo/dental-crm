@@ -85,6 +85,38 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 	handleConfirmSbpManual,
 	isCheckingSbp,
 }) => {
+	const handleAutoAlignRemainder = () => {
+		const totalKop = rubToKopecks(totalDueRub);
+		const allocatedKop = rubToKopecks(totalAllocatedRub);
+		const diffKop = totalKop - allocatedKop;
+		if (diffKop === 0) return;
+
+		if (diffKop > 0) {
+			if (splitCardRub > 0 || (splitCashRub === 0 && splitDepositRub === 0 && splitSbpRub === 0)) {
+				setSplitCardRub(kopecksToRub(rubToKopecks(splitCardRub) + diffKop));
+			} else if (splitCashRub > 0) {
+				setSplitCashRub(kopecksToRub(rubToKopecks(splitCashRub) + diffKop));
+			} else {
+				setSplitCardRub(kopecksToRub(diffKop));
+			}
+		} else {
+			const excessKop = -diffKop;
+			const cardKop = rubToKopecks(splitCardRub);
+			const cashKop = rubToKopecks(splitCashRub);
+			if (cardKop >= excessKop) {
+				setSplitCardRub(kopecksToRub(cardKop - excessKop));
+			} else if (cashKop >= excessKop) {
+				setSplitCashRub(kopecksToRub(cashKop - excessKop));
+			} else if (cardKop > 0) {
+				setSplitCardRub(0);
+				const remExcess = excessKop - cardKop;
+				setSplitCashRub(Math.max(0, kopecksToRub(cashKop - remExcess)));
+			} else {
+				setSplitCashRub(Math.max(0, kopecksToRub(cashKop - excessKop)));
+			}
+		}
+	};
+
 	return (
 		<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-4">
 			<div className="flex items-center justify-between flex-wrap gap-2 border-b border-[var(--line,#e2e8f0)] pb-2">
@@ -204,7 +236,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 					<div className="flex items-center justify-between flex-wrap gap-1">
 						<label className="text-xs font-semibold text-teal-800 dark:text-teal-300 flex items-center gap-1.5">
 							<ShieldCheck size={14} className="text-teal-600" />
-							<span>Страховая компания (ДМС, Тег 1217), ₽:</span>
+							<span>Страховая компания (ДМС), ₽:</span>
 						</label>
 						{dmsInsurerName && (
 							<span className="text-[11px] text-teal-700 dark:text-teal-300 font-medium">
@@ -429,29 +461,43 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 				</button>
 			</div>
 
-			{/* Parity indicator */}
-			<div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex items-center justify-between text-xs font-bold">
-				<span>Всего распределено:</span>
-				<span
-					className={`font-mono text-sm flex items-center gap-1 ${
-						isBalanced
-							? "text-emerald-600 dark:text-emerald-400"
-							: "text-amber-600 dark:text-amber-400"
-					}`}
-				>
-					<span>
-						{totalAllocatedRub.toLocaleString("ru-RU")} / {totalDueRub.toLocaleString("ru-RU")} ₽
+			{/* Parity indicator & 1-Click Remainder Auto-Alignment */}
+			<div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex items-center justify-between flex-wrap gap-2 text-xs font-bold">
+				<div className="flex items-center gap-2">
+					<span>Всего распределено:</span>
+					<span
+						className={`font-mono text-sm flex items-center gap-1 ${
+							isBalanced
+								? "text-emerald-600 dark:text-emerald-400"
+								: "text-amber-600 dark:text-amber-400"
+						}`}
+					>
+						<span>
+							{totalAllocatedRub.toLocaleString("ru-RU")} / {totalDueRub.toLocaleString("ru-RU")} ₽
+						</span>
+						{isBalanced ? (
+							<span className="inline-flex items-center gap-1 ml-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+								<CheckCircle2 size={13} /> Совпадает
+							</span>
+						) : (
+							<span className="inline-flex items-center gap-1 ml-1.5 text-xs text-amber-600 dark:text-amber-400">
+								<AlertCircle size={13} /> Не сходится ({kopecksToRub(Math.abs(rubToKopecks(totalDueRub) - rubToKopecks(totalAllocatedRub))).toLocaleString("ru-RU")} ₽)
+							</span>
+						)}
 					</span>
-					{isBalanced ? (
-						<span className="inline-flex items-center gap-1 ml-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-							<CheckCircle2 size={13} /> Совпадает
-						</span>
-					) : (
-						<span className="inline-flex items-center gap-1 ml-1.5 text-xs text-amber-600 dark:text-amber-400">
-							<AlertCircle size={13} /> Не сходится
-						</span>
-					)}
-				</span>
+				</div>
+				{!isBalanced && (
+					<button
+						type="button"
+						onClick={handleAutoAlignRemainder}
+						className="min-h-[36px] px-3 py-1 rounded-lg text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-500/30 cursor-pointer flex items-center gap-1.5 transition-all active:scale-95 shadow-xs"
+						data-testid="btn-auto-align-split-remainder"
+						title="Автоматически выровнять остаток с копеечной точностью"
+					>
+						<Sparkles size={13} />
+						<span>Выровнять остаток</span>
+					</button>
+				)}
 			</div>
 
 			{/* SBP Dynamic QR Display Panel for Split Payment Tender */}
@@ -480,7 +526,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 								₽) оплачена!
 							</p>
 							<span className="text-[11px] text-emerald-600 dark:text-emerald-400">
-								Транзакция СБП подтверждена • Тег 1081 «Безналичные»
+								Транзакция СБП подтверждена • Безналичный платёж
 							</span>
 						</div>
 					) : (
@@ -504,8 +550,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 								</p>
 								<p className="text-[var(--muted,#64748b)] m-0 font-mono text-[11px]">
 									Сумма СБП:{" "}
-									{splitSbpRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ • Тег
-									1081
+									{splitSbpRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ • Безналичный расчёт
 								</p>
 								{sbpCheckMessage && (
 									<p className="text-[11px] text-teal-700 dark:text-teal-300 font-medium m-0">

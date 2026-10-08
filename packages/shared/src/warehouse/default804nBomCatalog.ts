@@ -55,7 +55,59 @@ export const DEFAULT_804N_CONSUMABLE_LINKS: readonly ConsumableItemLink[] = [
 		notes: "Обработка места инъекции",
 	},
 
-	// ─── 2. ТЕРАПИЯ / ПЛОМБИРОВАНИЕ КАРИЕСА (A16.07.002.001 / A16.07.002) ─
+	// ─── 2. ТЕРАПИЯ / ПЛОМБИРОВАНИЕ КАРИЕСА (A16.07.002.001 / A16.07.002 / A16.07.002.011) ─
+	{
+		id: "def-link-caries-filtek-composite",
+		service804nCode: "A16.07.002.011",
+		serviceTitle: "Препарирование и пломба светового отверждения (Filtek / Estelite)",
+		inventoryItemId: "mat-composite-filtek",
+		itemName: "Светоотверждаемый нанокомпозит (Filtek / Estelite)",
+		category: "composite",
+		unit: "шприц_гр",
+		quantityPerService: 0.2,
+		isMandatory: true,
+		costPriceKopecks: 38000, // 380.00 ₽ за 0.2г (1900 ₽/г)
+		notes: "Норма расхода 0.2г на 1 поверхность",
+	},
+	{
+		id: "def-link-caries-filtek-adhesive",
+		service804nCode: "A16.07.002.011",
+		serviceTitle: "Препарирование и пломба светового отверждения (Filtek / Estelite)",
+		inventoryItemId: "mat-adhesive-single",
+		itemName: "Адгезивная система самопротравливающая (7 пок.)",
+		category: "composite",
+		unit: "dose",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 12000, // 120.00 ₽
+		notes: "Разовая доза адгезива",
+	},
+	{
+		id: "def-link-caries-filtek-gloves",
+		service804nCode: "A16.07.002.011",
+		serviceTitle: "Препарирование и пломба светового отверждения (Filtek / Estelite)",
+		inventoryItemId: "mat-nitrile-gloves",
+		itemName: "Перчатки смотровые нитриловые неопудренные (пара)",
+		category: "other",
+		unit: "шт",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 3500, // 35.00 ₽ за 1 пару
+		notes: "1 пара перчаток на процедуру",
+	},
+	{
+		id: "def-link-caries-filtek-ejector",
+		service804nCode: "A16.07.002.011",
+		serviceTitle: "Препарирование и пломба светового отверждения (Filtek / Estelite)",
+		inventoryItemId: "mat-saliva-ejector",
+		itemName: "Слюноотсос стоматологический одноразовый",
+		category: "other",
+		unit: "шт",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 1250, // 12.50 ₽
+		notes: "Эвакуация слюны (1 шт)",
+	},
 	{
 		id: "def-link-caries-composite",
 		service804nCode: "A16.07.002.001",

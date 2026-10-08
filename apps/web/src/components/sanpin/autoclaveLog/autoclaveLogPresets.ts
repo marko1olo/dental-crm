@@ -51,6 +51,7 @@ export const STATUTORY_STERILIZERS_CATALOG: readonly SterilizerApparatusDefiniti
 		nextMaintenanceDate: "2026-12-15",
 		supportedRegimeIds: [
 			"steam_134_5min",
+			"steam_134_quick",
 			"steam_134_20min_prion",
 			"steam_121_20min",
 			"bowie_dick_test",
@@ -74,6 +75,7 @@ export const STATUTORY_STERILIZERS_CATALOG: readonly SterilizerApparatusDefiniti
 		nextMaintenanceDate: "2027-01-01",
 		supportedRegimeIds: [
 			"steam_134_5min",
+			"steam_134_quick",
 			"steam_134_20min_prion",
 			"steam_121_20min",
 			"bowie_dick_test",
@@ -97,6 +99,7 @@ export const STATUTORY_STERILIZERS_CATALOG: readonly SterilizerApparatusDefiniti
 		nextMaintenanceDate: "2026-09-10",
 		supportedRegimeIds: [
 			"steam_134_5min",
+			"steam_134_quick",
 			"steam_121_20min",
 			"bowie_dick_test",
 		],
@@ -129,6 +132,7 @@ export const STATUTORY_STERILIZERS_CATALOG: readonly SterilizerApparatusDefiniti
 
 export type SterilizationRegimeId =
 	| "steam_134_5min"
+	| "steam_134_quick"
 	| "steam_134_20min_prion"
 	| "steam_121_20min"
 	| "dry_heat_180_60min"
@@ -173,8 +177,27 @@ export const STATUTORY_STERILIZATION_REGIMES: readonly SterilizationRegimeDefini
 		targetItemsDescriptionRu: "Стоматологические наконечники, боры, хирургический и смотровой инструмент, зеркала, пинцеты, лотки",
 		packagingTypesAllowed: ["kraft_pouch_sealed", "kraft_pouch_self_seal", "crepe_paper", "bix_filter"],
 		chemicalIndicatorClassRequired: "Класс 4 / 5 (СтериТЕСТ-В-134, ИнтеТЕСТ-В-134/5)",
-		sanpinNormRefRu: "СанПиН 3.3686-21 Таблица 3.12 (Паровой метод под давлением)",
+		sanpinNormRefRu: "Паровой метод под давлением (Основной)",
 		colorTheme: "blue",
+	},
+	{
+		id: "steam_134_quick",
+		nameRu: "Паровой быстрый режим — 134°C, 2.1 бар, 3.5 минуты (Экспресс-наконечники)",
+		shortLabelRu: "134°C (3.5 мин) • Экспресс",
+		methodType: "steam_autoclave",
+		targetTemperatureCelsius: 134,
+		tempToleranceCelsius: { min: 134, max: 138 },
+		targetPressureBar: 2.1,
+		pressureToleranceBar: { min: 2.0, max: 2.3 },
+		exposureTimeMinutes: 3.5,
+		dryingTimeMinutes: 10,
+		totalEstimatedMinutes: 25,
+		vacuumPulses: 3,
+		targetItemsDescriptionRu: "Стоматологические наконечники турбинные и угловые (быстрый цикл)",
+		packagingTypesAllowed: ["kraft_pouch_sealed", "kraft_pouch_self_seal"],
+		chemicalIndicatorClassRequired: "Класс 4 / 5 (СтериТЕСТ-В-134, ИнтеТЕСТ-В-134/5)",
+		sanpinNormRefRu: "Паровой метод (Экспресс-обработка наконечников)",
+		colorTheme: "amber",
 	},
 	{
 		id: "steam_134_20min_prion",

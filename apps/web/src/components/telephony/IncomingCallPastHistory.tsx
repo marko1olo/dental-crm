@@ -87,7 +87,7 @@ export function IncomingCallPastHistory({
 							<span>
 								{showTransferPanel
 									? "Скрыть перевод"
-									: "Перевод звонка (SIP Transfer)"}
+									: "Перевод на врача"}
 							</span>
 						</div>
 						<ChevronDown
@@ -108,7 +108,7 @@ export function IncomingCallPastHistory({
 											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 									}`}
 								>
-									Слепой (Blind)
+									Прямой перевод
 								</button>
 								<button
 									type="button"

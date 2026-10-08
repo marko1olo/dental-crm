@@ -155,10 +155,10 @@ export function VisitPlanStageHandoffBanner({
 									<span className="text-[var(--teal-dark,#0f766e)] dark:text-teal-300 font-semibold">
 										Запись по этапу:
 									</span>
-									<span className="truncate">{displayStageTitle}</span>
+									<span className="leading-snug break-words">{displayStageTitle}</span>
 								</span>
 							) : (
-								<span className="font-bold text-xs text-[var(--ink,#0f172a)] truncate">
+								<span className="font-bold text-xs text-[var(--ink,#0f172a)] leading-snug break-words">
 									План лечения: {loadedTreatmentPlan.name}
 								</span>
 							)}

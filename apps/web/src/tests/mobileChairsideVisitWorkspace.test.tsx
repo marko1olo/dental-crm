@@ -126,7 +126,9 @@ test("Sovereign Mobile Chairside Visit Workspace Suite (Apple HIG)", async (t) =
   });
 
   await t.test("6. CSS Invariant Verification: 0px horizontal drift, safe-area-insets, touch targets", () => {
-    const cssPath = path.resolve(process.cwd(), "src/components/visit/mobile-chairside-visit.css");
+    const candidate1 = path.resolve(process.cwd(), "src/components/visit/mobile-chairside-visit.css");
+    const candidate2 = path.resolve(process.cwd(), "apps/web/src/components/visit/mobile-chairside-visit.css");
+    const cssPath = fs.existsSync(candidate1) ? candidate1 : candidate2;
     const cssContent = fs.readFileSync(cssPath, "utf-8");
 
     // 0px horizontal drift invariant

@@ -511,7 +511,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 							Зуб {activeTooth}:
 						</span>
 						{onToothFindingChange && (
-							<div className="flex flex-wrap items-center gap-1.5 sm:gap-1" data-testid="active-tooth-findings-group">
+							<div className="flex flex-wrap items-center gap-1.5" data-testid="active-tooth-findings-group">
 								{(
 									[
 										{ id: "Healthy", label: "Здоров" },
@@ -529,16 +529,11 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 											key={st.id}
 											type="button"
 											onClick={() => onToothFindingChange(activeTooth, st.id)}
-											className={`min-h-[44px] sm:min-h-0 sm:h-6 px-2.5 sm:px-1.5 rounded-xl sm:rounded text-xs sm:text-[10px] font-bold border transition cursor-pointer select-none active:scale-95 flex items-center justify-center shrink-0 ${
+											className={`h-7 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer select-none active:scale-95 flex items-center justify-center shrink-0 ${
 												isCurrent
-													? "shadow-xs"
-													: "hover:bg-[var(--paper-soft,#f8fafc)]"
+													? "primary-button shadow-xs"
+													: "secondary-button hover:bg-[var(--paper-soft,#f8fafc)]"
 											}`}
-											style={{
-												backgroundColor: isCurrent ? "var(--accent, #0d9488)" : "var(--paper, #ffffff)",
-												color: isCurrent ? "#ffffff" : "var(--ink, #0f172a)",
-												borderColor: isCurrent ? "var(--accent, #0d9488)" : "var(--line, #e2e8f0)",
-											}}
 											data-testid={`active-tooth-finding-${st.id}`}
 										>
 											{st.label}

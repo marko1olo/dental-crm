@@ -1,11 +1,5 @@
-import { lazy, Suspense } from "react";
 import { Banknote, X } from "lucide-react";
-
-const CashboxViewModal = lazy(() =>
-	import("../cashbox/CashboxView.js").then((m) => ({
-		default: m.CashboxView,
-	})),
-);
+import { CashboxView } from "./CashRegisterView.js";
 
 export interface FinanceCashboxModalProps {
 	isOpen: boolean;
@@ -14,6 +8,11 @@ export interface FinanceCashboxModalProps {
 	cashierName: string;
 	clinicName: string;
 	clinicInn?: string;
+	patientId?: string;
+	patientName?: string;
+	patientPhone?: string;
+	patientDepositRub?: number;
+	patientFamilyBalanceRub?: number;
 	onPaymentComplete: () => void;
 }
 
@@ -24,6 +23,11 @@ export function FinanceCashboxModal({
 	cashierName,
 	clinicName,
 	clinicInn,
+	patientId,
+	patientName,
+	patientPhone,
+	patientDepositRub,
+	patientFamilyBalanceRub,
 	onPaymentComplete,
 }: FinanceCashboxModalProps) {
 	if (!isOpen) return null;
@@ -33,7 +37,7 @@ export function FinanceCashboxModal({
 			className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
-			aria-label="Касса 54-ФЗ и расчеты с пациентами"
+			aria-label="Окно кассы и расчетов с пациентами"
 			data-testid="modal-finance-cashbox"
 			onClick={(e) => {
 				if (e.target === e.currentTarget) onClose();
@@ -44,7 +48,7 @@ export function FinanceCashboxModal({
 					<div className="flex items-center gap-2">
 						<Banknote className="w-4 h-4 text-teal-600 dark:text-teal-400" />
 						<h2 className="text-sm font-bold text-[var(--ink)]">
-							АРМ Кассира · 54-ФЗ
+							Касса клиники · Приём оплаты
 						</h2>
 					</div>
 					<button
@@ -58,21 +62,18 @@ export function FinanceCashboxModal({
 					</button>
 				</header>
 				<div className="flex-1 overflow-y-auto p-2 sm:p-4">
-					<Suspense
-						fallback={
-							<div className="p-8 text-center text-xs text-[var(--muted)]">
-								Загрузка АРМ кассы 54-ФЗ...
-							</div>
-						}
-					>
-						<CashboxViewModal
-							initialShiftOpen={isShiftOpen}
-							cashierName={cashierName || "Врач-стоматолог / Кассир"}
-							clinicName={clinicName || "Стоматология ДЕНТЕ Премиум"}
-							{...(clinicInn ? { clinicInn } : {})}
-							onPaymentComplete={onPaymentComplete}
-						/>
-					</Suspense>
+					<CashboxView
+						initialShiftOpen={isShiftOpen}
+						cashierName={cashierName || "Врач-стоматолог / Кассир"}
+						clinicName={clinicName || "Стоматология ДЕНТЕ Премиум"}
+						patientId={patientId}
+						patientName={patientName}
+						patientPhone={patientPhone}
+						patientDepositRub={patientDepositRub}
+						patientFamilyBalanceRub={patientFamilyBalanceRub}
+						{...(clinicInn ? { clinicInn } : {})}
+						onPaymentComplete={onPaymentComplete}
+					/>
 				</div>
 			</div>
 		</div>

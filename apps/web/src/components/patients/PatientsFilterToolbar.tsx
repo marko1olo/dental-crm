@@ -1,7 +1,6 @@
 import type { Patient } from "@dental/shared";
 import { Filter, Plus, RotateCcw, Search, X } from "lucide-react";
 import type { ChangeEvent, RefObject } from "react";
-import { PatientSearchAutocomplete } from "./PatientSearchAutocomplete";
 
 export interface PatientsFilterToolbarProps {
 	readonly query: string;
@@ -78,14 +77,6 @@ export function PatientsFilterToolbar({
 					>
 						⌘K / Ctrl+K
 					</span>
-				</div>
-
-				<div className="hidden xl:block min-w-[220px] max-w-[300px]">
-					<PatientSearchAutocomplete
-						patients={filteredPatients}
-						onSelectPatient={(p) => onSelectPatient(p.id)}
-						placeholder="Быстрый поиск (ФИО / тел)..."
-					/>
 				</div>
 
 				<div className="patients-header-actions shrink-0 flex items-center gap-1.5">

@@ -156,12 +156,12 @@ export function TelephonyMiniControlPanel({
 				</div>
 				<div>
 					<h4 className="text-sm font-bold text-[var(--ink,#0f172a)]">
-						Ожидание вебхука АТС UIS/Mango/Zadarma/Asterisk
+						Ожидание звонка телефонии клиники
 					</h4>
 					<p className="text-xs text-[var(--muted,#64748b)] mt-1 max-w-xs mx-auto">
-						Шлюз АТС (UIS / Mango / Zadarma / Asterisk) подключен и ожидает
-						входящих звонков. При поступлении вызова карточка пациента и быстрая
-						запись откроются автоматически.
+						Телефония клиники подключена и ожидает входящих звонков.
+						При поступлении вызова карточка пациента и быстрая запись
+						откроются автоматически.
 					</p>
 					<div className="mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] border border-[var(--line,#e2e8f0)] text-[11px] font-medium text-[var(--ink,#0f172a)]">
 						<span
@@ -169,8 +169,8 @@ export function TelephonyMiniControlPanel({
 						/>
 						<span>
 							{isWsConnected
-								? "Шлюз АТС: Онлайн (WebSocket)"
-								: "Шлюз АТС: Ожидание вебхука (UIS / Mango / Zadarma / Asterisk)"}
+								? "Телефония клиники: Онлайн"
+								: "Телефония клиники: Ожидание звонка"}
 						</span>
 					</div>
 				</div>
@@ -247,20 +247,31 @@ export function TelephonyMiniControlPanel({
 			{(acutePainAlerts.length > 0 ||
 				(activeCall as unknown as { acutePain?: boolean })?.acutePain) && (
 				<div
-					className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-700/60 text-rose-900 dark:text-rose-200 text-xs font-semibold flex items-center gap-2 shadow-xs animate-fade-in"
+					className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-700/60 text-rose-900 dark:text-rose-200 text-xs font-semibold flex items-center justify-between gap-2 shadow-xs animate-fade-in"
 					data-testid="telephony-widget-acute-pain-alert"
 				>
-					<Zap size={15} className="text-rose-600 dark:text-rose-400 shrink-0" />
-					<div className="min-w-0 flex-1">
-						<span className="font-bold text-rose-700 dark:text-rose-300 uppercase text-[9px] tracking-wider block">
-							Экстренно: Острая боль
-						</span>
-						<span className="break-words line-clamp-2 text-[11px]">
-							{acutePainAlerts.length > 0
-								? acutePainAlerts.map((a) => a.label).join("; ")
-								: "Пациент с острой болью. Требуется экстренная помощь."}
-						</span>
+					<div className="flex items-center gap-2 min-w-0 flex-1">
+						<Zap size={15} className="text-rose-600 dark:text-rose-400 shrink-0" />
+						<div className="min-w-0 flex-1">
+							<span className="font-bold text-rose-700 dark:text-rose-300 uppercase text-[9px] tracking-wider block">
+								Экстренно: Острая боль
+							</span>
+							<span className="break-words line-clamp-2 text-[11px]">
+								{acutePainAlerts.length > 0
+									? acutePainAlerts.map((a) => a.label).join("; ")
+									: "Пациент с острой болью. Требуется экстренная помощь."}
+							</span>
+						</div>
 					</div>
+					<button
+						type="button"
+						onClick={() => onQuickBook("urgent")}
+						className="min-h-[36px] px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs transition-all inline-flex items-center gap-1"
+						data-testid="widget-action-cito-fast"
+						title="Внеочередная запись (Cito)"
+					>
+						<span>Cito</span>
+					</button>
 				</div>
 			)}
 
@@ -488,7 +499,7 @@ export function TelephonyMiniControlPanel({
 					<div className="flex items-center gap-2">
 						<PhoneForwarded size={16} className="text-[var(--teal)] flex-shrink-0" />
 						<span>
-							{showTransferPanel ? "Скрыть перевод звонка" : "Перевод звонка (SIP Transfer)"}
+							{showTransferPanel ? "Скрыть перевод звонка" : "Перевод на врача"}
 						</span>
 					</div>
 					<ChevronDown
@@ -509,7 +520,7 @@ export function TelephonyMiniControlPanel({
 										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 								}`}
 							>
-								Слепой
+								Прямой перевод
 							</button>
 							<button
 								type="button"

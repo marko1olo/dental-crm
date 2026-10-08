@@ -13,6 +13,7 @@ export interface DirectRvgViewportToolbarProps {
 	onToggleFlipH: () => void;
 	onToggleFlipV?: () => void;
 	onResetTransform: () => void;
+	extraSlot?: React.ReactNode;
 }
 
 export const DirectRvgViewportToolbar: React.FC<DirectRvgViewportToolbarProps> = ({
@@ -27,6 +28,7 @@ export const DirectRvgViewportToolbar: React.FC<DirectRvgViewportToolbarProps> =
 	onToggleFlipH,
 	onToggleFlipV,
 	onResetTransform,
+	extraSlot,
 }) => {
 	return (
 		<div className="rvg-viewport-top-toolbar">
@@ -101,6 +103,13 @@ export const DirectRvgViewportToolbar: React.FC<DirectRvgViewportToolbarProps> =
 					<Maximize2 className="w-4 h-4" />
 				</button>
 			</div>
+
+			{/* Center / Right: 1-Row Hick's Law Filters Toolbar Slot */}
+			{extraSlot && (
+				<div className="pointer-events-auto flex items-center">
+					{extraSlot}
+				</div>
+			)}
 
 			{/* Split compare indicator */}
 			{isSplitCompare && (

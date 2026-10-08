@@ -271,7 +271,7 @@ export const FiscalPaymentSummaryColumn: React.FC<FiscalPaymentSummaryColumnProp
 					)}
 					{certificateAmount > 0 && (
 						<div className="flex justify-between">
-							<span>Сертификат (Тег 1215):</span>
+							<span>Сертификат:</span>
 							<strong className="font-mono text-[var(--ink,#0f172a)]">{formatMoneyRu(certificateAmount)}</strong>
 						</div>
 					)}

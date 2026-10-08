@@ -37,7 +37,7 @@ export const InvoiceDecree659Banner: React.FC<InvoiceDecree659BannerProps> = ({
 						className="text-amber-600 dark:text-amber-400 shrink-0"
 					/>
 					<span className="text-sm">
-						Постановление Правительства РФ №659 от 30.05.2026 и ст. 16 ЗоЗПП (Upsell Consent Shield)
+						Согласование дополнительных медицинских услуг
 					</span>
 				</div>
 				<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-500/40">
@@ -45,7 +45,7 @@ export const InvoiceDecree659Banner: React.FC<InvoiceDecree659BannerProps> = ({
 				</span>
 			</div>
 			<p className="mt-1 leading-relaxed">
-				В смету включены платные медицинские услуги, отсутствующие в утвержденном плане лечения пациента. Согласно п. 21-23 Правил предоставления платных медуслуг (ПП РФ №659) и ст. 16 Закона РФ «О защите прав потребителей», оказание и выставление счетов на такие услуги без подписания Дополнительного соглашения строго запрещены.
+				В смету включены медицинские услуги, отсутствующие в утвержденном плане лечения пациента. Для защиты интересов пациента и соблюдения правил оказания услуг перед выставлением счета необходимо подписать Дополнительное соглашение.
 			</p>
 			<div className="mt-2.5 p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/20">
 				<div className="font-semibold text-amber-800 dark:text-amber-300 mb-1">
@@ -75,7 +75,7 @@ export const InvoiceDecree659Banner: React.FC<InvoiceDecree659BannerProps> = ({
 					<FileText size={14} />
 					{isCreatingAddendum
 						? "Формирование соглашения..."
-						: "Сформировать Дополнительное соглашение (ДС-2026)"}
+						: "Сформировать Дополнительное соглашение"}
 				</button>
 				<span className="text-[11px] text-amber-700 dark:text-amber-400 italic">
 					После оформления соглашения выписка наряда и счета будет продолжена без задержек

@@ -229,7 +229,7 @@ export function EmkToolbar({
 								else if (onApplyPhysiologicalNorm) onApplyPhysiologicalNorm();
 							}}
 							className="h-8 min-h-[32px] max-h-[32px] px-3 rounded-lg border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 text-[13px] font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs active:scale-[0.98] shrink-0"
-							title="Заполнить физиологическую норму осмотра и анамнеза (Z01.2)"
+							title="Заполнить физиологическую норму осмотра и анамнеза"
 						>
 							<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
 							<span className="hidden sm:inline">✓ Соматически здоров / Норма</span>
@@ -245,7 +245,7 @@ export function EmkToolbar({
 								data-testid="btn-open-protocols-catalog-1142"
 								onClick={onOpenProtocolsCatalog}
 								className="h-8 min-h-[32px] max-h-[32px] px-3 text-[13px] font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap touch-manipulation active:scale-[0.98]"
-								title="Открыть полный каталог 1 142 клинических протоколов (СтАР / Минздрав РФ)"
+								title="Открыть полный каталог клинических протоколов"
 							>
 								<BookOpen className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 								<span className="hidden sm:inline">Каталог протоколов</span>
@@ -296,7 +296,7 @@ export function EmkToolbar({
 										setIsExtraMenuOpen(false);
 									}}
 									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
-									title="Первичный или профилактический осмотр, норма (Z01.2)"
+									title="Первичный или профилактический осмотр, норма"
 								>
 									<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
 									<span>Терапевтический осмотр (Норма)</span>
@@ -380,7 +380,7 @@ export function EmkToolbar({
 									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
 								>
 									<Printer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-									<span>Печать Формы 043/у</span>
+									<span>Печать медицинской карты</span>
 								</button>
 							)}
 
@@ -488,7 +488,7 @@ export function EmkToolbar({
 				</div>
 			</div>
 
-			{/* СТРОКА 2: Навигационный сегментированный таб-бар Формы 043/у (SOAP Segmented Control) */}
+			{/* СТРОКА 2: Навигационный сегментированный таб-бар ЭМК (SOAP Segmented Control) */}
 			<div
 				className="emk-tabs-container w-full min-w-0 bg-[var(--paper-soft)] border-t border-[var(--line)] box-border"
 				role="tablist"

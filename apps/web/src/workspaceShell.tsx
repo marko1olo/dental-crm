@@ -310,6 +310,22 @@ export const sidebarHints: Record<AppView, string> = {
 	marketing: "Акции и реклама",
 };
 
+const collapsedNavLabels: Partial<Record<AppView, string>> = {
+	schedule: "Запись",
+	patients: "Пациенты",
+	visit: "Приём",
+	documents: "Документы",
+	finance: "Касса",
+	analytics: "Отчёты",
+	communications: "Связь",
+	inventory: "Склад",
+	lab: "ЗТЛ",
+	scanner: "Автоклав",
+	leads: "Лиды",
+	settings: "Опции",
+	marketing: "Акции",
+};
+
 export function WorkspaceSidebar({
 	currentView,
 	onViewIntent,
@@ -467,7 +483,7 @@ export function WorkspaceSidebar({
 									<span className="nav-label truncate min-w-0 block">{viewLabels[view]}</span>
 									<small className="nav-hint truncate min-w-0 block">{sidebarHints[view] || viewHints[view]}</small>
 								</span>
-								<span className={navCaptionClass}>{viewLabels[view]}</span>
+								<span className={navCaptionClass}>{collapsedNavLabels[view] || viewLabels[view]}</span>
 							</span>
 						</a>
 					) : null,
@@ -691,9 +707,12 @@ export function WorkspaceTopbar({
 	const setWsConnected = useTelephonyStore((s) => s.setWsConnected);
 	const currentView = useAppStore((s) => s.currentView);
 	const isFullScreenStudioActive = useUiSurfaceStore((s) => s.isFullScreenStudioActive);
-	// Absolute doctor immunity: when treating at chair (visit) or role is doctor, calls stay silent/background
+	// Absolute doctor immunity: when treating at chair (visit, odontogram, periodontics) or role is doctor, calls stay silent/background
 	const isDoctorMode =
-		selectedWorkspaceRole === "doctor" || currentView === "visit";
+		selectedWorkspaceRole === "doctor" ||
+		currentView === "visit" ||
+		currentView === "odontogram" ||
+		currentView === "periodontics";
 	const isDndActive = agentState === "dnd";
 	const isIncomingCall = Boolean(
 		(activeCall || isCallDrawerOpen) && !isDoctorMode && !isDndActive && !isFullScreenStudioActive,

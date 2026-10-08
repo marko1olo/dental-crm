@@ -258,27 +258,27 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 			aria-labelledby="chairside-bundles-title"
 			data-testid="clinical-service-bundles-modal"
 		>
-			<div className="relative w-full max-w-5xl rounded-2xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+			<div className="relative w-full max-w-5xl rounded-2xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
 				{/* Modal Header */}
-				<div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-[var(--line,#cbd5e1)] bg-[var(--paper-strong,#ffffff)] shrink-0">
+				<div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-[var(--line)] bg-[var(--paper-strong)] shrink-0">
 					<div className="flex items-center gap-3 min-w-0">
-						<div className="p-2 rounded-xl bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/20 shrink-0">
+						<div className="p-2 rounded-xl bg-[var(--teal)]/10 text-[var(--teal)] border border-[var(--teal)]/20 shrink-0">
 							<PackageCheck size={20} />
 						</div>
 						<div className="min-w-0">
 							<div className="flex items-center gap-2 flex-wrap">
-								<h2 id="chairside-bundles-title" className="text-sm sm:text-base font-black tracking-tight truncate">
-									Клинические пакеты услуг у кресла («Все включено»)
+								<h2 id="chairside-bundles-title" className="text-sm sm:text-base font-black tracking-tight break-words">
+									Клинические пакеты лечения («Все включено»)
 								</h2>
-								<span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[var(--teal,#0d9488)]/15 text-[var(--teal-dark,#0f766e)] dark:text-teal-300 border border-[var(--teal,#0d9488)]/30 shrink-0">
+								<span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[var(--teal)]/15 text-[var(--teal-dark)] dark:text-teal-300 border border-[var(--teal)]/30 shrink-0">
 									1 клик
 								</span>
-								<span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] border border-[var(--line,#cbd5e1)] shrink-0">
-									Прейскурант услуг
+								<span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] shrink-0">
+									Каталог клинических услуг
 								</span>
 							</div>
-							<p className="text-xs text-[var(--muted,#64748b)] truncate">
-								Быстрое добавление полного комплекса услуг в план лечения или счет пациента без ручного набора 5–8 мелких кодов
+							<p className="text-xs text-[var(--muted)] leading-normal break-words mt-0.5">
+								Быстрое добавление полного комплекса услуг в план лечения или счет пациента в 1 клик
 							</p>
 						</div>
 					</div>
@@ -286,7 +286,7 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-2 rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer shrink-0"
+						className="p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
 						title="Закрыть окно (Esc)"
 						aria-label="Закрыть окно"
 						data-testid="bundles-modal-close-btn"
@@ -296,7 +296,7 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 				</div>
 
 				{/* Toolbar: Category Filters, FDI Tooth Selector & Search */}
-				<div className="flex items-center justify-between gap-2.5 px-5 py-2.5 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#cbd5e1)] flex-wrap shrink-0">
+				<div className="flex items-center justify-between gap-2.5 px-5 py-2.5 bg-[var(--paper-soft)] border-b border-[var(--line)] flex-wrap shrink-0">
 					{/* Category Tabs (Hick's Law) */}
 					<div className="dente-filter-chips overflow-x-auto min-w-0 py-0.5">
 						<button
@@ -348,12 +348,12 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 
 					{/* Tooth Selector & Search */}
 					<div className="flex items-center gap-2 shrink-0">
-						<div className="flex items-center gap-1.5 bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg px-2.5 h-8">
-							<span className="text-xs font-bold text-[var(--muted,#64748b)]">Зуб FDI:</span>
+						<div className="flex items-center gap-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl px-2.5 h-9">
+							<span className="text-xs font-bold text-[var(--muted)]">Зуб FDI:</span>
 							<select
 								value={selectedTooth}
 								onChange={(e) => handleToothChange(Number(e.target.value))}
-								className="bg-transparent font-mono font-bold text-xs text-[var(--ink,#0f172a)] outline-none cursor-pointer"
+								className="bg-transparent font-mono font-bold text-xs text-[var(--ink)] outline-none cursor-pointer"
 								title="Выбрать номер зуба из частых"
 								data-testid="tooth-quick-select"
 							>
@@ -369,19 +369,19 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 								onChange={handleCustomToothChange}
 								placeholder="FDI"
 								maxLength={2}
-								className="w-8 text-center font-mono font-bold text-xs text-[var(--teal,#0d9488)] outline-none border-l border-[var(--line,#cbd5e1)] pl-1"
+								className="w-10 text-center font-mono font-bold text-xs text-[var(--teal)] outline-none border-l border-[var(--line)] px-1"
 								title="Ввести номер зуба вручную (11-85)"
 								data-testid="custom-tooth-input"
 							/>
 						</div>
 
-						<div className="dente-search-wrap" style={{ width: "200px" }}>
+						<div className="dente-search-wrap" style={{ width: "250px" }}>
 							<Search size={14} className="dente-search-icon" />
 							<input
 								type="text"
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
-								placeholder="Поиск по коду или названию..."
+								placeholder="Поиск пакета или кода..."
 								className="dente-search-input"
 								data-testid="bundles-search-input"
 							/>
@@ -399,12 +399,12 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 					</div>
 				</div>
 
-				{/* Scrollable Modal Content: 7 Clinical Package Cards */}
-				<div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 bg-[var(--paper,#ffffff)]">
+				{/* Scrollable Modal Content: Clinical Package Cards */}
+				<div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 bg-[var(--paper)]">
 					{filteredBundles.length === 0 ? (
-						<div className="py-12 px-4 text-center text-xs text-[var(--muted,#64748b)] bg-[var(--paper-soft,#f8fafc)] rounded-2xl border border-[var(--line,#cbd5e1)] flex flex-col items-center justify-center gap-2">
-							<PackagePlus size={28} className="text-[var(--muted,#64748b)] opacity-50" />
-							<span className="font-semibold text-sm text-[var(--ink,#0f172a)]">
+						<div className="py-12 px-4 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] rounded-2xl border border-[var(--line)] flex flex-col items-center justify-center gap-2">
+							<PackagePlus size={28} className="text-[var(--muted)] opacity-50" />
+							<span className="font-semibold text-sm text-[var(--ink)]">
 								Пакеты не найдены по заданным критериям
 							</span>
 							<p className="text-xs max-w-sm">
@@ -416,7 +416,7 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 									setSelectedCategory("all");
 									setSearchQuery("");
 								}}
-								className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/10 hover:bg-[var(--teal,#0d9488)]/20 border border-[var(--teal,#0d9488)]/30 cursor-pointer transition-colors mt-2"
+								className="h-9 min-h-[36px] px-3.5 rounded-xl text-xs font-bold text-[var(--teal)] bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 border border-[var(--teal)]/30 cursor-pointer transition-colors mt-2"
 							>
 								Сбросить фильтры
 							</button>
@@ -435,39 +435,39 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 										className={`rounded-2xl border transition-all ${
 											isRecentlyAdded
 												? "border-emerald-500 shadow-md bg-emerald-50/20 dark:bg-emerald-950/20"
-												: "border-[var(--line,#cbd5e1)] hover:border-[var(--teal,#0d9488)]/60 bg-[var(--paper-strong,#ffffff)] shadow-xs"
+												: "border-[var(--line)] hover:border-[var(--teal)]/60 bg-[var(--paper-strong)] shadow-xs"
 										}`}
 										data-testid={`bundle-modal-card-${bundle.id}`}
 									>
 										{/* Package Header Row */}
-										<div className="p-3.5 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[var(--line,#cbd5e1)]/60">
-											<div className="space-y-1 flex-1 min-w-0">
+										<div className="p-3.5 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[var(--line)]/60">
+											<div className="space-y-1.5 flex-1 min-w-0">
 												<div className="flex items-center gap-2 flex-wrap">
 													{getCategoryIcon(bundle.category)}
-													<h3 className="text-sm sm:text-base font-black text-[var(--ink,#0f172a)] tracking-tight">
+													<h3 className="text-sm sm:text-base font-black text-[var(--ink)] tracking-tight break-words leading-snug">
 														{bundle.title}
 													</h3>
-													<span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] border border-[var(--line,#cbd5e1)]">
+													<span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] shrink-0">
 														Этап {bundle.stageNumber}
 													</span>
 													{bundle.requiresTooth ? (
-														<span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-[var(--teal,#0d9488)]/10 text-[var(--teal-dark,#0f766e)] dark:text-teal-300 border border-[var(--teal,#0d9488)]/30">
+														<span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-[var(--teal)]/10 text-[var(--teal-dark)] dark:text-teal-300 border border-[var(--teal)]/30 shrink-0">
 															Зуб #{selectedTooth}
 														</span>
 													) : (
-														<span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] border border-[var(--line,#cbd5e1)]">
+														<span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] shrink-0">
 															Вся полость рта
 														</span>
 													)}
 												</div>
 
-												<p className="text-xs text-[var(--muted,#64748b)] leading-snug line-clamp-2">
+												<p className="text-xs text-[var(--muted)] leading-snug break-words">
 													{bundle.description}
 												</p>
 
 												{/* Composition summary chip */}
-												<div className="flex items-center gap-2 pt-0.5 text-[11px] text-[var(--muted,#64748b)]">
-													<span className="font-semibold text-[var(--ink,#0f172a)]">
+												<div className="flex items-center gap-2 pt-0.5 text-[11px] text-[var(--muted)] flex-wrap">
+													<span className="font-semibold text-[var(--ink)]">
 														{breakdown.selectedItems.length} из {bundle.items.length} поз. выбрано
 													</span>
 													{!breakdown.isFullySelected && (
@@ -479,29 +479,29 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 											</div>
 
 											{/* Price & Primary 1-Click Action Buttons */}
-											<div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-[var(--line,#cbd5e1)]/50">
+											<div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-[var(--line)]/50">
 												<div className="text-left md:text-right">
-													<span className="text-[10px] text-[var(--muted,#64748b)] block uppercase tracking-wider font-semibold">
+													<span className="text-[10px] text-[var(--muted)] block uppercase tracking-wider font-semibold">
 														{breakdown.isFullySelected ? "Итого «Все включено»" : "Итого с учетом выбора"}
 													</span>
 													<div className="flex items-baseline md:justify-end gap-1.5">
-														<strong className="text-base sm:text-lg font-black text-[var(--ink,#0f172a)] font-mono">
+														<strong className="text-base sm:text-lg font-black text-[var(--ink)] font-mono">
 															{breakdown.totalRub.toLocaleString("ru-RU")} ₽
 														</strong>
 														{!breakdown.isFullySelected && (
-															<span className="text-[11px] line-through text-[var(--muted,#64748b)] font-mono">
+															<span className="text-[11px] line-through text-[var(--muted)] font-mono">
 																{bundle.basePriceRub.toLocaleString("ru-RU")} ₽
 															</span>
 														)}
 													</div>
 												</div>
 
-												<div className="flex items-center gap-1.5">
+												<div className="flex items-center gap-2">
 													{/* Toggle composition checklist */}
 													<button
 														type="button"
 														onClick={() => toggleExpandBundle(bundle.id)}
-														className="h-8 px-2.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors flex items-center gap-1 cursor-pointer"
+														className="h-9 min-h-[36px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-1 cursor-pointer"
 														title="Настроить состав пакета (исключить анестезию или другие позиции)"
 														data-testid={`toggle-expand-${bundle.id}`}
 													>
@@ -514,11 +514,11 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 														<button
 															type="button"
 															onClick={() => handleApplyPlan(bundle)}
-															className="h-8 px-3.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+															className="h-9 min-h-[36px] px-4 rounded-xl bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
 															title={`Добавить пакет в активный план лечения${bundle.requiresTooth ? ` (зуб ${selectedTooth})` : ""}`}
 															data-testid={`apply-plan-${bundle.id}`}
 														>
-															<PackagePlus size={14} />
+															<PackagePlus size={15} />
 															<span>В план</span>
 														</button>
 													)}
@@ -528,11 +528,11 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 														<button
 															type="button"
 															onClick={() => handleApplyInvoice(bundle)}
-															className="h-8 px-3 rounded-xl border border-[var(--teal,#0d9488)]/40 bg-[var(--teal,#0d9488)]/10 hover:bg-[var(--teal,#0d9488)]/20 text-[var(--teal-dark,#0f766e)] dark:text-teal-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+															className="h-9 min-h-[36px] px-3.5 rounded-xl border border-[var(--teal)]/40 bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 text-[var(--teal-dark)] dark:text-teal-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
 															title={`Выставить счет пациенту по пакету${bundle.requiresTooth ? ` (зуб ${selectedTooth})` : ""}`}
 															data-testid={`apply-invoice-${bundle.id}`}
 														>
-															<Receipt size={14} />
+															<Receipt size={15} />
 															<span>В счет</span>
 														</button>
 													)}
@@ -542,21 +542,21 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 
 										{/* Interactive Composition Checklist (Flexible doctor customization) */}
 										{isExpanded && (
-											<div className="p-3.5 sm:p-4 bg-[var(--paper-soft,#f8fafc)] border-t border-[var(--line,#cbd5e1)] space-y-2.5 animate-in fade-in duration-150">
-												<div className="flex items-center justify-between gap-2">
+											<div className="p-3.5 sm:p-4 bg-[var(--paper-soft)] border-t border-[var(--line)] space-y-2.5 animate-in fade-in duration-150">
+												<div className="flex items-center justify-between gap-2 flex-wrap">
 													<div className="flex items-center gap-2">
-														<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
-															Состав клинического пакета (услуги):
+														<span className="text-xs font-bold text-[var(--ink)]">
+															Состав пакета лечения (клинические услуги):
 														</span>
-														<span className="text-[11px] text-[var(--muted,#64748b)]">
-															Снимите галочку, если позиция не проводилась
+														<span className="text-[11px] text-[var(--muted)]">
+															Снимите отметку, если позиция не проводилась
 														</span>
 													</div>
 
 													<button
 														type="button"
 														onClick={() => resetBundleSelection(bundle.id)}
-														className="text-[11px] text-[var(--teal,#0d9488)] hover:underline flex items-center gap-1 cursor-pointer font-medium"
+														className="text-[11px] text-[var(--teal)] hover:underline flex items-center gap-1 cursor-pointer font-medium"
 														title="Вернуть все позиции пакета по умолчанию"
 													>
 														<RotateCcw size={12} />
@@ -564,49 +564,49 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 													</button>
 												</div>
 
-												<div className="grid grid-cols-1 gap-1.5">
+												<div className="grid grid-cols-1 gap-2">
 													{bundle.items.map((item) => {
 														const isChecked = selectedIds.includes(item.id);
 
 														return (
 															<label
 																key={item.id}
-																className={`flex items-start justify-between gap-3 p-2.5 rounded-xl border transition-all cursor-pointer ${
+																className={`flex items-start justify-between gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
 																	isChecked
-																		? "bg-[var(--paper,#ffffff)] border-[var(--line,#cbd5e1)] shadow-2xs"
-																		: "bg-[var(--paper-soft,#f1f5f9)]/60 border-dashed border-[var(--line,#cbd5e1)] opacity-60"
+																		? "bg-[var(--paper)] border-[var(--line)] shadow-2xs"
+																		: "bg-[var(--paper-soft)]/60 border-dashed border-[var(--line)] opacity-60"
 																}`}
 																data-testid={`item-checkbox-${bundle.id}-${item.id}`}
 															>
-																<div className="flex items-start gap-2.5 min-w-0">
+																<div className="flex items-start gap-3 min-w-0">
 																	<input
 																		type="checkbox"
 																		checked={isChecked}
 																		onChange={() => toggleItemSelection(bundle.id, item.id)}
-																		className="mt-0.5 h-4 w-4 rounded text-[var(--teal,#0d9488)] border-[var(--line,#cbd5e1)] focus:ring-[var(--teal,#0d9488)] cursor-pointer"
+																		className="mt-0.5 h-4 w-4 rounded text-[var(--teal)] border-[var(--line)] focus:ring-[var(--teal)] cursor-pointer shrink-0"
 																	/>
 																	<div className="min-w-0">
 																		<div className="flex items-center gap-2 flex-wrap">
-																			<span className="font-mono text-[11px] font-bold text-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/10 px-1.5 py-0.5 rounded">
+																			<span className="font-mono text-[11px] font-bold text-[var(--teal)] bg-[var(--teal)]/10 px-1.5 py-0.5 rounded shrink-0">
 																				{item.code804n}
 																			</span>
-																			<span className={`text-xs font-bold ${isChecked ? "text-[var(--ink,#0f172a)]" : "text-[var(--muted,#64748b)] line-through"}`}>
+																			<span className={`text-xs font-bold break-words leading-snug ${isChecked ? "text-[var(--ink)]" : "text-[var(--muted)] line-through"}`}>
 																				{item.name}
 																			</span>
 																			{item.optional && (
-																				<span className="text-[10px] text-[var(--muted,#64748b)] font-medium">
+																				<span className="text-[10px] text-[var(--muted)] font-medium shrink-0">
 																					(опционально)
 																				</span>
 																			)}
 																		</div>
-																		<p className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">
-																			<strong className="text-[var(--ink,#0f172a)]/80">Материалы:</strong> {item.materials}
+																		<p className="text-[11px] text-[var(--muted)] mt-1 break-words">
+																			<strong className="text-[var(--ink)]/80">Материалы:</strong> {item.materials}
 																		</p>
 																	</div>
 																</div>
 
 																<div className="text-right shrink-0">
-																	<span className="font-mono font-bold text-xs text-[var(--ink,#0f172a)]">
+																	<span className="font-mono font-bold text-xs text-[var(--ink)]">
 																		{item.defaultPriceRub.toLocaleString("ru-RU")} ₽
 																	</span>
 																</div>
@@ -624,16 +624,16 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 				</div>
 
 				{/* Modal Footer */}
-				<div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] shrink-0 text-xs text-[var(--muted,#64748b)]">
+				<div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0 text-xs text-[var(--muted)]">
 					<div className="flex items-center gap-2">
-						<Stethoscope size={14} className="text-[var(--teal,#0d9488)]" />
+						<Stethoscope size={14} className="text-[var(--teal)]" />
 						<span>Все суммы рассчитываются в копейках с гарантией абсолютной точности.</span>
 					</div>
 
 					<button
 						type="button"
 						onClick={onClose}
-						className="secondary-button"
+						className="secondary-button min-h-[36px] px-4"
 						data-testid="bundles-modal-bottom-close-btn"
 					>
 						Закрыть

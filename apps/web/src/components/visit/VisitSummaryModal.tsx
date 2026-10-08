@@ -1,22 +1,27 @@
 import {
 	Activity,
 	Calendar,
+	Check,
 	CheckCircle2,
 	ChevronDown,
 	ChevronUp,
 	Clock,
+	Coins,
+	CreditCard,
 	FileText,
 	Lock,
 	Palette,
 	Pill,
 	Printer,
+	QrCode,
+	Save,
 	Scan,
 	ShieldCheck,
 	Sparkles,
 	Stethoscope,
 	User,
+	Wallet,
 	X,
-	Save,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState, useMemo, useRef } from "react";
@@ -34,7 +39,7 @@ import {
 	type FdiToothRecord,
 	type ToothSurface,
 } from "../emr";
-import { useVisitCompletion } from "./useVisitCompletion";
+import { useVisitCompletion, assembleVisitStoreCompletedServices } from "./useVisitCompletion";
 import { logger } from "../../utils/logger";
 import {
 	type RadiologySnapshotItem,
@@ -44,6 +49,10 @@ import {
 import { VisitSummaryDiarySections } from "./VisitSummaryDiarySections";
 import { PatientMemoPrintModal } from "./PatientMemoPrintModal";
 import { TOOTH_STATE_LABELS, type ToothState } from "../odontogram/ToothChart";
+import { PaymentModal } from "../finance/PaymentModal.js";
+import type { PaymentMethodTab } from "../finance/modal/payment/paymentModalTypes.js";
+import { DEFAULT_CHAIRSIDE_SERVICES } from "./visitBillingTypes.js";
+import { isDemoShowcaseMode, isDemoPatientId } from "../../lib/demoMode.js";
 
 export {
 	type RadiologySnapshotItem,
@@ -82,6 +91,10 @@ export interface VisitSummaryModalProps {
 		insurancePolicyNumber?: string | null;
 		omsPolis?: string | null;
 		snils?: string | null;
+		balanceRub?: number | null;
+		balanceKopecks?: number | null;
+		depositRub?: number | null;
+		familyBalanceRub?: number | null;
 	} | null;
 	diary: DiaryState;
 	doctorName?: string | null;
@@ -104,6 +117,13 @@ export interface VisitSummaryModalProps {
 	onOpenProtocolGenerator?: () => void;
 	onScheduleNextVisit?: () => void;
 	onCompleteVisit?: () => void;
+	services?: readonly any[];
+	totalDueRub?: number;
+	patientDepositRub?: number;
+	patientFamilyBalanceRub?: number;
+	isPaid?: boolean;
+	defaultDocsDropupOpen?: boolean;
+	onPaymentSuccess?: (paymentData: any) => void;
 }
 
 function formatPatientFullName(
@@ -139,6 +159,13 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 	onOpenProtocolGenerator,
 	onScheduleNextVisit,
 	onCompleteVisit,
+	services: servicesProp,
+	totalDueRub: totalDueRubProp,
+	patientDepositRub: patientDepositRubProp,
+	patientFamilyBalanceRub: patientFamilyBalanceRubProp,
+	isPaid: isPaidProp,
+	defaultDocsDropupOpen,
+	onPaymentSuccess,
 }) => {
 	const appLogic = useAppLogicContext() as any;
 	const [isNextStageModalOpen, setIsNextStageModalOpen] = useState(false);
@@ -150,8 +177,88 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 	const [isProtocolGeneratorOpen, setIsProtocolGeneratorOpen] = useState(false);
 	const [synthesizedDiaryPreview, setSynthesizedDiaryPreview] = useState<VisitDiaryEntry043 | null>(null);
 	const [isMemoModalOpen, setIsMemoModalOpen] = useState(false);
-	const [isDocsDropupOpen, setIsDocsDropupOpen] = useState(false);
+	const [isDocsDropupOpen, setIsDocsDropupOpen] = useState(Boolean(defaultDocsDropupOpen));
 	const docsDropupRef = useRef<HTMLDivElement>(null);
+
+	// Chairside POS state (Mandates 8b, 8d, 8e, 8n)
+	const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+	const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethodTab>("sbp_qr");
+	const [isVisitPaid, setIsVisitPaid] = useState(Boolean(isPaidProp));
+	const [paidAmountRub, setPaidAmountRub] = useState<number>(0);
+	const [paidTenderMethod, setPaidTenderMethod] = useState<PaymentMethodTab>("sbp_qr");
+
+	useEffect(() => {
+		if (typeof isPaidProp === "boolean") {
+			setIsVisitPaid(isPaidProp);
+		}
+	}, [isPaidProp]);
+
+	const chairsideServices = useMemo(() => {
+		if (Array.isArray(servicesProp) && servicesProp.length > 0) {
+			return servicesProp;
+		}
+		const storeServices = assembleVisitStoreCompletedServices();
+		if (storeServices.length > 0) {
+			return storeServices;
+		}
+		const activeVisitServices = appLogic?.dashboard?.activeVisit?.completedServices;
+		if (Array.isArray(activeVisitServices) && activeVisitServices.length > 0) {
+			return activeVisitServices;
+		}
+		if (isDemoShowcaseMode() || isDemoPatientId(patient?.id || "")) {
+			return DEFAULT_CHAIRSIDE_SERVICES;
+		}
+		return [];
+	}, [servicesProp, patient?.id, appLogic?.dashboard?.activeVisit?.completedServices]);
+
+	const calculatedServicesTotalRub = useMemo(() => {
+		return chairsideServices.reduce((sum: number, it: any) => {
+			const price = Number(it.priceRub ?? it.unitPriceRub ?? it.price ?? 0);
+			const qty = Number(it.quantity ?? 1);
+			const total = Number(it.totalRub ?? price * qty);
+			return sum + total;
+		}, 0);
+	}, [chairsideServices]);
+
+	const effectiveTotalDueRub = useMemo(() => {
+		if (typeof totalDueRubProp === "number") {
+			return totalDueRubProp;
+		}
+		if (calculatedServicesTotalRub > 0) {
+			return calculatedServicesTotalRub;
+		}
+		if (isDemoShowcaseMode() || isDemoPatientId(patient?.id || "")) {
+			return 8200;
+		}
+		return 0;
+	}, [totalDueRubProp, calculatedServicesTotalRub, patient?.id]);
+
+	const effectiveDepositRub = useMemo(() => {
+		if (typeof patientDepositRubProp === "number") {
+			return patientDepositRubProp;
+		}
+		const p = patient as any;
+		const balance = Number(
+			p?.depositRub ??
+			p?.balanceRub ??
+			(typeof p?.balanceKopecks === "number" ? p.balanceKopecks / 100 : undefined) ??
+			(appLogic?.dashboard?.activePatient?.balanceRub ?? 0)
+		);
+		return Math.max(0, balance);
+	}, [patientDepositRubProp, patient, appLogic?.dashboard?.activePatient]);
+
+	const effectiveFamilyBalanceRub = useMemo(() => {
+		if (typeof patientFamilyBalanceRubProp === "number") {
+			return patientFamilyBalanceRubProp;
+		}
+		const p = patient as any;
+		return Number(p?.familyBalanceRub ?? 0);
+	}, [patientFamilyBalanceRubProp, patient]);
+
+	const handleOpenPaymentModal = (method: PaymentMethodTab = "sbp_qr") => {
+		setSelectedPaymentMethod(method);
+		setIsPaymentModalOpen(true);
+	};
 
 	const mappedOdontogramTeeth = useMemo<FdiToothRecord[]>(() => {
 		return (teethData ?? []).map((t) => ({
@@ -210,7 +317,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 		completedPlanItems: appLogic?.activeTreatmentPlanItems || [],
 	});
 
-	if (!isOpen || typeof document === "undefined") return null;
+	if (!isOpen) return null;
 
 	const patientName = formatPatientFullName(patient);
 	const patientBirth =
@@ -364,7 +471,57 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 		);
 	}
 
-	return createPortal(
+	if (isPaymentModalOpen) {
+		return (
+			<PaymentModal
+				isOpen={true}
+				onClose={() => setIsPaymentModalOpen(false)}
+				patientId={patient?.id || appLogic?.activePatientId || "pat-walkin"}
+				patientName={patientName !== "—" ? patientName : "Пациент"}
+				patientPhone={patient?.phone || ""}
+				visitId={appLogic?.activeVisitId}
+				amountRub={effectiveTotalDueRub}
+				defaultMethod={selectedPaymentMethod}
+				patientDepositRub={effectiveDepositRub}
+				patientFamilyBalanceRub={effectiveFamilyBalanceRub}
+				cashierName={doctorName || "Врач-стоматолог"}
+				doctorName={doctorName || appLogic?.activeDoctor?.fullName || "Врач-стоматолог"}
+				clinicLegalName={appLogic?.dashboard?.clinicSettings?.legalName || "ООО «ДЕНТЕ»"}
+				onSuccess={(paymentData) => {
+					setIsPaymentModalOpen(false);
+					setIsVisitPaid(true);
+					setPaidAmountRub(effectiveTotalDueRub);
+					setPaidTenderMethod(selectedPaymentMethod);
+					showToast(`Оплата ${effectiveTotalDueRub.toLocaleString("ru-RU")} ₽ успешно принята. Чек выдан!`, "success", 4000);
+					onPaymentSuccess?.(paymentData);
+					if (typeof window !== "undefined") {
+						window.dispatchEvent(
+							new CustomEvent("dente-payment-completed", {
+								detail: {
+									visitId: appLogic?.activeVisitId,
+									patientId: patient?.id,
+									amountRub: effectiveTotalDueRub,
+									method: selectedPaymentMethod,
+									paymentData,
+								},
+							}),
+						);
+						window.dispatchEvent(
+							new CustomEvent("dente-treatment-plans-reload", {
+								detail: {
+									patientId: patient?.id,
+									visitId: appLogic?.activeVisitId,
+									amountRub: effectiveTotalDueRub,
+								},
+							}),
+						);
+					}
+				}}
+			/>
+		);
+	}
+
+	const modalContent = (
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
 			role="dialog"
@@ -375,7 +532,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 				if (e.target === e.currentTarget) onClose();
 			}}
 		>
-			<div className="relative flex flex-col w-full max-w-3xl max-h-[90vh] rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xl overflow-hidden">
+			<div className="relative flex flex-col w-full max-w-4xl max-h-[90vh] rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xl overflow-hidden">
 				{/* Modal Header */}
 				<div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)] bg-[var(--paper-soft)]">
 					<div className="flex items-center gap-3">
@@ -589,66 +746,208 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 								</div>
 							</div>
 						</div>
-						<button
-							type="button"
-							onClick={() => {
-								if (onScheduleNextVisit) {
-									onClose();
-									onScheduleNextVisit();
-								} else {
-									const d = new Date();
-									d.setDate(d.getDate() + 5);
-									d.setHours(10, 0, 0, 0);
-									const draft: Appointment = {
-										id: `new-stage-${Date.now()}`,
-										organizationId: appLogic?.dashboard?.activeVisit?.organizationId || "org-1",
-										patientId: patient?.id || "",
-										doctorUserId: (appLogic?.dashboard?.clinicSettings?.staff || []).find((s: any) => s.active && (s.role === "doctor" || s.role === "owner"))?.id || "",
-										assistantUserId: null,
-										chairId: (appLogic?.dashboard?.clinicSettings?.chairs || []).find((c: any) => c.active)?.id || "",
-										startsAt: d.toISOString(),
-										endsAt: new Date(d.getTime() + 45 * 60 * 1000).toISOString(),
-										status: "planned",
-										reason: `Следующий этап лечения: ${diary.diagnosisIcd10 || "Стоматологический приём"}`,
-										comment: `Назначено из сводки визита от ${new Date().toLocaleDateString("ru-RU")}`,
-									};
-									setNextVisitDraft(draft);
-									setIsNextStageModalOpen(true);
-								}
-							}}
-							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-extrabold shadow-md transition-all cursor-pointer touch-manipulation active:scale-[0.98]"
-							title="Записать пациента на следующий этап лечения через 5-7 дней"
-							data-testid="summary-schedule-next-stage-btn"
-						>
-							<Calendar className="w-4 h-4" />
-							<span>След. этап (+5 дней)</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => {
-								if (onOpenProtocolGenerator) {
-									onClose();
-									onOpenProtocolGenerator();
-								} else {
-									setIsProtocolGeneratorOpen(true);
-								}
-							}}
-							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] text-xs font-bold shadow-md transition-all shrink-0 cursor-pointer"
-							data-testid="summary-synthesize-protocol-btn"
-						>
-							<Sparkles className="w-4 h-4" />
-							<span>Заполнить дневник по диагнозу и формуле</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setIsMemoModalOpen(true)}
-							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md transition-all shrink-0 cursor-pointer"
-							data-testid="summary-quick-memo-btn"
-							title="Открыть памятку пациенту с рекомендациями после приёма"
-						>
-							<FileText className="w-4 h-4" />
-							<span>Памятка пациенту</span>
-						</button>
+						<div className="flex items-center gap-2 flex-wrap shrink-0">
+							<button
+								type="button"
+								onClick={() => {
+									if (onScheduleNextVisit) {
+										onClose();
+										onScheduleNextVisit();
+									} else {
+										const d = new Date();
+										d.setDate(d.getDate() + 5);
+										d.setHours(10, 0, 0, 0);
+										const draft: Appointment = {
+											id: `new-stage-${Date.now()}`,
+											organizationId: appLogic?.dashboard?.activeVisit?.organizationId || "org-1",
+											patientId: patient?.id || "",
+											doctorUserId: (appLogic?.dashboard?.clinicSettings?.staff || []).find((s: any) => s.active && (s.role === "doctor" || s.role === "owner"))?.id || "",
+											assistantUserId: null,
+											chairId: (appLogic?.dashboard?.clinicSettings?.chairs || []).find((c: any) => c.active)?.id || "",
+											startsAt: d.toISOString(),
+											endsAt: new Date(d.getTime() + 45 * 60 * 1000).toISOString(),
+											status: "planned",
+											reason: `Следующий этап лечения: ${diary.diagnosisIcd10 || "Стоматологический приём"}`,
+											comment: `Назначено из сводки визита от ${new Date().toLocaleDateString("ru-RU")}`,
+										};
+										setNextVisitDraft(draft);
+										setIsNextStageModalOpen(true);
+									}
+								}}
+								className="inline-flex items-center justify-center gap-2 px-3.5 py-2 min-h-[44px] rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md transition-all cursor-pointer whitespace-nowrap active:scale-[0.98]"
+								title="Записать пациента на следующий этап лечения через 5-7 дней"
+								data-testid="summary-schedule-next-stage-btn"
+							>
+								<Calendar className="w-4 h-4" />
+								<span>След. этап (+5 дней)</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									if (onOpenProtocolGenerator) {
+										onClose();
+										onOpenProtocolGenerator();
+									} else {
+										setIsProtocolGeneratorOpen(true);
+									}
+								}}
+								className="inline-flex items-center justify-center gap-2 px-3.5 py-2 min-h-[44px] rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] text-xs font-bold shadow-md transition-all shrink-0 cursor-pointer whitespace-nowrap"
+								data-testid="summary-synthesize-protocol-btn"
+							>
+								<Sparkles className="w-4 h-4" />
+								<span>Заполнить дневник</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setIsMemoModalOpen(true)}
+								className="inline-flex items-center justify-center gap-2 px-3.5 py-2 min-h-[44px] rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md transition-all shrink-0 cursor-pointer whitespace-nowrap"
+								data-testid="summary-quick-memo-btn"
+								title="Открыть памятку пациенту с рекомендациями после приёма"
+							>
+								<FileText className="w-4 h-4" />
+								<span>Памятка пациенту</span>
+							</button>
+						</div>
+					</div>
+
+					{/* Chairside POS Checkout & Quick Payment in Chair (Mandates 8b, 8d, 8e, 8n) */}
+					<div
+						className={`p-4 rounded-xl border transition-all ${
+							isVisitPaid
+								? "border-emerald-500/40 bg-emerald-50/40 dark:bg-emerald-950/20"
+								: "border-[var(--line)] bg-[var(--paper-soft)]"
+						}`}
+						data-testid="chairside-pos-block"
+					>
+						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--line)]">
+							<div className="flex items-center gap-3">
+								<div
+									className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 ${
+										isVisitPaid
+											? "bg-emerald-600 text-white shadow-xs"
+											: "bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--line)]"
+									}`}
+								>
+									{isVisitPaid ? <CheckCircle2 className="w-5 h-5" /> : <CreditCard className="w-5 h-5" />}
+								</div>
+								<div>
+									<h4 className="text-sm font-bold text-[var(--ink)] flex items-center gap-2">
+										Оплата приёма в кресле
+										{isVisitPaid && (
+											<span
+												className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-600 text-white"
+												data-testid="chairside-paid-badge"
+											>
+												<Check className="w-3 h-3 stroke-[3]" />
+												Чек выдан
+											</span>
+										)}
+									</h4>
+									<p className="text-xs text-[var(--muted)]">
+										{isVisitPaid
+											? `Платёж зафиксирован (${
+													paidTenderMethod === "sbp_qr"
+														? "QR-код СБП"
+														: paidTenderMethod === "card_terminal"
+															? "Банковская карта"
+															: paidTenderMethod === "family_deposit"
+																? "Депозит / аванс"
+																: paidTenderMethod === "cash"
+																	? "Наличные"
+																	: "Безналичный расчёт"
+											  })`
+											: "Мгновенный расчёт без ожидания администратора на стойке"}
+									</p>
+								</div>
+							</div>
+
+							<div className="flex items-baseline sm:items-end flex-col">
+								<span className="text-xs text-[var(--muted)] font-medium">
+									{isVisitPaid ? "Оплаченная сумма:" : "Итого к оплате:"}
+								</span>
+								<span
+									className={`text-xl sm:text-2xl font-black ${
+										isVisitPaid ? "text-emerald-600 dark:text-emerald-400" : "text-[var(--ink)]"
+									}`}
+									data-testid="chairside-total-due"
+								>
+									{`${(isVisitPaid ? (paidAmountRub || effectiveTotalDueRub) : effectiveTotalDueRub).toLocaleString("ru-RU")} ₽`}
+								</span>
+							</div>
+						</div>
+
+						{isVisitPaid ? (
+							<div className="mt-3 flex items-center justify-between flex-wrap gap-2 pt-1 text-xs">
+								<div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-semibold">
+									<CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+									<span>Оплата приёма принята · Чек сформирован и выдан</span>
+								</div>
+								<button
+									type="button"
+									onClick={() => handleOpenPaymentModal(paidTenderMethod)}
+									className="px-3.5 py-2 min-h-[38px] rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)] font-bold text-xs cursor-pointer transition-colors shadow-2xs"
+									data-testid="chairside-view-receipt-btn"
+								>
+									Повторный чек / Документы
+								</button>
+							</div>
+						) : (
+							<div className="mt-3 space-y-2">
+								<div className="flex items-center justify-between text-xs text-[var(--muted)] font-medium">
+									<span>Способ оплаты у кресла:</span>
+									{effectiveDepositRub > 0 && (
+										<span className="text-[var(--ink)] font-semibold">
+											Аванс пациента: {effectiveDepositRub.toLocaleString("ru-RU")} ₽
+										</span>
+									)}
+								</div>
+								<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+									{/* SBP QR */}
+									<button
+										type="button"
+										onClick={() => handleOpenPaymentModal("sbp_qr")}
+										className="inline-flex items-center justify-center gap-2 px-3 py-2.5 min-h-[44px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-[0.98]"
+										data-testid="chairside-pay-sbp-qr-btn"
+										title="Сформировать QR-код для оплаты через СБП"
+									>
+										<QrCode className="w-4 h-4 shrink-0" />
+										<span>Оплатить по QR (СБП)</span>
+									</button>
+
+									{/* Card Terminal */}
+									<button
+										type="button"
+										onClick={() => handleOpenPaymentModal("card_terminal")}
+										className="inline-flex items-center justify-center gap-2 px-3 py-2.5 min-h-[44px] rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] text-xs font-bold shadow-2xs transition-all cursor-pointer active:scale-[0.98]"
+										data-testid="chairside-pay-card-btn"
+										title="Оплата банковской картой через POS-терминал"
+									>
+										<CreditCard className="w-4 h-4 text-blue-500 shrink-0" />
+										<span>Банковская карта</span>
+									</button>
+
+									{/* Patient Family Deposit */}
+									<button
+										type="button"
+										onClick={() => handleOpenPaymentModal("family_deposit")}
+										className="inline-flex items-center justify-center gap-2 px-3 py-2.5 min-h-[44px] rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] text-xs font-bold shadow-2xs transition-all cursor-pointer active:scale-[0.98]"
+										data-testid="chairside-pay-deposit-btn"
+										title={
+											effectiveDepositRub > 0
+												? `Списать с депозита пациента (${effectiveDepositRub.toLocaleString("ru-RU")} ₽)`
+												: "Списание с депозита (на балансе 0 ₽)"
+										}
+									>
+										<Wallet className="w-4 h-4 text-amber-500 shrink-0" />
+										<span>
+											{effectiveDepositRub > 0
+												? `Списать с депозита (${effectiveDepositRub.toLocaleString("ru-RU")} ₽)`
+												: "Списать с депозита"}
+										</span>
+									</button>
+								</div>
+							</div>
+						)}
 					</div>
 
 					{/* Разделы Формы 043/у */}
@@ -714,7 +1013,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 
 							{isDocsDropupOpen && (
 								<div
-									className="absolute right-0 bottom-full mb-2 z-30 flex flex-col p-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl min-w-[280px] animate-in fade-in slide-in-from-bottom-2 duration-150"
+									className="absolute left-0 bottom-full mb-2 z-50 flex flex-col p-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xl min-w-[280px] animate-in fade-in slide-in-from-bottom-2 duration-150"
 									data-testid="summary-docs-dropup-menu"
 								>
 									<div className="px-3 py-1.5 text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider border-b border-[var(--line)]">
@@ -794,6 +1093,31 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 											<span>Электронная карта (Госуслуги)</span>
 										</button>
 									) : null}
+
+									{/* Quick Chairside POS inside Dropup */}
+									{!isVisitPaid ? (
+										<button
+											type="button"
+											onClick={() => {
+												setIsDocsDropupOpen(false);
+												handleOpenPaymentModal("sbp_qr");
+											}}
+											className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-colors text-left cursor-pointer border-t border-[var(--line)]"
+											data-testid="summary-quick-pay-btn"
+											title="Оплатить приём в кресле"
+										>
+											<CreditCard className="w-4 h-4 text-teal-600 shrink-0" />
+											<span>Оплата приёма ({effectiveTotalDueRub.toLocaleString("ru-RU")} ₽)</span>
+										</button>
+									) : (
+										<div
+											className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-emerald-600 border-t border-[var(--line)]"
+											data-testid="summary-paid-indicator"
+										>
+											<CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+											<span>Оплачено ({paidAmountRub || effectiveTotalDueRub} ₽)</span>
+										</div>
+									)}
 								</div>
 							)}
 						</div>
@@ -809,13 +1133,13 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 									window.print();
 								}
 							}}
-							className="inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-[48px] rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-sm sm:text-base font-extrabold hover:bg-[var(--teal-dark)] transition-colors shadow-md cursor-pointer"
+							className="inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-[48px] rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-sm sm:text-base font-extrabold hover:bg-[var(--teal-dark)] transition-colors shadow-md cursor-pointer whitespace-nowrap shrink-0"
 							data-testid="summary-print-btn"
-							title="Печать карты 043/у"
-							aria-label="Печать карты 043/у"
+							title="Печать медицинской карты приёма"
+							aria-label="Печать медицинской карты приёма"
 						>
 							<Printer className="w-4 h-4" />
-							<span>Печать карты 043/у</span>
+							<span>Печать медицинской карты</span>
 						</button>
 
 						{/* Primary CTA: Завершить приём */}
@@ -834,7 +1158,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 								}
 							}}
 							disabled={isCompleting}
-							className="inline-flex items-center justify-center gap-2 px-6 py-2.5 min-h-[48px] min-w-[200px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm sm:text-base font-black transition-colors shadow-md cursor-pointer disabled:opacity-50"
+							className="inline-flex items-center justify-center gap-2 px-6 py-2.5 min-h-[48px] min-w-[200px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm sm:text-base font-black transition-colors shadow-md cursor-pointer disabled:opacity-50 whitespace-nowrap shrink-0"
 							data-testid="summary-complete-visit-btn"
 							title="Завершить приём и сформировать чек"
 						>
@@ -881,7 +1205,10 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 					onClose={() => setZoomImage(null)}
 				/>
 			</div>
-		</div>,
-		document.body,
+		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 };

@@ -31,6 +31,7 @@ import {
 	User,
 	Zap,
 } from "lucide-react";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import type { ToothComplaint } from "./TelegramInteractiveToothPicker";
 
 export type SpecialistCategory = "therapist" | "surgeon" | "orthodontist" | "hygienist";
@@ -131,25 +132,36 @@ export const TelegramMiniAppBooking: React.FC<TelegramMiniAppBookingProps> = mem
 	onBackToTeeth,
 	onBookingComplete,
 }) => {
-	// Категория врача
+	const isDemo = isDemoShowcaseMode();
+
 	// Категория врача
 	const [activeCategory, setActiveCategory] = useState<SpecialistCategory>("therapist");
 
 	// Список врачей (живые из базы данных через API или дефолтные)
-	const [doctorsList, setDoctorsList] = useState<DoctorProfile[]>(DEFAULT_DOCTORS_LIST);
+	const [doctorsList, setDoctorsList] = useState<DoctorProfile[]>(() =>
+		isDemo ? DEFAULT_DOCTORS_LIST : [],
+	);
 
 	// Выбранный врач
-	const [selectedDoctorId, setSelectedDoctorId] = useState<string>(() => DEFAULT_DOCTORS_LIST[0]?.id || "doc-1");
+	const [selectedDoctorId, setSelectedDoctorId] = useState<string>(() =>
+		isDemo ? DEFAULT_DOCTORS_LIST[0]?.id || "doc-1" : "",
+	);
 
 	// Индекс выбранного дня (0 - сегодня, 1 - завтра, ...)
 	const [selectedDateIndex, setSelectedDateIndex] = useState<number>(0);
 
 	// Выбранный временной слот
-	const [selectedSlot, setSelectedSlot] = useState<string>("10:30");
+	const [selectedSlot, setSelectedSlot] = useState<string>(() =>
+		isDemo ? "10:30" : "",
+	);
 
 	// Данные пациента для записи
-	const [patientFullName, setPatientFullName] = useState<string>("Александр");
-	const [patientPhone, setPatientPhone] = useState<string>("+7 (999) 000-11-22");
+	const [patientFullName, setPatientFullName] = useState<string>(() =>
+		isDemo ? "Александр" : "",
+	);
+	const [patientPhone, setPatientPhone] = useState<string>(() =>
+		isDemo ? "+7 (999) 000-11-22" : "",
+	);
 	const [patientComment, setPatientComment] = useState<string>("");
 
 	// Состояние отправки
@@ -217,7 +229,8 @@ export const TelegramMiniAppBooking: React.FC<TelegramMiniAppBookingProps> = mem
 		let isMounted = true;
 		const fetchSlots = async () => {
 			try {
-				const orgId = organizationId || "demo-clinic-org";
+				const orgId = organizationId || (isDemo ? "demo-clinic-org" : "");
+				if (!orgId) return;
 				const res = await fetch(`/api/telegram/webapp/slots?organizationId=${encodeURIComponent(orgId)}`);
 				if (res.ok) {
 					const data = await res.json();
@@ -263,7 +276,7 @@ export const TelegramMiniAppBooking: React.FC<TelegramMiniAppBookingProps> = mem
 								dayOfWeek: dayMeta.dayOfWeek,
 								dayNum: dayMeta.dayNum,
 								month: dayMeta.month,
-								slots: currentDocSlots || item.doctors?.[0]?.slots || ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00", "18:30"],
+								slots: currentDocSlots || item.doctors?.[0]?.slots || (isDemo ? ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00", "18:30"] : []),
 							};
 						});
 						setLiveSchedule(mapped);
@@ -278,7 +291,7 @@ export const TelegramMiniAppBooking: React.FC<TelegramMiniAppBookingProps> = mem
 		return () => {
 			isMounted = false;
 		};
-	}, [calendarDays, organizationId, selectedDoctorId]);
+	}, [calendarDays, organizationId, selectedDoctorId, isDemo]);
 
 	// Фильтрация врачей по выбранной категории
 	const filteredDoctors = useMemo(() => {
@@ -292,9 +305,9 @@ export const TelegramMiniAppBooking: React.FC<TelegramMiniAppBookingProps> = mem
 			filteredDoctors.find((d) => d.id === selectedDoctorId) ||
 			filteredDoctors[0] ||
 			doctorsList[0] ||
-			DEFAULT_DOCTORS_LIST[0]!
+			(isDemo ? DEFAULT_DOCTORS_LIST[0] || null : null)
 		);
-	}, [filteredDoctors, selectedDoctorId, doctorsList]);
+	}, [filteredDoctors, selectedDoctorId, doctorsList, isDemo]);
 
 	// Переключение категории с автовыбором врача
 	const handleSelectCategory = (cat: SpecialistCategory) => {
@@ -311,9 +324,9 @@ export const TelegramMiniAppBooking: React.FC<TelegramMiniAppBookingProps> = mem
 		if (liveSchedule.length > selectedDateIndex && liveSchedule[selectedDateIndex]?.slots) {
 			return liveSchedule[selectedDateIndex]!.slots;
 		}
-		// Стандартные интервалы
-		return ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00", "18:30"];
-	}, [liveSchedule, selectedDateIndex]);
+		// Стандартные интервалы только в демо-режиме
+		return isDemo ? ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00", "18:30"] : [];
+	}, [liveSchedule, selectedDateIndex, isDemo]);
 
 	// Текстовая сводка по прикрепленным зубам
 	const teethSummaryText = useMemo(() => {
@@ -325,6 +338,11 @@ export const TelegramMiniAppBooking: React.FC<TelegramMiniAppBookingProps> = mem
 
 	// Обработка бронирования
 	const handleSubmitBooking = async () => {
+		if (!currentDoctor || !selectedSlot) {
+			setIsSubmitting(false);
+			return;
+		}
+
 		const selectedDay = calendarDays[selectedDateIndex] || calendarDays[0]!;
 		setIsSubmitting(true);
 		triggerHaptic("heavy");
@@ -337,8 +355,8 @@ export const TelegramMiniAppBooking: React.FC<TelegramMiniAppBookingProps> = mem
 			.join("\n");
 
 		const bookingPayload = {
-			organizationId: organizationId || "demo-clinic-org",
-			patientId: patientId || "demo-patient-id",
+			organizationId: organizationId || (isDemo ? "demo-clinic-org" : ""),
+			patientId: patientId || (isDemo ? "demo-patient-id" : ""),
 			doctorId: currentDoctor.id,
 			date: selectedDay.dateString,
 			time: selectedSlot,
@@ -590,34 +608,40 @@ export const TelegramMiniAppBooking: React.FC<TelegramMiniAppBookingProps> = mem
 				</div>
 
 				<div className="space-y-2">
-					{filteredDoctors.map((doc) => {
-						const isSel = selectedDoctorId === doc.id;
-						return (
-							<div
-								key={doc.id}
-								className={`tg-doctor-card ${isSel ? "selected" : ""}`}
-								onClick={() => {
-									setSelectedDoctorId(doc.id);
-									triggerHaptic("light");
-								}}
-							>
-								<div className="tg-doctor-avatar">{doc.initials}</div>
-								<div className="flex-1 min-w-0">
-									<div className="text-sm font-bold text-[var(--tg-text)] flex items-center gap-1.5">
-										<span>{doc.name}</span>
-										<span className="text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-300 px-1.5 py-0.2 rounded font-bold">
-											★ {doc.rating}
-										</span>
+					{filteredDoctors.length === 0 ? (
+						<div className="tg-empty-card py-4 text-center text-xs text-[var(--tg-text-muted)]">
+							Нет доступных специалистов в данной категории
+						</div>
+					) : (
+						filteredDoctors.map((doc) => {
+							const isSel = selectedDoctorId === doc.id;
+							return (
+								<div
+									key={doc.id}
+									className={`tg-doctor-card ${isSel ? "selected" : ""}`}
+									onClick={() => {
+										setSelectedDoctorId(doc.id);
+										triggerHaptic("light");
+									}}
+								>
+									<div className="tg-doctor-avatar">{doc.initials}</div>
+									<div className="flex-1 min-w-0">
+										<div className="text-sm font-bold text-[var(--tg-text)] flex items-center gap-1.5">
+											<span>{doc.name}</span>
+											<span className="text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-300 px-1.5 py-0.2 rounded font-bold">
+												★ {doc.rating}
+											</span>
+										</div>
+										<div className="text-xs text-[var(--tg-text-muted)] truncate">{doc.specialty}</div>
+										<div className="text-[11px] text-[var(--tg-accent)] font-semibold mt-0.5">
+											Стаж практики: {doc.experience}
+										</div>
 									</div>
-									<div className="text-xs text-[var(--tg-text-muted)] truncate">{doc.specialty}</div>
-									<div className="text-[11px] text-[var(--tg-accent)] font-semibold mt-0.5">
-										Стаж практики: {doc.experience}
-									</div>
+									{isSel && <CheckCircle2 size={18} className="text-[var(--tg-accent)] flex-shrink-0" />}
 								</div>
-								{isSel && <CheckCircle2 size={18} className="text-[var(--tg-accent)] flex-shrink-0" />}
-							</div>
-						);
-					})}
+							);
+						})
+					)}
 				</div>
 			</div>
 
@@ -666,23 +690,29 @@ export const TelegramMiniAppBooking: React.FC<TelegramMiniAppBookingProps> = mem
 				</div>
 
 				<div className="tg-slots-grid">
-					{availableSlots.map((time) => {
-						const isSel = selectedSlot === time;
-						return (
-							<button
-								key={time}
-								type="button"
-								className={`tg-slot-btn ${isSel ? "selected" : ""}`}
-								onClick={() => {
-									setSelectedSlot(time);
-									triggerHaptic("light");
-								}}
-							>
-								<Clock size={13} className="mr-1.5 opacity-70" />
-								<span>{time}</span>
-							</button>
-						);
-					})}
+					{availableSlots.length === 0 ? (
+						<div className="col-span-3 text-center text-xs text-[var(--tg-text-muted)] py-3">
+							На выбранную дату нет свободных слотов для записи
+						</div>
+					) : (
+						availableSlots.map((time) => {
+							const isSel = selectedSlot === time;
+							return (
+								<button
+									key={time}
+									type="button"
+									className={`tg-slot-btn ${isSel ? "selected" : ""}`}
+									onClick={() => {
+										setSelectedSlot(time);
+										triggerHaptic("light");
+									}}
+								>
+									<Clock size={13} className="mr-1.5 opacity-70" />
+									<span>{time}</span>
+								</button>
+							);
+						})
+					)}
 				</div>
 			</div>
 
@@ -735,14 +765,16 @@ export const TelegramMiniAppBooking: React.FC<TelegramMiniAppBookingProps> = mem
 				<button
 					type="button"
 					className="tg-cta-button"
-					disabled={isSubmitting}
+					disabled={isSubmitting || !selectedSlot || !currentDoctor}
 					onClick={handleSubmitBooking}
 				>
 					<Calendar size={18} />
 					<span className="truncate">
 						{isSubmitting
 							? "Оформление записи..."
-							: `Записаться к доктору на ${calendarDays[selectedDateIndex]?.dayNum} ${calendarDays[selectedDateIndex]?.month} в ${selectedSlot}`}
+							: !currentDoctor || !selectedSlot
+								? "Выберите врача и свободное время"
+								: `Записаться к доктору на ${calendarDays[selectedDateIndex]?.dayNum} ${calendarDays[selectedDateIndex]?.month} в ${selectedSlot}`}
 					</span>
 				</button>
 			</div>

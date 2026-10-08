@@ -17,6 +17,7 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import {
+	AlertTriangle,
 	Banknote,
 	Check,
 	CheckCircle,
@@ -219,11 +220,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 								type="button"
 								onClick={() => setShowReceiptSidePanel((prev) => !prev)}
 								className={`payment-doc-tab ${showReceiptSidePanel ? "is-active" : ""}`}
-								title="Показать/скрыть кассовую ленту 54-ФЗ"
+								title="Показать/скрыть кассовый чек"
 								data-testid="btn-toggle-receipt-tape"
 							>
 								<Receipt size={14} className={showReceiptSidePanel ? "text-teal-600 dark:text-teal-400" : ""} />
-								<span className="hidden sm:inline">Кассовая лента 54-ФЗ</span>
+								<span className="hidden sm:inline">Кассовый чек</span>
 							</button>
 
 							<button
@@ -323,6 +324,53 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 								>
 									<Sparkles size={14} />
 									<span>Закрыть визит (0 ₽)</span>
+								</button>
+							</div>
+						)}
+
+						{/* Debt Autonomy Banner (Mandates 8e & 8n: Patient debt never blocks receipt or tender) */}
+						{patientDebtRub > 0 && (
+							<div
+								data-testid="debt-autonomy-banner"
+								className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs font-medium text-amber-700 dark:text-amber-300 flex items-center gap-2"
+							>
+								<AlertTriangle size={14} className="shrink-0 text-amber-600" />
+								<span>
+									Задолженность пациента: {patientDebtRub.toLocaleString("ru-RU")} ₽. Долг не блокирует приём оплаты на фактически вносимую сумму.
+								</span>
+							</div>
+						)}
+
+						{/* 1-Click Patient Deposit Debit Chip (Mandates 8c, 8e) */}
+						{patientDepositRub > 0 && discountsHook.totalDueRub > 0 && (
+							<div
+								className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 flex items-center justify-between gap-2.5 flex-wrap animate-in fade-in"
+								data-testid="banner-quick-deposit-debit"
+							>
+								<div className="flex items-center gap-2">
+									<Wallet size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+									<div className="text-xs">
+										<span className="font-bold text-indigo-950 dark:text-indigo-200">
+											На депозите пациента:{" "}
+										</span>
+										<span className="font-mono font-black text-indigo-700 dark:text-indigo-300">
+											{patientDepositRub.toLocaleString("ru-RU")} ₽
+										</span>
+									</div>
+								</div>
+								<button
+									type="button"
+									disabled={execHook.isSubmittingDeposit}
+									onClick={() => execHook.handleDepositOrPartialCombo("deposit")}
+									className="min-h-[36px] px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer transition-all active:scale-95 disabled:opacity-50 flex items-center gap-1.5 shadow-xs"
+									data-testid="btn-quick-debit-deposit-chip"
+								>
+									<Zap size={14} />
+									<span>
+										{patientDepositRub >= discountsHook.totalDueRub
+											? `Списать ${discountsHook.totalDueRub.toLocaleString("ru-RU")} ₽ с депозита`
+											: `Зачесть ${patientDepositRub.toLocaleString("ru-RU")} ₽ + остаток`}
+									</span>
 								</button>
 							</div>
 						)}
@@ -534,11 +582,80 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 									<Users size={12} className="text-teal-600 dark:text-teal-400" />
 									<span>Нал + Карта + Аванс</span>
 								</button>
+								<button
+									type="button"
+									onClick={() => {
+										tendersHook.setActiveMethod("cash");
+										tendersHook.setReceivedCashRub(discountsHook.totalDueRub);
+									}}
+									className="discount-preset-chip"
+									data-testid="preset-exact-cash"
+									title="Вся сумма наличными ровно"
+								>
+									<Banknote size={12} className="text-emerald-600 dark:text-emerald-400" />
+									<span>Всё налом</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										tendersHook.setActiveMethod("card_terminal");
+									}}
+									className="discount-preset-chip"
+									data-testid="preset-full-card"
+									title="Вся сумма картой через терминал"
+								>
+									<CreditCard size={12} className="text-blue-600 dark:text-blue-400" />
+									<span>Всё картой</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										const half = Math.round(discountsHook.totalDueRub / 2);
+										tendersHook.setSplitCashRub(half);
+										tendersHook.setSplitCardRub(discountsHook.totalDueRub - half);
+										tendersHook.setActiveMethod("split");
+									}}
+									className="discount-preset-chip"
+									data-testid="preset-50-50-cash-card"
+									title="50% наличными, 50% картой"
+								>
+									<span>50/50 Нал + Карта</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										const depositToUse = Math.min(discountsHook.totalDueRub, patientDepositRub);
+										tendersHook.setSplitDepositRub(depositToUse);
+										tendersHook.setSplitCardRub(discountsHook.totalDueRub - depositToUse);
+										tendersHook.setActiveMethod("split");
+									}}
+									className="discount-preset-chip"
+									data-testid="preset-spend-all-deposit-bonus"
+									title="Списать весь доступный депозит"
+								>
+									<span>Списать весь аванс</span>
+								</button>
 							</div>
 						</div>
 
 						{/* 54-FZ Buyer Info (Frictionless, Citizen INN is strictly optional) */}
 						<div className="p-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] space-y-2 text-xs" data-testid="payer-type-section">
+							<div className="flex gap-2">
+								<button
+									type="button"
+									className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)]"
+									data-testid="tab-payer-physical"
+								>
+									Физлицо (пациент)
+								</button>
+								<button
+									type="button"
+									className="px-2.5 py-1 text-xs font-semibold rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									data-testid="tab-payer-legal"
+								>
+									Юрлицо / Организация
+								</button>
+							</div>
 							<div className="flex items-center justify-between flex-wrap gap-2">
 								<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
 									<User size={14} className="text-teal-600" />
@@ -578,7 +695,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 										<span>Предпросмотр чека</span>
 									</span>
 									<span className="text-[10px] font-mono text-emerald-600 font-bold">
-										54-ФЗ онлайн
+										Онлайн-касса
 									</span>
 								</div>
 								<ReceiptPreview
@@ -639,7 +756,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 								data-testid="btn-mobile-print-receipt-tape"
 							>
 								<Printer size={16} className="shrink-0" />
-								<span>Печать чека 54-ФЗ</span>
+								<span>Печать кассового чека</span>
 							</button>
 						) : discountsHook.totalDueRub === 0 ? (
 							<button

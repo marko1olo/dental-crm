@@ -26,12 +26,16 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import {
 	filterDoctorShiftAppointments,
 	calculateDoctorShiftEarnings,
+	calculateServicePieceRateAccrual,
 	initiateBatchEmrSigning,
 	verifyAndSignBatchEmr,
 	transitionAppointmentStatus,
+	adaptToDoctorShiftAppointments,
+	SAMPLE_DOCTOR_SHIFT_APPOINTMENTS,
 	DOCTOR_APPOINTMENT_STATUS_META,
 	EMR_043_STATUS_META,
 	type DoctorShiftAppointment,
@@ -51,17 +55,41 @@ import "./doctorMobileShift.css";
 export interface DoctorMobileShiftModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly initialDoctorId?: string;
-	readonly initialDoctorName?: string;
-	readonly initialDoctorSpecialty?: string;
-	readonly initialShiftDateIso?: string;
-	readonly initialAppointments?: readonly DoctorShiftAppointment[];
-	readonly onAppointmentUpdate?: (appointments: readonly DoctorShiftAppointment[]) => void;
-	readonly onEmergencyVisit?: () => void;
-	readonly onShiftClose?: () => void;
+	readonly initialDoctorId?: string | undefined;
+	readonly initialDoctorName?: string | undefined;
+	readonly initialDoctorSpecialty?: string | undefined;
+	readonly initialShiftDateIso?: string | undefined;
+	readonly initialAppointments?: readonly DoctorShiftAppointment[] | undefined;
+	readonly rawAppointments?: readonly any[] | undefined;
+	readonly patients?: readonly any[] | undefined;
+	readonly chairs?: readonly any[] | undefined;
+	readonly onAppointmentUpdate?: ((appointments: readonly DoctorShiftAppointment[]) => void) | undefined;
+	readonly onEmergencyVisit?: (() => void) | undefined;
+	readonly onShiftClose?: (() => void) | undefined;
 }
 
 const EMPTY_INITIAL_APPOINTMENTS: readonly DoctorShiftAppointment[] = [];
+
+function getShowcaseShiftAppointments(
+	doctorId: string,
+	doctorName: string,
+	doctorSpecialty: string,
+	shiftDateIso: string,
+): DoctorShiftAppointment[] {
+	const targetDate = shiftDateIso?.split("T")[0] || new Date().toISOString().split("T")[0]!;
+	return SAMPLE_DOCTOR_SHIFT_APPOINTMENTS.map((apt) => {
+		const timeStart = apt.startsAtIso.split("T")[1] || "09:00:00.000Z";
+		const timeEnd = apt.endsAtIso.split("T")[1] || "10:00:00.000Z";
+		return {
+			...apt,
+			doctorId,
+			doctorFullName: doctorName || apt.doctorFullName,
+			doctorSpecialty: doctorSpecialty || apt.doctorSpecialty,
+			startsAtIso: `${targetDate}T${timeStart}`,
+			endsAtIso: `${targetDate}T${timeEnd}`,
+		};
+	});
+}
 
 export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 	isOpen,
@@ -71,13 +99,38 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 	initialDoctorSpecialty = "Врач-стоматолог терапевт-ортопед",
 	initialShiftDateIso = new Date().toISOString().split("T")[0]!,
 	initialAppointments = EMPTY_INITIAL_APPOINTMENTS,
+	rawAppointments,
+	patients,
+	chairs,
 	onAppointmentUpdate,
 	onEmergencyVisit,
 	onShiftClose,
 }) => {
-	const [appointments, setAppointments] = useState<readonly DoctorShiftAppointment[]>(
-		initialAppointments,
-	);
+	const [appointments, setAppointments] = useState<readonly DoctorShiftAppointment[]>(() => {
+		if (initialAppointments && initialAppointments.length > 0) {
+			return initialAppointments;
+		}
+		if (rawAppointments && rawAppointments.length > 0) {
+			return adaptToDoctorShiftAppointments({
+				appointments: rawAppointments,
+				doctorId: initialDoctorId,
+				doctorName: initialDoctorName,
+				doctorSpecialty: initialDoctorSpecialty,
+				shiftDateIso: initialShiftDateIso,
+				patients,
+				chairs,
+			});
+		}
+		if (isDemoShowcaseMode()) {
+			return getShowcaseShiftAppointments(
+				initialDoctorId,
+				initialDoctorName,
+				initialDoctorSpecialty,
+				initialShiftDateIso,
+			);
+		}
+		return EMPTY_INITIAL_APPOINTMENTS;
+	});
 	const [activeTab, setActiveTab] = useState<
 		"all" | "in_chair" | "waiting" | "completed" | "needs_sign"
 	>("all");
@@ -90,10 +143,91 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 	const [smsCountdown, setSmsCountdown] = useState<number>(300);
 	const [isSubmittingCode, setIsSubmittingCode] = useState<boolean>(false);
 
-	// Sync when initialAppointments change
+	// Synchronize or load live shift appointments
 	useEffect(() => {
-		setAppointments((prev) => (prev === initialAppointments ? prev : initialAppointments));
-	}, [initialAppointments]);
+		if (initialAppointments && initialAppointments.length > 0) {
+			setAppointments(initialAppointments);
+			return;
+		}
+		if (rawAppointments && rawAppointments.length > 0) {
+			const adapted = adaptToDoctorShiftAppointments({
+				appointments: rawAppointments,
+				doctorId: initialDoctorId,
+				doctorName: initialDoctorName,
+				doctorSpecialty: initialDoctorSpecialty,
+				shiftDateIso: initialShiftDateIso,
+				patients,
+				chairs,
+			});
+			setAppointments(adapted);
+			return;
+		}
+		if (isDemoShowcaseMode()) {
+			setAppointments(
+				getShowcaseShiftAppointments(
+					initialDoctorId,
+					initialDoctorName,
+					initialDoctorSpecialty,
+					initialShiftDateIso,
+				),
+			);
+			return;
+		}
+
+		// Боевой режим (Production: !isDemoShowcaseMode()): загружаем живые приемы лечащего врача из API
+		let isMounted = true;
+		const targetDate =
+			initialShiftDateIso?.split("T")[0] || new Date().toISOString().split("T")[0]!;
+
+		const fetchLiveAppointments = async () => {
+			try {
+				const res = await fetch(
+					`/api/appointments?doctorId=${encodeURIComponent(initialDoctorId)}&date=${encodeURIComponent(targetDate)}`,
+				);
+				if (res.ok) {
+					const data = await res.json();
+					const list = Array.isArray(data)
+						? data
+						: Array.isArray(data?.appointments)
+							? data.appointments
+							: [];
+					if (isMounted) {
+						const adapted = adaptToDoctorShiftAppointments({
+							appointments: list,
+							doctorId: initialDoctorId,
+							doctorName: initialDoctorName,
+							doctorSpecialty: initialDoctorSpecialty,
+							shiftDateIso: targetDate,
+							patients,
+							chairs,
+						});
+						setAppointments(adapted);
+						onAppointmentUpdate?.(adapted);
+					}
+				}
+			} catch (err) {
+				console.warn(
+					"[DoctorMobileShiftModal] Загрузка расписания смены из API завершилась с ошибкой",
+					err,
+				);
+			}
+		};
+
+		fetchLiveAppointments();
+		return () => {
+			isMounted = false;
+		};
+	}, [
+		initialAppointments,
+		rawAppointments,
+		initialDoctorId,
+		initialDoctorName,
+		initialDoctorSpecialty,
+		initialShiftDateIso,
+		patients,
+		chairs,
+		onAppointmentUpdate,
+	]);
 
 	// Isolate current doctor's appointments
 	const doctorAppointments = useMemo(() => {
@@ -200,6 +334,54 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 		showToast(`Статус приема изменен: ${statusTitle}`, "info");
 	};
 
+	const persistBatchSigningToApi = async (
+		protocolHash: string,
+		signedAtIso: string,
+		targetIds: readonly string[],
+		updatedAppts: readonly DoctorShiftAppointment[],
+	) => {
+		try {
+			await fetch("/api/diary/shifts", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					shifts: [
+						{
+							doctorId: initialDoctorId,
+							doctorName: initialDoctorName,
+							shiftDateIso: initialShiftDateIso,
+							protocolHash,
+							signedAtIso,
+							signedAppointmentIds: targetIds,
+							appointments: updatedAppts,
+						},
+					],
+				}),
+			});
+		} catch (err) {
+			console.warn(
+				"[DoctorMobileShiftModal] Ошибка отправки статуса смены на /api/diary/shifts",
+				err,
+			);
+		}
+
+		for (const aptId of targetIds) {
+			try {
+				await fetch(`/api/diaries/${encodeURIComponent(aptId)}/lock`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						pkcs7Signature: protocolHash,
+						pepProtocolHash: protocolHash,
+						signedAtIso,
+					}),
+				});
+			} catch {
+				// Non-blocking fallback
+			}
+		}
+	};
+
 	// Start Batch Signing Session
 	const handleInitiateBatchSigning = () => {
 		if (unsignedAppointmentIds.length === 0) {
@@ -246,13 +428,19 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 			setAppointments(result.updatedAppointments);
 			onAppointmentUpdate?.(result.updatedAppointments);
 			setSigningSession(null);
+			persistBatchSigningToApi(
+				result.protocolHash,
+				result.signedAtIso,
+				result.signedAppointmentIds,
+				result.updatedAppointments,
+			);
 			showToast(result.messageRu, "success");
 		} else {
 			showToast(result.messageRu, "error");
 		}
 	};
 
-	// 1-Click Legal PEP Signing via Active Session (Mandate 8e, 63-ФЗ ст. 9, Приказ Минздрава РФ 947н)
+	// 1-Click Legal PEP Signing via Active Session
 	const handleSessionPepSigning = (targetIds: readonly string[]) => {
 		if (targetIds.length === 0) {
 			showToast("Все медицинские карты уже подписаны!", "success");
@@ -280,6 +468,12 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 			setAppointments(result.updatedAppointments);
 			onAppointmentUpdate?.(result.updatedAppointments);
 			setSigningSession(null);
+			persistBatchSigningToApi(
+				result.protocolHash,
+				result.signedAtIso,
+				result.signedAppointmentIds,
+				result.updatedAppointments,
+			);
 			showToast(result.messageRu, "success");
 		} else {
 			showToast(result.messageRu, "error");
@@ -626,6 +820,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 														<div className="text-[10px] text-[var(--muted)]">
 															Код: {srv.code804n} • {srv.commissionPercent ?? 25}% сделка
 															{(srv.directLabZtlCostKop ?? 0) > 0 && ` • Вычет ЗТЛ: −${formatKopecksRu(srv.directLabZtlCostKop ?? 0)}`}
+															{(srv.directMaterialCostKop ?? 0) > 0 && ` • Материалы: −${formatKopecksRu(srv.directMaterialCostKop ?? 0)}`}
 														</div>
 													</div>
 													<div className="text-right whitespace-nowrap">
@@ -674,10 +869,10 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 													onClick={() => handleSessionPepSigning([apt.id])}
 													className="doctor-pwa-action-btn primary !bg-[var(--teal-fill,#0d9488)] !text-[var(--on-teal,#ffffff)]"
 													data-testid={`btn-sign-043-pep-${apt.id}`}
-													title="Подписать сессионной ПЭП (Авторизован в системе по 63-ФЗ ст. 9)"
+													title="Подписать сессионной ПЭП (63-ФЗ ст. 9)"
 												>
 													<Zap size={14} />
-													<span>Подписать сессионной ПЭП (Авторизован в системе по 63-ФЗ ст. 9)</span>
+													<span>Подписать ПЭП</span>
 												</button>
 												<button
 													type="button"
@@ -787,7 +982,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 							{/* Statutory basis badge */}
 							<div className="p-2.5 rounded-xl bg-[var(--paper,#121826)] border border-[var(--line,#334155)] text-[10px] text-[var(--muted)] flex items-center gap-2">
 								<ShieldCheck size={14} className="text-[var(--emerald)] shrink-0" />
-								<span>Заверение простой электронной подписью по 63-ФЗ ст. 9 и Приказу Минздрава РФ 947н.</span>
+								<span>ПЭП в соответствии с 63-ФЗ ст. 9 и Приказом 947н</span>
 							</div>
 
 							{/* Confirm Button */}
@@ -820,7 +1015,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 								title="Подписать сессионной ПЭП без ожидания СМС"
 							>
 								<Zap size={14} />
-								<span>Подписать сессионной ПЭП (Авторизован в системе по 63-ФЗ ст. 9)</span>
+								<span>Подписать ПЭП (без ожидания СМС)</span>
 							</button>
 						</div>
 					</div>

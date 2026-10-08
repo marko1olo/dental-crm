@@ -197,8 +197,54 @@ const mockDashboard: Dashboard = {
   },
 } as any;
 
+const mockTreatmentPlan = {
+  id: "plan-101",
+  name: "Комплексный план санации и реставрации",
+  status: "Approved",
+  stages: [
+    {
+      id: "stage-1",
+      stageNumber: 1,
+      title: "Терапевтическая санация кариеса",
+      items: [
+        {
+          id: "tp-item-1",
+          code804n: "A16.07.002",
+          name: "Восстановление зуба световым композитом",
+          price: 4500,
+          quantity: 1,
+          toothNumber: 16,
+        },
+        {
+          id: "tp-item-2",
+          code804n: "A16.07.051",
+          name: "Профессиональная гигиена полости рта",
+          price: 3500,
+          quantity: 1,
+        },
+      ],
+    },
+    {
+      id: "stage-2",
+      stageNumber: 2,
+      title: "Ортопедический этап",
+      items: [
+        {
+          id: "tp-item-3",
+          code804n: "A16.07.004",
+          name: "Восстановление зуба керамической коронкой",
+          price: 28000,
+          quantity: 1,
+          toothNumber: 26,
+        },
+      ],
+    },
+  ],
+};
+
 export const MobileHigPreviewApp: React.FC = () => {
   const [screen, setScreen] = useState<"schedule" | "patients" | "chairside" | "patient_profile" | "payment">("schedule");
+  const [chairsideStep, setChairsideStep] = useState<any>("complaints");
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [currentDateKey, setCurrentDateKey] = useState<string>(todayIso);
   const [patientQuery, setPatientQuery] = useState("");
@@ -209,6 +255,10 @@ export const MobileHigPreviewApp: React.FC = () => {
     const screenParam = urlParams.get("screen") as "schedule" | "patients" | "chairside" | "patient_profile" | "payment" | null;
     if (screenParam && ["schedule", "patients", "chairside", "patient_profile", "payment"].includes(screenParam)) {
       setScreen(screenParam);
+    }
+    const stepParam = urlParams.get("step");
+    if (stepParam && ["complaints", "exam", "diagnosis", "treatment", "checkout"].includes(stepParam)) {
+      setChairsideStep(stepParam);
     }
     const themeParam = urlParams.get("theme") as "light" | "dark" | null;
     if (themeParam && ["light", "dark"].includes(themeParam)) {
@@ -356,6 +406,8 @@ export const MobileHigPreviewApp: React.FC = () => {
           handleOpenLabOrder={() => {}}
           onClose={() => setScreen("schedule")}
           testId="mobile-chairside-workspace"
+          loadedTreatmentPlan={mockTreatmentPlan}
+          initialStep={chairsideStep}
         />
       )}
 

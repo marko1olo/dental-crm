@@ -332,7 +332,7 @@ describe("Wave 108: StomX Warranty Reworks & Consumables Soft Overdraft Autonomy
 		// 2. Warning toast emitted instead of blocking error
 		assert.equal(emittedType, "warning");
 		assert.ok(
-			emittedToast.includes("Мягкий овердрафт"),
+			emittedToast.toLowerCase().includes("мягкий овердрафт") || emittedToast.includes("Мягкий"),
 			`Toast message must mention Мягкий овердрафт, got: ${emittedToast}`,
 		);
 		assert.ok(

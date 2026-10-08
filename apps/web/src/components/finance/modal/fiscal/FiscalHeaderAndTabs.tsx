@@ -66,11 +66,11 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 									: activeTab === "correction"
 										? "Чек коррекции"
 										: activeTab === "certificate"
-											? "Справка для налогового вычета"
+											? "Справка для вычета (13%)"
 											: activeTab === "act"
-												? "Акт сдачи-приемки выполненных услуг"
+												? "Акт выполненных услуг"
 												: activeTab === "oneC"
-													? "1С:Предприятие 8.3 / Экспорт в CommerceML 2.09"
+													? "Экспорт в 1С"
 													: "Касса · Прием платежей и печать чеков"}
 							</h3>
 							<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-bold shrink-0">
@@ -80,7 +80,7 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 								<span
 									className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-800 dark:text-blue-300 border border-blue-500/30 font-bold shrink-0"
 									data-testid="header-offline-fiscal-queue-badge"
-									title="В очереди фоновой фискализации 54-ФЗ"
+									title="В очереди отправки в онлайн-кассу"
 								>
 									Чек в очереди фискализации ({pendingCount})
 								</span>
@@ -88,7 +88,7 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 							{!isOnline && (
 								<span
 									className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold shrink-0"
-									title="Сетевое соединение отсутствует: включен офлайн-буфер 54-ФЗ"
+									title="Сетевое соединение отсутствует: автономный режим кассы"
 								>
 									Офлайн-касса
 								</span>
@@ -218,7 +218,7 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 						}`}
 						data-testid="tab-1c-export"
 					>
-						1С:Экспорт XML
+						Экспорт в 1С
 					</button>
 					<button
 						type="button"
@@ -229,7 +229,7 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--line-subtle,rgba(0,0,0,0.03))]"
 						}`}
 					>
-						Справка для налоговой (13%)
+						Справка для вычета (13%)
 					</button>
 					<button
 						type="button"

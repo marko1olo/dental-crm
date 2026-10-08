@@ -83,13 +83,13 @@ export const ROLE_TOUR_CATALOGS: Record<TourRole, RoleTourCatalog> = {
 			},
 			{
 				id: "admin_cashier_checkout",
-				title: "Касса и фискальный чек 54-ФЗ",
+				title: "Касса и кассовый чек",
 				targetSelector: '[data-tour="cashier-pay"], [data-tour="fast-cashier"], #cashier-tender-action-btn, [data-testid="payment-submit-button"]',
 				fallbackSelector: 'a[href="#finance"], [data-testid="btn-finance-open-cashbox"]',
 				viewTarget: "finance",
 				description:
 					"Нажмите F9 для мгновенного чекаута. Оплата картой, наличными или по динамическому QR-коду СБП с 0% эквайринговой комиссии.",
-				clinicalTip: "ИНН физлица по 54-ФЗ не требуется — чек формируется за 2 секунды без очередей.",
+				clinicalTip: "ИНН физлица не требуется — чек формируется за 2 секунды без очередей.",
 				actionBadge: "F9 быстрый чек",
 			},
 		],
@@ -139,7 +139,7 @@ export const ROLE_TOUR_CATALOGS: Record<TourRole, RoleTourCatalog> = {
 				fallbackSelector: 'a[href="#visit"]',
 				viewTarget: "visit",
 				description:
-					"Кнопка «Завершить приём» сохраняет дневник карты 043/у и моментально отправляет сформированный счёт на стойку администратора.",
+					"Кнопка «Завершить приём» сохраняет дневник приёма и моментально отправляет сформированный счёт на стойку администратора.",
 				clinicalTip: "Офлайн-сохранение: все данные сохраняются локально и прозрачно синхронизируются при появлении сети.",
 				actionBadge: "Завершить и счёт",
 			},
@@ -179,7 +179,7 @@ export const ROLE_TOUR_CATALOGS: Record<TourRole, RoleTourCatalog> = {
 				fallbackSelector: 'a[href="#inventory"]',
 				viewTarget: "inventory",
 				description:
-					"Автоматическое списание медикаментов по техкартам процедур (804н), партии FEFO, контроль сроков годности и критических остатков.",
+					"Автоматическое списание медикаментов по техкартам процедур, партии FEFO, контроль сроков годности и критических остатков.",
 				clinicalTip: "Мягкий учет: приём пациента никогда не блокируется из-за задержки приходной накладной.",
 				actionBadge: "FEFO склад",
 			},

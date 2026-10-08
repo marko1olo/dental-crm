@@ -152,6 +152,31 @@
   }
 }
 
+/* Calm Green Clean Allergy Badge */
+.mobile-chairside-allergy-clean {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  white-space: nowrap;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+}
+
+:root.dark .mobile-chairside-allergy-clean {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
 .mobile-chairside-hud-actions {
   display: flex;
   align-items: center;
@@ -193,14 +218,14 @@
 .mobile-chairside-steps-scroll {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 4px;
+  justify-content: flex-start;
+  gap: 6px;
   width: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  padding: 2px 0;
+  padding: 2px 4px;
   box-sizing: border-box;
 }
 
@@ -209,23 +234,23 @@
 }
 
 .mobile-chairside-step-chip {
-  min-height: 36px;
-  padding: 4px 6px;
-  border-radius: 10px;
-  font-size: 11px;
+  min-height: 38px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 4px;
   border: 1px solid var(--line, #e2e8f0);
   background: var(--paper, #ffffff);
   color: var(--muted, #64748b);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  flex: 1 1 0%;
-  min-width: 0;
+  flex: 0 0 auto;
+  flex-shrink: 0;
 }
 
 .mobile-chairside-step-chip.is-active {
@@ -355,17 +380,10 @@
 .mobile-smart-mic-chips {
   display: flex;
   align-items: center;
-  gap: 8px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  padding: 4px 16px 4px 2px;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 2px;
   box-sizing: border-box;
-}
-
-.mobile-smart-mic-chips::-webkit-scrollbar {
-  display: none;
 }
 
 .mobile-smart-mic-chip {

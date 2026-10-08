@@ -165,7 +165,7 @@ export function IncomingCallerCard({
 					<div className="min-w-0 flex-1">
 						<div className="flex items-center gap-1.5 flex-wrap">
 							<h3
-								className="text-sm font-bold text-[var(--ink,#0f172a)] truncate max-w-[200px] sm:max-w-[240px]"
+								className="text-sm font-bold text-[var(--ink,#0f172a)] break-words leading-tight"
 								title={callerName}
 							>
 								{callerName}
@@ -202,16 +202,16 @@ export function IncomingCallerCard({
 					{hasDebt ? (
 						<span
 							className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 shrink-0"
-							title={`Задолженность пациента: ${financialSummary.formattedDebt}`}
+							title={`Задолженность пациента: ${financialSummary.formattedDebt || `${Math.abs(financialSummary.debtRub || financialSummary.balanceRub || 0)} ₽`}`}
 						>
-							Долг: {financialSummary.formattedDebt}
+							Долг: {financialSummary.formattedDebt || `${Math.abs(financialSummary.debtRub || financialSummary.balanceRub || 0)} ₽`}
 						</span>
-					) : financialSummary.balanceRub > 0 ? (
+					) : (financialSummary.balanceRub || 0) > 0 ? (
 						<span
 							className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0"
-							title={`Аванс на балансе: ${financialSummary.formattedBalance}`}
+							title={`Аванс на балансе: ${financialSummary.formattedBalance || `${financialSummary.balanceRub || 0} ₽`}`}
 						>
-							Аванс: +{financialSummary.formattedBalance}
+							Аванс: +{financialSummary.formattedBalance || `${financialSummary.balanceRub || 0} ₽`}
 						</span>
 					) : (
 						<span
@@ -283,7 +283,7 @@ export function IncomingCallerCard({
 					{allergyAlerts.length > 0 && (
 						<span
 							className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-800 flex items-center gap-1"
-							title={`Аллергия: ${allergyAlerts.map((a) => a.label).join(", ")}`}
+							title={`Аллергия: ${allergyAlerts.map((a) => a.label || (a as any).text || "Аллергия").join(", ")}`}
 						>
 							<AlertTriangle size={11} className="text-rose-600 shrink-0" />
 							Аллергия
@@ -320,7 +320,10 @@ export function IncomingCallerCard({
 				</div>
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-2 flex-wrap">
-						<h3 className="text-base font-bold text-[var(--ink,#0f172a)] truncate">
+						<h3
+							className="text-base font-bold text-[var(--ink,#0f172a)] break-words leading-tight"
+							title={callerName}
+						>
 							{callerName}
 						</h3>
 						{renderStatusBadge()}
@@ -373,27 +376,41 @@ export function IncomingCallerCard({
 						<span>Медицинские предупреждения:</span>
 					</div>
 					<div className="space-y-1">
-						{somaticAlerts.map((alert, idx) => (
-							<div
-								// biome-ignore lint/suspicious/noArrayIndexKey: simple alert items
-								key={idx}
-								className="flex items-start gap-1.5 text-xs"
-							>
-								<span className="text-rose-500 font-bold">•</span>
-								<span>
-									<strong>{alert.label}</strong>
-									<span className="text-rose-600/80 dark:text-rose-400/80 ml-1">
-										(
-										{alert.category === "allergy"
-											? "Аллергия"
-											: alert.category === "pain"
-												? "Острая боль"
-												: alert.severity}
-										)
+						{somaticAlerts.map((alert, idx) => {
+							const categoryLabel =
+								alert.category === "allergy"
+									? "Аллергия"
+									: alert.category === "pain"
+										? "Острая боль"
+										: alert.category === "chronic"
+											? "Хроническое"
+											: alert.category === "risk"
+												? "Фактор риска"
+												: alert.severity === "high"
+													? "Высокий риск"
+													: alert.severity === "medium"
+														? "Умеренный риск"
+														: alert.severity === "info"
+															? "Информация"
+															: "Внимание";
+							const alertText = alert.label || (alert as any).text || "Предупреждение";
+
+							return (
+								<div
+									// biome-ignore lint/suspicious/noArrayIndexKey: simple alert items
+									key={idx}
+									className="flex items-start gap-1.5 text-xs"
+								>
+									<span className="text-rose-500 font-bold">•</span>
+									<span>
+										<strong>{alertText}</strong>
+										<span className="text-rose-600/80 dark:text-rose-400/80 ml-1">
+											({categoryLabel})
+										</span>
 									</span>
-								</span>
-							</div>
-						))}
+								</div>
+							);
+						})}
 					</div>
 				</div>
 			)}
@@ -421,14 +438,14 @@ export function IncomingCallerCard({
 							className={`text-sm font-bold ${
 								hasDebt
 									? "text-rose-600"
-									: financialSummary.balanceRub > 0
+									: (financialSummary.balanceRub || 0) > 0
 										? "text-emerald-600"
 										: "text-[var(--ink,#0f172a)]"
 							}`}
 						>
 							{hasDebt
-								? `-${financialSummary.formattedDebt}`
-								: financialSummary.formattedBalance}
+								? `-${financialSummary.formattedDebt || `${Math.abs(financialSummary.debtRub || financialSummary.balanceRub || 0)} ₽`}`
+								: (financialSummary.formattedBalance || `${financialSummary.balanceRub || 0} ₽`)}
 						</span>
 					</div>
 					<div className="p-2.5 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)]">

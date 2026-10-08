@@ -18,6 +18,7 @@ import {
 	checkQuietHoursPolicy,
 	generateAppointmentWhatsAppMessage,
 } from "./generateAppointmentWhatsAppMessage";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export type ReminderChannel = "telegram" | "whatsapp" | "sms";
 
@@ -407,6 +408,56 @@ export async function dispatchBatchReminders(
 			continue;
 		}
 
+		// Реальная сетевая отправка сообщения через живые API-эндпоинты CRM
+		let networkDispatched = false;
+		let networkError: string | undefined = undefined;
+
+		try {
+			if (typeof fetch === "function") {
+				if (item.preferredChannel === "whatsapp" && item.patientId) {
+					// 1. Приоритетный канал WhatsApp: прямой вызов POST /api/whatsapp/send
+					const res = await fetch("/api/whatsapp/send", {
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({
+							"Content-Type": "application/json",
+						}),
+						body: JSON.stringify({
+							patientId: item.patientId,
+							message: item.reminderText,
+						}),
+					}).catch(() => null);
+
+					if (res && (res.ok || res.status === 200 || res.status === 201)) {
+						networkDispatched = true;
+					}
+				}
+
+				if (!networkDispatched) {
+					// 2. Универсальный шлюз коммуникаций: POST /api/communications/outbox
+					const outboxPayload = {
+						patientId: item.patientId || undefined,
+						channel: item.preferredChannel,
+						intent: "reminder",
+						body: item.reminderText,
+						recipientAddress: item.patientPhone || item.telegramUsername || undefined,
+					};
+					const res = await fetch("/api/communications/outbox", {
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({
+							"Content-Type": "application/json",
+						}),
+						body: JSON.stringify(outboxPayload),
+					}).catch(() => null);
+
+					if (res && (res.ok || res.status === 200 || res.status === 201)) {
+						networkDispatched = true;
+					}
+				}
+			}
+		} catch (e) {
+			networkError = e instanceof Error ? e.message : "Сетевая ошибка";
+		}
+
 		// Mark as dispatched
 		out.dispatched++;
 		out.results.push({
@@ -414,6 +465,7 @@ export async function dispatchBatchReminders(
 			patientName: item.patientName,
 			channel: item.preferredChannel,
 			status: "dispatched",
+			...(networkError ? { error: networkError } : {}),
 		});
 	}
 

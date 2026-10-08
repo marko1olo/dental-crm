@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { ToothDeciduous } from "../icons/DentalIcons";
 import { showToast } from "../GlobalToast";
+import { resolveBraveryDiplomaRequisites } from "../../utils/pediatric/braveryDiplomaGenerator.js";
 
 export interface PediatricBraveryDiplomaModalProps {
 	readonly isOpen: boolean;
@@ -35,12 +36,24 @@ export interface PediatricBraveryDiplomaModalProps {
 export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModalProps> = ({
 	isOpen,
 	onClose,
-	patientName = "Юный пациент",
+	patientName,
 	patientAgeYears = 6,
-	doctorName = "Врач-стоматолог детский",
-	clinicName = "Детское отделение DENTE",
+	doctorName,
+	clinicName,
 	visitDate,
 }) => {
+	const resolvedRequisites = useMemo(() => {
+		return resolveBraveryDiplomaRequisites({
+			patientName,
+			patientAgeYears,
+			doctorName,
+			clinicName,
+		});
+	}, [patientName, patientAgeYears, doctorName, clinicName]);
+
+	const effectiveDoctorName = resolvedRequisites.doctorName;
+	const effectiveClinicName = resolvedRequisites.clinicName;
+
 	const effectiveDate = useMemo(() => {
 		if (visitDate) return visitDate;
 		return new Date().toLocaleDateString("ru-RU", {
@@ -50,7 +63,16 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 		});
 	}, [visitDate]);
 
-	const [heroName, setHeroName] = useState<string>(patientName || "Юный герой");
+	const [heroName, setHeroName] = useState<string>(
+		patientName?.trim() || resolvedRequisites.patientName || "Юный пациент",
+	);
+
+	useEffect(() => {
+		if (patientName?.trim()) {
+			setHeroName(patientName.trim());
+		}
+	}, [patientName]);
+
 	const [praiseText, setPraiseText] = useState<string>(
 		"Награждается за невероятную храбрость, ослепительную улыбку и дружбу с Зубной Феей на приеме у врача-стоматолога!",
 	);
@@ -62,10 +84,10 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 	}, [heroName]);
 
 	const doctorDisplay = useMemo(() => {
-		const trimmed = doctorName.trim();
+		const trimmed = effectiveDoctorName.trim();
 		if (!trimmed) return "Доктор: Врач-стоматолог";
 		return trimmed.startsWith("Доктор:") ? trimmed : `Доктор: ${trimmed}`;
-	}, [doctorName]);
+	}, [effectiveDoctorName]);
 
 	const handlePrintDiploma = useCallback(() => {
 		const printWindow = window.open("", "_blank");
@@ -208,6 +230,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 			<body>
 				<div class="diploma-card">
 					<div class="diploma-badge">Орден Зубной Феи</div>
+					<div class="diploma-number" style="font-family: monospace; font-size: 11px; font-weight: 700; color: #b45309; letter-spacing: 0.5px; margin-bottom: 8px;">№ ${resolvedRequisites.diplomaNumber}</div>
 					<h1 class="diploma-title">Диплом за храбрость</h1>
 					<div class="diploma-subtitle">Настоящему герою стоматологического кресла</div>
 
@@ -239,7 +262,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 						</div>
 						<div class="sig-item right">
 							<div class="sig-label">Клиника:</div>
-							<div class="sig-value">${clinicName}</div>
+							<div class="sig-value">${effectiveClinicName}</div>
 						</div>
 					</div>
 				</div>
@@ -252,7 +275,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 		`);
 		printWindow.document.close();
 		showToast(`Диплом за храбрость для ${heroDisplay} отправлен на печать!`, "success", 2500);
-	}, [clinicName, doctorDisplay, effectiveDate, heroDisplay, praiseText]);
+	}, [doctorDisplay, effectiveClinicName, effectiveDate, heroDisplay, praiseText]);
 
 	// Hotkey: Enter для моментальной печати диплома в 1 тап
 	useEffect(() => {
@@ -275,8 +298,8 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 			`Награждается: ${heroName}`,
 			`Возраст: ${patientAgeYears} лет`,
 			praiseText,
-			`Врач: ${doctorName}`,
-			`Клиника: ${clinicName}`,
+			`Врач: ${effectiveDoctorName}`,
+			`Клиника: ${effectiveClinicName}`,
 			`Дата: ${effectiveDate}`,
 		].join("\n");
 
@@ -286,7 +309,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 		} catch {
 			showToast("Не удалось скопировать текст диплома", "error");
 		}
-	}, [clinicName, doctorName, effectiveDate, heroName, patientAgeYears, praiseText]);
+	}, [effectiveClinicName, effectiveDoctorName, effectiveDate, heroName, patientAgeYears, praiseText]);
 
 	if (!isOpen) return null;
 
@@ -299,6 +322,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 		>
 			<div
 				className="relative flex flex-col w-full max-w-2xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] rounded-3xl border border-[var(--line,#cbd5e1)] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-auto"
+				data-testid="pediatric-bravery-diploma-modal"
 				onClick={(e) => e.stopPropagation()}
 			>
 				{/* Шапка модалки */}
@@ -310,12 +334,12 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 						<div className="min-w-0">
 							<h2
 								id="pediatric-bravery-diploma-title"
-								className="text-base sm:text-lg font-black tracking-tight text-[var(--ink,#0f172a)] truncate"
+								className="text-base sm:text-lg font-black tracking-tight text-[var(--ink,#0f172a)]"
 							>
-								Диплом за храбрость маленькому пациенту
+								Диплом за храбрость
 							</h2>
-							<p className="text-xs text-[var(--muted,#64748b)] font-medium truncate">
-								1-клик печать памятной грамоты с именем ребенка и датой
+							<p className="text-xs text-[var(--muted,#64748b)] font-medium">
+								Памятная грамота маленькому герою • 1-клик печать
 							</p>
 						</div>
 					</div>
@@ -329,7 +353,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 							data-testid="btn-print-bravery-diploma"
 						>
 							<Printer className="w-4 h-4" />
-							<span>Распечатать (Enter)</span>
+							<span className="hidden sm:inline">Распечатать (Enter)</span>
 						</button>
 
 						<button
@@ -378,15 +402,20 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 
 					{/* Красивое живое превью диплома в сертификатной рамке */}
 					<div
-						className="relative rounded-2xl border-4 border-double border-amber-400 dark:border-amber-600 bg-gradient-to-br from-amber-50/70 via-white to-amber-100/40 dark:from-amber-950/20 dark:via-neutral-900 dark:to-amber-950/40 p-6 text-center shadow-md select-none"
+						className="relative rounded-2xl border-4 border-double border-amber-400 dark:border-amber-600 bg-gradient-to-br from-amber-50/70 via-white to-amber-100/40 dark:from-amber-950/40 dark:via-neutral-900 dark:to-amber-950/60 p-6 text-center shadow-md select-none"
 						data-testid="diploma-certificate-preview"
 					>
 						{/* Угловые звездочки */}
 						<div className="flex justify-between items-center text-amber-500 mb-2">
 							<Star className="w-5 h-5 fill-amber-400 text-amber-500" />
-							<span className="text-[11px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400 bg-amber-200/50 dark:bg-amber-900/40 px-3 py-1 rounded-full">
-								Орден Зубной Феи
-							</span>
+							<div className="flex items-center gap-2">
+								<span className="text-[11px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400 bg-amber-200/50 dark:bg-amber-900/40 px-3 py-1 rounded-full">
+									Орден Зубной Феи
+								</span>
+								<span className="text-[10px] font-mono font-bold text-amber-800 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-300/60 dark:border-amber-700/60">
+									№ {resolvedRequisites.diplomaNumber}
+								</span>
+							</div>
 							<Star className="w-5 h-5 fill-amber-400 text-amber-500" />
 						</div>
 
@@ -398,12 +427,12 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 						</div>
 
 						<div className="inline-block border-b-2 border-amber-500 px-6 py-1 my-2">
-							<span className="text-xl sm:text-2xl font-black text-[var(--ink,#0f172a)] font-serif">
+							<span className="text-xl sm:text-2xl font-black text-amber-950 dark:text-amber-100 font-serif">
 								{heroDisplay}
 							</span>
 						</div>
 
-						<p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-medium max-w-md mx-auto my-3 leading-relaxed">
+						<p className="text-xs sm:text-sm text-slate-800 dark:text-amber-100 font-medium max-w-md mx-auto my-3 leading-relaxed">
 							{praiseText}
 						</p>
 
@@ -416,25 +445,25 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 						</div>
 
 						{/* Подписи внизу превью */}
-						<div className="mt-4 pt-3 border-t border-dashed border-amber-300 dark:border-amber-700 flex flex-wrap justify-between items-center text-[11px] text-[var(--muted,#64748b)]">
+						<div className="mt-4 pt-3 border-t border-dashed border-amber-300 dark:border-amber-700/80 flex flex-wrap justify-between items-center text-[11px] text-[var(--muted,#64748b)]">
 							<div className="text-left">
-								<span className="block font-semibold">Врач:</span>
-								<strong className="text-[var(--ink,#0f172a)] font-bold">{doctorDisplay}</strong>
+								<span className="block font-semibold text-amber-700/80 dark:text-amber-300/80">Врач:</span>
+								<strong className="text-slate-900 dark:text-amber-100 font-bold">{doctorDisplay}</strong>
 							</div>
 							<div className="text-center">
-								<span className="block font-semibold">Дата:</span>
-								<strong className="text-[var(--ink,#0f172a)] font-mono">{effectiveDate}</strong>
+								<span className="block font-semibold text-amber-700/80 dark:text-amber-300/80">Дата:</span>
+								<strong className="text-slate-900 dark:text-amber-100 font-mono">{effectiveDate}</strong>
 							</div>
 							<div className="text-right">
-								<span className="block font-semibold">Клиника:</span>
-								<strong className="text-[var(--ink,#0f172a)] font-bold">{clinicName}</strong>
+								<span className="block font-semibold text-amber-700/80 dark:text-amber-300/80">Клиника:</span>
+								<strong className="text-slate-900 dark:text-amber-100 font-bold">{effectiveClinicName}</strong>
 							</div>
 						</div>
 					</div>
 				</div>
 
 				{/* Подвал */}
-				<div className="flex items-center justify-between p-4 sm:px-6 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
+				<div className="flex items-center justify-between p-4 sm:px-6 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] gap-3">
 					<span className="text-xs text-[var(--muted,#64748b)] font-medium">
 						Выдается ребенку сразу после окончания приема
 					</span>

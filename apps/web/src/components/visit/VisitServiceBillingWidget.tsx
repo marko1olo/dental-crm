@@ -629,21 +629,22 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 
 							{/* Popover of discount presets */}
 							<div
-								className={`absolute right-0 bottom-full mb-2 z-30 p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] shadow-xl min-w-[240px] space-y-1.5 ${
+								className={`absolute right-0 bottom-full mb-2 z-30 p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] shadow-xl space-y-1.5 ${
 									isDiscountPopoverOpen ? "block animate-in fade-in slide-in-from-bottom-2 duration-150" : "hidden"
 								}`}
+								style={{ width: "260px", minWidth: "260px" }}
 								data-testid="doctor-discount-bar"
 							>
-								<div className="flex items-center justify-between text-xs font-bold text-[var(--ink,#0f172a)] px-1 pb-1 border-b border-[var(--line,#e2e8f0)]">
+								<div className="flex items-center justify-between text-xs font-bold text-[var(--ink,#0f172a)] px-1 pb-1 border-b border-[var(--line,#e2e8f0)] whitespace-nowrap">
 									<div className="flex items-center gap-1">
-										<Percent size={12} className="text-amber-600" />
+										<Percent size={12} className="text-amber-600 shrink-0" />
 										<span>Свобода скидок врача:</span>
 									</div>
 									<span className="text-[10px] text-[var(--muted,#64748b)] font-normal">без паролей</span>
 								</div>
 								{globalDiscountPercent > 0 && (
 									<div
-										className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200"
+										className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 whitespace-nowrap"
 										data-testid="active-global-discount-badge"
 									>
 										Активна: {globalDiscountPercent}% {globalDiscountReason ? `(${globalDiscountReason})` : ""}
@@ -663,7 +664,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 													setIsDiscountPopoverOpen(false);
 												}}
 												title={preset.reason ? `Применить скидку: ${preset.reason}` : "Сбросить скидку"}
-												className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-between gap-1 w-full text-left ${
+												className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-between gap-1 w-full text-left whitespace-nowrap ${
 													isSelected
 														? preset.percent === 100
 															? "bg-emerald-600 text-white shadow-2xs"

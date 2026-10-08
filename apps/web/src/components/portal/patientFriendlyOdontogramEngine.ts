@@ -263,6 +263,19 @@ export const DEFAULT_PATIENT_TEETH: readonly PatientToothInfo[] = [
 ];
 
 /**
+ * Creates standard physiological adult dentition norm (32 healthy teeth, Mandates 8e & 8y).
+ * In production mode, patients without recorded pathologies default to this physiological norm.
+ */
+export function createDefaultHealthyAdultTeeth(): PatientToothInfo[] {
+	return ALL_ADULT_FDI_TEETH.map((fdiCode) => ({
+		fdiCode,
+		status: "healthy",
+		humanNameRu: HUMAN_TOOTH_NAMES[fdiCode] || `Зуб №${fdiCode}`,
+		clinicalStateRu: "Здоров",
+	}));
+}
+
+/**
  * Calculates the patient's Dental Health & Sanitation Index.
  * Formula: % of healthy, cured and restored teeth vs total teeth in chart.
  */

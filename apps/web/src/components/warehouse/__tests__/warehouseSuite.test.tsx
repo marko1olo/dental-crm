@@ -10,7 +10,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -362,7 +362,7 @@ describe("RED TEAM WAREHOUSE & INVENTORY INQUISITOR SUITE", () => {
 			);
 
 			assert.ok(html.includes("warehouse-waybills-tab"));
-			assert.ok(html.includes("Приходные накладные (ТОРГ-12)"));
+			assert.ok(html.includes("Поступление партий"));
 			assert.ok(html.includes("Оприходовать накладную"));
 		});
 
@@ -378,8 +378,8 @@ describe("RED TEAM WAREHOUSE & INVENTORY INQUISITOR SUITE", () => {
 
 			assert.ok(html.includes("warehouse-inventory-tab"));
 			assert.ok(html.includes("Позиций в описи"));
-			assert.ok(html.includes("ИНВ-3"));
-			assert.ok(html.includes("ИНВ-19"));
+			assert.ok(html.includes("Опись остатков"));
+			assert.ok(html.includes("Сличительная ведомость"));
 		});
 
 		it("WarehouseBatchTrackingModal рендерит партии и серии", () => {
@@ -398,6 +398,51 @@ describe("RED TEAM WAREHOUSE & INVENTORY INQUISITOR SUITE", () => {
 			assert.ok(html.includes("Партионный учёт"));
 			assert.ok(html.includes("FEFO"));
 		});
+
+		it("WarehouseCatalogView рендерит каталог и тулбар в 1 строку", async () => {
+			const { WarehouseCatalogView } = await import("../WarehouseCatalogView.js");
+			const html = renderToStaticMarkup(
+				<WarehouseCatalogView
+					organizationId="test-org-1"
+					items={SAMPLE_ITEMS}
+				/>,
+			);
+
+			assert.ok(html.includes("warehouse-catalog-view"));
+			assert.ok(html.includes("Позиций в клинике:"));
+			assert.ok(html.includes("btn-open-protocol-deduction"));
+			assert.ok(html.includes("Списание по протоколу"));
+		});
+
+		it("ConsumablesDeductionModal рендерит списание у кресла и мягкий овердрафт", async () => {
+			const { ConsumablesDeductionModal } = await import("../ConsumablesDeductionModal.js");
+			const html = renderToStaticMarkup(
+				<ConsumablesDeductionModal
+					isOpen={true}
+					onClose={() => {}}
+					procedureTitle="Лечение кариеса (пломба световая)"
+					service804nCode="A16.07.002.011"
+					currentStockMap={{ "it-art": 25, "it-fltk": -2 }}
+				/>,
+			);
+
+			assert.ok(html.includes("consumables-deduction-modal"));
+			assert.ok(html.includes("Расходные материалы приёма"));
+			assert.ok(html.includes("btn-confirm-deduction"));
+		});
+
+		it("AutoBomDeductionBanner рендерит статус расходников к услуге", async () => {
+			const { AutoBomDeductionBanner } = await import("../AutoBomDeductionBanner.js");
+			const html = renderToStaticMarkup(
+				<AutoBomDeductionBanner
+					procedureTitle="Пломбирование зуба световым композитом"
+					onConfirmOneClick={() => {}}
+				/>,
+			);
+
+			assert.ok(html.includes("auto-bom-deduction-banner"));
+			assert.ok(html.includes("Списание по протоколу:"));
+		});
 	});
 
 	describe("6. Искоренение дев-жаргона, эмодзи и заглушек в компонентах", () => {
@@ -407,6 +452,9 @@ describe("RED TEAM WAREHOUSE & INVENTORY INQUISITOR SUITE", () => {
 			"WarehouseWaybillsTab.tsx",
 			"WarehouseInventoryTab.tsx",
 			"WarehouseBatchTrackingModal.tsx",
+			"WarehouseCatalogView.tsx",
+			"ConsumablesDeductionModal.tsx",
+			"AutoBomDeductionBanner.tsx",
 		];
 
 		it("компоненты не содержат мультяшных эмодзи и запрещенного дев-жаргона", async () => {
@@ -414,7 +462,10 @@ describe("RED TEAM WAREHOUSE & INVENTORY INQUISITOR SUITE", () => {
 			const path = await import("node:path");
 
 			for (const file of filesToInspect) {
-				const fullPath = path.join(process.cwd(), "apps/web/src/components/warehouse", file);
+				const baseDir = fs.existsSync(path.join(process.cwd(), "src/components/warehouse"))
+					? path.join(process.cwd(), "src/components/warehouse")
+					: path.join(process.cwd(), "apps/web/src/components/warehouse");
+				const fullPath = path.join(baseDir, file);
 				const content = fs.readFileSync(fullPath, "utf-8");
 
 				// Проверка на эмодзи

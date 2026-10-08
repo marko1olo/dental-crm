@@ -119,7 +119,7 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 	}, [items, todayDate, auditLines.length]);
 
 	const [documentNumber, setDocumentNumber] = useState(
-		`ИНВ-${new Date().toISOString().slice(0, 7).replace("-", "/")}-001`,
+		`СВЕРКА-${new Date().toISOString().slice(0, 7).replace("-", "/")}-001`,
 	);
 	const [molFullName, setMolFullName] = useState("Кузнецов А.В. (Врач-стоматолог)");
 	const [searchQuery, setSearchQuery] = useState("");
@@ -309,7 +309,7 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 
 				<div className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col">
 					<span className="text-[11px] font-semibold text-rose-700 dark:text-rose-400 uppercase tracking-wider">
-						Недостача (ТОРГ-16)
+						Недостача к списанию
 					</span>
 					<span className="text-lg font-bold text-rose-600 dark:text-rose-400 leading-tight mt-0.5">
 						{totals.shortageItemsCount} поз.
@@ -342,16 +342,16 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 				</div>
 			</div>
 
-			{/* ТУЛБАР УПРАВЛЕНИЯ ИНВЕНТАРИЗАЦИЕЙ */}
-			<div className="min-h-[36px] h-auto py-1 px-3 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-xl flex flex-wrap items-center justify-between gap-2 shrink-0">
-				<div className="flex items-center gap-2 flex-wrap">
+			{/* ТУЛБАР УПРАВЛЕНИЯ ИНВЕНТАРИЗАЦИЕЙ (СТРОГО 1 СТРОКА 36PX ПО ЗАКОНУ ХИКА) */}
+			<div className="h-9 min-h-[36px] px-3 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-xl flex items-center justify-between gap-2 shrink-0">
+				<div className="flex items-center gap-2 flex-1 min-w-0">
 					{/* Поиск */}
-					<div className="dente-search-wrap relative min-w-[180px] max-w-xs">
+					<div className="dente-search-wrap relative w-64 max-w-xs shrink-0">
 						<Search size={14} className="dente-search-icon" />
 						<input
 							type="text"
 							className="dente-search-input"
-							placeholder="Поиск позиции по названию или SKU..."
+							placeholder="Поиск по названию или SKU..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							data-testid="audit-search-input"
@@ -371,7 +371,7 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 					<button
 						type="button"
 						onClick={() => setDiscrepancyOnly((prev) => !prev)}
-						className={`h-8 min-h-[32px] px-2.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+						className={`h-7 px-2.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 ${
 							discrepancyOnly
 								? "bg-amber-500/20 text-amber-900 dark:text-amber-200 border-amber-500/40"
 								: "border-[var(--line,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -384,7 +384,7 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 					<button
 						type="button"
 						onClick={handleReconcileAllMatch}
-						className="h-8 min-h-[32px] px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-medium cursor-pointer"
+						className="h-7 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-medium cursor-pointer shrink-0"
 						title="Приравнять все фактические остатки к учетным"
 						data-testid="btn-reconcile-match-all"
 					>
@@ -393,39 +393,39 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 				</div>
 
 				{/* Действия печати и применения */}
-				<div className="flex items-center gap-1.5 flex-wrap">
+				<div className="flex items-center gap-1.5 shrink-0">
 					<button
 						type="button"
 						onClick={handlePrintInv3}
-						className="h-8 min-h-[32px] px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-semibold flex items-center gap-1 cursor-pointer"
+						className="h-7 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-semibold flex items-center gap-1 cursor-pointer"
 						data-testid="btn-print-inv3"
-						title="Печать инвентаризационной описи ТМЦ (ИНВ-3)"
+						title="Печать описи фактических остатков"
 					>
 						<Printer size={13} />
-						<span>ИНВ-3</span>
+						<span>Опись остатков</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={handlePrintInv19}
-						className="h-8 min-h-[32px] px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-semibold flex items-center gap-1 cursor-pointer"
+						className="h-7 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-semibold flex items-center gap-1 cursor-pointer"
 						data-testid="btn-print-inv19"
-						title="Печать сличительной ведомости расхождений (ИНВ-19)"
+						title="Печать сличительной ведомости расхождений"
 					>
 						<Printer size={13} />
-						<span>ИНВ-19</span>
+						<span>Сличительная ведомость</span>
 					</button>
 
 					{totals.shortageItemsCount > 0 && (
 						<button
 							type="button"
 							onClick={handlePrintTorg16}
-							className="h-8 min-h-[32px] px-2.5 rounded-lg border border-rose-300 text-rose-700 dark:text-rose-300 hover:bg-rose-50 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+							className="h-7 px-2.5 rounded-lg border border-rose-300 text-rose-700 dark:text-rose-300 hover:bg-rose-50 text-xs font-semibold flex items-center gap-1 cursor-pointer"
 							data-testid="btn-print-torg16"
-							title="Сформировать акт списания недостач и боя (ТОРГ-16)"
+							title="Сформировать акт списания недостач и боя"
 						>
 							<PackageX size={13} />
-							<span>ТОРГ-16</span>
+							<span>Акт списания</span>
 						</button>
 					)}
 
@@ -433,7 +433,7 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 						type="button"
 						onClick={handleApplyAuditDoc}
 						disabled={isApplying}
-						className="h-8 min-h-[32px] px-3.5 rounded-lg bg-teal-600 text-white font-semibold text-xs hover:bg-teal-700 active:scale-98 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+						className="h-7 px-3 rounded-lg bg-teal-600 text-white font-semibold text-xs hover:bg-teal-700 active:scale-98 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
 						data-testid="btn-apply-audit"
 					>
 						<Check size={14} />
@@ -457,7 +457,23 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-[var(--line,#e2e8f0)]">
-							{filteredLines.length === 0 ? (
+							{items.length === 0 ? (
+								<tr>
+									<td colSpan={6} className="py-14 text-center text-[var(--muted,#64748b)]">
+										<div className="flex flex-col items-center justify-center max-w-sm mx-auto">
+											<div className="w-12 h-12 rounded-2xl bg-teal-500/10 text-teal-600 flex items-center justify-center mb-3 border border-teal-500/20">
+												<Package size={24} />
+											</div>
+											<p className="font-bold text-sm text-[var(--ink,#0f172a)] mb-1">
+												Склад пуст — проведите первую приходную накладную
+											</p>
+											<p className="text-xs text-[var(--muted,#64748b)] mb-2">
+												В боевой базе отсутствуют остатки для инвентаризационной описи. Оприходуйте материалы от поставщика.
+											</p>
+										</div>
+									</td>
+								</tr>
+							) : filteredLines.length === 0 ? (
 								<tr>
 									<td colSpan={6} className="py-12 text-center text-[var(--muted,#64748b)]">
 										<Package size={28} className="mx-auto mb-2 opacity-50" />
@@ -491,10 +507,27 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 												</div>
 											</td>
 
-											{/* Партия и срок */}
+											{/* Партия и срок (FEFO) */}
 											<td className="py-2 px-3 text-[var(--muted,#64748b)]">
-												<div className="font-mono text-[11px]">{line.batchNumber}</div>
-												<div className="text-[10px]">до {line.expiryDate}</div>
+												<div className="font-mono text-[11px] text-[var(--ink,#0f172a)] font-semibold">{line.batchNumber}</div>
+												<div className="flex items-center gap-1.5 mt-0.5">
+													<span className="text-[10px]">до {line.expiryDate}</span>
+													<span
+														className={`text-[9px] px-1.5 py-0.2 rounded-full font-semibold border ${
+															line.fefoStatus === "expired"
+																? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30"
+																: line.fefoStatus === "warning_30" || line.fefoStatus === "warning_60"
+																	? "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30"
+																	: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30"
+														}`}
+													>
+														{line.fefoStatus === "expired"
+															? "Просрочен"
+															: line.fefoStatus === "warning_30" || line.fefoStatus === "warning_60"
+																? "Внимание"
+																: "Свежий"}
+													</span>
+												</div>
 											</td>
 
 											{/* Учетное кол-во */}

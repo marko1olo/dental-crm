@@ -16,6 +16,11 @@ import { showToast } from "../GlobalToast";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
 import { globalDentalVoiceEngine } from "../../services/voice";
 import { useVisitStore } from "../../store/visitStore";
+import { isDemoShowcaseMode, isDemoPatientId } from "../../lib/demoMode.js";
+import {
+	saveCephalometricAnalysisToEmr,
+	loadLatestCephalometricStudy,
+} from "../orthodontics/cephalometricPersistence";
 if (typeof document !== "undefined") {
 	import("../orthodontics/CephalometricAnalysisModal.css");
 }
@@ -71,12 +76,37 @@ export function CephalometricAnalysisModal({
 	initialTab,
 	onInsertToProtocol,
 }: CephalometricAnalysisModalProps) {
+	const isDemoSession = useMemo(
+		() => isDemoShowcaseMode() || isDemoPatientId(patientId || ""),
+		[patientId],
+	);
+
+	const latestSavedStudy = useMemo(() => {
+		if (patientId) {
+			return loadLatestCephalometricStudy(patientId);
+		}
+		return null;
+	}, [patientId]);
+
 	const [activeTab, setActiveTab] = useState<"landmarks" | "metrics" | "report">(initialTab ?? "landmarks");
 	const [mobileView, setMobileView] = useState<"canvas" | "landmarks" | "metrics" | "report">(initialTab ? initialTab : "canvas");
-	const [landmarks, setLandmarks] = useState<LandmarkMap>(() => (initialImageUrl ? DEFAULT_CEPH_LANDMARKS_PRESET : {}));
-	const [activeTargetKey, setActiveTargetKey] = useState<LandmarkKey | null>(initialImageUrl ? "S" : null);
 
-	const [imageUrl, setImageUrl] = useState<string | null>(initialImageUrl ?? null);
+	const [imageUrl, setImageUrl] = useState<string | null>(
+		() => initialImageUrl ?? latestSavedStudy?.imageUrl ?? null,
+	);
+	const [landmarks, setLandmarks] = useState<LandmarkMap>(() => {
+		if (latestSavedStudy?.landmarks && Object.keys(latestSavedStudy.landmarks).length > 0) {
+			return latestSavedStudy.landmarks;
+		}
+		if (initialImageUrl && isDemoSession) {
+			return DEFAULT_CEPH_LANDMARKS_PRESET;
+		}
+		return {};
+	});
+	const [activeTargetKey, setActiveTargetKey] = useState<LandmarkKey | null>(
+		() => (initialImageUrl || latestSavedStudy?.imageUrl) ? "S" : null,
+	);
+
 	const isImageLoaded = Boolean(imageUrl);
 	const [filterMode, setFilterMode] = useState<XrayFilterMode>("normal");
 	const [brightness, setBrightness] = useState<number>(100);
@@ -84,14 +114,29 @@ export function CephalometricAnalysisModal({
 	const [showPolygon, setShowPolygon] = useState<boolean>(true);
 	const [showPlanes, setShowPlanes] = useState<boolean>(true);
 	const [showLabels, setShowLabels] = useState<boolean>(true);
-	const [scaleMmPerPixel, setScaleMmPerPixel] = useState<number>(0.15);
+	const [scaleMmPerPixel, setScaleMmPerPixel] = useState<number>(
+		() => latestSavedStudy?.scaleMmPerPixel ?? 0.15,
+	);
 	const [isVoiceListening, setIsVoiceListening] = useState<boolean>(false);
 	const [voiceInterimText, setVoiceInterimText] = useState<string>("");
 	const [copied, setCopied] = useState<boolean>(false);
 
 	const [aiBackendPref, setAiBackendPref] = useState<CephAiBackendPreference>("auto");
 	const [isAiInferring, setIsAiInferring] = useState<boolean>(false);
-	const [aiStats, setAiStats] = useState<{ latencyMs: number; placedCount: number } | null>(null);
+	const [aiStats, setAiStats] = useState<{
+		latencyMs: number;
+		placedCount: number;
+		isCalibratedFallback?: boolean;
+	} | null>(() => {
+		if (latestSavedStudy?.isCalibratedFallback !== undefined) {
+			return {
+				latencyMs: 15,
+				placedCount: latestSavedStudy.placedCount,
+				isCalibratedFallback: latestSavedStudy.isCalibratedFallback,
+			};
+		}
+		return null;
+	});
 	const [detectedBackend, setDetectedBackend] = useState<CephBackendInfo | null>(null);
 
 	useEffect(() => {
@@ -100,43 +145,75 @@ export function CephalometricAnalysisModal({
 	}, [isOpen, aiBackendPref]);
 
 	const aiBackendBadge = useMemo(() => {
+		if (aiStats?.isCalibratedFallback) {
+			return "Шаблон";
+		}
 		if (aiBackendPref === "auto") {
 			return detectedBackend ? detectedBackend.badge : "GPU";
 		}
 		if (aiBackendPref === "webgpu") return "WebGPU";
 		if (aiBackendPref === "webgl") return "WebGL";
 		return "CPU";
-	}, [aiBackendPref, detectedBackend]);
+	}, [aiBackendPref, detectedBackend, aiStats]);
 
 	const aiBackendLabel = useMemo(() => {
+		if (aiStats?.isCalibratedFallback) {
+			return "Анатомический шаблон (калибровка)";
+		}
 		if (aiBackendPref === "auto") {
 			return detectedBackend ? detectedBackend.labelRu : "Автоматически";
 		}
 		if (aiBackendPref === "webgpu") return "Дискретная GPU (WebGPU)";
 		if (aiBackendPref === "webgl") return "Интегрированная GPU (WebGL)";
 		return "Процессор (WASM / CPU)";
-	}, [aiBackendPref, detectedBackend]);
+	}, [aiBackendPref, detectedBackend, aiStats]);
 
 	const handleRunAiAutoPlacement = useCallback(async () => {
-		const targetUrl = imageUrl || SAMPLE_TRG_CEPHALOGRAM_URL;
-		if (!imageUrl) {
+		const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId || "");
+		if (!imageUrl && !isDemo) {
+			showToast(
+				"Для запуска AI авторазметки необходимо загрузить реальный снимок ТРГ пациента",
+				"warning",
+			);
+			return;
+		}
+
+		const targetUrl = imageUrl || (isDemo ? SAMPLE_TRG_CEPHALOGRAM_URL : null);
+		if (!targetUrl) {
+			showToast("Снимок ТРГ отсутствует. Загрузите снимок пациента.", "warning");
+			return;
+		}
+
+		if (!imageUrl && isDemo) {
 			setImageUrl(targetUrl);
 		}
 		setIsAiInferring(true);
 		try {
 			const result = await cephAiInferenceService.runInference(targetUrl, {
 				backend: aiBackendPref,
+				allowFallback: isDemo,
 			});
 			setLandmarks(result.landmarks);
 			setActiveTargetKey(null);
 			const count = Object.keys(result.landmarks).length;
-			setAiStats({ latencyMs: result.latencyMs, placedCount: count });
+			setAiStats({
+				latencyMs: result.latencyMs,
+				placedCount: count,
+				isCalibratedFallback: result.isCalibratedFallback,
+			});
 			void SoundFeedbackService.getInstance().playActionSuccess();
-			const badge = result.backend === "webgpu" ? "WebGPU" : result.backend === "webgl" ? "WebGL" : "CPU";
-			showToast(
-				`✓ AI авторазметка: ${count} ориентиров расставлены за ${result.latencyMs} мс [${badge}]`,
-				"success",
-			);
+			if (result.isCalibratedFallback) {
+				showToast(
+					`⚠️ Внимание: Нейросеть ONNX недоступна. Установлен калиброванный анатомический шаблон (${count} точек). Проверьте ориентиры вручную!`,
+					"warning",
+				);
+			} else {
+				const badge = result.backend === "webgpu" ? "WebGPU" : result.backend === "webgl" ? "WebGL" : "CPU";
+				showToast(
+					`✓ AI авторазметка: ${count} ориентиров расставлены за ${result.latencyMs} мс [${badge}]`,
+					"success",
+				);
+			}
 		} catch (err) {
 			showToast(
 				`Ошибка AI авторазметки: ${err instanceof Error ? err.message : String(err)}`,
@@ -145,7 +222,7 @@ export function CephalometricAnalysisModal({
 		} finally {
 			setIsAiInferring(false);
 		}
-	}, [imageUrl, aiBackendPref]);
+	}, [imageUrl, aiBackendPref, patientId]);
 
 	const analysis = useMemo(() => calculateCephalometrics(landmarks, scaleMmPerPixel), [landmarks, scaleMmPerPixel]);
 	const activeLm = useMemo(() => (activeTargetKey ? CEPHALOMETRIC_LANDMARKS.find((l) => l.key === activeTargetKey) ?? null : null), [activeTargetKey]);
@@ -204,12 +281,19 @@ export function CephalometricAnalysisModal({
 	}, [isOpen, handleRemoveLandmark]);
 
 	const handleApplyPreset = useCallback((preset: LandmarkMap, label: string) => {
-		if (!imageUrl) setImageUrl(SAMPLE_TRG_CEPHALOGRAM_URL);
+		const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId || "");
+		if (!imageUrl) {
+			if (isDemo) {
+				setImageUrl(SAMPLE_TRG_CEPHALOGRAM_URL);
+			} else {
+				showToast("Снимок ТРГ не загружен. Пресет применен к координатам, прикрепите снимок пациента.", "info");
+			}
+		}
 		setLandmarks(preset);
 		setActiveTargetKey(null);
 		showToast(`Применен пресет: ${label}`, "success");
 		void SoundFeedbackService.getInstance().playActionSuccess();
-	}, [imageUrl]);
+	}, [imageUrl, patientId]);
 
 	const handleResetLandmarks = useCallback(() => {
 		setLandmarks({});
@@ -218,10 +302,15 @@ export function CephalometricAnalysisModal({
 	}, []);
 
 	const handleLoadPreset = () => {
-		setImageUrl(SAMPLE_TRG_CEPHALOGRAM_URL);
-		setLandmarks(DEFAULT_CEPH_LANDMARKS_PRESET);
-		setActiveTargetKey(null);
-		showToast("Загружена эталонная анатомическая разметка ТРГ со снимком", "success");
+		const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId || "");
+		if (isDemo) {
+			setImageUrl(SAMPLE_TRG_CEPHALOGRAM_URL);
+			setLandmarks(DEFAULT_CEPH_LANDMARKS_PRESET);
+			setActiveTargetKey(null);
+			showToast("Загружена эталонная анатомическая разметка ТРГ со снимком", "success");
+		} else {
+			showToast("Загрузка тестового образца снимка доступна только в Демо-режиме. Загрузите снимок пациента.", "warning");
+		}
 	};
 
 	const currentEffectiveProtocolText = useMemo(() => {
@@ -229,8 +318,46 @@ export function CephalometricAnalysisModal({
 		return generateConsultationNoteWithoutCeph(patientName, isImageLoaded, analysis.placedCount, analysis.totalCount);
 	}, [analysis.placedCount, analysis.diagnosis.protocol043Text, patientName, isImageLoaded, analysis.totalCount]);
 
+	const handleSaveToEmrOnly = useCallback(() => {
+		try {
+			const record = saveCephalometricAnalysisToEmr({
+				patientId,
+				patientName,
+				imageUrl,
+				landmarks,
+				scaleMmPerPixel,
+				analysis,
+				source: aiStats ? "ai" : "manual",
+				backendUsed: aiStats?.isCalibratedFallback ? "Калиброванный шаблон" : aiBackendLabel,
+				isCalibratedFallback: aiStats?.isCalibratedFallback,
+			});
+			void SoundFeedbackService.getInstance().playActionSuccess();
+			showToast(`Анализ ТРГ успешно зафиксирован в ЭМК пациента (ID: ${record.id})`, "success");
+		} catch (err) {
+			showToast(`Ошибка сохранения в ЭМК: ${err instanceof Error ? err.message : String(err)}`, "error");
+		}
+	}, [patientId, patientName, imageUrl, landmarks, scaleMmPerPixel, analysis, aiStats, aiBackendLabel]);
+
 	const handleInsertToChart = () => {
 		if (onInsertToProtocol) onInsertToProtocol(currentEffectiveProtocolText);
+
+		// Честное сохранение структурированных данных цефалометрии в ЭМК и базу данных
+		try {
+			saveCephalometricAnalysisToEmr({
+				patientId,
+				patientName,
+				imageUrl,
+				landmarks,
+				scaleMmPerPixel,
+				analysis,
+				source: aiStats ? "ai" : "manual",
+				backendUsed: aiStats?.isCalibratedFallback ? "Калиброванный шаблон" : aiBackendLabel,
+				isCalibratedFallback: aiStats?.isCalibratedFallback,
+			});
+		} catch (err) {
+			console.warn("[CephModal] Error saving cephalometrics to EMR:", err);
+		}
+
 		try {
 			const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
 			if (setVisitNoteForm) {
@@ -238,7 +365,7 @@ export function CephalometricAnalysisModal({
 					...prev,
 					complaint: prev.complaint ? `${prev.complaint}\n\n[Ортодонтия] Ортодонтический прием (ТРГ)` : "Ортодонтический приём. Жалобы на скученность зубов и прикус.",
 					objectiveStatus: prev.objectiveStatus ? `${prev.objectiveStatus}\n\n${currentEffectiveProtocolText}` : currentEffectiveProtocolText,
-					treatmentPlan: prev.treatmentPlan ? `${prev.treatmentPlan}\n\n[Ортодонтия] Диагностический протокол ТРГ сохранен.` : "Ортодонтическое лечение: протокол ТРГ сохранен, согласование аппаратуры.",
+					treatmentPlan: prev.treatmentPlan ? `${prev.treatmentPlan}\n\n[Ортодонтия] Диагностический протокол ТРГ сохранен: ${analysis.diagnosis.skeletalClassRu}.` : `Ортодонтическое лечение: протокол ТРГ сохранен (${analysis.diagnosis.skeletalClassRu}), согласование аппаратуры.`,
 				}));
 			}
 		} catch { /* ignore */ }
@@ -257,6 +384,23 @@ export function CephalometricAnalysisModal({
 	const handleSaveConsultationWithoutCeph = useCallback(() => {
 		const consultationText = generateConsultationNoteWithoutCeph(patientName, isImageLoaded, analysis.placedCount, analysis.totalCount);
 		if (onInsertToProtocol) onInsertToProtocol(consultationText);
+
+		try {
+			saveCephalometricAnalysisToEmr({
+				patientId,
+				patientName,
+				imageUrl,
+				landmarks,
+				scaleMmPerPixel,
+				analysis,
+				source: "manual",
+				backendUsed: "Предварительная консультация",
+				isCalibratedFallback: false,
+			});
+		} catch (err) {
+			console.warn("[CephModal] Error saving consultation to EMR:", err);
+		}
+
 		try {
 			const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
 			if (setVisitNoteForm) {
@@ -279,7 +423,7 @@ export function CephalometricAnalysisModal({
 		if (navigator?.clipboard?.writeText) navigator.clipboard.writeText(consultationText).catch(() => {});
 		showToast("Консультация сохранена в карту (без полного ТРГ-расчета)", "success");
 		onClose();
-	}, [patientName, isImageLoaded, analysis.placedCount, analysis.totalCount, onInsertToProtocol, onClose]);
+	}, [patientName, isImageLoaded, analysis, landmarks, scaleMmPerPixel, imageUrl, patientId, onInsertToProtocol, onClose]);
 
 	const handleCopyText = async () => {
 		try {
@@ -385,6 +529,18 @@ export function CephalometricAnalysisModal({
 						>
 							{isVoiceListening ? <MicOff size={14} /> : <Mic size={14} />}
 							<span className="hidden sm:inline">{isVoiceListening ? "Стоп голос" : "Голос"}</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleSaveToEmrOnly}
+							data-testid="save-ceph-to-emr-btn"
+							className="secondary-button shrink-0"
+							title="Зафиксировать исследование и координаты в ЭМК пациента"
+						>
+							<Save size={14} />
+							<span className="hidden sm:inline">Сохранить в ЭМК</span>
+							<span className="sm:hidden">В ЭМК</span>
 						</button>
 
 						<button

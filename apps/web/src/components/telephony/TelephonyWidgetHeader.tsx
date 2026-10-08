@@ -76,9 +76,9 @@ export function TelephonyWidgetHeader({
 							<h4 className="text-xs font-black uppercase tracking-wider text-[var(--ink,#0f172a)] truncate">
 								{activeCall
 									? isCallAnswered
-										? "Разговор (WebRTC)"
-										: "Входящий вызов (SIP)"
-									: "SIP Софтфон"}
+										? "Разговор"
+										: "Входящий вызов"
+									: "Софтфон клиники"}
 							</h4>
 							{activeCall && (
 								<span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
@@ -115,7 +115,7 @@ export function TelephonyWidgetHeader({
 									type="button"
 									onClick={onAnswerCall}
 									className="min-h-[36px] px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer"
-									title="Принять входящий звонок (WebRTC)"
+									title="Принять входящий звонок"
 									data-testid="widget-header-answer-btn"
 								>
 									<PhoneCall size={13} className="animate-pulse" />

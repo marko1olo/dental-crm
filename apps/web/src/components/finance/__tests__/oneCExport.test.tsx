@@ -152,7 +152,11 @@ describe('1C:Enterprise XML Export Button & Engine', () => {
     );
 
     // Verify exact non-truncated text and flex containers
-    assert.ok(html.includes('Фискализация 54-ФЗ &amp; Прием платежей') || html.includes('Фискализация 54-ФЗ & Прием платежей'));
+    assert.ok(
+      html.includes('Фискализация 54-ФЗ &amp; Прием платежей') ||
+      html.includes('Фискализация 54-ФЗ & Прием платежей') ||
+      html.includes('Касса · Прием платежей и печать чеков')
+    );
     assert.ok(html.includes('Смирнова Екатерина Васильевна'));
     assert.ok(html.includes('min-w-0 max-w-full flex-1'));
     assert.ok(html.includes('whitespace-normal break-normal'));

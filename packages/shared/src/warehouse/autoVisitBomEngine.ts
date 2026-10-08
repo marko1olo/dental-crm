@@ -222,8 +222,14 @@ export function calculateAutoVisitConsumables(
 
 	const effectiveServices: RenderedServiceItem[] = [...renderedServices];
 
-	// Ensure base PPE (B01.065.001) is included if not already explicitly present
-	if (includePpe && !effectiveServices.some((s) => s.serviceCode === "B01.065.001")) {
+	// Ensure base PPE (B01.065.001) is included if not already explicitly present and not covered by procedure BOM
+	const hasDedicatedPpeServices = effectiveServices.some(
+		(s) =>
+			s.serviceCode === "B01.065.001" ||
+			s.serviceCode === "A16.07.002.011" ||
+			(s.serviceTitle && s.serviceTitle.toLowerCase().includes("препарирование и пломба светового отверждения")),
+	);
+	if (includePpe && !hasDedicatedPpeServices) {
 		effectiveServices.push({
 			serviceCode: "B01.065.001",
 			serviceTitle: "Стандартный расходный набор СИЗ приёма (СанПиН 3.3686-21)",

@@ -30,16 +30,16 @@ export function AppointmentStatusBadgeSelector({
 					: "min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg text-xs"
 			} font-bold border transition-colors shrink-0 ${
 				displayStatus === "in_treatment"
-					? "bg-emerald-500/20 text-emerald-900 dark:text-emerald-200 border border-emerald-500/60 font-black"
+					? "bg-emerald-500/20 text-emerald-900 dark:text-emerald-200 border-emerald-500/60 font-black"
 					: displayStatus === "confirmed"
-						? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500"
+						? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/40"
 						: displayStatus === "arrived"
-							? "bg-amber-500/20 text-amber-900 dark:text-amber-100 border border-amber-500 font-black"
+							? "bg-amber-500/20 text-amber-900 dark:text-amber-100 border-amber-500/40 font-black"
 							: displayStatus === "completed"
-								? "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]"
+								? "bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/30"
 								: displayStatus === "cancelled" || displayStatus === "no_show"
-									? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40"
-									: "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]"
+									? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40"
+									: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30"
 			}`}
 			data-testid={`appointment-status-badge-${appointmentId}`}
 		>
@@ -51,12 +51,14 @@ export function AppointmentStatusBadgeSelector({
 				<span
 					className={`w-1.5 h-1.5 rounded-full shrink-0 ${
 						displayStatus === "confirmed"
-							? "bg-emerald-500"
+							? "bg-teal-500"
 							: displayStatus === "arrived"
 								? "bg-amber-500"
 								: displayStatus === "cancelled" || displayStatus === "no_show"
 									? "bg-rose-500"
-									: "bg-[var(--line-strong)]"
+									: displayStatus === "planned"
+										? "bg-blue-500"
+										: "bg-[var(--line-strong)]"
 					}`}
 					aria-hidden="true"
 				/>

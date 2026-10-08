@@ -164,7 +164,7 @@ export function TelephonyDrawerHeader({
 									className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
 								>
 									<PhoneForwarded size={13} className="text-[var(--teal)]" />
-									<span>Перевод звонка (SIP)</span>
+									<span>Перевод на врача</span>
 								</button>
 							)}
 							<button

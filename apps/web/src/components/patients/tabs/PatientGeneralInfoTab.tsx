@@ -28,6 +28,7 @@ import {
 import { DentalForm043 } from "../../icons/DentalIcons";
 import { PatientHistoryTab, type ClinicalVisitItem, DEFAULT_CLINICAL_VISITS } from "../PatientHistoryTab";
 import { VisitProtocolView } from "../VisitProtocolView";
+import { PatientFinanceTab } from "./PatientFinanceTab";
 import {
 	STOMX_MARKETING_SOURCES_CATALOG,
 	STOMX_REPRESENTATIVE_CATALOG,
@@ -185,7 +186,7 @@ export interface PatientGeneralInfoTabProps {
 
 /**
  * PatientGeneralInfoTab — Комплексная амбулаторная витрина пациента:
- * 1. Основные и паспортные данные (для договоров, чеков по 54-ФЗ и согласий).
+ * 1. Основные и паспортные данные (для договоров, чеков и согласий).
  * 2. Государственная и страховая идентификация (СНИЛС для справки в ФНС КНД 1151156, ОМС, ДМС).
  * 3. Заметки и особенности обслуживания (регистратура + клинические особенности врача).
  * 4. История приёмов и финансовый статус (личный и семейный депозит/задолженность).
@@ -1158,9 +1159,9 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 								<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
 									<div className="flex flex-col gap-1">
 										<label className="text-[11px] font-bold text-[var(--muted)] flex items-center justify-between">
-											<span>СНИЛС</span>
+											<span>СНИЛС (по желанию)</span>
 											<span className="flex items-center gap-1.5">
-												<span className="text-[9px] text-teal-600 font-bold uppercase">ФНС (вычет 13%)</span>
+												<span className="text-[9px] text-teal-600 font-bold uppercase">Для вычета 13%</span>
 												{onOpenTaxCertificate && (
 													<button
 														type="button"
@@ -1180,26 +1181,27 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 											className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 py-1 text-xs rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] text-[var(--ink)] font-mono focus:outline-hidden focus:ring-2 focus:ring-[var(--teal)] transition-colors"
 											value={patient?.snils ?? ""}
 											onChange={(e) => onUpdatePatient?.("snils", formatSnils(e.target.value))}
-											placeholder="123-456-789 00"
+											placeholder="123-456-789 00 (необязательно)"
 											disabled={disabled}
 											data-testid="input-snils"
-											title="Необходим для справки на налоговый вычет 13% НДФЛ"
+											title="СНИЛС не обязателен для приёма и лечения. Нужен только при оформлении справки для налогового вычета 13%"
 										/>
 									</div>
 
 									<div className="flex flex-col gap-1">
 										<label className="text-[11px] font-bold text-[var(--muted)] flex items-center justify-between">
-											<span>ИНН физлица</span>
-											<span className="text-[9px] text-[var(--muted)]">Чек</span>
+											<span>ИНН (не требуется физлицам)</span>
+											<span className="text-[9px] text-[var(--muted)]">Необязательно</span>
 										</label>
 										<input
 											type="text"
 											className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 py-1 text-xs rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] text-[var(--ink)] font-mono focus:outline-hidden focus:ring-2 focus:ring-[var(--teal)] transition-colors"
 											value={patient?.inn ?? ""}
 											onChange={(e) => onUpdatePatient?.("inn", formatTaxpayerInn(e.target.value))}
-											placeholder="12 цифр ИНН"
+											placeholder="Только при наличии (необязательно)"
 											disabled={disabled}
 											data-testid="input-inn"
+											title="Для пациентов-физлиц ИНН не требуется (Мандат 8e). Заполняется добровольно или для юрлиц/ИП"
 										/>
 									</div>
 
@@ -1713,58 +1715,15 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 							</div>
 						</div>
 
-						{/* Баланс пациента и баланс семьи */}
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-							{/* Личный баланс */}
-							<div
-								className="p-3.5 bg-[var(--paper-soft)] rounded-xl border border-[var(--glass-border)] flex items-center justify-between gap-3"
-								data-testid="patient-balance-card"
-							>
-								<div className="flex items-center gap-3">
-									<div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
-										<Wallet className="w-5 h-5" />
-									</div>
-									<div>
-										<div className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">
-											Личный баланс пациента
-										</div>
-										<div className="text-lg font-black text-emerald-600 dark:text-emerald-400">
-											{typeof patient?.patientBalanceRub === "number"
-												? `${patient.patientBalanceRub >= 0 ? "+" : ""}${patient.patientBalanceRub.toLocaleString("ru-RU")} ₽`
-												: "+4 500 ₽ (Депозит)"}
-										</div>
-									</div>
-								</div>
-								<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 shrink-0">
-									Депозит активен
-								</span>
-							</div>
-
-							{/* Семейный баланс */}
-							<div
-								className="p-3.5 bg-[var(--paper-soft)] rounded-xl border border-[var(--glass-border)] flex items-center justify-between gap-3"
-								data-testid="family-balance-card"
-							>
-								<div className="flex items-center gap-3">
-									<div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center shrink-0">
-										<Coins className="w-5 h-5" />
-									</div>
-									<div>
-										<div className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">
-											Общий баланс семьи
-										</div>
-										<div className="text-lg font-black text-indigo-600 dark:text-indigo-400">
-											{typeof patient?.familyBalanceRub === "number"
-												? `${patient.familyBalanceRub.toLocaleString("ru-RU")} ₽`
-												: "12 500 ₽"}
-										</div>
-									</div>
-								</div>
-								<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 shrink-0">
-									{patient?.familyGroupName || "Семейный счет"}
-								</span>
-							</div>
-						</div>
+						{/* Финансовый блок и управление депозитом (Мандат 8e, Apple HIG, Touch Targets >= 44x44px) */}
+						<PatientFinanceTab
+							patient={patient}
+							onUpdateBalance={(newBal) => onUpdatePatient?.("patientBalanceRub", newBal)}
+							onNavigateToVisit={onNavigateToVisit}
+							onNewAppointment={onNewAppointment}
+							onOpenTaxCertificate={onOpenTaxCertificate}
+							disabled={disabled}
+						/>
 
 						{/* Лента визитов — Компактный клинический таймлайн с аккордеонами и фильтрами */}
 						<div className="flex flex-col gap-2.5">

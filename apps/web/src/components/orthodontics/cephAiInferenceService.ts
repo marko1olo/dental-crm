@@ -31,6 +31,7 @@ import {
 } from "./cephalometricMath";
 import { getHardwareResourceTier } from "../../utils/deviceDetection";
 import { detectGpuPerformanceTier } from "../../utils/rafThrottler";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 
 export type CephAiBackendPreference = "auto" | "webgpu" | "webgl" | "wasm";
 export type CephAiActiveBackend = "webgpu" | "webgl" | "wasm";
@@ -63,6 +64,8 @@ export interface CephAiInferenceResult {
 		min: number;
 		allPlaced: boolean;
 	};
+	isCalibratedFallback: boolean;
+	fallbackReason?: string | undefined;
 }
 
 export interface CephAiInferenceOptions {
@@ -72,6 +75,7 @@ export interface CephAiInferenceOptions {
 	viewBoxHeight?: number;
 	targetImageWidth?: number;
 	targetImageHeight?: number;
+	allowFallback?: boolean;
 }
 
 /**
@@ -572,7 +576,20 @@ export class CephAiInferenceService {
 			}
 		}
 
+		let isCalibratedFallback = false;
+		let fallbackReason: string | undefined = undefined;
+
 		if (!ortExecutionSuccess) {
+			const allowFallback = options.allowFallback ?? isDemoShowcaseMode();
+			if (!allowFallback && !isDemoShowcaseMode()) {
+				throw new Error(
+					"Локальная нейросеть ONNX недоступна (сессия инференса не инициализирована или не поддерживается). Для предотвращения клинических ошибок синтетические координаты отключены.",
+				);
+			}
+
+			isCalibratedFallback = true;
+			fallbackReason = "Модель ONNX недоступна. Применен калиброванный анатомический шаблон (требуется ручная верификация ориентиров).";
+
 			// Certified clinical anatomical localization based on CEPHA29 calibration
 			for (const k of Object.keys(CLINICAL_16_CHANNELS) as LandmarkKey[]) {
 				const basePt = SAMPLE_VALIDATION_COORDINATES_1200_896[k];
@@ -607,8 +624,10 @@ export class CephAiInferenceService {
 		return {
 			landmarks: viewBoxLandmarks,
 			rawLandmarks,
-			backend: backendInfo.backend,
-			backendLabel: backendInfo.labelRu,
+			backend: isCalibratedFallback ? "wasm" : backendInfo.backend,
+			backendLabel: isCalibratedFallback
+				? "Калиброванный анатомический шаблон (Требует проверки)"
+				: backendInfo.labelRu,
 			latencyMs,
 			imageDimensions: { width: naturalWidth, height: naturalHeight },
 			confidenceSummary: {
@@ -616,6 +635,8 @@ export class CephAiInferenceService {
 				min: Math.round(minConf * 1000) / 1000,
 				allPlaced: Object.keys(viewBoxLandmarks).length === 16,
 			},
+			isCalibratedFallback,
+			fallbackReason,
 		};
 	}
 }

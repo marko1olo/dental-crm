@@ -102,8 +102,8 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 		if (currentPlan) {
 			return computePatientTeethFromStages(currentPlan.stages, data.warranties);
 		}
-		return DEFAULT_PATIENT_TEETH;
-	}, [data.teeth, currentPlan, data.warranties]);
+		return isDemo ? DEFAULT_PATIENT_TEETH : [];
+	}, [data.teeth, currentPlan, data.warranties, isDemo]);
 
 	const handleApprovePlan = () => {
 		if (!currentPlan) return;

@@ -29,6 +29,7 @@ import {
 	Zap,
 } from "lucide-react";
 import type { ImagingStudy } from "@dental/shared";
+import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { StudyPatientBindControlModal } from "./StudyPatientBindControlModal";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
@@ -57,6 +58,9 @@ export interface RadiologyStudiesArchiveProps {
 	readonly onOpenViewer?: ((study: ImagingStudy) => void) | undefined;
 	readonly onOpenSensorViewer?: ((study: ImagingStudy) => void) | undefined;
 	readonly onUploadNew?: (() => void) | undefined;
+	readonly onOpenDirectRvgCapture?: (() => void) | undefined;
+	readonly initialStudies?: ImagingStudy[] | undefined;
+	readonly initialLoading?: boolean | undefined;
 }
 
 export type ArchiveModalityFilter = "all" | "cbct" | "opg" | "periapical" | "ceph" | "photo";
@@ -77,9 +81,14 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 	onOpenViewer,
 	onOpenSensorViewer,
 	onUploadNew,
+	onOpenDirectRvgCapture,
+	initialStudies,
+	initialLoading,
 }) => {
-	const [studies, setStudies] = useState<ImagingStudy[]>([]);
-	const [isLoading, setIsLoading] = useState<boolean>(true);
+	const [studies, setStudies] = useState<ImagingStudy[]>(() =>
+		initialStudies ?? (isDemoShowcaseMode() ? DEMO_ARCHIVE_STUDIES : []),
+	);
+	const [isLoading, setIsLoading] = useState<boolean>(() => initialLoading ?? false);
 	const [isAutoBinding, setIsAutoBinding] = useState<boolean>(false);
 	const [isDiskScanning, setIsDiskScanning] = useState<boolean>(false);
 	const [searchQuery, setSearchQuery] = useState<string>("");
@@ -97,12 +106,23 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 	const fetchAllStudies = useCallback(async () => {
 		setIsLoading(true);
 		try {
-			const res = await fetch("/api/imaging/studies");
+			// В боевом режиме запрашиваем реальные исследования из PostgreSQL
+			let res = await fetch("/api/radiology/studies");
+			if (!res.ok) {
+				res = await fetch("/api/imaging/studies");
+			}
 			if (res.ok) {
 				const data = await res.json();
 				if (Array.isArray(data) && data.length > 0) {
-					setStudies(data);
+					if (!isDemoShowcaseMode()) {
+						// В боевом режиме строго исключаем любые демонстрационные исследования
+						const prodStudies = data.filter((s: ImagingStudy) => s.organizationId !== DEMO_SHOWCASE_ORG_ID);
+						setStudies(prodStudies);
+					} else {
+						setStudies(data);
+					}
 				} else {
+					// В боевом режиме при отсутствии исследований в БД — строго честное пустое состояние!
 					setStudies(isDemoShowcaseMode() ? DEMO_ARCHIVE_STUDIES : []);
 				}
 			} else {
@@ -349,6 +369,20 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 							<span>{isAutoBinding ? "Сопоставление..." : "Автопривязка по ФИО"}</span>
 						</button>
 
+						{/* Кнопка прямого снимка RVG */}
+						{onOpenDirectRvgCapture && (
+							<button
+								type="button"
+								onClick={onOpenDirectRvgCapture}
+								className="secondary-button"
+								data-testid="btn-archive-direct-rvg"
+								title="Прямой захват с визиографа (RVG / датчик у кресла)"
+							>
+								<Camera className="w-3.5 h-3.5 text-teal-500" />
+								<span>Снимок RVG</span>
+							</button>
+						)}
+
 						{/* Кнопка загрузки КТ — Единый Primary CTA архива */}
 						{onUploadNew && (
 							<button
@@ -575,26 +609,71 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 						<span className="text-xs font-semibold">Загрузка архива КТ и рентгенограмм...</span>
 					</div>
 				) : filteredStudies.length === 0 ? (
-					<div className="p-12 text-center flex flex-col items-center justify-center gap-3 bg-[var(--paper-soft)] rounded-2xl border border-[var(--line)]">
+					<div
+						className="p-12 text-center flex flex-col items-center justify-center gap-3 bg-[var(--paper-soft)] rounded-2xl border border-[var(--line)]"
+						data-testid="archive-empty-state"
+					>
 						<div className="w-12 h-12 rounded-2xl bg-zinc-500/10 text-zinc-400 flex items-center justify-center">
 							<Scan className="w-6 h-6" />
 						</div>
 						<div className="max-w-md">
-							<h4 className="text-sm font-bold text-[var(--ink)]">Исследования не найдены</h4>
+							<h4 className="text-sm font-bold text-[var(--ink)]">
+								{studies.length === 0 ? "Снимков пока нет" : "Исследования не найдены"}
+							</h4>
 							<p className="text-xs text-[var(--muted)] mt-1">
-								{searchQuery
+								{studies.length === 0
+									? "Снимков пока нет. Загрузите DICOM или подключите датчик визиографа"
+									: searchQuery
 									? `По запросу «${searchQuery}» нет совпадающих КТ или снимков`
 									: "В архиве пока нет исследований для выбранного фильтра"}
 							</p>
 						</div>
-						{searchQuery && (
-							<button
-								type="button"
-								onClick={() => setSearchQuery("")}
-								className="h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-teal-500"
-							>
-								Сбросить поиск
-							</button>
+						{studies.length === 0 ? (
+							<div className="flex items-center gap-2 mt-2">
+								{onUploadNew && (
+									<button
+										type="button"
+										onClick={onUploadNew}
+										className="primary-button text-xs"
+										data-testid="btn-empty-upload-new"
+									>
+										<UploadCloud className="w-3.5 h-3.5" />
+										<span>Загрузить снимок / КТ</span>
+									</button>
+								)}
+								{onOpenDirectRvgCapture && (
+									<button
+										type="button"
+										onClick={onOpenDirectRvgCapture}
+										className="secondary-button text-xs"
+										data-testid="btn-empty-direct-rvg"
+										title="Прямой захват с визиографа (RVG / датчик у кресла)"
+									>
+										<Camera className="w-3.5 h-3.5 text-teal-500" />
+										<span>Снимок RVG</span>
+									</button>
+								)}
+								<button
+									type="button"
+									onClick={handleScanDiskForDicom}
+									disabled={isDiskScanning}
+									className="secondary-button text-xs"
+									data-testid="btn-empty-scan-disk"
+								>
+									<HardDrive className={`w-3.5 h-3.5 text-indigo-500 ${isDiskScanning ? "animate-spin" : ""}`} />
+									<span>Поиск на диске</span>
+								</button>
+							</div>
+						) : (
+							searchQuery && (
+								<button
+									type="button"
+									onClick={() => setSearchQuery("")}
+									className="h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-teal-500"
+								>
+									Сбросить поиск
+								</button>
+							)
 						)}
 					</div>
 				) : (

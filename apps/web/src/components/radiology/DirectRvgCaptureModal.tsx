@@ -1,5 +1,4 @@
-import type React from "react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	FileText,
@@ -58,7 +57,10 @@ import { DirectRvgFooter } from "./DirectRvgFooter";
 import { DirectRvgSensorTelemetryHeader } from "./DirectRvgSensorTelemetryHeader";
 import { useRvgGlCanvas } from "./useRvgGlCanvas";
 import { useDirectRvgPanZoom } from "./useDirectRvgPanZoom";
-if (typeof document !== "undefined") { import("./rvgCapture.css"); }
+if (typeof document !== "undefined") {
+	import("./rvgCapture.css");
+	import("./rvgCaptureControls.css");
+}
 
 // Transparent re-exports
 export * from "./directRvgTypes";
@@ -93,13 +95,15 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 }) => {
 	const modalId = useId();
 
+	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId) || isDemoPatientId(patientName);
+
 	const defaultImage = useMemo(() => {
 		if (initialImageUrl !== undefined) return initialImageUrl;
-		if (isDemoShowcaseMode() || isDemoPatientId(patientId) || isDemoPatientId(patientName)) {
+		if (isDemo) {
 			return SAMPLE_PATIENT_RVG_URL;
 		}
 		return "";
-	}, [initialImageUrl, patientId, patientName]);
+	}, [initialImageUrl, isDemo]);
 
 	// Sensor & Capture Lifecycle State
 	const [sensorStatus, setSensorStatus] = useState<SensorCaptureStatus>("ready");
@@ -217,11 +221,23 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 	// Trigger physical or instant x-ray exposure capture (Mandate 8e: <50ms instant capture)
 	const handleTriggerCapture = useCallback(() => {
 		if (sensorStatus === "acquiring") return;
-		setSensorStatus("captured");
-		setAcquisitionProgress(100);
-		setCapturedImage(initialImageUrl || SAMPLE_PATIENT_RVG_URL);
-		showToast("Снимок успешно получен с датчика RVG", "success");
-	}, [sensorStatus, initialImageUrl]);
+		if (initialImageUrl) {
+			setSensorStatus("captured");
+			setAcquisitionProgress(100);
+			setCapturedImage(initialImageUrl);
+			showToast("Снимок успешно получен с датчика RVG", "success");
+			return;
+		}
+		if (isDemo) {
+			setSensorStatus("captured");
+			setAcquisitionProgress(100);
+			setCapturedImage(SAMPLE_PATIENT_RVG_URL);
+			showToast("Демо-режим: демонстрационный снимок RVG получен", "success");
+			return;
+		}
+		// В боевом режиме без реального снимка предупреждаем врача
+		showToast("Датчик ожидает физической экспозиции рентген-аппарата или загрузки файла", "info");
+	}, [sensorStatus, initialImageUrl, isDemo]);
 
 	// Direct File Upload & Ingestion State (Mandate 8e: Doctor Autonomy, no sensor lock-in)
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -517,6 +533,10 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 		filters.sharpness > 0 ? `url(#rvg-sharpness-kernel-${modalId}) contrast(${100 + Math.round(filters.sharpness * 0.35)}%)` : "",
 	].filter(Boolean).join(" ");
 
+	if (!isOpen) {
+		return null;
+	}
+
 	const modalContent = (
 		<div
 			className="rvg-capture-overlay"
@@ -597,6 +617,22 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 							onToggleFlipH={panZoom.handleToggleFlipH}
 							onToggleFlipV={panZoom.handleToggleFlipV}
 							onResetTransform={panZoom.handleResetTransform}
+							extraSlot={
+								<RvgFiltersToolbar
+									filters={filters}
+									onChange={setFilters}
+									activePresetId={activePresetId}
+									onSelectPreset={(p) => setActivePresetId(p.id)}
+									isSplitCompare={isSplitCompare}
+									onToggleSplitCompare={setIsSplitCompare}
+									onRotate={panZoom.handleRotate}
+									onReset={() => {
+										setFilters(DEFAULT_RVG_FILTERS);
+										setActivePresetId("standard");
+									}}
+									layout="toolbar"
+								/>
+							}
 						/>
 
 						{/* Acquiring Animation Overlay */}
@@ -680,18 +716,20 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 											<UploadCloud className="w-4 h-4 text-teal-400" />
 											<span>Загрузить с диска</span>
 										</button>
-										<button
-											type="button"
-											data-testid="btn-rvg-load-demo"
-											onClick={(e) => {
-												e.stopPropagation();
-												setCapturedImage(SAMPLE_PATIENT_RVG_URL);
-												setSensorStatus("captured");
-											}}
-											className="rvg-empty-btn-demo"
-										>
-											<span>Показать демо-снимок</span>
-										</button>
+										{isDemo && (
+											<button
+												type="button"
+												data-testid="btn-rvg-load-demo"
+												onClick={(e) => {
+													e.stopPropagation();
+													setCapturedImage(SAMPLE_PATIENT_RVG_URL);
+													setSensorStatus("captured");
+												}}
+												className="rvg-empty-btn-demo"
+											>
+												<span>Показать демо-снимок</span>
+											</button>
+										)}
 									</div>
 								</div>
 							)}
@@ -754,26 +792,6 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 							onChangeAnatomicalZone={setAnatomicalZone}
 						/>
 
-						{/* 3. Real-Time Filters Toolbar (Compact 1-row mode) */}
-						<div className="rvg-dock-section">
-							<div className="rvg-section-header">
-								<span className="rvg-section-header-title">
-									<Scan className="w-3.5 h-3.5 text-teal-500 dark:text-teal-400" />
-									Фильтры и оптимизация
-								</span>
-							</div>
-							<RvgFiltersToolbar
-								filters={filters}
-								onChange={setFilters}
-								activePresetId={activePresetId}
-								onSelectPreset={(p) => setActivePresetId(p.id)}
-								isSplitCompare={isSplitCompare}
-								onToggleSplitCompare={setIsSplitCompare}
-								onRotate={panZoom.handleRotate}
-								onReset={() => { setFilters(DEFAULT_RVG_FILTERS); setActivePresetId("standard"); }}
-								layout="toolbar"
-							/>
-						</div>
 
 						{/* 4. Clinical Diary Note */}
 						<div className="rvg-dock-section">
@@ -786,8 +804,8 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 							<textarea
 								value={clinicalNotes}
 								onChange={(e) => setClinicalNotes(e.target.value)}
-								rows={2}
-								className="w-full p-2 rounded-lg bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#334155)] text-xs text-[var(--ink,#e2e8f0)] placeholder-[var(--muted,#94a3b8)] outline-none focus:border-[var(--teal,#0d9488)] transition-colors resize-none"
+								rows={3}
+								className="w-full p-2.5 rounded-lg bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#334155)] text-xs leading-relaxed text-[var(--ink,#e2e8f0)] placeholder-[var(--muted,#94a3b8)] outline-none focus:border-[var(--teal,#0d9488)] transition-colors resize-y min-h-[64px]"
 								placeholder="Диагностические примечания к снимку..."
 								data-testid="rvg-clinical-notes-input"
 							/>

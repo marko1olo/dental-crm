@@ -23,10 +23,13 @@ import {
 	WarehouseWaybillsTab,
 	WarehouseInventoryTab,
 	WarehouseBatchTrackingModal,
+	WarehouseCatalogView,
+	ConsumablesDeductionModal,
 } from "./components/warehouse/index.js";
+import { SanPinSterilizationJournal } from "./components/sanpin/SanPinSterilizationJournal.js";
 import type { InventoryItem } from "./components/inventory/useInventoryLogic.js";
 import { applyThemeToRoot, resolveTheme, type ThemeMode } from "./lib/themeClasses.js";
-import { Layers, Truck, ClipboardList, ShieldAlert, Sun, Moon } from "lucide-react";
+import { Layers, Truck, ClipboardList, ShieldAlert, ShieldCheck, Sun, Moon, Package, Syringe } from "lucide-react";
 
 const INITIAL_WAREHOUSE_ITEMS: InventoryItem[] = [
 	{
@@ -110,11 +113,12 @@ const INITIAL_WAREHOUSE_ITEMS: InventoryItem[] = [
 ];
 
 export const WarehouseOverviewPreviewApp: React.FC = () => {
-	const [activeTab, setActiveTab] = useState<"overview" | "waybills" | "inventory">("overview");
+	const [activeTab, setActiveTab] = useState<"catalog" | "overview" | "waybills" | "inventory" | "sterilization">("catalog");
 	const [themeMode, setThemeMode] = useState<ThemeMode>("light");
 	const [items, setItems] = useState<InventoryItem[]>(INITIAL_WAREHOUSE_ITEMS);
 	const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
 	const [selectedBatchItem, setSelectedBatchItem] = useState<InventoryItem | undefined>(undefined);
+	const [isStandaloneDeductionOpen, setIsStandaloneDeductionOpen] = useState(false);
 
 	useEffect(() => {
 		applyThemeToRoot(document.documentElement, resolveTheme(themeMode, false));
@@ -142,7 +146,7 @@ export const WarehouseOverviewPreviewApp: React.FC = () => {
 							Склад и материальный учет DENTE
 						</h1>
 						<p className="text-[10px] text-[var(--muted,#64748b)] mt-0.5 font-medium">
-							Оперативный материальный учет, СанПиН 3.3686-21 (FEFO)
+							Оперативный учет материалов, протоколы лечения (BOM) и СанПиН 3.3686-21
 						</p>
 					</div>
 				</div>
@@ -150,6 +154,20 @@ export const WarehouseOverviewPreviewApp: React.FC = () => {
 				<div className="flex items-center gap-2">
 					{/* Переключатель вкладок */}
 					<div className="flex items-center bg-[var(--paper-soft,#f1f5f9)] p-0.5 rounded-lg border border-[var(--line-subtle,#e2e8f0)] text-xs">
+						<button
+							type="button"
+							onClick={() => setActiveTab("catalog")}
+							className={`h-7 px-3 rounded-md font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+								activeTab === "catalog"
+									? "bg-[var(--paper,#ffffff)] text-teal-700 dark:text-teal-300 shadow-xs border border-[var(--line,#cbd5e1)]"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="tab-catalog"
+						>
+							<Package size={13} />
+							<span>Каталог и расходники</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={() => setActiveTab("overview")}
@@ -161,7 +179,7 @@ export const WarehouseOverviewPreviewApp: React.FC = () => {
 							data-testid="tab-overview"
 						>
 							<Layers size={13} />
-							<span>Обзор склада</span>
+							<span>Оперативный склад</span>
 						</button>
 
 						<button
@@ -175,7 +193,7 @@ export const WarehouseOverviewPreviewApp: React.FC = () => {
 							data-testid="tab-waybills"
 						>
 							<Truck size={13} />
-							<span>Накладные ТОРГ-12</span>
+							<span>Поступления партий</span>
 						</button>
 
 						<button
@@ -189,9 +207,35 @@ export const WarehouseOverviewPreviewApp: React.FC = () => {
 							data-testid="tab-inventory"
 						>
 							<ClipboardList size={13} />
-							<span>Инвентаризация (ИНВ-3/19)</span>
+							<span>Инвентаризация и сверка</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setActiveTab("sterilization")}
+							className={`h-7 px-3 rounded-md font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+								activeTab === "sterilization"
+									? "bg-[var(--paper,#ffffff)] text-teal-700 dark:text-teal-300 shadow-xs border border-[var(--line,#cbd5e1)]"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="tab-sterilization"
+						>
+							<ShieldCheck size={13} />
+							<span>Журнал стерилизации</span>
 						</button>
 					</div>
+
+					{/* Быстрое открытие модалки списания по протоколу */}
+					<button
+						type="button"
+						onClick={() => setIsStandaloneDeductionOpen(true)}
+						className="h-8 px-2.5 rounded-lg border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+						title="Тест списания у кресла врача (BOM)"
+						data-testid="btn-open-preview-deduction"
+					>
+						<Syringe size={14} />
+						<span>Списание приёма</span>
+					</button>
 
 					{/* Переключатель темы */}
 					<button
@@ -208,6 +252,34 @@ export const WarehouseOverviewPreviewApp: React.FC = () => {
 
 			{/* Рабочая область выбранной вкладки */}
 			<main className="flex-1 overflow-hidden p-3 flex flex-col min-h-0">
+				{activeTab === "catalog" && (
+					<WarehouseCatalogView
+						organizationId="preview-org-1"
+						items={items}
+						onOpenBatches={handleOpenBatchTracking}
+						onOpenReceiptModal={() => setActiveTab("waybills")}
+						onOpenAuditModal={() => setActiveTab("inventory")}
+						onDeductItem={(item, qty = 1) => {
+							setItems((prev) =>
+								prev.map((it) =>
+									it.id === item.id
+										? { ...it, stockQuantity: Number(it.stockQuantity) - qty }
+										: it,
+								),
+							);
+						}}
+						onReceiveItem={(item, qty = 1) => {
+							setItems((prev) =>
+								prev.map((it) =>
+									it.id === item.id
+										? { ...it, stockQuantity: Number(it.stockQuantity) + qty }
+										: it,
+								),
+							);
+						}}
+					/>
+				)}
+
 				{activeTab === "overview" && (
 					<WarehouseOverviewTab
 						organizationId="preview-org-1"
@@ -284,6 +356,12 @@ export const WarehouseOverviewPreviewApp: React.FC = () => {
 						}}
 					/>
 				)}
+
+				{activeTab === "sterilization" && (
+					<div className="flex-1 overflow-y-auto p-1 bg-[var(--paper,#ffffff)] rounded-xl border border-[var(--line,#e2e8f0)]">
+						<SanPinSterilizationJournal />
+					</div>
+				)}
 			</main>
 
 			{/* Модальное окно FEFO партий и серий */}
@@ -309,6 +387,30 @@ export const WarehouseOverviewPreviewApp: React.FC = () => {
 								: it,
 						),
 					);
+				}}
+			/>
+
+			{/* Модальное окно списания расходников у кресла (BOM) */}
+			<ConsumablesDeductionModal
+				isOpen={isStandaloneDeductionOpen}
+				onClose={() => setIsStandaloneDeductionOpen(false)}
+				procedureTitle="Препарирование и пломбирование зуба световой композит (Filtek Z250)"
+				service804nCode="A16.07.002.011"
+				currentStockMap={Object.fromEntries(items.map((i) => [i.id, Number(i.stockQuantity) || 0]))}
+				onConfirmDeduction={(deducted) => {
+					for (const d of deducted) {
+						const it = items.find((x) => x.id === d.inventoryItemId);
+						if (it) {
+							setItems((prev) =>
+								prev.map((x) =>
+									x.id === it.id
+										? { ...x, stockQuantity: Number(x.stockQuantity) - d.deductedQty }
+										: x,
+								),
+							);
+						}
+					}
+					setIsStandaloneDeductionOpen(false);
 				}}
 			/>
 		</div>

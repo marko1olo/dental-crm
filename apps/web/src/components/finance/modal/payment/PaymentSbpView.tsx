@@ -41,7 +41,7 @@ export const PaymentSbpView: React.FC<PaymentSbpViewProps> = ({
 						<span>Динамический QR-код СБП (НСПК)</span>
 					</span>
 					<span className="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide bg-teal-500/15 text-teal-700 dark:text-teal-300 rounded-full border border-teal-500/20 flex items-center gap-1">
-						СБП • НСПК ГОСТ Р 56042
+						СБП • Быстрый платёж
 					</span>
 				</div>
 
@@ -51,7 +51,7 @@ export const PaymentSbpView: React.FC<PaymentSbpViewProps> = ({
 							<Check size={24} />
 						</div>
 						<p className="font-extrabold text-sm m-0">
-							Оплачено по СБП (Тег 1081 «Безналичные / Электронные»)
+							Оплачено по СБП (безналичный расчёт)
 						</p>
 						<p className="text-xs font-mono font-bold m-0 text-emerald-700 dark:text-emerald-300">
 							Сумма: {totalDueRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
@@ -81,7 +81,7 @@ export const PaymentSbpView: React.FC<PaymentSbpViewProps> = ({
 							</p>
 							<p className="text-[var(--muted,#64748b)] m-0 font-mono text-[11px]">
 								Сумма СБП: {totalDueRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ •
-								Без комиссии для пациента (Тег 1081)
+								Без комиссии для пациента
 							</p>
 							{sbpCheckMessage && (
 								<p className="text-[11px] text-teal-700 dark:text-teal-300 font-medium m-0">

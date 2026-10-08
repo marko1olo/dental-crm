@@ -291,7 +291,7 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={togglePlay}
-						className="h-8 w-8 min-h-[32px] min-w-[32px] rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white flex items-center justify-center transition-all shadow-xs focus:outline-none focus:ring-2 focus:ring-[var(--teal)] cursor-pointer"
+						className="min-h-[36px] min-w-[36px] w-9 h-9 sm:w-8 sm:h-8 sm:min-h-[32px] sm:min-w-[32px] rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white flex items-center justify-center transition-all shadow-xs focus:outline-none focus:ring-2 focus:ring-[var(--teal)] cursor-pointer"
 						title={isPlaying ? "Пауза" : "Воспроизвести запись"}
 						aria-label={isPlaying ? "Пауза" : "Воспроизвести запись"}
 					>
@@ -306,7 +306,7 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={() => handleSkip(-10)}
-						className="h-8 w-8 min-h-[32px] min-w-[32px] rounded-lg border border-[var(--line-subtle,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-colors cursor-pointer"
+						className="min-h-[32px] min-w-[32px] h-8 w-8 rounded-lg border border-[var(--line-subtle,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-colors cursor-pointer"
 						title="Назад на 10 сек"
 						aria-label="Назад на 10 секунд"
 					>
@@ -317,7 +317,7 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={() => handleSkip(10)}
-						className="h-8 w-8 min-h-[32px] min-w-[32px] rounded-lg border border-[var(--line-subtle,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-colors cursor-pointer"
+						className="min-h-[32px] min-w-[32px] h-8 w-8 rounded-lg border border-[var(--line-subtle,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-colors cursor-pointer"
 						title="Вперед на 10 сек"
 						aria-label="Вперед на 10 секунд"
 					>
@@ -342,7 +342,7 @@ export function CallAudioPlayer({
 								key={s}
 								type="button"
 								onClick={() => setPlaybackSpeed(s)}
-								className={`dente-segmented-item h-7 px-2 text-[12px] font-semibold cursor-pointer ${
+								className={`dente-segmented-item min-h-[28px] min-w-[28px] h-7 px-2 py-0.5 text-[12px] font-semibold cursor-pointer ${
 									playbackSpeed === s ? "is-active active" : ""
 								}`}
 								title={`Скорость ${s}x`}
@@ -356,7 +356,7 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={toggleMute}
-						className="h-8 w-8 min-h-[32px] min-w-[32px] rounded-lg border border-[var(--line-subtle,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-all cursor-pointer"
+						className="min-h-[32px] min-w-[32px] h-8 w-8 rounded-lg border border-[var(--line-subtle,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-all cursor-pointer"
 						title={isMuted ? "Включить звук" : "Выключить звук"}
 						aria-label={isMuted ? "Включить звук" : "Выключить звук"}
 					>

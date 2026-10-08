@@ -368,137 +368,75 @@ export function AutoclaveJournal257Tab({
 				}}
 			>
 				{/* Row 1: Search and Primary Filters */}
-				<div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "0.75rem" }}>
-					<div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem", flex: 1 }}>
-						{/* Search input */}
-						<div style={{ position: "relative", minWidth: "220px", flex: "1 1 220px" }}>
-							<input
-								type="text"
-								placeholder="Поиск по изделиям, ID, сотруднику..."
-								className="autoclave-input"
-								style={{ paddingLeft: "2.25rem", width: "100%", minHeight: "40px" }}
-								value={searchQuery}
-								onChange={(e) => setSearchQuery(e.target.value)}
-							/>
-							<Search
-								size={16}
-								color="var(--muted, #64748b)"
-								style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)" }}
-							/>
-						</div>
-
-						{/* Sterilizer Filter */}
-						<select
-							className="autoclave-select"
-							style={{ minHeight: "40px" }}
-							value={selectedSterilizerId}
-							onChange={(e) => setSelectedSterilizerId(e.target.value)}
-						>
-							<option value="all">Все аппараты ЦСО</option>
-							{STATUTORY_STERILIZERS_CATALOG.map((st) => (
-								<option key={st.id} value={st.id}>
-									{st.code} — {st.brand}
-								</option>
-							))}
-						</select>
-
-						{/* Regime Filter */}
-						<select
-							className="autoclave-select"
-							style={{ minHeight: "40px" }}
-							value={selectedRegimeId}
-							onChange={(e) => setSelectedRegimeId(e.target.value)}
-						>
-							<option value="all">Все режимы</option>
-							{STATUTORY_STERILIZATION_REGIMES.map((reg) => (
-								<option key={reg.id} value={reg.id}>
-									{reg.shortLabelRu}
-								</option>
-							))}
-						</select>
-
-						{/* Status Filter */}
-						<select
-							className="autoclave-select"
-							style={{ minHeight: "40px" }}
-							value={selectedStatus}
-							onChange={(e) => setSelectedStatus(e.target.value as any)}
-						>
-							<option value="all">Все статусы</option>
-							<option value="sterile_passed">Стерильно</option>
-							<option value="rejected_defect">Брак</option>
-						</select>
+				<div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem" }}>
+					{/* Search input */}
+					<div style={{ position: "relative", minWidth: "220px", flex: "2 1 240px" }}>
+						<input
+							type="text"
+							placeholder="Поиск по изделиям, ID, сотруднику..."
+							className="autoclave-input"
+							style={{ paddingLeft: "2.25rem", width: "100%", minHeight: "40px" }}
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+						/>
+						<Search
+							size={16}
+							color="var(--muted, #64748b)"
+							style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)" }}
+						/>
 					</div>
 
-					{/* Export and Print Buttons */}
-					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-						<button
-							type="button"
-							onClick={handleGenerateRegulatorySanpinInspection}
-							className="autoclave-btn"
-							style={{
-								minHeight: "40px",
-								padding: "0.5rem 1rem",
-								fontWeight: 800,
-								background: "linear-gradient(135deg, #0284c7 0%, #0d9488 100%)",
-								color: "#fff",
-								border: "none",
-								boxShadow: "0 2px 8px rgba(2, 132, 199, 0.25)",
-							}}
-							title="Формирование журналов стерилизации и контроля качества для инспекций"
-							data-testid="journal-tab-regulatory-export-btn"
-						>
-							<FileBadge size={16} />
-							<span>Выгрузка журналов для проверки</span>
-						</button>
+					{/* Sterilizer Filter */}
+					<select
+						className="autoclave-select"
+						style={{ minHeight: "40px", flex: "1 1 180px", minWidth: "160px" }}
+						value={selectedSterilizerId}
+						onChange={(e) => setSelectedSterilizerId(e.target.value)}
+					>
+						<option value="all">Все аппараты ЦСО</option>
+						{STATUTORY_STERILIZERS_CATALOG.map((st) => (
+							<option key={st.id} value={st.id}>
+								{st.code} — {st.brand}
+							</option>
+						))}
+					</select>
 
-						<button
-							type="button"
-							onClick={handleGenerateMonthlyForm257}
-							className="autoclave-btn autoclave-btn-secondary"
-							style={{
-								minHeight: "40px",
-								padding: "0.5rem 0.875rem",
-								fontWeight: 600,
-							}}
-							title="Автоматическое формирование и печать журнала стерилизаторов за текущий месяц"
-							data-testid="journal-tab-generate-monthly-form257-btn"
-						>
-							<DentalForm043 size={16} color="var(--teal, #0d9488)" />
-							<span>Журнал за месяц</span>
-						</button>
+					{/* Regime Filter */}
+					<select
+						className="autoclave-select"
+						style={{ minHeight: "40px", flex: "1 1 160px", minWidth: "140px" }}
+						value={selectedRegimeId}
+						onChange={(e) => setSelectedRegimeId(e.target.value)}
+					>
+						<option value="all">Все режимы</option>
+						{STATUTORY_STERILIZATION_REGIMES.map((reg) => (
+							<option key={reg.id} value={reg.id}>
+								{reg.shortLabelRu}
+							</option>
+						))}
+					</select>
 
-						<button
-							type="button"
-							onClick={handleExportCsv}
-							className="autoclave-btn autoclave-btn-secondary"
-							style={{ minHeight: "40px", padding: "0.5rem 0.875rem" }}
-							title="Экспорт в CSV с UTF-8 BOM"
-						>
-							<FileSpreadsheet size={16} color="var(--teal, #0d9488)" />
-							Экспорт CSV
-						</button>
-
-						<button
-							type="button"
-							onClick={handlePrintJournal}
-							className="autoclave-btn autoclave-btn-primary"
-							style={{ minHeight: "40px", padding: "0.5rem 1rem" }}
-						>
-							<Printer size={16} />
-							Печать журнала автоклава (А4)
-						</button>
-					</div>
+					{/* Status Filter */}
+					<select
+						className="autoclave-select"
+						style={{ minHeight: "40px", flex: "1 1 130px", minWidth: "120px" }}
+						value={selectedStatus}
+						onChange={(e) => setSelectedStatus(e.target.value as any)}
+					>
+						<option value="all">Все статусы</option>
+						<option value="sterile_passed">Стерильно</option>
+						<option value="rejected_defect">Брак</option>
+					</select>
 				</div>
 
-				{/* Row 2: Period Selection & Batch Generation Toolbar */}
+				{/* Row 2: Period Selection & Action Buttons */}
 				<div
 					style={{
 						display: "flex",
 						flexWrap: "wrap",
 						justifyContent: "space-between",
 						alignItems: "center",
-						gap: "0.5rem",
+						gap: "0.75rem",
 						paddingTop: "0.5rem",
 						borderTop: "1px solid var(--line, #e2e8f0)",
 					}}
@@ -511,7 +449,7 @@ export function AutoclaveJournal257Tab({
 							</span>
 							<select
 								className="autoclave-select"
-								style={{ minHeight: "36px", fontSize: "0.8125rem" }}
+								style={{ minHeight: "36px", height: "36px", fontSize: "0.8125rem" }}
 								value={periodPreset}
 								onChange={(e) => handlePresetChange(e.target.value)}
 								data-testid="journal-tab-period-preset-select"
@@ -530,7 +468,7 @@ export function AutoclaveJournal257Tab({
 							<input
 								type="date"
 								className="autoclave-input"
-								style={{ minHeight: "36px", fontSize: "0.8125rem", width: "135px" }}
+								style={{ minHeight: "36px", height: "36px", fontSize: "0.8125rem", width: "135px" }}
 								value={startDate}
 								onChange={(e) => {
 									setStartDate(e.target.value);
@@ -543,7 +481,7 @@ export function AutoclaveJournal257Tab({
 							<input
 								type="date"
 								className="autoclave-input"
-								style={{ minHeight: "36px", fontSize: "0.8125rem", width: "135px" }}
+								style={{ minHeight: "36px", height: "36px", fontSize: "0.8125rem", width: "135px" }}
 								value={endDate}
 								onChange={(e) => {
 									setEndDate(e.target.value);
@@ -570,10 +508,72 @@ export function AutoclaveJournal257Tab({
 							<Autoclave size={15} color="var(--teal, #0d9488)" />
 							<span>Сформировать за период</span>
 						</button>
+
+						<div style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)", fontWeight: 500, marginLeft: "0.5rem" }}>
+							Найдено: <strong>{filteredRecords.length}</strong> / {records.length}
+						</div>
 					</div>
 
-					<div style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)", fontWeight: 500 }}>
-						Найдено записей: <strong>{filteredRecords.length}</strong> (всего {records.length})
+					{/* Export and Print Buttons */}
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+						<button
+							type="button"
+							onClick={handleGenerateRegulatorySanpinInspection}
+							className="autoclave-btn"
+							style={{
+								minHeight: "36px",
+								padding: "0.45rem 0.875rem",
+								fontWeight: 700,
+								fontSize: "0.8125rem",
+								background: "linear-gradient(135deg, #0284c7 0%, #0d9488 100%)",
+								color: "#fff",
+								border: "none",
+								boxShadow: "0 2px 8px rgba(2, 132, 199, 0.25)",
+							}}
+							title="Формирование журналов стерилизации и контроля качества для инспекций"
+							data-testid="journal-tab-regulatory-export-btn"
+						>
+							<FileBadge size={15} />
+							<span>Выгрузка для проверки</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleGenerateMonthlyForm257}
+							className="autoclave-btn autoclave-btn-secondary"
+							style={{
+								minHeight: "36px",
+								padding: "0.45rem 0.75rem",
+								fontWeight: 600,
+								fontSize: "0.8125rem",
+							}}
+							title="Автоматическое формирование и печать журнала стерилизаторов за текущий месяц"
+							data-testid="journal-tab-generate-monthly-form257-btn"
+						>
+							<DentalForm043 size={15} color="var(--teal, #0d9488)" />
+							<span>За месяц</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleExportCsv}
+							className="autoclave-btn autoclave-btn-secondary"
+							style={{ minHeight: "36px", padding: "0.45rem 0.75rem", fontSize: "0.8125rem" }}
+							title="Экспорт в CSV с UTF-8 BOM"
+						>
+							<FileSpreadsheet size={15} color="var(--teal, #0d9488)" />
+							<span>CSV</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handlePrintJournal}
+							className="autoclave-btn autoclave-btn-primary"
+							style={{ minHeight: "36px", padding: "0.45rem 0.875rem", fontSize: "0.8125rem" }}
+						>
+							<Printer size={15} />
+							<span>Печать журнала</span>
+						</button>
 					</div>
 				</div>
 			</div>

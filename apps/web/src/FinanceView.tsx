@@ -827,6 +827,10 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				cashierName={paymentFiscalCashierName || "Врач-стоматолог / Кассир"}
 				clinicName={dashboard?.clinicSettings?.name || "Стоматология ДЕНТЕ Премиум"}
 				clinicInn={dashboard?.clinicSettings?.inn}
+				patientId={documentPatient?.id}
+				patientName={documentPatient?.fullName}
+				patientPhone={documentPatient?.phone ?? undefined}
+				patientDepositRub={documentPatient && typeof documentPatient.balanceRub === "number" && documentPatient.balanceRub > 0 ? documentPatient.balanceRub : 0}
 				onPaymentComplete={() => {
 					void loadDashboard?.();
 					setIsCashboxOpen(false);

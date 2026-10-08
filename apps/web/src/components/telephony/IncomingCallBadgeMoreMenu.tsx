@@ -111,6 +111,7 @@ export function IncomingCallBadgeMoreMenu({
 					onClose();
 				}}
 				className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-800 dark:text-amber-200 font-medium flex items-center gap-2 transition-colors cursor-pointer"
+				data-testid="badge-action-cito"
 			>
 				<Zap size={13} className="text-amber-500" />
 				<span>Запись: Острая боль ({urgentTime})</span>
@@ -184,7 +185,7 @@ export function IncomingCallBadgeMoreMenu({
 					className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
 				>
 					<PhoneForwarded size={13} className="text-[var(--teal)]" />
-					<span>Перевод звонка (SIP)</span>
+					<span>Перевод на врача</span>
 				</button>
 			)}
 

@@ -639,13 +639,13 @@ export function OfflineFiscalBatchModal({
 								<div className="p-4 rounded-lg border border-[var(--glass-border)] bg-[var(--paper-strong)] space-y-2 text-xs">
 									<div className="font-bold text-sm text-[var(--ink)] mb-2">Данные онлайн-кассы (ККТ)</div>
 									<div className="flex justify-between py-1 border-b border-[var(--glass-border)]">
-										<span className="text-[var(--muted)]">Банковские карты (Тег 1081):</span>
+										<span className="text-[var(--muted)]">Банковские карты:</span>
 										<span className="font-mono font-bold">
 											{batchResult ? batchResult.reconciliation.fiscalCardRub.toLocaleString("ru-RU") : queueSummary.cardRub.toLocaleString("ru-RU")} ₽
 										</span>
 									</div>
 									<div className="flex justify-between py-1 border-b border-[var(--glass-border)]">
-										<span className="text-[var(--muted)]">СБП QR (Тег 1081):</span>
+										<span className="text-[var(--muted)]">СБП QR:</span>
 										<span className="font-mono font-bold">
 											{batchResult ? batchResult.reconciliation.fiscalSbpRub.toLocaleString("ru-RU") : queueSummary.sbpRub.toLocaleString("ru-RU")} ₽
 										</span>

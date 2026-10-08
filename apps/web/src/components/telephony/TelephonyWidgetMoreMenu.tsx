@@ -89,6 +89,7 @@ export function TelephonyWidgetMoreMenu({
 					onClose();
 				}}
 				className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-800 dark:text-amber-200 font-medium flex items-center gap-2 transition-colors cursor-pointer"
+				data-testid="widget-action-cito"
 			>
 				<Zap size={13} className="text-amber-500 shrink-0" />
 				<span>Острая боль (10:00)</span>
@@ -159,7 +160,7 @@ export function TelephonyWidgetMoreMenu({
 				className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
 			>
 				<PhoneForwarded size={13} className="text-[var(--teal)] shrink-0" />
-				<span>Перевод звонка (SIP)</span>
+				<span>Перевод на врача</span>
 			</button>
 
 			<button
@@ -171,7 +172,7 @@ export function TelephonyWidgetMoreMenu({
 				className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
 			>
 				<Pause size={13} className="text-amber-500 shrink-0" />
-				<span>{isHeld ? "Снять с удержания" : "Удержание (Hold)"}</span>
+				<span>{isHeld ? "Снять с удержания" : "Поставить на удержание"}</span>
 			</button>
 
 			<button

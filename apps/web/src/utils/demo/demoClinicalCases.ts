@@ -146,14 +146,13 @@ export interface DemoExecutiveKpiCase {
 	payrollToRevenuePercent: number;
 }
 
-export interface DemoBraveryDiploma {
-	diplomaNumber: string;
-	patientName: string;
-	awardedDateIso: string;
-	awardReasonRu: string;
-	doctorName: string;
-	clinicName: string;
-}
+import {
+	generateBraveryDiploma,
+	type BraveryDiplomaData,
+	type ResolveBraveryDiplomaOptions,
+} from "../pediatric/braveryDiplomaGenerator.js";
+
+export type DemoBraveryDiploma = BraveryDiplomaData;
 
 // ============================================================================
 // 1. КЕЙС ТЕРАПЕВТА: Пациент Смирнова А. С., кариес 16, пломба 24, пульпит 36
@@ -435,13 +434,15 @@ export const DEMO_EXECUTIVE_KPI_CASE: DemoExecutiveKpiCase = {
 // ============================================================================
 // ДИПЛОМ ЗА ХРАБРОСТЬ (ДЛЯ ДЕТСКОГО И ТЕРАПЕВТИЧЕСКОГО ПРИЁМА)
 // ============================================================================
-export function generateDemoDiplomaForBravery(patientName = "Смирнова Анна Сергеевна"): DemoBraveryDiploma {
-	return {
-		diplomaNumber: "ДИПЛОМ-2026-ХРАБРОСТЬ-01",
+export function generateDemoDiplomaForBravery(
+	patientName = "Смирнова Анна Сергеевна",
+	options?: Partial<ResolveBraveryDiplomaOptions>,
+): DemoBraveryDiploma {
+	return generateBraveryDiploma({
 		patientName,
-		awardedDateIso: new Date().toISOString().slice(0, 10),
-		awardReasonRu: "За выдающееся мужество, безупречное спокойствие в кресле стоматолога и образцовую улыбку!",
-		doctorName: "Д-р Соколов А. В.",
-		clinicName: "Стоматологическая Клиника DENTE",
-	};
+		isDemoOverride: options?.isDemoOverride ?? true,
+		...options,
+	});
 }
+
+export { generateBraveryDiploma, type BraveryDiplomaData, type ResolveBraveryDiplomaOptions };

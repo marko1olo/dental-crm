@@ -212,4 +212,81 @@ describe("Wave 134: Auto-Visit BOM & Class B Medical Waste Engine", () => {
 			assert.strictEqual(parsedResult.classBWaste.wasteClass, "class_B");
 		});
 	});
+
+	describe("6. Честная связность: «Препарирование и пломба светового отверждения (Filtek / Estelite)» и мягкий овердрафт", () => {
+		it("списывает композит 0.2г, адгезив 1 дозу, перчатки 1 пару и слюноотсос 1 шт при оказании услуги", () => {
+			const result = executeAutoVisitBomDeduction({
+				visitId: "visit-filtek-001",
+				patientId: "pat-101",
+				doctorId: "doc-202",
+				renderedServices: [
+					{
+						serviceCode: "A16.07.002.011",
+						serviceTitle: "Препарирование и пломба светового отверждения (Filtek / Estelite)",
+						quantity: 1,
+						toothNumber: 16,
+					},
+				],
+				currentStockMap: {
+					"mat-composite-filtek": 5,
+					"mat-adhesive-single": 10,
+					"mat-nitrile-gloves": 50,
+					"mat-saliva-ejector": 30,
+				},
+				allowOverdraft: true,
+			});
+
+			assert.strictEqual(result.visitId, "visit-filtek-001");
+			assert.strictEqual(result.hasOverdraft, false);
+
+			// Находим списанные позиции
+			const compositeItem = result.items.find((i) => i.inventoryItemId === "mat-composite-filtek");
+			const adhesiveItem = result.items.find((i) => i.inventoryItemId === "mat-adhesive-single");
+			const glovesItem = result.items.find((i) => i.inventoryItemId === "mat-nitrile-gloves");
+			const ejectorItem = result.items.find((i) => i.inventoryItemId === "mat-saliva-ejector");
+
+			assert.ok(compositeItem, "Композит Filtek / Estelite должен быть списан");
+			assert.strictEqual(compositeItem.deductedQty, 0.2, "Норма расхода композита: 0.2г");
+
+			assert.ok(adhesiveItem, "Адгезивная система должна быть списана");
+			assert.strictEqual(adhesiveItem.deductedQty, 1, "Норма расхода адгезива: 1 доза");
+
+			assert.ok(glovesItem, "Перчатки нитриловые должны быть списаны");
+			assert.strictEqual(glovesItem.deductedQty, 1, "Норма расхода перчаток: 1 пара");
+
+			assert.ok(ejectorItem, "Слюноотсос должен быть списан");
+			assert.strictEqual(ejectorItem.deductedQty, 1, "Норма расхода слюноотсоса: 1 шт");
+		});
+
+		it("при остатке 0 фиксирует мягкий овердрафт без блокировки врача («Остаток 0, требуется пополнение»)", () => {
+			const result = executeAutoVisitBomDeduction({
+				visitId: "visit-filtek-empty-stock",
+				patientId: "pat-102",
+				doctorId: "doc-202",
+				renderedServices: [
+					{
+						serviceCode: "A16.07.002.011",
+						serviceTitle: "Препарирование и пломба светового отверждения (Filtek / Estelite)",
+						quantity: 1,
+						toothNumber: 26,
+					},
+				],
+				currentStockMap: {}, // склад пуст (остаток 0)
+				allowOverdraft: true,
+			});
+
+			assert.strictEqual(result.hasOverdraft, true, "Овердрафт должен быть зафиксирован");
+			assert.ok(result.softOverdrafts.length >= 4, "Должно быть минимум 4 предупреждения по дефициту");
+
+			// Проверяем текст мягкого предупреждения старшей медсестре/заведующему
+			const hasWarningWithText = result.softOverdrafts.some(
+				(w) => w.includes("Остаток 0, требуется пополнение") && w.includes("Лечение не блокируется"),
+			);
+			assert.strictEqual(
+				hasWarningWithText,
+				true,
+				"Должно содержать мягкое предупреждение («Остаток 0, требуется пополнение») без блокировки врача",
+			);
+		});
+	});
 });

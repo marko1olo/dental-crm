@@ -23,7 +23,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { Clock, PenTool, Star } from "lucide-react";
+import { Clock, Layers, PenTool, Star } from "lucide-react";
 import {
 	formatWarrantyYearsText,
 	type TreatmentPlanTier,
@@ -154,6 +154,25 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 	if (!tiers || tiers.length === 0) {
 		return null;
+	}
+
+	const isAllTiersEmpty = tiers.every((t) => (t.itemsCount ?? 0) === 0 && (t.totalRub ?? 0) === 0);
+
+	if (isAllTiersEmpty) {
+		return (
+			<div
+				className={`treatment-3tier-empty p-8 rounded-2xl border border-dashed border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] text-center text-xs text-[var(--muted,#64748b)] space-y-3 w-full ${className}`.trim()}
+				data-testid="treatment-plan-empty-state"
+			>
+				<Layers className="w-10 h-10 mx-auto text-[var(--muted,#64748b)] opacity-40" />
+				<div className="font-bold text-sm text-[var(--ink,#0f172a)]">
+					План лечения ещё не составлен
+				</div>
+				<p className="max-w-md mx-auto m-0 text-xs text-[var(--muted,#64748b)]">
+					В одонтограмме пациента нет патологий или план лечения пуст. Добавьте услуги из каталога или примените клинический пакет.
+				</p>
+			</div>
+		);
 	}
 
 	const activeTier = tiers.find((t) => t.tierId === activeTierId) ?? tiers[0]!;

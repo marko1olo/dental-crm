@@ -2212,6 +2212,9 @@ export function App() {
 									activeDoctor?.specialty || "Терапевт-ортопед"
 								}
 								initialShiftDateIso={dashboard?.todayIso || "2026-08-29"}
+								rawAppointments={dashboard?.appointments}
+								patients={dashboard?.patients}
+								chairs={dashboard?.clinicSettings?.chairs}
 							/>
 						</Suspense>
 					) : null}

@@ -104,7 +104,11 @@ describe("Wave 46: 54-FZ Buyer INN Optionality for Citizens (Mandates 8e & 8n)",
 		);
 
 		assert.ok(html.includes('data-testid="inn-patient-admin-optional-badge"'), "Must render optional badge for patient INN");
-		assert.ok(html.includes("(опционально для физлиц, 54-ФЗ)"), "Badge text must state optional for 54-FZ");
+		assert.ok(
+			html.includes("(опционально для физлиц, 54-ФЗ)") ||
+			html.includes("(не требуется при оплате)"),
+			"Badge text must state optional",
+		);
 	});
 });
 

@@ -1,9 +1,10 @@
 import type { ImagingStudy } from "@dental/shared";
+import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 
 export const DEMO_ARCHIVE_STUDIES: ImagingStudy[] = [
 	{
 		id: "02b00000-0000-0000-0000-000000000001",
-		organizationId: "00000000-0000-0000-0000-000000000001",
+		organizationId: DEMO_SHOWCASE_ORG_ID,
 		patientId: "01a00000-0000-0000-0000-000000000001",
 		patientFullName: "Захаров Иван Дмитриевич",
 		dicomPatientName: "Zakharov Ivan",
@@ -33,7 +34,7 @@ export const DEMO_ARCHIVE_STUDIES: ImagingStudy[] = [
 	},
 	{
 		id: "02b00000-0000-0000-0000-000000000002",
-		organizationId: "00000000-0000-0000-0000-000000000001",
+		organizationId: DEMO_SHOWCASE_ORG_ID,
 		patientId: "01a00000-0000-0000-0000-000000000002",
 		patientFullName: "Иванов Алексей Сергеевич",
 		dicomPatientName: "Ivanov Alexey",
@@ -63,7 +64,7 @@ export const DEMO_ARCHIVE_STUDIES: ImagingStudy[] = [
 	},
 	{
 		id: "02b00000-0000-0000-0000-000000000003",
-		organizationId: "00000000-0000-0000-0000-000000000001",
+		organizationId: DEMO_SHOWCASE_ORG_ID,
 		patientId: "01a00000-0000-0000-0000-000000000003",
 		patientFullName: "Смирнова Елена Александровна",
 		dicomPatientName: "Smirnova Elena",
@@ -93,7 +94,7 @@ export const DEMO_ARCHIVE_STUDIES: ImagingStudy[] = [
 	},
 	{
 		id: "02b00000-0000-0000-0000-000000000004",
-		organizationId: "00000000-0000-0000-0000-000000000001",
+		organizationId: DEMO_SHOWCASE_ORG_ID,
 		patientId: null,
 		patientFullName: null,
 		dicomPatientName: "Kuznetsov D.",

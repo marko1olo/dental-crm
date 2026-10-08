@@ -40,7 +40,6 @@ const mockPatient: Patient = {
 	gender: "male",
 	balanceRub: 125000,
 	notes: "Постоянный пациент клиники. Соматически здоров, аллергий нет.",
-	inn: "772812341040",
 	administrativeProfile: {
 		passportSeries: "4518",
 		passportNumber: "789123",

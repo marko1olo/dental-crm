@@ -474,6 +474,30 @@ export function calculateServiceConsumables(
 			}
 		}
 
+		// Fallback: match by service title / aliases if code didn't match directly
+		if (matchedLinks.length === 0) {
+			const candidate = (service.serviceTitle || service.serviceCode || "").trim().toLowerCase();
+			if (
+				candidate.includes("filtek") ||
+				candidate.includes("estelite") ||
+				(candidate.includes("препарирование") && candidate.includes("пломб")) ||
+				candidate.includes("светового отверждения")
+			) {
+				matchedLinks = links.filter(
+					(l) =>
+						l.service804nCode === "A16.07.002.011" ||
+						l.service804nCode === "A16.07.002.001" ||
+						l.service804nCode === "A16.07.002",
+				);
+			} else if (candidate.length > 3) {
+				matchedLinks = links.filter(
+					(l) =>
+						l.serviceTitle.toLowerCase().includes(candidate) ||
+						candidate.includes(l.serviceTitle.toLowerCase()),
+				);
+			}
+		}
+
 		for (const link of matchedLinks) {
 			const rawQty = link.quantityPerService * serviceQuantity;
 			// Round quantity deterministically to 4 decimal places avoiding IEEE-754 quirks
@@ -568,7 +592,7 @@ export function processConsumablesStockDeduction(
 			const suffix = options.overdraftMessageSuffix ?? (prefix.includes("8n")
 				? "Накладная в пути. Лечение не блокируется."
 				: "Операция не блокируется.");
-			const warningMsg = `${prefix} позиции «${planned.itemName}» (ID: ${planned.inventoryItemId}): списано ${planned.requiredQuantity} ${planned.unit}, остаток ${remainingQty} ${planned.unit}. ${suffix}`;
+			const warningMsg = `${prefix} позиции «${planned.itemName}» (ID: ${planned.inventoryItemId}): списано ${planned.requiredQuantity} ${planned.unit}, остаток ${remainingQty} ${planned.unit}. Остаток 0, требуется пополнение. ${suffix}`;
 
 			if (!allowOverdraft) {
 				throw new Error(

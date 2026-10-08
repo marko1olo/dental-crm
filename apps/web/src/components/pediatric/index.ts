@@ -5,3 +5,4 @@ export * from "./PediatricTeethChart";
 export * from "./PediatricSomaticAndLegalRep";
 export * from "./PediatricAnesthesiaCalculator";
 export * from "./PediatricBraveryDiplomaModal";
+export * from "./PediatricVisitAdaptationTab";

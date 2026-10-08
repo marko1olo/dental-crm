@@ -8,6 +8,7 @@ import {
 	Sparkles,
 	UserCheck,
 	UserPlus,
+	Zap,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -198,7 +199,7 @@ export function TelephonyDrawer({
 	const handleOpenFullPatientView = () => {
 		if (currentView === "visit") {
 			showToast(
-				"Приём пациента активен (форма 043/у). Карта доступна в текущей шторке без сброса визита.",
+				"Приём пациента активен. Карта доступна в текущей шторке без сброса визита.",
 				"warning",
 			);
 			return;
@@ -525,6 +526,18 @@ export function TelephonyDrawer({
 								</div>
 							))}
 						</div>
+						{somaticAlerts.some((a) => a.category === "pain") && (
+							<button
+								type="button"
+								onClick={() => handleQuickBook("today_urgent")}
+								className="w-full mt-2 min-h-[38px] px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+								data-testid="drawer-action-cito"
+								title="Внеочередная экстренная запись пациента с острой болью"
+							>
+								<Zap size={14} />
+								<span>Записать вне очереди (Острая боль / Cito)</span>
+							</button>
+						)}
 					</div>
 				)}
 

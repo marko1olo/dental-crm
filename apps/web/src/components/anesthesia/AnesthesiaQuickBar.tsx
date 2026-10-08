@@ -65,7 +65,7 @@ export const PRIMARY_ANESTHETIC_DRUGS: readonly {
 }[] = [
 	{
 		id: "articaine_1_200k",
-		labelRu: "Ультракаин Д-С (1:200 000)",
+		labelRu: "Артикаин 1:200 000 (Ультракаин Д-С)",
 		subLabelRu: "Артикаин 4% • Щадящий адреналин • МДД 7 мг/кг",
 		activeSubstanceRu: "Артикаин 4% + Эпинефрин 1:200 000",
 		vasoRatio: "1:200 000",
@@ -74,7 +74,7 @@ export const PRIMARY_ANESTHETIC_DRUGS: readonly {
 	},
 	{
 		id: "articaine_1_100k",
-		labelRu: "Ультракаин Форте (1:100 000)",
+		labelRu: "Артикаин 1:100 000 (Ультракаин Форте / Септанест)",
 		subLabelRu: "Артикаин 4% • Глубокая анестезия • МДД 7 мг/кг",
 		activeSubstanceRu: "Артикаин 4% + Эпинефрин 1:100 000",
 		vasoRatio: "1:100 000",
@@ -83,7 +83,7 @@ export const PRIMARY_ANESTHETIC_DRUGS: readonly {
 	},
 	{
 		id: "mepivacaine_plain",
-		labelRu: "Скандонест 3% (Без адреналина)",
+		labelRu: "Мепивакаин 3% (Скандонест 3% без адреналина)",
 		subLabelRu: "Мепивакаин 3% • Кардио-защита • Без сульфитов • МДД 4.4 мг/кг",
 		activeSubstanceRu: "Мепивакаин 3% (чистый)",
 		vasoRatio: "Без адреналина",
@@ -130,6 +130,7 @@ export function AnesthesiaQuickBar({
 	);
 
 	const [sessionInjectedCarpules, setSessionInjectedCarpules] = useState<number>(0);
+	const [selectedCarpulesCount, setSelectedCarpulesCount] = useState<number>(1.0);
 
 	const [selectedDrugId, setSelectedDrugId] = useState<AnestheticDrugId>(() => {
 		if (hasSulfiteAllergy || hasBronchialAsthma) return "mepivacaine_plain";
@@ -251,38 +252,28 @@ export function AnesthesiaQuickBar({
 			aspirationNegativeConfirmed: true,
 		});
 
-		// Check epinephrine 1:100 000 with cardio risk (Mandate: clear warning badge with clinical reasoning)
-		if (!bypassCheck && isCardioRisk && (targetDrugId === "articaine_1_100k" || targetDrugId === "lidocaine_1_100k")) {
-			setSafetyWarning({
-				title: "Кардиоваскулярный риск: Адреналин 1:100 000",
-				text: "Высокая концентрация адреналина 1:100 000 не рекомендуется при ССЗ (ИБС, гипертония, аритмии, инфаркт, прием бета-блокаторов). Лимит адреналина строго 0.04 мг (макс. 2 карпулы). Препарат выбора — Мепивакаин 3% без вазоконстриктора (Скандонест).",
-				carpulesCount,
-				suggestedDrugId: "mepivacaine_plain",
-			});
-			return;
-		}
-
-		// Check critical contraindications
-		if (!bypassCheck && (result.contraindicationsTriggered.length > 0 || (result.isOverdose && carpulesCount > 2.0))) {
-			setSafetyWarning({
-				title: "Соматический риск / Превышение предельной дозы",
-				text: result.contraindicationsTriggered[0] || result.warnings[0] || "Обнаружен риск при введении препарата",
-				carpulesCount,
-			});
-			return;
-		}
+		// Check epinephrine 1:100 000 with cardio risk (Mandate 8e: Doctor Autonomy - informative, non-blocking)
+		const isCardioConflict = isCardioRisk && (targetDrugId === "articaine_1_100k" || targetDrugId === "lidocaine_1_100k");
+		const isCriticalConflict = result.contraindicationsTriggered.length > 0 || (result.isOverdose && carpulesCount > 2.0);
 
 		setSessionInjectedCarpules((prev) => prev + carpulesCount);
 
-		const diaryEntry = bypassCheck
-			? `${result.diaryEntryRu} (Введено по экстренному врачебному решению согласно ст. 70 Федерального закона № 323-ФЗ)`
+		const diaryEntry = (bypassCheck || isCardioConflict || isCriticalConflict)
+			? `${result.diaryEntryRu} (Введено по клиническому решению врача согласно ст. 70 Федерального закона № 323-ФЗ)`
 			: result.diaryEntryRu;
 
 		onApplyAnesthesia?.(diaryEntry, result);
-		showQuickToast(
-			`Зафиксировано: ${drugInfo.tradeNamesRu[0]} ${(carpulesCount * 1.7).toFixed(1)} мл (${carpulesCount} карп.) в протокол 043/у`,
-			3500,
-		);
+		if (isCardioConflict) {
+			showQuickToast(
+				`Зафиксировано (ССЗ риск): ${drugInfo.tradeNamesRu[0]} ${(carpulesCount * 1.7).toFixed(1)} мл (${carpulesCount} карп.) по решению врача`,
+				4000,
+			);
+		} else {
+			showQuickToast(
+				`Зафиксировано: ${drugInfo.tradeNamesRu[0]} ${(carpulesCount * 1.7).toFixed(1)} мл (${carpulesCount} карп.) в протокол 043/у`,
+				3500,
+			);
+		}
 	};
 
 	const handleNurseQuickDisposal = (carpulesCount = 1.0) => {
@@ -465,7 +456,7 @@ export function AnesthesiaQuickBar({
 			</div>
 
 			{/* ── Drug Selection Chips (3 Primary Drugs, Hick's Law 36px density) ── */}
-			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+			<div className="anesthesia-quick-drugs-grid">
 				{PRIMARY_ANESTHETIC_DRUGS.map((drug) => {
 					const isSelected = selectedDrugId === drug.id;
 					const isCardioSuggested = isCardioRisk && drug.isAdrenalineFree;
@@ -480,11 +471,7 @@ export function AnesthesiaQuickBar({
 								setSelectedDrugId(drug.id);
 								setSafetyWarning(null);
 							}}
-							className={`flex items-center justify-between px-3 py-2 min-h-[36px] sm:h-9 rounded-lg border text-left transition-all cursor-pointer ${
-								isSelected
-									? "bg-[var(--teal-surface)] border-[var(--teal)] shadow-xs font-bold text-[var(--ink)]"
-									: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)]"
-							} ${isSulfiteRisky ? "opacity-75 border-amber-400 dark:border-amber-600" : ""}`}
+							className={`anesthesia-quick-drug-chip ${isSelected ? "selected" : ""} ${isSulfiteRisky ? "opacity-75 border-amber-400" : ""}`}
 							title={drug.subLabelRu}
 						>
 							<span className="text-xs sm:text-sm truncate font-bold">
@@ -549,6 +536,50 @@ export function AnesthesiaQuickBar({
 						Ввести дозу:
 					</span>
 
+					{/* Stepper [-] 1.0 карп. [+] */}
+					<div className="anesthesia-quick-stepper" role="group" aria-label="Счетчик карпул">
+						<button
+							type="button"
+							disabled={disabled || selectedCarpulesCount <= 0.5}
+							onClick={() => setSelectedCarpulesCount((c) => Math.max(0.5, Math.round((c - 0.5) * 10) / 10))}
+							className="anesthesia-stepper-btn min-h-[44px] min-w-[44px]"
+							title="Уменьшить дозу на 0.5 карпулы"
+							data-testid="btn-decrease-carpules"
+						>
+							−
+						</button>
+						<span
+							className="anesthesia-stepper-val"
+							data-testid="selected-carpules-display"
+							title={`${selectedCarpulesCount} карпула (${(selectedCarpulesCount * 1.7).toFixed(1)} мл)`}
+						>
+							{selectedCarpulesCount} карп. ({(selectedCarpulesCount * 1.7).toFixed(1)} мл)
+						</span>
+						<button
+							type="button"
+							disabled={disabled || selectedCarpulesCount >= 6.0}
+							onClick={() => setSelectedCarpulesCount((c) => Math.min(6.0, Math.round((c + 0.5) * 10) / 10))}
+							className="anesthesia-stepper-btn min-h-[44px] min-w-[44px]"
+							title="Увеличить дозу на 0.5 карпулы"
+							data-testid="btn-increase-carpules"
+						>
+							+
+						</button>
+					</div>
+
+					{/* Primary CTA: В карту */}
+					<button
+						type="button"
+						disabled={disabled}
+						onClick={() => handleApplyCarpules(selectedCarpulesCount)}
+						className="anesthesia-primary-cta-btn min-h-[44px]"
+						title={`Ввести ${selectedCarpulesCount} карп. в карту (043/у)`}
+						data-testid="btn-apply-anesthesia-to-card"
+					>
+						<DentalSyringe size={15} className="shrink-0" />
+						<span>В карту</span>
+					</button>
+
 					{/* Primary 1: Норма 1.7 мл */}
 					<button
 						type="button"
@@ -576,12 +607,12 @@ export function AnesthesiaQuickBar({
 					</button>
 
 					{/* Segmented Dose Switch */}
-					<div className="inline-flex items-center rounded-lg p-0.5 bg-[var(--paper)] border border-[var(--line)] shadow-xs" role="group" aria-label="Выбор дозы карпул">
+					<div className="anesthesia-segmented-group" role="group" aria-label="Выбор дозы карпул">
 						<button
 							type="button"
 							disabled={disabled}
 							onClick={() => handleApplyCarpules(0.5)}
-							className="inline-flex items-center justify-center px-2.5 py-1.5 min-h-[44px] rounded-md hover:bg-[var(--teal-surface)] text-xs font-bold text-[var(--ink)] transition-colors cursor-pointer active:scale-95"
+							className="anesthesia-segmented-btn min-h-[44px]"
 							title="Ввести 0.5 карпулы (0.85 мл)"
 							data-testid="anesthesia-dose-halfcarp"
 						>
@@ -591,7 +622,7 @@ export function AnesthesiaQuickBar({
 							type="button"
 							disabled={disabled}
 							onClick={() => handleApplyCarpules(1.0)}
-							className="inline-flex items-center justify-center px-2.5 py-1.5 min-h-[44px] rounded-md hover:bg-[var(--teal-surface)] text-xs font-bold text-[var(--ink)] transition-colors cursor-pointer active:scale-95 border-x border-[var(--line)]"
+							className="anesthesia-segmented-btn divider min-h-[44px]"
 							title="Ввести 1 карпулу (1.7 мл)"
 							data-testid="anesthesia-dose-1carp"
 						>
@@ -601,7 +632,7 @@ export function AnesthesiaQuickBar({
 							type="button"
 							disabled={disabled}
 							onClick={() => handleApplyCarpules(2.0)}
-							className="inline-flex items-center justify-center px-2.5 py-1.5 min-h-[44px] rounded-md hover:bg-[var(--teal-surface)] text-xs font-bold text-[var(--ink)] transition-colors cursor-pointer active:scale-95"
+							className="anesthesia-segmented-btn min-h-[44px]"
 							title="Ввести 2 карпулы (3.4 мл)"
 							data-testid="anesthesia-dose-2carp"
 						>

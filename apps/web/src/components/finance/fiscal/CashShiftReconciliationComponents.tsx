@@ -80,7 +80,7 @@ export const CashShiftKpiCards: React.FC<CashShiftKpiCardsProps> = ({
 						<Banknote className="w-4 h-4 text-emerald-600" />
 						Наличные (Ящик)
 					</span>
-					<span className="font-mono text-[10px]">Тег 1031</span>
+					<span className="text-[10px] font-bold">Касса</span>
 				</div>
 				<div
 					className="text-2xl font-black font-mono text-emerald-700 dark:text-emerald-300"
@@ -100,7 +100,7 @@ export const CashShiftKpiCards: React.FC<CashShiftKpiCardsProps> = ({
 						<CreditCard className="w-4 h-4 text-blue-600" />
 						Безналичные & СБП
 					</span>
-					<span className="font-mono text-[10px]">Тег 1081</span>
+					<span className="text-[10px] font-bold">Эквайринг</span>
 				</div>
 				<div
 					className="text-2xl font-black font-mono text-blue-700 dark:text-blue-300"
@@ -120,7 +120,7 @@ export const CashShiftKpiCards: React.FC<CashShiftKpiCardsProps> = ({
 						<Wallet className="w-4 h-4 text-amber-600" />
 						Зачет авансов
 					</span>
-					<span className="font-mono text-[10px]">Тег 1215</span>
+					<span className="text-[10px] font-bold">Депозит</span>
 				</div>
 				<div
 					className="text-2xl font-black font-mono text-amber-700 dark:text-amber-300"

@@ -181,7 +181,9 @@ test("Mobile Apple HIG Ergonomics & Anti-Desktop-Squeeze Verification", async (t
   });
 
   await t.test("4. CSS Apple HIG Invariants for Bottom Sheet & Touch Targets", () => {
-    const cssPath = path.resolve(process.cwd(), "src/styles/VisitView.css");
+    const candidate1 = path.resolve(process.cwd(), "src/styles/VisitView.css");
+    const candidate2 = path.resolve(process.cwd(), "apps/web/src/styles/VisitView.css");
+    const cssPath = fs.existsSync(candidate1) ? candidate1 : candidate2;
     const cssContent = fs.readFileSync(cssPath, "utf-8");
 
     // iOS Bottom sheet rules

@@ -92,7 +92,7 @@ export function formatNerveStepStatus(
 	activeSide: NerveCanalSide = "right",
 	tracingMode: NerveTracingMode = "auto",
 ): NerveStepStatusInfo {
-	const sideRu = activeSide === "right" ? "Правый" : "Левый";
+	const sideRu = activeSide === "right" ? "Правый (4.4-4.8)" : "Левый (3.4-3.8)";
 
 	if (tracingMode === "manual") {
 		if (pointCount === 0) {
@@ -128,7 +128,7 @@ export function formatNerveStepStatus(
 	if (pointCount === 0) {
 		return {
 			step: 1,
-			titleRu: "Шаг 1: Укажите ментальное отверстие",
+			titleRu: "Шаг 1: Укажите ментальное отверстие (Foramen mentale)",
 			hintRu: `Кликните на выходе канала у премоляров [${sideRu}]`,
 			badgeClass: "bg-emerald-950/80 text-emerald-300 border-emerald-500/60 animate-pulse",
 			isCompleted: false,
@@ -138,7 +138,7 @@ export function formatNerveStepStatus(
 	if (pointCount === 1) {
 		return {
 			step: 2,
-			titleRu: "Шаг 2: Укажите нижнечелюстное отверстие",
+			titleRu: "Шаг 2: Укажите нижнечелюстное отверстие (Foramen mandibulae)",
 			hintRu: `Кликните на медиальной стенке ветви челюсти [${sideRu}]`,
 			badgeClass: "bg-amber-950/80 text-amber-300 border-amber-500/60 animate-pulse",
 			isCompleted: false,
@@ -147,7 +147,7 @@ export function formatNerveStepStatus(
 
 	return {
 		step: 3,
-		titleRu: `Нижнечелюстной нерв: ${totalLengthMm.toFixed(1)} мм`,
+		titleRu: `Нижнечелюстной нерв: ${totalLengthMm.toFixed(1)} мм (Fast Marching Vatech)`,
 		hintRu: `Канал [${sideRu}] сегментирован. Перетащите узел для микроподгонки.`,
 		badgeClass: "bg-cyan-950/80 text-cyan-200 border-cyan-500/60 shadow-[0_0_10px_rgba(6,182,212,0.3)]",
 		isCompleted: true,

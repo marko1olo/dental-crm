@@ -284,5 +284,22 @@ describe('Red Team Inquisition: Outpatient Clinical Autonomy & Emergency Protoco
 			assert.ok(content.includes('.emergency-weight-chip'), 'Must have .emergency-weight-chip');
 			assert.ok(content.includes('.emergency-kit-row'), 'Must have .emergency-kit-row');
 		});
+
+		it('emergencyRescue.css enforces high-stress emergency touch targets min-height >= 48px', () => {
+			const cssPath = path.join(emergencyDir, 'emergencyRescue.css');
+			const content = fs.readFileSync(cssPath, 'utf8');
+
+			const weightChipMatch = content.match(/\.emergency-weight-chip\s*\{[^}]*min-height:\s*48px/);
+			assert.ok(weightChipMatch, 'Emergency weight chip must enforce min-height: 48px');
+
+			const timerBtnMatch = content.match(/\.emergency-timer-btn\s*\{[^}]*min-height:\s*48px/);
+			assert.ok(timerBtnMatch, 'Emergency timer button must enforce min-height: 48px');
+
+			const call112Match = content.match(/\.emergency-call-112-btn\s*\{[^}]*min-height:\s*48px/);
+			assert.ok(call112Match, 'Emergency call 112 button must enforce min-height: 48px');
+
+			const copyActMatch = content.match(/\.emergency-copy-act-btn\s*\{[^}]*min-height:\s*48px/);
+			assert.ok(copyActMatch, 'Emergency copy act button must enforce min-height: 48px');
+		});
 	});
 });

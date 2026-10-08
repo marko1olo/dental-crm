@@ -6,7 +6,7 @@ import {
 	STOMX_REFUSE_REASONS_CATALOG,
 } from "@dental/shared";
 import React, { useRef, useState, useEffect } from "react";
-import { Zap } from "lucide-react";
+import { Stethoscope, Zap } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
 import { SmartSlotRecoveryPopover } from "./SmartSlotRecoveryPopover";
@@ -222,6 +222,9 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 						const pid = appointmentPatient?.id || appointment.patientId;
 						if (pid) {
 							usePatientStore.getState().setSelectedPatientId(pid);
+							if (typeof window !== "undefined") {
+								window.location.hash = "#visit";
+							}
 							if (onOpenVisit) {
 								onOpenVisit();
 							} else {
@@ -320,6 +323,9 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 										const pid = appointmentPatient?.id || appointment.patientId;
 										if (pid) {
 											usePatientStore.getState().setSelectedPatientId(pid);
+											if (typeof window !== "undefined") {
+												window.location.hash = "#visit";
+											}
 											if (onOpenVisit) {
 												onOpenVisit();
 											} else {
@@ -378,6 +384,61 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 							</div>
 
 							<div className="flex items-center gap-1 shrink-0">
+								{displayStatus === "in_treatment" ? (
+									<button
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											const pid = appointmentPatient?.id || appointment.patientId;
+											if (pid) {
+												usePatientStore.getState().setSelectedPatientId(pid);
+											}
+											if (typeof window !== "undefined") {
+												window.location.hash = "#visit";
+											}
+											if (onOpenVisit) {
+												onOpenVisit();
+											} else {
+												useAppStore.getState().setCurrentView("visit");
+											}
+											showToast(`Открыта карта приёма: ${appointmentPatientName}`, "info");
+										}}
+										className="h-6 px-1.5 rounded-md bg-[var(--teal)]/15 text-[var(--teal)] border border-[var(--teal)]/40 hover:bg-[var(--teal)] hover:text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer transition-all shrink-0"
+										title="Открыть карту приёма пациента (#visit)"
+										data-testid="appointment-micro-open-visit-btn"
+									>
+										<Stethoscope size={11} className="shrink-0" />
+										<span className="hidden sm:inline">Приём</span>
+									</button>
+								) : (displayStatus === "arrived" || displayStatus === "planned" || displayStatus === "confirmed") ? (
+									<button
+										type="button"
+										disabled={isQuickStatusUpdating}
+										onClick={(e) => {
+											e.stopPropagation();
+											void handleQuickStatusChange("in_treatment");
+											const pid = appointmentPatient?.id || appointment.patientId;
+											if (pid) {
+												usePatientStore.getState().setSelectedPatientId(pid);
+											}
+											if (typeof window !== "undefined") {
+												window.location.hash = "#visit";
+											}
+											if (onOpenVisit) {
+												onOpenVisit();
+											} else {
+												useAppStore.getState().setCurrentView("visit");
+											}
+											showToast("Пациент в кресле: открыта медицинская карта", "success");
+										}}
+										className="h-6 px-1.5 rounded-md bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer transition-all shrink-0"
+										title="Начать приём в кресле (#visit)"
+										data-testid="appointment-micro-start-visit-btn"
+									>
+										<Stethoscope size={11} className="shrink-0" />
+										<span className="hidden sm:inline">В кресло</span>
+									</button>
+								) : null}
 								<AppointmentStatusBadgeSelector
 									appointmentId={appointment.id}
 									displayStatus={displayStatus}
@@ -429,6 +490,9 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 											const pid = appointmentPatient?.id || appointment.patientId;
 											if (pid) {
 												usePatientStore.getState().setSelectedPatientId(pid);
+												if (typeof window !== "undefined") {
+													window.location.hash = "#visit";
+												}
 												if (onOpenVisit) {
 													onOpenVisit();
 												} else {

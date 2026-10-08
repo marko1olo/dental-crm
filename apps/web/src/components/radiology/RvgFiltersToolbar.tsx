@@ -1,5 +1,4 @@
-import type React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import {
 	Activity,
 	ChevronDown,
@@ -220,7 +219,7 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 	// Strict 1-Row Hick's Law Toolbar (32-36px: Invert, Contrast, Sharpness, Emboss, Measurement, Rotate, Reset)
 	const render1RowHickToolbar = () => (
 		<div
-			className={`rvg-filters-1row-toolbar flex items-center gap-1.5 p-1.5 rounded-lg border border-[var(--line,#334155)] bg-[var(--paper-soft,#1e293b)] text-xs ${
+			className={`rvg-filters-1row-toolbar flex items-center gap-1.5 p-1 rounded-lg border border-slate-700/80 bg-slate-950/85 backdrop-blur-md text-xs shadow-xl ${
 				layout === "dock" ? "flex-wrap justify-start" : "justify-between h-9 min-h-[34px] max-h-[36px] overflow-x-auto whitespace-nowrap"
 			}`}
 			data-testid="rvg-filters-1row-toolbar"
@@ -231,10 +230,10 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 					type="button"
 					onClick={() => handleToggle("invert")}
 					disabled={disabled}
-					className={`px-2 py-1 h-7 min-h-[28px] max-h-[30px] rounded text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+					className={`px-2.5 py-1 h-8 min-h-[32px] max-h-[34px] rounded-md text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
 						filters.invert
-							? "bg-[var(--teal,#0d9488)] border-[var(--teal,#14b8a6)] text-white shadow-sm"
-							: "bg-[var(--paper-strong,#0f172a)] border-[var(--line,#334155)] text-[var(--ink,#c9d1d9)] hover:text-white"
+							? "bg-teal-600 border-teal-500 text-white shadow-sm"
+							: "bg-slate-800/90 border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 					}`}
 					title="Инверсия (Негатив / Позитив)"
 					data-testid="rvg-toggle-invert-btn"
@@ -251,18 +250,18 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 						if (p) handlePresetClick(p);
 					}}
 					disabled={disabled}
-					className="px-2 py-0.5 h-7 min-h-[28px] max-h-[30px] rounded text-xs font-semibold border border-[var(--line,#334155)] bg-[var(--paper-strong,#0f172a)] text-[var(--ink,#c9d1d9)] outline-none cursor-pointer shrink-0"
+					className="px-2.5 py-0.5 h-8 min-h-[32px] max-h-[34px] rounded-md text-xs font-semibold border border-slate-700/80 bg-slate-800/90 text-slate-200 outline-none cursor-pointer shrink-0"
 					title="Клинический контраст (Закон Хика)"
 					data-testid="rvg-contrast-preset-select"
 				>
 					{RVG_FILTER_PRESETS.map((p) => (
-						<option key={p.id} value={p.id} className="bg-[var(--paper-strong,#0f172a)] text-white">
+						<option key={p.id} value={p.id} className="bg-slate-900 text-slate-100">
 							{p.label}
 						</option>
 					))}
 				</select>
 
-				{/* 3. Четкость (USM шаг: 0% -> 50% -> 100%) */}
+				{/* 3. Четкость / Резкость (USM шаг: 0% -> 50% -> 100%) */}
 				<button
 					type="button"
 					onClick={() => {
@@ -270,27 +269,54 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 						handleSliderChange("sharpness", nextSharpness);
 					}}
 					disabled={disabled}
-					className={`px-2 py-1 h-7 min-h-[28px] max-h-[30px] rounded text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+					className={`px-2.5 py-1 h-8 min-h-[32px] max-h-[34px] rounded-md text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
 						filters.sharpness > 0
-							? "bg-[var(--teal-soft,rgba(13,148,136,0.2))] border-[var(--teal,#14b8a6)] text-[var(--teal,#2dd4bf)]"
-							: "bg-[var(--paper-strong,#0f172a)] border-[var(--line,#334155)] text-[var(--ink,#c9d1d9)] hover:text-white"
+							? "bg-teal-600/30 border-teal-500 text-teal-300"
+							: "bg-slate-800/90 border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 					}`}
-					title="Четкость (USM): клик переключает 0% -> 50% -> 100%"
+					title="Резкость (USM): клик переключает 0% -> 50% -> 100%"
 					data-testid="rvg-sharpness-quick-btn"
 				>
 					<Sliders className="w-3.5 h-3.5" />
-					<span>Четкость {filters.sharpness > 0 ? `${filters.sharpness}%` : ""}</span>
+					<span>Резкость {filters.sharpness > 0 ? `${filters.sharpness}%` : ""}</span>
 				</button>
 
-				{/* 4. Псевдорельеф 3D (Emboss 45°) */}
+				{/* 4. Костный фильтр (Быстрый 1-клик) */}
+				<button
+					type="button"
+					onClick={() => {
+						const perioPreset = RVG_FILTER_PRESETS.find((p) => p.id === "perio");
+						if (perioPreset) {
+							if (activePresetId === "perio") {
+								const std = RVG_FILTER_PRESETS.find((p) => p.id === "standard");
+								if (std) handlePresetClick(std);
+							} else {
+								handlePresetClick(perioPreset);
+							}
+						}
+					}}
+					disabled={disabled}
+					className={`px-2.5 py-1 h-8 min-h-[32px] max-h-[34px] rounded-md text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+						activePresetId === "perio"
+							? "bg-teal-600 border-teal-500 text-white shadow-sm"
+							: "bg-slate-800/90 border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
+					}`}
+					title="Костный фильтр: визуализация трабекул и периодонтальной щели"
+					data-testid="rvg-toggle-bone-filter-btn"
+				>
+					<Sparkles className="w-3.5 h-3.5" />
+					<span>Кость</span>
+				</button>
+
+				{/* 5. Псевдорельеф 3D (Emboss 45°) */}
 				<button
 					type="button"
 					onClick={() => handleToggle("emboss")}
 					disabled={disabled}
-					className={`px-2 py-1 h-7 min-h-[28px] max-h-[30px] rounded text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+					className={`px-2.5 py-1 h-8 min-h-[32px] max-h-[34px] rounded-md text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
 						filters.emboss
-							? "bg-[var(--teal,#0d9488)] border-[var(--teal,#14b8a6)] text-white shadow-sm"
-							: "bg-[var(--paper-strong,#0f172a)] border-[var(--line,#334155)] text-[var(--ink,#c9d1d9)] hover:text-white"
+							? "bg-teal-600 border-teal-500 text-white shadow-sm"
+							: "bg-slate-800/90 border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 					}`}
 					title="Псевдорельеф 45° (Emboss) для микротрещин корня и эмали"
 					data-testid="rvg-toggle-emboss-btn"
@@ -299,16 +325,16 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 					<span>Рельеф</span>
 				</button>
 
-				{/* 4. Измерение (Линейка) */}
+				{/* 6. Измерение (Линейка) */}
 				{onToggleMeasure && (
 					<button
 						type="button"
 						onClick={onToggleMeasure}
 						disabled={disabled}
-						className={`px-2 py-1 h-7 min-h-[28px] max-h-[30px] rounded text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+						className={`px-2.5 py-1 h-8 min-h-[32px] max-h-[34px] rounded-md text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
 							isMeasuring
-								? "bg-[var(--primary,#1f6feb)] border-[var(--primary,#58a6ff)] text-white shadow-sm"
-								: "bg-[var(--paper-strong,#0f172a)] border-[var(--line,#334155)] text-[var(--ink,#c9d1d9)] hover:text-white"
+								? "bg-blue-600 border-blue-400 text-white shadow-sm"
+								: "bg-slate-800/90 border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 						}`}
 						title="Инструмент измерения (линейка)"
 						data-testid="rvg-measure-btn"
@@ -318,13 +344,13 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 					</button>
 				)}
 
-				{/* 5. Поворот 90° */}
+				{/* 7. Поворот 90° */}
 				{onRotate && (
 					<button
 						type="button"
 						onClick={onRotate}
 						disabled={disabled}
-						className="px-2 py-1 h-7 min-h-[28px] max-h-[30px] rounded text-xs font-semibold border border-[var(--line,#334155)] bg-[var(--paper-strong,#0f172a)] text-[var(--ink,#c9d1d9)] hover:text-white transition-all cursor-pointer flex items-center gap-1 shrink-0"
+						className="px-2.5 py-1 h-8 min-h-[32px] max-h-[34px] rounded-md text-xs font-semibold border border-slate-700/80 bg-slate-800/90 text-slate-200 hover:text-white hover:bg-slate-700 transition-all cursor-pointer flex items-center gap-1 shrink-0"
 						title="Повернуть снимок на 90° (R)"
 						data-testid="rvg-rotate-btn-toolbar"
 					>
@@ -333,12 +359,12 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 					</button>
 				)}
 
-				{/* 6. Сброс всех настроек */}
+				{/* 8. Сброс всех настроек */}
 				<button
 					type="button"
 					onClick={handleReset}
 					disabled={disabled}
-					className="px-2 py-1 h-7 min-h-[28px] max-h-[30px] rounded text-xs font-semibold border border-[var(--line,#334155)] bg-[var(--paper-strong,#0f172a)] text-[var(--muted,#94a3b8)] hover:text-[var(--danger,#f43f5e)] transition-all cursor-pointer flex items-center gap-1 shrink-0"
+					className="px-2.5 py-1 h-8 min-h-[32px] max-h-[34px] rounded-md text-xs font-semibold border border-slate-700/80 bg-slate-800/90 text-slate-300 hover:text-rose-400 hover:bg-slate-700 transition-all cursor-pointer flex items-center gap-1 shrink-0"
 					title="Сбросить все фильтры"
 					data-testid="rvg-reset-filters-btn"
 				>
@@ -357,7 +383,7 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 						className={`px-2 py-1 h-7 min-h-[28px] max-h-[30px] rounded text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
 							isSplitCompare
 								? "bg-cyan-600 border-cyan-500 text-white shadow-sm"
-								: "bg-[var(--paper-strong,#0f172a)] border-[var(--line,#334155)] text-[var(--ink,#c9d1d9)] hover:text-white"
+								: "bg-slate-800/90 border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 						}`}
 						title="Сравнить (До / После)"
 						data-testid="rvg-toggle-split-btn"

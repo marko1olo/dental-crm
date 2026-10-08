@@ -306,7 +306,7 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 						<div className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]/50 flex flex-col gap-2">
 							<div className="flex items-center gap-1.5 text-[var(--muted)] font-semibold text-xs">
 								<FileText className="w-3.5 h-3.5 text-blue-400" />
-								<span>Данные из DICOM томографа:</span>
+								<span>Данные из томографа (DICOM):</span>
 							</div>
 							<div>
 								<div className="font-bold text-sm text-[var(--ink)]" data-testid="dicom-patient-name">
@@ -317,7 +317,7 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 								</div>
 								{study.dicomPatientId && (
 									<div className="text-[var(--muted)] text-xs mt-0.5 truncate">
-										DICOM ID: {study.dicomPatientId}
+										ID исследования: {study.dicomPatientId}
 									</div>
 								)}
 							</div>

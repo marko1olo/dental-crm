@@ -24,7 +24,7 @@ describe("ClinicalServiceBundlesModal — Компонент модальног�
 		assert.equal(html, "");
 	});
 
-	test("рендерит заголовок, бейдж 804н и все 10 пакетов при isOpen === true", () => {
+	test("рендерит заголовок, бейдж каталога и все 10 пакетов при isOpen === true", () => {
 		const html = renderToString(
 			<ClinicalServiceBundlesModal
 				isOpen={true}
@@ -36,9 +36,9 @@ describe("ClinicalServiceBundlesModal — Компонент модальног�
 			/>,
 		);
 
-		// Проверка заголовка и стандартов
-		assert.ok(html.includes("Клинические пакеты услуг у кресла"), "Заголовок должен присутствовать");
-		assert.ok(html.includes("Прейскурант услуг"), "Бейдж прейскуранта должен присутствовать");
+		// Проверка заголовка и стандартов без птичьего языка
+		assert.ok(html.includes("Клинические пакеты лечения"), "Заголовок «Клинические пакеты лечения» должен присутствовать");
+		assert.ok(html.includes("Каталог клинических услуг"), "Бейдж «Каталог клинических услуг» должен присутствовать");
 		assert.ok(html.includes("data-testid=\"clinical-service-bundles-modal\""), "Контейнер модалки должен иметь data-testid");
 
 		// Проверка наличия всех 10 пакетов в DOM

@@ -240,9 +240,38 @@ export function AutoclaveLog257Modal({
 
 	if (!isOpen) return null;
 
-	const handleSaveNewRecord = (newRec: Form257Record) => {
+	const handleSaveNewRecord = async (newRec: Form257Record) => {
 		setRecords((prev) => [newRec, ...prev]);
 		setActiveTab("journal_257");
+		if (!isDemo) {
+			try {
+				const clinicToken = readDenteClinicToken();
+				const staffToken = readDenteStaffToken();
+				await fetch("/api/sanpin/cycles", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+						...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+					},
+					body: JSON.stringify({
+						cycleNumber: newRec.cycleNumber,
+						deviceName: newRec.sterilizerBrandModel || newRec.sterilizerId,
+						autoclaveId: newRec.sterilizerId,
+						temperatureCelsius: newRec.actualTemperatureCelsius,
+						pressureBar: newRec.actualPressureBar,
+						durationMin: newRec.actualExposureMinutes,
+						itemsDescription: newRec.itemsDescriptionRu,
+						packagingType: newRec.packagingType,
+						passedIndicator: newRec.isCyclePassed,
+						status: newRec.isCyclePassed ? "passed" : "failed",
+						barcode: newRec.id,
+					}),
+				});
+			} catch (e) {
+				console.warn("Failed to persist cycle to /api/sanpin/cycles", e);
+			}
+		}
 	};
 
 	const handleDeleteRecord = (id: string) => {
@@ -287,8 +316,8 @@ export function AutoclaveLog257Modal({
 							<ShieldCheck size={24} />
 						</div>
 						<div className="autoclave-log-title-text">
-							<h2>Журнал автоклава (стерилизация инструментов)</h2>
-							<p>Журнал работы стерилизаторов (Форма № 257/у) • СанПиН 3.3686-21 • Паровой (Класс B) и воздушный методы</p>
+							<h2>Журнал автоклавирования</h2>
+							<p>Стерилизация инструментов • Паровой (Класс B) и воздушный режимы</p>
 						</div>
 					</div>
 
@@ -296,7 +325,7 @@ export function AutoclaveLog257Modal({
 						type="button"
 						onClick={onClose}
 						className="autoclave-log-close-btn"
-						title="Закрыть журнал автоклава"
+						title="Закрыть журнал автоклавирования"
 					>
 						<X size={20} />
 					</button>
@@ -313,7 +342,7 @@ export function AutoclaveLog257Modal({
 							onClick={() => setActiveTab("new_cycle")}
 						>
 							<Plus size={14} className="shrink-0" />
-							<span>Новый цикл стерилизации</span>
+							<span>Новый цикл</span>
 						</button>
 
 						<button
@@ -324,7 +353,7 @@ export function AutoclaveLog257Modal({
 							onClick={() => setActiveTab("journal_257")}
 						>
 							<FileText size={14} className="shrink-0" />
-							<span>Реестр Журнала 257/у ({records.length})</span>
+							<span>Журнал циклов ({records.length})</span>
 						</button>
 					</div>
 				</div>

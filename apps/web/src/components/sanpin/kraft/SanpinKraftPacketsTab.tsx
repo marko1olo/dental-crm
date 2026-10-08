@@ -184,6 +184,22 @@ export function SanpinKraftPacketsTab() {
 		showToast("Статус целостности упаковки обновлен", "info");
 	};
 
+	const handleToggleIndicatorTest = (id: string) => {
+		setPackages((prev) =>
+			prev.map((p) => {
+				if (p.id !== id) return p;
+				const isCurrentlyDefect = p.isBreached || p.status === "recalled";
+				const nextDefect = !isCurrentlyDefect;
+				return {
+					...p,
+					isBreached: nextDefect,
+					status: nextDefect ? "recalled" : "sterile_valid",
+				};
+			}),
+		);
+		showToast("Статус контроля индикатора обновлен", "info");
+	};
+
 	const handleUnsealChairside = (id: string) => {
 		const nowStr = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 		setPackages((prev) =>
@@ -225,9 +241,9 @@ export function SanpinKraftPacketsTab() {
 		<div className="sanpin-tab-content flex flex-col gap-3">
 			{/* Official Form Header */}
 			<div className="sanpin-print-title">
-				<h2>РЕЕСТР КРАФТ-ПАКЕТОВ И МАРКИРОВКИ СТЕРИЛЬНОСТИ</h2>
-				<p title="ГОСТ Р ИСО 11607 / СанПиН 3.3686-21">
-					Учет стерилизационных упаковок, термоэтикетки 58×40 / 43×25 мм, химические индикаторы 4–5 класса
+				<h2>Учет крафт-пакетов и маркировка стерильности</h2>
+				<p>
+					Учет стерилизационных упаковок, печать термоэтикеток и контроль химических индикаторов
 				</p>
 			</div>
 
@@ -465,19 +481,37 @@ export function SanpinKraftPacketsTab() {
 											</div>
 										</td>
 
-										{/* Chemical Indicator */}
-										<td style={{ width: "110px", minWidth: "105px" }}>
-											<span
-												className="inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-strong,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)]"
-												title={`${indDef.brandNameRu}: ${indDef.standardTargetParamRu}`}
+										{/* Chemical Indicator (Interactive 1-click test toggle) */}
+										<td style={{ width: "120px", minWidth: "110px" }}>
+											<button
+												type="button"
+												onClick={() => handleToggleIndicatorTest(pack.id)}
+												className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded transition-colors cursor-pointer border ${
+													pack.isBreached || pack.status === "recalled"
+														? "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800"
+														: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
+												}`}
+												title={
+													pack.isBreached || pack.status === "recalled"
+														? "Индикатор забракован. Кликните для подтверждения нормы."
+														: `Индикатор в норме (${indDef.brandNameRu}). Кликните для отметки брака.`
+												}
+												aria-label="Переключить статус индикатора"
 											>
-												<CheckCircle2 size={11} className="text-emerald-600 shrink-0" />
-												<span className="truncate">
-													{indDef.indicatorClass === "class_5_integrator"
-														? "Класс 5"
-														: "Класс 4"}
-												</span>
-											</span>
+												{pack.isBreached || pack.status === "recalled" ? (
+													<>
+														<AlertTriangle size={12} className="text-rose-600 shrink-0" />
+														<span>Брак теста</span>
+													</>
+												) : (
+													<>
+														<CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
+														<span>
+															{indDef.indicatorClass === "class_5_integrator" ? "Класс 5" : "Класс 4"}
+														</span>
+													</>
+												)}
+											</button>
 										</td>
 
 										{/* Status Badge */}
@@ -617,6 +651,32 @@ export function SanpinKraftPacketsTab() {
 								<div className="text-xs text-[var(--muted,#64748b)] mt-0.5">
 									Годен до {pack.expDate.slice(0, 10)} ({pack.daysRemaining} дн.) • {pack.autoclaveId} Ц#{pack.cycleNumber}
 								</div>
+							</div>
+
+							<div className="flex items-center justify-between text-xs">
+								<span className="text-[var(--muted,#64748b)]">Индикатор 4/5 кл:</span>
+								<button
+									type="button"
+									onClick={() => handleToggleIndicatorTest(pack.id)}
+									className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded border min-h-[36px] touch-manipulation cursor-pointer ${
+										pack.isBreached || pack.status === "recalled"
+											? "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800"
+											: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
+									}`}
+									title="Переключить статус теста химического индикатора"
+								>
+									{pack.isBreached || pack.status === "recalled" ? (
+										<>
+											<AlertTriangle size={12} className="text-rose-600 shrink-0" />
+											<span>Брак теста</span>
+										</>
+									) : (
+										<>
+											<CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
+											<span>Тест пройден</span>
+										</>
+									)}
+								</button>
 							</div>
 
 							{/* Touch Buttons (minHeight 44px) */}

@@ -8,11 +8,12 @@ import { StudyPatientBindControlModal } from "../../radiology/archive/StudyPatie
 import { PatientCardModal } from "../PatientCardModal";
 import { RadiologyModule } from "../../radiology/RadiologyModule";
 import type { ImagingStudy } from "@dental/shared";
+import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 
 describe("Red Team Inquisition: Patient Radiology Tab & Global Studies Archive", () => {
 	const sampleStudy: ImagingStudy = {
 		id: "02b00000-0000-0000-0000-000000000001",
-		organizationId: "00000000-0000-0000-0000-000000000001",
+		organizationId: DEMO_SHOWCASE_ORG_ID,
 		patientId: "01a00000-0000-0000-0000-000000000001",
 		patientFullName: "Захаров Иван Дмитриевич",
 		dicomPatientName: "Zakharov Ivan",
@@ -43,7 +44,7 @@ describe("Red Team Inquisition: Patient Radiology Tab & Global Studies Archive",
 
 	const unassignedStudy: ImagingStudy = {
 		id: "02b00000-0000-0000-0000-000000000004",
-		organizationId: "00000000-0000-0000-0000-000000000001",
+		organizationId: DEMO_SHOWCASE_ORG_ID,
 		patientId: null,
 		patientFullName: null,
 		dicomPatientName: "Kuznetsov D.",

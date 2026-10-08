@@ -296,7 +296,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 				title: `X-отчет смены №${shiftNumber}`,
 			});
 			showToast(
-				`X-отчет напечатан на ККТ: выручка ${netRevenueRub.toLocaleString("ru-RU")} ₽`,
+				`X-отчет напечатан на онлайн-кассе: выручка ${netRevenueRub.toLocaleString("ru-RU")} ₽`,
 				"success",
 				3000,
 			);
@@ -359,7 +359,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 								</span>
 							</h2>
 							<p className="text-xs text-[var(--muted)] m-0 mt-0.5">
-								Кассир: <strong className="text-[var(--ink)]">{cashierFullName}</strong> • ККТ: {kktRegNumber} • ОФД: {ofdName}
+								Кассир: <strong className="text-[var(--ink)]">{cashierFullName}</strong> • Касса: {kktRegNumber} • ОФД: {ofdName}
 							</p>
 						</div>
 					</div>

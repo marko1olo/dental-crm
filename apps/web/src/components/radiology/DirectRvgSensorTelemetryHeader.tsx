@@ -63,6 +63,11 @@ export const DirectRvgSensorTelemetryHeader: React.FC<DirectRvgSensorTelemetryHe
 }) => {
 	const currentSensor = availableSensors.find((s) => s.id === selectedSensorModel) || availableSensors[0];
 	const sensorDisplayName = currentSensor?.name ? (currentSensor.name.split("(")[0]?.trim() || "Vatech EzSensor") : "Vatech EzSensor";
+	const formattedCard = patientCardNumber
+		? (patientCardNumber.startsWith("043/") || patientCardNumber.startsWith("043/у-")
+			? `ЭМК №${patientCardNumber.replace(/^043\/[уy]-?/, "")}`
+			: `ЭМК №${patientCardNumber}`)
+		: "—";
 
 	return (
 		<div className="rvg-capture-header">
@@ -76,17 +81,17 @@ export const DirectRvgSensorTelemetryHeader: React.FC<DirectRvgSensorTelemetryHe
 						<span>Прицельный снимок</span>
 						<span
 							className="rvg-badge-autotrigger"
-							title="Ожидание снимка (Hot Folder / Автоподхват)"
+							title="Ожидание снимка (Hot Folder / Автоподхват) · Auto-Trigger / USB · Hot Folder / TWAIN (Бесконфликтно)"
 							data-testid="rvg-non-conflicting-badge"
 						>
-							Hot Folder / TWAIN (Бесконфликтно)
+							Автозахват с датчика визиографа (USB)
 						</span>
 					</h2>
 					<p
 						className="rvg-header-subtitle"
-						title={`${patientName ?? "Пациент"} · Карта: ${patientCardNumber ?? ""} · Врач: ${doctorName ?? ""}`}
+						title={`${patientName ?? "Пациент"} · ${formattedCard} · Врач: ${doctorName ?? ""}`}
 					>
-						{patientName ?? "Пациент"} · Карта: {patientCardNumber ?? "—"} · Врач: {doctorName ?? "—"}
+						{patientName ?? "Пациент"} · {formattedCard} · Врач: {doctorName ?? "—"}
 					</p>
 				</div>
 			</div>

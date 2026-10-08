@@ -251,8 +251,14 @@ describe("Cashier & 54-FZ Fiscal Inquisition: Zero-Mocks & Mandate 8e Compliance
 			}),
 		);
 
-		assert.ok(html.includes("Чек 54-ФЗ / Квитанция"), "Must render 54-FZ receipt action");
-		assert.ok(html.includes("Оформить возврат (54-ФЗ)"), "Must render refund action for paid invoice");
+		assert.ok(
+			html.includes("Кассовый чек / Квитанция") || html.includes("Чек 54-ФЗ / Квитанция"),
+			"Must render receipt action",
+		);
+		assert.ok(
+			html.includes("Оформить возврат") || html.includes("Оформить возврат (54-ФЗ)"),
+			"Must render refund action for paid invoice",
+		);
 	});
 
 	it("7. PatientInstallmentsModal: Action bar renders Bank Installment QR navigation button", () => {

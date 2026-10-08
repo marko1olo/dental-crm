@@ -232,7 +232,7 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 											: "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30"
 									}`}
 								>
-									{effectiveReceipt.isWarrantyZeroAct ? "Гарантия 100%" : "54-ФЗ / ФФД 1.2"}
+									{effectiveReceipt.isWarrantyZeroAct ? "Гарантия 100%" : "Онлайн-чек"}
 								</span>
 							</h3>
 							<p className="text-[11px] text-[var(--muted)] m-0">
@@ -247,6 +247,7 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setFormat("80mm")}
+								style={format === "80mm" ? { color: "#ffffff", backgroundColor: "#0d9488" } : undefined}
 								className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
 									format === "80mm"
 										? "bg-teal-600 text-white shadow-2xs font-bold"
@@ -259,6 +260,7 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setFormat("a4")}
+								style={format === "a4" ? { color: "#ffffff", backgroundColor: "#0d9488" } : undefined}
 								className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
 									format === "a4"
 										? "bg-teal-600 text-white shadow-2xs font-bold"
@@ -382,7 +384,7 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 								<div className="border-t border-[var(--line)] pt-3 text-[11px] text-purple-700 dark:text-purple-300 bg-purple-50/50 dark:bg-purple-950/20 p-2.5 rounded-lg flex items-center gap-2">
 									<ShieldCheck className="w-4 h-4 text-purple-600 shrink-0" />
 									<span>
-										Внутренний гарантийный акт клиники. В соответствии с 54-ФЗ и ст. 1.2 ФФД чек на сумму 0 ₽ не направляется в фискальный накопитель ККТ.
+										Внутренний гарантийный акт клиники. Чек на сумму 0 ₽ не направляется в фискальный накопитель онлайн-кассы.
 									</span>
 								</div>
 							) : (
@@ -421,11 +423,12 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 						<button
 							type="button"
 							onClick={handlePrint}
+							style={{ color: "#ffffff", backgroundColor: "#0d9488" }}
 							className="h-8 px-4 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition-colors"
 							data-testid="btn-print-receipt"
 						>
-							<Printer className="w-3.5 h-3.5" />
-							<span>Печать ({format === "80mm" ? "Лента" : "А4"})</span>
+							<Printer className="w-3.5 h-3.5 text-white" />
+							<span style={{ color: "#ffffff" }}>Печать ({format === "80mm" ? "Лента" : "А4"})</span>
 						</button>
 					</div>
 				</div>

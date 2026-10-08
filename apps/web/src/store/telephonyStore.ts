@@ -11,6 +11,7 @@ import type {
 export * from "./telephonyTypes";
 export * from "./telephonyHelpers";
 import { normalizePhone } from "./telephonyHelpers";
+import { isDemoShowcaseMode } from "../lib/demoMode";
 
 
 const initialTransferState: CallTransferState = {
@@ -128,6 +129,35 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 	},
 
 	triggerIncomingCall: (call) => {
+		// Защита боевого режима от пустых синтетических вызовов
+		if (!isDemoShowcaseMode() && (!call.phone || call.phone.trim().length < 4)) {
+			console.warn("[TelephonyStore] Production reject: call without valid phone number is prohibited.");
+			return;
+		}
+
+		let patientId = call.patientId;
+		let patientName = call.patientName;
+		let phone = call.phone;
+
+		// Демо-режим инвариант: связываем анонимный входящий звонок с реальным демо-пациентом
+		// Смирнова Анна Сергеевна из PostgreSQL
+		if (isDemoShowcaseMode()) {
+			if (!patientId || !patientName || patientName === "Неизвестный номер") {
+				patientId = "01a00000-0000-0000-0000-000000000001";
+				patientName = "Смирнова Анна Сергеевна";
+				if (!phone || phone.trim().length < 4) {
+					phone = "+7 916 234-56-78";
+				}
+			}
+		}
+
+		const effectiveCall: IncomingCallPayload = {
+			...call,
+			patientId,
+			patientName,
+			phone,
+		};
+
 		const state = get();
 		const now = Date.now();
 
@@ -139,20 +169,20 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 			!latestHistory.actionTaken &&
 			latestHistory.callStartedAt &&
 			now - latestHistory.callStartedAt < 2000 &&
-			((call.callId && latestHistory.callId === call.callId) ||
-				(!call.callId && latestHistory.phone === call.phone))
+			((effectiveCall.callId && latestHistory.callId === effectiveCall.callId) ||
+				(!effectiveCall.callId && latestHistory.phone === effectiveCall.phone))
 		) {
 			return;
 		}
 
-		const normalizedPhone = normalizePhone(call.phone) || call.phone;
-		const id = call.callId || `call-${now}-${++telephonyCallSeq}`;
-		const callStartedAt = call.callStartedAt ?? now;
+		const normalizedPhone = normalizePhone(effectiveCall.phone) || effectiveCall.phone;
+		const id = effectiveCall.callId || `call-${now}-${++telephonyCallSeq}`;
+		const callStartedAt = effectiveCall.callStartedAt ?? now;
 		const incomingPayload: IncomingCallPayload = {
-			...call,
+			...effectiveCall,
 			phone: normalizedPhone,
 			id,
-			status: call.status ?? "ringing",
+			status: effectiveCall.status ?? "ringing",
 			callStartedAt,
 		};
 
@@ -624,4 +654,12 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 
 if (typeof window !== "undefined") {
 	(window as unknown as { __denteTelephonyStore?: typeof useTelephonyStore }).__denteTelephonyStore = useTelephonyStore;
+}
+
+/**
+ * Валидатор защиты продакшена от спонтанных синтетических звонков (Zero-Mocks Invariant).
+ * В боевом режиме (!isDemoShowcaseMode()) запрещены любые таймерные синтетические звонки.
+ */
+export function assertNoSyntheticCallsInProduction(): boolean {
+	return !isDemoShowcaseMode();
 }

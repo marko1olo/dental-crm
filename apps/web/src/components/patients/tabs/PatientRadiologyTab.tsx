@@ -22,6 +22,7 @@ import {
 	User,
 } from "lucide-react";
 import type { ImagingStudy } from "@dental/shared";
+import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { CbctMprImplantStudioModal } from "../../radiology/CbctMprImplantStudioModal";
 import { DicomViewerModal } from "../../imaging/DicomViewerModal";
@@ -53,7 +54,7 @@ export interface PatientRadiologyTabProps {
 const DEMO_PATIENT_STUDIES: ImagingStudy[] = [
 	{
 		id: "03c00000-0000-0000-0000-000000000001",
-		organizationId: "00000000-0000-0000-0000-000000000001",
+		organizationId: DEMO_SHOWCASE_ORG_ID,
 		patientId: "01a00000-0000-0000-0000-000000000001",
 		patientFullName: "Иванов Алексей Сергеевич",
 		dicomPatientName: "Ivanov Alexey",
@@ -83,7 +84,7 @@ const DEMO_PATIENT_STUDIES: ImagingStudy[] = [
 	},
 	{
 		id: "03c00000-0000-0000-0000-000000000002",
-		organizationId: "00000000-0000-0000-0000-000000000001",
+		organizationId: DEMO_SHOWCASE_ORG_ID,
 		patientId: "01a00000-0000-0000-0000-000000000001",
 		patientFullName: "Иванов Алексей Сергеевич",
 		dicomPatientName: "Ivanov Alexey",
@@ -113,7 +114,7 @@ const DEMO_PATIENT_STUDIES: ImagingStudy[] = [
 	},
 	{
 		id: "03c00000-0000-0000-0000-000000000003",
-		organizationId: "00000000-0000-0000-0000-000000000001",
+		organizationId: DEMO_SHOWCASE_ORG_ID,
 		patientId: "01a00000-0000-0000-0000-000000000001",
 		patientFullName: "Иванов Алексей Сергеевич",
 		dicomPatientName: "Ivanov Alexey",

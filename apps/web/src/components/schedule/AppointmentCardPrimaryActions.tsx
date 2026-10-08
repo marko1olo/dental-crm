@@ -73,6 +73,9 @@ export function AppointmentCardPrimaryActions({
 						if (pid) {
 							usePatientStore.getState().setSelectedPatientId(pid);
 						}
+						if (typeof window !== "undefined") {
+							window.location.hash = "#visit";
+						}
 						if (onOpenVisit) {
 							onOpenVisit();
 						} else {
@@ -104,6 +107,9 @@ export function AppointmentCardPrimaryActions({
 						const pid = appointmentPatient?.id || appointment.patientId;
 						if (pid) {
 							usePatientStore.getState().setSelectedPatientId(pid);
+						}
+						if (typeof window !== "undefined") {
+							window.location.hash = "#visit";
 						}
 						if (onOpenVisit) {
 							onOpenVisit();
@@ -162,7 +168,14 @@ export function AppointmentCardPrimaryActions({
 						if (pid) {
 							usePatientStore.getState().setSelectedPatientId(pid);
 						}
-						useAppStore.getState().setCurrentView("visit");
+						if (typeof window !== "undefined") {
+							window.location.hash = "#visit";
+						}
+						if (onOpenVisit) {
+							onOpenVisit();
+						} else {
+							useAppStore.getState().setCurrentView("visit");
+						}
 						showToast(`Открыта карта визита: ${appointmentPatientName}`, "info");
 					}}
 					className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"

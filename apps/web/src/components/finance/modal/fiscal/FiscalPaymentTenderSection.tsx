@@ -242,13 +242,13 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 						setCertificateAmount(0);
 						setInsuranceAmount(0);
 						setPaymentMode("split");
-						showToast("Применен пресет: Гарантия 100% (0 ₽, без фискального чека ККТ)", "info", 2500);
+						showToast("Применен пресет: Гарантия 100% (0 ₽, внутренний гарантийный акт)", "info", 2500);
 					}}
 					className={`dente-filter-chip flex items-center gap-1 ${
 						selectedDiscountPreset === "warranty_100" ? "active" : ""
 					}`}
 					data-testid="preset-warranty-100"
-					title="Гарантийная переделка 100% (0 ₽, без фискального чека ККТ)"
+					title="Гарантийная переделка 100% (0 ₽, внутренний гарантийный акт)"
 				>
 					<ShieldCheck size={13} className={selectedDiscountPreset === "warranty_100" ? "text-[var(--teal)] shrink-0" : "text-purple-600 shrink-0"} />
 					<span>Гарантия (0 ₽)</span>
@@ -344,7 +344,7 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 									<button
 										type="button"
 										onClick={() => setReceivedCashRub(cashAmount)}
-										className="h-6 px-2 rounded text-[11px] font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 cursor-pointer transition-colors"
+										className="min-h-[44px] sm:min-h-0 sm:h-6 px-2 rounded text-[11px] font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 cursor-pointer transition-colors inline-flex items-center justify-center"
 									>
 										Ровно без сдачи
 									</button>
@@ -353,7 +353,7 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 											key={val}
 											type="button"
 											onClick={() => setReceivedCashRub((prev) => (prev || cashAmount) + val)}
-											className="h-6 px-2 rounded text-[11px] font-semibold bg-[var(--paper-soft,#f8fafc)] hover:bg-slate-200 dark:hover:bg-slate-800 text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-colors"
+											className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-6 px-2 rounded text-[11px] font-semibold bg-[var(--paper-soft,#f8fafc)] hover:bg-slate-200 dark:hover:bg-slate-800 text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-colors inline-flex items-center justify-center"
 										>
 											+{val} ₽
 										</button>
@@ -399,7 +399,7 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 								</div>
 								<div>
 									<span className="font-bold text-sm block text-[var(--ink,#0f172a)]">
-										Безналичные / Эквайринг (Тег 1081)
+										Безналичные / Терминал
 									</span>
 									<span className="text-xs text-[var(--muted,#64748b)]">
 										POS-терминал готов к приему оплаты
@@ -469,7 +469,7 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 								</div>
 								<div>
 									<span className="font-bold text-sm block text-[var(--ink,#0f172a)]">
-										Зачет аванса / Баланс семьи (Тег 1215)
+										Зачет аванса / Баланс семьи
 									</span>
 									<span className="text-xs text-[var(--muted,#64748b)]">
 										Доступно: {formatMoneyRu(patientDepositRub)}
@@ -523,7 +523,7 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 							<div className="flex items-center gap-2.5">
 								<CreditCard size={16} className="text-blue-600 shrink-0" />
 								<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
-									Карта (Тег 1081)
+									Карта
 								</span>
 							</div>
 							<div className="flex items-center gap-1.5">
@@ -554,7 +554,7 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 							<div className="flex items-center gap-2.5">
 								<QrCode size={16} className="text-teal-600 shrink-0" />
 								<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
-									СБП QR (Тег 1081)
+									СБП QR
 								</span>
 							</div>
 							<div className="flex items-center gap-1.5">
@@ -585,7 +585,7 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 							<div className="flex items-center gap-2.5">
 								<Banknote size={16} className="text-emerald-600 shrink-0" />
 								<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
-									Наличные (Тег 1031)
+									Наличные
 								</span>
 							</div>
 							<div className="flex items-center gap-1.5">
@@ -621,7 +621,7 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 								<Coins size={16} className="text-amber-600 shrink-0" />
 								<div>
 									<span className="text-xs font-bold block text-[var(--ink,#0f172a)]">
-										Зачет аванса (Тег 1215)
+										Зачет аванса
 									</span>
 									<span className="text-[11px] text-[var(--muted,#64748b)]">
 										Доступно: {formatMoneyRu(patientDepositRub)}
@@ -693,7 +693,7 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 										key={nom}
 										type="button"
 										onClick={() => setCertificateAmount((prev) => Math.min(totalSumRub, prev + nom))}
-										className="h-6 px-2 rounded-md text-[11px] font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/60 cursor-pointer transition-all"
+										className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-6 px-2 rounded-md text-[11px] font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/60 cursor-pointer transition-all inline-flex items-center justify-center"
 										data-testid={`btn-cert-nominal-${nom}`}
 									>
 										+{nom.toLocaleString("ru-RU")} ₽
@@ -703,7 +703,7 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 									<button
 										type="button"
 										onClick={() => setCertificateAmount(0)}
-										className="h-6 px-2 rounded-md text-[11px] font-bold text-rose-600 hover:bg-rose-50 cursor-pointer ml-auto"
+										className="min-h-[44px] sm:min-h-0 sm:h-6 px-2 rounded-md text-[11px] font-bold text-rose-600 hover:bg-rose-50 cursor-pointer ml-auto inline-flex items-center justify-center"
 									>
 										Сброс
 									</button>
@@ -711,7 +711,7 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 							</div>
 						</div>
 
-						{/* Insurance / DMS Row (Тег 1217 / Безнал Страховой) */}
+						{/* Insurance / DMS Row (Безнал Страховой) */}
 						<div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-sky-500/30 space-y-2" data-testid="split-insurance-row">
 							<div className="flex items-center justify-between gap-3">
 								<div className="flex items-center gap-2.5">

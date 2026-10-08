@@ -127,21 +127,21 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 					data-testid="add-service-from-catalog-modal"
 				>
 					<div
-						className="w-full max-w-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] rounded-3xl border border-[var(--line,var(--border,#cbd5e1))] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+						className="w-full max-w-2xl bg-[var(--paper)] text-[var(--ink)] rounded-3xl border border-[var(--line)] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
 						onClick={(e) => e.stopPropagation()}
 					>
 						{/* Header */}
-						<div className="flex items-center justify-between p-4 border-b border-[var(--line,var(--border,#cbd5e1))]">
-							<div className="flex items-center gap-2.5">
-								<div className="p-2 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal)]/20">
+						<div className="flex items-center justify-between p-4 border-b border-[var(--line)] bg-[var(--paper-strong)]">
+							<div className="flex items-center gap-2.5 min-w-0">
+								<div className="p-2 rounded-xl bg-[var(--teal-soft)] text-[var(--teal)] border border-[var(--teal)]/20 shrink-0">
 									<FolderPlus size={18} />
 								</div>
-								<div>
-									<h3 id="add-service-modal-title" className="text-sm font-black text-[var(--ink,#0f172a)]">
-										Добавить услугу из каталога
+								<div className="min-w-0">
+									<h3 id="add-service-modal-title" className="text-sm font-black text-[var(--ink)] tracking-tight break-words">
+										Каталог клинических услуг
 									</h3>
-									<p className="text-[11px] text-[var(--muted,#64748b)]">
-										Прейскурант услуг и каталог клиники
+									<p className="text-[11px] text-[var(--muted)] leading-tight break-words mt-0.5">
+										Прейскурант и клинические позиции для плана лечения
 									</p>
 								</div>
 							</div>
@@ -151,7 +151,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 									onClose();
 									setSelectedCatalogItem(null);
 								}}
-								className="p-1.5 rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer transition-colors"
+								className="p-1.5 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors shrink-0"
 								aria-label="Закрыть окно"
 							>
 								<X size={18} />
@@ -171,7 +171,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 										type="text"
 										value={serviceSearchQuery}
 										onChange={(e) => setServiceSearchQuery(e.target.value)}
-										placeholder="Поиск по названию или коду услуги (кариес, коронка, имплант, A16.07...)"
+										placeholder="Поиск по названию или коду (кариес, коронка, имплант, A16.07...)"
 										className="dente-search-input"
 										data-testid="catalog-service-search-input"
 									/>
@@ -214,9 +214,13 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 							</div>
 
 							{/* Services List */}
-							<div className="border border-[var(--line,var(--border,#cbd5e1))] rounded-2xl overflow-hidden max-h-48 overflow-y-auto divide-y divide-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
+							<div
+								className={`border border-[var(--line)] rounded-2xl overflow-hidden overflow-y-auto divide-y divide-[var(--line)] bg-[var(--paper-soft)] transition-all ${
+									selectedCatalogItem ? "max-h-36 sm:max-h-44" : "max-h-64 sm:max-h-72"
+								}`}
+							>
 								{filteredCatalogServices.length === 0 ? (
-									<div className="p-4 text-center text-xs text-[var(--muted,#64748b)]">
+									<div className="p-4 text-center text-xs text-[var(--muted)]">
 										Услуги не найдены. Попробуйте изменить поисковый запрос.
 									</div>
 								) : (
@@ -227,22 +231,22 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 												key={item.id}
 												onClick={() => setSelectedCatalogItem(item)}
 												data-testid={`catalog-item-${item.id}`}
-												className={`p-2.5 flex items-center justify-between gap-3 cursor-pointer transition-colors ${
+												className={`p-3 flex items-center justify-between gap-3 cursor-pointer transition-colors min-h-[48px] ${
 													isSelected
-														? "bg-[var(--teal-soft,var(--paper-soft))] border-l-4 border-l-[var(--teal,var(--brand-primary))]"
-														: "hover:bg-[var(--paper-strong,#ffffff)]"
+														? "bg-[var(--teal-soft)] border-l-4 border-l-[var(--teal)]"
+														: "hover:bg-[var(--paper)]"
 												}`}
 											>
 												<div className="min-w-0 flex-1">
 													<div className="flex items-center gap-1.5 flex-wrap">
-														<span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--teal-dark,var(--teal))]">
+														<span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-[var(--teal-dark)] dark:text-teal-300 shrink-0">
 															{item.order804nCode || item.code || item.id}
 														</span>
-														<span className="text-[10px] text-[var(--muted,#64748b)]">
+														<span className="text-[10px] text-[var(--muted)] shrink-0">
 															{item.category}
 														</span>
 													</div>
-													<div className="font-semibold text-xs text-[var(--ink,#0f172a)] truncate mt-0.5">
+													<div className="font-semibold text-xs text-[var(--ink)] break-words leading-snug mt-1">
 														{item.title}
 													</div>
 												</div>
@@ -251,7 +255,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 														{(item.basePriceRub || 0).toLocaleString("ru-RU")} ₽
 													</span>
 													{isSelected && (
-														<Check size={14} className="text-[var(--teal,var(--brand-primary))]" />
+														<Check size={16} className="text-[var(--teal)]" />
 													)}
 												</div>
 											</div>
@@ -262,17 +266,17 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 
 							{/* Configuration when a service is selected */}
 							{selectedCatalogItem && (
-								<div className="p-3 rounded-2xl bg-[var(--paper-strong,#ffffff)] border border-[var(--teal)]/40 space-y-3 shadow-xs">
-									<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2">
+								<div className="p-3.5 rounded-2xl bg-[var(--paper-strong)] border border-[var(--teal)]/40 space-y-3.5 shadow-xs">
+									<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2.5">
 										<div className="min-w-0">
 											<div className="text-[10px] text-[var(--muted)] uppercase font-bold tracking-wider">
-												Выбранная процедура:
+												Выбранная клиническая услуга:
 											</div>
-											<div className="font-bold text-xs text-[var(--ink)] truncate">
+											<div className="font-bold text-xs text-[var(--ink)] break-words leading-snug mt-0.5">
 												{selectedCatalogItem.title}
 											</div>
 										</div>
-										<span className="font-mono font-bold text-sm text-emerald-600 shrink-0">
+										<span className="font-mono font-bold text-sm text-emerald-600 dark:text-emerald-400 shrink-0">
 											{(selectedCatalogItem.basePriceRub || 0).toLocaleString("ru-RU")} ₽ / ед.
 										</span>
 									</div>
@@ -285,7 +289,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 										<select
 											value={serviceTargetStageNumber}
 											onChange={(e) => setServiceTargetStageNumber(Number(e.target.value))}
-											className="h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-bold text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+											className="h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-bold text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)] cursor-pointer"
 											data-testid="target-stage-selector"
 										>
 											{stages.map((st) => (
@@ -308,7 +312,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 											<button
 												type="button"
 												onClick={() => setSelectedToothForService(null)}
-												className={`text-[10px] px-2 py-0.5 rounded-md font-bold cursor-pointer transition-colors ${
+												className={`text-xs px-2.5 py-1 min-h-[28px] rounded-lg font-bold cursor-pointer transition-colors ${
 													selectedToothForService === null
 														? "bg-[var(--teal)] text-white"
 														: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
@@ -319,73 +323,81 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 										</div>
 
 										{/* Quick tooth selector chips */}
-										<div className="space-y-1 bg-[var(--paper-soft)] p-2 rounded-xl border border-[var(--line)]">
+										<div className="space-y-1.5 bg-[var(--paper-soft)] p-2 sm:p-2.5 rounded-xl border border-[var(--line)]">
 											{/* Upper Jaw: Q1 (18..11) | Q2 (21..28) */}
-											<div className="flex items-center justify-center gap-1 flex-wrap text-[10px] font-mono font-bold">
-												<span className="text-[9px] text-[var(--muted)] mr-1">В/Ч:</span>
-												{[18, 17, 16, 15, 14, 13, 12, 11].map((t) => (
-													<button
-														key={t}
-														type="button"
-														onClick={() => setSelectedToothForService(selectedToothForService === t ? null : t)}
-														className={`w-6 h-6 rounded flex items-center justify-center cursor-pointer transition-all ${
-															selectedToothForService === t
-																? "bg-[var(--teal)] text-white shadow-2xs font-black"
-																: "bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)]"
-														}`}
-													>
-														{t}
-													</button>
-												))}
-												<span className="text-[var(--line)] font-normal">|</span>
-												{[21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
-													<button
-														key={t}
-														type="button"
-														onClick={() => setSelectedToothForService(selectedToothForService === t ? null : t)}
-														className={`w-6 h-6 rounded flex items-center justify-center cursor-pointer transition-all ${
-															selectedToothForService === t
-																? "bg-[var(--teal)] text-white shadow-2xs font-black"
-																: "bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)]"
-														}`}
-													>
-														{t}
-													</button>
-												))}
+											<div className="flex items-center justify-center gap-0.5 sm:gap-1 text-[11px] sm:text-xs font-mono font-bold overflow-x-auto">
+												<span className="text-[10px] text-[var(--muted)] mr-1 shrink-0">В/Ч:</span>
+												<div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+													{[18, 17, 16, 15, 14, 13, 12, 11].map((t) => (
+														<button
+															key={t}
+															type="button"
+															onClick={() => setSelectedToothForService(selectedToothForService === t ? null : t)}
+															className={`w-6 h-7 sm:w-7 sm:h-8 rounded-lg flex items-center justify-center cursor-pointer transition-all ${
+																selectedToothForService === t
+																	? "bg-[var(--teal)] text-white shadow-xs font-black"
+																	: "bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)]"
+															}`}
+														>
+															{t}
+														</button>
+													))}
+												</div>
+												<span className="text-[var(--line)] font-normal mx-0.5 shrink-0">|</span>
+												<div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+													{[21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
+														<button
+															key={t}
+															type="button"
+															onClick={() => setSelectedToothForService(selectedToothForService === t ? null : t)}
+															className={`w-6 h-7 sm:w-7 sm:h-8 rounded-lg flex items-center justify-center cursor-pointer transition-all ${
+																selectedToothForService === t
+																	? "bg-[var(--teal)] text-white shadow-xs font-black"
+																	: "bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)]"
+															}`}
+														>
+															{t}
+														</button>
+													))}
+												</div>
 											</div>
 
 											{/* Lower Jaw: Q4 (48..41) | Q3 (31..38) */}
-											<div className="flex items-center justify-center gap-1 flex-wrap text-[10px] font-mono font-bold">
-												<span className="text-[9px] text-[var(--muted)] mr-1">Н/Ч:</span>
-												{[48, 47, 46, 45, 44, 43, 42, 41].map((t) => (
-													<button
-														key={t}
-														type="button"
-														onClick={() => setSelectedToothForService(selectedToothForService === t ? null : t)}
-														className={`w-6 h-6 rounded flex items-center justify-center cursor-pointer transition-all ${
-															selectedToothForService === t
-																? "bg-[var(--teal)] text-white shadow-2xs font-black"
-																: "bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)]"
-														}`}
-													>
-														{t}
-													</button>
-												))}
-												<span className="text-[var(--line)] font-normal">|</span>
-												{[31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
-													<button
-														key={t}
-														type="button"
-														onClick={() => setSelectedToothForService(selectedToothForService === t ? null : t)}
-														className={`w-6 h-6 rounded flex items-center justify-center cursor-pointer transition-all ${
-															selectedToothForService === t
-																? "bg-[var(--teal)] text-white shadow-2xs font-black"
-																: "bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)]"
-														}`}
-													>
-														{t}
-													</button>
-												))}
+											<div className="flex items-center justify-center gap-0.5 sm:gap-1 text-[11px] sm:text-xs font-mono font-bold overflow-x-auto">
+												<span className="text-[10px] text-[var(--muted)] mr-1 shrink-0">Н/Ч:</span>
+												<div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+													{[48, 47, 46, 45, 44, 43, 42, 41].map((t) => (
+														<button
+															key={t}
+															type="button"
+															onClick={() => setSelectedToothForService(selectedToothForService === t ? null : t)}
+															className={`w-6 h-7 sm:w-7 sm:h-8 rounded-lg flex items-center justify-center cursor-pointer transition-all ${
+																selectedToothForService === t
+																	? "bg-[var(--teal)] text-white shadow-xs font-black"
+																	: "bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)]"
+															}`}
+														>
+															{t}
+														</button>
+													))}
+												</div>
+												<span className="text-[var(--line)] font-normal mx-0.5 shrink-0">|</span>
+												<div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+													{[31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
+														<button
+															key={t}
+															type="button"
+															onClick={() => setSelectedToothForService(selectedToothForService === t ? null : t)}
+															className={`w-6 h-7 sm:w-7 sm:h-8 rounded-lg flex items-center justify-center cursor-pointer transition-all ${
+																selectedToothForService === t
+																	? "bg-[var(--teal)] text-white shadow-xs font-black"
+																	: "bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)]"
+															}`}
+														>
+															{t}
+														</button>
+													))}
+												</div>
 											</div>
 										</div>
 									</div>
@@ -393,23 +405,23 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 									{/* Quantity & Discount */}
 									<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
 										{/* Quantity */}
-										<div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+										<div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 											<span className="text-[11px] font-bold text-[var(--muted)]">Количество:</span>
 											<div className="flex items-center gap-1.5">
 												<button
 													type="button"
 													onClick={() => setServiceQuantity(Math.max(1, serviceQuantity - 1))}
-													className="w-7 h-7 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] text-xs font-bold flex items-center justify-center cursor-pointer hover:bg-[var(--line)]"
+													className="w-9 h-9 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-sm font-bold flex items-center justify-center cursor-pointer hover:bg-[var(--line)] transition-colors active:scale-95"
 												>
 													-
 												</button>
-												<span className="w-8 text-center font-mono font-bold text-xs">
+												<span className="w-10 text-center font-mono font-bold text-sm">
 													{serviceQuantity}
 												</span>
 												<button
 													type="button"
 													onClick={() => setServiceQuantity(serviceQuantity + 1)}
-													className="w-7 h-7 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] text-xs font-bold flex items-center justify-center cursor-pointer hover:bg-[var(--line)]"
+													className="w-9 h-9 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-sm font-bold flex items-center justify-center cursor-pointer hover:bg-[var(--line)] transition-colors active:scale-95"
 												>
 													+
 												</button>
@@ -417,7 +429,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 										</div>
 
 										{/* Doctor Discount */}
-										<div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+										<div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 											<span className="text-[11px] font-bold text-[var(--muted)]">Скидка врача:</span>
 											<div className="flex items-center gap-1">
 												{[0, 10, 50, 100].map((pct) => (
@@ -425,10 +437,10 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 														key={pct}
 														type="button"
 														onClick={() => setServiceDiscountPercent(pct)}
-														className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold cursor-pointer transition-colors ${
+														className={`px-2.5 py-1.5 min-h-[36px] rounded-lg text-xs font-mono font-bold cursor-pointer transition-colors ${
 															serviceDiscountPercent === pct
 																? "bg-[var(--teal)] text-white"
-																: "bg-[var(--paper-strong)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
+																: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
 														}`}
 													>
 														{pct}%
@@ -443,7 +455,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 														const v = Math.max(0, Math.min(100, Number(e.target.value) || 0));
 														setServiceDiscountPercent(v);
 													}}
-													className="w-10 h-7 text-center font-mono font-bold text-xs rounded border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]"
+													className="w-12 h-9 text-center font-mono font-bold text-xs rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
 												/>
 											</div>
 										</div>
@@ -456,9 +468,9 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 										const discRub = Math.round((grossRub * serviceDiscountPercent) / 100);
 										const netRub = Math.max(0, grossRub - discRub);
 										return (
-											<div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-xs font-bold">
-												<span className="text-emerald-900 dark:text-emerald-200">
-													Итого к начислению в план:
+											<div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-xs font-bold">
+												<span className="text-emerald-800 dark:text-emerald-200">
+													Итого к начислению в этап:
 												</span>
 												<div className="flex items-center gap-2">
 													{discRub > 0 && (
@@ -466,7 +478,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 															{grossRub.toLocaleString("ru-RU")} ₽
 														</span>
 													)}
-													<span className="font-mono text-sm text-emerald-700 dark:text-emerald-300">
+													<span className="font-mono text-base font-black text-emerald-700 dark:text-emerald-300">
 														{netRub.toLocaleString("ru-RU")} ₽
 													</span>
 												</div>
@@ -478,14 +490,14 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 						</div>
 
 						{/* Footer */}
-						<div className="p-4 border-t border-[var(--line,var(--border,#cbd5e1))] flex items-center justify-between gap-3 bg-[var(--paper-soft,#f8fafc)]">
+						<div className="p-4 border-t border-[var(--line)] flex items-center justify-between gap-3 bg-[var(--paper-soft)]">
 							<button
 								type="button"
 								onClick={() => {
 									onClose();
 									setSelectedCatalogItem(null);
 								}}
-								className="secondary-button"
+								className="secondary-button min-h-[38px] px-4 font-semibold"
 							>
 								Отмена
 							</button>
@@ -495,9 +507,9 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 								disabled={!selectedCatalogItem}
 								onClick={handleConfirmAddService}
 								data-testid="confirm-add-service-to-stage-btn"
-								className="primary-button"
+								className="primary-button min-h-[38px] px-5 font-bold"
 							>
-								<Plus size={15} />
+								<Plus size={16} />
 								<span>Добавить в этап</span>
 							</button>
 						</div>

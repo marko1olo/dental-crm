@@ -46,7 +46,11 @@ describe("TaxDeductionCertificateModal Autonomy & Non-blocking Actions", () => {
 		);
 
 		// Verify buttons are present
-		assert.ok(html.includes("Печать справки КНД 1151156 (А4)"), "Print certificate button must be rendered");
+		assert.ok(
+			html.includes("Печать справки КНД 1151156 (А4)") ||
+			html.includes("Печать справки для налогового вычета (А4)"),
+			"Print certificate button must be rendered",
+		);
 		assert.ok(html.includes("Выгрузить XML (ТКС)"), "Download XML button must be rendered");
 		assert.ok(html.includes("NO_MEDOPL (5.01)"), "Download NO_MEDOPL button must be rendered");
 

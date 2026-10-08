@@ -33,8 +33,7 @@ import {
 	Sparkles,
 	Wind,
 } from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	type AirwayAnalysisResult,
 	analyzeAirwayVolume,
@@ -1003,7 +1002,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 				{switcherSlot}
 
 				{/* Right: Presets, Angles & Reset */}
-				<div className="h-7 flex items-center gap-0.5 bg-zinc-950/85 backdrop-blur-md px-1 py-0.5 rounded-lg border border-zinc-800 shadow-xl select-none">
+				<div className="h-9 min-h-[34px] max-h-[36px] flex items-center gap-1 bg-zinc-950/90 backdrop-blur-md px-1.5 py-0.5 rounded-lg border border-zinc-800 shadow-xl select-none">
 					{/* Compact Preset Selector Popover */}
 					<div className="relative shrink-0">
 						<button
@@ -1012,7 +1011,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 								setIsPresetOpen((prev) => !prev);
 								setIsProjectionsMenuOpen(false);
 							}}
-							className={`h-6 px-1.5 rounded flex items-center gap-1 transition-all cursor-pointer group ${
+							className={`h-7 min-h-[28px] px-2 rounded-md flex items-center gap-1.5 transition-all cursor-pointer group ${
 								isPresetOpen
 									? "bg-cyan-500/25 text-cyan-200 border border-cyan-400/80 shadow-[0_0_10px_rgba(6,182,212,0.35)]"
 									: "bg-zinc-900/80 text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/80 border border-zinc-800/80"
@@ -1022,7 +1021,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 							aria-label={`3D Пресет: ${activePresetSpec.label}`}
 						>
 							<Layers className="w-3.5 h-3.5 text-cyan-400 transition-transform group-hover:scale-105" />
-							<span className="text-[10px] font-bold font-mono text-cyan-300 leading-none">
+							<span className="text-[11px] font-bold font-mono text-cyan-300 leading-none">
 								{activePresetSpec.shortLabel}
 							</span>
 							<ChevronDown
@@ -1068,13 +1067,13 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 
 					<div className="w-[1px] h-4 bg-zinc-800/80 mx-0.5 shrink-0" />
 
-					{/* Orthogonal Angle Shortcuts with Anatomical Skull Vector Icons */}
+					{/* Проекции черепа с анатомическими векторными иконками */}
 					<button
 						type="button"
 						onClick={() => handleSetOrientation("coronal")}
-						title="Фас (Anterior / Coronal): фронтальная проекция (Yaw 0°, Pitch 0°)"
+						title="Фас: фронтальная проекция черепа (0°, 0°)"
 						aria-label="Фас"
-						className={`w-7 h-6 rounded flex items-center justify-center transition-all cursor-pointer group shrink-0 ${
+						className={`w-8 h-7 min-w-[32px] min-h-[28px] rounded-md flex items-center justify-center transition-all cursor-pointer group shrink-0 ${
 							isCoronalActive
 								? "bg-cyan-500/25 text-cyan-200 border border-cyan-400/80 shadow-[0_0_10px_rgba(6,182,212,0.35)] font-bold"
 								: "bg-zinc-900/80 text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/80 border border-zinc-800/80"
@@ -1095,9 +1094,9 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					<button
 						type="button"
 						onClick={() => handleSetOrientation("sagittal")}
-						title="Профиль (Lateral / Sagittal): правая сагиттальная проекция (Yaw 90°, Pitch 0°)"
+						title="Профиль: сагиттальная проекция черепа (90°, 0°)"
 						aria-label="Профиль"
-						className={`w-7 h-6 rounded flex items-center justify-center transition-all cursor-pointer group shrink-0 ${
+						className={`w-8 h-7 min-w-[32px] min-h-[28px] rounded-md flex items-center justify-center transition-all cursor-pointer group shrink-0 ${
 							isSagittalActive
 								? "bg-cyan-500/25 text-cyan-200 border border-cyan-400/80 shadow-[0_0_10px_rgba(6,182,212,0.35)] font-bold"
 								: "bg-zinc-900/80 text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/80 border border-zinc-800/80"
@@ -1118,9 +1117,9 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					<button
 						type="button"
 						onClick={() => handleSetOrientation("isometric")}
-						title="Ракурс 3/4 (Anterolateral): изометрия челюсти (Yaw 45°, Pitch 15°)"
+						title="3D-реконструкция челюсти: ракурс 3/4 (45°, 15°)"
 						aria-label="3/4"
-						className={`w-7 h-6 rounded flex items-center justify-center transition-all cursor-pointer group shrink-0 ${
+						className={`w-8 h-7 min-w-[32px] min-h-[28px] rounded-md flex items-center justify-center transition-all cursor-pointer group shrink-0 ${
 							isIsometricActive
 								? "bg-cyan-500/25 text-cyan-200 border border-cyan-400/80 shadow-[0_0_10px_rgba(6,182,212,0.35)] font-bold"
 								: "bg-zinc-900/80 text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/80 border border-zinc-800/80"
@@ -1152,7 +1151,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 									: "Затылок, Левый профиль, Сверху, Снизу, 3/4L"
 							}`}
 							aria-label="Дополнительные проекции черепа"
-							className={`h-6 px-1.5 rounded flex items-center gap-0.5 transition-all cursor-pointer group shrink-0 ${
+							className={`h-7 min-h-[28px] px-2 rounded-md flex items-center gap-1 transition-all cursor-pointer group shrink-0 ${
 								isExtraActive || isProjectionsMenuOpen
 									? "bg-cyan-500/25 text-cyan-200 border border-cyan-400/80 shadow-[0_0_10px_rgba(6,182,212,0.35)] font-bold"
 									: "bg-zinc-900/80 text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/80 border border-zinc-800/80"
@@ -1225,7 +1224,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 						type="button"
 						onClick={() => setIsClippingOpen((prev) => !prev)}
 						title="Срезы черепа (Clipping Box): отсечение шейных позвонков, затылка и корональной плоскости"
-						className={`w-7 h-6 rounded relative flex items-center justify-center transition-all cursor-pointer group ${
+						className={`w-8 h-7 min-w-[32px] min-h-[28px] rounded-md relative flex items-center justify-center transition-all cursor-pointer group ${
 							isClippingOpen || hasActiveClipping
 								? "bg-cyan-500/25 text-cyan-200 border border-cyan-400/80 shadow-[0_0_10px_rgba(6,182,212,0.35)] font-bold"
 								: "bg-zinc-900/80 text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/80 border border-zinc-800/80"
@@ -1261,7 +1260,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 								? "Анатомический ряд: 4 импланта в кости челюсти (#46, #47, #36, #37). Клик для 1 импланта"
 								: "Одиночный имплант (#46). Клик для зубного ряда из 4 имплантов"
 						}
-						className={`h-6 px-1.5 rounded relative flex items-center gap-1 transition-all cursor-pointer group ${
+						className={`h-7 min-h-[28px] px-2 rounded-md relative flex items-center gap-1 transition-all cursor-pointer group ${
 							implantCountMode === "quad"
 								? "bg-emerald-500/25 text-emerald-200 border border-emerald-400/80 shadow-[0_0_10px_rgba(16,185,129,0.35)] font-bold"
 								: "bg-zinc-900/80 text-zinc-400 hover:text-emerald-300 hover:bg-emerald-500/20 hover:border-emerald-400/80 border border-zinc-800/80"
@@ -1303,7 +1302,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 								? "MAR (Metal Artifact Reduction): Умное отсечение фонящих радиальных игл и артефактов металла (Активно)"
 								: "MAR: Отсечение фонящих игл выключено. Клик для активации"
 						}
-						className={`w-7 h-6 rounded relative flex items-center justify-center transition-all cursor-pointer group ${
+						className={`w-8 h-7 min-w-[32px] min-h-[28px] rounded-md relative flex items-center justify-center transition-all cursor-pointer group ${
 							isMarActive
 								? "bg-cyan-500/25 text-cyan-200 border border-cyan-400/80 shadow-[0_0_10px_rgba(6,182,212,0.35)] font-bold"
 								: "bg-zinc-900/80 text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/80 border border-zinc-800/80"
@@ -1336,7 +1335,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 						onClick={handleResetCamera}
 						title="Сбросить положение камеры 3D объема"
 						aria-label="Сброс камеры 3D"
-						className="w-7 h-6 rounded flex items-center justify-center text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/80 border border-zinc-800/80 bg-zinc-900/80 transition-all cursor-pointer"
+						className="w-8 h-7 min-w-[32px] min-h-[28px] rounded-md flex items-center justify-center text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/80 border border-zinc-800/80 bg-zinc-900/80 transition-all cursor-pointer"
 						data-testid="cbct-btn-reset-3d-camera"
 					>
 						<RotateCcw className="w-3.5 h-3.5" />
@@ -1355,7 +1354,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 									? "Свернуть в сетку (Esc)"
 									: "Развернуть 3D объем на весь экран"
 							}
-							className="w-7 h-6 rounded flex items-center justify-center text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/80 border border-zinc-800/80 bg-zinc-900/80 transition-all cursor-pointer"
+							className="w-8 h-7 min-w-[32px] min-h-[28px] rounded-md flex items-center justify-center text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/80 border border-zinc-800/80 bg-zinc-900/80 transition-all cursor-pointer"
 							data-testid={
 								isMaximized
 									? "btn-viewport-collapse-volume3d"

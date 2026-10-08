@@ -11,6 +11,7 @@ import {
 	User,
 	UserCheck,
 	X,
+	Zap,
 } from "lucide-react";
 import React, { useState } from "react";
 import type {
@@ -136,7 +137,7 @@ export function IncomingCallPatientDrawer({
 						<div className="flex items-center gap-1.5 mt-1">
 							<span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-800 px-1.5 py-0.5 rounded-full inline-flex items-center gap-1">
 								<Check size={10} />
-								Визит 043/у сохранён
+								Визит сохранён
 							</span>
 							<span className="text-[10px] text-[var(--muted,#64748b)]">
 								(без сброса формы)
@@ -219,7 +220,7 @@ export function IncomingCallPatientDrawer({
 											size={13}
 											className="text-[var(--teal)]"
 										/>
-										<span>Перевод звонка (SIP)</span>
+										<span>Перевод на врача</span>
 									</button>
 								)}
 								<button
@@ -297,6 +298,26 @@ export function IncomingCallPatientDrawer({
 						</span>
 					</button>
 				</div>
+
+				{/* Emergency Acute Pain (Cito) Fast Intake Action */}
+				{somaticAlerts.some((a) => a.category === "pain") && (
+					<button
+						type="button"
+						onClick={() => onQuickBook("today_urgent")}
+						className="w-full min-h-[38px] px-3 py-1.5 rounded-lg text-white text-xs font-bold transition-all flex items-center justify-between cursor-pointer shadow-xs active:scale-95"
+						style={{ backgroundColor: "#e11d48", color: "#ffffff" }}
+						data-testid="drawer-action-cito"
+						title="Внеочередная экстренная запись пациента с острой болью"
+					>
+						<div className="flex items-center gap-1.5">
+							<Zap size={14} className="text-amber-300" />
+							<span>Острая боль! Внеочередной приём (Cito)</span>
+						</div>
+						<span className="text-[10px] font-mono px-1.5 py-0.5 rounded text-white" style={{ backgroundColor: "#be123c" }}>
+							{quickSlots?.[0]?.time || "Срочно"}
+						</span>
+					</button>
+				)}
 
 				{/* Collapsible 1-Click Quick Booking Slots */}
 				{showQuickBooking && (

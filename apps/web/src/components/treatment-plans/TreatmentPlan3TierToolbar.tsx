@@ -6,7 +6,7 @@
  * 2. Переключатель сценариев оплаты (Рассрочка 0%, Этапы 30/40/30, Скидка 5% за 100% оплату) — сегментированный контрол.
  * 3. Селектор срока рассрочки (3, 6, 12, 24 мес).
  * 4. Кнопку копирования сметы в мессенджер (WhatsApp / Telegram) для активного тарифа.
- * 5. Выпадающее меню [ ⚙ Параметры сметы ▾ ] (Вычет 13% НДФЛ, Студия сравнения, Эскроу, Валидация цен) — устранение Button Landfill.
+ * 5. Выпадающее меню [Параметры сметы ▾] (Вычет 13% НДФЛ, Студия сравнения, Эскроу, Валидация цен) — устранение Button Landfill.
  */
 
 import React, { useState, useRef, useEffect } from "react";
@@ -172,7 +172,7 @@ export const TreatmentPlan3TierToolbar: React.FC<TreatmentPlan3TierToolbarProps>
 					)}
 				</button>
 
-				{/* Collapsed Secondary Controls: [ ⚙ Параметры сметы ▾ ] Dropdown */}
+				{/* Collapsed Secondary Controls: [Параметры сметы ▾] Dropdown */}
 				<div className="relative inline-flex items-center" ref={dropdownRef}>
 					<button
 						type="button"

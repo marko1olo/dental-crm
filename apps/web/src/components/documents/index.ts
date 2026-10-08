@@ -17,3 +17,4 @@ export * from "./SurgicalPackageModal";
 export * from "./SanpinRegistryPackageModal";
 export * from "./TaxAccountingPackageModal";
 export * from "./DocumentsOutpatientArchive";
+export * from "./DocumentsCatalogView";

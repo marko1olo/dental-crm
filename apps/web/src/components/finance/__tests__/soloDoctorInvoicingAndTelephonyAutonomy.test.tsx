@@ -43,7 +43,7 @@ describe("Solo Doctor & Friction Killer Autonomy Suite (Wave 40 / Mandates 8e, 8
 				"Must declare dialInputRef",
 			);
 			assert.ok(
-				code.includes("ref={dialInputRef}"),
+				code.includes("ref={dialInputRef}") || code.includes("dialInputRef={dialInputRef}"),
 				"Must attach dialInputRef to dialer input",
 			);
 
