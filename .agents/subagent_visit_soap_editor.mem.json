@@ -1,0 +1,41 @@
+{
+  "target": "apps/web/src/components/visit/VisitSoapEditor.tsx",
+  "decomposedDirectory": "apps/web/src/components/visit/soapEditor",
+  "originalLines": 1985,
+  "facadeLines": 20,
+  "facadeLimitRequirement": "<= 150 lines",
+  "moduleLineBudgetRequirement": "<= 800 lines",
+  "modules": [
+    { "path": "apps/web/src/components/visit/soapEditor/constants.ts", "lines": 40, "layer": 0 },
+    { "path": "apps/web/src/components/visit/soapEditor/types.ts", "lines": 110, "layer": 0 },
+    { "path": "apps/web/src/components/visit/soapEditor/protocolsResolver.ts", "lines": 50, "layer": 1 },
+    { "path": "apps/web/src/components/visit/soapEditor/useVisitSoapDraft.ts", "lines": 348, "layer": 3 },
+    { "path": "apps/web/src/components/visit/soapEditor/useVisitSoapEditor.ts", "lines": 568, "layer": 3 },
+    { "path": "apps/web/src/components/visit/soapEditor/SoapTemplatesDrawer.tsx", "lines": 240, "layer": 2 },
+    { "path": "apps/web/src/components/visit/soapEditor/SoapFieldsEditor.tsx", "lines": 246, "layer": 2 },
+    { "path": "apps/web/src/components/visit/soapEditor/SoapFullTextView.tsx", "lines": 127, "layer": 2 },
+    { "path": "apps/web/src/components/visit/soapEditor/SoapToolbar.tsx", "lines": 335, "layer": 2 },
+    { "path": "apps/web/src/components/visit/soapEditor/VisitSoapEditorView.tsx", "lines": 127, "layer": 4 },
+    { "path": "apps/web/src/components/visit/soapEditor/index.ts", "lines": 10, "layer": 5 },
+    { "path": "apps/web/src/components/visit/VisitSoapEditor.tsx", "lines": 20, "layer": 5 }
+  ],
+  "gates": {
+    "gate1_line_count": { "passed": true, "maxFileLines": 568, "budget": 800 },
+    "gate2_ast_export_parity": { "passed": true, "exportedSymbols": ["VisitSoapEditor", "resolveProtocolFromTemplate", "VisitSoapNoteValues", "VisitSoapEditorProps"] },
+    "gate3_test_anchor_parity": { "passed": true, "preservedCount": 47, "lostCount": 0 },
+    "gate4_utf8_hygiene": { "passed": true, "mojibakeDetected": false },
+    "gate5_acyclic_dag": { "passed": true, "circularCycles": 0 }
+  },
+  "tests": {
+    "total": 19,
+    "passed": 19,
+    "failed": 0,
+    "suites": [
+      "VisitSoapEditor & Form 043/u StomX 448 Protocols Integration (6/6)",
+      "Mandates 8e, 8n, 8s: Chairside 043/U & Somatic Norm Autonomy Inquisitor (Wave 310) (7/7)",
+      "Anti-Academic Bloat & Human Doctor Protocol Inquisition (6/6)"
+    ]
+  },
+  "completedAt": "2026-10-09T01:35:20Z",
+  "status": "COMPLETED_CLEAN"
+}
