@@ -157,11 +157,7 @@ export function VisitSpecialtyFocus({
 				type="button"
 				data-testid="toggle-specialty-protocol-drawer"
 				onClick={() => setIsProtocolDrawerOpen((prev: boolean) => !prev)}
-				className={`h-8 min-h-[32px] max-h-[32px] px-3 rounded-lg border text-[13px] font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs whitespace-nowrap shrink-0 active:scale-[0.98] ${
-					isProtocolDrawerOpen
-						? "border-[var(--teal)] bg-[var(--paper-soft)] text-[var(--teal-ink,var(--teal))]"
-						: "border-[var(--line-subtle)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] hover:text-[var(--teal-ink,var(--teal))]"
-				}`}
+				className={`emk-toolbar-btn ${isProtocolDrawerOpen ? "active" : ""}`}
 				title="Развернуть специализированный бланк приема"
 				aria-expanded={isProtocolDrawerOpen}
 				aria-label="Специализированный клинический бланк"
@@ -227,11 +223,11 @@ export function VisitSpecialtyFocus({
 				<button
 					type="button"
 					onClick={() => setIsProtocolDrawerOpen((prev: boolean) => !prev)}
-					className="h-7.5 px-2.5 rounded-lg text-[12.5px] font-semibold flex items-center gap-1 transition-all cursor-pointer border border-[var(--line-subtle)] bg-[var(--paper-soft)] text-[var(--teal-ink,var(--teal))] hover:bg-[var(--teal)] hover:text-white shrink-0"
+					className={`emk-toolbar-btn ${isProtocolDrawerOpen ? "active" : ""}`}
 					title="Развернуть специализированный бланк приема"
 					data-testid="toggle-specialty-protocol-drawer"
 				>
-					<FileText size={12} className="shrink-0" />
+					<FileText size={12} className="shrink-0 text-[var(--teal)]" />
 					<span className="hidden sm:inline">Бланк:</span>
 					<span>{isChildDentition ? "Детство" : isSurgery ? "Хирургия" : "Терапия"}</span>
 					<ChevronDown size={11} className={`shrink-0 transform transition-transform ${isProtocolDrawerOpen ? "rotate-180" : ""}`} />

@@ -239,12 +239,12 @@ export function EmkToolbar({
 
 					{/* Кнопка вызова Каталога 1 142 протоколов + меню быстрых норм */}
 					{onOpenProtocolsCatalog && (
-						<div className="inline-flex items-center rounded-lg border border-[var(--line-subtle)] bg-[var(--paper)] shadow-2xs overflow-hidden shrink-0 hover:border-[var(--teal)] transition-all h-8 min-h-[32px] max-h-[32px]">
+						<div className="emk-toolbar-split-group">
 							<button
 								type="button"
 								data-testid="btn-open-protocols-catalog-1142"
 								onClick={onOpenProtocolsCatalog}
-								className="h-8 min-h-[32px] max-h-[32px] px-3 text-[13px] font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap touch-manipulation active:scale-[0.98]"
+								className="emk-split-main"
 								title="Открыть полный каталог клинических протоколов"
 							>
 								<BookOpen className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
@@ -260,7 +260,7 @@ export function EmkToolbar({
 								ref={buttonRef}
 								data-testid="btn-toggle-extra-soap-menu"
 								onClick={() => setIsExtraMenuOpen((prev) => !prev)}
-								className={`h-8 min-h-[32px] max-h-[32px] px-2 border-l border-[var(--line-subtle)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all cursor-pointer inline-flex items-center justify-center ${
+								className={`emk-split-arrow ${
 									isExtraMenuOpen ? "bg-[var(--paper-soft)] text-[var(--ink)]" : ""
 								}`}
 								title="Быстрые клинические нормы и бланки"
@@ -433,12 +433,9 @@ export function EmkToolbar({
 						type="button"
 						data-testid="btn-toggle-chairside-hud"
 						onClick={onToggleCopilot}
-						className={`h-8 min-h-[32px] max-h-[32px] px-3 rounded-lg border transition-all cursor-pointer inline-flex items-center gap-1.5 text-[13px] font-medium shadow-2xs whitespace-nowrap shrink-0 active:scale-[0.98] ${
-							isCopilotOpen
-								? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal-fill,var(--teal))]"
-								: "border-[var(--line-subtle)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] hover:border-[var(--teal)]"
-						}`}
+						className={`emk-toolbar-btn ${isCopilotOpen ? "active" : ""}`}
 						title="Интеллектуальный клинический ассистент приёма DENTA Copilot"
+						aria-expanded={isCopilotOpen}
 					>
 						<Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-500" />
 						<span className="hidden sm:inline">Ассистент</span>
@@ -458,7 +455,7 @@ export function EmkToolbar({
 					<button
 						type="button"
 						onClick={() => handleSchedule()}
-						className="h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg text-[12.5px] font-medium border border-[var(--line-subtle)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] hover:text-[var(--teal-ink,var(--teal))] text-[var(--ink)] shadow-2xs transition-all inline-flex items-center gap-1.5 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
+						className="emk-toolbar-btn"
 						data-testid="btn-schedule-next-stage"
 						title="Записать пациента на следующий этап через 5 дней"
 					>
@@ -470,7 +467,7 @@ export function EmkToolbar({
 					{/* Статус сохранения (Тихая телеметрия без цветных прыщей) */}
 					<span
 						data-testid="emk-autosave-status-badge"
-						className="emk-autosave-clean-badge text-[12px] font-medium h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg border border-[var(--line-subtle)] bg-[var(--paper)] text-[var(--muted)] transition-all shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 shadow-2xs"
+						className="emk-autosave-clean-badge"
 						title={hasUnsavedChanges ? "В черновике есть изменения (автосохранение активно)" : "Все изменения сохранены"}
 					>
 						{hasUnsavedChanges ? (

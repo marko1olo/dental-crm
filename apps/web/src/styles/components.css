@@ -834,9 +834,9 @@ button.emk-norm-button {
 	justify-content: center !important;
 	gap: 6px !important;
 	box-sizing: border-box !important;
-	height: 30px !important;
-	min-height: 30px !important;
-	max-height: 30px !important;
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
 	padding: 0 12px !important;
 	font-family: inherit !important;
 	font-size: 12px !important;
@@ -956,6 +956,248 @@ button.emk-action-button--teal:hover:not(:disabled) {
 	border-color: rgba(45, 212, 191, 0.5) !important;
 	color: #5eead4 !important;
 }
+
+/* ==========================================================================
+   13. EMK TACTILE TOOLBAR CONTROLS (Tactile Clinical Console Standard)
+   Authority: Red Team Inquisitor Tactile & Dente Design System
+   Guarantees:
+   - 100% tangible boundaries and tactile surfaces across all themes.
+   - Zero naked floating text buttons in EMK Action Bar.
+   - Explicit 1px border with --line-strong (light) / rgba(255,255,255,0.18-0.22) (dark).
+   - Elevated noble surface (var(--paper)), 8px border-radius, subtle tactile shadow.
+   - Smooth hover elevation with accent border.
+   ========================================================================== */
+
+.emk-toolbar-btn,
+button.emk-toolbar-btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	box-sizing: border-box !important;
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	padding: 0 10px !important;
+	font-family: inherit !important;
+	font-size: 12.5px !important;
+	font-weight: 500 !important;
+	line-height: 1 !important;
+	border-radius: 8px !important;
+	cursor: pointer !important;
+	white-space: nowrap !important;
+	text-decoration: none !important;
+	user-select: none !important;
+	outline: none !important;
+	position: relative !important;
+	background-color: var(--paper) !important;
+	border: 1px solid var(--line-strong, #cbd5e1) !important;
+	color: var(--ink) !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+	-webkit-tap-highlight-color: transparent !important;
+	flex-shrink: 0 !important;
+}
+
+.emk-toolbar-btn:hover:not(:disabled),
+button.emk-toolbar-btn:hover:not(:disabled) {
+	background-color: var(--paper-soft) !important;
+	border-color: var(--teal, #0d9488) !important;
+	color: var(--teal-ink, var(--teal, #0d9488)) !important;
+	transform: translateY(-1px) !important;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08) !important;
+}
+
+.emk-toolbar-btn:active:not(:disabled),
+button.emk-toolbar-btn:active:not(:disabled) {
+	transform: translateY(0) scale(0.98) !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+.emk-toolbar-btn.active,
+button.emk-toolbar-btn.active,
+.emk-toolbar-btn[aria-expanded="true"],
+button.emk-toolbar-btn[aria-expanded="true"] {
+	background-color: var(--teal-soft, rgba(13, 148, 136, 0.12)) !important;
+	border-color: var(--teal, #0d9488) !important;
+	color: var(--teal-ink, var(--teal, #0d9488)) !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.18) !important;
+}
+
+/* Dark mode theme hygiene for emk-toolbar-btn */
+:root.dark .emk-toolbar-btn,
+[data-theme="dark"] .emk-toolbar-btn,
+[data-theme="night"] .emk-toolbar-btn,
+[data-theme="oled"] .emk-toolbar-btn,
+[data-theme="ocean"] .emk-toolbar-btn,
+[data-theme="cyber_xray"] .emk-toolbar-btn,
+[data-theme="emerald"] .emk-toolbar-btn,
+[data-theme="contrast"] .emk-toolbar-btn {
+	background-color: var(--paper) !important;
+	border: 1px solid rgba(255, 255, 255, 0.18) !important;
+	color: var(--ink) !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35) !important;
+}
+
+:root.dark .emk-toolbar-btn:hover:not(:disabled),
+[data-theme="dark"] .emk-toolbar-btn:hover:not(:disabled),
+[data-theme="night"] .emk-toolbar-btn:hover:not(:disabled),
+[data-theme="oled"] .emk-toolbar-btn:hover:not(:disabled),
+[data-theme="ocean"] .emk-toolbar-btn:hover:not(:disabled),
+[data-theme="cyber_xray"] .emk-toolbar-btn:hover:not(:disabled),
+[data-theme="emerald"] .emk-toolbar-btn:hover:not(:disabled),
+[data-theme="contrast"] .emk-toolbar-btn:hover:not(:disabled) {
+	background-color: var(--paper-soft) !important;
+	border-color: #2dd4bf !important;
+	color: #2dd4bf !important;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+}
+
+:root.dark .emk-toolbar-btn.active,
+[data-theme="dark"] .emk-toolbar-btn.active,
+[data-theme="night"] .emk-toolbar-btn.active,
+[data-theme="oled"] .emk-toolbar-btn.active,
+[data-theme="ocean"] .emk-toolbar-btn.active,
+[data-theme="cyber_xray"] .emk-toolbar-btn.active,
+[data-theme="emerald"] .emk-toolbar-btn.active,
+[data-theme="contrast"] .emk-toolbar-btn.active {
+	background-color: rgba(13, 148, 136, 0.22) !important;
+	border-color: #2dd4bf !important;
+	color: #2dd4bf !important;
+}
+
+/* Сплит-группа каталога протоколов 1 142 и диктовки */
+.emk-toolbar-split-group {
+	display: inline-flex !important;
+	align-items: center !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line-strong, #cbd5e1) !important;
+	background-color: var(--paper) !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+	overflow: hidden !important;
+	flex-shrink: 0 !important;
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+	box-sizing: border-box !important;
+}
+
+.emk-toolbar-split-group:hover {
+	border-color: var(--teal, #0d9488) !important;
+}
+
+:root.dark .emk-toolbar-split-group,
+[data-theme="dark"] .emk-toolbar-split-group,
+[data-theme="night"] .emk-toolbar-split-group,
+[data-theme="oled"] .emk-toolbar-split-group,
+[data-theme="ocean"] .emk-toolbar-split-group,
+[data-theme="cyber_xray"] .emk-toolbar-split-group,
+[data-theme="emerald"] .emk-toolbar-split-group,
+[data-theme="contrast"] .emk-toolbar-split-group {
+	border: 1px solid rgba(255, 255, 255, 0.18) !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35) !important;
+}
+
+.emk-toolbar-split-group .emk-split-main {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	padding: 0 10px !important;
+	font-family: inherit !important;
+	font-size: 12.5px !important;
+	font-weight: 500 !important;
+	color: var(--ink) !important;
+	background: transparent !important;
+	border: none !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	cursor: pointer !important;
+	white-space: nowrap !important;
+	transition: all 0.15s ease !important;
+	box-sizing: border-box !important;
+}
+
+.emk-toolbar-split-group .emk-split-main:hover {
+	background-color: var(--paper-soft) !important;
+	color: var(--teal-ink, var(--teal, #0d9488)) !important;
+}
+
+.emk-toolbar-split-group .emk-split-arrow {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	padding: 0 7px !important;
+	border: none !important;
+	border-left: 1px solid var(--line-strong, #cbd5e1) !important;
+	background: transparent !important;
+	color: var(--muted) !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+	box-sizing: border-box !important;
+}
+
+:root.dark .emk-toolbar-split-group .emk-split-arrow,
+[data-theme="dark"] .emk-toolbar-split-group .emk-split-arrow,
+[data-theme="night"] .emk-toolbar-split-group .emk-split-arrow,
+[data-theme="oled"] .emk-toolbar-split-group .emk-split-arrow,
+[data-theme="ocean"] .emk-toolbar-split-group .emk-split-arrow,
+[data-theme="cyber_xray"] .emk-toolbar-split-group .emk-split-arrow,
+[data-theme="emerald"] .emk-toolbar-split-group .emk-split-arrow,
+[data-theme="contrast"] .emk-toolbar-split-group .emk-split-arrow {
+	border-left: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+.emk-toolbar-split-group .emk-split-arrow:hover {
+	background-color: var(--paper-soft) !important;
+	color: var(--ink) !important;
+}
+
+/* Статус автосохранения — согласованная аккуратная тактильная капсула */
+.emk-autosave-clean-badge,
+[data-testid="emk-autosave-status-badge"] {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	padding: 0 10px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line-strong, #cbd5e1) !important;
+	background-color: var(--paper) !important;
+	color: var(--muted) !important;
+	font-family: inherit !important;
+	font-size: 12px !important;
+	font-weight: 500 !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+	white-space: nowrap !important;
+	flex-shrink: 0 !important;
+	user-select: none !important;
+	box-sizing: border-box !important;
+}
+
+:root.dark .emk-autosave-clean-badge,
+[data-theme="dark"] .emk-autosave-clean-badge,
+[data-theme="night"] .emk-autosave-clean-badge,
+[data-theme="oled"] .emk-autosave-clean-badge,
+[data-theme="ocean"] .emk-autosave-clean-badge,
+[data-theme="cyber_xray"] .emk-autosave-clean-badge,
+[data-theme="emerald"] .emk-autosave-clean-badge,
+[data-theme="contrast"] .emk-autosave-clean-badge,
+:root.dark [data-testid="emk-autosave-status-badge"],
+[data-theme="dark"] [data-testid="emk-autosave-status-badge"] {
+	border: 1px solid rgba(255, 255, 255, 0.18) !important;
+	background-color: var(--paper) !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35) !important;
+}
+
 
 
 

@@ -186,11 +186,11 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 				className={`emk-voice-pilot-hud emk-voice-pilot-collapsed inline-flex items-center select-none shrink-0 ${className}`.trim()}
 				data-testid="emk-voice-pilot-hud"
 			>
-				<div className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] shadow-2xs overflow-hidden shrink-0 hover:border-[var(--teal)] transition-all h-8 min-h-[32px] max-h-[32px]">
+				<div className="emk-toolbar-split-group">
 					<button
 						type="button"
 						onClick={handleToggleMic}
-						className="h-8 min-h-[32px] max-h-[32px] px-2.5 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap touch-manipulation active:scale-[0.98]"
+						className="emk-split-main"
 						title="Начать диктовку (Ctrl+Space)"
 						aria-label="Начать диктовку"
 					>
@@ -200,7 +200,7 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 					<button
 						type="button"
 						onClick={() => setIsExpanded(true)}
-						className="h-8 min-h-[32px] max-h-[32px] px-2 border-l border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all cursor-pointer inline-flex items-center justify-center"
+						className="emk-split-arrow"
 						title="Развернуть пульт AI-Пилота"
 						aria-label="Развернуть пульт AI-Пилота"
 					>
