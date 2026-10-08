@@ -1,0 +1,74 @@
+{
+  "timestamp": "2026-10-09T02:27:30Z",
+  "task": "Decomposition of speech/storage.ts monolith (1666 lines) into speech/audioStorage/ service",
+  "status": "COMPLETED",
+  "exitCode": 0,
+  "gates": {
+    "gate1_line_count_budget": "PASSED",
+    "gate2_ast_export_parity": "PASSED",
+    "gate3_test_anchors": "PASSED",
+    "gate4_utf8_encoding": "PASSED",
+    "gate5_acyclic_dag_madge": "PASSED"
+  },
+  "modules": [
+    {
+      "file": "apps/api/src/speech/audioStorage/types.ts",
+      "layer": "Layer 0 (Types & Contracts)",
+      "lines": 131,
+      "description": "Error classes, DTOs, interfaces, and audio file metadata types"
+    },
+    {
+      "file": "apps/api/src/speech/audioStorage/constants.ts",
+      "layer": "Layer 0 (Constants & Config)",
+      "lines": 71,
+      "description": "Storage path prefixes, memory limits, AES-256 constants, MIME types"
+    },
+    {
+      "file": "apps/api/src/speech/audioStorage/audioEncryption.ts",
+      "layer": "Layer 1 (Audio Encryption & Speech Quality)",
+      "lines": 232,
+      "description": "AES-256-GCM audio encryption with tenant key isolation (323-FZ), speech quality metrics"
+    },
+    {
+      "file": "apps/api/src/speech/audioStorage/audioFileHandler.ts",
+      "layer": "Layer 1 (Audio File IO & Sequential Chains)",
+      "lines": 177,
+      "description": "Per-recording sequential write queues, envelope parsing, path traversal defense"
+    },
+    {
+      "file": "apps/api/src/speech/audioStorage/retentionPolicy.ts",
+      "layer": "Layer 2 (Cache Retention & Assembly)",
+      "lines": 378,
+      "description": "In-memory hot cache, per-tenant quotas, assembly, recovery listing"
+    },
+    {
+      "file": "apps/api/src/speech/audioStorage/audioIndexManager.ts",
+      "layer": "Layer 2 (Database Persistence & Recovery)",
+      "lines": 557,
+      "description": "PostgreSQL ai_jobs persistence with RLS tenant context, deduplication, error backoff"
+    },
+    {
+      "file": "apps/api/src/speech/audioStorage/index.ts",
+      "layer": "Layer 5 (Barrel Facade)",
+      "lines": 10,
+      "description": "Clean re-export barrel of audioStorage modules"
+    },
+    {
+      "file": "apps/api/src/speech/storage.ts",
+      "layer": "Layer 5 (Canonical Facade)",
+      "lines": 22,
+      "description": "Thin backwards-compatible canonical facade (<= 50 lines) with background cache restore"
+    }
+  ],
+  "testSuites": {
+    "storage.test.ts": "9 passed, 0 failed",
+    "storageIdentity.test.ts": "4 passed, 0 failed",
+    "storageRestoreCeiling.test.ts": "3 passed, 0 failed",
+    "storageRestoreRetry.test.ts": "3 passed, 0 failed",
+    "writePointTenantGuarantee.test.ts": "3 passed, 0 failed",
+    "speechAudioResilienceInquisition.test.ts": "14 passed, 0 failed",
+    "audioEncryptionAndFileHandler.test.ts": "7 passed, 0 failed",
+    "totalPassingTests": 43,
+    "totalFailingTests": 0
+  }
+}
