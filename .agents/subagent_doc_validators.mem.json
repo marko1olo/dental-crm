@@ -1,0 +1,87 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Document Validators Decomposer",
+  "status": "COMPLETED_CLEAN",
+  "timestamp": "2026-10-09T02:13:20Z",
+  "monolith_target": "apps/web/src/documentValidators.ts",
+  "initial_lines": 1884,
+  "facade_lines": 8,
+  "facade_path": "apps/web/src/documentValidators.ts",
+  "decomposed_directory": "apps/web/src/documentValidators",
+  "modules": [
+    {
+      "file": "apps/web/src/documentValidators/types.ts",
+      "layer": "Layer 0: Types & DTOs",
+      "lines": 17,
+      "purpose": "Интерфейсы DocumentState, ValidationResult, DocumentValidationOutput, DocumentValidatorFn"
+    },
+    {
+      "file": "apps/web/src/documentValidators/regexRules.ts",
+      "layer": "Layer 0: Pure Regex & Checksums",
+      "lines": 89,
+      "purpose": "Алгоритмы контрольных сумм ИНН (10 и 12 цифр), СНИЛС (11 цифр), Паспорт РФ, ОМС, requiredDocumentField"
+    },
+    {
+      "file": "apps/web/src/documentValidators/patientIdentityValidators.ts",
+      "layer": "Layer 1: Patient Identity & Legal Rep",
+      "lines": 247,
+      "purpose": "Валидаторы анкеты первичного приёма, согласия законного представителя, согласия на ПДн 152-ФЗ, запроса копий меддокументов, расписки в выдаче"
+    },
+    {
+      "file": "apps/web/src/documentValidators/consentAndContractValidators.ts",
+      "layer": "Layer 1: Clinical Consents & Contracts",
+      "lines": 382,
+      "purpose": "Валидаторы договора на оказание платных медуслуг (ПП РФ 736), памятки по гарантии, ИДС 1051н, процедурного согласия, анестезии, фото/видео, отказа от вмешательства"
+    },
+    {
+      "file": "apps/web/src/documentValidators/clinicalFormValidators.ts",
+      "layer": "Layer 2: Pure Clinical Domain Forms",
+      "lines": 462,
+      "purpose": "Валидаторы стоматологической карты 043/у (с суверенитетом 043/у), 043-1/у, 037/у, 039/у, плана лечения, акцепта плана, памяток после приёма, рецептов 107-1/у, нарядов лаборатории, направлений КЛКТ/рентген, выписок и справок о посещении"
+    },
+    {
+      "file": "apps/web/src/documentValidators/financialDocValidators.ts",
+      "layer": "Layer 2: Billing & Tax Forms",
+      "lines": 337,
+      "purpose": "Валидаторы актов выполненных услуг, смет, счетов, квитанций, графиков рассрочки, заявлений на налоговый вычет ФНС (КНД 1151156) и возвратов/коррекций"
+    },
+    {
+      "file": "apps/web/src/documentValidators/index.ts",
+      "layer": "Layer 5: Master Dispatcher & Barrel",
+      "lines": 128,
+      "purpose": "Реестр documentPayloadValidators (32 валидатора), диспетчер validateDocumentPayloadForKind, 100% реэкспорт публичных символов"
+    },
+    {
+      "file": "apps/web/src/documentValidators.ts",
+      "layer": "Layer 5: Master Canonical Facade",
+      "lines": 8,
+      "purpose": "Ультратонкий канонический фасад <= 50 строк для обратной совместимости всех внешних импортов"
+    }
+  ],
+  "gates_audit": {
+    "gate_1_line_budget": "PASSED (Все файлы строго <= 800 строк, фасад 8 строк)",
+    "gate_2_ast_export_parity": "PASSED (100% паритет символов, 48 из 48)",
+    "gate_3_test_anchors": "PASSED (100% тест-якорей сохранено)",
+    "gate_4_utf8_hygiene": "PASSED (Чистый UTF-8 без BOM)",
+    "gate_5_acyclic_dag": "PASSED (0 циклических зависимостей по данным madge)"
+  },
+  "tests_verified": [
+    {
+      "suite": "apps/web/src/tests/documentValidatorsDecomposition.test.ts",
+      "tests": 6,
+      "passed": 6,
+      "failed": 0
+    },
+    {
+      "suite": "apps/web/src/tests/documentNavigationWorkflow.test.ts",
+      "tests": 12,
+      "passed": 12,
+      "failed": 0
+    },
+    {
+      "suite": "apps/web/src/components/documents/__tests__/dentalOutpatientSovereignty.test.ts",
+      "tests": 4,
+      "passed": 4,
+      "failed": 0
+    }
+  ]
+}

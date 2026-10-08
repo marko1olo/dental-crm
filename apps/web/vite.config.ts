@@ -429,7 +429,10 @@ export default defineConfig({
 						return "app-helpers";
 					if (normalizedId.endsWith("/apps/web/src/documentLogic.ts"))
 						return "document-logic";
-					if (normalizedId.endsWith("/apps/web/src/documentValidators.ts"))
+					if (
+						normalizedId.endsWith("/apps/web/src/documentValidators.ts") ||
+						normalizedId.includes("/apps/web/src/documentValidators/")
+					)
 						return "document-validators";
 					if (normalizedId.endsWith("/apps/web/src/useAppLogic.tsx"))
 						return "app-logic";
