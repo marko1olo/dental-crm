@@ -1,0 +1,88 @@
+{
+  "subagent": "L3 Warranty Passport Modal Decomposer & Red Team Inquisitor",
+  "target": "apps/web/src/components/warranty/WarrantyPassportModal.tsx",
+  "decomposedDirectory": "apps/web/src/components/warranty/warrantyPassport/",
+  "status": "COMPLETED",
+  "gates": {
+    "gate1_line_count_budget": "PASSED (all files <= 800 lines)",
+    "gate2_ast_export_parity": "PASSED (100% baseline exports preserved)",
+    "gate3_test_anchor_parity": "PASSED (100% test anchors preserved)",
+    "gate4_utf8_encoding": "PASSED (0 mojibake, clean UTF-8)",
+    "gate5_acyclic_graph_madge": "PASSED (0 circular dependencies)"
+  },
+  "modules": [
+    {
+      "file": "apps/web/src/components/warranty/warrantyPassport/types.ts",
+      "layer": "Layer 0 (Types & DTOs)",
+      "lines": 62,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/warranty/warrantyPassport/constants.ts",
+      "layer": "Layer 0 (Constants & Pure Mappings)",
+      "lines": 110,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/warranty/warrantyPassport/WarrantyItemsStep.tsx",
+      "layer": "Layer 1 (Items, Formula & Risk Factors)",
+      "lines": 623,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/warranty/warrantyPassport/WarrantyConditionsStep.tsx",
+      "layer": "Layer 1 (Checkups Schedule & Warranty Conditions)",
+      "lines": 114,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/warranty/warrantyPassport/WarrantySignatureStep.tsx",
+      "layer": "Layer 2 (Remediation Order 0 Rub & Integrity)",
+      "lines": 272,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/warranty/warrantyPassport/WarrantyPreviewPrint.tsx",
+      "layer": "Layer 2 (A4/A5 Print Blank Iframe Preview)",
+      "lines": 28,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/warranty/warrantyPassport/WarrantyShareMenu.tsx",
+      "layer": "Layer 2 (WhatsApp/Telegram/Memo Share Popover)",
+      "lines": 85,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/warranty/warrantyPassport/useWarrantyPassportState.ts",
+      "layer": "Layer 3 (State Management Hook)",
+      "lines": 621,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/warranty/warrantyPassport/index.ts",
+      "layer": "Layer 5 (Barrel Re-exports)",
+      "lines": 14,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/warranty/WarrantyPassportModal.tsx",
+      "layer": "Layer 5 (Canonical Thin Facade)",
+      "lines": 117,
+      "budget": 150
+    }
+  ],
+  "unitTests": {
+    "testSuite": "apps/web/src/components/warranty/__tests__/warrantyAndLabQrInquisition.test.ts",
+    "passed": 14,
+    "failed": 0,
+    "suites": 4
+  },
+  "compliance": {
+    "mandate8e_zero_disabled_buttons": true,
+    "mandate8d_anti_matryoshka_depth1": true,
+    "mandate8d_zero_cartoon_emojis": true,
+    "mandate8e_free_remediation_zero_rub": true,
+    "single_compiler_lockout_respected": true
+  }
+}
