@@ -1,0 +1,149 @@
+{
+  "role": "Red Team Inquisitor & L3 Service Pricelist Presets Decomposer",
+  "status": "COMPLETED",
+  "started_at": "2026-10-08T22:32:16Z",
+  "completed_at": "2026-10-08T22:42:00Z",
+  "target_monolith": "apps/web/src/components/catalog/pricelist/servicePricelistPresets.ts",
+  "original_line_count": 1665,
+  "decomposed_directory": "apps/web/src/components/catalog/pricelist/presets",
+  "decomposed_modules": [
+    {
+      "file": "apps/web/src/components/catalog/pricelist/presets/types.ts",
+      "layer": "Layer 0: Types & Domain Contracts",
+      "lines": 109,
+      "budget_limit": 800,
+      "exports": [
+        "Order804nCategory",
+        "DoctorSpecialty",
+        "PriceTierKind",
+        "ServicePricelistItem",
+        "PricelistItemPreset",
+        "PricelistPresetGroup",
+        "PresetMatcherCriteria",
+        "PresetMatchResult",
+        "StatutoryNomenclatureLink"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/catalog/pricelist/presets/constants.ts",
+      "layer": "Layer 0: Constants, Labels & Statutory Metadata",
+      "lines": 53,
+      "budget_limit": 800,
+      "exports": [
+        "CATEGORY_LABELS",
+        "SPECIALTY_LABELS",
+        "PRICE_TIER_LABELS",
+        "STATUTORY_VAT_EXEMPTION_NOTE",
+        "STATUTORY_ORDER_NUMBER",
+        "STATUTORY_TAX_CODE_ARTICLE",
+        "DEFAULT_VAT_RATE",
+        "DEFAULT_SERVICE_UNIT"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/catalog/pricelist/presets/therapyPresets.ts",
+      "layer": "Layer 1: Therapy, Endodontics & Hygiene Presets",
+      "lines": 541,
+      "budget_limit": 800,
+      "exports": [
+        "THERAPY_STATUTORY_PRESETS",
+        "HYGIENE_STATUTORY_PRESETS",
+        "THERAPY_BASELINE_SERVICES",
+        "HYGIENE_BASELINE_SERVICES"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/catalog/pricelist/presets/surgeryImplantPresets.ts",
+      "layer": "Layer 1: Surgery, Extraction & Implantology Presets",
+      "lines": 325,
+      "budget_limit": 800,
+      "exports": [
+        "SURGERY_STATUTORY_PRESETS",
+        "SURGERY_BASELINE_SERVICES_PART1",
+        "SURGERY_BASELINE_SERVICES_PART2",
+        "SURGERY_BASELINE_SERVICES_PART3",
+        "SURGERY_BASELINE_SERVICES"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/catalog/pricelist/presets/orthoProstheticPresets.ts",
+      "layer": "Layer 1: Orthopedics, Prosthetics & Orthodontics Presets",
+      "lines": 371,
+      "budget_limit": 800,
+      "exports": [
+        "ORTHOPEDIC_STATUTORY_PRESETS",
+        "ORTHODONTIC_STATUTORY_PRESETS",
+        "ORTHOPEDIC_BASELINE_SERVICES_PART1",
+        "ORTHOPEDIC_BASELINE_SERVICES_PART2",
+        "ORTHOPEDIC_BASELINE_SERVICES"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/catalog/pricelist/presets/diagnosticPediatricPresets.ts",
+      "layer": "Layer 1: Consultations, Pediatric, Radiology, Anesthesia & Packages",
+      "lines": 485,
+      "budget_limit": 800,
+      "exports": [
+        "CONSULTATION_STATUTORY_PRESETS",
+        "PEDIATRIC_STATUTORY_PRESETS",
+        "RADIOLOGY_STATUTORY_PRESETS",
+        "ANESTHESIA_STATUTORY_PRESETS",
+        "PACKAGE_STATUTORY_PRESETS",
+        "CONSULTATION_BASELINE_SERVICES",
+        "RADIOLOGY_BASELINE_SERVICES"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/catalog/pricelist/presets/presetMatcher.ts",
+      "layer": "Layer 2: Domain Search, Normalization & Matcher Engine",
+      "lines": 186,
+      "budget_limit": 800,
+      "exports": [
+        "normalizeCode804n",
+        "findPresetsByIcd10",
+        "findPresetsByToothContext",
+        "findPresetsByComplaint",
+        "matchPresets",
+        "getRecommendedPresetsForSpecialty"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/catalog/pricelist/presets/index.ts",
+      "layer": "Layer 5: Barrel & Presets Assembly",
+      "lines": 95,
+      "budget_limit": 800,
+      "exports": [
+        "STATUTORY_ORDER_804N_PRESETS",
+        "BASELINE_804N_PRICELIST_SERVICES"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/catalog/pricelist/servicePricelistPresets.ts",
+      "layer": "Layer 5: Master Canonical Facade",
+      "lines": 23,
+      "budget_limit": 50,
+      "exports": [
+        "100% baseline public API backwards compatibility"
+      ]
+    }
+  ],
+  "gates_status": {
+    "gate_1_line_budget": "PASSED (all files <= 541 lines, facade 23 lines)",
+    "gate_2_ast_export_parity": "PASSED (100% of baseline exports preserved)",
+    "gate_3_test_anchors": "PASSED (100% preserved)",
+    "gate_4_utf8_hygiene": "PASSED (clean UTF-8 without BOM)",
+    "gate_5_acyclic_dag": "PASSED (madge verified 0 circular dependencies)"
+  },
+  "behavioral_conservation": {
+    "statutory_order_804n_presets_count": 50,
+    "baseline_804n_pricelist_services_count": 30,
+    "deep_strict_equality": "100% identical byte-for-byte and element-by-element",
+    "vat_0_compliance": "100% verified (пп. 2 п. 2 ст. 149 НК РФ)",
+    "kopeck_exact_math": "100% verified (basePriceKopecks === basePriceRub * 100)"
+  },
+  "tests_executed": [
+    "apps/web/src/components/catalog/pricelist/presets/__tests__/servicePricelistPresetsDecomposition.test.ts (10 passed)",
+    "apps/web/src/components/catalog/__tests__/servicePricelistEngine.test.ts (20 passed)",
+    "apps/web/src/components/settings/__tests__/doctorAndAdminSettingsRedTeamInquisition.test.ts (44 passed)"
+  ]
+}
