@@ -1,0 +1,80 @@
+{
+  "subagent": "new_appointment_form_decomposer",
+  "started_at": "2026-10-09T02:18:00+04:00",
+  "completed_at": "2026-10-09T02:25:30+04:00",
+  "mandate": "8zi",
+  "line_limit": 800,
+  "status": "completed",
+  "target": {
+    "monolith_file": "apps/web/src/components/schedule/NewAppointmentForm.tsx",
+    "initial_lines": 1766,
+    "decomposed_dir": "apps/web/src/components/schedule/newAppointment/",
+    "facade_lines": 126,
+    "files": [
+      {
+        "name": "NewAppointmentForm.tsx",
+        "role": "Layer 5: Canonical Facade",
+        "lines": 126
+      },
+      {
+        "name": "newAppointment/index.ts",
+        "role": "Layer 5: Barrel Re-export",
+        "lines": 9
+      },
+      {
+        "name": "newAppointment/types.ts",
+        "role": "Layer 0: Types & DTO Contracts",
+        "lines": 66
+      },
+      {
+        "name": "newAppointment/constants.ts",
+        "role": "Layer 0: Presets & Constants",
+        "lines": 64
+      },
+      {
+        "name": "newAppointment/useNewAppointmentLogic.ts",
+        "role": "Layer 3: State Hook & Effects",
+        "lines": 554
+      },
+      {
+        "name": "newAppointment/SmartAiBookingBar.tsx",
+        "role": "Layer 1: Voice & AI Smart Booking Header",
+        "lines": 435
+      },
+      {
+        "name": "newAppointment/DoctorChairTimeStep.tsx",
+        "role": "Layer 1: Doctor, Chair & Time Slots with Lab Orders",
+        "lines": 377
+      },
+      {
+        "name": "newAppointment/PatientSearchStep.tsx",
+        "role": "Layer 1: Patient Search & Fast Inline Creation",
+        "lines": 152
+      },
+      {
+        "name": "newAppointment/ServiceSelectionStep.tsx",
+        "role": "Layer 2: Reason & Quick Duration Presets",
+        "lines": 107
+      },
+      {
+        "name": "newAppointment/AppointmentSummaryStep.tsx",
+        "role": "Layer 2: Comment, Missing Steps & Collision Alerts",
+        "lines": 117
+      }
+    ]
+  },
+  "gates": {
+    "gate_1_line_budget": "PASSED (all files <= 800 lines, maximum 554 lines)",
+    "gate_2_ast_parity": "PASSED (100% of baseline exports preserved: 5 baseline, 21 facade)",
+    "gate_3_test_anchors": "PASSED (100% test anchors preserved: 19/19 anchors exact match)",
+    "gate_4_encoding": "PASSED (Clean UTF-8, 0 mojibake)",
+    "gate_5_acyclic_dag": "PASSED (0 circular dependencies in newAppointment via madge)"
+  },
+  "unit_tests": {
+    "suite": "apps/web/src/components/schedule/__tests__/emergencyCitoBookingWave47.test.tsx apps/web/src/lib/smartBookingParser.test.ts",
+    "total": 34,
+    "passed": 34,
+    "failed": 0,
+    "exit_code": 0
+  }
+}
