@@ -1,0 +1,94 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Insurance Routes Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T01:59:45Z",
+  "target": "apps/api/src/routes/insurance.ts",
+  "originalLines": 1788,
+  "facadeLines": 8,
+  "decomposedDirectory": "apps/api/src/routes/insurance/",
+  "modules": [
+    {
+      "file": "apps/api/src/routes/insurance/schemas.ts",
+      "layer": "Layer 0: Schemas & Validation Contracts",
+      "lines": 97,
+      "purpose": "Zod-схемы валидации запросов, договоров ДМС, гарантийных писем, счетов и тексты ошибок"
+    },
+    {
+      "file": "apps/api/src/routes/insurance/types.ts",
+      "layer": "Layer 0: Types & Reference Dictionaries",
+      "lines": 73,
+      "purpose": "TypeScript интерфейсы параметров, тела запросов, справочник INSURER_DIRECTORY"
+    },
+    {
+      "file": "apps/api/src/routes/insurance/policyManagement.ts",
+      "layer": "Layer 1: Policy & Contracts CRUD",
+      "lines": 330,
+      "purpose": "Обработчики договоров ДМС (CRUD) и 1-клик экспресс-прикрепления полисов"
+    },
+    {
+      "file": "apps/api/src/routes/insurance/guaranteeLetters.ts",
+      "layer": "Layer 1: Guarantee Letters & ACID Debit",
+      "lines": 478,
+      "purpose": "Гарантийные письма ДМС (CRUD, расчет статуса, ACID-транзакция списания лимита)"
+    },
+    {
+      "file": "apps/api/src/routes/insurance/claimInvoicing.ts",
+      "layer": "Layer 2: Claim Invoicing & Split Engine",
+      "lines": 189,
+      "purpose": "Расчёт покрытия ДМС и разделение счетов на долю страховой и доплату пациента"
+    },
+    {
+      "file": "apps/api/src/routes/insurance/insuranceReports.ts",
+      "layer": "Layer 2: Statutory Reports & Registry",
+      "lines": 463,
+      "purpose": "Формирование реестра счетов ДМС, экспорт в XML EDI и CSV для страховых компаний"
+    },
+    {
+      "file": "apps/api/src/routes/insurance/index.ts",
+      "layer": "Layer 5: Master Coordinator Plugin",
+      "lines": 43,
+      "purpose": "Сборка всех суб-плагинов Fastify и экспорт insuranceRoutes / registerInsuranceRoutes"
+    },
+    {
+      "file": "apps/api/src/routes/insurance/__tests__/insuranceDecomposition.test.ts",
+      "layer": "Testing & Parity Verification",
+      "lines": 147,
+      "purpose": "Юнит-тесты на паритет экспортов, схемы валидации и регистрацию эндпоинтов Fastify"
+    }
+  ],
+  "gatesAudit": {
+    "gate1_lineCountBudget": {
+      "status": "PASSED",
+      "limit": 800,
+      "maxLinesFound": 478
+    },
+    "gate2_astExportParity": {
+      "status": "PASSED",
+      "baselineExports": ["insuranceRoutes", "registerInsuranceRoutes"],
+      "facadeExports": ["insuranceRoutes", "registerInsuranceRoutes"],
+      "parity": "100%"
+    },
+    "gate3_testAnchors": {
+      "status": "PASSED",
+      "preserved": "100%"
+    },
+    "gate4_utf8Hygiene": {
+      "status": "PASSED",
+      "mojibakeFound": 0
+    },
+    "gate5_acyclicDag": {
+      "status": "PASSED",
+      "circularDependencies": 0
+    }
+  },
+  "tests": {
+    "totalPassing": 17,
+    "totalFailing": 0,
+    "suites": [
+      "apps/api/src/routes/insurance/__tests__/insuranceDecomposition.test.ts",
+      "apps/api/src/tests/routes/insuranceBody.test.ts",
+      "apps/api/src/tests/routes/insuranceRegistry.test.ts",
+      "apps/api/src/services/billing/dmsGuaranteePersistence.test.ts"
+    ]
+  }
+}
