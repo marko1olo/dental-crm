@@ -1,0 +1,103 @@
+{
+  "timestamp": "2026-10-09T01:36:00Z",
+  "task": "Doctor Payout Dashboard Safe Monolith Decomposition (<800 lines/file)",
+  "status": "COMPLETED",
+  "originalFile": "apps/web/src/pages/DoctorPayoutDashboard.tsx",
+  "originalLines": 1732,
+  "facadeFile": "apps/web/src/pages/DoctorPayoutDashboard.tsx",
+  "facadeLines": 182,
+  "targetDirectory": "apps/web/src/pages/payoutDashboard",
+  "modules": [
+    {
+      "file": "apps/web/src/pages/payoutDashboard/types.ts",
+      "layer": 0,
+      "description": "Domain types, DTO contracts, PayoutLoadState, CommissionSaveState and component props",
+      "lines": 163
+    },
+    {
+      "file": "apps/web/src/pages/payoutDashboard/payoutHelpers.ts",
+      "layer": 1,
+      "description": "Pure formatting utils, calendar date bounds calculation (zero toISOString), fetch helper, and payroll modal adapters",
+      "lines": 325
+    },
+    {
+      "file": "apps/web/src/pages/payoutDashboard/usePayoutDashboard.ts",
+      "layer": 3,
+      "description": "State management, API integration, inline commission editing, and search/pagination handlers",
+      "lines": 280
+    },
+    {
+      "file": "apps/web/src/pages/payoutDashboard/PayoutDashboardHeader.tsx",
+      "layer": 4,
+      "description": "Period month selector, recalculation action, notices, and skeleton loader",
+      "lines": 67
+    },
+    {
+      "file": "apps/web/src/pages/payoutDashboard/PayoutDoctorTable.tsx",
+      "layer": 4,
+      "description": "Doctor payout table, rate editor, formula summary card, visits table with pagination, and dental lab orders",
+      "lines": 675
+    },
+    {
+      "file": "apps/web/src/pages/payoutDashboard/PayoutSummaryCards.tsx",
+      "layer": 4,
+      "description": "Summary metrics grid (revenue, accrual, materials, dental lab, net payout) and limitations notes",
+      "lines": 152
+    },
+    {
+      "file": "apps/web/src/pages/payoutDashboard/index.ts",
+      "layer": 5,
+      "description": "Public barrel aggregator for all types, helpers, hooks, and components",
+      "lines": 9
+    },
+    {
+      "file": "apps/web/src/pages/DoctorPayoutDashboard.tsx",
+      "layer": 5,
+      "description": "Canonical thin facade retaining 100% backward compatibility and re-exporting 15 public symbols",
+      "lines": 182
+    }
+  ],
+  "verificationGates": {
+    "gate1_line_count_budget": {
+      "status": "PASSED",
+      "limit": 800,
+      "maxLinesFound": 675,
+      "details": "All decomposed modules are strictly <= 800 lines (range: 9 - 675 lines)"
+    },
+    "gate2_ast_export_parity": {
+      "status": "PASSED",
+      "details": "15 out of 15 baseline exports preserved (DoctorPayoutVisitService, DoctorPayoutVisitMaterial, DoctorPayoutVisit, DoctorPayoutLabOrder, DoctorPayoutRow, DoctorPayoutTotals, DoctorPayoutReport, payoutMonthCalendarBounds, requestDoctorPayouts, DoctorPayoutDashboardProps, DoctorPayoutDashboard, mapRoleToSpecialtyId, inferServiceCategory, doctorServicesForPayrollModal, default)"
+    },
+    "gate3_test_anchors": {
+      "status": "PASSED",
+      "details": "100% of test anchors preserved"
+    },
+    "gate4_utf8_hygiene": {
+      "status": "PASSED",
+      "details": "Clean UTF-8 encoding across workspace without BOM"
+    },
+    "gate5_acyclic_dag": {
+      "status": "PASSED",
+      "details": "Madge circular dependency check confirmed 0 cycles"
+    }
+  },
+  "unitTests": [
+    {
+      "command": "node --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/tests/periodBoundsGoToServerAsCalendarDate.test.ts",
+      "exitCode": 0,
+      "passed": 4,
+      "failed": 0
+    },
+    {
+      "command": "node scripts/verify-decomposition-health.cjs apps/web/src/pages/DoctorPayoutDashboard.tsx apps/web/src/pages/DoctorPayoutDashboard.tsx apps/web/src/pages/payoutDashboard/",
+      "exitCode": 0,
+      "summary": "100% CLEAN (ALL GATES PASSED)"
+    }
+  ],
+  "stylingHygiene": {
+    "hexColorsInJsx": 0,
+    "inlineStyles": 0,
+    "panelInPanel": 0,
+    "opsThemeTokensUsed": true
+  }
+}
