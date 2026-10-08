@@ -1,0 +1,85 @@
+{
+  "role": "Red Team Inquisitor & L3 Insurance & VHI Routes Decomposer",
+  "status": "COMPLETED",
+  "targetFile": "apps/api/src/routes/insurance.ts",
+  "decomposedDirectory": "apps/api/src/routes/insuranceRoutes/",
+  "metrics": {
+    "originalLines": 1788,
+    "facadeLines": 17,
+    "reductionPct": "99.05%",
+    "modules": [
+      {
+        "file": "apps/api/src/routes/insuranceRoutes/types.ts",
+        "layer": "Layer 0: Types & Zod Schemas",
+        "lines": 82
+      },
+      {
+        "file": "apps/api/src/routes/insuranceRoutes/constants.ts",
+        "layer": "Layer 0: Constants & Insurer Reference",
+        "lines": 41
+      },
+      {
+        "file": "apps/api/src/routes/insuranceRoutes/policyManagementHandlers.ts",
+        "layer": "Layer 1: Policy Management & Contracts",
+        "lines": 419
+      },
+      {
+        "file": "apps/api/src/routes/insuranceRoutes/guaranteeLetterHandlers.ts",
+        "layer": "Layer 2: Guarantee Letters & Usage (ACID)",
+        "lines": 564
+      },
+      {
+        "file": "apps/api/src/routes/insuranceRoutes/claimApprovalHandlers.ts",
+        "layer": "Layer 2: Claim Splitting & Approval",
+        "lines": 112
+      },
+      {
+        "file": "apps/api/src/routes/insuranceRoutes/insuranceAnalyticsHandlers.ts",
+        "layer": "Layer 3: Statutory VHI/DMS Registry & Analytics",
+        "lines": 431
+      },
+      {
+        "file": "apps/api/src/routes/insuranceRoutes/index.ts",
+        "layer": "Layer 5: Master Plugin Assembly",
+        "lines": 22
+      },
+      {
+        "file": "apps/api/src/routes/insurance.ts",
+        "layer": "Layer 5: Thin Canonical Facade",
+        "lines": 17
+      }
+    ]
+  },
+  "verificationGates": {
+    "gate1_lineCountBudget": {
+      "status": "PASSED",
+      "limit": 800,
+      "maxFileLines": 564
+    },
+    "gate2_astExportParity": {
+      "status": "PASSED",
+      "baselineExports": 26,
+      "facadeExports": 26,
+      "parity": "100%"
+    },
+    "gate3_testAnchors": {
+      "status": "PASSED",
+      "preserved": "100%"
+    },
+    "gate4_utf8Hygiene": {
+      "status": "PASSED",
+      "bomFree": true,
+      "mojibakeFree": true
+    },
+    "gate5_acyclicDagMadge": {
+      "status": "PASSED",
+      "circularDependencies": 0
+    }
+  },
+  "testExecution": {
+    "command": "npx tsx --test apps/api/src/tests/routes/insuranceBody.test.ts apps/api/src/tests/routes/insuranceRegistry.test.ts",
+    "passed": 13,
+    "failed": 0,
+    "exitCode": 0
+  }
+}
