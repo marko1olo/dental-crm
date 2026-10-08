@@ -84,6 +84,14 @@ describe("создание карты пациента: запрет дубле�
 				{ organizationId: ORG_ID, clinicId: ORG_ID },
 				authTokenSecret(),
 			),
+			"x-dente-staff-token": signToken(
+				{
+					organizationId: ORG_ID,
+					userId: fixtureUuid(FIXTURE, 99),
+					role: "doctor",
+				},
+				authTokenSecret(),
+			),
 			"content-type": "application/json",
 		};
 

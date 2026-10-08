@@ -12,6 +12,7 @@ import { chargeLineKopecks, toKopecks } from "../money/patientDebt.js";
 import { db } from "./client.js";
 import { withTenantCtx } from "./rls.js";
 import * as schema from "./schema.js";
+import { deductMaterialsForVisit } from "../services/inventory/materialDeduction.js";
 
 // The DB stores tax_deduction_code as free `text`, but the Payment DTO narrows it
 // to the fiscal codes "1" | "2" | null. Validate at the read boundary instead of
@@ -97,6 +98,8 @@ export async function findPaymentByClientMutationIdInDb(
 					eq(schema.payments.clientMutationId, clientMutationId),
 					eq(schema.payments.clientMutationId, `${clientMutationId}:cash`),
 					eq(schema.payments.clientMutationId, `${clientMutationId}:electronic`),
+					eq(schema.payments.clientMutationId, `${clientMutationId}:deposit`),
+					eq(schema.payments.clientMutationId, `${clientMutationId}:dms`),
 				),
 			),
 		);
@@ -202,18 +205,28 @@ export async function createPaymentInDb(
 	const rawDmsKop =
 		input.dmsAmountKopecks ??
 		(input.dmsAmountRub != null ? Math.round(input.dmsAmountRub * 100) : 0);
+	const rawDepositKop =
+		input.depositAmountKopecks ??
+		input.familyDepositAmountKopecks ??
+		(input.depositAmountRub != null
+			? Math.round(input.depositAmountRub * 100)
+			: input.familyDepositAmountRub != null
+				? Math.round(input.familyDepositAmountRub * 100)
+				: 0);
 	const isSplit =
 		(rawCashKop > 0 && rawElectronicKop > 0) ||
-		(rawDmsKop > 0 && (rawCashKop > 0 || rawElectronicKop > 0)) ||
+		(rawDmsKop > 0 && (rawCashKop > 0 || rawElectronicKop > 0 || rawDepositKop > 0)) ||
+		(rawDepositKop > 0 && (rawCashKop > 0 || rawElectronicKop > 0 || rawDmsKop > 0)) ||
 		input.method === "split" ||
 		input.method === "mixed";
 
 	let resolvedCashKop = rawCashKop;
 	let resolvedElectronicKop = rawElectronicKop;
 	let resolvedDmsKop = rawDmsKop;
+	let resolvedDepositKop = rawDepositKop;
 
 	if (isSplit) {
-		const nonCashElectronicKop = resolvedDmsKop;
+		const nonCashElectronicKop = resolvedDmsKop + resolvedDepositKop;
 		const netIncomingKop = incomingPaymentKopecks - nonCashElectronicKop;
 
 		if (resolvedCashKop === 0 && resolvedElectronicKop > 0 && resolvedElectronicKop < netIncomingKop) {
@@ -222,17 +235,17 @@ export async function createPaymentInDb(
 			resolvedElectronicKop = netIncomingKop - resolvedCashKop;
 		}
 
-		if (resolvedCashKop + resolvedElectronicKop + resolvedDmsKop !== incomingPaymentKopecks) {
+		if (resolvedCashKop + resolvedElectronicKop + resolvedDmsKop + resolvedDepositKop !== incomingPaymentKopecks) {
 			const hasOtherMentionedTenders = Boolean(
 				input.note && /(аванс|депозит|family|сертификат|бонус|дмс|dms)/i.test(input.note),
 			);
 			if (!hasOtherMentionedTenders) {
 				throw new Error(
-					`Сумма частей смешанной оплаты (${formatKopecksRu(resolvedCashKop + resolvedElectronicKop + resolvedDmsKop)}) не совпадает с общей суммой (${formatKopecksRu(incomingPaymentKopecks)}).`,
+					`Сумма частей смешанной оплаты (${formatKopecksRu(resolvedCashKop + resolvedElectronicKop + resolvedDmsKop + resolvedDepositKop)}) не совпадает с общей суммой (${formatKopecksRu(incomingPaymentKopecks)}).`,
 				);
 			}
 		}
-		if (resolvedCashKop < 0 || resolvedElectronicKop < 0 || resolvedDmsKop < 0) {
+		if (resolvedCashKop < 0 || resolvedElectronicKop < 0 || resolvedDmsKop < 0 || resolvedDepositKop < 0) {
 			throw new Error("Части смешанной оплаты не могут быть отрицательными.");
 		}
 	}
@@ -271,6 +284,8 @@ export async function createPaymentInDb(
 							eq(schema.payments.clientMutationId, input.clientMutationId),
 							eq(schema.payments.clientMutationId, `${input.clientMutationId}:cash`),
 							eq(schema.payments.clientMutationId, `${input.clientMutationId}:electronic`),
+							eq(schema.payments.clientMutationId, `${input.clientMutationId}:deposit`),
+							eq(schema.payments.clientMutationId, `${input.clientMutationId}:dms`),
 						),
 					),
 				);
@@ -309,6 +324,7 @@ export async function createPaymentInDb(
 				id: schema.patients.id,
 				fullName: schema.patients.fullName,
 				administrativeProfile: schema.patients.administrativeProfile,
+				familyGroupId: schema.patients.familyGroupId,
 			})
 			.from(schema.patients)
 			.where(
@@ -766,11 +782,16 @@ export async function createPaymentInDb(
 
 		let primaryPayment: typeof schema.payments.$inferSelect;
 
-		const tenderCount = (resolvedCashKop > 0 ? 1 : 0) + (resolvedElectronicKop > 0 ? 1 : 0) + (resolvedDmsKop > 0 ? 1 : 0);
+		const tenderCount =
+			(resolvedCashKop > 0 ? 1 : 0) +
+			(resolvedElectronicKop > 0 ? 1 : 0) +
+			(resolvedDmsKop > 0 ? 1 : 0) +
+			(resolvedDepositKop > 0 ? 1 : 0);
 		if (isSplit && tenderCount > 1) {
 			let cashPayment: typeof schema.payments.$inferSelect | undefined;
 			let electronicPayment: typeof schema.payments.$inferSelect | undefined;
 			let dmsPayment: typeof schema.payments.$inferSelect | undefined;
+			let depositPayment: typeof schema.payments.$inferSelect | undefined;
 
 			if (resolvedCashKop > 0) {
 				const cashAmountRub = Number((resolvedCashKop / 100).toFixed(2));
@@ -898,14 +919,73 @@ export async function createPaymentInDb(
 				}
 			}
 
-			const chosenPrimary = electronicPayment ?? cashPayment ?? dmsPayment;
+			if (resolvedDepositKop > 0) {
+				const depositAmountRub = Number((resolvedDepositKop / 100).toFixed(2));
+				const [depP] = await tx
+					.insert(schema.payments)
+					.values({
+						organizationId,
+						patientId: input.patientId,
+						visitId: input.visitId || null,
+						documentId: input.documentId || null,
+						amountRub: depositAmountRub,
+						method: "family_wallet",
+						fiscalReceiptNumber: input.fiscalReceiptNumber || null,
+						fiscalReceiptIssuedAt: input.fiscalReceiptIssuedAt || null,
+						fiscalReceiptUrl: input.fiscalReceiptUrl || null,
+						fiscalReceipt: input.fiscalReceipt || null,
+						clientMutationId: input.clientMutationId
+							? `${input.clientMutationId}:deposit`
+							: null,
+						payerFullName: input.payerFullName || null,
+						payerInn: input.payerInn || null,
+						payerBirthDate: input.payerBirthDate || null,
+						payerIdentityDocument: input.payerIdentityDocument || null,
+						payerRelationship: input.payerRelationship || null,
+						taxDeductionCode: input.taxDeductionCode || null,
+						note: effectivePaymentNote
+							? `${effectivePaymentNote} (зачёт аванса / семейный депозит: ${depositAmountRub} ₽)`
+							: `Смешанная оплата (зачёт аванса / семейный депозит: ${depositAmountRub} ₽)`,
+						status: "paid",
+					})
+					.returning();
+				depositPayment = depP;
+
+				if (lockedPatient.familyGroupId) {
+					const [famGroup] = await tx
+						.select()
+						.from(schema.familyGroups)
+						.where(
+							and(
+								eq(schema.familyGroups.id, lockedPatient.familyGroupId),
+								eq(schema.familyGroups.organizationId, organizationId),
+							),
+						)
+						.for("update")
+						.limit(1);
+
+					if (famGroup) {
+						const currentFamKop = Math.round(Number(famGroup.balance || 0) * 100);
+						const newFamKop = Math.max(0, currentFamKop - resolvedDepositKop);
+						const newFamRub = (newFamKop / 100).toFixed(2);
+						await tx
+							.update(schema.familyGroups)
+							.set({
+								balance: newFamRub,
+							})
+							.where(eq(schema.familyGroups.id, famGroup.id));
+					}
+				}
+			}
+
+			const chosenPrimary = electronicPayment ?? cashPayment ?? depositPayment ?? dmsPayment;
 			if (!chosenPrimary) {
 				throw new Error("Не удалось создать записи смешанной оплаты в базе данных.");
 			}
 			primaryPayment = chosenPrimary;
 		} else {
 			const effectiveMethod = (input.method === "split" || input.method === "mixed")
-				? (resolvedDmsKop > 0 ? "insurance" : resolvedCashKop > 0 ? "cash" : "card")
+				? (resolvedDmsKop > 0 ? "insurance" : resolvedCashKop > 0 ? "cash" : resolvedDepositKop > 0 ? "family_wallet" : "card")
 				: ((input.method as string) === "deposit" || (input.method as string) === "family_deposit")
 				? "family_wallet"
 				: input.method;
@@ -1044,6 +1124,21 @@ export async function createPaymentInDb(
 								eq(schema.appointments.organizationId, organizationId),
 							),
 						);
+				}
+
+				// Автоматическое списание расходных материалов со склада по техкартам процедур (BOM)
+				try {
+					await deductMaterialsForVisit(tx, {
+						organizationId,
+						visitId: input.visitId,
+						userId: input.payerFullName || null,
+						transactionType: "auto_deduct",
+					});
+				} catch (deductErr) {
+					console.warn(
+						`[billingQuery] Автоматическое списание материалов по визиту ${input.visitId} завершилось с предупреждением:`,
+						deductErr,
+					);
 				}
 
 				await tx
@@ -1190,11 +1285,13 @@ export async function createPaymentInDb(
 				: (input.method === "insurance" ? 0 : incomingPaymentKopecks);
 
 			// По Закону 54-ФЗ (п. 9 ст. 2) и Мандату 8e:
-			// Чек 54-ФЗ пробивается строго на доплату пациента > 0 ₽.
-			if (!isInsurance100 && patientCoPayKop > 0) {
+			// Чек 54-ФЗ пробивается строго на доплату пациента > 0 ₽ либо зачёт аванса > 0 ₽.
+			if (!isInsurance100 && (patientCoPayKop > 0 || resolvedDepositKop > 0)) {
 				const cashRubVal = isSplit ? Number((resolvedCashKop / 100).toFixed(2)) : (input.method === "cash" ? input.amountRub : 0);
-				const electronicRubVal = isSplit ? Number((resolvedElectronicKop / 100).toFixed(2)) : (input.method !== "cash" && input.method !== "insurance" ? input.amountRub : 0);
+				const electronicRubVal = isSplit ? Number((resolvedElectronicKop / 100).toFixed(2)) : (input.method !== "cash" && input.method !== "insurance" && input.method !== "family_wallet" ? input.amountRub : 0);
+				const advanceOffsetRubVal = isSplit ? Number((resolvedDepositKop / 100).toFixed(2)) : (input.method === "family_wallet" ? input.amountRub : 0);
 				const patientCoPayRub = Number((patientCoPayKop / 100).toFixed(2));
+				const totalFiscalRub = Number(((patientCoPayKop + resolvedDepositKop) / 100).toFixed(2));
 
 				await tx.insert(schema.fiscalReceiptQueue).values({
 					organizationId,
@@ -1203,12 +1300,14 @@ export async function createPaymentInDb(
 					receiptType: input.fiscalReceipt?.operationType || "income",
 					status: "pending_print",
 					payloadJson: {
-						amountRub: patientCoPayRub,
+						amountRub: isSplit ? totalFiscalRub : patientCoPayRub,
 						method: isSplit ? "split" : input.method,
 						cashRub: cashRubVal,
 						electronicRub: electronicRubVal,
+						advanceOffsetRub: advanceOffsetRubVal,
 						cashKopecks: isSplit ? resolvedCashKop : (input.method === "cash" ? incomingPaymentKopecks : 0),
-						electronicKopecks: isSplit ? resolvedElectronicKop : (input.method !== "cash" && input.method !== "insurance" ? incomingPaymentKopecks : 0),
+						electronicKopecks: isSplit ? resolvedElectronicKop : (input.method !== "cash" && input.method !== "insurance" && input.method !== "family_wallet" ? incomingPaymentKopecks : 0),
+						advanceOffsetKopecks: isSplit ? resolvedDepositKop : (input.method === "family_wallet" ? incomingPaymentKopecks : 0),
 						dmsKopecks: isSplit ? resolvedDmsKop : (input.method === "insurance" ? incomingPaymentKopecks : 0),
 						fiscalReceiptNumber: effectiveFdNumber,
 						fiscalReceipt: finalFiscalReceipt,

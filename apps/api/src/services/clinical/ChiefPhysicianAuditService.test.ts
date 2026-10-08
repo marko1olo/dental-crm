@@ -538,6 +538,12 @@ describe("ChiefPhysicianAuditService — Fastify HTTP Endpoints", () => {
 				patId = String((patInsert.rows ?? [])[0]?.id);
 			}
 
+			// ИДС для пациента (ст. 20 323-ФЗ для утверждения главврачом)
+			await db.execute(sql`
+				INSERT INTO generated_documents (organization_id, patient_id, kind, title, status)
+				VALUES (${testOrgId}::uuid, ${patId}::uuid, 'informed_consent', 'ИДС', 'issued')
+			`);
+
 			// Приём
 			const visitInsert = await db.execute(sql`
 				INSERT INTO visits (organization_id, patient_id, quality_control_status, status)

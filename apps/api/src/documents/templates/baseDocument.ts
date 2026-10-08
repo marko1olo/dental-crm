@@ -178,10 +178,10 @@ export function baseDocument(
       text-transform: uppercase;
       letter-spacing: 0.02em;
       margin: 10px 0 4px;
-      background: #f1f5f9;
+      background: #f8fafc;
       color: #0f172a;
       padding: 3px 6px;
-      border-left: 3.5px solid #0284c7;
+      border-bottom: 0.75pt solid #0f172a;
       page-break-after: avoid;
       break-after: avoid;
     }
@@ -266,12 +266,12 @@ export function baseDocument(
     .status-issued { border-color: #2f7340; color: #2f7340; }
     .status-voided { border-color: #5f574f; color: #5f574f; text-decoration: line-through; }
     .notice {
-      background: #f0fdf4;
-      border: 1px solid #86efac;
-      border-radius: 4px;
+      background: #f8fafc;
+      border: 0.75pt solid #94a3b8;
       padding: 6px 8px;
       margin: 6px 0;
       font-size: 8.5pt;
+      color: #0f172a;
       page-break-inside: avoid;
       break-inside: avoid;
     }
@@ -381,7 +381,7 @@ export function baseDocument(
     .small { color: #64748b; font-size: 8pt; }
     @media print {
       body { font-size: 9.5pt; color: #000 !important; background: #fff !important; }
-      h2 { background: #f1f5f9 !important; color: #0f172a !important; border-left-color: #0f172a !important; }
+      h2 { background: #f8fafc !important; color: #000 !important; border-bottom-color: #000 !important; }
       table th { background: #f1f5f9 !important; color: #0f172a !important; }
       td, th { border-color: #000 !important; }
       .header-grid { border-bottom-color: #000 !important; }

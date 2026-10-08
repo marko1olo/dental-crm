@@ -10,7 +10,7 @@ import {
 	PathTraversalError,
 	TenantIsolationError,
 } from "../../services/imaging/localPacsStorageService.js";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
 	createImagingStudySchema,
@@ -54,7 +54,7 @@ import {
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 
 export async function registerStudiesRoutes(app: FastifyInstance) {
-	app.get("/api/imaging/studies", async (request, reply) => {
+	const getStudiesHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		if (!(await requireClinicalReadAccess(request, reply, "imaging studies")))
 			return;
 
@@ -113,7 +113,10 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 			offset: parsedQuery.data.offset,
 		});
 		return studies.map((study) => imagingStudySchema.parse(study));
-	});
+	};
+
+	app.get("/api/imaging/studies", getStudiesHandler);
+	app.get("/api/radiology/studies", getStudiesHandler);
 
 
 	app.get("/api/imaging/studies/:id/viewer-session", async (request, reply) => {
@@ -186,7 +189,7 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 	});
 
 
-	app.post("/api/imaging/studies", async (request, reply) => {
+	const createStudyHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const parsed = parseImagingPayload(
 			createImagingStudySchema,
 			request.body,
@@ -251,7 +254,10 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 			aiSummary: input.aiSummary,
 		});
 		return reply.code(201).send(imagingStudySchema.parse(study));
-	});
+	};
+
+	app.post("/api/imaging/studies", createStudyHandler);
+	app.post("/api/radiology/studies", createStudyHandler);
 
 	// ─── AI Analysis ──────────────────────────────────────────────────────────
 
@@ -391,7 +397,7 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 	});
 
 
-	app.patch("/api/imaging/studies/:id", async (request, reply) => {
+	const updateStudyHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = getImagingOrganizationId(request, reply);
 		if (!orgId) return reply;
 		if (
@@ -414,13 +420,16 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 		const study = await updateImagingStudyInDb(orgId, id, parsed.data);
 		if (!study) return sendImagingStudyNotFound(reply);
 		return reply.send(imagingStudySchema.parse(study));
-	});
+	};
+
+	app.patch("/api/imaging/studies/:id", updateStudyHandler);
+	app.patch("/api/radiology/studies/:id", updateStudyHandler);
 
 	/**
 	 * Ручная привязка КТ/исследования к пациенту (контроль врача)
 	 * POST /api/imaging/studies/:id/bind-patient
 	 */
-	app.post("/api/imaging/studies/:id/bind-patient", async (request, reply) => {
+	const bindPatientHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		if (
 			!(await requireClinicalMutationAccess(
 				request,
@@ -466,13 +475,16 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 						: "Ошибка при привязке исследования к пациенту.",
 			});
 		}
-	});
+	};
+
+	app.post("/api/imaging/studies/:id/bind-patient", bindPatientHandler);
+	app.post("/api/radiology/studies/:id/bind-patient", bindPatientHandler);
 
 	/**
 	 * Отвязка исследования от пациента (перевод в unassigned)
 	 * POST /api/imaging/studies/:id/unbind-patient
 	 */
-	app.post("/api/imaging/studies/:id/unbind-patient", async (request, reply) => {
+	const unbindPatientHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		if (
 			!(await requireClinicalMutationAccess(
 				request,
@@ -491,13 +503,12 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 			return sendImagingStudyNotFound(reply);
 		}
 		return reply.code(200).send(imagingStudySchema.parse(updated));
-	});
+	};
 
-	/**
-	 * Запуск автоматического сканирования и автопривязки неразобранных КТ по базе пациентов
-	 * POST /api/imaging/studies/auto-bind-scan
-	 */
-	app.post("/api/imaging/studies/auto-bind-scan", async (request, reply) => {
+	app.post("/api/imaging/studies/:id/unbind-patient", unbindPatientHandler);
+	app.post("/api/radiology/studies/:id/unbind-patient", unbindPatientHandler);
+
+	const autoBindHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		if (
 			!(await requireClinicalMutationAccess(
 				request,
@@ -512,5 +523,8 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 
 		const summary = await autoBindUnassignedStudies(orgId);
 		return reply.code(200).send(summary);
-	});
+	};
+
+	app.post("/api/imaging/studies/auto-bind-scan", autoBindHandler);
+	app.post("/api/radiology/studies/auto-bind-scan", autoBindHandler);
 }

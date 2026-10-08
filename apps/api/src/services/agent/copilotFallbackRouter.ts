@@ -810,6 +810,30 @@ export async function* routeCopilotFallback(
 		return;
 	}
 
+	// 15.3 Greeting / General Assistance
+	if (
+		lower.startsWith("привет") ||
+		lower.startsWith("здравствуй") ||
+		lower.includes("чем ты можешь помочь") ||
+		lower.includes("что ты умеешь") ||
+		lower.includes("помоги")
+	) {
+		const defaultResponse =
+			"DENTE Ассистент готов помочь врачу у кресла:\n" +
+			"• Поиск пациентов и просмотр медицинских карт\n" +
+			"• Подбор услуг, сметы и формирование планов лечения\n" +
+			"• Совместимость препаратов и лекарственная безопасность\n" +
+			"• Заполнение зубной формулы и расписание приёмов\n" +
+			"• Наряды в зуботехническую лабораторию и дневник приёма.\n\n" +
+			"Назовите зуб, клиническую жалобу или действие.";
+
+		for (const char of defaultResponse) {
+			yield { type: "text_delta", text: char };
+		}
+		yield { type: "done", stopReason: "stop" };
+		return;
+	}
+
 	// 15.5 Direct Knowledge Lookup for high-confidence component queries (score >= 100)
 	const fallbackKnowledgeMatches = findComponentKnowledge(userText, { limit: 1 });
 	if (

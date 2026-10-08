@@ -1,0 +1,73 @@
+/**
+ * @file inventoryFixtures.ts
+ * @description Layer 1: Dental warehouse fixtures, medications, consumables, batches, suppliers.
+ */
+
+import type { SampleInventoryItem } from "./types.js";
+
+export const sampleInventoryItems: SampleInventoryItem[] = [
+	{
+		id: "inv-artikain-forte-1",
+		organizationId: "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+		sku: "MED-ART-100",
+		name: "Артикаин с эпинефрином 1:100 000 (карпулы 1.8 мл, уп. 50 шт)",
+		category: "anesthetic",
+		unit: "карпула",
+		stockQuantity: 120,
+		minimumQuantity: 30,
+		reorderQuantity: 100,
+		unitCostRub: 85,
+		batchNumber: "ART-2026-04",
+		expirationDate: "2027-12-31",
+		supplierName: "ООО «МедСнабСтоматология»",
+		storageLocation: "Шкаф А-1 (препараты со списком П)",
+	},
+	{
+		id: "inv-filtek-z250-a2",
+		organizationId: "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+		sku: "COMP-FLT-A2",
+		name: "Композит светоотверждаемый Filtek Z250, оттенок A2 (шприц 4г)",
+		category: "consumable",
+		unit: "шприц",
+		stockQuantity: 14,
+		minimumQuantity: 5,
+		reorderQuantity: 10,
+		unitCostRub: 2450,
+		batchNumber: "FLT-9921-A",
+		expirationDate: "2028-05-15",
+		supplierName: "Дентал Трейдинг Групп",
+		storageLocation: "Полка B-2 (пломбировочные материалы)",
+	},
+	{
+		id: "inv-gloves-nitrile-m",
+		organizationId: "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+		sku: "HYG-GLV-M",
+		name: "Перчатки нитриловые текстурированные неопудренные (р. M, уп. 100 пар)",
+		category: "hygiene",
+		unit: "пара",
+		stockQuantity: 450,
+		minimumQuantity: 100,
+		reorderQuantity: 500,
+		unitCostRub: 14,
+		batchNumber: "GLV-2026-01",
+		expirationDate: "2029-01-01",
+		supplierName: "ООО «Чистый Стандарт»",
+		storageLocation: "Складской бокс 1 (СИЗ)",
+	},
+	{
+		id: "inv-straumann-bone-level-4",
+		organizationId: "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+		sku: "IMP-STR-BL40",
+		name: "Имплантат титановый Straumann BLT Roxolid SLActive Ø4.1 мм, 10 мм",
+		category: "implant",
+		unit: "шт",
+		stockQuantity: 6,
+		minimumQuantity: 2,
+		reorderQuantity: 5,
+		unitCostRub: 18500,
+		batchNumber: "STR-BL-7741",
+		expirationDate: "2030-06-30",
+		supplierName: "Штрауманн Россия Дистрибьюшн",
+		storageLocation: "Сейф хирургии 1",
+	},
+];

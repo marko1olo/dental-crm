@@ -311,10 +311,31 @@ function paymentRetryMatchesExisting(
 	existingPayment: Payment,
 	input: CreatePaymentInput,
 ): boolean {
-	return (
-		JSON.stringify(paymentRetrySignatureFromPayment(existingPayment)) ===
-		JSON.stringify(paymentRetrySignatureFromInput(input))
-	);
+	if (existingPayment.patientId !== input.patientId) return false;
+	if ((existingPayment.visitId ?? null) !== (input.visitId ?? null)) return false;
+	if ((existingPayment.documentId ?? null) !== (input.documentId ?? null)) return false;
+	if (Number(existingPayment.amountRub) !== Number(input.amountRub)) return false;
+
+	const methodsMatch =
+		existingPayment.method === input.method ||
+		input.method === "split" ||
+		input.method === "mixed";
+	if (!methodsMatch) return false;
+
+	if ((existingPayment.payerInn ?? null) !== (cleanPaymentText(input.payerInn) ?? null)) return false;
+	if ((existingPayment.payerFullName ?? null) !== (cleanPaymentText(input.payerFullName) ?? null)) return false;
+	if ((existingPayment.taxDeductionCode ?? null) !== (input.taxDeductionCode ?? null)) return false;
+
+	const inputReceiptNum = cleanPaymentText(input.fiscalReceiptNumber);
+	if (inputReceiptNum && existingPayment.fiscalReceiptNumber !== inputReceiptNum) return false;
+
+	const inputNote = cleanPaymentText(input.note);
+	const existingNote = cleanPaymentText(existingPayment.note);
+	if (inputNote && existingNote && existingNote !== inputNote && !existingNote.startsWith(inputNote)) {
+		return false;
+	}
+
+	return true;
 }
 
 /** Параметры расчёта выплат. Обе даты необязательны — умолчание месяц. */

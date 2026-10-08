@@ -119,7 +119,6 @@ import { registerSyncRoutes } from "./routes/sync/index.js";
 import { registerSystemRoutes } from "./routes/system.js";
 import {
 	registerTelegramRoutes,
-	registerTelegramWebhookRoutes,
 } from "./routes/telegram.js";
 import { registerTelegramReferralLoyaltyRoutes } from "./routes/telegramReferralLoyalty.js";
 import {
@@ -770,7 +769,6 @@ export async function createDenteApiApp(
 	// /api/ws/schedule отвечал 404, а все wsBroker.broadcast* были пустышками.
 	await registerWebsocketRoutes(app);
 	await registerTelegramRoutes(app);
-	await registerTelegramWebhookRoutes(app);
 	await registerTelegramReferralLoyaltyRoutes(app);
 	await registerOmnichannelBotRoutes(app);
 	await registerVisitRoutes(app);
