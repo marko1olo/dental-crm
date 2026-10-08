@@ -1,0 +1,115 @@
+{
+  "subagent": "subagent_sources_dicom",
+  "role": "Red Team Inquisitor & L3 Sources Dicom Capability Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T01:47:00Z",
+  "targetFile": "apps/web/src/components/settings/sources/SourcesDicomCapability.tsx",
+  "originalLines": 1699,
+  "facadeLines": 68,
+  "decomposedDirectory": "apps/web/src/components/settings/sources/dicomCapability/",
+  "createdModules": [
+    {
+      "file": "apps/web/src/components/settings/sources/dicomCapability/constants.ts",
+      "layer": "Layer 0",
+      "lines": 86,
+      "purpose": "Default DICOM ports, medical imaging device presets (Sirona, KaVo, Planmeca, Vatech, Morita, Carestream), Hot Folder defaults"
+    },
+    {
+      "file": "apps/web/src/components/settings/sources/dicomCapability/types.ts",
+      "layer": "Layer 0",
+      "lines": 228,
+      "purpose": "Domain and component prop types for DICOM/PACS capabilities and MPR controls"
+    },
+    {
+      "file": "apps/web/src/components/settings/sources/dicomCapability/DicomCapabilityHeader.tsx",
+      "layer": "Layer 1",
+      "lines": 39,
+      "purpose": "Top banner and 4 capability summary cards"
+    },
+    {
+      "file": "apps/web/src/components/settings/sources/dicomCapability/DicomSeriesLabPanel.tsx",
+      "layer": "Layer 1",
+      "lines": 106,
+      "purpose": "Series preview, file grouping, modality/kind badges, warnings"
+    },
+    {
+      "file": "apps/web/src/components/settings/sources/dicomCapability/DicomMprHeader.tsx",
+      "layer": "Layer 1",
+      "lines": 40,
+      "purpose": "MPR series readiness header badge and safety disclaimer"
+    },
+    {
+      "file": "apps/web/src/components/settings/sources/dicomCapability/DicomMprRoadmapPanel.tsx",
+      "layer": "Layer 1",
+      "lines": 53,
+      "purpose": "Clinical roadmap checklist and operator summary cards"
+    },
+    {
+      "file": "apps/web/src/components/settings/sources/dicomCapability/DicomMprVisualizerPanel.tsx",
+      "layer": "Layer 1",
+      "lines": 116,
+      "purpose": "MPR axis visualizer compass, crosshair, slab marker, guidance, preset fit"
+    },
+    {
+      "file": "apps/web/src/components/settings/sources/dicomCapability/DicomMprControlPanel.tsx",
+      "layer": "Layer 1",
+      "lines": 429,
+      "purpose": "Interactive axis/slab/slice range controls, nudges, presets, clinical protocols, window presets, link planes switch"
+    },
+    {
+      "file": "apps/web/src/components/settings/sources/dicomCapability/DicomResourcePolicyPanel.tsx",
+      "layer": "Layer 1",
+      "lines": 77,
+      "purpose": "Resource tier badges, memory limits, cache modes, safety caps"
+    },
+    {
+      "file": "apps/web/src/components/settings/sources/dicomCapability/DicomOhifBridgePanel.tsx",
+      "layer": "Layer 1",
+      "lines": 317,
+      "purpose": "DICOMweb archive & OHIF viewer integration, launch manifest result, URL sanitize check"
+    },
+    {
+      "file": "apps/web/src/components/settings/sources/dicomCapability/DicomDiagnosticsPanel.tsx",
+      "layer": "Layer 2",
+      "lines": 424,
+      "purpose": "PACS workbench bundle result, workstation readiness hardware check, render cache plan details"
+    },
+    {
+      "file": "apps/web/src/components/settings/sources/dicomCapability/DicomServerConfigPanel.tsx",
+      "layer": "Layer 1",
+      "lines": 119,
+      "purpose": "PACS server C-ECHO/C-STORE configuration form with vendor presets"
+    },
+    {
+      "file": "apps/web/src/components/settings/sources/dicomCapability/DicomHotFolderPanel.tsx",
+      "layer": "Layer 1",
+      "lines": 122,
+      "purpose": "Local scanner hot folder directory, polling intervals and sync triggers"
+    },
+    {
+      "file": "apps/web/src/components/settings/sources/dicomCapability/DicomMprWorkbenchPanel.tsx",
+      "layer": "Layer 2",
+      "lines": 431,
+      "purpose": "Composite coordinator for complete MPR workspace"
+    },
+    {
+      "file": "apps/web/src/components/settings/sources/dicomCapability/index.ts",
+      "layer": "Layer 5",
+      "lines": 15,
+      "purpose": "Clean barrel re-exporting all subcomponents and types"
+    },
+    {
+      "file": "apps/web/src/components/settings/sources/SourcesDicomCapability.tsx",
+      "layer": "Layer 5",
+      "lines": 68,
+      "purpose": "Canonical thin facade maintaining 100% backward compatibility"
+    }
+  ],
+  "gates": {
+    "gate1_line_budget": "PASSED (all files <= 800 lines, facade 68 lines)",
+    "gate2_export_parity": "PASSED (100% exports preserved)",
+    "gate3_test_anchors": "PASSED (100% test anchors preserved)",
+    "gate4_utf8_encoding": "PASSED (Clean UTF-8)",
+    "gate5_acyclic_dag": "PASSED (madge verified acyclic DAG)"
+  }
+}
