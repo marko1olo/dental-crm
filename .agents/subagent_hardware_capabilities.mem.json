@@ -1,0 +1,38 @@
+{
+  "taskId": "DECOMPOSE_HARDWARE_CAPABILITIES_TS",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T02:34:00Z",
+  "sourceMonolith": {
+    "path": "apps/web/src/lib/hardwareCapabilities.ts",
+    "originalLines": 1782,
+    "facadeLines": 18
+  },
+  "decomposedDirectory": "apps/web/src/lib/hardwareCapabilities/",
+  "submodules": [
+    { "name": "types.ts", "layer": 0, "lines": 229, "description": "Contracts, shared types, clinical device payloads" },
+    { "name": "constants.ts", "layer": 0, "lines": 137, "description": "Storage keys, TTL constants, device hardware presets" },
+    { "name": "gpuProber.ts", "layer": 1, "lines": 523, "description": "WebGL/WebGPU probing, architecture detection, fillrate micro-benchmark" },
+    { "name": "cashRegisterDriver.ts", "layer": 1, "lines": 131, "description": "54-FZ FFD 1.2 ATOL / Shtrih-M cash register driver" },
+    { "name": "posTerminalDriver.ts", "layer": 1, "lines": 113, "description": "Acquiring bank POS terminal driver with UUIDv7 idempotency" },
+    { "name": "imagingHardwareDriver.ts", "layer": 2, "lines": 125, "description": "DirectShow camera stream, TWAIN/WIA radiovisiograph capture, footswitch" },
+    { "name": "hardwareDiscovery.ts", "layer": 2, "lines": 148, "description": "WebSerial / WebUSB device scanner, periodic health polling" },
+    { "name": "profileEvaluator.ts", "layer": 2, "lines": 537, "description": "Composite hardware scoring (0..100), tier mapping, 7-day TTL cache" },
+    { "name": "domAdapter.ts", "layer": 3, "lines": 265, "description": "DOM attributes, low-spec classes, dynamic perf states, CT flags" },
+    { "name": "hooks.ts", "layer": 4, "lines": 406, "description": "React hooks, subscription listeners, background watchers" },
+    { "name": "index.ts", "layer": 5, "lines": 30, "description": "Barrel export for all submodules" }
+  ],
+  "verificationGates": {
+    "gate1_line_count": "PASSED (all files <= 800 lines)",
+    "gate2_ast_export_parity": "PASSED (103/103 public exports preserved, 100% parity)",
+    "gate3_test_anchors": "PASSED (100% preserved)",
+    "gate4_utf8_clean": "PASSED (0 BOM, clean UTF-8)",
+    "gate5_acyclic_dag": "PASSED (0 circular dependencies)"
+  },
+  "unitTestResults": {
+    "hardwareCapabilities.test.ts": "16/16 PASSED",
+    "hardwareCacheAndBatteryPersistence.test.ts": "12/12 PASSED",
+    "universalHardwareProfiler.test.ts": "26/26 PASSED",
+    "perfAdaptivityInquisition.test.ts": "18/18 PASSED",
+    "multiPlatformNativeBridges.test.ts": "32/32 PASSED"
+  }
+}
