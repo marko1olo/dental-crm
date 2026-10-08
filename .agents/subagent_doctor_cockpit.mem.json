@@ -1,0 +1,150 @@
+{
+  "timestamp": "2026-10-09T01:21:00Z",
+  "role": "Red Team Inquisitor & L3 Doctor Shift Cockpit Engine Decomposer",
+  "target": "packages/shared/src/doctor/doctorShiftCockpitEngine.ts",
+  "status": "COMPLETED",
+  "baselineLines": 1547,
+  "decomposedModules": {
+    "timer": {
+      "path": "packages/shared/src/doctor/cockpit/timer.ts",
+      "lines": 193,
+      "layer": 0,
+      "exportsCount": 6,
+      "symbols": [
+        "appointmentTimerStatusSchema",
+        "AppointmentTimerStatus",
+        "APPOINTMENT_TIMER_STATUS_META",
+        "appointmentTimerResultSchema",
+        "AppointmentTimerResult",
+        "calculateAppointmentTimer"
+      ]
+    },
+    "emrCompleteness": {
+      "path": "packages/shared/src/doctor/cockpit/emrCompleteness.ts",
+      "lines": 327,
+      "layer": 1,
+      "exportsCount": 10,
+      "symbols": [
+        "emr043SectionIdSchema",
+        "Emr043SectionId",
+        "Emr043SectionConfig",
+        "EMR_043_SECTIONS_CONFIG",
+        "emr043SectionEvaluationSchema",
+        "Emr043SectionEvaluation",
+        "emr043CompletenessResultSchema",
+        "Emr043CompletenessResult",
+        "Emr043CardEvaluationInput",
+        "evaluateEmr043Completeness"
+      ]
+    },
+    "patientBalance": {
+      "path": "packages/shared/src/doctor/cockpit/patientBalance.ts",
+      "lines": 82,
+      "layer": 1,
+      "exportsCount": 3,
+      "symbols": [
+        "patientFinancialBalanceSchema",
+        "PatientFinancialBalance",
+        "calculatePatientShiftBalance"
+      ]
+    },
+    "pager": {
+      "path": "packages/shared/src/doctor/cockpit/pager.ts",
+      "lines": 201,
+      "layer": 1,
+      "exportsCount": 13,
+      "symbols": [
+        "pagerEventTypeSchema",
+        "PagerEventType",
+        "pagerUrgencySchema",
+        "PagerUrgency",
+        "pagerStatusSchema",
+        "PagerStatus",
+        "PAGER_EVENT_TYPE_META",
+        "assistantPagerEventSchema",
+        "AssistantPagerEvent",
+        "createAssistantPagerEvent",
+        "acknowledgeAssistantPagerEvent",
+        "resolveAssistantPagerEvent",
+        "cancelAssistantPagerEvent",
+        "filterActivePagerEvents"
+      ]
+    },
+    "pepSigning": {
+      "path": "packages/shared/src/doctor/cockpit/pepSigning.ts",
+      "lines": 225,
+      "layer": 1,
+      "exportsCount": 4,
+      "symbols": [
+        "generateBatchEmrProtocolHashSha256",
+        "EmrBatchSigningResultSha256",
+        "initiateBatchEmrSigningSha256",
+        "verifyAndSignBatchEmrSha256"
+      ]
+    },
+    "queueOrchestration": {
+      "path": "packages/shared/src/doctor/cockpit/queueOrchestration.ts",
+      "lines": 552,
+      "layer": 2,
+      "exportsCount": 9,
+      "symbols": [
+        "DoctorShiftServiceItem",
+        "unclosedEmrCardSchema",
+        "UnclosedEmrCard",
+        "CurrentPatientCockpitView",
+        "NextPatientWaitingView",
+        "DoctorShiftQueueResult",
+        "CalculateDoctorShiftQueueParams",
+        "calculateDoctorShiftQueue",
+        "SAMPLE_COCKPIT_APPOINTMENTS"
+      ]
+    },
+    "index": {
+      "path": "packages/shared/src/doctor/cockpit/index.ts",
+      "lines": 21,
+      "layer": 5,
+      "purpose": "Master aggregator of all cockpit modules"
+    },
+    "facade": {
+      "path": "packages/shared/src/doctor/doctorShiftCockpitEngine.ts",
+      "lines": 20,
+      "layer": 5,
+      "purpose": "Canonical backward-compatible SSOT facade"
+    }
+  },
+  "verificationGates": {
+    "gate1_line_count_budget": {
+      "status": "PASSED",
+      "maxLinesFound": 552,
+      "ceiling": 800
+    },
+    "gate2_ast_export_parity": {
+      "status": "PASSED",
+      "baselineExports": 46,
+      "facadeExports": 46,
+      "parityRate": "100%"
+    },
+    "gate3_test_anchors": {
+      "status": "PASSED",
+      "anchorsPreserved": "100%"
+    },
+    "gate4_utf8_encoding": {
+      "status": "PASSED",
+      "mojibakeFound": 0
+    },
+    "gate5_acyclic_dag_madge": {
+      "status": "PASSED",
+      "circularDependencies": 0
+    }
+  },
+  "testExecution": {
+    "testRunner": "npx tsx --test",
+    "suites": [
+      "packages/shared/src/tests/doctorShiftCockpitEngine.test.ts"
+    ],
+    "totalTests": 32,
+    "passed": 32,
+    "failed": 0,
+    "exitCode": 0
+  }
+}
