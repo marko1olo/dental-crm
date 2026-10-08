@@ -1,0 +1,150 @@
+{
+  "role": "Red Team Inquisitor & L3 Migration Loader Decomposer",
+  "status": "COMPLETED",
+  "target": "apps/api/src/migration/loader.ts",
+  "targetOriginalLines": 1752,
+  "facadeLines": 41,
+  "decomposedDirectory": "apps/api/src/migration/loader/",
+  "modules": [
+    {
+      "file": "apps/api/src/migration/loader/constants.ts",
+      "layer": "Layer 0",
+      "lines": 26,
+      "exports": [
+        "LOAD_BATCH_SIZE",
+        "DEFAULT_APPOINTMENT_MINUTES",
+        "APPOINTMENT_DEFAULT_MINUTES",
+        "PAYMENT_DEFAULT_MINUTES",
+        "NO_OFFSET_TIME_ZONE"
+      ]
+    },
+    {
+      "file": "apps/api/src/migration/loader/types.ts",
+      "layer": "Layer 0",
+      "lines": 71,
+      "exports": [
+        "MigrationTimeZone",
+        "TransferredMoment",
+        "DbTransaction",
+        "SavepointTx",
+        "PostgresErrorFields",
+        "StagedRow",
+        "StageResult",
+        "LoadOutcome",
+        "PendingStageItem"
+      ]
+    },
+    {
+      "file": "apps/api/src/migration/loader/timezonePolicy.ts",
+      "layer": "Layer 1",
+      "lines": 113,
+      "exports": [
+        "migrationTimeZoneFrom",
+        "transferredMoment",
+        "migrationTimeZone"
+      ]
+    },
+    {
+      "file": "apps/api/src/migration/loader/stagingStore.ts",
+      "layer": "Layer 1",
+      "lines": 211,
+      "exports": [
+        "stageRows",
+        "recordQuarantine"
+      ]
+    },
+    {
+      "file": "apps/api/src/migration/loader/batchPipeline.ts",
+      "layer": "Layer 2",
+      "lines": 228,
+      "exports": [
+        "postgresErrorFields",
+        "explainDatabaseError",
+        "loadRowInSavepoint",
+        "loadEntityLinks"
+      ]
+    },
+    {
+      "file": "apps/api/src/migration/loader/entityLoaderPatients.ts",
+      "layer": "Layer 2",
+      "lines": 341,
+      "exports": [
+        "buildPatientIdentityIndex",
+        "buildPatientNotes",
+        "loadPatients"
+      ]
+    },
+    {
+      "file": "apps/api/src/migration/loader/entityLoaderAppointments.ts",
+      "layer": "Layer 2",
+      "lines": 450,
+      "exports": [
+        "loadAppointments",
+        "loadVisits"
+      ]
+    },
+    {
+      "file": "apps/api/src/migration/loader/entityLoaderPayments.ts",
+      "layer": "Layer 2",
+      "lines": 238,
+      "exports": [
+        "loadPayments"
+      ]
+    },
+    {
+      "file": "apps/api/src/migration/loader/index.ts",
+      "layer": "Layer 5",
+      "lines": 51,
+      "exports": [
+        "loaderFor",
+        "naturalKeyFor",
+        "re-exports from all layers"
+      ]
+    },
+    {
+      "file": "apps/api/src/migration/loader.ts",
+      "layer": "Layer 5 Facade",
+      "lines": 41,
+      "description": "Thin canonical facade preserving 100% AST export parity and AST clinicTimeZone import parity"
+    }
+  ],
+  "gates": {
+    "gate1_line_count": {
+      "status": "PASSED",
+      "limit": 800,
+      "maxLinesFound": 450
+    },
+    "gate2_ast_parity": {
+      "status": "PASSED",
+      "preservedExports": 28,
+      "missingExports": 0
+    },
+    "gate3_test_anchors": {
+      "status": "PASSED",
+      "preservedAnchors": 0,
+      "lostAnchors": 0
+    },
+    "gate4_utf8_encoding": {
+      "status": "PASSED",
+      "mojibakeFound": 0
+    },
+    "gate5_acyclic_dag": {
+      "status": "PASSED",
+      "circularDependencies": 0
+    }
+  },
+  "tests": {
+    "targeted": {
+      "command": "npx tsx --test apps/api/src/migration/loaderClinicTimeZoneSource.test.ts apps/api/src/migration/loaderTransferredMoment.test.ts",
+      "passed": 12,
+      "failed": 0,
+      "exitCode": 0
+    },
+    "full_migration_suite": {
+      "command": "npx tsx --test apps/api/src/migration/loaderClinicTimeZoneSource.test.ts apps/api/src/migration/loaderTransferredMoment.test.ts apps/api/src/migration/rowTransformBirthDateToday.test.ts apps/api/src/migration/tests/mapping.test.ts apps/api/src/migration/tests/parsers.test.ts apps/api/src/migration/tests/valueNormalize.test.ts",
+      "passed": 141,
+      "failed": 0,
+      "exitCode": 0
+    }
+  }
+}
