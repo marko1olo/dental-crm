@@ -1,0 +1,98 @@
+{
+  "role": "Red Team Inquisitor & L3 CBCT Curved Viewport Handlers Decomposer",
+  "status": "PASSED",
+  "timestamp": "2026-10-09T02:46:30Z",
+  "targetMonolith": "apps/web/src/components/radiology/mpr/useCbctCurvedViewportHandlers.ts",
+  "monolithOriginalLines": 1662,
+  "facadeLineCount": 28,
+  "decomposedDirectory": "apps/web/src/components/radiology/mpr/curvedViewport/",
+  "modules": [
+    {
+      "file": "apps/web/src/components/radiology/mpr/curvedViewport/types.ts",
+      "layer": "Layer 0 (Types & Contracts)",
+      "lineCount": 207,
+      "role": "Type definitions, parameters, results, and DTO contracts with 0 runtime dependencies"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/curvedViewport/constants.ts",
+      "layer": "Layer 0 (Constants & Boundaries)",
+      "lineCount": 55,
+      "role": "Zoom limits, window/level limits, measurement hit thresholds, and clinical implant constraints"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/curvedViewport/curveSplineMath.ts",
+      "layer": "Layer 1 (Geometry & Spline Math)",
+      "lineCount": 297,
+      "role": "Catmull-Rom spline interpolation, curve orthogonal normal calculation, 3D coordinate projections, and implant geometry math"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/curvedViewport/panoramicSliceHandlers.ts",
+      "layer": "Layer 2 (Panoramic Slice Handlers)",
+      "lineCount": 708,
+      "role": "Panoramic slice navigation, measurement hit-testing, dragging, and usePanoramicViewportHandlers hook"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/curvedViewport/crossSectionHandlers.ts",
+      "layer": "Layer 2 (Cross-Section Handlers)",
+      "lineCount": 766,
+      "role": "Cross-section slices, virtual implant positioning, and useCrossSectionViewportHandlers hook"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/curvedViewport/viewportInteractionHandlers.ts",
+      "layer": "Layer 3 (Viewport Interaction Utilities)",
+      "lineCount": 388,
+      "role": "Common mouse drag, pan, zoom, window/level manipulation, angle measurement stepping, and nerve trace dispatchers"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/curvedViewport/useCbctCurvedViewportHandlers.ts",
+      "layer": "Layer 3 (Master Hook Coordinator)",
+      "lineCount": 36,
+      "role": "Clean master coordinator hook assembling panoramic and cross-section handlers"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/curvedViewport/index.ts",
+      "layer": "Layer 5 (Modular Barrel)",
+      "lineCount": 14,
+      "role": "Clean barrel re-export of all curved viewport symbols, types, and hooks"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/useCbctCurvedViewportHandlers.ts",
+      "layer": "Layer 5 (Canonical Facade)",
+      "lineCount": 28,
+      "role": "Thin backward-compatible facade strictly <= 50 lines preserving 100% of public exports"
+    }
+  ],
+  "gates": {
+    "gate1_line_count": {
+      "status": "PASSED",
+      "maxAllowed": 800,
+      "maxObserved": 766,
+      "details": "All 8 decomposed files are strictly <= 800 lines. Canonical facade is 28 lines (<= 50)."
+    },
+    "gate2_ast_export_parity": {
+      "status": "PASSED",
+      "baselineExports": 65,
+      "facadeExports": 65,
+      "details": "100% of baseline public exports and types are preserved verbatim in the facade."
+    },
+    "gate3_test_anchors": {
+      "status": "PASSED",
+      "details": "100% of test anchors preserved."
+    },
+    "gate4_utf8_hygiene": {
+      "status": "PASSED",
+      "details": "Clean UTF-8 encoding across workspace without BOM or Mojibake."
+    },
+    "gate5_acyclic_dag": {
+      "status": "PASSED",
+      "details": "0 circular dependencies detected via madge across the decomposed directory."
+    }
+  },
+  "tests": {
+    "unitTestFile": "apps/web/src/tests/cbctCurvedViewportHandlersDecomposition.test.ts",
+    "passed": 7,
+    "failed": 0,
+    "durationMs": 2401,
+    "exitCode": 0
+  }
+}
