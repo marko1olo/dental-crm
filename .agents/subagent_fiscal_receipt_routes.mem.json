@@ -1,0 +1,110 @@
+{
+  "subagent": "fiscal_receipt_routes_decomposer",
+  "role": "Red Team Inquisitor & L3 Fiscal Receipt Routes Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T02:40:00Z",
+  "target": "apps/api/src/routes/fiscal/fiscalReceiptRoutes.ts",
+  "originalLines": 1665,
+  "decomposedDirectory": "apps/api/src/routes/fiscal/receiptRoutes/",
+  "modules": [
+    {
+      "file": "apps/api/src/routes/fiscal/receiptRoutes/constants.ts",
+      "layer": "Layer 0",
+      "description": "54-FZ FFD 1.2 tags, operation types, payment methods, VAT rates, and hardware defaults",
+      "lineCount": 52,
+      "maxLineBudget": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/api/src/routes/fiscal/receiptRoutes/types.ts",
+      "layer": "Layer 0",
+      "description": "Zod schemas for SBP status, hardware test connection, queue pagination, and DTO contracts",
+      "lineCount": 77,
+      "maxLineBudget": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/api/src/routes/fiscal/receiptRoutes/receiptDraftHandlers.ts",
+      "layer": "Layer 1",
+      "description": "Service catalog price protection, Mandate 8e doctor discounts up to 100%, pre-flight POST /api/fiscal/validate",
+      "lineCount": 157,
+      "maxLineBudget": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/api/src/routes/fiscal/receiptRoutes/receiptFiscalizeHandlers.ts",
+      "layer": "Layer 2",
+      "description": "POST /api/fiscal/receipts & /api/finance/receipts, direct LAN KKT printing, composite Idempotency-Key, warranty 0.00 ₽ acts, ledger recording",
+      "lineCount": 578,
+      "maxLineBudget": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/api/src/routes/fiscal/receiptRoutes/receiptCorrectionHandlers.ts",
+      "layer": "Layer 2",
+      "description": "POST /api/fiscal/refund & /api/finance/refund, 54-FZ return receipts (Tag 1054 = 2), payments table reversal, shift expense recording",
+      "lineCount": 475,
+      "maxLineBudget": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/api/src/routes/fiscal/receiptRoutes/receiptQueryHandlers.ts",
+      "layer": "Layer 3",
+      "description": "SBP status checks, LAN KKT status/ping, fiscal queue query/retry/retry-all, and background auto-retry lifecycle",
+      "lineCount": 464,
+      "maxLineBudget": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/api/src/routes/fiscal/receiptRoutes/index.ts",
+      "layer": "Layer 5",
+      "description": "Master coordinator Fastify plugin registering all 14 routes and re-exporting symbols",
+      "lineCount": 73,
+      "maxLineBudget": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/api/src/routes/fiscal/fiscalReceiptRoutes.ts",
+      "layer": "Layer 5 (Canonical Facade)",
+      "description": "Thin canonical facade re-exporting registerFiscalReceiptRoutes and all submodules 1:1",
+      "lineCount": 16,
+      "maxLineBudget": 50,
+      "status": "PASSED"
+    }
+  ],
+  "gates": {
+    "gate1_line_count_budget": {
+      "status": "PASSED",
+      "evidence": "All files are strictly <= 800 lines (facade is 16 lines <= 50 lines)"
+    },
+    "gate2_ast_export_parity": {
+      "status": "PASSED",
+      "evidence": "100% of baseline public exports (36 symbols) preserved in facade"
+    },
+    "gate3_test_anchors": {
+      "status": "PASSED",
+      "evidence": "100% test anchors preserved"
+    },
+    "gate4_utf8_encoding": {
+      "status": "PASSED",
+      "evidence": "Clean UTF-8 encoding across workspace without BOM or Mojibake"
+    },
+    "gate5_acyclic_dag_madge": {
+      "status": "PASSED",
+      "evidence": "0 circular dependencies detected by madge"
+    }
+  },
+  "tests": [
+    {
+      "testFile": "apps/api/src/tests/routes/fiscalDecompositionSmoke.test.ts",
+      "testsCount": 2,
+      "passed": 2,
+      "failed": 0,
+      "exitCode": 0
+    },
+    {
+      "testFile": "apps/api/src/tests/compliance/localLanHardwareResilience.test.ts",
+      "fiscalHardwareTests": "1.1 - 1.5 PASSED (54-FZ KKT, offline buffering, retries)"
+    }
+  ]
+}
