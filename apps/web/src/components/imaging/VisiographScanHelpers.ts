@@ -106,19 +106,32 @@ export async function saveVisiographScanToServer(
 	dataUrl: string,
 	file: File,
 	headers: Record<string, string>,
+	toothCode?: string,
+	visitId?: string,
 ): Promise<{ saved?: XrayScan; failure?: string }> {
 	try {
+		const isUuid = (str?: string) =>
+			Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
+
+		const payload: Record<string, unknown> = {
+			patientId,
+			imageBase64: dataUrl,
+			originalFilename: file.name,
+			mimeType: file.type || "image/jpeg",
+			kind: "periapical",
+			status: "done",
+		};
+		if (toothCode) {
+			payload.toothCode = toothCode;
+		}
+		if (visitId && isUuid(visitId)) {
+			payload.visitId = visitId;
+		}
+
 		const res = await fetch("/api/xray/scans", {
 			method: "POST",
 			headers,
-			body: JSON.stringify({
-				patientId,
-				imageBase64: dataUrl,
-				originalFilename: file.name,
-				mimeType: file.type || "image/jpeg",
-				kind: "periapical",
-				status: "done",
-			}),
+			body: JSON.stringify(payload),
 		});
 		if (!res.ok) {
 			logger.error(`[VisiographAnalyzer] снимок не сохранён, ответ ${res.status}`);

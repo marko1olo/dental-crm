@@ -1,0 +1,155 @@
+/* ==========================================================================
+   DENTE CBCT POPOUT STUDIO (CtPopoutStudio.css)
+   Canonical Clinical PACS Viewer Styling (Romexis / Carestream / Horos standard)
+   ========================================================================== */
+
+.ct-studio-skull-bar {
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 4px !important;
+	padding: 3px !important;
+	background: #18181b !important;
+	border: 1px solid rgba(255, 255, 255, 0.12) !important;
+	border-radius: 8px !important;
+	box-sizing: border-box !important;
+	flex-shrink: 0 !important;
+}
+
+.ct-studio-skull-btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	height: 28px !important;
+	padding: 0 10px !important;
+	border-radius: 6px !important;
+	font-size: 11px !important;
+	font-weight: 500 !important;
+	line-height: 1 !important;
+	color: #d4d4d8 !important;
+	background: #27272a !important;
+	border: 1px solid rgba(255, 255, 255, 0.08) !important;
+	cursor: pointer !important;
+	white-space: nowrap !important;
+	transition: all 0.15s ease !important;
+	box-sizing: border-box !important;
+}
+
+.ct-studio-skull-btn:hover:not(.active) {
+	background: #3f3f46 !important;
+	color: #ffffff !important;
+	border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.ct-studio-skull-btn.active {
+	background: #0891b2 !important;
+	border-color: #22d3ee !important;
+	color: #ffffff !important;
+	font-weight: 700 !important;
+	box-shadow: 0 0 10px rgba(8, 145, 178, 0.4) !important;
+}
+
+/* WL Presets Toolbar */
+.ct-studio-wl-bar {
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 4px !important;
+	padding: 3px !important;
+	background: #09090b !important;
+	border: 1px solid rgba(255, 255, 255, 0.1) !important;
+	border-radius: 8px !important;
+	box-sizing: border-box !important;
+}
+
+.ct-studio-wl-btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	height: 28px !important;
+	padding: 0 12px !important;
+	border-radius: 6px !important;
+	font-size: 12px !important;
+	font-weight: 500 !important;
+	color: #a1a1aa !important;
+	background: #18181b !important;
+	border: 1px solid rgba(255, 255, 255, 0.08) !important;
+	cursor: pointer !important;
+	white-space: nowrap !important;
+	transition: all 0.15s ease !important;
+	box-sizing: border-box !important;
+}
+
+.ct-studio-wl-btn:hover:not(.active) {
+	background: #27272a !important;
+	color: #ffffff !important;
+	border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+.ct-studio-wl-btn.active {
+	background: #0d9488 !important;
+	border-color: #14b8a6 !important;
+	color: #ffffff !important;
+	font-weight: 700 !important;
+	box-shadow: 0 0 8px rgba(13, 148, 136, 0.4) !important;
+}
+
+/* Slab Thickness Buttons */
+.ct-studio-slab-btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	height: 24px !important;
+	padding: 0 8px !important;
+	border-radius: 5px !important;
+	font-size: 11px !important;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+	color: #a1a1aa !important;
+	background: #18181b !important;
+	border: 1px solid rgba(255, 255, 255, 0.08) !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+	box-sizing: border-box !important;
+}
+
+.ct-studio-slab-btn:hover:not(.active) {
+	background: #27272a !important;
+	color: #ffffff !important;
+}
+
+.ct-studio-slab-btn.active {
+	background: rgba(6, 182, 212, 0.25) !important;
+	border-color: rgba(6, 182, 212, 0.6) !important;
+	color: #67e8f9 !important;
+	font-weight: 700 !important;
+}
+
+/* Universal Action Buttons in CT Header */
+.ct-studio-action-btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	height: 28px !important;
+	padding: 0 10px !important;
+	border-radius: 6px !important;
+	font-size: 12px !important;
+	font-weight: 500 !important;
+	color: #e4e4e7 !important;
+	background: #27272a !important;
+	border: 1px solid rgba(255, 255, 255, 0.12) !important;
+	cursor: pointer !important;
+	white-space: nowrap !important;
+	transition: all 0.15s ease !important;
+	box-sizing: border-box !important;
+}
+
+.ct-studio-action-btn:hover {
+	background: #3f3f46 !important;
+	color: #ffffff !important;
+	border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.ct-studio-action-btn--active {
+	background: rgba(225, 29, 72, 0.2) !important;
+	border-color: rgba(244, 63, 94, 0.5) !important;
+	color: #fda4af !important;
+}

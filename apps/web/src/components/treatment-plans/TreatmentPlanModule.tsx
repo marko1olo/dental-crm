@@ -42,6 +42,7 @@ export interface TreatmentPlanModuleProps {
 	readonly initialStatus?: TreatmentPlanStatus | undefined;
 	readonly onStatusChange?: ((status: TreatmentPlanStatus) => void) | undefined;
 	readonly initialPlanId?: string | null | undefined;
+	readonly initialViewTab?: "3tier" | "stages" | "phased4" | "roadmap" | undefined;
 }
 
 export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
@@ -56,6 +57,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	initialStatus,
 	onStatusChange,
 	initialPlanId,
+	initialViewTab,
 }) => {
 	const logic = useTreatmentPlanLogic({
 		patientId,
@@ -67,6 +69,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		initialStatus,
 		onStatusChange,
 		initialPlanId,
+		initialViewTab,
 	});
 
 	return (
@@ -447,6 +450,8 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				teethData={teethData}
 				orthopedicTeeth={logic.orthopedicTeeth}
 				selectedLabTeeth={logic.selectedLabTeeth}
+				treatmentPlanId={logic.currentPlanId || undefined}
+				labOrderPrefill={logic.labOrderPrefill}
 				catalog={logic.catalog}
 				currentTier={logic.currentTier}
 				effectiveSignTier={logic.effectiveSignTier}

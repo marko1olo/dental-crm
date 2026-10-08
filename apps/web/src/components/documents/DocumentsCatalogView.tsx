@@ -39,6 +39,8 @@ import { PediatricBraveryDiplomaModal } from "../pediatric/PediatricBraveryDiplo
 import { ConsentModal } from "../consents/ConsentModal";
 import { FnsTaxCertificateModal } from "./FnsTaxCertificateModal";
 import { PrimaryIntakePackageModal } from "./PrimaryIntakePackageModal";
+import { OutpatientCardPrintModal } from "./OutpatientCardPrintModal";
+import { DocumentA4PrintPreviewModal } from "./DocumentA4PrintPreviewModal";
 
 export type DocumentCatalogCategory =
 	| "all"
@@ -94,6 +96,8 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 	const [isConsentModalOpen, setIsConsentModalOpen] = useState<boolean>(false);
 	const [isLocalTaxModalOpen, setIsLocalTaxModalOpen] = useState<boolean>(false);
 	const [isLocalIntakeModalOpen, setIsLocalIntakeModalOpen] = useState<boolean>(false);
+	const [isOutpatientCardModalOpen, setIsOutpatientCardModalOpen] = useState<boolean>(false);
+	const [isContractModalOpen, setIsContractModalOpen] = useState<boolean>(false);
 
 	const { setSelectedDocumentKind } = useDocumentStore();
 
@@ -131,10 +135,10 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 			{
 				id: "consent_medical_intervention",
 				kind: "informed_consent",
-				titleRu: "Информированное согласие (ИДС)",
+				titleRu: "Согласие на медицинское вмешательство (ИДС)",
 				category: "intake",
 				descriptionRu: "Добровольное согласие пациента на первичный осмотр, диагностику и местную анестезию",
-				badgeRu: "Приказ 1051н",
+				badgeRu: "Стандарт Минздрава",
 				icon: ShieldCheck,
 				isStatutory: true,
 				printSupported: true,
@@ -146,11 +150,14 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 				titleRu: "Договор платных медицинских услуг",
 				category: "intake",
 				descriptionRu: "Обязательный договор с пациентом или заказчиком до начала процедур с реквизитами клиники",
-				badgeRu: "ПП РФ № 736",
+				badgeRu: "Договор клиники",
 				icon: FileText,
 				isStatutory: true,
 				printSupported: true,
-				onQuickAction: () => handleOpenKind("paid_medical_services_contract"),
+				onQuickAction: () => {
+					handleOpenKind("paid_medical_services_contract");
+					setIsContractModalOpen(true);
+				},
 			},
 			{
 				id: "personal_data_processing_consent",
@@ -184,11 +191,14 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 				titleRu: "Медицинская карта приёма",
 				category: "clinical",
 				descriptionRu: "Официальный амбулаторный протокол осмотра, одонтограммы обеих челюстей и дневника лечения",
-				badgeRu: "Карта 043/у",
+				badgeRu: "Амбулаторная карта",
 				icon: DentalForm043,
 				isStatutory: true,
 				printSupported: true,
-				onQuickAction: () => handleOpenKind("dental_medical_card_043u"),
+				onQuickAction: () => {
+					handleOpenKind("dental_medical_card_043u");
+					setIsOutpatientCardModalOpen(true);
+				},
 			},
 			{
 				id: "treatment_plan",
@@ -231,7 +241,7 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 				titleRu: "Справка для налогового вычета (ФНС)",
 				category: "finance_tax",
 				descriptionRu: "Справка об оплате медицинских услуг по кодам 1 и 2 с расчетом 13% НДФЛ для налоговых органов",
-				badgeRu: "КНД 1151156",
+				badgeRu: "Справка ФНС",
 				icon: Zap,
 				isStatutory: true,
 				printSupported: true,
@@ -278,7 +288,7 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 			{
 				id: "minor_legal_consent",
 				kind: "minor_legal_representative_consent",
-				titleRu: "Согласие представителя ребёнка",
+				titleRu: "Согласие законного представителя ребёнка",
 				category: "pediatric",
 				descriptionRu: "Согласие родителя или опекуна на осмотр и лечение несовершеннолетнего",
 				badgeRu: "Педиатрия",
@@ -497,7 +507,7 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 					return (
 						<div
 							key={item.id}
-							className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:border-teal-500/70 transition flex flex-col justify-between gap-2 shadow-2xs"
+							className="p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:border-teal-500/70 transition flex flex-col justify-between gap-2.5 shadow-2xs min-h-[125px]"
 							data-testid={`document-item-${item.id}`}
 						>
 							<div className="flex items-start justify-between gap-2">
@@ -519,7 +529,7 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 										<h3 className="text-xs font-bold tracking-tight text-[var(--ink,#0f172a)] leading-snug">
 											{item.titleRu}
 										</h3>
-										<p className="text-[11px] text-[var(--muted,#64748b)] line-clamp-2 mt-0.5 leading-tight">
+										<p className="text-[11px] text-[var(--muted,#64748b)] mt-1 leading-normal break-words">
 											{item.descriptionRu}
 										</p>
 									</div>
@@ -628,6 +638,29 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 					onOpenDocument={() => {}}
 					onSelectDocumentKind={(kind) => handleOpenKind(kind)}
 					doctorFullName={doctorName}
+					clinicProfileDraft={clinicProfileDraft}
+				/>
+			)}
+
+			{/* Модалка медицинской карты / формы 043/у */}
+			{isOutpatientCardModalOpen && (
+				<OutpatientCardPrintModal
+					isOpen={isOutpatientCardModalOpen}
+					onClose={() => setIsOutpatientCardModalOpen(false)}
+					patient={patient ?? null}
+					doctorFullName={doctorName ?? null}
+					clinicProfileDraft={clinicProfileDraft}
+				/>
+			)}
+
+			{/* Модалка официального договора A4 */}
+			{isContractModalOpen && (
+				<DocumentA4PrintPreviewModal
+					isOpen={isContractModalOpen}
+					onClose={() => setIsContractModalOpen(false)}
+					initialTab="contract"
+					patient={patient ?? null}
+					doctorFullName={doctorName ?? null}
 					clinicProfileDraft={clinicProfileDraft}
 				/>
 			)}

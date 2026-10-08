@@ -33,8 +33,9 @@ import { applyThemeToRoot, resolveTheme, type ThemeMode } from "./lib/themeClass
 
 // 1. Пациент с реальными патологиями (Мандат 8k: Zero Mocks)
 const sampleTeeth: ToothData[] = [
+	{ toothNumber: 48, state: "Retained" },
 	{ toothNumber: 16, state: "Caries" },
-	{ toothNumber: 24, state: "Root" },
+	{ toothNumber: 24, state: "Caries" },
 	{ toothNumber: 36, state: "Missing" },
 	{ toothNumber: 46, state: "Pulpitis" },
 ];
@@ -241,10 +242,10 @@ const initialSampleStages: TreatmentPlanStage[] = [
 function TreatmentPlanPreviewApp() {
 	const params = new URLSearchParams(window.location.search);
 	const rawTheme = (params.get("theme") || "light") as ThemeMode;
-	const rawTab = (params.get("tab") || "stages") as "3tier" | "stages" | "phased4";
+	const rawTab = (params.get("tab") || "stages") as "3tier" | "stages" | "phased4" | "roadmap";
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>("optimum");
 	const [planStatus, setPlanStatus] = useState<TreatmentPlanStatus>("agreed");
-	const [activeTab, setActiveTab] = useState<"3tier" | "stages" | "phased4">(rawTab);
+	const [activeTab, setActiveTab] = useState<"3tier" | "stages" | "phased4" | "roadmap">(rawTab);
 	const [discount, setDiscount] = useState(5);
 	const [bonus, setBonus] = useState(1500);
 	const [stages, setStages] = useState<TreatmentPlanStage[]>(initialSampleStages);

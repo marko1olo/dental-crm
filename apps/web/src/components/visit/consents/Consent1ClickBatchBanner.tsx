@@ -9,6 +9,15 @@ export interface Consent1ClickBatchBannerProps {
 	readonly onOpenInformedConsentModal?: (() => void) | undefined;
 }
 
+function formatConsentsCount(count: number): string {
+	const mod10 = count % 10;
+	const mod100 = count % 100;
+	if (mod100 >= 11 && mod100 <= 19) return `${count} согласий`;
+	if (mod10 === 1) return `${count} согласие`;
+	if (mod10 >= 2 && mod10 <= 4) return `${count} согласия`;
+	return `${count} согласий`;
+}
+
 export function Consent1ClickBatchBanner({
 	unsignedRequiredItems,
 	onPrintTodayPackage,
@@ -24,7 +33,7 @@ export function Consent1ClickBatchBanner({
 					</div>
 					<div>
 						<div className="vct-package-title">
-							Требуется оформить {unsignedRequiredItems.length} согласий для сегодняшнего приёма
+							Требуется оформить {formatConsentsCount(unsignedRequiredItems.length)} для сегодняшнего приёма
 						</div>
 						<div className="vct-package-desc">
 							Клинические манипуляции по плану приёма:{" "}

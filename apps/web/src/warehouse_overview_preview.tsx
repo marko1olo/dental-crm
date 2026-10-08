@@ -17,15 +17,13 @@ import "./styles/overflow-fixes.css";
 import "./styles/themes.css";
 import "./styles/theme-overrides.css";
 
-import {
-	WarehouseStockAlertsBar,
-	WarehouseOverviewTab,
-	WarehouseWaybillsTab,
-	WarehouseInventoryTab,
-	WarehouseBatchTrackingModal,
-	WarehouseCatalogView,
-	ConsumablesDeductionModal,
-} from "./components/warehouse/index.js";
+import { WarehouseStockAlertsBar } from "./components/warehouse/WarehouseStockAlertsBar.js";
+import { WarehouseOverviewTab } from "./components/warehouse/WarehouseOverviewTab.js";
+import { WarehouseWaybillsTab } from "./components/warehouse/WarehouseWaybillsTab.js";
+import { WarehouseInventoryTab } from "./components/warehouse/WarehouseInventoryTab.js";
+import { WarehouseBatchTrackingModal } from "./components/warehouse/WarehouseBatchTrackingModal.js";
+import { WarehouseCatalogView } from "./components/warehouse/WarehouseCatalogView.js";
+import { ConsumablesDeductionModal } from "./components/warehouse/ConsumablesDeductionModal.js";
 import { SanPinSterilizationJournal } from "./components/sanpin/SanPinSterilizationJournal.js";
 import type { InventoryItem } from "./components/inventory/useInventoryLogic.js";
 import { applyThemeToRoot, resolveTheme, type ThemeMode } from "./lib/themeClasses.js";

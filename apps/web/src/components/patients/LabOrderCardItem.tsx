@@ -1,6 +1,7 @@
 import type React from "react";
 import {
 	AlertOctagon,
+	Box,
 	Calendar,
 	Camera,
 	Check,
@@ -20,6 +21,7 @@ import {
 	CANONICAL_LAB_STATUSES,
 	mapToCanonicalStatus,
 } from "../lab/labMath";
+import { is3DScanUrl } from "../lab/LabAttachScanModal";
 import type { LabOrder } from "./LabOrdersPanel";
 
 export interface LabOrderCardItemProps {
@@ -38,6 +40,7 @@ export interface LabOrderCardItemProps {
 	onReclamation: (order: LabOrder) => void;
 	onCopyPortalLink: (token: string) => void;
 	onDeleteOrder: (id: string) => void;
+	onView3DScan?: (order: LabOrder) => void;
 }
 
 export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
@@ -56,6 +59,7 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 	onReclamation,
 	onCopyPortalLink,
 	onDeleteOrder,
+	onView3DScan,
 }) => {
 	const canonicalStatus = mapToCanonicalStatus(order.status);
 	const isMenuOpen = openMenuOrderId === order.id;
@@ -130,6 +134,22 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 				</p>
 			)}
 
+			{/* Attached 3D-Scan Badge */}
+			{order.attachedImageUrl && is3DScanUrl(order.attachedImageUrl) && (
+				<div className="flex items-center gap-1.5 pt-0.5">
+					<button
+						type="button"
+						onClick={() => onView3DScan?.(order)}
+						className="px-2 py-0.5 rounded-lg bg-teal-500/15 hover:bg-teal-500/25 text-teal-700 dark:text-teal-300 border border-teal-500/30 text-[11px] font-bold flex items-center gap-1 font-mono truncate cursor-pointer transition-colors active:scale-95 text-left"
+						data-testid={`lab-order-card-view-scan-btn-${order.id}`}
+						title={`Открыть 3D-скан: ${order.attachedImageUrl}`}
+					>
+						<Box className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+						<span className="truncate">3D: {order.attachedImageUrl.split("/").pop()}</span>
+					</button>
+				</div>
+			)}
+
 			{/* Card Bottom 32px Action Toolbar */}
 			<div className="lab-card-footer">
 				<div className="flex items-center gap-1 text-xs text-[var(--muted)]">
@@ -196,6 +216,22 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 									<Calendar className="w-3.5 h-3.5 text-amber-500" />
 									<span>Запланировать прием</span>
 								</button>
+
+								{order.attachedImageUrl && is3DScanUrl(order.attachedImageUrl) && (
+									<button
+										type="button"
+										onClick={() => {
+											setOpenMenuOrderId(null);
+											onView3DScan?.(order);
+										}}
+										className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-teal-500/10 text-teal-700 dark:text-teal-300 font-bold transition-colors cursor-pointer"
+										role="menuitem"
+										data-testid={`lab-order-card-menu-view-scan-btn-${order.id}`}
+									>
+										<Box className="w-3.5 h-3.5 text-teal-500" />
+										<span>Открыть 3D-скан (STL/PLY)</span>
+									</button>
+								)}
 
 								<button
 									type="button"

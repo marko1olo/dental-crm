@@ -18,6 +18,7 @@ import {
 	Check,
 	ChevronRight,
 	Compass,
+	ExternalLink,
 	Eye,
 	Filter,
 	Layers,
@@ -28,10 +29,12 @@ import {
 	ZoomOut,
 } from "lucide-react";
 import type { ImagingStudy } from "@dental/shared";
+import { openCbctPopoutWindow } from "../../native/desktopBridge";
 import {
 	matchesDatePreset,
 	type TactileDatePreset,
 } from "../radiology/RadiologyPatientSearchModal";
+import { is3DScanUrl } from "../lab/LabAttachScanModal";
 
 export type TimelineDatePreset = "all" | "today" | "yesterday" | "3days" | "last_week" | "last_month";
 
@@ -56,6 +59,7 @@ export interface PatientTimelineProps {
 	readonly activeStudyId?: string | null | undefined;
 	readonly onSelectStudy?: ((study: ImagingStudy) => void) | undefined;
 	readonly onOpenStudio?: ((study: ImagingStudy) => void) | undefined;
+	readonly onOpenScan3d?: ((study: ImagingStudy) => void) | undefined;
 	readonly onOpenViewer?: ((study: ImagingStudy) => void) | undefined;
 	readonly onOpenControl?: ((study: ImagingStudy) => void) | undefined;
 	readonly onOpenTactileSearch?: (() => void) | undefined;
@@ -130,6 +134,9 @@ export function getModalityColor(modality: string | null | undefined): {
 	if (norm.includes("pano") || norm.includes("opg") || norm.includes("панорам")) {
 		return { label: "ПАНОРАМА", bg: "rgba(6, 182, 212, 0.18)", text: "#06b6d4", border: "rgba(6, 182, 212, 0.4)" };
 	}
+	if (norm.includes("stl") || norm.includes("ply") || norm.includes("obj") || norm.includes("scan") || norm.includes("скан")) {
+		return { label: "3D-СКАН", bg: "rgba(13, 148, 136, 0.18)", text: "#2dd4bf", border: "rgba(13, 148, 136, 0.4)" };
+	}
 	if (norm.includes("cbct") || norm.includes("3d") || norm.includes("кт")) {
 		return { label: "КЛКТ 3D", bg: "rgba(99, 102, 241, 0.18)", text: "#818cf8", border: "rgba(99, 102, 241, 0.4)" };
 	}
@@ -150,6 +157,7 @@ export const PatientTimeline: React.FC<PatientTimelineProps> = ({
 	activeStudyId: externalActiveStudyId,
 	onSelectStudy,
 	onOpenStudio,
+	onOpenScan3d,
 	onOpenViewer,
 	onOpenControl,
 	onOpenTactileSearch,
@@ -271,6 +279,19 @@ export const PatientTimeline: React.FC<PatientTimelineProps> = ({
 	};
 
 	const handleCardDoubleClick = (study: ImagingStudy) => {
+		const is3DScan = Boolean(
+			study.kind === "scan_3d" ||
+			study.modality === "STL" ||
+			study.modality === "PLY" ||
+			study.modality === "OBJ" ||
+			(study.previewUrl && is3DScanUrl(study.previewUrl)) ||
+			(study.viewerUrl && is3DScanUrl(study.viewerUrl)) ||
+			/\.(stl|ply|obj)($|[?#])/i.test(study.title || "")
+		);
+		if (is3DScan && onOpenScan3d) {
+			onOpenScan3d(study);
+			return;
+		}
 		const isCbct = study.kind === "cbct" || (study.sliceCount && study.sliceCount > 1);
 		if (isCbct && onOpenStudio) {
 			onOpenStudio(study);
@@ -460,7 +481,16 @@ export const PatientTimeline: React.FC<PatientTimelineProps> = ({
 							>
 								{group.items.map((study) => {
 									const isSelected = activeStudyId === study.id;
-									const isCbct = study.kind === "cbct" || (study.sliceCount && study.sliceCount > 1);
+									const is3DScan = Boolean(
+										study.kind === "scan_3d" ||
+										study.modality === "STL" ||
+										study.modality === "PLY" ||
+										study.modality === "OBJ" ||
+										(study.previewUrl && is3DScanUrl(study.previewUrl)) ||
+										(study.viewerUrl && is3DScanUrl(study.viewerUrl)) ||
+										/\.(stl|ply|obj)($|[?#])/i.test(study.title || "")
+									);
+									const isCbct = !is3DScan && (study.kind === "cbct" || (study.sliceCount && study.sliceCount > 1));
 									const { timeStr, formattedDate } = formatStudyDateKey(
 										study.capturedAt || study.studyDate,
 									);
@@ -502,12 +532,22 @@ export const PatientTimeline: React.FC<PatientTimelineProps> = ({
 													/>
 												) : (
 													<div className="flex flex-col items-center justify-center w-full h-full text-slate-500">
-														{isCbct ? (
-															<Box className="w-6 h-6 mb-1 opacity-70 text-indigo-400" />
+														{is3DScan ? (
+															<>
+																<Box className="w-6 h-6 mb-1 opacity-80 text-teal-400" />
+																<span className="text-[10px] font-mono text-teal-300">3D-СКАН</span>
+															</>
+														) : isCbct ? (
+															<>
+																<Box className="w-6 h-6 mb-1 opacity-70 text-indigo-400" />
+																<span className="text-[10px] font-mono">DICOM</span>
+															</>
 														) : (
-															<Scan className="w-6 h-6 mb-1 opacity-70 text-emerald-400" />
+															<>
+																<Scan className="w-6 h-6 mb-1 opacity-70 text-emerald-400" />
+																<span className="text-[10px] font-mono">DICOM</span>
+															</>
 														)}
-														<span className="text-[10px] font-mono">DICOM</span>
 													</div>
 												)}
 
@@ -576,18 +616,56 @@ export const PatientTimeline: React.FC<PatientTimelineProps> = ({
 												{/* Quick 1-Click Action Buttons */}
 												<div className="flex items-center gap-1.5 pt-1 border-t border-[#172338]">
 													{isCbct ? (
+														<div className="flex items-center gap-1 flex-1">
+															<button
+																type="button"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	if (onOpenStudio) onOpenStudio(study);
+																}}
+																className="flex-1 h-6 px-1.5 rounded text-[10px] font-bold bg-indigo-600 hover:bg-indigo-500 text-white inline-flex items-center justify-center gap-1 cursor-pointer transition-colors"
+																data-testid={`btn-timeline-launch-3d-${study.id}`}
+																title="Открыть в 3D MPR Студии прямо в карте"
+															>
+																<Box className="w-3 h-3" />
+																<span>3D КТ</span>
+															</button>
+															<button
+																type="button"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	openCbctPopoutWindow({
+																		studyId: study.id,
+																		patientId: study.patientId || undefined,
+																		patientName: study.patientFullName || undefined,
+																		title: `3D КТ - ${study.title || "Исследование"}`,
+																	});
+																}}
+																className="h-6 px-1.5 rounded text-[10px] font-bold bg-[#1e293b] hover:bg-[#334155] text-cyan-300 border border-cyan-500/30 inline-flex items-center justify-center gap-0.5 cursor-pointer transition-colors"
+																data-testid={`btn-timeline-launch-popout-${study.id}`}
+																title="Открыть на 2-м мониторе (в отдельном окне)"
+															>
+																<ExternalLink className="w-2.5 h-2.5" />
+																<span>В окно</span>
+															</button>
+														</div>
+													) : is3DScan ? (
 														<button
 															type="button"
 															onClick={(e) => {
 																e.stopPropagation();
-																if (onOpenStudio) onOpenStudio(study);
+																if (onOpenScan3d) {
+																	onOpenScan3d(study);
+																} else if (onOpenViewer) {
+																	onOpenViewer(study);
+																}
 															}}
-															className="flex-1 h-6 px-2 rounded text-[10px] font-bold bg-indigo-600 hover:bg-indigo-500 text-white inline-flex items-center justify-center gap-1 cursor-pointer transition-colors"
-															data-testid={`btn-timeline-launch-3d-${study.id}`}
-															title="Открыть в 3D MPR Студии"
+															className="flex-1 h-6 px-2 rounded text-[10px] font-bold bg-teal-600 hover:bg-teal-500 text-white inline-flex items-center justify-center gap-1 cursor-pointer transition-colors"
+															data-testid={`btn-timeline-launch-scan3d-${study.id}`}
+															title="Открыть интраоральный 3D-скан (STL/PLY)"
 														>
-															<Box className="w-3 h-3" />
-															<span>3D КТ</span>
+															<Box className="w-3 h-3 text-teal-200" />
+															<span>3D-скан</span>
 														</button>
 													) : (
 														<button

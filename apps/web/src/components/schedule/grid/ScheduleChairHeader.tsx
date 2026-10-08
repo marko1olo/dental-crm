@@ -189,13 +189,16 @@ export function ScheduleChairHeader({
           {!hasDoctor && (chair as any).active !== false && (
             <button
               type="button"
+              style={{ display: "none" }}
+              className="hidden"
+              aria-hidden="true"
+              tabIndex={-1}
               onClick={(e) => {
                 e.stopPropagation();
                 setActiveHeaderDoctorPopoverChairId(
                   activeHeaderDoctorPopoverChairId === chair.id ? null : chair.id,
                 );
               }}
-              className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded px-1.5 py-0.5 shrink-0 cursor-pointer"
               title="Кресло свободно (врач не назначен). Нажмите для назначения смены"
               data-testid={`chair-grid-unstaffed-badge-${chair.id}`}
             >
@@ -325,7 +328,9 @@ export function ScheduleChairHeader({
       <div className="flex items-center justify-between gap-1 w-full min-w-0">
         {doctors && doctors.length > 0 && (
           <div
-            className="flex flex-row items-center gap-1 shrink-0 cursor-pointer h-7 min-h-[28px]"
+            className={`flex flex-row items-center gap-1 shrink-0 cursor-pointer h-7 min-h-[28px] ${
+              hasDoctor ? "" : "hidden"
+            }`}
             data-testid={`chair-doctor-badge-${chair.id}`}
             onClick={() => openAssignModal(chair.id)}
             title={
@@ -425,7 +430,7 @@ export function ScheduleChairHeader({
         )}
 
         {/* Doctor-to-Chair Shift Binding Badge / Button */}
-        <div className="flex items-center gap-1 shrink-0 ml-auto">
+        <div className={`flex items-center gap-1 shrink-0 ${hasDoctor ? "ml-auto" : "w-full"}`}>
           <ScheduleChairDutySection
             chair={chair}
             assignment={assignment}

@@ -42,6 +42,8 @@ import { isDemoShowcaseMode, isDemoPatientId } from "../../utils/demoModeEngine.
 import { CLINICAL_RADIOLOGY_PRESETS, loadDoctorCbctSettings } from "./cbctLutMath";
 import { RadiologyConsultationSplit } from "./RadiologyConsultationSplit";
 import { DentalLabOrderModal, type DentalLabOrderData } from "../lab/DentalLabOrderModal";
+import { cacheActiveCbctVolume } from "./mpr/cbctStudioSyncChannel";
+import { routeOpenCbctPopout } from "../../utils/runtimeRouter";
 // Re-exports for backwards compatibility & wave224 test anchors (data-testid="cbct-empty-volume-dropzone")
 export type { StudioMode, ViewLayoutMode, CbctMprImplantStudioModalProps };
 export { DEFAULT_IAN_NERVE_POINTS, formatNerveNodesPlural, ROTATE_CURSOR, getTissueNameFromHU };
@@ -625,11 +627,42 @@ export const CbctMprImplantStudioModal: React.FC<
 		if (!vol) return false;
 		if (initialVolume && vol === initialVolume) return true;
 		if (typeof window !== "undefined") {
-			const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume };
+			const win = window as unknown as {
+				__cbctDemoVolume?: CbctVoxelVolume;
+				__cbctActiveVolume?: CbctVoxelVolume;
+				__cbctSharedVolume?: CbctVoxelVolume;
+			};
 			if (win.__cbctDemoVolume && vol === win.__cbctDemoVolume) return true;
+			if (win.__cbctActiveVolume && vol === win.__cbctActiveVolume) return true;
+			if (win.__cbctSharedVolume && vol === win.__cbctSharedVolume) return true;
 		}
 		return false;
 	}, [initialVolume]);
+
+	const handleOpenPopoutWindow = useCallback(async () => {
+		if (volume) {
+			cacheActiveCbctVolume(volume);
+			if (typeof window !== "undefined") {
+				const win = window as unknown as {
+					__cbctSharedVolume?: CbctVoxelVolume;
+					__cbctActiveVolume?: CbctVoxelVolume;
+				};
+				win.__cbctSharedVolume = volume;
+				win.__cbctActiveVolume = volume;
+			}
+		}
+		const res = await routeOpenCbctPopout({
+			studyId: study?.id,
+			patientId: patientId,
+			patientName: patientDisplayName || patientName,
+			mode: studioMode,
+		});
+		if (!res.success && res.error === "popup_blocked") {
+			showToast("Разрешите всплывающие окна для вывода КТ на второй монитор", "warning");
+		} else if (res.success) {
+			onClose();
+		}
+	}, [volume, study?.id, patientId, patientDisplayName, patientName, studioMode, onClose]);
 
 	const handleCloseStudio = useCallback(() => {
 		if (modalContainerRef.current) {
@@ -745,7 +778,7 @@ export const CbctMprImplantStudioModal: React.FC<
 				onDrop={dicomLoader.handleDropFiles}
 			>
 				<CbctHeaderBar
-					modalId={modalId} patientDisplayName={patientDisplayName} resolvedPatientName={patientDisplayName} loadedSliceCount={loadedSliceCount} volume={volume} studioMode={studioMode} handleSelectStudioMode={handleSelectStudioMode} handleExportToEmr={handleExportToEmr} handleExportCbctToFinance={handleExportCbctToFinance} handleExportToPlan={handleExportToPlan} handleExportToLab={handleExportToLab} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} isStudioMenuOpen={isStudioMenuOpen} setIsStudioMenuOpen={setIsStudioMenuOpen} studioMenuRef={studioMenuRef} handleResetAll={handleResetAll} handleAutoDetectArch={handleAutoDetectArch} showDentalArch={showDentalArch} setShowDentalArch={setShowDentalArch} showEdgeRulers={showEdgeRulers} setShowEdgeRulers={setShowEdgeRulers} handleExportPdfReport={handleExportPdfReport} maximizedViewport={maximizedViewport} setMaximizedViewport={setMaximizedViewport} viewLayout={viewLayout} setViewLayout={setViewLayout} isFullscreen={isFullscreen} handleToggleFullscreenModal={() => setIsFullscreen((prev) => !prev)} onClose={handleCloseStudio} activePresetId={activePreset} onSelectPreset={handleSelectPreset} crossSectionStepMm={crossSectionStepMm} onChangeCrossSectionStepMm={setCrossSectionStepMm} isUnsharpActive={isUnsharpActive} onToggleUnsharp={handleToggleUnsharp} sharpenAmount={isUnsharpActive ? 0.18 : 0.0} windowWidth={windowWidth} onChangeWindowWidth={setWindowWidth} windowLevel={windowLevel} onChangeWindowLevel={setWindowLevel} slabThicknessMm={slabThicknessMm} onChangeSlabThicknessMm={setSlabThicknessMm} slabMode={slabMode} onChangeSlabMode={setSlabMode} panoThicknessMm={panoThicknessMm} onChangePanoThicknessMm={setPanoThicknessMm} onSelectClinicalPreset={handleSelectClinicalPreset} onCopySnapshotToClipboard={clipboardSnapshot.copySnapshotToClipboard} onOpenComparisonSplit={() => setIsComparisonSplitOpen(true)}
+					modalId={modalId} patientDisplayName={patientDisplayName} resolvedPatientName={patientDisplayName} loadedSliceCount={loadedSliceCount} volume={volume} studioMode={studioMode} handleSelectStudioMode={handleSelectStudioMode} handleExportToEmr={handleExportToEmr} handleExportCbctToFinance={handleExportCbctToFinance} handleExportToPlan={handleExportToPlan} handleExportToLab={handleExportToLab} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} isStudioMenuOpen={isStudioMenuOpen} setIsStudioMenuOpen={setIsStudioMenuOpen} studioMenuRef={studioMenuRef} handleResetAll={handleResetAll} handleAutoDetectArch={handleAutoDetectArch} showDentalArch={showDentalArch} setShowDentalArch={setShowDentalArch} showEdgeRulers={showEdgeRulers} setShowEdgeRulers={setShowEdgeRulers} handleExportPdfReport={handleExportPdfReport} maximizedViewport={maximizedViewport} setMaximizedViewport={setMaximizedViewport} viewLayout={viewLayout} setViewLayout={setViewLayout} isFullscreen={isFullscreen} handleToggleFullscreenModal={() => setIsFullscreen((prev) => !prev)} onClose={handleCloseStudio} onOpenPopoutWindow={handleOpenPopoutWindow} studyId={study?.id} patientId={patientId} activePresetId={activePreset} onSelectPreset={handleSelectPreset} crossSectionStepMm={crossSectionStepMm} onChangeCrossSectionStepMm={setCrossSectionStepMm} isUnsharpActive={isUnsharpActive} onToggleUnsharp={handleToggleUnsharp} sharpenAmount={isUnsharpActive ? 0.18 : 0.0} windowWidth={windowWidth} onChangeWindowWidth={setWindowWidth} windowLevel={windowLevel} onChangeWindowLevel={setWindowLevel} slabThicknessMm={slabThicknessMm} onChangeSlabThicknessMm={setSlabThicknessMm} slabMode={slabMode} onChangeSlabMode={setSlabMode} panoThicknessMm={panoThicknessMm} onChangePanoThicknessMm={setPanoThicknessMm} onSelectClinicalPreset={handleSelectClinicalPreset} onCopySnapshotToClipboard={clipboardSnapshot.copySnapshotToClipboard} onOpenComparisonSplit={() => setIsComparisonSplitOpen(true)}
 				/>
 
 				<main className="flex-1 flex min-h-0 w-full overflow-hidden relative">

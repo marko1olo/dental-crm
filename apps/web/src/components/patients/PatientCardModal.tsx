@@ -266,7 +266,11 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								<p className="text-xs text-[var(--muted)] m-0 truncate">
 									{patientData.phone ? `Тел: ${patientData.phone}` : "Паспортная карточка и клинический статус"}
 									{patientData.birthDate ? ` • ${patientData.birthDate}` : ""}
-									{patientData.id ? ` • ID: ${patientData.id.length <= 16 ? patientData.id : `${patientData.id.slice(0, 8)}…`}` : ""}
+									{patientData.medicalCardNumber || patientData.cardNumber
+										? ` • Карта: №${patientData.medicalCardNumber || patientData.cardNumber}`
+										: patientData.id && patientData.id.length <= 16
+											? ` • ID: ${patientData.id}`
+											: ""}
 								</p>
 							</div>
 						</div>
@@ -591,7 +595,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								data-testid="btn-save-patient-card"
 								onClick={handleSave}
-								className="bg-[var(--teal)] text-white hover:opacity-95 min-h-[44px] sm:min-h-[32px] h-8 px-4 text-xs font-semibold rounded-lg shadow-xs cursor-pointer select-none transition-all"
+								className="bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] hover:opacity-95 min-h-[44px] sm:min-h-[32px] h-8 px-4 text-xs font-semibold rounded-lg shadow-xs cursor-pointer select-none transition-all"
 							>
 								Сохранить
 							</button>

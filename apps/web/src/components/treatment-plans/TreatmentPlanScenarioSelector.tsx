@@ -6,6 +6,7 @@
 import React from "react";
 import { TreatmentPlan3TierComparison } from "./TreatmentPlan3TierComparison";
 import { TreatmentPlanPhased4StageView } from "./TreatmentPlanPhased4StageView";
+import { TreatmentPlanRoadmap } from "./TreatmentPlanRoadmap";
 import type {
 	TreatmentPlanStage,
 	TreatmentPlanTier,
@@ -14,7 +15,7 @@ import type {
 import { showToast } from "../GlobalToast";
 
 export interface TreatmentPlanScenarioSelectorProps {
-	readonly activeViewTab: "3tier" | "stages" | "phased4";
+	readonly activeViewTab: "3tier" | "stages" | "phased4" | "roadmap";
 	readonly planTiers: readonly TreatmentPlanTier[];
 	readonly selectedTierId: TreatmentPlanTierId;
 	readonly onSelectTier: (tier: TreatmentPlanTier) => void;
@@ -139,6 +140,23 @@ export const TreatmentPlanScenarioSelector: React.FC<TreatmentPlanScenarioSelect
 						}) || stages[0];
 					if (matchingStage && onChangeStageStatus) {
 						onChangeStageStatus(matchingStage, newStatus);
+					}
+				}}
+			/>
+		);
+	}
+
+	if (activeViewTab === "roadmap") {
+		return (
+			<TreatmentPlanRoadmap
+				stages={stages}
+				patientName={patientName}
+				patientFullName={patientName}
+				patientId={patientId}
+				planId="PLAN-SHOWCASE-01"
+				onBookStage={(_stage) => {
+					if (typeof window !== "undefined") {
+						window.location.hash = "#schedule";
 					}
 				}}
 			/>

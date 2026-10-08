@@ -12,6 +12,7 @@ import {
 	DollarSign,
 	ExternalLink,
 	FlaskConical,
+	Columns3,
 	Layers,
 	LayoutGrid,
 	LayoutList,
@@ -60,6 +61,7 @@ import {
 	type LabPriceMatrixItem,
 } from "./DentalLabPriceMatrixModal";
 import { DentalLabWorkOrderModal } from "./DentalLabWorkOrderModal";
+import { IntraoralScan3DViewerModal } from "../radiology/IntraoralScan3DViewerModal";
 
 const DentalLabOrdersTrackerModal = lazy(() =>
 	import("../lab/DentalLabOrdersTrackerModal").then((module) => ({
@@ -71,6 +73,19 @@ const LabTrackingDrawer = lazy(() =>
 		default: module.LabTrackingDrawer,
 	})),
 );
+const DentalLabOrdersKanbanBoard = lazy(() =>
+	import("../lab/DentalLabOrdersKanbanBoard").then((module) => ({
+		default: module.DentalLabOrdersKanbanBoard,
+	})),
+);
+const DentalLabOrdersHubModal = lazy(() =>
+	import("../lab/DentalLabOrdersHubModal").then((module) => ({
+		default: module.DentalLabOrdersHubModal,
+	})),
+);
+import { mapRawApiOrderToWorkflowOrder } from "../lab/dentalLabApiMapper";
+import type { DentalLabWorkflowOrder, LabWorkflowStatus } from "../lab/dentalLabWorkflowEngine";
+import "../lab/dentalLabWorkflow.css";
 
 export interface DentalLabOrdersViewProps {
 	readonly initialOrders?: readonly DentalLabOrderData[];
@@ -92,7 +107,10 @@ export function DentalLabOrdersView({
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<string>("all");
 	const [doctorFilter, setDoctorFilter] = useState<string>("all");
-	const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+	const [viewMode, setViewMode] = useState<"table" | "cards" | "kanban">("table");
+	const [isHubModalOpen, setIsHubModalOpen] = useState(false);
+	const [kanbanStageLimits, setKanbanStageLimits] = useState<Record<string, number>>({});
+	const [kanbanActiveMenuId, setKanbanActiveMenuId] = useState<string | null>(null);
 	const [openMenuOrderId, setOpenMenuOrderId] = useState<string | null>(null);
 
 	// Отображение курьерской панели
@@ -124,6 +142,13 @@ export function DentalLabOrdersView({
 	const [isReadyInClinicModalOpen, setIsReadyInClinicModalOpen] = useState(false);
 	const [readyInClinicOrder, setReadyInClinicOrder] = useState<ReadyInClinicLabOrder | null>(null);
 
+	// Модалка 3D-просмотрщика интраорального скана
+	const [view3DScanOrder, setView3DScanOrder] = useState<DentalLabOrderData | null>(null);
+
+	const handleView3DScan = useCallback((order: DentalLabOrderData) => {
+		setView3DScanOrder(order);
+	}, []);
+
 	// Live status updates from store
 	const labOrderStatuses = useAppStore((state: any) => state.labOrderStatuses);
 
@@ -145,6 +170,7 @@ const CANONICAL_DEMO_LAB_ORDERS: DentalLabOrderData[] = [
 		dueDate: new Date(Date.now() + 5 * 86400000).toISOString(),
 		priceRub: 24000,
 		clinicalNotes: "Коронка 16 под цвет соседних зубов. Умеренная прозрачность HT.",
+		attachedImageUrl: "/models/mandible_scan_16.stl",
 	},
 	{
 		id: "lab-demo-002",
@@ -386,6 +412,25 @@ const CANONICAL_DEMO_LAB_ORDERS: DentalLabOrderData[] = [
 		}
 		return Array.from(set).sort();
 	}, [orders]);
+
+	const kanbanOrdersByStage = useMemo(() => {
+		const map: Record<LabWorkflowStatus, DentalLabWorkflowOrder[]> = {
+			draft: [],
+			sent_to_lab: [],
+			fitting_scheduled: [],
+			installed_completed: [],
+			warranty_rework: [],
+		};
+		filteredOrders.forEach((raw, idx) => {
+			const wf = mapRawApiOrderToWorkflowOrder(raw, idx, raw.patientId, raw.patientName, raw.doctorName);
+			if (map[wf.currentStage]) {
+				map[wf.currentStage].push(wf);
+			} else {
+				map.draft.push(wf);
+			}
+		});
+		return map;
+	}, [filteredOrders]);
 
 	const handleStatusChange = async (orderId: string, newStatus: string) => {
 		try {
@@ -854,6 +899,17 @@ const CANONICAL_DEMO_LAB_ORDERS: DentalLabOrderData[] = [
 
 							<button
 								type="button"
+								onClick={() => setIsHubModalOpen(true)}
+								className="secondary-button h-8 min-h-[32px] px-2.5 text-xs font-semibold inline-flex items-center gap-1.5"
+								title="Полноэкранный канбан-хаб ЗТЛ"
+								data-testid="lab-orders-open-hub-btn"
+							>
+								<Columns3 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+								<span>Канбан-хаб</span>
+							</button>
+
+							<button
+								type="button"
 								onClick={() => void fetchOrders()}
 								className="icon-button h-8 w-8 min-h-[32px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper)] transition-colors shadow-2xs flex items-center justify-center cursor-pointer shrink-0"
 								title="Обновить список"
@@ -953,6 +1009,16 @@ const CANONICAL_DEMO_LAB_ORDERS: DentalLabOrderData[] = [
 								<LayoutGrid className="w-3.5 h-3.5" />
 								<span>Карточки</span>
 							</button>
+							<button
+								type="button"
+								onClick={() => setViewMode("kanban")}
+								data-active={viewMode === "kanban" ? "true" : "false"}
+								className={`dente-segmented-item ${viewMode === "kanban" ? "active" : ""}`}
+								data-testid="lab-orders-view-kanban-btn"
+							>
+								<Columns3 className="w-3.5 h-3.5" />
+								<span>Канбан</span>
+							</button>
 						</div>
 					</div>
 
@@ -988,6 +1054,46 @@ const CANONICAL_DEMO_LAB_ORDERS: DentalLabOrderData[] = [
 								<Plus className="w-4 h-4" />
 								<span>+ Создать наряд-заказ в лабораторию</span>
 							</button>
+						</div>
+					) : viewMode === "kanban" ? (
+						<div className="w-full max-w-full overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs" data-testid="lab-orders-kanban-container">
+							<Suspense fallback={<div className="p-8 text-center text-xs text-[var(--muted)]">Загрузка канбан-доски ЗТЛ...</div>}>
+								<DentalLabOrdersKanbanBoard
+									ordersByStage={kanbanOrdersByStage}
+									stageLimits={kanbanStageLimits}
+									setStageLimits={setKanbanStageLimits}
+									activeCardMenuOrderId={kanbanActiveMenuId}
+									setActiveCardMenuOrderId={setKanbanActiveMenuId}
+									onInspectOrder={(wfOrder) => {
+										const orig = orders.find((o) => o.id === wfOrder.id);
+										if (orig) handleOpenEditOrder(orig);
+									}}
+									onAdvanceStage={async (wfOrder) => {
+										const nextStatus = wfOrder.currentStage === "draft" ? "sent_to_lab" : wfOrder.currentStage === "sent_to_lab" ? "fitting_scheduled" : "installed_completed";
+										await handleStatusChange(wfOrder.id, nextStatus);
+									}}
+									onPrintBlank={(wfOrder) => {
+										const orig = orders.find((o) => o.id === wfOrder.id);
+										if (orig) handleOpenPrintOrder(orig);
+									}}
+									onAttachBitePhoto={(wfOrder) => {
+										const orig = orders.find((o) => o.id === wfOrder.id);
+										if (orig) handleAttachBitePhoto(orig);
+									}}
+									onTechnicianComment={(wfOrder) => {
+										const orig = orders.find((o) => o.id === wfOrder.id);
+										if (orig) handleTechnicianComment(orig);
+									}}
+									onRepeatFitting={(wfOrder) => {
+										const orig = orders.find((o) => o.id === wfOrder.id);
+										if (orig) handleRepeatFitting(orig);
+									}}
+									onRequestWarrantyRework={(wfOrder) => {
+										const orig = orders.find((o) => o.id === wfOrder.id);
+										if (orig) handleReclamation(orig);
+									}}
+								/>
+							</Suspense>
 						</div>
 					) : viewMode === "table" ? (
 						<div className="w-full max-w-full overflow-x-auto rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs" data-testid="lab-orders-table-container">
@@ -1140,6 +1246,19 @@ const CANONICAL_DEMO_LAB_ORDERS: DentalLabOrderData[] = [
 															<Layers className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
 														</button>
 
+														{order.attachedImageUrl && is3DScanUrl(order.attachedImageUrl) && (
+															<button
+																type="button"
+																onClick={() => handleView3DScan(order)}
+																className="h-7 min-h-[28px] px-2 rounded-lg border border-teal-500/30 bg-teal-500/15 hover:bg-teal-500/25 text-teal-700 dark:text-teal-300 font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+																title="Открыть прикрепленный 3D-скан (STL/PLY)"
+																data-testid={`lab-order-table-view-scan-btn-${order.id}`}
+															>
+																<Box className="w-3.5 h-3.5 text-teal-500" />
+																<span>3D-скан</span>
+															</button>
+														)}
+
 														<div className="relative">
 															<button
 																type="button"
@@ -1156,6 +1275,20 @@ const CANONICAL_DEMO_LAB_ORDERS: DentalLabOrderData[] = [
 																	className="absolute right-0 top-full mt-1 w-52 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl z-30 py-1 text-xs text-[var(--ink)] animate-in fade-in-50 duration-100 text-left"
 																	onClick={(e) => e.stopPropagation()}
 																>
+																	{order.attachedImageUrl && is3DScanUrl(order.attachedImageUrl) && (
+																		<button
+																			type="button"
+																			onClick={() => {
+																				setOpenMenuOrderId(null);
+																				handleView3DScan(order);
+																			}}
+																			className="w-full px-3 py-1.5 hover:bg-teal-500/10 flex items-center gap-2 cursor-pointer text-[11px] text-teal-700 dark:text-teal-300 font-bold"
+																			data-testid={`lab-order-table-menu-view-scan-btn-${order.id}`}
+																		>
+																			<Box className="w-3.5 h-3.5 text-teal-500" />
+																			<span>Открыть 3D-скан</span>
+																		</button>
+																	)}
 																	{!(order as unknown as { paidFromCashOperationId?: string }).paidFromCashOperationId && (
 																		<button
 																			type="button"
@@ -1272,6 +1405,7 @@ const CANONICAL_DEMO_LAB_ORDERS: DentalLabOrderData[] = [
 									handleOpenReadyInClinicPrompt={handleOpenReadyInClinicPrompt}
 									handlePayFromCashbox={handlePayFromCashbox}
 									handleMarkInstalled={handleMarkInstalled}
+									handleView3DScan={handleView3DScan}
 								/>
 							))}
 						</div>
@@ -1347,6 +1481,35 @@ const CANONICAL_DEMO_LAB_ORDERS: DentalLabOrderData[] = [
 				onClose={() => setIsReadyInClinicModalOpen(false)}
 				order={readyInClinicOrder}
 			/>
+
+			{/* Просмотрщик интраорального 3D-скана (STL/PLY/OBJ) */}
+			{view3DScanOrder && (
+				<IntraoralScan3DViewerModal
+					isOpen={Boolean(view3DScanOrder)}
+					onClose={() => setView3DScanOrder(null)}
+					modelUrl={view3DScanOrder.attachedImageUrl || undefined}
+					modelFormat={
+						view3DScanOrder.attachedImageUrl && /\.ply($|[?#])/i.test(view3DScanOrder.attachedImageUrl)
+							? "ply"
+							: view3DScanOrder.attachedImageUrl && /\.obj($|[?#])/i.test(view3DScanOrder.attachedImageUrl)
+								? "obj"
+								: "stl"
+					}
+					patientName={view3DScanOrder.patientName}
+					scanTitle={`3D-скан челюсти: Наряд №${view3DScanOrder.id ? view3DScanOrder.id.slice(0, 8) : ""} (${view3DScanOrder.toothFdi ? `зуб ${view3DScanOrder.toothFdi}` : "челюсть"})`}
+				/>
+			)}
+
+			{/* Полноэкранный Канбан-хаб ЗТЛ */}
+			{isHubModalOpen && (
+				<Suspense fallback={null}>
+					<DentalLabOrdersHubModal
+						isOpen={isHubModalOpen}
+						onClose={() => setIsHubModalOpen(false)}
+						onSaveOrder={() => void fetchOrders()}
+					/>
+				</Suspense>
+			)}
 		</>
 	);
 }

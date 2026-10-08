@@ -410,4 +410,155 @@ export function isWebRuntime(target?: AppRuntimeKind): boolean {
 	return (target ?? detectAppRuntimeKind()) === "web_browser";
 }
 
+export interface CbctStudioRouteParams {
+	readonly isCbctStudio: boolean;
+	readonly studyId?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly mode?: string | undefined;
+	readonly isDemo?: boolean | undefined;
+}
+
+/**
+ * Authoritatively parses whether the current window/URL is directed to the standalone
+ * CBCT Radiology Studio Cockpit (/cbct-studio or ?view=cbct-studio).
+ */
+export function parseCbctStudioRoute(targetUrl?: string | Location): CbctStudioRouteParams {
+	if (typeof window === "undefined" && !targetUrl) {
+		return { isCbctStudio: false };
+	}
+
+	let pathname = "";
+	let search = "";
+	let hash = "";
+
+	if (typeof targetUrl === "string") {
+		try {
+			const parsed = new URL(targetUrl, "http://localhost");
+			pathname = parsed.pathname;
+			search = parsed.search;
+			hash = parsed.hash;
+		} catch {
+			pathname = targetUrl;
+		}
+	} else if (targetUrl) {
+		pathname = targetUrl.pathname || "";
+		search = targetUrl.search || "";
+		hash = targetUrl.hash || "";
+	} else if (typeof window !== "undefined") {
+		pathname = window.location.pathname || "";
+		search = window.location.search || "";
+		hash = window.location.hash || "";
+	}
+
+	const searchParams = new URLSearchParams(search);
+	const hashClean = hash.replace(/^#\/?/, "");
+	const hashParams = new URLSearchParams(hashClean.includes("?") ? hashClean.slice(hashClean.indexOf("?")) : "");
+
+	const isPathMatch =
+		pathname === "/cbct-studio" ||
+		pathname.startsWith("/cbct-studio/") ||
+		pathname === "/cbct" ||
+		pathname.startsWith("/cbct/");
+
+	const isSearchMatch =
+		searchParams.get("view") === "cbct-studio" ||
+		searchParams.get("view") === "cbct" ||
+		searchParams.get("cbct") === "studio" ||
+		searchParams.get("cbct") === "standalone";
+
+	const isHashMatch =
+		hashClean === "cbct-studio" ||
+		hashClean.startsWith("cbct-studio?") ||
+		hashClean.startsWith("cbct-studio/") ||
+		hashParams.get("view") === "cbct-studio";
+
+	const isCbctStudio = isPathMatch || isSearchMatch || isHashMatch;
+
+	const studyId =
+		searchParams.get("studyId") ||
+		searchParams.get("study_id") ||
+		hashParams.get("studyId") ||
+		undefined;
+
+	const patientId =
+		searchParams.get("patientId") ||
+		searchParams.get("patient_id") ||
+		hashParams.get("patientId") ||
+		undefined;
+
+	const patientName =
+		searchParams.get("patientName") ||
+		searchParams.get("patient_name") ||
+		hashParams.get("patientName") ||
+		undefined;
+
+	const mode =
+		searchParams.get("mode") ||
+		hashParams.get("mode") ||
+		undefined;
+
+	const isDemo =
+		searchParams.get("demo") === "true" ||
+		searchParams.get("cbct") === "demo" ||
+		searchParams.get("cbct") === "1" ||
+		hashClean.includes("demo") ||
+		undefined;
+
+	return {
+		isCbctStudio,
+		studyId,
+		patientId,
+		patientName,
+		mode,
+		isDemo,
+	};
+}
+
+/**
+ * Builds the canonical URL for launching the standalone CBCT Studio in a separate window.
+ */
+export function buildCbctStudioPopoutUrl(params: {
+	studyId?: string;
+	patientId?: string;
+	patientName?: string;
+	mode?: string;
+	demo?: boolean;
+}): string {
+	const query = new URLSearchParams();
+	query.set("view", "cbct-studio");
+	if (params.studyId) query.set("studyId", params.studyId);
+	if (params.patientId) query.set("patientId", params.patientId);
+	if (params.patientName) query.set("patientName", params.patientName);
+	if (params.mode) query.set("mode", params.mode);
+	if (params.demo) query.set("demo", "true");
+
+	return `/cbct-studio?${query.toString()}`;
+}
+
+/**
+ * Dispatches opening the CBCT Studio into an autonomous window across Desktop .EXE and Web Browser.
+ */
+export async function routeOpenCbctPopout(params: {
+	studyId?: string;
+	patientId?: string;
+	patientName?: string;
+	mode?: string;
+	demo?: boolean;
+	width?: number;
+	height?: number;
+}): Promise<{ success: boolean; popoutWindow?: Window | null; fallbackUrl?: string; error?: string }> {
+	const url = buildCbctStudioPopoutUrl(params);
+	const { openCbctPopoutWindow } = await import("../native/desktopBridge.js");
+	return openCbctPopoutWindow({
+		url,
+		...(params.studyId !== undefined ? { studyId: params.studyId } : {}),
+		...(params.patientId !== undefined ? { patientId: params.patientId } : {}),
+		...(params.patientName !== undefined ? { patientName: params.patientName } : {}),
+		width: params.width ?? 1600,
+		height: params.height ?? 1000,
+	});
+}
+
 export type { DispatchFiscalReceiptParams };
+

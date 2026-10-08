@@ -98,6 +98,10 @@ registerHooks({
 						restoreAllMocks: () => {},
 						clearAllMocks: () => {},
 						resetAllMocks: () => {},
+						stubGlobal: (key, val) => {
+							globalThis[key] = val;
+						},
+						unstubAllGlobals: () => {},
 						spyOn: (obj, method) => {
 							const orig = obj?.[method];
 							const mock = vi.fn(orig);

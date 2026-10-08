@@ -152,9 +152,10 @@ export function isLowSpecHardware(): boolean {
 		}
 	}
 
-	// 2. Delegate to canonical hardware profiler (respects manual overrides, storage, profiler score)
-	if (isLowSpecCanonical()) {
-		return true;
+	// 2. Explicit tier override
+	const override = getHardwareTierOverride();
+	if (override !== null) {
+		return override === "potato" || override === "low";
 	}
 
 	// 3. Explicit navigator checks (for node test mocks & real browser APIs)
@@ -177,6 +178,11 @@ export function isLowSpecHardware(): boolean {
 		if (typeof cores === "number" && cores >= 6 && (typeof navMem !== "number" || navMem >= 6)) {
 			return false;
 		}
+	}
+
+	// 4. Delegate to canonical hardware profiler (respects storage, profiler score)
+	if (isLowSpecCanonical()) {
+		return true;
 	}
 
 	return false;
@@ -202,19 +208,11 @@ export function getHardwareResourceTier(): HardwareResourceTier {
 		}
 	}
 
-	const profile = getHardwareProfile();
-	if (profile.tier === "potato" || profile.tier === "low") {
-		return "low";
-	}
-	if (profile.tier === "balanced") {
-		return "medium";
-	}
-	if (profile.tier === "ultra") {
-		return "high";
-	}
-
-	if (isLowSpecHardware()) {
-		return "low";
+	const override = getHardwareTierOverride();
+	if (override !== null) {
+		if (override === "potato" || override === "low") return "low";
+		if (override === "balanced") return "medium";
+		if (override === "ultra") return "high";
 	}
 
 	if (typeof navigator !== "undefined") {
@@ -231,6 +229,21 @@ export function getHardwareResourceTier(): HardwareResourceTier {
 		if ((typeof cores === "number" && cores >= 6) || (typeof navMem === "number" && navMem >= 6)) {
 			return "medium";
 		}
+	}
+
+	const profile = getHardwareProfile();
+	if (profile.tier === "potato" || profile.tier === "low") {
+		return "low";
+	}
+	if (profile.tier === "balanced") {
+		return "medium";
+	}
+	if (profile.tier === "ultra") {
+		return "high";
+	}
+
+	if (isLowSpecHardware()) {
+		return "low";
 	}
 
 	return "medium";

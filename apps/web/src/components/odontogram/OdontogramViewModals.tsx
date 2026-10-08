@@ -12,9 +12,17 @@ import { EndoCanalMeasurementDrawer } from "./EndoCanalMeasurementDrawer";
 import { ToothRadialMenu } from "./ToothRadialMenu";
 import { showToast } from "../GlobalToast";
 
+import type { OpgToothSlot } from "../orthodontics/opgTopologicalEngine";
+
 const ToothContextDrawer = React.lazy(() =>
 	import("../diagnostics/ToothContextDrawer").then((m) => ({
 		default: m.ToothContextDrawer,
+	})),
+);
+
+const SmartOpgViewerModal = React.lazy(() =>
+	import("../orthodontics/SmartOpgViewerModal").then((m) => ({
+		default: m.SmartOpgViewerModal,
 	})),
 );
 
@@ -68,6 +76,10 @@ export interface OdontogramViewModalsProps {
 	// Orthodontic ceph modal
 	isOrthoCephOpen: boolean;
 	onCloseOrthoCeph: () => void;
+	// Smart OPG panoramic AI modal
+	isSmartOpgOpen?: boolean | undefined;
+	onCloseSmartOpg?: (() => void) | undefined;
+	onApplyOpgOdontogram?: ((teethMap: Record<number, OpgToothSlot>) => void) | undefined;
 	// Jaw occlusion modal
 	activeJawModalTarget: "JU" | "JL" | "C" | null;
 	onCloseJawModal: () => void;
@@ -93,6 +105,9 @@ export const OdontogramViewModals: React.FC<OdontogramViewModalsProps> = React.m
 	onCloseEndoDrawer,
 	isOrthoCephOpen,
 	onCloseOrthoCeph,
+	isSmartOpgOpen,
+	onCloseSmartOpg,
+	onApplyOpgOdontogram,
 	activeJawModalTarget,
 	onCloseJawModal,
 	orthoDrawerTooth,
@@ -175,6 +190,18 @@ export const OdontogramViewModals: React.FC<OdontogramViewModalsProps> = React.m
 						onClose={onCloseOrthoCeph}
 						patientId={patientId}
 						patientName={patientId ? `Пациент #${patientId}` : undefined}
+					/>
+				</React.Suspense>
+			)}
+
+			{/* Smart OPG Panoramic AI & Odontogram Auto-Mapping */}
+			{isSmartOpgOpen && (
+				<React.Suspense fallback={null}>
+					<SmartOpgViewerModal
+						isOpen={isSmartOpgOpen}
+						onClose={onCloseSmartOpg ?? (() => {})}
+						patientName={patientId ? `Пациент #${patientId}` : undefined}
+						onApplyOdontogram={onApplyOpgOdontogram}
 					/>
 				</React.Suspense>
 			)}

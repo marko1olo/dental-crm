@@ -360,12 +360,10 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Специализированный вьюер КТ-исследований пациента. В активном интерфейсе заменен канонической мультипланарной реконструкцией CbctMprImplantStudioModal.tsx. Сохранен для обратной совместимости с PatientRadiologyTab.tsx и zeroBirdLanguagePurity.test.ts.",
 	},
-	{
-		file: "components/radiology/IntraoralScan3DViewerModal.tsx",
-		name: "IntraoralScan3DViewerModal",
-		reason:
-			"Автономный модальный просмотрщик интраоральных 3D-сканов зуботехнической лаборатории (форматы STL, PLY, OBJ) с WebGL/Three.js вьюером. Предназначен для интеграции с внешними сканерами Medit/3Shape и протестирован в intraoralScan3DViewerModal.test.ts.",
-	},
+	/*
+	 * IntraoralScan3DViewerModal СМОНТИРОВАН в DentalLabOrdersView.tsx, PatientRadiologyTab.tsx,
+	 * LabOrdersPanel.tsx и VisitDiagnosticsTab.tsx для сквозного 3D-просмотра сканов челюсти (STL/PLY/OBJ).
+	 */
 	/*
 	 * CbctPanoramicFdiRibbon СМОНТИРОВАН в PanoramicWorkspace.tsx (лента FDI-нумерации зубов над ОПТГ)
 	 */

@@ -156,6 +156,12 @@ export const ORDER_804N_PROCEDURES: Record<
 		price: 8500,
 		category: "Хирургия",
 	},
+	Impacted: {
+		code: "A16.07.001.003",
+		title: "Сложное удаление ретинированного / дистопированного зуба",
+		price: 8500,
+		category: "Хирургия",
+	},
 	BoneGrafting: {
 		code: "A16.07.041",
 		title: "Костная пластика челюстно-лицевой области (НКР / синус-лифтинг)",

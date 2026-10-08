@@ -74,7 +74,7 @@ export interface TreatmentPlanStageCardProps {
 	readonly onStartStage?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onExecuteWriteOffStage?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onPayStage?: ((stage: TreatmentPlanStage) => void) | undefined;
-	readonly onOpenLabOrder?: ((teeth?: number[]) => void) | undefined;
+	readonly onOpenLabOrder?: ((teeth?: number[], options?: Record<string, unknown>) => void) | undefined;
 	readonly onOneClickLabOrder?: ((teeth?: number[]) => void) | undefined;
 	readonly onOpenInstallment?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onApplyStageDiscount?: ((stage: TreatmentPlanStage) => void) | undefined;
@@ -429,7 +429,19 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 												item={item}
 												doctors={doctors}
 												onAssignDoctor={onAssignItemDoctor}
-												onOpenLabOrder={onOpenLabOrder}
+												onOpenLabOrder={
+													onOpenLabOrder
+														? (teeth, opts) =>
+																onOpenLabOrder(teeth, {
+																	stageId: stage.id,
+																	stageNumber: stage.stageNumber,
+																	stageTitle: stage.title,
+																	doctorId: stage.assignedDoctorId,
+																	doctorName: stage.assignedDoctorName,
+																	...opts,
+																})
+														: undefined
+												}
 												onOneClickLabOrder={onOneClickLabOrder}
 												onUpdateItemQuantity={onUpdateItemQuantity}
 												onUpdateItemPrice={onUpdateItemPrice}

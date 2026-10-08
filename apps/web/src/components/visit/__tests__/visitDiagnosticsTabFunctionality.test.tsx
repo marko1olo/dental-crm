@@ -622,7 +622,7 @@ describe("VisitDiagnosticsTab Comprehensive Functionality & Button Test Suite", 
 			await clickNode(btn);
 
 			await act(async () => {
-				await new Promise((r) => setTimeout(r, 60));
+				await new Promise((r) => setTimeout(r, 250));
 			});
 
 			const modalDropzone =
@@ -662,11 +662,14 @@ describe("VisitDiagnosticsTab Comprehensive Functionality & Button Test Suite", 
 			await clickNode(cbctStudioBtn);
 
 			await act(async () => {
-				await new Promise((r) => setTimeout(r, 60));
+				await new Promise((r) => setTimeout(r, 250));
 			});
 
-			const modal = findByTestId(mockDoc.body, "cbct-studio-modal");
-			assert.ok(modal, "CbctMprImplantStudioModal must open upon clicking btn-open-cbct-studio-modal");
+			const modal =
+				findByTestId(mockDoc.body, "ct-selector-modal") ||
+				findByTestId(container, "ct-selector-modal") ||
+				findByTestId(mockDoc.body, "cbct-studio-modal");
+			assert.ok(modal, "CtSelectorModal must open upon clicking btn-open-cbct-studio-modal");
 		});
 
 		it("in advanced diagnostics: clicking toggle-advanced-diagnostics-btn expands TRG section and opening analysis modal works", async () => {

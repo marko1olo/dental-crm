@@ -10,7 +10,7 @@ import { useVisitStore, type VisitToothUiState } from "../../../store/visitStore
 import {
 	loadStoredTeethData,
 	saveStoredTeethData,
-} from "../odontogram/odontogramStorage";
+} from "../../odontogram/odontogramStorage";
 import { generateSoapFromOdontogramFinding } from "../../../lib/clinicalProtocols043";
 import {
 	mergeMultiToothDiagnoses,

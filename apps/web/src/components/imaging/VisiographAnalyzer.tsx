@@ -44,6 +44,8 @@ import {
 	visiographContainerStyle,
 } from "./VisiographAnalyzerStyles";
 
+import { useAppStore } from "../../store/appStore";
+
 export type { XrayScan };
 
 export interface VisiographAnalyzerProps {
@@ -51,6 +53,7 @@ export interface VisiographAnalyzerProps {
 	readonly toothCode?: string | undefined;
 	readonly initialScan?: XrayScan | undefined;
 	readonly patientId?: string | undefined;
+	readonly visitId?: string | undefined;
 	readonly onConnectRvg?: (() => void) | undefined;
 	readonly onUploadDicom?: (() => void) | undefined;
 	readonly onReferToRadiology?: (() => void) | undefined;
@@ -61,6 +64,7 @@ export function VisiographAnalyzer({
 	toothCode,
 	initialScan,
 	patientId,
+	visitId,
 	onConnectRvg,
 	onUploadDicom,
 	onReferToRadiology,
@@ -71,6 +75,8 @@ export function VisiographAnalyzer({
 
 	const { selectedPatientId, patientCoreDraft } = usePatientStore();
 	const effectivePatientId = patientId ?? selectedPatientId;
+	const appActiveVisitId = useAppStore((s) => s.dashboard?.activeVisit?.id);
+	const effectiveVisitId = visitId ?? appActiveVisitId ?? undefined;
 	const patientFullName = patientCoreDraft?.fullName || (isDemoShowcaseMode() ? "Чухрова Лариса" : "Пациент клиники");
 	const [isSensorViewerOpen, setIsSensorViewerOpen] = useState(false);
 
@@ -325,6 +331,7 @@ export function VisiographAnalyzer({
 					patientId: effectivePatientId ?? "unknown",
 					status: "done",
 					kind: "periapical",
+					toothCode: toothCode || null,
 					originalFilename: file.name,
 					hasImage: true,
 					imageDataUri: dataUrl,
@@ -340,6 +347,8 @@ export function VisiographAnalyzer({
 						dataUrl,
 						file,
 						denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+						toothCode,
+						effectiveVisitId,
 					);
 					setIsSaving(false);
 					if (failure) {
@@ -361,7 +370,7 @@ export function VisiographAnalyzer({
 				if (fileInputRef.current) fileInputRef.current.value = "";
 			}
 		},
-		[effectivePatientId, patientId, resetAnalysisState, denteClinicalMutationHeaders, setScanHistory],
+		[effectivePatientId, patientId, toothCode, effectiveVisitId, resetAnalysisState, denteClinicalMutationHeaders, setScanHistory],
 	);
 
 	// Explicit doctor-initiated AI analysis
@@ -683,15 +692,16 @@ export function VisiographAnalyzer({
 									/>
 
 									{/* Actions */}
-									<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "nowrap" }}>
+									<div className="flex items-center gap-1.5 flex-nowrap shrink-0 ml-auto" style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "nowrap", flexShrink: 0, marginLeft: "auto" }}>
 										<button
 											type="button"
 											data-testid="btn-visiograph-norma-043"
 											onClick={handleApplyNormaTo043}
+											className="shrink-0"
 											style={getNormaButtonStyle(isNormaApplied)}
 										>
-											<CheckCircle2 size={13} style={{ color: "#10b981" }} />
-											<span>{isNormaApplied ? "Норма внесена ✓" : "Норма: патологии нет ✓"}</span>
+											<CheckCircle2 size={13} className={isNormaApplied ? "text-[var(--teal)]" : "text-[var(--ink)]"} />
+											<span>{isNormaApplied ? "Норма внесена ✓" : "Норма (043/у) ✓"}</span>
 										</button>
 
 										<button
@@ -699,6 +709,7 @@ export function VisiographAnalyzer({
 											data-testid="btn-run-visiograph-ai"
 											onClick={handleRunAiAnalysis}
 											disabled={isAnalyzing}
+											className="shrink-0"
 											style={getAiButtonStyle(isAnalyzing)}
 										>
 											{isAnalyzing ? (
@@ -719,25 +730,11 @@ export function VisiographAnalyzer({
 											type="button"
 											data-testid="btn-open-ezdent-sensor-viewer"
 											onClick={() => setIsSensorViewerOpen(true)}
-											style={{
-												height: "30px",
-												minHeight: "30px",
-												padding: "0 10px",
-												borderRadius: "6px",
-												fontSize: "0.78rem",
-												fontWeight: 700,
-												background: "rgba(0, 200, 83, 0.15)",
-												color: "#00C853",
-												border: "1px solid rgba(0, 200, 83, 0.4)",
-												cursor: "pointer",
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "5px",
-											}}
+											className="h-8 px-2.5 rounded-xl text-[13px] font-semibold border border-[var(--line-strong,var(--line))] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)]/40 cursor-pointer inline-flex items-center gap-1.5 transition-all shadow-xs active:scale-98 shrink-0"
 											title="Открыть полноэкранный 2D HUD со шкалой 5 мм и фильтрами"
 										>
-											<Maximize2 size={13} />
-											<span>2D Рентген HUD</span>
+											<Maximize2 size={14} className="text-[var(--teal)]" />
+											<span>2D HUD</span>
 										</button>
 									</div>
 								</div>

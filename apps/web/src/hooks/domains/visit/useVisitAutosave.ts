@@ -4,10 +4,10 @@ import {
 	operatorWorkflowFailureMessage,
 	responseErrorMessage,
 	visitNoteDraftFromForm,
-} from "../../AppHelpers";
-import { showToast } from "../../components/GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
-import { fetchWithHandling } from "../../utils/networkUtils";
+} from "../../../AppHelpers";
+import { showToast } from "../../../components/GlobalToast";
+import { actionFailureToast } from "../../../lib/panelStateText";
+import { fetchWithHandling } from "../../../utils/networkUtils";
 import { visitDraftSignature } from "./helpers";
 import type { UseVisitAutosaveParams, UseVisitAutosaveReturn } from "./types";
 

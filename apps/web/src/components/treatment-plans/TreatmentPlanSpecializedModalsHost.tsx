@@ -19,6 +19,7 @@ import type {
 import type { TreatmentPlanActPrintData } from "./TreatmentPlanCompletedActPrint";
 import type { ClinicalBundleDefinition } from "./treatmentPlanBundlesEngine";
 import type { InvoiceServiceItem } from "../finance/invoiceEngine";
+import type { LabOrderPrefillContext } from "./useTreatmentPlanLogic";
 import { showToast } from "../GlobalToast";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 
@@ -188,6 +189,8 @@ export interface TreatmentPlanSpecializedModalsHostProps {
 		bundle: ClinicalBundleDefinition,
 		toothNumber?: number,
 	) => void;
+	readonly treatmentPlanId?: string | undefined;
+	readonly labOrderPrefill?: LabOrderPrefillContext | null | undefined;
 }
 
 const mapCuratorStage = (stage?: string | null): CuratorFunnelStage => {
@@ -253,6 +256,8 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 	teethData,
 	orthopedicTeeth,
 	selectedLabTeeth,
+	treatmentPlanId,
+	labOrderPrefill,
 	catalog = [],
 	currentTier,
 	effectiveSignTier,
@@ -552,38 +557,50 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 						patientId={patientId}
 						patientName={patientName}
 						patientChartNumber={patientChartNumber || `К-${patientId.slice(0, 5)}`}
-						doctorId={doctorId}
-						doctorName={doctorFullName}
+						doctorId={labOrderPrefill?.doctorId || doctorId}
+						doctorName={labOrderPrefill?.doctorName || doctorFullName}
 						initialTeeth={
-							selectedLabTeeth && selectedLabTeeth.length > 0 ? selectedLabTeeth : orthopedicTeeth
+							labOrderPrefill?.selectedTeeth && labOrderPrefill.selectedTeeth.length > 0
+								? labOrderPrefill.selectedTeeth
+								: selectedLabTeeth && selectedLabTeeth.length > 0
+								? selectedLabTeeth
+								: orthopedicTeeth
 						}
+						treatmentPlanId={treatmentPlanId || validationPayload?.planId}
+						stageId={labOrderPrefill?.stageId || selectedActStage?.id}
+						stageNumber={labOrderPrefill?.stageNumber ?? selectedActStage?.stageNumber}
+						stageTitle={labOrderPrefill?.stageTitle || selectedActStage?.title}
+						stageTotalRub={labOrderPrefill?.priceRub ?? selectedActStage?.totalRub}
 						initialOrder={
-							selectedActStage
+							selectedActStage || labOrderPrefill
 								? ({
-										id: `LAB-${patientId.slice(0, 4)}-${Date.now().toString().slice(-4)}`,
-										orderNumber: `НРД-${patientId.slice(0, 4)}-${Date.now().toString().slice(-4)}`,
 										patientId,
 										patientName,
-										doctorId: doctorId,
-										doctorName: doctorFullName,
+										doctorId: labOrderPrefill?.doctorId || doctorId,
+										doctorName: labOrderPrefill?.doctorName || doctorFullName,
 										selectedTeeth:
-											selectedLabTeeth && selectedLabTeeth.length > 0
+											labOrderPrefill?.selectedTeeth && labOrderPrefill.selectedTeeth.length > 0
+												? labOrderPrefill.selectedTeeth
+												: selectedLabTeeth && selectedLabTeeth.length > 0
 												? selectedLabTeeth
 												: orthopedicTeeth,
-										prostheticTypeId: "crown_zirconia_monolithic",
-										materialId: "zirconia_katana_ml",
+										constructionType: labOrderPrefill?.constructionType || "single_crown",
+										material: labOrderPrefill?.material || "zirconia_multilayer",
 										shadeSystem: "classical",
-										shadeCode: "A2",
-										stumpShadeCode: "ND2",
-										currentStage: "in_progress",
-										completedStages: ["order_placed"],
-										patientPriceRub: selectedActStage.totalRub,
-										costPriceRub: Math.round(selectedActStage.totalRub * 0.4),
-										createdAt: new Date().toISOString(),
-										updatedAt: new Date().toISOString(),
-										stagesLog: [],
-										clinicNotes: `Оформлено по этапу №${selectedActStage.stageNumber} плана «${currentTier.title}». Зафиксированная стоимость: ${selectedActStage.totalRub.toLocaleString("ru-RU")} ₽.`,
-									} as any)
+										colorVita: "A2",
+										shadeStump: "ND2",
+										currentStage: "sent_to_lab",
+										priceRub: labOrderPrefill?.priceRub ?? selectedActStage?.totalRub,
+										treatmentPlanId: treatmentPlanId || validationPayload?.planId,
+										stageId: labOrderPrefill?.stageId || selectedActStage?.id,
+										stageNumber: labOrderPrefill?.stageNumber ?? selectedActStage?.stageNumber,
+										stageTitle: labOrderPrefill?.stageTitle || selectedActStage?.title,
+										clinicalNotes: `Оформлено по этапу ${
+											labOrderPrefill?.stageNumber ?? selectedActStage?.stageNumber ?? 1
+										}: «${labOrderPrefill?.stageTitle || selectedActStage?.title || currentTier?.title || "Ортопедия"}»${
+											labOrderPrefill?.itemName ? `, процедура: ${labOrderPrefill.itemName}` : ""
+										}.`,
+								  } as any)
 								: null
 						}
 						onSaveOrder={(order) => {

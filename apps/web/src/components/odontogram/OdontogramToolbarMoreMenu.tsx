@@ -37,6 +37,8 @@ export interface OdontogramToolbarMoreMenuProps {
 	onTogglePerio?: (() => void) | undefined;
 	isOrthoCephOpen: boolean;
 	setIsOrthoCephOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	isSmartOpgOpen?: boolean | undefined;
+	setIsSmartOpgOpen?: React.Dispatch<React.SetStateAction<boolean>> | undefined;
 	handleMarkIntactDentition: () => void;
 	handleMarkWisdomTeethMissing: () => void;
 	setIsPlanWizardOpen: (open: boolean) => void;
@@ -69,6 +71,8 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 	onTogglePerio,
 	isOrthoCephOpen,
 	setIsOrthoCephOpen,
+	isSmartOpgOpen,
+	setIsSmartOpgOpen,
 	handleMarkIntactDentition,
 	handleMarkWisdomTeethMissing,
 	setIsPlanWizardOpen,
@@ -109,7 +113,7 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 			<button
 				type="button"
 				onClick={() => setIsMoreMenuOpen((prev) => !prev)}
-				className={`h-7.5 flex items-center gap-1.5 px-2.5 rounded-[8px] text-[12.5px] font-medium whitespace-nowrap border transition-all shrink-0 cursor-pointer ${
+				className={`h-8 flex items-center gap-1.5 px-2.5 rounded-[8px] text-[12px] font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer shadow-2xs active:scale-98 ${
 					isMoreMenuOpen ||
 					activeStampTool === "Crown" ||
 					activeStampTool === "Missing" ||
@@ -117,15 +121,15 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 					isMultiSelectMode ||
 					isPerioOpen ||
 					isOrthoCephOpen
-						? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-400/40 shadow-xs font-semibold"
-						: "bg-[var(--paper-soft,var(--odontogram-surface-hover,#f1f5f9))] text-[var(--ink-muted,#64748b)] border-[var(--line-subtle,var(--odontogram-border-subtle,#e2e8f0))] hover:text-indigo-600 dark:hover:text-indigo-400"
+						? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/50 shadow-xs font-bold"
+						: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line-strong,var(--odontogram-border,#cbd5e1))] hover:bg-[var(--paper-hover,#f1f5f9)] hover:border-indigo-500"
 				}`}
 				title="Дополнительные инструменты, штампы и модули анализа"
 				data-testid="btn-odontogram-more-menu"
 				aria-expanded={isMoreMenuOpen}
 				aria-haspopup="true"
 			>
-				<MoreHorizontal size={13} className="shrink-0" />
+				<MoreHorizontal size={13} className="shrink-0 text-slate-600 dark:text-slate-400" />
 				<span>Ещё</span>
 				<ChevronDown
 					size={12}
@@ -345,6 +349,27 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 								<Sparkles size={14} className="text-purple-500 shrink-0" />
 								<span>Цефалометрия ТРГ</span>
 							</button>
+
+							{/* Smart OPG Panoramic AI Module */}
+							{setIsSmartOpgOpen && (
+								<button
+									type="button"
+									onClick={() => {
+										setIsSmartOpgOpen(true);
+										setIsMoreMenuOpen(false);
+									}}
+									className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left ${
+										isSmartOpgOpen
+											? "bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/50 shadow-xs font-black"
+											: "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30 hover:bg-sky-500/20"
+									}`}
+									title="Умный анализ ОПТГ: топологическая разметка всех 32 зубов, детекция ретенции, очагов периодонтита и автозаполнение Формы 043/у"
+									data-testid="btn-open-smart-opg"
+								>
+									<Sparkles size={14} className="text-sky-500 shrink-0" />
+									<span>Панорама ОПТГ AI</span>
+								</button>
+							)}
 
 							{/* Diagnocat AI Report */}
 							{onLoadDiagnocat && (

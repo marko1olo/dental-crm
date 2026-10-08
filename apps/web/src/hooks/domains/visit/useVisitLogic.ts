@@ -1,6 +1,6 @@
 import { useRef } from "react";
-import { useAppStore } from "../../store/appStore";
-import { useVisitStore } from "../../store/visitStore";
+import { useAppStore } from "../../../store/appStore";
+import { useVisitStore } from "../../../store/visitStore";
 import { scrollToVisitArea } from "./helpers";
 import type { UseVisitLogicParams, UseVisitLogicReturn } from "./types";
 import { useVisitAutosave } from "./useVisitAutosave";

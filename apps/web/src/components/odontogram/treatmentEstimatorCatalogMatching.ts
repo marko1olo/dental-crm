@@ -245,7 +245,14 @@ export const ESTIMATOR_RULE_SAMPLES: Partial<
 > = (() => {
 	const samples: Partial<Record<EstimatorSuggestionKey, EstimatorRule>> = {};
 	const adultTooth = 11;
-	for (const state of ["Caries", "Pulpitis", "Crown", "Planned_Implant"]) {
+	for (const state of [
+		"Caries",
+		"Pulpitis",
+		"Periodontitis",
+		"Retained",
+		"Crown",
+		"Planned_Implant",
+	]) {
 		for (const rule of estimatorRulesForTooth(state, adultTooth)) {
 			samples[rule.key] = rule;
 		}

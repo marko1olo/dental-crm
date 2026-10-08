@@ -1,7 +1,7 @@
 import type { DentalSpecialty, SpeechTranscriptionResponse } from "@dental/shared";
-import type { VisitNoteForm } from "../../AppHelpers";
-import { motionSafeScrollIntoView } from "../../motionPreference";
-import { useAppStore } from "../../store/appStore";
+import type { VisitNoteForm } from "../../../AppHelpers";
+import { motionSafeScrollIntoView } from "../../../motionPreference";
+import { useAppStore } from "../../../store/appStore";
 
 /**
  * Плавный скролл к нужной секции рабочей области визита.

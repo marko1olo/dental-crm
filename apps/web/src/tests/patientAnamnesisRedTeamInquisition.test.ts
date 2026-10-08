@@ -16,7 +16,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 
 import {
 	DEFAULT_SOMATIC_HEALTHY_NORM,
@@ -306,6 +306,121 @@ describe("Patient Somatic Anamnesis & Allergy Chairside Integrity Suite", () => 
 				safetyBannerCss.includes("44px"),
 				"safetyBanner.css must respect >= 44px touch targets",
 			);
+		});
+	});
+
+	describe("5. Order 834n & Clinical Depth of VisitAnamnesisTab (Chairside Security)", () => {
+		it("VisitAnamnesisTab includes granular dental allergens with reaction types", async () => {
+			const { DENTAL_ALLERGENS, ALLERGY_REACTIONS } = await import(
+				"../components/visit/VisitAnamnesisTab.js"
+			);
+
+			// Allergen catalog validation
+			const allergenNames = DENTAL_ALLERGENS.map((a: any) => a.name);
+			assert.ok(allergenNames.includes("Артикаин"), "Must include Articaine");
+			assert.ok(allergenNames.includes("Лидокаин"), "Must include Lidocaine");
+			assert.ok(allergenNames.includes("Мепивакаин"), "Must include Mepivacaine");
+			assert.ok(allergenNames.includes("Пенициллиновый ряд"), "Must include Penicillins");
+			assert.ok(allergenNames.includes("Латекс"), "Must include Latex");
+			assert.ok(allergenNames.includes("Металлы / Никель"), "Must include Metals/Nickel");
+			assert.ok(allergenNames.includes("Йод / Йодоформ"), "Must include Iodine");
+			assert.ok(allergenNames.includes("НПВП / Аспирин"), "Must include NSAIDs");
+
+			// Reaction types validation
+			assert.ok(ALLERGY_REACTIONS.includes("Отёк Квинке"), "Must include Quincke's edema");
+			assert.ok(ALLERGY_REACTIONS.includes("Анафилактический шок"), "Must include Anaphylaxis");
+			assert.ok(ALLERGY_REACTIONS.includes("Крапивница / кожный зуд"), "Must include Urticaria");
+		});
+
+		it("VisitAnamnesisTab includes Order 834n critical stop-factors and dental history", async () => {
+			const { SOMATIC_STOP_FACTORS, DENTAL_HISTORY_ITEMS } = await import(
+				"../components/visit/VisitAnamnesisTab.js"
+			);
+
+			// Stop-factors
+			const stopLabels = SOMATIC_STOP_FACTORS.map((s: any) => s.label);
+			assert.ok(stopLabels.some((l: string) => l.includes("Инфаркт")), "Must include Recent Infarction");
+			assert.ok(stopLabels.some((l: string) => l.includes("Кардиостимулятор")), "Must include Pacemaker EXS");
+			assert.ok(stopLabels.some((l: string) => l.includes("антикоагулянтов")), "Must include Anticoagulants");
+			assert.ok(stopLabels.some((l: string) => l.includes("бисфосфонатов")), "Must include Bisphosphonates MRONJ");
+			assert.ok(stopLabels.some((l: string) => l.includes("Сахарный диабет")), "Must include Diabetes");
+			assert.ok(stopLabels.some((l: string) => l.includes("Беременность")), "Must include Pregnancy");
+
+			// Dental history
+			const historyLabels = DENTAL_HISTORY_ITEMS.map((h: any) => h.label);
+			assert.ok(historyLabels.some((l: string) => l.includes("Опыт анестезии")), "Must include Anesthesia Experience");
+			assert.ok(historyLabels.some((l: string) => l.includes("Дентофобия")), "Must include Dentophobia");
+			assert.ok(historyLabels.some((l: string) => l.includes("Бруксизм")), "Must include Bruxism");
+			assert.ok(historyLabels.some((l: string) => l.includes("Кровоточивость")), "Must include Bleeding gums");
+		});
+
+		it("specific allergen + reaction string triggers accurate chairside critical alert badges", () => {
+			// Test 1: Articaine + Quincke edema
+			const articainePatient: PatientForCriticalBadges = {
+				allergies: "Артикаин (Отёк Квинке)",
+			};
+			const articaineBadges = calculateActivePatientCriticalBadges(articainePatient);
+			assert.ok(
+				articaineBadges.some((b) => b.id === "articaine"),
+				"Must trigger articaine critical badge",
+			);
+			assert.ok(
+				articaineBadges.some((b) => b.id === "allergy"),
+				"Must trigger general allergy alert badge",
+			);
+
+			// Test 2: Lidocaine + Anaphylaxis
+			const lidocainePatient: PatientForCriticalBadges = {
+				allergies: "Лидокаин (Анафилактический шок)",
+			};
+			const lidocaineBadges = calculateActivePatientCriticalBadges(lidocainePatient);
+			assert.ok(
+				lidocaineBadges.some((b) => b.id === "lidocaine"),
+				"Must trigger lidocaine critical badge",
+			);
+
+			// Test 3: Bisphosphonate therapy in somatic notes
+			const bisphosphonatePatient: PatientForCriticalBadges = {
+				allergies: "Аллергии не выявлены",
+				somaticNotes: "Приём бисфосфонатов (Акласта 5 мг/год)",
+			};
+			const bisBadges = calculateActivePatientCriticalBadges(bisphosphonatePatient);
+			assert.ok(
+				bisBadges.some((b) => b.id === "bisphosphonates"),
+				"Must trigger bisphosphonates MRONJ critical badge",
+			);
+			assert.strictEqual(
+				bisBadges.some((b) => b.id === "allergy"),
+				false,
+				"Must not trigger false positive allergy badge when allergies are clean",
+			);
+		});
+
+		it("zero disabled buttons and zero cartoon emojis in VisitAnamnesisTab.tsx", () => {
+			const content = fs.readFileSync(
+				path.join(webSrc, "components/visit/VisitAnamnesisTab.tsx"),
+				"utf-8",
+			);
+
+			// Autonomy check
+			assert.ok(!content.includes("disabled={!"), "Must have 0 disabled buttons");
+			assert.ok(!content.includes("disabled={true}"), "Must not hardcode disabled={true}");
+
+			// Test-ids presence
+			assert.ok(content.includes('data-testid="btn-somatic-norm-one-click"'), "Must have 1-click norm button test-id");
+			assert.ok(content.includes('data-testid="btn-apply-anamnesis-to-diary"'), "Must have apply to diary button test-id");
+			assert.ok(content.includes('data-testid="btn-save-anamnesis-to-patient"'), "Must have save to patient button test-id");
+
+			// Emoji hygiene check
+			const lines = content.split("\n");
+			for (let i = 0; i < lines.length; i++) {
+				const line = lines[i];
+				if (!line || line.includes("//") || line.includes("/*")) continue;
+				assert.ok(
+					!EMOJI_REGEX.test(line),
+					`Forbidden emoji detected in VisitAnamnesisTab.tsx at line ${i + 1}: ${line}`,
+				);
+			}
 		});
 	});
 });

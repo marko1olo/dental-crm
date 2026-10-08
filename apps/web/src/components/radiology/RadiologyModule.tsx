@@ -5,6 +5,7 @@ import {
 	Compass,
 	FileText,
 	Filter,
+	FolderDown,
 	FolderInput,
 	Layers,
 	Plus,
@@ -24,6 +25,7 @@ import { DirectRvgCaptureModal } from "./DirectRvgCaptureModal.js";
 import { RadiationSafetyRegistryModal } from "./RadiationSafetyRegistryModal.js";
 import { RadiologyReportStudioModal } from "./RadiologyReportStudioModal.js";
 import { HotFolderIntakeModal } from "./HotFolderIntakeModal.js";
+import { CtSelectorModal } from "./CtSelectorModal.js";
 import {
 	applyRadiologyProtocolToForm043,
 	RADIOLOGY_STANDARD_PROTOCOLS,
@@ -76,6 +78,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 	const [showConsultationModal, setShowConsultationModal] = useState<boolean>(false);
 	const [showReportStudioModal, setShowReportStudioModal] = useState<boolean>(false);
 	const [showTactileSearchModal, setShowTactileSearchModal] = useState<boolean>(false);
+	const [showCtSelectorModal, setShowCtSelectorModal] = useState<boolean>(false);
 	const [tactileFilters, setTactileFilters] = useState<RadiologyTactileFilterState>(DEFAULT_TACTILE_FILTERS);
 
 	// Active View (Archive vs Hub)
@@ -200,6 +203,17 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					>
 						<Box className="w-3.5 h-3.5 text-[var(--teal)]" />
 						<span>3D КЛКТ Студия</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setShowCtSelectorModal(true)}
+						className="secondary-button"
+						data-testid="btn-open-radiology-ct-selector"
+						title="Клинический селектор КТ: быстрый перенос из Загрузок, распаковка архивов и выбор вьюера"
+					>
+						<FolderDown className="w-3.5 h-3.5 text-blue-500" />
+						<span>Селектор КТ</span>
 					</button>
 
 					<button
@@ -637,6 +651,30 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 				}}
 				onReset={() => setTactileFilters(DEFAULT_TACTILE_FILTERS)}
 			/>
+
+			{showCtSelectorModal && (
+				<CtSelectorModal
+					isOpen={showCtSelectorModal}
+					onClose={() => setShowCtSelectorModal(false)}
+					patientId={patient?.id || undefined}
+					patientName={patientName}
+					cardNumber={cardNum}
+					onOpenCbctStudio={(study) => {
+						if (study) {
+							setSelectedStudyForStudio(study);
+						}
+						setShowCtSelectorModal(false);
+						setShow3dStudioModal(true);
+					}}
+					onImagesLoaded={(_imageIds, studyMeta) => {
+						if (studyMeta) {
+							setSelectedStudyForStudio(studyMeta);
+						}
+						setShowCtSelectorModal(false);
+						setShow3dStudioModal(true);
+					}}
+				/>
+			)}
 		</div>
 	);
 };

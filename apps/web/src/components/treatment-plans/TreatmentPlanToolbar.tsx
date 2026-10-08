@@ -39,8 +39,8 @@ export interface TreatmentPlanToolbarProps {
 	readonly onStatusTransition: (newStatus: TreatmentPlanStatus) => void;
 	readonly patientName: string;
 	readonly totalItemsCount: number;
-	readonly activeViewTab: "3tier" | "stages" | "phased4";
-	readonly setActiveViewTab: (tab: "3tier" | "stages" | "phased4") => void;
+	readonly activeViewTab: "3tier" | "stages" | "phased4" | "roadmap";
+	readonly setActiveViewTab: (tab: "3tier" | "stages" | "phased4" | "roadmap") => void;
 	readonly signedAgreement: unknown;
 	readonly onOpenSignModal: () => void;
 	readonly onExportCashier: () => void;
@@ -275,6 +275,18 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 							}`}
 						>
 							4 Фазы
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveViewTab("roadmap")}
+							data-testid="tp-tab-roadmap"
+							className={`h-7 px-3 rounded-[7px] text-[12.5px] font-medium transition-all cursor-pointer touch-manipulation whitespace-nowrap shrink-0 ${
+								activeViewTab === "roadmap"
+									? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-2xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+						>
+							Дорожная карта
 						</button>
 					</div>
 

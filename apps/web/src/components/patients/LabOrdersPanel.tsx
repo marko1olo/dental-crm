@@ -1,5 +1,5 @@
 import type React from "react";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState } from "react";
 import {
 	ChevronDown,
 	Clock,
@@ -31,6 +31,9 @@ const DentalLabOrdersTrackerModal = lazy(() =>
 );
 const LabTrackingDrawer = lazy(() =>
 	import("../lab/LabTrackingDrawer").then((m) => ({ default: m.LabTrackingDrawer }))
+);
+const IntraoralScan3DViewerModal = lazy(() =>
+	import("../radiology/IntraoralScan3DViewerModal").then((m) => ({ default: m.IntraoralScan3DViewerModal }))
 );
 
 export interface LabOrder {
@@ -75,6 +78,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 	}
 
 	const logic = useLabOrdersPanelLogic(patientId);
+	const [view3DScanOrder, setView3DScanOrder] = useState<LabOrder | null>(null);
 
 	return (
 		<div className="lab-orders-panel">
@@ -340,6 +344,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 							onReclamation={logic.handleReclamation}
 							onCopyPortalLink={logic.copyPortalLink}
 							onDeleteOrder={logic.handleDeleteOrder}
+							onView3DScan={(ord) => setView3DScanOrder(ord)}
 						/>
 					))}
 				</div>
@@ -428,6 +433,26 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 				state={logic.promptState}
 				onClose={() => logic.setPromptState(null)}
 			/>
+
+			{/* 3D Intraoral Scan Viewer Modal */}
+			{view3DScanOrder && (
+				<Suspense fallback={null}>
+					<IntraoralScan3DViewerModal
+						isOpen={Boolean(view3DScanOrder)}
+						onClose={() => setView3DScanOrder(null)}
+						modelUrl={view3DScanOrder.attachedImageUrl || undefined}
+						modelFormat={
+							view3DScanOrder.attachedImageUrl && /\.ply($|[?#])/i.test(view3DScanOrder.attachedImageUrl)
+								? "ply"
+								: view3DScanOrder.attachedImageUrl && /\.obj($|[?#])/i.test(view3DScanOrder.attachedImageUrl)
+									? "obj"
+									: "stl"
+						}
+						patientName={view3DScanOrder.patientName}
+						scanTitle={`3D-скан челюсти: Наряд №${view3DScanOrder.id ? view3DScanOrder.id.slice(0, 8) : ""} (${view3DScanOrder.toothFdi ? `зуб ${view3DScanOrder.toothFdi}` : "челюсть"})`}
+					/>
+				</Suspense>
+			)}
 		</div>
 	);
 }

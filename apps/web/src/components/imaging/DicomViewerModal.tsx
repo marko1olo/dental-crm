@@ -16,8 +16,8 @@ import { TOOTH_STATE_LABELS } from "../odontogram/ToothChart.js";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode.js";
 
 const DicomViewport = React.lazy(() => import("./DicomViewport.js").then((m) => ({ default: m.DicomViewport })));
-import { DicomMprCockpit } from "./DicomMprCockpit.js";
-import { DicomSectioningView } from "./DicomSectioningView.js";
+const CtSelectorModal = React.lazy(() => import("../radiology/CtSelectorModal.js").then((m) => ({ default: m.CtSelectorModal })));
+import { openCbctPopoutWindow } from "../../native/desktopBridge.js";
 import { DicomToolboxRibbon } from "./DicomToolboxRibbon.js";
 import { DicomAiFindingsDrawer } from "./DicomAiFindingsDrawer.js";
 import { DEFAULT_DICOM_VIEWPORT_STATE, type CalibratedRulerMeasurement, type DicomViewportState, type ImagingActiveTool } from "./rvgViewerEngine.js";
@@ -63,6 +63,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 	onReferToRadiology,
 }) => {
 	const [viewMode, setViewMode] = useState<"2d" | "3d_mpr" | "sectioning">(initialViewMode);
+	const [isCtSelectorOpen, setIsCtSelectorOpen] = useState<boolean>(false);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const defaultScanSrc =
 		imageSrc ||
@@ -152,12 +153,29 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 		onClose();
 	}, [onClose]);
 
-	const handleSwitchViewMode = useCallback((mode: "2d" | "3d_mpr" | "sectioning") => {
-		if (modalContainerRef.current) {
-			teardownViewportCanvases(modalContainerRef.current);
-		}
-		setViewMode(mode);
-	}, []);
+	const handleSwitchViewMode = useCallback(
+		(mode: "2d" | "3d_mpr" | "sectioning") => {
+			if (mode === "3d_mpr" || mode === "sectioning") {
+				// Врачебная автономия: 3D КЛКТ запускается на втором мониторе либо в легком селекторе
+				openCbctPopoutWindow({
+					studyId: "ct-study-current",
+					patientId: patientId || undefined,
+					patientName: patientName || undefined,
+					title: `3D КТ (КЛКТ) · ${patientName || "Исследование"}`,
+				}).then((res) => {
+					if (!res.success) {
+						setIsCtSelectorOpen(true);
+					}
+				});
+				return;
+			}
+			if (modalContainerRef.current) {
+				teardownViewportCanvases(modalContainerRef.current);
+			}
+			setViewMode(mode);
+		},
+		[patientId, patientName],
+	);
 
 	// Unmount cleanup: Zero canvas backing store and dispose contexts (Mandate 8c & 8x)
 	useEffect(() => {
@@ -221,39 +239,6 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 
 	if (!isOpen) return null;
 
-	// Canonical MPR Cockpit and Sectioning View modes
-	if (viewMode === "3d_mpr") {
-		return (
-			<div ref={modalContainerRef} data-testid="dicom-viewer-modal" style={{ position: "fixed", inset: 0, zIndex: 9999, backgroundColor: "rgba(2, 6, 23, 0.98)", display: "flex", flexDirection: "column", color: "#f8fafc" }}>
-				<DicomMprCockpit
-					patientName={patientName}
-					patientId={patientId}
-					studyDate={studyDate}
-					onBackTo2D={() => handleSwitchViewMode("2d")}
-					onSwitchToSectioning={() => handleSwitchViewMode("sectioning")}
-					onClose={handleClose}
-					onInsertToProtocol={onInsertToProtocol}
-				/>
-			</div>
-		);
-	}
-
-	if (viewMode === "sectioning") {
-		return (
-			<div ref={modalContainerRef} data-testid="dicom-viewer-modal" style={{ position: "fixed", inset: 0, zIndex: 9999, backgroundColor: "rgba(2, 6, 23, 0.98)", display: "flex", flexDirection: "column", color: "#f8fafc" }}>
-				<DicomSectioningView
-					patientName={patientName}
-					patientId={patientId}
-					studyDate={studyDate}
-					toothFdiCode={toothFdiCode}
-					onClose={handleClose}
-					onBackTo2D={() => handleSwitchViewMode("2d")}
-					onSwitchToMpr={() => handleSwitchViewMode("3d_mpr")}
-					onInsertToProtocol={onInsertToProtocol}
-				/>
-			</div>
-		);
-	}
 
 	const handleInsertNormaTo043 = () => {
 		const normaPreset = RADIOLOGY_STANDARD_PROTOCOLS.find((p) => p.id === "norma") || RADIOLOGY_STANDARD_PROTOCOLS[0]!;
@@ -778,6 +763,19 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						}}
 					/>
 				</div>
+			)}
+
+			{/* Клинический КТ-селектор для 3D КЛКТ (автономное окно 2-го монитора / внешний софт) */}
+			{isCtSelectorOpen && (
+				<Suspense fallback={null}>
+					<CtSelectorModal
+						isOpen={isCtSelectorOpen}
+						onClose={() => setIsCtSelectorOpen(false)}
+						patientId={patientId}
+						patientName={patientName}
+						studies={filmstripStudies as any}
+					/>
+				</Suspense>
 			)}
 		</div>
 	);

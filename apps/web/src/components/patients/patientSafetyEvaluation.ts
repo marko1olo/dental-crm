@@ -304,9 +304,11 @@ export function formatSafetyProfileToDiaryText(profile?: Partial<PatientClinical
 			(profile.customChronicNotes.toLowerCase().includes("соматически здоров") ||
 				profile.customChronicNotes.toLowerCase().includes("норма"))
 		) {
-			items.push(`Соматический статус: ${profile.customChronicNotes}.`);
+			const cleanNotes = profile.customChronicNotes.replace(/\.+$/, "");
+			items.push(`Соматический статус: ${cleanNotes}.`);
 		} else {
-			items.push(`Сопутствующие соматические заболевания: ${chronic.join(", ")}.`);
+			const cleanChronic = chronic.map((c) => c.replace(/\.+$/, ""));
+			items.push(`Сопутствующие соматические заболевания: ${cleanChronic.join(", ")}.`);
 		}
 	} else {
 		items.push("Соматический статус: Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает. Физиологическая норма.");

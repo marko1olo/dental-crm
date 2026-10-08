@@ -3,4 +3,4 @@
  * Mandate 8s: Single Source of Truth / Non-divergent Facade.
  */
 export * from "../treatment-plans/TreatmentPlanWizard";
-export { TreatmentPlanWizard, TreatmentPlanWizard as default } from "../treatment-plans/TreatmentPlanWizard";
+export { TreatmentPlanWizard, PlanWizardModal, TreatmentPlanWizard as default } from "../treatment-plans/TreatmentPlanWizard";

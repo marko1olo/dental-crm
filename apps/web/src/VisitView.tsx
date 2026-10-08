@@ -34,6 +34,7 @@ import {
 	mergeMultiToothTreatmentPlan,
 } from "./utils/clinicalTextSanitizer";
 import "./styles/VisitView.css";
+import "./components/visit/VisitAnamnesisTab.css";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { MobileChairsideVisitWorkspace } from "./components/visit/MobileChairsideVisitWorkspace";
 import { VisitPlanStageHandoffBanner } from "./components/visit/VisitPlanStageHandoffBanner";
@@ -829,8 +830,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</div>
 
 					{/* Строка 2: Вкладки приёма с плавным фейдом по краям на мобильных */}
-					<div className="relative border-t border-[var(--line)] bg-[var(--paper-soft,rgba(0,0,0,0.02))] rounded-b-xl min-h-[34px] h-[34px]">
-						<div className="flex items-center gap-1.5 px-2 py-0.5 overflow-x-auto scrollbar-none flex-nowrap shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x">
+					<div className="relative border-t border-[var(--line)] bg-[var(--paper-soft,rgba(0,0,0,0.02))] rounded-b-xl min-h-[36px] h-[36px]">
+						<div className="flex items-center gap-1.5 px-2.5 py-1 overflow-x-auto scrollbar-none flex-nowrap shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x">
 							{[
 								{ id: "emk", testId: "visit-subtab-emk", label: "Дневник приёма" },
 								{ id: "odontogram", testId: "visit-subtab-odontogram", label: "Зубная формула" },

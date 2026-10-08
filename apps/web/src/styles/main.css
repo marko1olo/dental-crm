@@ -17,6 +17,7 @@
 @import "../components/payments/checkout/fastCheckout.css";
 @import "../components/inventory/writeoff/clinicalWriteoff.css";
 @import "../components/telephony/telephonyFloatingWidget.css";
+@import "../components/visit/VisitAnamnesisTab.css";
 @import "./low-spec-hardware.css";
 
 :root {

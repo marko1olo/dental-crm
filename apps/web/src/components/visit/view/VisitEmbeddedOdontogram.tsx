@@ -328,10 +328,10 @@ export function VisitEmbeddedOdontogram({
 							<button
 								key={stamp.id}
 								type="button"
-								className={`px-2.5 py-1 text-xs rounded-full transition-all border flex items-center gap-1.5 min-h-[30px] cursor-pointer ${
+								className={`px-2.5 py-1 text-xs rounded-lg transition-all border flex items-center gap-1.5 min-h-[32px] h-8 cursor-pointer select-none ${
 									isActive
-										? "active bg-teal-600/10 dark:bg-teal-500/20 border-teal-600 dark:border-teal-400 text-teal-800 dark:text-teal-200 font-bold shadow-xs ring-1 ring-teal-500/30"
-										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium"
+										? "active bg-teal-600/15 dark:bg-teal-500/25 border-teal-600 dark:border-teal-400 text-teal-800 dark:text-teal-200 font-bold shadow-xs ring-1 ring-teal-500/30"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line-strong,#cbd5e1)] dark:border-white/20 text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)] hover:border-teal-500 font-medium"
 								}`}
 								onClick={() => {
 									setActiveStamp(stamp.id);
@@ -358,10 +358,10 @@ export function VisitEmbeddedOdontogram({
 			>
 				<button
 					type="button"
-					className={`quadrant-nav-btn shrink-0 min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+					className={`quadrant-nav-btn shrink-0 min-h-[32px] h-8 px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
 						activeQuadrant === null
-							? "active bg-teal-600 text-white border-teal-600 shadow-xs font-bold"
-							: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+							? "active bg-teal-600 text-white border-teal-700 shadow-xs font-bold"
+							: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] border-[var(--line-strong,#cbd5e1)] dark:border-white/20 text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)]"
 					}`}
 					onClick={() => setActiveQuadrant(null)}
 					title="Обе челюсти целиком"
@@ -370,10 +370,10 @@ export function VisitEmbeddedOdontogram({
 				</button>
 				<button
 					type="button"
-					className={`quadrant-nav-btn shrink-0 min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+					className={`quadrant-nav-btn shrink-0 min-h-[32px] h-8 px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
 						activeQuadrant === 1
-							? "active bg-teal-600 text-white border-teal-600 shadow-xs font-bold"
-							: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+							? "active bg-teal-600 text-white border-teal-700 shadow-xs font-bold"
+							: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] border-[var(--line-strong,#cbd5e1)] dark:border-white/20 text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)]"
 					}`}
 					onClick={() => setActiveQuadrant(1)}
 					title="Первый сектор: верх справа (11–18, 51–55)"
@@ -382,10 +382,10 @@ export function VisitEmbeddedOdontogram({
 				</button>
 				<button
 					type="button"
-					className={`quadrant-nav-btn shrink-0 min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+					className={`quadrant-nav-btn shrink-0 min-h-[32px] h-8 px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
 						activeQuadrant === 2
-							? "active bg-teal-600 text-white border-teal-600 shadow-xs font-bold"
-							: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+							? "active bg-teal-600 text-white border-teal-700 shadow-xs font-bold"
+							: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] border-[var(--line-strong,#cbd5e1)] dark:border-white/20 text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)]"
 					}`}
 					onClick={() => setActiveQuadrant(2)}
 					title="Второй сектор: верх слева (21–28, 61–65)"
@@ -394,10 +394,10 @@ export function VisitEmbeddedOdontogram({
 				</button>
 				<button
 					type="button"
-					className={`quadrant-nav-btn shrink-0 min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+					className={`quadrant-nav-btn shrink-0 min-h-[32px] h-8 px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
 						activeQuadrant === 3
-							? "active bg-teal-600 text-white border-teal-600 shadow-xs font-bold"
-							: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+							? "active bg-teal-600 text-white border-teal-700 shadow-xs font-bold"
+							: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] border-[var(--line-strong,#cbd5e1)] dark:border-white/20 text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)]"
 					}`}
 					onClick={() => setActiveQuadrant(3)}
 					title="Третий сектор: низ слева (31–38, 71–75)"
@@ -406,10 +406,10 @@ export function VisitEmbeddedOdontogram({
 				</button>
 				<button
 					type="button"
-					className={`quadrant-nav-btn shrink-0 min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+					className={`quadrant-nav-btn shrink-0 min-h-[32px] h-8 px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
 						activeQuadrant === 4
-							? "active bg-teal-600 text-white border-teal-600 shadow-xs font-bold"
-							: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+							? "active bg-teal-600 text-white border-teal-700 shadow-xs font-bold"
+							: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] border-[var(--line-strong,#cbd5e1)] dark:border-white/20 text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)]"
 					}`}
 					onClick={() => setActiveQuadrant(4)}
 					title="Четвёртый сектор: низ справа (41–48, 81–85)"

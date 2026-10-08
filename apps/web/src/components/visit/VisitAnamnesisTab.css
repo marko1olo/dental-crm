@@ -1,0 +1,428 @@
+/**
+ * apps/web/src/components/visit/VisitAnamnesisTab.css
+ *
+ * Dedicated styling for Clinical Anamnesis Tab:
+ * - Apple HIG Medical Filter Chips (strict 32px height, 8px radius, tactile 1px borders)
+ * - Anti-ghost text / anti-naked button design
+ * - Elegant independent allergen reaction selectors
+ * - Full Dark Mode & High Contrast WCAG AAA compliance
+ */
+
+/* ─── Root & Container ───────────────────────────────────────────────────── */
+.visit-anamnesis-tab {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	width: 100%;
+	max-width: 100%;
+	padding: 18px 20px;
+	border-radius: 16px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.dark .visit-anamnesis-tab,
+[data-theme="dark"] .visit-anamnesis-tab,
+[data-theme="night"] .visit-anamnesis-tab,
+[data-theme="cyber_xray"] .visit-anamnesis-tab {
+	border-color: rgba(255, 255, 255, 0.12);
+	background: var(--paper, #0f172a);
+	color: #f1f5f9;
+}
+
+/* ─── Top Bar Buttons (Strict 32px height, 8px radius) ──────────────────── */
+.anamnesis-top-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 13px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1;
+	white-space: nowrap;
+	cursor: pointer;
+	user-select: none;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.anamnesis-top-btn:active {
+	transform: scale(0.98);
+}
+
+/* Secondary ghost/outline button (e.g. "В дневник приёма") */
+.anamnesis-top-btn--secondary {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line-strong, #cbd5e1);
+	color: var(--ink, #0f172a);
+}
+
+.anamnesis-top-btn--secondary:hover {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--teal, #0d9488);
+	color: var(--teal-dark, #0f766e);
+	transform: translateY(-1px);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.dark .anamnesis-top-btn--secondary,
+[data-theme="dark"] .anamnesis-top-btn--secondary,
+[data-theme="night"] .anamnesis-top-btn--secondary {
+	background: rgba(255, 255, 255, 0.06);
+	border-color: rgba(255, 255, 255, 0.2);
+	color: #f1f5f9;
+}
+
+.dark .anamnesis-top-btn--secondary:hover,
+[data-theme="dark"] .anamnesis-top-btn--secondary:hover {
+	background: rgba(255, 255, 255, 0.12);
+	border-color: rgba(255, 255, 255, 0.35);
+	color: #ffffff;
+}
+
+/* Teal outline button (e.g. "Клинические шаблоны (448)") */
+.anamnesis-top-btn--teal {
+	background: var(--teal-soft, #f0fdfa);
+	border: 1px solid var(--teal, #0d9488);
+	color: var(--teal-dark, #0f766e);
+}
+
+.anamnesis-top-btn--teal:hover {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	transform: translateY(-1px);
+	box-shadow: 0 2px 5px rgba(13, 148, 136, 0.25);
+}
+
+.dark .anamnesis-top-btn--teal,
+[data-theme="dark"] .anamnesis-top-btn--teal {
+	background: rgba(13, 148, 136, 0.18);
+	border-color: var(--teal, #14b8a6);
+	color: #5eead4;
+}
+
+.dark .anamnesis-top-btn--teal:hover {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+}
+
+/* 1-Click Norm Button (Primary emerald) */
+.anamnesis-top-btn--norm {
+	background: #059669;
+	border: 1px solid #047857;
+	color: #ffffff;
+	box-shadow: 0 1px 3px rgba(5, 150, 105, 0.25);
+}
+
+.anamnesis-top-btn--norm:hover {
+	background: #047857;
+	border-color: #065f46;
+	transform: translateY(-1px);
+	box-shadow: 0 2px 6px rgba(5, 150, 105, 0.35);
+}
+
+.dark .anamnesis-top-btn--norm,
+[data-theme="dark"] .anamnesis-top-btn--norm {
+	background: #059669;
+	border-color: #10b981;
+	color: #ffffff;
+}
+
+/* Primary Action Button (Teal solid, e.g. "Сохранить в медкарту") */
+.anamnesis-top-btn--primary {
+	background: var(--teal, #0d9488);
+	border: 1px solid var(--teal-dark, #0f766e);
+	color: #ffffff;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
+}
+
+.anamnesis-top-btn--primary:hover {
+	background: var(--teal-dark, #0f766e);
+	border-color: #115e59;
+	transform: translateY(-1px);
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.35);
+}
+
+.dark .anamnesis-top-btn--primary,
+[data-theme="dark"] .anamnesis-top-btn--primary {
+	background: #0d9488;
+	border-color: #14b8a6;
+	color: #ffffff;
+}
+
+/* ─── Apple HIG Medical Filter Chips (Strict 32px height, 8px radius) ────── */
+.anamnesis-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1;
+	white-space: nowrap;
+	border: 1px solid var(--line-strong, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	cursor: pointer;
+	user-select: none;
+}
+
+.anamnesis-chip:hover {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--teal, #0d9488);
+	color: var(--ink, #0f172a);
+	transform: translateY(-1px);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.07);
+}
+
+.anamnesis-chip:active {
+	transform: scale(0.98);
+}
+
+.dark .anamnesis-chip,
+[data-theme="dark"] .anamnesis-chip,
+[data-theme="night"] .anamnesis-chip,
+[data-theme="cyber_xray"] .anamnesis-chip {
+	background: rgba(255, 255, 255, 0.05);
+	border-color: rgba(255, 255, 255, 0.18);
+	color: #f1f5f9;
+}
+
+.dark .anamnesis-chip:hover,
+[data-theme="dark"] .anamnesis-chip:hover {
+	background: rgba(255, 255, 255, 0.1);
+	border-color: rgba(255, 255, 255, 0.35);
+	color: #ffffff;
+}
+
+/* ─── Active Variants of Filter Chips ────────────────────────────────────── */
+
+/* 1. Critical Allergy & Dangerous Stop Factors (Red / Danger) */
+.anamnesis-chip--active-danger {
+	background: rgba(239, 68, 68, 0.1) !important;
+	border: 1px solid #ef4444 !important;
+	color: #991b1b !important;
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(239, 68, 68, 0.18) !important;
+}
+
+.anamnesis-chip--active-danger:hover {
+	background: rgba(239, 68, 68, 0.16) !important;
+	border-color: #dc2626 !important;
+}
+
+.dark .anamnesis-chip--active-danger,
+[data-theme="dark"] .anamnesis-chip--active-danger,
+[data-theme="night"] .anamnesis-chip--active-danger {
+	background: rgba(239, 68, 68, 0.22) !important;
+	border-color: #ef4444 !important;
+	color: #fecaca !important;
+}
+
+.dark .anamnesis-chip--active-danger:hover {
+	background: rgba(239, 68, 68, 0.3) !important;
+}
+
+/* 2. Somatic Risks (Amber / Warning: Hypertension, Diabetes, etc.) */
+.anamnesis-chip--active-warning {
+	background: rgba(245, 158, 11, 0.12) !important;
+	border: 1px solid #f59e0b !important;
+	color: #92400e !important;
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(245, 158, 11, 0.18) !important;
+}
+
+.anamnesis-chip--active-warning:hover {
+	background: rgba(245, 158, 11, 0.18) !important;
+	border-color: #d97706 !important;
+}
+
+.dark .anamnesis-chip--active-warning,
+[data-theme="dark"] .anamnesis-chip--active-warning,
+[data-theme="night"] .anamnesis-chip--active-warning {
+	background: rgba(245, 158, 11, 0.2) !important;
+	border-color: #f59e0b !important;
+	color: #fde68a !important;
+}
+
+.dark .anamnesis-chip--active-warning:hover {
+	background: rgba(245, 158, 11, 0.28) !important;
+}
+
+/* 3. Dental History Alert (Purple Alert: Anesthesia collapse, dentophobia) */
+.anamnesis-chip--active-purple-alert {
+	background: rgba(147, 51, 234, 0.12) !important;
+	border: 1px solid #9333ea !important;
+	color: #6b21a8 !important;
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(147, 51, 234, 0.18) !important;
+}
+
+.anamnesis-chip--active-purple-alert:hover {
+	background: rgba(147, 51, 234, 0.18) !important;
+	border-color: #7e22ce !important;
+}
+
+.dark .anamnesis-chip--active-purple-alert,
+[data-theme="dark"] .anamnesis-chip--active-purple-alert {
+	background: rgba(147, 51, 234, 0.25) !important;
+	border-color: #c084fc !important;
+	color: #f3e8ff !important;
+}
+
+/* 4. Dental History Normal (Purple Soft: Regular anesthesia, crowns) */
+.anamnesis-chip--active-purple {
+	background: rgba(168, 85, 247, 0.08) !important;
+	border: 1px solid #a855f7 !important;
+	color: #581c87 !important;
+	font-weight: 600;
+}
+
+.anamnesis-chip--active-purple:hover {
+	background: rgba(168, 85, 247, 0.14) !important;
+	border-color: #9333ea !important;
+}
+
+.dark .anamnesis-chip--active-purple,
+[data-theme="dark"] .anamnesis-chip--active-purple {
+	background: rgba(168, 85, 247, 0.18) !important;
+	border-color: #c084fc !important;
+	color: #e9d5ff !important;
+}
+
+/* 5. Patient Complaints (Teal) */
+.anamnesis-chip--active-teal {
+	background: rgba(13, 148, 136, 0.1) !important;
+	border: 1px solid #0d9488 !important;
+	color: #0f766e !important;
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.18) !important;
+}
+
+.anamnesis-chip--active-teal:hover {
+	background: rgba(13, 148, 136, 0.16) !important;
+	border-color: #0f766e !important;
+}
+
+.dark .anamnesis-chip--active-teal,
+[data-theme="dark"] .anamnesis-chip--active-teal {
+	background: rgba(13, 148, 136, 0.22) !important;
+	border-color: #14b8a6 !important;
+	color: #99f6e4 !important;
+}
+
+/* ─── Allergen Group & Reaction Selector ─────────────────────────────────── */
+.anamnesis-allergen-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.anamnesis-reaction-selector {
+	display: inline-flex;
+	align-items: center;
+	position: relative;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 28px 0 10px;
+	border-radius: 8px;
+	border: 1px solid rgba(239, 68, 68, 0.4);
+	background: rgba(239, 68, 68, 0.06);
+	color: #991b1b;
+	font-size: 11.5px;
+	font-weight: 600;
+	white-space: nowrap;
+	box-shadow: 0 1px 2px rgba(239, 68, 68, 0.08);
+	transition: all 0.15s ease;
+}
+
+.anamnesis-reaction-selector:hover {
+	border-color: #ef4444;
+	background: rgba(239, 68, 68, 0.1);
+}
+
+.dark .anamnesis-reaction-selector,
+[data-theme="dark"] .anamnesis-reaction-selector,
+[data-theme="night"] .anamnesis-reaction-selector {
+	border-color: rgba(239, 68, 68, 0.5);
+	background: rgba(239, 68, 68, 0.16);
+	color: #fca5a5;
+}
+
+.anamnesis-reaction-select {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+	cursor: pointer;
+	appearance: none;
+}
+
+.anamnesis-reaction-arrow {
+	position: absolute;
+	right: 8px;
+	width: 13px;
+	height: 13px;
+	color: #ef4444;
+	pointer-events: none;
+}
+
+/* ─── Clarification Inputs ───────────────────────────────────────────────── */
+.anamnesis-clarify-card {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 12px;
+	padding: 12px 14px;
+	border-radius: 12px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	margin-top: 8px;
+}
+
+.dark .anamnesis-clarify-card,
+[data-theme="dark"] .anamnesis-clarify-card {
+	border-color: rgba(255, 255, 255, 0.14);
+	background: rgba(255, 255, 255, 0.03);
+}
+
+.anamnesis-input {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 10px;
+	border-radius: 8px;
+	border: 1px solid var(--line-strong, #cbd5e1);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
+	font-size: 12px;
+	font-weight: 500;
+	transition: all 0.15s ease;
+	outline: none;
+}
+
+.anamnesis-input:focus {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px var(--teal-soft, rgba(13, 148, 136, 0.15));
+}
+
+.dark .anamnesis-input,
+[data-theme="dark"] .anamnesis-input {
+	border-color: rgba(255, 255, 255, 0.2);
+	background: rgba(255, 255, 255, 0.05);
+	color: #f1f5f9;
+}

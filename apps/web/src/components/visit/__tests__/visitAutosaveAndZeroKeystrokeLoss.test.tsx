@@ -160,10 +160,13 @@ describe("Visit Autosave & Zero Keystroke Loss Invariants", () => {
 	});
 
 	it("5. Structural invariant: useVisitLogic applyAcceptedVisitResponse non-destructively preserves active doctor notes", () => {
-		const useVisitLogicPath = path.resolve(
+		const decomposedTarget = path.resolve(
 			__dirname,
-			"../../../hooks/domains/useVisitLogic.ts",
+			"../../../hooks/domains/visit/useVisitOfflineQueue.ts",
 		);
+		const useVisitLogicPath = fs.existsSync(decomposedTarget)
+			? decomposedTarget
+			: path.resolve(__dirname, "../../../hooks/domains/useVisitLogic.ts");
 		const source = fs.readFileSync(useVisitLogicPath, "utf8");
 
 		// Verify functional updater is used in setVisitNoteForm

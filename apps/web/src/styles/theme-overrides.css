@@ -229,7 +229,7 @@
 	.font-semibold,
 	.font-bold,
 	strong
-):not(.text-teal):not(.text-red):not(.text-green):not(.text-amber) {
+):not(.text-teal):not(.text-red):not(.text-green):not(.text-amber):not(.pro-a4-viewport *):not(.pro-a4-physical-sheet *):not(.pro-a4-page-sheet *) {
 	color: var(--ink) !important;
 }
 
@@ -288,4 +288,98 @@
 		text-shadow: none !important;
 	}
 }
+
+/* ── 9. PHYSICAL A4 PRINT PREVIEW IMMUNITY (OFFICIAL RF SHEET PURITY ON SCREEN) ── */
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet, [data-testid="pro-a4-physical-sheet"]) {
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	color: #000000 !important;
+}
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet, [data-testid="pro-a4-physical-sheet"]) * {
+	color: #000000 !important;
+}
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet, [data-testid="pro-a4-physical-sheet"]) :is(
+	h1, h2, h3, h4, h5, h6,
+	p, span, div, td, th, strong, b, u, i,
+	.a4-doc-title, .a4-doc-subtitle, .a4-section-heading,
+	.a4-p, .a4-p-noindent, .a4-clinic-name, .a4-clinic-requisites,
+	.a4-meta-row, .a4-meta-row *
+) {
+	color: #000000 !important;
+}
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet, [data-testid="pro-a4-physical-sheet"]) :is(.a4-clinic-requisites, .a4-doc-subtitle, .a4-running-header, .a4-running-footer, .a4-sign-hint) {
+	color: #333333 !important;
+}
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet, [data-testid="pro-a4-physical-sheet"]) table.a4-table th {
+	background: #f0f0f0 !important;
+	background-color: #f0f0f0 !important;
+	color: #000000 !important;
+	border: 0.75pt solid #000000 !important;
+}
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet, [data-testid="pro-a4-physical-sheet"]) table.a4-table td {
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	color: #000000 !important;
+	border: 0.75pt solid #000000 !important;
+}
+
 

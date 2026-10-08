@@ -17,7 +17,7 @@ export interface TreatmentPlanStageItemRowProps {
 	readonly isArchivedInCatalog?: boolean | undefined;
 	readonly doctors?: readonly TreatmentPlanDoctorOption[] | undefined;
 	readonly onAssignDoctor?: ((itemId: string, doctorId: string | null, doctorName: string | null, doctorSpecialty: string | null) => void) | undefined;
-	readonly onOpenLabOrder?: ((teeth?: number[]) => void) | undefined;
+	readonly onOpenLabOrder?: ((teeth?: number[], options?: Record<string, unknown>) => void) | undefined;
 	readonly onOneClickLabOrder?: ((teeth?: number[]) => void) | undefined;
 	readonly onUpdateItemQuantity?: ((itemId: string, newQty: number) => void) | undefined;
 	readonly onUpdateItemPrice?: ((itemId: string, newPriceRub: number) => void) | undefined;
@@ -171,11 +171,16 @@ export const TreatmentPlanStageItemRow: React.FC<TreatmentPlanStageItemRowProps>
 						<div className="flex items-center gap-1.5">
 							<button
 								type="button"
-								onClick={() =>
-									onOpenLabOrder(
-										item.toothNumber ? [item.toothNumber] : undefined,
-									)
-								}
+								onClick={() => {
+									const itemTeeth = item.toothNumber ? [item.toothNumber] : undefined;
+									onOpenLabOrder(itemTeeth, {
+										selectedTeeth: itemTeeth,
+										itemName: item.name,
+										priceRub: item.totalPriceRub || item.unitPriceRub,
+										doctorId: item.assignedDoctorId,
+										doctorName: item.assignedDoctorName,
+									});
+								}}
 								className="h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2.5 py-1 rounded-md text-[11px] font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal)]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0 touch-manipulation flex items-center gap-1.5"
 								title={`Оформить наряд-заказ в зуботехническую лабораторию для ${item.name}`}
 								data-testid={`item-lab-order-btn-${item.id}`}

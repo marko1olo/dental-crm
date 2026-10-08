@@ -91,6 +91,7 @@ import {
 	createKioskManager,
 	verifyPinConstantTime,
 } from "../components/desktop/kioskMode";
+import { clearHardwareProfileCache } from "../lib/hardwareCapabilities";
 
 
 test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
@@ -1142,6 +1143,7 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 	});
 
 	await t.test("Low-Spec hardware auto-detection (Celeron 2-core CPU, <=4GB RAM, 5400 RPM HDD)", () => {
+		clearHardwareProfileCache();
 		const originalNavDesc = Object.getOwnPropertyDescriptor(globalThis, "navigator");
 
 		// Simulated weak clinic laptop: 2 cores (Celeron), 4GB RAM
@@ -1165,6 +1167,7 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 			assert.equal(getAdaptivePollingIntervalMs(5000), 15000); // 15s floor
 			assert.equal(getAdaptivePollingIntervalMs(30000), 75000); // 2.5x scaling
 		} finally {
+			clearHardwareProfileCache();
 			if (originalNavDesc) {
 				Object.defineProperty(globalThis, "navigator", originalNavDesc);
 			} else {
@@ -1174,6 +1177,7 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 	});
 
 	await t.test("High-performance workstation detection (>=8 cores, >=8GB RAM) retains 60/120 FPS full fidelity", () => {
+		clearHardwareProfileCache();
 		const originalNavDesc = Object.getOwnPropertyDescriptor(globalThis, "navigator");
 
 		// Simulated doctor workstation: 16 cores, 32GB RAM
@@ -1197,6 +1201,7 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 			assert.equal(getAdaptivePollingIntervalMs(5000), 5000);
 			assert.equal(getAdaptivePollingIntervalMs(30000), 30000);
 		} finally {
+			clearHardwareProfileCache();
 			if (originalNavDesc) {
 				Object.defineProperty(globalThis, "navigator", originalNavDesc);
 			} else {
@@ -1206,6 +1211,7 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 	});
 
 	await t.test("Medium-tier hardware scaling (4-6 cores, 6GB RAM)", () => {
+		clearHardwareProfileCache();
 		const originalNavDesc = Object.getOwnPropertyDescriptor(globalThis, "navigator");
 
 		// Simulated mid-range office PC
@@ -1227,6 +1233,7 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 			// 1.5x moderate adaptive polling
 			assert.equal(getAdaptivePollingIntervalMs(6000), 9000);
 		} finally {
+			clearHardwareProfileCache();
 			if (originalNavDesc) {
 				Object.defineProperty(globalThis, "navigator", originalNavDesc);
 			} else {
@@ -1347,6 +1354,7 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 	});
 
 	await t.test("DICOM & RVG imaging engine adapts dynamically to hardware resource tiers", () => {
+		clearHardwareProfileCache();
 		const originalNavDesc = Object.getOwnPropertyDescriptor(globalThis, "navigator");
 
 		// Scenario A: Low-spec hardware (Celeron / 2-core / 4GB RAM)
@@ -1395,6 +1403,7 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 			const effectiveZStep = isLowSpec ? Math.max(defaultZStep, 1.0) : defaultZStep;
 			assert.equal(effectiveZStep, 1.0);
 		} finally {
+			clearHardwareProfileCache();
 			if (originalNavDesc) {
 				Object.defineProperty(globalThis, "navigator", originalNavDesc);
 			} else {
@@ -1402,6 +1411,7 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 			}
 		}
 
+		clearHardwareProfileCache();
 		// Scenario B: High-performance workstation (8-core / 16GB RAM)
 		Object.defineProperty(globalThis, "navigator", {
 			value: {
@@ -1443,6 +1453,7 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 			const effectiveZStep = isLowSpec ? Math.max(defaultZStep, 1.0) : defaultZStep;
 			assert.equal(effectiveZStep, 0.5);
 		} finally {
+			clearHardwareProfileCache();
 			if (originalNavDesc) {
 				Object.defineProperty(globalThis, "navigator", originalNavDesc);
 			} else {

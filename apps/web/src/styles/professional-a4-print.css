@@ -178,7 +178,67 @@
 	box-sizing: border-box;
 }
 
-/* ── Physical A4 Paper Sheet ── */
+/* ── Multi-sheet Stack & Real A4 Pages ── */
+.pro-a4-sheet-stack {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 28px;
+	width: 100%;
+}
+
+.pro-a4-page-sheet {
+	width: 210mm;
+	min-height: 297mm;
+	max-width: 100%;
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	color: #000000 !important;
+	color-scheme: light !important;
+	box-sizing: border-box;
+	margin: 0 auto;
+	padding: 18mm 12mm 18mm 20mm;
+	box-shadow: 0 4px 25px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.08);
+	font-family: "PT Serif", "Times New Roman", "PT Astra Serif", Georgia, serif;
+	font-size: 9pt;
+	line-height: 1.35;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.pro-a4-page-sheet .a4-sheet-body {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+}
+
+.a4-running-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 7.5pt;
+	color: #444444 !important;
+	border-bottom: 0.5pt solid #888888;
+	padding-bottom: 3px;
+	margin-bottom: 10px;
+	line-height: 1.2;
+}
+
+.a4-running-footer {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 7.5pt;
+	color: #444444 !important;
+	border-top: 0.5pt solid #cccccc;
+	padding-top: 3px;
+	margin-top: 12px;
+	line-height: 1.2;
+}
+
+/* ── Physical A4 Paper Sheet (Legacy & Single-Page Fallback) ── */
 .pro-a4-physical-sheet {
 	width: 210mm;
 	min-height: 297mm;
@@ -189,7 +249,7 @@
 	color-scheme: light !important;
 	box-sizing: border-box;
 	margin: 0 auto;
-	padding: 15mm 15mm 15mm 20mm;
+	padding: 20mm 10mm 20mm 25mm;
 	box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.08);
 	font-family: "PT Serif", "Times New Roman", "PT Astra Serif", Georgia, serif;
 	font-size: 9.5pt;
@@ -197,26 +257,18 @@
 	position: relative;
 }
 
-:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-physical-sheet,
-:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-physical-sheet * {
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet),
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet) * {
 	color-scheme: light !important;
 }
 
-:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-physical-sheet {
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet) {
 	background: #ffffff !important;
 	background-color: #ffffff !important;
 	color: #000000 !important;
 }
 
-:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-physical-sheet h1,
-:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-physical-sheet h2,
-:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-physical-sheet h3,
-:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-physical-sheet p,
-:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-physical-sheet span,
-:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-physical-sheet div,
-:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-physical-sheet td,
-:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-physical-sheet th,
-:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-physical-sheet strong {
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet) :is(h1, h2, h3, h4, h5, h6, p, span, div, td, th, strong, .a4-doc-title, .a4-doc-subtitle, .a4-section-heading, .a4-p, .a4-p-noindent, .a4-meta-row, .a4-meta-row *) {
 	color: #000000 !important;
 }
 
@@ -378,7 +430,7 @@
 @media print {
 	@page {
 		size: A4 portrait;
-		margin: 15mm 12mm 15mm 20mm;
+		margin: 20mm 10mm 20mm 25mm;
 	}
 
 	html,
@@ -414,14 +466,28 @@
 		overflow: visible !important;
 	}
 
-	.pro-a4-physical-sheet {
+	.pro-a4-sheet-stack {
+		display: block !important;
+		gap: 0 !important;
+	}
+
+	.pro-a4-physical-sheet,
+	.pro-a4-page-sheet {
 		width: 100% !important;
-		min-height: auto !important;
+		min-height: 297mm !important;
+		height: 297mm !important;
 		max-width: none !important;
 		box-shadow: none !important;
 		margin: 0 !important;
-		padding: 0 !important;
+		padding: 15mm 10mm 15mm 20mm !important;
 		border: none !important;
+		page-break-after: always !important;
+		break-after: page !important;
+	}
+
+	.pro-a4-page-sheet:last-child {
+		page-break-after: auto !important;
+		break-after: auto !important;
 	}
 
 	.a4-sign-grid {

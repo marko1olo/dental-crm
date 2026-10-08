@@ -145,6 +145,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 						value={splitCardRub || ""}
 						onChange={(e) => setSplitCardRub(Math.max(0, parseFloat(e.target.value) || 0))}
 						placeholder="0 ₽"
+						data-testid="input-split-card"
 						className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line,#e2e8f0)] rounded-xl text-[var(--ink)] outline-none"
 					/>
 				</div>
@@ -161,6 +162,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 						value={splitCashRub || ""}
 						onChange={(e) => setSplitCashRub(Math.max(0, parseFloat(e.target.value) || 0))}
 						placeholder="0 ₽"
+						data-testid="input-split-cash"
 						className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line,#e2e8f0)] rounded-xl text-[var(--ink)] outline-none"
 					/>
 				</div>
@@ -177,6 +179,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 						value={splitSbpRub || ""}
 						onChange={(e) => setSplitSbpRub(Math.max(0, parseFloat(e.target.value) || 0))}
 						placeholder="0 ₽"
+						data-testid="input-split-sbp"
 						className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line,#e2e8f0)] rounded-xl text-[var(--ink)] outline-none"
 					/>
 				</div>
@@ -193,6 +196,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 						value={splitDepositRub || ""}
 						onChange={(e) => setSplitDepositRub(Math.max(0, parseFloat(e.target.value) || 0))}
 						placeholder="0 ₽"
+						data-testid="input-split-deposit"
 						className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line,#e2e8f0)] rounded-xl text-[var(--ink)] outline-none"
 					/>
 				</div>

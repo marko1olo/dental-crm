@@ -437,14 +437,17 @@ export const VISIT_CONSENTS_TAB_STYLES = `
 				}
 
 				.vct-code-pill {
-					font-family: monospace;
-					font-size: 10.5px;
+					font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+					font-size: 11px;
 					font-weight: 700;
-					padding: 2px 6px;
+					letter-spacing: 0.3px;
+					padding: 2px 7px;
 					border-radius: 4px;
 					background: var(--paper-soft);
 					border: 1px solid var(--glass-border);
 					color: var(--muted);
+					white-space: nowrap;
+					flex-shrink: 0;
 				}
 
 				.vct-statutory-pill {

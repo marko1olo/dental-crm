@@ -86,17 +86,17 @@ export const GlobalTreatmentsStrip: React.FC<GlobalTreatmentsStripProps> = ({
 
 	return (
 		<div
-			className="global-treatments-strip flex flex-wrap items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink,#0f172a)] transition-colors"
+			className="global-treatments-strip flex flex-wrap items-center gap-2 px-3.5 py-1.5 rounded-xl border border-[var(--line-strong,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink,#0f172a)] transition-colors shadow-2xs"
 			role="region"
 			aria-label="Общие процедуры на всю дугу и полость рта"
 		>
-			<div className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-[var(--muted,#64748b)] uppercase select-none mr-1">
+			<div className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-[var(--muted,#64748b)] uppercase select-none mr-1">
 				<Sparkles className="w-3.5 h-3.5 text-amber-500" />
 				<span>Общие процедуры:</span>
 			</div>
 
 			{globals.length === 0 ? (
-				<span className="text-[var(--muted,#64748b)] italic text-xs">
+				<span className="text-[var(--muted,#64748b)] italic text-xs font-medium">
 					Нет общих назначений
 				</span>
 			) : (
@@ -110,12 +110,12 @@ export const GlobalTreatmentsStrip: React.FC<GlobalTreatmentsStripProps> = ({
 							onClick={() => onTreatmentClick?.(tr)}
 							onMouseEnter={() => handleMouseEnter(tr)}
 							onMouseLeave={handleMouseLeave}
-							className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-150 cursor-pointer ${
+							className={`inline-flex items-center gap-1.5 px-2.5 h-7 rounded-lg text-xs font-bold border transition-all duration-150 cursor-pointer shadow-2xs ${
 								isHigh
-									? "border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-950/60 dark:text-blue-200 ring-2 ring-blue-400/40 shadow-sm"
+									? "border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-950/60 dark:text-blue-200 ring-2 ring-blue-400/40 shadow-xs"
 									: isPlanned
-										? "border-amber-300 dark:border-amber-700/60 bg-amber-50/70 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 hover:border-blue-400 hover:bg-blue-50/50"
-										: "border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] hover:border-blue-400 shadow-2xs"
+										? "border-amber-400 dark:border-amber-600 bg-amber-500/15 text-amber-900 dark:text-amber-200 hover:border-amber-500"
+										: "border-[var(--line-strong,var(--border,#cbd5e1))] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-teal-500"
 							}`}
 							style={
 								isPlanned
@@ -129,12 +129,12 @@ export const GlobalTreatmentsStrip: React.FC<GlobalTreatmentsStripProps> = ({
 							{getIcon(tr)}
 							<span>{tr.title}</span>
 							{tr.arch && (
-								<span className="text-xs uppercase tracking-wider px-1 py-0.2 rounded bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] border border-[var(--border,#e2e8f0)]">
+								<span className="text-xs uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] border border-[var(--line-strong,var(--border,#e2e8f0))] font-mono">
 									{tr.arch === "upper" ? "в/ч" : "н/ч"}
 								</span>
 							)}
 							{tr.status === "existing" && (
-								<Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400 ml-0.5" />
+								<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 ml-0.5" />
 							)}
 						</button>
 					);
@@ -142,32 +142,32 @@ export const GlobalTreatmentsStrip: React.FC<GlobalTreatmentsStripProps> = ({
 			)}
 
 			{!readOnly && onQuickAdd && (
-				<div className="flex items-center gap-1 ml-auto">
+				<div className="flex items-center gap-1.5 ml-auto">
 					<button
 						type="button"
 						onClick={() => onQuickAdd(DEFAULT_GLOBAL_PRESETS[0]!)}
-						className="inline-flex items-center gap-1 px-2.5 py-1 min-h-[28px] sm:h-7 text-xs font-semibold rounded border border-dashed border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:border-emerald-500 hover:text-emerald-600 transition-colors"
+						className="inline-flex items-center gap-1.5 px-2.5 h-7 text-xs font-bold rounded-lg border border-[var(--line-strong,var(--border,#cbd5e1))] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-hover,#f1f5f9)] hover:border-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-300 transition-all shadow-2xs active:scale-95 cursor-pointer"
 						title="Добавить профгигиену Air-Flow на всю полость рта"
 					>
-						<Plus className="w-3 h-3" />
+						<Plus className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span>Air-Flow</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => onQuickAdd(DEFAULT_GLOBAL_PRESETS[1]!)}
-						className="inline-flex items-center gap-1 px-2.5 py-1 min-h-[28px] sm:h-7 text-xs font-semibold rounded border border-dashed border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:border-sky-500 hover:text-sky-600 transition-colors"
+						className="inline-flex items-center gap-1.5 px-2.5 h-7 text-xs font-bold rounded-lg border border-[var(--line-strong,var(--border,#cbd5e1))] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-hover,#f1f5f9)] hover:border-sky-500 hover:text-sky-700 dark:hover:text-sky-300 transition-all shadow-2xs active:scale-95 cursor-pointer"
 						title="Добавить элайнеры на верхнюю челюсть"
 					>
-						<Plus className="w-3 h-3" />
+						<Plus className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
 						<span>В/Ч</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => onQuickAdd(DEFAULT_GLOBAL_PRESETS[2]!)}
-						className="inline-flex items-center gap-1 px-2.5 py-1 min-h-[28px] sm:h-7 text-xs font-semibold rounded border border-dashed border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:border-sky-500 hover:text-sky-600 transition-colors"
+						className="inline-flex items-center gap-1.5 px-2.5 h-7 text-xs font-bold rounded-lg border border-[var(--line-strong,var(--border,#cbd5e1))] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-hover,#f1f5f9)] hover:border-sky-500 hover:text-sky-700 dark:hover:text-sky-300 transition-all shadow-2xs active:scale-95 cursor-pointer"
 						title="Добавить элайнеры на нижнюю челюсть"
 					>
-						<Plus className="w-3 h-3" />
+						<Plus className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
 						<span>Н/Ч</span>
 					</button>
 				</div>

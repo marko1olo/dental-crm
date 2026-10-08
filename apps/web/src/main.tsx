@@ -38,6 +38,12 @@ const TelegramMiniAppView = React.lazy(() =>
 		default: m.TelegramMiniAppView,
 	})),
 );
+const CbctStandaloneStudioView = React.lazy(() =>
+	import("./components/radiology/CbctStandaloneStudioView").then((m) => ({
+		default: m.CbctStandaloneStudioView,
+	})),
+);
+import { parseCbctStudioRoute } from "./utils/runtimeRouter";
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
 // любому объявлению вне слоёв, поэтому порядок импорта на них не влияет —
 // но так виднее, что это фундамент, а не переопределение.
@@ -132,6 +138,7 @@ const publicPortalRoute = publicPortalRouteFromHash(
 			? window.location.hash
 			: "",
 );
+const cbctStudioRoute = typeof window !== "undefined" ? parseCbctStudioRoute() : { isCbctStudio: false };
 // biome-ignore lint/style/noNonNullAssertion: automated suppression
 const appRoot = createRoot(document.getElementById("root")!);
 
@@ -206,6 +213,28 @@ if (publicPortalRoute) {
 					) : (
 						<GuestLabPortal token={publicPortalRoute.token} />
 					)}
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (cbctStudioRoute.isCbctStudio) {
+	// АВТОНОМНЫЙ КОКПИТ 3D КЛКТ (ВТОРОЙ МОНИТОР / ПОПАУТ ОКНО / МАРШРУТ /cbct-studio)
+	// Должен рендериться БЕЗ бокового меню, БЕЗ шапки CRM и БЕЗ лишних провайдеров.
+	applyThemeToRoot(document.documentElement, "dark");
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense fallback={<div className="fixed inset-0 bg-zinc-950 flex items-center justify-center text-cyan-400 font-mono text-sm">Загрузка КЛКТ Студии...</div>}>
+					<CbctStandaloneStudioView
+						studyId={cbctStudioRoute.studyId}
+						patientId={cbctStudioRoute.patientId}
+						patientName={cbctStudioRoute.patientName}
+						initialStudioMode={cbctStudioRoute.mode as any}
+						autoLoadDemo={cbctStudioRoute.isDemo}
+					/>
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>
@@ -310,6 +339,7 @@ function watchDenteServiceWorkerUpdates(
 // а «Обновить рабочее место» ему предлагать нечего.
 if (
 	!publicPortalRoute &&
+	!cbctStudioRoute.isCbctStudio &&
 	"serviceWorker" in navigator &&
 	import.meta.env.PROD
 ) {

@@ -971,7 +971,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   PREMIUM VISIT SUB-NAVIGATION TABS (DEFECT 2: ОЖИВЛЕНИЕ ВКЛАДОК)
+   PREMIUM VISIT SUB-NAVIGATION TABS (TACTILE SEGMENTED CONTROL)
    ═══════════════════════════════════════════════════════════════════ */
 .visit-subtab-btn {
 	display: inline-flex;
@@ -979,32 +979,33 @@
 	justify-content: center;
 	min-height: 28px;
 	height: 28px;
-	padding: 0 12px;
+	padding: 0 13px;
 	border-radius: 8px;
-	font-size: 12px;
+	font-size: 12.5px;
 	font-weight: 500;
-	color: var(--muted);
-	background: transparent;
-	border: 1px solid transparent;
+	color: var(--ink-muted, var(--muted, #475569));
+	background: color-mix(in srgb, var(--paper) 45%, transparent);
+	border: 1px solid var(--line-subtle, rgba(0, 0, 0, 0.08));
 	cursor: pointer;
 	user-select: none;
 	white-space: nowrap;
 	flex-shrink: 0;
-	transition: all 0.15s ease-in-out;
+	transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .visit-subtab-btn:hover {
 	color: var(--ink);
-	background: color-mix(in srgb, var(--paper) 60%, transparent);
-	border-color: transparent;
+	background: var(--paper);
+	border-color: var(--line-strong, #cbd5e1);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .visit-subtab-btn.active {
 	background: var(--paper);
 	color: var(--ink);
 	font-weight: 600;
-	border: 1px solid var(--line);
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+	border: 1px solid var(--line-strong, #cbd5e1);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02);
 }
 
 [data-theme="dark"] .visit-subtab-btn,
@@ -1013,9 +1014,9 @@
 [data-theme="ocean"] .visit-subtab-btn,
 [data-theme="emerald"] .visit-subtab-btn,
 html.dark .visit-subtab-btn {
-	background: transparent;
-	color: var(--muted);
-	border: 1px solid transparent;
+	background: rgba(255, 255, 255, 0.04);
+	color: var(--muted, #94a3b8);
+	border: 1px solid rgba(255, 255, 255, 0.09);
 }
 
 [data-theme="dark"] .visit-subtab-btn:hover,
@@ -1024,9 +1025,9 @@ html.dark .visit-subtab-btn {
 [data-theme="ocean"] .visit-subtab-btn:hover,
 [data-theme="emerald"] .visit-subtab-btn:hover,
 html.dark .visit-subtab-btn:hover {
-	background: color-mix(in srgb, var(--paper) 60%, transparent);
-	color: var(--ink);
-	border-color: transparent;
+	background: rgba(255, 255, 255, 0.09);
+	color: var(--ink, #f8fafc);
+	border-color: rgba(255, 255, 255, 0.18);
 }
 
 [data-theme="dark"] .visit-subtab-btn.active,
@@ -1035,10 +1036,11 @@ html.dark .visit-subtab-btn:hover {
 [data-theme="ocean"] .visit-subtab-btn.active,
 [data-theme="emerald"] .visit-subtab-btn.active,
 html.dark .visit-subtab-btn.active {
-	background: var(--paper);
-	color: var(--ink);
-	border: 1px solid var(--line);
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+	background: var(--paper-strong, var(--paper, #1e293b));
+	color: var(--ink, #ffffff);
+	font-weight: 600;
+	border: 1px solid rgba(255, 255, 255, 0.22);
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 /* ═══════════════════════════════════════════════════════════════

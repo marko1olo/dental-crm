@@ -32,14 +32,6 @@ export function getDefaultClinicalPresetStages(
 	const validDiscountPct = Math.max(0, Math.min(100, discountPercent));
 	const isDemo = isDemoShowcaseMode(options?.isDemoMode);
 
-	if (!isDemo) {
-		return [
-			makeEmptyStage(1, "stage_1_therapy", "Этап 1: Неотложная терапия и санация", "Устранение очагов острой боли, КЛКТ 3D-диагностика, профессиональная гигиена."),
-			makeEmptyStage(2, "stage_2_surgery", "Этап 2: Хирургия и имплантация", "Хирургическая санация полости рта."),
-			makeEmptyStage(3, "stage_3_orthopedics", "Этап 3: Ортопедическая реабилитация", "Ортопедическое восстановление зубных рядов."),
-		];
-	}
-
 	if (tierId === "economy") {
 		// Эконом: 45 000 ₽, 1 год гарантии, 3 нед / 3 виз.
 		// Базовая санация, световые пломбы
@@ -733,6 +725,7 @@ export function normalizeToothState(state: unknown): ToothState {
 		case "корень":
 			return "Root";
 		case "impacted":
+		case "retained":
 		case "дистопирован":
 		case "дистопия":
 		case "ретинирован":
@@ -868,9 +861,55 @@ export function generateTierPlanStages(
 			continue;
 		}
 
-		if (state === "Retained") {
+		if (state === "Retained" || state === "Impacted") {
 			const defComplexExt = ORDER_804N_DICTIONARY.ComplexExtraction!;
-			stage2Items.push(createPlanItem("s2-impacted-" + num, 2, "stage_2_surgery", defComplexExt, num, catalog, validDiscountPct, { isDemoMode: isDemo }));
+			if (tierId === "optimum") {
+				stage2Items.push(
+					createPlanItem(
+						"s2-impacted-" + num,
+						2,
+						"stage_2_surgery",
+						defComplexExt,
+						num,
+						catalog,
+						validDiscountPct,
+						{
+							customTitle: "Пьезохирургическое атравматичное удаление ретенированного зуба №" + num + " под операционным микроскопом",
+							customPriceRub: 15000,
+							isDemoMode: isDemo,
+						},
+					),
+				);
+				const defBoneGraft = ORDER_804N_DICTIONARY.BoneGraftingSinusLift!;
+				stage2Items.push(
+					createPlanItem(
+						"s2-bonegraft-" + num,
+						2,
+						"stage_2_surgery",
+						defBoneGraft,
+						num,
+						catalog,
+						validDiscountPct,
+						{
+							customTitle: "Направленная костная регенерация (GBR) лунки зуба №" + num + " (Geistlich Bio-Oss + биомембрана Bio-Gide)",
+							isDemoMode: isDemo,
+						},
+					),
+				);
+			} else {
+				stage2Items.push(
+					createPlanItem(
+						"s2-impacted-" + num,
+						2,
+						"stage_2_surgery",
+						defComplexExt,
+						num,
+						catalog,
+						validDiscountPct,
+						{ isDemoMode: isDemo },
+					),
+				);
+			}
 			continue;
 		}
 

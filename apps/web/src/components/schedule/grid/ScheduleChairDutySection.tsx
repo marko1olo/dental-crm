@@ -482,52 +482,57 @@ export function ScheduleChairDutySection({
   // Unassigned chair
   return (
     <div className="w-full flex flex-col gap-1">
-      {/* Индикатор покрытия смен свободного кресла */}
-      <div
-        className="flex items-center gap-1 text-[10px] font-medium text-[var(--muted)]"
-        data-testid={`chair-shift-strip-${chair.id}`}
-      >
-        <div
-          className="px-1.5 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] opacity-60 flex items-center justify-center gap-1 shrink-0"
-          data-testid={`chair-status-morning-${chair.id}`}
-          title="Утренняя смена (08:00–14:00): Свободно"
+      {/* Монолитный блок назначения свободного кресла */}
+      <div className="flex items-center gap-1 w-full min-w-0">
+        <button
+          type="button"
+          onClick={() => openAssignModal(chair.id)}
+          className="min-h-[44px] sm:min-h-[30px] sm:h-7.5 w-full px-2 py-1 rounded-xl border border-dashed border-[var(--teal)]/40 hover:border-[var(--teal)] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface,var(--paper))] text-[var(--ink)] flex items-center justify-between gap-1 text-xs font-semibold cursor-pointer transition-all shadow-2xs group"
+          title={`Назначить врача на кресло «${chair.name}»`}
+          aria-label={`Назначить врача на кресло ${chair.name}`}
+          data-testid={`btn-assign-doctor-${chair.id}`}
         >
-          <Sun
-            size={11}
-            className="text-amber-500 shrink-0"
-            aria-hidden="true"
-          />
-          <span className="text-[10px] font-bold whitespace-nowrap">Своб.</span>
-        </div>
-        <div
-          className="px-1.5 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] opacity-60 flex items-center justify-center gap-1 shrink-0"
-          data-testid={`chair-status-evening-${chair.id}`}
-          title="Вечерняя смена (14:00–20:00): Свободно"
-        >
-          <Moon
-            size={11}
-            className="text-indigo-400 shrink-0"
-            aria-hidden="true"
-          />
-          <span className="text-[10px] font-bold whitespace-nowrap">Своб.</span>
-        </div>
+          <span className="flex items-center gap-1.5 min-w-0 truncate">
+            <Plus
+              size={13}
+              className="shrink-0 text-[var(--teal)] group-hover:scale-110 transition-transform"
+            />
+            <span className="truncate font-semibold text-[11px] sm:text-xs">
+              Назначить врача
+            </span>
+          </span>
+          {/* Индикатор покрытия смен свободного кресла */}
+          <span
+            className="flex items-center gap-1 shrink-0 text-[10px] text-[var(--muted)] font-normal"
+            data-testid={`chair-shift-strip-${chair.id}`}
+          >
+            <span
+              className="flex items-center gap-0.5 px-1 py-0.2 rounded bg-[var(--paper)]/80 border border-[var(--line)]"
+              data-testid={`chair-status-morning-${chair.id}`}
+              title="Утренняя смена (08:00–14:00): Свободно"
+            >
+              <Sun
+                size={10}
+                className="text-amber-500 shrink-0"
+                aria-hidden="true"
+              />
+              <span className="text-[9px] font-bold">Своб.</span>
+            </span>
+            <span
+              className="flex items-center gap-0.5 px-1 py-0.2 rounded bg-[var(--paper)]/80 border border-[var(--line)]"
+              data-testid={`chair-status-evening-${chair.id}`}
+              title="Вечерняя смена (14:00–20:00): Свободно"
+            >
+              <Moon
+                size={10}
+                className="text-indigo-400 shrink-0"
+                aria-hidden="true"
+              />
+              <span className="text-[9px] font-bold">Своб.</span>
+            </span>
+          </span>
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={() => openAssignModal(chair.id)}
-        className="min-h-[44px] sm:min-h-[30px] sm:h-7.5 w-full px-2.5 py-1 rounded-xl border border-dashed border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--teal-soft,var(--paper-soft))] text-[var(--muted)] hover:text-[var(--teal)] flex items-center justify-center gap-1.5 text-xs font-semibold cursor-pointer transition-all"
-        title={`Назначить врача на кресло «${chair.name}»`}
-        aria-label={`Назначить врача на кресло ${chair.name}`}
-        data-testid={`btn-assign-doctor-${chair.id}`}
-      >
-        <Plus
-          size={14}
-          className="shrink-0 text-[var(--teal)]"
-        />
-        <span className="truncate font-bold">
-          + Назначить врача
-        </span>
-      </button>
       {suggestedDoctor &&
         !isSoloDoctor &&
         doctors.length > 1 && (
@@ -540,12 +545,12 @@ export function ScheduleChairDutySection({
                 "full",
               )
             }
-            className="min-h-[32px] sm:min-h-[26px] sm:h-6.5 py-0.5 sm:py-0 px-2 rounded-lg bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal)] text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer hover:bg-[var(--teal)] hover:text-white transition-all border border-[var(--teal)]/20 shadow-2xs"
-            title={`Назначить: ${suggestedDoctor.fullName}`}
+            className="min-h-[32px] sm:min-h-[22px] sm:h-5.5 py-0.5 sm:py-0 px-2 rounded-lg bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal)] text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer hover:bg-[var(--teal)] hover:text-white transition-all border border-[var(--teal)]/20 shadow-2xs"
+            title={`Быстро назначить: ${suggestedDoctor.fullName}`}
             data-testid={`btn-quick-assign-${chair.id}`}
           >
             <Zap
-              size={11}
+              size={10}
               className="text-[var(--teal)] shrink-0"
             />
             <span className="truncate">{formatDoctorShortName(suggestedDoctor.fullName)}</span>

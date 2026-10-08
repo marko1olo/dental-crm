@@ -346,7 +346,7 @@ describe("Classic GOST 043/u — Visit Protocol / EMR Text Export", () => {
 
 		const text = formatOdontogramTo043ProtocolText(sampleTeeth, false);
 
-		assert.ok(text.includes("Зубная формула (Форма 043/у):"));
+		assert.ok(text.includes("Зубная формула (постоянный прикус):"));
 		assert.ok(text.includes("16:К(MOD)"));
 		assert.ok(text.includes("15:Пт"));
 		assert.ok(text.includes("21:П(V)"));
@@ -365,7 +365,7 @@ describe("Classic GOST 043/u — Visit Protocol / EMR Text Export", () => {
 
 		const text = formatOdontogramTo043ProtocolText(pedTeeth, true);
 
-		assert.ok(text.includes("Зубная формула 043/у (Молочный прикус):"));
+		assert.ok(text.includes("Зубная формула (молочный прикус):"));
 		assert.ok(text.includes("55:К(O)"));
 		assert.ok(text.includes("65:П"));
 		assert.ok(text.includes("75:0"));

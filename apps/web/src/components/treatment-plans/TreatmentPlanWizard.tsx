@@ -696,3 +696,6 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 		</div>
 	);
 };
+
+export const PlanWizardModal = TreatmentPlanWizard;
+export default TreatmentPlanWizard;

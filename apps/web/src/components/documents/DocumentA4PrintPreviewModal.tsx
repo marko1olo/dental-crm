@@ -19,6 +19,8 @@ import type {
 	A4DocumentActData,
 	A4DocumentTreatmentPlanData,
 	A4DocumentMedicalCardData,
+	A4DocumentInformedConsentData,
+	A4DocumentPersonalDataConsentData,
 } from "@dental/shared";
 import {
 	ProfessionalDocumentA4Sheet,
@@ -30,7 +32,7 @@ export interface DocumentA4PrintPreviewModalProps {
 	readonly onClose: () => void;
 	readonly initialTab?: ProfessionalA4DocumentTab;
 	readonly patient?: Patient | null;
-	readonly doctorFullName?: string | null;
+	readonly doctorFullName?: string | null | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: clinic profile draft
 	readonly clinicProfileDraft?: any;
 	readonly contractData?: Partial<A4DocumentContractData>;
@@ -52,6 +54,12 @@ export const DocumentA4PrintPreviewModal: React.FC<DocumentA4PrintPreviewModalPr
 	medicalCardData: customMedicalCardData,
 }) => {
 	const [activeTab, setActiveTab] = useState<ProfessionalA4DocumentTab>(initialTab);
+
+	React.useEffect(() => {
+		if (initialTab) {
+			setActiveTab(initialTab);
+		}
+	}, [initialTab]);
 
 	const todayRu = useMemo(() => {
 		const d = new Date();
@@ -305,6 +313,36 @@ export const DocumentA4PrintPreviewModal: React.FC<DocumentA4PrintPreviewModalPr
 		};
 	}, [cl, pt, doctor, todayRu, customMedicalCardData]);
 
+	// 5. Информированное добровольное согласие (1051н)
+	const consentData: A4DocumentInformedConsentData = useMemo(() => {
+		return {
+			consentNumber: `ИДС-${new Date().getFullYear()}/${pt.cardNumber.replace(/\D/g, "") || "418"}`,
+			consentDate: todayRu,
+			clinic: cl,
+			patient: pt,
+			doctorFullName: doctor,
+			doctorSpecialty: "Врач-стоматолог-терапевт",
+			interventionName: "Комплексное терапевтическое лечение, местная инфильтрационная анестезия и реставрация зубов",
+			toothOrArea: "16",
+			diagnosisSummary: "K02.1 Кариес дентина (глубокий кариес 16 зуба)",
+			contractNumber: contractData.contractNumber,
+			contractDate: contractData.contractDate,
+			patientQuestionsAnswered: true,
+		};
+	}, [cl, pt, doctor, todayRu, contractData]);
+
+	// 6. Согласие на обработку персональных данных (152-ФЗ)
+	const personalDataConsent: A4DocumentPersonalDataConsentData = useMemo(() => {
+		return {
+			consentNumber: `ПД-${new Date().getFullYear()}/${pt.cardNumber.replace(/\D/g, "") || "418"}`,
+			consentDate: todayRu,
+			clinic: cl,
+			patient: pt,
+			thirdPartyTransfersAllowed: true,
+			egiszTransferAllowed: true,
+		};
+	}, [cl, pt, todayRu]);
+
 	if (!isOpen) return null;
 
 	return (
@@ -353,6 +391,8 @@ export const DocumentA4PrintPreviewModal: React.FC<DocumentA4PrintPreviewModalPr
 						contractData={contractData}
 						actData={actData}
 						treatmentPlanData={treatmentPlanData}
+						consentData={consentData}
+						personalDataConsent={personalDataConsent}
 						medicalCardData={medicalCardData}
 						onPrint={() => window.print()}
 					/>

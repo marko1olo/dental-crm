@@ -290,7 +290,7 @@ export function useDicomWorkbenchPlanActions({
 			const data = await fetchDicomSeriesPreviewApi(
 				imagingStore.imagingImportSourceKind,
 				imagingStore.imagingImportSourceKind,
-				imagingImportText: imagingStore.imagingImportText,
+				imagingStore.imagingImportText,
 				auth,
 				controller.signal,
 			);

@@ -2,7 +2,7 @@ import type React from "react";
 import type { DentitionMode } from "../view/VisitEmbeddedOdontogram";
 import type { VisitToothUiState } from "../../../store/visitStore";
 import type { ClinicalVisitCompletionResult } from "../clinicalVisitWorkflow";
-import type { VisitNoteFieldsPatch } from "../clinicalCatalog";
+import type { VisitNoteFieldsPatch } from "../../clinicalCatalog";
 
 export type { DentitionMode };
 

@@ -37,6 +37,7 @@ import { DentalLabOrdersFilterBar } from "./DentalLabOrdersFilterBar";
 import { DentalLabCreateOrderModal } from "./DentalLabCreateOrderModal";
 import { DentalLabOrderDetailsModal, type ActionPromptState } from "./DentalLabOrderDetailsModal";
 import { DentalLabReadyInClinicModal, type ReadyInClinicLabOrder } from "./DentalLabReadyInClinicModal";
+import { IntraoralScan3DViewerModal } from "../radiology/IntraoralScan3DViewerModal";
 
 export interface DentalLabOrdersHubModalProps {
 	readonly isOpen: boolean;
@@ -88,54 +89,56 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	}, [initialOrders]);
 
 	// Live synchronization with PostgreSQL 18 lab orders (Mandates 8e, 8b, 8n)
+	const loadLabOrders = useCallback(async () => {
+		try {
+			const query = currentPatientId ? `?patientId=${encodeURIComponent(currentPatientId)}` : "";
+			const res = await fetch(`/api/dental-lab/orders${query}`, {
+				headers: denteAdminSecretRequestHeaders(),
+			});
+			if (!res.ok) {
+				setOrders([]);
+				return;
+			}
+			const data = await res.json();
+			if (!data) return;
+
+			const list = Array.isArray(data)
+				? data
+				: Array.isArray(data?.orders)
+				? data.orders
+				: Array.isArray(data?.data)
+				? data.data
+				: [];
+
+			if (list.length > 0) {
+				const mapped: DentalLabWorkflowOrder[] = list.map((raw: any, idx: number) =>
+					mapRawApiOrderToWorkflowOrder(raw, idx, currentPatientId, currentPatientName, currentDoctorName),
+				);
+				setOrders(mapped);
+			} else {
+				setOrders([]);
+			}
+		} catch (err) {
+			console.warn("[DentalLabOrdersHubModal] Failed to load live lab orders:", err);
+			setOrders([]);
+		}
+	}, [currentPatientId, currentPatientName, currentDoctorName]);
+
 	useEffect(() => {
 		if (!isOpen || (initialOrders && initialOrders.length > 0)) return;
-		let cancelled = false;
+		void loadLabOrders();
+	}, [isOpen, initialOrders, loadLabOrders]);
 
-		async function loadLabOrders() {
-			try {
-				const query = currentPatientId ? `?patientId=${encodeURIComponent(currentPatientId)}` : "";
-				const res = await fetch(`/api/dental-lab/orders${query}`, {
-					headers: denteAdminSecretRequestHeaders(),
-				});
-				if (!res.ok) {
-					if (!cancelled) {
-						setOrders([]);
-					}
-					return;
-				}
-				const data = await res.json();
-				if (cancelled || !data) return;
-
-				const list = Array.isArray(data)
-					? data
-					: Array.isArray(data?.orders)
-					? data.orders
-					: Array.isArray(data?.data)
-					? data.data
-					: [];
-
-				if (list.length > 0) {
-					const mapped: DentalLabWorkflowOrder[] = list.map((raw: any, idx: number) =>
-						mapRawApiOrderToWorkflowOrder(raw, idx, currentPatientId, currentPatientName, currentDoctorName),
-					);
-					setOrders(mapped);
-				} else {
-					setOrders([]);
-				}
-			} catch (err) {
-				console.warn("[DentalLabOrdersHubModal] Failed to load live lab orders:", err);
-				if (!cancelled) {
-					setOrders([]);
-				}
-			}
-		}
-
-		loadLabOrders();
-		return () => {
-			cancelled = true;
+	// Reactive listener for lab order creation across the clinical pipeline
+	useEffect(() => {
+		const handleOrderCreated = () => {
+			void loadLabOrders();
 		};
-	}, [isOpen, initialOrders, currentPatientId, currentPatientName, currentDoctorName]);
+		window.addEventListener("dente-lab-order-created", handleOrderCreated);
+		return () => {
+			window.removeEventListener("dente-lab-order-created", handleOrderCreated);
+		};
+	}, [loadLabOrders]);
 
 	// Фильтры и поиск
 	const [searchQuery, setSearchQuery] = useState<string>("");
@@ -156,6 +159,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	// Ready in clinic 1-click schedule/SMS modal state (Mandates 8b, 8e, 8n)
 	const [isReadyInClinicModalOpen, setIsReadyInClinicModalOpen] = useState<boolean>(false);
 	const [readyInClinicOrder, setReadyInClinicOrder] = useState<ReadyInClinicLabOrder | null>(null);
+	const [view3DScanOrder, setView3DScanOrder] = useState<DentalLabWorkflowOrder | null>(null);
 
 	const handleOpenReadyInClinicPrompt = useCallback((order: DentalLabWorkflowOrder) => {
 		const target: ReadyInClinicLabOrder = {
@@ -731,6 +735,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 						setInspectingOrder(null);
 						setWarrantyReworkOrder(ord);
 					}}
+					onView3DScan={(ord) => setView3DScanOrder(ord)}
 					warrantyReworkOrder={warrantyReworkOrder}
 					onCloseWarrantyRework={() => setWarrantyReworkOrder(null)}
 					onWarrantyReworkSubmit={handleWarrantyReworkSubmit}
@@ -744,6 +749,16 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 					isOpen={isReadyInClinicModalOpen}
 					onClose={() => setIsReadyInClinicModalOpen(false)}
 					order={readyInClinicOrder}
+				/>
+
+				{/* ─── 8. 3D-ПРОСМОТРЩИК ИНТРАОРАЛЬНЫХ СКАНОВ STL / PLY / OBJ (MANDATE 8B, 8E) ─── */}
+				<IntraoralScan3DViewerModal
+					isOpen={Boolean(view3DScanOrder)}
+					onClose={() => setView3DScanOrder(null)}
+					modelUrl={(view3DScanOrder as any)?.attachedScanUrl || (view3DScanOrder as any)?.attachedImageUrl || "/models/mandible_scan_16.stl"}
+					title={view3DScanOrder ? `3D-скан челюсти · Наряд № ${view3DScanOrder.orderNumber}` : "3D-скан ЗТЛ"}
+					patientName={view3DScanOrder?.patientName}
+					modelFormat="stl"
 				/>
 			</div>
 		</div>

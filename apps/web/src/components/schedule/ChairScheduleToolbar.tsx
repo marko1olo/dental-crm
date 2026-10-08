@@ -331,22 +331,38 @@ export function ChairScheduleToolbar({
               )}
 
               {/* Кнопка настройки смены и врача */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveShiftChairId((prev) => (prev === chair.id ? null : chair.id));
-                }}
-                className="h-6 w-6 inline-flex items-center justify-center rounded text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
-                title="Назначить врача и смену"
-                data-testid={`chair-view-assign-doctor-${chair.id}`}
-                aria-label={`Назначить врача на кресло ${chair.name}`}
-              >
-                <UserCheck
-                  size={13}
-                  className={assignedDocName ? "text-[var(--teal)]" : ""}
+              {assignedDocName ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveShiftChairId((prev) => (prev === chair.id ? null : chair.id));
+                  }}
+                  className="h-6 w-6 inline-flex items-center justify-center rounded text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
+                  title="Изменить врача и смену"
+                  data-testid={`chair-view-assign-doctor-${chair.id}`}
+                  aria-label={`Изменить врача на кресле ${chair.name}`}
+                >
+                  <UserCheck
+                    size={13}
+                    className="text-[var(--teal)]"
+                  />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  style={{ display: "none" }}
+                  className="hidden"
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveShiftChairId((prev) => (prev === chair.id ? null : chair.id));
+                  }}
+                  data-testid={`chair-view-assign-doctor-${chair.id}`}
+                  aria-label={`Назначить врача на кресло ${chair.name}`}
                 />
-              </button>
+              )}
 
               {/* Settings Button */}
               <button

@@ -31,13 +31,12 @@ export const cockpitToolbarStyle: CSSProperties = {
 	flexWrap: "nowrap",
 	overflowX: "auto",
 	scrollbarWidth: "none",
-	padding: "3px 8px",
+	padding: "4px 6px",
 	background: "var(--paper-soft)",
-	border: "1px solid var(--line)",
+	border: "1px solid var(--line-subtle)",
 	borderRadius: "8px",
-	height: "36px",
-	minHeight: "34px",
-	maxHeight: "38px",
+	height: "40px",
+	minHeight: "40px",
 };
 
 export const sanPinBadgeStyle: CSSProperties = {
@@ -51,38 +50,43 @@ export const sanPinBadgeStyle: CSSProperties = {
 
 export function getNormaButtonStyle(isNormaApplied: boolean): CSSProperties {
 	return {
-		height: "30px",
-		minHeight: "30px",
-		padding: "0 10px",
-		background: isNormaApplied ? "rgba(16, 185, 129, 0.25)" : "rgba(16, 185, 129, 0.12)",
-		color: isNormaApplied ? "#059669" : "#10b981",
-		border: "1px solid #10b981",
-		borderRadius: "6px",
-		fontSize: "0.78rem",
-		fontWeight: 700,
+		height: "32px",
+		minHeight: "32px",
+		padding: "0 8px",
+		background: isNormaApplied ? "var(--teal-soft)" : "var(--paper)",
+		color: isNormaApplied ? "var(--teal)" : "var(--ink)",
+		border: isNormaApplied ? "1px solid var(--teal)" : "1px solid var(--line-strong, var(--line))",
+		borderRadius: "8px",
+		fontSize: "13px",
+		fontWeight: 600,
 		cursor: "pointer",
 		display: "inline-flex",
 		alignItems: "center",
 		gap: "5px",
 		whiteSpace: "nowrap",
+		flexShrink: 0,
+		transition: "all 0.15s ease",
 	};
 }
 
 export function getAiButtonStyle(isAnalyzing: boolean): CSSProperties {
 	return {
-		height: "30px",
-		minHeight: "30px",
-		padding: "0 10px",
+		height: "32px",
+		minHeight: "32px",
+		padding: "0 8px",
 		background: isAnalyzing ? "var(--paper-soft)" : "var(--teal)",
 		color: isAnalyzing ? "var(--muted)" : "var(--on-teal, white)",
 		border: "1px solid var(--teal)",
-		borderRadius: "6px",
-		fontSize: "0.78rem",
+		borderRadius: "8px",
+		fontSize: "13px",
 		fontWeight: 600,
 		cursor: isAnalyzing ? "wait" : "pointer",
 		display: "inline-flex",
 		alignItems: "center",
 		gap: "5px",
+		whiteSpace: "nowrap",
+		flexShrink: 0,
+		transition: "all 0.15s ease",
 	};
 }
 

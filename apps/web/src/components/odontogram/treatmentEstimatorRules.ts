@@ -19,6 +19,7 @@ export type EstimatorSuggestionKey =
 	| "caries"
 	| "pulpitis"
 	| "periodontitis"
+	| "retained"
 	| "implant"
 	| "implantGuide"
 	| "crown";
@@ -140,6 +141,9 @@ export function estimatorRulesForTooth(
 			return rule("pulpitis", 1, PLAN_SERVICE_RULES.Pulpitis);
 		case "Periodontitis":
 			return rule("periodontitis", 1, PLAN_SERVICE_RULES.Periodontitis);
+		case "Retained":
+		case "Impacted":
+			return rule("retained", 2, PLAN_SERVICE_RULES.Retained);
 		case "Crown":
 			return rule("crown", 3, PLAN_SERVICE_RULES.Crown);
 		case "Planned_Implant":

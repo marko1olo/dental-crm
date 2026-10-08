@@ -133,6 +133,11 @@ export {
 	viewHints,
 	viewLabels,
 };
+export {
+	parseCbctStudioRoute,
+	buildCbctStudioPopoutUrl,
+	routeOpenCbctPopout,
+} from "./utils/runtimeRouter";
 
 import type { WorkspacePreloadIntent } from "./workspacePreload";
 

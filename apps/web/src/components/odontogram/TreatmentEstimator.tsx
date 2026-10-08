@@ -207,6 +207,17 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		};
 	}, [insuranceContractId, reloadToken]);
 
+	// Reactive state hydration without manual F5 when plans are created or modified elsewhere
+	useEffect(() => {
+		const handleReload = () => {
+			setReloadToken((t) => t + 1);
+		};
+		window.addEventListener("dente-treatment-plans-reload", handleReload);
+		return () => {
+			window.removeEventListener("dente-treatment-plans-reload", handleReload);
+		};
+	}, []);
+
 	const contract: EstimatorContract = useMemo(
 		() => estimatorContractFrom(activeContract),
 		[activeContract],

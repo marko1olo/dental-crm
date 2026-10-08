@@ -49,7 +49,13 @@ import {
 	printDesktopShtrihMFiscalReceipt,
 	printDesktopThermalLabel,
 	switchDesktopLocalDatabaseMode,
+	detectInstalledCtViewers,
+	launchExternalCtViewer,
+	scanDownloadsForCt,
+	openCbctPopoutWindow,
 	type DesktopNativeApi,
+	type InstalledCtViewerInfo,
+	type RecentDownloadsCtItem,
 } from "../native/index.js";
 import { printA4Document } from "../lib/hardwarePrinting.js";
 import {
@@ -669,5 +675,152 @@ describe("Multi-Platform Hardware Bridge & IPC Suite", () => {
 		assert.equal(universalRes.method, "desktop_silent");
 		assert.equal(nativePrintCalled, true);
 		assert.equal((nativePrintParams as any)?.silent, true);
+	});
+
+	it("14. CT / CBCT Desktop Native Bridge & Web/PWA multi-monitor popout fallback", async () => {
+		// --- Part A: Web / PWA fallback (window.denteDesktopNative is undefined) ---
+		let openedUrl = "";
+		let openedFeatures = "";
+		(globalThis as unknown as { window: unknown }).window = {
+			open: (url: string, name: string, features: string) => {
+				openedUrl = url;
+				openedFeatures = features;
+				return {
+					closed: false,
+					name,
+					focus: () => {},
+				} as unknown as Window;
+			},
+		};
+
+		// 1. Web detectInstalledCtViewers guarantees DENTE CBCT Studio (Mandate Zero Dead-Ends)
+		const webViewers = await detectInstalledCtViewers();
+		assert.equal(webViewers.length, 1);
+		assert.equal(webViewers[0]?.id, "dente-cbct-studio");
+		assert.equal(webViewers[0]?.isDefault, true);
+
+		// 2. Web scanDownloadsForCt returns empty array without mocks
+		const webDownloads = await scanDownloadsForCt();
+		assert.deepEqual(webDownloads, []);
+
+		// 3. Web launchExternalCtViewer for external app informs user about Desktop requirement
+		const webExternalLaunch = await launchExternalCtViewer({ viewerId: "ez3d" });
+		assert.equal(webExternalLaunch.success, false);
+		assert.ok(webExternalLaunch.error?.includes("DENTE Desktop"));
+
+		// 4. Web launchExternalCtViewer for internal studio opens browser window
+		const webInternalLaunch = await launchExternalCtViewer({
+			viewerId: "dente-cbct-studio",
+			studyPath: "study-web-99",
+		});
+		assert.equal(webInternalLaunch.success, true);
+		assert.ok(openedUrl.includes("studyId=study-web-99"));
+
+		// 5. Web openCbctPopoutWindow calls window.open
+		openedUrl = "";
+		const popoutRes = await openCbctPopoutWindow({
+			studyId: "study-mpr-1",
+			patientId: "patient-42",
+			patientName: "Сидоров Олег",
+			width: 1600,
+			height: 1000,
+		});
+		assert.equal(popoutRes.success, true);
+		assert.ok(openedUrl.includes("studyId=study-mpr-1"));
+		assert.ok(openedUrl.includes("patientId=patient-42"));
+		assert.ok(openedFeatures.includes("width=1600"));
+
+		// --- Part B: Desktop EXE with native bridge ---
+		let nativeLaunchCalledWith: unknown = null;
+		let nativeScanCalledWith: unknown = null;
+		let nativePopoutCalledWith: unknown = null;
+
+		(globalThis as unknown as { window: unknown }).window = {
+			denteDesktopNative: {
+				isDesktop: true,
+				platform: "win32",
+				version: "0.1.0",
+				detectInstalledCtViewers: async (): Promise<InstalledCtViewerInfo[]> => [
+					{
+						id: "picasso-ez3d2009",
+						name: "Picasso / Ez3D2009",
+						vendor: "vatech_picasso",
+						exePath: "C:\\Ez3D2009\\PicassoViewer.exe",
+						iconKey: "picasso",
+						isDefault: true,
+					},
+					{
+						id: "dente-cbct-studio",
+						name: "DENTE 3D MPR Студия",
+						vendor: "dente",
+						exePath: "internal://cbct-studio",
+						iconKey: "dente",
+						isDefault: false,
+					},
+				],
+				launchExternalCtViewer: async (p) => {
+					nativeLaunchCalledWith = p;
+					return { success: true, pid: 4567, viewerName: "PicassoViewer.exe" };
+				},
+				scanDownloadsForCt: async (opts): Promise<RecentDownloadsCtItem[]> => {
+					nativeScanCalledWith = opts;
+					return [
+						{
+							path: "C:\\Users\\User\\Downloads\\Иванов_И_И_CBCT.zip",
+							fileName: "Иванов_И_И_CBCT.zip",
+							sizeBytes: 150000000,
+							createdAt: "2026-10-08T10:00:00Z",
+							detectedModality: "CBCT",
+							patientHint: "Иванов И И",
+						},
+					];
+				},
+				openCbctPopoutWindow: async (p) => {
+					nativePopoutCalledWith = p;
+					return {
+						success: true,
+						windowId: 102,
+						isNewWindow: true,
+						url: "/cbct-studio?studyId=st-desktop",
+					};
+				},
+			},
+		};
+
+		// 6. Desktop detectInstalledCtViewers
+		const desktopViewers = await detectInstalledCtViewers();
+		assert.equal(desktopViewers.length, 2);
+		assert.equal(desktopViewers[0]?.id, "picasso-ez3d2009");
+		assert.equal(desktopViewers[0]?.isDefault, true);
+
+		// 7. Desktop launchExternalCtViewer passes parameters
+		const desktopLaunch = await launchExternalCtViewer({
+			viewerId: "picasso-ez3d2009",
+			studyPath: "D:\\CT\\Study01",
+		});
+		assert.equal(desktopLaunch.success, true);
+		assert.equal(desktopLaunch.pid, 4567);
+		assert.deepEqual(nativeLaunchCalledWith, {
+			viewerId: "picasso-ez3d2009",
+			studyPath: "D:\\CT\\Study01",
+		});
+
+		// 8. Desktop scanDownloadsForCt queries native IPC
+		const desktopScan = await scanDownloadsForCt({ maxDays: 3 });
+		assert.equal(desktopScan.length, 1);
+		assert.equal(desktopScan[0]?.patientHint, "Иванов И И");
+		assert.deepEqual(nativeScanCalledWith, { maxDays: 3 });
+
+		// 9. Desktop openCbctPopoutWindow passes multi-monitor options
+		const desktopPopout = await openCbctPopoutWindow({
+			studyId: "st-desktop",
+			targetDisplayId: 2,
+		});
+		assert.equal(desktopPopout.success, true);
+		assert.equal(desktopPopout.windowId, 102);
+		assert.deepEqual(nativePopoutCalledWith, {
+			studyId: "st-desktop",
+			targetDisplayId: 2,
+		});
 	});
 });

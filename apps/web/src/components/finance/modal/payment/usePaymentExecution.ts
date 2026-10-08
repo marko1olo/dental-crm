@@ -377,10 +377,12 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 
 			const cashKop = rubToKopecks(effectiveCashRub);
 			const electronicKop = rubToKopecks(effectiveCardRub) + rubToKopecks(effectiveSbpRub);
+			const depositKop = rubToKopecks(effectiveDepositRub);
 			const dmsKop = rubToKopecks(effectiveDmsRub);
 			const isSplitPayment =
 				(cashKop > 0 && electronicKop > 0) ||
-				(dmsKop > 0 && (cashKop > 0 || electronicKop > 0 || effectiveDepositRub > 0));
+				(depositKop > 0 && (cashKop > 0 || electronicKop > 0 || dmsKop > 0)) ||
+				(dmsKop > 0 && (cashKop > 0 || electronicKop > 0 || depositKop > 0));
 			const primaryMethod = isSplitPayment
 				? "split"
 				: dmsKop > 0
@@ -404,12 +406,14 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 					cashAmountKopecks: cashKop > 0 ? cashKop : undefined,
 					electronicAmountKopecks: electronicKop > 0 ? electronicKop : undefined,
 					dmsAmountKopecks: dmsKop > 0 ? dmsKop : undefined,
+					depositAmountKopecks: depositKop > 0 ? depositKop : undefined,
 					cashAmountRub: effectiveCashRub > 0 ? effectiveCashRub : undefined,
 					electronicAmountRub:
 						effectiveCardRub + effectiveSbpRub > 0
 							? Number((effectiveCardRub + effectiveSbpRub).toFixed(2))
 							: undefined,
 					dmsAmountRub: effectiveDmsRub > 0 ? effectiveDmsRub : undefined,
+					depositAmountRub: effectiveDepositRub > 0 ? effectiveDepositRub : undefined,
 					guaranteeLetterId: guaranteeLetterId || undefined,
 					cashBoxType: selectedCashBoxType,
 					receiptTypeAlias: selectedReceiptAlias,

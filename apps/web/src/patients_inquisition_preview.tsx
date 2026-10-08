@@ -30,7 +30,13 @@ import {
 	DEFAULT_SOMATIC_HEALTHY_NORM,
 	createHealthySomaticNormProfile,
 } from "./components/patients/safetyMath";
-import { Users, FileText, Sun, Moon } from "lucide-react";
+import { Users, FileText, Sun, Moon, HeartPulse, Wallet, PanelRightClose } from "lucide-react";
+import {
+	PatientAnamnesisTab,
+	FamilyWalletModal,
+	PatientDrawer,
+	PatientDetailsModal,
+} from "./components/patient";
 import { AppLogicProvider, type AppLogicContextType } from "./contexts/AppLogicContext";
 import { usePatientStore } from "./store/patientStore";
 
@@ -160,11 +166,11 @@ const ALLERGIC_SAFETY_PROFILE: PatientClinicalSafetyProfile = {
 export function PatientsInquisitionPreviewApp() {
 	const params = new URLSearchParams(window.location.search);
 	const initialTheme = (params.get("theme") as ThemeMode) || "light";
-	const initialView = params.get("view") || "registry"; // 'registry' or 'card'
+	const initialView = params.get("view") || "registry";
 
 	const [theme, setTheme] = useState<ThemeMode>(initialTheme);
-	const [activePreviewView, setActivePreviewView] = useState<"registry" | "card">(
-		initialView === "card" ? "card" : "registry",
+	const [activePreviewView, setActivePreviewView] = useState<"registry" | "card" | "anamnesis" | "family" | "drawer">(
+		(initialView as any) || "registry",
 	);
 
 	const [query, setQuery] = useState("");
@@ -323,7 +329,7 @@ export function PatientsInquisitionPreviewApp() {
 							}`}
 						>
 							<Users className="w-3.5 h-3.5" />
-							<span>Реестр пациентов</span>
+							<span>Реестр</span>
 						</button>
 						<button
 							type="button"
@@ -336,7 +342,46 @@ export function PatientsInquisitionPreviewApp() {
 							}`}
 						>
 							<FileText className="w-3.5 h-3.5" />
-							<span>Карточка пациента</span>
+							<span>Медкарта (043/у)</span>
+						</button>
+						<button
+							type="button"
+							data-testid="tab-view-anamnesis"
+							onClick={() => setActivePreviewView("anamnesis")}
+							className={`px-3 py-1 text-xs font-bold rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
+								activePreviewView === "anamnesis"
+									? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+						>
+							<HeartPulse className="w-3.5 h-3.5" />
+							<span>Анамнез и аллергии</span>
+						</button>
+						<button
+							type="button"
+							data-testid="tab-view-family"
+							onClick={() => setActivePreviewView("family")}
+							className={`px-3 py-1 text-xs font-bold rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
+								activePreviewView === "family"
+									? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+						>
+							<Wallet className="w-3.5 h-3.5" />
+							<span>Семейный кошелек</span>
+						</button>
+						<button
+							type="button"
+							data-testid="tab-view-drawer"
+							onClick={() => setActivePreviewView("drawer")}
+							className={`px-3 py-1 text-xs font-bold rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
+								activePreviewView === "drawer"
+									? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+						>
+							<PanelRightClose className="w-3.5 h-3.5" />
+							<span>Шторка</span>
 						</button>
 					</div>
 
@@ -475,13 +520,13 @@ export function PatientsInquisitionPreviewApp() {
 							</div>
 						</div>
 					</div>
-				) : (
-					/* Direct Full PatientCardModal view */
+				) : activePreviewView === "card" ? (
+					/* Direct Full PatientDetailsModal view */
 					<div
 						data-testid="patient-card-container"
 						className="flex-1 flex items-center justify-center py-4"
 					>
-						<PatientCardModal
+						<PatientDetailsModal
 							isOpen={true}
 							onClose={() => setActivePreviewView("registry")}
 							patient={{
@@ -490,20 +535,107 @@ export function PatientsInquisitionPreviewApp() {
 								phone: selectedPatient.phone,
 								birthDate: selectedPatient.birthDate,
 								patientBalanceRub: selectedPatient.balanceRub,
-								familyBalanceRub: (selectedPatient as any).familyBalanceRub ?? 12500,
-								docType: selectedPatient.docType || "passport_rf",
-								passportSeries: selectedPatient.passportSeries || "4512",
-								passportNumber: selectedPatient.passportNumber || "789123",
+								medicalCardNumber: "48201",
+								address: selectedPatient.address,
 								notes: selectedPatient.notes,
 							}}
 							safetyProfile={safetyProfile}
-							initialSafetyProfile={safetyProfile}
-							onSavePatient={(_pat, prof) => {
+							onSave={(_pat, prof) => {
 								setSafetyProfile(prof);
 							}}
 							onApplySomaticNorm={() => {
 								setSafetyProfile(createHealthySomaticNormProfile());
 							}}
+						/>
+					</div>
+				) : activePreviewView === "anamnesis" ? (
+					/* Standalone PatientAnamnesisTab view */
+					<div
+						data-testid="patient-anamnesis-container"
+						className="flex-1 p-2 sm:p-4 max-w-4xl mx-auto w-full"
+					>
+						<PatientAnamnesisTab
+							patientId={selectedPatient.id}
+							patientName={selectedPatient.fullName}
+							initialProfile={safetyProfile}
+							onSaveProfile={(prof) => setSafetyProfile(prof)}
+							onApplySomaticNorm={() => setSafetyProfile(createHealthySomaticNormProfile())}
+						/>
+					</div>
+				) : activePreviewView === "family" ? (
+					/* Standalone FamilyWalletModal view */
+					<div
+						data-testid="patient-family-container"
+						className="flex-1 flex items-center justify-center py-4"
+					>
+						<FamilyWalletModal
+							isOpen={true}
+							onClose={() => setActivePreviewView("registry")}
+							patientId={selectedPatient.id}
+							patientName={selectedPatient.fullName}
+							familyData={{
+								id: "fam-grp-001",
+								name: "Семья Вороновых",
+								balance: 12500,
+								headPatientId: selectedPatient.id,
+								members: [
+									{
+										id: selectedPatient.id,
+										fullName: selectedPatient.fullName,
+										phone: selectedPatient.phone,
+									},
+									{
+										id: "pat-child-1",
+										fullName: "Воронов Мирон Алексеевич",
+										phone: "",
+									},
+									{
+										id: "pat-spouse-1",
+										fullName: "Воронов Алексей Сергеевич",
+										phone: "+7 (916) 123-45-67",
+									},
+								],
+							}}
+						/>
+					</div>
+				) : (
+					/* Standalone PatientDrawer view */
+					<div
+						data-testid="patient-drawer-container"
+						className="flex-1 relative min-h-[600px]"
+					>
+						<div className="p-6 bg-[var(--paper)] rounded-2xl border border-[var(--line)]">
+							<h3 className="text-sm font-bold text-[var(--ink)] mb-2">
+								Фоновый контекст врача / Регистратуры
+							</h3>
+							<p className="text-xs text-[var(--muted)]">
+								Шторка пациента открыта как суверенный Tier 2 слой без вложенных модалок.
+							</p>
+						</div>
+						<PatientDrawer
+							isOpen={true}
+							onClose={() => setActivePreviewView("registry")}
+							patient={{
+								id: selectedPatient.id,
+								fullName: "Константинопольский-Преображенский Иннокентий Пантелеймонович",
+								phone: "+7 (925) 876-54-32",
+								birthDate: "1988-11-04",
+								medicalCardNumber: "48201",
+								patientBalanceRub: 4500,
+							}}
+							safetyProfile={safetyProfile}
+							familyData={{
+								id: "fam-grp-002",
+								name: "Семья Константинопольских",
+								balance: 25000,
+								members: [
+									{ id: selectedPatient.id, fullName: "Константинопольский-Преображенский Иннокентий Пантелеймонович" },
+									{ id: "pat-wife", fullName: "Константинопольская Елена Викторовна" },
+								],
+							}}
+							onOpenAnamnesis={() => setActivePreviewView("anamnesis")}
+							onOpenFamilyWallet={() => setActivePreviewView("family")}
+							onOpenFullCard={() => setActivePreviewView("card")}
 						/>
 					</div>
 				)}

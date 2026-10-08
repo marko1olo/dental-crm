@@ -24,10 +24,10 @@ import {
 import type { ImagingStudy } from "@dental/shared";
 import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
-import { CbctMprImplantStudioModal } from "../../radiology/CbctMprImplantStudioModal";
+import { routeOpenCbctPopout } from "../../../utils/runtimeRouter";
 import { DicomViewerModal } from "../../imaging/DicomViewerModal";
 import { DicomAutoDetectStatusBadge } from "../../imaging/DicomAutoDetectStatusBadge";
-import { CtStudyViewer } from "../../imaging/CtStudyViewer";
+import { CtSelectorModal } from "../../radiology/CtSelectorModal";
 import { HotFolderIntakeModal } from "../../radiology/HotFolderIntakeModal";
 import { StudyPatientBindControlModal } from "../../radiology/archive/StudyPatientBindControlModal";
 import { convertImagingStudyToRadiologyStudy } from "../../radiology/archive/radiologyStudyAdapter";
@@ -40,6 +40,8 @@ import {
 	DEFAULT_TACTILE_FILTERS,
 	type RadiologyTactileFilterState,
 } from "../../radiology/RadiologyPatientSearchModal";
+import { IntraoralScan3DViewerModal } from "../../radiology/IntraoralScan3DViewerModal";
+import { is3DScanUrl } from "../../lab/LabAttachScanModal";
 import { Filter } from "lucide-react";
 
 export interface PatientRadiologyTabProps {
@@ -48,6 +50,7 @@ export interface PatientRadiologyTabProps {
 	readonly patientBirthDate?: string | null | undefined;
 	readonly cardNumber?: string | null | undefined;
 	readonly onOpenStudio?: ((study: ImagingStudy) => void) | undefined;
+	readonly onOpenScan3d?: ((study: ImagingStudy) => void) | undefined;
 	readonly onOpenViewer?: ((study: ImagingStudy) => void) | undefined;
 }
 
@@ -142,6 +145,36 @@ const DEMO_PATIENT_STUDIES: ImagingStudy[] = [
 		previewUrl: "/radiology/sample_rvg_tooth36_periapical.jpg",
 		viewerUrl: null,
 	},
+	{
+		id: "03c00000-0000-0000-0000-000000000004",
+		organizationId: DEMO_SHOWCASE_ORG_ID,
+		patientId: "01a00000-0000-0000-0000-000000000001",
+		patientFullName: "Иванов Алексей Сергеевич",
+		dicomPatientName: "Ivanov Alexey",
+		dicomPatientId: "SCAN-3D-44102",
+		dicomBirthDate: "1992-08-24",
+		kind: "other",
+		toothCode: "16",
+		region: "Верхняя челюсть",
+		title: "Интраоральный 3D-скан челюсти (3Shape TRIOS)",
+		modality: "STL",
+		seriesDescription: "3Shape TRIOS 4 Color HD Surface Scan",
+		studyDate: "2026-08-29",
+		capturedAt: "2026-08-29T11:20:00.000Z",
+		sliceCount: 1,
+		dimensions: "3D Mesh Surface",
+		voxelSpacing: "0.01mm",
+		fileSizeBytes: 24500000,
+		bindingStatus: "manual_bound",
+		bindingConfidence: 100,
+		sourceKind: "folder_watch",
+		sourceName: "3Shape TRIOS Inbox",
+		status: "available",
+		visitId: null,
+		aiSummary: null,
+		previewUrl: "/models/mandible_scan_16.stl",
+		viewerUrl: "/models/mandible_scan_16.stl",
+	},
 ];
 
 /**
@@ -168,9 +201,10 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 	const [error, setError] = useState<string | null>(null);
 
 	// Внутренние модалки (если родитель не перехватывает открытие)
-	const [activeCbctStudy, setActiveCbctStudy] = useState<ImagingStudy | null>(null);
+	const [activeScan3dStudy, setActiveScan3dStudy] = useState<ImagingStudy | null>(null);
 	const [active2dStudy, setActive2dStudy] = useState<ImagingStudy | null>(null);
 	const [showHotFolder, setShowHotFolder] = useState<boolean>(false);
+	const [showCtSelector, setShowCtSelector] = useState<boolean>(false);
 	const [activeControlStudy, setActiveControlStudy] = useState<ImagingStudy | null>(null);
 
 	// Тактильный матричный поиск и хронологический таймлайн (EzDent-i Снимки 15, 16, 19)
@@ -228,21 +262,51 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 			if (onOpenStudio) {
 				onOpenStudio(study);
 			} else {
-				setActiveCbctStudy(study);
+				routeOpenCbctPopout({
+					patientId: patientId || study.patientId,
+					patientName: patientName || study.patientFullName,
+					studyId: study.id,
+					mode: "mpr",
+				});
+				showToast("3D КЛКТ исследование открыто в автономном окне для второго монитора", "info");
 			}
 		},
-		[onOpenStudio],
+		[onOpenStudio, patientId, patientName],
+	);
+
+	const handleOpenScan3d = useCallback(
+		(study: ImagingStudy) => {
+			if (onOpenScan3d) {
+				onOpenScan3d(study);
+			} else {
+				setActiveScan3dStudy(study);
+			}
+		},
+		[onOpenScan3d],
 	);
 
 	const handleOpen2d = useCallback(
 		(study: ImagingStudy) => {
+			const is3D = Boolean(
+				study.kind === "scan_3d" ||
+				study.modality === "STL" ||
+				study.modality === "PLY" ||
+				study.modality === "OBJ" ||
+				(study.previewUrl && is3DScanUrl(study.previewUrl)) ||
+				(study.viewerUrl && is3DScanUrl(study.viewerUrl)) ||
+				/\.(stl|ply|obj)($|[?#])/i.test(study.title || "")
+			);
+			if (is3D) {
+				handleOpenScan3d(study);
+				return;
+			}
 			if (onOpenViewer) {
 				onOpenViewer(study);
 			} else {
 				setActive2dStudy(study);
 			}
 		},
-		[onOpenViewer],
+		[onOpenViewer, handleOpenScan3d],
 	);
 
 	const handleStudyUpdated = useCallback((updated: ImagingStudy) => {
@@ -317,6 +381,18 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 					>
 						<Filter className="w-3.5 h-3.5" />
 						<span>Матрица поиска</span>
+					</button>
+
+					{/* Кнопка вызова КТ-селектора клиники */}
+					<button
+						type="button"
+						onClick={() => setShowCtSelector(true)}
+						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-500 text-white shadow-xs transition-all active:scale-95 cursor-pointer"
+						data-testid="btn-patient-open-ct-selector"
+						title="Клинический КТ-селектор: забор из Загрузок, 2-й монитор, запуск Picasso/Ez3D"
+					>
+						<Scan className="w-3.5 h-3.5" />
+						<span>КТ-селектор</span>
 					</button>
 
 					{/* Кнопка загрузки КТ для пациента */}
@@ -398,22 +474,12 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 						activeStudyId={activeStudyId || filteredStudies[0]?.id || null}
 						onSelectStudy={(study) => setActiveStudyId(study.id)}
 						onOpenStudio={handleOpen3d}
+						onOpenScan3d={handleOpenScan3d}
 						onOpenViewer={handleOpen2d}
 						onOpenControl={(study) => setActiveControlStudy(study)}
 						onOpenTactileSearch={() => setShowTactileSearch(true)}
 					/>
 				</div>
-			)}
-
-			{/* Модалка 3D КЛКТ Студии */}
-			{activeCbctStudy && (
-				<CbctMprImplantStudioModal
-					isOpen={Boolean(activeCbctStudy)}
-					onClose={() => setActiveCbctStudy(null)}
-					study={convertImagingStudyToRadiologyStudy(activeCbctStudy)}
-					patientName={patientName || activeCbctStudy.patientFullName || undefined}
-					patientId={patientId || activeCbctStudy.patientId || undefined}
-				/>
 			)}
 
 			{/* Модалка 2D Просмотрщика */}
@@ -426,6 +492,25 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 					patientName={patientName || active2dStudy.patientFullName || undefined}
 					patientId={patientId || active2dStudy.patientId || undefined}
 					toothFdiCode={active2dStudy.toothCode || undefined}
+				/>
+			)}
+
+			{/* Модалка 3D интраорального скана (STL/PLY/OBJ) */}
+			{activeScan3dStudy && (
+				<IntraoralScan3DViewerModal
+					isOpen={Boolean(activeScan3dStudy)}
+					onClose={() => setActiveScan3dStudy(null)}
+					modelUrl={activeScan3dStudy.viewerUrl || activeScan3dStudy.previewUrl || undefined}
+					modelFormat={
+						(activeScan3dStudy.modality?.toLowerCase() as "stl" | "obj" | "ply") ||
+						(activeScan3dStudy.previewUrl && /\.ply($|[?#])/i.test(activeScan3dStudy.previewUrl)
+							? "ply"
+							: activeScan3dStudy.previewUrl && /\.obj($|[?#])/i.test(activeScan3dStudy.previewUrl)
+								? "obj"
+								: "stl")
+					}
+					patientName={patientName || activeScan3dStudy.patientFullName || undefined}
+					scanTitle={activeScan3dStudy.title || "Интраоральный 3D-скан челюсти"}
 				/>
 			)}
 
@@ -466,6 +551,33 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 				matchedCount={filteredStudies.length}
 				studies={sortedStudies}
 			/>
+
+			{/* Клинический КТ-селектор */}
+			{showCtSelector && (
+				<CtSelectorModal
+					isOpen={showCtSelector}
+					onClose={() => setShowCtSelector(false)}
+					patientId={patientId || undefined}
+					patientName={patientName || undefined}
+					cardNumber={cardNumber || undefined}
+					studies={sortedStudies}
+					onSelectStudy={(study, launchMode) => {
+						setShowCtSelector(false);
+						if (launchMode === "crm_window") {
+							handleOpen3d(study);
+						}
+					}}
+					onOpenCbctStudio={(study) => {
+						setShowCtSelector(false);
+						if (study) handleOpen3d(study);
+					}}
+					onImagesLoaded={(_imageIds, studyMeta) => {
+						setShowCtSelector(false);
+						loadPatientStudies();
+						if (studyMeta) handleOpen3d(studyMeta);
+					}}
+				/>
+			)}
 		</div>
 	);
 };

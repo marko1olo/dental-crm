@@ -1,4 +1,4 @@
-import { Activity, Camera, ChevronDown, ChevronRight, Eye, FileText, FolderInput, Image as ImageIcon, MoreHorizontal, Plus, Receipt, Scan, Trash2 } from "lucide-react";
+import { Activity, Camera, ChevronDown, ChevronRight, ExternalLink, Eye, FileText, FolderInput, Image as ImageIcon, MoreHorizontal, Plus, Receipt, Scan, Trash2 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientStore } from "../../store/patientStore";
@@ -8,11 +8,6 @@ import { VisiographAnalyzer } from "../imaging/VisiographAnalyzer";
 const ClinicalPhotoProtocolModal = React.lazy(() =>
 	import("../photography/ClinicalPhotoProtocolModal").then((m) => ({
 		default: m.ClinicalPhotoProtocolModal,
-	})),
-);
-const CbctMprImplantStudioModal = React.lazy(() =>
-	import("../radiology/CbctMprImplantStudioModal").then((m) => ({
-		default: m.CbctMprImplantStudioModal,
 	})),
 );
 const RadiologyReferralModal = React.lazy(() =>
@@ -40,6 +35,22 @@ const CephalometricAnalysisModal = React.lazy(() =>
 		default: m.CephalometricAnalysisModal,
 	})),
 );
+const RadiologyReportStudioModal = React.lazy(() =>
+	import("../radiology/RadiologyReportStudioModal").then((m) => ({
+		default: m.RadiologyReportStudioModal,
+	})),
+);
+const CtSelectorModal = React.lazy(() =>
+	import("../radiology/CtSelectorModal").then((m) => ({
+		default: m.CtSelectorModal,
+	})),
+);
+const IntraoralScan3DViewerModal = React.lazy(() =>
+	import("../radiology/IntraoralScan3DViewerModal").then((m) => ({
+		default: m.IntraoralScan3DViewerModal,
+	})),
+);
+import { is3DScanUrl } from "../lab/LabAttachScanModal";
 import { imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
 import { addCbctToFinanceAndPlan } from "../radiology/ctImplantIntegrationBridge";
 import {
@@ -47,6 +58,11 @@ import {
 	generatePhotoProtocolAttachmentsStatement,
 } from "../../lib/clinicalProtocols043";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode";
+import { subscribeCbctSyncEvents } from "../radiology/mpr/cbctStudioSyncChannel";
+import { openCbctPopoutWindow } from "../../native/desktopBridge";
+import { routeOpenCbctPopout } from "../../utils/runtimeRouter";
+import { showToast } from "../GlobalToast";
+import "./VisitDiagnosticsTab.css";
 
 /*
   СНИМОК И ЗАКЛЮЧЕНИЕ ПРИВЯЗАНЫ НАПРЯМУЮ К ПАЦИЕНТУ ПРИЁМА.
@@ -70,11 +86,14 @@ export function VisitDiagnosticsTab(props?: {
 	const [diagnosticMode, setDiagnosticMode] = useState<DiagnosticTabMode>("rvg");
 	const [isCephModalOpen, setIsCephModalOpen] = useState<boolean>(false);
 	const [isRadiologyModalOpen, setIsRadiologyModalOpen] = useState<boolean>(false);
+	const [isReportStudioModalOpen, setIsReportStudioModalOpen] = useState<boolean>(false);
 	const [isPhotoProtocolModalOpen, setIsPhotoProtocolModalOpen] = useState<boolean>(false);
-	const [isCbctModalOpen, setIsCbctModalOpen] = useState<boolean>(false);
+	const [isCtSelectorModalOpen, setIsCtSelectorModalOpen] = useState<boolean>(false);
 	const [isDirectRvgModalOpen, setIsDirectRvgModalOpen] = useState<boolean>(false);
 	const [isDicomViewerModalOpen, setIsDicomViewerModalOpen] = useState<boolean>(false);
 	const [selectedDicomImageSrc, setSelectedDicomImageSrc] = useState<string | undefined>(undefined);
+	const [selected3DScanModelUrl, setSelected3DScanModelUrl] = useState<string | null>(null);
+	const [selected3DScanTitle, setSelected3DScanTitle] = useState<string | undefined>(undefined);
 	const [isHotFolderModalOpen, setIsHotFolderModalOpen] = useState<boolean>(false);
 	const isOrthoContext =
 		String(ctx?.dashboard?.activeDoctor?.specialty || "").toLowerCase().includes("ortho") ||
@@ -171,8 +190,101 @@ export function VisitDiagnosticsTab(props?: {
 	const effectiveTargetPatientId = activePatient?.id ?? selectedPatientId;
 	const target = imagingWriteTarget(effectiveTargetPatientId, visitPatientId);
 
+	const [liveStudies, setLiveStudies] = useState<any[]>([]);
+
+	useEffect(() => {
+		const targetId = effectiveTargetPatientId ?? visitPatientId;
+		if (!targetId || isDemoPatientId(targetId) || isDemoShowcaseMode()) return;
+		let cancelled = false;
+		fetch(`/api/imaging/studies?patientId=${encodeURIComponent(targetId)}`)
+			.then((res) => (res.ok ? res.json() : []))
+			.then((data) => {
+				if (!cancelled && Array.isArray(data)) {
+					setLiveStudies(data);
+				}
+			})
+			.catch(() => {
+				// non-blocking fallback
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [effectiveTargetPatientId, visitPatientId]);
+
+	// Inter-tab synchronization with standalone / pop-out CBCT Studio (Zero-Manual-F5)
+	useEffect(() => {
+		const handleInsertProtocolText = (text: string) => {
+			if (!text) return;
+			if (props?.onInsertToProtocol) {
+				props.onInsertToProtocol(text);
+			} else {
+				try {
+					window.dispatchEvent(
+						new CustomEvent("dente-apply-soap-protocol", {
+							detail: {
+								soap: {
+									treatmentDescription: text,
+								},
+								mode: "smart_append",
+							},
+						}),
+					);
+				} catch {
+					// non-blocking fallback
+				}
+			}
+		};
+
+		const unsubscribe = subscribeCbctSyncEvents((event) => {
+			if (!event) return;
+			const currentTargetPatientId = effectiveTargetPatientId ?? visitPatientId;
+			if (event.patientId && currentTargetPatientId && event.patientId !== currentTargetPatientId) {
+				return;
+			}
+
+			if (event.type === "IMPLANT_PLACED") {
+				const payload = event.payload as {
+					toothFdi?: string | number;
+					brand?: string;
+					diameterMm?: number;
+					lengthMm?: number;
+					nerveSafetyMarginMm?: number;
+					boneQuality?: string;
+					summaryText?: string;
+				};
+				const summary =
+					payload?.summaryText ||
+					`[КЛКТ Имплантация] Зуб ${payload?.toothFdi}: ${payload?.brand || "Имплантат"} Ø${payload?.diameterMm || "?"}×${payload?.lengthMm || "?"}мм. Безопасный отступ: ${payload?.nerveSafetyMarginMm ?? "?"}мм. Кость: ${payload?.boneQuality ?? "Misch"}.`;
+				handleInsertProtocolText(summary);
+				showToast(`Имплантат зуба ${payload?.toothFdi || ""} добавлен в протокол`, "success");
+			} else if (event.type === "CALIPER_MEASURED") {
+				const payload = event.payload as {
+					toothFdi?: string | number;
+					ridgeWidthMm?: number;
+					crestHeightMm?: number;
+					boneDensityHU?: number;
+				};
+				const note = `[КЛКТ Замер] Зуб ${payload?.toothFdi ?? "гребень"}: ширина ${payload?.ridgeWidthMm} мм, высота ${payload?.crestHeightMm} мм, плотность ${payload?.boneDensityHU ?? "—"} HU.`;
+				handleInsertProtocolText(note);
+				showToast("Замер гребня перенесен в протокол приёма", "info");
+			} else if (event.type === "STUDIO_SNAPSHOT_SAVED") {
+				const payload = event.payload as { protocolNote?: string };
+				if (payload?.protocolNote) {
+					handleInsertProtocolText(payload.protocolNote);
+				}
+				showToast("Снимок КЛКТ зафиксирован в приёме", "success");
+			}
+		});
+
+		return () => {
+			unsubscribe();
+		};
+	}, [effectiveTargetPatientId, visitPatientId, props?.onInsertToProtocol]);
+
 	const patientStudies = React.useMemo(() => {
-		const all = (ctx?.dashboard?.imagingStudies ?? []) as any[];
+		const all = ((ctx?.dashboard?.imagingStudies && (ctx.dashboard.imagingStudies as any[]).length > 0)
+			? ctx.dashboard.imagingStudies
+			: liveStudies) as any[];
 		const targetId = effectiveTargetPatientId ?? visitPatientId;
 		const filtered = targetId ? all.filter((s: any) => String(s?.patientId) === String(targetId)) : [];
 		if (filtered.length > 0) return filtered;
@@ -241,7 +353,7 @@ export function VisitDiagnosticsTab(props?: {
 			    ═══════════════════════════════════════════════════════════════════════ */}
 			<div className="flex items-center justify-between gap-3 flex-wrap">
 				<div
-					className="inline-flex items-center p-[3px] rounded-[10px] bg-[var(--paper-soft)] border border-[var(--line-subtle)] gap-[2px] shadow-2xs"
+					className="diag-segmented-bar"
 					role="tablist"
 					aria-label="Режимы визуальной диагностики"
 				>
@@ -251,13 +363,13 @@ export function VisitDiagnosticsTab(props?: {
 						aria-selected={diagnosticMode === "rvg"}
 						onClick={() => setDiagnosticMode("rvg")}
 						data-testid="tab-diagnostic-mode-rvg"
-						className={`h-8 px-3 rounded-[7px] text-[12.5px] flex items-center gap-1.5 transition-all cursor-pointer shrink-0 select-none ${
+						className={`diag-segmented-item h-7 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
 							diagnosticMode === "rvg"
-								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] border border-[var(--line-subtle)] shadow-xs font-semibold"
-								: "bg-transparent border border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/60 font-medium"
+								? "bg-[var(--paper)] text-[var(--teal)] shadow-2xs border border-[var(--line-subtle)]"
+								: "bg-transparent border border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
-						<Camera size={14} className={diagnosticMode === "rvg" ? "text-[var(--teal,#0d9488)]" : "text-[var(--muted)]"} />
+						<Camera size={14} />
 						<span>Прицельные снимки (RVG)</span>
 					</button>
 
@@ -267,16 +379,16 @@ export function VisitDiagnosticsTab(props?: {
 						aria-selected={diagnosticMode === "photo"}
 						onClick={() => setDiagnosticMode("photo")}
 						data-testid="tab-diagnostic-mode-photo"
-						className={`h-8 px-3 rounded-[7px] text-[12.5px] flex items-center gap-1.5 transition-all cursor-pointer shrink-0 select-none ${
+						className={`diag-segmented-item h-7 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
 							diagnosticMode === "photo"
-								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] border border-[var(--line-subtle)] shadow-xs font-semibold"
-								: "bg-transparent border border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/60 font-medium"
+								? "bg-[var(--paper)] text-[var(--teal)] shadow-2xs border border-[var(--line-subtle)]"
+								: "bg-transparent border border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
-						<ImageIcon size={14} className={diagnosticMode === "photo" ? "text-[var(--teal,#0d9488)]" : "text-[var(--muted)]"} />
+						<ImageIcon size={14} />
 						<span>Фотопротокол</span>
 						{photoAttachments.length > 0 ? (
-							<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--teal)] text-white">
+							<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--teal)] text-white leading-none">
 								{photoAttachments.length}
 							</span>
 						) : null}
@@ -288,27 +400,38 @@ export function VisitDiagnosticsTab(props?: {
 						aria-selected={diagnosticMode === "cbct"}
 						onClick={() => setDiagnosticMode("cbct")}
 						data-testid="tab-diagnostic-mode-cbct"
-						className={`h-8 px-3 rounded-[7px] text-[12.5px] flex items-center gap-1.5 transition-all cursor-pointer shrink-0 select-none ${
+						className={`diag-segmented-item h-7 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
 							diagnosticMode === "cbct"
-								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] border border-[var(--line-subtle)] shadow-xs font-semibold"
-								: "bg-transparent border border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/60 font-medium"
+								? "bg-[var(--paper)] text-[var(--teal)] shadow-2xs border border-[var(--line-subtle)]"
+								: "bg-transparent border border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
-						<Activity size={14} className={diagnosticMode === "cbct" ? "text-[var(--teal,#0d9488)]" : "text-[var(--muted)]"} />
+						<Activity size={14} />
 						<span>КЛКТ и ОПТГ</span>
 					</button>
 				</div>
 
-				<div className="flex items-center gap-1.5 shrink-0">
+				<div className="flex items-center gap-2 shrink-0">
+					<button
+						type="button"
+						onClick={() => setIsReportStudioModalOpen(true)}
+						className="diag-btn"
+						data-testid="btn-open-radiology-report-studio"
+						title="Открыть студию радиологического отчёта и печати бланка A4"
+					>
+						<FileText size={14} className="text-[var(--teal)]" />
+						<span>Радиологический отчёт (A4)</span>
+					</button>
+
 					<button
 						type="button"
 						onClick={() => setIsRadiologyModalOpen(true)}
-						className="h-8 px-3 rounded-lg text-[13px] font-semibold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 flex items-center gap-1.5"
+						className="diag-btn"
 						data-testid="btn-open-radiology-referral-modal"
 						title="Выписать направление на КЛКТ / ОПТГ / ТРГ"
 					>
 						<Plus size={14} className="text-[var(--teal)]" />
-						<span>+ Направление на КЛКТ/ОПТГ</span>
+						<span>Направление на КЛКТ/ОПТГ</span>
 					</button>
 				</div>
 			</div>
@@ -403,7 +526,8 @@ export function VisitDiagnosticsTab(props?: {
 						className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2.5 pt-0.5"
 					>
 						{patientStudies.map((study: any) => {
-							const isCbct = study.kind === "cbct" || study.modality === "cbct_3d";
+							const is3DScan = study.kind === "scan_3d" || study.modality === "STL" || study.modality === "PLY" || study.modality === "OBJ" || is3DScanUrl(study.previewUrl || study.viewerUrl || "");
+							const isCbct = !is3DScan && (study.kind === "cbct" || study.modality === "cbct_3d");
 							const thumbSrc = study.previewUrl || study.viewerUrl || "/radiology/sample_rvg_tooth16.jpg";
 							return (
 								<div
@@ -412,14 +536,17 @@ export function VisitDiagnosticsTab(props?: {
 									style={{ aspectRatio: "1 / 1" }}
 									data-testid={`visit-scan-thumbnail-${study.id}`}
 									onClick={() => {
-										if (isCbct) {
+										if (is3DScan) {
+											setSelected3DScanModelUrl(study.viewerUrl || study.previewUrl || "");
+											setSelected3DScanTitle(study.title || "Интраоральный 3D-скан");
+										} else if (isCbct) {
 											setIsCbctModalOpen(true);
 										} else {
 											setSelectedDicomImageSrc(thumbSrc);
 											setIsDicomViewerModalOpen(true);
 										}
 									}}
-									title={isCbct ? "Открыть в 3D КЛКТ Студии" : "Открыть в DICOM / RVG просмотрщике"}
+									title={is3DScan ? "Открыть в 3D Просмотрщике сканов" : isCbct ? "Открыть в 3D КЛКТ Студии" : "Открыть в DICOM / RVG просмотрщике"}
 								>
 									<img
 										src={thumbSrc}
@@ -432,13 +559,15 @@ export function VisitDiagnosticsTab(props?: {
 									{/* Modality, Tooth & Dose Badges */}
 									<div className="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between pointer-events-none gap-1">
 										<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-black/80 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/40 shadow-xs backdrop-blur-xs leading-none">
-											{study.kind === "cbct"
-												? "3D КТ"
-												: study.kind === "opg"
-													? "ОПТГ"
-													: study.kind === "cephalometric" || study.kind === "trg"
-														? "ТРГ"
-														: "RVG"}
+											{is3DScan
+												? "3D-СКАН"
+												: study.kind === "cbct"
+													? "3D КТ"
+													: study.kind === "opg"
+														? "ОПТГ"
+														: study.kind === "cephalometric" || study.kind === "trg"
+															? "ТРГ"
+															: "RVG"}
 											{study.toothCode ? ` #${study.toothCode}` : ""}
 										</span>
 										{study.effectiveDoseMicrosv ? (
@@ -449,15 +578,37 @@ export function VisitDiagnosticsTab(props?: {
 									</div>
 									{/* Bottom Overlay with Date and Action */}
 									<div className="absolute bottom-0 inset-x-0 p-1.5 bg-gradient-to-t from-black/95 via-black/65 to-transparent flex items-center justify-between text-white text-[10px]">
-										<span className="truncate max-w-[70px] opacity-90 text-[10px]">
+										<span className="truncate max-w-[55px] opacity-90 text-[10px]">
 											{study.capturedAt
 												? new Date(study.capturedAt).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })
 												: "Приём"}
 										</span>
-										<span className="text-[var(--teal,#0d9488)] font-semibold flex items-center gap-0.5 group-hover:text-white transition-colors">
-											<Eye size={11} />
-											<span className="text-[9.5px]">Открыть</span>
-										</span>
+										<div className="flex items-center gap-1.5">
+											{isCbct && (
+												<button
+													type="button"
+													onClick={(e) => {
+														e.stopPropagation();
+														openCbctPopoutWindow({
+															studyId: study.id,
+															patientId: effectiveTargetPatientId || undefined,
+															patientName: visitPatientName || undefined,
+															title: `3D КТ - ${study.title || "Исследование"}`,
+														});
+													}}
+													className="text-cyan-300 hover:text-white font-semibold flex items-center gap-0.5 transition-colors cursor-pointer"
+													title="Открыть на 2-м мониторе (в отдельном окне)"
+													data-testid={`visit-scan-popout-${study.id}`}
+												>
+													<ExternalLink size={10} />
+													<span className="text-[9.5px]">Окно</span>
+												</button>
+											)}
+											<span className="text-[var(--teal,#0d9488)] font-semibold flex items-center gap-0.5 group-hover:text-white transition-colors">
+												<Eye size={11} />
+												<span className="text-[9.5px]">Открыть</span>
+											</span>
+										</div>
 									</div>
 								</div>
 							);
@@ -532,7 +683,7 @@ export function VisitDiagnosticsTab(props?: {
 			<div className={diagnosticMode === "rvg" ? "flex flex-col gap-3" : "hidden"}>
 				<div className="flex items-center justify-between gap-3 flex-wrap p-2.5 sm:p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] shadow-2xs">
 					<div className="flex items-center gap-2.5 flex-wrap">
-						<span className="text-xs font-bold text-[var(--teal)] bg-[var(--teal-soft,#0d948815)] px-2.5 py-1 rounded-lg border border-[var(--teal)]/20 shadow-2xs flex items-center gap-1.5">
+						<span className="diag-badge">
 							<Scan size={14} />
 							<span>Зуб {initialToothNumber || 16}</span>
 						</span>
@@ -547,12 +698,12 @@ export function VisitDiagnosticsTab(props?: {
 						) : null}
 					</div>
 
-					<div className="flex items-center gap-1.5 flex-wrap">
+					<div className="flex items-center gap-2 flex-wrap">
 						<button
 							type="button"
 							onClick={() => setIsDirectRvgModalOpen(true)}
 							data-testid="btn-open-direct-rvg-modal"
-							className="h-8 px-3 rounded-lg text-[13px] font-semibold bg-[var(--teal)] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] border border-[var(--teal)] shadow-2xs active:scale-98 transition-all cursor-pointer flex items-center gap-1.5"
+							className="diag-btn-teal"
 							title="Прямой захват снимка с датчика визиографа"
 						>
 							<Camera size={14} />
@@ -562,7 +713,7 @@ export function VisitDiagnosticsTab(props?: {
 							type="button"
 							onClick={() => setIsHotFolderModalOpen(true)}
 							data-testid="btn-open-hot-folder-modal"
-							className="h-8 px-2.5 rounded-lg text-[13px] font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 flex items-center gap-1.5"
+							className="diag-btn"
 							title="Папка автозахвата снимков: автоматический импорт из каталога визиографа"
 						>
 							<FolderInput size={14} className="text-[var(--teal)]" />
@@ -572,7 +723,7 @@ export function VisitDiagnosticsTab(props?: {
 							type="button"
 							onClick={() => setIsDicomViewerModalOpen(true)}
 							data-testid="btn-open-dicom-viewer-modal"
-							className="h-8 px-2.5 rounded-lg text-[13px] font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 flex items-center gap-1.5"
+							className="diag-btn"
 							title="Открыть DICOM / ОПТГ панораму"
 						>
 							<ImageIcon size={14} className="text-[var(--teal)]" />
@@ -584,6 +735,7 @@ export function VisitDiagnosticsTab(props?: {
 				{/* Модуль визиографа и рентген-анализа ИИ */}
 				<VisiographAnalyzer
 					patientId={activePatient?.id}
+					visitId={dashboard?.activeVisit?.id}
 					toothCode={initialToothNumber ? String(initialToothNumber) : undefined}
 					onInsertToProtocol={props?.onInsertToProtocol}
 					onConnectRvg={() => setIsDirectRvgModalOpen(true)}
@@ -626,7 +778,7 @@ export function VisitDiagnosticsTab(props?: {
 								type="button"
 								onClick={() => setIsPhotoProtocolModalOpen(true)}
 								data-testid="open-visit-photo-protocol-modal-btn"
-								className="h-8 px-3.5 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] border border-[var(--teal)] font-semibold text-[13px] flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
+								className="diag-btn-teal"
 								title="Сетка фотопротокола (12 слотов)"
 							>
 								<Camera size={14} />
@@ -685,7 +837,7 @@ export function VisitDiagnosticsTab(props?: {
 						<button
 							type="button"
 							onClick={handleAddPhoto}
-							className="h-8 px-3.5 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] border border-[var(--teal)] text-[13px] font-semibold flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
+							className="diag-btn-teal"
 						>
 							<Plus size={14} />
 							<span>Привязать</span>
@@ -809,7 +961,7 @@ export function VisitDiagnosticsTab(props?: {
 							<button
 								type="button"
 								onClick={() => setIsRadiologyModalOpen(true)}
-								className="h-8 px-3 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 font-medium text-[13px] flex items-center gap-1.5 shadow-2xs active:scale-98 transition-all cursor-pointer"
+								className="diag-btn"
 								title="Выписать направление на КЛКТ / ОПТГ / ТРГ"
 							>
 								<Scan size={14} className="text-[var(--teal)]" />
@@ -835,7 +987,7 @@ export function VisitDiagnosticsTab(props?: {
 									});
 								}}
 								data-testid="btn-add-cbct-service-to-visit"
-								className="h-8 px-2.5 rounded-lg bg-[var(--teal-soft,#0d948815)] hover:bg-[var(--teal-soft,#0d948825)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 font-medium text-[13px] flex items-center gap-1 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
+								className="diag-btn-teal-soft"
 								title="Добавить услугу КЛКТ (3 800 ₽) в смету приёма"
 							>
 								<Receipt size={13} />
@@ -845,7 +997,7 @@ export function VisitDiagnosticsTab(props?: {
 							<button
 								type="button"
 								onClick={() => setIsDicomViewerModalOpen(true)}
-								className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 font-medium text-[13px] flex items-center gap-1 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
+								className="diag-btn"
 								title="Просмотр DICOM / КТ-серии"
 							>
 								<ImageIcon size={13} className="text-[var(--teal)]" />
@@ -854,14 +1006,47 @@ export function VisitDiagnosticsTab(props?: {
 
 							<button
 								type="button"
-								onClick={() => setIsCbctModalOpen(true)}
+								onClick={() => setIsCtSelectorModalOpen(true)}
+								data-testid="btn-open-ct-selector"
+								className="diag-btn"
+								title="Клинический КТ-селектор: забор из Загрузок, 2-й монитор, запуск Picasso/Ez3D"
+							>
+								<Scan size={13} className="text-[var(--teal)]" />
+								<span>КТ-селектор</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => setIsCtSelectorModalOpen(true)}
 								data-testid="btn-open-cbct-studio-modal"
 								id="open-visit-cbct-studio-btn"
-								className="h-8 px-3.5 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] border border-[var(--teal)] font-semibold text-[13px] flex items-center gap-1.5 shadow-2xs active:scale-98 transition-all cursor-pointer"
+								className="diag-btn-teal"
 								title="3D КЛКТ (MPR-срезы и имплантация)"
 							>
 								<Activity size={14} />
 								<span>Открыть 3D КЛКТ</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={async () => {
+									const res = await routeOpenCbctPopout({
+										patientId: visitPatientId ?? activePatient?.id,
+										patientName: visitPatientName ?? activePatient?.fullName,
+										mode: "mpr",
+									});
+									if (!res.success && res.error === "popup_blocked") {
+										showToast("Разрешите всплывающие окна для вывода КТ на второй монитор", "warning");
+									}
+								}}
+								data-testid="btn-open-cbct-popout-window"
+								id="open-visit-cbct-popout-btn"
+								className="diag-btn"
+								title="Вынести 3D КЛКТ в отдельное окно (второй монитор)"
+								aria-label="В отдельное окно"
+							>
+								<ExternalLink size={13} className="text-cyan-500" />
+								<span>В окно</span>
 							</button>
 						</div>
 					</div>
@@ -929,7 +1114,7 @@ export function VisitDiagnosticsTab(props?: {
 								type="button"
 								onClick={() => setIsCephModalOpen(true)}
 								data-testid="open-visit-ceph-modal-btn"
-								className="h-8 px-3.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line-subtle)] hover:border-[var(--teal)]/40 font-semibold text-[13px] flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
+								className="diag-btn"
 							>
 								<Activity size={14} className="text-[var(--teal)]" />
 								<span>Открыть анализ ТРГ</span>
@@ -1014,34 +1199,25 @@ export function VisitDiagnosticsTab(props?: {
 				/>
 			)}
 
-			{/* 3D CBCT / MPR Fullscreen Studio Modal */}
-			{isCbctModalOpen && (
-				<CbctMprImplantStudioModal
-					isOpen={isCbctModalOpen}
-					onClose={() => setIsCbctModalOpen(false)}
-					patientName={visitPatientName ?? activePatient?.fullName ?? undefined}
-					patientId={visitPatientId ?? activePatient?.id ?? undefined}
-					onApplyToDiary043={(diaryText) => {
-						if (!diaryText) return;
-						if (props?.onInsertToProtocol) {
-							props.onInsertToProtocol(diaryText);
-						}
-						try {
-							window.dispatchEvent(
-								new CustomEvent("dente-apply-soap-protocol", {
-									detail: {
-										soap: {
-											treatmentDescription: diaryText,
-										},
-										immediate: true,
-										mode: "smart_append",
-									},
-								}),
-							);
-						} catch {
-							// ignore
-						}
-					}}
+
+			{/* Radiology Report Studio Modal */}
+			{isReportStudioModalOpen && (
+				<RadiologyReportStudioModal
+					isOpen={isReportStudioModalOpen}
+					onClose={() => setIsReportStudioModalOpen(false)}
+					patientName={visitPatientName ?? activePatient?.fullName}
+					patientCardNumber={activePatient?.cardNumber || activePatient?.medCardNumber}
+					doctorName={dashboard?.activeDoctor?.fullName || ctx?.auth?.currentUser?.name}
+					clinicName={dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ"}
+					initialImages={patientStudies
+						.filter((s: any) => s.previewUrl || s.viewerUrl)
+						.map((s: any) => ({
+							imageUrl: s.previewUrl || s.viewerUrl,
+							toothFdi: s.toothCode || undefined,
+							modalityLabel: s.kind === "cbct" ? "3D КЛКТ" : s.kind === "cephalometric" ? "ТРГ" : "Рентген RVG",
+							dapDoseDgyCm2: (s.effectiveDoseMicrosv || 2) * 0.05,
+							capturedAt: s.capturedAt,
+						}))}
 				/>
 			)}
 
@@ -1121,6 +1297,58 @@ export function VisitDiagnosticsTab(props?: {
 							ctx.appendToTranscript(`\n\n${logText}`);
 						}
 					}}
+				/>
+			)}
+
+			{/* Clinical CT Selector Modal */}
+			{isCtSelectorModalOpen && (
+				<CtSelectorModal
+					isOpen={isCtSelectorModalOpen}
+					onClose={() => setIsCtSelectorModalOpen(false)}
+					patientId={visitPatientId ?? activePatient?.id}
+					patientName={visitPatientName ?? activePatient?.fullName}
+					cardNumber={activePatient?.cardNumber || activePatient?.medCardNumber}
+					studies={patientStudies}
+					onSelectStudy={(study, launchMode) => {
+						setIsCtSelectorModalOpen(false);
+						if (launchMode === "crm_window" || launchMode === "standalone_window") {
+							routeOpenCbctPopout({
+								patientId: visitPatientId ?? activePatient?.id,
+								patientName: visitPatientName ?? activePatient?.fullName,
+								studyId: study?.id,
+								mode: "mpr",
+							});
+						}
+					}}
+					onOpenCbctStudio={(study) => {
+						setIsCtSelectorModalOpen(false);
+						routeOpenCbctPopout({
+							patientId: visitPatientId ?? activePatient?.id,
+							patientName: visitPatientName ?? activePatient?.fullName,
+							studyId: study?.id,
+							mode: "mpr",
+						});
+					}}
+					onImagesLoaded={(_imageIds, studyMeta) => {
+						setIsCtSelectorModalOpen(false);
+						routeOpenCbctPopout({
+							patientId: visitPatientId ?? activePatient?.id,
+							patientName: visitPatientName ?? activePatient?.fullName,
+							studyId: studyMeta?.id,
+							mode: "mpr",
+						});
+					}}
+				/>
+			)}
+
+			{/* 3D Intraoral Scan Viewer Modal */}
+			{selected3DScanModelUrl && (
+				<IntraoralScan3DViewerModal
+					isOpen={Boolean(selected3DScanModelUrl)}
+					onClose={() => setSelected3DScanModelUrl(null)}
+					modelUrl={selected3DScanModelUrl}
+					patientName={visitPatientName ?? activePatient?.fullName}
+					scanTitle={selected3DScanTitle || "Интраоральный 3D-скан (STL/PLY)"}
 				/>
 			)}
 		</React.Suspense>

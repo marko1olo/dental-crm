@@ -238,7 +238,7 @@ export function generateTreatmentPlanStages(
 						},
 					),
 				);
-			} else if (state === "Periodontitis" || state === "Root" || state === "Impacted" || state === "Missing") {
+			} else if (state === "Periodontitis" || state === "Root" || state === "Impacted" || state === "Retained" || state === "Missing") {
 				const defPedExt = ORDER_804N_DICTIONARY.PediatricExtraction!;
 				stage2Items.push(
 					createPlanItem(
@@ -299,7 +299,7 @@ export function generateTreatmentPlanStages(
 			continue;
 		}
 
-		if (state === "Impacted") {
+		if (state === "Impacted" || state === "Retained") {
 			const defComplexExt = ORDER_804N_DICTIONARY.ComplexExtraction!;
 			stage2Items.push(
 				createPlanItem(

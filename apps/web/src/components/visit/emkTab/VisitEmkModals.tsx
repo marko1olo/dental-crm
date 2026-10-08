@@ -3,11 +3,11 @@ import { Check, X, Zap } from "lucide-react";
 import { generateQrCodeSvg } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { appendClinicalText } from "../emk";
-import { InformedConsentModal } from "../consents/InformedConsentModal";
-import { Form043PrintModal } from "../emr/Form043PrintModal";
-import { EmrProtocolGeneratorModal } from "../emr/protocolGenerator/EmrProtocolGeneratorModal";
+import { InformedConsentModal } from "../../consents/InformedConsentModal";
+import { Form043PrintModal } from "../../emr/Form043PrintModal";
+import { EmrProtocolGeneratorModal } from "../../emr/protocolGenerator/EmrProtocolGeneratorModal";
 import { EmkPrintableForm043 } from "../emk/EmkPrintableForm043";
-import { ClinicalProtocolsCatalogModal } from "../clinicalCatalog";
+import { ClinicalProtocolsCatalogModal } from "../clinicalCatalog/ClinicalProtocolsCatalogModal";
 import type { VisitEmkModalsProps } from "./types";
 
 export function VisitEmkModals({

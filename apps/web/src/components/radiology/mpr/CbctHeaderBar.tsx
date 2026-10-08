@@ -1,4 +1,4 @@
-import { Camera, Columns2, Columns3, FileText, Grid2X2, Maximize2, Minimize2, MoreHorizontal, Receipt, RotateCcw, Ruler, Sliders, SplitSquareHorizontal, X } from "lucide-react";
+import { Camera, Columns2, Columns3, ExternalLink, FileText, Grid2X2, Maximize2, Minimize2, MoreHorizontal, Receipt, RotateCcw, Ruler, Sliders, SplitSquareHorizontal, X } from "lucide-react";
 import React from "react";
 import { BoneDensityMisch, DentalArticulator, DentalImplant, DentalLabOrder, DentalPanoramicArch, DicomCube3D, EndoFileCanal } from "../../icons/DentalIcons";
 import {
@@ -69,6 +69,10 @@ export interface CbctHeaderBarProps {
 	readonly onSelectClinicalPreset?: ((presetId: string) => void) | undefined;
 	readonly onCopySnapshotToClipboard?: (() => void) | undefined;
 	readonly onOpenComparisonSplit?: (() => void) | undefined;
+	readonly onOpenPopoutWindow?: (() => void) | undefined;
+	readonly isStandaloneWindow?: boolean | undefined;
+	readonly studyId?: string | undefined;
+	readonly patientId?: string | undefined;
 }
 
 export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
@@ -122,6 +126,10 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 		onSelectClinicalPreset,
 		onCopySnapshotToClipboard,
 		onOpenComparisonSplit,
+		onOpenPopoutWindow,
+		isStandaloneWindow = false,
+		studyId,
+		patientId,
 	} = props;
 
 	const contrastMenuRef = React.useRef<HTMLDivElement | null>(null);
@@ -743,8 +751,41 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 					)}
 				</div>
 
-				{/* Оконные кнопки: Развернуть / Закрыть */}
+				{/* Оконные кнопки: В окно / Развернуть / Закрыть */}
 				<div className="flex items-center gap-1 pl-1 sm:pl-1.5 pr-0.5 border-l border-zinc-800 shrink-0">
+					{/* В отдельное окно (на второй монитор) */}
+					{!isStandaloneWindow && (
+						<button
+							type="button"
+							onClick={async () => {
+								if (onOpenPopoutWindow) {
+									onOpenPopoutWindow();
+								} else {
+									const { routeOpenCbctPopout } = await import("../../../utils/runtimeRouter");
+									const res = await routeOpenCbctPopout({
+										studyId,
+										patientId,
+										patientName: patientDisplayName || resolvedPatientName,
+										mode: studioMode,
+									});
+									if (!res.success && res.error === "popup_blocked") {
+										const { showToast } = await import("../../GlobalToast");
+										showToast("Разрешите всплывающие окна для вывода КТ на второй монитор", "warning");
+									} else if (res.success) {
+										onClose?.();
+									}
+								}
+							}}
+							className="w-7 h-7 min-h-0 min-w-0 rounded bg-zinc-950 hover:bg-zinc-900 text-cyan-400 hover:text-cyan-300 flex items-center justify-center border border-zinc-800 hover:border-cyan-500/60 shadow-xs transition-colors cursor-pointer shrink-0"
+							title="В отдельное окно (на второй монитор)"
+							aria-label="В отдельное окно"
+							data-testid="cbct-popout-window-btn"
+							id="cbct-popout-window-btn"
+						>
+							<ExternalLink className="w-3.5 h-3.5" />
+						</button>
+					)}
+
 					{/* Полноэкранный режим */}
 					<button
 						type="button"

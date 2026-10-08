@@ -21,13 +21,31 @@ const __dirname = path.dirname(__filename);
 
 describe("Mandates 8e, 8n, 8s: Chairside 043/U & Somatic Norm Autonomy Inquisitor (Wave 310)", () => {
 	const visitSoapEditorPath = path.resolve(__dirname, "../VisitSoapEditor.tsx");
-	const visitSoapEditorSource = fs.readFileSync(visitSoapEditorPath, "utf8");
+	const soapEditorDir = path.resolve(__dirname, "../soapEditor");
+	let loadedSoapEditor = fs.readFileSync(visitSoapEditorPath, "utf8");
+	if (fs.existsSync(soapEditorDir)) {
+		for (const f of fs.readdirSync(soapEditorDir)) {
+			if (/\.(tsx|ts)$/.test(f)) {
+				loadedSoapEditor += "\n" + fs.readFileSync(path.join(soapEditorDir, f), "utf8");
+			}
+		}
+	}
+	const visitSoapEditorSource = loadedSoapEditor;
 
 	const visitEmkTabPath = path.resolve(__dirname, "../VisitEmkTab.tsx");
 	const debouncedEmkPath = path.resolve(__dirname, "../emk/DebouncedEmkTextarea.tsx");
-	const visitEmkTabSource =
+	const emkTabDir = path.resolve(__dirname, "../emkTab");
+	let loadedEmkTab =
 		fs.readFileSync(visitEmkTabPath, "utf8") +
 		(fs.existsSync(debouncedEmkPath) ? fs.readFileSync(debouncedEmkPath, "utf8") : "");
+	if (fs.existsSync(emkTabDir)) {
+		for (const f of fs.readdirSync(emkTabDir)) {
+			if (/\.(tsx|ts)$/.test(f)) {
+				loadedEmkTab += "\n" + fs.readFileSync(path.join(emkTabDir, f), "utf8");
+			}
+		}
+	}
+	const visitEmkTabSource = loadedEmkTab;
 
 	const visitViewPath = path.resolve(__dirname, "../../../VisitView.tsx");
 	const visitViewSource = fs.readFileSync(visitViewPath, "utf8");

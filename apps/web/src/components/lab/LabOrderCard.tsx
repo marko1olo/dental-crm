@@ -39,6 +39,7 @@ export interface LabOrderCardProps {
 	handleOpenReadyInClinicPrompt?: ((order: DentalLabOrderData) => void) | undefined;
 	handlePayFromCashbox?: ((order: DentalLabOrderData) => void) | undefined;
 	handleMarkInstalled?: ((order: DentalLabOrderData) => void) | undefined;
+	handleView3DScan?: ((order: DentalLabOrderData) => void) | undefined;
 }
 
 export function LabOrderCard({
@@ -58,6 +59,7 @@ export function LabOrderCard({
 	handleOpenReadyInClinicPrompt,
 	handlePayFromCashbox,
 	handleMarkInstalled,
+	handleView3DScan,
 }: LabOrderCardProps) {
 	return (
 		<div
@@ -144,13 +146,16 @@ export function LabOrderCard({
 				{order.attachedImageUrl && (
 					<div className="flex items-center gap-1.5 pt-0.5">
 						{is3DScanUrl(order.attachedImageUrl) ? (
-							<span
-								className="px-2 py-0.5 rounded-lg bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/25 text-[11px] font-bold flex items-center gap-1 font-mono truncate"
-								title={`Прикреплен 3D-скан: ${order.attachedImageUrl}`}
+							<button
+								type="button"
+								onClick={() => (handleView3DScan ? handleView3DScan(order) : handleAttach3DScan(order))}
+								className="px-2 py-0.5 rounded-lg bg-teal-500/15 hover:bg-teal-500/25 text-teal-700 dark:text-teal-300 border border-teal-500/30 text-[11px] font-bold flex items-center gap-1 font-mono truncate cursor-pointer transition-colors active:scale-95 text-left"
+								data-testid={`lab-order-view-scan-btn-${order.id}`}
+								title={`Открыть 3D-скан: ${order.attachedImageUrl}`}
 							>
-								<Box className="w-3 h-3 text-teal-500 shrink-0" />
-								<span>3D-скан: {order.attachedImageUrl.split("/").pop()}</span>
-							</span>
+								<Box className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+								<span className="truncate">3D: {order.attachedImageUrl.split("/").pop()}</span>
+							</button>
 						) : (
 							<span
 								className="px-2 py-0.5 rounded-lg bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/25 text-[11px] font-bold flex items-center gap-1 truncate"
@@ -301,6 +306,24 @@ export function LabOrderCard({
 									<Layers className="w-3.5 h-3.5 text-indigo-500" />
 									<span>Сменить этап/статус</span>
 								</button>
+								{order.attachedImageUrl && is3DScanUrl(order.attachedImageUrl) && (
+									<button
+										type="button"
+										onClick={() => {
+											setOpenMenuOrderId(null);
+											if (handleView3DScan) {
+												handleView3DScan(order);
+											} else {
+												handleAttach3DScan(order);
+											}
+										}}
+										className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-teal-500/10 font-bold text-teal-700 dark:text-teal-300 inline-flex items-center gap-2 cursor-pointer"
+										data-testid={`lab-order-menu-view-scan-btn-${order.id}`}
+									>
+										<Box className="w-3.5 h-3.5 text-teal-500" />
+										<span>Открыть 3D-скан (STL/PLY)</span>
+									</button>
+								)}
 								<button
 									type="button"
 									onClick={() => handleAttach3DScan(order)}

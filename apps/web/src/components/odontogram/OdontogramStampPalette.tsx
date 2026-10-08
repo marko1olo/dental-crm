@@ -159,22 +159,22 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 
 	return (
 		<div
-			className={`odontogram-stamp-palette w-full flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-[var(--odontogram-surface,#f8fafc)] border border-[var(--odontogram-border,#cbd5e1)] shadow-xs select-none ${className}`.trim()}
+			className={`odontogram-stamp-palette w-full flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-[var(--paper-soft,var(--odontogram-surface,#f8fafc))] border border-[var(--line-strong,var(--odontogram-border,#cbd5e1))] shadow-2xs select-none ${className}`.trim()}
 			role="toolbar"
 			aria-label="Панель быстрой клинической разметки одонтограммы"
 			data-testid="odontogram-stamp-palette"
 		>
 			{/* Left section: Title & Pathology buttons */}
 			<div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-				<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--odontogram-ink,#0f172a)] mr-1 shrink-0">
+				<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink,#0f172a)] mr-1 shrink-0">
 					<Sparkles size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
 					<span className="hidden sm:inline">Быстрая разметка:</span>
 					<span className="sm:hidden">Разметка:</span>
 				</div>
 
-				{/* 8 Clinical Pathology Triggers */}
+				{/* 8 Clinical Pathology Triggers — Apple HIG / Medical Filter Chips */}
 				<div
-					className="flex flex-wrap items-center gap-1 sm:gap-1.5"
+					className="flex flex-wrap items-center gap-1.5"
 					role="group"
 					aria-label="Штампы патологий и состояний зубов"
 				>
@@ -185,10 +185,10 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 								key={opt.state}
 								type="button"
 								onClick={() => handleQuickTriggerState(opt.state)}
-								className={`h-7 px-2 sm:px-2.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer select-none shrink-0 flex items-center gap-1.5 border ${
+								className={`h-8 px-2.5 sm:px-3 rounded-[8px] text-[12px] font-bold transition-all duration-150 cursor-pointer select-none shrink-0 flex items-center gap-1.5 shadow-2xs active:scale-98 border ${
 									isActive
-										? `${opt.activeBgClass} ring-2 ring-indigo-500/40`
-										: `bg-[var(--odontogram-paper,#ffffff)] ${opt.inactiveHoverClass}`
+										? "bg-[var(--teal-soft,rgba(13,148,136,0.15))] text-[var(--teal-dark,var(--teal,#0d9488))] border-2 border-[var(--teal,#0d9488)] shadow-xs ring-2 ring-teal-500/25 font-black"
+										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line-strong,var(--odontogram-border,#cbd5e1))] hover:bg-[var(--paper-hover,#f1f5f9)] hover:border-teal-500 hover:text-[var(--ink,#0f172a)]"
 								}`}
 								title={`${opt.label}: ${opt.description}${
 									hasSelection
@@ -199,12 +199,12 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 								aria-pressed={isActive}
 							>
 								{/* Strict Pure CSS Circle Indicator — Zero Cartoon Emojis */}
-								<span className={`w-2.5 h-2.5 rounded-full shrink-0 ${opt.colorDotClass}`} />
-								<span className="font-bold whitespace-nowrap">
+								<span className={`w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs ring-1 ring-black/10 dark:ring-white/20 ${opt.colorDotClass}`} />
+								<span className="whitespace-nowrap font-bold">
 									<span className="hidden md:inline">{opt.label}</span>
 									<span className="md:hidden">{opt.shortLabel}</span>
 								</span>
-								{isActive && <Check size={12} className="stroke-[3] shrink-0 ml-0.5" />}
+								{isActive && <Check size={13} className="stroke-[3] shrink-0 ml-0.5 text-[var(--teal,#0d9488)]" />}
 							</button>
 						);
 					})}
@@ -215,7 +215,7 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 			<div className="flex items-center gap-2 shrink-0 justify-end mt-1 sm:mt-0">
 				{activeStampTool ? (
 					<div
-						className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/40 text-amber-950 dark:text-amber-100 text-xs font-bold shrink-0 animate-in fade-in duration-150 whitespace-nowrap shadow-2xs"
+						className="inline-flex items-center gap-1.5 px-3 h-8 rounded-[8px] bg-amber-500/15 border border-amber-600/50 dark:border-amber-500/60 text-amber-950 dark:text-amber-100 text-xs font-bold shrink-0 animate-in fade-in duration-150 whitespace-nowrap shadow-2xs"
 						data-testid="odontogram-active-stamp-indicator"
 					>
 						<span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
@@ -231,7 +231,7 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 						<button
 							type="button"
 							onClick={handleResetStamp}
-							className="ml-1.5 p-0.5 rounded hover:bg-amber-500/25 text-amber-900 dark:text-amber-100 transition-all cursor-pointer flex items-center gap-1"
+							className="ml-1.5 p-1 rounded hover:bg-amber-500/25 text-amber-900 dark:text-amber-100 transition-all cursor-pointer flex items-center gap-1"
 							title="Сбросить штамп (Режим осмотра) [Esc]"
 							aria-label="Сбросить активный штамп"
 							data-testid="clear-active-stamp-btn"
@@ -244,17 +244,17 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 					<button
 						type="button"
 						onClick={handleResetStamp}
-						className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--odontogram-ink-muted,#64748b)] bg-[var(--odontogram-paper,#ffffff)] hover:bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-colors cursor-pointer"
+						className="inline-flex items-center gap-1.5 px-3 h-8 rounded-[8px] text-[12px] font-bold text-[var(--ink,#0f172a)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-hover,#f1f5f9)] border border-[var(--line-strong,var(--odontogram-border,#cbd5e1))] hover:border-indigo-500 transition-all cursor-pointer shadow-2xs active:scale-98"
 						title="Режим стандартного осмотра и выделения зубов (без штампа)"
 						data-testid="clear-active-stamp-btn"
 					>
-						<MousePointer size={13} className="shrink-0 text-indigo-500" />
+						<MousePointer size={13} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
 						<span className="whitespace-nowrap">Осмотр</span>
 					</button>
 				)}
 
 				{hasSelection && (
-					<span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 whitespace-nowrap">
+					<span className="text-[11px] font-bold px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 whitespace-nowrap shadow-2xs">
 						Выбрано: {selectedTeeth.length}
 					</span>
 				)}

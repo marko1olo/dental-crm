@@ -128,7 +128,7 @@ export const OdontogramToolbarQuickActions: React.FC<OdontogramToolbarQuickActio
 	return (
 		<details className="relative shrink-0">
 			<summary
-				className="list-none h-7.5 px-2.5 rounded-[8px] bg-[var(--paper-soft,var(--odontogram-surface-hover,#f1f5f9))] border border-[var(--line-subtle,var(--odontogram-border-subtle,#e2e8f0))] hover:text-indigo-600 text-[var(--ink-muted,#64748b)] text-[12.5px] font-medium flex items-center gap-1 cursor-pointer select-none transition-all shrink-0"
+				className="list-none h-8 px-2.5 rounded-[8px] bg-[var(--paper,#ffffff)] border border-[var(--line-strong,var(--odontogram-border,#cbd5e1))] hover:bg-[var(--paper-hover,#f1f5f9)] hover:border-indigo-500 text-[var(--ink,#0f172a)] text-[12px] font-bold flex items-center gap-1.5 cursor-pointer select-none transition-all shrink-0 shadow-2xs active:scale-98"
 				title="Быстрые действия: санация, без 8-ок, инвертировать, квадранты, челюсти"
 				data-testid="odontogram-quick-actions-menu"
 			>

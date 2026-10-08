@@ -156,11 +156,40 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 	const [isVoiceListening, setIsVoiceListening] = useState<boolean>(false);
 	const [voiceInterimText, setVoiceInterimText] = useState<string>("");
 	const [isOrthoCephOpen, setIsOrthoCephOpen] = useState<boolean>(false);
+	const [isSmartOpgOpen, setIsSmartOpgOpen] = useState<boolean>(false);
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
 	const [orthoDrawerTooth, setOrthoDrawerTooth] = useState<number | null>(null);
 	const [activeJawModalTarget, setActiveJawModalTarget] = useState<
 		"JU" | "JL" | "C" | null
 	>(null);
+
+	const handleApplyOpgOdontogram = useCallback(
+		(teethMap: Record<number, import("../orthodontics/opgTopologicalEngine").OpgToothSlot>) => {
+			if (!onQuickStateChange) {
+				showToast("Ошибка: нет доступа к сохранению зубной формулы", "error");
+				return;
+			}
+
+			const grouped: Partial<Record<ToothState, number[]>> = {};
+			for (const [fdiStr, slot] of Object.entries(teethMap)) {
+				const fdi = Number(fdiStr);
+				if (isNaN(fdi)) continue;
+				if (!grouped[slot.status]) {
+					grouped[slot.status] = [];
+				}
+				grouped[slot.status]!.push(fdi);
+			}
+
+			for (const [state, targets] of Object.entries(grouped) as [ToothState, number[]][]) {
+				if (targets && targets.length > 0) {
+					onQuickStateChange(targets, state, []);
+				}
+			}
+
+			showToast("Зубная формула 043/у обновлена по результатам анализа ОПТГ", "success");
+		},
+		[onQuickStateChange],
+	);
 
 	// 3. Radial Menu Active Anchor
 	const [radialMenuData, setRadialMenuData] = useState<RadialMenuAnchorData | null>(
@@ -582,6 +611,8 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 					onTogglePerio={onTogglePerio}
 					isOrthoCephOpen={isOrthoCephOpen}
 					setIsOrthoCephOpen={setIsOrthoCephOpen}
+					isSmartOpgOpen={isSmartOpgOpen}
+					setIsSmartOpgOpen={setIsSmartOpgOpen}
 					setContextDrawerTooth={setContextDrawerTooth}
 					onOpenPediatricModal={onOpenPediatricModal}
 					onLoadDiagnocat={onLoadDiagnocat}
@@ -671,6 +702,9 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 				onCloseEndoDrawer={() => setEndoDrawerTooth(null)}
 				isOrthoCephOpen={isOrthoCephOpen}
 				onCloseOrthoCeph={() => setIsOrthoCephOpen(false)}
+				isSmartOpgOpen={isSmartOpgOpen}
+				onCloseSmartOpg={() => setIsSmartOpgOpen(false)}
+				onApplyOpgOdontogram={handleApplyOpgOdontogram}
 				activeJawModalTarget={activeJawModalTarget}
 				onCloseJawModal={() => setActiveJawModalTarget(null)}
 				orthoDrawerTooth={orthoDrawerTooth}

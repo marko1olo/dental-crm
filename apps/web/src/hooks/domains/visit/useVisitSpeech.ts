@@ -18,13 +18,13 @@ import {
 	responseStatusFailureLabel,
 	speechGatewayCanUpload,
 	speechQualityLabels,
-} from "../../AppHelpers";
-import { showToast } from "../../components/GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
-import { useAppStore } from "../../store/appStore";
-import { useVisitStore } from "../../store/visitStore";
-import { logger } from "../../utils/logger";
-import { fetchWithHandling } from "../../utils/networkUtils";
+} from "../../../AppHelpers";
+import { showToast } from "../../../components/GlobalToast";
+import { actionFailureToast } from "../../../lib/panelStateText";
+import { useAppStore } from "../../../store/appStore";
+import { useVisitStore } from "../../../store/visitStore";
+import { logger } from "../../../utils/logger";
+import { fetchWithHandling } from "../../../utils/networkUtils";
 import {
 	speechChunkApplyKey,
 	speechTranscriptionMatchesActiveVisit,

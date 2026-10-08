@@ -31,8 +31,9 @@ import {
 import {
 	generatePaymentSchedules,
 } from "./planComparatorEngine";
-import { isDemoShowcaseMode } from "../../../lib/demoMode";
-import "./planComparator.css";
+if (typeof document !== "undefined") {
+	void import("./planComparator.css");
+}
 
 export interface TreatmentPlanComparatorModalProps {
 	readonly isOpen?: boolean | undefined;
@@ -587,5 +588,7 @@ export const TreatmentPlanComparatorModal: React.FC<TreatmentPlanComparatorModal
 };
 
 export const TreatmentPlanComparisonModal = TreatmentPlanComparatorModal;
+export const PlanScenarioComparisonModal = TreatmentPlanComparatorModal;
 export type TreatmentPlanComparisonModalProps = TreatmentPlanComparatorModalProps;
+export type PlanScenarioComparisonModalProps = TreatmentPlanComparatorModalProps;
 export default TreatmentPlanComparatorModal;

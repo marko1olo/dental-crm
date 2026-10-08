@@ -45,7 +45,7 @@
 	border-radius: var(--plan-radius-lg);
 	box-shadow: var(--plan-shadow);
 	width: 100%;
-	max-width: 1280px;
+	max-width: 1380px;
 	height: 92vh;
 	max-height: 92vh;
 	display: flex;
@@ -213,13 +213,14 @@
 }
 
 .plan-card-cost {
-	font-size: 1.375rem;
-	font-weight: 900;
+	font-size: 1.625rem;
+	font-weight: 800;
 	color: var(--plan-text-main);
 	display: flex;
 	align-items: baseline;
-	gap: 4px;
+	gap: 6px;
 	white-space: nowrap;
+	font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
 }
 
 .plan-card-cost-sub {
@@ -446,13 +447,13 @@
 }
 
 .plan-action-btn-primary {
-	min-height: 34px;
-	height: 34px;
-	padding: 6px 16px;
+	min-height: 36px;
+	height: 36px;
+	padding: 6px 18px;
 	border-radius: var(--plan-radius-sm);
 	border: none;
 	background: var(--plan-primary);
-	color: var(--paper-strong);
+	color: #ffffff;
 	font-size: 0.8125rem;
 	font-weight: 700;
 	display: flex;

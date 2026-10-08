@@ -633,6 +633,7 @@ export const OdontogramModule = React.memo(({
 				/>
 
 				<OdontogramViewContainer
+					patientId={patientId}
 					teethData={teethData}
 					pediatricMode={isPediatricMode}
 					dentitionMode={dentitionMode}

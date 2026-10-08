@@ -51,23 +51,25 @@ export function VisiographCockpitPresets({
 				type="button"
 				data-tour="dicom-ruler"
 				onClick={onOpenApexRuler}
-				className="h-8 px-3 rounded-lg text-[13px] font-semibold border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 cursor-pointer inline-flex items-center gap-1.5 transition-colors shrink-0"
+				className="h-8 px-2.5 rounded-lg text-[13px] font-medium border border-[var(--line-strong,var(--line))] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)]/40 cursor-pointer inline-flex items-center gap-1.5 transition-all shadow-2xs active:scale-98 shrink-0"
+				title="Эндо-линейка (Апекс)"
 			>
-				<Activity size={14} />
-				<span>Эндо-линейка (Апекс)</span>
+				<Activity size={14} className="text-[var(--teal)]" />
+				<span>Эндо-линейка</span>
 			</button>
 
 			<button
 				type="button"
 				onClick={onToggleStudio}
-				className={`h-8 px-3 rounded-lg text-[13px] font-medium border cursor-pointer inline-flex items-center gap-1.5 transition-colors shrink-0 ${
+				title="Инструменты анализа снимка (PACS)"
+				className={`h-8 px-2.5 rounded-lg text-[13px] border cursor-pointer inline-flex items-center gap-1.5 transition-all shadow-2xs active:scale-98 shrink-0 ${
 					isStudioMode
 						? "bg-[var(--teal)] text-[var(--on-teal,white)] border-[var(--teal)] font-semibold"
-						: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-hover)]"
+						: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line-strong,var(--line))] hover:bg-[var(--paper-soft)] font-medium"
 				}`}
 			>
-				<Sparkles size={14} />
-				<span>{isStudioMode ? "Закрыть PACS" : "Инструменты (PACS)"}</span>
+				<Sparkles size={14} className={isStudioMode ? "text-[var(--on-teal,white)]" : "text-[var(--teal)]"} />
+				<span>{isStudioMode ? "Закрыть PACS" : "Инструменты"}</span>
 			</button>
 		</div>
 	);

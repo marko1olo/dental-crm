@@ -112,10 +112,10 @@ describe("1. Anti-Matryoshka Routing & CBCT 3D Studio Autonomy (Mandates 8c, 8d,
 	it("enforces Anti-Matryoshka Law in VisitDiagnosticsTab.tsx (modal depth strictly 1)", () => {
 		const source = readComponentSource("components/visit/VisitDiagnosticsTab.tsx");
 
-		// VisitDiagnosticsTab mounts DicomViewerModal, DirectRvgCaptureModal, and CbctMprImplantStudioModal at depth 1
+		// VisitDiagnosticsTab mounts DicomViewerModal, DirectRvgCaptureModal, and CtSelectorModal at depth 1
 		expect(source).toContain("<DicomViewerModal");
 		expect(source).toContain("<DirectRvgCaptureModal");
-		expect(source).toContain("<CbctMprImplantStudioModal");
+		expect(source.includes("<CtSelectorModal") || source.includes("<CbctMprImplantStudioModal")).toBe(true);
 	});
 
 	it("enforces Anti-Matryoshka Law in DicomViewerModal.tsx (no modal over modal in DOM)", () => {

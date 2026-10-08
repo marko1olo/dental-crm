@@ -433,6 +433,28 @@ export function generateCanonicalToothDetections(
 
 	const pathologies: OpgPathologyDetection[] = [
 		{
+			id: "car-16",
+			label: "caries",
+			confidence: 0.92,
+			x1: midlineX - 6 * spacing + spacing / 2 - spacing * 0.45,
+			y1: upperY - height * 0.04 - height * 0.08,
+			x2: midlineX - 6 * spacing + spacing / 2 + spacing * 0.45,
+			y2: upperY - height * 0.04 + height * 0.08,
+			cx: midlineX - 6 * spacing + spacing / 2,
+			cy: upperY - height * 0.04,
+		},
+		{
+			id: "car-24",
+			label: "caries",
+			confidence: 0.89,
+			x1: midlineX + 4 * spacing - spacing / 2 - spacing * 0.45,
+			y1: upperY - height * 0.08,
+			x2: midlineX + 4 * spacing - spacing / 2 + spacing * 0.45,
+			y2: upperY + height * 0.08,
+			cx: midlineX + 4 * spacing - spacing / 2,
+			cy: upperY,
+		},
+		{
 			id: "imp-48",
 			label: "impacted_tooth",
 			confidence: 0.88,

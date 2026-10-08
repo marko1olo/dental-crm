@@ -123,7 +123,10 @@ describe("Low-Spec Caching & DOM Virtualizer Invariants", () => {
 	describe("2. PatientsView & InvoicesView DOM Virtualization & content-visibility", () => {
 		it("PatientsView.tsx source contains contentVisibility: auto and containIntrinsicSize: 1px 48px", () => {
 			const patientsViewPath = path.resolve(__dirname, "../../../PatientsView.tsx");
-			const source = fs.readFileSync(patientsViewPath, "utf-8");
+			const masterListPath = path.resolve(__dirname, "../../patients/PatientsMasterList.tsx");
+			const source =
+				fs.readFileSync(patientsViewPath, "utf-8") +
+				(fs.existsSync(masterListPath) ? fs.readFileSync(masterListPath, "utf-8") : "");
 
 			assert.ok(
 				source.includes('contentVisibility: "auto"'),

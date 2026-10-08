@@ -1393,6 +1393,34 @@ test("бесшовный перенос кариеса одонтограммы 
 	assert.ok(expanded.length >= 2, "Кариес раскрывается в комплексный пакет");
 });
 
+test("при ретенции зуба (например, 48 на ОПТГ) сметчик подбирает удаление ретенированного зуба на этапе хирургии", () => {
+	const clinicCatalog: PlanPriceCatalogItem[] = [
+		{
+			id: "svc-surg-ret-01",
+			title: "Сложное удаление ретенированного дистопированного зуба (атипичное)",
+			category: "surgery",
+			basePriceRub: 9000,
+			active: true,
+		},
+	];
+
+	const teeth: EstimatorToothInput[] = [
+		{ toothNumber: 48, state: "Retained" },
+	];
+
+	const { items, changed } = reconcileAutoSuggestions([], teeth, clinicCatalog);
+	assert.equal(changed, true);
+	assert.equal(items.length, 1);
+	assert.equal(items[0]?.toothNumber, 48);
+	assert.equal(items[0]?.phase, 2);
+	assert.equal(items[0]?.priceId, "svc-surg-ret-01");
+	assert.equal(items[0]?.price, 9000);
+	assert.equal(items[0]?.suggestion, "retained");
+
+	const totals = estimatorTotals(items, null);
+	assert.equal(totals.payableKopecks, 900000);
+});
+
 test("декомпозиция сметчика на модули: каждый файл строго <= 800 строк (Мандат 8b)", () => {
 	const filesToCheck = [
 		"./treatmentEstimatorPricing.ts",

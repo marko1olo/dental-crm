@@ -70,6 +70,19 @@ import {
 } from "./treatmentPlanNetworkSync";
 import { useTreatmentPlanTeeth } from "./useTreatmentPlanTeeth";
 
+export interface LabOrderPrefillContext {
+	readonly selectedTeeth?: readonly number[] | undefined;
+	readonly stageId?: string | undefined;
+	readonly stageNumber?: number | undefined;
+	readonly stageTitle?: string | undefined;
+	readonly itemName?: string | undefined;
+	readonly constructionType?: string | undefined;
+	readonly material?: string | undefined;
+	readonly priceRub?: number | undefined;
+	readonly doctorId?: string | undefined;
+	readonly doctorName?: string | undefined;
+}
+
 export interface UseTreatmentPlanLogicProps {
 	readonly patientId: string;
 	readonly patientName?: string | undefined;
@@ -80,6 +93,7 @@ export interface UseTreatmentPlanLogicProps {
 	readonly initialStatus?: TreatmentPlanStatus | undefined;
 	readonly onStatusChange?: ((status: TreatmentPlanStatus) => void) | undefined;
 	readonly initialPlanId?: string | null | undefined;
+	readonly initialViewTab?: "3tier" | "stages" | "phased4" | "roadmap" | undefined;
 }
 
 export function useTreatmentPlanLogic({
@@ -92,6 +106,7 @@ export function useTreatmentPlanLogic({
 	initialStatus,
 	onStatusChange,
 	initialPlanId,
+	initialViewTab,
 }: UseTreatmentPlanLogicProps) {
 	const { dashboard, auth } = useAppLogicContext();
 	const effectiveTeethData = useTreatmentPlanTeeth(patientId, teethData);
@@ -103,7 +118,12 @@ export function useTreatmentPlanLogic({
 		return Math.max(0, Math.floor((Date.now() - createdTime) / (1000 * 60 * 60 * 24)));
 	}, [planCreatedAtIso]);
 
-	const [activeViewTab, setActiveViewTab] = useState<"3tier" | "stages" | "phased4">("3tier");
+	const [activeViewTab, setActiveViewTab] = useState<"3tier" | "stages" | "phased4" | "roadmap">(() => {
+		if (typeof window !== "undefined" && typeof window.location?.hash === "string" && window.location.hash.toLowerCase().includes("roadmap")) {
+			return "roadmap";
+		}
+		return initialViewTab || "3tier";
+	});
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>("optimum");
 	const [discountPercent, setDiscountPercent] = useState<number>(0);
 	const [bonusPointsToUseRub, setBonusPointsToUseRub] = useState<number>(0);
@@ -142,6 +162,7 @@ export function useTreatmentPlanLogic({
 	const [isCopilotExecuting, setIsCopilotExecuting] = useState<boolean>(false);
 
 	const [selectedLabTeeth, setSelectedLabTeeth] = useState<number[] | undefined>(undefined);
+	const [labOrderPrefill, setLabOrderPrefill] = useState<LabOrderPrefillContext | null>(null);
 	const [selectedActStage, setSelectedActStage] = useState<TreatmentPlanStage | null>(null);
 	const [isExecutingWriteOff, setIsExecutingWriteOff] = useState<boolean>(false);
 	const [signedAgreement, setSignedAgreement] =
@@ -557,8 +578,29 @@ export function useTreatmentPlanLogic({
 		return [21];
 	}, [stages, effectiveTeethData]);
 
-	const handleOpenLabOrder = (teeth?: number[]) => {
-		setSelectedLabTeeth(teeth && teeth.length > 0 ? teeth : orthopedicTeeth);
+	const handleOpenLabOrder = (
+		teethOrContext?: number[] | LabOrderPrefillContext,
+		maybeContext?: LabOrderPrefillContext,
+	) => {
+		let context: LabOrderPrefillContext = {};
+		if (Array.isArray(teethOrContext)) {
+			context = { ...maybeContext, selectedTeeth: teethOrContext };
+		} else if (teethOrContext && typeof teethOrContext === "object") {
+			context = teethOrContext;
+		} else if (maybeContext) {
+			context = maybeContext;
+		}
+
+		const resolvedTeeth =
+			context.selectedTeeth && context.selectedTeeth.length > 0
+				? [...context.selectedTeeth]
+				: orthopedicTeeth;
+
+		setSelectedLabTeeth(resolvedTeeth);
+		setLabOrderPrefill({
+			...context,
+			selectedTeeth: resolvedTeeth,
+		});
 		setIsLabOrderModalOpen(true);
 	};
 
@@ -826,6 +868,9 @@ export function useTreatmentPlanLogic({
 		loyaltyDeduction,
 		orthopedicTeeth,
 		selectedLabTeeth,
+		currentPlanId,
+		labOrderPrefill,
+		setLabOrderPrefill,
 		contractNumber,
 		completedActData,
 		selectedActStage,

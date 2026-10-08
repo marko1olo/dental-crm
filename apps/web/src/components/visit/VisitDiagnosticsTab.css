@@ -1,0 +1,247 @@
+/**
+ * apps/web/src/components/visit/VisitDiagnosticsTab.css
+ *
+ * Dedicated styling for Clinical Diagnostics & Radiology Tab:
+ * - Anti-ghost text / anti-naked button design (Strict 1px tangible borders, solid backgrounds)
+ * - Segmented cockpit switcher with visible tactile tabs
+ * - Primary CTA (Teal) with depth and tactile active state
+ * - Full Dark Mode & High Contrast WCAG AAA compliance
+ */
+
+/* ─── Segmented Mode Bar (Cockpit Tab Switcher) ─────────────────────────── */
+.diag-segmented-bar {
+	display: inline-flex;
+	align-items: center;
+	height: 36px;
+	min-height: 36px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line-strong, #cbd5e1);
+	border-radius: 12px;
+	padding: 2px;
+	gap: 3px;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	box-sizing: border-box;
+}
+
+.diag-segmented-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 30px;
+	min-height: 30px;
+	padding: 0 12px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--muted, #64748b);
+	background: transparent;
+	border: 1px solid transparent;
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
+}
+
+.diag-segmented-item:hover {
+	color: var(--ink, #0f172a);
+	background: rgba(0, 0, 0, 0.04);
+}
+
+.diag-segmented-item.active {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line-strong, #cbd5e1);
+	color: var(--teal, #0d9488);
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ─── Standard Tangible Button (.diag-btn) ─────────────────────────────── */
+.diag-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 32px;
+	min-height: 32px;
+	padding: 0 12px;
+	border-radius: 10px;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1;
+	color: var(--ink, #0f172a);
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line-strong, #cbd5e1);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
+}
+
+.diag-btn:hover {
+	background: var(--paper-soft, #f1f5f9);
+	border-color: var(--teal, #0d9488);
+	color: var(--teal-dark, #0f766e);
+	transform: translateY(-1px);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.diag-btn:active {
+	transform: scale(0.98);
+}
+
+/* ─── Primary CTA Button (.diag-btn-teal) ───────────────────────────────── */
+.diag-btn-teal {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 32px;
+	min-height: 32px;
+	padding: 0 14px;
+	border-radius: 10px;
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 1;
+	color: #ffffff !important;
+	background: var(--teal, #0d9488) !important;
+	border: 1px solid var(--teal, #0d9488) !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.35);
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
+}
+
+.diag-btn-teal:hover {
+	background: #0f766e !important;
+	border-color: #0f766e !important;
+	transform: translateY(-1px);
+	box-shadow: 0 3px 6px rgba(13, 148, 136, 0.45);
+}
+
+.diag-btn-teal:active {
+	transform: scale(0.98);
+}
+
+/* ─── Soft Teal Action Button (.diag-btn-teal-soft) ──────────────────────── */
+.diag-btn-teal-soft {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 32px;
+	min-height: 32px;
+	padding: 0 12px;
+	border-radius: 10px;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1;
+	color: var(--teal, #0d9488);
+	background: var(--teal-soft, rgba(13, 148, 136, 0.08));
+	border: 1px solid var(--teal, #0d9488);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
+}
+
+.diag-btn-teal-soft:hover {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	transform: translateY(-1px);
+	box-shadow: 0 2px 4px rgba(13, 148, 136, 0.25);
+}
+
+.diag-btn-teal-soft:active {
+	transform: scale(0.98);
+}
+
+/* ─── Tooth Badge (.diag-badge) ────────────────────────────────────────── */
+.diag-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	min-height: 32px;
+	padding: 0 12px;
+	border-radius: 10px;
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 1;
+	color: var(--teal, #0d9488);
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line-strong, #cbd5e1);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	user-select: none;
+	white-space: nowrap;
+	box-sizing: border-box;
+}
+
+/* ─── Dark Mode & Atmosphere Themes Support ────────────────────────────── */
+.dark .diag-segmented-bar,
+[data-theme="dark"] .diag-segmented-bar,
+[data-theme="night"] .diag-segmented-bar,
+[data-theme="cyber_xray"] .diag-segmented-bar {
+	background: rgba(15, 23, 42, 0.85);
+	border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dark .diag-segmented-item,
+[data-theme="dark"] .diag-segmented-item,
+[data-theme="night"] .diag-segmented-item,
+[data-theme="cyber_xray"] .diag-segmented-item {
+	color: #94a3b8;
+}
+
+.dark .diag-segmented-item:hover,
+[data-theme="dark"] .diag-segmented-item:hover,
+[data-theme="night"] .diag-segmented-item:hover,
+[data-theme="cyber_xray"] .diag-segmented-item:hover {
+	color: #f8fafc;
+	background: rgba(255, 255, 255, 0.08);
+}
+
+.dark .diag-segmented-item.active,
+[data-theme="dark"] .diag-segmented-item.active,
+[data-theme="night"] .diag-segmented-item.active,
+[data-theme="cyber_xray"] .diag-segmented-item.active {
+	background: rgba(30, 41, 59, 0.95);
+	border-color: rgba(255, 255, 255, 0.28);
+	color: #2dd4bf;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.dark .diag-btn,
+[data-theme="dark"] .diag-btn,
+[data-theme="night"] .diag-btn,
+[data-theme="cyber_xray"] .diag-btn {
+	background: rgba(30, 41, 59, 0.85);
+	border: 1px solid rgba(255, 255, 255, 0.22);
+	color: #f1f5f9;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.dark .diag-btn:hover,
+[data-theme="dark"] .diag-btn:hover,
+[data-theme="night"] .diag-btn:hover,
+[data-theme="cyber_xray"] .diag-btn:hover {
+	background: rgba(51, 65, 85, 0.95);
+	border-color: #2dd4bf;
+	color: #ffffff;
+}
+
+.dark .diag-badge,
+[data-theme="dark"] .diag-badge,
+[data-theme="night"] .diag-badge,
+[data-theme="cyber_xray"] .diag-badge {
+	background: rgba(30, 41, 59, 0.85);
+	border: 1px solid rgba(255, 255, 255, 0.22);
+	color: #2dd4bf;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}

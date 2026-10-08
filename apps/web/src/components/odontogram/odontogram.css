@@ -419,10 +419,10 @@
 	font-size: 12px;
 	font-weight: 700;
 	color: var(--odontogram-ink-muted);
-	background-color: var(--odontogram-surface);
+	background-color: var(--paper, #ffffff);
 	padding: 5px 16px;
 	border-radius: 9999px;
-	border: 1px solid var(--odontogram-border-subtle);
+	border: 1px solid var(--line-strong, #cbd5e1);
 }
 
 .tooth-chart-legend-item {

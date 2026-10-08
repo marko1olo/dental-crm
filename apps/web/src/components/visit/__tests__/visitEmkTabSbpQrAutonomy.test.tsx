@@ -18,7 +18,16 @@ const __dirname = path.dirname(__filename);
 
 describe("Wave 24 Worker 3: VisitEmkTab Authentic SBP QR Generator & Zero Diorama", () => {
 	const emkTabPath = path.resolve(__dirname, "../VisitEmkTab.tsx");
-	const sourceCode = fs.readFileSync(emkTabPath, "utf8");
+	const emkTabDir = path.resolve(__dirname, "../emkTab");
+	let loadedEmkSource = fs.readFileSync(emkTabPath, "utf8");
+	if (fs.existsSync(emkTabDir)) {
+		for (const f of fs.readdirSync(emkTabDir)) {
+			if (/\.(tsx|ts)$/.test(f)) {
+				loadedEmkSource += "\n" + fs.readFileSync(path.join(emkTabDir, f), "utf8");
+			}
+		}
+	}
+	const sourceCode = loadedEmkSource;
 
 	it("1. guarantees total elimination of fake 9-rect SVG diorama from VisitEmkTab.tsx", () => {
 		// Verify zero fake corner marker rects from the old diorama

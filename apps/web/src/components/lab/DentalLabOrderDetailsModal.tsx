@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from "react";
-import { X, CheckCircle2, RotateCcw, Printer } from "lucide-react";
+import { X, CheckCircle2, RotateCcw, Printer, Box } from "lucide-react";
 import {
 	type DentalLabWorkflowOrder,
 	LAB_WORKFLOW_STATUSES,
@@ -31,6 +31,7 @@ export interface DentalLabOrderDetailsModalProps {
 	readonly onPrintBlank: (order: DentalLabWorkflowOrder) => void;
 	readonly onAdvanceTechStage: (order: DentalLabWorkflowOrder, targetTechStage?: LabTechnologicalStageId) => void;
 	readonly onOpenWarrantyRework: (order: DentalLabWorkflowOrder) => void;
+	readonly onView3DScan?: (order: DentalLabWorkflowOrder) => void;
 
 	readonly warrantyReworkOrder: DentalLabWorkflowOrder | null;
 	readonly onCloseWarrantyRework: () => void;
@@ -47,6 +48,7 @@ export const DentalLabOrderDetailsModal: React.FC<DentalLabOrderDetailsModalProp
 	onPrintBlank,
 	onAdvanceTechStage,
 	onOpenWarrantyRework,
+	onView3DScan,
 	warrantyReworkOrder,
 	onCloseWarrantyRework,
 	onWarrantyReworkSubmit,
@@ -253,6 +255,19 @@ export const DentalLabOrderDetailsModal: React.FC<DentalLabOrderDetailsModalProp
 								>
 									<RotateCcw size={14} />
 									<span>Рекламация</span>
+								</button>
+							)}
+							{onView3DScan && (
+								<button
+									type="button"
+									className="ztl-btn-secondary"
+									data-testid="ztl-details-view-3d-scan-btn"
+									style={{ color: "var(--teal, #0d9488)", borderColor: "var(--teal-line, #99f6e4)", fontWeight: 700 }}
+									onClick={() => onView3DScan(inspectingOrder)}
+									title="Открыть интерактивный 3D-скан челюсти (STL/PLY/OBJ)"
+								>
+									<Box size={14} />
+									<span>3D-скан (STL/PLY)</span>
 								</button>
 							)}
 							<button

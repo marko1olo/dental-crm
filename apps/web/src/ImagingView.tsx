@@ -1,134 +1,52 @@
+import React, {
+	Suspense,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import {
 	Activity,
-	Bot,
 	Camera,
-	Check,
-	ClipboardList,
-	Contrast,
-	ExternalLink,
 	FileText,
-	FlipHorizontal,
-	Hand,
-	History,
-	Image as ImageIcon,
 	Layers,
 	MoreVertical,
 	Plus,
 	RefreshCw,
-	RotateCcw,
-	RotateCw,
-	Ruler,
 	Sparkles,
 	UploadCloud,
-	X,
-	ZoomIn,
-	ZoomOut,
 } from "lucide-react";
-import type { ViewerRulerMeasurement } from "./components/imaging/ShadowAnalystImageSlider";
-import { MobileChairsideRadiologyViewer } from "./components/radiology/MobileChairsideRadiologyViewer.js";
-import { RadiologyModule } from "./components/radiology/RadiologyModule.js";
+
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { readDenteClinicToken, readDenteStaffToken } from "./lib/safeLocalStorage";
 import { decodeHeicImage } from "./services/imaging/heicDecoder";
 import { logger } from "./utils/logger";
-
-const IMAGING_QUICK_CHIPS = [
-	"Норма (периапикальные ткани б/о, периодонтальная щель равномерная)",
-	"Кариес дентина",
-	"Хронический гранулирующий периодонтит",
-	"Атрофия костной ткани горизонтальная",
-	"Хронический пульпит",
-	"Неполная обтурация корневого канала",
-	"Имплантат стабилен, остеоинтеграция б/о",
-	"Ретенция / Дистопия",
-];
-
-/**
- * Шаблоны описания снимка по типу исследования.
- *
- * БЫЛО: рядом с полем заметки стояла кнопка с роботом и подсказкой
- * «Сгенерировать с помощью ИИ (заглушка)». Её единственным действием было
- * дописать в заметку строку « [AI AnalyzeCTReport]» — то есть мусор в
- * клинической записи. Никакого разбора снимка за ней не стояло: серверный
- * путь /api/ai/recognition-jobs для image_summary тоже лишь оборачивает
- * введённый текст в «Описание снимка: … Требуется подтверждение врачом».
- *
- * СТАЛО: кнопка вставляет заготовку описания под тип снимка. Это работает
- * без сети и без ИИ, экономит врачу набор текста и держит описания
- * однотипными — их можно сравнивать между визитами. Строки заготовки —
- * то, что рентгенолог и так обязан описать.
- */
-const IMAGING_DESCRIPTION_TEMPLATES: Record<string, string[]> = {
-	periapical: [
-		"Коронковая часть:",
-		"Полость зуба:",
-		"Корневые каналы:",
-		"Периапикальные ткани:",
-		"Заключение:",
-	],
-	bitewing: [
-		"Контактные поверхности:",
-		"Уровень костной ткани:",
-		"Наддесневые и поддесневые отложения:",
-		"Заключение:",
-	],
-	opg: [
-		"Зубная формула:",
-		"Уровень костной ткани:",
-		"Гайморовы пазухи:",
-		"Височно-челюстные суставы:",
-		"Ретинированные и непрорезавшиеся зубы:",
-		"Заключение:",
-	],
-	ceph: [
-		"Профиль лица:",
-		"Скелетный класс:",
-		"Углы SNA / SNB / ANB:",
-		"Положение резцов:",
-		"Заключение:",
-	],
-	cbct: [
-		"Область исследования:",
-		"Плотность костной ткани:",
-		"Высота и ширина кости:",
-		"Анатомические структуры (канал, пазуха, дно носа):",
-		"Патологические изменения:",
-		"Заключение:",
-	],
-	photo: [
-		"Область съёмки:",
-		"Состояние мягких тканей:",
-		"Гигиена:",
-		"Заключение:",
-	],
-	other: ["Область:", "Описание:", "Заключение:"],
-};
-
-function imagingDescriptionTemplate(
-	kind: string | null | undefined,
-	toothCode: string | null | undefined,
-	region: string | null | undefined,
-): string {
-	const lines =
-		IMAGING_DESCRIPTION_TEMPLATES[kind ?? "other"] ??
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		IMAGING_DESCRIPTION_TEMPLATES.other!;
-	// Зуб или область подставляем сразу: врачу не нужно их перепечатывать.
-	const header = toothCode
-		? `Зуб: ${toothCode}`
-		: region
-			? `Область: ${region}`
-			: null;
-	const body = header
-		? [header, ...(lines ?? []).filter((line) => !line.startsWith("Область:"))]
-		: (lines ?? []);
-	return body.join("\n");
-}
-
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { lazyWithRetry } from "./lib/lazyWithRetry";
-// Русское склонение счётного слова: «1 находка», «2 находки», «5 находок».
 import { countLabel } from "./AppHelpers";
+import { lazyWithRetry } from "./lib/lazyWithRetry";
+import { showToast } from "./components/GlobalToast";
+import { ShadowAnalystReport } from "./components/imaging/ShadowAnalystReport";
+import { DicomArchiveUploader } from "./components/imaging/DicomArchiveUploader";
+import { MobileChairsideRadiologyViewer } from "./components/radiology/MobileChairsideRadiologyViewer.js";
+import { RadiologyModule } from "./components/radiology/RadiologyModule.js";
+import { CtSelectorModal } from "./components/radiology/CtSelectorModal";
+import { routeOpenCbctPopout } from "./utils/runtimeRouter";
+
+import {
+	ImagingExportModal,
+	ImagingHeader,
+	ImagingMprPanel,
+	ImagingStudyList,
+	ImagingStudyThumbnail as ModularImagingStudyThumbnail,
+	ImagingToolbar,
+	ImagingViewport,
+	imagingStudyHasFile,
+	processCameraPhotoCapture,
+	useImagingPreviewBlob,
+	type AiProposal,
+	type ImagingStudy,
+	type ViewerRulerMeasurement,
+} from "./components/imaging";
 
 // Mandate 8s / Tier 3: Ленивая загрузка тяжелых 3D DICOM / КТ движков для защиты 5400 RPM HDD
 const PanoramicRendererWindow = lazyWithRetry(() =>
@@ -136,162 +54,15 @@ const PanoramicRendererWindow = lazyWithRetry(() =>
 		default: m.PanoramicRendererWindow,
 	})),
 );
-const CbctMprImplantStudioModal = lazyWithRetry(() =>
-	import("./components/radiology/CbctMprImplantStudioModal").then((m) => ({
-		default: m.CbctMprImplantStudioModal,
-	})),
-);
-const DicomArchiveUploader = lazyWithRetry(() =>
-	import("./components/dicom/DicomArchiveUploader").then((m) => ({
-		default: m.DicomArchiveUploader,
-	})),
-);
-const CtPlanningToolsPanel = lazyWithRetry(() =>
-	import("./ctPlanningTools").then((module) => ({
-		default: module.CtPlanningToolsPanel,
-	})),
-);
-import { EmptyState } from "./components/EmptyState";
-import { showToast } from "./components/GlobalToast";
-import { ShadowAnalystImageSlider } from "./components/imaging/ShadowAnalystImageSlider";
-import { ShadowAnalystReport } from "./components/imaging/ShadowAnalystReport";
-import type { MprWindowPreset } from "./imagingUiLabels";
-
-import { type ToothState, useVisitStore } from "./store/visitStore";
-
-/**
- * Есть ли у исследования файл снимка на сервере.
- *
- * ЧТО БЫЛО. «Добавить снимок вручную» создаёт карточку исследования БЕЗ файла:
- * запрос POST /api/imaging/studies уходит без storagePath. Разбор снимка на
- * сервере первым делом проверяет storagePath и без него отвечает 422
- * «У исследования не указан файл снимка» — разбирать нечего. На экране это
- * выглядело как сломанная кнопка: врач добавил снимок, нажал «Разобрать снимок
- * помощником» и получил отказ, а причину ему нигде не назвали — карточка без
- * файла ничем не отличалась от карточки с файлом, потому что вместо снимка обе
- * показывают нарисованную заглушку preview.svg.
- *
- * СТАЛО: отсутствие файла видно ДО нажатия — в ленте снимков и под
- * просмотрщиком, — а кнопка разбора выключена с объяснением. Прикрепить файл к
- * уже созданной карточке программа пока не умеет (в API нет такого маршрута),
- * поэтому подсказка ведёт туда, где файл действительно попадает на сервер, —
- * в импорт снимков.
- */
-// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-function imagingStudyHasFile(study: any): boolean {
-	return (
-		typeof study?.storagePath === "string" &&
-		study.storagePath.trim().length > 0
-	);
-}
-
-/**
- * Векторный SVG-контур радиовизиографического интраорального датчика (RVG Sensor).
- *
- * МАНДАТ 8e / 8k / T.A.R.S.:
- * Если файл снимка отсутствует, ещё загружается или сервер вернул отказ (403/404),
- * вместо дефолтного битого тега <img> с надписью «Рентгеновский снимок» рендерится
- * стилизованный высококонтрастный контур интраорального датчика размера Size 2 (26x36 мм)
- * с координатной эндодонтической сеткой, анатомическим силуэтом корней и живыми клиническими
- * метриками экспозиции (доза, разрешение 25 lp/mm, 16-bit CMOS).
- */
-function RvgSensorVectorVisualizer({
-	study,
-	loading,
-	hasFile,
-	viewerStyle,
-	kindLabels,
-	onAttachFile,
-}: {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	study: any;
-	loading?: boolean;
-	hasFile?: boolean;
-	viewerStyle?: React.CSSProperties;
-	kindLabels?: Record<string, string>;
-	onAttachFile?: () => void;
-}) {
-	const toothCode = study?.toothCode || (study?.region ? null : "36");
-	const toothLabel = toothCode ? `Зуб #${toothCode}` : study?.region || "Интраоральный снимок";
-	const kindName = study
-		? kindLabels?.[study.kind] || study.kind || "Прицельный снимок"
-		: "Прицельный снимок RVG";
-
-	return (
-		<div
-			className="rvg-sensor-visualizer rvg-clean-previewer w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 select-none"
-			style={{
-				...viewerStyle,
-				minHeight: "240px",
-				backgroundColor: "var(--paper, #090d16)",
-				color: "var(--ink, #f8fafc)",
-			}}
-		>
-			<div
-				className="w-full max-w-md p-5 sm:p-6 rounded-xl border border-dashed flex flex-col items-center text-center gap-3 transition-colors shadow-xs"
-				style={{
-					borderColor: "var(--line, #334155)",
-					background: "var(--paper-strong, #0f172a)",
-				}}
-			>
-				<div className="w-12 h-12 rounded-xl flex items-center justify-center bg-teal-500/10 text-teal-500 border border-teal-500/20 shadow-inner">
-					<UploadCloud className="w-6 h-6" />
-				</div>
-				<div className="flex flex-col gap-1">
-					<div className="flex items-center justify-center gap-2">
-						<h3 className="text-sm font-bold text-[var(--ink,#f8fafc)]">{kindName}</h3>
-						{toothCode && (
-							<span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30">
-								{toothLabel}
-							</span>
-						)}
-					</div>
-					<p className="text-xs text-[var(--muted,#94a3b8)]">
-						{hasFile
-							? "Исследование готово к разбору"
-							: "Файл визиографа или DICOM еще не прикреплен к карточке"}
-					</p>
-				</div>
-
-				<div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-[11px] font-mono text-[var(--muted,#94a3b8)]">
-					<span className="px-2 py-0.5 rounded bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)]">
-						Разрешение: 25 lp/mm
-					</span>
-					<span className="px-2 py-0.5 rounded bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)]">
-						65 kV · 0.08 s
-					</span>
-					<span
-						className="px-2 py-0.5 rounded bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)]"
-						title="Лучевая нагрузка в пределах безопасной нормы"
-					>
-						1.2 µSv · Безопасная доза
-					</span>
-				</div>
-
-				{onAttachFile && (
-					<button
-						type="button"
-						className="primary-button mt-1.5 text-xs py-1.5 px-4 inline-flex items-center gap-1.5 font-semibold cursor-pointer shadow-xs"
-						onClick={onAttachFile}
-						title="Прикрепить файл снимка к исследованию"
-					>
-						<UploadCloud size={14} />
-						<span>Загрузить снимок</span>
-					</button>
-				)}
-			</div>
-		</div>
-	);
-}
 
 /**
  * Безопасная миниатюра снимка: при 403 или ошибке загрузки рендерит аккуратный векторный датчик.
+ * Сохраняет фиксированные размеры 48x48px (aspectRatio: 1 / 1) для нулевого CLS.
  */
-function ImagingStudyThumbnail({
+export function ImagingStudyThumbnail({
 	study,
 	previewSrc,
 }: {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	study: any;
 	previewSrc?: string;
 }) {
@@ -335,134 +106,22 @@ export function ImagingView(props: ImagingViewProps) {
 	const appLogic = useAppLogicContext();
 	const auth = appLogic?.auth;
 	const {
-		activeAppointment,
-		activeImagingStudies,
-		activePatient,
-		addImagingViewerNoteAnnotation,
-		applyCtPlanningQuickAction,
-		applyMprClinicalPreset,
-		applyNearestMprClinicalPreset,
-		attachBrowserDirectoryInputRef,
-		browserImagingFileInputAccept,
-		browserImagingScanProgress,
-		browserPickedImagingFolder,
-		canRetryImagingViewerSave,
-		cancelBrowserImagingFolderScan,
-		cbctWorkbenchPlanes,
-		cbctWorkbenchProjections,
-		cbctWorkbenchSeries,
-		clampMprAxisDeg,
-		clampMprSlabMm,
-		clampMprSliceIndex,
-		createCtPlanningArtifact,
-		createImagingStudy,
-		ctPlanningActiveQuickActionId,
-		ctPlanningAnnotationRefs,
-		ctPlanningImplantPlan,
-		defaultImagingViewerState,
-		describeMprClinicalPresetProjectionFallback,
-		dicomLabel,
-		dicomQualityModeLabels,
-		dicomTextureStrategyLabels,
-		dicomViewerToolStateBundle,
-		dicomViewerWorkbenchManifest,
-		formatByteSize,
-		formatShortDate,
-		formatSignedMprStep,
-		formatTime,
-		handleBrowserDirectoryInputChange,
-		handleMprKeyboardNavigation,
-		imagingComparisonCandidates,
-		imagingCreateSavingKind,
-		imagingKindFilter,
-		imagingKindLabels,
-		imagingKindOptions,
-		imagingPreviewSource,
-		imagingSourceLabels,
-		imagingViewerActiveTool,
-		imagingViewerAnnotations,
-		imagingViewerHref,
-		imagingViewerImageStyle,
-		imagingViewerNote,
-		imagingViewerNoteMissingId,
-		imagingViewerNoteReady,
-		imagingViewerRetryMissingId,
-		imagingViewerSaveDetail,
-		imagingViewerSaveState,
-		imagingViewerSaveTitle,
-		imagingViewerSessionReady,
-		imagingViewerState,
-		imagingViewerToolLabels,
-		isBrowserImagingFolderPicking,
-		isOnline,
-		mprActiveProjectionLabel,
-		mprActiveProjectionOrientation,
-		mprAxisAngleBadge,
-		mprAxisBounds,
-		mprAxisDeg,
-		mprAxisDirectionLabel,
-		mprAxisGuidance,
-		mprAxisNudgeDeg,
-		mprAxisPresetDeg,
-		mprAxisRangeValue,
-		mprAxisVisualizerLabel,
-		mprAxisVisualizerStyle,
-		mprClinicalChecklist,
-		mprClinicalNextStep,
-		mprClinicalPresetButtonClass,
-		mprClinicalPresets,
-		mprControlsAutoOpen,
-		mprControlsReady,
-		mprCrosshairEnabled,
-		mprLinkedPlanesEnabled,
-		mprNearestClinicalPreset,
-		mprOperatorSummaryCards,
-		mprProjection,
-		mprProjectionCompass,
-		mprProjectionLabels,
-		mprSafeSliceIndex,
-		mprSeriesRequiredProjectionLabel,
-		mprSlabBadge,
-		mprSlabBounds,
-		mprSlabMm,
-		mprSlabNudgeMm,
-		mprSlabPresetMm,
-		mprSlabRangeValue,
-		mprSliceBadge,
-		mprSliceIndexFromFraction,
-		mprSliceLabel,
-		mprSliceMaxIndex,
-		mprSliceNudgeSteps,
-		mprSlicePresetFractions,
-		mprSliceRangeValue,
-		mprUnavailableProjectionLabel,
-		mprWindowPreset,
-		mprWindowPresetLabels,
-		mprWorkbenchDraftRestored,
-		mprWorkbenchLocalSavedAt,
-		mprWorkbenchSummaryText,
-		pickBrowserImagingFolder,
-		resetMprControls,
-		restoreMprWorkbenchLocalDraft,
-		retryImagingViewerSessionSave,
-		selectCtPlanningImplant,
-		selectedImagingStudy,
-		selectedImagingViewerPlan,
-		setCtPlanningActiveQuickActionId,
-		setCtPlanningImplantPlan,
-		setImagingKindFilter,
-		setImagingViewerActiveTool,
-		setImagingViewerNote,
-		setImagingViewerState,
-		setMprAxisDeg,
-		setMprCrosshairEnabled,
-		setMprLinkedPlanesEnabled,
-		setMprProjection,
-		setMprSlabMm,
-		setMprSliceIndex,
-		setMprWindowPreset,
-		setSelectedImagingStudyId,
-		visibleImagingStudies,
+		activeAppointment, activeImagingStudies, activePatient,
+		attachBrowserDirectoryInputRef, browserImagingFileInputAccept,
+		browserPickedImagingFolder, defaultImagingViewerState,
+		formatShortDate, handleBrowserDirectoryInputChange,
+		imagingKindFilter, imagingKindLabels, imagingKindOptions,
+		imagingPreviewSource, imagingSourceLabels, imagingViewerHref,
+		imagingViewerState, isBrowserImagingFolderPicking,
+		pickBrowserImagingFolder, selectedImagingStudy, selectedImagingViewerPlan,
+		setImagingKindFilter, setSelectedImagingStudyId, visibleImagingStudies,
+		addImagingViewerNoteAnnotation, canRetryImagingViewerSave,
+		imagingViewerAnnotations, imagingViewerNote, imagingViewerNoteMissingId,
+		imagingViewerNoteReady, imagingViewerRetryMissingId, imagingViewerSaveDetail,
+		imagingViewerSaveState, imagingViewerSaveTitle, imagingViewerSessionReady,
+		isOnline, retryImagingViewerSessionSave, setImagingViewerNote,
+		setImagingViewerState, setImagingViewerActiveTool,
+		setCtPlanningActiveQuickActionId, setCtPlanningImplantPlan,
 	} = props;
 
 	const localFilesInputRef = useRef<HTMLInputElement | null>(null);
@@ -479,9 +138,10 @@ export function ImagingView(props: ImagingViewProps) {
 	const [localImageIds, setLocalImageIds] = useState<string[]>([]);
 	const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
 	const [enhancementOn, setEnhancementOn] = useState(false);
-	const [isCbctStudioOpen, setIsCbctStudioOpen] = useState(false);
 	const [isPanoramicWindowOpen, setIsPanoramicWindowOpen] = useState(false);
 	const [isRadiologyModuleOpen, setIsRadiologyModuleOpen] = useState(false);
+	const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+	const [isCtSelectorOpen, setIsCtSelectorOpen] = useState(false);
 	const [isMobileImagingMenuOpen, setIsMobileImagingMenuOpen] = useState(false);
 	const mobileImagingMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -578,7 +238,7 @@ export function ImagingView(props: ImagingViewProps) {
 			setIsDicomwebLoading(false);
 			setDicomwebLoadProgress(null);
 		}
-	}, [selectedImagingStudy, activePatient?.id, authHeaders, showToast]);
+	}, [selectedImagingStudy, activePatient?.id, authHeaders]);
 
 	// Autoload DICOMweb WADO-RS when a CBCT study with PACS linkage is selected and localImageIds is empty
 	useEffect(() => {
@@ -601,240 +261,59 @@ export function ImagingView(props: ImagingViewProps) {
 		if (!file) return;
 
 		if (!activePatient?.id) {
-			showToast(
-				"Выберите пациента перед добавлением снимка с камеры.",
-				"info",
-				6000,
-			);
+			showToast("Выберите пациента перед добавлением снимка с камеры.", "info", 6000);
 			event.target.value = "";
 			return;
 		}
 
 		setIsCapturingCameraPhoto(true);
-		let localObjectUrl: string | null = null;
 		try {
-			// 1. Сжатие в WebP
-			let compressedBlob: Blob | null = null;
-			try {
-				const decoded = await decodeHeicImage(file, {
-					targetFormat: "webp",
-					quality: 0.88,
-					maxDimension: 1920,
-					preserveColorProfile: true,
-					applyExifRotation: true,
-				});
-				const res = await fetch(decoded.dataUrl);
-				if (!res.ok) throw new Error("HEIC_DECODE_FETCH_FAILED");
-				compressedBlob = await res.blob();
-			} catch {
-				const img = new Image();
-				localObjectUrl = URL.createObjectURL(file);
-				await new Promise<void>((resolve, reject) => {
-					img.onload = () => resolve();
-					img.onerror = () => reject(new Error("FILE_NOT_IMAGE"));
-					img.src = localObjectUrl!;
-				});
-
-				const canvas = document.createElement("canvas");
-				let width = img.width;
-				let height = img.height;
-				const MAX_SIZE = 1920;
-				if (width > height && width > MAX_SIZE) {
-					height = Math.round((height * MAX_SIZE) / width);
-					width = MAX_SIZE;
-				} else if (height > MAX_SIZE) {
-					width = Math.round((width * MAX_SIZE) / height);
-					height = MAX_SIZE;
-				}
-				canvas.width = width;
-				canvas.height = height;
-				const ctx = canvas.getContext("2d");
-				if (ctx) {
-					ctx.drawImage(img, 0, 0, width, height);
-					compressedBlob = await new Promise<Blob | null>((resolve) =>
-						canvas.toBlob(resolve, "image/webp", 0.85),
-					);
-				}
-			}
-
-			const uploadBlob = compressedBlob || file;
-			const clinicToken = readDenteClinicToken() || null;
-
-			// 2. Отправка вложения к пациенту
-			const formData = new FormData();
-			formData.append("file", uploadBlob, "chairside_camera.webp");
-			formData.append("entityType", "patient");
-			formData.append("entityId", activePatient.id);
-
-			let storagePath: string | undefined;
-			try {
-				const uploadRes = await fetch(
-					`/api/files/patients/${encodeURIComponent(activePatient.id)}/attachments`,
-					{
-						method: "POST",
-						headers: {
-							...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
-						},
-						body: formData,
-					},
-				);
-
-				if (uploadRes.ok) {
-					const uploadData = (await uploadRes.json()) as {
-						attachment?: { storagePath?: string };
-						file?: { url?: string };
-					};
-					storagePath =
-						uploadData.attachment?.storagePath || uploadData.file?.url;
-				}
-			} catch {
-				// Офлайн-режим
-			}
-
-			if (!storagePath) {
-				// Мандат 8e: Офлайн-сохранение снимка при обрыве сети
-				try {
-					const { saveOfflineDraft } = await import("./services/offline/index.js");
-					const reader = new FileReader();
-					reader.onloadend = () => {
-						const base64data = reader.result as string;
-						if (base64data) {
-							void saveOfflineDraft(
-								`camera_study_${activePatient.id}_${Date.now()}`,
-								"IMAGING_STUDY_DRAFT",
-								activeAppointment?.id || activePatient.id,
-								{
-									patientId: activePatient.id,
-									visitId: activeAppointment?.id || null,
-									dataUrl: base64data,
-									capturedAt: new Date().toISOString(),
-								},
-							);
-						}
-					};
-					reader.readAsDataURL(uploadBlob);
-					showToast("Снимок сохранён локально (офлайн-режим)", "info", 6000);
-				} catch {
-					// non-fatal
-				}
-			}
-
-			// 3. Создание карточки исследования
-			const studyRes = await fetch("/api/imaging/studies", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
+			await processCameraPhotoCapture({
+				file,
+				activePatientId: activePatient.id,
+				activeAppointmentId: activeAppointment?.id,
+				onStudyCreated: (id) => {
+					if (setSelectedImagingStudyId) setSelectedImagingStudyId(id);
+					if (setImagingKindFilter) setImagingKindFilter("photo");
 				},
-				body: JSON.stringify({
-					patientId: activePatient.id,
-					visitId: activeAppointment?.id || undefined,
-					kind: "photo",
-					title: "Снимок с камеры (кресло)",
-					region: "полость рта / негатоскоп",
-					sourceKind: "camera_macro",
-					sourceName: "Камера устройства",
-					storagePath: storagePath || undefined,
-					capturedAt: new Date().toISOString(),
-				}),
+				onDashboardRefresh: () => {
+					if (appLogic?.loadDashboard) void appLogic.loadDashboard();
+				},
 			});
-
-			if (studyRes.ok) {
-				const created = (await studyRes.json()) as { id?: string };
-				showToast("Снимок с камеры успешно добавлен в карту", "success", 5000);
-				if (created?.id && setSelectedImagingStudyId) {
-					setSelectedImagingStudyId(created.id);
-				}
-				if (setImagingKindFilter) {
-					setImagingKindFilter("photo");
-				}
-				if (appLogic?.loadDashboard) {
-					void appLogic.loadDashboard();
-				}
-			} else {
-				showToast("Снимок сохранён во вложениях пациента", "info", 6000);
-			}
-		} catch (err) {
-			logger.error("[imaging camera capture] error", err);
-			showToast("Ошибка при сохранении снимка с камеры", "error", 8000);
 		} finally {
-			if (localObjectUrl) URL.revokeObjectURL(localObjectUrl);
 			setIsCapturingCameraPhoto(false);
 			event.target.value = "";
 		}
 	};
 
 	useEffect(() => {
-		const handleOutside = (e: MouseEvent) => {
-			if (
-				mobileImagingMenuRef.current &&
-				!mobileImagingMenuRef.current.contains(e.target as Node)
-			) {
-				setIsMobileImagingMenuOpen(false);
-			}
-		};
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape") {
-				setIsMobileImagingMenuOpen(false);
-			}
-		};
-		if (isMobileImagingMenuOpen) {
-			document.addEventListener("mousedown", handleOutside);
-			document.addEventListener("keydown", handleKeyDown);
-		}
-		return () => {
-			document.removeEventListener("mousedown", handleOutside);
-			document.removeEventListener("keydown", handleKeyDown);
-		};
-	}, [isMobileImagingMenuOpen]);
-
-	useEffect(() => {
 		const handleOpen = (e: Event) => {
 			const detail = (e as CustomEvent<{ modalId: string }>).detail;
 			if (detail?.modalId === "cbct_mpr_workspace" || detail?.modalId === "cbct_implant_studio") {
-				setIsCbctStudioOpen(true);
+				routeOpenCbctPopout({
+					patientId: activePatient?.id,
+					patientName: activePatient?.name ?? activePatient?.fullName,
+					studyId: selectedImagingStudy?.id,
+					mode: "mpr",
+				});
+				showToast("3D КЛКТ Студия запущена на втором мониторе", "info");
 			} else if (detail?.modalId === "panoramic_recon_window") {
 				setIsPanoramicWindowOpen(true);
 			}
 		};
 		window.addEventListener("dente-open-backoffice-modal", handleOpen);
 		return () => window.removeEventListener("dente-open-backoffice-modal", handleOpen);
-	}, []);
-	/*
-	 * Разбор ИИ держится в состоянии этого экрана, а не дописывается в объект
-	 * исследования.
-	 *
-	 * ЧТО БЫЛО. `selectedImagingStudy.aiSummary = …` и `.aiToothUpdates = …` —
-	 * прямая запись в объект, пришедший из общего состояния приложения, а затем
-	 * `forceUpdate(n => n + 1)`, чтобы React заметил. Ради этого и существовал
-	 * счётчик-пустышка. Так делать нельзя по двум причинам:
-	 *   правка не видна React, поэтому любой другой компонент, читающий тот же
-	 *     объект (лента миниатюр ниже читает study.aiSummary), показывает старое,
-	 *     пока экран случайно не перерисуется;
-	 *   объект принадлежит дашборду, и следующая его загрузка молча затирает
-	 *     запись — врач видит, как заключение исчезает без причины.
-	 *
-	 * Ключ по идентификатору исследования: врач переключает снимки, и разбор
-	 * одного не должен показываться под другим.
-	 */
+	}, [activePatient, selectedImagingStudy]);
+
 	const [analysisByStudy, setAnalysisByStudy] = useState<
 		Record<string, { summary: string; toothUpdates: unknown[] }>
 	>({});
 
-	// Врачебный контроль предложений ИИ (защита от несанкционированной перезаписи зубной карты)
-	const [pendingAiProposal, setPendingAiProposal] = useState<{
-		studyId: string;
-		detectedCodes: string[];
-		detectedToothStates: Record<string, ToothState>;
-		aiDiagnoses: Record<string, string>;
-	} | null>(null);
-
-	// Калиброванная линейка и панорамирование снимка
+	const [pendingAiProposal, setPendingAiProposal] = useState<AiProposal | null>(null);
 	const [isRulerActive, setIsRulerActive] = useState(false);
 	const [isPanActive, setIsPanActive] = useState(false);
 	const [rulerMeasurements, setRulerMeasurements] = useState<ViewerRulerMeasurement[]>([]);
 
-	// Физическая калибровка пикселей для измерений (мм/пикс) в зависимости от модальности снимка
 	const currentPixelSpacingMm = useMemo(() => {
 		const kind = selectedImagingStudy?.kind;
 		if (kind === "rvg" || kind === "periapical" || kind === "bitewing") return 0.04;
@@ -843,7 +322,6 @@ export function ImagingView(props: ImagingViewProps) {
 		return 0.04;
 	}, [selectedImagingStudy?.kind]);
 
-	// Реальный CSS-трансформ и фильтры на основе текущего состояния просмотрщика
 	const computedViewerImageStyle = useMemo<React.CSSProperties>(() => {
 		if (props.imagingViewerImageStyle) return props.imagingViewerImageStyle;
 		const s = imagingViewerState || defaultImagingViewerState;
@@ -879,93 +357,16 @@ export function ImagingView(props: ImagingViewProps) {
 		};
 	}, [props.imagingViewerImageStyle, imagingViewerState, defaultImagingViewerState, isPanActive]);
 
-	// Аутентифицированная загрузка превью снимка через blob URL для устранения 403 Forbidden в <img>
-	const [authedPreviewBlobUrl, setAuthedPreviewBlobUrl] = useState<string | null>(null);
-	const [isPreviewLoading, setIsPreviewLoading] = useState(false);
-	const [previewLoadError, setPreviewLoadError] = useState(false);
+	const {
+		effectivePreviewUrl,
+		isPreviewLoading,
+		previewLoadError,
+	} = useImagingPreviewBlob({
+		selectedImagingStudy,
+		imagingPreviewSource,
+		auth,
+	});
 
-	useEffect(() => {
-		let isCancelled = false;
-		let objectUrlToRevoke: string | null = null;
-
-		if (!selectedImagingStudy) {
-			setAuthedPreviewBlobUrl(null);
-			setIsPreviewLoading(false);
-			setPreviewLoadError(false);
-			return;
-		}
-
-		// Если это уже blob: или data:, используем напрямую без повторного сетевого запроса
-		const rawPreviewUrl = imagingPreviewSource
-			? imagingPreviewSource(selectedImagingStudy)
-			: selectedImagingStudy.previewUrl;
-		if (
-			typeof rawPreviewUrl === "string" &&
-			(rawPreviewUrl.startsWith("blob:") || rawPreviewUrl.startsWith("data:"))
-		) {
-			setAuthedPreviewBlobUrl(rawPreviewUrl);
-			setIsPreviewLoading(false);
-			setPreviewLoadError(false);
-			return;
-		}
-
-		// Если у исследования нет файла, не дергаем сервер вхолостую — показываем векторный датчик
-		if (!imagingStudyHasFile(selectedImagingStudy)) {
-			setAuthedPreviewBlobUrl(null);
-			setIsPreviewLoading(false);
-			setPreviewLoadError(false);
-			return;
-		}
-
-		const previewEndpoint = `/api/imaging/studies/${selectedImagingStudy.id}/preview.svg`;
-		const headers: Record<string, string> =
-			auth && typeof auth.denteClinicalReadHeaders === "function"
-				? auth.denteClinicalReadHeaders()
-				: {};
-
-		setIsPreviewLoading(true);
-		setPreviewLoadError(false);
-
-		fetch(previewEndpoint, {
-			method: "GET",
-			headers,
-		})
-			.then(async (res) => {
-				if (!res.ok) {
-					throw new Error(`HTTP ${res.status}`);
-				}
-				return res.blob();
-			})
-			.then((blob) => {
-				if (isCancelled) return;
-				const url = URL.createObjectURL(blob);
-				objectUrlToRevoke = url;
-				setAuthedPreviewBlobUrl(url);
-				setIsPreviewLoading(false);
-				setPreviewLoadError(false);
-			})
-			.catch(() => {
-				if (isCancelled) return;
-				setAuthedPreviewBlobUrl(null);
-				setIsPreviewLoading(false);
-				setPreviewLoadError(true);
-			});
-
-		return () => {
-			isCancelled = true;
-			if (objectUrlToRevoke) {
-				URL.revokeObjectURL(objectUrlToRevoke);
-			}
-		};
-	}, [selectedImagingStudy?.id, selectedImagingStudy?.storagePath, auth, imagingPreviewSource]);
-
-	const effectivePreviewUrl = authedPreviewBlobUrl;
-
-	/*
-	 * Заключение для показа: сначала то, что разобрали в этом сеансе, иначе то,
-	 * что пришло с сервера. Сервер сохраняет заключение при разборе, поэтому после
-	 * перезагрузки страницы оно приходит в самом исследовании.
-	 */
 	const analysisForSelected = selectedImagingStudy
 		? analysisByStudy[selectedImagingStudy.id]
 		: undefined;
@@ -977,48 +378,10 @@ export function ImagingView(props: ImagingViewProps) {
 		analysisForSelected?.toothUpdates ??
 		(selectedImagingStudy?.aiToothUpdates as unknown[] | undefined);
 
-	/** Состояние зуба по описанию, которое вернул разбор. */
-	const toothStateFromAi = (rawState: unknown): ToothState => {
-		const state = typeof rawState === "string" ? rawState.toLowerCase() : "";
-		if (
-			state.includes("caries") ||
-			state.includes("pulpitis") ||
-			state.includes("periodontitis")
-		)
-			return "treatment";
-		if (state.includes("missing")) return "missing";
-		if (
-			state.includes("implant") ||
-			state.includes("restoration") ||
-			state.includes("crown")
-		)
-			return "done";
-		// Незнакомое описание — «наблюдать»: это ближе всего к «машина что-то нашла».
-		return "watch";
-	};
-
-	/*
-	 * Файл выбранного снимка. Без него разбор невозможен, и это надо сказать
-	 * врачу до нажатия кнопки, а не показывать отказ сервера постфактум.
-	 */
 	const selectedStudyHasFile = imagingStudyHasFile(selectedImagingStudy);
-
-	const handleCompareCandidateClick = (study: any) => {
-		if (
-			imagingKindFilter !== "all" &&
-			imagingKindFilter !== study.kind
-		) {
-			setImagingKindFilter("all");
-		}
-		setSelectedImagingStudyId(study.id);
-	};
 
 	const handleAnalyzeAI = async () => {
 		if (!selectedImagingStudy) return;
-		/*
-		 * Запрос к серверу без файла заведомо вернёт 422. Не тратим его и сразу
-		 * называем причину: раньше врач видел только отказ без объяснения.
-		 */
 		if (!selectedStudyHasFile) {
 			showToast(
 				"Разбирать нечего: к этой карточке не загружен файл снимка. Добавьте снимок через импорт снимков.",
@@ -1038,19 +401,8 @@ export function ImagingView(props: ImagingViewProps) {
 				method: "POST",
 				headers,
 			});
-			/*
-			 * Тело читается строкой и разбирается после проверки ответа.
-			 *
-			 * Было `await res.json()` ДО проверки res.ok: при ответе прокси страницей
-			 * или при пустом теле разбор бросал исключение, и врач получал
-			 * «Сбой сети: Unexpected token '<'» — английский текст из движка вместо
-			 * объяснения. Теперь непонятное тело — это отдельный человеческий отказ.
-			 */
 			const rawBody = await res.text();
-			let payload: {
-				analysisResult?: { summary?: unknown; toothUpdates?: unknown };
-				message?: unknown;
-			} | null = null;
+			let payload: any = null;
 			try {
 				payload = rawBody.trim() ? JSON.parse(rawBody) : null;
 			} catch {
@@ -1058,89 +410,37 @@ export function ImagingView(props: ImagingViewProps) {
 			}
 
 			if (!res.ok) {
-				const serverMessage =
-					typeof payload?.message === "string" ? payload.message : "";
+				const serverMessage = typeof payload?.message === "string" ? payload.message : "";
 				showToast(
-					serverMessage ||
-						"Разбор снимка не выполнен. Проверьте, что файл снимка загружен, и попробуйте снова.",
+					serverMessage || "Разбор снимка не выполнен. Проверьте, что файл снимка загружен.",
 					"error",
 				);
 				return;
 			}
 			if (!payload?.analysisResult) {
-				logger.error(
-					`[imaging analyze] ответ не разобран: ${rawBody.slice(0, 300)}`,
-				);
-				showToast(
-					"Ответ сервера не удалось прочитать. Повторите разбор снимка.",
-					"error",
-				);
+				showToast("Ответ сервера не удалось прочитать. Повторите разбор снимка.", "error");
 				return;
 			}
 
-			const summary =
-				typeof payload.analysisResult.summary === "string"
-					? payload.analysisResult.summary
-					: "";
-			const toothUpdates = Array.isArray(payload.analysisResult.toothUpdates)
-				? payload.analysisResult.toothUpdates
-				: [];
+			const summary = typeof payload.analysisResult.summary === "string" ? payload.analysisResult.summary : "";
+			const toothUpdates = Array.isArray(payload.analysisResult.toothUpdates) ? payload.analysisResult.toothUpdates : [];
 			setAnalysisByStudy((current) => ({
 				...current,
 				[studyId]: { summary, toothUpdates },
 			}));
 
-			if ((toothUpdates ?? []).length > 0) {
-				const detectedCodes: string[] = [];
-				const detectedToothStates: Record<string, ToothState> = {};
-				const aiDiagnoses: Record<string, string> = {};
-
-				for (const raw of toothUpdates) {
-					const update = (raw ?? {}) as Record<string, unknown>;
-					// Находка без номера зуба в формулу не попадает: непонятно, куда её ставить.
-					const code = typeof update.code === "string" ? update.code : "";
-					if (!code) continue;
-					detectedCodes.push(code);
-					aiDiagnoses[code] =
-						typeof update.diagnosisOrFinding === "string"
-							? update.diagnosisOrFinding
-							: "находка без описания";
-					detectedToothStates[code] = toothStateFromAi(update.state);
-				}
-				if ((detectedCodes ?? []).length > 0) {
-					// ВРАЧЕБНЫЙ КОНТРОЛЬ: Запрет автоматической перезаписи зубной формулы роботом!
-					// Сохраняем предложение ИИ для явного подтверждения врачом.
-					setPendingAiProposal({
-						studyId,
-						detectedCodes,
-						detectedToothStates,
-						aiDiagnoses,
-					});
-				}
-			}
-
 			setEnhancementOn(true);
-			const applied = (toothUpdates ?? []).filter(
-				(raw) =>
-					typeof (raw as Record<string, unknown>)?.code === "string" &&
-					(raw as Record<string, unknown>).code,
-			).length;
-			showToast(
-				applied > 0
-					? `Разбор снимка готов: обнаружено ${countLabel(applied, "находка", "находки", "находок")}. Подтвердите внесение в формулу.`
-					: "Разбор снимка готов: находок по зубам нет",
-				"success",
-			);
+			showToast("Разбор снимка ShadowAnalyst завершён", "success");
 		} catch (error) {
-			logger.error("[imaging analyze] запрос не выполнен", error);
-			showToast(
-				"Сервер не ответил на разбор снимка. Проверьте связь и повторите.",
-				"error",
-			);
+			logger.error("[imaging analyze] error", error);
+			showToast("Сервер не ответил на разбор снимка. Проверьте связь.", "error");
 		} finally {
 			setIsAnalyzingAI(false);
 		}
 	};
+
+	const isCbctActive =
+		localImageIds?.length > 0 || selectedImagingStudy?.kind === "cbct";
 
 	return (
 		<section
@@ -1148,16 +448,14 @@ export function ImagingView(props: ImagingViewProps) {
 			id="imaging"
 			aria-label="Снимки пациента"
 		>
-			{/* Shared Hidden File & Camera Inputs for both Mobile and Desktop */}
+			{/* Shared Hidden Inputs */}
 			<input
 				ref={attachBrowserDirectoryInputRef}
 				data-testid="imaging-browser-local-folder-input"
 				type="file"
 				multiple
 				style={{ display: "none" }}
-				onChange={(event) =>
-					void handleBrowserDirectoryInputChange(event.target.files)
-				}
+				onChange={(event) => void handleBrowserDirectoryInputChange(event.target.files)}
 			/>
 			<input
 				ref={browserImagingFilesInputRef}
@@ -1168,9 +466,7 @@ export function ImagingView(props: ImagingViewProps) {
 				accept={browserImagingFileInputAccept}
 				onChange={(event) => {
 					const input = event.currentTarget;
-					void Promise.resolve(
-						handleBrowserDirectoryInputChange(input.files),
-					).finally(() => {
+					void Promise.resolve(handleBrowserDirectoryInputChange(input.files)).finally(() => {
 						input.value = "";
 					});
 				}}
@@ -1185,18 +481,14 @@ export function ImagingView(props: ImagingViewProps) {
 				onChange={handleCameraPhotoCapture}
 			/>
 
-			{/* ═══════════════════════════════════════════════════════════════════
-			    1. MOBILE CHAIRSIDE RADIOLOGY VIEWER (<768px, Apple HIG)
-			    ═══════════════════════════════════════════════════════════════════ */}
+			{/* 1. MOBILE CHAIRSIDE RADIOLOGY VIEWER (<768px, Apple HIG) */}
 			<div className="block md:hidden w-full h-full min-h-[500px]">
 				<MobileChairsideRadiologyViewer
 					selectedImagingStudy={selectedImagingStudy}
 					activeImagingStudies={activeImagingStudies ?? []}
 					activePatient={activePatient}
 					onSelectStudy={(studyId) => {
-						if (setSelectedImagingStudyId) {
-							setSelectedImagingStudyId(studyId);
-						}
+						if (setSelectedImagingStudyId) setSelectedImagingStudyId(studyId);
 					}}
 					effectivePreviewUrl={effectivePreviewUrl}
 					isPreviewLoading={isPreviewLoading}
@@ -1213,483 +505,59 @@ export function ImagingView(props: ImagingViewProps) {
 				/>
 			</div>
 
-			{/* ═══════════════════════════════════════════════════════════════════
-			    2. DESKTOP WORKSPACE (>=768px, Dense Clinical Cockpit 32–36px)
-			    ═══════════════════════════════════════════════════════════════════ */}
+			{/* 2. DESKTOP WORKSPACE (>=768px, Dense Clinical Cockpit 32–36px) */}
 			<div className="hidden md:flex md:flex-col gap-3.5 w-full">
-				<div className="imaging-copy flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2 select-none">
-					<div className="min-w-0 flex-1">
-						<p className="eyebrow text-xs text-[var(--muted)] m-0">Снимки пациента</p>
-						<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] m-0 truncate" title="Прицельные, ОПТГ, ТРГ, КТ и фото в одной ленте">
-							<span className="sm:hidden">Снимки и КТ</span>
-							<span className="hidden sm:inline">Прицельные, ОПТГ, ТРГ, КТ и фото</span>
-						</h2>
-					</div>
-					<div className="imaging-actions flex items-center gap-1.5 flex-nowrap shrink-0 overflow-x-auto scrollbar-none py-0.5">
-					<input
-						ref={attachBrowserDirectoryInputRef}
-						data-testid="imaging-browser-local-folder-input"
-						type="file"
-						multiple
-						style={{ display: "none" }}
-						onChange={(event) =>
-							void handleBrowserDirectoryInputChange(event.target.files)
-						}
-					/>
-					<input
-						ref={browserImagingFilesInputRef}
-						data-testid="imaging-browser-local-files-input"
-						type="file"
-						multiple
-						style={{ display: "none" }}
-						accept={browserImagingFileInputAccept}
-						onChange={(event) => {
-							const input = event.currentTarget;
-							void Promise.resolve(
-								handleBrowserDirectoryInputChange(input.files),
-							).finally(() => {
-								input.value = "";
-							});
-						}}
-					/>
-					{/* Primary actions — always visible on both Mobile & Desktop (32-36px) */}
+				<ImagingHeader
+					activePatient={activePatient}
+					activeAppointment={activeAppointment}
+					activeImagingStudies={activeImagingStudies}
+					selectedImagingViewerPlan={selectedImagingViewerPlan}
+					isBrowserImagingFolderPicking={isBrowserImagingFolderPicking}
+					isCapturingCameraPhoto={isCapturingCameraPhoto}
+					onPickFolder={() => void pickBrowserImagingFolder()}
+					onPickFiles={pickBrowserImagingFiles}
+					onCaptureCamera={() => cameraCaptureInputRef.current?.click()}
+					onOpenCbctStudio={() => setIsCbctStudioOpen(true)}
+					onOpenPanoramic={() => setIsPanoramicWindowOpen(true)}
+					onOpenRadiologyModule={() => setIsRadiologyModuleOpen(true)}
+					onOpenCtSelector={() => setIsCtSelectorOpen(true)}
+				/>
+
+				{/* Kind Filter */}
+				<div className="imaging-kind-filter" role="tablist" aria-label="Фильтр типа снимка">
 					<button
-						className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 sm:px-3 text-xs font-bold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5"
-						type="button"
-						data-testid="imaging-pick-dicom-folder"
-						onClick={() => void pickBrowserImagingFolder()}
-						disabled={isBrowserImagingFolderPicking}
-						title="Выбрать папку DICOM/КТ или папку со снимками"
-					>
-						<UploadCloud aria-hidden="true" size={14} className="shrink-0" />{" "}
-						<span>{isBrowserImagingFolderPicking ? "Сканирую" : "Папка DICOM"}</span>
-					</button>
-					<button
-						className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 sm:px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5"
-						type="button"
-						data-testid="imaging-pick-dicom-files"
-						onClick={pickBrowserImagingFiles}
-						disabled={isBrowserImagingFolderPicking}
-						title="Выбрать отдельные DICOM, RVG, JPG/PNG/TIFF, ZIP/RAR/7z или 3D-файлы"
-					>
-						<FileText aria-hidden="true" size={14} className="shrink-0" />{" "}
-						<span>Файлы</span>
-					</button>
-					<input
-						ref={cameraCaptureInputRef}
-						data-testid="imaging-camera-capture-input"
-						type="file"
-						accept="image/*"
-						capture="environment"
-						style={{ display: "none" }}
-						onChange={handleCameraPhotoCapture}
-					/>
-					<button
-						className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 sm:px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5"
-						type="button"
-						data-testid="imaging-camera-capture-btn"
-						onClick={() => cameraCaptureInputRef.current?.click()}
-						disabled={isCapturingCameraPhoto || isBrowserImagingFolderPicking}
-						title="Сделать снимок с камеры смартфона/планшета (негатоскоп, фото полости рта)"
-					>
-						<Camera aria-hidden="true" size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />{" "}
-						<span>{isCapturingCameraPhoto ? "Загрузка..." : "Снимок с камеры"}</span>
-					</button>
-
-					{/* Desktop Secondary Actions (3D MPR & ОПТГ) — strictly 1 row (32-36px), hidden on mobile where they live in '...' menu */}
-					<button
-						className="secondary-button !hidden md:!inline-flex items-center gap-1 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 text-xs font-medium shrink-0 whitespace-nowrap"
-						type="button"
-						data-testid="imaging-open-3d-mpr"
-						onClick={() => setIsCbctStudioOpen(true)}
-						title="Romexis 3D КЛКТ Студия: панорама, срезы, импланты, нерв"
-					>
-						<Activity aria-hidden="true" className="w-3.5 h-3.5 text-cyan-400 shrink-0" />{" "}
-						<span>КЛКТ Студия 3D</span>
-					</button>
-					<button
-						className="secondary-button !hidden md:!inline-flex items-center gap-1 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 text-xs font-medium shrink-0 whitespace-nowrap"
-						type="button"
-						data-testid="imaging-open-panoramic"
-						onClick={() => setIsPanoramicWindowOpen(true)}
-						title="Открыть панорамную реконструкцию (ОПТГ)"
-					>
-						<Sparkles aria-hidden="true" className="w-3.5 h-3.5 text-amber-400 shrink-0" />{" "}
-						<span>ОПТГ</span>
-					</button>
-					<button
-						className="secondary-button !hidden md:!inline-flex items-center gap-1 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 text-xs font-medium shrink-0 whitespace-nowrap"
-						type="button"
-						data-testid="imaging-open-radiology-module"
-						onClick={() => setIsRadiologyModuleOpen(true)}
-						title="Рентген-кабинет: направления, архив исследований, лучевая нагрузка"
-					>
-						<Layers aria-hidden="true" className="w-3.5 h-3.5 text-teal-500 shrink-0" />{" "}
-						<span>Рентген-кабинет</span>
-					</button>
-
-					{isBrowserImagingFolderPicking && browserImagingScanProgress ? (
-						<button
-							className="secondary-button browser-scan-stop-button h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 text-xs font-semibold shrink-0 whitespace-nowrap"
-							type="button"
-							data-testid="imaging-cancel-local-imaging-scan"
-							onClick={cancelBrowserImagingFolderScan}
-						>
-							Остановить
-						</button>
-					) : null}
-
-					{/* Desktop Dropdown: "+ Вручную ▼" (compact 32-36px, fits in single desktop row) */}
-					<details
-						className="imaging-add-dropdown hidden sm:inline-block relative shrink-0"
-						style={{ position: "relative" }}
-					>
-						<summary
-							className="secondary-button h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 text-xs font-medium inline-flex items-center gap-1 cursor-pointer select-none list-none shrink-0"
-						>
-							<Plus aria-hidden="true" size={13} className="shrink-0" />
-							<span>Вручную</span>
-							<span style={{ fontSize: "0.65rem", marginLeft: "2px" }}>▼</span>
-						</summary>
-						<div
-							style={{
-								position: "absolute",
-								right: 0,
-								top: "100%",
-								marginTop: "4px",
-								background: "var(--paper)",
-								border: "1px solid var(--line)",
-								borderRadius: "8px",
-								boxShadow:
-									"0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)",
-								zIndex: 9999,
-								padding: "6px",
-								display: "flex",
-								flexDirection: "column",
-								gap: "4px",
-								minWidth: "150px",
-							}}
-						>
-							<button
-								className="secondary-button text-xs py-1 px-2 text-left justify-start border-0 bg-transparent hover:bg-[var(--paper-soft)] rounded"
-								type="button"
-								onClick={() => createImagingStudy("periapical")}
-								disabled={Boolean(imagingCreateSavingKind)}
-							>
-								Прицельный {imagingCreateSavingKind === "periapical" ? "(создаю)" : ""}
-							</button>
-							<button
-								className="secondary-button text-xs py-1 px-2 text-left justify-start border-0 bg-transparent hover:bg-[var(--paper-soft)] rounded"
-								type="button"
-								onClick={() => createImagingStudy("opg")}
-								disabled={Boolean(imagingCreateSavingKind)}
-							>
-								ОПТГ {imagingCreateSavingKind === "opg" ? "(создаю)" : ""}
-							</button>
-							<button
-								className="secondary-button text-xs py-1 px-2 text-left justify-start border-0 bg-transparent hover:bg-[var(--paper-soft)] rounded"
-								type="button"
-								onClick={() => createImagingStudy("ceph")}
-								disabled={Boolean(imagingCreateSavingKind)}
-							>
-								ТРГ {imagingCreateSavingKind === "ceph" ? "(создаю)" : ""}
-							</button>
-							<button
-								className="secondary-button text-xs py-1 px-2 text-left justify-start border-0 bg-transparent hover:bg-[var(--paper-soft)] rounded"
-								type="button"
-								onClick={() => createImagingStudy("cbct")}
-								disabled={Boolean(imagingCreateSavingKind)}
-							>
-								КТ {imagingCreateSavingKind === "cbct" ? "(создаю)" : ""}
-							</button>
-						</div>
-					</details>
-
-					{/* Mobile "..." Popover for secondary actions (3D MPR, ОПТГ, Добавить вручную) */}
-					<div className="relative shrink-0 md:hidden" ref={mobileImagingMenuRef}>
-						<button
-							className="secondary-button h-8 min-h-[32px] w-8 min-w-[32px] p-0 inline-flex items-center justify-center rounded-lg"
-							type="button"
-							onClick={() => setIsMobileImagingMenuOpen((prev) => !prev)}
-							aria-expanded={isMobileImagingMenuOpen}
-							aria-label="Вторичные действия со снимками"
-							title="Дополнительно (3D MPR, ОПТГ, Добавить вручную)"
-						>
-							<MoreVertical size={16} className="text-[var(--muted)]" />
-						</button>
-						{isMobileImagingMenuOpen && (
-							<div
-								className="absolute right-0 top-full mt-1.5 w-52 p-2 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl z-50 flex flex-col gap-1 text-left animate-in fade-in zoom-in-95"
-								role="menu"
-							>
-								<button
-									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start font-medium border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
-									type="button"
-									onClick={() => {
-										setIsMobileImagingMenuOpen(false);
-										cameraCaptureInputRef.current?.click();
-									}}
-								>
-									<Camera size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-									<span>Снимок с камеры</span>
-								</button>
-								<button
-									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start font-medium border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
-									type="button"
-									data-testid="imaging-mobile-open-cbct-studio"
-									onClick={() => {
-										setIsMobileImagingMenuOpen(false);
-										setIsCbctStudioOpen(true);
-									}}
-								>
-									<Activity size={14} className="text-cyan-400 shrink-0" />
-									<span>КЛКТ Студия 3D</span>
-								</button>
-								<button
-									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start font-medium border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
-									type="button"
-									onClick={() => {
-										setIsMobileImagingMenuOpen(false);
-										setIsPanoramicWindowOpen(true);
-									}}
-								>
-									<Sparkles size={14} className="text-amber-400 shrink-0" />
-									<span>ОПТГ панорама</span>
-								</button>
-								<button
-									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start font-medium border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
-									type="button"
-									data-testid="imaging-mobile-open-radiology-module"
-									onClick={() => {
-										setIsMobileImagingMenuOpen(false);
-										setIsRadiologyModuleOpen(true);
-									}}
-								>
-									<Layers size={14} className="text-teal-500 shrink-0" />
-									<span>Рентген-кабинет</span>
-								</button>
-								<div className="border-t border-[var(--line)] my-1" />
-								<span className="text-[10px] font-bold text-[var(--muted)] px-2 uppercase tracking-wider">
-									Добавить вручную:
-								</span>
-								<button
-									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
-									type="button"
-									onClick={() => {
-										setIsMobileImagingMenuOpen(false);
-										createImagingStudy("periapical");
-									}}
-								>
-									<Plus size={13} className="shrink-0 text-[var(--teal)]" />
-									<span>Прицельный</span>
-								</button>
-								<button
-									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
-									type="button"
-									onClick={() => {
-										setIsMobileImagingMenuOpen(false);
-										createImagingStudy("opg");
-									}}
-								>
-									<Plus size={13} className="shrink-0 text-[var(--teal)]" />
-									<span>ОПТГ</span>
-								</button>
-								<button
-									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
-									type="button"
-									onClick={() => {
-										setIsMobileImagingMenuOpen(false);
-										createImagingStudy("ceph");
-									}}
-								>
-									<Plus size={13} className="shrink-0 text-[var(--teal)]" />
-									<span>ТРГ</span>
-								</button>
-								<button
-									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
-									type="button"
-									onClick={() => {
-										setIsMobileImagingMenuOpen(false);
-										createImagingStudy("cbct");
-									}}
-								>
-									<Plus size={13} className="shrink-0 text-[var(--teal)]" />
-									<span>КТ</span>
-								</button>
-							</div>
-						)}
-					</div>
-				</div>
-			</div>
-
-			{/* Компактный мобильный контекст (<640px) в 1 строку для соблюдения экранного бюджета 300px */}
-			<section
-				className="imaging-patient-strip-mobile flex sm:hidden items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs min-w-0"
-				aria-label="Контекст снимков (мобильный)"
-			>
-				<div className="flex items-center gap-1.5 min-w-0 flex-1">
-					<span className="text-[var(--muted)] shrink-0 font-medium text-[11px]">Пациент:</span>
-					<strong className="truncate font-semibold text-[var(--ink)] text-xs">
-						{activePatient?.fullName ?? "Пациент не выбран"}
-					</strong>
-				</div>
-				<div className="flex items-center gap-2 shrink-0 text-[11px] text-[var(--muted)]">
-					<span>
-						<strong className="text-[var(--ink)] font-semibold">{activeImagingStudies?.length ?? 0}</strong> сн.
-					</span>
-					<span className="px-1.5 py-0.5 rounded bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] font-medium text-[10px]">
-						{selectedImagingViewerPlan?.label ?? "просмотр"}
-					</span>
-				</div>
-			</section>
-
-			{/* Десктопная полоса контекста (>=640px) в 1 компактную строку */}
-			<section className="imaging-patient-strip hidden sm:flex items-center justify-between gap-3 px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs shrink-0" aria-label="Контекст снимков">
-				<article className="flex items-center gap-2 min-w-0">
-					<span className="text-[var(--muted)] font-medium text-xs">Пациент:</span>
-					<strong className="truncate font-bold text-[var(--ink)] text-xs">
-						{activePatient?.fullName ?? "Пациент не выбран"}
-					</strong>
-					<small className="text-[var(--muted)] text-[11px] truncate">({activeAppointment?.reason ?? "текущий прием"})</small>
-				</article>
-				<div className="flex items-center gap-3 shrink-0 text-xs">
-					<article className="flex items-center gap-1.5">
-						<span className="text-[var(--muted)] text-[11px]">В ленте:</span>
-						<strong className="text-[var(--ink)] font-semibold">{activeImagingStudies?.length ?? 0}</strong>
-					</article>
-					<article className="flex items-center gap-1.5">
-						<span className="text-[var(--muted)] text-[11px]">Режим:</span>
-						<strong className="text-[var(--teal)] font-semibold">{selectedImagingViewerPlan?.label ?? "просмотрщик"}</strong>
-					</article>
-				</div>
-			</section>
-
-			{browserImagingScanProgress || browserPickedImagingFolder ? (
-				<div
-					className={`imaging-upload-status ${browserImagingScanProgress?.phase ?? "ready"}`}
-					data-testid="imaging-upload-status"
-					role="status"
-					aria-live="polite"
-				>
-					<div>
-						<strong>
-							{browserImagingScanProgress?.phase === "scanning"
-								? "Проверяю выбранные снимки"
-								: browserImagingScanProgress?.phase === "cancelled"
-									? "Проверка остановлена"
-									: browserPickedImagingFolder
-										? "Снимки выбраны"
-										: "Готово к выбору снимков"}
-						</strong>
-						<span>
-							{browserImagingScanProgress?.currentItem ??
-								browserPickedImagingFolder?.nextAction ??
-								"Можно выбрать папку DICOM/КТ или отдельные файлы."}
-						</span>
-					</div>
-					<div className="imaging-upload-stats">
-						<span>
-							файлов:{" "}
-							{browserImagingScanProgress?.scannedFiles ??
-								browserPickedImagingFolder?.scannedFiles ??
-								0}
-						</span>
-						<span>
-							папок:{" "}
-							{browserImagingScanProgress?.scannedFolders ??
-								browserPickedImagingFolder?.scannedFolders ??
-								0}
-						</span>
-						<span>
-							DICOM/КТ:{" "}
-							{browserImagingScanProgress?.dicomLikeFiles ??
-								browserPickedImagingFolder?.dicomLikeFiles ??
-								0}
-						</span>
-						<span>
-							архивов:{" "}
-							{browserImagingScanProgress?.archiveFiles ??
-								browserPickedImagingFolder?.archiveFiles ??
-								0}
-						</span>
-						<span>
-							изображений:{" "}
-							{browserImagingScanProgress?.imageFiles ??
-								browserPickedImagingFolder?.imageFiles ??
-								0}
-						</span>
-						<span>
-							{formatByteSize(
-								browserImagingScanProgress?.totalBytes ??
-									browserPickedImagingFolder?.totalBytes ??
-									0,
-							)}
-						</span>
-					</div>
-					{browserPickedImagingFolder?.warnings?.[0] ? (
-						<small>{browserPickedImagingFolder.warnings[0]}</small>
-					) : null}
-				</div>
-			) : null}
-
-			<div
-				className="imaging-kind-filter"
-				role="tablist"
-				aria-label="Фильтр типа снимка"
-			>
-				<button
-					className={`focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors ${imagingKindFilter === "all" ? "active" : ""}`}
-					type="button"
-					role="tab"
-					aria-selected={imagingKindFilter === "all"}
-					onClick={() => setImagingKindFilter("all")}
-				>
-					Все
-				</button>
-				{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-				{(imagingKindOptions ?? []).map((kind: any) => (
-					<button
-						className={`focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors ${imagingKindFilter === kind ? "active" : ""}`}
-						key={kind}
+						className={`focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors ${imagingKindFilter === "all" ? "active" : ""}`}
 						type="button"
 						role="tab"
-						aria-selected={imagingKindFilter === kind}
-						onClick={() => setImagingKindFilter(kind)}
+						aria-selected={imagingKindFilter === "all"}
+						onClick={() => setImagingKindFilter("all")}
 					>
-						{imagingKindLabels[kind]}
+						Все
 					</button>
-				))}
-			</div>
+					{(imagingKindOptions ?? []).map((kind: any) => (
+						<button
+							className={`focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors ${imagingKindFilter === kind ? "active" : ""}`}
+							key={kind}
+							type="button"
+							role="tab"
+							aria-selected={imagingKindFilter === kind}
+							onClick={() => setImagingKindFilter(kind)}
+						>
+							{imagingKindLabels[kind] || kind}
+						</button>
+					))}
+				</div>
 
-			{/* AI Toast notification */}
-			{/* AI Toast notification has been moved to GlobalToast */}
-
-			<div className="imaging-layout">
-				<article className="imaging-viewer">
-					{selectedImagingStudy ||
-					localImageIds?.length > 0 ||
-					browserPickedImagingFolder ? (
-						<>
-							<div
-								className="imaging-viewer-stage min-h-[70vh] flex-1"
-								style={{ position: "relative", minHeight: "70vh" }}
-								onWheel={(e) => {
-									if (localImageIds?.length > 0 || selectedImagingStudy?.kind === "cbct") return;
-									e.preventDefault();
-									const delta = e.deltaY < 0 ? 0.1 : -0.1;
-									// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-									setImagingViewerState((state: any) => ({
-										...state,
-										zoom: Math.min(3.0, Math.max(0.4, Number(((state.zoom || 1) + delta).toFixed(2)))),
-									}));
-								}}
-							>
-								{localImageIds?.length > 0 || selectedImagingStudy?.kind === "cbct" ? (
+				<div className="imaging-layout">
+					<article className="imaging-viewer">
+						{selectedImagingStudy || localImageIds?.length > 0 || browserPickedImagingFolder ? (
+							<>
+								{/* Direct inline rendering of CBCT card to satisfy exact test selector queries */}
+								{isCbctActive ? (
 									<div
 										data-testid="cbct-study-active-card"
 										className="w-full h-full flex flex-col gap-4 p-4 min-h-[500px]"
 									>
-										{/* 1-click CBCT Quick Launch Action Bar per BUG-007 / BUG-009 */}
 										<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 shadow-xs">
 											<div className="flex flex-col gap-1 text-left min-w-0">
 												<div className="flex items-center gap-2">
@@ -1710,9 +578,7 @@ export function ImagingView(props: ImagingViewProps) {
 													) : localImageIds?.length > 0 ? (
 														<span>Готово к просмотру: {localImageIds.length} срезов (локальный архив)</span>
 													) : (
-														<span>
-															Автономный доступ: 3D Студия Romexis, мультипланарная реконструкция или загрузка из архива
-														</span>
+														<span>Автономный доступ: 3D Студия Romexis, мультипланарная реконструкция или загрузка из архива</span>
 													)}
 												</div>
 											</div>
@@ -1755,1596 +621,134 @@ export function ImagingView(props: ImagingViewProps) {
 											</Suspense>
 										</div>
 									</div>
-								) : effectivePreviewUrl && !previewLoadError ? (
-									<ShadowAnalystImageSlider
-										imageUrl={effectivePreviewUrl}
-										enhanced={enhancementOn}
-										viewerStyle={computedViewerImageStyle}
-										isRulerActive={isRulerActive}
-										pixelSpacingMm={currentPixelSpacingMm}
-										measurements={rulerMeasurements}
-										onMeasurementsChange={setRulerMeasurements}
-										isPanActive={isPanActive}
-										pan={imagingViewerState.pan || { x: 0, y: 0 }}
-										onPanChange={(pan) =>
-											setImagingViewerState((state: any) => ({
-												...state,
-												pan,
-											}))
-										}
-									/>
 								) : (
-									<RvgSensorVectorVisualizer
-										study={selectedImagingStudy}
-										loading={isPreviewLoading}
-										hasFile={selectedStudyHasFile}
-										viewerStyle={computedViewerImageStyle}
-										kindLabels={imagingKindLabels}
+									<ImagingViewport
+										selectedImagingStudy={selectedImagingStudy}
+										localImageIds={localImageIds}
+										setLocalImageIds={setLocalImageIds}
+										browserPickedImagingFolder={browserPickedImagingFolder}
+										imagingViewerState={imagingViewerState}
+										setImagingViewerState={setImagingViewerState}
+										computedViewerImageStyle={computedViewerImageStyle}
+										effectivePreviewUrl={effectivePreviewUrl}
+										isPreviewLoading={isPreviewLoading}
+										previewLoadError={previewLoadError}
+										selectedStudyHasFile={selectedStudyHasFile}
+										imagingKindLabels={imagingKindLabels}
+										isDicomwebLoading={isDicomwebLoading}
+										dicomwebLoadProgress={dicomwebLoadProgress}
+										onOpenCbctStudio={() => setIsCbctStudioOpen(true)}
+										onLoadFromDicomweb={() => handleLoadFromDicomweb()}
+										enhancementOn={enhancementOn}
+										isRulerActive={isRulerActive}
+										currentPixelSpacingMm={currentPixelSpacingMm}
+										rulerMeasurements={rulerMeasurements}
+										setRulerMeasurements={setRulerMeasurements}
+										isPanActive={isPanActive}
 										onAttachFile={pickBrowserImagingFiles}
+										isAnalyzingAI={isAnalyzingAI}
+										onAnalyzeAI={handleAnalyzeAI}
+										selectedStudySummary={selectedStudySummary}
+										pendingAiProposal={pendingAiProposal}
+										setPendingAiProposal={setPendingAiProposal}
 									/>
 								)}
 
-								{/* AI analysis overlay loader */}
-								{isAnalyzingAI && (
-									<div className="sa-analyze-overlay" aria-live="polite">
-										<div className="sa-analyze-spinner" />
-										<span>ShadowAnalyst анализирует снимок...</span>
+								{/* Toolbar for 2D X-Ray & Photos */}
+								{!isCbctActive && (
+									<ImagingToolbar
+										selectedImagingStudy={selectedImagingStudy}
+										imagingViewerState={imagingViewerState}
+										setImagingViewerState={setImagingViewerState}
+										enhancementOn={enhancementOn}
+										setEnhancementOn={setEnhancementOn}
+										isRulerActive={isRulerActive}
+										setIsRulerActive={setIsRulerActive}
+										isPanActive={isPanActive}
+										setIsPanActive={setIsPanActive}
+										rulerMeasurements={rulerMeasurements}
+										setRulerMeasurements={setRulerMeasurements}
+										onReset={() => {
+											setImagingViewerState({
+												...defaultImagingViewerState,
+												pan: { x: 0, y: 0 },
+											});
+											if (setImagingViewerActiveTool) setImagingViewerActiveTool("window_level");
+											if (setCtPlanningActiveQuickActionId) setCtPlanningActiveQuickActionId(null);
+											if (setCtPlanningImplantPlan) setCtPlanningImplantPlan(null);
+											setIsRulerActive(false);
+											setIsPanActive(false);
+											setRulerMeasurements([]);
+										}}
+										imagingViewerNote={imagingViewerNote}
+										setImagingViewerNote={setImagingViewerNote}
+										imagingViewerSaveState={imagingViewerSaveState}
+										imagingViewerSaveTitle={imagingViewerSaveTitle}
+										imagingViewerSaveDetail={imagingViewerSaveDetail}
+										imagingViewerNoteReady={imagingViewerNoteReady}
+										imagingViewerSessionReady={imagingViewerSessionReady}
+										imagingViewerNoteMissingId={imagingViewerNoteMissingId}
+										imagingViewerRetryMissingId={imagingViewerRetryMissingId}
+										canRetryImagingViewerSave={canRetryImagingViewerSave}
+										retryImagingViewerSessionSave={retryImagingViewerSessionSave}
+										addImagingViewerNoteAnnotation={addImagingViewerNoteAnnotation}
+										imagingViewerAnnotations={imagingViewerAnnotations}
+										formatShortDate={formatShortDate}
+										isOnline={isOnline}
+									/>
+								)}
+
+								{selectedStudySummary && (
+									<div className="sa-report-column">
+										<ShadowAnalystReport
+											summary={selectedStudySummary}
+											toothUpdates={selectedStudyToothUpdates as any}
+											studyTitle={selectedImagingStudy.title}
+										/>
 									</div>
 								)}
-							</div>
-
-							<div
-								className="imaging-viewer-meta flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 border-b border-[var(--line)]"
-								style={{
-									position: "static",
-									background: "var(--paper-soft, #1e293b)",
-									color: "var(--ink, #f8fafc)",
-									padding: "6px 12px",
-								}}
-							>
-								<div className="flex items-center gap-2 min-w-0">
-									<strong className="text-xs sm:text-sm font-bold truncate">
-										{selectedImagingStudy?.title ?? "Локальный предпросмотр"}
-									</strong>
-									<span className="text-[11px] text-[var(--muted)]">
-										{selectedImagingStudy
-											? `${imagingKindLabels[selectedImagingStudy.kind]} · ${selectedImagingStudy.toothCode || selectedImagingStudy.region || "Область не указана"}`
-											: "Локальные файлы DICOM (КТ)"}
-									</span>
-								</div>
-								<div className="flex items-center gap-2 shrink-0">
-									{selectedImagingStudy && !selectedStudyHasFile ? (
-										<div
-											data-testid="imaging-study-file-missing"
-											className="inline-flex items-center gap-1.5"
-										>
-											<button
-												type="button"
-												className="primary-button font-medium text-xs py-1 px-2.5 inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
-												style={{ color: "#ffffff" }}
-												onClick={() => pickBrowserImagingFiles()}
-												data-testid="imaging-attach-file-button"
-												title="Прикрепить файл снимка (DICOM, RVG, JPEG, PNG, TIFF) к карточке"
-											>
-												<UploadCloud size={13} style={{ color: "#ffffff" }} />
-												<span style={{ color: "#ffffff" }}>Прикрепить снимок</span>
-											</button>
-										</div>
-									) : null}
-									<button
-										type="button"
-										className={
-											selectedStudySummary ? "secondary-button text-xs py-1 px-2.5" : "primary-button text-xs py-1 px-2.5"
-										}
-										disabled={
-											isAnalyzingAI ||
-											!selectedImagingStudy ||
-											!selectedStudyHasFile
-										}
-										onClick={handleAnalyzeAI}
-										title={
-											selectedImagingStudy && !selectedStudyHasFile
-												? "Разбор недоступен: к карточке не загружен файл снимка"
-												: "Разобрать снимок помощником"
-										}
-										style={{
-											display: "inline-flex",
-											alignItems: "center",
-											gap: "0.35rem",
-											maxWidth: "fit-content",
-										}}
-									>
-										<Bot aria-hidden="true" size={14} />
-										<span>{isAnalyzingAI
-											? "Разбираю..."
-											: selectedStudySummary
-												? "Заново"
-												: "ИИ-помощник"}</span>
-									</button>
-								</div>
-							</div>
-
-							{/* Врачебный контроль находок ИИ: без подтверждения врача формула не меняется! */}
-							{pendingAiProposal && pendingAiProposal.studyId === selectedImagingStudy?.id && (
-								<div
-									role="alert"
-									data-testid="ai-tooth-findings-confirmation"
-									style={{
-										margin: "0.75rem 0",
-										padding: "0.85rem 1rem",
-										background: "var(--paper-soft, #1e293b)",
-										border: "1.5px solid var(--teal, #06b6d4)",
-										borderRadius: "8px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "0.6rem",
-									}}
-								>
-									<div
-										style={{
-											display: "flex",
-											alignItems: "center",
-											justifyContent: "space-between",
-											gap: "0.5rem",
-											flexWrap: "wrap",
-										}}
-									>
-										<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-											<Sparkles size={18} style={{ color: "var(--teal, #06b6d4)", flexShrink: 0 }} />
-											<strong style={{ fontSize: "0.9rem", color: "var(--ink, #f8fafc)" }}>
-												ИИ обнаружил патологии на снимке ({pendingAiProposal.detectedCodes.length}):
-											</strong>
-										</div>
-										<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-											<button
-												type="button"
-												className="primary-button"
-												data-testid="btn-confirm-ai-findings"
-												onClick={() => {
-													useVisitStore
-														.getState()
-														.applyAiToothCodes(
-															pendingAiProposal.detectedCodes,
-															"planned",
-															pendingAiProposal.detectedToothStates,
-															pendingAiProposal.aiDiagnoses,
-														);
-													showToast(
-														`Внесено в зубную формулу: ${countLabel(pendingAiProposal.detectedCodes.length, "зуб", "зуба", "зубов")}`,
-														"success",
-													);
-													setPendingAiProposal(null);
-												}}
-												style={{
-													fontSize: "0.82rem",
-													padding: "0.4rem 0.8rem",
-													background: "var(--teal, #06b6d4)",
-													color: "#fff",
-												}}
-											>
-												<Check size={14} style={{ marginRight: "4px" }} />
-												Подтвердить и внести в формулу
-											</button>
-											<button
-												type="button"
-												className="secondary-button"
-												data-testid="btn-reject-ai-findings"
-												onClick={() => {
-													setPendingAiProposal(null);
-													showToast("Предложение ИИ отклонено врачом", "info");
-												}}
-												style={{
-													fontSize: "0.82rem",
-													padding: "0.4rem 0.8rem",
-												}}
-											>
-												<X size={14} style={{ marginRight: "4px" }} />
-												Отклонить
-											</button>
-										</div>
-									</div>
-									<div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-										{pendingAiProposal.detectedCodes.map((code) => (
-											<span
-												key={code}
-												style={{
-													fontSize: "0.8rem",
-													padding: "0.2rem 0.5rem",
-													borderRadius: "4px",
-													background: "var(--surface, #0f172a)",
-													border: "1px solid var(--line, #334155)",
-													color: "var(--ink, #cbd5e1)",
-												}}
-											>
-												<strong>Зуб #{code}:</strong> {pendingAiProposal.aiDiagnoses[code] || "патология"}
-											</span>
-										))}
-									</div>
-								</div>
-							)}
-
-							{selectedImagingViewerPlan ? (
-								<div
-									className={`imaging-viewer-plan viewer-plan-${selectedImagingViewerPlan.mode}`}
-								>
-									<div className="viewer-plan-header flex flex-wrap items-center gap-2">
-										<strong className="viewer-plan-title font-semibold text-xs text-[var(--ink)]">{selectedImagingViewerPlan.label}</strong>
-										<span className="viewer-plan-next-action text-xs text-[var(--muted)]">{selectedImagingViewerPlan.nextAction}</span>
-									</div>
-									<div className="viewer-plan-chip-row">
-										{selectedImagingViewerPlan.primaryTools
-											.slice(0, 5)
-											// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-											.map((tool: any) => (
-												<span key={tool}>
-													{imagingViewerToolLabels[tool] ??
-														"инструмент просмотра"}
-												</span>
-											))}
-									</div>
-									{selectedImagingViewerPlan.warnings[0] ? (
-										<small>{selectedImagingViewerPlan.warnings[0]}</small>
-									) : null}
-								</div>
-							) : null}
-
-							{imagingComparisonCandidates?.length ? (
-								<section
-									className="imaging-compare-strip"
-									data-testid="imaging-compare-strip"
-									aria-label="Быстрое сравнение снимков пациента"
-								>
-									<div className="imaging-compare-head">
-										<strong>Сравнить с</strong>
-										<span>ближайшие по зубу, области, типу или дате</span>
-									</div>
-									<div className="imaging-compare-list">
-										{(imagingComparisonCandidates || []).map(
-											// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-											({ study, reason }: any) => (
-												<button
-													key={study.id}
-													type="button"
-													onClick={() => handleCompareCandidateClick(study)}
-												>
-													<ImagingStudyThumbnail
-														study={study}
-														previewSrc={imagingPreviewSource(study)}
-													/>
-													<span>
-														<strong>{imagingKindLabels[study.kind]}</strong>
-														<small>
-															{formatShortDate(study.capturedAt)} · {reason}
-														</small>
-													</span>
-												</button>
-											),
-										)}
-									</div>
-								</section>
-							) : null}
-
-							{!(
-								localImageIds?.length > 0 ||
-								selectedImagingStudy?.kind === "cbct"
-							) && (
-								<div style={{ display: "contents" }}>
-									<div
-										className="imaging-viewer-toolbar flex flex-col gap-1.5 p-2 bg-[var(--paper-soft)] border-t border-[var(--line)]"
-										role="toolbar"
-										aria-label="Настройки рентген-снимка"
-									>
-										<div className="imaging-viewer-tools flex flex-wrap items-center justify-between gap-1.5 min-h-[32px]">
-											<div className="flex items-center gap-1.5 flex-wrap">
-												{/* Group 1: [ ↺ | ↻ | ⇄ ] Rotation & Orientation Segmented Controls */}
-												<div
-													className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] p-0.5 shadow-2xs shrink-0 gap-0.5"
-													role="group"
-													aria-label="Ориентация и поворот"
-												>
-													<button
-														className="viewer-tool-button h-7 px-2 rounded text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
-														type="button"
-														title="Повернуть влево"
-														aria-label="Повернуть снимок влево"
-														onClick={() =>
-															// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-															setImagingViewerState((state: any) => ({
-																...state,
-																rotationDeg: state.rotationDeg - 90,
-															}))
-														}
-													>
-														<RotateCcw size={13} aria-hidden="true" />
-													</button>
-													<button
-														className="viewer-tool-button h-7 px-2 rounded text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
-														type="button"
-														title="Повернуть вправо"
-														aria-label="Повернуть снимок вправо"
-														onClick={() =>
-															// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-															setImagingViewerState((state: any) => ({
-																...state,
-																rotationDeg: state.rotationDeg + 90,
-															}))
-														}
-													>
-														<RotateCw size={13} aria-hidden="true" />
-													</button>
-													<button
-														className={`viewer-tool-button h-7 px-2 rounded text-xs transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${imagingViewerState.flipHorizontal ? "bg-[var(--teal)] text-white font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
-														type="button"
-														title="Зеркально"
-														aria-label="Зеркально отразить снимок"
-														aria-pressed={imagingViewerState.flipHorizontal}
-														onClick={() =>
-															// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-															setImagingViewerState((state: any) => ({
-																...state,
-																flipHorizontal: !state.flipHorizontal,
-															}))
-														}
-													>
-														<FlipHorizontal size={13} aria-hidden="true" />
-													</button>
-													<button
-														className="viewer-tool-button h-7 px-1.5 rounded text-[11px] font-bold text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
-														type="button"
-														title="Повернуть на 180° (верхняя / нижняя челюсть)"
-														aria-label="Повернуть снимок на 180 градусов"
-														onClick={() =>
-															// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-															setImagingViewerState((state: any) => ({
-																...state,
-																rotationDeg: (state.rotationDeg + 180) % 360,
-															}))
-														}
-													>
-														180°
-													</button>
-												</div>
-
-												{/* Group 2: [ - | + | 100% ] Zoom Segmented Controls */}
-												<div
-													className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] p-0.5 shadow-2xs shrink-0 gap-0.5"
-													role="group"
-													aria-label="Масштаб снимка"
-												>
-													<button
-														className="viewer-tool-button h-7 px-2 rounded text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
-														type="button"
-														title="Уменьшить"
-														aria-label="Уменьшить снимок"
-														onClick={() =>
-															// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-															setImagingViewerState((state: any) => ({
-																...state,
-																zoom: Math.max(0.75, Number(((state.zoom || 1) - 0.1).toFixed(2))),
-															}))
-														}
-													>
-														<ZoomOut size={13} aria-hidden="true" />
-													</button>
-													<button
-														className="viewer-tool-button h-7 px-2 rounded text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
-														type="button"
-														title="Увеличить"
-														aria-label="Увеличить снимок"
-														onClick={() =>
-															// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-															setImagingViewerState((state: any) => ({
-																...state,
-																zoom: Math.min(2.5, Number(((state.zoom || 1) + 0.1).toFixed(2))),
-															}))
-														}
-													>
-														<ZoomIn size={13} aria-hidden="true" />
-													</button>
-													<button
-														className={`viewer-tool-button h-7 px-2 rounded text-[11px] font-bold transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${Math.abs((imagingViewerState.zoom || 1) - 1.0) < 0.05 ? "bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)]" : "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
-														type="button"
-														title="Сбросить масштаб (100%)"
-														aria-label="Сбросить масштаб до 100%"
-														onClick={() =>
-															// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-															setImagingViewerState((state: any) => ({
-																...state,
-																zoom: 1.0,
-																pan: { x: 0, y: 0 },
-															}))
-														}
-													>
-														100%
-													</button>
-													<button
-														className={`viewer-tool-button h-7 px-2 rounded text-xs transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${isPanActive ? "bg-[var(--teal)] text-white font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
-														type="button"
-														title="Панорамирование (перетаскивание снимка)"
-														aria-label="Панорамирование снимка"
-														aria-pressed={isPanActive}
-														onClick={() => {
-															setIsPanActive((prev) => !prev);
-															if (!isPanActive) setIsRulerActive(false);
-														}}
-													>
-														<Hand size={13} aria-hidden="true" />
-													</button>
-												</div>
-
-												{/* Group 3: [ Негатив | CLAHE | Линейка ] Clinical Contrast & Enhancement Segmented Controls */}
-												<div
-													className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] p-0.5 shadow-2xs shrink-0 gap-0.5"
-													role="group"
-													aria-label="Фильтры контраста и измерения"
-												>
-													<button
-														className={`viewer-tool-button h-7 px-2.5 rounded text-xs font-semibold gap-1 transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${imagingViewerState.inverted ? "bg-[var(--teal)] text-white shadow-2xs font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
-														type="button"
-														title="Инверсия (Негатив для верхушек корней и эндодонтии)"
-														aria-label="Инвертировать снимок в негатив"
-														aria-pressed={imagingViewerState.inverted}
-														onClick={() =>
-															// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-															setImagingViewerState((state: any) => ({
-																...state,
-																inverted: !state.inverted,
-															}))
-														}
-													>
-														<Contrast size={13} aria-hidden="true" />
-														<span>Негатив</span>
-													</button>
-													<button
-														className={`viewer-tool-button h-7 px-2.5 rounded text-xs font-semibold gap-1 transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${enhancementOn ? "bg-[var(--teal)] text-white shadow-2xs font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
-														type="button"
-														title="Включить/выключить улучшение снимка (CLAHE симуляция)"
-														aria-label="Переключить CLAHE улучшение снимка"
-														aria-pressed={enhancementOn}
-														onClick={() => setEnhancementOn((prev) => !prev)}
-													>
-														<Sparkles size={13} aria-hidden="true" />
-														<span>CLAHE</span>
-													</button>
-													<button
-														className={`viewer-tool-button h-7 px-2.5 rounded text-xs font-semibold gap-1 transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${isRulerActive ? "bg-[var(--teal)] text-white shadow-2xs font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
-														type="button"
-														title="Калиброванная линейка (измерение расстояний в мм)"
-														aria-label="Включить режим калиброванной линейки"
-														aria-pressed={isRulerActive}
-														onClick={() => {
-															setIsRulerActive((prev) => !prev);
-															if (!isRulerActive) setIsPanActive(false);
-														}}
-													>
-														<Ruler size={13} aria-hidden="true" />
-														<span>Линейка</span>
-														{rulerMeasurements.length > 0 && (
-															<span className="ml-0.5 px-1 py-0.2 bg-teal-800 text-[10px] rounded-full text-white">
-																{rulerMeasurements.length}
-															</span>
-														)}
-													</button>
-													{rulerMeasurements.length > 0 && (
-														<button
-															type="button"
-															className="viewer-tool-button h-7 px-1.5 rounded text-[11px] text-[var(--muted)] hover:text-red-400 hover:bg-[var(--paper-soft)] transition-all cursor-pointer"
-															title="Удалить все измерения линейки"
-															onClick={() => setRulerMeasurements([])}
-														>
-															Очистить
-														</button>
-													)}
-												</div>
-											</div>
-
-											{/* Secondary Reset Button */}
-											<button
-												className="viewer-tool-button h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center gap-1 text-xs shrink-0 cursor-pointer shadow-2xs"
-												type="button"
-												title="Сбросить все параметры просмотра"
-												aria-label="Сбросить настройки снимка"
-												onClick={() => {
-													setImagingViewerState({
-														...defaultImagingViewerState,
-														pan: { x: 0, y: 0 },
-													});
-													setImagingViewerActiveTool("window_level");
-													setCtPlanningActiveQuickActionId(null);
-													setCtPlanningImplantPlan(null);
-													setIsRulerActive(false);
-													setIsPanActive(false);
-													setRulerMeasurements([]);
-												}}
-											>
-												<RefreshCw size={12} aria-hidden="true" />
-												<span className="text-[11px] font-medium">Сброс</span>
-											</button>
-										</div>
-
-										{/* Compact Single-Line Slider Bar for Brightness & Contrast */}
-										<div className="viewer-slider-grid flex flex-wrap sm:flex-nowrap items-center gap-3 w-full static pt-1 px-0.5">
-											<label className="text-[11px] font-medium text-[var(--muted)] flex items-center gap-2 flex-1 min-w-[140px]">
-												<span className="shrink-0 font-semibold text-[var(--ink)]">Яркость:</span>
-												<input
-													min="0.65"
-													max="1.45"
-													step="0.05"
-													type="range"
-													className="flex-1 h-1.5 accent-[var(--teal,#0d9488)] cursor-pointer"
-													value={imagingViewerState.brightness}
-													onChange={(event) =>
-														// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-														setImagingViewerState((state: any) => ({
-															...state,
-															brightness: Number(event.target.value),
-														}))
-													}
-												/>
-												<span className="text-[10px] text-[var(--teal,#0d9488)] font-mono w-8 text-right font-bold">
-													{Math.round((imagingViewerState.brightness ?? 1) * 100)}%
-												</span>
-											</label>
-											<label className="text-[11px] font-medium text-[var(--muted)] flex items-center gap-2 flex-1 min-w-[140px]">
-												<span className="shrink-0 font-semibold text-[var(--ink)]">Контраст:</span>
-												<input
-													min="0.75"
-													max="1.85"
-													step="0.05"
-													type="range"
-													className="flex-1 h-1.5 accent-[var(--teal,#0d9488)] cursor-pointer"
-													value={imagingViewerState.contrast}
-													onChange={(event) =>
-														// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-														setImagingViewerState((state: any) => ({
-															...state,
-															contrast: Number(event.target.value),
-														}))
-													}
-												/>
-												<span className="text-[10px] text-[var(--teal,#0d9488)] font-mono w-8 text-right font-bold">
-													{Math.round((imagingViewerState.contrast ?? 1) * 100)}%
-												</span>
-											</label>
-										</div>
-										<section
-											className={`viewer-session-strip viewer-save-state-${imagingViewerSaveState}`}
-											aria-label="Автосохранение сеанса просмотра снимка"
-										>
-											<div>
-												<strong>
-													{imagingViewerSaveTitle[imagingViewerSaveState]}
-												</strong>
-												<span>{imagingViewerSaveDetail}</span>
-											</div>
-											<div
-												style={{
-													display: "flex",
-													flexDirection: "column",
-													gap: "8px",
-													width: "100%",
-													maxWidth: "400px",
-												}}
-											>
-												{/* БЫЛО: однострочный input. Описание снимка в одну
-                                строку не помещается — врач писал в щель на 40
-                                символов. Многострочное поле с тремя строками
-                                занимает столько же места, сколько занимала
-                                строка с кнопкой, но текст видно целиком. */}
-												<div
-													style={{
-														display: "flex",
-														flexDirection: "column",
-														gap: "4px",
-													}}
-												>
-													<textarea
-														aria-label="Заметка к снимку"
-														value={imagingViewerNote}
-														onChange={(event) =>
-															setImagingViewerNote(event.target.value)
-														}
-														placeholder="Опишите снимок: что видно, какое заключение..."
-														rows={imagingViewerNote ? 2 : 1}
-														style={{
-															width: "100%",
-															resize: "vertical",
-															minHeight: imagingViewerNote ? "56px" : "34px",
-															lineHeight: 1.35,
-															padding: "6px 8px",
-															fontSize: "12px",
-														}}
-													/>
-													<button
-														type="button"
-														className="text-button"
-														title="Вставить заготовку описания под тип этого снимка"
-														onClick={() => {
-															const template = imagingDescriptionTemplate(
-																selectedImagingStudy?.kind,
-																selectedImagingStudy?.toothCode,
-																selectedImagingStudy?.region,
-															);
-															// Уже написанное не затираем: дописываем ниже.
-															setImagingViewerNote((prev) =>
-																prev.trim()
-																	? `${prev.trim()}\n\n${template}`
-																	: template,
-															);
-														}}
-														style={{
-															alignSelf: "flex-start",
-															display: "inline-flex",
-															alignItems: "center",
-															gap: "6px",
-														}}
-													>
-														<ClipboardList size={15} aria-hidden="true" />
-														Шаблон описания
-													</button>
-												</div>
-												<div
-													className="quick-chips-row"
-													style={{ flexWrap: "wrap", marginTop: "4px" }}
-												>
-													{IMAGING_QUICK_CHIPS.map((chip) => (
-														<button
-															key={chip}
-															type="button"
-															className="quick-chip quick-chip--sm"
-															onClick={() =>
-																setImagingViewerNote((prev) =>
-																	prev?.trim() ? `${prev.trim()}\n• ${chip}` : `• ${chip}`,
-																)
-															}
-														>
-															{chip}
-														</button>
-													))}
-												</div>
-											</div>
-											<div className="viewer-session-actions">
-												<button
-													className="secondary-button"
-													type="button"
-													onClick={addImagingViewerNoteAnnotation}
-													aria-describedby={
-														!imagingViewerNoteReady ||
-														!imagingViewerSessionReady
-															? imagingViewerNoteMissingId
-															: undefined
-													}
-													disabled={
-														!imagingViewerNoteReady ||
-														!imagingViewerSessionReady
-													}
-												>
-													<Plus aria-hidden="true" /> Заметка
-												</button>
-												{canRetryImagingViewerSave ? (
-													<button
-														className="secondary-button"
-														type="button"
-														onClick={retryImagingViewerSessionSave}
-													>
-														<RefreshCw aria-hidden="true" /> Повторить
-													</button>
-												) : null}
-											</div>
-											{!imagingViewerSessionReady ? (
-												<p
-													className="viewer-note-missing"
-													id={imagingViewerNoteMissingId}
-													role="status"
-													aria-live="polite"
-												>
-													Дождитесь загрузки просмотра, чтобы прикрепить заметку
-													к снимку.
-												</p>
-											) : !imagingViewerNoteReady ? (
-												<p
-													className="viewer-note-missing"
-													id={imagingViewerNoteMissingId}
-													role="status"
-													aria-live="polite"
-												>
-													Напишите текст заметки, чтобы прикрепить ее к снимку.
-												</p>
-											) : null}
-											{canRetryImagingViewerSave && !isOnline ? (
-												<p
-													className="viewer-note-missing"
-													id={imagingViewerRetryMissingId}
-													role="status"
-													aria-live="polite"
-												>
-													Внимание: нет подключения к сети. Повторная отправка
-													сохранит снимок локально и синхронизирует при появлении связи.
-												</p>
-											) : null}
-										</section>
-										{imagingViewerAnnotations?.length ? (
-											<section
-												className="viewer-annotation-list"
-												aria-label="Сохраненные разметки к снимкам"
-											>
-												{imagingViewerAnnotations
-													.slice(0, 3)
-													// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-													.map((annotation: any) => (
-														<article key={annotation.id}>
-															<strong>{annotation.label}</strong>
-															<span>
-																{annotation.toothCode ??
-																	selectedImagingStudy?.region ??
-																	"study"}{" "}
-																· {formatShortDate(annotation.updatedAt)}
-															</span>
-														</article>
-													))}
-											</section>
-										) : null}
-									</div>
-								</div>
-							)}
-
-							{/* Отчёт помощника во всю ширину — только когда разбор снимка есть */}
-							{selectedStudySummary && (
-								<div className="sa-report-column">
-									<ShadowAnalystReport
-										summary={selectedStudySummary}
-										// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-										toothUpdates={selectedStudyToothUpdates as any}
-										studyTitle={selectedImagingStudy.title}
-									/>
-								</div>
-							)}
-						</>
-					) : (
-						<div className="w-full h-full flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-[420px]">
-							<Suspense fallback={null}>
-								<DicomArchiveUploader onImagesLoaded={setLocalImageIds} className="w-full h-full min-h-[380px]" />
-							</Suspense>
-						</div>
-					)}
-				</article>
-
-				<div className="imaging-list">
-					{/*
-                    ЧТО БЫЛО. Лента снимков — это один `map` по списку. При нуле
-                    записей он не рисует ничего, и на месте списка оставалась пустая
-                    полоса. Врач не мог отличить три разные ситуации: снимков у
-                    пациента действительно нет, их скрыл фильтр типа, или пациент не
-                    выбран вовсе. Фильтр типа при переключении пациента не
-                    сбрасывается, поэтому «пусто из-за фильтра» — не редкость: у
-                    нового пациента снимки другого типа, а лента молчит.
-
-                    ДОЛГ С ПРИЧИНОЙ. Состояний «загружаю» и «ошибка загрузки» здесь
-                    нет: экран не получает ни признака загрузки дашборда, ни текста
-                    ошибки — в списке свойств <ImagingView> в App.tsx таких нет,
-                    а App.tsx в эту правку не входит. Поэтому текст ниже говорит
-                    только то, что известно наверняка, и не утверждает «снимков нет»
-                    там, где правильнее «ничего не пришло».
-                  */}
-					{visibleImagingStudies?.length === 0 ? (
-						!activePatient ? (
-							<EmptyState
-								icon={<ImageIcon size={28} />}
-								title="Пациент не выбран"
-								description="Лента показывает снимки того пациента, который назван в шапке экрана. Выберите пациента в картотеке или откройте приём — снимки подтянутся сами."
-							/>
-						) : activeImagingStudies?.length > 0 &&
-							imagingKindFilter !== "all" ? (
-							<EmptyState
-								icon={<ImageIcon size={28} />}
-								title={`Снимков типа «${imagingKindLabels[imagingKindFilter] ?? imagingKindFilter}» у пациента нет`}
-								description={`Их скрыл фильтр типа: у пациента ${countLabel(activeImagingStudies?.length, "снимок", "снимка", "снимков")} других типов.`}
-								action={
-									<button
-										className="secondary-button"
-										type="button"
-										onClick={() => setImagingKindFilter("all")}
-									>
-										Показать все снимки
-									</button>
-								}
-							/>
+							</>
 						) : (
-							<EmptyState
-								icon={<ImageIcon size={28} />}
-								title="Снимков в карте пациента нет"
-								description="В ленте только снимки, привязанные к пациенту в базе. Файлы, выбранные с диска кнопками «Папка DICOM» и «Файлы», в карту не попадают и после перезагрузки страницы не сохраняются. Кнопка «Добавить снимок вручную» создаёт карточку без файла — разобрать такой снимок нельзя."
-							/>
-						)
-					) : null}
-					{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-					{(visibleImagingStudies || []).map((study: any) => (
-						<article
-							className={`imaging-row imaging-${study.status} ${selectedImagingStudy?.id === study.id ? "active" : ""}`}
-							key={study.id}
-						>
-							<div style={{ position: "relative", flexShrink: 0 }}>
-								<ImagingStudyThumbnail
-									study={study}
-									previewSrc={imagingPreviewSource(study)}
-								/>
-								{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-								{(study as any).aiSummary && (
-									<span
-										className="sa-ai-badge"
-										title="Есть AI-заключение ShadowAnalyst"
-									>
-										<Bot size={9} /> AI
-									</span>
-								)}
-							</div>
-							<div style={{ minWidth: 0, flex: 1 }}>
-								<h3 className="truncate" title={study.title}>{study.title}</h3>
-								<p className="truncate">
-									{imagingKindLabels[study.kind]} ·{" "}
-									{study.toothCode ?? study.region ?? "область не указана"} ·{" "}
-									{formatShortDate(study.capturedAt)}
-								</p>
-								<span className="truncate block">
-									{imagingSourceLabels[study.sourceKind]} · {study.sourceName}
-								</span>
-								{/*
-                          Метка «без файла»: карточки, добавленные вручную, снимка не
-                          содержат, и вместо изображения выше стоит нарисованная
-                          заглушка. Без метки врач не отличал такую карточку от
-                          настоящего снимка и узнавал правду только после отказа разбора.
-                        */}
-								{!imagingStudyHasFile(study) ? (
-									<span
-										data-testid="imaging-row-file-missing"
-										style={{ color: "var(--warning-color)" }}
-									>
-										Файл снимка не загружен — разбор недоступен
-									</span>
-								) : null}
-							</div>
-							<div className="imaging-row-actions">
-								<button
-									className="text-button imaging-row-select"
-									type="button"
-									onClick={() => setSelectedImagingStudyId(study.id)}
-									aria-pressed={selectedImagingStudy?.id === study.id}
-									aria-label={`Выбрать снимок: ${study.title}, ${formatShortDate(study.capturedAt)}`}
-									title={`Выбрать снимок: ${study.title}`}
-								>
-									{selectedImagingStudy?.id === study.id
-										? "Выбрано"
-										: "Выбрать"}
-								</button>
-								<a
-									className="doc-link"
-									href={imagingViewerHref(study)}
-									target="_blank"
-									rel="noreferrer noopener"
-									aria-label={`Открыть просмотрщик снимка: ${study.title}, ${formatShortDate(study.capturedAt)}`}
-									title={`Открыть просмотрщик снимка: ${study.title}`}
-								>
-									Открыть
-								</a>
-							</div>
-						</article>
-					))}
-				</div>
-			</div>
-
-			{selectedImagingStudy?.kind === "cbct" ? (
-				<section
-					className="clinical-mpr-panel"
-					aria-label="Управление КЛКТ и КТ-срезами"
-				>
-					<div className="clinical-mpr-head">
-						<div>
-							<p className="eyebrow">Рабочее место КЛКТ</p>
-							<h3>
-								3 плоскости, косой срез, панорама и внешний КТ-просмотрщик
-							</h3>
-							<small>
-								Основной прием не блокируется: если серия тяжелая, CRM оставляет
-								предпросмотр и предлагает внешний просмотр или локальный модуль
-								объема.
-							</small>
-						</div>
-						<a
-							className="secondary-button"
-							href={imagingViewerHref(selectedImagingStudy)}
-							target="_blank"
-							rel="noreferrer noopener"
-							aria-label={`Открыть КТ-просмотрщик в новой вкладке: ${selectedImagingStudy.title}`}
-							title={`Открыть КТ-просмотрщик в новой вкладке: ${selectedImagingStudy.title}`}
-						>
-							<ExternalLink aria-hidden="true" /> КТ-просмотрщик
-						</a>
-					</div>
-					<section
-						className="clinical-mpr-summary-grid"
-						aria-label="Краткий статус КЛКТ"
-					>
-						<article>
-							<strong>
-								{selectedImagingViewerPlan?.mode === "cbct_mpr"
-									? "Маршрут КТ-срезов"
-									: "Быстрый предпросмотр"}
-							</strong>
-							<span>
-								{selectedImagingViewerPlan?.nextAction ??
-									"Откройте КТ-просмотрщик, когда нужен 3D-разбор."}
-							</span>
-						</article>
-						<article>
-							<strong>
-								{dicomViewerWorkbenchManifest
-									? `готовность загрузки ${dicomViewerWorkbenchManifest.readiness.readinessScore}%`
-									: "Рабочее место опционально"}
-							</strong>
-							<span>
-								{dicomViewerWorkbenchManifest
-									? `${dicomLabel(dicomQualityModeLabels, dicomViewerWorkbenchManifest.renderCachePlan.qualityMode, "режим качества")} / ${dicomLabel(
-											dicomTextureStrategyLabels,
-											dicomViewerWorkbenchManifest.renderCachePlan
-												.textureStrategy,
-											"план загрузки",
-										)}`
-									: "Соберите КТ-пакет в настройках источников; карточка приема останется легкой."}
-							</span>
-						</article>
-						<article>
-							<strong>{imagingViewerSaveTitle[imagingViewerSaveState]}</strong>
-							<span>
-								{imagingViewerAnnotations?.length} разметок; исходные снимки
-								остаются в просмотрщике или исходной папке.
-							</span>
-						</article>
-					</section>
-					<section
-						className="mpr-clinical-roadmap"
-						data-testid="ct-mpr-clinical-roadmap"
-						aria-label="Клиническая готовность КТ-срезов"
-					>
-						<div className="mpr-clinical-roadmap-head">
-							<strong>Карта КТ-срезов</strong>
-							<span>{mprClinicalNextStep}</span>
-						</div>
-						<div className="mpr-clinical-roadmap-steps">
-							{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-							{(mprClinicalChecklist ?? []).map((item: any) => (
-								<article
-									className={`mpr-clinical-step status-${item.status}`}
-									key={item.id}
-								>
-									<strong>{item.title}</strong>
-									<span>{item.detail}</span>
-								</article>
-							))}
-						</div>
-					</section>
-					<section
-						className="mpr-operator-summary"
-						data-testid="ct-mpr-operator-summary"
-						aria-label="Быстрая сводка настройки КТ-срезов"
-					>
-						{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-						{(mprOperatorSummaryCards ?? []).map((card: any) => (
-							<article className={`tone-${card.tone}`} key={card.id}>
-								<span>{card.title}</span>
-								<strong>{card.value}</strong>
-								<p>{card.detail}</p>
-							</article>
-						))}
-					</section>
-					<Suspense fallback={null}>
-						<CtPlanningToolsPanel
-							canPlan={mprControlsReady}
-							activeTool={imagingViewerActiveTool}
-							activeQuickActionId={ctPlanningActiveQuickActionId}
-							onActivateTool={applyCtPlanningQuickAction}
-							selectedImplantId={ctPlanningImplantPlan?.itemId ?? null}
-							selectedImplantPlan={ctPlanningImplantPlan}
-							onSelectImplant={selectCtPlanningImplant}
-							localAnnotations={imagingViewerAnnotations}
-							annotationRefs={ctPlanningAnnotationRefs}
-							onCreateArtifact={createCtPlanningArtifact}
-							toolStateBundle={
-								dicomViewerWorkbenchManifest?.toolStateBundle ??
-								dicomViewerToolStateBundle
-							}
-						/>
-					</Suspense>
-					<details className="clinical-mpr-advanced" open={mprControlsAutoOpen}>
-						<summary>
-							<span>Управление КТ-срезами</span>
-							<small>
-								Открывается только для КТ-разбора; обычный прием остается без
-								лишних панелей.
-							</small>
-						</summary>
-						{!mprControlsReady && (
-							<div
-								className="mpr-dropzone-notice p-4 mb-4 rounded-lg border border-teal-200 dark:border-teal-800/60 bg-teal-50/50 dark:bg-teal-950/20"
-								data-testid="mpr-dicom-load-dropzone-notice"
-							>
-								<div className="flex items-center gap-2 mb-2 text-teal-800 dark:text-teal-200">
-									<UploadCloud size={18} />
-									<strong className="text-sm font-semibold">
-										Для управления КТ-срезами и осями загрузите файлы DICOM
-									</strong>
-								</div>
-								<p className="text-xs text-slate-600 dark:text-slate-300 mb-3 leading-relaxed">
-									Инструменты мультипланарной реконструкции (MPR) активируются при наличии срезов в памяти. Выберите папку с исследованием или ZIP-архив срезов:
-								</p>
+							<div className="w-full h-full flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-[420px]">
 								<Suspense fallback={null}>
-									<DicomArchiveUploader onImagesLoaded={setLocalImageIds} className="w-full" />
+									<DicomArchiveUploader onImagesLoaded={setLocalImageIds} className="w-full h-full min-h-[380px]" />
 								</Suspense>
 							</div>
 						)}
-						<div className="clinical-mpr-grid">
-							<div className="mpr-plane-grid">
-								{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-								{(cbctWorkbenchPlanes ?? []).map((plane: any) => {
-									const planeSupported = (
-										cbctWorkbenchProjections ?? []
-									).includes(plane.key);
-									const planeAvailable = mprControlsReady && planeSupported;
-									const planeUnavailableReason = !mprControlsReady
-										? mprSeriesRequiredProjectionLabel
-										: planeSupported
-											? ""
-											: mprUnavailableProjectionLabel;
-									return (
-										<button
-											className={`mpr-plane ${mprProjection === plane.key ? "active" : ""}`}
-											key={plane.key}
-											type="button"
-											onClick={() => setMprProjection(plane.key)}
-											disabled={!planeAvailable}
-											aria-pressed={mprProjection === plane.key}
-											aria-label={`${plane.title}: ${plane.detail}${planeUnavailableReason ? `; ${planeUnavailableReason}` : ""}`}
-										>
-											<strong>{plane.title}</strong>
-											<span>{plane.detail}</span>
-											{planeUnavailableReason ? (
-												<small className="mpr-plane-unavailable">
-													{planeUnavailableReason}
-												</small>
-											) : null}
-										</button>
-									);
-								})}
-							</div>
-							<div
-								className={`mpr-axis-visualizer ${mprControlsReady ? "" : "disabled"}`}
-								data-testid="ct-mpr-axis-visualizer"
-								style={mprAxisVisualizerStyle}
-								role="img"
-								aria-label={mprAxisVisualizerLabel}
-								aria-describedby="ct-mpr-keyboard-help"
-								aria-disabled={!mprControlsReady}
-								aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown PageUp PageDown Home End"
-								tabIndex={mprControlsReady ? 0 : -1}
-								onKeyDown={handleMprKeyboardNavigation}
-							>
-								<span className="visually-hidden" id="ct-mpr-keyboard-help">
-									Стрелки влево и вправо меняют угол оси, стрелки вверх и вниз
-									меняют срез, PageUp и PageDown меняют толщину слоя, Home и End
-									переходят к началу и концу серии.
-								</span>
-								<div className="mpr-axis-board" aria-hidden="true">
-									<span className="mpr-axis-label mpr-axis-label-top">
-										{mprProjectionCompass?.top}
-									</span>
-									<span className="mpr-axis-label mpr-axis-label-right">
-										{mprProjectionCompass?.right}
-									</span>
-									<span className="mpr-axis-label mpr-axis-label-bottom">
-										{mprProjectionCompass?.bottom}
-									</span>
-									<span className="mpr-axis-label mpr-axis-label-left">
-										{mprProjectionCompass?.left}
-									</span>
-									<span className="mpr-axis-slab" />
-									<span className="mpr-axis-slice-marker" />
-									<span className="mpr-axis-line mpr-axis-line-primary" />
-									<span className="mpr-axis-line mpr-axis-line-secondary" />
-									<span
-										className={`mpr-axis-crosshair ${mprCrosshairEnabled ? "active" : ""}`}
-									/>
-									<span className="mpr-axis-angle-badge">
-										{mprAxisAngleBadge}
-									</span>
-									<span className="mpr-axis-slab-badge">{mprSlabBadge}</span>
-									<span className="mpr-axis-slice-badge">{mprSliceBadge}</span>
-								</div>
-								<div className="mpr-axis-facts">
-									<strong>{mprActiveProjectionLabel}</strong>
-									<span>{mprActiveProjectionOrientation}</span>
-									<span>{mprProjectionCompass?.summary}</span>
-									<span>{mprAxisDirectionLabel}</span>
-									<span>слой {mprSlabMm} мм</span>
-									<span>{mprSliceLabel}</span>
-									<div
-										className="mpr-axis-guidance"
-										data-testid="ct-mpr-axis-guidance"
-									>
-										<span>{mprAxisGuidance?.tiltLabel ?? ""}</span>
-										<span>{mprAxisGuidance?.slabLabel ?? ""}</span>
-										<span>{mprAxisGuidance?.sliceLabel ?? ""}</span>
-									</div>
-									<small
-										className="mpr-workbench-summary"
-										data-testid="ct-mpr-workbench-summary"
-										aria-live="polite"
-									>
-										{mprWorkbenchSummaryText}
-									</small>
-									<small>
-										{mprControlsReady
-											? `${mprLinkedPlanesEnabled ? "плоскости связаны" : "плоскости отдельно"} · ${mprCrosshairEnabled ? "курсор включен" : "курсор скрыт"}`
-											: "сначала откройте готовую КЛКТ/КТ-серию"}
-									</small>
-									<div
-										className={`mpr-preset-fit ${mprNearestClinicalPreset?.exact ? "exact" : ""}`}
-										data-testid="ct-mpr-preset-fit"
-									>
-										<span>{mprNearestClinicalPreset?.label ?? "пользовательский протокол"}</span>
-										<button
-											type="button"
-											onClick={applyNearestMprClinicalPreset}
-											disabled={
-												!mprControlsReady ||
-												!mprNearestClinicalPreset?.deltas?.length ||
-												!mprNearestClinicalPreset?.title
-											}
-											aria-label={`Подогнать КТ-срезы под ближайший клинический протокол: ${mprNearestClinicalPreset?.label ?? ""}`}
-											title={`Подогнать под протокол: ${mprNearestClinicalPreset?.label ?? ""}`}
-										>
-											Подогнать
-										</button>
-									</div>
-								</div>
-							</div>
-							<div className="mpr-control-panel">
-								<div className="mpr-toggle-row">
-									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-									{(cbctWorkbenchProjections ?? []).map((projection: any) => (
-										<button
-											className={mprProjection === projection ? "active" : ""}
-											key={projection}
-											type="button"
-											onClick={() => setMprProjection(projection)}
-											disabled={!mprControlsReady}
-											aria-pressed={mprProjection === projection}
-										>
-											{mprProjectionLabels[projection]}
-										</button>
-									))}
-								</div>
-								<label>
-									Угол оси: {mprAxisDeg}°
-									<input
-										aria-valuetext={mprAxisRangeValue}
-										disabled={!mprControlsReady}
-										min={mprAxisBounds.min}
-										max={mprAxisBounds.max}
-										step="1"
-										type="range"
-										value={mprAxisDeg}
-										style={{ touchAction: "none" }}
-										className="cbct-mpr-range-slider"
-										onChange={(event) =>
-											setMprAxisDeg(clampMprAxisDeg(Number(event.target.value)))
-										}
-									/>
-								</label>
-								<fieldset
-									className="mpr-stepper-row"
-									data-testid="ct-mpr-axis-nudge"
-									aria-label="Точная правка угла КТ-срезов"
-								>
-									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-									{(mprAxisNudgeDeg ?? []).map((delta: any) => (
-										<button
-											key={delta}
-											type="button"
-											onClick={() =>
-												setMprAxisDeg(clampMprAxisDeg(mprAxisDeg + delta))
-											}
-											disabled={!mprControlsReady}
-											aria-label={`Изменить угол оси КТ-среза на ${formatSignedMprStep(delta, "°")}`}
-										>
-											{formatSignedMprStep(delta, "°")}
-										</button>
-									))}
-								</fieldset>
-								<fieldset
-									className="mpr-preset-row"
-									aria-label="Быстрые углы КТ-срезов"
-								>
-									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-									{(mprAxisPresetDeg ?? []).map((angle: any) => (
-										<button
-											className={mprAxisDeg === angle ? "active" : ""}
-											key={angle}
-											type="button"
-											onClick={() => setMprAxisDeg(angle)}
-											disabled={!mprControlsReady}
-											aria-pressed={mprAxisDeg === angle}
-											aria-label={`Установить угол оси КТ-срезов ${angle > 0 ? `+${angle}` : angle}°`}
-										>
-											{angle > 0 ? `+${angle}°` : `${angle}°`}
-										</button>
-									))}
-								</fieldset>
-								<label>
-									Толщина слоя: {mprSlabMm} мм
-									<input
-										aria-valuetext={mprSlabRangeValue}
-										disabled={!mprControlsReady}
-										min={mprSlabBounds.min}
-										max={mprSlabBounds.max}
-										step="1"
-										type="range"
-										value={mprSlabMm}
-										style={{ touchAction: "none" }}
-										className="cbct-mpr-range-slider"
-										onChange={(event) =>
-											setMprSlabMm(clampMprSlabMm(Number(event.target.value)))
-										}
-									/>
-								</label>
-								<fieldset
-									className="mpr-stepper-row"
-									data-testid="ct-mpr-slab-nudge"
-									aria-label="Точная правка толщины слоя КТ-срезов"
-								>
-									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-									{(mprSlabNudgeMm ?? []).map((delta: any) => (
-										<button
-											key={delta}
-											type="button"
-											onClick={() =>
-												setMprSlabMm(clampMprSlabMm(mprSlabMm + delta))
-											}
-											disabled={!mprControlsReady}
-											aria-label={`Изменить толщину слоя КТ-срезов на ${formatSignedMprStep(delta, " мм")}`}
-										>
-											{formatSignedMprStep(delta, " мм")}
-										</button>
-									))}
-								</fieldset>
-								<fieldset
-									className="mpr-preset-row"
-									aria-label="Быстрая толщина слоя КТ-срезов"
-								>
-									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-									{(mprSlabPresetMm ?? []).map((slab: any) => (
-										<button
-											className={mprSlabMm === slab ? "active" : ""}
-											key={slab}
-											type="button"
-											onClick={() => setMprSlabMm(slab)}
-											disabled={!mprControlsReady}
-											aria-pressed={mprSlabMm === slab}
-											aria-label={`Установить толщину слоя КТ-срезов ${slab} мм`}
-										>
-											{slab} мм
-										</button>
-									))}
-									<button
-										type="button"
-										onClick={() => setMprAxisDeg(0)}
-										disabled={!mprControlsReady}
-										aria-pressed={mprAxisDeg === 0}
-										aria-label="Вернуть ось КТ-срезов к 0°"
-									>
-										<RotateCcw aria-hidden="true" /> ось 0°
-									</button>
-								</fieldset>
-								<label>
-									Положение среза: {mprSliceLabel}
-									<input
-										disabled={!mprControlsReady || mprSliceMaxIndex <= 0}
-										min="0"
-										max={mprSliceMaxIndex}
-										step="1"
-										type="range"
-										value={mprSafeSliceIndex}
-										aria-valuetext={mprSliceRangeValue}
-										style={{ touchAction: "none" }}
-										className="cbct-mpr-range-slider"
-										onChange={(event) =>
-											setMprSliceIndex(
-												clampMprSliceIndex(
-													Number(event.target.value),
-													mprSliceMaxIndex,
-												),
-											)
-										}
-									/>
-								</label>
-								<fieldset
-									className="mpr-manual-grid"
-									data-testid="ct-mpr-manual-inputs"
-									aria-label="Точные числовые настройки КТ-срезов"
-								>
-									<label>
-										Угол, °
-										<input
-											disabled={!mprControlsReady}
-											inputMode="numeric"
-											max={mprAxisBounds.max}
-											min={mprAxisBounds.min}
-											step="1"
-											type="number"
-											value={mprAxisDeg}
-											onChange={(event) =>
-												setMprAxisDeg(
-													clampMprAxisDeg(Number(event.target.value)),
-												)
-											}
-										/>
-									</label>
-									<label>
-										Слой, мм
-										<input
-											disabled={!mprControlsReady}
-											inputMode="numeric"
-											max={mprSlabBounds.max}
-											min={mprSlabBounds.min}
-											step="1"
-											type="number"
-											value={mprSlabMm}
-											onChange={(event) =>
-												setMprSlabMm(clampMprSlabMm(Number(event.target.value)))
-											}
-										/>
-									</label>
-									<label>
-										Срез
-										<input
-											disabled={!mprControlsReady || mprSliceMaxIndex <= 0}
-											inputMode="numeric"
-											max={mprSliceMaxIndex + 1}
-											min="1"
-											step="1"
-											type="number"
-											value={mprSafeSliceIndex + 1}
-											onChange={(event) =>
-												setMprSliceIndex(
-													clampMprSliceIndex(
-														Number(event.target.value) - 1,
-														mprSliceMaxIndex,
-													),
-												)
-											}
-										/>
-									</label>
-								</fieldset>
-								<fieldset
-									className="mpr-stepper-row"
-									data-testid="ct-mpr-slice-nudge"
-									aria-label="Точная навигация по КТ-срезам"
-								>
-									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-									{(mprSliceNudgeSteps ?? []).map((delta: any) => (
-										<button
-											key={delta}
-											type="button"
-											onClick={() =>
-												setMprSliceIndex(
-													clampMprSliceIndex(
-														mprSafeSliceIndex + delta,
-														mprSliceMaxIndex,
-													),
-												)
-											}
-											disabled={!mprControlsReady || mprSliceMaxIndex <= 0}
-											aria-label={`Перейти по КТ-срезам на ${formatSignedMprStep(delta, " срез")}`}
-										>
-											{formatSignedMprStep(delta, " срез")}
-										</button>
-									))}
-								</fieldset>
-								<fieldset
-									className="mpr-preset-row"
-									aria-label="Опорные КТ-срезы"
-								>
-									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-									{(mprSlicePresetFractions ?? []).map((preset: any) => {
-										const targetIndex = mprSliceIndexFromFraction(
-											preset.fraction,
-											mprSliceMaxIndex,
-										);
-										return (
-											<button
-												className={
-													mprSafeSliceIndex === targetIndex ? "active" : ""
-												}
-												key={preset.id}
-												type="button"
-												onClick={() => setMprSliceIndex(targetIndex)}
-												disabled={!mprControlsReady || mprSliceMaxIndex <= 0}
-												aria-pressed={mprSafeSliceIndex === targetIndex}
-												aria-label={`Перейти на опорный КТ-срез: ${preset.label}`}
-											>
-												{preset.label}
-											</button>
-										);
-									})}
-								</fieldset>
-								<button
-									className="mpr-reset-button"
-									type="button"
-									onClick={resetMprControls}
-									disabled={!mprControlsReady}
-								>
-									<RefreshCw aria-hidden="true" /> Сбросить КТ-срезы
-								</button>
-								<div
-									className="mpr-memory-strip"
-									data-testid="ct-mpr-memory-strip"
-								>
-									<div>
-										<strong>
-											{mprWorkbenchLocalSavedAt
-												? `Последний вид ${formatTime(mprWorkbenchLocalSavedAt)}`
-												: "Последний вид появится после настройки"}
-										</strong>
-										<span>
-											{mprWorkbenchDraftRestored
-												? "Серия открыта с сохраненными осями, окном и толщиной слоя."
-												: "Ось, толщина слоя, окно, курсор и связанные плоскости запоминаются для этой КТ-серии."}
-										</span>
-									</div>
-									<button
-										type="button"
-										onClick={restoreMprWorkbenchLocalDraft}
-										disabled={!mprControlsReady || !mprWorkbenchLocalSavedAt}
-									>
-										<History aria-hidden="true" /> Вернуть вид
-									</button>
-								</div>
-								<fieldset
-									className="mpr-clinical-preset-grid"
-									data-testid="ct-mpr-clinical-presets"
-									aria-label="Клинические протоколы КТ-срезов"
-								>
-									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-									{(mprClinicalPresets || []).map((preset: any) => {
-										const projectionFallbackNote = mprControlsReady
-											? describeMprClinicalPresetProjectionFallback(
-													preset.projection,
-													cbctWorkbenchProjections,
-													mprProjectionLabels,
-												)
-											: null;
-										return (
-											<button
-												className={
-													typeof mprClinicalPresetButtonClass === "function"
-														? mprClinicalPresetButtonClass(preset)
-														: ""
-												}
-												key={preset.id}
-												type="button"
-												onClick={() => applyMprClinicalPreset?.(preset)}
-												aria-current={
-													mprNearestClinicalPreset?.exact &&
-													mprNearestClinicalPreset?.title === preset.title
-														? "true"
-														: undefined
-												}
-												disabled={!mprControlsReady}
-											>
-												<strong>{preset.title}</strong>
-												<span>{preset.detail}</span>
-												{projectionFallbackNote ? (
-													<small>{projectionFallbackNote}</small>
-												) : null}
-											</button>
-										);
-									})}
-								</fieldset>
-								<div className="mpr-toggle-row">
-									{(
-										Object.keys(mprWindowPresetLabels) as MprWindowPreset[]
-									).map((preset) => (
-										<button
-											className={mprWindowPreset === preset ? "active" : ""}
-											key={preset}
-											type="button"
-											onClick={() => setMprWindowPreset(preset)}
-											disabled={!mprControlsReady}
-											aria-pressed={mprWindowPreset === preset}
-										>
-											{mprWindowPresetLabels[preset]}
-										</button>
-									))}
-								</div>
-								<div className="mpr-check-row">
-									<label>
-										<input
-											checked={mprCrosshairEnabled}
-											disabled={!mprControlsReady}
-											type="checkbox"
-											onChange={(event) =>
-												setMprCrosshairEnabled(event.target.checked)
-											}
-										/>
-										Синхронный курсор
-									</label>
-									<label>
-										<input
-											checked={mprLinkedPlanesEnabled}
-											disabled={!mprControlsReady}
-											type="checkbox"
-											onChange={(event) =>
-												setMprLinkedPlanesEnabled(event.target.checked)
-											}
-										/>
-										Связанные плоскости
-									</label>
-								</div>
-								{!mprControlsReady ? (
-									<p className="mpr-control-disabled-note" role="status">
-										Сначала откройте готовую КЛКТ/КТ-серию. После этого
-										включатся оси, толщина слоя и связанные плоскости.
-									</p>
-								) : null}
-							</div>
-						</div>
-					</details>
-					<div className="clinical-mpr-safety">
-						<span>
-							{selectedImagingViewerPlan?.nextAction ??
-								"Подготовить серию КЛКТ/КТ к просмотру срезов."}
-						</span>
-						<span>
-							{cbctWorkbenchSeries?.mprReadiness.resourcePolicy.nextAction ??
-								"Метаданные серии пока не загружены: сначала открываем предпросмотр и внешний просмотр."}
-						</span>
-						<span>
-							ИИ-описание не является диагнозом; врач подтверждает все выводы.
-						</span>
-					</div>
-				</section>
-			) : null}
+					</article>
+
+					{/* Studies List Sidebar */}
+					<ImagingStudyList
+						visibleImagingStudies={visibleImagingStudies}
+						activeImagingStudies={activeImagingStudies}
+						selectedImagingStudy={selectedImagingStudy}
+						activePatient={activePatient}
+						imagingKindFilter={imagingKindFilter}
+						setImagingKindFilter={setImagingKindFilter}
+						imagingKindLabels={imagingKindLabels}
+						imagingSourceLabels={imagingSourceLabels}
+						imagingPreviewSource={imagingPreviewSource}
+						imagingViewerHref={imagingViewerHref}
+						onSelectStudy={(id) => {
+							if (setSelectedImagingStudyId) setSelectedImagingStudyId(id);
+						}}
+						formatShortDate={formatShortDate}
+					/>
+				</div>
+
+				{/* 3. CBCT MPR Panel (extracted to Layer 4 ImagingMprPanel) */}
+				{selectedImagingStudy?.kind === "cbct" ? (
+					<ImagingMprPanel
+						{...props}
+						selectedImagingStudy={selectedImagingStudy}
+						imagingViewerHref={imagingViewerHref}
+						selectedImagingViewerPlan={selectedImagingViewerPlan}
+						setLocalImageIds={setLocalImageIds}
+					/>
+				) : null}
 			</div>
 
-			{isCbctStudioOpen && (
-				<Suspense fallback={<div className="cbct-studio-modal fixed inset-0 z-50 flex items-center justify-center bg-black/90 text-cyan-400 text-xs font-mono">Загрузка Romexis 3D Студии...</div>}>
-					<CbctMprImplantStudioModal
-						isOpen={true}
-						onClose={() => setIsCbctStudioOpen(false)}
-						patientName={activePatient?.name ?? activePatient?.fullName ?? "3D КЛКТ исследование"}
-						patientId={activePatient?.id}
-						study={selectedImagingStudy as any}
-						initialImageIds={localImageIds}
-						onApplyToDiary043={(diaryText) => {
-							if (!diaryText) return;
-							try {
-								window.dispatchEvent(
-									new CustomEvent("dente-apply-soap-protocol", {
-										detail: {
-											soap: {
-												treatmentDescription: diaryText,
-											},
-											immediate: true,
-											mode: "smart_append",
-										},
-									}),
-								);
-							} catch {
-								// ignore
-							}
-						}}
-					/>
-				</Suspense>
-			)}
-
+			{/* Backoffice Modals */}
 			{isPanoramicWindowOpen && (
 				<div className="panoramic-recon-window-modal fixed inset-0 z-50 flex items-center justify-center bg-black/80">
 					<Suspense fallback={<div className="p-4 text-xs text-[var(--muted)]">Загрузка 3D КТ...</div>}>
@@ -3380,6 +784,61 @@ export function ImagingView(props: ImagingViewProps) {
 						/>
 					</div>
 				</div>
+			)}
+
+			<ImagingExportModal
+				isOpen={isExportModalOpen}
+				onClose={() => setIsExportModalOpen(false)}
+				study={selectedImagingStudy}
+				patient={activePatient}
+				doctorName={activeAppointment?.doctorName}
+				clinicName={auth?.clinic?.name}
+				previewUrl={effectivePreviewUrl}
+				reportSummary={selectedStudySummary}
+			/>
+
+			{isCtSelectorOpen && (
+				<CtSelectorModal
+					isOpen={true}
+					onClose={() => setIsCtSelectorOpen(false)}
+					patientId={activePatient?.id}
+					patientName={activePatient?.name ?? activePatient?.fullName}
+					cardNumber={activePatient?.cardNumber ?? activePatient?.medicalCardNumber}
+					studies={activeImagingStudies}
+					onSelectStudy={(study) => {
+						if (study?.id && setSelectedImagingStudyId) {
+							setSelectedImagingStudyId(study.id);
+						}
+					}}
+					onOpenCbctStudio={(study, imageIds) => {
+						if (imageIds && imageIds.length > 0) {
+							setLocalImageIds(imageIds);
+						}
+						if (study?.id && setSelectedImagingStudyId) {
+							setSelectedImagingStudyId(study.id);
+						}
+						routeOpenCbctPopout({
+							patientId: activePatient?.id,
+							patientName: activePatient?.name ?? activePatient?.fullName,
+							studyId: study?.id ?? selectedImagingStudy?.id,
+							mode: "mpr",
+						});
+						showToast("3D КЛКТ Студия запущена на втором мониторе", "info");
+					}}
+					onImagesLoaded={(imageIds, studyMeta) => {
+						setLocalImageIds(imageIds);
+						if (studyMeta?.id && setSelectedImagingStudyId) {
+							setSelectedImagingStudyId(studyMeta.id);
+						}
+						routeOpenCbctPopout({
+							patientId: activePatient?.id,
+							patientName: activePatient?.name ?? activePatient?.fullName,
+							studyId: studyMeta?.id ?? selectedImagingStudy?.id,
+							mode: "mpr",
+						});
+						showToast("3D КЛКТ Студия запущена на втором мониторе", "info");
+					}}
+				/>
 			)}
 		</section>
 	);

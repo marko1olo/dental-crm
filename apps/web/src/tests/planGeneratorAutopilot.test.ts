@@ -6,7 +6,8 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it, beforeEach } from "node:test";
+import { enableDemoShowcaseMode } from "../lib/demoMode.js";
 import {
 	generate3TierPlanComparison,
 	generate3TierTreatmentPlanOptions,
@@ -28,6 +29,9 @@ import {
 } from "@dental/shared";
 
 describe("1-Click 3-Tier Treatment Plan Generator (Economy, Standard, Optimum)", () => {
+	beforeEach(() => {
+		enableDemoShowcaseMode();
+	});
 	// Sample adult clinical case:
 	// - Tooth 16: Missing (requires extraction of root + bridge in Economy, Osstem in Standard, Straumann + 3D guide in Optimum)
 	// - Tooth 11: Destroyed crown (metal-ceramic in Economy, zirconia in Standard, E.max in Optimum)

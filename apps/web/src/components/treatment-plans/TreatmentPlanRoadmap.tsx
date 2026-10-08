@@ -937,6 +937,7 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 														},
 													}),
 												);
+												window.location.hash = "#schedule";
 											}
 										}}
 										className="roadmap-book-stage-btn"

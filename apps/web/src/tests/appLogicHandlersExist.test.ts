@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import { parse } from "@babel/parser";
@@ -46,7 +46,9 @@ import { webSrcRoot } from "./utils/componentReachability";
  */
 
 const APP_PATH = join(webSrcRoot, "App.tsx");
-const LOGIC_PATH = join(webSrcRoot, "useAppLogic.tsx");
+const LOGIC_PATH = existsSync(join(webSrcRoot, "hooks", "appLogic", "index.ts"))
+	? join(webSrcRoot, "hooks", "appLogic", "index.ts")
+	: join(webSrcRoot, "useAppLogic.tsx");
 const TELEGRAM_PATH = join(webSrcRoot, "hooks", "useTelegramSettings.ts");
 const AUTH_PATH = join(webSrcRoot, "hooks", "domains", "useAuthLogic.ts");
 const SETTINGS_STORE_PATH = join(webSrcRoot, "store", "settingsStore.ts");
@@ -428,26 +430,16 @@ test("общая логика отдаёт каждое имя, которое �
 });
 
 test("мастер первого запуска не зовёт ни одного мёртвого имени", () => {
-	const source = readFileSync(APP_PATH, "utf8");
-	const lines = source.split(/\r?\n/);
-	const openIndex = lines.findIndex((line) =>
-		line.includes("if (!onboardingDismissed && !isLocalOnboardingDismissed) {"),
+	const ONBOARDING_MODAL_PATH = join(
+		webSrcRoot,
+		"components",
+		"onboarding",
+		"OnboardingWizardModal.tsx",
 	);
-	const closeIndex = lines.findIndex(
-		(line, index) =>
-			index > openIndex &&
-			line.includes("if (accessUnlockRequired && !dashboard) {"),
-	);
-	assert.ok(
-		openIndex >= 0,
-		"В App.tsx не найден гейт мастера первого запуска — страж потерял границу блока",
-	);
-	assert.ok(
-		closeIndex > openIndex,
-		"В App.tsx не найдена граница после мастера первого запуска",
-	);
-
-	const wizard = lines.slice(openIndex, closeIndex);
+	const source = existsSync(ONBOARDING_MODAL_PATH)
+		? readFileSync(ONBOARDING_MODAL_PATH, "utf8")
+		: readFileSync(APP_PATH, "utf8");
+	const wizard = source.split(/\r?\n/);
 	const consumed = namesConsumedByApp();
 	const produced = producedNames();
 	const dangling = [...consumed].filter((name) => !produced.has(name));

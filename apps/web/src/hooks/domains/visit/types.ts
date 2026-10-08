@@ -16,8 +16,8 @@ import type {
 	VisitNoteDraft,
 } from "@dental/shared";
 import type React from "react";
-import type { VisitNoteField, VisitNoteForm } from "../../AppHelpers";
-import type { useVisitStore } from "../../store/visitStore";
+import type { VisitNoteField, VisitNoteForm } from "../../../AppHelpers";
+import type { useVisitStore } from "../../../store/visitStore";
 
 export interface UseVisitLogicParams {
 	dashboard?: Dashboard | null;

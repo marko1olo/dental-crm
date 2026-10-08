@@ -110,83 +110,90 @@ export function DentalLabOrdersTrackerModal({
 	};
 
 	// Загрузка живых нарядов с бэкенда при открытии
+	const loadLiveOrders = React.useCallback(async () => {
+		try {
+			const query = currentPatientId ? `?patientId=${encodeURIComponent(currentPatientId)}` : "";
+			const res = await fetch(`/api/dental-lab/orders${query}`, {
+				headers: denteAdminSecretRequestHeaders(),
+			});
+			if (!res.ok) {
+				setOrders([]);
+				return;
+			}
+			const data = await res.json();
+			if (!Array.isArray(data) || data.length === 0) {
+				setOrders([]);
+				return;
+			}
+
+			const mapped: DentalLabOrderRecord[] = data.map((raw: any, idx: number) => {
+				const teeth = parseFdiTeethString(raw.toothFdi || "16");
+				const cType: DentalLabConstructionType =
+					raw.material?.toLowerCase().includes("emax") || raw.material?.toLowerCase().includes("e-max")
+						? "crown_emax"
+						: raw.material?.toLowerCase().includes("металл")
+						? "metal_ceramic"
+						: raw.material?.toLowerCase().includes("бюгел")
+						? "clasp_denture"
+						: raw.material?.toLowerCase().includes("элайн") || raw.material?.toLowerCase().includes("капп")
+						? "aligner_splint"
+						: raw.material?.toLowerCase().includes("шаблон")
+						? "surgical_guide"
+						: "crown_zirconia";
+
+				const rawStatus = raw.status || "sent";
+				const status: DentalLabOrderStatus =
+					rawStatus === "in_progress" ? "in_progress" :
+					rawStatus === "shipped" || rawStatus === "received" ? "ready_in_clinic" :
+					rawStatus === "fitting" || rawStatus === "refitting" ? "try_in" :
+					rawStatus === "completed" ? "delivered_to_patient" :
+					rawStatus === "cancelled" ? "warranty_rework" : "sent_to_lab";
+
+				return createDentalLabOrderRecord({
+					id: raw.id || `live-ord-${idx}`,
+					orderNumber: raw.orderNumber || `ЗТЛ-2026-${String(idx + 1).padStart(3, "0")}`,
+					patientId: raw.patientId || currentPatientId || "pat-1",
+					patientName: raw.patientName || "Пациент",
+					doctorId: raw.doctorId || "doc-ortho",
+					doctorName: raw.doctorName || "Врач-ортопед",
+					labName: raw.labName || "CAD/CAM Центр Дентал-Мастер",
+					teethFdi: teeth.length > 0 ? teeth : [16],
+					constructionType: cType,
+					materialRu: raw.material || DENTAL_LAB_CONSTRUCTIONS[cType].defaultMaterialRu,
+					vitaShade: raw.colorVita || "A2",
+					sentDate: raw.sentDate ? raw.sentDate.slice(0, 10) : toIsoDate(new Date()),
+					deadlineDate: raw.dueDate ? raw.dueDate.slice(0, 10) : toIsoDate(new Date()),
+					status,
+					patientPriceKopecks: Number(raw.priceRub) ? Number(raw.priceRub) * 100 : 2400000,
+					ztlCostKopecks: Math.round((Number(raw.priceRub) || 24000) * 35),
+					doctorSharePercent: 20,
+					clinicalNotes: raw.clinicalNotes || undefined,
+				});
+			});
+
+			setOrders(mapped);
+		} catch (_err) {
+			setOrders([]);
+		}
+	}, [currentPatientId]);
+
 	useEffect(() => {
 		if (!isOpen) return;
-		let isCancelled = false;
-
-		async function loadLiveOrders() {
-			try {
-				const query = currentPatientId ? `?patientId=${encodeURIComponent(currentPatientId)}` : "";
-				const res = await fetch(`/api/dental-lab/orders${query}`, {
-					headers: denteAdminSecretRequestHeaders(),
-				});
-				if (!res.ok) {
-					setOrders([]);
-					return;
-				}
-				const data = await res.json();
-				if (isCancelled) return;
-				if (!Array.isArray(data) || data.length === 0) {
-					setOrders([]);
-					return;
-				}
-
-				const mapped: DentalLabOrderRecord[] = data.map((raw: any, idx: number) => {
-					const teeth = parseFdiTeethString(raw.toothFdi || "16");
-					const cType: DentalLabConstructionType =
-						raw.material?.toLowerCase().includes("emax") || raw.material?.toLowerCase().includes("e-max")
-							? "crown_emax"
-							: raw.material?.toLowerCase().includes("металл")
-							? "metal_ceramic"
-							: raw.material?.toLowerCase().includes("бюгел")
-							? "clasp_denture"
-							: raw.material?.toLowerCase().includes("элайн") || raw.material?.toLowerCase().includes("капп")
-							? "aligner_splint"
-							: raw.material?.toLowerCase().includes("шаблон")
-							? "surgical_guide"
-							: "crown_zirconia";
-
-					const rawStatus = raw.status || "sent";
-					const status: DentalLabOrderStatus =
-						rawStatus === "in_progress" ? "in_progress" :
-						rawStatus === "shipped" || rawStatus === "received" ? "ready_in_clinic" :
-						rawStatus === "fitting" || rawStatus === "refitting" ? "try_in" :
-						rawStatus === "completed" ? "delivered_to_patient" :
-						rawStatus === "cancelled" ? "warranty_rework" : "sent_to_lab";
-
-					return createDentalLabOrderRecord({
-						id: raw.id || `live-ord-${idx}`,
-						orderNumber: raw.orderNumber || `ЗТЛ-2026-${String(idx + 1).padStart(3, "0")}`,
-						patientId: raw.patientId || currentPatientId || "pat-1",
-						patientName: raw.patientName || "Пациент",
-						doctorId: raw.doctorId || "doc-ortho",
-						doctorName: raw.doctorName || "Врач-ортопед",
-						labName: raw.labName || "CAD/CAM Центр Дентал-Мастер",
-						teethFdi: teeth.length > 0 ? teeth : [16],
-						constructionType: cType,
-						materialRu: raw.material || DENTAL_LAB_CONSTRUCTIONS[cType].defaultMaterialRu,
-						vitaShade: raw.colorVita || "A2",
-						sentDate: raw.sentDate ? raw.sentDate.slice(0, 10) : toIsoDate(new Date()),
-						deadlineDate: raw.dueDate ? raw.dueDate.slice(0, 10) : toIsoDate(new Date()),
-						status,
-						patientPriceKopecks: Number(raw.priceRub) ? Number(raw.priceRub) * 100 : 2400000,
-						ztlCostKopecks: Math.round((Number(raw.priceRub) || 24000) * 35),
-						doctorSharePercent: 20,
-						clinicalNotes: raw.clinicalNotes || undefined,
-					});
-				});
-
-				setOrders(mapped);
-			} catch (_err) {
-				setOrders([]);
-			}
-		}
-
 		void loadLiveOrders();
-		return () => {
-			isCancelled = true;
+	}, [isOpen, loadLiveOrders]);
+
+	// Reactive listener for lab order creation across the clinical pipeline
+	useEffect(() => {
+		const handleOrderCreated = () => {
+			if (isOpen) {
+				void loadLiveOrders();
+			}
 		};
-	}, [isOpen, currentPatientId]);
+		window.addEventListener("dente-lab-order-created", handleOrderCreated);
+		return () => {
+			window.removeEventListener("dente-lab-order-created", handleOrderCreated);
+		};
+	}, [isOpen, loadLiveOrders]);
 
 	// Закрытие выпадающих меню при клике снаружи
 	useEffect(() => {

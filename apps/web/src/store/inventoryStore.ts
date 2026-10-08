@@ -258,3 +258,6 @@ export const useInventoryStore = create<InventoryStoreState>((set, get) => ({
 
 	clearStore: () => set({ items: [], transactions: [], error: null, isLoading: false }),
 }));
+
+/** Canonical alias for warehouse store (Mandates 8e, 8k, 8n) */
+export const useWarehouseStore = useInventoryStore;

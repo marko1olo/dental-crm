@@ -33,7 +33,7 @@ export interface TreatmentPlanStageFooterProps {
 	readonly onExecuteWriteOffStage?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onPayStage?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onExportStageEstimate?: ((stage: TreatmentPlanStage) => void) | undefined;
-	readonly onOpenLabOrder?: ((teeth?: number[]) => void) | undefined;
+	readonly onOpenLabOrder?: ((teeth?: number[], options?: Record<string, unknown>) => void) | undefined;
 	readonly onOneClickLabOrder?: ((teeth?: number[]) => void) | undefined;
 	readonly onApplyStageDiscount?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onOpenInstallment?: ((stage: TreatmentPlanStage) => void) | undefined;
@@ -306,7 +306,15 @@ export const TreatmentPlanStageFooter: React.FC<TreatmentPlanStageFooterProps> =
 											const stageTeeth = stage.items
 												.map((it) => it.toothNumber)
 												.filter((t): t is number => typeof t === "number" && t > 0);
-											onOpenLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined);
+											onOpenLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined, {
+												selectedTeeth: stageTeeth.length > 0 ? stageTeeth : undefined,
+												stageId: stage.id,
+												stageNumber: stage.stageNumber,
+												stageTitle: stage.title,
+												priceRub: stage.totalRub,
+												doctorId: stage.assignedDoctorId,
+												doctorName: stage.assignedDoctorName,
+											});
 										}}
 										className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"
 										title="Оформить наряд-заказ в зуботехническую лабораторию"
