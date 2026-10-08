@@ -1,0 +1,92 @@
+{
+  "timestamp": "2026-10-09T01:13:00Z",
+  "subagent": "Red Team Inquisitor & L3 Document Template Variables Registry Decomposer",
+  "task": "Decomposition of templateVariablesRegistry.ts (1,760 lines) into modular DAG hierarchy",
+  "monolith_file": "packages/shared/src/documents/templateVariablesRegistry.ts",
+  "monolith_original_lines": 1760,
+  "facade_file": "packages/shared/src/documents/templateVariablesRegistry.ts",
+  "facade_lines": 19,
+  "decomposed_directory": "packages/shared/src/documents/templateVariables",
+  "modules": [
+    {
+      "file": "packages/shared/src/documents/templateVariables/types.ts",
+      "layer": "Layer 0 (Types & Contracts)",
+      "lines": 14,
+      "exports": ["DocumentTemplateVariableSpec"]
+    },
+    {
+      "file": "packages/shared/src/documents/templateVariables/patientVariables.ts",
+      "layer": "Layer 1 (Domain Tokens: Patient)",
+      "lines": 610,
+      "exports": ["PATIENT_DOCUMENT_TEMPLATE_VARIABLES"]
+    },
+    {
+      "file": "packages/shared/src/documents/templateVariables/representativeVariables.ts",
+      "layer": "Layer 1 (Domain Tokens: Representative)",
+      "lines": 449,
+      "exports": ["REPRESENTATIVE_DOCUMENT_TEMPLATE_VARIABLES"]
+    },
+    {
+      "file": "packages/shared/src/documents/templateVariables/clinicVariables.ts",
+      "layer": "Layer 1 (Domain Tokens: Clinic & Dates)",
+      "lines": 248,
+      "exports": ["CLINIC_DOCUMENT_TEMPLATE_VARIABLES"]
+    },
+    {
+      "file": "packages/shared/src/documents/templateVariables/doctorVariables.ts",
+      "layer": "Layer 1 (Domain Tokens: Doctor & Staff)",
+      "lines": 165,
+      "exports": ["DOCTOR_DOCUMENT_TEMPLATE_VARIABLES"]
+    },
+    {
+      "file": "packages/shared/src/documents/templateVariables/financialVariables.ts",
+      "layer": "Layer 1 (Domain Tokens: Finance)",
+      "lines": 131,
+      "exports": ["FINANCIAL_DOCUMENT_TEMPLATE_VARIABLES"]
+    },
+    {
+      "file": "packages/shared/src/documents/templateVariables/clinicalVariables.ts",
+      "layer": "Layer 1 (Domain Tokens: Clinical & Teeth)",
+      "lines": 204,
+      "exports": [
+        "CLINICAL_DOCUMENT_TEMPLATE_VARIABLES",
+        "ALL_FDI_TEETH_NUMBERS",
+        "TEETH_DOCUMENT_TEMPLATE_VARIABLES"
+      ]
+    },
+    {
+      "file": "packages/shared/src/documents/templateVariables/allVariables.ts",
+      "layer": "Layer 2 (Consolidated Master Registry)",
+      "lines": 22,
+      "exports": ["ALL_DOCUMENT_TEMPLATE_VARIABLES"]
+    },
+    {
+      "file": "packages/shared/src/documents/templateVariables/index.ts",
+      "layer": "Layer 5 (Barrel Aggregator)",
+      "lines": 19,
+      "exports": [
+        "DocumentTemplateVariableSpec",
+        "ALL_DOCUMENT_TEMPLATE_VARIABLES",
+        "PATIENT_DOCUMENT_TEMPLATE_VARIABLES",
+        "REPRESENTATIVE_DOCUMENT_TEMPLATE_VARIABLES",
+        "CLINIC_DOCUMENT_TEMPLATE_VARIABLES",
+        "DOCTOR_DOCUMENT_TEMPLATE_VARIABLES",
+        "FINANCIAL_DOCUMENT_TEMPLATE_VARIABLES",
+        "CLINICAL_DOCUMENT_TEMPLATE_VARIABLES",
+        "ALL_FDI_TEETH_NUMBERS",
+        "TEETH_DOCUMENT_TEMPLATE_VARIABLES"
+      ]
+    }
+  ],
+  "verification_results": {
+    "gate_1_line_budget": "PASSED (all files <= 800 lines, maximum 610 lines)",
+    "gate_2_ast_export_parity": "PASSED (100% baseline exports preserved)",
+    "gate_3_test_anchors": "PASSED (0 lost anchors)",
+    "gate_4_utf8_encoding": "PASSED (Clean UTF-8, 0 mojibake)",
+    "gate_5_acyclic_graph_madge": "PASSED (0 circular dependencies)",
+    "total_variables_count": 274,
+    "byte_for_byte_parity": "100% verified across all 274 tokens and all properties",
+    "unit_tests": "15 passed, 0 failed (packages/shared/src/tests/documentTemplatesEngine.test.ts)"
+  },
+  "status": "COMPLETED_100_PERCENT"
+}

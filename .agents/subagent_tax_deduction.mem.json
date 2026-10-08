@@ -1,0 +1,94 @@
+{
+  "timestamp": "2026-10-09T01:13:20Z",
+  "role": "Red Team Inquisitor & L3 Russian Tax Deduction Engine Decomposer",
+  "target": "packages/shared/src/finance/taxDeduction.ts",
+  "status": "COMPLETED",
+  "baselineLines": 1685,
+  "decomposedModules": {
+    "constants": {
+      "path": "packages/shared/src/finance/tax/constants.ts",
+      "lines": 94,
+      "layer": 0,
+      "exportsCount": 9
+    },
+    "types": {
+      "path": "packages/shared/src/finance/tax/types.ts",
+      "lines": 216,
+      "layer": 0,
+      "exportsCount": 14
+    },
+    "classification": {
+      "path": "packages/shared/src/finance/tax/classification.ts",
+      "lines": 117,
+      "layer": 1,
+      "exportsCount": 2
+    },
+    "calculation": {
+      "path": "packages/shared/src/finance/tax/calculation.ts",
+      "lines": 591,
+      "layer": 1,
+      "exportsCount": 11
+    },
+    "validators": {
+      "path": "packages/shared/src/finance/tax/validators.ts",
+      "lines": 301,
+      "layer": 1,
+      "exportsCount": 9
+    },
+    "xmlGenerators": {
+      "path": "packages/shared/src/finance/tax/xmlGenerators.ts",
+      "lines": 425,
+      "layer": 2,
+      "exportsCount": 7
+    },
+    "index": {
+      "path": "packages/shared/src/finance/tax/index.ts",
+      "lines": 13,
+      "layer": 5,
+      "purpose": "Aggregator"
+    },
+    "facade": {
+      "path": "packages/shared/src/finance/taxDeduction.ts",
+      "lines": 14,
+      "layer": 5,
+      "purpose": "Canonical backward-compatible SSOT facade"
+    }
+  },
+  "verificationGates": {
+    "gate1_line_count_budget": {
+      "status": "PASSED",
+      "maxLinesFound": 591,
+      "ceiling": 800
+    },
+    "gate2_ast_export_parity": {
+      "status": "PASSED",
+      "baselineExports": 52,
+      "facadeExports": 52,
+      "parityRate": "100%"
+    },
+    "gate3_test_anchors": {
+      "status": "PASSED",
+      "anchorsPreserved": "100%"
+    },
+    "gate4_utf8_encoding": {
+      "status": "PASSED",
+      "mojibakeFound": 0
+    },
+    "gate5_acyclic_dag_madge": {
+      "status": "PASSED",
+      "circularDependencies": 0
+    }
+  },
+  "testExecution": {
+    "testRunner": "npx tsx --test",
+    "suites": [
+      "packages/shared/src/tests/taxDeduction.test.ts",
+      "apps/api/src/documents/taxXml.test.ts",
+      "apps/api/src/tests/compliance/fnsKnd1151156.test.ts"
+    ],
+    "totalTests": 38,
+    "passed": 38,
+    "failed": 0,
+    "exitCode": 0
+  }
+}

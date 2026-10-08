@@ -1,0 +1,130 @@
+import type { DocumentTemplateVariableSpec } from "./types.js";
+
+/**
+ * Финансовые токены и суммы прописью (счета, акты, договоры).
+ * Layer 1: Domain Variable Token Group.
+ */
+export const FINANCIAL_DOCUMENT_TEMPLATE_VARIABLES: readonly DocumentTemplateVariableSpec[] = [
+	// ─── ФИНАНСОВЫЕ ТОКЕНЫ И ДЕНЬГИ ПРОПИСЬЮ ───
+	{
+		token: "Сумма",
+		domain: "finance",
+		name: "Сумма операции числом и прописью",
+		description: "Сумма операции числом и прописью в рублях и копейках",
+		exampleValue: "1 000,00 ₽ (Одна тысяча рублей 00 копеек)",
+		resolverPath: "financial.amountFull",
+	},
+	{
+		token: "СуммаЧислом",
+		domain: "finance",
+		name: "Сумма операции числом",
+		description: "Сумма операции числом в формате 1 000,00",
+		exampleValue: "1 000,00",
+		resolverPath: "financial.amountNumeric",
+	},
+	{
+		token: "СуммаПрописью",
+		domain: "finance",
+		name: "Сумма операции прописью",
+		description: "Сумма операции прописью с указанием рублей и копеек",
+		exampleValue: "Одна тысяча рублей 00 копеек",
+		resolverPath: "financial.amountWords",
+	},
+	{
+		token: "СуммаПрописьюРублей",
+		domain: "finance",
+		name: "Сумма рублей прописью",
+		description: "Целое число рублей прописью со склонением",
+		exampleValue: "одна тысяча рублей",
+		resolverPath: "financial.amountRublesWords",
+	},
+	{
+		token: "Счет.Сумма",
+		domain: "finance",
+		name: "Сумма по счету",
+		description: "Полная сумма счета с копейками",
+		exampleValue: "15 000,00 ₽ (Пятнадцать тысяч рублей 00 копеек)",
+		resolverPath: "financial.invoiceAmount",
+	},
+	{
+		token: "Счет.СуммаЧислом",
+		domain: "finance",
+		name: "Сумма по счету числом",
+		description: "Сумма по счету числом",
+		exampleValue: "15 000,00",
+		resolverPath: "financial.invoiceAmountNumeric",
+	},
+	{
+		token: "Счет.СуммаПрописью",
+		domain: "finance",
+		name: "Сумма по счету прописью",
+		description: "Сумма по счету прописью с копейками",
+		exampleValue: "Пятнадцать тысяч рублей 00 копеек",
+		resolverPath: "financial.invoiceAmountWords",
+	},
+	{
+		token: "Счет.Номер",
+		domain: "finance",
+		name: "Номер счета",
+		description: "Номер выставленного счета на оплату",
+		exampleValue: "СЧ-2026/105",
+		resolverPath: "financial.invoiceNumber",
+	},
+	{
+		token: "Счет.Дата",
+		domain: "finance",
+		name: "Дата счета",
+		description: "Дата формирования счета (ДД.ММ.ГГГГ)",
+		exampleValue: "03.09.2026",
+		resolverPath: "financial.invoiceDate",
+	},
+	{
+		token: "Договор.Сумма",
+		domain: "finance",
+		name: "Сумма договора",
+		description: "Сумма договора на оказание платных медицинских услуг",
+		exampleValue: "50 000,00 ₽",
+		resolverPath: "financial.contractAmount",
+	},
+	{
+		token: "Договор.СуммаЧислом",
+		domain: "finance",
+		name: "Сумма договора числом",
+		description: "Сумма договора числом",
+		exampleValue: "50 000,00",
+		resolverPath: "financial.contractAmountNumeric",
+	},
+	{
+		token: "Договор.СуммаПрописью",
+		domain: "finance",
+		name: "Сумма договора прописью",
+		description: "Сумма договора прописью",
+		exampleValue: "Пятьдесят тысяч рублей 00 копеек",
+		resolverPath: "financial.contractAmountWords",
+	},
+	{
+		token: "Акт.Сумма",
+		domain: "finance",
+		name: "Сумма акта выполненных работ",
+		description: "Сумма по акту сдачи-приемки оказанных услуг",
+		exampleValue: "25 000,00 ₽",
+		resolverPath: "financial.actAmount",
+	},
+	{
+		token: "Акт.СуммаЧислом",
+		domain: "finance",
+		name: "Сумма акта числом",
+		description: "Сумма акта выполненных работ числом",
+		exampleValue: "25 000,00",
+		resolverPath: "financial.actAmountNumeric",
+	},
+	{
+		token: "Акт.СуммаПрописью",
+		domain: "finance",
+		name: "Сумма акта прописью",
+		description: "Сумма акта выполненных работ прописью",
+		exampleValue: "Двадцать пять тысяч рублей 00 копеек",
+		resolverPath: "financial.actAmountWords",
+	},
+
+] as const;

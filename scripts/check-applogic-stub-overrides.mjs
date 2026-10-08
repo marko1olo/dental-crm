@@ -48,7 +48,10 @@ import { dirname, join, resolve } from "node:path";
 const require_ = createRequire(import.meta.url);
 const ts = require_("typescript");
 
-const ENTRY = "apps/web/src/useAppLogic.tsx";
+let ENTRY = "apps/web/src/useAppLogic.tsx";
+if (existsSync("apps/web/src/hooks/appLogic/index.ts")) {
+	ENTRY = "apps/web/src/hooks/appLogic/index.ts";
+}
 
 /**
  * Значения, которые считаются МЁРТВЫМИ: свойство с таким значением не несёт
@@ -275,6 +278,24 @@ function resolveNestedModule(ownerModulePath, propertyName) {
 			const hook = node.initializer.expression.text;
 			if (localImports.has(hook)) {
 				found = { path: localImports.get(hook), hook };
+			}
+		}
+		if (
+			!found &&
+			ts.isVariableDeclaration(node) &&
+			ts.isObjectBindingPattern(node.name) &&
+			node.initializer &&
+			ts.isIdentifier(node.initializer)
+		) {
+			const parentVar = node.initializer.text;
+			for (const el of node.name.elements) {
+				if (ts.isIdentifier(el.name) && el.name.text === propertyName) {
+					const parentMod = resolveNestedModule(ownerModulePath, parentVar);
+					if (parentMod) {
+						found = resolveNestedModule(parentMod.path, propertyName) || parentMod;
+					}
+					break;
+				}
 			}
 		}
 		node.forEachChild(visitVar);
