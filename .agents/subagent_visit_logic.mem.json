@@ -1,0 +1,82 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Visit Logic Domain Hook Decomposer",
+  "task": "Decompose monolith useVisitLogic.ts into modular DAG layers (<800 lines)",
+  "monolith": {
+    "path": "apps/web/src/hooks/domains/useVisitLogic.ts",
+    "originalLines": 2165,
+    "facadeLines": 8
+  },
+  "decomposedModules": [
+    {
+      "file": "apps/web/src/hooks/domains/visit/types.ts",
+      "layer": "Layer 0: Types & Contracts",
+      "lines": 279,
+      "purpose": "Pure types and parameter contracts for visit hooks"
+    },
+    {
+      "file": "apps/web/src/hooks/domains/visit/helpers.ts",
+      "layer": "Layer 1: Pure Helpers",
+      "lines": 68,
+      "purpose": "Pure utilities, signature hashing, visit scroll, mime detection"
+    },
+    {
+      "file": "apps/web/src/hooks/domains/visit/useVisitSpeechRecording.ts",
+      "layer": "Layer 2: Speech Hardware Sub-Hook",
+      "lines": 458,
+      "purpose": "Web Audio Analyser, MediaRecorder monitoring, silence detection, dictation"
+    },
+    {
+      "file": "apps/web/src/hooks/domains/visit/useVisitSpeech.ts",
+      "layer": "Layer 2: Speech Gateway & Queue Sub-Hook",
+      "lines": 686,
+      "purpose": "Speech gateway health, provider runtime, audio chunk uploads, assembly"
+    },
+    {
+      "file": "apps/web/src/hooks/domains/visit/useVisitAutosave.ts",
+      "layer": "Layer 2: Autosave Sub-Hook",
+      "lines": 144,
+      "purpose": "Debounced server draft autosave and signatures"
+    },
+    {
+      "file": "apps/web/src/hooks/domains/visit/useVisitOfflineQueue.ts",
+      "layer": "Layer 2: Offline Queue & Acceptance Sub-Hook",
+      "lines": 386,
+      "purpose": "IndexedDB offline saves queue, optimistic visits, non-destructive Zero Keystroke Loss merge"
+    },
+    {
+      "file": "apps/web/src/hooks/domains/visit/useVisitNotes.ts",
+      "layer": "Layer 2: Clinical SOAP Notes Sub-Hook",
+      "lines": 514,
+      "purpose": "EMR Form 043/y fields, AI visit flow orchestrator, offline fallback draft, transcript polish"
+    },
+    {
+      "file": "apps/web/src/hooks/domains/visit/useVisitLogic.ts",
+      "layer": "Layer 3: Master Coordinator Hook",
+      "lines": 139,
+      "purpose": "Master orchestrator assembling all sub-hooks with 100% key parity"
+    },
+    {
+      "file": "apps/web/src/hooks/domains/visit/index.ts",
+      "layer": "Layer 5: Aggregator",
+      "lines": 9,
+      "purpose": "Clean export aggregator for visit module"
+    },
+    {
+      "file": "apps/web/src/hooks/domains/useVisitLogic.ts",
+      "layer": "Layer 5: Canonical Facade",
+      "lines": 8,
+      "purpose": "Backwards-compatible facade <= 50 lines preserving all imports"
+    }
+  ],
+  "gates": {
+    "gate1_line_budget_le_800": "PASSED (All files <= 686 lines)",
+    "gate2_ast_export_parity": "PASSED (100% exports preserved)",
+    "gate3_test_anchors": "PASSED (100% test anchors preserved)",
+    "gate4_utf8_encoding": "PASSED (Clean UTF-8)",
+    "gate5_acyclic_dag_madge": "PASSED (0 circular dependencies)"
+  },
+  "tests": {
+    "visitAutosaveAndZeroKeystrokeLoss": "PASSED 6/6 tests (Exit Code 0)"
+  },
+  "status": "COMPLETED_100_PERCENT"
+}

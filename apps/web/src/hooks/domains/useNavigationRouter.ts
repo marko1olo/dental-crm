@@ -13,35 +13,36 @@ import {
 } from "../../utils/routeUtils";
 
 export interface NavigationRouterOptions {
-	selectedWorkspaceRole: StaffRole;
-	requestedWorkspaceView: AppView;
-	setCurrentView: (view: AppView | ((prev: AppView) => AppView)) => void;
-	settingsTab: string;
-	setSettingsTab: (tab: string | ((prev: string) => string)) => void;
-	setError: (error: string | null) => void;
-	auth: {
+	selectedWorkspaceRole?: StaffRole;
+	requestedWorkspaceView?: AppView;
+	setCurrentView?: (view: AppView | ((prev: AppView) => AppView)) => void;
+	settingsTab?: string;
+	setSettingsTab?: (tab: string | ((prev: string) => string)) => void;
+	setError?: (error: string | null) => void;
+	auth?: {
 		denteClinicalMutationHeaders: (
 			extra?: Record<string, string>,
 			adminSecretOverride?: string,
 		) => Record<string, string>;
 	};
-	setSelectedPatientId: (id: string | null) => void;
-	loadDashboard: () => Promise<void>;
+	setSelectedPatientId?: (id: string | null) => void;
+	loadDashboard?: () => Promise<void>;
 	scrollToVisitArea?: (selector: string) => void;
 }
 
-export function useNavigationRouter({
-	selectedWorkspaceRole,
-	requestedWorkspaceView,
-	setCurrentView,
-	settingsTab,
-	setSettingsTab,
-	setError,
-	auth,
-	setSelectedPatientId,
-	loadDashboard,
-	scrollToVisitArea,
-}: NavigationRouterOptions) {
+export function useNavigationRouter(options: NavigationRouterOptions = {}) {
+	const {
+		selectedWorkspaceRole = "doctor",
+		requestedWorkspaceView = "schedule",
+		setCurrentView = () => {},
+		settingsTab = "profile",
+		setSettingsTab = () => {},
+		setError = () => {},
+		auth = { denteClinicalMutationHeaders: () => ({}) },
+		setSelectedPatientId = () => {},
+		loadDashboard = async () => {},
+		scrollToVisitArea,
+	} = options;
 	const activeSettingsTabButtonRef = useRef<HTMLButtonElement | null>(null);
 	const [isQuickConsultLoading, setIsQuickConsultLoading] = useState(false);
 
