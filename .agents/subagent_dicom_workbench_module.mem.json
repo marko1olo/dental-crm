@@ -1,0 +1,37 @@
+{
+  "module": "apps/web/src/hooks/domains/useDicomWorkbenchModule.ts",
+  "status": "COMPLETED",
+  "baselineLines": 1617,
+  "facadeLines": 62,
+  "decomposedDirectory": "apps/web/src/hooks/domains/dicomWorkbench/",
+  "submodules": [
+    { "file": "types.ts", "lines": 77, "layer": 0 },
+    { "file": "constants.ts", "lines": 122, "layer": 0 },
+    { "file": "dicomWindowingFilters.ts", "lines": 123, "layer": 1 },
+    { "file": "dicomMeasurementTools.ts", "lines": 128, "layer": 2 },
+    { "file": "dicomSyncCoordinator.ts", "lines": 77, "layer": 2 },
+    { "file": "dicomStudyLoader.ts", "lines": 560, "layer": 1 },
+    { "file": "useDicomPreviewLifecycle.ts", "lines": 112, "layer": 3 },
+    { "file": "useDicomWorkbenchState.ts", "lines": 257, "layer": 3 },
+    { "file": "useDicomWorkbenchPlanActions.ts", "lines": 378, "layer": 3 },
+    { "file": "useDicomWorkbenchManifestActions.ts", "lines": 542, "layer": 3 },
+    { "file": "useDicomWorkbenchActions.ts", "lines": 45, "layer": 3 },
+    { "file": "useDicomWorkbenchModule.ts", "lines": 82, "layer": 3 },
+    { "file": "index.ts", "lines": 16, "layer": 5 }
+  ],
+  "verificationGates": {
+    "gate1_line_count_budget": "PASSED (all <= 800 lines)",
+    "gate2_ast_public_export_parity": "PASSED (100% baseline exports preserved)",
+    "gate3_test_anchors": "PASSED (100% anchors preserved)",
+    "gate4_utf8_encoding": "PASSED (clean UTF-8)",
+    "gate5_acyclic_graph": "PASSED (madge acyclic verified)"
+  },
+  "unitTests": {
+    "appLogicHandlersExist.test.ts": "PASSED (2/2 tests passing)"
+  },
+  "invariants": {
+    "zeroLogicMutation": true,
+    "astObjectExpressionPreserved": true,
+    "dagLayeringCompliant": true
+  }
+}
