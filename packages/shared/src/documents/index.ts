@@ -13,6 +13,7 @@ export * from "./forms039u.js";
 export * from "./forms003vu.js";
 export * from "./radiationDoseSheet.js";
 export * from "./forms107_1u.js";
+export * from "./prescriptions/index.js";
 export * from "./formsRadiologyReferral.js";
 export * from "./clinicalHtmlRenderers.js";
 export * from "./dentalFormulaRenderer.js";

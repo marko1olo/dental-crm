@@ -5,12 +5,21 @@ import {
 	generateA4CompletedWorksActHtml,
 	generateA4TreatmentPlanHtml,
 	generateA4MedicalCardDiaryHtml,
+	generateA4InformedConsentHtml,
+	generateA4PersonalDataConsentHtml,
 	formatAmountInWordsRu,
 	formatRubles,
+	formatPassportString,
+	formatAddressString,
+	formatPhoneString,
+	formatSnilsString,
+	formatDateString,
 	type A4DocumentContractData,
 	type A4DocumentActData,
 	type A4DocumentTreatmentPlanData,
 	type A4DocumentMedicalCardData,
+	type A4DocumentInformedConsentData,
+	type A4DocumentPersonalDataConsentData,
 } from "../documents/professionalA4DocumentEngine.js";
 
 const sampleClinic = {
@@ -50,8 +59,14 @@ const samplePatient = {
 	address: "г. Москва, ул. Тверская, д. 4, кв. 18",
 	registrationAddress: "г. Москва, ул. Тверская, д. 4, кв. 18",
 	snils: "123-456-789 00",
+	omsPolis: "7700 8923 1204 9512",
 	cardNumber: "МК-2026/884",
 };
+
+function countA4Pages(html: string): number {
+	const matches = html.match(/class="a4-page"/g);
+	return matches ? matches.length : 0;
+}
 
 test("formatAmountInWordsRu produces correct Russian declensions with kopecks", () => {
 	assert.equal(formatAmountInWordsRu(14850), "Четырнадцать тысяч восемьсот пятьдесят рублей 00 копеек");
@@ -60,7 +75,15 @@ test("formatAmountInWordsRu produces correct Russian declensions with kopecks", 
 	assert.equal(formatAmountInWordsRu(24.03), "Двадцать четыре рубля 03 копейки");
 });
 
-test("generateA4PaidContractHtml produces strict A4 print layout per Government Decree #736", () => {
+test("Blank line helper functions generate statutory blanks for missing database fields", () => {
+	assert.ok(formatPassportString({ fullName: "Тест" }).includes("серия ______ № __________"));
+	assert.ok(formatAddressString(null).includes("_______"));
+	assert.ok(formatPhoneString(null).includes("+7 (____) ___-__-__"));
+	assert.ok(formatSnilsString(null).includes("___-___-___ __"));
+	assert.ok(formatDateString(null).includes("«___» _________ 20__ г."));
+});
+
+test("generateA4PaidContractHtml produces strictly 3 A4 sheets per Government Decree #736 and GOST", () => {
 	const contractData: A4DocumentContractData = {
 		contractNumber: "ДОГ-2026/884",
 		contractDate: "03.10.2026",
@@ -91,13 +114,24 @@ test("generateA4PaidContractHtml produces strict A4 print layout per Government 
 
 	const html = generateA4PaidContractHtml(contractData);
 
-	// Проверяем формат A4 и типографику
+	// 1. Проверяем СТРОГО 3 листа A4
+	assert.equal(countA4Pages(html), 3, "Contract must consist of exactly 3 A4 pages");
+
+	// 2. Проверяем колонтитулы «Стр. 1 из 3», «Стр. 2 из 3», «Стр. 3 из 3»
+	assert.ok(html.includes("Стр. 1 из 3"));
+	assert.ok(html.includes("Стр. 2 из 3"));
+	assert.ok(html.includes("Стр. 3 из 3"));
+	assert.ok(html.includes("Лист 2"));
+	assert.ok(html.includes("Лист 3"));
+
+	// 3. Проверяем ГОСТ-типографику и стили
 	assert.ok(html.includes("size: A4 portrait"));
 	assert.ok(html.includes("PT Astra Serif") || html.includes("Times New Roman"));
+	assert.ok(html.includes("20mm")); // Левое поле 20 мм под скоросшиватель
+
+	// 4. Проверяем реквизиты клиники и пациента
 	assert.ok(html.includes("ДОГОВОР № ДОГ-2026/884"));
 	assert.ok(html.includes("Постановлением Правительства РФ от 11.05.2023 № 736"));
-	
-	// Проверяем реквизиты обеих сторон
 	assert.ok(html.includes("ООО &quot;Стоматология ДЕНТЕ Премиум&quot;"));
 	assert.ok(html.includes("ЛО41-01137-77/00345678"));
 	assert.ok(html.includes("Ковалёв Роман Станиславович"));
@@ -105,14 +139,101 @@ test("generateA4PaidContractHtml produces strict A4 print layout per Government 
 	assert.ok(html.includes("14 850,00"));
 	assert.ok(html.includes("Четырнадцать тысяч восемьсот пятьдесят рублей 00 копеек"));
 
-	// Проверяем юридические положения: госгарантии, 152-ФЗ, запрет на одностороннее изменение
+	// 5. Проверяем разделы договора
+	assert.ok(html.includes("1. Предмет договора и уведомление о государственных гарантиях"));
 	assert.ok(html.includes("программе государственных гарантий бесплатного оказания"));
-	assert.ok(html.includes("Федеральным законом № 152-ФЗ"));
+	assert.ok(html.includes("2. Перечень и ориентировочная стоимость услуг"));
+	assert.ok(html.includes("3. Условия и порядок предоставления медицинских услуг"));
+	assert.ok(html.includes("4. Права и обязанности Сторон"));
+	assert.ok(html.includes("опоздании Пациента более чем на 15 минут"));
 	assert.ok(html.includes("Запрет на навязывание услуг"));
+	assert.ok(html.includes("5. Порядок расчетов и оплаты"));
+	assert.ok(html.includes("кассового чека контрольно-кассовой техники в соответствии с Федеральным законом № 54-ФЗ"));
+	assert.ok(html.includes("6. Гарантийные обязательства клиники"));
+	assert.ok(html.includes("12 месяцев на терапевтические"));
+	assert.ok(html.includes("24 месяца на несъемные ортопедические"));
+	assert.ok(html.includes("7. Ответственность Сторон, разрешение споров и форс-мажор"));
+	assert.ok(html.includes("10 (десять) рабочих дней"));
+	assert.ok(html.includes("8. Конфиденциальность и защита персональных данных (152-ФЗ, ЕГИСЗ)"));
+	assert.ok(html.includes("9. Срок действия и порядок расторжения договора"));
+	assert.ok(html.includes("10. Адреса, банковские реквизиты и подписи Сторон"));
 
-	// Места для подписей и печатей
+	// 6. Подписи Сторон и печать М.П.
 	assert.ok(html.includes("ИСПОЛНИТЕЛЬ"));
 	assert.ok(html.includes("ЗАКАЗЧИК (ПАЦИЕНТ)"));
+	assert.ok(html.includes("М.П."));
+});
+
+test("generateA4InformedConsentHtml generates strictly 2 A4 sheets per Order 1051n and art. 20 323-FZ", () => {
+	const consentData: A4DocumentInformedConsentData = {
+		consentNumber: "ИДС-2026/884",
+		consentDate: "03.10.2026",
+		clinic: sampleClinic,
+		patient: samplePatient,
+		doctorFullName: "Воронов Алексей Владимирович",
+		doctorSpecialty: "Врач-стоматолог-терапевт",
+		interventionName: "Терапевтическое эндодонтическое лечение и реставрация зуба 16",
+		toothOrArea: "16",
+		diagnosisSummary: "К02.1 Кариес дентина, глубокий кариозный дефект зуба 16",
+		plannedInterventionsList: [
+			"Проводниковая и инфильтрационная местная анестезия (Артикаин 4%)",
+			"Препарирование твердых тканей зуба 16 под водяным охлаждением",
+			"Изоляция рабочего поля системой коффердам",
+			"Реставрация коронковой части зуба нанокомпозитным материалом",
+		],
+		possibleComplicationsText: "Анатомическая кривизна каналов, временная парестезия при проводниковой анестезии",
+	};
+
+	const html = generateA4InformedConsentHtml(consentData);
+
+	// 1. Проверяем СТРОГО 2 листа A4
+	assert.equal(countA4Pages(html), 2, "Informed consent must consist of exactly 2 A4 pages");
+
+	// 2. Колонтитулы «Стр. 1 из 2», «Стр. 2 из 2»
+	assert.ok(html.includes("Стр. 1 из 2"));
+	assert.ok(html.includes("Стр. 2 из 2"));
+	assert.ok(html.includes("Лист 2"));
+
+	// 3. Законодательные основания
+	assert.ok(html.includes("ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ"));
+	assert.ok(html.includes("ст. 20 Федерального закона от 21.11.2011 № 323-ФЗ"));
+	assert.ok(html.includes("Приказом Министерства здравоохранения Российской Федерации от 12.11.2021 № 1051н"));
+
+	// 4. Разделы
+	assert.ok(html.includes("1. Характер и цели медицинского вмешательства"));
+	assert.ok(html.includes("2. Методы оказания медицинской помощи и сопутствующие риски"));
+	assert.ok(html.includes("3. Альтернативные методы лечения и последствия отказа"));
+	assert.ok(html.includes("4. Возможные осложнения и сопутствующие реакции при стоматологическом лечении"));
+	assert.ok(html.includes("Местная анестезия:"));
+	assert.ok(html.includes("парестезии"));
+	assert.ok(html.includes("Терапевтическое и эндодонтическое лечение:"));
+	assert.ok(html.includes("5. Право на отказ от медицинского вмешательства"));
+	assert.ok(html.includes("6. Подтверждение добровольности и полноты разъяснений врача"));
+
+	// 5. Подписи и М.П.
+	assert.ok(html.includes("ВРАЧ, ПРОВЕДШИЙ БЕСЕДУ"));
+	assert.ok(html.includes("ПАЦИЕНТ (ЗАКАЗЧИК)"));
+	assert.ok(html.includes("М.П."));
+});
+
+test("generateA4PersonalDataConsentHtml generates statutory 152-FZ consent with EGISZ and 25-year storage", () => {
+	const consentData: A4DocumentPersonalDataConsentData = {
+		consentDate: "03.10.2026",
+		clinic: sampleClinic,
+		patient: samplePatient,
+		egiszTransferAllowed: true,
+	};
+
+	const html = generateA4PersonalDataConsentHtml(consentData);
+
+	assert.equal(countA4Pages(html), 1, "Personal data consent is rendered as 1 structured A4 page");
+	assert.ok(html.includes("Федеральным законом от 27.07.2006 № 152-ФЗ"));
+	assert.ok(html.includes("Постановлением Правительства РФ от 09.02.2022 № 140 (ЕГИСЗ)"));
+	assert.ok(html.includes("Специальные категории данных (ст. 10 152-ФЗ)"));
+	assert.ok(html.includes("Единую государственную информационную систему в сфере здравоохранения (ЕГИСЗ / РЭМД)"));
+	assert.ok(html.includes("25 лет")); // Срок хранения по Минздраву РФ
+	assert.ok(html.includes("ОПЕРАТОР ПЕРСОНАЛЬНЫХ ДАННЫХ"));
+	assert.ok(html.includes("СУБЪЕКТ ПЕРСОНАЛЬНЫХ ДАННЫХ"));
 	assert.ok(html.includes("М.П."));
 });
 
@@ -150,6 +271,7 @@ test("generateA4CompletedWorksActHtml generates statutory act with 804n codes an
 
 	const html = generateA4CompletedWorksActHtml(actData);
 
+	assert.equal(countA4Pages(html), 1);
 	assert.ok(html.includes("АКТ СДАЧИ-ПРИЕМКИ ОКАЗАННЫХ МЕДИЦИНСКИХ УСЛУГ № АВР-2026/884"));
 	assert.ok(html.includes("ДОГ-2026/884"));
 	assert.ok(html.includes("B01.065.001"));
@@ -167,7 +289,7 @@ test("generateA4CompletedWorksActHtml generates statutory act with 804n codes an
 	assert.ok(html.includes("М.П."));
 });
 
-test("generateA4TreatmentPlanHtml produces structured stages and patient approval agreement block", () => {
+test("generateA4TreatmentPlanHtml produces strictly 2 A4 sheets with stages and patient agreement", () => {
 	const planData: A4DocumentTreatmentPlanData = {
 		planDate: "03.10.2026",
 		clinic: sampleClinic,
@@ -215,14 +337,20 @@ test("generateA4TreatmentPlanHtml produces structured stages and patient approva
 
 	const html = generateA4TreatmentPlanHtml(planData);
 
-	assert.ok(html.includes("ПЛАН КОМПЛЕКСНОГО ЛЕЧЕНИЯ СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА"));
+	// 1. Проверяем СТРОГО 2 листа A4
+	assert.equal(countA4Pages(html), 2, "Treatment plan must consist of exactly 2 A4 pages");
+	assert.ok(html.includes("Стр. 1 из 2"));
+	assert.ok(html.includes("Стр. 2 из 2"));
+	assert.ok(html.includes("Лист 2"));
+
+	assert.ok(html.includes("ПЛАН КОМПЛЕКСНОГО СТОМАТОЛОГИЧЕСКОГО ЛЕЧЕНИЯ И СМЕТА"));
 	assert.ok(html.includes("1 этап: Неотложная терапевтическая санация"));
-	assert.ok(html.includes("2 этап: Хирургическая санация и дентальная имплантация"));
+	assert.ok(html.includes("2 этап: Хирургическая санация"));
 	assert.ok(html.includes("3 этап: Ортопедическая реабилитация"));
 	assert.ok(html.includes("207 850,00"));
 
 	// Проверяем блок согласования пациентом
-	assert.ok(html.includes("Блок согласования плана лечения пациентом"));
+	assert.ok(html.includes("Блок информированного согласования плана лечения пациентом"));
 	assert.ok(html.includes("Мне понятен план, этапность, ориентировочные сроки"));
 	assert.ok(html.includes("ПЛАН СОГЛАСОВАЛ (ПАЦИЕНТ)"));
 	assert.ok(html.includes("Комплексный оптимальный план с имплантацией Straumann"));
@@ -261,6 +389,12 @@ test("generateA4MedicalCardDiaryHtml contains ZERO 043u in title and full clinic
 
 	const html = generateA4MedicalCardDiaryHtml(cardData);
 
+	// Строго 2 листа A4 и колонтитулы
+	assert.equal(countA4Pages(html), 2, "Medical card diary must consist of exactly 2 A4 pages");
+	assert.ok(html.includes("Стр. 1 из 2"));
+	assert.ok(html.includes("Стр. 2 из 2"));
+	assert.ok(html.includes("Лист 2"));
+
 	// Строгий запрет на "043у" в заголовках!
 	assert.ok(html.includes("МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА / ДНЕВНИК ПРИЁМА"));
 	assert.ok(!html.includes("<h1>Форма № 043/у</h1>"));
@@ -276,4 +410,36 @@ test("generateA4MedicalCardDiaryHtml contains ZERO 043u in title and full clinic
 	assert.ok(html.includes("Harmonize A3/A2"));
 	assert.ok(html.includes("ЛЕЧАЩИЙ ВРАЧ"));
 	assert.ok(html.includes("М.П."));
+});
+
+test("Blank Line Invariant: unpopulated patient profile produces zero undefined or null leaks", () => {
+	const blankPatient = {
+		fullName: "Сидорова Анна Петровна",
+	};
+	const blankClinic = {
+		name: "Клиника Стоматологии",
+		address: "",
+		inn: "",
+		ogrn: "",
+		licenseNumber: "",
+		phone: "",
+	};
+
+	const contractHtml = generateA4PaidContractHtml({
+		contractNumber: "ДОГ-БЛАНК",
+		contractDate: "03.10.2026",
+		clinic: blankClinic,
+		patient: blankPatient,
+		estimatedTotalRub: 0,
+	});
+
+	// Проверяем отсутствие утечек
+	assert.ok(!contractHtml.includes("undefined"));
+	assert.ok(!contractHtml.includes("null"));
+	assert.ok(!contractHtml.includes("[object Object]"));
+	assert.ok(!contractHtml.includes("NaN"));
+
+	// Проверяем наличие канцелярских строк
+	assert.ok(contractHtml.includes("серия ______ № __________"));
+	assert.ok(contractHtml.includes("«___» _________ _____ г.") || contractHtml.includes("«___» _________ 20__ г."));
 });

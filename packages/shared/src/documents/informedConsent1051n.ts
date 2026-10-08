@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CLINICAL_DOCUMENT_PRINT_STYLES } from "./clinicalHtmlRenderers.js";
+import { CLINICAL_DOCUMENT_PRINT_STYLES } from "./renderers/sharedStyles.js";
 import {
 	BASE_INFORMED_CONSENT_PRESET,
 	CLINICAL_CONSENT_PRESETS,
