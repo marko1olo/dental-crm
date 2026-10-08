@@ -2,8 +2,12 @@
  * ============================================================================
  * CLINICAL PROCEDURE BOM (BILL OF MATERIALS) & MATERIAL DEDUCTION ENGINE
  * Canonical 804n Nomenclature Technological Maps & Cabinet Stock Automation
- * Backward-compatible facade delegating to ./procedureBom/ domain modules.
  * ============================================================================
  */
 
-export * from "./procedureBom/index.js";
+export * from "./types.js";
+export * from "./constants.js";
+export * from "./bomItemMatcher.js";
+export * from "./bomUnitConverter.js";
+export * from "./bomStockValidator.js";
+export * from "./bomDeductionCalculator.js";
