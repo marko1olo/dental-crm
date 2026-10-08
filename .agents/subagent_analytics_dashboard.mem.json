@@ -1,0 +1,114 @@
+{
+  "task": "AnalyticsDashboardView Decomposition",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T01:45:30Z",
+  "target_monolith": "apps/web/src/pages/AnalyticsDashboardView.tsx",
+  "baseline_lines": 1726,
+  "facade_lines": 15,
+  "decomposed_directory": "apps/web/src/pages/analyticsDashboard",
+  "modules": [
+    {
+      "path": "apps/web/src/pages/AnalyticsDashboardView.tsx",
+      "layer": 5,
+      "role": "Canonical thin facade, re-exporting component and types with 100% backward compatibility",
+      "lines": 15
+    },
+    {
+      "path": "apps/web/src/pages/analyticsDashboard/index.ts",
+      "layer": 5,
+      "role": "Clean barrel aggregator for components, hooks, constants and types",
+      "lines": 11
+    },
+    {
+      "path": "apps/web/src/pages/analyticsDashboard/constants.ts",
+      "layer": 0,
+      "role": "Pure constants (DATE_RANGES, BRANCH_OPTIONS, REFRESH_INTERVAL_MS)",
+      "lines": 17
+    },
+    {
+      "path": "apps/web/src/pages/analyticsDashboard/types.ts",
+      "layer": 0,
+      "role": "Type definitions, Chart row contracts and Sub-component prop interfaces",
+      "lines": 126
+    },
+    {
+      "path": "apps/web/src/pages/analyticsDashboard/AnalyticsKpiCards.tsx",
+      "layer": 1,
+      "role": "Summary metric cards (Total Patients, Cash Revenue, Appointments & Chairs, Average Check)",
+      "lines": 85
+    },
+    {
+      "path": "apps/web/src/pages/analyticsDashboard/AnalyticsHeaderBar.tsx",
+      "layer": 1,
+      "role": "Header bar, branch selection, date range dropdown, toolbar actions (CSV, Print, Refresh) and sub-dashboard tabs",
+      "lines": 429
+    },
+    {
+      "path": "apps/web/src/pages/analyticsDashboard/AnalyticsRevenueCharts.tsx",
+      "layer": 2,
+      "role": "Recharts visual panels (LTV Cohort AreaChart, Treatment Plan Funnel ComposedChart, Chair RadialBarChart)",
+      "lines": 342
+    },
+    {
+      "path": "apps/web/src/pages/analyticsDashboard/AnalyticsDoctorsTable.tsx",
+      "layer": 2,
+      "role": "Doctors profitability and efficiency table (Revenue, Margin, Completion Rate, Services 804n, Lab Orders)",
+      "lines": 148
+    },
+    {
+      "path": "apps/web/src/pages/analyticsDashboard/RebookingConversionRulesWidget.tsx",
+      "layer": 2,
+      "role": "15-minute rebooking attribution conversion widget and solo doctor mode indicator",
+      "lines": 255
+    },
+    {
+      "path": "apps/web/src/pages/analyticsDashboard/useAnalyticsDashboardData.ts",
+      "layer": 3,
+      "role": "Custom data fetching hook, demo mode support, background timer with visibility check, and RFC-4180 CSV export",
+      "lines": 199
+    },
+    {
+      "path": "apps/web/src/pages/analyticsDashboard/AnalyticsSubDashboards.tsx",
+      "layer": 3,
+      "role": "Sub-dashboards coordinator (Director, Curator, Marketing, Lost Patients, Freed Slots, Clinic Analytics, Modals)",
+      "lines": 109
+    },
+    {
+      "path": "apps/web/src/pages/analyticsDashboard/AnalyticsDashboardView.tsx",
+      "layer": 4,
+      "role": "Core presentation coordinator binding header, sub-dashboards, operational view, charts and tables",
+      "lines": 186
+    }
+  ],
+  "gates": {
+    "gate_1_line_budget": {
+      "status": "PASSED",
+      "limit": "<= 800 lines",
+      "max_file_lines": 429
+    },
+    "gate_2_ast_export_parity": {
+      "status": "PASSED",
+      "baseline_exports": 1,
+      "facade_exports": 18,
+      "missing_exports": 0
+    },
+    "gate_3_test_anchors": {
+      "status": "PASSED",
+      "baseline_anchors": 16,
+      "preserved_anchors": 16,
+      "missing_anchors": 0
+    },
+    "gate_4_utf8_hygiene": {
+      "status": "PASSED",
+      "mojibake_detected": false
+    },
+    "gate_5_acyclic_dag": {
+      "status": "PASSED",
+      "circular_dependencies": 0
+    }
+  },
+  "tests": {
+    "analyticsDoctorMetrics.test.ts": "26 passed, 0 failed",
+    "panelsAreMounted.test.ts": "SSOT check passed"
+  }
+}
