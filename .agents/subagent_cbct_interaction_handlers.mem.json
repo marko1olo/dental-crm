@@ -1,0 +1,140 @@
+{
+  "status": "COMPLETED",
+  "subagent": "subagent_cbct_interaction_handlers",
+  "timestamp": "2026-10-09T03:06:00.000Z",
+  "targetMonolith": "apps/web/src/components/radiology/mpr/useCbctInteractionHandlers.ts",
+  "originalLines": 1620,
+  "facadePath": "apps/web/src/components/radiology/mpr/useCbctInteractionHandlers.ts",
+  "facadeLines": 16,
+  "decomposedDirectory": "apps/web/src/components/radiology/mpr/interactionHandlers/",
+  "modules": [
+    {
+      "file": "constants.ts",
+      "lines": 31,
+      "layer": "Layer 0",
+      "description": "Zoom, WW/WL drag thresholds, hit-test radii (12px, 10px, 24px, 18px), and wheel quantize step constants"
+    },
+    {
+      "file": "types.ts",
+      "lines": 343,
+      "layer": "Layer 0",
+      "description": "Interface contracts: UseCbctInteractionHandlersParams, drag/hover state models, CbctInteractionHandlersResult, MprCanvasEventContext"
+    },
+    {
+      "file": "windowLevelHandlers.ts",
+      "lines": 56,
+      "layer": "Layer 1",
+      "description": "Pure mathematical calculation of WW/WL drag deltas and bounds clamping"
+    },
+    {
+      "file": "sliceNavigationHandlers.ts",
+      "lines": 279,
+      "layer": "Layer 1",
+      "description": "Tooth navigation mapping, oblique normal step advance, cross-section step, and wheel canvas execution"
+    },
+    {
+      "file": "panZoomHandlers.ts",
+      "lines": 233,
+      "layer": "Layer 2",
+      "description": "Pan offsets, drag zoom, click zoom, and pan/zoom mouse event handlers"
+    },
+    {
+      "file": "crosshairRotationHandlers.ts",
+      "lines": 323,
+      "layer": "Layer 2",
+      "description": "Axis rotation formulas, rotation handle hit-testing, crosshair dragging, hover detection, and cursor resolution"
+    },
+    {
+      "file": "dentalArchInteractionHandlers.ts",
+      "lines": 162,
+      "layer": "Layer 2",
+      "description": "Dental arch control point hit-test on axial plane, rAF debounced anchor drag, and hover detection"
+    },
+    {
+      "file": "nerveInteractionHandlers.ts",
+      "lines": 146,
+      "layer": "Layer 2",
+      "description": "Mandibular canal (IAN) control point hit-testing, dragging, and Fast Marching async worker integration"
+    },
+    {
+      "file": "measurementInteractionHandlers.ts",
+      "lines": 472,
+      "layer": "Layer 2",
+      "description": "Hit-testing handles/objects for rulers, angles, and probes; object deletion; measurement tool creation; active ruler mouseup commit"
+    },
+    {
+      "file": "mprCanvasMouseDown.ts",
+      "lines": 180,
+      "layer": "Layer 3",
+      "description": "Dispatches mousedown events on MPR canvas (window/level, measurements, pan/zoom, nerve, dental arch, crosshairs)"
+    },
+    {
+      "file": "mprCanvasMouseMove.ts",
+      "lines": 264,
+      "layer": "Layer 3",
+      "description": "Dispatches mousemove events on MPR canvas (dragging and hover state updates)"
+    },
+    {
+      "file": "mprCanvasEventHandlers.ts",
+      "lines": 270,
+      "layer": "Layer 4",
+      "description": "Hook providing canvas event listeners for MPR interaction (mousedown, mousemove, mouseup, doubleclick, cursor, wheel)"
+    },
+    {
+      "file": "useCbctInteractionHandlers.ts",
+      "lines": 420,
+      "layer": "Layer 5",
+      "description": "Central coordinator hook for CBCT MPR viewport interactions"
+    },
+    {
+      "file": "index.ts",
+      "lines": 18,
+      "layer": "Layer 6",
+      "description": "Barrel re-export for interaction handlers"
+    }
+  ],
+  "verificationGates": {
+    "gate1_line_count": {
+      "status": "PASSED",
+      "rule": "<= 800 lines per file",
+      "maxLinesFound": 472
+    },
+    "gate2_export_parity": {
+      "status": "PASSED",
+      "rule": "100% AST public export parity",
+      "baselineExports": 3,
+      "facadeExports": 3
+    },
+    "gate3_test_anchors": {
+      "status": "PASSED",
+      "rule": "100% test anchor parity",
+      "anchors": 0
+    },
+    "gate4_utf8_hygiene": {
+      "status": "PASSED",
+      "rule": "Clean UTF-8 encoding across workspace without BOM"
+    },
+    "gate5_acyclic_madge": {
+      "status": "PASSED",
+      "rule": "0 circular dependencies (madge)"
+    }
+  },
+  "targetedUnitTests": [
+    {
+      "suite": "cbctAdaptiveInterpolationPipeline.test.ts",
+      "testsPassed": 11,
+      "testsFailed": 0,
+      "status": "GREEN"
+    },
+    {
+      "suite": "cbctInteractiveToolsAudit.test.ts",
+      "testsPassed": 38,
+      "testsFailed": 0,
+      "status": "GREEN"
+    },
+    {
+      "suite": "cbctRedTeamRomexisArchReslice.test.ts [useCbctInteractionHandlers modular limit <= 900 lines]",
+      "status": "GREEN"
+    }
+  ]
+}
