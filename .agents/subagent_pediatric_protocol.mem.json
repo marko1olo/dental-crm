@@ -1,0 +1,130 @@
+{
+  "timestamp": "2026-10-09T02:17:30Z",
+  "subagent": "Red Team Inquisitor & L3 Pediatric Protocol Widget Decomposer",
+  "targetMonolith": "apps/web/src/components/pediatric/VisitPediatricProtocolWidget.tsx",
+  "initialLines": 1889,
+  "facadeLines": 54,
+  "status": "COMPLETED",
+  "decomposedDirectory": "apps/web/src/components/pediatric/protocolWidget/",
+  "modules": [
+    {
+      "file": "types.ts",
+      "layer": 0,
+      "lines": 118,
+      "purpose": "Contracts, DTOs, Frankl scale interfaces, protocol IDs, props"
+    },
+    {
+      "file": "constants.ts",
+      "layer": 0,
+      "lines": 349,
+      "purpose": "Clinical presets, Frankl definitions, FDI tooth validator, surface combos"
+    },
+    {
+      "file": "PediatricBehaviorCard.tsx",
+      "layer": 1,
+      "lines": 77,
+      "purpose": "Frankl scale express selector grid 1..4, zero emojis, Lucide icons"
+    },
+    {
+      "file": "PediatricPrimaryTeethCard.tsx",
+      "layer": 1,
+      "lines": 165,
+      "purpose": "Pediatric teeth chart integration, mixed dentition, orthodontic screening"
+    },
+    {
+      "file": "protocolCalculation.ts",
+      "layer": 2,
+      "lines": 289,
+      "purpose": "Clinical calculation engine for Form 043/u and 804n nomenclature"
+    },
+    {
+      "file": "PediatricSedationProtocol.tsx",
+      "layer": 2,
+      "lines": 140,
+      "purpose": "N2O conscious sedation protocol, SpO2 monitoring, O2 flush timing"
+    },
+    {
+      "file": "PediatricTreatmentSteps.tsx",
+      "layer": 2,
+      "lines": 273,
+      "purpose": "323-FZ consent alert, 6 clinical presets, surfaces, somatic and anesthesia calculator"
+    },
+    {
+      "file": "PediatricRewardsModal.tsx",
+      "layer": 2,
+      "lines": 34,
+      "purpose": "Bravery diploma and patient rewards modal integration"
+    },
+    {
+      "file": "PediatricProtocolDetailsAccordion.tsx",
+      "layer": 3,
+      "lines": 65,
+      "purpose": "Parameters accordion, quick tooth switcher, Form 043/u preview"
+    },
+    {
+      "file": "PediatricProtocolToolbar.tsx",
+      "layer": 3,
+      "lines": 211,
+      "purpose": "Top header with 1-click norm/adaptation and desktop action bar"
+    },
+    {
+      "file": "PediatricMobileBottomBar.tsx",
+      "layer": 3,
+      "lines": 114,
+      "purpose": "Floating bottom bar for Apple HIG thumb zone with 52px Primary CTA"
+    },
+    {
+      "file": "PediatricProtocolWidgetContent.tsx",
+      "layer": 4,
+      "lines": 748,
+      "purpose": "Master coordinator for pediatric protocol workspace"
+    },
+    {
+      "file": "index.ts",
+      "layer": 5,
+      "lines": 46,
+      "purpose": "Acyclic barrel re-exporting all components, types, and constants"
+    },
+    {
+      "file": "VisitPediatricProtocolWidget.tsx",
+      "layer": 5,
+      "lines": 54,
+      "purpose": "Thin canonical facade (<= 150 lines) preserving 100% backward compatibility"
+    }
+  ],
+  "gates": {
+    "gate1_line_count_budget": {
+      "status": "PASSED",
+      "ceiling": 800,
+      "maxFileLines": 748,
+      "facadeLines": 54
+    },
+    "gate2_ast_export_parity": {
+      "status": "PASSED",
+      "baselineExportsCount": 14,
+      "facadeExportsCount": 27,
+      "parityPercent": 100
+    },
+    "gate3_test_anchors_parity": {
+      "status": "PASSED",
+      "originalAnchorsCount": 26,
+      "targetAnchorsCount": 27,
+      "preservedPercent": 100
+    },
+    "gate4_utf8_encoding": {
+      "status": "PASSED",
+      "cleanUtf8": true
+    },
+    "gate5_acyclic_dag_madge": {
+      "status": "PASSED",
+      "circularDependencies": 0
+    }
+  },
+  "tests": {
+    "pediatricTestsTotal": 74,
+    "pediatricTestsPassed": 74,
+    "pediatricTestsFailed": 0,
+    "suitesTotal": 23,
+    "suitesPassed": 23
+  }
+}
