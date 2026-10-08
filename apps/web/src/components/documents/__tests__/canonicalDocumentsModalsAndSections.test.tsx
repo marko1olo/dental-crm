@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { OutpatientCardPrintModal } from "../OutpatientCardPrintModal.js";
@@ -10,6 +11,10 @@ import { FnsTaxCertificateModal } from "../FnsTaxCertificateModal.js";
 import type { Patient, GeneratedDocument } from "@dental/shared";
 import { PrescriptionForm107Modal } from "../PrescriptionForm107Modal.js";
 import { PatientContractsSection } from "../PatientContractsSection.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const docsDir = path.resolve(__dirname, "..");
 
 const mockPatient: Patient = {
 	id: "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
@@ -173,7 +178,7 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 		];
 
 		for (const file of files) {
-			const content = fs.readFileSync(path.resolve("apps/web/src/components/documents", file), "utf8");
+			const content = fs.readFileSync(path.resolve(docsDir, file), "utf8");
 			assert.strictEqual(
 				emojiRegex.test(content),
 				false,
@@ -193,7 +198,7 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 		];
 
 		for (const file of files) {
-			const content = fs.readFileSync(path.resolve("apps/web/src/components/documents", file), "utf8");
+			const content = fs.readFileSync(path.resolve(docsDir, file), "utf8");
 			assert.strictEqual(
 				jargonRegex.test(content),
 				false,

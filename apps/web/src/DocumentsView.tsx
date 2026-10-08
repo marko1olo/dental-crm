@@ -42,6 +42,7 @@ import { DocumentVoidConfirmationModal } from "./components/documents/tabs/Docum
 import { DocumentAuditFactsModal } from "./components/documents/tabs/DocumentAuditFactsModal";
 import { DocumentRegistryTab } from "./components/documents/tabs/DocumentRegistryTab";
 import { DocumentModalsContainer } from "./components/documents/tabs/DocumentModalsContainer";
+import { DocumentsCatalogView } from "./components/documents/DocumentsCatalogView";
 import { MobileDocumentsHub } from "./components/documents/mobile/MobileDocumentsHub";
 import "./styles/modules/documents.css";
 import "./components/documents/documentNavigation.css";
@@ -537,6 +538,19 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 					для пациента.
 				</p>
 			) : null}
+
+			{/* 3.1 КАТАЛОГ КЛИНИЧЕСКИХ ДОКУМЕНТОВ КЛИНИКИ */}
+			<DocumentsCatalogView
+				patient={activePatient}
+				patientName={patientName}
+				doctorName={activeDoctor?.fullName}
+				clinicName={clinicProfileDraft?.clinicName || clinicProfileDraft?.legalName}
+				clinicProfileDraft={clinicProfileDraft}
+				onOpenDocument={setSelectedDocumentKind}
+				onOpenPrimaryIntakePackage={() => setIsPrimaryIntakeOpen(true)}
+				onOpenTaxCertificate={() => setIsTaxAccountingOpen(true)}
+				className="my-3"
+			/>
 
 			{/* 4. ФАБРИКА ДОКУМЕНТОВ И АКТИВНАЯ ФОРМА */}
 			<section className="document-factory" aria-label="Быстро создать документ">
