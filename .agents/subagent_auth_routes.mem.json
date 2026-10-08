@@ -1,0 +1,33 @@
+{
+  "subagent": "L3 Fastify Auth Routes Decomposer & Red Team Inquisitor",
+  "target": "apps/api/src/routes/auth.ts",
+  "original_lines": 2314,
+  "facade_lines": 29,
+  "status": "COMPLETED_CLEAN",
+  "timestamp": "2026-10-09T00:19:30Z",
+  "gates": {
+    "Gate1_LineCount": "PASSED (All files <= 800 lines)",
+    "Gate2_ASTExportsParity": "PASSED (100% of 36 public exports preserved)",
+    "Gate3_TestAnchors": "PASSED (0 lost anchors)",
+    "Gate4_UTF8Encoding": "PASSED (Clean UTF-8, no mojibake)",
+    "Gate5_AcyclicGraph": "PASSED (0 cycles via madge)"
+  },
+  "modules": {
+    "apps/api/src/routes/auth.ts": 29,
+    "apps/api/src/routes/auth/types.ts": 220,
+    "apps/api/src/routes/auth/tokenHelpers.ts": 144,
+    "apps/api/src/routes/auth/loginRoutes.ts": 678,
+    "apps/api/src/routes/auth/sessionRoutes.ts": 124,
+    "apps/api/src/routes/auth/invitationRoutes.ts": 274,
+    "apps/api/src/routes/auth/passwordRoutes.ts": 449,
+    "apps/api/src/routes/auth/registrationRoutes.ts": 427,
+    "apps/api/src/routes/auth/index.ts": 27
+  },
+  "unit_tests_verified": [
+    "apps/api/src/tests/routes/authAdminSetupBody.test.ts (17 pass)",
+    "apps/api/src/tests/routes/clinicStaffAuthBody.test.ts (10 pass)",
+    "apps/api/src/tests/routes/inviteRoleGuard.test.ts (6 pass)",
+    "apps/api/src/tests/authRateLimit.test.ts (1 pass)",
+    "apps/api/src/tests/demo/demoShowcaseIsolationAndSeeder.test.ts (5 pass)"
+  ]
+}

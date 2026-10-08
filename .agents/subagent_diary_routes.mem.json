@@ -1,0 +1,66 @@
+{
+  "subagent": "clinical-diary-routes-decomposer",
+  "task": "Safe monolith decomposition of apps/api/src/routes/diary.ts (2,044 lines) into modular DAG architecture",
+  "timestamp": "2026-10-09T00:43:30+04:00",
+  "status": "COMPLETED_CLEAN",
+  "files": [
+    {
+      "path": "apps/api/src/routes/diary/types.ts",
+      "lines": 214,
+      "layer": 0,
+      "purpose": "Zod schemas, refusal error constants, FastifyRequest augmentation, and isDoctorOrClinicalSigner validator"
+    },
+    {
+      "path": "apps/api/src/routes/diary/diaryCrudRoutes.ts",
+      "lines": 744,
+      "layer": 2,
+      "purpose": "GET /api/diaries/visit/:visitId, POST /api/diaries, POST /api/diaries/sync-progress, PUT /api/treatment-plans/:planId/signature, and /api/diary/shifts persistence"
+    },
+    {
+      "path": "apps/api/src/routes/diary/signingRoutes.ts",
+      "lines": 434,
+      "layer": 2,
+      "purpose": "POST /api/diaries/:id/lock, PKCS#7 reattach ceremony, and signing error status mapping"
+    },
+    {
+      "path": "apps/api/src/routes/diary/revisionRoutes.ts",
+      "lines": 497,
+      "layer": 2,
+      "purpose": "GET /api/diaries/:id/revisions (audit trail, reviser full name) and POST /api/diaries/:id/revise (optimistic locking, EMK sync)"
+    },
+    {
+      "path": "apps/api/src/routes/diary/chiefPhysicianRoutes.ts",
+      "lines": 217,
+      "layer": 2,
+      "purpose": "Order 203n chief doctor quality audits (POST/GET /api/diary/:id/chief-review(s) and /api/diaries/:id/chief-review(s))"
+    },
+    {
+      "path": "apps/api/src/routes/diary/index.ts",
+      "lines": 18,
+      "layer": 5,
+      "purpose": "Master Fastify plugin registering all subroutes and re-exporting public API"
+    },
+    {
+      "path": "apps/api/src/routes/diary.ts",
+      "lines": 15,
+      "layer": 5,
+      "purpose": "Thin canonical facade (<= 50 lines) re-exporting registerDiaryRoutes and isDoctorOrClinicalSigner with Mandate 8e comment"
+    }
+  ],
+  "verification": {
+    "gate1_lineBudget": "PASSED (all <= 800 lines)",
+    "gate2_exportParity": "PASSED (19/19 baseline exports preserved)",
+    "gate3_testAnchors": "PASSED (100% test anchors preserved)",
+    "gate4_utf8Hygiene": "PASSED (Clean UTF-8)",
+    "gate5_acyclicMadge": "PASSED (0 circular dependencies)",
+    "targeted_test_suites": [
+      "apps/api/src/routes/__tests__/diaryClinicalRoles.test.ts",
+      "apps/api/src/tests/routes/diaryRefusalText.test.ts",
+      "apps/api/src/tests/routes/diarySigningCeremony.test.ts",
+      "apps/api/test/diaryRevisionAutonomyWave48.test.ts",
+      "apps/api/src/services/clinical/DiarySigningCeremonyService.test.ts",
+      "apps/api/src/services/clinical/ChiefPhysicianAuditService.test.ts"
+    ],
+    "test_results": "40 passed, 0 failed, 6 skipped across 8 test suites (100% GREEN)"
+  }
+}

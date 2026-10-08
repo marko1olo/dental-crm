@@ -1,0 +1,114 @@
+{
+  "status": "completed",
+  "audit_phase": "monolith_decomposition_and_health_audit",
+  "started_at": "2026-10-08T22:30:00+04:00",
+  "completed_at": "2026-10-08T23:55:00+04:00",
+  "completed_steps": [
+    "Read /decomposer SKILL.md in full and adhere to Behavioral Conservation Theorem",
+    "Audit original monolith apps/api/src/services/agent/tools/clinicalTools.ts (originally 2,879 lines)",
+    "Establish Layered DAG architecture under apps/api/src/services/agent/tools/clinical/ across 8 modules + 1 canonical facade",
+    "Enforce strict <= 800 line limit on all extracted files (all modules 55..733 lines, facade 7 lines)",
+    "Verify 100% public AST export parity (all 34 baseline symbols preserved)",
+    "Eliminate circular dependencies (madge audit confirmed 0 cycles across 8 files)",
+    "Clean code quality and format hygiene (biome check clean with 0 errors and 0 warnings)",
+    "Run targeted unit tests via tsx --test (90/90 tests passing, 27 test suites, 0 failures, Exit Code 0)",
+    "Run Master Health Auditor scripts/verify-decomposition-health.cjs (5/5 quality gates passed)",
+    "Report findings to parent orchestrator via send_message"
+  ],
+  "findings": {
+    "scope": "apps/api/src/services/agent/tools/clinicalTools.ts",
+    "original_lines": 2879,
+    "facade_lines": 7,
+    "modules": [
+      {
+        "file": "types.ts",
+        "lines": 55,
+        "layer": "Layer 0: Types, Interfaces & Contracts"
+      },
+      {
+        "file": "toolFormatters.ts",
+        "lines": 103,
+        "layer": "Layer 1: Pure Clinical Text Formatters (Form 043/у & Prescription 107-1/у)"
+      },
+      {
+        "file": "patientRecordTools.ts",
+        "lines": 519,
+        "layer": "Layer 2: Patient Record & EMR Exploration Tools"
+      },
+      {
+        "file": "odontogramTools.ts",
+        "lines": 450,
+        "layer": "Layer 2: Odontogram, ICD-10 & Visit Diary Copilot Tools"
+      },
+      {
+        "file": "treatmentPlanTools.ts",
+        "lines": 397,
+        "layer": "Layer 2: 3-Tier Treatment Plan & Order 804n Billing Tools"
+      },
+      {
+        "file": "prescriptionsAndSanpinTools.ts",
+        "lines": 523,
+        "layer": "Layer 2: Statutory Prescription Form 107-1/у & Clinical DDI / Allergy Safety Engine"
+      },
+      {
+        "file": "scheduleAndTaskTools.ts",
+        "lines": 733,
+        "layer": "Layer 2: Interactive Scheduling, Staff Task & Preventive Recall Tools"
+      },
+      {
+        "file": "index.ts",
+        "lines": 135,
+        "layer": "Layer 5: Canonical Module Barrel & Tool Registry Integrator"
+      }
+    ],
+    "symbols_verified": [
+      "DrugSafetyAuditParams",
+      "DrugSafetyAuditResult",
+      "TimelineEvent",
+      "analyzeRadiographVisionTool",
+      "autoFillCancellationGapTool",
+      "bookVisitTool",
+      "calculateTreatmentEstimateTool",
+      "cancelAppointmentTool",
+      "checkDrugInteractionTool",
+      "checkDrugInteractionsTool",
+      "createPrescription107Tool",
+      "createStaffTaskTool",
+      "draftLabWorkOrderTool",
+      "findPatientTool",
+      "generateInformedConsentTool",
+      "generateVisitDiaryTool",
+      "getDoctorScheduleTool",
+      "getEmrCardTool",
+      "getFamilyBalanceTool",
+      "getLabOrdersTool",
+      "getPatientRecallsTool",
+      "getPatientTimelineTool",
+      "performClinicalDrugSafetyAudit",
+      "recordSterilizationTestTool",
+      "registerClinicalTools",
+      "registerSanpinTools",
+      "render043Text",
+      "renderPrescription107Text",
+      "rescheduleAppointmentTool",
+      "scheduleRecallTool",
+      "searchPatientHistoryTool",
+      "suggestIcd10PlanTool",
+      "suggestTreatmentPlanTool",
+      "verifyKraftPackTool"
+    ],
+    "verification_gates": {
+      "gate_1_line_count_budget": "PASSED (all files <= 800 lines)",
+      "gate_2_ast_export_parity": "PASSED (34/34 public exports matched 100%)",
+      "gate_3_test_anchor_parity": "PASSED (100% test anchors preserved)",
+      "gate_4_utf8_encoding": "PASSED (clean UTF-8 across workspace)",
+      "gate_5_circular_dependency": "PASSED (madge: 0 cycles detected across 8 files)"
+    },
+    "test_results": {
+      "clinicalTools_tests": "15/15 passed (100%)",
+      "total_agent_tests": "90/90 passed (100%)",
+      "failed_tests": 0,
+      "exit_code": 0
+    }
+  }
+}

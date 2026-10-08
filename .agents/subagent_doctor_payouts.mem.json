@@ -1,0 +1,48 @@
+{
+  "role": "Red Team Inquisitor & L3 Doctor Payouts Financial Engine Decomposer",
+  "target": "apps/api/src/services/finance/doctorPayouts.ts",
+  "status": "DECOMPOSED_100_PERCENT_CLEAN",
+  "timestamp": "2026-10-09T01:01:00Z",
+  "originalLines": 1909,
+  "facadeLines": 52,
+  "decomposedDir": "apps/api/src/services/finance/doctorPayouts/",
+  "modules": [
+    { "file": "types.ts", "layer": 0, "lines": 207, "purpose": "Layer 0 Types & DTO contracts" },
+    { "file": "math.ts", "layer": 1, "lines": 23, "purpose": "Layer 1 pure decimal.js rounding & money percentages" },
+    { "file": "periods.ts", "layer": 1, "lines": 59, "purpose": "Layer 1 payout period resolver with timezone support" },
+    { "file": "formula.ts", "layer": 1, "lines": 200, "purpose": "Layer 1 pure payout calculation formula & notes" },
+    { "file": "helpers.ts", "layer": 1, "lines": 50, "purpose": "Layer 1 medical card & ZTL restoration helpers" },
+    { "file": "t51Payslip.ts", "layer": 2, "lines": 84, "purpose": "Layer 2 official T-51 payslip HTML renderer" },
+    { "file": "queries.ts", "layer": 3, "lines": 422, "purpose": "Layer 3 CTE aggregate SQL query" },
+    { "file": "drillDown.ts", "layer": 3, "lines": 269, "purpose": "Layer 3 drill-down visits, materials & ZTL orders fetcher" },
+    { "file": "reportEngine.ts", "layer": 3, "lines": 535, "purpose": "Layer 3 master payouts report builder" },
+    { "file": "index.ts", "layer": 5, "lines": 48, "purpose": "Layer 5 barrel re-export aggregator" },
+    { "file": "doctorPayouts.ts", "layer": 5, "lines": 52, "purpose": "Layer 5 thin canonical facade" }
+  ],
+  "gates": {
+    "gate1_lineBudget": "PASSED (max file lines: 535 <= 800)",
+    "gate2_exportParity": "PASSED (33/33 exports preserved, 100% parity)",
+    "gate3_testAnchors": "PASSED (100% anchors preserved)",
+    "gate4_utf8Hygiene": "PASSED (Clean UTF-8)",
+    "gate5_acyclicDag": "PASSED (0 circular dependencies via madge)"
+  },
+  "tests": {
+    "totalPassing": 40,
+    "totalFailed": 0,
+    "suites": [
+      "apps/api/src/services/finance/doctorPayouts.test.ts",
+      "apps/api/src/services/finance/payoutNegativeExplain.test.ts",
+      "apps/api/src/tests/routes/payoutPeriodCalendarDate.test.ts"
+    ],
+    "exitCode": 0
+  },
+  "invariantsVerified": {
+    "zeroLogicMutation": true,
+    "tkRfNonNegativePayout": true,
+    "ztlWarrantyReclamationFund": true,
+    "overheadConsumablesProtected": true,
+    "userIdCommissionLookup": true,
+    "paymentsVisitsAppointmentsChain": true,
+    "zeroSilentCatches": true
+  }
+}

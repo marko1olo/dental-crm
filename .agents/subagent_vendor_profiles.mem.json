@@ -1,0 +1,38 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Fastify Vendor Profiles Migration Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T00:41:00Z",
+  "target": "apps/api/src/migration/vendorProfiles.ts",
+  "baselineLines": 2154,
+  "facadeLines": 18,
+  "decomposedDirectory": "apps/api/src/migration/vendorProfiles/",
+  "modules": [
+    { "path": "apps/api/src/migration/vendorProfiles.ts", "lines": 18, "role": "Layer 5 Facade" },
+    { "path": "apps/api/src/migration/vendorProfiles/types.ts", "lines": 33, "role": "Layer 0 Types" },
+    { "path": "apps/api/src/migration/vendorProfiles/canonicalColumnName.ts", "lines": 10, "role": "Layer 1 Normalizer" },
+    { "path": "apps/api/src/migration/vendorProfiles/profiles/ident.ts", "lines": 297, "role": "Layer 2 IDENT Profile" },
+    { "path": "apps/api/src/migration/vendorProfiles/profiles/dentalpro.ts", "lines": 168, "role": "Layer 2 DentalPRO Profile" },
+    { "path": "apps/api/src/migration/vendorProfiles/profiles/infodent.ts", "lines": 120, "role": "Layer 2 Infodent Profile" },
+    { "path": "apps/api/src/migration/vendorProfiles/profiles/onec.ts", "lines": 176, "role": "Layer 2 1C:Medicine Profile" },
+    { "path": "apps/api/src/migration/vendorProfiles/profiles/stomx.ts", "lines": 283, "role": "Layer 2 StomX Profile" },
+    { "path": "apps/api/src/migration/vendorProfiles/profiles/foreignVendors.ts", "lines": 132, "role": "Layer 2 Open Dental & Dentrix Profiles" },
+    { "path": "apps/api/src/migration/vendorProfiles/profiles/genericRu.ts", "lines": 561, "role": "Layer 2 Generic Russian Rules" },
+    { "path": "apps/api/src/migration/vendorProfiles/profiles/allProfiles.ts", "lines": 23, "role": "Layer 2 Consolidated Array" },
+    { "path": "apps/api/src/migration/vendorProfiles/matcher.ts", "lines": 377, "role": "Layer 3 Matcher Engine & Kind Detector" },
+    { "path": "apps/api/src/migration/vendorProfiles/index.ts", "lines": 13, "role": "Layer 5 Master Registry Facade" }
+  ],
+  "gates": {
+    "gate1_lineBudget": "PASSED (all files <= 800 lines, maximum 561 lines)",
+    "gate2_astExportParity": "PASSED (7/7 public symbols preserved: VendorFieldRule, VendorProfile, VendorProfileMatch, canonicalColumnName, detectEntityKind, matchVendorProfile, rulesForEntity)",
+    "gate3_testAnchors": "PASSED (backend module, 0 lost anchors)",
+    "gate4_utf8Encoding": "PASSED (clean UTF-8 across all modules)",
+    "gate5_acyclicDAG": "PASSED (madge verified 0 circular dependencies)"
+  },
+  "tests": {
+    "testSuite": "apps/api/src/migration/tests/mapping.test.ts",
+    "total": 29,
+    "passed": 29,
+    "failed": 0,
+    "exitCode": 0
+  }
+}

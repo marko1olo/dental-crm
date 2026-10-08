@@ -1,0 +1,139 @@
+{
+  "role": "Red Team Inquisitor & L3 Minzdrav Prescription Forms Decomposer",
+  "status": "COMPLETED",
+  "task": "Decompose monolith packages/shared/src/documents/forms107_1u.ts into packages/shared/src/documents/prescriptions/",
+  "statutoryBasis": "Приказ Минздрава РФ № 1094н (Формы 107-1/у, 148-1/у-88, 148-1/у-04(л), ПКУ, латинские сигнатуры Rp., D.t.d. N., фарм-безопасность)",
+  "constitution": "SKILL.md (/decomposer), THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, core.md",
+  "metrics": {
+    "originalMonolithLines": 2049,
+    "facadeLines": 18,
+    "lineBudgetThreshold": 800,
+    "lineBudgetPassed": true,
+    "baselineExportsCount": 47,
+    "facadeExportsCount": 47,
+    "exportParityPercent": 100,
+    "circularDependenciesCount": 0
+  },
+  "modules": [
+    {
+      "filePath": "packages/shared/src/documents/prescriptions/types.ts",
+      "layer": "Layer 0: Types & Zod Schemas",
+      "lines": 191,
+      "symbols": [
+        "prescriptionFormTypeSchema",
+        "PrescriptionFormType",
+        "prescriptionValidityPeriodSchema",
+        "PrescriptionValidityPeriod",
+        "PREFERENTIAL_BENEFIT_CATEGORIES",
+        "prescriptionDrugItemSchema",
+        "PrescriptionDrugItem",
+        "prescriptionClinicStampSchema",
+        "PrescriptionClinicStamp",
+        "prescriptionDoctorUkepSchema",
+        "PrescriptionDoctorUkep",
+        "prescriptionPreferentialDetailsSchema",
+        "PrescriptionPreferentialDetails",
+        "form107_1uPayloadSchema",
+        "Form107_1uPayload",
+        "form148_1u88PayloadSchema",
+        "Form148_1u88Payload",
+        "form148_1u04lPayloadSchema",
+        "Form148_1u04lPayload"
+      ]
+    },
+    {
+      "filePath": "packages/shared/src/documents/prescriptions/drugCatalog.ts",
+      "layer": "Layer 1: Pure Reference Catalogs",
+      "lines": 698,
+      "symbols": [
+        "PrescriptionDosageFormMeta",
+        "PRESCRIPTION_DOSAGE_FORMS_CATALOG",
+        "PrescriptionAdministrationRouteMeta",
+        "PRESCRIPTION_ADMINISTRATION_ROUTES_CATALOG",
+        "DentalPrescriptionDrugPreset",
+        "DENTAL_PRESCRIPTION_DRUG_CATALOG",
+        "CONTROLLED_DRUG_PRESETS",
+        "PREFERENTIAL_DRUG_PRESETS"
+      ]
+    },
+    {
+      "filePath": "packages/shared/src/documents/prescriptions/dosageSafetyEngine.ts",
+      "layer": "Layer 1: Pharmacological Safety Engine",
+      "lines": 386,
+      "symbols": [
+        "DrugDosageLimit",
+        "DENTAL_DRUG_DOSAGE_LIMITS",
+        "DrugInteractionSeverity",
+        "DrugInteractionRule",
+        "DENTAL_DRUG_INTERACTION_RULES",
+        "PrescriptionPharmacologicalSafetyReport",
+        "evaluatePrescriptionPharmacologicalSafety"
+      ]
+    },
+    {
+      "filePath": "packages/shared/src/documents/prescriptions/validityCalculator.ts",
+      "layer": "Layer 1: Statutory Validity Engine",
+      "lines": 137,
+      "symbols": [
+        "PrescriptionValidityResult",
+        "PRESCRIPTION_VALIDITY_RULES",
+        "calculatePrescriptionExpiration",
+        "verifyPrescriptionStatutoryValidity"
+      ]
+    },
+    {
+      "filePath": "packages/shared/src/documents/prescriptions/prescriptionBundles.ts",
+      "layer": "Layer 1: 1-Click Express Bundles",
+      "lines": 486,
+      "symbols": [
+        "DentalPrescriptionBundleDrugItem",
+        "DentalPrescriptionExpressBundle",
+        "DENTAL_PRESCRIPTION_EXPRESS_BUNDLES",
+        "getDentalPrescriptionExpressBundle",
+        "createPrescriptionDrugItemsFromBundle",
+        "generatePrescriptionPayloadFromBundle"
+      ]
+    },
+    {
+      "filePath": "packages/shared/src/documents/prescriptions/payloadGenerators.ts",
+      "layer": "Layer 2: Payload Generators from SOAP",
+      "lines": 183,
+      "symbols": [
+        "generatePrescriptionPayloadFromSoap",
+        "generateForm148_1u88Payload",
+        "generateForm107_1uPayload"
+      ]
+    },
+    {
+      "filePath": "packages/shared/src/documents/prescriptions/index.ts",
+      "layer": "Layer 5: Master Aggregator Facade",
+      "lines": 24,
+      "symbols": ["Aggregates and re-exports all 47 symbols"]
+    },
+    {
+      "filePath": "packages/shared/src/documents/forms107_1u.ts",
+      "layer": "Layer 5: Canonical Backward-Compatible Facade",
+      "lines": 18,
+      "symbols": ["Re-exports all symbols from ./prescriptions/index.js for zero call-site breakage"]
+    }
+  ],
+  "verificationGates": {
+    "gate1_lineCountBudget": "PASSED (all files <= 698 lines, limit 800)",
+    "gate2_astExportParity": "PASSED (47 baseline exports, 47 facade exports, 100% parity)",
+    "gate3_testAnchors": "PASSED (100% test anchors preserved)",
+    "gate4_utf8Hygiene": "PASSED (Clean UTF-8 encoding)",
+    "gate5_acyclicDagMadge": "PASSED (0 circular dependencies)"
+  },
+  "unitTestsSummary": {
+    "suites": [
+      "packages/shared/src/tests/forms107_1u.test.ts",
+      "packages/shared/src/tests/minzdravDocuments.test.ts",
+      "apps/api/src/tests/routes/prescriptions.test.ts"
+    ],
+    "totalTests": 31,
+    "passedTests": 31,
+    "failedTests": 0,
+    "exitCode": 0
+  },
+  "timestamp": "2026-10-09T00:49:00Z"
+}

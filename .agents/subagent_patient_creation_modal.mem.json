@@ -1,0 +1,127 @@
+{
+  "timestamp": "2026-10-09T03:35:00Z",
+  "subagent_role": "Lead Patient Creation Modal Decomposer",
+  "target_monolith": "apps/web/src/components/patients/PatientCreationModal.tsx",
+  "original_line_count": 1526,
+  "canonical_facade": {
+    "file": "apps/web/src/components/patients/PatientCreationModal.tsx",
+    "lines": 35,
+    "max_allowed": 150,
+    "status": "PASSED"
+  },
+  "decomposed_modules": [
+    {
+      "layer": 0,
+      "file": "apps/web/src/components/patients/patientCreation/types.ts",
+      "lines": 153,
+      "max_allowed": 800,
+      "description": "Form state interfaces, step types, props, and registration results"
+    },
+    {
+      "layer": 0,
+      "file": "apps/web/src/components/patients/patientCreation/constants.ts",
+      "lines": 49,
+      "max_allowed": 800,
+      "description": "Validation helpers, communication channels, initial draft state"
+    },
+    {
+      "layer": 1,
+      "file": "apps/web/src/components/patients/patientCreation/PatientPassportAddressStep.tsx",
+      "lines": 151,
+      "max_allowed": 800,
+      "description": "Passport / birth certificate, FIAS address, SNILS, OMS/VHI policy"
+    },
+    {
+      "layer": 1,
+      "file": "apps/web/src/components/patients/patientCreation/PatientContactsRepresentativeStep.tsx",
+      "lines": 528,
+      "max_allowed": 800,
+      "description": "Phones, messenger channels, pediatric legal representatives (323-FZ)"
+    },
+    {
+      "layer": 2,
+      "file": "apps/web/src/components/patients/patientCreation/PatientMedicalFlagsStep.tsx",
+      "lines": 250,
+      "max_allowed": 800,
+      "description": "Somatic risks, drug allergies, dental formula flags, pregnancy/lactation"
+    },
+    {
+      "layer": 3,
+      "file": "apps/web/src/components/patients/patientCreation/usePatientCreationForm.ts",
+      "lines": 539,
+      "max_allowed": 800,
+      "description": "Form state management hook, validation, draft persistence, submission to API"
+    },
+    {
+      "layer": 4,
+      "file": "apps/web/src/components/patients/patientCreation/PatientCreationModalView.tsx",
+      "lines": 313,
+      "max_allowed": 800,
+      "description": "Modal container, step navigation header, action buttons, blank contract printing"
+    },
+    {
+      "layer": 5,
+      "file": "apps/web/src/components/patients/patientCreation/index.ts",
+      "lines": 20,
+      "max_allowed": 800,
+      "description": "Public barrel export file"
+    }
+  ],
+  "gates": {
+    "gate_1_line_budget": {
+      "status": "PASSED",
+      "details": "All modules strictly < 800 lines; canonical facade is 35 lines (<= 150)"
+    },
+    "gate_2_ast_export_parity": {
+      "status": "PASSED",
+      "baseline_exports": 4,
+      "facade_exports": 4,
+      "symbols": [
+        "CreatePatientModal",
+        "PatientCreationModal",
+        "PatientCreationModalProps",
+        "default"
+      ]
+    },
+    "gate_3_test_anchors": {
+      "status": "PASSED",
+      "preserved_anchors": 32,
+      "details": "100% of data-testid (19), id (11), aria-label (2) anchors preserved verbatim"
+    },
+    "gate_4_utf8_hygiene": {
+      "status": "PASSED",
+      "details": "Clean UTF-8 without BOM across all created files"
+    },
+    "gate_5_acyclic_dag": {
+      "status": "PASSED",
+      "details": "0 circular dependencies detected via madge"
+    }
+  },
+  "targeted_test_suites": [
+    {
+      "suite": "apps/web/src/tests/pediatricRepresentative1Click.test.ts",
+      "tests_passed": 14,
+      "tests_failed": 0,
+      "status": "PASSED"
+    },
+    {
+      "suite": "apps/web/src/components/visit/__tests__/subagent3DoctorAutonomyWave64.test.tsx",
+      "tests_passed": 7,
+      "tests_failed": 0,
+      "status": "PASSED"
+    },
+    {
+      "suite": "apps/web/src/tests/marketingAttributionSeparation.test.tsx",
+      "tests_passed": 6,
+      "tests_failed": 0,
+      "status": "PASSED"
+    },
+    {
+      "suite": "apps/web/src/components/pediatric/__tests__/pediatricOneClickParentDiploma.test.tsx",
+      "tests_passed": 7,
+      "tests_failed": 0,
+      "status": "PASSED"
+    }
+  ],
+  "conclusion": "Decomposition 100% complete and fully verified."
+}

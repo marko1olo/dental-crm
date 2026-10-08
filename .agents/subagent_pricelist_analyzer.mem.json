@@ -1,0 +1,104 @@
+{
+  "timestamp": "2026-10-08T23:56:30+04:00",
+  "target": "apps/api/src/pricelist/analyzer.ts",
+  "original_lines": 2741,
+  "status": "COMPLETED",
+  "architecture": {
+    "facade": {
+      "path": "apps/api/src/pricelist/analyzer.ts",
+      "lines": 24,
+      "role": "Canonical thin facade re-exporting 100% of public exports and barrel symbols"
+    },
+    "decomposed_modules": [
+      {
+        "file": "types.ts",
+        "lines": 113,
+        "layer": 0,
+        "role": "Pricelist domain types, DTO contracts, GroqChatPayload, calendarFromClock, and constants"
+      },
+      {
+        "file": "textNormalizers.ts",
+        "lines": 403,
+        "layer": 1,
+        "role": "Text normalization, NFKC sanitization, currency/amount regexes, parseMoney (kopeck-exact)"
+      },
+      {
+        "file": "priceScanner.ts",
+        "lines": 407,
+        "layer": 2,
+        "role": "Edition year detection, collectPriceCandidates, extractPrice, stripPriceFromTitle, durationFromLine"
+      },
+      {
+        "file": "categoryClassifiers.ts",
+        "lines": 660,
+        "layer": 1,
+        "role": "Clinical classification rules (therapy, surgery, prosthetics, etc.), materials, brands, crown types, tooth scopes"
+      },
+      {
+        "file": "similarityMatcher.ts",
+        "lines": 85,
+        "layer": 2,
+        "role": "Token-based catalog service matching, warning generation, confidence score calculation"
+      },
+      {
+        "file": "tableExtractor.ts",
+        "lines": 411,
+        "layer": 2,
+        "role": "Tabular line splitting, deterministic row builder, summary aggregations, row gate validation"
+      },
+      {
+        "file": "aiParser.ts",
+        "lines": 681,
+        "layer": 3,
+        "role": "Groq vision/LLM JSON extraction, prompts, itemFromGroq, key rotation resilience, and error sanitization"
+      },
+      {
+        "file": "index.ts",
+        "lines": 126,
+        "layer": 5,
+        "role": "Master orchestrator analyzePricelist, fallback coordination, and barrel export"
+      }
+    ]
+  },
+  "verification_gates": {
+    "gate_1_line_count": {
+      "status": "PASSED",
+      "details": "All 8 decomposed files are strictly <= 800 lines (max is 681 lines, facade is 24 lines)"
+    },
+    "gate_2_ast_export_parity": {
+      "status": "PASSED",
+      "details": "100% (74/74) public and barrel exports preserved on the facade"
+    },
+    "gate_3_test_anchors": {
+      "status": "PASSED",
+      "details": "0 lost or missing test anchors"
+    },
+    "gate_4_encoding_hygiene": {
+      "status": "PASSED",
+      "details": "UTF-8 clean across workspace"
+    },
+    "gate_5_acyclic_dag": {
+      "status": "PASSED",
+      "details": "0 circular dependencies detected by madge"
+    }
+  },
+  "test_results": {
+    "pricelist_tests": {
+      "command": "npx tsx --test apps/api/src/pricelist/*.test.ts",
+      "passed": 114,
+      "failed": 0,
+      "exit_code": 0
+    },
+    "frozen_services_inquisition": {
+      "command": "npx tsx --test apps/api/src/tests/redteam/frozenServicesInquisition.test.ts",
+      "passed": 18,
+      "failed": 0,
+      "exit_code": 0
+    },
+    "decomposition_health_auditor": {
+      "command": "node scripts/verify-decomposition-health.cjs apps/api/src/pricelist/analyzer.ts apps/api/src/pricelist/analyzer.ts apps/api/src/pricelist/analyzer/",
+      "result": "100% CLEAN (ALL GATES PASSED)",
+      "exit_code": 0
+    }
+  }
+}

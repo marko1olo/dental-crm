@@ -1,0 +1,35 @@
+{
+  "target": "apps/api/src/services/treatmentConsumablesService.ts",
+  "status": "completed",
+  "timestamp": "2026-10-09T00:13:20Z",
+  "originalLines": 2488,
+  "facadeLines": 20,
+  "decomposedDirectory": "apps/api/src/services/treatmentConsumables",
+  "modules": {
+    "types.ts": { "lines": 36, "layer": 0, "description": "Contracts, DbExecutor, TreatmentConsumablesServiceError, InsufficientStockError, toValidUuid" },
+    "recipeService.ts": { "lines": 601, "layer": 2, "description": "Consumable BOM recipes linking, listLinks, getLink, createLink, updateLink, deleteLink, getRecipeForService, getLinkOptions" },
+    "stockAvailability.ts": { "lines": 107, "layer": 2, "description": "Pre-flight stock availability check, checkStockSufficiency" },
+    "inventoryReports.ts": { "lines": 98, "layer": 2, "description": "Inventory alerts summary, expiration categorization, stock valuation, getInventoryAlerts" },
+    "stockDeduction.ts": { "lines": 695, "layer": 2, "description": "Transactional stock deduction with FEFO, advisory locks, deadlock-free key sorting, deductForVisit, deductForToothTreatment" },
+    "quickWriteoffService.ts": { "lines": 385, "layer": 2, "description": "1-click nurse quick write-offs for standard kits and carpules (SanPiN 3.3686-21, zero-commission)" },
+    "bundleWriteoffService.ts": { "lines": 444, "layer": 2, "description": "1-click shift and visit bundle write-offs (therapy, surgery, implant, sinus_gbr) with soft overdraft" },
+    "manualDeduction.ts": { "lines": 210, "layer": 2, "description": "Emergency manual item deductions with guaranteed soft overdraft, deductManualItems" },
+    "index.ts": { "lines": 63, "layer": 5, "description": "Master coordinator and barrel export, TreatmentConsumablesService aggregator class" },
+    "treatmentConsumablesService.ts": { "lines": 20, "layer": 5, "description": "Canonical thin facade re-exporting instance, class, and types 1:1" }
+  },
+  "healthAudit": {
+    "gate1_lineCountBudget": "PASSED (all files <= 800 lines, maximum is 695 lines)",
+    "gate2_astExportParity": "PASSED (100% public exports preserved: 22 symbols)",
+    "gate3_testAnchorParity": "PASSED (100% test anchors preserved)",
+    "gate4_utf8Hygiene": "PASSED (clean UTF-8 encoding)",
+    "gate5_dagAcyclic": "PASSED (0 circular dependencies confirmed via madge)"
+  },
+  "testSuitesPassing": [
+    "apps/api/src/services/treatmentConsumablesService.test.ts (8/8 pass)",
+    "apps/api/src/tests/routes/treatmentConsumables.test.ts (5/5 pass)",
+    "packages/shared/src/tests/treatmentConsumables.test.ts (10/10 pass)",
+    "apps/api/src/tests/routes/surgeryRoutes.test.ts",
+    "apps/api/src/tests/routes/warehouseSoftOverdraftAndTechCardInquisitor.test.ts",
+    "apps/api/src/tests/routes/warehouseStockEndpoint.test.ts"
+  ]
+}

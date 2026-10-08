@@ -1,0 +1,33 @@
+{
+  "subagent": "subagent_dicom_processor",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T00:57:30Z",
+  "target": "apps/api/src/services/imaging/DicomProcessorService.ts",
+  "decomposedDirectory": "apps/api/src/services/imaging/dicomProcessor",
+  "baselineLines": 1913,
+  "facadeLines": 18,
+  "fileBudgets": {
+    "types.ts": 230,
+    "normalization.ts": 254,
+    "pathGuards.ts": 133,
+    "headerParser.ts": 465,
+    "previewRenderer.ts": 513,
+    "manifestParser.ts": 362,
+    "service.ts": 46,
+    "index.ts": 12,
+    "DicomProcessorService.ts (facade)": 18
+  },
+  "gates": {
+    "gate1_line_count": "PASSED (all <= 800 lines)",
+    "gate2_export_parity": "PASSED (100% baseline exports preserved)",
+    "gate3_test_anchors": "PASSED (100% anchors preserved)",
+    "gate4_utf8_encoding": "PASSED (clean UTF-8)",
+    "gate5_acyclic_dag": "PASSED (0 cycles by madge)"
+  },
+  "tests": {
+    "unitTestCommand": "npx tsx --test apps/api/src/services/imaging/DicomProcessorService.test.ts",
+    "passed": 12,
+    "failed": 0,
+    "exitCode": 0
+  }
+}

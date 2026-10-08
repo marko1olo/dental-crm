@@ -1,0 +1,158 @@
+{
+  "task": "CRDT Sync Engine Monolith Decomposition",
+  "status": "SUCCESS",
+  "timestamp": "2026-10-09T01:05:00.000Z",
+  "targetMonolith": {
+    "path": "packages/shared/src/sync/crdtSyncEngine.ts",
+    "originalLines": 1853,
+    "decomposedFacadeLines": 8,
+    "facadeInvariant": "Passed (<= 50 lines, thin backward-compatible re-export facade)"
+  },
+  "modules": [
+    {
+      "path": "packages/shared/src/sync/crdtEngine/types.ts",
+      "layer": "Layer 0: Types & Schemas",
+      "lines": 275,
+      "exports": [
+        "dentalToothStatusSchema",
+        "DentalToothStatus",
+        "dentalSurfaceSchema",
+        "DentalSurface",
+        "LwwElementRecord",
+        "SerializedLwwElementSet",
+        "LwwMapEntry",
+        "SerializedLwwMap",
+        "SoapMedicalDiaryRecord",
+        "CrdtOutboxStatus",
+        "CrdtOutboxQueueItem",
+        "CrdtSyncEngineStatus",
+        "CrdtBatchApplyResult",
+        "CrdtSyncSummary",
+        "CrdtSyncEngineEventType",
+        "CrdtSyncEngineListener",
+        "CrdtStorageDriver",
+        "CrdtSyncEngineOptions",
+        "FieldConflictDetail",
+        "MutationVector",
+        "OdontogramToothState",
+        "SyncMutationAction",
+        "SyncMutationEntityKind",
+        "SyncMutationEnvelope",
+        "SyncPushBatchRequest",
+        "SyncPushBatchResponse",
+        "SyncTierMode",
+        "VectorClock"
+      ]
+    },
+    {
+      "path": "packages/shared/src/sync/crdtEngine/fdiTeeth.ts",
+      "layer": "Layer 1: FDI Dental Teeth Domain Constants",
+      "lines": 28,
+      "exports": [
+        "FDI_ADULT_TEETH",
+        "FDI_PEDIATRIC_TEETH",
+        "ALL_FDI_TEETH",
+        "isFdiToothNumber"
+      ]
+    },
+    {
+      "path": "packages/shared/src/sync/crdtEngine/lamportClock.ts",
+      "layer": "Layer 1: Lamport Logical Clock",
+      "lines": 60,
+      "exports": [
+        "LamportClock"
+      ]
+    },
+    {
+      "path": "packages/shared/src/sync/crdtEngine/lwwElementSet.ts",
+      "layer": "Layer 1: LWW-Element-Set CRDT",
+      "lines": 185,
+      "exports": [
+        "LwwElementSet"
+      ]
+    },
+    {
+      "path": "packages/shared/src/sync/crdtEngine/lwwMap.ts",
+      "layer": "Layer 1: LWW-Map CRDT",
+      "lines": 166,
+      "exports": [
+        "LwwMap"
+      ]
+    },
+    {
+      "path": "packages/shared/src/sync/crdtEngine/storageDrivers.ts",
+      "layer": "Layer 1: Multi-Tier Storage Drivers",
+      "lines": 459,
+      "exports": [
+        "MemoryCrdtStorageDriver",
+        "IndexedDbCrdtStorageDriver"
+      ]
+    },
+    {
+      "path": "packages/shared/src/sync/crdtEngine/engine.ts",
+      "layer": "Layer 3: Core Coordinator & Outbox Engine",
+      "lines": 726,
+      "exports": [
+        "CrdtSyncEngine",
+        "crdtSyncEngine"
+      ]
+    },
+    {
+      "path": "packages/shared/src/sync/crdtEngine/index.ts",
+      "layer": "Layer 5: Aggregator Facade",
+      "lines": 13,
+      "exports": [
+        "*"
+      ]
+    },
+    {
+      "path": "packages/shared/src/sync/crdtSyncEngine.ts",
+      "layer": "Layer 5: Canonical Facade",
+      "lines": 8,
+      "exports": [
+        "*"
+      ]
+    }
+  ],
+  "verificationGates": {
+    "gate1_lineCountBudget": {
+      "status": "PASSED",
+      "limit": "<= 800 lines",
+      "maxLinesFound": 726
+    },
+    "gate2_astExportParity": {
+      "status": "PASSED",
+      "baselineExports": 39,
+      "facadeExports": 39,
+      "missingExports": []
+    },
+    "gate3_testAnchors": {
+      "status": "PASSED",
+      "preserved": "100%"
+    },
+    "gate4_utf8Encoding": {
+      "status": "PASSED",
+      "mojibakeFound": 0
+    },
+    "gate5_acyclicMadgeDAG": {
+      "status": "PASSED",
+      "circularDependencies": 0
+    }
+  },
+  "tests": {
+    "crdtSyncEngineTest": {
+      "command": "npx tsx --test packages/shared/src/sync/__tests__/crdtSyncEngine.test.ts",
+      "exitCode": 0,
+      "totalTests": 22,
+      "passed": 22,
+      "failed": 0
+    },
+    "lanSyncTests": {
+      "command": "npx tsx --test packages/shared/src/sync/__tests__/lanMesh.test.ts packages/shared/src/sync/__tests__/lanFailoverAndSplitBrain.test.ts packages/shared/src/sync/__tests__/multiSubnetScanner.test.ts",
+      "exitCode": 0,
+      "totalTests": 43,
+      "passed": 43,
+      "failed": 0
+    }
+  }
+}

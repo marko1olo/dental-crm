@@ -1,8 +1,8 @@
 # 📄 Outpatient Documents, Legal Forms & PDF Lifecycle
 
 
-> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
-Данный документ содержит полное архитектурное описание жизненного цикла медицинских, юридических и финансовых документов в DENTE CRM: Карта приёма, ИДС (1051н), Рецепты (107-1/у), Справки ФНС (КНД 1151156), Договоры, Акты выполненных услуг (804н), электронные подписи (ПЭП / УКЭП КриптоПро) и безбарьерная печать (Мандаты 8e и 8n).
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [⚖️ Стандарт документов РФ (.agents/RUSSIAN_BUREAUCRATIC_DOCUMENTS_STANDARD.md)](file:///C:/Clinic_MVP/dental-crm/.agents/RUSSIAN_BUREAUCRATIC_DOCUMENTS_STANDARD.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+Данный документ содержит полное архитектурное описание жизненного цикла медицинских, юридических и финансовых документов в DENTE CRM: Карта приёма, ИДС (1051н), Рецепты (107-1/у), Справки ФНС (КНД 1151156), Договоры, Акты выполненных услуг (804н), электронные подписи (ПЭП / УКЭП КриптоПро) и безбарьерная печать (Мандаты 8e и 8n). Все печатные формы строго подчиняются [Стандарту документов РФ](file:///C:/Clinic_MVP/dental-crm/.agents/RUSSIAN_BUREAUCRATIC_DOCUMENTS_STANDARD.md).
 
 ---
 

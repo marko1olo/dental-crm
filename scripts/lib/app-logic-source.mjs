@@ -27,10 +27,19 @@ const DOMAINS_DIR = path.join(WEB_SOURCE_ROOT, "hooks", "domains");
 export function appLogicSourceFiles() {
 	let domains = [];
 	try {
-		domains = readdirSync(DOMAINS_DIR)
-			.filter((name) => name.endsWith(".ts") || name.endsWith(".tsx"))
-			.sort()
-			.map((name) => path.join(DOMAINS_DIR, name));
+		function walk(dir) {
+			const entries = readdirSync(dir, { withFileTypes: true });
+			for (const e of entries) {
+				const full = path.join(dir, e.name);
+				if (e.isDirectory() && e.name !== "node_modules" && e.name !== "__tests__") {
+					walk(full);
+				} else if (e.isFile() && (e.name.endsWith(".ts") || e.name.endsWith(".tsx"))) {
+					domains.push(full);
+				}
+			}
+		}
+		walk(DOMAINS_DIR);
+		domains.sort();
 	} catch {
 		// Папки доменов может не быть — тогда источник только один.
 	}

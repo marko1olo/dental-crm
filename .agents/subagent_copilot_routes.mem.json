@@ -1,0 +1,76 @@
+{
+  "subagent": "L3 Fastify AI Copilot Routes Decomposer & Red Team Inquisitor",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T00:30:00Z",
+  "targetMonolith": "apps/api/src/routes/copilot.ts",
+  "originalLines": 1980,
+  "decomposedDirectory": "apps/api/src/routes/copilot/",
+  "modules": [
+    {
+      "file": "apps/api/src/routes/copilot/types.ts",
+      "layer": "Layer 0 (Types & Zod Schemas)",
+      "lines": 142,
+      "budgetPassed": true
+    },
+    {
+      "file": "apps/api/src/routes/copilot/contextExtractor.ts",
+      "layer": "Layer 1 (Pure Context Utility)",
+      "lines": 124,
+      "budgetPassed": true
+    },
+    {
+      "file": "apps/api/src/routes/copilot/sessionRoutes.ts",
+      "layer": "Layer 2 (Fastify Sessions Sub-Routes)",
+      "lines": 152,
+      "budgetPassed": true
+    },
+    {
+      "file": "apps/api/src/routes/copilot/chatRoutes.ts",
+      "layer": "Layer 2 (Fastify SSE Streaming Sub-Routes)",
+      "lines": 356,
+      "budgetPassed": true
+    },
+    {
+      "file": "apps/api/src/routes/copilot/actionRoutes.ts",
+      "layer": "Layer 2 (Fastify Action & Clinical Tools Sub-Routes)",
+      "lines": 678,
+      "budgetPassed": true
+    },
+    {
+      "file": "apps/api/src/routes/copilot/proactiveRoutes.ts",
+      "layer": "Layer 2 (Fastify Proactive Sentinel & Daemons Sub-Routes)",
+      "lines": 639,
+      "budgetPassed": true
+    },
+    {
+      "file": "apps/api/src/routes/copilot/index.ts",
+      "layer": "Layer 5 (Master Plugin Coordinator)",
+      "lines": 24,
+      "budgetPassed": true
+    },
+    {
+      "file": "apps/api/src/routes/copilot.ts",
+      "layer": "Layer 5 (Canonical Facade)",
+      "lines": 16,
+      "budgetPassed": true
+    }
+  ],
+  "verificationGates": {
+    "Gate1_LineCountBudget": "PASSED (all files <= 800 lines)",
+    "Gate2_ASTExportParity": "PASSED (100% parity, 27 exports preserved)",
+    "Gate3_TestAnchorParity": "PASSED (100% test anchors preserved)",
+    "Gate4_UTF8Encoding": "PASSED (Clean UTF-8)",
+    "Gate5_AcyclicGraph": "PASSED (Acyclic DAG confirmed, 0 cycles)"
+  },
+  "tests": {
+    "copilotSuite": "PASSED (13/13 passing)",
+    "copilotToolsSuite": "PASSED",
+    "autonomousAgentSuite": "PASSED",
+    "chairsideSentinelSuite": "PASSED",
+    "daemonsSuite": "PASSED",
+    "redTeamPatientsAndSwallowedAudit": "PASSED",
+    "totalPassingTests": 98,
+    "failingTests": 0,
+    "exitCode": 0
+  }
+}

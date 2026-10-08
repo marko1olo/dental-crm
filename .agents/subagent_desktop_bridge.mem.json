@@ -1,0 +1,83 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Desktop Native Bridge Decomposer",
+  "timestamp": "2026-10-09T00:53:45Z",
+  "target": "apps/web/src/native/desktopBridge.ts",
+  "status": "COMPLETED_100_PERCENT",
+  "original_monolith_lines": 2225,
+  "facade_lines": 12,
+  "decomposed_directory": "apps/web/src/native/desktop/",
+  "modules": [
+    {
+      "file": "apps/web/src/native/desktop/types.ts",
+      "layer": "Layer 0 (Types & DTOs)",
+      "lines": 407,
+      "description": "Typed IPC contracts, TWAIN models, fiscal payloads, 3D CT viewers, hotkey handlers and window states"
+    },
+    {
+      "file": "apps/web/src/native/desktop/platformDetection.ts",
+      "layer": "Layer 1 (Platform Detection)",
+      "lines": 96,
+      "description": "Zero-dependency pure platform detection (isDesktopApp, isPwaApp, isWebApp, getDesktopNativeApi)"
+    },
+    {
+      "file": "apps/web/src/native/desktop/twainAndDicomBridge.ts",
+      "layer": "Layer 2 (TWAIN Sensors & DICOM)",
+      "lines": 210,
+      "description": "TWAIN dental sensor acquisition, hardware fault classifier, local filesystem DICOM directory watching"
+    },
+    {
+      "file": "apps/web/src/native/desktop/fiscalPrintingBridge.ts",
+      "layer": "Layer 2 (Fiscal & Document Printing)",
+      "lines": 476,
+      "description": "АТОЛ / Штрих-М 54-ФЗ TCP/IP & serial printing, ESC/POS, SanPiN thermal labels, silent A4 document spooler"
+    },
+    {
+      "file": "apps/web/src/native/desktop/ctViewerBridge.ts",
+      "layer": "Layer 2 (3D CT Viewers & Popout)",
+      "lines": 224,
+      "description": "External CT viewers launcher (Ez3D-i, Romexis, OnDemand3D), Downloads scanner, secondary monitor popout"
+    },
+    {
+      "file": "apps/web/src/native/desktop/usbHidScannerBridge.ts",
+      "layer": "Layer 2 (USB HID Scanner)",
+      "lines": 205,
+      "description": "Autonomous USB HID 2D barcode / GS1 DataMatrix scanner packet interceptor with adaptive jitter tolerance"
+    },
+    {
+      "file": "apps/web/src/native/desktop/updatesBridge.ts",
+      "layer": "Layer 2 (Silent Updates)",
+      "lines": 63,
+      "description": "Silent background auto-update checker and installer for Electron host process"
+    },
+    {
+      "file": "apps/web/src/native/desktop/hotkeysAndKioskBridge.ts",
+      "layer": "Layer 2 (Hotkeys & Kiosk Mode)",
+      "lines": 458,
+      "description": "Global clinical hotkeys suite (F1-F12, F5 reload protection, Ctrl+S/Ctrl+P), Kiosk mode and exit protection"
+    },
+    {
+      "file": "apps/web/src/native/desktop/index.ts",
+      "layer": "Layer 5 (Master Subsystem Aggregator)",
+      "lines": 35,
+      "description": "Clean coordinator re-exporting all submodules and preserving backward-compatible clinical touch/audio exports"
+    },
+    {
+      "file": "apps/web/src/native/desktopBridge.ts",
+      "layer": "Layer 5 (Canonical Facade)",
+      "lines": 12,
+      "description": "Thin public facade <= 50 lines re-exporting 100% of symbols (84 symbols preserved)"
+    }
+  ],
+  "gates": {
+    "gate_1_line_budget": "PASSED (All files <= 800 lines, max 476 lines)",
+    "gate_2_ast_export_parity": "PASSED (84 baseline exports, 84 facade exports, 100% parity)",
+    "gate_3_test_anchors": "PASSED (0 lost anchors)",
+    "gate_4_utf8_encoding": "PASSED (Clean UTF-8 across workspace)",
+    "gate_5_acyclic_graph": "PASSED (0 circular dependencies, strict Acyclic DAG)"
+  },
+  "unit_tests": {
+    "multiPlatformNativeBridges": "55 passed, 0 failed (Exit Code 0)",
+    "desktopSilentPrint": "7 passed, 0 failed (Exit Code 0)",
+    "crossPlatformPortability": "16 passed, 0 failed (Exit Code 0)"
+  }
+}

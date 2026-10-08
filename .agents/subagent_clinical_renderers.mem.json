@@ -1,0 +1,100 @@
+{
+  "taskId": "decompose-clinicalHtmlRenderers",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T00:11:00Z",
+  "originalMonolith": {
+    "path": "packages/shared/src/documents/clinicalHtmlRenderers.ts",
+    "baselineLines": 2628,
+    "baselineBackup": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\22cc94bc-b42e-41d6-9452-2b328aa1d89a\\scratch\\clinicalHtmlRenderers.baseline.ts",
+    "publicExportsCount": 12
+  },
+  "decomposedStructure": {
+    "facade": {
+      "path": "packages/shared/src/documents/clinicalHtmlRenderers.ts",
+      "lines": 40,
+      "maxLinesBudget": 80,
+      "exportPreservation": "100% (all 12 original exports + types and modular exports)"
+    },
+    "modules": [
+      {
+        "path": "packages/shared/src/documents/renderers/types.ts",
+        "layer": "Layer 0",
+        "lines": 69,
+        "description": "Form payload types, UKEP digital signature payload, clinic options"
+      },
+      {
+        "path": "packages/shared/src/documents/renderers/sharedStyles.ts",
+        "layer": "Layer 1",
+        "lines": 573,
+        "description": "CLINICAL_DOCUMENT_PRINT_STYLES (GOST R 7.0.97-2016), escapeHtml, renderFdiToothFormulaTable, renderUkepDigitalSignatureBlock"
+      },
+      {
+        "path": "packages/shared/src/documents/renderers/prescriptionRenderers.ts",
+        "layer": "Layer 2",
+        "lines": 480,
+        "description": "Form 107-1/u, Form 148-1/u-88 (PKU), Form 148-1/u-04(l) preferential, renderPrescriptionUniversalHtml"
+      },
+      {
+        "path": "packages/shared/src/documents/renderers/examinationRenderers.ts",
+        "layer": "Layer 2",
+        "lines": 755,
+        "description": "Form 043/u (Dental medical record), Form 043-1/u (Orthodontic record), Radiation Dose Sheet (SanPiN), Radiology Referral"
+      },
+      {
+        "path": "packages/shared/src/documents/renderers/financialAndTaxRenderers.ts",
+        "layer": "Layer 2",
+        "lines": 656,
+        "description": "Form 037/u-88 (Daily Dentist Diary), Form 039/u-88 (Monthly Summary Statement)"
+      },
+      {
+        "path": "packages/shared/src/documents/renderers/treatmentPlanRenderers.ts",
+        "layer": "Layer 2",
+        "lines": 204,
+        "description": "Form 003-V/u (043/u extract, treatment timeline, discharge, warranties)"
+      },
+      {
+        "path": "packages/shared/src/documents/renderers/consentRenderers.ts",
+        "layer": "Layer 2",
+        "lines": 39,
+        "description": "Statutory Informed Consent 1051n, Medical Refusal, Paid Contract PP RF 736, Act 804n"
+      },
+      {
+        "path": "packages/shared/src/documents/renderers/index.ts",
+        "layer": "Layer 5",
+        "lines": 14,
+        "description": "Master barrel exports"
+      }
+    ]
+  },
+  "verificationGates": {
+    "gate1_lineCountBudget": {
+      "status": "PASSED",
+      "limit": 800,
+      "maxFileLines": 755
+    },
+    "gate2_astPublicExportParity": {
+      "status": "PASSED",
+      "baselineExports": 12,
+      "facadeExports": 55,
+      "preserved": "100%"
+    },
+    "gate3_testAnchors": {
+      "status": "PASSED",
+      "anchorsPreserved": "100%"
+    },
+    "gate4_utf8Hygiene": {
+      "status": "PASSED",
+      "encoding": "UTF-8 without BOM"
+    },
+    "gate5_acyclicMadgeGraph": {
+      "status": "PASSED",
+      "circularDependencies": 0
+    },
+    "targetedUnitTests": {
+      "command": "npx tsx --test packages/shared/src/tests/*document*.test.ts packages/shared/src/tests/*render*.test.ts",
+      "total": 37,
+      "passed": 37,
+      "failed": 0
+    }
+  }
+}

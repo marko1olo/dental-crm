@@ -1,0 +1,228 @@
+{
+  "target": "apps/api/src/sampleData.ts",
+  "originalLines": 8074,
+  "facadeLines": 36,
+  "reductionRatio": "99.55%",
+  "status": "COMPLETED",
+  "decomposedDirectory": "apps/api/src/sampleData/",
+  "files": [
+    {
+      "file": "apps/api/src/sampleData/types.ts",
+      "layer": "Layer 0",
+      "lines": 70,
+      "description": "Domain state types, administrative patch interfaces, and collection replacer utility"
+    },
+    {
+      "file": "apps/api/src/sampleData/fixtureIds.ts",
+      "layer": "Layer 0",
+      "lines": 30,
+      "description": "Canonical UUIDs, clinic IDs, doctor/patient IDs, and timezone constants"
+    },
+    {
+      "file": "apps/api/src/sampleData/stateNotifier.ts",
+      "layer": "Layer 0",
+      "lines": 22,
+      "description": "Leaf persistence flush notifier and timer debounce registration"
+    },
+    {
+      "file": "apps/api/src/sampleData/domainState.ts",
+      "layer": "Layer 0",
+      "lines": 36,
+      "description": "Live domain state registry and transparent Proxy decoupling function defaults from persistence"
+    },
+    {
+      "file": "apps/api/src/sampleData/inventoryFixtures.ts",
+      "layer": "Layer 1",
+      "lines": 71,
+      "description": "Warehouse SKU fixtures, stock quantities, batches, expiration dates, and suppliers"
+    },
+    {
+      "file": "apps/api/src/sampleData/sanpinFixtures.ts",
+      "layer": "Layer 1",
+      "lines": 45,
+      "description": "SanPiN sterilization, autoclave cycles, chemical/biological indicators, and journals"
+    },
+    {
+      "file": "apps/api/src/sampleData/priceList.ts",
+      "layer": "Layer 1",
+      "lines": 133,
+      "description": "Service catalog, service map, and price category definitions"
+    },
+    {
+      "file": "apps/api/src/sampleData/organizations.ts",
+      "layer": "Layer 1",
+      "lines": 201,
+      "description": "Clinic profiles, dental chairs, operating hours, and schedule defaults"
+    },
+    {
+      "file": "apps/api/src/sampleData/staff.ts",
+      "layer": "Layer 1",
+      "lines": 288,
+      "description": "Staff roster, roles, working hours normalization, and access control policies"
+    },
+    {
+      "file": "apps/api/src/sampleData/patients.ts",
+      "layer": "Layer 1",
+      "lines": 304,
+      "description": "Patient roster, medical alerts, administrative profiles, and debt insights"
+    },
+    {
+      "file": "apps/api/src/sampleData/appointments.ts",
+      "layer": "Layer 1",
+      "lines": 59,
+      "description": "Initial appointment slots, visit schedule statuses, and blocking status sets"
+    },
+    {
+      "file": "apps/api/src/sampleData/clinicalRecords.ts",
+      "layer": "Layer 1",
+      "lines": 529,
+      "description": "Active visit protocols, treatment plans, clinical scenarios, and dental formulas"
+    },
+    {
+      "file": "apps/api/src/sampleData/documents.ts",
+      "layer": "Layer 1",
+      "lines": 278,
+      "description": "Medical documents, act chains, consent forms, and sha256 checksums"
+    },
+    {
+      "file": "apps/api/src/sampleData/visitDrafts.ts",
+      "layer": "Layer 1",
+      "lines": 190,
+      "description": "Visit draft autosaves and medical save receipts"
+    },
+    {
+      "file": "apps/api/src/sampleData/integrationPresets.ts",
+      "layer": "Layer 1",
+      "lines": 375,
+      "description": "Integration configurations, mode hints, and sovereign scale presets"
+    },
+    {
+      "file": "apps/api/src/sampleData/speechProviders.ts",
+      "layer": "Layer 1",
+      "lines": 306,
+      "description": "Speech recognition provider profiles, telemetry, and capabilities"
+    },
+    {
+      "file": "apps/api/src/sampleData/audit.ts",
+      "layer": "Layer 1",
+      "lines": 78,
+      "description": "Audit event log fixtures, batch import logs, and event recorders"
+    },
+    {
+      "file": "apps/api/src/sampleData/scheduleTimeHelpers.ts",
+      "layer": "Layer 2",
+      "lines": 372,
+      "description": "Schedule time parsing, interval overlap, timezone converters, and clock utilities"
+    },
+    {
+      "file": "apps/api/src/sampleData/scheduleValidation.ts",
+      "layer": "Layer 2",
+      "lines": 284,
+      "description": "Schedule collision checks, operational window enforcement, and staff coverage validators"
+    },
+    {
+      "file": "apps/api/src/sampleData/clinicalRules.ts",
+      "layer": "Layer 2",
+      "lines": 342,
+      "description": "Clinical decision support rules, protocol validators, and rule mutation engine"
+    },
+    {
+      "file": "apps/api/src/sampleData/billing.ts",
+      "layer": "Layer 2",
+      "lines": 335,
+      "description": "Billing summaries, visit close checklists, fiscal payments, and ledger calculations"
+    },
+    {
+      "file": "apps/api/src/sampleData/communications.ts",
+      "layer": "Layer 2",
+      "lines": 254,
+      "description": "Communication tasks, event dispatches, templates, and follow-up queues"
+    },
+    {
+      "file": "apps/api/src/sampleData/imaging.ts",
+      "layer": "Layer 2",
+      "lines": 509,
+      "description": "Imaging studies, DICOM bundles, viewer annotations, and storage sanitizer"
+    },
+    {
+      "file": "apps/api/src/sampleData/speechRecognition.ts",
+      "layer": "Layer 2",
+      "lines": 554,
+      "description": "AI recognition jobs, audio transcription chunks, and streaming assembly"
+    },
+    {
+      "file": "apps/api/src/sampleData/scheduleSuggestions.ts",
+      "layer": "Layer 2",
+      "lines": 643,
+      "description": "Slot recommendations, patient schedule readiness, and smart booking intelligence"
+    },
+    {
+      "file": "apps/api/src/sampleData/scheduleIntelligence.ts",
+      "layer": "Layer 2",
+      "lines": 525,
+      "description": "Shift intelligence metrics, chair utilization, and role queues"
+    },
+    {
+      "file": "apps/api/src/sampleData/dashboard.ts",
+      "layer": "Layer 3",
+      "lines": 228,
+      "description": "Clinic settings builder, UI preferences, and full dashboard view aggregator"
+    },
+    {
+      "file": "apps/api/src/sampleData/appointmentMutations.ts",
+      "layer": "Layer 3",
+      "lines": 131,
+      "description": "Appointment creation, schedule updates, and waitlist hot-slot concurrency"
+    },
+    {
+      "file": "apps/api/src/sampleData/organizationMutations.ts",
+      "layer": "Layer 3",
+      "lines": 371,
+      "description": "Clinic mode switching, sovereign scale preset applicator, and chair management"
+    },
+    {
+      "file": "apps/api/src/sampleData/staffMutations.ts",
+      "layer": "Layer 3",
+      "lines": 120,
+      "description": "Staff creation, profile edits, working hours updates, and RBAC policy binding"
+    },
+    {
+      "file": "apps/api/src/sampleData/patientMutations.ts",
+      "layer": "Layer 3",
+      "lines": 146,
+      "description": "Patient registration, profile modifications, and administrative profile patches"
+    },
+    {
+      "file": "apps/api/src/sampleData/statePersistence.ts",
+      "layer": "Layer 4",
+      "lines": 485,
+      "description": "State snapshot assembly, debounced persistence flush, and state hydration"
+    },
+    {
+      "file": "apps/api/src/sampleData/index.ts",
+      "layer": "Layer 5",
+      "lines": 41,
+      "description": "Master module coordinator and public API export hub"
+    },
+    {
+      "file": "apps/api/src/sampleData.ts",
+      "layer": "Layer 5 Facade",
+      "lines": 36,
+      "description": "Canonical thin backwards-compatible facade (36 lines <= 80)"
+    }
+  ],
+  "gates": {
+    "gate1_line_budget": "PASSED (all 33 files strictly <= 800 lines, max 643 lines)",
+    "gate2_ast_export_parity": "PASSED (100% baseline exports preserved: 44 baseline, 131 facade)",
+    "gate3_test_anchors": "PASSED (100% test anchors preserved: 0 original, 0 target)",
+    "gate4_utf8_encoding": "PASSED (Clean UTF-8 encoding across workspace, 0 mojibake)",
+    "gate5_acyclic_dag": "PASSED (madge verified 0 circular dependencies)"
+  },
+  "tests": [
+    "apps/api/src/tests/sampleData.test.ts (14/14 PASS)",
+    "apps/api/src/tests/mutableStateFlushCoalescing.test.ts (7/7 PASS)",
+    "apps/api/src/tests/soloDoctorAutonomySettings.test.ts (5/5 PASS)",
+    "apps/api/src/tests/sovereignScalePresets.test.ts (4/4 PASS)",
+    "apps/api/src/tests/waitlistConcurrency.test.ts (2/2 PASS)"
+  ]
+}

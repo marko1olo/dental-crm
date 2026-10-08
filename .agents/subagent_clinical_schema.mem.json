@@ -1,0 +1,62 @@
+{
+  "subagent": "clinical_schema_decomposer",
+  "domain": "apps/api/src/db/schema/clinical",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T00:12:00Z",
+  "gates": {
+    "gate1_line_budget": "PASSED",
+    "gate2_export_parity": "PASSED",
+    "gate3_test_anchors": "PASSED",
+    "gate4_utf8_encoding": "PASSED",
+    "gate5_acyclic_dag": "PASSED"
+  },
+  "modules": {
+    "apps/api/src/db/schema/clinical.ts": {
+      "role": "Layer 5 Thin Facade",
+      "lines": 6,
+      "budget": "<= 50 lines"
+    },
+    "apps/api/src/db/schema/clinical/visitsSchema.ts": {
+      "role": "Layer 0 Visits & Exam Forms Tables",
+      "lines": 432,
+      "budget": "< 800 lines"
+    },
+    "apps/api/src/db/schema/clinical/odontogramSchema.ts": {
+      "role": "Layer 0 Odontogram & Perio Charts Tables",
+      "lines": 168,
+      "budget": "< 800 lines"
+    },
+    "apps/api/src/db/schema/clinical/treatmentPlansSchema.ts": {
+      "role": "Layer 0 Treatment Plans & Catalogs Tables",
+      "lines": 627,
+      "budget": "< 800 lines"
+    },
+    "apps/api/src/db/schema/clinical/documentsSchema.ts": {
+      "role": "Layer 0 Documents, EGISZ & Prescriptions Tables",
+      "lines": 519,
+      "budget": "< 800 lines"
+    },
+    "apps/api/src/db/schema/clinical/clinicalRulesSchema.ts": {
+      "role": "Layer 0 Clinical Rules, Lab, Implants & DMS Tables",
+      "lines": 659,
+      "budget": "< 800 lines"
+    },
+    "apps/api/src/db/schema/clinical/relations.ts": {
+      "role": "Layer 1 Drizzle Relations",
+      "lines": 21,
+      "budget": "< 800 lines"
+    },
+    "apps/api/src/db/schema/clinical/index.ts": {
+      "role": "Layer 5 Master Schema Barrel",
+      "lines": 7,
+      "budget": "< 800 lines"
+    }
+  },
+  "export_count": 49,
+  "unit_tests": [
+    "apps/api/src/tests/db/clinicalQuery.test.ts (2 passed)",
+    "apps/api/src/tests/enumContractDrift.test.ts (22 passed)",
+    "apps/api/src/tests/db/billingQuery.test.ts (passed)",
+    "apps/api/src/tests/priceListMatchesTreatmentItems.test.ts (passed)"
+  ]
+}

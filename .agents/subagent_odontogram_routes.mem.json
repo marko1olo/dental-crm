@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-10-08T20:03:00Z",
+  "subagent": "Red Team Inquisitor & L3 Odontogram Fastify Routes Decomposer",
+  "status": "COMPLETED_100_PERCENT_CLEAN",
+  "targetMonolith": "apps/api/src/routes/odontogram.ts",
+  "originalLines": 2397,
+  "facadeLines": 8,
+  "decomposedDirectory": "apps/api/src/routes/odontogram/",
+  "modulesCreated": [
+    {
+      "file": "apps/api/src/routes/odontogram/types.ts",
+      "layer": 0,
+      "lines": 192,
+      "purpose": "Zod-схемы валидации, DTO запросов/ответов, типы зубной формулы FDI и эндодонтии"
+    },
+    {
+      "file": "apps/api/src/routes/odontogram/planHelpers.ts",
+      "layer": 1,
+      "lines": 217,
+      "purpose": "Чистые вспомогательные функции работы со счетами, слотами и сериализацией планов"
+    },
+    {
+      "file": "apps/api/src/routes/odontogram/statusRoutes.ts",
+      "layer": 2,
+      "lines": 327,
+      "purpose": "Маршруты GET /tooth-states и POST /tooth-states/batch с версионированием LWW и 152-ФЗ"
+    },
+    {
+      "file": "apps/api/src/routes/odontogram/surfaceRoutes.ts",
+      "layer": 2,
+      "lines": 236,
+      "purpose": "Маршруты GET и POST эндодонтических измерений корневых каналов и поверхностей"
+    },
+    {
+      "file": "apps/api/src/routes/odontogram/historyRoutes.ts",
+      "layer": 2,
+      "lines": 155,
+      "purpose": "Маршруты истории изменений зуба и полной хронологии одонтограммы Формы 043/у"
+    },
+    {
+      "file": "apps/api/src/routes/odontogram/periodontalRoutes.ts",
+      "layer": 2,
+      "lines": 204,
+      "purpose": "Маршруты пародонтологического среза, подвижности и фуркации"
+    },
+    {
+      "file": "apps/api/src/routes/odontogram/pediatricRoutes.ts",
+      "layer": 2,
+      "lines": 164,
+      "purpose": "Маршруты детской и сменной зубной формулы, расчет индексов КПУ(з), КПУ(п) и кп"
+    },
+    {
+      "file": "apps/api/src/routes/odontogram/planCrudRoutes.ts",
+      "layer": 2,
+      "lines": 679,
+      "purpose": "Маршруты CRUD планов лечения (GET :id, GET list, POST upsert) с Постановлением №659"
+    },
+    {
+      "file": "apps/api/src/routes/odontogram/planCompletionRoutes.ts",
+      "layer": 2,
+      "lines": 341,
+      "purpose": "Маршрут закрытия позиций и этапов плана лечения при приеме (:planId/complete-items)"
+    },
+    {
+      "file": "apps/api/src/routes/odontogram/planVariantRoutes.ts",
+      "layer": 2,
+      "lines": 522,
+      "purpose": "Маршруты альтернативных планов, утверждения вариантов, токенов заморозки цен и скидок"
+    },
+    {
+      "file": "apps/api/src/routes/odontogram/index.ts",
+      "layer": 5,
+      "lines": 37,
+      "purpose": "Главный Fastify плагин, монтирующий все суброуты и реэкспортирующий API"
+    },
+    {
+      "file": "apps/api/src/routes/odontogram.ts",
+      "layer": 5,
+      "lines": 8,
+      "purpose": "Тонкий канонический фасад с сохранением 100% обратной совместимости"
+    }
+  ],
+  "verificationGates": {
+    "gate1_lineCountBudget": "PASSED (all files strictly <= 800 lines, max: 679 lines)",
+    "gate2_astExportParity": "PASSED (100% baseline exports preserved)",
+    "gate3_testAnchors": "PASSED (100% test anchors preserved)",
+    "gate4_utf8Encoding": "PASSED (Clean UTF-8, zero mojibake)",
+    "gate5_acyclicMadgeGraph": "PASSED (0 circular dependencies, acyclic DAG)"
+  },
+  "unitTestsPassed": [
+    "apps/api/src/tests/routes/odontogramDecomposition.test.ts",
+    "apps/api/src/tests/routes/odontogramToothHistory.test.ts",
+    "apps/api/src/tests/offlineConflictResolution.test.ts"
+  ]
+}

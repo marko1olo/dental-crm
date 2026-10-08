@@ -1,0 +1,41 @@
+{
+  "timestamp": "2026-10-09T00:38:00+04:00",
+  "subagent": "radiology_popout_studio_lead",
+  "status": "COMPLETED",
+  "summary": "Autonomous 3D CBCT (КЛКТ) Standalone Window & Pop-Out Studio Cockpit with inter-tab synchronization and Zero-Manual-F5 reactive state hydration",
+  "mandatesComplied": [
+    "Mandate 8e: Doctor Autonomy (release from modal prison onto secondary 1600x1000 display)",
+    "Mandate 8l: Radiology PACS completeness without synthetic mocks",
+    "Mandate 8c: Deterministic WebGL & canvas memory teardown",
+    "Mandate 8a: Strict TypeScript contracts and zero linter warnings",
+    "Zero-Manual-F5: Real-time reactive updates between pop-out window and parent CRM tab"
+  ],
+  "changedFiles": [
+    "apps/web/src/components/radiology/mpr/cbctStudioSyncChannel.ts",
+    "apps/web/src/components/radiology/CbctStandaloneStudioView.tsx",
+    "apps/web/src/utils/runtimeRouter.ts",
+    "apps/web/src/workspaceShell.tsx",
+    "apps/web/src/main.tsx",
+    "apps/web/src/native/desktopBridge.ts",
+    "apps/web/src/components/radiology/mpr/CbctHeaderBar.tsx",
+    "apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx",
+    "apps/web/src/components/visit/VisitDiagnosticsTab.tsx",
+    "apps/web/src/components/appLayout/AppModalsContainer.tsx",
+    "apps/web/src/tests/cbctPopoutStudioIntegration.test.ts"
+  ],
+  "testResults": {
+    "cbctPopoutStudioIntegration_test_ts": {
+      "total": 16,
+      "passed": 16,
+      "failed": 0,
+      "duration_ms": 7.89
+    },
+    "cbctMprViewerEngine_test_ts": {
+      "total": 15,
+      "passed": 15,
+      "failed": 0,
+      "duration_ms": 904.76
+    },
+    "combinedTotalPassing": 31
+  }
+}

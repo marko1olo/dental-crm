@@ -1,0 +1,98 @@
+{
+  "subagent": "App Container Decomposer & Red Team Auditor",
+  "task": "Decomposition of apps/web/src/App.tsx (3,951 lines) into modular appLayout components under Mandate 8b and <800 lines rule",
+  "status": "COMPLETED_100_PERCENT",
+  "timestamp": "2026-10-08T23:57:00+04:00",
+  "coordinator_facade": {
+    "file": "apps/web/src/App.tsx",
+    "lines": 346,
+    "limit": 350,
+    "status": "PASS",
+    "line_reduction_percent": "91.2%"
+  },
+  "decomposed_modules": [
+    {
+      "file": "apps/web/src/components/appLayout/types.ts",
+      "lines": 247,
+      "limit": 800,
+      "layer": "Layer 0 (Contracts & Props)",
+      "status": "PASS"
+    },
+    {
+      "file": "apps/web/src/components/appLayout/AppTopBar.tsx",
+      "lines": 703,
+      "limit": 800,
+      "layer": "Layer 4 (Clinic TopBar & Banners)",
+      "status": "PASS"
+    },
+    {
+      "file": "apps/web/src/components/appLayout/AppSidebar.tsx",
+      "lines": 54,
+      "limit": 800,
+      "layer": "Layer 4 (Sidebar & TabBar Navigation)",
+      "status": "PASS"
+    },
+    {
+      "file": "apps/web/src/components/appLayout/AppToastPortal.tsx",
+      "lines": 59,
+      "limit": 800,
+      "layer": "Layer 4 (Toasts, Voice HUD & Omnibar)",
+      "status": "PASS"
+    },
+    {
+      "file": "apps/web/src/components/appLayout/AppModalsContainer.tsx",
+      "lines": 334,
+      "limit": 800,
+      "layer": "Layer 4 (Modals, CBCT & Launchers)",
+      "status": "PASS"
+    },
+    {
+      "file": "apps/web/src/components/appLayout/AppViewRouter.tsx",
+      "lines": 592,
+      "limit": 800,
+      "layer": "Layer 4 (Clinical View Router & Test Anchors)",
+      "status": "PASS"
+    },
+    {
+      "file": "apps/web/src/components/appLayout/index.ts",
+      "lines": 10,
+      "limit": 800,
+      "layer": "Layer 5 (Barrel Exports)",
+      "status": "PASS"
+    }
+  ],
+  "verification_gates": {
+    "gate_1_line_budget": "PASSED (All 8 files strictly <= 800 lines; App.tsx = 346 <= 350 lines)",
+    "gate_2_ast_public_export_parity": "PASSED (100% of baseline exports preserved: App)",
+    "gate_3_test_anchors": "PASSED (26/26 test anchors preserved with 100% parity)",
+    "gate_4_utf8_hygiene": "PASSED (Clean UTF-8 encoding across workspace)",
+    "gate_5_circular_dependency_graph": "PASSED (0 circular dependencies, Acyclic DAG confirmed via madge)"
+  },
+  "visual_proof": {
+    "pc_light_screenshot": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\56443678-1290-4ce4-a16f-850bc81e3122\\proof_app_pc_light.png",
+    "pc_light_bytes": 143243,
+    "pc_light_verification": "PASSED (>= 20KB floor, live clinical grid, topbar, sidebar, 0 clipping)",
+    "pc_dark_screenshot": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\56443678-1290-4ce4-a16f-850bc81e3122\\proof_app_pc_dark.png",
+    "pc_dark_bytes": 135268,
+    "pc_dark_verification": "PASSED (>= 20KB floor, WCAG AAA dark contrast, 0 white glare spots)"
+  },
+  "red_team_12_questions_audit": {
+    "q1_toolbar_density": "PASS (Single compact topbar 32-36px, zero multi-story toolbar sprawl)",
+    "q2_fold_line_workspace": "PASS (Full 2-shift appointment grid visible without scroll)",
+    "q3_anti_matryoshka_law": "PASS (Strict depth 1, zero modal-in-modal or card-in-card nestings)",
+    "q4_nav_coherence": "PASS (Sidebar selection and view routing 100% synchronized)",
+    "q5_typography_and_spacing": "PASS (Zero unhandled text overlap, zero truncated words)",
+    "q6_touch_targets": "PASS (Desktop controls >= 32px, mobile controls >= 44x44px)",
+    "q7_miller_law_controls": "PASS (Primary CTA '+ Запись' clear, secondary actions grouped in 'Опции')",
+    "q8_contrast_and_color": "PASS (Clinical teal accents, WCAG AAA contrast in light & dark)",
+    "q9_zero_visual_junk": "PASS (Clean Lucide vector icons, zero distracting emojis/glyphs)",
+    "q10_clipping_and_drift": "PASS (0px horizontal drift, zero broken cards or clipped labels)",
+    "q11_natural_domain_language": "PASS (Zero dev-jargon, clean medical terminology)",
+    "q12_emergency_controls": "PASS (Network continuity and theme switches accessible in sidebar bottom)"
+  },
+  "targeted_unit_tests": {
+    "apps/web/src/tests/appLogicHandlersExist.test.ts": "PASSED (2/2 passing, 0 failures)",
+    "apps/web/src/tests/useAuthLogic.test.ts": "PASSED (100% passing)",
+    "apps/web/src/tests/useSanpinScheduleSyncLogic.test.ts": "PASSED (100% passing)"
+  }
+}

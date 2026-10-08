@@ -1,0 +1,90 @@
+{
+  "subagent": "dental_lab_routes_decomposer",
+  "role": "Red Team Inquisitor & L3 Fastify Dental Lab Routes Decomposer",
+  "timestamp": "2026-10-09T00:25:00.000Z",
+  "status": "COMPLETED_100_PERCENT_CLEAN",
+  "original_monolith": {
+    "file": "apps/api/src/routes/lab.ts",
+    "original_lines": 2191
+  },
+  "decomposed_architecture": {
+    "facade": {
+      "file": "apps/api/src/routes/lab.ts",
+      "lines": 18,
+      "role": "Layer 5 Canonical Thin Facade"
+    },
+    "modules": [
+      {
+        "file": "apps/api/src/routes/lab/types.ts",
+        "lines": 412,
+        "layer": "Layer 0",
+        "role": "Types, FDI and VITA validation schemas, pure helpers"
+      },
+      {
+        "file": "apps/api/src/routes/lab/expressOrderRoutes.ts",
+        "lines": 280,
+        "layer": "Layer 2",
+        "role": "Standard presets catalog, treatment plan continuity check, 3-click express order"
+      },
+      {
+        "file": "apps/api/src/routes/lab/ordersCrudRoutes.ts",
+        "lines": 567,
+        "layer": "Layer 2",
+        "role": "Lab orders GET list, POST create, PUT update, DELETE remove"
+      },
+      {
+        "file": "apps/api/src/routes/lab/orderStatusPatchRoutes.ts",
+        "lines": 248,
+        "layer": "Layer 2",
+        "role": "Lab order status/stage PATCH updates, warranty rework unlock, event audit trail"
+      },
+      {
+        "file": "apps/api/src/routes/lab/orderItemsRoutes.ts",
+        "lines": 133,
+        "layer": "Layer 2",
+        "role": "Multi-Unit restoration items GET /items, POST /items"
+      },
+      {
+        "file": "apps/api/src/routes/lab/pipelineRoutes.ts",
+        "lines": 318,
+        "layer": "Layer 2",
+        "role": "5-stage pipeline transitions, milestone audit events, prosthetic warranty passport"
+      },
+      {
+        "file": "apps/api/src/routes/lab/technicianPortalRoutes.ts",
+        "lines": 149,
+        "layer": "Layer 2",
+        "role": "Guest technician portal access by cryptographic token, status transitions"
+      },
+      {
+        "file": "apps/api/src/routes/lab/scansUploadRoutes.ts",
+        "lines": 186,
+        "layer": "Layer 2",
+        "role": "Presigned upload/download S3 URLs for heavy 3D STL/PLY/OBJ scans"
+      },
+      {
+        "file": "apps/api/src/routes/lab/index.ts",
+        "lines": 36,
+        "layer": "Layer 5",
+        "role": "Master Fastify plugin and coordinator"
+      }
+    ]
+  },
+  "gates_verification": {
+    "gate_1_line_count_budget": "PASSED (all files strictly <= 567 lines, limit <= 800 lines)",
+    "gate_2_ast_public_export_parity": "PASSED (23/23 exports preserved)",
+    "gate_3_test_anchor_parity": "PASSED (100% preserved)",
+    "gate_4_utf8_hygiene": "PASSED (clean UTF-8 across workspace)",
+    "gate_5_acyclic_dependency_graph": "PASSED (madge circular check: 0 cycles detected)"
+  },
+  "tests_verification": {
+    "dentalLabRoutes_test_ts": "PASSED (100% green)",
+    "labOrderMoney_test_ts": "PASSED (100% green)",
+    "labOrderWorkflow_test_ts": "PASSED (100% green)",
+    "labScanDirectUpload_test_ts": "PASSED (100% green)",
+    "cashbox_test_ts": "PASSED (100% green)",
+    "redTeamCoreRealismInquisition_test_ts": "PASSED (100% green)",
+    "redTeamSubagentInquisition_test_ts": "PASSED (100% green)",
+    "wave10PerimeterAndMedicalSecrecyPenetration_test_ts": "PASSED (100% green)"
+  }
+}

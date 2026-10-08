@@ -1,0 +1,83 @@
+{
+  "timestamp": "2026-10-09T03:07:00Z",
+  "task": "Decomposition of apps/web/src/utils/commonHelpers/imagingDraftHelpers.ts monolith (1647 lines) into apps/web/src/utils/commonHelpers/imagingDraft/ modular DAG service",
+  "status": "COMPLETED",
+  "exitCode": 0,
+  "gates": {
+    "gate1_line_count_budget": "PASSED",
+    "gate2_ast_export_parity": "PASSED",
+    "gate3_test_anchors": "PASSED",
+    "gate4_utf8_encoding": "PASSED",
+    "gate5_acyclic_dag_madge": "PASSED"
+  },
+  "modules": [
+    {
+      "file": "apps/web/src/utils/commonHelpers/imagingDraft/types.ts",
+      "layer": "Layer 0 (Types & DTOs)",
+      "lines": 110,
+      "description": "Persistence health, backup report, study plane, payment refund, and pricelist types"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/imagingDraft/constants.ts",
+      "layer": "Layer 0 (Constants & Enums)",
+      "lines": 176,
+      "description": "Labels, options, mime types, size bounds, and alias maps"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/imagingDraft/draftAnnotationTransformer.ts",
+      "layer": "Layer 1 (Annotation Transformers & ID Generators)",
+      "lines": 393,
+      "description": "Browser ID generators, MPR state normalizer, DICOM/Telegram URL drafts, pricelist image compressor"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/imagingDraft/draftStorageManager.ts",
+      "layer": "Layer 1 (Storage Operations & IndexedDB Access)",
+      "lines": 502,
+      "description": "LocalStorage and IndexedDB read, write, and deletion methods for DICOM and MPR drafts"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/imagingDraft/draftValidationEngine.ts",
+      "layer": "Layer 2 (Validation Engine & Type Guards)",
+      "lines": 218,
+      "description": "Domain predicates, union validators, preference guards, and clinical study normalizers"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/imagingDraft/draftSyncCoordinator.ts",
+      "layer": "Layer 2 (Sync Coordinator & Migration)",
+      "lines": 219,
+      "description": "Draft revision resolution, conflict detection, and LocalStorage to IndexedDB migration"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/imagingDraft/reexports.ts",
+      "layer": "Layer 1 (Subsystem Reexports)",
+      "lines": 64,
+      "description": "Clinic profile, date/time, and browser scan utilities exposed by draft helpers"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/imagingDraft/index.ts",
+      "layer": "Layer 5 (Barrel)",
+      "lines": 8,
+      "description": "Barrel re-exporting all submodules"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/imagingDraftHelpers.ts",
+      "layer": "Layer 5 (Master Canonical Facade)",
+      "lines": 14,
+      "description": "Thin backwards-compatible canonical facade (<= 50 lines) re-exporting 100% of symbols 1:1"
+    }
+  ],
+  "testSuites": {
+    "imagingDraft.test.ts": "15 passed, 0 failed",
+    "totalPassingTests": 15,
+    "totalFailingTests": 0
+  },
+  "metrics": {
+    "monolithInitialLines": 1647,
+    "facadeLines": 14,
+    "totalModules": 8,
+    "maxModuleLines": 502,
+    "totalExportsPreserved": 230,
+    "totalExportsBaseline": 230,
+    "exportParityPercent": 100
+  }
+}

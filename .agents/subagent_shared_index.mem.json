@@ -1,0 +1,83 @@
+{
+  "taskId": "decompose_shared_index_monolith",
+  "targetFile": "packages/shared/src/index.ts",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-08T23:30:00.000Z",
+  "originalLines": 13705,
+  "facadeLines": 171,
+  "schemasDirectory": "packages/shared/src/schemas",
+  "decomposedFiles": [
+    { "name": "aiAndEgiszSchemas.ts", "lines": 571 },
+    { "name": "anesthesiaAndRestorationSchemas.ts", "lines": 491 },
+    { "name": "clinicalRuleParserEngine.ts", "lines": 514 },
+    { "name": "clinicScaleAndPreviewSchemas.ts", "lines": 539 },
+    { "name": "clinicSettingsSchemas.ts", "lines": 520 },
+    { "name": "communicationAndTasksSchemas.ts", "lines": 549 },
+    { "name": "dentalInteractionMatrixEngine.ts", "lines": 237 },
+    { "name": "dentalSpeechNumbersSchemas.ts", "lines": 116 },
+    { "name": "dentalSpeechPhrasesSchemas.ts", "lines": 497 },
+    { "name": "dentalSpeechReplacementSchemas.ts", "lines": 420 },
+    { "name": "dicomHardwareAndBridgeSchemas.ts", "lines": 555 },
+    { "name": "dicomPreviewAndWindowSchemas.ts", "lines": 539 },
+    { "name": "dmsSplitAndScalePresetSchemas.ts", "lines": 493 },
+    { "name": "documentChainAndDmsSchemas.ts", "lines": 533 },
+    { "name": "documentMetaSchemas.ts", "lines": 407 },
+    { "name": "documentSourceSchemas.ts", "lines": 495 },
+    { "name": "imagingSessionAndAnesthesiaSchemas.ts", "lines": 524 },
+    { "name": "imagingViewerAndWorkstationSchemas.ts", "lines": 550 },
+    { "name": "implantologyAndPrescriptionSchemas.ts", "lines": 511 },
+    { "name": "index.ts", "lines": 29 },
+    { "name": "installmentAndLabOrderSchemas.ts", "lines": 533 },
+    { "name": "labOrderAndSterilizationSchemas.ts", "lines": 538 },
+    { "name": "localBridgeAndSpeechTokensSchemas.ts", "lines": 395 },
+    { "name": "migrationBridgeAndViewerSchemas.ts", "lines": 536 },
+    { "name": "paymentRefundAndGeneratedDocSchemas.ts", "lines": 522 },
+    { "name": "smartImportAndIngestionSchemas.ts", "lines": 554 },
+    { "name": "speechProviderSchemas.ts", "lines": 538 },
+    { "name": "telegramAndReceiptSchemas.ts", "lines": 517 },
+    { "name": "visitDraftParserProfileSchemas.ts", "lines": 465 }
+  ],
+  "verificationGates": {
+    "gate1_lineCountBudget": {
+      "status": "PASSED",
+      "maxFileLineCount": 571,
+      "budgetLimit": 800,
+      "facadeLineCount": 171,
+      "facadeLimit": 200
+    },
+    "gate2_exportParity": {
+      "status": "PASSED",
+      "baselineExports": 7015,
+      "facadeExports": 7015,
+      "missingExports": 0,
+      "parityPercentage": 100
+    },
+    "gate3_testAnchors": {
+      "status": "PASSED",
+      "originalAnchors": 0,
+      "targetAnchors": 0,
+      "missingAnchors": 0
+    },
+    "gate4_utf8Encoding": {
+      "status": "PASSED",
+      "encoding": "UTF-8",
+      "mojibakeFound": false
+    },
+    "gate5_acyclicDAG": {
+      "status": "PASSED",
+      "tool": "madge",
+      "cyclesFound": 0
+    }
+  },
+  "testSuite": {
+    "runner": "npx tsx --test packages/shared/src/tests/*.test.ts",
+    "total": 1704,
+    "passed": 1704,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "inMemoryDiagnostics": {
+    "totalDiagnostics": 0,
+    "status": "CLEAN"
+  }
+}

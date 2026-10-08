@@ -1,0 +1,82 @@
+{
+  "timestamp": "2026-10-09T00:46:50Z",
+  "subagent": "Red Team Inquisitor & L3 Fastify Clinic Settings Routes Decomposer",
+  "target": "apps/api/src/routes/settings.ts",
+  "status": "COMPLETED",
+  "original_lines": 1946,
+  "facade_lines": 15,
+  "decomposed_directory": "apps/api/src/routes/settings/",
+  "modules": {
+    "types.ts": {
+      "layer": 0,
+      "lines": 420,
+      "description": "Zod schemas, input types, and Russian error message constants"
+    },
+    "helpers.ts": {
+      "layer": 1,
+      "lines": 490,
+      "description": "Payload parser, domain message repair, rejection functions, and requireSettingsAccess guard"
+    },
+    "clinicProfileRoutes.ts": {
+      "layer": 2,
+      "lines": 112,
+      "description": "Clinic profile, working mode, scale preset, and reset endpoints"
+    },
+    "uiPreferencesRoutes.ts": {
+      "layer": 2,
+      "lines": 96,
+      "description": "UI preferences GET and PUT with stale save concurrency guard"
+    },
+    "staffSettingsRoutes.ts": {
+      "layer": 2,
+      "lines": 488,
+      "description": "Staff registry, credentials, working hours, profile updates, deactivation, commissions, and authority grants"
+    },
+    "chairsRoutes.ts": {
+      "layer": 2,
+      "lines": 174,
+      "description": "Dental chairs creation, working hours, profile updates, and deactivation"
+    },
+    "serviceCatalogRoutes.ts": {
+      "layer": 2,
+      "lines": 184,
+      "description": "Service catalog item CRUD and Order 804n baseline seeding"
+    },
+    "protocolTemplatesRoutes.ts": {
+      "layer": 2,
+      "lines": 156,
+      "description": "EMK 043/u clinical protocol templates CRUD"
+    },
+    "index.ts": {
+      "layer": 5,
+      "lines": 32,
+      "description": "Master Fastify plugin aggregating all settings route groups"
+    },
+    "settings.ts": {
+      "layer": 5,
+      "lines": 15,
+      "description": "Canonical facade maintaining 100% export parity (registerSettingsRoutes, clinicProfileMutationRejection)"
+    }
+  },
+  "health_check": {
+    "script": "scripts/verify-decomposition-health.cjs",
+    "gate_1_line_count": "PASSED (all files <= 490 lines, limit <= 800 lines)",
+    "gate_2_ast_export_parity": "PASSED (2/2 exports preserved: registerSettingsRoutes, clinicProfileMutationRejection)",
+    "gate_3_test_anchors": "PASSED (0 lost)",
+    "gate_4_utf8_encoding": "PASSED (Clean UTF-8)",
+    "gate_5_acyclic_dag": "PASSED (0 circular dependencies confirmed via madge)"
+  },
+  "test_suites": {
+    "total_tests": 30,
+    "passed": 30,
+    "failed": 0,
+    "suites": [
+      "apps/api/src/routes/settings.test.ts (5/5 passed)",
+      "apps/api/src/tests/routes/protocolTemplateRoutes.test.ts (4/4 passed)",
+      "apps/api/src/tests/routes/serviceCatalogRoutes.test.ts (4/4 passed)",
+      "apps/api/src/tests/routes/settingsHardening.test.ts (3/3 passed)",
+      "apps/api/src/tests/routes/staffCredentialsBody.test.ts (6/6 passed)",
+      "apps/api/src/tests/routes/uiPreferencesStaleSaveGuard.test.ts (8/8 passed)"
+    ]
+  }
+}

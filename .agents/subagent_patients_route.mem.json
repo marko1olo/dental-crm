@@ -1,0 +1,81 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Patients Fastify Route Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T00:14:30Z",
+  "target": "apps/api/src/routes/patients.ts",
+  "original_line_count": 2259,
+  "facade_line_count": 17,
+  "decomposed_directory": "apps/api/src/routes/patients/",
+  "modules": [
+    {
+      "file": "apps/api/src/routes/patients/types.ts",
+      "layer": 0,
+      "lines": 89,
+      "description": "Zod schemas, DTOs and type contracts for patients domain"
+    },
+    {
+      "file": "apps/api/src/routes/patients/helpers.ts",
+      "layer": 1,
+      "lines": 299,
+      "description": "Strict clinic session auth guard (requireClinicOrganizationId), name/phone normalizers, validation and error response builders"
+    },
+    {
+      "file": "apps/api/src/routes/patients/duplicateRoutes.ts",
+      "layer": 2,
+      "lines": 70,
+      "description": "MPI fuzzy duplicate detection and non-destructive merge route (POST /api/patients/:patientId/merge)"
+    },
+    {
+      "file": "apps/api/src/routes/patients/crudRoutes.ts",
+      "layer": 2,
+      "lines": 459,
+      "description": "Core patient CRUD endpoints (GET list with 152-FZ clinical search audit, GET single with archived protection, POST create with Decree 659 OMS guard, PUT update)"
+    },
+    {
+      "file": "apps/api/src/routes/patients/administrativeRoutes.ts",
+      "layer": 2,
+      "lines": 477,
+      "description": "Administrative profiles, SNILS, 323-FZ archive reasons and blacklisting endpoints and selectors"
+    },
+    {
+      "file": "apps/api/src/routes/patients/reclamationRoutes.ts",
+      "layer": 2,
+      "lines": 286,
+      "description": "Patient complications and reclamations lifecycle endpoints (GET, POST, PUT, DELETE)"
+    },
+    {
+      "file": "apps/api/src/routes/patients/ticketRoutes.ts",
+      "layer": 2,
+      "lines": 279,
+      "description": "Patient task tickets and follow-up delegations endpoints (GET, POST, PUT, DELETE)"
+    },
+    {
+      "file": "apps/api/src/routes/patients/timelineRoutes.ts",
+      "layer": 2,
+      "lines": 350,
+      "description": "Patient consents (1051n), communication timelines, and patient portal PWA preview endpoints"
+    },
+    {
+      "file": "apps/api/src/routes/patients/index.ts",
+      "layer": 5,
+      "lines": 32,
+      "description": "Master Fastify plugin coordinator mounting all subroutes"
+    },
+    {
+      "file": "apps/api/src/routes/patients.ts",
+      "layer": 5,
+      "lines": 17,
+      "description": "Canonical thin facade re-exporting plugin and public API 1:1"
+    }
+  ],
+  "verification_results": {
+    "all_files_under_800_lines": true,
+    "max_file_lines": 477,
+    "gate_1_line_count_budget": "PASSED",
+    "gate_2_ast_export_parity": "PASSED (39/39 exports preserved 100%)",
+    "gate_3_test_anchors": "PASSED (100% anchors preserved)",
+    "gate_4_utf8_encoding": "PASSED",
+    "gate_5_acyclic_dag_madge": "PASSED (0 cycles)",
+    "unit_tests_pass": "PASSED (100% green, 44 tests, 0 fails)"
+  }
+}

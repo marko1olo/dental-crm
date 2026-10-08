@@ -1,0 +1,88 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Frontend Utility Decomposer",
+  "task": "Decomposition of apps/web/src/AppHelpers.tsx monolith (<800 lines per file)",
+  "timestamp": "2026-10-08T23:08:00Z",
+  "status": "COMPLETED",
+  "constitutionalRulesFollowed": [
+    "C:\\Users\\Admin\\.gemini\\config\\skills\\decomposer\\SKILL.md",
+    "C:\\Clinic_MVP\\dental-crm\\.agents\\THE_HAMMER_MASTER_PROMPT.md",
+    "C:\\Clinic_MVP\\dental-crm\\.agents\\AGENTS.md",
+    "C:\\Users\\Admin\\.gemini\\config\\rules\\core.md",
+    "C:\\Users\\Admin\\.gemini\\config\\rules\\frontend.md",
+    "Mandate 8b: Single-file line budget <= 800 lines",
+    "Mandate 8t: Single-Compiler Heavy Lockout (no global builds, targeted tsx tests only)"
+  ],
+  "monolith": {
+    "path": "apps/web/src/AppHelpers.tsx",
+    "originalLines": 6089,
+    "facadeLines": 116,
+    "facadeLineBudget": "<= 120 lines",
+    "facadeCompliant": true
+  },
+  "decomposedModules": {
+    "directory": "apps/web/src/helpers",
+    "modules": [
+      { "name": "types.ts", "layer": "Layer 0", "lines": 426, "budgetCompliant": true },
+      { "name": "guardUtils.ts", "layer": "Layer 1", "lines": 50, "budgetCompliant": true },
+      { "name": "workflowErrors.ts", "layer": "Layer 1", "lines": 114, "budgetCompliant": true },
+      { "name": "offlineStorageEngine.ts", "layer": "Layer 1", "lines": 136, "budgetCompliant": true },
+      { "name": "sanpinHelpers.ts", "layer": "Layer 1", "lines": 75, "budgetCompliant": true },
+      { "name": "patientFormatters.ts", "layer": "Layer 1", "lines": 200, "budgetCompliant": true },
+      { "name": "financialHelpers.ts", "layer": "Layer 1", "lines": 267, "budgetCompliant": true },
+      { "name": "clinicalCalculations.ts", "layer": "Layer 1", "lines": 293, "budgetCompliant": true },
+      { "name": "dateHelpers.ts", "layer": "Layer 1", "lines": 364, "budgetCompliant": true },
+      { "name": "documentFormatters.ts", "layer": "Layer 1", "lines": 352, "budgetCompliant": true },
+      { "name": "documentDrafts.ts", "layer": "Layer 1", "lines": 391, "budgetCompliant": true },
+      { "name": "imagingHelpers.ts", "layer": "Layer 1", "lines": 597, "budgetCompliant": true },
+      { "name": "imagingStorage.ts", "layer": "Layer 1", "lines": 661, "budgetCompliant": true },
+      { "name": "storageHelpers.ts", "layer": "Layer 1", "lines": 630, "budgetCompliant": true },
+      { "name": "telegramHelpers.ts", "layer": "Layer 1", "lines": 623, "budgetCompliant": true },
+      { "name": "speechHelpers.ts", "layer": "Layer 1", "lines": 550, "budgetCompliant": true },
+      { "name": "uiRenderHelpers.tsx", "layer": "Layer 4", "lines": 636, "budgetCompliant": true },
+      { "name": "index.ts", "layer": "Layer 5", "lines": 25, "budgetCompliant": true }
+    ]
+  },
+  "gates": {
+    "gate1_line_budget": {
+      "status": "PASSED",
+      "limit": 800,
+      "maxFileLines": 661,
+      "overBudgetFiles": []
+    },
+    "gate2_ast_export_parity": {
+      "status": "PASSED",
+      "baselineExports": 469,
+      "facadeExports": 540,
+      "missingExports": []
+    },
+    "gate3_test_anchors": {
+      "status": "PASSED",
+      "originalAnchors": 0,
+      "targetAnchors": 0,
+      "missingAnchors": []
+    },
+    "gate4_utf8_encoding": {
+      "status": "PASSED",
+      "mojibakeDetected": false
+    },
+    "gate5_madge_dag_acyclic": {
+      "status": "PASSED",
+      "circularDependencies": 0,
+      "madgeOutput": "✔ No circular dependency found!"
+    }
+  },
+  "unitTests": {
+    "status": "PASSED",
+    "totalTests": 53,
+    "passedTests": 53,
+    "failedTests": 0,
+    "exitCode": 0,
+    "suites": [
+      "apps/web/src/tests/AppHelpers.test.ts",
+      "apps/web/src/tests/moneyFormat.test.ts",
+      "apps/web/src/tests/moneyUnknownNotZero.test.ts",
+      "apps/web/src/tests/dateInputValueLocalDay.test.ts",
+      "apps/web/src/tests/clinicCapabilities.test.ts"
+    ]
+  }
+}

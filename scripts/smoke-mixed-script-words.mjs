@@ -71,6 +71,10 @@ function walk(dir, files = []) {
  */
 const ALLOWED = [
 	{ file: "apps/api/src/migration/vendorProfiles.ts", word: "зубformula" },
+	{
+		file: "apps/api/src/migration/vendorProfiles/profiles/genericRu.ts",
+		word: "зубformula",
+	},
 ];
 
 const findings = [];

@@ -1,0 +1,51 @@
+{
+  "task": "DENTE Desktop CT Viewer Detection, External Launch, Downloads Scanner, and Multi-Monitor CBCT Popout Bridge",
+  "status": "COMPLETED",
+  "completedAt": "2026-10-09T00:22:00Z",
+  "implementedIpcChannels": [
+    {
+      "channel": "dente:detect-installed-ct-viewers",
+      "purpose": "Detects installed external CT viewers (PicassoViewer, Ez3D2009, Ez3D-i, Romexis, OnDemand3D, CS 3D, i-Dixel, Sidexis/Galileos, NewTom NNT) and Windows .dcm file associations. Always guarantees internal DENTE CBCT Studio (Zero Dead-Ends).",
+      "ipcMethod": "ipcRenderer.invoke('dente:detect-installed-ct-viewers')"
+    },
+    {
+      "channel": "dente:launch-external-ct-viewer",
+      "purpose": "Spawns external CT viewer executable with study/DICOM path safely using child_process.spawn with detached: true, stdio: 'ignore', and unref(). Fallback routes to internal CBCT popout window.",
+      "ipcMethod": "ipcRenderer.invoke('dente:launch-external-ct-viewer', params)"
+    },
+    {
+      "channel": "dente:scan-downloads-for-ct",
+      "purpose": "Asynchronously inspects %USERPROFILE%\\Downloads and hot folders for recent CT archives/folders (<7 days, maxDepth 2, <450ms timeout protection). Extracts patient hints and detects modalities (CBCT, CT, DICOM_ARCHIVE, DICOM_FOLDER).",
+      "ipcMethod": "ipcRenderer.invoke('dente:scan-downloads-for-ct', options)"
+    },
+    {
+      "channel": "dente:open-cbct-popout-window",
+      "purpose": "Opens independent Electron BrowserWindow for /cbct-studio with WebGL acceleration, auto multi-monitor detection, and focus management.",
+      "ipcMethod": "ipcRenderer.invoke('dente:open-cbct-popout-window', params)"
+    }
+  ],
+  "frontendBridge": {
+    "file": "apps/web/src/native/desktopBridge.ts",
+    "exportedMethods": [
+      "detectInstalledCtViewers",
+      "detectExternalCtViewers",
+      "launchExternalCtViewer",
+      "openInExternalViewer",
+      "scanDownloadsForCt",
+      "openCbctPopoutWindow",
+      "openInNewWindow"
+    ],
+    "webFallbacks": {
+      "detectInstalledCtViewers": "Returns DENTE CBCT Studio with isDefault: true",
+      "scanDownloadsForCt": "Returns empty array (zero mocks in web)",
+      "launchExternalCtViewer": "Routes internal studio to window.open(/cbct-studio), prompts desktop app for external viewers",
+      "openCbctPopoutWindow": "Opens secondary browser window with dimensions and features"
+    }
+  ],
+  "verification": {
+    "nodeTestCommand": "node --test electron/test/desktopHarness.test.mjs",
+    "nodeTestResults": "25 passed, 0 failed, duration ~240ms",
+    "webTestCommand": "npx tsx --test apps/web/src/tests/hardwareBridgeMultiPlatform.test.ts",
+    "webTestResults": "14 passed, 0 failed, duration ~1350ms"
+  }
+}

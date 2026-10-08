@@ -1,0 +1,44 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Mobile Native Bridge Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T00:44:00Z",
+  "target": "apps/web/src/native/mobileBridge.ts",
+  "baselineLines": 2198,
+  "facadeLines": 13,
+  "decomposedDirectory": "apps/web/src/native/mobile/",
+  "modules": [
+    { "path": "apps/web/src/native/mobileBridge.ts", "lines": 13, "role": "Layer 5 Canonical Facade" },
+    { "path": "apps/web/src/native/mobile/types.ts", "lines": 288, "role": "Layer 0 Interfaces, DTOs & Constants" },
+    { "path": "apps/web/src/native/mobile/platform.ts", "lines": 115, "role": "Layer 1 Runtime Platform Detection" },
+    { "path": "apps/web/src/native/mobile/gs1Scanner.ts", "lines": 117, "role": "Layer 1 GS1 DataMatrix (Chestny ZNAK / MDLP) Parser" },
+    { "path": "apps/web/src/native/mobile/hapticsAndAudio.ts", "lines": 197, "role": "Layer 1 Tactile Haptics & Clinical Web Audio Synthesis" },
+    { "path": "apps/web/src/native/mobile/ergonomics.ts", "lines": 228, "role": "Layer 1 Apple HIG 44x44px / 48px Glove Targets & Tooth Swipes" },
+    { "path": "apps/web/src/native/mobile/biometricsBridge.ts", "lines": 103, "role": "Layer 2 Biometrics (FaceID/Fingerprint) & Constant-Time PIN" },
+    { "path": "apps/web/src/native/mobile/offlineStorageBridge.ts", "lines": 111, "role": "Layer 2 Keystore Secure Storage & Thermal Binary Printing" },
+    { "path": "apps/web/src/native/mobile/cameraScannerBridge.ts", "lines": 162, "role": "Layer 2 Chairside Photo & Camera Stream Attachments" },
+    { "path": "apps/web/src/native/mobile/modalBackStack.ts", "lines": 137, "role": "Layer 2 Android Hardware Back Button LIFO Modal Stack" },
+    { "path": "apps/web/src/native/mobile/shareAndDeepLinkBridge.ts", "lines": 192, "role": "Layer 2 dente:// Deep Linking & Web Share / WhatsApp SOS" },
+    { "path": "apps/web/src/native/mobile/pushNotificationsBridge.ts", "lines": 244, "role": "Layer 2 FCM Background Push & High-Priority Channels" },
+    { "path": "apps/web/src/native/mobile/deviceAndNetworkBridge.ts", "lines": 218, "role": "Layer 2 Screen Wake Lock & Device Capabilities Hub" },
+    { "path": "apps/web/src/native/mobile/index.ts", "lines": 19, "role": "Layer 5 Subsystem Master Aggregator" }
+  ],
+  "gates": {
+    "gate1_lineBudget": "PASSED (all files strictly <= 800 lines, maximum 288 lines)",
+    "gate2_astExportParity": "PASSED (79/79 public symbols preserved 100%)",
+    "gate3_testAnchors": "PASSED (0 original anchors, 0 lost anchors)",
+    "gate4_utf8Encoding": "PASSED (clean UTF-8 across workspace)",
+    "gate5_acyclicDAG": "PASSED (madge verified 0 circular dependencies)"
+  },
+  "tests": {
+    "testSuites": [
+      "apps/web/src/tests/mobileNativeBridge.test.ts",
+      "apps/web/src/tests/multiPlatformNativeBridges.test.ts",
+      "apps/web/src/tests/crossPlatformPortability.test.ts",
+      "apps/web/src/tests/hardwareBridgeMultiPlatform.test.ts"
+    ],
+    "totalTests": 87,
+    "passed": 87,
+    "failed": 0,
+    "exitCode": 0
+  }
+}

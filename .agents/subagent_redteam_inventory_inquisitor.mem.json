@@ -1,63 +1,112 @@
 {
-  "agent": "Red Team Inquisitor-Samo-pravshchik #7: Warehouse & Inventory Overdraft Inquisitor",
-  "status": "completed",
-  "updated_at": "2026-10-05T16:53:00Z",
-  "completed_steps": [
-    "Full reading of THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, core.md, frontend.md per Law #0",
-    "Deep reconnaissance of warehouse & inventory components, Fastify API routes, and PostgreSQL 18.4 schema",
-    "Verified lot/batch tracking, expiration dates (FEFO) of anesthetics and consumables",
-    "Verified receipt/write-off, consumption per visit, and soft overdraft (0-blocking emergency overdraft per Mandate 8e)",
-    "Verified primary documents print (M-11 request-invoices, ИНВ-3/19, ТОРГ-16) without 403 errors and with 0 emojis",
-    "Verified 1-click nurse carpule write-offs per SanPiN 3.3686-21 without requiring a 3-person commission",
-    "Decomposed monolithic InventoryView.tsx (889 -> 703 lines) by extracting InventoryTopToolbar.tsx (319 lines), satisfying Mandate 8b line-count rule (<= 800 lines)",
-    "Fixed test assertion in AutoclaveLog257Modal subtitle and verified 100% test pass (203/203 unit tests, 15/15 backend tests)",
-    "Seeded PostgreSQL 18.4 database with 16 realistic dental items and FEFO batches, verified live API (HTTP 200)",
-    "Captured 4 live Playwright screenshots (1440x900) in docs/screenshots/inventory_inquisition/ and brain folder",
-    "Physically inspected all 4 PNG files with view_file multimodal vision, identified column overlap defect on soft overdraft rows, fixed CSS and table widths (.inventory-col-actions: 250px, .inventory-col-cost: 110px), re-captured and re-verified",
-    "Passed all compiler & token gates: npm run typecheck -w @dental/web (0 errors) and npm run check:css-tokens (0 errors)"
+  "audit_version": "1.0.0",
+  "timestamp": "2026-10-08T22:33:00.000Z",
+  "auditor_role": "Red Team Inquisitor & L3 Backend Decomposer Re-Verifier",
+  "presumption_of_defect": "100%",
+  "verdict": "VERIFIED_CLEAN",
+  "target_scope": {
+    "facade": "apps/api/src/routes/inventory.ts",
+    "submodules_dir": "apps/api/src/routes/inventory/"
+  },
+  "constitution_and_skills_loaded": [
+    "C:/Users/Admin/.gemini/config/skills/decomposer/SKILL.md",
+    "C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md",
+    "C:/Clinic_MVP/dental-crm/.agents/AGENTS.md",
+    "C:/Users/Admin/.gemini/config/rules/core.md"
   ],
-  "screenshots": [
-    {
-      "file": "proof_inventory_desktop_light.png",
-      "size_kb": 841.6,
-      "md5": "b92c91e9f90e40e1c924734d603c1b76",
-      "viewport": "1440x900",
-      "theme": "light",
-      "verified_with_eyes": true,
-      "description": "PC Light 1440x900 view of DENTE Warehouse stock table. 1-line top toolbar, category filter chips, 16 dental items including soft overdraft demonstration on Filtek Ultimate Body A2 (-1 шприц with amber badge 'Овердрафт (0-блокировка)'), clean right-aligned action buttons without overlap, zero emojis."
+  "line_budget_check": {
+    "status": "PASSED",
+    "max_allowed_lines": 800,
+    "files": {
+      "batchTrackingRoutes.ts": 237,
+      "index.ts": 35,
+      "itemCatalogRoutes.ts": 449,
+      "procedureRuleRoutes.ts": 360,
+      "stockLedgerRoutes.ts": 307,
+      "stornoRoutes.ts": 634,
+      "supplierInvoiceRoutes.ts": 365,
+      "types.ts": 280,
+      "writeOffRoutes.ts": 758,
+      "inventory.ts (facade)": 32
     },
-    {
-      "file": "proof_inventory_desktop_dark.png",
-      "size_kb": 857.5,
-      "md5": "db369ad8614f434681d2d35ef1bb00e6",
-      "viewport": "1440x900",
-      "theme": "dark",
-      "verified_with_eyes": true,
-      "description": "PC Dark 1440x900 view of DENTE Warehouse stock table. Perfect dark theme palette (var(--paper), var(--ink)), crisp typography, WCAG AA+ contrast, clean column spacing, no toast clutter."
-    },
-    {
-      "file": "proof_inventory_fefo_light.png",
-      "size_kb": 785.4,
-      "md5": "d5a4f4e646d47d0252371d73e55af6c5",
-      "viewport": "1440x900",
-      "theme": "light",
-      "verified_with_eyes": true,
-      "description": "FEFO Expiration Tracking subtab (1440x900 Light). Real dental batches sorted by expiry (First-Expired-First-Out). Highlighted badge 'Истекает через 20 дн. (25.10.2026)' for AH Plus Jet lot, metrics strip showing 16 lots, 1 priority FEFO release (< 30 days), 15 normal lots."
-    },
-    {
-      "file": "proof_inventory_packages_light.png",
-      "size_kb": 790.7,
-      "md5": "781549d01ba5becf5366b27b3d0aff52",
-      "viewport": "1440x900",
-      "theme": "light",
-      "verified_with_eyes": true,
-      "description": "1-Click Clinical Packages Accordion expanded (1440x900 Light). Shows 6 clinical preset packages (carpule write-off, sterilization kit, standard anesthesia, hygiene, composite seal, surgical kit), active soft overdraft badge ('Мягкий овердрафт активен (без блокировок)'), all touch targets >= 44px."
+    "all_within_budget": true
+  },
+  "export_parity": {
+    "status": "PASSED",
+    "script": "scripts/verify-export-parity.cjs",
+    "baseline_exports_preserved": "100%",
+    "facade_exports_count": 25,
+    "index_exports_count": 12
+  },
+  "fastify_routes_census": {
+    "status": "PASSED",
+    "total_original_routes": 47,
+    "total_decomposed_routes": 47,
+    "missing_routes_count": 0,
+    "breakdown": {
+      "batchTrackingRoutes.ts": 6,
+      "itemCatalogRoutes.ts": 9,
+      "procedureRuleRoutes.ts": 6,
+      "stockLedgerRoutes.ts": 1,
+      "stornoRoutes.ts": 8,
+      "supplierInvoiceRoutes.ts": 2,
+      "writeOffRoutes.ts": 15
     }
-  ],
-  "verification_gates": {
-    "frontend_unit_tests": "203/203 PASS",
-    "backend_inquisitor_tests": "15/15 PASS",
-    "typescript_typecheck": "tsc -p tsconfig.json --noEmit PASS (0 errors)",
-    "css_tokens": "npm run check:css-tokens PASS (0 unresolvable tokens)"
+  },
+  "decomposer_edge_cases_audit": {
+    "edge_case_25_acid_boundaries": {
+      "status": "PASSED",
+      "findings": "0 violations. All transaction callbacks strictly pass tx client. Zero calls to global db.* inside open tx callbacks."
+    },
+    "edge_case_26_row_lock_ordering": {
+      "status": "PASSED",
+      "findings": "Row locks are either single-row by unique ID or batch-loaded deterministically. No cyclic lock inversion."
+    },
+    "edge_case_32_barrel_deadlock": {
+      "status": "PASSED",
+      "findings": "Zero submodules import from index.ts. Strict DAG: types.ts -> *Routes.ts -> index.ts."
+    },
+    "edge_case_38_tenant_isolation": {
+      "status": "PASSED",
+      "guarded_routes": "47/47 (100%)",
+      "findings": "All routes verify organizationId via requireResolvedOrganizationId (read) or requireResolvedStaffOrAdminOrganizationId (write)."
+    },
+    "edge_case_40_silent_catches": {
+      "status": "PASSED",
+      "findings": "Zero empty catch blocks across all decomposed submodules."
+    },
+    "soft_negative_stock_mandates_8e_8n_8v": {
+      "status": "PASSED",
+      "findings": "allowOverdraft defaults to true in quick write-offs and auto-deductions. Doctor workflow is never blocked on zero physical stock."
+    }
+  },
+  "dag_circularity_audit": {
+    "status": "PASSED",
+    "tool": "npx madge --circular",
+    "result": "No circular dependency found! (9 files processed)"
+  },
+  "test_execution_proof": {
+    "target_test_suites": [
+      "apps/api/src/tests/routes/inventoryExpirationDate.test.ts",
+      "apps/api/src/tests/routes/warehouseStockEndpoint.test.ts",
+      "apps/api/src/tests/services/materialDeductionDeadlockFree.test.ts",
+      "apps/api/src/tests/routes/treatmentConsumables.test.ts",
+      "apps/api/src/tests/routes/warehouseSoftOverdraftAndTechCardInquisitor.test.ts"
+    ],
+    "target_suites_count": 5,
+    "target_tests_count": 28,
+    "target_passed": 28,
+    "target_failed": 0,
+    "target_exit_code": 0,
+    "supplementary_suites_count": 4,
+    "supplementary_passed": 7,
+    "supplementary_skipped": 11,
+    "supplementary_failed": 0,
+    "supplementary_exit_code": 0
+  },
+  "encoding_hygiene": {
+    "status": "PASSED",
+    "files_checked": 8604,
+    "mojibake_errors": 0
   }
 }

@@ -245,7 +245,8 @@ const mockDashboard = {
 
 async function main() {
   const targetDirs = [
-    path.resolve("C:/Users/Admin/.gemini/antigravity/brain/963b6127-b84e-43ef-a233-9c105b4e92a8"),
+    path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/visit_tabs"),
+    path.resolve("C:/Users/Admin/.gemini/antigravity/brain/a6e95988-e8e4-4c72-89a6-8b1d0b01322f"),
     path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/inquisition_live"),
     path.resolve("C:/Clinic_MVP/dental-crm/apps/web/public/screenshots"),
   ];
@@ -360,7 +361,8 @@ async function main() {
 
     // Wait for visit header or visit panel
     console.log("[VISIT] Waiting for visit elements...");
-    await page.waitForTimeout(3000);
+    await page.waitForSelector(".visit-monolithic-header, [data-testid=\"visit-header-monolith\"], [data-testid=\"visit-subtab-diagnostics\"]", { state: "visible", timeout: 30000 }).catch(() => {});
+    await page.waitForTimeout(1500);
 
     const bodyHtml = await page.evaluate(() => {
       const header = document.querySelector(".visit-monolithic-header, [data-testid=\"visit-header-monolith\"]");
@@ -453,11 +455,25 @@ async function main() {
 
     // 1. Light Mode
     await applyTheme("light");
-    const lightResult = await takeScreenshot("visit_diagnostics_pc_light.png", "Visit Diagnostics PC Light");
+    const lightResult = await takeScreenshot("diagnostics_pc_light.png", "Visit Diagnostics PC Light");
+    await takeScreenshot("visit_diagnostics_pc_light.png", "Visit Diagnostics PC Light (alias)");
 
     // 2. Dark Mode
     await applyTheme("dark");
-    const darkResult = await takeScreenshot("visit_diagnostics_pc_dark.png", "Visit Diagnostics PC Dark");
+    const darkResult = await takeScreenshot("diagnostics_pc_dark.png", "Visit Diagnostics PC Dark");
+    await takeScreenshot("visit_diagnostics_pc_dark.png", "Visit Diagnostics PC Dark (alias)");
+
+    // 3. Cockpit with Scan Loaded (Light & Dark)
+    console.log("[SCAN LOAD] Clicking 'Показать демо-снимок'...");
+    const demoBtn = await page.$('[data-testid="btn-load-demo-scan"]');
+    if (demoBtn) {
+      await demoBtn.click();
+      await page.waitForTimeout(1000);
+      await applyTheme("light");
+      await takeScreenshot("diagnostics_cockpit_scan_light.png", "Visiograph Cockpit Scan Light");
+      await applyTheme("dark");
+      await takeScreenshot("diagnostics_cockpit_scan_dark.png", "Visiograph Cockpit Scan Dark");
+    }
 
     console.log("=== CAPTURE COMPLETE ===");
     console.log(JSON.stringify({ lightResult, darkResult }, null, 2));

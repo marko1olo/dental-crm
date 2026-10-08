@@ -1,0 +1,58 @@
+{
+  "timestamp": "2026-10-09T00:22:30Z",
+  "target": "apps/api/src/routes/analytics.ts",
+  "originalLines": 2275,
+  "status": "COMPLETED",
+  "decompositionHealth": {
+    "allGatesPassed": true,
+    "gate1_lineCountBudget": {
+      "passed": true,
+      "maxLimit": 800,
+      "files": {
+        "apps/api/src/routes/analytics.ts": 23,
+        "apps/api/src/routes/analytics/cohortRoutes.ts": 153,
+        "apps/api/src/routes/analytics/curatorRoutes.ts": 216,
+        "apps/api/src/routes/analytics/dashboardRoutes.ts": 391,
+        "apps/api/src/routes/analytics/diagnocatRoutes.ts": 93,
+        "apps/api/src/routes/analytics/executiveRoutes.ts": 414,
+        "apps/api/src/routes/analytics/index.ts": 34,
+        "apps/api/src/routes/analytics/rebookingRoutes.ts": 596,
+        "apps/api/src/routes/analytics/types.ts": 64,
+        "apps/api/src/routes/analytics/utilizationRoutes.ts": 475,
+        "apps/api/src/routes/analytics/utils.ts": 76
+      }
+    },
+    "gate2_astExportParity": {
+      "passed": true,
+      "baselineExportsCount": 34,
+      "facadeExportsCount": 34,
+      "parityPercent": 100
+    },
+    "gate3_testAnchors": {
+      "passed": true,
+      "originalAnchors": 0,
+      "targetAnchors": 0
+    },
+    "gate4_utf8Encoding": {
+      "passed": true
+    },
+    "gate5_acyclicDag": {
+      "passed": true,
+      "circularDependenciesInModule": 0
+    }
+  },
+  "tests": {
+    "analyticsCohortTimeZone": "PASSED (100% green)",
+    "analyticsPlanFunnelRoute": "PASSED (100% green)",
+    "rebookingConversionSoloDoctor": "PASSED (100% green)",
+    "wave11TelemetryAndExportsMedicalPrivacyAudit": "PASSED (100% green)"
+  },
+  "invariantsPreserved": [
+    "Clinic timezone date_trunc month SQL literal preserved 1:1 across SELECT/GROUP BY/ORDER BY",
+    "SSOT buildPlanFunnel treatment plans calculation strictly preserved",
+    "Solo doctor Mandate 8n chairside rebooking conversion rules preserved",
+    "Multi-tenant organizationId filters preserved in all queries",
+    "Zero silent catch blocks: all errors properly logged and HTTP error responses returned",
+    "Thin canonical facade <= 50 lines (actual: 23 lines)"
+  ]
+}

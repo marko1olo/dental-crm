@@ -1,0 +1,70 @@
+{
+  "subagent": "Clinical CT Selector UI Lead & Red Team Inquisitor",
+  "timestamp": "2026-10-09T00:30:00Z",
+  "status": "COMPLETED",
+  "mission": "Canonical Clinical CT Selector (CtSelectorModal.tsx) and Quick-Attach Intake Integration for DENTE Dental CRM",
+  "components": [
+    {
+      "path": "apps/web/src/components/radiology/CtSelectorModal.tsx",
+      "description": "Master Clinical CT Selector modal with Downloads intake, 3 launch modes, universal dropzone (ZIP/folder/files) with live fflate extraction, and recent patient CBCT studies gallery",
+      "lines": 1038,
+      "exports": ["CtSelectorModal", "CtLaunchMode", "CtSelectorModalProps"]
+    },
+    {
+      "path": "apps/web/src/components/imaging/index.ts",
+      "description": "Domain barrel export re-exporting CtSelectorModal alongside CbctMprImplantStudioModal and DicomViewerModal",
+      "exports": ["CtSelectorModal"]
+    },
+    {
+      "path": "apps/web/src/native/desktopBridge.ts",
+      "description": "Hardware bridge typed methods for CT intake: scanDownloadsForCt, detectInstalledCtViewers, detectExternalCtViewers, launchExternalCtViewer, openInExternalViewer, openInNewWindow",
+      "invariants": ["Zero Mocks in web mode", "Native bridge IPC when running in Electron/Tauri", "Internal DENTE 3D MPR studio guaranteed fallback"]
+    }
+  ],
+  "integrations": [
+    {
+      "view": "apps/web/src/components/imaging/ImagingHeader.tsx",
+      "anchor": "btn-open-ct-selector",
+      "status": "INTEGRATED"
+    },
+    {
+      "view": "apps/web/src/ImagingView.tsx",
+      "anchor": "isCtSelectorOpen state, CtSelectorModal mount, onOpenCbctStudio and onImagesLoaded routing",
+      "status": "INTEGRATED"
+    },
+    {
+      "view": "apps/web/src/components/patients/tabs/PatientRadiologyTab.tsx",
+      "anchor": "btn-patient-open-ct-selector in toolbar and CtSelectorModal mount",
+      "status": "INTEGRATED"
+    },
+    {
+      "view": "apps/web/src/components/visit/VisitDiagnosticsTab.tsx",
+      "anchor": "btn-open-ct-selector in CBCT diagnostic card and CtSelectorModal mount",
+      "status": "INTEGRATED"
+    },
+    {
+      "view": "apps/web/src/components/radiology/RadiologyModule.tsx",
+      "anchor": "btn-open-radiology-ct-selector in header toolbar and CtSelectorModal mount",
+      "status": "INTEGRATED"
+    }
+  ],
+  "verification": {
+    "targeted_unit_tests": [
+      {
+        "file": "apps/web/src/tests/dicomArchiveUploader.test.ts",
+        "passed": 15,
+        "failed": 0
+      },
+      {
+        "file": "apps/web/src/tests/ctSelectorModalIntegration.test.ts",
+        "passed": 8,
+        "failed": 0
+      }
+    ],
+    "total_tests_passed": 23,
+    "total_tests_failed": 0,
+    "ram_guard_respected": true,
+    "anti_matryoshka_depth": 1,
+    "zero_mocks_verified": true
+  }
+}

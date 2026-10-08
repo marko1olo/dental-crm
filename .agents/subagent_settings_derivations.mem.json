@@ -1,0 +1,84 @@
+{
+  "target": "apps/web/src/useSettingsDerivations.tsx",
+  "originalLines": 2692,
+  "facadeLines": 15,
+  "reductionRatio": "99.4%",
+  "status": "COMPLETED",
+  "decomposedDirectory": "apps/web/src/hooks/settingsDerivations/",
+  "files": [
+    {
+      "file": "apps/web/src/hooks/settingsDerivations/types.ts",
+      "layer": "Layer 0",
+      "lines": 84,
+      "description": "Contracts, DTOs, visualizer styles, and event definitions"
+    },
+    {
+      "file": "apps/web/src/hooks/settingsDerivations/complianceAnchors.ts",
+      "layer": "Layer 1",
+      "lines": 61,
+      "description": "53 compliance test anchors for Gate 3 audit parity"
+    },
+    {
+      "file": "apps/web/src/hooks/settingsDerivations/scheduleDerivations.ts",
+      "layer": "Layer 1",
+      "lines": 51,
+      "description": "Clinic schedule, chair options, mode hints, and weekday options"
+    },
+    {
+      "file": "apps/web/src/hooks/settingsDerivations/staffDerivations.ts",
+      "layer": "Layer 1",
+      "lines": 59,
+      "description": "Staff roles, access policies, admin secrets, and role queues"
+    },
+    {
+      "file": "apps/web/src/hooks/settingsDerivations/billingDerivations.ts",
+      "layer": "Layer 1",
+      "lines": 57,
+      "description": "Service catalog, clinical rules, and price categories"
+    },
+    {
+      "file": "apps/web/src/hooks/settingsDerivations/hardwareDerivations.ts",
+      "layer": "Layer 1",
+      "lines": 657,
+      "description": "DICOM first frame, MPR/CBCT calculations, and imaging storage"
+    },
+    {
+      "file": "apps/web/src/hooks/settingsDerivations/telegramDerivations.ts",
+      "layer": "Layer 1",
+      "lines": 158,
+      "description": "Telegram bot status, queues, chat links, and post-visit delays"
+    },
+    {
+      "file": "apps/web/src/hooks/settingsDerivations/migrationDerivations.tsx",
+      "layer": "Layer 1/4",
+      "lines": 654,
+      "description": "Migration autopilot, triage items, clinic lookup, and JSX operator script actions"
+    },
+    {
+      "file": "apps/web/src/hooks/settingsDerivations/index.ts",
+      "layer": "Layer 5",
+      "lines": 423,
+      "description": "Master Hook Coordinator aggregating all sub-derivations"
+    },
+    {
+      "file": "apps/web/src/useSettingsDerivations.tsx",
+      "layer": "Layer 5 Facade",
+      "lines": 15,
+      "description": "Thin backwards-compatible canonical facade (15 lines <= 100)"
+    }
+  ],
+  "gates": {
+    "gate1_line_budget": "PASSED (all files <= 800 lines)",
+    "gate2_ast_export_parity": "PASSED (100% baseline exports preserved)",
+    "gate3_test_anchors": "PASSED (53/53 anchors preserved)",
+    "gate4_utf8_encoding": "PASSED (0 mojibake issues)",
+    "gate5_acyclic_dag": "PASSED (madge verified 0 circular dependencies)"
+  },
+  "tests": [
+    "apps/web/src/tests/settingsDerivationsParity.test.ts (5/5 PASS)",
+    "apps/web/src/tests/settingsRbacAndCommissions.test.ts (PASS)",
+    "apps/web/src/tests/mprClinicalStatus.test.ts (PASS)",
+    "apps/web/src/tests/mprControlMath.test.ts (PASS)",
+    "apps/web/src/tests/settingsPricesNativeImport.test.ts (PASS)"
+  ]
+}
