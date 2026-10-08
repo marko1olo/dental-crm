@@ -1,0 +1,50 @@
+{
+  "status": "completed",
+  "started_at": "2026-10-09T01:38:00+04:00",
+  "completed_at": "2026-10-09T01:46:00+04:00",
+  "role": "Red Team Inquisitor & L3 Manager Reports Service Decomposer",
+  "target_monolith": "apps/api/src/services/reports/managerReports.ts",
+  "original_lines": 1702,
+  "facade_lines": 9,
+  "completed_steps": [
+    "Read decomposer skill SKILL.md completely (776 lines)",
+    "Read THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, and GEMINI.md",
+    "Verified baseline tests (Gate 0) with Exit Code 0",
+    "Extracted Layer 0 types into apps/api/src/services/reports/managerReports/types.ts (235 lines)",
+    "Extracted Layer 0 timezone SSOT and SQL helpers into timezone.ts (100 lines)",
+    "Extracted Layer 1 periodBounds.ts with Daylight Saving resilience (167 lines)",
+    "Extracted Layer 2 revenueReports.ts for revenue timeline and patient flow (214 lines)",
+    "Extracted Layer 2 doctorReports.ts for doctor performance, chair load, appointment funnel, reminders, and schedule load (525 lines)",
+    "Extracted Layer 2 serviceReports.ts for service sales and categories (132 lines)",
+    "Extracted Layer 2 debtReports.ts for exact kopecks receivables and prepayments (386 lines)",
+    "Created Layer 5 index.ts aggregator (12 lines)",
+    "Replaced original monolith apps/api/src/services/reports/managerReports.ts with thin canonical facade (9 lines <= 50 lines)",
+    "Executed verify-decomposition-health.cjs and passed all 5 gates 100% cleanly",
+    "Executed targeted test suite (46 tests passing, 0 failures, Exit Code 0)",
+    "Executed loaderClinicTimeZoneSource.test.ts verifying SSOT clinicTimeZone import preservation"
+  ],
+  "extracted_modules": [
+    { "file": "apps/api/src/services/reports/managerReports/types.ts", "lines": 235 },
+    { "file": "apps/api/src/services/reports/managerReports/timezone.ts", "lines": 100 },
+    { "file": "apps/api/src/services/reports/managerReports/periodBounds.ts", "lines": 167 },
+    { "file": "apps/api/src/services/reports/managerReports/revenueReports.ts", "lines": 214 },
+    { "file": "apps/api/src/services/reports/managerReports/doctorReports.ts", "lines": 525 },
+    { "file": "apps/api/src/services/reports/managerReports/serviceReports.ts", "lines": 132 },
+    { "file": "apps/api/src/services/reports/managerReports/debtReports.ts", "lines": 386 },
+    { "file": "apps/api/src/services/reports/managerReports/index.ts", "lines": 12 },
+    { "file": "apps/api/src/services/reports/managerReports.ts", "lines": 9 }
+  ],
+  "gates": {
+    "gate_1_line_count_budget": "PASSED (all files <= 800 lines)",
+    "gate_2_ast_export_parity": "PASSED (100% of 37 exports preserved)",
+    "gate_3_test_anchors": "PASSED (0 lost)",
+    "gate_4_utf8_encoding": "PASSED",
+    "gate_5_acyclic_dag_madge": "PASSED (0 circular dependencies)"
+  },
+  "verification": {
+    "test_command": "npx tsx --test apps/api/src/tests/routes/managerReports.test.ts apps/api/src/tests/services/reportMonthPeriodClinicZone.test.ts apps/api/src/tests/routes/periodBoundaryDaylightSaving.test.ts apps/api/src/migration/loaderClinicTimeZoneSource.test.ts",
+    "tests_passed": 46,
+    "tests_failed": 0,
+    "exit_code": 0
+  }
+}
