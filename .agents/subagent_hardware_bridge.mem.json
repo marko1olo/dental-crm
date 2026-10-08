@@ -1,0 +1,121 @@
+{
+  "timestamp": "2026-10-09T00:52:00Z",
+  "task": "Decomposition of dentalHardwareBridge.ts monolith",
+  "status": "COMPLETED_100_PERCENT_CLEAN",
+  "targetMonolith": "packages/shared/src/hardware/dentalHardwareBridge.ts",
+  "originalLines": 1986,
+  "facadeLines": 17,
+  "facadePreservesAllExports": true,
+  "exportedSymbolsCount": 34,
+  "exportedSymbols": [
+    "CommandLineBridgeOptions",
+    "DENTAL_HARDWARE_PRESETS",
+    "DENTAL_PHOTO_PROTOCOL_12",
+    "DentalHardwareFamily",
+    "DentalHardwarePreset",
+    "DentalHardwareVendor",
+    "HotFolderFileMetadata",
+    "PhotoProtocolSlot",
+    "PhotoProtocolSlotId",
+    "SlidaPatientDescriptor",
+    "SlidaResponse",
+    "TwainDeviceCatalogEntry",
+    "VENDOR_CLI_TEMPLATES",
+    "VddsMediaDescriptor",
+    "VddsMediaResponse",
+    "detectHardwareVendorFromPath",
+    "formatCommandLineBridge",
+    "generateEzDentLinkContent",
+    "generateRomexisCliArgs",
+    "generateSlidaIniContent",
+    "generateSlidaXmlContent",
+    "generateVddsMediaContent",
+    "getHardwarePresetById",
+    "getHardwarePresetByVendor",
+    "getPresetsByFamily",
+    "getTwainDeviceCatalog",
+    "getVendorCliTemplate",
+    "matchPhotoProtocolSlot",
+    "parseDicomFilenameMetadata",
+    "parseHotFolderFilenameMetadata",
+    "parseSlidaIniResponse",
+    "parseSlidaResponse",
+    "parseSlidaXmlResponse",
+    "parseVddsMediaResponse"
+  ],
+  "decomposedModules": [
+    {
+      "file": "packages/shared/src/hardware/dentalHardware/types.ts",
+      "layer": 0,
+      "lines": 154,
+      "budget": "< 800 lines"
+    },
+    {
+      "file": "packages/shared/src/hardware/dentalHardware/vendorDetector.ts",
+      "layer": 1,
+      "lines": 333,
+      "budget": "< 800 lines"
+    },
+    {
+      "file": "packages/shared/src/hardware/dentalHardware/presets.ts",
+      "layer": 1,
+      "lines": 737,
+      "budget": "< 800 lines"
+    },
+    {
+      "file": "packages/shared/src/hardware/dentalHardware/photoProtocol.ts",
+      "layer": 1,
+      "lines": 145,
+      "budget": "< 800 lines"
+    },
+    {
+      "file": "packages/shared/src/hardware/dentalHardware/slidaBridge.ts",
+      "layer": 1,
+      "lines": 200,
+      "budget": "< 800 lines"
+    },
+    {
+      "file": "packages/shared/src/hardware/dentalHardware/vddsBridge.ts",
+      "layer": 1,
+      "lines": 96,
+      "budget": "< 800 lines"
+    },
+    {
+      "file": "packages/shared/src/hardware/dentalHardware/cliAndTwainBridge.ts",
+      "layer": 1,
+      "lines": 254,
+      "budget": "< 800 lines"
+    },
+    {
+      "file": "packages/shared/src/hardware/dentalHardware/hotFolderWatcher.ts",
+      "layer": 1,
+      "lines": 95,
+      "budget": "< 800 lines"
+    },
+    {
+      "file": "packages/shared/src/hardware/dentalHardware/index.ts",
+      "layer": 5,
+      "lines": 15,
+      "budget": "< 800 lines"
+    },
+    {
+      "file": "packages/shared/src/hardware/dentalHardwareBridge.ts",
+      "layer": 5,
+      "lines": 17,
+      "budget": "<= 50 lines facade"
+    }
+  ],
+  "auditGates": {
+    "gate1_line_budget": "PASSED (all <= 800 lines)",
+    "gate2_ast_export_parity": "PASSED (100% / 34 symbols)",
+    "gate3_test_anchors": "PASSED",
+    "gate4_utf8_encoding": "PASSED",
+    "gate5_acyclic_madge": "PASSED (0 circular dependencies)"
+  },
+  "unitTests": {
+    "command": "npx tsx --test packages/shared/src/tests/dentalHardwareBridge.test.ts",
+    "exitCode": 0,
+    "passCount": 9,
+    "failCount": 0
+  }
+}

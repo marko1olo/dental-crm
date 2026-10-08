@@ -1,0 +1,84 @@
+{
+  "role": "Red Team Inquisitor & L3 Frontend App Constants Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T01:10:00Z",
+  "targetMonolith": "apps/web/src/AppConstants.ts",
+  "originalLines": 2017,
+  "facadeLines": 8,
+  "facadePath": "apps/web/src/AppConstants.ts",
+  "totalBaselineExports": 212,
+  "totalFacadeExports": 212,
+  "exportParityPercent": 100,
+  "circularDependencies": 0,
+  "lineBudgetLimit": 800,
+  "modules": [
+    {
+      "file": "apps/web/src/constants/clinicalConstants.ts",
+      "lines": 519,
+      "layer": "Layer 0",
+      "domain": "Зубная формула, клинические статусы, осмотры, документы, кассовые и налоговые каналы"
+    },
+    {
+      "file": "apps/web/src/constants/imagingConstants.ts",
+      "lines": 404,
+      "layer": "Layer 0",
+      "domain": "DICOM, MPR мультипланарные срезы, сканирование папок, рентген/КТ направления"
+    },
+    {
+      "file": "apps/web/src/constants/telegramConstants.ts",
+      "lines": 353,
+      "layer": "Layer 0",
+      "domain": "Telegram-боты клиники, шаблоны, статусы outbox, маски чувствительных URL"
+    },
+    {
+      "file": "apps/web/src/constants/uiPreferencesConstants.ts",
+      "lines": 240,
+      "layer": "Layer 0",
+      "domain": "Начальные преференции UI, табы настроек клиники, языковые опции, заголовки auth"
+    },
+    {
+      "file": "apps/web/src/constants/migrationConstants.ts",
+      "lines": 213,
+      "layer": "Layer 0",
+      "domain": "Миграция старых МИС, импорт прайсов и документов, сканирование форматов"
+    },
+    {
+      "file": "apps/web/src/constants/onboardingConstants.ts",
+      "lines": 154,
+      "layer": "Layer 0",
+      "domain": "Мастер онбординга, драфты профиля клиники, расписания смен и персонала"
+    },
+    {
+      "file": "apps/web/src/constants/speechConstants.ts",
+      "lines": 143,
+      "layer": "Layer 0",
+      "domain": "Голосовые заметки врача, IndexedDB offline схема и очереди отложенного сохранения"
+    },
+    {
+      "file": "apps/web/src/constants/index.ts",
+      "lines": 8,
+      "layer": "Layer 5",
+      "domain": "Агрегатор экспортов констант"
+    },
+    {
+      "file": "apps/web/src/AppConstants.ts",
+      "lines": 8,
+      "layer": "Layer 5",
+      "domain": "Тонкий канонический фасад (обратная совместимость 1:1 во всем монорепозитории)"
+    }
+  ],
+  "gates": {
+    "gate1_lineBudget": "PASSED (all files <= 800 lines)",
+    "gate2_astExportParity": "PASSED (212/212 symbols, 100% parity)",
+    "gate3_testAnchors": "PASSED (0 lost)",
+    "gate4_utf8Hygiene": "PASSED (clean UTF-8)",
+    "gate5_acyclicDag": "PASSED (0 circular dependencies via madge)"
+  },
+  "unitTests": {
+    "settingsDeepLinks": "PASSED (Exit Code 0)",
+    "settingsModuleGate": "PASSED (Exit Code 0)",
+    "documentPayloadForms": "PASSED (Exit Code 0)",
+    "totalPassing": 44,
+    "totalFailing": 0
+  }
+}
