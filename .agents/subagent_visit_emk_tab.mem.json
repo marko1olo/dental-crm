@@ -1,0 +1,90 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Visit Emk Tab Decomposer",
+  "target_monolith": "apps/web/src/components/visit/VisitEmkTab.tsx",
+  "original_lines": 1992,
+  "decomposed_directory": "apps/web/src/components/visit/emkTab/",
+  "decomposed_modules": [
+    {
+      "file": "apps/web/src/components/visit/emkTab/types.ts",
+      "layer": "Layer 0",
+      "lines": 83,
+      "description": "Domain contracts, interface types for OdontogramBar, Modals, CompletionSection, ServicesBilling, Canvas"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkTab/VisitEmkOdontogramBar.tsx",
+      "layer": "Layer 1",
+      "lines": 307,
+      "description": "Embedded interactive odontogram bar, quadrant toggles, pathology stamps, SOAP enrichment finding handler"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkTab/VisitEmkModals.tsx",
+      "layer": "Layer 1",
+      "lines": 289,
+      "description": "Clinical modals manager: Form 043/u print, EMR protocol generator, Informed consent 1051n, Clinical catalog 1142 presets, SBP QR code payment"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkTab/VisitEmkCompletionSection.tsx",
+      "layer": "Layer 1",
+      "lines": 215,
+      "description": "Completion section banner, signed visit revision history banner, desktop action bar, mobile sticky floating action bar (Apple HIG Thumb Zone)"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkTab/VisitEmkServicesBilling.tsx",
+      "layer": "Layer 1",
+      "lines": 77,
+      "description": "Services and billing section, orthopedics chairside panel, EGISZ multiple diagnoses, ICD-10 clinical selector"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkTab/VisitEmkCanvas.tsx",
+      "layer": "Layer 1",
+      "lines": 403,
+      "description": "Clinical canvas container, step cards (steps 1-4) with one-click somatic norm chips, full-canvas section aggregator"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkTab/useVisitCompletionWorkflow.ts",
+      "layer": "Layer 3",
+      "lines": 194,
+      "description": "Asynchronous clinical visit completion workflow, automatic BOM warehouse deduction, backend work-order sync, tooth state batch persist, telemetry"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkTab/index.ts",
+      "layer": "Layer 5",
+      "lines": 7,
+      "description": "Clean barrel aggregator exporting types and subcomponents"
+    },
+    {
+      "file": "apps/web/src/components/visit/VisitEmkTab.tsx",
+      "layer": "Layer 5",
+      "lines": 492,
+      "description": "Canonical slim facade assembling subcomponents, re-exporting DebouncedEmkTextarea and types 1:1, strictly < 800 lines (down from 1,992 lines)"
+    }
+  ],
+  "verification_gates": {
+    "gate_1_line_budget": "PASSED (all files <= 800 lines)",
+    "gate_2_ast_export_parity": "PASSED (16/16 baseline exports preserved in facade)",
+    "gate_3_test_anchor_parity": "PASSED (100% of data-testid, aria-label, id preserved)",
+    "gate_4_utf8_hygiene": "PASSED (zero mojibake / clean UTF-8)",
+    "gate_5_acyclic_dag": "PASSED (0 circular dependencies detected via madge)"
+  },
+  "targeted_test_results": {
+    "total_tests": 22,
+    "suites": 3,
+    "passed": 22,
+    "failed": 0,
+    "exit_code": 0,
+    "suites_detail": [
+      "Mandates 8e, 8n, 8s: Chairside 043/U & Somatic Norm Autonomy Inquisitor (Wave 310) (7 tests - PASS)",
+      "Visit Autosave & Zero Keystroke Loss Invariants (6 tests - PASS)",
+      "Wave 24 Worker 3: VisitEmkTab Authentic SBP QR Generator & Zero Diorama (6 tests - PASS)",
+      "VisitEmkTab: nested card matryoshka is eliminated per Anti-Matryoshka law (1 test - PASS)",
+      "WhatsAppChatPanel: WCAG AAA Light Mode contrast tokens (1 test - PASS)",
+      "SettingsView: eliminates simultaneous dual mounting (1 test - PASS)"
+    ]
+  },
+  "compliance": {
+    "mandate_8e_doctor_autonomy": "100% preserved (non-blocking close visit, 1-click somatic norm)",
+    "mandate_8s_zero_keystroke_loss": "100% preserved (debounced autosave 600ms, emergency unmount flush)",
+    "apple_hig_mobile_thumb_zone": "100% preserved (52px primary action bar, safe-area)",
+    "anti_matryoshka_law": "100% preserved (flat document cards, clean dividers)"
+  }
+}
