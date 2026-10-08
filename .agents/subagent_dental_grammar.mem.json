@@ -1,0 +1,69 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Dental Grammar Voice Parser Decomposer",
+  "target": "apps/web/src/services/voice/dentalGrammarParser.ts",
+  "originalLines": 1784,
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T02:20:00Z",
+  "decompositionTargetDir": "apps/web/src/services/voice/dentalGrammar/",
+  "modules": [
+    {
+      "file": "apps/web/src/services/voice/dentalGrammar/types.ts",
+      "layer": "Layer 0 (Types & DTOs)",
+      "lines": 153,
+      "description": "Контракты типов, AST клинических находок, поверхностей MODBL, 804н, SOAP, ТРГ и периодонтологии"
+    },
+    {
+      "file": "apps/web/src/services/voice/dentalGrammar/constants.ts",
+      "layer": "Layer 0 (Constants & Vocabularies)",
+      "lines": 695,
+      "description": "Словари синонимов, фонетические паттерны, числовые эквиваленты зубов FDI 11-85, МКБ-10, анестетики, 804н"
+    },
+    {
+      "file": "apps/web/src/services/voice/dentalGrammar/toothNumberParser.ts",
+      "layer": "Layer 1 (Parsers)",
+      "lines": 115,
+      "description": "Грамматический парсер номеров зубов постоянного (11-48) и молочного (51-85) прикуса, анатомических положений и чисел словами"
+    },
+    {
+      "file": "apps/web/src/services/voice/dentalGrammar/surfaceExtractor.ts",
+      "layer": "Layer 1 (Extractors)",
+      "lines": 44,
+      "description": "Выделение анатомических поверхностей MODBL и класса V по Блэку"
+    },
+    {
+      "file": "apps/web/src/services/voice/dentalGrammar/pathologyClassifier.ts",
+      "layer": "Layer 2 (Classifiers)",
+      "lines": 21,
+      "description": "Классификация патологий МКБ-10 и клинических статусов зубной формулы"
+    },
+    {
+      "file": "apps/web/src/services/voice/dentalGrammar/voiceCommandInterpreter.ts",
+      "layer": "Layer 2 (Interpreter & Engine)",
+      "lines": 767,
+      "description": "Интерпретатор составных высказываний у кресла, анестезии, манипуляций 804н, SOAP, квадрантов, эндо, перио и ТРГ"
+    },
+    {
+      "file": "apps/web/src/services/voice/dentalGrammar/index.ts",
+      "layer": "Layer 5 (Barrel)",
+      "lines": 10,
+      "description": "Чистый реэкспорт всех контрактов и функций подсистемы dentalGrammar"
+    },
+    {
+      "file": "apps/web/src/services/voice/dentalGrammarParser.ts",
+      "layer": "Layer 5 (Canonical Facade)",
+      "lines": 40,
+      "description": "Тонкий канонический фасад <= 50 строк со 100% сохранением всех 29 публичных экспортов"
+    }
+  ],
+  "gates": {
+    "gate1_line_count_budget": "PASSED (all files strictly <= 800 lines)",
+    "gate2_ast_export_parity": "PASSED (29/29 baseline exports preserved, 100% parity)",
+    "gate3_test_anchors": "PASSED (100% preserved)",
+    "gate4_utf8_encoding": "PASSED (Clean UTF-8, no BOM, no mojibake)",
+    "gate5_acyclic_dag_madge": "PASSED (Zero circular dependencies)"
+  },
+  "tests": {
+    "dentalGrammarParser_test": "PASSED (42/42 tests pass, 0 fail)",
+    "audioDspFilters_test": "PASSED (14/14 tests pass, 0 fail)"
+  }
+}
