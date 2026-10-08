@@ -1,0 +1,74 @@
+{
+  "timestamp": "2026-10-09T02:15:35.000Z",
+  "subagent": "Red Team Inquisitor & L3 Patient History RAG Memory Decomposer",
+  "targetMonolith": "apps/api/src/services/agent/rag/patientHistoryMemory.ts",
+  "originalLines": 1820,
+  "facadeLines": 32,
+  "reductionFactor": "98.2%",
+  "decomposedDirectory": "apps/api/src/services/agent/rag/patientHistory/",
+  "modules": [
+    {
+      "file": "apps/api/src/services/agent/rag/patientHistory/types.ts",
+      "layer": "Layer 0: Types & DTOs",
+      "lines": 97,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/api/src/services/agent/rag/patientHistory/constants.ts",
+      "layer": "Layer 0: Constants & Dictionaries",
+      "lines": 219,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/api/src/services/agent/rag/patientHistory/patientDataSanitizer.ts",
+      "layer": "Layer 1: 152-FZ PII Sanitizer",
+      "lines": 88,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/api/src/services/agent/rag/patientHistory/embeddingPipeline.ts",
+      "layer": "Layer 1: Dense Vectorization & Morphology Pipeline",
+      "lines": 360,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/api/src/services/agent/rag/patientHistory/historyRetriever.ts",
+      "layer": "Layer 2: Chronology Retriever & Vector Indexer",
+      "lines": 769,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/api/src/services/agent/rag/patientHistory/clinicalPromptBuilder.ts",
+      "layer": "Layer 2: Clinical Context Synthesis & Agent Tool",
+      "lines": 319,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/api/src/services/agent/rag/patientHistory/index.ts",
+      "layer": "Layer 5: Master Barrel",
+      "lines": 15,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/api/src/services/agent/rag/patientHistoryMemory.ts",
+      "layer": "Layer 5: Canonical Slim Facade",
+      "lines": 32,
+      "budgetStatus": "PASSED (<= 50)"
+    }
+  ],
+  "gates": {
+    "gate1_line_count_budget": "PASSED",
+    "gate2_ast_export_parity": "PASSED (100% baseline exports preserved)",
+    "gate3_test_anchors": "PASSED (100% test anchors preserved)",
+    "gate4_utf8_encoding": "PASSED (Clean UTF-8, 0 mojibake, 0 null bytes)",
+    "gate5_acyclic_dag": "PASSED (0 circular dependencies via madge)"
+  },
+  "testSuite": {
+    "command": "node --max-old-space-size=1024 --import tsx --test apps/api/src/services/agent/rag/patientHistoryMemory.test.ts",
+    "testsTotal": 20,
+    "testsPassed": 20,
+    "testsFailed": 0,
+    "durationMs": 7284.67
+  },
+  "status": "COMPLETED_100_PERCENT"
+}
