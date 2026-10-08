@@ -1,0 +1,114 @@
+{
+  "task": "Decomposition of apps/api/src/documents/guards.ts",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T02:54:20+04:00",
+  "sourceMonolith": {
+    "path": "apps/api/src/documents/guards.ts",
+    "originalLines": 1659,
+    "currentLines": 22,
+    "isFacade": true
+  },
+  "decomposedModules": {
+    "targetDirectory": "apps/api/src/documents/documentGuards",
+    "files": [
+      {
+        "file": "types.ts",
+        "lines": 46,
+        "layer": 0,
+        "description": "Layer 0 contracts: DocumentVisit, DocumentPatient, DocumentTreatmentPlanItem, DocumentCreationFacts, DocumentCreationGuardResult, PaymentRefundSettlement, FinancialServicePayloadLine"
+      },
+      {
+        "file": "constants.ts",
+        "lines": 28,
+        "layer": 0,
+        "description": "Layer 0 constants: MONEY_TEXT_UNPRINTABLE, taxDeductionApplicationFieldLabels"
+      },
+      {
+        "file": "moneyUtils.ts",
+        "lines": 72,
+        "layer": 1,
+        "description": "Layer 1 money formatting and comparison helpers: moneyRubEquals, moneyRubText, moneyKopecksText"
+      },
+      {
+        "file": "consentGuards.ts",
+        "lines": 73,
+        "layer": 1,
+        "description": "Layer 1 informed consent (ИДС), personal data (152-ФЗ), minor legal rep, photo/video consent, intervention refusal"
+      },
+      {
+        "file": "prescriptionGuards.ts",
+        "lines": 26,
+        "layer": 1,
+        "description": "Layer 1 prescription order (107-1/у), anesthesia log, lab order guards"
+      },
+      {
+        "file": "accessControlGuards.ts",
+        "lines": 67,
+        "layer": 2,
+        "description": "Layer 2 access control: patient/visit existence & linkage, Decree 659 tax deduction ban for anonymous cards"
+      },
+      {
+        "file": "clinicalRecordGuards.ts",
+        "lines": 99,
+        "layer": 2,
+        "description": "Layer 2 clinical records: 043/у, extracts, copies, post-visit recommendations, treatment plans, attendance certificates, CBCT/x-ray referral + pregnancy check"
+      },
+      {
+        "file": "taxGuards.ts",
+        "lines": 186,
+        "layer": 2,
+        "description": "Layer 2 tax deduction certificate guards: КНД 1151156, legacy 2021–2023, payment matching, taxPaymentSelectionErrorForDocument"
+      },
+      {
+        "file": "paymentReceiptAndRefundGuards.ts",
+        "lines": 325,
+        "layer": 2,
+        "description": "Layer 2 payment receipts & refund corrections: paymentReceiptSelectionErrorForDocument, paymentRefundCorrectionSelectionErrorForDocument, paymentRefundSettlements"
+      },
+      {
+        "file": "financialGuards.ts",
+        "lines": 496,
+        "layer": 2,
+        "description": "Layer 2 financial line & contract consistency: paidAmountRubForDocument, plannedAmountRubForDocument, contracts, acts, estimates, invoices, installment schedules"
+      },
+      {
+        "file": "validateDocumentCreation.ts",
+        "lines": 203,
+        "layer": 3,
+        "description": "Layer 3 master validation coordinator: validateDocumentCreation, payloadKindMismatchReason, structuredPayloadMissingReason"
+      },
+      {
+        "file": "index.ts",
+        "lines": 105,
+        "layer": 5,
+        "description": "Layer 5 barrel re-exporting all types and guard functions"
+      }
+    ]
+  },
+  "verificationGates": {
+    "gate1_line_budget": "PASSED (all modules <= 496 lines, facade = 22 lines <= 50)",
+    "gate2_public_export_parity": "PASSED (100% of 12 public exports preserved)",
+    "gate3_test_anchors": "PASSED (100% preserved)",
+    "gate4_utf8_encoding": "PASSED (no mojibake, clean UTF-8)",
+    "gate5_madge_circular_dependencies": "PASSED (0 cycles detected, clean DAG)",
+    "unit_tests": {
+      "guards_and_money_tests": "47/47 passed (0 failed)",
+      "render_and_tax_tests": "41/41 passed (0 failed)",
+      "total_tests_passed": 88
+    }
+  },
+  "exportedSymbols": [
+    "MONEY_TEXT_UNPRINTABLE",
+    "moneyRubEquals",
+    "moneyRubText",
+    "moneyKopecksText",
+    "taxDeductionApplicationFieldLabels",
+    "taxPaymentSelectionErrorForDocument",
+    "paymentReceiptSelectionErrorForDocument",
+    "paymentRefundCorrectionSelectionErrorForDocument",
+    "paidAmountRubForDocument",
+    "plannedAmountRubForDocument",
+    "validateDocumentCreation",
+    "paymentRefundSettlements"
+  ]
+}
