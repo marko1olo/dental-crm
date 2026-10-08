@@ -357,11 +357,12 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 								</span>
 								{isCito && (
 									<span
-										className="text-[10px] px-1 py-0.2 rounded bg-rose-600 text-white font-extrabold shrink-0 animate-pulse"
+										className="text-[10px] px-1 py-0.2 rounded bg-rose-600 text-white font-extrabold shrink-0 animate-pulse inline-flex items-center gap-0.5"
 										title="Срочный приём (острая боль)"
 										data-testid="appointment-cito-badge"
 									>
-										⚡ СРОЧНО
+										<Zap size={10} className="shrink-0" aria-hidden="true" />
+										<span>СРОЧНО</span>
 									</span>
 								)}
 								{patientBalance !== null && patientBalance < 0 && (

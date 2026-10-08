@@ -549,8 +549,12 @@ export const SmartSlotRecoveryPopover: React.FC<SmartSlotRecoveryPopoverProps> =
                       title={match.offerMessage}
                       data-testid={`smart-slot-whatsapp-btn-${idx}`}
                     >
-                      <MessageSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span>{isContacted ? "Отправлено ✓" : "Предложить в WhatsApp"}</span>
+                      {isContacted ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      ) : (
+                        <MessageSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      )}
+                      <span>{isContacted ? "Отправлено" : "Предложить в WhatsApp"}</span>
                     </button>
 
                     <button

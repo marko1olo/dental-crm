@@ -823,4 +823,139 @@ button:is([class*="border"]):not([class*="border-none"]):not([class*="border-tra
 	color: var(--teal-dark, var(--teal));
 }
 
+/* ==========================================================================
+   11. EMK CLINICAL NORM BUTTON (Noble Emerald Tactile Control)
+   ========================================================================== */
+
+.emk-norm-button,
+button.emk-norm-button {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	box-sizing: border-box !important;
+	height: 30px !important;
+	min-height: 30px !important;
+	max-height: 30px !important;
+	padding: 0 12px !important;
+	font-family: inherit !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	line-height: 1 !important;
+	border-radius: 8px !important;
+	cursor: pointer !important;
+	white-space: nowrap !important;
+	text-decoration: none !important;
+	user-select: none !important;
+	outline: none !important;
+	position: relative !important;
+	background-color: rgba(16, 185, 129, 0.14) !important;
+	border: 1px solid rgba(16, 185, 129, 0.45) !important;
+	color: #047857 !important;
+	box-shadow: 0 1px 3px rgba(16, 185, 129, 0.12) !important;
+	transition: all 0.15s ease !important;
+	-webkit-tap-highlight-color: transparent !important;
+}
+
+.emk-norm-button:hover:not(:disabled),
+button.emk-norm-button:hover:not(:disabled) {
+	background-color: rgba(16, 185, 129, 0.24) !important;
+	border-color: rgba(16, 185, 129, 0.65) !important;
+	color: #065f46 !important;
+	transform: translateY(-1px) !important;
+	box-shadow: 0 3px 8px rgba(16, 185, 129, 0.2) !important;
+}
+
+.emk-norm-button:active:not(:disabled),
+button.emk-norm-button:active:not(:disabled) {
+	background-color: rgba(16, 185, 129, 0.18) !important;
+	transform: translateY(0) scale(0.98) !important;
+	box-shadow: 0 1px 2px rgba(16, 185, 129, 0.1) !important;
+}
+
+:root.dark .emk-norm-button,
+[data-theme="dark"] .emk-norm-button,
+[data-theme="night"] .emk-norm-button,
+[data-theme="oled"] .emk-norm-button {
+	background-color: rgba(16, 185, 129, 0.2) !important;
+	border-color: rgba(52, 211, 153, 0.5) !important;
+	color: #6ee7b7 !important;
+}
+
+:root.dark .emk-norm-button:hover:not(:disabled),
+[data-theme="dark"] .emk-norm-button:hover:not(:disabled),
+[data-theme="night"] .emk-norm-button:hover:not(:disabled),
+[data-theme="oled"] .emk-norm-button:hover:not(:disabled) {
+	background-color: rgba(16, 185, 129, 0.3) !important;
+	border-color: rgba(52, 211, 153, 0.7) !important;
+	color: #a7f3d0 !important;
+}
+
+/* ==========================================================================
+   12. EMK ACTION BUTTON (Tactile Header & Odontogram Controls)
+   ========================================================================== */
+
+.emk-action-button,
+button.emk-action-button {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	box-sizing: border-box !important;
+	height: 30px !important;
+	min-height: 30px !important;
+	max-height: 30px !important;
+	padding: 0 12px !important;
+	font-family: inherit !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	line-height: 1 !important;
+	border-radius: 8px !important;
+	cursor: pointer !important;
+	white-space: nowrap !important;
+	text-decoration: none !important;
+	user-select: none !important;
+	outline: none !important;
+	position: relative !important;
+	background-color: var(--paper-soft) !important;
+	border: 1px solid var(--line-strong, var(--line)) !important;
+	color: var(--ink) !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+	transition: all 0.15s ease !important;
+	-webkit-tap-highlight-color: transparent !important;
+}
+
+.emk-action-button:hover:not(:disabled),
+button.emk-action-button:hover:not(:disabled) {
+	background-color: var(--paper) !important;
+	border-color: var(--teal) !important;
+	color: var(--teal-dark, var(--teal)) !important;
+	transform: translateY(-1px) !important;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+.emk-action-button--teal,
+button.emk-action-button--teal {
+	background-color: rgba(13, 148, 136, 0.12) !important;
+	border: 1px solid rgba(13, 148, 136, 0.4) !important;
+	color: var(--teal-dark, #0f766e) !important;
+}
+
+.emk-action-button--teal:hover:not(:disabled),
+button.emk-action-button--teal:hover:not(:disabled) {
+	background-color: rgba(13, 148, 136, 0.22) !important;
+	border-color: rgba(13, 148, 136, 0.6) !important;
+	color: var(--teal-dark, #0f766e) !important;
+}
+
+:root.dark .emk-action-button--teal,
+[data-theme="dark"] .emk-action-button--teal,
+[data-theme="night"] .emk-action-button--teal,
+[data-theme="oled"] .emk-action-button--teal {
+	background-color: rgba(13, 148, 136, 0.2) !important;
+	border-color: rgba(45, 212, 191, 0.5) !important;
+	color: #5eead4 !important;
+}
+
+
 

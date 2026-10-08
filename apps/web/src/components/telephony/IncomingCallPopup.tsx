@@ -475,14 +475,14 @@ export function IncomingCallPopup() {
 								<span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isCallAnswered ? "bg-teal-400" : "bg-emerald-400"}`} />
 								<span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isCallAnswered ? "bg-teal-500" : "bg-emerald-500"}`} />
 							</span>
-							<div className="flex items-center gap-1.5 min-w-0">
-								<span className="text-xs font-black text-[var(--ink,#0f172a)] truncate max-w-[200px] sm:max-w-[280px]" title={callerName}>
+							<div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
+								<span className="text-xs font-black text-[var(--ink,#0f172a)] whitespace-nowrap shrink-0" title={callerName}>
 									{isCallAnswered
 										? `РАЗГОВОР ${formatDurationTimer(elapsedSeconds)} • ${formatShortCallerName(callerName)}`
-										: callerName}
+										: formatShortCallerName(callerName)}
 								</span>
 								{!isCallAnswered && (
-									<span className="text-[11px] font-mono text-[var(--muted,#64748b)] hidden md:inline shrink-0">{formattedPhone}</span>
+									<span className="text-[11px] font-mono text-[var(--muted,#64748b)] hidden md:inline shrink-0 whitespace-nowrap">{formattedPhone}</span>
 								)}
 							</div>
 							{!isCallAnswered && (
@@ -564,7 +564,7 @@ export function IncomingCallPopup() {
 						</section>
 					) : (
 						<section
-							className="dnt-incoming-call-badge pointer-events-auto flex flex-col gap-2 p-3 sm:p-3.5 rounded-2xl border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl backdrop-blur-xl animate-badge-drop w-[360px] sm:w-[420px] max-w-[calc(100%-24px)]"
+							className="dnt-incoming-call-badge pointer-events-auto flex flex-col gap-2 p-3 sm:p-3.5 rounded-2xl border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl backdrop-blur-xl animate-badge-drop w-[380px] sm:w-[480px] max-w-[calc(100%-24px)]"
 							aria-label="Входящий звонок телефонии"
 							data-testid="incoming-call-popup"
 						>
@@ -575,7 +575,7 @@ export function IncomingCallPopup() {
 										<span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isCallAnswered ? "bg-teal-400" : "bg-emerald-400"}`} />
 										<span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isCallAnswered ? "bg-teal-500" : "bg-emerald-500"}`} />
 									</span>
-									<span className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider truncate">
+									<span className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider shrink-0 whitespace-nowrap">
 										{isCallEnded ? "Завершён" : isCallAnswered ? "Разговор" : "Входящий"}
 									</span>
 									<span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] shrink-0" title={`Провайдер телефонии: ${providerLabel}`}>
@@ -720,7 +720,7 @@ export function IncomingCallPopup() {
 								<button
 									type="button"
 									onClick={() => handleQuickBook("today_standard")}
-									className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+									className="dnt-telephony-primary-btn flex-1 min-h-[44px] px-3.5 py-2 rounded-xl text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
 									title="Создать запись на приём"
 									data-testid="badge-action-book"
 								>

@@ -143,7 +143,7 @@ export function AppointmentAlertBadges({
 					data-testid="appointment-cito-badge"
 				>
 					<Zap size={13} className="text-rose-600 dark:text-rose-300 fill-rose-500" />
-					<span>⚡ СРОЧНО</span>
+					<span>СРОЧНО</span>
 				</span>
 			)}
 			{collisionMessage ? (

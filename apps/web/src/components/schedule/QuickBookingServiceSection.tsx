@@ -13,6 +13,7 @@ import {
   UserCheck,
   UserX,
   X,
+  Zap,
 } from "lucide-react";
 import React, { useState } from "react";
 import { showToast } from "../GlobalToast";
@@ -138,10 +139,11 @@ export function QuickBookingServiceSection({
           </span>
           {appointmentType === "emergency" && (
             <span
-              className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider animate-pulse"
+              className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider animate-pulse inline-flex items-center gap-1"
               data-testid="cito-slot-priority-badge"
             >
-              ⚡ СРОЧНО
+              <Zap size={11} className="shrink-0" aria-hidden="true" />
+              <span>СРОЧНО</span>
             </span>
           )}
         </div>
@@ -647,10 +649,10 @@ export function QuickBookingServiceSection({
                   <AlertTriangle size={15} className="shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
                   <div className="space-y-0.5">
                     <span className="font-semibold block">
-                      На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается в штатном режиме.
+                      На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается с подтверждением в штатном режиме.
                     </span>
                     <span className="text-[11px] text-[var(--muted)]">
-                      При необходимости врач может принять пациента в свободном кабинете
+                      Запись не блокируется. При необходимости врач может принять пациента в свободном кабинете.
                     </span>
                   </div>
                 </div>

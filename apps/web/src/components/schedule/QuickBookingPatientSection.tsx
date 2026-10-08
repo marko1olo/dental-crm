@@ -110,7 +110,7 @@ export function QuickBookingPatientSection(props: QuickBookingPatientSectionProp
               type="button"
               onClick={() => {
                 setAppointmentType("emergency");
-                setReason("⚡ Срочно: острая боль");
+                setReason("Срочно: острая боль");
                 setComment("Срочный приём по острой боли");
                 setDurationMinutes(30);
                 setShowInlineNewPatient(true);

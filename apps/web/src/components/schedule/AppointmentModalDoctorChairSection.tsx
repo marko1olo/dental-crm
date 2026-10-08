@@ -365,7 +365,7 @@ export function AppointmentModalDoctorChairSection({
                   На кресле дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись доступна в штатном режиме.
                 </span>
                 <span className="text-[11px] text-[var(--muted)] block">
-                  Врач может принять пациента на этой установке.
+                  Врач может принять пациента на этой установке. Запись не блокируется.
                 </span>
               </div>
             </div>

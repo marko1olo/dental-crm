@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Dashboard, Patient } from "@dental/shared";
@@ -107,8 +107,12 @@ describe("QuickBookingDrawer", () => {
 		);
 
 		assert.ok(
-			html.includes("⚡ Срочная запись: острая боль"),
+			html.includes("Срочная запись: острая боль"),
 			"должен быть заголовок экстренного приема острая боль",
+		);
+		assert.ok(
+			!html.includes("⚡"),
+			"не должно быть эмодзи молнии в заголовке",
 		);
 		assert.ok(
 			html.includes("Острая боль"),

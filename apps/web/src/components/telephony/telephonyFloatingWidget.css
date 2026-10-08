@@ -521,3 +521,40 @@ body:has([data-testid="preventive-inspection-modal"]) .dnt-telephony-patient-dra
 	color: var(--ink);
 	box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15), 0 0 20px 2px rgba(15, 118, 110, 0.12);
 }
+
+/* Bulletproof primary button styling for telephony actions (WCAG AAA 7:1) */
+.dnt-telephony-primary-btn {
+	background: #0d9488 !important;
+	background-color: #0d9488 !important;
+	color: #ffffff !important;
+	border: 1px solid #14b8a6 !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+}
+
+.dnt-telephony-primary-btn:hover {
+	background: #0f766e !important;
+	background-color: #0f766e !important;
+	color: #ffffff !important;
+	opacity: 0.95;
+}
+
+.dnt-telephony-primary-btn:active {
+	transform: scale(0.98);
+}
+
+[data-theme="dark"] .dnt-telephony-primary-btn,
+html.dark .dnt-telephony-primary-btn {
+	background: #0d9488 !important;
+	background-color: #0d9488 !important;
+	color: #ffffff !important;
+	border-color: #2dd4bf !important;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .dnt-telephony-primary-btn:hover,
+html.dark .dnt-telephony-primary-btn:hover {
+	background: #14b8a6 !important;
+	background-color: #14b8a6 !important;
+	color: #ffffff !important;
+}
+

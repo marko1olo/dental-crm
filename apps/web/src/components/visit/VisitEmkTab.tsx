@@ -227,7 +227,7 @@ export function VisitEmkTab() {
 	const [activeQuadrant, setActiveQuadrant] = React.useState<number | null>(null);
 	const [activeStamp, setActiveStamp] = React.useState<string>("idle");
 	const activeStampRef = React.useRef<string>("idle");
-	const [isOdontogramCollapsed, setIsOdontogramCollapsed] = React.useState<boolean>(false);
+	const [isOdontogramCollapsed, setIsOdontogramCollapsed] = React.useState<boolean>(true);
 
 	const [dentitionMode, setDentitionMode] = React.useState<DentitionMode>(() => {
 		const age =
@@ -1072,9 +1072,9 @@ export function VisitEmkTab() {
 
 			{/* Секции ЭМК — Full-Width Clinical Canvas */}
 			<div className="space-y-4 mt-2.5 w-full min-w-0" data-testid="emk-clinical-canvas">
-				{/* ═══ ТРАЕКТОРИЯ ВРАЧА У КРЕСЛА (CHAIRSIDE COCKPIT PIPELINE) — COMPACT 1-LINE STRIP ═══ */}
+				{/* ═══ ТРАЕКТОРИЯ ВРАЧА У КРЕСЛА (CHAIRSIDE COCKPIT PIPELINE) — HIDDEN TO ELIMINATE 10-TIER CLUTTER ═══ */}
 				<div
-					className="chairside-cockpit-pipeline bg-teal-500/5 dark:bg-teal-500/10 border border-teal-500/20 rounded-lg px-2.5 h-8 min-h-[32px] max-h-8 text-xs text-[var(--ink)] flex items-center justify-between gap-1.5 overflow-x-auto overflow-y-hidden"
+					className="chairside-cockpit-pipeline hidden bg-teal-500/5 dark:bg-teal-500/10 border border-teal-500/20 rounded-lg px-2.5 h-8 min-h-[32px] max-h-8 text-xs text-[var(--ink)] items-center justify-between gap-1.5 overflow-x-auto overflow-y-hidden"
 					data-testid="chairside-cockpit-pipeline-banner"
 				>
 					<div className="flex items-center gap-1 sm:gap-2 flex-nowrap min-w-0 font-medium text-[11px]">
@@ -1157,7 +1157,7 @@ export function VisitEmkTab() {
 								Активный зуб: {effectiveActiveTooth}
 							</span>
 						</div>
-						<div className="flex items-center gap-1.5 shrink-0">
+						<div className="flex items-center gap-2 shrink-0">
 							<button
 								type="button"
 								onClick={() => {
@@ -1166,7 +1166,7 @@ export function VisitEmkTab() {
 									);
 								}}
 								data-testid="btn-open-odontogram-tab"
-								className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 hover:text-teal-800 dark:hover:text-teal-200 px-2 py-0.5 rounded hover:bg-teal-500/10 transition-colors cursor-pointer inline-flex items-center gap-1"
+								className="emk-action-button emk-action-button--teal"
 								title="Перейти во вкладку полной зубной формулы"
 							>
 								<span>Зубная формула</span>
@@ -1176,7 +1176,7 @@ export function VisitEmkTab() {
 								type="button"
 								onClick={() => setIsOdontogramCollapsed((v) => !v)}
 								data-testid="btn-toggle-odontogram-collapse"
-								className="text-xs text-[var(--muted)] hover:text-[var(--ink)] px-2 py-0.5 rounded hover:bg-[var(--paper-soft)] transition-colors cursor-pointer inline-flex items-center gap-1 font-medium"
+								className="emk-action-button"
 								title={isOdontogramCollapsed ? "Развернуть одонтограмму" : "Свернуть одонтограмму"}
 							>
 								{isOdontogramCollapsed ? (

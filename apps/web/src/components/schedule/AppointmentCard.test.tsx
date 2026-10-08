@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Appointment, Dashboard, Patient } from "@dental/shared";
@@ -257,7 +257,8 @@ describe("AppointmentCard Suite", () => {
 			})
 		);
 
-		assert.ok(html.includes("⚡ СРОЧНО"), "должен отображаться текст бейджа срочного приёма");
+		assert.ok(html.includes("СРОЧНО"), "должен отображаться текст бейджа срочного приёма");
+		assert.ok(!html.includes("⚡"), "не должно быть мультяшных эмодзи в бейдже срочного приёма");
 		assert.ok(html.includes("data-testid=\"appointment-cito-badge\""), "должен присутствовать data-testid appointment-cito-badge");
 	});
 

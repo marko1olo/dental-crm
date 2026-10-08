@@ -166,7 +166,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 						data-testid="btn-quick-apply-physio-norm"
 					>
 						<ShieldCheck size={15} className="shrink-0" />
-						<span>Соматически здоров / Норма Z01.2</span>
+						<span>Соматически здоров / Норма</span>
 					</button>
 
 					<button
@@ -184,7 +184,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 						data-testid="btn-quick-apply-ortho-norm"
 					>
 						<ShieldCheck size={15} className="shrink-0" />
-						<span>Норма Ортопедия Z46.3</span>
+						<span>Норма: Ортопедия</span>
 					</button>
 
 					<button
@@ -202,7 +202,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 						data-testid="btn-quick-apply-surgery-norm"
 					>
 						<ShieldCheck size={15} className="shrink-0" />
-						<span>Норма Хирургия Z09.0</span>
+						<span>Норма: Хирургия</span>
 					</button>
 
 					{onOpenTemplatesModal && (

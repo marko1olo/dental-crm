@@ -23,28 +23,28 @@ export function EmkComplaintsSection({
 	};
 
 	return (
-		<div className="flex flex-col gap-3">
+		<div className="flex flex-col gap-3.5">
 			{/* Жалобы */}
-			<div className="flex flex-col gap-1.5">
-				<div className="flex items-center justify-between gap-2 flex-wrap">
-					<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-						<FileText size={14} className="text-[var(--teal,var(--brand-primary))]" />
+			<div className="p-3 sm:p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs flex flex-col gap-2">
+				<div className="flex items-center justify-between gap-2 flex-wrap pb-1.5 border-b border-[var(--line-subtle)]">
+					<label className="text-xs sm:text-sm font-bold text-[var(--ink)] flex items-center gap-1.5">
+						<FileText size={15} className="text-[var(--teal,var(--brand-primary))]" />
 						<span>Жалобы пациента</span>
 					</label>
 					<div className="flex items-center gap-2">
+						<span className="text-[11px] text-[var(--muted)] hidden md:inline">
+							Симптомы со слов пациента
+						</span>
 						<button
 							type="button"
 							data-testid="btn-emk-complaints-norm"
 							onClick={handleFillComplaintsNorm}
-							className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:underline transition-colors"
+							className="emk-norm-button"
 							title="Заполнить жалобы нормой: Жалоб нет"
 						>
-							<CheckCircle2 size={12} />
+							<CheckCircle2 size={14} className="shrink-0" />
 							<span>✓ Жалоб нет / норма</span>
 						</button>
-						<span className="text-[11px] text-[var(--muted)] hidden md:inline">
-							Симптомы со слов пациента
-						</span>
 					</div>
 				</div>
 
@@ -54,31 +54,31 @@ export function EmkComplaintsSection({
 					value={visitNoteForm?.complaint || ""}
 					onCommit={updateVisitNoteField}
 					placeholder="Опишите жалобы пациента (характер боли, локализация, провоцирующие факторы)..."
-					className="w-full min-h-[85px] p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
+					className="w-full min-h-[85px] p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 				/>
 			</div>
 
 			{/* Анамнез */}
-			<div className="flex flex-col gap-1.5">
-				<div className="flex items-center justify-between gap-2 flex-wrap">
-					<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-						<FileText size={14} className="text-[var(--teal,var(--brand-primary))]" />
+			<div className="p-3 sm:p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs flex flex-col gap-2">
+				<div className="flex items-center justify-between gap-2 flex-wrap pb-1.5 border-b border-[var(--line-subtle)]">
+					<label className="text-xs sm:text-sm font-bold text-[var(--ink)] flex items-center gap-1.5">
+						<FileText size={15} className="text-[var(--teal,var(--brand-primary))]" />
 						<span>Анамнез заболевания и жизни</span>
 					</label>
 					<div className="flex items-center gap-2">
+						<span className="text-[11px] text-[var(--muted)] hidden md:inline">
+							Развитие заболевания
+						</span>
 						<button
 							type="button"
 							data-testid="btn-emk-anamnesis-norm"
 							onClick={handleFillAnamnesisNorm}
-							className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:underline transition-colors"
+							className="emk-norm-button"
 							title="Заполнить анамнез нормой: Соматически здоров"
 						>
-							<CheckCircle2 size={12} />
+							<CheckCircle2 size={14} className="shrink-0" />
 							<span>✓ Соматически здоров</span>
 						</button>
-						<span className="text-[11px] text-[var(--muted)] hidden md:inline">
-							Развитие заболевания
-						</span>
 					</div>
 				</div>
 
@@ -88,7 +88,7 @@ export function EmkComplaintsSection({
 					value={visitNoteForm?.anamnesis || ""}
 					onCommit={updateVisitNoteField}
 					placeholder="История настоящего заболевания, перенесенные соматические заболевания, аллергологический статус..."
-					className="w-full min-h-[85px] p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
+					className="w-full min-h-[85px] p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 				/>
 			</div>
 		</div>

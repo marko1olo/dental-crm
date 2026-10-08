@@ -85,6 +85,7 @@ export function AppointmentCardContextMenu({
 			<button
 				type="button"
 				className="secondary-button appointment-context-menu-btn min-h-[44px] min-w-[44px] w-11 h-11 sm:min-h-0 sm:min-w-0 sm:w-8 sm:h-8 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-[var(--ink)] inline-flex items-center justify-center cursor-pointer transition-colors shrink-0"
+				data-testid="appointment-context-menu-btn"
 				onClick={(e) => {
 					e.stopPropagation();
 					setIsCardMenuOpen((prev) => !prev);

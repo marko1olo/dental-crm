@@ -40,7 +40,7 @@ export function QuickBookingDrawerHeader({
           <div className="flex items-center gap-2">
             <h3 className="text-base font-bold tracking-tight text-[var(--ink)] m-0">
               {isEmergencyMode
-                ? "⚡ Срочная запись: острая боль"
+                ? "Срочная запись: острая боль"
                 : "Быстрая запись на прием"}
             </h3>
             {isEmergencyMode && (

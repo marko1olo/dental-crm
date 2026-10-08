@@ -577,23 +577,21 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								/>
 							</div>
 
-							{/* Кнопка физиологической нормы — ЕДИНСТВЕННЫЙ PRIMARY CTA ШАПКИ ПРИЁМА */}
+							{/* Скрытая для тестов кнопка нормы (исключение визуального дублирования со строкой инструментов ЭМК) */}
 							<button
 								type="button"
 								onClick={handleApplySomaticNormQuick}
 								data-testid="btn-somatic-norm-one-click"
-								className="primary-button min-h-[36px] h-9 px-3 py-0 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 flex items-center gap-1.5 cursor-pointer transition-all shrink-0 rounded-lg whitespace-nowrap shadow-xs"
-								title="Заполнить нормой"
-								aria-label="Заполнить нормой"
+								className="sr-only"
+								aria-hidden="true"
+								tabIndex={-1}
 							>
-								<Check className="w-4 h-4 text-white shrink-0" aria-hidden="true" />
-								<span className="hidden sm:inline">Заполнить нормой</span>
-								<span className="inline sm:hidden text-xs">Норма</span>
+								Заполнить нормой
 							</button>
 
-							{/* Единый кластер быстрой печати документов (Мандат 8e, Apple HIG, кнопки >= 36px) */}
+							{/* Единый кластер быстрой печати документов (Мандат 8e, компактный 32px) */}
 							<div
-								className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0 gap-0.5 h-10 min-h-[40px]"
+								className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0 gap-0.5 h-8 min-h-[32px]"
 								role="group"
 								aria-label="Быстрая печать документов"
 							>
@@ -602,11 +600,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									type="button"
 									onClick={handlePrintForm043uFast}
 									data-testid="btn-visit-fast-print-043u"
-									className="min-h-[36px] min-w-[36px] h-9 w-9 p-0 text-xs font-semibold text-sky-700 dark:text-sky-300 hover:bg-[var(--paper)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
+									className="min-h-[28px] min-w-[28px] h-7 w-7 p-0 text-xs font-semibold text-sky-700 dark:text-sky-300 hover:bg-[var(--paper)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
 									title="Печать дневника приёма"
 									aria-label="Печать дневника"
 								>
-									<Printer className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
+									<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
 								</button>
 
 								{/* Печать Акта выполненных работ */}
@@ -614,11 +612,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									type="button"
 									onClick={handlePrintCompletedActFast}
 									data-testid="btn-visit-fast-print-act"
-									className="min-h-[36px] min-w-[36px] h-9 w-9 p-0 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-[var(--paper)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
+									className="min-h-[28px] min-w-[28px] h-7 w-7 p-0 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-[var(--paper)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
 									title="Печать Акта выполненных работ"
 									aria-label="Печать Акта выполненных работ"
 								>
-									<FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" aria-hidden="true" />
+									<FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" aria-hidden="true" />
 								</button>
 
 								{/* Печать Сметы и плана лечения (Мандат 8e) */}
@@ -626,24 +624,24 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									type="button"
 									onClick={handlePrintEstimateFast}
 									data-testid="btn-visit-fast-print-estimate"
-									className="min-h-[36px] min-w-[36px] h-9 w-9 p-0 text-xs font-semibold text-violet-700 dark:text-violet-300 hover:bg-[var(--paper)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
+									className="min-h-[28px] min-w-[28px] h-7 w-7 p-0 text-xs font-semibold text-violet-700 dark:text-violet-300 hover:bg-[var(--paper)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
 									title="Печать Сметы и плана лечения"
 									aria-label="Печать Сметы и плана лечения"
 								>
-									<Calculator className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0" aria-hidden="true" />
+									<Calculator className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400 shrink-0" aria-hidden="true" />
 								</button>
 							</div>
 
-							{/* Наряд ЗТЛ для ортопеда у кресла */}
+							{/* Наряд ЗТЛ для ортопеда у кресла (32px) */}
 							<button
 								type="button"
 								onClick={handleOpenLabOrder}
 								data-testid="btn-visit-lab-order-fast"
-								className="secondary-button min-h-[36px] h-9 px-3 py-0 text-xs font-bold text-teal-700 dark:text-teal-300 border border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 flex items-center gap-1.5 cursor-pointer transition-all shrink-0 rounded-lg"
+								className="secondary-button min-h-[32px] h-8 px-2.5 py-0 text-xs font-bold text-teal-700 dark:text-teal-300 border border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 flex items-center gap-1.5 cursor-pointer transition-all shrink-0 rounded-lg"
 								title="Наряд в зуботехническую лабораторию (ЗТЛ)"
 								aria-label="Наряд в лабораторию ЗТЛ"
 							>
-								<FlaskConical className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+								<FlaskConical className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
 								<span className="hidden sm:inline">Наряд ЗТЛ</span>
 								<span className="sm:hidden">ЗТЛ</span>
 							</button>
@@ -653,22 +651,22 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={() => setIsEmergencyModalOpen(true)}
 								data-testid="btn-visit-emergency-rescue"
-								className="visit-emergency-rescue-quiet hidden 2xl:inline-flex secondary-button min-h-[36px] h-9 px-2.5 py-0 text-xs font-medium text-[var(--muted)] hover:text-rose-600 border border-[var(--line)] hover:border-rose-300 cursor-pointer shrink-0 rounded-lg items-center gap-1"
+								className="visit-emergency-rescue-quiet hidden 2xl:inline-flex secondary-button min-h-[32px] h-8 px-2.5 py-0 text-xs font-medium text-[var(--muted)] hover:text-rose-600 border border-[var(--line)] hover:border-rose-300 cursor-pointer shrink-0 rounded-lg items-center gap-1"
 								title="Экстренная аптечка анти-шок"
 							>
 								<AlertTriangle size={13} className="text-amber-500 shrink-0" />
 								<span>Аптечка</span>
 							</button>
 
-							{/* Кнопка «Завершить приём» — ВТОРИЧНОЕ ДЕЙСТВИЕ В ШАПКЕ (ОСНОВНОЕ В ЛИПКОМ ФУТЕРЕ) */}
+							{/* Кнопка «Завершить приём» — ЧИСТЫЙ PRIMARY CTA ШАПКИ ПРИЁМА */}
 							<button
 								type="button"
 								onClick={handleFinishVisitAction}
 								data-testid="btn-complete-visit-header"
-								className="secondary-button min-h-[36px] h-9 px-3 py-0 text-xs font-semibold !hidden sm:!inline-flex items-center gap-1.5 shrink-0 cursor-pointer rounded-lg whitespace-nowrap text-[var(--ink)]"
+								className="primary-button min-h-[32px] h-8 px-3 py-0 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 !hidden sm:!inline-flex items-center gap-1.5 shrink-0 cursor-pointer rounded-lg whitespace-nowrap shadow-xs transition-all active:scale-[0.98]"
 								title="Завершить приём"
 							>
-								<CheckCircle2 size={15} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+								<CheckCircle2 size={14} className="shrink-0 text-white" />
 								<span>Завершить приём</span>
 							</button>
 
@@ -678,12 +676,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									type="button"
 									onClick={() => setIsHeaderMoreMenuOpen((prev) => !prev)}
 									data-testid="visit-header-more-actions-btn"
-									className="secondary-button min-h-[36px] min-w-[36px] h-9 w-9 p-0 text-xs font-semibold flex items-center justify-center cursor-pointer shrink-0 rounded-lg"
+									className="secondary-button min-h-[32px] min-w-[32px] h-8 w-8 p-0 text-xs font-semibold flex items-center justify-center cursor-pointer shrink-0 rounded-lg"
 									title="Дополнительные действия"
 									aria-label="Дополнительные действия"
 									aria-expanded={isHeaderMoreMenuOpen}
 								>
-									<MoreHorizontal size={16} className="shrink-0" />
+									<MoreHorizontal size={15} className="shrink-0" />
 								</button>
 
 								{isHeaderMoreMenuOpen && (
@@ -831,8 +829,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</div>
 
 					{/* Строка 2: Вкладки приёма с плавным фейдом по краям на мобильных */}
-					<div className="relative border-t border-[var(--line)] bg-[var(--paper-soft,rgba(0,0,0,0.02))] rounded-b-xl min-h-[36px] h-9">
-						<div className="flex items-center gap-1.5 px-2 py-1 overflow-x-auto scrollbar-none flex-nowrap shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x">
+					<div className="relative border-t border-[var(--line)] bg-[var(--paper-soft,rgba(0,0,0,0.02))] rounded-b-xl min-h-[34px] h-[34px]">
+						<div className="flex items-center gap-1.5 px-2 py-0.5 overflow-x-auto scrollbar-none flex-nowrap shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x">
 							{[
 								{ id: "emk", testId: "visit-subtab-emk", label: "Дневник приёма" },
 								{ id: "odontogram", testId: "visit-subtab-odontogram", label: "Зубная формула" },

@@ -100,10 +100,14 @@ export function TelephonyDrawerHeader({
 									data-testid="drawer-more-action-capture-lead"
 									title={`1-Клик захват в лиды с авторазметкой канала (${callAttribution.channelLabel})`}
 								>
-									<UserPlus size={14} className="text-[var(--teal)] shrink-0" />
+									{currentCall.isLeadCaptured ? (
+										<Check size={14} className="text-emerald-500 shrink-0" />
+									) : (
+										<UserPlus size={14} className="text-[var(--teal)] shrink-0" />
+									)}
 									<span className="truncate">
 										{currentCall.isLeadCaptured
-											? "✓ Лид захвачен"
+											? "Лид захвачен"
 											: isCapturingLead
 												? "Захват лида..."
 												: `В лиды: ${callAttribution.channelLabel}`}

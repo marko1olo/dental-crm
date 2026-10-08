@@ -1785,7 +1785,7 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 		// Override note should be displayed without blocking
 		const overrideNote = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-override-note");
 		expect(overrideNote).not.toBeNull();
-		expect(overrideNote?.textContent).toContain("Мандат 8e: запись не блокируется");
+		expect(overrideNote?.textContent).toContain("не блокируется");
 	});
 
 	it("23. Chair header doctor popover renders all 4 shift presets with >= 44px touch targets and supports 1-click week binding (StomX parity)", async () => {

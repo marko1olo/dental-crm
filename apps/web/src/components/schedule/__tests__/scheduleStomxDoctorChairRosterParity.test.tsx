@@ -382,7 +382,7 @@ describe("StomX & DentalPRO Doctor-to-Chair Roster Parity Suite", () => {
 			assert.ok(html.includes('data-testid="cell-template-tue-thu-sat"'));
 			assert.ok(html.includes('data-testid="cell-template-two-two"'));
 			assert.ok(html.includes('data-testid="cell-template-five-day"'));
-			assert.ok(html.includes("Недельное закрепление за креслом (StomX)"));
+			assert.ok(html.includes("Недельное закрепление за креслом"));
 		});
 	});
 

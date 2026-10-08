@@ -209,7 +209,7 @@ export function EmkToolbar({
 
 	return (
 		<div
-			className="emk-unified-toolbar flex flex-col w-full min-w-0 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] shadow-xs mb-2.5 overflow-hidden"
+			className="emk-unified-toolbar flex flex-col w-full min-w-0 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] shadow-xs mb-1.5 overflow-hidden"
 			data-testid="emk-unified-toolbar"
 		>
 			{/* СТРОКА 1: Клинические инструменты приёма (Action Toolbar) */}
@@ -228,10 +228,10 @@ export function EmkToolbar({
 								if (onApplyNorm) onApplyNorm();
 								else if (onApplyPhysiologicalNorm) onApplyPhysiologicalNorm();
 							}}
-							className="h-8 min-h-[32px] max-h-[32px] px-3 rounded-lg border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 text-[13px] font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs active:scale-[0.98] shrink-0"
+							className="emk-norm-button shrink-0"
 							title="Заполнить физиологическую норму осмотра и анамнеза"
 						>
-							<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+							<ShieldCheck size={14} className="shrink-0" />
 							<span className="hidden sm:inline">✓ Соматически здоров / Норма</span>
 							<span className="sm:hidden">✓ Норма</span>
 						</button>
@@ -470,7 +470,7 @@ export function EmkToolbar({
 					{/* Статус сохранения (Тихая телеметрия без цветных прыщей) */}
 					<span
 						data-testid="emk-autosave-status-badge"
-						className="visit-note-status-badge text-[12px] font-medium h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg border border-[var(--line-subtle)] bg-[var(--paper)] text-[var(--muted)] transition-all shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 shadow-2xs"
+						className="emk-autosave-clean-badge text-[12px] font-medium h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg border border-[var(--line-subtle)] bg-[var(--paper)] text-[var(--muted)] transition-all shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 shadow-2xs"
 						title={hasUnsavedChanges ? "В черновике есть изменения (автосохранение активно)" : "Все изменения сохранены"}
 					>
 						{hasUnsavedChanges ? (
@@ -488,15 +488,15 @@ export function EmkToolbar({
 				</div>
 			</div>
 
-			{/* СТРОКА 2: Навигационный сегментированный таб-бар ЭМК (SOAP Segmented Control) */}
+			{/* СТРОКА 2: Навигационный сегментированный таб-бар ЭМК (SOAP Segmented Control) — строго для мобильных устройств (Apple HIG, 44px touch targets) */}
 			<div
-				className="emk-tabs-container w-full min-w-0 bg-[var(--paper-soft)] border-t border-[var(--line)] box-border"
+				className="emk-tabs-container sm:!hidden w-full min-w-0 bg-[var(--paper-soft)] border-t border-[var(--line)] box-border"
 				role="tablist"
 				aria-label="Вкладки разделов приема"
 				data-testid="emk-tabs-container"
 			>
 				{/* Мобильный вариант (Apple HIG Segmented Control, 44px touch targets) */}
-				<div className="sm:hidden flex items-center p-1 gap-1 w-full min-w-0">
+				<div className="flex sm:hidden items-center p-1 gap-1 w-full min-w-0">
 					{mobileSteps.map((step) => {
 						const isFilled = isTabFilled(step.id);
 						const isActive = isTabActive(step.id);
@@ -514,40 +514,6 @@ export function EmkToolbar({
 								onClick={() => setActiveEmkTab(step.id)}
 							>
 								<span>{step.label}</span>
-								{isFilled && (
-									<span
-										className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-											isActive
-												? "bg-[var(--teal,#0d9488)] ring-1 ring-[var(--teal)]/40"
-												: "bg-emerald-500/80"
-										}`}
-										title="Раздел заполнен"
-									/>
-								)}
-							</button>
-						);
-					})}
-				</div>
-
-				{/* Десктопный вариант (полный 5-вкладочный бар со всеми разделами в стиле Apple Segmented Control) */}
-				<div className="hidden sm:flex items-center gap-1 p-[3px] m-1 rounded-[10px] bg-[var(--paper-soft)] border border-[var(--line-subtle)] min-w-0 h-[34px] overflow-x-auto scrollbar-none shadow-2xs">
-					{tabs.map((tab) => {
-						const isFilled = isTabFilled(tab.id);
-						const isActive = isTabActive(tab.id);
-						return (
-							<button
-								key={tab.id}
-								type="button"
-								role="tab"
-								aria-selected={isActive}
-								className={`emk-tab-button flex-1 min-w-0 whitespace-nowrap text-[12.5px] h-7 px-3 rounded-[7px] transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 touch-manipulation select-none ${
-									isActive
-										? "active bg-[var(--paper)] text-[var(--ink)] border border-[var(--line-subtle)] shadow-xs font-semibold"
-										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/60 border border-transparent font-medium"
-								}`}
-								onClick={() => setActiveEmkTab(tab.id)}
-							>
-								<span>{tab.label}</span>
 								{isFilled && (
 									<span
 										className={`w-1.5 h-1.5 rounded-full shrink-0 ${

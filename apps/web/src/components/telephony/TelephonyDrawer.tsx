@@ -2,6 +2,7 @@ import {
 	AlertCircle,
 	AlertTriangle,
 	CalendarCheck,
+	Check,
 	ChevronDown,
 	Copy,
 	ExternalLink,
@@ -39,6 +40,7 @@ import { IncomingCallPastHistory } from "./IncomingCallPastHistory";
 import { useIncomingCallData } from "./useIncomingCallData";
 import { TelephonyDrawerHeader } from "./TelephonyDrawerHeader";
 import { TelephonyDrawerFinancialAndUpcoming } from "./TelephonyDrawerFinancialAndUpcoming";
+import "./telephonyFloatingWidget.css";
 
 export interface TelephonyDrawerProps {
 	isOpen?: boolean;
@@ -467,7 +469,7 @@ export function TelephonyDrawer({
 					<button
 						type="button"
 						onClick={() => setShowQuickBooking((prev) => !prev)}
-						className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+						className="dnt-telephony-primary-btn flex-1 min-h-[44px] px-3.5 py-2 rounded-xl text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
 						title="Создать запись на приём (быстрые слоты в 1 клик)"
 						data-testid="drawer-action-book"
 					>
@@ -519,7 +521,17 @@ export function TelephonyDrawer({
 												? "Аллергия"
 												: alert.category === "pain"
 													? "Острая боль"
-													: alert.severity}
+													: alert.category === "chronic"
+														? "Хроническое"
+														: alert.category === "risk"
+															? "Фактор риска"
+															: alert.severity === "high"
+																? "Высокий риск"
+																: alert.severity === "medium"
+																	? "Умеренный риск"
+																	: alert.severity === "info"
+																		? "Информация"
+																		: "Внимание"}
 											)
 										</span>
 									</span>
@@ -661,14 +673,14 @@ export function TelephonyDrawer({
 							type="button"
 							onClick={() => handleCaptureLead()}
 							disabled={isCapturingLead || currentCall.isLeadCaptured}
-							className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-60"
+							className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-60"
 							data-testid="drawer-action-capture-lead"
 							title="1-Клик захват звонящего в лиды с автоматической разметкой рекламного канала"
 						>
-							<UserPlus size={15} />
+							{currentCall.isLeadCaptured ? <Check size={15} /> : <UserPlus size={15} />}
 							<span>
 								{currentCall.isLeadCaptured
-									? `✓ Лид захвачен (${callAttribution.channelLabel})`
+									? `Лид захвачен (${callAttribution.channelLabel})`
 									: isCapturingLead
 										? "Сохранение лида..."
 										: `Захватить в лиды (${callAttribution.channelLabel})`}
@@ -697,7 +709,7 @@ export function TelephonyDrawer({
 								type="button"
 								onClick={() => handleQuickCreatePatient()}
 								disabled={isCreatingPatient}
-								className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[var(--teal)] text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60"
+								className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-teal-600 text-white text-xs font-bold hover:bg-teal-500 active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60"
 								data-testid="drawer-quick-create-patient-btn"
 								title="Создать первичную карту пациента в 1 клик (без обязательного паспорта и СНИЛС)"
 							>

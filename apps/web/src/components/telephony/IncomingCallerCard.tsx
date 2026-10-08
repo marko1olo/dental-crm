@@ -587,10 +587,10 @@ export function IncomingCallerCard({
 							data-testid="drawer-action-capture-lead"
 							title="1-Клик захват звонящего в лиды с автоматической разметкой рекламного канала"
 						>
-							<UserPlus size={15} />
+							{isLeadCaptured ? <Check size={15} /> : <UserPlus size={15} />}
 							<span>
 								{isLeadCaptured
-									? `✓ Лид захвачен (${callAttribution.channelLabel})`
+									? `Лид захвачен (${callAttribution.channelLabel})`
 									: isCapturingLead
 										? "Сохранение лида..."
 										: `Захватить в лиды (${callAttribution.channelLabel})`}

@@ -309,7 +309,7 @@ export function AppointmentQuickActions({
 							}`}
 							title={
 								isLocked
-									? "Статус зафиксирован: открыт активный визит"
+									? "Статус заблокирован / зафиксирован: открыт активный визит"
 									: action.title
 							}
 							aria-label={action.title}

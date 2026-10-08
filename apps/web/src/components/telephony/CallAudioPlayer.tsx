@@ -508,12 +508,14 @@ export function CallAudioPlayer({
 											{formatDurationTimer(u.endTimeSeconds)}
 										</span>
 									</div>
-									<span className="text-[9px] text-[var(--muted,#64748b)]">
-										{(u.confidence * 100).toFixed(0)}% уверенность
-									</span>
+									{typeof u.confidence === "number" && !Number.isNaN(u.confidence) && (
+										<span className="text-[9px] text-[var(--muted,#64748b)]">
+											{(u.confidence * 100).toFixed(0)}% уверенность
+										</span>
+									)}
 								</div>
 								<p className="text-[var(--ink,#0f172a)] text-[11px] leading-relaxed">
-									{u.text}
+									{u.text || ""}
 								</p>
 							</div>
 						))
