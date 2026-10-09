@@ -1,0 +1,92 @@
+{
+  "subagent": "Treatment Plan Tier Stages Decomposer",
+  "targetMonolith": "apps/web/src/components/treatment-plans/treatmentPlanTierStagesGenerator.ts",
+  "originalLines": 1388,
+  "decomposedAt": "2026-10-09T12:01:00Z",
+  "directory": "apps/web/src/components/treatment-plans/tierStages",
+  "modules": [
+    {
+      "file": "apps/web/src/components/treatment-plans/tierStages/types.ts",
+      "layer": "Layer 0",
+      "lines": 21,
+      "budgetPassed": true,
+      "description": "Контракты типов, опции генерации TierStagesGeneratorOptions, реэкспорт зависимостей"
+    },
+    {
+      "file": "apps/web/src/components/treatment-plans/tierStages/toothStateHelpers.ts",
+      "layer": "Layer 1",
+      "lines": 58,
+      "budgetPassed": true,
+      "description": "Чистые хелперы normalizeToothState и hasToothDefect"
+    },
+    {
+      "file": "apps/web/src/components/treatment-plans/tierStages/clinicalPresets.ts",
+      "layer": "Layer 1",
+      "lines": 684,
+      "budgetPassed": true,
+      "description": "Функция getDefaultClinicalPresetStages (пресеты Эконом 45к, Стандарт 145к, Оптимум 380к)"
+    },
+    {
+      "file": "apps/web/src/components/treatment-plans/tierStages/tierStagesGenerator.ts",
+      "layer": "Layer 2",
+      "lines": 665,
+      "budgetPassed": true,
+      "description": "Движок generateTierPlanStages: полный расчет этапов по тарифам при наличии патологий и адентии"
+    },
+    {
+      "file": "apps/web/src/components/treatment-plans/tierStages/index.ts",
+      "layer": "Layer 5",
+      "lines": 9,
+      "budgetPassed": true,
+      "description": "Barrel реэкспорта всех 4 публичных функций и типов"
+    },
+    {
+      "file": "apps/web/src/components/treatment-plans/treatmentPlanTierStagesGenerator.ts",
+      "layer": "Layer 5 (Facade)",
+      "lines": 13,
+      "budgetPassed": true,
+      "description": "Канонический фасад <= 50 строк, обеспечивающий 100% обратной совместимости"
+    }
+  ],
+  "gates": {
+    "gate1_line_count_budget": {
+      "status": "PASSED",
+      "limit": "<= 800 lines",
+      "maxObservedLines": 684
+    },
+    "gate2_ast_export_parity": {
+      "status": "PASSED",
+      "baselineExports": [
+        "getDefaultClinicalPresetStages",
+        "hasToothDefect",
+        "normalizeToothState",
+        "generateTierPlanStages"
+      ],
+      "facadeExportsCount": 11,
+      "parity": "100%"
+    },
+    "gate3_test_anchors": {
+      "status": "PASSED",
+      "preserved": "100%"
+    },
+    "gate4_utf8_encoding": {
+      "status": "PASSED",
+      "encoding": "UTF-8 without BOM"
+    },
+    "gate5_acyclic_dag": {
+      "status": "PASSED",
+      "circularDependencies": 0
+    }
+  },
+  "tests": {
+    "treatmentPlan3TierComparison_test": {
+      "command": "node --max-old-space-size=4096 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/treatment-plans/__tests__/treatmentPlan3TierComparison.test.tsx",
+      "exitCode": 0,
+      "suites": 1,
+      "tests": 9,
+      "passed": 9,
+      "failed": 0
+    }
+  },
+  "overallStatus": "VERIFIED_CLEAN"
+}

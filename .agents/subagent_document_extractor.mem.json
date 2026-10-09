@@ -1,0 +1,68 @@
+{
+  "timestamp": "2026-10-09T08:02:00Z",
+  "subagent": "Red Team Inquisitor & L3 Document Extractor Decomposer",
+  "target": "apps/api/src/ingestion/documentExtractor.ts",
+  "status": "COMPLETED_100_PERCENT_CLEAN",
+  "gates": {
+    "gate_1_line_budget": {
+      "status": "PASSED",
+      "limit": "<= 800 lines per file (facade <= 50 lines)",
+      "files": {
+        "apps/api/src/ingestion/documentExtractor.ts": 10,
+        "apps/api/src/ingestion/docExtractor/index.ts": 49,
+        "apps/api/src/ingestion/docExtractor/types.ts": 32,
+        "apps/api/src/ingestion/docExtractor/zipReader.ts": 222,
+        "apps/api/src/ingestion/docExtractor/officeParsers.ts": 216,
+        "apps/api/src/ingestion/docExtractor/pdfParser.ts": 226,
+        "apps/api/src/ingestion/docExtractor/extractorPipeline.ts": 657
+      }
+    },
+    "gate_2_ast_export_parity": {
+      "status": "PASSED",
+      "baseline_exports": 3,
+      "facade_exports": 3,
+      "parity_percentage": "100%",
+      "missing_exports": []
+    },
+    "gate_3_test_anchors": {
+      "status": "PASSED",
+      "original_anchors": 0,
+      "target_anchors": 0,
+      "lost_anchors": []
+    },
+    "gate_4_utf8_encoding": {
+      "status": "PASSED",
+      "encoding": "UTF-8 without BOM",
+      "mojibake_detected": false
+    },
+    "gate_5_acyclic_dag": {
+      "status": "PASSED",
+      "tool": "madge",
+      "circular_dependencies": 0
+    }
+  },
+  "tests": {
+    "apps/api/src/tests/ingestion/documentExtractor.test.ts": "14/14 PASS (Exit Code 0)",
+    "apps/api/src/tests/routes/priceListIngestionService.test.ts": "7/7 PASS (Exit Code 0)",
+    "total_suite_tests": "21/21 PASS"
+  },
+  "architecture_layers": {
+    "layer_0": [
+      "apps/api/src/ingestion/docExtractor/types.ts (ZipEntry, ExtractedDocument, ExtractedArchiveFile, constants)"
+    ],
+    "layer_1": [
+      "apps/api/src/ingestion/docExtractor/zipReader.ts (readZipEntries, safeFileLabel, extensionOf, buffer decoders, zipText)"
+    ],
+    "layer_2": [
+      "apps/api/src/ingestion/docExtractor/officeParsers.ts (OpenXML DOCX tables, XLSX shared strings, PPTX, OpenDocument ODT/ODS/ODP)",
+      "apps/api/src/ingestion/docExtractor/pdfParser.ts (FlateDecode streams, PDF stream operators, literal/hex text decoders)"
+    ],
+    "layer_3": [
+      "apps/api/src/ingestion/docExtractor/extractorPipeline.ts (extractDocument master coordinator, detectKind, route routing, quality signals)"
+    ],
+    "layer_5": [
+      "apps/api/src/ingestion/docExtractor/index.ts (barrel re-export of all public contracts)",
+      "apps/api/src/ingestion/documentExtractor.ts (canonical facade <= 50 lines with 100% backward compatibility)"
+    ]
+  }
+}

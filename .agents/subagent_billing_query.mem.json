@@ -1,0 +1,43 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Billing Query Decomposer",
+  "target_monolith": "apps/api/src/db/billingQuery.ts",
+  "original_line_count": 1450,
+  "facade_line_count": 15,
+  "decomposed_dir": "apps/api/src/db/billing/",
+  "decomposed_files": {
+    "types.ts": 98,
+    "billingLookups.ts": 156,
+    "decree659Audit.ts": 253,
+    "billingTargetBalance.ts": 234,
+    "fiscalAccounting.ts": 208,
+    "refundSettlements.ts": 67,
+    "paymentCreationPipeline.ts": 609,
+    "index.ts": 8,
+    "billingQuery.ts": 15
+  },
+  "max_file_lines": 609,
+  "tests_status": {
+    "billingQuery.test.ts": "PASSED (9/9)",
+    "decree659AnesthesiaBillingAudit.test.ts": "PASSED (6/6)",
+    "billingBarrierRemoval.test.ts": "PASSED (4/4)",
+    "total_passing": 19,
+    "total_failing": 0,
+    "exit_code": 0
+  },
+  "compliance_and_invariants": {
+    "54_FZ_fiscalization": "Sequential FD & 10-digit FPD generation, fiscalReceiptQueue queueing, unblocked physical persons without INN (Mandates 8e, 8n)",
+    "Decree_659_audit": "Strict statutory block on OMS for anonymous cards (UUID_ANON), 3-NDFL social tax deduction block (code 01/02), non-blocking upsell warnings",
+    "doctor_autonomy_discounts": "100% warranty remakes and staff discounts with 0 rub payment and automatic closed work act (Mandate 8e item 7, 8n)",
+    "acid_tenant_safety": "pg_advisory_xact_lock on clientMutationId, pessimistic locking on patient/visit/document, withTenantCtx organization isolation",
+    "zero_silent_catches": "All database and transaction errors properly surfaced without swallow"
+  },
+  "gates_status": {
+    "Gate_1_Line_Count_Budget": "PASSED (all <= 609 lines, limit 800)",
+    "Gate_2_AST_Export_Parity": "PASSED (19/19 public exports preserved: 100%)",
+    "Gate_3_Test_Anchor_Parity": "PASSED (100% preserved)",
+    "Gate_4_UTF8_Encoding": "PASSED (clean UTF-8 across workspace)",
+    "Gate_5_Acyclic_Graph_Madge": "PASSED (0 circular dependencies detected)"
+  },
+  "overall_audit_status": "100% CLEAN (ALL GATES PASSED & AUDITED)",
+  "verified_at": "2026-10-09T08:06:00Z"
+}

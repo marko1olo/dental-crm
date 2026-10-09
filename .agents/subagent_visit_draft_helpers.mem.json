@@ -1,0 +1,63 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Visit Draft Helpers Decomposer",
+  "status": "COMPLETED",
+  "completedAt": "2026-10-09T12:04:00Z",
+  "target": "apps/web/src/utils/commonHelpers/visitDraftHelpers.ts",
+  "originalLines": 1393,
+  "facadeLines": 9,
+  "gates": {
+    "gate1_lineBudget": "PASSED (all files <= 800 lines, facade 9 lines <= 50 lines)",
+    "gate2_astExportParity": "PASSED (206/206 baseline exports, 100% parity)",
+    "gate3_testAnchors": "PASSED (0 lost anchors)",
+    "gate4_utf8Hygiene": "PASSED (Clean UTF-8 without BOM)",
+    "gate5_madgeAcyclic": "PASSED (0 circular dependencies)"
+  },
+  "modules": [
+    {
+      "file": "apps/web/src/utils/commonHelpers/visitDraft/types.ts",
+      "lines": 92,
+      "layer": "Layer 0: Types & Data Contracts"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/visitDraft/constants.ts",
+      "lines": 180,
+      "layer": "Layer 0: Constants, Enums & Options"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/visitDraft/typeGuards.ts",
+      "lines": 150,
+      "layer": "Layer 1: Type Guards & Domain Predicates"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/visitDraft/normalizers.ts",
+      "lines": 406,
+      "layer": "Layer 1: Data Normalizers, Crypto ID & Canvas Compression"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/visitDraft/draftStorage.ts",
+      "lines": 89,
+      "layer": "Layer 2: LocalStorage & Dual-storage Offline Drafts"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/visitDraft/pendingQueue.ts",
+      "lines": 409,
+      "layer": "Layer 2: IndexedDB / LocalStorage Pending Save Queue"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/visitDraft/index.ts",
+      "lines": 141,
+      "layer": "Layer 5: Master Barrel Re-export"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/visitDraftHelpers.ts",
+      "lines": 9,
+      "layer": "Layer 5: Canonical Backward-Compatible Facade (<= 50 lines)"
+    }
+  ],
+  "targetedUnitTests": {
+    "command": "node --max-old-space-size=4096 --import tsx --test apps/web/src/tests/diaryDraftResilience.test.ts apps/web/src/components/patients/patientDraftResetDecision.test.ts",
+    "exitCode": 0,
+    "passedTests": 22,
+    "failedTests": 0
+  }
+}
