@@ -1,0 +1,31 @@
+{
+  "subagent": "Lead Schedule Filter Strip Decomposer",
+  "target_monolith": "apps/web/src/components/schedule/ScheduleFilterStrip.tsx",
+  "original_line_count": 1485,
+  "facade_line_count": 37,
+  "decomposed_dir": "apps/web/src/components/schedule/filterStrip/",
+  "decomposed_files": {
+    "types.ts": 90,
+    "constants.ts": 25,
+    "DateRangeQuickButtons.tsx": 64,
+    "StatusFilterToggleGroup.tsx": 130,
+    "DoctorFilterDropdown.tsx": 50,
+    "CabinetFilterBar.tsx": 222,
+    "ScheduleOptionsMobileSection.tsx": 206,
+    "ScheduleOptionsToolsSection.tsx": 345,
+    "ScheduleOptionsDropdown.tsx": 449,
+    "useScheduleFilters.ts": 247,
+    "ScheduleFilterStripContent.tsx": 278,
+    "index.ts": 25
+  },
+  "max_file_lines": 449,
+  "gates_status": {
+    "Gate_1_Line_Count_Budget": "PASSED (all <= 449 lines, limit 800)",
+    "Gate_2_AST_Export_Parity": "PASSED (10/10 exports preserved: 100%)",
+    "Gate_3_Test_Anchor_Parity": "PASSED (52/52 test anchors preserved: 100%)",
+    "Gate_4_UTF8_Encoding": "PASSED (clean UTF-8 across workspace)",
+    "Gate_5_Acyclic_Graph_Madge": "PASSED (0 circular dependencies detected)"
+  },
+  "overall_audit_status": "100% CLEAN (ALL GATES PASSED)",
+  "verified_at": "2026-10-09T04:30:00Z"
+}
