@@ -1,0 +1,100 @@
+{
+  "subagent": "subagent_message_delivery_console",
+  "role": "Red Team Inquisitor & L3 Message Delivery Console Decomposer",
+  "timestamp": "2026-10-09T04:08:45Z",
+  "targetMonolith": "apps/web/src/components/communications/MessageDeliveryConsole.tsx",
+  "originalLines": 1507,
+  "decomposedDirectory": "apps/web/src/components/communications/deliveryConsole/",
+  "files": [
+    {
+      "file": "apps/web/src/components/communications/deliveryConsole/types.ts",
+      "lines": 109,
+      "layer": "Layer 0 (Types & DTOs)"
+    },
+    {
+      "file": "apps/web/src/components/communications/deliveryConsole/constants.ts",
+      "lines": 99,
+      "layer": "Layer 0 (Pure Constants & Helpers)"
+    },
+    {
+      "file": "apps/web/src/components/communications/deliveryConsole/DeliveryStatusBadge.tsx",
+      "lines": 36,
+      "layer": "Layer 1 (Status Badge Presentation)"
+    },
+    {
+      "file": "apps/web/src/components/communications/deliveryConsole/DeliveryChannelsStatus.tsx",
+      "lines": 172,
+      "layer": "Layer 1 (Channels Status Presentation)"
+    },
+    {
+      "file": "apps/web/src/components/communications/deliveryConsole/DeliveryQueueList.tsx",
+      "lines": 124,
+      "layer": "Layer 1 (Queue & Journal List)"
+    },
+    {
+      "file": "apps/web/src/components/communications/deliveryConsole/DeliveryRetryPanel.tsx",
+      "lines": 61,
+      "layer": "Layer 2 (Dispatch & Reminders Retry Controls)"
+    },
+    {
+      "file": "apps/web/src/components/communications/deliveryConsole/DeliveryEnqueueForm.tsx",
+      "lines": 228,
+      "layer": "Layer 2 (Single Outbox Enqueue Form)"
+    },
+    {
+      "file": "apps/web/src/components/communications/deliveryConsole/DeliveryTemplatesSection.tsx",
+      "lines": 257,
+      "layer": "Layer 2 (Template Editor & Variable Catalog)"
+    },
+    {
+      "file": "apps/web/src/components/communications/deliveryConsole/DeliverySettingsSection.tsx",
+      "lines": 99,
+      "layer": "Layer 2 (Quiet Hours & Reminder Settings)"
+    },
+    {
+      "file": "apps/web/src/components/communications/deliveryConsole/useMessageDeliveryConsole.ts",
+      "lines": 561,
+      "layer": "Layer 3 (State, Polling, SSE & Query Hook)"
+    },
+    {
+      "file": "apps/web/src/components/communications/deliveryConsole/index.ts",
+      "lines": 15,
+      "layer": "Layer 5 (Module Barrel Export)"
+    },
+    {
+      "file": "apps/web/src/components/communications/MessageDeliveryConsole.tsx",
+      "lines": 124,
+      "layer": "Layer 5 (Canonical Thin Facade <= 150 lines)"
+    }
+  ],
+  "verificationGates": {
+    "gate1_lineCountBudget": {
+      "status": "PASSED",
+      "detail": "All decomposed files are strictly <= 800 lines (max: 561 lines, facade: 124 lines <= 150 lines)"
+    },
+    "gate2_astExportParity": {
+      "status": "PASSED",
+      "detail": "17 baseline exports preserved 100% in facade"
+    },
+    "gate3_testAnchorsParity": {
+      "status": "PASSED",
+      "detail": "28 of 28 original test anchors preserved 100% (data-testid, id, aria-label)"
+    },
+    "gate4_utf8Hygiene": {
+      "status": "PASSED",
+      "detail": "Clean UTF-8 without BOM across all files"
+    },
+    "gate5_acyclicDag": {
+      "status": "PASSED",
+      "detail": "0 circular dependencies detected by madge"
+    }
+  },
+  "tests": {
+    "communicationsAutonomyInquisition": "14 tests PASSED (Exit Code 0)",
+    "messageDeliveryConsoleAutonomy": "7 tests PASSED (Exit Code 0)",
+    "operationsPanelsStyling": "11 tests PASSED (Exit Code 0)",
+    "totalPassingTests": 32,
+    "failingTests": 0
+  },
+  "status": "COMPLETED_100_PERCENT_CLEAN"
+}
