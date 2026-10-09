@@ -1,0 +1,76 @@
+{
+  "subagent": "Lead Autoclave Log Engine Decomposer",
+  "target": "apps/web/src/components/sanpin/autoclaveLog/autoclaveLogEngine.ts",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T04:05:00.000Z",
+  "gates": {
+    "gate1_line_count_budget": {
+      "status": "PASSED",
+      "limit": 800,
+      "files": {
+        "engine/autoclaveLogRegistry.ts": 381,
+        "engine/constants.ts": 29,
+        "engine/index.ts": 14,
+        "engine/packageBarcodeGenerator.ts": 106,
+        "engine/sanpinReportExporter.ts": 653,
+        "engine/sterilizationCycleValidator.ts": 317,
+        "engine/types.ts": 228,
+        "autoclaveLogEngine.ts": 12
+      },
+      "facade_lines": 12,
+      "facade_limit": 50
+    },
+    "gate2_ast_export_parity": {
+      "status": "PASSED",
+      "parityPercent": 100,
+      "baselineExportsCount": 65,
+      "facadeExportsCount": 65,
+      "missingExports": []
+    },
+    "gate3_test_anchors": {
+      "status": "PASSED",
+      "preserved": 0,
+      "missing": 0
+    },
+    "gate4_utf8_hygiene": {
+      "status": "PASSED",
+      "checkedFilesCount": 9408,
+      "mojibakeCount": 0
+    },
+    "gate5_acyclic_graph": {
+      "status": "PASSED",
+      "tool": "madge",
+      "circularDependencies": 0
+    }
+  },
+  "tests": {
+    "totalPassing": 92,
+    "totalFailing": 0,
+    "testSuites": [
+      "apps/web/src/tests/autoclaveLog.test.ts",
+      "apps/web/src/tests/sterilizationForm257BatchReporting.test.ts",
+      "apps/web/src/components/sanpin/__tests__/autoclaveExpressCycle.test.ts",
+      "apps/web/src/components/sanpin/__tests__/autoSanpinShiftBatchAutonomy.test.ts",
+      "apps/web/src/components/sanpin/__tests__/sanpinAutoclaveJournal257.test.ts",
+      "apps/web/src/components/sanpin/__tests__/sanpinComponentIntegration.test.ts"
+    ]
+  },
+  "architectureLayers": {
+    "Layer0_Types_Constants": [
+      "apps/web/src/components/sanpin/autoclaveLog/engine/types.ts",
+      "apps/web/src/components/sanpin/autoclaveLog/engine/constants.ts"
+    ],
+    "Layer1_Validators_Generators": [
+      "apps/web/src/components/sanpin/autoclaveLog/engine/sterilizationCycleValidator.ts",
+      "apps/web/src/components/sanpin/autoclaveLog/engine/packageBarcodeGenerator.ts"
+    ],
+    "Layer2_Registry_Exporters": [
+      "apps/web/src/components/sanpin/autoclaveLog/engine/autoclaveLogRegistry.ts",
+      "apps/web/src/components/sanpin/autoclaveLog/engine/sanpinReportExporter.ts"
+    ],
+    "Layer5_Barrel_Facade": [
+      "apps/web/src/components/sanpin/autoclaveLog/engine/index.ts",
+      "apps/web/src/components/sanpin/autoclaveLog/autoclaveLogEngine.ts"
+    ]
+  }
+}
