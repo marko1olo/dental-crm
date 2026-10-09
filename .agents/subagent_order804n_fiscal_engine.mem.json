@@ -1,0 +1,61 @@
+{
+  "subagent": "Order 804n Fiscal Engine Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T12:59:30Z",
+  "targetMonolith": "apps/web/src/components/finance/order804nFiscalEngine.ts",
+  "originalLines": 1361,
+  "facadeLines": 10,
+  "facadeLimitRequirement": "<= 50 lines (COMPLIANT: 10 lines)",
+  "fileLinesLimitRequirement": "< 800 lines per file (COMPLIANT: max 516 lines)",
+  "decomposedDirectory": "apps/web/src/components/finance/fiscal804n",
+  "modules": [
+    {
+      "path": "apps/web/src/components/finance/fiscal804n/types.ts",
+      "layer": "Layer 0: Types & Contracts",
+      "lines": 345,
+      "purpose": "Контракты типов, интерфейсы, константы лимитов налогового вычета (150k / 120k) и словари ФФД 1.2"
+    },
+    {
+      "path": "apps/web/src/components/finance/fiscal804n/taxAndMathHelpers.ts",
+      "layer": "Layer 1: Math & Tax Helpers",
+      "lines": 364,
+      "purpose": "Категоризация Код 01 vs Код 02, НДФЛ 13%/15%, справка КНД 1151156, СБП QR, расчет купюр кассы"
+    },
+    {
+      "path": "apps/web/src/components/finance/fiscal804n/receiptBuilders.ts",
+      "layer": "Layer 2: Receipt Builders",
+      "lines": 516,
+      "purpose": "Маппинг позиций плана лечения в ФФД 1.2 позиции, расчет чека прихода и Z-отчета закрытия смены"
+    },
+    {
+      "path": "apps/web/src/components/finance/fiscal804n/refundAndCorrectionEngine.ts",
+      "layer": "Layer 2: Refund & Correction",
+      "lines": 215,
+      "purpose": "Пропорциональный возврат смешанной оплаты (Hamilton / Largest Remainder) и чеки коррекции"
+    },
+    {
+      "path": "apps/web/src/components/finance/fiscal804n/index.ts",
+      "layer": "Layer 5: Barrel Re-export",
+      "lines": 9,
+      "purpose": "Канонический barrel реэкспорта всех слоев фискального контура"
+    },
+    {
+      "path": "apps/web/src/components/finance/order804nFiscalEngine.ts",
+      "layer": "Layer 5: Master Facade",
+      "lines": 10,
+      "purpose": "Тонкий канонический фасад (10 строк <= 50), сохраняющий 100% обратной совместимости"
+    }
+  ],
+  "verificationGates": {
+    "gate1_lineBudget": "PASSED (all files <= 800 lines)",
+    "gate2_astExportParity": "PASSED (34/34 baseline exports preserved, 100% parity)",
+    "gate3_testAnchors": "PASSED (100% test anchors preserved)",
+    "gate4_utf8Clean": "PASSED (Clean UTF-8 without BOM)",
+    "gate5_acyclicDag": "PASSED (0 circular dependencies confirmed via madge)"
+  },
+  "tests": {
+    "order804nFiscalEngineTest": "PASSED (29/29 tests green, 0 failures)",
+    "mixedFiscalReceiptWebTest": "PASSED (7/7 tests green)",
+    "expressFiscalRefundAutonomyTest": "PASSED (12/12 tests green)"
+  }
+}

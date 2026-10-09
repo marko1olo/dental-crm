@@ -1,0 +1,80 @@
+{
+  "subagent": "pricelist_routes_decomposer",
+  "role": "Lead Pricelist Routes Decomposer & Red Team Inquisitor",
+  "timestamp": "2026-10-09T09:03:00.000Z",
+  "status": "COMPLETED_100_PERCENT",
+  "targetMonolith": "apps/api/src/routes/pricelist.ts",
+  "originalLines": 1360,
+  "canonicalFacade": {
+    "file": "apps/api/src/routes/pricelist.ts",
+    "lines": 11,
+    "limit": 50,
+    "status": "PASSED"
+  },
+  "decomposedModules": [
+    {
+      "file": "apps/api/src/routes/pricelist/types.ts",
+      "layer": "Layer 0 (Types & Zod Schemas)",
+      "lines": 279,
+      "limit": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/api/src/routes/pricelist/spreadsheetImport.ts",
+      "layer": "Layer 1 (Spreadsheet & RFC 4180 Import/Export)",
+      "lines": 260,
+      "limit": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/api/src/routes/pricelist/catalogOperations.ts",
+      "layer": "Layer 2 (Catalog Mutators, Normalizers & ACID Transactions)",
+      "lines": 356,
+      "limit": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/api/src/routes/pricelist/routeHandlers.ts",
+      "layer": "Layer 3 (Fastify Route Endpoints & Access Control)",
+      "lines": 773,
+      "limit": 800,
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/api/src/routes/pricelist/index.ts",
+      "layer": "Layer 5 (Barrel Re-export)",
+      "lines": 12,
+      "limit": 800,
+      "status": "PASSED"
+    }
+  ],
+  "verificationGates": {
+    "gate1_lineCountBudget": {
+      "status": "PASSED",
+      "description": "All files are strictly < 800 lines (max 773 lines)"
+    },
+    "gate2_astExportParity": {
+      "status": "PASSED",
+      "description": "100% public export parity verified (49 exported symbols preserved in facade)"
+    },
+    "gate3_testAnchorAudit": {
+      "status": "PASSED",
+      "description": "100% test anchors preserved"
+    },
+    "gate4_utf8Hygiene": {
+      "status": "PASSED",
+      "description": "Clean UTF-8 encoding across workspace without BOM corruption"
+    },
+    "gate5_dagAcyclicGraph": {
+      "status": "PASSED",
+      "description": "0 circular dependencies detected by madge"
+    }
+  },
+  "testExecution": {
+    "command": "node --max-old-space-size=4096 --import tsx --test apps/api/src/tests/routes/pricelist.test.ts apps/api/src/tests/routes/pricelistBatchImportRoute.test.ts apps/api/src/tests/routes/pricelistScanAndImportRoute.test.ts",
+    "totalTests": 32,
+    "passedTests": 32,
+    "failedTests": 0,
+    "exitCode": 0
+  }
+}

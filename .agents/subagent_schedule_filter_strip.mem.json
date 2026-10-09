@@ -1,5 +1,5 @@
 {
-  "subagent": "Lead Schedule Filter Strip Decomposer",
+  "subagent": "Lead Schedule Filter Strip Decomposer & Toolbar Harmonizer",
   "target_monolith": "apps/web/src/components/schedule/ScheduleFilterStrip.tsx",
   "original_line_count": 1485,
   "facade_line_count": 37,
@@ -7,25 +7,39 @@
   "decomposed_files": {
     "types.ts": 90,
     "constants.ts": 25,
-    "DateRangeQuickButtons.tsx": 64,
-    "StatusFilterToggleGroup.tsx": 130,
-    "DoctorFilterDropdown.tsx": 50,
-    "CabinetFilterBar.tsx": 222,
+    "DateRangeQuickButtons.tsx": 65,
+    "StatusFilterToggleGroup.tsx": 178,
+    "DoctorFilterDropdown.tsx": 51,
+    "CabinetFilterBar.tsx": 196,
     "ScheduleOptionsMobileSection.tsx": 206,
     "ScheduleOptionsToolsSection.tsx": 345,
-    "ScheduleOptionsDropdown.tsx": 449,
+    "ScheduleOptionsDropdown.tsx": 450,
     "useScheduleFilters.ts": 247,
-    "ScheduleFilterStripContent.tsx": 278,
+    "ScheduleFilterStripContent.tsx": 279,
     "index.ts": 25
   },
-  "max_file_lines": 449,
+  "max_file_lines": 450,
+  "button_harmonization": {
+    "status": "COMPLETED",
+    "queue_segmented_bar": "Monolithic 4-item segmented control [Все (N) | В холле (N) | Приём (N) | Оплата (N)], 32px height, 8px outer radius, 6px inner radius",
+    "detached_pill_elimination": "Removed standalone 20px oval pill 'Все записи' from middle bar; unified into queue segmented control",
+    "toolbar_height_standard": "All controls strictly harmonized to 32px height on desktop with 8px radius (rounded-lg)",
+    "date_group": "32px height, 8px radius",
+    "view_switcher": "32px container height, 8px outer radius, 6px inner items [Лента | Сетка | Кресла]",
+    "action_buttons": "32px height, 8px radius (+ Запись: Primary CTA teal; ⋮ Опции: Secondary CTA)",
+    "unit_tests": "PASSED (11/11 in ScheduleFilterStrip.test.tsx, 7/7 in scheduleInlineChairManagement.test.tsx)",
+    "visual_proofs": {
+      "light": "proof_schedule_toolbar_buttons_light_1440x900.png (156 KB)",
+      "dark": "proof_schedule_toolbar_buttons_dark_1440x900.png (151 KB)"
+    }
+  },
   "gates_status": {
-    "Gate_1_Line_Count_Budget": "PASSED (all <= 449 lines, limit 800)",
+    "Gate_1_Line_Count_Budget": "PASSED (all <= 450 lines, limit 800)",
     "Gate_2_AST_Export_Parity": "PASSED (10/10 exports preserved: 100%)",
     "Gate_3_Test_Anchor_Parity": "PASSED (52/52 test anchors preserved: 100%)",
     "Gate_4_UTF8_Encoding": "PASSED (clean UTF-8 across workspace)",
     "Gate_5_Acyclic_Graph_Madge": "PASSED (0 circular dependencies detected)"
   },
-  "overall_audit_status": "100% CLEAN (ALL GATES PASSED)",
-  "verified_at": "2026-10-09T04:30:00Z"
+  "overall_audit_status": "100% CLEAN (ALL GATES PASSED & VISUALLY AUDITED)",
+  "verified_at": "2026-10-09T07:17:00Z"
 }

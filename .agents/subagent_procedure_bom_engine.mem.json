@@ -1,0 +1,71 @@
+{
+  "timestamp": "2026-10-09T03:46:00Z",
+  "subagent": "Lead Procedure BOM Engine Decomposer & Red Team Inquisitor",
+  "target": "packages/shared/src/inventory/procedureBomEngine.ts",
+  "status": "COMPLETED_100_PERCENT_CLEAN",
+  "gates": {
+    "gate_1_line_budget": {
+      "status": "PASSED",
+      "limit": "<= 800 lines per file (facade <= 50 lines)",
+      "files": {
+        "packages/shared/src/inventory/procedureBomEngine.ts": 10,
+        "packages/shared/src/inventory/procedureBom/index.ts": 14,
+        "packages/shared/src/inventory/procedureBom/types.ts": 270,
+        "packages/shared/src/inventory/procedureBom/constants.ts": 595,
+        "packages/shared/src/inventory/procedureBom/bomItemMatcher.ts": 27,
+        "packages/shared/src/inventory/procedureBom/bomUnitConverter.ts": 37,
+        "packages/shared/src/inventory/procedureBom/bomStockValidator.ts": 306,
+        "packages/shared/src/inventory/procedureBom/bomDeductionCalculator.ts": 334
+      }
+    },
+    "gate_2_ast_export_parity": {
+      "status": "PASSED",
+      "baseline_exports": 34,
+      "facade_exports": 34,
+      "parity_percentage": "100%",
+      "missing_exports": []
+    },
+    "gate_3_test_anchors": {
+      "status": "PASSED",
+      "original_anchors": 0,
+      "target_anchors": 0,
+      "lost_anchors": []
+    },
+    "gate_4_utf8_encoding": {
+      "status": "PASSED",
+      "encoding": "UTF-8 without BOM",
+      "mojibake_detected": false
+    },
+    "gate_5_acyclic_dag": {
+      "status": "PASSED",
+      "tool": "madge",
+      "circular_dependencies": 0
+    }
+  },
+  "tests": {
+    "procedureBomEngine.test.ts": "11/11 PASS (Exit Code 0)",
+    "wave134AutoVisitBomEngine.test.ts": "PASS",
+    "wave122TreatmentConsumables.test.ts": "PASS",
+    "wave134TreatmentConsumables.test.ts": "PASS",
+    "wave135ClinicExpenses.test.ts": "PASS",
+    "total_suite_tests": "53/53 PASS"
+  },
+  "architecture_layers": {
+    "layer_0": [
+      "packages/shared/src/inventory/procedureBom/types.ts (schemas and contracts)",
+      "packages/shared/src/inventory/procedureBom/constants.ts (standard BOM maps and 804n aliases)"
+    ],
+    "layer_1": [
+      "packages/shared/src/inventory/procedureBom/bomItemMatcher.ts (804n code and alias resolution)",
+      "packages/shared/src/inventory/procedureBom/bomUnitConverter.ts (material cost calculations)"
+    ],
+    "layer_2": [
+      "packages/shared/src/inventory/procedureBom/bomStockValidator.ts (stock validation, PO generation, HTML/Text formatting)",
+      "packages/shared/src/inventory/procedureBom/bomDeductionCalculator.ts (requirement aggregation and deduction execution)"
+    ],
+    "layer_5": [
+      "packages/shared/src/inventory/procedureBom/index.ts (clean barrel re-export)",
+      "packages/shared/src/inventory/procedureBomEngine.ts (canonical thin facade, 10 lines)"
+    ]
+  }
+}

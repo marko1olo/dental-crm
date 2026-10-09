@@ -1,0 +1,100 @@
+{
+  "subagent": "Lead Visit Diagnostics Tab Decomposer",
+  "role": "Red Team Inquisitor & L3 Visit Diagnostics Tab Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T09:23:00Z",
+  "targetMonolith": "apps/web/src/components/visit/VisitDiagnosticsTab.tsx",
+  "originalLines": 1358,
+  "facadeLines": 20,
+  "decomposedDirectory": "apps/web/src/components/visit/diagnosticsTab/",
+  "modules": [
+    {
+      "file": "apps/web/src/components/visit/diagnosticsTab/types.ts",
+      "layer": "Layer 0: Types & Contracts",
+      "lines": 46,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/web/src/components/visit/diagnosticsTab/DiagnosticsModalsHost.tsx",
+      "layer": "Layer 1: Modals Host",
+      "lines": 358,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/web/src/components/visit/diagnosticsTab/DiagnosticsStudyCard.tsx",
+      "layer": "Layer 2: Study & Photo Cards",
+      "lines": 233,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/web/src/components/visit/diagnosticsTab/DiagnosticsStudyList.tsx",
+      "layer": "Layer 2: Study & Photo Gallery List",
+      "lines": 91,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/web/src/components/visit/diagnosticsTab/DiagnosticsTabToolbar.tsx",
+      "layer": "Layer 2: Cockpit Mode Selector Toolbar & Patient Warnings",
+      "lines": 178,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/web/src/components/visit/diagnosticsTab/DiagnosticsRvgSection.tsx",
+      "layer": "Layer 2: RVG Action Bar & VisiographAnalyzer Host",
+      "lines": 103,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/web/src/components/visit/diagnosticsTab/DiagnosticsPhotoSection.tsx",
+      "layer": "Layer 2: Clinical Photo Protocol Section & Quick Attach Form",
+      "lines": 157,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/web/src/components/visit/diagnosticsTab/DiagnosticsCbctSection.tsx",
+      "layer": "Layer 2: 3D CBCT / OPG Section & Popout Studio Trigger",
+      "lines": 156,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/web/src/components/visit/diagnosticsTab/DiagnosticsCephSection.tsx",
+      "layer": "Layer 2: Orthodontic Cephalometry Section",
+      "lines": 84,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/web/src/components/visit/diagnosticsTab/useVisitDiagnosticsTab.ts",
+      "layer": "Layer 3: Tab Business Logic Hook",
+      "lines": 337,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/web/src/components/visit/diagnosticsTab/VisitDiagnosticsTabView.tsx",
+      "layer": "Layer 4: Diagnostics Tab Container View",
+      "lines": 136,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/web/src/components/visit/diagnosticsTab/index.ts",
+      "layer": "Layer 5: Barrel Re-exports",
+      "lines": 12,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "file": "apps/web/src/components/visit/VisitDiagnosticsTab.tsx",
+      "layer": "Layer 5: Canonical Facade",
+      "lines": 20,
+      "budgetStatus": "PASSED (<= 150)"
+    }
+  ],
+  "verificationGates": {
+    "gate1_lineCountBudget": "PASSED (all <= 800, facade 20 <= 150)",
+    "gate2_astExportParity": "PASSED (100% of baseline exports preserved: DiagnosticTabMode, VisitDiagnosticsTab)",
+    "gate3_testAnchors": "PASSED (100% preserved: 31 of 31 test anchors present)",
+    "gate4_utf8Hygiene": "PASSED (clean UTF-8 across workspace)",
+    "gate5_dagAcyclicMadge": "PASSED (0 circular dependencies)"
+  },
+  "tests": {
+    "cbctPopoutStudioIntegration": "PASSED (5/5 suites, 10/10 tests green)"
+  }
+}

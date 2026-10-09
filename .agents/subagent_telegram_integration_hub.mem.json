@@ -1,0 +1,116 @@
+{
+  "subagent": "TelegramIntegrationHubDecomposer",
+  "role": "Lead Telegram Integration Hub Decomposer & Red Team Inquisitor",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T03:47:00+04:00",
+  "monolith": {
+    "originalPath": "apps/web/src/components/settings/telegram/TelegramIntegrationHub.tsx",
+    "originalLines": 1516,
+    "facadeLines": 28,
+    "facadeLimit": 150,
+    "facadeBudgetStatus": "PASSED"
+  },
+  "modules": [
+    {
+      "name": "types.ts",
+      "layer": "Layer 0",
+      "lines": 104,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "name": "constants.ts",
+      "layer": "Layer 0",
+      "lines": 123,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "name": "useTelegramHubState.ts",
+      "layer": "Layer 3",
+      "lines": 70,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "name": "BotConfigurationCard.tsx",
+      "layer": "Layer 1",
+      "lines": 410,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "name": "StaffBindingCard.tsx",
+      "layer": "Layer 1",
+      "lines": 261,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "name": "PhoneAuthForm.tsx",
+      "layer": "Layer 1",
+      "lines": 484,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "name": "QrAuthCard.tsx",
+      "layer": "Layer 1",
+      "lines": 219,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "name": "NotificationTemplatesEditor.tsx",
+      "layer": "Layer 2",
+      "lines": 407,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "name": "DeliveryQueueMonitor.tsx",
+      "layer": "Layer 2",
+      "lines": 309,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "name": "TelegramHubView.tsx",
+      "layer": "Layer 4",
+      "lines": 140,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "name": "index.ts",
+      "layer": "Layer 5",
+      "lines": 10,
+      "budgetStatus": "PASSED (< 800)"
+    },
+    {
+      "name": "TelegramIntegrationHub.tsx",
+      "layer": "Layer 5 Facade",
+      "lines": 28,
+      "budgetStatus": "PASSED (<= 150)"
+    }
+  ],
+  "verificationGates": {
+    "gate1_lineCountBudget": {
+      "status": "PASSED",
+      "details": "All decomposed files strictly <= 800 lines, facade strictly <= 150 lines"
+    },
+    "gate2_astExportParity": {
+      "status": "PASSED",
+      "details": "100% of public exports preserved (TelegramIntegrationHubProps, TelegramIntegrationHub)"
+    },
+    "gate3_testAnchorsParity": {
+      "status": "PASSED",
+      "details": "100% of original test anchors (19) preserved, 21 total target anchors"
+    },
+    "gate4_utf8Encoding": {
+      "status": "PASSED",
+      "details": "Clean UTF-8 encoding across workspace, zero mojibake"
+    },
+    "gate5_acyclicDagMadge": {
+      "status": "PASSED",
+      "details": "0 circular dependencies detected by madge"
+    }
+  },
+  "unitTests": {
+    "testSuite": "apps/web/src/components/settings/telegram/telegramHub/__tests__/telegramIntegrationHubDecomposition.test.ts",
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "exitCode": 0
+  }
+}

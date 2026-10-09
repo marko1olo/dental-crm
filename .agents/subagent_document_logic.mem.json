@@ -1,0 +1,82 @@
+{
+  "subagent": "Document Logic Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T13:09:30Z",
+  "targetMonolith": "apps/web/src/documentLogic.ts",
+  "originalLines": 1360,
+  "facadeLines": 26,
+  "facadeLimitRequirement": "<= 50 lines (COMPLIANT: 26 lines)",
+  "fileLinesLimitRequirement": "< 800 lines per file (COMPLIANT: max 473 lines)",
+  "decomposedDirectory": "apps/web/src/documentLogic",
+  "modules": [
+    {
+      "path": "apps/web/src/documentLogic/types.ts",
+      "layer": "Layer 0: Types & Shapes",
+      "lines": 60,
+      "purpose": "Типы DocumentState, DOCUMENT_TIMESTAMP_FIELDS, TimestampShape"
+    },
+    {
+      "path": "apps/web/src/documentLogic/timestampHelpers.ts",
+      "layer": "Layer 1: Timestamp & Date Helpers",
+      "lines": 66,
+      "purpose": "Форматирование дат и времени (formatRuDateTime, formatRuDate, formatIsoDate, formatDateTimeLocal) и честное заполнение отметок времени при создании документов (withDocumentCreationTimestamps)"
+    },
+    {
+      "path": "apps/web/src/documentLogic/documentStateHydrator.ts",
+      "layer": "Layer 3: State Hydration & Validation Helpers",
+      "lines": 90,
+      "purpose": "Предикаты и хелперы валидации (requiredDocumentField, confirmedDocumentLiteral, withDocumentHelpers, validateDocumentPayloadForKind, hydrateDocumentStateWithProfiles)"
+    },
+    {
+      "path": "apps/web/src/documentLogic/payloadBuildersFinancial.ts",
+      "layer": "Layer 2: Domain Payload Builders (Financial)",
+      "lines": 473,
+      "purpose": "Сборщики полезной нагрузки финансовых документов: договоры, акты, сметы, счета, квитанции, графики рассрочки, гарантия, вычеты, возвраты"
+    },
+    {
+      "path": "apps/web/src/documentLogic/payloadBuildersConsent.ts",
+      "layer": "Layer 2: Domain Payload Builders (Consent & Legal)",
+      "lines": 414,
+      "purpose": "Сборщики согласий и юридических документов: ИДС (общие и специфические), журналы анестезии, фото/видео, ПДн, отказ от вмешательства, согласие законного представителя, анкета здоровья"
+    },
+    {
+      "path": "apps/web/src/documentLogic/payloadBuildersClinical.ts",
+      "layer": "Layer 2: Domain Payload Builders (Clinical & Diagnostic)",
+      "lines": 467,
+      "purpose": "Сборщики клинических документов: планы лечения, согласование плана, рекомендации после приема, рецепты, заказ-наряды зуботехнической лаборатории, направления КТ/ОПТГ, форма 043/у, выписки, копии, справки о посещении, расписки о выдаче"
+    },
+    {
+      "path": "apps/web/src/documentLogic/payloadBuilders.ts",
+      "layer": "Layer 2: Domain Payload Builders (Dispatcher)",
+      "lines": 25,
+      "purpose": "Мастер-диспетчер documentPayloadForKind, делегирующий построение в финансовый, согласовательный и клинический модули"
+    },
+    {
+      "path": "apps/web/src/documentLogic/index.ts",
+      "layer": "Layer 5: Master Barrel Re-export",
+      "lines": 26,
+      "purpose": "Канонический barrel реэкспорта всех слоев подсистемы логики документов"
+    },
+    {
+      "path": "apps/web/src/documentLogic.ts",
+      "layer": "Layer 5: Master Facade",
+      "lines": 26,
+      "purpose": "Тонкий канонический фасад (26 строк <= 50), сохраняющий 100% обратную совместимость"
+    }
+  ],
+  "verificationGates": {
+    "gate1_lineBudget": "PASSED (all files <= 800 lines, max 473 lines)",
+    "gate2_astExportParity": "PASSED (100% baseline exports preserved)",
+    "gate3_testAnchors": "PASSED (100% test anchors preserved)",
+    "gate4_utf8Clean": "PASSED (Clean UTF-8 without BOM across 9710 files)",
+    "gate5_acyclicDag": "PASSED (0 circular dependencies confirmed via madge)"
+  },
+  "tests": {
+    "documentLogicTest": "PASSED (10/10 tests green, exit code 0)",
+    "documentGeneratorsTest": "PASSED (32/32 tests green, exit code 0)",
+    "documentCreationTimestampsTest": "PASSED (6/6 tests green, exit code 0)",
+    "paidContractRequiredFieldsTest": "PASSED (9/9 tests green, exit code 0)",
+    "documentLogicRootTest": "PASSED (5/5 tests green, exit code 0)",
+    "totalTargetedTests": "62/62 tests passed, 0 failures, exit code 0"
+  }
+}

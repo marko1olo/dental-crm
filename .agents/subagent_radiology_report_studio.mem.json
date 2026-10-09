@@ -1,0 +1,105 @@
+{
+  "subagent": "radiology-report-studio-decomposer",
+  "role": "Red Team Inquisitor & L3 Radiology Report Studio Modal Decomposer",
+  "targetFile": "apps/web/src/components/radiology/RadiologyReportStudioModal.tsx",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T13:10:00Z",
+  "originalLines": 1350,
+  "facadeLines": 145,
+  "facadeBudgetStatus": "PASSED (<= 150 lines)",
+  "decomposedDirectory": "apps/web/src/components/radiology/reportStudio/",
+  "modules": [
+    {
+      "file": "types.ts",
+      "layer": 0,
+      "lines": 102,
+      "exports": [
+        "PageSizeOption",
+        "OrientationOption",
+        "LegendPlacementOption",
+        "RadiologyReportLayoutPreset",
+        "ReportPrintSettings",
+        "ReportFrameItem",
+        "RadiologyReportStudioModalProps",
+        "PatientStudyThumbnail",
+        "DragState",
+        "DEFAULT_PRINT_SETTINGS"
+      ],
+      "status": "PASSED (< 800 lines)"
+    },
+    {
+      "file": "ReportStudioToolbar.tsx",
+      "layer": 1,
+      "lines": 233,
+      "component": "ReportStudioToolbar",
+      "status": "PASSED (< 800 lines)"
+    },
+    {
+      "file": "ReportClinicalConclusion.tsx",
+      "layer": 2,
+      "lines": 76,
+      "component": "ReportClinicalConclusion",
+      "status": "PASSED (< 800 lines)"
+    },
+    {
+      "file": "ReportDoctorSignatureStamp.tsx",
+      "layer": 2,
+      "lines": 39,
+      "component": "ReportDoctorSignatureStamp",
+      "status": "PASSED (< 800 lines)"
+    },
+    {
+      "file": "ReportA4PrintableSheet.tsx",
+      "layer": 2,
+      "lines": 263,
+      "component": "ReportA4PrintableSheet",
+      "status": "PASSED (< 800 lines)"
+    },
+    {
+      "file": "ReportFilmstripTray.tsx",
+      "layer": 4,
+      "lines": 96,
+      "component": "ReportFilmstripTray",
+      "status": "PASSED (< 800 lines)"
+    },
+    {
+      "file": "ReportPrintSettingsModal.tsx",
+      "layer": 4,
+      "lines": 269,
+      "component": "ReportPrintSettingsModal",
+      "status": "PASSED (< 800 lines)"
+    },
+    {
+      "file": "ReportStudioContainer.tsx",
+      "layer": 4,
+      "lines": 30,
+      "component": "ReportStudioContainer",
+      "status": "PASSED (< 800 lines)"
+    },
+    {
+      "file": "useReportStudioState.ts",
+      "layer": 3,
+      "lines": 476,
+      "hook": "useReportStudioState",
+      "status": "PASSED (< 800 lines)"
+    },
+    {
+      "file": "index.ts",
+      "layer": 5,
+      "lines": 14,
+      "description": "Clean barrel re-export",
+      "status": "PASSED (< 800 lines)"
+    }
+  ],
+  "verificationGates": {
+    "gate1_line_count_budget": "PASSED (all files <= 800 lines, facade 145 <= 150)",
+    "gate2_ast_export_parity": "PASSED (100% of 7 baseline exports preserved)",
+    "gate3_test_anchor_parity": "PASSED (100% of 26 anchors preserved)",
+    "gate4_utf8_hygiene": "PASSED (Clean UTF-8, 0 mojibake)",
+    "gate5_acyclic_dag_madge": "PASSED (0 circular dependencies)"
+  },
+  "tests": {
+    "radiologyReportStudioDecomposition.test.ts": "PASSED (4 tests, Exit Code 0)",
+    "cbctCurvedViewportHandlersDecomposition.test.ts": "PASSED (7 tests, Exit Code 0)"
+  }
+}

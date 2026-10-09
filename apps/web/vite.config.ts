@@ -427,7 +427,10 @@ export default defineConfig({
 						return "dictation-hints";
 					if (normalizedId.endsWith("/apps/web/src/AppHelpers.tsx"))
 						return "app-helpers";
-					if (normalizedId.endsWith("/apps/web/src/documentLogic.ts"))
+					if (
+						normalizedId.endsWith("/apps/web/src/documentLogic.ts") ||
+						normalizedId.includes("/apps/web/src/documentLogic/")
+					)
 						return "document-logic";
 					if (
 						normalizedId.endsWith("/apps/web/src/documentValidators.ts") ||
