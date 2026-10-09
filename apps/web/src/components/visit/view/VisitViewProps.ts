@@ -210,4 +210,5 @@ export interface VisitViewProps {
 	safeSpecialtyLabels?: Record<string, string> | undefined;
 	visitCloseChecklist?: any[] | undefined;
 	openCloseChecklistSection?: ((task: any) => void) | undefined;
+	setSelectedPatientId?: ((id: string | null) => void) | undefined;
 }

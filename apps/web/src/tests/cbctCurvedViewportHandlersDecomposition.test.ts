@@ -31,10 +31,9 @@ import {
 
 describe("CBCT Curved Viewport Handlers Decomposition Invariants", () => {
 	it("verifies line count constraint (<= 800 lines per module, <= 50 lines for facade)", () => {
-		const curvedDir = path.resolve(
-			process.cwd(),
-			"src/components/radiology/mpr/curvedViewport",
-		);
+		const curvedDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src/components/radiology/mpr/curvedViewport"))
+			? path.resolve(process.cwd(), "apps/web/src/components/radiology/mpr/curvedViewport")
+			: path.resolve(process.cwd(), "src/components/radiology/mpr/curvedViewport");
 		const files = fs.readdirSync(curvedDir);
 
 		assert.ok(files.length >= 7, "Expected at least 7 decomposed files");
@@ -50,10 +49,9 @@ describe("CBCT Curved Viewport Handlers Decomposition Invariants", () => {
 			}
 		}
 
-		const facadePath = path.resolve(
-			process.cwd(),
-			"src/components/radiology/mpr/useCbctCurvedViewportHandlers.ts",
-		);
+		const facadePath = fs.existsSync(path.resolve(process.cwd(), "apps/web/src/components/radiology/mpr/useCbctCurvedViewportHandlers.ts"))
+			? path.resolve(process.cwd(), "apps/web/src/components/radiology/mpr/useCbctCurvedViewportHandlers.ts")
+			: path.resolve(process.cwd(), "src/components/radiology/mpr/useCbctCurvedViewportHandlers.ts");
 		const facadeLines = fs.readFileSync(facadePath, "utf8").split("\n").length;
 		assert.ok(
 			facadeLines <= 50,
@@ -153,7 +151,7 @@ describe("CBCT Curved Viewport Handlers Decomposition Invariants", () => {
 		};
 
 		const localMm = { x: 5, y: 0, z: 12 };
-		const nerve3D = calculateCrossSectionNerveWorldPoint(sliceData, localMm);
+		const nerve3D = calculateCrossSectionNerveWorldPoint(sliceData as any, localMm);
 
 		// x: center.x + normal.x * local.x = 20 + 0 = 20
 		// y: center.y + normal.y * local.x = 30 + 1 * 5 = 35

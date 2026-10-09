@@ -1,23 +1,12 @@
 /**
  * DENTE CRM — CBCT CPU Slice Multi-Threaded Web Worker Bridge (FEAT-010)
- * Standards: DICOM Part 3 PS 3.3, Planmeca Romexis 6.x, Vatech Ez3D-i
- *
- * Canonical Facade delegating to decomposed workerBridge/ subsystem.
+ * Decomposed Module Index
  */
 
 export {
 	StaleSliceRequestError,
 	isStaleSliceRequestError,
-	CbctWorkerBridge,
-	getSharedCbctWorkerBridge,
-	WorkerPoolManager,
-	SliceDispatchEngine,
-	syncExtractSingleSlice,
-	syncExtractAllPlanes,
-	syncExtractCrossSectionSeries,
-	syncDecodeDicomSlices,
-	syncGenerateProgressiveLod,
-} from "./workerBridge";
+} from "./types";
 
 export type {
 	DecodeDicomSliceTask,
@@ -37,4 +26,19 @@ export type {
 	PendingLodRequest,
 	InFlightSingleTask,
 	InFlightMultiTask,
-} from "./workerBridge";
+} from "./types";
+
+export { WorkerPoolManager } from "./workerPoolManager";
+export { SliceDispatchEngine } from "./sliceDispatchEngine";
+export {
+	syncExtractSingleSlice,
+	syncExtractAllPlanes,
+	syncExtractCrossSectionSeries,
+	syncDecodeDicomSlices,
+	syncGenerateProgressiveLod,
+} from "./syncFallbackReslice";
+
+export {
+	CbctWorkerBridge,
+	getSharedCbctWorkerBridge,
+} from "./cbctWorkerBridgeCore";

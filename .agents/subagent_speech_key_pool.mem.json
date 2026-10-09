@@ -1,0 +1,76 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Speech Key Pool Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T09:35:00Z",
+  "target": "apps/api/src/speech/keyPool.ts",
+  "decomposition": {
+    "originalLines": 1331,
+    "facadeLines": 8,
+    "targetDir": "apps/api/src/speech/keys",
+    "modules": [
+      {
+        "file": "apps/api/src/speech/keys/types.ts",
+        "layer": "Layer 0 (Types & DTOs)",
+        "lines": 81,
+        "purpose": "Contracts, SpeechKeyRecord, SpeechProviderKeyCandidate, ModelHealthRecord, KeyHealth"
+      },
+      {
+        "file": "apps/api/src/speech/keys/keyHashing.ts",
+        "layer": "Layer 1 (Pure Utils & Env)",
+        "lines": 129,
+        "purpose": "SHA256 fingerprinting, zero-leak secret sanitization, env parsers"
+      },
+      {
+        "file": "apps/api/src/speech/keys/proxyAndTunnel.ts",
+        "layer": "Layer 1 (Network Dispatcher & Tunnel)",
+        "lines": 388,
+        "purpose": "SOCKS5 & HTTPS undici ProxyAgent, WS agent, SSH tunnel fallback, SpeechProviderRequestError, fetchWithProviderTimeout"
+      },
+      {
+        "file": "apps/api/src/speech/keys/modelHealthEngine.ts",
+        "layer": "Layer 2 (Model Cascade Engine)",
+        "lines": 194,
+        "purpose": "LLM model health, temporary bans, cascade failover, disk persistence"
+      },
+      {
+        "file": "apps/api/src/speech/keys/keyRotationEngine.ts",
+        "layer": "Layer 2 (Key Rotation Engine)",
+        "lines": 592,
+        "purpose": "Round-robin / random key selection, 429 quota backoff, error cooldowns, provider key specs, health tracking"
+      },
+      {
+        "file": "apps/api/src/speech/keys/keyPoolManager.ts",
+        "layer": "Layer 3 (Key Pool Manager Class)",
+        "lines": 102,
+        "purpose": "SpeechKeyPool OOP manager class, instance methods, static agent helpers"
+      },
+      {
+        "file": "apps/api/src/speech/keys/index.ts",
+        "layer": "Layer 5 (Barrel)",
+        "lines": 7,
+        "purpose": "Public re-export barrel"
+      },
+      {
+        "file": "apps/api/src/speech/keyPool.ts",
+        "layer": "Layer 5 (Canonical Facade)",
+        "lines": 8,
+        "purpose": "Ultra-thin backwards-compatible facade (<= 50 lines ceiling)"
+      }
+    ]
+  },
+  "verificationGates": {
+    "gate1_lineBudget": "PASSED (all files < 800 lines, facade 8 lines <= 50)",
+    "gate2_astExportParity": "PASSED (100% public exports preserved)",
+    "gate3_testAnchors": "PASSED (100% anchors preserved)",
+    "gate4_utf8Encoding": "PASSED (Clean UTF-8 without BOM)",
+    "gate5_dagAcyclic": "PASSED (0 circular dependencies confirmed by madge)"
+  },
+  "testSuites": {
+    "keyPoolTests": "PASSED (11/11 tests, exit code 0)",
+    "geminiMultiKeyPoolFailover": "PASSED (6/6 tests, exit code 0)",
+    "geminiBatchTranscribe": "PASSED (7/7 tests, exit code 0)",
+    "geminiLiveTranslate": "PASSED (2/2 tests, exit code 0)",
+    "whisperCascade": "PASSED (8/8 tests, exit code 0)",
+    "speechAudioResilienceInquisition": "PASSED (14/14 tests, exit code 0)"
+  }
+}

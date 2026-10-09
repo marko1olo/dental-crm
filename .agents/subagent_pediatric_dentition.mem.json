@@ -1,0 +1,164 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Pediatric Dentition Engine Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T09:35:00Z",
+  "monolithTarget": "packages/shared/src/clinical/pediatricDentition.ts",
+  "originalLines": 1333,
+  "facadeLines": 9,
+  "decomposedDirectory": "packages/shared/src/clinical/pediatric/",
+  "decomposedModules": [
+    {
+      "file": "constants.ts",
+      "layer": 0,
+      "lines": 49,
+      "exports": [
+        "PRIMARY_UPPER_RIGHT",
+        "PRIMARY_UPPER_LEFT",
+        "PRIMARY_LOWER_LEFT",
+        "PRIMARY_LOWER_RIGHT",
+        "PRIMARY_UPPER_TEETH",
+        "PRIMARY_LOWER_TEETH",
+        "ALL_PRIMARY_TEETH",
+        "primaryToothNumberSchema",
+        "PrimaryToothNumber",
+        "isPrimaryTooth",
+        "MIXED_DENTITION_TOP",
+        "MIXED_DENTITION_BOTTOM",
+        "ALL_MIXED_DENTITION_TEETH"
+      ]
+    },
+    {
+      "file": "resorption.ts",
+      "layer": 1,
+      "lines": 80,
+      "exports": [
+        "resorptionStagePercentSchema",
+        "ResorptionStagePercent",
+        "ResorptionStageDefinition",
+        "RESORPTION_STAGE_DEFINITIONS"
+      ]
+    },
+    {
+      "file": "toothSuccession.ts",
+      "layer": 1,
+      "lines": 72,
+      "exports": [
+        "PRIMARY_TO_PERMANENT_SUCCESSOR_MAP",
+        "PERMANENT_TO_PRIMARY_PREDECESSOR_MAP",
+        "getPermanentSuccessor",
+        "getPrimaryPredecessor",
+        "isPrimaryMolar"
+      ]
+    },
+    {
+      "file": "eruptionChronology.ts",
+      "layer": 1,
+      "lines": 249,
+      "exports": [
+        "DentitionStageCategory",
+        "ToothExchangeStatus",
+        "EruptionTimelineAnalysis",
+        "calculateEruptionTimelineByAge"
+      ]
+    },
+    {
+      "file": "cariogram.ts",
+      "layer": 2,
+      "lines": 129,
+      "exports": [
+        "cariogramRiskLevelSchema",
+        "CariogramRiskLevel",
+        "cariogramInputSchema",
+        "CariogramInput",
+        "CariogramRiskCategory",
+        "CariogramSectorBreakdown",
+        "CariogramResult",
+        "calculateCariogramRisk"
+      ]
+    },
+    {
+      "file": "anesthesiology.ts",
+      "layer": 2,
+      "lines": 128,
+      "exports": [
+        "PediatricAnestheticCalculation",
+        "PEDIATRIC_ANESTHETIC_DOSAGE_LIMITS",
+        "calculatePediatricAnestheticSafety"
+      ]
+    },
+    {
+      "file": "franklScale.ts",
+      "layer": 1,
+      "lines": 118,
+      "exports": [
+        "franklRatingSchema",
+        "FranklRating",
+        "FranklRatingDefinition",
+        "FRANKL_SCALE_DEFINITIONS",
+        "getFranklDefinition"
+      ]
+    },
+    {
+      "file": "clinicalProcedures.ts",
+      "layer": 2,
+      "lines": 294,
+      "exports": [
+        "silveringDrugSchema",
+        "SilveringDrug",
+        "PediatricSilveringOptions",
+        "PediatricSilveringResult",
+        "calculatePediatricSilveringProtocol",
+        "fissureSealingMethodSchema",
+        "FissureSealingMethod",
+        "fissureSealantMaterialSchema",
+        "FissureSealantMaterial",
+        "PediatricFissureSealingOptions",
+        "PediatricFissureSealingResult",
+        "calculatePediatricFissureSealingProtocol",
+        "pulpotomySubBaseMaterialSchema",
+        "PulpotomySubBaseMaterial",
+        "pulpotomyRestorationSchema",
+        "PulpotomyRestoration",
+        "PediatricPulpotomyOptions",
+        "PediatricPulpotomyResult",
+        "calculatePediatricPulpotomyProtocol",
+        "PediatricParentMemoOptions",
+        "generatePediatricParentRecommendations"
+      ]
+    },
+    {
+      "file": "pediatricDiagnostics.ts",
+      "layer": 2,
+      "lines": 181,
+      "exports": [
+        "PediatricDiaryTextOptions",
+        "generatePediatricCariogramDiaryText",
+        "validatePediatricToothPathology",
+        "calculatePediatricCariesIndex"
+      ]
+    },
+    {
+      "file": "index.ts",
+      "layer": 5,
+      "lines": 15,
+      "exports": [
+        "*"
+      ]
+    }
+  ],
+  "verificationGates": {
+    "Gate1_LineCount": "PASSED (all files <= 800 lines, facade 9 lines <= 50)",
+    "Gate2_AST_ExportParity": "PASSED (100% baseline exports preserved: 79 symbols)",
+    "Gate3_TestAnchors": "PASSED (0 lost anchors)",
+    "Gate4_UTF8_Encoding": "PASSED (Clean UTF-8, no BOM, zero Mojibake)",
+    "Gate5_DAG_Acyclic": "PASSED (0 circular dependencies via madge)"
+  },
+  "unitTests": {
+    "command": "node --max-old-space-size=4096 --import tsx --test packages/shared/src/tests/pediatricDentition.test.ts packages/shared/src/tests/pediatricFranklDentition.test.ts",
+    "status": "PASSED",
+    "exitCode": 0,
+    "passedTests": 15,
+    "failedTests": 0,
+    "suites": 2
+  }
+}
