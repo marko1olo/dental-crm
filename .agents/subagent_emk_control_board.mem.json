@@ -1,0 +1,105 @@
+{
+  "subagent": "subagent_emk_control_board",
+  "status": "COMPLETED",
+  "task": "Safe Monolith Decomposition of EmkControlBoard.tsx into modular DAG architecture",
+  "targetMonolith": "apps/web/src/components/visit/EmkControlBoard.tsx",
+  "originalLines": 1469,
+  "decomposedDirectory": "apps/web/src/components/visit/emkControlBoard/",
+  "modules": [
+    {
+      "file": "apps/web/src/components/visit/emkControlBoard/types.ts",
+      "layer": "Layer 0 (Types & DTOs)",
+      "lines": 82,
+      "description": "Contracts for protocol steps, autosave states, Diagnocat reports, rejection modals, and control board props"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkControlBoard/constants.ts",
+      "layer": "Layer 0 (Pure Constants & Helpers)",
+      "lines": 82,
+      "description": "Default clinical protocol steps, autosave debounce timing (400ms), completeness thresholds and color mapping"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkControlBoard/DiagnocatReportWidget.tsx",
+      "layer": "Layer 1 (Pure Subcomponent)",
+      "lines": 96,
+      "description": "Diagnocat AI report integration link widget with network cancellation"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkControlBoard/EmkAutosaveStatusBadge.tsx",
+      "layer": "Layer 1 (Pure Subcomponent)",
+      "lines": 105,
+      "description": "Indicator of background draft autosave status into IDB / REST dual queue (Mandate 8e)"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkControlBoard/EmkMetricsSummaryStrip.tsx",
+      "layer": "Layer 1 (Pure Subcomponent)",
+      "lines": 134,
+      "description": "Statutory metrics summary cards (pending review, needs correction, completeness score, compliance rate)"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkControlBoard/EmkPatientSummaryHeader.tsx",
+      "layer": "Layer 1 (Pure Subcomponent)",
+      "lines": 167,
+      "description": "Compact patient card summary header with doctor, date, chair, tooth pill, and completeness score"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkControlBoard/EmkProtocolStepper.tsx",
+      "layer": "Layer 1 (Pure Subcomponent)",
+      "lines": 95,
+      "description": "Visual clinical protocol stepper bar with step completion indicators"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkControlBoard/EmkVisitCard.tsx",
+      "layer": "Layer 4 (Presentation Subcomponent)",
+      "lines": 305,
+      "description": "Individual visit audit card with actions, highlights, Diagnocat widget, remarks, and expanded 7-section Минздрав accordion"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkControlBoard/EmkVisitHandoffModal.tsx",
+      "layer": "Layer 2 (Domain Modal)",
+      "lines": 316,
+      "description": "Handoff/Rejection dialog with defect tags, reason input (anchor id='cmo-rejection-reason'), and non-blocking button (Mandate 8e)"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkControlBoard/useEmkControlBoard.ts",
+      "layer": "Layer 3 (Custom Hook)",
+      "lines": 219,
+      "description": "State management hook for data loading, CMO audit evaluations, filtering, approving, batch approval, and returning to doctor"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkControlBoard/EmkControlBoardView.tsx",
+      "layer": "Layer 4 (Master Presentation View)",
+      "lines": 363,
+      "description": "Integrated control board UI coordinating metrics strip, filter tabs, visit cards, and modals"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkControlBoard/index.ts",
+      "layer": "Layer 5 (Barrel)",
+      "lines": 12,
+      "description": "Clean barrel re-exporting all types, constants, hooks, and components"
+    },
+    {
+      "file": "apps/web/src/components/visit/EmkControlBoard.tsx",
+      "layer": "Layer 5 (Canonical Facade)",
+      "lines": 25,
+      "description": "Thin master coordinator facade (<= 150 lines), preserving 100% backward compatibility and test contracts"
+    }
+  ],
+  "verificationGates": {
+    "gate1_lineCountBudget": "PASSED (All files strictly <= 800 lines; facade 25 lines <= 150)",
+    "gate2_astExportParity": "PASSED (100% exports preserved)",
+    "gate3_testAnchors": "PASSED (100% test anchors preserved, including id='cmo-rejection-reason')",
+    "gate4_utf8Hygiene": "PASSED (0 Mojibake, clean UTF-8)",
+    "gate5_acyclicDag": "PASSED (0 circular dependencies confirmed via madge)"
+  },
+  "testsPassing": [
+    "apps/web/src/components/visit/__tests__/EmkControlBoard.test.tsx (2/2 pass)",
+    "apps/web/src/components/visit/__tests__/subagent3DoctorAutonomyWave64.test.tsx (7/7 pass)"
+  ],
+  "redTeamTrapsNeutralized": [
+    "Mandate 8z: Completely eliminated forbidden Soviet bureaucratic acronyms (043/у, 834н) from user-facing code and comments",
+    "Mandate 8e: Non-blocking button semantics (disabled={isSubmitting}) with guidance toast, never disabled by empty reason",
+    "Server-side rendering: Explicit React import preventing ReferenceError in node:test tsx runtime",
+    "Windows ESM module collision: Path disambiguation using /index preventing self-referential collision"
+  ]
+}
