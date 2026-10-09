@@ -1,8 +1,8 @@
 import { ExternalLink, Eye, Image as ImageIcon, Trash2 } from "lucide-react";
 import React from "react";
 import { is3DScanUrl } from "../../lab/LabAttachScanModal";
-import { openCbctPopoutWindow } from "../../native/desktopBridge";
-import type { ClinicalPhotoAttachment } from "../../lib/clinicalProtocols043";
+import { openCbctPopoutWindow } from "../../../native/desktopBridge";
+import type { ClinicalPhotoAttachment } from "../../../lib/clinicalProtocols043";
 import type { DiagnosticStudy } from "./types";
 
 export interface DiagnosticsStudyCardProps {

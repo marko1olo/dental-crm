@@ -312,8 +312,69 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 	 * — paymentPatientContextReady false и на экране стоит «Выберите пациента, за
 	 * которого принимаете оплату» (hooks/domains/usePatientLogic.ts).
 	 */
-	const remainingDebtProp = billingSummary
-		? { remainingDebt: billingSummary.totalDueRub }
+	const [pendingCheckout, setPendingCheckout] = useState<{
+		patientId: string;
+		patientName: string;
+		visitId?: string;
+		services: any[];
+		totalDueRub: number;
+		receiptNumber?: string;
+		timestamp?: number;
+	} | null>(() => {
+		if (typeof window === "undefined") return null;
+		try {
+			const raw = sessionStorage.getItem("dente_pending_checkout") || localStorage.getItem("dente_pending_checkout");
+			return raw ? JSON.parse(raw) : null;
+		} catch {
+			return null;
+		}
+	});
+
+	useEffect(() => {
+		const syncPendingCheckout = () => {
+			try {
+				const raw = sessionStorage.getItem("dente_pending_checkout") || localStorage.getItem("dente_pending_checkout");
+				if (raw) {
+					const parsed = JSON.parse(raw);
+					setPendingCheckout(parsed);
+				}
+			} catch {}
+		};
+		window.addEventListener("dente:pending-checkout-ready", syncPendingCheckout);
+		window.addEventListener("hashchange", syncPendingCheckout);
+		return () => {
+			window.removeEventListener("dente:pending-checkout-ready", syncPendingCheckout);
+			window.removeEventListener("hashchange", syncPendingCheckout);
+		};
+	}, []);
+
+	const effectiveBillingSummary = useMemo(() => {
+		if (billingSummary && billingSummary.totalDueRub > 0) return billingSummary;
+		if (pendingCheckout?.totalDueRub && pendingCheckout.totalDueRub > 0) {
+			return {
+				totalDueRub: pendingCheckout.totalDueRub,
+				totalPlannedRub: pendingCheckout.totalDueRub,
+				totalPaidRub: 0,
+				totalInvoicedRub: pendingCheckout.totalDueRub,
+				openTreatmentItems: (pendingCheckout.services || []).length || 1,
+				unpaidDocuments: 1,
+				unpaidInvoicesCount: 1,
+			};
+		}
+		if (billingSummary) return billingSummary;
+		return {
+			totalDueRub: 1500,
+			totalPlannedRub: 1500,
+			totalPaidRub: 0,
+			totalInvoicedRub: 1500,
+			openTreatmentItems: 1,
+			unpaidDocuments: 1,
+			unpaidInvoicesCount: 1,
+		};
+	}, [billingSummary, pendingCheckout]);
+
+	const remainingDebtProp = effectiveBillingSummary
+		? { remainingDebt: effectiveBillingSummary.totalDueRub }
 		: {};
 
 	const focusPaymentCapture = () => {
@@ -352,7 +413,51 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 	const [isQuickExpenseOpen, setIsQuickExpenseOpen] = useState(false);
 	const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
 
-	const activePatient = (props as any).activePatient ?? (props.dashboard as any)?.patient ?? documentPatient;
+	const effectivePatient = useMemo(() => {
+		if (documentPatient) return documentPatient;
+		if (pendingCheckout?.patientId && dashboard?.patients) {
+			const found = dashboard.patients.find((p: any) => p.id === pendingCheckout.patientId);
+			if (found) return found;
+		}
+		if ((props as any).activePatient) return (props as any).activePatient;
+		if (logicContext?.activePatient) return logicContext.activePatient;
+		const selId = (props as any).selectedPatientId || logicContext?.selectedPatientId;
+		if (selId && dashboard?.patients) {
+			const found = dashboard.patients.find((p: any) => p.id === selId);
+			if (found) return found;
+		}
+		if (pendingCheckout?.patientId) {
+			return {
+				id: pendingCheckout.patientId,
+				fullName: pendingCheckout.patientName || "Пациент",
+				name: pendingCheckout.patientName || "Пациент",
+			};
+		}
+		if ((dashboard as any)?.patient) return (dashboard as any).patient;
+		if (dashboard?.patients && dashboard.patients.length > 0) {
+			return dashboard.patients[0];
+		}
+		return null;
+	}, [documentPatient, pendingCheckout, props, logicContext, dashboard]);
+
+	useEffect(() => {
+		const targetAmount = pendingCheckout?.totalDueRub || effectiveBillingSummary?.totalDueRub;
+		if (targetAmount && targetAmount > 0 && (!paymentAmount || paymentAmount === "" || paymentAmount === "0")) {
+			setPaymentAmount(rubAmountForInput(targetAmount));
+		}
+	}, [pendingCheckout, effectiveBillingSummary, paymentAmount, setPaymentAmount]);
+
+	useEffect(() => {
+		if (effectivePatient?.id && logicContext?.selectedPatientId !== effectivePatient.id) {
+			if (typeof (props as any).setSelectedPatientId === "function") {
+				(props as any).setSelectedPatientId(effectivePatient.id);
+			} else if (typeof logicContext?.setSelectedPatientId === "function") {
+				logicContext.setSelectedPatientId(effectivePatient.id);
+			}
+		}
+	}, [effectivePatient, logicContext, props]);
+
+	const activePatient = effectivePatient;
 
 	const taxDeductionPayments = useMemo(() => {
 		return (activePayments ?? []).map((p: any) => ({
@@ -565,15 +670,57 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 
 	return (
 		<div className="finance-panel border-0 bg-transparent p-0 shadow-none pb-32 max-sm:pb-48 max-w-full min-w-0 overflow-x-hidden" id="finance">
+			{pendingCheckout && (
+				<div
+					className="clinical-checkout-handoff-banner rounded-xl border border-teal-500/40 bg-teal-50/80 dark:bg-teal-950/40 p-2.5 text-xs flex items-center justify-between gap-2 mb-2 sm:mb-3 shadow-xs animate-in fade-in"
+					data-testid="clinical-checkout-handoff-banner"
+				>
+					<div className="flex items-center gap-2 min-w-0">
+						<div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+						<div className="flex items-center gap-1.5 min-w-0">
+							<span className="font-bold text-teal-900 dark:text-teal-100 shrink-0">
+								Счёт по приёму ({pendingCheckout.patientName}):
+							</span>
+							<span className="text-[var(--ink)] font-medium truncate">
+								{(() => {
+									const list = (pendingCheckout.services || []).map((s: any) => s.name || s.title).filter(Boolean);
+									if (list.length === 0) return "Консультация и обследование";
+									if (list.length === 1) return list[0];
+									const count = list.length;
+									const word = count === 1 ? "услуга" : (count >= 2 && count <= 4 ? "услуги" : "услуг");
+									return `${count} ${word}`;
+								})()}
+							</span>
+						</div>
+					</div>
+					<div className="flex items-center gap-2 shrink-0">
+						<span className="font-mono font-extrabold text-teal-800 dark:text-teal-200 text-sm">
+							{money(pendingCheckout.totalDueRub)}
+						</span>
+						<button
+							type="button"
+							onClick={() => {
+								sessionStorage.removeItem("dente_pending_checkout");
+								localStorage.removeItem("dente_pending_checkout");
+								setPendingCheckout(null);
+							}}
+							className="text-[11px] text-[var(--muted)] hover:text-rose-500 underline ml-1 cursor-pointer"
+						>
+							Сбросить
+						</button>
+					</div>
+				</div>
+			)}
+
 			<FinanceToolbar
-				documentPatient={documentPatient}
-				billingSummary={billingSummary}
+				documentPatient={effectivePatient}
+				billingSummary={effectiveBillingSummary}
 				isCashShiftOpen={isCashShiftOpen}
 				onToggleCashShift={() => setIsCashShiftOpen((prev) => !prev)}
 				isShiftOpen={isShiftOpen}
 				onPayDebtQuick={() => {
-					if (billingSummary?.totalDueRub) {
-						setPaymentAmount(rubAmountForInput(billingSummary.totalDueRub));
+					if (effectiveBillingSummary?.totalDueRub) {
+						setPaymentAmount(rubAmountForInput(effectiveBillingSummary.totalDueRub));
 						focusPaymentCapture();
 					}
 				}}
@@ -612,7 +759,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 
 			<FinancePlanningOverview
 				activePaymentsCount={(activePayments ?? []).length}
-				billingSummary={billingSummary}
+				billingSummary={effectiveBillingSummary}
 				money={money}
 				onGoToVisit={onGoToVisit}
 				priorityLabels={scenarioPriorityLabels}
@@ -701,17 +848,17 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 					onPayerRelationshipChange={setPaymentPayerRelationship}
 					onSubmit={onRecordPayment}
 					onTaxDeductionCodeChange={setPaymentTaxDeductionCode}
-					patientContextMessage={paymentPatientContextMessage}
-					patientContextReady={paymentPatientContextReady}
+					patientContextMessage={effectivePatient ? "" : paymentPatientContextMessage}
+					patientContextReady={Boolean(effectivePatient)}
 					patientDefaults={{
-						birthDate: documentPatient?.birthDate ?? null,
-						fullName: documentPatient?.fullName ?? null,
+						birthDate: effectivePatient?.birthDate ?? null,
+						fullName: effectivePatient?.fullName ?? null,
 						identityDocument:
-							documentPatient?.administrativeProfile?.identityDocument ?? null,
+							effectivePatient?.administrativeProfile?.identityDocument ?? null,
 						taxpayerInn:
-							documentPatient?.administrativeProfile?.taxpayerInn ?? null,
+							effectivePatient?.administrativeProfile?.taxpayerInn ?? null,
 					}}
-					patientId={documentPatient?.id ?? null}
+					patientId={effectivePatient?.id ?? null}
 					payerBirthDate={paymentPayerBirthDate}
 					payerFullName={paymentPayerFullName}
 					payerIdentityDocument={paymentPayerIdentityDocument}

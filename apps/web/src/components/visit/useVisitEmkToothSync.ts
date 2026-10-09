@@ -95,10 +95,15 @@ export function useVisitEmkToothSync({
 	updateVisitNoteField,
 }: UseVisitEmkToothSyncParams): void {
 	const lastHydratedPatientRef = useRef<string | null>(null);
+	const visitNoteFormRef = useRef(visitNoteForm);
+	visitNoteFormRef.current = visitNoteForm;
+	const updateVisitNoteFieldRef = useRef(updateVisitNoteField);
+	updateVisitNoteFieldRef.current = updateVisitNoteField;
 
 	// 1. Initial hydration from patient's stored odontogram teeth (always syncs visitToothStateByCode)
 	useEffect(() => {
 		if (!patientId || lastHydratedPatientRef.current === patientId) return;
+		lastHydratedPatientRef.current = patientId;
 
 		const syncStateMap = (teeth: readonly ToothData[]) => {
 			const stateMap: Record<string, VisitToothUiState> = {};
@@ -138,7 +143,7 @@ export function useVisitEmkToothSync({
 				});
 			}
 
-			const currentDiag = String(visitNoteForm?.diagnosis || "").trim();
+			const currentDiag = String(visitNoteFormRef.current?.diagnosis || "").trim();
 			const isDiagBlankOrNorm =
 				!currentDiag ||
 				currentDiag === "Z01.2" ||
@@ -154,28 +159,28 @@ export function useVisitEmkToothSync({
 					})),
 				);
 				if (generated.diagnosisIcd10) {
-					updateVisitNoteField("diagnosis", generated.diagnosisIcd10);
+					updateVisitNoteFieldRef.current("diagnosis", generated.diagnosisIcd10);
 				}
 				if (generated.statusLocalis) {
-					const currentObj = String(visitNoteForm?.objectiveStatus || "");
-					updateVisitNoteField(
+					const currentObj = String(visitNoteFormRef.current?.objectiveStatus || "");
+					updateVisitNoteFieldRef.current(
 						"objectiveStatus",
 						mergeMultiToothObjective(currentObj, generated.statusLocalis),
 					);
 				}
 				if (generated.treatmentDescription) {
-					const currentPlan = String(visitNoteForm?.treatmentPlan || "");
-					updateVisitNoteField(
+					const currentPlan = String(visitNoteFormRef.current?.treatmentPlan || "");
+					updateVisitNoteFieldRef.current(
 						"treatmentPlan",
 						mergeMultiToothTreatmentPlan(currentPlan, generated.treatmentDescription),
 					);
 				}
 				if (generated.anamnesis) {
 					const currentComp = String(
-						visitNoteForm?.complaint || visitNoteForm?.complaints || "",
+						visitNoteFormRef.current?.complaint || visitNoteFormRef.current?.complaints || "",
 					).trim();
 					if (!currentComp || currentComp.includes("активно не предъявляет")) {
-						updateVisitNoteField("complaint", generated.anamnesis);
+						updateVisitNoteFieldRef.current("complaint", generated.anamnesis);
 					}
 				}
 			}
@@ -214,7 +219,7 @@ export function useVisitEmkToothSync({
 				controller.abort();
 			};
 		}
-	}, [patientId, visitNoteForm, updateVisitNoteField]);
+	}, [patientId]);
 
 	// 2. Global event listener for 'dente-odontogram-update' (OdontogramModule <-> VisitEmbeddedOdontogram sync)
 	useEffect(() => {
@@ -414,45 +419,45 @@ export function useVisitEmkToothSync({
 				"";
 
 			if (incomingDiag) {
-				const currentDiag = String(visitNoteForm?.diagnosis || "");
+				const currentDiag = String(visitNoteFormRef.current?.diagnosis || "");
 				const mergedDiag = mergeMultiToothDiagnoses(
 					currentDiag,
 					toothNum ? { toothNumber: toothNum, diagnosis: incomingDiag } : incomingDiag,
 				);
-				updateVisitNoteField("diagnosis", mergedDiag);
+				updateVisitNoteFieldRef.current("diagnosis", mergedDiag);
 			}
 
 			if (incomingObj) {
-				const currentObj = String(visitNoteForm?.objectiveStatus || "");
+				const currentObj = String(visitNoteFormRef.current?.objectiveStatus || "");
 				const mergedObj = mergeMultiToothObjective(currentObj, incomingObj, toothNum);
-				updateVisitNoteField("objectiveStatus", mergedObj);
+				updateVisitNoteFieldRef.current("objectiveStatus", mergedObj);
 			}
 
 			if (incomingPlan) {
-				const currentPlan = String(visitNoteForm?.treatmentPlan || "");
+				const currentPlan = String(visitNoteFormRef.current?.treatmentPlan || "");
 				const mergedPlan = mergeMultiToothTreatmentPlan(currentPlan, incomingPlan, toothNum);
-				updateVisitNoteField("treatmentPlan", mergedPlan);
+				updateVisitNoteFieldRef.current("treatmentPlan", mergedPlan);
 			}
 
 			if (incomingComplaints) {
 				const currentComp = String(
-					visitNoteForm?.complaint || visitNoteForm?.complaints || "",
+					visitNoteFormRef.current?.complaint || visitNoteFormRef.current?.complaints || "",
 				).trim();
 				if (!currentComp || currentComp.includes("активно не предъявляет")) {
-					updateVisitNoteField("complaint", incomingComplaints);
+					updateVisitNoteFieldRef.current("complaint", incomingComplaints);
 				}
 			}
 
 			if (incomingAnamnesis) {
-				const currentAnamnesis = String(visitNoteForm?.anamnesis || "").trim();
+				const currentAnamnesis = String(visitNoteFormRef.current?.anamnesis || "").trim();
 				if (!currentAnamnesis || currentAnamnesis.includes("Соматически здоров")) {
-					updateVisitNoteField("anamnesis", incomingAnamnesis);
+					updateVisitNoteFieldRef.current("anamnesis", incomingAnamnesis);
 				}
 			}
 
 			if (incomingRecs) {
-				const currentRecs = String(visitNoteForm?.recommendations || "");
-				updateVisitNoteField(
+				const currentRecs = String(visitNoteFormRef.current?.recommendations || "");
+				updateVisitNoteFieldRef.current(
 					"recommendations",
 					appendClinicalText(currentRecs, incomingRecs, "\n"),
 				);
@@ -474,5 +479,5 @@ export function useVisitEmkToothSync({
 		return () => {
 			window.removeEventListener("dente-apply-soap-protocol", handleExternalSoapProtocol);
 		};
-	}, [visitNoteForm, updateVisitNoteField]);
+	}, []);
 }

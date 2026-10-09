@@ -1,5 +1,6 @@
 import { Coins, CreditCard, MoreVertical } from "lucide-react";
 import React from "react";
+import { createPortal } from "react-dom";
 import { normalizeRubAmountInput } from "./rubAmountInput";
 
 export type PaymentCheckoutBarProps = {
@@ -33,11 +34,13 @@ export function PaymentCheckoutBar({
 	onOpenSplitModal,
 	onManualCardTerminalSubmit,
 }: PaymentCheckoutBarProps) {
-	return (
+	if (typeof document === "undefined") return null;
+
+	return createPortal(
 		<div
 			id="payment-checkout-bar"
-			className="payment-checkout-bar col-span-full fixed bottom-0 right-0 z-50 bg-[var(--paper-strong,var(--paper))] dark:bg-[var(--paper-strong)] border-t border-[var(--line)] shadow-2xl px-2 sm:px-3 py-2 sm:py-2.5 flex flex-row items-center justify-between gap-1.5 sm:gap-2 max-w-full min-w-0 box-border left-0 md:left-[var(--sidebar-width,200px)] pb-safe overflow-hidden"
-			style={{ position: "fixed", bottom: 0, right: 0, zIndex: 50 }}
+			className="payment-checkout-bar col-span-full fixed bottom-0 right-0 z-50 bg-[var(--paper-strong,var(--paper))]/95 dark:bg-[var(--paper-strong)]/95 backdrop-blur-md border-t border-[var(--line)] shadow-2xl px-2 sm:px-3 py-2 sm:py-2.5 flex flex-row items-center justify-between gap-1.5 sm:gap-2 max-w-full min-w-0 box-border left-0 md:left-[var(--sidebar-width,200px)] pb-safe overflow-hidden"
+			style={{ position: "fixed", bottom: 0, right: 0, zIndex: 9999 }}
 			data-testid="payment-checkout-bar"
 		>
 			<div
@@ -59,8 +62,8 @@ export function PaymentCheckoutBar({
 
 			<div className="payment-actions flex items-center gap-1 sm:gap-1.5 md:gap-2 flex-1 min-w-0 justify-end">
 				<button
-					style={{ minHeight: "44px" }}
-					className="primary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 sm:flex-initial font-bold text-xs sm:text-sm min-w-0 px-2 sm:px-3 whitespace-nowrap shrink-0"
+					style={{ minHeight: "48px" }}
+					className="primary-button min-h-[48px] sm:min-h-9 sm:h-9 flex-1 sm:flex-initial font-bold text-xs sm:text-sm min-w-0 px-2 sm:px-3 whitespace-nowrap shrink-0"
 					type="button"
 					onClick={onPrimarySubmit}
 					aria-busy={isSaving || undefined}
@@ -73,7 +76,7 @@ export function PaymentCheckoutBar({
 				>
 					<CreditCard aria-hidden="true" size={16} className="shrink-0" />{" "}
 					<span className="truncate">
-						{isSaving ? "Записываю..." : isZeroAmount ? "Введите сумму" : "Принять оплату"}
+						{isSaving ? "Записываю..." : "Принять оплату"}
 					</span>
 				</button>
 				<button
@@ -177,6 +180,7 @@ export function PaymentCheckoutBar({
 					)}
 				</div>
 			</div>
-		</div>
+		</div>,
+		document.body,
 	);
 }

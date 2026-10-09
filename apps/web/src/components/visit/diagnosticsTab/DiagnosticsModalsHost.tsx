@@ -1,11 +1,11 @@
 import React from "react";
-import { EMPTY_DIARY } from "../useVisitDiaryLogic";
+import { EMPTY_DIARY } from "../../useVisitDiaryLogic";
 import {
 	type ClinicalPhotoAttachment,
 	generatePhotoProtocolAttachmentsStatement,
-} from "../../lib/clinicalProtocols043";
-import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode";
-import { routeOpenCbctPopout } from "../../utils/runtimeRouter";
+} from "../../../lib/clinicalProtocols043";
+import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
+import { routeOpenCbctPopout } from "../../../utils/runtimeRouter";
 import type { DiagnosticStudy } from "./types";
 
 const ClinicalPhotoProtocolModal = React.lazy(() =>

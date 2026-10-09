@@ -19,34 +19,30 @@ export function EgiszMultipleDiagnosesWidget() {
 	const [items, setItems] = useState<EgiszMultipleDiagnosisItem[]>([]);
 	const [error, setError] = useState<string | null>(null);
 
-	const fetchDiagnoses = useCallback(
-		async function fetchDiagnoses() {
-			setLoading(true);
-			setError(null);
-			try {
-				const headers = appLogic.auth?.denteClinicalReadHeaders?.() ?? {};
-				const res = await fetch("/api/egisz/multiple-diagnoses", { headers });
-				if (!res.ok) {
-					const errJson = await res.json();
-					throw new Error(
-						errJson?.message || errJson?.error || `HTTP ${res.status}`,
-					);
-				}
-				const data = await res.json();
-				setItems(Array.isArray(data) ? data : []);
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			} catch (err: any) {
-				setError(err?.message || "Ошибка загрузки сопутствующих диагнозов");
-			} finally {
-				setLoading(false);
+	const loadDiagnoses = useCallback(async () => {
+		setLoading(true);
+		setError(null);
+		try {
+			const headers = appLogic.auth?.denteClinicalReadHeaders?.() ?? {};
+			const res = await fetch("/api/egisz/multiple-diagnoses", { headers });
+			if (!res.ok) {
+				const errJson = await res.json().catch(() => ({}));
+				throw new Error(
+					errJson?.message || errJson?.error || `HTTP ${res.status}`,
+				);
 			}
-		},
-		[appLogic.auth],
-	);
+			const data = await res.json();
+			setItems(Array.isArray(data) ? data : []);
+		} catch (err: any) {
+			setError(err?.message || "Ошибка загрузки сопутствующих диагнозов");
+		} finally {
+			setLoading(false);
+		}
+	}, []);
 
 	useEffect(() => {
-		fetchDiagnoses();
-	}, [fetchDiagnoses]);
+		loadDiagnoses();
+	}, [loadDiagnoses]);
 
 	return (
 		<div className="rounded-xl border border-[var(--line)] p-3.5 bg-[var(--paper-soft)] space-y-2 text-xs">
@@ -58,7 +54,7 @@ export function EgiszMultipleDiagnosesWidget() {
 				<button
 					type="button"
 					disabled={loading}
-					onClick={fetchDiagnoses}
+					onClick={loadDiagnoses}
 					className="p-1 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-strong)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
 					title="Обновить сопутствующие диагнозы"
 				>

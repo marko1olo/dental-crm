@@ -25,7 +25,6 @@ import { VisitSpecialtyFocus } from "./VisitSpecialtyFocus";
 import { peekNoteFormForeignVisit } from "./visitIdentity";
 import { EmkToolbar, appendClinicalText } from "./emk";
 import {
-	VisitEmkOdontogramBar,
 	VisitEmkModals,
 	VisitEmkCompletionSection,
 	VisitEmkCanvas,
@@ -423,17 +422,6 @@ export function VisitEmkTab() {
 				</div>
 			)}
 
-			{/* Встроенная одонтограмма приёма */}
-			<div className="mt-2.5">
-				<VisitEmkOdontogramBar
-					activePatient={activePatient}
-					visitNoteForm={visitNoteForm}
-					updateVisitNoteField={updateVisitNoteField}
-					effectiveActiveTooth={effectiveActiveTooth}
-					visitToothStateByCode={visitToothStateByCode}
-					draft={draft}
-				/>
-			</div>
 
 			{/* Основной клинический канвас */}
 			<VisitEmkCanvas

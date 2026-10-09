@@ -14,8 +14,8 @@ import {
 	buildStageMedicalDiaryText,
 } from "../visitPlanStageHandoff";
 import { calculateActivePatientCriticalBadges } from "./visitCriticalBadges";
+import { executeApplySomaticNormAutonomy } from "./visitViewAutonomyActions";
 import {
-	executeApplySomaticNormAutonomy,
 	executeFastPrint043u,
 	executeFastPrintInformedConsent,
 	executeFastPrintCompletedAct,

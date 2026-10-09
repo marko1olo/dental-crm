@@ -153,13 +153,13 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
     return billingItems.reduce((sum, item) => sum + item.priceRub * item.quantity, 0);
   }, [billingItems]);
 
-  // Steps definition for 5-segment bar
+  // Steps definition for 5-segment bar (Apple HIG compact)
   const stepItems: Array<{ id: MobileChairsideStep; label: string; number: number }> = [
     { id: "complaints", label: "Жалобы", number: 1 },
     { id: "exam", label: "Осмотр", number: 2 },
     { id: "diagnosis", label: "Диагноз", number: 3 },
-    { id: "treatment", label: "Лечение", number: 4 },
-    { id: "checkout", label: "Итог и Чек", number: 5 },
+    { id: "treatment", label: "План", number: 4 },
+    { id: "checkout", label: "Чек", number: 5 },
   ];
 
   // Callback to take treatment plan stage into active visit

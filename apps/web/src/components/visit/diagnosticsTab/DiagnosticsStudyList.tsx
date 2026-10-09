@@ -1,6 +1,6 @@
 import { Camera, Scan } from "lucide-react";
 import React from "react";
-import type { ClinicalPhotoAttachment } from "../../lib/clinicalProtocols043";
+import type { ClinicalPhotoAttachment } from "../../../lib/clinicalProtocols043";
 import { DiagnosticsPhotoCard, DiagnosticsStudyCard } from "./DiagnosticsStudyCard";
 import type { DiagnosticStudy } from "./types";
 

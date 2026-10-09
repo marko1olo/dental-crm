@@ -418,10 +418,12 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 					somaticParts.push(trimLabels[pregTrim] || "2-й триместр");
 				}
 
-				const formattedSomatic =
+				const cleanSomatic = (
 					somaticParts.length > 0
 						? somaticParts.join(", ")
-						: "Соматически здоров. Норма.";
+						: "Соматически здоров. Норма"
+				).trim().replace(/\.+$/, "");
+				const formattedSomatic = cleanSomatic ? `${cleanSomatic}.` : "Соматически здоров. Норма.";
 
 				// 1. Прямое обновление в активном пациенте
 				if (curPat) {
@@ -442,15 +444,19 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 				// 2. Формируем клинический текст анамнеза для Формы 043/у
 				const parts: string[] = [];
 				if (complaintsList.length > 0) {
-					parts.push(`Жалобы: ${complaintsList.join(", ")}.`);
+					const cleanComplaints = complaintsList.join(", ").trim().replace(/\.+$/, "");
+					if (cleanComplaints) parts.push(`Жалобы: ${cleanComplaints}.`);
 				}
-				parts.push(`Аллергоанамнез: ${formattedAllergies}.`);
-				parts.push(`Соматический статус: ${formattedSomatic}.`);
+				const cleanAllergies = formattedAllergies.trim().replace(/\.+$/, "");
+				parts.push(`Аллергоанамнез: ${cleanAllergies}.`);
+				parts.push(`Соматический статус: ${cleanSomatic}.`);
 				if (historyList.length > 0) {
-					parts.push(`Стоматологический анамнез: ${historyList.join(", ")}.`);
+					const cleanHistory = historyList.join(", ").trim().replace(/\.+$/, "");
+					if (cleanHistory) parts.push(`Стоматологический анамнез: ${cleanHistory}.`);
 				}
 				if (notesText.trim()) {
-					parts.push(`Примечания: ${notesText.trim()}`);
+					const cleanNotes = notesText.trim().replace(/\.+$/, "");
+					if (cleanNotes) parts.push(`Примечания: ${cleanNotes}.`);
 				}
 				const fullAnamnesisText = parts.join(" ");
 
@@ -629,26 +635,31 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 				? selectedHistory
 				: ["Опыт анестезии положительный (без осложнений)"];
 		const effCustom =
-			customNotes.trim() ||
-			"Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания со слов отрицает. Физиологическая норма.";
+			customNotes.trim().replace(/\.+$/, "") ||
+			"Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания со слов отрицает. Физиологическая норма";
 
 		const allergyEntries = Object.entries(selectedAllergies).map(
 			([allergen, reaction]) => `${allergen} (${reaction})`,
 		);
-		const formattedAllergies =
+		const formattedAllergies = (
 			allergyEntries.length > 0
 				? allergyEntries.join(", ")
-				: "Аллергии не выявлены";
+				: "Аллергии не выявлены"
+		).trim().replace(/\.+$/, "");
 
 		const parts: string[] = [];
-		parts.push(`Жалобы: ${effComplaints.join(", ")}.`);
+		const cleanComplaints = effComplaints.join(", ").trim().replace(/\.+$/, "");
+		if (cleanComplaints) parts.push(`Жалобы: ${cleanComplaints}.`);
 		parts.push(`Аллергологический статус: ${formattedAllergies}.`);
 		if (selectedRisks.length > 0) {
-			parts.push(`Соматические факторы риска: ${selectedRisks.join(", ")}.`);
+			const cleanRisks = selectedRisks.join(", ").trim().replace(/\.+$/, "");
+			if (cleanRisks) parts.push(`Соматические факторы риска: ${cleanRisks}.`);
 		}
-		parts.push(`Стоматологический анамнез: ${effHistory.join(", ")}.`);
+		const cleanHistory = effHistory.join(", ").trim().replace(/\.+$/, "");
+		if (cleanHistory) parts.push(`Стоматологический анамнез: ${cleanHistory}.`);
 		if (effCustom) {
-			parts.push(effCustom);
+			const cleanCustom = effCustom.trim().replace(/\.+$/, "");
+			if (cleanCustom) parts.push(`${cleanCustom}.`);
 		}
 
 		const fullAnamnesis = parts.join(" ");

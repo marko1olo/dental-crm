@@ -1,6 +1,6 @@
 import { Camera, FolderInput, Image as ImageIcon, Scan } from "lucide-react";
 import React from "react";
-import { VisiographAnalyzer } from "../imaging/VisiographAnalyzer";
+import { VisiographAnalyzer } from "../../imaging/VisiographAnalyzer";
 
 export interface DiagnosticsRvgSectionProps {
 	isVisible: boolean;

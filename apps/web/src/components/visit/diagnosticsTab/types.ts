@@ -1,4 +1,4 @@
-import type { ClinicalPhotoAttachment } from "../../lib/clinicalProtocols043";
+import type { ClinicalPhotoAttachment } from "../../../lib/clinicalProtocols043";
 
 export type DiagnosticTabMode = "rvg" | "photo" | "cbct";
 

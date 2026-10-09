@@ -1,8 +1,8 @@
 import { Activity, ExternalLink, Image as ImageIcon, Receipt, Scan } from "lucide-react";
 import React from "react";
-import { addCbctToFinanceAndPlan } from "../radiology/ctImplantIntegrationBridge";
-import { routeOpenCbctPopout } from "../../utils/runtimeRouter";
-import { showToast } from "../GlobalToast";
+import { addCbctToFinanceAndPlan } from "../../radiology/ctImplantIntegrationBridge";
+import { routeOpenCbctPopout } from "../../../utils/runtimeRouter";
+import { showToast } from "../../GlobalToast";
 
 export interface DiagnosticsCbctSectionProps {
 	isVisible: boolean;

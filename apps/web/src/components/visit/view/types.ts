@@ -21,10 +21,10 @@ export interface VisitViewHeaderProps {
 	// biome-ignore lint/suspicious/noExplicitAny: doctor entity
 	activeDoctor?: any;
 	// biome-ignore lint/suspicious/noExplicitAny: badges list
-	activePatientCriticalBadges: any[];
+	activePatientCriticalBadges: readonly any[];
 	consolidatedAllergyChip: string | null;
-	activePeers: any[];
-	summaryText: string;
+	activePeers: readonly any[];
+	summaryText: string | null;
 	// biome-ignore lint/suspicious/noExplicitAny: note form
 	visitNoteForm?: any;
 	updateVisitNoteField?: (field: string, value: string) => void;

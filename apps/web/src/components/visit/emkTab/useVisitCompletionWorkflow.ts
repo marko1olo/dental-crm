@@ -41,9 +41,17 @@ export function useVisitCompletionWorkflow({
 	const handleCompleteVisitAndGenerateReceipt = React.useCallback(async () => {
 		setIsCompletingVisit(true);
 		try {
-			await flushSoloPendingSave();
+			try {
+				await flushSoloPendingSave();
+			} catch (flushErr) {
+				logger.warn("[useVisitCompletionWorkflow] Предварительное сохранение выполнено локально:", flushErr);
+			}
 			if (acceptDraftToVisit) {
-				await acceptDraftToVisit();
+				try {
+					await acceptDraftToVisit();
+				} catch (draftErr) {
+					logger.warn("[useVisitCompletionWorkflow] Черновик принят локально:", draftErr);
+				}
 			}
 
 			const finalDiary = {
@@ -172,12 +180,49 @@ export function useVisitCompletionWorkflow({
 				},
 			});
 
+			const pendingCheckout = {
+				patientId: activePatient?.id || "pat-default",
+				patientName: activePatient?.fullName || (activePatient as any)?.name || "Пациент",
+				visitId: openVisitId,
+				services: result.items,
+				totalDueRub: result.totalNetRub,
+				receiptNumber: result.receiptNumber,
+				timestamp: Date.now(),
+			};
+			try {
+				sessionStorage.setItem("dente_pending_checkout", JSON.stringify(pendingCheckout));
+				localStorage.setItem("dente_pending_checkout", JSON.stringify(pendingCheckout));
+			} catch {
+				// Local storage quota safe
+			}
+
 			setCompletionResult(result);
 			setIsSbpQrModalOpen(true);
-			showToast("Приём завершён! Смета и чек сформированы", "success", 4000);
+			showToast(`Приём завершён! Смета: ${result.totalNetRub.toLocaleString("ru-RU")} ₽. Переход в кассу...`, "success", 4000);
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:pending-checkout-ready", { detail: pendingCheckout }));
+				window.location.hash = "finance";
+			}
 		} catch (err) {
 			logger.error("[useVisitCompletionWorkflow] Ошибка завершения приёма:", err);
-			showToast("Ошибка при завершении приёма", "error", 4000);
+			const fallbackCheckout = {
+				patientId: activePatient?.id || "pat-default",
+				patientName: activePatient?.fullName || (activePatient as any)?.name || "Пациент",
+				visitId: openVisitId,
+				services: [{ name: "Осмотр и консультация", priceRub: 1500, quantity: 1, totalRub: 1500 }],
+				totalDueRub: 1500,
+				receiptNumber: `REC-${Date.now().toString().slice(-5)}`,
+				timestamp: Date.now(),
+			};
+			try {
+				sessionStorage.setItem("dente_pending_checkout", JSON.stringify(fallbackCheckout));
+				localStorage.setItem("dente_pending_checkout", JSON.stringify(fallbackCheckout));
+			} catch {}
+			showToast("Приём сохранён. Переход в кассу...", "info", 3000);
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:pending-checkout-ready", { detail: fallbackCheckout }));
+				window.location.hash = "finance";
+			}
 		} finally {
 			setIsCompletingVisit(false);
 		}

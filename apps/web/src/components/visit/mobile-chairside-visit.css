@@ -95,8 +95,6 @@
   color: var(--muted, #64748b);
   margin-top: 1px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .mobile-chairside-timer-wrap {
@@ -113,6 +111,8 @@
   align-items: center;
   gap: 3px;
   min-height: 20px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .mobile-chairside-phone-link:active {
@@ -185,14 +185,14 @@
 }
 
 .mobile-chairside-icon-btn {
-  min-width: 40px;
-  min-height: 40px;
-  width: 40px;
-  height: 40px;
+  min-width: 36px;
+  min-height: 36px;
+  width: 36px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--paper-soft, #f1f5f9);
   color: var(--ink, #0f172a);
   border: 1px solid var(--line-subtle, #e2e8f0);
@@ -219,7 +219,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 6px;
+  gap: 5px;
   width: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
@@ -234,16 +234,16 @@
 }
 
 .mobile-chairside-step-chip {
-  min-height: 38px;
-  padding: 6px 12px;
-  border-radius: 12px;
-  font-size: 12px;
+  min-height: 34px;
+  padding: 5px 9px;
+  border-radius: 10px;
+  font-size: 11.5px;
   font-weight: 600;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   border: 1px solid var(--line, #e2e8f0);
   background: var(--paper, #ffffff);
   color: var(--muted, #64748b);

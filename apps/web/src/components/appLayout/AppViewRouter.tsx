@@ -8,6 +8,8 @@ import { WorkspaceRouteErrorBoundary } from "../../WorkspaceRouteErrorBoundary";
 import { ClinicalErrorBoundary } from "../common/ClinicalErrorBoundary";
 import { loadStoredTeethData } from "../odontogram/odontogramStorage";
 import { usePerspectiveStore } from "../../store/perspectiveStore";
+import { VisitView } from "../../VisitView";
+import { FinanceView } from "../../FinanceView";
 
 const ShiftView = lazyWithRetry(() =>
 	import("../../ShiftView").then((module) => ({ default: module.ShiftView })),
@@ -24,9 +26,7 @@ const ScheduleView = lazyWithRetry(() =>
 const PatientsView = lazyWithRetry(() =>
 	import("../../PatientsView").then((module) => ({ default: module.PatientsView })),
 );
-const VisitView = lazyWithRetry(() =>
-	import("../../VisitView").then((module) => ({ default: module.VisitView })),
-);
+
 const TreatmentPlanModule = lazyWithRetry(() =>
 	import("../treatment-plans/TreatmentPlanModule").then((module) => ({
 		default: module.TreatmentPlanModule,
@@ -42,9 +42,7 @@ const DocumentsView = lazyWithRetry(() =>
 		default: module.DocumentsView,
 	})),
 );
-const FinanceView = lazyWithRetry(() =>
-	import("../../FinanceView").then((module) => ({ default: module.FinanceView })),
-);
+
 const CommunicationsView = lazyWithRetry(() =>
 	import("../../CommunicationsView").then((module) => ({
 		default: module.CommunicationsView,
@@ -84,6 +82,11 @@ const LeadsKanbanView = lazyWithRetry(() =>
 const LabOrdersPage = lazyWithRetry(() =>
 	import("../../pages/LabOrdersPage").then((module) => ({
 		default: module.LabOrdersPage,
+	})),
+);
+const TreatmentPipeline = lazyWithRetry(() =>
+	import("../../pages/coordinator/TreatmentPipeline").then((module) => ({
+		default: module.TreatmentPipeline,
 	})),
 );
 
@@ -308,12 +311,10 @@ export function AppViewRouter({
 										aria-label="Текущий прием"
 										aria-busy="true"
 									>
-										<div className="panel-heading">
-											<h2>Текущий прием</h2>
-											<span className="status-pill status-planned">
-												загрузка
-											</span>
-										</div>
+										<AppLoadingState
+											title="Загрузка клинического приёма..."
+											hint="Подготовка карты и данных пациента"
+										/>
 									</section>
 								}
 							>
@@ -379,12 +380,10 @@ export function AppViewRouter({
 										aria-label="Финансы"
 										aria-busy="true"
 									>
-										<div className="panel-heading">
-											<h2>Оплаты, план лечения и вычет</h2>
-											<span className="status-pill status-planned">
-												загрузка
-											</span>
-										</div>
+										<AppLoadingState
+											title="Загрузка кассы и оплат..."
+											hint="Синхронизация счетов и фискальных чеков"
+										/>
 									</section>
 								}
 							>
@@ -582,6 +581,20 @@ export function AppViewRouter({
 						}
 					>
 						<LabOrdersPage />
+					</Suspense>
+				</WorkspaceRouteErrorBoundary>
+			) : null}
+			{currentView === "pipeline" ? (
+				<WorkspaceRouteErrorBoundary
+					view="pipeline"
+					label={viewLabels.pipeline}
+					panelClassName="panel pipeline-panel p-2 sm:p-4 overflow-hidden max-w-full"
+					panelId="pipeline"
+				>
+					<Suspense
+						fallback={<AppLoadingState message="Загрузка воронки планов лечения" />}
+					>
+						<TreatmentPipeline />
 					</Suspense>
 				</WorkspaceRouteErrorBoundary>
 			) : null}
