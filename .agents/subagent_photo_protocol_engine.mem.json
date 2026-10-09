@@ -1,0 +1,64 @@
+{
+  "timestamp": "2026-10-09T18:38:00Z",
+  "subagent": "photo_protocol_engine_decomposer",
+  "role": "Red Team Inquisitor & L3 Photo Protocol Engine Decomposer",
+  "targetMonolith": "packages/shared/src/diagnostics/photoProtocolEngine.ts",
+  "originalLines": 1154,
+  "status": "COMPLETED",
+  "allGatesPassed": true,
+  "decomposedFiles": [
+    {
+      "path": "packages/shared/src/diagnostics/photoProtocol/types.ts",
+      "layer": 0,
+      "description": "Layer 0: Pure Types, Schemas, Enums & DTO contracts",
+      "lines": 246
+    },
+    {
+      "path": "packages/shared/src/diagnostics/photoProtocol/shotAngleClassifier.ts",
+      "layer": 1,
+      "description": "Layer 1: Canonical 8-Angle Registry, Metadata, Labels & Angle Classification",
+      "lines": 264
+    },
+    {
+      "path": "packages/shared/src/diagnostics/photoProtocol/photoColorCalibration.ts",
+      "layer": 1,
+      "description": "Layer 1: Colorimetry, White Balance, 18% Gray Card & Guidelines Math",
+      "lines": 112
+    },
+    {
+      "path": "packages/shared/src/diagnostics/photoProtocol/beforeAfterComparator.ts",
+      "layer": 2,
+      "description": "Layer 2: Session Mutations, Slot Updates & Before/After Comparison Engine",
+      "lines": 262
+    },
+    {
+      "path": "packages/shared/src/diagnostics/photoProtocol/photoPresentationExporter.ts",
+      "layer": 2,
+      "description": "Layer 2: Clinical Report, HTML Presentation & ZTL Lab Order Exporter",
+      "lines": 553
+    },
+    {
+      "path": "packages/shared/src/diagnostics/photoProtocol/index.ts",
+      "layer": 5,
+      "description": "Layer 5: Barrel re-exporting all submodules",
+      "lines": 15
+    },
+    {
+      "path": "packages/shared/src/diagnostics/photoProtocolEngine.ts",
+      "layer": 5,
+      "description": "Layer 5: Canonical Facade preserving 100% backward compatibility (<= 50 lines)",
+      "lines": 20
+    }
+  ],
+  "gatesSummary": {
+    "gate1_line_count_budget": "PASSED (All files strictly <= 800 lines, facade 20 lines)",
+    "gate2_ast_export_parity": "PASSED (100% baseline exports preserved: 42 of 42 baseline preserved, total 54 exports)",
+    "gate3_test_anchor_parity": "PASSED (0 test anchors lost)",
+    "gate4_utf8_hygiene": "PASSED (Clean UTF-8 without BOM)",
+    "gate5_acyclic_dag_madge": "PASSED (0 circular dependencies, Acyclic graph confirmed)"
+  },
+  "testExecution": {
+    "unitTests": "packages/shared/src/tests/photoProtocolEngine.test.ts (22 tests passing, 0 failing)",
+    "integrationTests": "apps/web/src/tests/cbctPopoutStudioIntegration.test.ts (16 tests passing, 0 failing)"
+  }
+}

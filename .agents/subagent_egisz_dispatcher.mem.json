@@ -1,0 +1,53 @@
+{
+  "agent": "subagent_egisz_dispatcher",
+  "status": "completed",
+  "started_at": "2026-10-09T22:29:10Z",
+  "completed_at": "2026-10-09T22:51:30Z",
+  "target_monolith": "apps/api/src/services/egisz/EgiszOutboxDispatcher.ts",
+  "decomposed_directory": "apps/api/src/services/egisz/dispatcher/",
+  "completed_steps": [
+    "Read and absorbed SKILL.md (/decomposer), core.md, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md",
+    "Analyzed 1,148-line monolith EgiszOutboxDispatcher.ts and mapped 8 baseline public AST exports",
+    "Created Layer 0 types.ts (123 lines): pure interfaces and DTOs (EgiszOutboxItem, OutboxProcessResult, EnqueueSignedPackageInput/Result, EgiszQueueHealthSummary, CreateEgiszRemdReceiptParams, SemdXmlValidationResult, CryptoProSignatureVerificationResult)",
+    "Created Layer 1 semdXmlValidator.ts (141 lines): extractSnils, isValidSnilsChecksum, validateSemdXml with statutory CDA R2/R3 section checks, sanitizeXmlString",
+    "Created Layer 1 cryptoProSigner.ts (126 lines): verifyCryptoProSignature with PKCS#7 Base64 validation and GOST OID algorithms, validateDoctorSignature enforcing Zero-Mock FZ-63 compliance",
+    "Created Layer 2 egiszGatewayClient.ts (110 lines): calculateEgiszRetryDelayMs monotonic exponential backoff curves, createEgiszRemdReceipt statutory receipt factory, EgiszGatewayClient wrapper",
+    "Created Layer 2 receiptManager.ts (132 lines): getReceiptByOutboxId and getReceiptByVisitId safe UUID retrieval and receipt hydration",
+    "Created Layer 2 statusSyncer.ts (193 lines): syncPendingStatuses polling gateway transaction statuses and syncing egisz_outbox & egisz_logs with audit logs",
+    "Created Layer 2 outboxQueueProcessor.ts (755 lines): enqueueSignedPackage, processPendingQueue with SELECT ... FOR UPDATE SKIP LOCKED pattern, stale lock recovery, dead-letter queue escalation, audit log chaining",
+    "Created Layer 5 index.ts (16 lines): barrel re-exporting all subsystem members",
+    "Transformed EgiszOutboxDispatcher.ts into canonical thin facade (36 lines, <= 50 lines) preserving 100% backwards compatibility and all 25 AST exports",
+    "Validated with verify-decomposition-health.cjs: all 5 gates PASSED (Gate 1 lines <= 800, Gate 2 AST export parity, Gate 3 test anchors, Gate 4 UTF-8 encoding, Gate 5 madge acyclic graph)",
+    "Authored and executed comprehensive test suite apps/api/src/tests/egiszOutboxDispatcher.test.ts (17 tests, 100% passing)",
+    "Executed full EGISZ test suite (egiszRegistrationReceipt, egiszQueueWorker, egiszOutboxPersistence, egiszOutboxDispatcher): 39 tests passing, 0 failing (Exit Code 0)"
+  ],
+  "gates_status": {
+    "gate_1_line_budget": "PASSED (all files <= 800 lines; facade 36 lines <= 50 lines)",
+    "gate_2_ast_export_parity": "PASSED (100% of baseline exports preserved: 25 exports in facade)",
+    "gate_3_test_anchors": "PASSED (0 lost anchors)",
+    "gate_4_utf8_encoding": "PASSED (clean UTF-8 across workspace)",
+    "gate_5_acyclic_dag": "PASSED (0 circular dependencies via madge)"
+  },
+  "modules_breakdown": [
+    { "file": "apps/api/src/services/egisz/EgiszOutboxDispatcher.ts", "layer": "Layer 5 (Facade)", "lines": 36 },
+    { "file": "apps/api/src/services/egisz/dispatcher/types.ts", "layer": "Layer 0 (Types)", "lines": 123 },
+    { "file": "apps/api/src/services/egisz/dispatcher/semdXmlValidator.ts", "layer": "Layer 1 (Domain XML Validator)", "lines": 141 },
+    { "file": "apps/api/src/services/egisz/dispatcher/cryptoProSigner.ts", "layer": "Layer 1 (CryptoPro Signer)", "lines": 126 },
+    { "file": "apps/api/src/services/egisz/dispatcher/egiszGatewayClient.ts", "layer": "Layer 2 (Gateway Client & Backoff)", "lines": 110 },
+    { "file": "apps/api/src/services/egisz/dispatcher/receiptManager.ts", "layer": "Layer 2 (Receipt Manager)", "lines": 132 },
+    { "file": "apps/api/src/services/egisz/dispatcher/statusSyncer.ts", "layer": "Layer 2 (Status Syncer)", "lines": 193 },
+    { "file": "apps/api/src/services/egisz/dispatcher/outboxQueueProcessor.ts", "layer": "Layer 2 (Queue Processor)", "lines": 755 },
+    { "file": "apps/api/src/services/egisz/dispatcher/index.ts", "layer": "Layer 5 (Barrel)", "lines": 16 }
+  ],
+  "tests_summary": {
+    "total_tests": 39,
+    "passed": 39,
+    "failed": 0,
+    "suites": [
+      "apps/api/src/tests/egiszOutboxDispatcher.test.ts (17 pass)",
+      "apps/api/src/services/egisz/__tests__/egiszRegistrationReceipt.test.ts (15 pass)",
+      "apps/api/src/services/egisz/__tests__/egiszQueueWorker.test.ts (4 pass)",
+      "apps/api/src/services/egisz/__tests__/egiszOutboxPersistence.test.ts (3 pass)"
+    ]
+  }
+}

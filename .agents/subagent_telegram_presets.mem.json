@@ -1,0 +1,99 @@
+{
+  "taskId": "telegram-bot-presets-decomposition",
+  "role": "Red Team Inquisitor & L3 Telegram Bot Presets Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T18:40:00Z",
+  "originalMonolith": {
+    "file": "apps/api/src/services/telegram/TelegramBotPresets.ts",
+    "originalLines": 1068
+  },
+  "canonicalFacade": {
+    "file": "apps/api/src/services/telegram/TelegramBotPresets.ts",
+    "lines": 15,
+    "limit": 50,
+    "status": "PASSED"
+  },
+  "decomposedModules": [
+    {
+      "layer": 0,
+      "name": "types.ts",
+      "path": "apps/api/src/services/telegram/presets/types.ts",
+      "lines": 117,
+      "role": "Layer 0: Types, DTOs, interfaces BotPresetConfig, scenarios, triggers, and re-exports of @dental/shared"
+    },
+    {
+      "layer": 1,
+      "name": "specialtyBotScenarios.ts",
+      "path": "apps/api/src/services/telegram/presets/specialtyBotScenarios.ts",
+      "lines": 691,
+      "role": "Layer 1: Specialty clinical bot scenarios (premium implants/All-on-4, family & pediatric, orthodontics, solo doctor, and full catalog)"
+    },
+    {
+      "layer": 1,
+      "name": "clinicalFaqPresets.ts",
+      "path": "apps/api/src/services/telegram/presets/clinicalFaqPresets.ts",
+      "lines": 369,
+      "role": "Layer 1: Clinical knowledge base, universal clinic preset, triage symptom evaluation, Day 1 & Day 3 post-op survey and BotFather guide"
+    },
+    {
+      "layer": 2,
+      "name": "menuLayoutBuilder.ts",
+      "path": "apps/api/src/services/telegram/presets/menuLayoutBuilder.ts",
+      "lines": 90,
+      "role": "Layer 2: In-place menu navigation constructor, submenus, back buttons, and zero chat landfill keyboard layout builder"
+    },
+    {
+      "layer": 2,
+      "name": "presetApplierService.ts",
+      "path": "apps/api/src/services/telegram/presets/presetApplierService.ts",
+      "lines": 133,
+      "role": "Layer 2: Preset application to bot instance in PostgreSQL with tenant isolation and TelegramBotPresetsEngine coordinator class"
+    },
+    {
+      "layer": 5,
+      "name": "index.ts",
+      "path": "apps/api/src/services/telegram/presets/index.ts",
+      "lines": 13,
+      "role": "Layer 5: Clean barrel re-exporting all preset entities, scenarios, and services"
+    }
+  ],
+  "gatesAudit": {
+    "gate1_line_count": {
+      "status": "PASSED",
+      "maxFileLines": 691,
+      "ceiling": 800
+    },
+    "gate2_ast_export_parity": {
+      "status": "PASSED",
+      "parity": "100%",
+      "baselineExports": 37,
+      "facadeExports": 37
+    },
+    "gate3_test_anchors": {
+      "status": "PASSED",
+      "parity": "100%"
+    },
+    "gate4_utf8_hygiene": {
+      "status": "PASSED",
+      "encoding": "UTF-8 without BOM"
+    },
+    "gate5_dag_acyclic": {
+      "status": "PASSED",
+      "circularDependencies": 0
+    }
+  },
+  "testExecution": {
+    "engineTests": {
+      "command": "node --max-old-space-size=4096 --import tsx --test apps/api/src/tests/telegramBotPresetsEngine.test.ts",
+      "exitCode": 0,
+      "passed": 23,
+      "failed": 0
+    },
+    "integratedTelegramTests": {
+      "command": "node --max-old-space-size=4096 --import tsx --test apps/api/src/tests/telegramBotHostingService.test.ts apps/api/src/tests/telegramInteractiveTriage.test.ts apps/api/src/tests/telegramPostOpEmergency.test.ts",
+      "exitCode": 0,
+      "passed": 50,
+      "failed": 0
+    }
+  }
+}

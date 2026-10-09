@@ -1,0 +1,112 @@
+{
+  "timestamp": "2026-10-09T22:39:15Z",
+  "role": "L3 Mobile Communications Messenger Decomposer",
+  "targetMonolith": "apps/web/src/components/communications/MobileCommunicationsMessenger.tsx",
+  "originalLines": 1136,
+  "facadeLines": 29,
+  "decomposedDirectory": "apps/web/src/components/communications/mobileMessenger/",
+  "modules": [
+    {
+      "file": "apps/web/src/components/communications/mobileMessenger/types.ts",
+      "layer": "Layer 0 (Types & DTOs)",
+      "lines": 55,
+      "purpose": "MobilePatientDialogSummary, MobileChatMessageItem, MobileCommunicationsMessengerProps, channel and section types"
+    },
+    {
+      "file": "apps/web/src/components/communications/mobileMessenger/utils.tsx",
+      "layer": "Layer 1 (Pure Utils)",
+      "lines": 29,
+      "purpose": "formatLastMessageTime, renderChannelIcon pure helpers"
+    },
+    {
+      "file": "apps/web/src/components/communications/mobileMessenger/MessengerHeaderBar.tsx",
+      "layer": "Layer 1 (Header Bar)",
+      "lines": 113,
+      "purpose": "Top navigation bar, telemetry status dot, search toggle, schedule CTA, Apple segmented tab bar"
+    },
+    {
+      "file": "apps/web/src/components/communications/mobileMessenger/ChatTopBar.tsx",
+      "layer": "Layer 1 (Chat Top Bar)",
+      "lines": 96,
+      "purpose": "Fullscreen chat patient header, avatar, direct phone call trigger, bot takeover action"
+    },
+    {
+      "file": "apps/web/src/components/communications/mobileMessenger/MessageBubbleList.tsx",
+      "layer": "Layer 1 (Message Timeline)",
+      "lines": 94,
+      "purpose": "Message bubbles timeline with delivery status checks, date separator, bot takeover banner"
+    },
+    {
+      "file": "apps/web/src/components/communications/mobileMessenger/QuickReplyChipsBar.tsx",
+      "layer": "Layer 2 (Quick Templates)",
+      "lines": 35,
+      "purpose": "Horizontal scroller with quick clinical and administrative reply template chips"
+    },
+    {
+      "file": "apps/web/src/components/communications/mobileMessenger/MessageInputFloatingBar.tsx",
+      "layer": "Layer 2 (Input Floating Bar)",
+      "lines": 127,
+      "purpose": "Bottom Natural Thumb Zone input bar with channel toggle, file attachment preview, SmartMicrophoneButton dictation, send CTA"
+    },
+    {
+      "file": "apps/web/src/components/communications/mobileMessenger/DialogsFeedView.tsx",
+      "layer": "Layer 2 (Dialogs Feed)",
+      "lines": 159,
+      "purpose": "Search bar, channel filter chips, iOS inset grouped cards list of patient dialogs"
+    },
+    {
+      "file": "apps/web/src/components/communications/mobileMessenger/FullscreenChatView.tsx",
+      "layer": "Layer 3 (Chat Screen View)",
+      "lines": 90,
+      "purpose": "Fullscreen iMessage / Telegram style chat room coordinator"
+    },
+    {
+      "file": "apps/web/src/components/communications/mobileMessenger/useMobileMessengerLogic.ts",
+      "layer": "Layer 3 (Custom Hook Logic)",
+      "lines": 484,
+      "purpose": "State management, optimistic messaging, /api/communications/inbox network queries, bot takeover handler, template expansion"
+    },
+    {
+      "file": "apps/web/src/components/communications/mobileMessenger/MobileMessengerView.tsx",
+      "layer": "Layer 4 (Presentation Coordinator)",
+      "lines": 199,
+      "purpose": "Main mobile presentation coordinator for Dialogs, Tasks queue, Journal log, Bot Desk, and Fullscreen Chat"
+    },
+    {
+      "file": "apps/web/src/components/communications/mobileMessenger/index.ts",
+      "layer": "Layer 5 (Barrel)",
+      "lines": 12,
+      "purpose": "Acyclic barrel re-exporting public types and components"
+    },
+    {
+      "file": "apps/web/src/components/communications/MobileCommunicationsMessenger.tsx",
+      "layer": "Layer 5 (Canonical Facade)",
+      "lines": 29,
+      "purpose": "Canonical facade (<=150 lines), preserving 100% export parity and backward compatibility"
+    }
+  ],
+  "gates": {
+    "gate1_line_count_budget": "PASSED (all files <= 800 lines, facade 29 lines <= 150)",
+    "gate2_ast_export_parity": "PASSED (4/4 exports preserved)",
+    "gate3_test_anchor_parity": "PASSED (27/27 test anchors preserved: 17 data-testid, 10 aria-label)",
+    "gate4_utf8_hygiene": "PASSED (clean UTF-8 across workspace)",
+    "gate5_acyclic_dag": "PASSED (0 circular dependencies, madge verified)"
+  },
+  "tests": [
+    {
+      "command": "node scripts/verify-decomposition-health.cjs apps/web/src/components/communications/MobileCommunicationsMessenger.tsx apps/web/src/components/communications/MobileCommunicationsMessenger.tsx apps/web/src/components/communications/mobileMessenger/",
+      "exitCode": 0,
+      "status": "PASSED"
+    },
+    {
+      "command": "node --max-old-space-size=4096 --import tsx --test apps/web/src/tests/workspaceRouteErrorBoundary.test.ts",
+      "exitCode": 0,
+      "status": "PASSED (8/8)"
+    },
+    {
+      "command": "node --max-old-space-size=4096 --import tsx --test apps/web/src/tests/mobileCommunicationsMessengerDecomposition.test.ts",
+      "exitCode": 0,
+      "status": "PASSED (5/5)"
+    }
+  ]
+}

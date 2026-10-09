@@ -1,0 +1,113 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Patient History Tab Decomposer",
+  "targetMonolith": "apps/web/src/components/patients/PatientHistoryTab.tsx",
+  "status": "COMPLETED_PASSED",
+  "timestamp": "2026-10-09T22:51:30Z",
+  "decomposedDirectory": "apps/web/src/components/patients/patientHistory/",
+  "metrics": {
+    "originalLineCount": 1141,
+    "facadeLineCount": 115,
+    "facadeLineLimit": 150,
+    "modules": [
+      {
+        "file": "apps/web/src/components/patients/patientHistory/types.ts",
+        "layer": "Layer 0 (Types & DTOs)",
+        "lines": 323,
+        "status": "PASSED"
+      },
+      {
+        "file": "apps/web/src/components/patients/patientHistory/HistoryFiltersBar.tsx",
+        "layer": "Layer 1 (Presentation Filter Toolbar)",
+        "lines": 135,
+        "status": "PASSED"
+      },
+      {
+        "file": "apps/web/src/components/patients/patientHistory/HistoryTimelineCard.tsx",
+        "layer": "Layer 1 (Timeline Visit Event Card)",
+        "lines": 440,
+        "status": "PASSED"
+      },
+      {
+        "file": "apps/web/src/components/patients/patientHistory/HistoryEmptyState.tsx",
+        "layer": "Layer 1 (Empty State Card)",
+        "lines": 36,
+        "status": "PASSED"
+      },
+      {
+        "file": "apps/web/src/components/patients/patientHistory/HistoryFinancialSummary.tsx",
+        "layer": "Layer 2 (Financial Balance & Saldo Strip)",
+        "lines": 143,
+        "status": "PASSED"
+      },
+      {
+        "file": "apps/web/src/components/patients/patientHistory/HistoryDetailDrawer.tsx",
+        "layer": "Layer 2 (Side Drawer Protocol Viewer)",
+        "lines": 335,
+        "status": "PASSED"
+      },
+      {
+        "file": "apps/web/src/components/patients/patientHistory/usePatientHistory.ts",
+        "layer": "Layer 3 (Custom State & Filter Hook)",
+        "lines": 353,
+        "status": "PASSED"
+      },
+      {
+        "file": "apps/web/src/components/patients/patientHistory/index.ts",
+        "layer": "Layer 5 (Public Barrel Re-export)",
+        "lines": 14,
+        "status": "PASSED"
+      },
+      {
+        "file": "apps/web/src/components/patients/PatientHistoryTab.tsx",
+        "layer": "Layer 5 (Canonical Facade Coordinator)",
+        "lines": 115,
+        "status": "PASSED"
+      }
+    ]
+  },
+  "verificationGates": {
+    "gate1_lineCountBudget": {
+      "status": "PASSED",
+      "limit": 800,
+      "maxFileLines": 440,
+      "facadeLines": 115
+    },
+    "gate2_astExportParity": {
+      "status": "PASSED",
+      "baselineExports": [
+        "ClinicalSpecialty",
+        "SpecialtyFilterOption",
+        "SPECIALTY_FILTERS",
+        "ClinicalMaterialItem",
+        "ClinicalAttachedScan",
+        "ClinicalVisitItem",
+        "PatientHistoryTabProps",
+        "DEFAULT_CLINICAL_VISITS",
+        "PatientHistoryTab"
+      ],
+      "preservedCount": 9,
+      "parity": "100%"
+    },
+    "gate3_testAnchorsParity": {
+      "status": "PASSED",
+      "originalAnchors": 8,
+      "decomposedAnchors": 14,
+      "parity": "100%"
+    },
+    "gate4_utf8Hygiene": {
+      "status": "PASSED",
+      "checkedFiles": 10151,
+      "mojibakeErrors": 0
+    },
+    "gate5_acyclicDAG": {
+      "status": "PASSED",
+      "madgeCircularDependencies": 0,
+      "direction": "Types -> Presentation/Drawer/Summary -> Hooks -> Barrel/Facade"
+    }
+  },
+  "tests": {
+    "focusedWorkspaceRouteTest": "PASSED (8/8 pass)",
+    "patientCardDecompositionTest": "PASSED (9/9 pass)",
+    "exitCode": 0
+  }
+}

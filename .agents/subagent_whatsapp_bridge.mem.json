@@ -1,0 +1,76 @@
+{
+  "subagent": "Red Team Inquisitor & L3 WhatsApp Bridge Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T22:40:00Z",
+  "target": "apps/api/src/services/agent/whatsappBridge.ts",
+  "originalLines": 1157,
+  "facadeLines": 17,
+  "decomposedDirectory": "apps/api/src/services/agent/whatsapp/",
+  "modules": [
+    {
+      "file": "apps/api/src/services/agent/whatsapp/types.ts",
+      "layer": 0,
+      "lines": 290,
+      "description": "Domain Types, DTOs & Zod Schemas (WhatsAppMessageDto, Webhook payloads, HitL & Triage contracts)"
+    },
+    {
+      "file": "apps/api/src/services/agent/whatsapp/webhookPayloadParser.ts",
+      "layer": 1,
+      "lines": 244,
+      "description": "Inbound Webhook Payload Parsers (Meta WABA, Green API, Wazzup) & prompt-injection sanitization"
+    },
+    {
+      "file": "apps/api/src/services/agent/whatsapp/whatsappRateLimiter.ts",
+      "layer": 1,
+      "lines": 193,
+      "description": "Anti-spam rate limiter, randomized 15-40s delays & Meta 24-hour service window regulator"
+    },
+    {
+      "file": "apps/api/src/services/agent/whatsapp/patientContextResolver.ts",
+      "layer": 2,
+      "lines": 148,
+      "description": "Patient resolution by E.164 phone with composite organizationId filter & clinical context loading"
+    },
+    {
+      "file": "apps/api/src/services/agent/whatsapp/clinicalTriageAnalyzer.ts",
+      "layer": 2,
+      "lines": 427,
+      "description": "Structured LLM & fast semantic parser for clinical emergency triage (1:1 behavioral preservation)"
+    },
+    {
+      "file": "apps/api/src/services/agent/whatsapp/whatsappMessageDispatcher.ts",
+      "layer": 2,
+      "lines": 345,
+      "description": "Outbound message dispatcher, WhatsAppHitLQueue, PostgreSQL persistence in copilotHitlCards"
+    },
+    {
+      "file": "apps/api/src/services/agent/whatsapp/whatsappBridgeCoordinator.ts",
+      "layer": "3/4",
+      "lines": 197,
+      "description": "WhatsAppBridge coordinator: binds triage, HitL, WebSocket broker, and Copilot SSE broadcasting"
+    },
+    {
+      "file": "apps/api/src/services/agent/whatsapp/index.ts",
+      "layer": 5,
+      "lines": 55,
+      "description": "Clean barrel re-exporting 100% of domain entities and types"
+    },
+    {
+      "file": "apps/api/src/services/agent/whatsappBridge.ts",
+      "layer": 5,
+      "lines": 17,
+      "description": "Thin canonical facade (<= 50 lines) with 100% backward compatibility"
+    }
+  ],
+  "verificationGates": {
+    "gate1_line_budget": "PASSED (all files <= 800 lines, facade 17 lines <= 50)",
+    "gate2_ast_export_parity": "PASSED (100% public export parity, 39/39 exports preserved)",
+    "gate3_test_anchors": "PASSED (0 lost anchors)",
+    "gate4_utf8_hygiene": "PASSED (strict UTF-8 without BOM)",
+    "gate5_acyclic_dag": "PASSED (0 circular dependencies confirmed via madge)"
+  },
+  "tests": {
+    "whatsappTriage_test": "PASSED (21/21 passed, 0 failed)",
+    "omnichannelBotEngine_test": "PASSED (22/22 passed, 0 failed)"
+  }
+}
