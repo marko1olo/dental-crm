@@ -1,0 +1,45 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Sensor Study Viewer Decomposer",
+  "target_monolith": "apps/web/src/components/radiology/SensorStudyViewer.tsx",
+  "original_line_count": 1432,
+  "facade_line_count": 52,
+  "decomposed_dir": "apps/web/src/components/radiology/sensorViewer/",
+  "decomposed_files": {
+    "types.ts": 121,
+    "ViewerToolbar.tsx": 369,
+    "ViewerCanvasViewport.tsx": 165,
+    "ViewerMeasurementOverlay.tsx": 83,
+    "useSensorViewerMeasurements.ts": 106,
+    "useSensorViewerGestures.ts": 288,
+    "useSensorViewerState.ts": 692,
+    "SensorStudyViewerLayout.tsx": 156,
+    "index.ts": 6
+  },
+  "max_file_lines": 692,
+  "facade_target_limit": 150,
+  "gates_status": {
+    "Gate_1_Line_Count_Budget": "PASSED (all <= 692 lines, limit 800; facade 52 lines, limit 150)",
+    "Gate_2_AST_Export_Parity": "PASSED (2/2 exports preserved: 100% parity)",
+    "Gate_3_Test_Anchor_Parity": "PASSED (24/24 data-testid anchors preserved: 100%)",
+    "Gate_4_UTF8_Encoding": "PASSED (clean UTF-8 across workspace)",
+    "Gate_5_Acyclic_Graph_Madge": "PASSED (0 circular dependencies detected)"
+  },
+  "targeted_test_suites": {
+    "sensorStudyViewer.test.tsx": "PASSED (10/10 tests, 0 failures)",
+    "sensorStudyViewerAndFilmstrip.test.ts": "PASSED (22/22 tests, 0 failures)",
+    "sensorStudyClinicalTools.test.ts": "PASSED (10/10 tests, 0 failures)",
+    "dental2DRadiologyViewer.test.ts": "PASSED (23/23 tests, 0 failures)",
+    "radiologyViewerProtocols.test.ts": "PASSED (16/16 tests, 0 failures)",
+    "radiologyConsultationSplit.test.ts": "PASSED (12/12 tests, 0 failures)"
+  },
+  "clinical_invariants_preserved": {
+    "filmstrip_dock": "Persistent horizontal bottom filmstrip dock with dates, times, modality badges and 3px active slot border preserved verbatim",
+    "quick_filters": "1-Click quick filters (Unsharp Masking, High-Boost, Invert, Emboss 45° pseudo-relief + Reset) preserved verbatim",
+    "hardware_calibration": "Calibrated 5 mm ladder scale ruler with physical grounding to EzSensor 35.0 µm and Soft HR 14.8 µm preserved verbatim",
+    "endo_measurements": "Working Length (WL) curved root canal caliper and Gauss Shoelace periapical lesion contour polygon area calculations preserved verbatim",
+    "form043u_injection": "1-Click clinical Norma and standard protocols injection into Form 043/u and visit store preserved verbatim",
+    "fullscreen_cockpit": "Clinical Cockpit HUD with patient telemetry, FDI tooth, zero kV/mA physics clutter preserved verbatim"
+  },
+  "overall_audit_status": "100% CLEAN (ALL GATES PASSED & BEHAVIOR CONSERVED)",
+  "verified_at": "2026-10-09T07:31:00Z"
+}
