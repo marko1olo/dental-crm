@@ -1,0 +1,110 @@
+{
+  "subagent": "subagent_telegram_portal_cabinet",
+  "role": "Red Team Inquisitor & L3 Telegram Patient Portal Cabinet Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T07:29:00Z",
+  "targetMonolith": "apps/web/src/components/portal/telegramMiniApp/TelegramPatientPortalCabinet.tsx",
+  "metrics": {
+    "monolithInitialLines": 1432,
+    "facadeFinalLines": 149,
+    "facadeLineLimit": 150,
+    "moduleFilesCount": 13,
+    "maxModuleLines": 365,
+    "moduleLineLimit": 800
+  },
+  "modules": [
+    {
+      "file": "apps/web/src/components/portal/telegramMiniApp/cabinet/types.ts",
+      "lines": 181,
+      "layer": 0,
+      "description": "Contracts, DTOs, FamilyMember, TelegramCabinetTab, demo fixtures"
+    },
+    {
+      "file": "apps/web/src/components/portal/telegramMiniApp/cabinet/CabinetHeader.tsx",
+      "lines": 69,
+      "layer": 1,
+      "description": "Pocket clinic header, brand status, bonus chip, family member pills"
+    },
+    {
+      "file": "apps/web/src/components/portal/telegramMiniApp/cabinet/CabinetBottomNav.tsx",
+      "lines": 98,
+      "layer": 1,
+      "description": "Native fixed iOS-style 5-button bottom nav with haptic feedback & badges"
+    },
+    {
+      "file": "apps/web/src/components/portal/telegramMiniApp/cabinet/CabinetTeethTab.tsx",
+      "lines": 42,
+      "layer": 2,
+      "description": "Interactive tooth picker FDI 32 + 20 and complaints list"
+    },
+    {
+      "file": "apps/web/src/components/portal/telegramMiniApp/cabinet/CabinetAppointmentsTab.tsx",
+      "lines": 206,
+      "layer": 2,
+      "description": "Segmented appointments list (upcoming/past), 1-tap confirmation, route/call actions"
+    },
+    {
+      "file": "apps/web/src/components/portal/telegramMiniApp/cabinet/CabinetImagingTab.tsx",
+      "lines": 303,
+      "layer": 2,
+      "description": "Radiology viewer, 2D RVG / 3D CBCT SVG simulator, zoom, inversion, doctor notes"
+    },
+    {
+      "file": "apps/web/src/components/portal/telegramMiniApp/cabinet/CabinetTaxTab.tsx",
+      "lines": 109,
+      "layer": 2,
+      "description": "13% NDFL tax deduction calculator, FNS orders, 3-step guide"
+    },
+    {
+      "file": "apps/web/src/components/portal/telegramMiniApp/cabinet/CabinetTaxSheet.tsx",
+      "lines": 365,
+      "layer": 2,
+      "description": "Apple HIG Bottom Sheet for tax cert KND 1151156, UKEP signature & FNS QR code"
+    },
+    {
+      "file": "apps/web/src/components/portal/telegramMiniApp/cabinet/CabinetFinanceTab.tsx",
+      "lines": 111,
+      "layer": 2,
+      "description": "Bonus balance, deposit card, 1000 RUB referral invite sharing, history"
+    },
+    {
+      "file": "apps/web/src/components/portal/telegramMiniApp/cabinet/CabinetBillingTab.tsx",
+      "lines": 15,
+      "layer": 2,
+      "description": "Billing module adapter extending FinanceTab for SBP payments"
+    },
+    {
+      "file": "apps/web/src/components/portal/telegramMiniApp/cabinet/CabinetTreatmentPlansTab.tsx",
+      "lines": 140,
+      "layer": 2,
+      "description": "Treatment plans, staged costs, approval status and progress bar"
+    },
+    {
+      "file": "apps/web/src/components/portal/telegramMiniApp/cabinet/useTelegramPortalCabinet.ts",
+      "lines": 191,
+      "layer": 3,
+      "description": "State management hook, tab navigation, Telegram haptic feedback & actions"
+    },
+    {
+      "file": "apps/web/src/components/portal/telegramMiniApp/cabinet/index.ts",
+      "lines": 14,
+      "layer": 5,
+      "description": "Barrel re-export file with clean isolatedModules type re-exports"
+    },
+    {
+      "file": "apps/web/src/components/portal/telegramMiniApp/TelegramPatientPortalCabinet.tsx",
+      "lines": 149,
+      "layer": 5,
+      "description": "Canonical thin facade retaining 100% baseline public exports"
+    }
+  ],
+  "verification": {
+    "gate1_line_budget": "PASSED (all files <= 365 lines, facade = 149 lines)",
+    "gate2_ast_parity": "PASSED (5/5 exports preserved: TelegramCabinetTab, PatientAppointment, PatientImagingScan, TelegramPatientPortalCabinetProps, TelegramPatientPortalCabinet)",
+    "gate3_test_anchors": "PASSED (0 lost)",
+    "gate4_utf8_hygiene": "PASSED",
+    "gate5_acyclic_dag": "PASSED (0 circular dependencies)",
+    "unit_tests": "PASSED (7/7 in TelegramPatientPortalCabinet.test.tsx)",
+    "zero_mock_purity_tests": "PASSED (6/6 in patientPortalZeroMockPurity.test.ts)"
+  }
+}
