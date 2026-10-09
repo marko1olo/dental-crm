@@ -1,0 +1,69 @@
+{
+  "subagent": "telegram_treatment_plan_closer_decomposer",
+  "role": "Red Team Inquisitor & L3 Telegram Treatment Plan Closer Decomposer",
+  "targetMonolith": "apps/api/src/services/telegram/TelegramTreatmentPlanCloserService.ts",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T00:25:30Z",
+  "metrics": {
+    "originalLines": 1493,
+    "facadeLines": 42,
+    "facadeLimit": 50,
+    "maxFileLineLimit": 800
+  },
+  "decomposedModules": [
+    {
+      "path": "apps/api/src/services/telegram/planCloser/types.ts",
+      "layer": "Layer 0 (Types & DTOs)",
+      "lines": 95
+    },
+    {
+      "path": "apps/api/src/services/telegram/planCloser/constants.ts",
+      "layer": "Layer 0 (Pure Constants)",
+      "lines": 34
+    },
+    {
+      "path": "apps/api/src/services/telegram/planCloser/planKeyboardBuilder.ts",
+      "layer": "Layer 1 (Inline Keyboard Builders)",
+      "lines": 318
+    },
+    {
+      "path": "apps/api/src/services/telegram/planCloser/planMessagePresenter.ts",
+      "layer": "Layer 1 (Message Presentation & In-Place Screens)",
+      "lines": 416
+    },
+    {
+      "path": "apps/api/src/services/telegram/planCloser/planCallbackProcessor.ts",
+      "layer": "Layer 2 (DB Integration, Leads, In-Place Callbacks)",
+      "lines": 537
+    },
+    {
+      "path": "apps/api/src/services/telegram/planCloser/planEscalationManager.ts",
+      "layer": "Layer 2 (Follow-up Escalations & Candidate Discovery)",
+      "lines": 86
+    },
+    {
+      "path": "apps/api/src/services/telegram/planCloser/index.ts",
+      "layer": "Layer 5 (Module Barrel)",
+      "lines": 6
+    },
+    {
+      "path": "apps/api/src/services/telegram/TelegramTreatmentPlanCloserService.ts",
+      "layer": "Layer 5 (Canonical Thin Facade)",
+      "lines": 42
+    }
+  ],
+  "gates": {
+    "gate1_line_budget": "PASSED (all files <= 800 lines, facade 42 <= 50 lines)",
+    "gate2_ast_export_parity": "PASSED (14/14 symbols, 100% baseline parity)",
+    "gate3_test_anchors": "PASSED (100% preserved)",
+    "gate4_utf8_cleanliness": "PASSED (clean UTF-8 without BOM or mojibake)",
+    "gate5_acyclic_dag": "PASSED (0 circular dependencies via madge)"
+  },
+  "verification": {
+    "unitTestSuite": "apps/api/src/tests/telegramTreatmentPlanCloser.test.ts",
+    "testsTotal": 30,
+    "testsPassed": 30,
+    "testsFailed": 0,
+    "exitCode": 0
+  }
+}

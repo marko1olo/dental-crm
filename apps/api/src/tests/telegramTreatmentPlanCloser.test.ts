@@ -59,7 +59,7 @@ describe("Telegram Treatment Plan Closer & Installment Calculator Suite", () => 
 
 		app = createTenantTestApp();
 		await registerTelegramRoutes(app);
-		await registerTelegramWebhookRoutes(app);
+		await registerTelegramTreatmentPlanCloserRoutes(app);
 		await app.ready();
 
 		try {
