@@ -136,7 +136,15 @@ export function generateSoapFromOdontogramStates(
 			if (soap.treatmentDescription) treatmentParts.push(soap.treatmentDescription);
 		} else {
 			if (soap.anamnesis) anamnesisParts.push(`• Зуб ${soap.toothNameRu}: ${soap.anamnesis}`);
-			if (soap.statusLocalis) statusLocalisParts.push(`• Зуб ${soap.toothNameRu}: ${soap.statusLocalis}`);
+			if (soap.statusLocalis) {
+				const trimmed = soap.statusLocalis.trim();
+				const statusBody = trimmed.startsWith(`Зуб ${soap.toothNameRu}:`)
+					? trimmed.slice(`Зуб ${soap.toothNameRu}:`.length).trim()
+					: trimmed.startsWith(`Зуб ${soap.toothNumber}:`)
+						? trimmed.slice(`Зуб ${soap.toothNumber}:`.length).trim()
+						: trimmed;
+				statusLocalisParts.push(`• Зуб ${soap.toothNameRu}: ${statusBody}`);
+			}
 			if (soap.treatmentDescription) treatmentParts.push(`• Зуб ${soap.toothNumber}: ${soap.treatmentDescription}`);
 		}
 

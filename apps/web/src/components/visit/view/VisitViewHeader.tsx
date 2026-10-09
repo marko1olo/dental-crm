@@ -52,7 +52,7 @@ export function VisitViewHeader({
 }: VisitViewHeaderProps) {
 	return (
 		<div className="min-h-[44px] h-[44px] flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 border-b border-[var(--line)] flex-nowrap min-w-0 max-w-full">
-			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 min-w-0">
+			<div className="flex items-center gap-1 sm:gap-1.5 shrink min-w-0 overflow-hidden">
 				<PatientAvatar fullName={activePatient.fullName} size={22} className="!w-5 !h-5 sm:!w-[26px] sm:!h-[26px] shrink-0" />
 				<span
 					className="font-bold text-xs sm:text-sm text-[var(--ink)] shrink-0 flex-shrink-0 whitespace-nowrap"
@@ -81,22 +81,22 @@ export function VisitViewHeader({
 				{/* Единый компактный и яркий чип аллергии (Tier 1) */}
 				{activePatientCriticalBadges.length > 0 ? (
 					<span
-						className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink-0 flex-shrink-0 animate-pulse whitespace-nowrap"
+						className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink min-w-0 max-w-[200px] lg:max-w-[260px] xl:max-w-[340px] animate-pulse"
 						data-testid="visit-focus-allergy-alert"
 						role="alert"
 						title={activePatientCriticalBadges.map((b) => b.title).join(" | ")}
 					>
 						<AlertOctagon size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
-						<span className="sm:hidden text-[10px] whitespace-nowrap">
+						<span className="sm:hidden text-[10px] truncate">
 							{consolidatedAllergyChip || activePatientCriticalBadges[0]?.shortLabel}
 						</span>
-						<span className="hidden sm:inline whitespace-nowrap shrink-0">
+						<span className="hidden sm:inline truncate">
 							{consolidatedAllergyChip || activePatientCriticalBadges[0]?.fullLabel}
 						</span>
 					</span>
 				) : (
 					<span
-						className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-medium text-xs shadow-xs shrink-0 flex-shrink-0 whitespace-nowrap"
+						className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-medium text-xs shadow-xs shrink-0 whitespace-nowrap"
 						data-testid="visit-focus-allergy-clean"
 						title="Отягощенный аллергоанамнез не выявлен"
 					>

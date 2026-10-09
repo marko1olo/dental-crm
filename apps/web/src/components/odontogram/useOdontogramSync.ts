@@ -281,7 +281,14 @@ export function useOdontogramSync({
 						saveStoredTeethData(patientId, teethDataRef.current);
 						setTeethLoad({ phase: "ready" });
 						showToast("Зубная формула сохранена из локального сеанса (офлайн)", "info", 5000);
+					} else if (isDemoShowcaseMode() || isDemoPatientId(patientId)) {
+						setTeethData(defaultBaseline);
+						setTeethLoad({ phase: "ready" });
 					} else {
+						showToast(
+							actionFailureToast("Ошибка выполнения операции", status),
+							"error",
+						);
 						setTeethData(defaultBaseline);
 						setTeethLoad({ phase: "failed", status });
 					}
@@ -384,6 +391,9 @@ export function useOdontogramSync({
 					saveStoredTeethData(patientId, teethDataRef.current);
 					setTeethLoad({ phase: "ready" });
 					showToast("Зубная формула сохранена из локального сеанса (офлайн)", "info", 5000);
+				} else if (isDemoShowcaseMode() || isDemoPatientId(patientId)) {
+					setTeethData(defaultBaseline);
+					setTeethLoad({ phase: "ready" });
 				} else {
 					setTeethData(defaultBaseline);
 					setTeethLoad({ phase: "failed", status });
@@ -404,6 +414,9 @@ export function useOdontogramSync({
 					saveStoredTeethData(patientId, teethDataRef.current);
 					setTeethLoad({ phase: "ready" });
 					showToast("Зубная формула сохранена из локального сеанса (офлайн)", "info", 5000);
+				} else if (isDemoShowcaseMode() || isDemoPatientId(patientId)) {
+					setTeethData(defaultBaseline);
+					setTeethLoad({ phase: "ready" });
 				} else {
 					showToast(
 						actionFailureToast(
