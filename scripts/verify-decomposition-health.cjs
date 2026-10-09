@@ -84,7 +84,7 @@ try {
 // Gate 4: UTF-8 Encoding Hygiene
 console.log('\n▶ [Gate 4/5] Checking UTF-8 Encoding...');
 try {
-  execSync(`node "${path.join(__dirname, 'check-encoding.mjs')}"`, { stdio: 'pipe' });
+  execSync(`node --max-old-space-size=2048 "${path.join(__dirname, 'check-encoding.mjs')}"`, { stdio: 'pipe' });
   console.log('✔ Gate 4 PASSED: Clean UTF-8 encoding across workspace.');
 } catch (err) {
   console.error('❌ Gate 4 FAILED: Encoding issues detected.');

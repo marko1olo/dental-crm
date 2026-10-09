@@ -1,0 +1,90 @@
+{
+  "subagent": "Lead Dental Lab Orders View Decomposer",
+  "status": "COMPLETED",
+  "targetMonolith": "apps/web/src/components/dental-lab/DentalLabOrdersView.tsx",
+  "originalLines": 1515,
+  "facadeLines": 48,
+  "facadeLimit": 150,
+  "fileLimit": 800,
+  "decomposedDirectory": "apps/web/src/components/dental-lab/ordersView",
+  "modules": [
+    {
+      "file": "types.ts",
+      "layer": 0,
+      "lines": 109,
+      "description": "Интерфейсы нарядов ЗТЛ, метрик, фильтров, пропсов сабкомпонентов"
+    },
+    {
+      "file": "constants.tsx",
+      "layer": 0,
+      "lines": 195,
+      "description": "Константы ЗТЛ, канонические фильтры, 4 демо-наряда, бейджи статусов"
+    },
+    {
+      "file": "LabOrdersFilterBar.tsx",
+      "layer": 1,
+      "lines": 160,
+      "description": "Тулбар ЗТЛ строго в 1 строку 32-36px, поиск, фильтр по врачу, кнопки"
+    },
+    {
+      "file": "LabOrdersSegmentedNav.tsx",
+      "layer": 1,
+      "lines": 78,
+      "description": "Apple HIG сегментированная навигация (5 этапов и режимы Таблица/Карточки/Канбан)"
+    },
+    {
+      "file": "LabOrdersTable.tsx",
+      "layer": 1,
+      "lines": 382,
+      "description": "Плотная таблица нарядов ЗТЛ со всеми действиями, бейджами, меню, датами"
+    },
+    {
+      "file": "LabOrderCard.tsx",
+      "layer": 1,
+      "lines": 53,
+      "description": "Сетка карточек заказ-нарядов ЗТЛ и реэкспорт карточки"
+    },
+    {
+      "file": "LabOrderDetailsDrawer.tsx",
+      "layer": 2,
+      "lines": 180,
+      "description": "Комплекс шторок и модалок наряда, 3D-сканов, рекламаций, трекера"
+    },
+    {
+      "file": "DentalLabOrdersMainContent.tsx",
+      "layer": 4,
+      "lines": 323,
+      "description": "Основной презентационный координатор десктопного интерфейса ЗТЛ"
+    },
+    {
+      "file": "useDentalLabOrders.ts",
+      "layer": 3,
+      "lines": 687,
+      "description": "Кастомный хук состояния нарядов ЗТЛ, синхронизации, смены статусов и оплат"
+    },
+    {
+      "file": "index.ts",
+      "layer": 5,
+      "lines": 9,
+      "description": "Чистый barrel реэкспорта модулей"
+    },
+    {
+      "file": "DentalLabOrdersView.tsx",
+      "layer": 5,
+      "lines": 48,
+      "description": "Тонкий канонический фасад <= 150 строк (48 строк) со 100% обратной совместимостью"
+    }
+  ],
+  "verificationGates": {
+    "gate1_lineBudget": "PASSED (all files <= 800 lines, facade <= 150 lines)",
+    "gate2_astExportParity": "PASSED (26 exports preserved, 100% parity)",
+    "gate3_testAnchors": "PASSED (all testids preserved verbatim)",
+    "gate4_utf8Hygiene": "PASSED (clean UTF-8 across workspace)",
+    "gate5_acyclicDAG": "PASSED (madge confirmed 0 cycles)"
+  },
+  "unitTests": {
+    "dentalLabInquisitorScope": "PASSED (13 tests, 0 fails)",
+    "visitDentalLabOrderHandoff": "PASSED (14 tests, 0 fails)"
+  },
+  "timestamp": "2026-10-09T04:06:00Z"
+}
