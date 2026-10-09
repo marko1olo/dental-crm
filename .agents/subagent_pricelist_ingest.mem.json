@@ -1,0 +1,105 @@
+{
+  "subagent": "redteam-inquisitor-price-list-ingestion-decomposer",
+  "status": "completed",
+  "role": "Red Team Inquisitor & L3 Price List Ingestion Service Decomposer",
+  "target_monolith": "apps/api/src/services/ai/priceListIngestionService.ts",
+  "original_line_count": 1223,
+  "behavioral_conservation_theorem": "Strictly satisfied — 100% verbatim logic extraction, zero logic mutation, zero float drift",
+  "decomposed_modules": [
+    {
+      "file": "apps/api/src/services/ai/pricelistIngest/types.ts",
+      "layer": "Layer 0 (Types & Contracts)",
+      "line_count": 122,
+      "limit": "<= 800",
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/api/src/services/ai/pricelistIngest/documentTabularParser.ts",
+      "layer": "Layer 1 (Tabular & Document Text Parsing)",
+      "line_count": 166,
+      "limit": "<= 800",
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/api/src/services/ai/pricelistIngest/nomenclature804nMatcher.ts",
+      "layer": "Layer 1 (804n Statutory Registry & Semantic Matcher)",
+      "line_count": 773,
+      "limit": "<= 800",
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/api/src/services/ai/pricelistIngest/ingestionPipelineCore.ts",
+      "layer": "Layer 2 (Ingestion Pipeline Core & Catalog Cross-Referencing)",
+      "line_count": 190,
+      "limit": "<= 800",
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/api/src/services/ai/pricelistIngest/index.ts",
+      "layer": "Layer 5 (Barrel Re-Export)",
+      "line_count": 10,
+      "limit": "<= 800",
+      "status": "PASSED"
+    },
+    {
+      "file": "apps/api/src/services/ai/priceListIngestionService.ts",
+      "layer": "Layer 5 (Master Canonical Facade)",
+      "line_count": 9,
+      "limit": "<= 50",
+      "status": "PASSED"
+    }
+  ],
+  "verification_gates": {
+    "Gate_1_line_count_budget": {
+      "status": "PASSED",
+      "description": "All decomposed files strictly <= 800 lines (facade is 9 lines, <= 50 lines)"
+    },
+    "Gate_2_ast_export_parity": {
+      "status": "PASSED",
+      "baseline_exports": 24,
+      "facade_exports": 24,
+      "missing_exports": 0,
+      "description": "100% of public exports preserved"
+    },
+    "Gate_3_test_anchors": {
+      "status": "PASSED",
+      "description": "100% of test anchors preserved"
+    },
+    "Gate_4_utf8_hygiene": {
+      "status": "PASSED",
+      "checked_files": 9852,
+      "mojibake_errors": 0,
+      "description": "Clean UTF-8 without BOM across repository"
+    },
+    "Gate_5_acyclic_dag_madge": {
+      "status": "PASSED",
+      "circular_dependencies": 0,
+      "description": "Acyclic DAG confirmed via madge"
+    }
+  },
+  "tests": {
+    "apps/api/src/tests/routes/priceListIngestionService.test.ts": {
+      "passed": 7,
+      "failed": 0,
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    "apps/api/src/tests/routes/pricelist.test.ts": {
+      "passed": 23,
+      "failed": 0,
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    "apps/api/src/tests/redteam/frozenServicesInquisition.test.ts": {
+      "passed": 18,
+      "failed": 0,
+      "exit_code": 0,
+      "status": "PASS"
+    }
+  },
+  "mandate_compliance": {
+    "Single_Compiler_Lockout_8t": "STRICT COMPLIANCE: No parallel global typecheck executed; isolated targeted tsx tests only",
+    "Kopeck_Exact_Arithmetic_8b": "STRICT COMPLIANCE: 100% kopeck preservation with parseKopecks / formatKopecksToRubles",
+    "Clean_Worktree_Invariant": "STRICT COMPLIANCE: Zero debug scripts, 0 stray files created in root"
+  }
+}

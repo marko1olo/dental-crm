@@ -1,0 +1,80 @@
+{
+  "timestamp": "2026-10-09T19:38:30Z",
+  "role": "Red Team Inquisitor & L3 Visit Anamnesis Tab Decomposer",
+  "targetMonolith": "apps/web/src/components/visit/VisitAnamnesisTab.tsx",
+  "originalLines": 1246,
+  "facadeLines": 116,
+  "facadeBudgetStatus": "PASSED (116 <= 150 lines)",
+  "healthAuditGates": {
+    "Gate1_LineCountBudget": {
+      "status": "PASSED",
+      "limit": "<= 800 lines per file",
+      "files": [
+        { "file": "apps/web/src/components/visit/VisitAnamnesisTab.tsx", "lines": 116 },
+        { "file": "apps/web/src/components/visit/anamnesisTab/types.ts", "lines": 260 },
+        { "file": "apps/web/src/components/visit/anamnesisTab/useAnamnesisState.ts", "lines": 559 },
+        { "file": "apps/web/src/components/visit/anamnesisTab/SomaticQuickNormBar.tsx", "lines": 159 },
+        { "file": "apps/web/src/components/visit/anamnesisTab/AllergyStatusPicker.tsx", "lines": 183 },
+        { "file": "apps/web/src/components/visit/anamnesisTab/ChronicDiseasesSection.tsx", "lines": 192 },
+        { "file": "apps/web/src/components/visit/anamnesisTab/AnamnesisVoiceInput.tsx", "lines": 132 },
+        { "file": "apps/web/src/components/visit/anamnesisTab/index.ts", "lines": 13 }
+      ]
+    },
+    "Gate2_ASTExportParity": {
+      "status": "PASSED",
+      "details": "100% of public exports preserved (11/11 baseline symbols)",
+      "symbols": [
+        "VisitAnamnesisTabProps",
+        "AllergenItem",
+        "SomaticStopFactorItem",
+        "DentalHistoryItem",
+        "DENTAL_ALLERGENS",
+        "ALLERGY_REACTIONS",
+        "SOMATIC_STOP_FACTORS",
+        "DENTAL_HISTORY_ITEMS",
+        "PATIENT_COMPLAINTS_LIST",
+        "VisitAnamnesisTab",
+        "default"
+      ]
+    },
+    "Gate3_TestAnchorParity": {
+      "status": "PASSED",
+      "details": "100% of test anchors preserved in decomposed modules",
+      "preservedAnchors": [
+        "data-testid=\"visit-anamnesis-tab\"",
+        "data-testid=\"btn-open-stomt-templates-anamnesis\"",
+        "data-testid=\"btn-somatic-norm-one-click\"",
+        "data-testid=\"btn-apply-anamnesis-to-diary\"",
+        "data-testid=\"visit-anamnesis-critical-alert\"",
+        "data-testid=\"visit-anamnesis-alert-banner\"",
+        "data-testid=\"anamnesis-custom-notes\"",
+        "data-testid=\"sync-anamnesis-btn\"",
+        "data-testid=\"btn-save-anamnesis-to-patient\"",
+        "aria-label=\"Срок беременности или период лактации\""
+      ]
+    },
+    "Gate4_UTF8Hygiene": {
+      "status": "PASSED",
+      "details": "Clean UTF-8 encoding across all decomposed files without BOM"
+    },
+    "Gate5_AcyclicDAG": {
+      "status": "PASSED",
+      "details": "Madge acyclic graph audit confirmed 0 circular dependencies"
+    }
+  },
+  "targetedUnitTests": [
+    {
+      "test": "apps/web/src/tests/diaryDraftResilience.test.ts",
+      "status": "PASSED",
+      "suites": 2,
+      "passedCount": 17,
+      "failedCount": 0,
+      "exitCode": 0
+    }
+  ],
+  "mandatesCompliance": {
+    "Mandate8e_DoctorAutonomy": "1-клик физиологическая норма, 0 disabled CTA кнопок, autosave flush при unmount",
+    "Mandate8k_ClinicalSafety": "Сквозная связность: аллергены, MRONJ, ЭКС, антикоагулянты, форма 043/у",
+    "Mandate8t_SingleCompilerLockout": "Соблюден: глобальный tsc/build не вызывался, использовались точечные CLI валидаторы"
+  }
+}

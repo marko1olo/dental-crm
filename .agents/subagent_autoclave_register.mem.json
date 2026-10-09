@@ -1,0 +1,82 @@
+{
+  "timestamp": "2026-10-09T19:37:00Z",
+  "role": "Red Team Inquisitor & L3 Autoclave Register Table Decomposer",
+  "targetMonolith": "apps/web/src/components/sanpin/AutoclaveRegisterTable.tsx",
+  "originalLines": 1276,
+  "facadeLines": 134,
+  "facadeBudgetStatus": "PASSED (134 <= 150 lines)",
+  "healthAuditGates": {
+    "Gate1_LineCountBudget": {
+      "status": "PASSED",
+      "limit": "<= 800 lines per file",
+      "files": [
+        { "file": "apps/web/src/components/sanpin/AutoclaveRegisterTable.tsx", "lines": 134 },
+        { "file": "apps/web/src/components/sanpin/autoclave/AutoclaveCycleModal.tsx", "lines": 302 },
+        { "file": "apps/web/src/components/sanpin/autoclave/autoclaveEngine.ts", "lines": 486 },
+        { "file": "apps/web/src/components/sanpin/autoclave/AutoclaveIndicatorControl.tsx", "lines": 140 },
+        { "file": "apps/web/src/components/sanpin/autoclave/AutoclaveMobileActionSheet.tsx", "lines": 349 },
+        { "file": "apps/web/src/components/sanpin/autoclave/AutoclaveMobileCards.tsx", "lines": 280 },
+        { "file": "apps/web/src/components/sanpin/autoclave/AutoclavePagination.tsx", "lines": 39 },
+        { "file": "apps/web/src/components/sanpin/autoclave/autoclavePresets.ts", "lines": 300 },
+        { "file": "apps/web/src/components/sanpin/autoclave/AutoclaveRegisterRows.tsx", "lines": 669 },
+        { "file": "apps/web/src/components/sanpin/autoclave/AutoclaveRegisterToolbar.tsx", "lines": 370 },
+        { "file": "apps/web/src/components/sanpin/autoclave/index.ts", "lines": 12 },
+        { "file": "apps/web/src/components/sanpin/autoclave/types.ts", "lines": 59 }
+      ]
+    },
+    "Gate2_ASTExportParity": {
+      "status": "PASSED",
+      "details": "100% of public exports preserved (AutoclaveRegisterTable, AutoclaveRegisterTableProps)"
+    },
+    "Gate3_TestAnchorParity": {
+      "status": "PASSED",
+      "details": "All 8 critical test anchors preserved and verified in AutoclaveMobileActionSheet.tsx",
+      "preservedAnchors": [
+        "data-testid=\"sheet-quick-shift-batch-btn\"",
+        "data-testid=\"sheet-batch-labels-btn\"",
+        "data-testid=\"sheet-equipment-fleet-btn\"",
+        "data-testid=\"sheet-manual-cycle-entry-btn\"",
+        "data-testid=\"sheet-monthly-journal-btn\"",
+        "data-testid=\"sheet-kraft-studio-btn\"",
+        "aria-label=\"Панель действий автоклава\"",
+        "aria-label=\"Закрыть шторку\""
+      ]
+    },
+    "Gate4_UTF8Hygiene": {
+      "status": "PASSED",
+      "details": "Clean UTF-8 without BOM across all decomposed modules"
+    },
+    "Gate5_AcyclicDAG": {
+      "status": "PASSED",
+      "details": "Madge acyclic audit confirmed 0 circular dependencies"
+    }
+  },
+  "targetedUnitTests": [
+    {
+      "test": "apps/web/src/tests/workspaceRouteErrorBoundary.test.ts",
+      "status": "PASSED",
+      "passedCount": 8,
+      "failedCount": 0
+    },
+    {
+      "test": "apps/web/src/components/sanpin/__tests__/sanpinAutoclaveJournal257.test.ts",
+      "status": "PASSED",
+      "passedCount": 33,
+      "failedCount": 0
+    },
+    {
+      "test": "apps/web/src/components/sanpin/__tests__/autoSanpinShiftBatchAutonomy.test.ts",
+      "status": "PASSED",
+      "passedCount": 15,
+      "failedCount": 0
+    }
+  ],
+  "mandateRemediations": [
+    {
+      "mandate": "Mandate 8d pt 7 (Zero Cartoon Emojis)",
+      "file": "apps/web/src/components/sanpin/autoclave/AutoclaveIndicatorControl.tsx",
+      "fix": "Replaced unicode arrow glyph with Lucide ArrowRight vector icon"
+    }
+  ],
+  "overallStatus": "100% CLEAN DECOMPOSITION"
+}
