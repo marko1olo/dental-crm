@@ -10,7 +10,7 @@ const { execSync } = require('child_process');
 
 const originalPath = process.argv[2];
 const facadePath = process.argv[3];
-const decomposedDir = process.argv[4] || path.dirname(facadePath);
+const decomposedDir = process.argv[4] || (fs.statSync(facadePath).isDirectory() ? facadePath : path.dirname(facadePath));
 
 if (!originalPath || !facadePath) {
   console.log('Usage: node scripts/verify-decomposition-health.cjs <original_file> <facade_file> [decomposed_dir]');

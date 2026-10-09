@@ -9,9 +9,13 @@ const path = require('path');
 const ts = require('typescript');
 
 function extractExports(filePath, visited = new Set()) {
-  const resolvedPath = path.resolve(filePath);
+  let resolvedPath = path.resolve(filePath);
   if (visited.has(resolvedPath)) return new Set();
   visited.add(resolvedPath);
+
+  if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isDirectory()) {
+    resolvedPath = path.join(resolvedPath, 'index.ts');
+  }
 
   if (!fs.existsSync(resolvedPath)) {
     console.error(`[ExportParity] Error: File not found: ${resolvedPath}`);

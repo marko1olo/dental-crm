@@ -19,7 +19,7 @@ import {
 	sortDicomEntries,
 } from "../components/dicom/dicomArchiveFilter";
 import { CtSelectorModal } from "../components/radiology/CtSelectorModal";
-import { CtSelectorModal as ImagingCtSelectorModal } from "../components/imaging";
+import { CtSelectorModal as ImagingCtSelectorModal } from "../components/imaging/CtSelectorModal";
 
 describe("CtSelectorModal - Clinical Intake & Viewer Selector Integration", () => {
 	test("exports CtSelectorModal from both radiology and imaging domains", () => {
@@ -154,7 +154,9 @@ describe("CtSelectorModal - Clinical Intake & Viewer Selector Integration", () =
 	});
 
 	test("verifies CtSelector integration anchors across all primary CRM views", () => {
-		const webRoot = path.resolve(process.cwd(), "apps/web/src");
+		const webRoot = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))
+			? path.resolve(process.cwd(), "apps/web/src")
+			: path.resolve(process.cwd(), "src");
 
 		// 1. ImagingHeader.tsx: CTA button exists
 		const imagingHeaderContent = fs.readFileSync(
@@ -198,17 +200,20 @@ describe("CtSelectorModal - Clinical Intake & Viewer Selector Integration", () =
 			"PatientRadiologyTab must mount CtSelectorModal"
 		);
 
-		// 4. VisitDiagnosticsTab.tsx: CTA button & modal mount
-		const visitTabContent = fs.readFileSync(
-			path.join(webRoot, "components/visit/VisitDiagnosticsTab.tsx"),
-			"utf-8"
-		);
+		// 4. VisitDiagnosticsTab.tsx / diagnosticsTab: CTA button & modal mount
+		const visitTabPath = path.join(webRoot, "components/visit/VisitDiagnosticsTab.tsx");
+		const visitCbctSectionPath = path.join(webRoot, "components/visit/diagnosticsTab/DiagnosticsCbctSection.tsx");
+		const visitModalsPath = path.join(webRoot, "components/visit/diagnosticsTab/DiagnosticsModalsHost.tsx");
+		const visitContent = fs.readFileSync(visitTabPath, "utf-8") +
+			(fs.existsSync(visitCbctSectionPath) ? fs.readFileSync(visitCbctSectionPath, "utf-8") : "") +
+			(fs.existsSync(visitModalsPath) ? fs.readFileSync(visitModalsPath, "utf-8") : "");
+
 		assert.ok(
-			visitTabContent.includes('data-testid="btn-open-ct-selector"'),
+			visitContent.includes('data-testid="btn-open-ct-selector"'),
 			"VisitDiagnosticsTab must contain data-testid='btn-open-ct-selector'"
 		);
 		assert.ok(
-			visitTabContent.includes("<CtSelectorModal"),
+			visitContent.includes("<CtSelectorModal"),
 			"VisitDiagnosticsTab must mount CtSelectorModal"
 		);
 
@@ -228,9 +233,11 @@ describe("CtSelectorModal - Clinical Intake & Viewer Selector Integration", () =
 	});
 
 	test("verifies clinical Russian domain language and Anti-Matryoshka compliance in CtSelectorModal", () => {
-		const webRoot = path.resolve(process.cwd(), "apps/web/src");
+		const webRoot = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))
+			? path.resolve(process.cwd(), "apps/web/src")
+			: path.resolve(process.cwd(), "src");
 		const modalContent = fs.readFileSync(
-			path.join(webRoot, "components/radiology/CtSelectorModal.tsx"),
+			path.join(webRoot, "components/radiology/ctSelectorModal/CtSelectorModalUI.tsx"),
 			"utf-8"
 		);
 
