@@ -1,0 +1,70 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Document Template Engine Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T07:16:30Z",
+  "target": "packages/shared/src/documents/templateEngine.ts",
+  "initialLines": 1454,
+  "facadeLines": 9,
+  "decomposedDirectory": "packages/shared/src/documents/templateEngine",
+  "modules": [
+    {
+      "file": "types.ts",
+      "layer": 0,
+      "lines": 260,
+      "role": "Layer 0 Context interfaces, DTOs and options"
+    },
+    {
+      "file": "dateAndAgeHelpers.ts",
+      "layer": 0,
+      "lines": 192,
+      "role": "Layer 0 Pure date, age, initials, passport and money formatting helpers"
+    },
+    {
+      "file": "builtinTemplates.ts",
+      "layer": 1,
+      "lines": 98,
+      "role": "Layer 1 Built-in system template catalog"
+    },
+    {
+      "file": "variableResolver.ts",
+      "layer": 1,
+      "lines": 582,
+      "role": "Layer 1 Variable map builder and string interpolation engine"
+    },
+    {
+      "file": "renderer.ts",
+      "layer": 2,
+      "lines": 144,
+      "role": "Layer 2 Document and message template rendering logic"
+    },
+    {
+      "file": "engineClass.ts",
+      "layer": 3,
+      "lines": 68,
+      "role": "Layer 3 TemplateEngine class and singleton instance"
+    },
+    {
+      "file": "index.ts",
+      "layer": 5,
+      "lines": 33,
+      "role": "Layer 5 Module barrel re-exporting all symbols"
+    },
+    {
+      "file": "../templateEngine.ts",
+      "layer": 5,
+      "lines": 9,
+      "role": "Layer 5 Canonical backward-compatibility facade <= 50 lines"
+    }
+  ],
+  "gates": {
+    "gate1_line_budget": "PASSED (all files strictly <= 800 lines, facade 9 lines <= 50)",
+    "gate2_ast_export_parity": "PASSED (55 of 55 baseline exports preserved, 100%)",
+    "gate3_test_anchors": "PASSED (100% anchors preserved)",
+    "gate4_utf8_encoding": "PASSED (0 mojibake, valid UTF-8 without BOM)",
+    "gate5_dag_acyclic": "PASSED (madge verified 0 circular dependencies)"
+  },
+  "tests": {
+    "documentTemplatesEngine": "15/15 passed",
+    "templateEngineMessaging": "8/8 passed"
+  }
+}
