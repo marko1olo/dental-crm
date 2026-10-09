@@ -1,0 +1,87 @@
+{
+  "subagent": "lan_mesh_sync_decomposer",
+  "targetMonolith": "packages/shared/src/sync/lanMesh.ts",
+  "initialLines": 1368,
+  "decomposedDirectory": "packages/shared/src/sync/lanMeshSync/",
+  "modules": [
+    {
+      "file": "packages/shared/src/sync/lanMeshSync/schemas.ts",
+      "layer": "Layer 0",
+      "lines": 140,
+      "description": "Zod schemas for roles, node statuses, peer summaries, handshakes, discovery beacons, schema compatibility modes, mutations, status badges, and lease heartbeat packets"
+    },
+    {
+      "file": "packages/shared/src/sync/lanMeshSync/schemaCompatibility.ts",
+      "layer": "Layer 1",
+      "lines": 126,
+      "description": "Semver parsers, schema normalization, and multi-tenant schema compatibility verification"
+    },
+    {
+      "file": "packages/shared/src/sync/lanMeshSync/leaseSecurity.ts",
+      "layer": "Layer 1",
+      "lines": 147,
+      "description": "HMAC-SHA256 cryptographic lease signing payload, master lease heartbeat creation and verification, UDP lease packet serialization"
+    },
+    {
+      "file": "packages/shared/src/sync/lanMeshSync/electionEngine.ts",
+      "layer": "Layer 1",
+      "lines": 76,
+      "description": "Deterministic primary master election and dynamic consensus failover election algorithms"
+    },
+    {
+      "file": "packages/shared/src/sync/lanMeshSync/discoveryPackets.ts",
+      "layer": "Layer 2",
+      "lines": 58,
+      "description": "UDP broadcast/multicast zero-conf discovery beacon creation, parsing, and port configuration"
+    },
+    {
+      "file": "packages/shared/src/sync/lanMeshSync/mutationBuffers.ts",
+      "layer": "Layer 2",
+      "lines": 219,
+      "description": "Thread-safe circular ring buffer with O(1) deduplication and offline mutation queue"
+    },
+    {
+      "file": "packages/shared/src/sync/lanMeshSync/topologyManager.ts",
+      "layer": "Layer 3",
+      "lines": 624,
+      "description": "Central LAN mesh node state machine, peer gossip propagation, lease failover evaluator, and telemetry badge emitter"
+    },
+    {
+      "file": "packages/shared/src/sync/lanMeshSync/index.ts",
+      "layer": "Layer 5",
+      "lines": 15,
+      "description": "Clean barrel re-exporting 100% of submodules, domain types, and contracts"
+    },
+    {
+      "file": "packages/shared/src/sync/lanMesh.ts",
+      "layer": "Layer 5",
+      "lines": 13,
+      "description": "Canonical slim facade (13 lines <= 50 lines ceiling) preserving 100% backward compatibility"
+    }
+  ],
+  "verificationGates": {
+    "gate1_line_count_budget": "PASSED (all decomposed files strictly <= 800 lines)",
+    "gate2_ast_export_parity": "PASSED (100% of 47 baseline exports preserved)",
+    "gate3_test_anchors": "PASSED (100% test anchors preserved)",
+    "gate4_utf8_hygiene": "PASSED (clean UTF-8 without BOM across workspace)",
+    "gate5_acyclic_dag_madge": "PASSED (0 circular dependencies detected)"
+  },
+  "unitTests": [
+    {
+      "testSuite": "packages/shared/src/sync/__tests__/lanMesh.test.ts",
+      "total": 11,
+      "passed": 11,
+      "failed": 0,
+      "exitCode": 0
+    },
+    {
+      "testSuite": "packages/shared/src/sync/__tests__/lanFailoverAndSplitBrain.test.ts",
+      "total": 18,
+      "passed": 18,
+      "failed": 0,
+      "exitCode": 0
+    }
+  ],
+  "auditStatus": "VERIFIED_CLEAN",
+  "timestamp": "2026-10-09T08:38:00Z"
+}

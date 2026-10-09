@@ -1,0 +1,73 @@
+{
+  "timestamp": "2026-10-09T12:39:00.000Z",
+  "subagent": "Lead Communications Outbox Decomposer",
+  "status": "COMPLETED",
+  "targetFile": "apps/api/src/routes/communicationsOutbox.ts",
+  "originalLines": 1375,
+  "facadeLines": 11,
+  "modulesCreated": [
+    {
+      "path": "apps/api/src/routes/outbox/types.ts",
+      "layer": 0,
+      "lines": 205,
+      "description": "Zod schemas, inferred types, parseVariables and validationError helper"
+    },
+    {
+      "path": "apps/api/src/routes/outbox/outboxQueries.ts",
+      "layer": 1,
+      "lines": 209,
+      "description": "Tenant-scoped database read queries for templates, settings, consents, outbox journal and queue backlog"
+    },
+    {
+      "path": "apps/api/src/routes/outbox/outboxDispatcher.ts",
+      "layer": 2,
+      "lines": 371,
+      "description": "Mutation and dispatch logic: enqueue, cancel, retry, campaigns lifecycle, settings upsert, consents upsert, gateway status"
+    },
+    {
+      "path": "apps/api/src/routes/outbox/templateAndSettingsRoutes.ts",
+      "layer": 3,
+      "lines": 426,
+      "description": "Fastify endpoints for template management, preview, settings and consents"
+    },
+    {
+      "path": "apps/api/src/routes/outbox/outboxAndCampaignRoutes.ts",
+      "layer": 3,
+      "lines": 444,
+      "description": "Fastify endpoints for outbox queue mutations, campaigns and gateway status"
+    },
+    {
+      "path": "apps/api/src/routes/outbox/outboxRouteHandlers.ts",
+      "layer": 3,
+      "lines": 11,
+      "description": "Fastify route registration coordinator combining modular route handlers"
+    },
+    {
+      "path": "apps/api/src/routes/outbox/index.ts",
+      "layer": 5,
+      "lines": 8,
+      "description": "Barrel re-export for the outbox subsystem"
+    },
+    {
+      "path": "apps/api/src/routes/communicationsOutbox.ts",
+      "layer": 5,
+      "lines": 11,
+      "description": "Canonical slim facade <= 50 lines preserving 100% public exports and default export"
+    }
+  ],
+  "verificationGates": {
+    "gate1_lineCountBudget": "PASSED (All files <= 444 lines, facade 11 lines <= 50 lines)",
+    "gate2_astExportParity": "PASSED (100% baseline exports preserved: 33 baseline, 33 facade)",
+    "gate3_testAnchors": "PASSED (100% anchors preserved)",
+    "gate4_utf8Hygiene": "PASSED (Clean UTF-8 without BOM)",
+    "gate5_acyclicDAG": "PASSED (0 circular dependencies, verified by madge)",
+    "allGatesResult": "100% CLEAN (ALL GATES PASSED)"
+  },
+  "unitTests": {
+    "suite": "apps/api/src/tests/routes/communicationsOutbox.test.ts",
+    "total": 16,
+    "passed": 16,
+    "failed": 0,
+    "exitCode": 0
+  }
+}

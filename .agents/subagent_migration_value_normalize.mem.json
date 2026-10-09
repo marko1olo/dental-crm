@@ -1,0 +1,109 @@
+{
+  "subagent": "Lead Migration Value Normalizer Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T08:38:00Z",
+  "target": "apps/api/src/migration/valueNormalize.ts",
+  "originalLines": 1364,
+  "facadeLines": 38,
+  "decomposedDirectory": "apps/api/src/migration/normalizers",
+  "modules": [
+    {
+      "path": "apps/api/src/migration/normalizers/types.ts",
+      "layer": "Layer 0",
+      "lines": 75,
+      "exports": [
+        "NormalizedValue",
+        "DateOrder",
+        "DateFormatHint",
+        "NormalizedDateTime",
+        "NormalizedPhone",
+        "NormalizedName",
+        "Gender"
+      ]
+    },
+    {
+      "path": "apps/api/src/migration/normalizers/common.ts",
+      "layer": "Layer 1",
+      "lines": 118,
+      "exports": [
+        "ok",
+        "empty",
+        "bad",
+        "isNullToken",
+        "truncateForMessage"
+      ]
+    },
+    {
+      "path": "apps/api/src/migration/normalizers/textAndDateNormalizers.ts",
+      "layer": "Layer 1",
+      "lines": 533,
+      "exports": [
+        "isNullToken",
+        "normalizeText",
+        "detectDateOrder",
+        "normalizeDateValue",
+        "normalizeDateTimeValue",
+        "formatNormalizedDateTime",
+        "storedDateTimeToUtc",
+        "dateOnlyPart"
+      ]
+    },
+    {
+      "path": "apps/api/src/migration/normalizers/phoneAndNameNormalizers.ts",
+      "layer": "Layer 1",
+      "lines": 274,
+      "exports": [
+        "normalizePhoneValue",
+        "fixNameCase",
+        "normalizeNameValue",
+        "combineNameParts"
+      ]
+    },
+    {
+      "path": "apps/api/src/migration/normalizers/financialAndClinicalNormalizers.ts",
+      "layer": "Layer 1",
+      "lines": 379,
+      "exports": [
+        "normalizeMoneyValue",
+        "normalizeMoneyRubles",
+        "normalizeGenderValue",
+        "normalizeBooleanValue",
+        "normalizeEnumValue",
+        "normalizeToothCode",
+        "truncateForMessage",
+        "normalizeEmailValue"
+      ]
+    },
+    {
+      "path": "apps/api/src/migration/normalizers/index.ts",
+      "layer": "Layer 5",
+      "lines": 43,
+      "exports": "All 27 normalizer symbols"
+    },
+    {
+      "path": "apps/api/src/migration/valueNormalize.ts",
+      "layer": "Layer 5 Facade",
+      "lines": 38,
+      "exports": "Canonical facade <= 50 lines, 100% backward compatible"
+    }
+  ],
+  "gates": {
+    "gate1_line_count_budget": "PASSED (all files <= 533 lines, max budget 800 lines)",
+    "gate2_ast_export_parity": "PASSED (27/26 exports, 100% baseline preserved)",
+    "gate3_test_anchors": "PASSED (100% preserved)",
+    "gate4_utf8_hygiene": "PASSED (Clean UTF-8)",
+    "gate5_acyclic_dag": "PASSED (0 circular dependencies confirmed via madge)"
+  },
+  "tests": {
+    "valueNormalize_test": {
+      "total": 55,
+      "passed": 55,
+      "failed": 0
+    },
+    "adjacent_tests": {
+      "total": 26,
+      "passed": 26,
+      "failed": 0
+    }
+  }
+}

@@ -1,6 +1,5 @@
 /**
- * Canonical facade for migration value normalizers.
- * Preserves 100% backward compatibility with all existing imports.
+ * Layer 5: Clean barrel export for all migration normalizers.
  */
 
 export type {
@@ -11,27 +10,33 @@ export type {
 	NormalizedName,
 	NormalizedPhone,
 	NormalizedValue,
-} from "./normalizers/index.js";
+} from "./types.js";
+
+export {
+	dateOnlyPart,
+	detectDateOrder,
+	formatNormalizedDateTime,
+	isNullToken,
+	normalizeDateTimeValue,
+	normalizeDateValue,
+	normalizeText,
+	storedDateTimeToUtc,
+} from "./textAndDateNormalizers.js";
 
 export {
 	combineNameParts,
-	dateOnlyPart,
-	detectDateOrder,
 	fixNameCase,
-	formatNormalizedDateTime,
-	isNullToken,
+	normalizeNameValue,
+	normalizePhoneValue,
+} from "./phoneAndNameNormalizers.js";
+
+export {
 	normalizeBooleanValue,
-	normalizeDateTimeValue,
-	normalizeDateValue,
 	normalizeEmailValue,
 	normalizeEnumValue,
 	normalizeGenderValue,
 	normalizeMoneyRubles,
 	normalizeMoneyValue,
-	normalizeNameValue,
-	normalizePhoneValue,
-	normalizeText,
 	normalizeToothCode,
-	storedDateTimeToUtc,
 	truncateForMessage,
-} from "./normalizers/index.js";
+} from "./financialAndClinicalNormalizers.js";
