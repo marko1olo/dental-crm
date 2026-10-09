@@ -1,0 +1,68 @@
+{
+  "subagent": "subagent_telegram_staff_cockpit",
+  "role": "Red Team Inquisitor & L3 Telegram Staff Cockpit Decomposer",
+  "targetMonolith": "apps/api/src/services/telegram/TelegramStaffCockpitService.ts",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T11:47:00Z",
+  "originalLines": 1422,
+  "facadeLines": 35,
+  "decomposedDirectory": "apps/api/src/services/telegram/staffCockpit/",
+  "modules": [
+    {
+      "file": "apps/api/src/services/telegram/staffCockpit/types.ts",
+      "layer": "Layer 0",
+      "lines": 121,
+      "purpose": "Types and contracts: StaffCockpitRole, MedicalSecrecySanitizeResult, StaffAuthTokenRecord, DoctorEventType, DoctorEventPushParams, DoctorEventPushResult, DoctorMorningDigestResult, ExecutiveEveningReportResult, InventoryShortageItem, LowInventoryAlertResult"
+    },
+    {
+      "file": "apps/api/src/services/telegram/staffCockpit/sanitizers.ts",
+      "layer": "Layer 0/1",
+      "lines": 151,
+      "purpose": "323-FZ/152-FZ Medical secrecy sanitizers, phone formatting, patient initials, role mapping, in-memory tokens storage"
+    },
+    {
+      "file": "apps/api/src/services/telegram/staffCockpit/digestBuilders.ts",
+      "layer": "Layer 1",
+      "lines": 681,
+      "purpose": "Morning doctor shift digest, realtime event pushes, evening executive financial report, low inventory shortage alert, role menu keyboards"
+    },
+    {
+      "file": "apps/api/src/services/telegram/staffCockpit/pushDispatcher.ts",
+      "layer": "Layer 2",
+      "lines": 75,
+      "purpose": "Staff push dispatcher: doctor chat link verification and Telegram transport message delivery"
+    },
+    {
+      "file": "apps/api/src/services/telegram/staffCockpit/cockpitService.ts",
+      "layer": "Layer 3",
+      "lines": 522,
+      "purpose": "TelegramStaffCockpitService class: single-use token generation, /start command auth handler, interactive callback routing"
+    },
+    {
+      "file": "apps/api/src/services/telegram/staffCockpit/index.ts",
+      "layer": "Layer 5",
+      "lines": 45,
+      "purpose": "Canonical barrel re-exporting all 17 public symbols"
+    },
+    {
+      "file": "apps/api/src/services/telegram/TelegramStaffCockpitService.ts",
+      "layer": "Layer 5 (Facade)",
+      "lines": 35,
+      "purpose": "Canonical facade maintaining 100% backwards compatibility (<= 50 lines)"
+    }
+  ],
+  "verificationGates": {
+    "gate1_line_count_budget": "PASSED (all files strictly <= 800 lines, facade 35 lines <= 50)",
+    "gate2_ast_public_export_parity": "PASSED (100% of 24 baseline/facade exports preserved)",
+    "gate3_test_anchors": "PASSED (100% test anchors preserved)",
+    "gate4_utf8_encoding": "PASSED (clean UTF-8 without BOM)",
+    "gate5_acyclic_graph": "PASSED (madge verified 0 circular dependencies)"
+  },
+  "unitTests": {
+    "suite": "apps/api/src/tests/telegramStaffCockpit.test.ts",
+    "passed": 30,
+    "failed": 0,
+    "duration_ms": 3452,
+    "exitCode": 0
+  }
+}

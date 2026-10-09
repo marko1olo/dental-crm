@@ -401,6 +401,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	gap: 8px;
 	background: var(--paper-strong);
 }
 
@@ -408,6 +409,8 @@
 	display: flex;
 	align-items: center;
 	gap: 6px;
+	min-width: 0;
+	flex: 1;
 }
 
 .ztl-column-icon {
@@ -415,6 +418,7 @@
 	align-items: center;
 	justify-content: center;
 	color: var(--teal);
+	flex-shrink: 0;
 }
 
 .ztl-column-title {
@@ -422,7 +426,9 @@
 	font-weight: 700;
 	color: var(--ink);
 	margin: 0;
-	white-space: nowrap;
+	white-space: normal;
+	line-height: 1.25;
+	word-break: break-word;
 }
 
 .ztl-column-count {
@@ -432,6 +438,7 @@
 	border-radius: 10px;
 	background: var(--paper-soft);
 	color: var(--muted);
+	flex-shrink: 0;
 }
 
 .ztl-column-count.has-items {
@@ -499,15 +506,22 @@
 	font-weight: 700;
 	color: var(--ink);
 	margin: 0;
-	white-space: nowrap;
+	white-space: normal;
+	line-height: 1.3;
+	word-break: break-word;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
 	overflow: hidden;
-	text-overflow: ellipsis;
 }
 
 .ztl-card-doctor {
 	font-size: 11px;
 	color: var(--muted);
 	margin: 0;
+	white-space: normal;
+	line-height: 1.3;
+	word-break: break-word;
 }
 
 .ztl-card-work-type {
@@ -530,8 +544,11 @@
 	font-size: 11px;
 	color: var(--muted);
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	gap: 4px;
+	white-space: normal;
+	line-height: 1.3;
+	word-break: break-word;
 }
 
 /* Плашка предупреждения о дедлайне внутри карточки */

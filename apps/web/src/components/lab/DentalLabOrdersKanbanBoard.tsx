@@ -85,7 +85,9 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 									{stageId === "installed_completed" && <CheckCircle2 size={16} />}
 									{stageId === "warranty_rework" && <RotateCcw size={16} />}
 								</span>
-								<h3 className="ztl-column-title">{stageDef.nameRu}</h3>
+								<h3 className="ztl-column-title" title={stageDef.nameRu}>
+									{stageId === "warranty_rework" ? "Рекламация / Гарантия" : stageDef.nameRu}
+								</h3>
 							</div>
 							<span className={`ztl-column-count ${stageOrders.length > 0 ? "has-items" : ""}`}>
 								{stageOrders.length}
@@ -129,11 +131,11 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 											</div>
 										)}
 
-										<h4 className="ztl-card-patient-name truncate min-w-0" title={order.patientName}>
+										<h4 className="ztl-card-patient-name min-w-0" title={order.patientName}>
 											{order.patientName}
 										</h4>
 
-										<p className="ztl-card-doctor truncate min-w-0" title={order.doctorName}>
+										<p className="ztl-card-doctor min-w-0" title={order.doctorName}>
 											{order.doctorName}
 										</p>
 
@@ -219,7 +221,7 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 
 										<div className="ztl-card-lab-name min-w-0" title={order.labName}>
 											<Building2 size={11} className="shrink-0" />
-											<span className="truncate">{order.labName}</span>
+											<span>{order.labName}</span>
 										</div>
 
 										{/* 8 технологических этапов ЗТЛ */}

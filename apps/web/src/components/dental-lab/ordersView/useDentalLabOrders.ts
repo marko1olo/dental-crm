@@ -301,7 +301,7 @@ export function useDentalLabOrders({
 				idx,
 				raw.patientId,
 				raw.patientName,
-				raw.doctorName,
+				raw.doctorName ?? undefined,
 			);
 			if (map[wf.currentStage]) {
 				map[wf.currentStage].push(wf);

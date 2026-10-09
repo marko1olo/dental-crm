@@ -1,9 +1,8 @@
 /**
- * TelegramStaffCockpitService.ts
+ * staffCockpit/index.ts
  *
- * Канонический фасад мобильного кокпита персонала в Telegram (Staff Dispatcher & Doctor Chairside Cockpit).
- * Декомпозирован в директорию ./staffCockpit/ согласно DAG Layering архитектуре.
- * Сохраняет 100% обратную совместимость для всех импортов в кодовой базе.
+ * Layer 5: Единый канонический barrel-экспорт мобильного кокпита персонала в Telegram.
+ * 100% паритет всех 17 публичных сущностей.
  */
 
 export type {
@@ -17,7 +16,7 @@ export type {
 	ExecutiveEveningReportResult,
 	InventoryShortageItem,
 	LowInventoryAlertResult,
-} from "./staffCockpit/index.js";
+} from "./types.js";
 
 export {
 	mapUserRoleToStaffCockpitRole,
@@ -27,11 +26,20 @@ export {
 	sanitizeStaffPushFor323FZ,
 	clearInMemoryStaffTokensForTest,
 	inMemoryStaffTokens,
+} from "./sanitizers.js";
+
+export {
 	buildStaffRoleMenuKeyboard,
 	buildDoctorMorningDigest,
 	buildDoctorEventPush,
 	buildExecutiveEveningReport,
 	buildLowInventoryAlert,
+} from "./digestBuilders.js";
+
+export {
 	dispatchDoctorPush,
+} from "./pushDispatcher.js";
+
+export {
 	TelegramStaffCockpitService,
-} from "./staffCockpit/index.js";
+} from "./cockpitService.js";

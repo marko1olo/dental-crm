@@ -1,0 +1,86 @@
+{
+  "subagent": "domain_state_hydration_decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T11:48:00+04:00",
+  "original_file": "apps/api/src/db/domainStateHydration.ts",
+  "original_line_count": 1423,
+  "facade_file": "apps/api/src/db/domainStateHydration.ts",
+  "facade_line_count": 32,
+  "target_directory": "apps/api/src/db/domainHydration/",
+  "modules": [
+    {
+      "file": "apps/api/src/db/domainHydration/types.ts",
+      "layer": 0,
+      "lines": 50,
+      "exports": ["DomainState", "DomainStateHydrationReport", "HydratedDomainState", "HydrationOptions"]
+    },
+    {
+      "file": "apps/api/src/db/domainHydration/sliceValidators.ts",
+      "layer": 2,
+      "lines": 49,
+      "exports": ["CRITICAL_SLICES", "DomainStateSliceUnavailableError", "assertCriticalSlicesAvailable"]
+    },
+    {
+      "file": "apps/api/src/db/domainHydration/sliceExtractors.ts",
+      "layer": 1,
+      "lines": 662,
+      "exports": [
+        "iso",
+        "reportUnreadableTime",
+        "isoOrSkipRow",
+        "parseJsonArray",
+        "parseJsonObject",
+        "collect",
+        "selectByOrganization",
+        "extractStaff",
+        "extractChairs",
+        "extractPatients",
+        "extractAppointments",
+        "extractVisits",
+        "extractTreatmentItems",
+        "extractPayments",
+        "extractDocuments",
+        "extractCommunicationTasks",
+        "extractCommunicationEvents",
+        "extractImagingStudies",
+        "extractClinicalRules",
+        "extractProtocolTemplates"
+      ]
+    },
+    {
+      "file": "apps/api/src/db/domainHydration/hydrationPipeline.ts",
+      "layer": 3,
+      "lines": 377,
+      "exports": [
+        "NIL_UUID",
+        "NO_VISIT_TIMESTAMP",
+        "UNREADABLE_TIME_MARKER",
+        "noVisitSkeleton",
+        "applyActiveVisit",
+        "emptyDomainState",
+        "hydrateFromDatabase",
+        "hydrateDomainStateFromDb",
+        "_withHydratedDomainState",
+        "_findLatestVisitIdForPatient"
+      ]
+    },
+    {
+      "file": "apps/api/src/db/domainHydration/index.ts",
+      "layer": 5,
+      "lines": 52,
+      "exports": "barrel"
+    }
+  ],
+  "verification_gates": {
+    "gate_1_line_count_budget": "PASSED (all files <= 800 lines, facade 32 lines <= 50 lines)",
+    "gate_2_ast_export_parity": "PASSED (100% of 5 baseline exports preserved)",
+    "gate_3_test_anchors": "PASSED (100% anchors preserved)",
+    "gate_4_utf8_encoding": "PASSED (clean UTF-8 without BOM)",
+    "gate_5_acyclic_dag": "PASSED (0 circular dependencies)"
+  },
+  "targeted_database_tests": {
+    "hydrationUnknownTimeIsNotNow.test.ts": "PASSED (6/6 passing)",
+    "patientInsightDropsCancelledTreatment.test.ts": "PASSED (4/4 passing)",
+    "dashboardOrphanClinicSession.test.ts": "PASSED (5/5 passing)"
+  }
+}

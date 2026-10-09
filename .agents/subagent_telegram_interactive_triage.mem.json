@@ -1,0 +1,70 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Telegram Interactive Triage Decomposer",
+  "targetMonolith": "apps/api/src/services/telegram/TelegramInteractiveTriageService.ts",
+  "timestamp": "2026-10-09T07:48:30Z",
+  "status": "COMPLETED",
+  "linesBaseline": 1421,
+  "linesFacade": 9,
+  "gates": {
+    "gate1_line_budget": {
+      "status": "PASSED",
+      "limit": 800,
+      "files": [
+        { "file": "apps/api/src/services/telegram/triageService/types.ts", "lines": 100 },
+        { "file": "apps/api/src/services/telegram/triageService/presets.ts", "lines": 114 },
+        { "file": "apps/api/src/services/telegram/triageService/triageKeyboardBuilder.ts", "lines": 608 },
+        { "file": "apps/api/src/services/telegram/triageService/triageCostCalculator.ts", "lines": 65 },
+        { "file": "apps/api/src/services/telegram/triageService/triageScreenPresenter.ts", "lines": 492 },
+        { "file": "apps/api/src/services/telegram/triageService/triageServiceClass.ts", "lines": 543 },
+        { "file": "apps/api/src/services/telegram/triageService/index.ts", "lines": 101 },
+        { "file": "apps/api/src/services/telegram/TelegramInteractiveTriageService.ts", "lines": 9 }
+      ]
+    },
+    "gate2_ast_export_parity": {
+      "status": "PASSED",
+      "baselineExportsCount": 11,
+      "facadeExportsCount": 73,
+      "baselinePreserved": [
+        "CARIES_PRESETS",
+        "CROWN_PRESETS",
+        "CrownTypePreset",
+        "IMPLANT_PRESETS",
+        "ImplantSystemPreset",
+        "TelegramInlineButton",
+        "TelegramInlineKeyboard",
+        "TelegramInteractiveTriageService",
+        "TreatmentCostOption",
+        "TriageScreenResult",
+        "WHITENING_PRESETS"
+      ]
+    },
+    "gate3_test_anchors": {
+      "status": "PASSED",
+      "anchorsPreserved": "100%"
+    },
+    "gate4_utf8_hygiene": {
+      "status": "PASSED",
+      "encoding": "UTF-8 without BOM"
+    },
+    "gate5_acyclic_dag": {
+      "status": "PASSED",
+      "circularDependencies": 0
+    }
+  },
+  "tests": {
+    "triageServiceUnitTest": {
+      "file": "apps/api/src/services/telegram/__tests__/triageService.test.ts",
+      "tests": 13,
+      "passed": 13,
+      "failed": 0,
+      "exitCode": 0
+    },
+    "telegramInteractiveTriageIntegration": {
+      "file": "apps/api/src/tests/telegramInteractiveTriage.test.ts",
+      "tests": 24,
+      "passed": 24,
+      "failed": 0,
+      "exitCode": 0
+    }
+  }
+}

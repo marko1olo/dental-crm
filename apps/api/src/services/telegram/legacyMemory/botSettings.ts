@@ -304,7 +304,7 @@ function configuredTelegramBotUsername(): string | null {
 	return safeTelegramBotUsername(selected);
 }
 
-function configuredTelegramBotConfigId(): string {
+export function configuredTelegramBotConfigId(): string {
 	const clinicJson = configuredClinicTelegramBotFromJson();
 	if (
 		denteTelegramBotSettings.mode === "clinic_owned_bot" &&

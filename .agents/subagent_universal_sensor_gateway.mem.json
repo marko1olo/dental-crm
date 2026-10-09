@@ -1,0 +1,117 @@
+{
+  "subagent": "UniversalSensorGateway Decomposer & Red Team Inquisitor",
+  "targetFile": "apps/web/src/components/radiology/UniversalSensorGateway.ts",
+  "timestamp": "2026-10-09T11:43:00.000Z",
+  "status": "COMPLETED",
+  "allGatesPassed": true,
+  "metrics": {
+    "monolithInitialLines": 1424,
+    "facadeLines": 13,
+    "facadeLineBudgetMax": 50,
+    "fileLineBudgetMax": 800,
+    "totalExports": 24,
+    "astExportParityPercent": 100
+  },
+  "decomposedModules": [
+    {
+      "path": "apps/web/src/components/radiology/sensorGateway/types.ts",
+      "layer": "Layer 0 (Types & Contracts)",
+      "lines": 125,
+      "exports": [
+        "SensorBrandId",
+        "SensorIntakeProtocol",
+        "UniversalSensorModel",
+        "SensorVendorProfile",
+        "TwainDataSourceItem",
+        "HotFolderRouteMatch",
+        "UsbSensorMatch",
+        "DicomScpConfig",
+        "SensorDetectionResult",
+        "SensorConnectionStatus"
+      ]
+    },
+    {
+      "path": "apps/web/src/components/radiology/sensorGateway/vendorProfiles.ts",
+      "layer": "Layer 0 (Vendor Hardware & Windows Folders Catalog)",
+      "lines": 238,
+      "exports": [
+        "SENSOR_VENDOR_PROFILES"
+      ]
+    },
+    {
+      "path": "apps/web/src/components/radiology/sensorGateway/sensorModelsCatalog.ts",
+      "layer": "Layer 0 (Certified Sensor Hardware Models Catalog)",
+      "lines": 781,
+      "exports": [
+        "UNIVERSAL_SENSOR_CATALOG"
+      ]
+    },
+    {
+      "path": "apps/web/src/components/radiology/sensorGateway/sensorCatalogs.ts",
+      "layer": "Layer 0 (Catalogs Aggregator & Selector Helpers)",
+      "lines": 27,
+      "exports": [
+        "SENSOR_VENDOR_PROFILES",
+        "UNIVERSAL_SENSOR_CATALOG",
+        "getUniversalSensorById",
+        "getSensorsByBrand"
+      ]
+    },
+    {
+      "path": "apps/web/src/components/radiology/sensorGateway/twainAndUsbDrivers.ts",
+      "layer": "Layer 1 (TWAIN DSM, Direct USB VID/PID Registry, DICOM SCP)",
+      "lines": 136,
+      "exports": [
+        "KNOWN_TWAIN_DATA_SOURCES",
+        "getAvailableTwainSources",
+        "lookupSensorByUsbVidPid",
+        "DEFAULT_DICOM_SCP_CONFIG",
+        "NON_CONFLICTING_USB_POLICY"
+      ]
+    },
+    {
+      "path": "apps/web/src/components/radiology/sensorGateway/hotFolderRouting.ts",
+      "layer": "Layer 2 (Hot Folder Intake Router & Scanner Paths)",
+      "lines": 70,
+      "exports": [
+        "VENDOR_HOT_FOLDER_MAP",
+        "routeIncomingHotFolder",
+        "getAllVendorHotFolders"
+      ]
+    },
+    {
+      "path": "apps/web/src/components/radiology/sensorGateway/hardwareDetection.ts",
+      "layer": "Layer 2 (Autonomous Hardware Detection & Diagnostic Loopback)",
+      "lines": 82,
+      "exports": [
+        "autoDetectConnectedSensor",
+        "testSensorConnection"
+      ]
+    },
+    {
+      "path": "apps/web/src/components/radiology/sensorGateway/index.ts",
+      "layer": "Layer 5 (Barrel Re-Export Facade)",
+      "lines": 13,
+      "exports": "All 24 canonical exports"
+    },
+    {
+      "path": "apps/web/src/components/radiology/UniversalSensorGateway.ts",
+      "layer": "Layer 5 (Canonical Backward-Compatible Slim Facade)",
+      "lines": 13,
+      "exports": "100% backward-compatible re-exports"
+    }
+  ],
+  "verificationGates": {
+    "Gate1_LineCountBudget": "PASSED (all files <= 800 lines, facade 13 lines <= 50 lines)",
+    "Gate2_ASTExportParity": "PASSED (24/24 exports preserved, 100% parity)",
+    "Gate3_TestAnchorParity": "PASSED (0 test anchors lost)",
+    "Gate4_Utf8Encoding": "PASSED (Clean UTF-8, no BOM, no mojibake)",
+    "Gate5_AcyclicGraphMadge": "PASSED (0 circular dependencies, acyclic DAG confirmed)"
+  },
+  "testSuitesPassing": [
+    "apps/web/src/components/radiology/__tests__/sensorStudyClinicalTools.test.ts (10/10 passed)",
+    "apps/web/src/components/radiology/__tests__/universalSensorGateway.test.ts (43/43 passed)",
+    "apps/web/src/components/radiology/__tests__/captureConsoleAndHardwareGateways.test.ts (21/21 passed)",
+    "apps/web/src/components/radiology/__tests__/directRvgCaptureModal.test.tsx (9/9 passed)"
+  ]
+}

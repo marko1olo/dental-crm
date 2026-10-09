@@ -25,7 +25,7 @@ import { formatLabConstructionTitle } from "./dentalLabDefinitions";
 export interface LabOrderCardProps {
 	order: DentalLabOrderData;
 	openMenuOrderId: string | null;
-	setOpenMenuOrderId: React.Dispatch<React.SetStateAction<string | null>>;
+	setOpenMenuOrderId: React.Dispatch<React.SetStateAction<string | null>> | ((id: string | null) => void);
 	handleOpenPrintOrder: (order: DentalLabOrderData) => void;
 	handleOpenTracking: (order: DentalLabOrderData) => void;
 	handleAttach3DScan: (order: DentalLabOrderData) => void;

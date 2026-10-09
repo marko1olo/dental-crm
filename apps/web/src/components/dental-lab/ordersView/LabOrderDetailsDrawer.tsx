@@ -181,7 +181,7 @@ export function LabOrderDetailsDrawer({
 					}
 					patientName={view3DScanOrder.patientName}
 					scanTitle={`3D-скан челюсти: Наряд №${view3DScanOrder.id ? view3DScanOrder.id.slice(0, 8) : ""} (${view3DScanOrder.toothFdi ? `зуб ${view3DScanOrder.toothFdi}` : "челюсть"})`}
-					toothCode={view3DScanOrder.toothFdi}
+					toothCode={view3DScanOrder.toothFdi ?? undefined}
 					orderId={view3DScanOrder.id}
 				/>
 			)}
