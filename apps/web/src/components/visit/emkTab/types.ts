@@ -86,4 +86,5 @@ export interface VisitEmkCanvasProps {
 	setIsSoapTemplatesModalOpen: (open: boolean) => void;
 	handleCompleteVisitAndGenerateReceipt: () => Promise<void>;
 	isCompletingVisit: boolean;
+	onApplySoapPreset?: (preset: any) => void;
 }

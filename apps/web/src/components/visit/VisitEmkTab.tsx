@@ -17,6 +17,7 @@ import {
 	formatSoapFromPreset,
 } from "./clinicalSoapPresets";
 import { type VisitNoteFieldsPatch } from "./clinicalCatalog";
+import { infer804nServiceFromStamp } from "./infer804nService";
 import { EmkVoicePilot } from "./EmkVoicePilot";
 import { useVisitSave } from "./useVisitSave";
 import { useVisitEmkToothSync } from "./useVisitEmkToothSync";
@@ -251,9 +252,20 @@ export function VisitEmkTab() {
 
 			if (formatted.complaint) {
 				const currentComplaint = (visitNoteForm as any)?.complaint || (visitNoteForm as any)?.complaints || "";
-				if (!currentComplaint.trim() || currentComplaint.includes("активно не предъявляет")) {
+				if (!currentComplaint.trim() || currentComplaint.includes("активно не предъявляет") || currentComplaint.includes("Жалоб нет")) {
 					updateVisitNoteField("complaint", formatted.complaint);
 				}
+			}
+
+			if (formatted.anamnesis) {
+				const currentAnamnesis = (visitNoteForm as any)?.anamnesis || "";
+				if (!currentAnamnesis.trim() || currentAnamnesis.includes("Соматически здоров")) {
+					updateVisitNoteField("anamnesis", formatted.anamnesis);
+				}
+			}
+
+			if (formatted.recommendations) {
+				updateVisitNoteField("recommendations", formatted.recommendations);
 			}
 
 			useVisitStore.getState().setVisitToothRecord(String(activeToothNum), {
@@ -275,9 +287,30 @@ export function VisitEmkTab() {
 					: {}),
 			});
 
+			if (preset.service804n) {
+				window.dispatchEvent(
+						new CustomEvent("dente-add-services-to-invoice", {
+							detail: {
+								services: [
+									{
+										serviceId: preset.service804n.code804n,
+										title: preset.service804n.title,
+										unitPriceRub: preset.service804n.basePriceRub,
+										quantity: 1,
+										code804n: preset.service804n.code804n,
+										toothCode: String(activeToothNum),
+									},
+								],
+							},
+						}),
+				);
+			}
+
+			triggerDebouncedAutosave();
+
 			showToast(`Протокол «${preset.title}» применён для зуба ${activeToothNum}`, "success", 3000);
 		},
-		[visitNoteForm, updateVisitNoteField, dashboard],
+		[visitNoteForm, updateVisitNoteField, dashboard, triggerDebouncedAutosave],
 	);
 
 	const handleSaveVisitNote = React.useCallback(async () => {
@@ -436,6 +469,7 @@ export function VisitEmkTab() {
 				setIsSoapTemplatesModalOpen={setIsSoapTemplatesModalOpen}
 				handleCompleteVisitAndGenerateReceipt={handleCompleteVisitAndGenerateReceipt}
 				isCompletingVisit={isCompletingVisit}
+				onApplySoapPreset={handleApplySoapPreset}
 			/>
 
 			{/* Секция завершения визита и нижний командный бар */}

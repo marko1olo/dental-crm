@@ -9,6 +9,7 @@ import {
 	EmkEndoSection,
 	appendClinicalText,
 } from "../emk";
+import { ClinicalQuickPresetsBar } from "../ClinicalQuickPresetsBar";
 import { VisitEmkServicesBilling } from "./VisitEmkServicesBilling";
 import type { VisitEmkCanvasProps } from "./types";
 
@@ -24,6 +25,7 @@ export function VisitEmkCanvas({
 	setIsSoapTemplatesModalOpen,
 	handleCompleteVisitAndGenerateReceipt,
 	isCompletingVisit,
+	onApplySoapPreset,
 }: VisitEmkCanvasProps) {
 	return (
 		<div className="space-y-4 mt-2.5 w-full min-w-0" data-testid="emk-clinical-canvas">
@@ -90,6 +92,18 @@ export function VisitEmkCanvas({
 
 			{activeEmkTab === "all" ? (
 				<div className="space-y-4 w-full min-w-0">
+					{/* Экспресс-панель клинических категорий и протоколов СтАР */}
+					<ClinicalQuickPresetsBar
+						onSelectPreset={(preset, targetTooth) => {
+							if (onApplySoapPreset) {
+								onApplySoapPreset(preset);
+							}
+						}}
+						isLocked={isLocked}
+						activeTooth={effectiveActiveTooth}
+						onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
+					/>
+
 					<EmkComplaintsSection
 						visitNoteForm={visitNoteForm}
 						updateVisitNoteField={updateVisitNoteField}

@@ -3,17 +3,14 @@ import {
 	Baby,
 	Bone,
 	BookOpen,
-	Check,
 	Crown,
 	Flame,
 	HeartPulse,
 	PlusCircle,
 	Scissors,
-	Search,
 	ShieldCheck,
 	Sparkles,
 	Stethoscope,
-	Syringe,
 	Zap,
 } from "lucide-react";
 import React from "react";
@@ -54,6 +51,197 @@ const COMMON_FDI_TEETH = [
 	16, 26, 36, 46, 11, 21, 31, 41, 14, 24, 34, 44, 18, 48,
 ];
 
+interface ClinicalSpecialtySection {
+	id: string;
+	label: string;
+	icon: React.ComponentType<{ size?: number; className?: string }>;
+	items: {
+		presetId: string;
+		label: string;
+		subtext?: string;
+	}[];
+}
+
+const CLINICAL_SPECIALTY_SECTIONS: readonly ClinicalSpecialtySection[] = [
+	{
+		id: "therapy",
+		label: "Терапия (Кариес)",
+		icon: Stethoscope,
+		items: [
+			{
+				presetId: "caries_initial_icon",
+				label: "Поверхностный кариес",
+				subtext: "Инфильтрация Icon (без бора)",
+			},
+			{
+				presetId: "caries_medium",
+				label: "Средний кариес (K02.1)",
+				subtext: "Препарирование + Estelite",
+			},
+			{
+				presetId: "caries_deep",
+				label: "Глубокий кариес",
+				subtext: "Ca(OH)2 + СИЦ + реставрация",
+			},
+			{
+				presetId: "wedge_defect_cervical",
+				label: "Клиновидный дефект",
+				subtext: "Beautifil Flow + эмаль",
+			},
+			{
+				presetId: "filling_restoration",
+				label: "Скол эмали",
+				subtext: "Восстановление реставрации",
+			},
+		],
+	},
+	{
+		id: "endo",
+		label: "Эндодонтия (Пульпит/Периодонтит)",
+		icon: Flame,
+		items: [
+			{
+				presetId: "pulpitis_acute",
+				label: "Острый пульпит (K04.0)",
+				subtext: "ProTaper + NaOCl + AH Plus",
+			},
+			{
+				presetId: "pulpitis_visit1",
+				label: "Пульпит 1 эт. (экстирпация + Ca(OH)2)",
+				subtext: "Экстирпация + Каласепт",
+			},
+			{
+				presetId: "pulpitis_obturation",
+				label: "Обтурация (AH Plus + гуттаперча)",
+				subtext: "Латеральная конденсация",
+			},
+			{
+				presetId: "periodontitis_destructive",
+				label: "Периодонтит деструктивный (K04.5)",
+				subtext: "УЗ + Metapex/Calcept",
+			},
+			{
+				presetId: "periodontitis_chronic",
+				label: "Хронический периодонтит",
+				subtext: "Мехобработка + Ca(OH)2",
+			},
+		],
+	},
+	{
+		id: "hygiene",
+		label: "Гигиена",
+		icon: Sparkles,
+		items: [
+			{
+				presetId: "hygiene_complex",
+				label: "Комплексная профгигиена",
+				subtext: "Piezon + Air-Flow + фторлак",
+			},
+			{
+				presetId: "hygiene_k036",
+				label: "Снятие зубных отложений (K03.6)",
+				subtext: "Piezon + Detartrine + Bifluorid",
+			},
+			{
+				presetId: "hygiene_and_caries_mixed",
+				label: "Air-Flow + полировка",
+				subtext: "Удаление мягкого/пигм. налета",
+			},
+			{
+				presetId: "cold_hot_sensitivity",
+				label: "Реминерализующая терапия",
+				subtext: "Gluma Desensitizer + фторирование",
+			},
+		],
+	},
+	{
+		id: "surgery",
+		label: "Хирургия (Удаление)",
+		icon: Scissors,
+		items: [
+			{
+				presetId: "surgery_extraction_simple",
+				label: "Простое удаление зуба (K01.1)",
+				subtext: "Анестезия + Элеватор + Щипцы",
+			},
+			{
+				presetId: "surgery_extraction_complex",
+				label: "Сложное удаление (разъединение корней)",
+				subtext: "Кюретаж лунки + Альвожиль",
+			},
+			{
+				presetId: "surgery_periostotomy",
+				label: "Периостотомия (вскрытие абсцесса)",
+				subtext: "Разрез + Дренирование",
+			},
+			{
+				presetId: "surgery_implant_standard",
+				label: "Дентальная имплантация",
+				subtext: "Установка имплантата 35 Н/см",
+			},
+		],
+	},
+	{
+		id: "orthopedics",
+		label: "Ортопедия (Коронки)",
+		icon: Crown,
+		items: [
+			{
+				presetId: "ortho_crown_prep",
+				label: "Препарирование под коронку",
+				subtext: "Уступ + А-силиконовый оттиск",
+			},
+			{
+				presetId: "ortho_prep_zirconia_emax",
+				label: "Препарирование Zirconia / E-max",
+				subtext: "Циркониевая коронка / винир",
+			},
+			{
+				presetId: "ortho_try_in_framework_crown",
+				label: "Примерка каркаса коронки",
+				subtext: "Окклюзия, прилегание, цвет",
+			},
+			{
+				presetId: "crown_adhesive_cementation",
+				label: "Постоянная фиксация (цемент)",
+				subtext: "RelyX / Panavia V5 / СИЦ",
+			},
+			{
+				presetId: "ortho_removable_prosthetics",
+				label: "Съемный протез",
+				subtext: "Acry-Free / бюгельный протез",
+			},
+		],
+	},
+	{
+		id: "periodontology",
+		label: "Пародонтология",
+		icon: HeartPulse,
+		items: [
+			{
+				presetId: "perio_srp_curettage",
+				label: "SRP кюретаж карманов",
+				subtext: "Кюреты Грейси + Хлоргексидин",
+			},
+			{
+				presetId: "perio_vector_therapy",
+				label: "Вектор-терапия",
+				subtext: "Аппарат Vector + Polish Fluid",
+			},
+			{
+				presetId: "perio_srp_curettage",
+				label: "Хронический пародонтит (K05.3)",
+				subtext: "Метрогил Дента + шинирование",
+			},
+			{
+				presetId: "perio_gingivitis_catarrhal",
+				label: "Катаральный гингивит (K05.1)",
+				subtext: "Скейлинг + аппликации геля",
+			},
+		],
+	},
+];
+
 export const ClinicalQuickPresetsBar: React.FC<
 	ClinicalQuickPresetsBarProps
 > = ({
@@ -66,6 +254,8 @@ export const ClinicalQuickPresetsBar: React.FC<
 	onSelectActiveTooth,
 }) => {
 	const [activeCategory, setActiveCategory] = React.useState<string>("all");
+	const [activeSpecialtyCategory, setActiveSpecialtyCategory] =
+		React.useState<string>("therapy");
 	const [localSelectedTooth, setLocalSelectedTooth] = React.useState<
 		number | null
 	>(activeTooth ?? 16);
@@ -124,9 +314,17 @@ export const ClinicalQuickPresetsBar: React.FC<
 			.filter((p): p is ClinicalQuickPreset => Boolean(p));
 	}, []);
 
+	const currentSpecialtySection = React.useMemo(() => {
+		return (
+			CLINICAL_SPECIALTY_SECTIONS.find(
+				(s) => s.id === activeSpecialtyCategory,
+			) || CLINICAL_SPECIALTY_SECTIONS[0]
+		);
+	}, [activeSpecialtyCategory]);
+
 	return (
 		<div
-			className={`clinical-quick-presets-bar p-3 sm:p-3.5 rounded-xl border border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] space-y-2.5 ${className}`.trim()}
+			className={`clinical-quick-presets-bar p-3 sm:p-3.5 rounded-xl border border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] space-y-3 ${className}`.trim()}
 			data-testid="clinical-quick-presets-bar"
 			data-tour="diary-preset"
 		>
@@ -285,6 +483,88 @@ export const ClinicalQuickPresetsBar: React.FC<
 				</div>
 			</div>
 
+			{/* ── 🌟 ЭКСПРЕСС-ПАНЕЛЬ КЛИНИЧЕСКИХ КАТЕГОРИЙ И ТОПОВЫХ НОЗОЛОГИЙ ── */}
+			<div
+				className="p-2.5 sm:p-3 rounded-xl bg-[var(--paper)] border border-[var(--border)] shadow-xs space-y-2.5"
+				data-testid="clinical-express-specialty-panel"
+			>
+				{/* Чипы категорий */}
+				<div className="flex items-center justify-between gap-2 flex-wrap">
+					<div
+						className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scrollbar-none flex-nowrap py-0.5 touch-pan-x"
+						data-testid="clinical-category-chips-bar"
+					>
+						{CLINICAL_SPECIALTY_SECTIONS.map((sec) => {
+							const IconComponent = sec.icon;
+							const isActive = activeSpecialtyCategory === sec.id;
+							return (
+								<button
+									key={sec.id}
+									type="button"
+									onClick={() => setActiveSpecialtyCategory(sec.id)}
+									data-testid={`btn-specialty-category-${sec.id}`}
+									className={`min-h-[44px] sm:min-h-[30px] sm:h-7.5 px-3 py-1 sm:py-0 rounded-lg text-xs font-extrabold transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap touch-manipulation active:scale-95 ${
+										isActive
+											? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] shadow-xs"
+											: "bg-[var(--paper-soft)] border border-[var(--line-subtle)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)]"
+									}`}
+								>
+									<IconComponent size={13} className="shrink-0" />
+									<span>{sec.label}</span>
+								</button>
+							);
+						})}
+					</div>
+					<span className="text-[11px] font-mono text-[var(--muted)] hidden md:inline">
+						Быстрый протокол в 1 клик
+					</span>
+				</div>
+
+				{/* Сетка нозологий под активной категорией */}
+				<div
+					className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 min-w-0"
+					data-testid="clinical-category-presets-grid"
+				>
+					{currentSpecialtySection.items.map((item) => {
+						const preset = CLINICAL_SOAP_PRESETS.find(
+							(p) => p.id === item.presetId,
+						);
+						if (!preset) return null;
+
+						const dynamicBadge =
+							preset.category !== "hygiene" && currentTooth
+								? `${item.label} (${currentTooth})`
+								: item.label;
+
+						return (
+							<button
+								key={`spec-${item.presetId}`}
+								type="button"
+								onClick={() => handlePresetClick(preset)}
+								data-testid={`btn-nosology-preset-${item.presetId}`}
+								className="clinical-protocol-card min-h-[50px] sm:min-h-[44px] p-2 sm:p-2.5 rounded-xl text-xs font-bold border transition-all flex flex-col items-start justify-between gap-1 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] border-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)]"
+								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
+							>
+								<div className="flex items-center justify-between w-full gap-1.5 min-w-0">
+									<span className="font-extrabold text-xs text-[var(--ink)] truncate">
+										{dynamicBadge}
+									</span>
+									<span className="text-[10px] font-mono px-1 py-0.2 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--border)] shrink-0 font-bold">
+										{preset.icd10}
+									</span>
+								</div>
+								<span
+									className="text-[11px] font-normal text-[var(--muted)] truncate w-full"
+									title={item.subtext || preset.title}
+								>
+									{item.subtext || preset.title}
+								</span>
+							</button>
+						);
+					})}
+				</div>
+			</div>
+
 			{/* ── ТОП-5 ЭКСПРЕСС-СЦЕНАРИЕВ (КРУПНЫЕ КНОПКИ >= 50px) ── */}
 			<div className="space-y-1.5">
 				<div className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
@@ -384,7 +664,9 @@ export const ClinicalQuickPresetsBar: React.FC<
 												className="text-purple-600 dark:text-purple-400 shrink-0"
 											/>
 										)}
-										<span className="whitespace-nowrap shrink-0 font-black">{dynamicBadge}</span>
+										<span className="whitespace-nowrap shrink-0 font-black">
+											{dynamicBadge}
+										</span>
 									</div>
 									<span className="text-[10px] sm:text-xs font-mono px-1.5 py-0.2 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--border)] font-bold shrink-0">
 										{preset.icd10}
@@ -402,7 +684,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 				</div>
 			</div>
 
-			{/* ── ТЕРАПИЯ И ЭНДОДОНТИЯ (БЕЗ СИМУЛЯТОРА: ПУЛЬПИТ / ОБТУРАЦИЯ / ПЕРИОДОНТИТ / КАРИЕС) ── */}
+			{/* ── ТЕРАПИЯ И ЭНДОДОНТИЯ ── */}
 			<div
 				className="space-y-1.5 pt-1 border-t border-[var(--border)]"
 				data-testid="therapy-endo-quick-actions-section"
@@ -410,9 +692,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 				<div className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center justify-between">
 					<div className="flex items-center gap-1.5">
 						<Stethoscope size={14} className="text-blue-500 shrink-0" />
-						<span>
-							Терапия и эндодонтия:
-						</span>
+						<span>Терапия и эндодонтия:</span>
 					</div>
 					<span className="text-[11px] font-mono text-[var(--muted)] font-normal hidden sm:inline">
 						Пульпит (1/2 эт.) · Периодонтит · Кариес + списание
@@ -447,7 +727,9 @@ export const ClinicalQuickPresetsBar: React.FC<
 											size={15}
 											className="text-blue-600 dark:text-blue-400 shrink-0"
 										/>
-										<span className="whitespace-nowrap shrink-0 font-black">{dynamicBadge}</span>
+										<span className="whitespace-nowrap shrink-0 font-black">
+											{dynamicBadge}
+										</span>
 									</div>
 									<span className="text-[10px] sm:text-xs font-mono px-1.5 py-0.2 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--border)] font-bold shrink-0">
 										{preset.icd10}
@@ -465,7 +747,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 				</div>
 			</div>
 
-			{/* ── ХИРУРГИЧЕСКИЕ БЫСТРЫЕ ДЕЙСТВИЯ (ОСТРАЯ БОЛЬ / ЭКСТРЕННАЯ ХИРУРГИЯ) ── */}
+			{/* ── ХИРУРГИЧЕСКИЕ БЫСТРЫЕ ДЕЙСТВИЯ (ОСТРАЯ БОЛЬ) ── */}
 			<div
 				className="space-y-1.5 pt-1 border-t border-[var(--border)]"
 				data-testid="surgery-quick-actions-section"
@@ -508,7 +790,9 @@ export const ClinicalQuickPresetsBar: React.FC<
 											size={15}
 											className="text-rose-600 dark:text-rose-400 shrink-0"
 										/>
-										<span className="whitespace-nowrap shrink-0 font-black">{dynamicBadge}</span>
+										<span className="whitespace-nowrap shrink-0 font-black">
+											{dynamicBadge}
+										</span>
 									</div>
 									<span className="text-[10px] sm:text-xs font-mono px-1.5 py-0.2 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--border)] font-bold shrink-0">
 										{preset.icd10}

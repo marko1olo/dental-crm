@@ -92,8 +92,9 @@ export function App() {
 	useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
 	useEffect(() => scheduleClinicalHotModulesWarmup(), []);
 
-	const [clinicAuthed, setClinicAuthed] = useState<boolean>(() => Boolean(readDenteClinicToken()));
-	const [staffAuthed, setStaffAuthed] = useState<boolean>(() => Boolean(readDenteStaffToken()));
+	const isDemoParam = typeof window !== "undefined" && ((window.location.search || "").includes("demo=true") || (window.location.hash || "").includes("demo=true"));
+	const [clinicAuthed, setClinicAuthed] = useState<boolean>(() => isDemoParam || Boolean(readDenteClinicToken()));
+	const [staffAuthed, setStaffAuthed] = useState<boolean>(() => isDemoParam || Boolean(readDenteStaffToken()));
 	const [activeStaffUser, setActiveStaffUser] = useState<any>(null);
 	const [showStaffPinPad, setShowStaffPinPad] = useState<boolean>(false);
 	const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);

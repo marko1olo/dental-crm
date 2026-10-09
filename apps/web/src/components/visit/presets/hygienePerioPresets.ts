@@ -214,4 +214,9 @@ export const HYGIENE_PERIO_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 	...(findSoapProtocolById("pediatric_fissure_sealing")
 		? [findSoapProtocolById("pediatric_fissure_sealing") as ClinicalSoapPreset]
 		: []),
+
+	// ── 33. K05.1 ХРОНИЧЕСКИЙ КАТАРАЛЬНЫЙ ГИНГИВИТ (SSOT) ──
+	...(findSoapProtocolById("perio_gingivitis_catarrhal")
+		? [findSoapProtocolById("perio_gingivitis_catarrhal") as ClinicalSoapPreset]
+		: []),
 ];
