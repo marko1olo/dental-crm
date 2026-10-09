@@ -1,0 +1,84 @@
+{
+  "agent": "AST & Static Analysis Inquisitor",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T21:55:00+04:00",
+  "summary": {
+    "scannedSourceFiles": 6538,
+    "issuesFixed": 13,
+    "categories": [
+      "Zero Silent Failures (Unswallowed Catches with Logging)",
+      "Unsafe Deep Dereferencing & Runtime TypeError Immunity",
+      "Fake Contracts & Schema-Compliant Telegram Resolution",
+      "Postgres Enum Validation against Injection/Drift",
+      "Component Lifecycle Cleanup (EventSource & Custom Event Handlers)",
+      "UI Undefined Currency Interpolation Leaks"
+    ]
+  },
+  "fixedDefects": [
+    {
+      "file": "apps/web/src/components/radiology/cbctExportEngine.ts",
+      "defect": "Unsafe data.patient.patientName dereferencing crashing with TypeError during CBCT HTML report download",
+      "fix": "Replaced with guarded safe fallback `(data.patient?.patientName ?? \"Patient\").replace(...)`"
+    },
+    {
+      "file": "apps/web/src/components/visiograph/VisiographExportService.ts",
+      "defect": "scaleMmPerPx.toFixed(4), lengthMm.toFixed(1), angleDeg.toFixed(1), lesion calculations crashing on null/undefined values",
+      "fix": "Added null-coalescing `?? 0` guards on all metric formatting calls"
+    },
+    {
+      "file": "apps/web/src/components/visit/summaryModal/useVisitSummaryModalState.ts",
+      "defect": "Direct access on patient.administrativeProfile without optional chaining inside condition evaluation",
+      "fix": "Converted to safe optional chaining `patient.administrativeProfile?.identityDocument?.trim()`"
+    },
+    {
+      "file": "apps/web/src/components/egisz/cdaR2XmlBuilder.ts",
+      "defect": "Direct dereferencing on payload.clinic and payload.doctor causing TypeError when generating CDA R2 XML",
+      "fix": "Defaulted patient, clinic, doctor to safe partial objects and referenced local sanitized variables"
+    },
+    {
+      "file": "apps/api/src/routes/dayConfirmations.ts",
+      "defect": "Fake (pat as any)?.telegramUsername bypass querying non-existent column in patients table",
+      "fix": "Imported and queried active patient records from `denteTelegramChatLinks` (`subject_type = 'patient'`), correctly resolving and normalizing `@` addresses"
+    },
+    {
+      "file": "apps/api/src/routes/egisz/outboxRoutes.ts",
+      "defect": "Unvalidated query.status passed to Drizzle eq() causing Postgres enum cast 500 error; unneeded `as any` on docTypeCode",
+      "fix": "Validated query.status against `schema.egiszOutboxStatus.enumValues` before applying eq() condition; typed docTypeCode directly"
+    },
+    {
+      "file": "apps/web/src/components/settings/imports/MigrationStreamProgress.tsx",
+      "defect": "EventSource listener leak and silent swallowed JSON parse catches",
+      "fix": "Extracted named `handleProgress` listener, registered cleanup `es.removeEventListener`, and added warning logs in catch blocks"
+    },
+    {
+      "file": "apps/api/src/services/cloudRelayClient.ts",
+      "defect": "Three empty catch (_e) {} blocks suppressing WebSocket close, error, and heartbeat terminate failures",
+      "fix": "Added fastify logger / console debug & warning logging across all three catch blocks"
+    },
+    {
+      "file": "apps/api/src/services/portalBudgetService.ts",
+      "defect": "Four empty catch {} blocks ignoring directory creation, cache file read/write, and file unlink failures",
+      "fix": "Added structured warning logging `[PortalBudgetService]` across all file cache operations"
+    },
+    {
+      "file": "apps/web/src/components/visit/view/useVisitViewState.ts",
+      "defect": "Silent catch {} on fallback checkout storage persistence",
+      "fix": "Added console.warn logging on storage write exceptions"
+    },
+    {
+      "file": "apps/web/src/components/visit/emkTab/useVisitCompletionWorkflow.ts",
+      "defect": "Silent catch {} on fallback checkout storage persistence",
+      "fix": "Added console.warn logging on storage write exceptions"
+    },
+    {
+      "file": "apps/web/src/components/finance/InvoiceItemsTable.tsx",
+      "defect": "Unchecked `{it.suggested804nAnalogue?.basePriceRub} ₽` causing UI leak of `undefined ₽`",
+      "fix": "Enforced fallback `{it.suggested804nAnalogue?.basePriceRub ?? 0} ₽`"
+    },
+    {
+      "file": "apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx",
+      "defect": "Conditional custom event listener registration in else-if branch leaving dangling listeners or missing event subscription",
+      "fix": "Decoupled initialVolume initialization from window event listener, ensuring unconditional listener registration and cleanup"
+    }
+  ]
+}

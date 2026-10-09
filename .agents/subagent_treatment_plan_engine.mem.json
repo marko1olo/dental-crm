@@ -1,0 +1,124 @@
+{
+  "subagent": "Subagent L3: Treatment Plan Engine Decomposer & Red Team Inquisitor",
+  "target_monolith": "packages/shared/src/treatment-plans/treatmentPlanEngine.ts",
+  "original_lines": 1187,
+  "status": "COMPLETED",
+  "gates_passed": [
+    "Gate 1: Line Count Budget (<= 800 lines per file) - PASSED",
+    "Gate 2: AST Export Parity (100% of public exports preserved) - PASSED (34/34 symbols preserved)",
+    "Gate 3: Test Anchor Parity (100% data-testid, id, aria-label) - PASSED",
+    "Gate 4: UTF-8 Encoding Hygiene (Clean UTF-8 without BOM across 9,979 files) - PASSED",
+    "Gate 5: Circular Dependency Audit (Acyclic DAG via madge) - PASSED (0 cycles)"
+  ],
+  "decomposed_modules": [
+    {
+      "file": "packages/shared/src/treatment-plans/engine/types.ts",
+      "layer": "Layer 0: Types, Schemas, Metadata & Contracts",
+      "lines": 357,
+      "exports": [
+        "planTierKeySchema",
+        "PlanTierKey",
+        "planStageKindSchema",
+        "PlanStageKind",
+        "planItemStatusSchema",
+        "PlanItemStatus",
+        "PlanStageMetadata",
+        "PLAN_STAGE_METADATA",
+        "PlanTierConfig",
+        "PLAN_TIER_CONFIGS",
+        "TreatmentPlanItemInput",
+        "TreatmentPlanItem",
+        "TreatmentPlanStageSummary",
+        "PlanInstallmentSchedule",
+        "PlanNdflDeductionSummary",
+        "TreatmentPlanTierEstimate",
+        "ClinicLegalRequisites",
+        "DEFAULT_CLINIC_LEGAL_REQUISITES",
+        "MultiOptionTreatmentPlanInput",
+        "MultiOptionTreatmentPlan",
+        "TreatmentPlanAppendix1DocumentData"
+      ]
+    },
+    {
+      "file": "packages/shared/src/treatment-plans/engine/stageSequencingRules.ts",
+      "layer": "Layer 1: Stage Sequencing Rules & Order 804n Classification",
+      "lines": 81,
+      "exports": [
+        "classifyProcedureStage",
+        "isProcedureHighCostCode02"
+      ]
+    },
+    {
+      "file": "packages/shared/src/treatment-plans/engine/financialWarrantyCalculator.ts",
+      "layer": "Layer 1: Financial & Warranty Calculator",
+      "lines": 154,
+      "exports": [
+        "splitLaborAndMaterials",
+        "calculateTierInstallments",
+        "calculateTierNdflDeduction",
+        "escapeHtml",
+        "formatRublesFromKopecks",
+        "convertKopecksToRussianWords"
+      ]
+    },
+    {
+      "file": "packages/shared/src/treatment-plans/engine/treatmentPlanCore.ts",
+      "layer": "Layer 2: Core Plan Engine & Statutory Appendix 1 Generator",
+      "lines": 569,
+      "exports": [
+        "normalizeTreatmentPlanItem",
+        "calculateSingleTierEstimate",
+        "buildMultiOptionTreatmentPlan",
+        "buildTreatmentPlanAppendix1Data",
+        "renderTreatmentPlanContractAppendix1Html"
+      ]
+    },
+    {
+      "file": "packages/shared/src/treatment-plans/engine/index.ts",
+      "layer": "Layer 5: Engine Barrel",
+      "lines": 11,
+      "exports": "Re-exports all symbols from types, stageSequencingRules, financialWarrantyCalculator, treatmentPlanCore"
+    },
+    {
+      "file": "packages/shared/src/treatment-plans/treatmentPlanEngine.ts",
+      "layer": "Layer 5: Canonical Facade",
+      "lines": 7,
+      "exports": "Re-exports all symbols from engine/index.js (<= 50 lines strictly enforced, 100% backward compatible)"
+    }
+  ],
+  "verified_tests": [
+    {
+      "suite": "packages/shared/src/tests/treatmentPlanEngine.test.ts",
+      "passed": 20,
+      "failed": 0,
+      "exit_code": 0
+    },
+    {
+      "suite": "packages/shared/src/treatment-plans/patientCasePresenterEngine.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "exit_code": 0
+    },
+    {
+      "suite": "packages/shared/src/tests/treatmentPlanStagesMining.test.ts",
+      "passed": 12,
+      "failed": 0,
+      "exit_code": 0
+    }
+  ],
+  "verification_commands": [
+    "node scripts/verify-decomposition-health.cjs packages/shared/src/treatment-plans/treatmentPlanEngine.ts packages/shared/src/treatment-plans/treatmentPlanEngine.ts packages/shared/src/treatment-plans/engine/",
+    "node --max-old-space-size=4096 --import tsx --test packages/shared/src/treatment-plans/patientCasePresenterEngine.test.ts",
+    "node --max-old-space-size=4096 --import tsx --test packages/shared/src/tests/treatmentPlanEngine.test.ts"
+  ],
+  "compliance": [
+    "RF Government Decree No. 736 (Paid medical services regulations & Appendix 1 generator)",
+    "RF Government Decree No. 458 (High-cost medical care Code 02 vs standard Code 01)",
+    "RF Government Decree No. 659 (Treatment plan approval & estimates)",
+    "RF Law 'On Protection of Consumer Rights' Art. 29 (Statutory dental warranties)",
+    "Tax Code of the Russian Federation Art. 219 (13% NDFL deduction calculator with 150 000 RUB cap)",
+    "Ministry of Health Order No. 804n (Medical services nomenclature)",
+    "FDI / ISO 3950 Tooth notation standards (11-48, 51-85)",
+    "Form 043/u Ambulatory dental patient card integration"
+  ]
+}

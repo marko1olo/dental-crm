@@ -1,0 +1,54 @@
+{
+  "role": "API Compiler & Drizzle Schema Inquisitor (Red Team)",
+  "session": "Handover from 4144f9e5-bac6-46c9-b270-0f30a238c8a2 to 8c2b7912-b8de-4cfd-a3ea-c0450fc5060a",
+  "timestamp": "2026-10-09T17:11:30Z",
+  "status": "COMPLETED",
+  "presumption_of_defect": "100%",
+  "scope_files": [
+    "apps/api/src/sampleData/visitDrafts.ts",
+    "apps/api/src/scripts/seed_pipeline_demo_plans.ts",
+    "apps/api/src/services/closerBot/competitorDbImporter.ts",
+    "apps/api/src/services/communications/dispatch/dispatcherCore.ts",
+    "apps/api/src/services/sync/syncGateway/syncQueueManager.ts"
+  ],
+  "fixes": [
+    {
+      "file": "apps/api/src/sampleData/visitDrafts.ts",
+      "issue": "TS2304: Cannot find name 'buildVisitCloseChecklist'",
+      "resolution": "Imported buildVisitCloseChecklist from ../visitCloseChecklist.js canonical checklist calculator",
+      "status": "VERIFIED_0_ERRORS"
+    },
+    {
+      "file": "apps/api/src/scripts/seed_pipeline_demo_plans.ts",
+      "issue": "TS2769 & TS2322: Non-existent 'gender' property on patients table insert; totalPriceRub number vs string numeric column; untyped treatmentPlans upsert",
+      "resolution": "Removed invalid 'gender' field from patient insert objects; converted totalPriceRub to canonical string literals matching Drizzle numeric schema; strongly typed plansToUpsert as (typeof treatmentPlans.$inferInsert)[] with explicit set mapping in onConflictDoUpdate",
+      "status": "VERIFIED_0_ERRORS"
+    },
+    {
+      "file": "apps/api/src/services/closerBot/competitorDbImporter.ts",
+      "issue": "TS2375: exactOptionalPropertyTypes incompatibility with optional firstName, lastName, middleName mapping",
+      "resolution": "Used conditional spread properties (...(nameParts.firstName !== undefined ? { firstName: nameParts.firstName } : {})) to strictly avoid passing undefined values as explicit keys",
+      "status": "VERIFIED_0_ERRORS"
+    },
+    {
+      "file": "apps/api/src/services/communications/dispatch/dispatcherCore.ts",
+      "issue": "TS2379: organizationId string | null | undefined vs DispatchOptions exactOptionalPropertyTypes in getStatus()",
+      "resolution": "Applied conditional spread (...(organizationId ? { organizationId } : {})) in getStatus() call to dispatchDueMessages() so optional property is omitted entirely when nullish",
+      "status": "VERIFIED_0_ERRORS"
+    },
+    {
+      "file": "apps/api/src/services/sync/syncGateway/syncQueueManager.ts",
+      "issue": "TS2375: oldestEnqueuedAt undefined vs SyncQueueStats exactOptionalPropertyTypes",
+      "resolution": "Extracted oldestEnqueuedAt and applied conditional spread (...(oldest !== undefined ? { oldestEnqueuedAt: oldest } : {})) in getQueueStats()",
+      "status": "VERIFIED_0_ERRORS"
+    }
+  ],
+  "compiler_verification": {
+    "engine": "TypeScript 5.8.3 via Node.js with 4096MB heap",
+    "target_files_ts_errors": 0,
+    "proof_filter_log": "Get-Content task-105.log | Select-String -Pattern 'visitDrafts|seed_pipeline_demo_plans|competitorDbImporter|dispatcherCore|syncQueueManager' -> 0 hits",
+    "no_any_used": true,
+    "no_ts_ignore_used": true,
+    "tenant_isolation_preserved": true
+  }
+}

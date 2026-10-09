@@ -1,0 +1,88 @@
+{
+  "timestamp": "2026-10-09T21:28:50+04:00",
+  "agent": "subagent_monolith_decomposer",
+  "status": "COMPLETED",
+  "checkFileLimitsStatus": "PASSING_EXIT_0",
+  "zeroCheatingLawEnforced": true,
+  "whitelistCeilingsAltered": false,
+  "targets": [
+    {
+      "sourceFile": "apps/web/src/pages/coordinator/TreatmentPipeline.tsx",
+      "originalLines": 646,
+      "finalLines": 244,
+      "status": "COMPLIANT_LE_500",
+      "extractedModules": [
+        { "file": "apps/web/src/pages/coordinator/pipeline/types.ts", "lines": 112 },
+        { "file": "apps/web/src/pages/coordinator/pipeline/PipelineCardItem.tsx", "lines": 165 },
+        { "file": "apps/web/src/pages/coordinator/pipeline/PipelineKpiSummary.tsx", "lines": 54 },
+        { "file": "apps/web/src/pages/coordinator/pipeline/PipelineBoard.tsx", "lines": 148 }
+      ]
+    },
+    {
+      "sourceFile": "apps/api/src/routes/patients/crudRoutes.ts",
+      "originalLines": 552,
+      "finalLines": 414,
+      "status": "COMPLIANT_LE_500",
+      "extractedModules": [
+        { "file": "apps/api/src/routes/patients/patientRecordsRoutes.ts", "lines": 110 },
+        { "file": "apps/api/src/routes/patients/patientSearchFilter.ts", "lines": 43 }
+      ]
+    },
+    {
+      "sourceFile": "apps/api/src/routes/publicBudgetRoutes.ts",
+      "originalLines": 540,
+      "finalLines": 383,
+      "status": "COMPLIANT_LE_500",
+      "extractedModules": [
+        { "file": "apps/api/src/services/budget/budgetSecurityService.ts", "lines": 50 },
+        { "file": "apps/api/src/services/budget/budgetSchemas.ts", "lines": 45 },
+        { "file": "apps/api/src/services/budget/budgetSigningService.ts", "lines": 126 }
+      ]
+    },
+    {
+      "sourceFile": "apps/api/src/services/telegram/legacyMemory/appointmentCallbacks.ts",
+      "originalLines": 605,
+      "finalLines": 539,
+      "whitelistCeiling": 605,
+      "status": "COMPLIANT_WITHIN_CEILING",
+      "extractedModules": [
+        { "file": "apps/api/src/services/telegram/legacyMemory/telegramChatLinkHelpers.ts", "lines": 89 }
+      ]
+    },
+    {
+      "sourceFile": "apps/api/src/services/telegram/legacyMemory/documentAndCareRequests.ts",
+      "originalLines": 731,
+      "finalLines": 289,
+      "whitelistCeiling": 731,
+      "status": "COMPLIANT_LE_500",
+      "extractedModules": [
+        { "file": "apps/api/src/services/telegram/legacyMemory/postVisitCareRequests.ts", "lines": 469 }
+      ]
+    },
+    {
+      "sourceFile": "apps/api/src/services/telegram/legacyMemory/linkCodes.ts",
+      "originalLines": 654,
+      "finalLines": 397,
+      "whitelistCeiling": 654,
+      "status": "COMPLIANT_LE_500",
+      "extractedModules": [
+        { "file": "apps/api/src/services/telegram/legacyMemory/linkCodeHelpers.ts", "lines": 287 }
+      ]
+    },
+    {
+      "sourceFile": "apps/api/src/services/telegram/legacyMemory/outboxDelivery.ts",
+      "originalLines": 549,
+      "finalLines": 296,
+      "whitelistCeiling": 549,
+      "status": "COMPLIANT_LE_500",
+      "extractedModules": [
+        { "file": "apps/api/src/services/telegram/legacyMemory/outboxQueryBuilder.ts", "lines": 247 }
+      ]
+    }
+  ],
+  "verification": {
+    "checkFileLimitsScript": "node scripts/check_file_limits.cjs -> 0 fatal errors, 1268 legacy whitelisted passing, exit code 0",
+    "treatmentPipelineAndPublicBudgetTest": "5/5 passing, 0 failures",
+    "telegramOutboxPartialDeliveryTest": "18/18 passing, 0 failures"
+  }
+}

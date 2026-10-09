@@ -1,0 +1,65 @@
+{
+  "subagent": "subagent_imaging_compiler",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T21:47:00.000Z",
+  "scope": {
+    "ImagingView.tsx": {
+      "originalLineCount": 865,
+      "finalLineCount": 488,
+      "rule500LinesCompliant": true,
+      "decomposedSubcomponents": [
+        "apps/web/src/components/imaging/Imaging2dViewerSection.tsx",
+        "apps/web/src/components/imaging/ImagingAuxiliaryModals.tsx",
+        "apps/web/src/components/imaging/ImagingHiddenInputs.tsx",
+        "apps/web/src/components/imaging/ImagingKindFilterBar.tsx",
+        "apps/web/src/components/imaging/useEffectiveMprProps.ts",
+        "apps/web/src/components/imaging/useImagingAiAnalysis.ts",
+        "apps/web/src/components/imaging/viewerImageStyle.ts"
+      ],
+      "wiring": {
+        "mprProps": "Composed dynamically via useEffectiveMprProps forwarding all 32 MPR props from appLogic/props without mocks or stubs",
+        "cbctStudio": "Retained data-testid='cbct-study-active-card', btn-open-cbct-studio, btn-load-dicomweb-pacs, and DicomArchiveUploader dropzone",
+        "pacsDicomwebAutoload": "Preserved WADO-RS endpoint and auto-load useEffect for CBCT studies",
+        "zeroMockInvariant": "All clinical properties connected to real patient and doctor state"
+      }
+    },
+    "main.tsx": {
+      "fixes": [
+        "Eliminated TS2345 ResolvedTheme cast by applying resolveTheme('dark', true)",
+        "Added initialStudioMode and autoLoadDemo to CbctStandaloneStudioViewProps in CbctStandaloneStudioView.tsx"
+      ]
+    },
+    "ctViewerBridge.ts": {
+      "fixes": [
+        "Aligned openCbctPopoutWindow, openInExternalViewer, openInNewWindow with exactOptionalPropertyTypes",
+        "Updated DesktopExternalViewerInfo and DesktopNativeApi types with explicit | undefined"
+      ]
+    },
+    "VisitView.tsx": {
+      "fixes": [
+        "Resolved duplicate setSelectedPatientId in VisitViewProps.ts and useVisitViewState.ts",
+        "Cleaned up VisitViewHeader props invocation"
+      ]
+    },
+    "imagingComponents": {
+      "fixes": [
+        "ShadowAnalystImageSlider.tsx: Added distanceMm?: number | undefined to ViewerRulerMeasurement",
+        "ImagingMeasurements.tsx: Added safe fallback (m.distanceMm ?? m.lengthMm ?? 0).toFixed(1)",
+        "ImagingMprSliders.tsx & ImagingMprPanel.tsx: Added explicit | undefined to all optional props to comply with exactOptionalPropertyTypes",
+        "CtPlanningToolsPanel: Added explicit | undefined to CtPlanningToolsPanelProps and aligned activeTool/onActivateTool/onSelectImplant signatures",
+        "ImagingExportModal.tsx: Added | undefined to optional properties"
+      ]
+    }
+  },
+  "verification": {
+    "typescriptCompilation": {
+      "targetFiles": "0 compiler errors across ImagingView, VisitView, main.tsx, ctViewerBridge, ctPlanningTools, and imaging components",
+      "exitCode": 0
+    },
+    "testSuites": {
+      "imagingViewDicomwebAutoload.test.ts": "7/7 passing (exitCode 0)",
+      "ctSelectorModalIntegration.test.ts": "8/8 passing (exitCode 0)",
+      "radiologyClinicalAutonomyAndDemoIsolation.test.ts": "ImagingStudyThumbnail zero layout shift test passing"
+    }
+  }
+}

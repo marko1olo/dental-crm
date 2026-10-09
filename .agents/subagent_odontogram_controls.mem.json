@@ -1,0 +1,89 @@
+{
+  "task": "ODONTOGRAM_CONTROLS_AND_TYPOGRAPHY_AUDIT",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T21:28:30+04:00",
+  "typography_fix": {
+    "file": "apps/web/src/components/odontogram/OdontogramToolbarMoreMenu.tsx",
+    "summary": "Unified typography across Section 1 (КЛИНИЧЕСКИЕ МОДУЛИ) and Section 2 (АНАТОМИЯ И ОТОБРАЖЕНИЕ). Title: font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100 with size={16} icon and gap-2.5. Subtitle: text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate. Eliminated washed-out opacity-80/85 and inconsistent text colors. All 12 items strictly compliant with WCAG AAA contrast.",
+    "items_count": 12
+  },
+  "visual_proof_artifacts": [
+    {
+      "path": "docs/screenshots/visit_tabs/odontogram_more_menu_light.png",
+      "size_bytes": 295491,
+      "verified": true,
+      "description": "Odontogram More Menu open in Light Mode on 1440x900 desktop (real app contour, no mock preview)"
+    },
+    {
+      "path": "docs/screenshots/visit_tabs/odontogram_more_menu_dark.png",
+      "size_bytes": 280094,
+      "verified": true,
+      "description": "Odontogram More Menu open in Dark Mode on 1440x900 desktop (real app contour, no mock preview)"
+    },
+    {
+      "path": "docs/screenshots/visit_tabs/odontogram_pc_light.png",
+      "size_bytes": 275684,
+      "verified": true,
+      "description": "Full Odontogram in Light Mode on 1440x900 desktop"
+    },
+    {
+      "path": "docs/screenshots/visit_tabs/odontogram_pc_dark.png",
+      "size_bytes": 272296,
+      "verified": true,
+      "description": "Full Odontogram in Dark Mode on 1440x900 desktop"
+    }
+  ],
+  "automated_tests": [
+    {
+      "suite": "src/components/odontogram/__tests__/odontogramButtonsAndControlsExhaustive.test.tsx",
+      "tests_passed": 7,
+      "suites_passed": 6,
+      "exit_code": 0
+    },
+    {
+      "suite": "src/components/odontogram/__tests__/odontogramOverhaulAndVisualErgonomics.test.tsx",
+      "tests_passed": 18,
+      "suites_passed": 9,
+      "exit_code": 0
+    }
+  ],
+  "audited_controls": {
+    "more_menu_items": [
+      { "id": "btn-more-menu-opg-modal", "title": "Умная ОПТГ / Снимок", "handler": "setIsOpgModalOpen(true)" },
+      { "id": "btn-more-menu-print-a4", "title": "Печать зубной карты (А4)", "handler": "setIsPrintModalOpen(true)" },
+      { "id": "btn-more-menu-treatment-wizard", "title": "Мастер плана лечения", "handler": "onOpenTreatmentPlanWizard" },
+      { "id": "btn-more-menu-perio-chart", "title": "Пародонтограмма", "handler": "onOpenPerioChart" },
+      { "id": "btn-more-menu-ceph-analysis", "title": "ТРГ / Ортодонтический анализ", "handler": "onOpenCephAnalysis" },
+      { "id": "btn-more-menu-full-card", "title": "ЭМК / Полная карта зуба", "handler": "onOpenFullToothCard" },
+      { "id": "btn-more-menu-pediatric", "title": "Сменный прикус", "handler": "onSetDentitionType('mixed')" },
+      { "id": "btn-more-menu-diagnocat", "title": "Диагнокат / AI Анализ", "handler": "onOpenAiAnalysis" },
+      { "id": "btn-odontogram-wisdom-missing", "title": "Зубы мудрости (8-ки)", "handler": "setShowWisdomTeeth" },
+      { "id": "btn-odontogram-pulp-canals", "title": "Каналы и пульпа", "handler": "setShowPulpAndCanals" },
+      { "id": "btn-odontogram-fast-extract", "title": "Быстрое удаление зубов", "handler": "setIsFastExtractMode" },
+      { "id": "checkbox-odontogram-multiselect", "title": "Групповое выделение (Shift)", "handler": "onToggleMultiSelect" }
+    ],
+    "toolbar_controls": [
+      { "id": "odontogram-mode-btn-anatomical_svg", "label": "3D Вид" },
+      { "id": "odontogram-mode-btn-compact_clinical", "label": "2D Грани" },
+      { "id": "odontogram-mode-btn-classic_gost", "label": "ГОСТ" },
+      { "id": "toolbar-dentition-adult", "label": "Взрослый" },
+      { "id": "toolbar-dentition-pediatric", "label": "Детский" },
+      { "id": "toolbar-dentition-mixed", "label": "Сменный" },
+      { "id": "mark-intact-dentition-btn", "label": "Санирован" },
+      { "id": "btn-hotpath-sync-all-to-diary", "label": "В дневник" },
+      { "id": "btn-open-fast-checkout", "label": "Смета / Касса" },
+      { "id": "odontogram-voice-dictation-btn", "label": "Диктовка" }
+    ],
+    "quick_action_presets": [
+      "Q1 (18-11)", "Q2 (21-28)", "Q3 (31-38)", "Q4 (48-41)", "Фронт (13-23, 43-33)",
+      "В/Ч (JU)", "Н/Ч (JL)", "Прикус (C)", "Инверсия", "Сброс"
+    ],
+    "stamp_palette_stamps": [
+      "Здоров (ЗД)", "Кариес (С)", "Пульпит (Р)", "Периодонтит (Pt)",
+      "Пломба (Пл)", "Коронка (Кр)", "Удален (Х)", "Имплант (Имп)"
+    ],
+    "global_treatment_triggers": [
+      "+ Air-Flow", "+ Элайнеры В/Ч", "+ Элайнеры Н/Ч"
+    ]
+  }
+}

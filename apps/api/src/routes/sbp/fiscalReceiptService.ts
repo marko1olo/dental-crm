@@ -1,0 +1,599 @@
+import { kopecksToNumericString } from "@dental/shared";
+import { and, eq, sql } from "drizzle-orm";
+import { db } from "../../db/client.js";
+import {
+	cashLedger,
+	digitalReceiptDispatches,
+	fiscalReceiptQueue,
+	generatedDocuments,
+	patientInvoices,
+	patients,
+	payments,
+	visits,
+} from "../../db/schema.js";
+import type {
+	CreateFiscalReceiptPayloadInput,
+	ItemizedFfd12Tag,
+	OfdVerificationUrlParams,
+	Tag1054OperationType,
+} from "./types.js";
+
+/** Computes deterministic fiscal sign hash */
+export function computeFiscalSign(
+	fn: string,
+	fd: string,
+	date: Date,
+	amountKopecks: number,
+): string {
+	const data = `${fn}:${fd}:${date.toISOString().slice(0, 10)}:${amountKopecks}`;
+	let hash = 0;
+	for (let i = 0; i < data.length; i++) {
+		hash = (hash * 31 + data.charCodeAt(i)) >>> 0;
+	}
+	return `FP-${String(hash).padStart(9, "0").slice(0, 10)}`;
+}
+
+/** Builds OFD validation link for receipt verification */
+export function buildOfdVerificationUrl(params: OfdVerificationUrlParams): string {
+	const n = params.operationType === "income_return" ? "2" : "1";
+	const sumRub = (params.amountKopecks / 100).toFixed(2);
+	return `https://ofd.ru/check?fn=${encodeURIComponent(params.fn)}&fd=${encodeURIComponent(params.fd)}&fpd=${encodeURIComponent(params.fpd)}&s=${sumRub}&n=${n}`;
+}
+
+/** Helper to map FFD 1.2 Tag 1054 operation types accurately */
+export function resolveTag1054(operationType: Tag1054OperationType): number {
+	switch (operationType) {
+		case "income":
+			return 1;
+		case "income_return":
+			return 2;
+		case "expense":
+			return 3;
+		case "expense_return":
+			return 4;
+	}
+}
+
+/** Helper to map FFD 1.2 Tag 1212 payment subject */
+export function resolveTag1212(subject: string): number {
+	switch (subject) {
+		case "commodity":
+			return 1;
+		case "job":
+			return 3;
+		case "service":
+			return 4;
+		case "payment":
+			return 10;
+		case "composite":
+			return 11;
+		case "other":
+			return 12;
+		case "excisable_goods_without_marking":
+			return 30;
+		case "excisable_goods_with_marking":
+			return 31;
+		case "goods_without_marking":
+			return 32;
+		case "goods_with_marking":
+			return 33;
+		default:
+			return 4;
+	}
+}
+
+/** Helper to map FFD 1.2 Tag 1214 payment method */
+export function resolveTag1214(method: string): number {
+	switch (method) {
+		case "full_prepayment":
+			return 1;
+		case "prepayment":
+			return 2;
+		case "advance":
+			return 3;
+		case "full_payment":
+			return 4;
+		case "partial_payment_and_credit":
+			return 5;
+		case "credit_handover":
+			return 6;
+		case "credit_payment":
+			return 7;
+		default:
+			return 4;
+	}
+}
+
+/** Helper to map FFD 1.2 Tag 1199 VAT rate */
+export function resolveTag1199(vatRate: string): number {
+	switch (vatRate) {
+		case "vat_20":
+			return 1;
+		case "vat_10":
+			return 2;
+		case "vat_20_120":
+			return 3;
+		case "vat_10_110":
+			return 4;
+		case "vat_0":
+			return 5;
+		default:
+			return 6; // Без НДС — ст. 149 п. 2 пп. 2 НК РФ
+	}
+}
+
+/** Helper to map FFD 1.2 Tag 2108 Measure of quantity */
+export function resolveTag2108(measure: string): number {
+	switch (measure) {
+		case "piece":
+			return 0; // 0 = шт / ед
+		case "gram":
+			return 10; // 10 = г
+		case "kilogram":
+			return 11; // 11 = кг
+		case "other":
+			return 255; // 255 = иное
+		default:
+			return 0;
+	}
+}
+
+/** Helper to map FFD 1.2 Tag 1055 Taxation system (СНО) */
+export function resolveTag1055(taxation: string): number {
+	switch (taxation) {
+		case "osn":
+			return 1; // 1 = ОСН
+		case "usn_income":
+			return 2; // 2 = УСН Доходы
+		case "usn_income_expense":
+			return 4; // 4 = УСН Доходы минус расходы
+		case "esxn":
+			return 8; // 8 = ЕСХН
+		case "psn":
+			return 16; // 16 = Патент (ПСН)
+		default:
+			return 2;
+	}
+}
+
+/** Maps receipt items to FFD 1.2 tags */
+export function buildItemizedFfd12Tags(
+	items: CreateFiscalReceiptPayloadInput["items"],
+): ItemizedFfd12Tag[] {
+	return items.map((item) => ({
+		name: item.name,
+		priceKopecks: item.priceKopecks,
+		quantity: item.quantity,
+		amountKopecks: item.amountKopecks,
+		tag1212_paymentSubject: resolveTag1212(item.subject),
+		tag1214_paymentMethod: resolveTag1214(item.method),
+		tag1199_vatRate: resolveTag1199(item.vatRate),
+		tag2108_quantityMeasure: resolveTag2108(item.measure),
+		medicalServiceCode804n: item.medicalServiceCode804n || null,
+	}));
+}
+
+export type FiscalizeReceiptServiceResult =
+	| {
+			readonly kind: "patient_not_found";
+	  }
+	| {
+			readonly kind: "invoice_not_found";
+	  }
+	| {
+			readonly kind: "idempotency_conflict";
+	  }
+	| {
+			readonly kind: "existing_payment";
+			readonly payment: typeof payments.$inferSelect;
+			readonly fiscalReceiptNumber: string | null;
+	  }
+	| {
+			readonly kind: "created";
+			readonly payment: typeof payments.$inferSelect;
+			readonly fiscalReceiptNumber: string;
+			readonly queueId?: string | undefined;
+			readonly queueStatus: "printed" | "hardware_offline";
+			readonly ffd12Tags: {
+				readonly tag1054_operationType: number;
+				readonly tag1055_taxationSystem: number;
+				readonly tag1008_customerContact: string;
+				readonly tag1021_cashier: string;
+				readonly tag1031_cashSumKopecks: number;
+				readonly tag1081_electronicSumKopecks: number;
+				readonly tag1215_prepaidSumKopecks: number;
+				readonly items: readonly ItemizedFfd12Tag[];
+			};
+	  };
+
+/** Executes ACID transaction for fiscalizing receipts under 54-FZ */
+export async function executeFiscalizeReceiptTransaction(params: {
+	orgId: string;
+	input: CreateFiscalReceiptPayloadInput;
+	headerIdempotencyKey?: string | undefined;
+	logWarn?: (obj: Record<string, unknown>, msg: string) => void;
+}): Promise<FiscalizeReceiptServiceResult> {
+	const { orgId, input, headerIdempotencyKey, logWarn } = params;
+
+	// Verify patient exists
+	const [patient] = await db
+		.select({ id: patients.id, fullName: patients.fullName })
+		.from(patients)
+		.where(
+			and(eq(patients.id, input.patientId), eq(patients.organizationId, orgId)),
+		)
+		.limit(1);
+
+	if (!patient) {
+		return { kind: "patient_not_found" };
+	}
+
+	// Verify invoice if provided
+	if (input.invoiceId) {
+		const [invoice] = await db
+			.select()
+			.from(patientInvoices)
+			.where(
+				and(
+					eq(patientInvoices.id, input.invoiceId),
+					eq(patientInvoices.organizationId, orgId),
+				),
+			)
+			.limit(1);
+
+		if (!invoice) {
+			return { kind: "invoice_not_found" };
+		}
+	}
+
+	// Idempotency check with payload integrity verification
+	if (input.clientMutationId) {
+		const [existingPayment] = await db
+			.select()
+			.from(payments)
+			.where(
+				and(
+					eq(payments.organizationId, orgId),
+					eq(payments.clientMutationId, input.clientMutationId),
+				),
+			)
+			.limit(1);
+
+		if (existingPayment) {
+			const expectedAmountRub = Number(
+				kopecksToNumericString(input.totalKopecks),
+			);
+			if (
+				Math.abs(Number(existingPayment.amountRub) - expectedAmountRub) >
+					0.001 ||
+				existingPayment.patientId !== input.patientId
+			) {
+				return { kind: "idempotency_conflict" };
+			}
+			return {
+				kind: "existing_payment",
+				payment: existingPayment,
+				fiscalReceiptNumber: existingPayment.fiscalReceiptNumber || "",
+			};
+		}
+	}
+
+	const fiscalReceiptNumber = `FD-${Date.now().toString().slice(-6)}`;
+	const now = new Date();
+	const effectiveMutationId =
+		input.clientMutationId?.trim() ||
+		headerIdempotencyKey?.trim() ||
+		`fiscal:${fiscalReceiptNumber}`;
+
+	const itemizedFfd12Tags = buildItemizedFfd12Tags(input.items);
+
+	const result = await db.transaction(async (tx) => {
+		// 1. Блокировка пациента (Level 3 в иерархии блокировок)
+		const [lockedPatient] = await tx
+			.select()
+			.from(patients)
+			.where(
+				and(eq(patients.id, input.patientId), eq(patients.organizationId, orgId)),
+			)
+			.for("update")
+			.limit(1);
+
+		if (!lockedPatient) {
+			throw new Error("Пациент не найден в этой клинике.");
+		}
+
+		// 2. Блокировка и валидация счёта (если указан)
+		if (input.invoiceId) {
+			const [lockedInvoice] = await tx
+				.select()
+				.from(patientInvoices)
+				.where(
+					and(
+						eq(patientInvoices.id, input.invoiceId),
+						eq(patientInvoices.organizationId, orgId),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			if (!lockedInvoice) {
+				const err = new Error("Счёт на оплату не найден в этой клинике.");
+				// biome-ignore lint/suspicious/noExplicitAny: error mapping
+				(err as any).statusCode = 404;
+				throw err;
+			}
+
+			if (
+				input.operationType !== "income_return" &&
+				(lockedInvoice.status === "paid" || lockedInvoice.status === "refunded")
+			) {
+				const err = new Error(
+					`Счёт уже находится в статусе «${lockedInvoice.status}» и не может быть фискализирован повторно.`,
+				);
+				// biome-ignore lint/suspicious/noExplicitAny: error mapping
+				(err as any).statusCode = 409;
+				// biome-ignore lint/suspicious/noExplicitAny: error mapping
+				(err as any).errorCode = "InvoiceAlreadySettled";
+				throw err;
+			}
+		}
+
+		const isReturn = input.operationType === "income_return";
+		const [payment] = await tx
+			.insert(payments)
+			.values({
+				organizationId: orgId,
+				patientId: input.patientId,
+				visitId: input.visitId || null,
+				documentId: input.documentId || null,
+				clientMutationId: effectiveMutationId,
+				amountRub: Number(kopecksToNumericString(input.totalKopecks)),
+				method:
+					input.sbpKopecks > 0
+						? "online"
+						: input.electronicCardKopecks > 0
+							? "card"
+							: "cash",
+				status: isReturn ? "refunded" : "paid",
+				paidAt: now,
+				fiscalReceiptNumber,
+				fiscalReceiptIssuedAt: now.toISOString(),
+				taxDeductionCode:
+					input.taxDeductionSummaryCode === "code_2_expensive_treatment"
+						? "2"
+						: "1",
+				fiscalReceipt: {
+					fn: process.env.KKM_FN_SERIAL || "9960440302145896",
+					fd: fiscalReceiptNumber.replace(/\D/g, "") || "1",
+					fpd: computeFiscalSign(
+						process.env.KKM_FN_SERIAL || "9960440302145896",
+						fiscalReceiptNumber,
+						now,
+						input.totalKopecks,
+					),
+					cashierName: input.cashierFullName,
+					receiptUrl: buildOfdVerificationUrl({
+						fn: process.env.KKM_FN_SERIAL || "9960440302145896",
+						fd: fiscalReceiptNumber.replace(/\D/g, "") || "1",
+						fpd: computeFiscalSign(
+							process.env.KKM_FN_SERIAL || "9960440302145896",
+							fiscalReceiptNumber,
+							now,
+							input.totalKopecks,
+						),
+						amountKopecks: input.totalKopecks,
+						operationType: input.operationType,
+					}),
+					operationType: isReturn ? "income_return" : "income",
+				},
+				note: isReturn
+					? `Возврат прихода 54-ФЗ. Чек ${fiscalReceiptNumber}`
+					: `Фискализация 54-ФЗ. Чек ${fiscalReceiptNumber}`,
+			})
+			.onConflictDoNothing({
+				target: [payments.organizationId, payments.clientMutationId],
+			})
+			.returning();
+
+		// Если из-за параллельного клика запись уже создана — извлекаем существующую
+		if (!payment) {
+			const [existing] = await tx
+				.select()
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						eq(payments.clientMutationId, effectiveMutationId),
+					),
+				)
+				.limit(1);
+
+			if (existing) {
+				return {
+					payment: existing,
+					queueEntry: null,
+					fiscalReceiptNumber: existing.fiscalReceiptNumber,
+					isExisting: true,
+				};
+			}
+
+			throw new Error(
+				"Не удалось зарегистрировать фискальный платёж в базе данных.",
+			);
+		}
+
+		// If documentId provided, promote document status to issued
+		if (input.documentId) {
+			await tx
+				.update(generatedDocuments)
+				.set({ status: "issued", issuedAt: now })
+				.where(
+					and(
+						eq(generatedDocuments.id, input.documentId),
+						eq(generatedDocuments.organizationId, orgId),
+					),
+				);
+		}
+
+		// If visitId provided, update visit
+		if (input.visitId) {
+			await tx
+				.update(visits)
+				.set({ updatedAt: now })
+				.where(
+					and(eq(visits.id, input.visitId), eq(visits.organizationId, orgId)),
+				);
+		}
+
+		// Record cash ledger entry and promote document status
+		if (input.invoiceId) {
+			await tx.insert(cashLedger).values({
+				invoiceId: input.invoiceId,
+				paymentMethod:
+					input.sbpKopecks > 0
+						? "card"
+						: input.electronicCardKopecks > 0
+							? "card"
+							: "cash",
+				amountRub: isReturn
+					? `-${kopecksToNumericString(input.totalKopecks)}`
+					: kopecksToNumericString(input.totalKopecks),
+				timestamp: now,
+			});
+
+			await tx
+				.update(patientInvoices)
+				.set({
+					status: isReturn ? "refunded" : "paid",
+					paidAt: now,
+				})
+				.where(
+					and(
+						eq(patientInvoices.id, input.invoiceId),
+						eq(patientInvoices.organizationId, orgId),
+					),
+				);
+
+			await tx
+				.update(generatedDocuments)
+				.set({ status: "issued", issuedAt: now })
+				.where(
+					and(
+						eq(generatedDocuments.id, input.invoiceId),
+						eq(generatedDocuments.organizationId, orgId),
+						eq(generatedDocuments.status, "draft"),
+					),
+				);
+		}
+
+		// Record digital receipt dispatch
+		const isEmail = input.customerContact.includes("@");
+		await tx.insert(digitalReceiptDispatches).values({
+			organizationId: orgId,
+			paymentId: payment.id,
+			patientName: patient.fullName,
+			dispatchChannel: isEmail ? "email" : "sms",
+			targetDestination: input.customerContact,
+			fiscalReceiptNumber,
+			receiptAmountRub: kopecksToNumericString(input.totalKopecks),
+			paperPrintSkipped: true,
+		});
+
+		// Register receipt in fiscal queue buffer with pending_print status
+		const [queueEntry] = await tx
+			.insert(fiscalReceiptQueue)
+			.values({
+				organizationId: orgId,
+				paymentId: payment.id,
+				visitId: input.visitId || null,
+				receiptType: input.operationType || "income",
+				status: "pending_print",
+				payloadJson: {
+					...input,
+					fiscalReceiptNumber,
+					issuedAt: now.toISOString(),
+					itemizedFfd12Tags,
+				},
+				retryCount: 0,
+			})
+			.returning();
+
+		return { payment, queueEntry };
+	});
+
+	if ("isExisting" in result && result.isExisting) {
+		return {
+			kind: "existing_payment",
+			payment: result.payment,
+			fiscalReceiptNumber: result.fiscalReceiptNumber || "",
+		};
+	}
+
+	// Physical KKT print dispatch (non-blocking for financial records)
+	const isKktOffline =
+		process.env.KKM_FORCE_OFFLINE === "1" ||
+		process.env.KKM_HARDWARE_TIMEOUT === "1";
+
+	let queueStatus: "printed" | "hardware_offline" = "printed";
+	let printError: string | null = null;
+
+	if (isKktOffline) {
+		queueStatus = "hardware_offline";
+		printError = "KKT connection timed out (5000ms) or printer offline";
+		if (logWarn) {
+			logWarn(
+				{ queueId: result.queueEntry?.id, orgId },
+				"Physical KKT printer offline; buffered in fiscal_receipt_queue",
+			);
+		}
+		if (result.queueEntry?.id) {
+			await db
+				.update(fiscalReceiptQueue)
+				.set({
+					status: "hardware_offline",
+					lastError: printError,
+					retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(fiscalReceiptQueue.id, result.queueEntry.id),
+						eq(fiscalReceiptQueue.organizationId, orgId),
+					),
+				);
+		}
+	} else if (result.queueEntry?.id) {
+		await db
+			.update(fiscalReceiptQueue)
+			.set({
+				status: "printed",
+				printedAt: new Date(),
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(fiscalReceiptQueue.id, result.queueEntry.id),
+					eq(fiscalReceiptQueue.organizationId, orgId),
+				),
+			);
+	}
+
+	return {
+		kind: "created",
+		payment: result.payment,
+		fiscalReceiptNumber,
+		queueId: result.queueEntry?.id,
+		queueStatus,
+		ffd12Tags: {
+			tag1054_operationType: resolveTag1054(input.operationType),
+			tag1055_taxationSystem: resolveTag1055(input.taxationSystem),
+			tag1008_customerContact: input.customerContact,
+			tag1021_cashier: input.cashierFullName,
+			tag1031_cashSumKopecks: input.cashKopecks,
+			tag1081_electronicSumKopecks:
+				input.electronicCardKopecks + input.sbpKopecks,
+			tag1215_prepaidSumKopecks: input.prepaidKopecks,
+			items: itemizedFfd12Tags,
+		},
+	};
+}

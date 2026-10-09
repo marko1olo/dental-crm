@@ -1,0 +1,56 @@
+{
+  "timestamp": "2026-10-09T18:07:00Z",
+  "target": "apps/api/src/routes/sbpQr.ts",
+  "originalLines": 1198,
+  "status": "COMPLETED",
+  "decompositionHealth": {
+    "allGatesPassed": true,
+    "gate1_lineCountBudget": {
+      "passed": true,
+      "maxLimit": 800,
+      "files": {
+        "apps/api/src/routes/sbpQr.ts": 23,
+        "apps/api/src/routes/sbp/types.ts": 107,
+        "apps/api/src/routes/sbp/bankGatewaySecurity.ts": 109,
+        "apps/api/src/routes/sbp/fiscalReceiptService.ts": 600,
+        "apps/api/src/routes/sbp/sbpPaymentService.ts": 493,
+        "apps/api/src/routes/sbp/sbpRouteHandlers.ts": 306,
+        "apps/api/src/routes/sbp/index.ts": 12
+      }
+    },
+    "gate2_astExportParity": {
+      "passed": true,
+      "baselineExportsCount": 40,
+      "facadeExportsCount": 40,
+      "parityPercent": 100
+    },
+    "gate3_testAnchors": {
+      "passed": true,
+      "originalAnchors": 0,
+      "targetAnchors": 0
+    },
+    "gate4_utf8Encoding": {
+      "passed": true
+    },
+    "gate5_acyclicDag": {
+      "passed": true,
+      "circularDependenciesInModule": 0
+    }
+  },
+  "tests": {
+    "sberbankWebhookIdempotency": "PASSED (9/9 pass, 0 fail, 100% green)",
+    "fiscalReceiptQueue": "PASSED (7/7 pass, 0 fail, 100% green)",
+    "pricelist": "PASSED (23/23 pass, 0 fail, 100% green)"
+  },
+  "invariantsPreserved": [
+    "HMAC-SHA256 and SHA-256 bank gateway webhook verification with constant-time equality (timingSafeSecretEqual)",
+    "NSPK SBP C2B Dynamic QR generation with CRC16-CCITT and vector SVG generation via createTelegramQrSvg",
+    "54-FZ FFD 1.2 fiscal tags mapping (Tag 1054, Tag 1212, Tag 1214, Tag 1199, Tag 2108, Tag 1055)",
+    "Tax deduction categorization (Code 1 standard vs Code 2 expensive treatment)",
+    "ACID transaction integrity with strict hierarchical locking: Patient lock -> Invoice lock -> Payment insertion with onConflictDoNothing",
+    "Idempotency guard on clientMutationId and Idempotency-Key / x-idempotency-key",
+    "Non-blocking physical KKT hardware timeout buffer (fiscal_receipt_queue hardware_offline vs printed)",
+    "Multi-tenant tenant isolation (organizationId) preserved across all queries and services",
+    "Thin canonical facade <= 50 lines (actual: 23 lines)"
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "subagent": "L3 Pediatric Mixed Dentition Modal Decomposer & Red Team Inquisitor",
+  "target": "apps/web/src/components/odontogram/PediatricMixedDentitionModal.tsx",
+  "decomposedDirectory": "apps/web/src/components/odontogram/pediatricModal/",
+  "status": "COMPLETED",
+  "gates": {
+    "gate1_line_count_budget": "PASSED (all files <= 800 lines, facade 132 lines <= 150 limit)",
+    "gate2_ast_export_parity": "PASSED (100% baseline exports preserved)",
+    "gate3_test_anchor_parity": "PASSED (100% test anchors preserved: 11 anchors verified)",
+    "gate4_utf8_encoding": "PASSED (0 mojibake, clean UTF-8)",
+    "gate5_acyclic_graph_madge": "PASSED (0 circular dependencies)"
+  },
+  "modules": [
+    {
+      "file": "apps/web/src/components/odontogram/pediatricModal/types.ts",
+      "layer": "Layer 0 (Types & DTOs)",
+      "lines": 71,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/odontogram/pediatricModal/PediatricArchVisualizer.tsx",
+      "layer": "Layer 1 (Dental Arch Visualizer 51-85 & 11-48)",
+      "lines": 123,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/odontogram/pediatricModal/PediatricCariogramSection.tsx",
+      "layer": "Layer 1 (Bratthall Cariogram Risk Section)",
+      "lines": 43,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/odontogram/pediatricModal/PediatricQuickProtocols.tsx",
+      "layer": "Layer 1 (1-Click Clinical Protocols & Physiological Norm)",
+      "lines": 197,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/odontogram/pediatricModal/PediatricFranklSection.tsx",
+      "layer": "Layer 1 (Frankl Scale & Parent Recommendations Memo)",
+      "lines": 51,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/odontogram/pediatricModal/PediatricResorptionTimeline.tsx",
+      "layer": "Layer 2 (Physiological Root Resorption & Eruption Matrix)",
+      "lines": 280,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/odontogram/pediatricModal/PediatricModalHeader.tsx",
+      "layer": "Layer 4 (Modal Header, A11y Anchors & Tab Bar)",
+      "lines": 105,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/odontogram/pediatricModal/usePediatricModalLogic.ts",
+      "layer": "Layer 3 (State Management Hook & Keyboard Shortcuts)",
+      "lines": 395,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/odontogram/pediatricModal/index.ts",
+      "layer": "Layer 5 (Barrel Re-exports)",
+      "lines": 8,
+      "budget": 800
+    },
+    {
+      "file": "apps/web/src/components/odontogram/PediatricMixedDentitionModal.tsx",
+      "layer": "Layer 5 (Canonical Thin Facade)",
+      "lines": 132,
+      "budget": 150
+    }
+  ],
+  "unitTests": {
+    "testSuite": "apps/web/src/components/odontogram/__tests__/pediatricDentition.test.ts",
+    "passed": 8,
+    "failed": 0,
+    "suites": 1
+  },
+  "auxiliaryTests": {
+    "workspaceRouteErrorBoundary": "PASSED (8/8)",
+    "classicGostOdontogram": "PASSED (23/23)"
+  },
+  "compliance": {
+    "mandate8e_zero_disabled_buttons": true,
+    "mandate8d_anti_matryoshka_depth1": true,
+    "mandate8d_zero_cartoon_emojis": true,
+    "mandate8i_clinical_sovereignty": true,
+    "single_compiler_lockout_respected": true
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "subagent": "Red Team Inquisitor: Module Resolution & Audio Utilities",
+  "timestamp": "2026-10-09T21:18:00+04:00",
+  "status": "COMPLETED_CLEAN",
+  "modulesResolved": [
+    {
+      "file": "apps/web/src/utils/commonHelpers/speechChunks/domainGuards.ts",
+      "issue": "TS2305 pricelistUiMeta missing export",
+      "resolution": "Confirmed valid canonical import pricelistSourceKindLabels from apps/web/src/pricelistUiMeta.ts. Zero TS errors.",
+      "status": "CLEAN"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/speechChunks/chunkStreamingPipeline.ts",
+      "issue": "TS2322 string not assignable to literal union 'document' | 'visit' | 'import' | 'settings_lab'",
+      "resolution": "Implemented speechTranscriptionSources, isSpeechTranscriptionSource type guard and normalizeSpeechTranscriptionSource fallback to 'visit'. Updated SpeechChunkStreamingPipeline constructor options and queue deserializer.",
+      "status": "CLEAN"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/speechChunks/__tests__/speechChunks.test.ts",
+      "issue": "TS18048 audioBase64 possibly undefined in test assertion",
+      "resolution": "Hardened flushed chunk assertions with explicit null guard and non-empty string type check; added facade type guard export verification.",
+      "status": "CLEAN"
+    },
+    {
+      "file": "apps/web/src/utils/commonHelpers/uiPreferences/types.ts and index.ts",
+      "issue": "TS2307 Cannot find module '../clinicProfileUtils' & TS2308 export collision for ClinicProfileDraft, PatientAdministrativeProfileDraft, StaffScheduleDraft",
+      "resolution": "Fixed relative path to '../../clinicProfileUtils', eliminated duplicate re-export from tableAndLayoutPreferences.ts, cleaned index.ts barrel.",
+      "status": "CLEAN"
+    },
+    {
+      "file": "apps/web/src/native/desktop/index.ts, types.ts and apps/web/src/native/index.ts",
+      "issue": "TS2724 missing ParsedGs1DataMatrix & TS2308 export collisions between desktopBridge and mobileBridge",
+      "resolution": "Exported ParsedGs1DataMatrix in desktop/types.ts; removed foreign mobile audio/haptic exports from desktop/index.ts; established explicit disambiguated re-exports in native/index.ts.",
+      "status": "CLEAN"
+    }
+  ],
+  "verification": {
+    "typecheck": "PASSED (All 11 target and dependent files CLEAN, 0 diagnostics)",
+    "speechChunksTests": "PASSED (7/7 pass, 0 fail)",
+    "nativeBridgeTests": "PASSED (94/94 pass across crossPlatformPortability, multiPlatformNativeBridges, hardwareBridgeMultiPlatform, mobileNativeBridge)",
+    "antiMocksAudit": "Zero mocks/stubs added, 100% genuine type guards and domain parity"
+  }
+}

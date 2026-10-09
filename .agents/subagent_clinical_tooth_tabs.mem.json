@@ -1,0 +1,104 @@
+{
+  "subagent": "Lead Visit Clinical Tooth Tabs Decomposer",
+  "status": "COMPLETED",
+  "target_monolith": "apps/web/src/components/visit/view/VisitClinicalToothTabs.tsx",
+  "original_lines": 1154,
+  "facade_lines": 122,
+  "facade_target_limit": 150,
+  "decomposed_directory": "apps/web/src/components/visit/view/clinicalToothTabs/",
+  "modules": [
+    {
+      "file": "apps/web/src/components/visit/view/clinicalToothTabs/types.ts",
+      "layer": "Layer 0",
+      "description": "Types, interfaces, protocols (caries, pulpitis, extraction, hygiene), surfaces MODBL, test states",
+      "lines": 236
+    },
+    {
+      "file": "apps/web/src/components/visit/view/clinicalToothTabs/ToothSurfacesSelector.tsx",
+      "layer": "Layer 1",
+      "description": "Selection of 5 anatomical surfaces MODBL and Black cavity presets (O, MO, OD, MOD, V)",
+      "lines": 105
+    },
+    {
+      "file": "apps/web/src/components/visit/view/clinicalToothTabs/ToothClinicalTestsSection.tsx",
+      "layer": "Layer 1",
+      "description": "Clinical tests: EOD, percussion, cold/thermal test, periodontal pocket depth, tooth mobility",
+      "lines": 293
+    },
+    {
+      "file": "apps/web/src/components/visit/view/clinicalToothTabs/ToothDiagnosisHistorySection.tsx",
+      "layer": "Layer 2",
+      "description": "Tooth history and clinical status summary with chairside service accumulator",
+      "lines": 70
+    },
+    {
+      "file": "apps/web/src/components/visit/view/clinicalToothTabs/useClinicalToothTabsLogic.ts",
+      "layer": "Layer 3",
+      "description": "Business logic hook: store selectors, protocol batch addition, 804n presets, invoice event dispatches",
+      "lines": 194
+    },
+    {
+      "file": "apps/web/src/components/visit/view/clinicalToothTabs/ToothDiagnosisTab.tsx",
+      "layer": "Layer 3",
+      "description": "Diagnosis tab view: warnings, physiological states, ICD-10 pathologies, protocol selector card, 804n packages",
+      "lines": 325
+    },
+    {
+      "file": "apps/web/src/components/visit/view/clinicalToothTabs/ToothTherapyTab.tsx",
+      "layer": "Layer 3",
+      "description": "Therapy & filling tab view: composite material selector (Filtek, Ceram.x, Asteria), cavity prep, anesthesia, canal log link",
+      "lines": 211
+    },
+    {
+      "file": "apps/web/src/components/visit/view/clinicalToothTabs/ToothEndoTab.tsx",
+      "layer": "Layer 3",
+      "description": "Endodontics tab view: canal log link, pulpectomy, temporary/permanent obturation, pulpitis protocol, anesthesia",
+      "lines": 159
+    },
+    {
+      "file": "apps/web/src/components/visit/view/clinicalToothTabs/ToothSurgeryTab.tsx",
+      "layer": "Layer 3",
+      "description": "Surgery & prosthetics tab view: dental lab order link, crowns, veneers, extraction package, implantology",
+      "lines": 165
+    },
+    {
+      "file": "apps/web/src/components/visit/view/clinicalToothTabs/ToothAssignedServicesSection.tsx",
+      "layer": "Layer 3",
+      "description": "Chairside assigned services list on tooth with live ruble sum, removal actions, and toasts",
+      "lines": 73
+    },
+    {
+      "file": "apps/web/src/components/visit/view/clinicalToothTabs/index.ts",
+      "layer": "Layer 5",
+      "description": "Clean barrel re-exporting all domain types and view subcomponents",
+      "lines": 25
+    },
+    {
+      "file": "apps/web/src/components/visit/view/VisitClinicalToothTabs.tsx",
+      "layer": "Layer 5",
+      "description": "Canonical backward-compatible facade coordinating tabs and delegating to subviews",
+      "lines": 122
+    }
+  ],
+  "verification_gates": {
+    "gate_1_line_budget": "PASSED (all files strictly <= 800 lines, facade 122 <= 150 lines)",
+    "gate_2_ast_parity": "PASSED (100% baseline exports preserved)",
+    "gate_3_test_anchors": "PASSED (100% of 12 original test-anchors preserved in target directory)",
+    "gate_4_utf8_hygiene": "PASSED (clean UTF-8 across all files, zero BOM, zero mojibake)",
+    "gate_5_acyclic_dag": "PASSED (0 circular dependencies confirmed via madge)"
+  },
+  "tests": [
+    {
+      "suite": "apps/web/src/components/visit/__tests__/toothClinicalProtocolBilling.test.tsx",
+      "status": "PASSED",
+      "passed_tests": 10,
+      "failed_tests": 0
+    },
+    {
+      "suite": "apps/web/src/tests/workspaceRouteErrorBoundary.test.ts",
+      "status": "PASSED",
+      "passed_tests": 8,
+      "failed_tests": 0
+    }
+  ]
+}

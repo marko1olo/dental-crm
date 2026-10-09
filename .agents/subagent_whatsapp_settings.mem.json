@@ -1,0 +1,102 @@
+{
+  "role": "L3 WhatsApp Settings Panel Decomposer & Red Team Inquisitor",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T22:08:45Z",
+  "target_monolith": "apps/web/src/components/settings/WhatsappSettingsPanel.tsx",
+  "original_line_count": 1155,
+  "facade_line_count": 138,
+  "facade_ceiling": 150,
+  "decomposed_directory": "apps/web/src/components/settings/whatsapp",
+  "decomposed_modules": [
+    {
+      "path": "apps/web/src/components/settings/whatsapp/types.ts",
+      "layer": "Layer 0: Types & Contracts",
+      "lines": 106,
+      "description": "Интерфейсы пропсов WhatsappSettingsPanelProps, шлюзов, статусов, шаблонов сервисных сообщений и параметров анти-бана"
+    },
+    {
+      "path": "apps/web/src/components/settings/whatsapp/utils.ts",
+      "layer": "Layer 1: Pure Utils",
+      "lines": 53,
+      "description": "Чистые функции вычисления несохраненных изменений computeWhatsappSettingsDirty и проверки неблокирующего сохранения isWhatsappSettingsSaveDisabled (Мандат 8e)"
+    },
+    {
+      "path": "apps/web/src/components/settings/whatsapp/WhatsappInstanceConnectionCard.tsx",
+      "layer": "Layer 1: Instance Connection Card",
+      "lines": 389,
+      "description": "Карточка статуса инстанса, отображение QR-кода авторизации, таймер рефреша, кнопка реконнекта, код сопряжения и симуляция сканирования"
+    },
+    {
+      "path": "apps/web/src/components/settings/whatsapp/WhatsappQrInstructionsAccordion.tsx",
+      "layer": "Layer 1: Instructions Accordion",
+      "lines": 190,
+      "description": "Пошаговый клинический аккордеон инструкций подключения WhatsApp Multi-Device на рабочем смартфоне клиники (iOS/Android)"
+    },
+    {
+      "path": "apps/web/src/components/settings/whatsapp/WhatsappTemplatesSection.tsx",
+      "layer": "Layer 1: Templates Section",
+      "lines": 270,
+      "description": "Редактор шаблонов сервисных сообщений с переменными ({{patient_name}}, {{doctor}}, {{time}}), живым предпросмотром бабла и интерактивными кнопками Да/Нет"
+    },
+    {
+      "path": "apps/web/src/components/settings/whatsapp/WhatsappAntiBanLimitsSection.tsx",
+      "layer": "Layer 2: Anti-Ban Limits",
+      "lines": 297,
+      "description": "Настройка пауз между сообщениями (рандомизация 15-40 сек), суточных квот, режима прогрева нового номера (Warm-Up) и передышек пачек"
+    },
+    {
+      "path": "apps/web/src/components/settings/whatsapp/WhatsappTestMessageSection.tsx",
+      "layer": "Layer 2: Test Message Section",
+      "lines": 191,
+      "description": "Блок тестовой отправки сообщения на произвольный номер с обработкой сетевых статусов"
+    },
+    {
+      "path": "apps/web/src/components/settings/whatsapp/WhatsappCloudApiSection.tsx",
+      "layer": "Layer 3: Cloud API Section",
+      "lines": 237,
+      "description": "Настройки официального Meta Cloud API (Phone Number ID, WABA Account ID, System User Access Token, Webhook Verify Token, документация Meta)"
+    },
+    {
+      "path": "apps/web/src/components/settings/whatsapp/WhatsappRoutingAndFeaturesSection.tsx",
+      "layer": "Layer 3: Routing & Features",
+      "lines": 92,
+      "description": "Тумблер активности канала, сетка сервисных функций WhatsApp и правила маршрутизации входящих сообщений врачам и администраторам"
+    },
+    {
+      "path": "apps/web/src/components/settings/whatsapp/WhatsappActionsBar.tsx",
+      "layer": "Layer 4: Actions Bar",
+      "lines": 221,
+      "description": "Индикаторы сохранения (dirty/clean badge с токенами var(--amber) и var(--muted)), кнопки перезагрузки и сохранения, блок Telegram бота"
+    },
+    {
+      "path": "apps/web/src/components/settings/whatsapp/WhatsappSettingsPanelContent.tsx",
+      "layer": "Layer 4: Coordinator",
+      "lines": 332,
+      "description": "Координатор представления панели настроек WhatsApp, шапка, тумблер режимов (Cloud API / QR-шлюз) и интеграция всех дочерних секций"
+    },
+    {
+      "path": "apps/web/src/components/settings/whatsapp/useWhatsappPanelState.ts",
+      "layer": "Layer 3: Custom Hook",
+      "lines": 247,
+      "description": "Кастомный хук управления локальным состоянием панели: поллинг QR-сессии, статус WABA, буфер обмена вебхука"
+    },
+    {
+      "path": "apps/web/src/components/settings/whatsapp/index.ts",
+      "layer": "Layer 5: Barrel",
+      "lines": 13,
+      "description": "Чистый ациклический barrel с экспортом публичного API и компонентов"
+    }
+  ],
+  "gates_audit": {
+    "gate_1_line_budget": "PASSED (all files <= 500 lines, facade 138 lines <= 150 lines)",
+    "gate_2_ast_export_parity": "PASSED (100% baseline exports preserved)",
+    "gate_3_test_anchors": "PASSED (100% of 22 test anchors preserved)",
+    "gate_4_utf8_encoding": "PASSED (Clean UTF-8 across workspace)",
+    "gate_5_acyclic_dag": "PASSED (0 circular dependencies confirmed)"
+  },
+  "tests_verified": [
+    "apps/web/src/components/settings/__tests__/whatsappSettingsAutonomy.test.ts (31 passing, 0 failing)",
+    "apps/web/src/components/settings/__tests__/whatsappIntegrationHub.test.tsx (all passing)",
+    "apps/web/src/tests/workspaceRouteErrorBoundary.test.ts (all passing)"
+  ]
+}
