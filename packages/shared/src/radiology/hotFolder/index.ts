@@ -1,9 +1,12 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * CLINICAL HOT-FOLDER SYNC & RADIOLOGY INTAKE ENGINE (CANONICAL FACADE)
- * Real-world Visigraph File Intake (EzDent-i, Romexis, Sidexis, CliniView)
- * DICOM & Filename Parser, FDI Tooth Mapping, Visit Matcher & Image Normalizer
+ * CLINICAL HOT-FOLDER SYNC & RADIOLOGY INTAKE ENGINE
+ * Layer 5: Module Barrel Re-exports
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export * from "./hotFolder/index.js";
+export * from "./types.js";
+export * from "./dicomHeaderParser.js";
+export * from "./patientStudyMatcher.js";
+export * from "./fileStabilityWatcher.js";
+export * from "./storageSyncPipeline.js";

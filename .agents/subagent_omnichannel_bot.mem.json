@@ -1,0 +1,68 @@
+{
+  "timestamp": "2026-10-09T18:24:30Z",
+  "subagent": "subagent_omnichannel_bot",
+  "status": "COMPLETED",
+  "task": "Safe Monolith Decomposition of packages/shared/src/messaging/omnichannelBotEngine.ts",
+  "originalFile": "packages/shared/src/messaging/omnichannelBotEngine.ts",
+  "originalLines": 1183,
+  "facadeFile": "packages/shared/src/messaging/omnichannelBotEngine.ts",
+  "facadeLines": 16,
+  "decomposedDir": "packages/shared/src/messaging/omnichannel/",
+  "modules": [
+    {
+      "file": "packages/shared/src/messaging/omnichannel/types.ts",
+      "layer": 0,
+      "lines": 332,
+      "description": "Layer 0: Contracts, Schemas, and DTOs (BotDialogContext, IncomingBotMessage, BotIntentType, keyboard buttons, and all omnichannel schemas)"
+    },
+    {
+      "file": "packages/shared/src/messaging/omnichannel/intentClassifier.ts",
+      "layer": 1,
+      "lines": 563,
+      "description": "Layer 1: Parsing and classification of patient intents, clinical acute pain/CITO triage, keyword regex patterns, and webhook parsing"
+    },
+    {
+      "file": "packages/shared/src/messaging/omnichannel/appointmentSlotMatcher.ts",
+      "layer": 1,
+      "lines": 670,
+      "description": "Layer 1: Slot matching algorithm for doctors and transactional reminder dispatch builders (T-24h, T-2h, birthday, 6m recall)"
+    },
+    {
+      "file": "packages/shared/src/messaging/omnichannel/operatorHandoverService.ts",
+      "layer": 2,
+      "lines": 149,
+      "description": "Layer 2: Escalation to human operator, clinic notifications, manual mode takeover, and bot release"
+    },
+    {
+      "file": "packages/shared/src/messaging/omnichannel/botDialogManager.ts",
+      "layer": 2,
+      "lines": 498,
+      "description": "Layer 2: FSM dialog manager, branching logic (specialty -> slot -> booking), session TTL management, and history preservation"
+    },
+    {
+      "file": "packages/shared/src/messaging/omnichannel/index.ts",
+      "layer": 5,
+      "lines": 17,
+      "description": "Layer 5: Clean barrel re-export of all omnichannel entities"
+    },
+    {
+      "file": "packages/shared/src/messaging/omnichannelBotEngine.ts",
+      "layer": 5,
+      "lines": 16,
+      "description": "Layer 5: Canonical thin facade (<= 50 lines) preserving 100% backward compatibility"
+    }
+  ],
+  "verificationGates": {
+    "gate1_lineBudget": "PASSED (all files strictly < 800 lines, facade strictly 16 lines <= 50 lines)",
+    "gate2_astExportParity": "PASSED (100% baseline exports preserved, 59 total exported symbols)",
+    "gate3_testAnchors": "PASSED (100% preserved)",
+    "gate4_utf8Hygiene": "PASSED (clean UTF-8 without BOM)",
+    "gate5_acyclicDAG": "PASSED (0 circular dependencies confirmed via madge)"
+  },
+  "unitTests": {
+    "existingTests": "packages/shared/src/tests/omnichannelBotEngine.test.ts (22/22 passing)",
+    "newTests": "packages/shared/src/tests/omnichannelBotDialog.test.ts (10/10 passing)",
+    "totalPassing": 32,
+    "totalFailing": 0
+  }
+}

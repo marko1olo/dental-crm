@@ -1,0 +1,90 @@
+{
+  "timestamp": "2026-10-09T18:24:00Z",
+  "role": "Red Team Inquisitor & L3 Telegram Bot Hosting Service Decomposer",
+  "task": "Safe Monolith Decomposition of TelegramBotHostingService.ts (<800 lines per file)",
+  "monolith": {
+    "originalFile": "apps/api/src/services/telegram/TelegramBotHostingService.ts",
+    "originalLines": 1199,
+    "targetDir": "apps/api/src/services/telegram/hosting/"
+  },
+  "modules": [
+    {
+      "file": "apps/api/src/services/telegram/hosting/types.ts",
+      "layer": 0,
+      "lines": 266,
+      "description": "Domain types, BotInstance, BotPoolMetrics, RateLimitConfig, command catalogs, method parameters"
+    },
+    {
+      "file": "apps/api/src/services/telegram/hosting/tokenCrypto.ts",
+      "layer": 1,
+      "lines": 50,
+      "description": "AES-256-GCM token encryption with tenant AAD, validation of BotFather tokens, token masking in logs"
+    },
+    {
+      "file": "apps/api/src/services/telegram/hosting/webhookLifecycle.ts",
+      "layer": 1,
+      "lines": 336,
+      "description": "Telegram Bot API endpoints: verifyBotToken, setupWebhook, getWebhookInfo, deleteWebhook, setBotCommands, descriptions"
+    },
+    {
+      "file": "apps/api/src/services/telegram/hosting/clinicalCareInstructions.ts",
+      "layer": 1,
+      "lines": 73,
+      "description": "Clinical post-op care catalog adhering to SanPiN & clinical protocols (extraction, implantation, hygiene, filling, endo)"
+    },
+    {
+      "file": "apps/api/src/services/telegram/hosting/staffScheduleFormatter.ts",
+      "layer": 2,
+      "lines": 97,
+      "description": "Doctor schedule builder for Telegram without patient personal data (ФЗ-323 compliance)"
+    },
+    {
+      "file": "apps/api/src/services/telegram/hosting/intercomStaffNotifier.ts",
+      "layer": 2,
+      "lines": 262,
+      "description": "Intercom ping dispatcher to clinic staff Telegram with 1-tap Ack buttons and WebSocket synchronization"
+    },
+    {
+      "file": "apps/api/src/services/telegram/hosting/botInstancePool.ts",
+      "layer": 2,
+      "lines": 123,
+      "description": "In-memory active bot instance registry with multi-tenant isolation and graceful shutdown"
+    },
+    {
+      "file": "apps/api/src/services/telegram/hosting/telegramRateLimiter.ts",
+      "layer": 2,
+      "lines": 133,
+      "description": "Token bucket and sliding window rate limiter (30 msg/sec global, 1 msg/sec per chat, 429 backoff)"
+    },
+    {
+      "file": "apps/api/src/services/telegram/hosting/hostingCoreService.ts",
+      "layer": 3,
+      "lines": 396,
+      "description": "Core hosting service coordinator: connectBot, disconnectBot, getBotStatus, testBotConnection, applyPresetToBot"
+    },
+    {
+      "file": "apps/api/src/services/telegram/hosting/index.ts",
+      "layer": 5,
+      "lines": 17,
+      "description": "Barrel re-export index of all hosting modules and classes"
+    },
+    {
+      "file": "apps/api/src/services/telegram/TelegramBotHostingService.ts",
+      "layer": 5,
+      "lines": 12,
+      "description": "Canonical thin facade (12 lines <= 50 limit) preserving 100% backward compatibility"
+    }
+  ],
+  "gates": {
+    "gate1_line_count_budget": "PASSED (all files <= 396 lines, strictly < 800; facade is 12 lines <= 50)",
+    "gate2_ast_export_parity": "PASSED (39 baseline exports preserved, 100% parity)",
+    "gate3_test_anchors": "PASSED (100% test anchors preserved)",
+    "gate4_utf8_clean": "PASSED (clean UTF-8 across all files)",
+    "gate5_acyclic_graph": "PASSED (zero circular dependencies confirmed via madge)"
+  },
+  "unitTests": {
+    "telegramBotHostingService": "PASSED (12/12 passed, Exit Code 0)",
+    "telegramOutboxPartialDelivery": "PASSED (18/18 passed, Exit Code 0)"
+  },
+  "status": "COMPLETED_CLEAN"
+}

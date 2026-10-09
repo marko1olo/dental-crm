@@ -1,0 +1,109 @@
+{
+  "subagent": "ast_proactive_architecture_inquisitor_wave2",
+  "status": "completed",
+  "timestamp": "2026-10-09T22:22:00.000Z",
+  "summary": "Глубокая превентивная AST-инквизиция архитектуры кодовой базы Clinic MVP: ликвидированы уязвимости ACID, IDOR, плавающих промисов и фронтенд race conditions.",
+  "vectors": {
+    "vector1_acid_transactions": {
+      "status": "FIXED_AND_VERIFIED",
+      "findings": [
+        {
+          "file": "apps/api/src/routes/referrals.ts",
+          "lines": "180-205",
+          "risk": "Неатомарная вставка patientReferrals и обновление patientReferralCodes.signupCount без транзакции.",
+          "resolution": "Обернуто в db.transaction(async (tx) => { ... })"
+        },
+        {
+          "file": "apps/api/src/services/telegram/referralLoyalty/referralRewardsEngine.ts",
+          "lines": "33-85, 290-340",
+          "risk": "Мультитабличные мутации patientReferrals, начисление бонусов и обновление referralCodes без транзакции и блокировки строк.",
+          "resolution": "awardBonusPoints снабжен поддержкой внешней транзакции tx и блокировкой for('update'); processReferralStart обернут в db.transaction."
+        },
+        {
+          "file": "apps/api/src/routes/patientRecall.ts",
+          "lines": "260-305",
+          "risk": "Раздельная фиксация auditEvents и communicationEvents без гарантии атомарности.",
+          "resolution": "Обернуто в db.transaction(async (tx) => { ... })"
+        },
+        {
+          "file": "apps/api/src/routes/documents/signUkep.ts",
+          "lines": "227-295",
+          "risk": "Раздельное сохранение криптоподписи УКЭП и последующее наложение ГОСТ-штампа на архивный снимок создавали риск рассинхронизации при сбое файловой системы.",
+          "resolution": "Объединено в атомарную db.transaction(async (tx) => { ... })"
+        }
+      ]
+    },
+    "vector2_tenant_isolation_idor": {
+      "status": "FIXED_AND_VERIFIED",
+      "findings": [
+        {
+          "file": "apps/api/src/routes/omnichannelBots/triageAndBooking.ts",
+          "lines": "383-395",
+          "risk": "Обновление заметок пациента (patients.notes) происходило без фильтра organizationId в where(eq(patients.id, existing.id)).",
+          "resolution": "Добавлен обязательный фильтр and(eq(patients.organizationId, orgId), eq(patients.id, existing.id))."
+        }
+      ]
+    },
+    "vector3_floating_promises": {
+      "status": "FIXED_AND_VERIFIED",
+      "findings": [
+        {
+          "file": "apps/api/src/speech/storage.ts",
+          "lines": "25-29",
+          "risk": "Фоновая инициализация ensureSpeechTranscriptionChunksRestored() вызывалась без .catch(), что при ошибке вызывало UnhandledPromiseRejection и падение Node.js процесса.",
+          "resolution": "Добавлен безопасный гардинг .catch(err => { console.error(...) })."
+        }
+      ]
+    },
+    "vector4_frontend_race_conditions": {
+      "status": "FIXED_AND_VERIFIED",
+      "findings": [
+        {
+          "file": "apps/web/src/components/radiology/archive/StudyPatientBindControlModal.tsx",
+          "lines": "90-158",
+          "risk": "Поиск пациентов при вводе символов отправлял параллельные fetch-запросы без AbortController и sequence id, приводя к stale responses и перезатиранию результатов более старыми ответами.",
+          "resolution": "Интегрированы searchAbortRef (отмена предыдущего inflight запроса через AbortController), searchSeqRef (проверка актуальности последовательности ответа) и безопасный перехват AbortError."
+        }
+      ]
+    }
+  },
+  "verification": {
+    "tests_run": [
+      {
+        "suite": "apps/api/src/tests/compliance/wave10CryptoSignatureAndPdfPentest.test.ts",
+        "result": "17/17 passed",
+        "exit_code": 0
+      },
+      {
+        "suite": "apps/api/src/tests/routes/redTeamSubagentInquisition.test.ts",
+        "result": "17/17 passed",
+        "exit_code": 0
+      },
+      {
+        "suite": "apps/api/src/tests/telegramReferralLoyalty.test.ts",
+        "result": "18/18 passed",
+        "exit_code": 0
+      },
+      {
+        "suite": "apps/api/src/tests/routes/loyaltyAndReferrals.test.ts",
+        "result": "2/2 passed",
+        "exit_code": 0
+      },
+      {
+        "suite": "apps/api/src/tests/routes/patientRecall.test.ts",
+        "result": "6/6 passed",
+        "exit_code": 0
+      },
+      {
+        "suite": "apps/api/src/tests/omnichannelBotEngine.test.ts & omnichannelBotLiveOperator.test.ts",
+        "result": "17/17 passed",
+        "exit_code": 0
+      },
+      {
+        "suite": "npm run check:encoding",
+        "result": "10080 files clean",
+        "exit_code": 0
+      }
+    ]
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Mobile Chairside Visit Workspace Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T18:24:00Z",
+  "target": "apps/web/src/components/visit/MobileChairsideVisitWorkspace.tsx",
+  "decomposedDirectory": "apps/web/src/components/visit/mobileChairside/",
+  "metrics": {
+    "originalLines": 1142,
+    "facadeLines": 144,
+    "maxFileLineBudget": 800,
+    "facadeBudget": 150
+  },
+  "modules": [
+    {
+      "file": "apps/web/src/components/visit/mobileChairside/types.ts",
+      "layer": "Layer 0 (Types & DTOs)",
+      "lines": 148,
+      "purpose": "Types, interfaces, step definitions, common dental diagnoses, chairside quick services, payment options"
+    },
+    {
+      "file": "apps/web/src/components/visit/mobileChairside/ChairsidePatientQuickBar.tsx",
+      "layer": "Layer 1 (Presentation)",
+      "lines": 143,
+      "purpose": "Top HUD patient bar: name, phone link, VisitTimer, allergy badges (clean & pulse alert)"
+    },
+    {
+      "file": "apps/web/src/components/visit/mobileChairside/ChairsideStepNav.tsx",
+      "layer": "Layer 1 (Navigation)",
+      "lines": 63,
+      "purpose": "5-segment step navigation chips: Complaints, Exam, Diagnosis, Treatment, Checkout"
+    },
+    {
+      "file": "apps/web/src/components/visit/mobileChairside/ChairsideTeethQuickSelector.tsx",
+      "layer": "Layer 1 (Touch Selector)",
+      "lines": 155,
+      "purpose": "FDI quadrant selector Q1-Q4 with >=44x44px touch targets and native MobileBottomSheet"
+    },
+    {
+      "file": "apps/web/src/components/visit/mobileChairside/ChairsideSmartMicrophone.tsx",
+      "layer": "Layer 1 (Voice Dictation)",
+      "lines": 71,
+      "purpose": "SmartMicrophone clinical speech recognition card with quick chips"
+    },
+    {
+      "file": "apps/web/src/components/visit/mobileChairside/ChairsideProtocolsSection.tsx",
+      "layer": "Layer 2 (Protocols & Steps)",
+      "lines": 353,
+      "purpose": "Steps 1-5 content, clinical protocols, quick diagnoses, treatment handoff, checkout & payment bottom sheet"
+    },
+    {
+      "file": "apps/web/src/components/visit/mobileChairside/ChairsideBottomStickyActions.tsx",
+      "layer": "Layer 2 (Natural Thumb Zone)",
+      "lines": 87,
+      "purpose": "Floating Bottom Bar: 52px Primary CTA, secondary back button, plan stage CTA"
+    },
+    {
+      "file": "apps/web/src/components/visit/mobileChairside/useChairsideVisitWorkspace.ts",
+      "layer": "Layer 3 (State Hook)",
+      "lines": 328,
+      "purpose": "State coordination hook: step machine, speech recognition, billing items, treatment stage handoff"
+    },
+    {
+      "file": "apps/web/src/components/visit/mobileChairside/index.ts",
+      "layer": "Layer 5 (Barrel)",
+      "lines": 14,
+      "purpose": "Pure barrel re-exporting all subcomponents and types"
+    },
+    {
+      "file": "apps/web/src/components/visit/MobileChairsideVisitWorkspace.tsx",
+      "layer": "Layer 5 (Canonical Facade)",
+      "lines": 144,
+      "purpose": "Master coordinator and 100% backward-compatible facade (strictly <= 150 lines)"
+    }
+  ],
+  "gates": {
+    "gate1_line_count_budget": "PASSED (all files < 800 lines, facade 144 lines <= 150)",
+    "gate2_ast_export_parity": "PASSED (5/5 baseline exports preserved: default, MobileChairsideVisitWorkspace, MobileChairsideStep, MobileChairsideBillingItem, MobileChairsideVisitWorkspaceProps)",
+    "gate3_test_anchors": "PASSED (100% data-testid, id, aria-label preserved)",
+    "gate4_utf8_hygiene": "PASSED (clean UTF-8 across workspace)",
+    "gate5_acyclic_dag_madge": "PASSED (0 circular dependencies)"
+  },
+  "tests": [
+    "apps/web/src/tests/mobileChairsideVisitWorkspace.test.tsx (7/7 passed)",
+    "apps/web/src/components/visit/__tests__/visitMobileHigErgonomics.test.tsx (5/5 passed)",
+    "apps/web/src/tests/workspaceRouteErrorBoundary.test.ts (8/8 passed)"
+  ]
+}

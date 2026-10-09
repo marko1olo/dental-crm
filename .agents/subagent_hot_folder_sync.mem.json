@@ -1,0 +1,79 @@
+{
+  "module": "packages/shared/src/radiology/hotFolderSyncEngine.ts",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T22:20:50.000Z",
+  "decomposition": {
+    "targetDirectory": "packages/shared/src/radiology/hotFolder/",
+    "facadeFile": "packages/shared/src/radiology/hotFolderSyncEngine.ts",
+    "facadeLineCount": 10,
+    "maxFileLineLimit": 800,
+    "modules": [
+      {
+        "layer": "Layer 0",
+        "file": "types.ts",
+        "lines": 207,
+        "description": "HotFolderSyncConfig, ActiveVisitContext, ExtractedRadiologyMetadata, Zod schemas, normalization types"
+      },
+      {
+        "layer": "Layer 1",
+        "file": "dicomHeaderParser.ts",
+        "lines": 395,
+        "description": "DICOM dataset tag extractor, transliteration, Levenshtein distance, tooth FDI validator, software vendor detector"
+      },
+      {
+        "layer": "Layer 1",
+        "file": "patientStudyMatcher.ts",
+        "lines": 199,
+        "description": "Multi-strategy visit matcher (Exact barcode, visit ID, patient card, fuzzy transliterated name and tooth overlap, cabinet in-treatment fallback)"
+      },
+      {
+        "layer": "Layer 2",
+        "file": "fileStabilityWatcher.ts",
+        "lines": 182,
+        "description": "File stability tracker & partial write guard (SMB/NFS write completion check, consecutive check intervals, timeout guard)"
+      },
+      {
+        "layer": "Layer 2",
+        "file": "storageSyncPipeline.ts",
+        "lines": 544,
+        "description": "Histogram percentile auto-contrast, 16-bit to 8-bit/RGBA image normalization, HotFolderSyncEngine ingestion core, S3/MinIO storage & WebSocket notifier"
+      },
+      {
+        "layer": "Layer 5",
+        "file": "index.ts",
+        "lines": 13,
+        "description": "Clean barrel re-exporting all submodules"
+      }
+    ]
+  },
+  "gates": {
+    "gate1_line_budget": "PASSED (all files <= 544 lines, facade <= 10 lines)",
+    "gate2_ast_export_parity": "PASSED (100% baseline symbols preserved, 34/34 symbols)",
+    "gate3_test_anchors": "PASSED (100% test anchors preserved)",
+    "gate4_utf8_hygiene": "PASSED (Clean UTF-8 without BOM)",
+    "gate5_acyclic_dag": "PASSED (0 circular dependencies)"
+  },
+  "tests": {
+    "hotFolderSyncEngine_unit": {
+      "command": "node --max-old-space-size=4096 --import tsx --test packages/shared/src/tests/hotFolderSyncEngine.test.ts",
+      "status": "PASSED",
+      "testsTotal": 25,
+      "testsPassed": 25,
+      "testsFailed": 0
+    },
+    "treatmentPlanEngine_unit": {
+      "command": "node --max-old-space-size=4096 --import tsx --test packages/shared/src/tests/treatmentPlanEngine.test.ts",
+      "status": "PASSED",
+      "testsTotal": 20,
+      "testsPassed": 20,
+      "testsFailed": 0
+    },
+    "cbctPopoutStudioIntegration_integration": {
+      "command": "node --max-old-space-size=4096 --import tsx --test apps/web/src/tests/cbctPopoutStudioIntegration.test.ts",
+      "status": "PASSED",
+      "testsTotal": 16,
+      "testsPassed": 16,
+      "testsFailed": 0
+    }
+  }
+}

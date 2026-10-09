@@ -1,0 +1,107 @@
+{
+  "task": "Safe Monolith Decomposition of SickLeaveElnModal.tsx",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T22:24:00Z",
+  "targetFile": "apps/web/src/components/documents/sickLeave/SickLeaveElnModal.tsx",
+  "originalLines": 1140,
+  "facadeLines": 135,
+  "facadeBudgetLimit": 150,
+  "decomposedDirectory": "apps/web/src/components/documents/sickLeave/elnModal/",
+  "modules": [
+    {
+      "file": "types.ts",
+      "layer": 0,
+      "lines": 106,
+      "purpose": "Interfaces for SickLeaveElnModalProps, ElnFormData, TabType, SfrElnStatus, DigitalSignatureCert, DigitalSignatureStatus and subcomponent props"
+    },
+    {
+      "file": "ElnPatientAndJobSection.tsx",
+      "layer": 1,
+      "lines": 82,
+      "purpose": "Patient and employer requisites: FIO, SNILS, birth date, workplace organization name, employment type"
+    },
+    {
+      "file": "ElnDiagnosisAndPeriodSection.tsx",
+      "layer": 1,
+      "lines": 282,
+      "purpose": "SFR incapacity reasons, ambulatory regime, ICD-10 code, diagnosis text, period list management with doctor role, closing codes 31/32, regime violations"
+    },
+    {
+      "file": "ElnDigitalSignatureSection.tsx",
+      "layer": 2,
+      "lines": 185,
+      "purpose": "CryptoPro CSP digital signatures (doctor UKEP & clinic/MO UKEP), thumbprint verification, timestamping and certificate validity checks"
+    },
+    {
+      "file": "ElnPrintPreviewDrawer.tsx",
+      "layer": 2,
+      "lines": 31,
+      "purpose": "A5 statutory patient memo print preview and instant print trigger"
+    },
+    {
+      "file": "ElnVkProtocolSection.tsx",
+      "layer": 2,
+      "lines": 161,
+      "purpose": "Medical Commission (ВК) session protocol: protocol number, date, chair, SNILS, members, clinical substantiation, expert decision"
+    },
+    {
+      "file": "ElnJournal036Section.tsx",
+      "layer": 2,
+      "lines": 68,
+      "purpose": "Statutory Form 036/u clinical-expert accounting journal table"
+    },
+    {
+      "file": "ElnSfrPayloadSection.tsx",
+      "layer": 2,
+      "lines": 37,
+      "purpose": "SFR/EGISZ XML SEMD v2.0 and JSON API payloads viewer with clipboard copy"
+    },
+    {
+      "file": "useSickLeaveElnLogic.ts",
+      "layer": 3,
+      "lines": 431,
+      "purpose": "Custom hook isolating all modal state, presets, period mutation, validation, digital signing, and diary insertion handlers"
+    },
+    {
+      "file": "index.ts",
+      "layer": 5,
+      "lines": 9,
+      "purpose": "Clean module barrel re-exporting all subcomponents and logic"
+    }
+  ],
+  "verificationGates": {
+    "gate1_line_budget": {
+      "status": "PASSED",
+      "detail": "All decomposed files are strictly <= 800 lines. Facade is 135 lines (strictly <= 150 lines limit)."
+    },
+    "gate2_ast_export_parity": {
+      "status": "PASSED",
+      "detail": "100% of baseline exports (SickLeaveElnModalProps, SickLeaveElnModal) preserved in the canonical facade."
+    },
+    "gate3_test_anchors": {
+      "status": "PASSED",
+      "detail": "100% test anchors (aria-label='Закрыть', aria-label='Удалить период') preserved."
+    },
+    "gate4_utf8_hygiene": {
+      "status": "PASSED",
+      "detail": "Clean UTF-8 without BOM across all created files."
+    },
+    "gate5_dag_acyclic": {
+      "status": "PASSED",
+      "detail": "Zero circular dependencies detected by madge."
+    }
+  },
+  "testExecutionResults": {
+    "documentGeneratorsTest": "PASSED (30/30 suites passing)",
+    "sickLeaveElnEngineTest": "PASSED (19/19 suites passing)",
+    "dentalOutpatientSovereigntyTest": "PASSED (4/4 suites passing, Order 1089n outpatient regime verified)",
+    "humanLanguageToneInquisitionTest8": "PASSED (clean clinical language, 0 bureaucratic 043/у text)",
+    "decompositionHealthAudit": "PASSED (5/5 gates 100% clean)"
+  },
+  "mandate8eDoctorAutonomy": {
+    "unblockedSaving": true,
+    "draftDiaryInsertionAlwaysAvailable": true,
+    "smoothFallback": true,
+    "zeroModalNesting": true
+  }
+}
