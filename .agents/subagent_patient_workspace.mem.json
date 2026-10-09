@@ -1,0 +1,99 @@
+{
+  "subagent": "L3 Patient Workspace View Decomposer",
+  "targetMonolith": "apps/web/src/components/patients/PatientWorkspaceView.tsx",
+  "originalLines": 1189,
+  "facadeLines": 118,
+  "decomposedDirectory": "apps/web/src/components/patients/workspaceView/",
+  "createdAt": "2026-10-09T19:53:00Z",
+  "gatesSummary": {
+    "gate1_lineCountBudget": "PASSED (All modules <= 800 lines, facade 118 lines <= 150)",
+    "gate2_astExportParity": "PASSED (100% baseline exports preserved: PatientWorkspaceViewProps, PatientWorkspaceView)",
+    "gate3_testAnchorsParity": "PASSED (100% test anchors preserved: 31 data-testid anchors)",
+    "gate4_utf8Hygiene": "PASSED (Clean UTF-8 encoding across workspace)",
+    "gate5_acyclicMadgeGraph": "PASSED (0 circular dependencies, Acyclic DAG confirmed)"
+  },
+  "modules": [
+    {
+      "file": "apps/web/src/components/patients/workspaceView/types.ts",
+      "lines": 36,
+      "layer": "Layer 0: Types & DTOs",
+      "description": "PatientWorkspaceViewProps, WorkspaceTabKey, ImagingStudyItem, DomSliceResult"
+    },
+    {
+      "file": "apps/web/src/components/patients/workspaceView/VisitHistoryCardItem.tsx",
+      "lines": 83,
+      "layer": "Layer 1: Presentation Item",
+      "description": "VisitHistoryCardItem with date formatting and status tags"
+    },
+    {
+      "file": "apps/web/src/components/patients/workspaceView/PatientWorkspaceHeader.tsx",
+      "lines": 68,
+      "layer": "Layer 1: Header Presentation",
+      "description": "Allergy banner, duplicate alert, chart number and balance badge"
+    },
+    {
+      "file": "apps/web/src/components/patients/workspaceView/PatientWorkspaceToolbar.tsx",
+      "lines": 374,
+      "layer": "Layer 1: Action Toolbar Presentation",
+      "description": "New visit button, plan button, documents and DMS dropdown with 13 actions"
+    },
+    {
+      "file": "apps/web/src/components/patients/workspaceView/PatientWorkspaceTabsNav.tsx",
+      "lines": 77,
+      "layer": "Layer 2: Tab Navigation",
+      "description": "Timeline, Plans, Visits, Scans tab navigation with live counters"
+    },
+    {
+      "file": "apps/web/src/components/patients/workspaceView/usePatientWorkspaceViewLogic.ts",
+      "lines": 339,
+      "layer": "Layer 3: Domain Logic Hook",
+      "description": "State management, pagination limits, studies, appointments, DMS letter handler"
+    },
+    {
+      "file": "apps/web/src/components/patients/workspaceView/PatientWorkspacePlansTab.tsx",
+      "lines": 116,
+      "layer": "Layer 3: Tab Content Presentation",
+      "description": "Decree 659 consent banner, plan items grid, addendums, and pagination"
+    },
+    {
+      "file": "apps/web/src/components/patients/workspaceView/PatientWorkspaceVisitsTab.tsx",
+      "lines": 69,
+      "layer": "Layer 3: Tab Content Presentation",
+      "description": "Visit history cards grid with doctor lookup and pagination"
+    },
+    {
+      "file": "apps/web/src/components/patients/workspaceView/PatientWorkspaceScansTab.tsx",
+      "lines": 174,
+      "layer": "Layer 3: Tab Content Presentation",
+      "description": "Radiology and CBCT gallery with 200x200px cards (CLS = 0) and modality badges"
+    },
+    {
+      "file": "apps/web/src/components/patients/workspaceView/PatientWorkspaceModalsWrapper.tsx",
+      "lines": 73,
+      "layer": "Layer 4: Modal Mounting Subcomponent",
+      "description": "Mounts DicomViewerModal, PatientWorkspaceModals, PatientTreatmentPlanDrawerModal"
+    },
+    {
+      "file": "apps/web/src/components/patients/workspaceView/index.ts",
+      "lines": 11,
+      "layer": "Layer 5: Barrel Re-export",
+      "description": "Re-exports all types and workspaceView subcomponents"
+    },
+    {
+      "file": "apps/web/src/components/patients/PatientWorkspaceView.tsx",
+      "lines": 118,
+      "layer": "Layer 5: Canonical Facade",
+      "description": "Compact coordinator <= 150 lines, 100% backwards compatible"
+    }
+  ],
+  "tests": [
+    {
+      "command": "node scripts/verify-decomposition-health.cjs apps/web/src/components/patients/PatientWorkspaceView.tsx apps/web/src/components/patients/PatientWorkspaceView.tsx apps/web/src/components/patients/workspaceView/",
+      "result": "PASSED (100% clean, All 5 Gates passed)"
+    },
+    {
+      "command": "node --max-old-space-size=4096 --import tsx --test apps/web/src/tests/workspaceRouteErrorBoundary.test.ts",
+      "result": "PASSED (8/8 tests passed, Exit Code 0)"
+    }
+  ]
+}

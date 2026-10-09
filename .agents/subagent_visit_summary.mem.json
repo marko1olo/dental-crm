@@ -1,0 +1,76 @@
+{
+  "target": "apps/web/src/components/visit/VisitSummaryModal.tsx",
+  "originalLines": 1215,
+  "facadeLines": 128,
+  "status": "DECOMPOSED_VERIFIED",
+  "decomposedDirectory": "apps/web/src/components/visit/summaryModal/",
+  "modules": [
+    {
+      "file": "apps/web/src/components/visit/summaryModal/types.ts",
+      "lines": 85,
+      "layer": "Layer 0: Types & DTOs"
+    },
+    {
+      "file": "apps/web/src/components/visit/summaryModal/summaryCalculations.ts",
+      "lines": 128,
+      "layer": "Layer 1: Pure Utilities & Calculations"
+    },
+    {
+      "file": "apps/web/src/components/visit/summaryModal/VisitFollowUpSection.tsx",
+      "lines": 38,
+      "layer": "Layer 1: Follow-Up & Next Stage Booking"
+    },
+    {
+      "file": "apps/web/src/components/visit/summaryModal/VisitRecommendationsSection.tsx",
+      "lines": 139,
+      "layer": "Layer 2: Recommendations, Protocols & Tooth Abnormalities"
+    },
+    {
+      "file": "apps/web/src/components/visit/summaryModal/VisitBillingSummarySection.tsx",
+      "lines": 168,
+      "layer": "Layer 2: Chairside POS & Billing Summary"
+    },
+    {
+      "file": "apps/web/src/components/visit/summaryModal/useVisitSummaryModalState.ts",
+      "lines": 362,
+      "layer": "Layer 3: State & Custom Hooks"
+    },
+    {
+      "file": "apps/web/src/components/visit/summaryModal/VisitSummaryModalContent.tsx",
+      "lines": 463,
+      "layer": "Layer 4: Presentation Subcomponents"
+    },
+    {
+      "file": "apps/web/src/components/visit/summaryModal/index.ts",
+      "lines": 8,
+      "layer": "Layer 5: Barrel Re-export"
+    },
+    {
+      "file": "apps/web/src/components/visit/VisitSummaryModal.tsx",
+      "lines": 128,
+      "layer": "Layer 5: Canonical Facade (<= 150 lines)"
+    }
+  ],
+  "gates": {
+    "gate1_lineBudget": "PASSED (all files <= 800 lines, facade 128 lines <= 150)",
+    "gate2_exportParity": "PASSED (100% baseline exports preserved: VisitSummaryModal, VisitSummaryModalProps, RadiologySnapshotItem, VisitSummaryRadiologyGallery, RadiologyZoomLightbox, VisitSummaryDiarySections)",
+    "gate3_testAnchors": "PASSED (100% preserved: 28 of 28 test anchors)",
+    "gate4_utf8": "PASSED (clean UTF-8 without BOM across all files)",
+    "gate5_madgeDag": "PASSED (0 circular dependencies, strictly acyclic DAG)"
+  },
+  "tests": [
+    {
+      "suite": "apps/web/src/components/visit/__tests__/chairsidePosPaymentPlanSync.test.tsx",
+      "status": "PASSED (4 of 4 tests passing)"
+    },
+    {
+      "suite": "apps/web/src/components/visit/__tests__/humanDoctorProtocolsAntiBloat.test.tsx",
+      "status": "PASSED (6 of 6 tests passing)"
+    },
+    {
+      "suite": "apps/web/src/tests/workspaceRouteErrorBoundary.test.ts",
+      "status": "PASSED (8 of 8 tests passing)"
+    }
+  ],
+  "completedAt": "2026-10-09T19:55:00.000Z"
+}

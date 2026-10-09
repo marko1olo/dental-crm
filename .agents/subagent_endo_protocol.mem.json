@@ -1,0 +1,64 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Endo Protocol Engine Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T19:51:30Z",
+  "target": "packages/shared/src/clinical/endoProtocolEngine.ts",
+  "baselineLines": 1214,
+  "decomposedDirectory": "packages/shared/src/clinical/endo/",
+  "files": [
+    {
+      "path": "packages/shared/src/clinical/endo/types.ts",
+      "layer": "Layer 0: Types & Contracts",
+      "lines": 159,
+      "maxLines": 800,
+      "status": "PASSED"
+    },
+    {
+      "path": "packages/shared/src/clinical/endo/canalAnatomyRules.ts",
+      "layer": "Layer 1: Canal Anatomy & Tooling Rules",
+      "lines": 578,
+      "maxLines": 800,
+      "status": "PASSED"
+    },
+    {
+      "path": "packages/shared/src/clinical/endo/irrigationObturationRules.ts",
+      "layer": "Layer 1: Irrigation & Obturation Protocol Rules",
+      "lines": 566,
+      "maxLines": 800,
+      "status": "PASSED"
+    },
+    {
+      "path": "packages/shared/src/clinical/endo/endoCaseEvaluatorCore.ts",
+      "layer": "Layer 2: Endo Case Quality Evaluator Core",
+      "lines": 239,
+      "maxLines": 800,
+      "status": "PASSED"
+    },
+    {
+      "path": "packages/shared/src/clinical/endo/index.ts",
+      "layer": "Layer 5: Canonical Subsystem Barrel",
+      "lines": 13,
+      "maxLines": 800,
+      "status": "PASSED"
+    },
+    {
+      "path": "packages/shared/src/clinical/endoProtocolEngine.ts",
+      "layer": "Layer 5: Canonical Master Facade",
+      "lines": 11,
+      "maxLines": 50,
+      "status": "PASSED"
+    }
+  ],
+  "verificationGates": {
+    "gate1_line_budget": "PASSED (all files <= 800 lines, facade <= 50 lines)",
+    "gate2_ast_export_parity": "PASSED (100% of baseline exports preserved: 50/50 + 9 extended domain exports)",
+    "gate3_test_anchors": "PASSED (100% preserved)",
+    "gate4_utf8_hygiene": "PASSED (Clean UTF-8 without BOM)",
+    "gate5_acyclic_dag": "PASSED (0 circular dependencies, strictly acyclic DAG)"
+  },
+  "tests": {
+    "endoProtocolEngine.test.ts": "PASSED (19/19 tests)",
+    "endoCaseEvaluatorCore.test.ts": "PASSED (6/6 tests)",
+    "pediatricDentition.test.ts": "PASSED (8/8 tests)"
+  }
+}

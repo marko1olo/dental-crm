@@ -446,7 +446,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 				</div>
 			)}
 
-			{/* Интерактивный быстрый просмотр (Instant Preview Panel) */}
+			{/* Интерактивный быстрый просмотр (Instant Preview Panel: instant-preview-patient-link-) */}
 			{isPreviewOpen && (
 				<LeadInstantPreview
 					lead={lead}

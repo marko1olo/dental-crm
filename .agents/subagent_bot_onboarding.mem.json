@@ -1,0 +1,81 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Bot Onboarding Wizard Decomposer",
+  "status": "COMPLETED",
+  "target_monolith": "apps/web/src/components/settings/telegram/BotOnboardingWizard.tsx",
+  "original_line_count": 1189,
+  "facade_line_count": 76,
+  "decomposed_directory": "apps/web/src/components/settings/telegram/onboarding/",
+  "modules": [
+    {
+      "file": "apps/web/src/components/settings/telegram/onboarding/types.ts",
+      "layer": 0,
+      "lines": 102,
+      "description": "Layer 0: Pure TypeScript contracts, wizard step numbers, connection status, lead items and step props interfaces"
+    },
+    {
+      "file": "apps/web/src/components/settings/telegram/onboarding/BotStepperHeader.tsx",
+      "layer": 1,
+      "lines": 49,
+      "description": "Layer 1: Navigation progress stepper header preserving role=navigation and aria-label"
+    },
+    {
+      "file": "apps/web/src/components/settings/telegram/onboarding/BotTokenStep.tsx",
+      "layer": 1,
+      "lines": 266,
+      "description": "Layer 1: Channel selection (Telegram, VK, WhatsApp, MAX), 2-step setup guide and BotFather token verification"
+    },
+    {
+      "file": "apps/web/src/components/settings/telegram/onboarding/BotTemplatesStep.tsx",
+      "layer": 1,
+      "lines": 175,
+      "description": "Layer 1: Clinic profile, branding, concept selector, tone of voice radio and welcome message customization"
+    },
+    {
+      "file": "apps/web/src/components/settings/telegram/onboarding/BotAdminsStep.tsx",
+      "layer": 2,
+      "lines": 224,
+      "description": "Layer 2: 5 clinical plugin toggles (booking 24/7, reminders 24h/2h, reviews, price FAQ, live admin escalation) and phone preview triggers"
+    },
+    {
+      "file": "apps/web/src/components/settings/telegram/onboarding/BotTestingStep.tsx",
+      "layer": 2,
+      "lines": 161,
+      "description": "Layer 2: Live bot cloud launch, webhook registration status, source code ZIP download and real-time leads log"
+    },
+    {
+      "file": "apps/web/src/components/settings/telegram/onboarding/useBotOnboardingState.ts",
+      "layer": 3,
+      "lines": 462,
+      "description": "Layer 3: Wizard state machine, API synchronization (/api/bots/inbox, /api/telegram/bot/verify, /api/bots/configs), ZIP generator and memoized step props bundles"
+    },
+    {
+      "file": "apps/web/src/components/settings/telegram/onboarding/index.ts",
+      "layer": 5,
+      "lines": 18,
+      "description": "Layer 5: Clean barrel export for all submodules and types"
+    },
+    {
+      "file": "apps/web/src/components/settings/telegram/BotOnboardingWizard.tsx",
+      "layer": 5,
+      "lines": 76,
+      "description": "Layer 5: Canonical coordinator facade (strictly <= 150 lines) with 100% backward compatibility"
+    }
+  ],
+  "verification_results": {
+    "gate_1_line_budget": "PASSED (all files strictly <= 800 lines, facade strictly 76 lines <= 150)",
+    "gate_2_ast_export_parity": "PASSED (100% public exports preserved: BotOnboardingWizard, BotOnboardingWizardProps)",
+    "gate_3_test_anchors": "PASSED (100% data-testid, id, aria-label preserved)",
+    "gate_4_utf8_encoding": "PASSED (clean UTF-8 across workspace)",
+    "gate_5_acyclic_dag_madge": "PASSED (0 circular dependencies, strictly acyclic DAG)",
+    "unit_tests": [
+      {
+        "command": "node --max-old-space-size=4096 --import tsx --test apps/web/src/tests/workspaceRouteErrorBoundary.test.ts",
+        "result": "PASSED (8/8 tests, Exit Code 0)"
+      },
+      {
+        "command": "npx vitest run apps/web/src/tests/botStudioModal.test.tsx",
+        "result": "PASSED (5/5 tests, Exit Code 0)"
+      }
+    ]
+  }
+}

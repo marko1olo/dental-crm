@@ -1,0 +1,40 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Speech Chunk Helpers Decomposer",
+  "timestamp": "2026-10-09T15:56:00Z",
+  "status": "COMPLETED_CLEAN",
+  "target": "apps/web/src/utils/commonHelpers/speechChunkHelpers.ts",
+  "originalLines": 1201,
+  "facadeLines": 8,
+  "decomposedDirectory": "apps/web/src/utils/commonHelpers/speechChunks",
+  "architecture": {
+    "layer0": [
+      { "file": "types.ts", "lines": 164, "role": "SpeechChunk, VAD config, quantization config, persistence health & DTO contracts" }
+    ],
+    "layer1": [
+      { "file": "pcmAudioUtils.ts", "lines": 231, "role": "Float32/Int16 PCM conversion, WAV generation, click suppression, noise gate, pricelist image prep" },
+      { "file": "vadSilenceDetector.ts", "lines": 206, "role": "RMS & dB calculation, voice activity detection, silence timeout, pause events" },
+      { "file": "domainLabels.ts", "lines": 157, "role": "Import, document, consent, action labels & options" },
+      { "file": "domainGuards.ts", "lines": 245, "role": "Id generators, type predicates & clinical option normalizers" },
+      { "file": "telegramUtils.ts", "lines": 144, "role": "Telegram public URL and bot username sanitation" },
+      { "file": "reexports.ts", "lines": 121, "role": "Browser scan, clinic profile & date/time reexports" }
+    ],
+    "layer2": [
+      { "file": "chunkStreamingPipeline.ts", "lines": 465, "role": "Streaming pipeline, audio buffering, quantization & IndexedDB/LocalStorage queue" }
+    ],
+    "layer5": [
+      { "file": "index.ts", "lines": 14, "role": "Clean master barrel re-exporting all submodules" },
+      { "file": "speechChunkHelpers.ts", "lines": 8, "role": "Canonical thin facade preserving 100% backward compatibility" }
+    ]
+  },
+  "healthAudit": {
+    "gate1_line_count": "PASSED (all files <= 465 lines, limit <= 800)",
+    "gate2_ast_parity": "PASSED (235 of 235 exports preserved, 100% parity)",
+    "gate3_test_anchors": "PASSED (0 test anchors lost)",
+    "gate4_utf8_encoding": "PASSED (100% clean UTF-8 without BOM)",
+    "gate5_acyclic_dag": "PASSED (madge: 0 circular dependencies detected)"
+  },
+  "testResults": {
+    "diaryDraftResilience": "PASSED (17/17 tests passing, exit code 0)",
+    "speechChunksUnitTests": "PASSED (7/7 tests passing, exit code 0)"
+  }
+}

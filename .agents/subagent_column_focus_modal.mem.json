@@ -1,0 +1,75 @@
+{
+  "timestamp": "2026-10-09T19:53:00.000Z",
+  "subagent": "L3 Expanded Column Focus Modal Decomposer & Red Team Inquisitor",
+  "targetMonolith": "apps/web/src/components/leads/ExpandedColumnFocusModal.tsx",
+  "originalLines": 1183,
+  "decomposedDirectory": "apps/web/src/components/leads/columnFocusModal",
+  "modules": [
+    {
+      "file": "apps/web/src/components/leads/columnFocusModal/types.ts",
+      "layer": 0,
+      "lines": 106,
+      "description": "Layer 0: Pure interfaces and domain contracts (ExpandedColumnFocusModalProps, ColumnMetrics, NextStageInfo, ViewMode)"
+    },
+    {
+      "file": "apps/web/src/components/leads/columnFocusModal/ColumnFocusHeader.tsx",
+      "layer": 1,
+      "lines": 127,
+      "description": "Layer 1: Stage header, clinical telemetry metrics cluster, view toggle segmented bar, and dismiss button"
+    },
+    {
+      "file": "apps/web/src/components/leads/columnFocusModal/ColumnFocusBatchToolbar.tsx",
+      "layer": 1,
+      "lines": 253,
+      "description": "Layer 1: Live search, SLA urgency filter tabs, sort picker, CSV export, and bulk action toolbar (batch advance, stage transfer, doctor assignment)"
+    },
+    {
+      "file": "apps/web/src/components/leads/columnFocusModal/ColumnFocusCardsList.tsx",
+      "layer": 2,
+      "lines": 370,
+      "description": "Layer 2: 3-column wide responsive grid of lead cards with quick actions, SLA badges, audio player, and existing patient profile bridge"
+    },
+    {
+      "file": "apps/web/src/components/leads/columnFocusModal/ColumnFocusTableView.tsx",
+      "layer": 2,
+      "lines": 357,
+      "description": "Layer 2: 32px high-density clinical spreadsheet table with multi-select checkboxes, quick inline edit, audio player, and actions"
+    },
+    {
+      "file": "apps/web/src/components/leads/columnFocusModal/useColumnFocusModalLogic.ts",
+      "layer": 3,
+      "lines": 267,
+      "description": "Layer 3: Workspace state, Esc key listener, memoized filtering/sorting, pagination, and bulk operation handlers"
+    },
+    {
+      "file": "apps/web/src/components/leads/columnFocusModal/ColumnFocusWorkspaceModal.tsx",
+      "layer": 4,
+      "lines": 190,
+      "description": "Layer 4: Fullscreen 92vw / 90vh modal coordinator composing Header, BatchToolbar, CardsList, TableView, and Footer"
+    },
+    {
+      "file": "apps/web/src/components/leads/columnFocusModal/index.ts",
+      "layer": 5,
+      "lines": 15,
+      "description": "Layer 5: Clean barrel exporting domain types, subcomponents, hooks, and modal component"
+    },
+    {
+      "file": "apps/web/src/components/leads/ExpandedColumnFocusModal.tsx",
+      "layer": 5,
+      "lines": 35,
+      "description": "Layer 5: Canonical facade (<= 150 lines), mounting ColumnFocusWorkspaceModal and maintaining 100% backward compatibility"
+    }
+  ],
+  "gatesAudit": {
+    "gate1_line_budget": "PASSED (All 8 decomposed files strictly <= 800 lines; max is 370 lines; facade is 35 lines <= 150 limit)",
+    "gate2_ast_export_parity": "PASSED (100% baseline public exports preserved: ExpandedColumnFocusModalProps, ExpandedColumnFocusModal)",
+    "gate3_test_anchors": "PASSED (100% of test anchors preserved: 13/13 anchors verified)",
+    "gate4_utf8_hygiene": "PASSED (Clean UTF-8 encoding across workspace, 0 broken characters)",
+    "gate5_acyclic_dag": "PASSED (0 circular dependencies detected by madge, pristine DAG layering)"
+  },
+  "testsPassed": [
+    "apps/web/src/tests/workspaceRouteErrorBoundary.test.ts (8/8 pass, Exit 0)",
+    "apps/web/src/tests/leadsExistingPatientDeduplicationAndConversion.test.ts (ExpandedColumnFocusModal 1-click jump to patient profile in both cards and table views: PASS)"
+  ],
+  "status": "COMPLETED"
+}
