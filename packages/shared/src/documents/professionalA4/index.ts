@@ -1,9 +1,7 @@
 /**
- * professionalA4DocumentEngine.ts
+ * index.ts
  *
- * Канонический фасад профессионального печатного движка документов формата А4
- * (ГОСТ Р 7.0.97-2016, ПП РФ № 736, Приказ МЗ РФ № 1051н, 152-ФЗ, 804н, 834н).
- * Сохраняет 100% обратной совместимости API и AST-экспортов.
+ * Layer 5: Barrel реэкспорта всех компонентов профессионального движка документов A4.
  */
 
 export type {
@@ -18,7 +16,7 @@ export type {
 	A4DocumentMedicalCardData,
 	A4DocumentInformedConsentData,
 	A4DocumentPersonalDataConsentData,
-} from "./professionalA4/index.js";
+} from "./types.js";
 
 export {
 	formatRubles,
@@ -30,11 +28,26 @@ export {
 	formatPolicyString,
 	formatDateString,
 	formatSignatoryString,
+} from "./formatters.js";
+
+export {
 	A4_PRINT_BASE_STYLES,
+} from "./styles.js";
+
+export {
 	generateA4PaidContractHtml,
+} from "./contractBuilder.js";
+
+export {
 	generateA4InformedConsentHtml,
 	generateA4PersonalDataConsentHtml,
+} from "./consentBuilders.js";
+
+export {
 	generateA4CompletedWorksActHtml,
 	generateA4TreatmentPlanHtml,
+} from "./actAndPlanBuilders.js";
+
+export {
 	generateA4MedicalCardDiaryHtml,
-} from "./professionalA4/index.js";
+} from "./medicalCardBuilder.js";

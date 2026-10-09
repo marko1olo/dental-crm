@@ -1,0 +1,141 @@
+{
+  "subagent": "professional_a4_document_engine_decomposer",
+  "role": "Red Team Inquisitor & L3 Monolith Decomposer",
+  "target": "packages/shared/src/documents/professionalA4DocumentEngine.ts",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T07:15:00Z",
+  "baseline_metrics": {
+    "original_lines": 1467,
+    "public_exports_count": 27,
+    "target_line_budget_per_file": 800,
+    "facade_target_lines": 50
+  },
+  "decomposed_modules": [
+    {
+      "file": "packages/shared/src/documents/professionalA4/types.ts",
+      "layer": "Layer 0: Types & DTOs",
+      "lines": 181,
+      "budget_passed": true,
+      "exports": [
+        "A4ClinicRequisites",
+        "A4PatientRequisites",
+        "A4CustomerRequisites",
+        "A4DocumentServiceItem",
+        "A4DocumentContractData",
+        "A4DocumentActData",
+        "A4TreatmentPlanStageItem",
+        "A4DocumentTreatmentPlanData",
+        "A4DocumentMedicalCardData",
+        "A4DocumentInformedConsentData",
+        "A4DocumentPersonalDataConsentData"
+      ]
+    },
+    {
+      "file": "packages/shared/src/documents/professionalA4/formatters.ts",
+      "layer": "Layer 0: Pure Formatters & Blank Line Invariant",
+      "lines": 91,
+      "budget_passed": true,
+      "exports": [
+        "escapeHtml",
+        "formatRubles",
+        "formatAmountInWordsRu",
+        "formatPassportString",
+        "formatAddressString",
+        "formatPhoneString",
+        "formatSnilsString",
+        "formatPolicyString",
+        "formatDateString",
+        "formatSignatoryString"
+      ]
+    },
+    {
+      "file": "packages/shared/src/documents/professionalA4/styles.ts",
+      "layer": "Layer 1: Print Styles & Typography",
+      "lines": 291,
+      "budget_passed": true,
+      "exports": [
+        "A4_PRINT_BASE_STYLES",
+        "renderClinicHeaderHtml",
+        "renderRunningFooterHtml",
+        "renderRunningHeaderHtml"
+      ]
+    },
+    {
+      "file": "packages/shared/src/documents/professionalA4/contractBuilder.ts",
+      "layer": "Layer 2: Statutory Contract Generator (Decree 736)",
+      "lines": 252,
+      "budget_passed": true,
+      "exports": [
+        "generateA4PaidContractHtml"
+      ]
+    },
+    {
+      "file": "packages/shared/src/documents/professionalA4/consentBuilders.ts",
+      "layer": "Layer 2: Statutory Consents (1051n & 152-FZ)",
+      "lines": 252,
+      "budget_passed": true,
+      "exports": [
+        "generateA4InformedConsentHtml",
+        "generateA4PersonalDataConsentHtml"
+      ]
+    },
+    {
+      "file": "packages/shared/src/documents/professionalA4/actAndPlanBuilders.ts",
+      "layer": "Layer 2: Statutory Act & Treatment Plan (804n & stages)",
+      "lines": 307,
+      "budget_passed": true,
+      "exports": [
+        "generateA4CompletedWorksActHtml",
+        "generateA4TreatmentPlanHtml"
+      ]
+    },
+    {
+      "file": "packages/shared/src/documents/professionalA4/medicalCardBuilder.ts",
+      "layer": "Layer 2: Medical Card Diary & FDI Formula (834n)",
+      "lines": 195,
+      "budget_passed": true,
+      "exports": [
+        "generateA4MedicalCardDiaryHtml"
+      ]
+    },
+    {
+      "file": "packages/shared/src/documents/professionalA4/index.ts",
+      "layer": "Layer 5: Barrel Re-export",
+      "lines": 54,
+      "budget_passed": true,
+      "exports": 27
+    },
+    {
+      "file": "packages/shared/src/documents/professionalA4DocumentEngine.ts",
+      "layer": "Layer 5: Master Facade",
+      "lines": 41,
+      "budget_passed": true,
+      "max_50_lines_passed": true,
+      "exports": 27
+    }
+  ],
+  "gates_audit": {
+    "gate_1_line_budget": "PASSED (all files <= 307 lines, limit 800; facade is 41 lines, limit 50)",
+    "gate_2_ast_export_parity": "PASSED (27/27 baseline exports preserved, 100% parity against HEAD)",
+    "gate_3_test_anchors": "PASSED (100% preserved)",
+    "gate_4_utf8_hygiene": "PASSED (check-encoding.mjs verified 9516 files, clean UTF-8 without BOM)",
+    "gate_5_acyclic_dag": "PASSED (madge verified 0 circular dependencies)"
+  },
+  "tests_verified": [
+    {
+      "command": "node --max-old-space-size=4096 --import tsx --test packages/shared/src/tests/professionalA4DocumentEngine.test.ts",
+      "status": "PASSED",
+      "details": "9 tests passed, 0 failed, 0 skipped"
+    },
+    {
+      "command": "node --max-old-space-size=4096 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/documents/__tests__/professionalA4PrintComponents.test.tsx",
+      "status": "PASSED",
+      "details": "8 tests passed, 0 failed, 0 skipped"
+    },
+    {
+      "command": "node scripts/verify-decomposition-health.cjs packages/shared/src/documents/professionalA4DocumentEngine.ts packages/shared/src/documents/professionalA4DocumentEngine.ts packages/shared/src/documents/professionalA4/",
+      "status": "PASSED",
+      "details": "All 5 gates passed cleanly"
+    }
+  ]
+}
