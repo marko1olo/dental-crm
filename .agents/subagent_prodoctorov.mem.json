@@ -1,0 +1,56 @@
+{
+  "module": "prodoctorov",
+  "targetMonolith": "apps/api/src/routes/integrations/prodoctorov.ts",
+  "decomposedDirectory": "apps/api/src/routes/integrations/prodoctorov",
+  "status": "PASSED",
+  "timestamp": "2026-10-09T18:35:00Z",
+  "originalLines": 1249,
+  "facadeLines": 19,
+  "gates": {
+    "gate1_lineCountBudget": {
+      "status": "PASSED",
+      "limit": 800,
+      "files": {
+        "apps/api/src/routes/integrations/prodoctorov.ts": 19,
+        "apps/api/src/routes/integrations/prodoctorov/types.ts": 171,
+        "apps/api/src/routes/integrations/prodoctorov/hmacSignatureAuth.ts": 60,
+        "apps/api/src/routes/integrations/prodoctorov/prodoctorovSlotsSync.ts": 562,
+        "apps/api/src/routes/integrations/prodoctorov/prodoctorovBookingService.ts": 475,
+        "apps/api/src/routes/integrations/prodoctorov/prodoctorovRouteHandlers.ts": 156,
+        "apps/api/src/routes/integrations/prodoctorov/index.ts": 11
+      }
+    },
+    "gate2_astExportParity": {
+      "status": "PASSED",
+      "baselineExportsCount": 27,
+      "facadeExportsCount": 27,
+      "parityPercentage": 100
+    },
+    "gate3_testAnchors": {
+      "status": "PASSED",
+      "preservedCount": 3
+    },
+    "gate4_utf8Encoding": {
+      "status": "PASSED",
+      "details": "Clean UTF-8 without BOM"
+    },
+    "gate5_acyclicDag": {
+      "status": "PASSED",
+      "cyclesCount": 0
+    }
+  },
+  "tests": [
+    {
+      "name": "apps/api/src/tests/routes/settingsHardening.test.ts",
+      "result": "PASSED",
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "name": "apps/api/src/tests/prodoctorovDecomposition.test.ts",
+      "result": "PASSED",
+      "pass": 4,
+      "fail": 0
+    }
+  ]
+}
