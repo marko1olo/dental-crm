@@ -1,10 +1,13 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * DENTE Dental CRM — Doctor Mobile PWA & Shift Operations Engine (Wave 21)
+ * DENTE Dental CRM — Doctor Shift Operations Engine (Layer 5: Barrel)
  *
- * Master Canonical Facade (Decomposed Module).
- * Preserves 100% public API backwards compatibility.
+ * Re-exports 100% of domain types, contracts, time utilities, conflict
+ * detectors, and core shift calculation engines.
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export * from "./shiftEngine/index.js";
+export * from "./types.js";
+export * from "./shiftTimeMath.js";
+export * from "./shiftConflictDetector.js";
+export * from "./doctorShiftCore.js";

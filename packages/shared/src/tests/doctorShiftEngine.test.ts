@@ -32,10 +32,18 @@ import {
 	verifyAndSignBatchEmr,
 	transitionAppointmentStatus,
 	SAMPLE_DOCTOR_SHIFT_APPOINTMENTS,
+	detectChairShiftConflicts,
+	detectDoctorShiftCollisions,
+	validateShiftIntervalsNoOverlap,
+	calculateNightShiftMinutes,
+	calculateIntervalDurationMinutes,
+	isIsoIntervalOverlap,
+	shiftDateFromIso,
 	type DoctorShiftAppointment,
 	type DoctorShiftServiceItem,
 } from "../doctor-portal/doctorShiftEngine.js";
 import { generateDoctorShiftNumber } from "../utils/idGenerators.js";
+import * as ShiftEngineBarrel from "../doctor-portal/shiftEngine/index.js";
 
 describe("Wave 21 Domain 2: Doctor Shift Engine & Mobile PWA Operations", () => {
 	describe("1. Zod Schemas & Domain Enums", () => {

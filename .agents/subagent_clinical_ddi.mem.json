@@ -1,0 +1,58 @@
+{
+  "task": "Decomposition of clinicalDdiDrugSafetyEngine.ts",
+  "targetFile": "packages/shared/src/clinical/clinicalDdiDrugSafetyEngine.ts",
+  "targetOriginalLines": 1317,
+  "facadeLines": 10,
+  "decomposedDirectory": "packages/shared/src/clinical/ddi/",
+  "modules": [
+    {
+      "path": "packages/shared/src/clinical/ddi/types.ts",
+      "layer": "Layer 0",
+      "description": "Zod contracts and interfaces for drug safety, DDI severity and warnings",
+      "lines": 92
+    },
+    {
+      "path": "packages/shared/src/clinical/ddi/ddiRulesMatrix.ts",
+      "layer": "Layer 1",
+      "description": "Pharmacological knowledge base, 21 drug class matchers, pure string matchers",
+      "lines": 472
+    },
+    {
+      "path": "packages/shared/src/clinical/ddi/somaticRiskEvaluator.ts",
+      "layer": "Layer 2",
+      "description": "Evaluator for somatic conditions (hypertension, asthma, pregnancy, ulcer, etc.) and allergies",
+      "lines": 453
+    },
+    {
+      "path": "packages/shared/src/clinical/ddi/drugSafetyCore.ts",
+      "layer": "Layer 3",
+      "description": "Pairwise DDI interaction evaluator, multi-hazard aggregator, auditClinicalDrugSafety",
+      "lines": 400
+    },
+    {
+      "path": "packages/shared/src/clinical/ddi/index.ts",
+      "layer": "Layer 5",
+      "description": "Clean barrel reexporting all DDI subsystem modules",
+      "lines": 10
+    },
+    {
+      "path": "packages/shared/src/clinical/clinicalDdiDrugSafetyEngine.ts",
+      "layer": "Layer 5 Facade",
+      "description": "Thin backwards-compatible canonical facade (<= 50 lines ceiling)",
+      "lines": 10
+    }
+  ],
+  "verificationGates": {
+    "gate1_line_budget_800": "PASSED (max 472 lines, budget 800 lines)",
+    "gate2_ast_export_parity": "PASSED (100% of baseline exports preserved: 20 symbols)",
+    "gate3_test_anchors": "PASSED (100% test anchors preserved)",
+    "gate4_utf8_encoding": "PASSED (Clean UTF-8, 0 mojibake)",
+    "gate5_acyclic_dag_madge": "PASSED (0 circular dependencies, strictly acyclic DAG)"
+  },
+  "tests": {
+    "clinicalDdiDrugSafetyEngine_test": "23/23 PASSED (100%)",
+    "prescriptionCatalog_test": "8/8 PASSED (100%)",
+    "forms107_1u_test": "9/9 PASSED (100%)"
+  },
+  "status": "COMPLETED_100_PERCENT_CLEAN"
+}
