@@ -1,12 +1,16 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * CLINICAL CBCT BONE QUALITY & OSTEOTOMY ASSESSMENT ENGINE (FACADE)
+ * CLINICAL CBCT BONE QUALITY ENGINE — BARREL EXPORTS (LAYER 5)
  * ═══════════════════════════════════════════════════════════════════════════
- * Canonical backward-compatibility facade delegating 100% of symbols to
- * modular boneQuality/ sub-packages (Wave 139 decomposition).
- *
- * All submodules strictly <= 800 lines. Facade strictly <= 50 lines.
+ * Unified public entry point for CBCT bone quality assessment, Misch density
+ * classification, Lekholm-Zarb typing, osteotomy stability forecast, and
+ * Form 043/u clinical reporting.
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export * from "./boneQuality/index.js";
+export * from "./types.js";
+export * from "./constants.js";
+export * from "./boneDensityClassifier.js";
+export * from "./implantStabilityPredictor.js";
+export * from "./corticalCancellousProfiler.js";
+export * from "./anatomicalRiskEvaluator.js";
