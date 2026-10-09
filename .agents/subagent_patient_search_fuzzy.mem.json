@@ -1,0 +1,100 @@
+{
+  "timestamp": "2026-10-09T11:31:00.000Z",
+  "role": "Red Team Inquisitor & L3 Patient Search Fuzzy Engine Decomposer",
+  "task": "Decompose patientSearchFuzzy.ts monolith (<800 lines budget, <=50 lines facade)",
+  "monolith": {
+    "path": "apps/web/src/components/patients/patientSearchFuzzy.ts",
+    "originalLines": 1425,
+    "originalExportsCount": 23
+  },
+  "decomposedArchitecture": {
+    "directory": "apps/web/src/components/patients/patientSearch/",
+    "modules": [
+      {
+        "file": "types.ts",
+        "layer": "Layer 0",
+        "lines": 90,
+        "description": "PatientSearchableFields, PatientSearchScoredResult, SearchMatchHighlightPart, PatientSearchResultItem, FindPotentialDuplicatesCriteria, PotentialDuplicateItem, MergedPatientResult"
+      },
+      {
+        "file": "stringNormalizers.ts",
+        "layer": "Layer 0",
+        "lines": 251,
+        "description": "normalizePhoneToNational, normalizePhoneE164, transliterateLatinToCyrillic, convertKeyboardMistype, normalizeCyrillicText, extractPatientCardNumbers, extractPatientPhones, normalizeCardQuery"
+      },
+      {
+        "file": "fuzzyScoring.ts",
+        "layer": "Layer 1",
+        "lines": 693,
+        "description": "fuzzyMatchToken, isFuzzyNameMatch, scorePatientSearch, matchesPatientSearch, highlightSearchMatches"
+      },
+      {
+        "file": "patientSearchEngine.ts",
+        "layer": "Layer 2",
+        "lines": 69,
+        "description": "searchPatientsQuick, extractPatientCardNumbers, extractPatientPhones, normalizeCardQuery"
+      },
+      {
+        "file": "duplicateDetector.ts",
+        "layer": "Layer 2",
+        "lines": 366,
+        "description": "findPotentialDuplicates, mergePatientRecordsNonDestructive"
+      },
+      {
+        "file": "index.ts",
+        "layer": "Layer 5",
+        "lines": 48,
+        "description": "Master barrel re-exporting all 23 public entities"
+      }
+    ],
+    "facade": {
+      "path": "apps/web/src/components/patients/patientSearchFuzzy.ts",
+      "layer": "Layer 5",
+      "lines": 10,
+      "budgetLimit": 50,
+      "status": "PASSED"
+    }
+  },
+  "qualityGates": {
+    "gate1_lineBudget": {
+      "status": "PASSED",
+      "maxLinesFound": 693,
+      "limit": 800
+    },
+    "gate2_astExportParity": {
+      "status": "PASSED",
+      "baselineExports": 23,
+      "facadeExports": 23,
+      "parity": "100%"
+    },
+    "gate3_testAnchors": {
+      "status": "PASSED",
+      "anchorsPreserved": "100%"
+    },
+    "gate4_utf8Hygiene": {
+      "status": "PASSED",
+      "mojibakeFound": false
+    },
+    "gate5_acyclicDag": {
+      "status": "PASSED",
+      "circularDependencies": 0
+    }
+  },
+  "testExecution": {
+    "suitesExecuted": [
+      "apps/web/src/components/patients/__tests__/patientSearchFuzzy.test.ts",
+      "apps/web/src/components/schedule/__tests__/patientSearchEngine.test.ts",
+      "apps/web/src/tests/patientSearchFuzzy.test.ts"
+    ],
+    "totalTests": 46,
+    "passed": 46,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "invariants": {
+    "zeroLogicMutation": true,
+    "antiRottenSeedsLaw": true,
+    "zeroMocks": true,
+    "backwardCompatibility": "100%"
+  }
+}
