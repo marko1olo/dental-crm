@@ -1,8 +1,6 @@
 /**
- * Cephalometric Analysis Math & Landmark Engine (ТРГ боковая) — Canonical Facade
- * 
- * Re-exports 100% of the public cephalometric API from ./cephalometric/index.
- * Preserves 100% backward compatibility for all consumer modules across the repository.
+ * DENTE CRM — Cephalometric Analysis Module Barrel Export (Layer 5)
+ * Re-exports all 22 public types, geometry utilities, landmark presets, and calculation engines.
  */
 
 export type {
@@ -13,7 +11,7 @@ export type {
 	CephalometricMeasurement,
 	CephalometricDiagnosis,
 	CephalometricAnalysisResult,
-} from "./cephalometric";
+} from "./types";
 
 export {
 	distance,
@@ -24,11 +22,16 @@ export {
 	angle3Points,
 	angleBetweenLines,
 	projectPointOntoLine,
+} from "./geometry";
+
+export {
 	CEPHALOMETRIC_LANDMARKS,
 	DEFAULT_CEPH_LANDMARKS_PRESET,
 	CLASS_I_NORMAL_LANDMARKS_PRESET,
 	CLASS_II_DISTAL_LANDMARKS_PRESET,
 	CLASS_III_MESIAL_LANDMARKS_PRESET,
-	calculateCephalometrics,
-	generateForm043OrthodonticProtocolText,
-} from "./cephalometric";
+} from "./landmarks";
+
+export { calculateCephalometrics } from "./analysisEngine";
+
+export { generateForm043OrthodonticProtocolText } from "./protocolGenerator";
