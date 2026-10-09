@@ -1,0 +1,83 @@
+{
+  "timestamp": "2026-10-09T12:20:00.000Z",
+  "subagentRole": "Red Team Inquisitor & L3 Somatic Radar Daemon Decomposer",
+  "targetFile": "apps/api/src/services/daemons/somaticRadarDaemon.ts",
+  "originalLines": 1376,
+  "facadeLines": 31,
+  "decomposedDirectory": "apps/api/src/services/daemons/somaticRadar/",
+  "modules": [
+    {
+      "file": "apps/api/src/services/daemons/somaticRadar/types.ts",
+      "layer": "Layer 0: Types & DTOs",
+      "lines": 170,
+      "exports": [
+        "SomaticThreatCategory",
+        "SomaticRadarAlertAction",
+        "SomaticRadarAlert",
+        "SomaticRadarPreShiftSummary",
+        "PatientSomaticProfileInput",
+        "AppointmentSomaticContextInput",
+        "SomaticAnamnesisExtractionSchema",
+        "SomaticAnamnesisExtraction"
+      ]
+    },
+    {
+      "file": "apps/api/src/services/daemons/somaticRadar/clinicalClassifiers.ts",
+      "layer": "Layer 1: Pure Utilities & Classifiers",
+      "lines": 131,
+      "exports": [
+        "SURGERY_PROCEDURE_KEYWORDS",
+        "SURGERY_NOMENCLATURE_CODES",
+        "isSurgicalAppointment",
+        "isAnesthesiaIndicatedAppointment",
+        "calculateAge"
+      ]
+    },
+    {
+      "file": "apps/api/src/services/daemons/somaticRadar/riskEvaluationEngine.ts",
+      "layer": "Layer 2: Domain Risk Evaluation Engine",
+      "lines": 746,
+      "exports": [
+        "extractSomaticRisksWithLlm",
+        "extractSomaticRisksDeterministic",
+        "evaluatePatientSomaticRisk"
+      ]
+    },
+    {
+      "file": "apps/api/src/services/daemons/somaticRadar/radarScanPipeline.ts",
+      "layer": "Layer 3: Database Integration & Scan Pipeline",
+      "lines": 323,
+      "exports": [
+        "runSomaticRadarScan",
+        "runSomaticRadarShiftSummary"
+      ]
+    },
+    {
+      "file": "apps/api/src/services/daemons/somaticRadar/index.ts",
+      "layer": "Layer 5: Barrel Re-export",
+      "lines": 35,
+      "exports": "All 18 symbols re-exported"
+    },
+    {
+      "file": "apps/api/src/services/daemons/somaticRadarDaemon.ts",
+      "layer": "Layer 5: Canonical Master Facade",
+      "lines": 31,
+      "exports": "100% backward compatibility preserved (<= 50 lines)"
+    }
+  ],
+  "verificationHealth": {
+    "gate1_lineCountBudget": "PASSED (All files <= 800 lines)",
+    "gate2_astExportParity": "PASSED (18/18 symbols preserved, 100% parity)",
+    "gate3_testAnchors": "PASSED (0 data-testid expected, 0 lost)",
+    "gate4_utf8Hygiene": "PASSED (Clean UTF-8 across workspace)",
+    "gate5_acyclicDagMadge": "PASSED (0 circular dependencies, acyclic graph confirmed)",
+    "masterHealthAuditorVerdict": "100% CLEAN (ALL GATES PASSED)"
+  },
+  "unitTests": {
+    "testFile": "apps/api/src/services/daemons/somaticRadar.test.ts",
+    "total": 19,
+    "passed": 19,
+    "failed": 0,
+    "exitCode": 0
+  }
+}

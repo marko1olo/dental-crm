@@ -1,0 +1,64 @@
+{
+  "timestamp": "2026-10-09T08:24:45Z",
+  "subagent": "subagent_telegram_referral_loyalty",
+  "role": "Red Team Inquisitor & L3 Telegram Referral Loyalty Decomposer",
+  "targetMonolith": "apps/api/src/services/telegram/TelegramReferralLoyaltyService.ts",
+  "monolithOriginalLines": 1387,
+  "facadeLines": 11,
+  "status": "COMPLETED_100_PERCENT",
+  "modules": [
+    {
+      "file": "apps/api/src/services/telegram/referralLoyalty/types.ts",
+      "layer": "Layer 0: Types & DTOs",
+      "lines": 114,
+      "budgetStatus": "PASSED (< 800 lines)"
+    },
+    {
+      "file": "apps/api/src/services/telegram/referralLoyalty/webAppValidator.ts",
+      "layer": "Layer 1: HMAC WebApp Validator & Crypto",
+      "lines": 190,
+      "budgetStatus": "PASSED (< 800 lines)"
+    },
+    {
+      "file": "apps/api/src/services/telegram/referralLoyalty/familyAndChurnManager.ts",
+      "layer": "Layer 1: Family Profiles & Churn Retention Radar",
+      "lines": 354,
+      "budgetStatus": "PASSED (< 800 lines)"
+    },
+    {
+      "file": "apps/api/src/services/telegram/referralLoyalty/referralRewardsEngine.ts",
+      "layer": "Layer 2: Referral Rewards & Bonus Accrual Engine",
+      "lines": 414,
+      "budgetStatus": "PASSED (< 800 lines)"
+    },
+    {
+      "file": "apps/api/src/services/telegram/referralLoyalty/referralLoyaltyServiceClass.ts",
+      "layer": "Layer 3: TelegramReferralLoyaltyService Master Class",
+      "lines": 505,
+      "budgetStatus": "PASSED (< 800 lines)"
+    },
+    {
+      "file": "apps/api/src/services/telegram/referralLoyalty/index.ts",
+      "layer": "Layer 5: Barrel Re-export",
+      "lines": 42,
+      "budgetStatus": "PASSED (< 800 lines)"
+    },
+    {
+      "file": "apps/api/src/services/telegram/TelegramReferralLoyaltyService.ts",
+      "layer": "Layer 5: Canonical Backward-Compatible Facade",
+      "lines": 11,
+      "budgetStatus": "PASSED (<= 50 lines)"
+    }
+  ],
+  "verificationGates": {
+    "gate1_line_budget": "PASSED (All <= 800, Facade <= 50)",
+    "gate2_ast_export_parity": "PASSED (100% of 21 exports preserved)",
+    "gate3_test_anchors": "PASSED (100% preserved)",
+    "gate4_utf8_encoding": "PASSED (Clean UTF-8 without BOM)",
+    "gate5_acyclic_madge": "PASSED (0 circular dependencies)"
+  },
+  "tests": {
+    "telegramReferralLoyalty": "20/20 PASSED (Exit Code 0)",
+    "loyaltyAndReferrals": "2/2 PASSED (Exit Code 0)"
+  }
+}

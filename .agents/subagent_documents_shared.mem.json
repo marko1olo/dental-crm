@@ -1,0 +1,126 @@
+{
+  "timestamp": "2026-10-09T12:21:40.000Z",
+  "role": "Red Team Inquisitor & L3 Document Shared Utils Decomposer",
+  "targetMonolith": "apps/api/src/routes/documents/shared.ts",
+  "initialLines": 1383,
+  "facadeLines": 7,
+  "status": "COMPLETED",
+  "decomposedDirectory": "apps/api/src/routes/documents/sharedDocUtils",
+  "modules": [
+    {
+      "file": "apps/api/src/routes/documents/sharedDocUtils/types.ts",
+      "layer": 0,
+      "lines": 52,
+      "exports": [
+        "apiError",
+        "issuedArchiveIntegrityError",
+        "documentIssueValidationMessage",
+        "documentVoidValidationMessage",
+        "normalizedDocumentChainValue",
+        "normalizeTaxApplicationRelationship"
+      ]
+    },
+    {
+      "file": "apps/api/src/routes/documents/sharedDocUtils/taxCertificateEngine.ts",
+      "layer": 1,
+      "lines": 245,
+      "exports": [
+        "normalizedTaxpayerInn",
+        "findIssuedDuplicateTaxCertificate",
+        "taxSnapshotDocument",
+        "taxXmlSourceSnapshotSha256",
+        "taxXmlSourceSnapshotForIssue",
+        "frozenTaxXmlPatient",
+        "frozenTaxXmlClinicProfile",
+        "frozenTaxXmlPayments",
+        "configuredTaxOfficeCode"
+      ]
+    },
+    {
+      "file": "apps/api/src/routes/documents/sharedDocUtils/archiveAndPdfRenderer.ts",
+      "layer": 2,
+      "lines": 296,
+      "exports": [
+        "documentAttachmentFileName",
+        "documentRequiresIssuedArchive",
+        "documentHasIssuedArchiveMetadata",
+        "renderIssuedHtmlToPdf",
+        "applySignatureStampIfSigned"
+      ]
+    },
+    {
+      "file": "apps/api/src/routes/documents/sharedDocUtils/documentValidationRules.ts",
+      "layer": 2,
+      "lines": 503,
+      "exports": [
+        "normalizedDocumentChainValue",
+        "medicalRecordCopyRequestDatesAreValid",
+        "findIssuedMedicalCopyRequestForRelease",
+        "documentCreateValidationMessageForRequest",
+        "documentIssueChainBlockReason"
+      ]
+    },
+    {
+      "file": "apps/api/src/routes/documents/sharedDocUtils/documentJournalAndAudit.ts",
+      "layer": 3,
+      "lines": 324,
+      "exports": [
+        "buildMedicalDocumentReleaseJournalEntry",
+        "resolveDocumentRenderContext",
+        "buildDocumentAuditFacts"
+      ]
+    },
+    {
+      "file": "apps/api/src/routes/documents/sharedDocUtils/index.ts",
+      "layer": 5,
+      "lines": 45,
+      "exports": [
+        "apiError",
+        "applySignatureStampIfSigned",
+        "buildDocumentAuditFacts",
+        "buildMedicalDocumentReleaseJournalEntry",
+        "configuredTaxOfficeCode",
+        "documentAttachmentFileName",
+        "documentCreateValidationMessageForRequest",
+        "documentHasIssuedArchiveMetadata",
+        "documentIssueChainBlockReason",
+        "documentIssueValidationMessage",
+        "documentRequiresIssuedArchive",
+        "documentVoidValidationMessage",
+        "findIssuedDuplicateTaxCertificate",
+        "frozenTaxXmlClinicProfile",
+        "frozenTaxXmlPatient",
+        "frozenTaxXmlPayments",
+        "issuedArchiveIntegrityError",
+        "medicalRecordCopyRequestDatesAreValid",
+        "normalizedDocumentChainValue",
+        "normalizedTaxpayerInn",
+        "renderIssuedHtmlToPdf",
+        "resolveDocumentRenderContext",
+        "taxSnapshotDocument",
+        "taxXmlSourceSnapshotForIssue",
+        "taxXmlSourceSnapshotSha256"
+      ]
+    },
+    {
+      "file": "apps/api/src/routes/documents/shared.ts",
+      "layer": 5,
+      "lines": 7,
+      "description": "Thin canonical facade (7 lines <= 50 lines) re-exporting sharedDocUtils/index.js with 100% backward compatibility"
+    }
+  ],
+  "verificationGates": {
+    "gate1_line_count": "PASSED (All files <= 800 lines, max 503 lines, facade 7 lines)",
+    "gate2_ast_export_parity": "PASSED (25/25 public exports preserved, 100% parity)",
+    "gate3_test_anchors": "PASSED (100% preserved)",
+    "gate4_utf8_hygiene": "PASSED (Clean UTF-8, zero mojibake)",
+    "gate5_acyclic_dag": "PASSED (0 circular dependencies, strictly acyclic)"
+  },
+  "tests": {
+    "command": "node --max-old-space-size=4096 --import tsx --test apps/api/src/tests/routes/documents.test.ts apps/api/src/tests/routes/documentsUkepSigning.test.ts",
+    "status": "PASSED",
+    "total": 22,
+    "passed": 22,
+    "failed": 0
+  }
+}

@@ -1,9 +1,6 @@
 /**
- * somaticRadarDaemon.ts — Canonical Master Facade (Layer 5).
- *
- * 07:30 AM Morning Pre-Shift Somatic Risk & DDI Clinical Radar.
- * Preserves 100% backward compatibility across all call sites,
- * re-exporting clinical types, schema, classifiers, and pipelines.
+ * Somatic Radar Daemon — Barrel Index.
+ * Directed Acyclic Graph (DAG) layer exports for somatic risk monitoring.
  */
 
 export type {
@@ -14,18 +11,25 @@ export type {
 	SomaticRadarAlertAction,
 	SomaticRadarPreShiftSummary,
 	SomaticThreatCategory,
-} from "./somaticRadar/index.js";
+} from "./types.js";
+
+export { SomaticAnamnesisExtractionSchema } from "./types.js";
 
 export {
 	SURGERY_NOMENCLATURE_CODES,
 	SURGERY_PROCEDURE_KEYWORDS,
-	SomaticAnamnesisExtractionSchema,
 	calculateAge,
+	isAnesthesiaIndicatedAppointment,
+	isSurgicalAppointment,
+} from "./clinicalClassifiers.js";
+
+export {
 	evaluatePatientSomaticRisk,
 	extractSomaticRisksDeterministic,
 	extractSomaticRisksWithLlm,
-	isAnesthesiaIndicatedAppointment,
-	isSurgicalAppointment,
+} from "./riskEvaluationEngine.js";
+
+export {
 	runSomaticRadarScan,
 	runSomaticRadarShiftSummary,
-} from "./somaticRadar/index.js";
+} from "./radarScanPipeline.js";

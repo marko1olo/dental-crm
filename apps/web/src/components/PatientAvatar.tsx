@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 
 export function guessGender(fullName?: string): "male" | "female" | "unknown" {
 	if (typeof fullName !== "string" || !fullName.trim()) return "unknown";

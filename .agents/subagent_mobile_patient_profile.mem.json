@@ -1,0 +1,92 @@
+{
+  "subagentRole": "Red Team Inquisitor & L3 Mobile Patient Profile Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T12:22:00Z",
+  "targetMonolith": {
+    "originalPath": "apps/web/src/components/patients/MobilePatientProfileWorkspace.tsx",
+    "originalLineCount": 1381,
+    "decomposedFacadeLineCount": 141,
+    "facadeTargetBudget": "<= 150 lines",
+    "budgetStatus": "PASSED (141 <= 150 lines)"
+  },
+  "modulesCreated": [
+    {
+      "file": "apps/web/src/components/patients/mobileProfile/types.ts",
+      "layer": "Layer 0 (Types & Helpers)",
+      "lineCount": 114,
+      "description": "MobilePatientTab, MobilePatientProfileWorkspaceProps, formatPatientBirthAndAge, Test Anchors"
+    },
+    {
+      "file": "apps/web/src/components/patients/mobileProfile/useMobilePatientProfile.ts",
+      "layer": "Layer 3 (State, Selectors & Callbacks)",
+      "lineCount": 114,
+      "description": "useMobilePatientProfile state hook: activeTab, taxModal, memoized appointments, studies, invoices, call/visit/appointment triggers"
+    },
+    {
+      "file": "apps/web/src/components/patients/mobileProfile/MobilePatientHeaderCard.tsx",
+      "layer": "Layer 4 (Presentation)",
+      "lineCount": 641,
+      "description": "Top Bar, Patient HUD Hero Card, 1-Tap Communications (Phone, WhatsApp, Telegram, Copy), Safety & Somatic Banners, Family Box & Member Switcher"
+    },
+    {
+      "file": "apps/web/src/components/patients/mobileProfile/MobilePatientTabsBar.tsx",
+      "layer": "Layer 4 (Presentation)",
+      "lineCount": 117,
+      "description": "Apple Segmented Bar Navigation with touch targets >= 44x44px for card, visits, finance, documents, scans, plans"
+    },
+    {
+      "file": "apps/web/src/components/patients/mobileProfile/MobilePatientInfoTab.tsx",
+      "layer": "Layer 4 (Presentation)",
+      "lineCount": 188,
+      "description": "Passport & contacts, clinical notes & comfort chips (+ Норма), quadrant dental chart Q1..Q4"
+    },
+    {
+      "file": "apps/web/src/components/patients/mobileProfile/MobilePatientHistoryTab.tsx",
+      "layer": "Layer 4 (Presentation)",
+      "lineCount": 133,
+      "description": "Vertical timeline of appointments, visit status badges, doctor info and link to active visit"
+    },
+    {
+      "file": "apps/web/src/components/patients/mobileProfile/MobilePatientPlansTab.tsx",
+      "layer": "Layer 4 (Presentation)",
+      "lineCount": 112,
+      "description": "Treatment plans summary, stage details, total cost, empty state with zero mocks"
+    },
+    {
+      "file": "apps/web/src/components/patients/mobileProfile/MobilePatientFinanceTab.tsx",
+      "layer": "Layer 4 (Presentation)",
+      "lineCount": 115,
+      "description": "Balance Hero card (deposit/debt/settled), 1-tap cashier CTA, invoices and payment history"
+    },
+    {
+      "file": "apps/web/src/components/patients/mobileProfile/MobilePatientDocumentsTab.tsx",
+      "layer": "Layer 4 (Presentation)",
+      "lineCount": 130,
+      "description": "Legal contracts blank print, informed consent (ИДС) blank print, tax deduction certificate modal trigger, medical record print"
+    },
+    {
+      "file": "apps/web/src/components/patients/mobileProfile/MobilePatientScansTab.tsx",
+      "layer": "Layer 4 (Presentation)",
+      "lineCount": 75,
+      "description": "Radiology studies grid with 200x200px previews and 0px CLS"
+    },
+    {
+      "file": "apps/web/src/components/patients/mobileProfile/index.ts",
+      "layer": "Layer 5 (Barrel)",
+      "lineCount": 17,
+      "description": "Public re-exports of all types and subcomponents"
+    }
+  ],
+  "gatesVerification": {
+    "gate1_line_count_budget": "PASSED (all files <= 800 lines, facade 141 lines <= 150)",
+    "gate2_ast_export_parity": "PASSED (100% baseline exports preserved: 5 of 5)",
+    "gate3_test_anchors": "PASSED (100% test anchors preserved: 52 target anchors)",
+    "gate4_utf8_hygiene": "PASSED (Clean UTF-8 without BOM across all files)",
+    "gate5_acyclic_dag_madge": "PASSED (0 circular dependencies, strictly acyclic)"
+  },
+  "unitTests": {
+    "mobilePatientProfileWorkspace_test": "PASSED (3/3 tests passed)",
+    "mobilePatientsGroupedList_test": "PASSED (3/3 tests passed)",
+    "overallExitCode": 0
+  }
+}
