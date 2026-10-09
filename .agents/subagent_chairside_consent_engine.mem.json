@@ -1,0 +1,92 @@
+{
+  "taskId": "DECOMPOSE_CHAIRSIDE_CONSENT_ENGINE",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T04:08:30Z",
+  "monolith": {
+    "originalPath": "apps/web/src/components/chairside/chairsideConsentEngine.ts",
+    "originalLines": 1553,
+    "facadeLines": 9,
+    "preservedExports": 41,
+    "totalFacadeExports": 53
+  },
+  "modules": [
+    {
+      "path": "apps/web/src/components/chairside/consentEngine/types.ts",
+      "lines": 163,
+      "layer": 0,
+      "description": "Domain data types, profiles, signature states and packages"
+    },
+    {
+      "path": "apps/web/src/components/chairside/consentEngine/constants.ts",
+      "lines": 35,
+      "layer": 0,
+      "description": "Default clinic profile and fallback statutory constants"
+    },
+    {
+      "path": "apps/web/src/components/chairside/consentEngine/consentCryptoFingerprint.ts",
+      "lines": 225,
+      "layer": 2,
+      "description": "Cryptographic SHA-256 (FIPS 180-4), doctor PIN hashing and legal PEP stamp"
+    },
+    {
+      "path": "apps/web/src/components/chairside/consentEngine/consentSignatureCapture.ts",
+      "lines": 193,
+      "layer": 1,
+      "description": "Tablet stylus capture, Bezier curve smoothing, SMS OTP generation and phone masking"
+    },
+    {
+      "path": "apps/web/src/components/chairside/consentEngine/consentTemplateResolver.ts",
+      "lines": 625,
+      "layer": 1,
+      "description": "Statutory template generation (1051n, 152-FZ, 804n/736-PP estimate) and package HTML rendering"
+    },
+    {
+      "path": "apps/web/src/components/chairside/consentEngine/consentStorageBridge.ts",
+      "lines": 456,
+      "layer": 2,
+      "description": "Signing protocols (SMS PEP, Paper Physical, Stylus, In-Person) and backend OTP bridge"
+    },
+    {
+      "path": "apps/web/src/components/chairside/consentEngine/index.ts",
+      "lines": 14,
+      "layer": 5,
+      "description": "Canonical barrel module re-exporting all submodules"
+    }
+  ],
+  "verification": {
+    "exportParity": {
+      "status": "PASSED",
+      "baselineExports": 41,
+      "facadeExports": 53,
+      "parityRate": "100%"
+    },
+    "healthAuditor": {
+      "status": "PASSED",
+      "gate1_lineCountBudget": "PASSED (all <= 800 lines)",
+      "gate2_astExportParity": "PASSED (100% preserved)",
+      "gate3_testAnchors": "PASSED (100% preserved)",
+      "gate4_utf8Hygiene": "PASSED (clean UTF-8)",
+      "gate5_acyclicMadge": "PASSED (0 circular dependencies)"
+    },
+    "tests": [
+      {
+        "suite": "chairsideConsentEngine.test.ts",
+        "passed": 22,
+        "failed": 0,
+        "total": 22
+      },
+      {
+        "suite": "chairsideConsentPaperAutonomy.test.tsx",
+        "passed": 5,
+        "failed": 0,
+        "total": 5
+      },
+      {
+        "suite": "wave117DevLeaksPurification.test.ts (test 2)",
+        "passed": 1,
+        "failed": 0,
+        "total": 1
+      }
+    ]
+  }
+}
