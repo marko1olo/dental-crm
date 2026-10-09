@@ -1,0 +1,71 @@
+{
+  "subagent": "subagent_dicom_crawler_daemon",
+  "role": "Red Team Inquisitor & L3 Dicom Crawler Daemon Decomposer",
+  "targetFile": "apps/api/src/services/dicom/DicomCrawlerDaemon.ts",
+  "originalLines": 1455,
+  "facadeLines": 12,
+  "decomposedDirectory": "apps/api/src/services/dicom/crawler/",
+  "modules": [
+    {
+      "file": "apps/api/src/services/dicom/crawler/types.ts",
+      "layer": 0,
+      "lines": 91,
+      "description": "Domain types, interfaces (ZipCentralEntry, StudyUnpackMetadata) and constants (ZIP_EOCD_SEARCH_WINDOW, JUNK_VIEWER_EXTENSIONS)"
+    },
+    {
+      "file": "apps/api/src/services/dicom/crawler/archiveInspector.ts",
+      "layer": 1,
+      "lines": 510,
+      "description": "Stream-based ZIP central directory reader, DICOM Part 10 magic checker, and auto-unpacking engine"
+    },
+    {
+      "file": "apps/api/src/services/dicom/crawler/studyMatcher.ts",
+      "layer": 1,
+      "lines": 113,
+      "description": "Patient database matching via resolveOrAutoCreatePatientForDicom and PostgreSQL deduplication"
+    },
+    {
+      "file": "apps/api/src/services/dicom/crawler/directoryWatcher.ts",
+      "layer": 2,
+      "lines": 286,
+      "description": "Cross-platform watch path resolvers (macOS/Win/Linux), recursive scanner, and debounced hot folder watcher"
+    },
+    {
+      "file": "apps/api/src/services/dicom/crawler/ingestPipeline.ts",
+      "layer": 3,
+      "lines": 334,
+      "description": "Candidate ingestion pipeline, imagingStudies database registration, and real-time WebSocket broadcast"
+    },
+    {
+      "file": "apps/api/src/services/dicom/crawler/crawlerDaemon.ts",
+      "layer": 4,
+      "lines": 421,
+      "description": "DicomCrawlerDaemon class coordinator assembling watchers, inspector, pipeline, and telemetry"
+    },
+    {
+      "file": "apps/api/src/services/dicom/crawler/index.ts",
+      "layer": 5,
+      "lines": 14,
+      "description": "Canonical barrel re-exporting all submodules"
+    },
+    {
+      "file": "apps/api/src/services/dicom/DicomCrawlerDaemon.ts",
+      "layer": 5,
+      "lines": 12,
+      "description": "Thin backwards-compatible canonical facade (<= 50 lines)"
+    }
+  ],
+  "verification": {
+    "gate1_line_budget": "PASSED (all files strictly <= 800 lines)",
+    "gate2_ast_export_parity": "PASSED (100% of 18 baseline exports preserved)",
+    "gate3_test_anchors": "PASSED (0 test anchors lost)",
+    "gate4_utf8_hygiene": "PASSED (Clean UTF-8 across workspace)",
+    "gate5_acyclic_dag": "PASSED (0 circular dependencies via madge)",
+    "unit_tests": {
+      "dicomCrawlerDaemon_test": "11/11 PASSED (100%)",
+      "dicomStoragePackaging_test": "20/20 PASSED (100%)"
+    }
+  },
+  "timestamp": "2026-10-09T07:17:00.000Z",
+  "status": "COMPLETED_CLEAN"
+}
