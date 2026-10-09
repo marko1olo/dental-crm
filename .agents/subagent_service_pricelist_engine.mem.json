@@ -1,0 +1,81 @@
+{
+  "subagent": "Red Team Inquisitor & L3 Service Pricelist Engine Decomposer",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-09T07:27:00Z",
+  "target": "apps/web/src/components/catalog/pricelist/servicePricelistEngine.ts",
+  "initialLines": 1451,
+  "facadeLines": 16,
+  "decomposedDirectory": "apps/web/src/components/catalog/pricelist/servicePricelist",
+  "modules": [
+    {
+      "file": "types.ts",
+      "layer": 0,
+      "lines": 90,
+      "role": "Layer 0 Domain types, DTOs and query interfaces"
+    },
+    {
+      "file": "currencyMath.ts",
+      "layer": 0,
+      "lines": 107,
+      "role": "Layer 0 Kopeck-exact money math, ruble formatters and price tier calculators"
+    },
+    {
+      "file": "profitabilityCalculator.ts",
+      "layer": 1,
+      "lines": 113,
+      "role": "Layer 1 Unit economic margin analysis, cost calculators and batch markups"
+    },
+    {
+      "file": "serviceCodesAndSynonyms.ts",
+      "layer": 1,
+      "lines": 196,
+      "role": "Layer 1 Minzdrav Order 804n code validator, category detector and clinical synonym dictionary"
+    },
+    {
+      "file": "pricelistSearchAndSort.ts",
+      "layer": 2,
+      "lines": 175,
+      "role": "Layer 2 WeakMap memoized multi-index search, synonym resolver and column sorting"
+    },
+    {
+      "file": "csvPricelistIo.ts",
+      "layer": 2,
+      "lines": 327,
+      "role": "Layer 2 RFC 4180 CSV import/export with UTF-8 BOM for Russian Excel"
+    },
+    {
+      "file": "pricelistHtmlPrinter.ts",
+      "layer": 2,
+      "lines": 265,
+      "role": "Layer 2 Statutory A4 printable pricelist HTML generator for Consumer Corner Stand"
+    },
+    {
+      "file": "unstructuredPriceParser.ts",
+      "layer": 2,
+      "lines": 216,
+      "role": "Layer 2 Unstructured price text parser and proposal converter"
+    },
+    {
+      "file": "index.ts",
+      "layer": 5,
+      "lines": 13,
+      "role": "Layer 5 Module barrel re-exporting all symbols"
+    },
+    {
+      "file": "../servicePricelistEngine.ts",
+      "layer": 5,
+      "lines": 16,
+      "role": "Layer 5 Canonical backward-compatibility facade <= 50 lines"
+    }
+  ],
+  "gates": {
+    "gate1_line_budget": "PASSED (all decomposed files strictly <= 327 lines <= 800, facade 16 lines <= 50)",
+    "gate2_ast_export_parity": "PASSED (38 of 38 baseline exports preserved, 100%)",
+    "gate3_test_anchors": "PASSED (100% test anchors preserved)",
+    "gate4_utf8_encoding": "PASSED (0 mojibake, clean UTF-8 across workspace)",
+    "gate5_dag_acyclic": "PASSED (madge verified 0 circular dependencies)"
+  },
+  "tests": {
+    "servicePricelistEngineTests": "20/20 passed"
+  }
+}
