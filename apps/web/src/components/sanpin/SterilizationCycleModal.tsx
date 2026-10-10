@@ -10,21 +10,8 @@
  */
 
 import React, { useMemo, useState } from "react";
-import {
-	Activity,
-	AlertTriangle,
-	Award,
-	Check,
-	CheckCircle2,
-	Clock,
-	Flame,
-	Gauge,
-	Layers,
-	ShieldCheck,
-	Sparkles,
-	Tag,
-	X,
-} from "lucide-react";
+import { createPortal } from "react-dom";
+import { AlertTriangle, CheckCircle2, Flame, X } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import type { ClinicAutoclaveDevice } from "./AutoclaveEquipmentModal";
@@ -49,7 +36,7 @@ export const STATUTORY_REGIMES_OPTIONS: readonly SterilizationRegimeOption[] = [
 	{
 		id: "steam_134_5min",
 		category: "autoclave_class_b",
-		nameRu: "Паровой 134°C / 5 мин (2.1 атм) — Скоростной B-класс (Стандарт)",
+		nameRu: "Паровой 134°C • 5 мин",
 		targetTemperature: 134,
 		targetPressure: 2.1,
 		exposureMinutes: 5,
@@ -60,7 +47,7 @@ export const STATUTORY_REGIMES_OPTIONS: readonly SterilizationRegimeOption[] = [
 	{
 		id: "steam_134_20min_prion",
 		category: "autoclave_class_b",
-		nameRu: "Паровой 134°C / 20 мин (2.1 атм) — Хирургический / Прионный усиленный",
+		nameRu: "Паровой 134°C • 20 мин",
 		targetTemperature: 134,
 		targetPressure: 2.1,
 		exposureMinutes: 20,
@@ -71,7 +58,7 @@ export const STATUTORY_REGIMES_OPTIONS: readonly SterilizationRegimeOption[] = [
 	{
 		id: "steam_121_20min",
 		category: "autoclave_class_b",
-		nameRu: "Паровой 121°C / 20 мин (1.1 атм) — Щадящий для термолабильных изделий",
+		nameRu: "Паровой 121°C • 20 мин",
 		targetTemperature: 121,
 		targetPressure: 1.1,
 		exposureMinutes: 20,
@@ -82,7 +69,7 @@ export const STATUTORY_REGIMES_OPTIONS: readonly SterilizationRegimeOption[] = [
 	{
 		id: "dry_heat_180_60min",
 		category: "dry_heat_air",
-		nameRu: "Воздушный (Сухожар) 180°C / 60 мин (0 атм) — ГП-10/20/40 СПУ",
+		nameRu: "Воздушный 180°C • 60 мин",
 		targetTemperature: 180,
 		targetPressure: 0.0,
 		exposureMinutes: 60,
@@ -93,7 +80,7 @@ export const STATUTORY_REGIMES_OPTIONS: readonly SterilizationRegimeOption[] = [
 	{
 		id: "glassperlen_240_20sec",
 		category: "glassperlen_bead",
-		nameRu: "Гласперленовый 240°C / 20 сек (0 атм) — Среда нагретых стеклянных шариков",
+		nameRu: "Гласперленовый 240°C • 20 с",
 		targetTemperature: 240,
 		targetPressure: 0.0,
 		exposureMinutes: 0.33,
@@ -219,6 +206,11 @@ export function SterilizationCycleModal({
 	const [chamberPoints, setChamberPoints] = useState<ChamberPointState[]>(INITIAL_5_POINTS);
 	const [indicatorExternalPassed, setIndicatorExternalPassed] = useState<boolean>(true);
 
+	// PSO (Pre-sterilization cleaning) control
+	const [psoAzopyramNegative, setPsoAzopyramNegative] = useState<boolean>(true);
+	const [psoPhenolphthaleinNegative, setPsoPhenolphthaleinNegative] = useState<boolean>(true);
+	const [psoSampleSize, setPsoSampleSize] = useState<number>(3);
+
 	// Operator
 	const [operatorName, setOperatorName] = useState<string>(defaultOperatorName);
 	const [submitting, setSubmitting] = useState<boolean>(false);
@@ -279,8 +271,9 @@ export function SterilizationCycleModal({
 		const tempOk = actualTemp >= selectedRegime.targetTemperature - 0.5;
 		const presOk = selectedRegime.targetPressure === 0 || actualPressure >= selectedRegime.targetPressure - 0.1;
 		const timeOk = actualDuration >= selectedRegime.exposureMinutes;
-		return tempOk && presOk && timeOk && areAllChamberPointsPassed && indicatorExternalPassed;
-	}, [actualTemp, actualPressure, actualDuration, selectedRegime, areAllChamberPointsPassed, indicatorExternalPassed]);
+		const psoOk = psoAzopyramNegative && psoPhenolphthaleinNegative && psoSampleSize >= 3;
+		return tempOk && presOk && timeOk && areAllChamberPointsPassed && indicatorExternalPassed && psoOk;
+	}, [actualTemp, actualPressure, actualDuration, selectedRegime, areAllChamberPointsPassed, indicatorExternalPassed, psoAzopyramNegative, psoPhenolphthaleinNegative, psoSampleSize]);
 
 	const toggleChamberPoint = (pointIndex: 1 | 2 | 3 | 4 | 5) => {
 		setChamberPoints((prev) =>
@@ -294,7 +287,10 @@ export function SterilizationCycleModal({
 		setActualDuration(selectedRegime.exposureMinutes);
 		setChamberPoints((prev) => prev.map((p) => ({ ...p, passed: true })));
 		setIndicatorExternalPassed(true);
-		showToast("Параметры цикла установлены на 100% регламентную норму СанПиН", "success");
+		setPsoAzopyramNegative(true);
+		setPsoPhenolphthaleinNegative(true);
+		setPsoSampleSize(Math.max(3, Math.ceil(packsCount * 0.01)));
+		showToast("Параметры цикла и пробы ПСО установлены на 100% регламентную норму СанПиН", "success");
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -335,7 +331,10 @@ export function SterilizationCycleModal({
 				indicatorClass: selectedRegime.indicatorClass,
 				isCyclePassed: isCycleSterileCompliant,
 				operatorName,
-				notes: `Контроль термоиндикаторов: наружные ${indicatorExternalPassed ? "норма" : "брак"}, внутренние 5 точек ${areAllChamberPointsPassed ? "норма" : "брак"}. Срок стерильности: ${expiryDateStr}.`,
+				psoAzopyramNegative,
+				psoPhenolphthaleinNegative,
+				psoSampleSize,
+				notes: `Контроль ПСО (ф. 366/у): Азопирам ${psoAzopyramNegative ? "отриц." : "полож."}, Фенолфталеин ${psoPhenolphthaleinNegative ? "отриц." : "полож."} (${psoSampleSize} шт.). Термоиндикаторы: наружные ${indicatorExternalPassed ? "норма" : "брак"}, 5 точек ${areAllChamberPointsPassed ? "норма" : "брак"}. Срок: ${expiryDateStr}.`,
 			};
 
 			const res = await fetch("/api/registers/sterilization", {
@@ -349,10 +348,10 @@ export function SterilizationCycleModal({
 			}).catch(() => null);
 
 			if (res && res.ok) {
-				showToast(`Цикл стерилизации №${cycleNumber} зафиксирован в журнале автоклава`, "success");
+				showToast(`Цикл №${cycleNumber} зафиксирован в журнале стерилизации (ф. 257/у)`, "success");
 			} else {
 				// Local fallback toast
-				showToast(`Цикл №${cycleNumber} сохранен локально`, "success");
+				showToast(`Цикл №${cycleNumber} сохранен локально в журнале (ф. 257/у)`, "success");
 			}
 
 			if (onCycleCreated) onCycleCreated();
@@ -367,18 +366,18 @@ export function SterilizationCycleModal({
 
 	if (!isOpen) return null;
 
-	return (
-		<div className="sanpin-modal-overlay" role="dialog" aria-modal="true">
-			<div className="sanpin-modal" style={{ maxWidth: "680px", width: "95%" }}>
+	const modalContent = (
+		<div className="sanpin-modal-overlay" role="dialog" aria-modal="true" aria-label="Фиксация цикла стерилизации" onClick={onClose}>
+			<div className="sanpin-modal" style={{ maxWidth: "680px", width: "95%" }} onClick={(e) => e.stopPropagation()}>
 				<div className="sanpin-modal-header" style={{ padding: "1.2rem 1.5rem" }}>
 					<div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
 						<Flame size={22} color="#0284c7" />
 						<div>
 							<h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700 }}>
-								Фиксация цикла стерилизации
+								Фиксация цикла в журнале (ф. 257/у)
 							</h3>
 							<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
-								Стерилизация: аппараты клиники, термоиндикаторы 4/5 классов, крафт-пакеты
+								СанПиН 3.3686-21 • Контроль ПСО (ф. 366/у) и стерилизации (ф. 257/у)
 							</div>
 						</div>
 					</div>
@@ -386,7 +385,8 @@ export function SterilizationCycleModal({
 						type="button"
 						onClick={onClose}
 						className="sanpin-btn-icon"
-						style={{ minWidth: "36px", minHeight: "36px", background: "none", border: "none", cursor: "pointer" }}
+						style={{ minWidth: "44px", minHeight: "44px", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+						aria-label="Закрыть"
 					>
 						<X size={20} />
 					</button>
@@ -611,6 +611,55 @@ export function SterilizationCycleModal({
 							</div>
 						</div>
 
+						{/* Pre-Sterilization Cleaning Control (ПСО, Форма № 366/у) */}
+						<div
+							style={{
+								padding: "0.75rem",
+								borderRadius: "8px",
+								background: "var(--paper-soft, #f8fafc)",
+								border: "1px solid var(--line, #e2e8f0)",
+							}}
+						>
+							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
+								<div style={{ fontSize: "0.8rem", fontWeight: 700 }}>
+									Контроль ПСО (Форма № 366/у, СанПиН 3.3686-21)
+								</div>
+								<span style={{ fontSize: "0.72rem", color: "var(--muted)" }}>
+									Серия азопирама: АЗО-2026/08-114
+								</span>
+							</div>
+							<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.5rem" }}>
+								<label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", cursor: "pointer" }}>
+									<input
+										type="checkbox"
+										checked={psoAzopyramNegative}
+										onChange={(e) => setPsoAzopyramNegative(e.target.checked)}
+									/>
+									<span>Азопирам: {psoAzopyramNegative ? "Отрицательно (норма)" : "Положительно (брак!)"}</span>
+								</label>
+								<label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", cursor: "pointer" }}>
+									<input
+										type="checkbox"
+										checked={psoPhenolphthaleinNegative}
+										onChange={(e) => setPsoPhenolphthaleinNegative(e.target.checked)}
+									/>
+									<span>Фенолфталеин: {psoPhenolphthaleinNegative ? "Отрицательно (норма)" : "Положительно (брак!)"}</span>
+								</label>
+								<div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+									<span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Выборка:</span>
+									<input
+										type="number"
+										min={3}
+										value={psoSampleSize}
+										onChange={(e) => setPsoSampleSize(parseInt(e.target.value, 10) || 3)}
+										className="sanpin-input"
+										style={{ minHeight: "30px", width: "60px", padding: "0.2rem 0.4rem", fontSize: "0.78rem", fontWeight: 700 }}
+									/>
+									<span style={{ fontSize: "0.72rem", color: "var(--muted)" }}>шт. (≥1%)</span>
+								</div>
+							</div>
+						</div>
+
 						{/* Chemical indicators: Outside and 5 Chamber Points */}
 						<div
 							style={{
@@ -694,8 +743,8 @@ export function SterilizationCycleModal({
 							)}
 							<div style={{ fontSize: "0.8rem", fontWeight: 700, color: isCycleSterileCompliant ? "#059669" : "#dc2626" }}>
 								{isCycleSterileCompliant
-									? "Все параметры и термоиндикаторы соответствуют норме. Партия стерильна."
-									: "ВНИМАНИЕ: Нарушение параметров цикла или термоиндикаторов! Инструменты подлежат браковке и повторной стерилизации."}
+									? "Все параметры цикла, термоиндикаторы и пробы ПСО соответствуют норме СанПиН. Партия стерильна."
+									: "ВНИМАНИЕ: Нарушение параметров цикла, термоиндикаторов или проб ПСО! Инструменты подлежат браковке и повторной стерилизации."}
 							</div>
 						</div>
 
@@ -708,7 +757,7 @@ export function SterilizationCycleModal({
 								value={operatorName}
 								onChange={(e) => setOperatorName(e.target.value)}
 								className="sanpin-input"
-								style={{ minHeight: "36px", fontSize: "0.85rem" }}
+								style={{ minHeight: "44px", fontSize: "0.85rem" }}
 							/>
 						</div>
 					</div>
@@ -718,7 +767,7 @@ export function SterilizationCycleModal({
 							type="button"
 							onClick={onClose}
 							className="sanpin-btn sanpin-btn-secondary"
-							style={{ minHeight: "36px", padding: "0.4rem 1rem", fontSize: "0.85rem" }}
+							style={{ minHeight: "44px", padding: "0.4rem 1rem", fontSize: "0.85rem" }}
 						>
 							Отмена
 						</button>
@@ -726,13 +775,16 @@ export function SterilizationCycleModal({
 							type="submit"
 							aria-busy={submitting}
 							className="sanpin-btn sanpin-btn-primary"
-							style={{ minHeight: "36px", padding: "0.4rem 1.25rem", fontSize: "0.85rem", fontWeight: 700 }}
+							style={{ minHeight: "44px", padding: "0.4rem 1.25rem", fontSize: "0.85rem", fontWeight: 700 }}
 						>
-							{submitting ? "Сохранение..." : "Зафиксировать цикл в журнале"}
+							{submitting ? "Сохранение..." : "Внести запись в журнал (ф. 257/у)"}
 						</button>
 					</div>
 				</form>
 			</div>
 		</div>
 	);
+
+	if (typeof document === "undefined") return null;
+	return createPortal(modalContent, document.body);
 }

@@ -38,10 +38,10 @@ export function SterilizerModalFooterActions({
 						aria-busy={submitting}
 						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 						style={{ minHeight: "36px", padding: "0.35rem 0.75rem", fontSize: "0.78rem", fontWeight: 600 }}
-						title="Быстрый запуск цикла стерилизации"
+						title="Внести запись в журнал стерилизации (Форма 257/у)"
 					>
 						<Plus size={14} color="#0d9488" />
-						<span>Запустить цикл</span>
+						<span>Внести запись в журнал (ф. 257/у)</span>
 					</button>
 				)}
 

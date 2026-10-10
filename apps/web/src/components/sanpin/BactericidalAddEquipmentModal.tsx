@@ -1,6 +1,7 @@
 import type { BactericidalDeviceType } from "@dental/shared";
-import { X } from "lucide-react";
+import { ShieldCheck, X } from "lucide-react";
 import React from "react";
+import { createPortal } from "react-dom";
 
 export interface BactericidalAddEquipmentModalProps {
 	readonly isOpen: boolean;
@@ -41,11 +42,27 @@ export function BactericidalAddEquipmentModal({
 }: BactericidalAddEquipmentModalProps) {
 	if (!isOpen) return null;
 
-	return (
-		<div className="sanpin-modal-overlay">
-			<div className="sanpin-modal">
+	const modalContent = (
+		<div
+			className="sanpin-modal-overlay"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Регистрация бактерицидного облучателя"
+			onClick={onClose}
+		>
+			<div className="sanpin-modal" onClick={(e) => e.stopPropagation()}>
 				<div className="sanpin-modal-header">
-					<h3>Регистрация бактерицидного облучателя / рециркулятора</h3>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+						<ShieldCheck size={20} color="var(--teal, #0d9488)" />
+						<div>
+							<h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 700 }}>
+								Регистрация бактерицидного облучателя
+							</h3>
+							<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
+								СанПиН 3.3686-21 • Паспорт установки и учет наработки часов
+							</div>
+						</div>
+					</div>
 					<button
 						type="button"
 						onClick={onClose}
@@ -55,11 +72,14 @@ export function BactericidalAddEquipmentModal({
 							cursor: "pointer",
 							display: "flex",
 							alignItems: "center",
+							justifyContent: "center",
 							color: "var(--muted)",
+							minHeight: "44px",
+							minWidth: "44px",
 						}}
 						aria-label="Закрыть"
 					>
-						<X size={18} />
+						<X size={20} />
 					</button>
 				</div>
 				<form onSubmit={onSubmit}>
@@ -73,6 +93,7 @@ export function BactericidalAddEquipmentModal({
 								onChange={(e) => setNewRoomName(e.target.value)}
 								className="sanpin-input"
 								placeholder="Кабинет хирургии / Стерилизационная"
+								style={{ minHeight: "44px" }}
 							/>
 						</div>
 
@@ -86,6 +107,7 @@ export function BactericidalAddEquipmentModal({
 									value={newRoomVolume}
 									onChange={(e) => setNewRoomVolume(parseFloat(e.target.value) || 0)}
 									className="sanpin-input"
+									style={{ minHeight: "44px" }}
 								/>
 							</div>
 
@@ -95,6 +117,7 @@ export function BactericidalAddEquipmentModal({
 									value={newDeviceType}
 									onChange={(e) => setNewDeviceType(e.target.value as BactericidalDeviceType)}
 									className="sanpin-select"
+									style={{ minHeight: "44px" }}
 								>
 									<option value="recirculator_closed">Рециркулятор закрытого типа (в присутствии людей)</option>
 									<option value="irradiator_open">Облучатель открытого типа (только без людей)</option>
@@ -113,6 +136,7 @@ export function BactericidalAddEquipmentModal({
 									onChange={(e) => setNewDeviceBrand(e.target.value)}
 									className="sanpin-input"
 									placeholder="Дезар-4 / Кронт / Сибэст"
+									style={{ minHeight: "44px" }}
 								/>
 							</div>
 
@@ -124,6 +148,7 @@ export function BactericidalAddEquipmentModal({
 									value={newSerialNumber}
 									onChange={(e) => setNewSerialNumber(e.target.value)}
 									className="sanpin-input"
+									style={{ minHeight: "44px" }}
 								/>
 							</div>
 						</div>
@@ -136,25 +161,34 @@ export function BactericidalAddEquipmentModal({
 								value={newMaxHours}
 								onChange={(e) => setNewMaxHours(parseInt(e.target.value) || 8000)}
 								className="sanpin-input"
+								style={{ minHeight: "44px" }}
 							/>
 							<span className="sanpin-form-hint">Стандарт для безозоновых ламп Philips TUV / Osram: 8000-9000 часов</span>
 						</div>
 					</div>
 					<div className="sanpin-modal-footer">
-						<button type="button" onClick={onClose} className="sanpin-btn sanpin-btn-secondary">
+						<button
+							type="button"
+							onClick={onClose}
+							className="sanpin-btn sanpin-btn-secondary"
+							style={{ minHeight: "44px" }}
+						>
 							Отмена
 						</button>
 						<button
 							type="submit"
 							aria-busy={submitting}
-							style={{ opacity: submitting ? 0.7 : 1 }}
+							style={{ opacity: submitting ? 0.7 : 1, minHeight: "44px" }}
 							className="sanpin-btn sanpin-btn-primary"
 						>
-							Поставить на учет
+							Поставить на учет в журнале
 						</button>
 					</div>
 				</form>
 			</div>
 		</div>
 	);
+
+	if (typeof document === "undefined") return null;
+	return createPortal(modalContent, document.body);
 }

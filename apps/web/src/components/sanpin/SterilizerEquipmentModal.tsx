@@ -76,7 +76,7 @@ export function SterilizerEquipmentModal({
 						<SterilizerPassportCard formData={form.formData} onFieldChange={form.updateField} selectedPresetId={form.selectedPresetId} onApplyPreset={form.applyPreset} isEditing={form.isEditing} />
 					)}
 					{form.activeTab === "cycles" && (
-						<SterilizerCycleLogsTable equipmentId={editingEquipment?.id} equipmentName={form.formData.name || form.formData.brandModel} deviceClass={form.formData.deviceClass} deviceType={form.formData.deviceType} />
+						<SterilizerCycleLogsTable equipmentId={editingEquipment?.id ?? null} equipmentName={form.formData.name || form.formData.brandModel} deviceClass={form.formData.deviceClass} deviceType={form.formData.deviceType} />
 					)}
 					{form.activeTab === "maintenance" && (
 						<SterilizerMaintenanceSchedule formData={form.formData} onFieldChange={form.updateField} isEditing={form.isEditing} submitting={form.submitting} onQuickMaintenance={form.handleQuickMaintenance} onQuickReturnToService={form.handleQuickReturnToService} onQuickDecommission={form.handleQuickDecommission} decommissionReason={form.decommissionReason} setDecommissionReason={form.setDecommissionReason} showDecommissionConfirm={form.showDecommissionConfirm} setShowDecommissionConfirm={form.setShowDecommissionConfirm} />

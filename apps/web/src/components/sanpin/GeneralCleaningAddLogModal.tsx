@@ -5,6 +5,7 @@ import {
 } from "@dental/shared";
 import { Sparkles, X } from "lucide-react";
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { showToast } from "../GlobalToast";
 
@@ -102,18 +103,41 @@ export function GeneralCleaningAddLogModal({
 		}
 	};
 
-	return (
-		<div className="sanpin-modal-overlay">
-			<div className="sanpin-modal">
+	const modalContent = (
+		<div
+			className="sanpin-modal-overlay"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Проведение генеральной уборки"
+			onClick={onClose}
+		>
+			<div className="sanpin-modal" onClick={(e) => e.stopPropagation()}>
 				<div className="sanpin-modal-header">
-					<h3>Проведение генеральной уборки</h3>
+					<div>
+						<h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 700 }}>
+							Проведение генеральной уборки
+						</h3>
+						<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
+							СанПиН 3.3686-21 • Журнал генеральных уборок и заключительной дезинфекции
+						</div>
+					</div>
 					<button
 						type="button"
 						onClick={onClose}
-						style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--muted)" }}
+						style={{
+							background: "none",
+							border: "none",
+							cursor: "pointer",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							color: "var(--muted)",
+							minHeight: "44px",
+							minWidth: "44px",
+						}}
 						aria-label="Закрыть"
 					>
-						<X size={18} />
+						<X size={20} />
 					</button>
 				</div>
 				<form onSubmit={handleSubmit}>
@@ -123,7 +147,7 @@ export function GeneralCleaningAddLogModal({
 								type="button"
 								onClick={handleApplySanpinNormPreset}
 								className="sanpin-btn sanpin-btn-secondary"
-								style={{ fontSize: "0.78rem", padding: "0.3rem 0.6rem" }}
+								style={{ fontSize: "0.78rem", padding: "0.3rem 0.6rem", minHeight: "38px" }}
 							>
 								<Sparkles size={13} /> Заполнить нормой (Аламинол 5%, УФ 120 мин)
 							</button>
@@ -135,6 +159,7 @@ export function GeneralCleaningAddLogModal({
 									value={formCleaningType}
 									onChange={(e) => setFormCleaningType(e.target.value as CleaningType)}
 									className="sanpin-select"
+									style={{ minHeight: "44px" }}
 								>
 									<option value="general">Генеральная уборка (по графику, 1 раз в 7 дней)</option>
 									<option value="current_routine">Текущая заключительная дезинфекция</option>
@@ -150,6 +175,7 @@ export function GeneralCleaningAddLogModal({
 									onChange={(e) => setFormRoomName(e.target.value)}
 									className="sanpin-input"
 									placeholder="Операционная / Кабинет терапии / ЦСО"
+									style={{ minHeight: "44px" }}
 								/>
 							</div>
 						</div>
@@ -163,6 +189,7 @@ export function GeneralCleaningAddLogModal({
 									value={formScheduledDate}
 									onChange={(e) => setFormScheduledDate(e.target.value)}
 									className="sanpin-input"
+									style={{ minHeight: "44px" }}
 								/>
 							</div>
 
@@ -174,6 +201,7 @@ export function GeneralCleaningAddLogModal({
 									value={formActualDateTime}
 									onChange={(e) => setFormActualDateTime(e.target.value)}
 									className="sanpin-input"
+									style={{ minHeight: "44px" }}
 								/>
 							</div>
 						</div>
@@ -188,6 +216,7 @@ export function GeneralCleaningAddLogModal({
 									value={formAreaM2}
 									onChange={(e) => setFormAreaM2(parseFloat(e.target.value) || 0)}
 									className="sanpin-input"
+									style={{ minHeight: "44px" }}
 								/>
 							</div>
 
@@ -197,6 +226,7 @@ export function GeneralCleaningAddLogModal({
 									value={formAppMethod}
 									onChange={(e) => setFormAppMethod(e.target.value as CleaningApplicationMethod)}
 									className="sanpin-select"
+									style={{ minHeight: "44px" }}
 								>
 									<option value="wiping">Двукратное протирание ветошью</option>
 									<option value="spraying">Орошение (распыление)</option>
@@ -215,6 +245,7 @@ export function GeneralCleaningAddLogModal({
 									onChange={(e) => setFormDisinfectant(e.target.value)}
 									className="sanpin-input"
 									placeholder="Аламинол / Септолит / Бриллиант"
+									style={{ minHeight: "44px" }}
 								/>
 							</div>
 
@@ -227,6 +258,7 @@ export function GeneralCleaningAddLogModal({
 									value={formConcentration}
 									onChange={(e) => setFormConcentration(parseFloat(e.target.value) || 0)}
 									className="sanpin-input"
+									style={{ minHeight: "44px" }}
 								/>
 							</div>
 						</div>
@@ -240,6 +272,7 @@ export function GeneralCleaningAddLogModal({
 									value={formExposureMin}
 									onChange={(e) => setFormExposureMin(parseInt(e.target.value) || 0)}
 									className="sanpin-input"
+									style={{ minHeight: "44px" }}
 								/>
 							</div>
 
@@ -251,6 +284,7 @@ export function GeneralCleaningAddLogModal({
 									value={formUvMin}
 									onChange={(e) => setFormUvMin(parseInt(e.target.value) || 0)}
 									className="sanpin-input"
+									style={{ minHeight: "44px" }}
 								/>
 							</div>
 
@@ -262,25 +296,34 @@ export function GeneralCleaningAddLogModal({
 									value={formVentilationMin}
 									onChange={(e) => setFormVentilationMin(parseInt(e.target.value) || 0)}
 									className="sanpin-input"
+									style={{ minHeight: "44px" }}
 								/>
 							</div>
 						</div>
 					</div>
 					<div className="sanpin-modal-footer">
-						<button type="button" onClick={onClose} className="sanpin-btn sanpin-btn-secondary">
+						<button
+							type="button"
+							onClick={onClose}
+							className="sanpin-btn sanpin-btn-secondary"
+							style={{ minHeight: "44px" }}
+						>
 							Отмена
 						</button>
 						<button
 							type="submit"
 							aria-busy={submitting}
-							style={{ opacity: submitting ? 0.7 : 1 }}
+							style={{ opacity: submitting ? 0.7 : 1, minHeight: "44px" }}
 							className="sanpin-btn sanpin-btn-primary"
 						>
-							Зафиксировать уборку
+							Внести запись в журнал уборок
 						</button>
 					</div>
 				</form>
 			</div>
 		</div>
 	);
+
+	if (typeof document === "undefined") return null;
+	return createPortal(modalContent, document.body);
 }

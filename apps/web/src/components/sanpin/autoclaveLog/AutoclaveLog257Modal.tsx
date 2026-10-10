@@ -20,6 +20,7 @@ import {
 	X,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
 import { AutoclaveJournal257Tab } from "./AutoclaveJournal257Tab.js";
@@ -306,8 +307,8 @@ export function AutoclaveLog257Modal({
 		});
 	};
 
-	return (
-		<div className="autoclave-log-modal-overlay" onClick={onClose}>
+	const modalContent = (
+		<div className="autoclave-log-modal-overlay" role="dialog" aria-modal="true" aria-label="Журнал работы стерилизаторов (ф. 257/у)" onClick={onClose}>
 			<div className="autoclave-log-modal-container" onClick={(e) => e.stopPropagation()}>
 				{/* Header */}
 				<div className="autoclave-log-header">
@@ -383,4 +384,7 @@ export function AutoclaveLog257Modal({
 			</div>
 		</div>
 	);
+
+	if (typeof document === "undefined") return null;
+	return createPortal(modalContent, document.body);
 }

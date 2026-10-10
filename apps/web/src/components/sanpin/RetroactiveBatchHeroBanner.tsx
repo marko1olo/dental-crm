@@ -10,8 +10,8 @@ import {
 	Calendar,
 	Check,
 	CheckCircle2,
+	FileCheck,
 	Plus,
-	Rocket,
 } from "lucide-react";
 import React from "react";
 import {
@@ -86,7 +86,7 @@ export function RetroactiveBatchHeroBanner({
 							color: "var(--ink, #0f172a)",
 						}}
 					>
-						<Rocket size={24} color="var(--teal)" />
+						<FileCheck size={24} color="var(--teal)" />
 						Пакетное заполнение журналов стерилизации за период
 					</h2>
 					<div style={{ fontSize: "0.875rem", color: "var(--muted, #64748b)", marginTop: "0.25rem" }}>
@@ -385,7 +385,7 @@ export function RetroactiveBatchHeroBanner({
 					}}
 					data-testid="execute-sanpin-batch-1click-btn"
 				>
-					<Rocket size={22} color="var(--on-teal, #ffffff)" />
+					<FileCheck size={22} color="var(--on-teal, #ffffff)" />
 					<span>Заполнить все журналы стерилизации за период</span>
 				</button>
 			</div>

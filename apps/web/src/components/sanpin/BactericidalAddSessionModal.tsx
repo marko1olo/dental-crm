@@ -1,6 +1,7 @@
 import type { BactericidalOperatingMode } from "@dental/shared";
-import { X, Zap } from "lucide-react";
+import { Clock, ShieldCheck, X, Zap } from "lucide-react";
 import React from "react";
+import { createPortal } from "react-dom";
 
 export interface BactericidalAddSessionModalProps {
 	readonly isOpen: boolean;
@@ -62,11 +63,27 @@ export function BactericidalAddSessionModal({
 }: BactericidalAddSessionModalProps) {
 	if (!isOpen) return null;
 
-	return (
-		<div className="sanpin-modal-overlay">
-			<div className="sanpin-modal">
+	const modalContent = (
+		<div
+			className="sanpin-modal-overlay"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Фиксация сеанса работы бактерицидного облучателя"
+			onClick={onClose}
+		>
+			<div className="sanpin-modal" onClick={(e) => e.stopPropagation()}>
 				<div className="sanpin-modal-header">
-					<h3>Фиксация сеанса работы бактерицидного облучателя</h3>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+						<Clock size={20} color="var(--teal, #0d9488)" />
+						<div>
+							<h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 700 }}>
+								Фиксация сеанса работы бактерицидного облучателя
+							</h3>
+							<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
+								СанПиН 3.3686-21 • Учет времени и наработки часов бактерицидных ламп
+							</div>
+						</div>
+					</div>
 					<button
 						type="button"
 						onClick={onClose}
@@ -76,11 +93,14 @@ export function BactericidalAddSessionModal({
 							cursor: "pointer",
 							display: "flex",
 							alignItems: "center",
+							justifyContent: "center",
 							color: "var(--muted)",
+							minHeight: "44px",
+							minWidth: "44px",
 						}}
 						aria-label="Закрыть"
 					>
-						<X size={18} />
+						<X size={20} />
 					</button>
 				</div>
 				<form onSubmit={onSubmit}>
@@ -120,6 +140,7 @@ export function BactericidalAddSessionModal({
 								value={logEquipId}
 								onChange={(e) => setLogEquipId(e.target.value)}
 								className="sanpin-select"
+								style={{ minHeight: "44px" }}
 							>
 								{equipments.map((e) => (
 									<option key={e.id} value={e.id}>
@@ -138,6 +159,7 @@ export function BactericidalAddSessionModal({
 									value={logDate}
 									onChange={(e) => setLogDate(e.target.value)}
 									className="sanpin-input"
+									style={{ minHeight: "44px" }}
 								/>
 							</div>
 
@@ -147,6 +169,7 @@ export function BactericidalAddSessionModal({
 									value={logMode}
 									onChange={(e) => setLogMode(e.target.value as BactericidalOperatingMode)}
 									className="sanpin-select"
+									style={{ minHeight: "44px" }}
 								>
 									<option value="continuous_presence">В присутствии людей (рабочая смена)</option>
 									<option value="pre_op_preparation">Предоперационная подготовка (30-60 мин)</option>
@@ -165,6 +188,7 @@ export function BactericidalAddSessionModal({
 									value={logStartTime}
 									onChange={(e) => onStartTimeChange(e.target.value)}
 									className="sanpin-input"
+									style={{ minHeight: "44px" }}
 								/>
 							</div>
 
@@ -176,6 +200,7 @@ export function BactericidalAddSessionModal({
 									value={logEndTime}
 									onChange={(e) => onEndTimeChange(e.target.value)}
 									className="sanpin-input"
+									style={{ minHeight: "44px" }}
 								/>
 							</div>
 						</div>
@@ -190,7 +215,7 @@ export function BactericidalAddSessionModal({
 										type="button"
 										onClick={() => onSetPresetDuration(30)}
 										className="sanpin-btn sanpin-btn-secondary"
-										style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem" }}
+										style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem", minHeight: "36px" }}
 									>
 										30м
 									</button>
@@ -198,7 +223,7 @@ export function BactericidalAddSessionModal({
 										type="button"
 										onClick={() => onSetPresetDuration(60)}
 										className="sanpin-btn sanpin-btn-secondary"
-										style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem" }}
+										style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem", minHeight: "36px" }}
 									>
 										1ч
 									</button>
@@ -206,7 +231,7 @@ export function BactericidalAddSessionModal({
 										type="button"
 										onClick={() => onSetPresetDuration(120)}
 										className="sanpin-btn sanpin-btn-secondary"
-										style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem" }}
+										style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem", minHeight: "36px" }}
 									>
 										2ч
 									</button>
@@ -214,7 +239,7 @@ export function BactericidalAddSessionModal({
 										type="button"
 										onClick={() => onSetPresetDuration(360)}
 										className="sanpin-btn sanpin-btn-secondary"
-										style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", fontWeight: 700 }}
+										style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem", fontWeight: 700, minHeight: "36px" }}
 									>
 										Смена 6ч
 									</button>
@@ -239,6 +264,7 @@ export function BactericidalAddSessionModal({
 									}
 								}}
 								className="sanpin-input"
+								style={{ minHeight: "44px" }}
 							/>
 							<span className="sanpin-form-hint">
 								Эквивалентно {(logDurationMin / 60).toFixed(2)} часам наработки ламп
@@ -269,20 +295,28 @@ export function BactericidalAddSessionModal({
 						)}
 					</div>
 					<div className="sanpin-modal-footer">
-						<button type="button" onClick={onClose} className="sanpin-btn sanpin-btn-secondary">
+						<button
+							type="button"
+							onClick={onClose}
+							className="sanpin-btn sanpin-btn-secondary"
+							style={{ minHeight: "44px" }}
+						>
 							Отмена
 						</button>
 						<button
 							type="submit"
 							aria-busy={submitting}
-							style={{ opacity: submitting ? 0.7 : 1 }}
+							style={{ opacity: submitting ? 0.7 : 1, minHeight: "44px" }}
 							className="sanpin-btn sanpin-btn-primary"
 						>
-							Зафиксировать сеанс
+							Зафиксировать сеанс в журнале
 						</button>
 					</div>
 				</form>
 			</div>
 		</div>
 	);
+
+	if (typeof document === "undefined") return null;
+	return createPortal(modalContent, document.body);
 }
