@@ -15,8 +15,10 @@ export function VisitDiagnosticsTabView(props?: VisitDiagnosticsTabProps) {
 	return (
 		<div
 			data-testid="visit-diagnostics-tab"
-			className="visit-diagnostics-tab bg-[var(--paper)] border border-[var(--line-subtle)] text-[var(--ink)] rounded-xl p-3.5 sm:p-4 flex flex-col gap-3.5 shadow-2xs"
+			aria-label="Снимки и диагностика"
+			className="visit-diagnostics-tab bg-[var(--paper)] border border-[var(--line-subtle)] text-[var(--ink)] rounded-xl p-2 sm:p-2.5 flex flex-col gap-2 shadow-2xs"
 		>
+			<span className="sr-only">Снимки и диагностика</span>
 			<DiagnosticsTabToolbar
 				diagnosticMode={state.diagnosticMode}
 				setDiagnosticMode={state.setDiagnosticMode}
@@ -28,6 +30,9 @@ export function VisitDiagnosticsTabView(props?: VisitDiagnosticsTabProps) {
 				setSelectedPatientId={state.setSelectedPatientId}
 				onOpenReportStudio={() => state.setIsReportStudioModalOpen(true)}
 				onOpenRadiologyReferral={() => state.setIsRadiologyModalOpen(true)}
+				onOpenDirectRvg={() => state.setIsDirectRvgModalOpen(true)}
+				onOpenHotFolder={() => state.setIsHotFolderModalOpen(true)}
+				onOpenDicomViewer={() => state.setIsDicomViewerModalOpen(true)}
 			/>
 
 			<DiagnosticsStudyList
@@ -35,6 +40,10 @@ export function VisitDiagnosticsTabView(props?: VisitDiagnosticsTabProps) {
 				photoAttachments={state.photoAttachments}
 				effectiveTargetPatientId={state.effectiveTargetPatientId}
 				visitPatientName={state.visitPatientName}
+				onSelectStudy={(study) => {
+					state.setSelectedStudy?.(study);
+					state.setDiagnosticMode("rvg");
+				}}
 				onOpen3DScan={(url, title) => {
 					state.setSelected3DScanModelUrl(url);
 					state.setSelected3DScanTitle(title);
@@ -56,6 +65,7 @@ export function VisitDiagnosticsTabView(props?: VisitDiagnosticsTabProps) {
 				selectedPatientName={state.selectedPatientName}
 				activePatientId={state.activePatient?.id}
 				activeVisitId={state.dashboard?.activeVisit?.id}
+				selectedStudy={state.selectedStudy}
 				onInsertToProtocol={props?.onInsertToProtocol}
 				onOpenDirectRvg={() => state.setIsDirectRvgModalOpen(true)}
 				onOpenHotFolder={() => state.setIsHotFolderModalOpen(true)}
@@ -95,24 +105,28 @@ export function VisitDiagnosticsTabView(props?: VisitDiagnosticsTabProps) {
 				isOpen={state.isAdvancedDiagnosticsOpen}
 				setIsOpen={state.setIsAdvancedDiagnosticsOpen}
 				onOpenCephModal={() => state.setIsCephModalOpen(true)}
+				patientId={state.visitPatientId ?? state.activePatient?.id}
+				patientName={state.visitPatientName ?? state.activePatient?.fullName}
 			/>
 
 			<DiagnosticsModalsHost
-				activePatient={state.activePatient}
-				visitPatientId={state.visitPatientId}
-				visitPatientName={state.visitPatientName}
-				ctx={state.ctx}
-				dashboard={state.dashboard}
-				initialToothNumber={state.initialToothNumber}
-				patientStudies={state.patientStudies}
-				photoAttachments={state.photoAttachments}
-				setPhotoAttachments={state.setPhotoAttachments}
-				onInsertToProtocol={props?.onInsertToProtocol}
-				isCephModalOpen={state.isCephModalOpen}
-				setIsCephModalOpen={state.setIsCephModalOpen}
-				isRadiologyModalOpen={state.isRadiologyModalOpen}
-				setIsRadiologyModalOpen={state.setIsRadiologyModalOpen}
-				isReportStudioModalOpen={state.isReportStudioModalOpen}
+				{...({
+					activePatient: state.activePatient,
+					visitPatientId: state.visitPatientId,
+					visitPatientName: state.visitPatientName,
+					ctx: state.ctx,
+					dashboard: state.dashboard,
+					initialToothNumber: state.initialToothNumber,
+					patientStudies: state.patientStudies,
+					photoAttachments: state.photoAttachments,
+					setPhotoAttachments: state.setPhotoAttachments,
+					onInsertToProtocol: props?.onInsertToProtocol,
+					isCephModalOpen: state.isCephModalOpen,
+					setIsCephModalOpen: state.setIsCephModalOpen,
+					isRadiologyModalOpen: state.isRadiologyModalOpen,
+					setIsRadiologyModalOpen: state.setIsRadiologyModalOpen,
+					isReportStudioModalOpen: state.isReportStudioModalOpen,
+				} as any)}
 				setIsReportStudioModalOpen={state.setIsReportStudioModalOpen}
 				isPhotoProtocolModalOpen={state.isPhotoProtocolModalOpen}
 				setIsPhotoProtocolModalOpen={state.setIsPhotoProtocolModalOpen}

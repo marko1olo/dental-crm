@@ -1,16 +1,22 @@
-import { Activity, ChevronDown, ChevronRight } from "lucide-react";
+import { Activity, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import React from "react";
+import { routeOpenCephPopout } from "../../../utils/runtimeRouter";
+import { showToast } from "../../GlobalToast";
 
 export interface DiagnosticsCephSectionProps {
 	isOpen: boolean;
 	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	onOpenCephModal: () => void;
+	patientId?: string | undefined;
+	patientName?: string | undefined;
 }
 
 export function DiagnosticsCephSection({
 	isOpen,
 	setIsOpen,
 	onOpenCephModal,
+	patientId,
+	patientName,
 }: DiagnosticsCephSectionProps) {
 	return (
 		<div className="border border-[var(--line-subtle)] rounded-xl overflow-hidden bg-[var(--paper-soft)] hover:border-[var(--teal)]/40 shadow-2xs transition-all">
@@ -65,14 +71,36 @@ export function DiagnosticsCephSection({
 						</div>
 					</div>
 
-					<div className="flex items-center justify-end pt-1 border-t border-[var(--line-subtle)]">
+					<div className="flex items-center justify-end gap-2 pt-1 border-t border-[var(--line-subtle)] flex-wrap">
+						<button
+							type="button"
+							onClick={async () => {
+								const res = await routeOpenCephPopout({
+									patientId,
+									patientName,
+								});
+								if (!res.success && res.error === "popup_blocked") {
+									showToast("Разрешите всплывающие окна для вывода ТРГ на второй монитор", "warning");
+								} else if (res.success) {
+									showToast("Окно ТРГ Цефалометрии открыто для второго монитора", "success");
+								}
+							}}
+							data-testid="open-visit-ceph-popout-btn"
+							className="diag-btn"
+							title="Вынести ТРГ Цефалометрию в отдельное окно (второй монитор)"
+							aria-label="Вынести ТРГ в отдельное окно"
+						>
+							<ExternalLink size={13} className="text-cyan-500" />
+							<span>В окно (2-й монитор)</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={onOpenCephModal}
 							data-testid="open-visit-ceph-modal-btn"
-							className="diag-btn"
+							className="diag-btn-teal"
 						>
-							<Activity size={14} className="text-[var(--teal)]" />
+							<Activity size={14} />
 							<span>Открыть анализ ТРГ</span>
 						</button>
 					</div>

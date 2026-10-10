@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 import { usePatientStore } from "../../../store/patientStore";
+import { useVisitStore } from "../../../store/visitStore";
 import {
 	type ClinicalPhotoAttachment,
 	generatePhotoProtocolAttachmentsStatement,
@@ -30,6 +31,25 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 	const [selectedDicomImageSrc, setSelectedDicomImageSrc] = useState<string | undefined>(undefined);
 	const [selected3DScanModelUrl, setSelected3DScanModelUrl] = useState<string | null>(null);
 	const [selected3DScanTitle, setSelected3DScanTitle] = useState<string | undefined>(undefined);
+
+	const storeActiveStudy = useVisitStore((s) => s.activeStudy) as DiagnosticStudy | null;
+	const setStoreActiveStudy = useVisitStore((s) => s.setActiveStudy);
+	const [selectedStudy, setSelectedStudyState] = useState<DiagnosticStudy | null>(storeActiveStudy);
+
+	useEffect(() => {
+		if (storeActiveStudy && storeActiveStudy !== selectedStudy) {
+			setSelectedStudyState(storeActiveStudy);
+		}
+	}, [storeActiveStudy, selectedStudy]);
+
+	const setSelectedStudy = (study: DiagnosticStudy | null) => {
+		setSelectedStudyState(study);
+		setStoreActiveStudy(study);
+		if (study?.toothCode && !Number.isNaN(Number(study.toothCode))) {
+			useVisitStore.getState().setActiveToothNumber(Number(study.toothCode));
+		}
+	};
+
 	const [isHotFolderModalOpen, setIsHotFolderModalOpen] = useState<boolean>(false);
 
 	const isOrthoContext =
@@ -54,7 +74,11 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 	}, [isCbctMenuOpen]);
 
 	const [photoAttachments, setPhotoAttachments] = useState<ClinicalPhotoAttachment[]>([]);
-	const initialToothNumber = Number(ctx?.dashboard?.activeVisit?.diagnosisTooth) || 16;
+	const storeActiveToothNumber = useVisitStore((s) => s.activeToothNumber);
+	const initialToothNumber =
+		storeActiveToothNumber ??
+		Number(ctx?.dashboard?.activeVisit?.diagnosisTooth) ??
+		16;
 	const [selectedToothForPhoto, setSelectedToothForPhoto] = useState<number>(initialToothNumber);
 	const [selectedPhotoType, setSelectedPhotoType] = useState<PhotoStageType>("before");
 	const [photoComment, setPhotoComment] = useState<string>("");
@@ -97,6 +121,63 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 		const updated = photoAttachments.filter((p) => p.id !== id);
 		setPhotoAttachments(updated);
 	};
+
+	useEffect(() => {
+		const handleAttachPastedPhoto = (e: Event) => {
+			const custom = e as CustomEvent<{
+				url: string;
+				name?: string;
+				toothNumber?: string;
+				photoType?: PhotoStageType;
+				width?: number;
+				height?: number;
+			}>;
+			if (!custom.detail?.url) return;
+
+			const newPhoto: ClinicalPhotoAttachment = {
+				id: `photo-pasted-${Date.now()}`,
+				toothNumber: (custom.detail.toothNumber ? Number(custom.detail.toothNumber) : selectedToothForPhoto) || undefined,
+				photoType: custom.detail.photoType || selectedPhotoType || "before",
+				photoUrl: custom.detail.url,
+				description: custom.detail.name || "Снимок из буфера обмена (Ctrl+V)",
+				capturedAtIso: new Date().toISOString(),
+			};
+			setPhotoAttachments((prev) => {
+				const next = [...prev, newPhoto];
+				const statement = generatePhotoProtocolAttachmentsStatement(next);
+				if (props?.onInsertToProtocol) {
+					props.onInsertToProtocol(statement);
+				} else {
+					window.dispatchEvent(
+						new CustomEvent("dente-apply-soap-protocol", {
+							detail: {
+								soap: { treatmentDescription: statement },
+								mode: "smart_append",
+							},
+						}),
+					);
+				}
+				return next;
+			});
+			const isXray = String(custom.detail?.photoType || "") === "xray" || (custom.detail?.name ? custom.detail.name.includes("Рентген") : false);
+			showToast(isXray ? "Рентген-снимок с визиографа успешно прикреплен к протоколу" : "Снимок из буфера успешно прикреплен к фотопротоколу", "success", 3000);
+		};
+
+		const handleOpenDirectRvg = (e: Event) => {
+			const custom = e as CustomEvent<{ imageUrl?: string; tooth?: string }>;
+			if (custom.detail?.imageUrl) {
+				setSelectedDicomImageSrc(custom.detail.imageUrl);
+			}
+			setIsDirectRvgModalOpen(true);
+		};
+
+		window.addEventListener("dente:attach-photo-to-visit", handleAttachPastedPhoto);
+		window.addEventListener("dente:open-direct-rvg", handleOpenDirectRvg);
+		return () => {
+			window.removeEventListener("dente:attach-photo-to-visit", handleAttachPastedPhoto);
+			window.removeEventListener("dente:open-direct-rvg", handleOpenDirectRvg);
+		};
+	}, [selectedToothForPhoto, selectedPhotoType, props?.onInsertToProtocol]);
 
 	const selectedPatientId = usePatientStore((state) => state.selectedPatientId);
 	const setSelectedPatientId = usePatientStore(
@@ -330,6 +411,8 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 		setSelected3DScanModelUrl,
 		selected3DScanTitle,
 		setSelected3DScanTitle,
+		selectedStudy,
+		setSelectedStudy,
 		isHotFolderModalOpen,
 		setIsHotFolderModalOpen,
 	};

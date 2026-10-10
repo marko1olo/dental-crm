@@ -133,7 +133,7 @@ export function DiagnosticsCbctSection({
 									patientId: visitPatientId ?? activePatientId,
 									patientName: visitPatientName ?? activePatientFullName,
 									mode: "mpr",
-								});
+								} as any);
 								if (!res.success && res.error === "popup_blocked") {
 									showToast("Разрешите всплывающие окна для вывода КТ на второй монитор", "warning");
 								}

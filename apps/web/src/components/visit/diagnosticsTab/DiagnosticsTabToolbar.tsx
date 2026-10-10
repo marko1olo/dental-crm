@@ -1,4 +1,4 @@
-import { Activity, Camera, FileText, Image as ImageIcon, Plus } from "lucide-react";
+import { Activity, Camera, FileText, FolderInput, Image as ImageIcon, Plus } from "lucide-react";
 import React from "react";
 import type { DiagnosticTabMode } from "./types";
 
@@ -13,6 +13,9 @@ export interface DiagnosticsTabToolbarProps {
 	setSelectedPatientId: (id: string) => void;
 	onOpenReportStudio: () => void;
 	onOpenRadiologyReferral: () => void;
+	onOpenDirectRvg?: () => void;
+	onOpenHotFolder?: () => void;
+	onOpenDicomViewer?: () => void;
 }
 
 export function DiagnosticsTabToolbar({
@@ -26,15 +29,18 @@ export function DiagnosticsTabToolbar({
 	setSelectedPatientId,
 	onOpenReportStudio,
 	onOpenRadiologyReferral,
+	onOpenDirectRvg,
+	onOpenHotFolder,
+	onOpenDicomViewer,
 }: DiagnosticsTabToolbarProps) {
 	return (
 		<>
 			{/* ═══════════════════════════════════════════════════════════════════════
 			    КЛИНИЧЕСКИЙ КОКПИТ: СЕГМЕНТИРОВАННЫЙ ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМОВ ДИАГНОСТИКИ И НАПРАВЛЕНИЕ
 			    ═══════════════════════════════════════════════════════════════════════ */}
-			<div className="flex items-center justify-between gap-3 flex-wrap">
+			<div className="flex items-center justify-between gap-2.5 flex-nowrap h-[34px] min-h-[34px] overflow-x-auto">
 				<div
-					className="diag-segmented-bar"
+					className="diag-segmented-bar flex items-center shrink-0"
 					role="tablist"
 					aria-label="Режимы визуальной диагностики"
 				>
@@ -51,7 +57,7 @@ export function DiagnosticsTabToolbar({
 						}`}
 					>
 						<Camera size={14} />
-						<span>Прицельные снимки (RVG)</span>
+						<span>RVG визиограф</span>
 					</button>
 
 					<button
@@ -92,27 +98,53 @@ export function DiagnosticsTabToolbar({
 					</button>
 				</div>
 
-				<div className="flex items-center gap-2 shrink-0">
+				<div className="flex items-center gap-1.5 shrink-0 flex-nowrap">
+					{diagnosticMode === "rvg" && onOpenDirectRvg && (
+						<button
+							type="button"
+							onClick={onOpenDirectRvg}
+							data-testid="btn-open-direct-rvg-modal"
+							className="diag-btn-teal h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0"
+							title="Прямой захват снимка с датчика визиографа"
+						>
+							<Camera size={14} />
+							<span>+ Захват с датчика</span>
+						</button>
+					)}
+
+					{diagnosticMode === "rvg" && onOpenHotFolder && (
+						<button
+							type="button"
+							onClick={onOpenHotFolder}
+							data-testid="btn-open-hot-folder-modal"
+							className="diag-btn h-7 px-2 rounded-lg text-xs font-medium flex items-center gap-1 shrink-0"
+							title="Папка автозахвата снимков: автоматический импорт из каталога визиографа"
+						>
+							<FolderInput size={13} className="text-[var(--teal)]" />
+							<span>Автозахват</span>
+						</button>
+					)}
+
 					<button
 						type="button"
 						onClick={onOpenReportStudio}
-						className="diag-btn"
+						className="diag-btn h-7 px-2.5 rounded-lg text-xs font-medium flex items-center gap-1 shrink-0"
 						data-testid="btn-open-radiology-report-studio"
 						title="Открыть студию радиологического отчёта и печати бланка A4"
 					>
-						<FileText size={14} className="text-[var(--teal)]" />
-						<span>Радиологический отчёт (A4)</span>
+						<FileText size={13} className="text-[var(--teal)]" />
+						<span>Отчёт (A4)</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={onOpenRadiologyReferral}
-						className="diag-btn"
+						className="diag-btn h-7 px-2.5 rounded-lg text-xs font-medium flex items-center gap-1 shrink-0"
 						data-testid="btn-open-radiology-referral-modal"
 						title="Выписать направление на КЛКТ / ОПТГ / ТРГ"
 					>
-						<Plus size={14} className="text-[var(--teal)]" />
-						<span>Направление на КЛКТ/ОПТГ</span>
+						<Plus size={13} className="text-[var(--teal)]" />
+						<span>Направление</span>
 					</button>
 				</div>
 			</div>

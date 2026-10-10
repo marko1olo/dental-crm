@@ -213,12 +213,12 @@ export function DiagnosticsModalsHost({
 					initialImages={patientStudies
 						.filter((s) => s.previewUrl || s.viewerUrl)
 						.map((s) => ({
-							imageUrl: s.previewUrl || s.viewerUrl,
+							imageUrl: (s.previewUrl || s.viewerUrl)!,
 							toothFdi: s.toothCode || undefined,
 							modalityLabel: s.kind === "cbct" ? "3D КЛКТ" : s.kind === "cephalometric" ? "ТРГ" : "Рентген RVG",
 							dapDoseDgyCm2: (s.effectiveDoseMicrosv || 2) * 0.05,
 							capturedAt: s.capturedAt,
-						}))}
+						} as any))}
 				/>
 			)}
 
@@ -226,12 +226,16 @@ export function DiagnosticsModalsHost({
 			{isDirectRvgModalOpen && (
 				<DirectRvgCaptureModal
 					isOpen={isDirectRvgModalOpen}
-					onClose={() => setIsDirectRvgModalOpen(false)}
+					onClose={() => {
+						setIsDirectRvgModalOpen(false);
+						setSelectedDicomImageSrc(undefined);
+					}}
 					patientId={visitPatientId ?? activePatient?.id}
 					patientName={visitPatientName ?? activePatient?.fullName}
 					patientCardNumber={activePatient?.cardNumber || activePatient?.medCardNumber}
 					doctorName={dashboard?.activeDoctor?.fullName || "Врач-стоматолог"}
 					initialToothFdi={initialToothNumber ? String(initialToothNumber) : undefined}
+					initialImageUrl={selectedDicomImageSrc}
 					onSaveToEmr={(study) => {
 						const toothStr = study.teethFdi?.[0] || (initialToothNumber ? String(initialToothNumber) : "—");
 						const logText = `[Визиограф RVG] Снимок зуба #${toothStr}: доза ${study.effectiveDoseMicrosv || 0} мкЗв. Сохранен в ЭМК.`;

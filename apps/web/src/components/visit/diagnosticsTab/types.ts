@@ -5,7 +5,7 @@ export type DiagnosticTabMode = "rvg" | "photo" | "cbct";
 export interface VisitDiagnosticsTabProps {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	activePatient?: any;
-	onInsertToProtocol?: (text: string) => void;
+	onInsertToProtocol?: ((text: string) => void) | undefined;
 }
 
 export interface DiagnosticStudy {
