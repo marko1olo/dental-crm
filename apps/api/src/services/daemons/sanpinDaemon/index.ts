@@ -1,9 +1,8 @@
 /**
- * sanpinAndInventoryDaemon.ts — Canonical Master Facade (Layer 5).
+ * index.ts — Barrel Index for SanPiN & Expensive Materials Inventory Daemon.
  *
- * 21:30 PM SanPiN 3.3686-21 Kraft Pack & High-Cost Inventory Reconciliation Daemon.
- * Preserves 100% backward compatibility across all call sites,
- * re-exporting clinical types, schema, evaluators, and audit runners.
+ * Directed Acyclic Graph (DAG) layer exports for SanPiN 3.3686-21 kraft pack monitoring,
+ * autoclave validation, surgical inventory reconciliation, and background daemon scheduling.
  */
 
 export type {
@@ -20,18 +19,27 @@ export type {
 	SanpinSterilizationAuditOptions,
 	SurgicalActInput,
 	WarehouseTransactionInput,
-} from "./sanpinDaemon/index.js";
+} from "./types.js";
 
 export {
 	DISCREPANCY_TYPE_RU_MAP,
 	PACKAGING_TYPE_RU_MAP,
-	SanpinDaemonScheduler,
-	defaultSanpinDaemonScheduler,
+} from "./types.js";
+
+export {
 	evaluateKraftPackShelfLife,
+	runSanpinSterilizationAudit,
+} from "./sanpinCycleRunner.js";
+
+export {
 	extractRecognizedBrand,
 	normalizeText,
 	reconcileSurgicalActWithInventory,
 	runExpensiveMaterialsInventoryAudit,
+} from "./inventoryDeductionRunner.js";
+
+export {
+	SanpinDaemonScheduler,
+	defaultSanpinDaemonScheduler,
 	runSanpinAndInventoryAudit,
-	runSanpinSterilizationAudit,
-} from "./sanpinDaemon/index.js";
+} from "./daemonScheduler.js";
