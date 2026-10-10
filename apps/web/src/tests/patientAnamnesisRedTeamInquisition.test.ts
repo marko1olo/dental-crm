@@ -93,10 +93,10 @@ describe("Patient Somatic Anamnesis & Allergy Chairside Integrity Suite", () => 
 		});
 
 		it("VisitHeaderMonolith and VisitView render clean allergy badge branch when badges are empty", () => {
-			const monolithContent = fs.readFileSync(
-				path.join(webSrc, "components/visit/view/VisitHeaderMonolith.tsx"),
-				"utf-8",
-			);
+			const monolithPath = fs.existsSync(path.join(webSrc, "components/visit/view/visitHeader/PatientAlertBadgesBar.tsx"))
+				? path.join(webSrc, "components/visit/view/visitHeader/PatientAlertBadgesBar.tsx")
+				: path.join(webSrc, "components/visit/view/VisitHeaderMonolith.tsx");
+			const monolithContent = fs.readFileSync(monolithPath, "utf-8");
 			const visitViewContent = fs.readFileSync(
 				path.join(webSrc, "VisitView.tsx"),
 				"utf-8",

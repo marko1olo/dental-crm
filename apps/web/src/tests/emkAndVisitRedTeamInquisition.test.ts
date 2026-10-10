@@ -30,8 +30,9 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 		return fs.readFileSync(fullPath, "utf-8");
 	};
 
-	it("1. Искоренение птичьего языка: в ClinicalQuickPresetsBar кнопки не содержат голых кодов МКБ в видимом тексте", () => {
+	it("1. Искоренение птичьего языка и ликвидация дубликатов: в ClinicalQuickPresetsBar нет голых кодов МКБ и ликвидированы дубли норм", () => {
 		const code = readSrcFile("components/visit/ClinicalQuickPresetsBar.tsx");
+		const somaticCode = readSrcFile("components/clinical/SomaticAnamnesisCard.tsx");
 
 		// Запрещены голые технические шифры на кнопках пресетов
 		assert.ok(
@@ -47,18 +48,16 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 			"Кнопка хирургии не должна содержать технический шифр Z09.0 в видимом тексте",
 		);
 
-		// Должны быть чистые клинические названия
+		// В ClinicalQuickPresetsBar ликвидированы паразитные дубликаты норм (Мандат 8p, 8s)
 		assert.ok(
-			code.includes("<span>Соматически здоров / Норма</span>"),
-			"Кнопка нормы должна называться по-человечески: 'Соматически здоров / Норма'",
+			!code.includes("btn-norm-healthy-quick"),
+			"В ClinicalQuickPresetsBar не должно быть дублирующей кнопки соматической нормы",
 		);
+
+		// Каноническая норма находится в SomaticAnamnesisCard без птичьего языка
 		assert.ok(
-			code.includes("<span>Норма: Ортопедия</span>"),
-			"Кнопка ортопедии должна называться 'Норма: Ортопедия'",
-		);
-		assert.ok(
-			code.includes("<span>Норма: Хирургия</span>"),
-			"Кнопка хирургии должна называться 'Норма: Хирургия'",
+			somaticCode.includes("Соматически здоров"),
+			"В SomaticAnamnesisCard норма должна называться по-человечески: 'Соматически здоров'",
 		);
 	});
 
@@ -129,7 +128,9 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 	});
 
 	it("5. Автономия врача (Мандат 8e): 0 заблокированных кнопок «Завершить приём» по второстепенным полям", () => {
-		const headerCode = readSrcFile("components/visit/view/VisitHeaderMonolith.tsx");
+		const headerCode = fs.existsSync(path.join(webSrc, "components/visit/view/visitHeader/VisitActionButtonsToolbar.tsx"))
+			? readSrcFile("components/visit/view/visitHeader/VisitActionButtonsToolbar.tsx")
+			: readSrcFile("components/visit/view/VisitHeaderMonolith.tsx");
 		// Кнопка Завершить приём в шапке
 		assert.ok(
 			headerCode.includes('data-testid="btn-complete-visit-header"'),

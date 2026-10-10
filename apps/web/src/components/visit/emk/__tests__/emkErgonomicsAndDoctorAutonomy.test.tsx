@@ -31,7 +31,9 @@ describe("RED TEAM INQUISITION: Clinical Ergonomics & Doctor Autonomy", () => {
 	const objectivePath = path.resolve(__dirname, "../EmkObjectiveStatusSection.tsx");
 	const diaryPath = path.resolve(__dirname, "../EmkDiaryProtocolSection.tsx");
 	const somaticAlertPath = path.resolve(__dirname, "../../../clinical/SomaticSafetyAlertWidget.tsx");
-	const visitHeaderPath = path.resolve(__dirname, "../../view/VisitHeaderMonolith.tsx");
+	const visitHeaderPath = fs.existsSync(path.resolve(__dirname, "../../view/visitHeader/VisitActionButtonsToolbar.tsx"))
+		? path.resolve(__dirname, "../../view/visitHeader/VisitActionButtonsToolbar.tsx")
+		: path.resolve(__dirname, "../../view/VisitHeaderMonolith.tsx");
 	const financeToolbarPath = path.resolve(__dirname, "../../../finance/FinanceToolbar.tsx");
 	const financeViewPath = path.resolve(__dirname, "../../../../FinanceView.tsx");
 

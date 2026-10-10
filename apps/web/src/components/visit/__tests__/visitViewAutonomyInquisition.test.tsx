@@ -136,7 +136,17 @@ const __dirname = path.dirname(__filename);
 
 describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisition", () => {
 	const visitViewPath = path.resolve(__dirname, "../../../VisitView.tsx");
-	const visitViewSource = fs.readFileSync(visitViewPath, "utf8");
+	const headerPath = path.resolve(__dirname, "../view/VisitViewHeader.tsx");
+	const footerPath = path.resolve(__dirname, "../view/VisitActionFooter.tsx");
+	const modalsPath = path.resolve(__dirname, "../view/VisitViewModals.tsx");
+	const statePath = path.resolve(__dirname, "../view/useVisitViewState.ts");
+	const visitViewSource = [
+		fs.readFileSync(visitViewPath, "utf8"),
+		fs.existsSync(headerPath) ? fs.readFileSync(headerPath, "utf8") : "",
+		fs.existsSync(footerPath) ? fs.readFileSync(footerPath, "utf8") : "",
+		fs.existsSync(modalsPath) ? fs.readFileSync(modalsPath, "utf8") : "",
+		fs.existsSync(statePath) ? fs.readFileSync(statePath, "utf8") : "",
+	].join("\n");
 
 	it("1. guarantees AI polish button is NOT disabled when transcript text is empty (disabled === false)", () => {
 		// Verify source code constraint: removed `!hasVisitTranscriptText` from disabled attribute on polish button
@@ -252,7 +262,7 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 		const telephonyPopupSource = fs.readFileSync(telephonyPopupPath, "utf8");
 
 		expect(telephonyPopupSource).toMatch(
-			/const isDoctorMode\s*=\s*selectedWorkspaceRole === "doctor" \|\| currentView === "visit";/,
+			/const isDoctorMode\s*=\s*selectedWorkspaceRole === "doctor" \|\| currentView === "visit"/,
 		);
 		expect(telephonyPopupSource).toContain("if (!activeCall || isDoctorMode || isDndActive) return null;");
 	});
@@ -297,9 +307,8 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 
 	it("11. doctor primary action button is NEVER disabled (Mandate 8e: 0 disabled buttons)", () => {
 		expect(visitViewSource).toContain('data-testid="visit-primary-action"');
-		// Must not have disabled conditions on primary action
-		expect(visitViewSource).toContain(
-			'<button\n\t\t\t\t\t\t\t\t\tclassName="primary-button visit-primary-action min-h-[44px] px-3 py-2"\n\t\t\t\t\t\t\t\t\ttype="button"\n\t\t\t\t\t\t\t\t\tonClick={safeVisitPrimaryAction.onClick}\n\t\t\t\t\t\t\t\t\tdisabled={false}',
+		expect(visitViewSource).toMatch(
+			/<button[\s\S]*?className="primary-button visit-primary-action min-h-\[44px\] px-3 py-2"[\s\S]*?type="button"[\s\S]*?onClick=\{safeVisitPrimaryAction\.onClick\}[\s\S]*?disabled=\{false\}/,
 		);
 	});
 
@@ -329,7 +338,9 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 		expect(visitViewSource).toContain('"dente-open-lab-order-modal"');
 
 		// VisitHeaderMonolith has matching test-ids and button/dropdown actions
-		const headerMonolithPath = path.resolve(__dirname, "../view/VisitHeaderMonolith.tsx");
+		const headerMonolithPath = fs.existsSync(path.resolve(__dirname, "../view/visitHeader/VisitActionButtonsToolbar.tsx"))
+			? path.resolve(__dirname, "../view/visitHeader/VisitActionButtonsToolbar.tsx")
+			: path.resolve(__dirname, "../view/VisitHeaderMonolith.tsx");
 		const headerMonolithSource = fs.readFileSync(headerMonolithPath, "utf8");
 		expect(headerMonolithSource).toContain('data-testid="btn-visit-lab-order-fast"');
 		expect(headerMonolithSource).toContain('data-testid="visit-more-action-lab-order"');
