@@ -3,7 +3,7 @@
 .timesheet-modal-overlay {
 	position: fixed;
 	inset: 0;
-	z-index: 60;
+	z-index: 10000;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -12,19 +12,41 @@
 	backdrop-filter: blur(4px);
 }
 
+@media (min-width: 640px) {
+	.timesheet-modal-overlay {
+		padding: 1.5rem;
+	}
+}
+
 .timesheet-modal-container {
 	display: flex;
 	flex-direction: column;
 	width: 100%;
 	max-width: 1280px;
 	height: 90vh;
-	max-height: 900px;
+	max-height: calc(100vh - 2rem);
 	background-color: var(--paper);
 	color: var(--ink);
 	border: 1px solid var(--line);
 	border-radius: 1rem;
 	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 	overflow: hidden;
+}
+
+@media (min-width: 640px) {
+	.timesheet-modal-container {
+		max-height: calc(100vh - 3rem);
+	}
+}
+
+.timesheet-modal-container > *:first-child,
+.timesheet-modal-header-root {
+	flex-shrink: 0;
+}
+
+.timesheet-modal-container > *:last-child,
+.timesheet-modal-footer-root {
+	flex-shrink: 0;
 }
 
 .timesheet-stat-card {

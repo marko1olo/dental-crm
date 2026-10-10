@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { Users } from "lucide-react";
 import { useAppStore } from "../../store/appStore";
 import "./timesheetT13.css";
@@ -27,7 +28,7 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 	if (!isOpen) return null;
 
 	if (state.resolvedEmployees.length === 0 || !state.activeEmployee) {
-		return (
+		const emptyContent = (
 			<div className="timesheet-modal-overlay" data-testid="timesheet-t13-modal">
 				<div className="timesheet-modal-container max-w-lg mx-auto my-auto p-6 bg-[var(--paper)] rounded-2xl shadow-xl border border-[var(--line)] text-center flex flex-col items-center gap-4">
 					<div className="w-14 h-14 rounded-2xl bg-[var(--teal-soft)] text-[var(--teal)] flex items-center justify-center border border-[var(--teal)]/30">
@@ -64,9 +65,12 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 				</div>
 			</div>
 		);
+		return typeof document !== "undefined"
+			? createPortal(emptyContent, document.body)
+			: emptyContent;
 	}
 
-	return (
+	const modalContent = (
 		<div className="timesheet-modal-overlay" data-testid="timesheet-t13-modal">
 			<div className="timesheet-modal-container">
 				<TimesheetT13Header
@@ -112,6 +116,10 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 };
 
 export default TimesheetT13Modal;

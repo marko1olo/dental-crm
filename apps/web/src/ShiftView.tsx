@@ -43,6 +43,7 @@ import {
 	safeLocalStorageSetItem,
 } from "./lib/safeLocalStorage";
 import { DoctorPayrollModal } from "./components/finance/payroll/DoctorPayrollModal";
+import { TimesheetT13Modal } from "./components/payroll/TimesheetT13Modal";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { staffTelemetryService } from "./services/logging/staffTelemetryService";
 
@@ -118,6 +119,7 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 
 	const [isQueueBoardModalOpen, setIsQueueBoardModalOpen] = useState(false);
 	const [isPayrollModalOpen, setIsPayrollModalOpen] = useState(false);
+	const [isTimesheetT13ModalOpen, setIsTimesheetT13ModalOpen] = useState(false);
 	const [isShiftCloseModalOpen, setIsShiftCloseModalOpen] = useState(false);
 	const [secondaryTab, setSecondaryTab] = useState<"emk" | "intelligence">("emk");
 	const [isSecondaryExpanded, setIsSecondaryExpanded] = useState<boolean>(false);
@@ -257,6 +259,13 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 						useClinicalCategoryRates={true}
 					/>
 				)}
+				{isTimesheetT13ModalOpen && (
+					<TimesheetT13Modal
+						isOpen={isTimesheetT13ModalOpen}
+						onClose={() => setIsTimesheetT13ModalOpen(false)}
+						clinicName={dashboard?.clinicName}
+					/>
+				)}
 				{isShiftCloseModalOpen && (
 					<DoctorShiftCloseModal
 						isOpen={isShiftCloseModalOpen}
@@ -283,6 +292,7 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 				isShiftOpen={isShiftOpen}
 				onToggleShift={handleToggleShift}
 				onOpenPayrollModal={() => setIsPayrollModalOpen(true)}
+				onOpenT13Timesheet={() => setIsTimesheetT13ModalOpen(true)}
 				shiftStats={shiftStats}
 			/>
 
@@ -467,6 +477,15 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 					initialPeriodEnd={todayIso}
 					initialBasePercentage={30}
 					useClinicalCategoryRates={true}
+				/>
+			)}
+
+			{/* Form T-13 Official Timesheet Modal */}
+			{isTimesheetT13ModalOpen && (
+				<TimesheetT13Modal
+					isOpen={isTimesheetT13ModalOpen}
+					onClose={() => setIsTimesheetT13ModalOpen(false)}
+					clinicName={dashboard?.clinicName}
 				/>
 			)}
 

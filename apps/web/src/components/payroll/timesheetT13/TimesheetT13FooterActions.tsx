@@ -18,7 +18,7 @@ export const TimesheetT13FooterActions: React.FC<TimesheetT13FooterActionsProps>
 			: "Главный врач";
 
 	return (
-		<div className="h-12 px-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-3 overflow-x-auto whitespace-nowrap timesheet-no-print shrink-0">
+		<div className="h-12 px-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-3 overflow-x-auto whitespace-nowrap timesheet-no-print shrink-0 timesheet-modal-footer-root">
 			<div className="text-[12.5px] text-[var(--muted)]">
 				Ответственный за табель:{" "}
 				<span className="font-bold text-[var(--ink)]">{responsibleTitle}</span>

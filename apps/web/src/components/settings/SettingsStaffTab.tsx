@@ -1,5 +1,5 @@
 import type { StaffRole } from "@dental/shared";
-import { KeyRound, MoreVertical, Phone, ShieldCheck, UserPlus } from "lucide-react";
+import { Calendar, KeyRound, MoreVertical, Phone, ShieldCheck, UserPlus } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
@@ -9,6 +9,7 @@ import { StaffAuthorityPanel } from "./StaffAuthorityPanel";
 import { StaffCommissionsPanel } from "./StaffCommissionsPanel";
 import { StaffProfileCard } from "./StaffProfileCard";
 import { CREATABLE_STAFF_ROLES, staffRoleTitle } from "./settingsInviteRoles";
+import { TimesheetT13Modal, staffToEmployeeInfo } from "../payroll/TimesheetT13Modal";
 import {
 	planStaffCredentialUpdate,
 	reloadStaffList,
@@ -50,6 +51,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 	const clinicDataLoaded = Boolean(dashboard?.clinicSettings);
 
 	const [loading, setLoading] = useState(false);
+	const [isTimesheetT13Open, setIsTimesheetT13Open] = useState(false);
 
 	// New staff form state
 	const [newStaffName, setNewStaffName] = useState("");
@@ -328,8 +330,17 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 				<StaffAuthorityPanel />
 				{/* Список сотрудников */}
 				<article className="settings-card col-span-full form-span-2 w-full" data-testid="active-staff-list-card">
-					<div className="settings-card-header">
-						<h4>Активный персонал</h4>
+					<div className="settings-card-header flex items-center justify-between gap-2">
+						<h4 className="m-0">Активный персонал</h4>
+						<button
+							type="button"
+							onClick={() => setIsTimesheetT13Open(true)}
+							className="h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+							data-testid="btn-staff-open-timesheet-t13"
+						>
+							<Calendar className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+							<span>Табель Т-13 (Госкомстат)</span>
+						</button>
 					</div>
 					{/* min(280px,100%): иначе колонка шире узкого контейнера и
               карточки сотрудников обрезаются справа. */}
@@ -344,7 +355,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
             ничего о персонале не утверждается.
           */}
 					{staff.length === 0 && (
-						<p className="text-sm text-slate-500 dark:text-slate-400 m-0 py-6 text-center">
+						<p className="text-sm text-[var(--muted)] m-0 py-6 text-center">
 							{clinicDataLoaded
 								? "Сотрудников пока нет. Добавьте первого в форме «Добавить сотрудника» и назначьте ему PIN-код для планшета."
 								: "Данные клиники ещё не прочитаны, поэтому список персонала показать нельзя. Обновите страницу; если список не появится, сообщите администратору."}
@@ -355,9 +366,9 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 						{staff.map((member: any) => (
 							<div
 								key={member.id}
-								className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-4 min-h-[140px] flex flex-col justify-between shadow-sm"
+								className="border border-[var(--line)] bg-[var(--paper-card)] rounded-xl p-3.5 flex flex-col gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:border-[var(--line-strong)] transition-all"
 							>
-								<div className="flex items-center gap-3 mb-3">
+								<div className="flex items-center gap-3">
 									<div
 										className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg text-white shrink-0"
 										style={{ backgroundColor: member.color || "var(--accent, #3b82f6)" }}
@@ -365,7 +376,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 										{member.fullName ? member.fullName.charAt(0) : "S"}
 									</div>
 									<div className="min-w-0 flex-1">
-										<h5 className="m-0 text-sm font-semibold text-slate-900 dark:text-white break-words leading-snug">
+										<h5 className="m-0 text-sm font-semibold text-[var(--ink)] break-words leading-snug">
 											{member.fullName}
 										</h5>
 										{/*
@@ -376,7 +387,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
                       чего у человека не хватает. А без справочника подписей на
                       экран попадало имя роли латиницей.
                     */}
-										<span className="text-xs text-slate-500 dark:text-slate-400">
+										<span className="text-xs text-[var(--muted)]">
 											{staffRoleTitle(String(member.role ?? ""))}
 										</span>
 										{/*
@@ -387,20 +398,20 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
                     */}
 										{member.phone ? (
 											<a
-												className="block text-xs text-slate-600 dark:text-slate-300 no-underline hover:underline"
+												className="block text-xs text-[var(--ink)] no-underline hover:text-[var(--teal)] hover:underline"
 												href={`tel:${String(member.phone).replace(/[^\d+]/g, "")}`}
 											>
 												{member.phone}
 											</a>
 										) : (
-											<span className="block text-xs text-slate-400 dark:text-slate-500">
+											<span className="block text-xs text-[var(--muted)]">
 												телефон не указан
 											</span>
 										)}
 									</div>
 								</div>
 
-								<div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-col gap-2">
+								<div className="pt-2.5 border-t border-[var(--line-subtle)] flex flex-col gap-2">
 									{editingPhoneForId === member.id ? (
 										<form
 											onSubmit={(e) => handleUpdatePhone(e, member.id)}
@@ -535,10 +546,10 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 													<MoreVertical size={14} />
 												</button>
 												{credentialMenuOpenId === member.id && (
-													<div className="absolute right-0 bottom-full mb-1 w-36 py-1 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 z-10 flex flex-col text-xs">
+													<div className="absolute right-0 bottom-full mb-1 w-36 py-1 bg-[var(--paper-card)] rounded-xl shadow-lg border border-[var(--line)] z-10 flex flex-col text-xs">
 														<button
 															type="button"
-															className="px-3 py-1.5 text-left flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 cursor-pointer"
+															className="px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer transition-colors"
 															onClick={() => {
 																setEditingPinForId(member.id);
 																setEditingPasswordForId(null);
@@ -547,12 +558,12 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 																setCredentialMenuOpenId(null);
 															}}
 														>
-															<KeyRound size={13} className="text-slate-400" />
+															<KeyRound size={13} className="text-[var(--muted)]" />
 															<span>PIN-код</span>
 														</button>
 														<button
 															type="button"
-															className="px-3 py-1.5 text-left flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 cursor-pointer"
+															className="px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer transition-colors"
 															onClick={() => {
 																setEditingPasswordForId(member.id);
 																setEditingPinForId(null);
@@ -561,7 +572,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 																setCredentialMenuOpenId(null);
 															}}
 														>
-															<ShieldCheck size={13} className="text-slate-400" />
+															<ShieldCheck size={13} className="text-[var(--muted)]" />
 															<span>Пароль</span>
 														</button>
 													</div>
@@ -668,6 +679,15 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 						await reloadStaffList(loadDashboard);
 						setSelectedStaffForCard(null);
 					}}
+				/>
+			)}
+
+			{isTimesheetT13Open && (
+				<TimesheetT13Modal
+					isOpen={isTimesheetT13Open}
+					onClose={() => setIsTimesheetT13Open(false)}
+					clinicName={dashboard?.clinicSettings?.name || dashboard?.clinicName}
+					employees={staffToEmployeeInfo(staff)}
 				/>
 			)}
 		</section>

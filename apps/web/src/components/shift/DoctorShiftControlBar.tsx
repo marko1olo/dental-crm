@@ -1,6 +1,7 @@
 import React from "react";
 import {
 	Calculator,
+	Calendar,
 	ChevronRight,
 	Moon,
 	Radio,
@@ -23,6 +24,7 @@ export interface DoctorShiftControlBarProps {
 	readonly isShiftOpen: boolean;
 	readonly onToggleShift: () => void;
 	readonly onOpenPayrollModal: () => void;
+	readonly onOpenT13Timesheet?: (() => void) | undefined;
 	readonly shiftStats: DoctorShiftStats;
 	readonly doctorName?: string | null | undefined;
 	readonly cabinetName?: string | undefined;
@@ -47,6 +49,7 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 	isShiftOpen,
 	onToggleShift,
 	onOpenPayrollModal,
+	onOpenT13Timesheet,
 	shiftStats,
 	doctorName,
 	cabinetName = "Кабинет №1",
@@ -66,12 +69,12 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 				background: "var(--paper)",
 				border: "1px solid var(--line)",
 				borderRadius: "12px",
-				padding: "10px 14px",
+				padding: "14px 16px",
 				marginBottom: "12px",
 				boxShadow: "var(--shadow-1)",
 				display: "flex",
 				flexDirection: "column",
-				gap: "10px",
+				gap: "12px",
 			}}
 			data-testid="doctor-shift-control-bar"
 		>
@@ -186,15 +189,25 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 				</div>
 
 				{/* Right: Actions */}
-				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+				<div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
 					<button
 						type="button"
 						onClick={onToggleShift}
-						className={`min-h-[32px] h-8 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-							isShiftOpen
-								? "bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
-								: "bg-teal-600 text-white hover:bg-teal-700 shadow-sm"
-						}`}
+						style={{
+							height: "32px",
+							borderRadius: "8px",
+							padding: "0 12px",
+							fontSize: "12px",
+							fontWeight: 600,
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "6px",
+							cursor: "pointer",
+							transition: "all 0.15s ease",
+							background: isShiftOpen ? "var(--paper-soft)" : "var(--teal)",
+							border: isShiftOpen ? "1px solid var(--line)" : "1px solid transparent",
+							color: isShiftOpen ? "var(--ink)" : "#ffffff",
+						}}
 						title={isShiftOpen ? "Завершить рабочую смену" : "Открыть смену врача"}
 					>
 						<Zap size={14} />
@@ -204,12 +217,53 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 					<button
 						type="button"
 						onClick={onOpenPayrollModal}
-						className="min-h-[32px] h-8 px-3 py-1 rounded-lg text-xs font-bold bg-teal-50 dark:bg-teal-950/50 border border-teal-500/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/60 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+						style={{
+							height: "32px",
+							borderRadius: "8px",
+							padding: "0 12px",
+							fontSize: "12px",
+							fontWeight: 600,
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "6px",
+							cursor: "pointer",
+							transition: "all 0.15s ease",
+							background: "var(--paper-soft)",
+							border: "1px solid var(--line)",
+							color: "var(--ink)",
+						}}
 						title="Расчет зарплаты врачей (Зарплатная ведомость): детализированный расчет за смену"
 					>
 						<Calculator size={14} />
 						<span>Расчет зарплаты</span>
 					</button>
+
+					{onOpenT13Timesheet && (
+						<button
+							type="button"
+							onClick={onOpenT13Timesheet}
+							style={{
+								height: "32px",
+								borderRadius: "8px",
+								padding: "0 12px",
+								fontSize: "12px",
+								fontWeight: 600,
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "6px",
+								cursor: "pointer",
+								transition: "all 0.15s ease",
+								background: "var(--paper-soft)",
+								border: "1px solid var(--line)",
+								color: "var(--ink)",
+							}}
+							title="Унифицированный табель учета рабочего времени персонала (Форма Т-13 Госкомстата РФ)"
+							data-testid="btn-shift-open-timesheet-t13"
+						>
+							<Calendar size={14} className="text-[var(--teal)]" />
+							<span>Табель Т-13 (Госкомстат)</span>
+						</button>
+					)}
 				</div>
 			</div>
 
@@ -224,7 +278,7 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 				{/* KPI 1: Patients Seen */}
 				<div
 					style={{
-						padding: "6px 10px",
+						padding: "8px 12px",
 						borderRadius: "8px",
 						background: "var(--paper-soft)",
 						border: "1px solid var(--line)",
@@ -233,6 +287,7 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 						justifyContent: "space-between",
 						gap: "8px",
 						minWidth: 0,
+						height: "40px",
 					}}
 				>
 					<span
@@ -240,13 +295,15 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 							fontSize: "11px",
 							fontWeight: 600,
 							color: "var(--muted)",
+							textTransform: "uppercase",
+							letterSpacing: "0.02em",
 							whiteSpace: "nowrap",
 						}}
 					>
 						Пациенты за смену
 					</span>
 					<div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
-						<strong style={{ fontSize: "14px", fontWeight: 800, color: "var(--ink)" }}>
+						<strong style={{ fontSize: "14px", fontWeight: 800, color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>
 							{shiftStats.completedCount}
 						</strong>
 						<span style={{ fontSize: "11px", color: "var(--muted)" }}>
@@ -258,7 +315,7 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 				{/* KPI 2: Billed Services Revenue */}
 				<div
 					style={{
-						padding: "6px 10px",
+						padding: "8px 12px",
 						borderRadius: "8px",
 						background: "var(--paper-soft)",
 						border: "1px solid var(--line)",
@@ -267,6 +324,7 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 						justifyContent: "space-between",
 						gap: "8px",
 						minWidth: 0,
+						height: "40px",
 					}}
 				>
 					<span
@@ -274,12 +332,14 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 							fontSize: "11px",
 							fontWeight: 600,
 							color: "var(--muted)",
+							textTransform: "uppercase",
+							letterSpacing: "0.02em",
 							whiteSpace: "nowrap",
 						}}
 					>
 						Оказано услуг (касса)
 					</span>
-					<strong style={{ fontSize: "14px", fontWeight: 800, color: "var(--ink)" }}>
+					<strong style={{ fontSize: "14px", fontWeight: 800, color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>
 						{money(shiftStats.totalRevenueRub)}
 					</strong>
 				</div>
@@ -287,7 +347,7 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 				{/* KPI 3: Doctor Calculated Payout */}
 				<div
 					style={{
-						padding: "6px 10px",
+						padding: "8px 12px",
 						borderRadius: "8px",
 						background: "var(--teal-surface, rgba(13, 148, 136, 0.08))",
 						border: "1px solid var(--teal-ring, rgba(13, 148, 136, 0.25))",
@@ -296,6 +356,7 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 						justifyContent: "space-between",
 						gap: "8px",
 						minWidth: 0,
+						height: "40px",
 					}}
 				>
 					<span
@@ -303,6 +364,8 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 							fontSize: "11px",
 							fontWeight: 700,
 							color: "var(--teal-dark, #0f766e)",
+							textTransform: "uppercase",
+							letterSpacing: "0.02em",
 							whiteSpace: "nowrap",
 						}}
 					>
@@ -314,6 +377,7 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 								fontSize: "14px",
 								fontWeight: 800,
 								color: "var(--teal-dark, #0f766e)",
+								fontVariantNumeric: "tabular-nums",
 							}}
 						>
 							{money(shiftStats.estimatedDoctorPayoutRub)}
