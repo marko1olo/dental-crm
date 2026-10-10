@@ -1,8 +1,11 @@
-import { describe, it } from "node:test";
-import assert from "node:assert/strict";
+import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+const assert = {
+	ok: (val: any, msg?: string) => expect(Boolean(val), msg).toBe(true),
+};
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,9 +17,12 @@ describe("Dental Lab Responsiveness, 32px Dense Registry & Perfect Print Audit",
 
 	it("1. Desktop Registry (LabOrdersPage.tsx) provides dense 32px grid and 5 canonical status filters", () => {
 		const filePath = path.join(pagesDir, "LabOrdersPage.tsx");
-		assert.ok(fs.existsSync(filePath), "LabOrdersPage.tsx must exist");
 		const labOrdersViewPath = path.resolve(__dirname, "../../dental-lab/DentalLabOrdersView.tsx");
-		const content = fs.readFileSync(filePath, "utf-8") + (fs.existsSync(labOrdersViewPath) ? "\n" + fs.readFileSync(labOrdersViewPath, "utf-8") : "");
+		const ordersViewDir = path.resolve(__dirname, "../../dental-lab/ordersView");
+		const ordersViewContent = fs.existsSync(ordersViewDir)
+			? fs.readdirSync(ordersViewDir).filter((f) => f.endsWith(".ts") || f.endsWith(".tsx")).map((f) => fs.readFileSync(path.join(ordersViewDir, f), "utf-8")).join("\n")
+			: "";
+		const content = fs.readFileSync(filePath, "utf-8") + (fs.existsSync(labOrdersViewPath) ? "\n" + fs.readFileSync(labOrdersViewPath, "utf-8") : "") + "\n" + ordersViewContent;
 
 		// 5 Canonical Status Filter Chips & IDs
 		assert.ok(content.includes("lab-status-filter-"), "Must have status filter data-testids");

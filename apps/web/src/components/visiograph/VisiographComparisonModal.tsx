@@ -7,6 +7,7 @@
  */
 
 import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { RadiologyConsultationSplit } from "../radiology/RadiologyConsultationSplit.js";
 import type { RadiologyStudy } from "../radiology/types.js";
 import type { RadiologyFilmstripItem } from "../radiology/RadiologyFilmstripDock.js";
@@ -43,6 +44,7 @@ export const VisiographComparisonModal: React.FC<VisiographComparisonModalProps>
 		if (!isOpen) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
+				e.stopPropagation();
 				onClose();
 			}
 		};
@@ -51,16 +53,30 @@ export const VisiographComparisonModal: React.FC<VisiographComparisonModalProps>
 	}, [isOpen, onClose]);
 
 	if (!isOpen) return null;
+	if (typeof document === "undefined") return null;
 
-	return (
+	const modalContent = (
 		<div
-			className="fixed inset-0 z-50 flex flex-col bg-black/85 backdrop-blur-xs p-2 sm:p-4 select-none"
-			data-testid="visiograph-comparison-modal"
-			role="dialog"
-			aria-modal="true"
-			aria-label="Сплит-сравнение визиограмм и консультация"
+			className="fixed inset-0 z-[99999] flex flex-col p-2 sm:p-4 select-none"
+			style={{
+				backgroundColor: "rgba(15, 23, 42, 0.72)",
+				backdropFilter: "blur(4px)",
+			}}
+			onClick={(e) => {
+				if (e.target === e.currentTarget) onClose();
+			}}
 		>
-			<div className="w-full h-full flex flex-col rounded-2xl overflow-hidden border border-[#334155] shadow-2xl bg-[#020617]">
+			<div
+				className="w-full h-full flex flex-col rounded-2xl overflow-hidden border border-[#334155] shadow-2xl bg-[#020617]"
+				style={{
+					backgroundColor: "#020617",
+					borderColor: "#334155",
+				}}
+				data-testid="visiograph-comparison-modal"
+				role="dialog"
+				aria-modal="true"
+				aria-label="Сплит-сравнение визиограмм и консультация"
+			>
 				<RadiologyConsultationSplit
 					patientName={patientName}
 					patientCardNumber={patientCardNumber}
@@ -76,4 +92,6 @@ export const VisiographComparisonModal: React.FC<VisiographComparisonModalProps>
 			</div>
 		</div>
 	);
+
+	return createPortal(modalContent, document.body);
 };

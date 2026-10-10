@@ -3,7 +3,8 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { X, CheckCircle2, Sparkles, AlertTriangle, Calendar, Zap } from "lucide-react";
+import { createPortal } from "react-dom";
+import { X, CheckCircle2, Sparkles, AlertTriangle, Calendar, Zap, Layers } from "lucide-react";
 import {
 	type OrthopedicWorkTypeId,
 	ORTHOPEDIC_WORK_TYPES,
@@ -38,27 +39,41 @@ export interface DentalLabCreateOrderModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly onCreateOrder: (order: DentalLabWorkflowOrder) => void;
-	readonly sampleLabs: readonly string[];
+	readonly sampleLabs?: readonly string[] | undefined;
 	readonly currentDoctorName?: string | undefined;
 	readonly currentPatientName?: string | undefined;
 	readonly currentPatientId?: string | undefined;
 	readonly currentToothNumber?: number | string | undefined;
+	readonly treatmentPlanId?: string | undefined;
+	readonly stageNumber?: number | undefined;
+	readonly stageTitle?: string | undefined;
+	readonly initialTeeth?: readonly (number | string)[] | undefined;
 }
+
+const DEFAULT_SAMPLE_LABS: readonly string[] = [
+	"Центральная зуботехническая лаборатория «Денте-Лаб»",
+	"Цифровая CAD/CAM лаборатория «Циркон-Про»",
+	"Собственная ЗТЛ клиники",
+];
 
 export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps> = ({
 	isOpen,
 	onClose,
 	onCreateOrder,
-	sampleLabs,
+	sampleLabs = DEFAULT_SAMPLE_LABS,
 	currentDoctorName,
 	currentPatientName,
 	currentPatientId,
 	currentToothNumber,
+	treatmentPlanId,
+	stageNumber,
+	stageTitle,
+	initialTeeth,
 }) => {
 	const [newPatientName, setNewPatientName] = useState<string>("");
 	const [newChartNumber, setNewChartNumber] = useState<string>("");
 	const [newDoctorName, setNewDoctorName] = useState<string>("");
-	const [newLabName, setNewLabName] = useState<string>(sampleLabs[0] || "Центральная зуботехническая лаборатория");
+	const [newLabName, setNewLabName] = useState<string>(sampleLabs?.[0] || "Центральная зуботехническая лаборатория");
 	const [newWorkType, setNewWorkType] = useState<OrthopedicWorkTypeId>("crown_zirconia");
 	const [newTeethInput, setNewTeethInput] = useState<string>("");
 	const [newShade, setNewShade] = useState<string>("A2");
@@ -84,16 +99,40 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 	const [newFixationType, setNewFixationType] = useState<FixationType | "">("");
 	const [newTechStage, setNewTechStage] = useState<LabTechnologicalStageId>("impression_scan");
 
-	// Pre-fill on open with current patient and tooth
+	// Pre-fill on open with current patient, plan stage and teeth
 	useEffect(() => {
 		if (isOpen) {
 			if (currentPatientName) setNewPatientName(currentPatientName);
 			if (currentDoctorName) setNewDoctorName(currentDoctorName);
-			if (currentToothNumber) setNewTeethInput(String(currentToothNumber));
+			if (initialTeeth && initialTeeth.length > 0) {
+				setNewTeethInput(initialTeeth.join(", "));
+			} else if (currentToothNumber) {
+				setNewTeethInput(String(currentToothNumber));
+			}
+			if (stageTitle) {
+				const stageNote = `[План лечения: Этап ${stageNumber ?? 1} · ${stageTitle}]`;
+				setNewClinicalNotes((prev) =>
+					prev.includes(stageNote) ? prev : prev ? `${stageNote}\n${prev}` : stageNote,
+				);
+			}
 		}
-	}, [isOpen, currentPatientName, currentDoctorName, currentToothNumber]);
+	}, [isOpen, currentPatientName, currentDoctorName, currentToothNumber, initialTeeth, stageNumber, stageTitle]);
+
+	// Close on Escape key (Universal Modal A11y)
+	useEffect(() => {
+		if (!isOpen) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				e.stopPropagation();
+				onClose();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, onClose]);
 
 	if (!isOpen) return null;
+	if (typeof document === "undefined") return null;
 
 	const handleWorkTypeChange = (val: OrthopedicWorkTypeId) => {
 		setNewWorkType(val);
@@ -217,24 +256,46 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 		onClose();
 	};
 
-	return (
-		<div className="ztl-detail-overlay">
-			<div className="ztl-detail-card">
+	const modalContent = (
+		<div className="ztl-detail-overlay" style={{ zIndex: 99999 }}>
+			<div className="ztl-detail-card" data-testid="dental-lab-create-order-modal" role="dialog" aria-modal="true" aria-labelledby="ztl-create-order-title">
 				<header className="ztl-detail-header">
-					<h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700 }}>
-						Оформление наряд-заказа в зуботехническую лабораторию (ЗТЛ)
-					</h3>
+					<div className="flex items-center gap-2 flex-wrap min-w-0">
+						<h3 id="ztl-create-order-title" style={{ margin: 0, fontSize: "14px", fontWeight: 700 }}>
+							Оформление наряд-заказа в зуботехническую лабораторию (ЗТЛ)
+						</h3>
+						{(stageTitle || stageNumber != null) && (
+							<span
+								className="px-2 py-0.5 text-[11px] font-semibold rounded bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 whitespace-nowrap inline-flex items-center gap-1 shadow-2xs"
+								data-testid="lab-create-order-stage-badge"
+							>
+								<Layers size={11} className="text-teal-600 dark:text-teal-400" />
+								<span>Этап {stageNumber ?? 1}: {stageTitle || "Ортопедия"}</span>
+							</span>
+						)}
+					</div>
 					<button
 						type="button"
 						className="ztl-btn-icon"
 						onClick={onClose}
+						aria-label="Закрыть"
+						data-testid="btn-close-create-lab-order"
 					>
 						<X size={16} />
 					</button>
 				</header>
 
-				<form onSubmit={handleCreateOrderSubmit}>
-					<div className="ztl-detail-body">
+				<form
+					onSubmit={handleCreateOrderSubmit}
+					style={{
+						display: "flex",
+						flexDirection: "column",
+						flex: 1,
+						minHeight: 0,
+						overflow: "hidden",
+					}}
+				>
+					<div className="ztl-detail-body" style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
 						{/* 1-Click Chairside Express Presets Bar */}
 						<div
 							style={{
@@ -251,7 +312,7 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 						>
 							<span style={{ fontSize: "11.5px", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px", color: "var(--ink, #1e293b)" }}>
 								<Zap size={13} className="text-amber-500" />
-								<span>1-Клик пресеты:</span>
+								<span>Быстрые шаблоны:</span>
 							</span>
 							<button
 								type="button"
@@ -545,7 +606,7 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 								/>
 							</div>
 							<div className="ztl-form-group">
-								<label className="ztl-form-label">Дата примерки в расписании (fittingDate)</label>
+								<label className="ztl-form-label">Дата примерки в расписании</label>
 								<input
 									type="date"
 									className="ztl-form-input"
@@ -578,7 +639,7 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 									style={{ width: "16px", height: "16px", accentColor: "var(--teal, #0d9488)", cursor: "pointer" }}
 									data-testid="ztl-auto-book-fitting-checkbox"
 								/>
-								<span>Автоматически забронировать визит на примерку в расписании врача (1 клик)</span>
+								<span>Автоматически забронировать визит на примерку в расписании врача</span>
 							</label>
 							{autoBookFitting && (
 								<p style={{ margin: "2px 0 0 24px", fontSize: "11px", color: "var(--muted, #4b5563)" }}>
@@ -589,11 +650,11 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 
 						<div className="ztl-form-grid-2">
 							<div className="ztl-form-group">
-								<label className="ztl-form-label">ID приема в расписании (appointmentId)</label>
+								<label className="ztl-form-label">Номер записи в расписании</label>
 								<input
 									type="text"
 									className="ztl-form-input"
-									placeholder="appt-1234"
+									placeholder="Например: Визит №1234"
 									value={newAppointmentId}
 									onChange={(e) => setNewAppointmentId(e.target.value)}
 								/>
@@ -648,7 +709,7 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 						</div>
 					</div>
 
-					<footer className="ztl-detail-footer">
+					<footer className="ztl-detail-footer" style={{ flexShrink: 0 }}>
 						<button
 							type="button"
 							className="ztl-btn-secondary"
@@ -665,4 +726,6 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 			</div>
 		</div>
 	);
+
+	return createPortal(modalContent, document.body);
 };

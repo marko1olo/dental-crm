@@ -11,7 +11,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
@@ -286,6 +286,16 @@ describe("Targeted Treatment Plan Stage Handoff Engine", () => {
 		assert.ok(
 			normalizedHtml.includes("Взять Этап 2 в работу визита"),
 			"Button text must explicitly target Stage 2",
+		);
+
+		// Lab order button should be present
+		assert.ok(
+			normalizedHtml.includes('data-testid="handoff-stage-lab-order-btn"'),
+			"Must render handoff stage lab order button",
+		);
+		assert.ok(
+			normalizedHtml.includes("Заказ в ЗТЛ"),
+			"Must include lab order label",
 		);
 	});
 

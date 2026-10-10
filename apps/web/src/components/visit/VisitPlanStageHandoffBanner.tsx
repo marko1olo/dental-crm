@@ -11,6 +11,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import {
 	CheckCircle2,
 	Clock,
+	FlaskConical,
 	Layers,
 	ShieldCheck,
 	Tag,
@@ -27,6 +28,7 @@ export interface VisitPlanStageHandoffBannerProps {
 	activePatient?: any | null | undefined;
 	style?: React.CSSProperties;
 	onTakeStage?: (stage: { title: string; stageNumber: number; items: any[] }, items: any[]) => void;
+	onOpenLabOrder?: (stage: { title: string; stageNumber: number; items: any[] }, items: any[]) => void;
 }
 
 export function VisitPlanStageHandoffBanner({
@@ -35,6 +37,7 @@ export function VisitPlanStageHandoffBanner({
 	activePatient,
 	style,
 	onTakeStage,
+	onOpenLabOrder,
 }: VisitPlanStageHandoffBannerProps) {
 	// 1. Extract appointment stage targeting info
 	const appointmentStageTarget = useMemo(() => {
@@ -132,6 +135,35 @@ export function VisitPlanStageHandoffBanner({
 		}
 	};
 
+	const handleOpenLabOrderForStage = () => {
+		const stagePayload = {
+			title: displayStageTitle,
+			stageNumber: typeof selectedStageKey === "number" ? selectedStageKey : 1,
+			items: selectedItems,
+		};
+
+		if (typeof onOpenLabOrder === "function") {
+			onOpenLabOrder(stagePayload, selectedItems);
+		}
+
+		if (typeof window !== "undefined") {
+			const detailPayload = {
+				treatmentPlanId: loadedTreatmentPlan?.id,
+				stageNumber: typeof selectedStageKey === "number" ? selectedStageKey : 1,
+				stageTitle: displayStageTitle,
+				items: selectedItems,
+				patientId: activePatient?.id,
+				patientName: activePatient?.fullName || activePatient?.name,
+			};
+			window.dispatchEvent(
+				new CustomEvent("dente-open-lab-order-modal", { detail: detailPayload }),
+			);
+			window.dispatchEvent(
+				new CustomEvent("dente-open-create-lab-order", { detail: detailPayload }),
+			);
+		}
+	};
+
 	return (
 		<div
 			data-testid="visit-treatment-plan-handoff-banner"
@@ -202,21 +234,34 @@ export function VisitPlanStageHandoffBanner({
 					</div>
 				</div>
 
-				{/* Primary action CTA button (Apple HIG >= 44px touch target) */}
-				<button
-					type="button"
-					data-testid="take-stage-to-visit-btn"
-					onClick={handleExecuteTakeStage}
-					className="primary-button min-h-[44px] h-11 w-full sm:w-auto px-4 rounded-xl text-sm font-bold cursor-pointer transition-all flex items-center justify-center gap-2 shadow-2xs active:scale-95 shrink-0"
-					title="Перенести выбранный этап плана лечения в текущий визит и счет"
-				>
-					<CheckCircle2 size={16} />
-					<span>
-						{typeof selectedStageKey === "number"
-							? `Взять этап ${selectedStageKey} в работу`
-							: "Взять этап в работу"}
-					</span>
-				</button>
+				{/* Action CTA buttons (Apple HIG >= 44px touch target) */}
+				<div className="flex items-center gap-2 w-full sm:w-auto">
+					<button
+						type="button"
+						data-testid="take-stage-to-visit-btn"
+						onClick={handleExecuteTakeStage}
+						className="primary-button min-h-[44px] h-11 flex-1 sm:flex-none px-4 rounded-xl text-sm font-bold cursor-pointer transition-all flex items-center justify-center gap-2 shadow-2xs active:scale-95 shrink-0"
+						title="Перенести выбранный этап плана лечения в текущий визит и счет"
+					>
+						<CheckCircle2 size={16} />
+						<span>
+							{typeof selectedStageKey === "number"
+								? `Взять Этап ${selectedStageKey} в работу визита`
+								: "Взять этап в работу визита"}
+						</span>
+					</button>
+
+					<button
+						type="button"
+						data-testid="handoff-stage-lab-order-btn"
+						onClick={handleOpenLabOrderForStage}
+						className="secondary-button min-h-[44px] h-11 px-3.5 rounded-xl text-xs font-semibold cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 shrink-0 border border-[var(--teal,#0d9488)]/40 bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--teal-dark,#0f766e)] dark:text-teal-300 hover:bg-[var(--teal,#0d9488)]/10"
+						title="Сформировать наряд-заказ в зуботехническую лабораторию (ЗТЛ) по данному этапу"
+					>
+						<FlaskConical size={15} />
+						<span>Заказ в ЗТЛ</span>
+					</button>
+				</div>
 			</div>
 
 			{/* Stage Selector Chips (Apple HIG Segmented Bar pattern >= 44px tap zone) */}
