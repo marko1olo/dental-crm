@@ -18,6 +18,283 @@
 }
 
 /* ==========================================================================
+   UNIFIED BUTTON MATRIX (Authority: rules/frontend.md §17 & Button Architect)
+   1. Primary CTA:      h-10 px-4 rounded-xl bg-[var(--teal,#0d9488)] text-white hover:bg-[var(--teal-hover,#0f766e)] font-medium text-sm transition-all shadow-sm active:scale-[0.98]
+   2. Secondary Button: h-10 px-4 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-[var(--line-dark,#1e293b)] bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-dark,#0f172a)] text-[var(--foreground,#0f172a)] dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium text-sm transition-all
+   3. Ghost / Sub:      h-9 px-3 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-xs transition-all
+   4. Pills / Presets:  h-8 px-3 rounded-lg text-xs font-medium with clear geometry and active accent
+   5. Icon-only Button: 36x36px desktop / 44x44px touch, centered Lucide vector icon
+   ========================================================================== */
+
+.btn-primary,
+.btn-primary-cta,
+button.btn-primary,
+button.btn-primary-cta {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	height: 40px;
+	min-height: 40px;
+	max-height: 40px;
+	padding: 0 16px;
+	border-radius: 12px;
+	background: var(--teal, #0d9488);
+	border: 1px solid var(--teal, #0d9488);
+	color: #ffffff;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
+}
+
+.btn-primary:hover:not(:disabled),
+.btn-primary-cta:hover:not(:disabled) {
+	background: var(--teal-hover, #0f766e);
+	border-color: var(--teal-hover, #0f766e);
+	color: #ffffff;
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+	transform: translateY(-1px);
+}
+
+.btn-primary:active:not(:disabled),
+.btn-primary-cta:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+.btn-secondary,
+.btn-secondary-action,
+button.btn-secondary,
+button.btn-secondary-action {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	height: 40px;
+	min-height: 40px;
+	max-height: 40px;
+	padding: 0 16px;
+	border-radius: 12px;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	color: var(--foreground, #0f172a);
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .btn-secondary,
+[data-theme="dark"] .btn-secondary-action,
+.dark .btn-secondary,
+.dark .btn-secondary-action {
+	background: var(--paper-dark, #0f172a);
+	border-color: var(--line-dark, #1e293b);
+	color: #f1f5f9;
+}
+
+.btn-secondary:hover:not(:disabled),
+.btn-secondary-action:hover:not(:disabled) {
+	background: #f8fafc;
+	border-color: var(--line-strong, #cbd5e1);
+	transform: translateY(-1px);
+}
+
+[data-theme="dark"] .btn-secondary:hover:not(:disabled),
+[data-theme="dark"] .btn-secondary-action:hover:not(:disabled),
+.dark .btn-secondary:hover:not(:disabled),
+.dark .btn-secondary-action:hover:not(:disabled) {
+	background: #1e293b;
+	border-color: #334155;
+	color: #ffffff;
+}
+
+.btn-ghost,
+.btn-ghost-action,
+button.btn-ghost,
+button.btn-ghost-action {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 36px;
+	min-height: 36px;
+	max-height: 36px;
+	padding: 0 12px;
+	border-radius: 8px;
+	background: transparent;
+	border: 1px solid transparent;
+	color: #475569;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1;
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .btn-ghost,
+[data-theme="dark"] .btn-ghost-action,
+.dark .btn-ghost,
+.dark .btn-ghost-action {
+	color: #cbd5e1;
+}
+
+.btn-ghost:hover:not(:disabled),
+.btn-ghost-action:hover:not(:disabled) {
+	background: #f1f5f9;
+	color: #0f172a;
+}
+
+[data-theme="dark"] .btn-ghost:hover:not(:disabled),
+[data-theme="dark"] .btn-ghost-action:hover:not(:disabled),
+.dark .btn-ghost:hover:not(:disabled),
+.dark .btn-ghost-action:hover:not(:disabled) {
+	background: #1e293b;
+	color: #ffffff;
+}
+
+.btn-pill,
+.pill-preset-btn,
+button.btn-pill,
+button.pill-preset-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	color: #334155;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1;
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .btn-pill,
+[data-theme="dark"] .pill-preset-btn,
+.dark .btn-pill,
+.dark .pill-preset-btn {
+	border-color: var(--line-dark, #1e293b);
+	background: rgba(30, 41, 59, 0.6);
+	color: #e2e8f0;
+}
+
+.btn-pill:hover:not(:disabled),
+.pill-preset-btn:hover:not(:disabled) {
+	background: var(--paper, #ffffff);
+	border-color: var(--line-strong, #cbd5e1);
+}
+
+[data-theme="dark"] .btn-pill:hover:not(:disabled),
+[data-theme="dark"] .pill-preset-btn:hover:not(:disabled),
+.dark .btn-pill:hover:not(:disabled),
+.dark .pill-preset-btn:hover:not(:disabled) {
+	background: #334155;
+	color: #ffffff;
+}
+
+.btn-pill.active,
+.pill-preset-btn.active {
+	border-color: var(--teal, #0d9488) !important;
+	background: var(--teal-soft, #ccfbf1) !important;
+	color: var(--teal-dark, #0f766e) !important;
+	font-weight: 600 !important;
+}
+
+[data-theme="dark"] .btn-pill.active,
+[data-theme="dark"] .pill-preset-btn.active,
+.dark .btn-pill.active,
+.dark .pill-preset-btn.active {
+	border-color: var(--teal, #0d9488) !important;
+	background: rgba(13, 148, 136, 0.22) !important;
+	color: #2dd4bf !important;
+}
+
+.btn-icon,
+.btn-icon-square,
+.icon-only-btn,
+button.btn-icon,
+button.icon-only-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	min-width: 36px;
+	max-width: 36px;
+	height: 36px;
+	min-height: 36px;
+	max-height: 36px;
+	padding: 0;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: #475569;
+	cursor: pointer;
+	user-select: none;
+	transition: all 0.15s ease;
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .btn-icon,
+[data-theme="dark"] .icon-only-btn,
+.dark .btn-icon,
+.dark .icon-only-btn {
+	border-color: var(--line-dark, #1e293b);
+	background: var(--paper-dark, #0f172a);
+	color: #cbd5e1;
+}
+
+.btn-icon:hover:not(:disabled),
+.icon-only-btn:hover:not(:disabled) {
+	background: #f8fafc;
+	color: #0f172a;
+}
+
+[data-theme="dark"] .btn-icon:hover:not(:disabled),
+[data-theme="dark"] .icon-only-btn:hover:not(:disabled),
+.dark .btn-icon:hover:not(:disabled),
+.dark .icon-only-btn:hover:not(:disabled) {
+	background: #1e293b;
+	color: #ffffff;
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.btn-icon,
+	.btn-icon-square,
+	.icon-only-btn {
+		width: 44px;
+		min-width: 44px;
+		max-width: 44px;
+		height: 44px;
+		min-height: 44px;
+		max-height: 44px;
+		border-radius: 10px;
+	}
+}
+
+/* ==========================================================================
    1. BASE BUTTON FOUNDATION
    ========================================================================== */
 
@@ -752,6 +1029,44 @@ button:is([class*="border"]):not([class*="border-none"]):not([class*="border-tra
 	box-shadow: 0 1px 4px rgba(13, 148, 136, 0.4) !important;
 }
 
+/* Schedule Toolbar Button Harmonization: Unified 32px height, 8px outer radius */
+.schedule-filter-strip .dente-filter-chip,
+.schedule-filter-strip .quick-chip {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	border-radius: 8px !important;
+	padding: 0 10px !important;
+	font-size: 12.5px !important;
+	line-height: 1 !important;
+}
+
+.schedule-filter-strip .schedule-add-chair-chip-btn {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	border-radius: 8px !important;
+}
+
+.schedule-filter-strip .dente-segmented-bar {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	padding: 2px !important;
+	border-radius: 8px !important;
+	box-sizing: border-box;
+}
+
+.schedule-filter-strip .dente-segmented-item {
+	height: 26px !important;
+	min-height: 26px !important;
+	max-height: 26px !important;
+	border-radius: 6px !important;
+	padding: 0 8px !important;
+	font-size: 12px !important;
+	line-height: 1 !important;
+}
+
 /* ==========================================================================
    11. ANTI-NAKED-TEXT-ROW PROTECTION & BUTTON GROUP SYSTEM
    Guarantees: Zero raw, unstyled consecutive text buttons side-by-side!
@@ -1354,7 +1669,151 @@ button.emk-toolbar-btn[aria-expanded="true"] {
 	color: #fda4af !important;
 }
 
+/* ==========================================================================
+   14. CLINICAL QUICK PRESETS & TOOTH SELECTOR CONTROLS
+   ========================================================================== */
 
+.clinical-presets-title-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 6px;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.14));
+	color: var(--teal, #0d9488);
+	flex-shrink: 0;
+}
 
+.clinical-active-tooth-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 24px;
+	padding: 0 8px;
+	border-radius: 6px;
+	font-size: 11.5px;
+	font-weight: 700;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.15));
+	border: 1px solid var(--teal, #0d9488);
+	color: var(--teal-dark, var(--teal, #0f766e));
+	white-space: nowrap;
+}
 
+[data-theme="dark"] .clinical-active-tooth-badge,
+.dark .clinical-active-tooth-badge {
+	color: #2dd4bf;
+}
 
+.clinical-tooth-status-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	height: 26px;
+	padding: 0 9px;
+	border-radius: 9999px;
+	font-size: 11.5px;
+	font-weight: 600;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	white-space: nowrap;
+}
+
+.clinical-tooth-btn,
+button.clinical-tooth-btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 5px !important;
+	height: 28px !important;
+	min-height: 28px !important;
+	max-height: 28px !important;
+	padding: 0 9px !important;
+	border-radius: 7px !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	line-height: 1 !important;
+	background: var(--paper) !important;
+	border: 1px solid var(--line-strong, var(--line)) !important;
+	color: var(--ink) !important;
+	cursor: pointer !important;
+	white-space: nowrap !important;
+	transition: all 0.15s ease !important;
+	box-sizing: border-box !important;
+}
+
+.clinical-tooth-btn:hover:not(.active):not([data-active="true"]) {
+	background: var(--paper-soft) !important;
+	border-color: var(--teal, #0d9488) !important;
+	color: var(--teal-dark, var(--teal)) !important;
+}
+
+.clinical-tooth-btn.active,
+.clinical-tooth-btn[data-active="true"] {
+	background: var(--teal, #0d9488) !important;
+	border-color: var(--teal-dark, #0f766e) !important;
+	color: #ffffff !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25) !important;
+}
+
+.clinical-fdi-select {
+	height: 28px !important;
+	min-height: 28px !important;
+	max-height: 28px !important;
+	padding: 0 8px !important;
+	border-radius: 7px !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	background: var(--paper) !important;
+	border: 1px solid var(--line-strong, var(--line)) !important;
+	color: var(--ink) !important;
+	cursor: pointer !important;
+	outline: none !important;
+}
+
+.clinical-protocol-card,
+button.clinical-protocol-card {
+	display: flex !important;
+	flex-direction: column !important;
+	align-items: flex-start !important;
+	justify-content: center !important;
+	gap: 4px !important;
+	min-height: 48px !important;
+	padding: 8px 12px !important;
+	border-radius: 10px !important;
+	background: var(--paper) !important;
+	border: 1.5px solid var(--line-strong, var(--line)) !important;
+	color: var(--ink) !important;
+	text-align: left !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+}
+
+.clinical-protocol-card:hover {
+	border-color: var(--teal, #0d9488) !important;
+	background: var(--paper-strong, var(--paper)) !important;
+	transform: translateY(-1px) !important;
+	box-shadow: 0 3px 8px rgba(13, 148, 136, 0.12) !important;
+}
+
+.clinical-protocol-icd-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1px 6px;
+	border-radius: 5px;
+	font-size: 10.5px;
+	font-weight: 700;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.14));
+	color: var(--teal-dark, var(--teal, #0f766e));
+	border: 1px solid rgba(13, 148, 136, 0.25);
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .clinical-protocol-icd-badge,
+.dark .clinical-protocol-icd-badge {
+	color: #2dd4bf;
+}
