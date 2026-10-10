@@ -7,17 +7,22 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+	AUTOCLAVE_CYCLE_PRESETS,
+	CHEMICAL_DISINFECTION_PRESETS,
 	createQuickAutoclaveCycle,
 	createQuickAzopyramRecord,
-	createQuickPhenolphthaleinRecord,
-	createStandardSterileTrayBarcode,
-	STANDARD_TRAY_OPTIONS,
 	createQuickCombinedPsoRecord,
 	createQuickDailyShiftAutoclaveCycles,
 	createQuickDailyShiftPsoRecords,
+	createQuickPhenolphthaleinRecord,
+	createStandardSterileTrayBarcode,
+	getChemicalDisinfectionPresetById,
+	PSO_QUALITY_CONTROL_PRESETS,
 	SANPIN_AUTOCLAVE_CLASS_B_PRESET,
+	SANPIN_AUTOCLAVE_VACUUM_TEST_PRESET,
 	SANPIN_AZOPYRAM_TEST_PRESET,
 	SANPIN_PHENOLPHTHALEIN_TEST_PRESET,
+	STANDARD_TRAY_OPTIONS,
 } from "../sterilizationPresets";
 
 describe("SterilizationSanPiN — 1-Click Presets & Quick Tray Generation", () => {
@@ -94,4 +99,26 @@ describe("SterilizationSanPiN — 1-Click Presets & Quick Tray Generation", () =
 		assert.equal(shiftPso[0]?.isApproved, true);
 		assert.equal(shiftPso[1]?.isApproved, true);
 	});
+
+	it("предоставляет модульные справочники AUTOCLAVE_CYCLE_PRESETS, CHEMICAL_DISINFECTION_PRESETS и PSO_QUALITY_CONTROL_PRESETS по СанПиН 3.3686-21", () => {
+		assert.ok(AUTOCLAVE_CYCLE_PRESETS.length >= 7);
+		assert.equal(SANPIN_AUTOCLAVE_CLASS_B_PRESET.temperatureC, 134);
+		assert.equal(SANPIN_AUTOCLAVE_VACUUM_TEST_PRESET.bowieDickResult, "passed");
+
+		assert.ok(CHEMICAL_DISINFECTION_PRESETS.length >= 6);
+		const alaminol = getChemicalDisinfectionPresetById("alaminol_instruments_immersion");
+		assert.ok(alaminol);
+		assert.equal(alaminol.concentrationPercent, 1.5);
+		assert.equal(alaminol.exposureMinutes, 60);
+
+		const ultrasonicBurs = getChemicalDisinfectionPresetById("optimax_pro_rotary_ultrasonic");
+		assert.ok(ultrasonicBurs);
+		assert.equal(ultrasonicBurs.methodRu, "ультразвуковая_ванна");
+		assert.equal(ultrasonicBurs.exposureMinutes, 15);
+
+		assert.equal(PSO_QUALITY_CONTROL_PRESETS.length, 2);
+		assert.equal(SANPIN_AZOPYRAM_TEST_PRESET.azopyramResult, "negative");
+		assert.equal(SANPIN_PHENOLPHTHALEIN_TEST_PRESET.phenolphthaleinResult, "negative");
+	});
 });
+
