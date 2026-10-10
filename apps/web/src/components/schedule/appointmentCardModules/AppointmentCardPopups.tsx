@@ -54,19 +54,19 @@ export function AppointmentCardHoverOverlay({
 	return (
 		<AppointmentHoverHud
 			appointment={appointment}
-			dashboard={dashboard}
-			displayStatus={displayStatus}
+			dashboard={dashboard as any}
+			displayStatus={displayStatus as any}
 			appointmentPatient={appointmentPatient}
 			appointmentPatientName={appointmentPatientName}
-			patientBalance={patientBalance}
+			patientBalance={patientBalance ?? null}
 			appointmentDoctor={appointmentDoctor}
 			appointmentAssistant={appointmentAssistant}
 			appointmentChair={appointmentChair}
 			cardTeeth={cardTeeth}
-			allergyAlert={allergyAlert}
+			allergyAlert={allergyAlert ?? null}
 			appointmentLabels={appointmentLabels}
 			formatTime={formatTime}
-			handleQuickStatusChange={handleQuickStatusChange}
+			handleQuickStatusChange={handleQuickStatusChange as any}
 			onCloseHover={handleCardMouseLeave}
 			onKeepHover={() => {
 				if (hoverTimeoutRef.current) {
@@ -127,21 +127,21 @@ export function AppointmentCardBottomPopups({
 			{/* Mobile Native Bottom Sheet for Progressive Disclosure on tap */}
 			<AppointmentMobileBottomSheet
 				appointment={appointment}
-				dashboard={dashboard}
+				dashboard={dashboard as any}
 				isOpen={isMobileSheetOpen}
 				onClose={() => setIsMobileSheetOpen(false)}
-				displayStatus={displayStatus}
+				displayStatus={displayStatus as any}
 				appointmentPatient={appointmentPatient}
 				appointmentPatientName={appointmentPatientName}
-				patientBalance={patientBalance}
+				patientBalance={patientBalance ?? null}
 				appointmentDoctor={appointmentDoctor}
 				appointmentAssistant={appointmentAssistant}
 				appointmentChair={appointmentChair}
 				cardTeeth={cardTeeth}
-				allergyAlert={allergyAlert}
+				allergyAlert={allergyAlert ?? null}
 				appointmentLabels={appointmentLabels}
 				formatTime={formatTime}
-				handleQuickStatusChange={handleQuickStatusChange}
+				handleQuickStatusChange={handleQuickStatusChange as any}
 				onCloseHover={() => {}}
 				onKeepHover={() => {}}
 				openAppointmentEditor={openAppointmentEditor}

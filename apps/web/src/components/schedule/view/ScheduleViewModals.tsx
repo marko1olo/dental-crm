@@ -12,7 +12,11 @@ import {
   type DoctorShift,
   type StaffMember as RosterStaffMember,
   type CabinetDefinition as RosterCabinetDefinition,
+  type DateRangeShiftPreset,
+  getMondayOfWeekIso,
 } from "../roster/DoctorShiftRosterModal";
+import { DoctorShiftDrawer } from "../roster/DoctorShiftDrawer";
+import { ChairDateRangeModal } from "../ChairDateRangeModal";
 import { QuickAddChairModal, type QuickAddChairData } from "../QuickAddChairModal";
 import { DoctorCalendarSyncModal } from "../DoctorCalendarSyncModal";
 import { PatientSearchModal } from "../PatientSearchModal";
@@ -82,6 +86,25 @@ export interface ScheduleViewModalsProps {
   handleSaveDoctorShifts: (shifts: DoctorShift[]) => Promise<void>;
   handleAddChairFromSchedule: (chairData: QuickAddChairData) => Promise<void>;
   showToast: (msg: string, type?: "success" | "error" | "info" | "warning", duration?: number) => void;
+  editingDrawerShift?: Partial<DoctorShift> | null;
+  setEditingDrawerShift?: React.Dispatch<React.SetStateAction<Partial<DoctorShift> | null>>;
+  isNewDrawerShift?: boolean;
+  onSaveDrawerShift?: (shift: DoctorShift, isNew: boolean) => void;
+  onDeleteDrawerShift?: (shiftId: string) => void;
+  onCloseDoctorShiftDrawer?: () => void;
+  isChairDateRangeModalOpen?: boolean;
+  setIsChairDateRangeModalOpen?: (open: boolean) => void;
+  chairRangeDoctorId?: string;
+  setChairRangeDoctorId?: (id: string) => void;
+  chairRangeChairId?: string;
+  setChairRangeChairId?: (id: string) => void;
+  chairRangeStartDate?: string;
+  setChairRangeStartDate?: (date: string) => void;
+  chairRangeEndDate?: string;
+  setChairRangeEndDate?: (date: string) => void;
+  chairRangePreset?: DateRangeShiftPreset;
+  setChairRangePreset?: (preset: DateRangeShiftPreset) => void;
+  onApplyChairDateRange?: () => void;
 }
 
 export function ScheduleViewModals(props: ScheduleViewModalsProps) {
@@ -90,6 +113,25 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
     setQuickBookingOpen,
     quickBookingSlot,
     setQuickBookingSlot,
+    editingDrawerShift,
+    setEditingDrawerShift,
+    isNewDrawerShift,
+    onSaveDrawerShift,
+    onDeleteDrawerShift,
+    onCloseDoctorShiftDrawer,
+    isChairDateRangeModalOpen,
+    setIsChairDateRangeModalOpen,
+    chairRangeDoctorId,
+    setChairRangeDoctorId,
+    chairRangeChairId,
+    setChairRangeChairId,
+    chairRangeStartDate,
+    setChairRangeStartDate,
+    chairRangeEndDate,
+    setChairRangeEndDate,
+    chairRangePreset,
+    setChairRangePreset,
+    onApplyChairDateRange,
     modalAppointment,
     setModalAppointment,
     doctorFreeSlotsOpen,
@@ -584,6 +626,38 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
           isOpen={isTomorrowRemindersOpen}
           onClose={() => setIsTomorrowRemindersOpen(false)}
           targetDateIso={scheduleDateFilter || undefined}
+        />
+      )}
+      {editingDrawerShift && onCloseDoctorShiftDrawer && setEditingDrawerShift && onSaveDrawerShift && onDeleteDrawerShift && (
+        <DoctorShiftDrawer
+          editingShift={editingDrawerShift}
+          isNewShift={Boolean(isNewDrawerShift)}
+          staffList={rosterStaffList}
+          cabinets={rosterCabinets}
+          weekStartDateIso={getMondayOfWeekIso(currentDateKey)}
+          onClose={onCloseDoctorShiftDrawer}
+          onChangeEditingShift={setEditingDrawerShift}
+          onSaveShift={onSaveDrawerShift}
+          onDeleteShift={onDeleteDrawerShift}
+        />
+      )}
+      {isChairDateRangeModalOpen && setIsChairDateRangeModalOpen && (
+        <ChairDateRangeModal
+          isOpen={isChairDateRangeModalOpen}
+          onClose={() => setIsChairDateRangeModalOpen(false)}
+          doctors={scheduleDoctors}
+          chairs={dashboard?.clinicSettings?.chairs ?? []}
+          rangeDoctorId={chairRangeDoctorId ?? ""}
+          setRangeDoctorId={setChairRangeDoctorId ?? (() => {})}
+          rangeChairId={chairRangeChairId ?? ""}
+          setRangeChairId={setChairRangeChairId ?? (() => {})}
+          rangeStartDate={chairRangeStartDate ?? currentDateKey}
+          setRangeStartDate={setChairRangeStartDate ?? (() => {})}
+          rangeEndDate={chairRangeEndDate ?? currentDateKey}
+          setRangeEndDate={setChairRangeEndDate ?? (() => {})}
+          rangePreset={chairRangePreset ?? "full"}
+          setRangePreset={setChairRangePreset ?? (() => {})}
+          onApply={onApplyChairDateRange ?? (() => {})}
         />
       )}
     </>

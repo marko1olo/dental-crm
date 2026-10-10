@@ -12,11 +12,13 @@ import {
   isCitoAppointment,
   type ChairMaintenanceBlock,
 } from "../../../utils/scheduleCollisionUtils";
-import { showToast } from "../../GlobalToast";
+import { showToast, showRollbackToast } from "../../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import type { ChairDoctorShiftAssignment } from "./gridTypes";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 import { useScheduleDensity, type ScheduleDensityMode } from "../useScheduleState";
+import { DecoupledDragGhost, dragGhostManager } from "./DecoupledDragGhost";
+import { snapSlotHourTo15Min } from "./scheduleQuantumEngine";
 
 export interface ScheduleAppointmentTrackProps {
   densityMode?: ScheduleDensityMode;
@@ -144,6 +146,7 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
   // Slot drop helper for Drag-and-Drop & Waitlist items
   const handleSlotDrop = (e: React.DragEvent, chair: any, hour: string) => {
     try {
+      dragGhostManager.endDrag();
       const rawData = e.dataTransfer.getData("application/json");
       if (!rawData) return;
       const data = JSON.parse(rawData);
@@ -153,7 +156,8 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
         );
         if (!sourceAppt) return;
         const targetChairId = chair.id !== "default-chair" ? chair.id : null;
-        const assignedDocId = getDoctorForChairAndHour(chair.id, hour);
+        const quantizedHour = snapSlotHourTo15Min(hour);
+        const assignedDocId = getDoctorForChairAndHour(chair.id, quantizedHour);
         const targetDoctorId =
           selectedDoctorId || assignedDocId || sourceAppt.doctorUserId;
         const targetDocName =
@@ -163,7 +167,7 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
           undefined;
         const slotDuration = data.durationMinutes || 30;
         const { startIso: targetStartIso, endIso: targetEndIso } =
-          safeBuildSlotIso(dateKey, hour, slotDuration);
+          safeBuildSlotIso(dateKey, quantizedHour, slotDuration);
         const isSourceCito = isCitoAppointment(sourceAppt);
 
         const collisionCheck = checkAppointmentResourceCollision(
@@ -203,6 +207,11 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
           );
         }
 
+        const prevStartsAt = sourceAppt.startsAt;
+        const prevEndsAt = sourceAppt.endsAt;
+        const prevChairId = sourceAppt.chairId;
+        const prevDoctorUserId = sourceAppt.doctorUserId;
+
         if (typeof onAppointmentMove === "function") {
           void Promise.resolve(
             onAppointmentMove(sourceAppt.id, {
@@ -217,13 +226,30 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
               const pName = patientName
                 ? patientName(dashboard?.patients ?? [], sourceAppt.patientId)
                 : "Пациент";
-              showToast(`«${pName}» перенесен(а) на ${hour}`, "success", 3000);
+              showRollbackToast(
+                `«${pName}» перенесен(а) на ${quantizedHour}`,
+                () => {
+                  void Promise.resolve(
+                    onAppointmentMove(sourceAppt.id, {
+                      startsAt: prevStartsAt,
+                      endsAt: prevEndsAt,
+                      chairId: prevChairId,
+                      doctorUserId: prevDoctorUserId,
+                      allowOverbooking: true,
+                    }),
+                  ).then(() => {
+                    showToast("Перенос отменен, время восстановлено", "info", 3000);
+                  });
+                },
+                5000,
+                "Отменить",
+              );
             }
           });
         } else {
           onSlotClick({
             dateKey,
-            startTime: hour,
+            startTime: quantizedHour,
             chairId: targetChairId,
             doctorUserId: targetDoctorId,
             doctorName: targetDocName,
@@ -419,6 +445,11 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
           }}
           data-chair-id={chair.id}
           data-chair-palette={chairPalette.nameRu}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+          }}
+          onDrop={(e) => handleSlotDrop(e, chair, hour)}
         >
           {cellMaintenance.map((mBlock) => {
             const mReasonLabel =
@@ -523,6 +554,11 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
           }}
           data-chair-id={chair.id}
           data-chair-palette={chairPalette.nameRu}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+          }}
+          onDrop={(e) => handleSlotDrop(e, chair, hour)}
         >
           {unrenderedContinuing.map((a) => {
             const isNearBottom = hIndex >= slotsList.length - 4;
@@ -674,92 +710,97 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
   if (canSplitShift) {
     const chair = effectiveChairs[0];
     return (
-      <div
-        className="schedule-split-day-track grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[var(--line)] border-b border-[var(--line)] bg-[var(--paper)]"
-        data-testid="schedule-split-day-track"
-      >
-        {/* Morning Shift (08:00 — 14:00) */}
-        <div className="schedule-shift-subtrack flex flex-col min-w-0">
-          <div className="schedule-shift-header schedule-shift-header-morning">
-            <span className="flex items-center gap-1.5">
-              <Sun size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
-              <span>1-я смена / Утро (08:00 — 14:00)</span>
-            </span>
-            <span className="text-[10px] text-[var(--muted)] font-medium">
-              {morningSlots.length} слотов · {gridStep} мин
-            </span>
+      <>
+        <DecoupledDragGhost />
+        <div
+          className="schedule-split-day-track grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[var(--line)] border-b border-[var(--line)] bg-[var(--paper)]"
+          data-testid="schedule-split-day-track"
+        >
+          {/* Morning Shift (08:00 — 14:00) */}
+          <div className="schedule-shift-subtrack flex flex-col min-w-0">
+            <div className="schedule-shift-header schedule-shift-header-morning">
+              <span className="flex items-center gap-1.5">
+                <Sun size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>1-я смена / Утро (08:00 — 14:00)</span>
+              </span>
+              <span className="text-[10px] text-[var(--muted)] font-medium">
+                {morningSlots.length} слотов · {gridStep} мин
+              </span>
+            </div>
+            <div
+              className="schedule-grid-container grid min-w-full"
+              style={{
+                gridTemplateColumns: "clamp(64px, 5vw, 84px) 1fr",
+                gridTemplateRows: `repeat(${morningSlots.length}, minmax(${baseSlotHeightPx}px, auto))`,
+              }}
+            >
+              {morningSlots.map((hour, hIndex) => (
+                <div
+                  key={`morning-time-${hour}`}
+                  className="schedule-time-label px-1.5 sm:px-2 py-1 text-center text-xs font-bold text-[var(--muted)] border-r border-b border-[var(--line)] sticky left-0 z-10 bg-[var(--paper)] select-none flex items-center justify-center"
+                  style={{ gridColumn: 1, gridRow: hIndex + 1, minHeight: `${baseSlotHeightPx}px` }}
+                >
+                  {hour}
+                </div>
+              ))}
+              {morningSlots.map((hour, hIndex) =>
+                renderSlotCell(hour, hIndex, chair, 0, morningSlots, true, 2),
+              )}
+            </div>
           </div>
-          <div
-            className="schedule-grid-container grid min-w-full"
-            style={{
-              gridTemplateColumns: "clamp(64px, 5vw, 84px) 1fr",
-              gridTemplateRows: `repeat(${morningSlots.length}, minmax(${baseSlotHeightPx}px, auto))`,
-            }}
-          >
-            {morningSlots.map((hour, hIndex) => (
-              <div
-                key={`morning-time-${hour}`}
-                className="schedule-time-label px-1.5 sm:px-2 py-1 text-center text-xs font-bold text-[var(--muted)] border-r border-b border-[var(--line)] sticky left-0 z-10 bg-[var(--paper)] select-none flex items-center justify-center"
-                style={{ gridColumn: 1, gridRow: hIndex + 1, minHeight: `${baseSlotHeightPx}px` }}
-              >
-                {hour}
-              </div>
-            ))}
-            {morningSlots.map((hour, hIndex) =>
-              renderSlotCell(hour, hIndex, chair, 0, morningSlots, true, 2),
-            )}
-          </div>
-        </div>
 
-        {/* Evening Shift (14:00 — 20:00) */}
-        <div className="schedule-shift-subtrack flex flex-col min-w-0">
-          <div className="schedule-shift-header schedule-shift-header-evening">
-            <span className="flex items-center gap-1.5">
-              <Moon size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
-              <span>2-я смена / Вечер (14:00 — 20:00)</span>
-            </span>
-            <span className="text-[10px] text-[var(--muted)] font-medium">
-              {eveningSlots.length} слотов · {gridStep} мин
-            </span>
-          </div>
-          <div
-            className="schedule-grid-container grid min-w-full"
-            style={{
-              gridTemplateColumns: "clamp(64px, 5vw, 84px) 1fr",
-              gridTemplateRows: `repeat(${eveningSlots.length}, minmax(${baseSlotHeightPx}px, auto))`,
-            }}
-          >
-            {eveningSlots.map((hour, hIndex) => (
-              <div
-                key={`evening-time-${hour}`}
-                className="schedule-time-label px-1.5 sm:px-2 py-1 text-center text-xs font-bold text-[var(--muted)] border-r border-b border-[var(--line)] sticky left-0 z-10 bg-[var(--paper)] select-none flex items-center justify-center"
-                style={{ gridColumn: 1, gridRow: hIndex + 1, minHeight: `${baseSlotHeightPx}px` }}
-              >
-                {hour}
-              </div>
-            ))}
-            {eveningSlots.map((hour, hIndex) =>
-              renderSlotCell(hour, hIndex, chair, 0, eveningSlots, true, 2),
-            )}
+          {/* Evening Shift (14:00 — 20:00) */}
+          <div className="schedule-shift-subtrack flex flex-col min-w-0">
+            <div className="schedule-shift-header schedule-shift-header-evening">
+              <span className="flex items-center gap-1.5">
+                <Moon size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                <span>2-я смена / Вечер (14:00 — 20:00)</span>
+              </span>
+              <span className="text-[10px] text-[var(--muted)] font-medium">
+                {eveningSlots.length} слотов · {gridStep} мин
+              </span>
+            </div>
+            <div
+              className="schedule-grid-container grid min-w-full"
+              style={{
+                gridTemplateColumns: "clamp(64px, 5vw, 84px) 1fr",
+                gridTemplateRows: `repeat(${eveningSlots.length}, minmax(${baseSlotHeightPx}px, auto))`,
+              }}
+            >
+              {eveningSlots.map((hour, hIndex) => (
+                <div
+                  key={`evening-time-${hour}`}
+                  className="schedule-time-label px-1.5 sm:px-2 py-1 text-center text-xs font-bold text-[var(--muted)] border-r border-b border-[var(--line)] sticky left-0 z-10 bg-[var(--paper)] select-none flex items-center justify-center"
+                  style={{ gridColumn: 1, gridRow: hIndex + 1, minHeight: `${baseSlotHeightPx}px` }}
+                >
+                  {hour}
+                </div>
+              ))}
+              {eveningSlots.map((hour, hIndex) =>
+                renderSlotCell(hour, hIndex, chair, 0, eveningSlots, true, 2),
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
   // Multi-chair panoramic grid (all chairs side by side 1fr 1fr ...)
   return (
-    <div
-      className="schedule-grid-container grid min-w-full"
-      style={{
-        minWidth:
-          effectiveChairs.length > 1
-            ? `${Math.max(260, 72 + effectiveChairs.length * 220)}px`
-            : undefined,
-        gridTemplateColumns: `clamp(112px, 10vw, 150px) repeat(${effectiveChairs.length}, minmax(180px, 1fr))`,
-        gridTemplateRows: `repeat(${timeSlots.length}, minmax(${baseSlotHeightPx}px, auto))`,
-      }}
-    >
+    <>
+      <DecoupledDragGhost />
+      <div
+        className="schedule-grid-container grid min-w-full"
+        style={{
+          minWidth:
+            effectiveChairs.length > 1
+              ? `${Math.max(260, 72 + effectiveChairs.length * 220)}px`
+              : undefined,
+          gridTemplateColumns: `clamp(112px, 10vw, 150px) repeat(${effectiveChairs.length}, minmax(180px, 1fr))`,
+          gridTemplateRows: `repeat(${timeSlots.length}, minmax(${baseSlotHeightPx}px, auto))`,
+        }}
+      >
       {/* 1. Time Column Labels (Column 1) */}
       {timeSlots.map((hour, hIndex) => (
         <div
@@ -792,5 +833,6 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
         }),
       )}
     </div>
+    </>
   );
 }

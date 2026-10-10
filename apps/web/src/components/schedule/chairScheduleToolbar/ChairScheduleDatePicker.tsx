@@ -23,7 +23,10 @@ function formatDateDisplay(isoDateStr: string): string {
 
 function addDays(isoDateStr: string, days: number): string {
   try {
-    const [year, month, day] = isoDateStr.split("-").map(Number);
+    const parts = isoDateStr.split("-").map(Number);
+    const year = parts[0] ?? 2026;
+    const month = parts[1] ?? 1;
+    const day = parts[2] ?? 1;
     const date = new Date(year, month - 1, day);
     date.setDate(date.getDate() + days);
     const y = date.getFullYear();

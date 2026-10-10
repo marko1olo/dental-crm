@@ -36,6 +36,7 @@ import { GridAppointmentMenu } from "./GridAppointmentMenu";
 import { GridAppointmentStatusPopover } from "./GridAppointmentStatusPopover";
 import { DentalToothIcon } from "./DentalToothIcon";
 import { GridAppointmentQuickActions } from "./GridAppointmentQuickActions";
+import { dragGhostManager, setEmptyDragImage } from "./grid/DecoupledDragGhost";
 
 export * from "./appointmentCardHelpers";
 
@@ -221,16 +222,45 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 			onFocus={() => onMouseEnter(a.id)}
 			onBlur={onMouseLeave}
 			onDragStart={(e) => {
+				const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+				const offsetX = e.clientX - rect.left;
+				const offsetY = e.clientY - rect.top;
+
+				dragGhostManager.startDrag(
+					{
+						appointmentId: a.id,
+						patientName: pName,
+						procedure: procedureLabel,
+						doctorName: formatDoctorShortName(docObj?.fullName || a.doctorUserId),
+						timeRange: `${aStart} – ${aEnd}`,
+						durationMinutes: durationMin,
+						status: a.status,
+						chairName: chair?.name,
+						isCito,
+					},
+					{
+						offsetX,
+						offsetY,
+						startX: e.clientX,
+						startY: e.clientY,
+					},
+				);
+
+				setEmptyDragImage(e.dataTransfer);
+
 				e.dataTransfer.setData(
 					"application/json",
 					JSON.stringify({
 						type: "appointment",
 						appointmentId: a.id,
 						doctorUserId: a.doctorUserId,
-						durationMinutes: Math.round((Date.parse(a.endsAt) - Date.parse(a.startsAt)) / 60000) || 30,
+						durationMinutes: durationMin,
 					}),
 				);
 				e.dataTransfer.effectAllowed = "move";
+			}}
+			onDragEnd={() => {
+				dragGhostManager.endDrag();
 			}}
 			style={
 				isHovered

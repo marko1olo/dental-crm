@@ -42,6 +42,8 @@ export function ChairDateRangeModal({
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        e.preventDefault?.();
+        e.stopPropagation?.();
         onClose();
       }
     };
@@ -53,7 +55,12 @@ export function ChairDateRangeModal({
 
   const modalNode = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-[4px] animate-in fade-in duration-150"
+      className="chair-range-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150"
+      style={{
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        backdropFilter: "blur(4px)",
+        WebkitBackdropFilter: "blur(4px)",
+      }}
       data-testid="chair-schedule-date-range-modal"
       role="dialog"
       aria-modal="true"

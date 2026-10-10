@@ -453,7 +453,7 @@ html[data-theme="dark"].low-spec-mode .card-glass {
 	background-color: var(--paper-strong) !important;
 }
 
-/* DentalPRO Expo26 Lateral Drawer semi-transparent schedule backdrop protection */
+/* DentalPRO Expo26 Lateral Drawer & Schedule Modal semi-transparent backdrop protection */
 html [data-testid="quick-booking-drawer"],
 html .quick-booking-drawer-overlay,
 html[data-hardware-tier="low"] .quick-booking-drawer-overlay,
@@ -462,6 +462,26 @@ html.low-spec-mode .quick-booking-drawer-overlay,
 [data-testid="quick-booking-drawer"],
 .quick-booking-drawer-overlay {
 	background-color: rgba(0, 0, 0, 0.25) !important;
+}
+
+html [data-testid="chair-schedule-date-range-modal"],
+html .chair-range-modal-overlay,
+html[data-hardware-tier="low"] .chair-range-modal-overlay,
+html[data-low-spec="true"] .chair-range-modal-overlay,
+html.low-spec-mode .chair-range-modal-overlay,
+[data-testid="chair-schedule-date-range-modal"],
+.chair-range-modal-overlay {
+	background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+html [data-testid="doctor-shift-drawer-overlay"],
+html .roster-drawer-overlay,
+html[data-hardware-tier="low"] .roster-drawer-overlay,
+html[data-low-spec="true"] .roster-drawer-overlay,
+html.low-spec-mode .roster-drawer-overlay,
+[data-testid="doctor-shift-drawer-overlay"],
+.roster-drawer-overlay {
+	background-color: rgba(0, 0, 0, 0.45) !important;
 }
 
 /* Header, topbar, toolbar solid background */
