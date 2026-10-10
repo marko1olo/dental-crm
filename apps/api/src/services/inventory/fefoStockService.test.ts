@@ -1,5 +1,19 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+
+let describe: any;
+let it: any;
+
+try {
+	// @ts-ignore
+	const v = await import("vitest");
+	describe = v.describe;
+	it = v.it;
+} catch {
+	const n = await import("node:test");
+	describe = n.describe;
+	it = n.it;
+}
+
 import {
 	fefoStockService,
 	type FefoDeductionResult,
