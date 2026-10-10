@@ -142,7 +142,7 @@ export function createPlanStageMutationHandlers(
 		showRollbackToast(
 			`${itemName} удалена из плана лечения`,
 			() => {
-				setCustomStages(prevStages);
+				setCustomStages([...prevStages]);
 			},
 			5000,
 		);

@@ -3,8 +3,13 @@
  * Вынесено из тулбара для соблюдения лимита высоты экрана (y <= 140px для 3-Tier карточек).
  */
 
-import React from "react";
-import { Coins, Percent, X } from "lucide-react";
+import React, { useMemo } from "react";
+import { Coins, Percent, X, Calculator, ShieldCheck } from "lucide-react";
+import type { Kopecks } from "@dental/shared";
+import {
+	calculateLoyaltyBonusDeduction,
+	formatChairsidePrice,
+} from "./treatmentPlanPricingEngine";
 
 export interface TreatmentPlanDiscountsModalProps {
 	readonly isOpen: boolean;
@@ -14,6 +19,7 @@ export interface TreatmentPlanDiscountsModalProps {
 	readonly bonusPointsToUseRub: number;
 	readonly setBonusPointsToUseRub: (rub: number) => void;
 	readonly patientBalanceRub: number;
+	readonly planGrossKopecks?: Kopecks | number | undefined;
 }
 
 export const TreatmentPlanDiscountsModal: React.FC<TreatmentPlanDiscountsModalProps> = ({
@@ -24,7 +30,18 @@ export const TreatmentPlanDiscountsModal: React.FC<TreatmentPlanDiscountsModalPr
 	bonusPointsToUseRub,
 	setBonusPointsToUseRub,
 	patientBalanceRub,
+	planGrossKopecks,
 }) => {
+	const summary = useMemo(() => {
+		if (!planGrossKopecks || Number(planGrossKopecks) <= 0) return null;
+		return calculateLoyaltyBonusDeduction(
+			Number(planGrossKopecks) as Kopecks,
+			discountPercent,
+			patientBalanceRub,
+			bonusPointsToUseRub,
+		);
+	}, [planGrossKopecks, discountPercent, patientBalanceRub, bonusPointsToUseRub]);
+
 	if (!isOpen) return null;
 
 	return (
@@ -147,6 +164,35 @@ export const TreatmentPlanDiscountsModal: React.FC<TreatmentPlanDiscountsModalPr
 						</p>
 					)}
 				</div>
+
+				{/* Live Pricing Breakdown via treatmentPlanPricingEngine SSOT */}
+				{summary && (
+					<div className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] space-y-1.5 text-xs font-mono">
+						<div className="flex items-center justify-between text-[var(--muted)]">
+							<span>Базовая смета плана:</span>
+							<span className="font-bold">{formatChairsidePrice(Math.round(summary.grossKopecks / 100))}</span>
+						</div>
+						{summary.discountKopecks > 0 && (
+							<div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
+								<span>Скидка врача ({discountPercent}%):</span>
+								<span className="font-bold">−{formatChairsidePrice(Math.round(summary.discountKopecks / 100))}</span>
+							</div>
+						)}
+						{summary.appliedBonusRub > 0 && (
+							<div className="flex items-center justify-between text-amber-600 dark:text-amber-400">
+								<span>Оплата бонусами/депозитом:</span>
+								<span className="font-bold">−{formatChairsidePrice(summary.appliedBonusRub)}</span>
+							</div>
+						)}
+						<div className="pt-1.5 border-t border-[var(--line)] flex items-center justify-between font-bold text-sm text-[var(--ink)]">
+							<span className="flex items-center gap-1 font-sans">
+								<Calculator size={14} className="text-[var(--teal)]" />
+								Итого к оплате пациентом:
+							</span>
+							<span className="text-[var(--teal)]">{formatChairsidePrice(summary.netPayableRub)}</span>
+						</div>
+					</div>
+				)}
 
 				{/* Footer */}
 				<div className="pt-3 border-t border-[var(--line,var(--border,#cbd5e1))] flex justify-end">

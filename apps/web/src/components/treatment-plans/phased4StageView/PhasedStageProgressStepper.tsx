@@ -158,7 +158,7 @@ export const PhasedStageProgressStepper: React.FC<PhasedStageProgressStepperProp
 							>
 								<div className="flex items-center justify-between gap-1.5">
 									<span className="text-xs font-bold text-[var(--ink)] truncate">
-										{STEP_SHORT_TITLES[cat] || `${idx + 1}. ${stageData.meta.labelRu}`}
+										{STEP_SHORT_TITLES[cat] || `${idx + 1}. ${stageData.meta.shortLabelRu}`}
 									</span>
 									<span
 										className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold border shrink-0 ${statusMeta.badgeClass}`}

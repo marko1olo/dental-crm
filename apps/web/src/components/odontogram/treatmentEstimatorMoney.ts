@@ -15,6 +15,7 @@ import {
 	coveragePercentForCategory,
 	type InsuranceCoveragePercents,
 } from "../treatment-plans/planPricing";
+import { parseSafeKopecks } from "../treatment-plans/treatmentPlanPricingEngine";
 import type { PlanItem } from "./treatmentEstimatorCatalogMatching";
 
 /** Договор ДМС в том виде, в каком его читает расчёт. */
@@ -72,17 +73,12 @@ export type EstimatorRowMoney =
 
 /**
  * Разбор денежного значения без исключения посреди отрисовки.
+ * Делегирует в канонический SSOT parseSafeKopecks (Мандат 8za).
  */
 export function safeKopecks(
 	value: number | string | null | undefined,
 ): Kopecks | null {
-	if (value === null || value === undefined || value === "") return null;
-	if (typeof value === "number" && !Number.isFinite(value)) return null;
-	try {
-		return parseKopecks(value);
-	} catch {
-		return null;
-	}
+	return parseSafeKopecks(value, { allowEmptyAsZero: false });
 }
 
 /**

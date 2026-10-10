@@ -4,6 +4,8 @@
 
 export type { TreatmentPlanStatus } from "./types";
 export * from "./types";
+export type { PlanPriceCatalogItem } from "./treatmentPlanPricingEngine";
+export { calculateChairsideInstallments } from "./treatmentPlanMath";
 export * from "./treatmentPlanStagesEngine";
 export * from "./treatmentPlanMaterialEngine";
 export * from "./TreatmentPlanStageCard";

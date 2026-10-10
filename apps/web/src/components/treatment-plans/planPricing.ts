@@ -320,81 +320,12 @@ export function planPriceIssueMessages(
 	return messages;
 }
 
-/**
- * Разбор денежного значения, пришедшего из API, без исключения в отрисовке.
- * null — значение испорчено, и это ЧЕСТНЫЙ ответ, в отличие от нуля.
- */
-export function safeKopecks(
-	value: number | string | null | undefined,
-): Kopecks | null {
-	if (value === null || value === undefined || value === "") return 0;
-	if (typeof value === "number" && !Number.isFinite(value)) return null;
-	try {
-		return parseKopecks(value);
-	} catch {
-		return null;
-	}
-}
+// Делегирование денежных расчетов в канонический SSOT модуль treatmentPlanPricingEngine.ts (Мандат 8za)
+export {
+	safeKopecks,
+	type PlanMoneyLine,
+	planLineTotalKopecks,
+	type PlanTotal,
+	planTotalKopecks,
+} from "./treatmentPlanPricingEngine";
 
-/** Строка сметы в том виде, в каком её отдаёт API. */
-export interface PlanMoneyLine {
-	price: number | string;
-	quantity: number;
-	discount?: number | string | null;
-}
-
-/**
- * Итог по строке, точно до копейки.
- *
- * Считается ровно так же, как на сервере (routes/odontogram.ts):
- * `max(0, цена × количество − скидка)`, где скидка — РУБЛИ, а не проценты.
- * Иначе экран и сохранённый итог разошлись бы, а расходиться им нельзя:
- * пациент видит один документ.
- */
-export function planLineTotalKopecks(line: PlanMoneyLine): Kopecks | null {
-	const unitKopecks = safeKopecks(line.price);
-	if (unitKopecks === null) return null;
-	if (!Number.isInteger(line.quantity) || line.quantity < 0) return null;
-	const discountKopecks = safeKopecks(line.discount ?? 0);
-	if (discountKopecks === null || discountKopecks < 0) return null;
-
-	const gross = multiplyKopecks(unitKopecks, line.quantity);
-	return Math.max(0, gross - discountKopecks);
-}
-
-export interface PlanTotal {
-	/** Итог в копейках; null — в плане есть строка с непонятной суммой. */
-	kopecks: Kopecks | null;
-	/** Сколько строк не удалось прочитать. */
-	unreadableLines: number;
-}
-
-/**
- * Итог плана. Складываются целые копейки, поэтому сумма строк равна итогу
- * ровно, без «почти» (.agents/AGENTS.md §8b).
- *
- * Пустой список строк — не ноль: у сохранённого плана итог хранится отдельно
- * (`totalPrice`), и именно он тогда и показывается.
- */
-export function planTotalKopecks(
-	lines: readonly PlanMoneyLine[],
-	storedTotalRub?: number | string | null,
-): PlanTotal {
-	if (lines.length === 0) {
-		const stored = safeKopecks(storedTotalRub ?? 0);
-		return { kopecks: stored, unreadableLines: stored === null ? 1 : 0 };
-	}
-
-	const totals: Kopecks[] = [];
-	let unreadableLines = 0;
-	for (const line of lines) {
-		const lineTotal = planLineTotalKopecks(line);
-		if (lineTotal === null) {
-			unreadableLines += 1;
-			continue;
-		}
-		totals.push(lineTotal);
-	}
-	if (unreadableLines > 0) return { kopecks: null, unreadableLines };
-	return { kopecks: sumKopecks(totals), unreadableLines: 0 };
-}

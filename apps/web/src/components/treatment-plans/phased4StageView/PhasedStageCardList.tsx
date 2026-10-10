@@ -129,10 +129,10 @@ export const PhasedStageCardList: React.FC<PhasedStageCardListProps> = ({
 					const statusBadge = STAGE_STATUS_META[currentStatus];
 					const showConsumablesForStage = expandedConsumables[cat];
 					const primaryItems = stageData.items.filter(
-						(it) => !isMicroConsumable(it.name, it.priceRub),
+						(it) => !isMicroConsumable(it),
 					);
 					const microConsumables = stageData.items.filter((it) =>
-						isMicroConsumable(it.name, it.priceRub),
+						isMicroConsumable(it),
 					);
 					const visibleItems =
 						showConsumablesForStage || primaryItems.length === 0
@@ -176,7 +176,7 @@ export const PhasedStageCardList: React.FC<PhasedStageCardListProps> = ({
 												Этап {idx + 1} из 4
 											</span>
 											<h4 className="text-sm font-bold text-[var(--ink)]">
-												{STAGE_TITLES[cat] || meta.labelRu}
+												{STAGE_TITLES[cat] || meta.shortLabelRu}
 											</h4>
 											<span className="inline-flex items-center gap-1 rounded-md bg-[var(--paper-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--ink-muted)] border border-[var(--line)]">
 												<svg

@@ -74,6 +74,7 @@ export interface TreatmentPlanToolbarProps {
 	readonly onOpenChairsideBundlesModal: () => void;
 	readonly onApplyClinicalBundle: (bundleId: ClinicalBundleId) => void;
 	readonly orthopedicTeeth: readonly number[];
+	readonly planGrossKopecks?: number | undefined;
 }
 
 export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
@@ -117,6 +118,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 	onOpenChairsideBundlesModal,
 	onApplyClinicalBundle,
 	orthopedicTeeth,
+	planGrossKopecks,
 }) => {
 	const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState<boolean>(initialOptionsMenuOpen);
 	const [isDiscountsModalOpen, setIsDiscountsModalOpen] = useState<boolean>(false);
@@ -602,6 +604,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 				bonusPointsToUseRub={bonusPointsToUseRub}
 				setBonusPointsToUseRub={setBonusPointsToUseRub}
 				patientBalanceRub={patientBalanceRub}
+				planGrossKopecks={planGrossKopecks ?? 0}
 			/>
 
 			<TreatmentPlanCopilotModal

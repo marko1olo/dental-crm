@@ -15,11 +15,14 @@ import type { TreatmentPlanItem } from "./types";
  * Структурное подмножество ServiceCatalogItem.
  */
 export interface PlanPriceCatalogItem {
-	id: string;
-	title: string;
-	category: string;
-	basePriceRub: number;
-	active: boolean;
+	readonly id: string;
+	readonly title: string;
+	readonly category: string;
+	readonly basePath?: string | undefined;
+	readonly basePriceRub: number;
+	readonly active?: boolean | undefined;
+	readonly code?: string | undefined;
+	readonly order804nCode?: string | undefined;
 }
 
 /**

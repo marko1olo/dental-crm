@@ -19,7 +19,12 @@ import {
 	calculateStaged304030Schedule,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
 } from "@dental/shared";
-import { calculateNdflDeduction } from "./treatmentPlanPricingEngine";
+import {
+	calculateNdflDeduction,
+	formatChairsidePrice,
+	formatKopecksToRubString,
+	computeTierInstallments,
+} from "./treatmentPlanPricingEngine";
 import type {
 	NdflDeductionResult,
 	TierInstallmentPlan,
@@ -34,22 +39,8 @@ import type {
 export const NDFL_STANDARD_ANNUAL_LIMIT_RUB = ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024;
 export const NDFL_STANDARD_ANNUAL_LIMIT_KOPECKS = (ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024 * 100) as Kopecks;
 
-/**
- * Форматирует сумму в рублях для отображения пациенту у кресла.
- * Пример: 154000 -> "154 000 ₽"
- */
-export function formatChairsidePrice(amountRub: number | undefined | null): string {
-	const safe = typeof amountRub === "number" && !Number.isNaN(amountRub) ? Math.round(amountRub) : 0;
-	return `${safe.toLocaleString("ru-RU")} ₽`;
-}
-
-/**
- * Форматирует сумму в копейках в рублевую строку.
- */
-export function formatKopecksToRubString(amountKopecks: Kopecks | number): string {
-	const rub = Math.round(Number(amountKopecks) / 100);
-	return formatChairsidePrice(rub);
-}
+// Каноническое форматирование цен (Мандат 8za Anti-Duplicates SSOT)
+export { formatChairsidePrice, formatKopecksToRubString };
 
 /**
  * Рассчитывает общую сумму этапа в копейках и рублях на основе его процедур.
@@ -112,50 +103,10 @@ export function calculatePlanStagesTotals(stages: readonly TreatmentPlanStage[])
 }
 
 /**
- * Рассчитывает рассрочку 0% на 3, 6, 12, 24 месяца равными долями в копейках.
- * Сумма долей строго равна исходной сумме до последней копейки (Мандат 8e / 8n).
+ * Рассчитывает рассрочку 0% на 3, 6, 12, 24 месяца равными долями в копейках (Мандаты 8b, 8e).
+ * Делегирует в канонический SSOT treatmentPlanPricingEngine.ts (Мандат 8za).
  */
-export function calculateChairsideInstallments(
-	totalKopecks: Kopecks,
-): Record<3 | 6 | 12 | 24, TierInstallmentPlan> {
-	const monthsList: readonly (3 | 6 | 12 | 24)[] = [3, 6, 12, 24];
-	const result = {} as Record<3 | 6 | 12 | 24, TierInstallmentPlan>;
-
-	for (const months of monthsList) {
-		if (totalKopecks <= 0) {
-			result[months] = {
-				months,
-				monthlyPaymentKopecks: 0 as Kopecks,
-				monthlyPaymentRub: 0,
-				partsKopecks: Array(months).fill(0 as Kopecks),
-				remainderKopecks: 0 as Kopecks,
-			};
-			continue;
-		}
-
-		const basePart = Math.floor(totalKopecks / months) as Kopecks;
-		const remainder = (totalKopecks - basePart * months) as Kopecks;
-
-		const parts: Kopecks[] = [];
-		for (let i = 0; i < months; i++) {
-			// Добавляем копеечный остаток к первому платежу
-			const part = (i === 0 ? basePart + remainder : basePart) as Kopecks;
-			parts.push(part);
-		}
-
-		const monthlyPaymentRub = Math.round(basePart / 100);
-
-		result[months] = {
-			months,
-			monthlyPaymentKopecks: basePart,
-			monthlyPaymentRub,
-			partsKopecks: parts,
-			remainderKopecks: remainder,
-		};
-	}
-
-	return result;
-}
+export const calculateChairsideInstallments = computeTierInstallments;
 
 /**
  * Рассчитывает социальный налоговый вычет 13% НДФЛ по ст. 219 НК РФ.

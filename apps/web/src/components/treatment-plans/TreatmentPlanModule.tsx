@@ -124,6 +124,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				onOpenChairsideBundlesModal={() => logic.setIsChairsideBundlesModalOpen(true)}
 				onApplyClinicalBundle={logic.handleApplyClinicalBundle}
 				orthopedicTeeth={logic.orthopedicTeeth}
+				planGrossKopecks={logic.effectiveSignTier.totalKopecks}
 			/>
 
 			{/* Main Content Area: 3-Tier comparison, 4-Phases view, or Stages list */}

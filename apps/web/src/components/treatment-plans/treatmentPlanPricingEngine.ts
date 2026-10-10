@@ -8,6 +8,8 @@ import {
 	parseKopecks,
 	percentageOfKopecks,
 	splitKopecks,
+	sumKopecks,
+	multiplyKopecks,
 	calculatePlanTaxDeductionBreakdown,
 	calculateStaged304030Schedule,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
@@ -20,17 +22,215 @@ import type {
 } from "./types";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 
-export type LoyaltyBonusCalculationResult = LoyaltyBonusDeduction;
+import type { PlanPriceCatalogItem } from "./planDriftAudit";
 
-export interface CatalogServiceLookupItem {
-	readonly id: string;
-	readonly title: string;
-	readonly category: string;
-	readonly basePath?: string;
-	readonly basePriceRub: number;
-	readonly active?: boolean;
-	readonly code?: string;
-	readonly order804nCode?: string;
+export type { PlanPriceCatalogItem };
+export type LoyaltyBonusCalculationResult = LoyaltyBonusDeduction;
+export type CatalogServiceLookupItem = PlanPriceCatalogItem;
+
+/**
+ * Разбор денежного значения без исключения посреди отрисовки.
+ * @param allowEmptyAsZero - если true, null/undefined/"" дает 0 (для смет),
+ *                            если false, дает null (для одонтограммы, где отсутствие цены = unknown).
+ */
+export function safeKopecks(
+	value: number | string | null | undefined,
+	options: { allowEmptyAsZero?: boolean } = { allowEmptyAsZero: true },
+): Kopecks | null {
+	if (value === null || value === undefined || value === "") {
+		return options.allowEmptyAsZero ? (0 as Kopecks) : null;
+	}
+	if (typeof value === "number" && !Number.isFinite(value)) return null;
+	try {
+		return parseKopecks(value);
+	} catch {
+		return null;
+	}
+}
+
+export const parseSafeKopecks = safeKopecks;
+
+/** Строка сметы в том виде, в каком её отдаёт API. */
+export interface PlanMoneyLine {
+	readonly price: number | string;
+	readonly quantity: number;
+	readonly discount?: number | string | null;
+}
+
+/**
+ * Итог по строке сметы, точно до копейки (Мандаты 8b, 8e).
+ * Формула: Math.max(0, price * quantity - discountRub).
+ */
+export function planLineTotalKopecks(line: PlanMoneyLine): Kopecks | null {
+	const unitKopecks = safeKopecks(line.price, { allowEmptyAsZero: true });
+	if (unitKopecks === null) return null;
+	if (!Number.isInteger(line.quantity) || line.quantity < 0) return null;
+	const discountKopecks = safeKopecks(line.discount ?? 0, { allowEmptyAsZero: true });
+	if (discountKopecks === null || discountKopecks < 0) return null;
+
+	const gross = multiplyKopecks(unitKopecks, line.quantity);
+	return Math.max(0, gross - discountKopecks) as Kopecks;
+}
+
+export interface PlanTotal {
+	readonly kopecks: Kopecks | null;
+	readonly unreadableLines: number;
+}
+
+/**
+ * Итог плана лечения. Складываются целые копейки (Kopecks),
+ * исключая ошибки с плавающей точкой IEEE 754 (0.1 + 0.2 != 0.3).
+ */
+export function planTotalKopecks(
+	lines: readonly PlanMoneyLine[],
+	storedTotalRub?: number | string | null,
+): PlanTotal {
+	if (lines.length === 0) {
+		const stored = safeKopecks(storedTotalRub ?? 0, { allowEmptyAsZero: true });
+		return { kopecks: stored, unreadableLines: stored === null ? 1 : 0 };
+	}
+
+	const totals: Kopecks[] = [];
+	let unreadableLines = 0;
+	for (const line of lines) {
+		const lineTotal = planLineTotalKopecks(line);
+		if (lineTotal === null) {
+			unreadableLines += 1;
+			continue;
+		}
+		totals.push(lineTotal);
+	}
+	if (unreadableLines > 0) return { kopecks: null, unreadableLines };
+	return { kopecks: sumKopecks(totals), unreadableLines: 0 };
+}
+
+export interface InstallmentScheduleKopecks {
+	readonly months: 3 | 6 | 12 | 24;
+	readonly totalKopecks: Kopecks;
+	readonly monthlyPaymentKopecks: Kopecks;
+	readonly monthlyPaymentRub: number;
+	readonly partsKopecks: readonly Kopecks[];
+	readonly remainderKopecks: Kopecks;
+}
+
+/**
+ * Точный копеечный расчет рассрочки 0% без переплат (Мандат 8b, 8e).
+ * Сумма всех ежемесячных платежей гарантированно равна итогу плана до копейки (kopeck-exact).
+ */
+export function calculateInstallmentScheduleKopecks(
+	totalKopecks: Kopecks,
+	months: 3 | 6 | 12 | 24,
+): InstallmentScheduleKopecks {
+	if (!Number.isInteger(totalKopecks) || totalKopecks <= 0) {
+		return {
+			months,
+			totalKopecks: 0 as Kopecks,
+			monthlyPaymentKopecks: 0 as Kopecks,
+			monthlyPaymentRub: 0,
+			partsKopecks: Array(months).fill(0 as Kopecks),
+			remainderKopecks: 0 as Kopecks,
+		};
+	}
+
+	const parts = splitKopecks(totalKopecks, months);
+	const monthlyPaymentKopecks = (parts[0] ?? 0) as Kopecks;
+	const monthlyPaymentRub = Math.round(monthlyPaymentKopecks / 100);
+	const basePart = Math.floor(totalKopecks / months);
+	const remainder = (totalKopecks - basePart * months) as Kopecks;
+
+	return {
+		months,
+		totalKopecks,
+		monthlyPaymentKopecks,
+		monthlyPaymentRub,
+		partsKopecks: parts,
+		remainderKopecks: remainder,
+	};
+}
+
+export interface StagedPaymentBreakdownKopecks {
+	readonly totalKopecks: Kopecks;
+	readonly stage1Kopecks: Kopecks;
+	readonly stage2Kopecks: Kopecks;
+	readonly stage3Kopecks: Kopecks;
+	readonly stage1Rub: number;
+	readonly stage2Rub: number;
+	readonly stage3Rub: number;
+}
+
+/**
+ * Копеечный расчет поэтапной оплаты (по умолчанию 30% аванс / 40% хирургия / 30% ортопедия).
+ * Сумма этапов точно сходится с итогом сметы без погрешностей округления.
+ */
+export function calculateStagedPaymentScheduleKopecks(
+	totalKopecks: Kopecks,
+	ratios: readonly [number, number, number] = [30, 40, 30],
+): StagedPaymentBreakdownKopecks {
+	if (!Number.isInteger(totalKopecks) || totalKopecks <= 0) {
+		return {
+			totalKopecks: 0 as Kopecks,
+			stage1Kopecks: 0 as Kopecks,
+			stage2Kopecks: 0 as Kopecks,
+			stage3Kopecks: 0 as Kopecks,
+			stage1Rub: 0,
+			stage2Rub: 0,
+			stage3Rub: 0,
+		};
+	}
+
+	const stage1Kopecks = Math.round((totalKopecks * ratios[0]) / 100) as Kopecks;
+	const stage2Kopecks = Math.round((totalKopecks * ratios[1]) / 100) as Kopecks;
+	const stage3Kopecks = Math.max(0, totalKopecks - stage1Kopecks - stage2Kopecks) as Kopecks;
+
+	return {
+		totalKopecks,
+		stage1Kopecks,
+		stage2Kopecks,
+		stage3Kopecks,
+		stage1Rub: Math.round(stage1Kopecks / 100),
+		stage2Rub: Math.round(stage2Kopecks / 100),
+		stage3Rub: Math.round(stage3Kopecks / 100),
+	};
+}
+
+/**
+ * Форматирование суммы в рублях на понятном русском языке.
+ * Запрет на сырые «NULL», «NaN ₽», «404 Not Found» или машинный мусор в UI.
+ */
+export function formatPlanPriceRub(
+	amountRub: number | string | null | undefined,
+	fallbackText = "Цена не указана",
+): string {
+	if (amountRub === null || amountRub === undefined || amountRub === "") {
+		return fallbackText;
+	}
+	const num =
+		typeof amountRub === "string"
+			? Number(amountRub.replace(/\s+/g, "").replace(",", "."))
+			: amountRub;
+	if (!Number.isFinite(num)) {
+		return fallbackText;
+	}
+	const formatted = Math.round(num)
+		.toLocaleString("ru-RU")
+		.replace(/[\u00A0\u202F]/g, " ");
+	return `${formatted} ₽`;
+}
+
+/**
+ * Форматирует сумму в рублях для отображения пациенту у кресла.
+ */
+export function formatChairsidePrice(amountRub: number | undefined | null): string {
+	const safe = typeof amountRub === "number" && !Number.isNaN(amountRub) ? Math.round(amountRub) : 0;
+	return `${safe.toLocaleString("ru-RU")} ₽`;
+}
+
+/**
+ * Форматирует сумму в копейках в рублевую строку.
+ */
+export function formatKopecksToRubString(amountKopecks: Kopecks | number): string {
+	const rub = Math.round(Number(amountKopecks) / 100);
+	return formatChairsidePrice(rub);
 }
 
 export interface MatchCatalogServiceResult {
@@ -230,11 +430,14 @@ export function calculateNdflDeduction(
 }
 
 /**
- * Расчет рассрочки 0% без потерь копеек.
+ * Расчет рассрочки 0% без потерь копеек (Мандат 8b, 8e).
+ * Сумма всех частей строго равна totalKopecks.
  */
 export function computeTierInstallments(
 	totalKopecks: Kopecks,
+	options?: { distributeEvenly?: boolean },
 ): Record<3 | 6 | 12 | 24, TierInstallmentPlan> {
+	const distributeEvenly = options?.distributeEvenly ?? false;
 	const build = (months: 3 | 6 | 12 | 24): TierInstallmentPlan => {
 		if (totalKopecks <= 0) {
 			return {
@@ -245,16 +448,34 @@ export function computeTierInstallments(
 				remainderKopecks: 0 as Kopecks,
 			};
 		}
-		const parts = splitKopecks(totalKopecks, months);
-		const monthlyPaymentKopecks = (parts[0] ?? 0) as Kopecks;
-		const monthlyPaymentRub = Math.round(monthlyPaymentKopecks / 100);
-		const remainderKopecks = ((parts[parts.length - 1] ?? 0) - monthlyPaymentKopecks) as Kopecks;
+		if (distributeEvenly) {
+			const parts = splitKopecks(totalKopecks, months);
+			const monthlyPaymentKopecks = (parts[0] ?? 0) as Kopecks;
+			const monthlyPaymentRub = Math.round(monthlyPaymentKopecks / 100);
+			const remainderKopecks = ((parts[parts.length - 1] ?? 0) - monthlyPaymentKopecks) as Kopecks;
+			return {
+				months,
+				monthlyPaymentKopecks,
+				monthlyPaymentRub,
+				partsKopecks: parts,
+				remainderKopecks,
+			};
+		}
+
+		// Каноническое распределение с остатком в первом платеже (Мандат 8e / 8n)
+		const basePart = Math.floor(totalKopecks / months) as Kopecks;
+		const remainder = (totalKopecks - basePart * months) as Kopecks;
+		const parts: Kopecks[] = [];
+		for (let i = 0; i < months; i++) {
+			parts.push((i === 0 ? basePart + remainder : basePart) as Kopecks);
+		}
+		const monthlyPaymentRub = Math.round(basePart / 100);
 		return {
 			months,
-			monthlyPaymentKopecks,
+			monthlyPaymentKopecks: basePart,
 			monthlyPaymentRub,
 			partsKopecks: parts,
-			remainderKopecks,
+			remainderKopecks: remainder,
 		};
 	};
 
