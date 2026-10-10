@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import {
@@ -312,7 +312,11 @@ test("Cephalometrics: Циклический обход нерасставлен
 });
 
 test("Cephalometrics: UI инварианты модалки (Hero Showcase, Guidance Banner, zero-NaN)", () => {
-	const source = readSource("components/radiology/CephalometricAnalysisModal.tsx");
+	const cephModalDir = path.join(webSrcRoot, "components/radiology/cephModal");
+	const source = existsSync(cephModalDir)
+		? readSource("components/radiology/cephModal/CephAnalysisControls.tsx") +
+		  readSource("components/radiology/cephModal/CephMeasurementTable.tsx")
+		: readSource("components/radiology/CephalometricAnalysisModal.tsx");
 
 	// Баннер руководства ортодонту
 	assert.ok(
