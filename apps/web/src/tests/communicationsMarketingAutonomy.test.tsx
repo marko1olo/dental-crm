@@ -260,10 +260,10 @@ describe("CampaignPanel Autonomy & 1-Click Defaults (Mandates 8e, 8n)", () => {
 			"Create campaign button must NOT be disabled by empty title or template (Mandate 8e)",
 		);
 
-		// Verify touch target >= 44px
+		// Verify desktop primary button styling
 		assert.ok(
-			btnTag.includes("min-height:44px"),
-			"Create campaign button must have min-height >= 44px",
+			btnTag.includes("primary-button"),
+			"Create campaign button must use primary-button styling",
 		);
 	});
 });

@@ -205,10 +205,12 @@ describe("Red Team Inquisition: Mandate 8b — Kopeck-Exact Arithmetic & SMS Seg
 
 describe("Red Team Inquisition: Mandate 8s — Solo Doctor & Small Clinic Sovereignty", () => {
 	it("1. Single-click reminder: enqueueMessage does not require double-click when body is empty", () => {
-		const consoleSrc = fs.readFileSync(
-			path.resolve(commDir, "MessageDeliveryConsole.tsx"),
-			"utf-8",
-		);
+		const hookPath = fs.existsSync(
+			path.resolve(commDir, "deliveryConsole/useMessageDeliveryConsole.ts"),
+		)
+			? path.resolve(commDir, "deliveryConsole/useMessageDeliveryConsole.ts")
+			: path.resolve(commDir, "MessageDeliveryConsole.tsx");
+		const consoleSrc = fs.readFileSync(hookPath, "utf-8");
 		// Must not have double-click blocker
 		assert.ok(
 			!consoleSrc.includes("showToast(\"Заполнен текст напоминания по умолчанию. Нажмите кнопку ещё раз для отправки\""),
@@ -233,10 +235,12 @@ describe("Red Team Inquisition: Mandate 8s — Solo Doctor & Small Clinic Sovere
 	});
 
 	it("3. CampaignPanel defaults to service scope for clinical recall without marketing barriers", () => {
-		const campaignSrc = fs.readFileSync(
-			path.resolve(commDir, "CampaignPanel.tsx"),
-			"utf-8",
-		);
+		const hookPath = fs.existsSync(
+			path.resolve(commDir, "campaignPanel/useCampaignPanel.ts"),
+		)
+			? path.resolve(commDir, "campaignPanel/useCampaignPanel.ts")
+			: path.resolve(commDir, "CampaignPanel.tsx");
+		const campaignSrc = fs.readFileSync(hookPath, "utf-8");
 		assert.ok(
 			campaignSrc.includes('useState<"service" | "marketing">("service")'),
 			"Default scope must be service so recall reaches patients without explicit ad consent",
@@ -244,10 +248,12 @@ describe("Red Team Inquisition: Mandate 8s — Solo Doctor & Small Clinic Sovere
 	});
 
 	it("4. CampaignPanel includes 1-click quick recall presets for solo doctor", () => {
-		const campaignSrc = fs.readFileSync(
-			path.resolve(commDir, "CampaignPanel.tsx"),
-			"utf-8",
-		);
+		const presetsPath = fs.existsSync(
+			path.resolve(commDir, "campaignPanel/CampaignAudienceFilter.tsx"),
+		)
+			? path.resolve(commDir, "campaignPanel/CampaignAudienceFilter.tsx")
+			: path.resolve(commDir, "CampaignPanel.tsx");
+		const campaignSrc = fs.readFileSync(presetsPath, "utf-8");
 		assert.ok(campaignSrc.includes('data-testid="preset-recall-6m"'));
 		assert.ok(campaignSrc.includes('data-testid="preset-recall-12m"'));
 		assert.ok(campaignSrc.includes('data-testid="preset-hygiene-3m"'));
