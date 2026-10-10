@@ -266,6 +266,7 @@ export function CommunicationsView(
 						<PatientOmnichannelHubModal
 							isOpen={isOmnichannelHubOpen}
 							onClose={() => setIsOmnichannelHubOpen(false)}
+							portal={true}
 						/>
 					</Suspense>
 				)}
@@ -589,22 +590,7 @@ export function CommunicationsView(
 						</div>
 					) : null}
 
-					{/*
-        Пульт отправки: настоящие шлюзы, журнал с причиной отказа, редактор
-        шаблонов и правила рассылки.
-
-        Рассылки по базе показываются не всем. Отдельному врачу они не нужны —
-        его режим описан как «минимум экранов», маркетинга у него нет, а лишний
-        раздел на экране стоит дороже, чем отсутствующая возможность. Решение
-        принимает таблица режимов в lib/clinicCapabilities.ts, а не сравнение
-        строк здесь.
-      */}
-					<MessageDeliveryConsole />
-					{hasCapability(clinicMode, "massCampaigns") ? (
-						<CampaignPanel />
-					) : null}
-
-					<div className="communication-layout">
+					<div className="communication-layout mb-5">
 						<section
 							className="communication-task-list"
 							aria-label="Очередь связи"
@@ -667,39 +653,6 @@ export function CommunicationsView(
 						</section>
 
 						<aside className="communication-side">
-							{/*
-            ЗДЕСЬ БЫЛ ВТОРОЙ СПИСОК ШАБЛОНОВ — и он показывал выдумку.
-            Блок читал dashboard.communicationTemplates, а живой ответ
-            /api/dashboard отдаёт по этому полю четыре примера, зашитых в
-            sampleData.ts: их идентификаторы «tpl-appo», «tpl-paym»,
-            «tpl-post», «tpl-reca» вместо настоящих UUID — проверено запросом.
-            То есть на одном экране рядом стояли настоящие шаблоны из базы (в
-            консоли отправки, по ним реально уходят сообщения) и четыре
-            несуществующих. Администратор видел «Подтверждение приёма —
-            WhatsApp» и мог решить, что оно настроено, хотя WhatsApp не
-            подключён вовсе, а такого шаблона в базе нет.
-
-            Два источника правды на одном экране опаснее отсутствия одного из
-            них: правку вносят в тот список, а рассылка идёт по этому.
-            Настоящий список остаётся в MessageDeliveryConsole на том же экране,
-            там же его можно менять.
-          */}
-
-							{/*
-            ЖУРНАЛ СВЯЗИ. Раньше здесь стояла зелёная плашка `status-confirmed` с
-            одним числом — длиной массива событий, — и список одинаковых строк.
-            Клиника, у которой из двенадцати сообщений три упали с отказом
-            шлюза, видела спокойную зелёную «12»: недоставленное считалось
-            наравне с доставленным и ничем от него не отличалось. Это отказ
-            отправки, показанный как успех, то есть пропущенный приём.
-
-            А когда событий не было или сервер ответил без списка, на месте
-            журнала оставался пустой блок с зелёным нулём — ни строки текста.
-            «Не прочитано» выглядело так же, как «сообщений не было».
-
-            Решение о числах, цвете плашки и текстах трёх состояний вынесено в
-            journalDigest.ts и проверяется node:test — здесь только разметка.
-          */}
 							<section aria-label="Журнал связи">
 								<div className="panel-heading">
 									<h3>Журнал связи</h3>
@@ -765,36 +718,10 @@ export function CommunicationsView(
 						</aside>
 					</div>
 
-					{/*
-        ЗДЕСЬ БЫЛА СЕТКА ИЗ 14 ВИДЖЕТОВ. Убрана после проверки живыми запросами:
-
-          404 (маршрута не существует вовсе) — 9 штук:
-            appointment-channel-inheritances, chat-message-dispatch-statuses,
-            collaborative-chat-processing-states, message-template-catalogs,
-            messenger-file-attachments, previous-chat-dialog-histories,
-            uis-call-speech-transcripts, uis-mass-appointment-confirmations,
-            uis-sms-chat-quotas
-          200 с пустым массивом (таблицы пусты) — 5 штук:
-            email-dispatch-logs, quick-appointment-confirmations,
-            uis-omni-messenger-queues, confirmation-performance-reports,
-            prodoctorov-sync
-
-        То есть все четырнадцать показывали «данные отсутствуют» и занимали
-        четыре экрана прокрутки под рабочими панелями. Их назначение уже
-        закрыто настоящими инструментами выше:
-          справочник шаблонов        → редактор в «Отправке сообщений»
-          логи отправки по e-mail    → журнал очереди с причиной отказа
-          квоты SMS                  → остаток на счету в состоянии шлюзов
-          массовое подтверждение     → «Рассылки»
-          отчёт по подтверждениям    → «Обзвон и подтверждения» и отчёты
-
-        Дописывать девять отсутствующих маршрутов ради виджетов, которых никто
-        не просил, значило бы выдумывать контракты. Файлы виджетов удалены —
-        последним ConfirmationPerformanceReportsWidget, который до этого
-        оставался ради аналитики и смены: его таблица
-        confirmation_performance_reports тоже без единого писателя, и на всех
-        трёх экранах он показывал одну и ту же пустоту.
-      */}
+					<MessageDeliveryConsole />
+					{hasCapability(clinicMode, "massCampaigns") ? (
+						<CampaignPanel />
+					) : null}
 				</>
 			)}
 
@@ -812,6 +739,7 @@ export function CommunicationsView(
 					<PatientOmnichannelHubModal
 						isOpen={isOmnichannelHubOpen}
 						onClose={() => setIsOmnichannelHubOpen(false)}
+						portal={true}
 					/>
 				</Suspense>
 			)}

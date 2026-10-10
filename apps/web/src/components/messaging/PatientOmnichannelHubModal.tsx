@@ -1,66 +1,28 @@
 /**
- * PatientOmnichannelHubModal.tsx — Омниканальный центр сообщений (WhatsApp, Telegram, SMS),
- * дашборд NPS / лояльности и быстрые клинические шаблоны.
- *
- * Архитектурные возможности:
- * 1. Единый поток переписки с пациентом (мультиканальная лента WhatsApp / Telegram / SMS).
- * 2. Быстрые клинические шаблоны: напоминание о визите, подтверждение брони, отправка сметы, опрос качества.
- * 3. Дашборд NPS: баллы клиники, промоутеры/нейтралы/детракторы, таблица отзывов с бейджами срочности.
- * 4. 1-кликовая интеграция со счетами СБП (SbpPaymentQrModal).
+ * PatientOmnichannelHubModal.tsx — Тонкий фасад омниканального центра сообщений (WhatsApp, Telegram, SMS),
+ * дашборда NPS / лояльности и динамического эквайринга СБП.
+ * Декомпозирован в поддиректорию omnichannelHub/ в соответствии с Мандатом 8b.
  */
 
-import React, { useId, useMemo, useRef, useState } from "react";
-import {
-	Activity, AlertTriangle, ArrowUpRight, Bot, Calendar, Check, CheckCheck,
-	CheckCircle2, ChevronRight, Clock, CreditCard, FileText, Filter, HeartHandshake,
-	HelpCircle, History, Layers, MessageCircle, MessageSquare, MessagesSquare,
-	Paperclip, Phone, Plus, QrCode, RefreshCw, Search, Send, ShieldCheck,
-	Sparkles, Star, ThumbsDown, ThumbsUp, TrendingUp, User, UserCheck, Users, X, Zap,
-} from "lucide-react";
-import { showToast } from "../GlobalToast";
+import React, { useId } from "react";
+import { createPortal } from "react-dom";
 import { SbpPaymentQrModal } from "./SbpPaymentQrModal.js";
 import {
-	DEFAULT_CONTACTS,
-	DEFAULT_MESSAGES_BY_PATIENT,
-	DEFAULT_NPS_REVIEWS,
-	DEFAULT_TEMPLATES,
-	calculateNpsMetrics,
-	formatCurrencyRu,
-	formatRussianPhone,
-	getNpsCategory,
-	getNpsUrgency,
-	replaceTemplateVariables,
-} from "./omnichannelEngine.js";
+	OmnichannelChatTab,
+	OmnichannelHeader,
+	OmnichannelModalFooter,
+	OmnichannelNpsTab,
+	OmnichannelTemplatesTab,
+	useOmnichannelHubState,
+} from "./omnichannelHub/index.js";
+import { DEFAULT_TEMPLATES } from "./omnichannelEngine.js";
 import type {
-	InteractiveButtonPayload,
-	MessageAttachment,
-	NpsReview,
-	NpsReviewStatus,
-	NpsUrgency,
-	OmnichannelChannel,
-	OmnichannelChannelFilter,
-	OmnichannelMessage,
-	OmnichannelTemplate,
-	PatientOmnichannelContact,
-	SbpPaymentInvoice,
-	TemplateCategory,
-} from "./omnichannelTypes.js";
-import { OmnichannelNpsTab } from "./OmnichannelNpsTab.js";
-import { OmnichannelTemplatesTab } from "./OmnichannelTemplatesTab.js";
+	OmnichannelTab,
+	PatientOmnichannelHubModalProps,
+} from "./omnichannelHub/types.js";
 import "./omnichannelHub.css";
 
-export type OmnichannelTab = "chat" | "templates" | "nps";
-
-export interface PatientOmnichannelHubModalProps {
-	readonly isOpen: boolean;
-	readonly onClose: () => void;
-	readonly initialPatientId?: string | undefined;
-	readonly clinicName?: string | undefined;
-	readonly clinicAddress?: string | undefined;
-	readonly onSendMessage?: ((message: OmnichannelMessage) => Promise<void> | void) | undefined;
-}
-
-let omnichannelMsgSeq = 0;
+export type { OmnichannelTab, PatientOmnichannelHubModalProps };
 
 export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProps> = ({
 	isOpen,
@@ -69,313 +31,19 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 	clinicName = "DENTE Dental Clinic",
 	clinicAddress = "г. Москва, ул. Арбат, д. 24",
 	onSendMessage,
+	portal = false,
 }) => {
 	const modalTitleId = useId();
-
-	// Навигация по табам
-	const [activeTab, setActiveTab] = useState<OmnichannelTab>("chat");
-
-	// Состояние контактов и выбранного пациента
-	const [contacts, setContacts] = useState<readonly PatientOmnichannelContact[]>(DEFAULT_CONTACTS);
-	const [selectedPatientId, setSelectedPatientId] = useState<string>(initialPatientId);
-	const [patientSearchQuery, setPatientSearchQuery] = useState<string>("");
-
-	// Сообщения по пациентам
-	const [messagesByPatient, setMessagesByPatient] = useState<Record<string, OmnichannelMessage[]>>(
-		DEFAULT_MESSAGES_BY_PATIENT,
-	);
-
-	// Фильтр каналов в чате
-	const [channelFilter, setChannelFilter] = useState<OmnichannelChannelFilter>("all");
-
-	// Поле ввода сообщения
-	const [inputChannel, setInputChannel] = useState<OmnichannelChannel>("whatsapp");
-	const [messageText, setMessageText] = useState<string>("");
-	const [selectedTemplateCategory, setSelectedTemplateCategory] = useState<string>("");
-	const [isSending, setIsSending] = useState<boolean>(false);
-	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-	const attachmentInputRef = useRef<HTMLInputElement | null>(null);
-
-	// Отзывы NPS
-	const [npsReviews, setNpsReviews] = useState<readonly NpsReview[]>(DEFAULT_NPS_REVIEWS);
-	const [npsFilterUrgency, setNpsFilterUrgency] = useState<string>("all");
-	const [npsFilterStatus, setNpsFilterStatus] = useState<string>("all");
-
-	// Состояние модального окна оплаты СБП
-	const [isSbpModalOpen, setIsSbpModalOpen] = useState<boolean>(false);
-	const [currentSbpInvoice, setCurrentSbpInvoice] = useState<SbpPaymentInvoice | null>(null);
-
-	// Перехват диалога у бота (Operator Takeover)
-	const [interceptedPatients, setInterceptedPatients] = useState<Record<string, boolean>>({});
-	const isCurrentPatientIntercepted = Boolean(interceptedPatients[selectedPatientId]);
-
-	// Текущий выбранный контакт
-	const selectedContact = useMemo(() => {
-		return contacts.find((c) => c.id === selectedPatientId) || contacts[0]!;
-	}, [contacts, selectedPatientId]);
-
-	// Фильтрованный список пациентов в левом сайдбаре
-	const filteredContacts = useMemo(() => {
-		const q = patientSearchQuery.trim().toLowerCase();
-		if (!q) return contacts;
-		return contacts.filter(
-			(c) =>
-				c.fullName.toLowerCase().includes(q) ||
-				c.phone.includes(q) ||
-				c.telegramUsername?.toLowerCase().includes(q),
-		);
-	}, [contacts, patientSearchQuery]);
-
-	// Лента сообщений для выбранного пациента с фильтром по каналу
-	const currentThreadMessages = useMemo(() => {
-		const allMsgs = messagesByPatient[selectedPatientId] || [];
-		if (channelFilter === "all") return allMsgs;
-		return allMsgs.filter((m) => m.channel === channelFilter);
-	}, [messagesByPatient, selectedPatientId, channelFilter]);
-
-	// Расчет метрик NPS
-	const npsMetrics = useMemo(() => {
-		return calculateNpsMetrics(npsReviews);
-	}, [npsReviews]);
-
-	// Фильтрованные отзывы NPS
-	const filteredNpsReviews = useMemo(() => {
-		return npsReviews.filter((r) => {
-			if (npsFilterUrgency !== "all") {
-				if (npsFilterUrgency === "critical" && r.urgency !== "critical") return false;
-				if (npsFilterUrgency === "detractor" && r.category !== "detractor") return false;
-				if (npsFilterUrgency === "promoter" && r.category !== "promoter") return false;
-				if (npsFilterUrgency === "neutral" && r.category !== "neutral") return false;
-			}
-			if (npsFilterStatus !== "all" && r.status !== npsFilterStatus) {
-				return false;
-			}
-			return true;
-		});
-	}, [npsReviews, npsFilterUrgency, npsFilterStatus]);
+	const hub = useOmnichannelHubState({
+		initialPatientId,
+		clinicName,
+		clinicAddress,
+		onSendMessage,
+	});
 
 	if (!isOpen) return null;
 
-	// Быстрая вставка шаблона в поле ввода
-	const handleApplyTemplate = (template: OmnichannelTemplate) => {
-		const context = {
-			patientName: selectedContact.fullName,
-			clinicName,
-			clinicAddress,
-			appointmentDate: selectedContact.nextAppointment?.date || "",
-			appointmentTime: selectedContact.nextAppointment?.time || "",
-			cabinet: selectedContact.nextAppointment?.cabinet || "",
-			doctorName: selectedContact.nextAppointment?.doctorName || "Лечащий врач",
-			treatmentPlanTitle: selectedContact.activeTreatmentPlan?.title || "Комплексный план лечения",
-			treatmentSum: selectedContact.activeTreatmentPlan
-				? formatCurrencyRu(selectedContact.activeTreatmentPlan.totalRub)
-				: "0,00 ₽",
-			orderId: `ORD-${Date.now().toString().slice(-6)}`,
-			paymentLink: "",
-			bonusAmount: "1 000 ₽",
-			promoCode: "BIRTHDAY",
-			validDays: "30 дней",
-		};
-
-		const filled = replaceTemplateVariables(template.templateText, context);
-		setMessageText(filled);
-		setSelectedTemplateCategory(template.category);
-		if (template.channel !== "all") {
-			setInputChannel(template.channel);
-		}
-		setActiveTab("chat");
-	};
-
-	// Отправка сообщения
-	const handleSendMessage = async () => {
-		if (isSending) return;
-		const text = messageText.trim();
-		if (!text) {
-			const template = DEFAULT_TEMPLATES[0];
-			if (template) {
-				handleApplyTemplate(template);
-			} else {
-				setMessageText(
-					`Здравствуйте, ${selectedContact.fullName}! Напоминаем о вашей записи на приём в клинику ${clinicName}. Если у вас есть вопросы, пожалуйста, сообщите нам.`,
-				);
-			}
-			textareaRef.current?.focus();
-			showToast("Подставлен шаблон сообщения. Нажмите «Отправить»", "info");
-			return;
-		}
-
-		setIsSending(true);
-		const newMsg: OmnichannelMessage = {
-			id: `msg-${Date.now()}-${++omnichannelMsgSeq}`,
-			patientId: selectedPatientId,
-			channel: inputChannel,
-			direction: "outbound",
-			senderName: "Администратор клиники",
-			senderType: "clinic_staff",
-			timestamp: new Date().toISOString(),
-			body: text,
-			status: "sent",
-		};
-
-		setMessagesByPatient((prev) => ({
-			...prev,
-			[selectedPatientId]: [...(prev[selectedPatientId] || []), newMsg],
-		}));
-
-		setMessageText("");
-		setSelectedTemplateCategory("");
-
-		try {
-			if (onSendMessage) {
-				await onSendMessage(newMsg);
-			}
-		} finally {
-			setIsSending(false);
-		}
-	};
-
-	// Обработка клика по интерактивной кнопке быстрого ответа
-	const handleInteractiveButtonClick = (btn: InteractiveButtonPayload, originalMsg: OmnichannelMessage) => {
-		const replyMsg: OmnichannelMessage = {
-			id: `msg-${Date.now()}`,
-			patientId: selectedPatientId,
-			channel: originalMsg.channel,
-			direction: "outbound",
-			senderName: "Администратор клиники",
-			senderType: "clinic_staff",
-			timestamp: new Date().toISOString(),
-			body: `Выбрано действие: ${btn.title}`,
-			status: "sent",
-		};
-		setMessagesByPatient((prev) => ({
-			...prev,
-			[selectedPatientId]: [...(prev[selectedPatientId] || []), replyMsg],
-		}));
-		onSendMessage?.(replyMsg);
-		showToast(`Действие «${btn.title}» выполнено`, "success");
-	};
-
-	// Прикрепление файла через скрепку
-	const handleAttachFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (!file) return;
-		const newAtt: MessageAttachment = {
-			id: `att-${Date.now()}`,
-			name: file.name,
-			type: file.type.includes("pdf") ? "pdf" : file.type.includes("image") ? "image" : "document",
-			url: URL.createObjectURL(file),
-			sizeFormatted: `${(file.size / 1024).toFixed(1)} КБ`,
-		};
-		const attMsg: OmnichannelMessage = {
-			id: `msg-${Date.now()}`,
-			patientId: selectedPatientId,
-			channel: inputChannel,
-			direction: "outbound",
-			senderName: "Администратор клиники",
-			senderType: "clinic_staff",
-			timestamp: new Date().toISOString(),
-			body: `Прикреплен файл: ${file.name}`,
-			attachments: [newAtt],
-			status: "sent",
-		};
-		setMessagesByPatient((prev) => ({
-			...prev,
-			[selectedPatientId]: [...(prev[selectedPatientId] || []), attMsg],
-		}));
-		onSendMessage?.(attMsg);
-		showToast(`Файл «${file.name}» прикреплен к переписке`, "success");
-		e.target.value = "";
-	};
-
-	// Открытие модального окна СБП для текущего пациента
-	const handleOpenSbpModal = () => {
-		const sumRub = selectedContact.activeTreatmentPlan?.totalRub || 14500;
-		const invoice: SbpPaymentInvoice = {
-			orderId: `ORD-${Date.now().toString().slice(-6)}`,
-			patientId: selectedContact.id,
-			patientName: selectedContact.fullName,
-			phone: selectedContact.phone,
-			sumRub,
-			sumKopecks: sumRub * 100,
-			purpose: `Оплата медицинских стоматологических услуг (${clinicName})`,
-			clinicName,
-			totalInvoiceRub: sumRub,
-		};
-		setCurrentSbpInvoice(invoice);
-		setIsSbpModalOpen(true);
-	};
-
-	// Обработка успешного платежа СБП
-	const handleSbpPaymentSuccess = (res: {
-		orderId: string;
-		sumRub: number;
-		fiscalReceiptId: string | null;
-		isManualReconciliation?: boolean;
-	}) => {
-		const successMsg: OmnichannelMessage = {
-			id: `msg-sbp-${Date.now()}`,
-			patientId: selectedPatientId,
-			channel: inputChannel,
-			direction: "outbound",
-			senderName: "DENTE Фискальный Шлюз",
-			senderType: "automated_bot",
-			timestamp: new Date().toISOString(),
-			body: `Поступила оплата заказа №${res.orderId} на сумму ${formatCurrencyRu(res.sumRub)} через СБП.\n${
-				res.fiscalReceiptId
-					? `Электронный фискальный чек 54-ФЗ: #${res.fiscalReceiptId}`
-					: "Ручная сверка (без чека ККТ)"
-			}`,
-			status: "delivered",
-			templateCategory: "sbp_payment",
-		};
-
-		setMessagesByPatient((prev) => ({
-			...prev,
-			[selectedPatientId]: [...(prev[selectedPatientId] || []), successMsg],
-		}));
-	};
-
-	// Переключение статуса отзыва NPS
-	const handleUpdateNpsStatus = (reviewId: string, newStatus: NpsReviewStatus) => {
-		setNpsReviews((prev) =>
-			prev.map((r) => (r.id === reviewId ? { ...r, status: newStatus } : r)),
-		);
-	};
-
-	// Переход из таблицы NPS в чат с пациентом
-	const handleOpenChatFromNps = (patientId: string) => {
-		setSelectedPatientId(patientId);
-		setActiveTab("chat");
-	};
-
-	// Перехват диалога у Telegram/VK бота оператором
-	const handleTakeoverChat = () => {
-		setInterceptedPatients((prev) => ({
-			...prev,
-			[selectedPatientId]: true,
-		}));
-
-		const takeoverMsg: OmnichannelMessage = {
-			id: `msg-takeover-${Date.now()}`,
-			patientId: selectedPatientId,
-			channel: inputChannel,
-			direction: "outbound",
-			senderName: "Дежурный оператор",
-			senderType: "clinic_staff",
-			timestamp: new Date().toISOString(),
-			body: "👩‍💼 Оператор клиники подключился к диалогу. Бот переведён в спящий режим. Чем я могу вам помочь?",
-			status: "delivered",
-		};
-
-		setMessagesByPatient((prev) => ({
-			...prev,
-			[selectedPatientId]: [...(prev[selectedPatientId] || []), takeoverMsg],
-		}));
-		onSendMessage?.(takeoverMsg);
-		showToast("Диалог успешно перехвачен оператором клиники", "success");
-	};
-
-	return (
+	const modalContent = (
 		<div
 			className="omnichannel-modal-overlay"
 			role="dialog"
@@ -383,507 +51,67 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 			aria-labelledby={modalTitleId}
 		>
 			<div className="omnichannel-modal-container hub-main-container">
-				{/* Верхняя шапка */}
-				<header className="omnichannel-modal-header">
-					<div className="hub-header-left">
-						<div className="hub-header-icon-badge" aria-hidden="true">
-							<MessagesSquare size={20} />
-						</div>
-						<div>
-							<h2 id={modalTitleId} className="omnichannel-modal-title">
-								Омниканальный центр сообщений и лояльности
-							</h2>
-							<p className="hub-header-sub">
-								Единый шлюз WhatsApp (Kapso WABA), Telegram Bot, SMS и динамических платежей СБП
-							</p>
-						</div>
-					</div>
+				<OmnichannelHeader
+					titleId={modalTitleId}
+					activeTab={hub.activeTab}
+					setActiveTab={hub.setActiveTab}
+					unreadCount={hub.selectedContact.unreadCount}
+					criticalPendingCount={hub.npsMetrics.criticalPendingCount}
+					npsScore={hub.npsMetrics.npsScore}
+					averageScore={hub.npsMetrics.averageScore}
+					onClose={onClose}
+				/>
 
-					{/* Индикаторы статусов каналов */}
-					<div className="hub-channel-status-bar">
-						<div className="hub-status-pill online" title="WhatsApp Business Cloud API / Kapso Gateway">
-							<span className="hub-status-dot green" />
-							<span className="hub-status-name">WhatsApp:</span>
-							<span className="hub-status-val">Подключено</span>
-						</div>
-						<div className="hub-status-pill online" title="Telegram Bot API: @DenteClinicBot">
-							<span className="hub-status-dot blue" />
-							<span className="hub-status-name">Telegram:</span>
-							<span className="hub-status-val">@DenteClinicBot</span>
-						</div>
-						<div className="hub-status-pill nps-badge" title="Текущий индекс лояльности NPS">
-							<Star size={13} className="text-amber" />
-							<span className="hub-status-name">NPS:</span>
-							<span className="hub-status-val">+{npsMetrics.npsScore}% ({npsMetrics.averageScore})</span>
-						</div>
-					</div>
-
-					<button
-						type="button"
-						className="omnichannel-modal-close min-h-[44px] min-w-[44px] inline-flex items-center justify-center"
-						style={{ minHeight: "44px", minWidth: "44px" }}
-						onClick={onClose}
-						aria-label="Закрыть окно"
-					>
-						<X size={18} />
-					</button>
-				</header>
-
-				{/* Навигационные табы */}
-				<nav className="hub-tabs-navigation" aria-label="Разделы центра сообщений">
-					<button
-						type="button"
-						className={`hub-nav-tab min-h-[44px] ${activeTab === "chat" ? "active" : ""}`}
-						style={{ minHeight: "44px" }}
-						onClick={() => setActiveTab("chat")}
-					>
-						<MessageCircle size={16} />
-						<span>Диалог с пациентом</span>
-						{selectedContact.unreadCount > 0 && (
-							<span className="hub-tab-badge">{selectedContact.unreadCount}</span>
-						)}
-					</button>
-
-					<button
-						type="button"
-						className={`hub-nav-tab min-h-[44px] ${activeTab === "templates" ? "active" : ""}`}
-						style={{ minHeight: "44px" }}
-						onClick={() => setActiveTab("templates")}
-					>
-						<FileText size={16} />
-						<span>Клинические шаблоны</span>
-					</button>
-
-					<button
-						type="button"
-						className={`hub-nav-tab min-h-[44px] ${activeTab === "nps" ? "active" : ""}`}
-						style={{ minHeight: "44px" }}
-						onClick={() => setActiveTab("nps")}
-					>
-						<TrendingUp size={16} />
-						<span>Дашборд NPS и отзывов</span>
-						{npsMetrics.criticalPendingCount > 0 && (
-							<span className="hub-tab-badge badge-critical">{npsMetrics.criticalPendingCount}</span>
-						)}
-					</button>
-				</nav>
-
-				{/* Контент табов */}
 				<div className="hub-tab-content-area">
-					{/* ТАБ 1: ДИАЛОГ С ПАЦИЕНТОМ */}
-					{activeTab === "chat" && (
-						<div className="hub-chat-workspace">
-							{/* Левый сайдбар: Список контактов */}
-							<aside className="hub-contacts-sidebar">
-								<div className="hub-contacts-search">
-									<div className="dente-search-wrap w-full">
-										<Search size={14} className="dente-search-icon" />
-										<input
-											type="text"
-											className="dente-search-input w-full"
-											placeholder="Поиск пациента / телефона..."
-											value={patientSearchQuery}
-											onChange={(e) => setPatientSearchQuery(e.target.value)}
-										/>
-										{patientSearchQuery && (
-											<button
-												type="button"
-												onClick={() => setPatientSearchQuery("")}
-												className="dente-search-clear"
-												aria-label="Очистить поиск"
-											>
-												<X size={13} />
-											</button>
-										)}
-									</div>
-								</div>
+					{hub.activeTab === "chat" && <OmnichannelChatTab hub={hub} />}
 
-								<div className="hub-contacts-list" role="list">
-									{filteredContacts.map((contact) => {
-										const isSelected = contact.id === selectedPatientId;
-										return (
-											<button
-												key={contact.id}
-												type="button"
-												className={`hub-contact-card ${isSelected ? "selected" : ""}`}
-												onClick={() => setSelectedPatientId(contact.id)}
-											>
-												<div
-													className="hub-contact-avatar"
-													style={{ backgroundColor: contact.avatarColor || "var(--teal, #0d9488)" }}
-												>
-													{contact.fullName.charAt(0)}
-												</div>
-
-												<div className="hub-contact-info">
-													<div className="hub-contact-row-top">
-														<span className="hub-contact-name">{contact.fullName}</span>
-														<span className={`hub-channel-icon-pill ${contact.preferredChannel}`}>
-															{contact.preferredChannel === "whatsapp" && "WA"}
-															{contact.preferredChannel === "telegram" && "TG"}
-															{contact.preferredChannel === "sms" && "SMS"}
-														</span>
-													</div>
-
-													<p className="hub-contact-snippet">
-														{contact.lastMessageSnippet || "Нет сообщений"}
-													</p>
-												</div>
-
-												{contact.unreadCount > 0 && (
-													<span className="hub-unread-pill">{contact.unreadCount}</span>
-												)}
-											</button>
-										);
-									})}
-								</div>
-							</aside>
-
-							{/* Центральная зона: Активный чат */}
-							<section className="hub-active-chat-pane">
-								{/* Шапка активного диалога */}
-								<div className="hub-chat-header">
-									<div className="hub-chat-patient-meta">
-										<div
-											className="hub-chat-avatar-large"
-											style={{ backgroundColor: selectedContact.avatarColor || "var(--teal, #0d9488)" }}
-										>
-											{selectedContact.fullName.charAt(0)}
-										</div>
-										<div>
-											<div className="hub-chat-patient-title-row">
-												<h3 className="hub-chat-patient-name">{selectedContact.fullName}</h3>
-												<span className="hub-phone-chip">{formatRussianPhone(selectedContact.phone)}</span>
-											</div>
-											<div className="hub-chat-quick-details">
-												{selectedContact.nextAppointment && (
-													<span className="hub-detail-chip">
-														<Calendar size={12} /> Визит: {selectedContact.nextAppointment.date} {selectedContact.nextAppointment.time} ({selectedContact.nextAppointment.doctorName})
-													</span>
-												)}
-												{selectedContact.activeTreatmentPlan && (
-													<span className="hub-detail-chip highlight inline-flex items-center gap-1">
-														<Activity size={12} className="text-teal" /> План: {formatCurrencyRu(selectedContact.activeTreatmentPlan.totalRub)}
-													</span>
-												)}
-											</div>
-										</div>
-									</div>
-
-									{/* Действия шапки */}
-									<div className="hub-chat-header-actions">
-										{/* Фильтр каналов в ленте */}
-										<div className="dente-segmented-bar">
-											<button
-												type="button"
-												className={`dente-segmented-item ${channelFilter === "all" ? "active" : ""}`}
-												data-active={channelFilter === "all"}
-												onClick={() => setChannelFilter("all")}
-											>
-												Все
-											</button>
-											<button
-												type="button"
-												className={`dente-segmented-item ${channelFilter === "whatsapp" ? "active" : ""}`}
-												data-active={channelFilter === "whatsapp"}
-												onClick={() => setChannelFilter("whatsapp")}
-											>
-												WhatsApp
-											</button>
-											<button
-												type="button"
-												className={`dente-segmented-item ${channelFilter === "telegram" ? "active" : ""}`}
-												data-active={channelFilter === "telegram"}
-												onClick={() => setChannelFilter("telegram")}
-											>
-												Telegram
-											</button>
-											<button
-												type="button"
-												className={`dente-segmented-item ${channelFilter === "sms" ? "active" : ""}`}
-												data-active={channelFilter === "sms"}
-												onClick={() => setChannelFilter("sms")}
-											>
-												SMS
-											</button>
-										</div>
-
-										{/* Кнопка перехвата диалога у Telegram/VK бота (Operator Takeover) */}
-										{!isCurrentPatientIntercepted ? (
-											<button
-												type="button"
-												className="hub-btn-takeover min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-amber-200 hover:bg-amber-500/25 transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
-												onClick={handleTakeoverChat}
-												title="Отключить Telegram/VK бота и перехватить диалог оператором"
-												data-testid="btn-takeover-chat"
-											>
-												<UserCheck size={15} className="text-amber-600 dark:text-amber-400" />
-												<span>Перехватить диалог</span>
-											</button>
-										) : (
-											<span
-												className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/15 border border-emerald-500/40 text-emerald-800 dark:text-emerald-200 inline-flex items-center gap-1.5"
-												data-testid="badge-operator-active"
-											>
-												<ShieldCheck size={15} className="text-emerald-600 dark:text-emerald-400" />
-												<span>Оператор на линии</span>
-											</span>
-										)}
-
-										{/* 1-клик счет СБП */}
-										<button
-											type="button"
-											className="hub-btn-sbp-invoice min-h-[44px]"
-											style={{ minHeight: "44px" }}
-											onClick={handleOpenSbpModal}
-											title="Сформировать динамический QR-код СБП для оплаты"
-										>
-											<QrCode size={15} /> Выставить счет СБП
-										</button>
-									</div>
-								</div>
-
-								{/* Лента сообщений */}
-								<div className="hub-messages-feed">
-									{currentThreadMessages.length === 0 ? (
-										<div className="hub-empty-feed">
-											<MessageSquare size={36} className="text-muted" />
-											<p>Нет сообщений в выбранном канале.</p>
-										</div>
-									) : (
-										currentThreadMessages.map((msg) => {
-											const isOutbound = msg.direction === "outbound";
-											return (
-												<div
-													key={msg.id}
-													className={`hub-message-bubble-wrapper ${isOutbound ? "outbound" : "inbound"}`}
-												>
-													<div className={`hub-message-bubble ${msg.channel}`}>
-														{/* Заголовок отправителя и канал */}
-														<div className="hub-msg-meta-row">
-															<span className="hub-msg-sender">{msg.senderName}</span>
-															<span className={`hub-msg-channel-tag ${msg.channel}`}>
-																{msg.channel.toUpperCase()}
-															</span>
-														</div>
-
-														{/* Тело сообщения */}
-														<div className="hub-msg-body-text">
-															{msg.body.split("\n").map((line, idx) => (
-																<React.Fragment key={idx}>
-																	{line}
-																	{idx < msg.body.split("\n").length - 1 && <br />}
-																</React.Fragment>
-															))}
-														</div>
-
-														{/* Интерактивные кнопки */}
-														{msg.interactivePayload?.buttons && (
-															<div className="hub-msg-interactive-buttons">
-																{msg.interactivePayload.buttons.map((btn) => (
-																	<button
-																		key={btn.id}
-																		type="button"
-																		className={`hub-msg-interactive-btn ${btn.variant || "secondary"}`}
-																		onClick={() => handleInteractiveButtonClick(btn, msg)}
-																	>
-																		{btn.title}
-																	</button>
-																))}
-															</div>
-														)}
-
-														{/* Вложения */}
-														{msg.attachments && msg.attachments.length > 0 && (
-															<div className="hub-msg-attachments">
-																{msg.attachments.map((att) => (
-																	<div key={att.id} className="hub-msg-attachment-item">
-																		<FileText size={16} />
-																		<span className="att-name">{att.name}</span>
-																		{att.sizeFormatted && <span className="att-size">{att.sizeFormatted}</span>}
-																	</div>
-																))}
-															</div>
-														)}
-
-														{/* Таймстамп и статус доставки */}
-														<div className="hub-msg-footer">
-															<span className="hub-msg-time">
-																{new Date(msg.timestamp).toLocaleTimeString("ru-RU", {
-																	hour: "2-digit",
-																	minute: "2-digit",
-																})}
-															</span>
-
-															{isOutbound && (
-																<span className="hub-msg-status" title={`Статус: ${msg.status}`}>
-																	{msg.status === "read" && <CheckCheck size={14} className="text-teal" />}
-																	{msg.status === "delivered" && <CheckCheck size={14} className="text-muted" />}
-																	{msg.status === "sent" && <Check size={14} className="text-muted" />}
-																	{msg.status === "sending" && <Clock size={14} className="text-muted" />}
-																</span>
-															)}
-														</div>
-													</div>
-												</div>
-											);
-										})
-									)}
-								</div>
-
-								{/* Панель ввода сообщения */}
-								<div className="hub-chat-input-area">
-									<div className="hub-input-top-bar">
-										{/* Выбор канала отправки */}
-										<div className="hub-channel-select-wrap">
-											<span className="hub-input-bar-label">Канал:</span>
-											<select
-												className="hub-channel-select"
-												value={inputChannel}
-												onChange={(e) => setInputChannel(e.target.value as OmnichannelChannel)}
-											>
-												<option value="whatsapp">WhatsApp (Kapso WABA)</option>
-												<option value="telegram">Telegram (@DenteClinicBot)</option>
-												<option value="sms">SMS (Резервный канал)</option>
-											</select>
-										</div>
-
-										{/* Быстрый выбор шаблона */}
-										<div className="hub-template-quick-select-wrap">
-											<span className="hub-input-bar-label">Шаблон:</span>
-											<select
-												className="hub-template-select"
-												value={selectedTemplateCategory}
-												onChange={(e) => {
-													const cat = e.target.value;
-													setSelectedTemplateCategory(cat);
-													const tpl = DEFAULT_TEMPLATES.find((t) => t.category === cat);
-													if (tpl) handleApplyTemplate(tpl);
-												}}
-											>
-												<option value="">-- Выберите быстрый шаблон --</option>
-												{DEFAULT_TEMPLATES.map((t) => (
-													<option key={t.id} value={t.category}>
-														{t.name}
-													</option>
-												))}
-											</select>
-										</div>
-									</div>
-
-									{/* Текстовая область */}
-									<div className="hub-textarea-container">
-										<textarea
-											ref={textareaRef}
-											className="hub-message-textarea min-h-[110px] pb-14"
-											rows={3}
-											placeholder={`Введите сообщение для ${selectedContact.fullName} (Ctrl+Enter для отправки)...`}
-											value={messageText}
-											onChange={(e) => setMessageText(e.target.value)}
-											onKeyDown={(e) => {
-												if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-													e.preventDefault();
-													handleSendMessage();
-												}
-											}}
-										/>
-
-										<div className="hub-textarea-actions">
-											<input
-												type="file"
-												ref={attachmentInputRef}
-												style={{ display: "none" }}
-												aria-hidden="true"
-												tabIndex={-1}
-												onChange={handleAttachFile}
-											/>
-											<button
-												type="button"
-												className="hub-icon-action-btn min-h-[44px] min-w-[44px] inline-flex items-center justify-center"
-												style={{ minHeight: "44px", minWidth: "44px" }}
-												title="Прикрепить файл или план лечения"
-												aria-label="Прикрепить файл или план лечения"
-												onClick={() => attachmentInputRef.current?.click()}
-											>
-												<Paperclip size={16} />
-											</button>
-
-											<button
-												type="button"
-												className="hub-btn-send min-h-[44px] min-w-[44px]"
-												style={{ minHeight: "44px", minWidth: "44px" }}
-												onClick={handleSendMessage}
-												disabled={isSending}
-												aria-label="Отправить сообщение"
-											>
-												<Send size={15} /> {isSending ? "Отправка..." : "Отправить"}
-											</button>
-										</div>
-									</div>
-								</div>
-							</section>
-						</div>
-					)}
-
-					{/* ТАБ 2: КЛИНИЧЕСКИЕ ШАБЛОНЫ */}
-					{activeTab === "templates" && (
+					{hub.activeTab === "templates" && (
 						<OmnichannelTemplatesTab
 							templates={DEFAULT_TEMPLATES}
-							selectedContactName={selectedContact.fullName}
-							onApplyTemplate={handleApplyTemplate}
+							selectedContactName={hub.selectedContact.fullName}
+							onApplyTemplate={hub.handleApplyTemplate}
 						/>
 					)}
 
-					{/* ТАБ 3: ДАШБОРД NPS И ОТЗЫВОВ */}
-					{activeTab === "nps" && (
+					{hub.activeTab === "nps" && (
 						<OmnichannelNpsTab
-							npsMetrics={npsMetrics}
-							npsReviews={npsReviews}
-							filteredNpsReviews={filteredNpsReviews}
-							npsFilterUrgency={npsFilterUrgency}
-							setNpsFilterUrgency={setNpsFilterUrgency}
-							npsFilterStatus={npsFilterStatus}
-							setNpsFilterStatus={setNpsFilterStatus}
-							onUpdateNpsStatus={handleUpdateNpsStatus}
-							onOpenChatFromNps={handleOpenChatFromNps}
+							npsMetrics={hub.npsMetrics}
+							npsReviews={hub.npsReviews}
+							filteredNpsReviews={hub.filteredNpsReviews}
+							npsFilterUrgency={hub.npsFilterUrgency}
+							setNpsFilterUrgency={hub.setNpsFilterUrgency}
+							npsFilterStatus={hub.npsFilterStatus}
+							setNpsFilterStatus={hub.setNpsFilterStatus}
+							onUpdateNpsStatus={hub.handleUpdateNpsStatus}
+							onOpenChatFromNps={hub.handleOpenChatFromNps}
 						/>
 					)}
 				</div>
 
-				{/* Футер */}
-				<footer className="omnichannel-modal-footer">
-					<div className="hub-footer-status">
-						<ShieldCheck size={16} className="text-ok" />
-						<span>Все сообщения шифруются и архивируются в соответствии с 152-ФЗ и СанПиН.</span>
-					</div>
+				<OmnichannelModalFooter onClose={onClose} />
 
-					<button
-						type="button"
-						className="omnichannel-btn-secondary min-h-[44px] px-4"
-						style={{ minHeight: "44px" }}
-						onClick={onClose}
-					>
-						Закрыть
-					</button>
-				</footer>
-
-				{/* Встроенная панель оплаты СБП без модального оверлея (Анти-Матрёшка) */}
-				{isSbpModalOpen && currentSbpInvoice && (
+				{hub.isSbpModalOpen && hub.currentSbpInvoice && (
 					<SbpPaymentQrModal
-						isOpen={isSbpModalOpen}
+						isOpen={hub.isSbpModalOpen}
 						embedded={true}
-						onClose={() => setIsSbpModalOpen(false)}
-						invoice={currentSbpInvoice}
-						onPaymentSuccess={handleSbpPaymentSuccess}
+						onClose={() => hub.setIsSbpModalOpen(false)}
+						invoice={hub.currentSbpInvoice}
+						onPaymentSuccess={hub.handleSbpPaymentSuccess}
 						onSendToChat={(channel, text) => {
-							setMessageText(text);
-							setInputChannel(channel);
-							setIsSbpModalOpen(false);
-							setActiveTab("chat");
+							hub.setMessageText(text);
+							hub.setInputChannel(channel);
+							hub.setIsSbpModalOpen(false);
+							hub.setActiveTab("chat");
 						}}
 					/>
 				)}
 			</div>
 		</div>
 	);
+
+	if (portal && typeof document !== "undefined" && document.body) {
+		return createPortal(modalContent, document.body);
+	}
+	return modalContent;
 };
+
