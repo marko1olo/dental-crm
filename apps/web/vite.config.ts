@@ -168,7 +168,8 @@ export default defineConfig({
 					// `import type`, поэтому в рантайм-графе его нет и правило на него не давало
 					// ни одного чанка. Правило переведено на живой модуль.
 					if (
-						normalizedId.endsWith("/apps/web/src/utils/math/toothGeometry.ts")
+						normalizedId.endsWith("/apps/web/src/utils/math/toothGeometry.ts") ||
+						normalizedId.includes("/apps/web/src/utils/math/toothGeometry/")
 					)
 						return "ct-planning-geometry";
 					if (
