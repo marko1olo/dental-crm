@@ -95,7 +95,7 @@ export function validateNeedleForTechnique(
 		if (needle.lengthMm > 15) {
 			return {
 				isValid: false,
-				warningRu: `Для интралигаментарной анестезии под давлением 10–15 атм длинная игла (${needle.lengthMm} мм) сгибается и травмирует корень. Используйте ультракороткую 30G 8–12 мм.`,
+				warningRu: `Для интралигаментарной анестезии специальным инъектором длинная игла (${needle.lengthMm} мм) сгибается и травмирует корень. Используйте ультракороткую 30G 8–12 мм.`,
 				isSevereMismatch: true,
 			};
 		}

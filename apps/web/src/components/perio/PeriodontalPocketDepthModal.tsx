@@ -114,6 +114,42 @@ export const PeriodontalPocketDepthModal: React.FC<PeriodontalPocketDepthModalPr
 		});
 	};
 
+const SITE_NAMES_RU: Record<PerioSiteKey, string> = {
+	distoBuccal: "Дистально-вестибулярно (ДВ)",
+	midBuccal: "Вестибулярно по центру (В)",
+	mesioBuccal: "Медиально-вестибулярно (МВ)",
+	distoLingual: "Дистально-орально (ДО)",
+	midLingual: "Орально по центру (О)",
+	mesioLingual: "Медиально-орально (МО)",
+};
+
+	const handleApplyToothPreset = (depth: number, bop = false, plq = false, name = "") => {
+		if (readOnly) return;
+		setToothData((prev) => {
+			const updated = { ...prev };
+			for (const siteCfg of PERIO_SITES_CONFIG) {
+				const existing = prev[siteCfg.key] ?? {
+					probingDepthMm: 2,
+					gingivalMarginMm: 0,
+					bleedingOnProbing: false,
+					suppuration: false,
+					plaque: false,
+					calculus: false,
+				};
+				const calMm = calculateClinicalAttachmentLevel(depth, existing.gingivalMarginMm ?? 0);
+				updated[siteCfg.key] = {
+					...existing,
+					probingDepthMm: depth,
+					bleedingOnProbing: bop,
+					plaque: plq,
+					calMm,
+				};
+			}
+			return updated;
+		});
+		showToast(`Установлен пресет: ${name}`, "info", 1500);
+	};
+
 	const handleSave = () => {
 		if (onSaveToothRecord) {
 			onSaveToothRecord(toothData);
@@ -157,6 +193,49 @@ export const PeriodontalPocketDepthModal: React.FC<PeriodontalPocketDepthModalPr
 						<X size={16} />
 					</button>
 				</header>
+
+				{/* Quick 1-Click Tooth Presets (Mandates 8e, 8k) */}
+				<div className="px-4 sm:px-5 pt-3 pb-0 flex items-center gap-1.5 flex-wrap">
+					<span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 shrink-0">
+						Экспресс-пресеты зуба:
+					</span>
+					<button
+						type="button"
+						disabled={readOnly}
+						onClick={() => handleApplyToothPreset(2, false, false, "Здоровый пародонт (2 мм)")}
+						className="min-h-[32px] h-8 px-2.5 rounded-lg text-xs font-semibold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all cursor-pointer inline-flex items-center gap-1"
+						data-testid="btn-perio-preset-norm"
+					>
+						<span>Норма (2 мм)</span>
+					</button>
+					<button
+						type="button"
+						disabled={readOnly}
+						onClick={() => handleApplyToothPreset(3, true, false, "Гингивит (3 мм + BOP)")}
+						className="min-h-[32px] h-8 px-2.5 rounded-lg text-xs font-semibold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-all cursor-pointer inline-flex items-center gap-1"
+						data-testid="btn-perio-preset-gingivitis"
+					>
+						<span>Гингивит (3 мм + BOP)</span>
+					</button>
+					<button
+						type="button"
+						disabled={readOnly}
+						onClick={() => handleApplyToothPreset(4, true, true, "Пародонтит ср. ст. (4 мм)")}
+						className="min-h-[32px] h-8 px-2.5 rounded-lg text-xs font-semibold bg-orange-500/15 text-orange-800 dark:text-orange-300 border border-orange-500/30 hover:bg-orange-500/25 transition-all cursor-pointer inline-flex items-center gap-1"
+						data-testid="btn-perio-preset-pocket-4"
+					>
+						<span>Карман 4 мм</span>
+					</button>
+					<button
+						type="button"
+						disabled={readOnly}
+						onClick={() => handleApplyToothPreset(5, true, true, "Пародонтит тяж. ст. (5+ мм)")}
+						className="min-h-[32px] h-8 px-2.5 rounded-lg text-xs font-semibold bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 transition-all cursor-pointer inline-flex items-center gap-1"
+						data-testid="btn-perio-preset-pocket-5"
+					>
+						<span>Карман 5+ мм</span>
+					</button>
+				</div>
 
 				{/* Body: 6 Points Probing Matrix */}
 				<div className="p-4 sm:p-5 overflow-y-auto space-y-4">
@@ -250,7 +329,7 @@ export const PeriodontalPocketDepthModal: React.FC<PeriodontalPocketDepthModalPr
 					{/* Fast Depth Numeric Input for Selected Site */}
 					<div className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/40 border border-[var(--line,#e2e8f0)] dark:border-slate-700 space-y-2">
 						<div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-							<span className="text-[12.5px]">Ввод глубины кармана для точки: <strong className="text-teal-700 dark:text-teal-300">{activeSiteKey}</strong></span>
+							<span className="text-[12.5px]">Ввод глубины кармана для точки: <strong className="text-teal-700 dark:text-teal-300">{SITE_NAMES_RU[activeSiteKey] || activeSiteKey}</strong></span>
 							<span className="text-[12px] text-slate-500 dark:text-slate-400 font-normal">Диапазон: 1–12 мм</span>
 						</div>
 						<div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">

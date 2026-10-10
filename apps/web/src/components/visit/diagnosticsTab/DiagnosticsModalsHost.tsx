@@ -374,8 +374,8 @@ export function DiagnosticsModalsHost({
 					patientName={visitPatientName ?? activePatient?.fullName ?? activePatient?.name}
 					patientCardNumber={activePatient?.cardNumber ?? activePatient?.medicalCardNumber}
 					activeToothFdi={initialToothNumber}
-					currentStudy={patientStudies?.[0]}
-					historyStudies={patientStudies}
+					currentStudy={patientStudies?.[0] as any}
+					historyStudies={patientStudies as any}
 					onInsertProtocol={onInsertToProtocol}
 				/>
 			)}

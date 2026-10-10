@@ -84,7 +84,7 @@ export function VisitEmkCanvas({
 				snapshot,
 				toothNumber: snapshot.toothNumber,
 				serviceCatalog,
-				currentDiary: visitNoteForm,
+				currentDiary: visitNoteForm as any,
 			});
 
 			// 1. Анамнез заболевания, диагноз, жалобы, осмотр, протокол Формы 043/у
@@ -125,7 +125,7 @@ export function VisitEmkCanvas({
 					price: s.unitPriceRub,
 				})),
 			});
-			useVisitStore.getState().setVisitToothState?.(String(result.toothNumber), "done");
+			useVisitStore.getState().setToothState(String(result.toothNumber), "done");
 
 			playTactileEarcon("save");
 			showToast(

@@ -89,16 +89,16 @@ export function EmkAnesthesiaSection({
 								"Анестезия: инфильтрационная Sol. Ultracaini D-S 1:200 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое.",
 							);
 						}}
-						className={`min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0 ${
+						className={`min-h-[36px] h-9 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0 ${
 							isUltracainDsFavorite
 								? "bg-teal-500/10 border-teal-500 text-[var(--ink)] font-bold ring-1 ring-teal-500/30"
 								: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
 						}`}
 						data-testid="btn-anes-ultracain-ds"
-						title="Внести стандартную анестезию 1:200 000 в протокол"
+						title="Внести стандартную анестезию 1:200 000 в протокол (1 клик)"
 					>
-						<Syringe size={12} className="text-teal-600 shrink-0" />
-						<span>Ультракаин 1:200k (1 карп.)</span>
+						<Syringe size={14} className="text-teal-600 shrink-0" />
+						<span>Ультракаин Д-С 1:200k (1 карп.)</span>
 						{isUltracainDsFavorite && (
 							<span className="text-[10px] text-teal-700 dark:text-teal-300 font-bold flex items-center gap-0.5">
 								<Star size={10} className="fill-teal-500 text-teal-600" />
@@ -117,16 +117,16 @@ export function EmkAnesthesiaSection({
 								"Анестезия: проводниковая/инфильтрационная Sol. Ultracaini D-S Forte 1:100 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое.",
 							);
 						}}
-						className={`min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0 ${
+						className={`min-h-[36px] h-9 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0 ${
 							isUltracainForteFavorite
 								? "bg-teal-500/10 border-teal-500 text-[var(--ink)] font-bold ring-1 ring-teal-500/30"
 								: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
 						}`}
 						data-testid="btn-anes-ultracain-ds-forte"
-						title="Внести глубокую анестезию 1:100 000 в протокол"
+						title="Внести глубокую анестезию 1:100 000 в протокол (1 клик)"
 					>
-						<Syringe size={12} className="text-blue-500 shrink-0" />
-						<span>Ультракаин Форте (1 карп.)</span>
+						<Syringe size={14} className="text-blue-500 shrink-0" />
+						<span>Ультракаин Форте 1:100k (1 карп.)</span>
 						{isUltracainForteFavorite && (
 							<span className="text-[10px] text-teal-700 dark:text-teal-300 font-bold flex items-center gap-0.5">
 								<Star size={10} className="fill-teal-500 text-teal-600" />
@@ -145,15 +145,15 @@ export function EmkAnesthesiaSection({
 								"Анестезия: инфильтрационная Sol. Scandonest 3% (без адреналина) — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание достаточное.",
 							);
 						}}
-						className={`min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0 ${
+						className={`min-h-[36px] h-9 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0 ${
 							isScandonestFavorite
 								? "bg-teal-500/10 border-teal-500 text-[var(--ink)] font-bold ring-1 ring-teal-500/30"
 								: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
 						}`}
 						data-testid="btn-anes-scandonest-3"
-						title="Безадреналиновая анестезия для кардио-пациентов"
+						title="Безадреналиновая анестезия для кардио-пациентов (1 клик)"
 					>
-						<Syringe size={12} className="text-amber-500 shrink-0" />
+						<Syringe size={14} className="text-amber-500 shrink-0" />
 						<span>Скандонест 3% (без адреналина)</span>
 						{isScandonestFavorite && (
 							<span className="text-[10px] text-teal-700 dark:text-teal-300 font-bold flex items-center gap-0.5">
@@ -176,7 +176,7 @@ export function EmkAnesthesiaSection({
 								key={w}
 								type="button"
 								onClick={() => setPatientWeightKg(w)}
-								className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border transition-all cursor-pointer ${
+								className={`min-h-[28px] px-2.5 py-1 rounded-md text-[11.5px] font-semibold border transition-all cursor-pointer ${
 									patientWeightKg === w
 										? "bg-[var(--teal)] text-white border-[var(--teal)]"
 										: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
@@ -193,25 +193,25 @@ export function EmkAnesthesiaSection({
 						<button
 							type="button"
 							onClick={() => setCarpuleCount((prev) => Math.max(0.5, prev - 0.5))}
-							className="w-6 h-6 rounded-md bg-[var(--paper)] border border-[var(--line)] flex items-center justify-center text-[var(--ink)] hover:border-[var(--teal)] cursor-pointer"
+							className="w-7 h-7 min-w-[28px] min-h-[28px] rounded-md bg-[var(--paper)] border border-[var(--line)] flex items-center justify-center text-[var(--ink)] hover:border-[var(--teal)] cursor-pointer"
 							title="Уменьшить на 0.5 карпулы"
 						>
-							<Minus size={11} />
+							<Minus size={12} />
 						</button>
-						<span className="font-mono font-bold px-1.5">{carpuleCount}</span>
+						<span className="font-mono font-bold px-1.5 text-xs">{carpuleCount}</span>
 						<button
 							type="button"
 							onClick={() => setCarpuleCount((prev) => prev + 0.5)}
-							className="w-6 h-6 rounded-md bg-[var(--paper)] border border-[var(--line)] flex items-center justify-center text-[var(--ink)] hover:border-[var(--teal)] cursor-pointer"
+							className="w-7 h-7 min-w-[28px] min-h-[28px] rounded-md bg-[var(--paper)] border border-[var(--line)] flex items-center justify-center text-[var(--ink)] hover:border-[var(--teal)] cursor-pointer"
 							title="Увеличить на 0.5 карпулы"
 						>
-							<Plus size={11} />
+							<Plus size={12} />
 						</button>
 					</div>
 
 					{/* Индикатор безопасности МРД */}
 					<span
-						className={`px-2 py-1 rounded-lg text-[11px] font-bold border inline-flex items-center gap-1 shrink-0 ${
+						className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border inline-flex items-center gap-1 shrink-0 min-h-[28px] ${
 							anesthesiaSafety.isOverdose
 								? "bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-500/40"
 								: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/40"
@@ -220,12 +220,12 @@ export function EmkAnesthesiaSection({
 					>
 						{anesthesiaSafety.isOverdose ? (
 							<>
-								<AlertTriangle size={12} className="shrink-0 text-rose-500" />
+								<AlertTriangle size={13} className="shrink-0 text-rose-500" />
 								<span>Передозировка! (max {anesthesiaSafety.maxSafeCarpules} карп.)</span>
 							</>
 						) : (
 							<>
-								<ShieldCheck size={12} className="shrink-0 text-emerald-500" />
+								<ShieldCheck size={13} className="shrink-0 text-emerald-500" />
 								<span>Безопасно ({carpuleCount} из max {anesthesiaSafety.maxSafeCarpules} карп. · {anesthesiaSafety.safetyPercentage}%)</span>
 							</>
 						)}
@@ -240,10 +240,10 @@ export function EmkAnesthesiaSection({
 							anesthesiaSafety.formattedTreatmentSnippet,
 						)
 					}
-					className="min-h-[28px] h-7 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs whitespace-nowrap shrink-0 ml-auto"
+					className="min-h-[36px] h-9 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0 ml-auto"
 					title="Внести индивидуальный расчет анестезии в протокол"
 				>
-					<Syringe size={12} className="shrink-0" />
+					<Syringe size={13} className="shrink-0" />
 					<span>Внести в протокол</span>
 				</button>
 			</div>

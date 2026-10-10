@@ -475,7 +475,7 @@ describe("Periodontal Express Screening & Doctor Autonomy (Mandates 8e, 8i, 8k, 
 	// ──────────────────────────────────────────────────────────────────────────
 	// 6. ПРЕСЕТ: ПРОФГИГИЕНА ПОЛОСТИ РТА
 	// ──────────────────────────────────────────────────────────────────────────
-	test("6. Пресет «Профгигиена полости рта»: протокол Detartrine + Bifluorid 12", () => {
+	test("6. Пресет «Профгигиена полости рта»: клинический регламент СтАР / 804н", () => {
 		const prophyDiary = generatePsrDiaryProtocol("pro_hygiene_express");
 		assert.ok(
 			prophyDiary.includes(
@@ -488,12 +488,12 @@ describe("Periodontal Express Screening & Doctor Autonomy (Mandates 8e, 8i, 8k, 
 			"Протокол содержит Air-Flow глицин",
 		);
 		assert.ok(
-			prophyDiary.includes("полировка абразивной пастой Detartrine"),
-			"Протокол содержит полировку Detartrine",
+			prophyDiary.includes("полировка абразивной пастой"),
+			"Протокол содержит полировку абразивной пастой",
 		);
 		assert.ok(
-			prophyDiary.includes("глубокое фторирование эмали Bifluorid 12"),
-			"Протокол содержит глубокое фторирование Bifluorid 12",
+			prophyDiary.includes("глубокое фторирование эмали"),
+			"Протокол содержит глубокое фторирование эмали",
 		);
 	});
 });

@@ -599,7 +599,7 @@ export const CompletedServicesChecklist: React.FC<
 					const visitState = useVisitStore.getState();
 					previousToothState =
 						visitState.visitToothStateByCode?.[toothStr] ||
-						visitState.teeth?.[toothStr]?.state;
+						(visitState as any).teeth?.[toothStr]?.state;
 					visitState.setToothState(toothStr, "idle");
 				}
 			}

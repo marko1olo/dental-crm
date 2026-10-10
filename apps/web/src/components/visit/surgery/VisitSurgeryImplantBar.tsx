@@ -74,10 +74,10 @@ export const VisitSurgeryImplantBar: React.FC<VisitSurgeryImplantBarProps> = ({
 					onClick={() => onApplyPreset()}
 					className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-2 cursor-pointer shadow-xs hover:opacity-95 transition-all touch-manipulation"
 					data-testid="btn-preset-standard-implant-tab"
-					title="Стандартная имплантация (торк 35 Н*см, ISQ 72, ФДМ, швы Prolene 4-0, контрольный снимок)"
+					title="Стандартный протокол: установка дентального имплантата с ФДМ (1 клик)"
 				>
 					<Zap size={14} className="text-amber-300" />
-					<span>Стандартная имплантация (торк 35 Н*см, ISQ 72, ФДМ, Prolene 4-0, снимок)</span>
+					<span>Стандартная имплантация с ФДМ</span>
 				</button>
 			</div>
 

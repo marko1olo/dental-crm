@@ -1,4 +1,4 @@
-import { Camera, Plus } from "lucide-react";
+import { Camera, Plus, QrCode } from "lucide-react";
 import React from "react";
 import type { ClinicalPhotoAttachment } from "../../../lib/clinicalProtocols043";
 import { DiagnosticsPhotoCard } from "./DiagnosticsStudyCard";
@@ -16,6 +16,7 @@ export interface DiagnosticsPhotoSectionProps {
 	onAddPhoto: () => void;
 	onRemovePhoto: (id: string) => void;
 	onOpenPhotoProtocol: () => void;
+	onOpenLanQr?: () => void;
 }
 
 export function DiagnosticsPhotoSection({
@@ -30,6 +31,7 @@ export function DiagnosticsPhotoSection({
 	onAddPhoto,
 	onRemovePhoto,
 	onOpenPhotoProtocol,
+	onOpenLanQr,
 }: DiagnosticsPhotoSectionProps) {
 	return (
 		<div className={isVisible ? "flex flex-col gap-3" : "hidden"}>
@@ -57,7 +59,23 @@ export function DiagnosticsPhotoSection({
 						</div>
 					</div>
 
-					<div className="flex items-center gap-1.5 shrink-0">
+					<div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+						<button
+							type="button"
+							onClick={() => {
+								if (typeof window !== "undefined") {
+									window.dispatchEvent(new CustomEvent("dente:open-lan-qr"));
+								}
+								onOpenLanQr?.();
+							}}
+							data-testid="btn-visit-photo-lan-qr"
+							className="diag-btn-teal flex items-center gap-1.5"
+							title="Снять фото с телефона по Wi-Fi (LAN QR)"
+						>
+							<QrCode size={14} />
+							<span>Снять фото с телефона по Wi-Fi</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={onOpenPhotoProtocol}

@@ -338,7 +338,7 @@ export function generateAspirationJournalEntry043(session: AnesthesiaSessionData
 		`Препарат: ${drug.tradeNamesRu[0]} (${drug.activeSubstanceRu}).`,
 		`Дозировка: объем ${session.volumeMl} мл (${carpulesEquivalent} карп.), действующее вещество: ${activeMg} мг, вазоконстриктор (эпинефрин): ${epinephrineMg > 0 ? `${epinephrineMg} мг` : 'без вазоконстриктора'}.`,
 		technique.targetPressureAtm.isHighPressure
-			? `Параметры инъекции: интралигаментарное введение под давлением ${technique.targetPressureAtm.min}–${technique.targetPressureAtm.max} атм.`
+			? 'Параметры инъекции: интралигаментарное дозированное введение специальным инъектором.'
 			: `Скорость введения: дробное, плавное со скоростью ~1.0 мл/мин (общее время введения ~${velocityPlan.minRecommendedDurationSeconds} сек).`,
 		`${aspirationNarrative}`,
 		`Зона онемения: ${technique.anatomicZones.summaryRu}.`,

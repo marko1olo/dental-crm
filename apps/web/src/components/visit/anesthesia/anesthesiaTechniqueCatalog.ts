@@ -480,12 +480,12 @@ export const CONDUCTION_TECHNIQUES_CATALOG: Record<ConductionTechniqueId, Techni
 
 	intraligamentary_pdl: {
 		id: 'intraligamentary_pdl',
-		nameRu: 'Интралигаментарная периодонтальная анестезия (PDL / Гидравлическое давление 10–15 атм)',
+		nameRu: 'Интралигаментарная периодонтальная анестезия (PDL / Дозированное введение)',
 		shortNameRu: 'Интралигаментарная (PDL)',
 		category: 'intraligamentary_pressure',
 		anatomicalLandmarksRu: 'Периодонтальная щель причинного зуба, угол 30° к продольной оси корня.',
 		puncturePointRu:
-			'В десневую бороздку на глубину 1–2 мм с упором скоса иглы в корень зуба под давлением 10–15 атм.',
+			'В десневую бороздку на глубину 1–2 мм с упором скоса иглы в корень зуба специальным инъектором.',
 		targetNervesRu: ['Периодонтальные и пульпарные терминальные рецепторы изолированного зуба'],
 		recommendedNeedle: 'gauge_30_ultrashort_12mm',
 		allowedNeedles: ['gauge_30_ultrashort_12mm', 'gauge_30_extrashort_8mm'],
@@ -515,7 +515,7 @@ export const CONDUCTION_TECHNIQUES_CATALOG: Record<ConductionTechniqueId, Techni
 		},
 		aspirationPlanesRequired: 1,
 		clinicalRecommendationsRu:
-			'Требует высокого гидравлического давления (10–15 атм). Идеально для детей, пожилых, пациентов с риском прикусывания губы.',
+			'Требует дозированного введения инъектором высокого сопротивления. Идеально для детей, пожилых, пациентов с риском прикусывания губы.',
 		contraindicationsOrCautionsRu: [
 			'Острый пародонтит или пародонтальный карман > 5 мм с гноетечением',
 			'Риск бактериемии у пациентов с эндокардитом',
