@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it } from 'node:test';
+import { describe, it } from 'vitest';
 import assert from 'node:assert/strict';
 import { renderToString } from 'react-dom/server';
 import { TreatmentPlanPhased4StageView } from '../TreatmentPlanPhased4StageView';
@@ -239,6 +239,8 @@ describe('TreatmentPlanPhased4StageView Component', () => {
     assert.ok(html.includes('Неотложная помощь и купирование боли / Санация'), 'Stage 1 title must reflect acute pain relief');
     assert.ok(html.includes('Рассрочка 0% клиники'), 'Footer must display 0% installments');
     assert.ok(html.includes('Этапы 30/40/30'), 'Footer must display 30/40/30 staged breakdown');
+    assert.ok(html.includes('Готовность маршрута:'), 'Stepper must display rehabilitation progress percentage');
+    assert.ok(html.includes('Финансовая сводка и график оплаты по этапам'), 'Financial summary must render');
   });
 });
 
