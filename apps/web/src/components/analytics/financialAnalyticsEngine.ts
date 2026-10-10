@@ -230,7 +230,7 @@ export function calculateClinicPnl(
 		: Math.round(rev * 0.15);
 
 	const totalOpexKopecks = marketingSpendKopecks + payrollKopecks + overheadKopecks;
-	const ebitdaKopecks = Math.max(0, grossProfitKopecks - (payrollKopecks + overheadKopecks));
+	const ebitdaKopecks = Math.max(0, grossProfitKopecks - totalOpexKopecks);
 
 	// Налог УСН (факт либо 6% от выручки)
 	const estimatedTaxKopecks = realExpenses?.taxKopecks !== undefined
