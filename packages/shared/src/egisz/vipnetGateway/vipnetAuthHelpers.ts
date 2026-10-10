@@ -1,11 +1,18 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * N3.HEALTH VIPNET EGISZ INTEGRATION GATEWAY (CANONICAL FACADE)
+ * N3.HEALTH VIPNET AUTHENTICATION HELPERS
  * (ПРИКАЗ МИНЗДРАВА РФ 911Н / 555-ПП / ГОСТ Р 34.10-2012 / VIPNET ENCRYPTION)
- *
- * Декомпозиция монолита (Wave 22) в модульные слои:
- * packages/shared/src/egisz/vipnetGateway/
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export * from "./vipnetGateway/index.js";
+/**
+ * Нормализация заголовка авторизации EventLog API:
+ * N3.Health ожидает заголовок вида: `Authorization: N3 <guid-token>`
+ */
+export function formatEventLogAuthHeader(rawToken: string): string {
+	const trimmed = rawToken.trim();
+	if (trimmed.startsWith("N3 ")) {
+		return trimmed;
+	}
+	return `N3 ${trimmed}`;
+}

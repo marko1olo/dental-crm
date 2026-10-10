@@ -1,11 +1,11 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * N3.HEALTH VIPNET EGISZ INTEGRATION GATEWAY (CANONICAL FACADE)
+ * N3.HEALTH VIPNET EGISZ INTEGRATION GATEWAY (BARREL INDEX)
  * (ПРИКАЗ МИНЗДРАВА РФ 911Н / 555-ПП / ГОСТ Р 34.10-2012 / VIPNET ENCRYPTION)
- *
- * Декомпозиция монолита (Wave 22) в модульные слои:
- * packages/shared/src/egisz/vipnetGateway/
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export * from "./vipnetGateway/index.js";
+export * from "./types.js";
+export * from "./vipnetAuthHelpers.js";
+export * from "./n3HealthPayloadBuilders.js";
+export * from "./n3HealthVipnetClient.js";
