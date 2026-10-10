@@ -143,6 +143,57 @@ backups/
 # а сами снимки пересоздаются скриптом при каждом прогоне.
 screenshots/migration-wizard/
 
+# ---- Одноразовые агентские скрипты (НИКОГДА не в git) ----------------------
+# Playwright-съёмки, дебаг-зонды, ручные пробы — создаются агентами на лету,
+# не несут ценности в истории. Полезные (smoke-*, verify-*, check-*, cleanup_*)
+# под эти паттерны не попадают.
+scripts/capture_*.cjs
+scripts/capture_*.mjs
+scripts/debug_*.cjs
+scripts/debug_*.mjs
+scripts/inspect_*.cjs
+scripts/inspect_*.mjs
+scripts/probe_*.cjs
+scripts/probe_*.mjs
+scripts/test_*.cjs
+scripts/test_*.mjs
+scripts/snap_*.cjs
+scripts/redteam_*.cjs
+scripts/sandbox_*.cjs
+scripts/split_*.cjs
+scripts/split_*.py
+scripts/split.py
+scripts/generate_sample_*.cjs
+scripts/generate_apphelpers_*.cjs
+scripts/generate_and_capture_*.ts
+scripts/build_clean_*.cjs
+scripts/demo_*.ts
+scripts/diagnose_*.mjs
+scripts/wait_app_boot.cjs
+# Дампы и JSON-мусор сессий агентов
+scripts/*_debug.json
+scripts/*_parsed.json
+scripts/*_declarations.json
+scripts/*_exports.json
+scripts/file_limits_whitelist.json
+scripts/module_items_debug.json
+scripts/stmts_parsed.json
+scripts/apphelpers_declarations.json
+scripts/baseline_apphelpers_exports.json
+# .bak резервные копии перед рефактором
+scripts/*.bak
+**/*.original.tsx
+**/*.original.tsx.bak
+**/*.original.ts.bak
+
+# ---- Корневые пруф-скриншоты и папка screenshots/ --------------------------
+# Нужные скриншоты живут в docs/screenshots/. Корневой мусор — игнорируем.
+proof_*.png
+schedule_pc_*.png
+visit_diary_pc_*.png
+screenshots/
+!screenshots/migration-wizard/
+
 # Файл с именем NUL — всегда следствие ошибки, а не чей-то замысел.
 #
 # `cmd > NUL` в cmd.exe выбрасывает вывод в устройство-пустышку, но в Git Bash
