@@ -272,7 +272,10 @@ describe("вкладки настроек не держат мёртвых пр�
 		 * — SettingsView.tsx рисует их четырьмя блоками над <SettingsPricesTab />.
 		 */
 		const parent = withoutComments(
-			readFileSync(join(here, "..", "SettingsView.tsx"), "utf8"),
+			[
+				readFileSync(join(here, "..", "SettingsView.tsx"), "utf8"),
+				readFileSync(join(here, "..", "views", "settingsView", "index.tsx"), "utf8"),
+			].join("\n"),
 		);
 		for (const call of [
 			"pricelistWarningsText([warning])",
@@ -296,7 +299,10 @@ describe("вкладки настроек не держат мёртвых пр�
 		 * законно живут в App.tsx для других мест.
 		 */
 		const app = withoutComments(
-			readFileSync(join(here, "..", "App.tsx"), "utf8"),
+			[
+				readFileSync(join(here, "..", "App.tsx"), "utf8"),
+				readFileSync(join(here, "..", "components", "appLayout", "AppViewRouter.tsx"), "utf8"),
+			].join("\n"),
 		);
 		const openAt = app.indexOf("<SettingsView");
 		assert.ok(
@@ -319,3 +325,4 @@ describe("вкладки настроек не держат мёртвых пр�
 		);
 	});
 });
+
