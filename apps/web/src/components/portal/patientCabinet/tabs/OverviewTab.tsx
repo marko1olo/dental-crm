@@ -37,7 +37,7 @@ import type {
 	PatientPersonalCabinetData,
 } from "../patientCabinetEngine";
 import { formatRubles } from "../patientCabinetEngine";
-import type { PatientCabinetTab } from "../PatientCabinetModal";
+import type { PatientCabinetTab } from "../modal/types.js";
 
 export interface OverviewTabProps {
 	readonly data: PatientPersonalCabinetData;
