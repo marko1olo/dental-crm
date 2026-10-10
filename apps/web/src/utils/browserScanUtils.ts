@@ -10,5 +10,4 @@
  * Preserves 100% AST export parity for backward compatibility.
  */
 
-export type * from "./browserScan/index.js";
 export * from "./browserScan/index.js";

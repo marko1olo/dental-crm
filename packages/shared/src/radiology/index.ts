@@ -9,6 +9,7 @@ export * from "./rvgTwainEngine.js";
 export * from "./hotFolderWatcher.js";
 export * from "./radiologyFilterEngine.js";
 export * from "./hotFolderSyncEngine.js";
+export type { HotFolderConfig } from "./hotFolderWatcher.js";
 export * from "./cbctSafetyEngine.js";
 export * from "./cbctScanMeshEngine.js";
 export * from "./cbctCropBox.js";

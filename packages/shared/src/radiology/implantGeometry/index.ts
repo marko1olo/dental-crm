@@ -1,12 +1,18 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * CLINICAL CBCT 3D IMPLANT GEOMETRY & MESH GENERATION ENGINE (FACADE)
+ * CLINICAL CBCT 3D IMPLANT GEOMETRY & MESH GENERATION — BARREL EXPORTS (LAYER 5)
  * ═══════════════════════════════════════════════════════════════════════════
- * Canonical backward-compatibility facade delegating 100% of symbols to
- * modular implantGeometry/ sub-packages.
- *
- * All submodules strictly <= 800 lines. Facade strictly <= 50 lines.
+ * Canonical modular entry point for 3D parametric implant geometry, mesh
+ * generation, arch-frame projection, safety clearance evaluator, slice plane
+ * intersections, drill sleeve geometries, and Form 043/u clinical reporting.
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export * from "./implantGeometry/index.js";
+export * from "./types.js";
+export * from "./mathVectors.js";
+export * from "./archFrame.js";
+export * from "./meshGenerator.js";
+export * from "./sliceIntersection.js";
+export * from "./safetyEnvelope.js";
+export * from "./implantCollisionDetector.js";
+export * from "./planningReport.js";
