@@ -12,12 +12,14 @@
  */
 
 import React, { useMemo, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
 	AlertTriangle,
 	Banknote,
 	Check,
 	CheckCheck,
 	CheckCircle2,
+	Coins,
 	Copy,
 	CreditCard,
 	Lock,
@@ -66,6 +68,7 @@ export interface CashRegisterModalProps {
 	readonly onOpenShift?: () => Promise<void> | void;
 	readonly onCloseShift?: (zReportSummary: Ffd12ShiftCloseZReportSummary) => Promise<void> | void;
 	readonly onPrintXReport?: () => Promise<void> | void;
+	readonly onOpenSplitPayment?: () => void;
 	readonly initialTab?: "reconciliation" | "drawer" | "tape" | undefined;
 }
 
@@ -93,6 +96,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 	onOpenShift,
 	onCloseShift,
 	onPrintXReport,
+	onOpenSplitPayment,
 	initialTab = "reconciliation",
 }) => {
 	const [activeTab, setActiveTab] = useState<"reconciliation" | "drawer" | "tape">(initialTab);
@@ -321,7 +325,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 
 	if (!isOpen) return null;
 
-	return (
+	const modalContent = (
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
 			role="dialog"
@@ -432,7 +436,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									Кассовая смена закрыта
 								</h3>
 								<p className="text-xs sm:text-sm text-[var(--muted)] m-0">
-									Откройте смену в 1 клик для формирования чеков, приема оплат наличными, банковскими картами и СБП.
+									Откройте кассовую смену для формирования чеков, приема оплат наличными, банковскими картами и СБП.
 								</p>
 							</div>
 
@@ -532,6 +536,22 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 							</button>
 						)}
 
+						{isShiftActive && onOpenSplitPayment && (
+							<button
+								type="button"
+								onClick={() => {
+									onClose();
+									onOpenSplitPayment();
+								}}
+								className="min-h-[44px] px-3 sm:px-4 rounded-xl border border-teal-500/40 bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-none"
+								title="Разделить оплату чека между пациентом, ДМС и родственником"
+								data-testid="btn-cash-register-open-split"
+							>
+								<Coins size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />
+								<span>Сплит / ДМС</span>
+							</button>
+						)}
+
 						<button
 							type="button"
 							onClick={onClose}
@@ -557,4 +577,6 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 };

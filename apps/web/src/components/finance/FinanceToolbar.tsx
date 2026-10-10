@@ -9,6 +9,9 @@ import {
 	Banknote,
 	ShieldCheck,
 	PlusCircle,
+	Calendar,
+	Coins,
+	Users,
 } from "lucide-react";
 
 export interface FinanceToolbarProps {
@@ -26,9 +29,12 @@ export interface FinanceToolbarProps {
 	onOpenPnl: () => void;
 	onGoToDocuments: () => void;
 	onOpenCashbox: () => void;
-	onOpenBillingAct?: () => void;
-	onOpenQuickExpense?: () => void;
-	onOpenTaxCertificate?: () => void;
+	onOpenBillingAct?: (() => void) | undefined;
+	onOpenQuickExpense?: (() => void) | undefined;
+	onOpenTaxCertificate?: (() => void) | undefined;
+	onOpenT13Timesheet?: (() => void) | undefined;
+	onOpenFamilyBilling?: (() => void) | undefined;
+	onOpenSplitPayment?: (() => void) | undefined;
 }
 
 export function FinanceToolbar({
@@ -49,38 +55,22 @@ export function FinanceToolbar({
 	onOpenBillingAct,
 	onOpenQuickExpense,
 	onOpenTaxCertificate,
+	onOpenT13Timesheet,
+	onOpenFamilyBilling,
+	onOpenSplitPayment,
 }: FinanceToolbarProps) {
 	return (
 		<div className="finance-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-1.5 sm:mb-2 flex-nowrap overflow-hidden shrink-0 select-none">
 			<div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
-				<span className="truncate text-xs sm:text-sm font-bold text-[var(--ink)] shrink-0">
+				<span className="text-xs sm:text-sm font-bold text-[var(--ink)] shrink-0 whitespace-nowrap">
 					<span className="sm:hidden">Оплаты</span>
 					<span className="hidden sm:inline">Оплаты и план</span>
 				</span>
 				<span
-					className="text-[11px] sm:text-xs text-[var(--ink)] sm:text-[var(--muted)] min-w-0 flex-1 truncate font-semibold sm:font-normal"
+					className="text-[11px] sm:text-xs text-[var(--muted)] min-w-0 flex-1 truncate font-normal hidden sm:inline"
 					title={documentPatient?.fullName ?? "пациент не выбран"}
 				>
-					·{" "}
-					<span className="sm:hidden tracking-tight">
-						{(() => {
-							const name = documentPatient?.fullName ?? "пациент не выбран";
-							if (!documentPatient?.fullName) return name;
-							const parts = name.trim().split(/\s+/);
-							if (parts.length >= 2) {
-								const initials = parts
-									.slice(1)
-									.map((p: string) => (p[0] ? `${p[0]}.` : ""))
-									.filter(Boolean)
-									.join(" ");
-								return `${parts[0]} ${initials}`.trim();
-							}
-							return name;
-						})()}
-					</span>
-					<span className="hidden sm:inline">
-						{documentPatient?.fullName ?? "пациент не выбран"}
-					</span>
+					· {documentPatient?.fullName ?? "пациент не выбран"}
 				</span>
 				<button
 					type="button"
@@ -151,7 +141,6 @@ export function FinanceToolbar({
 					>
 						<PlusCircle size={13} className="shrink-0 text-rose-600 dark:text-rose-400" />
 						<span className="truncate hidden sm:inline">+ Расход</span>
-						<span className="truncate sm:hidden">+ Расход</span>
 					</button>
 				)}
 
@@ -259,6 +248,24 @@ export function FinanceToolbar({
 									<span>Справка для вычета (ФНС)</span>
 								</button>
 							)}
+							{onOpenT13Timesheet && (
+								<button
+									type="button"
+									onClick={() => {
+										onCloseFinanceOptions();
+										onOpenT13Timesheet();
+									}}
+									className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[32px]"
+									role="menuitem"
+									data-testid="btn-finance-open-timesheet-t13"
+								>
+									<Calendar
+										size={14}
+										className="shrink-0 text-cyan-600 dark:text-cyan-400"
+									/>
+									<span>Табель Т-13 (Госкомстат)</span>
+								</button>
+							)}
 							<button
 								type="button"
 								onClick={() => {
@@ -276,6 +283,42 @@ export function FinanceToolbar({
 								/>
 								<span>Касса и оплата</span>
 							</button>
+							{onOpenSplitPayment && (
+								<button
+									type="button"
+									onClick={() => {
+										onCloseFinanceOptions();
+										onOpenSplitPayment();
+									}}
+									className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[32px]"
+									role="menuitem"
+									data-testid="menuitem-split-payment"
+								>
+									<Coins
+										size={14}
+										className="shrink-0 text-amber-600 dark:text-amber-400"
+									/>
+									<span>Разделить чек (Сплит-оплата)</span>
+								</button>
+							)}
+							{onOpenFamilyBilling && (
+								<button
+									type="button"
+									onClick={() => {
+										onCloseFinanceOptions();
+										onOpenFamilyBilling();
+									}}
+									className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[32px]"
+									role="menuitem"
+									data-testid="menuitem-family-billing"
+								>
+									<Users
+										size={14}
+										className="shrink-0 text-violet-600 dark:text-violet-400"
+									/>
+									<span>Семейный расчет (Сплит / ДМС / Вычет)</span>
+								</button>
+							)}
 							<button
 								type="button"
 								onClick={() => {

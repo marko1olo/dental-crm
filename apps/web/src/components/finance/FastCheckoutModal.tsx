@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import { createPortal } from "react-dom";
 import {
 	QrCode,
 	X,
@@ -50,6 +51,7 @@ export interface FastCheckoutModalProps {
 	readonly attendingDoctorName?: string | undefined;
 	readonly initialSimpleCashierMode?: boolean | undefined;
 	readonly onPaymentComplete?: ((payload: Ffd12FiscalPayload) => void) | undefined;
+	readonly containerTestId?: string | undefined;
 }
 
 export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = (props) => {
@@ -158,11 +160,11 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = (props) => {
 
 	if (!isOpen) return null;
 
-	return (
+	const modalContent = (
 		<div
 			ref={modalRef}
 			className="fast-checkout-modal-overlay"
-			data-testid="fast-checkout-modal"
+			data-testid={props.containerTestId || (props.initialSimpleCashierMode === false ? "split-payment-modal" : "fast-checkout-modal")}
 			tabIndex={-1}
 		>
 			<div className="fast-checkout-modal-container max-w-3xl">
@@ -174,7 +176,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = (props) => {
 						</div>
 						<div className="min-w-0">
 							<h2 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)] truncate flex items-center gap-2 m-0">
-								1-Клик Оплата приема & Кассовый чек
+								Оплата приёма и кассовый чек
 							</h2>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5 truncate">
 								{patientName} • Заказ #{orderId} • К оплате:{" "}
@@ -192,6 +194,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = (props) => {
 						onClick={onClose}
 						className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 sm:w-8 rounded-xl border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors cursor-pointer shrink-0 ml-2"
 						aria-label="Закрыть быструю кассу"
+						data-testid="btn-close-fast-checkout-modal"
 					>
 						<X className="w-4 h-4" />
 					</button>
@@ -595,4 +598,6 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = (props) => {
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 };

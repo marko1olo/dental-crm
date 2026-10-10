@@ -5,6 +5,7 @@
  */
 
 import React, { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
 	Award,
 	Layers,
@@ -175,12 +176,13 @@ export function FamilyCombinedBillingModal({
 		}
 	};
 
-	return (
+	const modalContent = (
 		<div
 			className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="family-billing-title"
+			data-testid="family-combined-billing-modal"
 			onClick={(e) => {
 				if (e.target === e.currentTarget) onClose();
 			}}
@@ -221,6 +223,7 @@ export function FamilyCombinedBillingModal({
 						onClick={onClose}
 						className="min-h-[44px] min-w-[44px] rounded-xl border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors cursor-pointer"
 						aria-label="Закрыть"
+						data-testid="btn-close-family-billing-modal"
 					>
 						<X size={18} />
 					</button>
@@ -522,4 +525,6 @@ export function FamilyCombinedBillingModal({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 }

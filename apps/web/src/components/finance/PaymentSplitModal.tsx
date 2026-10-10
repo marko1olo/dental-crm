@@ -24,6 +24,7 @@ export const PaymentSplitModal: React.FC<PaymentSplitModalProps> = (props) => {
 	return (
 		<FastCheckoutModal
 			{...props}
+			containerTestId={props.containerTestId ?? "split-payment-modal"}
 			initialSimpleCashierMode={props.initialSimpleCashierMode ?? false}
 		/>
 	);

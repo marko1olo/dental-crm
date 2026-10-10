@@ -1,5 +1,6 @@
+import { createPortal } from "react-dom";
 import { Banknote, X } from "lucide-react";
-import { CashboxView } from "./CashRegisterView.js";
+import { CashRegisterView } from "./CashRegisterView.js";
 
 export interface FinanceCashboxModalProps {
 	isOpen: boolean;
@@ -32,7 +33,7 @@ export function FinanceCashboxModal({
 }: FinanceCashboxModalProps) {
 	if (!isOpen) return null;
 
-	return (
+	const modalContent = (
 		<div
 			className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150"
 			role="dialog"
@@ -62,7 +63,7 @@ export function FinanceCashboxModal({
 					</button>
 				</header>
 				<div className="flex-1 overflow-y-auto p-2 sm:p-4">
-					<CashboxView
+					<CashRegisterView
 						initialShiftOpen={isShiftOpen}
 						cashierName={cashierName || "Врач-стоматолог / Кассир"}
 						clinicName={clinicName || "Стоматология ДЕНТЕ Премиум"}
@@ -78,4 +79,6 @@ export function FinanceCashboxModal({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 }

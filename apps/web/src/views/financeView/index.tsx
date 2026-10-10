@@ -1,13 +1,13 @@
 import { lazy, Suspense } from "react";
-import { ChevronDown, FileText } from "lucide-react";
-import { ClinicalAiPersonalizePanel } from "../../ClinicalAiPersonalizePanel";
-import { ClinicalRulePanel } from "../../ClinicalRulePanel";
 import { FamilyWalletPanel } from "../../components/finance/FamilyWalletPanel";
 import { FinanceInvoicesModal } from "../../components/finance/FinanceInvoicesModal";
 import { FinanceCashboxModal } from "../../components/finance/FinanceCashboxModal";
 import { PatientBillingModal } from "../../components/finance/PatientBillingModal";
 import { QuickExpenseModal } from "../../components/finance/QuickExpenseModal";
 import { TaxDeductionCertificateModal } from "../../components/finance/TaxDeductionCertificateModal";
+import { TimesheetT13Modal } from "../../components/payroll/TimesheetT13Modal";
+import { FamilyCombinedBillingModal } from "../../components/finance/FamilyCombinedBillingModal";
+import { PaymentSplitModal } from "../../components/finance/PaymentSplitModal";
 import { ServiceCatalogStrip } from "../../FinancePlanning";
 import { PaymentCapture } from "../../PaymentCapture";
 import { FinanceOperationsToolbar } from "./FinanceOperationsToolbar";
@@ -56,6 +56,9 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				onOpenBillingAct={() => s.setIsBillingActOpen(true)}
 				onOpenQuickExpense={() => s.setIsQuickExpenseOpen(true)}
 				onOpenTaxCertificate={() => s.setIsTaxModalOpen(true)}
+				onOpenT13Timesheet={() => s.setIsTimesheetT13Open(true)}
+				onOpenFamilyBilling={() => s.setIsFamilyBillingOpen(true)}
+				onOpenSplitPayment={() => s.setIsSplitPaymentOpen(true)}
 				shiftNumber={s.shiftNumber}
 				paymentFiscalCashierName={s.paymentFiscalCashierName}
 				cashInDrawerRub={s.cashInDrawerRub}
@@ -82,48 +85,6 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				methodLabels={s.paymentMethodLabels}
 			/>
 
-			{/* Сворачиваемый блок клинических рекомендаций и правил (отображается только при наличии активных правил или замечаний) */}
-			{s.hasActiveClinicalRules && (
-				<details
-					className="clinical-recommendations-accordion group rounded-lg border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1 text-xs shadow-xs my-0.5 sm:my-1 select-none"
-					data-testid="clinical-recommendations-accordion"
-				>
-					<summary className="flex items-center justify-between cursor-pointer font-medium text-[var(--ink)] list-none hover:text-[var(--teal)] transition-colors min-h-[26px]">
-						<div className="flex items-center gap-1.5">
-							<FileText size={13} className="text-[var(--teal)] shrink-0" />
-							<span className="text-[11px] sm:text-xs">Клинические рекомендации и правила</span>
-							{s.clinicalRuleSummary && (
-								<span className="text-[10px] sm:text-[11px] text-[var(--muted)] font-normal">
-									{((s.clinicalRuleSummary.unresolved ?? 0) > 0
-										? `${s.clinicalRuleSummary.unresolved} нерешённых`
-										: s.clinicalRuleSummary.activeRules ?? 0)}
-								</span>
-							)}
-						</div>
-						<ChevronDown
-							size={13}
-							className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180 shrink-0"
-						/>
-					</summary>
-					<div className="pt-2 space-y-2">
-						<ClinicalRulePanel
-							actionLabels={s.clinicalRuleActionLabels}
-							context="finance"
-							evaluations={s.clinicalRuleEvaluations ?? []}
-							patientId={s.documentPatient?.id ?? null}
-							serviceTitle={s.serviceTitle}
-							severityLabels={s.clinicalRuleSeverityLabels}
-							staffRoleLabels={s.staffRoleLabels}
-							summary={s.clinicalRuleSummary}
-						/>
-
-						<ClinicalAiPersonalizePanel
-							context="finance"
-							patientId={s.documentPatient?.id ?? null}
-						/>
-					</div>
-				</details>
-			)}
 
 			{/* Контейнер кассового модуля с отступом pb-28 для исключения перекрытия интерактивных кнопок плавающим баром (Мандаты 8d, 8p) */}
 			<div className="finance-cashbox-container pb-28 sm:pb-24">
@@ -289,6 +250,52 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 					clinicName={s.dashboard?.clinicSettings?.name}
 					clinicInn={s.dashboard?.clinicSettings?.inn}
 					payments={s.taxDeductionPayments}
+				/>
+			)}
+
+			{s.isTimesheetT13Open && (
+				<TimesheetT13Modal
+					isOpen={s.isTimesheetT13Open}
+					onClose={() => s.setIsTimesheetT13Open(false)}
+					clinicName={s.dashboard?.clinicSettings?.name || (s.dashboard as any)?.clinicName}
+				/>
+			)}
+
+			{s.isFamilyBillingOpen && (
+				<FamilyCombinedBillingModal
+					isOpen={s.isFamilyBillingOpen}
+					onClose={() => s.setIsFamilyBillingOpen(false)}
+					familyGroupId={(s.documentPatient as any)?.familyGroupId}
+					familyGroupName={(s.documentPatient as any)?.familyGroupName || "Семейная группа"}
+					availableFamilyWalletRub={s.documentPatient?.familyBalanceRub ?? 0}
+					initialPayer={{
+						payerId: s.documentPatient?.id || "",
+						payerFullName: s.documentPatient?.fullName || "Ответственный плательщик",
+					}}
+					clinicName={s.dashboard?.clinicSettings?.name}
+					clinicInn={s.dashboard?.clinicSettings?.inn}
+					onCheckoutComplete={() => {
+						void s.loadDashboard?.();
+						s.setIsFamilyBillingOpen(false);
+					}}
+				/>
+			)}
+
+			{s.isSplitPaymentOpen && (
+				<PaymentSplitModal
+					isOpen={s.isSplitPaymentOpen}
+					onClose={() => s.setIsSplitPaymentOpen(false)}
+					totalBillRub={s.effectiveBillingSummary?.totalDueRub ?? 0}
+					patientId={s.effectivePatient?.id}
+					patientName={s.effectivePatient?.fullName}
+					patientPhone={s.effectivePatient?.phone ?? undefined}
+					patientDepositRub={s.effectivePatient && typeof s.effectivePatient.depositRub === "number" ? s.effectivePatient.depositRub : 0}
+					patientFamilyBalanceRub={s.effectivePatient?.familyBalanceRub ?? 0}
+					cashierFullName={s.paymentFiscalCashierName || undefined}
+					onPaymentComplete={() => {
+						void s.loadDashboard?.();
+						s.setIsSplitPaymentOpen(false);
+					}}
 				/>
 			)}
 		</div>

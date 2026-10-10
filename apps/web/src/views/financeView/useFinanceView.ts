@@ -1,6 +1,6 @@
 import type { Dashboard, Payment, PaymentMethod } from "@dental/shared";
 import { resolveTaxDeductionCategoryShared } from "@dental/shared";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { money as formatMoney } from "../../AppHelpers";
 import {
 	safeLocalStorageGetItem,
@@ -131,7 +131,6 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 	}, []);
 
 	const effectiveBillingSummary = useMemo(() => {
-		if (billingSummary && billingSummary.totalDueRub > 0) return billingSummary;
 		if (pendingCheckout?.totalDueRub && pendingCheckout.totalDueRub > 0) {
 			return {
 				totalDueRub: pendingCheckout.totalDueRub,
@@ -143,6 +142,7 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 				unpaidInvoicesCount: 1,
 			};
 		}
+		if (billingSummary && billingSummary.totalDueRub > 0) return billingSummary;
 		if (billingSummary) return billingSummary;
 		return {
 			totalDueRub: 1500,
@@ -195,26 +195,33 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 	const [isBillingActOpen, setIsBillingActOpen] = useState(false);
 	const [isQuickExpenseOpen, setIsQuickExpenseOpen] = useState(false);
 	const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
+	const [isTimesheetT13Open, setIsTimesheetT13Open] = useState(false);
+	const [isFamilyBillingOpen, setIsFamilyBillingOpen] = useState(false);
+	const [isSplitPaymentOpen, setIsSplitPaymentOpen] = useState(false);
 
 	const effectivePatient = useMemo(() => {
-		if (documentPatient) return documentPatient;
-		if (pendingCheckout?.patientId && dashboard?.patients) {
-			const found = dashboard.patients.find((p: any) => p.id === pendingCheckout.patientId);
-			if (found) return found;
+		if (pendingCheckout?.patientId) {
+			if (dashboard?.patients) {
+				const found = dashboard.patients.find((p: any) => p.id === pendingCheckout.patientId);
+				if (found) return found;
+			}
+			if (documentPatient?.id === pendingCheckout.patientId) {
+				return documentPatient;
+			}
+			return {
+				id: pendingCheckout.patientId,
+				fullName: pendingCheckout.patientName || "Пациент",
+				name: pendingCheckout.patientName || "Пациент",
+				phone: (pendingCheckout as any).patientPhone,
+			};
 		}
+		if (documentPatient) return documentPatient;
 		if ((props as any).activePatient) return (props as any).activePatient;
 		if (logicContext?.activePatient) return logicContext.activePatient;
 		const selId = (props as any).selectedPatientId || logicContext?.selectedPatientId;
 		if (selId && dashboard?.patients) {
 			const found = dashboard.patients.find((p: any) => p.id === selId);
 			if (found) return found;
-		}
-		if (pendingCheckout?.patientId) {
-			return {
-				id: pendingCheckout.patientId,
-				fullName: pendingCheckout.patientName || "Пациент",
-				name: pendingCheckout.patientName || "Пациент",
-			};
 		}
 		if ((dashboard as any)?.patient) return (dashboard as any).patient;
 		if (dashboard?.patients && dashboard.patients.length > 0) {
@@ -223,12 +230,60 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 		return null;
 	}, [documentPatient, pendingCheckout, props, logicContext, dashboard]);
 
-	useEffect(() => {
-		const targetAmount = pendingCheckout?.totalDueRub || effectiveBillingSummary?.totalDueRub;
-		if (targetAmount && targetAmount > 0 && (!paymentAmount || paymentAmount === "" || paymentAmount === "0")) {
-			setPaymentAmount(rubAmountForInput(targetAmount));
+	const [localPaymentAmount, setLocalPaymentAmount] = useState<string>(() => {
+		if (pendingCheckout?.totalDueRub && pendingCheckout.totalDueRub > 0) {
+			return rubAmountForInput(pendingCheckout.totalDueRub);
 		}
-	}, [pendingCheckout, effectiveBillingSummary, paymentAmount, setPaymentAmount]);
+		if (effectiveBillingSummary?.totalDueRub && effectiveBillingSummary.totalDueRub > 0) {
+			return rubAmountForInput(effectiveBillingSummary.totalDueRub);
+		}
+		return "";
+	});
+
+	const effectivePaymentAmount = paymentAmount || localPaymentAmount;
+
+	const handleAmountChange = useCallback(
+		(val: string) => {
+			setLocalPaymentAmount(val);
+			if (typeof props.setPaymentAmount === "function") {
+				props.setPaymentAmount(val);
+			}
+		},
+		[props.setPaymentAmount],
+	);
+
+	useEffect(() => {
+		if (
+			pendingCheckout &&
+			typeof pendingCheckout.totalDueRub === "number" &&
+			pendingCheckout.totalDueRub > 0
+		) {
+			const target = rubAmountForInput(pendingCheckout.totalDueRub);
+			if (paymentAmount !== target && localPaymentAmount !== target) {
+				setLocalPaymentAmount(target);
+				if (typeof props.setPaymentAmount === "function") {
+					props.setPaymentAmount(target);
+				}
+			}
+		} else if (
+			effectiveBillingSummary?.totalDueRub &&
+			effectiveBillingSummary.totalDueRub > 0
+		) {
+			const target = rubAmountForInput(effectiveBillingSummary.totalDueRub);
+			if (!paymentAmount && !localPaymentAmount) {
+				setLocalPaymentAmount(target);
+				if (typeof props.setPaymentAmount === "function") {
+					props.setPaymentAmount(target);
+				}
+			}
+		}
+	}, [
+		pendingCheckout,
+		effectiveBillingSummary,
+		paymentAmount,
+		localPaymentAmount,
+		props.setPaymentAmount,
+	]);
 
 	useEffect(() => {
 		if (effectivePatient?.id && logicContext?.selectedPatientId !== effectivePatient.id) {
@@ -445,11 +500,23 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 					setIsTaxModalOpen(false);
 					return;
 				}
+				if (isTimesheetT13Open) {
+					setIsTimesheetT13Open(false);
+					return;
+				}
+				if (isFamilyBillingOpen) {
+					setIsFamilyBillingOpen(false);
+					return;
+				}
+				if (isSplitPaymentOpen) {
+					setIsSplitPaymentOpen(false);
+					return;
+				}
 			}
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isInvoicesOpen, isPnlOpen, isFinanceOptionsOpen, isCashShiftOpen, isCashboxOpen, isBillingActOpen, isQuickExpenseOpen, isTaxModalOpen]);
+	}, [isInvoicesOpen, isPnlOpen, isFinanceOptionsOpen, isCashShiftOpen, isCashboxOpen, isBillingActOpen, isQuickExpenseOpen, isTaxModalOpen, isTimesheetT13Open, isFamilyBillingOpen, isSplitPaymentOpen]);
 
 	const hasActiveClinicalRules = Boolean(
 		(clinicalRuleSummary &&
@@ -457,6 +524,16 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 				(clinicalRuleSummary.activeRules ?? 0) > 0)) ||
 			(clinicalRuleEvaluations && clinicalRuleEvaluations.length > 0),
 	);
+
+	const handleRecordPayment = useCallback(async () => {
+		await onRecordPayment();
+		if (typeof window !== "undefined") {
+			sessionStorage.removeItem("dente_pending_checkout");
+			localStorage.removeItem("dente_pending_checkout");
+		}
+		setPendingCheckout(null);
+		setLocalPaymentAmount("");
+	}, [onRecordPayment]);
 
 	return {
 		activePatient,
@@ -488,20 +565,23 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 		isBillingActOpen,
 		isCashShiftOpen,
 		isCashboxOpen,
+		isFamilyBillingOpen,
 		isFinanceOptionsOpen,
 		isInvoicesOpen,
 		isPaymentSaving,
 		isPnlOpen,
 		isQuickExpenseOpen,
 		isShiftOpen,
+		isSplitPaymentOpen,
 		isTaxModalOpen,
+		isTimesheetT13Open,
 		loadDashboard,
 		money,
 		onGoToDocuments,
 		onGoToPrices,
 		onGoToVisit,
-		onRecordPayment,
-		paymentAmount,
+		onRecordPayment: handleRecordPayment,
+		paymentAmount: effectivePaymentAmount,
 		paymentFeedback,
 		paymentFiscalCashierName,
 		paymentFiscalFd,
@@ -532,12 +612,15 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 		setIsBillingActOpen,
 		setIsCashShiftOpen,
 		setIsCashboxOpen,
+		setIsFamilyBillingOpen,
 		setIsFinanceOptionsOpen,
 		setIsInvoicesOpen,
 		setIsPnlOpen,
 		setIsQuickExpenseOpen,
+		setIsSplitPaymentOpen,
 		setIsTaxModalOpen,
-		setPaymentAmount,
+		setIsTimesheetT13Open,
+		setPaymentAmount: handleAmountChange,
 		setPaymentFiscalCashierName,
 		setPaymentFiscalFd,
 		setPaymentFiscalFn,
