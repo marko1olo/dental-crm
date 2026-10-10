@@ -138,7 +138,20 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
     useAppStore.getState().setCurrentView("visit");
   };
 
-  if (isMobile && dashboard) {
+  if (isMobile) {
+    if (!dashboard) {
+      return (
+        <div
+          className="schedule-mobile-agenda p-8 flex flex-col items-center justify-center gap-3 text-center min-h-[350px]"
+          data-testid="schedule-mobile-agenda-loading"
+        >
+          <div className="w-8 h-8 rounded-full border-2 border-[var(--teal,#0d9488)] border-t-transparent animate-spin" />
+          <p className="text-sm font-medium text-[var(--muted)]">
+            Подготовка расписания...
+          </p>
+        </div>
+      );
+    }
     return (
       <ScheduleMobileAgendaView
         dashboard={dashboard}
@@ -228,7 +241,7 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
     if (!dashboard) return null;
     return (
       <ChairScheduleView
-        hideToolbar={true}
+        hideToolbar={false}
         gridStepMinutes={scheduleGridStep}
         onGridStepChange={setScheduleGridStep}
         dashboard={dashboard}
