@@ -1,8 +1,11 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * CLINICAL RVG TWAIN & DENTAL RADIOGRAPHY HARDWARE ENGINE
- * Canonical Facade over modular packages/shared/src/radiology/twain/
+ * CLINICAL RVG TWAIN & DENTAL RADIOGRAPHY HARDWARE SUBSYSTEM
+ * Barrel index re-exporting modular types, profiles, bridges & orchestrator
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export * from "./twain/index.js";
+export * from "./types.js";
+export * from "./vendorProfiles.js";
+export * from "./protocolBridge.js";
+export * from "./acquisitionOrchestrator.js";
