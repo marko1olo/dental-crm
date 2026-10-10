@@ -1,827 +1,95 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React from "react";
+import { CheckCircle2 } from "lucide-react";
+import { STANDARD_ANESTHESIA_NORM_PRESET_RU } from "../../lib/clinicalProtocols043";
 import {
-	AlertTriangle,
-	Heart,
-	Plus,
-	CheckCircle2,
-	ShieldAlert,
-	Activity,
-	Trash2,
-	MoreHorizontal,
-} from "lucide-react";
-import { DentalSyringe } from "../icons/DentalIcons";
-import {
-	type AnestheticDrugId,
-	DENTAL_ANESTHETICS,
-	type InjectionTechniqueId,
-} from "./anesthesiaCatalog";
-import {
-	calculateAnesthesiaSafety,
-	resolveClinicalDefaultWeightKg,
 	formatAnesthesiaPatientMemo,
 	type AnesthesiaPatientMemoParams,
-	type AnesthesiaCalculationResult,
-	type AsaPhysicalStatus,
-} from "./anesthesiaEngine";
-import { STANDARD_ANESTHESIA_NORM_PRESET_RU } from "../../lib/clinicalProtocols043";
+	WEIGHT_QUICK_PRESETS,
+	WEIGHT_PRESETS,
+	PRIMARY_ANESTHETIC_DRUGS,
+	type AnesthesiaQuickBarProps,
+} from "./anesthesiaQuickBar/types";
+import { AnestheticDrugSelector } from "./anesthesiaQuickBar/AnestheticDrugSelector";
+import { AnesthesiaMethodSelector } from "./anesthesiaQuickBar/AnesthesiaMethodSelector";
+import { AnesthesiaSafetyAllergyHud } from "./anesthesiaQuickBar/AnesthesiaSafetyAllergyHud";
+import { AnesthesiaQuickBarActions } from "./anesthesiaQuickBar/AnesthesiaQuickBarActions";
+import { useAnesthesiaQuickBar } from "./anesthesiaQuickBar/useAnesthesiaQuickBar";
 import "./anesthesia.css";
 
 export {
 	formatAnesthesiaPatientMemo,
 	type AnesthesiaPatientMemoParams,
+	WEIGHT_QUICK_PRESETS,
+	WEIGHT_PRESETS,
+	PRIMARY_ANESTHETIC_DRUGS,
+	type AnesthesiaQuickBarProps,
+	STANDARD_ANESTHESIA_NORM_PRESET_RU,
 };
 
-export interface AnesthesiaQuickBarProps {
-	patientWeightKg?: number | undefined;
-	patientAgeYears?: number | undefined;
-	hasCardiovascularRisk?: boolean | undefined;
-	hasHypertension?: boolean | undefined;
-	hasCardiacArrhythmia?: boolean | undefined;
-	hasIschemicHeartDisease?: boolean | undefined;
-	hasMyocardialInfarctionHistory?: boolean | undefined;
-	takesBetaBlockers?: boolean | undefined;
-	hasSulfiteAllergy?: boolean | undefined;
-	hasBronchialAsthma?: boolean | undefined;
-	isPregnantOrLactating?: boolean | undefined;
-	targetToothNumberFdi?: number | string | undefined;
-	onApplyAnesthesia?: ((diaryText: string, result: AnesthesiaCalculationResult) => void) | undefined;
-	onDisposalCarpules?: ((carpulesCount: number, drugId: AnestheticDrugId) => void) | undefined;
-	onOpenEmergencyProtocol?: (() => void) | undefined;
-	onOpenAspirationJournal?: (() => void) | undefined;
-	disabled?: boolean | undefined;
-}
-
-export const WEIGHT_QUICK_PRESETS: readonly number[] = [15, 30, 50, 70, 85, 100];
-export const WEIGHT_PRESETS: readonly number[] = WEIGHT_QUICK_PRESETS;
-
-export const PRIMARY_ANESTHETIC_DRUGS: readonly {
-	id: AnestheticDrugId;
-	labelRu: string;
-	subLabelRu: string;
-	activeSubstanceRu: string;
-	vasoRatio: string;
-	isAdrenalineFree: boolean;
-	isCardioRecommended: boolean;
-}[] = [
-	{
-		id: "articaine_1_200k",
-		labelRu: "Артикаин 1:200 000 (Ультракаин Д-С)",
-		subLabelRu: "Артикаин 4% • Щадящий адреналин • МДД 7 мг/кг",
-		activeSubstanceRu: "Артикаин 4% + Эпинефрин 1:200 000",
-		vasoRatio: "1:200 000",
-		isAdrenalineFree: false,
-		isCardioRecommended: false,
-	},
-	{
-		id: "articaine_1_100k",
-		labelRu: "Артикаин 1:100 000 (Ультракаин Форте / Септанест)",
-		subLabelRu: "Артикаин 4% • Глубокая анестезия • МДД 7 мг/кг",
-		activeSubstanceRu: "Артикаин 4% + Эпинефрин 1:100 000",
-		vasoRatio: "1:100 000",
-		isAdrenalineFree: false,
-		isCardioRecommended: false,
-	},
-	{
-		id: "mepivacaine_plain",
-		labelRu: "Мепивакаин 3% (Скандонест 3% без адреналина)",
-		subLabelRu: "Мепивакаин 3% • Кардио-защита • Без сульфитов • МДД 4.4 мг/кг",
-		activeSubstanceRu: "Мепивакаин 3% (чистый)",
-		vasoRatio: "Без адреналина",
-		isAdrenalineFree: true,
-		isCardioRecommended: true,
-	},
-];
-
-export function AnesthesiaQuickBar({
-	patientWeightKg: initialWeightKg,
-	patientAgeYears = 35,
-	hasCardiovascularRisk = false,
-	hasHypertension = false,
-	hasCardiacArrhythmia = false,
-	hasIschemicHeartDisease = false,
-	hasMyocardialInfarctionHistory = false,
-	takesBetaBlockers = false,
-	hasSulfiteAllergy = false,
-	hasBronchialAsthma = false,
-	isPregnantOrLactating = false,
-	targetToothNumberFdi,
-	onApplyAnesthesia,
-	onDisposalCarpules,
-	onOpenEmergencyProtocol,
-	onOpenAspirationJournal,
-	disabled = false,
-}: AnesthesiaQuickBarProps) {
-	const defaultWeight = resolveClinicalDefaultWeightKg(
-		initialWeightKg,
-		patientAgeYears,
-		patientAgeYears < 18,
-	);
-	const [customWeightKg, setCustomWeightKg] = useState<number | null>(null);
-	const patientWeightKg = customWeightKg ?? defaultWeight;
-	const setPatientWeightKg = (w: number) => setCustomWeightKg(w);
-
-	const isCardioRisk = Boolean(
-		hasCardiovascularRisk ||
-		hasHypertension ||
-		hasCardiacArrhythmia ||
-		hasIschemicHeartDisease ||
-		hasMyocardialInfarctionHistory ||
-		takesBetaBlockers
-	);
-
-	const [sessionInjectedCarpules, setSessionInjectedCarpules] = useState<number>(0);
-	const [selectedCarpulesCount, setSelectedCarpulesCount] = useState<number>(1.0);
-
-	const [selectedDrugId, setSelectedDrugId] = useState<AnestheticDrugId>(() => {
-		if (hasSulfiteAllergy || hasBronchialAsthma) return "mepivacaine_plain";
-		if (isCardioRisk) return "mepivacaine_plain";
-		return "articaine_1_200k";
-	});
-	const [techniqueId, setTechniqueId] = useState<InjectionTechniqueId>("infiltration");
-	const [activeToastMessage, setActiveToastMessage] = useState<string | null>(null);
-	const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-	const showQuickToast = (msg: string, durationMs = 3500) => {
-		if (toastTimerRef.current) {
-			clearTimeout(toastTimerRef.current);
-		}
-		setActiveToastMessage(msg);
-		toastTimerRef.current = setTimeout(() => {
-			toastTimerRef.current = null;
-			setActiveToastMessage(null);
-		}, durationMs);
-	};
-
-	useEffect(() => {
-		return () => {
-			if (toastTimerRef.current) {
-				clearTimeout(toastTimerRef.current);
-				toastTimerRef.current = null;
-			}
-		};
-	}, []);
-
-	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
-	const [safetyWarning, setSafetyWarning] = useState<{
-		title: string;
-		text: string;
-		carpulesCount?: number;
-		suggestedDrugId?: AnestheticDrugId;
-	} | null>(null);
-
-	const asaStatus: AsaPhysicalStatus = isCardioRisk ? "asa_3" : "asa_1";
-
-	// Live calculation for 1 carpule (1.7 ml)
-	const singleCarpuleResult = useMemo(() => {
-		const effectiveWeight = resolveClinicalDefaultWeightKg(
-			patientWeightKg,
-			patientAgeYears,
-			patientAgeYears < 18,
-		);
-		return calculateAnesthesiaSafety({
-			drugId: selectedDrugId,
-			carpulesCount: 1.0,
-			patientWeightKg: effectiveWeight,
-			patientAgeYears,
-			asaStatus,
-			hasCardiovascularRisk: isCardioRisk,
-			hasHypertension,
-			hasCardiacArrhythmia,
-			hasIschemicHeartDisease,
-			hasMyocardialInfarctionHistory,
-			takesBetaBlockers,
-			hasSulfiteAllergy,
-			hasBronchialAsthma,
-			isPregnantOrLactating,
-			techniqueId,
-			needleType: "g30_short_21mm",
-			targetToothNumberFdi,
-			aspirationNegativeConfirmed: true,
-		});
-	}, [
-		selectedDrugId,
-		patientWeightKg,
-		patientAgeYears,
-		asaStatus,
-		isCardioRisk,
-		hasHypertension,
-		hasCardiacArrhythmia,
-		hasIschemicHeartDisease,
-		hasMyocardialInfarctionHistory,
-		takesBetaBlockers,
-		hasSulfiteAllergy,
-		hasBronchialAsthma,
-		isPregnantOrLactating,
-		techniqueId,
-		targetToothNumberFdi,
-	]);
-
-	const selectedDrugInfo = DENTAL_ANESTHETICS[selectedDrugId] ?? DENTAL_ANESTHETICS.articaine_1_200k;
-	const maxSafeCarpules = singleCarpuleResult.maxSafeCarpulesCount;
-
-	const handleApplyCarpules = (carpulesCount: number, bypassCheck = false, overrideDrugId?: AnestheticDrugId) => {
-		if (disabled) return;
-
-		const targetDrugId = overrideDrugId ?? selectedDrugId;
-		const drugInfo = DENTAL_ANESTHETICS[targetDrugId] ?? selectedDrugInfo;
-
-		const effectiveWeight = resolveClinicalDefaultWeightKg(
-			patientWeightKg,
-			patientAgeYears,
-			patientAgeYears < 18,
-		);
-
-		const result = calculateAnesthesiaSafety({
-			drugId: targetDrugId,
-			carpulesCount,
-			patientWeightKg: effectiveWeight,
-			patientAgeYears,
-			asaStatus,
-			hasCardiovascularRisk: isCardioRisk,
-			hasHypertension,
-			hasCardiacArrhythmia,
-			hasIschemicHeartDisease,
-			hasMyocardialInfarctionHistory,
-			takesBetaBlockers,
-			hasSulfiteAllergy,
-			hasBronchialAsthma,
-			isPregnantOrLactating,
-			techniqueId,
-			needleType: "g30_short_21mm",
-			targetToothNumberFdi,
-			aspirationNegativeConfirmed: true,
-		});
-
-		// Check epinephrine 1:100 000 with cardio risk (Mandate 8e: Doctor Autonomy - informative, non-blocking)
-		const isCardioConflict = isCardioRisk && (targetDrugId === "articaine_1_100k" || targetDrugId === "lidocaine_1_100k");
-		const isCriticalConflict = result.contraindicationsTriggered.length > 0 || (result.isOverdose && carpulesCount > 2.0);
-
-		setSessionInjectedCarpules((prev) => prev + carpulesCount);
-
-		const diaryEntry = (bypassCheck || isCardioConflict || isCriticalConflict)
-			? `${result.diaryEntryRu} (Введено по клиническому решению врача согласно ст. 70 Федерального закона № 323-ФЗ)`
-			: result.diaryEntryRu;
-
-		onApplyAnesthesia?.(diaryEntry, result);
-		if (isCardioConflict) {
-			showQuickToast(
-				`Зафиксировано (ССЗ риск): ${drugInfo.tradeNamesRu[0]} ${(carpulesCount * 1.7).toFixed(1)} мл (${carpulesCount} карп.) по решению врача`,
-				4000,
-			);
-		} else {
-			showQuickToast(
-				`Зафиксировано: ${drugInfo.tradeNamesRu[0]} ${(carpulesCount * 1.7).toFixed(1)} мл (${carpulesCount} карп.) в протокол 043/у`,
-				3500,
-			);
-		}
-	};
-
-	const handleNurseQuickDisposal = (carpulesCount = 1.0) => {
-		if (disabled) return;
-		showQuickToast(
-			`Списана карпула ${selectedDrugInfo.tradeNamesRu[0]} (${carpulesCount} шт.): отходы Класса Б, списание по FEFO (расход сверх остатка)`,
-			4000,
-		);
-		if (onDisposalCarpules) {
-			onDisposalCarpules(carpulesCount, selectedDrugId);
-		}
-	};
-
-	const handleNursePacketDisposal = () => {
-		if (disabled) return;
-		showQuickToast(
-			"Списана 1 карпула Артикаин 1:100 000 + игла 30G: списание по FEFO (расход сверх остатка)",
-			4000,
-		);
-		if (onDisposalCarpules) {
-			onDisposalCarpules(1.0, "articaine_1_100k");
-		}
-	};
-
-	const handleApplyStandardNormPreset = () => {
-		if (disabled) return;
-		const effectiveWeight = resolveClinicalDefaultWeightKg(
-			patientWeightKg,
-			patientAgeYears,
-			patientAgeYears < 18,
-		);
-		const result = calculateAnesthesiaSafety({
-			drugId: "articaine_1_100k",
-			carpulesCount: 1.0,
-			patientWeightKg: effectiveWeight,
-			patientAgeYears,
-			asaStatus: "asa_1",
-			hasCardiovascularRisk: false,
-			hasSulfiteAllergy: false,
-			hasBronchialAsthma: false,
-			isPregnantOrLactating: false,
-			techniqueId: "infiltration",
-			needleType: "g30_short_21mm",
-			targetToothNumberFdi,
-			aspirationNegativeConfirmed: true,
-		});
-
-		const normDiaryText = `Инфильтрационная/проводниковая анестезия: ${STANDARD_ANESTHESIA_NORM_PRESET_RU}`;
-		onApplyAnesthesia?.(normDiaryText, result);
-		showQuickToast("Анестезия: протокол сформирован", 3500);
-	};
-
-	const handleApplyUltracainForteCombined = () => {
-		if (disabled) return;
-		setSelectedDrugId("articaine_1_100k");
-		setTechniqueId("mandibular_torus");
-		const effectiveWeight = resolveClinicalDefaultWeightKg(
-			patientWeightKg,
-			patientAgeYears,
-			patientAgeYears < 18,
-		);
-		const result = calculateAnesthesiaSafety({
-			drugId: "articaine_1_100k",
-			carpulesCount: 1.0,
-			patientWeightKg: effectiveWeight,
-			patientAgeYears,
-			asaStatus,
-			hasCardiovascularRisk,
-			hasSulfiteAllergy,
-			hasBronchialAsthma,
-			isPregnantOrLactating,
-			techniqueId: "mandibular_torus",
-			needleType: "g27_long_35mm",
-			targetToothNumberFdi,
-			aspirationNegativeConfirmed: true,
-		});
-
-		const diaryText =
-			"Комбинированная мандибулярная проводниковая и инфильтрационная анестезия: Ультракаин Д-С Форте 1:100 000 (1.7 мл). Двухплоскостная аспирация отрицательная. Обезболивание глубокое, онемение половины нижней губы и языка.";
-		onApplyAnesthesia?.(diaryText, result);
-		showQuickToast("Мандибулярная + инфильтрационная (Ультракаин Форте 1.7 мл): протокол сформирован", 3500);
-	};
-
-	const handleApplySeptanestInfiltration = () => {
-		if (disabled) return;
-		setSelectedDrugId("articaine_1_100k");
-		setTechniqueId("infiltration");
-		const effectiveWeight = resolveClinicalDefaultWeightKg(
-			patientWeightKg,
-			patientAgeYears,
-			patientAgeYears < 18,
-		);
-		const result = calculateAnesthesiaSafety({
-			drugId: "articaine_1_100k",
-			carpulesCount: 1.0,
-			patientWeightKg: effectiveWeight,
-			patientAgeYears,
-			asaStatus,
-			hasCardiovascularRisk,
-			hasSulfiteAllergy,
-			hasBronchialAsthma,
-			isPregnantOrLactating,
-			techniqueId: "infiltration",
-			needleType: "g30_short_21mm",
-			targetToothNumberFdi,
-			aspirationNegativeConfirmed: true,
-		});
-
-		const diaryText =
-			"Инфильтрационная наднадкостничная анестезия: Септанест 1:100 000 (1.7 мл). Аспирационная проба отрицательная. Обезболивание глубокое, аллергических реакций нет.";
-		onApplyAnesthesia?.(diaryText, result);
-		showQuickToast("Инфильтрационная анестезия Септанест (1.7 мл): протокол сформирован", 3500);
-	};
-
-	const handleNurseSeptanestDisposal = () => {
-		if (disabled) return;
-		showQuickToast(
-			"Списана 1 карпула Септанест 1:100 000 (1.7 мл): отходы Класса Б, списание выполнено",
-			4000,
-		);
-		if (onDisposalCarpules) {
-			onDisposalCarpules(1.0, "articaine_1_100k");
-		}
-	};
-
+export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
+	const bar = useAnesthesiaQuickBar(props);
 
 	return (
 		<div className="anesthesia-quick-bar" data-testid="anesthesia-quick-bar">
-			{/* ── Top Bar: Title & Somatic Tags & Weight & Configure ── */}
-			<div className="anesthesia-quick-bar-header">
-				<div className="anesthesia-quick-bar-title">
-					<DentalSyringe size={16} className="anesthesia-icon-accent shrink-0" />
-					<span className="font-bold text-xs sm:text-sm">{`Анестезия (МДД по массе тела ${patientWeightKg} кг):`}</span>
-					{isCardioRisk && (
-						<span className="anesthesia-cardio-tag" title="Кардиоваскулярный риск: лимит адреналина 0.04 мг">
-							<Heart size={12} className="text-amber-500" />
-							<span>ССЗ: Скандонест / лимит 0.04 мг</span>
-						</span>
-					)}
-					{takesBetaBlockers && (
-						<span className="anesthesia-cardio-tag" title="Пациент принимает бета-блокаторы: строгий лимит адреналина 0.04 мг">
-							<Activity size={12} className="text-red-500" />
-							<span>Бета-блокаторы: лимит 0.04 мг</span>
-						</span>
-					)}
-					{(hasSulfiteAllergy || hasBronchialAsthma) && (
-						<span className="anesthesia-allergy-tag" title="Аллергия на сульфиты / астма: запрещены растворы с адреналином (E223)">
-							<AlertTriangle size={12} className="text-red-500" />
-							<span>Без сульфитов (E223)</span>
-						</span>
-					)}
-				</div>
+			<AnesthesiaSafetyAllergyHud
+				patientWeightKg={bar.patientWeightKg}
+				isCardioRisk={bar.isCardioRisk}
+				takesBetaBlockers={Boolean(props.takesBetaBlockers)}
+				hasSulfiteAllergy={Boolean(props.hasSulfiteAllergy)}
+				hasBronchialAsthma={Boolean(props.hasBronchialAsthma)}
+				selectedDrugId={bar.selectedDrugId}
+				selectedDrugInfo={bar.selectedDrugInfo}
+				safetyWarning={bar.safetyWarning}
+				onSelectDrug={bar.handleSelectDrug}
+				onDismissWarning={bar.handleDismissWarning}
+				onConfirmWarningOverride={bar.handleConfirmWarningOverride}
+				onOpenEmergencyProtocol={props.onOpenEmergencyProtocol}
+				onOpenAspirationJournal={props.onOpenAspirationJournal}
+				disabled={props.disabled}
+			/>
 
-				<div className="flex items-center gap-2 flex-wrap">
-					{onOpenEmergencyProtocol && (
-						<button
-							type="button"
-							onClick={onOpenEmergencyProtocol}
-							className="px-3 py-2 min-h-[48px] rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-black text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs animate-pulse"
-							title="Экстренная помощь: Анафилаксия, LAST (липиды 20%), шок (112)"
-							data-testid="btn-anesthesia-quick-emergency"
-						>
-							<ShieldAlert size={14} />
-							<span>Шок / LAST 112</span>
-						</button>
-					)}
-					{onOpenAspirationJournal && (
-						<button
-							type="button"
-							onClick={onOpenAspirationJournal}
-							className="px-3 py-2 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-bold text-[var(--ink)] inline-flex items-center gap-1 transition-colors cursor-pointer"
-							title="Открыть подробный журнал проводниковой анестезии и аспирационной пробы"
-							data-testid="btn-anesthesia-quick-journal"
-						>
-							<span>Журнал пробы</span>
-						</button>
-					)}
-					<span className="text-[11px] text-[var(--muted)]">Выбор дозировки</span>
-				</div>
-			</div>
+			<AnesthesiaMethodSelector
+				techniqueId={bar.techniqueId}
+				onSelectTechnique={bar.setTechniqueId}
+				targetToothNumberFdi={props.targetToothNumberFdi}
+				disabled={props.disabled}
+			/>
 
-			{/* ── Drug Selection Chips (3 Primary Drugs, Hick's Law 36px density) ── */}
-			<div className="anesthesia-quick-drugs-grid">
-				{PRIMARY_ANESTHETIC_DRUGS.map((drug) => {
-					const isSelected = selectedDrugId === drug.id;
-					const isCardioSuggested = isCardioRisk && drug.isAdrenalineFree;
-					const isSulfiteRisky = (hasSulfiteAllergy || hasBronchialAsthma) && !drug.isAdrenalineFree;
+			<AnestheticDrugSelector
+				selectedDrugId={bar.selectedDrugId}
+				onSelectDrug={bar.handleSelectDrug}
+				isCardioRisk={bar.isCardioRisk}
+				hasSulfiteAllergy={Boolean(props.hasSulfiteAllergy)}
+				hasBronchialAsthma={Boolean(props.hasBronchialAsthma)}
+				disabled={props.disabled}
+			/>
 
-					return (
-						<button
-							key={drug.id}
-							type="button"
-							disabled={disabled}
-							onClick={() => {
-								setSelectedDrugId(drug.id);
-								setSafetyWarning(null);
-							}}
-							className={`anesthesia-quick-drug-chip ${isSelected ? "selected" : ""} ${isSulfiteRisky ? "opacity-75 border-amber-400" : ""}`}
-							title={drug.subLabelRu}
-						>
-							<span className="text-xs sm:text-sm truncate font-bold">
-								{drug.labelRu}
-							</span>
-							<div className="flex items-center gap-1 shrink-0 ml-1.5">
-								{isCardioSuggested && (
-									<span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-										ССЗ выбор
-									</span>
-								)}
-								{isSulfiteRisky && (
-									<span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-500/20 text-amber-700 dark:text-amber-300">
-										Сульфиты!
-									</span>
-								)}
-							</div>
-						</button>
-					);
-				})}
-			</div>
+			<AnesthesiaQuickBarActions
+				patientWeightKg={bar.patientWeightKg}
+				selectedDrugId={bar.selectedDrugId}
+				selectedDrugInfo={bar.selectedDrugInfo}
+				singleCarpuleResult={bar.singleCarpuleResult}
+				maxSafeCarpules={bar.maxSafeCarpules}
+				sessionInjectedCarpules={bar.sessionInjectedCarpules}
+				selectedCarpulesCount={bar.selectedCarpulesCount}
+				onChangeSelectedCarpulesCount={bar.setSelectedCarpulesCount}
+				onApplyCarpules={bar.handleApplyCarpules}
+				onApplyStandardNormPreset={bar.handleApplyStandardNormPreset}
+				onApplyUltracainForteCombined={bar.handleApplyUltracainForteCombined}
+				onApplySeptanestInfiltration={bar.handleApplySeptanestInfiltration}
+				onNurseQuickDisposal={bar.handleNurseQuickDisposal}
+				onNursePacketDisposal={bar.handleNursePacketDisposal}
+				onNurseSeptanestDisposal={bar.handleNurseSeptanestDisposal}
+				onSelectDrug={bar.handleSelectDrug}
+				disabled={props.disabled}
+			/>
 
-			{/* ── Cardio Risk Warning Badge for 1:100 000 Epinephrine (Mandate: clear warning with rationale) ── */}
-			{isCardioRisk && (selectedDrugId === "articaine_1_100k" || selectedDrugId === "lidocaine_1_100k") && (
-				<div
-					className="flex items-start sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-800 dark:text-red-200 text-xs font-medium"
-					role="alert"
-					data-testid="anesthesia-cardio-100k-warning-badge"
-				>
-					<div className="flex items-center gap-2">
-						<AlertTriangle size={16} className="text-red-600 dark:text-red-400 shrink-0" />
-						<span>
-							<strong>Внимание, кардио-риск!</strong> Высокая концентрация адреналина 1:100 000 не рекомендуется при ССЗ (ИБС, гипертония II-III ст, аритмии, инфаркт, бета-блокаторы). Лимит адреналина: строго <strong>0.04 мг</strong> (макс. 2 карпулы). Препарат выбора — <strong>Мепивакаин 3% (Скандонест) без адреналина</strong>.
-						</span>
-					</div>
-					<button
-						type="button"
-						onClick={() => setSelectedDrugId("mepivacaine_plain")}
-						className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] shrink-0 transition-colors cursor-pointer"
-						title="Переключиться на Мепивакаин 3% (Скандонест)"
-						data-testid="btn-switch-to-mepivacaine"
-					>
-						Выбрать Скандонест 3%
-					</button>
-				</div>
-			)}
-
-			{/* ── Soft Ambient Warning for Somatic Risks (Mandate 8e: Non-blocking doctor autonomy) ── */}
-			{((hasSulfiteAllergy || hasBronchialAsthma) && !selectedDrugInfo.isAdrenalineFree) && (
-				<div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/15 border border-amber-500/35 text-amber-800 dark:text-amber-200 text-xs font-medium" role="status">
-					<AlertTriangle size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
-					<span>Внимание: выбранный препарат содержит сульфиты (E223). Рекомендован Скандонест 3% (без адреналина). Введение разрешено по клиническому решению врача.</span>
-				</div>
-			)}
-
-			{/* ── 1-Click Dose Selection Row & MRD Gauge ── */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1 border-t border-[var(--line)]/50">
-				{/* 1-Click Action Buttons */}
-				<div className="flex items-center gap-2 flex-wrap">
-					<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1 shrink-0">
-						<Plus size={13} className="text-[var(--teal)]" />
-						Ввести дозу:
-					</span>
-
-					{/* Stepper [-] 1.0 карп. [+] */}
-					<div className="anesthesia-quick-stepper" role="group" aria-label="Счетчик карпул">
-						<button
-							type="button"
-							disabled={disabled || selectedCarpulesCount <= 0.5}
-							onClick={() => setSelectedCarpulesCount((c) => Math.max(0.5, Math.round((c - 0.5) * 10) / 10))}
-							className="anesthesia-stepper-btn min-h-[44px] min-w-[44px]"
-							title="Уменьшить дозу на 0.5 карпулы"
-							data-testid="btn-decrease-carpules"
-						>
-							−
-						</button>
-						<span
-							className="anesthesia-stepper-val"
-							data-testid="selected-carpules-display"
-							title={`${selectedCarpulesCount} карпула (${(selectedCarpulesCount * 1.7).toFixed(1)} мл)`}
-						>
-							{selectedCarpulesCount} карп. ({(selectedCarpulesCount * 1.7).toFixed(1)} мл)
-						</span>
-						<button
-							type="button"
-							disabled={disabled || selectedCarpulesCount >= 6.0}
-							onClick={() => setSelectedCarpulesCount((c) => Math.min(6.0, Math.round((c + 0.5) * 10) / 10))}
-							className="anesthesia-stepper-btn min-h-[44px] min-w-[44px]"
-							title="Увеличить дозу на 0.5 карпулы"
-							data-testid="btn-increase-carpules"
-						>
-							+
-						</button>
-					</div>
-
-					{/* Primary CTA: В карту */}
-					<button
-						type="button"
-						disabled={disabled}
-						onClick={() => handleApplyCarpules(selectedCarpulesCount)}
-						className="anesthesia-primary-cta-btn min-h-[44px]"
-						title={`Ввести ${selectedCarpulesCount} карп. в карту (043/у)`}
-						data-testid="btn-apply-anesthesia-to-card"
-					>
-						<DentalSyringe size={15} className="shrink-0" />
-						<span>В карту</span>
-					</button>
-
-					{/* Primary 1: Норма 1.7 мл */}
-					<button
-						type="button"
-						disabled={disabled}
-						onClick={handleApplyStandardNormPreset}
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/50 text-xs sm:text-sm font-black text-blue-700 dark:text-blue-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
-						title="Норма: Артикаин 4% 1:100 000 (1.7 мл), аспирация (-), аллергий нет"
-						data-testid="anesthesia-dose-norm-preset"
-					>
-						<DentalSyringe size={14} className="text-amber-500 dark:text-amber-300 shrink-0" />
-						<span>Норма: Артикаин 1:100k (1.7 мл)</span>
-					</button>
-
-					{/* Primary 2: Мандибулярная 1.7 мл */}
-					<button
-						type="button"
-						disabled={disabled}
-						onClick={handleApplyUltracainForteCombined}
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-teal-600/15 hover:bg-teal-600/25 border border-teal-500/50 text-xs sm:text-sm font-black text-teal-700 dark:text-teal-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
-						title="Мандибулярная + инфильтрационная 1.7 мл Ультракаин Д-С Форте (2-пл. аспирация отр.)"
-						data-testid="anesthesia-preset-mandibular-infiltration-ultracaine-forte"
-					>
-						<DentalSyringe size={14} className="text-teal-500 shrink-0" />
-						<span>Мандибулярная + инфильтр. 1.7 мл</span>
-					</button>
-
-					{/* Segmented Dose Switch */}
-					<div className="anesthesia-segmented-group" role="group" aria-label="Выбор дозы карпул">
-						<button
-							type="button"
-							disabled={disabled}
-							onClick={() => handleApplyCarpules(0.5)}
-							className="anesthesia-segmented-btn min-h-[44px]"
-							title="Ввести 0.5 карпулы (0.85 мл)"
-							data-testid="anesthesia-dose-halfcarp"
-						>
-							½ карп. (0.85 мл)
-						</button>
-						<button
-							type="button"
-							disabled={disabled}
-							onClick={() => handleApplyCarpules(1.0)}
-							className="anesthesia-segmented-btn divider min-h-[44px]"
-							title="Ввести 1 карпулу (1.7 мл)"
-							data-testid="anesthesia-dose-1carp"
-						>
-							1 карпула (1.7 мл)
-						</button>
-						<button
-							type="button"
-							disabled={disabled}
-							onClick={() => handleApplyCarpules(2.0)}
-							className="anesthesia-segmented-btn min-h-[44px]"
-							title="Ввести 2 карпулы (3.4 мл)"
-							data-testid="anesthesia-dose-2carp"
-						>
-							2 карпулы (3.4 мл)
-						</button>
-					</div>
-
-					{/* Primary 3: Списать карпулу */}
-					<button
-						type="button"
-						disabled={disabled}
-						onClick={() => handleNurseQuickDisposal(1.0)}
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-emerald-500/10 border border-emerald-500/40 hover:border-emerald-500 text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
-						title="Списать пустые карпулы анестетика по FEFO (расход сверх остатка)"
-						data-testid="nurse-quick-carpule-disposal"
-					>
-						<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-						<span>Списать карпулу (FEFO)</span>
-					</button>
-
-					{/* More Actions Dropdown (...) */}
-					<div className="relative">
-						<button
-							type="button"
-							disabled={disabled}
-							onClick={() => setIsMoreMenuOpen((prev) => !prev)}
-							className="inline-flex items-center justify-center w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)] transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
-							title="Дополнительные пресеты и списания"
-							aria-label="Дополнительные пресеты"
-							aria-expanded={isMoreMenuOpen}
-						>
-							<MoreHorizontal size={18} />
-						</button>
-						{isMoreMenuOpen && (
-							<div className="absolute left-0 bottom-full mb-1.5 w-72 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-xl p-1.5 z-30 flex flex-col gap-1">
-								<button
-									type="button"
-									disabled={disabled}
-									onClick={() => {
-										setIsMoreMenuOpen(false);
-										setSelectedDrugId("articaine_1_100k");
-										handleApplyCarpules(1.0, false, "articaine_1_100k");
-									}}
-									className="w-full inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-left text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-surface)] transition-colors cursor-pointer"
-									data-testid="anesthesia-dose-1carp-articaine-100k"
-								>
-									<DentalSyringe size={14} className="text-emerald-500 shrink-0" />
-									<span>1 карп. Артикаин 1:100k (1.7 мл)</span>
-								</button>
-								<button
-									type="button"
-									disabled={disabled}
-									onClick={() => {
-										setIsMoreMenuOpen(false);
-										handleApplySeptanestInfiltration();
-									}}
-									className="w-full inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-left text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-surface)] transition-colors cursor-pointer"
-									data-testid="anesthesia-preset-infiltration-septanest"
-								>
-									<DentalSyringe size={14} className="text-cyan-500 shrink-0" />
-									<span>Инфильтрация 1.7 мл (Септанест)</span>
-								</button>
-								<button
-									type="button"
-									disabled={disabled}
-									onClick={() => {
-										setIsMoreMenuOpen(false);
-										handleNurseSeptanestDisposal();
-									}}
-									className="w-full inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-left text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 transition-colors cursor-pointer"
-									data-testid="nurse-quick-septanest-disposal"
-								>
-									<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-									<span>Списать препарат</span>
-								</button>
-								<button
-									type="button"
-									disabled={disabled}
-									onClick={() => {
-										setIsMoreMenuOpen(false);
-										handleNursePacketDisposal();
-									}}
-									className="w-full inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-left text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 transition-colors cursor-pointer"
-									data-testid="nurse-quick-packet-disposal"
-								>
-									<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-									<span>Пакет: 1 карп. + игла 30G</span>
-								</button>
-							</div>
-						)}
-					</div>
-				</div>
-
-				{/* Maximum Safe Carpules Badge & Live Human-Readable Dose Balance */}
-				<div className="flex items-center gap-2 flex-wrap text-xs text-[var(--muted)] font-medium shrink-0">
-					<Activity size={14} className="text-[var(--teal)]" />
-					<span data-testid="anesthesia-dose-summary">
-						{sessionInjectedCarpules > 0 ? (
-							<>
-								{`Введено: ${(sessionInjectedCarpules * 1.7).toFixed(1)} мл (${sessionInjectedCarpules} карп.) · `}
-								<strong className="text-[var(--ink)] font-bold">
-									{`Безопасный остаток: ${Math.max(0, Math.floor((maxSafeCarpules - sessionInjectedCarpules) * 10) / 10)} карп. (из ${maxSafeCarpules})`}
-								</strong>
-							</>
-						) : (
-							<>
-								{`Предельная доза для ${patientWeightKg} кг: `}
-								<strong className="text-[var(--ink)] font-bold">
-									до {maxSafeCarpules} карп. ({(maxSafeCarpules * 1.7).toFixed(1)} мл)
-								</strong>
-								{` · Безопасный остаток: ${singleCarpuleResult.remainingSafeCarpulesCount ?? Math.max(0, Math.floor((maxSafeCarpules - 1.0) * 10) / 10)} карп.`}
-							</>
-						)}
-					</span>
-					<span
-						data-testid="anesthesia-mrd-safety-badge"
-						className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border transition-colors ${
-							singleCarpuleResult.safetyZone === "safe"
-								? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-								: singleCarpuleResult.safetyZone === "caution"
-								? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
-								: "bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30"
-						}`}
-						title={`Расчет 1 карпулы (1.7 мл): ${singleCarpuleResult.percentOfMaxDose}% от предельной суточной дозы`}
-					>
-						<CheckCircle2 size={12} className={singleCarpuleResult.safetyZone === "safe" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-500"} />
-						<span>
-							{singleCarpuleResult.percentOfMaxDose}% от макс. дозы — {singleCarpuleResult.safetyZone === "safe" ? "безопасно" : singleCarpuleResult.safetyZone === "caution" ? "внимание" : "опасно"}
-						</span>
-					</span>
-				</div>
-			</div>
-
-			{/* Feedback Toast */}
-			{activeToastMessage && (
+			{bar.activeToastMessage && (
 				<div className="anesthesia-quick-toast" role="status">
 					<CheckCircle2 size={16} />
-					<span>{activeToastMessage}</span>
-				</div>
-			)}
-
-			{/* Safety Alert Stopper / Confirmation Banner (Mandate 8e: 0 disabled buttons, soft confirmation) */}
-			{safetyWarning && (
-				<div className="anesthesia-safety-stopper-alert" role="alert">
-					<div className="stopper-alert-content">
-						<ShieldAlert size={20} className="stopper-icon text-amber-500 shrink-0" />
-						<div>
-							<div className="stopper-title">{safetyWarning.title}</div>
-							<div className="stopper-text">{safetyWarning.text}</div>
-						</div>
-					</div>
-					<div className="stopper-actions">
-						<button
-							type="button"
-							className="stopper-btn-switch"
-							onClick={() => {
-								setSafetyWarning(null);
-								setSelectedDrugId("mepivacaine_plain");
-								handleApplyCarpules(1.0, true, "mepivacaine_plain");
-							}}
-							title="Быстро переключиться на безопасный Мепивакаин 3% без вазоконстриктора"
-						>
-							Ввести Скандонест 3% (безопасно)
-						</button>
-						<button
-							type="button"
-							disabled={false}
-							data-testid="btn-anesthesia-confirm-override"
-							className="px-3 py-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors cursor-pointer active:scale-98 shadow-xs"
-							onClick={() => {
-								const count = safetyWarning.carpulesCount ?? 1.0;
-								setSafetyWarning(null);
-								handleApplyCarpules(count, true);
-							}}
-							title="Применить клиническое суждение врача и внести препарат в протокол 043/у"
-						>
-							Всё равно внести (врачебное решение)
-						</button>
-						<button
-							type="button"
-							className="stopper-btn-dismiss"
-							onClick={() => setSafetyWarning(null)}
-						>
-							Закрыть
-						</button>
-					</div>
+					<span>{bar.activeToastMessage}</span>
 				</div>
 			)}
 		</div>
 	);
 }
-
