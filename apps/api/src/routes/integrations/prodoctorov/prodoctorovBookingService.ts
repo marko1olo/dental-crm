@@ -234,8 +234,10 @@ export async function processProdoctorovBookingWebhook(
 	}
 
 	// 3. Определение врача (Мандат 8n: поддержка соло-врача)
-	let resolvedDoctorId = doctorUserId;
-	if (!resolvedDoctorId) {
+	let resolvedDoctorId: string;
+	if (doctorUserId) {
+		resolvedDoctorId = doctorUserId;
+	} else {
 		const [firstDoc] = await tx
 			.select({ id: users.id })
 			.from(users)

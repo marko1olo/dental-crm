@@ -11,6 +11,7 @@ import type {
 	DenteTelegramVisualCardUrls,
 } from "@dental/shared";
 import type { DenteTelegramPortalSection } from "./types.js";
+import { denteTelegramBotSettings } from "./botSettings.js";
 
 const telegramPublicUrlSensitiveQueryKeys = new Set([
 	"patient",

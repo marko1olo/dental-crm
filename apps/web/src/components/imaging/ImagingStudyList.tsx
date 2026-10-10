@@ -65,6 +65,58 @@ export interface ImagingStudyListProps {
 	formatShortDate: (date: string) => string;
 }
 
+const KIND_LABELS: Record<string, string> = {
+	periapical: "Прицельный RVG",
+	bitewing: "Интерпроксимальный",
+	opg: "ОПТГ",
+	ceph: "ТРГ",
+	cbct: "КЛКТ 3D",
+	photo: "Фотопротокол",
+	other: "Снимок",
+};
+
+const SOURCE_KIND_LABELS: Record<string, string> = {
+	manual_upload: "Файл",
+	dicom_file: "DICOM серия",
+	dicomweb: "Архив PACS",
+	pacs: "Архив PACS",
+	twain_wia: "Сканер",
+	sensor_bridge: "Датчик RVG",
+	folder_watch: "Папка обмена",
+	hot_folder: "Горячая папка",
+	dicom_worklist: "Рабочий список",
+	other: "Внешний файл",
+};
+
+const REGION_LABELS: Record<string, string> = {
+	maxilla_mandible: "Обе челюсти",
+	maxilla: "Верхняя челюсть",
+	mandible: "Нижняя челюсть",
+	anterior: "Фронтальный отдел",
+	posterior: "Жевательный отдел",
+	tmj: "ВНЧС",
+	sinus: "Пазухи",
+};
+
+const SOURCE_NAME_LABELS: Record<string, string> = {
+	manual: "Вручную",
+	manual_upload: "Ручная загрузка",
+	dicom_import: "Импорт DICOM",
+	pacs: "PACS архив",
+	sensor: "Датчик RVG",
+};
+
+function formatStudyRegion(toothCode?: string | null, region?: string | null): string {
+	if (toothCode) return `Зуб ${toothCode}`;
+	if (!region) return "Область не указана";
+	return REGION_LABELS[region] ?? region;
+}
+
+function formatStudySourceName(sourceName?: string | null): string {
+	if (!sourceName) return "Загружено";
+	return SOURCE_NAME_LABELS[sourceName] ?? sourceName;
+}
+
 export function ImagingStudyList({
 	visibleImagingStudies,
 	activeImagingStudies,
@@ -91,7 +143,7 @@ export function ImagingStudyList({
 				) : activeImagingStudies?.length > 0 && imagingKindFilter !== "all" ? (
 					<EmptyState
 						icon={<ImageIcon size={28} />}
-						title={`Снимков типа «${imagingKindLabels[imagingKindFilter] ?? imagingKindFilter}» у пациента нет`}
+						title={`Снимков типа «${KIND_LABELS[imagingKindFilter] ?? imagingKindLabels?.[imagingKindFilter] ?? imagingKindFilter}» у пациента нет`}
 						description={`Их скрыл фильтр типа: у пациента ${countLabel(activeImagingStudies?.length, "снимок", "снимка", "снимков")} других типов.`}
 						action={
 							<button
@@ -107,7 +159,7 @@ export function ImagingStudyList({
 					<EmptyState
 						icon={<ImageIcon size={28} />}
 						title="Снимков в карте пациента нет"
-						description="В ленте только снимки, привязанные к пациенту в базе. Файлы, выбранные с диска кнопками «Папка DICOM» и «Файлы», в карту не попадают и после перезагрузки страницы не сохраняются. Кнопка «Добавить снимок вручную» создаёт карточку без файла — разобрать такой снимок нельзя."
+						description="Загрузите снимки пациента (КТ, ОПТГ, прицельные RVG или фотопротокол) через верхнюю панель импорта DICOM или выберите архив исследования."
 					/>
 				)
 			) : null}
@@ -134,12 +186,12 @@ export function ImagingStudyList({
 					<div style={{ minWidth: 0, flex: 1 }}>
 						<h3 className="truncate" title={study.title}>{study.title}</h3>
 						<p className="truncate">
-							{imagingKindLabels[study.kind] || study.kind} ·{" "}
-							{study.toothCode ?? study.region ?? "область не указана"} ·{" "}
+							{KIND_LABELS[study.kind] || imagingKindLabels?.[study.kind] || study.kind} ·{" "}
+							{formatStudyRegion(study.toothCode, study.region)} ·{" "}
 							{formatShortDate(study.capturedAt)}
 						</p>
 						<span className="truncate block">
-							{imagingSourceLabels[study.sourceKind || "other"] || study.sourceKind} · {study.sourceName}
+							{SOURCE_KIND_LABELS[study.sourceKind || "other"] || imagingSourceLabels?.[study.sourceKind || "other"] || "Файл"} · {formatStudySourceName(study.sourceName)}
 						</span>
 						{!imagingStudyHasFile(study) ? (
 							<span

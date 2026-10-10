@@ -120,7 +120,7 @@ export function DocumentQuickRoleScenarios({
 				title="Пакет документов хирургического вмешательства: согласие на операцию, анестезия, хирургический протокол, памятка"
 			>
 				<div className="document-scenario-left">
-					<Scissors size={14} className="text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
+					<Scissors size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
 					<span className="document-scenario-title">Хирургический пакет</span>
 				</div>
 				<span className="document-scenario-badge">Удаление / Имплантация</span>
@@ -135,7 +135,7 @@ export function DocumentQuickRoleScenarios({
 				title="Журнал контроля работы стерилизаторов (автоклавов) и предстерилизационной очистки (ПСО)"
 			>
 				<div className="document-scenario-left">
-					<Autoclave size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+					<Autoclave size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
 					<span className="document-scenario-title">Журнал стерилизации (ПСО)</span>
 				</div>
 				<span className="document-scenario-badge">Журнал стерилизации</span>

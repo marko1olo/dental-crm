@@ -585,7 +585,7 @@ export function IncomingCallerCard({
 							disabled={isCapturingLead || isLeadCaptured}
 							className="w-full h-9 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-[13px] font-semibold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60"
 							data-testid="drawer-action-capture-lead"
-							title="1-Клик захват звонящего в лиды с автоматической разметкой рекламного канала"
+							title="Захват звонящего в лиды с автоматической разметкой рекламного канала"
 						>
 							{isLeadCaptured ? <Check size={15} /> : <UserPlus size={15} />}
 							<span>

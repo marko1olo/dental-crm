@@ -15,11 +15,8 @@ import {
 } from "lucide-react";
 import { formatCurrencyRu, formatRussianPhone } from "../omnichannelEngine.js";
 import { OmnichannelFooter } from "./OmnichannelFooter.js";
+import type { OmnichannelChatTabProps } from "./types.js";
 import type { UseOmnichannelHubStateReturn } from "./useOmnichannelHubState.js";
-
-export interface OmnichannelChatTabProps {
-	readonly hub: UseOmnichannelHubStateReturn;
-}
 
 export const OmnichannelChatTab: React.FC<OmnichannelChatTabProps> = ({ hub }) => {
 	const {

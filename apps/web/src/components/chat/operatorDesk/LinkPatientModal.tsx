@@ -113,7 +113,7 @@ export function LinkPatientModal({
 							) : (
 								<Check size={15} />
 							)}
-							<span>Создать карту в 1 клик</span>
+							<span>Быстро создать карту</span>
 						</button>
 					</div>
 				</form>

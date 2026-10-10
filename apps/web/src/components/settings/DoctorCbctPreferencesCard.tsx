@@ -255,8 +255,8 @@ export function DoctorCbctPreferencesCard() {
 					<span className="text-[10px] font-semibold text-[var(--muted)]">
 						2D-Интерполяция
 					</span>
-					<span className="text-xs font-semibold text-[var(--teal)] mt-0.5 truncate" title={activeInterpMeta?.labelRu}>
-						{activeInterpMeta?.shortLabel ?? "Bilinear"}
+					<span className="text-xs font-semibold text-[var(--teal)] mt-0.5" title={activeInterpMeta?.labelRu}>
+						{(activeInterpMeta?.shortLabel ?? "Bilinear").replace(/\s*\(.*\)/, "")}
 					</span>
 				</div>
 			</div>

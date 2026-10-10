@@ -10,19 +10,20 @@
  * 5. Strict Design Tokens: var(--paper), var(--paper-soft), var(--ink), var(--teal), var(--line)
  */
 
-/* ─── 1. SCHEDULE FILTER STRIP (STRICT 1-ROW 32–36PX TOOLBAR) ─── */
+/* ─── 1. SCHEDULE FILTER STRIP (STRICT 1-ROW 48PX TOOLBAR) ─── */
 .schedule-filter-strip {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	width: 100%;
-	height: 36px;
-	min-height: 36px;
-	max-height: 36px;
+	height: 48px;
+	min-height: 48px;
+	max-height: 48px;
+	padding: 0 16px;
 	box-sizing: border-box;
 	border-bottom: 1px solid var(--line);
 	background: var(--paper);
-	gap: 6px;
+	gap: 8px;
 	overflow: hidden;
 	white-space: nowrap;
 	flex-wrap: nowrap;
@@ -58,13 +59,6 @@
 	transform: scale(0.96);
 }
 
-@media (min-width: 640px) {
-	/* Avoid duplicate [+ Запись] button on desktop (topbar already provides the single primary [+ Запись] button) */
-	.schedule-toolbar-primary-quick-booking-btn {
-		display: none !important;
-	}
-}
-
 /* Horizontal Filter Chips Strip */
 .schedule-filter-chips {
 	display: flex;
@@ -85,17 +79,17 @@
 
 /* Quick Filter Chips */
 .schedule-filter-strip .quick-chip {
-	height: 28px;
-	min-height: 28px;
-	max-height: 28px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
 	padding: 0 10px;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
 	border-radius: 8px;
-	font-size: 12px;
-	font-weight: 600;
+	font-size: 12.5px;
+	font-weight: 500;
 	flex-shrink: 0;
 	white-space: nowrap;
 	border: 1px solid var(--line);
@@ -114,7 +108,7 @@
 	background: var(--teal, var(--brand-primary, #0d9488));
 	color: var(--on-teal, #ffffff);
 	border-color: var(--teal, var(--brand-primary, #0d9488));
-	font-weight: 700;
+	font-weight: 600;
 }
 
 /* Date Picker Stepper */
@@ -123,18 +117,18 @@
 	align-items: center;
 	gap: 4px;
 	flex-shrink: 0;
-	height: 28px;
+	height: 32px;
 }
 
 .schedule-date-input {
-	height: 28px;
-	min-height: 28px;
-	max-height: 28px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
 	width: 135px;
 	min-width: 135px;
 	text-align: center;
-	font-size: 12px;
-	font-weight: 700;
+	font-size: 12.5px;
+	font-weight: 500;
 	border-radius: 8px;
 	border: 1px solid var(--line);
 	background: var(--paper-soft);
@@ -375,4 +369,28 @@
 .appointment-modal-cta-cancel:active {
 	transform: scale(0.97) !important;
 }
+
+/* ─── HATCHED BACKGROUND FOR OFF-DUTY / NON-WORKING DOCTOR SLOTS ─── */
+.schedule-slot-hatched,
+.schedule-slot--off-duty,
+.schedule-non-working-slot {
+	background-color: var(--paper-soft) !important;
+	background-image: repeating-linear-gradient(
+		-45deg,
+		transparent,
+		transparent 6px,
+		var(--line-strong) 6px,
+		var(--line-strong) 7px
+	) !important;
+	opacity: 0.75;
+	transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.schedule-slot-hatched:hover,
+.schedule-slot--off-duty:hover,
+.schedule-non-working-slot:hover {
+	opacity: 0.95;
+	background-color: var(--paper-subtle, var(--paper)) !important;
+}
+
 

@@ -23,11 +23,11 @@ import {
 		formatTime, fromDateTimeLocalValue, imagingSourceChoices, isTelegramOutboxItemDueForUi,
 		loadLocalDicomWorkbenchDraft, loadUiPreferences, normalizedTelegramBotMode, normalizedTelegramLinkSubjectType,
 		normalizedTelegramOutboxStatusFilter, normalizedTelegramOutboxTemplateFilter, normalizedTelegramPrivacyMode, onboardingTelegramVisualCardKeys,
-		operatorWorkflowFailureMessage, preparePricelistImage, responseErrorMessage, saveLocalDicomWorkbenchDraft,
+		operatorWorkflowFailureMessage, patientName as patientNameHelper, preparePricelistImage, responseErrorMessage, saveLocalDicomWorkbenchDraft,
 		saveUiPreferences, telegramClassificationLabels, telegramDeliveryStatusLabels, telegramHumanMessage,
 		telegramInlineButtonKindLabels, telegramInlineButtonRowsFromReplyMarkup, telegramLinkCodeStatusLabels, telegramModeHints,
 		telegramModeLabels, telegramOutboxStatusFilterLabels, telegramOutboxStatusFilterOptions, telegramOutboxTemplateFilterLabels,
-		telegramOutboxTemplateFilterOptions, telegramPrivacyModeLabels, telegramStatusHints, telegramStatusLabels,
+		telegramOutboxTemplateFilterOptions, telegramPrivacyModeLabels,
 		toDateTimeLocalValue, viewFromHash, visitDraftMissingFieldLabel, visitDraftQualityLabels,
 		visitDraftSignalLabel, visitNoteFieldDefinitions, visitNoteFormFromDraft, visitNoteFormFromVisit,
 		visitSaveReceiptText, WorkflowResponseError, weekdayOptions, workspaceScopeLabels,
@@ -150,7 +150,7 @@ export function useAppLogic(): any {
 		loadDashboard,
 		setError: appStore.setError,
 		setDashboard: appStore.setDashboard,
-	});
+	} as any);
 	const {
 		query, setQuery, selectedPatientId, setSelectedPatientId,
 		selectedPatient, activePatient, activeVisitPatient, activePatientCallablePhone,
@@ -163,7 +163,7 @@ export function useAppLogic(): any {
 		setDashboard: appStore.setDashboard,
 		auth,
 		setError: appStore.setError,
-		selectedPatientId,
+		selectedPatientId: selectedPatientId ?? "",
 		setSelectedPatientId,
 		loadDashboard,
 		selectedSpecialty: "",
@@ -192,8 +192,8 @@ export function useAppLogic(): any {
 		activeAppointment,
 		activeDoctor,
 		activePatient,
-		selectedPatientId,
-	});
+		selectedPatientId: selectedPatientId ?? "",
+	} as any);
 	const {
 		clinicalVisitLogic, odontogramUseSurfaces, setOdontogramUseSurfaces, odontogramViewMode,
 		setOdontogramViewMode, toothRows, toothStateByCode, setToothState,
@@ -236,7 +236,7 @@ export function useAppLogic(): any {
 		setCurrentView,
 		activePatient,
 		clinicProfileDraft: appStore.clinicProfileDraft,
-	});
+	} as any);
 	const {
 		modalOrchestrator, accessUnlockRequired, setAccessUnlockRequired, accessUnlockMessage,
 		setAccessUnlockMessage, clinicalAdminSecretDraft, setClinicalAdminSecretDraft, settingsAdminSecretDraft,
@@ -255,7 +255,7 @@ export function useAppLogic(): any {
 		setCurrentView,
 		onboardingStep,
 		onboardingDismissed,
-	});
+	} as any);
 
 	const offlineSync = useOfflineSyncLogic({
 		auth,
@@ -285,7 +285,7 @@ export function useAppLogic(): any {
 		activeDoctor,
 		activeAppointment,
 		documentPatient: patient.documentPatient,
-		selectedPatientId,
+		selectedPatientId: selectedPatientId ?? "",
 		uiPreferencesHydrated: appStore.uiPreferencesHydrated,
 		setSelectedDocumentKind: () => {},
 		activePayments,
@@ -424,6 +424,7 @@ export function useAppLogic(): any {
 		...dicomWorkbenchModule, ...documentWorkflow, ...modalOrchestrator, ...staffSettingsLogic,
 		...patientIntakeLogic, ...migrationQueries, ...imagingQueries, ...communicationsQueries,
 		...scheduleFilterController, ...navigationRouter,
+		...patientSelection, ...billingModal, ...scheduleLogic,
 	};
 	const {
 		activeSpeechProviderHealth = null, appendToTranscript = () => {}, appointmentReadinessLabels = {},
@@ -475,7 +476,7 @@ export function useAppLogic(): any {
 		normalizedTaxApplicationRelationshipSelect = (r: any) => r, normalizedTreatmentPlanAcceptanceVariant = (v: any) => v,
 		normalizedXrayPregnancyStatus = (p: any) => p, normalizedXrayPriority = (p: any) => p, normalizedXrayStudyType = (t: any) => t,
 		onboardingSteps = [], openVisitWarningAction = () => {}, patientInsightRiskLabels = {}, patientIntakePregnancyStatusOptions = [],
-		patientName = "", paymentPatientContextMessage = "", paymentPatientContextReady = false, pendingSpeechChunkCount = 0,
+		patientName = patientNameHelper, paymentPatientContextMessage = "", paymentPatientContextReady = false, pendingSpeechChunkCount = 0,
 		photoVideoMaterialOptions = [], policyAuditEventLabels = {}, polishTranscript = async () => {}, pricelistParserModeLabels = {},
 		primaryVisitWarning = null, procedureSpecificConsentProcedureOptions = [], recommendedActionPriorityLabels = {},
 		refreshSpeechRuntime = () => {}, roleFocusOrder = [], setCtPlanningActiveQuickActionId = () => {}, setCtPlanningImplantPlan = () => {},
@@ -528,6 +529,9 @@ export function useAppLogic(): any {
 		...modalOrchestrator,
 		...scheduleFilterController,
 		...navigationRouter,
+		...patientSelection,
+		...billingModal,
+		...scheduleLogic,
 		telegram, soundNotifications, auth, acceptDraftToVisit, activeAppointment, activeChair, activeDoctor, activePatient,
 		activeVisitPatient, activePatientCallablePhone, activePatientHasCallablePhone, activePatientInsight, activeQueueRole, activeRolePolicy, activeRoleQueue, activeRoleRestrictedSections,
 		activeRoleWritableSections, activeSettingsTabButtonRef, activeSpeechProviderHealth, appendToTranscript, appointmentLabels, appointmentReadinessById, appointmentReadinessLabels, appointmentScheduleDraftFromAppointment,

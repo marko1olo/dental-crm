@@ -99,8 +99,8 @@ export function getExpiryTrafficLight(
 			status: "warning_soon",
 			color: "amber",
 			daysLeft,
-			labelRu: `Истекает через ${daysLeft} дн. (${readable})`,
-			badgeTextRu: "Истекает скоро — первоочередной отпуск",
+			labelRu: `Истекает через ${daysLeft} дн. (${readable}) — первоочередной отпуск`,
+			badgeTextRu: "Истекает скоро (FEFO)",
 			isBlocked: false,
 			className: "text-amber-700 dark:text-amber-300 bg-amber-500/15 border-amber-500/40",
 		};
@@ -135,6 +135,8 @@ export function getExpiryTrafficLight(
 export { getWarehouseFefoTrafficLight, getFefoTrafficLight, type FefoTrafficLightInfo };
 
 const CATEGORY_MAP: Record<string, { label: string; className: string }> = {
+	material: { label: "Материалы", className: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]" },
+	materials: { label: "Материалы", className: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]" },
 	anesthesia: { label: "Анестезия", className: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30" },
 	therapy: { label: "Терапия", className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" },
 	composite: { label: "Композиты", className: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/30" },
@@ -152,7 +154,7 @@ export function getCategoryBadge(category?: string): { label: string; className:
 		return { label: "Материалы", className: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]" };
 	}
 	const norm = category.toLowerCase().trim();
-	return CATEGORY_MAP[norm] || { label: category, className: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]" };
+	return CATEGORY_MAP[norm] || { label: "Материалы", className: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]" };
 }
 
 export function formatExpDate(exp?: string | null): string {

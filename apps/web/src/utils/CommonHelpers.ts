@@ -448,6 +448,11 @@ export const recommendedActionPriorityLabels: Record<
 };
 
 export * from "./browserScanUtils";
+export {
+	collectDicomWorkstationClientFacts,
+	isBrowserImagingScanAbortError,
+	localImagingFolderFingerprint,
+} from "./browserScanUtils";
 
 export {
 	buildClinicProfileUpdatePayload,
@@ -581,3 +586,7 @@ export {
 	type PaymentRefundCorrectionAction,
 	type PaymentRefundCorrectionMethod,
 } from "./commonHelpers/predicateHelpers";
+
+export { sensitiveLocalDraftRetentionMs } from "../helpers/storageHelpers";
+export { emptyDocumentPaymentSelectionStore } from "../helpers/financialHelpers";
+export { emptyDocumentPayloadDraftStore, normalizeMedicalRecordExtractDocumentDraftFields } from "../helpers/documentDrafts";

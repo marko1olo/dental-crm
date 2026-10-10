@@ -18,6 +18,7 @@ import {
 	getPatientEmk043uSchema,
 	type GetPatientEmk043uInput,
 	type PatientEmk043uResult,
+	type PatientEmk043uToothState,
 	updateToothStatusSchema,
 	type UpdateToothStatusInput,
 	type UpdateToothStatusResult,

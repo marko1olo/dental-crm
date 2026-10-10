@@ -74,7 +74,7 @@ try {
 // Gate 3: Test Anchor Parity
 console.log('\n▶ [Gate 3/5] Checking Test Anchors (data-testid, id, aria-label)...');
 try {
-  execSync(`node "${path.join(__dirname, 'verify-test-anchors.cjs')}" "${originalPath}" "${decomposedDir}"`, { stdio: 'inherit' });
+  execSync(`node "${path.join(__dirname, 'verify-test-anchors.cjs')}" "${originalPath}" "${decomposedDir}" "${facadePath}"`, { stdio: 'inherit' });
   console.log('✔ Gate 3 PASSED: 100% of test anchors preserved.');
 } catch (err) {
   console.error('❌ Gate 3 FAILED: Test anchors lost or renamed.');

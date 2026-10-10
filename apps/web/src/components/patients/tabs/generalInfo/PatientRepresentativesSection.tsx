@@ -30,7 +30,7 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 							</div>
 							<div>
 								<h3 className="text-sm font-black m-0 text-[var(--ink)]">
-									Законный представитель / Член семьи (ст. 64 СК РФ / 323-ФЗ)
+									Законный представитель / Член семьи
 								</h3>
 								<p className="text-[11px] text-[var(--muted)] m-0">
 									Правовая основа подписания согласий за несовершеннолетних и доступ к семейному счету
@@ -73,6 +73,16 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 												? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs font-bold"
 												: "border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)]"
 										}`}
+										style={{
+											height: "28px",
+											padding: "0 10px",
+											borderRadius: "8px",
+											border: isSelected
+												? "1px solid var(--teal)"
+												: "1px solid var(--line-strong, var(--line))",
+											background: isSelected ? "var(--teal)" : "var(--paper-soft)",
+											color: isSelected ? "var(--on-teal, #ffffff)" : "var(--ink)",
+										}}
 										onClick={() => {
 											if (disabled) return;
 											onUpdatePatient?.("representativeType", isSelected ? "" : rep.nameRu);
@@ -101,7 +111,7 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 							})}
 						</div>
 
-						{/* Правовой вердикт по ст. 20 323-ФЗ и ст. 64 СК РФ */}
+						{/* Правовой вердикт */}
 						{selectedRep && (
 							<div
 								className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-between gap-3 ${
@@ -120,11 +130,11 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 									<span>
 										{selectedRep.isLegalRepresentative ? (
 											<>
-												<strong>Законный представитель ребёнка:</strong> Имеет безусловное законное право подписывать информированное добровольное согласие (ИДС) за несовершеннолетнего (ст. 20 323-ФЗ, ст. 64 СК РФ).
+												<strong>Законный представитель ребёнка:</strong> Имеет безусловное законное право подписывать информированное добровольное согласие (ИДС) за несовершеннолетнего.
 											</>
 										) : (
 											<>
-												<strong>Член семьи (не является законным представителем):</strong> Для подписания ИДС за несовершеннолетнего требуется нотариальная доверенность (ст. 20 323-ФЗ, ст. 64 СК РФ).
+												<strong>Член семьи (не является законным представителем):</strong> Для подписания ИДС за несовершеннолетнего требуется нотариальная доверенность.
 											</>
 										)}
 									</span>
@@ -227,16 +237,18 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 			);
 		}
 
-		// Mode: compact (для базовой карточки)
+		// Mode: compact (для базовой карточки — без вложенной рамки-матрёшки)
 		return (
-			<div className="p-3 bg-[var(--paper)] rounded-xl border border-[var(--glass-border)] shadow-2xs flex flex-col gap-2.5">
+			<div
+				className="flex flex-col gap-2.5 pt-3 border-t border-[var(--line)]"
+				style={{ borderTop: "1px solid var(--line)", paddingTop: "12px" }}
+			>
 				<div className="flex items-center justify-between gap-2 flex-wrap">
 					<div className="flex items-center gap-2">
 						<Users className="w-3.5 h-3.5 text-[var(--teal)]" />
 						<span className="font-bold text-xs text-[var(--ink)]">
 							Законный представитель / Член семьи:
 						</span>
-						<span className="sr-only">Законный представитель / Член семьи (ст. 64 СК РФ / 323-ФЗ)</span>
 					</div>
 					{patient?.representativeType && (
 						<span className="text-[11px] px-2 py-0.5 rounded-full font-bold border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--teal)]">
@@ -261,6 +273,16 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 										? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs font-bold"
 										: "border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)]"
 								}`}
+								style={{
+									height: "28px",
+									padding: "0 10px",
+									borderRadius: "8px",
+									border: isSelected
+										? "1px solid var(--teal)"
+										: "1px solid var(--line-strong, var(--line))",
+									background: isSelected ? "var(--teal)" : "var(--paper-soft)",
+									color: isSelected ? "var(--on-teal, #ffffff)" : "var(--ink)",
+								}}
 								onClick={() => {
 									if (disabled) return;
 									onUpdatePatient?.("representativeType", isSelected ? "" : rep.nameRu);

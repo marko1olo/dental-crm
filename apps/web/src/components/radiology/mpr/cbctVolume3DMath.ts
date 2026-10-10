@@ -532,7 +532,7 @@ export function renderCanvas2DPreviewSlice(
 	ctx.font = "bold 10px monospace";
 	ctx.textAlign = "center";
 	ctx.textBaseline = "middle";
-	ctx.fillText("⚡ WebGL2 офлайн • Легкий 2D превью-срез", badgeX + badgeW / 2, badgeY + badgeH / 2);
+	ctx.fillText("WebGL2 офлайн • Легкий 2D превью-срез", badgeX + badgeW / 2, badgeY + badgeH / 2);
 	ctx.restore();
 }
 

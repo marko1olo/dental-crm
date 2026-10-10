@@ -34,7 +34,10 @@ const webSrc = join(here, "..");
 const read = (relativePath: string) =>
 	readFileSync(join(webSrc, relativePath), "utf8");
 
-const documentsView = read("DocumentsView.tsx");
+const documentsView =
+	read("DocumentsView.tsx") +
+	"\n" +
+	read("documentsView/useDocumentsViewController.ts");
 
 /**
  * Код без комментариев. Порядок важен и один раз уже соврал: в строчном

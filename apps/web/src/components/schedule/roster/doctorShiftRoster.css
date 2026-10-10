@@ -570,7 +570,9 @@
 .roster-drawer-overlay {
 	position: fixed;
 	inset: 0;
-	background: rgba(0, 0, 0, 0.4);
+	background: rgba(0, 0, 0, 0.45);
+	backdrop-filter: blur(4px);
+	-webkit-backdrop-filter: blur(4px);
 	z-index: 10000;
 	display: flex;
 	justify-content: flex-end;

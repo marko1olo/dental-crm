@@ -46,6 +46,27 @@ function extractExports(filePath, visited = new Set()) {
         return c;
       }
     }
+
+    // Fallback: if checking a backup file located in scripts/, resolve against apps/web/src
+    const webSrc = path.resolve(__dirname, '../apps/web/src');
+    const altTarget = path.resolve(webSrc, moduleSpecifier);
+    const altCandidates = [
+      altTarget,
+      altTarget.replace(/\.js$/, '.ts'),
+      altTarget.replace(/\.js$/, '.tsx'),
+      altTarget + '.ts',
+      altTarget + '.tsx',
+      altTarget + '.js',
+      path.join(altTarget, 'index.ts'),
+      path.join(altTarget, 'index.tsx'),
+      path.join(altTarget, 'index.js'),
+    ];
+    for (const c of altCandidates) {
+      if (fs.existsSync(c) && fs.statSync(c).isFile()) {
+        return c;
+      }
+    }
+
     return null;
   }
 

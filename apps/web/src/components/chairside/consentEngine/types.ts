@@ -143,14 +143,14 @@ export interface CreateChairsidePackageParams {
 export interface SignatureVectorPoint {
 	x: number;
 	y: number;
-	pressure?: number;
-	time?: number;
+	pressure?: number | undefined;
+	time?: number | undefined;
 }
 
 export interface SignatureStroke {
 	points: SignatureVectorPoint[];
-	color?: string;
-	width?: number;
+	color?: string | undefined;
+	width?: number | undefined;
 }
 
 export interface SignatureExportResult {

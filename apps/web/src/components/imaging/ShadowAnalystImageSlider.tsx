@@ -10,12 +10,11 @@ import { useSafeObjectUrl } from "../../hooks/useMemoryLeakGuard";
 
 export interface ViewerRulerMeasurement {
 	id: string;
-	startX: number;
-	startY: number;
-	endX: number;
-	endY: number;
+	startX: number; startY: number;
+	endX: number; endY: number;
 	lengthMm: number;
-	label?: string;
+	distanceMm?: number | undefined;
+	label?: string | undefined;
 }
 
 export interface ShadowAnalystImageSliderProps {
@@ -280,7 +279,7 @@ export function ShadowAnalystImageSlider({
 	if (!resolvedImageUrl || !resolvedImageUrl.trim() || imageLoadError) {
 		return (
 			<div
-				className="sa-image-container flex flex-col items-center justify-center p-8 text-center rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] min-h-[70vh] flex-1 w-full"
+				className="sa-image-container flex flex-col items-center justify-center p-8 text-center rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] min-h-[500px] h-[520px] max-h-[calc(100vh-280px)] flex-1 w-full"
 				ref={containerRef}
 				data-testid="shadow-analyst-placeholder"
 			>
@@ -444,7 +443,7 @@ export function ShadowAnalystImageSlider({
 	if (!enhanced) {
 		return (
 			<div
-				className="sa-image-container min-h-[70vh] flex-1"
+				className="sa-image-container min-h-[500px] h-[520px] max-h-[calc(100vh-280px)] flex-1"
 				ref={containerRef}
 				style={{
 					...viewerVariables,
@@ -467,7 +466,7 @@ export function ShadowAnalystImageSlider({
 
 	return (
 		<div
-			className="sa-image-container min-h-[70vh] flex-1"
+			className="sa-image-container min-h-[500px] h-[520px] max-h-[calc(100vh-280px)] flex-1"
 			ref={containerRef}
 			role={isRulerActive || isPanActive ? "region" : "slider"}
 			tabIndex={0}

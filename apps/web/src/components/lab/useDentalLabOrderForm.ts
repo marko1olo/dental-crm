@@ -347,7 +347,7 @@ export function useDentalLabOrderForm({
 			setScheduledVisitDate(fitDateIso);
 		}
 		showToast(
-			`Применен 1-клик пресет: «Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней» (до ${due.toLocaleDateString("ru-RU")})`,
+			`Применен шаблон: «Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней» (до ${due.toLocaleDateString("ru-RU")})`,
 			"success",
 			4000,
 		);

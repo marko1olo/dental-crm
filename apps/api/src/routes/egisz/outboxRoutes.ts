@@ -117,10 +117,8 @@ export function registerEgiszOutboxRoutes(app: FastifyInstance): void {
 				conditions.push(eq(schema.egiszOutbox.status, "queued"));
 			} else if (query.status === "error") {
 				conditions.push(inArray(schema.egiszOutbox.status, ["failed", "rejected_by_remd"]));
-			} else if (query.status === "rejected_by_egisz") {
-				conditions.push(eq(schema.egiszOutbox.status, "rejected_by_remd"));
-			} else {
-				conditions.push(eq(schema.egiszOutbox.status, query.status as any));
+			} else if (schema.egiszOutboxStatus.enumValues.includes(query.status as any)) {
+				conditions.push(eq(schema.egiszOutbox.status, query.status as (typeof schema.egiszOutboxStatus.enumValues)[number]));
 			}
 		}
 
@@ -284,7 +282,7 @@ export function registerEgiszOutboxRoutes(app: FastifyInstance): void {
 				doctorId: row.doctorId,
 				docType: row.docTypeNsiCode,
 				docTypeNsiCode: row.docTypeNsiCode,
-				docTypeCode: row.docTypeNsiCode as any,
+				docTypeCode: row.docTypeNsiCode,
 				docTypeName,
 				status: uiStatus,
 				dbStatus: row.status,

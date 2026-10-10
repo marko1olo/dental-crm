@@ -111,10 +111,10 @@ export const MedicalRecordGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour 
 										? "bg-emerald-600 text-white shadow-xs"
 										: "bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/25"
 								}`}
-								title="Заполнить осмотр физиологической нормой в 1 клик"
+								title="Заполнить осмотр физиологической нормой"
 							>
 								<Check size={13} />
-								<span>{isNormaActive ? "✓ Норма применена" : "✓ Осмотр в норме (1 клик)"}</span>
+								<span>{isNormaActive ? "✓ Норма применена" : "✓ Осмотр в норме"}</span>
 							</button>
 
 							<button

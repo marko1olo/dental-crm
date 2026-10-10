@@ -96,17 +96,17 @@ describe("Omnichannel FSM Dialog & Slot Matcher Engine", () => {
 			const result = findAvailableSlots(sampleSlots, { specialty: "терапевт" });
 			assert.equal(result.found, true);
 			assert.equal(result.matches.length, 2);
-			assert.equal(result.matches[0].doctorName, "д-р Иванов И.И.");
+			assert.equal(result.matches[0]!.doctorName, "д-р Иванов И.И.");
 		});
 
 		it("2.2 filters by time of day (morning vs evening)", () => {
 			const morningResult = findAvailableSlots(sampleSlots, { timeOfDay: "morning" });
 			assert.equal(morningResult.matches.length, 1);
-			assert.equal(morningResult.matches[0].slotId, "slot-01");
+			assert.equal(morningResult.matches[0]!.slotId, "slot-01");
 
 			const eveningResult = findAvailableSlots(sampleSlots, { timeOfDay: "evening" });
 			assert.equal(eveningResult.matches.length, 1);
-			assert.equal(eveningResult.matches[0].slotId, "slot-03");
+			assert.equal(eveningResult.matches[0]!.slotId, "slot-03");
 		});
 
 		it("2.3 handles no free slots with fallback buttons", () => {

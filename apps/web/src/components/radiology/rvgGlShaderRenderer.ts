@@ -285,7 +285,7 @@ export function createRvgGlRenderer(canvas: HTMLCanvasElement): RvgGlRendererIns
 	let hasTexture = false;
 
 	const updateImage = (img: HTMLImageElement | ImageBitmap | HTMLCanvasElement): boolean => {
-		if (!gl || !texture) return false;
+		if (!gl || !texture || (typeof gl.isContextLost === "function" && gl.isContextLost())) return false;
 
 		const width = "naturalWidth" in img ? img.naturalWidth || 1000 : img.width || 1000;
 		const height = "naturalHeight" in img ? img.naturalHeight || 1300 : img.height || 1300;
@@ -310,7 +310,7 @@ export function createRvgGlRenderer(canvas: HTMLCanvasElement): RvgGlRendererIns
 	};
 
 	const render = (params: RvgGlRenderParams): boolean => {
-		if (!gl || !hasTexture || !program) return false;
+		if (!gl || !hasTexture || !program || (typeof gl.isContextLost === "function" && gl.isContextLost())) return false;
 
 		gl.useProgram(program);
 		gl.viewport(0, 0, canvas.width, canvas.height);

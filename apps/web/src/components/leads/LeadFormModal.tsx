@@ -462,7 +462,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 									onClick={() => {
 										onCreatePatient(currentLead);
 									}}
-									title="Создать карту пациента из обращения в 1 клик"
+									title="Создать карту пациента из обращения"
 									style={{
 										justifyContent: "center",
 										color: "var(--ok-fg)",

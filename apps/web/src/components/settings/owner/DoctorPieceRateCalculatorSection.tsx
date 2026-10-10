@@ -254,7 +254,7 @@ export function DoctorPieceRateCalculatorSection() {
 			{/* Быстрые пресеты условий оплаты */}
 			<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] mb-4 space-y-2">
 				<span className="text-xs font-bold text-[var(--ink)] block">
-					Типовые отраслевые модели оплаты труда (1 клик):
+					Типовые отраслевые модели оплаты труда:
 				</span>
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
 					{PIECE_RATE_PRESETS.map((preset) => (
@@ -500,16 +500,16 @@ export function DoctorPieceRateCalculatorSection() {
 						</div>
 
 						{/* К выплате врачу */}
-						<div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-between">
+						<div className="p-3.5 rounded-xl bg-[var(--paper-card)] border border-[var(--teal)] shadow-xs flex items-center justify-between">
 							<div>
-								<span className="text-[11px] font-bold text-teal-800 dark:text-teal-300 block">
+								<span className="text-[11px] font-bold text-[var(--ink)] block">
 									К выплате врачу на руки
 								</span>
 								<span className="text-[10px] text-[var(--muted)] block">
 									После всех вычетов и надбавок
 								</span>
 							</div>
-							<span className="text-base font-extrabold text-teal-700 dark:text-teal-300">
+							<span className="text-base font-extrabold text-[var(--teal)]">
 								{formatKopecksToRublesDisplay(calculation.netPayoutKopecks)}
 							</span>
 						</div>

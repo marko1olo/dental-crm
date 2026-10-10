@@ -16,6 +16,8 @@ export function generateInvoicePrintHtml(params: {
 	totalDueRub: number;
 	isWarranty100?: boolean | undefined;
 	dateStr?: string | undefined;
+	items?: readonly { name: string; code804n?: string; quantity: number; amountRub: number; toothNumber?: number | string; }[] | undefined;
+	toothNumber?: number | string | undefined;
 }): string {
 	const discountInfoHtml =
 		params.discountRub > 0
@@ -24,6 +26,10 @@ export function generateInvoicePrintHtml(params: {
   <div style="color: #b45309; font-weight: 600; margin-top: 4px;">Скидка: ${params.discountRub.toLocaleString("ru-RU")} ₽ (${params.effectiveDiscountPercent}%${params.discountReason ? ` — ${params.discountReason}` : ""})</div>
 </div>`
 			: "";
+
+	const tableRows = (params.items && params.items.length > 0)
+		? params.items.map((it, idx) => `<tr><td>${idx + 1}</td><td>${it.name}${it.toothNumber || params.toothNumber ? ` (Зуб ${it.toothNumber || params.toothNumber})` : ""}</td><td>${it.quantity}</td><td>${it.amountRub.toLocaleString("ru-RU")} ₽</td></tr>`).join("")
+		: `<tr><td>1</td><td>Стоматологическое лечение по наряду-заказу${params.toothNumber ? ` (Зуб ${params.toothNumber})` : ""}</td><td>1</td><td>${params.rawTotalDueRub.toLocaleString("ru-RU")} ₽</td></tr>`;
 
 	return `<!DOCTYPE html>
 <html lang="ru">
@@ -58,7 +64,7 @@ th { background: #f8fafc; font-weight: 700; }
     <tr><th>№</th><th>Наименование медицинской услуги</th><th>Кол-во</th><th>Сумма</th></tr>
   </thead>
   <tbody>
-    <tr><td>1</td><td>Стоматологическое лечение по наряду-заказу</td><td>1</td><td>${params.rawTotalDueRub.toLocaleString("ru-RU")} ₽</td></tr>
+    ${tableRows}
   </tbody>
 </table>
 ${discountInfoHtml}
@@ -83,6 +89,8 @@ export function generateActPrintHtml(params: {
 	totalDueRub: number;
 	isWarranty100?: boolean | undefined;
 	dateStr?: string | undefined;
+	items?: readonly { name: string; code804n?: string; quantity: number; amountRub: number; toothNumber?: number | string; }[] | undefined;
+	toothNumber?: number | string | undefined;
 }): string {
 	const discountInfoHtml =
 		params.discountRub > 0
@@ -91,6 +99,10 @@ export function generateActPrintHtml(params: {
   <div style="color: #b45309; font-weight: 600; margin-top: 4px;">Скидка: ${params.discountRub.toLocaleString("ru-RU")} ₽ (${params.effectiveDiscountPercent}%${params.discountReason ? ` — ${params.discountReason}` : ""})</div>
 </div>`
 			: "";
+
+	const tableRows = (params.items && params.items.length > 0)
+		? params.items.map((it, idx) => `<tr><td>${idx + 1}</td><td>${it.code804n || "A16.07.002.001"}</td><td>${it.name}${it.toothNumber || params.toothNumber ? ` (Зуб ${it.toothNumber || params.toothNumber})` : ""}</td><td>${it.quantity}</td><td>${it.amountRub.toLocaleString("ru-RU")} ₽</td></tr>`).join("")
+		: `<tr><td>1</td><td>A16.07.002.001</td><td>Стоматологический прием и лечение${params.toothNumber ? ` (Зуб ${params.toothNumber})` : ""}</td><td>1</td><td>${params.rawTotalDueRub.toLocaleString("ru-RU")} ₽</td></tr>`;
 
 	return `<!DOCTYPE html>
 <html lang="ru">
@@ -125,7 +137,7 @@ th { background: #f8fafc; font-weight: 700; }
     <tr><th>№</th><th>Код услуги</th><th>Наименование услуги</th><th>Кол-во</th><th>Сумма</th></tr>
   </thead>
   <tbody>
-    <tr><td>1</td><td>A16.07.002</td><td>Стоматологический прием и лечение</td><td>1</td><td>${params.rawTotalDueRub.toLocaleString("ru-RU")} ₽</td></tr>
+    ${tableRows}
   </tbody>
 </table>
 ${discountInfoHtml}

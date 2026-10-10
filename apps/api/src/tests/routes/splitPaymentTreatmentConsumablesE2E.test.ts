@@ -105,7 +105,6 @@ describe("E2E Integration: Split Payment (Card + SBP + Family Deposit) -> 54-FZ 
 				fullName: "Доктор Хирург-Стоматолог",
 				email: "surgeon@dente.ru",
 				role: "doctor",
-				login: "surgeon_e2e",
 				passwordHash: "hash",
 			});
 
@@ -243,178 +242,180 @@ describe("E2E Integration: Split Payment (Card + SBP + Family Deposit) -> 54-FZ 
 		assert.strictEqual(paymentData.amountRub, 9000);
 		assert.strictEqual(paymentData.status, "paid");
 
-		// 2. Проверяем записи в таблице payments
-		const recordedPayments = await db
-			.select()
-			.from(payments)
-			.where(
-				and(
-					eq(payments.organizationId, ORG_ID),
-					eq(payments.visitId, VISIT_ID),
-				),
+		// 2. Проверяем записи в БД под RLS тенанта
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			const recordedPayments = await tx
+				.select()
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, ORG_ID),
+						eq(payments.visitId, VISIT_ID),
+					),
+				);
+
+			// Созданы 2 сплит-проводки: электронная (8 000 ₽) и с семейного кошелька (1 000 ₽)
+			assert.strictEqual(recordedPayments.length, 2, "Должно быть записано ровно 2 сплит-проводки");
+			const electronicPayment = recordedPayments.find((p) => p.method === "card");
+			const depositPayment = recordedPayments.find((p) => p.method === "family_wallet");
+
+			assert.ok(electronicPayment, "Должна быть электронная оплата (card / SBP)");
+			assert.strictEqual(electronicPayment.amountRub, 8000, "Сумма по карте + СБП должна быть 8 000 ₽");
+
+			assert.ok(depositPayment, "Должна быть оплата с семейного депозита (family_wallet)");
+			assert.strictEqual(depositPayment.amountRub, 1000, "Сумма с семейного депозита должна быть 1 000 ₽");
+
+			// 3. Проверяем дебетование баланса семьи
+			const [updatedFamily] = await tx
+				.select()
+				.from(familyGroups)
+				.where(
+					and(
+						eq(familyGroups.id, FAMILY_ID),
+						eq(familyGroups.organizationId, ORG_ID),
+					),
+				);
+
+			assert.ok(updatedFamily);
+			assert.strictEqual(
+				Number(updatedFamily.balance),
+				1500,
+				"Семейный баланс должен уменьшиться ровно на 1 000 ₽ (с 2 500 ₽ до 1 500 ₽)",
 			);
 
-		// Созданы 2 сплит-проводки: электронная (8 000 ₽) и с семейного кошелька (1 000 ₽)
-		assert.strictEqual(recordedPayments.length, 2, "Должно быть записано ровно 2 сплит-проводки");
-		const electronicPayment = recordedPayments.find((p) => p.method === "card");
-		const depositPayment = recordedPayments.find((p) => p.method === "family_wallet");
+			// 4. Проверяем очередь фискализации 54-ФЗ (Tag 1081 + Tag 1215)
+			const [queuedReceipt] = await tx
+				.select()
+				.from(fiscalReceiptQueue)
+				.where(
+					and(
+						eq(fiscalReceiptQueue.organizationId, ORG_ID),
+						eq(fiscalReceiptQueue.visitId, VISIT_ID),
+					),
+				);
 
-		assert.ok(electronicPayment, "Должна быть электронная оплата (card / SBP)");
-		assert.strictEqual(electronicPayment.amountRub, 8000, "Сумма по карте + СБП должна быть 8 000 ₽");
+			assert.ok(queuedReceipt, "Чек 54-ФЗ должен быть поставлен в очередь печати");
+			const payload = queuedReceipt.payloadJson as Record<string, unknown>;
+			assert.strictEqual(payload.electronicKopecks, 800000, "Тег 1081 (безнал): 800 000 копеек");
+			assert.strictEqual(payload.advanceOffsetKopecks, 100000, "Тег 1215 (зачет аванса): 100 000 копеек");
+			assert.strictEqual(payload.amountRub, 9000, "Общая сумма чека: 9 000 ₽");
 
-		assert.ok(depositPayment, "Должна быть оплата с семейного депозита (family_wallet)");
-		assert.strictEqual(depositPayment.amountRub, 1000, "Сумма с семейного депозита должна быть 1 000 ₽");
+			// 5. Проверяем статус визита: переведен в signed
+			const [updatedVisit] = await tx
+				.select()
+				.from(visits)
+				.where(
+					and(
+						eq(visits.id, VISIT_ID),
+						eq(visits.organizationId, ORG_ID),
+					),
+				);
 
-		// 3. Проверяем дебетование баланса семьи
-		const [updatedFamily] = await db
-			.select()
-			.from(familyGroups)
-			.where(
-				and(
-					eq(familyGroups.id, FAMILY_ID),
-					eq(familyGroups.organizationId, ORG_ID),
-				),
+			assert.ok(updatedVisit);
+			assert.strictEqual(updatedVisit.status, "signed", "Визит должен быть закрыт и подписан (signed)");
+
+			// 6. Проверяем статус позиции лечения: переведен в completed
+			const [updatedTreatmentItem] = await tx
+				.select()
+				.from(treatmentItems)
+				.where(
+					and(
+						eq(treatmentItems.organizationId, ORG_ID),
+						eq(treatmentItems.visitId, VISIT_ID),
+					),
+				);
+
+			assert.ok(updatedTreatmentItem);
+			assert.strictEqual(updatedTreatmentItem.status, "completed", "Услуга удаления зуба должна быть completed");
+
+			// 7. Проверяем автоматическое списание материалов со склада (BOM зуба 48)
+			const [articaineItem] = await tx
+				.select()
+				.from(inventoryItems)
+				.where(eq(inventoryItems.id, ITEM_ARTICAINE_ID));
+			assert.ok(articaineItem);
+			assert.strictEqual(
+				Number(articaineItem.stockQuantity),
+				9,
+				"Остаток карпул артикаина должен уменьшиться с 10 до 9",
 			);
 
-		assert.ok(updatedFamily);
-		assert.strictEqual(
-			Number(updatedFamily.balance),
-			1500,
-			"Семейный баланс должен уменьшиться ровно на 1 000 ₽ (с 2 500 ₽ до 1 500 ₽)",
-		);
-
-		// 4. Проверяем очередь фискализации 54-ФЗ (Tag 1081 + Tag 1215)
-		const [queuedReceipt] = await db
-			.select()
-			.from(fiscalReceiptQueue)
-			.where(
-				and(
-					eq(fiscalReceiptQueue.organizationId, ORG_ID),
-					eq(fiscalReceiptQueue.visitId, VISIT_ID),
-				),
+			const [sutureItem] = await tx
+				.select()
+				.from(inventoryItems)
+				.where(eq(inventoryItems.id, ITEM_SUTURE_ID));
+			assert.ok(sutureItem);
+			assert.strictEqual(
+				Number(sutureItem.stockQuantity),
+				9,
+				"Остаток шовного материала должен уменьшиться с 10 до 9",
 			);
 
-		assert.ok(queuedReceipt, "Чек 54-ФЗ должен быть поставлен в очередь печати");
-		const payload = queuedReceipt.payloadJson as Record<string, unknown>;
-		assert.strictEqual(payload.electronicKopecks, 800000, "Тег 1081 (безнал): 800 000 копеек");
-		assert.strictEqual(payload.advanceOffsetKopecks, 100000, "Тег 1215 (зачет аванса): 100 000 копеек");
-		assert.strictEqual(payload.amountRub, 9000, "Общая сумма чека: 9 000 ₽");
-
-		// 5. Проверяем статус визита: переведен в signed
-		const [updatedVisit] = await db
-			.select()
-			.from(visits)
-			.where(
-				and(
-					eq(visits.id, VISIT_ID),
-					eq(visits.organizationId, ORG_ID),
-				),
+			const [ppeItem] = await tx
+				.select()
+				.from(inventoryItems)
+				.where(eq(inventoryItems.id, ITEM_PPE_ID));
+			assert.ok(ppeItem);
+			assert.strictEqual(
+				Number(ppeItem.stockQuantity),
+				18,
+				"Остаток перчаток (2 пары по СанПиН) должен уменьшиться с 20 до 18",
 			);
 
-		assert.ok(updatedVisit);
-		assert.strictEqual(updatedVisit.status, "signed", "Визит должен быть закрыт и подписан (signed)");
+			// 8. Проверяем проводки складского движения
+			const warehouseTxns = await tx
+				.select()
+				.from(inventoryTransactions)
+				.where(
+					and(
+						eq(inventoryTransactions.organizationId, ORG_ID),
+						eq(inventoryTransactions.visitId, VISIT_ID),
+					),
+				);
 
-		// 6. Проверяем статус позиции лечения: переведен в completed
-		const [updatedTreatmentItem] = await db
-			.select()
-			.from(treatmentItems)
-			.where(
-				and(
-					eq(treatmentItems.organizationId, ORG_ID),
-					eq(treatmentItems.visitId, VISIT_ID),
-				),
+			assert.ok(warehouseTxns.length >= 3, "Должно быть как минимум 3 складские проводки");
+			const articaineTxn = warehouseTxns.find((t) => t.inventoryItemId === ITEM_ARTICAINE_ID);
+			const sutureTxn = warehouseTxns.find((t) => t.inventoryItemId === ITEM_SUTURE_ID);
+			const ppeTxn = warehouseTxns.find((t) => t.inventoryItemId === ITEM_PPE_ID);
+
+			assert.ok(articaineTxn, "Должна быть проводка по артикаину");
+			assert.strictEqual(articaineTxn.transactionType, "auto_deduct");
+			assert.strictEqual(articaineTxn.isOverdraft, false);
+
+			assert.ok(sutureTxn, "Должна быть проводка по шовному материалу");
+			assert.strictEqual(sutureTxn.transactionType, "auto_deduct");
+			assert.strictEqual(sutureTxn.isOverdraft, false);
+
+			assert.ok(ppeTxn, "Должна быть проводка по перчаткам");
+			assert.strictEqual(ppeTxn.transactionType, "auto_deduct");
+			assert.strictEqual(ppeTxn.isOverdraft, false);
+
+			// Мандат 8e Soft Overdraft: сопутствующие позиции по техкарте 804н без начального остатка списываются как emergency_overdraft без сбоя
+			const overdraftTxns = warehouseTxns.filter((t) => t.isOverdraft);
+			assert.ok(
+				overdraftTxns.length > 0,
+				"Мандат 8e: незаведенные сопутствующие материалы фиксируются как мягкий овердрафт без блокировки врача",
 			);
 
-		assert.ok(updatedTreatmentItem);
-		assert.strictEqual(updatedTreatmentItem.status, "completed", "Услуга удаления зуба должна быть completed");
-
-		// 7. Проверяем автоматическое списание материалов со склада (BOM зуба 48)
-		const [articaineItem] = await db
-			.select()
-			.from(inventoryItems)
-			.where(eq(inventoryItems.id, ITEM_ARTICAINE_ID));
-		assert.ok(articaineItem);
-		assert.strictEqual(
-			Number(articaineItem.stockQuantity),
-			9,
-			"Остаток карпул артикаина должен уменьшиться с 10 до 9",
-		);
-
-		const [sutureItem] = await db
-			.select()
-			.from(inventoryItems)
-			.where(eq(inventoryItems.id, ITEM_SUTURE_ID));
-		assert.ok(sutureItem);
-		assert.strictEqual(
-			Number(sutureItem.stockQuantity),
-			9,
-			"Остаток шовного материала должен уменьшиться с 10 до 9",
-		);
-
-		const [ppeItem] = await db
-			.select()
-			.from(inventoryItems)
-			.where(eq(inventoryItems.id, ITEM_PPE_ID));
-		assert.ok(ppeItem);
-		assert.strictEqual(
-			Number(ppeItem.stockQuantity),
-			18,
-			"Остаток перчаток (2 пары по СанПиН) должен уменьшиться с 20 до 18",
-		);
-
-		// 8. Проверяем проводки складского движения
-		const warehouseTxns = await db
-			.select()
-			.from(inventoryTransactions)
-			.where(
-				and(
-					eq(inventoryTransactions.organizationId, ORG_ID),
-					eq(inventoryTransactions.visitId, VISIT_ID),
-				),
+			// 9. Проверяем фиксацию в журнале СанПиН медотходов класса Б (СанПиН 2.1.3684-21)
+			const wasteRecords = await tx
+				.select()
+				.from(medicalWasteLogs)
+				.where(
+					and(
+						eq(medicalWasteLogs.organizationId, ORG_ID),
+						eq(medicalWasteLogs.wasteClass, "class_B"),
+					),
+				);
+			assert.ok(
+				wasteRecords.length >= 1,
+				"В СанПиН журнале должна появиться запись об образовании отходов класса Б после удаления зуба 48",
 			);
-
-		assert.ok(warehouseTxns.length >= 3, "Должно быть как минимум 3 складские проводки");
-		const articaineTxn = warehouseTxns.find((t) => t.inventoryItemId === ITEM_ARTICAINE_ID);
-		const sutureTxn = warehouseTxns.find((t) => t.inventoryItemId === ITEM_SUTURE_ID);
-		const ppeTxn = warehouseTxns.find((t) => t.inventoryItemId === ITEM_PPE_ID);
-
-		assert.ok(articaineTxn, "Должна быть проводка по артикаину");
-		assert.strictEqual(articaineTxn.transactionType, "auto_deduct");
-		assert.strictEqual(articaineTxn.isOverdraft, false);
-
-		assert.ok(sutureTxn, "Должна быть проводка по шовному материалу");
-		assert.strictEqual(sutureTxn.transactionType, "auto_deduct");
-		assert.strictEqual(sutureTxn.isOverdraft, false);
-
-		assert.ok(ppeTxn, "Должна быть проводка по перчаткам");
-		assert.strictEqual(ppeTxn.transactionType, "auto_deduct");
-		assert.strictEqual(ppeTxn.isOverdraft, false);
-
-		// Мандат 8e Soft Overdraft: сопутствующие позиции по техкарте 804н без начального остатка списываются как emergency_overdraft без сбоя
-		const overdraftTxns = warehouseTxns.filter((t) => t.isOverdraft);
-		assert.ok(
-			overdraftTxns.length > 0,
-			"Мандат 8e: незаведенные сопутствующие материалы фиксируются как мягкий овердрафт без блокировки врача",
-		);
-
-		// 9. Проверяем фиксацию в журнале СанПиН медотходов класса Б (СанПиН 2.1.3684-21)
-		const wasteRecords = await db
-			.select()
-			.from(medicalWasteLogs)
-			.where(
-				and(
-					eq(medicalWasteLogs.organizationId, ORG_ID),
-					eq(medicalWasteLogs.wasteClass, "class_B"),
-				),
-			);
-		assert.ok(
-			wasteRecords.length >= 1,
-			"В СанПиН журнале должна появиться запись об образовании отходов класса Б после удаления зуба 48",
-		);
-		const classBEntry = wasteRecords[0]!;
-		assert.strictEqual(classBEntry.operationType, "accumulation");
-		assert.strictEqual(classBEntry.packageType, "yellow_bag");
-		assert.strictEqual(Number(classBEntry.weightKg), 0.15);
+			const classBEntry = wasteRecords[0]!;
+			assert.strictEqual(classBEntry.operationType, "accumulation");
+			assert.strictEqual(classBEntry.packageType, "yellow_bag");
+			assert.strictEqual(Number(classBEntry.weightKg), 0.15);
+		});
 
 		// 10. Идемпотентность: повторный вызов с тем же clientMutationId возвращает 200 без повторного списания
 		const repeatResponse = await app.inject({
@@ -446,10 +447,12 @@ describe("E2E Integration: Split Payment (Card + SBP + Family Deposit) -> 54-FZ 
 		);
 
 		// Проверяем, что баланс семьи не списался повторно
-		const [familyAfterRepeat] = await db
-			.select()
-			.from(familyGroups)
-			.where(eq(familyGroups.id, FAMILY_ID));
+		const [familyAfterRepeat] = await withFixtureTenant(ORG_ID, async (tx) => {
+			return tx
+				.select()
+				.from(familyGroups)
+				.where(eq(familyGroups.id, FAMILY_ID));
+		});
 		assert.strictEqual(Number(familyAfterRepeat?.balance), 1500, "Баланс не должен меняться при повторном запросе");
 	});
 });

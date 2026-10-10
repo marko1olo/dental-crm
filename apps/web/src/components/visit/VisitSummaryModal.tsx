@@ -76,6 +76,30 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = (props) => {
 	}
 
 	if (isPaymentModalOpen) {
+		const effectiveTooth =
+			props.diary.diagnosisTooth
+				? Number(props.diary.diagnosisTooth)
+				: (state.abnormalTeeth[0]?.toothNumber
+					? Number(state.abnormalTeeth[0].toothNumber)
+					: undefined);
+
+		const enrichedItems: import("../billing/ReceiptPreview.js").ReceiptItem[] = (state.effectiveChairsideServices || []).map((s: any, idx: number) => {
+			const tooth = s.toothNumber ? Number(s.toothNumber) : (s.toothCode ? Number(s.toothCode) : effectiveTooth);
+			const price = Number(s.unitPriceRub ?? s.priceRub ?? s.price ?? 0);
+			const qty = Number(s.quantity ?? 1);
+			const total = Number(s.totalRub ?? price * qty);
+			return {
+				id: s.id || `cs-${idx}`,
+				name: s.title || s.name || s.serviceName || "Стоматологическая услуга",
+				code804n: s.code804n || s.code || "A16.07.002.001",
+				quantity: qty,
+				priceRub: price,
+				discountRub: Number(s.discountRub ?? 0),
+				amountRub: total,
+				toothNumber: tooth,
+			};
+		});
+
 		return (
 			<PaymentModal
 				isOpen={true}
@@ -91,6 +115,8 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = (props) => {
 				cashierName={props.doctorName || "Врач-стоматолог"}
 				doctorName={props.doctorName || appLogic?.activeDoctor?.fullName || "Врач-стоматолог"}
 				clinicLegalName={appLogic?.dashboard?.clinicSettings?.legalName || "ООО «ДЕНТЕ»"}
+				items={enrichedItems}
+				toothNumber={effectiveTooth}
 				onSuccess={state.handlePaymentSuccessCallback}
 			/>
 		);

@@ -60,6 +60,7 @@ export function DocumentRegistryFilterBar({
 					<input
 						type="text"
 						className="document-search-input dente-search-input"
+						style={{ paddingLeft: "38px" }}
 						placeholder="Быстрый поиск (ФИО, № карты, врач, статус ЭЦП, чек, ИНН)..."
 						value={safeQuery}
 						onChange={(e) => onSearchChange(e.target.value)}

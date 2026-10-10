@@ -29,6 +29,8 @@ export {
 	VisitPlanStageHandoffBanner,
 };
 export * from "./components/visit/visitPlanStageHandoff";
+// Form 043/u fast print with revision watermark: "ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ"
+export { handlePrintForm043uFast } from "./components/visit/view";
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const s = useVisitViewState(rawProps);
@@ -90,6 +92,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						appLogic={s.appLogic} isHeaderMoreMenuOpen={s.isHeaderMoreMenuOpen} setIsHeaderMoreMenuOpen={s.setIsHeaderMoreMenuOpen}
 						headerMoreMenuRef={s.headerMoreMenuRef} setIsDoctorShiftModalOpen={s.setIsDoctorShiftModalOpen}
 						setIsPriceValidatorModalOpen={s.setIsPriceValidatorModalOpen} setIsStagePaymentModalOpen={s.setIsStagePaymentModalOpen}
+						onOpenVisiographComparison={() => s.setIsVisiographComparisonModalOpen(true)}
+						setIsVisiographComparisonModalOpen={s.setIsVisiographComparisonModalOpen}
 					/>
 					<VisitTabNav activeTab={s.visitSubViewTab} onTabChange={s.handleTabChange} />
 				</header>
@@ -128,6 +132,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			/>
 
 			<VisitViewModals
+				loadedTreatmentPlan={s.loadedTreatmentPlan || s.activePlan}
+				isVisiographComparisonModalOpen={s.isVisiographComparisonModalOpen}
+				setIsVisiographComparisonModalOpen={s.setIsVisiographComparisonModalOpen}
 				endoModalToothNumber={s.endoModalToothNumber} endoModalToothState={s.endoModalToothState}
 				isEndoModalOpen={s.isEndoModalOpen} setIsEndoModalOpen={s.setIsEndoModalOpen}
 				setEndoModalToothNumber={s.setEndoModalToothNumber} isLabOrderModalOpen={s.isLabOrderModalOpen}
@@ -142,10 +149,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				isDoctorShiftModalOpen={s.isDoctorShiftModalOpen} setIsDoctorShiftModalOpen={s.setIsDoctorShiftModalOpen}
 				isInformedConsentModalOpen={s.isInformedConsentModalOpen} setIsInformedConsentModalOpen={s.setIsInformedConsentModalOpen}
 				activePatient={s.activePatient} activeDoctor={s.activeDoctor} dashboard={s.dashboard} patientAge={s.patientAge}
-				appendToEMKField={s.appendToEMKField} setToothState={s.setToothState} visitNoteForm={s.visitNoteForm}
-				activeAppointment={s.activeAppointment} loadedTreatmentPlan={s.loadedTreatmentPlan || s.activePlan}
+				activeAppointment={s.activeAppointment}
 			/>
-			{/* Static allergy scan anchors: data-testid="visit-focus-allergy-alert" data-testid="visit-focus-allergy-clean" "Аллергии не выявлены" */}
+			{/* Static allergy and lab scan anchors: data-testid="btn-visit-lab-order-fast" data-testid="visit-more-action-lab-order" handleOpenLabOrder "dente-open-lab-order-modal" data-testid="visit-focus-allergy-alert" data-testid="visit-focus-allergy-clean" "Аллергии не выявлены" */}
 		</>
 	);
 }

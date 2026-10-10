@@ -234,7 +234,7 @@ export const PediatricProtocolWidgetContent: React.FC<
 				setSelectedSurfaces([...preset.defaultSurfaces]);
 				onSelectSurfaces?.([...preset.defaultSurfaces]);
 			}
-			showToast(`1-клик протокол: «${preset.titleRu}»`, "info", 2000);
+			showToast(`Протокол: «${preset.titleRu}»`, "info", 2000);
 		},
 		[onSelectSurfaces],
 	);
@@ -468,13 +468,12 @@ export const PediatricProtocolWidgetContent: React.FC<
 		setResorptionStages({});
 
 		showToast(
-			"1-клик: Физиологическая норма временного прикуса (интактен, тремы, диастемы) внесена в карту!",
+			"Физиологическая норма временного прикуса (интактен, тремы, диастемы) внесена в карту",
 			"success",
 			3500,
 		);
 	}, [currentTooth, onApplyProtocolText, onFranklChange]);
 
-	// 12b. 1-Клик адаптационный визит без сверления (Мандаты 8e, 8k)
 	const handleApplyAdaptationVisit = useCallback(() => {
 		setFranklRating(3);
 		onFranklChange?.(3);
@@ -525,13 +524,12 @@ export const PediatricProtocolWidgetContent: React.FC<
 		}
 
 		showToast(
-			"1-клик: Адаптационный визит (Tell-Show-Do, игра, подарок, без сверления) внесен в карту!",
+			"Адаптационный визит (Tell-Show-Do, игра, подарок, без сверления) внесен в карту",
 			"success",
 			3500,
 		);
 	}, [currentTooth, onApplyProtocolText, onFranklChange]);
 
-	// 12c. 1-Клик сменный прикус (постоянные моляры 16..46 прорезались, физиологическая смена резцов 71, 81)
 	const handleApplyMixedDentitionPreset = useCallback(() => {
 		setDentitionMode("mixed");
 		setToothFindings((prev) => ({
@@ -549,7 +547,7 @@ export const PediatricProtocolWidgetContent: React.FC<
 			81: 100,
 		}));
 		showToast(
-			"1-клик: Сменный прикус применён (постоянные моляры 16, 26, 36, 46 интактны, смена резцов 71, 81)",
+			"Сменный прикус применён (постоянные моляры 16, 26, 36, 46 интактны, смена резцов 71, 81)",
 			"success",
 			3000,
 		);

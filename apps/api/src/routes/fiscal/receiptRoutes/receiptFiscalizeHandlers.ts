@@ -17,7 +17,7 @@ import {
 	parseKopecks,
 	verifyFiscalCompositeIdempotencyKey,
 } from "@dental/shared";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
@@ -330,13 +330,18 @@ export async function handleFiscalReceipt(
 				await tx.execute(
 					sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':' || ${mutationId}))`,
 				);
+				const rawMutation = mutationId;
+				const baseMutation = mutationId.includes("#") ? mutationId.split("#")[0] : mutationId;
 				const existingQueueRows = await tx
 					.select()
 					.from(fiscalReceiptQueue)
 					.where(
 						and(
 							eq(fiscalReceiptQueue.organizationId, orgId),
-							sql`${fiscalReceiptQueue.payloadJson}->>'clientMutationId' = ${mutationId}`,
+							or(
+								sql`${fiscalReceiptQueue.payloadJson}->>'clientMutationId' = ${rawMutation}`,
+								sql`${fiscalReceiptQueue.payloadJson}->>'clientMutationId' = ${baseMutation}`,
+							),
 						),
 					)
 					.limit(1);
@@ -415,13 +420,18 @@ export async function handleFiscalReceipt(
 				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':' || ${mutationId}))`,
 			);
 
+			const rawMutation = mutationId;
+			const baseMutation = mutationId.includes("#") ? mutationId.split("#")[0] : mutationId;
 			const existingQueueRows = await tx
 				.select()
 				.from(fiscalReceiptQueue)
 				.where(
 					and(
 						eq(fiscalReceiptQueue.organizationId, orgId),
-						sql`${fiscalReceiptQueue.payloadJson}->>'clientMutationId' = ${mutationId}`,
+						or(
+							sql`${fiscalReceiptQueue.payloadJson}->>'clientMutationId' = ${rawMutation}`,
+							sql`${fiscalReceiptQueue.payloadJson}->>'clientMutationId' = ${baseMutation}`,
+						),
 					),
 				)
 				.limit(1);

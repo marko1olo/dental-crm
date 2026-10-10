@@ -92,7 +92,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 		if (canvas) {
 			if (!glStateRef.current || glStateRef.current.gl.canvas !== canvas) {
 				try {
-					const gl = canvas.getContext("webgl2", { alpha: true, antialias: false, depth: false, preserveDrawingBuffer: true, powerPreference: "high-performance", desynchronized: true });
+					const gl = canvas.getContext("webgl2", { alpha: true, antialias: false, depth: false, preserveDrawingBuffer: true, powerPreference: "high-performance", desynchronized: false });
 					if (gl) glStateRef.current = initWebGl2VolumeRaymarching(gl);
 				} catch { glStateRef.current = null; }
 			}

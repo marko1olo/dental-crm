@@ -122,7 +122,7 @@ export async function upsertPatientConsents(params: {
 		scope: Scope;
 		state: "granted" | "revoked";
 		source: string;
-		evidence?: string | null;
+		evidence?: string | null | undefined;
 	}>;
 }) {
 	const now = new Date();

@@ -73,8 +73,12 @@ export function useAnamnesisState(props: VisitAnamnesisTabProps) {
 		customNotes,
 	]);
 
+	const loadedKeyRef = useRef<string | null>(null);
+
 	// ─── Восстановление из черновика или карты пациента ────────────────
 	useEffect(() => {
+		if (loadedKeyRef.current === storageKey) return;
+		loadedKeyRef.current = storageKey;
 		try {
 			const saved = safeLocalStorageGetItem(storageKey);
 			if (saved) {
@@ -124,15 +128,9 @@ export function useAnamnesisState(props: VisitAnamnesisTabProps) {
 				if (safety.hasDiabetesMellitus) autoRisks.push("Сахарный диабет");
 				if (safety.takesAnticoagulants) autoRisks.push("Приём антикоагулянтов");
 				if (safety.takesBisphosphonates) autoRisks.push("Приём бисфосфонатов");
-				if (safety.pregnancyTrimester && safety.pregnancyTrimester !== "none") {
+				if (safety.pregnancyTrimester && (safety.pregnancyTrimester as any) !== "none") {
 					autoRisks.push("Беременность / Лактация");
-					if (safety.pregnancyTrimester !== "none") {
-						setPregnancyTrimester(
-							safety.pregnancyTrimester === "lactation"
-								? "lactation"
-								: safety.pregnancyTrimester,
-						);
-					}
+					setPregnancyTrimester(safety.pregnancyTrimester as any);
 				}
 				if (autoRisks.length > 0) {
 					setSelectedRisks(autoRisks);

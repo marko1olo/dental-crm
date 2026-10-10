@@ -4,6 +4,8 @@
  */
 
 import {
+	type Ffd12CorrectionType,
+	type Ffd12OperationType,
 	type Ffd12PaymentMethod,
 	type Ffd12PaymentSubject,
 	type Ffd12TaxationSystem,
@@ -499,10 +501,8 @@ export function generateShiftCloseZReport54Fz(params: {
 		incomeReturnCount: summary.refundedCount,
 		incomeReturnTotalRub,
 		incomeReturnTotalKopecks,
-		incomeReturnCashRub: 0,
-		incomeReturnCashKopecks,
-		incomeReturnCardRub: summary.refundedRub,
-		incomeReturnCardKopecks,
+		incomeReturnCashRub: 0, incomeReturnCashKopecks,
+		incomeReturnCardRub: summary.refundedRub, incomeReturnCardKopecks,
 		correctionCount: 0,
 		correctionTotalRub: 0,
 		totalRevenueRub,

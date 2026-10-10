@@ -307,8 +307,8 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 								onClick={() => handleRoleSelect(roleKey)}
 								className={`px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-semibold transition-all text-center whitespace-normal break-words sm:whitespace-nowrap border cursor-pointer touch-manipulation flex items-center justify-center gap-1.5 ${
 									isSelected
-										? "bg-teal-500/15 text-teal-800 dark:text-teal-200 border-teal-500/60 dark:border-teal-500 shadow-xs font-bold ring-1 ring-teal-500/40"
-										: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--line)]"
+										? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-xs font-bold"
+										: "bg-[var(--paper-card)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)]"
 								}`}
 								data-testid={`role-matrix-tab-${roleKey}`}
 							>
@@ -326,10 +326,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 						<span className="font-bold text-[var(--ink)] text-xs sm:text-sm">
 							{ROLE_DISPLAY_NAMES[selectedMatrixRole] || activeRoleMeta.title}
 						</span>
-						<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--line)] text-[var(--ink)] font-mono font-medium">
-							role: {activeRoleMeta.role}
-						</span>
-						<span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-800">
+						<span className="text-[11px] px-2 py-0.5 rounded-full bg-[var(--teal-soft)] text-[var(--teal-dark)] font-bold border border-[var(--line-subtle)]">
 							{grantedPermsCount} разрешено
 						</span>
 						<span className="text-[11px] px-2 py-0.5 rounded-full bg-[var(--line)] text-[var(--muted)] font-medium">

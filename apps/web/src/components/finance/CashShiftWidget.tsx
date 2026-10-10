@@ -398,7 +398,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 								<>
 									<span>·</span>
 									<span className="flex items-center gap-1">
-										Clock: Открыта с {openedAt}
+										Открыта с {openedAt}
 									</span>
 								</>
 							)}
@@ -451,7 +451,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						data-testid="btn-flush-offline-queue-1click"
 					>
 						<Zap size={14} className="shrink-0" />
-						<span>Пробить всю очередь в 1 клик</span>
+						<span>Фискализировать всю очередь</span>
 					</button>
 				</div>
 			)}

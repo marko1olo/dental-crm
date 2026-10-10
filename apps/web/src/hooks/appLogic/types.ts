@@ -53,8 +53,8 @@ export interface NavigationStateSlice {
 export interface PatientSelectionStateSlice {
 	query: string;
 	setQuery: (query: string) => void;
-	selectedPatientId: string;
-	setSelectedPatientId: (id: string) => void;
+	selectedPatientId: string | null;
+	setSelectedPatientId: (id: any) => void;
 	selectedPatient: any;
 	activePatient: any;
 	activeVisitPatient: any;
@@ -63,8 +63,8 @@ export interface PatientSelectionStateSlice {
 	activePatientInsight: any;
 	savePatientCore: (payload: any) => Promise<any>;
 	createPatient: (payload: any) => Promise<any>;
-	updatePatientCoreDraft: (field: string, value: any) => void;
-	updatePatientAdministrativeProfileDraft: (field: string, value: any) => void;
+	updatePatientCoreDraft: any;
+	updatePatientAdministrativeProfileDraft: any;
 	patient: any;
 	patientIntakeLogic: any;
 }
@@ -96,19 +96,19 @@ export interface ScheduleLogicSlice {
 	appointmentReadinessById: Record<string, any>;
 	scheduleAdminSecretDraft: string;
 	scheduleAdminSecretSession: string;
-	updateAppointmentScheduleDraft: (id: string, draft: Partial<AppointmentScheduleDraft>) => void;
-	updateChairScheduleDay: (chairId: string, day: string, draft: any) => void;
-	updateChairScheduleDraft: (chairId: string, draft: any) => void;
-	updateNewAppointmentDraft: (draft: any) => void;
-	updateStaffScheduleDay: (staffId: string, day: string, draft: any) => void;
-	updateStaffScheduleDraft: (staffId: string, draft: any) => void;
-	toggleChairWorkingDay: (chairId: string, day: string) => void;
-	toggleClinicWorkingDay: (day: string) => void;
-	toggleStaffWorkingDay: (staffId: string, day: string) => void;
+	updateAppointmentScheduleDraft: any;
+	updateChairScheduleDay: any;
+	updateChairScheduleDraft: any;
+	updateNewAppointmentDraft: any;
+	updateStaffScheduleDay: any;
+	updateStaffScheduleDraft: any;
+	toggleChairWorkingDay: any;
+	toggleClinicWorkingDay: any;
+	toggleStaffWorkingDay: any;
 	staffScheduleDrafts: Record<string, StaffScheduleDraft>;
 	staffScheduleSaveStates: Record<string, any>;
 	staffScheduleSavingId: string | null;
-	saveStaffSchedule: (staffId: string) => Promise<void>;
+	saveStaffSchedule: any;
 	schedule: any;
 	scheduleFilterController: any;
 }
@@ -118,7 +118,7 @@ export interface ClinicalSessionLogicSlice {
 	odontogramUseSurfaces: boolean;
 	setOdontogramUseSurfaces: (val: boolean) => void;
 	odontogramViewMode: string;
-	setOdontogramViewMode: (mode: string) => void;
+	setOdontogramViewMode: (mode: any) => void;
 	toothRows: any;
 	toothStateByCode: Record<string, any>;
 	setToothState: (code: string, state: any) => void;
@@ -138,19 +138,19 @@ export interface ClinicalSessionLogicSlice {
 	visitNoteFieldDefinitions: any[];
 	visitNoteReadyToAccept: boolean;
 	visitNoteStatusLabel: string;
-	visitSaveReceiptText: string;
+	visitSaveReceiptText: any;
 	acceptDraftToVisit: () => Promise<void>;
 	scrollToVisitArea: (areaId: string) => void;
 }
 
 export interface BillingModalLogicSlice {
 	finance: any;
-	paymentAmount: number;
-	setPaymentAmount: (amount: number) => void;
-	paymentMethod: string;
-	setPaymentMethod: (method: string) => void;
-	paymentFeedback: string | null;
-	setPaymentFeedback: (fb: string | null) => void;
+	paymentAmount: any;
+	setPaymentAmount: any;
+	paymentMethod: any;
+	setPaymentMethod: any;
+	paymentFeedback: any;
+	setPaymentFeedback: any;
 	activePayments: any[];
 	activeTreatmentPlanItems: any[];
 	paymentFiscalCashierName: string;
@@ -177,8 +177,8 @@ export interface BillingModalLogicSlice {
 	setPaymentPayerInn: (val: string) => void;
 	paymentPayerRelationship: string;
 	setPaymentPayerRelationship: (val: string) => void;
-	paymentTaxDeductionCode: string;
-	setPaymentTaxDeductionCode: (val: string) => void;
+	paymentTaxDeductionCode: any;
+	setPaymentTaxDeductionCode: any;
 	selectedPaymentReceiptTotalRub: number;
 	selectedTaxPaymentTotalRub: number;
 }
@@ -220,8 +220,8 @@ export interface ModalControllerSlice {
 	onboardingChairCreateGuidanceId: string | null;
 	onboardingFinishGuidanceId: string | null;
 	currentOnboardingIndex: number;
-	previousOnboardingStep: OnboardingStep | null;
-	nextOnboardingStep: OnboardingStep | null;
+	previousOnboardingStep: any;
+	nextOnboardingStep: any;
 }
 
 export interface OfflineSyncLogicSlice {

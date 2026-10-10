@@ -65,7 +65,7 @@ export function TelephonyWidgetMoreMenu({
 					disabled={isCapturingLead || activeCall?.isLeadCaptured}
 					className="w-full text-left px-2.5 py-2 rounded-lg bg-[var(--teal-surface)] hover:opacity-90 text-[var(--teal)] font-bold flex items-center gap-2 transition-colors cursor-pointer border border-[var(--teal-soft)] mb-1"
 					data-testid="widget-action-capture-lead"
-					title={`1-Клик захват в лиды с авторазметкой канала (${callAttribution.channelLabel})`}
+					title={`Захват в лиды с авторазметкой канала (${callAttribution.channelLabel})`}
 				>
 					<UserPlus size={14} className="text-[var(--teal)] shrink-0" />
 					<span className="truncate">

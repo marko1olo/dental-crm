@@ -3,7 +3,8 @@ import { CbctLeftToolDock } from "../CbctLeftToolDock.js";
 import { CbctMprViewportsGrid } from "../mpr/CbctMprViewportsGrid.js";
 import type { StudioViewportGridProps } from "./types.js";
 
-export const StudioViewportGrid: React.FC<StudioViewportGridProps> = (props) => {
+// biome-ignore lint/suspicious/noExplicitAny: master viewport grid facade forwarding props to underlying components
+export const StudioViewportGrid: React.FC<any> = (props) => {
 	return (
 		<>
 			<CbctLeftToolDock
@@ -23,122 +24,7 @@ export const StudioViewportGrid: React.FC<StudioViewportGridProps> = (props) => 
 				onAutoDetectArch={props.onAutoDetectArch}
 			/>
 
-			<CbctMprViewportsGrid
-				isSidebarOpen={props.isSidebarOpen}
-				mobileActiveTab={props.mobileActiveTab}
-				patientDisplayName={props.patientDisplayName}
-				patientId={props.patientId}
-				onSelectMobileTab={props.onSelectMobileTab}
-				volume={props.volume}
-				dicomLoadingStatus={props.dicomLoadingStatus}
-				dicomProgress={props.dicomProgress}
-				maximizedViewport={props.maximizedViewport}
-				viewLayout={props.viewLayout}
-				studioMode={props.studioMode}
-				onSelectStudioMode={props.onSelectStudioMode}
-				folderInputRef={props.folderInputRef}
-				zipInputRef={props.zipInputRef}
-				handleDicomFilesChange={props.handleDicomFilesChange}
-				activeViewport={props.activeViewport}
-				setActiveViewport={props.setActiveViewport}
-				hoveredViewport={props.hoveredViewport}
-				onHoverViewport={props.onHoverViewport}
-				showEdgeRulers={props.showEdgeRulers}
-				handleToggleMaximize={props.handleToggleMaximize}
-				axialBaseCanvasRef={props.axialBaseCanvasRef}
-				axialOverlayCanvasRef={props.axialOverlayCanvasRef}
-				coronalBaseCanvasRef={props.coronalBaseCanvasRef}
-				coronalOverlayCanvasRef={props.coronalOverlayCanvasRef}
-				sagittalBaseCanvasRef={props.sagittalBaseCanvasRef}
-				sagittalOverlayCanvasRef={props.sagittalOverlayCanvasRef}
-				panoBaseCanvasRef={props.panoBaseCanvasRef}
-				panoOverlayCanvasRef={props.panoOverlayCanvasRef}
-				crossSectionBaseCanvasRef={props.crossSectionBaseCanvasRef}
-				crossSectionOverlayCanvasRef={props.crossSectionOverlayCanvasRef}
-				handleCanvasDoubleClick={props.handleCanvasDoubleClick}
-				handleCanvasMouseDown={props.handleCanvasMouseDown}
-				handleCanvasMouseMove={props.handleCanvasMouseMove}
-				handleCanvasMouseUp={props.handleCanvasMouseUp}
-				handleCanvasWheel={props.handleCanvasWheel}
-				getCanvasCursor={props.getCanvasCursor}
-				crosshairMm={props.crosshairMm}
-				currentVoxel={props.currentVoxel}
-				slabMode={props.slabMode}
-				slabThicknessMm={props.slabThicknessMm}
-				obliqueAngles={props.obliqueAngles}
-				setObliqueAngles={props.setObliqueAngles}
-				handleFullResetViewport={props.handleFullResetViewport}
-				activeRotationHandle={props.activeRotationHandle}
-				isShiftRotating={props.isShiftRotating}
-				hoveredHandle={props.hoveredHandle}
-				transforms={props.transforms}
-				windowWidth={props.windowWidth}
-				windowLevel={props.windowLevel}
-				renderViewportOverlays={props.renderViewportOverlays}
-				handlePanoMouseDown={props.handlePanoMouseDown}
-				handlePanoMouseMove={props.handlePanoMouseMove}
-				handlePanoMouseUp={props.handlePanoMouseUp}
-				handleCrossSectionMouseDown={props.handleCrossSectionMouseDown}
-				handleCrossSectionMouseMove={props.handleCrossSectionMouseMove}
-				handleCrossSectionMouseUp={props.handleCrossSectionMouseUp}
-				dragImplantPart={props.dragImplantPart}
-				hoveredImplantPart={props.hoveredImplantPart}
-				activeCrossSection={props.activeCrossSection}
-				activeCrossSectionIdx={props.activeCrossSectionIdx}
-				crossSections={props.crossSections}
-				onLoadDemoVolume={props.onLoadDemoVolume}
-				activeTool={props.activeTool}
-				onSelectTool={props.onSelectTool}
-				rulers={props.rulers}
-				onClearRulers={props.onClearRulers}
-				angles={props.angles}
-				onClearAngles={props.onClearAngles}
-				onSelectQuickWlPreset={props.onSelectQuickWlPreset}
-				handleSelectTooth={props.handleSelectTooth}
-				archCurve={props.archCurve}
-				jawType={props.jawType}
-				onSwitchJaw={props.onSwitchJaw}
-				activeToothFdi={props.activeToothFdi}
-				isUnsharpActive={props.isUnsharpActive}
-				onToggleUnsharp={props.onToggleUnsharp}
-				onChangeCrossSectionIdx={props.onChangeCrossSectionIdx}
-				selectedBrand={props.selectedBrand}
-				onSelectBrand={props.onSelectBrand}
-				selectedDiameterMm={props.selectedDiameterMm}
-				onSelectDiameterMm={props.onSelectDiameterMm}
-				selectedLengthMm={props.selectedLengthMm}
-				onSelectLengthMm={props.onSelectLengthMm}
-				displayBoneClass={props.displayBoneClass}
-				displayMeanHU={props.displayMeanHU}
-				displayTorque={props.displayTorque}
-				displayNerveClearanceMm={props.displayNerveClearanceMm}
-				displayDrillingProtocol={props.displayDrillingProtocol}
-				nerveSafetyStatus={props.nerveSafetyStatus}
-				nervePoints={props.nervePoints}
-				interpolatedNerve3D={props.interpolatedNerve3D}
-				implant3DWorld={props.implant3DWorld}
-				nerveAuditResult={props.nerveAuditResult}
-				handleExportToEmr={props.handleExportToEmr}
-				handleExportToPlan={props.handleExportToPlan}
-				onChangeWindowWidth={props.onChangeWindowWidth}
-				onChangeWindowLevel={props.onChangeWindowLevel}
-				onChangeSlabThicknessMm={props.onChangeSlabThicknessMm}
-				onChangeSlabMode={props.onChangeSlabMode}
-				onSelectClinicalPreset={props.onSelectClinicalPreset}
-				activePresetId={props.activePresetId}
-				panoThicknessMm={props.panoThicknessMm}
-				onChangePanoThicknessMm={props.onChangePanoThicknessMm}
-				panoProjectionMode={props.panoProjectionMode}
-				onChangePanoProjectionMode={props.onChangePanoProjectionMode}
-				crossSectionStepMm={props.crossSectionStepMm}
-				onChangeCrossSectionStepMm={props.onChangeCrossSectionStepMm}
-				implantEntryXOffsetMm={props.implantEntryXOffsetMm}
-				onChangeImplantEntryXOffsetMm={props.onChangeImplantEntryXOffsetMm}
-				implantEntryDepthMm={props.implantEntryDepthMm}
-				onChangeImplantEntryDepthMm={props.onChangeImplantEntryDepthMm}
-				implantAngulationDeg={props.implantAngulationDeg}
-				onChangeImplantAngulationDeg={props.onChangeImplantAngulationDeg}
-			/>
+			<CbctMprViewportsGrid {...(props as any)} />
 		</>
 	);
 };

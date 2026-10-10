@@ -160,7 +160,7 @@ export const TreatmentPlanPresenterComparisonTab: React.FC<TreatmentPlanPresente
 																setActiveTab?.("finance");
 															}}
 															className="treatment-tier-ndfl-calc-btn cursor-pointer"
-															title="1-клик детальный расчет вычета 13% НДФЛ и справка ФНС"
+															title="Расчет налогового вычета 13% НДФЛ и справка ФНС"
 															data-testid={"calc-ndfl-btn-" + tier.tierId}
 														>
 															<div className="flex items-center justify-between w-full">
@@ -245,7 +245,7 @@ export const TreatmentPlanPresenterComparisonTab: React.FC<TreatmentPlanPresente
 													className={"treatment-tier-select-btn w-full cursor-pointer m-0 " + (isSelected ? "selected" : "")}
 													data-testid={"apply-tier-btn-" + tier.tierId}
 													aria-pressed={isSelected}
-													title="Выбрать этот вариант и начать лечение в 1 клик"
+													title="Выбрать этот вариант и утвердить план лечения"
 												>
 													{isSelected ? (
 														<>

@@ -84,3 +84,4 @@ export * from "./clinicalMarketMaterialsCatalog.js";
 export * from "./diagnosisServiceBundles.js";
 export * from "./pricelistBatchImport.js";
 export * from "./informedConsentEngine.js";
+export * from "./prescriptionCatalog.js";

@@ -1,8 +1,10 @@
 import { create } from "zustand";
+import { isDemoShowcaseMode } from "../lib/demoMode";
 import {
 	readDenteClinicToken,
 	readDenteStaffToken,
 } from "../lib/safeLocalStorage";
+import { getDemoShowcaseLeads } from "../utils/demoModeEngine";
 import { logger } from "../utils/logger";
 
 export type LeadStatus =
@@ -90,7 +92,7 @@ interface LeadsState {
 		id: string,
 		payload: ConvertLeadToAppointmentPayload,
 	) => Promise<ConvertLeadResult>;
-	/** 1-click action: create patient from lead without appointment or bureaucratic barriers */
+	/** Direct action: create patient from lead without appointment or bureaucratic barriers */
 	createPatientFromLead: (
 		id: string,
 	) => Promise<{
@@ -142,9 +144,14 @@ async function leadsFailureMessage(
 }
 
 function authHeaders(extra?: Record<string, string>): Record<string, string> {
+	const isDemo = isDemoShowcaseMode();
+	const clinicToken =
+		readDenteClinicToken() || (isDemo ? "demo-showcase-token-owner" : "");
+	const staffToken =
+		readDenteStaffToken() || (isDemo ? "demo-showcase-staff-token-owner" : "");
 	return {
-		"x-dente-staff-token": readDenteStaffToken(),
-		"x-dente-clinic-token": readDenteClinicToken(),
+		...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
+		...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
 		...extra,
 	};
 }
@@ -162,7 +169,11 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 			if (res.ok) {
 				const data = await res.json();
 				if (Array.isArray(data)) {
-					set({ leads: data, isLoading: false });
+					const effectiveLeads =
+						data.length === 0 && isDemoShowcaseMode()
+							? (getDemoShowcaseLeads() as Lead[])
+							: data;
+					set({ leads: effectiveLeads, isLoading: false });
 					return;
 				}
 			}
@@ -175,8 +186,23 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 				);
 			}
 			const data = await res.json();
-			set({ leads: Array.isArray(data) ? data : [], isLoading: false });
+			const parsed = Array.isArray(data) ? data : [];
+			set({
+				leads:
+					parsed.length === 0 && isDemoShowcaseMode()
+						? (getDemoShowcaseLeads() as Lead[])
+						: parsed,
+				isLoading: false,
+			});
 		} catch (e: unknown) {
+			if (isDemoShowcaseMode()) {
+				set({
+					leads: getDemoShowcaseLeads() as Lead[],
+					error: null,
+					isLoading: false,
+				});
+				return;
+			}
 			const message =
 				e instanceof Error && e.message
 					? e.message

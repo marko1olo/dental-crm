@@ -280,7 +280,7 @@ export const PatientTimeline: React.FC<PatientTimelineProps> = ({
 
 	const handleCardDoubleClick = (study: ImagingStudy) => {
 		const is3DScan = Boolean(
-			study.kind === "scan_3d" ||
+			(study.kind as string) === "scan_3d" ||
 			study.modality === "STL" ||
 			study.modality === "PLY" ||
 			study.modality === "OBJ" ||
@@ -482,7 +482,7 @@ export const PatientTimeline: React.FC<PatientTimelineProps> = ({
 								{group.items.map((study) => {
 									const isSelected = activeStudyId === study.id;
 									const is3DScan = Boolean(
-										study.kind === "scan_3d" ||
+										(study.kind as string) === "scan_3d" ||
 										study.modality === "STL" ||
 										study.modality === "PLY" ||
 										study.modality === "OBJ" ||

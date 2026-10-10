@@ -352,13 +352,12 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 						</button>
 					</div>
 
-					{/* 1-Клик: все временные интактны */}
 					{onSetAllHealthy && (
 						<button
 							type="button"
 							onClick={onSetAllHealthy}
 							className="min-h-[44px] sm:min-h-[32px] sm:h-7 px-2 rounded-lg border border-emerald-500/30 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-100 text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 touch-manipulation"
-							title="1-клик: все молочные зубы здоровы (индекс кп=0)"
+							title="Все молочные зубы здоровы (индекс кп=0)"
 							data-testid="pediatric-all-healthy-btn"
 						>
 							<ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -366,13 +365,12 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 						</button>
 					)}
 
-					{/* 1-Клик: пресет смены резцов */}
 					{onApplyMixedDentitionPreset && (
 						<button
 							type="button"
 							onClick={onApplyMixedDentitionPreset}
 							className="min-h-[44px] sm:min-h-[32px] sm:h-7 px-2 rounded-lg border border-sky-500/30 bg-sky-50 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300 hover:bg-sky-100 text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 touch-manipulation"
-							title="1-клик: смена резцов и появление первых моляров 16, 26, 36, 46"
+							title="Смена резцов и появление первых моляров 16, 26, 36, 46"
 							data-testid="pediatric-mixed-preset-btn"
 						>
 							<ToothDeciduous className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400 shrink-0" />

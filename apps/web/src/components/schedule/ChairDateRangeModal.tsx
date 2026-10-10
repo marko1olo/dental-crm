@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { CalendarRange, X } from "lucide-react";
 import type { ScheduleChair } from "./ScheduleFilterStrip";
 import type { DateRangeShiftPreset } from "./roster/DoctorShiftRosterModal";
@@ -38,11 +39,21 @@ export function ChairDateRangeModal({
   setRangePreset,
   onApply,
 }: ChairDateRangeModalProps) {
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   if (!isOpen) return null;
 
-  return (
+  const modalNode = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-[4px] animate-in fade-in duration-150"
       data-testid="chair-schedule-date-range-modal"
       role="dialog"
       aria-modal="true"
@@ -223,4 +234,9 @@ export function ChairDateRangeModal({
       </div>
     </div>
   );
+
+  if (typeof document !== "undefined" && document.body) {
+    return createPortal(modalNode, document.body);
+  }
+  return modalNode;
 }

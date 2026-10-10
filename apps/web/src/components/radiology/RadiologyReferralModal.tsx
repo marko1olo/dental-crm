@@ -309,7 +309,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 									Направление на КЛКТ / 3D Лучевую диагностику
 								</h2>
 								<span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
-									1-клик протокол
+									Стандартный протокол
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted)]">
@@ -363,7 +363,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 						<div className="p-3 rounded-2xl bg-[var(--teal-surface)]/40 border border-[var(--teal-soft)]">
 							<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--teal)] mb-2">
 								<Sparkles className="w-4 h-4" />
-								<span>Быстрые пресеты у кресла (0–1 клик):</span>
+								<span>Быстрые клинические пресеты:</span>
 							</div>
 							<div className="dente-filter-chips" data-testid="referral-express-presets">
 								{CLINICAL_EXPRESS_PRESETS.map((preset) => (

@@ -48,13 +48,13 @@ describe("MobileCommunicationsMessenger safe monolith decomposition", () => {
 	it("чистая утилита renderChannelIcon генерирует бейджи каналов", () => {
 		const wa = renderChannelIcon("whatsapp");
 		assert.ok(wa);
-		assert.equal(wa.props.className, "mobile-avatar-channel-badge channel-badge-whatsapp");
+		assert.equal((wa as any).props.className, "mobile-avatar-channel-badge channel-badge-whatsapp");
 
 		const tg = renderChannelIcon("telegram");
-		assert.equal(tg.props.className, "mobile-avatar-channel-badge channel-badge-telegram");
+		assert.equal((tg as any).props.className, "mobile-avatar-channel-badge channel-badge-telegram");
 
 		const sms = renderChannelIcon("sms");
-		assert.equal(sms.props.className, "mobile-avatar-channel-badge channel-badge-sms");
+		assert.equal((sms as any).props.className, "mobile-avatar-channel-badge channel-badge-sms");
 	});
 
 	it("бюджет строк соблюдён: фасад <= 150 строк, каждый файл модуля < 800 строк", () => {

@@ -61,7 +61,7 @@ export const CbctContrastPopover: React.FC<CbctContrastPopoverProps> = ({
 						title="Открыть интерактивный тюнер КЛКТ (?cbct=tuner)"
 						data-testid="cbct-header-tuner-btn"
 					>
-						🧪 Тюнер
+						Тюнер
 					</button>
 					<button
 						type="button"

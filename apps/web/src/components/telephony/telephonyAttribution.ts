@@ -49,76 +49,28 @@ export const CHANNEL_DISPLAY_NAMES: Record<CanonicalMarketingChannelKey, string>
 	other: "Прямой звонок / ВАТС",
 };
 
+const CALM_CHANNEL_BADGE = {
+	bg: "var(--paper-soft)",
+	text: "var(--ink)",
+	color: "var(--muted)",
+	border: "var(--line)",
+};
+
 export const CHANNEL_BADGE_COLORS: Record<
 	CanonicalMarketingChannelKey,
 	{ bg: string; text: string; color: string; border: string }
 > = {
-	yandex_direct: {
-		bg: "var(--rust-soft, rgba(239, 68, 68, 0.12))",
-		text: "var(--rust, #ef4444)",
-		color: "var(--rust, #ef4444)",
-		border: "var(--rust-soft, rgba(239, 68, 68, 0.35))",
-	},
-	gis_2: {
-		bg: "var(--ok-bg, rgba(16, 185, 129, 0.12))",
-		text: "var(--ok-fg, #10b981)",
-		color: "var(--ok-fg, #10b981)",
-		border: "var(--ok-bg, rgba(16, 185, 129, 0.35))",
-	},
-	prodoctorov: {
-		bg: "var(--accent-soft, rgba(14, 165, 233, 0.12))",
-		text: "var(--accent, #0ea5e9)",
-		color: "var(--accent, #0ea5e9)",
-		border: "var(--accent-soft, rgba(14, 165, 233, 0.35))",
-	},
-	napopravku: {
-		bg: "var(--amber-soft, rgba(245, 158, 11, 0.12))",
-		text: "var(--amber, #f59e0b)",
-		color: "var(--amber, #f59e0b)",
-		border: "var(--amber-soft, rgba(245, 158, 11, 0.35))",
-	},
-	site_seo: {
-		bg: "var(--teal-soft, rgba(20, 184, 166, 0.12))",
-		text: "var(--teal, #14b8a6)",
-		color: "var(--teal, #14b8a6)",
-		border: "var(--teal, rgba(20, 184, 166, 0.35))",
-	},
-	social_media: {
-		bg: "var(--accent-soft, rgba(99, 102, 241, 0.12))",
-		text: "var(--accent, #6366f1)",
-		color: "var(--accent, #6366f1)",
-		border: "var(--accent-soft, rgba(99, 102, 241, 0.35))",
-	},
-	recommendations: {
-		bg: "var(--amber-soft, rgba(168, 85, 247, 0.12))",
-		text: "var(--amber, #a855f7)",
-		color: "var(--amber, #a855f7)",
-		border: "var(--amber-soft, rgba(168, 85, 247, 0.35))",
-	},
-	avito: {
-		bg: "var(--accent-soft, rgba(14, 165, 233, 0.12))",
-		text: "var(--accent, #0ea5e9)",
-		color: "var(--accent, #0ea5e9)",
-		border: "var(--accent-soft, rgba(14, 165, 233, 0.35))",
-	},
-	yandex_maps: {
-		bg: "var(--rust-soft, rgba(239, 68, 68, 0.12))",
-		text: "var(--rust, #ef4444)",
-		color: "var(--rust, #ef4444)",
-		border: "var(--rust-soft, rgba(239, 68, 68, 0.35))",
-	},
-	max: {
-		bg: "var(--teal-soft, rgba(20, 184, 166, 0.12))",
-		text: "var(--teal, #14b8a6)",
-		color: "var(--teal, #14b8a6)",
-		border: "var(--teal, rgba(20, 184, 166, 0.35))",
-	},
-	other: {
-		bg: "var(--paper-soft, rgba(100, 116, 139, 0.12))",
-		text: "var(--muted, #64748b)",
-		color: "var(--muted, #64748b)",
-		border: "var(--line, rgba(100, 116, 139, 0.35))",
-	},
+	yandex_direct: CALM_CHANNEL_BADGE,
+	gis_2: CALM_CHANNEL_BADGE,
+	prodoctorov: CALM_CHANNEL_BADGE,
+	napopravku: CALM_CHANNEL_BADGE,
+	site_seo: CALM_CHANNEL_BADGE,
+	social_media: CALM_CHANNEL_BADGE,
+	recommendations: CALM_CHANNEL_BADGE,
+	avito: CALM_CHANNEL_BADGE,
+	yandex_maps: CALM_CHANNEL_BADGE,
+	max: CALM_CHANNEL_BADGE,
+	other: CALM_CHANNEL_BADGE,
 };
 
 /**

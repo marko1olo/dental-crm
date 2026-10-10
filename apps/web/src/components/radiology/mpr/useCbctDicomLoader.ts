@@ -368,6 +368,21 @@ interface DemoCbctManifest {
 				setDicomLoadingStatus(`Загрузка 3D КЛКТ (1/${totalSlices})...`);
 				setDicomProgress(10);
 
+				// If quick progressive mode requested via URL, stabilize immediately on central slice (Z=156)
+				if (
+					typeof window !== "undefined" &&
+					(window.location.search.includes("fast=true") ||
+						window.location.search.includes("quick=true") ||
+						window.location.search.includes("preview=true") ||
+						window.location.search.includes("progressive=true"))
+				) {
+					alignArchAndCrosshair(previewVol);
+					setLoadedSliceCount(totalSlices);
+					setDicomLoadingStatus(null);
+					setDicomProgress(100);
+					return;
+				}
+
 				await new Promise<void>((r) => setTimeout(r, 0));
 
 				// 3. BACKGROUND CHUNKED STREAMING (batches of 10 with Transferable worker messages)
@@ -428,7 +443,7 @@ interface DemoCbctManifest {
 					setDicomLoadingStatus(`Загрузка срезов КТ (${loadedSlices}/${totalSlices})...`);
 
 					// Mandatory yield to browser event loop to eliminate UI freeze
-					await new Promise<void>((r) => setTimeout(r, 0));
+					await new Promise<void>((r) => setTimeout(r, 16));
 				}
 
 				if (currentLoadId !== activeLoadIdRef.current) return;

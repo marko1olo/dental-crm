@@ -20,7 +20,7 @@ import { createClinicalRuleSchema } from "@dental/shared";
 import { serviceCatalog, serviceCatalogMap } from "./priceList.js";
 import { organizationId } from "./fixtureIds.js";
 import { persistMutableState } from "./stateNotifier.js";
-import { nullableTrimmed } from "./types.js";
+import { type DomainState, nullableTrimmed } from "./types.js";
 
 export const clinicalRules: ClinicalRule[] = [
 	{

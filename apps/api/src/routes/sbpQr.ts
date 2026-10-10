@@ -7,7 +7,6 @@
 import type { FastifyInstance } from "fastify";
 import { registerSbpRoutes } from "./sbp/index.js";
 
-export type * from "./sbp/index.js";
 export * from "./sbp/index.js";
 
 /**

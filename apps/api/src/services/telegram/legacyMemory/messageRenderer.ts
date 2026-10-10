@@ -9,27 +9,40 @@ import type {
 	AppointmentStatus,
 	CommunicationTask,
 	CommunicationTemplate,
+	DenteTelegramBotSettings,
 	DenteTelegramMessagePreview,
 	DenteTelegramMessagePreviewRequest,
 	DenteTelegramTemplateKind,
+	StaffMember,
 	StaffRole,
 } from "@dental/shared";
 import { denteTelegramMessagePreviewSchema } from "@dental/shared";
-import { repairMojibakeDeep } from "../../../text/repairMojibake.js";
+import { repairMojibakeDeep, repairMojibakeText } from "../../../text/repairMojibake.js";
 import type { DomainState } from "../../../types/domainState.js";
 import type { TelegramMessageContext } from "./types.js";
 import {
 	inMemoryDomainState,
 	validScheduleTimeZone,
 	appointmentClinicDateKey,
+	clinicProfile,
+	getAppointmentTimeFormatter,
+	isOpenCommunicationTask,
 } from "./storeState.js";
 import {
 	denteTelegramPortalUrlForTemplate,
 	denteTelegramVisualCardUrlForTemplate,
+	safeHttpsUrl,
 } from "./botUrlHelpers.js";
 import {
 	getDenteTelegramBotSettings,
+	denteTelegramBotSettings,
 } from "./botSettings.js";
+import {
+	denteTelegramAppointmentCallbacksReady,
+} from "./appointmentCallbacks.js";
+import {
+	telegramReplyMarkupFor,
+} from "./replyMarkups.js";
 
 export function telegramAppointmentTimeLabel(appointment: Appointment): string {
 	const date = new Date(appointment.startsAt);

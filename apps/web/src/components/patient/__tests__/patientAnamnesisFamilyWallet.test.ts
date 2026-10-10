@@ -123,7 +123,14 @@ describe("Patient Anamnesis, Family Wallet & Drawer Integrity Suite", () => {
 	describe("2. FamilyWalletModal Invariants", () => {
 		it("enforces exact kopeck arithmetic and 0% commission intra-family transfer in FamilyWalletModal source", () => {
 			const modalFile = path.resolve(patientDir, "FamilyWalletModal.tsx");
-			const content = fs.readFileSync(modalFile, "utf-8");
+			const decompDir = path.resolve(patientDir, "familyWalletModal");
+			let content = fs.readFileSync(modalFile, "utf-8");
+			if (fs.existsSync(decompDir)) {
+				const decompFiles = fs.readdirSync(decompDir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts"));
+				for (const f of decompFiles) {
+					content += "\n" + fs.readFileSync(path.join(decompDir, f), "utf-8");
+				}
+			}
 
 			assert.ok(content.includes('data-testid="family-wallet-modal"'), "Must have family-wallet-modal testid");
 			assert.ok(content.includes('data-testid="family-wallet-pooled-balance"'), "Must have pooled balance card");

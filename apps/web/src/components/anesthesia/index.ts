@@ -2,7 +2,11 @@ export * from './anesthesiaCatalog';
 export * from './anesthesiaEngine';
 export * from './AnesthesiaQuickBar';
 export * from '../visit/anesthesiaMrdMath';
-export { resolveClinicalDefaultWeightKg } from './anesthesiaEngine';
+export {
+	resolveClinicalDefaultWeightKg,
+	formatAnesthesiaPatientMemo,
+	type AnesthesiaPatientMemoParams,
+} from './anesthesiaEngine';
 export {
 	calculateAnesthesiaSafety as calculateAnesthesiaComprehensiveSafety,
 	ANESTHESIA_DRUG_CATALOG,
@@ -11,5 +15,3 @@ export {
 	isGeriatricPatient,
 	calculateEffectiveMgPerKg,
 } from './anesthesiaSafetyEngine';
-
-

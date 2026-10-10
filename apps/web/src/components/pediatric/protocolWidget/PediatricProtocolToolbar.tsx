@@ -60,33 +60,33 @@ export const PediatricProtocolTopBar: React.FC<PediatricProtocolTopBarProps> = (
 					type="button"
 					onClick={onApplyPhysiologicalNorm}
 					className="min-h-[48px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/25 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 shrink-0 touch-manipulation"
-					title="1-клик: Временный прикус интактен / физиологическая стираемость / тремы и диастемы"
+					title="Временный прикус интактен / физиологическая стираемость / тремы и диастемы"
 					data-testid="pediatric-one-click-norm-btn"
 				>
 					<Zap className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-					<span className="hidden sm:inline">1-клик Норма прикуса</span>
+					<span className="hidden sm:inline">Норма прикуса</span>
 					<span className="sm:hidden">Норма</span>
 				</button>
 
-				{/* 1-Клик адаптационный визит без сверления (Мандаты 8e, 8k) */}
+				{/* Адаптационный визит без сверления */}
 				<button
 					type="button"
 					onClick={onApplyAdaptationVisit}
 					className="min-h-[48px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg border border-sky-500/40 bg-sky-500/15 text-sky-800 dark:text-sky-200 hover:bg-sky-500/25 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 shrink-0 touch-manipulation"
-					title="1-клик: Адаптационный визит без сверления (Tell-Show-Do, игра, подарок)"
+					title="Адаптационный визит без сверления (Tell-Show-Do, игра, подарок)"
 					data-testid="pediatric-one-click-adaptation-btn"
 				>
 					<Sparkles className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
-					<span className="hidden sm:inline">1-клик Адаптация</span>
+					<span className="hidden sm:inline">Адаптация</span>
 					<span className="sm:hidden">Адаптация</span>
 				</button>
 
-				{/* 1-Тап Диплом за храбрость (Мандат 8e: печать грамоты маленькому пациенту) */}
+				{/* Диплом за храбрость (печать грамоты маленькому пациенту) */}
 				<button
 					type="button"
 					onClick={onOpenDiplomaModal}
 					className="min-h-[48px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg border border-amber-500/40 bg-amber-500/15 text-amber-900 dark:text-amber-200 hover:bg-amber-500/25 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 shrink-0 touch-manipulation"
-					title="1-тап: Диплом за храбрость маленькому пациенту (печать грамоты)"
+					title="Диплом за храбрость маленькому пациенту (печать грамоты)"
 					data-testid="pediatric-toolbar-diploma-btn"
 				>
 					<Award className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />

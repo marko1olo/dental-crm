@@ -47,7 +47,7 @@ export const FastCheckoutFamilyBalance: React.FC<FastCheckoutFamilyBalanceProps>
 			>
 				<div className="flex items-center gap-2">
 					<Users size={14} className="text-purple-600" />
-					<span>Семейный лицевой счет (Tier 2)</span>
+					<span>Семейный лицевой счет</span>
 				</div>
 				<ChevronDown
 					size={16}

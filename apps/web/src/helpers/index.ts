@@ -4,6 +4,7 @@
  */
 
 export * from "./types";
+export type { SettingsTabGroup } from "./types";
 export * from "./guardUtils";
 export * from "./workflowErrors";
 export * from "./offlineStorageEngine";

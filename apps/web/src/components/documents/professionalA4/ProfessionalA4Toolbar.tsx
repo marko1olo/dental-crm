@@ -122,17 +122,19 @@ export const ProfessionalA4Toolbar: React.FC<ProfessionalA4ToolbarProps> = ({
 						</button>
 					</div>
 
-					<span className="pro-a4-format-badge">Формат A4 · 210 × 297 мм · ГОСТ</span>
+					<span className="pro-a4-format-caption text-[11px] text-[var(--muted)] font-medium hidden lg:inline">
+						Формат A4 · 210 × 297 мм · ГОСТ
+					</span>
 
 					<button
 						type="button"
-						className="primary-button pro-a4-print-btn"
+						className="primary-button pro-a4-print-btn shrink-0"
 						onClick={handlePrint}
 						data-testid="btn-print-a4-document"
 						title="Печать на принтере (Ctrl+P)"
 					>
 						<Printer size={15} aria-hidden="true" />
-						<span>Печать на принтер (A4)</span>
+						<span>Печать А4</span>
 					</button>
 				</div>
 			</div>

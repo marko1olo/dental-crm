@@ -6,6 +6,7 @@ import {
 	Sliders,
 	Download,
 	Link as LinkIcon,
+	ExternalLink,
 } from 'lucide-react';
 import { ToothShadeGuide } from '../icons/DentalIcons';
 import { PhotoProtocolPreset, PhotoSlotRecord, getSlotDefinitionById } from './photoGridPresets';
@@ -23,6 +24,8 @@ import { BeforeAfterExportModal } from './BeforeAfterExportModal';
 import { BeforeAfterFineTunePanel } from './BeforeAfterFineTunePanel';
 import { BeforeAfterSideBySideView } from './BeforeAfterSideBySideView';
 import { BeforeAfterBlendView } from './BeforeAfterBlendView';
+import { openPatientPresentationWindow } from './presentationSyncProtocol';
+import { usePresentationSync } from './usePresentationSync';
 
 export interface BeforeAfterComparisonViewProps {
 	preset: PhotoProtocolPreset;
@@ -101,6 +104,31 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 		}
 	}, [beforeSlotRecord.detectedVitaShade, afterSlotRecord.detectedVitaShade]);
 
+	const getCurrentSyncPayload = useCallback(() => ({
+		beforeImageUrl: beforeSlotRecord.imageUrl,
+		afterImageUrl: afterSlotRecord.imageUrl,
+		beforeLabel: getSlotDefinitionById(beforeSlotId)?.shortLabelRu || 'До',
+		afterLabel: getSlotDefinitionById(afterSlotId)?.shortLabelRu || 'После',
+		beforeShade,
+		afterShade,
+		splitPercent,
+		blendOpacity,
+		mode: comparisonType,
+		splitDirection,
+		clinicName,
+		patientName,
+	}), [beforeSlotRecord.imageUrl, afterSlotRecord.imageUrl, beforeSlotId, afterSlotId, beforeShade, afterShade, splitPercent, blendOpacity, comparisonType, splitDirection, clinicName, patientName]);
+
+	const { broadcastSync } = usePresentationSync({
+		getState: getCurrentSyncPayload,
+		onRemoteState: (p) => {
+			if (typeof p.splitPercent === 'number') setSplitPercent(p.splitPercent);
+			if (typeof p.blendOpacity === 'number') setBlendOpacity(p.blendOpacity);
+			if (p.mode) setComparisonType(p.mode);
+			if (p.splitDirection) setSplitDirection(p.splitDirection);
+		},
+	});
+
 	useEffect(() => {
 		if (!showExportModal) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -114,14 +142,10 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 	}, [showExportModal]);
 
 	const COMPARISON_PROJECTIONS = useMemo(() => [
-		{ id: 'portrait_smile', labelRu: 'Анфас улыбка' },
-		{ id: 'portrait_rest', labelRu: 'Анфас покой' },
-		{ id: 'intraoral_frontal_occlusion', labelRu: 'Фронтальная окклюзия' },
-		{ id: 'intraoral_maxillary_occlusal', labelRu: 'Окклюзия в/ч' },
-		{ id: 'intraoral_mandibular_occlusal', labelRu: 'Окклюзия н/ч' },
-		{ id: 'intraoral_right_buccal', labelRu: 'Боковой правый' },
-		{ id: 'intraoral_left_buccal', labelRu: 'Боковой левый' },
-		{ id: 'profile_90_smile', labelRu: 'Профиль 90°' },
+		{ id: 'portrait_smile', labelRu: 'Анфас улыбка' }, { id: 'portrait_rest', labelRu: 'Анфас покой' },
+		{ id: 'intraoral_frontal_occlusion', labelRu: 'Фронтальная окклюзия' }, { id: 'intraoral_maxillary_occlusal', labelRu: 'Окклюзия в/ч' },
+		{ id: 'intraoral_mandibular_occlusal', labelRu: 'Окклюзия н/ч' }, { id: 'intraoral_right_buccal', labelRu: 'Боковой правый' },
+		{ id: 'intraoral_left_buccal', labelRu: 'Боковой левый' }, { id: 'profile_90_smile', labelRu: 'Профиль 90°' },
 		{ id: 'intraoral_overjet', labelRu: 'Сагиттальная щель' },
 	], []);
 
@@ -178,15 +202,12 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 	const updateSplitFromPointer = (e: React.PointerEvent<HTMLDivElement>) => {
 		if (!sliderContainerRef.current) return;
 		const container = sliderContainerRef.current.getBoundingClientRect();
-		if (splitDirection === 'vertical') {
-			const relativeX = e.clientX - container.left;
-			const percent = clamp((relativeX / container.width) * 100, 0, 100);
-			setSplitPercent(Math.round(percent));
-		} else {
-			const relativeY = e.clientY - container.top;
-			const percent = clamp((relativeY / container.height) * 100, 0, 100);
-			setSplitPercent(Math.round(percent));
-		}
+		const pct = splitDirection === 'vertical'
+			? clamp(((e.clientX - container.left) / container.width) * 100, 0, 100)
+			: clamp(((e.clientY - container.top) / container.height) * 100, 0, 100);
+		const rounded = Math.round(pct);
+		setSplitPercent(rounded);
+		broadcastSync({ splitPercent: rounded });
 	};
 
 	// Mouse Wheel Split Handler
@@ -194,6 +215,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 		e.preventDefault();
 		const newPercent = calculateWiperWheelDelta(splitPercent, e.deltaY, 2);
 		setSplitPercent(newPercent);
+		broadcastSync({ splitPercent: newPercent });
 	};
 
 	// Keyboard Navigation Handler
@@ -202,14 +224,12 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 			e.preventDefault();
 			const newPercent = calculateKeyboardWiperDelta(splitPercent, e.key, e.shiftKey);
 			setSplitPercent(newPercent);
+			broadcastSync({ splitPercent: newPercent });
 		}
 	};
 
 	const toggleGuide = (guideKey: GuideOverlayType) => {
-		setActiveGuides(prev => ({
-			...prev,
-			[guideKey]: !prev[guideKey],
-		}));
+		setActiveGuides(prev => ({ ...prev, [guideKey]: !prev[guideKey] }));
 	};
 
 	const handleBeforeShadeChange = (code: string) => {
@@ -223,12 +243,8 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 	};
 
 	const resetAlignment = () => {
-		setBeforeRotation(0);
-		setAfterRotation(0);
-		setZoomScale(1.0);
-		setPanOffset({ x: 0, y: 0 });
-		setBipupillaryTilt(0);
-		setIncisalCanting(0);
+		setBeforeRotation(0); setAfterRotation(0); setZoomScale(1.0);
+		setPanOffset({ x: 0, y: 0 }); setBipupillaryTilt(0); setIncisalCanting(0);
 	};
 
 	// 1-Click High-Res Canvas Export (delegated to canonical photoProtocolEngine)
@@ -290,7 +306,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 				border: '1px solid var(--line, #e2e8f0)',
 			}}>
 				<span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted, #64748b)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-					1-Клик Проекция:
+					Проекция:
 				</span>
 				<div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', flex: 1 }}>
 					{COMPARISON_PROJECTIONS.map((p) => {
@@ -479,9 +495,21 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 
 					<button
 						type="button"
+						className="photo-touch-btn"
+						data-testid="btn-patient-presentation-popout"
+						onClick={() => openPatientPresentationWindow(getCurrentSyncPayload())}
+						title="Показать на экране пациента перед креслом (2-й монитор / ТВ)"
+						style={{ minHeight: '44px', minWidth: '44px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+					>
+						<ExternalLink size={16} />
+						Экран пациента
+					</button>
+
+					<button
+						type="button"
 						className="photo-touch-btn primary"
 						onClick={() => setShowExportModal(true)}
-						title="1-клик экспорт презентации плана лечения"
+						title="Экспорт презентации плана лечения"
 						style={{ minHeight: '44px', minWidth: '44px' }}
 					>
 						<Download size={16} />

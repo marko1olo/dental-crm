@@ -220,7 +220,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 				preferFileSystemPicker: preferPicker,
 				meta: {
 					clinicName: clinicName || "DENTE Клиника",
-					notes: exportNotes || "Автономный 1-клик бэкап DENTE Vault",
+					notes: exportNotes || "Автономная резервная копия DENTE Vault",
 				},
 			});
 			setLastExportResult(result);
@@ -533,7 +533,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 				{[
 					{
 						id: "export",
-						label: "1-Клик Экспорт (.dente)",
+						label: "Экспорт архива (.dente)",
 						icon: <HardDrive size={15} />,
 					},
 					{

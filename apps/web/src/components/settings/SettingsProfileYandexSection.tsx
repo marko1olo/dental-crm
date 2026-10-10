@@ -1,5 +1,6 @@
 import type React from "react";
 import { useEffect, useState } from "react";
+import { Calendar } from "lucide-react";
 import { readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
@@ -83,65 +84,70 @@ export function SettingsProfileYandexSection({
 	};
 
 	return (
-		<section className="settings-section">
-			<div className="settings-section-header">
-				<h3>Яндекс.Календарь</h3>
+		<section className="rounded-2xl border border-[var(--line)] bg-[var(--paper-card)] p-5 shadow-xs">
+			<div className="flex items-center gap-3 pb-3 border-b border-[var(--line)] mb-4">
+				<div className="w-8 h-8 rounded-xl bg-[var(--teal-soft)] flex items-center justify-center text-[var(--teal-dark)]">
+					<Calendar size={18} aria-hidden="true" />
+				</div>
+				<div>
+					<h3 className="text-sm font-bold text-[var(--ink)] m-0">
+						Яндекс.Календарь
+					</h3>
+					<p className="text-xs text-[var(--muted)] m-0">
+						Синхронизация персонального графика визитов и приёмов
+					</p>
+				</div>
 			</div>
-			<p
-				className="form-hint"
-				style={{
-					marginBottom: 16,
-					fontSize: 12,
-					color: "var(--text-secondary)",
-				}}
-			>
-				Подключите свой Яндекс.Календарь для синхронизации расписания приёмов.
-			</p>
-			<form onSubmit={handleUpdateYandexSettings} className="form-grid">
-				<label className="form-span-1">
-					ID Календаря
+
+			<form onSubmit={handleUpdateYandexSettings} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<div className="flex flex-col gap-1.5">
+					<label className="text-xs font-semibold text-[var(--muted)]">
+						ID Календаря
+					</label>
 					<input
 						type="text"
 						value={yandexCalendarId}
 						onChange={(e) => setYandexCalendarId(e.target.value)}
 						placeholder="Yandex Calendar ID"
 						disabled={yandexLoading}
-						className="focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all"
+						className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--teal)] focus:ring-2 focus:ring-[var(--teal)]/20 transition-all"
 					/>
-				</label>
-				<label className="form-span-1">
-					Токен (JSON)
+				</div>
+				<div className="flex flex-col gap-1.5">
+					<label className="text-xs font-semibold text-[var(--muted)]">
+						Токен интеграции (JSON)
+					</label>
 					<input
 						type="text"
 						value={yandexCalendarToken}
 						onChange={(e) => setYandexCalendarToken(e.target.value)}
 						placeholder='{"access_token": "...", ...}'
 						disabled={yandexLoading}
-						className="focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all"
+						className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--teal)] focus:ring-2 focus:ring-[var(--teal)]/20 transition-all"
 					/>
-				</label>
-				<div className="form-actions form-span-2 flex gap-4 flex-wrap">
+				</div>
+				<div className="md:col-span-2 pt-2 flex items-center gap-3 flex-wrap">
 					<button
-						className="primary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
 						type="submit"
 						disabled={yandexLoading}
+						className="px-4 py-2.5 rounded-xl bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-[var(--on-teal)] text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-xs active:scale-[0.98] cursor-pointer disabled:opacity-50"
 					>
 						{yandexLoading ? "Сохранение..." : "Сохранить настройки"}
 					</button>
 					<button
 						type="button"
-						className="secondary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
 						onClick={handleSyncYandexCalendar}
 						disabled={yandexSyncLoading || !yandexCalendarId}
+						className="px-4 py-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-xs active:scale-[0.98] cursor-pointer disabled:opacity-50"
 					>
 						{yandexSyncLoading ? "Запуск..." : "Запустить синхронизацию"}
 					</button>
 					<button
 						type="button"
-						className="secondary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
 						onClick={() => {
 							window.location.href = "/api/integrations/yandex-calendar/auth";
 						}}
+						className="px-4 py-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-xs active:scale-[0.98] cursor-pointer"
 					>
 						Подключить Яндекс.Календарь
 					</button>

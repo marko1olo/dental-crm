@@ -136,8 +136,9 @@ assert(
 	"appointment readiness labels were not repaired",
 );
 
+import { readApiServerSourceSync } from "./lib/api-server-source.mjs";
 const sharedSource = readFileSync("packages/shared/src/index.ts", "utf8");
-const serverSource = readFileSync("apps/api/src/server.ts", "utf8");
+const serverSource = readApiServerSourceSync();
 const appSource = readFileSync("apps/web/src/App.tsx", "utf8");
 const userFacingApiSources = [
 	readFileSync("apps/api/src/sampleData.ts", "utf8"),

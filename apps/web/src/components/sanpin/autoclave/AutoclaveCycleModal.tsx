@@ -64,7 +64,7 @@ export function AutoclaveCycleModal({
 
 		onSaveCycle?.({
 			deviceId: dev?.id || "default",
-			deviceName: dev ? `${dev.brand} ${dev.model}` : "Автоклав B-класса",
+			deviceName: dev ? dev.brandModelRu : "Автоклав B-класса",
 			temperatureCelsius: temp,
 			pressureBar: press,
 			durationMin: duration,
@@ -132,7 +132,7 @@ export function AutoclaveCycleModal({
 							) : (
 								clinicDevices.map((d) => (
 									<option key={d.id} value={d.id}>
-										{d.brand} {d.model} {d.serialNumber ? `(№${d.serialNumber})` : ""}
+										{d.brandModelRu} {d.serialNumber ? `(№${d.serialNumber})` : ""}
 									</option>
 								))
 							)}

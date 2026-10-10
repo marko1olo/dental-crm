@@ -1,4 +1,4 @@
-import { Activity, Camera, FileText, FolderInput, Image as ImageIcon, Plus } from "lucide-react";
+import { Activity, Camera, Columns2, FileText, FolderInput, Image as ImageIcon, Plus } from "lucide-react";
 import React from "react";
 import type { DiagnosticTabMode } from "./types";
 
@@ -16,6 +16,7 @@ export interface DiagnosticsTabToolbarProps {
 	onOpenDirectRvg?: () => void;
 	onOpenHotFolder?: () => void;
 	onOpenDicomViewer?: () => void;
+	onOpenComparison?: () => void;
 }
 
 export function DiagnosticsTabToolbar({
@@ -32,6 +33,7 @@ export function DiagnosticsTabToolbar({
 	onOpenDirectRvg,
 	onOpenHotFolder,
 	onOpenDicomViewer,
+	onOpenComparison,
 }: DiagnosticsTabToolbarProps) {
 	return (
 		<>
@@ -122,6 +124,19 @@ export function DiagnosticsTabToolbar({
 						>
 							<FolderInput size={13} className="text-[var(--teal)]" />
 							<span>Автозахват</span>
+						</button>
+					)}
+
+					{onOpenComparison && (
+						<button
+							type="button"
+							onClick={onOpenComparison}
+							data-testid="btn-compare-visiograph-scans"
+							className="diag-btn h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 hover:bg-teal-500/20"
+							title="Сравнение прицельных снимков визиографа До / После лечения (EzDent-i Dual View)"
+						>
+							<Columns2 size={13} className="text-[var(--teal)]" />
+							<span>Сравнить (До/После)</span>
 						</button>
 					)}
 

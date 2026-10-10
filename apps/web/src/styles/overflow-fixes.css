@@ -91,7 +91,36 @@
 	contain: none !important;
 }
 
-/* --- 6. Гарантия строго 0px горизонтального скролла на мобильных (R1) --- */
+/* --- 6. Гарантия строго 0px горизонтального скролла и защита от распирания флекс-контейнеров (Desktop & Mobile) --- */
+.app-shell,
+.app-shell.dente-redesign {
+	max-width: 100vw;
+	overflow-x: hidden;
+}
+
+.app-shell.dente-redesign .workspace,
+.workspace,
+.workspace-shell {
+	max-width: 100%;
+	overflow-x: hidden;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
+.panel.schedule-panel,
+.panel.visit-panel,
+.patients-panel,
+.finance-panel,
+.panel.documents-panel,
+.inventory-panel,
+.scanner-panel,
+.lab-panel,
+.panel {
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
 @media (max-width: 840px) {
 	html,
 	body,
@@ -474,13 +503,21 @@
 	max-height: 36px !important;
 	box-sizing: border-box !important;
 	padding: 2px 8px !important;
-	overflow-x: auto !important;
-	overflow-y: hidden !important;
+	overflow: visible !important;
 	flex-wrap: nowrap !important;
-	scrollbar-width: none !important;
-	-webkit-overflow-scrolling: touch !important;
-	touch-action: pan-x !important;
-	overscroll-behavior-x: contain !important;
+	position: relative !important;
+	z-index: 30 !important;
+}
+
+@media (max-width: 1023px) {
+	.odontogram-toolbar:not(:has([aria-expanded="true"])):not(:has(details[open])) {
+		overflow-x: auto !important;
+		overflow-y: hidden !important;
+		scrollbar-width: none !important;
+		-webkit-overflow-scrolling: touch !important;
+		touch-action: pan-x !important;
+		overscroll-behavior-x: contain !important;
+	}
 }
 
 .odontogram-toolbar-row {
@@ -711,6 +748,7 @@
 	}
 }
 
-
-
-
+/* --- 24. Воронка планов лечения координатора (#pipeline) --- */
+.pipeline-search-input {
+	padding-left: 38px !important;
+}

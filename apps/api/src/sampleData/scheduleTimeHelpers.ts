@@ -3,15 +3,20 @@
  * @description Layer 2: Timezone helpers, appointment time part calculations, and schedule capacity.
  */
 import { inMemoryDomainState } from "./domainState.js";
+import { defaultClinicTimezone, nowIso } from "./fixtureIds.js";
 import { clinicProfile, defaultClinicScheduleDefaults, defaultStaffWorkingHours, normalizeClinicScheduleDefaults, clockToMinutes } from "./organizations.js";
 import { normalizeStaffWorkingHours } from "./staff.js";
 
 import type {
 	Appointment,
+	Chair,
+	ClinicProfile,
 	ClinicScheduleDefaults,
+	Patient,
 	StaffMember,
 	StaffWorkingHours,
 } from "@dental/shared";
+import type { DomainState } from "../types/domainState.js";
 import { appointments } from "./appointments.js";
 
 const appointmentTimeFormatters = new Map<string, Intl.DateTimeFormat>();
@@ -58,7 +63,7 @@ function clinicTodayIso(timeZone: string = clinicProfile.timezone): string {
 	return new Date().toISOString().slice(0, 10);
 }
 
-function assertValidScheduleTimeZone(value: string): void {
+export function assertValidScheduleTimeZone(value: string): void {
 	try {
 		getAppointmentTimeFormatter(value);
 	} catch {

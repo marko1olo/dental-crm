@@ -6,6 +6,7 @@
  */
 
 import React from "react";
+import { createPortal } from "react-dom";
 import { Check, Trash2, X } from "lucide-react";
 import {
 	type CabinetDefinition,
@@ -48,20 +49,26 @@ export function DoctorShiftDrawer({
 	onSaveShift,
 	onDeleteShift,
 }: DoctorShiftDrawerProps) {
+	React.useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				onClose();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [onClose]);
+
 	if (!editingShift) return null;
 
 	const staffList =
-		propStaffList !== undefined
+		propStaffList && propStaffList.length > 0
 			? propStaffList
-			: isDemoShowcaseMode()
-				? DEFAULT_CLINIC_STAFF
-				: [];
+			: DEFAULT_CLINIC_STAFF;
 	const cabinets =
-		propCabinets !== undefined
+		propCabinets && propCabinets.length > 0
 			? propCabinets
-			: isDemoShowcaseMode()
-				? CLINIC_CABINETS_CATALOG
-				: [];
+			: CLINIC_CABINETS_CATALOG;
 
 	const handleSave = () => {
 		const effectiveDoc =
@@ -145,10 +152,14 @@ export function DoctorShiftDrawer({
 		onSaveShift(finalizedShift, isNewShift);
 	};
 
-	return (
+	const drawerNode = (
 		<div
 			className="roster-drawer-overlay"
 			onClick={onClose}
+			data-testid="doctor-shift-drawer-overlay"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Шторка назначения смены врача"
 		>
 			<div
 				className="roster-drawer-panel"
@@ -419,4 +430,9 @@ export function DoctorShiftDrawer({
 			</div>
 		</div>
 	);
+
+	if (typeof document !== "undefined" && document.body) {
+		return createPortal(drawerNode, document.body);
+	}
+	return drawerNode;
 }

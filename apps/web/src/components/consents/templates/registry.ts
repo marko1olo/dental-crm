@@ -59,8 +59,8 @@ export const CONSENT_PACKAGES: Record<ConsentPackageKey, ConsentPackageDefinitio
 	PACKAGE_PRIMARY_VISIT: {
 		key: "PACKAGE_PRIMARY_VISIT",
 		code: "ПАКЕТ-ПЕРВИЧНЫЙ",
-		title: "Первичный комплекс ИДС (323-ФЗ)",
-		shortTitle: "Первичный комплекс ИДС (323-ФЗ)",
+		title: "Первичный комплекс ИДС",
+		shortTitle: "Первичный комплекс ИДС",
 		subtitle: "Персональные данные + Осмотр и диагностика + Местная анестезия + Терапия",
 		templateKeys: [
 			"CONSENT_PERSONAL_DATA",
@@ -118,7 +118,7 @@ export function getConsentPackage(key: ConsentPackageKey): ConsentPackageDefinit
 
 /**
  * Получить список всех шаблонов в каталоге.
- * @param includeExtended Если true — возвращает все 16 шаблонов (включая правовые регламенты StomX).
+ * @param includeExtended Если true — возвращает все 16 шаблонов (включая расширенные регламенты).
  * По умолчанию false для строгой обратной совместимости с тестами 9 базовых статутных согласий.
  */
 export function getAllConsentTemplates(includeExtended = false): ConsentTemplate[] {
@@ -157,9 +157,9 @@ export function getConsentTemplate(key: ConsentTemplateKey): ConsentTemplate {
 }
 
 export const PACKAGE_SHORT_TITLES: Record<ConsentPackageKey, string> = {
-	PACKAGE_PRIMARY_VISIT: "Первичный комплекс ИДС (323-ФЗ)",
-	PACKAGE_SURGERY: "Хирургический комплекс ИДС",
-	PACKAGE_ORTHOPEDICS: "Ортопедический комплекс ИДС",
+	PACKAGE_PRIMARY_VISIT: "Первичный комплекс ИДС",
+	PACKAGE_SURGERY: "Хирургический комплекс",
+	PACKAGE_ORTHOPEDICS: "Ортопедический комплекс",
 };
 
 export const TEMPLATE_SHORT_TITLES: Record<ConsentTemplateKey, string> = {
@@ -177,7 +177,7 @@ export const TEMPLATE_SHORT_TITLES: Record<ConsentTemplateKey, string> = {
 	CONSENT_WARRANTY_PASSPORT: "Гарантийный паспорт",
 	CONSENT_WARRANTY_POLICY: "Положение о гарантиях",
 	CONSENT_SEDATION: "Седация (ЗАКС / в/в)",
-	CONSENT_PHOTOPROTOCOL: "Фотопротокол (152-ФЗ)",
+	CONSENT_PHOTOPROTOCOL: "Фотопротокол лечения",
 	CONSENT_HEALTH_QUESTIONNAIRE: "Анкета здоровья (анамнез)",
 };
 

@@ -2,6 +2,7 @@ import type {
 	DenteTelegramOutboxSendDueResponse,
 } from "@dental/shared";
 import {
+	denteTelegramOutboxSendResponseSchema,
 	denteTelegramOutboxSendDueResponseSchema,
 } from "@dental/shared";
 import type { DomainState } from "../../services/telegram/telegramLegacyMemoryStore.js";
@@ -15,15 +16,18 @@ import {
 import {
 	executeTelegramOutboxSend,
 	isDenteTelegramOutboxItemDue,
+	telegramOutboxScheduleState,
+	telegramOutboxScheduleUnreadableWarning,
 } from "./telegramOutboxDelivery.js";
 import {
 	resolveTelegramOutboxRuntimeScopeFromQuery,
 } from "./telegramRuntimeContext.js";
-import type {
-	TelegramOutboxSendDueInput,
-	TelegramResolvedOutboxRuntime,
-	TelegramDueWorkerLogger,
-	DenteTelegramOutboxDueWorkerHandle,
+import {
+	telegramOutboxScheduleUnreadableBlockedReason,
+	type TelegramOutboxSendDueInput,
+	type TelegramResolvedOutboxRuntime,
+	type TelegramDueWorkerLogger,
+	type DenteTelegramOutboxDueWorkerHandle,
 } from "./types.js";
 
 export async function executeDenteTelegramOutboxDueBatch(
@@ -58,8 +62,9 @@ export async function executeDenteTelegramOutboxDueBatch(
 			],
 		});
 	}
+	const requestedLimit = input.limit ?? 50;
 	const outbox = buildDenteTelegramOutbox(
-		{ limit: Math.max(input.limit, 50), status: "due" },
+		{ limit: Math.max(requestedLimit, 50), status: "due" },
 		runtimeResult.runtime.runtimeScope,
 		domainState,
 	);
@@ -69,7 +74,7 @@ export async function executeDenteTelegramOutboxDueBatch(
 	);
 	const dueItems = readyItems
 		.filter((item) => isDenteTelegramOutboxItemDue(item, nowMs))
-		.slice(0, input.limit);
+		.slice(0, requestedLimit);
 	// Позиция с нечитаемым временем не отправляется, но и не исчезает молча: она уходит в ответ как
 	// заблокированная, поэтому попадает в blockedCount, в лог воркера и в ответ роута со статусом 409.
 	// Без этого fail-closed превратился бы в «тихо не отправляем и никому не говорим».
@@ -78,7 +83,7 @@ export async function executeDenteTelegramOutboxDueBatch(
 			(item) =>
 				telegramOutboxScheduleState(item.scheduledAt, nowMs) === "unreadable",
 		)
-		.slice(0, input.limit);
+		.slice(0, requestedLimit);
 	const unreadableResults: DenteTelegramOutboxSendDueResponse["results"] =
 		unreadableItems.map((item) => ({
 			itemId: item.id,
@@ -104,7 +109,7 @@ export async function executeDenteTelegramOutboxDueBatch(
 				const sendResult = await executeTelegramOutboxSend(
 					item.id,
 					{
-						dryRun: input.dryRun,
+						dryRun: Boolean(input.dryRun),
 						clientMutationId: input.dryRun
 							? null
 							: dueOutboxClientMutationId(item.id, item.scheduledAt),
@@ -224,11 +229,12 @@ export function startDenteTelegramOutboxDueWorker(
 		if (stopped) return;
 		timer = setTimeout(() => {
 			void runAndReschedule().catch((error: unknown) => {
-				logger?.error({ error }, "DENTE Telegram due worker tick failed");
+				logger?.error?.({ error }, "DENTE Telegram due worker tick failed");
 			});
 		}, delayMs);
-		(timer as any).unref?.();
-		(timer as any).unref?.();
+		if (timer && "unref" in timer && typeof timer.unref === "function") {
+			timer.unref();
+		}
 	};
 
 	const runAndReschedule =
@@ -236,7 +242,7 @@ export function startDenteTelegramOutboxDueWorker(
 			if (stopped) return null;
 			if (inFlight) {
 				skippedTicks += 1;
-				logger?.warn(
+				logger?.warn?.(
 					{ skippedTicks },
 					"DENTE Telegram due worker skipped overlapping tick",
 				);
@@ -250,7 +256,7 @@ export function startDenteTelegramOutboxDueWorker(
 					limit,
 				});
 				const retryDelayMs = retryAfterDelayMs(response);
-				logger?.info(
+				logger?.info?.(
 					{
 						attemptedCount: response.attemptedCount,
 						sentCount: response.sentCount,
@@ -264,7 +270,7 @@ export function startDenteTelegramOutboxDueWorker(
 				schedule(retryDelayMs ?? intervalMs);
 				return response;
 			} catch (error) {
-				logger?.error({ error }, "DENTE Telegram due worker tick failed");
+				logger?.error?.({ error }, "DENTE Telegram due worker tick failed");
 				schedule(intervalMs);
 				throw error;
 			} finally {
@@ -281,7 +287,7 @@ export function startDenteTelegramOutboxDueWorker(
 		},
 		runOnce: runAndReschedule,
 	};
-	logger?.info(
+	logger?.info?.(
 		{ intervalMs, limit, dryRun, runOnStart },
 		"DENTE Telegram due worker enabled",
 	);

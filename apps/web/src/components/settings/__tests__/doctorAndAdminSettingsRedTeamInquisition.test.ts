@@ -46,12 +46,20 @@ describe("Doctor & Admin Settings Red Team Inquisition", () => {
 	const settingsDir = path.resolve(__dirname, "..");
 
 	const filesToCheck = [
+		"DelimitedTileCard.tsx",
+		"DoctorSettingsSection.tsx",
+		"AdminSettingsSection.tsx",
+		"SettingsProfileTab.tsx",
+		"SettingsProfileYandexSection.tsx",
+		"SettingsStaffTab.tsx",
+		"ScaleSovereigntyPresetsBar.tsx",
 		"DoctorClinicalPreferencesSection.tsx",
 		"doctor/diaryTemplateTags.ts",
 		"doctor/DoctorAnesthesiaDefaultsSection.tsx",
 		"doctor/DoctorAnesthesiaToxicityCalculator.tsx",
 		"doctor/DoctorForm043TemplatesSection.tsx",
 		"doctor/DoctorPrescriptions107Section.tsx",
+		"doctor/DoctorSpecialtyPresetsCard.tsx",
 		"doctor/index.ts",
 		"owner/OwnerPriceList804nSection.tsx",
 		"owner/DoctorPieceRateCalculatorSection.tsx",
@@ -401,4 +409,64 @@ describe("Doctor & Admin Settings Red Team Inquisition", () => {
 			assert.equal(parseRublesToKopecks(0), 0);
 		});
 	});
+
+	describe("9. Стандарт Delimited Tile Cards, запрет полых карточек и призрачных плашек (Разделы 17.5 и 17.6)", () => {
+		it("DelimitedTileCard содержит непрозрачную основу var(--paper-card), границу var(--line), микротень и iOS-тумблер w-9 h-5", () => {
+			const tileContent = fs.readFileSync(
+				path.join(settingsDir, "DelimitedTileCard.tsx"),
+				"utf-8",
+			);
+			assert.ok(tileContent.includes("bg-[var(--paper-card)]"));
+			assert.ok(tileContent.includes("border-[var(--line)]"));
+			assert.ok(tileContent.includes("shadow-[0_1px_3px_rgba(0,0,0,0.06)]"));
+			assert.ok(tileContent.includes("w-9 h-5"));
+			assert.ok(tileContent.includes("translate-x-4"));
+			assert.equal(tileContent.includes("bg-slate-"), false);
+		});
+
+		it("DoctorSettingsSection и AdminSettingsSection используют канонический DelimitedTileCard без сырых slate-* тумблеров", () => {
+			const doctorContent = fs.readFileSync(
+				path.join(settingsDir, "DoctorSettingsSection.tsx"),
+				"utf-8",
+			);
+			const adminContent = fs.readFileSync(
+				path.join(settingsDir, "AdminSettingsSection.tsx"),
+				"utf-8",
+			);
+
+			assert.ok(doctorContent.includes("<DelimitedTileCard"));
+			assert.ok(adminContent.includes("<DelimitedTileCard"));
+			assert.equal(doctorContent.includes("bg-slate-300"), false);
+			assert.equal(adminContent.includes("bg-slate-300"), false);
+		});
+
+		it("SettingsStaffTab не содержит полых карточек (min-h-[140px]) и сырых bg-white / slate-* цветов", () => {
+			const staffContent = fs.readFileSync(
+				path.join(settingsDir, "SettingsStaffTab.tsx"),
+				"utf-8",
+			);
+			assert.equal(staffContent.includes("min-h-[140px]"), false);
+			assert.equal(staffContent.includes("bg-white"), false);
+			assert.equal(staffContent.includes("bg-slate-"), false);
+			assert.ok(staffContent.includes("bg-[var(--paper-card)]"));
+		});
+
+		it("DoctorClinicalPreferencesSection и ScaleSovereigntyPresetsBar не содержат призрачных плашек bg-teal-500/10 и кислотных колец ring-teal", () => {
+			const clinicalContent = fs.readFileSync(
+				path.join(settingsDir, "DoctorClinicalPreferencesSection.tsx"),
+				"utf-8",
+			);
+			const scaleContent = fs.readFileSync(
+				path.join(settingsDir, "ScaleSovereigntyPresetsBar.tsx"),
+				"utf-8",
+			);
+
+			assert.equal(clinicalContent.includes("bg-teal-500/10"), false);
+			assert.equal(clinicalContent.includes("ring-2 ring-[var(--teal)]"), false);
+			assert.equal(clinicalContent.includes("ring-1 ring-[var(--teal)]"), false);
+			assert.equal(scaleContent.includes("bg-teal-500/10"), false);
+			assert.equal(scaleContent.includes("ring-teal-500/40"), false);
+		});
+	});
 });
+

@@ -1,6 +1,6 @@
 import type React from "react";
-import type { FranklRating } from "../odontogram/pediatricDentitionEngine";
-import type { SomaticRiskProfile } from "../visit/anesthesiaCalculatorEngine";
+import type { FranklRating } from "../../odontogram/pediatricDentitionEngine";
+import type { SomaticRiskProfile } from "../../visit/anesthesiaCalculatorEngine";
 
 /**
  * Валидация номера зуба по стандарту FDI (ISO 3950):

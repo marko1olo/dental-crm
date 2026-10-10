@@ -160,7 +160,7 @@ export const DoctorCabinetHandoverCard: React.FC<DoctorCabinetHandoverCardProps>
 								lineHeight: 1.25,
 							}}
 						>
-							Передача кабинета & Стерилизация (СанПиН 3.3686-21)
+							Передача кабинета и стерилизация
 						</h3>
 						<p
 							style={{
@@ -194,18 +194,20 @@ export const DoctorCabinetHandoverCard: React.FC<DoctorCabinetHandoverCardProps>
 						onClick={handleCheckAllNorma}
 						className="secondary-button"
 						style={{
-							fontSize: "11.5px",
-							padding: "4px 10px",
-							minHeight: "30px",
+							fontSize: "12px",
+							fontWeight: 600,
+							padding: "0 10px",
+							height: "32px",
+							borderRadius: "8px",
 							display: "inline-flex",
 							alignItems: "center",
 							gap: "4px",
 						}}
-						title="Заполнить все пункты санитарного регламента нормой в 1 клик"
+						title="Отметить все пункты санитарной подготовки выполненными"
 						data-testid="btn-handover-norma-all"
 					>
 						<Check size={13} aria-hidden="true" />
-						Норма в 1 клик
+						Все в норме
 					</button>
 				</div>
 			</div>

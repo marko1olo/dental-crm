@@ -71,7 +71,7 @@ export function useSensorViewerState(props: SensorStudyViewerProps): SensorViewe
 	// Resolves persistent filmstrip studies list (guarantees non-empty patient timeline)
 	const effectiveStudiesHistory: readonly (RadiologyStudy | RadiologyFilmstripItem)[] = useMemo(() => {
 		if (studiesHistory && studiesHistory.length > 0) return studiesHistory;
-		const currentTooth = activeStudy?.teethFdi?.[0] || toothFdiCode || "14";
+		const currentTooth = activeStudy?.teethFdi?.[0] || toothFdiCode || (isDemoShowcaseMode() ? "14" : "");
 		const currentImg = activeImageUrl || "/radiology/sample_rvg_tooth16.jpg";
 		return [
 			{
@@ -79,11 +79,11 @@ export function useSensorViewerState(props: SensorStudyViewerProps): SensorViewe
 				title:
 					(activeStudy as any)?.title ||
 					(activeStudy as any)?.studyDescription ||
-					`Прицельный снимок зуба #${currentTooth}`,
+					(currentTooth ? `Прицельный снимок зуба #${currentTooth}` : "Прицельный снимок RVG"),
 				modality: "intraoral_rvg",
 				modalityLabel: "IO-СЕНСОР",
 				studyDate: activeStudy?.studyDate || "01.10.2026 10:14:20",
-				teethFdi: [currentTooth],
+				teethFdi: currentTooth ? [currentTooth] : [],
 				imageUrl: currentImg,
 				effectiveDoseMicrosv: 3.0,
 			},
@@ -546,7 +546,7 @@ export function useSensorViewerState(props: SensorStudyViewerProps): SensorViewe
 		setIsProtocolsOpen(false);
 	}, [toothFdiCode, onInsertToProtocol]);
 
-	const effectiveTooth = activeStudy?.teethFdi?.[0] || toothFdiCode || "14";
+	const effectiveTooth = activeStudy?.teethFdi?.[0] || toothFdiCode || (isDemoShowcaseMode() ? "14" : "");
 
 	// 1-Click high-resolution PNG export with calibrated 5 mm ladder & clinical stamp
 	const handleExportImage = useCallback(async () => {
@@ -566,7 +566,7 @@ export function useSensorViewerState(props: SensorStudyViewerProps): SensorViewe
 				patientName: (activeStudy as any)?.patientName || patientName,
 				patientAge,
 				patientBirthDate: (activeStudy as any)?.patientBirthDate || patientBirthDate,
-				toothFdi: effectiveTooth,
+				toothFdi: effectiveTooth || undefined,
 				modalityLabel: (activeStudy as any)?.modalityLabel || "IO-СЕНСОР",
 				studyDate: activeStudy?.studyDate,
 			});
@@ -579,12 +579,17 @@ export function useSensorViewerState(props: SensorStudyViewerProps): SensorViewe
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement("a");
 			a.href = url;
-			a.download = `RVG_Tooth${effectiveTooth}_${Date.now()}.png`;
+			a.download = effectiveTooth ? `RVG_Tooth${effectiveTooth}_${Date.now()}.png` : `RVG_Scan_${Date.now()}.png`;
 			document.body.appendChild(a);
 			a.click();
 			document.body.removeChild(a);
 			URL.revokeObjectURL(url);
-			showToast(`Снимок зуба #${effectiveTooth} с калибровочной шкалой 5 мм экспортирован`, "success");
+			showToast(
+				effectiveTooth
+					? `Снимок зуба #${effectiveTooth} с калибровочной шкалой 5 мм экспортирован`
+					: "Снимок с калибровочной шкалой 5 мм экспортирован",
+				"success"
+			);
 		} catch {
 			showToast("Ошибка при экспорте снимка", "error");
 		} finally {
@@ -598,11 +603,11 @@ export function useSensorViewerState(props: SensorStudyViewerProps): SensorViewe
 		const now = new Date();
 		const newStudy: RadiologyFilmstripItem = {
 			id: `uploaded-${Date.now()}`,
-			title: file.name.replace(/\.[^/.]+$/, "") || `Снимок зуба ${effectiveTooth}`,
+			title: file.name.replace(/\.[^/.]+$/, "") || (effectiveTooth ? `Снимок зуба ${effectiveTooth}` : "Снимок RVG"),
 			modality: "intraoral_rvg",
 			modalityLabel: "IO-СЕНСОР",
 			studyDate: now.toLocaleDateString("ru-RU"),
-			teethFdi: [effectiveTooth],
+			teethFdi: effectiveTooth ? [effectiveTooth] : [],
 			imageUrl: objectUrl,
 			thumbnailUrl: objectUrl,
 		};

@@ -869,11 +869,14 @@ test("Omni-Platform Adaptor & Multi-Environment Invariants Suite", async (t) => 
 			"3D CBCT studio must be lazy loaded via lazyWithRetry to prevent loading on Schedule/Patients views",
 		);
 
-		// Verify App.tsx lazy-loads ImagingView
+		// Verify App.tsx or AppViewRouter lazy-loads ImagingView
 		const appSource = fs.readFileSync("C:/Clinic_MVP/dental-crm/apps/web/src/App.tsx", "utf-8");
+		const routerPath = "C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/AppViewRouter.tsx";
+		const routerSource = fs.existsSync(routerPath) ? fs.readFileSync(routerPath, "utf-8") : "";
 		assert.ok(
 			appSource.includes("lazyWithRetry(() => import(\"./ImagingView\"))") ||
-				appSource.includes("import(\"./ImagingView\")"),
+				appSource.includes("import(\"./ImagingView\")") ||
+				routerSource.includes("import(\"../../ImagingView\")"),
 			"ImagingView must be lazy loaded to isolate heavy DICOM/3D modules from Hot Path",
 		);
 	});

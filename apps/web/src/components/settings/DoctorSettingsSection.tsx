@@ -12,9 +12,12 @@ import React, { useState, useEffect } from "react";
 import {
 	Activity,
 	Bot,
+	Camera,
 	FileText,
 	HardDrive,
+	HeartPulse,
 	Layers,
+	Mic,
 	ShieldCheck,
 	Sparkles,
 	Stethoscope,
@@ -40,6 +43,7 @@ import {
 	type DoctorSubTab,
 	type DoctorTabDefinition,
 } from "./doctorSettingsTabs";
+import { DelimitedTileCard } from "./DelimitedTileCard";
 export { DOCTOR_TABS, type DoctorSubTab, type DoctorTabDefinition };
 
 export interface DoctorSettingsSectionProps {
@@ -101,150 +105,9 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 	};
 
 	return (
-		<div className="space-y-6" data-testid="doctor-settings-section">
-			{/* Super-Header: Doctor Cockpit Banner */}
-			<div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-teal-500/10 via-cyan-500/10 to-transparent border border-teal-500/25 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
-				<div className="flex items-center gap-3 min-w-0">
-					<div className="w-12 h-12 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-md">
-						<Stethoscope size={24} />
-					</div>
-					<div className="min-w-0">
-						<div className="flex items-center gap-2 flex-wrap">
-							<h3 className="font-extrabold text-base sm:text-lg text-[var(--ink)]">
-								Кабинет врача: персональные настройки
-							</h3>
-							<span
-								className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-teal-500/15 text-teal-800 dark:text-teal-300 border border-teal-500/30 whitespace-nowrap shrink-0 select-none leading-none"
-								style={{ lineHeight: 1 }}
-								title="Персональные клинические стандарты врача (не перетираются общеклиническими настройками)"
-							>
-								<ShieldCheck size={12} className="text-teal-600 dark:text-teal-400 shrink-0" />
-								<span>Врачебная автономия</span>
-							</span>
-						</div>
-						<p className="text-xs text-[var(--muted)] mt-0.5 line-clamp-2 sm:truncate max-w-xl">
-							Персональные клинические стандарты врача: шаблоны медицинской карты, пресеты анестезии и материалы
-						</p>
-					</div>
-				</div>
-
-				{/* Quick Clinical Specialty Presets */}
-				<div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 shrink-0 self-stretch xl:self-auto">
-					<span className="text-xs font-semibold text-[var(--muted)] whitespace-nowrap hidden lg:inline">
-						Специализация:
-					</span>
-					<div className="dente-segmented-bar flex flex-wrap sm:flex-nowrap">
-						{SPECIALTY_PRESET_BUTTONS.map((spec) => {
-							const isSelected = currentSpecialty === spec.key;
-							return (
-								<button
-									key={spec.key}
-									type="button"
-									onClick={() => {
-										applySpecialtyPreset(spec.key);
-										showToast(`Пресет «${spec.label}» активирован (настройки приёма обновлены)`, "success");
-									}}
-									className={`dente-segmented-item ${isSelected ? "active" : ""}`}
-									data-active={isSelected}
-									title={`Активировать пресет рабочего места для «${spec.label}»`}
-									data-testid={`doctor-specialty-preset-banner-${spec.key}`}
-								>
-									{spec.label}
-								</button>
-							);
-						})}
-					</div>
-				</div>
-			</div>
-
-			{/* Super-Settings: 1-Click Smart Clinical Toggles (Fully Persisted) */}
-			<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3">
-				<div className="flex items-center justify-between">
-					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-						<Wand2 size={14} className="text-teal-600" />
-						Умные клинические ассистенты (включено по умолчанию):
-					</span>
-					<span className="text-[11px] text-[var(--muted)] hidden sm:inline">
-						Сохраняется мгновенно без перезагрузки
-					</span>
-				</div>
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-					<button
-						type="button"
-						onClick={() => handleToggleAssistant("autoMkb10", "МКБ-10 Автоподбор")}
-						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
-							autoMkb10
-								? "bg-teal-500/10 border-teal-500/40 text-[var(--ink)]"
-								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70"
-						}`}
-					>
-						<div className="flex items-center justify-between">
-							<span className="font-bold text-xs">МКБ-10 Автоподбор</span>
-							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${autoMkb10 ? "bg-teal-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
-								{autoMkb10 ? "ВКЛ" : "ВЫКЛ"}
-							</span>
-						</div>
-						<span className="text-[11px] text-[var(--muted)] mt-1">Автоподстановка диагноза</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => handleToggleAssistant("somaticWarnings", "Соматические алерты")}
-						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
-							somaticWarnings
-								? "bg-emerald-500/10 border-emerald-500/40 text-[var(--ink)]"
-								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70"
-						}`}
-					>
-						<div className="flex items-center justify-between">
-							<span className="font-bold text-xs">Соматические алерты</span>
-							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${somaticWarnings ? "bg-emerald-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
-								{somaticWarnings ? "ВКЛ" : "ВЫКЛ"}
-							</span>
-						</div>
-						<span className="text-[11px] text-[var(--muted)] mt-1">Аллергии и противопоказания</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => handleToggleAssistant("instantPhotoProtocol", "Быстрый фотопротокол")}
-						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
-							instantPhotoProtocol
-								? "bg-cyan-500/10 border-cyan-500/40 text-[var(--ink)]"
-								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70"
-						}`}
-					>
-						<div className="flex items-center justify-between">
-							<span className="font-bold text-xs">Быстрый фотопротокол</span>
-							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${instantPhotoProtocol ? "bg-cyan-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
-								{instantPhotoProtocol ? "ВКЛ" : "ВЫКЛ"}
-							</span>
-						</div>
-						<span className="text-[11px] text-[var(--muted)] mt-1">Захват снимков с SD/SMB</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => handleToggleAssistant("voiceDictationActive", "Голосовая диктовка")}
-						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
-							voiceDictationActive
-								? "bg-purple-500/10 border-purple-500/40 text-[var(--ink)]"
-								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70"
-						}`}
-					>
-						<div className="flex items-center justify-between">
-							<span className="font-bold text-xs">Голосовая диктовка</span>
-							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${voiceDictationActive ? "bg-purple-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
-								{voiceDictationActive ? "ВКЛ" : "ВЫКЛ"}
-							</span>
-						</div>
-						<span className="text-[11px] text-[var(--muted)] mt-1">Заполнение дневника голосом</span>
-					</button>
-				</div>
-			</div>
-
+		<div className="space-y-4" data-testid="doctor-settings-section">
 			{/* Sub-Navigation Strip (Desktop 32px, Radius 8px) */}
-			<div className="settings-subnav-strip" role="tablist" aria-label="Разделы настроек врача">
+			<div className="settings-subnav-strip overflow-x-auto pb-2 border-b border-[var(--line)]" role="tablist" aria-label="Разделы настроек врача">
 				{DOCTOR_TABS.map((tab) => {
 					const Icon = tab.icon;
 					const isSelected = activeSubTab === tab.id;
@@ -265,6 +128,82 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 					);
 				})}
 			</div>
+
+			{/* When on Profile tab: Show Smart Clinical Assistants as a quiet, dense Apple Grouped Card */}
+			{activeSubTab === "profile" && (
+				<div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3.5 space-y-2.5 shadow-xs">
+					<div className="flex flex-wrap items-center justify-between gap-2">
+						<div className="flex items-center gap-2">
+							<Wand2 size={14} className="text-[var(--teal)]" />
+							<h4 className="text-xs font-bold text-[var(--ink)] m-0">
+								Клинические ассистенты приёма
+							</h4>
+						</div>
+						<div className="flex items-center gap-3">
+							<span className="text-[11px] text-[var(--muted)] hidden md:inline">
+								Сохраняется мгновенно без перезагрузки
+							</span>
+							<div className="flex items-center gap-1.5 shrink-0">
+								<span className="text-[11px] font-medium text-[var(--muted)] whitespace-nowrap">
+									Профиль:
+								</span>
+								<select
+									value={currentSpecialty}
+									onChange={(e) => {
+										const val = e.target.value as DoctorSpecialtyKey;
+										applySpecialtyPreset(val);
+										const label = SPECIALTY_PRESET_BUTTONS.find((b) => b.key === val)?.label || val;
+										showToast(`Пресет «${label}» активирован`, "success");
+									}}
+									className="h-7 text-xs px-2.5 py-0 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] font-medium cursor-pointer focus:outline-none focus:border-[var(--teal)] transition-colors"
+									data-testid="doctor-specialty-preset-select"
+								>
+									{SPECIALTY_PRESET_BUTTONS.map((spec) => (
+										<option key={spec.key} value={spec.key}>
+											{spec.label}
+										</option>
+									))}
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+						<DelimitedTileCard
+							icon={FileText}
+							title="МКБ-10 Автоподбор"
+							description="Подстановка диагноза"
+							checked={autoMkb10}
+							onChange={() => handleToggleAssistant("autoMkb10", "МКБ-10 Автоподбор")}
+							testId="doctor-assistant-toggle-autoMkb10"
+						/>
+						<DelimitedTileCard
+							icon={HeartPulse}
+							title="Соматические алерты"
+							description="Аллергии и стоп-факторы"
+							checked={somaticWarnings}
+							onChange={() => handleToggleAssistant("somaticWarnings", "Соматические алерты")}
+							testId="doctor-assistant-toggle-somaticWarnings"
+						/>
+						<DelimitedTileCard
+							icon={Camera}
+							title="Быстрый фотопротокол"
+							description="Захват снимков SD/SMB"
+							checked={instantPhotoProtocol}
+							onChange={() => handleToggleAssistant("instantPhotoProtocol", "Быстрый фотопротокол")}
+							testId="doctor-assistant-toggle-instantPhotoProtocol"
+						/>
+						<DelimitedTileCard
+							icon={Mic}
+							title="Голосовая диктовка"
+							description="Заполнение карты голосом"
+							checked={voiceDictationActive}
+							onChange={() => handleToggleAssistant("voiceDictationActive", "Голосовая диктовка")}
+							testId="doctor-assistant-toggle-voiceDictationActive"
+						/>
+					</div>
+				</div>
+			)}
 
 			{/* Sub-Tab Content Rendering */}
 			<div className="pt-2">

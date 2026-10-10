@@ -13,24 +13,13 @@
 
 import type React from "react";
 import { useMemo, useState } from "react";
-import {
-	Check,
-	CheckCircle2,
-	Clock,
-	CreditCard,
-	Printer,
-	Sparkles,
-	Wallet,
-	X,
-} from "lucide-react";
+import { Check, CheckCircle2, Clock, CreditCard, Printer, Sparkles, Wallet, X } from "lucide-react";
 import {
 	DEFAULT_TREATMENT_PLAN_PRESETS,
-	type ComprehensivePlanVariant,
-	type PlanTierCode,
+	type ComprehensivePlanVariant, type PlanTierCode,
 } from "./planPresentationPresets";
-import {
-	generatePaymentSchedules,
-} from "./planComparatorEngine";
+import { generatePaymentSchedules } from "./planComparatorEngine";
+import { isDemoShowcaseMode } from "../../../utils/demoModeEngine";
 if (typeof document !== "undefined") {
 	void import("./planComparator.css");
 }

@@ -1,3 +1,4 @@
+import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 import { and, desc, eq, gte, lte, type SQL, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { communicationCampaigns } from "../../db/communicationsSchema.js";
@@ -12,10 +13,53 @@ import { resolveCommunicationSettings } from "../../services/communications/disp
 import { type OutboxQuery, parseVariables } from "./types.js";
 
 export async function fetchTemplateList(organizationId: string) {
-	const rows = await db
+	let rows = await db
 		.select()
 		.from(communicationTemplates)
 		.where(eq(communicationTemplates.organizationId, organizationId));
+
+	if (organizationId === DEMO_SHOWCASE_ORG_ID && rows.length === 0) {
+		try {
+			await db.insert(communicationTemplates).values([
+				{
+					organizationId,
+					title: "Подтверждение приёма (WhatsApp)",
+					channel: "whatsapp",
+					intent: "appointment_confirmation",
+					audienceRole: "patient",
+					body: "Здравствуйте, {patient_name}! Напоминаем о записи в клинику {clinic_name} {appointment_date} в {appointment_time}. Пожалуйста, подтвердите визит.",
+					variablesJson: JSON.stringify(["patient_name", "clinic_name", "appointment_date", "appointment_time"]),
+					isActive: true,
+				},
+				{
+					organizationId,
+					title: "Рекомендации после лечения (Telegram)",
+					channel: "telegram",
+					intent: "post_visit_instruction",
+					audienceRole: "patient",
+					body: "Здравствуйте, {patient_name}! Благодарим за визит в {clinic_name}. Соблюдайте рекомендации лечащего врача. При вопросах звоните: {clinic_phone}.",
+					variablesJson: JSON.stringify(["patient_name", "clinic_name", "clinic_phone"]),
+					isActive: true,
+				},
+				{
+					organizationId,
+					title: "Приглашение на профосмотр (SMS)",
+					channel: "sms",
+					intent: "recall",
+					audienceRole: "patient",
+					body: "{patient_name}, прошло 6 мес. с вашего осмотра в {clinic_name}. Запишитесь на плановую профгигиену: {clinic_phone}",
+					variablesJson: JSON.stringify(["patient_name", "clinic_name", "clinic_phone"]),
+					isActive: true,
+				},
+			]);
+			rows = await db
+				.select()
+				.from(communicationTemplates)
+				.where(eq(communicationTemplates.organizationId, organizationId));
+		} catch {
+			// safe fallback
+		}
+	}
 
 	return rows.map((row) => ({
 		id: row.id,

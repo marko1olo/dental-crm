@@ -154,7 +154,7 @@ export function DentalLabShadeSelector({
 							</span>
 						</span>
 						<span className="text-xs text-slate-500 dark:text-slate-400">
-							Клиническая шкала оттенков с образцами цвета (1 клик для выбора)
+							Клиническая шкала оттенков с образцами цвета
 						</span>
 					</div>
 					{SHADE_SWATCH_MAP[currentPrimaryShade] && (

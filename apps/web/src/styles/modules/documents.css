@@ -24,6 +24,33 @@
 	color: var(--ink);
 }
 
+/* =============================================================================
+   RESPONSIVE LAYOUT SWITCH: MOBILE HUB VS DESKTOP EXPERIENCE
+   ============================================================================= */
+@media (max-width: 767px) {
+	.documents-panel .mobile-documents-hub-wrapper,
+	.documents-panel > .md\:hidden {
+		display: block !important;
+	}
+	.documents-panel .desktop-documents-experience,
+	.documents-panel > .md\:block,
+	.documents-panel > .hidden.md\:block {
+		display: none !important;
+	}
+}
+
+@media (min-width: 768px) {
+	.documents-panel .mobile-documents-hub-wrapper,
+	.documents-panel > .md\:hidden {
+		display: none !important;
+	}
+	.documents-panel .desktop-documents-experience,
+	.documents-panel > .md\:block,
+	.documents-panel > .hidden.md\:block {
+		display: block !important;
+	}
+}
+
 .documents-panel .panel-heading {
 	display: flex;
 	align-items: center;
@@ -206,21 +233,16 @@
 }
 
 .document-primary-intake-btn-group {
-	display: grid !important;
-	grid-template-columns: 1fr !important;
+	display: flex !important;
+	flex-wrap: wrap !important;
+	align-items: center !important;
 	gap: 8px !important;
 }
 
-@media (min-width: 640px) {
-	.document-primary-intake-btn-group {
-		grid-template-columns: 1.3fr 1.3fr 1fr !important;
-		gap: 8px !important;
-	}
-}
-
 .document-intake-quick-print-btn {
-	height: 34px !important;
-	min-height: 34px !important;
+	width: auto !important;
+	height: 32px !important;
+	min-height: 32px !important;
 	padding: 0 12px !important;
 	border-radius: 8px !important;
 	background: var(--teal) !important;
@@ -246,9 +268,10 @@
 }
 
 .document-intake-blank-contract-btn,
-.document-intake-open-modal-btn {
-	height: 34px !important;
-	min-height: 34px !important;
+.document-intake-open-modal-btn,
+.document-intake-a4-preview-btn {
+	height: 32px !important;
+	min-height: 32px !important;
 	padding: 0 12px !important;
 	border-radius: 8px !important;
 	background: var(--paper) !important;
@@ -266,7 +289,8 @@
 }
 
 .document-intake-blank-contract-btn:hover,
-.document-intake-open-modal-btn:hover {
+.document-intake-open-modal-btn:hover,
+.document-intake-a4-preview-btn:hover {
 	border-color: var(--teal) !important;
 	background: var(--teal-surface) !important;
 	color: var(--ink) !important;
@@ -352,11 +376,12 @@
 
 .document-scenario-card {
 	display: flex !important;
+	flex-direction: row !important;
 	align-items: center !important;
 	justify-content: space-between !important;
 	gap: 8px !important;
-	height: 34px !important;
-	min-height: 34px !important;
+	height: 38px !important;
+	min-height: 38px !important;
 	padding: 0 10px !important;
 	background: var(--paper-soft) !important;
 	border: 1px solid var(--line) !important;

@@ -7,6 +7,89 @@ import {
 } from "./ToothChart";
 import type { PanelSubject } from "../../lib/panelStateText";
 import { DEMO_SHOWCASE_TEETH } from "../treatment-plans/treatmentPlanStagesEngine";
+import {
+	CLINICAL_SERVICE_BUNDLES,
+	type ClinicalServiceBundle,
+} from "../visit/clinicalServiceBundles";
+import {
+	generateSoapFromOdontogramFinding,
+	generateSoapFromOdontogramStates,
+} from "../../lib/clinicalProtocols043";
+
+export function getClinicalBundleForToothState(
+	state: ToothState,
+): ClinicalServiceBundle | null {
+	if (state === "Caries") {
+		return CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "caries") ?? null;
+	}
+	if (state === "Pulpitis" || state === "Periodontitis") {
+		return CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "endo_1") ?? null;
+	}
+	if (state === "Missing") {
+		return (
+			CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "surgery_extraction") ?? null
+		);
+	}
+	return null;
+}
+
+export function dispatchOdontogramSoapAndBundle(params: {
+	targets: number[];
+	state: ToothState;
+	findings: Array<{ toothNumber: number; state: ToothState; surfaces?: readonly string[] }>;
+	patientId: string;
+}): void {
+	const { targets, state, findings, patientId } = params;
+	if (findings.length === 0) return;
+	try {
+		const soap =
+			findings.length > 1
+				? generateSoapFromOdontogramStates(findings)
+				: generateSoapFromOdontogramFinding(findings[0]!);
+		window.dispatchEvent(
+			new CustomEvent("dente-apply-soap-protocol", {
+				detail: {
+					finding: findings[0],
+					soap,
+					mode: "smart_append",
+					immediate: true,
+				},
+			}),
+		);
+
+		const bundle = getClinicalBundleForToothState(state);
+		if (bundle) {
+			targets.forEach((tNum) => {
+				window.dispatchEvent(
+					new CustomEvent("dente-add-services-to-invoice", {
+						detail: {
+							bundleId: bundle.id,
+							bundleTitle: bundle.title,
+							toothNumber: tNum,
+							toothCode: String(tNum),
+							patientId,
+							source: "odontogram_bundle",
+							services: bundle.services.map((s, idx) => ({
+								id: `srv_${patientId || "pat"}_tooth_${tNum}_${bundle.id}_${s.code804n}_${idx}`,
+								code: s.code804n,
+								code804n: s.code804n,
+								title: s.title,
+								price: s.priceRub,
+								priceRub: s.priceRub,
+								unitPriceRub: s.priceRub,
+								quantity: 1,
+								toothCode: String(tNum),
+								toothNumber: tNum,
+							})),
+						},
+					}),
+				);
+			});
+		}
+	} catch {
+		// Safe event dispatch fallback
+	}
+}
 
 /**
  * Состояния зуба, доступные врачу в контекстном меню.

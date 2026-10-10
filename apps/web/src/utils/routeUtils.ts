@@ -4,6 +4,7 @@ export const appViews = [
 	"shift",
 	"schedule",
 	"patients",
+	"pipeline",
 	"imaging",
 	"visit",
 	"documents",
@@ -24,6 +25,7 @@ export const viewLabels: Record<AppView, string> = {
 	shift: "Смена",
 	schedule: "Записи",
 	patients: "Пациенты",
+	pipeline: "Планы лечения",
 	imaging: "Снимки",
 	visit: "Прием",
 	documents: "Документы",
@@ -42,6 +44,7 @@ export const viewHints: Record<AppView, string> = {
 	shift: "что делать сейчас",
 	schedule: "очередь, врачи и кресла",
 	patients: "карточки и контакты",
+	pipeline: "воронка планов лечения координатора",
 	imaging: "рентген, КЛКТ и КТ",
 	visit: "прием и диктовка",
 	documents: "договоры и справки",
@@ -62,6 +65,7 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 			"shift",
 			"schedule",
 			"patients",
+			"pipeline",
 			"imaging",
 			"visit",
 			"documents",
@@ -89,6 +93,7 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 		return [
 			"schedule",
 			"patients",
+			"pipeline",
 			"documents",
 			"finance",
 			"analytics",
@@ -103,6 +108,7 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 		return [
 			"schedule",
 			"patients",
+			"pipeline",
 			"finance",
 			"analytics",
 			"communications",
@@ -153,6 +159,7 @@ export function viewFromHash(): AppView {
 	const hash = window.location.hash.replace(/^#\/?/, "");
 	const parts = hash.split("/").filter(Boolean);
 	const view = parts[0]?.toLowerCase() ?? "";
+	if (view === "visits") return "visit";
 	if (view === "sanpin") return "scanner";
 	if (view === "cmo") return "analytics";
 	if (view === "telephony") return "communications";

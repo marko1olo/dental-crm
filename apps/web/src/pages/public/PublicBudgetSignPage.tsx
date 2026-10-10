@@ -9,11 +9,10 @@ import {
 	Lock,
 	Phone,
 	Printer,
-	RotateCcw,
 	ShieldAlert,
 	ShieldCheck,
-	Sparkles,
 } from "lucide-react";
+import { PublicBudgetSignaturePad } from "./PublicBudgetSignaturePad";
 
 export interface BudgetItem {
 	id?: string; title: string; toothNumber?: number | null; quantity?: number;
@@ -104,14 +103,10 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 	const [isVerifying, setIsVerifying] = useState<boolean>(false);
 	const [verifyError, setVerifyError] = useState<string | null>(null);
 
-	// Canvas Signature state
-	const canvasRef = useRef<HTMLCanvasElement | null>(null);
-	const [isDrawing, setIsDrawing] = useState<boolean>(false);
-	const [hasStrokes, setHasStrokes] = useState<boolean>(false);
+	// Signature Submission state
 	const [signerName, setSignerName] = useState<string>("");
 	const [isSubmittingSign, setIsSubmittingSign] = useState<boolean>(false);
 	const [signError, setSignError] = useState<string | null>(null);
-	const [agreedToTerms, setAgreedToTerms] = useState<boolean>(true);
 
 	const fetchBudget = useCallback(
 		async (targetToken: string, sToken?: string) => {
@@ -176,101 +171,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 		}
 	}, [token, fetchBudget]);
 
-	// Setup Retina canvas resolution
-	const setupCanvas = useCallback(() => {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
 
-		const rect = canvas.getBoundingClientRect();
-		const effectiveWidth = rect.width > 0 ? rect.width : 360;
-		const effectiveHeight = rect.height > 0 ? rect.height : 150;
-		const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-
-		canvas.width = effectiveWidth * dpr;
-		canvas.height = effectiveHeight * dpr;
-
-		const ctx = canvas.getContext("2d");
-		if (ctx) {
-			ctx.scale(dpr, dpr);
-			ctx.lineCap = "round";
-			ctx.lineJoin = "round";
-			ctx.lineWidth = 2.5;
-			const isDark =
-				document.documentElement.classList.contains("dark") ||
-				(typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-			ctx.strokeStyle = isDark ? "#38bdf8" : "#0f172a"; // Crisp neon cyan in dark mode, deep clinical dark navy ink in light mode
-		}
-	}, []);
-
-	useEffect(() => {
-		if (budget?.isVerified && budget?.status !== "accepted") {
-			const timer = setTimeout(setupCanvas, 100);
-			return () => clearTimeout(timer);
-		}
-	}, [budget?.isVerified, budget?.status, setupCanvas]);
-
-	// Canvas drawing handlers (mouse & touch)
-	const getCanvasCoords = (e: React.MouseEvent | React.TouchEvent) => {
-		const canvas = canvasRef.current;
-		if (!canvas) return { x: 0, y: 0 };
-		const rect = canvas.getBoundingClientRect();
-
-		if ("touches" in e) {
-			const touch = e.touches[0];
-			if (!touch) return { x: 0, y: 0 };
-			return {
-				x: touch.clientX - rect.left,
-				y: touch.clientY - rect.top,
-			};
-		}
-		return {
-			x: e.clientX - rect.left,
-			y: e.clientY - rect.top,
-		};
-	};
-
-	const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
-		if ("touches" in e) {
-			e.preventDefault();
-		}
-		const { x, y } = getCanvasCoords(e);
-		const ctx = canvasRef.current?.getContext("2d");
-		if (!ctx) return;
-
-		ctx.beginPath();
-		ctx.moveTo(x, y);
-		setIsDrawing(true);
-		setHasStrokes(true);
-		setSignError(null);
-	};
-
-	const draw = (e: React.MouseEvent | React.TouchEvent) => {
-		if (!isDrawing) return;
-		if ("touches" in e) {
-			e.preventDefault();
-		}
-		const { x, y } = getCanvasCoords(e);
-		const ctx = canvasRef.current?.getContext("2d");
-		if (!ctx) return;
-
-		ctx.lineTo(x, y);
-		ctx.stroke();
-	};
-
-	const stopDrawing = () => {
-		setIsDrawing(false);
-	};
-
-	const clearCanvas = () => {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		setupCanvas();
-		setHasStrokes(false);
-		setSignError(null);
-	};
 
 	// Verification submission
 	const handleVerifySubmit = async (e: React.FormEvent) => {
@@ -326,29 +227,13 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 	};
 
 	// Digital signature submission
-	const handleSignSubmit = async () => {
+	const handleSignSubmit = async (data: { signaturePng: string; signerName: string }) => {
 		if (!token) return;
-		if (!hasStrokes || !canvasRef.current) {
-			setSignError("Пожалуйста, распишитесь в поле выше пальцем или стилусом.");
-			return;
-		}
-
-		if (!signerName.trim()) {
-			setSignError("Пожалуйста, укажите имя или фамилию подписывающего лица.");
-			return;
-		}
-
-		if (!agreedToTerms) {
-			setSignError("Необходимо подтвердить ознакомление с планом лечения и сметой.");
-			return;
-		}
 
 		setIsSubmittingSign(true);
 		setSignError(null);
 
 		try {
-			const signaturePng = canvasRef.current.toDataURL("image/png");
-
 			const headers: Record<string, string> = {
 				"Content-Type": "application/json",
 			};
@@ -360,8 +245,8 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 				method: "POST",
 				headers,
 				body: JSON.stringify({
-					signaturePng,
-					signerName: signerName.trim(),
+					signaturePng: data.signaturePng,
+					signerName: data.signerName,
 				}),
 			});
 
@@ -370,16 +255,16 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 					method: "POST",
 					headers,
 					body: JSON.stringify({
-						signaturePng,
-						signerName: signerName.trim(),
+						signaturePng: data.signaturePng,
+						signerName: data.signerName,
 					}),
 				});
 			}
 
-			const data = await res.json().catch(() => ({}));
+			const resJson = await res.json().catch(() => ({}));
 
 			if (!res.ok) {
-				setSignError(data.message || "Ошибка при сохранении цифровой подписи.");
+				setSignError(resJson.message || "Ошибка при сохранении цифровой подписи.");
 				return;
 			}
 
@@ -602,7 +487,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 													{it.toothNumber ? (
 														<span className="px-1.5 py-0.5 rounded bg-cyan-50 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 font-mono text-[11px] font-medium border border-cyan-200 dark:border-cyan-800/60">Зуб {it.toothNumber}</span>
 													) : (
-														<span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[11px]">Комплекс</span>
+														<span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 text-[11px] font-medium">Комплекс</span>
 													)}
 													<span className="text-xs font-medium text-slate-800 dark:text-slate-200">{formatProcedureTitle(it.title)}</span>
 												</div>
@@ -643,93 +528,12 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 						</div>
 
 						{/* Signature Pad Section */}
-						<div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-							<div className="flex items-center justify-between gap-3">
-								<label className="text-xs font-semibold text-slate-900 dark:text-white flex items-center gap-1.5 min-w-0">
-									<Sparkles className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
-									<span className="truncate">Подпись пациента (ПЭП)</span>
-								</label>
-								<button
-									type="button"
-									onClick={clearCanvas}
-									className="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-1 py-1 px-2.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition min-h-[36px] shrink-0"
-								>
-									<RotateCcw className="w-3.5 h-3.5" />
-									<span>Очистить</span>
-								</button>
-							</div>
-
-							<div className="relative bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl overflow-hidden touch-none h-[150px]">
-								<canvas
-									ref={canvasRef}
-									onMouseDown={startDrawing}
-									onMouseMove={draw}
-									onMouseUp={stopDrawing}
-									onMouseLeave={stopDrawing}
-									onTouchStart={startDrawing}
-									onTouchMove={draw}
-									onTouchEnd={stopDrawing}
-									className="w-full h-full cursor-crosshair block"
-								/>
-								{!hasStrokes && (
-									<div className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-400 dark:text-slate-600 text-xs font-medium">
-										Распишитесь пальцем или стилусом здесь
-									</div>
-								)}
-							</div>
-
-							{/* Signer full name */}
-							<div className="space-y-1">
-								<label htmlFor="signerNameInput" className="text-xs text-slate-600 dark:text-slate-400 block">
-									ФИО подписывающего лица:
-								</label>
-								<input
-									id="signerNameInput"
-									type="text"
-									value={signerName}
-									onChange={(e) => setSignerName(e.target.value)}
-									placeholder="Иванов И.И."
-									className="w-full text-xs py-2 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-cyan-500 transition"
-								/>
-							</div>
-
-							{/* Consent checkbox */}
-							<label className="flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-400 cursor-pointer select-none">
-								<input
-									type="checkbox"
-									checked={agreedToTerms}
-									onChange={(e) => setAgreedToTerms(e.target.checked)}
-									className="mt-0.5 rounded border-slate-300 dark:border-slate-700 text-cyan-600 focus:ring-0 bg-white dark:bg-slate-950"
-								/>
-								<span>
-									Я подтверждаю согласие с предложенным планом лечения и стоимостью (ст. 20 323-ФЗ и ПП РФ №659).
-								</span>
-							</label>
-
-							{signError && (
-								<div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs text-rose-600 dark:text-rose-300 flex items-start gap-2">
-									<AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-									<span>{signError}</span>
-								</div>
-							)}
-
-							{/* Primary CTA (Natural Thumb Zone) */}
-							<button
-								type="button"
-								onClick={handleSignSubmit}
-								disabled={isSubmittingSign || !hasStrokes}
-								className="w-full min-h-[50px] py-3.5 px-4 rounded-xl font-medium text-sm bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-lg shadow-cyan-600/20 transition flex items-center justify-center gap-2"
-							>
-								{isSubmittingSign ? (
-									<div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-								) : (
-									<>
-										<CheckCircle2 className="w-4 h-4" />
-										<span>Подписать и согласовать смету</span>
-									</>
-								)}
-							</button>
-						</div>
+						<PublicBudgetSignaturePad
+							defaultSignerName={budget.patientFirstName || "Пациент"}
+							isSubmitting={isSubmittingSign}
+							error={signError}
+							onSign={handleSignSubmit}
+						/>
 					</div>
 				)}
 

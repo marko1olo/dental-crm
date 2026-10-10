@@ -83,7 +83,7 @@ export function calculateToothNavigationTarget(
 			target: {
 				crossSectionIdx: res.crossSectionIdx,
 				positionMm: res.positionMm,
-				nearestToothFdi: res.nearestToothFdi,
+				nearestToothFdi: typeof res.nearestToothFdi === "number" ? res.nearestToothFdi : (Number.parseInt(String(res.nearestToothFdi), 10) || num),
 			},
 		};
 	}

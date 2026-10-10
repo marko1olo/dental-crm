@@ -29,6 +29,7 @@ export interface ReceiptItem {
 	readonly id?: string | undefined;
 	readonly name: string;
 	readonly code804n?: string | undefined;
+	readonly toothNumber?: number | string | undefined;
 	readonly quantity: number;
 	readonly priceRub: number;
 	readonly discountRub?: number | undefined;
@@ -63,6 +64,7 @@ export interface ReceiptPreviewProps {
 	readonly patientName?: string | undefined;
 	readonly patientPhone?: string | undefined;
 	readonly items?: readonly ReceiptItem[] | undefined;
+	readonly toothNumber?: number | string | undefined;
 	readonly totalDueRub: number;
 	readonly payments?: ReceiptPaymentDetails | undefined;
 	readonly isWarranty100?: boolean | undefined;
@@ -92,6 +94,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 	patientName = "Пациент",
 	patientPhone = "",
 	items = [],
+	toothNumber,
 	totalDueRub,
 	payments = {},
 	isWarranty100 = false,
@@ -121,13 +124,19 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 
 	// Standard line items fallback if items array is empty
 	const effectiveItems: readonly ReceiptItem[] = useMemo(() => {
-		if (items && items.length > 0) return items;
+		if (items && items.length > 0) {
+			return items.map((it) => ({
+				...it,
+				toothNumber: it.toothNumber ?? toothNumber,
+			}));
+		}
 		if (isWarranty100 || totalDueRub === 0) {
 			return [
 				{
 					id: "w100-default",
 					name: "Гарантийное обслуживание (скидка 100%)",
 					code804n: "A16.07.002",
+					toothNumber,
 					quantity: 1,
 					priceRub: 0,
 					discountRub: 0,
@@ -142,6 +151,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 				id: "service-default",
 				name: "Стоматологический прием и лечение",
 				code804n: "A16.07.002",
+				toothNumber,
 				quantity: 1,
 				priceRub: totalDueRub,
 				discountRub: 0,
@@ -150,7 +160,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 				taxDeductionCategory: "1",
 			},
 		];
-	}, [items, totalDueRub, isWarranty100]);
+	}, [items, totalDueRub, isWarranty100, toothNumber]);
 
 	// 54-FZ FNS QR Code payload: t=YYYYMMDDTHHmm&s=AMOUNT&fn=FN&i=FD&fp=FPD&n=1
 	const fnsQrSvg = useMemo(() => {
@@ -190,7 +200,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 			`Пациент: ${patientName}${patientPhone ? ` (${patientPhone})` : ""}`,
 			"----------------------------------------",
 			...effectiveItems.map(
-				(it, i) => `${i + 1}. [${it.code804n || "A16.07.002"}] ${it.name} = ${it.amountRub.toLocaleString("ru-RU")} руб. (Без НДС)`,
+				(it, i) => `${i + 1}. [${it.code804n || "A16.07.002"}] ${it.name}${it.toothNumber ? ` (Зуб ${it.toothNumber})` : ""} · ${it.quantity} шт · ${it.amountRub.toLocaleString("ru-RU")} ₽ (Без НДС)`,
 			),
 			"----------------------------------------",
 			`ИТОГО К ОПЛАТЕ: ${totalDueRub.toLocaleString("ru-RU")} руб.`,
@@ -281,27 +291,21 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 			{/* Format 1: Authentic 80mm Thermal Receipt Paper Tape */}
 			{format === "80mm" ? (
 				<div className="receipt-tape-container">
-					<div
-						className="receipt-tape-paper"
-						style={{ color: "#0f172a", backgroundColor: "#ffffff", colorScheme: "light" }}
-					>
+					<div className="receipt-tape-paper">
 						<div className="receipt-tape-tear-top" />
 
 						{/* Header */}
 						<div className="text-center space-y-1 pb-2">
-							<h3
-								className="font-extrabold text-[13px] uppercase tracking-wide text-slate-950 m-0"
-								style={{ color: "#020617" }}
-							>
+							<h3 className="font-extrabold text-[13px] uppercase tracking-wide text-slate-950 m-0">
 								{clinicLegalName}
 							</h3>
-							<p className="text-[11px] text-slate-600 m-0" style={{ color: "#475569" }}>
+							<p className="text-[11px] text-slate-600 m-0">
 								ИНН: {clinicInn} · КПП: {clinicKpp}
 							</p>
-							<p className="text-[10px] text-slate-500 m-0 leading-tight" style={{ color: "#64748b" }}>
+							<p className="text-[10px] text-slate-500 m-0 leading-tight">
 								{clinicAddress}
 							</p>
-							<p className="text-[10px] text-slate-600 m-0 font-semibold" style={{ color: "#334155" }}>
+							<p className="text-[10px] text-slate-600 m-0 font-semibold">
 								Налоговый режим: {taxationSystemName}
 							</p>
 						</div>
@@ -327,7 +331,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 							)}
 							<div className="flex justify-between text-slate-600">
 								<span>ПРИЗНАК РАСЧЕТА:</span>
-								<span className="font-semibold text-slate-950">ПОЛНЫЙ РАСЧЕТ (Тег 1214)</span>
+								<span className="font-semibold text-slate-950">ПОЛНЫЙ РАСЧЕТ</span>
 							</div>
 							<div className="flex justify-between text-slate-600">
 								<span>ДАТА И ВРЕМЯ:</span>
@@ -343,7 +347,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 							</div>
 							{patientPhone && (
 								<div className="flex justify-between text-slate-600">
-									<span>КОНТАКТ<span className="sr-only"> (Тег 1008)</span>:</span>
+									<span>КОНТАКТ:</span>
 									<span className="font-mono text-slate-950">{patientPhone}</span>
 								</div>
 							)}
@@ -360,6 +364,11 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 								<div key={item.id || idx} className="space-y-0.5 pb-1.5 border-b border-dotted border-slate-200 last:border-0 last:pb-0">
 									<div className="font-bold text-slate-900 leading-snug break-words">
 										{idx + 1}. {item.name}
+										{item.toothNumber ? (
+											<span className="ml-1 text-teal-800 dark:text-teal-900 font-bold whitespace-nowrap">
+												(Зуб {item.toothNumber})
+											</span>
+										) : null}
 									</div>
 									<div className="text-[10px] text-slate-500 font-mono">
 										Код услуги: {item.code804n || "A16.07.002"}
@@ -376,7 +385,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 									<div className="flex justify-between text-[10px] text-slate-500">
 										<span>
 											{item.vatRate === "vat_20"
-												? "НДС 20% (ст. 164 НК РФ, Тег 1199 = 1)"
+												? "НДС 20% (ст. 164 НК РФ)"
 												: "НДС: БЕЗ НДС (пп. 2 п. 2 ст. 149 НК РФ)"}
 										</span>
 										<span className="font-semibold text-teal-700">
@@ -402,7 +411,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 							<div className="space-y-1 pt-1 text-[11px] text-slate-700">
 								{(payments.cardRub ?? 0) > 0 && (
 									<div className="flex justify-between">
-										<span>БЕЗНАЛИЧНЫМИ / КАРТА (Тег 1081):</span>
+										<span>БЕЗНАЛИЧНЫМИ (КАРТА):</span>
 										<span className="font-bold text-slate-950 font-mono">
 											{(payments.cardRub ?? 0).toLocaleString("ru-RU")} ₽
 										</span>
@@ -410,7 +419,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 								)}
 								{(payments.sbpRub ?? 0) > 0 && (
 									<div className="flex justify-between">
-										<span>СБП / ПЛАТИ QR (Тег 1081):</span>
+										<span>СБП / ПЛАТИ QR:</span>
 										<span className="font-bold text-teal-800 font-mono">
 											{(payments.sbpRub ?? 0).toLocaleString("ru-RU")} ₽
 										</span>
@@ -419,7 +428,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 								{(payments.cashRub ?? 0) > 0 && (
 									<>
 										<div className="flex justify-between">
-											<span>НАЛИЧНЫМИ (Тег 1031):</span>
+											<span>НАЛИЧНЫМИ:</span>
 											<span className="font-bold text-slate-950 font-mono">
 												{(payments.cashRub ?? 0).toLocaleString("ru-RU")} ₽
 											</span>
@@ -566,7 +575,14 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 								<tr key={it.id || idx} className="border-b border-slate-200">
 									<td className="py-1 px-2 text-slate-500">{idx + 1}</td>
 									<td className="py-1 px-2 font-mono text-[10px] text-slate-600">{it.code804n || "A16.07.002"}</td>
-									<td className="py-1 px-2 font-semibold text-slate-900">{it.name}</td>
+									<td className="py-1 px-2 font-semibold text-slate-900">
+										{it.name}
+										{it.toothNumber ? (
+											<span className="ml-1 text-slate-700 font-semibold whitespace-nowrap">
+												(Зуб {it.toothNumber})
+											</span>
+										) : null}
+									</td>
 									<td className="py-1 px-2 text-right text-slate-700">{it.quantity}</td>
 									<td className="py-1 px-2 text-right font-bold text-slate-950 font-mono">{it.amountRub.toLocaleString("ru-RU")} ₽</td>
 								</tr>

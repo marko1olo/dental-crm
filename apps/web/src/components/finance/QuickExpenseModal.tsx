@@ -138,7 +138,7 @@ export const QuickExpenseModal: React.FC<QuickExpenseModalProps> = ({
 				<div className="quick-expense-header">
 					<h2 className="quick-expense-title">
 						<Receipt size={18} className="text-rose-600" />
-						Внесение расхода клиники (1 клик)
+						Внесение расхода клиники
 					</h2>
 					<button
 						type="button"

@@ -212,9 +212,9 @@ export function AppointmentModalPatientSection({
 
         {/* 1. STATE: Patient is already selected — Clean, handsome compact card */}
         {patientId && selectedPatient && !isInlineNewPatient ? (
-          <div className="p-3 sm:p-3.5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line-strong)] flex items-center justify-between gap-3 shadow-2xs">
+          <div className="px-3 py-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-strong)] flex items-center justify-between gap-3 shadow-2xs">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-[var(--teal)]/15 text-[var(--teal)] border border-[var(--teal)]/30 flex items-center justify-center font-bold text-sm shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-[var(--teal)]/15 text-[var(--teal)] border border-[var(--teal)]/30 flex items-center justify-center font-bold text-xs shrink-0">
                 {selectedPatient.fullName ? (
                   selectedPatient.fullName
                     .split(" ")
@@ -224,12 +224,12 @@ export function AppointmentModalPatientSection({
                     .join("")
                     .toUpperCase()
                 ) : (
-                  <User size={18} />
+                  <User size={16} />
                 )}
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h4 className="text-sm sm:text-base font-extrabold text-[var(--ink)] truncate leading-tight">
+                  <h4 className="m-0 text-sm sm:text-base font-extrabold text-[var(--ink)] truncate leading-tight">
                     {selectedPatient.fullName || "Пациент"}
                   </h4>
                   <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold uppercase tracking-wider shrink-0 inline-flex items-center gap-1">
@@ -237,7 +237,7 @@ export function AppointmentModalPatientSection({
                     <span>Прикреплен</span>
                   </span>
                 </div>
-                <div className="flex items-center gap-3 mt-1 text-xs text-[var(--muted)]">
+                <div className="flex items-center gap-3 mt-0.5 text-xs text-[var(--muted)]">
                   {selectedPatient.phone ? (
                     <span className="flex items-center gap-1 font-mono font-medium text-[var(--ink)]">
                       <Phone size={11} className="text-[var(--teal)]" />
@@ -257,7 +257,15 @@ export function AppointmentModalPatientSection({
                   setPatientId("");
                   setPatientSearchQuery("");
                 }}
-                className="h-8.5 px-3 rounded-xl border border-[var(--line-strong)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-bold text-[var(--ink)] flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer"
+                className="h-8 px-3 rounded-lg border border-[var(--line-strong)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-bold text-[var(--ink)] flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer"
+                style={{
+                  height: "32px",
+                  padding: "0 12px",
+                  borderRadius: "8px",
+                  border: "1px solid var(--line-strong, var(--line))",
+                  background: "var(--paper)",
+                  color: "var(--ink)",
+                }}
                 title="Сменить прикрепленного пациента"
               >
                 <User size={13} className="text-[var(--teal)]" />

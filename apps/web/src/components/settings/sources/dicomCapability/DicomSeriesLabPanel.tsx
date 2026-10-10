@@ -2,7 +2,7 @@ import { Layers3 } from "lucide-react";
 import {
 	dicomSeriesDisplayText,
 	dicomSeriesWarningText,
-} from "../SettingsViewHelpers";
+} from "../../SettingsViewHelpers.js";
 import type { DicomSeriesLabPanelProps } from "./types";
 
 export function DicomSeriesLabPanel({

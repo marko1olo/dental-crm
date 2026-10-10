@@ -79,7 +79,7 @@ describe("ICD-10 Ambulatory Clinical Selector & TOP-12 Dental Presets", () => {
 
 		// Instant top-bar section
 		assert.ok(html.includes("icd10-top12-section"), "Top-12 section container must render");
-		assert.ok(html.includes("ТОП-12 амбулаторных диагнозов (1 клик):"), "Renders clear clinical label");
+		assert.ok(html.includes("ТОП-12 амбулаторных диагнозов:"), "Renders clear clinical label");
 
 		// All 12 chips rendered with testids
 		for (const code of TOP_12_AMBULATORY_DIAGNOSES_CODES) {

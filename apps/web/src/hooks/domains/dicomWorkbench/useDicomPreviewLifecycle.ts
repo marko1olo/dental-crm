@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import type { Dashboard } from "../../../AppConstants";
+import type { Dashboard } from "@dental/shared";
 import { showToast } from "../../../components/GlobalToast";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { fetchWithHandling } from "../../../utils/networkUtils";

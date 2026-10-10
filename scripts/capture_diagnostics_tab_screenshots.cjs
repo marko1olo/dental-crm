@@ -159,10 +159,12 @@ async function waitForServer(port, timeoutMs = 60000) {
 
 async function main() {
   const primaryDir = path.resolve(__dirname, "../docs/screenshots/visit_tabs");
-  const brainDir = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/a6e95988-e8e4-4c72-89a6-8b1d0b01322f");
+  const brainDir1 = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/0ca8d7b5-da31-48f8-9cc4-b117cf7e242b");
+  const brainDir2 = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/f64e7778-5470-452e-8804-8aebe88a7027");
 
   fs.mkdirSync(primaryDir, { recursive: true });
-  fs.mkdirSync(brainDir, { recursive: true });
+  fs.mkdirSync(brainDir1, { recursive: true });
+  fs.mkdirSync(brainDir2, { recursive: true });
 
   const port = 5173;
   let viteProcess = null;
@@ -339,10 +341,10 @@ async function main() {
       });
     });
 
-    console.log("Navigating to Visit view...");
-    await pcPage.goto("http://127.0.0.1:5173/#visit", { waitUntil: "domcontentloaded", timeout: 45000 });
-    await pcPage.waitForSelector(".boot-state", { state: "detached", timeout: 30000 }).catch(() => {});
-    await pcPage.waitForSelector(".app-shell", { state: "visible", timeout: 30000 });
+    console.log("Loading application schedule to seed stores...");
+    await pcPage.goto("http://127.0.0.1:5173/#schedule", { waitUntil: "domcontentloaded", timeout: 60000 });
+    await pcPage.waitForSelector(".boot-state", { state: "detached", timeout: 60000 }).catch(() => {});
+    await pcPage.waitForSelector(".app-shell", { state: "visible", timeout: 30000 }).catch(() => {});
     await pcPage.waitForTimeout(1500);
 
     // Remove overlays
@@ -350,15 +352,26 @@ async function main() {
       document.querySelectorAll(".tour-spotlight-root, [data-testid=\"guided-tour-spotlight-overlay\"], .tour-backdrop-clickable-zone, .global-toast-container").forEach((el) => el.remove());
     });
 
+    // Navigate to Visit view
+    console.log("Navigating to Visit view...");
+    await pcPage.evaluate(() => { window.location.hash = "visit"; });
+    await pcPage.waitForTimeout(1500);
+
+    // Check if visit header visible; if not, navigate directly to #visit
+    let hasHeader = await pcPage.$(".visit-monolithic-header, [data-testid=\"visit-header-monolith\"]");
+    if (!hasHeader) {
+      console.log("Visit header not detected immediately. Trying #visit direct navigation...");
+      await pcPage.goto("http://127.0.0.1:5173/#visit", { waitUntil: "domcontentloaded", timeout: 30000 });
+      await pcPage.waitForTimeout(2000);
+    }
+
+    await pcPage.waitForSelector(".visit-monolithic-header, [data-testid=\"visit-header-monolith\"]", { state: "visible", timeout: 30000 });
+    await pcPage.waitForTimeout(1000);
+
     // Switch to Diagnostics subtab
     console.log("Switching to Diagnostics tab...");
-    const subtabBtn = await pcPage.$('[data-testid="visit-subtab-diagnostics"]');
-    if (subtabBtn) {
-      await subtabBtn.click();
-    } else {
-      const textBtn = await pcPage.getByRole("button", { name: "Диагностика" }).first();
-      await textBtn.click();
-    }
+    const subtabBtn = await pcPage.waitForSelector('[data-testid="visit-subtab-diagnostics"]', { timeout: 10000 });
+    await subtabBtn.click();
     await pcPage.waitForTimeout(1000);
 
     // Wait for diagnostics tab container
@@ -396,8 +409,9 @@ async function main() {
         throw new Error(`[ANTI-BLANK REJECTED] File ${baseFilename} is only ${stats.size} bytes (< 20 KB)!`);
       }
 
-      // Copy to brain artifact dir
-      fs.copyFileSync(primaryPath, path.join(brainDir, baseFilename));
+      // Copy to brain artifact dirs
+      try { fs.copyFileSync(primaryPath, path.join(brainDir1, baseFilename)); } catch (_) {}
+      try { fs.copyFileSync(primaryPath, path.join(brainDir2, baseFilename)); } catch (_) {}
 
       const hash = crypto.createHash("md5").update(fs.readFileSync(primaryPath)).digest("hex");
       console.log(`[PROOF CAPTURED] ${baseFilename}: ${stats.size} bytes (${(stats.size / 1024).toFixed(1)} KB), MD5=${hash}`);

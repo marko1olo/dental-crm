@@ -28,10 +28,3 @@ export {
 export {
 	validateClinicalActionButtonErgonomics,
 } from "../mobile/ergonomics";
-
-export {
-	playClinicalAudioFeedback,
-	isClinicalAudioMuted,
-	setClinicalAudioMuted,
-	type ClinicalAudioFeedbackType,
-} from "../mobile/hapticsAndAudio";

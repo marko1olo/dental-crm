@@ -560,7 +560,7 @@ export function VisiographStudioCanvas({
 						{/* 1-Click Standard Sensor Buttons */}
 						<div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "4px" }}>
 							<span style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--muted, #8b949e)" }}>
-								Датчики (1 клик):
+								Пресеты датчиков:
 							</span>
 							{STANDARD_SENSOR_PRESETS.map((preset) => {
 								const isSelected = activeSensorPresetId === preset.id;

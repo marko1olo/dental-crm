@@ -9,12 +9,12 @@ import type {
 } from "./types";
 
 export interface ScheduleOptionsMobileSectionProps {
-	setScheduleViewMode?: (mode: "timeline" | "grid" | "chairs") => void;
-	scheduleViewMode?: "timeline" | "grid" | "chairs";
+	setScheduleViewMode?: ((mode: "timeline" | "grid" | "chairs") => void) | undefined;
+	scheduleViewMode?: ("timeline" | "grid" | "chairs") | undefined;
 	setIsOptionsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	hasMultipleBranches: boolean;
-	selectedBranchId?: string | null;
-	onSelectBranch?: (branchId: string | null) => void;
+	selectedBranchId?: string | null | undefined;
+	onSelectBranch?: ((branchId: string | null) => void) | undefined;
 	activeBranches: ScheduleBranch[];
 	activeScheduleFilterCount: number;
 	resetScheduleFilters: () => void;
@@ -24,11 +24,11 @@ export interface ScheduleOptionsMobileSectionProps {
 	handleSelectMyChair: () => void;
 	hasMultipleDoctors: boolean;
 	activeDoctors: ScheduleStaffMember[];
-	scheduleDoctorFilterId?: string | null;
-	setScheduleDoctorFilterId?: (id: string | null) => void;
+	scheduleDoctorFilterId?: string | null | undefined;
+	setScheduleDoctorFilterId?: ((id: string | null) => void) | undefined;
 	displayChairs: readonly ScheduleChair[];
-	scheduleChairFilterId?: string | null;
-	setScheduleChairFilterId?: (id: string | null) => void;
+	scheduleChairFilterId?: string | null | undefined;
+	setScheduleChairFilterId?: ((id: string | null) => void) | undefined;
 }
 
 export function ScheduleOptionsMobileSection({

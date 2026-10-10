@@ -185,8 +185,10 @@ describe('Service Pricelist Presets Decomposed Suite (DAG Invariants & Red Team 
 			});
 
 			assert.ok(results.length > 0);
-			assert.ok(results[0].score >= 50);
-			assert.strictEqual(results[0].item.category, 'therapy');
+			const first = results[0];
+			assert.ok(first);
+			assert.ok(first.score >= 50);
+			assert.strictEqual(first.item.category, 'therapy');
 		});
 
 		test('getRecommendedPresetsForSpecialty filters active presets for doctor specialty', () => {

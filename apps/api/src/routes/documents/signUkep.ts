@@ -224,79 +224,87 @@ export async function register(app: FastifyInstance) {
 				? new Date(parsedBody.data.signedAt)
 				: now;
 
-			const updated = await db
-				.update(generatedDocuments)
-				.set({
-					cryptoSignaturePkcs7: pkcs7Signature,
-					doctorSignaturePkcs7: pkcs7Signature,
-					doctorCertSerial: certSerial,
-					doctorCertSubject: certSubject,
-					doctorSignedAt: signedAtDate,
-				})
-				.where(
-					and(
-						eq(generatedDocuments.id, id),
-						eq(generatedDocuments.organizationId, orgId),
-						// Условие в самом UPDATE: два одновременных подписания
-						// не смогут перезаписать друг друга.
-						isNull(generatedDocuments.cryptoSignaturePkcs7),
-					),
-				)
-				.returning();
+			const signResult = await db.transaction(async (tx) => {
+				const updated = await tx
+					.update(generatedDocuments)
+					.set({
+						cryptoSignaturePkcs7: pkcs7Signature,
+						doctorSignaturePkcs7: pkcs7Signature,
+						doctorCertSerial: certSerial,
+						doctorCertSubject: certSubject,
+						doctorSignedAt: signedAtDate,
+					})
+					.where(
+						and(
+							eq(generatedDocuments.id, id),
+							eq(generatedDocuments.organizationId, orgId),
+							// Условие в самом UPDATE: два одновременных подписания
+							// не смогут перезаписать друг друга.
+							isNull(generatedDocuments.cryptoSignaturePkcs7),
+						),
+					)
+					.returning();
 
-			if (!updated.length) {
+				if (!updated.length) {
+					return { conflict: true as const };
+				}
+
+				// Если документ уже был выдан и имел архивный снимок на диске —
+				// накладываем динамический штамп ГОСТ Р 7.0.97-2016 и обновляем хэш снимка
+				if (doc.status === "issued" && doc.issuedSnapshotSha256) {
+					const snapshotHtml = readIssuedDocumentSnapshot(doc as any);
+					if (snapshotHtml) {
+						const validFrom =
+							parsedBody.data.validFrom ??
+							doc.issuedAt?.toISOString() ??
+							now.toISOString();
+						const validToDate = new Date(validFrom);
+						validToDate.setFullYear(validToDate.getFullYear() + 1);
+
+						const stampHtml = renderDigitalSignatureStampHtml({
+							certificateSerialNumber: certSerial,
+							certificateSubject: certSubject,
+							certificateIssuer:
+								parsedBody.data.certificateIssuer ??
+								"Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
+							validFrom,
+							validTo: parsedBody.data.validTo ?? validToDate.toISOString(),
+							signedAt: signedAtDate.toISOString(),
+							signatureType: parsedBody.data.signatureType ?? "ukep",
+							documentId: doc.id,
+						});
+
+						const stampedHtml = injectVisualSignatureStampIntoHtml(
+							snapshotHtml,
+							stampHtml,
+						);
+						const written = writeIssuedDocumentSnapshot(doc.id, stampedHtml);
+						await tx
+							.update(generatedDocuments)
+							.set({
+								issuedSnapshotSha256: written.sha256,
+								storagePath: written.snapshotPath,
+							})
+							.where(
+								and(
+									eq(generatedDocuments.id, doc.id),
+									eq(generatedDocuments.organizationId, orgId),
+								),
+							);
+					}
+				}
+
+				return { success: true as const, id: updated[0]?.id };
+			});
+
+			if ("conflict" in signResult && signResult.conflict) {
 				return reply.code(409).send({
 					error: "AlreadySigned",
 					message: "Документ уже подписан УКЭП или недоступен.",
 				});
 			}
 
-			// Если документ уже был выдан и имел архивный снимок на диске —
-			// накладываем динамический штамп ГОСТ Р 7.0.97-2016 и обновляем хэш снимка
-			if (doc.status === "issued" && doc.issuedSnapshotSha256) {
-				const snapshotHtml = readIssuedDocumentSnapshot(doc as any);
-				if (snapshotHtml) {
-					const validFrom =
-						parsedBody.data.validFrom ??
-						doc.issuedAt?.toISOString() ??
-						now.toISOString();
-					const validToDate = new Date(validFrom);
-					validToDate.setFullYear(validToDate.getFullYear() + 1);
-
-					const stampHtml = renderDigitalSignatureStampHtml({
-						certificateSerialNumber: certSerial,
-						certificateSubject: certSubject,
-						certificateIssuer:
-							parsedBody.data.certificateIssuer ??
-							"Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
-						validFrom,
-						validTo: parsedBody.data.validTo ?? validToDate.toISOString(),
-						signedAt: signedAtDate.toISOString(),
-						signatureType: parsedBody.data.signatureType ?? "ukep",
-						documentId: doc.id,
-					});
-
-					const stampedHtml = injectVisualSignatureStampIntoHtml(
-						snapshotHtml,
-						stampHtml,
-					);
-					const written = writeIssuedDocumentSnapshot(doc.id, stampedHtml);
-					await db
-						.update(generatedDocuments)
-						.set({
-							issuedSnapshotSha256: written.sha256,
-							storagePath: written.snapshotPath,
-						})
-						.where(
-							and(
-								eq(generatedDocuments.id, doc.id),
-								eq(generatedDocuments.organizationId, orgId),
-							),
-						);
-				}
-			}
-
-			return { success: true, id: updated[0]?.id };
+			return { success: true, id: signResult.id };
 		} catch (e) {
 			console.error("[DocumentSignUkep] Error:", e);
 			return reply.code(500).send({ error: "DatabaseError" });

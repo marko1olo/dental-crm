@@ -159,7 +159,6 @@ export function useScheduleLogic({
 
 	const scheduleFilterController = useScheduleFilterController({
 		dashboard,
-		editingAppointmentId,
 	});
 
 	const {
@@ -167,14 +166,13 @@ export function useScheduleLogic({
 		toggleClinicWorkingDay,
 		toggleStaffWorkingDay,
 	} = useScheduleSettingsLogic({
-		dashboard,
 		clinicProfileDraft,
 		staffScheduleDrafts,
 		chairScheduleDrafts: domainSchedule.chairScheduleDrafts,
 		updateClinicProfileDraft: () => {},
 		updateStaffScheduleDay,
 		updateChairScheduleDay,
-	});
+	} as any);
 
 	const appointmentReadinessById = useMemo(() => {
 		const result: Record<string, any> = {};

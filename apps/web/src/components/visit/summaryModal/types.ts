@@ -2,8 +2,9 @@ import type { DiaryState } from "../diaryLogic/diaryLogicTypes";
 import type { VisitDiaryEntry043 } from "../../emr";
 import type { RadiologySnapshotItem } from "../VisitSummaryRadiologyGallery";
 import type { PaymentMethodTab } from "../../finance/modal/payment/paymentModalTypes.js";
+import type { ConsumablesReconciliationResult } from "../../odontogram/treatmentEstimatorReconciler";
 
-export type { RadiologySnapshotItem };
+export type { RadiologySnapshotItem, ConsumablesReconciliationResult };
 
 export interface VisitSummaryPatient {
 	id?: string;

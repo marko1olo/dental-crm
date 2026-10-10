@@ -217,11 +217,11 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 						type="button"
 						onClick={handleApply1ClickSomaticNorm}
 						className="min-h-[36px] sm:h-8 px-2.5 rounded-lg border border-emerald-500/40 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-100 text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 shrink-0"
-						title="1-клик: Физиологическая норма развития, аллергоанамнез не отягощен, соматически здоров"
+						title="Физиологическая норма развития, аллергоанамнез не отягощен, соматически здоров"
 						data-testid="btn-one-click-somatic-norm"
 					>
 						<ToothDeciduous className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-						<span>1-клик: Соматическая норма ребенка</span>
+						<span>Соматическая норма ребенка</span>
 					</button>
 				</div>
 
@@ -261,7 +261,7 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 						type="button"
 						onClick={handle1ClickParentPresent}
 						className="min-h-[32px] sm:h-7 px-2 rounded-lg border border-teal-500/30 bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-300 hover:bg-teal-100 text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0"
-						title="1-клик: Родитель присутствует, согласие оформлено без лишней бюрократии"
+						title="Родитель присутствует, согласие оформлено"
 						data-testid="btn-parent-present-norm"
 					>
 						<Check className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
@@ -370,7 +370,7 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 							className="min-h-[28px] px-2 py-0.5 rounded bg-teal-600 hover:bg-teal-700 text-white font-bold text-[11px] shrink-0 cursor-pointer transition active:scale-95"
 							data-testid="btn-one-click-sign-consent"
 						>
-							1-клик: Подписать
+							Подписать ИДС
 						</button>
 					</div>
 				)}

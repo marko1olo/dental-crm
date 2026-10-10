@@ -5,10 +5,12 @@ import type {
 	TelegramInlineKeyboardRow,
 	TelegramPortalSection,
 	DenteTelegramCareRequestTopic,
+	TelegramSafeCallbackAction,
 } from "./types.js";
 import {
 	isRecord,
 	stringFromUnknown,
+	freeTextIncludes,
 } from "./telegramUtils.js";
 
 export function portalButton(

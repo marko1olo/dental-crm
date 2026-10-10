@@ -104,7 +104,6 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 										data-testid={`pkg-tab-${pkg.key}`}
 										title={titleText}
 									>
-										<Sparkles size={13} className="shrink-0" />
 										<span className="whitespace-nowrap">{titleText}</span>
 									</button>
 								);
@@ -139,13 +138,13 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 								{currentPackage.title} ({currentPackage.templateKeys.length} документа в пакете)
 							</div>
 							<div className="text-xs text-muted">
-								{currentPackage.description} • 1 клик подтверждает подписание всех {currentPackage.templateKeys.length} документов на бумаге
+								{currentPackage.description}
 							</div>
 						</div>
 					</div>
 					<div className="flex items-center gap-1.5 flex-wrap">
 						<span className="text-xs font-semibold text-muted mr-1">Просмотр бланка:</span>
-						{currentPackage.templateKeys.map((k) => {
+						{currentPackage.templateKeys.map((k, idx) => {
 							const t = getConsentTemplate(k);
 							const isSelected = k === activeDocKey;
 							return (
@@ -156,7 +155,7 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 									onClick={() => setPreviewTemplateKey(k)}
 									title={`Просмотреть ${t.title}`}
 								>
-									<span className="font-mono shrink-0">{t.code}</span>
+									<span className="font-semibold opacity-75 shrink-0">{idx + 1}.</span>
 									<span className="whitespace-nowrap">{TEMPLATE_SHORT_TITLES[k] || t.title}</span>
 								</button>
 							);

@@ -186,6 +186,14 @@ describe("Red Team Inquisition: Dental Photography, VITA Scale SSOT & Patient Ca
 		const workspaceContent = fs.readFileSync(workspacePath, "utf-8");
 		const modalsContent = fs.readFileSync(modalsPath, "utf-8");
 
+		const toolbarPath = path.resolve(webSrc, "components/patients/workspaceView/PatientWorkspaceToolbar.tsx");
+		const scansTabPath = path.resolve(webSrc, "components/patients/workspaceView/PatientWorkspaceScansTab.tsx");
+		const workspaceCombinedContent = [
+			workspaceContent,
+			fs.existsSync(toolbarPath) ? fs.readFileSync(toolbarPath, "utf-8") : "",
+			fs.existsSync(scansTabPath) ? fs.readFileSync(scansTabPath, "utf-8") : "",
+		].join("\n");
+
 		// Proves PatientWorkspaceModals imports and renders ClinicalPhotoProtocolModal & OrthodonticPhotoProtocolModal
 		assert.ok(
 			modalsContent.includes("ClinicalPhotoProtocolModal"),
@@ -198,15 +206,15 @@ describe("Red Team Inquisition: Dental Photography, VITA Scale SSOT & Patient Ca
 
 		// Proves PatientWorkspaceView has 1-click action triggers
 		assert.ok(
-			workspaceContent.includes("patient-workspace-open-photo-protocol-btn"),
+			workspaceCombinedContent.includes("patient-workspace-open-photo-protocol-btn"),
 			"PatientWorkspaceView dropdown menu must contain photo protocol button",
 		);
 		assert.ok(
-			workspaceContent.includes("patient-workspace-open-ortho-photo-btn"),
+			workspaceCombinedContent.includes("patient-workspace-open-ortho-photo-btn"),
 			"PatientWorkspaceView dropdown menu must contain ortho photo button",
 		);
 		assert.ok(
-			workspaceContent.includes("btn-patient-open-photo-protocol"),
+			workspaceCombinedContent.includes("btn-patient-open-photo-protocol"),
 			"PatientWorkspaceView scans tab must contain 1-click photo protocol button",
 		);
 	});

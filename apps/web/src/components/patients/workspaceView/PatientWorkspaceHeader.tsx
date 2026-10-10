@@ -5,10 +5,10 @@ import { PatientDuplicateAlert } from "../PatientDuplicateAlert";
 // Root container anchor: data-testid="patient-workspace-view"
 export interface PatientWorkspaceHeaderProps {
 	patientId: string;
-	patientName?: string | null;
+	patientName?: string | null | undefined;
 	currentPatient?: any;
-	patientCardNumber?: string | null;
-	patientBalanceRub?: number | null;
+	patientCardNumber?: string | null | undefined;
+	patientBalanceRub?: number | null | undefined;
 }
 
 export const PatientWorkspaceHeader: React.FC<PatientWorkspaceHeaderProps> = React.memo(
@@ -45,7 +45,7 @@ export const PatientWorkspaceHeader: React.FC<PatientWorkspaceHeaderProps> = Rea
 					<span className="text-xs font-mono font-bold text-[var(--muted)] bg-[var(--paper-soft)] px-2 py-0.5 rounded-md border border-[var(--line)] shrink-0">
 						{patientCardNumber ? `Карта: ${patientCardNumber}` : patientId ? `№ ${String(patientId || "").slice(0, 8)}` : "—"}
 					</span>
-					{patientBalanceRub !== null && (
+					{typeof patientBalanceRub === "number" && (
 						<span
 							className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md border shrink-0 ${
 								patientBalanceRub < 0

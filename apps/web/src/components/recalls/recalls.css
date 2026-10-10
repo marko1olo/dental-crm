@@ -3,6 +3,9 @@
    Touch-First, Responsive, Multi-Theme (Light, Dark, Night, Calm Teal)
    ========================================================================== */
 
+@import "./recallsPreview.css";
+@import "./recallsKanban.css";
+
 .recall-manager-modal-backdrop {
 	position: fixed;
 	top: 0;
@@ -543,8 +546,7 @@
 	opacity: 0.4;
 	cursor: not-allowed;
 }
-/* Preview Drawer, Script Drawer, & Presets extracted to modular recallsPreview.css (Anti-Monolith ceiling <=800 lines) */
-@import "./recallsPreview.css";
+/* Preview Drawer, Script Drawer, & Presets in recallsPreview.css */
 
 
 /* Empty & Loading States */
@@ -564,8 +566,7 @@
 	margin: 0 auto;
 }
 
-/* Kanban styles extracted to modular recallsKanban.css (Anti-Monolith ceiling <=800 lines) */
-@import "./recallsKanban.css";
+/* Kanban styles in recallsKanban.css */
 
 /* Responsive Styles for Mobile Viewports */
 @media (max-width: 768px) {

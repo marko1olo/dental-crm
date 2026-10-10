@@ -424,7 +424,7 @@ export function OfflineFiscalBatchModal({
 							data-testid="btn-execute-batch-fiscalization"
 						>
 							<Sparkles className="w-5 h-5 animate-pulse" />
-							{isProcessing ? "Фискализация..." : "Пробить все чеки в 1 клик"}
+							{isProcessing ? "Фискализация..." : "Фискализировать все чеки"}
 						</button>
 					)}
 
@@ -570,7 +570,7 @@ export function OfflineFiscalBatchModal({
 									<Layers className="w-10 h-10 mx-auto mb-2 opacity-50" />
 									<div>Пакетная фискализация еще не выполнена.</div>
 									<div className="text-xs mt-1">
-										Нажмите кнопку «Пробить все чеки в 1 клик» на вкладке очереди.
+										Нажмите кнопку «Фискализировать все чеки» на вкладке очереди.
 									</div>
 								</div>
 							) : (

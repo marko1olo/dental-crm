@@ -15,6 +15,7 @@ import type {
 	CommunicationTemplate,
 	CompleteCommunicationTaskInput,
 } from "@dental/shared";
+import type { DomainState } from "./types.js";
 import { persistMutableState } from "./stateNotifier.js";
 import { organizationId, marinaPatientId, alexeyPatientId, elmiraPatientId, activeAppointmentId, activeVisitId, nowIso, doctorUserId } from "./fixtureIds.js";
 

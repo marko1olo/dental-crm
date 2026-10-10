@@ -128,7 +128,7 @@ export const ConsultationTopToolbar: React.FC<ConsultationTopToolbarProps> = ({
 				)}
 
 				{/* Patient Telemetry (Screenshot 25 banner) */}
-				<span className="text-[11px] text-slate-300 font-mono hidden xl:inline">
+				<span className="text-[11px] text-slate-300 font-mono hidden 2xl:inline whitespace-nowrap truncate max-w-[260px]">
 					{patientCardNumber} <strong className="text-white font-sans">{patientName}</strong>{" "}
 					{patientAge} ({patientGender})
 				</span>

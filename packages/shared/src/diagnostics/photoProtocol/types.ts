@@ -239,7 +239,7 @@ export interface DentalLabOrderPhotoExport {
 	readonly orderNumber: string;
 	readonly labName: string;
 	readonly shadeGuideVita: string;
-	readonly stumpShadeVita?: string;
+	readonly stumpShadeVita?: string | undefined;
 	readonly shots: readonly DentalPhotoShot[];
-	readonly clinicalNotes?: string;
+	readonly clinicalNotes?: string | undefined;
 }

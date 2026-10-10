@@ -230,8 +230,7 @@ export function DentalLabCourierDispatchBar({
 					<button
 						type="button"
 						onClick={() => handlePrintCourierManifest()}
-						disabled={pendingOrders.length === 0}
-						className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 rounded-lg border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+						className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 rounded-lg border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
 						data-testid="btn-print-courier-manifest"
 						title="Печать сопроводительного курьерского листа с QR-кодом"
 					>
@@ -242,8 +241,8 @@ export function DentalLabCourierDispatchBar({
 					<button
 						type="button"
 						onClick={handleCallCourier}
-						disabled={isCallingCourier || pendingOrders.length === 0}
-						className="min-h-[44px] sm:min-h-[32px] h-8 px-3.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+						disabled={isCallingCourier}
+						className="min-h-[44px] sm:min-h-[32px] h-8 px-3.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer disabled:opacity-50"
 						data-testid="btn-call-dental-courier"
 					>
 						<Bike className="w-4 h-4" />

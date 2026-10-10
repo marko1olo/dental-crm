@@ -115,6 +115,9 @@
      значениями в светлой и тёмной теме. */
 	--brand-400: var(--teal);
 	--glass-bg: var(--glass-panel);
+	--paper-card: var(--paper-strong);
+	--card-bg: var(--paper-strong);
+	--switch-thumb: #ffffff;
 	--code-bg: var(--paper-strong);
 	--code-fg: var(--ink);
 	--primary-hover: var(--teal-dark);

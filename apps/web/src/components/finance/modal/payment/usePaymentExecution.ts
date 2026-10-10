@@ -76,7 +76,8 @@ export interface UsePaymentExecutionParams {
 	readonly isCheckingSbp: boolean;
 	readonly setIsCheckingSbp: (v: boolean) => void;
 	readonly setSbpCheckMessage: (msg: string | null) => void;
-	readonly sbpQrData: { payload: { qrId?: string } } | null;
+	readonly items?: readonly import("../../../billing/ReceiptPreview.js").ReceiptItem[] | undefined;
+	readonly toothNumber?: number | string | undefined;
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly onSuccess: NonNullable<PaymentModalProps["onSuccess"]>;
@@ -132,6 +133,8 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 		setIsCheckingSbp,
 		setSbpCheckMessage,
 		sbpQrData,
+		items,
+		toothNumber,
 		isOpen,
 		onClose,
 		onSuccess,
@@ -185,6 +188,8 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 		setIsCheckingSbp,
 		setSbpCheckMessage,
 		sbpQrData,
+		items,
+		toothNumber,
 		isOpen,
 		onClose,
 		onSuccess: handleBroadcastSuccess,
@@ -254,7 +259,16 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 					visitId: visitId || null,
 					documentId: documentId || (invoiceId ? invoiceId : null),
 					clientMutationId,
-					note: `Оплата наличными через кассу (${effectiveAmountRub} ₽ • ${effectiveCashier})${changeNote}${innNote}${stomxNote}`,
+					toothNumber: toothNumber ? (typeof toothNumber === "number" ? toothNumber : Number(toothNumber) || toothNumber) : undefined,
+					invoiceItems: items && items.length > 0 ? items.map((it) => ({
+						name: it.name,
+						code804n: it.code804n,
+						quantity: it.quantity,
+						priceRub: it.priceRub,
+						amountRub: it.amountRub,
+						toothNumber: it.toothNumber,
+					})) : undefined,
+					note: `Оплата наличными через кассу (${effectiveAmountRub} ₽ • ${effectiveCashier})${changeNote}${innNote}${stomxNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`,
 				}),
 			});
 
@@ -421,7 +435,16 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 					visitId: visitId || null,
 					documentId: documentId || (invoiceId ? invoiceId : null),
 					clientMutationId,
-					note: `Комбинированная оплата (${effectiveCashier}): ${parts.join(" + ")}${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${innNote}${stomxNote}`,
+					toothNumber: toothNumber ? (typeof toothNumber === "number" ? toothNumber : Number(toothNumber) || toothNumber) : undefined,
+					invoiceItems: items && items.length > 0 ? items.map((it) => ({
+						name: it.name,
+						code804n: it.code804n,
+						quantity: it.quantity,
+						priceRub: it.priceRub,
+						amountRub: it.amountRub,
+						toothNumber: it.toothNumber,
+					})) : undefined,
+					note: `Комбинированная оплата (${effectiveCashier}): ${parts.join(" + ")}${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${innNote}${stomxNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`,
 				}),
 			});
 
@@ -497,10 +520,19 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 					visitId: visitId || null,
 					documentId: documentId || (invoiceId ? invoiceId : null),
 					clientMutationId,
+					toothNumber: toothNumber ? (typeof toothNumber === "number" ? toothNumber : Number(toothNumber) || toothNumber) : undefined,
+					invoiceItems: items && items.length > 0 ? items.map((it) => ({
+						name: it.name,
+						code804n: it.code804n,
+						quantity: it.quantity,
+						priceRub: it.priceRub,
+						amountRub: it.amountRub,
+						toothNumber: it.toothNumber,
+					})) : undefined,
 					note:
 						source === "family"
-							? `Оплата с семейного баланса (${totalDueRub} ₽)${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${stomxNote}`
-							: `Оплата с лицевого счета / аванса (${totalDueRub} ₽)${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${stomxNote}`,
+							? `Оплата с семейного баланса (${totalDueRub} ₽)${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${stomxNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`
+							: `Оплата с лицевого счета / аванса (${totalDueRub} ₽)${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${stomxNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`,
 				}),
 			});
 

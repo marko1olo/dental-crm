@@ -24,8 +24,8 @@ import {
 	DEFAULT_CLINIC_LICENCE,
 	SINGLE_DOCTOR_MAX_DAYS
 } from "../sickLeaveElnEngine";
-import { showToast } from "../../GlobalToast";
-import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
+import { showToast } from "../../../GlobalToast";
+import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import type { SickLeaveElnModalProps, TabType, DigitalSignatureStatus } from "./types";
 
 export function useSickLeaveElnLogic(props: SickLeaveElnModalProps) {

@@ -12,12 +12,17 @@ import type {
 	BillingSummary,
 	CreatePaymentInput,
 	Payment,
+	TreatmentPlanItem,
+	UiPreferences,
 	Visit,
 } from "@dental/shared";
+import type { DomainState } from "./types.js";
 import {
 	buildVisitLedger,
+	MoneyPrecisionError,
 	QuantityContractError,
 	rublesFromKopecks,
+	type VisitLedger,
 	visitOutstandingKopecks,
 	visitOverpaidKopecks,
 } from "../money/patientDebt.js";
@@ -25,7 +30,7 @@ import { buildVisitCloseChecklist, type VisitCloseChecklistFacts } from "../visi
 import { getServiceCatalogItem, serviceCatalog, serviceCatalogMap } from "./priceList.js";
 import { treatmentPlanItems } from "./clinicalRecords.js";
 import { buildClinicalRuleSummary } from "./clinicalRules.js";
-import { documents } from "./documents.js";
+import { documents, cleanNullableText } from "./documents.js";
 import { organizationId, marinaPatientId, activeVisitId, nowIso } from "./fixtureIds.js";
 import { persistMutableState } from "./stateNotifier.js";
 

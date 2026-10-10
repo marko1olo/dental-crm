@@ -708,7 +708,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 			)}
 
 			{/* Global Treatments Strip (below teeth) */}
-			<div className="my-2">
+			<div className="my-1">
 				<GlobalTreatmentsStrip
 					treatments={currentGlobals}
 					onArchHover={setHoveredArch}
@@ -726,8 +726,8 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 				/>
 			</div>
 
-			{/* Color Legend (below teeth) */}
-			{!hideLegend && (
+			{/* Color Legend (below teeth) — only displayed when interactive Stamp Palette is absent */}
+			{!hideLegend && !onQuickStateChange && (
 				<div className="tooth-chart-legend-row my-2 hidden sm:block">
 					<div className="tooth-chart-legend">
 						<span className="tooth-chart-legend-item">

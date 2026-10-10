@@ -1,16 +1,24 @@
 import type {
 	DenteTelegramBotSettings,
 	DenteTelegramUpdateKind,
-	TelegramTransportResult,
-	SendTelegramPhotoMessageInput,
 	DenteTelegramOutboxItem,
 	DenteTelegramTemplateKind,
 	DenteTelegramOutboxDeliveryStatus,
 	DenteTelegramOutboxSendRequest,
+	DenteTelegramOutboxSendResponse,
+	DenteTelegramOutboxSendDueResponse,
 	DenteTelegramVisualCardUrls,
 	DenteTelegramPostVisitCheckupDelayHoursByTopic,
 } from "@dental/shared";
-import type { DomainState, createDenteTelegramCareRequest } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import type {
+	TelegramTransportResult,
+	SendTelegramPhotoMessageInput,
+} from "../../telegramTransport.js";
+import type {
+	DomainState,
+	createDenteTelegramCareRequest,
+	DenteTelegramOutboxRuntimeScope,
+} from "../../services/telegram/telegramLegacyMemoryStore.js";
 
 // Constants
 export const telegramPhotoSentTextFailedBlockedReason =
@@ -100,28 +108,35 @@ export type TelegramClinicBotEnvConfig = {
 	organizationId: string | null;
 	clinicId: string | null;
 	botConfigId: string | null;
-	enabled: boolean;
+	enabled?: boolean;
 	botUsername: string | null;
 	botToken: string | null;
 	webhookSecret: string | null;
+	webhookBaseUrl?: string | null;
 	patientPortalBaseUrl: string | null;
-	clinicPublicPhone: string | null;
-	clinicAddress: string | null;
-	clinicWebsiteUrl: string | null;
-	clinicYandexMapsUrl: string | null;
-	clinicTwoGisUrl: string | null;
-	visualCardUrls: DenteTelegramVisualCardUrls | null;
-	postVisitCheckupDelayHours: DenteTelegramPostVisitCheckupDelayHoursByTopic | null;
+	welcomeImageUrl?: string | null;
+	clinicPublicPhone?: string | null;
+	clinicAddress?: string | null;
+	clinicWebsiteUrl?: string | null;
+	clinicYandexMapsUrl?: string | null;
+	clinicTwoGisUrl?: string | null;
+	clinicReviewUrl?: string | null;
+	clinicMapsUrl?: string | null;
+	visualCardUrls: Partial<DenteTelegramVisualCardUrls> | null;
+	postVisitCheckupDelayHours?: Partial<DenteTelegramPostVisitCheckupDelayHoursByTopic> | null;
+	postVisitCheckupDelayHoursByTopic?: Partial<DenteTelegramPostVisitCheckupDelayHoursByTopic> | null;
 	reviewRequestDelayHours: number | null;
 };
 
 export type TelegramRuntimeSettingsResolution = {
 	settings: DenteTelegramBotSettings;
 	envConfig: TelegramClinicBotEnvConfig | null;
+	clinicId?: string;
 };
 
 export type TelegramLinkCodeRejection = {
-	status: "invalid_code" | "crypto_unavailable";
+	error: string;
+	reason: string;
 	message: string;
 };
 
@@ -151,8 +166,8 @@ export const telegramChatLinkNotFoundMessage =
 	"Активная связка Telegram-чата для предпросмотра не найдена.";
 
 export type TelegramOutboxSendExecutionResult = {
-	status: DenteTelegramOutboxDeliveryStatus;
-	receipts: unknown[];
+	statusCode: number;
+	body: DenteTelegramOutboxSendResponse;
 };
 
 export type TelegramOutboxSendDueInput = {
@@ -160,6 +175,7 @@ export type TelegramOutboxSendDueInput = {
 	clinicId?: string | null;
 	botConfigId?: string | null;
 	limit?: number;
+	dryRun?: boolean;
 };
 
 export type TelegramDueWorkerLogger = {
@@ -169,8 +185,10 @@ export type TelegramDueWorkerLogger = {
 };
 
 export type DenteTelegramOutboxDueWorkerHandle = {
+	enabled?: boolean;
 	stop: () => void;
-	isRunning: () => boolean;
+	runOnce?: () => Promise<DenteTelegramOutboxSendDueResponse | null>;
+	isRunning?: () => boolean;
 };
 
 export type TelegramOutboxScheduleState = "due" | "not_due" | "unreadable";
@@ -210,16 +228,15 @@ export type TelegramOutboxPartDeliveryOutcome = {
 };
 
 export type TelegramResolvedOutboxRuntime = {
-	organizationId: string;
-	clinicId: string;
-	botConfigId: string;
-	botToken: string | null;
+	context: TelegramRuntimeContext;
+	runtimeScope: DenteTelegramOutboxRuntimeScope;
 };
 
 export type TelegramPortalSection =
 	| "home"
 	| "documents"
 	| "tax"
+	| "care"
 	| "billing"
 	| "schedule"
 	| "medical-docs"

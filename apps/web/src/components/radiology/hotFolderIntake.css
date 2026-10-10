@@ -487,3 +487,25 @@
 	box-shadow: 0 0 30px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.1);
 	pointer-events: none;
 }
+
+.hfi-radiology-image.hidden,
+.hfi-radiology-image[hidden] {
+	display: none !important;
+}
+
+.hfi-select-input {
+	width: 100%;
+	padding: 0.5rem 0.625rem;
+	border-radius: 0.5rem;
+	background: var(--paper-strong, #0f172a);
+	border: 1px solid var(--line, #334155);
+	color: var(--ink, #f8fafc);
+	font-size: 0.75rem;
+	outline: none;
+	cursor: pointer;
+}
+
+.hfi-select-input:focus {
+	border-color: var(--teal, #14b8a6);
+}
+

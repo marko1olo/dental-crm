@@ -317,7 +317,7 @@ export function VisitEmkOdontogramBar({
 					setActiveStamp={setActiveStamp}
 					activeStampRef={activeStampRef}
 					toothRows={toothRows}
-					toothStateByCode={visitToothStateByCode}
+					toothStateByCode={visitToothStateByCode as any}
 					draft={draft?.quality?.detectedToothCodes ? { quality: { detectedToothCodes: draft.quality.detectedToothCodes } } : null}
 					handleToothClick={handleOdontogramToothClick}
 					dentitionMode={dentitionMode}

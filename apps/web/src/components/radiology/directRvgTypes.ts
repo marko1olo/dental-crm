@@ -144,6 +144,8 @@ export const SENSOR_MODELS = [
 	{ id: "xpect_vision_photon", name: "Xpect Vision Photon-Counting", resolution: "33.0 lp/mm (15.0 мкм)", pixelSpacing: 0.015 },
 ] as const;
 
+export type SensorModelInfo = (typeof SENSOR_MODELS)[number];
+
 export const PROJECTION_TYPES: Array<{
 	id: ProjectionAngleType;
 	label: string;

@@ -12,7 +12,7 @@ import { QuickCreateInvoiceModal } from "./QuickCreateInvoiceModal.js";
 import { PatientInstallmentsModal } from "./PatientInstallmentsModal.js";
 import { CashboxShiftModal } from "../finance/CashboxShiftModal.js";
 import { CashRegisterDrawer } from "./CashRegisterDrawer.js";
-import { PaymentSplitModal } from "../finance/PaymentSplitModal.js";
+import { PaymentModal } from "../finance/PaymentModal.js";
 import { CashReceiptPrintModal } from "../finance/CashReceiptPrintModal.js";
 import { RefundServiceModal } from "../finance/refunds/RefundServiceModal.js";
 import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal.js";
@@ -128,18 +128,19 @@ export const InvoicesModalsLayer: React.FC<InvoicesModalsLayerProps> = ({
 			)}
 
 			{activeSplitInvoice && (
-				<PaymentSplitModal
+				<PaymentModal
 					isOpen={Boolean(activeSplitInvoice)}
 					onClose={() => setActiveSplitInvoice(null)}
-					totalBillRub={activeSplitInvoice.totalAmountRub}
+					amountRub={activeSplitInvoice.totalAmountRub}
 					patientId={activeSplitInvoice.patientId}
 					patientName={activeSplitInvoice.patientName}
 					patientPhone={activeSplitInvoice.patientPhone}
-					attendingDoctorName={activeSplitInvoice.doctorName}
-					cashierFullName={currentDoctorName}
-					orderId={activeSplitInvoice.id}
-					onPaymentComplete={(payload) => {
-						const isOffline = Boolean(payload?.offlineBuffered);
+					doctorName={activeSplitInvoice.doctorName}
+					cashierName={currentDoctorName}
+					invoiceId={activeSplitInvoice.id}
+					defaultMethod="split"
+					onSuccess={(payload) => {
+						const isOffline = Boolean((payload as any)?.offlineBuffered);
 						onUpdateInvoice?.({
 							...activeSplitInvoice,
 							status: "paid",

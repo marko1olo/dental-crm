@@ -13,6 +13,7 @@
  */
 
 import React, { useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
 	Banknote,
 	CreditCard,
@@ -37,6 +38,8 @@ import {
 	calculateCashChange,
 	formatDisplayCurrency,
 	CASH_QUICK_BILLS_RUB,
+	createCompositeIdempotencyKey,
+	generateDynamicSbpQrSvg,
 	type CashRegisterCheckoutPayload,
 	type CheckoutPaymentMethod,
 	type ReceiptDeliveryMode,
@@ -100,6 +103,25 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 	// Available balance
 	const totalAvailableDeposit = (patientDepositRub || 0) + (patientFamilyBalanceRub || 0);
 
+	// Real Dynamic SBP QR Code SVG generation (ГОСТ Р 56042-2014 & NSPK EMVCo)
+	const sbpQrResult = useMemo(() => {
+		if (totalDueRub <= 0) return null;
+		try {
+			return generateDynamicSbpQrSvg(
+				{
+					sumRub: totalDueRub,
+					orderId: invoiceId || visitId || `chk_${Date.now()}`,
+					purpose: `Оплата медицинских услуг: ${patientName}`,
+					clinicName: clinicLegalName,
+				},
+				{ size: 140, margin: 2, title: `QR-код СБП: ${totalDueRub} ₽` },
+			);
+		} catch (err) {
+			console.warn("[CashRegisterCheckoutModal] SBP QR generation error:", err);
+			return null;
+		}
+	}, [totalDueRub, invoiceId, visitId, patientName, clinicLegalName]);
+
 	if (!isOpen) return null;
 
 	const handleQuickBillAdd = (billRub: number) => {
@@ -113,6 +135,15 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 	const handleExecutePayment = async () => {
 		if (isSubmitting || isCompleted) return;
 		setIsSubmitting(true);
+
+		const compositeIdempotencyKey = createCompositeIdempotencyKey(clientMutationId, {
+			patientId,
+			visitId,
+			invoiceId,
+			totalDueRub,
+			paymentMethod: selectedMethod,
+			deliveryMode,
+		});
 
 		const isElectronicOnly = deliveryMode === "electronic_sms" || deliveryMode === "electronic_email";
 		const payload: CashRegisterCheckoutPayload = {
@@ -129,7 +160,7 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 			isElectronicReceiptOnly: isElectronicOnly,
 			cashTenderedRub: selectedMethod === "cash" ? cashTenderedRub : undefined,
 			cashChangeRub: selectedMethod === "cash" ? changeResult.changeRub : undefined,
-			clientMutationId,
+			clientMutationId: compositeIdempotencyKey,
 			cashierFullName,
 			doctorFullName,
 			clinicLegalName,
@@ -158,14 +189,14 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 				headers: {
 					"Content-Type": "application/json",
 					Authorization: token ? `Bearer ${token}` : "",
-					"Idempotency-Key": clientMutationId,
+					"Idempotency-Key": compositeIdempotencyKey,
 				},
 				body: JSON.stringify({
 					patientId,
 					visitId: visitId || undefined,
 					amountRub: totalDueRub,
 					method: methodMappedForApi,
-					clientMutationId,
+					clientMutationId: compositeIdempotencyKey,
 					payerFullName: patientName,
 					fiscalReceiptNumber: `ЧЕК-${Date.now().toString().slice(-6)}`,
 					fiscalReceiptIssuedAt: new Date().toISOString(),
@@ -192,15 +223,15 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 		}
 	};
 
-	return (
+	const modalNode = (
 		<div
-			className="fixed inset-0 z-[100] flex flex-col justify-end md:items-center md:justify-center bg-black/65 backdrop-blur-xs p-0 md:p-4 payment-modal-backdrop animate-in fade-in duration-150"
+			className="fixed inset-0 z-[10000] flex flex-col justify-end md:items-center md:justify-center bg-black/70 backdrop-blur-xs p-0 md:p-4 payment-modal-backdrop animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="cash-register-modal-title"
 			data-testid="cash-register-checkout-modal"
 		>
-			<div className="payment-modal w-full max-w-full md:max-w-4xl rounded-t-[24px] md:rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] border-t md:border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] shadow-2xl overflow-hidden flex flex-col max-h-[94dvh] md:max-h-[92vh] min-h-0">
+			<div className="payment-modal w-full max-w-full md:max-w-4xl rounded-t-[24px] md:rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] border-t md:border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] shadow-2xl overflow-hidden flex flex-col max-h-[94dvh] md:max-h-[90vh] min-h-0">
 				{/* 1. Header with Patient Context */}
 				<div className="flex items-center justify-between px-4 py-3 border-b border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] shrink-0">
 					<div className="flex items-center gap-2.5">
@@ -262,7 +293,7 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 							<label className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider">
 								Способ оплаты
 							</label>
-							<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+							<div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
 								<button
 									type="button"
 									onClick={() => setSelectedMethod("card")}
@@ -271,6 +302,11 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 											? "border-teal-600 bg-teal-500/10 text-teal-700 dark:text-teal-400 font-bold shadow-xs ring-1 ring-teal-500/30"
 											: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-slate-400"
 									}`}
+									style={{
+										border: selectedMethod === "card" ? "2px solid #0d9488" : "1px solid var(--line, #cbd5e1)",
+										background: selectedMethod === "card" ? "rgba(13, 148, 136, 0.12)" : "var(--paper, #ffffff)",
+										color: selectedMethod === "card" ? "#0d9488" : "var(--ink, #0f172a)",
+									}}
 									data-testid="btn-tender-card"
 								>
 									<CreditCard size={20} />
@@ -285,6 +321,11 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 											? "border-teal-600 bg-teal-500/10 text-teal-700 dark:text-teal-400 font-bold shadow-xs ring-1 ring-teal-500/30"
 											: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-slate-400"
 									}`}
+									style={{
+										border: selectedMethod === "sbp" ? "2px solid #0d9488" : "1px solid var(--line, #cbd5e1)",
+										background: selectedMethod === "sbp" ? "rgba(13, 148, 136, 0.12)" : "var(--paper, #ffffff)",
+										color: selectedMethod === "sbp" ? "#0d9488" : "var(--ink, #0f172a)",
+									}}
 									data-testid="btn-tender-sbp"
 								>
 									<QrCode size={20} />
@@ -299,6 +340,11 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 											? "border-teal-600 bg-teal-500/10 text-teal-700 dark:text-teal-400 font-bold shadow-xs ring-1 ring-teal-500/30"
 											: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-slate-400"
 									}`}
+									style={{
+										border: selectedMethod === "cash" ? "2px solid #0d9488" : "1px solid var(--line, #cbd5e1)",
+										background: selectedMethod === "cash" ? "rgba(13, 148, 136, 0.12)" : "var(--paper, #ffffff)",
+										color: selectedMethod === "cash" ? "#0d9488" : "var(--ink, #0f172a)",
+									}}
 									data-testid="btn-tender-cash"
 								>
 									<Banknote size={20} />
@@ -313,11 +359,34 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 											? "border-teal-600 bg-teal-500/10 text-teal-700 dark:text-teal-400 font-bold shadow-xs ring-1 ring-teal-500/30"
 											: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-slate-400"
 									}`}
+									style={{
+										border: selectedMethod === "deposit" ? "2px solid #0d9488" : "1px solid var(--line, #cbd5e1)",
+										background: selectedMethod === "deposit" ? "rgba(13, 148, 136, 0.12)" : "var(--paper, #ffffff)",
+										color: selectedMethod === "deposit" ? "#0d9488" : "var(--ink, #0f172a)",
+									}}
 									data-testid="btn-tender-deposit"
 								>
 									<Wallet size={20} />
 									<span className="text-xs">Депозит</span>
 								</button>
+
+								{onOpenSplitPayment && (
+									<button
+										type="button"
+										onClick={onOpenSplitPayment}
+										className="p-3 rounded-xl border border-teal-500/30 bg-teal-500/5 hover:bg-teal-500/15 text-teal-700 dark:text-teal-400 flex flex-col items-center justify-center gap-2 text-center transition-all"
+										style={{
+											border: "1px solid rgba(13, 148, 136, 0.35)",
+											background: "rgba(13, 148, 136, 0.08)",
+											color: "#0d9488",
+										}}
+										data-testid="btn-tender-split"
+										title="Открыть комбинированную сплит-оплату"
+									>
+										<Layers size={20} />
+										<span className="text-xs font-bold">Сплит (Комбо)</span>
+									</button>
+								)}
 							</div>
 
 							{/* Additional Split Option Link */}
@@ -401,16 +470,25 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 						)}
 
 						{selectedMethod === "sbp" && (
-							<div className="p-3.5 rounded-xl border border-teal-500/25 bg-teal-500/5 flex items-center gap-3">
-								<div className="w-12 h-12 rounded-lg bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] flex items-center justify-center shrink-0">
-									<QrCode size={28} className="text-teal-600" />
-								</div>
-								<div>
-									<div className="text-xs font-bold text-[var(--ink,#0f172a)]">
-										Динамический QR СБП готов к сканированию
+							<div
+								className="p-3.5 rounded-xl border border-teal-500/25 bg-teal-500/5 flex flex-col sm:flex-row items-center gap-4 animate-in fade-in duration-150"
+								data-testid="sbp-dynamic-qr-container"
+							>
+								<div
+									className="w-32 h-32 rounded-xl bg-white p-2 border border-slate-200 dark:border-slate-700 shadow-2xs flex items-center justify-center shrink-0"
+									dangerouslySetInnerHTML={sbpQrResult ? { __html: sbpQrResult.svg } : undefined}
+									data-testid="sbp-qr-svg-wrapper"
+								/>
+								<div className="space-y-1.5 text-center sm:text-left">
+									<div className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center justify-center sm:justify-start gap-1.5">
+										<ShieldCheck size={16} className="text-teal-600 dark:text-teal-400" />
+										<span>Динамический QR СБП (ГОСТ Р 56042 / НСПК)</span>
 									</div>
-									<div className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">
-										Сумма {formatDisplayCurrency(totalDueRub)} зашита в код. Оплата подтверждается за 2 секунды.
+									<div className="text-[11px] text-[var(--muted,#64748b)]">
+										Сумма <strong className="text-[var(--ink,#0f172a)]">{formatDisplayCurrency(totalDueRub)}</strong> зашита в код с контрольной суммой CRC16.
+									</div>
+									<div className="text-[10px] text-teal-700 dark:text-teal-400 font-mono">
+										Мгновенное подтверждение · Комиссия 0% для пациента
 									</div>
 								</div>
 							</div>
@@ -497,7 +575,7 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 								ФФД 1.2
 							</span>
 						</div>
-						<div className="flex-1 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] p-3 overflow-y-auto max-h-[380px] shadow-inner">
+						<div className="flex-1 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] p-2.5 overflow-y-auto shadow-inner">
 							<ReceiptPreview
 								receiptNumber={clientMutationId.slice(-4)}
 								shiftNumber={14}
@@ -523,7 +601,15 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 					<button
 						type="button"
 						onClick={onClose}
-						className="px-4 py-2.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-sm font-semibold text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+						className="px-5 h-12 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-sm font-semibold text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors inline-flex items-center justify-center"
+						style={{
+							border: "1px solid var(--line, #cbd5e1)",
+							background: "var(--paper, #ffffff)",
+							color: "var(--ink, #0f172a)",
+							padding: "0 20px",
+							height: "48px",
+							borderRadius: "12px",
+						}}
 						data-testid="btn-cancel-checkout"
 					>
 						Отмена
@@ -534,19 +620,26 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 						onClick={handleExecutePayment}
 						disabled={isSubmitting || isCompleted}
 						className="flex-1 md:flex-none md:min-w-[280px] h-12 px-6 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+						style={{
+							backgroundColor: isCompleted ? "#10b981" : "#0d9488",
+							color: "#ffffff",
+						}}
 						data-testid="btn-submit-checkout-54fz"
 					>
 						{isCompleted ? (
 							<>
-								<CheckCircle2 size={18} />
-								<span>Оплачено и фискализировано</span>
+								<CheckCircle2 size={18} style={{ color: "#ffffff" }} />
+								<span style={{ color: "#ffffff" }}>Оплачено и фискализировано</span>
 							</>
 						) : isSubmitting ? (
-							<span>Пробитие чека 54-ФЗ...</span>
+							<>
+								<div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+								<span style={{ color: "#ffffff" }}>Пробитие чека 54-ФЗ...</span>
+							</>
 						) : (
 							<>
-								<span>Оплатить {formatDisplayCurrency(totalDueRub)}</span>
-								<ArrowRight size={16} />
+								<span style={{ color: "#ffffff" }}>Оплатить {formatDisplayCurrency(totalDueRub)}</span>
+								<ArrowRight size={16} style={{ color: "#ffffff" }} />
 							</>
 						)}
 					</button>
@@ -554,6 +647,8 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined" ? createPortal(modalNode, document.body) : modalNode;
 };
 
 export default CashRegisterCheckoutModal;

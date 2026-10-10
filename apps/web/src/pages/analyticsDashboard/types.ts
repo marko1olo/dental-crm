@@ -34,7 +34,7 @@ export interface DoctorProfitabilityRow {
 	labOrdersCount?: number;
 	labOrdersCostRub?: number;
 	doctorPayrollRub?: number;
-	clinicMarginRub?: number;
+	clinicMarginRub?: number | null | undefined;
 }
 
 export interface RebookingConversionSummary {

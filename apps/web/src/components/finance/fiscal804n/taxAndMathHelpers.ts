@@ -205,7 +205,7 @@ export function generateTaxDeductionCertificate(params: {
 		payerFullName,
 		...(payerInn ? { payerInn } : {}),
 		...(payerBirthDate ? { payerBirthDate } : {}),
-		...(payerRelationship ? { payerRelationship } : {}),
+		payerRelationship,
 		payerRelationshipLabel: TAX_DEDUCTION_RELATIONSHIP_LABELS[payerRelationship],
 		payerRelationshipCode: TAX_DEDUCTION_RELATIONSHIP_CODES[payerRelationship],
 		patientFullName: receipt.patientName,

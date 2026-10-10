@@ -214,9 +214,17 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 			{/* Chairs List */}
 			<div className="staff-list space-y-3 pt-2">
 				{typedChairs.map((chair) => {
-					const scheduleDraft =
+					const rawScheduleDraft =
 						chairScheduleDrafts[chair.id] ??
-						staffScheduleDraftFromWorkingHours(chair.workingHours ?? null);
+						(typeof staffScheduleDraftFromWorkingHours === "function"
+							? staffScheduleDraftFromWorkingHours(chair.workingHours ?? null)
+							: null);
+					const scheduleDraft = rawScheduleDraft || {
+						start: "08:00",
+						end: "20:00",
+						workingDays: [1, 2, 3, 4, 5, 6],
+						perDay: {},
+					};
 					const scheduleSaveState =
 						chairScheduleSaveStates[chair.id] ?? "saved";
 					const scheduleDirty = chairScheduleDirtyIds.has(chair.id);
@@ -311,7 +319,7 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 											<span>С:</span>
 											<input
 												type="time"
-												value={scheduleDraft.start}
+												value={scheduleDraft?.start ?? "08:00"}
 												onChange={(event: InputChangeEvent) =>
 													updateChairScheduleDraft(chair.id, {
 														start: event.target.value,
@@ -324,7 +332,7 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 											<span>До:</span>
 											<input
 												type="time"
-												value={scheduleDraft.end}
+												value={scheduleDraft?.end ?? "20:00"}
 												onChange={(event: InputChangeEvent) =>
 													updateChairScheduleDraft(chair.id, {
 														end: event.target.value,
@@ -407,7 +415,7 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 									>
 										{typedWeekdayOptions
 											.filter((day) =>
-												(scheduleDraft.workingDays ?? []).includes(day.value),
+												(scheduleDraft?.workingDays ?? []).includes(day.value),
 											)
 											.map((day) => {
 												const dayHours = scheduleDraft?.perDay?.[day.value];
@@ -421,7 +429,7 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 															<input
 																aria-label={`${day.label}, начало кресла`}
 																type="time"
-																value={dayHours?.start ?? scheduleDraft.start}
+																value={dayHours?.start ?? scheduleDraft?.start ?? "08:00"}
 																onChange={(event: InputChangeEvent) =>
 																	updateChairScheduleDay(chair.id, day.value, {
 																		start: event.target.value,
@@ -433,7 +441,7 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 															<input
 																aria-label={`${day.label}, конец кресла`}
 																type="time"
-																value={dayHours?.end ?? scheduleDraft.end}
+																value={dayHours?.end ?? scheduleDraft?.end ?? "20:00"}
 																onChange={(event: InputChangeEvent) =>
 																	updateChairScheduleDay(chair.id, day.value, {
 																		end: event.target.value,

@@ -85,7 +85,7 @@ export const PerioArchGrid: React.FC<PerioArchGridProps> = React.memo(({
 							6 точек зондирования (углублённый осмотр по требованию)
 						</span>
 						<span className="text-xs text-[var(--muted)]">
-							Изолированы в Tier 3 для углублённого пародонтологического приёма.
+							Доступно в расширенном режиме для углублённого пародонтологического приёма.
 							На обычном терапевтическом приёме используйте протоколы
 							экспресс-скрининга (Норма / Патология / Профгигиена) выше.
 						</span>
@@ -98,7 +98,7 @@ export const PerioArchGrid: React.FC<PerioArchGridProps> = React.memo(({
 					data-testid="expand-perio-chart-tier3-btn"
 				>
 					<PerioProbe size={16} />
-					<span>Развернуть 6 точек зондирования (Tier 3)</span>
+					<span>Развернуть 6 точек зондирования</span>
 				</button>
 			</div>
 		);

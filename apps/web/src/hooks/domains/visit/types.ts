@@ -275,4 +275,5 @@ export type UseVisitLogicReturn = VisitStoreSlice &
 		pendingSpeechChunkCount: number;
 		speechStatusNote: string | null;
 		isImportDictating: boolean;
+		scrollToVisitArea: (areaId: string) => void;
 	};

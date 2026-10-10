@@ -336,7 +336,7 @@ export const PatientFinanceTab: React.FC<PatientFinanceTabProps> = React.memo(
 						</div>
 
 						<p className="text-[11px] text-[var(--muted)] m-0 leading-normal border-t border-[var(--glass-border)] pt-2.5">
-							Авансовые средства расходуются на приёмах в 1 клик без ожидания банковских авторизаций.
+							Авансовые средства списываются на приёме мгновенно без ожидания банковских авторизаций.
 						</p>
 					</div>
 
@@ -384,7 +384,7 @@ export const PatientFinanceTab: React.FC<PatientFinanceTabProps> = React.memo(
 					</div>
 				</div>
 
-				{/* 2. ПАНЕЛЬ БЫСТРЫХ ОПЕРАЦИЙ (Тач-таргеты >= 44x44px, 1-клик кнопки) */}
+				{/* 2. ПАНЕЛЬ БЫСТРЫХ ОПЕРАЦИЙ */}
 				<div
 					className="p-4 sm:p-5 rounded-2xl bg-[var(--paper)] border border-[var(--glass-border)] shadow-xs flex flex-col gap-4"
 					data-testid="quick-deposit-operations-panel"
@@ -518,12 +518,12 @@ export const PatientFinanceTab: React.FC<PatientFinanceTabProps> = React.memo(
 						</div>
 					</div>
 
-					{/* ПЛИТКИ БЫСТРОГО ВЫБОРА СУММ (Apple HIG: Touch Targets >= 44x44px) */}
+					{/* ПЛИТКИ БЫСТРОГО ВЫБОРА СУММ */}
 					<div className="flex flex-col gap-2">
 						<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">
 							{activeOperationMode === "topup"
-								? "Быстрый ввод аванса (1 клик):"
-								: "Быстрое списание (1 клик):"}
+								? "Быстрый выбор суммы пополнения:"
+								: "Быстрый выбор суммы списания:"}
 						</span>
 
 						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">

@@ -308,7 +308,7 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance) {
 			success: true,
 			count: inserted.length,
 			logs: inserted,
-			message: `Зарегистрировано циклов смены в 1 клик: ${inserted.length} (134°C, 2.15 бар, 5 мин, норма СанПиН 3.3686-21)`,
+			message: `Зарегистрировано циклов смены: ${inserted.length} (134°C, 2.15 бар, 5 мин)`,
 		});
 	});
 

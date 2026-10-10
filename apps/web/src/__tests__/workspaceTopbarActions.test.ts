@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import test from "node:test";
+import { test } from "vitest";
 import { fileURLToPath } from "node:url";
 import { parse } from "@babel/parser";
 
@@ -32,7 +32,7 @@ import { parse } from "@babel/parser";
  */
 
 const shellPath = fileURLToPath(
-	new URL("../workspaceShell.tsx", import.meta.url),
+	new URL("../workspaceShellModules/WorkspaceTopBar.tsx", import.meta.url),
 );
 const labelsPath = fileURLToPath(
 	new URL("../workspaceUiLabels.ts", import.meta.url),

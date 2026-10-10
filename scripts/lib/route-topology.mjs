@@ -282,84 +282,92 @@ export function matchPrecision(routePath, callPath) {
  * никем не зовётся и попал бы в отчёт мёртвым маршрутом, которого нет.
  */
 function prefixByRouteFile() {
-	if (!existsSync(apiServerFile))
-		return { prefixes: new Map(), unresolved: [] };
-	const source = readFileSync(apiServerFile, "utf8");
-	const parsed = parseSource(apiServerFile, source);
+	const filesToCheck = [
+		apiServerFile,
+		path.join(apiSourceRoot, "serverModules", "routeRegistrar.ts"),
+	].filter(existsSync);
 
-	/* Локальное имя импорта -> файл на диске. В коде пишут «.js», на диске «.ts». */
-	const importedFrom = new Map();
-	const rememberImport = (localName, specifier) => {
-		if (!specifier.startsWith(".")) return;
-		const base = path.resolve(path.dirname(apiServerFile), specifier);
-		const candidates = [
-			base.replace(/\.js$/, ".ts"),
-			`${base}.ts`,
-			path.join(base, "index.ts"),
-		];
-		const found = candidates.find((candidate) => existsSync(candidate));
-		if (found) importedFrom.set(localName, found);
-	};
+	if (filesToCheck.length === 0)
+		return { prefixes: new Map(), unresolved: [] };
 
 	const prefixes = new Map();
 	const unresolved = [];
 
-	const visit = (node) => {
-		if (
-			ts.isImportDeclaration(node) &&
-			ts.isStringLiteral(node.moduleSpecifier)
-		) {
-			const specifier = node.moduleSpecifier.text;
-			const clause = node.importClause;
-			if (clause?.name) rememberImport(clause.name.text, specifier);
-			if (clause?.namedBindings && ts.isNamedImports(clause.namedBindings)) {
-				for (const element of clause.namedBindings.elements)
-					rememberImport(element.name.text, specifier);
-			}
-		}
-		if (
-			ts.isCallExpression(node) &&
-			ts.isPropertyAccessExpression(node.expression) &&
-			node.expression.name.text === "register"
-		) {
-			const plugin = node.arguments[0];
-			const options = node.arguments[1];
-			let prefix = null;
-			if (options !== undefined && ts.isObjectLiteralExpression(options)) {
-				for (const property of options.properties) {
-					if (!ts.isPropertyAssignment(property)) continue;
-					const key =
-						ts.isIdentifier(property.name) ||
-						ts.isStringLiteralLike(property.name)
-							? property.name.text
-							: null;
-					if (key !== "prefix") continue;
-					prefix = literalText(property.initializer);
+	for (const file of filesToCheck) {
+		const source = readFileSync(file, "utf8");
+		const parsed = parseSource(file, source);
+
+		/* Локальное имя импорта -> файл на диске. В коде пишут «.js», на диске «.ts». */
+		const importedFrom = new Map();
+		const rememberImport = (localName, specifier) => {
+			if (!specifier.startsWith(".")) return;
+			const base = path.resolve(path.dirname(file), specifier);
+			const candidates = [
+				base.replace(/\.js$/, ".ts"),
+				`${base}.ts`,
+				path.join(base, "index.ts"),
+			];
+			const found = candidates.find((candidate) => existsSync(candidate));
+			if (found) importedFrom.set(localName, found);
+		};
+
+		const visit = (node) => {
+			if (
+				ts.isImportDeclaration(node) &&
+				ts.isStringLiteral(node.moduleSpecifier)
+			) {
+				const specifier = node.moduleSpecifier.text;
+				const clause = node.importClause;
+				if (clause?.name) rememberImport(clause.name.text, specifier);
+				if (clause?.namedBindings && ts.isNamedImports(clause.namedBindings)) {
+					for (const element of clause.namedBindings.elements)
+						rememberImport(element.name.text, specifier);
 				}
 			}
-			if (prefix !== null && prefix !== "") {
-				if (
-					plugin !== undefined &&
-					ts.isIdentifier(plugin) &&
-					importedFrom.has(plugin.text)
-				) {
-					prefixes.set(importedFrom.get(plugin.text), prefix);
-				} else {
-					/* Префикс есть, а файл по имени не найден: молчать нельзя. */
-					unresolved.push({
-						prefix,
-						where: `${relative(apiServerFile)}:${lineOf(parsed, node)}`,
-						plugin:
-							plugin !== undefined && ts.isIdentifier(plugin)
-								? plugin.text
-								: "<не идентификатор>",
-					});
+			if (
+				ts.isCallExpression(node) &&
+				ts.isPropertyAccessExpression(node.expression) &&
+				node.expression.name.text === "register"
+			) {
+				const plugin = node.arguments[0];
+				const options = node.arguments[1];
+				let prefix = null;
+				if (options !== undefined && ts.isObjectLiteralExpression(options)) {
+					for (const property of options.properties) {
+						if (!ts.isPropertyAssignment(property)) continue;
+						const key =
+							ts.isIdentifier(property.name) ||
+							ts.isStringLiteralLike(property.name)
+								? property.name.text
+								: null;
+						if (key !== "prefix") continue;
+						prefix = literalText(property.initializer);
+					}
+				}
+				if (prefix !== null && prefix !== "") {
+					if (
+						plugin !== undefined &&
+						ts.isIdentifier(plugin) &&
+						importedFrom.has(plugin.text)
+					) {
+						prefixes.set(importedFrom.get(plugin.text), prefix);
+					} else {
+						/* Префикс есть, а файл по имени не найден: молчать нельзя. */
+						unresolved.push({
+							prefix,
+							where: `${relative(file)}:${lineOf(parsed, node)}`,
+							plugin:
+								plugin !== undefined && ts.isIdentifier(plugin)
+									? plugin.text
+									: "<не идентификатор>",
+						});
+					}
 				}
 			}
-		}
-		ts.forEachChild(node, visit);
-	};
-	ts.forEachChild(parsed, visit);
+			ts.forEachChild(node, visit);
+		};
+		ts.forEachChild(parsed, visit);
+	}
 	return { prefixes, unresolved };
 }
 

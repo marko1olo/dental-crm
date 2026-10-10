@@ -9,26 +9,12 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import {
-	Banknote,
-	CheckCircle2,
-	ChevronRight,
-	CreditCard,
-	DollarSign,
-	FileText,
-	Lock,
-	LogOut,
-	Plus,
-	Printer,
-	QrCode,
-	Receipt,
-	RefreshCw,
-	ShieldCheck,
-	Wallet,
-	X,
-	Zap,
+	Banknote, CheckCircle2, ChevronRight, CreditCard, DollarSign, FileText, Lock, LogOut,
+	Plus, Printer, QrCode, Receipt, RefreshCw, ShieldCheck, Wallet, X, Zap,
 } from "lucide-react";
 import { showToast } from "../GlobalToast.js";
 import { ReceiptPreview, type ReceiptItem } from "./ReceiptPreview.js";
+import { CashRegisterPaymentPane } from "./CashRegisterPaymentPane.js";
 import "./paymentModalStudio.css";
 
 export interface CashRegisterDrawerProps {
@@ -40,55 +26,11 @@ export interface CashRegisterDrawerProps {
 	readonly invoices?: readonly any[] | undefined;
 }
 
-export interface ShiftReceiptEntry {
-	readonly id: string;
-	readonly number: string;
-	readonly time: string;
-	readonly patientName: string;
-	readonly totalRub: number;
-	readonly method: "card" | "sbp" | "cash" | "split" | "warranty";
-	readonly items: readonly ReceiptItem[];
-}
-
-const DEFAULT_RECENT_RECEIPTS: readonly ShiftReceiptEntry[] = [
-	{
-		id: "rec-104",
-		number: "0104",
-		time: "15:42",
-		patientName: "Смирнов Алексей Игоревич",
-		totalRub: 12500,
-		method: "card",
-		items: [
-			{ name: "Лечение глубокого кариеса (световая пломба Estelite)", quantity: 1, priceRub: 7500, amountRub: 7500, code804n: "A16.07.002" },
-			{ name: "Анестезия инфильтрационная (Убистезин Форте)", quantity: 1, priceRub: 1500, amountRub: 1500, code804n: "B01.003.004.005" },
-			{ name: "Комплексная гигиена полости рта (AirFlow)", quantity: 1, priceRub: 3500, amountRub: 3500, code804n: "A16.07.051" },
-		],
-	},
-	{
-		id: "rec-103",
-		number: "0103",
-		time: "14:15",
-		patientName: "Иванова Ольга Сергеевна",
-		totalRub: 9000,
-		method: "sbp",
-		items: [
-			{ name: "Профессиональная чистка и полировка зубов", quantity: 1, priceRub: 5500, amountRub: 5500, code804n: "A16.07.051" },
-			{ name: "Ремтерапия эмали фторлаком (2 челюсти)", quantity: 1, priceRub: 3500, amountRub: 3500, code804n: "A16.07.053" },
-		],
-	},
-	{
-		id: "rec-102",
-		number: "0102",
-		time: "12:30",
-		patientName: "Ковалев Дмитрий Сергеевич",
-		totalRub: 7500,
-		method: "cash",
-		items: [
-			{ name: "Удаление подвижного молочного зуба", quantity: 1, priceRub: 3500, amountRub: 3500, code804n: "A16.07.001" },
-			{ name: "Наложение лечебной повязки Альвожиль", quantity: 1, priceRub: 4000, amountRub: 4000, code804n: "A15.07.001" },
-		],
-	},
-];
+import {
+	type ShiftReceiptEntry,
+	DEFAULT_RECENT_RECEIPTS,
+} from "./cashRegisterDrawerData.js";
+export type { ShiftReceiptEntry };
 
 export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 	isOpen,
@@ -98,7 +40,7 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 	onOpenPaymentModal,
 	invoices,
 }) => {
-	const [activeTab, setActiveTab] = useState<"shift" | "receipts" | "operations">("shift");
+	const [activeTab, setActiveTab] = useState<"payment" | "shift" | "receipts" | "operations">("payment");
 	const [selectedReceipt, setSelectedReceipt] = useState<ShiftReceiptEntry | null>(null);
 	const [cashInDrawerRub, setCashInDrawerRub] = useState<number>(24500);
 
@@ -355,6 +297,20 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 					<button
 						type="button"
 						onClick={() => {
+							setActiveTab("payment");
+							setSelectedReceipt(null);
+						}}
+						className={`cash-drawer-tab-btn ${
+							activeTab === "payment" && !selectedReceipt ? "is-active" : ""
+						}`}
+						data-testid="tab-register-payment"
+					>
+						<QrCode size={14} />
+						<span>Касса & СБП</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => {
 							setActiveTab("shift");
 							setSelectedReceipt(null);
 						}}
@@ -417,8 +373,31 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 								}}
 							/>
 						</div>
-					) : activeTab === "shift" ? (
-						<div className="space-y-4">
+					) : activeTab === "payment" || activeTab === "shift" ? (
+						<>
+							<div hidden={activeTab !== "payment"} style={{ display: activeTab === "payment" ? undefined : "none" }}>
+								<CashRegisterPaymentPane
+									defaultAmountRub={invoices && invoices[0]?.totalAmountRub ? invoices[0].totalAmountRub : 8500}
+									cashierFullName={cashierFullName}
+									clinicLegalName={clinicLegalName}
+									onPaymentCompleted={(newReceipt) => {
+										setRecentReceipts((prev) => [newReceipt, ...prev]);
+										setReceiptsCount((prev) => prev + 1);
+										setGrandTotalRub((prev) => prev + newReceipt.totalRub);
+										if (newReceipt.method === "sbp") {
+											setSbpTotalRub((prev) => prev + newReceipt.totalRub);
+										} else if (newReceipt.method === "card") {
+											setCardTotalRub((prev) => prev + newReceipt.totalRub);
+										} else if (newReceipt.method === "cash") {
+											setCashTotalRub((prev) => prev + newReceipt.totalRub);
+											setCashInDrawerRub((prev) => prev + newReceipt.totalRub);
+										}
+										setSelectedReceipt(newReceipt);
+									}}
+									onOpenFullSplitModal={onOpenPaymentModal}
+								/>
+							</div>
+							<div hidden={activeTab !== "shift"} style={{ display: activeTab === "shift" ? undefined : "none" }} className="space-y-4">
 							{/* Revenue Overview Card */}
 							<div className="p-4 rounded-2xl bg-gradient-to-br from-teal-500/10 to-emerald-500/10 border border-teal-500/20 space-y-3">
 								<span className="text-xs font-bold text-teal-800 dark:text-teal-300 uppercase tracking-wide block">
@@ -538,6 +517,7 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 								</div>
 							</div>
 						</div>
+						</>
 					) : activeTab === "receipts" ? (
 						<div className="space-y-2">
 							<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wide block">
@@ -630,8 +610,8 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 					<button
 						type="button"
 						onClick={() => {
-							onClose();
-							onOpenPaymentModal?.();
+							setActiveTab("payment");
+							setSelectedReceipt(null);
 						}}
 						className="flex-1 min-h-[46px] px-4 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-sm font-extrabold flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98 transition-all"
 						data-testid="btn-drawer-new-payment"

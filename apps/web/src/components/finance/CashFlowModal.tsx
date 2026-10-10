@@ -199,7 +199,7 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({
 							<label className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider">
 								Тип операции ({cashFlowMode === "cash_in" ? "Каталог приходов клиники" : "Каталог расходов клиники"}):
 							</label>
-							<span className="text-[11px] text-[var(--muted,#64748b)]">1 клик для выбора</span>
+							<span className="text-[11px] text-[var(--muted,#64748b)]">Быстрый выбор</span>
 						</div>
 
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1 border border-[var(--line,rgba(0,0,0,0.06))] rounded-xl bg-[var(--paper-soft,#f8fafc)]">
@@ -225,7 +225,7 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({
 												<div className="flex items-center gap-1.5 flex-wrap">
 													{receipt.ffdTag1054 !== null ? (
 														<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-700 dark:text-blue-300 font-semibold">
-															{`54-ФЗ: Тег 1054 = ${receipt.ffdTag1054Code} (${receipt.ffdTag1054})`}
+															{`54-ФЗ: ${receipt.ffdTag1054}`}
 														</span>
 													) : (
 														<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-500/10 text-neutral-600 dark:text-neutral-400 font-medium">
@@ -257,7 +257,7 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({
 												<div className="flex items-center gap-1.5 flex-wrap">
 													{expense.ffdTag1054 !== null ? (
 														<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-700 dark:text-purple-300 font-semibold">
-															{`54-ФЗ: Тег 1054 = ${expense.ffdTag1054Code} (${expense.ffdTag1054})`}
+															{`54-ФЗ: ${expense.ffdTag1054}`}
 														</span>
 													) : (
 														<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-500/10 text-neutral-600 dark:text-neutral-400 font-medium">

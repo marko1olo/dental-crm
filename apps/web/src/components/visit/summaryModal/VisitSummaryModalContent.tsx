@@ -81,6 +81,8 @@ export const VisitSummaryModalContent: React.FC<VisitSummaryModalContentProps> =
 		setIsMemoModalOpen,
 		zoomImage,
 		setZoomImage,
+		consumablesReconciliation,
+		handleAddAllUnbilledToBill,
 	} = state;
 
 	const doctorName = props.doctorName;
@@ -214,6 +216,8 @@ export const VisitSummaryModalContent: React.FC<VisitSummaryModalContentProps> =
 						effectiveTotalDueRub={effectiveTotalDueRub}
 						effectiveDepositRub={effectiveDepositRub}
 						onOpenPaymentModal={handleOpenPaymentModal}
+						consumablesReconciliation={consumablesReconciliation}
+						onAddAllUnbilledToBill={handleAddAllUnbilledToBill}
 					/>
 
 					{/* Разделы Формы 043/у */}

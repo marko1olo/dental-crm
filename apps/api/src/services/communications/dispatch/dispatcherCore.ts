@@ -612,12 +612,10 @@ export class CommunicationsDispatcher {
 	public async getStatus(
 		organizationId?: string | null,
 	): Promise<DispatchReport> {
-		return dispatchDueMessages({ organizationId, batchSize: 0 });
+		return dispatchDueMessages({ ...(organizationId ? { organizationId } : {}), batchSize: 0 });
 	}
 
-	public async broadcast(
-		messages: EnqueueMessageInput[],
-	): Promise<EnqueueMessageResult[]> {
+	public async broadcast(messages: EnqueueMessageInput[]): Promise<EnqueueMessageResult[]> {
 		return Promise.all(messages.map((m) => enqueueMessage(m)));
 	}
 }

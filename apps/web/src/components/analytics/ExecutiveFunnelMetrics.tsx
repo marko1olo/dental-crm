@@ -63,11 +63,13 @@ export const ExecutiveFunnelMetrics: React.FC<ExecutiveFunnelMetricsProps> = ({
 						<div className="funnel-step-top">
 							<div className="funnel-step-info">
 								<span className="funnel-step-num">{st.stepNumber}</span>
-								<span className="funnel-step-title">{st.title}</span>
+								<span className="funnel-step-title">
+									{st.title.replace(/\s*\(Diagnocat\)|Diagnocat\s*/gi, "")}
+								</span>
 								{st.isAiAssisted && (
-									<span className="funnel-ai-badge" title="Автоматический скрининг КЛКТ и прикусных снимков в Diagnocat AI">
+									<span className="funnel-ai-badge" title="Автоматический скрининг КЛКТ и прикусных снимков">
 										<Sparkles size={13} aria-hidden="true" />
-										Diagnocat AI
+										ИИ-скрининг КЛКТ
 									</span>
 								)}
 							</div>
@@ -142,9 +144,9 @@ export const ExecutiveFunnelMetrics: React.FC<ExecutiveFunnelMetricsProps> = ({
 									<strong>{st.conversionFromLeadPercent}%</strong>
 								</div>
 								{st.isAiAssisted && (
-									<div style={{ color: "var(--accent, #6366f1)", fontWeight: 500, display: "flex", alignItems: "center", gap: "0.25rem" }}>
+									<div style={{ color: "var(--teal, #0d9488)", fontWeight: 500, display: "flex", alignItems: "center", gap: "0.25rem" }}>
 										<CheckCircle2 size={14} />
-										Интегрировано с модулем ИИ-рентгенологии Diagnocat PACS
+										Интегрировано с модулем ИИ-рентгенологии КЛКТ
 									</div>
 								)}
 							</div>

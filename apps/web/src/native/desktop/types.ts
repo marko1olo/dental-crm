@@ -5,10 +5,9 @@
  * fiscal printers, 3D CT viewers, window states, and hardware events.
  */
 
-import type { ParsedGs1DataMatrix } from "../mobile/gs1Scanner";
-import type { ClinicalAudioFeedbackType } from "../mobile/hapticsAndAudio";
+import type { ParsedGs1DataMatrix, ClinicalAudioFeedbackType } from "../mobile/types";
 
-export type { ClinicalAudioFeedbackType };
+export type { ClinicalAudioFeedbackType, ParsedGs1DataMatrix };
 
 export interface DesktopSerialPortInfo {
 	path: string;
@@ -172,6 +171,8 @@ export interface LaunchCtViewerResult {
 	viewerName?: string | undefined;
 	error?: string | undefined;
 	windowId?: number | undefined;
+	canFallbackToInternalStudio?: boolean | undefined;
+	commandLine?: string | undefined;
 }
 
 export interface RecentDownloadsCtItem {
@@ -192,25 +193,25 @@ export interface ScanDownloadsCtOptions {
 export interface DesktopCtDownloadItem {
 	id: string;
 	fileName: string;
-	filePath?: string;
+	filePath?: string | undefined;
 	fileSizeBytes: number;
 	detectedAtIso: string;
-	patientName?: string;
+	patientName?: string | undefined;
 	modality: "cbct" | "ct" | "dicom_archive";
-	sliceCountEstimate?: number;
+	sliceCountEstimate?: number | undefined;
 	source: "downloads" | "hot_folder" | "drag_drop";
 	isZip: boolean;
-	externalViewerExecutable?: string;
+	externalViewerExecutable?: string | undefined;
 }
 
 export interface DesktopExternalViewerInfo {
 	id: string;
 	name: string;
 	vendor: string;
-	executablePath?: string;
+	executablePath?: string | undefined;
 	isAvailable: boolean;
-	icon?: string;
-	isDefault?: boolean;
+	icon?: string | undefined;
+	isDefault?: boolean | undefined;
 }
 
 export interface DesktopNativeApi {
@@ -313,18 +314,18 @@ export interface DesktopNativeApi {
 	detectInstalledCtViewers?: () => Promise<InstalledCtViewerInfo[]>;
 	launchExternalCtViewer?: (params: LaunchCtViewerParams) => Promise<LaunchCtViewerResult>;
 	detectExternalCtViewers?: () => Promise<DesktopExternalViewerInfo[]>;
-	openInExternalViewer?: (params: { viewerId: string; filePath?: string; archivePath?: string }) => Promise<{ success: boolean; error?: string }>;
-	openInNewWindow?: (params: { url: string; title?: string; studyId?: string; patientId?: string }) => Promise<{ success: boolean; error?: string }>;
+	openInExternalViewer?: (params: { viewerId: string; filePath?: string | undefined; archivePath?: string | undefined }) => Promise<{ success: boolean; error?: string | undefined; canFallbackToInternalStudio?: boolean | undefined }>;
+	openInNewWindow?: (params: { url: string; title?: string | undefined; studyId?: string | undefined; patientId?: string | undefined }) => Promise<{ success: boolean; error?: string | undefined }>;
 	openCbctPopoutWindow?: (params: {
-		url?: string;
-		studyId?: string;
-		patientId?: string;
-		patientName?: string;
-		title?: string;
-		targetDisplayId?: number;
-		width?: number;
-		height?: number;
-	}) => Promise<{ success: boolean; windowId?: number; isNewWindow?: boolean; url?: string; error?: string }>;
+		url?: string | undefined;
+		studyId?: string | undefined;
+		patientId?: string | undefined;
+		patientName?: string | undefined;
+		title?: string | undefined;
+		targetDisplayId?: number | undefined;
+		width?: number | undefined;
+		height?: number | undefined;
+	}) => Promise<{ success: boolean; windowId?: number | undefined; isNewWindow?: boolean | undefined; url?: string | undefined; error?: string | undefined }>;
 }
 
 declare global {

@@ -410,7 +410,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						aria-label="Эндо-калипер канала"
 						data-testid="cbct-tool-endo-canal"
 					>
-						<EndoFileCanal className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-teal-400 shrink-0" />
+						<EndoFileCanal className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
 					<DockTooltip
 						title="Канал (Эндо-калипер)"
@@ -427,18 +427,18 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						onClick={() => onSelectTool(activeTool === "airway" ? "crosshair" : "airway")}
 						className={getToolBtnClass(
 							activeTool === "airway",
-							"bg-cyan-500/20 text-cyan-300 border border-cyan-500/60 shadow-xs shadow-cyan-950/40",
+							"bg-teal-500/20 text-teal-300 border border-teal-500/60 shadow-xs shadow-teal-950/40",
 						)}
 						title="Дыхательные пути (Анализ объема и сужения по Ez3D-i)"
 						aria-label="Анализ дыхательных путей"
 						data-testid="cbct-tool-airway"
 					>
-						<Wind className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-cyan-400 shrink-0" />
+						<Wind className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
 					<DockTooltip
 						title="Дыхательные пути"
 						subtitle="Объем воздуха и сужение (Ez3D-i)"
-						titleColor="text-cyan-300"
+						titleColor="text-teal-300"
 					/>
 				</div>
 
@@ -448,12 +448,12 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						<button
 							type="button"
 							onClick={onToggleDentalArch}
-							className={getToolBtnClass(showDentalArch, "bg-purple-500/20 text-purple-300 border border-purple-500/60 shadow-xs shadow-purple-950/40")}
+							className={getToolBtnClass(showDentalArch, "bg-teal-500/20 text-teal-300 border border-teal-500/60 shadow-xs shadow-teal-950/40")}
 							title="Дуга ОПТГ (Отображение зубной дуги)"
 							aria-label="Дуга ОПТГ"
 							data-testid="cbct-left-dock-toggle-arch"
 						>
-							<DentalPanoramicArch className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-purple-400 shrink-0" />
+							<DentalPanoramicArch className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 						</button>
 						<DockTooltip title="Дуга ОПТГ" subtitle={showDentalArch ? "Включена" : "Выключена"} />
 					</div>
@@ -465,14 +465,14 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						<button
 							type="button"
 							onClick={onAutoDetectArch}
-							className="w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 bg-zinc-900 text-purple-300 hover:text-purple-200 hover:bg-purple-950/40 border border-[var(--line,#27272a)] hover:border-purple-500/80 shadow-xs"
+							className="w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-teal-300 hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-teal-500/60 shadow-xs"
 							title="Сгенерировать дугу автоматически (по плотности эмали/кости)"
 							aria-label="Сгенерировать дугу автоматически"
 							data-testid="cbct-tool-auto-arch"
 						>
-							<Sliders className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-purple-400 shrink-0" />
+							<Sliders className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 						</button>
-						<DockTooltip title="Авто-дуга" subtitle="Сгенерировать автоматически" titleColor="text-purple-300" />
+						<DockTooltip title="Авто-дуга" subtitle="Сгенерировать автоматически" titleColor="text-teal-300" />
 					</div>
 				)}
 
@@ -482,14 +482,14 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						<button
 							type="button"
 							onClick={() => onSelectStudioMode(studioMode === "implant" ? "diagnostic" : "implant")}
-							className={getToolBtnClass(studioMode === "implant", "bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-xs shadow-amber-950/40")}
+							className={getToolBtnClass(studioMode === "implant", "bg-teal-500/20 text-teal-300 border border-teal-500/60 shadow-xs shadow-teal-950/40")}
 							title="Имплантация (Планирование имплантата) [I]"
 							aria-label="Имплантация"
 							data-testid="cbct-left-dock-toggle-implant"
 						>
-							<CircleDot className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-amber-400 shrink-0" />
+							<CircleDot className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 						</button>
-						<DockTooltip title="Имплантация" subtitle={studioMode === "implant" ? "Режим активен" : "Планирование"} titleColor="text-amber-300" />
+						<DockTooltip title="Имплантация" subtitle={studioMode === "implant" ? "Режим активен" : "Планирование"} titleColor="text-teal-300" />
 					</div>
 				)}
 			</div>
@@ -506,8 +506,8 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						onClick={() => toggleMenu("slab")}
 						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
 							openMenu === "slab" || isSlabActive
-								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
+								? "bg-teal-500/20 text-teal-400 border border-teal-500/60 shadow-xs shadow-teal-950/40"
+								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-teal-500/40"
 						}`}
 						title="Толщина среза & Режимы MIP [L]"
 						aria-label="Толщина среза и MIP"
@@ -531,9 +531,9 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							role="tooltip"
 							className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 						>
-							<span className="font-semibold text-cyan-300">Толщина среза</span>
+							<span className="font-semibold text-teal-300">Толщина среза</span>
 							<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Сляб MIP / MinIP / Avg</span>
-							<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
+							<kbd className="text-[10px] bg-zinc-800 text-teal-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
 								L
 							</kbd>
 						</div>
@@ -558,8 +558,8 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						onClick={() => toggleMenu("hu")}
 						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
 							openMenu === "hu"
-								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
+								? "bg-teal-500/20 text-teal-400 border border-teal-500/60 shadow-xs shadow-teal-950/40"
+								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-teal-500/40"
 						}`}
 						title="Пресеты контраста HU [F]"
 						aria-label="HU Пресеты контраста"
@@ -572,7 +572,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						</span>
 					</button>
 
-					{openMenu === "none" && <DockTooltip title="Пресеты HU" subtitle="Кость / Эндо / Ткани" shortcut="F" titleColor="text-cyan-300" />}
+					{openMenu === "none" && <DockTooltip title="Пресеты HU" subtitle="Кость / Эндо / Ткани" shortcut="F" titleColor="text-teal-300" />}
 
 					{/* Flyout Popover for HU Window/Level Presets */}
 					{openMenu === "hu" && (
@@ -591,16 +591,16 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						onClick={() => toggleMenu("colormap")}
 						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
 							openMenu === "colormap" || activeColorMapMode !== "grayscale"
-								? "bg-purple-500/20 text-purple-300 border border-purple-500/60 shadow-xs shadow-purple-950/40"
-								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-purple-500/40"
+								? "bg-teal-500/20 text-teal-300 border border-teal-500/60 shadow-xs shadow-teal-950/40"
+								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-teal-500/40"
 						}`}
 						title="Цветовые карты WebGL2 (Миш D1-D4 / Эндо / DICOM)"
 						aria-label="Цветовые карты WebGL2"
 						aria-expanded={openMenu === "colormap"}
 						data-testid="cbct-tool-colormap"
 					>
-						<Palette className="w-3.5 h-3.5 [@media(pointer:coarse)]:w-4 [@media(pointer:coarse)]:h-4 shrink-0 text-purple-400" />
-						<span className="text-[7.5px] [@media(pointer:coarse)]:text-[8px] font-mono font-bold leading-none mt-0.5 text-purple-300">
+						<Palette className="w-3.5 h-3.5 [@media(pointer:coarse)]:w-4 [@media(pointer:coarse)]:h-4 shrink-0" />
+						<span className="text-[7.5px] [@media(pointer:coarse)]:text-[8px] font-mono font-bold leading-none mt-0.5">
 							{activeColorMapMode === "bone_density"
 								? "МИШ"
 								: activeColorMapMode === "endo"
@@ -611,7 +611,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						</span>
 					</button>
 
-					{openMenu === "none" && <DockTooltip title="Цветовая карта" subtitle={activeColorMapMode === "bone_density" ? "Плотность кости (Миш D1-D4)" : activeColorMapMode === "endo" ? "Эндо (Микротрещины)" : activeColorMapMode === "inverted" ? "Белая бумага (Печать)" : "Серый (DICOM)"} titleColor="text-purple-300" />}
+					{openMenu === "none" && <DockTooltip title="Цветовая карта" subtitle={activeColorMapMode === "bone_density" ? "Плотность кости (Миш D1-D4)" : activeColorMapMode === "endo" ? "Эндо (Микротрещины)" : activeColorMapMode === "inverted" ? "Белая бумага (Печать)" : "Серый (DICOM)"} titleColor="text-teal-300" />}
 
 					{/* Flyout Popover for Colormaps */}
 					{openMenu === "colormap" && (

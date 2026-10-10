@@ -11,13 +11,12 @@ import type {
 	Appointment,
 	AppointmentStatus,
 	Chair,
-	ChairWorkingHours,
 	ClinicScheduleDefaults,
 	StaffMember,
 	StaffWorkingHours,
 	UpdateAppointmentInput,
 } from "@dental/shared";
-import { appointments, scheduleBlockingAppointmentStatuses } from "./appointments.js";
+import { appointments, scheduleBlockingAppointmentStatuses, terminalAppointmentStatuses } from "./appointments.js";
 import { chairs, clinicProfile } from "./organizations.js";
 import { staffMembers } from "./staff.js";
 import { activeVisit } from "./clinicalRecords.js";

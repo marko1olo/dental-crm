@@ -148,7 +148,7 @@ export const SettingsProtocolsEditForm: React.FC<
 							Коды диагнозов МКБ-10 (автоподстановка в дневник приёма)
 						</span>
 						<span className="text-[11px] text-[var(--muted)]">
-							1 клик для добавления или снятия диагноза
+							Нажмите для добавления или снятия диагноза
 						</span>
 					</div>
 					<div className="flex items-center gap-1.5 flex-wrap p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
@@ -237,7 +237,7 @@ export const SettingsProtocolsEditForm: React.FC<
 					<div className="flex items-center justify-between flex-wrap gap-1 mb-1">
 						<span>Шаблон плана лечения и манипуляций</span>
 						<span className="text-[11px] text-[var(--muted)]">
-							Быстрые протоколы (1 клик):
+							Быстрые протоколы:
 						</span>
 					</div>
 					<div className="flex items-center gap-1 flex-wrap p-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] mb-2">

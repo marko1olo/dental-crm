@@ -6,6 +6,7 @@ import {
 	FileText,
 	MoveHorizontal,
 	UploadCloud,
+	ExternalLink,
 } from 'lucide-react';
 import { CheekRetractor } from '../icons/DentalIcons';
 import './clinicalPhotography.css';
@@ -21,7 +22,8 @@ import { PhotoSlotCard } from './PhotoSlotCard';
 import { BeforeAfterComparisonView } from './BeforeAfterComparisonView';
 import { PhotoCalibrationDrawer } from './PhotoCalibrationDrawer';
 import { PhotoCollageExportSheet } from './PhotoCollageExportSheet';
-import { decodeHeicImage } from '../../services/imaging/heicDecoder';
+import { compressChairsidePhotoToBlobUrl } from './chairsidePhotoCompressor';
+import { openPatientPresentationWindow } from './presentationSyncProtocol';
 
 export interface ClinicalPhotoProtocolModalProps {
 	isOpen: boolean;
@@ -73,9 +75,20 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 	const [beforeSlotId, setBeforeSlotId] = useState<string>('portrait_smile');
 	const [afterSlotId, setAfterSlotId] = useState<string>('intraoral_frontal_occlusion');
 
-	// File input ref
+	// File input ref & Blob URLs memory leak prevention
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const currentUploadingSlotRef = useRef<string | null>(null);
+	const createdBlobUrlsRef = useRef<Set<string>>(new Set());
+
+	useEffect(() => {
+		return () => {
+			// Revoke all created blob URLs to prevent memory leaks in V8 heap
+			for (const url of createdBlobUrlsRef.current) {
+				URL.revokeObjectURL(url);
+			}
+			createdBlobUrlsRef.current.clear();
+		};
+	}, []);
 
 	useEffect(() => {
 		if (initialSlots && Object.keys(initialSlots).length > 0) {
@@ -99,20 +112,25 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 
 	const handleFileUpload = async (slotId: string, file: File) => {
 		try {
-			const decoded = await decodeHeicImage(file, {
-				targetFormat: "webp",
-				quality: 0.94,
-				maxDimension: 2048,
-				preserveColorProfile: true,
-				applyExifRotation: true,
-				generateThumbnail: true,
-				thumbnailSize: 200,
+			// Stream compress to optimized WebP blob (1920px max, 0.85 quality)
+			const compressed = await compressChairsidePhotoToBlobUrl(file, {
+				maxDimension: 1920,
+				quality: 0.85,
 			});
 
+			// Revoke previous blob URL to prevent V8 heap bloat
+			const prevUrl = slotsData[slotId]?.imageUrl;
+			if (prevUrl && prevUrl.startsWith('blob:')) {
+				URL.revokeObjectURL(prevUrl);
+				createdBlobUrlsRef.current.delete(prevUrl);
+			}
+
+			createdBlobUrlsRef.current.add(compressed.blobUrl);
+
 			updateSlotRecord(slotId, {
-				imageUrl: decoded.dataUrl,
+				imageUrl: compressed.blobUrl,
 				uploadedAt: new Date().toISOString(),
-				stage: 'before',
+				stage: currentStage === 'during' ? 'in_progress' : currentStage,
 				rotationDegrees: 0,
 				flipHorizontal: false,
 				flipVertical: false,
@@ -122,23 +140,20 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 				warmth: 0
 			});
 		} catch (_err) {
-			const reader = new FileReader();
-			reader.onload = (e) => {
-				const resultUrl = e.target?.result as string;
-				updateSlotRecord(slotId, {
-					imageUrl: resultUrl,
-					uploadedAt: new Date().toISOString(),
-					stage: 'before',
-					rotationDegrees: 0,
-					flipHorizontal: false,
-					flipVertical: false,
-					brightness: 0,
-					contrast: 0,
-					exposure: 0,
-					warmth: 0
-				});
-			};
-			reader.readAsDataURL(file);
+			const fallbackUrl = URL.createObjectURL(file);
+			createdBlobUrlsRef.current.add(fallbackUrl);
+			updateSlotRecord(slotId, {
+				imageUrl: fallbackUrl,
+				uploadedAt: new Date().toISOString(),
+				stage: currentStage === 'during' ? 'in_progress' : currentStage,
+				rotationDegrees: 0,
+				flipHorizontal: false,
+				flipVertical: false,
+				brightness: 0,
+				contrast: 0,
+				exposure: 0,
+				warmth: 0
+			});
 		}
 	};
 
@@ -198,6 +213,11 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 
 	const handleDeleteImage = (slotId: string, e?: React.MouseEvent) => {
 		e?.stopPropagation();
+		const prevUrl = slotsData[slotId]?.imageUrl;
+		if (prevUrl && prevUrl.startsWith('blob:')) {
+			URL.revokeObjectURL(prevUrl);
+			createdBlobUrlsRef.current.delete(prevUrl);
+		}
 		setSlotsData(prev => {
 			const next = { ...prev };
 			delete next[slotId];
@@ -302,6 +322,29 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 
 					{/* Actions */}
 					<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+						<button
+							type="button"
+							className="photo-touch-btn"
+							data-testid="btn-patient-presentation-popout"
+							onClick={() => {
+								openPatientPresentationWindow({
+									beforeImageUrl: slotsData[beforeSlotId]?.imageUrl,
+									afterImageUrl: slotsData[afterSlotId]?.imageUrl,
+									beforeLabel: getSlotDefinitionById(beforeSlotId)?.shortLabelRu || 'До',
+									afterLabel: getSlotDefinitionById(afterSlotId)?.shortLabelRu || 'После',
+									beforeShade: slotsData[beforeSlotId]?.detectedVitaShade,
+									afterShade: slotsData[afterSlotId]?.detectedVitaShade,
+									clinicName,
+									patientName,
+									mode: 'split',
+								});
+							}}
+							title="Показать на экране пациента перед креслом (2-й монитор / ТВ)"
+							style={{ minHeight: '34px', fontSize: '12px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+						>
+							<ExternalLink size={16} />
+							Экран пациента
+						</button>
 						{onSaveProtocol && (
 							<button
 								className="photo-touch-btn primary"

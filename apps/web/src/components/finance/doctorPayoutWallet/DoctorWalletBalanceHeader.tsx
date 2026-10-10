@@ -12,7 +12,7 @@ export interface DoctorWalletBalanceHeaderProps {
 	readonly currentDoctor: DoctorPayoutRow;
 	readonly onSelectDoctor: (doctorUserId: string) => void;
 	readonly totalWithheld: number;
-	readonly onRequestPayout?: (doctor: DoctorPayoutRow, amountKopecks: number) => void;
+	readonly onRequestPayout?: ((doctor: DoctorPayoutRow, amountKopecks: number) => void) | undefined;
 }
 
 export function DoctorWalletBalanceHeader({

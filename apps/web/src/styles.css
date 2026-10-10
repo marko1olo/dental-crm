@@ -181,3 +181,32 @@
 		display: none;
 	}
 }
+
+/* ==========================================================================
+   6. LOW-END HARDWARE ACCELERATOR (Intel Celeron, 4 GB RAM)
+   Replaces expensive GPU backdrop-filter: blur with solid/semi-opaque fallbacks.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce), (update: slow) {
+	.backdrop-blur-xs,
+	.backdrop-blur-sm,
+	.backdrop-blur-md,
+	.backdrop-blur,
+	.backdrop-blur-lg,
+	.backdrop-blur-xl {
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+		background-color: var(--paper-strong, #ffffff) !important;
+	}
+}
+
+.low-end-hardware-mode .backdrop-blur-xs,
+.low-end-hardware-mode .backdrop-blur-sm,
+.low-end-hardware-mode .backdrop-blur-md,
+.low-end-hardware-mode .backdrop-blur,
+.low-end-hardware-mode .backdrop-blur-lg,
+.low-end-hardware-mode .backdrop-blur-xl {
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+	background-color: var(--paper-strong, #ffffff) !important;
+}
+

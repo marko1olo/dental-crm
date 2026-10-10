@@ -143,7 +143,7 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 							</span>
 						)}
 						<span className="text-[11px] text-[var(--tp-text-muted)] hidden lg:inline">
-							Автономия врача: скидки и пакеты в 1 клик
+							Инструменты врача: скидки и клинические пакеты
 						</span>
 					</div>
 				</div>
@@ -307,7 +307,7 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 						</div>
 					</div>
 					<div className="text-[11px] text-[var(--tp-text-muted)] hidden lg:block">
-						Автономия врача: свободные скидки и переделки без согласований с администратором
+						Скидки лечащего врача и гарантийные переделки
 					</div>
 				</div>
 

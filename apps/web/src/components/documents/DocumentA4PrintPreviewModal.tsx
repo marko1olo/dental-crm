@@ -2,7 +2,7 @@
  * DocumentA4PrintPreviewModal.tsx
  *
  * Полноразмерное модальное окно промышленного печатного документооборота A4.
- * Позволяет врачу или администратору в 1 клик просмотреть и распечатать
+ * Позволяет врачу или администратору просмотреть и распечатать
  * любой из 4 канонических юридических документов клиники:
  * 1. Договор на оказание платных медицинских услуг (ПП РФ № 736 от 11.05.2023, 152-ФЗ, 323-ФЗ).
  * 2. Акт сдачи-приемки выполненных работ и финансовая смета (Номенклатура МЗ РФ № 804н).
@@ -15,6 +15,7 @@ import { X, Printer, FileText } from "lucide-react";
 import type {
 	Patient,
 	StaffMember,
+	GeneratedDocument,
 	A4DocumentContractData,
 	A4DocumentActData,
 	A4DocumentTreatmentPlanData,
@@ -35,9 +36,12 @@ export interface DocumentA4PrintPreviewModalProps {
 	readonly doctorFullName?: string | null | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: clinic profile draft
 	readonly clinicProfileDraft?: any;
+	readonly existingDocuments?: readonly GeneratedDocument[] | undefined;
 	readonly contractData?: Partial<A4DocumentContractData>;
 	readonly actData?: Partial<A4DocumentActData>;
 	readonly treatmentPlanData?: Partial<A4DocumentTreatmentPlanData>;
+	readonly consentData?: Partial<A4DocumentInformedConsentData>;
+	readonly personalDataConsent?: Partial<A4DocumentPersonalDataConsentData>;
 	readonly medicalCardData?: Partial<A4DocumentMedicalCardData>;
 }
 
@@ -48,9 +52,12 @@ export const DocumentA4PrintPreviewModal: React.FC<DocumentA4PrintPreviewModalPr
 	patient,
 	doctorFullName,
 	clinicProfileDraft,
+	existingDocuments,
 	contractData: customContractData,
 	actData: customActData,
 	treatmentPlanData: customTreatmentPlanData,
+	consentData: customConsentData,
+	personalDataConsent: customPersonalDataConsent,
 	medicalCardData: customMedicalCardData,
 }) => {
 	const [activeTab, setActiveTab] = useState<ProfessionalA4DocumentTab>(initialTab);
@@ -60,6 +67,16 @@ export const DocumentA4PrintPreviewModal: React.FC<DocumentA4PrintPreviewModalPr
 			setActiveTab(initialTab);
 		}
 	}, [initialTab]);
+
+	React.useEffect(() => {
+		if (isOpen) {
+			try {
+				window.scrollTo({ top: 0, behavior: "instant" });
+			} catch {
+				window.scrollTo(0, 0);
+			}
+		}
+	}, [isOpen]);
 
 	const todayRu = useMemo(() => {
 		const d = new Date();
@@ -125,14 +142,37 @@ export const DocumentA4PrintPreviewModal: React.FC<DocumentA4PrintPreviewModalPr
 
 	const doctor = doctorFullName || cl.directorFullName || "Воронов Алексей Владимирович";
 
+	const patientDocs = useMemo(() => {
+		const docs = existingDocuments ?? [];
+		if (!patient?.id) return docs;
+		const filtered = docs.filter((d) => d.patientId === patient.id);
+		return filtered.length > 0 ? filtered : docs;
+	}, [existingDocuments, patient?.id]);
+
+	const latestContractDoc = useMemo(
+		() => patientDocs.find((d) => d.kind === "paid_medical_services_contract"),
+		[patientDocs],
+	);
+	const latestActDoc = useMemo(
+		() => patientDocs.find((d) => d.kind === "completed_works_act"),
+		[patientDocs],
+	);
+	const latestPlanDoc = useMemo(
+		() => patientDocs.find((d) => d.kind === "treatment_plan"),
+		[patientDocs],
+	);
+
 	// 1. Договор
 	const contractData: A4DocumentContractData = useMemo(() => {
+		const liveDocNum = (latestContractDoc as any)?.documentNumber as string | undefined;
+		const rawAmount = (latestContractDoc as any)?.amountRub ?? latestContractDoc?.totalAmountRub;
+		const liveAmount = typeof rawAmount === "number" && rawAmount > 0 ? rawAmount : undefined;
 		return {
 			clinic: cl,
 			patient: pt,
-			contractNumber: `Д-${new Date().getFullYear()}/${pt.cardNumber.replace(/\D/g, "") || "418"}`,
+			contractNumber: liveDocNum || `Д-${new Date().getFullYear()}/${pt.cardNumber.replace(/\D/g, "") || "418"}`,
 			contractDate: todayRu,
-			estimatedTotalRub: customContractData?.estimatedTotalRub || 18500,
+			estimatedTotalRub: customContractData?.estimatedTotalRub || liveAmount || 18500,
 			services: customContractData?.services || [
 				{
 					code804n: "B01.065.001",
@@ -159,18 +199,25 @@ export const DocumentA4PrintPreviewModal: React.FC<DocumentA4PrintPreviewModalPr
 					totalRub: 6500,
 				},
 			],
-			clinicalReason: customContractData?.clinicalReason || "Первичная консультация, санация кариеса зуба 16 и профгигиена",
+			clinicalReason:
+				customContractData?.clinicalReason ||
+				(latestContractDoc as any)?.summary ||
+				(latestContractDoc as any)?.notes ||
+				"Первичная консультация, санация кариеса зуба 16 и профгигиена",
 			doctorFullName: doctor,
 			...customContractData,
 		};
-	}, [cl, pt, doctor, todayRu, customContractData]);
+	}, [cl, pt, doctor, todayRu, customContractData, latestContractDoc]);
 
 	// 2. Акт выполненных работ
 	const actData: A4DocumentActData = useMemo(() => {
+		const liveActNum = (latestActDoc as any)?.documentNumber as string | undefined;
+		const rawActAmount = (latestActDoc as any)?.amountRub ?? latestActDoc?.totalAmountRub;
+		const liveActAmount = typeof rawActAmount === "number" && rawActAmount > 0 ? rawActAmount : undefined;
 		return {
 			clinic: cl,
 			patient: pt,
-			actNumber: `А-${new Date().getFullYear()}/${pt.cardNumber.replace(/\D/g, "") || "418"}`,
+			actNumber: liveActNum || `А-${new Date().getFullYear()}/${pt.cardNumber.replace(/\D/g, "") || "418"}`,
 			actDate: todayRu,
 			contractNumber: contractData.contractNumber,
 			contractDate: contractData.contractDate,
@@ -205,21 +252,22 @@ export const DocumentA4PrintPreviewModal: React.FC<DocumentA4PrintPreviewModalPr
 					totalRub: 6500,
 				},
 			],
-			totalAmountRub: customActData?.totalAmountRub || 18000,
+			totalAmountRub: customActData?.totalAmountRub || liveActAmount || 18000,
 			warrantyTermsText: customActData?.warrantyTermsText || "12 месяцев на композитные реставрации при условии прохождения контрольного осмотра каждые 6 месяцев.",
 			fiscalReceiptNumber: customActData?.fiscalReceiptNumber || "ФД-78412 / ФП-98214301",
 			...customActData,
 		};
-	}, [cl, pt, doctor, todayRu, contractData, customActData]);
+	}, [cl, pt, doctor, todayRu, contractData, customActData, latestActDoc]);
 
 	// 3. План лечения
 	const treatmentPlanData: A4DocumentTreatmentPlanData = useMemo(() => {
+		const livePlanSummary = (latestPlanDoc as any)?.summary || (latestPlanDoc as any)?.notes;
 		return {
 			clinic: cl,
 			patient: pt,
 			planDate: todayRu,
 			doctorFullName: doctor,
-			diagnosisSummary: "K02.1 Кариес дентина 16 зуба, K05.1 Хронический гингивит, дефект коронки 24 зуба",
+			diagnosisSummary: livePlanSummary || "K02.1 Кариес дентина 16 зуба, K05.1 Хронический гингивит, дефект коронки 24 зуба",
 			stages: customTreatmentPlanData?.stages || [
 				{
 					stageNumber: 1,
@@ -276,7 +324,7 @@ export const DocumentA4PrintPreviewModal: React.FC<DocumentA4PrintPreviewModalPr
 			approvedVariantName: "Вариант «Оптимальный» (Биологическая санация + E.max керамика)",
 			...customTreatmentPlanData,
 		};
-	}, [cl, pt, doctor, todayRu, customTreatmentPlanData]);
+	}, [cl, pt, doctor, todayRu, customTreatmentPlanData, latestPlanDoc]);
 
 	// 4. Медицинская карта / Дневник
 	const medicalCardData: A4DocumentMedicalCardData = useMemo(() => {
@@ -328,8 +376,9 @@ export const DocumentA4PrintPreviewModal: React.FC<DocumentA4PrintPreviewModalPr
 			contractNumber: contractData.contractNumber,
 			contractDate: contractData.contractDate,
 			patientQuestionsAnswered: true,
+			...customConsentData,
 		};
-	}, [cl, pt, doctor, todayRu, contractData]);
+	}, [cl, pt, doctor, todayRu, contractData, customConsentData]);
 
 	// 6. Согласие на обработку персональных данных (152-ФЗ)
 	const personalDataConsent: A4DocumentPersonalDataConsentData = useMemo(() => {
@@ -340,22 +389,23 @@ export const DocumentA4PrintPreviewModal: React.FC<DocumentA4PrintPreviewModalPr
 			patient: pt,
 			thirdPartyTransfersAllowed: true,
 			egiszTransferAllowed: true,
+			...customPersonalDataConsent,
 		};
-	}, [cl, pt, todayRu]);
+	}, [cl, pt, todayRu, customPersonalDataConsent]);
 
 	if (!isOpen) return null;
 
 	return (
 		<div
-			className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex flex-col justify-start items-center p-0 sm:p-4 animate-in fade-in duration-200"
+			className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm flex items-start justify-center p-2 sm:p-4 animate-in fade-in duration-200"
 			data-testid="modal-a4-document-preview"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Предварительный просмотр печатных документов A4"
 		>
-			<div className="relative w-full max-w-[1020px] bg-[var(--paper)] text-[var(--ink)] rounded-none sm:rounded-xl shadow-2xl border border-[var(--line)] flex flex-col my-auto overflow-hidden">
+			<div className="relative w-full max-w-[1060px] h-[95vh] max-h-[95vh] bg-[var(--paper)] text-[var(--ink)] rounded-xl shadow-2xl border border-[var(--line)] flex flex-col overflow-hidden">
 				{/* Top Modal Header */}
-				<header className="flex items-center justify-between px-4 py-3 bg-[var(--paper-soft)] border-b border-[var(--line)]">
+				<header className="flex items-center justify-between px-4 py-2.5 bg-[var(--paper-soft)] border-b border-[var(--line)] shrink-0">
 					<div className="flex items-center gap-2.5">
 						<div className="w-8 h-8 rounded-lg bg-[var(--teal)] text-[var(--on-teal,#ffffff)] flex items-center justify-center font-bold shrink-0">
 							<FileText size={18} />
@@ -384,7 +434,7 @@ export const DocumentA4PrintPreviewModal: React.FC<DocumentA4PrintPreviewModalPr
 				</header>
 
 				{/* Modal Body: A4 Sheet */}
-				<main className="p-0 sm:p-4 max-h-[85vh] overflow-y-auto bg-[var(--paper-soft)] flex justify-center">
+				<main className="p-0 sm:p-2 flex-1 min-h-0 overflow-y-auto bg-[var(--paper-soft)] flex justify-center">
 					<ProfessionalDocumentA4Sheet
 						activeTab={activeTab}
 						onTabChange={setActiveTab}

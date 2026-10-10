@@ -56,7 +56,7 @@ export interface StaffChatPresetsBarProps {
 
 export interface StaffChatThreadProps {
 	messages: StaffChatMessage[];
-	onOpenPatientCard?: (patientId: string) => void;
+	onOpenPatientCard?: ((patientId: string) => void) | undefined;
 	onIntercomAck: (messageId: string, ackType: IntercomAckType) => void;
 	messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }
@@ -65,7 +65,7 @@ export interface StaffChatInputProps {
 	inputRef: React.RefObject<HTMLInputElement | null>;
 	messageText: string;
 	isSending: boolean;
-	activeChannelName?: string;
+	activeChannelName?: string | undefined;
 	onChangeMessageText: (text: string) => void;
 	onSendMessage: (e?: React.FormEvent) => void;
 }

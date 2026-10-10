@@ -18,6 +18,7 @@ import {
 	WorkflowResponseError,
 } from "../../../AppHelpers";
 import { showToast } from "../../../components/GlobalToast";
+import { playTactileEarcon } from "../../../lib/intercomSound";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { useAppStore } from "../../../store/appStore";
 import { logger } from "../../../utils/logger";
@@ -298,6 +299,7 @@ export function useVisitOfflineQueue({
 				},
 			);
 			applyAcceptedVisitResponse(result);
+			playTactileEarcon("save");
 			scrollToVisitArea(".visit-fields");
 		} catch (acceptError) {
 			showToast(

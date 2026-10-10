@@ -35,7 +35,7 @@ export interface ExecuteSigningParams {
 	patient?: InformedConsentPatientInfo | null | undefined;
 	integrityRecord: { hash: string };
 	activeMode: "packages" | "single";
-	currentPackage: { code: string; title: string; templateKeys: ConsentTemplateKey[] };
+	currentPackage: { code: string; title: string; templateKeys: readonly ConsentTemplateKey[] };
 	activeDocKey: ConsentTemplateKey;
 	currentTemplate: ConsentTemplate;
 	rendered: { fullTextContent: string };

@@ -139,35 +139,46 @@ export function useDoctorShiftData({ dashboard }: UseDoctorShiftDataOptions) {
 
 	const nextAppointment = useMemo(() => {
 		const now = Date.now();
-		return (
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			todayAppointments.find((app: any) => {
-				if (inChairAppointment && app.id === inChairAppointment.id) return false;
-				const statusKey = String(
-					app.status || app.appointmentStatus || app.state || "",
-				).toLowerCase();
-				if (
-					[
-						"in_chair",
-						"in_treatment",
-						"in_progress",
-						"completed",
-						"done",
-						"cancelled",
-						"no_show",
-					].includes(statusKey)
-				) {
-					return false;
-				}
-				const ends = new Date(app.endsAt ?? app.startsAt).getTime();
-				return Number.isFinite(ends) && ends >= now;
-			}) ?? null
-		);
+		const isPendingAppointment = (app: any) => {
+			if (inChairAppointment && app.id === inChairAppointment.id) return false;
+			const statusKey = String(
+				app.status || app.appointmentStatus || app.state || "",
+			).toLowerCase();
+			return ![
+				"in_chair",
+				"in_treatment",
+				"in_progress",
+				"completed",
+				"done",
+				"cancelled",
+				"no_show",
+			].includes(statusKey);
+		};
+
+		const upcoming = todayAppointments.find((app: any) => {
+			if (!isPendingAppointment(app)) return false;
+			const ends = new Date(app.endsAt ?? app.startsAt).getTime();
+			return Number.isFinite(ends) && ends >= now;
+		});
+
+		return upcoming ?? todayAppointments.find(isPendingAppointment) ?? null;
 	}, [todayAppointments, inChairAppointment]);
 
-	const nextAppointmentPatient = nextAppointment
-		? (patientsById.get(nextAppointment.patientId ?? "") ?? null)
-		: null;
+	const nextAppointmentPatient = useMemo(() => {
+		if (!nextAppointment) return null;
+		const fromMap = patientsById.get(nextAppointment.patientId ?? "");
+		if (fromMap) return fromMap;
+		const appAny = nextAppointment as any;
+		if (appAny.patient) return appAny.patient;
+		if (appAny.patientFullName || appAny.patientName) {
+			return {
+				id: nextAppointment.patientId ?? "unknown",
+				fullName: appAny.patientFullName || appAny.patientName,
+				phone: appAny.patientPhone ?? "",
+			};
+		}
+		return null;
+	}, [nextAppointment, patientsById]);
 
 	const rolesWorthShowing = useMemo(
 		() =>

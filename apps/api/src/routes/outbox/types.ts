@@ -27,6 +27,7 @@ export const intentSchema = z.enum([
 	"document_ready",
 	"imaging_review",
 	"general",
+	"transactional_reply",
 ]);
 
 export const scopeSchema = z.enum(["service", "marketing"]);

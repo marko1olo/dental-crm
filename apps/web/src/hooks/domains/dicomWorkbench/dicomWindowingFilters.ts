@@ -75,7 +75,8 @@ export function getPresetWindowValues(presetKey: string): {
 } {
 	const normalizedKey = presetKey.toLowerCase().trim();
 	const config =
-		DICOM_HU_PRESETS[normalizedKey] ?? DICOM_HU_PRESETS.bone;
+		(DICOM_HU_PRESETS as Record<string, { windowCenter: number; windowWidth: number }>)[normalizedKey] ??
+		DICOM_HU_PRESETS.bone ?? { windowCenter: 300, windowWidth: 1500 };
 	return {
 		windowCenter: config.windowCenter,
 		windowWidth: config.windowWidth,

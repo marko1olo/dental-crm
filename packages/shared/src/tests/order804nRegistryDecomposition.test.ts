@@ -96,18 +96,18 @@ describe("Minzdrav Order 804n Statutory Registry Decomposition Suite", () => {
 		// Exact code search
 		const searchByCode = search804nRegistry("A16.07.002");
 		assert.ok(searchByCode.length > 0);
-		assert.equal(searchByCode[0].entry.code, "A16.07.002");
-		assert.equal(searchByCode[0].matchType, "exact_code");
+		assert.equal(searchByCode[0]!.entry.code, "A16.07.002");
+		assert.equal(searchByCode[0]!.matchType, "exact_code");
 
 		// Keyword search for therapy
 		const searchTherapy = search804nRegistry("Лечение кариеса пломбой световой");
 		assert.ok(searchTherapy.length > 0);
-		assert.equal(searchTherapy[0].entry.code, "A16.07.002");
+		assert.equal(searchTherapy[0]!.entry.code, "A16.07.002");
 
 		// Keyword search for CT 3D
 		const searchCT = search804nRegistry("КЛКТ 3D снимок двух челюстей");
 		assert.ok(searchCT.length > 0);
-		assert.equal(searchCT[0].entry.code, "A06.07.013");
+		assert.equal(searchCT[0]!.entry.code, "A06.07.013");
 
 		// Keyword search with category filter
 		const searchFiltered = search804nRegistry("осмотр", { categoryFilter: "consultation" });

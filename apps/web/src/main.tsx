@@ -18,6 +18,11 @@ import { logger } from "./utils/logger";
 const PublicBookingWidget = React.lazy(() =>
 	import("./pages/PublicBookingWidget").then((m) => ({ default: m.PublicBookingWidget })),
 );
+const PublicBudgetSignPage = React.lazy(() =>
+	import("./pages/public/PublicBudgetSignPage").then((m) => ({
+		default: m.PublicBudgetSignPage,
+	})),
+);
 const PatientBudgetSignView = React.lazy(() =>
 	import("./components/portal/PatientBudgetSignView").then((m) => ({
 		default: m.PatientBudgetSignView,
@@ -43,7 +48,18 @@ const CbctStandaloneStudioView = React.lazy(() =>
 		default: m.CbctStandaloneStudioView,
 	})),
 );
-import { parseCbctStudioRoute } from "./utils/runtimeRouter";
+const CephStandaloneStudioView = React.lazy(() =>
+	import("./components/orthodontics/CephStandaloneStudioView").then((m) => ({
+		default: m.CephStandaloneStudioView,
+	})),
+);
+const PatientPresentationStandaloneView = React.lazy(() =>
+	import("./components/photography/PatientPresentationStandaloneView").then((m) => ({
+		default: m.PatientPresentationStandaloneView,
+	})),
+);
+import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
+import { isPatientPresentationRoute } from "./components/photography/presentationSyncProtocol";
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
 // любому объявлению вне слоёв, поэтому порядок импорта на них не влияет —
 // но так виднее, что это фундамент, а не переопределение.
@@ -129,7 +145,9 @@ if (typeof Node !== "undefined" && Node.prototype) {
  */
 const publicPortalRoute = publicPortalRouteFromHash(
 	typeof window !== "undefined" &&
-		(window.location.pathname === "/tgapp" ||
+		(window.location.pathname.startsWith("/public/budget") ||
+			window.location.pathname.startsWith("/portal/budget") ||
+			window.location.pathname === "/tgapp" ||
 			window.location.pathname.startsWith("/tgapp/") ||
 			window.location.pathname === "/portal/tgapp" ||
 			window.location.pathname.startsWith("/portal/tgapp/"))
@@ -139,6 +157,7 @@ const publicPortalRoute = publicPortalRouteFromHash(
 			: "",
 );
 const cbctStudioRoute = typeof window !== "undefined" ? parseCbctStudioRoute() : { isCbctStudio: false };
+const cephStudioRoute = typeof window !== "undefined" ? parseCephStudioRoute() : { isCephStudio: false };
 // biome-ignore lint/style/noNonNullAssertion: automated suppression
 const appRoot = createRoot(document.getElementById("root")!);
 
@@ -209,7 +228,7 @@ if (publicPortalRoute) {
 							patientId={publicPortalRoute.patientId ?? null}
 						/>
 					) : publicPortalRoute.kind === "budget" ? (
-						<PatientBudgetSignView token={publicPortalRoute.token} />
+						<PublicBudgetSignPage token={publicPortalRoute.token} />
 					) : (
 						<GuestLabPortal token={publicPortalRoute.token} />
 					)}
@@ -221,7 +240,7 @@ if (publicPortalRoute) {
 } else if (cbctStudioRoute.isCbctStudio) {
 	// АВТОНОМНЫЙ КОКПИТ 3D КЛКТ (ВТОРОЙ МОНИТОР / ПОПАУТ ОКНО / МАРШРУТ /cbct-studio)
 	// Должен рендериться БЕЗ бокового меню, БЕЗ шапки CRM и БЕЗ лишних провайдеров.
-	applyThemeToRoot(document.documentElement, "dark");
+	applyThemeToRoot(document.documentElement, resolveTheme("dark", true));
 	installApiAuthFetch();
 
 	appRoot.render(
@@ -235,6 +254,44 @@ if (publicPortalRoute) {
 						initialStudioMode={cbctStudioRoute.mode as any}
 						autoLoadDemo={cbctStudioRoute.isDemo}
 					/>
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (cephStudioRoute.isCephStudio) {
+	// АВТОНОМНАЯ СТУДИЯ ТРГ И ЦЕФАЛОМЕТРИИ (ВТОРОЙ МОНИТОР / ПОПАУТ ОКНО / МАРШРУТ /radiology/ceph-studio)
+	// Суверенный экран без бокового меню CRM для демонстрации пациенту и точной разметки
+	applyThemeToRoot(document.documentElement, resolveTheme("dark", true));
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense fallback={<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">Загрузка ТРГ Студии...</div>}>
+					<CephStandaloneStudioView
+						patientId={cephStudioRoute.patientId}
+						patientName={cephStudioRoute.patientName}
+						initialImageUrl={cephStudioRoute.imageUrl}
+						initialStudioMode={cephStudioRoute.demoMode ? "patient" : "doctor"}
+						autoLoadDemo={cephStudioRoute.isDemo}
+					/>
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (typeof window !== "undefined" && isPatientPresentationRoute()) {
+	// АВТОНОМНЫЙ ЭКРАН ПРЕЗЕНТАЦИИ ПАЦИЕНТУ (ВТОРОЙ МОНИТОР / ТВ В КАБИНЕТЕ / ?view=patient-presentation)
+	// Суверенная демонстрация «До / После» без клинических цен, заметок и меню CRM
+	applyThemeToRoot(document.documentElement, resolveTheme("dark", true));
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="public">
+				<React.Suspense fallback={<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">Загрузка презентации...</div>}>
+					<PatientPresentationStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>

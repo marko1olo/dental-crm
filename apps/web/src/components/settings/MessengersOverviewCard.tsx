@@ -54,45 +54,45 @@ const CHANNEL_THEMES: Record<
 	{ iconColor: string; bgSoft: string; borderAccent: string; defaultIcon: "bot" | "user" | "phone" }
 > = {
 	tg_bot: {
-		iconColor: "#0284c7",
-		bgSoft: "rgba(2, 132, 199, 0.08)",
-		borderAccent: "rgba(2, 132, 199, 0.25)",
+		iconColor: "var(--teal, #0d9488)",
+		bgSoft: "rgba(13, 148, 136, 0.1)",
+		borderAccent: "rgba(13, 148, 136, 0.3)",
 		defaultIcon: "bot",
 	},
 	tg_account: {
-		iconColor: "#4f46e5",
-		bgSoft: "rgba(79, 70, 229, 0.08)",
-		borderAccent: "rgba(79, 70, 229, 0.25)",
+		iconColor: "var(--teal, #0d9488)",
+		bgSoft: "rgba(13, 148, 136, 0.1)",
+		borderAccent: "rgba(13, 148, 136, 0.3)",
 		defaultIcon: "user",
 	},
 	vk_group: {
-		iconColor: "#0077ff",
-		bgSoft: "rgba(0, 119, 255, 0.08)",
-		borderAccent: "rgba(0, 119, 255, 0.25)",
+		iconColor: "#0284c7",
+		bgSoft: "rgba(2, 132, 199, 0.1)",
+		borderAccent: "rgba(2, 132, 199, 0.3)",
 		defaultIcon: "bot",
 	},
 	vk_account: {
-		iconColor: "#7c3aed",
-		bgSoft: "rgba(124, 58, 237, 0.08)",
-		borderAccent: "rgba(124, 58, 237, 0.25)",
+		iconColor: "#0284c7",
+		bgSoft: "rgba(2, 132, 199, 0.1)",
+		borderAccent: "rgba(2, 132, 199, 0.3)",
 		defaultIcon: "user",
 	},
 	wa_phone: {
-		iconColor: "#059669",
-		bgSoft: "rgba(5, 150, 105, 0.08)",
-		borderAccent: "rgba(5, 150, 105, 0.25)",
+		iconColor: "var(--teal, #0d9488)",
+		bgSoft: "rgba(13, 148, 136, 0.1)",
+		borderAccent: "rgba(13, 148, 136, 0.3)",
 		defaultIcon: "phone",
 	},
 	wa_waba: {
-		iconColor: "#16a34a",
-		bgSoft: "rgba(22, 163, 74, 0.08)",
-		borderAccent: "rgba(22, 163, 74, 0.25)",
+		iconColor: "var(--teal, #0d9488)",
+		bgSoft: "rgba(13, 148, 136, 0.1)",
+		borderAccent: "rgba(13, 148, 136, 0.3)",
 		defaultIcon: "bot",
 	},
 	max_bot: {
-		iconColor: "#9333ea",
-		bgSoft: "rgba(147, 51, 234, 0.08)",
-		borderAccent: "rgba(147, 51, 234, 0.25)",
+		iconColor: "var(--teal, #0d9488)",
+		bgSoft: "rgba(13, 148, 136, 0.1)",
+		borderAccent: "rgba(13, 148, 136, 0.3)",
 		defaultIcon: "bot",
 	},
 };
@@ -353,7 +353,7 @@ export function MessengersOverviewCard({
 					return (
 						<div
 							key={ch.id}
-							className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]/60 p-3.5 flex flex-col justify-between gap-3 hover:border-slate-400 dark:hover:border-slate-600 transition-all shadow-2xs"
+							className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3.5 flex flex-col justify-between gap-3 hover:border-[var(--line-strong)] transition-all shadow-xs"
 							data-testid={`channel-card-${ch.id}`}
 						>
 							{/* Top info row */}

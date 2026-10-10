@@ -30,7 +30,7 @@ export function DoctorFilterDropdown({
 					<button
 						key={member.id}
 						type="button"
-						className={`quick-chip dente-filter-chip schedule-doctor-chip ${scheduleDoctorFilterId === member.id ? "active font-semibold" : ""} shrink-0 flex-shrink-0 cursor-pointer inline-flex items-center justify-center select-none`}
+						className={`quick-chip dente-filter-chip schedule-doctor-chip h-8 min-h-[32px] max-h-8 rounded-lg px-2.5 text-[12.5px] ${scheduleDoctorFilterId === member.id ? "active font-semibold" : ""} shrink-0 flex-shrink-0 cursor-pointer inline-flex items-center justify-center select-none`}
 						style={{ whiteSpace: "nowrap", flexShrink: 0 }}
 						onClick={() =>
 							setScheduleDoctorFilterId(

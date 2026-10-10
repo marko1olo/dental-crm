@@ -10,6 +10,7 @@ import type {
 	TelegramBotDialogSession,
 	TelegramBotDialogStep,
 } from "./types.js";
+import { configuredTelegramBotConfigId } from "./botSettings.js";
 
 
 const DEFAULT_DIALOG_SESSION_TTL_MS = 60 * 60 * 1000; // 1 час неактивности

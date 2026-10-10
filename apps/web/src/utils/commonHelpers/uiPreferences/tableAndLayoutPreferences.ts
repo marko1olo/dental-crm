@@ -12,15 +12,15 @@ import {
 	type XrayCbctReferralPriority,
 	type XrayCbctReferralStudyType,
 } from "@dental/shared";
-import { showToast } from "../../components/GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
-import { telegramVisualCardFields } from "../../workspaceStaticOptions";
+import { showToast } from "../../../components/GlobalToast";
+import { actionFailureToast } from "../../../lib/panelStateText";
+import { telegramVisualCardFields } from "../../../workspaceStaticOptions";
 import {
 	collectDicomWorkstationClientFacts,
 	isBrowserImagingScanAbortError,
 	isBrowserMigrationScanAbortError,
 	localImagingFolderFingerprint,
-} from "../browserScanUtils";
+} from "../../browserScanUtils";
 import {
 	buildClinicProfileUpdatePayload,
 	buildPatientAdministrativeProfilePayload,
@@ -52,20 +52,20 @@ import {
 	staffScheduleDraftSignature,
 	staffWorkingHoursFromDraft,
 	staffWorkingHoursFromSimpleDraft,
-} from "../clinicProfileUtils";
+} from "../../clinicProfileUtils";
 import {
 	loadImageFromDataUrl,
 	readFileAsDataUrl,
 	xrayPregnancyStatusOptions,
 	xrayPriorityOptions,
 	xrayStudyTypeOptions,
-} from "../ImagingHelpers";
+} from "../../ImagingHelpers";
 import {
 	type DenteTelegramPortalSection,
 	denteTelegramHandoffTargets,
 	telegramPublicUrlSensitivePathSegments,
 	telegramPublicUrlSensitiveQueryKeys,
-} from "../TelegramHelpers";
+} from "../../TelegramHelpers";
 import {
 	isOptionValue,
 	isRecordKey,
@@ -528,13 +528,7 @@ export function loadSidebarCollapsedPreference(orgId?: string | null): boolean {
 	}
 }
 
-export * from "../browserScanUtils";
-
-export type {
-	ClinicProfileDraft,
-	PatientAdministrativeProfileDraft,
-	StaffScheduleDraft,
-};
+export * from "../../browserScanUtils";
 
 export {
 	buildClinicProfileUpdatePayload,

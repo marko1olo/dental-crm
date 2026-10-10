@@ -455,8 +455,8 @@ export class CbctVolumeGlContext {
 
 		const result = uploadCbctVolumeTexture(gl, volume, {
 			max3dSize,
-			targetMaxDim,
-			tier,
+			...(targetMaxDim !== undefined ? { targetMaxDim } : {}),
+			...(tier !== undefined ? { tier } : {}),
 		});
 		if (!result) {
 			this.volumeTexture = null;

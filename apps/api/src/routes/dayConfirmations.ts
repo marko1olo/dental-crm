@@ -24,41 +24,22 @@ import { requireClinicalReadContext } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { appointmentActionCodes } from "../db/communicationsSchema.js";
 import {
-	appointments,
-	clinics,
-	communicationOutbox,
-	patients,
-	users,
+	appointments, clinics, communicationOutbox, denteTelegramChatLinks, patients, users,
 } from "../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import { replyBadRequest } from "./routeErrors.js";
 
 const querySchema = z.object({
 	/** Дата в виде ГГГГ-ММ-ДД. По умолчанию — завтра: обзвон делают накануне. */
-	date: z
-		.string()
-		.regex(/^\d{4}-\d{2}-\d{2}$/, "дата должна быть в виде ГГГГ-ММ-ДД")
-		.optional(),
+	date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "дата должна быть в виде ГГГГ-ММ-ДД").optional(),
 });
 
 /** Состояние напоминания глазами администратора, а не очереди. */
-export type ReminderState =
-	| "not_queued"
-	| "queued"
-	| "sent"
-	| "delivered"
-	| "failed"
-	| "suppressed"
-	| "cancelled";
+export type ReminderState = "not_queued" | "queued" | "sent" | "delivered" | "failed" | "suppressed" | "cancelled";
 
 const OUTBOX_TO_REMINDER_STATE: Readonly<Record<string, ReminderState>> = {
-	queued: "queued",
-	sending: "queued",
-	sent: "sent",
-	delivered: "delivered",
-	failed: "failed",
-	suppressed: "suppressed",
-	cancelled: "cancelled",
+	queued: "queued", sending: "queued", sent: "sent", delivered: "delivered",
+	failed: "failed", suppressed: "suppressed", cancelled: "cancelled",
 };
 
 /**
@@ -546,12 +527,20 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 			.filter((id): id is string => typeof id === "string");
 
 		const patientMap = new Map<string, typeof patients.$inferSelect>();
+		const telegramChatMap = new Map<string, string>();
 		if (patientIds.length > 0) {
-			const foundPatients = await db
-				.select()
-				.from(patients)
-				.where(and(eq(patients.organizationId, organizationId), inArray(patients.id, patientIds)));
+			const [foundPatients, foundTgLinks] = await Promise.all([
+				db.select().from(patients).where(and(eq(patients.organizationId, organizationId), inArray(patients.id, patientIds))),
+				db.select({ subjectId: denteTelegramChatLinks.subjectId, chatTransportRef: denteTelegramChatLinks.chatTransportRef })
+					.from(denteTelegramChatLinks).where(and(
+						eq(denteTelegramChatLinks.organizationId, organizationId),
+						eq(denteTelegramChatLinks.subjectType, "patient"),
+						eq(denteTelegramChatLinks.status, "active"),
+						inArray(denteTelegramChatLinks.subjectId, patientIds),
+					)),
+			]);
 			for (const p of foundPatients) patientMap.set(p.id, p);
+			for (const l of foundTgLinks) { if (l.chatTransportRef) telegramChatMap.set(l.subjectId, l.chatTransportRef); }
 		}
 
 		let dispatched = 0;
@@ -571,7 +560,8 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 			const pat = appt.patientId ? patientMap.get(appt.patientId) : null;
 			const patName = pat?.fullName || "Пациент";
 			const phone = pat?.phone?.trim() || null;
-			const telegram = (pat as any)?.telegramUsername || (pat as any)?.telegramHandle || null;
+			const telegram =
+				(appt.patientId ? telegramChatMap.get(appt.patientId) : null) || null;
 
 			if (!phone && !telegram) {
 				skippedNoContact++;
@@ -607,7 +597,10 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 			}
 
 			const dedupeKey = `reminder:${appt.id}:${date}:${preferredChannel}`;
-			const recipientAddress = preferredChannel === "telegram" ? `@${telegram}` : (phone || "");
+			const recipientAddress =
+				preferredChannel === "telegram"
+					? (telegram?.startsWith("@") ? telegram : `@${telegram}`)
+					: (phone || "");
 
 			const timeStr = appt.startsAt.toLocaleTimeString("ru-RU", {
 				timeZone,

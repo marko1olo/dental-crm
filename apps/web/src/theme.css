@@ -341,12 +341,8 @@ button[data-testid^="btn-slot-"]:hover {
 	[data-theme="cyber_xray"],
 	html.dark
 ) {
-	/* Purge hardcoded Tailwind white surfaces */
-	.bg-white,
-	.bg-white\/80,
-	.bg-white\/90,
-	.bg-white\/95,
-	[class*="bg-white"] {
+	/* Purge hardcoded Tailwind white surfaces (exclude paper sheets) */
+	:is(.bg-white, .bg-white\/80, .bg-white\/90, .bg-white\/95, [class*="bg-white"]):not(.premium-doc-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.emr043-a4-sheet *) {
 		background-color: var(--paper-strong) !important;
 		color: var(--ink) !important;
 	}

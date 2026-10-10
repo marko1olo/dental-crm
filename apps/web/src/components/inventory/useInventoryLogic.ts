@@ -217,6 +217,15 @@ export function useInventoryLogic(organizationId: string) {
 		setIsLoading(false);
 	}, [organizationId, fetchItems]);
 
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const handleReload = () => {
+			fetchItems();
+		};
+		window.addEventListener("dente-inventory-reload", handleReload);
+		return () => window.removeEventListener("dente-inventory-reload", handleReload);
+	}, [fetchItems]);
+
 	const openAddModal = () => {
 		setEditingItem(null);
 		setFormData({

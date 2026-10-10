@@ -259,10 +259,9 @@ export class TelegramWebhookLifecycle {
 			}
 
 			const data = (await response.json()) as { ok: boolean; description?: string };
-			return {
-				ok: data.ok,
-				description: data.description,
-			};
+			return data.description !== undefined
+				? { ok: data.ok, description: data.description }
+				: { ok: data.ok };
 		} catch (err: unknown) {
 			const description =
 				err instanceof Error ? err.message : "Ошибка вызова deleteWebhook";

@@ -1,16 +1,21 @@
 import assert from "node:assert/strict";
 import test, { describe } from "node:test";
 import {
+	calculateEndoTreatmentPriceKopecks,
 	detectOrder804nCategory,
 	getAnatomicalRootCanalCount,
 	getEndodonticOrder804nPair,
 	getOrder804nEndoProcedureForTooth,
+	getToothCanalsCount,
 	isValidOrder804nCode,
-	ORDER_804N_CODE_REGEX,
+	mapCanalsTo804nCode,
 	ORDER_804N_ENDODONTIC_PACKAGES,
 	ORDER_804N_INSTRUMENTATION,
 	ORDER_804N_OBTURATIONS,
+	TOOTH_CANAL_ANATOMY_MAP,
 } from "../toothCanalsAndBilling804n.js";
+import { ORDER_804N_CODE_REGEX } from "../pricelist/index.js";
+import * as ModularToothCanalsBilling from "../clinical/toothCanalsBilling/index.js";
 
 describe("toothCanalsAndBilling804n — Root Canals & Minzdrav Order 804n Billing", () => {
 	test("Derives accurate anatomical root canal counts for all FDI permanent and primary teeth", () => {
@@ -158,4 +163,56 @@ describe("toothCanalsAndBilling804n — Root Canals & Minzdrav Order 804n Billin
 		assert.equal(detectOrder804nCategory("B01.003.004"), "anesthesia");
 		assert.equal(detectOrder804nCategory("PKG.CHECKUP", "Пакет чекап"), "package");
 	});
+
+	test("TOOTH_CANAL_ANATOMY_MAP, getToothCanalsCount, and mapCanalsTo804nCode maintain 100% parity", () => {
+		assert.equal(Object.keys(TOOTH_CANAL_ANATOMY_MAP).length, 52, "Must define all 32 permanent and 20 primary teeth");
+		assert.equal(TOOTH_CANAL_ANATOMY_MAP[16]?.defaultCanals, 3);
+		assert.equal(TOOTH_CANAL_ANATOMY_MAP[14]?.defaultCanals, 2);
+		assert.equal(TOOTH_CANAL_ANATOMY_MAP[11]?.defaultCanals, 1);
+		assert.equal(TOOTH_CANAL_ANATOMY_MAP[74]?.defaultCanals, 2);
+		assert.equal(TOOTH_CANAL_ANATOMY_MAP[54]?.defaultCanals, 3);
+
+		assert.equal(getToothCanalsCount(16), 3);
+		assert.equal(getToothCanalsCount("14"), 2);
+		assert.equal(getToothCanalsCount(36, 4), 4);
+
+		assert.equal(mapCanalsTo804nCode(1, "instrumentation"), "A16.07.030.001");
+		assert.equal(mapCanalsTo804nCode(2, "obturation"), "A16.07.008.002");
+		assert.equal(mapCanalsTo804nCode(3, "package"), "A16.07.008.003");
+		assert.equal(mapCanalsTo804nCode(4, "instrumentation"), "A16.07.030.004");
+	});
+
+	test("calculateEndoTreatmentPriceKopecks calculates exact integer kopecks with anesthesia and cofferdam", () => {
+		// 1-canal upper central incisor (11): infiltration (800) + cofferdam (800) + inst (3500) + obt (4000) = 9100 RUB (910_000 kopecks)
+		const res11 = calculateEndoTreatmentPriceKopecks({ fdiNumber: 11 });
+		assert.equal(res11.canalCount, 1);
+		assert.equal(res11.anesthesiaPriceKopecks, 80_000);
+		assert.equal(res11.cofferdamPriceKopecks, 80_000);
+		assert.equal(res11.instrumentationPriceKopecks, 350_000);
+		assert.equal(res11.obturationPriceKopecks, 400_000);
+		assert.equal(res11.totalPriceKopecks, 910_000);
+		assert.equal(res11.totalRub, 9100);
+
+		// 3-canal lower molar (36) with retreatment & Ca(OH)2 & multi-surface restoration:
+		// conduction (950) + cofferdam (800) + unsealing 3x2500 (7500) + inst 3c (8200) + Ca(OH)2 (2000) + obt 3c (9500) + filling II class (5500) = 34450 RUB (3_445_000 kopecks)
+		const res36 = calculateEndoTreatmentPriceKopecks({
+			fdiNumber: 36,
+			isRetreatment: true,
+			includeMedicationCaOH2: true,
+			includeRestoration: true,
+			isMultiSurfaceRestoration: true,
+		});
+		assert.equal(res36.canalCount, 3);
+		assert.equal(res36.anesthesiaPriceKopecks, 95_000);
+		assert.equal(res36.unsealingPriceKopecks, 750_000);
+		assert.equal(res36.medicationPriceKopecks, 200_000);
+		assert.equal(res36.restorationPriceKopecks, 550_000);
+		assert.equal(res36.totalPriceKopecks, 3_445_000);
+		assert.equal(res36.totalRub, 34450);
+
+		// Direct module reference equality with facade
+		assert.equal(ModularToothCanalsBilling.getAnatomicalRootCanalCount, getAnatomicalRootCanalCount);
+		assert.equal(ModularToothCanalsBilling.calculateEndoTreatmentPriceKopecks, calculateEndoTreatmentPriceKopecks);
+	});
 });
+

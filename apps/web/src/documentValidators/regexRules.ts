@@ -23,7 +23,7 @@ export function isValidInn(innRaw: string): boolean {
 		const coeffs = [2, 4, 10, 3, 5, 9, 4, 6, 8, 0];
 		let sum = 0;
 		for (let i = 0; i < 9; i++) {
-			sum += Number(inn[i]) * coeffs[i];
+			sum += Number(inn[i]) * (coeffs[i] ?? 0);
 		}
 		const checkDigit = (sum % 11) % 10;
 		return checkDigit === Number(inn[9]);
@@ -32,7 +32,7 @@ export function isValidInn(innRaw: string): boolean {
 		const coeffs11 = [7, 2, 4, 10, 3, 5, 9, 4, 6, 8, 0];
 		let sum11 = 0;
 		for (let i = 0; i < 10; i++) {
-			sum11 += Number(inn[i]) * coeffs11[i];
+			sum11 += Number(inn[i]) * (coeffs11[i] ?? 0);
 		}
 		const checkDigit11 = (sum11 % 11) % 10;
 		if (checkDigit11 !== Number(inn[10])) {
@@ -42,7 +42,7 @@ export function isValidInn(innRaw: string): boolean {
 		const coeffs12 = [3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8, 0];
 		let sum12 = 0;
 		for (let i = 0; i < 11; i++) {
-			sum12 += Number(inn[i]) * coeffs12[i];
+			sum12 += Number(inn[i]) * (coeffs12[i] ?? 0);
 		}
 		const checkDigit12 = (sum12 % 11) % 10;
 		return checkDigit12 === Number(inn[11]);

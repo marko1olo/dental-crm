@@ -314,7 +314,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 			<div className="flex items-center justify-between gap-3 px-5 py-2 border-b border-[var(--line)] bg-[var(--paper-soft)]/60 text-xs">
 				<div className="flex items-center gap-2">
 					<Sparkles className="w-4 h-4 text-[var(--teal)] shrink-0" />
-					<span className="font-bold text-[var(--muted)]">1-клик протокол в карту:</span>
+					<span className="font-bold text-[var(--muted)]">Протокол в карту:</span>
 					<div className="dente-filter-chips overflow-x-auto">
 						{RADIOLOGY_STANDARD_PROTOCOLS.map((proto) => (
 							<button
@@ -426,7 +426,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 									Прицельные снимки
 								</h4>
 								<p className="text-xs text-[var(--muted)] mb-3 leading-relaxed">
-									Просмотр снимков за &lt;50мс, аппаратные фильтры контрастности, калиброванная линейка и 1-кликовая фиксация рентген-нормы в медицинскую карту.
+									Просмотр снимков за &lt;50мс, аппаратные фильтры контрастности, калиброванная линейка и быстрое внесение рентген-нормы в медицинскую карту.
 								</p>
 							</div>
 							<button

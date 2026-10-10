@@ -19,7 +19,7 @@ export interface OperatorMessageStreamProps {
 	operatorName: string;
 	messagesEndRef: React.RefObject<HTMLDivElement | null>;
 	onCloseMobileThread: () => void;
-	onOpenPatientCard?: (patientId: string) => void;
+	onOpenPatientCard?: ((patientId: string) => void) | undefined;
 	onOpenQuickBooking: () => void;
 	onOpenLinkPatient: () => void;
 	onTakeover: () => void;
@@ -126,7 +126,7 @@ export function OperatorMessageStream({
 							type="button"
 							onClick={onOpenLinkPatient}
 							className="min-h-[44px] px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--line,#e2e8f0)] transition-all flex items-center gap-1 cursor-pointer shrink-0"
-							title="Создать или привязать карту пациента в 1 клик"
+							title="Создать или привязать карту пациента"
 							data-testid="link-patient-chat-btn"
 						>
 							<Plus size={14} className="text-teal-600" />

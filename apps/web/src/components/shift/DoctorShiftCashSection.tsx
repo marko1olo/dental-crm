@@ -90,7 +90,7 @@ export const DoctorShiftCashSection: React.FC<DoctorShiftCashSectionProps> = ({
 
 		setEncashmentCompleted(true);
 		showToast(
-			`Инкассация ${encashmentAmount.toLocaleString("ru-RU")} ₽ зафиксирована в журнале 54-ФЗ`,
+			`Инкассация ${encashmentAmount.toLocaleString("ru-RU")} ₽ зафиксирована в кассовом журнале`,
 			"info",
 		);
 	};
@@ -118,12 +118,12 @@ export const DoctorShiftCashSection: React.FC<DoctorShiftCashSectionProps> = ({
 	return (
 		<section
 			className={`doctor-shift-cash-section ${className}`.trim()}
-			aria-label="Кассовый срез смены и инкассация 54-ФЗ"
+			aria-label="Касса смены и инкассация"
 			style={{
 				background: "var(--paper)",
 				border: "1px solid var(--line)",
-				borderRadius: "14px",
-				padding: "16px 18px",
+				borderRadius: "12px",
+				padding: "16px",
 				boxShadow: "var(--shadow-1)",
 				display: "flex",
 				flexDirection: "column",
@@ -146,7 +146,7 @@ export const DoctorShiftCashSection: React.FC<DoctorShiftCashSectionProps> = ({
 						style={{
 							width: "34px",
 							height: "34px",
-							borderRadius: "10px",
+							borderRadius: "8px",
 							background: "var(--teal-surface, rgba(13, 148, 136, 0.1))",
 							color: "var(--teal-dark, #0f766e)",
 							display: "flex",
@@ -167,7 +167,7 @@ export const DoctorShiftCashSection: React.FC<DoctorShiftCashSectionProps> = ({
 								lineHeight: 1.25,
 							}}
 						>
-							Кассовый срез смены & Инкассация 54-ФЗ
+							Касса смены и инкассация
 						</h3>
 						<p
 							style={{
@@ -177,7 +177,7 @@ export const DoctorShiftCashSection: React.FC<DoctorShiftCashSectionProps> = ({
 								lineHeight: 1.35,
 							}}
 						>
-							Фискальная сверка выручки, выемка наличности в сейф и Z-отчёт
+							Сверка выручки по способам оплаты, выемка наличности в сейф и отчёт за смену
 						</p>
 					</div>
 				</div>
@@ -194,42 +194,48 @@ export const DoctorShiftCashSection: React.FC<DoctorShiftCashSectionProps> = ({
 						}}
 					>
 						<ShieldCheck size={12} aria-hidden="true" />
-						54-ФЗ: ОФД в сети
+						Касса онлайн
 					</span>
 					<button
 						type="button"
 						onClick={handleDefaultPrint}
 						className="secondary-button"
 						style={{
-							fontSize: "11.5px",
-							padding: "4px 10px",
-							minHeight: "30px",
+							fontSize: "12px",
+							fontWeight: 600,
+							padding: "0 10px",
+							height: "32px",
+							borderRadius: "8px",
 							display: "inline-flex",
 							alignItems: "center",
-							gap: "5px",
+							gap: "6px",
+							background: "var(--paper-soft)",
+							border: "1px solid var(--line)",
+							color: "var(--ink)",
+							cursor: "pointer",
 						}}
 						title="Распечатать сменную ведомость инкассации"
 						data-testid="btn-print-cash-statement"
 					>
-						<Printer size={13} aria-hidden="true" />
+						<Printer size={14} aria-hidden="true" />
 						Ведомость смены
 					</button>
 				</div>
 			</div>
 
-			{/* 4 Payment Channel Metric Cards */}
+			{/* 4 Payment Channel Metric Cards (Monochrome Luxury Base with 1 Brand Accent) */}
 			<div
 				style={{
 					display: "grid",
 					gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))",
-					gap: "10px",
+					gap: "8px",
 				}}
 			>
 				{[
-					{ label: "Наличные в кассе", amount: cashRub, hint: "Денежный ящик", icon: Banknote, color: "text-emerald-600" },
-					{ label: "Банковские карты", amount: cardRub, hint: "POS-эквайринг", icon: CreditCard, color: "text-sky-600" },
-					{ label: "СБП по QR-коду", amount: sbpRub, hint: "Комиссия 0.4%", icon: QrCode, color: "text-teal-600" },
-					{ label: "Списание депозитов", amount: depositRub, hint: "Авансы пациентов", icon: Coins, color: "text-amber-500" },
+					{ label: "Наличные в кассе", amount: cashRub, hint: "Денежный ящик", icon: Banknote },
+					{ label: "Банковские карты", amount: cardRub, hint: "POS-эквайринг", icon: CreditCard },
+					{ label: "СБП по QR-коду", amount: sbpRub, hint: "Комиссия 0.4%", icon: QrCode },
+					{ label: "Списание депозитов", amount: depositRub, hint: "Авансы пациентов", icon: Coins },
 				].map((chan) => {
 					const Icon = chan.icon;
 					return (
@@ -237,7 +243,7 @@ export const DoctorShiftCashSection: React.FC<DoctorShiftCashSectionProps> = ({
 							key={chan.label}
 							style={{
 								padding: "10px 12px",
-								borderRadius: "10px",
+								borderRadius: "8px",
 								background: "var(--paper-soft)",
 								border: "1px solid var(--line)",
 								display: "flex",
@@ -252,28 +258,26 @@ export const DoctorShiftCashSection: React.FC<DoctorShiftCashSectionProps> = ({
 									color: "var(--muted)",
 									display: "flex",
 									alignItems: "center",
-									gap: "4px",
+									gap: "5px",
 								}}
 							>
-								<Icon size={12} className={chan.color} />
+								<Icon size={13} style={{ color: "var(--teal-dark, #0f766e)" }} aria-hidden="true" />
 								{chan.label}
 							</span>
-							<strong style={{ fontSize: "16px", fontWeight: 800, color: "var(--ink)" }}>
+							<strong style={{ fontSize: "15px", fontWeight: 800, color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>
 								{money(chan.amount)}
 							</strong>
-							<span style={{ fontSize: "10.5px", color: "var(--ink-2)" }}>{chan.hint}</span>
+							<span style={{ fontSize: "10.5px", color: "var(--muted)" }}>{chan.hint}</span>
 						</div>
 					);
 				})}
 			</div>
 
-			{/* Encashment Action Box (Мандат 54-ФЗ) */}
+			{/* Encashment Action Row (Zero Nested Card-in-Card) */}
 			<div
 				style={{
-					padding: "14px 16px",
-					borderRadius: "12px",
-					background: "var(--paper-soft)",
-					border: "1px solid var(--line)",
+					paddingTop: "12px",
+					borderTop: "1px solid var(--line)",
 					display: "flex",
 					flexDirection: "column",
 					gap: "10px",
@@ -301,12 +305,19 @@ export const DoctorShiftCashSection: React.FC<DoctorShiftCashSectionProps> = ({
 					<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
 						<button
 							type="button"
-							className={`secondary-button ${encashmentAmount === cashRub && !isCustomMode ? "active" : ""}`}
 							style={{
-								fontSize: "11px",
-								padding: "3px 8px",
-								minHeight: "26px",
-								fontWeight: encashmentAmount === cashRub ? 700 : 500,
+								fontSize: "11.5px",
+								padding: "0 10px",
+								height: "30px",
+								borderRadius: "8px",
+								fontWeight: encashmentAmount === cashRub && !isCustomMode ? 700 : 500,
+								background: encashmentAmount === cashRub && !isCustomMode ? "var(--teal-surface, rgba(13, 148, 136, 0.1))" : "var(--paper)",
+								border: encashmentAmount === cashRub && !isCustomMode ? "1px solid var(--teal)" : "1px solid var(--line)",
+								color: encashmentAmount === cashRub && !isCustomMode ? "var(--teal-dark, #0f766e)" : "var(--ink)",
+								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								transition: "all 0.15s ease",
 							}}
 							onClick={handleFullEncashment}
 						>
@@ -314,11 +325,19 @@ export const DoctorShiftCashSection: React.FC<DoctorShiftCashSectionProps> = ({
 						</button>
 						<button
 							type="button"
-							className="secondary-button"
 							style={{
-								fontSize: "11px",
-								padding: "3px 8px",
-								minHeight: "26px",
+								fontSize: "11.5px",
+								padding: "0 10px",
+								height: "30px",
+								borderRadius: "8px",
+								fontWeight: 500,
+								background: "var(--paper)",
+								border: "1px solid var(--line)",
+								color: "var(--ink)",
+								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								transition: "all 0.15s ease",
 							}}
 							onClick={() => handleKeepFloat(5000)}
 						>
@@ -326,11 +345,19 @@ export const DoctorShiftCashSection: React.FC<DoctorShiftCashSectionProps> = ({
 						</button>
 						<button
 							type="button"
-							className="secondary-button"
 							style={{
-								fontSize: "11px",
-								padding: "3px 8px",
-								minHeight: "26px",
+								fontSize: "11.5px",
+								padding: "0 10px",
+								height: "30px",
+								borderRadius: "8px",
+								fontWeight: 500,
+								background: "var(--paper)",
+								border: "1px solid var(--line)",
+								color: "var(--ink)",
+								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								transition: "all 0.15s ease",
 							}}
 							onClick={() => handleKeepFloat(10000)}
 						>
@@ -338,12 +365,19 @@ export const DoctorShiftCashSection: React.FC<DoctorShiftCashSectionProps> = ({
 						</button>
 						<button
 							type="button"
-							className="text-button"
 							style={{
-								fontSize: "11px",
-								padding: "3px 6px",
-								color: "var(--teal-dark)",
+								fontSize: "11.5px",
+								padding: "0 10px",
+								height: "30px",
+								borderRadius: "8px",
 								fontWeight: 600,
+								background: isCustomMode ? "var(--teal-surface, rgba(13, 148, 136, 0.1))" : "var(--paper)",
+								border: isCustomMode ? "1px solid var(--teal)" : "1px solid var(--line)",
+								color: isCustomMode ? "var(--teal-dark, #0f766e)" : "var(--ink)",
+								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								transition: "all 0.15s ease",
 							}}
 							onClick={() => setIsCustomMode((v) => !v)}
 						>

@@ -151,7 +151,7 @@ export const CopilotNudges: React.FC<CopilotNudgesProps> = ({
                       fontWeight: 600,
                     }}
                     disabled={isApplied}
-                    title="Внести клинический протокол в медицинскую карту в 1 клик"
+                    title="Внести клинический протокол в медицинскую карту"
                   >
                     {isApplied ? (
                       <>
@@ -161,7 +161,7 @@ export const CopilotNudges: React.FC<CopilotNudgesProps> = ({
                     ) : (
                       <>
                         <FileText size={14} />
-                        <span>1 клик в карту</span>
+                        <span>В карту</span>
                       </>
                     )}
                   </button>

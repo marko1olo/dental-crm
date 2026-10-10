@@ -114,20 +114,20 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							type="button"
 							onClick={form.handleApplyOneClickDefaults}
 							className="min-h-[44px] sm:min-h-8 sm:h-8 inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-0 text-xs font-bold rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 transition-colors shadow-xs shrink-0"
-							title="1-клик пресет: Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней"
+							title="Быстрый шаблон: Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней"
 							data-testid="lab-order-apply-defaults-btn"
 						>
 							<Sparkles className="w-4 h-4 text-amber-500" />
-							<span className="hidden sm:inline">Пресет (ZrO2 А2, 5 дн.)</span>
+							<span className="hidden sm:inline">Шаблон (ZrO2 А2, 5 дн.)</span>
 						</button>
 						<button
 							type="button"
 							onClick={form.handlePrint}
 							className="min-h-[44px] sm:min-h-8 sm:h-8 inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-0 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shadow-sm shrink-0"
-							title="Печать наряда (ГОСТ)"
+							title="Печать бланка наряда"
 						>
 							<Printer className="w-4 h-4" />
-							<span className="hidden sm:inline">Печать (ГОСТ)</span>
+							<span className="hidden sm:inline">Печать</span>
 						</button>
 						<button
 							type="button"
@@ -147,7 +147,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 						{ id: "main", label: "1. Зубы и Конструкция", shortLabel: "1. Зубы", icon: DentalBridge, fullTitle: "1. Зубная формула и Конструкция" },
 						{ id: "shades", label: "2. Расцветка VITA", shortLabel: "2. VITA", icon: ToothShadeGuide, fullTitle: "2. Расцветка VITA и Культя" },
 						{ id: "stages", label: "3. Этапы и Сроки", shortLabel: "3. Этапы", icon: Clock, fullTitle: "3. Этапы ЗТЛ и Примерки" },
-						{ id: "print", label: "4. Бланк ГОСТ", shortLabel: "4. Бланк", icon: DentalLabOrder, fullTitle: "4. Бланк наряда (ГОСТ) и QR" },
+						{ id: "print", label: "4. Печатный бланк", shortLabel: "4. Бланк", icon: DentalLabOrder, fullTitle: "4. Бланк наряда и QR" },
 					].map((tab) => {
 						const Icon = tab.icon;
 						const isActive = form.activeTab === tab.id;
@@ -183,7 +183,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 										Финансовый контроль ЗТЛ: Внесено {form.financialGateResult.paidPercent}% (порог аванса 50%)
 									</div>
 									<div className="text-[11px] text-teal-900/80 dark:text-teal-300/80 mt-0.5">
-										Экстренное показание (временная PMMA, примерка моста). Врач может отправить наряд в 1 клик.
+										Экстренное показание (временная PMMA, примерка моста). Врач может отправить наряд без ожидания оплаты.
 									</div>
 									{form.financialGateResult.isPlanExpiredNotice && (
 										<div className="text-[11px] text-teal-700 dark:text-teal-300 font-bold mt-1 flex items-center gap-1">
@@ -260,16 +260,16 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 					{/* ═══ TAB 1: MAIN SPECS & ODONTOGRAM ═══════════════════════════ */}
 					{form.activeTab === "main" && (
 						<div className="space-y-4">
-							{/* 1-Click Express Presets Bar (Integrated inside Tab 1) */}
+							{/* Express Presets Bar (Integrated inside Tab 1) */}
 							<div className="flex flex-col gap-2 p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 w-full max-w-full overflow-hidden">
 								<div className="flex items-center justify-between gap-2 w-full">
 									<span className="text-xs font-black text-amber-900 dark:text-amber-200 flex items-center gap-1 shrink-0">
 										<Sparkles size={14} className="text-amber-500" />
-										<span>Экспресс 1-клик:</span>
+										<span>Быстрые шаблоны:</span>
 									</span>
 									<span className="text-[11px] text-amber-800/80 dark:text-amber-300/80 font-medium hidden sm:inline flex items-center gap-1 shrink-0">
 										<Sparkles size={12} className="text-amber-500 shrink-0" />
-										<span>1 клик заполняет конструкцию, материал, цвет A2, сроки</span>
+										<span>Автозаполнение конструкции, материала, цвета A2 и сроков</span>
 									</span>
 								</div>
 								<div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full max-w-full py-0.5">
@@ -379,12 +379,12 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 						/>
 					)}
 
-					{/* ═══ TAB 4: PRINTABLE BLANK (GOST) & QR CODE ══════════════════ */}
+					{/* ═══ TAB 4: PRINTABLE BLANK & QR CODE ══════════════════ */}
 					{form.activeTab === "print" && (
 						<div className="flex flex-col gap-3">
 							<div className="flex items-center justify-between gap-2 px-2 py-1 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800">
 								<div className="text-xs font-semibold text-slate-500">
-									Наряд-заказ в зуботехническую лабораторию (ГОСТ Р 51087-97 / СтАР)
+									Наряд-заказ в зуботехническую лабораторию
 								</div>
 								<button
 									type="button"
@@ -453,7 +453,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							type="button"
 							onClick={form.handleCopyMessengerSummary}
 							data-testid="lab-order-copy-messenger-btn"
-							className="h-9 px-3.5 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+							className="min-h-[44px] h-11 px-3.5 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
 							title="Скопировать выжимку наряда для отправки курьеру или зубному технику в WhatsApp/Telegram"
 						>
 							<Copy className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
@@ -463,7 +463,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							type="button"
 							onClick={form.handlePrint}
 							data-testid="lab-order-footer-print-btn"
-							className="h-9 px-3.5 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+							className="min-h-[44px] h-11 px-3.5 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
 							title="Распечатать наряд-заказ (А4)"
 						>
 							<Printer className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />

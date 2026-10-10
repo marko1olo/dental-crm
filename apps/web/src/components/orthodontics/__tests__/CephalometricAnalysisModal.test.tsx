@@ -144,8 +144,8 @@ describe("CephalometricAnalysisModal Component (ТРГ боковая)", () => {
 			"Contains primary select ceph image button",
 		);
 		assert.ok(
-			html.includes("Загрузить клинический снимок ТРГ пациента"),
-			"Contains patient clinical ceph upload button",
+			html.includes('data-testid="choose-ceph-file-btn"'),
+			"Contains honest file chooser button with data-testid choose-ceph-file-btn",
 		);
 
 		// ABSOLUTE ZERO FAKE VECTOR SKULL

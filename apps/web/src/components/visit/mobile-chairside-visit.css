@@ -132,10 +132,12 @@
   color: #e11d48;
   border: 1px solid rgba(225, 29, 72, 0.35);
   animation: mobileAllergyPulse 1.8s infinite cubic-bezier(0.4, 0, 0.6, 1);
-  white-space: nowrap;
-  max-width: 250px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  line-height: 1.25;
+  text-align: right;
+  max-width: none;
+  overflow: visible;
+  word-break: break-word;
   flex-shrink: 1;
 }
 
@@ -164,10 +166,12 @@
   background: rgba(16, 185, 129, 0.1);
   color: #059669;
   border: 1px solid rgba(16, 185, 129, 0.25);
-  white-space: nowrap;
-  max-width: 250px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  line-height: 1.25;
+  text-align: right;
+  max-width: none;
+  overflow: visible;
+  word-break: break-word;
   flex-shrink: 1;
 }
 
@@ -209,7 +213,7 @@
 /* ─── 3. SEGMENTED STEP PROGRESS BAR (5 STEPS) ─── */
 .mobile-chairside-steps-container {
   width: 100%;
-  padding: 6px 8px 8px 8px;
+  padding: 6px 12px 8px 12px;
   background: color-mix(in srgb, var(--paper, #ffffff) 95%, transparent);
   border-bottom: 1px solid var(--line-subtle, #e2e8f0);
   box-sizing: border-box;
@@ -219,12 +223,14 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 5px;
+  gap: 6px;
   width: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 12px;
   padding: 2px 4px;
   box-sizing: border-box;
 }
@@ -235,7 +241,7 @@
 
 .mobile-chairside-step-chip {
   min-height: 34px;
-  padding: 5px 9px;
+  padding: 5px 10px;
   border-radius: 10px;
   font-size: 11.5px;
   font-weight: 600;
@@ -243,7 +249,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 4px;
   border: 1px solid var(--line, #e2e8f0);
   background: var(--paper, #ffffff);
   color: var(--muted, #64748b);
@@ -251,6 +257,7 @@
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   flex: 0 0 auto;
   flex-shrink: 0;
+  scroll-snap-align: start;
 }
 
 .mobile-chairside-step-chip.is-active {

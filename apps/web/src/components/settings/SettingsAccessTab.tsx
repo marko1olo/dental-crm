@@ -135,16 +135,21 @@ export function SettingsAccessTab({
 			className="access-settings flex flex-col gap-6 pb-32 sm:pb-24 w-full max-w-full min-w-0"
 			aria-label="Доступы, рабочие профили и роли"
 		>
-			<div className="import-copy p-3 sm:p-5 rounded-2xl bg-slate-100/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-start gap-3 min-w-0">
-				<div className="p-2 sm:p-2.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 shrink-0">
-					<UserCheck size={20} className="sm:w-6 sm:h-6" aria-hidden="true" />
+			<div className="import-copy p-4 sm:p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-xs flex items-start gap-3.5 min-w-0">
+				<div className="w-11 h-11 rounded-xl bg-teal-600 dark:bg-teal-700 text-white flex items-center justify-center shrink-0 shadow-xs">
+					<UserCheck size={22} aria-hidden="true" />
 				</div>
 				<div className="flex-1 min-w-0">
-					<p className="eyebrow text-[10px] sm:text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider m-0">Безопасность и RBAC</p>
-					<h2 className="text-sm sm:text-lg font-bold text-slate-900 dark:text-white m-0 mt-0.5 break-words leading-snug">
-						Матрица прав доступа к модулям DENTE, защита данных и финансовая изоляция
-					</h2>
-					<p className="text-xs text-slate-600 dark:text-slate-300 m-0 mt-1 leading-relaxed break-words hidden sm:block">
+					<div className="flex items-center gap-2 flex-wrap">
+						<h2 className="text-sm sm:text-lg font-bold text-[var(--ink)] m-0 tracking-tight leading-snug">
+							Матрица прав доступа к модулям DENTE, защита данных и финансовая изоляция
+						</h2>
+						<span className="inline-flex items-center justify-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-500/30 whitespace-nowrap shrink-0 select-none">
+							<ShieldCheck size={12} className="text-teal-600 dark:text-teal-400 shrink-0" />
+							<span>Безопасность и RBAC</span>
+						</span>
+					</div>
+					<p className="text-xs text-[var(--muted)] m-0 mt-1 leading-relaxed break-words hidden sm:block">
 						Гранулярная ролевая модель для 8 клинических и административных ролей.
 						Строгая изоляция финансовой отчётности клиники, маскирование персональных данных
 						пациентов и расчёт сдельной мотивации в целых копейках.
@@ -152,49 +157,53 @@ export function SettingsAccessTab({
 				</div>
 			</div>
 
-			{/* Ключевые гарантии безопасности системы */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 min-w-0" data-testid="security-guarantees-grid">
-				<div className="p-3 sm:p-4 rounded-xl border border-teal-300 dark:border-teal-800 bg-teal-50/80 dark:bg-teal-950/40 flex flex-col gap-1.5 sm:gap-2 min-w-0">
-					<div className="flex items-center gap-2 text-teal-800 dark:text-teal-200 font-bold text-xs sm:text-sm">
-						<ShieldCheck size={16} className="shrink-0 sm:w-[18px] sm:h-[18px] text-teal-600 dark:text-teal-400" />
-						<span className="min-w-0 flex-1 break-words">Защита персональных данных</span>
+			{/* Ключевые гарантии безопасности системы (Канонические отграниченные тайлы) */}
+			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 min-w-0" data-testid="security-guarantees-grid">
+				<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xs flex flex-col justify-between gap-2 min-w-0 min-h-[88px]">
+					<div className="flex items-center gap-2.5">
+						<div className="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 flex items-center justify-center shrink-0">
+							<ShieldCheck size={15} />
+						</div>
+						<span className="font-bold text-xs sm:text-sm text-[var(--ink)] leading-snug">Защита данных</span>
 					</div>
-					<p className="text-[11px] sm:text-xs text-slate-700 dark:text-slate-300 m-0 leading-relaxed break-words min-w-0">
-						Телефоны, паспорта, СНИЛС и адреса проживания маскируются для ассистентов и младшего персонала.
-						Врачи и администраторы видят необходимые контакты для связи и приёма.
+					<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 leading-relaxed break-words min-w-0 pl-9">
+						Телефоны, паспорта и СНИЛС маскируются для ассистентов. Врачи и администраторы видят необходимые контакты.
 					</p>
 				</div>
 
-				<div className="p-3 sm:p-4 rounded-xl border border-purple-300 dark:border-purple-800 bg-purple-50/80 dark:bg-purple-950/40 flex flex-col gap-1.5 sm:gap-2 min-w-0">
-					<div className="flex items-center gap-2 text-purple-800 dark:text-purple-200 font-bold text-xs sm:text-sm">
-						<Lock size={16} className="shrink-0 sm:w-[18px] sm:h-[18px] text-purple-600 dark:text-purple-400" />
-						<span className="min-w-0 flex-1 break-words">Финансовая изоляция</span>
+				<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xs flex flex-col justify-between gap-2 min-w-0 min-h-[88px]">
+					<div className="flex items-center gap-2.5">
+						<div className="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 flex items-center justify-center shrink-0">
+							<Lock size={15} />
+						</div>
+						<span className="font-bold text-xs sm:text-sm text-[var(--ink)] leading-snug">Финансовая изоляция</span>
 					</div>
-					<p className="text-[11px] sm:text-xs text-slate-700 dark:text-slate-300 m-0 leading-relaxed break-words min-w-0">
-						Сводный P&L, выручка клиники, маржинальность и общие зарплатные ведомости доступны только Директору,
-						Главврачу и Бухгалтеру. Врач видит исключительно свою личную сдельную выработку.
+					<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 leading-relaxed break-words min-w-0 pl-9">
+						Сводный P&L и общая выручка клиники доступны только Директору и Главврачу. Врач видит личную выработку.
 					</p>
 				</div>
 
-				<div className="p-3 sm:p-4 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-950/40 flex flex-col gap-1.5 sm:gap-2 min-w-0">
-					<div className="flex items-center gap-2 text-amber-800 dark:text-amber-200 font-bold text-xs sm:text-sm">
-						<Coins size={16} className="shrink-0 sm:w-[18px] sm:h-[18px] text-amber-600 dark:text-amber-400" />
-						<span className="min-w-0 flex-1 break-words">Сдельная оплата (Копейки)</span>
+				<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xs flex flex-col justify-between gap-2 min-w-0 min-h-[88px]">
+					<div className="flex items-center gap-2.5">
+						<div className="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 flex items-center justify-center shrink-0">
+							<Coins size={15} />
+						</div>
+						<span className="font-bold text-xs sm:text-sm text-[var(--ink)] leading-snug">Сдельная оплата</span>
 					</div>
-					<p className="text-[11px] sm:text-xs text-slate-700 dark:text-slate-300 m-0 leading-relaxed break-words min-w-0">
-						Расчёт мотивации (% от терапевтического/ортопедического приёма минус ЗТЛ и материалы)
-						ведётся строго в целых копейках с нулевой погрешностью округления.
+					<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 leading-relaxed break-words min-w-0 pl-9">
+						Расчёт мотивации (% от приёма минус ЗТЛ и материалы) ведётся строго в целых копейках с нулевой погрешностью.
 					</p>
 				</div>
 
-				<div className="p-3 sm:p-4 rounded-xl border border-blue-300 dark:border-blue-800 bg-blue-50/80 dark:bg-blue-950/40 flex flex-col gap-1.5 sm:gap-2 min-w-0">
-					<div className="flex items-center gap-2 text-blue-800 dark:text-blue-200 font-bold text-xs sm:text-sm">
-						<FileCheck size={16} className="shrink-0 sm:w-[18px] sm:h-[18px] text-blue-600 dark:text-blue-400" />
-						<span className="min-w-0 flex-1 break-words">Подпись протоколов и карты</span>
+				<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xs flex flex-col justify-between gap-2 min-w-0 min-h-[88px]">
+					<div className="flex items-center gap-2.5">
+						<div className="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 flex items-center justify-center shrink-0">
+							<FileCheck size={15} />
+						</div>
+						<span className="font-bold text-xs sm:text-sm text-[var(--ink)] leading-snug">Подпись протоколов</span>
 					</div>
-					<p className="text-[11px] sm:text-xs text-slate-700 dark:text-slate-300 m-0 leading-relaxed break-words min-w-0">
-						Клинические протоколы, дневники и медицинскую карту могут подписывать исключительно дипломированные врачи.
-						Ассистенты, регистраторы и немедицинский персонал законодательно лишены права подписи.
+					<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 leading-relaxed break-words min-w-0 pl-9">
+						Клинические протоколы подписывают исключительно врачи. Ассистенты и регистраторы лишены права подписи.
 					</p>
 				</div>
 			</div>

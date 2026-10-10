@@ -119,12 +119,12 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 						)}
 					</div>
 					<div className="document-patient-stats">
-						<span className="document-stat-pill issued" title="Выданные и подписанные документы">
-							<CheckCircle2 size={13} className="inline mr-1 text-emerald-500" aria-hidden="true" />
+						<span className="document-stat-pill" title="Выданные и подписанные документы">
+							<CheckCircle2 size={13} className="inline mr-1 text-[var(--teal,#0d9488)]" aria-hidden="true" />
 							Выдано: {patientIssuedDocsCount}
 						</span>
-						<span className="document-stat-pill draft" title="Черновики в работе">
-							<Clock size={13} className="inline mr-1 text-amber-500" aria-hidden="true" />
+						<span className="document-stat-pill" title="Черновики в работе">
+							<Clock size={13} className="inline mr-1 text-[var(--muted)]" aria-hidden="true" />
 							Черновиков: {patientDraftDocsCount}
 						</span>
 						<span className="document-stat-pill" title="Всего документов">
@@ -133,15 +133,15 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 					</div>
 				</div>
 
-				{/* 1.1 АКЦЕНТНЫЙ БЛОК: ПЕРВИЧНЫЙ ПРИЁМ (0-CLICK GUIDANCE ДЛЯ АДМИНИСТРАТОРА) */}
+				{/* 1.1 АКЦЕНТНЫЙ БЛОК: ПЕРВИЧНЫЙ ПРИЁМ */}
 				<div className="document-primary-intake-banner" data-testid="document-primary-intake-banner">
 					<div className="document-primary-intake-heading">
 						<div className="document-primary-intake-badge-title">
 							<span className="document-primary-intake-pill">
-								1. Первичный приём (Договор + Согласие ИДС + Персональные данные)
+								Первичный приём (Договор + ИДС + Персданные)
 							</span>
 							<span className="document-primary-intake-hint">
-								Оформление нового пациента со строками «________» для ручной подписи
+								Комплект бланков для оформления нового пациента на стойке регистрации
 							</span>
 						</div>
 					</div>
@@ -153,7 +153,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 							data-tour="print-contract-btn"
 							onClick={handleDirectPrintPrimaryIntake}
 							data-testid="btn-quick-print-primary-intake-package"
-							title="Сформировать и напечатать полный пакет первичного приёма (Договор + Согласие ИДС + Персональные данные + Анкета здоровья) со строками «________» для быстрой ручной подписи на стойке регистрации"
+							title="Сформировать и напечатать полный пакет первичного приёма (Договор + Согласие ИДС + Персональные данные + Анкета здоровья)"
 						>
 							<Printer size={15} aria-hidden="true" />
 							<span className="font-bold">Печать первичного пакета</span>
@@ -186,7 +186,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 							title="Распечатать чистый бланк договора для ручного заполнения пациентом до приёма"
 						>
 							<FileText size={15} aria-hidden="true" />
-							<span>Пустой бланк договора (под ручное заполнение)</span>
+							<span>Пустой бланк договора</span>
 						</button>
 						<button
 							type="button"
@@ -203,22 +203,22 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 								className="secondary-button document-intake-a4-preview-btn flex items-center gap-1.5"
 								onClick={() => setIsA4PrintPreviewOpen(true)}
 								data-testid="btn-open-pro-a4-modal"
-								title="Открыть официальный печатный бланк А4 (Договор ПП РФ № 736, Акт выполненных работ, План лечения, Медкарта)"
+								title="Открыть официальный печатный бланк А4 (Договор, Акт выполненных работ, План лечения, Медкарта)"
 							>
 								<Printer size={14} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
-								<span className="font-semibold">Бланки А4 (ГОСТ / Договор / Акт / План / Карта)</span>
+								<span className="font-semibold">Бланки А4 (Договор / Акт / Карта)</span>
 							</button>
 						)}
 					</div>
 				</div>
 
-				{/* 2. БЫСТРЫЕ РОЛЕВЫЕ СЦЕНАРИИ В 1 КЛИК */}
-				<details className="document-scenarios-accordion group" data-testid="document-scenarios-accordion" open>
+				{/* 2. БЫСТРЫЕ РОЛЕВЫЕ СЦЕНАРИИ */}
+				<details className="document-scenarios-accordion group" data-testid="document-scenarios-accordion">
 					<summary className="document-scenarios-summary">
 						<div className="flex items-center gap-2">
 							<Zap size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
 							<span className="font-bold text-xs text-[var(--ink)]">
-								Быстрые сценарии и пакеты (понятные подсказки для регистратуры)
+								Быстрые сценарии оформления документов
 							</span>
 						</div>
 						<span className="document-scenarios-summary-badge">

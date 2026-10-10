@@ -81,7 +81,7 @@ export function AutoclaveRegisterTable({
 				onPrintBatchPouches={onPrintBatchPouches}
 				onPrintSinglePouch={onPrintSinglePouch}
 				onOpenKraftForLog={onOpenKraftForLog}
-				onOpenNewCycleModal={onOpenNewCycleModal}
+				onOpenNewCycleModal={onOpenNewCycleModal || (() => {})}
 				onOpenJournal257Modal={onOpenJournal257Modal}
 				onOpenKraftModal={onOpenKraftModal}
 			/>
@@ -119,7 +119,7 @@ export function AutoclaveRegisterTable({
 				onQuickShiftBatch={onQuickShiftBatch}
 				onPrintBatchPouches={onPrintBatchPouches}
 				onOpenEquipmentModal={onOpenEquipmentModal}
-				onOpenNewCycleModal={onOpenNewCycleModal}
+				onOpenNewCycleModal={onOpenNewCycleModal || (() => {})}
 				onGenerateMonthlyForm257={onGenerateMonthlyForm257}
 				onOpenKraftModal={onOpenKraftModal}
 				selectedLogForSheet={selectedLogForSheet}

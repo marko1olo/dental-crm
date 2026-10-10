@@ -19,31 +19,17 @@
  * Invariants: Mandates 8d (7 Deadly Sins), 8e (Doctor Autonomy), 8x (Zero Memory Leaks).
  */
 
-import { registerHooks } from "node:module";
-
-// Ensure CSS imports are stubbed in headless test environment if run directly without testCssStub.mjs
-try {
-	registerHooks({
-		load(url, context, nextLoad) {
-			if (url.endsWith(".css")) {
-				return { format: "module", shortCircuit: true, source: "export default {};" };
-			}
-			return nextLoad(url, context);
-		},
-	});
-} catch {
-	// Hooks already registered
-}
-
+import "../../../../testCssStub.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import React, { act, Suspense } from "react";
+globalThis.React = React;
 import { createRoot, type Root } from "react-dom/client";
 import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/AppLogicContext";
-import { VisitDiagnosticsTab } from "../VisitDiagnosticsTab";
+const { VisitDiagnosticsTab } = await import("../VisitDiagnosticsTab");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -785,9 +771,26 @@ describe("VisitDiagnosticsTab Comprehensive Functionality & Button Test Suite", 
 			);
 		});
 
+		it("renders breadcrumb and title 'Снимки и диагностика'", async () => {
+			await renderDiagnosticsTab();
+			const header = findByTestId(container, "visit-diagnostics-header");
+			assert.ok(header, "Must render visit-diagnostics-header");
+			assert.ok(
+				header.textContent.includes("Снимки и диагностика") ||
+					header.textContent.includes("Диагностика и рентгенологические снимки"),
+				"Header must include 'Снимки и диагностика'",
+			);
+		});
+
 		it("source code verification: VisitDiagnosticsTab strictly enforces design tokens across all tabs", () => {
-			const sourcePath = path.resolve(__dirname, "../VisitDiagnosticsTab.tsx");
-			const source = fs.readFileSync(sourcePath, "utf8");
+			const diagnosticsDir = path.resolve(__dirname, "../diagnosticsTab");
+			const sourceFiles = [
+				path.resolve(__dirname, "../VisitDiagnosticsTab.tsx"),
+				...(fs.existsSync(diagnosticsDir)
+					? fs.readdirSync(diagnosticsDir).map((f) => path.resolve(diagnosticsDir, f))
+					: []),
+			];
+			const source = sourceFiles.map((f) => fs.readFileSync(f, "utf8")).join("\n");
 
 			// Check all 3 segmented mode buttons use bg-transparent border border-transparent
 			const bgTransparentCount = (source.match(/bg-transparent border border-transparent/g) || []).length;

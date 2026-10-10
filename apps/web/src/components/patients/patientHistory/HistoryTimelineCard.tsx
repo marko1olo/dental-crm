@@ -23,8 +23,8 @@ import {
 	Stethoscope,
 	User,
 } from "lucide-react";
-import { ToothMolar } from "../icons/DentalIcons";
-import { showToast } from "../GlobalToast";
+import { ToothMolar } from "../../icons/DentalIcons";
+import { showToast } from "../../GlobalToast";
 import type { ClinicalVisitItem } from "./types";
 
 export interface HistoryTimelineCardProps {

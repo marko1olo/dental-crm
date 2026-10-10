@@ -702,7 +702,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							type="button"
 							onClick={() => setIsTaxModalOpen(true)}
 							className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-teal-50 dark:bg-teal-950/50 border border-teal-500/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/60 flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 whitespace-nowrap shadow-2xs"
-							title="Сформировать справку для налогового вычета 13% НДФЛ в 1 клик"
+							title="Сформировать справку для налогового вычета 13% НДФЛ"
 						>
 							<FileSpreadsheet className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
 							<span className="shrink-0 whitespace-nowrap">Справка 13% НДФЛ</span>

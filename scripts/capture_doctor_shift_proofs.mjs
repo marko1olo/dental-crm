@@ -4,7 +4,7 @@ import fs from "node:fs";
 import crypto from "node:crypto";
 
 const APP_BASE = process.env.APP_BASE || "http://127.0.0.1:5173";
-const ARTIFACT_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/3b9934ab-d1fa-45f2-896b-50e23eafb447");
+const ARTIFACT_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/1088bb18-60a1-4af0-aa1c-05a147921b8e");
 const REPO_SCREENSHOTS_DIR = path.resolve("screenshots");
 const DOCS_SCREENSHOTS_DIR = path.resolve("docs/screenshots");
 

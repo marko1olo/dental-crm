@@ -86,91 +86,102 @@ export const GlobalTreatmentsStrip: React.FC<GlobalTreatmentsStripProps> = ({
 
 	return (
 		<div
-			className="global-treatments-strip flex flex-wrap items-center gap-2 px-3.5 py-1.5 rounded-xl border border-[var(--line-strong,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink,#0f172a)] transition-colors shadow-2xs"
+			className="global-treatments-strip flex flex-wrap items-center gap-2 px-3 py-1.5 rounded-xl border border-[var(--line-strong,var(--border,#cbd5e1))] dark:border-white/20 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-soft,#0f172a)] text-xs text-[var(--ink,#0f172a)] transition-colors shadow-2xs"
 			role="region"
 			aria-label="Общие процедуры на всю дугу и полость рта"
 		>
-			<div className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-[var(--muted,#64748b)] uppercase select-none mr-1">
-				<Sparkles className="w-3.5 h-3.5 text-amber-500" />
-				<span>Общие процедуры:</span>
+			<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--muted,#64748b)] select-none shrink-0">
+				<Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+				<span className="font-extrabold text-[12px] text-slate-800 dark:text-slate-100">
+					Общие процедуры (вся дуга):
+				</span>
 			</div>
 
-			{globals.length === 0 ? (
-				<span className="text-[var(--muted,#64748b)] italic text-xs font-medium">
-					Нет общих назначений
-				</span>
-			) : (
-				globals.map((tr) => {
-					const isHigh = (Array.isArray(highlightedIds) ? highlightedIds : []).includes(tr.id);
-					const isPlanned = tr.status === "planned";
-					return (
-						<button
-							key={tr.id}
-							type="button"
-							onClick={() => onTreatmentClick?.(tr)}
-							onMouseEnter={() => handleMouseEnter(tr)}
-							onMouseLeave={handleMouseLeave}
-							className={`inline-flex items-center gap-1.5 px-2.5 h-7 rounded-lg text-xs font-bold border transition-all duration-150 cursor-pointer shadow-2xs ${
-								isHigh
-									? "border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-950/60 dark:text-blue-200 ring-2 ring-blue-400/40 shadow-xs"
-									: isPlanned
-										? "border-amber-400 dark:border-amber-600 bg-amber-500/15 text-amber-900 dark:text-amber-200 hover:border-amber-500"
-										: "border-[var(--line-strong,var(--border,#cbd5e1))] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-teal-500"
-							}`}
-							style={
-								isPlanned
-									? {
-											backgroundImage:
-												"repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(245, 158, 11, 0.08) 4px, rgba(245, 158, 11, 0.08) 8px)",
-										}
-									: undefined
-							}
-						>
-							{getIcon(tr)}
-							<span>{tr.title}</span>
-							{tr.arch && (
-								<span className="text-xs uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] border border-[var(--line-strong,var(--border,#e2e8f0))] font-mono">
-									{tr.arch === "upper" ? "в/ч" : "н/ч"}
-								</span>
-							)}
-							{tr.status === "existing" && (
-								<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 ml-0.5" />
-							)}
-						</button>
-					);
-				})
+			{globals.length > 0 && (
+				<div className="flex flex-wrap items-center gap-1.5">
+					{globals.map((tr) => {
+						const isHigh = (Array.isArray(highlightedIds) ? highlightedIds : []).includes(tr.id);
+						const isPlanned = tr.status === "planned";
+						return (
+							<button
+								key={tr.id}
+								type="button"
+								onClick={() => onTreatmentClick?.(tr)}
+								onMouseEnter={() => handleMouseEnter(tr)}
+								onMouseLeave={handleMouseLeave}
+								className={`inline-flex items-center gap-1.5 px-3 h-8 min-h-[32px] rounded-lg text-xs font-bold border transition-all duration-150 cursor-pointer shadow-2xs ${
+									isHigh
+										? "border-blue-500 bg-blue-50 text-blue-900 dark:bg-blue-950/60 dark:text-blue-100 ring-2 ring-blue-400/40 shadow-xs"
+										: isPlanned
+											? "border-amber-400 dark:border-amber-600 bg-amber-500/15 text-amber-950 dark:text-amber-100 hover:border-amber-500"
+											: "border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 hover:border-emerald-500"
+								}`}
+							>
+								{getIcon(tr)}
+								<span>{tr.title}</span>
+								{tr.arch && (
+									<span className="text-[11px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--muted,#64748b)] border border-[var(--line-strong,var(--border,#cbd5e1))] font-mono">
+										{tr.arch === "upper" ? "в/ч" : "н/ч"}
+									</span>
+								)}
+								{tr.status === "existing" && (
+									<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 ml-0.5" />
+								)}
+							</button>
+						);
+					})}
+				</div>
 			)}
 
-			{!readOnly && onQuickAdd && (
-				<div className="flex items-center gap-1.5 ml-auto">
+			{!readOnly && onQuickAdd ? (
+				<div className="flex flex-wrap items-center gap-1.5">
 					<button
 						type="button"
 						onClick={() => onQuickAdd(DEFAULT_GLOBAL_PRESETS[0]!)}
-						className="inline-flex items-center gap-1.5 px-2.5 h-7 text-xs font-bold rounded-lg border border-[var(--line-strong,var(--border,#cbd5e1))] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-hover,#f1f5f9)] hover:border-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-300 transition-all shadow-2xs active:scale-95 cursor-pointer"
+						className="odontogram-global-btn odontogram-global-btn--airflow"
 						title="Добавить профгигиену Air-Flow на всю полость рта"
+						data-testid="btn-quick-add-airflow"
 					>
-						<Plus className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-						<span>Air-Flow</span>
+						<Plus className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 stroke-[2.5]" />
+						<span>Air-Flow (Вся полость)</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => onQuickAdd(DEFAULT_GLOBAL_PRESETS[1]!)}
-						className="inline-flex items-center gap-1.5 px-2.5 h-7 text-xs font-bold rounded-lg border border-[var(--line-strong,var(--border,#cbd5e1))] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-hover,#f1f5f9)] hover:border-sky-500 hover:text-sky-700 dark:hover:text-sky-300 transition-all shadow-2xs active:scale-95 cursor-pointer"
-						title="Добавить элайнеры на верхнюю челюсть"
+						className="odontogram-global-btn odontogram-global-btn--aligners"
+						title="Элайнеры / Сплинт на верхнюю челюсть"
+						data-testid="btn-quick-add-aligners-upper"
 					>
-						<Plus className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
-						<span>В/Ч</span>
+						<Plus className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0 stroke-[2.5]" />
+						<span>Элайнеры (В/Ч)</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => onQuickAdd(DEFAULT_GLOBAL_PRESETS[2]!)}
-						className="inline-flex items-center gap-1.5 px-2.5 h-7 text-xs font-bold rounded-lg border border-[var(--line-strong,var(--border,#cbd5e1))] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-hover,#f1f5f9)] hover:border-sky-500 hover:text-sky-700 dark:hover:text-sky-300 transition-all shadow-2xs active:scale-95 cursor-pointer"
-						title="Добавить элайнеры на нижнюю челюсть"
+						className="odontogram-global-btn odontogram-global-btn--aligners"
+						title="Элайнеры / Сплинт на нижнюю челюсть"
+						data-testid="btn-quick-add-aligners-lower"
 					>
-						<Plus className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
-						<span>Н/Ч</span>
+						<Plus className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0 stroke-[2.5]" />
+						<span>Элайнеры (Н/Ч)</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => onQuickAdd(DEFAULT_GLOBAL_PRESETS[3]!)}
+						className="odontogram-global-btn odontogram-global-btn--airflow"
+						title="Клиническое отбеливание обеих челюстей"
+						data-testid="btn-quick-add-whitening"
+					>
+						<Plus className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0 stroke-[2.5]" />
+						<span>Отбеливание</span>
 					</button>
 				</div>
+			) : (
+				globals.length === 0 && (
+					<span className="text-[var(--muted,#64748b)] text-xs font-medium">
+						Нет общих назначений
+					</span>
+				)
 			)}
 		</div>
 	);

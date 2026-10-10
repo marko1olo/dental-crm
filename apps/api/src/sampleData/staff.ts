@@ -2,7 +2,8 @@
  * @file staff.ts
  * @description Layer 1: Staff members, roles, access policies, working hours defaults.
  */
-import { defaultClinicScheduleDefaults, clockToMinutes, isClockTime } from "./organizations.js";
+import { createHash } from "node:crypto";
+import { defaultClinicScheduleDefaults, clockToMinutes, isClockTime, defaultStaffWorkingHours } from "./organizations.js";
 
 
 import type {
@@ -11,7 +12,6 @@ import type {
 	StaffWorkingHours,
 } from "@dental/shared";
 import { organizationId, doctorUserId, assistantUserId, nowIso } from "./fixtureIds.js";
-import { defaultStaffWorkingHours, isClockTime } from "./organizations.js";
 
 const staffMembers: StaffMember[] = [
 	{

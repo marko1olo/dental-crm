@@ -338,7 +338,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 											);
 										}}
 										className="h-6 text-[10.5px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-500/5 hover:bg-indigo-500/15 border border-indigo-500/20 rounded-full px-2 py-0 cursor-pointer focus:outline-hidden transition-colors"
-										title="Назначить специалиста на все процедуры этапа в 1 клик"
+										title="Назначить специалиста на все процедуры этапа"
 										data-testid={`assign-stage-doctor-select-${stage.stageNumber}`}
 									>
 										<option value="">+ Врач этапа</option>
@@ -436,8 +436,8 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 																	stageId: stage.id,
 																	stageNumber: stage.stageNumber,
 																	stageTitle: stage.title,
-																	doctorId: stage.assignedDoctorId,
-																	doctorName: stage.assignedDoctorName,
+																	doctorId: (stage as any).assignedDoctorId,
+																	doctorName: (stage as any).assignedDoctorName,
 																	...opts,
 																})
 														: undefined

@@ -69,7 +69,7 @@ describe("geminiBidi Modular Domain Architecture", () => {
 		});
 
 		it("constructs system instruction with anti-hallucination and clinical terms", () => {
-			const instruction = buildDentalBidiSystemInstruction("therapy", [
+			const instruction = buildDentalBidiSystemInstruction("therapist", [
 				"интраоральный сканер",
 			]);
 			assert.match(instruction, /ассистент ДЕНТА/);
@@ -82,7 +82,7 @@ describe("geminiBidi Modular Domain Architecture", () => {
 		it("builds standard Gemini Live setup frame with TEXT response modality", () => {
 			const frame = buildBidiSetupFrame({
 				model: "models/test-model",
-				specialty: "surgery",
+				specialty: "surgeon",
 			});
 			assert.equal(frame.setup.model, "models/test-model");
 			assert.deepEqual(frame.setup.generationConfig.responseModalities, [
@@ -96,12 +96,12 @@ describe("geminiBidi Modular Domain Architecture", () => {
 		it("formats media chunks with 16kHz rate from Buffer and ArrayBuffer", () => {
 			const pcmBuf = Buffer.from([0x00, 0x01, 0x02, 0x03]);
 			const frame1 = buildBidiMediaChunkFrame(pcmBuf, 16000);
-			assert.equal(frame1.realtimeInput.mediaChunks[0].mimeType, "audio/pcm;rate=16000");
-			assert.equal(frame1.realtimeInput.mediaChunks[0].data, pcmBuf.toString("base64"));
+			assert.equal(frame1.realtimeInput.mediaChunks[0]!.mimeType, "audio/pcm;rate=16000");
+			assert.equal(frame1.realtimeInput.mediaChunks[0]!.data, pcmBuf.toString("base64"));
 
 			const ab = new ArrayBuffer(4);
 			const frame2 = buildBidiMediaChunkFrame(ab, 16000);
-			assert.equal(frame2.realtimeInput.mediaChunks[0].mimeType, "audio/pcm;rate=16000");
+			assert.equal(frame2.realtimeInput.mediaChunks[0]!.mimeType, "audio/pcm;rate=16000");
 		});
 
 		it("enforces chunk size ceiling and validates base64 strings before Buffer allocation", () => {

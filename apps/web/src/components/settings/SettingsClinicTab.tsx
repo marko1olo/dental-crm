@@ -77,7 +77,7 @@ export function SettingsClinicTab({
 	const {
 		dashboard,
 		changeClinicMode,
-		clinicProfileDraft = {},
+		clinicProfileDraft: rawClinicProfileDraft,
 		clinicProfileSaveState = "saved",
 		updateClinicProfileDraft,
 		saveClinicProfileFromDraft,
@@ -205,6 +205,7 @@ export function SettingsClinicTab({
 
 	if (settingsTab !== "clinic") return null;
 
+	const clinicProfileDraft = rawClinicProfileDraft || {};
 	const typedClinicModes = Object.keys(clinicModeLabels || {}) as ClinicMode[];
 	const typedWeekdayOptions = (weekdayOptions ?? []) as WeekdayOption[];
 	const typedUiLanguageOptions = (uiLanguageOptions ?? []) as Array<{
@@ -310,13 +311,13 @@ export function SettingsClinicTab({
 					<p className="eyebrow text-xs uppercase font-bold text-[var(--muted)]">Аккаунт клиники</p>
 					<h2 className="text-xl sm:text-2xl font-bold leading-tight break-words text-[var(--ink)] m-0 mt-0.5">
 						{dashboard?.clinicSettings?.profile?.clinicName ??
-							clinicProfileDraft.clinicName ??
+							clinicProfileDraft?.clinicName ??
 							"Клиника DENTE"}
 					</h2>
 					<p className="text-xs sm:text-sm text-[var(--muted)] leading-normal break-words mt-1 m-0">
-						{dashboard?.clinicSettings?.profile?.legalName ?? clinicProfileDraft.legalName ?? "ООО Клиника"} ·{" "}
-						{dashboard?.clinicSettings?.profile?.address ?? clinicProfileDraft.address ?? "Адрес не указан"} ·{" "}
-						{dashboard?.clinicSettings?.profile?.timezone ?? clinicProfileDraft.timezone ?? "Europe/Moscow"}
+						{dashboard?.clinicSettings?.profile?.legalName ?? clinicProfileDraft?.legalName ?? "ООО Клиника"} ·{" "}
+						{dashboard?.clinicSettings?.profile?.address ?? clinicProfileDraft?.address ?? "Адрес не указан"} ·{" "}
+						{dashboard?.clinicSettings?.profile?.timezone ?? clinicProfileDraft?.timezone ?? "Europe/Moscow"}
 					</p>
 				</div>
 				<div className="flex items-center gap-2">

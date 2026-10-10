@@ -611,9 +611,11 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 	// 1-Click Form 043/u Consultation Protocol Injection
 	const handleInsertConsultationNote = () => {
 		const isAtlas = splitMode === "atlas";
+		const targetTooth = leftViewport.toothCode || activeToothFdi;
+		const toothDesc = targetTooth ? `зуба №${targetTooth} ` : "";
 		const note = isAtlas
 			? `Проведена клиническая консультация (Атлас патологий DENTE): сопоставлены рентгенограмма пациента и анатомический эталон («${rightViewport.title}»). Пациенту наглядно продемонстрированы анатомические ориентиры, обоснован план комплексной санации и согласован протокол лечения.`
-			: `Проведена клиническая консультация (Сплит-сопоставление «До / После»): сопоставлены снимок зуба №${leftViewport.toothCode || "16"} до начала лечения («${leftViewport.title}», ${leftViewport.subtitle}) и контрольный снимок после лечения («${rightViewport.title}», ${rightViewport.subtitle}). Пациенту наглядно продемонстрирован результат лечения, согласован протокол реабилитации.`;
+			: `Проведена клиническая консультация (Сплит-сопоставление «До / После»): сопоставлены снимок ${toothDesc}до начала лечения («${leftViewport.title}», ${leftViewport.subtitle}) и контрольный снимок после лечения («${rightViewport.title}», ${rightViewport.subtitle}). Пациенту наглядно продемонстрирован результат лечения, согласован протокол реабилитации.`;
 
 		applyRadiologyProtocolToForm043({
 			protocol: note,
@@ -719,6 +721,7 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 		<div
 			ref={containerRef}
 			data-testid="radiology-consultation-split"
+			data-theme="dark"
 			style={{
 				position: isFullscreen ? "fixed" : "relative",
 				inset: isFullscreen ? 0 : "auto",
@@ -732,7 +735,7 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 				userSelect: "none",
 				overflow: "hidden",
 			}}
-			className="radiology-consultation-split"
+			className="radiology-consultation-split dark"
 		>
 			{/* ═══════════════════════════════════════════════════════════════════
 			    1. TOP CLINICAL TOOLBAR (Strict 32-36px Desktop Density)

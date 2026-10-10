@@ -272,23 +272,35 @@ export function worldMmToVoxel(
 		volume = arg2 as CbctVoxelVolume;
 	}
 
-	const sp = volume.spacingMm;
+	const sp = volume?.spacingMm;
 	const sx = (sp?.x && sp.x > 0) ? sp.x : 0.2;
 	const sy = (sp?.y && sp.y > 0) ? sp.y : 0.2;
 	const sz = (sp?.z && sp.z > 0) ? sp.z : 0.2;
 
-	const relX = pointMm.x - volume.originMm.x;
-	const relY = pointMm.y - volume.originMm.y;
-	const relZ = pointMm.z - volume.originMm.z;
+	const ox = volume?.originMm?.x ?? 0;
+	const oy = volume?.originMm?.y ?? 0;
+	const oz = volume?.originMm?.z ?? 0;
+
+	const px = pointMm?.x ?? 0;
+	const py = pointMm?.y ?? 0;
+	const pz = pointMm?.z ?? 0;
+
+	const relX = px - ox;
+	const relY = py - oy;
+	const relZ = pz - oz;
 
 	const vx = Math.round(relX / sx);
 	const vy = Math.round(relY / sy);
 	const vz = Math.round(relZ / sz);
 
+	const w = volume?.dimensions?.width ?? 256;
+	const h = volume?.dimensions?.height ?? 256;
+	const d = volume?.dimensions?.depth ?? 256;
+
 	return {
-		x: Math.max(0, Math.min(volume.dimensions.width - 1, vx)),
-		y: Math.max(0, Math.min(volume.dimensions.height - 1, vy)),
-		z: Math.max(0, Math.min(volume.dimensions.depth - 1, vz)),
+		x: Math.max(0, Math.min(w - 1, vx)),
+		y: Math.max(0, Math.min(h - 1, vy)),
+		z: Math.max(0, Math.min(d - 1, vz)),
 	};
 }
 
@@ -337,16 +349,23 @@ export function voxelToWorldMm(
  */
 export function clampCoordinateToVolume(worldMm: Point3D, volume: CbctVoxelVolume): Point3D {
 	if (!volume) return { ...worldMm };
-	const halfX = volume.physicalSizeMm.x / 2;
-	const halfY = volume.physicalSizeMm.y / 2;
-	const halfZ = volume.physicalSizeMm.z / 2;
+	const ox = volume.originMm?.x ?? 0;
+	const oy = volume.originMm?.y ?? 0;
+	const oz = volume.originMm?.z ?? 0;
+	const psx = volume.physicalSizeMm?.x ?? 50;
+	const psy = volume.physicalSizeMm?.y ?? 50;
+	const psz = volume.physicalSizeMm?.z ?? 50;
 
-	const minX = Math.min(volume.originMm.x, -halfX);
-	const maxX = Math.max(volume.originMm.x + volume.physicalSizeMm.x, halfX);
-	const minY = Math.min(volume.originMm.y, -halfY);
-	const maxY = Math.max(volume.originMm.y + volume.physicalSizeMm.y, halfY);
-	const minZ = Math.min(volume.originMm.z, -halfZ);
-	const maxZ = Math.max(volume.originMm.z + volume.physicalSizeMm.z, halfZ);
+	const halfX = psx / 2;
+	const halfY = psy / 2;
+	const halfZ = psz / 2;
+
+	const minX = Math.min(ox, -halfX);
+	const maxX = Math.max(ox + psx, halfX);
+	const minY = Math.min(oy, -halfY);
+	const maxY = Math.max(oy + psy, halfY);
+	const minZ = Math.min(oz, -halfZ);
+	const maxZ = Math.max(oz + psz, halfZ);
 
 	const safeX = Number.isFinite(worldMm.x) ? Math.max(minX, Math.min(maxX, worldMm.x)) : 0;
 	const safeY = Number.isFinite(worldMm.y) ? Math.max(minY, Math.min(maxY, worldMm.y)) : 0;
@@ -404,21 +423,25 @@ export function sampleVoxelHU(
 		volume = arg4 as CbctVoxelVolume;
 	}
 
+	const w = volume.dimensions?.width ?? 256;
+	const h = volume.dimensions?.height ?? 256;
+	const d = volume.dimensions?.depth ?? 256;
+
 	if (
 		!volume ||
 		!volume.data ||
 		volume.isDisposed ||
 		x < 0 ||
-		x >= volume.dimensions.width ||
+		x >= w ||
 		y < 0 ||
-		y >= volume.dimensions.height ||
+		y >= h ||
 		z < 0 ||
-		z >= volume.dimensions.depth
+		z >= d
 	) {
 		return -1000; // Air HU fallback
 	}
 
-	const index = z * (volume.dimensions.width * volume.dimensions.height) + y * volume.dimensions.width + x;
+	const index = z * (w * h) + y * w + x;
 	const raw = volume.data[index] ?? -1000;
 	return Math.max(-32768, Math.min(32767, raw));
 }

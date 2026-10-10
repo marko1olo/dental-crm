@@ -331,6 +331,9 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 	});
 
 	it("на закрытый приём отвечает доменным отказом, а не подписывает второй раз", async () => {
+		await db.execute(
+			sql`update visits set status = 'voided' where id = ${FILLED_VISIT_ID}`,
+		);
 		await assert.rejects(
 			() =>
 				withFixtureTenant(ORGANIZATION_ID, async () =>

@@ -1,7 +1,6 @@
 import type {
   Appointment, AppointmentReadiness, Dashboard, ScheduleSuggestion, StaffRole,
 } from "@dental/shared";
-import { ShieldCheck } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { appointmentScheduleMissingFields } from "./AppHelpers";
@@ -34,7 +33,9 @@ import { ScheduleDisconnectedState } from "./components/schedule/view/ScheduleDi
 import { ScheduleViewToolbar } from "./components/schedule/view/ScheduleViewToolbar";
 import { ScheduleViewBody } from "./components/schedule/view/ScheduleViewBody";
 import { ScheduleViewModals } from "./components/schedule/view/ScheduleViewModals";
+import { ScheduleAdminUnlockFieldset } from "./components/schedule/view/ScheduleAdminUnlockFieldset";
 import { findPreventiveInspectionCandidates } from "./components/schedule/doctorFreeSlotsEngine";
+import { useIsMobile } from "./hooks/useIsMobile";
 
 // Zero-downtime re-exports of shifts, drafts, and lock contracts
 export { buildChairDoctorAssignmentsFromShifts, buildChairDoctorAssignmentsByDate } from "./components/schedule/view/scheduleViewShifts";
@@ -119,6 +120,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     Partial<ScheduleViewProps>;
 
   useScheduleRealtime(props.loadDashboard);
+
+  const isMobile = useIsMobile(768);
 
   const {
     scheduleDoctorFilterId, scheduleAssistantFilterId, scheduleChairFilterId,
@@ -524,37 +527,25 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   ) : null;
 
   return (
-    <div className="panel schedule-panel" id="schedule" data-testid="schedule-view">
-      <ScheduleViewToolbar
-        clinicToday={clinicToday}
-        scheduleDateFilter={scheduleDateFilter}
-        setScheduleDateFilter={setScheduleDateFilter}
-        stepScheduleDay={stepScheduleDay}
-        activeScheduleFilterCount={activeScheduleFilterCount}
-        resetScheduleFilters={resetScheduleFilters}
-        dashboard={dashboard}
-        scheduleDoctorFilterId={scheduleDoctorFilterId}
-        setScheduleDoctorFilterId={setScheduleDoctorFilterId}
-        scheduleChairFilterId={scheduleChairFilterId}
-        setScheduleChairFilterId={setScheduleChairFilterId}
-        scheduleStatusFilter={scheduleStatusFilter}
-        shiftQueueCounts={shiftQueueCounts}
+    <div
+      className={`panel schedule-panel ${isMobile ? "schedule-mobile-panel" : ""}`}
+      id="schedule"
+      data-testid="schedule-view"
+    >
+      {!isMobile && (
+        <>
+          <ScheduleViewToolbar
+        clinicToday={clinicToday} scheduleDateFilter={scheduleDateFilter} setScheduleDateFilter={setScheduleDateFilter}
+        stepScheduleDay={stepScheduleDay} activeScheduleFilterCount={activeScheduleFilterCount} resetScheduleFilters={resetScheduleFilters}
+        dashboard={dashboard} scheduleDoctorFilterId={scheduleDoctorFilterId} setScheduleDoctorFilterId={setScheduleDoctorFilterId}
+        scheduleChairFilterId={scheduleChairFilterId} setScheduleChairFilterId={setScheduleChairFilterId}
+        scheduleStatusFilter={scheduleStatusFilter} shiftQueueCounts={shiftQueueCounts}
         setScheduleStatusFilter={(status) => {
           if (!setScheduleStatusFilter) return;
           if (!status || status === "all") {
             setScheduleStatusFilter("all");
           } else {
-            setScheduleStatusFilter(
-              status as
-                | "cancelled"
-                | "completed"
-                | "confirmed"
-                | "no_show"
-                | "in_treatment"
-                | "planned"
-                | "arrived"
-                | "all",
-            );
+            setScheduleStatusFilter(status as "cancelled" | "completed" | "confirmed" | "no_show" | "in_treatment" | "planned" | "arrived" | "all");
           }
         }}
         computedChairDoctorAssignments={computedChairDoctorAssignments}
@@ -594,92 +585,17 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
         openScheduleWarning={openScheduleWarning}
       />
 
-      {scheduleAdminSecretNeeded ? (
-        <fieldset
-          className="appointment-editor schedule-admin-unlock min-w-0"
-          aria-label="Секрет администратора для сохранения расписания"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
-            padding: "16px",
-            borderRadius: "10px",
-            background: "var(--paper-soft)",
-            marginTop: "8px",
-            minWidth: 0,
-          }}
-        >
-          {!scheduleAdminSecretSession ? (
-            <>
-              <p
-                className="admin-unlock-guidance form-span-2 break-words"
-                id="schedule-admin-unlock-guidance"
-                role="status"
-                aria-live="polite"
-                style={{ margin: 0, fontWeight: 600 }}
-              >
-                {scheduleAdminSecretReason}
-              </p>
-              <label className="form-span-2 min-w-0">
-                Секрет администратора клиники
-                <input
-                  type="password"
-                  autoComplete="current-password"
-                  value={scheduleAdminSecretDraft}
-                  onChange={(event: TextFieldChangeEvent) =>
-                    setScheduleAdminSecretDraft(event.target.value)
-                  }
-                  onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      if (!adminSecretReady) {
-                        showToast(
-                          "Введите мастер-пароль администратора",
-                          "warning",
-                        );
-                        return;
-                      }
-                      unlockScheduleAdminSession();
-                    }
-                  }}
-                  placeholder="введите секрет администратора"
-                  aria-describedby="schedule-admin-unlock-guidance"
-                />
-              </label>
-              <div className="appointment-editor-actions flex flex-wrap items-center justify-between gap-3 min-w-0">
-                <span className="save-state save-state-idle break-words">
-                  Секрет хранится только до перезагрузки страницы и относится
-                  только к расписанию.
-                </span>
-                <button
-                  className="secondary-button shrink-0 h-8 px-3.5"
-                  type="button"
-                  onClick={unlockScheduleAdminSession}
-                  aria-describedby={!adminSecretReady ? "schedule-admin-unlock-guidance" : undefined}
-                  disabled={!adminSecretReady}
-                >
-                  <ShieldCheck aria-hidden="true" /> Запомнить и повторить
-                  сохранение
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className="appointment-editor-actions flex flex-wrap items-center justify-between gap-3 min-w-0">
-              <span className="save-state save-state-idle break-words">
-                Секрет запомнен до перезагрузки страницы. Он подставляется при
-                сохранении записи — верен он или нет, покажет само сохранение.
-              </span>
-              <button
-                className="secondary-button shrink-0"
-                type="button"
-                onClick={lockScheduleAdminSession}
-              >
-                Забыть секрет
-              </button>
-            </div>
-          )}
-        </fieldset>
-      ) : null}
+      <ScheduleAdminUnlockFieldset
+        scheduleAdminSecretNeeded={scheduleAdminSecretNeeded}
+        scheduleAdminSecretSession={scheduleAdminSecretSession}
+        scheduleAdminSecretDraft={scheduleAdminSecretDraft}
+        setScheduleAdminSecretDraft={setScheduleAdminSecretDraft}
+        scheduleAdminSecretReason={scheduleAdminSecretReason}
+        adminSecretReady={adminSecretReady}
+        unlockScheduleAdminSession={unlockScheduleAdminSession}
+        lockScheduleAdminSession={lockScheduleAdminSession}
+        showToast={showToast}
+      />
 
       <NewAppointmentForm
         dashboard={dashboard}
@@ -700,6 +616,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
         setIsSmartAiOpen={setIsSmartAiOpen}
         chairDoctorAssignments={computedChairDoctorAssignments}
       />
+        </>
+      )}
 
       <ScheduleViewBody
         scheduleViewMode={scheduleViewMode}

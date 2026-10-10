@@ -58,6 +58,8 @@ export interface ScheduleViewToolbarProps {
   loadDashboard?: () => void | Promise<void>;
   shiftWarnings: any[];
   openScheduleWarning: (w: any) => void;
+  onOpenDoctorShiftDrawer?: () => void;
+  onOpenChairDateRangeModal?: () => void;
 }
 
 export function ScheduleViewToolbar(props: ScheduleViewToolbarProps) {
@@ -111,6 +113,8 @@ export function ScheduleViewToolbar(props: ScheduleViewToolbarProps) {
     loadDashboard,
     shiftWarnings,
     openScheduleWarning,
+    onOpenDoctorShiftDrawer,
+    onOpenChairDateRangeModal,
   } = props;
 
   return (
@@ -179,6 +183,8 @@ export function ScheduleViewToolbar(props: ScheduleViewToolbarProps) {
         onOpenTomorrowReminders={() => setIsTomorrowRemindersOpen(true)}
         onOpenAddChair={() => setIsQuickAddChairOpen(true)}
         onAddChair={handleAddChairFromSchedule}
+        onOpenDoctorShiftDrawer={onOpenDoctorShiftDrawer}
+        onOpenChairDateRangeModal={onOpenChairDateRangeModal}
         onQuickBooking={() => {
           setQuickBookingSlot({
             dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
@@ -207,6 +213,8 @@ export function ScheduleViewToolbar(props: ScheduleViewToolbarProps) {
           dashboard={dashboard}
           shiftWarnings={shiftWarnings}
           onOpenWarning={openScheduleWarning}
+          onOpenDoctorShiftDrawer={onOpenDoctorShiftDrawer}
+          onOpenChairDateRangeModal={onOpenChairDateRangeModal}
         />
       )}
     </>

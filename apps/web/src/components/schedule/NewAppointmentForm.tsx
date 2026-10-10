@@ -51,7 +51,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 				newAppointmentSaveState={newAppointmentSaveState}
 				showCreateForm={showCreateForm}
 				setShowCreateForm={setShowCreateForm}
-				setIsSmartAiOpen={setIsSmartAiOpen}
+				setIsSmartAiOpen={setIsSmartAiOpen || (() => {})}
 				useManualSelects={useManualSelects}
 				setUseManualSelects={setUseManualSelects}
 				smartInputText={logic.smartInputText}
@@ -64,7 +64,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 				setSmartParsedData={logic.setSmartParsedData}
 				smartActionNote={logic.smartActionNote}
 				setSmartActionNote={logic.setSmartActionNote}
-				collision={logic.collision}
+				collision={logic.collision as any}
 				criticalMissingSteps={logic.criticalMissingSteps}
 				newAppointmentReadyToCreate={logic.newAppointmentReadyToCreate}
 				createFailureText={logic.createFailureText}
@@ -117,7 +117,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 						resetNewAppointmentDraft={resetNewAppointmentDraft}
 						newAppointmentReadyToCreate={logic.newAppointmentReadyToCreate}
 						criticalMissingSteps={logic.criticalMissingSteps}
-						collision={logic.collision}
+						collision={logic.collision as any}
 					/>
 				</div>
 			)}

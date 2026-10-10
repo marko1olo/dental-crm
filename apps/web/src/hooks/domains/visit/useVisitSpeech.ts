@@ -80,7 +80,7 @@ export function useVisitSpeech({
 
 	const speechProviderHealthById = useMemo(
 		() =>
-			new Map(
+			new Map<string, any>(
 				(speechGatewayHealthReport?.providers ?? []).map((provider) => [
 					provider.providerId,
 					provider,

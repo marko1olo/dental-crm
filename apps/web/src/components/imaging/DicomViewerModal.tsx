@@ -510,20 +510,20 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						data-testid="btn-dicom-norma-043"
 						onClick={handleInsertNormaTo043}
 						style={{ height: "28px", padding: "0 10px", fontSize: "11px", fontWeight: 700, borderRadius: "6px", border: "1px solid #10b981", backgroundColor: isNormaApplied ? "rgba(16, 185, 129, 0.25)" : "#064e3b", color: "#a7f3d0", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "5px", whiteSpace: "nowrap" }}
-						title="1-клик действие: внести «Рентген-норма» в медицинскую карту"
+						title="Внести заключение «Рентген-норма» в медицинскую карту"
 					>
 						{isNormaApplied ? <CheckCircle2 size={13} /> : <Zap size={13} color="#34d399" />}
 						<span>{isNormaApplied ? "Норма внесена" : "Норма: патологии нет"}</span>
 					</button>
 
-					{/* 1-Click Protocols Menu Dropdown (Mandate 8e, 8i, 8k) */}
+					{/* Protocols Menu Dropdown */}
 					<div style={{ position: "relative" }} ref={protocolsDropdownRef}>
 						<button
 							type="button"
 							data-testid="btn-dicom-protocols-menu"
 							onClick={() => setIsProtocolsDropdownOpen((prev) => !prev)}
 							style={{ height: "28px", padding: "0 8px", fontSize: "11px", borderRadius: "6px", border: isProtocolsDropdownOpen ? "1px solid #0d9488" : "1px solid #334155", backgroundColor: isProtocolsDropdownOpen ? "#134e4a" : "#1e293b", color: "#e2e8f0", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600, whiteSpace: "nowrap" }}
-							title="Стандартные протоколы описания снимка — вставка в 1 клик"
+							title="Стандартные протоколы описания снимка"
 						>
 							<FileText size={13} color="#2dd4bf" />
 							<span>Протоколы</span>

@@ -26,10 +26,10 @@ import type {
 let omnichannelMsgSeq = 0;
 
 export interface UseOmnichannelHubStateParams {
-	readonly initialPatientId?: string;
-	readonly clinicName?: string;
-	readonly clinicAddress?: string;
-	readonly onSendMessage?: (message: OmnichannelMessage) => Promise<void> | void;
+	readonly initialPatientId?: string | undefined;
+	readonly clinicName?: string | undefined;
+	readonly clinicAddress?: string | undefined;
+	readonly onSendMessage?: ((message: OmnichannelMessage) => Promise<void> | void) | undefined;
 }
 
 export function useOmnichannelHubState({

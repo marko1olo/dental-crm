@@ -231,6 +231,21 @@ export function subscribeCbctSyncEvents(
 }
 
 /**
+ * Closes the underlying BroadcastChannel to allow deterministic cleanup.
+ */
+export function closeCbctSyncChannel(): void {
+	if (broadcastChannelInstance) {
+		try {
+			broadcastChannelInstance.close();
+		} catch {
+			// ignore
+		}
+		broadcastChannelInstance = null;
+	}
+	inMemorySubscribers.clear();
+}
+
+/**
  * Persists CBCT session state into localStorage/sessionStorage.
  */
 export function saveCbctSessionState<T = unknown>(key: string, data: T): void {

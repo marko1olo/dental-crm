@@ -4,10 +4,10 @@ import type { VisitTabItem, VisitTabNavProps } from "./types";
 export const VISIT_VIEW_TABS: VisitTabItem[] = [
 	{ id: "odontogram", testId: "visit-subtab-odontogram", label: "1. Зубная формула" },
 	{ id: "emk", testId: "visit-subtab-emk", label: "2. Дневник приёма" },
-	{ id: "diagnostics", testId: "visit-subtab-diagnostics", label: "3. Диагноз МКБ" },
+	{ id: "diagnostics", testId: "visit-subtab-diagnostics", label: "3. Диагностика и снимки" },
 	{ id: "plan", testId: "visit-subtab-plan", label: "4. План лечения" },
-	{ id: "consents", testId: "visit-subtab-consents", label: "Согласия" },
-	{ id: "anamnesis", testId: "visit-subtab-anamnesis", label: "Анамнез" },
+	{ id: "consents", testId: "visit-subtab-consents", label: "5. Согласия" },
+	{ id: "anamnesis", testId: "visit-subtab-anamnesis", label: "6. Анамнез" },
 ];
 
 export function VisitTabNav({ activeTab, onTabChange }: VisitTabNavProps) {

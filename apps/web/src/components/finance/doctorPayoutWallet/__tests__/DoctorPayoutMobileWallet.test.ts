@@ -99,14 +99,16 @@ describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
 
 			// Dates must be descending
 			for (let i = 0; i < shifts.length - 1; i++) {
-				assert.ok(
-					shifts[i].date >= shifts[i + 1].date,
-					`Dates must be in descending order: ${shifts[i].date} >= ${shifts[i + 1].date}`,
-				);
+				const cur = shifts[i];
+				const nxt = shifts[i + 1];
+				if (cur && nxt) {
+					assert.ok(cur.date >= nxt.date, `Dates must be in descending order: ${cur.date} >= ${nxt.date}`);
+				}
 			}
 
 			// First shift is 2026-10-22
 			const s1 = shifts[0];
+			assert.ok(s1);
 			assert.equal(s1.date, "2026-10-22");
 			assert.equal(s1.patientCount, 1);
 			assert.equal(s1.shiftRevenueRub, 68000);
@@ -127,21 +129,24 @@ describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
 	describe("4. React Component Rendering & Test Anchor Parity", () => {
 		it("renders DoctorPayoutMobileWallet with all 7 test anchors", () => {
 			const report = {
-				month: "2026-10",
-				currency: "RUB",
+				scope: "all" as const,
+				period: { from: "2026-10-01", to: "2026-10-31" },
 				totals: {
-					doctorCount: 2,
-					activeDoctorCount: 2,
-					totalRevenueRub: 500000,
-					totalAccruedRub: 200000,
-					totalWithheldMaterialRub: 1400,
-					totalWithheldLabRub: 28000,
-					totalPayoutRub: 170600,
-					totalPayments: 20,
-					totalMaterialMovements: 20,
-					unpricedMaterialMovements: 0,
-					totalLabOrders: 4,
+					revenueRub: 500000,
+					paymentCount: 20,
+					attributableRevenueRub: 500000,
+					unattributedRevenueRub: 0,
+					materialCostRub: 1400,
+					accruedRub: 200000,
+					withheldMaterialRub: 1400,
+					withheldLabRub: 28000,
+					payoutRub: 170600,
+					doctorsCounted: 2,
+					doctorsWithoutRate: 0,
 				},
+				methodNote: "Тестовый отчет",
+				limitations: [],
+				isEmpty: false,
 				rows: [
 					DEMO_SHOWCASE_DOCTOR,
 					{
@@ -175,7 +180,7 @@ describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
 
 		it("renders DoctorPayoutHistoryList with bottom sheet close anchor", () => {
 			const shifts = computeDoctorShifts(DEMO_SHOWCASE_DOCTOR);
-			const activeShift = shifts[0];
+			const activeShift = shifts[0] ?? null;
 
 			const html = renderToString(
 				React.createElement(DoctorPayoutHistoryList, {
@@ -196,22 +201,24 @@ describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
 			const html = renderToString(
 				React.createElement(DoctorPayoutMobileWallet, {
 					report: {
-						month: "2026-10",
-						currency: "RUB",
+						scope: "all",
+						period: { from: "2026-10-01", to: "2026-10-31" },
 						totals: {
-							doctorCount: 0,
-							activeDoctorCount: 0,
-							totalRevenueRub: 0,
-							totalAccruedRub: 0,
-							totalWithheldMaterialRub: 0,
-							totalWithheldLabRub: 0,
-							totalPayoutRub: 0,
-							totalPayments: 0,
-							totalMaterialMovements: 0,
-							unpricedMaterialMovements: 0,
-							totalLabOrders: 0,
+							revenueRub: 0,
+							paymentCount: 0,
+							attributableRevenueRub: 0,
+							unattributedRevenueRub: 0,
+							materialCostRub: 0,
+							accruedRub: 0,
+							withheldMaterialRub: 0,
+							payoutRub: 0,
+							doctorsCounted: 0,
+							doctorsWithoutRate: 0,
 						},
 						rows: [],
+						methodNote: "Тестовый пустой расчет",
+						limitations: [],
+						isEmpty: true,
 					},
 					month: "2026-10",
 					onMonthChange: () => {},

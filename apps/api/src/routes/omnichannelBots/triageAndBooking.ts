@@ -331,7 +331,8 @@ export async function fetchInboxMessages(
 
 	messages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-	const intercept = omnichannelBotEngine.getChatInterceptInfo(channel, orgId, senderId);
+	const raw = omnichannelBotEngine.getChatInterceptInfo(channel, orgId, senderId);
+	const intercept = { isIntercepted: raw.isIntercepted, interceptedBy: raw.interceptedBy ?? null, interceptedAt: ("interceptedAt" in raw && typeof raw.interceptedAt === "string") ? raw.interceptedAt : null };
 
 	return {
 		messages,
@@ -385,7 +386,12 @@ export async function handleLinkPatient(
 					notes: existing.notes ? `${existing.notes} • ${marker}` : marker,
 					updatedAt: new Date(),
 				})
-				.where(eq(patients.id, existing.id));
+				.where(
+					and(
+						eq(patients.organizationId, orgId),
+						eq(patients.id, existing.id),
+					),
+				);
 		}
 	} else if (createNew && createNew.fullName.trim()) {
 		const marker = `${channel}:${senderId}`;
@@ -543,15 +549,8 @@ export async function handleBookAppointment(
 	// 5. Если запрошено авто-подтверждение в чат пациенту
 	if (sendConfirmationToChat) {
 		const startDate = new Date(startsAt);
-		const formattedDate = startDate.toLocaleDateString("ru-RU", {
-			day: "numeric",
-			month: "long",
-			weekday: "short",
-		});
-		const formattedTime = startDate.toLocaleTimeString("ru-RU", {
-			hour: "2-digit",
-			minute: "2-digit",
-		});
+		const formattedDate = startDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long", weekday: "short" });
+		const formattedTime = startDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 
 		const confirmText = `Здравствуйте, ${patient.fullName}! Вы успешно записаны на приём в клинику DENTE.\n\n📅 Дата: ${formattedDate}\n⏰ Время: ${formattedTime}\n👨‍⚕️ Врач: ${doctorName}\n🎯 Причина: ${reason}\n\n📍 Адрес: ул. Стоматологическая, 12 (парковка во дворе).\nЕсли потребуется перенести или отменить визит, просто ответьте в этот чат!`;
 

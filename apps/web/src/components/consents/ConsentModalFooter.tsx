@@ -165,11 +165,10 @@ export const ConsentModalFooter: React.FC<ConsentModalFooterProps> = ({
 							: "Подтвердить подписание"
 					}
 				>
-					<Zap size={15} />
 					<span>
 						{activeMode === "packages"
-							? `Подтвердить пакет (${packageDocsCount} док.) в 1 клик`
-							: "Подтвердить подписание на бумаге (1 клик)"}
+							? `Подтвердить подписание пакета (${packageDocsCount} док.)`
+							: "Подтвердить подписание на бумаге"}
 					</span>
 				</button>
 			</div>

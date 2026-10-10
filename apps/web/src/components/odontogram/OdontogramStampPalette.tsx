@@ -33,8 +33,7 @@ interface StampOption {
 	abbr: string;
 	testId: string;
 	colorDotClass: string;
-	activeBgClass: string;
-	inactiveHoverClass: string;
+	colorStyleClass: string;
 	description: string;
 }
 
@@ -45,9 +44,8 @@ const STAMP_OPTIONS: readonly StampOption[] = [
 		shortLabel: "Зд",
 		abbr: "Зд",
 		testId: "quick-trigger-healthy-btn",
-		colorDotClass: "bg-emerald-500",
-		activeBgClass: "bg-emerald-600 text-white font-bold shadow-xs border-emerald-700",
-		inactiveHoverClass: "text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/15 border-emerald-500/30",
+		colorDotClass: "bg-[#10b981]",
+		colorStyleClass: "odontogram-stamp-tool-btn--healthy",
 		description: "Норма (Интактный)",
 	},
 	{
@@ -56,9 +54,8 @@ const STAMP_OPTIONS: readonly StampOption[] = [
 		shortLabel: "К",
 		abbr: "К",
 		testId: "quick-trigger-caries-btn",
-		colorDotClass: "bg-amber-500",
-		activeBgClass: "bg-amber-600 text-white font-bold shadow-xs border-amber-700",
-		inactiveHoverClass: "text-amber-800 dark:text-amber-300 hover:bg-amber-500/15 border-amber-500/30",
+		colorDotClass: "bg-[#f59e0b]",
+		colorStyleClass: "odontogram-stamp-tool-btn--caries",
 		description: "Кариозное поражение (C)",
 	},
 	{
@@ -67,9 +64,8 @@ const STAMP_OPTIONS: readonly StampOption[] = [
 		shortLabel: "Пт",
 		abbr: "Пт",
 		testId: "quick-trigger-pulpitis-btn",
-		colorDotClass: "bg-rose-600",
-		activeBgClass: "bg-rose-600 text-white font-bold shadow-xs border-rose-700",
-		inactiveHoverClass: "text-rose-800 dark:text-rose-300 hover:bg-rose-500/15 border-rose-500/30",
+		colorDotClass: "bg-[#ef4444]",
+		colorStyleClass: "odontogram-stamp-tool-btn--pulpitis",
 		description: "Воспаление пульпы (P)",
 	},
 	{
@@ -78,9 +74,8 @@ const STAMP_OPTIONS: readonly StampOption[] = [
 		shortLabel: "Pt",
 		abbr: "Pt",
 		testId: "quick-trigger-periodontitis-btn",
-		colorDotClass: "bg-orange-600",
-		activeBgClass: "bg-orange-600 text-white font-bold shadow-xs border-orange-700",
-		inactiveHoverClass: "text-orange-800 dark:text-orange-300 hover:bg-orange-500/15 border-orange-500/30",
+		colorDotClass: "bg-[#ea580c]",
+		colorStyleClass: "odontogram-stamp-tool-btn--periodontitis",
 		description: "Периодонтит (Pt)",
 	},
 	{
@@ -89,9 +84,8 @@ const STAMP_OPTIONS: readonly StampOption[] = [
 		shortLabel: "П",
 		abbr: "П",
 		testId: "quick-trigger-filling-btn",
-		colorDotClass: "bg-teal-500",
-		activeBgClass: "bg-teal-600 text-white font-bold shadow-xs border-teal-700",
-		inactiveHoverClass: "text-teal-800 dark:text-teal-300 hover:bg-teal-500/15 border-teal-500/30",
+		colorDotClass: "bg-[#0d9488]",
+		colorStyleClass: "odontogram-stamp-tool-btn--filled",
 		description: "Пломбированный зуб (Pl)",
 	},
 	{
@@ -100,9 +94,8 @@ const STAMP_OPTIONS: readonly StampOption[] = [
 		shortLabel: "Кр",
 		abbr: "Кр",
 		testId: "quick-trigger-crown-btn",
-		colorDotClass: "bg-blue-600",
-		activeBgClass: "bg-blue-600 text-white font-bold shadow-xs border-blue-700",
-		inactiveHoverClass: "text-blue-800 dark:text-blue-300 hover:bg-blue-500/15 border-blue-500/30",
+		colorDotClass: "bg-[#2563eb]",
+		colorStyleClass: "odontogram-stamp-tool-btn--crown",
 		description: "Ортопедическая коронка (K)",
 	},
 	{
@@ -111,9 +104,8 @@ const STAMP_OPTIONS: readonly StampOption[] = [
 		shortLabel: "0",
 		abbr: "0",
 		testId: "quick-trigger-extracted-btn",
-		colorDotClass: "bg-slate-500 dark:bg-slate-400",
-		activeBgClass: "bg-slate-700 text-white font-bold shadow-xs border-slate-800",
-		inactiveHoverClass: "text-slate-800 dark:text-slate-200 hover:bg-slate-500/20 border-slate-400/40",
+		colorDotClass: "bg-[#64748b]",
+		colorStyleClass: "odontogram-stamp-tool-btn--missing",
 		description: "Отсутствует / Адентия (0)",
 	},
 	{
@@ -122,9 +114,8 @@ const STAMP_OPTIONS: readonly StampOption[] = [
 		shortLabel: "И",
 		abbr: "И",
 		testId: "quick-trigger-implant-btn",
-		colorDotClass: "bg-violet-600",
-		activeBgClass: "bg-violet-600 text-white font-bold shadow-xs border-violet-700",
-		inactiveHoverClass: "text-violet-800 dark:text-violet-300 hover:bg-violet-500/15 border-violet-500/30",
+		colorDotClass: "bg-[#7c3aed]",
+		colorStyleClass: "odontogram-stamp-tool-btn--implant",
 		description: "Дентальный имплантат (I)",
 	},
 ];
@@ -159,20 +150,21 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 
 	return (
 		<div
-			className={`odontogram-stamp-palette w-full flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-[var(--paper-soft,var(--odontogram-surface,#f8fafc))] border border-[var(--line-strong,var(--odontogram-border,#cbd5e1))] shadow-2xs select-none ${className}`.trim()}
+			className={`odontogram-stamp-palette w-full flex flex-wrap items-center gap-2 px-3 py-1.5 rounded-xl border select-none ${className}`.trim()}
 			role="toolbar"
-			aria-label="Панель быстрой клинической разметки одонтограммы"
+			aria-label="Панель клинических штампов патологий одонтограммы"
 			data-testid="odontogram-stamp-palette"
 		>
-			{/* Left section: Title & Pathology buttons */}
+			{/* Left section: Title & Pathology stamp buttons */}
 			<div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-				<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink,#0f172a)] mr-1 shrink-0">
-					<Sparkles size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
-					<span className="hidden sm:inline">Быстрая разметка:</span>
-					<span className="sm:hidden">Разметка:</span>
+				<div className="flex items-center gap-1.5 text-xs font-bold shrink-0">
+					<Sparkles size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+					<span className="font-extrabold text-[12px] text-slate-800 dark:text-slate-100">
+						Штамп патологии:
+					</span>
 				</div>
 
-				{/* 8 Clinical Pathology Triggers — Apple HIG / Medical Filter Chips */}
+				{/* 8 Clinical Pathology Triggers — Tactile 32px Delimited Tile Cards */}
 				<div
 					className="flex flex-wrap items-center gap-1.5"
 					role="group"
@@ -185,10 +177,8 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 								key={opt.state}
 								type="button"
 								onClick={() => handleQuickTriggerState(opt.state)}
-								className={`h-8 px-2.5 sm:px-3 rounded-[8px] text-[12px] font-bold transition-all duration-150 cursor-pointer select-none shrink-0 flex items-center gap-1.5 shadow-2xs active:scale-98 border ${
-									isActive
-										? "bg-[var(--teal-soft,rgba(13,148,136,0.15))] text-[var(--teal-dark,var(--teal,#0d9488))] border-2 border-[var(--teal,#0d9488)] shadow-xs ring-2 ring-teal-500/25 font-black"
-										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line-strong,var(--odontogram-border,#cbd5e1))] hover:bg-[var(--paper-hover,#f1f5f9)] hover:border-teal-500 hover:text-[var(--ink,#0f172a)]"
+								className={`odontogram-stamp-tool-btn ${opt.colorStyleClass} ${
+									isActive ? "odontogram-stamp-tool-btn--active" : ""
 								}`}
 								title={`${opt.label}: ${opt.description}${
 									hasSelection
@@ -198,24 +188,30 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 								data-testid={opt.testId}
 								aria-pressed={isActive}
 							>
-								{/* Strict Pure CSS Circle Indicator — Zero Cartoon Emojis */}
-								<span className={`w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs ring-1 ring-black/10 dark:ring-white/20 ${opt.colorDotClass}`} />
+								{/* Strict Pure CSS Circle Indicator with crisp border — Zero Cartoon Emojis */}
+								<span
+									className={`w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs ring-1 ring-black/10 dark:ring-white/20 ${opt.colorDotClass}`}
+								/>
 								<span className="whitespace-nowrap font-bold">
 									<span className="hidden md:inline">{opt.label}</span>
 									<span className="md:hidden">{opt.shortLabel}</span>
 								</span>
-								{isActive && <Check size={13} className="stroke-[3] shrink-0 ml-0.5 text-[var(--teal,#0d9488)]" />}
+								{isActive && (
+									<Check size={13} className="stroke-[3] shrink-0 ml-0.5 text-teal-700 dark:text-teal-300" />
+								)}
 							</button>
 						);
 					})}
 				</div>
 			</div>
 
+			<div className="hidden sm:block h-5 w-px bg-[var(--line-strong,#cbd5e1)] dark:bg-white/15 mx-0.5 shrink-0" aria-hidden="true" />
+
 			{/* Right section: Active Stamp Indicator & Inspection Mode Reset */}
-			<div className="flex items-center gap-2 shrink-0 justify-end mt-1 sm:mt-0">
+			<div className="flex items-center gap-2 shrink-0">
 				{activeStampTool ? (
 					<div
-						className="inline-flex items-center gap-1.5 px-3 h-8 rounded-[8px] bg-amber-500/15 border border-amber-600/50 dark:border-amber-500/60 text-amber-950 dark:text-amber-100 text-xs font-bold shrink-0 animate-in fade-in duration-150 whitespace-nowrap shadow-2xs"
+						className="inline-flex items-center gap-1.5 px-3 h-8 min-h-[32px] rounded-lg bg-amber-500/15 border border-amber-600/50 dark:border-amber-500/60 text-amber-950 dark:text-amber-100 text-xs font-bold shrink-0 animate-in fade-in duration-150 whitespace-nowrap shadow-2xs"
 						data-testid="odontogram-active-stamp-indicator"
 					>
 						<span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
@@ -224,37 +220,34 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 							<strong className="font-black text-amber-950 dark:text-white">
 								{TOOTH_STATE_LABELS[activeStampTool] || activeStampTool}
 							</strong>
-							<span className="hidden lg:inline font-normal text-amber-900/80 dark:text-amber-200/80 ml-1">
-								(клик по зубу красит зуб)
-							</span>
 						</span>
 						<button
 							type="button"
 							onClick={handleResetStamp}
-							className="ml-1.5 p-1 rounded hover:bg-amber-500/25 text-amber-900 dark:text-amber-100 transition-all cursor-pointer flex items-center gap-1"
+							className="ml-1 px-2 py-0.5 rounded-md border border-amber-600/40 bg-amber-500/20 hover:bg-amber-500/35 text-amber-950 dark:text-amber-100 transition-all cursor-pointer flex items-center gap-1 font-bold shadow-2xs text-[11px]"
 							title="Сбросить штамп (Режим осмотра) [Esc]"
 							aria-label="Сбросить активный штамп"
 							data-testid="clear-active-stamp-btn"
 						>
-							<X size={13} className="shrink-0 stroke-[2.5]" />
-							<span className="hidden sm:inline text-[11px] font-bold">Сброс</span>
+							<X size={12} className="shrink-0 stroke-[2.5]" />
+							<span className="hidden sm:inline">Сброс (Esc)</span>
 						</button>
 					</div>
 				) : (
 					<button
 						type="button"
 						onClick={handleResetStamp}
-						className="inline-flex items-center gap-1.5 px-3 h-8 rounded-[8px] text-[12px] font-bold text-[var(--ink,#0f172a)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-hover,#f1f5f9)] border border-[var(--line-strong,var(--odontogram-border,#cbd5e1))] hover:border-indigo-500 transition-all cursor-pointer shadow-2xs active:scale-98"
-						title="Режим стандартного осмотра и выделения зубов (без штампа)"
+						className="odontogram-stamp-inspection-btn"
+						title="Режим стандартного осмотра и выделения зубов (без штампа) [Esc]"
 						data-testid="clear-active-stamp-btn"
 					>
-						<MousePointer size={13} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
-						<span className="whitespace-nowrap">Осмотр</span>
+						<MousePointer size={14} className="shrink-0 text-teal-600 dark:text-teal-400 stroke-[2.5]" />
+						<span className="whitespace-nowrap font-bold">Режим осмотра [Esc]</span>
 					</button>
 				)}
 
 				{hasSelection && (
-					<span className="text-[11px] font-bold px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 whitespace-nowrap shadow-2xs">
+					<span className="text-[11px] font-bold px-2.5 h-8 inline-flex items-center rounded-lg bg-teal-500/10 text-teal-800 dark:text-teal-300 border border-teal-500/30 whitespace-nowrap shadow-2xs">
 						Выбрано: {selectedTeeth.length}
 					</span>
 				)}

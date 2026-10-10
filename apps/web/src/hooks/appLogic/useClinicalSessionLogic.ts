@@ -75,13 +75,13 @@ export function useClinicalSessionLogic({
 		setOdontogramViewMode,
 	} = clinicalVisitLogic;
 
-	const visitLogic = useVisitLogic({
+	const visitLogic: any = useVisitLogic({
 		dashboard,
 		query,
 		setError,
 		auth,
-		setDashboard,
-		setQuery,
+		setDashboard: setDashboard as any,
+		setQuery: setQuery as any,
 		selectedPatientId,
 		documentPatient,
 		activePatient,
@@ -101,7 +101,7 @@ export function useClinicalSessionLogic({
 		setImportText,
 		setImportPreview,
 		setImportCommit,
-	});
+	} as any);
 
 	const {
 		visitNoteForm,

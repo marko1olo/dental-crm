@@ -1,25 +1,11 @@
-import {
-	type PaymentMethod,
-	kopecksToRub,
-	normalizePaymentMethod,
-	percentageOfKopecks,
-	rubToKopecks,
-} from "@dental/shared";
-import {
-	Banknote,
-	Bot,
-	CreditCard,
-	QrCode,
-} from "lucide-react";
+import { type PaymentMethod, kopecksToRub, normalizePaymentMethod, percentageOfKopecks, rubToKopecks } from "@dental/shared";
+import { Banknote, Bot, CreditCard, QrCode } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { money } from "./AppHelpers";
 import { PaymentModal } from "./components/finance/PaymentModal";
 import { showToast } from "./components/GlobalToast";
-import {
-	fromKopecks,
-	rubAmountForInput,
-	toKopecks,
-} from "./components/payments/cashDeskAmounts";
+import { playTactileEarcon } from "./lib/intercomSound";
+import { fromKopecks, rubAmountForInput, toKopecks } from "./components/payments/cashDeskAmounts";
 import { SberPosTerminalModal } from "./components/payments/sberPos/SberPosTerminalModal";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { DictationHints } from "./DictationHints";
@@ -27,23 +13,11 @@ import { useFiscalOperations } from "./hooks/useFiscalOperations";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 import { textToNumbers } from "./lib/stringUtils";
 import { PaymentCheckoutBar } from "./PaymentCheckoutBar";
-import {
-	type DoctorDiscountPreset,
-	PaymentDiscountsAndSplitSection,
-} from "./PaymentDiscountsAndSplitSection";
-import {
-	digitsOnly,
-	PaymentFiscalCashierBar,
-} from "./PaymentFiscalCashierBar";
+import { type DoctorDiscountPreset, PaymentDiscountsAndSplitSection } from "./PaymentDiscountsAndSplitSection";
+import { digitsOnly, PaymentFiscalCashierBar } from "./PaymentFiscalCashierBar";
 import { PaymentQuickTenderGrid } from "./PaymentQuickTenderGrid";
-import {
-	type TaxDeductionCode,
-	TaxPayerDetails,
-} from "./PaymentTaxPayerDetails";
-import {
-	normalizeRubAmountInput,
-	validateRubAmountInput,
-} from "./rubAmountInput";
+import { type TaxDeductionCode, TaxPayerDetails } from "./PaymentTaxPayerDetails";
+import { normalizeRubAmountInput, validateRubAmountInput } from "./rubAmountInput";
 import { SmartParsePreview } from "./SmartParsePreview";
 
 export type { TaxDeductionCode };
@@ -337,6 +311,7 @@ export function PaymentCapture({
 		if (isTaxDeductionDraft) {
 			showToast("Оплата принимается. Данные для справки налогового вычета можно довнести позже в карточке пациента.", "info");
 		}
+		playTactileEarcon("pay");
 		onSubmit();
 	};
 
@@ -387,6 +362,7 @@ export function PaymentCapture({
 		}
 		onMethodChange("card");
 		showToast("Оплата картой подтверждена на терминале вручную (без повторного списания с карты). Сохраняю платёж...", "success", 4500);
+		playTactileEarcon("pay");
 		onSubmit();
 	};
 
@@ -486,39 +462,6 @@ export function PaymentCapture({
 						/>
 					</div>
 
-					<div className="quick-chips-row payment-smart-chips col-span-full" style={{ gridColumn: "1 / -1", marginBottom: "2px", display: "flex", gap: "3px", width: "100%" }}>
-						<button
-							type="button"
-							style={{ minHeight: "44px" }}
-							className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-semibold inline-flex items-center gap-1 shrink-0"
-							onClick={() => handleSmartDictation("5000 наличными")}
-						>
-							<Banknote size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
-							<span className="sm:hidden">5000 нал</span>
-							<span className="hidden sm:inline">5000 наличными</span>
-						</button>
-						<button
-							type="button"
-							style={{ minHeight: "44px" }}
-							className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-semibold inline-flex items-center gap-1 shrink-0"
-							onClick={() => handleSmartDictation("15000 по карте")}
-						>
-							<CreditCard size={12} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-							<span className="sm:hidden">15000 карта</span>
-							<span className="hidden sm:inline">15000 картой</span>
-						</button>
-						<button
-							type="button"
-							style={{ minHeight: "44px" }}
-							className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-semibold inline-flex items-center gap-1 shrink-0"
-							onClick={() => handleSmartDictation("20000 сбп, вычет")}
-						>
-							<QrCode size={12} className="text-indigo-600 dark:text-indigo-400 shrink-0" aria-hidden="true" />
-							<span className="sm:hidden">20000 СБП</span>
-							<span className="hidden sm:inline">20000 СБП + вычет</span>
-						</button>
-					</div>
-
 					{showSmartPreview && smartParsedData && (
 						<div className="col-span-full" style={{ gridColumn: "1 / -1", marginBottom: "8px" }}>
 							<SmartParsePreview
@@ -548,16 +491,27 @@ export function PaymentCapture({
 
 			<div
 				role="tablist"
-				className="dente-segmented-bar w-full flex col-span-full"
-				style={{ gridColumn: "1 / -1", marginBottom: method === "cash" ? "2px" : "3px" }}
+				className="dente-segmented-bar w-full flex col-span-full gap-1 p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]"
+				style={{ gridColumn: "1 / -1", marginBottom: method === "cash" ? "4px" : "6px" }}
 				aria-label="Способ оплаты"
 			>
 				{visiblePaymentMethods.map((paymentMethod) => {
 					const isActive = method === paymentMethod;
 					return (
 						<button
-							style={{ minHeight: "44px" }}
-							className={`dente-segmented-item min-h-[44px] flex-1 ${isActive ? "active" : ""}`}
+							style={{
+								minHeight: "36px",
+								padding: "0 12px",
+								borderRadius: "8px",
+								background: isActive ? "#0d9488" : "transparent",
+								color: isActive ? "#ffffff" : "var(--ink)",
+								border: isActive ? "1px solid #0d9488" : "1px solid transparent",
+							}}
+							className={`dente-segmented-item min-h-[36px] flex-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+								isActive
+									? "active bg-teal-600 text-white shadow-xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
 							key={paymentMethod}
 							type="button"
 							role="tab"

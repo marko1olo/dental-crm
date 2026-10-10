@@ -66,56 +66,56 @@ export function AutoclaveRegisterRows({
 
 	return (
 		<div
-			className="hidden md:block w-full overflow-x-auto min-w-0"
+			className="hidden md:block w-full overflow-x-auto min-w-0 max-w-full"
 			style={{ width: "100%", overflowX: "auto", WebkitOverflowScrolling: "touch" }}
 		>
 			<table
 				className="sanpin-table w-full min-w-0"
-				style={{ width: "100%", minWidth: "1180px", tableLayout: "auto" }}
+				style={{ width: "100%", tableLayout: "fixed" }}
 			>
 				<thead>
 					<tr>
 						<th
-							style={{ fontSize: "0.825rem", width: "140px", minWidth: "130px", whiteSpace: "nowrap" }}
+							style={{ fontSize: "0.75rem", width: "11%", whiteSpace: "nowrap" }}
 							className="whitespace-nowrap shrink-0"
 						>
 							Дата / № Цикла
 						</th>
-						<th style={{ fontSize: "0.825rem", width: "130px", minWidth: "120px" }} className="min-w-0">
+						<th style={{ fontSize: "0.75rem", width: "12%" }} className="min-w-0">
 							Марка аппарата
 						</th>
-						<th style={{ fontSize: "0.825rem", width: "180px", minWidth: "165px" }} className="min-w-0">
+						<th style={{ fontSize: "0.75rem", width: "15%" }} className="min-w-0">
 							Стерилизуемые изделия
 						</th>
-						<th style={{ fontSize: "0.825rem", width: "140px", minWidth: "130px" }} className="min-w-0">
+						<th style={{ fontSize: "0.75rem", width: "11%" }} className="min-w-0">
 							Вид упаковки
 						</th>
 						<th
-							style={{ fontSize: "0.825rem", width: "120px", minWidth: "115px", whiteSpace: "nowrap" }}
+							style={{ fontSize: "0.75rem", width: "11%", whiteSpace: "nowrap" }}
 							className="whitespace-nowrap shrink-0"
 						>
 							Режим (T°, P, t)
 						</th>
 						<th
-							style={{ fontSize: "0.825rem", width: "100px", minWidth: "95px", whiteSpace: "nowrap" }}
+							style={{ fontSize: "0.75rem", width: "8%", whiteSpace: "nowrap" }}
 							className="whitespace-nowrap shrink-0"
 						>
 							Индикатор
 						</th>
 						<th
-							style={{ fontSize: "0.825rem", width: "100px", minWidth: "95px", whiteSpace: "nowrap" }}
+							style={{ fontSize: "0.75rem", width: "8%", whiteSpace: "nowrap" }}
 							className="whitespace-nowrap shrink-0"
 						>
-							Срок годности
+							Годен до
 						</th>
 						<th
-							style={{ fontSize: "0.825rem", width: "215px", minWidth: "205px", whiteSpace: "nowrap" }}
+							style={{ fontSize: "0.75rem", width: "12%", whiteSpace: "nowrap" }}
 							className="whitespace-nowrap shrink-0"
 						>
 							Штрихкод / Статус
 						</th>
 						<th
-							style={{ fontSize: "0.825rem", width: "140px", minWidth: "135px", whiteSpace: "nowrap" }}
+							style={{ fontSize: "0.75rem", width: "12%", whiteSpace: "nowrap", paddingRight: "0.85rem" }}
 							className="whitespace-nowrap shrink-0"
 						>
 							Заверка / Оператор
@@ -129,7 +129,7 @@ export function AutoclaveRegisterRows({
 								Загрузка журнала стерилизаторов...
 							</td>
 						</tr>
-					) : clinicDevices.length === 0 ? (
+					) : filteredLogs.length === 0 && clinicDevices.length === 0 ? (
 						<tr>
 							<td colSpan={9} style={{ textAlign: "center", padding: "3rem 1.5rem" }}>
 								<div
@@ -142,7 +142,7 @@ export function AutoclaveRegisterRows({
 										margin: "0 auto",
 									}}
 								>
-									<ShieldCheck size={42} color="var(--brand-primary, #2563eb)" />
+									<ShieldCheck size={42} color="var(--teal, #0d9488)" />
 									<div
 										style={{
 											fontWeight: 700,
@@ -196,7 +196,7 @@ export function AutoclaveRegisterRows({
 										margin: "0 auto",
 									}}
 								>
-									<Sparkles size={36} color="var(--brand-primary, #2563eb)" />
+									<Sparkles size={36} color="var(--teal, #0d9488)" />
 									<div
 										style={{
 											fontWeight: 700,
@@ -288,27 +288,27 @@ export function AutoclaveRegisterRows({
 									}}
 								>
 									<td
-										style={{ width: "140px", minWidth: "130px" }}
+										style={{ width: "11%" }}
 										className="whitespace-nowrap shrink-0"
 									>
 										<div
 											style={{
 												display: "flex",
 												alignItems: "center",
-												gap: "0.35rem",
+												gap: "0.3rem",
 												whiteSpace: "nowrap",
 											}}
 										>
 											<span
 												style={{
 													fontWeight: 700,
-													fontSize: "0.825rem",
+													fontSize: "0.78rem",
 													color: "var(--ink)",
 												}}
 											>
 												№{log.cycleNumber}
 											</span>
-											<span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+											<span style={{ fontSize: "0.72rem", color: "var(--muted)" }}>
 												{safeDate.toLocaleDateString("ru-RU", {
 													day: "2-digit",
 													month: "2-digit",
@@ -321,11 +321,11 @@ export function AutoclaveRegisterRows({
 										</div>
 									</td>
 
-									<td style={{ width: "130px", minWidth: "120px" }} className="min-w-0">
+									<td style={{ width: "12%" }} className="min-w-0">
 										<div
 											style={{
 												fontWeight: 600,
-												fontSize: "0.8125rem",
+												fontSize: "0.78rem",
 												lineHeight: 1.25,
 												wordBreak: "break-word",
 												display: "-webkit-box",
@@ -339,10 +339,10 @@ export function AutoclaveRegisterRows({
 										</div>
 									</td>
 
-									<td style={{ width: "180px", minWidth: "165px" }} className="min-w-0">
+									<td style={{ width: "15%" }} className="min-w-0">
 										<div
 											style={{
-												fontSize: "0.8125rem",
+												fontSize: "0.78rem",
 												fontWeight: 500,
 												lineHeight: 1.25,
 												wordBreak: "break-word",
@@ -357,10 +357,10 @@ export function AutoclaveRegisterRows({
 										</div>
 									</td>
 
-									<td style={{ width: "140px", minWidth: "130px" }} className="min-w-0">
+									<td style={{ width: "11%" }} className="min-w-0">
 										<div
 											style={{
-												fontSize: "0.775rem",
+												fontSize: "0.75rem",
 												color: "var(--ink)",
 												lineHeight: 1.25,
 												wordBreak: "break-word",
@@ -376,44 +376,43 @@ export function AutoclaveRegisterRows({
 									</td>
 
 									<td
-										style={{ width: "120px", minWidth: "115px", whiteSpace: "nowrap" }}
+										style={{ width: "11%", whiteSpace: "nowrap" }}
 										className="whitespace-nowrap shrink-0"
 									>
-										<div style={{ fontSize: "0.8125rem", whiteSpace: "nowrap" }}>
+										<div style={{ fontSize: "0.76rem", whiteSpace: "nowrap" }}>
 											<span style={{ fontWeight: 700, color: "var(--ink)" }}>
 												{log.temperatureCelsius || (log as any).temperature || 134} °C
 											</span>
-											<span style={{ color: "var(--muted)", fontSize: "0.75rem" }}>
+											<span style={{ color: "var(--muted)", fontSize: "0.7rem" }}>
 												{" "}
 												· {log.pressureBar || 2.1} б ·{" "}
-												{log.durationMin || (log as any).durationMinutes || 5} мин
+												{log.durationMin || (log as any).durationMinutes || 5} м
 											</span>
 										</div>
 									</td>
 
 									<td
-										style={{ width: "100px", minWidth: "95px" }}
+										style={{ width: "8%" }}
 										className="whitespace-nowrap shrink-0"
 									>
 										<span
 											className="sanpin-tag sanpin-tag-success shrink-0 whitespace-nowrap"
 											style={{
-												fontSize: "0.75rem",
-												padding: "0.15rem 0.45rem",
+												fontSize: "0.7rem",
+												padding: "0.1rem 0.35rem",
 												whiteSpace: "nowrap",
 												flexShrink: 0,
 											}}
 										>
-											<CheckCircle2 size={12} className="shrink-0" />{" "}
-											{log.indicatorType === "class6_emulating" ? "Класс 6" : "Класс 5"}
+											<CheckCircle2 size={11} className="shrink-0" />{" "}
+											{log.indicatorType === "class6_emulating" ? "Кл. 6" : "Кл. 5"}
 										</span>
 									</td>
 
 									<td
 										style={{
-											width: "100px",
-											minWidth: "95px",
-											fontSize: "0.8rem",
+											width: "8%",
+											fontSize: "0.75rem",
 											whiteSpace: "nowrap",
 										}}
 										className="whitespace-nowrap shrink-0"
@@ -423,54 +422,55 @@ export function AutoclaveRegisterRows({
 												{new Date(log.expiresAt).toLocaleDateString("ru-RU")}
 											</span>
 										) : (
-											<span style={{ color: "var(--muted)" }}>Вскрыть сразу</span>
+											<span style={{ color: "var(--muted)" }}>Сразу</span>
 										)}
 									</td>
 
 									<td
-										style={{ width: "215px", minWidth: "205px" }}
+										style={{ width: "13%" }}
 										className="whitespace-nowrap shrink-0"
 									>
 										<div
 											style={{
 												display: "flex",
 												alignItems: "center",
-												gap: "0.4rem",
+												gap: "0.25rem",
 												whiteSpace: "nowrap",
+												overflow: "hidden",
 											}}
 										>
 											<span
 												className="sanpin-tag sanpin-tag-success shrink-0 whitespace-nowrap"
 												style={{
-													fontSize: "0.75rem",
-													padding: "0.15rem 0.45rem",
+													fontSize: "0.7rem",
+													padding: "0.1rem 0.35rem",
 													whiteSpace: "nowrap",
 													flexShrink: 0,
 												}}
 												title="Стерилизация завершена успешно, контроль пройден (100% норма)"
 											>
-												<CheckCircle2 size={12} className="shrink-0" /> Стерильно
+												<CheckCircle2 size={11} className="shrink-0" /> Норма
 											</span>
 											{log.barcode ? (
 												<span
 													style={{
-														fontSize: "0.75rem",
+														fontSize: "0.7rem",
 														fontFamily: "monospace",
 														color: "var(--brand-primary, #2563eb)",
 														fontWeight: 700,
 														background: "rgba(37, 99, 235, 0.08)",
-														padding: "0.15rem 0.45rem",
+														padding: "0.1rem 0.35rem",
 														borderRadius: "4px",
 														whiteSpace: "nowrap",
 														flexShrink: 0,
-														letterSpacing: "0.02em",
+														letterSpacing: "0.01em",
 													}}
 													title={`Штрихкод крафт-пакета: ${log.barcode}`}
 												>
 													{log.barcode}
 												</span>
 											) : (
-												<span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+												<span style={{ fontSize: "0.72rem", color: "var(--muted)" }}>
 													—
 												</span>
 											)}
@@ -478,7 +478,7 @@ export function AutoclaveRegisterRows({
 									</td>
 
 									<td
-										style={{ width: "140px", minWidth: "135px" }}
+										style={{ width: "11%" }}
 										className="whitespace-nowrap shrink-0"
 									>
 										<div

@@ -185,9 +185,13 @@ export async function createPaymentInDb(
 				incomingPaymentKopecks,
 			});
 
-		const effectivePaymentNote = isWarrantyOrFullDiscount
+		const toothSuffix = input.toothNumber ? ` [Зуб: ${input.toothNumber}]` : "";
+		const rawNote = isWarrantyOrFullDiscount
 			? (input.note || "Гарантийная переделка (скидка 100%)")
 			: (input.note || null);
+		const effectivePaymentNote = rawNote
+			? (toothSuffix && !rawNote.includes("Зуб") ? `${rawNote}${toothSuffix}` : rawNote)
+			: (toothSuffix ? `Оплата стоматологических услуг${toothSuffix}` : null);
 
 		let primaryPayment: typeof schema.payments.$inferSelect;
 

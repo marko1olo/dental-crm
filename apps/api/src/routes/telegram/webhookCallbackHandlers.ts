@@ -8,6 +8,7 @@ import {
 	denteTelegramWebhookResponseSchema,
 	type DenteTelegramBotSettings,
 	type DenteTelegramUpdateKind,
+	type DenteTelegramWebhookResponse,
 	type TelegramBotPresetId,
 } from "@dental/shared";
 import {
@@ -29,6 +30,7 @@ import {
 import { TelegramPostOpCarePipeline } from "../../services/telegram/TelegramPostOpCarePipeline.js";
 import { TelegramInteractiveTriageService } from "../../services/telegram/TelegramInteractiveTriageService.js";
 import { TelegramTreatmentPlanCloserService } from "../../services/telegram/TelegramTreatmentPlanCloserService.js";
+import { TelegramReferralLoyaltyService } from "../../services/telegram/TelegramReferralLoyaltyService.js";
 import type {
 	TelegramRuntimeContext,
 	UnknownRecord,
@@ -49,10 +51,10 @@ export async function handleWebhookSpecializedCallbacks(params: {
 	callbackQueryId: string | null;
 	chatHash: string | null;
 	chatId: string | null;
-	update: UnknownRecord;
+	update: UnknownRecord & { update_id: number };
 	updateKind: DenteTelegramUpdateKind;
 	warnings: string[];
-}): Promise<any | null> {
+}): Promise<DenteTelegramWebhookResponse | null> {
 	const {
 		request,
 		runtime,
@@ -119,18 +121,14 @@ export async function handleWebhookSpecializedCallbacks(params: {
 					telegramChatId: chatId ?? undefined,
 				},
 				{
-					clinicName: (runtime.settings as any)?.botName || "DENTE",
-					yandexMapsUrl: (runtime.settings as any)?.yandexReviewUrl || undefined,
-					twoGisUrl: (runtime.settings as any)?.twoGisReviewUrl || undefined,
+					clinicName: runtime.settings.ownBotUsername || runtime.settings.botUsername || "DENTE",
+					...(runtime.settings.clinicMapsUrl ? { yandexMapsUrl: runtime.settings.clinicMapsUrl } : {}),
+					...(runtime.settings.clinicReviewUrl ? { twoGisUrl: runtime.settings.clinicReviewUrl } : {}),
 				},
 			);
 
 			if (callbackQueryId && runtime.botToken) {
-				void answerTelegramCallbackQuery({
-					botToken: runtime.botToken,
-					callbackQueryId,
-					text: score === 5 ? "⭐ Спасибо за высшую оценку!" : "Спасибо за отзыв!",
-				}).catch(() => {});
+				void answerTelegramCallbackQuery({ botToken: runtime.botToken, callbackQueryId, text: score === 5 ? "⭐ Спасибо за высшую оценку!" : "Спасибо за отзыв!" }).catch(() => {});
 			}
 
 			const messageId =

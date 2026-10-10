@@ -18,10 +18,12 @@ import {
 } from "./lib/safeLocalStorage";
 import { operatorWorkflowFailureMessage } from "./AppHelpers";
 import { cacheActiveStaffUser, clearOfflineClinicCaches, getCachedStaffList } from "./lib/offlineStorage";
+import { TelephonyFloatingWidget } from "./components/telephony/TelephonyFloatingWidget";
 import { getFilteredAppViews } from "./workspaceShell";
 import {
 	preloadWorkspaceView, scheduleClinicalHotModulesWarmup, scheduleIdleWorkspacePreload,
 } from "./workspacePreload";
+import { useChairsideErgonomics } from "./hooks/useChairsideErgonomics";
 
 const AuthHub = lazyWithRetry(() => import("./components/auth/AuthHub").then((m) => ({ default: m.AuthHub })));
 const StaffPinPad = lazyWithRetry(() => import("./components/auth/StaffPinPad").then((m) => ({ default: m.StaffPinPad })));
@@ -114,25 +116,66 @@ export function App() {
 	const [isEgiszRemdModalOpen, setIsEgiszRemdModalOpen] = useState<boolean>(() => typeof window !== "undefined" && ((window.location.search || "").includes("egisz") || (window.location.search || "").includes("remd") || (window.location.hash || "").includes("egisz") || (window.location.hash || "").includes("remd")));
 	const [isSmartSlotRecoveryDemoOpen, setIsSmartSlotRecoveryDemoOpen] = useState<boolean>(() => typeof window !== "undefined" && ((window.location.search || "").includes("smart_slot") || (window.location.search || "").includes("recovery") || (window.location.hash || "").includes("recovery") || (window.location.hash || "").includes("smart-slot")));
 	const [isSmartOpgDirectModalOpen, setIsSmartOpgDirectModalOpen] = useState<boolean>(() => typeof window !== "undefined" && ((window.location.search || "").includes("opg") || (window.location.hash || "").includes("opg")));
+	const [isCtSelectorDirectModalOpen, setIsCtSelectorDirectModalOpen] = useState<boolean>(() => typeof window !== "undefined" && ((window.location.search || "").includes("ct-selector") || (window.location.search || "").includes("ct_selector") || (window.location.hash || "").includes("ct-selector")));
+	const [isVisiographDirectModalOpen, setIsVisiographDirectModalOpen] = useState<boolean>(() => typeof window !== "undefined" && ((window.location.search || "").includes("visiograph") || (window.location.hash || "").includes("visiograph")));
+	const [isImagingExportDirectModalOpen, setIsImagingExportDirectModalOpen] = useState<boolean>(() => typeof window !== "undefined" && ((window.location.search || "").includes("imaging-export") || (window.location.hash || "").includes("imaging-export")));
+	const [isLabCreateOrderDirectModalOpen, setIsLabCreateOrderDirectModalOpen] = useState<boolean>(() => typeof window !== "undefined" && ((window.location.search || "").includes("lab-create") || (window.location.hash || "").includes("lab-create")));
+	const [isDmsDirectModalOpen, setIsDmsDirectModalOpen] = useState<boolean>(() => typeof window !== "undefined" && ((window.location.search || "").includes("dms") || (window.location.hash || "").includes("dms")));
+	const [isSessionLocked, setIsSessionLocked] = useState<boolean>(() => typeof window !== "undefined" && safeLocalStorageGetItem("dente_session_locked") === "true");
 	const [isPrivacyShieldActive, setIsPrivacyShieldActive] = useState<boolean>(() => typeof window !== "undefined" && safeLocalStorageGetItem(DENTE_PRIVACY_SHIELD_LOCKED_KEY) === "true");
 
+	// Wire chairside ergonomics hook into the core app tree
+	useChairsideErgonomics();
+
 	useEffect(() => {
-		const handleOpenCbct = () => setIsCbctDirectModalOpen(true), handleOpenTuner = () => setIsCbctTunerOpen(true), handleOpenConsent = () => setIsConsentDirectModalOpen(true), handleOpenCeph = () => setIsCephDirectModalOpen(true), handleOpenOpg = () => setIsSmartOpgDirectModalOpen(true);
+		const handlePrivacyToggled = (e: Event) => {
+			const custom = e as CustomEvent<{ active: boolean }>;
+			if (custom?.detail) {
+				setIsPrivacyShieldActive(custom.detail.active);
+				if (custom.detail.active) {
+					safeLocalStorageSetItem(DENTE_PRIVACY_SHIELD_LOCKED_KEY, "true");
+				} else {
+					safeLocalStorageRemoveItem(DENTE_PRIVACY_SHIELD_LOCKED_KEY);
+				}
+			}
+		};
+		window.addEventListener("dente:privacy-shield-toggled", handlePrivacyToggled);
+		return () => window.removeEventListener("dente:privacy-shield-toggled", handlePrivacyToggled);
+	}, []);
+
+	useEffect(() => {
+		const handleOpenCbct = () => setIsCbctDirectModalOpen(true), handleOpenTuner = () => setIsCbctTunerOpen(true), handleOpenConsent = () => setIsConsentDirectModalOpen(true), handleOpenCeph = () => setIsCephDirectModalOpen(true), handleOpenOpg = () => setIsSmartOpgDirectModalOpen(true), handleOpenCtSelector = () => setIsCtSelectorDirectModalOpen(true);
+		const handleOpenVisiograph = () => { setIsImagingExportDirectModalOpen(false); setIsLabCreateOrderDirectModalOpen(false); setIsVisiographDirectModalOpen(true); };
+		const handleOpenImagingExport = () => { setIsVisiographDirectModalOpen(false); setIsLabCreateOrderDirectModalOpen(false); setIsImagingExportDirectModalOpen(true); };
+		const handleOpenLabCreate = () => { setIsVisiographDirectModalOpen(false); setIsImagingExportDirectModalOpen(false); setIsLabCreateOrderDirectModalOpen(true); };
 		const handleHashChange = () => {
 			const s = window.location.search || "", h = window.location.hash || "";
 			if (s.includes("cbct=tuner") || h.includes("cbct=tuner")) { setIsCbctTunerOpen(true); return; }
 			if (s.includes("cbct=") || s.includes("cbct=1") || s.includes("cbct=demo") || h.includes("cbct")) setIsCbctDirectModalOpen(true);
+			if (s.includes("ct-selector") || s.includes("ct_selector") || h.includes("ct-selector")) setIsCtSelectorDirectModalOpen(true);
 			if (s.includes("consent") || h.includes("consent") || h.includes("ids")) setIsConsentDirectModalOpen(true);
 			if (s.includes("ceph") || s.includes("trg") || h.includes("ceph") || h.includes("trg")) setIsCephDirectModalOpen(true);
 			if (s.includes("egisz") || s.includes("remd") || h.includes("egisz") || h.includes("remd")) setIsEgiszRemdModalOpen(true);
 			if (s.includes("smart_slot") || s.includes("recovery") || h.includes("recovery") || h.includes("smart-slot")) setIsSmartSlotRecoveryDemoOpen(true);
 			if (s.includes("opg") || h.includes("opg")) setIsSmartOpgDirectModalOpen(true);
+			if (s.includes("visiograph") || h.includes("visiograph")) setIsVisiographDirectModalOpen(true);
+			if (s.includes("imaging-export") || h.includes("imaging-export")) setIsImagingExportDirectModalOpen(true);
+			if (s.includes("lab-create") || h.includes("lab-create")) setIsLabCreateOrderDirectModalOpen(true);
+			if (s.includes("dms") || h.includes("dms")) setIsDmsDirectModalOpen(true);
 		};
+		handleHashChange();
+		const handleOpenDms = () => setIsDmsDirectModalOpen(true);
 		window.addEventListener("dente-open-cbct", handleOpenCbct);
+		window.addEventListener("dente-open-ct-selector", handleOpenCtSelector);
 		window.addEventListener("dente-open-tuner", handleOpenTuner);
 		window.addEventListener("dente-open-consent", handleOpenConsent);
 		window.addEventListener("dente-open-ceph", handleOpenCeph);
 		window.addEventListener("dente-open-opg", handleOpenOpg);
+		window.addEventListener("dente-open-visiograph-comparison", handleOpenVisiograph);
+		window.addEventListener("dente-open-imaging-export", handleOpenImagingExport);
+		window.addEventListener("dente-open-create-lab-order", handleOpenLabCreate);
+		window.addEventListener("dente-open-dms-letters", handleOpenDms);
+		window.addEventListener("dente:open-dms-letters", handleOpenDms);
 		window.addEventListener("hashchange", handleHashChange);
 		return () => {
 			window.removeEventListener("dente-open-cbct", handleOpenCbct);
@@ -140,6 +183,11 @@ export function App() {
 			window.removeEventListener("dente-open-consent", handleOpenConsent);
 			window.removeEventListener("dente-open-ceph", handleOpenCeph);
 			window.removeEventListener("dente-open-opg", handleOpenOpg);
+			window.removeEventListener("dente-open-visiograph-comparison", handleOpenVisiograph);
+			window.removeEventListener("dente-open-imaging-export", handleOpenImagingExport);
+			window.removeEventListener("dente-open-create-lab-order", handleOpenLabCreate);
+			window.removeEventListener("dente-open-dms-letters", handleOpenDms);
+			window.removeEventListener("dente:open-dms-letters", handleOpenDms);
 			window.removeEventListener("hashchange", handleHashChange);
 		};
 	}, []);
@@ -149,8 +197,8 @@ export function App() {
 	}, [clinicAuthed, staffAuthed, dashboard, loadDashboard]);
 
 	const handleLockSession = useCallback(() => {
-		safeLocalStorageSetItem(DENTE_PRIVACY_SHIELD_LOCKED_KEY, "true");
-		setIsPrivacyShieldActive(true);
+		safeLocalStorageSetItem("dente_session_locked", "true");
+		setIsSessionLocked(true);
 	}, []);
 
 	const handleClinicLogout = useCallback(() => {
@@ -158,18 +206,21 @@ export function App() {
 		safeLocalStorageRemoveItem(DENTE_CLINIC_TOKEN_KEY);
 		safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
 		safeLocalStorageRemoveItem(DENTE_PRIVACY_SHIELD_LOCKED_KEY);
+		safeLocalStorageRemoveItem("dente_session_locked");
 		setClinicAuthed(false);
 		setStaffAuthed(false);
 		setActiveStaffUser(null);
 		setIsPrivacyShieldActive(false);
+		setIsSessionLocked(false);
 		if (typeof window !== "undefined") window.location.hash = "#/auth/login";
 	}, []);
 
 	const handleFullStaffLock = useCallback(() => {
-		safeLocalStorageSetItem(DENTE_PRIVACY_SHIELD_LOCKED_KEY, "true");
+		safeLocalStorageSetItem("dente_session_locked", "true");
 		safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
 		setStaffAuthed(false);
 		setActiveStaffUser(null);
+		setIsSessionLocked(true);
 		setShowStaffPinPad(true);
 	}, []);
 
@@ -186,6 +237,11 @@ export function App() {
 		isEgiszRemdModalOpen, setIsEgiszRemdModalOpen,
 		isSmartSlotRecoveryDemoOpen, setIsSmartSlotRecoveryDemoOpen,
 		isSmartOpgDirectModalOpen, setIsSmartOpgDirectModalOpen,
+		isCtSelectorDirectModalOpen, setIsCtSelectorDirectModalOpen,
+		isVisiographDirectModalOpen, setIsVisiographDirectModalOpen,
+		isImagingExportDirectModalOpen, setIsImagingExportDirectModalOpen,
+		isLabCreateOrderDirectModalOpen, setIsLabCreateOrderDirectModalOpen,
+		isDmsDirectModalOpen, setIsDmsDirectModalOpen,
 	});
 	if (standalone) return standalone;
 
@@ -341,9 +397,11 @@ export function App() {
 						isEgiszRemdModalOpen={isEgiszRemdModalOpen} setIsEgiszRemdModalOpen={setIsEgiszRemdModalOpen}
 						isSmartSlotRecoveryDemoOpen={isSmartSlotRecoveryDemoOpen} setIsSmartSlotRecoveryDemoOpen={setIsSmartSlotRecoveryDemoOpen}
 						isPrivacyShieldActive={isPrivacyShieldActive} setIsPrivacyShieldActive={setIsPrivacyShieldActive}
+						isSessionLocked={isSessionLocked} setIsSessionLocked={setIsSessionLocked}
 						activeStaffUser={activeStaffUser} setActiveStaffUser={setActiveStaffUser}
 						handleClinicLogout={handleClinicLogout} handleFullStaffLock={handleFullStaffLock}
 					/>
+					<TelephonyFloatingWidget />
 				</main>
 			</AuthProvider>
 		</AppLogicProvider>

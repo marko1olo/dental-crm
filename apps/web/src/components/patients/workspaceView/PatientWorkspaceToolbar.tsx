@@ -24,9 +24,9 @@ import type { WorkspaceTabKey } from "./types";
 
 export interface PatientWorkspaceToolbarProps {
 	patientId: string;
-	patientName?: string | null;
+	patientName?: string | null | undefined;
 	dashboard?: any;
-	onOpenPlan?: (planId: string) => void;
+	onOpenPlan?: ((planId: string) => void) | undefined;
 	handleCreateNewPlanCallback: () => void;
 	setActiveTab: (tab: WorkspaceTabKey) => void;
 	setIsCbctModalOpen: (v: boolean) => void;

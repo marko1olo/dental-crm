@@ -3,6 +3,7 @@
  * @description Layer 3: Visit draft autosaves and save receipt handling.
  */
 import { visitCloseChecklistFactsFor } from "./billing.js";
+import { buildVisitCloseChecklist } from "../visitCloseChecklist.js";
 import { recordAuditEvent } from "./audit.js";
 
 

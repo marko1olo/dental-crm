@@ -72,7 +72,7 @@ export interface ColumnFocusBatchToolbarProps {
 	selectedLeadIds: Set<string>;
 	totalDisplayLeads: number;
 	onToggleSelectAll: () => void;
-	nextStageInfo?: NextStageInfo;
+	nextStageInfo?: NextStageInfo | undefined;
 	isProcessingBatch: boolean;
 	onBatchAdvance: () => void;
 	onBatchMoveToStage: (nextStatus: LeadStatus) => void;
@@ -93,7 +93,7 @@ export interface ColumnFocusListBaseProps {
 	onScheduleLead: (leadId: string) => void;
 	onCreatePatient: (lead: Lead) => Promise<void> | void;
 	onClose: () => void;
-	nextStageInfo?: NextStageInfo;
+	nextStageInfo?: NextStageInfo | undefined;
 	visibleLimit: number;
 	onLoadMore: () => void;
 }

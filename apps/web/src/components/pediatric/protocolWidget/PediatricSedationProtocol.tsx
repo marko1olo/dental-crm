@@ -60,7 +60,7 @@ export const PediatricSedationProtocol: React.FC<
 							<span>Седация активна</span>
 						</>
 					) : (
-						<span>Без седации (1-клик включить)</span>
+						<span>Без седации (включить ЗАКС)</span>
 					)}
 				</button>
 			</div>

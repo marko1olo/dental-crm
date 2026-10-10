@@ -62,4 +62,4 @@ const terminalAppointmentStatuses = new Set<Appointment["status"]>([
 ]);
 
 
-export { scheduleBlockingAppointmentStatuses };
+export { scheduleBlockingAppointmentStatuses, terminalAppointmentStatuses };

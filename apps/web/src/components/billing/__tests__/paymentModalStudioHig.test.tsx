@@ -147,10 +147,10 @@ describe("Studio Clinical HIG: ReceiptPreview 54-FZ Fiscal Requisites (Mandate 8
 		assert.ok(html.includes('data-testid="receipt-54fz-preview-container"'));
 		assert.ok(html.includes("receipt-tape-paper"), "Must have thermal paper tape class");
 		assert.ok(html.includes("КАССОВЫЙ ЧЕК / ПРИХОД"));
-		assert.ok(html.includes("ПОЛНЫЙ РАСЧЕТ (Тег 1214)"));
+		assert.ok(html.includes("ПОЛНЫЙ РАСЧЕТ"));
 		assert.ok(html.includes("БЕЗ НДС (пп. 2 п. 2 ст. 149 НК РФ)"));
 		assert.ok(html.includes("ВЫЧЕТ: КОД 01"));
-		assert.ok(html.includes("БЕЗНАЛИЧНЫМИ / КАРТА (Тег 1081)"));
+		assert.ok(html.includes("БЕЗНАЛИЧНЫМИ (КАРТА):"));
 		assert.ok(html.includes('data-testid="fns-receipt-verification-qr"'), "Must render FNS QR code container");
 		assert.ok(html.includes('data-testid="btn-format-80mm"'));
 		assert.ok(html.includes('data-testid="btn-format-a4"'));

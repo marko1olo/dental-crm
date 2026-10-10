@@ -264,7 +264,7 @@ export function useTelegramSettings(options: {
 
 	function telegramControlPlaneHeaders(
 		extra: Record<string, string> = {},
-		adminSecretOverride?: string,
+		adminSecretOverride?: string | null,
 	): Record<string, string> {
 		return denteAdminSecretRequestHeaders(
 			extra,

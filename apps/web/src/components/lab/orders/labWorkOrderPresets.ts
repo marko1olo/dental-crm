@@ -67,7 +67,7 @@ export const PROSTHETIC_TYPES: Record<ProstheticTypeId, ProstheticTypeDefinition
 	},
 	crown_pmma_temporary: {
 		id: 'crown_pmma_temporary',
-		nameRu: 'Временная фрезерованная коронка PMMA CAD/CAM (1 клик)',
+		nameRu: 'Временная фрезерованная коронка PMMA CAD/CAM',
 		shortNameRu: 'Временная PMMA CAD/CAM',
 		category: 'fixed',
 		categoryNameRu: 'Провизорное протезирование',
@@ -195,7 +195,7 @@ export const PROSTHETIC_TYPES: Record<ProstheticTypeId, ProstheticTypeDefinition
 	},
 	orthodontic_aligners_set: {
 		id: 'orthodontic_aligners_set',
-		nameRu: 'Комплект ортодонтических элайнеров 3D CAD/CAM (1 клик)',
+		nameRu: 'Комплект ортодонтических элайнеров 3D CAD/CAM',
 		shortNameRu: 'Элайнеры CAD/CAM',
 		category: 'orthodontic',
 		categoryNameRu: 'Ортодонтия и элайнеры',
@@ -243,7 +243,7 @@ export const PROSTHETIC_TYPES: Record<ProstheticTypeId, ProstheticTypeDefinition
 	},
 	orthodontic_tmj_splint: {
 		id: 'orthodontic_tmj_splint',
-		nameRu: 'Окклюзионный сплинт / миорелаксирующая шина ВНЧС (1 клик)',
+		nameRu: 'Окклюзионный сплинт / миорелаксирующая шина ВНЧС',
 		shortNameRu: 'Сплинт ВНЧС',
 		category: 'orthodontic',
 		categoryNameRu: 'Ортодонтия и элайнеры',

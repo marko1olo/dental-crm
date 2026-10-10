@@ -14,7 +14,7 @@ import {
 	ShieldCheck,
 	Wallet,
 } from "lucide-react";
-import { showToast } from "../GlobalToast";
+import { showToast } from "../../GlobalToast";
 import type { PatientHistoryFinancialSummaryData } from "./types";
 
 export interface HistoryFinancialSummaryProps {

@@ -22,6 +22,7 @@ import {
 	getCachedActiveCbctVolume,
 	saveCbctSessionState,
 	loadCbctSessionState,
+	closeCbctSyncChannel,
 	CBCT_SYNC_CHANNEL_NAME,
 	CBCT_STORAGE_SYNC_KEY,
 	type CbctStudioSyncMessage,
@@ -160,7 +161,7 @@ describe("CBCT Standalone Window & Pop-Out Studio Integration Test Suite", () =>
 			});
 
 			assert.equal(receivedEvents.length, 1);
-			const msg = receivedEvents[0];
+			const msg = receivedEvents[0]!;
 			assert.equal(msg.type, "IMPLANT_PLACED");
 			assert.equal(msg.studyId, "study_sync_01");
 			assert.equal(msg.patientId, "pat_sync_01");
@@ -189,8 +190,8 @@ describe("CBCT Standalone Window & Pop-Out Studio Integration Test Suite", () =>
 			});
 
 			assert.equal(receivedEvents.length, 1);
-			assert.equal(receivedEvents[0].type, "CALIPER_MEASURED");
-			assert.deepEqual(receivedEvents[0].payload, payload);
+			assert.equal(receivedEvents[0]!.type, "CALIPER_MEASURED");
+			assert.deepEqual(receivedEvents[0]!.payload, payload);
 
 			unsubscribe();
 		});
@@ -216,8 +217,8 @@ describe("CBCT Standalone Window & Pop-Out Studio Integration Test Suite", () =>
 			publishCbctSyncEvent("STUDIO_SNAPSHOT_SAVED", snapPayload);
 
 			assert.equal(receivedEvents.length, 2);
-			assert.equal(receivedEvents[0].type, "NERVE_TRACED");
-			assert.equal(receivedEvents[1].type, "STUDIO_SNAPSHOT_SAVED");
+			assert.equal(receivedEvents[0]!.type, "NERVE_TRACED");
+			assert.equal(receivedEvents[1]!.type, "STUDIO_SNAPSHOT_SAVED");
 
 			unsubscribe();
 		});
@@ -234,6 +235,7 @@ describe("CBCT Standalone Window & Pop-Out Studio Integration Test Suite", () =>
 			unsubscribe();
 			publishCbctSyncEvent("STUDIO_CLOSED", { reason: "second_close" });
 			assert.equal(callCount, 1, "Unsubscribed listener must NOT receive further events");
+			closeCbctSyncChannel();
 		});
 	});
 
@@ -244,7 +246,7 @@ describe("CBCT Standalone Window & Pop-Out Studio Integration Test Suite", () =>
 		let testVolume: CbctVoxelVolume;
 
 		beforeEach(() => {
-			testVolume = createEmptyCbctVolume(40, 40, 20, { x: 0.5, y: 0.5, z: 1.0 });
+			testVolume = createEmptyCbctVolume(40, 40, 20, 0.5);
 		});
 
 		afterEach(() => {
@@ -288,9 +290,9 @@ describe("CBCT Standalone Window & Pop-Out Studio Integration Test Suite", () =>
 			};
 
 			saveCbctSessionState(sessionKey, state);
-			const loaded = loadCbctSessionState(sessionKey);
+			const loaded = loadCbctSessionState(sessionKey) as any;
 
-			assert.ok(loaded !== null);
+			assert.ok(loaded !== null && loaded !== undefined);
 			assert.deepEqual(loaded.crosshairMm, state.crosshairMm);
 			assert.equal(loaded.windowWidth, 2500);
 			assert.equal(loaded.windowLevel, 650);

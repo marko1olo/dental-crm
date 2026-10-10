@@ -13,6 +13,24 @@ export interface DentalFastPrescriptionSet {
 
 export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[] = [
 	{
+		id: "post_op_implant_surgery",
+		label: "«После сложного удаления / имплантации»",
+		desc: "Амоксиклав 875/125 мг №14 + Нимесил 100 мг №9 + Хлоргексидин 0.05% 100 мл + Омепразол 20 мг №20 (хирургический протокол)",
+		drugIds: ["amoxiclav_875_125", "nimesulide_100", "chlorhexidine_005", "omeprazole_20"],
+	},
+	{
+		id: "acute_pericoronitis_periodontitis",
+		label: "«Острый перикоронит / периодонтит»",
+		desc: "Цифран СТ (500+600 мг) №10 + Нимесил 100 мг №9 + Холисал гель 10 г + Хлоргексидин 0.05% 100 мл",
+		drugIds: ["cyfran_st", "nimesulide_100", "cholisal_gel", "chlorhexidine_005"],
+	},
+	{
+		id: "stomatitis_gingivitis",
+		label: "«Стоматит / гингивит (слизистая)»",
+		desc: "Хлоргексидин 0.05% 100 мл + Холисал стоматологический гель 10 г + Метрогил Дента 20 г",
+		drugIds: ["cholisal_gel", "chlorhexidine_005", "metrogyl_denta"],
+	},
+	{
 		id: "pulpitis_acute_relief",
 		label: "«Пульпит (купирование острой боли и воспаления)»",
 		desc: "Нимесил 100 мг №9 + Омепразол 20 мг №20 + Хлоргексидин 0.05% 100 мл (купирование острой боли и асептического воспаления пульпы)",
@@ -83,6 +101,42 @@ export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[]
 		label: "«Омепразол 20 мг / Гастропротекция при приеме НПВП»",
 		desc: "Rp: Omeprazoli 20mg, D.t.d. N 20 in caps., S. По 1 капсуле за 30 минут до завтрака 1 раз в сутки на весь период терапии НПВП.",
 		drugIds: ["omeprazole_20"],
+	},
+	{
+		id: "standard_anti_inflammatory_course",
+		label: "«Стандартный противовоспалительный курс»",
+		desc: "Амоксиклав 875/125 мг + Нимесил 100 мг + Хлоргексидин 0.05% (комплексная терапия)",
+		drugIds: ["amoxiclav_875_125", "nimesulide_100", "chlorhexidine_005"],
+	},
+	{
+		id: "post_extraction_surgery",
+		label: "«После удаления / хирургии»",
+		desc: "Амоксиклав 875/125 мг + Нимесил 100 мг + Супрастин 25 мг (хирургический протокол)",
+		drugIds: ["amoxiclav_875_125", "nimesulide_100", "suprastin_25"],
+	},
+	{
+		id: "anti_inflammatory",
+		label: "«Противовоспалительный»",
+		desc: "Ибупрофен 400 мг + Хлоргексидин 0.05%",
+		drugIds: ["ibuprofen_400", "chlorhexidine_005"],
+	},
+	{
+		id: "antiseptic_rinsing",
+		label: "«Антисептический / полоскания»",
+		desc: "Мирамистин 0.01% + Стоматофит",
+		drugIds: ["miramistin_001", "stomatophyt_100"],
+	},
+	{
+		id: "periostitis_osteotropic",
+		label: "«Периостит / Остеотропный комплекс»",
+		desc: "Линкомицин 500 мг + Метронидазол 500 мг",
+		drugIds: ["lincomycin_500", "metronidazole_500"],
+	},
+	{
+		id: "pediatric_analgesic",
+		label: "«Детский / Стоматит & Боль»",
+		desc: "Ибупрофен 400 мг + Холисал гель",
+		drugIds: ["ibuprofen_400", "cholisal_gel"],
 	},
 ];
 

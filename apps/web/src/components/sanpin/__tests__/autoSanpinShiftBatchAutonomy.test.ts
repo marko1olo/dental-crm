@@ -16,10 +16,11 @@
  * 9. Mandate 8v: Pure Tier 3 Cold Backoffice isolation without leaking into primary screens.
  */
 
+import "../../../../testCssStub.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import {
 	compileShiftForm257Records,
 	compileShiftPsoBatches,

@@ -191,12 +191,13 @@ export class SyncQueueManager {
 	 */
 	public static getQueueStats(organizationId: string): SyncQueueStats {
 		const items = this.offlineQueue.filter((q) => q.organizationId === organizationId);
+		const oldest = items[0]?.enqueuedAt;
 		return {
 			organizationId,
 			pendingCount: items.filter((q) => q.retryCount === 0).length,
 			processingCount: items.filter((q) => q.retryCount > 0 && q.retryCount < 5).length,
 			deadLetterCount: items.filter((q) => q.retryCount >= 5).length,
-			oldestEnqueuedAt: items[0]?.enqueuedAt,
+			...(oldest !== undefined ? { oldestEnqueuedAt: oldest } : {}),
 		};
 	}
 }

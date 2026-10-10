@@ -39,24 +39,16 @@ export const LeadsKanbanHeader: React.FC<LeadsKanbanHeaderProps> = ({
 	colBg = "var(--paper-soft)",
 }) => {
 	return (
-		<div className="flex flex-col gap-3 mb-5">
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					flexWrap: "wrap",
-					gap: 12,
-				}}
-			>
-				<div className="flex items-center gap-2.5 flex-wrap">
-					<h2 className="m-0 text-lg font-bold text-[var(--ink)] flex items-center gap-2">
+		<div className="mb-4">
+			<div className="flex items-center justify-between gap-2 flex-nowrap">
+				<div className="flex items-center gap-2 min-w-0">
+					<h2 className="m-0 text-base font-bold text-[var(--ink)] whitespace-nowrap shrink-0">
 						Воронка обращений
 					</h2>
 
 					{/* Segmented Funnel / All stages selector */}
 					<div
-						className="leads-viewmode-segmented dente-segmented-bar"
+						className="leads-viewmode-segmented dente-segmented-bar shrink-0"
 						role="tablist"
 						aria-label="Выбор отображения этапов воронки"
 					>
@@ -90,7 +82,7 @@ export const LeadsKanbanHeader: React.FC<LeadsKanbanHeaderProps> = ({
 					</div>
 
 					<button
-						className="primary-button h-8 min-h-[32px] text-[13px] font-semibold px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98] inline-flex items-center gap-1.5"
+						className="primary-button h-8 min-h-[32px] text-[12.5px] font-semibold px-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
 						onClick={onNewLead}
 						type="button"
 						aria-label="Создать новое обращение"
@@ -98,32 +90,32 @@ export const LeadsKanbanHeader: React.FC<LeadsKanbanHeaderProps> = ({
 						<Plus size={14} /> Новый лид
 					</button>
 					<button
-						className="secondary-button h-8 min-h-[32px] text-[13px] font-medium px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98] inline-flex items-center gap-1.5"
+						className="secondary-button h-8 min-h-[32px] text-[12.5px] font-medium px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
 						onClick={onOpenAnalytics}
 						type="button"
 						aria-label="Открыть сквозную аналитику воронки"
 					>
-						<BarChart3 size={14} className="text-[var(--teal)]" /> Аналитика воронки
+						<BarChart3 size={14} className="text-[var(--teal)]" /> Аналитика
 					</button>
 					<button
-						className="secondary-button h-8 min-h-[32px] text-[13px] font-medium px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98] inline-flex items-center gap-1.5"
+						className="secondary-button h-8 min-h-[32px] text-[12.5px] font-medium px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
 						onClick={onOpenLeakDetector}
 						type="button"
 						aria-label="Открыть детектор оттока пациентов (210 дней)"
 					>
-						<RotateCcw size={14} className="text-[var(--teal)]" /> Детектор оттока
+						<RotateCcw size={14} className="text-[var(--teal)]" /> Отток
 					</button>
 				</div>
 
-				<div className="flex items-center gap-2.5">
-					<div className="dente-search-wrap w-60">
+				<div className="flex items-center gap-2 shrink-0">
+					<div className="dente-search-wrap w-48 xl:w-56">
 						<Search
 							size={14}
 							className="dente-search-icon"
 						/>
 						<input
 							type="text"
-							placeholder="Поиск по имени или телефону..."
+							placeholder="Имя или телефон..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							className="dente-search-input"
@@ -142,16 +134,16 @@ export const LeadsKanbanHeader: React.FC<LeadsKanbanHeaderProps> = ({
 					</div>
 					<div style={{ position: "relative" }}>
 						<Filter
-							size={14}
+							size={13}
 							color="var(--muted)"
-							style={{ position: "absolute", left: 10, top: 9 }}
+							style={{ position: "absolute", left: 9, top: 9 }}
 						/>
 						<select
 							value={sourceFilter}
 							onChange={(e) => setSourceFilter(e.target.value)}
-							className="h-8 text-[12.5px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] pl-8 pr-3 outline-none cursor-pointer hover:border-[var(--line-strong,var(--line))]"
+							className="h-8 text-[12px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] pl-7 pr-2.5 outline-none cursor-pointer hover:border-[var(--line-strong,var(--line))]"
 							style={{
-								minWidth: 140,
+								minWidth: 130,
 							}}
 							aria-label="Фильтр по каналу обращения"
 						>
@@ -165,31 +157,6 @@ export const LeadsKanbanHeader: React.FC<LeadsKanbanHeaderProps> = ({
 					</div>
 				</div>
 			</div>
-
-			{/* Channel Filter Chips: WhatsApp, Звонки, Сайт, ВК etc. */}
-			{uniqueSources.length > 0 && (
-				<div className="dente-filter-chips" role="radiogroup" aria-label="Фильтры каналов лидов">
-					<button
-						type="button"
-						onClick={() => setSourceFilter("")}
-						className={`dente-filter-chip ${!sourceFilter ? "active" : ""}`}
-						style={{ minWidth: "max-content" }}
-					>
-						Все каналы
-					</button>
-					{uniqueSources.map((source) => (
-						<button
-							key={source}
-							type="button"
-							onClick={() => setSourceFilter(source === sourceFilter ? "" : source)}
-							className={`dente-filter-chip ${sourceFilter === source ? "active" : ""}`}
-							style={{ minWidth: "max-content" }}
-						>
-							{source}
-						</button>
-					))}
-				</div>
-			)}
 		</div>
 	);
 };

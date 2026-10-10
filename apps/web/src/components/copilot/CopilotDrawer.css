@@ -1313,3 +1313,152 @@
     display: none !important;
   }
 }
+
+/* ─── COPILOT PLAYBOOKS & OPERATIONAL SHIFT DEBTS ─── */
+.copilot-playbooks-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background-color: var(--paper-strong, var(--paper));
+  border-top: 1px solid var(--line);
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: thin;
+  flex-shrink: 0;
+}
+
+.copilot-playbooks-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-right: 2px;
+  flex-shrink: 0;
+}
+
+.copilot-playbook-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  background-color: var(--paper-soft);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.copilot-playbook-chip:hover {
+  background-color: var(--teal-soft, rgba(13, 148, 136, 0.1));
+  border-color: var(--teal);
+  color: var(--teal-dark, var(--teal));
+}
+
+.copilot-playbook-chip:active {
+  transform: scale(0.96);
+}
+
+/* Tasks Summary Banner */
+.copilot-tasks-summary-banner {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background-color: var(--paper-strong, var(--paper-soft));
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Tasks Sections & Cards */
+.copilot-tasks-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.copilot-tasks-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+}
+
+.copilot-tasks-count-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  line-height: 1.4;
+}
+
+.copilot-task-card {
+  padding: 12px;
+  border-radius: 12px;
+  background-color: var(--paper-soft);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.copilot-task-card:hover {
+  border-color: var(--line-strong);
+  background-color: var(--paper-strong, var(--paper-soft));
+}
+
+.copilot-task-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.copilot-task-btn:active {
+  transform: scale(0.96);
+}
+
+.copilot-task-btn-primary {
+  background-color: var(--teal);
+  color: #ffffff;
+  border: 1px solid var(--teal);
+}
+
+.copilot-task-btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.copilot-task-btn-secondary {
+  background-color: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+}
+
+.copilot-task-btn-secondary:hover {
+  background-color: var(--paper-subtle, var(--paper));
+}
+
+.copilot-task-btn-teal {
+  background-color: var(--teal-soft, rgba(13, 148, 136, 0.1));
+  color: var(--teal-dark, var(--teal));
+  border: 1px solid var(--teal);
+}
+
+.copilot-task-btn-teal:hover {
+  background-color: var(--teal);
+  color: #ffffff;
+}
+

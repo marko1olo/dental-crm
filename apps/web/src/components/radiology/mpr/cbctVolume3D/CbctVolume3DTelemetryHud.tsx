@@ -89,7 +89,7 @@ export const CbctVolume3DTelemetryHud: React.FC<CbctVolume3DTelemetryHudProps> =
 					data-testid="cbct-hud-gpu-status"
 				>
 					{isGpuActive
-						? `⚡ GPU (${lastRenderTimeMs.toFixed(1)} мс)`
+						? `GPU (${lastRenderTimeMs.toFixed(1)} мс)`
 						: "CPU"}
 				</span>
 				<span

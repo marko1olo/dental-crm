@@ -7,9 +7,7 @@ import {
 } from "lucide-react";
 import { formatShortDate } from "../../../AppHelpers.js";
 import { showToast } from "../../GlobalToast.js";
-if (typeof document !== "undefined") {
-	import("../mobileRadiology.css");
-}
+import "../mobileRadiology.css";
 
 import type {
 	MobileChairsideRadiologyViewerProps,
@@ -93,12 +91,35 @@ export const MobileChairsideRadiologyViewer: React.FC<MobileChairsideRadiologyVi
 		return 0.04;
 	}, [selectedImagingStudy?.kind]);
 
-	// Format study metadata
+	// Format study metadata with compact Russian labels for 390px viewport
 	const toothCode = selectedImagingStudy?.toothCode;
 	const region = selectedImagingStudy?.region;
-	const toothBadge = toothCode ? `Зуб #${toothCode}` : region ? region : "Интраорально";
+	const regionBadgeMap: Record<string, string> = {
+		maxilla_mandible: "Обе чел.",
+		maxilla: "В/Ч",
+		mandible: "Н/Ч",
+		anterior: "Фронт",
+		posterior: "Жев.",
+		tmj: "ВНЧС",
+		sinus: "Пазухи",
+	};
+	const kindShortMap: Record<string, string> = {
+		periapical: "RVG",
+		bitewing: "Прикус",
+		opg: "ОПТГ",
+		ceph: "ТРГ",
+		cbct: "КТ 3D",
+		photo: "Фото",
+	};
+	const toothBadge = toothCode
+		? `#${toothCode}`
+		: region
+			? regionBadgeMap[region] ?? region
+			: "RVG";
 	const modalityTitle = selectedImagingStudy
-		? imagingKindLabels[selectedImagingStudy.kind] || selectedImagingStudy.kind
+		? imagingKindLabels?.[selectedImagingStudy.kind] ||
+			kindShortMap[selectedImagingStudy.kind] ||
+			selectedImagingStudy.kind
 		: "Рентгенодиагностика";
 	const studyDateStr = selectedImagingStudy?.capturedAt
 		? formatShortDate(selectedImagingStudy.capturedAt)
@@ -202,23 +223,23 @@ export const MobileChairsideRadiologyViewer: React.FC<MobileChairsideRadiologyVi
 						triggerHaptic();
 						setIsStudiesSheetOpen(true);
 					}}
-					className="h-10 px-3 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-xs font-semibold text-white flex items-center gap-1.5 transition-all border border-white/10 cursor-pointer"
+					className="h-10 px-3 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-xs font-semibold text-white flex items-center gap-1.5 transition-all border border-white/10 cursor-pointer shrink-0"
 					data-testid="btn-open-mobile-studies-sheet"
 					aria-label="Открыть список всех снимков пациента"
 					title="Все снимки пациента"
 				>
-					<span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+					<span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse shrink-0" />
 					<span>Снимки</span>
-					<span className="px-1.5 py-0.2 rounded-full bg-teal-500/25 text-teal-300 font-mono text-[10px] font-bold">
+					<span className="px-1.5 py-0.2 rounded-full bg-teal-500/25 text-teal-300 font-mono text-[10px] font-bold shrink-0">
 						{activeImagingStudies.length}
 					</span>
 				</button>
 
 				{/* Center: Active Tooth / Region & Study Type / Date & Showcase Trigger */}
-				<div className="mobile-radiology-topbar-title truncate px-1">
-					<div className="flex items-center justify-center gap-1.5">
+				<div className="mobile-radiology-topbar-title min-w-0 flex-1 px-1">
+					<div className="flex items-center justify-center gap-1.5 flex-nowrap">
 						<span
-							className="px-2 py-0.5 rounded-full text-xs font-bold font-mono bg-teal-500/20 text-teal-300 border border-teal-500/30 truncate"
+							className="px-2 py-0.5 rounded-full text-xs font-bold font-mono bg-teal-500/20 text-teal-300 border border-teal-500/30 shrink-0"
 							title={toothBadge}
 						>
 							{toothBadge}
@@ -229,10 +250,10 @@ export const MobileChairsideRadiologyViewer: React.FC<MobileChairsideRadiologyVi
 								triggerHaptic();
 								setIsShowcaseOpen(true);
 							}}
-							className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/10 hover:bg-white/20 text-slate-200 border border-white/15 transition-all cursor-pointer flex items-center gap-1"
+							className="mobile-radiology-showcase-btn rounded-full font-bold bg-white/10 hover:bg-white/20 text-slate-200 border border-white/15 transition-all cursor-pointer flex items-center gap-1 shrink-0 whitespace-nowrap"
 							title="Режим демонстрации пациенту (До/После и 043/у)"
 						>
-							<FileText size={10} className="text-teal-400" />
+							<FileText size={10} className="text-teal-400 shrink-0" />
 							<span>Пациенту</span>
 						</button>
 					</div>
@@ -246,18 +267,18 @@ export const MobileChairsideRadiologyViewer: React.FC<MobileChairsideRadiologyVi
 					<button
 						type="button"
 						onClick={onCaptureCamera}
-						className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-teal-400 flex items-center justify-center transition-all border border-white/10 cursor-pointer"
+						className="mobile-radiology-icon-btn rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-teal-400 flex items-center justify-center transition-all border border-white/10 cursor-pointer"
 						data-testid="btn-mobile-camera-capture"
 						aria-label="Сделать снимок с камеры смартфона"
 						title="Снимок с камеры"
 					>
-						<Camera size={17} />
+						<Camera size={16} />
 					</button>
 
 					<button
 						type="button"
 						onClick={handleResetTransform}
-						className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-slate-300 flex items-center justify-center transition-all border border-white/10 cursor-pointer"
+						className="mobile-radiology-icon-btn rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-slate-300 flex items-center justify-center transition-all border border-white/10 cursor-pointer"
 						data-testid="btn-mobile-reset-transform"
 						aria-label="Сбросить масштаб и положение"
 						title="Сброс (1:1)"
@@ -274,12 +295,12 @@ export const MobileChairsideRadiologyViewer: React.FC<MobileChairsideRadiologyVi
 								window.location.hash = "visit";
 							}
 						}}
-						className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-slate-300 hover:text-white flex items-center justify-center transition-all border border-white/10 cursor-pointer"
+						className="mobile-radiology-icon-btn rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-slate-300 hover:text-white flex items-center justify-center transition-all border border-white/10 cursor-pointer"
 						data-testid="btn-mobile-close-viewer"
 						aria-label="Закрыть просмотрщик"
 						title="Закрыть (к визиту)"
 					>
-						<X size={17} />
+						<X size={16} />
 					</button>
 				</div>
 			</header>
@@ -313,6 +334,62 @@ export const MobileChairsideRadiologyViewer: React.FC<MobileChairsideRadiologyVi
 				triggerHaptic={triggerHaptic}
 				onPickFiles={onPickFiles}
 			/>
+
+			{/* ═══════════════════════════════════════════════════════════════════
+			    2.5. HORIZONTAL PREVIEW CAROUSEL (>=56x56px, Apple HIG Thumb Zone)
+			    ═══════════════════════════════════════════════════════════════════ */}
+			{activeImagingStudies.length > 0 && (
+				<aside
+					className="mobile-radiology-preview-carousel"
+					data-testid="mobile-radiology-preview-carousel"
+					aria-label="Лента снимков пациента"
+				>
+					{activeImagingStudies.map((study) => {
+						const isSelected = selectedImagingStudy?.id === study.id;
+						const toothLabel = study.toothCode
+							? `#${study.toothCode}`
+							: study.region
+								? (regionBadgeMap[study.region] ?? study.region)
+								: (kindShortMap[study.kind] ?? "RVG");
+						const thumbCode = study.toothCode
+							? `#${study.toothCode}`
+							: (kindShortMap[study.kind] ?? "RVG");
+						return (
+							<button
+								key={study.id}
+								type="button"
+								onClick={() => {
+									triggerHaptic();
+									onSelectStudy(study.id);
+								}}
+								className={`mobile-radiology-carousel-item ${isSelected ? "active" : ""}`}
+								data-testid={`mobile-carousel-study-${study.id}`}
+								aria-label={`Снимок ${study.title || toothLabel}`}
+								aria-current={isSelected ? "true" : undefined}
+							>
+								<div className="mobile-radiology-carousel-thumb">
+									<span className="text-[11px] font-bold text-teal-400 font-mono select-none">
+										{thumbCode}
+									</span>
+									{study.previewUrl && (
+										<img
+											src={study.previewUrl}
+											alt=""
+											className="absolute inset-0 w-full h-full object-cover"
+											onError={(e) => {
+												(e.target as HTMLElement).style.display = "none";
+											}}
+										/>
+									)}
+									<span className="mobile-radiology-carousel-badge">
+										{toothLabel}
+									</span>
+								</div>
+							</button>
+						);
+					})}
+				</aside>
+			)}
 
 			{/* ═══════════════════════════════════════════════════════════════════
 			    3. FLOATING THUMB ACTION BAR & FILTER CONTROLS (>=44px)

@@ -3,13 +3,13 @@
  *
  * Red Team Inquisitor Test Suite: Paper-First Sovereignty & Anti-Tablet Coercion (Mandates 8e, 8l, 8n):
  * 1. Default View: Paper-First is dominant.
- *    - Prominent print button: «Печать согласия для подписи ручкой (А4)».
- *    - Prominent paper confirmation button: «Подтвердить подписание на бумаге (1 клик)».
+ *    - Prominent print button: «Печать согласия для подписи».
+ *    - Prominent paper confirmation button: «Подтвердить подписание на бумаге».
  *    - Signature vector pad (<svg>) is HIDDEN by default.
  *    - Optional tablet button is collapsed and non-intrusive.
  * 2. Explicit Tablet Mode:
  *    - When tablet_stylus is requested, vector pad is expanded.
- *    - Easy 1-click fallback button «Вернуться к бумажному бланку» is present.
+ *    - Easy fallback button «Вернуться к бумажному бланку» is present.
  * 3. Zero Dead-Ends (Mandate 8n):
  *    - Paper confirmation creates valid signed consent with SHA-256 integrity hash.
  */
@@ -46,15 +46,15 @@ describe("Red Team Inquisition: Paper-First Sovereignty & Anti-Tablet Coercion (
 
 		// 1. Prominent Paper actions
 		assert.ok(
-			html.includes("Печать согласия для подписи ручкой (А4)"),
+			html.includes("Печать согласия для подписи"),
 			"Must render prominent A4 print button for hand-signing",
 		);
 		assert.ok(
 			html.includes('data-testid="btn-confirm-paper-signed"'),
-			"Must render 1-click paper confirmation button",
+			"Must render paper confirmation button",
 		);
 		assert.ok(
-			html.includes("Подтвердить подписание на бумаге (1 клик)"),
+			html.includes("Подтвердить подписание на бумаге"),
 			"Must have clear paper confirmation label",
 		);
 
@@ -84,11 +84,11 @@ describe("Red Team Inquisition: Paper-First Sovereignty & Anti-Tablet Coercion (
 		);
 
 		assert.ok(
-			html.includes("Печать пакета для подписи ручкой (А4)"),
+			html.includes("Печать пакета для подписи"),
 			"Must render prominent package print button",
 		);
 		assert.ok(
-			html.includes("Подтвердить пакет (4 док.) в 1 клик"),
+			html.includes("Подтвердить подписание пакета (4 док.)"),
 			"Must render batch paper confirmation button",
 		);
 		assert.ok(
@@ -117,10 +117,10 @@ describe("Red Team Inquisition: Paper-First Sovereignty & Anti-Tablet Coercion (
 		// Return to paper button is present
 		assert.ok(
 			html.includes("Вернуться к бумажному бланку"),
-			"Must provide frictionless 1-click return to paper mode",
+			"Must provide frictionless return to paper mode",
 		);
 		assert.ok(
-			html.includes("Печать на бумаге"),
+			html.includes("Печать бланка (А4)"),
 			"Must provide print to paper button even in tablet view",
 		);
 	});

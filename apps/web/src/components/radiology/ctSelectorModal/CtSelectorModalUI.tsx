@@ -382,7 +382,7 @@ export function CtSelectorModalUI(props: CtSelectorModalProps) {
 											title="Открыть это исследование в выбранном режиме"
 										>
 											<ChevronRight size={14} />
-											<span>В 1 клик</span>
+											<span>Открыть</span>
 										</button>
 									</div>
 								))}

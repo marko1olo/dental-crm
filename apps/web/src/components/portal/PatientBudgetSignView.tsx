@@ -696,7 +696,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 						data-testid="patient-budget-agree-oneclick-btn"
 					>
 						<ShieldCheck size={18} />
-						{isSubmittingSign ? "Сохранение согласования..." : "Согласовать смету и план лечения в 1 клик"}
+						{isSubmittingSign ? "Сохранение согласования..." : "Согласовать смету и план лечения"}
 					</button>
 				</div>
 			) : null}

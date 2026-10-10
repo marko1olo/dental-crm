@@ -1,18 +1,14 @@
 import React from "react";
 import { ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { ConsentDocumentSheet } from "../ConsentDocumentSheet.js";
+import type { RenderedConsentTemplate } from "../consentTemplates.js";
 import type { ConsentSubstitutionContext } from "./types.js";
 
 export interface ConsentDocumentPreviewProps {
 	isMobile: boolean;
 	isDocumentTextExpanded: boolean;
 	setIsDocumentTextExpanded: React.Dispatch<React.SetStateAction<boolean>>;
-	rendered: {
-		title: string;
-		fullTextContent: string;
-		sections?: any[];
-		[key: string]: any;
-	};
+	rendered: RenderedConsentTemplate;
 	effectiveContext: ConsentSubstitutionContext;
 	effectiveWatermark: string;
 	stampColor: string;

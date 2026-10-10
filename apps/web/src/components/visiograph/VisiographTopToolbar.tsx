@@ -419,7 +419,7 @@ export function VisiographTopToolbar({
 							fontSize: "0.78rem",
 							cursor: "pointer",
 						}}
-						title="1-клик калибровка по стандартным датчикам RVG / ОПТГ"
+						title="Калибровка по стандартным датчикам RVG / ОПТГ"
 					>
 						<option value="">Калибровка датчика...</option>
 						{sensorPresets.map((p) => (

@@ -7,6 +7,7 @@
 import type {
 	Appointment,
 	DenteTelegramBotSettings,
+	DenteTelegramTemplateKind,
 	GeneratedDocument,
 	Payment,
 	StaffMember,
@@ -22,6 +23,7 @@ import {
 	denteTelegramPortalUrlForSection,
 	denteTelegramPortalUrlForTemplate,
 	denteTelegramPortalRowForTemplate,
+	safeHttpsUrl,
 } from "./botUrlHelpers.js";
 import {
 	buildDenteTelegramAppointmentCallbackData,

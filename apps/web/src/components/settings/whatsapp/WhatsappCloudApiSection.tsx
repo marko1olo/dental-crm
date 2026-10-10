@@ -15,7 +15,7 @@ export interface WhatsappCloudApiSectionProps {
 	onPhoneNumberIdChange: (val: string) => void;
 	accessTokenDraft: string;
 	onAccessTokenChange: (val: string) => void;
-	hasToken?: boolean;
+	hasToken?: boolean | undefined;
 	wabaAccountIdDraft: string;
 	onWabaAccountIdChange: (val: string) => void;
 	webhookVerifyTokenDraft: string;

@@ -335,7 +335,7 @@ export function useCbctInteractionHandlers(
 			isPanning === null &&
 			isDraggingZoom === null &&
 			isDraggingWL === null &&
-			!curvedHandlers.hasActiveDrag &&
+			!curvedHandlers.isDraggingPano &&
 			isDraggingArchAnchor === null &&
 			!draggingMeasurementHandle &&
 			!dragImplantPart
@@ -370,11 +370,11 @@ export function useCbctInteractionHandlers(
 	// Native non-passive wheel listeners on canvas refs to prevent parasitic page scroll behind modal
 	useEffect(() => {
 		const canvases = [
-			axialCanvasRef.current,
-			coronalCanvasRef.current,
-			sagittalCanvasRef.current,
-			panoCanvasRef.current,
-			crossSectionCanvasRef.current,
+			axialCanvasRef?.current,
+			coronalCanvasRef?.current,
+			sagittalCanvasRef?.current,
+			panoCanvasRef?.current,
+			crossSectionCanvasRef?.current,
 		];
 		const onNativeWheel = (e: WheelEvent) => {
 			e.preventDefault();

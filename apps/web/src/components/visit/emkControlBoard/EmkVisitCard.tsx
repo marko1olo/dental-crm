@@ -56,10 +56,10 @@ export function EmkVisitCard({
 					patientFullName={visit.patientFullName}
 					patientCardCode={visit.patientCardCode}
 					doctorFullName={visit.doctorFullName}
-					doctorSpecialty={visit.doctorSpecialty}
+					doctorSpecialty={visit.doctorSpecialty ?? ""}
 					visitDateIso={visit.visitDateIso}
-					chairName={visit.chairName}
-					diagnosisTooth={visit.diagnosisTooth}
+					chairName={visit.chairName ?? ""}
+					diagnosisTooth={visit.diagnosisTooth ?? null}
 					completenessScore={score}
 				/>
 

@@ -350,7 +350,7 @@ export const DicomImportManagerModal: React.FC<DicomImportManagerModalProps> = (
 													className="inline-flex items-center gap-1.5 h-8 px-3 text-[13px] font-semibold rounded-lg text-white bg-[var(--teal)] hover:opacity-95 transition-all cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
 												>
 													<UserCheck className="w-3.5 h-3.5" />
-													<span>Привязать в 1 клик</span>
+													<span>Привязать к карте</span>
 												</button>
 											)}
 

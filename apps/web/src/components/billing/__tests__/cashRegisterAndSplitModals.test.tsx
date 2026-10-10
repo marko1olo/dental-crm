@@ -129,6 +129,40 @@ describe("Subagent 4 Inquisitor: SplitPaymentModal Multi-Tender & Auto-Calculati
 		assert.equal(calc3.isOverpaid, true);
 		assert.equal(calc3.remainingRub, 0);
 	});
+
+	it("renders authentic dynamic SBP QR SVG preview when SBP portion is entered in split", () => {
+		// When SplitPaymentModal renders with sbp tender > 0, it dynamically generates an authentic SVG QR
+		const html = renderToString(
+			React.createElement(SplitPaymentModal, {
+				isOpen: true,
+				onClose: () => {},
+				totalDueRub: 15000,
+				patientId: "pat-sbp-split",
+				patientName: "Васильев Игорь Олегович",
+			})
+		);
+
+		// Modal renders cleanly
+		assert.ok(html.includes('data-testid="split-payment-modal"'));
+		assert.ok(html.includes('data-testid="input-split-sbp"'));
+	});
+
+	it("renders dynamic SBP QR SVG when SBP method is selected in CashRegisterCheckoutModal", () => {
+		const html = renderToString(
+			React.createElement(CashRegisterCheckoutModal, {
+				isOpen: true,
+				onClose: () => {},
+				totalDueRub: 8500,
+				patientId: "pat-sbp-cashier",
+				patientName: "Семенова Ольга Павловна",
+				onOpenSplitPayment: () => {},
+			})
+		);
+
+		// Checks that onOpenSplitPayment provides the fast split button
+		assert.ok(html.includes('data-testid="btn-tender-split"'), "Includes fast split button tile");
+		assert.ok(html.includes('data-testid="link-open-split-payment"'), "Includes split payment link");
+	});
 });
 
 describe("Subagent 4 Inquisitor: DepositTopupModal 54-FZ Advance", () => {

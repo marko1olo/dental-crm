@@ -40,7 +40,7 @@ import { DoctorSettingsSection, type DoctorSubTab } from "../../components/setti
 import { AdminSettingsSection, type AdminSubTab } from "../../components/settings/AdminSettingsSection";
 import { OwnerSettingsSection, type OwnerSubTab } from "../../components/settings/OwnerSettingsSection";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
-import { money } from "../../AppHelpers";
+import { money } from "../../utils/formatters";
 import { AuditLogsPanel } from "../../AuditLogsPanel";
 import { EgiszBlankPermissionsWidget } from "../../components/integrations/EgiszBlankPermissionsWidget";
 import { YandexCalendarSyncsWidget } from "../../components/integrations/YandexCalendarSyncsWidget";
@@ -451,7 +451,10 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 						type="button"
 						role="tab"
 						aria-selected={roleMode === "doctor"}
-						onClick={() => setRoleMode("doctor")}
+						onClick={() => {
+							setRoleMode("doctor");
+							selectSettingsTab("profile");
+						}}
 						className={`settings-segment-btn ${roleMode === "doctor" ? "active" : ""}`}
 						data-testid="btn-settings-role-doctor"
 					>
@@ -463,7 +466,10 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 						type="button"
 						role="tab"
 						aria-selected={roleMode === "admin"}
-						onClick={() => setRoleMode("admin")}
+						onClick={() => {
+							setRoleMode("admin");
+							selectSettingsTab("staff");
+						}}
 						className={`settings-segment-btn ${roleMode === "admin" ? "active" : ""}`}
 						data-testid="btn-settings-role-admin"
 					>
@@ -475,7 +481,10 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 						type="button"
 						role="tab"
 						aria-selected={roleMode === "owner"}
-						onClick={() => setRoleMode("owner")}
+						onClick={() => {
+							setRoleMode("owner");
+							selectSettingsTab("clinic");
+						}}
 						className={`settings-segment-btn ${roleMode === "owner" ? "active" : ""}`}
 						data-testid="btn-settings-role-owner"
 					>

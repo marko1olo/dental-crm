@@ -10,15 +10,24 @@ import { isOpenCommunicationTask } from "./communications.js";
 
 
 import type {
+	Appointment,
+	CommunicationTask,
+	GeneratedDocument,
+	ImagingStudy,
 	Patient,
 	PatientAdministrativeProfile,
 	PatientInsight,
+	Payment,
+	TreatmentPlanItem,
 } from "@dental/shared";
+import type { DomainState } from "../types/domainState.js";
 import { normalizePatientAdministrativeProfile } from "../utils/patientAdministrativeProfile.js";
 import {
 	buildPatientLedger,
 	debtNumericText,
+	MoneyPrecisionError,
 	patientOwesClinicKopecks,
+	QuantityContractError,
 	rublesFromKopecks,
 } from "../money/patientDebt.js";
 import { appointments } from "./appointments.js";
@@ -191,16 +200,16 @@ export function buildPatientInsights(
 	// документам, задачам, снимкам, платежам, позициям плана и записям — то есть
 	// O(пациенты × записи). На демо-базе это незаметно, на клинике с несколькими
 	// тысячами пациентов главный экран считался секундами. Группируем один раз.
-	const documentsByPatient = groupByPatientId(documents);
-	const tasksByPatient = groupByPatientId(
+	const documentsByPatient = groupByPatientId<GeneratedDocument>(documents);
+	const tasksByPatient = groupByPatientId<CommunicationTask>(
 		communicationTasks.filter(isOpenCommunicationTask),
 	);
-	const imagesByPatient = groupByPatientId(imagingStudies);
-	const paymentsByPatient = groupByPatientId(
+	const imagesByPatient = groupByPatientId<ImagingStudy>(imagingStudies);
+	const paymentsByPatient = groupByPatientId<Payment>(
 		payments.filter((payment) => payment.status === "paid"),
 	);
-	const planItemsByPatient = groupByPatientId(treatmentPlanItems);
-	const appointmentsByPatient = groupByPatientId(appointments);
+	const planItemsByPatient = groupByPatientId<TreatmentPlanItem>(treatmentPlanItems);
+	const appointmentsByPatient = groupByPatientId<Appointment>(appointments);
 
 	return patients.map((patient) => {
 		const patientDocuments = documentsByPatient.get(patient.id) ?? [];

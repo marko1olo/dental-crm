@@ -77,26 +77,33 @@ export function LabOrdersTable({
 							new Date(order.dueDate).getTime() < Date.now();
 						const orderNumDisplay =
 							(order as unknown as { orderNumber?: string }).orderNumber ||
-							(order.id ? `#${order.id.slice(0, 8)}` : "ЗТЛ");
+							(order.id ? `ЗТЛ-${order.id.slice(-4).toUpperCase()}` : "ЗТЛ");
 						const swatchBg =
 							SHADE_SWATCH_MAP[order.colorVita?.toUpperCase() ?? ""]?.bg || "#f4eedb";
+						const constructionTitle = formatLabConstructionTitle(
+							order.constructionType,
+							order.material ?? undefined,
+						);
+						const showMaterialSubtitle =
+							Boolean(order.material) &&
+							order.material?.trim().toLowerCase() !== constructionTitle.trim().toLowerCase();
 
 						return (
 							<tr
 								key={order.id}
-								className="h-8 min-h-[32px] max-h-[32px] hover:bg-[var(--paper-soft)] transition-colors text-xs text-[var(--ink)] cursor-pointer"
+								className="h-9 min-h-[36px] hover:bg-[var(--paper-soft)] transition-colors text-xs text-[var(--ink)] cursor-pointer"
 								data-testid={`lab-order-table-row-${order.id}`}
 								onClick={() => {
 									if (order.id) onSelectTimelineOrder(order.id);
 								}}
 							>
-								<td className="px-2.5 py-0 whitespace-nowrap align-middle">
+								<td className="px-2.5 py-1.5 whitespace-nowrap align-middle">
 									<span className="font-mono font-bold text-[11px] text-teal-600 dark:text-teal-400">
 										{orderNumDisplay}
 									</span>
 								</td>
 
-								<td className="px-2.5 py-1 whitespace-nowrap align-middle">
+								<td className="px-2.5 py-1.5 whitespace-nowrap align-middle">
 									<div className="flex items-center gap-1.5 flex-wrap">
 										<span
 											className="font-bold text-xs text-[var(--ink)]"
@@ -117,24 +124,21 @@ export function LabOrdersTable({
 									</div>
 								</td>
 
-								<td className="px-2 py-1 whitespace-nowrap align-middle text-center">
+								<td className="px-2 py-1.5 whitespace-nowrap align-middle text-center">
 									<span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 border border-[var(--line)] font-mono">
 										{order.toothFdi ? `№ ${order.toothFdi}` : "Челюсть"}
 									</span>
 								</td>
 
-								<td className="px-2.5 py-1 align-middle">
-									<div className="flex flex-col min-w-[160px] max-w-[320px] break-words">
+								<td className="px-2.5 py-1.5 align-middle">
+									<div className="flex flex-col min-w-[160px] max-w-[340px] break-words">
 										<span
 											className="font-semibold text-xs text-[var(--ink)] leading-snug whitespace-normal break-words"
 											title={`${order.constructionType || ""} ${order.material || ""}`}
 										>
-											{formatLabConstructionTitle(
-												order.constructionType,
-												order.material ?? undefined,
-											)}
+											{constructionTitle}
 										</span>
-										{order.material && (
+										{showMaterialSubtitle && (
 											<span className="text-[10px] text-[var(--muted)] leading-tight whitespace-normal break-words">
 												{order.material}
 											</span>
@@ -298,7 +302,7 @@ export function LabOrdersTable({
 															className="w-full px-3 py-1.5 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold"
 														>
 															<DollarSign className="w-3.5 h-3.5" />
-															<span>Оплатить из кассы (Ст. 11)</span>
+															<span>Оплатить из кассы</span>
 														</button>
 													)}
 													{order.status !== "installed" &&
@@ -309,7 +313,7 @@ export function LabOrdersTable({
 																className="w-full px-3 py-1.5 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[11px] text-teal-700 dark:text-teal-400 font-semibold"
 															>
 																<CheckCircle2 className="w-3.5 h-3.5" />
-																<span>Сдать пациенту (Замок)</span>
+																<span>Сдать работу пациенту</span>
 															</button>
 														)}
 													<button

@@ -94,15 +94,15 @@ export function useVisitSoapEditor({
 		saveDraftToStorage,
 		valuesRef,
 	} = useVisitSoapDraft({
-		visitId,
-		patientId,
+		visitId: visitId || "",
+		patientId: patientId || "",
 		selectedTooth,
 		initialValues,
 		values,
 		setValues,
 		onSave,
 		onChange,
-	});
+	} as any);
 
 	// Загрузка шаблонов из реального API бэкенда (таблица outpatient_templates в PostgreSQL 18)
 	// с надежным офлайн-фоллбэком на локальный кэш и встроенные пресеты (Мандаты 8e, 8s, 8t)

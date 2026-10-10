@@ -26,7 +26,7 @@ export const MobilePatientPlansTab: React.FC<MobilePatientPlansTabProps> = ({
 	onCreatePlan,
 }) => {
 	const patientPlans = useMemo(() => {
-		const all = (dashboard?.treatmentPlans ?? (dashboard as any)?.plans ?? []) as any[];
+		const all = ((dashboard as any)?.treatmentPlans ?? (dashboard as any)?.plans ?? (dashboard as any)?.treatmentPlanScenarios ?? []) as any[];
 		return all.filter((p) => String(p?.patientId) === String(patient.id));
 	}, [dashboard, patient.id]);
 

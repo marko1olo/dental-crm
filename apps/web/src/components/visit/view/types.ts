@@ -37,7 +37,7 @@ export interface VisitViewHeaderProps {
 	setIsEmergencyModalOpen: (open: boolean) => void;
 	handleFinishVisitAction: () => void;
 	setIsQueueCockpitForced: (forced: boolean) => void;
-	setSelectedPatientId?: (id: string | null) => void;
+	setSelectedPatientId?: ((id: string | null) => void) | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: appLogic fallback
 	appLogic?: any;
 	isHeaderMoreMenuOpen: boolean;
@@ -46,6 +46,8 @@ export interface VisitViewHeaderProps {
 	setIsDoctorShiftModalOpen: (open: boolean) => void;
 	setIsPriceValidatorModalOpen: (open: boolean) => void;
 	setIsStagePaymentModalOpen: (open: boolean) => void;
+	onOpenVisiographComparison?: () => void;
+	setIsVisiographComparisonModalOpen?: (open: boolean) => void;
 }
 
 export interface VisitTabItem {

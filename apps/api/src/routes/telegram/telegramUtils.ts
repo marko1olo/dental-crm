@@ -1,23 +1,19 @@
 import { createHash } from "node:crypto";
 import type { FastifyReply } from "fastify";
 import { z } from "zod";
-import type {
-	DenteTelegramTemplateKind,
-	DenteTelegramOutboxDeliveryStatus,
+import type { DenteTelegramTemplateKind, DenteTelegramOutboxDeliveryStatus } from "@dental/shared";
+import {
+	denteTelegramOutboxDeliveryStatusSchema, denteTelegramTemplateKindSchema,
+	denteTelegramSubjectTypeSchema, denteTelegramLinkCodeStatusSchema, denteTelegramChatLinkStatusSchema,
 } from "@dental/shared";
+import { getDenteTelegramBotSettings } from "../../services/telegram/telegramLegacyMemoryStore.js";
 import type {
-	BuildDenteTelegramChatLinkListOptions,
-	BuildDenteTelegramLinkCodeListOptions,
-	BuildDenteTelegramOutboxOptions,
-	DenteTelegramChatLinkListStatusFilter,
-	DenteTelegramLinkCodeListStatusFilter,
-	DenteTelegramOutboxRuntimeScope,
+	BuildDenteTelegramChatLinkListOptions, BuildDenteTelegramLinkCodeListOptions,
+	BuildDenteTelegramOutboxOptions, DenteTelegramChatLinkListStatusFilter,
+	DenteTelegramLinkCodeListStatusFilter, DenteTelegramOutboxRuntimeScope,
 	DenteTelegramOutboxStatusFilter,
 } from "../../services/telegram/telegramLegacyMemoryStore.js";
-import type {
-	TelegramTransportFailure,
-	TelegramTransportResult,
-} from "../../telegramTransport.js";
+import type { TelegramTransportFailure, TelegramTransportResult } from "../../telegramTransport.js";
 import { repairMojibakeDeep, repairMojibakeText } from "../../text/repairMojibake.js";
 import {
 	UnknownRecord,
@@ -505,4 +501,8 @@ export function dueOutboxClientMutationId(
 		.digest("hex")
 		.slice(0, 40);
 	return `due-${digest}`;
+}
+
+export function freeTextIncludes(value: string, fragments: string[]): boolean {
+	return fragments.some((fragment) => value.includes(fragment));
 }

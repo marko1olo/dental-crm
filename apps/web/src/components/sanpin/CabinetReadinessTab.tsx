@@ -1,845 +1,113 @@
+/**
+ * @file CabinetReadinessTab.tsx
+ * @description Thin Facade for Cabinet Readiness (SanPiN 3.3686-21).
+ * Decomposed into modular components in ./cabinetReadiness/ per Mandate 8b and /decomposer skill.
+ */
+
+import React from "react";
 import {
-	CABINET_READINESS_PRESETS,
-	calculateCabinetStampHash,
-	createCabinetReadinessRecord,
-	createDefaultPaperJournalCabinetRecord,
-	evaluateCabinetReadiness,
-	exportCabinetReadinessToCsv,
-	generateCabinetReadinessPrintHtml,
-	getCabinetReadinessPreset,
-	type CabinetReadinessRecord,
-	type DentalAppointmentType,
-} from "@dental/shared";
-import {
-	AlertTriangle,
-	Award,
-	Check,
-	CheckCircle2,
-	Clock,
-	Download,
-	FileSpreadsheet,
-	Filter,
-	Info,
-	Layers,
-	Printer,
-	RotateCcw,
-	Search,
-	ShieldAlert,
-	ShieldCheck,
-	Sparkles,
-	Trash2,
-	XCircle,
-	Zap,
-	Save,
-} from "lucide-react";
-import React, { useMemo, useState } from "react";
-import { showToast } from "../GlobalToast";
+	CabinetBactericidalTimer,
+	CabinetReadinessActions,
+	CabinetReadinessHistoryTable,
+	CabinetReadinessStatusHeader,
+	CabinetSanpinChecklist,
+	useCabinetReadinessState,
+} from "./cabinetReadiness";
 
 export function CabinetReadinessTab() {
-	const [selectedCabinet, setSelectedCabinet] = useState("Кабинет № 1");
-	const [selectedProfile, setSelectedProfile] = useState<DentalAppointmentType>("therapy");
-	const [nurseName, setNurseName] = useState("Медсестра / Ассистент");
-	const [nursePosition, setNursePosition] = useState("Ассистент стоматолога");
-
-	// Checklist State
-	const [disinfectionCompleted, setDisinfectionCompleted] = useState(true);
-	const [disinfectantBrand, setDisinfectantBrand] = useState("Бациллол АФ (спрей)");
-	const [exposureMinutes, setExposureMinutes] = useState(3);
-
-	const [turbineSterile, setTurbineSterile] = useState(true);
-	const [contraAngleSterile, setContraAngleSterile] = useState(true);
-	const [micromotorSterile, setMicromotorSterile] = useState(true);
-	const [class5Verified, setClass5Verified] = useState(true);
-	const [packageIntegrityVerified, setPackageIntegrityVerified] = useState(true);
-
-	const [mirrorReady, setMirrorReady] = useState(true);
-	const [probeReady, setProbeReady] = useState(true);
-	const [tweezersReady, setTweezersReady] = useState(true);
-	const [excavatorReady, setExcavatorReady] = useState(true);
-	const [spatulaReady, setSpatulaReady] = useState(true);
-
-	const [salivaConnected, setSalivaConnected] = useState(true);
-	const [hveConnected, setHveConnected] = useState(true);
-	const [filterChecked, setFilterChecked] = useState(true);
-
-	const [rubberDamReady, setRubberDamReady] = useState(true);
-	const [clampsReady, setClampsReady] = useState(true);
-	const [forcepsReady, setForcepsReady] = useState(true);
-
-	const [notes, setNotes] = useState("");
-
-	// History records
-	const [historyRecords, setHistoryRecords] = useState<CabinetReadinessRecord[]>([
-		createCabinetReadinessRecord({
-			cabinetNumber: "Кабинет № 1",
-			appointmentType: "therapy",
-			operatorStaffFullName: "Медсестра / Ассистент",
-			operatorStaffPosition: "Ассистент стоматолога",
-			surfaceDisinfection: {
-				isCompleted: true,
-				disinfectantBrand: "Бациллол АФ",
-				exposureMinutes: 3,
-			},
-			handpiecesSterility: {
-				isCompleted: true,
-				turbineHandpieceSterile: true,
-				contraAngleHandpieceSterile: true,
-				class5IndicatorsVerified: true,
-				packageIntegrityVerified: true,
-			},
-			sterileTray: {
-				isCompleted: true,
-				mirrorReady: true,
-				probeReady: true,
-				tweezersReady: true,
-				excavatorReady: true,
-				spatulaPluggerReady: true,
-			},
-			aspirationSystem: {
-				isCompleted: true,
-				salivaEjectorConnected: true,
-				hveVacuumConnected: true,
-				bacterialFilterChecked: true,
-			},
-			isolationCofferdam: {
-				isCompleted: true,
-				rubberDamSheetReady: true,
-				clampsReady: true,
-				forcepsReady: true,
-			},
-			notes: "Подготовка к утреннему терапевтическому приёму",
-		}),
-	]);
-
-	const currentPreset = useMemo(() => getCabinetReadinessPreset(selectedProfile), [selectedProfile]);
-
-	const evaluation = useMemo(() => {
-		return evaluateCabinetReadiness({
-			appointmentType: selectedProfile,
-			surfaceDisinfection: {
-				isCompleted: disinfectionCompleted,
-				disinfectantBrand,
-				exposureMinutes,
-			},
-			handpiecesSterility: {
-				isCompleted: turbineSterile && contraAngleSterile && class5Verified && packageIntegrityVerified,
-				turbineHandpieceSterile: turbineSterile,
-				contraAngleHandpieceSterile: contraAngleSterile,
-				micromotorHandpieceSterile: micromotorSterile,
-				class5IndicatorsVerified: class5Verified,
-				packageIntegrityVerified: packageIntegrityVerified,
-			},
-			sterileTray: {
-				isCompleted: mirrorReady && probeReady && tweezersReady && excavatorReady && spatulaReady,
-				mirrorReady,
-				probeReady,
-				tweezersReady,
-				excavatorReady,
-				spatulaPluggerReady: spatulaReady,
-			},
-			aspirationSystem: {
-				isCompleted: salivaConnected && hveConnected && filterChecked,
-				salivaEjectorConnected: salivaConnected,
-				hveVacuumConnected: hveConnected,
-				bacterialFilterChecked: filterChecked,
-			},
-			isolationCofferdam: {
-				isCompleted: rubberDamReady && clampsReady && forcepsReady,
-				rubberDamSheetReady: rubberDamReady,
-				clampsReady,
-				forcepsReady,
-				isNotRequiredForProfile: !currentPreset.requiresCofferdam,
-			},
-		});
-	}, [
-		selectedProfile,
-		disinfectionCompleted,
-		disinfectantBrand,
-		exposureMinutes,
-		turbineSterile,
-		contraAngleSterile,
-		micromotorSterile,
-		class5Verified,
-		packageIntegrityVerified,
-		mirrorReady,
-		probeReady,
-		tweezersReady,
-		excavatorReady,
-		spatulaReady,
-		salivaConnected,
-		hveConnected,
-		filterChecked,
-		rubberDamReady,
-		clampsReady,
-		forcepsReady,
-		currentPreset.requiresCofferdam,
-	]);
-
-	const handleSaveChecklist = (e: React.FormEvent) => {
-		e.preventDefault();
-		const record = createCabinetReadinessRecord({
-			cabinetNumber: selectedCabinet,
-			appointmentType: selectedProfile,
-			operatorStaffFullName: nurseName.trim() || "Персонал клиники",
-			operatorStaffPosition: nursePosition,
-			surfaceDisinfection: {
-				isCompleted: disinfectionCompleted,
-				disinfectantBrand,
-				exposureMinutes,
-			},
-			handpiecesSterility: {
-				isCompleted: turbineSterile && contraAngleSterile && class5Verified && packageIntegrityVerified,
-				turbineHandpieceSterile: turbineSterile,
-				contraAngleHandpieceSterile: contraAngleSterile,
-				micromotorHandpieceSterile: micromotorSterile,
-				class5IndicatorsVerified: class5Verified,
-				packageIntegrityVerified: packageIntegrityVerified,
-			},
-			sterileTray: {
-				isCompleted: mirrorReady && probeReady && tweezersReady && excavatorReady && spatulaReady,
-				mirrorReady,
-				probeReady,
-				tweezersReady,
-				excavatorReady,
-				spatulaPluggerReady: spatulaReady,
-			},
-			aspirationSystem: {
-				isCompleted: salivaConnected && hveConnected && filterChecked,
-				salivaEjectorConnected: salivaConnected,
-				hveVacuumConnected: hveConnected,
-				bacterialFilterChecked: filterChecked,
-			},
-			isolationCofferdam: {
-				isCompleted: rubberDamReady && clampsReady && forcepsReady,
-				rubberDamSheetReady: rubberDamReady,
-				clampsReady,
-				forcepsReady,
-				isNotRequiredForProfile: !currentPreset.requiresCofferdam,
-			},
-			notes: notes || undefined,
-		});
-
-		setHistoryRecords((prev) => [record, ...prev]);
-		if (record.isFullyReady) {
-			showToast(
-				`${selectedCabinet} успешно подготовлен: «${currentPreset.shortLabelRu}». Статус готовности зафиксирован в журнале.`,
-				"success",
-			);
-		} else {
-			showToast(
-				`${selectedCabinet} принят в работу. Чек-лист сохранен в фоновом режиме без блокировки врача.`,
-				"info",
-			);
-		}
-	};
-
-	const handleQuickFillAllReady = () => {
-		setDisinfectionCompleted(true);
-		setExposureMinutes(currentPreset.minExposureMinutes);
-		setTurbineSterile(true);
-		setContraAngleSterile(true);
-		setMicromotorSterile(true);
-		setClass5Verified(true);
-		setPackageIntegrityVerified(true);
-		setMirrorReady(true);
-		setProbeReady(true);
-		setTweezersReady(true);
-		setExcavatorReady(true);
-		setSpatulaReady(true);
-		setSalivaConnected(true);
-		setHveConnected(true);
-		setFilterChecked(true);
-		setRubberDamReady(true);
-		setClampsReady(true);
-		setForcepsReady(true);
-		showToast("Все пункты чек-листа отмечены как проверенные и готовые", "info");
-	};
-
-	const handleOneClickConfirmCabinetReady = () => {
-		handleQuickFillAllReady();
-		const record = createCabinetReadinessRecord({
-			cabinetNumber: selectedCabinet,
-			appointmentType: selectedProfile,
-			operatorStaffFullName: nurseName,
-			operatorStaffPosition: nursePosition,
-			surfaceDisinfection: {
-				isCompleted: true,
-				disinfectantBrand,
-				exposureMinutes: currentPreset.minExposureMinutes,
-			},
-			handpiecesSterility: {
-				isCompleted: true,
-				turbineHandpieceSterile: true,
-				contraAngleHandpieceSterile: true,
-				micromotorHandpieceSterile: true,
-				class5IndicatorsVerified: true,
-				packageIntegrityVerified: true,
-			},
-			sterileTray: {
-				isCompleted: true,
-				mirrorReady: true,
-				probeReady: true,
-				tweezersReady: true,
-				excavatorReady: true,
-				spatulaPluggerReady: true,
-			},
-			aspirationSystem: {
-				isCompleted: true,
-				salivaEjectorConnected: true,
-				hveVacuumConnected: true,
-				bacterialFilterChecked: true,
-			},
-			isolationCofferdam: {
-				isCompleted: true,
-				rubberDamSheetReady: true,
-				clampsReady: true,
-				forcepsReady: true,
-				isNotRequiredForProfile: !currentPreset.requiresCofferdam,
-			},
-			notes: notes || "Подтверждена готовность всех узлов кабинета к смене",
-		});
-
-		setHistoryRecords((prev) => [record, ...prev]);
-		showToast(
-			`${selectedCabinet}: готовность к смене подтверждена`,
-			"success",
-		);
-	};
-
-	const handleStartAppointmentPaperLogNorm = () => {
-		const record = createDefaultPaperJournalCabinetRecord({
-			cabinetNumber: selectedCabinet,
-			appointmentType: selectedProfile,
-			operatorStaffFullName: nurseName || "Персонал клиники",
-			notes: "Приём начат (отметка в журнале)",
-		});
-		setHistoryRecords((prev) => [record, ...prev]);
-		showToast(
-			`${selectedCabinet}: приём начат в штатном режиме.`,
-			"success",
-		);
-	};
-
-	const handleExportCsv = () => {
-		const csv = exportCabinetReadinessToCsv(historyRecords);
-		const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = `Cabinet_Readiness_${new Date().toISOString().slice(0, 10)}.csv`;
-		a.click();
-		URL.revokeObjectURL(url);
-		showToast("Реестр готовности кабинетов выгружен в CSV (с UTF-8 BOM)", "success");
-	};
-
-	const handlePrint = () => {
-		const html = generateCabinetReadinessPrintHtml({ records: historyRecords });
-		const printWin = window.open("", "_blank");
-		if (printWin) {
-			printWin.document.write(html);
-			printWin.document.close();
-			printWin.focus();
-			setTimeout(() => printWin.print(), 250);
-		}
-	};
+	const state = useCabinetReadinessState();
 
 	return (
 		<div className="sanpin-tab-pane">
-			<div className="sanpin-pane-header">
-				<div>
-					<h2>
-						<ShieldCheck size={22} color="var(--brand-primary, #2563eb)" />
-						Экспресс-чек-лист: «Готовность кабинета и стоматологической установки»
-					</h2>
-					<p className="sanpin-pane-desc">
-						Стандартный протокол подготовки кабинета. Ведение в CRM опционально: при использовании бумажных журналов приём пациентов ведётся в обычном порядке.
-					</p>
-				</div>
+			{/* Overall status header and KPI banner */}
+			<CabinetReadinessStatusHeader
+				selectedCabinet={state.selectedCabinet}
+				currentPreset={state.currentPreset}
+				isFullyReady={state.evaluation.isFullyReady}
+				statusMessageRu={state.evaluation.statusMessageRu}
+				disinfectionCompleted={state.disinfectionCompleted}
+				turbineSterile={state.turbineSterile}
+				contraAngleSterile={state.contraAngleSterile}
+				bactericidalActive={state.bactericidalActive}
+				onStartAppointmentPaperLogNorm={state.handleStartAppointmentPaperLogNorm}
+				onOneClickConfirmCabinetReady={state.handleOneClickConfirmCabinetReady}
+				onExportCsv={state.handleExportCsv}
+				onPrint={state.handlePrint}
+			/>
 
-				<div className="sanpin-pane-actions" style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-					<button
-						type="button"
-						onClick={handleStartAppointmentPaperLogNorm}
-						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "48px", padding: "0.6rem 1.25rem", fontSize: "0.95rem", background: "var(--teal)", color: "var(--on-teal, #fff)", fontWeight: 800, cursor: "pointer", boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)" }}
-						title="Начать приём пациента (журнал заполняется параллельно)"
-						data-testid="cabinet-readiness-start-appointment-btn"
-					>
-						<CheckCircle2 size={18} /> <span>Начать приём (норма)</span>
-					</button>
+			{/* Bactericidal irradiator / Dezar lamp runtime and timer */}
+			<CabinetBactericidalTimer
+				selectedCabinet={state.selectedCabinet}
+				nurseName={state.nurseName}
+				onExposureLogged={state.handleExposureLogged}
+			/>
 
-					<button
-						type="button"
-						onClick={handleOneClickConfirmCabinetReady}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "48px", padding: "0.6rem 1.25rem", fontSize: "0.92rem", fontWeight: 700, cursor: "pointer" }}
-						title="Отметить все пункты текущего профиля как готовые"
-						data-testid="cabinet-readiness-autofill-btn"
-					>
-						<Zap size={18} /> <span>Кабинет готов к смене</span>
-					</button>
+			{/* Structured SanPiN checklist with 1-click norm preset */}
+			<CabinetSanpinChecklist
+				selectedCabinet={state.selectedCabinet}
+				setSelectedCabinet={state.setSelectedCabinet}
+				selectedProfile={state.selectedProfile}
+				setSelectedProfile={state.setSelectedProfile}
+				currentPreset={state.currentPreset}
+				disinfectionCompleted={state.disinfectionCompleted}
+				setDisinfectionCompleted={state.setDisinfectionCompleted}
+				disinfectantBrand={state.disinfectantBrand}
+				setDisinfectantBrand={state.setDisinfectantBrand}
+				exposureMinutes={state.exposureMinutes}
+				setExposureMinutes={state.setExposureMinutes}
+				turbineSterile={state.turbineSterile}
+				setTurbineSterile={state.setTurbineSterile}
+				contraAngleSterile={state.contraAngleSterile}
+				setContraAngleSterile={state.setContraAngleSterile}
+				micromotorSterile={state.micromotorSterile}
+				setMicromotorSterile={state.setMicromotorSterile}
+				class5Verified={state.class5Verified}
+				setClass5Verified={state.setClass5Verified}
+				mirrorReady={state.mirrorReady}
+				setMirrorReady={state.setMirrorReady}
+				probeReady={state.probeReady}
+				setProbeReady={state.setProbeReady}
+				tweezersReady={state.tweezersReady}
+				setTweezersReady={state.setTweezersReady}
+				excavatorReady={state.excavatorReady}
+				setExcavatorReady={state.setExcavatorReady}
+				spatulaReady={state.spatulaReady}
+				setSpatulaReady={state.setSpatulaReady}
+				salivaConnected={state.salivaConnected}
+				setSalivaConnected={state.setSalivaConnected}
+				hveConnected={state.hveConnected}
+				setHveConnected={state.setHveConnected}
+				rubberDamReady={state.rubberDamReady}
+				setRubberDamReady={state.setRubberDamReady}
+				clampsReady={state.clampsReady}
+				setClampsReady={state.setClampsReady}
+				forcepsReady={state.forcepsReady}
+				setForcepsReady={state.setForcepsReady}
+				onQuickFillAllReady={state.handleQuickFillAllReady}
+			/>
 
-					<button
-						type="button"
-						onClick={handleExportCsv}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "48px", padding: "0.6rem 1rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer" }}
-						title="Экспорт истории проверок в CSV"
-					>
-						<Download size={16} /> CSV
-					</button>
+			{/* Action toolbar, verdict banner and sign-off */}
+			<CabinetReadinessActions
+				isFullyReady={state.evaluation.isFullyReady}
+				statusMessageRu={state.evaluation.statusMessageRu}
+				missingItems={state.evaluation.missingItems}
+				nurseName={state.nurseName}
+				setNurseName={state.setNurseName}
+				nursePosition={state.nursePosition}
+				notes={state.notes}
+				setNotes={state.setNotes}
+				onSaveChecklist={state.handleSaveChecklist}
+				onStartAppointmentPaperLogNorm={state.handleStartAppointmentPaperLogNorm}
+				onOneClickConfirmCabinetReady={state.handleOneClickConfirmCabinetReady}
+				onQuickFillAllReady={state.handleQuickFillAllReady}
+				onExportCsv={state.handleExportCsv}
+				onPrint={state.handlePrint}
+			/>
 
-					<button
-						type="button"
-						onClick={handlePrint}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "48px", padding: "0.6rem 1rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer" }}
-						title="Печать официального листа передачи смены"
-					>
-						<Printer size={16} /> Печать / PDF
-					</button>
-				</div>
-			</div>
-
-			{/* Компактная полоса статуса готовности (<= 40px) */}
-			<div
-				className="flex items-center justify-between gap-3 px-3 py-1.5 my-2 rounded-lg border border-[var(--teal,#0d9488)] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)]"
-			>
-				<div className="flex items-center gap-2 min-w-0">
-					<span className="px-1.5 py-0.5 rounded bg-[var(--teal,#0d9488)] text-white text-[10px] font-bold uppercase tracking-wider shrink-0">
-						Готовность
-					</span>
-					<span className="text-xs font-semibold text-ink truncate">
-						{selectedCabinet} • {currentPreset.shortLabelRu}: норма дезинфекции поверхностей, наконечники 5 кл., лоток, аспирация
-					</span>
-				</div>
-
-				<div className="flex items-center gap-2 shrink-0 text-xs text-muted">
-					<Save size={13} color="var(--ok-fg)" />
-					<span className="text-[11px]">Кабинет проверен (автосохранение)</span>
-				</div>
-			</div>
-
-			{/* Collapsible 20-Checklist Section (For Exceptions / Breakdowns) */}
-			<details
-				style={{
-					background: "var(--paper, #fff)",
-					border: "1px solid var(--paper-border, #e2e8f0)",
-					borderRadius: "0.75rem",
-					padding: "1rem",
-					marginTop: "1rem",
-				}}
-			>
-				<summary
-					style={{
-						cursor: "pointer",
-						fontWeight: 700,
-						fontSize: "0.92rem",
-						display: "flex",
-						alignItems: "center",
-						gap: "0.5rem",
-						color: "var(--brand-primary, #2563eb)",
-						userSelect: "none",
-					}}
-				>
-					<Filter size={16} />
-					<span>Детальный чек-лист узлов установки (20 параметров — для исключений и поломок)</span>
-					<span style={{ marginLeft: "auto", fontSize: "0.8rem", color: "var(--muted, #64748b)", fontWeight: 500 }}>
-						Развернуть для ручной корректировки
-					</span>
-				</summary>
-
-				<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.25rem", marginTop: "1rem" }}>
-					{/* Column 1: Configuration & Disinfection */}
-					<div style={{ background: "var(--paper-subtle, #f8fafc)", border: "1px solid var(--paper-border, #e2e8f0)", borderRadius: "0.75rem", padding: "1.25rem" }}>
-						<h3 style={{ fontSize: "1rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem", color: "var(--brand-primary, #2563eb)" }}>
-							<Filter size={18} /> Шаг 1: Профиль приёма и Кабинет
-						</h3>
-
-						<div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
-							<div>
-								<label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "0.3rem" }}>
-									Стоматологический кабинет:
-								</label>
-								<select
-									value={selectedCabinet}
-									onChange={(e) => setSelectedCabinet(e.target.value)}
-									className="sanpin-input"
-									style={{ width: "100%", minHeight: "44px" }}
-								>
-									<option value="Кабинет № 1">Кабинет № 1 (Терапия/Эндодонтия)</option>
-									<option value="Кабинет № 2">Кабинет № 2 (Терапия/Ортопедия)</option>
-									<option value="Хирургический кабинет">Хирургический кабинет (Операционная)</option>
-									<option value="Детский кабинет">Детский кабинет</option>
-									<option value="Ортодонтический кабинет">Ортодонтический кабинет</option>
-								</select>
-							</div>
-
-							<div>
-								<label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "0.3rem" }}>
-									Специализация / Профиль приёма:
-								</label>
-								<div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.4rem" }}>
-									{CABINET_READINESS_PRESETS.map((p) => (
-										<button
-											key={p.type}
-											type="button"
-											onClick={() => {
-												setSelectedProfile(p.type);
-												setExposureMinutes(p.minExposureMinutes);
-											}}
-											style={{
-												minHeight: "42px",
-												padding: "0.4rem 0.6rem",
-												fontSize: "0.82rem",
-												fontWeight: selectedProfile === p.type ? 800 : 500,
-												background: selectedProfile === p.type ? "rgba(37, 99, 235, 0.12)" : "var(--paper-subtle, #f8fafc)",
-												border: selectedProfile === p.type ? "2px solid var(--brand-primary, #2563eb)" : "1px solid var(--paper-border, #cbd5e1)",
-												color: selectedProfile === p.type ? "var(--brand-primary, #2563eb)" : "inherit",
-												borderRadius: "0.5rem",
-												cursor: "pointer",
-												textAlign: "left",
-											}}
-										>
-											{p.shortLabelRu}
-										</button>
-									))}
-								</div>
-							</div>
-
-							<div style={{ marginTop: "0.5rem", borderTop: "1px solid var(--line, #e2e8f0)", paddingTop: "0.75rem" }}>
-								<h4 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "0.5rem", color: "var(--teal)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-									<Sparkles size={16} /> Дезинфекция поверхностей установки:
-								</h4>
-
-								<label style={{ display: "flex", alignItems: "center", gap: "0.6rem", fontSize: "0.85rem", marginBottom: "0.5rem", cursor: "pointer" }}>
-									<input
-										type="checkbox"
-										checked={disinfectionCompleted}
-										onChange={(e) => setDisinfectionCompleted(e.target.checked)}
-										style={{ width: "18px", height: "18px" }}
-									/>
-									<span>Поверхности протерты (кресло, столик, светильник, шланги)</span>
-								</label>
-
-								<div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "0.5rem" }}>
-									<div>
-										<label style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>Дезсредство:</label>
-										<input
-											type="text"
-											value={disinfectantBrand}
-											onChange={(e) => setDisinfectantBrand(e.target.value)}
-											className="sanpin-input"
-											style={{ minHeight: "38px", fontSize: "0.85rem" }}
-										/>
-									</div>
-									<div>
-										<label style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>Экспозиция (мин):</label>
-										<input
-											type="number"
-											min={1}
-											max={30}
-											value={exposureMinutes}
-											onChange={(e) => setExposureMinutes(Number(e.target.value))}
-											className="sanpin-input"
-											style={{ minHeight: "38px", fontSize: "0.85rem" }}
-										/>
-									</div>
-								</div>
-								{exposureMinutes < currentPreset.minExposureMinutes && (
-									<div style={{ color: "var(--bad-fg)", fontSize: "0.75rem", marginTop: "0.3rem", fontWeight: 600 }}>
-										Внимание: требуется экспозиция не менее {currentPreset.minExposureMinutes} мин!
-									</div>
-								)}
-							</div>
-						</div>
-					</div>
-
-					{/* Column 2: Handpieces, Sterile Tray & Aspiration */}
-					<div style={{ background: "var(--paper-subtle, #f8fafc)", border: "1px solid var(--paper-border, #e2e8f0)", borderRadius: "0.75rem", padding: "1.25rem" }}>
-						<h3 style={{ fontSize: "1rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem", color: "var(--brand-primary, #2563eb)" }}>
-							<Sparkles size={18} /> Шаг 2: Стерильные инструменты и Аспирация
-						</h3>
-
-						<div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", fontSize: "0.85rem" }}>
-							<div style={{ background: "var(--paper, #fff)", padding: "0.65rem", borderRadius: "0.5rem", border: "1px solid var(--line, #e2e8f0)" }}>
-								<strong style={{ display: "block", marginBottom: "0.4rem", color: "var(--ink, #1e293b)" }}>
-									Наконечники и крафт-пакеты:
-								</strong>
-								<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem", cursor: "pointer" }}>
-									<input type="checkbox" checked={turbineSterile} onChange={(e) => setTurbineSterile(e.target.checked)} />
-									<span>Турбинный наконечник стерилен</span>
-								</label>
-								<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem", cursor: "pointer" }}>
-									<input type="checkbox" checked={contraAngleSterile} onChange={(e) => setContraAngleSterile(e.target.checked)} />
-									<span>Угловой / микромоторный наконечник стерилен</span>
-								</label>
-								<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
-									<input type="checkbox" checked={class5Verified} onChange={(e) => setClass5Verified(e.target.checked)} />
-									<span style={{ fontWeight: 600, color: "var(--ok-fg, #059669)" }}>Индикатор 5 класса (Интеграл/Медтест) проверен</span>
-								</label>
-							</div>
-
-							<div style={{ background: "var(--paper, #fff)", padding: "0.65rem", borderRadius: "0.5rem", border: "1px solid var(--line, #e2e8f0)" }}>
-								<strong style={{ display: "block", marginBottom: "0.4rem", color: "var(--ink, #1e293b)" }}>
-									Базовый смотровой лоток:
-								</strong>
-								<div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.25rem" }}>
-									<label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer" }}>
-										<input type="checkbox" checked={mirrorReady} onChange={(e) => setMirrorReady(e.target.checked)} />
-										<span>Зеркало</span>
-									</label>
-									<label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer" }}>
-										<input type="checkbox" checked={probeReady} onChange={(e) => setProbeReady(e.target.checked)} />
-										<span>Зонд</span>
-									</label>
-									<label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer" }}>
-										<input type="checkbox" checked={tweezersReady} onChange={(e) => setTweezersReady(e.target.checked)} />
-										<span>Пинцет</span>
-									</label>
-									<label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer" }}>
-										<input type="checkbox" checked={excavatorReady} onChange={(e) => setExcavatorReady(e.target.checked)} />
-										<span>Экскаватор</span>
-									</label>
-									<label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer", gridColumn: "span 2" }}>
-										<input type="checkbox" checked={spatulaReady} onChange={(e) => setSpatulaReady(e.target.checked)} />
-										<span>Гладилка-штопфер</span>
-									</label>
-								</div>
-							</div>
-
-							<div style={{ background: "var(--paper, #fff)", padding: "0.65rem", borderRadius: "0.5rem", border: "1px solid var(--line, #e2e8f0)" }}>
-								<strong style={{ display: "block", marginBottom: "0.4rem", color: "var(--ink, #1e293b)" }}>
-									Аспирационная система и Коффердам:
-								</strong>
-								<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", cursor: "pointer" }}>
-									<input type="checkbox" checked={salivaConnected} onChange={(e) => setSalivaConnected(e.target.checked)} />
-									<span>Слюноотсос (канюля подключена)</span>
-								</label>
-								<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", cursor: "pointer" }}>
-									<input type="checkbox" checked={hveConnected} onChange={(e) => setHveConnected(e.target.checked)} />
-									<span>Пылесос (высокообъемная канюля)</span>
-								</label>
-								{currentPreset.requiresCofferdam && (
-									<div style={{ marginTop: "0.4rem", borderTop: "1px dashed var(--line, #cbd5e1)", paddingTop: "0.4rem" }}>
-										<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
-											<input
-												type="checkbox"
-												checked={rubberDamReady && clampsReady && forcepsReady}
-												onChange={(e) => {
-													const val = e.target.checked;
-													setRubberDamReady(val);
-													setClampsReady(val);
-													setForcepsReady(val);
-												}}
-											/>
-											<span style={{ fontWeight: 600, color: "var(--teal)" }}>Коффердам (платок, клампы 2A/W8A, щипцы)</span>
-										</label>
-									</div>
-								)}
-							</div>
-						</div>
-					</div>
-				</div>
-			</details>
-
-			{/* Main Checklist Verdict Card */}
-			<div style={{ marginTop: "1rem" }}>
-
-				{/* Column 3: Readiness Verdict & Signature */}
-				<div style={{ background: "var(--paper, #fff)", border: "1px solid var(--paper-border, #e2e8f0)", borderRadius: "0.75rem", padding: "1.25rem", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-					<div>
-						<h3 style={{ fontSize: "1rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem", color: "var(--brand-primary, #2563eb)" }}>
-							<Award size={18} /> Шаг 3: Статус готовности и фиксация
-						</h3>
-
-						{/* Verdict Banner */}
-						<div
-							style={{
-								padding: "1rem",
-								borderRadius: "0.5rem",
-								background: evaluation.isFullyReady ? "rgba(16, 185, 129, 0.1)" : "rgba(245, 158, 11, 0.1)",
-								border: evaluation.isFullyReady ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(245, 158, 11, 0.3)",
-								marginBottom: "1rem",
-							}}
-						>
-							<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1rem", fontWeight: 800, color: evaluation.isFullyReady ? "var(--ok-fg)" : "var(--warn-fg, #b45309)" }}>
-								{evaluation.isFullyReady ? <CheckCircle2 size={20} /> : <Info size={20} />}
-								<span>{evaluation.statusMessageRu}</span>
-							</div>
-
-							{evaluation.missingItems.length > 0 && (
-								<div style={{ marginTop: "0.5rem" }}>
-									<p style={{ margin: "0 0 0.3rem 0", fontSize: "0.82rem", fontWeight: 700, color: "var(--warn-fg, #b45309)" }}>
-										Не заполнены пункты экспресс-проверки (при использовании бумажных журналов приём разрешён):
-									</p>
-									<ul style={{ margin: "0 0 0.5rem 1.25rem", padding: 0, fontSize: "0.8rem", color: "var(--muted)" }}>
-										{evaluation.missingItems.map((item, idx) => (
-											<li key={idx} style={{ marginBottom: "0.2rem" }}>{item}</li>
-										))}
-									</ul>
-									<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.5rem" }}>
-										<button
-											type="button"
-											onClick={handleStartAppointmentPaperLogNorm}
-											className="sanpin-btn sanpin-btn-primary"
-											style={{
-												flex: 1,
-												minHeight: "44px",
-												padding: "0.5rem 1rem",
-												fontSize: "0.88rem",
-												background: "var(--teal)",
-												color: "var(--on-teal, #fff)",
-												fontWeight: 800,
-												cursor: "pointer",
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-												gap: "0.4rem",
-											}}
-											title="Начать приём в штатном режиме (бумажный журнал)"
-										>
-											<CheckCircle2 size={16} /> <span>Начать приём (норма)</span>
-										</button>
-										<button
-											type="button"
-											onClick={handleQuickFillAllReady}
-											className="sanpin-btn sanpin-btn-secondary"
-											style={{
-												flex: 1,
-												minHeight: "44px",
-												padding: "0.5rem 1rem",
-												fontSize: "0.88rem",
-												fontWeight: 700,
-												cursor: "pointer",
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-												gap: "0.4rem",
-											}}
-											title="Отметить все недостающие пункты чек-листа как готовые"
-										>
-											<Zap size={16} /> <span>Заполнить чек-лист по норме</span>
-										</button>
-									</div>
-								</div>
-							)}
-						</div>
-
-						<div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-							<div>
-								<label style={{ fontSize: "0.8rem", color: "var(--muted, #64748b)" }}>ФИО ассистента / медсестры (опционально):</label>
-								<input
-									type="text"
-									value={nurseName}
-									onChange={(e) => setNurseName(e.target.value)}
-									placeholder="Персонал клиники"
-									className="sanpin-input"
-									style={{ minHeight: "40px", fontSize: "0.85rem" }}
-								/>
-							</div>
-
-							<div>
-								<label style={{ fontSize: "0.8rem", color: "var(--muted, #64748b)" }}>Примечания / Особые указания:</label>
-								<input
-									type="text"
-									value={notes}
-									onChange={(e) => setNotes(e.target.value)}
-									placeholder="например: подготовлен стерильный набор имплантации"
-									className="sanpin-input"
-									style={{ minHeight: "40px", fontSize: "0.85rem" }}
-								/>
-							</div>
-						</div>
-					</div>
-
-					<button
-						type="button"
-						onClick={handleSaveChecklist}
-						className="sanpin-btn sanpin-btn-primary"
-						style={{
-							minHeight: "52px",
-							fontSize: "1rem",
-							fontWeight: 800,
-							letterSpacing: "0.02em",
-							marginTop: "1.25rem",
-							background: "var(--teal)",
-							color: "var(--on-teal, #fff)",
-							cursor: "pointer",
-							boxShadow: "0 4px 12px rgba(13, 148, 136, 0.4)",
-						}}
-						data-testid="submit-cabinet-readiness-btn"
-					>
-						<Check size={20} />
-						{evaluation.isFullyReady ? "Кабинет готов к приёму — зафиксировать" : "Сохранить статус проверки"}
-					</button>
-				</div>
-			</div>
-
-			{/* History Table */}
-			<div style={{ marginTop: "1.5rem", background: "var(--paper, #fff)", border: "1px solid var(--paper-border, #e2e8f0)", borderRadius: "0.75rem", padding: "1.25rem" }}>
-				<h3 style={{ fontSize: "1rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
-					<Clock size={18} color="var(--brand-primary, #2563eb)" />
-					История проверок готовности кабинетов за смену
-				</h3>
-
-				<div style={{ overflowX: "auto" }}>
-					<table className="sanpin-table" style={{ width: "100%", fontSize: "0.85rem" }}>
-						<thead>
-							<tr>
-								<th>Время</th>
-								<th>Кабинет</th>
-								<th>Профиль</th>
-								<th>Статус</th>
-								<th>Дезинфекция</th>
-								<th>Наконечники</th>
-								<th>Лоток</th>
-								<th>Исполнитель</th>
-								<th>ЭЦП Штамп</th>
-							</tr>
-						</thead>
-						<tbody>
-							{historyRecords.map((rec) => (
-								<tr
-									key={rec.id}
-									className="sanpin-log-row"
-									style={{
-										minHeight: "44px",
-										contentVisibility: "auto",
-										containIntrinsicSize: "1px 44px",
-										contain: "content",
-									}}
-								>
-									<td style={{ whiteSpace: "nowrap" }}>
-										{new Date(rec.timestamp).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
-									</td>
-									<td style={{ fontWeight: 700 }}>{rec.cabinetNumber}</td>
-									<td>{rec.appointmentTypeTitleRu.split("(")[0]}</td>
-									<td>
-										<span
-											style={{
-												padding: "0.2rem 0.5rem",
-												borderRadius: "0.3rem",
-												fontSize: "0.75rem",
-												fontWeight: 700,
-												background: rec.isFullyReady ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.15)",
-												color: rec.isFullyReady ? "var(--ok-fg)" : "var(--warn-fg, #b45309)",
-											}}
-										>
-											{rec.summaryBadgeRu}
-										</span>
-									</td>
-									<td>{rec.surfaceDisinfection.disinfectantBrand} ({rec.surfaceDisinfection.exposureMinutes} мин)</td>
-									<td>{rec.handpiecesSterility.class5IndicatorsVerified ? "5 кл. ОК" : "—"}</td>
-									<td>{rec.sterileTray.isCompleted ? "Укомплектован" : "—"}</td>
-									<td>{rec.operatorStaffFullName}</td>
-									<td style={{ fontFamily: "monospace", fontSize: "0.75rem", color: "var(--muted)" }}>{rec.digitalStampHash}</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
-			</div>
+			{/* Shift audit history log table */}
+			<CabinetReadinessHistoryTable historyRecords={state.historyRecords} />
 		</div>
 	);
 }
+
+export default CabinetReadinessTab;

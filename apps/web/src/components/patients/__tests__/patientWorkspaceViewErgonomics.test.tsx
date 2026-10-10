@@ -27,7 +27,9 @@ const mockAppContext = {
 
 describe("PatientWorkspaceView Toolbar Ergonomics & Anti-Clutter (Mandates 8c, 8d, 8e)", () => {
 	const sourcePath = path.resolve(__dirname, "../PatientWorkspaceView.tsx");
-	const sourceCode = fs.readFileSync(sourcePath, "utf8");
+	const toolbarPath = path.resolve(__dirname, "../workspaceView/PatientWorkspaceToolbar.tsx");
+	const sourceCode =
+		fs.readFileSync(sourcePath, "utf8") + "\n" + fs.readFileSync(toolbarPath, "utf8");
 
 	it("1. renders exactly 2 primary action buttons: '+ Новый визит' and '+ План лечения'", () => {
 		const html = renderToString(

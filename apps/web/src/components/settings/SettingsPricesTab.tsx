@@ -81,7 +81,7 @@ export function SettingsPricesTab() {
 						onProcessScannerFile={prices.handleProcessScannerFile} onRunScannerRequest={prices.runScannerRequest}
 						isMappingDiffOpen={prices.isMappingDiffOpen} onCloseMappingDiff={() => prices.setIsMappingDiffOpen(false)}
 						mappingDiffItems={prices.mappingDiffItems} setMappingDiffItems={prices.setMappingDiffItems}
-						onCommitPricelistDiff={prices.handleCommitPricelistDiff} isCommittingImport={prices.isCommittingImport}
+						handleCommitPricelistDiff={prices.handleCommitPricelistDiff} isCommittingImport={prices.isCommittingImport}
 						existingCatalogReferences={prices.existingCatalogReferences}
 					/>
 

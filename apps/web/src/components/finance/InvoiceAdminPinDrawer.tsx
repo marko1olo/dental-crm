@@ -76,7 +76,7 @@ export const InvoiceAdminPinDrawer: React.FC<InvoiceAdminPinDrawerProps> = ({
 					title="Согласовать цены решением лечащего врача"
 				>
 					<ShieldCheck size={14} />
-					<span>Решение врача (1 клик)</span>
+					<span>Решение лечащего врача</span>
 				</button>
 				<button
 					type="button"

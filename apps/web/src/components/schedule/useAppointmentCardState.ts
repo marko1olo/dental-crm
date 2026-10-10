@@ -12,7 +12,7 @@ import {
 	calculateAppointmentSpan,
 } from "./appointmentCardHelpers";
 import type { AppointmentCardProps } from "./AppointmentCardTypes";
-import { extractTeethList } from "./AppointmentCard";
+import { extractTeethList } from "./appointmentCardModules/AppointmentCardTeethList";
 
 export function useAppointmentCardState(props: AppointmentCardProps) {
 	const {

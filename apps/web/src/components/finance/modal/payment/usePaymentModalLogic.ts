@@ -142,6 +142,8 @@ export function usePaymentModalLogic(props: PaymentModalProps) {
 		setIsCheckingSbp: tendersHook.setIsCheckingSbp,
 		setSbpCheckMessage: tendersHook.setSbpCheckMessage,
 		sbpQrData: tendersHook.sbpQrData,
+		items: props.items,
+		toothNumber: props.toothNumber,
 		isOpen,
 		onClose,
 		onSuccess,

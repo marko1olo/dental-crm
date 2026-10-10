@@ -7,7 +7,7 @@
  */
 
 import { calculateDynamicWorkerPoolSize } from "@dental/shared";
-import type { MprPlane } from "../cbctMprMath";
+import type { MprPlane } from "../../cbctMprMath";
 import type {
 	CbctWorkerInboundMessage,
 	CbctWorkerOutboundMessage,

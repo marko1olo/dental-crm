@@ -164,7 +164,11 @@ export function classifyAppointmentRejection(
 	)
 		return "patient_blacklisted";
 	if (message === "Запись не найдена") return "appointment_not_found";
-	if (message.includes("не найден") || message.includes("не активен"))
+	if (
+		message.includes("не найден") ||
+		message.includes("не активен") ||
+		message.includes("не относится к вашей клинике")
+	)
 		return "reference_missing";
 	if (
 		message.includes("Время окончания записи должно быть позже времени начала") ||
@@ -285,6 +289,12 @@ export async function appointmentRejectionResponse(
 				error.message.includes("уже занято") ||
 				error.message.includes("Слот уже занят") ||
 				error.message.includes("Внимание:"))
+		) {
+			specificMessage = error.message;
+		} else if (
+			reason === "reference_missing" &&
+			error instanceof Error &&
+			error.message.includes("не относится к вашей клинике")
 		) {
 			specificMessage = error.message;
 		} else {

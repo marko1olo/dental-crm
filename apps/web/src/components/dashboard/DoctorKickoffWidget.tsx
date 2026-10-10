@@ -244,11 +244,11 @@ export const DoctorKickoffWidget: React.FC<DoctorKickoffWidgetProps> = ({
 						title={
 							isShiftOpen
 								? "Рабочая смена врача активна (нажмите для завершения)"
-								: "Открыть смену врача в 1 клик"
+								: "Открыть смену врача"
 						}
 					>
 						<Zap size={14} aria-hidden="true" />
-						<span>{isShiftOpen ? "Смена открыта" : "Открыть смену в 1 клик"}</span>
+						<span>{isShiftOpen ? "Смена открыта" : "Открыть смену"}</span>
 					</button>
 				)}
 

@@ -4,11 +4,11 @@ export type WorkspaceTabKey = "timeline" | "plans" | "visits" | "scans";
 
 export interface PatientWorkspaceViewProps {
 	patientId: string;
-	patientName?: string | null;
-	dashboard?: Dashboard | null;
-	initialTab?: WorkspaceTabKey;
-	onOpenVisit?: (visitId: string) => void;
-	onOpenPlan?: (planId: string) => void;
+	patientName?: string | null | undefined;
+	dashboard?: Dashboard | null | undefined;
+	initialTab?: WorkspaceTabKey | undefined;
+	onOpenVisit?: ((visitId: string) => void) | undefined;
+	onOpenPlan?: ((planId: string) => void) | undefined;
 }
 
 export interface ImagingStudyItem {
@@ -16,21 +16,21 @@ export interface ImagingStudyItem {
 	patientId: string;
 	title: string;
 	kind: string;
-	toothCode?: string | null;
-	previewUrl?: string;
-	viewerUrl?: string;
-	capturedAt?: string;
-	effectiveDoseMicrosv?: number;
-	status?: string;
-	modality?: string;
+	toothCode?: string | null | undefined;
+	previewUrl?: string | undefined;
+	viewerUrl?: string | undefined;
+	capturedAt?: string | undefined;
+	effectiveDoseMicrosv?: number | undefined;
+	status?: string | undefined;
+	modality?: string | undefined;
 }
 
 export interface DomSliceResult<T> {
-	visibleItems: T[];
-	totalCount: number;
-	displayedCount: number;
-	remainingCount: number;
-	hasMore: boolean;
+	readonly visibleItems: readonly T[];
+	readonly totalCount: number;
+	readonly displayedCount: number;
+	readonly remainingCount: number;
+	readonly hasMore: boolean;
 }
 
 export const WORKSPACE_VIEW_TEST_ID = "patient-workspace-view";

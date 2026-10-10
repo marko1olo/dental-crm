@@ -57,10 +57,10 @@ export const TreatmentPlanActSignatures: React.FC<TreatmentPlanActSignaturesProp
 
 			{/* ── 9. Doctor Signature and Clinic Seal Zones (Crisp Two-Column Grid) ── */}
 			<div
-				className="doc-sign-zone pt-4 border-t border-slate-300 break-inside-avoid"
+				className="doc-sign-zone !flex !flex-col !gap-0 !items-stretch !justify-start w-full pt-4 border-t border-slate-300 break-inside-avoid"
 				style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
 			>
-				<div className="grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-8 items-start">
+				<div className="w-full grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-8 items-start">
 					{/* Left: Clinic / Doctor Signature & Stamp */}
 					<div className="space-y-4">
 						<div>

@@ -14,12 +14,14 @@ export function ToothDiagnosisHistorySection({
 	toothServicesCount,
 	toothTotalRub,
 }: ToothDiagnosisHistorySectionProps) {
+	const idleMeta = {
+		label: "Интактен / Здоров",
+		desc: "Кариозных полостей не выявлено, пломб нет.",
+		colorClass: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30",
+	};
+
 	const stateLabels: Record<string, { label: string; desc: string; colorClass: string }> = {
-		idle: {
-			label: "Интактен / Здоров",
-			desc: "Кариозных полостей не выявлено, пломб нет.",
-			colorClass: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30",
-		},
+		idle: idleMeta,
 		done: {
 			label: "Санирован",
 			desc: "Ранее лечен, установлена пломба или коронка.",
@@ -41,8 +43,8 @@ export function ToothDiagnosisHistorySection({
 			colorClass: "text-slate-400 bg-slate-100 dark:bg-slate-800",
 		},
 	};
-
-	const currentMeta = stateLabels[state] || stateLabels.idle;
+	const currentMeta: { label: string; desc: string; colorClass: string } =
+		(state ? stateLabels[state] : undefined) ?? idleMeta;
 
 	return (
 		<div className="_ccm-history-section mb-3 p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)]">

@@ -1,24 +1,7 @@
+import { type Appointment, type Dashboard, type DentalSpecialty } from "@dental/shared";
 import {
-	type Appointment,
-	type Dashboard,
-	type DentalSpecialty,
-} from "@dental/shared";
-import {
-	AlertTriangle,
-	CalendarCheck,
-	Check,
-	CheckCircle2,
-	Clock,
-	CreditCard,
-	FileText,
-	MoreVertical,
-	Phone,
-	PhoneCall,
-	Stethoscope,
-	User,
-	UserCheck,
-	UserX,
-	Zap,
+	AlertTriangle, CalendarCheck, Check, CheckCircle2, Clock, CreditCard,
+	FileText, MoreVertical, Phone, PhoneCall, Stethoscope, User, UserCheck, UserX, Zap,
 } from "lucide-react";
 import React, { memo } from "react";
 import { useAppStore } from "../../store/appStore";
@@ -43,11 +26,16 @@ import {
 	resolveAppointmentLabStatus,
 	calculateProportionalCardHeight,
 	getAppointmentElapsedMinutes,
+	sanitizeScheduleCardText,
+	isRedundantScheduleComment,
+	formatRussianAge,
 	type ScheduleDensityMode,
 } from "./appointmentCardHelpers";
 import { GridAppointmentHoverHud } from "./GridAppointmentHoverHud";
 import { GridAppointmentMenu } from "./GridAppointmentMenu";
 import { GridAppointmentStatusPopover } from "./GridAppointmentStatusPopover";
+import { DentalToothIcon } from "./DentalToothIcon";
+import { GridAppointmentQuickActions } from "./GridAppointmentQuickActions";
 
 export * from "./appointmentCardHelpers";
 
@@ -149,12 +137,20 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 		onCloseMenu,
 	} = props;
 
+	const patObj = a.patientId ? patientLookupMap.get(a.patientId) : undefined;
 	const resolveNameFn = getPatientName || patientNameFn || ((_patients: any, _id?: string | null) => "Пациент");
-	const pName = resolveNameFn(dashboard.patients, a.patientId ?? null);
+	const rawResolvedName =
+		patObj?.fullName ||
+		(a as any).patient?.fullName ||
+		(a as any).patientName ||
+		(resolveNameFn ? resolveNameFn(dashboard?.patients, a.patientId ?? null) : undefined);
+	const pName =
+		rawResolvedName && rawResolvedName.trim() && rawResolvedName.trim() !== "Пациент"
+			? rawResolvedName.trim()
+			: (patObj?.fullName || (a.patientId ? `Пациент (${a.patientId.slice(0, 6)})` : "Пациент"));
 	const aStart = toDateTimeLocalValue(a.startsAt, timezone).slice(11, 16);
 	const aEnd = toDateTimeLocalValue(a.endsAt, timezone).slice(11, 16);
 
-	const patObj = a.patientId ? patientLookupMap.get(a.patientId) : undefined;
 	const docObj = a.doctorUserId ? staffLookupMap.get(a.doctorUserId) : undefined;
 	const doctorSpecialty =
 		docObj?.specialty ||
@@ -188,20 +184,25 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 				(Date.now() - bDate.getTime()) / (365.25 * 24 * 3600 * 1000),
 			);
 			if (ageYears > 0 && ageYears < 120) {
-				patientAgeLabel = `${ageYears} лет`;
+				patientAgeLabel = formatRussianAge(ageYears);
 			}
 		}
 	}
 
 	const teethList = extractTeethList(a);
-	const procedureLabel = a.reason || (a as any).serviceTitle || "Приём";
+	const rawProcedure = a.reason || (a as any).serviceTitle || "Приём";
+	const procedureLabel = sanitizeScheduleCardText(rawProcedure) || "Приём";
+	const cleanComment = sanitizeScheduleCardText(a.comment);
+	const normalizedStatusLabel = getNormalizedAppointmentStatusLabel(a.status, appointmentLabels);
+	const isCommentRedundant = isRedundantScheduleComment(cleanComment, procedureLabel, normalizedStatusLabel);
 
 	const showRow2 =
 		densityMode === "expanded" ||
 		((!densityMode || densityMode === "informative") && durationMin >= 30);
 
 	const showComment =
-		Boolean(a.comment) &&
+		Boolean(cleanComment) &&
+		!isCommentRedundant &&
 		(densityMode === "expanded" ||
 			((!densityMode || densityMode === "informative") && durationMin >= 30));
 
@@ -253,7 +254,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 				(durationMin <= 20 ? "micro" : durationMin <= 30 ? "compact" : "expanded")
 			}
 			data-hovered={isHovered ? "true" : undefined}
-			className={`appointment-card m-0 mb-0 w-full h-full text-left rounded-lg border text-xs font-semibold shadow-2xs flex flex-col justify-between gap-1 transition-all cursor-grab active:cursor-grabbing relative overflow-hidden ${
+			className={`appointment-card m-0 mb-0 w-full h-full text-left rounded-xl border border-[var(--line)] text-xs font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex flex-col justify-between gap-1 transition-all cursor-grab active:cursor-grabbing relative overflow-hidden ${
 				densityMode === "compact" || (!densityMode && durationMin <= 20)
 					? "p-1.5 px-2"
 					: "p-2"
@@ -345,7 +346,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 					>
 						{/* Left: Time + CITO badge + Patient FIO */}
 						<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
-							<span className="font-bold text-[11px] text-[var(--ink)] font-mono shrink-0">
+							<span className="font-bold text-xs text-[var(--ink)] font-mono shrink-0" title={`Время приёма: ${aStart}–${aEnd}`}>
 								{aStart}
 							</span>
 							{isCito && (
@@ -358,9 +359,9 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 									<span>СРОЧНО</span>
 								</span>
 							)}
-							<span
-								className="font-bold text-xs text-[var(--ink)] truncate min-w-[70px] sm:min-w-[95px] flex-1 hover:underline cursor-pointer"
-								title={`Пациент: ${pName}. Нажмите для перехода в карточку`}
+							<div
+								className="flex items-center gap-1 min-w-0 flex-1 truncate hover:underline cursor-pointer tracking-tight"
+								title={`Пациент: ${pName}${patientAgeLabel ? ` (${patientAgeLabel})` : ""}. Нажмите для перехода в карточку`}
 								onClick={(e) => {
 									e.stopPropagation();
 									if (a.patientId) {
@@ -370,12 +371,23 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 									}
 								}}
 							>
-								{formatPatientDisplayFio(pName)}
-							</span>
-							{/* DentalPRO Live Status Elapsed Badge */}
+								<span className="font-bold text-[13px] text-[var(--ink)] truncate min-w-0">
+									{formatPatientDisplayFio(pName)}
+								</span>
+								{patientAgeLabel && durationMin >= 60 && (
+									<span className="text-[11px] text-[var(--muted)] font-normal shrink-0 whitespace-nowrap">
+										· {patientAgeLabel}
+									</span>
+								)}
+							</div>
+							{/* Live Status Elapsed Badge */}
 							{(a.status === "arrived" || (a.status as string) === "in_clinic" || (a.status as string) === "waiting") && (
 								<span
-									className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-500/40 shrink-0 hidden sm:inline-flex items-center gap-0.5"
+									className={
+										getAppointmentElapsedMinutes(a) <= 180
+											? "text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-500/40 shrink-0 hidden sm:inline-flex items-center gap-0.5"
+											: "sr-only"
+									}
 									title="Пациент в холле: время ожидания с момента записи"
 									data-testid={`appointment-live-timer-arrived-${a.id}`}
 								>
@@ -385,7 +397,11 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 							)}
 							{isAppointmentInChair(a.status) && (
 								<span
-									className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 shrink-0 hidden sm:inline-flex items-center gap-1"
+									className={
+										getAppointmentElapsedMinutes(a) <= 180
+											? "text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 shrink-0 hidden sm:inline-flex items-center gap-1"
+											: "sr-only"
+									}
 									title="Пациент у кресла: время текущего приёма"
 									data-testid={`appointment-live-timer-chair-${a.id}`}
 								>
@@ -399,133 +415,13 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 						<div className="flex items-center gap-1 shrink-0">
 							{/* DentalPRO 1-Click Stage Transitions */}
 							{onQuickStatusChange && (
-								<div className={`items-center gap-1 shrink-0 ${isHovered || densityMode === "expanded" ? "flex" : "hidden"}`} data-testid={`dentalpro-realtime-bar-${a.id}`}>
-									{(a.status === "planned" || a.status === "confirmed") && (
-										<>
-											<button
-												type="button"
-												onClick={(e) => {
-													e.stopPropagation();
-													onQuickStatusChange(a.id, "arrived");
-													playIntercomChime("urgent");
-													showToast(`Пациент ${pName} прибыл в холл клиники`, "info");
-												}}
-												className="h-[22px] min-h-[22px] w-[22px] min-w-[22px] p-0 rounded text-[10px] font-extrabold bg-amber-500/15 hover:bg-amber-500 text-amber-800 hover:text-white dark:text-amber-200 dark:hover:text-white border border-amber-500/40 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs shrink-0"
-												title="Пациент пришёл — перевести «В холл» и подать сигнал в интерком"
-												data-testid={`dentalpro-quick-arrived-${a.id}`}
-											>
-												<UserCheck size={11} className="shrink-0" />
-												<span className="sr-only">Прибыл</span>
-											</button>
-											<button
-												type="button"
-												onClick={(e) => {
-													e.stopPropagation();
-													onQuickStatusChange(a.id, "in_treatment");
-													playIntercomChime("normal");
-													const pid = a.patientId || patObj?.id;
-													if (pid) {
-														usePatientStore.getState().setSelectedPatientId(pid);
-													}
-													if (typeof window !== "undefined") {
-														window.location.hash = "#visit";
-													}
-													useAppStore.getState().setCurrentView("visit");
-													showToast(`Пациент ${pName} в кресле: открыта медкарта`, "info");
-												}}
-												className="h-[22px] min-h-[22px] w-[22px] min-w-[22px] p-0 rounded text-[10px] font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-xs shrink-0"
-												title="Начать приём у кресла (#visit)"
-												data-testid={`dentalpro-quick-start-treatment-${a.id}`}
-											>
-												<Stethoscope size={11} className="shrink-0" />
-												<span className="sr-only">Приём</span>
-											</button>
-										</>
-									)}
-									{(a.status === "arrived" || (a.status as string) === "in_clinic" || (a.status as string) === "waiting") && (
-										<button
-											type="button"
-											onClick={(e) => {
-												e.stopPropagation();
-												onQuickStatusChange(a.id, "in_treatment");
-												playIntercomChime("normal");
-												const pid = a.patientId || patObj?.id;
-												if (pid) {
-													usePatientStore.getState().setSelectedPatientId(pid);
-												}
-												if (typeof window !== "undefined") {
-													window.location.hash = "#visit";
-												}
-												useAppStore.getState().setCurrentView("visit");
-												showToast(`Пациент ${pName} приглашен в кресло: открыта медкарта`, "info");
-											}}
-											className="h-[22px] min-h-[22px] w-[22px] min-w-[22px] p-0 rounded text-[10px] font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-xs shrink-0 animate-pulse"
-											title="Пригласить в кабинет — перевести в статус «В кресле» и начать приём (#visit)"
-											data-testid={`dentalpro-quick-in-chair-${a.id}`}
-										>
-											<CalendarCheck size={11} className="shrink-0" />
-											<span className="sr-only">В кресло</span>
-										</button>
-									)}
-									{isAppointmentInChair(a.status) && (
-										<>
-											<button
-												type="button"
-												onClick={(e) => {
-													e.stopPropagation();
-													const pid = a.patientId || patObj?.id;
-													if (pid) {
-														usePatientStore.getState().setSelectedPatientId(pid);
-													}
-													if (typeof window !== "undefined") {
-														window.location.hash = "#visit";
-													}
-													useAppStore.getState().setCurrentView("visit");
-													showToast(`Открыта карта приёма: ${pName}`, "info");
-												}}
-												className="h-[22px] min-h-[22px] w-[22px] min-w-[22px] p-0 rounded text-[10px] font-extrabold bg-[var(--teal)] hover:opacity-90 text-white border border-[var(--teal)] transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-xs shrink-0"
-												title="Открыть карту приёма пациента у кресла (#visit)"
-												data-testid={`dentalpro-quick-open-visit-${a.id}`}
-											>
-												<Stethoscope size={11} className="shrink-0" />
-												<span className="sr-only">Приём</span>
-											</button>
-											<button
-												type="button"
-												onClick={(e) => {
-													e.stopPropagation();
-													onQuickStatusChange(a.id, "completed");
-													showToast(`Приём ${pName} завершён — направлен на кассу`, "success");
-												}}
-												className="h-[22px] min-h-[22px] w-[22px] min-w-[22px] p-0 rounded text-[10px] font-extrabold bg-slate-700 hover:bg-slate-800 text-white border border-slate-600 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs shrink-0"
-												title="Завершить приём у кресла и отправить на оплату"
-												data-testid={`dentalpro-quick-complete-${a.id}`}
-											>
-												<Check size={11} className="stroke-[3]" />
-												<span className="sr-only">Завершить</span>
-											</button>
-										</>
-									)}
-									{a.status === "completed" && (
-										<button
-											type="button"
-											onClick={(e) => {
-												e.stopPropagation();
-												if (patObj?.id) {
-													usePatientStore.getState().setSelectedPatientId(patObj.id);
-												}
-												useAppStore.getState().setCurrentView("finance");
-												showToast(`Касса: оплата визита ${pName}`, "info");
-											}}
-											className="h-[22px] min-h-[22px] w-[22px] min-w-[22px] p-0 rounded text-[10px] font-extrabold bg-emerald-500/15 hover:bg-emerald-600 text-emerald-800 hover:text-white dark:text-emerald-200 dark:hover:text-white border border-emerald-500/40 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs shrink-0"
-											title="Перейти к оплате на кассе"
-											data-testid={`dentalpro-quick-pay-${a.id}`}
-										>
-											<CreditCard size={11} />
-											<span className="sr-only">Касса</span>
-										</button>
-									)}
-								</div>
+								<GridAppointmentQuickActions
+									appointment={a}
+									pName={pName}
+									patObj={patObj}
+									isHovered={isHovered}
+									onQuickStatusChange={onQuickStatusChange}
+								/>
 							)}
 
 							<div className="relative shrink-0">
@@ -537,18 +433,18 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 											onToggleStatusPicker(a.id);
 										}
 									}}
-									className={`h-[22px] min-h-[22px] text-[10px] font-bold uppercase tracking-wider px-1.5 py-0 rounded shrink-0 flex items-center gap-1 transition-all cursor-pointer hover:opacity-90 active:scale-95 ${getAppointmentStatusBadgeClasses(a.status)}`}
+									className={`h-[22px] min-h-[22px] text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 flex items-center gap-0.5 transition-all cursor-pointer hover:opacity-90 active:scale-95 ${getAppointmentStatusBadgeClasses(a.status)}`}
 									title={`Статус: ${getNormalizedAppointmentStatusLabel(a.status, appointmentLabels)}. Нажмите для смены`}
 									aria-label={`Сменить статус визита, текущий: ${getNormalizedAppointmentStatusLabel(a.status, appointmentLabels)}`}
 									data-testid={`appointment-card-status-badge-${a.id}`}
 								>
 									{isAppointmentInChair(a.status) && (
-										<span className="w-1.5 h-1.5 rounded-full bg-white animate-ping shrink-0" />
+										<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
 									)}
 									{String(a.status).toLowerCase() === "completed" && (
-										<Check size={10} className="shrink-0 text-current" />
+										<Check size={10} className="shrink-0 text-current stroke-[2.5]" />
 									)}
-									<span className="truncate max-w-[70px] sm:max-w-[85px]">
+									<span className="whitespace-nowrap shrink-0">
 										{getNormalizedAppointmentStatusLabel(a.status, appointmentLabels)}
 									</span>
 								</button>
@@ -575,7 +471,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 										e.stopPropagation();
 										onToggleMenu(a.id);
 									}}
-									className="appointment-action-more h-[22px] w-[22px] min-h-[22px] min-w-[22px] p-0 rounded border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer select-none shrink-0"
+									className="appointment-action-more h-[22px] w-[22px] min-h-[22px] min-w-[22px] p-0 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer select-none shrink-0"
 									title="Все действия визита"
 									aria-label="Дополнительные действия визита"
 									aria-expanded={isMenuOpen}
@@ -610,10 +506,12 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 							className="appointment-card-row-procedure flex items-center gap-1.5 flex-wrap w-full min-w-0 text-xs text-[var(--ink)]"
 							data-testid={`appointment-card-procedure-row-${a.id}`}
 						>
-							<div className="flex items-center gap-1 min-w-0 flex-1">
-								<Stethoscope size={11} className="shrink-0 text-[var(--teal)] opacity-80" />
+							<div className="flex items-center gap-1.5 min-w-0 flex-1">
+								<DentalToothIcon size={12} className="shrink-0 text-[var(--teal)] opacity-85" />
 								<span
-									className="font-semibold text-xs text-[var(--ink)] truncate max-w-[240px] sm:max-w-[320px]"
+									className={`font-semibold text-xs text-[var(--ink)] ${
+										durationMin >= 45 ? "line-clamp-2 leading-snug break-words" : "truncate"
+									} min-w-0 flex-1`}
 									title={procedureLabel}
 								>
 									{procedureLabel}
@@ -685,59 +583,74 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 						</div>
 					)}
 
-					{/* Clinical Comment if present */}
-					{showComment && (
-						<p className="text-[10px] text-[var(--muted)] line-clamp-1 italic opacity-85 min-w-0" title={a.comment ?? undefined}>
-							{a.comment}
-						</p>
+					{/* Clinical Comment if present (Clean medical secondary line) */}
+					{showComment && !isCommentRedundant && cleanComment && (
+						<div
+							className="text-[11px] text-[var(--muted)] font-normal line-clamp-1 min-w-0 opacity-80"
+							title={cleanComment}
+						>
+							<span className="truncate">{cleanComment}</span>
+						</div>
 					)}
 
-					{/* ROW 3: DOCTOR, PHONE & QUICK ACTION [В приём] */}
+					{/* ROW 3: DOCTOR, PHONE & SMART ACTION [В приём →] / [К оплате 💳] */}
 					{showRow3 && (
 						<div
 							className="appointment-card-row-footer flex items-center justify-between gap-1.5 w-full min-w-0 pt-1 border-t border-[var(--line)]/50 mt-auto"
 							data-testid={`appointment-card-footer-${a.id}`}
 						>
-							{/* Left: Doctor name & Patient Phone */}
-							<div className="flex items-center gap-2 text-[11px] text-[var(--muted)] font-medium truncate min-w-0 flex-1">
+							{/* Left: Doctor name & Phone */}
+							<div className="flex items-center gap-1.5 text-[11px] text-[var(--muted)] font-medium min-w-0 flex-1 overflow-hidden">
 								{docObj && (
-									<span className="truncate flex items-center gap-1 text-[var(--ink)] opacity-90 shrink-0 max-w-[120px]" title={`Врач: ${docObj.fullName}`}>
-										<User size={10} className="shrink-0 text-[var(--teal)] opacity-70" />
-										<span className="truncate whitespace-nowrap">{formatDoctorShortName(docObj.fullName)}</span>
+									<span className="truncate flex items-center gap-1 text-[var(--ink)] opacity-90 shrink-0 max-w-[150px]" title={`Врач: ${docObj.fullName}`}>
+										<UserCheck size={11} className="shrink-0 text-[var(--teal)] opacity-70" /><span className="truncate whitespace-nowrap">{formatDoctorShortName(docObj.fullName)}</span>
 									</span>
 								)}
 								{patObj?.phone ? (
-									<span className="truncate flex items-center gap-1 text-[var(--muted)] min-w-0" title={`Телефон: ${patObj.phone}`}>
-										<Phone size={10} className="shrink-0 opacity-70" />
-										<span className="truncate">{patObj.phone}</span>
+									<span className="hidden 2xl:inline-flex items-center gap-1 text-[var(--muted)] shrink-0 whitespace-nowrap" title={`Телефон: ${patObj.phone}`}>
+										<Phone size={10} className="shrink-0 opacity-70" /><span className="whitespace-nowrap font-mono text-[10.5px]">{patObj.phone}</span>
 									</span>
 								) : null}
-								{patientAgeLabel && (
-									<span className="text-[10px] text-[var(--muted)] opacity-60 shrink-0">
-										· {patientAgeLabel}
-									</span>
-								)}
 							</div>
 
-							{/* Right: Quick Action Button [В приём] */}
-							<button
-								type="button"
-								onClick={(e) => {
-									e.stopPropagation();
-									if (a.patientId) {
-										usePatientStore.getState().setSelectedPatientId(a.patientId);
-									}
-									useAppStore.getState().setCurrentView("visit");
-									showToast(`Открыт приём: ${pName}`, "info");
-								}}
-								className="appointment-action-visit h-[24px] min-h-[24px] max-h-[24px] px-2.5 py-0 rounded border border-[var(--teal)]/40 bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 text-[var(--teal-dark,var(--teal))] text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
-								title={`Открыть приём: ${pName}`}
-								aria-label={`Открыть приём ${pName}`}
-								data-testid={`appointment-action-start-${a.id}`}
-							>
-								<FileText size={11} className="shrink-0 text-[var(--teal)]" />
-								<span className="whitespace-nowrap">В приём</span>
-							</button>
+							{/* Right: Smart Contextual Action Button [В приём →] vs [К оплате] */}
+							{a.status === "completed" ? (
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										if (patObj?.id || a.patientId) usePatientStore.getState().setSelectedPatientId(patObj?.id || a.patientId!);
+										useAppStore.getState().setCurrentView("finance");
+										if (typeof window !== "undefined") window.location.hash = "#finance";
+										showToast(`Касса: оплата визита ${pName}`, "info");
+									}}
+									className="appointment-action-pay h-[24px] min-h-[24px] px-2.5 py-0.5 rounded-lg border border-violet-400/50 bg-violet-500/15 hover:bg-violet-500/25 text-violet-950 dark:text-violet-200 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0 shadow-2xs active:scale-95"
+									title={`К оплате на кассе: ${pName}`}
+									aria-label={`К оплате на кассе ${pName}`}
+									data-testid={`appointment-action-pay-${a.id}`}
+								>
+									<CreditCard size={11} className="shrink-0 text-violet-600 dark:text-violet-400" />
+									<span className="appointment-action-label whitespace-nowrap">К оплате</span>
+								</button>
+							) : (
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										if (a.patientId) usePatientStore.getState().setSelectedPatientId(a.patientId);
+										useAppStore.getState().setCurrentView("visit");
+										if (typeof window !== "undefined") window.location.hash = "#visit";
+										showToast(`Открыт приём: ${pName}`, "info");
+									}}
+									className="appointment-action-visit h-[24px] min-h-[24px] px-2.5 py-0.5 rounded-lg border border-[var(--teal)]/40 bg-[var(--teal)]/15 hover:bg-[var(--teal)]/25 text-[var(--teal-dark,var(--teal))] dark:text-teal-200 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0 shadow-2xs active:scale-95"
+									title={`Открыть приём: ${pName}`}
+									aria-label={`Открыть приём ${pName}`}
+									data-testid={`appointment-action-start-${a.id}`}
+								>
+									<FileText size={11} className="shrink-0 text-[var(--teal)]" />
+									<span className="appointment-action-label whitespace-nowrap">В приём →</span>
+								</button>
+							)}
 						</div>
 					)}
 				</div>

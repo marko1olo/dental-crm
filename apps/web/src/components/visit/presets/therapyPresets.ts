@@ -43,9 +43,9 @@ export const THERAPY_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 		anesthetic: { drugKey: "ultracain_ds", drugName: "Артикаин с эпинефрином 1:200 000 (1.7 мл)", carpulesCount: 1.0, volumeMl: 1.7 },
 		service804n: { code804n: "A16.07.002.001", title: "Восстановление зуба пломбой с нарушением контактного пункта зуба II, III класса по Блэку с использованием фотополимерных материалов (поверхности O/MOD)", basePriceRub: 4800, category: "therapy" },
 		materialsToDeduct: [
-			{ name: "Композит светоотверждаемый наногибридный Estelite Sigma Quick", category: "composite", unit: "г", quantity: 0.35, unitCostRub: 1450 },
-			{ name: "Изолирующая прокладка СИЦ Vitrebond / Ionoseal", category: "composite", unit: "г", quantity: 0.1, unitCostRub: 550 },
-			{ name: "Адгезивная система OptiBond FL (Kerr, праймер + бонд)", category: "adhesive", unit: "мл", quantity: 0.1, unitCostRub: 1950 },
+			{ name: "Светоотверждаемый наногибридный композит Estelite Sigma Quick", category: "composite", unit: "г", quantity: 0.35, unitCostRub: 1450 },
+			{ name: "Стеклоиономерная изолирующая прокладка (СИЦ Vitrebond / Ionoseal)", category: "composite", unit: "г", quantity: 0.1, unitCostRub: 550 },
+			{ name: "Универсальная адгезивная система (OptiBond FL, праймер + бонд)", category: "adhesive", unit: "мл", quantity: 0.1, unitCostRub: 1950 },
 			{ name: "Гель травильный 37% ортофосфорная кислота", category: "composite", unit: "мл", quantity: 0.2, unitCostRub: 180 },
 			{ name: "Платок коффердама латексный Sanctuary Dental Dam", category: "auxiliary", unit: "шт.", quantity: 1, unitCostRub: 115 },
 			{ name: "Анестетик артикаиновый 4% с эпинефрином 1:200000 1.7 мл", category: "anesthesia", unit: "карп.", quantity: 1, unitCostRub: 220 },
@@ -225,11 +225,11 @@ export const THERAPY_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 		recommendations: "Не накусывать на зуб твердую пищу. При болях — прием НПВП. При выпадении временной повязки срочно обратиться в клинику.",
 	},
 
-	// ── 7. K02.0 НАЧАЛЬНЫЙ КАРИЕС / ИНФИЛЬТРАЦИЯ ICON ──
+	// ── 7. K02.0 НАЧАЛЬНЫЙ КАРИЕС / ИНФИЛЬТРАЦИЯ ПОЛИМЕРОМ ──
 	{
 		id: "caries_initial_icon",
-		title: "Начальный кариес (K02.0) — Инфильтрация Icon (без препарирования)",
-		shortBadge: "Icon / Пятно",
+		title: "Начальный кариес (K02.0) — Инфильтрация полимером без препарирования",
+		shortBadge: "Инфильтрация",
 		category: "therapy",
 		icd10: "K02.0",
 		icd10Label: "Кариес эмали (в стадии пятна)",
@@ -239,9 +239,9 @@ export const THERAPY_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 		anamnesis: "Пятно появилось после снятия брекет-системы / в течение последних месяцев. Гигиена регулярная.",
 		statusLocalis: "Матовое белое пятно на вестибулярной поверхности без образования дефекта эмали. Поверхность шероховатая. Зонд не застревает. Перкуссия безболезненная. ЭОД 3 мкА.",
 		treatmentDescription: "Очищение поверхности пастой без фтора Cleanic. Коффердам. Протравливание 15% гелем соляной кислоты Icon-Etch 2 мин, смывание водой, высушивание этанолом Icon-Dry. Нанесение полимерного инфильтранта Icon-Infiltrant на 3 мин, полимеризация 40 сек, повторное нанесение 1 мин и полимеризация 40 сек. Глубокое фторирование Clinpro White Varnish, финишная полировка головками Enhance до зеркального блеска.",
-		service804n: { code804n: "A16.07.002.003", title: "Неинвазивное лечение начального кариеса методом инфильтрации Icon", basePriceRub: 3500, category: "therapy" },
+		service804n: { code804n: "A16.07.002.003", title: "Неинвазивное лечение начального кариеса методом инфильтрации", basePriceRub: 3500, category: "therapy" },
 		materialsToDeduct: [
-			{ name: "Набор инфильтранта Icon (Etch + Dry + Infiltrant)", category: "composite", unit: "компл.", quantity: 1, unitCostRub: 1800 },
+			{ name: "Система полимерной инфильтрации (Icon / аналог)", category: "composite", unit: "компл.", quantity: 1, unitCostRub: 1800 },
 			{ name: "Платок коффердама Sanctuary Dental Dam", category: "auxiliary", unit: "шт.", quantity: 1, unitCostRub: 115 },
 		],
 		recommendations: "Не употреблять красящие продукты 24 часа. Использовать реминерализирующий гель Tooth Mousse.",
@@ -250,7 +250,7 @@ export const THERAPY_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 	// ── 8. K02.2 КАРИЕС ЦЕМЕНТА КОРНЯ ──
 	{
 		id: "caries_cementum_root",
-		title: "Кариес цемента корня (K02.2) — СИЦ Fuji II LC + Estelite",
+		title: "Кариес цемента корня (K02.2) — СИЦ-лайнер + Светоотверждаемый нанокомпозит",
 		shortBadge: "Кариес корня",
 		category: "therapy",
 		icd10: "K02.2",
@@ -264,8 +264,8 @@ export const THERAPY_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 		anesthetic: { drugKey: "septanest_100", drugName: "Септанест 1:100 000", carpulesCount: 1.0, volumeMl: 1.7 },
 		service804n: { code804n: "A16.07.002.002", title: "Лечение пришеечного кариеса цемента корня зуба (V класс)", basePriceRub: 4800, category: "therapy" },
 		materialsToDeduct: [
-			{ name: "Стеклоиономерный цемент светоотверждаемый Fuji II LC", category: "composite", unit: "г", quantity: 0.25, unitCostRub: 800 },
-			{ name: "Композит светоотверждаемый Estelite Sigma Quick", category: "composite", unit: "г", quantity: 0.2, unitCostRub: 1450 },
+			{ name: "Стеклоиономерный цемент светоотверждаемый (Fuji II LC / аналог)", category: "composite", unit: "г", quantity: 0.25, unitCostRub: 800 },
+			{ name: "Светоотверждаемый наногибридный композит Estelite Sigma Quick", category: "composite", unit: "г", quantity: 0.2, unitCostRub: 1450 },
 		],
 		recommendations: "Использовать мягкую зубную щетку с десенсибилизирующей пастой Sensodyne/Biorepair.",
 	},
@@ -273,7 +273,7 @@ export const THERAPY_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 	// ── 9. K03.1 КЛИНОВИДНЫЙ ДЕФЕКТ ──
 	{
 		id: "wedge_defect_cervical",
-		title: "Клиновидный дефект (K03.1) — Beautifil Flow + Estelite",
+		title: "Клиновидный дефект (K03.1) — Текучий гибридный композит + полировка",
 		shortBadge: "Клин. дефект",
 		category: "therapy",
 		icd10: "K03.1",
@@ -287,8 +287,8 @@ export const THERAPY_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 		anesthetic: { drugKey: "septanest_100", drugName: "Септанест 1:100 000", carpulesCount: 1.0, volumeMl: 1.7 },
 		service804n: { code804n: "A16.07.003", title: "Восстановление зуба при клиновидном дефекте нанокомпозитом", basePriceRub: 4200, category: "therapy" },
 		materialsToDeduct: [
-			{ name: "Текучий композит Beautifil Flow Plus F00", category: "composite", unit: "г", quantity: 0.2, unitCostRub: 900 },
-			{ name: "Композит светоотверждаемый Estelite Sigma Quick", category: "composite", unit: "г", quantity: 0.15, unitCostRub: 1450 },
+			{ name: "Текучий гибридный композит (Beautifil Flow Plus / аналог)", category: "composite", unit: "г", quantity: 0.2, unitCostRub: 900 },
+			{ name: "Светоотверждаемый наногибридный композит Estelite Sigma Quick", category: "composite", unit: "г", quantity: 0.15, unitCostRub: 1450 },
 		],
 		recommendations: "Заменить жесткую зубную щетку на мягкую (Soft/Ultra Soft). Исключить абразивные отбеливающие пасты.",
 	},
@@ -296,7 +296,7 @@ export const THERAPY_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 	// ── 10. K03.8 ГИПЕРЕСТЕЗИЯ ДЕНТИНА ──
 	{
 		id: "cold_hot_sensitivity",
-		title: "Гиперестезия дентина (K03.8) — Gluma Desensitizer + Clinpro",
+		title: "Гиперестезия дентина (K03.8) — Десенситайзер + Глубокое фторирование",
 		shortBadge: "Реакция на холод/горячее",
 		category: "therapy",
 		icd10: "K03.8",
@@ -309,8 +309,8 @@ export const THERAPY_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 		treatmentDescription: "Профессиональная чистка пастой Cleanic, нанесение десенситайзера Gluma Desensitizer / Bifluorid 12, глубокое фторирование эмали и дентина Clinpro White Varnish.",
 		service804n: { code804n: "A16.07.051", title: "Глубокое фторирование и десенсибилизация твердых тканей зубов", basePriceRub: 2500, category: "therapy" },
 		materialsToDeduct: [
-			{ name: "Десенситайзер Gluma Desensitizer (Heraeus Kulzer)", category: "adhesive", unit: "мл", quantity: 0.1, unitCostRub: 550 },
-			{ name: "Фторлак защитный Clinpro White Varnish", category: "hygiene", unit: "мл", quantity: 0.5, unitCostRub: 640 },
+			{ name: "Десенситайзер твердых тканей (Gluma Desensitizer / аналог)", category: "adhesive", unit: "мл", quantity: 0.1, unitCostRub: 550 },
+			{ name: "Защитный фторлак для глубокого фторирования (Clinpro / аналог)", category: "hygiene", unit: "мл", quantity: 0.5, unitCostRub: 640 },
 		],
 		recommendations: "Использовать пасту для чувствительных зубов и мягкую щетку в течение 1 месяца.",
 	},
@@ -332,8 +332,8 @@ export const THERAPY_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 		anesthetic: { drugKey: "ultracain_ds_forte", drugName: "Ультракаин Д-С Форте 1:100 000", carpulesCount: 1.0, volumeMl: 1.7 },
 		service804n: { code804n: "A16.07.002.001", title: "Комплекс: Профгигиена + Лечение кариеса дентина световым композитом", basePriceRub: 8500, category: "therapy" },
 		materialsToDeduct: [
-			{ name: "Композит светоотверждаемый Estelite Sigma Quick", category: "composite", unit: "г", quantity: 0.35, unitCostRub: 1450 },
-			{ name: "Адгезивная система OptiBond FL", category: "adhesive", unit: "мл", quantity: 0.1, unitCostRub: 1950 },
+			{ name: "Светоотверждаемый наногибридный композит Estelite Sigma Quick", category: "composite", unit: "г", quantity: 0.35, unitCostRub: 1450 },
+			{ name: "Универсальная адгезивная система (OptiBond FL)", category: "adhesive", unit: "мл", quantity: 0.1, unitCostRub: 1950 },
 			{ name: "Порошок Air-Flow глициновый EMS Plus", category: "hygiene", unit: "г", quantity: 25, unitCostRub: 18 },
 		],
 		warrantyMonths: 24,
@@ -343,7 +343,7 @@ export const THERAPY_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 	// ── 16. K02.1 ГЛУБОКИЙ КАРИЕС ДЕНТИНА ──
 	{
 		id: "caries_deep",
-		title: "Глубокий кариес дентина (K02.1) — Лечебная прокладка Ca(OH)2 + СИЦ + Estelite",
+		title: "Глубокий кариес дентина (K02.1) — Лечебная прокладка Ca(OH)2 + СИЦ-лайнер + Нанокомпозит",
 		shortBadge: "Глуб. кариес",
 		category: "therapy",
 		icd10: "K02.1",
@@ -357,7 +357,7 @@ export const THERAPY_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 		anesthetic: { drugKey: "ultracain_ds", drugName: "Ультракаин Д-С 1:200 000", carpulesCount: 1.0, volumeMl: 1.7 },
 		service804n: { code804n: "A16.07.002.001", title: "Лечение глубокого кариеса с наложением лечебной/изолирующей прокладки", basePriceRub: 5500, category: "therapy" },
 		materialsToDeduct: [
-			{ name: "Композит светоотверждаемый Estelite Sigma Quick", category: "composite", unit: "г", quantity: 0.35, unitCostRub: 1450 },
+			{ name: "Светоотверждаемый наногибридный композит Estelite Sigma Quick", category: "composite", unit: "г", quantity: 0.35, unitCostRub: 1450 },
 			{ name: "Лечебная прокладка гидроксид кальция Life / Calcesil", category: "composite", unit: "г", quantity: 0.1, unitCostRub: 400 },
 		],
 		warrantyMonths: 24,
@@ -381,7 +381,7 @@ export const THERAPY_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 		anesthetic: { drugKey: "ultracain_ds_forte", drugName: "Ультракаин Д-С Форте 1:100 000", carpulesCount: 1.0, volumeMl: 1.7 },
 		service804n: { code804n: "A16.07.002.001", title: "Восстановление зуба пломбой (замена дефектной реставрации)", basePriceRub: 4500, category: "therapy" },
 		materialsToDeduct: [
-			{ name: "Композит светоотверждаемый Estelite Sigma Quick", category: "composite", unit: "г", quantity: 0.35, unitCostRub: 1450 },
+			{ name: "Светоотверждаемый наногибридный композит Estelite Sigma Quick", category: "composite", unit: "г", quantity: 0.35, unitCostRub: 1450 },
 		],
 		warrantyMonths: 24,
 		serviceLifeMonths: 36,

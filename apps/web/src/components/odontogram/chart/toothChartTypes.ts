@@ -67,18 +67,29 @@ export type ToothState =
  * необязательных ключей заставляет компилятор потребовать перевод при
  * добавлении нового состояния.
  */
-export const TOOTH_STATE_LABELS: Record<ToothState, string> = {
+export const TOOTH_STATE_LABELS: Record<string, string> = {
 	Caries: "кариес",
+	caries: "кариес",
 	Pulpitis: "пульпит",
+	pulpitis: "пульпит",
 	Periodontitis: "периодонтит",
+	periodontitis: "периодонтит",
 	Filled: "пломба",
+	filled: "пломба",
 	Crown: "коронка",
+	crown: "коронка",
 	Implant: "имплантат",
+	implant: "имплантат",
 	Planned_Implant: "план. имплантат",
+	planned_implant: "план. имплантат",
 	Missing: "отсутствует",
+	missing: "отсутствует",
 	Healthy: "здоров",
+	healthy: "здоров",
 	Retained: "ретинированный",
+	retained: "ретинированный",
 	Root: "разрушенный корень",
+	root: "разрушенный корень",
 	Temporary_Crown: "временная коронка",
 	Veneer: "винир",
 	Inlay: "вкладка",
@@ -98,7 +109,20 @@ export const TOOTH_STATE_LABELS: Record<ToothState, string> = {
 	Bleeding: "кровоточивость",
 	Recession: "рецессия десны",
 	Pocket: "пародонтальный карман",
+	planned: "план лечения",
+	treatment: "в лечении",
+	done: "санирован",
+	watch: "наблюдение",
 };
+
+export function getToothStateLabelRu(state?: string | null): string {
+	if (!state) return "интактный";
+	const direct = TOOTH_STATE_LABELS[state];
+	if (direct) return direct;
+	const lower = TOOTH_STATE_LABELS[state.toLowerCase()];
+	if (lower) return lower;
+	return "интактный";
+}
 
 import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols043";
 import { showToast } from "../../GlobalToast";

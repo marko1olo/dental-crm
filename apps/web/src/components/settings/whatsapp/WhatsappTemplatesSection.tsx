@@ -27,8 +27,10 @@ export function WhatsappTemplatesSection({
 	const [localTemplates, setLocalTemplates] =
 		useState<WhatsappNotificationTemplate[]>(templates);
 
-	const activeTemplate =
-		localTemplates.find((t) => t.id === activeTemplateId) || localTemplates[0];
+	const activeTemplate: WhatsappNotificationTemplate =
+		localTemplates.find((t) => t.id === activeTemplateId) ??
+		localTemplates[0] ??
+		DEFAULT_WHATSAPP_TEMPLATES[0]!;
 
 	const handleContentChange = (newContent: string) => {
 		const updated = localTemplates.map((t) =>

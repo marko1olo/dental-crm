@@ -470,7 +470,7 @@ export function TelephonyDrawer({
 						type="button"
 						onClick={() => setShowQuickBooking((prev) => !prev)}
 						className="dnt-telephony-primary-btn flex-1 min-h-[44px] px-3.5 py-2 rounded-xl text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
-						title="Создать запись на приём (быстрые слоты в 1 клик)"
+						title="Создать запись на приём (быстрые слоты)"
 						data-testid="drawer-action-book"
 					>
 						<CalendarCheck size={15} />
@@ -675,7 +675,7 @@ export function TelephonyDrawer({
 							disabled={isCapturingLead || currentCall.isLeadCaptured}
 							className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-60"
 							data-testid="drawer-action-capture-lead"
-							title="1-Клик захват звонящего в лиды с автоматической разметкой рекламного канала"
+							title="Захват звонящего в лиды с автоматической разметкой рекламного канала"
 						>
 							{currentCall.isLeadCaptured ? <Check size={15} /> : <UserPlus size={15} />}
 							<span>
@@ -711,7 +711,7 @@ export function TelephonyDrawer({
 								disabled={isCreatingPatient}
 								className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-teal-600 text-white text-xs font-bold hover:bg-teal-500 active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60"
 								data-testid="drawer-quick-create-patient-btn"
-								title="Создать первичную карту пациента в 1 клик (без обязательного паспорта и СНИЛС)"
+								title="Создать первичную карту пациента за 5 секунд (без обязательного паспорта и СНИЛС)"
 							>
 								<UserCheck size={15} />
 								<span>

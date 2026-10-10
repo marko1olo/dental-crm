@@ -5,7 +5,7 @@
  */
 
 import React, { useCallback } from "react";
-import { ArrowLeftRight, ChevronDown, Layers, X, Zap } from "lucide-react";
+import { ArrowLeftRight, ChevronDown, Layers, ShieldCheck, X } from "lucide-react";
 import type { ToothState } from "./ToothChart";
 import { TOOTH_STATE_LABELS } from "./chart/toothChartTypes";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
@@ -128,13 +128,13 @@ export const OdontogramToolbarQuickActions: React.FC<OdontogramToolbarQuickActio
 	return (
 		<details className="relative shrink-0">
 			<summary
-				className="list-none h-8 px-2.5 rounded-[8px] bg-[var(--paper,#ffffff)] border border-[var(--line-strong,var(--odontogram-border,#cbd5e1))] hover:bg-[var(--paper-hover,#f1f5f9)] hover:border-indigo-500 text-[var(--ink,#0f172a)] text-[12px] font-bold flex items-center gap-1.5 cursor-pointer select-none transition-all shrink-0 shadow-2xs active:scale-98"
-				title="Быстрые действия: санация, без 8-ок, инвертировать, квадранты, челюсти"
+				className="list-none odontogram-tools-trigger-btn"
+				title="Выделение квадрантов, челюстей, инверсия и пакетная санация"
 				data-testid="odontogram-quick-actions-menu"
 			>
-				<Layers size={13} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
-				<span className="hidden sm:inline">Действия</span>
-				<ChevronDown size={12} className="shrink-0 opacity-70" />
+				<Layers size={14} className="shrink-0 text-[var(--muted,#64748b)]" />
+				<span className="hidden sm:inline font-bold">Выделение</span>
+				<ChevronDown size={13} className="shrink-0 text-[var(--muted,#64748b)]" />
 			</summary>
 			<div className="absolute right-0 top-full mt-1.5 z-40 w-72 p-2 rounded-xl shadow-xl bg-[var(--paper,#ffffff)] dark:bg-zinc-900 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 flex flex-col gap-2">
 				{onQuickStateChange && (
@@ -152,9 +152,9 @@ export const OdontogramToolbarQuickActions: React.FC<OdontogramToolbarQuickActio
 								}}
 								className="flex-1 h-7 px-2 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-98"
 								title="Физиологическая норма (зубные ряды интактны): вся челюсть моментально помечается здоровой без поверхностей"
-								data-testid="mark-intact-dentition-dropdown-btn mark-intact-dentition-btn"
+								data-testid="mark-intact-dentition-dropdown-btn"
 							>
-								<Zap size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+								<ShieldCheck size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 								<span>Санирован</span>
 							</button>
 
@@ -170,7 +170,7 @@ export const OdontogramToolbarQuickActions: React.FC<OdontogramToolbarQuickActio
 									title="Первичная адентия третьих моляров: зубы 18, 28, 38, 48 моментально помечаются отсутствующими без поверхностей"
 									data-testid="mark-wisdom-missing-btn"
 								>
-									<Zap size={13} className="text-zinc-500 shrink-0" />
+									<X size={13} className="text-zinc-500 shrink-0" />
 									<span>Без 8-ок</span>
 								</button>
 							)}

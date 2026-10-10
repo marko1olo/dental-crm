@@ -119,7 +119,7 @@ export const ActSheet: React.FC<ActSheetProps> = ({
 
 							<div className="a4-running-footer">
 								<span>Акт № {actData.actNumber} от {actData.actDate} г. к Договору № {actData.contractNumber}</span>
-								<span>Стр. 1 из 1</span>
+								<span>Лист 1 из 1</span>
 							</div>
 						</section>
 					</div>

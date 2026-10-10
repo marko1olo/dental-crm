@@ -8,6 +8,13 @@ import {
 } from "../../accessGuard.js";
 import { telegramMultiTenantSupervisor } from "../../services/telegram/TelegramMultiTenantSupervisor.js";
 import { TelegramAccountService } from "../../services/telegram/TelegramAccountService.js";
+import type { PostOpSurveyInput, TelegramBotPresetId } from "@dental/shared";
+import { getDenteTelegramBotSettings } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import { TelegramBotHostingService } from "../../services/telegram/TelegramBotHostingService.js";
+import {
+	TELEGRAM_BOT_PRESETS,
+	TelegramBotPresetsEngine,
+} from "../../services/telegram/TelegramBotPresets.js";
 import {
 	isRecord,
 	parseTelegramClinicScopeQuery,
@@ -17,6 +24,7 @@ import {
 import {
 	hydrateTelegramDomainState,
 	requireTelegramControlPlaneAccess,
+	resolveTelegramRuntimeContext,
 } from "./telegramRuntimeContext.js";
 import {
 	buildFeaturePlan,

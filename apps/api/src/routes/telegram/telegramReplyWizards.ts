@@ -1,25 +1,19 @@
 import type {
-	DenteTelegramBotSettings,
-	DenteTelegramFeature,
-	DenteTelegramUpdateKind,
+	DenteTelegramBotSettings, DenteTelegramFeature,
+	DenteTelegramUpdateKind, DenteTelegramVisualCardKey,
 } from "@dental/shared";
 import {
-	denteTelegramVisualCardUrlFor,
-	createDenteTelegramCareRequest,
-	createDenteTelegramContactRequest,
-	createDenteTelegramDocumentRequest,
+	denteTelegramVisualCardUrlFor, createDenteTelegramCareRequest,
+	createDenteTelegramContactRequest, createDenteTelegramDocumentRequest,
 	buildDenteTelegramLinkedScheduleReply,
 } from "../../services/telegram/telegramLegacyMemoryStore.js";
+import { TelegramBotHostingService } from "../../services/telegram/TelegramBotHostingService.js";
+import { TelegramInteractiveTriageService } from "../../services/telegram/TelegramInteractiveTriageService.js";
 import type {
-	TelegramWebhookReplyPackage,
-	TelegramRequestScope,
-	DenteTelegramCareRequestTopic,
-	TelegramSafeCallbackAction,
+	TelegramWebhookReplyPackage, TelegramRequestScope,
+	DenteTelegramCareRequestTopic, TelegramSafeCallbackAction,
 } from "./types.js";
-import {
-	isRecord,
-	stringFromUnknown,
-} from "./telegramUtils.js";
+import { isRecord, stringFromUnknown } from "./telegramUtils.js";
 import {
 	portalButton,
 	safeHttpsTelegramButton,
@@ -30,6 +24,7 @@ import {
 	careTopicFromFreeText,
 	replyMarkupWithNextActions,
 	safeCommandKeyboard,
+	telegramCareCallbackTopicByAction,
 } from "./telegramKeyboards.js";
 
 export function reviewReplyFor(
@@ -75,7 +70,7 @@ export function mapReplyFor(
 
 export function patientMenuCardPhoto(
 	settings: DenteTelegramBotSettings,
-	cardKey: keyof DenteTelegramVisualCardUrls = "mainMenu",
+	cardKey: DenteTelegramVisualCardKey = "mainMenu",
 ): string | null {
 	return denteTelegramVisualCardUrlFor(settings, cardKey);
 }

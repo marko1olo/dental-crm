@@ -6,7 +6,7 @@ import {
 	Gauge,
 	Layers3,
 } from "lucide-react";
-import { humanizeMigrationText } from "../SettingsViewHelpers";
+import { humanizeMigrationText } from "../../SettingsViewHelpers";
 import type { DicomOhifBridgePanelProps, TextInputChangeEvent } from "./types";
 
 export function DicomOhifBridgePanel({

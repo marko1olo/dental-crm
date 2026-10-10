@@ -230,15 +230,15 @@ export function VisitDiaryModals({
 							printPatient || activePatient
 								? {
 										fullName: patientFullName,
-										birthDate: patientBirthDate,
-										medicalCardNumber: patientCardNumber,
+										birthDate: patientBirthDate ?? null,
+										medicalCardNumber: patientCardNumber ?? null,
 									}
 								: null
 						}
 						diary={diary}
 						doctorName={doctorName}
 						doctorSpecialty={doctorSpecialty}
-						clinicName={clinicName}
+						clinicName={clinicName ?? null}
 						onInsertToDiary={(diaryText) => {
 							setDiary((prev) => ({
 								...prev,

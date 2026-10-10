@@ -97,11 +97,11 @@ export const SelfCheckinConsentsSection: React.FC<SelfCheckinConsentsSectionProp
 					type="button"
 					className="w-full py-2.5 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
 					onClick={onSignAllConsentsWithPep}
-					title="Подписать все согласия онлайн в 1 клик"
+					title="Подписать все согласия онлайн"
 					data-testid="sign-all-consents-pep-btn"
 				>
 					<ShieldCheck size={16} />
-					<span>Подписать все согласия онлайн (в 1 клик)</span>
+					<span>Подписать все согласия онлайн</span>
 				</button>
 			</div>
 
@@ -179,7 +179,7 @@ export const SelfCheckinConsentsSection: React.FC<SelfCheckinConsentsSectionProp
 								data-testid="consent-sign-pep-single-btn"
 							>
 								<ShieldCheck size={18} />
-								<span>Подтвердить согласие (в 1 клик)</span>
+								<span>Подтвердить согласие</span>
 							</button>
 							<button
 								type="button"

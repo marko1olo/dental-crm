@@ -21,8 +21,10 @@ import {
 	Tag,
 	RotateCcw,
 	CheckCircle2,
-	Plus,
+	Layers,
+	Receipt,
 	ShoppingBag,
+	Plus,
 } from "lucide-react";
 import {
 	createCompositeIdempotencyKey,
@@ -338,6 +340,7 @@ export function CashboxView({
 			{/* Cash Shift Banner / Management Connected to Real Cashbox Endpoints */}
 			<section aria-label="Управление кассовой сменой">
 				<CashShiftWidget
+					compact={true}
 					initialIsOpen={isShiftOpen}
 					cashierName={cashierName}
 					cashierInn={cashierInn}
@@ -357,12 +360,12 @@ export function CashboxView({
 				<div className="cashbox-toolbar min-h-[36px] h-9 max-h-9 flex items-center justify-between gap-2 px-1 pb-2 border-b border-[var(--line)] mb-3 flex-nowrap overflow-hidden select-none">
 					<div className="flex items-center gap-2 min-w-0">
 						<Banknote className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
-						<h2 className="text-sm font-bold text-[var(--ink)] truncate">
+						<h2 className="text-sm font-bold text-[var(--ink)] truncate m-0">
 							Касса и чеки
 						</h2>
 					</div>
 					<div className="flex items-center gap-2 shrink-0">
-						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--ok-bg,rgba(16,185,129,0.1))] text-[var(--ok-fg,#10b981)] border border-[var(--ok-fg,rgba(16,185,129,0.2))] whitespace-nowrap">
+						<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--ok-bg,rgba(16,185,129,0.1))] text-[var(--ok-fg,#10b981)] border border-[var(--ok-fg,rgba(16,185,129,0.2))] whitespace-nowrap">
 							<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
 							<span>Касса: без барьеров</span>
 						</span>
@@ -370,12 +373,15 @@ export function CashboxView({
 				</div>
 
 				{/* Amount Entry & Quick Presets Row */}
-				<div className="mb-3 p-3 bg-[var(--paper-soft,#f8fafc)] rounded-lg border border-[var(--line)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-					<div className="flex-1 min-w-[200px]">
+				<div
+					className="mb-3 p-3 bg-[var(--paper-soft,#f8fafc)] rounded-lg border border-[var(--line)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"
+					style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}
+				>
+					<div className="flex-1 min-w-[220px]">
 						<label htmlFor="gross-amount-input" className="block text-xs font-semibold text-[var(--ink)] mb-1">
 							Сумма к расчету (брутто):
 						</label>
-						<div className="relative">
+						<div className="relative" style={{ position: "relative" }}>
 							<input
 								id="gross-amount-input"
 								type="number"
@@ -389,22 +395,34 @@ export function CashboxView({
 								placeholder="Введите сумму в рублях"
 								className="w-full text-base font-bold font-mono px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal,var(--brand-primary))]"
 							/>
-							<span className="absolute right-3 top-2 text-xs font-bold text-[var(--muted)]">₽</span>
+							<span className="absolute right-3 top-2 text-xs font-bold text-[var(--muted)]" style={{ position: "absolute", right: 12, top: 8 }}>₽</span>
 						</div>
 					</div>
 
 					{/* Fast Amount Preset Chips */}
-					<div className="flex items-center gap-1.5 flex-wrap">
+					<div className="flex items-center gap-2 flex-wrap" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
 						{[1000, 3000, 5000, 10000].map((preset) => (
 							<button
 								key={preset}
 								type="button"
 								onClick={() => handleAddAmountPreset(preset)}
-								className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 px-2.5 rounded-md text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer inline-flex items-center justify-center gap-0.5"
+								className="secondary-button text-xs font-semibold cursor-pointer inline-flex items-center justify-center gap-1"
+								style={{
+									height: 34,
+									padding: "0 12px",
+									borderRadius: 8,
+									border: "1px solid var(--line)",
+									background: "var(--paper)",
+									color: "var(--ink)",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: 4,
+									fontWeight: 600,
+								}}
 								title={`Добавить +${preset.toLocaleString("ru-RU")} ₽`}
 							>
-								<Plus className="w-3 h-3 text-[var(--teal,var(--brand-primary))]" />
-								<span>{preset.toLocaleString("ru-RU")}</span>
+								<Plus className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
+								<span>{preset.toLocaleString("ru-RU")} ₽</span>
 							</button>
 						))}
 
@@ -412,10 +430,22 @@ export function CashboxView({
 							<button
 								type="button"
 								onClick={() => setGrossAmountRub(0)}
-								className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 rounded-md text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer inline-flex items-center justify-center gap-1"
+								className="secondary-button text-xs font-semibold cursor-pointer inline-flex items-center justify-center gap-1"
+								style={{
+									height: 34,
+									padding: "0 12px",
+									borderRadius: 8,
+									border: "1px solid var(--line)",
+									background: "var(--paper)",
+									color: "var(--muted)",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: 4,
+									fontWeight: 600,
+								}}
 								title="Очистить сумму"
 							>
-								<RotateCcw className="w-3 h-3" />
+								<RotateCcw className="w-3.5 h-3.5" />
 								<span>Сброс</span>
 							</button>
 						)}
@@ -423,19 +453,28 @@ export function CashboxView({
 				</div>
 
 				{/* Doctor Discount Autonomy Row (Up to 100% without admin password, Mandates 8c, 8e) */}
-				<div className="mb-3 px-2.5 py-1 min-h-[36px] bg-[var(--paper-soft,#f8fafc)] rounded-lg border border-[var(--line)] flex items-center gap-2 flex-nowrap overflow-x-auto scrollbar-none select-none">
-					<div className="text-xs font-bold text-[var(--ink)] shrink-0 flex items-center gap-1.5 whitespace-nowrap">
-						<Tag className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-						<span>Скидки врача:</span>
-					</div>
-					<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-x-auto scrollbar-none flex-nowrap">
+				<div
+					className="mb-3 px-3 py-2 bg-[var(--paper-soft,#f8fafc)] rounded-lg border border-[var(--line)] flex items-center justify-between gap-2 flex-wrap select-none"
+					style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}
+				>
+					<div className="flex items-center gap-2 flex-wrap" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+						<div className="text-xs font-bold text-[var(--ink)] shrink-0 flex items-center gap-1.5 whitespace-nowrap" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+							<Tag className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
+							<span>Скидки врача:</span>
+						</div>
+
 						<button
 							type="button"
-							className={`h-7 px-2 sm:px-2.5 rounded-md text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-								isWarranty
-									? "bg-[var(--warning-fg,#b45309)] text-white shadow-xs"
-									: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft,#f1f5f9)]"
-							}`}
+							style={{
+								height: 30,
+								padding: "0 10px",
+								borderRadius: 8,
+								border: isWarranty ? "1px solid var(--teal, #0d9488)" : "1px solid var(--line)",
+								background: isWarranty ? "var(--teal, #0d9488)" : "var(--paper)",
+								color: isWarranty ? "#ffffff" : "var(--ink)",
+								fontWeight: 600,
+								fontSize: 12,
+							}}
 							onClick={() => {
 								setIsWarranty(!isWarranty);
 								setIsStaffColleague(false);
@@ -446,11 +485,16 @@ export function CashboxView({
 
 						<button
 							type="button"
-							className={`h-7 px-2 sm:px-2.5 rounded-md text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-								isStaffColleague
-									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-									: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft,#f1f5f9)]"
-							}`}
+							style={{
+								height: 30,
+								padding: "0 10px",
+								borderRadius: 8,
+								border: isStaffColleague ? "1px solid var(--teal, #0d9488)" : "1px solid var(--line)",
+								background: isStaffColleague ? "var(--teal, #0d9488)" : "var(--paper)",
+								color: isStaffColleague ? "#ffffff" : "var(--ink)",
+								fontWeight: 600,
+								fontSize: 12,
+							}}
 							onClick={() => {
 								setIsStaffColleague(!isStaffColleague);
 								setIsWarranty(false);
@@ -459,29 +503,46 @@ export function CashboxView({
 							100% Персонал
 						</button>
 
-						{[50, 20, 10].map((pct) => (
-							<button
-								key={pct}
-								type="button"
-								className={`h-7 px-2 sm:px-2.5 rounded-md text-xs font-semibold transition-all cursor-pointer shrink-0 ${
-									discountPercent === pct && !isWarranty && !isStaffColleague
-										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-										: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft,#f1f5f9)]"
-								}`}
-								onClick={() => {
-									setDiscountPercent(discountPercent === pct ? 0 : pct);
-									setIsWarranty(false);
-									setIsStaffColleague(false);
-								}}
-							>
-								{pct}%
-							</button>
-						))}
+						{[50, 20, 10].map((pct) => {
+							const active = discountPercent === pct && !isWarranty && !isStaffColleague;
+							return (
+								<button
+									key={pct}
+									type="button"
+									style={{
+										height: 30,
+										padding: "0 10px",
+										borderRadius: 8,
+										border: active ? "1px solid var(--teal, #0d9488)" : "1px solid var(--line)",
+										background: active ? "var(--teal, #0d9488)" : "var(--paper)",
+										color: active ? "#ffffff" : "var(--ink)",
+										fontWeight: 600,
+										fontSize: 12,
+									}}
+									onClick={() => {
+										setDiscountPercent(discountPercent === pct ? 0 : pct);
+										setIsWarranty(false);
+										setIsStaffColleague(false);
+									}}
+								>
+									{pct}%
+								</button>
+							);
+						})}
 
 						{(isWarranty || isStaffColleague || discountPercent > 0) && (
 							<button
 								type="button"
-								className="text-xs text-[var(--muted)] hover:text-rose-600 dark:hover:text-rose-400 underline ml-auto whitespace-nowrap cursor-pointer shrink-0"
+								style={{
+									height: 30,
+									padding: "0 8px",
+									borderRadius: 8,
+									border: "none",
+									background: "transparent",
+									color: "var(--muted)",
+									textDecoration: "underline",
+									fontSize: 12,
+								}}
 								onClick={() => {
 									setIsWarranty(false);
 									setIsStaffColleague(false);
@@ -498,41 +559,68 @@ export function CashboxView({
 						<button
 							type="button"
 							onClick={() => setIsRetailModalOpen(true)}
-							className="h-7 px-2.5 rounded-md text-xs font-semibold bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-600/30 hover:bg-teal-100 dark:hover:bg-teal-900/50 cursor-pointer inline-flex items-center gap-1.5 shrink-0 transition-colors"
+							style={{
+								height: 32,
+								padding: "0 12px",
+								borderRadius: 8,
+								border: "1px solid var(--line)",
+								background: "var(--paper)",
+								color: "var(--ink)",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: 6,
+								fontWeight: 600,
+								fontSize: 12,
+							}}
 							data-testid="btn-open-retail-showcase"
 							title="Витрина сопутствующих товаров ресепшена (Curaprox, Marvis, подарочные сертификаты)"
 						>
-							<ShoppingBag className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+							<ShoppingBag className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
 							<span>Витрина товаров</span>
 						</button>
 					</div>
 				</div>
 
 				{/* Payer Type & 54-FZ INN Logic */}
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+				<div
+					className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3"
+					style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12, marginBottom: 12 }}
+				>
 					<div>
 						<label className="block text-xs font-medium text-[var(--muted)] mb-1">
 							Тип плательщика
 						</label>
-						<div className="flex gap-2">
+						<div className="flex gap-2" style={{ display: "flex", gap: 8 }}>
 							<button
 								type="button"
-								className={`flex-1 min-h-[44px] sm:min-h-0 py-1.5 px-3 rounded-lg text-xs font-semibold border transition-colors cursor-pointer inline-flex items-center justify-center ${
-									payerType === "physical_person"
-										? "!bg-teal-600 !text-white !border-teal-500 shadow-xs"
-										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-								}`}
+								style={{
+									flex: 1,
+									height: 36,
+									padding: "0 12px",
+									borderRadius: 8,
+									border: payerType === "physical_person" ? "1px solid var(--teal, #0d9488)" : "1px solid var(--line)",
+									background: payerType === "physical_person" ? "var(--teal, #0d9488)" : "var(--paper)",
+									color: payerType === "physical_person" ? "#ffffff" : "var(--ink)",
+									fontWeight: 600,
+									fontSize: 12,
+								}}
 								onClick={() => setPayerType("physical_person")}
 							>
 								Физическое лицо (без ИНН)
 							</button>
 							<button
 								type="button"
-								className={`flex-1 min-h-[44px] sm:min-h-0 py-1.5 px-3 rounded-lg text-xs font-semibold border transition-colors cursor-pointer inline-flex items-center justify-center ${
-									payerType === "legal_entity"
-										? "!bg-teal-600 !text-white !border-teal-500 shadow-xs"
-										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-								}`}
+								style={{
+									flex: 1,
+									height: 36,
+									padding: "0 12px",
+									borderRadius: 8,
+									border: payerType === "legal_entity" ? "1px solid var(--teal, #0d9488)" : "1px solid var(--line)",
+									background: payerType === "legal_entity" ? "var(--teal, #0d9488)" : "var(--paper)",
+									color: payerType === "legal_entity" ? "#ffffff" : "var(--ink)",
+									fontWeight: 600,
+									fontSize: 12,
+								}}
 								onClick={() => setPayerType("legal_entity")}
 							>
 								Юрлицо (ИНН 10 цифр)
@@ -555,6 +643,7 @@ export function CashboxView({
 									: "10 или 12 цифр"
 							}
 							className="w-full text-xs px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal,var(--brand-primary))]"
+							style={{ height: 36 }}
 						/>
 						{innValidation.errorRu && (
 							<p className="text-[11px] text-[var(--warning-fg)] mt-1">{innValidation.errorRu}</p>
@@ -564,15 +653,18 @@ export function CashboxView({
 
 				{/* Financial Summary & 1-Click Tenders */}
 				<div className="bg-[var(--paper-soft,#f8fafc)] border border-[var(--line)] rounded-xl p-3">
-					<div className="flex items-center justify-between mb-2.5">
-						<span className="text-xs text-[var(--muted)] font-medium">Итого к оплате:</span>
-						<span className="text-lg font-black font-mono text-[var(--ink)]">
+					<div className="flex items-center justify-between mb-2.5" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+						<span className="text-xs text-[var(--muted)] font-semibold uppercase">Итого к оплате:</span>
+						<span className="text-xl font-black font-mono text-[var(--ink)]">
 							{checkoutResult.totalNetRub.toLocaleString("ru-RU")} ₽
 						</span>
 					</div>
 
 					{checkoutResult.isZeroDue ? (
-						<div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-2.5 rounded-lg bg-[var(--ok-bg,rgba(16,185,129,0.1))] border border-[var(--ok-fg,rgba(16,185,129,0.2))]">
+						<div
+							className="flex flex-col sm:flex-row items-center justify-between gap-3 p-2.5 rounded-lg bg-[var(--ok-bg,rgba(16,185,129,0.1))] border border-[var(--ok-fg,rgba(16,185,129,0.2))] mb-2"
+							style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}
+						>
 							<div className="text-xs text-[var(--ok-fg,#10b981)] font-medium">
 								{checkoutResult.statusBannerText}
 							</div>
@@ -580,62 +672,181 @@ export function CashboxView({
 								type="button"
 								onClick={handleProcessZeroDiscountCheckout}
 								disabled={isSubmittingZeroReceipt}
-								className="w-full sm:w-auto px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+								style={{
+									height: 36,
+									padding: "0 16px",
+									borderRadius: 8,
+									border: "1px solid var(--teal, #0d9488)",
+									background: "var(--teal, #0d9488)",
+									color: "#ffffff",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: 6,
+									fontWeight: 700,
+									fontSize: 12,
+								}}
 							>
 								<CheckCircle2 className="w-4 h-4" />
 								<span>{isSubmittingZeroReceipt ? "Оформление..." : "Оформить чек 0 ₽"}</span>
 							</button>
 						</div>
-					) : (
-						<div className="flex flex-wrap gap-2">
-							<button
-								type="button"
-								className="flex-1 min-w-[120px] min-h-[44px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[var(--teal,var(--brand-primary))] text-white text-xs font-semibold shadow-xs hover:opacity-95 transition-opacity cursor-pointer"
-								onClick={() => {
-									handleAllocateAll("card");
-									handleOpenPaymentWithMethod("card_terminal");
-								}}
-							>
-								<CreditCard className="w-3.5 h-3.5" />
-								Всё картой
-							</button>
+					) : null}
 
-							<button
-								type="button"
-								className="flex-1 min-w-[120px] min-h-[44px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white text-xs font-semibold shadow-xs hover:opacity-95 transition-opacity cursor-pointer"
-								onClick={() => {
-									handleAllocateAll("cash");
-									handleOpenPaymentWithMethod("cash");
-								}}
-							>
-								<Banknote className="w-3.5 h-3.5" />
-								Всё наличными
-							</button>
+					<div
+						className="flex flex-wrap gap-2"
+						style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}
+					>
+						{!checkoutResult.isZeroDue && (
+							<>
+								<button
+									type="button"
+									style={{
+										height: 40,
+										padding: "0 12px",
+										borderRadius: 8,
+										border: "1px solid var(--teal, #0d9488)",
+										background: "var(--teal, #0d9488)",
+										color: "#ffffff",
+										display: "inline-flex",
+										alignItems: "center",
+										justifyContent: "center",
+										gap: 6,
+										fontWeight: 700,
+										fontSize: 12,
+									}}
+									onClick={() => {
+										handleAllocateAll("card");
+										handleOpenPaymentWithMethod("card_terminal");
+									}}
+								>
+									<CreditCard className="w-4 h-4 shrink-0" />
+									<span>Всё картой</span>
+								</button>
 
-							<button
-								type="button"
-								className="flex-1 min-w-[120px] min-h-[44px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white text-xs font-semibold shadow-xs hover:opacity-95 transition-opacity cursor-pointer"
-								onClick={() => {
-									handleAllocateAll("sbp");
-									handleOpenPaymentWithMethod("sbp_qr");
-								}}
-							>
-								<QrCode className="w-3.5 h-3.5" />
-								Всё по СБП
-							</button>
+								<button
+									type="button"
+									style={{
+										height: 40,
+										padding: "0 12px",
+										borderRadius: 8,
+										border: "1px solid var(--line)",
+										background: "var(--paper)",
+										color: "var(--ink)",
+										display: "inline-flex",
+										alignItems: "center",
+										justifyContent: "center",
+										gap: 6,
+										fontWeight: 600,
+										fontSize: 12,
+									}}
+									onClick={() => {
+										handleAllocateAll("cash");
+										handleOpenPaymentWithMethod("cash");
+									}}
+								>
+									<Banknote className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
+									<span>Всё наличными</span>
+								</button>
 
-							<button
-								type="button"
-								className="flex-1 min-w-[140px] min-h-[44px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-								onClick={() => handleOpenPaymentWithMethod("split")}
-								data-testid="btn-open-payment-modal"
-								title="Универсальное окно сплит-оплаты и терминала"
-							>
-								<Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-								<span>Сплит / Терминал...</span>
-							</button>
-						</div>
-					)}
+								<button
+									type="button"
+									style={{
+										height: 40,
+										padding: "0 12px",
+										borderRadius: 8,
+										border: "1px solid var(--line)",
+										background: "var(--paper)",
+										color: "var(--ink)",
+										display: "inline-flex",
+										alignItems: "center",
+										justifyContent: "center",
+										gap: 6,
+										fontWeight: 600,
+										fontSize: 12,
+									}}
+									onClick={() => {
+										handleAllocateAll("sbp");
+										handleOpenPaymentWithMethod("sbp_qr");
+									}}
+								>
+									<QrCode className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
+									<span>Всё по СБП</span>
+								</button>
+							</>
+						)}
+
+						<button
+							type="button"
+							style={{
+								height: 40,
+								padding: "0 12px",
+								borderRadius: 8,
+								border: "1px solid var(--line)",
+								background: "var(--paper)",
+								color: "var(--ink)",
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
+								gap: 6,
+								fontWeight: 600,
+								fontSize: 12,
+							}}
+							onClick={() => handleOpenPaymentWithMethod("card_terminal")}
+							data-testid="btn-open-fast-checkout-modal"
+							title="Оформление оплаты и чека 54-ФЗ"
+						>
+							<Receipt className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
+							<span>Чек 54-ФЗ</span>
+						</button>
+
+						<button
+							type="button"
+							style={{
+								height: 40,
+								padding: "0 12px",
+								borderRadius: 8,
+								border: "1px solid var(--line)",
+								background: "var(--paper)",
+								color: "var(--ink)",
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
+								gap: 6,
+								fontWeight: 600,
+								fontSize: 12,
+							}}
+							onClick={() => handleOpenPaymentWithMethod("split")}
+							data-testid="btn-open-split-modal"
+							title="Комбинированная сплит-оплата (несколько способов)"
+						>
+							<Layers className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
+							<span>Сплит-оплата</span>
+						</button>
+
+						<button
+							type="button"
+							style={{
+								height: 40,
+								padding: "0 12px",
+								borderRadius: 8,
+								border: "1px solid var(--line)",
+								background: "var(--paper)",
+								color: "var(--ink)",
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
+								gap: 6,
+								fontWeight: 600,
+								fontSize: 12,
+							}}
+							onClick={() => handleOpenPaymentWithMethod("split")}
+							data-testid="btn-open-payment-modal"
+							title="Универсальное окно сплит-оплаты и терминала"
+						>
+							<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
+							<span>Терминал / Сплит</span>
+						</button>
+					</div>
 				</div>
 			</div>
 

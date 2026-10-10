@@ -91,7 +91,7 @@ export function IncomingCallBadgeMoreMenu({
 					disabled={isCapturingLead || currentCall?.isLeadCaptured}
 					className="w-full text-left px-2.5 py-2 rounded-lg bg-[var(--teal-surface)] hover:opacity-90 text-[var(--teal)] font-bold flex items-center gap-2 transition-colors cursor-pointer border border-[var(--teal-soft)] mb-1"
 					data-testid="badge-action-capture-lead"
-					title={`1-Клик захват в лиды с авторазметкой канала (${callAttribution.channelLabel})`}
+					title={`Захват в лиды с авторазметкой канала (${callAttribution.channelLabel})`}
 				>
 					<UserPlus size={14} className="text-[var(--teal)] shrink-0" />
 					<span className="truncate">
@@ -260,7 +260,7 @@ export function IncomingCallBadgeMoreMenu({
 					}}
 					className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-medium flex items-center gap-2 transition-colors cursor-pointer"
 					data-testid="badge-action-callback-15m"
-					title="Перезвонить через 15 минут (фиксация исхода в 1 клик)"
+					title="Перезвонить через 15 минут (быстрая фиксация)"
 				>
 					<Clock size={13} className="text-amber-500" />
 					<span>Перезвонить через 15 мин</span>

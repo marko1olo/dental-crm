@@ -44,26 +44,47 @@ export function ToothClinicalTestsSection({
 	};
 
 	const handleSaveToEMK = () => {
+		const currentTests: ToothClinicalTestsState = hasAnyTest
+			? tests
+			: {
+					eodMicroAmperes: 4,
+					percussion: "negative",
+					coldTest: "norm",
+					pocketDepthMm: 2,
+					mobilityGrade: "0",
+					palpation: "painless",
+			  };
+
+		if (!hasAnyTest) {
+			setTests(currentTests);
+		}
+
 		const parts: string[] = [`Зуб ${code} (клинические тесты):`];
 
-		if (tests.percussion === "negative") parts.push("перкуссия отриц.");
-		else if (tests.percussion === "positive_vertical") parts.push("перкуссия резкая вертик.");
-		else if (tests.percussion === "positive_horizontal") parts.push("перкуссия болезненная горизонт.");
+		if (currentTests.percussion === "negative") parts.push("перкуссия отриц.");
+		else if (currentTests.percussion === "positive_vertical") parts.push("перкуссия резкая вертик.");
+		else if (currentTests.percussion === "positive_horizontal") parts.push("перкуссия болезненная горизонт.");
 
-		if (tests.coldTest === "norm") parts.push("термопроба норма (кратковременная)");
-		else if (tests.coldTest === "hypersensitive") parts.push("термопроба резко положительная");
-		else if (tests.coldTest === "delayed_pain") parts.push("термопроба длительная ноющая");
-		else if (tests.coldTest === "negative") parts.push("термопроба отрицательная (нет реакции)");
+		if (currentTests.coldTest === "norm") parts.push("термопроба норма (кратковременная)");
+		else if (currentTests.coldTest === "hypersensitive") parts.push("термопроба резко положительная");
+		else if (currentTests.coldTest === "delayed_pain") parts.push("термопроба длительная ноющая");
+		else if (currentTests.coldTest === "negative") parts.push("термопроба отрицательная (нет реакции)");
 
-		if (tests.eodMicroAmperes != null) parts.push(`ЭОД ${tests.eodMicroAmperes} мкА`);
-		if (tests.pocketDepthMm != null) parts.push(`зубодесневой карман ${tests.pocketDepthMm} мм`);
-		if (tests.mobilityGrade != null) parts.push(`подвижность ${tests.mobilityGrade} ст.`);
-		if (tests.palpation === "painless") parts.push("пальпация по переходной складке безболезненная");
-		else if (tests.palpation === "painful") parts.push("пальпация переходной складки болезненная");
+		if (currentTests.eodMicroAmperes != null) parts.push(`ЭОД ${currentTests.eodMicroAmperes} мкА`);
+		if (currentTests.pocketDepthMm != null) parts.push(`зубодесневой карман ${currentTests.pocketDepthMm} мм`);
+		if (currentTests.mobilityGrade != null) parts.push(`подвижность ${currentTests.mobilityGrade} ст.`);
+		if (currentTests.palpation === "painless") parts.push("пальпация по переходной складке безболезненная");
+		else if (currentTests.palpation === "painful") parts.push("пальпация переходной складки болезненная");
 
 		const textToAppend = parts.join(" ");
 		appendToEMKField("objectiveStatus", textToAppend);
-		showToast(`Результаты тестов зуба ${code} добавлены в статус осмотра ЭМК`, "success", 2500);
+		showToast(
+			hasAnyTest
+				? `Результаты тестов зуба ${code} добавлены в статус осмотра ЭМК`
+				: `Зуб ${code}: установлена физиологическая норма тестов и записана в ЭМК`,
+			"success",
+			2500,
+		);
 	};
 
 	const hasAnyTest =
@@ -117,20 +138,15 @@ export function ToothClinicalTestsSection({
 						<button
 							type="button"
 							onClick={handleSetNorm}
-							className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] text-[var(--text)] text-[11px] font-medium transition-colors"
+							className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--line-strong,var(--line))] bg-[var(--paper)] hover:border-[var(--teal)] text-[var(--text)] text-xs font-semibold transition-colors shadow-2xs"
 						>
 							<Check className="w-3.5 h-3.5 text-emerald-500" />
-							<span>✓ Норма в 1 клик</span>
+							<span>✓ Норма</span>
 						</button>
 						<button
 							type="button"
 							onClick={handleSaveToEMK}
-							disabled={!hasAnyTest}
-							className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-medium transition-colors ml-auto ${
-								hasAnyTest
-									? "bg-[var(--teal)] text-white hover:opacity-90"
-									: "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] opacity-50 cursor-not-allowed"
-							}`}
+							className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ml-auto bg-[var(--teal)] text-white hover:opacity-90 shadow-2xs cursor-pointer"
 						>
 							<FileText className="w-3.5 h-3.5" />
 							<span>Записать в дневник ЭМК</span>

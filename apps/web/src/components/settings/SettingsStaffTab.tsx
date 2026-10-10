@@ -317,17 +317,15 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 			aria-label="Управление персоналом"
 			data-testid="settings-staff-tab"
 		>
-			<div className="import-copy flex flex-col gap-1 mb-4">
-				<h3 className="text-lg font-bold text-[var(--ink)]">Управление персоналом</h3>
-				<p className="text-xs text-[var(--muted)]">
+			<div className="flex flex-col gap-1 mb-4">
+				<h3 className="text-lg font-bold text-[var(--ink)] m-0">Управление персоналом</h3>
+				<p className="text-xs text-[var(--muted)] m-0">
 					Добавляйте новых врачей, ассистентов и администраторов. Устанавливайте
 					PIN-коды для доступа к планшету клиники.
 				</p>
 			</div>
 
 			<div className="settings-grid">
-				<StaffCommissionsPanel />
-				<StaffAuthorityPanel />
 				{/* Список сотрудников */}
 				<article className="settings-card col-span-full form-span-2 w-full" data-testid="active-staff-list-card">
 					<div className="settings-card-header flex items-center justify-between gap-2">
@@ -667,6 +665,8 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 						</div>
 					</form>
 				</article>
+				<StaffCommissionsPanel />
+				<StaffAuthorityPanel />
 			</div>
 
 			{selectedStaffForCard && (

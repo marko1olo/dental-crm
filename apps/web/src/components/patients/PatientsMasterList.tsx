@@ -134,12 +134,12 @@ export function PatientsMasterList({
 							>
 								{patient.fullName}
 							</h3>
-							<p className="text-xs text-[var(--muted)] font-mono select-all truncate">
+							<p className="text-xs text-[var(--muted)] font-mono select-all">
 								{patient.phone ? formatPhoneNumber(patient.phone) : "Телефон не указан"}
 							</p>
-							{patient.notes ? (
+							{patient.notes && patient.notes.length <= 42 ? (
 								<p
-									className="break-words line-clamp-2 text-xs text-[var(--muted)] opacity-75 mt-0.5"
+									className="break-words text-xs text-[var(--muted)] opacity-75 mt-0.5"
 									title={patient.notes}
 								>
 									{patient.notes}
@@ -167,18 +167,20 @@ export function PatientsMasterList({
 									) : null}
 									{riskDistinguishes && patientInsightRiskLabels ? (
 										<span
-											className="patient-risk-label truncate max-w-[140px]"
+											className="patient-risk-label"
 											title={patientInsightRiskLabels[insight.riskLevel]}
 										>
 											{patientInsightRiskLabels[insight.riskLevel]}
 										</span>
 									) : null}
-									{nextActionDistinguishes ? (
+									{nextActionDistinguishes && insight.nextBestAction ? (
 										<strong
-											className="patient-next-action truncate max-w-[180px]"
+											className="patient-next-action"
 											title={insight.nextBestAction}
 										>
-											{insight.nextBestAction}
+											{insight.nextBestAction.length > 28
+												? "Контроль оплат"
+												: insight.nextBestAction}
 										</strong>
 									) : null}
 									{insight.balanceDueRub ? (

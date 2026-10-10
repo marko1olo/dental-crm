@@ -14,7 +14,7 @@ import {
 	dispatchPediatricSoapProtocol,
 } from "../pediatricDentitionEngine";
 import type { ToothData } from "../ToothChart";
-import { showToast } from "../GlobalToast";
+import { showToast } from "../../GlobalToast";
 import {
 	type ModalTab,
 	UPPER_PRIMARY_TEETH,
@@ -158,7 +158,7 @@ export function usePediatricModalLogic({
 			treatmentDescription: norm.treatmentDescriptionRu,
 		});
 		showToast(
-			"1-клик: Применена норма временного прикуса (3 года: 51–85 интактны, кариеса нет, 0% резорбция). Протокол перенесен в дневник!",
+			"Применена норма временного прикуса (3 года: 51–85 интактны, кариеса нет, 0% резорбция). Протокол перенесен в дневник!",
 			"success",
 		);
 	};
@@ -182,7 +182,7 @@ export function usePediatricModalLogic({
 			treatmentDescription: norm.treatmentDescriptionRu,
 		});
 		showToast(
-			"1-клик: Применена норма прорезывания первых моляров (6 лет: 16, 26, 36, 46 + 20 молочных). Протокол перенесен в дневник!",
+			"Применена норма прорезывания первых моляров (6 лет: 16, 26, 36, 46 + 20 молочных). Протокол перенесен в дневник!",
 			"success",
 		);
 	};
@@ -206,7 +206,7 @@ export function usePediatricModalLogic({
 			treatmentDescription: norm.treatmentDescriptionRu,
 		});
 		showToast(
-			"1-клик: Применена норма сменного прикуса (9 лет: резцы 11..42, 1-е моляры 16..46, молочные 53..85). Протокол перенесен в дневник!",
+			"Применена норма сменного прикуса (9 лет: резцы 11..42, 1-е моляры 16..46, молочные 53..85). Протокол перенесен в дневник!",
 			"success",
 		);
 	};
@@ -230,7 +230,7 @@ export function usePediatricModalLogic({
 			treatmentDescription: norm.treatmentDescriptionRu,
 		});
 		showToast(
-			"1-клик: Применена норма постоянного прикуса (12 лет: 28 зубов 17..27, 47..37). Протокол перенесен в дневник!",
+			"Применена норма постоянного прикуса (12 лет: 28 зубов 17..27, 47..37). Протокол перенесен в дневник!",
 			"success",
 		);
 	};
@@ -243,7 +243,7 @@ export function usePediatricModalLogic({
 			treatmentDescription: preset.treatmentDescriptionRu,
 		});
 		showToast(
-			`1-клик: Протокол ${preset.labelRu} перенесен в медицинскую карту!`,
+			`Протокол ${preset.labelRu} перенесен в медицинскую карту!`,
 			"success",
 		);
 	};

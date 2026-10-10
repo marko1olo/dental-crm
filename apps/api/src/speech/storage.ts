@@ -23,4 +23,6 @@ export {
 export * from "./audioStorage/index.js";
 
 // Идемпотентная фоновая загрузка расшифровок при старте модуля
-void ensureSpeechTranscriptionChunksRestored();
+void ensureSpeechTranscriptionChunksRestored().catch((err) => {
+	console.error("[SpeechStorage] Failed to asynchronously restore chunks on module load:", err);
+});

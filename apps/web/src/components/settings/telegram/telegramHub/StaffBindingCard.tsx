@@ -241,16 +241,16 @@ export function StaffBindingCard({
 
 					{accountAuthMode === "phone" && (
 						<PhoneAuthForm
-							clinicId={clinicId}
-							userId={userId}
+							clinicId={clinicId || ""}
+							userId={userId || ""}
 							onSuccess={onRefreshStatus}
 						/>
 					)}
 
 					{accountAuthMode === "qr" && (
 						<QrAuthCard
-							clinicId={clinicId}
-							userId={userId}
+							clinicId={clinicId || ""}
+							userId={userId || ""}
 							onSuccess={onRefreshStatus}
 						/>
 					)}

@@ -6,12 +6,14 @@ import {
 	Receipt,
 	ShieldCheck,
 	Users,
+	Wallet,
 } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
 import { useAppStore } from "../../store/appStore";
 import { formatOmsPolicy } from "../../utils/inputSanitation";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
+import { FamilyWalletModal } from "../patient/FamilyWalletModal";
 
 export interface PatientFamilyAndInsuranceWidgetProps {
 	readonly patient: Patient;
@@ -23,12 +25,17 @@ export interface PatientFamilyAndInsuranceWidgetProps {
 export interface FamilyGroupData {
 	id: string;
 	name: string;
-	sharedBalanceRub: number;
+	balance?: number | string;
+	sharedBalanceRub?: number;
+	headPatientId?: string | null;
 	members: Array<{
-		patientId: string;
-		patientName: string;
-		role: string;
-		individualBalanceRub: number;
+		id?: string;
+		patientId?: string;
+		fullName?: string;
+		patientName?: string;
+		phone?: string | null;
+		role?: string;
+		individualBalanceRub?: number;
 	}>;
 }
 
@@ -42,6 +49,7 @@ export function PatientFamilyAndInsuranceWidget({
 	const [isLoadingFamily, setIsLoadingFamily] = useState(false);
 	const [isEditingPolicy, setIsEditingPolicy] = useState(false);
 	const [localPolicy, setLocalPolicy] = useState(insurancePolicyNumber || "");
+	const [isFamilyWalletModalOpen, setIsFamilyWalletModalOpen] = useState(false);
 
 	useEffect(() => {
 		setLocalPolicy(insurancePolicyNumber || "");
@@ -138,7 +146,7 @@ export function PatientFamilyAndInsuranceWidget({
 						</span>
 						{familyData ? (
 							<span className="font-mono font-bold text-xs text-indigo-700 dark:text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded">
-								Баланс: {familyData.sharedBalanceRub?.toLocaleString("ru-RU") ?? 0} ₽
+								Баланс: {Number(familyData.balance ?? familyData.sharedBalanceRub ?? 0).toLocaleString("ru-RU")} ₽
 							</span>
 						) : (
 							<span className="text-[11px] text-[var(--muted)]">
@@ -160,6 +168,15 @@ export function PatientFamilyAndInsuranceWidget({
 							Пациент обслуживается с индивидуальным балансом. При объединении с родственниками доступен единый семейный кошелёк.
 						</p>
 					)}
+					<button
+						type="button"
+						data-testid="widget-open-family-wallet-btn"
+						onClick={() => setIsFamilyWalletModalOpen(true)}
+						className="mt-1 min-h-[44px] sm:min-h-[32px] h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+					>
+						<Wallet size={13} className="text-[var(--teal)] shrink-0" />
+						<span>Управление семейным кошельком</span>
+					</button>
 				</div>
 
 				{/* Insurance Policy DMS / OMS Section */}
@@ -224,6 +241,31 @@ export function PatientFamilyAndInsuranceWidget({
 					</p>
 				</div>
 			</div>
+
+			<FamilyWalletModal
+				isOpen={isFamilyWalletModalOpen}
+				onClose={() => setIsFamilyWalletModalOpen(false)}
+				patientId={patient?.id}
+				patientName={patient?.fullName}
+				familyData={
+					familyData
+						? {
+								id: familyData.id,
+								name: familyData.name,
+								balance: familyData.balance ?? familyData.sharedBalanceRub ?? 0,
+								headPatientId: familyData.headPatientId,
+								members: familyData.members?.map((m) => ({
+									id: m.id || m.patientId || "",
+									fullName: m.fullName || m.patientName || "Пациент",
+									phone: m.phone,
+									personalBalanceRub: m.individualBalanceRub,
+									roleRu: m.role,
+								})),
+							}
+						: undefined
+				}
+				onFamilyDataChanged={loadFamily}
+			/>
 		</div>
 	);
 }

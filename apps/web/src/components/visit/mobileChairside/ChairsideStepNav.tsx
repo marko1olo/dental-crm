@@ -23,13 +23,23 @@ export const ChairsideStepNav: React.FC<ChairsideStepNavProps> = ({
   billingItemsCount,
   testId = "mobile-chairside-workspace",
 }) => {
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!scrollRef.current) return;
+    const activeEl = scrollRef.current.querySelector<HTMLElement>(".mobile-chairside-step-chip.is-active");
+    if (activeEl) {
+      activeEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+    }
+  }, [currentStep]);
+
   return (
     <nav
       className="mobile-chairside-steps-container"
       aria-label="Этапы клинического приёма"
       data-testid={`${testId}-steps-nav`}
     >
-      <div className="mobile-chairside-steps-scroll">
+      <div className="mobile-chairside-steps-scroll" ref={scrollRef}>
         {CHAIRSIDE_STEP_ITEMS.map((step) => {
           const isActive = currentStep === step.id;
           const isCompleted =

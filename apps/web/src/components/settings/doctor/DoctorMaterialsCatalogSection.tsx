@@ -144,7 +144,7 @@ export function DoctorMaterialsCatalogSection({ className = "" }: DoctorMaterial
 						<span>Реестр клинических материалов (90% рынка РФ/СНГ) и изоляция</span>
 					</label>
 					<p className="m-0 text-[11px] text-[var(--muted)]">
-						1-клик выбор любимого материала с автоматическим подтягиванием в протокол медицинской карты
+						Выбор основного материала с автоматической подстановкой в протокол медицинской карты
 					</p>
 				</div>
 				{/* Поиск материала — Canonical Dente Search Wrap */}

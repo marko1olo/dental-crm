@@ -622,6 +622,8 @@ export function ProcedureMaterialDeductionModal({
 
 						{summary.hasDeficit && (
 							<div
+								className="inventory-deficit-badge"
+								data-testid="inventory-deficit-badge"
 								style={{
 									display: "inline-flex",
 									alignItems: "center",
@@ -710,7 +712,7 @@ export function ProcedureMaterialDeductionModal({
 							{isDeducting
 								? "Списание..."
 								: summary.hasDeficit
-									? `Списать (с дефицитом: ${summary.criticalCount} поз.)`
+									? `Списать (мягкий овердрафт: ${summary.criticalCount} поз.)`
 									: "Списать со склада"}
 						</button>
 					</div>

@@ -646,14 +646,14 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 							onClick={handleLockAllPrices}
 							className="px-2.5 py-1 rounded-md bg-[var(--paper-strong)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] font-medium transition-colors cursor-pointer"
 						>
-							1-Клик Зафиксировать цены плана
+							Зафиксировать цены плана
 						</button>
 						<button
 							type="button"
 							onClick={handleUpdateAllToCurrent}
 							className="px-2.5 py-1 rounded-md bg-[var(--paper-strong)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] font-medium transition-colors cursor-pointer"
 						>
-							1-Клик Актуальный прайс
+							Актуальный прайс
 						</button>
 					</div>
 				</div>

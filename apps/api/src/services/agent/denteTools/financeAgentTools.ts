@@ -15,6 +15,7 @@ import { checkWarehouseSuppliesTool, checkWarehouseSuppliesSchema, type CheckWar
 import {
 	calculate804nEstimateSchema,
 	type Calculate804nEstimateResult,
+	type EstimateLineItem,
 } from "./types.js";
 import { getDailyScheduleIntelligenceTool, getDoctorShiftsAndChairsTool } from "../tools/crmOperationalScheduleTools.js";
 import { getClinicOrDoctorRevenueTool, getPatientFamilyDepositAndDebtTool } from "../tools/crmFinancialIntelligenceTools.js";

@@ -28,7 +28,7 @@ export function PatientCoreEditorForm({
 	updatePatientCoreDraft,
 }: PatientCoreEditorFormProps) {
 	return (
-		<div className="clinic-profile-form-grid patient-core-form-grid">
+		<div className="patient-core-form-grid">
 			<label>
 				ФИО пациента
 				<input

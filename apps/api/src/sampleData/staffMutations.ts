@@ -9,14 +9,14 @@ import { recordAuditEvent } from "./audit.js";
 import type {
 	CreateStaffMemberInput,
 	StaffMember,
-	UpdateStaffMemberProfileInput,
 	UpdateStaffWorkingHoursInput,
 } from "@dental/shared";
+
 import { randomUUID } from "node:crypto";
 import { normalizeStaffWorkingHours, staffMembers, permissionsForRole } from "./staff.js";
 import { assertStaffWorkingHoursCoverExistingAppointments } from "./scheduleValidation.js";
 import { persistMutableState } from "./stateNotifier.js";
-import { nullableTrimmed } from "./types.js";
+import { nullableTrimmed, type UpdateStaffMemberProfileInput } from "./types.js";
 
 export function createStaffMember(input: CreateStaffMemberInput): StaffMember {
 	const createdAt = new Date().toISOString();

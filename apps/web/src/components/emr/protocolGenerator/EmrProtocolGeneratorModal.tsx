@@ -244,7 +244,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 									</h2>
 									<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#059669)] border border-[var(--ok-fg,#059669)]/30">
 										<ShieldCheck className="w-3.5 h-3.5" />
-										1-Click СтАР
+										Стандарты СтАР
 									</span>
 								</div>
 								<p className="text-xs text-[var(--muted,#64748b)]">
@@ -295,7 +295,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 							<div className="space-y-2">
 								<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
 									<Zap className="w-4 h-4 text-amber-500" />
-									1. Стандартные 1-Click пресеты по МКБ-10
+									1. Клинические пресеты по МКБ-10
 								</label>
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 									{CORE_1CLICK_PRESETS.map((preset) => {

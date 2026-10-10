@@ -448,21 +448,29 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 				</div>
 			</div>
 
-			{/* Actions Bottom: Sticky Fixed Footer (Miller's Law: <= 2 Action Buttons) */}
-			<div className="sticky bottom-0 bg-[var(--paper-soft,var(--paper,#ffffff))] border-t border-[var(--line,var(--border,#cbd5e1))] p-3 -mx-3.5 sm:-mx-4 -mb-3.5 sm:-mb-4 rounded-b-2xl mt-auto z-10 space-y-1.5 shadow-xs shrink-0">
-				<button
-					type="button"
-					onClick={(e) => onSignClick(e, tier)}
-					className={`w-full min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center justify-center gap-1.5 px-3 rounded-lg text-[13px] font-semibold shadow-xs cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-[0.99] ${
-						isSelected
-							? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-emerald-600/20"
-							: "bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))]"
-					}`}
-					data-testid={`approve-tier-btn-${tier.tierId}`}
-				>
-					<PenTool size={14} />
-					<span>Утвердить и подписать план</span>
-				</button>
+			{/* Actions Bottom: Sticky Footer on Desktop; in-flow Secondary Actions on Mobile */}
+			<div
+				className={
+					isMobile
+						? "mt-3 pt-2.5 border-t border-[var(--line-subtle)] space-y-1.5 shrink-0"
+						: "sticky bottom-0 bg-[var(--paper-soft,var(--paper,#ffffff))] border-t border-[var(--line,var(--border,#cbd5e1))] p-3 -mx-3.5 sm:-mx-4 -mb-3.5 sm:-mb-4 rounded-b-2xl mt-auto z-10 space-y-1.5 shadow-xs shrink-0"
+				}
+			>
+				{!isMobile && (
+					<button
+						type="button"
+						onClick={(e) => onSignClick(e, tier)}
+						className={`w-full min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center justify-center gap-1.5 px-3 rounded-lg text-[13px] font-semibold shadow-xs cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-[0.99] ${
+							isSelected
+								? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-emerald-600/20"
+								: "bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))]"
+						}`}
+						data-testid={`approve-tier-btn-${tier.tierId}`}
+					>
+						<PenTool size={14} />
+						<span>Утвердить и подписать план</span>
+					</button>
+				)}
 
 				{/* Secondary Action Strip */}
 				<div className="flex flex-wrap items-center gap-2">

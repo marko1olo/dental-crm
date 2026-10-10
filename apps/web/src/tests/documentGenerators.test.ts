@@ -558,7 +558,7 @@ describe("documentPayloadForKind: Comprehensive Payload Generators", () => {
 		);
 		assert.ok(payload?.prescriptionMedicationOrder);
 		assert.equal(
-			payload.prescriptionMedicationOrder.medications[0].medication,
+			payload.prescriptionMedicationOrder.medications[0]?.medication,
 			"Ибупрофен",
 		);
 	});

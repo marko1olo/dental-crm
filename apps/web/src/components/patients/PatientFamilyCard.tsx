@@ -4,6 +4,7 @@ import {
 	Unlink,
 	UserPlus,
 	Users,
+	Wallet,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
@@ -16,6 +17,7 @@ import {
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import { FamilyWalletModal } from "../patient/FamilyWalletModal";
 import { usePatientStore } from "../../store/patientStore";
 
 export type PatientFamilyCardProps = {
@@ -61,6 +63,13 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 }) => {
 	const [isCreating, setIsCreating] = useState(false);
 	const [isLinking, setIsLinking] = useState(false);
+	const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+
+	useEffect(() => {
+		const handleOpenWallet = () => setIsWalletModalOpen(true);
+		window.addEventListener("dente-open-family-wallet", handleOpenWallet);
+		return () => window.removeEventListener("dente-open-family-wallet", handleOpenWallet);
+	}, []);
 
 	const [newFamilyName, setNewFamilyName] = useState("");
 	const [searchQuery, setSearchQuery] = useState("");
@@ -426,12 +435,23 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			data-testid="patient-family-card"
 			className="panel mb-5 p-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
 		>
-			<h3 className="flex items-center gap-2 mb-4 p-0 border-none">
-				<Users size={16} className="text-[var(--teal)]" />
-				<span className="text-sm font-semibold text-[var(--ink)]">
-					{familyData ? familyData.name || "Семья пациента" : "Семейный счет"}
-				</span>
-			</h3>
+			<div className="flex items-center justify-between gap-2 mb-4">
+				<h3 className="flex items-center gap-2 m-0 p-0 border-none">
+					<Users size={16} className="text-[var(--teal)]" />
+					<span className="text-sm font-semibold text-[var(--ink)]">
+						{familyData ? familyData.name || "Семья пациента" : "Семейный счет"}
+					</span>
+				</h3>
+				<button
+					type="button"
+					data-testid="btn-open-family-wallet-modal"
+					onClick={() => setIsWalletModalOpen(true)}
+					className="min-h-[44px] sm:min-h-[32px] h-8 px-3 rounded-lg bg-[var(--teal)] text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:opacity-95 transition-opacity shadow-xs shrink-0"
+				>
+					<Wallet size={14} className="shrink-0" />
+					<span>Семейный кошелек</span>
+				</button>
+			</div>
 
 			{familyData ? (
 				<>
@@ -659,6 +679,15 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 					)}
 				</div>
 			)}
+
+			<FamilyWalletModal
+				isOpen={isWalletModalOpen}
+				onClose={() => setIsWalletModalOpen(false)}
+				patientId={patientId}
+				patientName={patientName}
+				familyData={familyData}
+				onFamilyDataChanged={onFamilyDataChanged}
+			/>
 		</div>
 	);
 };

@@ -11,11 +11,11 @@ import type {
 	PatientAdministrativeProfile,
 } from "@dental/shared";
 import type React from "react";
-import type { PatientCoreDraft } from "../../../PatientsView";
+import type { PatientAdministrativeProfileDraft, PatientCoreDraft } from "../../../AppConstants";
 import type { PotentialDuplicateItem } from "../../schedule/patientSearchEngine";
 import type {
 	PatientFieldRequirements,
-	ValidationResult,
+	PatientDraftValidationResult as ValidationResult,
 } from "../patientFieldRequirementsConfig";
 
 export interface PatientCreationModalProps {
@@ -75,10 +75,10 @@ export interface PatientContactsRepresentativeStepProps {
 	readonly onAdvertisingSourceChange: (source: string) => void;
 	readonly fieldRequirements: PatientFieldRequirements;
 	readonly isAnonymous: boolean;
-	readonly updatePatientCoreDraft?: (
+	readonly updatePatientCoreDraft?: ((
 		field: keyof PatientCoreDraft,
 		value: string,
-	) => void;
+	) => void) | undefined;
 }
 
 export interface PatientMedicalFlagsStepProps {
@@ -94,13 +94,13 @@ export interface UsePatientCreationFormOptions {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly createPatient: () => void | Promise<void | Patient | null>;
-	readonly updatePatientCoreDraft?: (
+	readonly updatePatientCoreDraft?: ((
 		field: keyof PatientCoreDraft,
 		value: string,
-	) => void;
-	readonly customRequirements?: PatientFieldRequirements;
-	readonly initialBirthDate?: string;
-	readonly initialIsChild?: boolean;
+	) => void) | undefined;
+	readonly customRequirements?: PatientFieldRequirements | undefined;
+	readonly initialBirthDate?: string | undefined;
+	readonly initialIsChild?: boolean | undefined;
 }
 
 export interface UsePatientCreationFormResult {
@@ -145,8 +145,8 @@ export interface UsePatientCreationFormResult {
 	readonly setNewPatientBirthDate: (birthDate: string) => void;
 	readonly isPatientCreating: boolean;
 	readonly setSelectedPatientId: (id: string | null) => void;
-	readonly patientAdministrativeProfileDraft: PatientAdministrativeProfile;
+	readonly patientAdministrativeProfileDraft: PatientAdministrativeProfileDraft;
 	readonly setPatientAdministrativeProfileDraft: (
-		fn: (prev: PatientAdministrativeProfile) => PatientAdministrativeProfile,
+		val: PatientAdministrativeProfileDraft | ((prev: PatientAdministrativeProfileDraft) => PatientAdministrativeProfileDraft),
 	) => void;
 }

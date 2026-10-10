@@ -6,6 +6,8 @@
 
 import type {
 	DenteTelegramBotSettings,
+	DenteTelegramChatLink,
+	DenteTelegramLinkCode,
 	UpdateDenteTelegramBotSettingsInput,
 } from "@dental/shared";
 import type {
@@ -33,6 +35,8 @@ import {
 	normalizeTelegramPublicHttpsUrl,
 	safeDenteTelegramPublicHttpsUrl,
 } from "./botUrlHelpers.js";
+
+export { safeTelegramBotUsername };
 
 export const denteTelegramBotSettings: DenteTelegramBotSettings = {
 	version: 1,
@@ -234,7 +238,7 @@ function telegramEnvString(value: unknown): string | null {
 	return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-function denteTelegramBotConfigIdForSettings(
+export function denteTelegramBotConfigIdForSettings(
 	settings: DenteTelegramBotSettings = denteTelegramBotSettings,
 	botUsername: string | null = null,
 ): string {
@@ -290,7 +294,7 @@ function configuredClinicTelegramBotFromJson(): {
 	};
 }
 
-function configuredTelegramBotUsername(): string | null {
+export function configuredTelegramBotUsername(): string | null {
 	const sharedConfigured = process.env.DENTE_TELEGRAM_BOT_USERNAME?.trim();
 	const clinicJson = configuredClinicTelegramBotFromJson();
 	const clinicConfigured =
@@ -354,14 +358,6 @@ function configuredTelegramBotToken(): string | null {
 		null
 	);
 }
-
-
-type ResolvedDenteTelegramOutboxRuntimeScope = {
-	settings: DenteTelegramBotSettings;
-	botTokenConfigured: boolean;
-	botConfigId: string;
-	clinicId: string;
-};
 
 export function resolveDenteTelegramOutboxRuntimeScope(
 	runtime?: DenteTelegramOutboxRuntimeScope,

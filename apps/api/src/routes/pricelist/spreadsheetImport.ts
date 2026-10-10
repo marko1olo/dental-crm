@@ -227,13 +227,13 @@ export function resolveSpreadsheetRowsAndSheets(
  * Resolves input for price list scanning from file or raw text.
  */
 export function resolveSpreadsheetScanInput(params: {
-	fileBase64?: string;
-	rawContent?: string;
-	rawText?: string;
-	filename?: string;
-	selectedSheetIndex?: number;
-	commit?: boolean;
-	approvedItems?: ScanAndImportItem[];
+	fileBase64?: string | undefined;
+	rawContent?: string | undefined;
+	rawText?: string | undefined;
+	filename?: string | undefined;
+	selectedSheetIndex?: number | undefined;
+	commit?: boolean | undefined;
+	approvedItems?: ScanAndImportItem[] | undefined;
 }): string | string[][] {
 	const {
 		fileBase64,

@@ -6,7 +6,7 @@
  * and handles superseding of obsolete MPR slices during rapid scrubbing.
  */
 
-import type { MprPlane } from "../cbctMprMath";
+import type { MprPlane } from "../../cbctMprMath";
 import {
 	type InFlightMultiTask,
 	type InFlightSingleTask,

@@ -10,7 +10,7 @@ export interface MessengerHeaderBarProps {
 	eventsCount: number;
 	isSearchOpen: boolean;
 	setIsSearchOpen: React.Dispatch<React.SetStateAction<boolean>>;
-	onGoToSchedule?: () => void;
+	onGoToSchedule?: (() => void) | undefined;
 }
 
 export const MessengerHeaderBar: React.FC<MessengerHeaderBarProps> = ({

@@ -239,10 +239,10 @@ ${zReportData.clinicLegalName}
 ИТОГИ СМЕНЫ:
 ЧЕКОВ ПРИХОДА: ${zReportData.incomeCount}
 СУММА ПРИХОДА: ${zReportData.incomeTotalRub.toLocaleString("ru-RU")} ₽
-  - Наличными (Тег 1031): ${zReportData.incomeCashRub.toLocaleString("ru-RU")} ₽
-  - Картой/Безнал (Тег 1081): ${zReportData.incomeCardRub.toLocaleString("ru-RU")} ₽
-  - СБП QR (Тег 1081): ${zReportData.incomeSbpRub.toLocaleString("ru-RU")} ₽
-  - Зачет аванса/семья (Тег 1215): ${zReportData.incomeAdvanceOffsetRub.toLocaleString("ru-RU")} ₽
+  - Наличными: ${zReportData.incomeCashRub.toLocaleString("ru-RU")} ₽
+  - Картой / Безнал: ${zReportData.incomeCardRub.toLocaleString("ru-RU")} ₽
+  - СБП QR: ${zReportData.incomeSbpRub.toLocaleString("ru-RU")} ₽
+  - Зачет аванса / семья: ${zReportData.incomeAdvanceOffsetRub.toLocaleString("ru-RU")} ₽
 
 ЧЕКОВ ВОЗВРАТА: ${zReportData.incomeReturnCount}
 СУММА ВОЗВРАТОВ: ${zReportData.incomeReturnTotalRub.toLocaleString("ru-RU")} ₽
@@ -383,7 +383,7 @@ ${zReportData.clinicLegalName}
 										<Wallet className="w-4 h-4 text-amber-600 dark:text-amber-400" />
 										<span>Семейный баланс</span>
 									</span>
-									<span className="font-mono">Тег 1215</span>
+									<span className="font-mono">Аванс</span>
 								</div>
 								<div className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)] font-mono">
 									{money(summary.familyWalletRub)}
@@ -630,19 +630,19 @@ ${zReportData.clinicLegalName}
 										1. ПРИХОД (ЧЕКОВ: {zReportData.incomeCount})
 									</div>
 									<div className="flex justify-between pl-2">
-										<span>- Наличными (Тег 1031):</span>
+										<span>- Наличными:</span>
 										<span className="font-bold">{zReportData.incomeCashRub.toLocaleString("ru-RU")} ₽</span>
 									</div>
 									<div className="flex justify-between pl-2">
-										<span>- Эквайринг/Безнал (Тег 1081):</span>
+										<span>- Эквайринг / Безнал:</span>
 										<span className="font-bold">{zReportData.incomeCardRub.toLocaleString("ru-RU")} ₽</span>
 									</div>
 									<div className="flex justify-between pl-2">
-										<span>- СБП QR (Тег 1081):</span>
+										<span>- СБП QR:</span>
 										<span className="font-bold">{zReportData.incomeSbpRub.toLocaleString("ru-RU")} ₽</span>
 									</div>
 									<div className="flex justify-between pl-2">
-										<span>- Зачет аванса/Семья (Тег 1215):</span>
+										<span>- Зачет аванса / Семья:</span>
 										<span className="font-bold">{zReportData.incomeAdvanceOffsetRub.toLocaleString("ru-RU")} ₽</span>
 									</div>
 									<div className="flex justify-between font-bold pt-1 border-t border-dotted border-[var(--line,#e2e8f0)]">

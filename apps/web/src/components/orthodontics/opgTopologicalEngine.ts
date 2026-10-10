@@ -49,7 +49,7 @@ export interface OpgToothSlot {
 	quadrant: 1 | 2 | 3 | 4;
 	slotNumber: number; // 1 (Central Incisor) .. 8 (Wisdom tooth)
 	status: ToothState;
-	toothDetection?: OpgToothDetection;
+	toothDetection?: OpgToothDetection | undefined;
 	pathologies: OpgPathologyDetection[];
 	clinicalDescriptionRu: string;
 }

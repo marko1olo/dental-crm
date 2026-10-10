@@ -3,7 +3,7 @@
  */
 
 import React from "react";
-import { Sparkles, Zap, FileText } from "lucide-react";
+import { Sparkles, Layers, FileText } from "lucide-react";
 import type { OdontogramViewMode } from "@dental/shared";
 import type {
 	ToothData,
@@ -26,32 +26,32 @@ export const ODONTOGRAM_VIEW_MODES: readonly OdontogramViewOption[] = [
 	{
 		mode: "anatomical_svg",
 		label: "3D Анатомический",
-		shortLabel: "Анатомический",
+		shortLabel: "3D",
 		compactLabel: "3D",
 		mobileLabel: "3D",
-		icon: <Sparkles size={14} className="text-indigo-500 shrink-0" />,
+		icon: <Sparkles size={13} className="shrink-0" />,
 		tooltip: "Векторная анатомическая визуализация коронок, корней и каналов",
 		badge: "3D",
 	},
 	{
 		mode: "compact_clinical",
-		label: "Клинический 6-поверхностный",
-		shortLabel: "6-Поверхностный FDI",
-		compactLabel: "FDI 6-гр",
-		mobileLabel: "FDI",
-		icon: <Zap size={14} className="text-amber-500 shrink-0" />,
+		label: "2D Грани (Клинический)",
+		shortLabel: "2D",
+		compactLabel: "2D",
+		mobileLabel: "2D",
+		icon: <Layers size={13} className="shrink-0" />,
 		tooltip: "Быстрая разметка патологий по 6 граням зуба (O, V, L/P, M, D, C)",
-		badge: "FDI",
+		badge: "2D",
 	},
 	{
 		mode: "classic_gost",
 		label: "Классический ГОСТ",
-		shortLabel: "Классический",
+		shortLabel: "ГОСТ",
 		compactLabel: "ГОСТ",
 		mobileLabel: "ГОСТ",
-		icon: <FileText size={14} className="text-[var(--teal)] shrink-0" />,
+		icon: <FileText size={13} className="shrink-0" />,
 		tooltip: "Табличная форма карты стоматологического пациента (Минздрав РФ)",
-		badge: "МЗ РФ",
+		badge: "ГОСТ",
 	},
 ] as const;
 

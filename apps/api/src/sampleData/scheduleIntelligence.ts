@@ -3,6 +3,7 @@
  * @description Layer 2: Load balancing, doctor/chair load calculations, role queues, shift intelligence.
  */
 import { inMemoryDomainState } from "./domainState.js";
+import type { DomainState } from "../types/domainState.js";
 import { activeVisit, hasUnsignedActiveVisit } from "./clinicalRecords.js";
 import { nowIso, activeAppointmentId } from "./fixtureIds.js";
 import { documents } from "./documents.js";

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { ToothMolar, DentalSyringe, ToothDeciduous } from "../icons/DentalIcons";
 import type { ToothData, ToothState } from "../odontogram/ToothChart";
+import { getToothStateLabelRu } from "../odontogram/chart/toothChartTypes";
 import { getToothAnatomicalNameRu, getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { ToothSurfacesAndEndoMatrix } from "./ToothSurfacesAndEndoMatrix";
 import { ToothRvgThumbnail } from "./ToothRvgThumbnail";
@@ -282,7 +283,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 							<div className="dente-tooth-title-row min-w-0">
 								<h2 className="dente-tooth-title truncate min-w-0" title={anatomicalName}>{anatomicalName}</h2>
 								<span className={`dente-tooth-state-pill shrink-0 state-${currentState.toLowerCase()}`}>
-									{currentState}
+									{getToothStateLabelRu(currentState)}
 								</span>
 							</div>
 							<p className="dente-tooth-folk-name truncate min-w-0" title={folkAndAnatomical}>{folkAndAnatomical}</p>
@@ -446,7 +447,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 						>
 							<div className="trigger-left">
 								<DentalSyringe size={16} style={{ color: "var(--brand-primary, var(--teal))" }} />
-								<span className="trigger-title">2. Экспресс-анестезия (1 клик)</span>
+								<span className="trigger-title">2. Экспресс-анестезия</span>
 							</div>
 							<div className="trigger-right">
 								<span className="trigger-summary">
@@ -458,7 +459,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 
 						{activeSection === "anesthesia" && (
 							<div className="dente-accordion-content animate-in p-3 flex flex-col gap-2">
-								{/* Somatic Risk Alert or 1-Click Physiological Norm Strip */}
+								{/* Somatic Risk Alert or Physiological Norm Strip */}
 								{Boolean(patient?.hasCardioRisk || patient?.hasSulfiteAllergy || patient?.hasAsthma || patient?.isPregnant) ? (
 									<div className="dente-somatic-alert-strip" data-testid="tooth-somatic-risk-alert">
 										<ShieldAlert size={16} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
@@ -486,17 +487,17 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 												showToast("Соматическая норма внесена в протокол 043/у", "success", 2000);
 											}}
 											className="px-2 py-1 text-[11px] font-bold rounded-md bg-[var(--teal-surface)] text-[var(--teal)] hover:bg-[var(--teal)] hover:text-white transition-colors shrink-0 ml-2 cursor-pointer"
-											title="Вставить соматическую норму в протокол 043/у (1 клик)"
+											title="Вставить соматическую норму в протокол 043/у"
 											data-testid="tooth-somatic-norm-btn"
 										>
-											В протокол (1 клик)
+											В протокол
 										</button>
 									</div>
 								)}
 
 								<div className="flex items-center justify-between text-xs text-[var(--muted)] px-0.5">
-									<span>Быстрый выбор анестетика в 1 клик (без ввода веса и калькуляторов):</span>
-									<span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">1 клик • норма</span>
+									<span>Выбор анестетика:</span>
+									<span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">Норма</span>
 								</div>
 								<div className="flex flex-col gap-1.5" data-testid="tooth-express-anesthesia-list">
 									{TOOTH_EXPRESS_ANESTHESIA_OPTIONS.map((preset) => (
@@ -666,11 +667,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 						</span>
 					</div>
 					<div className="footer-actions">
-						<button
-							type="button"
-							onClick={onClose}
-							className="dente-drawer-btn-secondary"
-						>
+						<button type="button" onClick={onClose} className="dente-drawer-btn-secondary">
 							Закрыть
 						</button>
 					</div>

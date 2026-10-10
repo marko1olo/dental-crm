@@ -97,16 +97,16 @@ export const DIARY_ALREADY_LOCKED_CANONICAL_MESSAGE =
 export const diaryUpsertSchema = z.object({
 	visitId: z.string().uuid(),
 	patientId: z.string().uuid(),
-	anamnesis: z.string().optional(),
-	statusLocalis: z.string().optional(),
-	diagnosisIcd10: z.string().optional(),
-	diagnosisTooth: z.string().optional(),
-	treatmentDescription: z.string().optional(),
-	complications: z.string().optional(),
-	comorbidities: z.string().optional(),
+	anamnesis: z.string().max(65536, "Анамнез не должен превышать 64 КБ").optional(),
+	statusLocalis: z.string().max(65536, "Status localis не должен превышать 64 КБ").optional(),
+	diagnosisIcd10: z.string().max(200).optional(),
+	diagnosisTooth: z.string().max(100).optional(),
+	treatmentDescription: z.string().max(65536, "Описание лечения не должно превышать 64 КБ").optional(),
+	complications: z.string().max(10000).optional(),
+	comorbidities: z.string().max(10000).optional(),
 	organizationId: z.string().uuid().optional(),
 	status: z.enum(["draft", "signed"]).optional(),
-	instrumentTrayBarcode: z.string().optional(),
+	instrumentTrayBarcode: z.string().max(200).optional(),
 	/**
 	 * УКЭП врача. Раньше поле принимал только маршрут /lock, поэтому подпись
 	 * через POST физически не могла сохранить оттиск в crypto_signature_pkcs7:
@@ -125,19 +125,19 @@ export const diaryLockBodySchema = z.object({
 });
 
 export const diaryReviseBodySchema = z.object({
-	anamnesis: z.unknown().optional(),
-	statusLocalis: z.unknown().optional(),
-	diagnosisIcd10: z.unknown().optional(),
-	diagnosisTooth: z.unknown().optional(),
-	treatmentDescription: z.unknown().optional(),
+	anamnesis: z.string().max(65536, "Анамнез не должен превышать 64 КБ").optional(),
+	statusLocalis: z.string().max(65536, "Status localis не должен превышать 64 КБ").optional(),
+	diagnosisIcd10: z.string().max(200).optional(),
+	diagnosisTooth: z.string().max(100).optional(),
+	treatmentDescription: z.string().max(65536, "Описание лечения не должно превышать 64 КБ").optional(),
 	/*
 	 * complications / comorbidities — поля visit_diaries и UI 043/у.
 	 * БЫЛО: схема revise их не принимала, handler не писал. Админ правил
 	 * «Осложнения»/«Сопутствующие» — после сохранения оставался старый
 	 * текст; в подписанной 043/у ошибка не исправлялась.
 	 */
-	complications: z.unknown().optional(),
-	comorbidities: z.unknown().optional(),
+	complications: z.string().max(10000).optional(),
+	comorbidities: z.string().max(10000).optional(),
 	/*
 	 * instrumentTrayBarcode — элемент diary_hash и печать 043/у.
 	 * БЫЛО: revise схема/handler не принимали лоток; sterilization/link
@@ -145,8 +145,8 @@ export const diaryReviseBodySchema = z.object({
 	 * ревизию», но /revise лоток не менял — неверный штрихкод в
 	 * подписанной 043/у исправить было нельзя.
 	 */
-	instrumentTrayBarcode: z.unknown().optional(),
-	revisionReason: z.unknown().optional(),
+	instrumentTrayBarcode: z.string().max(200).optional(),
+	revisionReason: z.string().max(1000).optional(),
 });
 
 export const chiefReviewBodySchema = z.object({

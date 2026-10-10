@@ -256,41 +256,42 @@ export async function registerPatientRecallRoutes(app: FastifyInstance) {
 
 		const actorUserId = (request.user as { id?: string } | undefined)?.id ?? null;
 
-		// 1. Фиксация в аудит-логе (Mandate 8a PostgreSQL 18 Law)
-		await db.insert(auditEvents).values({
-			organizationId: context.organizationId,
-			actorUserId,
-			entityType: "patient_recall",
-			entityId: patientId,
-			action: normalizedAction,
-			reason: note ?? `Обновление статуса профосмотра: ${status}`,
-		});
-
-		// 2. Если указан канал коммуникации — протоколируем событие связи
+		// 1 & 2. Атомарная фиксация в аудит-логе и событиях связи (ACID Transaction)
 		const validCommChannels = ["sms", "whatsapp", "telegram", "phone", "email"] as const;
 		const commChannel = channel
 			? validCommChannels.find((c) => c === channel.toLowerCase())
 			: undefined;
 
-		if (commChannel) {
-			let commStatus: "queued" | "sent" | "delivered" | "failed" = "queued";
-			const lowerStatus = status.toLowerCase();
-			if (["sent", "reached", "contacted", "confirmed", "scheduled"].includes(lowerStatus)) {
-				commStatus = "delivered";
-			} else if (["cancelled", "declined", "no_answer", "failed"].includes(lowerStatus)) {
-				commStatus = "failed";
-			}
-
-			await db.insert(communicationEvents).values({
+		await db.transaction(async (tx) => {
+			await tx.insert(auditEvents).values({
 				organizationId: context.organizationId,
-				patientId,
 				actorUserId,
-				channel: commChannel,
-				direction: "outbound",
-				status: commStatus,
-				message: note ?? `Контрольный вызов: ${status}`,
+				entityType: "patient_recall",
+				entityId: patientId,
+				action: normalizedAction,
+				reason: note ?? `Обновление статуса профосмотра: ${status}`,
 			});
-		}
+
+			if (commChannel) {
+				let commStatus: "queued" | "sent" | "delivered" | "failed" = "queued";
+				const lowerStatus = status.toLowerCase();
+				if (["sent", "reached", "contacted", "confirmed", "scheduled"].includes(lowerStatus)) {
+					commStatus = "delivered";
+				} else if (["cancelled", "declined", "no_answer", "failed"].includes(lowerStatus)) {
+					commStatus = "failed";
+				}
+
+				await tx.insert(communicationEvents).values({
+					organizationId: context.organizationId,
+					patientId,
+					actorUserId,
+					channel: commChannel,
+					direction: "outbound",
+					status: commStatus,
+					message: note ?? `Контрольный вызов: ${status}`,
+				});
+			}
+		});
 
 		// 3. Вебсокет-оповещение для мгновенной синхронизации канбана и таблицы у всех операторов
 		const updatedAt = new Date().toISOString();

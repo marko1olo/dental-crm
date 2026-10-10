@@ -1430,6 +1430,7 @@ test("декомпозиция сметчика на модули: каждый 
 		"./treatmentEstimatorValidation.ts",
 		"./treatmentEstimatorStagesAndConflicts.ts",
 		"./treatmentEstimatorBundles.ts",
+		"./treatmentEstimatorReconciler.ts",
 	];
 
 	for (const relPath of filesToCheck) {

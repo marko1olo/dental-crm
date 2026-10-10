@@ -68,7 +68,7 @@ export const ROLE_TOUR_CATALOGS: Record<TourRole, RoleTourCatalog> = {
 				description:
 					"Запись бронируется за 5 секунд. Кликните свободную ячейку в кресле или кнопку «+ Запись». Позволяет вести плотный приём без наездов.",
 				clinicalTip: "Шаг сетки (15/30/45/60 мин) автоматически адаптируется под длительность выбранной процедуры.",
-				actionBadge: "1 клик до брони",
+				actionBadge: "Быстрая бронь",
 			},
 			{
 				id: "admin_patient_search",

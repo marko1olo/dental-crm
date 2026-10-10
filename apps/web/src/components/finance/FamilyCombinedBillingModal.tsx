@@ -62,11 +62,40 @@ export function FamilyCombinedBillingModal({
 		payerPhone: "",
 		payerPassport: "",
 	},
-	initialItems = [],
+	initialItems: propInitialItems,
 	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	clinicInn = "",
 	onCheckoutComplete,
 }: FamilyCombinedBillingModalProps) {
+	const initialItems: readonly FamilyMemberBillingItem[] = useMemo(() => {
+		if (propInitialItems && propInitialItems.length > 0) return propInitialItems;
+		return [
+			{
+				id: "fam-seed-1",
+				patientId: initialPayer.payerId || "pat-seed-parent",
+				patientFullName: initialPayer.payerFullName || "Кузнецов Дмитрий Анатольевич",
+				relationship: "self",
+				serviceName: "Профессиональная гигиена полости рта и AirFlow",
+				code804n: "A16.07.051",
+				priceRub: 4500,
+				quantity: 1,
+				taxDeductionCategory: "1",
+			},
+			{
+				id: "fam-seed-2",
+				patientId: "pat-seed-child",
+				patientFullName: "Кузнецова София Дмитриевна",
+				relationship: "child",
+				serviceName: "Лечение кариеса молочного зуба с пломбированием",
+				code804n: "A16.07.002",
+				toothNumber: 54,
+				priceRub: 5500,
+				quantity: 1,
+				taxDeductionCategory: "1",
+			},
+		];
+	}, [propInitialItems, initialPayer.payerId, initialPayer.payerFullName]);
+
 	const [activeTab, setActiveTab] = useState<"items" | "payment" | "tax">("items");
 	const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
 		() => new Set(initialItems.map((i) => i.id)),
@@ -77,6 +106,10 @@ export function FamilyCombinedBillingModal({
 	React.useEffect(() => {
 		setCustomWalletOffsetRub(availableFamilyWalletRub);
 	}, [availableFamilyWalletRub]);
+
+	React.useEffect(() => {
+		setSelectedItemIds(new Set(initialItems.map((i) => i.id)));
+	}, [initialItems]);
 
 	const [additionalPaymentMethod, setAdditionalPaymentMethod] = useState<"sbp" | "card" | "cash">("sbp");
 	const [cashReceivedRub, setCashReceivedRub] = useState<number>(0);
@@ -230,15 +263,28 @@ export function FamilyCombinedBillingModal({
 				</div>
 
 				{/* Навигационные вкладки */}
-				<div className="flex border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] px-4 sm:px-5">
+				<div
+					className="flex border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] px-4 sm:px-5"
+					style={{ display: "flex", gap: 12, padding: "0 16px", borderBottom: "1px solid var(--line)", background: "var(--paper)" }}
+				>
 					<button
 						type="button"
 						onClick={() => setActiveTab("items")}
-						className={`py-3 px-4 font-bold text-xs sm:text-sm border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-							activeTab === "items"
-								? "border-teal-600 text-teal-600 dark:text-teal-400"
-								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-						}`}
+						style={{
+							padding: "12px 14px",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: 8,
+							fontWeight: 700,
+							fontSize: 13,
+							borderBottom: activeTab === "items" ? "2px solid var(--teal, #0d9488)" : "2px solid transparent",
+							color: activeTab === "items" ? "var(--teal, #0d9488)" : "var(--muted)",
+							background: "transparent",
+							borderTop: "none",
+							borderLeft: "none",
+							borderRight: "none",
+							cursor: "pointer",
+						}}
 					>
 						<Layers size={16} />
 						<span>1. Состав счетов и вычет ({activeItems.length})</span>
@@ -247,24 +293,44 @@ export function FamilyCombinedBillingModal({
 					<button
 						type="button"
 						onClick={() => setActiveTab("payment")}
-						className={`py-3 px-4 font-bold text-xs sm:text-sm border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-							activeTab === "payment"
-								? "border-teal-600 text-teal-600 dark:text-teal-400"
-								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-						}`}
+						style={{
+							padding: "12px 14px",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: 8,
+							fontWeight: 700,
+							fontSize: 13,
+							borderBottom: activeTab === "payment" ? "2px solid var(--teal, #0d9488)" : "2px solid transparent",
+							color: activeTab === "payment" ? "var(--teal, #0d9488)" : "var(--muted)",
+							background: "transparent",
+							borderTop: "none",
+							borderLeft: "none",
+							borderRight: "none",
+							cursor: "pointer",
+						}}
 					>
 						<QrCode size={16} />
-						<span>2. Сплит-оплата & СБП QR ({billingResult.totalAmountFormattedRu})</span>
+						<span>2. Сплит-оплата & СБП QR ({billingResult.totalAmountRub.toLocaleString("ru-RU")} ₽)</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveTab("tax")}
-						className={`py-3 px-4 font-bold text-xs sm:text-sm border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-							activeTab === "tax"
-								? "border-teal-600 text-teal-600 dark:text-teal-400"
-								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-						}`}
+						style={{
+							padding: "12px 14px",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: 8,
+							fontWeight: 700,
+							fontSize: 13,
+							borderBottom: activeTab === "tax" ? "2px solid var(--teal, #0d9488)" : "2px solid transparent",
+							color: activeTab === "tax" ? "var(--teal, #0d9488)" : "var(--muted)",
+							background: "transparent",
+							borderTop: "none",
+							borderLeft: "none",
+							borderRight: "none",
+							cursor: "pointer",
+						}}
 					>
 						<ShieldCheck size={16} />
 						<span>3. Справки для налоговой (ИФНС)</span>
@@ -375,7 +441,7 @@ export function FamilyCombinedBillingModal({
 								<div>
 									<span className="text-[11px] font-bold text-[var(--muted,#64748b)] uppercase">Всего к оплате</span>
 									<div className="text-xl font-black font-mono text-[var(--ink,#0f172a)] mt-0.5">
-										{billingResult.totalAmountFormattedRu}
+										{billingResult.totalAmountRub.toLocaleString("ru-RU")} ₽
 									</div>
 								</div>
 								<div>
@@ -484,7 +550,7 @@ export function FamilyCombinedBillingModal({
 						<div>
 							<span className="text-[11px] text-[var(--muted,#64748b)] font-bold uppercase">Итого к фискализации:</span>
 							<div className="text-xl sm:text-2xl font-black font-mono text-[var(--ink,#0f172a)]">
-								{billingResult.totalAmountFormattedRu}
+								{billingResult.totalAmountRub.toLocaleString("ru-RU")} ₽
 							</div>
 						</div>
 						{useFamilyWallet && billingResult.defaultSplit.familyWalletOffsetRub > 0 && (
@@ -494,11 +560,21 @@ export function FamilyCombinedBillingModal({
 						)}
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2" style={{ display: "flex", gap: 10, alignItems: "center" }}>
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[48px] px-5 rounded-xl border border-[var(--line,#cbd5e1)] text-xs sm:text-sm font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer transition-all"
+							style={{
+								minHeight: 44,
+								padding: "0 18px",
+								borderRadius: 10,
+								border: "1px solid var(--line, #cbd5e1)",
+								background: "var(--paper, #ffffff)",
+								color: "var(--ink, #0f172a)",
+								fontWeight: 600,
+								fontSize: 13,
+								cursor: "pointer",
+							}}
 						>
 							Отмена
 						</button>
@@ -514,10 +590,25 @@ export function FamilyCombinedBillingModal({
 									? "Выполняется фискализация..."
 									: `Принять оплату на сумму ${billingResult.totalAmountFormattedRu} и выдать чек`
 							}
-							className="min-h-[48px] px-6 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white text-xs sm:text-sm font-extrabold flex items-center gap-2 cursor-pointer shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+							style={{
+								minHeight: 44,
+								padding: "0 22px",
+								borderRadius: 10,
+								background: "var(--teal, #0d9488)",
+								color: "#ffffff",
+								border: "1px solid var(--teal, #0d9488)",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: 8,
+								fontWeight: 700,
+								fontSize: 13,
+								cursor: isFiscalizing ? "not-allowed" : "pointer",
+								opacity: isFiscalizing ? 0.6 : 1,
+								boxShadow: "0 2px 8px rgba(13,148,136,0.25)",
+							}}
 							data-testid="btn-execute-family-fiscal-checkout"
 						>
-							<Sparkles size={18} className="animate-pulse" />
+							<Sparkles size={16} />
 							<span>Принять оплату и выдать чек</span>
 						</button>
 					</div>

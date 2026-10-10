@@ -8,7 +8,7 @@ import {
 	OiisGatewayClient,
 	type RemdSubmissionResponse,
 } from "../OiisGatewayClient.js";
-import type { EgiszRemdPackage } from "../cda/signature.js";
+import type { EgiszRemdPackage } from "@dental/shared";
 import type {
 	CreateEgiszRemdReceiptParams,
 	EgiszRemdRegistrationReceipt,

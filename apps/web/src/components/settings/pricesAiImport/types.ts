@@ -17,8 +17,8 @@ export interface SelectedFileInfo {
 }
 
 export interface ImportResultSummary {
-	count?: number;
-	error?: string;
+	count?: number | undefined;
+	error?: string | undefined;
 }
 
 export interface PricelistImportBatchItem {

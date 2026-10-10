@@ -6,6 +6,7 @@
  */
 
 import React from "react";
+import { useVisitStore } from "../../store/visitStore";
 import { STATE_LABELS, type AiToothState } from "./VisiographScanHelpers";
 
 export interface VisiographFindingsPillsProps {
@@ -66,7 +67,13 @@ export function VisiographFindingsPills({
 						<input
 							type="checkbox"
 							checked={isSelected}
-							onChange={() => onToggleFindingCode(code)}
+							onChange={() => {
+								onToggleFindingCode(code);
+								const num = Number(code);
+								if (num && !Number.isNaN(num)) {
+									useVisitStore.getState().setActiveToothNumber(num);
+								}
+							}}
 							style={{ cursor: "pointer" }}
 						/>
 						<span>Зуб {code}</span>

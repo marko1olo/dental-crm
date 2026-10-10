@@ -246,33 +246,35 @@
 /* ── ACTION ITEMS (STUDIO HIG) ── */
 ._ccm-action-item {
 	width: 100%;
-	height: 34px;
-	min-height: 34px;
-	padding: 0 0.65rem;
-	border-radius: 8px;
-	border: 1px solid var(--line, #e2e8f0);
+	min-height: 40px;
+	height: auto;
+	padding: 8px 12px;
+	border-radius: 10px;
+	border: 1.5px solid var(--line-strong, #cbd5e1);
 	background: var(--paper, #fff);
 	color: var(--ink, #1e293b);
-	font-size: 0.75rem;
-	font-weight: 500;
+	font-size: 0.8rem;
+	font-weight: 600;
 	text-align: left;
 	cursor: pointer;
 	display: flex;
 	align-items: center;
-	gap: 0.5rem;
-	transition: background 0.12s, border-color 0.12s, box-shadow 0.12s;
+	gap: 0.65rem;
+	transition: all 0.15s ease;
 	user-select: none;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 ._ccm-action-item:hover {
 	background: var(--paper-soft, #f8fafc);
-	border-color: var(--line-strong, #cbd5e1);
-	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
 }
 ._ccm-action-item.active {
 	background: var(--teal-surface, #f0fdfa);
 	color: var(--teal-dark, #0f766e);
 	border-color: var(--teal, #0d9488);
-	font-weight: 600;
+	font-weight: 700;
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
 }
 ._ccm-action-item.highlight {
 	background: var(--teal-surface, #f0fdfa);
@@ -993,19 +995,25 @@
 	transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.visit-subtab-btn:hover {
-	color: var(--ink);
-	background: var(--paper);
-	border-color: var(--line-strong, #cbd5e1);
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+.visit-subtab-btn:hover:not(.active) {
+	color: var(--ink, #0f172a);
+	background: var(--paper-soft, rgba(0, 0, 0, 0.03));
+	border-color: var(--line-subtle, rgba(0, 0, 0, 0.12));
+	box-shadow: none;
 }
 
 .visit-subtab-btn.active {
-	background: var(--paper);
-	color: var(--ink);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
 	font-weight: 600;
-	border: 1px solid var(--line-strong, #cbd5e1);
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02);
+	border: 1.5px solid var(--teal, #0d9488);
+	box-shadow: inset 0 -2px 0 var(--teal, #0d9488), 0 1px 3px rgba(13, 148, 136, 0.12);
+}
+
+.visit-subtab-btn.active:hover {
+	background: var(--paper, #ffffff);
+	border: 1.5px solid var(--teal, #0d9488);
+	box-shadow: inset 0 -2px 0 var(--teal, #0d9488), 0 1px 4px rgba(13, 148, 136, 0.18);
 }
 
 [data-theme="dark"] .visit-subtab-btn,
@@ -1014,20 +1022,21 @@
 [data-theme="ocean"] .visit-subtab-btn,
 [data-theme="emerald"] .visit-subtab-btn,
 html.dark .visit-subtab-btn {
-	background: rgba(255, 255, 255, 0.04);
+	background: rgba(255, 255, 255, 0.03);
 	color: var(--muted, #94a3b8);
-	border: 1px solid rgba(255, 255, 255, 0.09);
+	border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-[data-theme="dark"] .visit-subtab-btn:hover,
-[data-theme="night"] .visit-subtab-btn:hover,
-[data-theme="cyber_xray"] .visit-subtab-btn:hover,
-[data-theme="ocean"] .visit-subtab-btn:hover,
-[data-theme="emerald"] .visit-subtab-btn:hover,
-html.dark .visit-subtab-btn:hover {
-	background: rgba(255, 255, 255, 0.09);
+[data-theme="dark"] .visit-subtab-btn:hover:not(.active),
+[data-theme="night"] .visit-subtab-btn:hover:not(.active),
+[data-theme="cyber_xray"] .visit-subtab-btn:hover:not(.active),
+[data-theme="ocean"] .visit-subtab-btn:hover:not(.active),
+[data-theme="emerald"] .visit-subtab-btn:hover:not(.active),
+html.dark .visit-subtab-btn:hover:not(.active) {
+	background: rgba(255, 255, 255, 0.07);
 	color: var(--ink, #f8fafc);
-	border-color: rgba(255, 255, 255, 0.18);
+	border-color: rgba(255, 255, 255, 0.12);
+	box-shadow: none;
 }
 
 [data-theme="dark"] .visit-subtab-btn.active,
@@ -1039,8 +1048,19 @@ html.dark .visit-subtab-btn.active {
 	background: var(--paper-strong, var(--paper, #1e293b));
 	color: var(--ink, #ffffff);
 	font-weight: 600;
-	border: 1px solid rgba(255, 255, 255, 0.22);
-	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+	border: 1.5px solid var(--teal, #14b8a6);
+	box-shadow: inset 0 -2px 0 var(--teal, #14b8a6), 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .visit-subtab-btn.active:hover,
+[data-theme="night"] .visit-subtab-btn.active:hover,
+[data-theme="cyber_xray"] .visit-subtab-btn.active:hover,
+[data-theme="ocean"] .visit-subtab-btn.active:hover,
+[data-theme="emerald"] .visit-subtab-btn.active:hover,
+html.dark .visit-subtab-btn.active:hover {
+	background: var(--paper-strong, var(--paper, #1e293b));
+	border: 1.5px solid var(--teal, #14b8a6);
+	box-shadow: inset 0 -2px 0 var(--teal, #14b8a6), 0 1px 6px rgba(0, 0, 0, 0.5);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1266,3 +1286,589 @@ html.dark .visit-subtab-btn.active {
 .visit-emergency-rescue-quiet {
 	display: none !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   APPLE HIG PHYSICAL PRESET BUTTONS (.dente-norm-btn)
+   Zero Flat Text Antipattern — Tactile Physical Surfaces with Depth
+   ═══════════════════════════════════════════════════════════════════ */
+.dente-norm-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	height: 34px;
+	min-height: 34px;
+	padding: 0 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 1;
+	white-space: nowrap;
+	cursor: pointer;
+	user-select: none;
+	touch-action: manipulation;
+	background: var(--paper, #ffffff);
+	border: 1.5px solid var(--line-strong, #cbd5e1);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.02);
+	color: var(--ink, #0f172a);
+	transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+	flex-shrink: 0;
+	text-decoration: none;
+}
+
+.dente-norm-btn:hover {
+	transform: translateY(-1px);
+	border-color: var(--line-strong, #94a3b8);
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.09), 0 0 0 1px rgba(0, 0, 0, 0.03);
+}
+
+.dente-norm-btn:active {
+	transform: scale(0.98);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Status indicator / left badge */
+.dente-norm-indicator {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex-shrink: 0;
+	display: inline-block;
+	box-shadow: 0 0 0 1.5px var(--paper, #ffffff);
+}
+
+.dente-norm-indicator--green {
+	background-color: #10b981;
+	box-shadow: 0 0 0 1.5px var(--paper, #ffffff), 0 0 6px rgba(16, 185, 129, 0.45);
+}
+
+.dente-norm-indicator--cyan {
+	background-color: #06b6d4;
+	box-shadow: 0 0 0 1.5px var(--paper, #ffffff), 0 0 6px rgba(6, 182, 212, 0.45);
+}
+
+.dente-norm-indicator--indigo {
+	background-color: #6366f1;
+	box-shadow: 0 0 0 1.5px var(--paper, #ffffff), 0 0 6px rgba(99, 102, 241, 0.45);
+}
+
+.dente-norm-indicator--teal {
+	background-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 1.5px var(--paper, #ffffff), 0 0 6px rgba(13, 148, 136, 0.45);
+}
+
+/* Semantic variants with solid dense tinted backgrounds and tangible physical borders */
+.dente-norm-btn--green {
+	background: color-mix(in srgb, var(--paper, #ffffff) 90%, #ecfdf5);
+	border: 1.5px solid color-mix(in srgb, var(--line-strong, #cbd5e1) 60%, #10b981);
+	color: #065f46;
+}
+.dente-norm-btn--green:hover {
+	background: color-mix(in srgb, var(--paper, #ffffff) 82%, #d1fae5);
+	border-color: #10b981;
+	box-shadow: 0 2px 6px rgba(16, 185, 129, 0.18), 0 0 0 1px rgba(16, 185, 129, 0.2);
+}
+
+.dente-norm-btn--cyan {
+	background: color-mix(in srgb, var(--paper, #ffffff) 90%, #ecfeff);
+	border: 1.5px solid color-mix(in srgb, var(--line-strong, #cbd5e1) 60%, #06b6d4);
+	color: #155e75;
+}
+.dente-norm-btn--cyan:hover {
+	background: color-mix(in srgb, var(--paper, #ffffff) 82%, #cffafe);
+	border-color: #06b6d4;
+	box-shadow: 0 2px 6px rgba(6, 182, 212, 0.18), 0 0 0 1px rgba(6, 182, 212, 0.2);
+}
+
+.dente-norm-btn--indigo {
+	background: color-mix(in srgb, var(--paper, #ffffff) 90%, #eef2ff);
+	border: 1.5px solid color-mix(in srgb, var(--line-strong, #cbd5e1) 60%, #6366f1);
+	color: #3730a3;
+}
+.dente-norm-btn--indigo:hover {
+	background: color-mix(in srgb, var(--paper, #ffffff) 82%, #e0e7ff);
+	border-color: #6366f1;
+	box-shadow: 0 2px 6px rgba(99, 102, 241, 0.18), 0 0 0 1px rgba(99, 102, 241, 0.2);
+}
+
+.dente-norm-btn--teal {
+	background: color-mix(in srgb, var(--paper, #ffffff) 90%, var(--teal-surface, #f0fdfa));
+	border: 1.5px solid color-mix(in srgb, var(--line-strong, #cbd5e1) 60%, var(--teal, #0d9488));
+	color: #115e59;
+}
+.dente-norm-btn--teal:hover {
+	background: color-mix(in srgb, var(--paper, #ffffff) 82%, #ccfbf1);
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.18), 0 0 0 1px rgba(13, 148, 136, 0.2);
+}
+
+.dente-norm-btn--catalog {
+	background: linear-gradient(180deg, #4f46e5 0%, #4338ca 100%);
+	border: 1.5px solid #3730a3;
+	color: #ffffff;
+	box-shadow: 0 1px 3px rgba(79, 70, 229, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+.dente-norm-btn--catalog:hover {
+	background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+	border-color: #4338ca;
+	box-shadow: 0 2px 6px rgba(79, 70, 229, 0.45), 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.dente-norm-btn--neutral {
+	background: var(--paper, #ffffff);
+	border: 1.5px solid var(--line-strong, #cbd5e1);
+	color: var(--ink, #334155);
+}
+.dente-norm-btn--neutral:hover {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--ink-muted, #64748b);
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+/* Dark theme overrides */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn {
+	background: var(--paper, #1e293b);
+	border: 1.5px solid rgba(255, 255, 255, 0.18);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+	color: var(--ink, #f1f5f9);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn:hover {
+	border-color: rgba(255, 255, 255, 0.32);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-indicator {
+	box-shadow: 0 0 0 1.5px var(--paper, #1e293b);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--green {
+	background: color-mix(in srgb, var(--paper, #1e293b) 88%, #064e3b);
+	border: 1.5px solid rgba(16, 185, 129, 0.45);
+	color: #6ee7b7;
+}
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--green:hover {
+	background: color-mix(in srgb, var(--paper, #1e293b) 78%, #064e3b);
+	border-color: #10b981;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--cyan {
+	background: color-mix(in srgb, var(--paper, #1e293b) 88%, #164e63);
+	border: 1.5px solid rgba(6, 182, 212, 0.45);
+	color: #67e8f9;
+}
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--cyan:hover {
+	background: color-mix(in srgb, var(--paper, #1e293b) 78%, #164e63);
+	border-color: #06b6d4;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--indigo {
+	background: color-mix(in srgb, var(--paper, #1e293b) 88%, #312e81);
+	border: 1.5px solid rgba(99, 102, 241, 0.45);
+	color: #a5b4fc;
+}
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--indigo:hover {
+	background: color-mix(in srgb, var(--paper, #1e293b) 78%, #312e81);
+	border-color: #6366f1;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--teal {
+	background: color-mix(in srgb, var(--paper, #1e293b) 88%, #134e4a);
+	border: 1.5px solid rgba(20, 184, 166, 0.45);
+	color: #5eead4;
+}
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--teal:hover {
+	background: color-mix(in srgb, var(--paper, #1e293b) 78%, #134e4a);
+	border-color: var(--teal, #14b8a6);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--catalog {
+	background: linear-gradient(180deg, #4f46e5 0%, #3730a3 100%);
+	border: 1.5px solid rgba(165, 180, 252, 0.4);
+	color: #ffffff;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--neutral {
+	background: var(--paper, #1e293b);
+	border: 1.5px solid rgba(255, 255, 255, 0.18);
+	color: var(--ink, #f1f5f9);
+}
+
+/* Mobile Apple HIG Touch Target: 44px min-height */
+@media (max-width: 768px), (pointer: coarse) {
+	.dente-norm-btn {
+		height: 44px;
+		min-height: 44px;
+		padding: 0 14px;
+		font-size: 13px;
+		border-radius: 10px;
+	}
+	.dente-norm-indicator {
+		width: 10px;
+		height: 10px;
+	}
+}
+
+/* DENTE Intake Cockpit & Dark Mode Ergonomics */
+.dente-intake-start-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.45rem 0.85rem;
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: var(--teal, #0d9488);
+	background: var(--teal-soft, rgba(13, 148, 136, 0.1));
+	border: 1px solid var(--teal, #0d9488);
+	border-radius: 8px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.dente-intake-start-btn:hover {
+	background: var(--teal, #0d9488);
+	color: var(--on-teal, #ffffff);
+}
+
+.dente-intake-start-btn--in-chair {
+	color: #ffffff;
+	background: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-intake-start-btn {
+	color: #2dd4bf;
+	background: rgba(13, 148, 136, 0.2);
+	border-color: rgba(20, 184, 166, 0.4);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-intake-start-btn:hover {
+	background: #0d9488;
+	color: #ffffff;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-intake-start-btn--in-chair {
+	background: #0d9488;
+	border-color: #14b8a6;
+	color: #ffffff;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CLINICAL QUICK PRESETS BAR, FDI TOOTH CHIPS & PROTOCOL CARDS
+   Zero Naked Text Buttons — Tactile Clinical Console Surfaces
+   ═══════════════════════════════════════════════════════════════════ */
+.clinical-quick-presets-bar {
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	color: var(--ink, #0f172a);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-quick-presets-bar {
+	background: rgba(15, 23, 42, 0.55);
+	border-color: rgba(255, 255, 255, 0.12);
+}
+
+.clinical-presets-title-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 6px;
+	background: rgba(13, 148, 136, 0.12);
+	border: 1px solid rgba(13, 148, 136, 0.3);
+	color: var(--teal, #0d9488);
+	flex-shrink: 0;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-presets-title-icon {
+	background: rgba(13, 148, 136, 0.22);
+	border-color: rgba(45, 212, 191, 0.4);
+	color: #2dd4bf;
+}
+
+.clinical-active-tooth-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	height: 24px;
+	padding: 0 8px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 700;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	background: rgba(13, 148, 136, 0.12);
+	border: 1px solid rgba(13, 148, 136, 0.35);
+	color: var(--teal, #0d9488);
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-active-tooth-badge {
+	background: rgba(13, 148, 136, 0.22);
+	border-color: rgba(45, 212, 191, 0.45);
+	color: #2dd4bf;
+}
+
+.clinical-tooth-status-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	height: 24px;
+	padding: 0 8px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 600;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #cbd5e1);
+	color: var(--muted, #64748b);
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-tooth-status-pill {
+	background: rgba(30, 41, 59, 0.85);
+	border-color: rgba(255, 255, 255, 0.15);
+	color: #94a3b8;
+}
+
+.clinical-tooth-btn,
+button.clinical-tooth-btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 5px !important;
+	height: 28px !important;
+	min-height: 28px !important;
+	min-width: 30px !important;
+	padding: 0 8px !important;
+	border-radius: 7px !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+	line-height: 1 !important;
+	background: var(--paper, #ffffff) !important;
+	border: 1px solid var(--line-strong, #cbd5e1) !important;
+	color: var(--ink, #0f172a) !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+	white-space: nowrap !important;
+	box-sizing: border-box !important;
+}
+
+.clinical-tooth-btn:hover:not(.active):not([data-active="true"]),
+button.clinical-tooth-btn:hover:not(.active):not([data-active="true"]) {
+	border-color: var(--teal, #0d9488) !important;
+	color: var(--teal, #0d9488) !important;
+	background: var(--paper-soft, #f8fafc) !important;
+}
+
+.clinical-tooth-btn.active,
+button.clinical-tooth-btn.active,
+.clinical-tooth-btn[data-active="true"],
+button.clinical-tooth-btn[data-active="true"] {
+	background: var(--teal, #0d9488) !important;
+	border-color: var(--teal, #0d9488) !important;
+	color: #ffffff !important;
+	font-weight: 700 !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.3) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-tooth-btn,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) button.clinical-tooth-btn {
+	background: var(--paper, #1e293b) !important;
+	border: 1px solid rgba(255, 255, 255, 0.18) !important;
+	color: var(--ink, #f1f5f9) !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-tooth-btn.active,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) button.clinical-tooth-btn.active,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-tooth-btn[data-active="true"],
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) button.clinical-tooth-btn[data-active="true"] {
+	background: #0d9488 !important;
+	border-color: #2dd4bf !important;
+	color: #ffffff !important;
+}
+
+.clinical-fdi-select {
+	height: 28px !important;
+	min-height: 28px !important;
+	padding: 0 8px !important;
+	border-radius: 7px !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	background: var(--paper, #ffffff) !important;
+	border: 1px solid var(--line-strong, #cbd5e1) !important;
+	color: var(--ink, #0f172a) !important;
+	cursor: pointer !important;
+	box-sizing: border-box !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-fdi-select {
+	background: var(--paper, #1e293b) !important;
+	border: 1px solid rgba(255, 255, 255, 0.18) !important;
+	color: var(--ink, #f1f5f9) !important;
+}
+
+.clinical-protocol-card,
+button.clinical-protocol-card {
+	display: flex !important;
+	flex-direction: column !important;
+	align-items: flex-start !important;
+	justify-content: center !important;
+	gap: 4px !important;
+	min-height: 48px !important;
+	padding: 8px 12px !important;
+	border-radius: 10px !important;
+	background: var(--paper, #ffffff) !important;
+	border: 1.5px solid var(--line-strong, #cbd5e1) !important;
+	color: var(--ink, #0f172a) !important;
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+	text-align: left !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+	box-sizing: border-box !important;
+}
+
+.clinical-protocol-card:hover,
+button.clinical-protocol-card:hover {
+	border-color: var(--teal, #0d9488) !important;
+	box-shadow: 0 3px 8px rgba(13, 148, 136, 0.12) !important;
+	transform: translateY(-1px) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-protocol-card,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) button.clinical-protocol-card {
+	background: var(--paper, #1e293b) !important;
+	border: 1px solid rgba(255, 255, 255, 0.16) !important;
+	color: var(--ink, #f1f5f9) !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-protocol-card:hover,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) button.clinical-protocol-card:hover {
+	border-color: #2dd4bf !important;
+	background: rgba(30, 41, 59, 0.95) !important;
+}
+
+.clinical-protocol-card.applied,
+button.clinical-protocol-card.applied {
+	border-color: var(--teal, #0d9488) !important;
+	background: rgba(13, 148, 136, 0.08) !important;
+	box-shadow: 0 0 0 1px var(--teal, #0d9488) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-protocol-card.applied,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) button.clinical-protocol-card.applied {
+	border-color: #2dd4bf !important;
+	background: rgba(13, 148, 136, 0.22) !important;
+	box-shadow: 0 0 0 1px #2dd4bf !important;
+}
+
+.clinical-protocol-price-badge {
+	display: inline-flex;
+	align-items: center;
+	font-size: 11px;
+	font-weight: 700;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	color: var(--teal, #0d9488);
+	white-space: nowrap;
+	line-height: 1;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-protocol-price-badge {
+	color: #2dd4bf;
+}
+
+.clinical-protocol-applied-badge {
+	display: inline-flex;
+	align-items: center;
+	font-size: 10px;
+	font-weight: 700;
+	color: var(--teal, #0d9488);
+	background: rgba(13, 148, 136, 0.12);
+	border: 1px solid rgba(13, 148, 136, 0.25);
+	padding: 1px 4px;
+	border-radius: 4px;
+	line-height: 1;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-protocol-applied-badge {
+	color: #2dd4bf;
+	background: rgba(13, 148, 136, 0.25);
+	border-color: rgba(45, 212, 191, 0.4);
+}
+
+.clinical-protocol-icd-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 1px 5px;
+	border-radius: 4px;
+	font-size: 10px;
+	font-weight: 700;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	background: var(--paper-soft, #f1f5f9);
+	border: 1px solid var(--line, #cbd5e1);
+	color: var(--muted, #64748b);
+	flex-shrink: 0;
+	line-height: 1.2;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-protocol-icd-badge {
+	background: rgba(15, 23, 42, 0.7);
+	border-color: rgba(255, 255, 255, 0.14);
+	color: #94a3b8;
+}
+
+.clinical-protocol-icd-badge.applied-icd {
+	background: rgba(13, 148, 136, 0.15);
+	border-color: rgba(13, 148, 136, 0.4);
+	color: var(--teal, #0d9488);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-protocol-icd-badge.applied-icd {
+	background: rgba(13, 148, 136, 0.28);
+	border-color: rgba(45, 212, 191, 0.5);
+	color: #2dd4bf;
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+	.clinical-tooth-btn,
+	button.clinical-tooth-btn {
+		height: 44px !important;
+		min-height: 44px !important;
+		min-width: 44px !important;
+	}
+	.clinical-fdi-select {
+		height: 44px !important;
+		min-height: 44px !important;
+	}
+}
+
+.visit-monolithic-header .primary-button,
+.visit-monolithic-header .secondary-button {
+	padding-left: 10px !important;
+	padding-right: 10px !important;
+	font-size: 12px !important;
+}
+
+.visit-monolithic-header [data-testid="visit-header-more-actions-btn"] {
+	padding-left: 0 !important;
+	padding-right: 0 !important;
+}
+
+/* ── SOAP FORM 043/U VISIBILITY TRACKER ── */
+.emk-soap-visibility-tracker {
+	backdrop-filter: blur(8px);
+}
+.soap-status-chip {
+	transition: all 0.15s ease-in-out;
+}
+.soap-status-chip:active {
+	transform: scale(0.97);
+}
+

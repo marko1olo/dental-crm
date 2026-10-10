@@ -6,7 +6,7 @@
  * in-flight worker tracking, and queued slice draining.
  */
 
-import type { MprPlane, MprSliceExtractionResult } from "../cbctMprMath";
+import type { MprPlane, MprSliceExtractionResult } from "../../cbctMprMath";
 import type {
 	CbctWorkerInboundMessage,
 	CbctWorkerOutboundMessage,

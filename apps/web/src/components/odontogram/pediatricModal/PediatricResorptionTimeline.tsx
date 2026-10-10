@@ -9,7 +9,7 @@ import {
 	calculateEruptionTimelineByAge,
 	type EruptionTimelineAnalysis,
 } from "../pediatricDentitionEngine";
-import { showToast } from "../GlobalToast";
+import { showToast } from "../../GlobalToast";
 import { PEDIATRIC_AGE_PRESETS } from "./types";
 import { PediatricArchVisualizer } from "./PediatricArchVisualizer";
 import { PediatricTimelineTab } from "../PediatricTimelineTab";
@@ -21,7 +21,7 @@ export interface PediatricResorptionTimelineProps {
 	hasFirstPermanentMolars: boolean;
 	upperRow: number[];
 	lowerRow: number[];
-	onApplyAgeArch?: (teethNumbers: number[]) => void;
+	onApplyAgeArch?: ((teethNumbers: number[]) => void) | undefined;
 }
 
 export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelineProps> = ({
@@ -60,7 +60,7 @@ export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelinePr
 				{/* Clinical Age Presets Bar (3-5 years, 6-7 years, 8-10 years, 11-13 years) */}
 				<div className="space-y-2">
 					<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400">
-						Клинические возрастные пресеты (норма в 1 клик):
+						Клинические возрастные пресеты:
 					</div>
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 						{PEDIATRIC_AGE_PRESETS.map((preset) => {
@@ -120,7 +120,7 @@ export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelinePr
 													);
 												}}
 												className="min-h-[44px] sm:min-h-[32px] px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-xs select-none touch-manipulation"
-												title={`Применить формулу «${preset.labelRu}» в 1 клик`}
+												title={`Применить формулу «${preset.labelRu}»`}
 												data-testid={`pediatric-timeline-apply-${preset.id}`}
 											>
 												<Sparkles className="w-4 h-4 shrink-0" />

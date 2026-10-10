@@ -362,7 +362,7 @@ export async function calculateNoShowHeatmap(
 ): Promise<NoShowHeatmap> {
 	const noShowTimeBucket = inClinicZone(
 		appointments.startsAt,
-		cohortZone,
+		cohortZone ?? null,
 	);
 	const dowExpr = sql`extract(isodow from ${noShowTimeBucket})::int`;
 	const hourExpr = sql`extract(hour from ${noShowTimeBucket})::int`;

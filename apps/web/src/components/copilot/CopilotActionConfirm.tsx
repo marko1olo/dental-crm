@@ -644,7 +644,7 @@ export const CopilotActionConfirm: React.FC<CopilotActionConfirmProps> = ({
                     title="Утвердить назначение врача без замены"
                   >
                     <Check size={15} />
-                    <span>Утвердить без замены (1 клик)</span>
+                    <span>Утвердить без замены</span>
                   </button>
                 )}
             </>

@@ -1,6 +1,6 @@
 import { escapeXml } from "../../cda/c14n.js";
 import { canonicalJsonStringify, sha256Hex } from "../../sync/hashing.js";
-import { validateRussianInn, validateRussianKpp, validateRussianOgrn } from "../taxDeduction.js";
+import { validateRussianInn, validateRussianKpp, validateRussianOgrn } from "../tax/index.js";
 import type { OneCClinicProfile, OneCCommerceMlPackage } from "./types.js";
 
 export function computeCommerceMlSha256(payload: unknown): string {

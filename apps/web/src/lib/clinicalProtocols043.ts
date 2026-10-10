@@ -137,3 +137,20 @@ export const CLINICAL_FAST_PRESETS: readonly FastClinicalPreset[] = [
 	PROSTHO_FAST_PRESETS[0]!, // implant_crown_zirconia
 	THERAPY_FAST_PRESETS[3]!, // enamel_wear_erosion
 ];
+
+export {
+	ORDER_804N_ENDO_CODES,
+	DEFAULT_STAGE1_SERVICE_TITLE,
+	DEFAULT_STAGE2_OBTURATION_TITLE,
+	DEFAULT_STAGE2_RESTORATION_TITLE,
+	BASELINE_PRICES_RUB,
+	type LastVisitSoapSnapshot,
+	type MultiStageEndoTransformResult,
+	resolveServicePriceFromCatalog,
+	clearEndoHistoryIndex,
+	formatVisitDateRu,
+	isEndodonticIndication,
+	buildPatientPreviousVisitsEndoIndex,
+	getUnfinishedEndoSnapshot,
+	transformEndoStage1ToStage2,
+} from "./protocols/multiStageEndoEngine.js";

@@ -204,7 +204,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 				className="cd-templates-backdrop"
 				role="dialog"
 				aria-modal="true"
-				aria-label="1-Click Клинические протоколы и дневники приёма"
+				aria-label="Клинические протоколы и дневники приёма"
 				onClick={(e) => {
 					if (e.target === e.currentTarget) onClose();
 				}}
@@ -219,7 +219,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 							<div className="min-w-0 flex-1">
 								<div className="flex items-center gap-2 flex-wrap">
 									<h2 className="cd-templates-title truncate">
-										1-Click Клинические протоколы и дневники приёма
+										Клинические протоколы и дневники приёма
 									</h2>
 									<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#15803d)] border border-[var(--ok-fg,#15803d)]/30 shrink-0 whitespace-nowrap">
 										<ShieldCheck className="w-3.5 h-3.5" />
@@ -245,7 +245,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 						</button>
 					</header>
 
-					{/* ── Mandate 8e Item 3: Dominant 1-Click Physiological Norm Preset ── */}
+					{/* ── Dominant Physiological Norm Preset ── */}
 					<div className="cd-templates-dominant-norm-bar">
 						<div className="flex items-center gap-2 min-w-0">
 							<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#15803d)] shrink-0" />
@@ -263,7 +263,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 							<Sparkles className="w-4 h-4 text-emerald-500 shrink-0" />
 							<span>Соматически здоров / Физиологическая норма</span>
 							<span className="cd-dominant-norm-badge">
-								1-Click Норма
+								Норма
 							</span>
 							{selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id && (
 								<Check className="w-3.5 h-3.5 shrink-0" />
@@ -271,11 +271,11 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 						</button>
 					</div>
 
-					{/* ── 1-Click Fast Presets Ribbon (TOP Presets with Norm) ── */}
+					{/* ── Fast Presets Ribbon (TOP Presets with Norm) ── */}
 					<div className="cd-templates-fast-ribbon" data-testid="cd-core-fast-ribbon">
 						<div className="cd-fast-ribbon-label">
 							<Zap className="w-3.5 h-3.5 text-amber-500" />
-							<span>Быстрый 1-Click доступ:</span>
+							<span>Быстрый доступ:</span>
 						</div>
 						<div className="cd-fast-buttons-grid">
 							{coreTemplates.map((item) => {
@@ -556,7 +556,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										title="Мгновенная вставка регламентного протокола в карту"
 									>
 										<Sparkles className="w-4 h-4" />
-										<span>Вставить в дневник (1-Click)</span>
+										<span>Вставить в дневник</span>
 									</button>
 								</div>
 							</footer>

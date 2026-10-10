@@ -22,10 +22,10 @@ export interface DemoCaseHeaderBarProps {
 	readonly selectedCaseId: string;
 	readonly currentCase: DemoClinicalCase;
 	readonly onSelectCase: (caseId: string) => void;
-	readonly onSelectRole?: (roleKey: string) => void;
+	readonly onSelectRole?: ((roleKey: string) => void) | undefined;
 	readonly onClose: () => void;
-	readonly profileBadge?: string;
-	readonly profileDescription?: string;
+	readonly profileBadge?: string | undefined;
+	readonly profileDescription?: string | undefined;
 }
 
 export const DemoCaseHeaderBar: React.FC<DemoCaseHeaderBarProps> = ({

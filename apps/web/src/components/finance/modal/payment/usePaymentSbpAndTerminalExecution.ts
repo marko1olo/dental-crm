@@ -50,7 +50,8 @@ export interface UsePaymentSbpAndTerminalParams {
 	readonly isCheckingSbp: boolean;
 	readonly setIsCheckingSbp: (v: boolean) => void;
 	readonly setSbpCheckMessage: (msg: string | null) => void;
-	readonly sbpQrData: { payload: { qrId?: string } } | null;
+	readonly items?: readonly import("../../../billing/ReceiptPreview.js").ReceiptItem[] | undefined;
+	readonly toothNumber?: number | string | undefined;
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly onSuccess: NonNullable<PaymentModalProps["onSuccess"]>;
@@ -86,6 +87,8 @@ export function usePaymentSbpAndTerminalExecution(params: UsePaymentSbpAndTermin
 		setIsCheckingSbp,
 		setSbpCheckMessage,
 		sbpQrData,
+		items,
+		toothNumber,
 		isOpen,
 		onClose,
 		onSuccess,
@@ -278,9 +281,18 @@ export function usePaymentSbpAndTerminalExecution(params: UsePaymentSbpAndTermin
 					visitId: visitId || null,
 					documentId: documentId || (invoiceId ? invoiceId : null),
 					clientMutationId,
+					toothNumber: toothNumber ? (typeof toothNumber === "number" ? toothNumber : Number(toothNumber) || toothNumber) : undefined,
+					invoiceItems: items && items.length > 0 ? items.map((it) => ({
+						name: it.name,
+						code804n: it.code804n,
+						quantity: it.quantity,
+						priceRub: it.priceRub,
+						amountRub: it.amountRub,
+						toothNumber: it.toothNumber,
+					})) : undefined,
 					electronicAmountRub: effectiveAmountRub,
 					electronicAmountKopecks: discountCalc.totalDueKopecks,
-					note: `Оплата через СБП (НСПК / ГОСТ Р 56042-2014) (${effectiveAmountRub} ₽ • ${effectiveCashier}) [Заказ: ${effectiveOrderId}]${receiptId ? ` [Чек: ${receiptId}]` : ""}${innNote}${stomxNote}`,
+					note: `Оплата через СБП (НСПК / ГОСТ Р 56042-2014) (${effectiveAmountRub} ₽ • ${effectiveCashier}) [Заказ: ${effectiveOrderId}]${receiptId ? ` [Чек: ${receiptId}]` : ""}${innNote}${stomxNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`,
 				}),
 			});
 

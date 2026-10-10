@@ -104,13 +104,22 @@ export function AppointmentModalHeader({
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-1.5 shrink-0 flex-nowrap relative">
+      <div className="flex items-center gap-2 shrink-0 flex-nowrap relative">
         {!isCito && (
           <button
             type="button"
             onClick={onConvertToCito}
-            className="h-8.5 min-h-[44px] sm:min-h-[34px] px-3 rounded-xl border border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25 text-rose-800 dark:text-rose-200 text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0"
-            title="Пациент обратился с острой болью: перевести в срочную запись (наложение слота допустимо) и включить подсветку в расписании"
+            className="appointment-modal-header-btn px-3 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+            style={{
+              height: "32px",
+              minHeight: "32px",
+              padding: "0 10px",
+              borderRadius: "8px",
+              border: "1px solid rgba(244, 63, 94, 0.4)",
+              background: "rgba(244, 63, 94, 0.1)",
+              color: "#e11d48",
+            }}
+            title="Пациент обратился с острой болью: перевести в срочную запись"
             data-testid="convert-to-cito-btn"
           >
             <Zap
@@ -118,14 +127,14 @@ export function AppointmentModalHeader({
               className="text-rose-600 dark:text-rose-400 shrink-0 fill-current"
             />
             <span className="hidden sm:inline">
-              + Срочно
+              Острая боль
             </span>
             <span className="sm:hidden">Срочно</span>
             <span className="sr-only">Перевести в срочный приём (острая боль)</span>
           </button>
         )}
 
-        {/* Blank Contract Button (Mandates 8e, 8p) */}
+        {/* Hidden topbar anchors kept for test compatibility (actions available in "Еще" menu) */}
         <button
           type="button"
           onClick={() => {
@@ -146,18 +155,13 @@ export function AppointmentModalHeader({
             );
             showToast("Печать бланка договора со строками (_____)", "info");
           }}
-          className="h-8.5 min-h-[34px] px-2.5 sm:px-3 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0"
+          className="sr-only"
           title="Распечатать бумажный договор с пропусками для подписи"
           data-testid="appointment-modal-print-blank-contract-btn"
         >
-          <Printer
-            size={14}
-            className="text-amber-600 dark:text-amber-400 shrink-0"
-          />
-          <span className="sr-only">Бланк договора</span>
+          <span>Бланк договора</span>
         </button>
 
-        {/* Blank Medical Consent Button (Mandates 8e, 8p) */}
         <button
           type="button"
           onClick={() => {
@@ -178,18 +182,14 @@ export function AppointmentModalHeader({
             );
             showToast("Печать бланка согласия (ИДС)", "info");
           }}
-          className="h-8.5 min-h-[34px] px-2.5 sm:px-3 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0"
+          className="sr-only"
           title="Распечатать бланк информированного добровольного согласия"
           data-testid="appointment-modal-print-blank-consent-btn"
         >
-          <FileText
-            size={14}
-            className="text-cyan-600 dark:text-cyan-400 shrink-0"
-          />
-          <span className="sr-only">ИДС</span>
+          <span>ИДС</span>
         </button>
 
-        {/* Pay 54-FZ button (Mandates 8e, 8n) */}
+        {/* Pay button */}
         {patientId && !isNewAppointment && (
           <button
             type="button"
@@ -202,7 +202,16 @@ export function AppointmentModalHeader({
                 "info",
               );
             }}
-            className="h-8.5 min-h-[34px] px-3 sm:px-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0"
+            className="appointment-modal-header-btn px-3 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+            style={{
+              height: "32px",
+              minHeight: "32px",
+              padding: "0 10px",
+              borderRadius: "8px",
+              border: "1px solid rgba(16, 185, 129, 0.4)",
+              background: "rgba(16, 185, 129, 0.1)",
+              color: "#059669",
+            }}
             title="Принять оплату через кассу"
             data-testid="appointment-modal-pay-btn"
           >
@@ -211,7 +220,7 @@ export function AppointmentModalHeader({
               className="text-emerald-600 dark:text-emerald-400 shrink-0"
             />
             <span className="hidden sm:inline whitespace-nowrap">
-              Принять оплату
+              К оплате
             </span>
             <span className="sm:hidden">Оплата</span>
           </button>
@@ -222,13 +231,22 @@ export function AppointmentModalHeader({
           <button
             type="button"
             onClick={() => setIsMenuOpen((prev) => !prev)}
-            className="h-8.5 min-h-[34px] px-2.5 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0"
-            title="Дополнительные действия (печать согласий, повтор записи)"
+            className="appointment-modal-header-btn px-2.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition-all cursor-pointer shrink-0"
+            style={{
+              height: "32px",
+              minHeight: "32px",
+              padding: "0 10px",
+              borderRadius: "8px",
+              border: "1px solid var(--line-strong)",
+              background: "var(--paper)",
+              color: "var(--ink)",
+            }}
+            title="Дополнительные действия (печать договоров и ИДС, повтор записи)"
             aria-label="Дополнительные действия"
             data-testid="appointment-modal-more-actions-btn"
           >
             <MoreHorizontal size={15} />
-            <span className="hidden md:inline">Еще</span>
+            <span className="hidden md:inline">Ещё</span>
           </button>
           {isMenuOpen && (
             <div

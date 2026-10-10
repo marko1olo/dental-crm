@@ -28,18 +28,7 @@ export interface ScheduleMobileAgendaViewProps {
   onSlotClick?: ((slot: QuickBookingSlotInfo) => void) | undefined;
   onAppointmentClick?: ((appointment: Appointment) => void) | undefined;
   onQuickStatusChange?: ((appointmentId: string, status: Appointment["status"]) => void) | undefined;
-  onAppointmentMove?:
-    | ((
-        appointmentId: string,
-        updates: {
-          startsAt?: string | undefined;
-          endsAt?: string | undefined;
-          chairId?: string | undefined;
-          doctorUserId?: string | undefined;
-          allowOverbooking?: boolean | undefined;
-        },
-      ) => void | Promise<any>)
-    | undefined;
+  onAppointmentMove?: ((appointmentId: string, updates: { startsAt?: string; endsAt?: string; chairId?: string; doctorUserId?: string; allowOverbooking?: boolean }) => void | Promise<any>) | undefined;
   patientName: (patients: any[], id: string | null) => string;
   formatTime: (iso: string) => string;
   toDateTimeLocalValue: (iso: string, timezone?: string | null) => string;
@@ -612,8 +601,13 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 
                         {allergyText && (
                           <span className="schedule-mobile-allergy-chip" title={allergyText}>
-                            <AlertTriangle size={10} />
-                            <span>{allergyText.slice(0, 24)}</span>
+                            <AlertTriangle size={10} className="shrink-0" />
+                            <span>
+                              {(() => {
+                                const c = allergyText.replace(/^аллерги[яи][: \t-]*/i, "").replace(/^на\s+/i, "").trim();
+                                return c ? c.charAt(0).toUpperCase() + c.slice(1) : allergyText;
+                              })()}
+                            </span>
                           </span>
                         )}
                       </div>

@@ -312,8 +312,8 @@ export const TreatmentPlanStageFooter: React.FC<TreatmentPlanStageFooterProps> =
 												stageNumber: stage.stageNumber,
 												stageTitle: stage.title,
 												priceRub: stage.totalRub,
-												doctorId: stage.assignedDoctorId,
-												doctorName: stage.assignedDoctorName,
+												doctorId: (stage as any).assignedDoctorId,
+												doctorName: (stage as any).assignedDoctorName,
 											});
 										}}
 										className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"

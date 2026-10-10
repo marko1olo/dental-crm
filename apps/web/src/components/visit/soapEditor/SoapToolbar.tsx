@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { ALL_FDI_ADULT_TEETH } from "./constants";
 import type { SoapToolbarProps } from "./types";
+import { playTactileEarcon } from "../../../lib/intercomSound";
 
 export const SoapToolbar: React.FC<SoapToolbarProps> = ({
 	selectedTooth,
@@ -374,7 +375,10 @@ export const SoapMobileActionBar: React.FC<SoapMobileActionBarProps> = ({
 
 			<button
 				type="button"
-				onClick={onApplyNorm}
+				onClick={() => {
+					playTactileEarcon("norm");
+					onApplyNorm();
+				}}
 				className="min-h-[44px] px-3.5 text-[13px] font-semibold rounded-xl flex items-center justify-center gap-1 bg-emerald-500/15 active:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 touch-manipulation cursor-pointer shrink-0"
 				title="Заполнить нормой"
 			>

@@ -105,9 +105,10 @@ export function parseReportSections(report: string): ReportSectionItem[] {
 export interface VisiographReportViewerProps {
 	report: string;
 	capturedAt?: string | undefined;
+	onInsertToProtocol?: ((text: string) => void) | undefined;
 }
 
-export function VisiographReportViewer({ report, capturedAt }: VisiographReportViewerProps) {
+export function VisiographReportViewer({ report, capturedAt, onInsertToProtocol }: VisiographReportViewerProps) {
 	const [activeSection, setActiveSection] = useState<number | null>(null);
 	const sections = parseReportSections(report);
 
@@ -123,12 +124,13 @@ export function VisiographReportViewer({ report, capturedAt }: VisiographReportV
 		>
 			<div
 				style={{
-					padding: "10px 14px",
+					padding: "8px 14px",
 					background: "var(--paper-soft)",
 					display: "flex",
 					alignItems: "center",
 					gap: "8px",
 					borderBottom: "1px solid var(--line)",
+					flexWrap: "wrap",
 				}}
 			>
 				<Sparkles size={14} style={{ color: "var(--teal)" }} />
@@ -140,11 +142,29 @@ export function VisiographReportViewer({ report, capturedAt }: VisiographReportV
 						style={{
 							fontSize: "0.78rem",
 							color: "var(--muted)",
-							marginLeft: "auto",
 						}}
 					>
-						{new Date(capturedAt).toLocaleDateString("ru-RU")}
+						· {new Date(capturedAt).toLocaleDateString("ru-RU")}
 					</span>
+				)}
+				{onInsertToProtocol && (
+					<button
+						type="button"
+						onClick={() => onInsertToProtocol(report)}
+						className="diag-btn-teal shrink-0"
+						style={{
+							height: "28px",
+							minHeight: "28px",
+							padding: "0 10px",
+							fontSize: "12px",
+							marginLeft: "auto",
+						}}
+						title="Перенести отчёт лучевой диагностики в дневник визита (043/у)"
+						data-testid="btn-transfer-report-to-protocol"
+					>
+						<FileText size={13} />
+						<span>В дневник (043/у)</span>
+					</button>
 				)}
 			</div>
 			{sections.map((section, sIndex) => {

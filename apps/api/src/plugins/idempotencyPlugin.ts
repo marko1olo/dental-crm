@@ -200,10 +200,28 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 				reply.header("X-Idempotency-Key", idempotencyKey);
 				reply.header("X-Idempotency-Status", "replayed");
 				reply.header("X-Cache-Lookup", "HIT");
-				reply.code(existingMem.responseStatus);
-				if (existingMem.responseJson) {
+
+				let replayedStatus = existingMem.responseStatus;
+				let replayedBody: unknown = existingMem.responseJson;
+
+				if (
+					existingMem.responseJson &&
+					typeof existingMem.responseJson === "object" &&
+					"replayed" in existingMem.responseJson
+				) {
+					replayedBody = {
+						...existingMem.responseJson,
+						replayed: true,
+					};
+					if (replayedStatus === 201) {
+						replayedStatus = 200;
+					}
+				}
+
+				reply.code(replayedStatus);
+				if (replayedBody !== null && replayedBody !== undefined) {
 					reply.type("application/json");
-					return reply.send(existingMem.responseJson);
+					return reply.send(replayedBody);
 				}
 				return reply.send();
 			}
@@ -359,14 +377,29 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 					reply.header("X-Idempotency-Key", idempotencyKey);
 					reply.header("X-Idempotency-Status", "replayed");
 					reply.header("X-Cache-Lookup", "HIT");
-					reply.code(existingSyncRecord.responseStatus);
+
+					let replayedStatus = existingSyncRecord.responseStatus;
+					let replayedBody: unknown = existingSyncRecord.responseJson;
 
 					if (
-						existingSyncRecord.responseJson !== null &&
-						existingSyncRecord.responseJson !== undefined
+						existingSyncRecord.responseJson &&
+						typeof existingSyncRecord.responseJson === "object" &&
+						"replayed" in (existingSyncRecord.responseJson as Record<string, unknown>)
 					) {
+						replayedBody = {
+							...(existingSyncRecord.responseJson as Record<string, unknown>),
+							replayed: true,
+						};
+						if (replayedStatus === 201) {
+							replayedStatus = 200;
+						}
+					}
+
+					reply.code(replayedStatus);
+
+					if (replayedBody !== null && replayedBody !== undefined) {
 						reply.type("application/json");
-						return reply.send(existingSyncRecord.responseJson);
+						return reply.send(replayedBody);
 					}
 					return reply.send();
 				}

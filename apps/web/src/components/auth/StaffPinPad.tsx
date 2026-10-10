@@ -19,6 +19,7 @@ import {
 	resolveStaffUnlockListState,
 	resolveStaffUnlockPhase,
 	STAFF_UNLOCK_LIST_SUBJECT,
+	type StaffUnlockMember,
 } from "./staffUnlockState";
 import { AuthArtBackground } from "./AuthArtBackground";
 import { formatDoctorRole } from "./doctorPrivacyShieldHelpers";
@@ -26,6 +27,7 @@ import {
 	DEMO_SHOWCASE_ORG_ID,
 	isDemoShowcaseMode,
 } from "../../lib/demoMode";
+import { getDemoShowcaseStaff } from "../../utils/demoModeEngine";
 
 interface StaffPinPadProps {
 	/**
@@ -96,12 +98,11 @@ export function StaffPinPad({
 	// Если в клинике 1 действующий сотрудник, автоматически выбираем его.
 	// Если список не прочитан (сервер офлайн), пуст или активен демо-режим, выбираем Доктора Демо.
 	useEffect(() => {
-		if (!selectedUser) {
-			if (activeStaff && activeStaff.length === 1) {
-				setSelectedUser(activeStaff[0]);
-			} else if (listPhase === "failed" || listPhase === "empty" || isDemoShowcaseMode()) {
-				setSelectedUser(DEMO_CHIEF_DOCTOR);
-			}
+		if (!selectedUser && activeStaff && activeStaff.length === 1) {
+			setSelectedUser(activeStaff[0]);
+		} else if (!selectedUser && (listPhase === "failed" || listPhase === "empty" || listPhase === "loading" || isDemoShowcaseMode())) {
+			const fallback = (getDemoShowcaseStaff() as unknown as StaffUnlockMember[])[0] || DEMO_CHIEF_DOCTOR;
+			setSelectedUser(fallback);
 		}
 	}, [activeStaff, selectedUser, listPhase]);
 
@@ -124,8 +125,8 @@ export function StaffPinPad({
 			if (activeStaff && activeStaff.length === 1) {
 				targetUser = activeStaff[0];
 				setSelectedUser(targetUser);
-			} else if (listPhase === "failed" || listPhase === "empty" || isDemoShowcaseMode()) {
-				targetUser = DEMO_CHIEF_DOCTOR;
+			} else if (listPhase === "failed" || listPhase === "empty" || listPhase === "loading" || isDemoShowcaseMode()) {
+				targetUser = (getDemoShowcaseStaff() as unknown as StaffUnlockMember[])[0] || DEMO_CHIEF_DOCTOR;
 				setSelectedUser(targetUser);
 			} else {
 				showToast("Сначала выберите сотрудника из списка", "info");
@@ -365,16 +366,62 @@ export function StaffPinPad({
               кроме повтора.
             */}
 						{listPhase === "loading" ? (
-							<div
-								className="p-4 text-center rounded-xl border border-dashed text-xs text-slate-400 bg-slate-800/40 col-span-full"
-								role="status"
-								aria-live="polite"
-							>
-								{
-									panelStateText(STAFF_UNLOCK_LIST_SUBJECT, {
-										phase: "loading",
-									}).title
-								}
+							<div className="col-span-full flex flex-col gap-2.5">
+								<div
+									className="p-2.5 text-center rounded-xl border border-[var(--line,#e2e8f0)] dark:border-[var(--line-dark,#1e293b)] text-xs text-[var(--muted)] bg-[var(--paper-soft)] flex items-center justify-center gap-2"
+									role="status"
+									aria-live="polite"
+								>
+									<span className="w-2 h-2 rounded-full bg-[var(--teal,#0d9488)] animate-pulse" />
+									<span>
+										{
+											panelStateText(STAFF_UNLOCK_LIST_SUBJECT, {
+												phase: "loading",
+											}).title
+										}
+									</span>
+								</div>
+								<div className="flex flex-col gap-1.5">
+									<div className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1.5 px-0.5">
+										<Zap size={12} className="text-[var(--teal,#0d9488)]" />
+										<span>Быстрый вход / Демо-профиль:</span>
+									</div>
+									{(getDemoShowcaseStaff() as unknown as StaffUnlockMember[]).slice(0, 4).map((staff) => {
+										const isSelected = selectedUser?.id === staff?.id;
+										const fullName = typeof staff?.fullName === "string" ? staff.fullName : "";
+										const initials = fullName
+											? fullName.split(" ").filter(Boolean).map((p) => p[0] ?? "").join("").slice(0, 2)
+											: "ДД";
+										return (
+											<button
+												key={staff.id}
+												type="button"
+												className={`auth-staff-card ${isSelected ? "active" : ""}`}
+												onClick={() => {
+													setSelectedUser(staff);
+													setPin("");
+													setErrorText(null);
+												}}
+											>
+												<div
+													className="auth-staff-avatar"
+													style={{ backgroundColor: (staff.color as string) || "var(--teal,#0d9488)" }}
+												>
+													{initials}
+												</div>
+												<div className="auth-staff-info">
+													<div className="auth-staff-name">{fullName}</div>
+													<div className="auth-staff-role">{formatDoctorRole(staff.role as string)} · PIN: 1111</div>
+												</div>
+												{isSelected && (
+													<div className="auth-staff-check">
+														<UserCheck size={18} />
+													</div>
+												)}
+											</button>
+										);
+									})}
+								</div>
 							</div>
 						) : listPhase === "failed" ? (
 							<div className="col-span-full" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -384,26 +431,9 @@ export function StaffPinPad({
 									onRetry={onRetryStaffList}
 									className="col-span-full"
 								/>
-								<div
-									style={{
-										padding: "12px",
-										borderRadius: "10px",
-										background: "rgba(13, 148, 136, 0.08)",
-										border: "1px dashed var(--teal, #0d9488)",
-									}}
-								>
-									<div
-										style={{
-											fontSize: "12px",
-											color: "var(--teal, #0d9488)",
-											fontWeight: 600,
-											marginBottom: "8px",
-											display: "flex",
-											alignItems: "center",
-											gap: "6px",
-										}}
-									>
-										<Zap size={14} /> Автономный режим / Вход без сервера:
+								<div className="p-3 rounded-xl bg-[rgba(13,148,136,0.06)] dark:bg-[rgba(13,148,136,0.12)] border border-[var(--teal,#0d9488)]/25 flex flex-col gap-2">
+									<div className="text-xs text-[var(--teal,#0d9488)] font-semibold flex items-center gap-1.5">
+										<Zap size={14} /> <span>Автономный режим / Вход без сервера:</span>
 									</div>
 									<button
 										type="button"
@@ -438,7 +468,7 @@ export function StaffPinPad({
 							</div>
 						) : listPhase === "empty" ? (
 							<div className="col-span-full" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-								<div className="p-4 text-center rounded-xl border border-dashed text-xs text-slate-400 bg-slate-800/40 col-span-full">
+								<div className="p-4 text-center rounded-xl border border-[var(--line,#e2e8f0)] dark:border-[var(--line-dark,#1e293b)] text-xs text-[var(--muted)] bg-[var(--paper-soft)] col-span-full">
 									{
 										panelStateText(STAFF_UNLOCK_LIST_SUBJECT, { phase: "empty" })
 											.title
@@ -449,26 +479,9 @@ export function StaffPinPad({
 											.hint
 									}
 								</div>
-								<div
-									style={{
-										padding: "12px",
-										borderRadius: "10px",
-										background: "rgba(13, 148, 136, 0.08)",
-										border: "1px dashed var(--teal, #0d9488)",
-									}}
-								>
-									<div
-										style={{
-											fontSize: "12px",
-											color: "var(--teal, #0d9488)",
-											fontWeight: 600,
-											marginBottom: "8px",
-											display: "flex",
-											alignItems: "center",
-											gap: "6px",
-										}}
-									>
-										<Zap size={14} /> Резервный профиль для начала работы:
+								<div className="p-3 rounded-xl bg-[rgba(13,148,136,0.06)] dark:bg-[rgba(13,148,136,0.12)] border border-[var(--teal,#0d9488)]/25 flex flex-col gap-2">
+									<div className="text-xs text-[var(--teal,#0d9488)] font-semibold flex items-center gap-1.5">
+										<Zap size={14} /> <span>Резервный профиль для начала работы:</span>
 									</div>
 									<button
 										type="button"
@@ -682,7 +695,6 @@ export function StaffPinPad({
 						<button
 							type="button"
 							className="auth-demo-btn"
-							style={{ marginTop: "14px", width: "100%", justifyContent: "center" }}
 							disabled={loading}
 							onClick={() => {
 								const target = selectedUser || DEMO_CHIEF_DOCTOR;
@@ -691,7 +703,8 @@ export function StaffPinPad({
 								void submitPin("1111", target);
 							}}
 						>
-							<Zap size={16} /> ⚡ Войти как Доктор Демо (PIN: 1111)
+							<Zap size={16} className="auth-demo-btn-icon" />
+							<span>Войти как Доктор Демо (PIN: 1111)</span>
 						</button>
 					)}
 				</div>

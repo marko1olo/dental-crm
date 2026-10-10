@@ -11,6 +11,8 @@ import type {
 	A4DocumentContractData,
 	A4DocumentActData,
 	A4DocumentTreatmentPlanData,
+	A4DocumentInformedConsentData,
+	A4DocumentPersonalDataConsentData,
 	A4DocumentMedicalCardData,
 } from "@dental/shared";
 
@@ -128,11 +130,49 @@ const mockTreatmentPlanData: A4DocumentTreatmentPlanData = {
 			],
 			stageTotalRub: 9500,
 		},
+		{
+			stageNumber: 2,
+			stageName: "Этап II. Профессиональная гигиена",
+			stageTiming: "через 5 дней",
+			plannedServices: [
+				{
+					name: "Ультразвуковая чистка",
+					toothOrArea: "11-48",
+					timing: "2-й визит",
+					priceRub: 6000,
+				},
+			],
+			stageTotalRub: 6000,
+		},
 	],
-	totalCostWithoutDiscountRub: 9500,
+	totalCostWithoutDiscountRub: 15500,
 	discountRub: 0,
-	totalCostWithDiscountRub: 9500,
+	totalCostWithDiscountRub: 15500,
 	approvedVariantName: "Вариант «Стандарт»",
+};
+
+const mockConsentData: A4DocumentInformedConsentData = {
+	consentNumber: "ИДС-2026/418",
+	consentDate: "03 октября 2026",
+	clinic: mockClinic,
+	patient: mockPatient,
+	doctorFullName: "Воронов Алексей Владимирович",
+	doctorSpecialty: "Врач-стоматолог-терапевт",
+	interventionName: "Лечение кариеса зуба 16 и местная анестезия",
+	toothOrArea: "16",
+	diagnosisSummary: "K02.1 Кариес дентина",
+	contractNumber: "Д-2026/418",
+	contractDate: "03 октября 2026",
+	patientQuestionsAnswered: true,
+};
+
+const mockPersonalDataConsent: A4DocumentPersonalDataConsentData = {
+	consentNumber: "ПД-2026/418",
+	consentDate: "03 октября 2026",
+	clinic: mockClinic,
+	patient: mockPatient,
+	thirdPartyTransfersAllowed: true,
+	egiszTransferAllowed: true,
 };
 
 const mockMedicalCardData: A4DocumentMedicalCardData = {
@@ -159,84 +199,183 @@ const mockMedicalCardData: A4DocumentMedicalCardData = {
 	recommendations: "Контрольный осмотр через 6 месяцев.",
 };
 
+function countA4PageSheets(html: string): number {
+	const matches = html.match(/class="[^"]*pro-a4-page-sheet[^"]*"/g);
+	return matches ? matches.length : 0;
+}
+
 describe("Professional A4 Document Sheet & Preview Modal (SSR Safe Tests)", () => {
-	it("renders Tab 1 (Contract) with Russian legal text, 152-FZ, PP 736 and stamp box", () => {
+	it("renders Tab 1 (Contract) with exactly 3 discrete A4 sheets, PP 736 and stamp box", () => {
 		const html = renderToString(
 			<ProfessionalDocumentA4Sheet
 				activeTab="contract"
 				contractData={mockContractData}
 				actData={mockActData}
 				treatmentPlanData={mockTreatmentPlanData}
+				consentData={mockConsentData}
+				personalDataConsent={mockPersonalDataConsent}
 				medicalCardData={mockMedicalCardData}
 			/>,
 		);
 
+		assert.equal(countA4PageSheets(html), 3, "Contract must render strictly 3 A4 sheets");
 		assert.ok(html.includes("ДОГОВОР № Д-2026/418"));
 		assert.ok(html.includes("Постановлением Правительства РФ от 11.05.2023 № 736"));
 		assert.ok(html.includes("Ковалёв Роман Станиславович"));
 		assert.ok(html.includes("М.П."));
 		assert.ok(html.includes("a4-table"));
 		assert.ok(html.includes("B01.065.001"));
+		assert.ok(html.includes("Лист 1 из 3"));
+		assert.ok(html.includes("Лист 2 из 3"));
+		assert.ok(html.includes("Лист 3 из 3"));
 	});
 
-	it("renders Tab 2 (Act of Completed Works) with 804n, surrender formula and doctor signature", () => {
+	it("renders Tab 2 (Act of Completed Works) with exactly 1 discrete A4 sheet and 804n", () => {
 		const html = renderToString(
 			<ProfessionalDocumentA4Sheet
 				activeTab="act"
 				contractData={mockContractData}
 				actData={mockActData}
 				treatmentPlanData={mockTreatmentPlanData}
+				consentData={mockConsentData}
+				personalDataConsent={mockPersonalDataConsent}
 				medicalCardData={mockMedicalCardData}
 			/>,
 		);
 
+		assert.equal(countA4PageSheets(html), 1, "Act must render strictly 1 A4 sheet");
 		assert.ok(html.includes("АКТ СДАЧИ-ПРИЕМКИ ОКАЗАННЫХ МЕДИЦИНСКИХ УСЛУГ"));
 		assert.ok(html.includes("Номенклатура МЗ РФ № 804н"));
 		assert.ok(html.includes("Услуги оказаны в полном объеме"));
 		assert.ok(html.includes("Претензий по объему, качеству и стоимости оказанных медицинских услуг не имею"));
 		assert.ok(html.includes("УСЛУГИ СДАЛ (ИСПОЛНИТЕЛЬ)"));
 		assert.ok(html.includes("УСЛУГИ ПРИНЯЛ (ЗАКАЗЧИК)"));
+		assert.ok(html.includes("Лист 1 из 1"));
 	});
 
-	it("renders Tab 3 (Treatment Plan) with stages, approval block and words sum", () => {
+	it("renders Tab 3 (Treatment Plan) with exactly 2 discrete A4 sheets, stages and patient approval", () => {
 		const html = renderToString(
 			<ProfessionalDocumentA4Sheet
 				activeTab="treatment_plan"
 				contractData={mockContractData}
 				actData={mockActData}
 				treatmentPlanData={mockTreatmentPlanData}
+				consentData={mockConsentData}
+				personalDataConsent={mockPersonalDataConsent}
 				medicalCardData={mockMedicalCardData}
 			/>,
 		);
 
-		assert.ok(html.includes("ПЛАН КОМПЛЕКСНОГО ЛЕЧЕНИЯ СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА"));
+		assert.equal(countA4PageSheets(html), 2, "Treatment plan must render strictly 2 A4 sheets");
+		assert.ok(html.includes("ПЛАН КОМПЛЕКСНОГО СТОМАТОЛОГИЧЕСКОГО ЛЕЧЕНИЯ И СМЕТА"));
 		assert.ok(html.includes("Этап I. Терапевтическая санация"));
-		assert.ok(html.includes("Блок согласования плана лечения пациентом"));
+		assert.ok(html.includes("Блок информированного согласования плана лечения пациентом"));
 		assert.ok(html.includes("ПЛАН СОГЛАСОВАЛ (ПАЦИЕНТ)"));
 		assert.ok(html.includes("с планом, сроками и стоимостью согласен"));
+		assert.ok(html.includes("Лист 1 из 2"));
+		assert.ok(html.includes("Лист 2 из 2"));
 	});
 
-	it("renders Tab 4 (Medical Card / Diary) with FDI tooth chart, ICD-10 and NO 043u in title", () => {
+	it("renders Tab 4 (Informed Consent 1051n) with exactly 2 discrete A4 sheets and art. 20 323-FZ", () => {
+		const html = renderToString(
+			<ProfessionalDocumentA4Sheet
+				activeTab="consent_1051n"
+				contractData={mockContractData}
+				actData={mockActData}
+				treatmentPlanData={mockTreatmentPlanData}
+				consentData={mockConsentData}
+				personalDataConsent={mockPersonalDataConsent}
+				medicalCardData={mockMedicalCardData}
+			/>,
+		);
+
+		assert.equal(countA4PageSheets(html), 2, "Informed consent must render strictly 2 A4 sheets");
+		assert.ok(html.includes("ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ"));
+		assert.ok(html.includes("Приказом Министерства здравоохранения Российской Федерации от 12.11.2021 № 1051н"));
+		assert.ok(html.includes("Характер и цели медицинского вмешательства"));
+		assert.ok(html.includes("ВРАЧ, ПРОВЕДШИЙ БЕСЕДУ"));
+		assert.ok(html.includes("ПАЦИЕНТ (ЗАКАЗЧИК)"));
+		assert.ok(html.includes("М.П."));
+		assert.ok(html.includes("Лист 1 из 2"));
+		assert.ok(html.includes("Лист 2 из 2"));
+	});
+
+	it("renders Tab 5 (Personal Data Consent 152-FZ) with exactly 1 discrete A4 sheet and 25-year storage", () => {
+		const html = renderToString(
+			<ProfessionalDocumentA4Sheet
+				activeTab="personal_data"
+				contractData={mockContractData}
+				actData={mockActData}
+				treatmentPlanData={mockTreatmentPlanData}
+				consentData={mockConsentData}
+				personalDataConsent={mockPersonalDataConsent}
+				medicalCardData={mockMedicalCardData}
+			/>,
+		);
+
+		assert.equal(countA4PageSheets(html), 1, "Personal data consent must render strictly 1 A4 sheet");
+		assert.ok(html.includes("СОГЛАСИЕ НА ОБРАБОТКУ ПЕРСОНАЛЬНЫХ ДАННЫХ"));
+		assert.ok(html.includes("Федеральным законом от 27.07.2006 № 152-ФЗ"));
+		assert.ok(html.includes("Постановлением Правительства РФ от 09.02.2022 № 140 (ЕГИСЗ)"));
+		assert.ok(html.includes("25 лет"));
+		assert.ok(html.includes("ОПЕРАТОР ПЕРСОНАЛЬНЫХ ДАННЫХ"));
+		assert.ok(html.includes("СУБЪЕКТ ПЕРСОНАЛЬНЫХ ДАННЫХ"));
+		assert.ok(html.includes("Лист 1 из 1"));
+	});
+
+	it("renders Tab 6 (Medical Card / Diary) with exactly 2 discrete A4 sheets, FDI chart and NO 043u in title", () => {
 		const html = renderToString(
 			<ProfessionalDocumentA4Sheet
 				activeTab="medical_card"
 				contractData={mockContractData}
 				actData={mockActData}
 				treatmentPlanData={mockTreatmentPlanData}
+				consentData={mockConsentData}
+				personalDataConsent={mockPersonalDataConsent}
 				medicalCardData={mockMedicalCardData}
 			/>,
 		);
 
+		assert.equal(countA4PageSheets(html), 2, "Medical card must render strictly 2 A4 sheets");
 		assert.ok(html.includes("МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА / ДНЕВНИК ПРИЁМА"));
-		// Invariant: no "043у" in title/headings
+		// Invariant: strictly ZERO "043у" in titles or headings!
 		assert.ok(!html.includes("Форма № 043/у"));
 		assert.ok(!html.includes("Форма 043/у"));
 		assert.ok(html.includes("Зубная формула (FDI World Dental Federation)"));
 		assert.ok(html.includes("K02.1"));
 		assert.ok(html.includes("Кариес дентина"));
+		assert.ok(html.includes("Лист 1 из 2"));
+		assert.ok(html.includes("Лист 2 из 2"));
 	});
 
-	it("renders DocumentA4PrintPreviewModal without crashing when open", () => {
+	it("renders 1-line ergonomic toolbar with 6 tabs, zoom controls and print button", () => {
+		const html = renderToString(
+			<ProfessionalDocumentA4Sheet
+				activeTab="contract"
+				contractData={mockContractData}
+				actData={mockActData}
+				treatmentPlanData={mockTreatmentPlanData}
+				consentData={mockConsentData}
+				personalDataConsent={mockPersonalDataConsent}
+				medicalCardData={mockMedicalCardData}
+			/>,
+		);
+
+		assert.ok(html.includes("pro-a4-toolbar"));
+		assert.ok(html.includes("a4-tab-contract"));
+		assert.ok(html.includes("a4-tab-act"));
+		assert.ok(html.includes("a4-tab-treatment-plan"));
+		assert.ok(html.includes("a4-tab-consent-1051n"));
+		assert.ok(html.includes("a4-tab-personal-data"));
+		assert.ok(html.includes("a4-tab-medical-card"));
+		assert.ok(html.includes("zoom-80"));
+		assert.ok(html.includes("zoom-100"));
+		assert.ok(html.includes("zoom-fit"));
+		assert.ok(html.includes("btn-print-a4-document"));
+		assert.ok(html.includes("Формат A4 · 210 × 297 мм · ГОСТ"));
+	});
+
+	it("renders DocumentA4PrintPreviewModal without crashing when open and supports all tabs", () => {
 		const html = renderToString(
 			<DocumentA4PrintPreviewModal
 				isOpen={true}
@@ -245,6 +384,8 @@ describe("Professional A4 Document Sheet & Preview Modal (SSR Safe Tests)", () =
 				contractData={mockContractData}
 				actData={mockActData}
 				treatmentPlanData={mockTreatmentPlanData}
+				consentData={mockConsentData}
+				personalDataConsent={mockPersonalDataConsent}
 				medicalCardData={mockMedicalCardData}
 			/>,
 		);

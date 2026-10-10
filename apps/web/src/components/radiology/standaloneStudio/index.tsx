@@ -117,7 +117,9 @@ export const CbctStandaloneStudioView: React.FC<CbctStandaloneStudioViewProps> =
 				panoThicknessMm={studio.panoThicknessMm}
 				onChangePanoThicknessMm={studio.setPanoThicknessMm}
 				onSelectClinicalPreset={studio.handleSelectClinicalPreset}
-				onCopySnapshotToClipboard={studio.clipboardSnapshot.copySnapshotToClipboard}
+				onCopySnapshotToClipboard={async () => {
+					await studio.clipboardSnapshot.copySnapshotToClipboard();
+				}}
 				onOpenComparisonSplit={() => studio.setIsComparisonSplitOpen(true)}
 			/>
 
@@ -243,7 +245,6 @@ export const CbctStandaloneStudioView: React.FC<CbctStandaloneStudioViewProps> =
 					}}
 					onChangeWindowWidth={studio.setWindowWidth}
 					onChangeWindowLevel={studio.setWindowLevel}
-					onChangeSlabThicknessMm={studio.setSlabThicknessMm}
 					onSelectClinicalPreset={studio.handleSelectClinicalPreset}
 					panoThicknessMm={studio.panoThicknessMm}
 					onChangePanoThicknessMm={studio.setPanoThicknessMm}

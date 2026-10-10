@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
 	AlertTriangle,
 	Check,
@@ -88,34 +88,58 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 	const [selectedPatient, setSelectedPatient] = useState<PatientSearchCandidate | null>(null);
 	const [showSearchBox, setShowSearchBox] = useState(false);
 
+	const searchAbortRef = useRef<AbortController | null>(null);
+	const searchSeqRef = useRef<number>(0);
+
 	const dicomName = study.dicomPatientName || "Не указано в DICOM";
 	const dicomBirth = study.dicomBirthDate || "Не указана";
 	const currentPatientName = study.patientFullName || (study.patientId ? "Пациент привязан" : "Не привязано");
 	const confidence = study.bindingConfidence ?? 0;
 	const isCurrentlyBound = Boolean(study.patientId);
 
-	// Очистка при открытии/смене исследования
+	// Очистка при открытии/смене исследования и сброс активных запросов
 	useEffect(() => {
 		setSelectedPatient(null);
 		setSearchQuery("");
 		setShowSearchBox(false);
 		setSearchResults([]);
+		if (searchAbortRef.current) {
+			searchAbortRef.current.abort();
+			searchAbortRef.current = null;
+		}
 	}, [study.id]);
 
-	// Поиск пациентов в базе клиники
+	// Поиск пациентов в базе клиники с защитой от race conditions (AbortController & sequence counter)
 	const handleSearchPatients = useCallback(async (query: string) => {
 		setSearchQuery(query);
 		const trimmed = query.trim().toLowerCase();
+
+		// Отменяем предыдущий активный запрос поиска
+		if (searchAbortRef.current) {
+			searchAbortRef.current.abort();
+			searchAbortRef.current = null;
+		}
+
 		if (trimmed.length < 2) {
 			setSearchResults([]);
+			setIsSearching(false);
 			return;
 		}
 
+		const controller = new AbortController();
+		searchAbortRef.current = controller;
+		const seq = ++searchSeqRef.current;
+
 		setIsSearching(true);
 		try {
-			const res = await fetch(`/api/patients?search=${encodeURIComponent(trimmed)}`);
+			const res = await fetch(`/api/patients?search=${encodeURIComponent(trimmed)}`, {
+				signal: controller.signal,
+			});
+			if (seq !== searchSeqRef.current) return;
+
 			if (res.ok) {
 				const data = await res.json();
+				if (seq !== searchSeqRef.current) return;
 				const items: PatientSearchCandidate[] = Array.isArray(data)
 					? data
 					: Array.isArray(data?.items)
@@ -141,7 +165,11 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 					setSearchResults([]);
 				}
 			}
-		} catch {
+		} catch (err: any) {
+			if (err?.name === "AbortError") {
+				return;
+			}
+			if (seq !== searchSeqRef.current) return;
 			if (isDemoShowcaseMode()) {
 				setSearchResults(
 					DEMO_FALLBACK_PATIENTS.filter(p =>
@@ -152,7 +180,9 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 				setSearchResults([]);
 			}
 		} finally {
-			setIsSearching(false);
+			if (seq === searchSeqRef.current) {
+				setIsSearching(false);
+			}
 		}
 	}, []);
 

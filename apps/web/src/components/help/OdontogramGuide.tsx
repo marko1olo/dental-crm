@@ -216,7 +216,7 @@ export const OdontogramGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) 
 							type="button"
 							onClick={handleApplyAutonorm}
 							className="px-2.5 py-1 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold text-[10px] flex items-center gap-1 hover:bg-emerald-500/25 transition-all cursor-pointer"
-							title="Заполнить все зубы физиологической нормой в 1 клик (Shift+N)"
+							title="Заполнить все зубы физиологической нормой (Shift+N)"
 						>
 							<Check size={12} />
 							<span>✓ Норма (Shift+N)</span>
@@ -428,7 +428,7 @@ export const OdontogramGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) 
 						</thead>
 						<tbody className="divide-y divide-[var(--line)]/50">
 							<tr>
-								<td className="py-1.5 font-medium text-emerald-600 dark:text-emerald-400">1-Клик Норма (Все интактны)</td>
+								<td className="py-1.5 font-medium text-emerald-600 dark:text-emerald-400">Норма здоровья (Все интактны)</td>
 								<td className="py-1.5">
 									<kbd className="px-1.5 py-0.5 bg-[var(--paper-soft)] rounded border border-[var(--line)] font-mono font-bold text-teal-600 dark:text-teal-400">
 										Shift + N

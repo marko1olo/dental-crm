@@ -195,6 +195,7 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 	cardNumber,
 	onOpenStudio,
 	onOpenViewer,
+	onOpenScan3d,
 }) => {
 	const [studies, setStudies] = useState<ImagingStudy[]>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -263,8 +264,8 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 				onOpenStudio(study);
 			} else {
 				routeOpenCbctPopout({
-					patientId: patientId || study.patientId,
-					patientName: patientName || study.patientFullName,
+					patientId: (patientId || study.patientId) ?? undefined,
+					patientName: (patientName || study.patientFullName) ?? undefined,
 					studyId: study.id,
 					mode: "mpr",
 				});
@@ -288,7 +289,7 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 	const handleOpen2d = useCallback(
 		(study: ImagingStudy) => {
 			const is3D = Boolean(
-				study.kind === "scan_3d" ||
+				(study.kind as string) === "scan_3d" ||
 				study.modality === "STL" ||
 				study.modality === "PLY" ||
 				study.modality === "OBJ" ||

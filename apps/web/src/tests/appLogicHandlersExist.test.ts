@@ -440,6 +440,7 @@ test("мастер первого запуска не зовёт ни одног
 		? readFileSync(ONBOARDING_MODAL_PATH, "utf8")
 		: readFileSync(APP_PATH, "utf8");
 	const wizard = source.split(/\r?\n/);
+	const openIndex = 0;
 	const consumed = namesConsumedByApp();
 	const produced = producedNames();
 	const dangling = [...consumed].filter((name) => !produced.has(name));

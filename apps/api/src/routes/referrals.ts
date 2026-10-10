@@ -177,27 +177,31 @@ export async function registerReferralRoutes(app: FastifyInstance) {
 					)
 					.limit(1);
 
-				const [referral] = await db
-					.insert(patientReferrals)
-					.values({
-						organizationId: orgId,
-						referrerPatientId: codeRecord.patientId,
-						parentReferrerPatientId: parentReferrer?.referrerPatientId || null,
-						refereePatientId,
-						status: "registered",
-					})
-					.returning();
+				const [referral] = await db.transaction(async (tx) => {
+					const [newReferral] = await tx
+						.insert(patientReferrals)
+						.values({
+							organizationId: orgId,
+							referrerPatientId: codeRecord.patientId,
+							parentReferrerPatientId: parentReferrer?.referrerPatientId || null,
+							refereePatientId,
+							status: "registered",
+						})
+						.returning();
 
-				// Increment code signup count
-				await db
-					.update(patientReferralCodes)
-					.set({ signupCount: sql`${patientReferralCodes.signupCount} + 1` })
-					.where(
-						and(
-							eq(patientReferralCodes.id, codeRecord.id),
-							eq(patientReferralCodes.organizationId, orgId),
-						),
-					);
+					// Increment code signup count
+					await tx
+						.update(patientReferralCodes)
+						.set({ signupCount: sql`${patientReferralCodes.signupCount} + 1` })
+						.where(
+							and(
+								eq(patientReferralCodes.id, codeRecord.id),
+								eq(patientReferralCodes.organizationId, orgId),
+							),
+						);
+
+					return [newReferral];
+				});
 
 				return reply.status(201).send({
 					success: true,

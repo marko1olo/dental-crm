@@ -2,6 +2,7 @@ import React from "react";
 import {
 	Calendar,
 	CalendarPlus,
+	Check,
 	ClipboardCheck,
 	Image as ImageIcon,
 	Phone,
@@ -78,21 +79,21 @@ export const DoctorShiftHeroCard: React.FC<DoctorShiftHeroCardProps> = ({
 					</div>
 					<div className="hero-actions">
 						<button
-							className="primary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+							className="primary-button min-h-[36px] h-9 px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors inline-flex items-center gap-1.5"
 							type="button"
 							onClick={() => onOpenVisit(currentPatient.id)}
 						>
-							<ClipboardCheck aria-hidden="true" /> Открыть приём / ЭМК
+							<ClipboardCheck size={16} aria-hidden="true" /> Открыть приём / ЭМК
 						</button>
 						<button
-							className="secondary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+							className="secondary-button min-h-[36px] h-9 px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors inline-flex items-center gap-1.5"
 							type="button"
 							onClick={() => onOpenImaging(currentPatient.id)}
 						>
-							<ImageIcon aria-hidden="true" /> Снимки
+							<ImageIcon size={16} aria-hidden="true" /> Снимки
 						</button>
 						<button
-							className="secondary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+							className="secondary-button min-h-[36px] h-9 px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors inline-flex items-center gap-1.5"
 							type="button"
 							aria-label="Позвонить пациенту"
 							aria-describedby={
@@ -119,16 +120,20 @@ export const DoctorShiftHeroCard: React.FC<DoctorShiftHeroCardProps> = ({
 								window.location.href = `tel:${currentPatientCallablePhone}`;
 							}}
 						>
-							<Phone aria-hidden="true" /> Позвонить
+							<Phone size={16} aria-hidden="true" /> Позвонить
 						</button>
 					</div>
 
-					<div className="status-flow min-w-0">
+					<div className="status-flow min-w-0" aria-label="Этапы текущего приёма">
 						<span className="status-flow-label shrink-0">Статус:</span>
 						<div className="status-flow-steps flex flex-wrap items-center min-w-0">
-							<span className="status-flow-step done">1. Запись</span>
+							<span className="status-flow-step done inline-flex items-center gap-1">
+								<Check size={12} aria-hidden="true" /> 1. Запись
+							</span>
 							<span className="status-flow-arrow" aria-hidden="true">→</span>
-							<span className="status-flow-step done">2. ЭМК</span>
+							<span className="status-flow-step done inline-flex items-center gap-1">
+								<Check size={12} aria-hidden="true" /> 2. ЭМК
+							</span>
 							<span className="status-flow-arrow" aria-hidden="true">→</span>
 							<span className="status-flow-step">3. Оплата</span>
 						</div>
@@ -165,9 +170,10 @@ export const DoctorShiftHeroCard: React.FC<DoctorShiftHeroCardProps> = ({
 							</p>
 						</div>
 					</div>
-					<div className="hero-actions">
+					<div className="hero-actions" style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "10px" }}>
 						<button
-							className="primary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+							className="primary-button"
+							style={{ fontSize: "12.5px", fontWeight: 600, padding: "0 14px", height: "32px", borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "6px" }}
 							type="button"
 							onClick={() => {
 								if (nextAppointmentPatient) {
@@ -175,19 +181,17 @@ export const DoctorShiftHeroCard: React.FC<DoctorShiftHeroCardProps> = ({
 								}
 							}}
 						>
-							<ClipboardCheck aria-hidden="true" /> Начать прием
+							<ClipboardCheck size={15} aria-hidden="true" /> Начать приём
 						</button>
 						<button
-							className="secondary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+							className="secondary-button"
+							style={{ fontSize: "12.5px", fontWeight: 600, padding: "0 12px", height: "32px", borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "6px", background: "var(--paper-soft)", border: "1px solid var(--line)", color: "var(--ink)" }}
 							type="button"
 							onClick={onOpenSchedule}
 						>
-							<Calendar aria-hidden="true" /> Все записи дня
+							<Calendar size={15} aria-hidden="true" /> Все записи дня
 						</button>
 					</div>
-					<ShiftCallout role="status">
-						Приём ещё не открыт. Нажмите «Начать прием», когда пациент сядет в кресло.
-					</ShiftCallout>
 				</>
 			) : (
 				<div
@@ -196,10 +200,7 @@ export const DoctorShiftHeroCard: React.FC<DoctorShiftHeroCardProps> = ({
 						display: "flex",
 						flexDirection: "column",
 						gap: "12px",
-						padding: "16px 14px",
-						borderRadius: "12px",
-						background: "var(--paper-soft, rgba(0,0,0,0.02))",
-						border: "1px solid var(--line)",
+						padding: "4px 0 0",
 					}}
 				>
 					<div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
@@ -224,7 +225,7 @@ export const DoctorShiftHeroCard: React.FC<DoctorShiftHeroCardProps> = ({
 							</h3>
 							<p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)", lineHeight: 1.35 }}>
 								{todayAppointmentsCount > 0
-									? "Все приемы на сегодня уже прошли. Откройте расписание, чтобы записать пациента на другой день."
+									? "Все приемы на сегодня завершены. Откройте расписание для записи на следующий день."
 									: "На сегодня запланированных приёмов нет. Можно записать пациента или открыть расписание."}
 							</p>
 						</div>
@@ -233,17 +234,17 @@ export const DoctorShiftHeroCard: React.FC<DoctorShiftHeroCardProps> = ({
 					<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", paddingTop: "2px" }}>
 						<button
 							type="button"
-							className="primary-button"
-							style={{ fontSize: "12px", padding: "5px 12px", minHeight: "32px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+							className="secondary-button"
+							style={{ fontSize: "12px", fontWeight: 600, padding: "0 12px", height: "32px", borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "6px", background: "var(--paper-soft)", border: "1px solid var(--line)", color: "var(--ink)" }}
 							onClick={onOpenSchedule}
 						>
 							<CalendarPlus size={14} />
-							<span>+ Записать</span>
+							<span>Записать пациента</span>
 						</button>
 						<button
 							type="button"
 							className="secondary-button"
-							style={{ fontSize: "12px", padding: "5px 12px", minHeight: "32px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+							style={{ fontSize: "12px", fontWeight: 600, padding: "0 12px", height: "32px", borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "6px", background: "var(--paper-soft)", border: "1px solid var(--line)", color: "var(--ink)" }}
 							onClick={onOpenSchedule}
 						>
 							<Calendar size={14} />

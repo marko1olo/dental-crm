@@ -9,6 +9,7 @@ export * from "./VisiographProgressiveLoader";
 export * from "./VisiographLegalPrintProtocol";
 export * from "./VisiographInteractiveOverlay";
 export * from "./VisiographExportModal";
+export * from "./VisiographComparisonModal";
 export * from "./VisiographTopToolbar";
 export * from "./VisiographLesionsHud";
 export * from "./VisiographImageSliders";

@@ -2,7 +2,7 @@ import type React from "react";
 import type { DentitionMode } from "../view/VisitEmbeddedOdontogram";
 import type { VisitToothUiState } from "../../../store/visitStore";
 import type { ClinicalVisitCompletionResult } from "../clinicalVisitWorkflow";
-import type { VisitNoteFieldsPatch } from "../../clinicalCatalog";
+import type { VisitNoteFieldsPatch } from "../clinicalCatalog/clinicalProtocolsCatalog";
 
 export type { DentitionMode };
 
@@ -86,5 +86,5 @@ export interface VisitEmkCanvasProps {
 	setIsSoapTemplatesModalOpen: (open: boolean) => void;
 	handleCompleteVisitAndGenerateReceipt: () => Promise<void>;
 	isCompletingVisit: boolean;
-	onApplySoapPreset?: (preset: any) => void;
+	onApplySoapPreset?: (preset: any, targetTooth?: number | null) => void;
 }

@@ -100,7 +100,7 @@ export const SOVEREIGN_PRESETS: readonly SovereignPresetDefinition[] = [
 		features: [
 			"Филиальная изоляция и единый контакт-центр",
 			"Склад FEFO по номенклатуре Минздрава 804н",
-			"Зуботехническая лаборатория (ЗТЛ: канбан нарядов и расцветка VITA)",
+			"Зуботехническая лаборатория (ЗТЛ и наряды VITA)",
 			"Интеграция с 3D КТ / КЛКТ томографом и PACS",
 			"ЕГИСЗ РЭМД и страховые компании (ДМС)",
 		],
@@ -305,13 +305,13 @@ export function SovereignScalePresetsCard({
 						</div>
 						<div>
 							<h4 className="m-0 text-sm font-bold text-[var(--ink)] flex items-center gap-2">
-								Экспресс-старт в 3 клика
+								Быстрый старт профиля клиники
 								<span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-800 dark:text-teal-300">
 									Готовые пресеты
 								</span>
 							</h4>
 							<p className="m-0 text-xs text-[var(--muted)]">
-								Один клик преднастраивает кресла, расписание, кассу и протоколы ЭМК под масштаб вашей клиники
+								Автоматическая настройка кресел, расписания, кассы и протоколов под масштаб клиники
 							</p>
 						</div>
 					</div>
@@ -328,23 +328,24 @@ export function SovereignScalePresetsCard({
 						<button
 							key={preset.id}
 							type="button"
-							className={`w-full sovereign-preset-box text-left p-4 rounded-2xl border transition-all relative flex flex-col justify-between cursor-pointer ${
+							style={{ padding: "16px" }}
+							className={`w-full sovereign-preset-box text-left rounded-2xl border transition-all relative flex flex-col justify-between cursor-pointer ${
 								isSelected
-									? "border-teal-500 bg-teal-500/10 dark:bg-teal-500/15 shadow-sm ring-2 ring-teal-500/40"
-									: "border-slate-200 dark:border-slate-800 bg-[var(--paper)] hover:border-teal-500/50 hover:bg-[var(--line)]/30 shadow-[0_1px_3px_rgba(0,0,0,0.05)]"
+									? "border-[var(--teal)] bg-[var(--paper-card)] shadow-[0_2px_6px_rgba(0,0,0,0.08)]"
+									: "border-[var(--line)] bg-[var(--paper-card)] hover:border-[var(--line-strong)] shadow-[0_1px_3px_rgba(0,0,0,0.05)]"
 							}`}
 							onClick={() => handleCardClick(preset)}
 							disabled={isApplying}
 							data-testid={`preset-card-${preset.id}`}
 						>
 							<div className="w-full">
-								<div className="flex items-start justify-between gap-2 mb-2">
+								<div className="flex items-start justify-between gap-2 mb-2.5">
 									<div className="flex items-center gap-2.5">
 										<div
-											className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+											className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
 												isSelected
-													? "bg-teal-600 text-white shadow-sm"
-													: "bg-[var(--line)] text-[var(--ink)]"
+													? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-2xs"
+													: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]"
 											}`}
 										>
 											<Icon size={18} aria-hidden="true" />
@@ -360,14 +361,14 @@ export function SovereignScalePresetsCard({
 									</div>
 
 									{isSelected && (
-										<div className="w-5 h-5 rounded-full bg-teal-600 text-white flex items-center justify-center shrink-0">
+										<div className="w-5 h-5 rounded-full bg-[var(--teal)] text-[var(--on-teal)] flex items-center justify-center shrink-0">
 											<Check size={12} aria-hidden="true" />
 										</div>
 									)}
 								</div>
 
 								<div className="mb-2.5">
-									<span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[var(--line)] text-[var(--ink)]">
+									<span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)]">
 										{preset.chairsCountText}
 									</span>
 								</div>
@@ -375,20 +376,20 @@ export function SovereignScalePresetsCard({
 								{!compactMode && (
 									<ul className="text-[11px] text-[var(--muted)] space-y-1.5 mb-2 pl-0 list-none">
 										{preset.features.slice(0, 3).map((f, i) => (
-											<li key={i} className="flex items-center gap-1.5 line-clamp-1">
-												<CheckCircle2 size={12} className="text-teal-600 shrink-0" aria-hidden="true" />
-												<span className="truncate">{f}</span>
+											<li key={i} className="flex items-start gap-1.5 leading-snug">
+												<CheckCircle2 size={12} className="text-[var(--teal)] shrink-0 mt-0.5" aria-hidden="true" />
+												<span>{f}</span>
 											</li>
 										))}
 									</ul>
 								)}
 							</div>
 
-							<div className="w-full pt-3 mt-2 border-t border-[var(--line,rgba(148,163,184,0.2))] flex items-center justify-between text-[11px]">
+							<div className="w-full pt-3 mt-2 border-t border-[var(--line)] flex items-center justify-between text-[11px]">
 								<span className="text-[var(--muted)] font-medium">
-									{isSelected ? "Активный пресет" : "Выбрать в 1 клик"}
+									{isSelected ? "Активный пресет" : "Выбрать пресет"}
 								</span>
-								<span className="font-bold text-teal-600 dark:text-teal-400">
+								<span className="font-bold text-[var(--teal)]">
 									{isSelected ? "Выбрано" : "Применить"}
 								</span>
 							</div>

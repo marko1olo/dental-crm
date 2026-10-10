@@ -104,10 +104,10 @@ export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSe
 			<div className="flex flex-col gap-2">
 				<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
 					<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" />
-					Стоматологические 1-клик пакеты назначений:
+					Стоматологические пакеты назначений:
 				</span>
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-					{fastPresets.slice(0, 4).map((preset) => {
+					{fastPresets.slice(0, 6).map((preset) => {
 						const hasPresetConflict = Boolean(
 							patientAllergies &&
 							preset.drugIds?.some((drugId) => {
@@ -155,15 +155,15 @@ export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSe
 									<button
 										type="button"
 										onClick={() => onApplyAndInsertToDiary(preset)}
-										className="secondary-button h-8 px-2.5 text-[13px] font-semibold rounded-lg inline-flex items-center gap-1 cursor-pointer"
+										className="h-8 px-2.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 inline-flex items-center gap-1.5 transition-colors cursor-pointer select-none"
 									>
-										<PenTool className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+										<PenTool className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" />
 										<span>В дневник</span>
 									</button>
 									<button
 										type="button"
 										onClick={() => onApplyAndPrint(preset)}
-										className="primary-button h-8 px-3 text-[13px] font-semibold rounded-lg inline-flex items-center gap-1 ml-auto cursor-pointer"
+										className="h-8 px-3 text-xs font-semibold rounded-lg bg-[var(--teal,#0d9488)] text-white hover:brightness-110 active:brightness-95 inline-flex items-center gap-1.5 ml-auto shadow-xs transition-all cursor-pointer select-none"
 									>
 										<Printer className="w-3.5 h-3.5 shrink-0" />
 										<span>Печать</span>
@@ -185,9 +185,9 @@ export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSe
 					<button
 						type="button"
 						onClick={onToggleAddingCustom}
-						className="secondary-button h-8 px-3 text-[13px] font-semibold rounded-lg text-[var(--teal)] inline-flex items-center gap-1 cursor-pointer"
+						className="h-8 px-3 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 inline-flex items-center gap-1.5 transition-colors cursor-pointer select-none"
 					>
-						<Plus className="w-3.5 h-3.5" />
+						<Plus className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" />
 						<span>Свой препарат</span>
 					</button>
 				</div>

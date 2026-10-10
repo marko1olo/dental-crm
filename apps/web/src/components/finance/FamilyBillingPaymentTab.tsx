@@ -226,7 +226,7 @@ export const FamilyBillingPaymentTab: React.FC<FamilyBillingPaymentTabProps> = (
 									</h4>
 								</div>
 								<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/30">
-									54-ФЗ: Тег 1081 (Безналичными)
+									54-ФЗ: Безналичный расчет
 								</span>
 							</div>
 
@@ -253,7 +253,7 @@ export const FamilyBillingPaymentTab: React.FC<FamilyBillingPaymentTabProps> = (
 									</h4>
 								</div>
 								<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-									54-ФЗ: Тег 1031 (Наличными)
+									54-ФЗ: Наличный расчет
 								</span>
 							</div>
 

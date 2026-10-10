@@ -125,14 +125,17 @@ export const DoctorQuestHeaderChip: React.FC<DoctorQuestHeaderChipProps> = React
 			{isCompleted ? (
 				<CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" aria-hidden="true" />
 			) : (
-				<GraduationCap className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0 animate-pulse" aria-hidden="true" />
+				<GraduationCap className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" aria-hidden="true" />
 			)}
 
 			<span className="hidden xl:inline text-xs font-semibold whitespace-nowrap">
 				{isCompleted ? "Квест врача ✓" : "Квест врача (3 мин)"}
 			</span>
 			<span className="hidden md:inline xl:hidden text-xs font-semibold whitespace-nowrap">
-				{isCompleted ? "Квест ✓" : "Квест (3м)"}
+				{isCompleted ? "Квест ✓" : "Квест (3 мин)"}
+			</span>
+			<span className="inline md:hidden text-xs font-semibold whitespace-nowrap">
+				{isCompleted ? "Квест ✓" : "Квест"}
 			</span>
 
 			{!isCompleted && currentStepNum > 1 && (

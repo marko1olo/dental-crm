@@ -1,5 +1,5 @@
 import { Database, FileText, RefreshCw } from "lucide-react";
-import { dicomRenderCachePriorityLabels } from "../SettingsViewHelpers";
+import { dicomRenderCachePriorityLabels } from "../../SettingsViewHelpers.js";
 import type { DicomDiagnosticsPanelProps } from "./types";
 
 export function DicomDiagnosticsPanel({

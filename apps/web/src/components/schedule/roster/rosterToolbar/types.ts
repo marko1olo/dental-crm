@@ -97,10 +97,10 @@ export interface RosterTemplateActionsProps {
 		label: string,
 	) => void;
 	onAutoFillDefault: () => void;
-	onCopyWeekToNextWeek?: () => void;
-	onCopyWeekToMonth?: () => void;
-	onClearWeek?: () => void;
-	onRotateShifts?: () => void;
+	onCopyWeekToNextWeek?: (() => void) | undefined;
+	onCopyWeekToMonth?: (() => void) | undefined;
+	onClearWeek?: (() => void) | undefined;
+	onRotateShifts?: (() => void) | undefined;
 	isPresetMenuOpen: boolean;
 	onTogglePresetMenu: () => void;
 	onClosePresetMenu: () => void;

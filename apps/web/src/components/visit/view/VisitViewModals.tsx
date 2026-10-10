@@ -11,6 +11,7 @@ import {
 import { WarrantyPassportModal } from "../../warranty/WarrantyPassportModal";
 import { DoctorMobileShiftModal } from "../../doctor-portal/DoctorMobileShiftModal";
 import { InformedConsentModal } from "../../consents/InformedConsentModal";
+import { VisiographComparisonModal } from "../../visiograph/VisiographComparisonModal";
 import { showToast } from "../../GlobalToast";
 import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 import { useVisitStore } from "../../../store/visitStore";
@@ -21,6 +22,8 @@ import {
 
 export interface VisitViewModalsProps {
 	loadedTreatmentPlan?: any;
+	isVisiographComparisonModalOpen?: boolean;
+	setIsVisiographComparisonModalOpen?: (v: boolean) => void;
 	endoModalToothNumber: string | null;
 	endoModalToothState?: string;
 	isEndoModalOpen: boolean;
@@ -68,6 +71,8 @@ export interface VisitViewModalsProps {
 
 export function VisitViewModals({
 	loadedTreatmentPlan,
+	isVisiographComparisonModalOpen,
+	setIsVisiographComparisonModalOpen,
 	endoModalToothNumber,
 	endoModalToothState,
 	isEndoModalOpen,
@@ -130,6 +135,7 @@ export function VisitViewModals({
 	// Экстренная помощь (emergency_rescue) имеет абсолютный клинический приоритет при анафилаксии/шоке.
 	const effectiveActiveModal = React.useMemo<string | null>(() => {
 		if (isEmergencyModalOpen) return "emergency_rescue";
+		if (isVisiographComparisonModalOpen) return "visiograph_comparison";
 		if (isLabOrderModalOpen) return "lab_order";
 		if (isEndoModalOpen) return "endo_canal";
 		if (isStagePaymentModalOpen) return "stage_payment";
@@ -141,6 +147,7 @@ export function VisitViewModals({
 		return null;
 	}, [
 		isEmergencyModalOpen,
+		isVisiographComparisonModalOpen,
 		isLabOrderModalOpen,
 		isEndoModalOpen,
 		isStagePaymentModalOpen,
@@ -750,6 +757,19 @@ export function VisitViewModals({
 							"success",
 						);
 					}}
+				/>
+			)}
+
+			{/* ─── 10. МОДАЛЬНОЕ ОКНО СПЛИТ-СРАВНЕНИЯ ВИЗИОГРАФА (EZDENT-I DUAL VIEW) ─── */}
+			{isVisiographComparisonModalOpen && effectiveActiveModal === "visiograph_comparison" && (
+				<VisiographComparisonModal
+					isOpen={Boolean(isVisiographComparisonModalOpen)}
+					onClose={() => setIsVisiographComparisonModalOpen?.(false)}
+					patientName={activePatient?.fullName || activePatient?.name}
+					patientCardNumber={activePatient?.cardNumber || activePatient?.medicalCardNumber}
+					activeToothFdi={endoModalToothNumber ?? undefined}
+					patientAge={patientAge ?? undefined}
+					onInsertProtocol={(note) => appendToEMKField("anamnesis", note)}
 				/>
 			)}
 		</>

@@ -518,7 +518,7 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 						<Send size={16} className="text-teal" aria-hidden="true" />
 						<h4 className="marketing-section-title">Быстрый запуск сегменту пациентов</h4>
 					</div>
-					<span className="marketing-section-badge">1-клик рассылка</span>
+					<span className="marketing-section-badge">Запуск рассылки</span>
 				</div>
 
 				{/* Segment Selector Chips */}

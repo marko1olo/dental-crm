@@ -39,8 +39,8 @@ export function useDentalLabOrders({
 	const [kanbanActiveMenuId, setKanbanActiveMenuId] = useState<string | null>(null);
 	const [openMenuOrderId, setOpenMenuOrderId] = useState<string | null>(null);
 
-	// Отображение курьерской панели
-	const [isCourierBarOpen, setIsCourierBarOpen] = useState(true);
+	// Отображение курьерской панели (открывается по кнопке «Курьер» в тулбаре)
+	const [isCourierBarOpen, setIsCourierBarOpen] = useState(false);
 
 	// Выбранный наряд для инспекции таймлайна
 	const [selectedTimelineOrderId, setSelectedTimelineOrderId] = useState<string | null>(null);
@@ -82,12 +82,6 @@ export function useDentalLabOrders({
 		try {
 			setIsLoading(true);
 			setError(null);
-
-			if (isDemoShowcaseMode()) {
-				setOrders([...CANONICAL_DEMO_LAB_ORDERS]);
-				onOrdersChanged?.(CANONICAL_DEMO_LAB_ORDERS);
-				return;
-			}
 
 			const res = await fetch("/api/dental-lab/orders", {
 				headers: denteAdminSecretRequestHeaders(),

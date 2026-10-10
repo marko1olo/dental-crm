@@ -300,8 +300,8 @@ export function detectLabDeadlineAlert(params: CheckLabOrderAlertParams): LabDea
 			badgeLabelRu: "Задерживается ЗТЛ",
 			messageRu: "Лаборатория задерживает изготовление работы. Требуется перенос приема пациента.",
 			warningRu: "Лаборатория задерживает изготовление работы. Требуется перенос приема пациента.",
-			actionRu: "Перенести прием пациента в расписании (1 клик).",
-			actionPromptRu: "Перенести прием пациента в расписании (1 клик).",
+			actionRu: "Перенести прием пациента в расписании.",
+			actionPromptRu: "Перенести прием пациента в расписании.",
 			daysUntilDeadline: -1,
 		};
 	}

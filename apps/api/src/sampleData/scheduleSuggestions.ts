@@ -14,11 +14,13 @@ import { buildDoctorLoads, buildAssistantLoads, buildChairLoads, buildModeFit } 
 import type {
 	Appointment,
 	AppointmentReadiness,
+	PatientInsight,
 	RecommendedAction,
 	ScheduleSuggestion,
 	StaffMember,
 	StaffWorkingHours,
 } from "@dental/shared";
+import type { DomainState } from "../types/domainState.js";
 import { chairs, clinicProfile, defaultClinicScheduleDefaults } from "./organizations.js";
 import { staffMembers } from "./staff.js";
 import { patients, buildPatientInsights } from "./patients.js";

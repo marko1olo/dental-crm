@@ -260,7 +260,7 @@ export function CtPlanningTaskBoardPanel({
 												? "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
 												: "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900"
 										}`}
-										title={isDone ? "Вернуть в работу" : "Завершить в 1 клик"}
+										title={isDone ? "Вернуть в работу" : "Завершить задачу"}
 										data-testid={`ct-task-toggle-${task.id}`}
 									>
 										<Check className="w-3 h-3" />

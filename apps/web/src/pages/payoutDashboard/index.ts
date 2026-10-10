@@ -5,6 +5,6 @@
 export * from "./types";
 export * from "./payoutHelpers";
 export * from "./usePayoutDashboard";
-export * from "./PayoutDashboardHeader";
-export * from "./PayoutSummaryCards";
-export * from "./PayoutDoctorTable";
+export { PayoutDashboardHeader } from "./PayoutDashboardHeader";
+export { PayoutSummaryCards } from "./PayoutSummaryCards";
+export { PayoutDoctorTable } from "./PayoutDoctorTable";

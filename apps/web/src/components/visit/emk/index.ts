@@ -9,3 +9,4 @@ export * from "./EmkEndoSection";
 export * from "./EmkServicesSection";
 export * from "./EmkPrintableForm043";
 export * from "./EmkToolbar";
+export * from "./EmkSoapVisibilityTracker";

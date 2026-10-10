@@ -123,17 +123,12 @@ export function CommunicationTaskCard({
 	}
 
 	function handleCompleteTask() {
-		console.log("[CommunicationTaskCard] handleCompleteTask invoked", { taskId: task.id, selectedOutcome, fnType: typeof completeCommunicationTask });
 		if (!selectedOutcome) {
+			document.getElementById(outcomeSelectId)?.focus();
 			showToast("Выберите результат звонка", "info");
 			return;
 		}
-		try {
-			const res = completeCommunicationTask(task.id, selectedOutcome);
-			console.log("[CommunicationTaskCard] completeCommunicationTask call result:", res);
-		} catch (err) {
-			console.error("[CommunicationTaskCard] completeCommunicationTask threw:", err);
-		}
+		void completeCommunicationTask(task.id, selectedOutcome);
 	}
 
 	return (
@@ -175,13 +170,13 @@ export function CommunicationTaskCard({
 							style={{
 								borderLeft: "3px solid var(--teal)",
 								paddingLeft: "10px",
-								marginBottom: "10px",
+								marginBottom: "8px",
 							}}
 						>
 							<p
 								style={{
 									margin: "0 0 6px",
-									fontSize: "13px",
+									fontSize: "12px",
 									color: "var(--muted)",
 								}}
 							>
@@ -194,28 +189,16 @@ export function CommunicationTaskCard({
 									{apptActionDone === "confirmed" ? "подтверждён" : "отменён"}
 								</span>
 							) : (
-								<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-									<button
-										type="button"
-										className="primary-button"
-										onClick={() => void handleConfirmAppointment("confirmed")}
-										disabled={apptActionLoading || communicationSaveInProgress}
-										aria-label="Подтвердить приём"
-										style={{ minHeight: "44px" }}
-									>
-										Подтвердил
-									</button>
-									<button
-										type="button"
-										className="secondary-button"
-										onClick={() => void handleConfirmAppointment("cancelled")}
-										disabled={apptActionLoading || communicationSaveInProgress}
-										aria-label="Отменить приём"
-										style={{ minHeight: "44px" }}
-									>
-										Отменил
-									</button>
-								</div>
+								<button
+									type="button"
+									className="secondary-button"
+									onClick={() => void handleConfirmAppointment("confirmed")}
+									disabled={apptActionLoading || communicationSaveInProgress}
+									aria-label="Подтвердить приём"
+									style={{ minHeight: "36px" }}
+								>
+									Подтвердить приём
+								</button>
 							)}
 							{apptActionError ? (
 								<p
@@ -230,26 +213,27 @@ export function CommunicationTaskCard({
 								</p>
 							) : null}
 						</div>
-					) : null}
-					{documentKinds?.map((kind, index) => {
-						const documentActionLabel =
-							communicationDocumentTaskActionLabels[kind] ??
-							documentLabels[kind];
-						return (
-							<button
-								className={index === 0 ? "primary-button" : "secondary-button"}
-								type="button"
-								key={kind}
-								onClick={() =>
-									openCommunicationTaskDocumentWorkflow(task, kind)
-								}
-								aria-label={`${documentActionLabel}: ${task.title}`}
-								style={{ minHeight: "44px" }}
-							>
-								<FileText aria-hidden="true" /> {documentActionLabel}
-							</button>
-						);
-					})}
+					) : (
+						documentKinds?.slice(0, 1).map((kind) => {
+							const documentActionLabel =
+								communicationDocumentTaskActionLabels[kind] ??
+								documentLabels[kind];
+							return (
+								<button
+									className="secondary-button"
+									type="button"
+									key={kind}
+									onClick={() =>
+										openCommunicationTaskDocumentWorkflow(task, kind)
+									}
+									aria-label={`${documentActionLabel}: ${task.title}`}
+									style={{ minHeight: "36px" }}
+								>
+									<FileText aria-hidden="true" /> {documentActionLabel}
+								</button>
+							);
+						})
+					)}
 					{isTaskSaving ? (
 						<span
 							className="communication-task-saving"
@@ -260,17 +244,8 @@ export function CommunicationTaskCard({
 							Сохраняю в журнал
 						</span>
 					) : null}
-					<div className="communication-outcome-select">
-						<label
-							htmlFor={outcomeSelectId}
-							style={{
-								fontSize: "13px",
-								color: "var(--slate-500)",
-								fontWeight: 500,
-								marginBottom: "8px",
-								display: "block",
-							}}
-						>
+					<div className="flex items-center gap-2 flex-wrap">
+						<label htmlFor={outcomeSelectId} className="sr-only">
 							Исход
 						</label>
 						<select
@@ -279,52 +254,50 @@ export function CommunicationTaskCard({
 							onChange={(e) =>
 								setSelectedOutcome(e.target.value as CommunicationTaskOutcome)
 							}
-							style={{ display: "none" }}
+							className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 						>
-							<option value="">Выберите исход...</option>
+							<option value="">Исход звонка / связи...</option>
 							{communicationTaskOutcomeOptions?.map(([outcome, label]) => (
 								<option key={outcome} value={outcome}>
 									{label}
 								</option>
 							))}
 						</select>
-						<div className="quick-chips-row" style={{ flexWrap: "wrap" }}>
+						<div className="sr-only" aria-hidden="true">
 							{communicationTaskOutcomeOptions?.map(([outcome, label]) => (
 								<button
 									key={outcome}
 									type="button"
-									className={`quick-chip ${selectedOutcome === outcome ? "selected" : ""}`}
 									data-testid={`communication-outcome-${outcome}`}
 									data-outcome={outcome}
 									onClick={() =>
 										setSelectedOutcome(outcome as CommunicationTaskOutcome)
 									}
 									disabled={communicationSaveInProgress}
-									style={{ minHeight: "44px" }}
 								>
 									{label}
 								</button>
 							))}
 						</div>
+						<button
+							aria-label={`Закрыть задачу связи: ${task.title}`}
+							aria-busy={isTaskSaving || undefined}
+							aria-describedby={
+								isTaskSaving
+									? `${completionNoteDescriptionId} ${savingStatusId}`
+									: completionNoteDescriptionId
+							}
+							className="primary-button"
+							type="button"
+							data-testid="communication-task-complete-btn"
+							onClick={handleCompleteTask}
+							disabled={communicationSaveInProgress}
+							style={{ minHeight: "36px" }}
+						>
+							<CheckCircle2 aria-hidden="true" size={14} />{" "}
+							{isTaskSaving ? "Закрываю" : "Закрыть"}
+						</button>
 					</div>
-					<button
-						aria-label={`Закрыть задачу связи: ${task.title}`}
-						aria-busy={isTaskSaving || undefined}
-						aria-describedby={
-							isTaskSaving
-								? `${completionNoteDescriptionId} ${savingStatusId}`
-								: completionNoteDescriptionId
-						}
-						className="secondary-button"
-						type="button"
-						data-testid="communication-task-complete-btn"
-						onClick={handleCompleteTask}
-						disabled={communicationSaveInProgress}
-						style={{ minHeight: "44px" }}
-					>
-						<CheckCircle2 aria-hidden="true" />{" "}
-						{isTaskSaving ? "Закрываю" : "Закрыть"}
-					</button>
 				</div>
 			)}
 		</article>

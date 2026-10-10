@@ -18,45 +18,44 @@ import type {
     XrayCbctReferralPriority,
     XrayCbctReferralStudyType
 } from "@dental/shared";
-import { showToast } from "../../components/GlobalToast";
-import { actionFailureToast } from "../../lib/panelStateText";
-import { telegramVisualCardFields } from "../../workspaceStaticOptions";
+import { showToast } from "../../../components/GlobalToast";
+import { actionFailureToast } from "../../../lib/panelStateText";
+import { telegramVisualCardFields } from "../../../workspaceStaticOptions";
 import {
     clinicalRuleActionLabels,
     clinicalRuleSeverityLabels,
     serviceCategoryLabels
-} from "../../workspaceUiLabels";
-import { treatmentAcceptanceVariantOptions } from "../AppointmentHelpers";
+} from "../../../workspaceUiLabels";
+import { treatmentAcceptanceVariantOptions } from "../../AppointmentHelpers";
 import {
     isBrowserMigrationScanAbortError
-} from "../browserScanUtils";
+} from "../../browserScanUtils";
 import {
     todayDateInputValue
-} from "../dateTimeUtils";
-import { MedicalDocumentReleaseChannel } from "../documentDraftHelpers";
+} from "../../dateTimeUtils";
+import type { MedicalDocumentReleaseChannel, PersistenceHealth, PricelistImageMimeType } from "./types";
 import {
     type MedicalRecordExtractDocumentDraftFields,
     taxApplicationRelationshipOptions
-} from "../DocumentHelpers";
-import { PersistenceHealth, PricelistImageMimeType } from "../errorHelpers";
+} from "../../DocumentHelpers";
 import {
     loadImageFromDataUrl,
     readFileAsDataUrl,
     xrayPregnancyStatusOptions,
     xrayPriorityOptions,
     xrayStudyTypeOptions,
-} from "../ImagingHelpers";
-import { isOptionValue, isRecordKey, isStringUnionValue } from "../predicateHelpers";
-import { defaultUiPreferences } from "../preferencesUtils";
+} from "../../ImagingHelpers";
+import { isOptionValue, isRecordKey, isStringUnionValue } from "./validation";
+import { defaultUiPreferences } from "../../preferencesUtils";
 import {
     telegramPublicUrlSensitivePathSegments,
     telegramPublicUrlSensitiveQueryKeys
-} from "../TelegramHelpers";
+} from "../../TelegramHelpers";
 import {
     isProcedureSpecificConsentProcedurePreference,
     isTaxApplicationDeliveryChannelPreference,
     isTaxApplicationFormPreference,
-} from "./uiPreferencesHelpers";
+} from "../uiPreferencesHelpers";
 
 export function browserGeneratedId(prefix: string): string {
     return `${prefix}-${crypto.randomUUID()}`;
@@ -390,7 +389,7 @@ export function normalizeTaxApplicationRelationship(value: string | null | undef
 }
 
 export function normalizedTaxApplicationRelationshipSelect(value: unknown): TaxDeductionApplicationRelationship {
-    return isOptionValue(value, taxApplicationRelationshipOptions)
+    return isOptionValue<TaxDeductionApplicationRelationship>(value, taxApplicationRelationshipOptions)
     ? value
     : "self";
 }
@@ -414,53 +413,53 @@ export function normalizedProcedureSpecificConsentProcedure(value: unknown): Pro
 }
 
 export function normalizedTreatmentPlanAcceptanceVariant(value: unknown): TreatmentPlanAcceptanceVariant {
-    return isStringUnionValue(value, treatmentAcceptanceVariantOptions)
+    return isStringUnionValue<TreatmentPlanAcceptanceVariant>(value, treatmentAcceptanceVariantOptions)
     ? value
     : "standard";
 }
 
 export function normalizedXrayStudyType(value: unknown): XrayCbctReferralStudyType {
-    return isOptionValue(value, xrayStudyTypeOptions) ? value : "cbct";
+    return isOptionValue<XrayCbctReferralStudyType>(value, xrayStudyTypeOptions) ? value : "cbct";
 }
 
 export function normalizedXrayPriority(value: unknown): XrayCbctReferralPriority {
-    return isStringUnionValue(value, xrayPriorityOptions) ? value : "routine";
+    return isStringUnionValue<XrayCbctReferralPriority>(value, xrayPriorityOptions) ? value : "routine";
 }
 
 export function normalizedXrayPregnancyStatus(value: unknown): XrayCbctReferralPregnancyStatus {
-    return isOptionValue(value, xrayPregnancyStatusOptions) ? value : "unknown";
+    return isOptionValue<XrayCbctReferralPregnancyStatus>(value, xrayPregnancyStatusOptions) ? value : "unknown";
 }
 
 export function normalizedMedicalDocumentReleaseChannel(value: unknown): MedicalDocumentReleaseChannel {
-    return isRecordKey(value, medicalDocumentReleaseChannelLabels)
+    return isRecordKey<MedicalDocumentReleaseChannel>(value, medicalDocumentReleaseChannelLabels)
     ? value
     : "paper";
 }
 
 export function normalizedPaymentRefundCorrectionAction(value: unknown): PaymentRefundCorrectionAction {
-    return isStringUnionValue(value, paymentRefundCorrectionActionOptions)
+    return isStringUnionValue<PaymentRefundCorrectionAction>(value, paymentRefundCorrectionActionOptions)
     ? value
     : "partial_refund";
 }
 
 export function normalizedPaymentRefundCorrectionMethod(value: unknown): PaymentRefundCorrectionMethod {
-    return isStringUnionValue(value, paymentRefundCorrectionMethodOptions)
+    return isStringUnionValue<PaymentRefundCorrectionMethod>(value, paymentRefundCorrectionMethodOptions)
     ? value
     : "card";
 }
 
 export function normalizedClinicalRuleAction(value: unknown): Dashboard["clinicalRules"][number]["action"] {
-    return isRecordKey(value, clinicalRuleActionLabels)
+    return isRecordKey<Dashboard["clinicalRules"][number]["action"]>(value, clinicalRuleActionLabels as Record<Dashboard["clinicalRules"][number]["action"], unknown>)
     ? value
     : "add_required_service";
 }
 
 export function normalizedClinicalRuleSeverity(value: unknown): Dashboard["clinicalRules"][number]["severity"] {
-    return isRecordKey(value, clinicalRuleSeverityLabels) ? value : "warning";
+    return isRecordKey<Dashboard["clinicalRules"][number]["severity"]>(value, clinicalRuleSeverityLabels as Record<Dashboard["clinicalRules"][number]["severity"], unknown>) ? value : "warning";
 }
 
 export function normalizedServiceCategory(value: unknown): Dashboard["serviceCatalog"][number]["category"] {
-    return isRecordKey(value, serviceCategoryLabels) ? value : "therapy";
+    return isRecordKey<Dashboard["serviceCatalog"][number]["category"]>(value, serviceCategoryLabels as Record<Dashboard["serviceCatalog"][number]["category"], unknown>) ? value : "therapy";
 }
 
 export async function preparePricelistImage(file: File): Promise<{

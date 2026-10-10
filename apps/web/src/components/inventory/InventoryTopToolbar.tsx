@@ -104,15 +104,15 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 }) => {
 	return (
 		<div
-			className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 py-1 bg-[var(--paper,#ffffff)] border-b border-[var(--line,#e2e8f0)] flex flex-nowrap overflow-x-auto no-scrollbar scrollbar-none items-center justify-between gap-2 shrink-0"
+			className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 py-1 bg-[var(--paper,#ffffff)] border-b border-[var(--line,#e2e8f0)] flex flex-nowrap overflow-x-auto no-scrollbar scrollbar-none items-center justify-between gap-1.5 shrink-0 max-w-full"
 			role="toolbar"
 			aria-label="Панель склада материалов"
 		>
 			{/* Left: Section Identity, Sub-tabs, and Inline KPI */}
-			<div className="flex items-center gap-2 overflow-x-auto no-scrollbar scrollbar-none flex-nowrap min-w-0 max-w-full touch-pan-x shrink-0">
-				<div className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink,#0f172a)] shrink-0">
-					<Package size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-					<span>Склад материалов</span>
+			<div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scrollbar-none flex-nowrap min-w-0 shrink">
+				<div className="flex items-center gap-1 font-bold text-xs text-[var(--ink,#0f172a)] shrink-0">
+					<Package size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+					<span>Склад</span>
 				</div>
 
 				{/* Subtabs switcher */}
@@ -135,7 +135,7 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 						data-testid="tab-inventory-items"
 					>
 						<Package
-							size={14}
+							size={13}
 							className={
 								activeSubTab === "inventory" && stockViewMode === "standard"
 									? "text-teal-600 dark:text-teal-400 shrink-0"
@@ -160,14 +160,14 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 						data-testid="tab-inventory-fefo"
 					>
 						<Clock
-							size={14}
+							size={13}
 							className={
 								activeSubTab === "inventory" && stockViewMode === "fefo"
 									? "text-teal-600 dark:text-teal-400 shrink-0"
 									: "text-[var(--muted)] shrink-0"
 							}
 						/>
-						<span>Сроки годности (FEFO)</span>
+						<span>Партии FEFO</span>
 						<span className="text-[10px] opacity-70 font-mono">({itemsCount})</span>
 					</button>
 
@@ -182,20 +182,20 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 						data-testid="tab-inventory-rules"
 					>
 						<FileText
-							size={14}
+							size={13}
 							className={
 								activeSubTab === "rules"
 									? "text-teal-600 dark:text-teal-400 shrink-0"
 									: "text-[var(--muted)] shrink-0"
 							}
 						/>
-						<span>Правила списания</span>
+						<span>Нормы списания</span>
 						<span className="text-[10px] opacity-70 font-mono">({rulesCount})</span>
 					</button>
 				</div>
 
 				{/* Compact Inline KPI Badges */}
-				<div className="hidden lg:flex items-center gap-1.5 text-xs text-[var(--muted,#64748b)] shrink-0 pl-1 border-l border-[var(--line,#e2e8f0)]">
+				<div className="hidden 2xl:flex items-center gap-1 text-xs text-[var(--muted,#64748b)] shrink-0 pl-1 border-l border-[var(--line,#e2e8f0)]">
 					<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[11px] font-medium shrink-0 whitespace-nowrap">
 						Поз: <strong className="text-[var(--ink,#0f172a)] font-bold">{totalItems}</strong>
 					</span>
@@ -211,21 +211,16 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 							{lowStockCount}
 						</strong>
 					</span>
-					{totalValue > 0 && (
-						<span className="hidden 2xl:inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[11px] font-medium shrink-0 whitespace-nowrap">
-							Стоимость:{" "}
-							<strong className="text-teal-600 dark:text-teal-400 font-bold">
-								{money(totalValue)}
-							</strong>
-						</span>
-					)}
 				</div>
 			</div>
 
 			{/* Right: Search, Quick Packages Toggle, Carpule Disposal, Ops Menu, Inbound Invoice, Add Item */}
 			<div className="flex items-center gap-1.5 shrink-0 flex-nowrap">
 				{/* Compact Search Input */}
-				<div className="dente-search-wrap relative flex items-center shrink-0 w-28 sm:w-44">
+				<div
+					className="dente-search-wrap relative flex items-center shrink-0"
+					style={{ width: 148, minWidth: 120, maxWidth: 160, flex: "0 0 148px" }}
+				>
 					<Search
 						size={13}
 						className="dente-search-icon"
@@ -236,6 +231,7 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 						className="dente-search-input !h-8"
+						style={{ width: "100%", height: 32, minHeight: 32 }}
 						data-testid="inventory-search-input"
 					/>
 					{searchQuery && (
@@ -254,8 +250,11 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 				<button
 					type="button"
 					onClick={() => setIsQuickPackagesOpen((prev) => !prev)}
-					className="h-8 px-2.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors border shrink-0 whitespace-nowrap"
+					className="h-8 px-2 rounded-lg text-xs font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors border shrink-0 whitespace-nowrap"
 					style={{
+						height: 32,
+						minHeight: 32,
+						borderRadius: 8,
 						background: isQuickPackagesOpen ? "var(--teal-soft)" : paperSoftBg,
 						color: isQuickPackagesOpen ? "var(--teal-dark, #0f766e)" : "var(--ink)",
 						borderColor: isQuickPackagesOpen ? "var(--teal)" : borderColor,
@@ -276,7 +275,8 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 					data-testid="nurse-quick-carpules-btn"
 					disabled={isWritingOffCarpules}
 					onClick={() => handleQuickWriteoffCarpules()}
-					className="secondary-button h-8 px-2.5 rounded-lg shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 font-bold text-xs cursor-pointer transition-colors bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)]"
+					className="secondary-button h-8 px-2 rounded-lg shrink-0 whitespace-nowrap inline-flex items-center gap-1 font-semibold text-xs cursor-pointer transition-colors"
+					style={{ height: 32, minHeight: 32, borderRadius: 8 }}
 					title="Утилизировать пустую карпулу анестетика"
 				>
 					<Syringe size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
@@ -310,19 +310,21 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 				{/* Quick Acceptance Inbound Invoice Button */}
 				<button
 					type="button"
-					className="secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-2.5 rounded-lg font-semibold text-xs cursor-pointer bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] shadow-xs"
+					className="secondary-button h-8 shrink-0 whitespace-nowrap inline-flex items-center gap-1 px-2.5 rounded-lg font-semibold text-xs cursor-pointer"
+					style={{ height: 32, minHeight: 32, borderRadius: 8 }}
 					onClick={() => setIsInboundInvoiceModalOpen(true)}
 					title="Приходная накладная поставщика (партии по срокам, погашение дефицита)"
 					data-testid="btn-acceptance-waybills"
 				>
 					<FileText size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
-					<span className="hidden sm:inline">Приходная накладная</span>
+					<span className="hidden sm:inline">Накладная</span>
 				</button>
 
 				{/* Add Inventory Item Button */}
 				<button
 					type="button"
-					className="primary-button min-h-[44px] sm:min-h-[32px] sm:h-8 shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 rounded-lg font-bold text-xs cursor-pointer bg-[var(--teal)] text-[var(--on-teal,#ffffff)] border-none shadow-xs"
+					className="primary-button h-8 shrink-0 whitespace-nowrap inline-flex items-center gap-1 px-2.5 rounded-lg font-bold text-xs cursor-pointer"
+					style={{ height: 32, minHeight: 32, borderRadius: 8 }}
 					onClick={openAddModal}
 					data-testid="btn-add-inventory-item"
 				>

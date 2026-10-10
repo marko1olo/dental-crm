@@ -1,13 +1,16 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
 import { db } from "../../db/client.js";
 import { denteTelegramBotConfigs } from "../../db/schema.js";
 import {
 	requireResolvedOrganizationId,
+	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
 import { TelegramTokenVault } from "../../services/telegram/TelegramTokenVault.js";
 import { TelegramBotHostingService } from "../../services/telegram/TelegramBotHostingService.js";
+import { TelegramAccountService } from "../../services/telegram/TelegramAccountService.js";
 import {
 	parseTelegramRouteBody,
 	sendTelegramValidationError,

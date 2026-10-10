@@ -1,6 +1,6 @@
 import React from "react";
 import { Check } from "lucide-react";
-import type { ResorptionStagePercent } from "../odontogram/pediatricDentitionEngine";
+import type { ResorptionStagePercent } from "../../odontogram/pediatricDentitionEngine";
 import {
 	PediatricTeethChart,
 	type PediatricDentitionMode,

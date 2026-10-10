@@ -1,6 +1,7 @@
 import {
 	denteTelegramWebhookResponseSchema,
 	type DenteTelegramUpdateKind,
+	type DenteTelegramWebhookResponse,
 } from "@dental/shared";
 import { recordDenteTelegramWebhookEvent } from "../../services/telegram/telegramLegacyMemoryStore.js";
 import { TelegramInteractiveTriageService } from "../../services/telegram/TelegramInteractiveTriageService.js";
@@ -16,18 +17,19 @@ import {
 	isRecord,
 	readableTelegramPayload,
 	readableTelegramText,
+	stringFromUnknown,
 } from "./telegramUtils.js";
 
 export async function handleWebhookMediaAndEmergency(params: {
 	runtime: TelegramRuntimeContext;
-	update: UnknownRecord;
+	update: UnknownRecord & { update_id: number };
 	updateKind: DenteTelegramUpdateKind;
 	messageText: string | null;
 	command: string | null;
 	chatHash: string | null;
 	chatId: string | null;
 	warnings: string[];
-}): Promise<any | null> {
+}): Promise<DenteTelegramWebhookResponse | null> {
 	const {
 		runtime,
 		update,

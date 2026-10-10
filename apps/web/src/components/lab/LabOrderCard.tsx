@@ -240,7 +240,7 @@ export function LabOrderCard({
 					<div className="relative">
 						<button
 							type="button"
-							onClick={() => setOpenMenuOrderId((prev) => prev === order.id ? null : (order.id || null))}
+							onClick={() => setOpenMenuOrderId(openMenuOrderId === order.id ? null : (order.id || null))}
 							className="w-11 sm:w-8 h-11 sm:h-8 min-w-[44px] sm:min-w-[32px] min-h-[44px] sm:min-h-[32px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
 							aria-label="Вторичные действия с нарядом ЗТЛ"
 							aria-expanded={openMenuOrderId === order.id}
@@ -274,10 +274,10 @@ export function LabOrderCard({
 										}}
 										className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-2 cursor-pointer"
 										data-testid={`lab-order-card-pay-cashbox-btn-${order.id}`}
-										title="Оплатить услуги ЗТЛ из кассы по статье 11"
+										title="Оплатить услуги зуботехнической лаборатории из кассы"
 									>
 										<DollarSign className="w-3.5 h-3.5 text-emerald-500" />
-										<span>Оплатить из кассы (Ст. 11)</span>
+										<span>Оплатить из кассы</span>
 									</button>
 								)}
 								{handleMarkInstalled && order.status !== "completed" && (order as any).status !== "installed" && (
@@ -289,10 +289,10 @@ export function LabOrderCard({
 										}}
 										className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-blue-500/10 font-bold text-blue-700 dark:text-blue-300 inline-flex items-center gap-2 cursor-pointer"
 										data-testid={`lab-order-card-mark-installed-btn-${order.id}`}
-										title="Сдать конструкцию пациенту и заблокировать наряд"
+										title="Сдать готовую ортопедическую конструкцию пациенту"
 									>
 										<CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />
-										<span>Сдать пациенту (Замок)</span>
+										<span>Сдать работу пациенту</span>
 									</button>
 								)}
 								<button

@@ -135,9 +135,9 @@ export function normalizeSpecialty(spec: string): DentalSpecialty {
 export interface IngestItemToCommit {
 	category: string;
 	specialty: string;
-	code804n?: string | null;
-	suggestedAction?: string | null;
-	matchedExistingServiceId?: string | null;
+	code804n?: string | null | undefined;
+	suggestedAction?: string | null | undefined;
+	matchedExistingServiceId?: string | null | undefined;
 	cleanedTitle: string;
 	priceRub: number;
 }
@@ -297,6 +297,10 @@ export async function commitBatchImportItems(
 	let createdCount = 0;
 	let updatedCount = 0;
 	let skippedCount = 0;
+
+	if (!items || items.length === 0) {
+		return { createdCount: 0, updatedCount: 0, skippedCount: 0 };
+	}
 
 	await db.transaction(async () => {
 		for (const item of items) {

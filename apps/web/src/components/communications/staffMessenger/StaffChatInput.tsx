@@ -11,7 +11,7 @@ export const StaffChatPresetsBar: React.FC<StaffChatPresetsBarProps> = ({
 			data-testid="chairside-intercom-pings-bar"
 		>
 			<span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mr-1 shrink-0 hidden sm:inline">
-				Интерком 1-клик:
+				Быстрые сигналы:
 			</span>
 
 			{/* 1. Вызов ассистента */}

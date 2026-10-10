@@ -280,12 +280,12 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 						title="Настройка яркости, контраста (W/L), толщины среза и пресетов КЛКТ"
 						aria-expanded={isContrastMenuOpen}
 					>
-						<Sliders className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-						<span className="hidden xl:inline text-zinc-400">Контраст:</span>
-						<span className="font-mono text-[10px] font-semibold text-cyan-300">
+						<Sliders className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+						<span className="hidden 2xl:inline text-zinc-400">Контраст:</span>
+						<span className="font-mono text-[10px] font-semibold text-zinc-200">
 							W:{windowWidth}/L:{windowLevel}
 						</span>
-						<span className="hidden sm:inline-block text-[10px] text-zinc-500 font-mono">
+						<span className="hidden 2xl:inline-block text-[10px] text-zinc-500 font-mono">
 							• {slabThicknessMm} мм
 						</span>
 					</button>
@@ -309,20 +309,20 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 			</div>
 
 			{/* Right: Primary Clinical Actions (В ЭМК, В буфер, Смета, Панель, Опции) */}
-			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-				{/* Кнопка «В ЭМК»: темный благородный медицинский стиль без белого текста */}
+			<div className="flex items-center gap-1 shrink-0">
+				{/* Кнопка «В ЭМК»: темный благородный медицинский стиль */}
 				<button
 					type="button"
 					onClick={handleExportToEmr}
-					className="px-2 sm:px-2.5 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-300 hover:text-cyan-200 border border-cyan-500/50 shadow-xs transition-colors cursor-pointer"
+					className="px-2 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-teal-950/60 hover:bg-teal-900/80 text-teal-300 hover:text-teal-200 border border-teal-500/50 shadow-xs transition-colors cursor-pointer shrink-0"
 					data-testid="cbct-btn-export-emr"
 					title="Сохранить снимок и протокол планирования в медицинскую карту"
 				>
-					<Camera className="w-3.5 h-3.5" />
+					<Camera className="w-3.5 h-3.5 shrink-0" />
 					<span className="hidden sm:inline">В ЭМК</span>
 				</button>
 
-				{/* Кнопка «В буфер»: приглушенный серый text-zinc-300 hover:text-zinc-200 */}
+				{/* Кнопка «В буфер»: приглушенный серый */}
 				<button
 					type="button"
 					onClick={() => {
@@ -330,28 +330,25 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 						else
 							window.dispatchEvent(new CustomEvent("dente:copy-cbct-snapshot"));
 					}}
-					className="px-2 sm:px-2.5 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-850 text-zinc-300 hover:text-zinc-200 border border-zinc-750 hover:border-cyan-500/40 shadow-xs transition-all cursor-pointer"
+					className="px-2 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-zinc-900 hover:bg-zinc-850 text-zinc-300 hover:text-zinc-200 border border-zinc-800 hover:border-teal-500/40 shadow-xs transition-all cursor-pointer shrink-0"
 					data-testid="cbct-btn-copy-clipboard"
 					id="cbct-btn-copy-clipboard"
 					title="Копировать текущий снимок в буфер обмена (Ctrl+C)"
 				>
-					<Camera className="w-3.5 h-3.5 text-cyan-400" />
-					<span className="hidden sm:inline">Буфер</span>
-					<span className="hidden 2xl:inline text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-zinc-400 font-mono border border-zinc-700">
-						Ctrl+C
-					</span>
+					<Camera className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+					<span className="hidden xl:inline">Буфер</span>
 				</button>
 
-				{/* 3. Кнопка «+ Смета»: мягкий благородный teal без ослепляющего белого */}
+				{/* 3. Кнопка «+ Смета»: монохром с деликатным акцентом */}
 				{handleExportCbctToFinance && (
 					<button
 						type="button"
 						onClick={handleExportCbctToFinance}
-						className="px-1.5 sm:px-2 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-teal-950/60 hover:bg-teal-900/80 text-teal-300 hover:text-teal-200 border border-teal-500/50 shadow-xs transition-colors cursor-pointer shrink-0"
+						className="px-2 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-zinc-900 hover:bg-zinc-850 text-zinc-300 hover:text-zinc-200 border border-zinc-800 hover:border-teal-500/50 shadow-xs transition-colors cursor-pointer shrink-0"
 						data-testid="cbct-header-add-finance-btn"
-						title="В 1 клик добавить операцию имплантации, костную пластику и КЛКТ в финансовый наряд визита"
+						title="Добавить операцию имплантации, костную пластику и КЛКТ в финансовый наряд визита"
 					>
-						<Receipt className="w-3.5 h-3.5 shrink-0" />
+						<Receipt className="w-3.5 h-3.5 text-teal-400 shrink-0" />
 						<span className="hidden 2xl:inline">+ КЛКТ и имплант в смету</span>
 						<span className="inline 2xl:hidden">+ Смета</span>
 					</button>
@@ -362,14 +359,14 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 					<button
 						type="button"
 						onClick={handleExportToPlan}
-						className="px-1.5 sm:px-2 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-indigo-950/60 hover:bg-indigo-900/80 text-indigo-300 hover:text-indigo-200 border border-indigo-500/50 shadow-xs transition-colors cursor-pointer shrink-0"
+						className="px-2 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-zinc-900 hover:bg-zinc-850 text-zinc-300 hover:text-zinc-200 border border-zinc-800 hover:border-teal-500/50 shadow-xs transition-colors cursor-pointer shrink-0"
 						data-testid="cbct-btn-export-plan"
 						id="cbct-btn-export-plan"
 						title="Добавить хирургический этап имплантации со срезом КЛКТ в план лечения"
 					>
-						<FileText className="w-3.5 h-3.5 shrink-0" />
+						<FileText className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
 						<span className="hidden 2xl:inline">В план лечения</span>
-						<span className="inline 2xl:hidden">В план</span>
+						<span className="hidden xl:inline 2xl:hidden">В план</span>
 					</button>
 				)}
 
@@ -378,24 +375,24 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 					<button
 						type="button"
 						onClick={handleExportToLab}
-						className="px-1.5 sm:px-2 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 hover:text-amber-200 border border-amber-500/50 shadow-xs transition-colors cursor-pointer shrink-0"
+						className="px-2 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-zinc-900 hover:bg-zinc-850 text-zinc-300 hover:text-zinc-200 border border-zinc-800 hover:border-teal-500/50 shadow-xs transition-colors cursor-pointer shrink-0"
 						data-testid="cbct-btn-export-lab"
 						id="cbct-btn-export-lab"
 						title="Сформировать заказ-наряд ЗТЛ на хирургический шаблон с параметрами имплантата и срезом КЛКТ"
 					>
-						<DentalLabOrder className="w-3.5 h-3.5 shrink-0" />
+						<DentalLabOrder className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
 						<span className="hidden 2xl:inline">В лабораторию (ЗТЛ)</span>
-						<span className="inline 2xl:hidden">В ЗТЛ</span>
+						<span className="hidden xl:inline 2xl:hidden">В ЗТЛ</span>
 					</button>
 				)}
 
-				{/* Кнопка «Панель»: приглушенный серый text-zinc-400 hover:text-zinc-200 */}
+				{/* Кнопка «Панель»: приглушенный серый */}
 				<button
 					type="button"
 					onClick={() => setIsSidebarOpen((prev) => !prev)}
-					className={`px-1.5 sm:px-2 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors border shadow-xs shrink-0 ${
+					className={`px-1.5 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors border shadow-xs shrink-0 ${
 						isSidebarOpen
-							? "bg-zinc-900 text-cyan-300 border-cyan-500/60"
+							? "bg-zinc-900 text-teal-300 border-teal-500/60"
 							: "bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:bg-zinc-900"
 					}`}
 					title={
@@ -403,11 +400,8 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 					}
 					data-testid="cbct-toggle-sidebar-btn"
 				>
-					<span
-						className={`w-1.5 h-1.5 rounded-full transition-colors ${isSidebarOpen ? "bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.8)]" : "bg-zinc-500"}`}
-					/>
 					<Columns2 className="w-3.5 h-3.5 shrink-0" />
-					<span className="hidden xl:inline">Панель</span>
+					<span className="hidden 2xl:inline">Панель</span>
 				</button>
 
 				{/* Кнопка «Опции» и меню дополнительных действий */}
@@ -415,9 +409,9 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 					<button
 						type="button"
 						onClick={() => setIsStudioMenuOpen((prev) => !prev)}
-						className={`px-1.5 sm:px-2 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 border transition-colors cursor-pointer ${
+						className={`px-1.5 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 border transition-colors cursor-pointer ${
 							isStudioMenuOpen
-								? "bg-zinc-900 text-cyan-300 border-cyan-500/60"
+								? "bg-zinc-900 text-teal-300 border-teal-500/60"
 								: "bg-zinc-950 hover:bg-zinc-900 text-zinc-400 hover:text-zinc-200 border-zinc-800"
 						}`}
 						data-testid="cbct-more-options-btn"
@@ -426,7 +420,7 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 						aria-expanded={isStudioMenuOpen}
 					>
 						<MoreHorizontal className="w-3.5 h-3.5" />
-						<span className="hidden sm:inline">Опции</span>
+						<span className="hidden 2xl:inline">Опции</span>
 					</button>
 
 					{isStudioMenuOpen && (
@@ -476,52 +470,32 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 									});
 									setIsStudioMenuOpen(false);
 								}}
-								className={`w-full px-2.5 py-1.5 rounded text-xs font-medium text-left flex items-center gap-2 transition-colors cursor-pointer ${
-									showDentalArch
-										? "text-purple-300 bg-purple-950/40 hover:bg-purple-950/60"
-										: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
-								}`}
+								className={`w-full px-2.5 py-1.5 rounded text-xs font-medium text-left flex items-center gap-2 transition-colors cursor-pointer ${showDentalArch ? "text-purple-300 bg-purple-950/40 hover:bg-purple-950/60" : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"}`}
 								data-testid="cbct-toggle-dental-arch"
 								title="Показать / скрыть анатомическую дугу ОПТГ"
 							>
 								<DentalPanoramicArch className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-								<span>
-									{showDentalArch ? "Скрыть дугу ОПТГ" : "Показать дугу ОПТГ"}
-								</span>
+								<span>{showDentalArch ? "Скрыть дугу ОПТГ" : "Показать дугу ОПТГ"}</span>
 							</button>
 
 							{/* Краевые миллиметровые линейки */}
 							{setShowEdgeRulers && (
 								<button
 									type="button"
-									onClick={() => {
-										setShowEdgeRulers((prev) => !prev);
-										setIsStudioMenuOpen(false);
-									}}
-									className={`w-full px-2.5 py-1.5 rounded text-xs font-medium text-left flex items-center gap-2 transition-colors cursor-pointer ${
-										showEdgeRulers
-											? "text-cyan-300 bg-cyan-950/40 hover:bg-cyan-950/60"
-											: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
-									}`}
+									onClick={() => { setShowEdgeRulers((prev) => !prev); setIsStudioMenuOpen(false); }}
+									className={`w-full px-2.5 py-1.5 rounded text-xs font-medium text-left flex items-center gap-2 transition-colors cursor-pointer ${showEdgeRulers ? "text-cyan-300 bg-cyan-950/40 hover:bg-cyan-950/60" : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"}`}
 									data-testid="cbct-toggle-edge-rulers"
 									title="Показать / скрыть краевые миллиметровые линейки по периметру окон"
 								>
 									<Ruler className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-									<span>
-										{showEdgeRulers
-											? "Скрыть краевые линейки"
-											: "Показать краевые линейки"}
-									</span>
+									<span>{showEdgeRulers ? "Скрыть краевые линейки" : "Показать краевые линейки"}</span>
 								</button>
 							)}
 
 							{/* Печатный A4 PDF протокол */}
 							<button
 								type="button"
-								onClick={() => {
-									handleExportPdfReport();
-									setIsStudioMenuOpen(false);
-								}}
+								onClick={() => { handleExportPdfReport(); setIsStudioMenuOpen(false); }}
 								className="w-full px-2.5 py-1.5 rounded text-xs font-medium text-left flex items-center gap-2 text-amber-300/90 hover:text-amber-200 hover:bg-zinc-800 transition-colors cursor-pointer"
 								data-testid="cbct-btn-export-pdf"
 								title="Сформировать печатный A4 протокол планирования / PDF"
@@ -535,10 +509,7 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 								type="button"
 								onClick={() => {
 									if (onCopySnapshotToClipboard) onCopySnapshotToClipboard();
-									else
-										window.dispatchEvent(
-											new CustomEvent("dente:copy-cbct-snapshot"),
-										);
+									else window.dispatchEvent(new CustomEvent("dente:copy-cbct-snapshot"));
 									setIsStudioMenuOpen(false);
 								}}
 								className="w-full px-2.5 py-1.5 rounded text-xs font-medium text-left flex items-center gap-2 text-cyan-300/90 hover:text-cyan-200 hover:bg-zinc-800 transition-colors cursor-pointer"
@@ -553,10 +524,7 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 							{onOpenComparisonSplit && (
 								<button
 									type="button"
-									onClick={() => {
-										onOpenComparisonSplit();
-										setIsStudioMenuOpen(false);
-									}}
+									onClick={() => { onOpenComparisonSplit(); setIsStudioMenuOpen(false); }}
 									className="w-full px-2.5 py-1.5 rounded text-xs font-medium text-left flex items-center gap-2 text-emerald-300/90 hover:text-emerald-200 hover:bg-zinc-800 transition-colors cursor-pointer"
 									data-testid="cbct-menu-open-comparison-split"
 									title="Сравнение исследований (До/После) и динамика остеоинтеграции"
@@ -763,8 +731,8 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 								} else {
 									const { routeOpenCbctPopout } = await import("../../../utils/runtimeRouter");
 									const res = await routeOpenCbctPopout({
-										studyId,
-										patientId,
+										...(studyId ? { studyId } : {}),
+										...(patientId ? { patientId } : {}),
 										patientName: patientDisplayName || resolvedPatientName,
 										mode: studioMode,
 									});

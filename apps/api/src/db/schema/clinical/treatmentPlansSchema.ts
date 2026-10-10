@@ -9,6 +9,7 @@ import {
 	text,
 	timestamp,
 	uuid,
+	varchar,
 } from "drizzle-orm/pg-core";
 import {
 	dentalSpecialty,
@@ -622,5 +623,56 @@ export const treatmentPlanItemsNew = pgTable(
 		),
 		planIdIdx: index("treatment_plan_items_new_plan_id_idx").on(t.planId),
 		doctorIdIdx: index("treatment_plan_items_new_doctor_id_idx").on(t.doctorId),
+	}),
+);
+
+export const portalBudgetTokens = pgTable(
+	"portal_budget_tokens",
+	{
+		token: varchar("token", { length: 128 }).primaryKey(),
+		planId: uuid("plan_id"),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id),
+		doctorId: uuid("doctor_id").references(() => users.id),
+		status: varchar("status", { length: 32 }).notNull().default("sent"),
+		clinicName: text("clinic_name").notNull(),
+		clinicPhone: text("clinic_phone"),
+		clinicAddress: text("clinic_address"),
+		doctorName: text("doctor_name").notNull(),
+		patientFirstName: text("patient_first_name").notNull(),
+		patientPhone: text("patient_phone"),
+		patientBirthDate: text("patient_birth_date"),
+		authMethod: varchar("auth_method", { length: 32 }).notNull().default("phone_last4"),
+		verbalPinHash: text("verbal_pin_hash"),
+		items: jsonb("items").notNull().default(sql`'[]'::jsonb`),
+		totalPriceRub: numeric("total_price_rub", { precision: 12, scale: 2 }).notNull().default("0"),
+		discountRub: numeric("discount_rub", { precision: 12, scale: 2 }).notNull().default("0"),
+		netTotalRub: numeric("net_total_rub", { precision: 12, scale: 2 }).notNull().default("0"),
+		currency: varchar("currency", { length: 8 }).notNull().default("RUB"),
+		failedAttempts: integer("failed_attempts").notNull().default(0),
+		totalFailures: integer("total_failures").notNull().default(0),
+		isLocked: boolean("is_locked").notNull().default(false),
+		lockedUntil: timestamp("locked_until", { withTimezone: true }),
+		viewedAt: timestamp("viewed_at", { withTimezone: true }),
+		signedAt: timestamp("signed_at", { withTimezone: true }),
+		signerName: text("signer_name"),
+		documentHash: text("document_hash"),
+		signature: jsonb("signature"),
+		validUntil: timestamp("valid_until", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		planIdIdx: index("idx_portal_budget_tokens_plan_id").on(t.planId),
+		patientIdIdx: index("idx_portal_budget_tokens_patient_id").on(t.patientId),
+		orgIdIdx: index("idx_portal_budget_tokens_org_id").on(t.organizationId),
 	}),
 );

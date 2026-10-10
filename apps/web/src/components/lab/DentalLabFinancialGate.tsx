@@ -294,7 +294,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 						</div>
 						<p className="text-amber-900/90 dark:text-amber-200 text-xs leading-relaxed">
 							Рекомендуемый аванс для запуска работ в ЗТЛ: <strong>{gateResult.minAdvancePercent}%</strong> (
-							{formatKopecksRu(gateResult.requiredAdvanceKopecks)}). Врач вправе отправить заказ в лабораторию прямо сейчас в 1 клик по клиническим показаниям.
+							{formatKopecksRu(gateResult.requiredAdvanceKopecks)}). Врач вправе отправить заказ в лабораторию прямо сейчас по клиническим показаниям.
 						</p>
 						{gateResult.isPlanExpiredNotice && (
 							<div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/30 text-[var(--teal-dark,var(--teal))] text-[11px] font-semibold leading-relaxed flex items-center gap-1.5">
@@ -348,7 +348,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 						</div>
 					</div>
 
-					{/* Doctor Clinical Override (1-Click Autonomy) */}
+					{/* Doctor Clinical Override */}
 					<div className="p-4 rounded-2xl bg-teal-500/10 border border-teal-500/30 space-y-3">
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-2 text-teal-900 dark:text-teal-200 font-bold text-xs">
@@ -356,7 +356,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 								<span>Клиническая автономия врача: отправка наряда без задержки</span>
 							</div>
 							<span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-800 dark:text-teal-200 font-bold">
-								1 клик
+								Решение врача
 							</span>
 						</div>
 						<p className="text-[11px] text-teal-900/80 dark:text-teal-300/80 leading-relaxed m-0">

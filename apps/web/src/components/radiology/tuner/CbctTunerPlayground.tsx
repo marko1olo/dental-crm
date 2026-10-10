@@ -246,7 +246,7 @@ export const CbctTunerPlayground: React.FC<CbctTunerPlaygroundProps> = ({
 			<header className="h-11 sm:h-12 border-b border-zinc-800 bg-zinc-950/95 px-2 sm:px-3 flex items-center justify-between shrink-0 backdrop-blur-md gap-1">
 				{/* Left: Badge + Patient Select */}
 				<div className="flex items-center gap-1 sm:gap-2 min-w-0">
-					<span className="p-1 rounded bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 text-xs shrink-0">🧪</span>
+					<span className="px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 text-[10px] font-bold shrink-0">3D</span>
 					<span className="hidden md:inline text-cyan-400 font-bold text-xs tracking-wide shrink-0">ТЮНЕР КОНТРАСТА КЛКТ</span>
 
 					<select

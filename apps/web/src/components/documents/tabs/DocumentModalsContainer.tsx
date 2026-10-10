@@ -233,6 +233,7 @@ export const DocumentModalsContainer: React.FC<DocumentModalsContainerProps> = R
 						patient={activePatient ?? null}
 						doctorFullName={activeDoctor?.fullName ?? null}
 						clinicProfileDraft={clinicProfileDraft}
+						existingDocuments={typedActiveDocuments}
 					/>
 				)}
 			</Suspense>

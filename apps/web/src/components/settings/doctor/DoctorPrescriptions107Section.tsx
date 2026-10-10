@@ -115,8 +115,8 @@ export function DoctorPrescriptions107Section() {
 							onClick={() => setSelectedMedId(med.id)}
 							className={`p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
 								isSelected
-									? "bg-[var(--paper)] border-teal-600 shadow-xs ring-2 ring-teal-500/40"
-									: "bg-[var(--paper)] border-[var(--line)] hover:border-teal-500/60"
+									? "bg-[var(--paper-card)] border-[var(--teal)] shadow-xs"
+									: "bg-[var(--paper-card)] border-[var(--line)] hover:border-[var(--line-strong)]"
 							}`}
 						>
 							<div className="flex items-start justify-between gap-1 w-full">
@@ -136,8 +136,8 @@ export function DoctorPrescriptions107Section() {
 									}}
 									className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border transition-colors cursor-pointer ${
 										isFav
-											? "bg-teal-600 border-teal-600 text-white"
-											: "border-[var(--line)] text-slate-300 hover:text-slate-500"
+											? "bg-[var(--teal)] border-[var(--teal)] text-[var(--on-teal)]"
+											: "border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
 									}`}
 									title={isFav ? "Удалить из избранных" : "Добавить в избранные"}
 								>
@@ -145,8 +145,8 @@ export function DoctorPrescriptions107Section() {
 								</button>
 							</div>
 
-							<div className="flex items-center justify-between text-[10px] text-[var(--muted)] border-t border-[var(--line)]/50 pt-1.5 mt-0.5">
-								<span className="font-mono font-bold text-teal-700 dark:text-teal-300">
+							<div className="flex items-center justify-between text-[10px] text-[var(--muted)] border-t border-[var(--line-subtle)] pt-1.5 mt-0.5">
+								<span className="font-mono font-bold text-[var(--teal)]">
 									{med.dosage}
 								</span>
 								<span className="font-semibold">{med.categoryLabel}</span>
@@ -157,10 +157,10 @@ export function DoctorPrescriptions107Section() {
 			</div>
 
 			{/* Active Medication Card: Latin Signature & Overdose Protection */}
-			<div className="p-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-3">
+			<div className="p-4 rounded-xl bg-[var(--paper-card)] border border-[var(--line)] space-y-3">
 				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--line)] pb-2">
 					<div className="flex items-center gap-2">
-						<FileText size={16} className="text-teal-600" />
+						<FileText size={16} className="text-[var(--teal)]" />
 						<span className="text-xs font-bold text-[var(--ink)]">
 							Рецептурный бланк: {currentMed.tradeName} ({currentMed.mnn})
 						</span>
@@ -169,10 +169,10 @@ export function DoctorPrescriptions107Section() {
 					<button
 						type="button"
 						onClick={handleCopyLatin}
-						className="px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+						className="px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] hover:border-[var(--line-strong)] flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
 						title="Скопировать латинскую пропись"
 					>
-						<Copy size={12} className="text-teal-600" />
+						<Copy size={12} className="text-[var(--teal)]" />
 						<span>Копировать Rp.:</span>
 					</button>
 				</div>
@@ -184,8 +184,8 @@ export function DoctorPrescriptions107Section() {
 
 				{/* Overdose Protection & Safety Bounds */}
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-					<div className="p-3 rounded-lg bg-teal-500/10 border border-teal-500/20 text-xs space-y-1">
-						<div className="flex items-center gap-1.5 font-bold text-teal-800 dark:text-teal-300">
+					<div className="p-3 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs space-y-1">
+						<div className="flex items-center gap-1.5 font-bold text-[var(--teal)]">
 							<ShieldCheck size={14} />
 							<span>Предельная суточная дозировка:</span>
 						</div>

@@ -306,10 +306,7 @@ export async function registerCampaignAndBroadcastHandlers(
 							patientCommunicationConsents.channel,
 							channel as any,
 						),
-						inArray(patientCommunicationConsents.state, [
-							"revoked",
-							"opted_out",
-						]),
+						eq(patientCommunicationConsents.state, "revoked"),
 					),
 				);
 

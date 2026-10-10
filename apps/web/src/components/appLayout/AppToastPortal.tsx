@@ -17,9 +17,18 @@ const ClinicalGuidanceHost = lazyWithRetry(() =>
 		default: module.ClinicalGuidanceHost,
 	})),
 );
-const A2hsPromptModal = lazyWithRetry(() =>
-	import("../../pwa/A2hsPromptModal").then((module) => ({
-		default: module.A2hsPromptModal,
+import { A2hsPromptModal } from "../../pwa/A2hsPromptModal";
+import { ChairsideErgonomicsHost } from "../chairside/ChairsideErgonomicsHost";
+
+const VisiographIncomingToast = lazyWithRetry(() =>
+	import("../radiology/VisiographIncomingToast").then((module) => ({
+		default: module.VisiographIncomingToast,
+	})),
+);
+
+const VoiceChairsideHudBar = lazyWithRetry(() =>
+	import("../odontogram/VoiceChairsideHudBar").then((module) => ({
+		default: module.VoiceChairsideHudBar,
 	})),
 );
 
@@ -28,6 +37,7 @@ export function AppToastPortal(props: AppToastPortalProps) {
 
 	return (
 		<>
+			<ChairsideErgonomicsHost />
 			<Suspense fallback={null}>
 				<VoiceAssistantUI
 					onNavigate={(view) => {
@@ -52,6 +62,12 @@ export function AppToastPortal(props: AppToastPortalProps) {
 			</Suspense>
 			<Suspense fallback={null}>
 				<A2hsPromptModal />
+			</Suspense>
+			<Suspense fallback={null}>
+				<VisiographIncomingToast />
+			</Suspense>
+			<Suspense fallback={null}>
+				<VoiceChairsideHudBar />
 			</Suspense>
 		</>
 	);

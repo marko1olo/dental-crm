@@ -15,6 +15,9 @@ import type {
 	DocumentReleaseJournalEntry,
 	DocumentVoidAttestation,
 	GeneratedDocument,
+	TaxPaymentSnapshot,
+	TaxXmlSourceSnapshot,
+	TaxXmlSnapshot,
 } from "@dental/shared";
 import { documentKindMetadata } from "@dental/shared";
 import { organizationId, marinaPatientId, alexeyPatientId, activeVisitId, doctorUserId } from "./fixtureIds.js";
@@ -293,7 +296,7 @@ function _voidGeneratedDocument(
 	return document;
 }
 
-function cleanNullableText(value: string | null | undefined): string | null {
+export function cleanNullableText(value: string | null | undefined): string | null {
 	const clean = value?.trim();
 	return clean ? clean : null;
 }

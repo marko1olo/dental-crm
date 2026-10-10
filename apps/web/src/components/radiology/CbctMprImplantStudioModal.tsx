@@ -402,14 +402,10 @@ export const CbctMprImplantStudioModal: React.FC<
 			applyVol(initialVolume);
 		} else if (typeof window !== "undefined") {
 			const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume };
-			if (win.__cbctDemoVolume && !volume) {
-				applyVol(win.__cbctDemoVolume);
-			}
+			if (win.__cbctDemoVolume && !volume) applyVol(win.__cbctDemoVolume);
 			const handleCustomLoad = (e: Event) => {
 				const customEvent = e as CustomEvent<CbctVoxelVolume>;
-				if (customEvent.detail) {
-					applyVol(customEvent.detail);
-				}
+				if (customEvent.detail) applyVol(customEvent.detail);
 			};
 			window.addEventListener("dente-load-cbct-volume", handleCustomLoad);
 			return () => {
@@ -546,12 +542,9 @@ export const CbctMprImplantStudioModal: React.FC<
 	}, [handleSelectPreset]);
 
 	const {
-		handleExportToPlan: handleImplantExportToPlan,
-		handleExportToSchedule,
-		handleExportToEmr: handleImplantExportToEmr,
-		handleExportCbctToFinance,
-		handleExportToLab,
-		handleExportPdfReport,
+		handleExportToPlan: handleImplantExportToPlan, handleExportToSchedule,
+		handleExportToEmr: handleImplantExportToEmr, handleExportCbctToFinance,
+		handleExportToLab, handleExportPdfReport,
 	} = useCbctStudioExports({
 		patientId, patientDisplayName, study, activeCrossSection, activeCaliper,
 		currentImplantSpec, currentImplantPose, currentCanal, implantAngulationDeg,
@@ -589,8 +582,7 @@ export const CbctMprImplantStudioModal: React.FC<
 	}, [studioMode, activeCrossSection, patientId, patientDisplayName, onApplyToPlan, handleImplantExportToPlan]);
 
 	const handleResetNerve = useCallback(() => {
-		if (activeNerveSide === "right") setRightNervePoints([]);
-		else setLeftNervePoints([]);
+		if (activeNerveSide === "right") setRightNervePoints([]); else setLeftNervePoints([]);
 		setSelectedNerveNodeIdx(null);
 		showToast(`Трассировка (${activeNerveSide === "right" ? "Правый" : "Левый"} нерв) сброшена`, "info");
 	}, [activeNerveSide]);
@@ -602,24 +594,16 @@ export const CbctMprImplantStudioModal: React.FC<
 		showToast(`Узел нерва #${selectedNerveNodeIdx + 1} удален`, "info");
 	}, [selectedNerveNodeIdx, setNervePoints]);
 
-	const renderViewportOverlays = useCallback(
-		(viewport: CbctViewportType) => {
-			if (viewport !== activeViewport) return null;
-			return (
-				<CbctNerveTracingHud
-					activeTool={activeTool}
-					activeSide={activeNerveSide}
-					onSwitchSide={setActiveNerveSide}
-					nervePoints={nervePoints}
-					nerveTotalLengthMm={nerveTotalLengthMm}
-					selectedNerveNodeIdx={selectedNerveNodeIdx}
-					onResetNerve={handleResetNerve}
-					onDeleteSelectedNode={handleDeleteSelectedNode}
-				/>
-			);
-		},
-		[activeViewport, activeTool, activeNerveSide, nervePoints, nerveTotalLengthMm, selectedNerveNodeIdx, handleResetNerve, handleDeleteSelectedNode],
-	);
+	const renderViewportOverlays = useCallback((viewport: CbctViewportType) => {
+		if (viewport !== activeViewport) return null;
+		return (
+			<CbctNerveTracingHud
+				activeTool={activeTool} activeSide={activeNerveSide} onSwitchSide={setActiveNerveSide}
+				nervePoints={nervePoints} nerveTotalLengthMm={nerveTotalLengthMm} selectedNerveNodeIdx={selectedNerveNodeIdx}
+				onResetNerve={handleResetNerve} onDeleteSelectedNode={handleDeleteSelectedNode}
+			/>
+		);
+	}, [activeViewport, activeTool, activeNerveSide, nervePoints, nerveTotalLengthMm, selectedNerveNodeIdx, handleResetNerve, handleDeleteSelectedNode]);
 
 	const modalContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -627,11 +611,7 @@ export const CbctMprImplantStudioModal: React.FC<
 		if (!vol) return false;
 		if (initialVolume && vol === initialVolume) return true;
 		if (typeof window !== "undefined") {
-			const win = window as unknown as {
-				__cbctDemoVolume?: CbctVoxelVolume;
-				__cbctActiveVolume?: CbctVoxelVolume;
-				__cbctSharedVolume?: CbctVoxelVolume;
-			};
+			const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume; __cbctActiveVolume?: CbctVoxelVolume; __cbctSharedVolume?: CbctVoxelVolume };
 			if (win.__cbctDemoVolume && vol === win.__cbctDemoVolume) return true;
 			if (win.__cbctActiveVolume && vol === win.__cbctActiveVolume) return true;
 			if (win.__cbctSharedVolume && vol === win.__cbctSharedVolume) return true;
@@ -643,25 +623,13 @@ export const CbctMprImplantStudioModal: React.FC<
 		if (volume) {
 			cacheActiveCbctVolume(volume);
 			if (typeof window !== "undefined") {
-				const win = window as unknown as {
-					__cbctSharedVolume?: CbctVoxelVolume;
-					__cbctActiveVolume?: CbctVoxelVolume;
-				};
-				win.__cbctSharedVolume = volume;
-				win.__cbctActiveVolume = volume;
+				const win = window as unknown as { __cbctSharedVolume?: CbctVoxelVolume; __cbctActiveVolume?: CbctVoxelVolume };
+				win.__cbctSharedVolume = volume; win.__cbctActiveVolume = volume;
 			}
 		}
-		const res = await routeOpenCbctPopout({
-			studyId: study?.id,
-			patientId: patientId,
-			patientName: patientDisplayName || patientName,
-			mode: studioMode,
-		});
-		if (!res.success && res.error === "popup_blocked") {
-			showToast("Разрешите всплывающие окна для вывода КТ на второй монитор", "warning");
-		} else if (res.success) {
-			onClose();
-		}
+		const res = await routeOpenCbctPopout({ studyId: study?.id, patientId, patientName: patientDisplayName || patientName, mode: studioMode });
+		if (!res.success && res.error === "popup_blocked") showToast("Разрешите всплывающие окна для вывода КТ на второй монитор", "warning");
+		else if (res.success) onClose();
 	}, [volume, study?.id, patientId, patientDisplayName, patientName, studioMode, onClose]);
 
 	const handleCloseStudio = useCallback(() => {

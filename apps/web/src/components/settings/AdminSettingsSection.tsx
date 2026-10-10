@@ -13,8 +13,11 @@ import {
 	BellRing,
 	CalendarDays,
 	CalendarRange,
+	Clock,
 	Globe,
+	HeartPulse,
 	Lock,
+	MapPin,
 	MessageSquare,
 	Puzzle,
 	Send,
@@ -39,6 +42,7 @@ import { SettingsMessengersTab } from "./SettingsMessengersTab";
 import { SettingsModulesTab } from "./SettingsModulesTab";
 import { SettingsStaffTab } from "./SettingsStaffTab";
 import { showToast } from "../GlobalToast";
+import { DelimitedTileCard } from "./DelimitedTileCard";
 import {
 	safeLocalStorageGetItem,
 	safeLocalStorageSetItem,
@@ -71,7 +75,7 @@ const ADMIN_TABS: Array<{
 }> = [
 	{
 		id: "clinic",
-		label: "График клиники и кресла",
+		label: "График и кресла",
 		description: "Часы работы, стоматологические установки, смены",
 		icon: CalendarDays,
 	},
@@ -83,19 +87,19 @@ const ADMIN_TABS: Array<{
 	},
 	{
 		id: "access",
-		label: "Права доступа (RBAC)",
+		label: "Права доступа",
 		description: "Роли, разрешения, ЕГИСЗ и ограничения",
 		icon: Lock,
 	},
 	{
 		id: "messengers",
-		label: "Мессенджеры и каденции",
+		label: "Мессенджеры",
 		description: "WhatsApp, Telegram, SMS и каденция напоминаний",
 		icon: MessageSquare,
 	},
 	{
 		id: "templates",
-		label: "Шаблоны сообщений",
+		label: "Шаблоны",
 		description: "Тексты SMS, WhatsApp, Telegram и макросы {patient_name}, {time}",
 		icon: MessageSquare,
 	},
@@ -107,13 +111,13 @@ const ADMIN_TABS: Array<{
 	},
 	{
 		id: "modules",
-		label: "Модули и интеграции",
+		label: "Интеграции",
 		description: "Яндекс.Календарь, АТС/Телефония, аналитика",
 		icon: Puzzle,
 	},
 	{
 		id: "marketing",
-		label: "Отзывы и сценарии",
+		label: "Отзывы и NPS",
 		description: "Автосбор отзывов, NPS, цепочки повторных визитов",
 		icon: Send,
 	},
@@ -197,121 +201,9 @@ export const AdminSettingsSection: React.FC<AdminSettingsSectionProps> = ({
 	};
 
 	return (
-		<div className="space-y-6" data-testid="admin-settings-section">
-			{/* Super-Header: Admin Banner */}
-			<div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-transparent border border-blue-500/25 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-				<div className="flex items-center gap-3">
-					<div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md">
-						<CalendarRange size={24} />
-					</div>
-					<div>
-						<div className="flex items-center gap-2">
-							<h3 className="font-extrabold text-base sm:text-lg text-[var(--ink)]">
-								Рабочее место администратора: операционные настройки
-							</h3>
-							<span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-500/15 text-blue-800 dark:text-blue-300 border border-blue-500/30">
-								Front-Desk & Расписание
-							</span>
-						</div>
-						<p className="text-xs text-[var(--muted)] mt-0.5">
-							Управление креслами, рабочими сменами, напоминаниями пациентам и приемом звонков
-						</p>
-					</div>
-				</div>
-			</div>
-
-			{/* Super-Settings: 1-Click Communications & Booking Toggles */}
-			<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3">
-				<div className="flex items-center justify-between">
-					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-						<BellRing size={14} className="text-blue-600" />
-						Каденция оповещения пациентов и автодействия:
-					</span>
-					<span className="text-[11px] text-[var(--muted)] hidden sm:inline">
-						Автоматическая отправка без участия администратора
-					</span>
-				</div>
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-					<button
-						type="button"
-						onClick={toggleRemind24h}
-						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
-							cadence.remind24hEnabled
-								? "bg-blue-500/10 border-blue-500/40 text-[var(--ink)]"
-								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70"
-						}`}
-						title="Переключить напоминание за 24 часа"
-					>
-						<div className="flex items-center justify-between">
-							<span className="font-bold text-xs">За 24ч до приема</span>
-							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${cadence.remind24hEnabled ? "bg-blue-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
-								{cadence.remind24hEnabled ? "ВКЛ" : "ВЫКЛ"}
-							</span>
-						</div>
-						<span className="text-[11px] text-[var(--muted)] mt-1">С кнопкой «Подтвердить визит»</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={toggleRemind2h}
-						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
-							cadence.remind2hEnabled
-								? "bg-indigo-500/10 border-indigo-500/40 text-[var(--ink)]"
-								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70"
-						}`}
-						title="Переключить напоминание за 2 часа"
-					>
-						<div className="flex items-center justify-between">
-							<span className="font-bold text-xs">За 2ч до приема</span>
-							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${cadence.remind2hEnabled ? "bg-indigo-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
-								{cadence.remind2hEnabled ? "ВКЛ" : "ВЫКЛ"}
-							</span>
-						</div>
-						<span className="text-[11px] text-[var(--muted)] mt-1">Геопозиция и ссылка на карту</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={togglePostOp24h}
-						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
-							cadence.postOp24hEnabled
-								? "bg-teal-500/10 border-teal-500/40 text-[var(--ink)]"
-								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70"
-						}`}
-						title="Переключить опрос самочувствия после операции"
-					>
-						<div className="flex items-center justify-between">
-							<span className="font-bold text-xs">Через 24ч после операции</span>
-							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${cadence.postOp24hEnabled ? "bg-teal-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
-								{cadence.postOp24hEnabled ? "ВКЛ" : "ВЫКЛ"}
-							</span>
-						</div>
-						<span className="text-[11px] text-[var(--muted)] mt-1">Памятка и опрос 043/у</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={toggleOnlineBooking}
-						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
-							onlineBookingEnabled
-								? "bg-emerald-500/10 border-emerald-500/40 text-[var(--ink)]"
-								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70"
-						}`}
-						title="Переключить онлайн-запись"
-					>
-						<div className="flex items-center justify-between">
-							<span className="font-bold text-xs">Онлайн-запись</span>
-							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${onlineBookingEnabled ? "bg-emerald-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
-								{onlineBookingEnabled ? "ВКЛ" : "ВЫКЛ"}
-							</span>
-						</div>
-						<span className="text-[11px] text-[var(--muted)] mt-1">Виджет на сайте и в картах</span>
-					</button>
-				</div>
-			</div>
-
+		<div className="space-y-4" data-testid="admin-settings-section">
 			{/* Sub-Navigation Strip (Desktop 32px, Radius 8px) */}
-			<div className="settings-subnav-strip" role="tablist" aria-label="Разделы настроек администратора">
+			<div className="settings-subnav-strip overflow-x-auto pb-1 border-b border-[var(--line)]" role="tablist" aria-label="Разделы настроек администратора">
 				{ADMIN_TABS.map((tab) => {
 					const Icon = tab.icon;
 					const isSelected = activeSubTab === tab.id;
@@ -327,11 +219,63 @@ export const AdminSettingsSection: React.FC<AdminSettingsSectionProps> = ({
 							data-testid={`admin-tab-${tab.id}`}
 						>
 							<Icon size={14} className="shrink-0" />
-							<span>{tab.label}</span>
+							<span className="whitespace-nowrap">{tab.label}</span>
 						</button>
 					);
 				})}
 			</div>
+
+			{/* When on Messengers tab: Show Cadence as a quiet Apple Grouped Card */}
+			{activeSubTab === "messengers" && (
+				<div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3.5 space-y-2.5 shadow-xs">
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-2">
+							<BellRing size={14} className="text-[var(--teal)]" />
+							<h4 className="text-xs font-bold text-[var(--ink)]">
+								Каденция оповещения пациентов
+							</h4>
+						</div>
+						<span className="text-[11px] text-[var(--muted)] hidden sm:inline">
+							Автоматическая отправка без участия администратора
+						</span>
+					</div>
+
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+						<DelimitedTileCard
+							icon={Clock}
+							title="За 24ч до приема"
+							description="Подтверждение визита"
+							checked={cadence.remind24hEnabled}
+							onChange={toggleRemind24h}
+							testId="admin-cadence-toggle-24h"
+						/>
+						<DelimitedTileCard
+							icon={MapPin}
+							title="За 2ч до приема"
+							description="Геолокация клиники"
+							checked={cadence.remind2hEnabled}
+							onChange={toggleRemind2h}
+							testId="admin-cadence-toggle-2h"
+						/>
+						<DelimitedTileCard
+							icon={HeartPulse}
+							title="После операции"
+							description="Опрос 043/у (24ч)"
+							checked={cadence.postOp24hEnabled}
+							onChange={togglePostOp24h}
+							testId="admin-cadence-toggle-postop"
+						/>
+						<DelimitedTileCard
+							icon={Globe}
+							title="Онлайн-запись"
+							description="Виджет на сайте"
+							checked={onlineBookingEnabled}
+							onChange={toggleOnlineBooking}
+							testId="admin-cadence-toggle-booking"
+						/>
+					</div>
+				</div>
+			)}
 
 			{/* Sub-Tab Content Rendering */}
 			<div className="pt-2">

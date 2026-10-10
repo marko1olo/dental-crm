@@ -35,7 +35,7 @@ export function extractTeethList(appointment?: Appointment | null): string[] {
 
 /**
  * Formats full patient FIO into a readable, non-truncated medical card string:
- * "Иванов Иван Сергеевич" -> "Иванов Иван С."
+ * "Иванов Иван Сергеевич" -> "Иванов И.С."
  * "Петрова Анна" -> "Петрова Анна"
  */
 export function formatPatientDisplayFio(name: string | null | undefined): string {
@@ -43,9 +43,9 @@ export function formatPatientDisplayFio(name: string | null | undefined): string
 	const parts = name.trim().split(/\s+/);
 	if (parts.length >= 3) {
 		const lastName = parts[0];
-		const firstName = parts[1];
+		const firstInitial = parts[1]?.charAt(0);
 		const middleInitial = parts[2]?.charAt(0);
-		return `${lastName} ${firstName} ${middleInitial ? `${middleInitial}.` : ""}`.trim();
+		return `${lastName} ${firstInitial ? `${firstInitial}.` : ""}${middleInitial ? `${middleInitial}.` : ""}`.trim();
 	}
 	return name.trim();
 }
@@ -103,10 +103,10 @@ export function getNormalizedAppointmentStatusLabel(
 	if (!status) return "";
 	const s = String(status).toLowerCase();
 	if (s === "in_treatment" || s === "in_chair" || s === "in_progress") return "На приёме";
-	if (s === "arrived" || s === "in_clinic" || s === "waiting") return "Ожидает приёма";
-	if (s === "completed") return "Ожидает оплаты";
+	if (s === "arrived" || s === "in_clinic" || s === "waiting") return "В холле";
+	if (s === "completed") return "К оплате";
 	if (s === "confirmed") return "Подтверждён";
-	if (s === "planned") return "Запланирован";
+	if (s === "planned") return "Ожидает";
 	if (labels) {
 		if (labels[s]) return labels[s];
 		if (labels[status]) return labels[status];
@@ -286,29 +286,26 @@ export function getPatientSomaticAlert(patient?: any): string | null {
 export function getAppointmentStatusBadgeClasses(status: string | undefined | null): string {
 	const s = String(status || "").toLowerCase();
 	if (s === "in_treatment" || s === "in_chair" || s === "in_progress") {
-		return "bg-emerald-600 text-white font-bold shadow-xs";
+		return "bg-emerald-100 text-emerald-950 dark:bg-emerald-950/80 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-600 font-bold shadow-2xs";
 	}
 	if (s === "arrived" || s === "in_clinic" || s === "waiting") {
-		return "bg-amber-500 text-white font-bold shadow-xs";
+		return "bg-amber-100 text-amber-950 dark:bg-amber-950/80 dark:text-amber-200 border border-amber-300 dark:border-amber-600 font-bold shadow-2xs";
 	}
 	if (s === "confirmed") {
-		return "bg-teal-600 text-white font-bold shadow-xs";
+		return "bg-teal-100 text-teal-950 dark:bg-teal-950/80 dark:text-teal-200 border border-teal-300 dark:border-teal-600 font-bold shadow-2xs";
 	}
 	if (s === "completed") {
-		return "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 font-semibold";
+		return "bg-violet-100 text-violet-950 dark:bg-violet-950/80 dark:text-violet-200 border border-violet-300 dark:border-violet-600 font-bold shadow-2xs";
 	}
 	if (s === "cancelled" || s === "no_show") {
-		return "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40 font-bold";
+		return "bg-rose-100 text-rose-950 dark:bg-rose-950/80 dark:text-rose-200 border border-rose-300 dark:border-rose-600 font-bold shadow-2xs";
 	}
-	return "bg-indigo-500/15 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-bold";
+	return "bg-sky-100 text-sky-950 dark:bg-sky-950/80 dark:text-sky-200 border border-sky-300 dark:border-sky-600 font-bold shadow-2xs";
 }
 
 /**
  * Resolves container classes for Grid appointment card based on status, theme, collision, and CITO.
- * DentalPRO expo26 Realtime Schedule Bar:
- * - arrived (В холле): янтарный оттенок, border-l-4 border-l-amber-500, ring-1 ring-amber-500/40
- * - in_chair (В кресле): изумрудно-зеленый оттенок, border-l-4 border-l-emerald-500, ring-1 ring-emerald-500/50
- * - completed: мягкий благородный статус
+ * Color stripe 4px accent line on left border, subtle background tint, micro-shadows.
  */
 export function getGridAppointmentCardContainerClasses(
 	status: string | undefined | null,
@@ -320,31 +317,29 @@ export function getGridAppointmentCardContainerClasses(
 ): string {
 	const { collision, isCito, docTheme } = options;
 	if (collision) {
-		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-amber-500 text-[var(--ink)] ring-1 ring-amber-500/40";
+		return "bg-[var(--paper-card,var(--paper))] border-[var(--line)] border-l-[4px] border-l-amber-500 text-[var(--ink)] ring-1 ring-amber-500/40 shadow-xs";
 	}
 	if (isCito) {
-		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-rose-600 text-[var(--ink)] ring-1 ring-rose-500/50";
+		return "bg-rose-500/[0.04] dark:bg-rose-950/20 border-[var(--line)] border-l-[4px] border-l-rose-600 text-[var(--ink)] ring-1 ring-rose-500/50 shadow-xs";
 	}
 	if (isAppointmentInChair(status)) {
-		return "bg-emerald-500/[0.08] dark:bg-emerald-500/[0.18] border-[var(--line)] border-l-[4px] border-l-emerald-500 ring-1 ring-emerald-500/50 text-[var(--ink)]";
+		return "bg-emerald-500/[0.04] dark:bg-emerald-500/[0.12] border-[var(--line)] border-l-[4px] border-l-emerald-500 ring-1 ring-emerald-500/40 text-[var(--ink)] shadow-xs";
 	}
 	const s = String(status || "").toLowerCase();
 	if (s === "arrived" || s === "in_clinic" || s === "waiting") {
-		return "bg-amber-500/[0.08] dark:bg-amber-500/[0.16] border-[var(--line)] border-l-[4px] border-l-amber-500 ring-1 ring-amber-500/40 text-[var(--ink)]";
+		return "bg-amber-500/[0.04] dark:bg-amber-500/[0.12] border-[var(--line)] border-l-[4px] border-l-amber-500 ring-1 ring-amber-500/40 text-[var(--ink)] shadow-xs";
 	}
 	if (s === "completed") {
-		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-slate-400 text-[var(--muted-strong,var(--ink))] opacity-95";
+		return "bg-violet-500/[0.04] dark:bg-violet-950/20 border-[var(--line)] border-l-[4px] border-l-violet-500 text-[var(--ink)] shadow-xs";
 	}
 	if (s === "cancelled" || s === "no_show") {
-		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-rose-400 text-[var(--muted)] opacity-75";
+		return "bg-[var(--paper-card,var(--paper))] border-[var(--line)] border-l-[4px] border-l-slate-400 text-[var(--muted)] opacity-75";
 	}
 	if (s === "confirmed") {
-		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-teal-500 text-[var(--ink)]";
+		return "bg-teal-500/[0.03] dark:bg-teal-500/[0.10] border-[var(--line)] border-l-[4px] border-l-teal-500 text-[var(--ink)] shadow-xs";
 	}
 	// "planned" and any other status:
-	return docTheme
-		? "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-indigo-400 dark:border-l-indigo-500 text-[var(--ink)]"
-		: "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-indigo-400 dark:border-l-indigo-500 text-[var(--ink)]";
+	return "bg-[var(--paper-card,var(--paper))] border-[var(--line)] border-l-[4px] border-l-sky-500 text-[var(--ink)] shadow-xs";
 }
 
 /**
@@ -473,5 +468,9 @@ export type { ClinicalBadgeItem } from "./appointmentClinicalBadges";
 export {
 	resolveAppointmentLabStatus,
 	resolveAppointmentClinicalBadges,
+	sanitizeScheduleCardText,
+	isRedundantScheduleComment,
+	formatRussianAge,
 } from "./appointmentClinicalBadges";
+
 

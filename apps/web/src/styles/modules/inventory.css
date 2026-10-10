@@ -91,17 +91,17 @@
 }
 
 .inventory-col-stock {
-	width: 85px;
-	min-width: 80px;
-	max-width: 90px;
+	width: 95px;
+	min-width: 90px;
+	max-width: 105px;
 	text-align: right;
 }
 
 .inventory-col-threshold {
-	width: 75px;
-	min-width: 70px;
-	max-width: 80px;
-	text-align: center;
+	width: 80px;
+	min-width: 75px;
+	max-width: 85px;
+	text-align: right;
 }
 
 .inventory-col-cost {
@@ -112,9 +112,9 @@
 }
 
 .inventory-col-fefo {
-	width: 145px;
-	min-width: 140px;
-	max-width: 155px;
+	width: 165px;
+	min-width: 155px;
+	max-width: 175px;
 }
 
 .inventory-col-lot {
@@ -130,9 +130,9 @@
 }
 
 .inventory-col-actions {
-	width: 250px;
-	min-width: 230px;
-	max-width: 270px;
+	width: 220px;
+	min-width: 210px;
+	max-width: 235px;
 	text-align: right;
 }
 

@@ -60,7 +60,7 @@ export const RadiologyClinicalHud: React.FC<RadiologyClinicalHudProps> = ({
 	const effectivePatientName = patientName || (isDemo ? "Чухрова Лариса" : "Пациент клиники");
 	const effectiveCardNumber = medicalCardNumber || (isDemo ? "20190621_101042" : "20261001_101420");
 	const effectiveStudyDate = formatHumanStudyDate(studyDate || (isDemo ? "01.10.2026" : "01.10.2026 10:14"));
-	const effectiveToothFdi = toothFdi !== undefined && toothFdi !== "" ? toothFdi : (isDemo ? "14" : "16");
+	const effectiveToothFdi = toothFdi !== undefined && toothFdi !== "" ? toothFdi : (isDemo ? "14" : null);
 
 	const toothCodeStr = effectiveToothFdi ? String(effectiveToothFdi) : "";
 	const anatomicalName = toothCodeStr ? TOOTH_ANATOMICAL_NAMES[toothCodeStr] : null;

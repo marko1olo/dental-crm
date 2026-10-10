@@ -213,6 +213,7 @@ export function AppTopBar(props: AppTopBarProps) {
 		documentFactoryGroups,
 		saveClinicProfileFromDraft,
 		clinicProfileSaveState,
+		onboardingTelegramRecommendations = [],
 		previousOnboardingStep,
 		nextOnboardingStep,
 	} = props;
@@ -377,18 +378,10 @@ export function AppTopBar(props: AppTopBarProps) {
 					</button>
 				</section>
 			) : null}
-			{!onboardingDismissed &&
-			!showFullOnboardingGuide &&
-			!isLocalOnboardingDismissed &&
-			!isStripDismissedLocally &&
+			{!onboardingDismissed && !showFullOnboardingGuide && !isLocalOnboardingDismissed && !isStripDismissedLocally &&
 			!(typeof window !== "undefined" && window.innerWidth <= 768) &&
-			currentView !== "visit" &&
-			currentView !== "shift" &&
-			!(
-				typeof window !== "undefined" &&
-				(window.location.hash.toLowerCase().includes("visit") ||
-					window.location.hash.toLowerCase().includes("shift"))
-			) ? (
+			currentView !== "visit" && currentView !== "shift" && currentView !== "schedule" &&
+			!(typeof window !== "undefined" && (window.location.hash.toLowerCase().includes("visit") || window.location.hash.toLowerCase().includes("shift") || window.location.hash.toLowerCase().includes("schedule"))) ? (
 				<section
 					className="onboarding-compact-strip"
 					aria-label="Первичная настройка клиники"
@@ -468,8 +461,8 @@ export function AppTopBar(props: AppTopBarProps) {
 						currentOnboardingIndex={currentOnboardingIndex}
 						onboardingSteps={onboardingSteps}
 						legalReadinessPercent={legalReadinessPercent}
-						continueOnboardingInDraftMode={continueOnboardingInDraftMode}
-						moveOnboardingTo={moveOnboardingTo}
+						continueOnboardingInDraftMode={(targetView) => void continueOnboardingInDraftMode(targetView)}
+						moveOnboardingTo={(step) => void moveOnboardingTo(step)}
 						onboardingStep={onboardingStep}
 						onboardingReadyToFinish={onboardingReadyToFinish}
 						onboardingFinishGuidanceId={onboardingFinishGuidanceId}

@@ -15,16 +15,11 @@
  */
 
 import type {
-	HUZoneSampling,
-	MischBoneClass,
-	MischClassificationResult,
+	HUZoneSampling, MischBoneClass, MischClassificationResult,
 } from "./boneDensityMischMath";
 import type {
-	AlveolarContainmentResult,
-	CrossSectionImplantPose,
-	MandibularCanalCrossSection,
-	NerveSafetyAuditResult,
-	VirtualImplantSpec,
+	AlveolarContainmentResult, CrossSectionImplantPose,
+	MandibularCanalCrossSection, NerveSafetyAuditResult, VirtualImplantSpec,
 } from "./implantSafetyEngine";
 import {
 	type CbctVoxelVolume,
@@ -626,7 +621,8 @@ export function downloadCbctReportFile(
 	}
 
 	const safeFilename =
-		filename || `CBCT_Implant_Protocol_FDI_${data.targetToothFdi}_${data.patient.patientName.replace(/\s+/g, "_")}.html`;
+		filename ||
+		`CBCT_Implant_Protocol_FDI_${data.targetToothFdi}_${(data.patient?.patientName ?? "Patient").replace(/\s+/g, "_")}.html`;
 	const html = renderCbctReportHtml(data, options);
 	const blob = new Blob([html], { type: "text/html;charset=utf-8" });
 	const url = URL.createObjectURL(blob);

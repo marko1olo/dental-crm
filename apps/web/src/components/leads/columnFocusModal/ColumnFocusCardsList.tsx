@@ -340,7 +340,7 @@ export const ColumnFocusCardsList: React.FC<ColumnFocusCardsListProps> = ({
 										type="button"
 										onClick={() => void onCreatePatient(lead)}
 										className="expanded-focus-action-btn expanded-focus-action-btn--patient"
-										title="Создать карту пациента в 1 клик"
+										title="Создать карту пациента"
 										data-testid={`expanded-create-patient-btn-${lead.id}`}
 									>
 										<UserPlus size={12} />

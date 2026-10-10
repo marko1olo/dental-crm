@@ -609,21 +609,22 @@ export function DicomArchiveUploader({
 				</div>
 			)}
 
-			<div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mt-1.5 sm:mt-3">
+			<div className="flex flex-wrap items-center justify-center gap-2.5 mt-2 sm:mt-3">
 				<button
 					type="button"
 					onClick={() => {
 						if (!loading) fileInputRef.current?.click();
 					}}
-					className="px-2.5 py-1.5 sm:px-3.5 text-xs font-semibold rounded-lg shadow-sm border transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer"
+					className="secondary-button h-8 min-h-[32px] px-3 text-xs font-semibold rounded-lg border transition-colors inline-flex items-center gap-1.5 cursor-pointer"
 					style={{
-						background: "var(--surface-50, #f8fafc)",
+						background: "var(--paper, #ffffff)",
 						borderColor: "var(--line, #cbd5e1)",
 						color: "var(--ink, #0f172a)",
+						padding: "0 12px",
 						opacity: loading ? 0.7 : 1,
 					}}
 				>
-					<Archive size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+					<Archive size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
 					<span>Выбрать ZIP-архив / .DCM</span>
 				</button>
 				<button
@@ -631,15 +632,16 @@ export function DicomArchiveUploader({
 					onClick={() => {
 						if (!loading) folderInputRef.current?.click();
 					}}
-					className="px-2.5 py-1.5 sm:px-3.5 text-xs font-semibold rounded-lg shadow-sm border transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer"
+					className="secondary-button h-8 min-h-[32px] px-3 text-xs font-semibold rounded-lg border transition-colors inline-flex items-center gap-1.5 cursor-pointer"
 					style={{
-						background: "var(--surface-50, #f8fafc)",
+						background: "var(--paper, #ffffff)",
 						borderColor: "var(--line, #cbd5e1)",
 						color: "var(--ink, #0f172a)",
+						padding: "0 12px",
 						opacity: loading ? 0.7 : 1,
 					}}
 				>
-					<Folder size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+					<Folder size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
 					<span>Выбрать папку КЛКТ</span>
 				</button>
 			</div>

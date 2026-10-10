@@ -384,9 +384,9 @@
 
 .dente-touch-chip {
 	min-height: 44px;
-	padding: 6px 12px;
-	border-radius: 6px;
-	border: 1px solid var(--line);
+	padding: 8px 14px;
+	border-radius: 10px;
+	border: 1.5px solid var(--line-strong, #cbd5e1);
 	background: var(--paper);
 	color: var(--ink);
 	font-size: 12px;
@@ -394,18 +394,23 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: 4px;
+	gap: 6px;
 	cursor: pointer;
 	transition: all 0.15s ease;
 	user-select: none;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .dente-touch-chip:hover {
 	border-color: var(--teal);
+	background: var(--paper-soft);
 }
 
 .dente-touch-chip.active {
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+	border-color: var(--teal);
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	color: var(--teal);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.25);
 }
 
 /* Cross 5-Surface Diagram */
@@ -413,10 +418,11 @@
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
-	padding: 12px;
-	border-radius: 10px;
+	padding: 14px;
+	border-radius: 12px;
 	background: var(--paper);
-	border: 1px solid var(--line);
+	border: 1.5px solid var(--line-strong, #cbd5e1);
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
 .dente-surface-label-row {
@@ -449,21 +455,21 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: 4px;
+	gap: 6px;
 }
 
 .dente-surface-middle-row {
 	display: flex;
 	align-items: center;
-	gap: 4px;
+	gap: 6px;
 }
 
 .dente-surface-tile {
-	min-width: 54px;
-	min-height: 44px;
-	padding: 4px 8px;
-	border-radius: 6px;
-	border: 1.5px solid var(--line);
+	min-width: 58px;
+	min-height: 46px;
+	padding: 6px 10px;
+	border-radius: 10px;
+	border: 1.5px solid var(--line-strong, #cbd5e1);
 	background: var(--paper-strong);
 	color: var(--ink);
 	display: flex;
@@ -473,34 +479,36 @@
 	cursor: pointer;
 	transition: all 0.15s ease;
 	user-select: none;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .dente-surface-tile .tile-letter {
-	font-size: 12px;
+	font-size: 13px;
 	font-weight: 900;
 	line-height: 1;
 }
 
 .dente-surface-tile .tile-name {
-	font-size: 8.5px;
+	font-size: 9px;
 	color: var(--muted);
 	line-height: 1;
-	margin-top: 1px;
+	margin-top: 2px;
 }
 
 .dente-surface-tile:hover {
 	border-color: var(--teal);
+	background: var(--paper-soft);
 }
 
 .dente-surface-tile.selected {
 	background: var(--bad-fg);
-	color: var(--paper-strong);
+	color: #ffffff;
 	border-color: var(--bad-fg);
-	box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+	box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
 }
 
 .dente-surface-tile.selected .tile-name {
-	color: var(--paper-strong);
+	color: rgba(255, 255, 255, 0.9);
 }
 
 /* Black Classification Macros */
@@ -520,9 +528,9 @@
 
 .dente-macro-chip {
 	min-height: 44px;
-	padding: 6px 12px;
-	border-radius: 6px;
-	border: 1px solid var(--line, #cbd5e1);
+	padding: 8px 14px;
+	border-radius: 10px;
+	border: 1.5px solid var(--line-strong, #cbd5e1);
 	background: var(--paper-strong, #ffffff);
 	font-size: 12px;
 	font-weight: 700;
@@ -532,6 +540,7 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .dente-macro-chip:hover {
@@ -542,15 +551,15 @@
 /* Materials Grid */
 .dente-materials-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-	gap: 6px;
+	grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+	gap: 8px;
 }
 
 .dente-material-btn {
-	min-height: 44px;
-	padding: 6px 10px;
-	border-radius: 6px;
-	border: 1px solid var(--line, #cbd5e1);
+	min-height: 48px;
+	padding: 8px 12px;
+	border-radius: 10px;
+	border: 1.5px solid var(--line-strong, #cbd5e1);
 	background: var(--paper, #f8fafc);
 	color: var(--ink, #0f172a);
 	display: flex;
@@ -560,6 +569,7 @@
 	text-align: left;
 	cursor: pointer;
 	transition: all 0.15s ease;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .dente-material-btn .material-title {
@@ -568,18 +578,20 @@
 }
 
 .dente-material-btn .material-sub {
-	font-size: 10px;
+	font-size: 10.5px;
 	color: var(--muted, #64748b);
 }
 
 .dente-material-btn:hover {
 	border-color: var(--brand-primary, var(--teal));
+	background: var(--paper-soft);
 }
 
 .dente-material-btn.selected {
 	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
 	border-color: var(--brand-primary, var(--teal));
 	color: var(--brand-primary, var(--teal));
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.25);
 }
 
 /* Endo Section */

@@ -30,11 +30,11 @@ export const PediatricQuickProtocols: React.FC<PediatricQuickProtocolsProps> = (
 				<div className="flex items-center gap-2">
 					<Zap className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 					<span className="text-xs font-black uppercase tracking-wider text-teal-700 dark:text-teal-300">
-						1-Клик Клинические Протоколы &amp; Физиологическая Норма
+						Клинические Протоколы &amp; Физиологическая Норма
 					</span>
 				</div>
 				<span className="text-[11px] font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
-					0 лишних кликов • Без бюрократии • Готовый дневник приёма
+					Клинические стандарты • Готовый дневник приёма
 				</span>
 			</div>
 
@@ -183,7 +183,7 @@ export const PediatricQuickProtocols: React.FC<PediatricQuickProtocolsProps> = (
 				>
 					<div className="min-w-0">
 						<div className="font-extrabold truncate">
-							В карту (1 клик)
+							В карту
 						</div>
 						<div className="text-[10px] text-teal-100 truncate">
 							Перенос протокола и статуса

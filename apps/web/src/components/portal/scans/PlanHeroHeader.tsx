@@ -465,7 +465,7 @@ export const PlanHeroHeader: React.FC<PlanHeroHeaderProps> = ({
 						}}
 					>
 						<Download size={16} />
-						<span>Скачать справку для налоговой (1 клик)</span>
+						<span>Скачать справку для налоговой</span>
 					</button>
 				</div>
 			)}

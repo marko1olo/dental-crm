@@ -36,7 +36,9 @@ function readSource(relativePath: string): string {
  */
 
 test("ссылку строит и разбирает один и тот же путь", () => {
-	const panel = readSource("components/patients/LabOrdersPanel.tsx");
+	const panel =
+		readSource("components/patients/LabOrdersPanel.tsx") +
+		readSource("components/patients/useLabOrdersPanelLogic.tsx");
 	assert.ok(
 		panel.includes(`/#${LAB_ORDER_PORTAL_PATH}`),
 		`LabOrdersPanel.tsx больше не строит ссылку по пути ${LAB_ORDER_PORTAL_PATH}. ` +
@@ -230,8 +232,8 @@ test("ссылка согласования сметы пациентом раз
 test("страницу согласования сметы рендерит точка монтирования main.tsx", () => {
 	const entry = readSource("main.tsx");
 	assert.ok(
-		entry.includes("<PatientBudgetSignView"),
-		"main.tsx больше не рендерит PatientBudgetSignView для маршрута сметы.",
+		entry.includes("<PublicBudgetSignPage") || entry.includes("<PatientBudgetSignView"),
+		"main.tsx больше не рендерит PublicBudgetSignPage / PatientBudgetSignView для маршрута сметы.",
 	);
 	assert.ok(
 		entry.includes('kind === "budget"'),

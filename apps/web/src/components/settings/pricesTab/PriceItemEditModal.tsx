@@ -120,8 +120,8 @@ export function PriceItemEditModal({
 					<ServiceFormMetaFields
 						editServiceForm={editServiceForm}
 						setEditServiceForm={setEditServiceForm}
-						serviceCategoryLabels={serviceCategoryLabels}
-						specialtyLabels={specialtyLabels}
+						serviceCategoryLabels={serviceCategoryLabels || {}}
+						specialtyLabels={specialtyLabels || {}}
 					/>
 
 					<div className="premium-modal-footer">

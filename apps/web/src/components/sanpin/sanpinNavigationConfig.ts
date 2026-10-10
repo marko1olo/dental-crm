@@ -57,7 +57,7 @@ export const SANPIN_CATEGORIES: SanpinCategoryDef[] = [
 		icon: Flame,
 		tabs: [
 			{ id: "autoclave", label: "Журнал работы стерилизаторов (автоклавов)", shortLabel: "Автоклавы", category: "sterilization", icon: Flame },
-			{ id: "kraft", label: "Крафт-пакеты и маркировка (ГОСТ Р ИСО 11607)", shortLabel: "Крафт-пакеты", category: "sterilization", icon: PackageCheck },
+			{ id: "kraft", label: "Крафт-пакеты и маркировка", shortLabel: "Крафт-пакеты", category: "sterilization", icon: PackageCheck },
 			{ id: "sterilizers", label: "Парк стерилизаторов", shortLabel: "Оборудование", category: "sterilization", icon: Gauge },
 			{ id: "pso", label: "Контроль предстерилизационной очистки (азопирам)", shortLabel: "Контроль ПСО", category: "sterilization", icon: FlaskConical },
 			{ id: "cabinet_readiness", label: "Готовность кабинета к приёму", shortLabel: "Готовность кабинета", category: "sterilization", icon: ShieldCheck },

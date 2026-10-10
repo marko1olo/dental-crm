@@ -84,7 +84,7 @@ export function DentalLabExpressConfigurator({
 			<div className="space-y-2">
 				<div className="flex items-center gap-1.5 text-xs font-black text-amber-900 dark:text-amber-200">
 					<Sparkles size={15} className="text-amber-500 shrink-0" />
-					<span>4 КАНОНИЧЕСКИХ 1-КЛИК ПРЕСЕТА (ОРТОПЕДИЯ БЕЗ СИМУЛЯТОРА):</span>
+					<span>БЫСТРЫЕ ШАБЛОНЫ ОРТОПЕДИЧЕСКИХ КОНСТРУКЦИЙ:</span>
 				</div>
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
 					{[

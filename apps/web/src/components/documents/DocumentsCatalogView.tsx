@@ -9,38 +9,23 @@
 
 import React, { useCallback, useMemo, useState } from "react";
 import {
-	AlertCircle,
-	Award,
-	Check,
-	CheckCircle2,
-	ChevronRight,
-	ClipboardList,
-	Eye,
-	FileCheck,
-	FilePlus,
-	FileText,
-	Heart,
-	Printer,
-	Receipt,
-	Scan,
-	Search,
-	ShieldAlert,
-	ShieldCheck,
-	Sparkles,
-	UserCheck,
-	X,
-	Zap,
+	Award, CheckCircle2, ClipboardList, Clock, Eye, FileCheck, FileText,
+	Heart, Printer, Receipt, Scan, Search, ShieldAlert, ShieldCheck,
+	Sparkles, UserCheck, X, Zap,
 } from "lucide-react";
 import { DentalForm043, ToothDeciduous } from "../icons/DentalIcons";
 import { useDocumentStore } from "../../store/documentStore";
 import { showToast } from "../GlobalToast";
-import type { DocumentKind, Patient } from "@dental/shared";
+import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
+import { formatShortDate } from "../../AppHelpers";
 import { PediatricBraveryDiplomaModal } from "../pediatric/PediatricBraveryDiplomaModal";
 import { ConsentModal } from "../consents/ConsentModal";
 import { FnsTaxCertificateModal } from "./FnsTaxCertificateModal";
+import type { TaxPaymentRecord } from "./taxCertificateEngine";
 import { PrimaryIntakePackageModal } from "./PrimaryIntakePackageModal";
 import { OutpatientCardPrintModal } from "./OutpatientCardPrintModal";
 import { DocumentA4PrintPreviewModal } from "./DocumentA4PrintPreviewModal";
+import type { ProfessionalA4DocumentTab } from "./ProfessionalDocumentA4Sheet";
 
 export type DocumentCatalogCategory =
 	| "all"
@@ -48,7 +33,8 @@ export type DocumentCatalogCategory =
 	| "clinical"
 	| "finance_tax"
 	| "refusal"
-	| "pediatric";
+	| "pediatric"
+	| "registry";
 
 export interface DocumentCatalogItem {
 	readonly id: string;
@@ -57,6 +43,7 @@ export interface DocumentCatalogItem {
 	readonly category: DocumentCatalogCategory;
 	readonly descriptionRu: string;
 	readonly badgeRu: string;
+	readonly regulationRu: string;
 	readonly icon: React.ComponentType<{ className?: string; size?: number }>;
 	readonly isPediatric?: boolean | undefined;
 	readonly isStatutory?: boolean | undefined;
@@ -72,9 +59,16 @@ export interface DocumentsCatalogViewProps {
 	readonly clinicName?: string | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: clinicProfileDraft
 	readonly clinicProfileDraft?: any | undefined;
+	readonly existingDocuments?: readonly GeneratedDocument[] | undefined;
+	// biome-ignore lint/suspicious/noExplicitAny: eligibleTaxPayments
+	readonly eligibleTaxPayments?: readonly any[] | undefined;
+	readonly onCreateDocument?: ((kind: DocumentKind) => void | Promise<void>) | undefined;
+	readonly onOpenIssuedDocumentHtml?: ((id: string) => void | Promise<void>) | undefined;
 	readonly onOpenDocument?: ((kind: DocumentKind) => void) | undefined;
 	readonly onOpenPrimaryIntakePackage?: (() => void) | undefined;
 	readonly onOpenTaxCertificate?: (() => void) | undefined;
+	readonly onSelectRegistryTab?: (() => void) | undefined;
+	readonly onOpenFocusEditor?: ((kind: DocumentKind) => void) | undefined;
 	readonly className?: string | undefined;
 }
 
@@ -85,9 +79,15 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 	doctorName,
 	clinicName,
 	clinicProfileDraft,
+	existingDocuments,
+	eligibleTaxPayments,
+	onCreateDocument,
+	onOpenIssuedDocumentHtml,
 	onOpenDocument,
 	onOpenPrimaryIntakePackage,
 	onOpenTaxCertificate,
+	onSelectRegistryTab,
+	onOpenFocusEditor,
 	className = "",
 }) => {
 	const [searchQuery, setSearchQuery] = useState<string>("");
@@ -98,65 +98,82 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 	const [isLocalIntakeModalOpen, setIsLocalIntakeModalOpen] = useState<boolean>(false);
 	const [isOutpatientCardModalOpen, setIsOutpatientCardModalOpen] = useState<boolean>(false);
 	const [isContractModalOpen, setIsContractModalOpen] = useState<boolean>(false);
+	const [selectedA4Tab, setSelectedA4Tab] = useState<ProfessionalA4DocumentTab | null>(null);
 
 	const { setSelectedDocumentKind } = useDocumentStore();
-
 	const effectivePatientName = patient?.fullName || patientName;
 
+	const mappedTaxPayments = useMemo<TaxPaymentRecord[] | undefined>(() => {
+		if (!eligibleTaxPayments || eligibleTaxPayments.length === 0) return undefined;
+		return eligibleTaxPayments.map((p, idx) => {
+			const amountRub = Number(p.amountRub ?? p.amount ?? 0);
+			const isExpensive =
+				p.taxServiceCode === "2" || p.taxCode === "2" || Boolean(p.isExpensiveTreatment) || amountRub >= 100000;
+			return {
+				id: String(p.id || `pay-${idx}`),
+				dateIso: String(p.paidAt || p.createdAt || p.dateIso || new Date().toISOString()),
+				amountRub,
+				amountKopecks: Math.round(amountRub * 100),
+				taxCode: isExpensive ? ("2" as const) : ("1" as const),
+				serviceName: String(p.description || p.serviceName || "Стоматологические медицинские услуги"),
+				code804n: String(p.code804n || (isExpensive ? "A16.07.054" : "A16.07.002")),
+				receiptNumber: String(p.receiptNumber || `ФЧ-${idx + 1}`),
+				fiscalDocumentNumber: p.fiscalDocumentNumber ? String(p.fiscalDocumentNumber) : undefined,
+				fiscalSign: p.fiscalSign ? String(p.fiscalSign) : undefined,
+				isRefund: Boolean(p.status === "refunded" || p.isRefund),
+			};
+		});
+	}, [eligibleTaxPayments]);
+
 	const handleOpenKind = useCallback(
-		(kind: DocumentKind) => {
+		(kind: DocumentKind, titleRu?: string) => {
 			setSelectedDocumentKind(kind);
 			onOpenDocument?.(kind);
-			showToast(`Открыт документ: ${kind}`, "info", 1500);
+			if (titleRu) showToast(`Выбран документ: ${titleRu}`, "info", 1500);
 		},
 		[onOpenDocument, setSelectedDocumentKind],
 	);
 
 	const handleOpenIntake = useCallback(() => {
-		if (onOpenPrimaryIntakePackage) {
-			onOpenPrimaryIntakePackage();
-		} else {
-			setIsLocalIntakeModalOpen(true);
-		}
+		if (onOpenPrimaryIntakePackage) onOpenPrimaryIntakePackage();
+		else setIsLocalIntakeModalOpen(true);
 	}, [onOpenPrimaryIntakePackage]);
 
 	const handleOpenTax = useCallback(() => {
-		if (onOpenTaxCertificate) {
-			onOpenTaxCertificate();
-		} else {
-			setIsLocalTaxModalOpen(true);
-		}
+		if (onOpenTaxCertificate) onOpenTaxCertificate();
+		else setIsLocalTaxModalOpen(true);
 	}, [onOpenTaxCertificate]);
 
-	// Каталог документов клиники на чистом медицинском языке без птичьего жаргона
 	const catalogItems = useMemo<readonly DocumentCatalogItem[]>(() => {
 		return [
-			// 1. ПЕРВИЧНЫЙ ПРИЁМ
 			{
 				id: "consent_medical_intervention",
 				kind: "informed_consent",
 				titleRu: "Согласие на медицинское вмешательство (ИДС)",
 				category: "intake",
-				descriptionRu: "Добровольное согласие пациента на первичный осмотр, диагностику и местную анестезию",
+				descriptionRu: "Добровольное согласие пациента на осмотр, диагностику и анестезию",
 				badgeRu: "Стандарт Минздрава",
+				regulationRu: "ФЗ-323 ст. 20 · Стандарт Минздрава",
 				icon: ShieldCheck,
 				isStatutory: true,
 				printSupported: true,
-				onQuickAction: () => setIsConsentModalOpen(true),
+				onQuickAction: () => {
+					setSelectedA4Tab("consent_1051n");
+				},
 			},
 			{
 				id: "treatment_contract_paid",
 				kind: "paid_medical_services_contract",
 				titleRu: "Договор платных медицинских услуг",
 				category: "intake",
-				descriptionRu: "Обязательный договор с пациентом или заказчиком до начала процедур с реквизитами клиники",
+				descriptionRu: "Договор с пациентом или заказчиком на стоматологическое лечение",
 				badgeRu: "Договор клиники",
+				regulationRu: "Договор клиники · ГОСТ",
 				icon: FileText,
 				isStatutory: true,
 				printSupported: true,
 				onQuickAction: () => {
-					handleOpenKind("paid_medical_services_contract");
-					setIsContractModalOpen(true);
+					setSelectedA4Tab("contract");
 				},
 			},
 			{
@@ -164,40 +181,42 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 				kind: "personal_data_processing_consent",
 				titleRu: "Согласие на обработку персданных",
 				category: "intake",
-				descriptionRu: "Правовое основание для ведения медицинской карты, связи с пациентом и оповещений",
-				badgeRu: "152-ФЗ",
+				descriptionRu: "Правовое основание для ведения медкарты, связи и оповещений",
+				badgeRu: "Персональные данные",
+				regulationRu: "152-ФЗ · Персональные данные",
 				icon: UserCheck,
 				isStatutory: true,
 				printSupported: true,
-				onQuickAction: () => handleOpenKind("personal_data_processing_consent"),
+				onQuickAction: () => {
+					setSelectedA4Tab("personal_data");
+				},
 			},
 			{
 				id: "patient_intake_questionnaire",
 				kind: "patient_intake_questionnaire",
 				titleRu: "Анкета первичного пациента о здоровье",
 				category: "intake",
-				descriptionRu: "Сбор аллергоанамнеза, соматических патологий, непереносимости анестетиков и постоянных препаратов",
+				descriptionRu: "Сбор аллергоанамнеза, хронических патологий и реакций на анестетики",
 				badgeRu: "Анкета здоровья",
+				regulationRu: "Анкета здоровья · Аллергоанамнез",
 				icon: ClipboardList,
 				isStatutory: true,
 				printSupported: true,
-				onQuickAction: () => handleOpenKind("patient_intake_questionnaire"),
+				onQuickAction: () => handleOpenKind("patient_intake_questionnaire", "Анкета первичного пациента о здоровье"),
 			},
-
-			// 2. ЛЕЧЕНИЕ И МЕДКАРТА
 			{
 				id: "dental_card_043u",
 				kind: "dental_medical_card_043u",
 				titleRu: "Медицинская карта приёма",
 				category: "clinical",
-				descriptionRu: "Официальный амбулаторный протокол осмотра, одонтограммы обеих челюстей и дневника лечения",
+				descriptionRu: "Амбулаторный протокол осмотра, зубной формулы и дневника приёма",
 				badgeRu: "Амбулаторная карта",
+				regulationRu: "Приказ МЗ № 403н · Амбулаторная карта",
 				icon: DentalForm043,
 				isStatutory: true,
 				printSupported: true,
 				onQuickAction: () => {
-					handleOpenKind("dental_medical_card_043u");
-					setIsOutpatientCardModalOpen(true);
+					setSelectedA4Tab("medical_card");
 				},
 			},
 			{
@@ -205,43 +224,47 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 				kind: "treatment_plan",
 				titleRu: "План стоматологического лечения",
 				category: "clinical",
-				descriptionRu: "Комплексный поэтапный график санации, финансовая смета и согласование процедур с пациентом",
+				descriptionRu: "Поэтапный график санации, финансовая смета и согласование работ",
 				badgeRu: "План и смета",
+				regulationRu: "План и смета · Гарантии",
 				icon: FileText,
 				printSupported: true,
-				onQuickAction: () => handleOpenKind("treatment_plan"),
+				onQuickAction: () => {
+					setSelectedA4Tab("treatment_plan");
+				},
 			},
 			{
 				id: "xray_cbct_referral",
 				kind: "xray_cbct_referral",
 				titleRu: "Направление на рентгенодиагностику и КТ",
 				category: "clinical",
-				descriptionRu: "Направление на прицельные снимки, ОПТГ и КЛКТ с указанием лучевой нагрузки",
+				descriptionRu: "Направление на прицельный снимок, ОПТГ или КЛКТ челюстей",
 				badgeRu: "Рентген / КЛКТ",
+				regulationRu: "СанПиН · Рентген / КЛКТ",
 				icon: Scan,
 				printSupported: true,
-				onQuickAction: () => handleOpenKind("xray_cbct_referral"),
+				onQuickAction: () => handleOpenKind("xray_cbct_referral", "Направление на рентгенодиагностику и КТ"),
 			},
 			{
 				id: "post_visit_recommendations",
 				kind: "post_visit_recommendations",
 				titleRu: "Рекомендации пациенту после приёма",
 				category: "clinical",
-				descriptionRu: "Памятка по гигиене и режиму после хирургического, эндодонтического или ортопедического лечения",
+				descriptionRu: "Памятка по уходу и режиму после проведённого лечения",
 				badgeRu: "Памятка ухода",
+				regulationRu: "Памятка ухода · Реабилитация",
 				icon: Sparkles,
 				printSupported: true,
-				onQuickAction: () => handleOpenKind("post_visit_recommendations"),
+				onQuickAction: () => handleOpenKind("post_visit_recommendations", "Рекомендации пациенту после приёма"),
 			},
-
-			// 3. ФИНАНСЫ И ФНС
 			{
 				id: "tax_deduction_certificate",
 				kind: "tax_deduction_certificate",
 				titleRu: "Справка для налогового вычета (ФНС)",
 				category: "finance_tax",
-				descriptionRu: "Справка об оплате медицинских услуг по кодам 1 и 2 с расчетом 13% НДФЛ для налоговых органов",
+				descriptionRu: "Справка об оплате медуслуг по кодам 1 и 2 для возврата 13% НДФЛ",
 				badgeRu: "Справка ФНС",
+				regulationRu: "НК РФ ст. 219 · Справка ФНС",
 				icon: Zap,
 				isStatutory: true,
 				printSupported: true,
@@ -252,46 +275,48 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 				kind: "completed_works_act",
 				titleRu: "Акт выполненных стоматологических работ",
 				category: "finance_tax",
-				descriptionRu: "Итоговый финансовый акт оказанных услуг с подписью пациента о сдаче-приемке работы",
+				descriptionRu: "Финансовый акт оказанных услуг с подписью о приёмке работ",
 				badgeRu: "Акт услуг",
+				regulationRu: "54-ФЗ · Акт услуг",
 				icon: FileCheck,
 				printSupported: true,
-				onQuickAction: () => handleOpenKind("completed_works_act"),
+				onQuickAction: () => {
+					setSelectedA4Tab("act");
+				},
 			},
 			{
 				id: "payment_receipt",
 				kind: "payment_receipt",
 				titleRu: "Квитанция и подтверждение оплаты",
 				category: "finance_tax",
-				descriptionRu: "Подтверждение фискальной оплаты медицинских услуг наличными, картой, СБП или депозитом",
-				badgeRu: "Касса 54-ФЗ",
+				descriptionRu: "Подтверждение оплаты услуг наличными, картой, СБП или с депозита",
+				badgeRu: "Кассовый чек",
+				regulationRu: "54-ФЗ · Кассовый чек",
 				icon: Receipt,
 				printSupported: true,
-				onQuickAction: () => handleOpenKind("payment_receipt"),
+				onQuickAction: () => handleOpenKind("payment_receipt", "Квитанция и подтверждение оплаты"),
 			},
-
-			// 4. ОТКАЗЫ
 			{
 				id: "medical_intervention_refusal",
 				kind: "medical_intervention_refusal",
 				titleRu: "Отказ от медицинского вмешательства",
 				category: "refusal",
-				descriptionRu: "Официальный отказ пациента от предложенного медицинского вмешательства или госпитализации",
-				badgeRu: "Ст. 20 323-ФЗ",
+				descriptionRu: "Официальное оформление отказа от предложенного вмешательства",
+				badgeRu: "Форма отказа",
+				regulationRu: "ФЗ-323 ст. 20 · Форма отказа",
 				icon: ShieldAlert,
 				isStatutory: true,
 				printSupported: true,
 				onQuickAction: () => handleOpenKind("medical_intervention_refusal"),
 			},
-
-			// 5. ДЕТСКИЕ ДОКУМЕНТЫ (ТАБУ: ПЕДИАТРИЯ ПОЛНОСТЬЮ СОХРАНЕНА)
 			{
 				id: "minor_legal_consent",
 				kind: "minor_legal_representative_consent",
 				titleRu: "Согласие законного представителя ребёнка",
 				category: "pediatric",
-				descriptionRu: "Согласие родителя или опекуна на осмотр и лечение несовершеннолетнего",
+				descriptionRu: "Согласие родителя или опекуна на осмотр и лечение ребёнка",
 				badgeRu: "Педиатрия",
+				regulationRu: "ФЗ-323 · Педиатрия",
 				icon: Heart,
 				isPediatric: true,
 				isStatutory: true,
@@ -304,6 +329,7 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 				category: "pediatric",
 				descriptionRu: "Памятный диплом супергероя маленькому пациенту за храбрость у кресла",
 				badgeRu: "Печать грамоты",
+				regulationRu: "Печать грамоты · Адаптация",
 				icon: Award,
 				isPediatric: true,
 				printSupported: true,
@@ -316,21 +342,21 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 				category: "pediatric",
 				descriptionRu: "Комплексный график адаптации, санации молочных зубов и профилактики",
 				badgeRu: "План санации",
+				regulationRu: "План санации · Педиатрия",
 				icon: ToothDeciduous,
 				isPediatric: true,
 				printSupported: true,
-				onQuickAction: () => handleOpenKind("treatment_plan"),
+				onQuickAction: () => {
+					setSelectedA4Tab("treatment_plan");
+				},
 			},
 		];
 	}, [handleOpenKind, handleOpenTax]);
 
-	// Фильтрация по поиску и категориям
 	const filteredItems = useMemo(() => {
 		const query = searchQuery.trim().toLowerCase();
 		return catalogItems.filter((item) => {
-			if (activeCategory !== "all" && item.category !== activeCategory) {
-				return false;
-			}
+			if (activeCategory !== "all" && item.category !== activeCategory) return false;
 			if (!query) return true;
 			return (
 				item.titleRu.toLowerCase().includes(query) ||
@@ -342,16 +368,9 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 
 	const categoryCounts = useMemo(() => {
 		const counts: Record<string, number> = {
-			all: catalogItems.length,
-			intake: 0,
-			clinical: 0,
-			finance_tax: 0,
-			refusal: 0,
-			pediatric: 0,
+			all: catalogItems.length, intake: 0, clinical: 0, finance_tax: 0, refusal: 0, pediatric: 0,
 		};
-		for (const item of catalogItems) {
-			counts[item.category] = (counts[item.category] || 0) + 1;
-		}
+		for (const item of catalogItems) counts[item.category] = (counts[item.category] || 0) + 1;
 		return counts;
 	}, [catalogItems]);
 
@@ -361,9 +380,9 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 			data-testid="documents-catalog-view"
 		>
 			{/* ВЕРХНИЙ КОМПАКТНЫЙ ТУЛБАР (СТРОГО 1 СТРОКА: 32–36PX) */}
-			<div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-[var(--line,#e2e8f0)]">
-				{/* Поле поиска по стандарту Mandate 12: padding-left >= 38px */}
-				<div className="relative min-w-[200px] max-w-[280px] flex-1">
+			<div className="flex items-center justify-between gap-2 pb-3 border-b border-[var(--line,#e2e8f0)] min-w-0 flex-wrap xl:flex-nowrap">
+				{/* Поле поиска: padding-left >= 38px, гарантированная ширина 210px без сжатия */}
+				<div className="relative shrink-0" style={{ width: "210px", minWidth: "210px" }}>
 					<Search
 						className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted,#64748b)] pointer-events-none"
 						aria-hidden="true"
@@ -372,9 +391,9 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 						type="text"
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
-						placeholder="Поиск по бланкам и согласиям..."
+						placeholder="Поиск по бланкам..."
 						style={{ paddingLeft: "38px" }}
-						className="w-full h-8 pr-8 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink,#0f172a)] placeholder:text-[var(--muted,#64748b)] focus:border-teal-500 focus:bg-[var(--paper,#ffffff)] focus:outline-hidden transition"
+						className="document-search-input w-full h-8 pr-7 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink,#0f172a)] placeholder:text-[var(--muted,#64748b)] focus:border-[var(--teal,#0d9488)] focus:bg-[var(--paper,#ffffff)] focus:outline-hidden transition"
 						data-testid="input-documents-catalog-search"
 					/>
 					{searchQuery && (
@@ -389,196 +408,178 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 					)}
 				</div>
 
-				{/* Сегментированные фильтры-пилюли (Apple-style 32px) */}
-				<div className="inline-flex p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] gap-1 overflow-x-auto max-w-full">
-					<button
-						type="button"
-						onClick={() => setActiveCategory("all")}
-						className={`h-7 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-1 ${
-							activeCategory === "all"
-								? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-xs border border-[var(--line,#e2e8f0)]"
-								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)]/50"
-						}`}
-						data-testid="filter-cat-all"
-					>
-						<span>Все</span>
-						<span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] font-semibold">
-							{categoryCounts.all}
-						</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setActiveCategory("intake")}
-						className={`h-7 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap ${
-							activeCategory === "intake"
-								? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-xs border border-[var(--line,#e2e8f0)]"
-								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)]/50"
-						}`}
-						data-testid="filter-cat-intake"
-					>
-						Первичный приём
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setActiveCategory("clinical")}
-						className={`h-7 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap ${
-							activeCategory === "clinical"
-								? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-xs border border-[var(--line,#e2e8f0)]"
-								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)]/50"
-						}`}
-						data-testid="filter-cat-clinical"
-					>
-						Лечение
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setActiveCategory("finance_tax")}
-						className={`h-7 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap ${
-							activeCategory === "finance_tax"
-								? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-xs border border-[var(--line,#e2e8f0)]"
-								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)]/50"
-						}`}
-						data-testid="filter-cat-finance"
-					>
-						Финансы и ФНС
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setActiveCategory("refusal")}
-						className={`h-7 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap ${
-							activeCategory === "refusal"
-								? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-xs border border-[var(--line,#e2e8f0)]"
-								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)]/50"
-						}`}
-						data-testid="filter-cat-refusal"
-					>
-						Отказы
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setActiveCategory("pediatric")}
-						className={`h-7 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap ${
-							activeCategory === "pediatric"
-								? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-xs border border-[var(--line,#e2e8f0)]"
-								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)]/50"
-						}`}
-						data-testid="filter-cat-pediatric"
-					>
-						Детские
-					</button>
+				{/* Сегментированные фильтры-пилюли */}
+				<div
+					className="dente-segmented-bar inline-flex p-0.5 rounded-xl bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#cbd5e1)] gap-0.5 overflow-x-auto max-w-full min-h-[32px] items-center shrink-0 select-none"
+					role="tablist"
+					aria-label="Категории документов"
+				>
+					{(
+						[
+							{ id: "all", label: "Все", testId: "filter-cat-all", count: categoryCounts.all },
+							{ id: "intake", label: "Первичный приём", testId: "filter-cat-intake" },
+							{ id: "clinical", label: "Лечение", testId: "filter-cat-clinical" },
+							{ id: "finance_tax", label: "Финансы и ФНС", testId: "filter-cat-finance" },
+							{ id: "refusal", label: "Отказы", testId: "filter-cat-refusal" },
+							{ id: "pediatric", label: "Детские", testId: "filter-cat-pediatric" },
+							{ id: "registry", label: "Реестр", testId: "filter-cat-registry", count: existingDocuments?.length ?? 0 },
+						] as const
+					).map((tab) => {
+						const isActive = activeCategory === tab.id;
+						return (
+							<button
+								key={tab.id}
+								type="button"
+								role="tab"
+								aria-selected={isActive}
+								onClick={() => {
+									setActiveCategory(tab.id);
+									if (tab.id === "registry") onSelectRegistryTab?.();
+								}}
+								className={`dente-segmented-item h-7 px-2 rounded-lg text-xs transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 border ${
+									isActive
+										? "active bg-[var(--paper,#ffffff)] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/40 shadow-2xs font-bold"
+										: "bg-transparent border-transparent text-[var(--ink,#334155)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)]/70 font-semibold"
+								}`}
+								data-testid={tab.testId}
+							>
+								<span>{tab.label}</span>
+								{"count" in tab && tab.count !== undefined && (
+									<span
+										className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+											isActive
+												? "bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)]"
+												: "bg-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]"
+										}`}
+									>
+										{tab.count}
+									</span>
+								)}
+							</button>
+						);
+					})}
 				</div>
 
-				{/* Действия тулбара: 1 Primary CTA («Пакет первичного приёма») + Secondary */}
-				<div className="flex items-center gap-2">
+				{/* Действия тулбара */}
+				<div className="flex items-center gap-1.5 shrink-0">
 					<button
 						type="button"
 						onClick={handleOpenIntake}
-						style={{ backgroundColor: "var(--teal, #0d9488)" }}
-						className="h-8 px-3 rounded-lg text-white font-bold text-xs shadow-xs flex items-center gap-1.5 cursor-pointer transition hover:brightness-110 active:scale-95 shrink-0"
+						className="primary-button h-8 px-2.5 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer transition shrink-0 shadow-2xs"
 						data-testid="btn-catalog-primary-intake"
-						title="Пакет документов первичного приёма (ИДС 1051н + Договор + 152-ФЗ)"
+						title="Пакет приёма в 1 клик (ИДС + Договор + Персданные)"
 					>
 						<Printer className="w-3.5 h-3.5 text-white" />
-						<span>Пакет первичного приёма</span>
+						<span className="whitespace-nowrap">Пакет приёма в 1 клик</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setIsDiplomaModalOpen(true)}
-						className="h-8 px-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 font-bold text-xs flex items-center gap-1 cursor-pointer transition active:scale-95 shrink-0"
+						className="secondary-button h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition shrink-0"
 						data-testid="btn-catalog-print-diploma"
 						title="Печать памятного диплома маленькому пациенту за смелость"
 					>
-						<Award className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-						<span className="hidden sm:inline">Грамота за смелость</span>
+						<Award className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+						<span className="hidden xl:inline whitespace-nowrap">Грамота</span>
 					</button>
 				</div>
 			</div>
 
-			{/* СЕТКА КАРТОЧЕК ДОКУМЕНТОВ (ГЛУБИНА 1, ЧИСТАЯ ТИПОГРАФИКА) */}
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5" data-testid="documents-catalog-grid">
+			{/* СЕТКА КАРТОЧЕК ДОКУМЕНТОВ (0 МНОГОТОЧИЙ, ЧИСТАЯ ТИПОГРАФИКА) */}
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" data-testid="documents-catalog-grid">
 				{filteredItems.map((item) => {
 					const ItemIcon = item.icon;
+					const patientDoc = existingDocuments?.find((d) => d.kind === item.kind);
+					// biome-ignore lint/suspicious/noExplicitAny: dynamic signedAt check
+					const isSigned = Boolean(patientDoc?.doctorSignedAt || (patientDoc as any)?.signedAt || (patientDoc?.status as string) === "issued" || (patientDoc as any)?.signatureAttestation);
+					const isDraft = patientDoc?.status === "draft";
+					const isIssued = patientDoc?.status === "issued";
+					// biome-ignore lint/suspicious/noExplicitAny: dynamic createdAt fallback
+					const docDateStr = patientDoc?.issuedAt || (patientDoc as any)?.createdAt;
+
 					return (
 						<div
 							key={item.id}
-							className="p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:border-teal-500/70 transition flex flex-col justify-between gap-2.5 shadow-2xs min-h-[125px]"
+							className="dente-tile-card p-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-card,var(--paper,#ffffff))] hover:border-[var(--teal,#0d9488)] transition-all flex flex-col gap-2 shadow-[0_1px_3px_rgba(15,23,42,0.06)] hover:shadow-[0_4px_12px_rgba(13,148,136,0.10)]"
 							data-testid={`document-item-${item.id}`}
 						>
 							<div className="flex items-start justify-between gap-2">
-								<div className="flex items-start gap-2.5 min-w-0">
-									<div
-										className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-											item.isPediatric
-												? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30"
-												: item.category === "refusal"
-												? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
-												: item.category === "finance_tax"
-												? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
-												: "bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30"
-										}`}
-									>
+								<div className="flex items-start gap-2.5 min-w-0 flex-1">
+									<div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 bg-[var(--paper-soft,#f1f5f9)] text-[var(--teal,#0d9488)] border border-[var(--line,#cbd5e1)]">
 										<ItemIcon className="w-4 h-4" />
 									</div>
 									<div className="min-w-0 flex-1">
 										<h3 className="text-xs font-bold tracking-tight text-[var(--ink,#0f172a)] leading-snug">
 											{item.titleRu}
 										</h3>
-										<p className="text-[11px] text-[var(--muted,#64748b)] mt-1 leading-normal break-words">
-											{item.descriptionRu}
-										</p>
+										<div className="text-[10.5px] font-semibold text-[var(--teal,#0d9488)] dark:text-teal-400 mt-0.5 tracking-wide">
+											{item.regulationRu}
+										</div>
 									</div>
 								</div>
 
-								<span
-									className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${
-										item.isPediatric
-											? "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-700"
-											: item.category === "refusal"
-											? "bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-700"
-											: item.category === "finance_tax"
-											? "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-700"
-											: "bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] border-[var(--line,#e2e8f0)]"
-									}`}
-								>
+								<span className="text-[10px] font-semibold px-2 py-0.5 rounded-md border shrink-0 bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#334155)] border-[var(--line,#cbd5e1)]">
 									{item.badgeRu}
 								</span>
 							</div>
 
-							{/* Кнопки быстрого действия (не более 2 кнопок по Миллеру) */}
-							<div className="flex items-center justify-between pt-2 border-t border-[var(--line-subtle,#f1f5f9)]">
-								<span className="text-[10px] text-[var(--muted,#64748b)] font-medium">
-									{item.printSupported ? "Печать А4 доступна" : "Электронная форма"}
-								</span>
+							<p className="text-[11.5px] text-[var(--muted,#475569)] leading-snug">
+								{item.descriptionRu}
+							</p>
 
-								<div className="flex items-center gap-1.5">
-									{item.onQuickAction && (
-										<button
-											type="button"
-											onClick={item.onQuickAction}
-											className="h-7 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-bold text-[var(--ink,#0f172a)] transition flex items-center gap-1 cursor-pointer active:scale-95"
-											title="Открыть форму"
-											data-testid={`btn-open-${item.id}`}
-										>
-											<Eye className="w-3.5 h-3.5" />
-											<span>Открыть</span>
-										</button>
+							<div className="mt-auto pt-2 border-t border-[var(--line,#e2e8f0)] flex flex-col gap-2">
+								<div className="flex items-center justify-between text-[11px]">
+									{isSigned ? (
+										<span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+											<CheckCircle2 size={12} aria-hidden="true" />
+											<span>Подписан {docDateStr ? formatShortDate(docDateStr) : ""}</span>
+										</span>
+									) : isDraft ? (
+										<span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+											<Clock size={12} aria-hidden="true" />
+											<span>Черновик {docDateStr ? formatShortDate(docDateStr) : ""}</span>
+										</span>
+									) : isIssued ? (
+										<span className="inline-flex items-center gap-1 text-[11px] font-medium text-teal-700 dark:text-teal-300 bg-teal-500/10 px-2 py-0.5 rounded-md border border-teal-500/20">
+											<CheckCircle2 size={12} aria-hidden="true" />
+											<span>Оформлен {docDateStr ? formatShortDate(docDateStr) : ""}</span>
+										</span>
+									) : (
+										<span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--muted,#64748b)] bg-[var(--paper-soft,#f1f5f9)] px-2 py-0.5 rounded-md border border-[var(--line,#cbd5e1)]">
+											Не оформлен
+										</span>
 									)}
+
+									<span className="text-[10.5px] font-medium text-[var(--muted,#64748b)]">
+										{item.printSupported ? "Печать А4" : "Электронно"}
+									</span>
+								</div>
+
+								<div className="flex items-center justify-end gap-1.5">
+									<button
+										type="button"
+										onClick={() => {
+											if (item.kind && onOpenFocusEditor) onOpenFocusEditor(item.kind);
+											else if (item.onQuickAction) item.onQuickAction();
+										}}
+										className="secondary-button h-8 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] transition flex items-center gap-1.5 cursor-pointer flex-1 justify-center"
+										title={patientDoc ? "Открыть документ пациента" : "Оформить документ"}
+										data-testid={`btn-open-${item.id}`}
+									>
+										<Eye className="w-3.5 h-3.5 text-[var(--muted)]" />
+										<span>{patientDoc ? "Открыть" : "Оформить"}</span>
+									</button>
 
 									{item.printSupported && (
 										<button
 											type="button"
 											onClick={item.onQuickAction}
-											className="h-7 px-2.5 rounded-lg border border-teal-500/40 bg-teal-500/15 text-teal-800 dark:text-teal-200 hover:bg-teal-500/25 text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-xs active:scale-95"
-											title="1-клик печать бланка"
+											className="secondary-button h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-[var(--teal,#0d9488)] text-xs font-semibold text-[var(--ink,#0f172a)] transition flex items-center gap-1.5 cursor-pointer"
+											title="Печать бланка"
 											data-testid={`btn-print-${item.id}`}
 										>
-											<Printer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-300" />
+											<Printer className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
 											<span>Печать</span>
 										</button>
 									)}
@@ -589,7 +590,6 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 				})}
 			</div>
 
-			{/* Модалка диплома за храбрость */}
 			{isDiplomaModalOpen && (
 				<PediatricBraveryDiplomaModal
 					isOpen={isDiplomaModalOpen}
@@ -601,48 +601,41 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 				/>
 			)}
 
-			{/* Модалка информированного добровольного согласия */}
 			{isConsentModalOpen && (
 				<ConsentModal
 					isOpen={isConsentModalOpen}
 					onClose={() => setIsConsentModalOpen(false)}
-					patient={{
-						fullName: effectivePatientName,
-						phone: patient?.phone,
-						birthDate: patient?.birthDate,
-					}}
+					patient={{ fullName: effectivePatientName, phone: patient?.phone, birthDate: patient?.birthDate }}
 					doctorName={doctorName}
 					clinicName={clinicName}
 					isMinorPatient={patientAgeYears < 15}
 				/>
 			)}
 
-			{/* Локальная модалка справки ФНС */}
 			{isLocalTaxModalOpen && (
 				<FnsTaxCertificateModal
 					isOpen={isLocalTaxModalOpen}
 					onClose={() => setIsLocalTaxModalOpen(false)}
 					patient={patient ?? null}
 					clinicProfileDraft={clinicProfileDraft}
+					payments={mappedTaxPayments || []}
 				/>
 			)}
 
-			{/* Локальная модалка первичного пакета */}
 			{isLocalIntakeModalOpen && (
 				<PrimaryIntakePackageModal
 					isOpen={isLocalIntakeModalOpen}
 					onClose={() => setIsLocalIntakeModalOpen(false)}
 					patient={patient ?? null}
-					existingDocuments={[]}
-					onCreateDocument={(kind) => handleOpenKind(kind)}
-					onOpenDocument={() => {}}
+					existingDocuments={existingDocuments ? [...existingDocuments] : []}
+					onCreateDocument={(kind) => (onCreateDocument ? void onCreateDocument(kind) : handleOpenKind(kind))}
+					onOpenDocument={(id) => (onOpenIssuedDocumentHtml ? void onOpenIssuedDocumentHtml(id) : undefined)}
 					onSelectDocumentKind={(kind) => handleOpenKind(kind)}
 					doctorFullName={doctorName}
 					clinicProfileDraft={clinicProfileDraft}
 				/>
 			)}
 
-			{/* Модалка медицинской карты / формы 043/у */}
 			{isOutpatientCardModalOpen && (
 				<OutpatientCardPrintModal
 					isOpen={isOutpatientCardModalOpen}
@@ -653,15 +646,15 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 				/>
 			)}
 
-			{/* Модалка официального договора A4 */}
-			{isContractModalOpen && (
+			{(selectedA4Tab || isContractModalOpen) && (
 				<DocumentA4PrintPreviewModal
-					isOpen={isContractModalOpen}
-					onClose={() => setIsContractModalOpen(false)}
-					initialTab="contract"
+					isOpen={Boolean(selectedA4Tab || isContractModalOpen)}
+					onClose={() => { setSelectedA4Tab(null); setIsContractModalOpen(false); }}
+					initialTab={selectedA4Tab || "contract"}
 					patient={patient ?? null}
 					doctorFullName={doctorName ?? null}
 					clinicProfileDraft={clinicProfileDraft}
+					existingDocuments={existingDocuments}
 				/>
 			)}
 		</div>

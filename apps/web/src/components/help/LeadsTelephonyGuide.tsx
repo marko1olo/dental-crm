@@ -511,7 +511,7 @@ export const LeadsTelephonyGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour
 					</li>
 					<li className="flex items-start gap-1.5">
 						<strong className="text-[var(--ink)] shrink-0">• Можно ли прослушать запись разговора?</strong>
-						<span>Да, аудиозапись разговора прикрепляется к карточке пациента и обращению, доступна для прослушивания в 1 клик.</span>
+						<span>Да, аудиозапись разговора прикрепляется к карточке пациента и обращению, доступна для мгновенного прослушивания.</span>
 					</li>
 					<li className="flex items-start gap-1.5">
 						<strong className="text-[var(--ink)] shrink-0">• Мешает ли плашка звонка врачу на приёме?</strong>

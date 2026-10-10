@@ -2,7 +2,7 @@
  * types.ts — Layer 0: Контракты типов и интерфейсы голосового парсера DENTE
  */
 
-import type { ToothState, OdontogramQuadrantId } from "../../components/odontogram/ToothChart";
+import type { ToothState, OdontogramQuadrantId } from "../../../components/odontogram/ToothChart";
 
 export type ClinicalToothStatus =
 	| "CARIES"

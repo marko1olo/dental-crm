@@ -11,14 +11,14 @@ import {
 } from "../cephalometricMath";
 
 export interface SaveConsultationParams {
-	patientId?: string;
-	patientName?: string;
-	imageUrl?: string | null;
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	imageUrl?: string | null | undefined;
 	landmarks: LandmarkMap;
 	scaleMmPerPixel: number;
 	analysis: CephalometricAnalysisResult;
 	isImageLoaded: boolean;
-	onInsertToProtocol?: (text: string) => void;
+	onInsertToProtocol?: ((text: string) => void) | undefined;
 	onClose: () => void;
 }
 
@@ -45,9 +45,9 @@ export function executeSaveConsultationWithoutCeph(params: SaveConsultationParam
 
 	try {
 		saveCephalometricAnalysisToEmr({
-			patientId,
-			patientName,
-			imageUrl,
+			patientId: patientId || "PAT-001",
+			patientName: patientName || "Пациент",
+			imageUrl: imageUrl ?? null,
 			landmarks,
 			scaleMmPerPixel,
 			analysis,
@@ -103,9 +103,9 @@ export function executeSaveConsultationWithoutCeph(params: SaveConsultationParam
 }
 
 export interface OpenPopoutStudioParams {
-	patientId?: string;
-	patientName?: string;
-	imageUrl?: string | null;
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	imageUrl?: string | null | undefined;
 	landmarks: LandmarkMap;
 	scaleMmPerPixel: number;
 	analysis: CephalometricAnalysisResult;

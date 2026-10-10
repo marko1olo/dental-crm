@@ -25,9 +25,9 @@ export interface SomaticRiskEvaluationResult {
  */
 export function evaluateSomaticAndAllergyRisks(params: {
 	readonly proposedMedications: readonly string[];
-	readonly knownAllergies?: readonly string[];
-	readonly patientConditions?: readonly string[];
-	readonly existingMedications?: readonly string[];
+	readonly knownAllergies?: readonly string[] | undefined;
+	readonly patientConditions?: readonly string[] | undefined;
+	readonly existingMedications?: readonly string[] | undefined;
 }): SomaticRiskEvaluationResult {
 	const allergyWarnings: ClinicalAllergyWarning[] = [];
 	const conditionContraindications: ClinicalConditionContraindication[] = [];

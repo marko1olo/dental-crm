@@ -4,12 +4,13 @@ import type { AppViewRouterProps } from "./types";
 import { lazyWithRetry } from "../../lib/lazyWithRetry";
 import { viewLabels } from "../../workspaceShell";
 import { AppLoadingState } from "../../AppBootState";
-import { WorkspaceRouteErrorBoundary } from "../../WorkspaceRouteErrorBoundary";
+import { WorkspaceRouteErrorBoundary } from "../../workspaceRouteErrorBoundary";
 import { ClinicalErrorBoundary } from "../common/ClinicalErrorBoundary";
 import { loadStoredTeethData } from "../odontogram/odontogramStorage";
 import { usePerspectiveStore } from "../../store/perspectiveStore";
 import { VisitView } from "../../VisitView";
 import { FinanceView } from "../../FinanceView";
+import { PatientsView } from "../../PatientsView";
 
 const ShiftView = lazyWithRetry(() =>
 	import("../../ShiftView").then((module) => ({ default: module.ShiftView })),
@@ -22,9 +23,6 @@ const ImagingView = lazyWithRetry(() =>
 );
 const ScheduleView = lazyWithRetry(() =>
 	import("../../ScheduleView").then((module) => ({ default: module.ScheduleView })),
-);
-const PatientsView = lazyWithRetry(() =>
-	import("../../PatientsView").then((module) => ({ default: module.PatientsView })),
 );
 
 const TreatmentPlanModule = lazyWithRetry(() =>
@@ -275,25 +273,12 @@ export function AppViewRouter({
 							panelClassName="panel patients-panel"
 							panelId="patients"
 						>
-							<Suspense
-								fallback={
-									<section
-										className="panel patients-panel"
-										id="patients"
-										aria-label="Пациенты"
-										aria-busy="true"
-									>
-										<div className="panel-heading">
-											<h2>Быстрый поиск</h2>
-											<span className="status-pill status-planned">
-												загрузка
-											</span>
-										</div>
-									</section>
-								}
+							<ClinicalErrorBoundary
+								workspaceName="Реестр пациентов"
+								workspaceKey="patients"
 							>
 								<PatientsView />
-							</Suspense>
+							</ClinicalErrorBoundary>
 						</WorkspaceRouteErrorBoundary>
 					) : null}
 					{currentView === "visit" ? (
@@ -312,8 +297,7 @@ export function AppViewRouter({
 										aria-busy="true"
 									>
 										<AppLoadingState
-											title="Загрузка клинического приёма..."
-											hint="Подготовка карты и данных пациента"
+											message="Загрузка клинического приёма..."
 										/>
 									</section>
 								}
@@ -381,8 +365,7 @@ export function AppViewRouter({
 										aria-busy="true"
 									>
 										<AppLoadingState
-											title="Загрузка кассы и оплат..."
-											hint="Синхронизация счетов и фискальных чеков"
+											message="Загрузка кассы и оплат..."
 										/>
 									</section>
 								}

@@ -119,47 +119,49 @@ export async function bookingFailureMessage(response: Response): Promise<string>
 	return `Запись не создана, сервер ответил кодом ${response.status}. Обращение осталось в прежнем столбце.`;
 }
 
-export const COLUMNS: {
+export type ColumnConfig = {
 	id: LeadStatus;
 	label: string;
 	color: string;
 	icon: React.ReactNode;
-}[] = [
+};
+
+export const COLUMNS: ColumnConfig[] = [
 	{
 		id: "new",
 		label: "1. Новые",
 		color: "var(--teal-soft)",
-		icon: React.createElement(Plus, { size: 16 }),
+		icon: React.createElement(Plus, { size: 15 }),
 	},
 	{
 		id: "contacted",
 		label: "2. Квалифицированные",
-		color: "var(--amber-soft)",
-		icon: React.createElement(Phone, { size: 16 }),
+		color: "var(--teal-soft)",
+		icon: React.createElement(Phone, { size: 15 }),
 	},
 	{
 		id: "consult_booked",
 		label: "3. Консультация",
-		color: "var(--ok-bg)",
-		icon: React.createElement(CalendarClock, { size: 16 }),
+		color: "var(--teal-soft)",
+		icon: React.createElement(CalendarClock, { size: 15 }),
 	},
 	{
 		id: "showed_up",
 		label: "4. Дошли",
-		color: "var(--accent-soft)",
-		icon: React.createElement(UserCheck, { size: 16 }),
+		color: "var(--teal-soft)",
+		icon: React.createElement(UserCheck, { size: 15 }),
 	},
 	{
 		id: "no_answer",
 		label: "Недозвон",
-		color: "var(--paper-soft)",
-		icon: React.createElement(Handshake, { size: 16 }),
+		color: "var(--paper)",
+		icon: React.createElement(Handshake, { size: 15 }),
 	},
 	{
 		id: "trash",
 		label: "Отказ",
-		color: "var(--rust-soft)",
-		icon: React.createElement(Trash2, { size: 16 }),
+		color: "var(--paper)",
+		icon: React.createElement(Trash2, { size: 15 }),
 	},
 ];
 

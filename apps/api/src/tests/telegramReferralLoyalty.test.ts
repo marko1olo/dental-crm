@@ -32,6 +32,7 @@ import {
 	type ToothComplaintInput,
 	type WebAppBookingInput,
 } from "../services/telegram/TelegramReferralLoyaltyService.js";
+import { TelegramPostOpCarePipeline } from "../services/telegram/TelegramPostOpCarePipeline.js";
 import { fixtureUuid, withFixtureTenant } from "./support/fixtureOrganizations.js";
 import { createTenantTestApp } from "./support/tenantTestApp.js";
 
@@ -80,6 +81,15 @@ describe("Telegram WebApp Mini-App & Referral Retention Suite", () => {
 		process.env.DENTE_TELEGRAM_BOT_USERNAME = "dente_clinic_bot";
 		process.env.DENTE_TELEGRAM_ORGANIZATION_ID = TEST_ORG_ID;
 		process.env.DENTE_TELEGRAM_WEBHOOK_SECRET = WEBHOOK_SECRET;
+		process.env.DENTE_TELEGRAM_CLINIC_BOTS_JSON = JSON.stringify([
+			{
+				organizationId: TEST_ORG_ID,
+				clinicId: CLINIC_ID,
+				botUsername: "dente_clinic_bot",
+				botToken: BOT_TOKEN,
+				webhookSecret: WEBHOOK_SECRET,
+			},
+		]);
 		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
 		process.env.DENTE_TELEGRAM_ALLOW_UNGUARDED_CONTROL_PLANE = "1";
 		process.env.DENTAL_STATE_PERSISTENCE = "on";
@@ -93,7 +103,6 @@ describe("Telegram WebApp Mini-App & Referral Retention Suite", () => {
 
 		app = createTenantTestApp();
 		await registerTelegramRoutes(app);
-		await registerTelegramWebhookRoutes(app);
 		await registerTelegramReferralLoyaltyRoutes(app);
 		await app.ready();
 
@@ -302,6 +311,30 @@ describe("Telegram WebApp Mini-App & Referral Retention Suite", () => {
 						status: "planned",
 					})
 					.onConflictDoNothing();
+
+				// 6. Конфигурация Telegram-бота с динамическими URL карт филиала
+				await tx
+					.insert(denteTelegramBotConfigs)
+					.values({
+						organizationId: TEST_ORG_ID,
+						clinicId: CLINIC_ID,
+						botConfigId: "default",
+						mode: "clinic_owned_bot",
+						botUsername: "DenteTestBot",
+						clinicMapsUrl: "https://yandex.ru/maps/org/dente_samara_branch",
+						clinicReviewUrl: "https://2gis.ru/samara/firm/dente_samara_branch",
+					})
+					.onConflictDoUpdate({
+						target: [
+							denteTelegramBotConfigs.organizationId,
+							denteTelegramBotConfigs.clinicId,
+							denteTelegramBotConfigs.botConfigId,
+						],
+						set: {
+							clinicMapsUrl: "https://yandex.ru/maps/org/dente_samara_branch",
+							clinicReviewUrl: "https://2gis.ru/samara/firm/dente_samara_branch",
+						},
+					});
 			});
 		}
 	});
@@ -604,6 +637,26 @@ describe("Telegram WebApp Mini-App & Referral Retention Suite", () => {
 			assert.ok(npsResult.replyMessage.includes("высшую оценку"));
 		});
 
+		it("dynamically resolves maps and review URLs from denteTelegramBotConfigs when clinicSettings are not passed", async () => {
+			const npsResult = await TelegramReferralLoyaltyService.handleNpsFeedback(
+				TEST_ORG_ID,
+				{
+					appointmentId: APPT_NPS_ID,
+					score: 5,
+				},
+			);
+
+			assert.equal(npsResult.normalizedScore, 5);
+			assert.equal(npsResult.routeDestination, "external_review");
+			if (isDbAvailable) {
+				assert.equal(npsResult.yandexMapsUrl, "https://yandex.ru/maps/org/dente_samara_branch");
+				assert.equal(npsResult.twoGisUrl, "https://2gis.ru/samara/firm/dente_samara_branch");
+			} else {
+				assert.ok(npsResult.yandexMapsUrl);
+				assert.ok(npsResult.twoGisUrl);
+			}
+		});
+
 		it("routes 1-4 score to internal service recovery task in communicationTasks", async () => {
 			const npsResult = await TelegramReferralLoyaltyService.handleNpsFeedback(
 				TEST_ORG_ID,
@@ -821,7 +874,7 @@ describe("Telegram WebApp Mini-App & Referral Retention Suite", () => {
 
 			const resp = await app.inject({
 				method: "POST",
-				url: "/api/telegram/webhook",
+				url: `/api/telegram/webhook/${TEST_ORG_ID}`,
 				headers: {
 					"content-type": "application/json",
 					"x-telegram-bot-api-secret-token": WEBHOOK_SECRET,
@@ -829,9 +882,6 @@ describe("Telegram WebApp Mini-App & Referral Retention Suite", () => {
 				payload: updatePayload,
 			});
 
-			if (resp.statusCode !== 200) {
-				console.error("WEBHOOK 500 ERROR BODY 1:", resp.body);
-			}
 			assert.equal(resp.statusCode, 200);
 			const body = JSON.parse(resp.body);
 			assert.equal(body.ok, true);
@@ -853,7 +903,7 @@ describe("Telegram WebApp Mini-App & Referral Retention Suite", () => {
 
 			const resp = await app.inject({
 				method: "POST",
-				url: "/api/telegram/webhook",
+				url: `/api/telegram/webhook/${TEST_ORG_ID}`,
 				headers: {
 					"content-type": "application/json",
 					"x-telegram-bot-api-secret-token": WEBHOOK_SECRET,
@@ -866,6 +916,134 @@ describe("Telegram WebApp Mini-App & Referral Retention Suite", () => {
 			assert.equal(body.ok, true);
 			assert.equal(body.action, "telegram_nps_external_review_routed");
 			assert.ok(body.suggestedReply?.includes("высшую оценку"));
+		});
+	});
+
+	// ========================================================================
+	// 9. ПОСЛЕОПЕРАЦИОННЫЙ ТРИАЖ И АВТО-ОПРОС 24Ч (SURGERY VS THERAPY)
+	// ========================================================================
+	describe("9. Post-Surgery Tele-Care & 24h Triage Survey Scheduling Engine", () => {
+		const SURGERY_VISIT_ID = fixtureUuid("tg-referral-loyalty-test", 20);
+		const THERAPY_VISIT_ID = fixtureUuid("tg-referral-loyalty-test", 21);
+		const SURGERY_APPT_ID = fixtureUuid("tg-referral-loyalty-test", 22);
+		const THERAPY_APPT_ID = fixtureUuid("tg-referral-loyalty-test", 23);
+
+		it("schedules 4-stage post-op care pipeline and enqueues 3h task for complex surgery", async () => {
+			const res = await TelegramPostOpCarePipeline.schedulePostVisitSurveyIfNeeded({
+				organizationId: TEST_ORG_ID,
+				clinicId: CLINIC_ID,
+				visitId: SURGERY_VISIT_ID,
+				patientId: REFERRER_PATIENT_ID,
+				doctorId: DOCTOR_ID,
+				appointmentId: SURGERY_APPT_ID,
+				diagnosis: "К01.1 Дистопия зуба 38, хронический периодонтит",
+				treatmentPlan: "Сложное удаление зуба мудрости 38 с выкраиванием слизисто-надкостничного лоскута",
+			});
+
+			assert.equal(res.isSurgery, true);
+			assert.equal(res.scheduled, true);
+			assert.ok(res.planId);
+
+			const plan = TelegramPostOpCarePipeline.getPlanByVisitId(SURGERY_VISIT_ID);
+			assert.ok(plan);
+			assert.equal(plan.stages.length, 4);
+			assert.equal(plan.stages[0]?.stage, "3_hours");
+			assert.equal(plan.stages[1]?.stage, "day_1");
+			assert.equal(plan.stages[2]?.stage, "day_3");
+			assert.equal(plan.stages[3]?.stage, "day_7");
+		});
+
+		it("schedules 24-hour follow-up survey in communicationTasks for therapeutic visit", async () => {
+			const res = await TelegramPostOpCarePipeline.schedulePostVisitSurveyIfNeeded({
+				organizationId: TEST_ORG_ID,
+				clinicId: CLINIC_ID,
+				visitId: THERAPY_VISIT_ID,
+				patientId: REFERRER_PATIENT_ID,
+				doctorId: DOCTOR_ID,
+				appointmentId: THERAPY_APPT_ID,
+				diagnosis: "К02.1 Кариес дентина 2.5",
+				treatmentPlan: "Препарирование кариозной полости, пломба световой композит",
+			});
+
+			assert.equal(res.isSurgery, false);
+			assert.equal(res.scheduled, true);
+
+			if (isDbAvailable && res.taskId) {
+				await withFixtureTenant(TEST_ORG_ID, async (tx) => {
+					const [task] = await tx
+						.select()
+						.from(communicationTasks)
+						.where(
+							and(
+								eq(communicationTasks.organizationId, TEST_ORG_ID),
+								eq(communicationTasks.id, res.taskId!),
+							),
+						);
+					assert.ok(task);
+					assert.equal(task.workflowCode, "POST_VISIT_CHECKUP");
+					assert.equal(task.intent, "post_visit_instruction");
+					assert.equal(task.channel, "telegram");
+					assert.ok(task.title.includes("24 часа"));
+				});
+			}
+		});
+
+		it("guarantees idempotency: duplicate scheduling returns scheduled=false", async () => {
+			const dupRes = await TelegramPostOpCarePipeline.schedulePostVisitSurveyIfNeeded({
+				organizationId: TEST_ORG_ID,
+				clinicId: CLINIC_ID,
+				visitId: THERAPY_VISIT_ID,
+				patientId: REFERRER_PATIENT_ID,
+				doctorId: DOCTOR_ID,
+				appointmentId: THERAPY_APPT_ID,
+				diagnosis: "К02.1 Кариес дентина 2.5",
+			});
+
+			assert.equal(dupRes.scheduled, false);
+		});
+
+		it("handles 24h therapeutic survey callbacks (high_bite adjustment and pain alert)", async () => {
+			// 1. Опрос: Всё отлично
+			const okRes = await TelegramPostOpCarePipeline.handlePostOpCallback({
+				callbackData: "postop:therapy:ok",
+				callbackQueryId: "cb_therapy_1",
+				chatFingerprint: "fp_test",
+				chatId: "123456",
+				messageId: 901,
+				botToken: BOT_TOKEN,
+				organizationId: TEST_ORG_ID,
+				clinicId: CLINIC_ID,
+			});
+			assert.equal(okRes.handled, true);
+			assert.ok(okRes.screen?.text.includes("Отлично"));
+
+			// 2. Опрос: Завышение пломбы по прикусу -> задача администратору
+			const biteRes = await TelegramPostOpCarePipeline.handlePostOpCallback({
+				callbackData: "postop:therapy:high_bite",
+				callbackQueryId: "cb_therapy_2",
+				chatFingerprint: "fp_test",
+				chatId: "123456",
+				messageId: 902,
+				botToken: BOT_TOKEN,
+				organizationId: TEST_ORG_ID,
+				clinicId: CLINIC_ID,
+			});
+			assert.equal(biteRes.handled, true);
+			assert.ok(biteRes.screen?.text.includes("Коррекция"));
+
+			// 3. Опрос: Боль/чувствительность -> алерт начмеду
+			const painRes = await TelegramPostOpCarePipeline.handlePostOpCallback({
+				callbackData: "postop:therapy:pain",
+				callbackQueryId: "cb_therapy_3",
+				chatFingerprint: "fp_test",
+				chatId: "123456",
+				messageId: 903,
+				botToken: BOT_TOKEN,
+				organizationId: TEST_ORG_ID,
+				clinicId: CLINIC_ID,
+			});
+			assert.equal(painRes.handled, true);
+			assert.ok(painRes.screen?.text.includes("чувствительности"));
 		});
 	});
 });

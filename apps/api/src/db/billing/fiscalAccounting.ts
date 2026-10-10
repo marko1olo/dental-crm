@@ -192,6 +192,8 @@ export async function recordCashAndFiscalAccounting(
 					payerFullName: input.payerFullName,
 					payerInn: input.payerInn,
 					taxDeductionCode: input.taxDeductionCode,
+					toothNumber: input.toothNumber ?? null,
+					invoiceItems: input.invoiceItems ?? input.invoice_items ?? null,
 					note: input.note,
 				},
 				retryCount: 0,

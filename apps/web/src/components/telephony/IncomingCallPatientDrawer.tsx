@@ -270,7 +270,7 @@ export function IncomingCallPatientDrawer({
 						type="button"
 						onClick={onToggleQuickBooking}
 						className="flex-1 h-9 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-[13px] font-semibold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-						title="Создать запись на приём (быстрые слоты в 1 клик)"
+						title="Создать запись на приём (быстрые слоты)"
 						data-testid="drawer-action-book"
 					>
 						<CalendarCheck size={15} />
@@ -396,7 +396,7 @@ export function IncomingCallPatientDrawer({
 								disabled={isCreatingPatient}
 								className="w-full h-9 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--teal)] text-white text-[13px] font-semibold hover:opacity-90 active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60"
 								data-testid="popup-drawer-quick-create-patient-btn"
-								title="Создать первичную карту пациента в 1 клик за 5 секунд (без обязательного паспорта и СНИЛС)"
+								title="Создать первичную карту пациента за 5 секунд (без обязательного паспорта и СНИЛС)"
 							>
 								<UserCheck size={15} />
 								<span>

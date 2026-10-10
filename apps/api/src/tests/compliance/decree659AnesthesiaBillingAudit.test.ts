@@ -92,7 +92,7 @@ describe("Prosecutor 3: Decree 659 & Anesthesia Statutory Billing Audit", { conc
 			await db.insert(organizations).values({
 				id: ORG_ID,
 				name: "Клиника Аудита Анестезии и Постановления №659",
-			});
+			}).onConflictDoNothing();
 
 			await db.insert(users).values([
 				{
@@ -107,7 +107,7 @@ describe("Prosecutor 3: Decree 659 & Anesthesia Statutory Billing Audit", { conc
 					fullName: "Администратор-Кассир Клиники",
 					role: "admin",
 				},
-			]);
+			]).onConflictDoNothing();
 
 			// 1. Анонимный пациент (UUID_ANON)
 			await db.insert(patients).values({
@@ -121,7 +121,7 @@ describe("Prosecutor 3: Decree 659 & Anesthesia Statutory Billing Audit", { conc
 					isAnonymous: true,
 					// Паспорт, ИНН, СНИЛС и полис ОМС отсутствуют по ст. 84 323-ФЗ
 				}),
-			});
+			}).onConflictDoNothing();
 
 			// 2. Услуга анестезии в каталоге
 			await db.insert(serviceCatalogItems).values([
@@ -143,7 +143,7 @@ describe("Prosecutor 3: Decree 659 & Anesthesia Statutory Billing Audit", { conc
 					priceRub: 25000,
 					category: "prosthetics",
 				},
-			]);
+			]).onConflictDoNothing();
 
 			// 3. Утвержденный план лечения с анестезией
 			await db.insert(treatmentPlans).values({
@@ -157,7 +157,7 @@ describe("Prosecutor 3: Decree 659 & Anesthesia Statutory Billing Audit", { conc
 				totalPriceRub: "26500.00",
 				discountMode: "none",
 				version: 1,
-			});
+			}).onConflictDoNothing();
 
 			await db.insert(treatmentPlanItemsNew).values([
 				{
@@ -182,7 +182,7 @@ describe("Prosecutor 3: Decree 659 & Anesthesia Statutory Billing Audit", { conc
 					discount: "0",
 					phase: 1,
 				},
-			]);
+			]).onConflictDoNothing();
 		});
 
 		clinicToken = signToken({ organizationId: ORG_ID }, authTokenSecret());

@@ -164,7 +164,7 @@ export const ClinicalBundlesPanel: React.FC<ClinicalBundlesPanelProps> = ({
 					<div>
 						<div className="flex items-center gap-2 flex-wrap">
 							<h3 className="text-sm font-black text-[var(--ink,#0f172a)]">
-								Клинические пакеты «под ключ» (1 клик)
+								Клинические пакеты «под ключ»
 							</h3>
 							<span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,#0d9488)]/30">
 								Быстрый ввод

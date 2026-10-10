@@ -516,7 +516,7 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 														type="button"
 														className="cld-action-btn"
 														onClick={() => handleCreateTask(lead)}
-														title="Создать задачу администратору перезвонить пациенту (реактивация в 1 клик)"
+														title="Создать задачу администратору перезвонить пациенту (быстрая реактивация)"
 													>
 														<PhoneCall size={12} />
 														Перезвонить (задача)

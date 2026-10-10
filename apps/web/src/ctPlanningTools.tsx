@@ -73,19 +73,19 @@ import { CtPlanningToolGridPanel } from "./ctPlanningToolGridPanel";
 
 type CtPlanningToolsPanelProps = {
 	canPlan: boolean;
-	compact?: boolean;
-	activeTool?: ImagingViewerTool | null;
-	activeQuickActionId?: string | null;
-	onActivateTool?: (action: CtPlanningQuickAction) => void;
-	selectedImplantId?: string | null;
-	selectedImplantPlan?: ImagingViewerImplantPlan | null;
-	onSelectImplant?: (implant: CtImplantLibraryItem) => void;
-	localAnnotations?: ImagingViewerAnnotation[];
-	annotationRefs?: CtPlanningArtifactAnnotationRef[];
-	onCreateArtifact?: (command: CtPlanningArtifactCommand) => void;
-	toolStateBundle?: DicomViewerToolStateBundleResponse | null;
-	dentalModelWorkbenchManifest?: DentalModelWorkbenchManifest | null;
-	localBridgeReadiness?: LocalBridgeReadinessResponse | null;
+	compact?: boolean | undefined;
+	activeTool?: ImagingViewerTool | null | undefined;
+	activeQuickActionId?: string | null | undefined;
+	onActivateTool?: ((action: CtPlanningQuickAction) => void) | undefined;
+	selectedImplantId?: string | null | undefined;
+	selectedImplantPlan?: ImagingViewerImplantPlan | null | undefined;
+	onSelectImplant?: ((implant: CtImplantLibraryItem) => void) | undefined;
+	localAnnotations?: ImagingViewerAnnotation[] | undefined;
+	annotationRefs?: CtPlanningArtifactAnnotationRef[] | undefined;
+	onCreateArtifact?: ((command: CtPlanningArtifactCommand) => void) | undefined;
+	toolStateBundle?: DicomViewerToolStateBundleResponse | null | undefined;
+	dentalModelWorkbenchManifest?: DentalModelWorkbenchManifest | null | undefined;
+	localBridgeReadiness?: LocalBridgeReadinessResponse | null | undefined;
 };
 
 const emptyCtPlanningItems: never[] = [];

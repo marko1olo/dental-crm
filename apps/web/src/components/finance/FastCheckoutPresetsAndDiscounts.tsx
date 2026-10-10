@@ -136,7 +136,7 @@ export const FastCheckoutPresetsAndDiscounts: React.FC<FastCheckoutPresetsAndDis
 						onClick={() => onQuickPreset("split_three_way")}
 						className="min-h-[40px] min-w-0 px-2 py-1.5 rounded-xl border-2 border-indigo-500/40 bg-[var(--paper,#ffffff)] hover:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 						data-testid="btn-checkout-split-three-way"
-						title={`Комбинированная оплата в 1 клик: Аванс родственника (${familyPayerName}) + 50% Карта + 50% Нал`}
+						title={`Комбинированная оплата: Аванс родственника (${familyPayerName}) + 50% Карта + 50% Нал`}
 					>
 						<Users size={14} className="shrink-0 text-indigo-600" />
 						<span className="truncate">Нал + Карта + Аванс</span>
@@ -146,7 +146,7 @@ export const FastCheckoutPresetsAndDiscounts: React.FC<FastCheckoutPresetsAndDis
 						onClick={() => onQuickPreset("warranty_100")}
 						className="min-h-[40px] min-w-0 px-2 py-1.5 rounded-xl border-2 border-blue-500/40 bg-[var(--paper,#ffffff)] hover:bg-blue-500/15 text-blue-700 dark:text-blue-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 						data-testid="btn-checkout-warranty-100"
-						title="100% гарантийная переделка (к оплате 0 ₽, без паролей и блокировок)"
+						title="100% гарантийная переделка (к оплате 0 ₽)"
 					>
 						<ShieldCheck size={14} className="shrink-0 text-blue-600" />
 						<span className="truncate">100% Гарантия (0 ₽)</span>

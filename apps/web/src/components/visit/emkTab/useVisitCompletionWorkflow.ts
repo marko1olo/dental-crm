@@ -217,7 +217,9 @@ export function useVisitCompletionWorkflow({
 			try {
 				sessionStorage.setItem("dente_pending_checkout", JSON.stringify(fallbackCheckout));
 				localStorage.setItem("dente_pending_checkout", JSON.stringify(fallbackCheckout));
-			} catch {}
+			} catch (err) {
+				console.warn("[VisitCompletionWorkflow] Failed to write fallback checkout to storage:", err);
+			}
 			showToast("Приём сохранён. Переход в кассу...", "info", 3000);
 			if (typeof window !== "undefined") {
 				window.dispatchEvent(new CustomEvent("dente:pending-checkout-ready", { detail: fallbackCheckout }));

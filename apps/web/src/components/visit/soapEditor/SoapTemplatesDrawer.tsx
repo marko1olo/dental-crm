@@ -43,7 +43,7 @@ export const SoapTemplatesDrawer: React.FC<SoapTemplatesDrawerProps> = ({
 								className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]"
 								aria-label="Клинические протоколы (448 шаблонов)"
 								title="Клинические протоколы (448 шаблонов)"
-								data-catalog-source="Клинические протоколы StomX"
+								data-catalog-source="Клинические протоколы СтАР"
 							>
 								Клинические протоколы (448 шаблонов)
 							</span>

@@ -28,6 +28,7 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 	const [isCtSelectorModalOpen, setIsCtSelectorModalOpen] = useState<boolean>(false);
 	const [isDirectRvgModalOpen, setIsDirectRvgModalOpen] = useState<boolean>(false);
 	const [isDicomViewerModalOpen, setIsDicomViewerModalOpen] = useState<boolean>(false);
+	const [isComparisonModalOpen, setIsComparisonModalOpen] = useState<boolean>(false);
 	const [selectedDicomImageSrc, setSelectedDicomImageSrc] = useState<string | undefined>(undefined);
 	const [selected3DScanModelUrl, setSelected3DScanModelUrl] = useState<string | null>(null);
 	const [selected3DScanTitle, setSelected3DScanTitle] = useState<string | undefined>(undefined);
@@ -405,6 +406,8 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 		setIsDirectRvgModalOpen,
 		isDicomViewerModalOpen,
 		setIsDicomViewerModalOpen,
+		isComparisonModalOpen,
+		setIsComparisonModalOpen,
 		selectedDicomImageSrc,
 		setSelectedDicomImageSrc,
 		selected3DScanModelUrl,

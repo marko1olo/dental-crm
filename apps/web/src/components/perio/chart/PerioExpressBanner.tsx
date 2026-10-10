@@ -104,8 +104,8 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					>
 						<span>
 							{isTier3ProbingExpanded
-								? "Скрыть детальные точки (Tier 3)"
-								: "6 точек на зуб (Tier 3, по требованию)"}
+								? "Скрыть детальные точки"
+								: "6 точек на зуб (по требованию)"}
 						</span>
 						{isTier3ProbingExpanded ? (
 							<ChevronUp size={14} />

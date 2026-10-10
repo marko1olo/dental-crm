@@ -11,3 +11,9 @@
  */
 
 export * from "./desktop";
+export {
+	CLINICAL_TOUCH_TARGETS,
+} from "./mobile/types";
+export {
+	validateClinicalActionButtonErgonomics,
+} from "./mobile/ergonomics";

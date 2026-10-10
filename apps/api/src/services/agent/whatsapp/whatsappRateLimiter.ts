@@ -65,8 +65,8 @@ export class WhatsAppRateLimiter {
 		organizationId: string,
 		phone: string,
 		options: {
-			isTemplate?: boolean;
-			lastInboundTimestamp?: string | Date | number;
+			isTemplate?: boolean | undefined;
+			lastInboundTimestamp?: string | Date | number | undefined;
 		} = {},
 	): RateLimitCheckResult {
 		const now = Date.now();

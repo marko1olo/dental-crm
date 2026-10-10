@@ -128,10 +128,10 @@ export const CbctNerveTracingHud: React.FC<CbctNerveTracingHudProps> = ({
 							? "bg-amber-500 text-zinc-950 font-bold shadow-xs"
 							: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
 					}`}
-					title="Автоматическая трассировка (2 клика: ментальное -> нижнечелюстное отверстие)"
+					title="Автоматическая трассировка (2 точки: ментальное -> нижнечелюстное отверстие)"
 					data-testid="cbct-nerve-hud-mode-auto-btn"
 				>
-					<span>⚡ Авто (2 клика)</span>
+					<span>Авто (2 точки)</span>
 				</button>
 				<button
 					type="button"
@@ -144,7 +144,7 @@ export const CbctNerveTracingHud: React.FC<CbctNerveTracingHudProps> = ({
 					title="Ручная разметка: кликайте по срезам вдоль канала, перетаскивайте узлы мышью"
 					data-testid="cbct-nerve-hud-mode-manual-btn"
 				>
-					<span>✏️ Вручную</span>
+					<span>Вручную</span>
 				</button>
 			</div>
 

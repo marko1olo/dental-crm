@@ -85,50 +85,50 @@ const OWNER_TABS: Array<{
 }> = [
 	{
 		id: "clinic",
-		label: "Реквизиты, юрлицо и касса",
+		label: "Реквизиты и касса",
 		description: "ИНН, ОГРН, лицензия, кассовый аппарат ККТ, филиалы",
 		icon: Building2,
 	},
 	{
 		id: "prices",
-		label: "Прейскурант услуг",
+		label: "Прейскурант 804н",
 		description: "Номенклатура услуг, анализ рентабельности и цен",
 		icon: DollarSign,
 	},
 	{
 		id: "commissions",
-		label: "Комиссии и мотивация",
+		label: "Комиссии и ЗП",
 		description: "Ставки врачей %, сдельная оплата труда, вычеты",
 		icon: Percent,
 	},
 	{
 		id: "procedure-boms",
-		label: "Техкарты расхода материалов",
+		label: "Техкарты",
 		description: "Нормы списания расходников по протоколам процедур",
 		icon: Layers,
 	},
 	{
 		id: "insurance",
-		label: "Страховые договоры (ДМС)",
+		label: "Страховые ДМС",
 		description: "Договоры со страховыми, гарантийные письма",
 		icon: ShieldCheck,
 	},
 	{
 		id: "reporting",
-		label: "Финансовая отчётность",
+		label: "Отчётность",
 		description: "Выручка, маржинальность, загрузка кресел",
 		icon: LineChart,
 	},
 	{
 		id: "imports",
-		label: "Перенос данных",
-		description: "Миграция баз из IDENT, DentalPRO, Инфодент, StomX",
+		label: "Импорт МИС",
+		description: "Миграция баз пациентов, расписания и прайса из внешних МИС",
 		icon: HardDriveDownload,
 	},
 	{
 		id: "backup",
-		label: "Резервное копирование Vault",
-		description: "1-клик локальный бэкап, шифрование AES-GCM-256, расписание",
+		label: "Резервная копия",
+		description: "Локальный архив, шифрование AES-GCM-256, расписание",
 		icon: HardDrive,
 	},
 	{
@@ -139,13 +139,13 @@ const OWNER_TABS: Array<{
 	},
 	{
 		id: "sources",
-		label: "Источники снимков и КТ",
+		label: "Источники КТ",
 		description: "DICOM, PACS-сервер, сетевые хранилища снимков",
 		icon: Database,
 	},
 	{
 		id: "deep-clinical",
-		label: "Клинические протоколы и автономия",
+		label: "Автономия и ЭМК",
 		description: "ЭМК, ИДС 1051н, нормы списаний, интерком и 54-ФЗ автономия",
 		icon: Sparkles,
 	},
@@ -225,68 +225,10 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 	};
 
 	return (
-		<div className="space-y-6" data-testid="owner-settings-section">
-			{/* Super-Header: Owner Strategic Cockpit */}
-			<div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-transparent border border-amber-500/25 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-				<div className="flex items-center gap-3">
-					<div className="w-12 h-12 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-md">
-						<Building2 size={24} />
-					</div>
-					<div>
-						<div className="flex items-center gap-2">
-							<h3 className="font-extrabold text-base sm:text-lg text-[var(--ink)]">
-								Кабинет владельца и управляющего
-							</h3>
-							<span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30">
-								Бизнес & Финансы
-							</span>
-						</div>
-						<p className="text-xs text-[var(--muted)] mt-0.5">
-							Юридические реквизиты, касса и чеки, прейскурант услуг, мотивация врачей и защита бизнеса
-						</p>
-					</div>
-				</div>
-
-				<div className="flex items-center gap-3 text-xs self-stretch md:self-auto justify-end">
-					<div className="p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-right">
-						<span className="text-[10px] text-[var(--muted)] block">Готовность юрлица</span>
-						<span className="font-bold text-emerald-600 dark:text-emerald-400">
-							{props?.legalReadinessPercent ?? 100}%
-						</span>
-					</div>
-					<div className="p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-right">
-						<span className="text-[10px] text-[var(--muted)] block">Касса и чеки</span>
-						<span className="font-bold text-teal-600 dark:text-teal-400">
-							Готова к работе
-						</span>
-					</div>
-				</div>
-			</div>
-
-			{/* Scale Sovereignty Presets (Mandate 8s & 8n: Doctor Autonomy & Database-Backed Presets) */}
-			<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
-				<SovereignScalePresetsCard
-					compactMode={false}
-					hideHeader={false}
-					onPresetApplied={(presetId) => {
-						const targetMode: ClinicMode =
-							presetId === "solo_doctor"
-								? "solo_doctor"
-								: presetId === "standard_clinic"
-									? "small_clinic"
-									: "network_clinic";
-						if (appLogic?.changeClinicMode) {
-							appLogic.changeClinicMode(targetMode);
-						} else if (props?.changeClinicMode) {
-							props.changeClinicMode(targetMode);
-						}
-					}}
-				/>
-			</div>
-
-			{/* Sub-Navigation Strip (Desktop 32px, Radius 8px) */}
-			<div className="settings-subnav-strip" role="tablist" aria-label="Разделы настроек владельца">
-				{OWNER_TABS.map((tab) => {
+		<div className="space-y-4" data-testid="owner-settings-section">
+			{/* Sub-Navigation Strip (Desktop 32px, Radius 8px, strictly <= 7 controls per row) */}
+			<div className="settings-subnav-strip overflow-x-auto pb-1 border-b border-[var(--line)]" role="tablist" aria-label="Разделы настроек владельца">
+				{OWNER_TABS.slice(0, 6).map((tab) => {
 					const Icon = tab.icon;
 					const isSelected = activeSubTab === tab.id;
 					return (
@@ -305,6 +247,28 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 						</button>
 					);
 				})}
+				<select
+					aria-label="Дополнительные системные разделы владельца"
+					value={OWNER_TABS.slice(6).some((t) => t.id === activeSubTab) ? activeSubTab : ""}
+					onChange={(e) => {
+						if (e.target.value) {
+							handleTabChange(e.target.value as OwnerSubTab);
+						}
+					}}
+					className={`settings-subnav-btn px-2.5 cursor-pointer ${
+						OWNER_TABS.slice(6).some((t) => t.id === activeSubTab) ? "active" : ""
+					}`}
+					data-testid="owner-tab-system-more-select"
+				>
+					<option value="" disabled>
+						Системные разделы...
+					</option>
+					{OWNER_TABS.slice(6).map((tab) => (
+						<option key={tab.id} value={tab.id} data-testid={`owner-tab-${tab.id}`}>
+							{tab.label}
+						</option>
+					))}
+				</select>
 			</div>
 
 			{/* Sub-Tab Content Rendering */}
@@ -312,6 +276,26 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 				{activeSubTab === "clinic" && (
 					<ErrorBoundary moduleName="Реквизиты и касса">
 						<div className="space-y-6">
+							{/* Scale Sovereignty Presets (Mandate 8s & 8n: Doctor Autonomy & Database-Backed Presets) */}
+							<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+								<SovereignScalePresetsCard
+									compactMode={false}
+									hideHeader={false}
+									onPresetApplied={(presetId) => {
+										const targetMode: ClinicMode =
+											presetId === "solo_doctor"
+												? "solo_doctor"
+												: presetId === "standard_clinic"
+													? "small_clinic"
+													: "network_clinic";
+										if (appLogic?.changeClinicMode) {
+											appLogic.changeClinicMode(targetMode);
+										} else if (props?.changeClinicMode) {
+											props.changeClinicMode(targetMode);
+										}
+									}}
+								/>
+							</div>
 							<TaxationAndFiscalizationCard />
 							<SettingsClinicTab props={props} settingsTab="clinic" />
 						</div>

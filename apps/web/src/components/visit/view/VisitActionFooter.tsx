@@ -90,7 +90,7 @@ export function VisitActionFooter({
 							visitNoteForm,
 							polishTranscript,
 							showToastFn: showToast,
-						})
+						} as any)
 					}
 				>
 					Полировать ИИ

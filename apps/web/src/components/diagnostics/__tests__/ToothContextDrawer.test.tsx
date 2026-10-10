@@ -154,7 +154,7 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.ok(html.includes("tooth-family-loyalty-accordion"), "Family loyalty tool should render");
 		assert.ok(html.includes("Семейный депозит"), "Family deposit metric should be present");
 		assert.ok(html.includes("Баллы кешбэка"), "Loyalty points metric should be present");
-		assert.ok(html.includes("Применить сплит к чеку 54-ФЗ"), "Split confirmation action should be present");
+		assert.ok(html.includes("Применить сплит к чеку"), "Split confirmation action should be present");
 	});
 
 	it("ToothPediatricContext renders Frankl behavioral scale and resorption stages for primary teeth", () => {
@@ -188,7 +188,7 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 			/>,
 		);
 
-		assert.ok(html.includes("2. Экспресс-анестезия (1 клик)"), "1-click express title should be present");
+		assert.ok(html.includes("2. Экспресс-анестезия"), "Express anesthesia title should be present");
 		assert.ok(html.includes("Артикаин • Ультракаин • Скандонест • Септанест"), "Preset drugs summary should be present");
 	});
 

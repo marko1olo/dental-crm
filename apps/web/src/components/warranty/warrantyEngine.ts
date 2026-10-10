@@ -7,12 +7,10 @@
  */
 
 import {
-	getWarrantyDefectTemplate,
-	getWarrantyPreset,
-	type WarrantyCategory,
-	type WarrantyDefectType,
-	type WarrantyRemediationMaterialItem,
+	getWarrantyDefectTemplate, getWarrantyPreset,
+	type WarrantyCategory, type WarrantyDefectType, type WarrantyRemediationMaterialItem,
 } from "./warrantyPresets.js";
+export type { WarrantyCategory, WarrantyDefectType, WarrantyRemediationMaterialItem };
 import { generateQrCodeSvg, sha256Hex } from "@dental/shared";
 
 export interface WarrantyRiskFactors {

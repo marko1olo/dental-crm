@@ -153,7 +153,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 								onClick={onDownloadTaxCertificateDirect}
 							>
 								<Download size={15} />
-								<span>Скачать справку для вычета (1 клик)</span>
+								<span>Скачать справку для вычета</span>
 							</button>
 
 							<button

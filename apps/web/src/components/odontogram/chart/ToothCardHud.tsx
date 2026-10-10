@@ -56,11 +56,13 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 		selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 
 	const surfaceBadge = surfaces && surfaces.length > 0 ? surfaces.join("") : null;
-	const stateLabel = state ? TOOTH_STATE_LABELS[state] ?? state : "интактный";
+	const stateLabel = state
+		? TOOTH_STATE_LABELS[state] ?? TOOTH_STATE_LABELS[String(state).toLowerCase()] ?? "интактный"
+		: "интактный";
 
 	return (
 		<div
-			className={`tooth-hover-quick-hud absolute tooth-card-hud-compact ${hudAlignClass} hidden group-hover:flex group-hover/badge:flex flex-col transition-all duration-150 z-50 p-1.5 rounded-xl bg-[var(--odontogram-paper)]/95 border border-[var(--odontogram-border-strong)] shadow-xl backdrop-blur-md pointer-events-auto whitespace-nowrap w-[216px] min-w-[216px] max-w-[226px] box-border ${
+			className={`tooth-hover-quick-hud absolute tooth-card-hud-compact ${hudAlignClass} hidden group-hover/badge:flex flex-col transition-all duration-150 z-50 p-1.5 rounded-xl bg-[var(--odontogram-paper)]/95 border border-[var(--odontogram-border-strong)] shadow-xl backdrop-blur-md pointer-events-auto whitespace-nowrap w-[216px] min-w-[216px] max-w-[226px] box-border ${
 				isTop ? "top-full mt-1.5" : "bottom-full mb-1.5"
 			}`}
 			onClick={(e) => e.stopPropagation()}
@@ -163,18 +165,19 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 					</div>
 
 					{/* Молочный прикус: Вторичные компактные действия */}
-					<div className="grid grid-cols-3 gap-0.5">
+					<div className="grid grid-cols-3 gap-1">
 						<button
 							type="button"
 							onClick={(e) => {
 								e.stopPropagation();
 								onQuickStateChange(getTargets(), "Crown", []);
 							}}
-							className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-amber-500/10 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/30 !text-[10px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
+							className="!min-h-[24px] !h-[24px] px-1 rounded-md bg-amber-500/10 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/30 !text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 touch-manipulation"
 							title="Эстетическая циркониевая коронка NuSmile / 3M"
 							data-testid={`quick-nusmile-${number}`}
 						>
-							Коронка
+							<span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block shrink-0" />
+							<span>Коронка</span>
 						</button>
 
 						{onResorptionChange && (
@@ -188,11 +191,12 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 									const nextStage = stages[nextIdx] ?? 0;
 									onResorptionChange(getTargets(), nextStage);
 								}}
-								className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-orange-500/10 hover:bg-orange-500 text-orange-800 dark:text-orange-300 hover:text-white border border-orange-500/30 !text-[10px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
+								className="!min-h-[24px] !h-[24px] px-1 rounded-md bg-orange-500/10 hover:bg-orange-500 text-orange-800 dark:text-orange-300 hover:text-white border border-orange-500/30 !text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 touch-manipulation"
 								title={`Сменить стадию физиологической резорбции корня (текущая: ${rootResorptionStage ?? 0}%)`}
 								data-testid={`quick-resorption-${number}`}
 							>
-								{rootResorptionStage ? `R${rootResorptionStage}%` : "R+"}
+								<span className="w-1.5 h-1.5 rounded-full bg-orange-500 inline-block shrink-0" />
+								<span>{rootResorptionStage ? `R${rootResorptionStage}%` : "R+"}</span>
 							</button>
 						)}
 
@@ -202,11 +206,12 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 								e.stopPropagation();
 								onQuickStateChange(getTargets(), "Missing", []);
 							}}
-							className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-slate-500/10 hover:bg-slate-600 text-slate-800 dark:text-slate-300 hover:text-white border border-slate-500/30 !text-[10px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
+							className="!min-h-[24px] !h-[24px] px-1 rounded-md bg-slate-500/10 hover:bg-slate-600 text-slate-800 dark:text-slate-300 hover:text-white border border-slate-500/30 !text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 touch-manipulation"
 							title="Физиологическая смена зуба (выпал / эксфолиация)"
 							data-testid={`quick-exfoliated-${number}`}
 						>
-							Смена
+							<span className="w-1.5 h-1.5 rounded-full bg-slate-500 inline-block shrink-0" />
+							<span>Смена</span>
 						</button>
 					</div>
 				</>
@@ -290,18 +295,19 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 					</div>
 
 					{/* Постоянный прикус: Ортопедия и Хирургия (Коронка, Имплант, Удален) */}
-					<div className="grid grid-cols-3 gap-0.5">
+					<div className="grid grid-cols-3 gap-1">
 						<button
 							type="button"
 							onClick={(e) => {
 								e.stopPropagation();
 								onQuickStateChange(getTargets(), "Crown", []);
 							}}
-							className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-amber-500/10 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/30 !text-[10px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
+							className="!min-h-[24px] !h-[24px] px-1 rounded-md bg-amber-500/10 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/30 !text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 touch-manipulation"
 							title="Коронка"
 							data-testid={`quick-crown-${number}`}
 						>
-							Коронка
+							<span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block shrink-0" />
+							<span>Коронка</span>
 						</button>
 
 						<button
@@ -310,11 +316,12 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 								e.stopPropagation();
 								onQuickStateChange(getTargets(), "Implant", []);
 							}}
-							className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-indigo-500/10 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/30 !text-[10px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
+							className="!min-h-[24px] !h-[24px] px-1 rounded-md bg-indigo-500/10 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/30 !text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 touch-manipulation"
 							title="Имплантат"
 							data-testid={`quick-implant-${number}`}
 						>
-							Имплант
+							<span className="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block shrink-0" />
+							<span>Имплант</span>
 						</button>
 
 						<button
@@ -323,11 +330,12 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 								e.stopPropagation();
 								onQuickStateChange(getTargets(), "Missing", []);
 							}}
-							className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-red-600/10 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/30 !text-[10px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
+							className="!min-h-[24px] !h-[24px] px-1 rounded-md bg-red-600/10 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/30 !text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 touch-manipulation"
 							title="Удален"
 							data-testid={`quick-missing-${number}`}
 						>
-							Удален
+							<span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block shrink-0" />
+							<span>Удален</span>
 						</button>
 					</div>
 				</>

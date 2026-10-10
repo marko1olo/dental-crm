@@ -177,12 +177,15 @@ export function WhatsappSettingsPanelContent({
 	);
 
 	if (loadState.phase === "failed") {
+		const numericStatus: number | null = typeof loadFailureStatus === "number"
+			? loadFailureStatus
+			: (loadFailureStatus ? Number.parseInt(String(loadFailureStatus), 10) || null : null);
 		return (
 			<section className="messenger-panel whatsapp-panel">
 				{header}
 				<PanelLoadFailure
 					subject={WHATSAPP_SETTINGS_PANEL_SUBJECT}
-					status={loadFailureStatus}
+					status={numericStatus}
 					onRetry={onReload}
 				/>
 			</section>
@@ -275,7 +278,7 @@ export function WhatsappSettingsPanelContent({
 						onPhoneNumberIdChange={setPhoneNumberIdDraft}
 						accessTokenDraft={accessTokenDraft}
 						onAccessTokenChange={setAccessTokenDraft}
-						hasToken={settings?.hasToken}
+						hasToken={Boolean(settings?.hasToken)}
 						wabaAccountIdDraft={wabaAccountIdDraft}
 						onWabaAccountIdChange={setWabaAccountIdDraft}
 						webhookVerifyTokenDraft={webhookVerifyTokenDraft}

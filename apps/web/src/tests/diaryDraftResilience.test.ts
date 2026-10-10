@@ -384,11 +384,30 @@ describe("Visit SOAP Draft Recovery & Non-blocking Invariants (Mandate 8c, 8e)",
 		);
 	});
 
-	test("Мандат 8e: VisitSoapEditor содержит дуальное сохранение в localStorage и IndexedDB", () => {
-		const soapEditorCode = fs.readFileSync(
-			path.resolve(process.cwd(), "apps/web/src/components/visit/VisitSoapEditor.tsx"),
-			"utf-8",
+	function getSoapEditorFullCode(): string {
+		const facadePath = path.resolve(
+			process.cwd(),
+			"apps/web/src/components/visit/VisitSoapEditor.tsx",
 		);
+		const soapDir = path.resolve(
+			process.cwd(),
+			"apps/web/src/components/visit/soapEditor",
+		);
+		let code = fs.existsSync(facadePath)
+			? fs.readFileSync(facadePath, "utf-8")
+			: "";
+		if (fs.existsSync(soapDir)) {
+			for (const file of fs.readdirSync(soapDir)) {
+				if (file.endsWith(".ts") || file.endsWith(".tsx")) {
+					code += `\n${fs.readFileSync(path.join(soapDir, file), "utf-8")}`;
+				}
+			}
+		}
+		return code;
+	}
+
+	test("Мандат 8e: VisitSoapEditor содержит дуальное сохранение в localStorage и IndexedDB", () => {
+		const soapEditorCode = getSoapEditorFullCode();
 
 		assert.ok(
 			soapEditorCode.includes("saveOfflineDraft"),
@@ -413,10 +432,7 @@ describe("Visit SOAP Draft Recovery & Non-blocking Invariants (Mandate 8c, 8e)",
 	});
 
 	test("Мандат 8z: Полное искоренение советских кодов 043/у и 834н из пользовательского интерфейса", () => {
-		const soapEditorCode = fs.readFileSync(
-			path.resolve(process.cwd(), "apps/web/src/components/visit/VisitSoapEditor.tsx"),
-			"utf-8",
-		);
+		const soapEditorCode = getSoapEditorFullCode();
 		const controlBoardCode = fs.readFileSync(
 			path.resolve(process.cwd(), "apps/web/src/components/visit/EmkControlBoard.tsx"),
 			"utf-8",
@@ -429,10 +445,7 @@ describe("Visit SOAP Draft Recovery & Non-blocking Invariants (Mandate 8c, 8e)",
 	});
 
 	test("Мандат 8e: Кнопка 1-клика физиологической нормы никогда не disabled и заполняет статус", () => {
-		const soapEditorCode = fs.readFileSync(
-			path.resolve(process.cwd(), "apps/web/src/components/visit/VisitSoapEditor.tsx"),
-			"utf-8",
-		);
+		const soapEditorCode = getSoapEditorFullCode();
 
 		assert.ok(
 			soapEditorCode.includes('data-testid="btn-soap-physio-norm"'),

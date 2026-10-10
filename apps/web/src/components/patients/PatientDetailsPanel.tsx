@@ -331,7 +331,7 @@ export function PatientDetailsPanel({
 				updatePatientCoreDraft={updatePatientCoreDraft}
 			/>
 
-			{patientCoreSaveGuidance ? (
+			{patientCoreSaveGuidance && (patientCoreDirty || patientCoreSaveState === "error") ? (
 				<p
 					className="patient-save-guidance"
 					id={patientCoreSaveGuidanceId}

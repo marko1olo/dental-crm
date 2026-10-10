@@ -1,8 +1,8 @@
 import type { Appointment, Dashboard } from "@dental/shared";
 import type { ChangeEvent } from "react";
-import type { AppointmentScheduleDraft } from "../../AppConstants";
-import type { SmartParsedPayload } from "../../SmartParsePreview";
-import type { ChairDoctorShiftAssignment } from "./ScheduleGrid";
+import type { AppointmentScheduleDraft } from "../../../AppConstants";
+import type { SmartParsedPayload } from "../../../SmartParsePreview";
+import type { ChairDoctorShiftAssignment } from "../ScheduleGrid";
 
 export type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 

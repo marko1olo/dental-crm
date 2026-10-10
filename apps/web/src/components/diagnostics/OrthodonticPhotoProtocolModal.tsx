@@ -601,7 +601,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 					<div className="ortho-presets-bar" role="group" aria-label="Готовые клинические пресеты ортодонтии">
 						<div className="ortho-presets-label">
 							<AlignerTray size={14} className="text-amber-500 shrink-0" />
-							<span>1-клик пресеты протоколов:</span>
+							<span>Клинические пресеты:</span>
 						</div>
 						<div className="ortho-presets-list">
 							{ORTHODONTIC_CLINICAL_PRESETS.map((preset) => {

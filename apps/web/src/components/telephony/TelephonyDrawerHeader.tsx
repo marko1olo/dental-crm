@@ -98,7 +98,7 @@ export function TelephonyDrawerHeader({
 									disabled={isCapturingLead || currentCall.isLeadCaptured}
 									className="w-full text-left px-2.5 py-2 rounded-lg bg-[var(--teal-surface)] hover:opacity-90 text-[var(--teal)] font-bold flex items-center gap-2 transition-colors cursor-pointer border border-[var(--teal-soft)] mb-1"
 									data-testid="drawer-more-action-capture-lead"
-									title={`1-Клик захват в лиды с авторазметкой канала (${callAttribution.channelLabel})`}
+									title={`Захват в лиды с авторазметкой канала (${callAttribution.channelLabel})`}
 								>
 									{currentCall.isLeadCaptured ? (
 										<Check size={14} className="text-emerald-500 shrink-0" />

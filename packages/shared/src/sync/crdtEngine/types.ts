@@ -28,6 +28,8 @@ export type {
 	VectorClock,
 };
 
+export type { OdontogramToothState } from "../mesh/form-crdt.js";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. LWW CRDT Records & Serialization Contracts
 // ─────────────────────────────────────────────────────────────────────────────

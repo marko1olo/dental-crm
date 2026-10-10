@@ -22,15 +22,17 @@
 	pointer-events: auto;
 	display: flex;
 	align-items: center;
-	gap: 0.75rem;
-	padding: 0.5rem 0.875rem;
-	background: rgba(15, 23, 42, 0.9);
+	gap: 0.5rem;
+	padding: 0.375rem 0.625rem;
+	background: rgba(15, 23, 42, 0.92);
 	border: 1px solid rgba(51, 65, 85, 0.9);
 	backdrop-filter: blur(12px);
 	border-radius: 0.875rem;
 	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
 	flex-wrap: wrap;
 	justify-content: center;
+	max-width: 100%;
+	box-sizing: border-box;
 }
 
 .hfi-slider-group {
@@ -91,13 +93,15 @@
 .hfi-presets-strip {
 	display: flex;
 	align-items: center;
-	gap: 0.375rem;
-	overflow-x: auto;
+	justify-content: center;
+	flex-wrap: wrap;
+	gap: 0.25rem;
+	width: 100%;
 	max-width: 100%;
 }
 
 .hfi-preset-chip {
-	padding: 0.25rem 0.5rem;
+	padding: 0.2rem 0.45rem;
 	border-radius: 0.375rem;
 	font-size: 0.625rem;
 	font-weight: 700;
@@ -166,13 +170,18 @@
 }
 
 .hfi-fdi-quick-presets {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.25rem;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.375rem;
+	width: 100%;
 }
 
 .hfi-fdi-quick-chip {
-	padding: 0.2rem 0.4rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	padding: 0.35rem 0.25rem;
 	border-radius: 0.375rem;
 	font-size: 0.625rem;
 	font-weight: 600;
@@ -180,12 +189,20 @@
 	border: 1px solid var(--line, #334155);
 	color: var(--muted, #94a3b8);
 	cursor: pointer;
+	white-space: nowrap;
 	transition: all 0.15s ease;
 }
 
 .hfi-fdi-quick-chip:hover {
 	color: var(--ink, #ffffff);
 	border-color: var(--teal, #14b8a6);
+}
+
+.hfi-fdi-quick-chip.active {
+	background: rgba(20, 184, 166, 0.25);
+	border-color: var(--teal, #14b8a6);
+	color: var(--teal, #14b8a6);
+	font-weight: 700;
 }
 
 .hfi-fdi-grid-container {

@@ -1,16 +1,4 @@
-import {
-	Check,
-	Clock,
-	FileText,
-	Palette,
-	Pill,
-	ShieldCheck,
-	Sparkles,
-	Stethoscope,
-	Syringe,
-	Volume2,
-	VolumeX,
-} from "lucide-react";
+import { Check, Clock, FileText, Palette, Pill, ShieldCheck, Sparkles, Stethoscope, Syringe, Volume2, VolumeX } from "lucide-react";
 import React, { useState } from "react";
 import { showToast } from "../GlobalToast";
 import {
@@ -82,7 +70,7 @@ export function DoctorClinicalPreferencesSection({
 	};
 
 	return (
-		<section className="settings-section" data-testid="doctor-clinical-preferences-section">
+		<section className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5 shadow-xs" data-testid="doctor-clinical-preferences-section">
 			<div className="flex items-center justify-between gap-2 mb-4 pb-2 border-b border-[var(--line)]">
 				<div className="flex items-center gap-2">
 					<div className="w-8 h-8 rounded-lg bg-[var(--teal-soft)] flex items-center justify-center text-[var(--teal-dark)]">
@@ -118,8 +106,8 @@ export function DoctorClinicalPreferencesSection({
 						onClick={() => setClinicalSubTab("materials")}
 						className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border flex items-center gap-1.5 shrink-0 ${
 							clinicalSubTab === "materials"
-								? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs"
-								: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+								? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-2xs"
+								: "bg-[var(--paper-card)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Sparkles size={14} />
@@ -130,8 +118,8 @@ export function DoctorClinicalPreferencesSection({
 						onClick={() => setClinicalSubTab("anesthesia")}
 						className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border flex items-center gap-1.5 shrink-0 ${
 							clinicalSubTab === "anesthesia"
-								? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs"
-								: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+								? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-2xs"
+								: "bg-[var(--paper-card)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="doctor-clinical-subtab-anesthesia"
 					>
@@ -143,8 +131,8 @@ export function DoctorClinicalPreferencesSection({
 						onClick={() => setClinicalSubTab("templates_043")}
 						className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border flex items-center gap-1.5 shrink-0 ${
 							clinicalSubTab === "templates_043"
-								? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs"
-								: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+								? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-2xs"
+								: "bg-[var(--paper-card)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<FileText size={14} />
@@ -155,8 +143,8 @@ export function DoctorClinicalPreferencesSection({
 						onClick={() => setClinicalSubTab("prescriptions_107")}
 						className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border flex items-center gap-1.5 shrink-0 ${
 							clinicalSubTab === "prescriptions_107"
-								? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs"
-								: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+								? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-2xs"
+								: "bg-[var(--paper-card)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Pill size={14} />
@@ -167,8 +155,8 @@ export function DoctorClinicalPreferencesSection({
 						onClick={() => setClinicalSubTab("standards")}
 						className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border flex items-center gap-1.5 shrink-0 ${
 							clinicalSubTab === "standards"
-								? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs"
-								: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+								? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-2xs"
+								: "bg-[var(--paper-card)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="doctor-clinical-subtab-standards"
 					>
@@ -186,9 +174,9 @@ export function DoctorClinicalPreferencesSection({
 						data-testid="doctor-standards-signature-section"
 					>
 						{/* Autonomy Badge */}
-						<div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+						<div className="p-3.5 rounded-xl bg-[var(--paper-card)] border border-[var(--line)] shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
 							<div className="flex items-center gap-2.5">
-								<div className="w-8 h-8 rounded-lg bg-[var(--teal)] text-white flex items-center justify-center shrink-0">
+								<div className="w-8 h-8 rounded-lg bg-[var(--teal)] text-[var(--on-teal)] flex items-center justify-center shrink-0">
 									<ShieldCheck size={18} />
 								</div>
 								<div>
@@ -200,7 +188,7 @@ export function DoctorClinicalPreferencesSection({
 									</p>
 								</div>
 							</div>
-							<span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 shrink-0">
+							<span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[var(--teal-soft)] text-[var(--teal-dark)] border border-[var(--line)] shrink-0">
 								Защищено законом РФ
 							</span>
 						</div>
@@ -237,10 +225,10 @@ export function DoctorClinicalPreferencesSection({
 												updatePreferences({ digitalSignatureMode: item.mode });
 												showToast(`Режим подписи изменён: ${item.title}`, "success");
 											}}
-											className={`p-3 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+											className={`p-3.5 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
 												isCurrent
-													? "bg-[var(--paper)] border-[var(--teal)] ring-2 ring-[var(--teal)]/40 shadow-xs"
-													: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--teal)]/60"
+													? "bg-[var(--paper-card)] border-[var(--teal)] shadow-xs"
+													: "bg-[var(--paper-card)] border-[var(--line)] hover:border-[var(--line-strong)]"
 											}`}
 											data-testid={`signature-mode-${item.mode}`}
 										>
@@ -316,8 +304,8 @@ export function DoctorClinicalPreferencesSection({
 									onClick={() => handleDurationSelect(mins)}
 									className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer border ${
 										isSelected
-											? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-sm scale-102"
-											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
+											? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-xs"
+											: "bg-[var(--paper-card)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)]"
 									}`}
 								>
 									<span>{mins} мин</span>
@@ -340,7 +328,7 @@ export function DoctorClinicalPreferencesSection({
 							<span>Любимые медикаменты для рецептов</span>
 						</label>
 						<span className="text-[11px] font-medium text-[var(--muted)]">
-							Быстрая выписка рецептов и назначений в 1 клик
+							Быстрая выписка рецептов и назначений
 						</span>
 					</div>
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -351,10 +339,10 @@ export function DoctorClinicalPreferencesSection({
 									key={med.id}
 									type="button"
 									onClick={() => handleMedicationToggle(med.id)}
-									className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between gap-1 min-h-[44px] ${
+									className={`p-3 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between gap-1 min-h-[44px] ${
 										isFavorite
-											? "bg-[var(--paper)] border-[var(--teal)] shadow-2xs ring-1 ring-[var(--teal)]"
-											: "bg-[var(--paper)] border-[var(--line)] opacity-75 hover:opacity-100 hover:border-[var(--teal)]/60"
+											? "bg-[var(--paper-card)] border-[var(--teal)] shadow-xs"
+											: "bg-[var(--paper-card)] border-[var(--line)] hover:border-[var(--line-strong)]"
 									}`}
 								>
 									<div className="flex items-start justify-between gap-1 w-full">
@@ -362,7 +350,7 @@ export function DoctorClinicalPreferencesSection({
 											{med.tradeName}
 										</span>
 										{isFavorite ? (
-											<span className="w-4 h-4 rounded-full bg-[var(--teal)] text-white flex items-center justify-center shrink-0">
+											<span className="w-4 h-4 rounded-full bg-[var(--teal)] text-[var(--on-teal)] flex items-center justify-center shrink-0">
 												<Check size={10} className="stroke-[3]" />
 											</span>
 										) : (
@@ -372,7 +360,7 @@ export function DoctorClinicalPreferencesSection({
 									<span className="text-[10px] text-[var(--muted)] line-clamp-1">
 										{med.mnn}
 									</span>
-									<div className="flex items-center justify-between gap-1 mt-1 pt-1 border-t border-[var(--line)]/50">
+									<div className="flex items-center justify-between gap-1 mt-1 pt-1 border-t border-[var(--line-subtle)]">
 										<span className="text-[9px] font-mono font-bold text-[var(--teal)]">
 											{med.dosage}
 										</span>
@@ -413,10 +401,10 @@ export function DoctorClinicalPreferencesSection({
 												updatePreferences({ odontogramNotation: n.key });
 												showToast(`Нумерация: ${n.title}`, "info");
 											}}
-											className={`w-full p-2 rounded-lg text-left border text-xs transition-all flex items-center justify-between min-h-[44px] sm:min-h-[32px] cursor-pointer ${
+											className={`w-full p-2.5 rounded-xl text-left border text-xs transition-all flex items-center justify-between min-h-[44px] sm:min-h-[34px] cursor-pointer ${
 												isSelected
-													? "bg-[var(--paper)] border-[var(--teal)] font-bold text-[var(--ink)] shadow-2xs"
-													: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
+													? "bg-[var(--paper-card)] border-[var(--teal)] font-bold text-[var(--ink)] shadow-2xs"
+													: "bg-[var(--paper-card)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong)]"
 											}`}
 										>
 											<div className="flex items-center gap-2">
@@ -451,10 +439,10 @@ export function DoctorClinicalPreferencesSection({
 												updatePreferences({ defaultDentition: d.key as DefaultDentition });
 												showToast(`Прикус: ${d.title}`, "info");
 											}}
-											className={`w-full p-2 rounded-lg text-left border text-xs transition-all flex items-center justify-between min-h-[44px] sm:min-h-[32px] cursor-pointer ${
+											className={`w-full p-2.5 rounded-xl text-left border text-xs transition-all flex items-center justify-between min-h-[44px] sm:min-h-[34px] cursor-pointer ${
 												isSelected
-													? "bg-[var(--paper)] border-[var(--teal)] font-bold text-[var(--ink)] shadow-2xs"
-													: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
+													? "bg-[var(--paper-card)] border-[var(--teal)] font-bold text-[var(--ink)] shadow-2xs"
+													: "bg-[var(--paper-card)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong)]"
 											}`}
 										>
 											<span>{d.title}</span>
@@ -475,7 +463,7 @@ export function DoctorClinicalPreferencesSection({
 							<span>Быстрые шаблоны дневников приёма</span>
 						</label>
 						<span className="text-[11px] font-medium text-[var(--muted)]">
-							Отображаются в панели 1-клик в карточке визита
+							Отображаются в панели экспресс-шаблонов визита
 						</span>
 					</div>
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -486,17 +474,17 @@ export function DoctorClinicalPreferencesSection({
 									key={p.id}
 									type="button"
 									onClick={() => handleProtocolToggle(p.id)}
-									className={`p-2.5 rounded-lg text-left border text-xs transition-all flex items-center justify-between min-h-[44px] sm:min-h-[36px] cursor-pointer ${
+									className={`p-2.5 rounded-xl text-left border text-xs transition-all flex items-center justify-between min-h-[44px] sm:min-h-[36px] cursor-pointer ${
 										isChecked
-											? "bg-[var(--paper)] border-[var(--teal)] text-[var(--ink)] font-semibold shadow-2xs"
-											: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70 hover:opacity-100"
+											? "bg-[var(--paper-card)] border-[var(--teal)] text-[var(--ink)] font-semibold shadow-2xs"
+											: "bg-[var(--paper-card)] border-[var(--line)] text-[var(--muted)] hover:border-[var(--line-strong)]"
 									}`}
 								>
 									<div className="flex items-center gap-2 min-w-0">
 										<span
 											className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
 												isChecked
-													? "bg-[var(--teal)] border-[var(--teal)] text-white"
+													? "bg-[var(--teal)] border-[var(--teal)] text-[var(--on-teal)]"
 													: "border-[var(--line)]"
 											}`}
 										>
@@ -537,10 +525,10 @@ export function DoctorClinicalPreferencesSection({
 										setThemeMode(theme.mode);
 										showToast(`Тема «${theme.title}» активирована`, "success");
 									}}
-									className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between gap-1.5 min-h-[44px] ${
+									className={`p-3 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between gap-1.5 min-h-[44px] ${
 										isCurrent
-											? "bg-[var(--paper)] border-[var(--teal)] shadow-sm ring-2 ring-[var(--teal)] scale-102"
-											: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--teal)]/60"
+											? "bg-[var(--paper-card)] border-[var(--teal)] shadow-xs"
+											: "bg-[var(--paper-card)] border-[var(--line)] hover:border-[var(--line-strong)]"
 									}`}
 								>
 									<div className="flex items-center justify-between gap-1 w-full">
@@ -548,19 +536,19 @@ export function DoctorClinicalPreferencesSection({
 											{theme.title}
 										</span>
 										{isCurrent && (
-											<span className="w-4 h-4 rounded-full bg-[var(--teal)] text-white flex items-center justify-center shrink-0">
+											<span className="w-4 h-4 rounded-full bg-[var(--teal)] text-[var(--on-teal)] flex items-center justify-center shrink-0">
 												<Check size={10} className="stroke-[3]" />
 											</span>
 										)}
 									</div>
 									<div className="flex items-center gap-1 my-0.5">
 										<div
-											className="w-4 h-4 rounded-full border border-black/10 shrink-0"
+											className="w-4 h-4 rounded-full border border-[var(--line)] shrink-0"
 											style={{ backgroundColor: theme.previewColors[0] }}
 											title="Фон"
 										/>
 										<div
-											className="w-4 h-4 rounded-full border border-black/10 shrink-0"
+											className="w-4 h-4 rounded-full border border-[var(--line)] shrink-0"
 											style={{ backgroundColor: theme.previewColors[1] }}
 											title="Карточка"
 										/>
@@ -585,12 +573,14 @@ export function DoctorClinicalPreferencesSection({
 				{/* 8. Звуковые оповещения таймера и онлайн-записи */}
 				<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2.5">
 					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-2">
-							{soundNotificationsMuted ? (
-								<VolumeX size={16} className="text-slate-400" />
-							) : (
-								<Volume2 size={16} className="text-[var(--teal)]" />
-							)}
+						<div className="flex items-center gap-2.5">
+							<div className="w-7 h-7 rounded-lg bg-[var(--paper-card)] border border-[var(--line-subtle)] flex items-center justify-center shrink-0 text-[var(--teal)]">
+								{soundNotificationsMuted ? (
+									<VolumeX size={15} className="text-[var(--muted)]" />
+								) : (
+									<Volume2 size={15} className="text-[var(--teal)]" />
+								)}
+							</div>
 							<div>
 								<span className="text-xs font-bold text-[var(--ink)] block">
 									Звуковые оповещения врача
@@ -602,15 +592,15 @@ export function DoctorClinicalPreferencesSection({
 								</span>
 							</div>
 						</div>
-						<label className="relative inline-flex items-center cursor-pointer">
-							<input
-								type="checkbox"
-								checked={!soundNotificationsMuted}
-								onChange={(e) => onToggleSoundMuted?.(!e.target.checked)}
-								className="sr-only peer"
-							/>
-							<div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--teal)]" />
-						</label>
+						<button
+							type="button"
+							onClick={() => onToggleSoundMuted?.(!soundNotificationsMuted)}
+							className={`w-9 h-5 rounded-full transition-colors relative shrink-0 cursor-pointer ${!soundNotificationsMuted ? "bg-[var(--teal)]" : "bg-[var(--line-strong)]"}`}
+							aria-pressed={!soundNotificationsMuted}
+							aria-label="Переключить звуковые оповещения"
+						>
+							<div className={`w-4 h-4 rounded-full bg-[var(--switch-thumb)] shadow-xs transition-transform absolute top-0.5 left-0.5 ${!soundNotificationsMuted ? "translate-x-4" : "translate-x-0"}`} />
+						</button>
 					</div>
 
 					<div className="flex gap-2 flex-wrap pt-1">
@@ -618,7 +608,7 @@ export function DoctorClinicalPreferencesSection({
 							type="button"
 							onClick={onTestOnlineBookingSound}
 							disabled={soundNotificationsMuted}
-							className="secondary-button text-xs py-1.5 px-2.5 min-h-[44px] sm:min-h-[32px] inline-flex items-center gap-1.5 cursor-pointer"
+							className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-card)] hover:border-[var(--line-strong)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
 						>
 							<Volume2 size={13} />
 							<span>Проверить: Онлайн-запись (440→660 Гц)</span>
@@ -627,7 +617,7 @@ export function DoctorClinicalPreferencesSection({
 							type="button"
 							onClick={onTestSlotEndSound}
 							disabled={soundNotificationsMuted}
-							className="secondary-button text-xs py-1.5 px-2.5 min-h-[44px] sm:min-h-[32px] inline-flex items-center gap-1.5 cursor-pointer"
+							className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-card)] hover:border-[var(--line-strong)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
 						>
 							<Volume2 size={13} />
 							<span>Проверить: 5 мин до конца приёма (880→660 Гц)</span>

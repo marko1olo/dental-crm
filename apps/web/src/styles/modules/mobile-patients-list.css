@@ -287,9 +287,14 @@
 	color: var(--muted);
 	opacity: 0.85;
 	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	max-width: 220px;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	white-space: normal;
+	word-break: break-word;
+	max-width: 100%;
+	line-height: 1.3;
 }
 
 /* Row Actions (Call + Chevron) */

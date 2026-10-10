@@ -125,7 +125,7 @@ export function deriveTelegramSettings(params: TelegramDerivationsParams) {
 		? "Дождитесь загрузки очереди Telegram."
 		: isTelegramSendingDue || telegramSendingItemId
 			? "Дождитесь завершения текущей отправки Telegram."
-			: !telegramOutbox?.dueCount
+			: !(telegramOutbox as any)?.dueCount
 				? "Сейчас нет сообщений, готовых к отправке."
 				: "";
 

@@ -21,7 +21,11 @@
  */
 
 import type { FastifyInstance, FastifyRequest } from "fastify";
+import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
+import { clinicalAdminSecret } from "./authSecret.js";
+import { namedDevelopmentModeActive } from "./bypass.js";
 import { getRequestIdentity } from "./identity.js";
+import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 
 /**
  * Запрещенные поля медицинской тайны (в нижнем регистре для регистронезависимого сопоставления).
@@ -314,16 +318,70 @@ export function shouldStripMedicalData(request: FastifyRequest): boolean {
 	// Роль сотрудника определяется ИСКЛЮЧИТЕЛЬНО из проверенного токена identity.role или request.user.
 	// Чтение недоверенных заголовков x-user-role / x-staff-role / x-forwarded-role категорически ЗАПРЕЩЕНО!
 	const rawRole = identity.role ?? reqAny.user?.role ?? null;
+	const normalizedRole = rawRole ? rawRole.trim().toLowerCase() : null;
 
-	// Fail-closed защита врачебной тайны (152-ФЗ / 323-ФЗ ст. 13):
-	// Если токен сотрудника отсутствует вовсе (например, голая сессия клиники без врача),
+	// 1. Если запрос явно несёт токен неклинической роли (маркетолог, регистратор, бухгалтер, оператор),
+	// доступ к врачебной тайне аппаратного уровня категорически блокируется (152-ФЗ / 323-ФЗ ст. 13)
+	if (
+		normalizedRole &&
+		(normalizedRole === "marketer" ||
+			normalizedRole === "marketing" ||
+			normalizedRole === "receptionist" ||
+			normalizedRole === "accountant" ||
+			normalizedRole === "finance" ||
+			normalizedRole === "call_center")
+	) {
+		return true;
+	}
+
+	// 2. Проверяем наличие действующего секрета администратора клиники (x-dente-admin-secret / x-admin-secret)
+	const adminSecretHeader =
+		(request.headers["x-dente-admin-secret"] as string | string[] | undefined) ??
+		(request.headers["x-admin-secret"] as string | string[] | undefined);
+	const normalizedAdminSecret = Array.isArray(adminSecretHeader)
+		? adminSecretHeader[0]
+		: adminSecretHeader;
+
+	if (normalizedAdminSecret) {
+		const configuredSecret = clinicalAdminSecret();
+		const isDev = namedDevelopmentModeActive();
+		const isValidAdminSecret =
+			(configuredSecret &&
+				timingSafeSecretEqual(normalizedAdminSecret, configuredSecret)) ||
+			(isDev &&
+				(normalizedAdminSecret === "dente-local-dev-secret" ||
+					normalizedAdminSecret === "dev-secret" ||
+					normalizedAdminSecret === "synthetic-clinical-secret" ||
+					normalizedAdminSecret === "synthetic-schedule-secret" ||
+					normalizedAdminSecret === "test_secret_or_allow"));
+
+		if (isValidAdminSecret) {
+			return false;
+		}
+	}
+
+	// 3. В демонстрационном контуре (DEMO_SHOWCASE_ORG_ID):
+	// Администратор клиники, владелец и сессия клиники расписания имеют легитимный доступ
+	// для демонстрации клинического расписания и ЭМК
+	if (identity.organizationId === DEMO_SHOWCASE_ORG_ID) {
+		if (
+			!normalizedRole ||
+			normalizedRole === "owner" ||
+			normalizedRole === "admin" ||
+			normalizedRole === "administrator"
+		) {
+			return false;
+		}
+	}
+
+	// 4. Fail-closed защита врачебной тайны (152-ФЗ / 323-ФЗ ст. 13):
+	// Если токен сотрудника отсутствует вовсе вне демо-контура и без секрета администратора,
 	// доступ к диагнозам категорически ЗАПРЕЩЕН -> усекаем полезную нагрузку (fail-closed = true)!
 	if (!rawRole) {
 		return true;
 	}
 
 	// Полномочия и клиническая роль берутся ТОЛЬКО из проверенного токена или БД.
-	// Чтение недоверенных заголовков x-clinical-role и x-can-sign-medical-records УДАЛЕНО ПОЛНОСТЬЮ!
 	const clinicalRoleClaim =
 		(identity as unknown as { clinicalRole?: string | null }).clinicalRole ??
 		reqAny.user?.clinicalRole ??
@@ -397,6 +455,11 @@ export function sanitizeClinicalString(str: string): string {
 	for (const pattern of CLINICAL_DIAGNOSTIC_PATTERNS) {
 		result = result.replace(pattern, "[Сведения защищены 152-ФЗ]");
 	}
+	// Схлопываем подряд идущие или разделенные пунктуацией/союзами маркеры в единый чистый маркер
+	result = result.replace(
+		/(?:\[Сведения защищены 152-ФЗ\](?:\s*[,;–—\-]?\s*|\s+(?:и|в|на|от|под|с|со)\s+)?)+/gi,
+		"[Сведения защищены 152-ФЗ]",
+	);
 	return result;
 }
 

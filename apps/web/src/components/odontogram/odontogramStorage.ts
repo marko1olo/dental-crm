@@ -152,3 +152,77 @@ if (typeof window !== "undefined" && typeof window.addEventListener === "functio
 	window.addEventListener("pagehide", () => flushStoredTeethData());
 }
 
+/**
+ * Applies completed dental services to a specific tooth in persistent odontogram storage
+ * and dispatches 'dente-odontogram-update' for reactive UI synchronization.
+ */
+export function applyServicesToToothState(
+	patientId: string,
+	toothNumber: number,
+	services: Array<{ code?: string; code804n?: string; title?: string; name?: string }> = [],
+): ToothData[] | null {
+	if (!patientId || !Number.isFinite(toothNumber)) return null;
+	const existing = loadStoredTeethData(patientId) ?? [];
+	const updated: ToothData[] = [...existing];
+
+	let inferredState: ToothData["state"] = "Filled";
+	for (const srv of services) {
+		const code = (srv.code804n || srv.code || "").trim();
+		const title = (srv.title || srv.name || "").toLowerCase();
+		if (code.startsWith("A16.07.001") || title.includes("удален")) {
+			inferredState = "Missing";
+		} else if (
+			code.startsWith("A16.07.004") ||
+			title.includes("коронк") ||
+			title.includes("протез") ||
+			title.includes("вкладк")
+		) {
+			inferredState = "Crown";
+		} else if (
+			code.startsWith("A16.07.030") ||
+			code.startsWith("A16.07.008") ||
+			title.includes("пульпит") ||
+			title.includes("периодонтит") ||
+			title.includes("канал")
+		) {
+			inferredState = "Pulpitis";
+		} else {
+			inferredState = "Filled";
+		}
+	}
+
+	const idx = updated.findIndex((t) => t.toothNumber === toothNumber);
+	const nowIso = new Date().toISOString();
+	if (idx >= 0 && updated[idx]) {
+		updated[idx] = {
+			...updated[idx],
+			toothNumber,
+			state: inferredState,
+			updatedAt: nowIso,
+		};
+	} else {
+		updated.push({
+			toothNumber,
+			state: inferredState,
+			updatedAt: nowIso,
+		});
+	}
+
+	saveStoredTeethData(patientId, updated, true);
+
+	if (typeof window !== "undefined") {
+		window.dispatchEvent(
+			new CustomEvent("dente-odontogram-update", {
+				detail: {
+					patientId,
+					states: updated,
+					teeth: updated,
+				},
+			}),
+		);
+	}
+
+	return updated;
+}
+
+

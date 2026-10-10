@@ -22,6 +22,7 @@ import type {
 	ClinicSettings,
 	Dashboard,
 	DocumentChainSummary,
+	GeneratedDocument,
 	StaffRole,
 	UiPreferences,
 	UiPreferencesInput,

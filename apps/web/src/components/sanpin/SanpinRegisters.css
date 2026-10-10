@@ -501,12 +501,12 @@
 }
 
 .sanpin-btn-primary {
-	background: var(--brand-primary, #2563eb);
+	background: var(--teal, #0d9488);
 	color: #ffffff;
 }
 
 .sanpin-btn-primary:hover {
-	background: #1d4ed8;
+	background: #0f766e;
 }
 
 .sanpin-btn-secondary {

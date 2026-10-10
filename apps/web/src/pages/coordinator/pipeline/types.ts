@@ -5,6 +5,9 @@ export type PipelineStage =
 	| "in_progress_abandoned"
 	| "completed";
 
+export type PipelineStageFilter = "all" | PipelineStage;
+export type PipelineViewMode = "horizontal" | "kanban";
+
 export interface PipelineCard {
 	id: string;
 	name: string;
@@ -53,7 +56,7 @@ export const STAGE_CONFIG: Record<
 > = {
 	requires_budget: {
 		title: "Требуется смета",
-		shortTitle: "Требуется",
+		shortTitle: "Смета",
 		hint: "Черновики без расчета",
 		accentColor: "var(--amber, #f59e0b)",
 		badgeBg: "rgba(245, 158, 11, 0.12)",
@@ -71,16 +74,16 @@ export const STAGE_CONFIG: Record<
 	},
 	no_appointment: {
 		title: "Без записи",
-		shortTitle: "Без записи",
+		shortTitle: "Запись",
 		hint: "Одобрено, без записи",
-		accentColor: "var(--purple, #a855f7)",
-		badgeBg: "rgba(168, 85, 247, 0.12)",
-		badgeBorder: "rgba(168, 85, 247, 0.3)",
-		badgeText: "var(--purple, #a855f7)",
+		accentColor: "var(--teal, #0d9488)",
+		badgeBg: "rgba(13, 148, 136, 0.12)",
+		badgeBorder: "rgba(13, 148, 136, 0.3)",
+		badgeText: "var(--teal, #0d9488)",
 	},
 	in_progress_abandoned: {
 		title: "Брошенные (>30д)",
-		shortTitle: "Брошенные",
+		shortTitle: "Пауза",
 		hint: "Пауза >30 дней",
 		accentColor: "var(--rose, #f43f5e)",
 		badgeBg: "rgba(244, 63, 94, 0.12)",
@@ -89,7 +92,7 @@ export const STAGE_CONFIG: Record<
 	},
 	completed: {
 		title: "Завершенные",
-		shortTitle: "Завершенные",
+		shortTitle: "Готово",
 		hint: "План закрыт",
 		accentColor: "var(--emerald, #10b981)",
 		badgeBg: "rgba(16, 185, 129, 0.12)",

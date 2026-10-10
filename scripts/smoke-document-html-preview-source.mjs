@@ -24,6 +24,7 @@
 import { readFileSync } from "node:fs";
 import ts from "typescript";
 import { appLogicSourceFiles } from "./lib/app-logic-source.mjs";
+import { readApiServerSourceSync } from "./lib/api-server-source.mjs";
 
 const webSourceFiles = [
 	"apps/web/src/App.tsx",
@@ -34,7 +35,7 @@ const webSourceFiles = [
 const appSource = webSourceFiles
 	.map((file) => readFileSync(file, "utf8"))
 	.join("\n");
-const serverSource = readFileSync("apps/api/src/server.ts", "utf8");
+const serverSource = readApiServerSourceSync();
 
 function assert(condition, message) {
 	if (!condition) throw new Error(message);

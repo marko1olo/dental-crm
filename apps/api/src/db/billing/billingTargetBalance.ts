@@ -227,7 +227,7 @@ export async function validateVisitAndDocumentBalances(
 	}
 
 	return {
-		lockedVisit,
+		...(lockedVisit !== undefined ? { lockedVisit } : {}),
 		remainingVisitKopecks,
 	};
 }

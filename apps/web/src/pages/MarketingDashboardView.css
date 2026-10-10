@@ -10,7 +10,7 @@
 .marketing-dashboard-page {
 	display: flex;
 	flex-direction: column;
-	gap: 18px;
+	gap: 16px;
 	width: 100%;
 	padding: 20px;
 	background: var(--paper-strong);
@@ -18,6 +18,14 @@
 	border-radius: 16px;
 	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
 	box-sizing: border-box;
+}
+
+.marketing-dashboard-page--embedded {
+	padding: 0;
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
 }
 
 /* ── 1. QUIET HEADER ROW (HICK'S LAW: SINGLE ROW) ────────────────────────── */
@@ -28,7 +36,7 @@
 	justify-content: space-between;
 	flex-wrap: wrap;
 	gap: 12px;
-	padding-bottom: 14px;
+	padding-bottom: 12px;
 	border-bottom: 1px solid var(--line);
 }
 

@@ -11,8 +11,8 @@ import type {
 	CbctVoxelVolume,
 	MprPlane,
 	MprSliceExtractionResult,
-} from "../cbctMprMath";
-import type { CrossSectionSliceData } from "../cbctCrossSectionResliceMath";
+} from "../../cbctMprMath";
+import type { CrossSectionSliceData } from "../../cbctCrossSectionResliceMath";
 import type {
 	CbctWorkerInboundMessage,
 	CbctWorkerOutboundMessage,

@@ -256,7 +256,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		ensureRevisingIfLocked();
 		const drugName =
 			DENTAL_ANESTHETICS[drugId as AnestheticDrugId]?.tradeNamesRu[0] ?? "Анестетик";
-		const disposalNote = `Утилизация: списана пустая карпула ${drugName} (${count} шт., отходы Класса Б, списание по FEFO в 1 клик без комиссии).`;
+		const disposalNote = `Утилизация: списана пустая карпула ${drugName} (${count} шт., отходы Класса Б, списание со склада по FEFO).`;
 		applyAnesthesiaPreset(disposalNote);
 
 		// Автоматическое списание со склада по FEFO (Мандат 8e, 8v, 8n)
@@ -328,11 +328,11 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					<button
 						type="button"
 						data-testid="open-1click-templates-btn"
-						className="vde-043__btn vde-043__btn--primary text-xs font-bold px-3 py-1.5 min-h-[38px] flex items-center gap-1.5"
+						className="vde-043__btn vde-043__btn--primary"
 						onClick={() => setShowTemplatesModal(true)}
 						title="Открыть каталог клинических протоколов и шаблонов дневника"
 					>
-						<Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+						<Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
 						<span>Клинические протоколы</span>
 					</button>
 					<button
@@ -345,10 +345,10 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							}
 							handleApplyFullPhysiologicalNorm();
 						}}
-						className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] rounded-xl bg-[var(--ok-bg)] hover:opacity-90 text-[var(--ok-fg)] font-bold text-xs transition-all touch-manipulation cursor-pointer border border-[var(--ok-border,transparent)]"
+						className="vde-043__btn vde-043__btn--norm hidden sm:inline-flex"
 						title="Норма для осмотра: соматически здоров, зубные ряды санированы/интактны, онкоскрининг в норме"
 					>
-						<CheckCircle2 className="w-3.5 h-3.5 text-[var(--ok-fg)] shrink-0" />
+						<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span>Норма</span>
 					</button>
 					<button
@@ -428,20 +428,19 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				</div>
 			</div>
 
-			{/* ── 1-Click Fast Clinical Presets Accordion (Tier 2 Warm Context) ── */}
+			{/* ── Fast Clinical Presets Accordion (Tier 2 Warm Context) ── */}
 			{!fieldsDisabled && (
 				<details
-					open
-					className="group rounded-xl border border-[var(--glass-border)] bg-[var(--paper-soft)] p-3 text-xs mb-1"
+					className="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] px-3 py-2 text-xs"
 					data-testid="fast-clinical-presets-bar"
 				>
-					<summary className="cursor-pointer font-bold text-xs text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-between select-none list-none">
+					<summary className="cursor-pointer font-bold text-xs text-[var(--ink)] hover:text-[var(--teal)] flex items-center justify-between select-none list-none">
 						<span className="flex items-center gap-1.5">
 							<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" />
 							<span>Клинические протоколы и формулы (PSR, Дети, Кариес...)</span>
 						</span>
-						<span className="text-[10px] font-normal text-[var(--muted)] group-open:hidden">Развернуть &darr;</span>
-						<span className="text-[10px] font-normal text-[var(--muted)] hidden group-open:inline">Свернуть &uarr;</span>
+						<span className="text-[11px] font-medium text-[var(--muted)] group-open:hidden">Развернуть &darr;</span>
+						<span className="text-[11px] font-medium text-[var(--muted)] hidden group-open:inline">Свернуть &uarr;</span>
 					</summary>
 					<div className="pt-2.5 flex flex-col gap-2">
 						{activeTeeth && activeTeeth.length > 0 && (
@@ -449,32 +448,34 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								<button
 									type="button"
 									onClick={() => populateFromOdontogram(activeTeeth)}
-									className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--teal-surface)] text-[var(--teal-dark)] hover:bg-[var(--teal-soft)] border border-[var(--teal)] text-xs sm:text-sm font-bold transition-colors shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
+									className="vde-043__btn vde-043__btn--norm"
 									title="Сформировать структурированный дневник из отметок на зубной формуле"
 									data-testid="populate-diary-from-odontogram-btn"
 								>
-									<FileText size={15} className="shrink-0" />
-									<span className="min-w-0 break-words">Заполнить дневник из формулы</span>
+									<FileText size={14} className="shrink-0 text-[var(--teal)]" />
+									<span>Заполнить дневник из формулы</span>
 								</button>
 							</div>
 						)}
-						<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 scrollbar-none overscroll-x-contain min-w-0">
-							{/* Кнопка физиологической нормы */}
-							<button
-								type="button"
-								onClick={() => {
-									if (isLocked && !isRevising) {
-										beginRevise();
-									}
-									handleApplyFullPhysiologicalNorm();
-								}}
-								className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] h-[44px] sm:min-h-[38px] sm:h-[38px] rounded-xl bg-[var(--ok-bg)] hover:opacity-90 text-[var(--ok-fg)] font-bold text-xs transition-all touch-manipulation cursor-pointer min-w-0 shrink-0 border border-[var(--ok-border,transparent)]"
-								title="Заполнить дневник физиологической нормой (соматически здоров, патологий не выявлено)"
-								data-testid="diary-norm-043-btn"
-							>
-								<ShieldCheck className="w-3.5 h-3.5 text-[var(--ok-fg)] shrink-0" />
-								<span className="whitespace-nowrap">Норма</span>
-							</button>
+						<div className="flex flex-col gap-2 min-w-0">
+							<div className="dente-filter-chips">
+								{/* Кнопка физиологической нормы */}
+								<button
+									type="button"
+									onClick={() => {
+										if (isLocked && !isRevising) {
+											beginRevise();
+										}
+										handleApplyFullPhysiologicalNorm();
+									}}
+									className="emk-norm-button"
+									title="Заполнить дневник физиологической нормой (соматически здоров, патологий не выявлено)"
+									data-testid="diary-norm-043-btn"
+								>
+									<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+									<span>Норма</span>
+								</button>
+							</div>
 
 							<VisitDiaryPerioPediatricPresets
 								perioMenuRef={perioMenuRef}

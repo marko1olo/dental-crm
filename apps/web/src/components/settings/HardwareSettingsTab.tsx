@@ -24,7 +24,7 @@ import {
 	UNIVERSAL_SENSOR_CATALOG,
 	autoDetectConnectedSensor,
 	testSensorConnection,
-} from "../radiology/UniversalSensorGateway.js";
+} from "../radiology/sensorGateway";
 import {
 	Activity,
 	Barcode,
@@ -370,7 +370,7 @@ export function HardwareSettingsTab() {
 					{isPresetsPickerOpen && (
 						<div className="hw-presets-strip" data-testid="hardware-presets-picker">
 							<div className="hw-presets-strip-header">
-								<span>Каталог оборудования РФ / СНГ: выберите модель для мгновенной настройки в 1 клик</span>
+								<span>Каталог оборудования РФ / СНГ: выберите модель для быстрой настройки</span>
 								<button
 									type="button"
 									className="hw-btn-compact"

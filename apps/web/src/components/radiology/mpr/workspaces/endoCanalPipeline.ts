@@ -369,15 +369,15 @@ export function extractToothSubvolume(
 	if (!volume.data || volume.isDisposed) return null;
 
 	const [nx, ny, nz] = dims;
-	const sx = volume.spacingMm.x ?? 0.25;
-	const sy = volume.spacingMm.y ?? 0.25;
-	const sz = volume.spacingMm.z ?? 0.25;
-	const volW = volume.dimensions.width;
-	const volH = volume.dimensions.height;
-	const volD = volume.dimensions.depth;
-	const ox = volume.originMm.x ?? 0;
-	const oy = volume.originMm.y ?? 0;
-	const oz = volume.originMm.z ?? 0;
+	const sx = volume.spacingMm?.x ?? 0.25;
+	const sy = volume.spacingMm?.y ?? 0.25;
+	const sz = volume.spacingMm?.z ?? 0.25;
+	const volW = volume.dimensions?.width ?? 256;
+	const volH = volume.dimensions?.height ?? 256;
+	const volD = volume.dimensions?.depth ?? 256;
+	const ox = volume.originMm?.x ?? 0;
+	const oy = volume.originMm?.y ?? 0;
+	const oz = volume.originMm?.z ?? 0;
 
 	const [cx, cy, cz] = centroidWorld;
 	const halfX = (nx * spacingMm) / 2;
@@ -572,12 +572,12 @@ export async function runEndoAnalysisForToothAsync(
 			number,
 			number,
 		],
-		spacingMm: [subVol.spacingMm.x, subVol.spacingMm.y, subVol.spacingMm.z] as [
+		spacingMm: [subVol.spacingMm?.x ?? 0.25, subVol.spacingMm?.y ?? 0.25, subVol.spacingMm?.z ?? 0.25] as [
 			number,
 			number,
 			number,
 		],
-		originMm: [subVol.originMm.x, subVol.originMm.y, subVol.originMm.z] as [
+		originMm: [subVol.originMm?.x ?? 0, subVol.originMm?.y ?? 0, subVol.originMm?.z ?? 0] as [
 			number,
 			number,
 			number,

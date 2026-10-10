@@ -40,13 +40,13 @@ export interface CursorResolutionParams {
 	isDraggingArchAnchor: number | null;
 	hoveredArchAnchorIdx: number | null;
 	draggingMeasurementHandle: unknown;
-	hoveredMeasurementHandlePlane?: MprPlane;
-	isShiftRotatingPlane?: MprPlane;
-	activeRotationHandlePlane?: MprPlane;
-	hoveredHandlePlane?: MprPlane;
+	hoveredMeasurementHandlePlane?: string | MprPlane | CbctViewportType | null | undefined;
+	isShiftRotatingPlane?: string | MprPlane | CbctViewportType | null | undefined;
+	activeRotationHandlePlane?: string | MprPlane | CbctViewportType | null | undefined;
+	hoveredHandlePlane?: string | MprPlane | CbctViewportType | null | undefined;
 	isDraggingWL: unknown;
-	isPanningPlane?: CbctViewportType;
-	isDraggingZoomPlane?: CbctViewportType;
+	isPanningPlane?: string | MprPlane | CbctViewportType | null | undefined;
+	isDraggingZoomPlane?: string | MprPlane | CbctViewportType | null | undefined;
 	activeTool: CbctToolMode;
 }
 

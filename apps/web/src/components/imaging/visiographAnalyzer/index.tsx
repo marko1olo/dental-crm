@@ -198,7 +198,7 @@ export function VisiographAnalyzer(props: VisiographAnalyzerProps = {}) {
 								<VisiographCanvasViewport
 									isStudioMode={isStudioMode}
 									currentImageUrl={currentImageUrl}
-									effectivePatientId={effectivePatientId}
+									effectivePatientId={effectivePatientId ?? undefined}
 									currentScan={currentScan}
 									initialStudioTool={initialStudioTool}
 									quickPreset={quickPreset}
@@ -232,7 +232,7 @@ export function VisiographAnalyzer(props: VisiographAnalyzerProps = {}) {
 							}}
 							isApplyingToChart={isApplyingToChart}
 							onApplyFindingsToChart={handleApplyFindingsToChart}
-							aiReport={currentScan?.aiReport}
+							aiReport={currentScan?.aiReport ?? undefined}
 							capturedAt={currentScan?.capturedAt}
 							onInsertReportToProtocol={handleInsertReportToProtocol}
 							currentScan={currentScan}
@@ -274,7 +274,7 @@ export function VisiographAnalyzer(props: VisiographAnalyzerProps = {}) {
 						}
 						patientName={patientFullName}
 						medicalCardNumber={effectivePatientId || undefined}
-						toothFdiCode={currentScan?.toothCode || toothCode || "16"}
+						toothFdiCode={currentScan?.toothCode || toothCode || undefined}
 						onInsertToProtocol={onInsertToProtocol}
 						onClose={() => setIsSensorViewerOpen(false)}
 					/>

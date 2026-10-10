@@ -93,10 +93,86 @@ body {
   background: rgba(15, 23, 42, 0.7); padding: 4px 8px; border-radius: 4px;
 }
 #file-input { display: none; }
+
+/* ─── ВЫНОСНОЕ ОКНО ДЛЯ 2-ГО МОНИТОРА (POPOUT HEADER) ─── */
+#popout-header {
+  position: absolute; top: 0; left: 0; right: 0; height: 46px; z-index: 30;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+#popout-header.hidden { display: none; }
+body.has-popout-header #top-controls,
+body.has-popout-header #materials { top: 58px; }
+.popout-left { display: flex; align-items: center; gap: 10px; overflow: hidden; }
+.popout-title { font-size: 13px; font-weight: 700; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.popout-badge {
+  font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 600;
+  background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3);
+  white-space: nowrap;
+}
+.popout-badge.tooth-badge {
+  background: rgba(13, 148, 136, 0.15); color: #2dd4bf; border-color: rgba(13, 148, 136, 0.3);
+}
+.ctrl-btn.danger {
+  background: rgba(225, 29, 72, 0.15); border-color: rgba(225, 29, 72, 0.4); color: #fb7185;
+}
+.ctrl-btn.danger:hover {
+  background: rgba(225, 29, 72, 0.3); color: #fff;
+}
+/* ─── СВЕТЛАЯ КЛИНИЧЕСКАЯ ТЕМА ─── */
+html[data-theme="light"] body {
+  background: #f1f5f9;
+}
+html[data-theme="light"] #popout-header {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+}
+html[data-theme="light"] .popout-title {
+  color: #0f172a;
+}
+html[data-theme="light"] .ctrl-btn,
+html[data-theme="light"] .mat-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #334155;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+html[data-theme="light"] .ctrl-btn:hover,
+html[data-theme="light"] .mat-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+html[data-theme="light"] .mat-btn.active {
+  background: #4f46e5;
+  border-color: #6366f1;
+  color: #ffffff;
+}
+html[data-theme="light"] #info {
+  background: rgba(255, 255, 255, 0.9);
+  color: #475569;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
 </style>
 </head>
 <body>
 <div id="container"></div>
+
+<!-- Автономная шапка для 2-го монитора -->
+<header id="popout-header" class="hidden">
+  <div class="popout-left">
+    <span style="font-size: 16px;">🦷</span>
+    <span id="popout-title" class="popout-title">3D Интраоральный скан челюсти</span>
+    <span id="popout-patient-badge" class="popout-badge" style="display: none;"></span>
+    <span id="popout-tooth-badge" class="popout-badge tooth-badge" style="display: none;"></span>
+  </div>
+  <div class="popout-right">
+    <button class="ctrl-btn danger" type="button" onclick="window.close()" title="Закрыть отдельное окно">✕ Закрыть окно</button>
+  </div>
+</header>
 
 <div id="top-controls">
   <button class="ctrl-btn" onclick="openFilePicker()">Открыть скан</button>
@@ -340,10 +416,48 @@ function handleFile(file) {
   window.loadModel(url, ext);
 }
 
+window.setTheme = function(mode) {
+  if (mode === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    if (scene) scene.background = new THREE.Color(0xf1f5f9);
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    if (scene) scene.background = new THREE.Color(0x090d16);
+  }
+};
+
 function checkUrlParams() {
   const params = new URLSearchParams(window.location.search);
+  const theme = params.get('theme');
+  if (theme === 'light') {
+    window.setTheme('light');
+  }
   const modelUrl = params.get('model');
   const ext = params.get('ext') || (modelUrl ? modelUrl.split('.').pop() : '');
+  const title = params.get('title');
+  const patient = params.get('patient') || params.get('patientName');
+  const tooth = params.get('tooth') || params.get('toothCode');
+  const isPopout = params.get('popout') === '1' || params.get('standalone') === 'true' || Boolean(title || patient || tooth);
+
+  if (isPopout) {
+    const popoutHeader = document.getElementById('popout-header');
+    if (popoutHeader) {
+      popoutHeader.classList.remove('hidden');
+      document.body.classList.add('has-popout-header');
+      if (title) document.getElementById('popout-title').textContent = title;
+      if (patient) {
+        const pBadge = document.getElementById('popout-patient-badge');
+        pBadge.textContent = 'Пациент: ' + patient;
+        pBadge.style.display = 'inline-block';
+      }
+      if (tooth) {
+        const tBadge = document.getElementById('popout-tooth-badge');
+        tBadge.textContent = 'Зуб № ' + tooth;
+        tBadge.style.display = 'inline-block';
+      }
+    }
+  }
+
   if (modelUrl) {
     window.loadModel(modelUrl, ext);
   }

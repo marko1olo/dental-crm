@@ -1,6 +1,6 @@
 import React from "react";
 import { AlertCircle, Check } from "lucide-react";
-import type { SomaticRiskProfile } from "../visit/anesthesiaCalculatorEngine";
+import type { SomaticRiskProfile } from "../../visit/anesthesiaCalculatorEngine";
 import {
 	PediatricSomaticAndLegalRep,
 	type LegalRepresentativeData,
@@ -94,17 +94,17 @@ export const PediatricTreatmentSteps: React.FC<
 						className="min-h-[32px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shrink-0 cursor-pointer transition active:scale-95"
 						data-testid="pediatric-btn-sign-consent-323fz"
 					>
-						1-клик: ИДС оформлено
+						ИДС оформлено
 					</button>
 				</div>
 			)}
 
 			{/* ═════════════════════════════════════════════════════════════════════ */}
-			{/* 6 КАНОНИЧЕСКИХ 1-КЛИК ПРОТОКОЛОВ (ФОРМА 043/у + НОМЕНКЛАТУРА 804н) */}
+			{/* 6 КАНОНИЧЕСКИХ КЛИНИЧЕСКИХ ПРОТОКОЛОВ (ФОРМА 043/у + НОМЕНКЛАТУРА 804н) */}
 			{/* ═════════════════════════════════════════════════════════════════════ */}
 			<div>
 				<div className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
-					1-Клик клинические протоколы у кресла:
+					Клинические протоколы у кресла:
 				</div>
 				<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
 					{PEDIATRIC_PROTOCOL_PRESETS.map((preset) => {

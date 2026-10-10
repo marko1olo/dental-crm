@@ -13,10 +13,14 @@ import {
 import {
 	defaultAppointmentStartLocal,
 } from "../utils/clinicProfileUtils";
-export {
+import {
 	addMinutesToClinicDateTimeLocal,
 	fromDateTimeLocalValue,
 } from "../utils/dateTimeUtils";
+export {
+	addMinutesToClinicDateTimeLocal,
+	fromDateTimeLocalValue,
+};
 import {
 	type UiPreferences,
 	type UiPreferencesInput,

@@ -149,7 +149,7 @@ describe("OPG -> Odontogram -> Treatment Plan (3 Tiers) -> Form 043/U Pipeline",
 			const stagesKopecksSum = sumKopecks(tier.stages.map((s) => s.totalKopecks));
 			assert.equal(stagesKopecksSum, tier.totalKopecks, "Stages sum must exactly match tier total");
 
-			// Verify staged 30/40/30 schedule sums to total kopecks
+			assert.ok(tier.stagedSchedule, "tier.stagedSchedule must exist");
 			const stagedSum = sumKopecks([
 				tier.stagedSchedule.stage1AdvanceTherapyKopecks,
 				tier.stagedSchedule.stage2SurgeryImplantKopecks,
@@ -167,11 +167,11 @@ describe("OPG -> Odontogram -> Treatment Plan (3 Tiers) -> Form 043/U Pipeline",
 
 		// Both are present in PLAN_SERVICE_RULES
 		assert.ok(PLAN_SERVICE_RULES.Retained, "PLAN_SERVICE_RULES must have Retained");
-		assert.ok(PLAN_SERVICE_RULES.Impacted, "PLAN_SERVICE_RULES must have Impacted");
+		assert.ok((PLAN_SERVICE_RULES as Record<string, unknown>).Impacted, "PLAN_SERVICE_RULES must have Impacted");
 
 		// Estimator rules for both
 		const rulesRetained = estimatorRulesForTooth("Retained", 48);
-		const rulesImpacted = estimatorRulesForTooth("Impacted", 48);
+		const rulesImpacted = estimatorRulesForTooth("Impacted" as any, 48);
 		assert.equal(rulesRetained.length, 1);
 		assert.equal(rulesImpacted.length, 1);
 		assert.equal(rulesRetained[0]?.key, "retained");

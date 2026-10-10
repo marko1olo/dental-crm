@@ -1,6 +1,7 @@
 import {
 	type FieldConflictDetail,
 	type MutationVector,
+	type SyncMutationEntityKind,
 	mergeFieldLevelCrdt,
 } from "@dental/shared";
 import { APPOINTMENT_STATUS_RANK } from "./constants.js";
@@ -19,10 +20,10 @@ export interface AppointmentStatusConflictResolution {
  * and LWW for cancellations.
  */
 export function resolveAppointmentStatusConflict(params: {
-	incomingStatus?: string;
-	existingStatus?: string;
+	incomingStatus?: string | undefined;
+	existingStatus?: string | undefined;
 	clientUpdatedAt: string;
-	serverUpdatedAt?: string | null;
+	serverUpdatedAt?: string | null | undefined;
 }): AppointmentStatusConflictResolution {
 	const { incomingStatus, existingStatus, clientUpdatedAt, serverUpdatedAt } = params;
 
@@ -169,7 +170,7 @@ export function parseTeethFromPayload(
  */
 export function resolveOdontogramToothConflict(params: {
 	toothItem: OdontogramParsedTooth;
-	serverTooth?: { state?: string | null; updatedAt?: Date | string | null } | null;
+	serverTooth?: { state?: string | null | undefined; updatedAt?: Date | string | null | undefined } | null | undefined;
 	incomingDate: Date;
 }): {
 	clientWins: boolean;
@@ -231,16 +232,16 @@ export function buildOdontogramVector(params: {
  * Dispatches standard field-level CRDT merge for entities.
  */
 export function performFieldLevelCrdtMerge(params: {
-	entityKind: string;
+	entityKind: SyncMutationEntityKind;
 	entityId: string;
 	serverEntity: Record<string, unknown> | null;
 	serverVector: MutationVector;
 	clientPatch: Record<string, unknown>;
-	clientVector?: MutationVector;
+	clientVector?: MutationVector | undefined;
 	clientUpdatedAt: string;
 	serverUpdatedAt: string | null;
 	clientId: string;
-	authorUserId?: string;
+	authorUserId?: string | undefined;
 }) {
 	return mergeFieldLevelCrdt(params);
 }

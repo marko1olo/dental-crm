@@ -166,11 +166,11 @@ export const PaymentPresetsAndDiscountsBar: React.FC<PaymentPresetsAndDiscountsB
 				</button>
 			</div>
 
-			{/* 1-Click Tender Presets Row */}
+			{/* Quick Tender Presets Row */}
 			<div className="pt-2 border-t border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-1.5 font-bold text-[var(--muted,#64748b)]">
 					<Zap size={14} className="text-amber-500 shrink-0" />
-					<span>1-клик оплата:</span>
+					<span>Быстрые сценарии оплаты:</span>
 				</div>
 			</div>
 			<div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap">
@@ -250,7 +250,7 @@ export const PaymentPresetsAndDiscountsBar: React.FC<PaymentPresetsAndDiscountsB
 							: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
 					}`}
 					data-testid="preset-three-way-split"
-					title="Комбинированная оплата в 1 клик: Нал + Карта + Аванс"
+					title="Комбинированная оплата: Нал + Карта + Аванс"
 				>
 					<Users
 						size={14}

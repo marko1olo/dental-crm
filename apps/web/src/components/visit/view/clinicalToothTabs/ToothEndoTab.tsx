@@ -69,7 +69,7 @@ export function ToothEndoTab({
 					onClick={() =>
 						handleSelectDiagnosis(
 							"treatment",
-							"депульпирование, хемомеханическая обработка каналов ProTaper Gold",
+							"депульпирование, хемомеханическая обработка каналов никель-титановыми инструментами",
 							"treatmentPlan",
 						)
 					}
@@ -86,14 +86,14 @@ export function ToothEndoTab({
 					onClick={() =>
 						handleSelectDiagnosis(
 							"treatment",
-							"временная обтурация каналов гидроокисью кальция (Calasept / Metapex)",
+							"временная обтурация каналов пастой гидроксида кальция",
 							"treatmentPlan",
 						)
 					}
 				>
 					<FileCheck2 className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 					<span className="_ccm-item-title">
-						Временная обтурация (Calasept / Metapex)
+						Временная обтурация (Гидроксид кальция)
 					</span>
 				</button>
 
@@ -103,14 +103,14 @@ export function ToothEndoTab({
 					onClick={() =>
 						handleSelectDiagnosis(
 							"done",
-							"постоянная обтурация каналов гуттаперчей методом латеральной компакции с силером AH Plus",
+							"постоянная обтурация каналов гуттаперчей с эпоксидным силером методом латеральной компакции",
 							"treatmentPlan",
 						)
 					}
 				>
 					<CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
 					<span className="_ccm-item-title">
-						Постоянная обтурация (Гуттаперча + AH Plus)
+						Постоянная обтурация (Гуттаперча + силер)
 					</span>
 				</button>
 

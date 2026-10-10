@@ -389,11 +389,10 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 								}}
 								disabled={isSubmitting || (strokes.length === 0 && currentPoints.length === 0)}
 							>
-								<Zap size={14} />
 								<span>
 									{activeMode === "packages"
-										? `Подтвердить векторный пакет (${packageDocsCount} док.) в 1 клик`
-										: "Подтвердить векторную подпись (1 клик)"}
+										? `Подтвердить электронный пакет (${packageDocsCount} док.)`
+										: "Подтвердить электронную подпись"}
 								</span>
 							</button>
 							<button
@@ -640,11 +639,10 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 							}}
 							disabled={isSubmitting}
 						>
-							<Zap size={14} />
 							<span>
 								{activeMode === "packages"
-									? `Подтвердить пакет (${packageDocsCount} док.) в 1 клик`
-									: "Подтвердить подписание на бумаге (1 клик)"}
+									? `Подтвердить подписание пакета (${packageDocsCount} док.)`
+									: "Подтвердить подписание на бумаге"}
 							</span>
 						</button>
 

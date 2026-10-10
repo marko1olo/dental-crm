@@ -56,7 +56,7 @@ export function ToothSurgeryTab({
 				>
 					<FileCheck2 className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 					<span className="_ccm-item-title font-semibold">
-						Наряд в ЗТЛ (CAD/CAM коронка ZrO2 / E.max)
+						Наряд в ЗТЛ (CAD/CAM коронка диоксид циркония / керамика)
 					</span>
 					<ChevronRight className="w-3.5 h-3.5 text-[var(--muted)] ml-auto" />
 				</button>
@@ -89,7 +89,7 @@ export function ToothSurgeryTab({
 					onClick={() => {
 						handleSelectDiagnosis(
 							"done",
-							"установлен керамический винир IPS e.max Press с адгезивной фиксацией",
+							"установлен керамический винир с адгезивной фиксацией",
 							"treatmentPlan",
 						);
 						closeClinicalModal();
@@ -97,7 +97,7 @@ export function ToothSurgeryTab({
 				>
 					<Sparkles className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 					<span className="_ccm-item-title">
-						Керамический винир E.max зафиксирован
+						Керамический винир зафиксирован
 					</span>
 				</button>
 			</div>

@@ -173,14 +173,14 @@ export const FranklBehaviorBadge: React.FC<FranklBehaviorBadgeProps> = ({
 					type="button"
 					onClick={() => {
 						onChange?.(4);
-						onQuickSelect?.(4, "1-клик: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания");
+						onQuickSelect?.(4, "Пресет: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания");
 					}}
 					className={`w-full min-h-[44px] px-3.5 sm:px-4 py-2 rounded-xl border flex items-center justify-between gap-2 font-bold text-xs sm:text-sm cursor-pointer transition-all active:scale-[0.99] select-none ${
 						rating === 4
 							? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-200 shadow-xs ring-2 ring-emerald-500/20"
 							: "bg-[var(--paper,#ffffff)] hover:bg-emerald-500/10 border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] hover:border-emerald-500/40"
 					}`}
-					title="1-клик: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания"
+					title="Пресет: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания"
 					data-testid="frankl-one-click-btn"
 				>
 					<span className="flex items-center gap-2 text-left min-w-0">

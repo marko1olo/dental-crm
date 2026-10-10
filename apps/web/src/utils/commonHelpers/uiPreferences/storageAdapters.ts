@@ -1,11 +1,11 @@
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import { countLabel } from "../../lib/russianPlural.js";
-import { normalizedLocalOrganizationId } from "../AuthOnboardingHelpers";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { countLabel } from "../../../lib/russianPlural.js";
+import { normalizedLocalOrganizationId } from "../../AuthOnboardingHelpers";
 import {
 	localConvenienceRetentionMs,
 	localSavedAtFresh,
 	organizationScopedLocalStorageKey,
-} from "../localStorageHelpers";
+} from "../../localStorageHelpers";
 import type { PersistenceHealth } from "./types";
 
 // In-Memory Fallback Cache to survive Safari Private Browsing and QuotaExceededError

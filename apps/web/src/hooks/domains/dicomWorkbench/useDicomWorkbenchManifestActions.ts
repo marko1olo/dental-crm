@@ -10,6 +10,7 @@ import type {
 	DicomWorkbenchBundle,
 } from "@dental/shared";
 import {
+	collectDicomWorkstationClientFacts,
 	operatorWorkflowFailureMessage,
 	removeLocalDicomWorkbenchDraft,
 	saveLocalDicomWorkbenchDraft,
@@ -192,12 +193,10 @@ export function useDicomWorkbenchManifestActions({
 		const controller = state.startLocalDicomOperation();
 		imagingStore.setIsDicomWorkbenchBuilding(true);
 		try {
-			const client = await fetchDicomWorkstationReadinessApi(
-				state.cbctWorkbenchSeries,
-				imagingStore.dicomWebCheck,
-				auth,
-				controller.signal,
-			).then((r) => r.client);
+			const client = await collectDicomWorkstationClientFacts();
+			await fetchDicomWorkstationReadinessApi(
+				state.cbctWorkbenchSeries, imagingStore.dicomWebCheck, auth, controller.signal,
+			);
 
 			const result = await fetchDicomViewerWorkbenchManifestApi(
 				{

@@ -271,7 +271,7 @@ export function PaymentDiscountsAndSplitSection({
 								className={`dente-filter-chip min-h-[44px] ${selectedDoctorDiscount === "warranty_100" ? "active" : ""}`}
 								onClick={() => onApplyDoctorDiscount("warranty_100")}
 								data-testid="btn-doctor-discount-warranty"
-								title="100% гарантийная переделка клинического этапа (к оплате 0 ₽, без блокировок)"
+								title="100% гарантийная переделка клинического этапа (к оплате 0 ₽)"
 							>
 								<span className="sm:hidden">100% Гарантия</span>
 								<span className="hidden sm:inline">100% Гарантия (Переделка)</span>

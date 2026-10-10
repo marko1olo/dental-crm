@@ -9,7 +9,7 @@
 
 import React from "react";
 import type { Dashboard, ResourceLoad } from "@dental/shared";
-import { Users, UserCheck, AlertCircle } from "lucide-react";
+import { Users, UserCheck, AlertCircle, CalendarRange } from "lucide-react";
 import { DentalChairUnit } from "../icons/DentalIcons";
 
 export interface ScheduleShiftWarning {
@@ -24,6 +24,8 @@ export interface ScheduleShiftAnalyticsProps {
 	readonly dashboard?: Dashboard | null | undefined;
 	readonly shiftWarnings?: readonly ScheduleShiftWarning[] | ScheduleShiftWarning[] | undefined;
 	readonly onOpenWarning?: ((warning: ScheduleShiftWarning) => void) | undefined;
+	readonly onOpenDoctorShiftDrawer?: (() => void) | undefined;
+	readonly onOpenChairDateRangeModal?: (() => void) | undefined;
 	readonly className?: string | undefined;
 }
 
@@ -31,6 +33,8 @@ export const ScheduleShiftAnalytics: React.FC<ScheduleShiftAnalyticsProps> = ({
 	dashboard,
 	shiftWarnings = [],
 	onOpenWarning,
+	onOpenDoctorShiftDrawer,
+	onOpenChairDateRangeModal,
 	className = "",
 }) => {
 	const doctorLoads: ResourceLoad[] = dashboard?.shiftIntelligence?.doctorLoads ?? [];
@@ -54,12 +58,47 @@ export const ScheduleShiftAnalytics: React.FC<ScheduleShiftAnalyticsProps> = ({
 	const controlSummaryText = firstWarning?.title ?? "Нет предупреждений";
 
 	return (
-		<div
-			className={className ? `schedule-command-grid min-w-0 ${className}`.trim() : "schedule-command-grid"}
-			data-testid="schedule-shift-analytics"
-			role="region"
-			aria-label="Аналитика загрузки смены"
-		>
+		<div className="flex flex-col gap-2 min-w-0" data-testid="schedule-shift-analytics-wrapper">
+			<div className="flex items-center justify-between flex-wrap gap-2 px-1">
+				<div className="flex items-center gap-2">
+					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+						Смена: Показатели дня
+					</span>
+				</div>
+				<div className="flex items-center gap-2">
+					{onOpenDoctorShiftDrawer && (
+						<button
+							type="button"
+							onClick={onOpenDoctorShiftDrawer}
+							className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+							data-testid="shift-analytics-doctor-drawer-btn"
+							title="Назначить смену врача"
+						>
+							<Users size={13} className="text-[var(--teal)]" />
+							<span>График смен</span>
+						</button>
+					)}
+					{onOpenChairDateRangeModal && (
+						<button
+							type="button"
+							onClick={onOpenChairDateRangeModal}
+							className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+							data-testid="shift-analytics-chair-range-btn"
+							title="Назначить график кресел на период"
+						>
+							<CalendarRange size={13} className="text-[var(--teal)]" />
+							<span>Период кресел</span>
+						</button>
+					)}
+				</div>
+			</div>
+
+			<div
+				className={className ? `schedule-command-grid min-w-0 ${className}`.trim() : "schedule-command-grid"}
+				data-testid="schedule-shift-analytics"
+				role="region"
+				aria-label="Аналитика загрузки смены"
+			>
 			<article className="min-w-0 flex flex-col justify-between" data-testid="analytics-card-doctors">
 				<div className="flex items-center justify-between gap-1">
 					<span className="flex items-center gap-1.5 text-xs font-semibold text-[var(--muted)]">
@@ -149,6 +188,7 @@ export const ScheduleShiftAnalytics: React.FC<ScheduleShiftAnalyticsProps> = ({
 					{controlSummaryText}
 				</p>
 			</article>
+		</div>
 		</div>
 	);
 };

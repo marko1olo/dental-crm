@@ -48,7 +48,7 @@ export interface VisitHeaderMonolithProps {
 	isQueueLobbyDropdownOpen: boolean;
 	setIsQueueLobbyDropdownOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	queueLobbyDropdownRef: React.RefObject<HTMLDivElement | null>;
-	flushPendingVisitSaves?: () => Promise<void>;
+	flushPendingVisitSaves?: (() => Promise<void>) | undefined;
 	handleFinishVisitAction: () => void;
 	isHeaderMoreMenuOpen: boolean;
 	setIsHeaderMoreMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -59,9 +59,9 @@ export interface VisitHeaderMonolithProps {
 	setIsDoctorShiftModalOpen: (v: boolean) => void;
 	setIsPriceValidatorModalOpen: (v: boolean) => void;
 	setIsStagePaymentModalOpen: (v: boolean) => void;
-	handlePrintCompletedActFast?: () => void;
-	handlePrintEstimateFast?: () => void;
-	onOpenLabOrderModal?: () => void;
+	handlePrintCompletedActFast?: (() => void) | undefined;
+	handlePrintEstimateFast?: (() => void) | undefined;
+	onOpenLabOrderModal?: (() => void) | undefined;
 }
 
 /**
@@ -99,15 +99,15 @@ export interface VisitTimerAndStatusControlsProps {
 export interface VisitActionButtonsToolbarProps {
 	handleApplySomaticNormQuick: () => void;
 	handlePrintForm043uFast: () => void;
-	handlePrintCompletedActFast?: () => void;
-	handlePrintEstimateFast?: () => void;
-	onOpenLabOrderModal?: () => void;
+	handlePrintCompletedActFast?: (() => void) | undefined;
+	handlePrintEstimateFast?: (() => void) | undefined;
+	onOpenLabOrderModal?: (() => void) | undefined;
 	setIsEmergencyModalOpen: (v: boolean) => void;
 	shiftDayQueue: ShiftDayQueue;
 	isQueueLobbyDropdownOpen: boolean;
 	setIsQueueLobbyDropdownOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	queueLobbyDropdownRef: React.RefObject<HTMLDivElement | null>;
-	flushPendingVisitSaves?: () => Promise<void>;
+	flushPendingVisitSaves?: (() => Promise<void>) | undefined;
 	handleFinishVisitAction: () => void;
 	isHeaderMoreMenuOpen: boolean;
 	setIsHeaderMoreMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;

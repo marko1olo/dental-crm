@@ -239,6 +239,8 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
     color: #0f172a;
     border-bottom: 0.5pt solid #e2e8f0;
     padding-bottom: 1px;
+    page-break-after: avoid;
+    break-after: avoid;
   }
   p, li { margin: 2px 0; text-align: justify; }
   .services-table {
@@ -246,6 +248,13 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
     border-collapse: collapse;
     font-size: 8pt;
     margin: 4px 0 6px 0;
+  }
+  .services-table thead {
+    display: table-header-group;
+  }
+  .services-table tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
   .services-table th, .services-table td {
     border: 0.5pt solid #94a3b8;
@@ -262,6 +271,8 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
     padding: 4px 6px;
     margin: 5px 0;
     font-size: 8pt;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
   .requisites-grid {
     display: table;
@@ -270,6 +281,8 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
     border-top: 1.5pt solid #0f172a;
     padding-top: 6px;
     font-size: 7.5pt;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
   .req-col {
     display: table-cell;

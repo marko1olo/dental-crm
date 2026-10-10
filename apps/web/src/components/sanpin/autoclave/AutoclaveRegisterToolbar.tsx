@@ -26,7 +26,7 @@ export interface AutoclaveRegisterToolbarProps {
 	readonly onOpenEquipmentModal: () => void;
 	readonly onPrintBatchPouches: (log: SterilizationLogRecord, count?: number) => void;
 	readonly onQuickShiftBatch: () => void;
-	readonly onOpenNewCycleModal?: () => void;
+	readonly onOpenNewCycleModal?: (() => void) | undefined;
 	readonly onGenerateMonthlyForm257: () => void;
 	readonly onOpenJournal257Modal: () => void;
 	readonly onOpenMobileSheet: () => void;
@@ -67,13 +67,13 @@ export function AutoclaveRegisterToolbar({
 	}, [isDesktopMoreMenuOpen]);
 
 	return (
-		<div className="sanpin-table-toolbar min-w-0 flex items-center justify-between gap-2 p-2 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] border-b border-[var(--line,#e2e8f0)] dark:border-[#334155]">
+		<div className="sanpin-table-toolbar min-w-0 max-w-full flex items-center justify-between gap-2 p-2 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] border-b border-[var(--line,#e2e8f0)] dark:border-[#334155]">
 			{/* Search Field (Shared) */}
-			<div className="dente-search-wrap flex-1 min-w-[140px] max-w-full sm:max-w-xs">
+			<div className="dente-search-wrap flex-1 min-w-[120px] max-w-[240px]">
 				<Search size={14} className="dente-search-icon" />
 				<input
 					type="text"
-					placeholder="Поиск по аппарату, лотку, штрихкоду..."
+					placeholder="Поиск по аппарату, штрихкоду..."
 					value={searchQuery}
 					onChange={(e) => setSearchQuery(e.target.value)}
 					className="dente-search-input !h-8"
@@ -99,7 +99,7 @@ export function AutoclaveRegisterToolbar({
 					className="sanpin-select shrink-0 whitespace-nowrap text-xs rounded-lg px-2"
 					style={{ minHeight: "32px", height: "32px" }}
 				>
-					<option value="all">Все циклы (100% норма)</option>
+					<option value="all">Все циклы (Норма)</option>
 					<option value="passed">Стерильно (Норма)</option>
 				</select>
 
@@ -111,18 +111,18 @@ export function AutoclaveRegisterToolbar({
 					style={{
 						minHeight: "32px",
 						height: "32px",
-						padding: "0.25rem 0.65rem",
-						fontSize: "0.8125rem",
+						padding: "0.2rem 0.55rem",
+						fontSize: "0.75rem",
 						fontWeight: 600,
 						display: "inline-flex",
 						alignItems: "center",
-						gap: "0.35rem",
+						gap: "0.3rem",
 						borderRadius: "8px",
 					}}
 					data-testid="autoclave-equipment-btn"
 					title="Управление парком автоклавов и стерилизаторов клиники"
 				>
-					<ShieldCheck size={14} color="#2563eb" className="shrink-0" />
+					<ShieldCheck size={13} color="var(--teal, #0d9488)" className="shrink-0" />
 					<span className="shrink-0 whitespace-nowrap">
 						Оборудование ({clinicDevices.length})
 					</span>
@@ -142,12 +142,12 @@ export function AutoclaveRegisterToolbar({
 					style={{
 						minHeight: "32px",
 						height: "32px",
-						padding: "0.25rem 0.65rem",
-						fontSize: "0.8125rem",
+						padding: "0.2rem 0.55rem",
+						fontSize: "0.75rem",
 						fontWeight: 700,
 						display: "inline-flex",
 						alignItems: "center",
-						gap: "0.35rem",
+						gap: "0.3rem",
 						borderRadius: "8px",
 						color: "var(--teal, #0d9488)",
 						borderColor: "var(--teal, #0d9488)",
@@ -156,8 +156,8 @@ export function AutoclaveRegisterToolbar({
 					title="Печать пачки из 10 наклеек крафт-пакетов (срок 30 дней)"
 					data-testid="autoclave-quick-batch-labels-btn"
 				>
-					<Printer size={14} className="shrink-0" />
-					<span className="shrink-0 whitespace-nowrap">Печать наклеек (10 шт.)</span>
+					<Printer size={13} className="shrink-0" />
+					<span className="shrink-0 whitespace-nowrap">Наклейки (10 шт.)</span>
 				</button>
 
 				{/* Action: + Зафиксировать цикл стерилизации (134°C, 2.1 бар) */}
@@ -169,12 +169,12 @@ export function AutoclaveRegisterToolbar({
 					style={{
 						minHeight: "32px",
 						height: "32px",
-						padding: "0.25rem 0.75rem",
-						fontSize: "0.8125rem",
+						padding: "0.2rem 0.65rem",
+						fontSize: "0.75rem",
 						fontWeight: 700,
 						display: "inline-flex",
 						alignItems: "center",
-						gap: "0.35rem",
+						gap: "0.3rem",
 						borderRadius: "8px",
 						background: "var(--teal, #0d9488)",
 						color: "#ffffff",
@@ -185,7 +185,7 @@ export function AutoclaveRegisterToolbar({
 					data-testid="sanpin-autoclave-new-cycle-btn"
 					title="Цикл стерилизации завершён: зафиксировать параметры 134°C / 2.1 бар в журнале"
 				>
-					<Sparkles size={14} className="shrink-0" />
+					<Sparkles size={13} className="shrink-0" />
 					<span className="shrink-0 whitespace-nowrap">
 						{isLoggingBatch ? "Фиксация..." : "Цикл завершён (134°C)"}
 					</span>

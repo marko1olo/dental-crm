@@ -91,9 +91,7 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 	return (
 		<>
 			{/* Acquiring & Fiscalization Emergency Fault-Tolerance Banner (Mandates 8e, 8n) */}
-			{(!kktHardwareStatus.online ||
-				!kktHardwareStatus.paperOk ||
-				interruptedPaymentState?.isInterrupted) && (
+			{Boolean(interruptedPaymentState?.isInterrupted) && (
 				<div
 					className="p-3.5 rounded-xl bg-amber-500/15 dark:bg-amber-950/50 border border-amber-500/40 space-y-2.5"
 					data-testid="banner-fast-checkout-interrupted"
@@ -202,7 +200,7 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 						className="px-3.5 py-1.5 min-h-[44px] rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm flex items-center gap-1 cursor-pointer transition-all shadow-xs"
 						title="Сбросить суммы и применить выбранный способ на весь чек"
 					>
-						<Zap size={13} /> Исправить в 1 клик ({activeMethodTitle})
+						<Zap size={13} /> Применить на весь чек ({activeMethodTitle})
 					</button>
 				</div>
 			)}
@@ -344,7 +342,17 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 							type="button"
 							onClick={onClose}
 							data-testid="btn-close-fast-checkout"
-							className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer transition-colors select-none text-center"
+							style={{
+								height: 38,
+								padding: "0 16px",
+								borderRadius: 10,
+								border: "1px solid var(--line)",
+								background: "var(--paper)",
+								color: "var(--ink)",
+								fontWeight: 600,
+								fontSize: 13,
+								cursor: "pointer",
+							}}
 						>
 							Закрыть
 						</button>
@@ -356,7 +364,20 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 						data-testid="btn-autonomous-terminal-checkout"
 						onClick={() => void onAcceptPaymentOfflineFallback()}
 						disabled={isPrinting}
-						className="min-h-[48px] sm:min-h-[40px] sm:h-10 px-3 sm:px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98 transition-all truncate"
+						style={{
+							height: 38,
+							padding: "0 14px",
+							borderRadius: 10,
+							border: "1px solid rgba(245,158,11,0.4)",
+							background: "rgba(245,158,11,0.1)",
+							color: "#b45309",
+							fontWeight: 700,
+							fontSize: 12,
+							display: "inline-flex",
+							alignItems: "center",
+							gap: 6,
+							cursor: "pointer",
+						}}
 						title="Принять оплату через автономный терминал: чек ставится в очередь отложенной печати"
 					>
 						<WifiOff size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
@@ -380,16 +401,31 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 						onClick={() => void onExecutePayment()}
 						disabled={isPrinting}
 						title={isPrinting ? "Идет печать кассового чека..." : undefined}
-						className="w-full sm:w-auto min-h-[52px] sm:min-h-[40px] sm:h-10 px-4 sm:px-6 rounded-2xl sm:rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 disabled:opacity-50 text-white text-base sm:text-sm font-extrabold flex items-center justify-center gap-2 shadow-xl hover:shadow-2xl transition-all cursor-pointer select-none active:scale-98 min-w-0"
+						style={{
+							height: 38,
+							padding: "0 22px",
+							borderRadius: 10,
+							background: "var(--teal, #0d9488)",
+							color: "#ffffff",
+							border: "1px solid var(--teal, #0d9488)",
+							fontWeight: 700,
+							fontSize: 13,
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: 6,
+							cursor: isPrinting ? "not-allowed" : "pointer",
+							boxShadow: "0 2px 8px rgba(13,148,136,0.25)",
+						}}
 					>
 						{isPrinting ? (
 							<>
-								<Printer className="w-5 h-5 animate-spin shrink-0" />
+								<Printer className="w-4 h-4 animate-spin shrink-0" />
 								<span className="truncate">Печать кассового чека...</span>
 							</>
 						) : (
 							<>
-								<Check className="w-5 h-5 shrink-0" />
+								<Check className="w-4 h-4 shrink-0" />
 								<span className="truncate">
 									{targetBillKop === 0
 										? "Закрыть визит: 100% Гарантия / Скидка (0 ₽)"

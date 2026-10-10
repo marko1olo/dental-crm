@@ -8,12 +8,16 @@ import {
 	denteTelegramWebhookResponseSchema,
 	type DenteTelegramBotSettings,
 	type DenteTelegramUpdateKind,
+	type DenteTelegramWebhookEvent,
+	type DenteTelegramWebhookResponse,
 } from "@dental/shared";
+import type { TenantBotRuntime } from "../../services/telegram/TelegramMultiTenantSupervisor.js";
 import {
 	type DomainState,
 	extractDenteTelegramLinkCode,
 	consumeDenteTelegramLinkCode,
 	recordDenteTelegramWebhookEvent,
+	updateTelegramDialogSession,
 } from "../../services/telegram/telegramLegacyMemoryStore.js";
 import { answerTelegramCallbackQuery } from "../../telegramTransport.js";
 import { TelegramInteractiveTriageService } from "../../services/telegram/TelegramInteractiveTriageService.js";
@@ -40,11 +44,23 @@ import {
 	configuredSendTimeoutMs,
 } from "./telegramRuntimeContext.js";
 
+export interface WebhookAppointmentCallbackResult {
+	handled: boolean;
+	ok: boolean;
+	action: string;
+	appointmentId: string | null;
+	taskId: string | null;
+	eventId: string | null;
+	suggestedReply: string | null;
+	callbackAnswerText: string;
+	warnings: string[];
+}
+
 export async function dispatchWebhookMessage(params: {
 	request: FastifyRequest;
 	runtime: TelegramRuntimeContext;
 	settings: DenteTelegramBotSettings;
-	update: UnknownRecord;
+	update: UnknownRecord & { update_id: number };
 	updateKind: DenteTelegramUpdateKind;
 	messageText: string | null;
 	command: string | null;
@@ -54,9 +70,9 @@ export async function dispatchWebhookMessage(params: {
 	chatId: string | null;
 	chatType: string | null;
 	suppressPublicChatReply: boolean;
-	supervisorBot: any;
-	appointmentCallbackResult: any;
-	webhookClaim: any;
+	supervisorBot: TenantBotRuntime | null | undefined;
+	appointmentCallbackResult: WebhookAppointmentCallbackResult;
+	webhookClaim: { claimed: boolean; event: DenteTelegramWebhookEvent };
 	domainState: DomainState;
 	expectedSecret: string | null;
 	sendWebhookSuggestedReply: (
@@ -64,7 +80,7 @@ export async function dispatchWebhookMessage(params: {
 		suggestedReply: TelegramWebhookReplyPackage,
 		botToken: string | null,
 	) => Promise<string | null>;
-}): Promise<any> {
+}): Promise<DenteTelegramWebhookResponse> {
 	const {
 		request,
 		runtime,

@@ -328,9 +328,7 @@ export function ScheduleChairHeader({
       <div className="flex items-center justify-between gap-1 w-full min-w-0">
         {doctors && doctors.length > 0 && (
           <div
-            className={`flex flex-row items-center gap-1 shrink-0 cursor-pointer h-7 min-h-[28px] ${
-              hasDoctor ? "" : "hidden"
-            }`}
+            className="sr-only"
             data-testid={`chair-doctor-badge-${chair.id}`}
             onClick={() => openAssignModal(chair.id)}
             title={
@@ -360,7 +358,7 @@ export function ScheduleChairHeader({
                 }
               }}
               onClick={(e) => e.stopPropagation()}
-              className="text-[10px] font-bold border border-[var(--line)] rounded-lg px-2 py-0.5 bg-[var(--paper)] text-[var(--ink)] cursor-pointer h-7 min-w-[95px] sm:min-w-[130px] max-w-[130px] sm:max-w-[180px] shrink-0"
+              className="sr-only"
               title="Закрепление врача за креслом (выбор из списка)"
               data-testid={`chair-duty-doctor-select-${chair.id}`}
               aria-label={`Дежурный врач для ${chair.name}`}
@@ -413,7 +411,7 @@ export function ScheduleChairHeader({
                 }
               }}
               onClick={(e) => e.stopPropagation()}
-              className="text-[10px] font-bold border border-[var(--line)] rounded-lg px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] cursor-pointer h-7 min-w-[76px] sm:min-w-[84px] sm:w-[86px] shrink-0"
+              className="sr-only"
               title="Смена врача на кресле (Утро 09:00-15:00 / Вечер 15:00-21:00 / Полный день 08:00-20:00 / 09:00-21:00)"
               data-testid={`chair-shift-select-${chair.id}`}
               aria-label={`Смена для ${chair.name}`}
@@ -430,7 +428,7 @@ export function ScheduleChairHeader({
         )}
 
         {/* Doctor-to-Chair Shift Binding Badge / Button */}
-        <div className={`flex items-center gap-1 shrink-0 ${hasDoctor ? "ml-auto" : "w-full"}`}>
+        <div className="flex items-center gap-1 shrink-0 w-full">
           <ScheduleChairDutySection
             chair={chair}
             assignment={assignment}

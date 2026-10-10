@@ -9,8 +9,8 @@ import {
 export interface ToothSurfacesSelectorProps {
 	code: string;
 	selectedSurfaces: string[];
-	onSelectSurface?: (surface: string) => void;
-	onClearSurfaces?: () => void;
+	onSelectSurface?: ((surface: string) => void) | undefined;
+	onClearSurfaces?: (() => void) | undefined;
 }
 
 export function ToothSurfacesSelector({

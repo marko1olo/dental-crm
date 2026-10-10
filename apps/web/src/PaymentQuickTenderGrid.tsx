@@ -41,7 +41,7 @@ export function PaymentQuickTenderGrid({
 				data-testid="payment-amount-section"
 			>
 				<div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-					<div className="w-full sm:w-44 shrink-0">
+					<div className="w-full sm:w-56 shrink-0">
 						<label
 							htmlFor="payment-amount-input"
 							className="block text-[10px] sm:text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5"
@@ -62,17 +62,17 @@ export function PaymentQuickTenderGrid({
 								value={amount}
 								onChange={(event) => onAmountChange(event.target.value)}
 								placeholder="0 ₽"
-								className="w-full h-8 sm:h-8 px-2.5 text-sm font-bold font-mono rounded-lg border border-[var(--line-strong)] bg-[var(--paper)] dark:bg-[var(--paper-strong)] dark:border-[var(--glass-border)] text-[var(--ink)] focus:border-[var(--teal)] focus:ring-2 focus:ring-[var(--teal)]/20 outline-none transition-all"
+								className="w-full h-11 sm:h-12 px-3 text-xl sm:text-2xl font-black font-mono rounded-xl border border-[var(--line-strong)] bg-[var(--paper)] dark:bg-[var(--paper-strong)] dark:border-[var(--glass-border)] text-[var(--ink)] focus:border-[var(--teal)] focus:ring-2 focus:ring-[var(--teal)]/20 outline-none transition-all"
 							/>
 							{amount ? (
 								<button
 									type="button"
 									style={{ minHeight: "44px" }}
 									onClick={() => onAmountChange("")}
-									className="absolute right-2 top-1/2 -translate-y-1/2 min-h-[44px] sm:min-h-0 text-xs text-[var(--muted)] hover:text-[var(--ink)] px-1 cursor-pointer flex items-center justify-center"
+									className="absolute right-2 top-1/2 -translate-y-1/2 min-h-[44px] text-xs text-[var(--muted)] hover:text-[var(--ink)] px-2 cursor-pointer flex items-center justify-center"
 									title="Очистить сумму"
 								>
-									<X size={12} aria-hidden="true" />
+									<X size={16} aria-hidden="true" />
 								</button>
 							) : null}
 						</div>
@@ -174,11 +174,11 @@ export function PaymentQuickTenderGrid({
 									<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider block">
 										Быстрый выбор купюры:
 									</span>
-									<div className="flex flex-wrap gap-2">
+									<div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5 sm:gap-2">
 										<button
 											type="button"
 											style={{ minHeight: "44px" }}
-											className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--teal-dark)] text-white hover:brightness-110 active:brightness-95 shadow-sm cursor-pointer"
+											className="col-span-2 sm:col-span-1 min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--teal-dark)] text-white hover:brightness-110 active:brightness-95 shadow-sm cursor-pointer flex items-center justify-center text-center"
 											onClick={() => onReceivedCashChange(String(requiredRub))}
 										>
 											Без сдачи ({requiredRub.toLocaleString("ru-RU")} ₽)
@@ -191,7 +191,7 @@ export function PaymentQuickTenderGrid({
 													key={preset}
 													type="button"
 													style={{ minHeight: "44px" }}
-													className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-mono font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)] shadow-sm cursor-pointer"
+													className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-mono font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)] shadow-sm cursor-pointer flex items-center justify-center text-center"
 													onClick={() => onReceivedCashChange(String(preset))}
 												>
 													{preset.toLocaleString("ru-RU")} ₽

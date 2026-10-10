@@ -427,7 +427,7 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 						<div className="flex items-center justify-between">
 							<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink,#c9d1d9)] flex items-center gap-1.5">
 								<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#14b8a6)]" />
-								Клинические пресеты (1 клик)
+								Клинические пресеты
 							</span>
 						</div>
 

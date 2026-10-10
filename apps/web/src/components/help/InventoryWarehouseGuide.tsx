@@ -80,10 +80,10 @@ export const InventoryWarehouseGuide: React.FC<ClinicalGuideProps> = ({ onLaunch
 						type="button"
 						onClick={handleDeductCarpool}
 						className="px-2.5 py-1 rounded bg-teal-500/15 border border-teal-500/30 text-teal-700 dark:text-teal-300 font-bold text-[10px] flex items-center gap-1 hover:bg-teal-500/25 transition-all cursor-pointer"
-						title="Списать 1 карпулу анестетика в 1 клик без комиссии"
+						title="Списать 1 карпулу анестетика без комиссии"
 					>
 						<Minus size={11} />
-						<span>Списать 1 карпулу (1 клик)</span>
+						<span>Списать 1 карпулу</span>
 					</button>
 				</div>
 

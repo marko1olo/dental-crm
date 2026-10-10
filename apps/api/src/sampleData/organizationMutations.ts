@@ -15,7 +15,6 @@ import type {
 	ClinicSettings,
 	CreateChairInput,
 	SovereignScalePresetId,
-	UpdateChairProfileInput,
 	UpdateChairWorkingHoursInput,
 	UpdateClinicProfileInput,
 } from "@dental/shared";
@@ -30,9 +29,10 @@ import {
 	assertChairWorkingHoursCoverExistingAppointments,
 	assertClinicScheduleDefaultsCoverExistingAppointments,
 } from "./scheduleValidation.js";
+import { assertValidScheduleTimeZone } from "./scheduleTimeHelpers.js";
 import { buildClinicSettings } from "./dashboard.js";
 import { persistMutableState } from "./stateNotifier.js";
-import { nullableTrimmed } from "./types.js";
+import { nullableTrimmed, type UpdateChairProfileInput } from "./types.js";
 
 export function updateClinicMode(mode: ClinicMode): ClinicSettings {
 	const currentModePreset =

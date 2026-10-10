@@ -83,7 +83,7 @@ const DEFAULT_PREFLIGHT_ITEMS: PreFlightCheckItem[] = [
 	{
 		id: "kraft_packet_datamatrix",
 		title: "Стерильный инструментальный лоток СанПиН 3.3686-21",
-		subtitle: "Инструменты накрыты в стерильном лотке, индикатор стерильности 4–5 класса в норме (подготовлен по стандарту в 1 клик)",
+		subtitle: "Инструменты накрыты в стерильном лотке, индикатор стерильности 4–5 класса в норме (подготовлен по стандарту)",
 		sanpinNormRu: "СанПиН 3.3686-21 п. 3602",
 		estimatedSeconds: 10,
 		category: "sterilization",

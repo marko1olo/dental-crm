@@ -131,7 +131,7 @@ export async function registerOutboxAndCampaignRoutes(app: FastifyInstance) {
 			recipientAddress: input.recipientAddress ?? null,
 			subject,
 			body,
-			dedupeKey: input.dedupeKey,
+			...(input.dedupeKey ? { dedupeKey: input.dedupeKey } : {}),
 			scheduledAt: input.scheduledAt ?? null,
 		});
 

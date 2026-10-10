@@ -80,7 +80,7 @@ export function calculateSafetyStock(
  * @param safetyStock - Static or calculated safety buffer.
  * @returns Reorder point in integer units.
  */
-export function calculateReorderPoint(
+export function calculateStockReorderPoint(
 	dailyConsumption: number,
 	leadTimeDays: number,
 	safetyStock: number = 0,

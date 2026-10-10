@@ -691,7 +691,7 @@ export function DmsRegistryExportModal({
 							type="button"
 							className="dms-btn dms-btn-secondary"
 							onClick={handleExportCsv}
-							title="1-клик экспорт в CSV/Excel (с кодировкой UTF-8 BOM и точкой с запятой)"
+							title="Быстрый экспорт в CSV/Excel (с кодировкой UTF-8 BOM и точкой с запятой)"
 						>
 							<Download size={18} />
 							Экспорт реестра XLS/CSV

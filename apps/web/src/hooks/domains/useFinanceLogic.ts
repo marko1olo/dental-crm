@@ -193,6 +193,7 @@ export function useFinanceLogic({
 					method: "POST",
 					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
+						"Idempotency-Key": familyClientMutationId,
 					}),
 					body: JSON.stringify({
 						organizationId:
@@ -216,6 +217,7 @@ export function useFinanceLogic({
 					method: "POST",
 					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
+						"Idempotency-Key": paymentClientMutationId,
 					}),
 					body: JSON.stringify({
 						patientId: documentPatient.id,

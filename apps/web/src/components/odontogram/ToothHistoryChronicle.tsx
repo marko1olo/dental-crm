@@ -7,6 +7,7 @@ import {
 	panelStateText,
 } from "../../lib/panelStateText";
 import { listPatientMedia, type StoredMediaItem } from "../../services/media/offlineMediaVault";
+import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
@@ -113,13 +114,15 @@ export function ToothHistoryChronicle({
 				setEvents(parsed);
 				setLoad({ phase: "ready" });
 			} catch (e) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(e as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
+				if (!isDemoShowcaseMode() && !isDemoPatientId(patientId)) {
+					showToast(
+						actionFailureToast(
+							"Ошибка выполнения операции",
+							(e as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
+				}
 				logger.error("[tooth history] запрос не выполнен", e);
 				// До сервера не дошли: кода ответа нет, и придумывать его нельзя.
 				if (active) setLoad({ phase: "failed", status });

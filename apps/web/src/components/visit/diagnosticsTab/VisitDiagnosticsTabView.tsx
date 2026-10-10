@@ -33,6 +33,7 @@ export function VisitDiagnosticsTabView(props?: VisitDiagnosticsTabProps) {
 				onOpenDirectRvg={() => state.setIsDirectRvgModalOpen(true)}
 				onOpenHotFolder={() => state.setIsHotFolderModalOpen(true)}
 				onOpenDicomViewer={() => state.setIsDicomViewerModalOpen(true)}
+				onOpenComparison={() => state.setIsComparisonModalOpen(true)}
 			/>
 
 			<DiagnosticsStudyList
@@ -143,6 +144,8 @@ export function VisitDiagnosticsTabView(props?: VisitDiagnosticsTabProps) {
 				selected3DScanTitle={state.selected3DScanTitle}
 				isHotFolderModalOpen={state.isHotFolderModalOpen}
 				setIsHotFolderModalOpen={state.setIsHotFolderModalOpen}
+				isComparisonModalOpen={state.isComparisonModalOpen}
+				setIsComparisonModalOpen={state.setIsComparisonModalOpen}
 			/>
 		</div>
 	);

@@ -142,7 +142,7 @@ export function useVolume3DContext({
 					depth: false,
 					preserveDrawingBuffer: true,
 					powerPreference: "high-performance",
-					desynchronized: true,
+					desynchronized: false,
 				});
 				if (gl) {
 					glStateRef.current = initWebGl2VolumeRaymarching(gl);

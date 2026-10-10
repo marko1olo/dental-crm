@@ -8,15 +8,11 @@
 
 import {
 	canonicalizeCdaXml as sharedCanonicalizeCdaXml,
-	escapeXml,
-	formatHl7DateTime,
-	formatRuDate,
+	escapeXml, formatHl7DateTime, formatRuDate,
 } from "@dental/shared/cda";
 import {
-	DENTAL_TOOTH_STATUS_DICTIONARY,
-	EGISZ_DENTAL_SEMD_TYPES,
-	EGISZ_REMD_OIDS,
-	type EgiszDentalSemdCode,
+	DENTAL_TOOTH_STATUS_DICTIONARY, EGISZ_DENTAL_SEMD_TYPES,
+	EGISZ_REMD_OIDS, type EgiszDentalSemdCode,
 } from "./remdXml/egiszRemdPresets";
 
 export { escapeXml, formatHl7DateTime, formatRuDate };
@@ -207,16 +203,20 @@ export function generateEgiszDentalCdaXml(payload: EgiszDentalCdaPayload): strin
 			templateRoot: "1.2.643.5.1.13.13.11.1527",
 		};
 
+	const patient = payload.patient || ({} as Partial<EgiszDentalCdaPayload["patient"]>);
+	const clinic = payload.clinic || ({} as Partial<EgiszDentalCdaPayload["clinic"]>);
+	const doctor = payload.doctor || ({} as Partial<EgiszDentalCdaPayload["doctor"]>);
+
 	const now = new Date();
 	const effectiveTime = formatHl7DateTime(now, true);
 	const encounterDate = payload.encounterDate ? new Date(payload.encounterDate) : now;
 	const visitTime = formatHl7DateTime(encounterDate, true);
-	const birthTime = formatHl7DateTime(payload.patient.patientBirthDate, false);
+	const birthTime = formatHl7DateTime(patient.patientBirthDate, false);
 
 	const genderCode =
-		payload.patient.patientGender === "male"
+		patient.patientGender === "male"
 			? "1"
-			: payload.patient.patientGender === "female"
+			: patient.patientGender === "female"
 			? "2"
 			: "0";
 	const genderLabel =
@@ -227,22 +227,22 @@ export function generateEgiszDentalCdaXml(payload: EgiszDentalCdaPayload): strin
 		(typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
 			? crypto.randomUUID()
 			: `00000000-0000-4000-8000-${String(Date.now() % 1000000000000).padStart(12, "0")}`);
-	const clinicOid = payload.clinic.clinicOid || EGISZ_REMD_OIDS.FRMO_MO_ROOT;
+	const clinicOid = clinic.clinicOid || EGISZ_REMD_OIDS.FRMO_MO_ROOT;
 
-	const patParts = (payload.patient.patientFullName || "Пациент").trim().split(/\s+/);
+	const patParts = (patient.patientFullName || "Пациент").trim().split(/\s+/);
 	const patFamily = patParts[0] || "Пациент";
 	const patGiven = patParts[1] || "";
 	const patPatronymic = patParts[2] || "";
 
-	const docParts = (payload.doctor.doctorFullName || "Врач").trim().split(/\s+/);
+	const docParts = (doctor.doctorFullName || "Врач").trim().split(/\s+/);
 	const docFamily = docParts[0] || "Врач";
 	const docGiven = docParts[1] || "";
 	const docPatronymic = docParts[2] || "";
 
-	const cleanDocSnils = (payload.doctor.doctorSnils || "").replace(/\D/g, "");
-	const cleanPatSnils = (payload.patient.patientSnils || "").replace(/\D/g, "");
+	const cleanDocSnils = (doctor.doctorSnils || "").replace(/\D/g, "");
+	const cleanPatSnils = (patient.patientSnils || "").replace(/\D/g, "");
 
-	const chiefParts = (payload.clinic.chiefDoctorName || "").trim().split(/\s+/);
+	const chiefParts = (clinic.chiefDoctorName || "").trim().split(/\s+/);
 	const chiefFamily = chiefParts[0] || docFamily;
 	const chiefGiven = chiefParts[1] || docGiven;
 	const chiefPatronymic = chiefParts[2] || docPatronymic;
@@ -415,18 +415,18 @@ ${proceduresEntriesXml}
 	<effectiveTime value="${effectiveTime}"/>
 	<confidentialityCode code="N" codeSystem="${EGISZ_REMD_OIDS.CONFIDENTIALITY}" codeSystemName="HL7 Confidentiality" displayName="Обычный доступ"/>
 	<languageCode code="ru-RU"/>
-	<setId root="${escapeXml(clinicOid)}.100.1.2" extension="${escapeXml(payload.patient.cardNumber || docUuid)}"/>
+	<setId root="${escapeXml(clinicOid)}.100.1.2" extension="${escapeXml(patient.cardNumber || docUuid)}"/>
 	<versionNumber value="${payload.documentVersion || 1}"/>
 
 	<recordTarget>
 		<patientRole>
 			${cleanPatSnils ? `<id root="${EGISZ_REMD_OIDS.SNILS}" extension="${escapeXml(cleanPatSnils)}"/>` : ""}
-			<id root="${escapeXml(clinicOid)}.100.2" extension="${escapeXml(payload.patient.cardNumber || payload.patient.patientId || docUuid)}"/>
-			${payload.patient.patientPolisOms ? `<id root="${EGISZ_REMD_OIDS.POLIS_OMS}" extension="${escapeXml(payload.patient.patientPolisOms.replace(/\s+/g, ""))}"/>` : ""}
-			${payload.patient.patientPassport ? `<id root="${EGISZ_REMD_OIDS.IDENTITY_DOC_TYPE}" extension="${escapeXml(payload.patient.patientPassport)}"/>` : ""}
-			<addr><streetAddressLine>${escapeXml(payload.patient.patientAddress || payload.clinic.clinicAddress)}</streetAddressLine></addr>
-			${payload.patient.patientPhone ? `<telecom value="tel:${escapeXml(payload.patient.patientPhone.replace(/[^\d+]/g, ""))}" use="MC"/>` : ""}
-			${payload.patient.patientEmail ? `<telecom value="mailto:${escapeXml(payload.patient.patientEmail)}" use="WP"/>` : ""}
+			<id root="${escapeXml(clinicOid)}.100.2" extension="${escapeXml(patient.cardNumber || patient.patientId || docUuid)}"/>
+			${patient.patientPolisOms ? `<id root="${EGISZ_REMD_OIDS.POLIS_OMS}" extension="${escapeXml(patient.patientPolisOms.replace(/\s+/g, ""))}"/>` : ""}
+			${patient.patientPassport ? `<id root="${EGISZ_REMD_OIDS.IDENTITY_DOC_TYPE}" extension="${escapeXml(patient.patientPassport)}"/>` : ""}
+			<addr><streetAddressLine>${escapeXml(patient.patientAddress || clinic.clinicAddress || "")}</streetAddressLine></addr>
+			${patient.patientPhone ? `<telecom value="tel:${escapeXml(patient.patientPhone.replace(/[^\d+]/g, ""))}" use="MC"/>` : ""}
+			${patient.patientEmail ? `<telecom value="mailto:${escapeXml(patient.patientEmail)}" use="WP"/>` : ""}
 			<patient>
 				<name>
 					<family>${escapeXml(patFamily)}</family>
@@ -443,8 +443,8 @@ ${proceduresEntriesXml}
 		<time value="${visitTime}"/>
 		<assignedAuthor>
 			<id root="${EGISZ_REMD_OIDS.SNILS}" extension="${escapeXml(cleanDocSnils)}"/>
-			<code code="${escapeXml(payload.doctor.doctorPositionCode || "71")}" codeSystem="${EGISZ_REMD_OIDS.MEDICAL_POSITIONS}" codeSystemName="Должности медработников" displayName="${escapeXml(payload.doctor.doctorPosition || "Врач-стоматолог-терапевт")}"/>
-			${payload.doctor.doctorPhone ? `<telecom value="tel:${escapeXml(payload.doctor.doctorPhone.replace(/[^\d+]/g, ""))}" use="WP"/>` : ""}
+			<code code="${escapeXml(doctor.doctorPositionCode || "71")}" codeSystem="${EGISZ_REMD_OIDS.MEDICAL_POSITIONS}" codeSystemName="Должности медработников" displayName="${escapeXml(doctor.doctorPosition || "Врач-стоматолог-терапевт")}"/>
+			${doctor.doctorPhone ? `<telecom value="tel:${escapeXml(doctor.doctorPhone.replace(/[^\d+]/g, ""))}" use="WP"/>` : ""}
 			<assignedPerson>
 				<name>
 					<family>${escapeXml(docFamily)}</family>
@@ -454,11 +454,11 @@ ${proceduresEntriesXml}
 			</assignedPerson>
 			<representedOrganization>
 				<id root="${EGISZ_REMD_OIDS.FRMO_MO_ROOT}" extension="${escapeXml(clinicOid)}"/>
-				<id root="${EGISZ_REMD_OIDS.OGRN_LEGAL}" extension="${escapeXml((payload.clinic.clinicOgrn || "").replace(/\D/g, ""))}"/>
-				<id root="${EGISZ_REMD_OIDS.INN}" extension="${escapeXml((payload.clinic.clinicInn || "").replace(/\D/g, ""))}"/>
-				<name>${escapeXml(payload.clinic.clinicName)}</name>
-				<telecom value="tel:${escapeXml((payload.clinic.clinicPhone || "").replace(/[^\d+]/g, ""))}" use="WP"/>
-				<addr><streetAddressLine>${escapeXml(payload.clinic.clinicAddress)}</streetAddressLine></addr>
+				<id root="${EGISZ_REMD_OIDS.OGRN_LEGAL}" extension="${escapeXml((clinic.clinicOgrn || "").replace(/\D/g, ""))}"/>
+				<id root="${EGISZ_REMD_OIDS.INN}" extension="${escapeXml((clinic.clinicInn || "").replace(/\D/g, ""))}"/>
+				<name>${escapeXml(clinic.clinicName || "")}</name>
+				<telecom value="tel:${escapeXml((clinic.clinicPhone || "").replace(/[^\d+]/g, ""))}" use="WP"/>
+				<addr><streetAddressLine>${escapeXml(clinic.clinicAddress || "")}</streetAddressLine></addr>
 			</representedOrganization>
 		</assignedAuthor>
 	</author>
@@ -467,10 +467,10 @@ ${proceduresEntriesXml}
 		<assignedCustodian>
 			<representedCustodianOrganization>
 				<id root="${EGISZ_REMD_OIDS.FRMO_MO_ROOT}" extension="${escapeXml(clinicOid)}"/>
-				<id root="${EGISZ_REMD_OIDS.OGRN_LEGAL}" extension="${escapeXml((payload.clinic.clinicOgrn || "").replace(/\D/g, ""))}"/>
-				<name>${escapeXml(payload.clinic.clinicName)}</name>
-				<telecom value="tel:${escapeXml((payload.clinic.clinicPhone || "").replace(/[^\d+]/g, ""))}" use="WP"/>
-				<addr><streetAddressLine>${escapeXml(payload.clinic.clinicAddress)}</streetAddressLine></addr>
+				<id root="${EGISZ_REMD_OIDS.OGRN_LEGAL}" extension="${escapeXml((clinic.clinicOgrn || "").replace(/\D/g, ""))}"/>
+				<name>${escapeXml(clinic.clinicName || "")}</name>
+				<telecom value="tel:${escapeXml((clinic.clinicPhone || "").replace(/[^\d+]/g, ""))}" use="WP"/>
+				<addr><streetAddressLine>${escapeXml(clinic.clinicAddress || "")}</streetAddressLine></addr>
 			</representedCustodianOrganization>
 		</assignedCustodian>
 	</custodian>
@@ -479,7 +479,7 @@ ${proceduresEntriesXml}
 		<time value="${effectiveTime}"/>
 		<signatureCode code="S"/>
 		<assignedEntity>
-			<id root="${EGISZ_REMD_OIDS.SNILS}" extension="${escapeXml((payload.clinic.chiefDoctorSnils || payload.doctor.doctorSnils || "").replace(/\D/g, ""))}"/>
+			<id root="${EGISZ_REMD_OIDS.SNILS}" extension="${escapeXml((clinic.chiefDoctorSnils || doctor.doctorSnils || "").replace(/\D/g, ""))}"/>
 			<code code="15" codeSystem="${EGISZ_REMD_OIDS.MEDICAL_POSITIONS}" displayName="Главный врач"/>
 			<assignedPerson>
 				<name>

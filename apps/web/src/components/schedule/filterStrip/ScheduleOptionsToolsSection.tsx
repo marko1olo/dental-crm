@@ -4,6 +4,7 @@ import {
 	BarChart3,
 	Bot,
 	Calendar,
+	CalendarRange,
 	Clipboard,
 	Clock,
 	LayoutGrid,
@@ -35,6 +36,8 @@ export interface ScheduleOptionsToolsSectionProps {
 	onToggleShiftAnalytics?: () => void;
 	showShiftAnalytics?: boolean;
 	onOpenShiftRoster?: () => void;
+	onOpenDoctorShiftDrawer?: () => void;
+	onOpenChairDateRangeModal?: () => void;
 	onOpenWaitlist?: () => void;
 	waitlistCount?: number;
 	onToggleConfirmations?: () => void;
@@ -60,6 +63,8 @@ export function ScheduleOptionsToolsSection({
 	onToggleShiftAnalytics,
 	showShiftAnalytics = false,
 	onOpenShiftRoster,
+	onOpenDoctorShiftDrawer,
+	onOpenChairDateRangeModal,
 	onOpenWaitlist,
 	waitlistCount = 0,
 	onToggleConfirmations,
@@ -254,7 +259,41 @@ export function ScheduleOptionsToolsSection({
 					role="menuitem"
 				>
 					<Users size={14} className="text-[var(--teal,var(--brand-primary))]" />
-					<span>График смен (ТК РФ)</span>
+					<span>Табель смен (ТК РФ)</span>
+				</button>
+			)}
+
+			{onOpenDoctorShiftDrawer && (
+				<button
+					type="button"
+					onClick={() => {
+						onOpenDoctorShiftDrawer();
+						setIsOptionsMenuOpen(false);
+					}}
+					className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+					role="menuitem"
+					data-testid="schedule-options-doctor-shift-btn"
+					title="Назначить смену врача"
+				>
+					<Clock size={14} className="text-[var(--teal,var(--brand-primary))]" />
+					<span>График смен</span>
+				</button>
+			)}
+
+			{onOpenChairDateRangeModal && (
+				<button
+					type="button"
+					onClick={() => {
+						onOpenChairDateRangeModal();
+						setIsOptionsMenuOpen(false);
+					}}
+					className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+					role="menuitem"
+					data-testid="schedule-options-chair-range-btn"
+					title="Назначить смену на период дат"
+				>
+					<CalendarRange size={14} className="text-[var(--teal,var(--brand-primary))]" />
+					<span>Период кресел</span>
 				</button>
 			)}
 

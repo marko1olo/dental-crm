@@ -340,8 +340,8 @@ export function renderActOfCompletedWorksHtml(payload: ActOfCompletedWorksPayloa
 
 		return `<tr>
       <td style="text-align:center;">${idx + 1}</td>
-      <td style="font-family:'Courier New', monospace; font-weight:bold; font-size:7.5pt;">${escapeHtml(item.code804n || "A16.07.002")}</td>
-      <td>${escapeHtml(item.serviceName)} ${item.toothNumber ? `(зуб ${escapeHtml(item.toothNumber)})` : ""}</td>
+      <td style="font-family:'Courier New', monospace; font-weight:bold; font-size:7.5pt;">${escapeHtml(item.code804n || "A16.07.002.001")}</td>
+      <td>${escapeHtml(item.serviceName)}${item.toothNumber ? ` (Зуб ${escapeHtml(item.toothNumber)})` : ""}</td>
       <td style="text-align:center;">${qty}</td>
       <td style="text-align:right;">${formatRublesWithKopecks(price)}</td>
       <td style="text-align:right; font-weight:bold;">${formatRublesWithKopecks(sum)}</td>

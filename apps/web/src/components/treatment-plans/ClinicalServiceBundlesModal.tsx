@@ -271,14 +271,14 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 									Клинические пакеты лечения («Все включено»)
 								</h2>
 								<span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[var(--teal)]/15 text-[var(--teal-dark)] dark:text-teal-300 border border-[var(--teal)]/30 shrink-0">
-									1 клик
+									Быстрый выбор
 								</span>
 								<span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] shrink-0">
 									Каталог клинических услуг
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted)] leading-normal break-words mt-0.5">
-								Быстрое добавление полного комплекса услуг в план лечения или счет пациента в 1 клик
+								Быстрое добавление полного комплекса услуг в план лечения или счет пациента
 							</p>
 						</div>
 					</div>

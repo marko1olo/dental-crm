@@ -2,7 +2,11 @@ import type {
 	DicomViewerWorkbenchManifestResponse,
 	DicomWorkstationReadinessResponse,
 } from "@dental/shared";
-import { CtPlanningToolsPanel } from "../../../ctPlanningTools";
+import { CtPlanningToolsPanel } from "../../../../ctPlanningTools";
+import {
+	mprLoadStrategyLabels as defaultMprLoadStrategyLabels,
+	mprResourceTierLabels as defaultMprResourceTierLabels,
+} from "../../../../imagingUiLabels";
 import { DicomDiagnosticsPanel } from "./DicomDiagnosticsPanel";
 import { DicomMprControlPanel } from "./DicomMprControlPanel";
 import { DicomMprHeader } from "./DicomMprHeader";
@@ -22,6 +26,8 @@ export function DicomMprWorkbenchPanel({
 }: DicomMprWorkbenchPanelProps) {
 	const {
 		cbctWorkbenchSeries,
+		mprLoadStrategyLabels = defaultMprLoadStrategyLabels,
+		mprResourceTierLabels = defaultMprResourceTierLabels,
 		mprClinicalNextStep,
 		mprClinicalChecklist,
 		mprOperatorSummaryCards,

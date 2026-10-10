@@ -90,6 +90,16 @@ export function planLineQuantity(item: unknown): number | null {
 	return parsed;
 }
 
+export function planLineDiscountRub(item: unknown): number | null {
+	const rawDiscount = (item as { discountRub?: unknown } | null)?.discountRub;
+	if (rawDiscount === null || rawDiscount === undefined || rawDiscount === "") {
+		return 0;
+	}
+	const parsed = parseRubAmount(rawDiscount);
+	if (parsed === null || parsed < 0) return null;
+	return parsed;
+}
+
 /**
  * Итог строки плана: цена × количество − скидка, не ниже нуля. Формула ровно та
  * же, что в смете (useAppLogic.tsx) и в ленте оплат (FinanceLedger.tsx).
@@ -104,11 +114,7 @@ export function planLineTotalRub(item: unknown): number | null {
 	if (unit === null) return null;
 	const quantity = planLineQuantity(item);
 	if (quantity === null) return null;
-	const rawDiscount = (item as { discountRub?: unknown } | null)?.discountRub;
-	const discount =
-		rawDiscount === null || rawDiscount === undefined || rawDiscount === ""
-			? 0
-			: parseRubAmount(rawDiscount);
+	const discount = planLineDiscountRub(item);
 	if (discount === null) return null;
 	return Math.max(0, roundToKopecks(unit * quantity - discount));
 }

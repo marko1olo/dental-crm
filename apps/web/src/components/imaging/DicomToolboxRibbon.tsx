@@ -465,7 +465,7 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 									? "border-emerald-500/50 bg-emerald-500/20 text-emerald-300"
 									: "border-emerald-500/40 bg-emerald-950/80 text-emerald-400 hover:bg-emerald-900/60"
 							}`}
-							title="1-клик действие: внести «Рентген-норма» в дневник приёма"
+							title="Внести заключение «Рентген-норма» в дневник приёма"
 						>
 							<Zap size={13} className="text-emerald-400" />
 							<span>{isNormaApplied ? "Норма внесена" : "Норма: патологии нет"}</span>

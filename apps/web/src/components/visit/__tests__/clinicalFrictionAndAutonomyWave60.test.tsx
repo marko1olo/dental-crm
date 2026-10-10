@@ -30,12 +30,18 @@ describe('Wave 60 / Feature 249: Clinical Autonomy & Friction Reduction', () => 
 	const visiographAnalyzerPath = path.resolve(__dirname, '../../imaging/VisiographAnalyzer.tsx');
 	const visitDiagnosticsTabPath = path.resolve(__dirname, '../VisitDiagnosticsTab.tsx');
 	const anesthesiaQuickBarPath = path.resolve(__dirname, '../../anesthesia/AnesthesiaQuickBar.tsx');
+	const anesthesiaQuickBarDir = path.resolve(__dirname, '../../anesthesia/anesthesiaQuickBar');
 
 	const clinicProfileUtilsCode = fs.readFileSync(clinicProfileUtilsPath, 'utf8');
 	const usePatientLogicCode = fs.readFileSync(usePatientLogicPath, 'utf8');
 	const visiographAnalyzerCode = fs.readFileSync(visiographAnalyzerPath, 'utf8');
 	const visitDiagnosticsTabCode = fs.readFileSync(visitDiagnosticsTabPath, 'utf8');
-	const anesthesiaQuickBarCode = fs.readFileSync(anesthesiaQuickBarPath, 'utf8');
+	const anesthesiaQuickBarCode = [
+		fs.readFileSync(anesthesiaQuickBarPath, 'utf8'),
+		...(fs.existsSync(anesthesiaQuickBarDir)
+			? fs.readdirSync(anesthesiaQuickBarDir).map((f) => fs.readFileSync(path.join(anesthesiaQuickBarDir, f), 'utf8'))
+			: []),
+	].join('\n');
 
 	describe('1. Patient Administrative Profile Unblocking (Mandates 8e, 8n)', () => {
 		const baseDraft = patientAdministrativeProfileDraftFromPatient(null);

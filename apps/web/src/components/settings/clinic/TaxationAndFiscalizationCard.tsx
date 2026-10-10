@@ -125,7 +125,7 @@ export const TaxationAndFiscalizationCard: React.FC = () => {
 					<Scale size={14} className="text-amber-600" />
 					Система налогообложения клиники:
 				</label>
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 					{TAXATION_SYSTEMS.map((system) => {
 						const isSelected = activeTaxation === system.id;
 						return (
@@ -133,26 +133,30 @@ export const TaxationAndFiscalizationCard: React.FC = () => {
 								key={system.id}
 								type="button"
 								onClick={() => setActiveTaxation(system.id)}
-								className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+								className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[96px] shadow-xs ${
 									isSelected
-										? "bg-teal-500/15 border-teal-500/50 shadow-xs ring-1 ring-teal-500/30 text-[var(--ink)]"
-										: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:border-teal-400"
+										? "bg-[var(--paper)] border-teal-600 ring-2 ring-teal-500/25 shadow-sm text-[var(--ink)]"
+										: "bg-[var(--paper)] border-[var(--line)] opacity-85 hover:opacity-100 hover:border-[var(--line-strong)] text-[var(--muted)]"
 								}`}
 							>
 								<div>
-									<div className="flex items-center justify-between">
+									<div className="flex items-center justify-between gap-1.5">
 										<span className="font-bold text-xs text-[var(--ink)]">
 											{system.shortName}
 										</span>
-										{isSelected && (
-											<CheckCircle2 size={14} className="text-teal-600 shrink-0" />
+										{isSelected ? (
+											<span className="w-5 h-5 rounded-full bg-teal-600 text-white flex items-center justify-center shrink-0">
+												<CheckCircle2 size={13} className="stroke-[2.5]" />
+											</span>
+										) : (
+											<span className="w-5 h-5 rounded-full border border-[var(--line)] shrink-0" />
 										)}
 									</div>
-									<span className="text-[11px] text-[var(--muted)] block mt-1">
+									<span className="text-[11px] text-[var(--muted)] block mt-1.5 leading-snug">
 										{system.rateDescription}
 									</span>
 								</div>
-								<div className="mt-3 pt-2 border-t border-[var(--line)]">
+								<div className="mt-3 pt-2 border-t border-[var(--line-subtle)]">
 									<span className="text-[10px] font-mono text-teal-700 dark:text-teal-300 font-semibold block">
 										{system.vatRule}
 									</span>
@@ -162,7 +166,7 @@ export const TaxationAndFiscalizationCard: React.FC = () => {
 					})}
 				</div>
 
-				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--muted)] flex items-start gap-2.5">
+				<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--muted)] flex items-start gap-2.5">
 					<Info size={16} className="text-teal-600 shrink-0 mt-0.5" />
 					<div>
 						<strong className="text-[var(--ink)] block mb-0.5">
@@ -176,7 +180,7 @@ export const TaxationAndFiscalizationCard: React.FC = () => {
 			{/* Accepted Payment Modes (54-FZ Split Payments) */}
 			<div className="space-y-3 pt-2 border-t border-[var(--line)]">
 				<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-					<CreditCard size={14} className="text-blue-600" />
+					<CreditCard size={14} className="text-teal-600" />
 					Разрешенные способы расчетов (сплит-платежи):
 				</label>
 				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
@@ -192,7 +196,7 @@ export const TaxationAndFiscalizationCard: React.FC = () => {
 						return (
 							<div
 								key={item.label}
-								className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col items-center text-center gap-1"
+								className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs flex flex-col items-center text-center gap-1"
 							>
 								<Icon size={16} className="text-[var(--ink)]" />
 								<span className="text-[11px] font-bold text-[var(--ink)] leading-tight">
@@ -208,22 +212,22 @@ export const TaxationAndFiscalizationCard: React.FC = () => {
 			</div>
 
 			{/* Solo Doctor Autonomy & Zero Dead-Ends Banner (Mandate 8s) */}
-			<div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent border border-emerald-500/25 space-y-2">
+			<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2.5 shadow-xs">
 				<div className="flex items-center gap-2">
-					<ShieldCheck size={16} className="text-emerald-600 shrink-0" />
+					<ShieldCheck size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 					<span className="text-xs font-bold text-[var(--ink)]">
 						Автономия соло-практики и бесперебойная работа кассы:
 					</span>
 				</div>
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-[var(--muted)]">
 					<div className="flex items-start gap-2">
-						<div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-1.5" />
+						<div className="w-1.5 h-1.5 rounded-full bg-teal-600 shrink-0 mt-1.5" />
 						<span>
 							<strong className="text-[var(--ink)]">Быстрый расчет пациентов:</strong> Согласно 54-ФЗ, ИНН покупателя-физического лица не является обязательным реквизитом чека. Оплата принимается штатно в оперативном режиме.
 						</span>
 					</div>
 					<div className="flex items-start gap-2">
-						<div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-1.5" />
+						<div className="w-1.5 h-1.5 rounded-full bg-teal-600 shrink-0 mt-1.5" />
 						<span>
 							<strong className="text-[var(--ink)]">Автономный буфер фискализации:</strong> При временном обрыве связи с ОФД или кассой чек сохраняется в защищенную локальную очередь и отправляется автоматически при восстановлении связи без остановки приема.
 						</span>

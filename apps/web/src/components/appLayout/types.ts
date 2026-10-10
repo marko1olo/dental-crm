@@ -48,7 +48,7 @@ export interface AppTopBarProps {
 	currentOnboardingIndex: number;
 	onboardingSteps: any[];
 	legalReadinessPercent: number;
-	continueOnboardingInDraftMode: (view: string) => Promise<void>;
+	continueOnboardingInDraftMode: (view?: string) => Promise<void> | void;
 	openOnboardingGuide: () => void;
 	dismissOnboarding: () => void;
 	onboardingDraftMode: boolean;
@@ -62,13 +62,13 @@ export interface AppTopBarProps {
 	closeDoctorShiftCockpit: () => void;
 	activeDoctor: any;
 	onboardingRoleChoices: any[];
-	moveOnboardingTo: (step: number) => void;
+	moveOnboardingTo: (step: string | number) => Promise<void> | void;
 	onboardingStep: any;
 	onboardingFinishGuidanceId: string;
 	specialtyLabels: Record<DentalSpecialty, string>;
 	selectedSpecialty: DentalSpecialty;
 	setSelectedSpecialty: (spec: DentalSpecialty) => void;
-	clinicModeLabels: Record<ClinicMode, string>;
+	clinicModeLabels: Record<ClinicMode, { title: string; detail: string }>;
 	changeClinicMode: (mode: ClinicMode) => void;
 	clinicProfileDraft: any;
 	updateClinicProfileDraft: (patch: any) => void;
@@ -187,8 +187,9 @@ export interface AppTopBarProps {
 	documentFactoryGroups: any;
 	saveClinicProfileFromDraft: any;
 	clinicProfileSaveState: any;
-	previousOnboardingStep: () => void;
-	nextOnboardingStep: () => void;
+	onboardingTelegramRecommendations?: readonly string[] | any;
+	previousOnboardingStep: any;
+	nextOnboardingStep: any;
 }
 
 export interface AppSidebarProps {
@@ -233,6 +234,8 @@ export interface AppModalsContainerProps {
 	setIsSmartSlotRecoveryDemoOpen: Dispatch<SetStateAction<boolean>>;
 	isPrivacyShieldActive: boolean;
 	setIsPrivacyShieldActive: Dispatch<SetStateAction<boolean>>;
+	isSessionLocked?: boolean;
+	setIsSessionLocked?: Dispatch<SetStateAction<boolean>>;
 	activeStaffUser: any;
 	setActiveStaffUser: Dispatch<SetStateAction<any>>;
 	handleClinicLogout: () => void;

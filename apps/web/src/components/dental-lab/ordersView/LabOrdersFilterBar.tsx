@@ -160,7 +160,7 @@ export function LabOrdersFilterBar({
 					data-testid="lab-orders-new-order-btn"
 				>
 					<Plus className="w-3.5 h-3.5" />
-					<span>+ Наряд</span>
+					<span>Наряд</span>
 				</button>
 			</div>
 		</header>

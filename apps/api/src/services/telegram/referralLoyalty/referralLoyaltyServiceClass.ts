@@ -12,6 +12,7 @@ import {
 	appointments,
 	chairs,
 	communicationTasks,
+	denteTelegramBotConfigs,
 	patients,
 	users,
 } from "../../../db/schema.js";
@@ -153,7 +154,7 @@ export class TelegramReferralLoyaltyService {
 	static async handleNpsFeedback(
 		organizationId: string,
 		input: NpsFeedbackInput,
-		clinicSettings?: { yandexMapsUrl?: string; twoGisUrl?: string; clinicName?: string },
+		clinicSettings?: { yandexMapsUrl?: string | undefined; twoGisUrl?: string | undefined; clinicName?: string | undefined },
 	): Promise<NpsFeedbackResult> {
 		try {
 			return await withTenantCtx(organizationId, async () => {
@@ -164,6 +165,7 @@ export class TelegramReferralLoyaltyService {
 				const [appt] = await db
 					.select({
 						id: appointments.id,
+						organizationId: appointments.organizationId,
 						patientId: appointments.patientId,
 						doctorId: appointments.doctorUserId,
 						patientName: patients.fullName,
@@ -175,9 +177,42 @@ export class TelegramReferralLoyaltyService {
 					.where(and(eq(appointments.organizationId, organizationId), eq(appointments.id, input.appointmentId)))
 					.limit(1);
 
-				const clinicName = clinicSettings?.clinicName || "DENTE";
-				const yandexUrl = clinicSettings?.yandexMapsUrl || "https://yandex.ru/maps/";
-				const twoGisUrl = clinicSettings?.twoGisUrl || "https://2gis.ru/";
+				let clinicName = clinicSettings?.clinicName;
+				let yandexUrl = clinicSettings?.yandexMapsUrl;
+				let twoGisUrl = clinicSettings?.twoGisUrl;
+
+				if (!yandexUrl || !twoGisUrl || !clinicName) {
+					try {
+						const [botConfig] = await db
+							.select({
+								clinicMapsUrl: denteTelegramBotConfigs.clinicMapsUrl,
+								clinicReviewUrl: denteTelegramBotConfigs.clinicReviewUrl,
+								botUsername: denteTelegramBotConfigs.botUsername,
+								ownBotUsername: denteTelegramBotConfigs.ownBotUsername,
+							})
+							.from(denteTelegramBotConfigs)
+							.where(eq(denteTelegramBotConfigs.organizationId, organizationId))
+							.limit(1);
+
+						if (botConfig) {
+							if (!yandexUrl && botConfig.clinicMapsUrl) {
+								yandexUrl = botConfig.clinicMapsUrl;
+							}
+							if (!twoGisUrl && botConfig.clinicReviewUrl) {
+								twoGisUrl = botConfig.clinicReviewUrl;
+							}
+							if (!clinicName) {
+								clinicName = botConfig.ownBotUsername || botConfig.botUsername || undefined;
+							}
+						}
+					} catch {
+						// Защитный fallback при отсутствии таблицы или тесте без схемы
+					}
+				}
+
+				clinicName = clinicName || "DENTE";
+				yandexUrl = yandexUrl || "https://yandex.ru/maps/";
+				twoGisUrl = twoGisUrl || "https://2gis.ru/";
 
 				let createdTaskId: string | null = null;
 

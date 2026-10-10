@@ -145,7 +145,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 		setCustomNotes(noteText);
 		setHasAnesthesia(true);
 		onApplyFrankl?.(4, noteText);
-		showToast("1-клик: Поведение Frankl 4/4 и успешная адаптация применены!", "success");
+		showToast("Поведение Frankl 4/4 и успешная адаптация применены!", "success");
 	};
 
 	const handleOneClickAnesthesiaMemo = () => {
@@ -163,7 +163,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 		setHasSilvering(false);
 		setHasFissureSealing(false);
 		onApplyFrankl?.(4, noteText);
-		showToast("1-клик: Адаптационный визит без сверления применен!", "success");
+		showToast("Адаптационный визит без сверления применен!", "success");
 	};
 
 	const handleCopyText = async () => {
@@ -297,10 +297,10 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 							type="button"
 							onClick={handlePrint}
 							className="min-h-[44px] px-3.5 sm:px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
-							title="Мгновенная печать памятки без блокирующих вопросов (1 клик)"
+							title="Мгновенная печать памятки без блокирующих вопросов"
 						>
 							<Printer className="w-4 h-4" />
-							<span className="hidden sm:inline">1-клик Печать</span>
+							<span className="hidden sm:inline">Быстрая печать</span>
 						</button>
 						<button
 							type="button"
@@ -342,7 +342,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 							>
 								<span className="flex items-center gap-2 text-left truncate min-w-0">
 									<Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-									<span className="truncate">1-клик: Поведение Frankl 4/4</span>
+									<span className="truncate">Поведение Frankl 4/4</span>
 								</span>
 								{frankl === 4 ? (
 									<span className="inline-flex items-center gap-1 text-xs font-black text-emerald-700 dark:text-emerald-300 shrink-0 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-0.5 rounded-md">
@@ -366,7 +366,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 							>
 								<span className="flex items-center gap-2 text-left truncate min-w-0">
 									<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-									<span className="truncate">1-клик: Не кусать губу</span>
+									<span className="truncate">Не кусать губу</span>
 								</span>
 								{hasAnesthesia && (
 									<span className="inline-flex items-center gap-1 text-xs font-black text-amber-700 dark:text-amber-300 shrink-0 bg-amber-100 dark:bg-amber-900/50 px-2 py-0.5 rounded-md">
@@ -380,11 +380,11 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 								type="button"
 								onClick={handleOneClickAdaptationVisit}
 								className="min-h-[44px] px-3.5 py-2.5 rounded-xl border border-sky-500/40 bg-sky-500/15 text-sky-800 dark:text-sky-200 hover:bg-sky-500/25 flex items-center justify-between gap-2 font-bold text-xs sm:text-sm cursor-pointer transition-all active:scale-[0.99] select-none"
-								title="1-клик: Адаптационный визит без сверления (Tell-Show-Do, игра, похвала, подарок)"
+								title="Адаптационный визит без сверления (Tell-Show-Do, игра, похвала, подарок)"
 							>
 								<span className="flex items-center gap-2 text-left truncate min-w-0">
 									<Sparkles className="w-4 h-4 text-sky-600 shrink-0" />
-									<span className="truncate">1-клик: Без сверления</span>
+									<span className="truncate">Без сверления</span>
 								</span>
 								<span className="text-xs text-sky-700 dark:text-sky-300 shrink-0">Адаптация</span>
 							</button>
@@ -628,7 +628,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 							type="button"
 							onClick={handleSendWhatsApp}
 							className="min-h-[44px] px-3.5 py-2 rounded-xl border border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/25 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
-							title="Отправить памятку родителям в WhatsApp в 1 клик"
+							title="Отправить памятку родителям в WhatsApp"
 							data-testid="pediatric-memo-whatsapp-btn"
 						>
 							<MessageCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />

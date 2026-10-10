@@ -467,7 +467,7 @@ export const VitaShadeSelector: React.FC<VitaShadeSelectorProps> = ({
 						border: '1px solid var(--line, #e2e8f0)',
 					}}>
 						<span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted, #64748b)' }}>
-							1-Клик Пресет:
+							Пресет:
 						</span>
 						<button
 							type="button"

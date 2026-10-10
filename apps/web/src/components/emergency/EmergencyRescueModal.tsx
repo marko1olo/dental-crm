@@ -395,7 +395,7 @@ export function EmergencyRescueModal({
 							className="emergency-call-112-btn"
 							onClick={handleCallSmpCheatSheet}
 							data-testid="emergency-call-112-header-btn"
-							title="Шпаргалка вызова 103 / 112 (1-клик копирование для диспетчера)"
+							title="Шпаргалка вызова 103 / 112 (быстрое копирование для диспетчера)"
 						>
 							<PhoneCall size={18} />
 							ВЫЗОВ СМП (103 / 112)

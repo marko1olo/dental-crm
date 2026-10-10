@@ -30,6 +30,16 @@ export interface RvgSensorVectorVisualizerProps {
 	onAttachFile?: () => void;
 }
 
+const RVG_KIND_LABELS: Record<string, string> = {
+	periapical: "Прицельный снимок RVG",
+	bitewing: "Интерпроксимальный снимок",
+	opg: "Панорамный снимок (ОПТГ)",
+	ceph: "Телерентгенограмма (ТРГ)",
+	cbct: "КЛКТ 3D томограмма",
+	photo: "Фотопротокол",
+	other: "Рентген-снимок",
+};
+
 export function RvgSensorVectorVisualizer({
 	study,
 	hasFile,
@@ -37,11 +47,17 @@ export function RvgSensorVectorVisualizer({
 	kindLabels,
 	onAttachFile,
 }: RvgSensorVectorVisualizerProps) {
-	const toothCode = study?.toothCode || (study?.region ? null : "36");
-	const toothLabel = toothCode ? `Зуб #${toothCode}` : study?.region || "Интраоральный снимок";
+	const toothCode = study?.toothCode;
+	const toothLabel = toothCode ? `Зуб #${toothCode}` : (study?.region || null);
 	const kindName = study
-		? kindLabels?.[study.kind] || study.kind || "Прицельный снимок"
+		? RVG_KIND_LABELS[study.kind] || kindLabels?.[study.kind] || "Прицельный снимок RVG"
 		: "Прицельный снимок RVG";
+
+	const studyMeta = study as Record<string, unknown> | undefined;
+	const resolution = studyMeta?.resolutionLpMm ? `Разрешение: ${studyMeta.resolutionLpMm} lp/mm` : null;
+	const exposure = studyMeta?.kvp && studyMeta?.exposureSeconds ? `${studyMeta.kvp} kV · ${studyMeta.exposureSeconds} s` : null;
+	const dose = studyMeta?.doseUsv ? `${studyMeta.doseUsv} µSv` : null;
+	const hasAcquisitionMetadata = Boolean(resolution || exposure || dose);
 
 	return (
 		<div
@@ -66,7 +82,7 @@ export function RvgSensorVectorVisualizer({
 				<div className="flex flex-col gap-1">
 					<div className="flex items-center justify-center gap-2">
 						<h3 className="text-sm font-bold text-[var(--ink,#f8fafc)]">{kindName}</h3>
-						{toothCode && (
+						{toothLabel && (
 							<span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30">
 								{toothLabel}
 							</span>
@@ -79,20 +95,28 @@ export function RvgSensorVectorVisualizer({
 					</p>
 				</div>
 
-				<div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-[11px] font-mono text-[var(--muted,#94a3b8)]">
-					<span className="px-2 py-0.5 rounded bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)]">
-						Разрешение: 25 lp/mm
-					</span>
-					<span className="px-2 py-0.5 rounded bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)]">
-						65 kV · 0.08 s
-					</span>
-					<span
-						className="px-2 py-0.5 rounded bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)]"
-						title="Лучевая нагрузка в пределах безопасной нормы"
-					>
-						1.2 µSv · Безопасная доза
-					</span>
-				</div>
+				{hasAcquisitionMetadata && (
+					<div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-[11px] font-mono text-[var(--muted,#94a3b8)]">
+						{resolution && (
+							<span className="px-2 py-0.5 rounded bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)]">
+								{resolution}
+							</span>
+						)}
+						{exposure && (
+							<span className="px-2 py-0.5 rounded bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)]">
+								{exposure}
+							</span>
+						)}
+						{dose && (
+							<span
+								className="px-2 py-0.5 rounded bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)]"
+								title="Дозовая нагрузка"
+							>
+								{dose}
+							</span>
+						)}
+					</div>
+				)}
 
 				{onAttachFile && (
 					<button
@@ -183,8 +207,8 @@ export function ImagingViewport({
 
 	return (
 		<div
-			className="imaging-viewer-stage min-h-[70vh] flex-1"
-			style={{ position: "relative", minHeight: "70vh" }}
+			className="imaging-viewer-stage min-h-[280px] max-h-[380px] h-[350px] flex-1"
+			style={{ position: "relative", minHeight: "280px", maxHeight: "380px", height: "350px" }}
 			onWheel={(e) => {
 				if (isCbctOrLocalArchive) return;
 				e.preventDefault();

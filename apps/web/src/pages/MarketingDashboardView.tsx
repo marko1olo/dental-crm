@@ -58,11 +58,13 @@ const CrmLeakDetectorModal = lazy(() =>
 export interface MarketingDashboardViewProps {
 	readonly clinicName?: string;
 	readonly onNavigateToRecalls?: () => void;
+	readonly embedded?: boolean;
 }
 
 export function MarketingDashboardView({
 	clinicName = "Стоматология ДЕНТЕ",
 	onNavigateToRecalls,
+	embedded = false,
 }: MarketingDashboardViewProps) {
 	const { leads, fetchLeads } = useLeadsStore();
 	const [period, setPeriod] = useState<FunnelTimePeriod>("all");
@@ -207,23 +209,27 @@ export function MarketingDashboardView({
 
 	return (
 		<section
-			className="marketing-dashboard-page"
+			className={`marketing-dashboard-page ${embedded ? "marketing-dashboard-page--embedded" : ""}`}
 			data-testid="marketing-dashboard-page"
 			aria-label="Маркетинговая аналитика и воронка"
 		>
 			{/* ── 1. QUIET HEADER (1 ROW, HICK'S LAW) ─────────────────────────── */}
 			<header className="marketing-dashboard-header">
 				<div className="marketing-dashboard-title-wrap">
-					<Megaphone size={20} className="text-[var(--teal)]" aria-hidden="true" />
-					<h1 className="marketing-dashboard-title">
-						Маркетинговая аналитика и воронка
-					</h1>
+					{!embedded && (
+						<>
+							<Megaphone size={20} className="text-[var(--teal)]" aria-hidden="true" />
+							<h1 className="marketing-dashboard-title">
+								Маркетинговая аналитика и воронка
+							</h1>
+						</>
+					)}
 					<div
 						className="marketing-quiet-telemetry"
 						title="Сквозной учет конверсий и расходов активен"
 					>
 						<span className="marketing-telemetry-dot" />
-						<span>Телеметрия активна</span>
+						<span>Сквозной учёт конверсий и расходов</span>
 					</div>
 				</div>
 

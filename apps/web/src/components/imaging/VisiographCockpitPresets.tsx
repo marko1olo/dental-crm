@@ -30,7 +30,7 @@ export function VisiographCockpitPresets({
 	return (
 		<div data-tour="mpr-presets" className="flex items-center gap-2 flex-nowrap shrink-0">
 			{/* Segmented Control for 5 quick presets */}
-			<div className="dente-segmented-bar shrink-0">
+			<div className="diag-segmented-bar shrink-0">
 				{(["standard", "invert", "endo", "bone", "enamel"] as const).map((p) => {
 					const isAct = quickPreset === p;
 					return (
@@ -38,7 +38,7 @@ export function VisiographCockpitPresets({
 							key={p}
 							type="button"
 							onClick={() => setQuickPreset(p)}
-							className={`dente-segmented-item ${isAct ? "active" : ""}`}
+							className={`diag-segmented-item ${isAct ? "active" : ""}`}
 						>
 							{PRESET_LABELS[p]}
 						</button>

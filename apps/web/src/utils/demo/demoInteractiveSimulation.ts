@@ -135,12 +135,16 @@ class DemoInteractiveState {
 	private odontogramStates: Map<string, DemoOdontogramToothState[]> = new Map();
 	private estimates: Map<string, DemoEstimate> = new Map();
 	private activeRoleId = "therapist";
+	private initialized = false;
 
-	constructor() {
-		this.resetToDefaults();
+	private ensureInitialized() {
+		if (!this.initialized) {
+			this.resetToDefaults();
+		}
 	}
 
 	public resetToDefaults() {
+		this.initialized = true;
 		try {
 			if (typeof getDemoShowcaseAppointments === "function") {
 				this.appointments = getDemoShowcaseAppointments();
@@ -161,6 +165,7 @@ class DemoInteractiveState {
 	}
 
 	public getAppointments(): Appointment[] {
+		this.ensureInitialized();
 		if (this.appointments.length === 0 && typeof getDemoShowcaseAppointments === "function") {
 			try {
 				this.appointments = getDemoShowcaseAppointments();
@@ -175,6 +180,7 @@ class DemoInteractiveState {
 		appointmentId: string,
 		newStatus: Appointment["status"],
 	): { success: boolean; appointment?: Appointment } {
+		this.ensureInitialized();
 		if (this.appointments.length === 0 && typeof getDemoShowcaseAppointments === "function") {
 			try {
 				this.appointments = getDemoShowcaseAppointments();
@@ -191,6 +197,7 @@ class DemoInteractiveState {
 	}
 
 	public getOdontogram(patientId: string): DemoOdontogramToothState[] {
+		this.ensureInitialized();
 		const existing = this.odontogramStates.get(patientId);
 		if (existing) return [...existing];
 		// default to therapist odontogram
@@ -202,6 +209,7 @@ class DemoInteractiveState {
 		toothNumber: number,
 		patch: Partial<DemoOdontogramToothState>,
 	): DemoOdontogramToothState[] {
+		this.ensureInitialized();
 		const current = this.getOdontogram(patientId);
 		const idx = current.findIndex((t) => t.toothNumber === toothNumber);
 		if (idx >= 0) {
@@ -221,6 +229,7 @@ class DemoInteractiveState {
 	}
 
 	public getEstimate(patientId: string): DemoEstimate {
+		this.ensureInitialized();
 		const existing = this.estimates.get(patientId);
 		if (existing) return existing;
 		return JSON.parse(JSON.stringify(DEMO_THERAPIST_ESTIMATE));
@@ -230,6 +239,7 @@ class DemoInteractiveState {
 		patientId: string,
 		item: DemoEstimateItem,
 	): DemoEstimate {
+		this.ensureInitialized();
 		const est = this.getEstimate(patientId);
 		est.items.push(item);
 		est.totalGrossRub = est.items.reduce((sum, i) => sum + i.totalRub, 0);

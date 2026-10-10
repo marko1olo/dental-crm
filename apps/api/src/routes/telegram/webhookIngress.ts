@@ -7,6 +7,7 @@ import { namedDevelopmentModeActive } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	inMemoryDomainState,
+	hasDenteTelegramWebhookUpdate,
 	claimDenteTelegramWebhookUpdate,
 	handleDenteTelegramAppointmentCallback,
 	recordDenteTelegramWebhookEvent,
@@ -35,7 +36,9 @@ import {
 	parseTelegramRouteBody,
 	telegramPhotoFallbackWarning,
 	telegramWebhookReplyFailureWarning,
+	stringFromUnknown,
 } from "./telegramUtils.js";
+import { repairMojibakeText } from "../../text/repairMojibake.js";
 import {
 	configuredSendTimeoutMs,
 	hydrateTelegramDomainState,
@@ -440,6 +443,16 @@ export async function handleWebhook(
 				}),
 			);
 		}
+		const warnings: string[] = [
+			...webhookClaim.event.warnings,
+			...appointmentCallbackResult.warnings,
+			...(expectedSecret
+				? []
+				: [
+						"Webhook secret не настроен; update принимается только для локальной разработки.",
+					]),
+		];
+
 		// Specialized callbacks (nps, intercom_ack, cockpit, preset_nav, postop, triage, closer)
 		const specializedCallbackResponse = await handleWebhookSpecializedCallbacks({
 			request,
@@ -451,7 +464,7 @@ export async function handleWebhook(
 			chatId,
 			update,
 			updateKind,
-		warnings,
+			warnings,
 		});
 		if (specializedCallbackResponse) {
 			return specializedCallbackResponse;

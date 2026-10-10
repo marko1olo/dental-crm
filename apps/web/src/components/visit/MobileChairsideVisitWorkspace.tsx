@@ -54,8 +54,8 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
       <ChairsidePatientQuickBar
         activePatient={activePatient}
         activeAppointment={activeAppointment}
-        patientAge={patientAge}
-        consolidatedAllergyChip={consolidatedAllergyChip}
+        patientAge={patientAge ?? null}
+        consolidatedAllergyChip={consolidatedAllergyChip ?? null}
         handlePrintForm043uFast={handlePrintForm043uFast}
         handleOpenLabOrder={handleOpenLabOrder}
         onClose={onClose}
@@ -114,7 +114,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
           onTakeStage={ws.handleTakeStageFromBanner}
           activeQuadrant={ws.activeQuadrant}
           onQuadrantChange={ws.setActiveQuadrant}
-          toothStateByCode={toothStateByCode}
+          toothStateByCode={toothStateByCode ?? {}}
           setToothState={setToothState}
           billingItems={ws.billingItems}
           totalBillingAmountRub={ws.totalBillingAmountRub}

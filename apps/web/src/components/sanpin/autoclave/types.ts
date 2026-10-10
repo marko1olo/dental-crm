@@ -31,7 +31,7 @@ export interface AutoclaveRegisterTableProps {
 	readonly onOpenKraftForLog: (log: SterilizationLogRecord) => void;
 	readonly onQuickShiftBatch: () => void;
 	readonly isLoggingBatch: boolean;
-	readonly onOpenNewCycleModal?: () => void;
+	readonly onOpenNewCycleModal?: (() => void) | undefined;
 	readonly onGenerateMonthlyForm257: () => void;
 	readonly onOpenJournal257Modal: () => void;
 	readonly onOpenKraftModal: () => void;

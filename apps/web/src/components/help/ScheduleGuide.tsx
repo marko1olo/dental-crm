@@ -365,7 +365,7 @@ export const ScheduleGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) =>
 				<div className="space-y-0.5">
 					<div className="font-semibold text-xs text-teal-800 dark:text-teal-200 flex items-center gap-1.5">
 						<Gamepad2 size={16} className="text-teal-600 dark:text-teal-400" />
-						<span>Интерактивный тренажёр: Запись за 1 клик</span>
+						<span>Интерактивный тренажёр: Быстрая запись</span>
 					</div>
 					<p className="text-[11px] text-teal-700/80 dark:text-teal-300/80">
 						Запустите пошаговое обучение с подсветкой кнопок и подсказками прямо на живом экране.

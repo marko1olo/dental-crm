@@ -328,10 +328,10 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 														}
 													}}
 													data-testid={`ztl-delay-reschedule-btn-${order.id}`}
-													title="Перейти к записи пациента в расписании для переноса (1 клик)"
+													title="Перейти к записи пациента в расписании для переноса"
 												>
 													<Calendar size={11} />
-													<span>Перенести запись (1 клик)</span>
+													<span>Перенести запись</span>
 												</button>
 											</div>
 										)}

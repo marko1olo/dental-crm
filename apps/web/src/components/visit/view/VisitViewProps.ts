@@ -132,6 +132,7 @@ export interface VisitViewProps {
 	setClearedTranscriptSnapshot: any;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setSelectedProtocolId: any;
+	setSelectedPatientId?: ((id: string | null) => void) | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setSelectedSpecialty: any;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -210,5 +211,4 @@ export interface VisitViewProps {
 	safeSpecialtyLabels?: Record<string, string> | undefined;
 	visitCloseChecklist?: any[] | undefined;
 	openCloseChecklistSection?: ((task: any) => void) | undefined;
-	setSelectedPatientId?: ((id: string | null) => void) | undefined;
 }

@@ -23,7 +23,7 @@ export interface CheckoutPaymentMethodInfo {
 export const CHECKOUT_PAYMENT_METHODS: readonly CheckoutPaymentMethodInfo[] = [
 	{
 		id: "sbp_qr",
-		titleRu: "СБП QR / Плати QR",
+		titleRu: "СБП (QR)",
 		subtitleRu: "Динамический QR НСПК (0.4–0.7% комиссия)",
 		ffdTag: 1081,
 		commissionRatePercent: 0.4,
@@ -32,7 +32,7 @@ export const CHECKOUT_PAYMENT_METHODS: readonly CheckoutPaymentMethodInfo[] = [
 	},
 	{
 		id: "bank_card",
-		titleRu: "Банковская карта (Эквайринг)",
+		titleRu: "Карта (POS)",
 		subtitleRu: "Безналичная оплата через терминал",
 		ffdTag: 1081,
 		commissionRatePercent: 1.5,
@@ -41,7 +41,7 @@ export const CHECKOUT_PAYMENT_METHODS: readonly CheckoutPaymentMethodInfo[] = [
 	},
 	{
 		id: "cash",
-		titleRu: "Наличные рубли",
+		titleRu: "Наличные",
 		subtitleRu: "Купюры в кассу с автокалькулятором сдачи",
 		ffdTag: 1031,
 		commissionRatePercent: 0.0,
@@ -50,7 +50,7 @@ export const CHECKOUT_PAYMENT_METHODS: readonly CheckoutPaymentMethodInfo[] = [
 	},
 	{
 		id: "patient_deposit",
-		titleRu: "Зачет аванса / Депозит",
+		titleRu: "Депозит",
 		subtitleRu: "Списание с баланса пациента",
 		ffdTag: 1215,
 		commissionRatePercent: 0.0,
@@ -59,7 +59,7 @@ export const CHECKOUT_PAYMENT_METHODS: readonly CheckoutPaymentMethodInfo[] = [
 	},
 	{
 		id: "dms_insurance",
-		titleRu: "Страховая компания (ДМС)",
+		titleRu: "ДМС (Страховка)",
 		subtitleRu: "Гарантийное письмо с доплатой",
 		ffdTag: 1081,
 		commissionRatePercent: 0.0,
@@ -68,7 +68,7 @@ export const CHECKOUT_PAYMENT_METHODS: readonly CheckoutPaymentMethodInfo[] = [
 	},
 	{
 		id: "loyalty_points",
-		titleRu: "Бонусные баллы лояльности",
+		titleRu: "Баллы",
 		subtitleRu: "Списание бонусов клиники (до 30%)",
 		ffdTag: 1216,
 		commissionRatePercent: 0.0,

@@ -292,12 +292,12 @@ export const PublicBookingLinkPanel: React.FC = () => {
 				</div>
 
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-					<label className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex items-start gap-3 cursor-pointer hover:border-slate-400 transition-colors">
+					<label className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-card)] flex items-start gap-3 cursor-pointer hover:border-[var(--line-strong)] transition-colors">
 						<input
 							type="checkbox"
 							checked={config.onlyDoctorsWithActiveShifts}
 							onChange={(e) => updateConfig("onlyDoctorsWithActiveShifts", e.target.checked)}
-							className="mt-0.5 rounded text-teal-600 focus:ring-teal-500"
+							className="mt-0.5 rounded text-[var(--teal)] focus:ring-[var(--teal)]"
 						/>
 						<div>
 							<strong className="text-xs text-[var(--ink)] block">
@@ -309,12 +309,12 @@ export const PublicBookingLinkPanel: React.FC = () => {
 						</div>
 					</label>
 
-					<label className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex items-start gap-3 cursor-pointer hover:border-slate-400 transition-colors">
+					<label className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-card)] flex items-start gap-3 cursor-pointer hover:border-[var(--line-strong)] transition-colors">
 						<input
 							type="checkbox"
 							checked={config.showDoctorExperience}
 							onChange={(e) => updateConfig("showDoctorExperience", e.target.checked)}
-							className="mt-0.5 rounded text-teal-600 focus:ring-teal-500"
+							className="mt-0.5 rounded text-[var(--teal)] focus:ring-[var(--teal)]"
 						/>
 						<div>
 							<strong className="text-xs text-[var(--ink)] block">
@@ -331,7 +331,7 @@ export const PublicBookingLinkPanel: React.FC = () => {
 			{/* Section 3: Services Selection & Clinical Safeguards */}
 			<section className="p-4 sm:p-5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-4">
 				<div className="flex items-center gap-2.5">
-					<div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+					<div className="w-8 h-8 rounded-lg bg-[var(--paper-card)] border border-[var(--line-subtle)] text-[var(--teal)] flex items-center justify-center shrink-0">
 						<Stethoscope size={16} />
 					</div>
 					<div>
@@ -348,10 +348,10 @@ export const PublicBookingLinkPanel: React.FC = () => {
 					<button
 						type="button"
 						onClick={() => updateConfig("allowedServicesMode", "consultations_only")}
-						className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+						className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
 							config.allowedServicesMode === "consultations_only"
-								? "bg-teal-500/10 border-teal-500/40 text-[var(--ink)] shadow-xs"
-								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:border-slate-400"
+								? "bg-[var(--paper-card)] border-[var(--teal)] text-[var(--ink)] shadow-xs"
+								: "bg-[var(--paper-card)] border-[var(--line)] text-[var(--muted)] hover:border-[var(--line-strong)]"
 						}`}
 					>
 						<div>
@@ -360,8 +360,8 @@ export const PublicBookingLinkPanel: React.FC = () => {
 									Только первичные приёмы и гигиена
 								</strong>
 								{config.allowedServicesMode === "consultations_only" && (
-									<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-600 text-white">
-										РЕКОМЕНДУЕТСЯ
+									<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--teal)] text-[var(--on-teal)]">
+										Рекомендуется
 									</span>
 								)}
 							</div>
@@ -374,10 +374,10 @@ export const PublicBookingLinkPanel: React.FC = () => {
 					<button
 						type="button"
 						onClick={() => updateConfig("allowedServicesMode", "basic_treatments")}
-						className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+						className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
 							config.allowedServicesMode === "basic_treatments"
-								? "bg-teal-500/10 border-teal-500/40 text-[var(--ink)] shadow-xs"
-								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:border-slate-400"
+								? "bg-[var(--paper-card)] border-[var(--teal)] text-[var(--ink)] shadow-xs"
+								: "bg-[var(--paper-card)] border-[var(--line)] text-[var(--muted)] hover:border-[var(--line-strong)]"
 						}`}
 					>
 						<div>
@@ -395,7 +395,7 @@ export const PublicBookingLinkPanel: React.FC = () => {
 			{/* Section 4: Anti-Spam Bot Protection & Limits */}
 			<section className="p-4 sm:p-5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-4">
 				<div className="flex items-center gap-2.5">
-					<div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+					<div className="w-8 h-8 rounded-lg bg-[var(--paper-card)] border border-[var(--line-subtle)] text-[var(--teal)] flex items-center justify-center shrink-0">
 						<Lock size={16} />
 					</div>
 					<div>
@@ -409,12 +409,12 @@ export const PublicBookingLinkPanel: React.FC = () => {
 				</div>
 
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-xs">
-					<label className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex items-start gap-3 cursor-pointer hover:border-slate-400 transition-colors">
+					<label className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-card)] flex items-start gap-3 cursor-pointer hover:border-[var(--line-strong)] transition-colors">
 						<input
 							type="checkbox"
 							checked={config.requirePhoneOtp}
 							onChange={(e) => updateConfig("requirePhoneOtp", e.target.checked)}
-							className="mt-0.5 rounded text-teal-600 focus:ring-teal-500"
+							className="mt-0.5 rounded text-[var(--teal)] focus:ring-[var(--teal)]"
 						/>
 						<div>
 							<strong className="text-xs text-[var(--ink)] block">
@@ -426,12 +426,12 @@ export const PublicBookingLinkPanel: React.FC = () => {
 						</div>
 					</label>
 
-					<label className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex items-start gap-3 cursor-pointer hover:border-slate-400 transition-colors">
+					<label className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-card)] flex items-start gap-3 cursor-pointer hover:border-[var(--line-strong)] transition-colors">
 						<input
 							type="checkbox"
 							checked={config.honeypotSpamShield}
 							onChange={(e) => updateConfig("honeypotSpamShield", e.target.checked)}
-							className="mt-0.5 rounded text-teal-600 focus:ring-teal-500"
+							className="mt-0.5 rounded text-[var(--teal)] focus:ring-[var(--teal)]"
 						/>
 						<div>
 							<strong className="text-xs text-[var(--ink)] block">

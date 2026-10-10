@@ -369,7 +369,7 @@ export function useVisitNotes({
 									toothNumber: s.toothNumber ? Number(s.toothNumber) : null,
 									code804n: s.code804n,
 							  }))
-							: (dashboard?.activeVisit?.completedServices ?? []),
+							: ((dashboard?.activeVisit as any)?.completedServices ?? []),
 					doctorFullName: activeDoctor?.fullName ?? undefined,
 					planPayload: null, // extracted inside flow
 					recommendationsPayload: null,

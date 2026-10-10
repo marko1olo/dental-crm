@@ -128,6 +128,9 @@ export interface SlotResult {
 	cabinet?: string | undefined;
 	professional_name?: string | undefined;
 	doctor_name?: string | undefined;
+	date?: string | undefined;
+	chairId?: string | undefined;
+	time?: string | undefined;
 }
 
 export interface PatientResult {

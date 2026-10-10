@@ -229,7 +229,7 @@
 	.font-semibold,
 	.font-bold,
 	strong
-):not(.text-teal):not(.text-red):not(.text-green):not(.text-amber):not(.pro-a4-viewport *):not(.pro-a4-physical-sheet *):not(.pro-a4-page-sheet *) {
+):not(.text-teal):not(.text-red):not(.text-green):not(.text-amber):not(.pro-a4-viewport *):not(.pro-a4-physical-sheet *):not(.pro-a4-page-sheet *):not(.premium-doc-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *) {
 	color: var(--ink) !important;
 }
 
@@ -327,7 +327,7 @@
 	[data-theme="cyber_xray"],
 	html.dark,
 	.dark
-) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet, [data-testid="pro-a4-physical-sheet"]) :is(
+) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet, [data-testid="pro-a4-physical-sheet"], .premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) :is(
 	h1, h2, h3, h4, h5, h6,
 	p, span, div, td, th, strong, b, u, i,
 	.a4-doc-title, .a4-doc-subtitle, .a4-section-heading,

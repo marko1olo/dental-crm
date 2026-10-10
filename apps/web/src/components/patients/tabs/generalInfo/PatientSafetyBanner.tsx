@@ -212,9 +212,12 @@ export const PatientSafetyBanner: React.FC<PatientSafetyBannerProps> = React.mem
 			);
 		}
 
-		// Mode: compact (для базовой карточки)
+		// Mode: compact (для базовой карточки — без вложенной рамки-матрёшки)
 		return (
-			<div className="p-3 bg-[var(--paper)] rounded-xl border border-[var(--glass-border)] shadow-2xs flex flex-col gap-2.5">
+			<div
+				className="flex flex-col gap-2.5 pt-3 border-t border-[var(--line)]"
+				style={{ borderTop: "1px solid var(--line)", paddingTop: "12px" }}
+			>
 				<div className="flex items-center justify-between gap-2 flex-wrap">
 					<div className="flex items-center gap-2">
 						<HeartPulse className="w-3.5 h-3.5 text-[var(--teal)]" />
@@ -257,6 +260,14 @@ export const PatientSafetyBanner: React.FC<PatientSafetyBannerProps> = React.mem
 								onClick={handleApplyNormAction}
 								disabled={disabled}
 								className="min-h-[44px] sm:min-h-[28px] h-7 px-2.5 text-[11px] rounded-lg font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs inline-flex items-center gap-1.5 cursor-pointer transition-all active:scale-98 shrink-0 select-none"
+								style={{
+									height: "28px",
+									padding: "0 10px",
+									borderRadius: "8px",
+									border: "1px solid var(--teal)",
+									background: "var(--teal)",
+									color: "var(--on-teal, #ffffff)",
+								}}
 								title="Зафиксировать физиологическую норму: соматически здоров"
 							>
 								<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
@@ -266,15 +277,29 @@ export const PatientSafetyBanner: React.FC<PatientSafetyBannerProps> = React.mem
 					</div>
 				</div>
 
-				<div className="flex items-center gap-1.5 flex-wrap">
+				<div className="flex items-center gap-2 flex-wrap">
 					<button
 						type="button"
 						data-testid="toggle-allergy-penicillin"
-						className={`min-h-[44px] sm:min-h-[28px] h-7 px-2.5 text-xs rounded-lg font-semibold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+						className={`min-h-[44px] sm:min-h-[30px] h-7.5 px-3 text-xs rounded-lg font-semibold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
 							currentProfile.hasPenicillinAllergy
 								? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40 font-bold"
 								: "border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 						}`}
+						style={{
+							height: "30px",
+							padding: "0 10px",
+							borderRadius: "8px",
+							border: currentProfile.hasPenicillinAllergy
+								? "1px solid var(--rose-border, rgba(244, 63, 94, 0.4))"
+								: "1px solid var(--line-strong, var(--line))",
+							background: currentProfile.hasPenicillinAllergy
+								? "var(--rose-soft, rgba(244, 63, 94, 0.12))"
+								: "var(--paper-soft)",
+							color: currentProfile.hasPenicillinAllergy
+								? "var(--rose-text, #e11d48)"
+								: "var(--ink)",
+						}}
 						onClick={() => onToggleAllergy("hasPenicillinAllergy")}
 						disabled={disabled}
 					>
@@ -289,11 +314,25 @@ export const PatientSafetyBanner: React.FC<PatientSafetyBannerProps> = React.mem
 					<button
 						type="button"
 						data-testid="toggle-allergy-nsaid"
-						className={`min-h-[44px] sm:min-h-[28px] h-7 px-2.5 text-xs rounded-lg font-semibold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+						className={`min-h-[44px] sm:min-h-[30px] h-7.5 px-3 text-xs rounded-lg font-semibold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
 							currentProfile.hasNsaidAllergy
 								? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40 font-bold"
 								: "border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 						}`}
+						style={{
+							height: "30px",
+							padding: "0 10px",
+							borderRadius: "8px",
+							border: currentProfile.hasNsaidAllergy
+								? "1px solid var(--rose-border, rgba(244, 63, 94, 0.4))"
+								: "1px solid var(--line-strong, var(--line))",
+							background: currentProfile.hasNsaidAllergy
+								? "var(--rose-soft, rgba(244, 63, 94, 0.12))"
+								: "var(--paper-soft)",
+							color: currentProfile.hasNsaidAllergy
+								? "var(--rose-text, #e11d48)"
+								: "var(--ink)",
+						}}
 						onClick={() => onToggleAllergy("hasNsaidAllergy")}
 						disabled={disabled}
 					>
@@ -308,11 +347,25 @@ export const PatientSafetyBanner: React.FC<PatientSafetyBannerProps> = React.mem
 					<button
 						type="button"
 						data-testid="toggle-allergy-latex"
-						className={`min-h-[44px] sm:min-h-[28px] h-7 px-2.5 text-xs rounded-lg font-semibold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+						className={`min-h-[44px] sm:min-h-[30px] h-7.5 px-3 text-xs rounded-lg font-semibold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
 							currentProfile.hasLatexAllergy
 								? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40 font-bold"
 								: "border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 						}`}
+						style={{
+							height: "30px",
+							padding: "0 10px",
+							borderRadius: "8px",
+							border: currentProfile.hasLatexAllergy
+								? "1px solid var(--amber-border, rgba(245, 158, 11, 0.4))"
+								: "1px solid var(--line-strong, var(--line))",
+							background: currentProfile.hasLatexAllergy
+								? "var(--amber-soft, rgba(245, 158, 11, 0.12))"
+								: "var(--paper-soft)",
+							color: currentProfile.hasLatexAllergy
+								? "var(--amber-text, #d97706)"
+								: "var(--ink)",
+						}}
 						onClick={() => onToggleAllergy("hasLatexAllergy")}
 						disabled={disabled}
 					>

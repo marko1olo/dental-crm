@@ -85,7 +85,7 @@ export function ImagingMeasurements({
 								</span>
 							</div>
 							<div className="flex items-center gap-2 shrink-0 font-mono font-semibold text-[var(--ink)]">
-								<span>{m.distanceMm.toFixed(1)} мм</span>
+								<span>{(m.distanceMm ?? m.lengthMm ?? 0).toFixed(1)} мм</span>
 								<button
 									type="button"
 									onClick={() =>

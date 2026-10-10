@@ -174,7 +174,7 @@ export const OmnichannelNpsTab: React.FC<OmnichannelNpsTabProps> = ({
 								</tr>
 							) : (
 								filteredNpsReviews.map((rev) => {
-									const urgency = getNpsUrgency(rev.score, rev.status);
+									const { urgency } = getNpsUrgency(rev.score);
 									return (
 										<tr key={rev.id} className={`nps-row ${urgency === "critical" ? "critical-row" : ""}`}>
 											<td className="cell-patient">
@@ -207,7 +207,7 @@ export const OmnichannelNpsTab: React.FC<OmnichannelNpsTabProps> = ({
 
 											<td className="cell-doctor">
 												<span className="doc-name">{rev.doctorName || "—"}</span>
-												<span className="proc-name">{rev.treatmentType || "—"}</span>
+												<span className="proc-name">{rev.serviceName || "—"}</span>
 											</td>
 
 											<td className="cell-urgency">

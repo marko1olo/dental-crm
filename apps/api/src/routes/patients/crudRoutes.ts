@@ -20,12 +20,9 @@ import {
 	stripDiagnosisPayload,
 } from "../../security/medicalSecrecyWarden.js";
 import {
-	convertQwertyMistype,
 	findPatientDuplicate,
 	type PatientDuplicateInput,
 	type PatientDuplicateResult,
-	phoneKey,
-	transliterateLatinToCyrillic,
 } from "../../services/patients/duplicateDetection.js";
 import {
 	PATIENT_ID_UUID_PATTERN,
@@ -38,8 +35,13 @@ import {
 	sendPatientNotFound,
 	sendPatientRouteValidationError,
 } from "./helpers.js";
+import { filterPatientsBySearchQuery } from "./patientSearchFilter.js";
+import { registerPatientRecordsRoutes } from "./patientRecordsRoutes.js";
 
 export function registerPatientCrudRoutes(app: FastifyInstance) {
+	// Регистрация суб-маршрутов клинических записей формы 043/у
+	registerPatientRecordsRoutes(app);
+
 	app.get("/api/patients", async (request, reply) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
@@ -100,32 +102,7 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 			});
 
 			if (searchRaw) {
-				const qLower = searchRaw.toLowerCase();
-				const qwertySearch = convertQwertyMistype(qLower);
-				const translitSearch = transliterateLatinToCyrillic(qLower);
-				const searchDigits = qLower.replace(/\D/g, "");
-				const searchPk = phoneKey(qLower);
-
-				dbPatients = dbPatients.filter((p: any) => {
-					const nameStr = typeof p.fullName === "string" ? p.fullName : "";
-					const nameLower = nameStr.toLowerCase();
-					const nameMatch =
-						nameLower.includes(qLower) ||
-						(qwertySearch !== qLower && nameLower.includes(qwertySearch)) ||
-						(translitSearch !== qLower && nameLower.includes(translitSearch));
-
-					const pPhone = typeof p.phone === "string" ? p.phone : "";
-					const phoneDigits = pPhone.replace(/\D/g, "");
-					const phonePk = phoneKey(pPhone);
-					const phoneMatch =
-						pPhone.toLowerCase().includes(qLower) ||
-						(searchDigits.length >= 4 && phoneDigits.includes(searchDigits)) ||
-						(searchPk !== null && phonePk !== null && searchPk === phonePk);
-
-					const pEmail = typeof p.email === "string" ? p.email : "";
-					const emailMatch = pEmail.toLowerCase().includes(qLower);
-					return Boolean(nameMatch || phoneMatch || emailMatch);
-				});
+				dbPatients = filterPatientsBySearchQuery(dbPatients, searchRaw);
 			}
 
 			if (shouldStripMedicalData(request)) {
@@ -143,9 +120,6 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 			return dbPatients.map((patient) => patientSchema.parse(patient));
 		} catch (e) {
 			console.error("[Patients] Error fetching from DB:", e);
-			// Пустой список вместо отказа читается как «пациентов нет», а картотека —
-			// это первый экран смены: администратор решит, что база пуста, и начнёт
-			// заводить карты заново.
 			return reply.code(500).send({
 				error: "DatabaseError",
 				message:
@@ -218,14 +192,12 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 				});
 
 				if (evalAccess.hasClinicalAccess) {
-					// Врач/клинический персонал: фиксируем факт доступа к медицинской карте
 					await auditMedicalAccessFromRequest(request, {
 						organizationId: orgId,
 						patientId,
 						action: "VIEW_PATIENT_MEDICAL_RECORD",
 					});
 				} else {
-					// Неклинический сотрудник: фиксируем усечение доступа в аудите
 					await auditMedicalAccessFromRequest(request, {
 						organizationId: orgId,
 						patientId,
@@ -235,8 +207,6 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 				}
 			}
 
-			// 152-ФЗ / 323-ФЗ ст. 13: Защита архивированных пациентов.
-			// Извлечение медицинских карт списанных в архив пациентов неклиническим персоналом (маркетологи, стажеры, регистраторы) запрещено!
 			if (patient.status === "archived") {
 				const evalAccess = staffRole
 					? evaluateClinicalAccess(staffRole, {
@@ -355,14 +325,6 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 			return reply.code(201).send(patientSchema.parse(safeResult.patient));
 		} catch (e) {
 			console.error("[Patients] Create error:", e);
-			/*
-			 * «Мог не сохраниться», а не «не сохранён», и это точность, а не
-			 * осторожность: в try стоят и вставка в базу, и разбор ответа
-			 * patientSchema.parse ПОСЛЕ успешной вставки. Тот же промах на соседнем
-			 * PUT уже приводил к дублям карт (см. комментарий ниже, ветка catch у
-			 * обновления). Поэтому текст велит проверить список, а не создавать
-			 * вторую карту того же человека.
-			 */
 			return reply.code(500).send({
 				error: "DatabaseError",
 				message:
@@ -429,14 +391,6 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 			if (!patient) return sendPatientNotFound(reply);
 			return patientSchema.parse(patient);
 		} catch (e) {
-			// БЫЛО: любой сбой внутри try отвечал 404 «Пациент не найден» — включая
-			// ошибку разбора ответа patientSchema.parse ПОСЛЕ успешной записи в базу.
-			// Оператор видел «пациент не найден», считал, что данные не сохранились,
-			// и заводил карточку заново — появлялись дубли уже сохранённых пациентов.
-			//
-			// familyGroupId: привязка к несуществующей/чужой группе — бизнес-ошибка
-			// 400, не 500. Иначе UI показывает «не удалось сохранить» при опечатке
-			// UUID семьи, хотя валидация отклонила запрос до записи.
 			const msg = e instanceof Error ? e.message : "";
 			if (
 				msg.includes("семейная группа не найдена") ||

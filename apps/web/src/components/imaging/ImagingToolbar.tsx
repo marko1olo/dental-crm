@@ -22,15 +22,15 @@ import {
 } from "./types";
 
 export interface ImagingToolbarProps {
-	selectedImagingStudy?: ImagingStudy | null;
+	selectedImagingStudy?: ImagingStudy | null | undefined;
 	imagingViewerState: ImagingViewerState;
 	setImagingViewerState: React.Dispatch<React.SetStateAction<ImagingViewerState>> | ((state: any) => void);
 	enhancementOn: boolean;
-	setEnhancementOn: React.Dispatch<React.SetStateAction<boolean>>;
+	setEnhancementOn: React.Dispatch<React.SetStateAction<boolean>> | ((on: boolean) => void);
 	isRulerActive: boolean;
-	setIsRulerActive: React.Dispatch<React.SetStateAction<boolean>>;
+	setIsRulerActive: React.Dispatch<React.SetStateAction<boolean>> | ((active: boolean) => void);
 	isPanActive: boolean;
-	setIsPanActive: React.Dispatch<React.SetStateAction<boolean>>;
+	setIsPanActive: React.Dispatch<React.SetStateAction<boolean>> | ((active: boolean) => void);
 	rulerMeasurements: ViewerRulerMeasurement[];
 	setRulerMeasurements: (measurements: ViewerRulerMeasurement[]) => void;
 	onReset: () => void;
@@ -41,19 +41,19 @@ export interface ImagingToolbarProps {
 	imagingViewerSaveDetail: string;
 	imagingViewerNoteReady: boolean;
 	imagingViewerSessionReady: boolean;
-	imagingViewerNoteMissingId?: string;
-	imagingViewerRetryMissingId?: string;
-	canRetryImagingViewerSave?: boolean;
-	retryImagingViewerSessionSave?: () => void;
-	addImagingViewerNoteAnnotation?: () => void;
+	imagingViewerNoteMissingId?: string | undefined;
+	imagingViewerRetryMissingId?: string | undefined;
+	canRetryImagingViewerSave?: boolean | undefined;
+	retryImagingViewerSessionSave?: (() => void) | undefined;
+	addImagingViewerNoteAnnotation?: (() => void) | undefined;
 	imagingViewerAnnotations?: Array<{
 		id: string;
 		label: string;
-		toothCode?: string | null;
+		toothCode?: string | null | undefined;
 		updatedAt: string;
-	}>;
-	formatShortDate?: (date: string) => string;
-	isOnline?: boolean;
+	}> | undefined;
+	formatShortDate?: ((date: string) => string) | undefined;
+	isOnline?: boolean | undefined;
 }
 
 export function ImagingToolbar({
@@ -214,7 +214,7 @@ export function ImagingToolbar({
 							aria-label="Панорамирование снимка"
 							aria-pressed={isPanActive}
 							onClick={() => {
-								setIsPanActive((prev) => !prev);
+								setIsPanActive(!isPanActive);
 								if (!isPanActive) setIsRulerActive(false);
 							}}
 						>
@@ -250,7 +250,7 @@ export function ImagingToolbar({
 							title="Включить/выключить улучшение снимка (CLAHE симуляция)"
 							aria-label="Переключить CLAHE улучшение снимка"
 							aria-pressed={enhancementOn}
-							onClick={() => setEnhancementOn((prev) => !prev)}
+							onClick={() => setEnhancementOn(!enhancementOn)}
 						>
 							<Sparkles size={13} aria-hidden="true" />
 							<span>CLAHE</span>
@@ -262,7 +262,7 @@ export function ImagingToolbar({
 							aria-label="Включить режим калиброванной линейки"
 							aria-pressed={isRulerActive}
 							onClick={() => {
-								setIsRulerActive((prev) => !prev);
+								setIsRulerActive(!isRulerActive);
 								if (!isRulerActive) setIsPanActive(false);
 							}}
 						>
@@ -350,27 +350,11 @@ export function ImagingToolbar({
 				aria-label="Автосохранение сеанса просмотра снимка"
 			>
 				<div>
-					<strong>
-						{imagingViewerSaveTitle[imagingViewerSaveState] || "Автосохранение"}
-					</strong>
+					<strong>{imagingViewerSaveTitle[imagingViewerSaveState] || "Автосохранение"}</strong>
 					<span>{imagingViewerSaveDetail}</span>
 				</div>
-				<div
-					style={{
-						display: "flex",
-						flexDirection: "column",
-						gap: "8px",
-						width: "100%",
-						maxWidth: "400px",
-					}}
-				>
-					<div
-						style={{
-							display: "flex",
-							flexDirection: "column",
-							gap: "4px",
-						}}
-					>
+				<div className="flex flex-col gap-1.5 w-full min-w-0">
+					<div className="flex flex-col gap-1 min-w-0">
 						<textarea
 							aria-label="Заметка к снимку"
 							value={imagingViewerNote}
@@ -388,7 +372,7 @@ export function ImagingToolbar({
 						/>
 						<button
 							type="button"
-							className="text-button"
+							className="text-button self-start inline-flex items-center gap-1.5"
 							title="Вставить заготовку описания под тип этого снимка"
 							onClick={() => {
 								const template = imagingDescriptionTemplate(
@@ -402,37 +386,32 @@ export function ImagingToolbar({
 										: template,
 								);
 							}}
-							style={{
-								alignSelf: "flex-start",
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-							}}
 						>
-							<ClipboardList size={15} aria-hidden="true" />
+							<ClipboardList size={14} aria-hidden="true" />
 							Шаблон описания
 						</button>
 					</div>
-					<div
-						className="quick-chips-row"
-						style={{ flexWrap: "wrap", marginTop: "4px" }}
-					>
-						{IMAGING_QUICK_CHIPS.map((chip) => (
-							<button
-								key={chip}
-								type="button"
-								className="quick-chip quick-chip--sm"
-								onClick={() =>
-									setImagingViewerNote(
-										imagingViewerNote?.trim()
-											? `${imagingViewerNote.trim()}\n• ${chip}`
-											: `• ${chip}`,
-									)
-								}
-							>
-								{chip}
-							</button>
-						))}
+					<div className="quick-chips-row flex flex-wrap gap-1.5 mt-0.5 min-w-0">
+						{IMAGING_QUICK_CHIPS.map((chip) => {
+							const shortLabel = chip.startsWith("Норма (") ? "Норма (б/о)" : chip;
+							return (
+								<button
+									key={chip}
+									type="button"
+									className="quick-chip quick-chip--sm"
+									title={chip}
+									onClick={() =>
+										setImagingViewerNote(
+											imagingViewerNote?.trim()
+												? `${imagingViewerNote.trim()}\n• ${chip}`
+												: `• ${chip}`,
+										)
+									}
+								>
+									{shortLabel}
+								</button>
+							);
+						})}
 					</div>
 				</div>
 				<div className="viewer-session-actions">
@@ -452,43 +431,23 @@ export function ImagingToolbar({
 						</button>
 					)}
 					{canRetryImagingViewerSave && retryImagingViewerSessionSave ? (
-						<button
-							className="secondary-button"
-							type="button"
-							onClick={retryImagingViewerSessionSave}
-						>
+						<button className="secondary-button" type="button" onClick={retryImagingViewerSessionSave}>
 							<RefreshCw aria-hidden="true" /> Повторить
 						</button>
 					) : null}
 				</div>
 				{!imagingViewerSessionReady ? (
-					<p
-						className="viewer-note-missing"
-						id={imagingViewerNoteMissingId}
-						role="status"
-						aria-live="polite"
-					>
+					<p className="viewer-note-missing" id={imagingViewerNoteMissingId} role="status" aria-live="polite">
 						Дождитесь загрузки просмотра, чтобы прикрепить заметку к снимку.
 					</p>
 				) : !imagingViewerNoteReady ? (
-					<p
-						className="viewer-note-missing"
-						id={imagingViewerNoteMissingId}
-						role="status"
-						aria-live="polite"
-					>
+					<p className="viewer-note-missing" id={imagingViewerNoteMissingId} role="status" aria-live="polite">
 						Напишите текст заметки, чтобы прикрепить ее к снимку.
 					</p>
 				) : null}
 				{canRetryImagingViewerSave && !isOnline ? (
-					<p
-						className="viewer-note-missing"
-						id={imagingViewerRetryMissingId}
-						role="status"
-						aria-live="polite"
-					>
-						Внимание: нет подключения к сети. Повторная отправка сохранит снимок
-						локально и синхронизирует при появлении связи.
+					<p className="viewer-note-missing" id={imagingViewerRetryMissingId} role="status" aria-live="polite">
+						Внимание: нет подключения к сети. Повторная отправка сохранит снимок локально и синхронизирует при появлении связи.
 					</p>
 				) : null}
 			</section>

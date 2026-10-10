@@ -222,20 +222,20 @@ export function ScaleSovereigntyPresetsBar() {
 	};
 
 	return (
-		<div className="mb-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 p-4 sm:p-5">
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-200/80 dark:border-slate-800/80">
+		<div className="mb-6 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] p-4 sm:p-5">
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-[var(--line)]">
 				<div className="flex items-center gap-2.5">
-					<div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+					<div className="w-8 h-8 rounded-lg bg-[var(--paper-card)] border border-[var(--line-subtle)] text-[var(--teal)] flex items-center justify-center">
 						<Sparkles size={18} />
 					</div>
 					<div>
-						<h3 className="m-0 text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+						<h3 className="m-0 text-base font-semibold text-[var(--ink)] flex items-center gap-2">
 							Быстрый запуск под масштаб клиники
-							<span className="text-xs font-normal px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-800 dark:text-teal-300">
-								1 клик
+							<span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--teal-soft)] text-[var(--teal-dark)] border border-[var(--line-subtle)]">
+								Быстрый выбор
 							</span>
 						</h3>
-						<p className="m-0 text-xs text-slate-500 dark:text-slate-400">
+						<p className="m-0 text-xs text-[var(--muted)]">
 							Выберите профиль — интерфейс мгновенно адаптируется, скрыв
 							неактуальные разделы
 						</p>
@@ -254,60 +254,49 @@ export function ScaleSovereigntyPresetsBar() {
 							key={preset.id}
 							className={`relative flex flex-col justify-between p-4 rounded-xl border transition-all ${
 								isActive
-									? "bg-white dark:bg-slate-850 shadow-md ring-2 ring-teal-500/40"
-									: "bg-white/80 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-850 hover:shadow-sm"
+									? "bg-[var(--paper-card)] border-[var(--teal)] shadow-xs"
+									: "bg-[var(--paper-card)] border-[var(--line)] hover:border-[var(--line-strong)]"
 							}`}
-							style={{
-								borderColor: isActive
-									? preset.color
-									: "var(--line, #e2e8f0)",
-							}}
 						>
 							<div>
 								<div className="flex items-start justify-between gap-2 mb-2.5">
-									<div
-										className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-										style={{
-											background: `${preset.color}15`,
-											color: preset.color,
-										}}
-									>
-										<Icon size={20} />
+									<div className="w-9 h-9 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] text-[var(--teal)] flex items-center justify-center shrink-0">
+										<Icon size={18} />
 									</div>
 									<span
 										className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
 											isActive
-												? "bg-teal-500 text-white font-semibold"
-												: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+												? "bg-[var(--teal)] text-[var(--on-teal)] font-semibold"
+												: "bg-[var(--paper-soft)] border border-[var(--line-subtle)] text-[var(--muted)]"
 										}`}
 									>
 										{isActive ? "Активный профиль" : preset.badge}
 									</span>
 								</div>
 
-								<h4 className="m-0 text-sm font-bold text-slate-900 dark:text-slate-100 mb-0.5">
+								<h4 className="m-0 text-sm font-bold text-[var(--ink)] mb-0.5">
 									{preset.title}
 								</h4>
-								<div className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-2">
+								<div className="text-xs text-[var(--muted)] font-medium mb-2">
 									{preset.subtitle}
 								</div>
 
-								<div className="mb-3 text-[11px] text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 p-2 rounded-lg leading-snug">
+								<div className="mb-3 text-[11px] text-[var(--ink)] bg-[var(--paper-soft)] border border-[var(--line-subtle)] p-2 rounded-lg leading-snug">
 									<strong>Назначение:</strong> {preset.targetAudience}
 								</div>
 
 								<div className="space-y-1 mb-3 text-xs">
-									<div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+									<div className="text-[11px] font-semibold text-[var(--muted)] mb-1">
 										Включено:
 									</div>
 									{preset.keyFeatures.map((feat) => (
 										<div
 											key={feat}
-											className="flex items-start gap-1.5 text-slate-700 dark:text-slate-300 text-[11px] leading-snug"
+											className="flex items-start gap-1.5 text-[var(--ink)] text-[11px] leading-snug"
 										>
 											<CheckCircle2
 												size={13}
-												className="text-emerald-500 shrink-0 mt-0.5"
+												className="text-[var(--teal)] shrink-0 mt-0.5"
 											/>
 											<span>{feat}</span>
 										</div>
@@ -316,15 +305,15 @@ export function ScaleSovereigntyPresetsBar() {
 
 								{preset.excludedFeatures && (
 									<div className="space-y-1 mb-4 text-xs opacity-75">
-										<div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+										<div className="text-[11px] font-semibold text-[var(--muted)] mb-1">
 											Скрыто для чистоты:
 										</div>
 										{preset.excludedFeatures.map((feat) => (
 											<div
 												key={feat}
-												className="flex items-start gap-1.5 text-slate-500 dark:text-slate-400 text-[11px] leading-snug"
+												className="flex items-start gap-1.5 text-[var(--muted)] text-[11px] leading-snug"
 											>
-												<span className="text-slate-400 font-bold shrink-0">
+												<span className="text-[var(--muted)] font-bold shrink-0">
 													—
 												</span>
 												<span>{feat}</span>
@@ -338,10 +327,10 @@ export function ScaleSovereigntyPresetsBar() {
 								type="button"
 								onClick={() => void handleApplyPreset(preset)}
 								disabled={isActive || isApplying}
-								className={`w-full mt-2 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+								className={`w-full mt-2 h-9 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
 									isActive
-										? "bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 cursor-default"
-										: "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200"
+										? "bg-[var(--teal-soft)] text-[var(--teal-dark)] border border-[var(--line)] cursor-default"
+										: "bg-[var(--teal)] text-[var(--on-teal)] hover:opacity-90"
 								}`}
 							>
 								{isApplying ? (
@@ -351,7 +340,7 @@ export function ScaleSovereigntyPresetsBar() {
 									</>
 								) : isActive ? (
 									<>
-										<CheckCircle2 size={13} className="text-teal-600" />
+										<CheckCircle2 size={13} className="text-[var(--teal)]" />
 										<span>Активен</span>
 									</>
 								) : (

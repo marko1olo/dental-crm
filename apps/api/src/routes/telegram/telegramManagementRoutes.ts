@@ -1,32 +1,23 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
-	createDenteTelegramLinkCodeSchema,
-	denteTelegramChatLinkPublicSchema,
-	denteTelegramChatLinkStatusSchema,
-	denteTelegramLinkCodeStatusSchema,
-	denteTelegramMessagePreviewRequestSchema,
-	denteTelegramOutboxDeliveryStatusSchema,
-	denteTelegramOutboxSendDueResponseSchema,
-	denteTelegramOutboxSendRequestSchema,
-	denteTelegramOutboxSendResponseSchema,
-	denteTelegramSubjectTypeSchema,
-	denteTelegramTemplateKindSchema,
-	updateDenteTelegramBotSettingsSchema,
+	createDenteTelegramLinkCodeSchema, denteTelegramChatLinkPublicSchema,
+	denteTelegramChatLinkStatusSchema, denteTelegramLinkCodeStatusSchema,
+	denteTelegramMessagePreviewRequestSchema, denteTelegramOutboxDeliveryStatusSchema,
+	denteTelegramOutboxSendDueResponseSchema, denteTelegramOutboxSendRequestSchema,
+	denteTelegramOutboxSendResponseSchema, denteTelegramSubjectTypeSchema,
+	denteTelegramTemplateKindSchema, updateDenteTelegramBotSettingsSchema,
+	type UpdateDenteTelegramBotSettingsInput,
 } from "@dental/shared";
 import {
-	requireResolvedOrganizationId,
-	requireResolvedStaffOrAdminOrganizationId,
+	requireResolvedOrganizationId, requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
 import {
-	buildDenteTelegramChatLinkList,
-	revokeDenteTelegramChatLink,
+	buildDenteTelegramChatLinkList, revokeDenteTelegramChatLink,
 } from "../../telegram/chatLinks.js";
 import {
-	buildDenteTelegramLinkCodeList,
-	buildDenteTelegramOutbox,
-	createDenteTelegramLinkCode,
-	denteTelegramOutboxDeliveryReceipts,
-	renderDenteTelegramMessagePreview,
+	buildDenteTelegramLinkCodeList, buildDenteTelegramOutbox,
+	createDenteTelegramLinkCode, denteTelegramOutboxDeliveryReceipts,
+	getDenteTelegramBotSettings, renderDenteTelegramMessagePreview,
 	revokeDenteTelegramChatLink as revokeLegacyInMemoryTelegramChatLink,
 	updateDenteTelegramBotSettings,
 } from "../../services/telegram/telegramLegacyMemoryStore.js";
@@ -48,6 +39,13 @@ import {
 	telegramLinkCodeRejection,
 	telegramMessagePreviewRejection,
 } from "./telegramUtils.js";
+import {
+	buildStatus,
+	buildFeaturePlan,
+} from "./telegramStatusService.js";
+import {
+	telegramChatLinkNotFoundMessage,
+} from "./types.js";
 import {
 	hydrateTelegramDomainState,
 	resolveTelegramOutboxRuntimeScopeFromQuery,

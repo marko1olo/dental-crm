@@ -95,15 +95,15 @@ export function VisitIntakeCockpit({
 		});
 		if (waiting && waiting.patientId) {
 			onSelectPatient(waiting.patientId);
-			showToast(`Открыт приём: ${waiting.patientName || "Пациент"}`, "success");
+			showToast(`Открыт приём: ${(waiting as any).patientName || "Пациент"}`, "success");
 			return;
 		}
 		if (todayAppointments.length > 0 && todayAppointments[0]?.patientId) {
 			onSelectPatient(todayAppointments[0].patientId);
-			showToast(`Открыт приём: ${todayAppointments[0].patientName || "Пациент"}`, "success");
+			showToast(`Открыт приём: ${(todayAppointments[0] as any)?.patientName || "Пациент"}`, "success");
 			return;
 		}
-		if (allPatients.length > 0) {
+		if (allPatients.length > 0 && allPatients[0]) {
 			onSelectPatient(allPatients[0].id);
 			showToast(`Открыта карта: ${allPatients[0].fullName}`, "info");
 			return;
@@ -206,7 +206,7 @@ export function VisitIntakeCockpit({
 						onClick={() => {
 							if (onEmergencyIntake) {
 								onEmergencyIntake();
-							} else if (allPatients.length > 0) {
+							} else if (allPatients.length > 0 && allPatients[0]) {
 								onSelectPatient(allPatients[0].id);
 								showToast("Экстренный приём: открыта карточка пациента", "warning");
 							} else {
@@ -335,19 +335,7 @@ export function VisitIntakeCockpit({
 								</div>
 								<button
 									type="button"
-									style={{
-										display: "inline-flex",
-										alignItems: "center",
-										gap: "0.3rem",
-										padding: "0.35rem 0.65rem",
-										fontSize: "0.8rem",
-										fontWeight: 600,
-										color: "var(--accent, #0284c7)",
-										background: "var(--accent-subtle, #eff6ff)",
-										border: "1px solid rgba(2, 132, 199, 0.2)",
-										borderRadius: "6px",
-										cursor: "pointer",
-									}}
+									className="dente-intake-start-btn"
 								>
 									<span>Начать приём</span>
 									<ArrowRight size={14} />
@@ -538,20 +526,7 @@ export function VisitIntakeCockpit({
 										<button
 											type="button"
 											onClick={() => onSelectPatient(app.patientId || pat.id)}
-											style={{
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "0.35rem",
-												padding: "0.45rem 0.85rem",
-												fontSize: "0.85rem",
-												fontWeight: 600,
-												color: isInChair ? "#ffffff" : "var(--accent, #0284c7)",
-												background: isInChair ? "var(--accent, #0284c7)" : "var(--accent-subtle, #eff6ff)",
-												border: "1px solid",
-												borderColor: isInChair ? "var(--accent, #0284c7)" : "rgba(2, 132, 199, 0.2)",
-												borderRadius: "6px",
-												cursor: "pointer",
-											}}
+											className={`dente-intake-start-btn ${isInChair ? "dente-intake-start-btn--in-chair" : ""}`}
 										>
 											<Play size={14} fill="currentColor" />
 											<span>{isInChair ? "Продолжить приём" : "Начать приём"}</span>

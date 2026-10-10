@@ -182,10 +182,10 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 							<div className="space-y-1">
 								<div className="flex items-center gap-1.5 text-xs font-extrabold text-[var(--ink)]">
 									<ShieldCheck size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-									<span>Бумажное подписание сметы и плана (Автономия врача)</span>
+									<span>Бумажное подписание сметы и плана</span>
 								</div>
 								<p className="text-xs text-[var(--muted)] leading-relaxed">
-									Распечатайте план на А4 для физической подписи пациентом или подтвердите утверждение на бумаге в 1 клик.
+									Распечатайте план на А4 для физической подписи пациентом или подтвердите утверждение на бумаге.
 								</p>
 							</div>
 

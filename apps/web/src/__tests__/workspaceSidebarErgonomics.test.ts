@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import test from "node:test";
+import { test } from "vitest";
 import { fileURLToPath } from "node:url";
 
 const shellPath = fileURLToPath(
-	new URL("../workspaceShell.tsx", import.meta.url),
+	new URL("../workspaceShellModules/WorkspaceSidebar.tsx", import.meta.url),
 );
 const sidebarCssPath = fileURLToPath(
 	new URL("../styles/modules/sidebar.css", import.meta.url),

@@ -14,7 +14,7 @@ import {
 	ALLOWED_PO_TRANSITIONS,
 	RECEIVABLE_PO_STATUSES,
 	// Layer 1 Thresholds
-	calculateReorderPoint,
+	calculateStockReorderPoint,
 	calculateSafetyStock,
 	calculateAverageDailyConsumption,
 	evaluateItemReorderThreshold,
@@ -54,7 +54,7 @@ describe("Warehouse Purchase Orders: Decomposed Modules & Invariants", () => {
 		assert.equal(safetyStock, 4);
 
 		// ROP = (2 * 10) + 4 = 24 units
-		const rop = calculateReorderPoint(avgDaily, 10, safetyStock);
+		const rop = calculateStockReorderPoint(avgDaily, 10, safetyStock);
 		assert.equal(rop, 24);
 
 		// Evaluate item below threshold
@@ -81,7 +81,7 @@ describe("Warehouse Purchase Orders: Decomposed Modules & Invariants", () => {
 		assert.equal(calculateAverageDailyConsumption([], 0), 0);
 		assert.equal(calculateSafetyStock(0, 10), 0);
 		assert.equal(calculateSafetyStock(5, -2), 0);
-		assert.equal(calculateReorderPoint(0, 10, 5), 5);
+		assert.equal(calculateStockReorderPoint(0, 10, 5), 5);
 	});
 
 	it("compares multi-supplier quotes, converts foreign currency, and finds best price", () => {

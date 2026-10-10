@@ -16,9 +16,9 @@ import {
 	type TaxDeductionApplicationForm,
 	type TreatmentPlanAcceptanceVariant,
 } from "@dental/shared";
-import { imagingKindLabels, imagingSourceLabels } from "../../imagingUiLabels";
-import { pricelistSourceKindLabels } from "../../pricelistUiMeta";
-import { postVisitCareTopicOptions } from "../../workspaceStaticOptions";
+import { imagingKindLabels, imagingSourceLabels } from "../../../imagingUiLabels";
+import { pricelistSourceKindLabels } from "../../../pricelistUiMeta";
+import { postVisitCareTopicOptions } from "../../../workspaceStaticOptions";
 import {
 	appointmentLabels,
 	clinicalRuleActionLabels,
@@ -26,13 +26,13 @@ import {
 	paymentMethodLabels,
 	recognitionTargetLabels,
 	serviceCategoryLabels,
-} from "../../workspaceUiLabels";
-import { treatmentAcceptanceVariantOptions } from "../AppointmentHelpers";
+} from "../../../workspaceUiLabels";
+import { treatmentAcceptanceVariantOptions } from "../../AppointmentHelpers";
 import {
 	type OnboardingStep,
 	onboardingStepValues,
-} from "../AuthOnboardingHelpers";
-import { isDentalSpecialty, isStaffRole } from "../clinicProfileUtils";
+} from "../../AuthOnboardingHelpers";
+import { isDentalSpecialty, isStaffRole } from "../../clinicProfileUtils";
 import {
 	addMinutesToClinicDateTimeLocal,
 	calendarDayInTimeZone,
@@ -55,28 +55,28 @@ import {
 	todayDateInputValue,
 	validClockTime,
 	weekdayFromDateInput,
-} from "../dateTimeUtils";
+} from "../../dateTimeUtils";
 import {
 	loadDocumentIssueSignatureDraft,
 	taxApplicationDeliveryChannelOptions,
 	taxApplicationFormOptions,
-} from "../DocumentHelpers";
+} from "../../DocumentHelpers";
 import {
 	defaultUiLanguageOption,
 	isUiLanguage,
 	pickUiPreference,
 	uiPreferencesServerPath,
-} from "../PreferencesHelpers";
+} from "../../PreferencesHelpers";
 import {
 	defaultUiPreferences,
 	type UiPreferences,
 	type UiPreferencesInput,
-} from "../preferencesUtils";
+} from "../../preferencesUtils";
 import {
 	isTelegramLinkSubjectTypePreference,
 	isTelegramOutboxStatusFilterPreference,
 	isTelegramOutboxTemplateFilterPreference,
-} from "../TelegramHelpers";
+} from "../../TelegramHelpers";
 import { responseErrorMessage } from "../errorHelpers";
 import {
 	denteAdminSecretRequestHeaders,

@@ -32,6 +32,10 @@ import { invalidateAppointmentReminders } from "../services/communications/appoi
 import { triggerSmartGapFiller } from "../services/daemons/smartGapFillerService.js";
 import { wsBroker } from "../services/websocketBroker.js";
 import {
+	syncRecallOnAppointmentCreated,
+	syncRecallOnAppointmentCompleted,
+} from "../services/patients/recallSyncService.js";
+import {
 	appointmentCreateValidationMessage,
 	appointmentRejectionResponse,
 	appointmentUpdateValidationMessage,
@@ -238,6 +242,13 @@ export const createAppointmentHandler = async (
 				endsAt: created.endsAt,
 				status: created.status,
 			},
+		});
+
+		void syncRecallOnAppointmentCreated(orgId, {
+			id: created.id,
+			patientId: created.patientId,
+			doctorUserId: created.doctorUserId,
+			reason: input.reason,
 		});
 
 		let dashboard: Awaited<ReturnType<typeof getDashboardFromDb>>;
@@ -534,6 +545,7 @@ export const updateAppointmentHandler = async (
 				);
 			}
 		} else if (input.status === "completed") {
+			void syncRecallOnAppointmentCompleted(orgId, params.appointmentId);
 			try {
 				await db
 					.update(visits)

@@ -5,6 +5,7 @@ import {
 	Calculator,
 	CheckCircle2,
 	Clock,
+	Columns2,
 	FileText,
 	FlaskConical,
 	Lock,
@@ -49,10 +50,12 @@ export function VisitViewHeader({
 	setIsDoctorShiftModalOpen,
 	setIsPriceValidatorModalOpen,
 	setIsStagePaymentModalOpen,
+	onOpenVisiographComparison,
+	setIsVisiographComparisonModalOpen,
 }: VisitViewHeaderProps) {
 	return (
-		<div className="min-h-[44px] h-[44px] flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 border-b border-[var(--line)] flex-nowrap min-w-0 max-w-full">
-			<div className="flex items-center gap-1 sm:gap-1.5 shrink min-w-0 overflow-hidden">
+		<div className="min-h-[44px] h-[44px] flex items-center justify-between gap-1 px-2 py-1 border-b border-[var(--line)] flex-nowrap min-w-0 max-w-full">
+			<div className="flex items-center gap-1 shrink min-w-0 overflow-hidden">
 				<PatientAvatar fullName={activePatient.fullName} size={22} className="!w-5 !h-5 sm:!w-[26px] sm:!h-[26px] shrink-0" />
 				<span
 					className="font-bold text-xs sm:text-sm text-[var(--ink)] shrink-0 flex-shrink-0 whitespace-nowrap"
@@ -81,16 +84,16 @@ export function VisitViewHeader({
 				{/* Единый компактный и яркий чип аллергии (Tier 1) */}
 				{activePatientCriticalBadges.length > 0 ? (
 					<span
-						className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink min-w-0 max-w-[200px] lg:max-w-[260px] xl:max-w-[340px] animate-pulse"
+						className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink-0 whitespace-nowrap animate-pulse"
 						data-testid="visit-focus-allergy-alert"
 						role="alert"
 						title={activePatientCriticalBadges.map((b) => b.title).join(" | ")}
 					>
 						<AlertOctagon size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
-						<span className="sm:hidden text-[10px] truncate">
+						<span className="sm:hidden text-[10px] whitespace-nowrap">
 							{consolidatedAllergyChip || activePatientCriticalBadges[0]?.shortLabel}
 						</span>
-						<span className="hidden sm:inline truncate">
+						<span className="hidden sm:inline whitespace-nowrap">
 							{consolidatedAllergyChip || activePatientCriticalBadges[0]?.fullLabel}
 						</span>
 					</span>
@@ -117,7 +120,7 @@ export function VisitViewHeader({
 				</span>
 			</div>
 
-			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+			<div className="flex items-center gap-1 shrink-0">
 				{/* Скрытый для тестов виджет соматики (предотвращает тройное дублирование на экране) */}
 				<div className="sr-only" aria-hidden="true">
 					<SomaticSafetyAlertWidget
@@ -134,7 +137,7 @@ export function VisitViewHeader({
 					/>
 				</div>
 
-				{/* 1-клик «✓ Норма» (Жалоб нет, соматически здоров, физиологическая норма) */}
+				{/* 1-клик «✓ Норма» (каноническая видимая кнопка находится в EmkToolbar, здесь sr-only для обратной совместимости) */}
 				<button
 					type="button"
 					onClick={() => {
@@ -147,9 +150,10 @@ export function VisitViewHeader({
 						showToast("ЭМК заполнена нормой: пациент здоров", "success");
 					}}
 					data-testid="btn-soap-norm-one-click"
-					className="secondary-button min-h-[34px] h-[34px] px-2.5 py-0 text-xs font-semibold text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30 flex items-center gap-1.5 cursor-pointer transition-all shrink-0 rounded-lg shadow-2xs"
+					className="sr-only"
 					title="Заполнить дневник физиологической нормой (здоров)"
-					aria-label="Физиологическая норма в 1 клик"
+					aria-label="Физиологическая норма"
+					tabIndex={-1}
 				>
 					<Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
 					<span>✓ Норма</span>
@@ -245,7 +249,7 @@ export function VisitViewHeader({
 					}}
 					id="btn-visit-switch-to-queue"
 					data-testid="btn-visit-switch-to-queue"
-					className="secondary-button min-h-[34px] h-[34px] px-3 py-0 text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] !hidden md:!inline-flex items-center gap-1.5 shrink-0 cursor-pointer rounded-lg whitespace-nowrap shadow-2xs"
+					className="secondary-button min-h-[34px] h-[34px] px-2 py-0 text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] !hidden md:!inline-flex items-center gap-1 shrink-0 cursor-pointer rounded-lg whitespace-nowrap shadow-2xs"
 					title="Открыть очередь смены и список пациентов"
 				>
 					<UserCheck size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
@@ -257,7 +261,7 @@ export function VisitViewHeader({
 					type="button"
 					onClick={handleFinishVisitAction}
 					data-testid="btn-complete-visit-header"
-					className="primary-button min-h-[34px] h-[34px] px-3.5 py-0 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 !hidden sm:!inline-flex items-center gap-1.5 shrink-0 cursor-pointer rounded-lg whitespace-nowrap shadow-xs transition-all active:scale-[0.98]"
+					className="primary-button min-h-[34px] h-[34px] px-2.5 py-0 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 !hidden sm:!inline-flex items-center gap-1 shrink-0 cursor-pointer rounded-lg whitespace-nowrap shadow-xs transition-all active:scale-[0.98]"
 					title="Завершить приём и сформировать чек"
 				>
 					<CheckCircle2 size={14} className="shrink-0 text-white" />
@@ -384,6 +388,28 @@ export function VisitViewHeader({
 								<div className="flex flex-col">
 									<span className="font-semibold">Наряд в зуботехническую лабораторию (ЗТЛ)</span>
 									<span className="text-[10px] text-[var(--muted)]">Заказ коронок, мостов, вкладок, All-on-4</span>
+								</div>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setIsHeaderMoreMenuOpen(false);
+									if (onOpenVisiographComparison) {
+										onOpenVisiographComparison();
+									} else if (setIsVisiographComparisonModalOpen) {
+										setIsVisiographComparisonModalOpen(true);
+									} else if (typeof window !== "undefined") {
+										window.dispatchEvent(new CustomEvent("dente-open-visiograph-comparison"));
+									}
+								}}
+								data-testid="visit-more-action-compare-visiograph"
+								className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)]"
+								role="menuitem"
+							>
+								<Columns2 size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<div className="flex flex-col">
+									<span className="font-semibold">Сравнить снимки визиографа (До/После)</span>
+									<span className="text-[10px] text-[var(--muted)]">Сплит-контроль эндодонтии и пломбировки каналов</span>
 								</div>
 							</button>
 							<button

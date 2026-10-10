@@ -132,7 +132,7 @@ export const CabinetAppointmentsTab: React.FC<CabinetAppointmentsTabProps> = mem
 											onClick={() => onConfirmAppointment(app.id)}
 										>
 											<CheckCircle2 size={16} />
-											<span>Подтвердить визит в 1 клик</span>
+											<span>Подтвердить визит</span>
 										</button>
 									) : (
 										<div className="tg-confirmed-note">

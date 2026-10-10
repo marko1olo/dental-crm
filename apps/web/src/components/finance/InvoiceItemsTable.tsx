@@ -105,7 +105,7 @@ export const InvoiceItemsTable: React.FC<InvoiceItemsTableProps> = ({
 															{it.suggested804nAnalogue?.code804n}
 														</strong>{" "}
 														{it.suggested804nAnalogue?.title} (
-														{it.suggested804nAnalogue?.basePriceRub} ₽)
+														{it.suggested804nAnalogue?.basePriceRub ?? 0} ₽)
 													</span>
 													<button
 														type="button"

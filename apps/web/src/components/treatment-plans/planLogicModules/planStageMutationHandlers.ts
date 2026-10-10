@@ -5,24 +5,25 @@
  * Выделено из useTreatmentPlanLogic.ts строго по Мандату 8b (лимит строк <= 800).
  */
 
-import { showToast } from "../../GlobalToast";
+import {
+	applyCopilotCommandToPlan,
+	type CopilotCommandType,
+} from "../../../services/ai/treatmentPlanCopilot";
 import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
 import { logger } from "../../../utils/logger";
+import { showRollbackToast, showToast } from "../../GlobalToast";
 import {
 	extractCbctFindingsFromOdontogramAndStorage,
 	generateCbctAutoPlanScenarios,
 } from "../ctImplantIntegrationBridge";
 import {
-	applyCopilotCommandToPlan,
-	type CopilotCommandType,
-} from "../../../services/ai/treatmentPlanCopilot";
-import {
 	applyClinicalBundleToStages,
-	createBundlePlanItems,
-	getClinicalBundleById,
 	type ClinicalBundleDefinition,
 	type ClinicalBundleId,
+	createBundlePlanItems,
+	getClinicalBundleById,
 } from "../treatmentPlanBundlesEngine";
+import { dispatchStageStartEvents } from "../treatmentPlanNetworkSync";
 import {
 	addItemToPlanStages,
 	assignDoctorToItemInStages,
@@ -33,7 +34,6 @@ import {
 	updateItemPriceInStages,
 	updateItemQuantityInStages,
 } from "../treatmentPlanStageMutations";
-import { dispatchStageStartEvents } from "../treatmentPlanNetworkSync";
 import type {
 	CashierInvoiceExportData,
 	PlanStageMutationContext,
@@ -94,7 +94,10 @@ export function createPlanStageMutationHandlers(
 				);
 			}
 		} catch (err: unknown) {
-			logger.error("[useTreatmentPlanLogic] Error generating CBCT auto plan", err);
+			logger.error(
+				"[useTreatmentPlanLogic] Error generating CBCT auto plan",
+				err,
+			);
 			showToast("Не удалось сформировать автоплан по КЛКТ", "error");
 		}
 	};
@@ -124,6 +127,7 @@ export function createPlanStageMutationHandlers(
 		const targetItem = stages
 			.flatMap((s) => s.items)
 			.find((it) => it.id === itemId);
+		const prevStages = stages;
 		setCustomStages(removeItemFromStages(stages, itemId));
 		if (targetItem) {
 			StaffActionAuditService.logServiceRemove({
@@ -134,7 +138,14 @@ export function createPlanStageMutationHandlers(
 				amountKopecks: Math.round((targetItem.priceRub || 0) * 100),
 			});
 		}
-		showToast("Процедура удалена из этапа", "info");
+		const itemName = targetItem ? `«${targetItem.name}»` : "Процедура";
+		showRollbackToast(
+			`${itemName} удалена из плана лечения`,
+			() => {
+				setCustomStages(prevStages);
+			},
+			5000,
+		);
 	};
 
 	const handleAssignDoctorToStage = (
@@ -158,10 +169,7 @@ export function createPlanStageMutationHandlers(
 				"success",
 			);
 		} else {
-			showToast(
-				`Назначение врача с этапа ${stage.stageNumber} снято`,
-				"info",
-			);
+			showToast(`Назначение врача с этапа ${stage.stageNumber} снято`, "info");
 		}
 	};
 
@@ -283,10 +291,7 @@ export function createPlanStageMutationHandlers(
 					totalRub,
 					totalKopecks: Math.round(totalRub * 100) as any,
 					order804nCodes: Array.from(
-						new Set([
-							...st.order804nCodes,
-							...items.map((it) => it.code804n),
-						]),
+						new Set([...st.order804nCodes, ...items.map((it) => it.code804n)]),
 					),
 				};
 			});

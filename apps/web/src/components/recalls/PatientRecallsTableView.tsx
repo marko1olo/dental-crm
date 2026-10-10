@@ -179,7 +179,7 @@ export const PatientRecallsTableView: React.FC<PatientRecallsTableViewProps> = (
 										<button
 											type="button"
 											className="recall-action-btn"
-											title="Связались — пациент уже записан на прием (1 клик)"
+											title="Связались — пациент уже записан на прием"
 											style={{
 												minHeight: "36px",
 												padding: "6px 10px",

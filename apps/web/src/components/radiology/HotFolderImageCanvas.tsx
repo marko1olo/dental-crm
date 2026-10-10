@@ -95,6 +95,7 @@ export const HotFolderImageCanvas: React.FC<HotFolderImageCanvasProps> = ({
 }) => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const glRendererRef = useRef<RvgGlRendererInstance | null>(null);
+	const [isGlReady, setIsGlReady] = React.useState<boolean>(false);
 
 	// Initialize WebGL 2D renderer and upload image texture
 	useEffect(() => {
@@ -103,34 +104,45 @@ export const HotFolderImageCanvas: React.FC<HotFolderImageCanvasProps> = ({
 			glRendererRef.current = createRvgGlRenderer(canvas);
 		}
 
-		if (!activeItem?.imageUrl) return;
+		if (!activeItem?.imageUrl) {
+			setIsGlReady(false);
+			return;
+		}
+
+		const handleContextLost = (e: Event) => {
+			e.preventDefault();
+			setIsGlReady(false);
+		};
+		canvas?.addEventListener("webglcontextlost", handleContextLost);
 
 		const img = new Image();
-		img.crossOrigin = "anonymous";
-		img.src = activeItem.imageUrl;
 		img.onload = () => {
 			if (glRendererRef.current) {
-				glRendererRef.current.updateImage(img);
-				glRendererRef.current.render({
-					brightness,
-					contrast,
-					sharpness,
-					invert,
-					enamelHighPass,
-					pdlSharpening,
-				});
-			} else if (canvas) {
-				const ctx = canvas.getContext("2d");
-				if (ctx) {
-					canvas.width = img.naturalWidth || 1000;
-					canvas.height = img.naturalHeight || 1300;
-					ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-				}
+				const updated = glRendererRef.current.updateImage(img);
+				const rendered = updated
+					? glRendererRef.current.render({
+							brightness,
+							contrast,
+							sharpness,
+							invert,
+							enamelHighPass,
+							pdlSharpening,
+						})
+					: false;
+				setIsGlReady(rendered);
+			} else {
+				setIsGlReady(false);
 			}
 		};
+		img.onerror = () => {
+			setIsGlReady(false);
+		};
+		img.src = activeItem.imageUrl;
 
 		return () => {
+			canvas?.removeEventListener("webglcontextlost", handleContextLost);
 			img.onload = null;
+			img.onerror = null;
 			img.src = "";
 		};
 	}, [activeItem?.imageUrl]);
@@ -214,9 +226,10 @@ export const HotFolderImageCanvas: React.FC<HotFolderImageCanvasProps> = ({
 					className="hfi-image-stage"
 					style={{
 						transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100}) rotate(${rotation}deg) scaleX(${flipH ? -1 : 1}) scaleY(${flipV ? -1 : 1})`,
-						filter: glRendererRef.current?.isWebGL
-							? "none"
-							: `brightness(${brightness}%) contrast(${contrast}%) ${invert ? "invert(100%)" : ""} ${sharpness > 0 ? "url(#hfi-sharpness-kernel)" : ""}`,
+						filter:
+							isGlReady && glRendererRef.current?.isWebGL
+								? "none"
+								: `brightness(${brightness}%) contrast(${contrast}%) ${invert ? "invert(100%)" : ""} ${sharpness > 0 ? "url(#hfi-sharpness-kernel)" : ""}`,
 					}}
 				>
 					{activeItem ? (
@@ -226,7 +239,7 @@ export const HotFolderImageCanvas: React.FC<HotFolderImageCanvasProps> = ({
 								className="hfi-radiology-canvas"
 								data-testid="hfi-active-radiology-canvas"
 								style={{
-									display: "block",
+									display: isGlReady ? "block" : "none",
 									maxWidth: "100%",
 									maxHeight: "100%",
 									objectFit: "contain",
@@ -236,9 +249,9 @@ export const HotFolderImageCanvas: React.FC<HotFolderImageCanvasProps> = ({
 							<img
 								src={activeItem.imageUrl}
 								alt={activeItem.filename}
-								loading="lazy"
 								decoding="async"
-								className="hfi-radiology-image hidden"
+								className="hfi-radiology-image"
+								style={{ display: isGlReady ? "none" : "block" }}
 								data-testid="hfi-active-radiology-image"
 								draggable={false}
 							/>

@@ -100,11 +100,11 @@ export const ClinicalTasksTable: React.FC<ClinicalTasksTableProps> = ({
 												cursor: "pointer",
 												whiteSpace: "nowrap",
 											}}
-											title="Завершить задачу в 1 клик"
+											title="Завершить задачу"
 										>
 											{completingTaskId === task.id
 												? "Завершаю…"
-												: "Завершить в 1 клик"}
+												: "Завершить задачу"}
 										</button>
 									) : (
 										<span

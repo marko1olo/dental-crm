@@ -41,13 +41,15 @@ for (const escapeFlag of [
 	process.env[escapeFlag] = "0";
 }
 
+import { readApiServerSourceSync } from "./lib/api-server-source.mjs";
+
 const serverPath = path.resolve("apps/api/dist/server.js");
 
 if (!existsSync(serverPath)) {
 	throw new Error("Build API first: npm run build -w @dental/api");
 }
 
-const serverSource = readFileSync("apps/api/src/server.ts", "utf8");
+const serverSource = readApiServerSourceSync();
 
 function assert(condition, message) {
 	if (!condition) throw new Error(message);

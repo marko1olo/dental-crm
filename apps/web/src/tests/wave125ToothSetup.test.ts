@@ -6,8 +6,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 
-import "../../../../packages/shared/src/radiology/__tests__/wave125ToothSetup.test.js";
-
 import {
 	TOOTH_GEOMETRY,
 	TOOTH_SURFACE_POLYGONS,
@@ -113,15 +111,14 @@ describe("Tooth Geometry Math Decomposition Invariants", () => {
 		const summary: CtPlanningGeometrySummary = buildCtPlanningGeometrySummary({
 			annotations: [],
 			implantPlan: {
-				id: "imp-1",
-				manufacturer: "Straumann",
+				itemId: "imp-1",
+				indication: "single_tooth",
+				system: "Straumann",
 				line: "BLT",
 				diameterMm: 4.1,
 				lengthMm: 10,
-				toothCode: "36",
-				positionWorld: [0, 0, 0],
-				axisWorld: [0, 0, -1],
-				safetyMarginMm: 2,
+				platform: "RC",
+				selectedAt: "2026-10-10T10:00:00.000Z",
 			},
 			slabMm: 1.5,
 		});

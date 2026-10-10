@@ -76,7 +76,7 @@ export interface SyncQueueStats {
 	pendingCount: number;
 	processingCount: number;
 	deadLetterCount: number;
-	oldestEnqueuedAt?: string;
+	oldestEnqueuedAt?: string | undefined;
 }
 
 /**

@@ -555,7 +555,7 @@ export function deriveMigrationSettings(params: MigrationDerivationsParams) {
 							className={actionButtonClass}
 							type="button"
 							onClick={() =>
-								void previewMigrationAutopilotSources(step.sourceFingerprint)
+								void previewMigrationAutopilotSources(step.sourceFingerprint ?? undefined)
 							}
 							disabled={isSmartImportLoading || !operatorStepPreviewReady}
 							data-testid={scriptTestId("operator-script-build-preview")}

@@ -64,21 +64,24 @@ describe("Wave 117: Dev Leaks & Synthetic Staff Mocks Purification (Mandates 8a�
 		);
 	});
 
-	it("3. App.tsx: absence of synthetic doctor mocks «Смирнов Олег Игоревич» and «Смирнов Алексей Петрович»", () => {
+	it("3. App.tsx / AppTopBar.tsx: absence of synthetic doctor mocks «Смирнов Олег Игоревич» and «Смирнов Алексей Петрович»", () => {
 		const filePath = path.join(repoRoot, "apps/web/src/App.tsx");
 		const content = fs.readFileSync(filePath, "utf-8");
+		const topBarPath = path.join(repoRoot, "apps/web/src/components/appLayout/AppTopBar.tsx");
+		const topBarContent = fs.existsSync(topBarPath) ? fs.readFileSync(topBarPath, "utf-8") : "";
+		const combined = content + "\n" + topBarContent;
 
 		assert.ok(
-			!content.includes("Смирнов Олег Игоревич"),
-			"App.tsx must not contain synthetic doctor mock 'Смирнов Олег Игоревич'",
+			!combined.includes("Смирнов Олег Игоревич"),
+			"App.tsx/AppTopBar.tsx must not contain synthetic doctor mock 'Смирнов Олег Игоревич'",
 		);
 		assert.ok(
-			!content.includes("Смирнов Алексей Петрович"),
-			"App.tsx must not contain synthetic doctor mock 'Смирнов Алексей Петрович'",
+			!combined.includes("Смирнов Алексей Петрович"),
+			"App.tsx/AppTopBar.tsx must not contain synthetic doctor mock 'Смирнов Алексей Петрович'",
 		);
 		assert.ok(
-			content.includes('initialDoctorName={activeDoctor?.fullName || "Лечащий врач"}'),
-			"App.tsx must use neutral fallback 'Лечащий врач'",
+			combined.includes('activeDoctor?.fullName || "Лечащий врач"'),
+			"App.tsx/AppTopBar.tsx must use neutral fallback 'Лечащий врач'",
 		);
 	});
 

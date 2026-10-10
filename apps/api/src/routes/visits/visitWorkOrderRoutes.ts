@@ -10,6 +10,7 @@ import {
 	VisitWorkOrderService,
 } from "../../services/clinical/VisitWorkOrderService.js";
 import { wsBroker } from "../../services/websocketBroker.js";
+import { TelegramPostOpCarePipeline } from "../../services/telegram/TelegramPostOpCarePipeline.js";
 
 export function registerVisitWorkOrderRoutes(app: FastifyInstance) {
 	// Перенос согласованных услуг из плана лечения в наряд / протокол приёма (Feature #41, ЗоЗПП ст. 16, ПП РФ № 736)
@@ -119,6 +120,60 @@ export function registerVisitWorkOrderRoutes(app: FastifyInstance) {
 						status: "completed",
 					},
 				});
+			}
+
+			wsBroker.broadcastToOrganization(context.organizationId, {
+				type: "INVENTORY_STOCK_CHANGED",
+				payload: {
+					visitId,
+					action: "auto_deduct",
+					deductionsCount: result.deductions?.length ?? 0,
+					isOverdraft: Boolean(result.isOverdraft),
+				},
+			});
+
+			// Автоматическая постановка послеоперационного триажа (3ч) или 24ч авто-опроса после завершения наряда
+			try {
+				const [completedVisit] = await database
+					.select({
+						id: visits.id,
+						organizationId: visits.organizationId,
+						patientId: visits.patientId,
+						appointmentId: visits.appointmentId,
+						diagnosis: visits.diagnosis,
+						treatmentPlan: visits.treatmentPlan,
+						complaint: visits.complaint,
+						objectiveStatus: visits.objectiveStatus,
+						doctorSummary: visits.doctorSummary,
+					})
+					.from(visits)
+					.where(
+						and(
+							eq(visits.id, visitId),
+							eq(visits.organizationId, context.organizationId),
+						),
+					)
+					.limit(1);
+
+				if (completedVisit) {
+					await TelegramPostOpCarePipeline.schedulePostVisitSurveyIfNeeded({
+						organizationId: context.organizationId,
+						clinicId: completedVisit.organizationId,
+						visitId: completedVisit.id,
+						patientId: completedVisit.patientId,
+						appointmentId: completedVisit.appointmentId,
+						diagnosis: completedVisit.diagnosis,
+						treatmentPlan: completedVisit.treatmentPlan,
+						complaint: completedVisit.complaint,
+						objectiveStatus: completedVisit.objectiveStatus,
+						doctorSummary: completedVisit.doctorSummary,
+					});
+				}
+			} catch (postOpError) {
+				request.log.warn(
+					{ error: postOpError, visitId },
+					"Не удалось автоматически поставить опрос после завершения наряда (не блокирует приём)",
+				);
 			}
 
 			return result;

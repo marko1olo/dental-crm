@@ -256,7 +256,45 @@ export function useOdontogramSync({
 		const controller = new AbortController();
 		let cancelled = false;
 
+		const isUuidPatient = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+			patientId || "",
+		);
+
+		const applyFallbackTeeth = (errStatus: number | null, shouldToastError = false) => {
+			const localCached = loadStoredTeethData(patientId);
+			if (localCached && localCached.length > 0) {
+				setTeethData(localCached);
+				setTeethLoad({ phase: "ready" });
+			} else if (
+				isSamePatient &&
+				teethDataRef.current.length > 0 &&
+				teethDataRef.current.some((t) => t.state !== "Healthy")
+			) {
+				saveStoredTeethData(patientId, teethDataRef.current);
+				setTeethLoad({ phase: "ready" });
+			} else if (
+				isDemoShowcaseMode() ||
+				isDemoPatientId(patientId) ||
+				!isUuidPatient ||
+				errStatus === 404
+			) {
+				setTeethData(defaultBaseline);
+				setTeethLoad({ phase: "ready" });
+			} else {
+				if (shouldToastError) {
+					showToast(actionFailureToast("Ошибка выполнения операции", errStatus), "error");
+				}
+				setTeethData(defaultBaseline);
+				setTeethLoad({ phase: "failed", status: errStatus });
+			}
+		};
+
 		const loadTeeth = async () => {
+			if (!patientId) {
+				setTeethData(defaultBaseline);
+				setTeethLoad({ phase: "ready" });
+				return;
+			}
 			let status: number | null = null;
 			try {
 				const res = await fetch(`/api/patients/${patientId}/tooth-states`, {
@@ -267,31 +305,10 @@ export function useOdontogramSync({
 				const rawBody = await res.text();
 				if (cancelled) return;
 				if (!res.ok) {
-					logger.error(`[tooth states] ${status} ${rawBody.slice(0, 300)}`);
-					const localCached = loadStoredTeethData(patientId);
-					if (localCached && localCached.length > 0) {
-						setTeethData(localCached);
-						setTeethLoad({ phase: "ready" });
-						showToast("Зубная формула загружена из локального хранилища (офлайн)", "info", 5000);
-					} else if (
-						isSamePatient &&
-						teethDataRef.current.length > 0 &&
-						teethDataRef.current.some((t) => t.state !== "Healthy")
-					) {
-						saveStoredTeethData(patientId, teethDataRef.current);
-						setTeethLoad({ phase: "ready" });
-						showToast("Зубная формула сохранена из локального сеанса (офлайн)", "info", 5000);
-					} else if (isDemoShowcaseMode() || isDemoPatientId(patientId)) {
-						setTeethData(defaultBaseline);
-						setTeethLoad({ phase: "ready" });
-					} else {
-						showToast(
-							actionFailureToast("Ошибка выполнения операции", status),
-							"error",
-						);
-						setTeethData(defaultBaseline);
-						setTeethLoad({ phase: "failed", status });
+					if (status !== 404 && isUuidPatient) {
+						logger.error(`[tooth states] ${status} ${rawBody.slice(0, 300)}`);
 					}
+					applyFallbackTeeth(status, true);
 					return;
 				}
 				let data: unknown = null;
@@ -304,8 +321,21 @@ export function useOdontogramSync({
 					typeof data === "object" && data !== null && !Array.isArray(data)
 						? (data as Record<string, unknown>)
 						: null;
-				if (body?.success === true && Array.isArray(body.states)) {
-					const incoming = body.states as ToothData[];
+				const incomingStates: ToothData[] | null = Array.isArray(data)
+					? (data as ToothData[])
+					: body
+						? Array.isArray(body.states)
+							? (body.states as ToothData[])
+							: Array.isArray(body.data)
+								? (body.data as ToothData[])
+								: Object.keys(body).length === 0 || body.success === true
+									? []
+									: null
+						: rawBody.trim() === ""
+							? []
+							: null;
+				if (incomingStates !== null) {
+					const incoming = incomingStates;
 					const localCached = loadStoredTeethData(patientId);
 					const baseTeeth: ToothData[] =
 						localCached && localCached.length > 0
@@ -378,56 +408,11 @@ export function useOdontogramSync({
 					return;
 				}
 				logger.error(`[tooth states] ${status}: в ответе нет формулы`);
-				const localCached = loadStoredTeethData(patientId);
-				if (localCached && localCached.length > 0) {
-					setTeethData(localCached);
-					setTeethLoad({ phase: "ready" });
-					showToast("Зубная формула загружена из локального хранилища (офлайн)", "info", 5000);
-				} else if (
-					isSamePatient &&
-					teethDataRef.current.length > 0 &&
-					teethDataRef.current.some((t) => t.state !== "Healthy")
-				) {
-					saveStoredTeethData(patientId, teethDataRef.current);
-					setTeethLoad({ phase: "ready" });
-					showToast("Зубная формула сохранена из локального сеанса (офлайн)", "info", 5000);
-				} else if (isDemoShowcaseMode() || isDemoPatientId(patientId)) {
-					setTeethData(defaultBaseline);
-					setTeethLoad({ phase: "ready" });
-				} else {
-					setTeethData(defaultBaseline);
-					setTeethLoad({ phase: "failed", status });
-				}
+				applyFallbackTeeth(status, false);
 			} catch (err) {
 				if (cancelled || (err instanceof Error && err.name === "AbortError") || (typeof err === "object" && err !== null && (err as { name?: string }).name === "AbortError")) return;
 				logger.error("[tooth states] запрос не выполнен", err);
-				const localCached = loadStoredTeethData(patientId);
-				if (localCached && localCached.length > 0) {
-					setTeethData(localCached);
-					setTeethLoad({ phase: "ready" });
-					showToast("Зубная формула загружена из локального хранилища (офлайн)", "info", 5000);
-				} else if (
-					isSamePatient &&
-					teethDataRef.current.length > 0 &&
-					teethDataRef.current.some((t) => t.state !== "Healthy")
-				) {
-					saveStoredTeethData(patientId, teethDataRef.current);
-					setTeethLoad({ phase: "ready" });
-					showToast("Зубная формула сохранена из локального сеанса (офлайн)", "info", 5000);
-				} else if (isDemoShowcaseMode() || isDemoPatientId(patientId)) {
-					setTeethData(defaultBaseline);
-					setTeethLoad({ phase: "ready" });
-				} else {
-					showToast(
-						actionFailureToast(
-							"Ошибка выполнения операции",
-							(err as { status?: number })?.status ?? null,
-						),
-						"error",
-					);
-					setTeethData(defaultBaseline);
-					setTeethLoad({ phase: "failed", status });
-				}
+				applyFallbackTeeth((err as { status?: number })?.status ?? status, true);
 			}
 		};
 		void loadTeeth();

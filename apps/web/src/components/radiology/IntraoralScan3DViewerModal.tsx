@@ -1,13 +1,54 @@
 import React, { useEffect } from "react";
-import { X, Maximize2, Minimize2, Box } from "lucide-react";
+import { createPortal } from "react-dom";
+import { X, Maximize2, Minimize2, Box, ExternalLink } from "lucide-react";
+
+export interface Scan3dPopoutParams {
+	readonly modelUrl?: string | undefined;
+	readonly modelFormat?: ("stl" | "obj" | "ply") | undefined;
+	readonly patientName?: string | undefined;
+	readonly scanTitle?: string | undefined;
+	readonly toothCode?: (string | number) | undefined;
+	readonly orderId?: string | undefined;
+}
+
+export function buildScan3dPopoutUrl(params: Scan3dPopoutParams): string {
+	const q = new URLSearchParams();
+	if (params.modelUrl) q.set("model", params.modelUrl);
+	if (params.modelFormat) q.set("ext", params.modelFormat);
+	if (params.scanTitle) q.set("title", params.scanTitle);
+	if (params.patientName) q.set("patient", params.patientName);
+	if (params.toothCode) q.set("tooth", String(params.toothCode));
+	if (params.orderId) q.set("orderId", params.orderId);
+	q.set("popout", "1");
+	return `/viewer3d.html?${q.toString()}`;
+}
+
+export function openScan3dPopoutWindow(params: Scan3dPopoutParams): Window | null {
+	if (typeof window === "undefined") return null;
+	const url = buildScan3dPopoutUrl(params);
+	const width = 1280;
+	const height = 800;
+	const left = Math.max(0, Math.round((window.screen.width - width) / 2));
+	const top = Math.max(0, Math.round((window.screen.height - height) / 2));
+	const features = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no,status=no`;
+	const win = window.open(url, "dente_3d_scan_popout", features);
+	if (win) {
+		win.focus();
+	}
+	return win;
+}
 
 export interface IntraoralScan3DViewerModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly modelUrl?: string;
-	readonly modelFormat?: "stl" | "obj" | "ply";
-	readonly patientName?: string;
-	readonly scanTitle?: string;
+	readonly modelUrl?: string | undefined;
+	readonly modelFormat?: ("stl" | "obj" | "ply") | undefined;
+	readonly patientName?: string | undefined;
+	readonly scanTitle?: string | undefined;
+	readonly title?: string | undefined;
+	readonly toothCode?: (string | number) | undefined;
+	readonly orderId?: string | undefined;
+	readonly onPopout?: (() => void) | undefined;
 }
 
 export function build3DViewerIframeSrc(
@@ -26,8 +67,29 @@ export const IntraoralScan3DViewerModal: React.FC<IntraoralScan3DViewerModalProp
 	modelFormat = "stl",
 	patientName,
 	scanTitle = "Интраоральный 3D-скан (STL / OBJ / PLY)",
+	title,
+	toothCode,
+	orderId,
+	onPopout,
 }) => {
+	const effectiveTitle = title || scanTitle;
 	const [isFullscreen, setIsFullscreen] = React.useState(false);
+
+	const handlePopout = () => {
+		openScan3dPopoutWindow({
+			modelFormat,
+			scanTitle,
+			...(modelUrl ? { modelUrl } : {}),
+			...(patientName ? { patientName } : {}),
+			...(toothCode !== undefined && toothCode !== null ? { toothCode } : {}),
+			...(orderId ? { orderId } : {}),
+		});
+		if (onPopout) {
+			onPopout();
+		} else {
+			onClose();
+		}
+	};
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -43,12 +105,12 @@ export const IntraoralScan3DViewerModal: React.FC<IntraoralScan3DViewerModalProp
 
 	const iframeSrc = build3DViewerIframeSrc(modelUrl, modelFormat);
 
-	return (
+	const modalContent = (
 		<div
 			style={{
 				position: "fixed",
 				inset: 0,
-				zIndex: 9999,
+				zIndex: 999999,
 				display: "flex",
 				alignItems: "center",
 				justifyContent: "center",
@@ -58,6 +120,7 @@ export const IntraoralScan3DViewerModal: React.FC<IntraoralScan3DViewerModalProp
 			role="dialog"
 			aria-modal="true"
 			aria-label="3D Просмотрщик интраоральных сканов"
+			data-testid="intraoral-scan-3d-viewer-modal"
 		>
 			<div
 				style={{
@@ -107,9 +170,46 @@ export const IntraoralScan3DViewerModal: React.FC<IntraoralScan3DViewerModalProp
 								Пациент: {patientName}
 							</span>
 						)}
+						{toothCode && (
+							<span
+								style={{
+									fontSize: "11px",
+									padding: "2px 8px",
+									background: "rgba(13, 148, 136, 0.15)",
+									color: "#2dd4bf",
+									borderRadius: "4px",
+									border: "1px solid rgba(13, 148, 136, 0.3)",
+									fontWeight: 600,
+								}}
+							>
+								{`Зуб № ${toothCode}`}
+							</span>
+						)}
 					</div>
 
 					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+						<button
+							type="button"
+							data-testid="btn-scan3d-popout"
+							onClick={handlePopout}
+							title="Открыть 3D-скан в отдельном окне / на 2-м мониторе (освобождает экран приема)"
+							style={{
+								background: "rgba(99, 102, 241, 0.15)",
+								border: "1px solid rgba(99, 102, 241, 0.4)",
+								color: "#818cf8",
+								cursor: "pointer",
+								padding: "4px 10px",
+								borderRadius: "6px",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "6px",
+								fontSize: "12px",
+								fontWeight: 600,
+							}}
+						>
+							<ExternalLink size={13} />
+							<span>На 2-й монитор</span>
+						</button>
 						<button
 							type="button"
 							onClick={() => setIsFullscreen(!isFullscreen)}
@@ -129,6 +229,7 @@ export const IntraoralScan3DViewerModal: React.FC<IntraoralScan3DViewerModalProp
 						</button>
 						<button
 							type="button"
+							data-testid="btn-close-3d-scan-modal"
 							onClick={onClose}
 							title="Закрыть (Esc)"
 							style={{
@@ -163,4 +264,9 @@ export const IntraoralScan3DViewerModal: React.FC<IntraoralScan3DViewerModalProp
 			</div>
 		</div>
 	);
+
+	if (typeof document !== "undefined" && document.body) {
+		return createPortal(modalContent, document.body);
+	}
+	return modalContent;
 };

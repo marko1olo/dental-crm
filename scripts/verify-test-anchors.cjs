@@ -60,22 +60,29 @@ function scanDir(dirPath) {
 }
 
 const originalPath = process.argv[2];
-const targetPath = process.argv[3];
+const targetPaths = process.argv.slice(3);
 
-if (!originalPath || !targetPath) {
-  console.log('Usage: node scripts/verify-test-anchors.cjs <original_file> <target_dir_or_file>');
+if (!originalPath || targetPaths.length === 0) {
+  console.log('Usage: node scripts/verify-test-anchors.cjs <original_file> <target_dir_or_file> [additional_targets...]');
   process.exit(1);
 }
 
 console.log(`[TestAnchorAudit] Auditing test anchors:`);
 console.log(`  Original: ${originalPath}`);
-console.log(`  Target:   ${targetPath}`);
+console.log(`  Targets:  ${targetPaths.join(', ')}`);
 
 const originalAnchors = scanFile(originalPath);
 
-const targetAnchors = fs.statSync(targetPath).isDirectory()
-  ? scanDir(targetPath)
-  : scanFile(targetPath);
+const targetAnchors = new Set();
+for (const tPath of targetPaths) {
+  if (!fs.existsSync(tPath)) continue;
+  const currentAnchors = fs.statSync(tPath).isDirectory()
+    ? scanDir(tPath)
+    : scanFile(tPath);
+  for (const a of currentAnchors) {
+    targetAnchors.add(a);
+  }
+}
 
 const lost = Array.from(originalAnchors).filter(a => !targetAnchors.has(a));
 

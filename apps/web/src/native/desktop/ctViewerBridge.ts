@@ -67,15 +67,20 @@ export async function detectInstalledCtViewers(): Promise<InstalledCtViewerInfo[
  */
 export async function detectExternalCtViewers(): Promise<DesktopExternalViewerInfo[]> {
 	const installed = await detectInstalledCtViewers();
-	return installed.map((v) => ({
-		id: v.id,
-		name: v.name,
-		vendor: v.vendor,
-		executablePath: v.exePath,
-		isAvailable: Boolean(v.exePath) && v.exePath !== "",
-		icon: v.iconKey,
-		isDefault: v.isDefault,
-	}));
+	return installed.map((v) => {
+		const info: DesktopExternalViewerInfo = {
+			id: v.id,
+			name: v.name,
+			vendor: v.vendor,
+			executablePath: v.exePath,
+			isAvailable: Boolean(v.exePath) && v.exePath !== "",
+			isDefault: v.isDefault,
+		};
+		if (v.iconKey) {
+			info.icon = v.iconKey;
+		}
+		return info;
+	});
 }
 
 /**
@@ -83,35 +88,46 @@ export async function detectExternalCtViewers(): Promise<DesktopExternalViewerIn
  * Automatically targets secondary monitor if available or opens popup window (1600x1000).
  */
 export async function openCbctPopoutWindow(params: {
-	url?: string;
-	studyId?: string;
-	patientId?: string;
-	patientName?: string;
-	title?: string;
-	targetDisplayId?: number;
-	width?: number;
-	height?: number;
+	url?: string | undefined;
+	studyId?: string | undefined;
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	title?: string | undefined;
+	targetDisplayId?: number | undefined;
+	width?: number | undefined;
+	height?: number | undefined;
 }): Promise<{
 	success: boolean;
-	windowId?: number;
-	isNewWindow?: boolean;
-	url?: string;
-	popoutWindow?: Window | null;
-	fallbackUrl?: string;
-	error?: string;
+	windowId?: number | undefined;
+	isNewWindow?: boolean | undefined;
+	url?: string | undefined;
+	popoutWindow?: Window | null | undefined;
+	fallbackUrl?: string | undefined;
+	error?: string | undefined;
 }> {
 	const api = getDesktopNativeApi();
 	if (api?.openCbctPopoutWindow) {
 		try {
 			const res = await api.openCbctPopoutWindow(params);
-			return {
+			const out: {
+				success: boolean;
+				windowId?: number | undefined;
+				isNewWindow?: boolean | undefined;
+				url?: string | undefined;
+				popoutWindow?: Window | null | undefined;
+				fallbackUrl?: string | undefined;
+				error?: string | undefined;
+			} = {
 				success: res.success,
-				windowId: res.windowId,
-				isNewWindow: res.isNewWindow,
-				url: res.url,
-				fallbackUrl: res.url,
-				error: res.error,
 			};
+			if (res.windowId !== undefined) out.windowId = res.windowId;
+			if (res.isNewWindow !== undefined) out.isNewWindow = res.isNewWindow;
+			if (res.url !== undefined) {
+				out.url = res.url;
+				out.fallbackUrl = res.url;
+			}
+			if (res.error !== undefined) out.error = res.error;
+			return out;
 		} catch (err: unknown) {
 			logger.warn("[desktopBridge] native openCbctPopoutWindow failed:", err);
 		}
@@ -169,27 +185,63 @@ export async function launchExternalCtViewer(params: LaunchCtViewerParams): Prom
 		} catch (err: unknown) {
 			const message = err instanceof Error ? err.message : "Сбой запуска просмотрщика КТ";
 			logger.warn("[desktopBridge] launchExternalCtViewer failed:", err);
-			return { success: false, error: message };
+			return { success: false, error: message, canFallbackToInternalStudio: true };
 		}
 	}
 
 	// Web / PWA fallback for internal studio
 	if (params.viewerId === "dente-cbct-studio" || params.exePath === "internal://cbct-studio" || !params.viewerId) {
-		const popout = await openCbctPopoutWindow({
-			url: params.studyPath ? `/cbct-studio?studyId=${encodeURIComponent(params.studyPath)}` : undefined,
-			studyId: params.studyPath,
-		});
-		return {
+		const popoutParams: Parameters<typeof openCbctPopoutWindow>[0] = {};
+		if (params.studyPath) {
+			popoutParams.url = `/cbct-studio?studyId=${encodeURIComponent(params.studyPath)}`;
+			popoutParams.studyId = params.studyPath;
+		}
+		const popout = await openCbctPopoutWindow(popoutParams);
+		const result: LaunchCtViewerResult = {
 			success: popout.success,
 			viewerName: "DENTE 3D MPR Studio (Web)",
-			windowId: popout.windowId,
-			error: popout.error,
 		};
+		if (popout.windowId !== undefined) result.windowId = popout.windowId;
+		if (popout.error !== undefined) result.error = popout.error;
+		return result;
+	}
+
+	// Try local API if running on workstation with DENTE backend
+	if (typeof window !== "undefined") {
+		try {
+			const res = await fetch("/api/imaging/launch-external-viewer", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(params),
+			});
+			if (res.ok) {
+				const data = (await res.json()) as {
+					success: boolean;
+					viewerName?: string;
+					error?: string;
+					canFallbackToInternalStudio?: boolean;
+				};
+				if (data.success) {
+					return {
+						success: true,
+						viewerName: data.viewerName || "Нативный просмотрщик КТ",
+					};
+				}
+				return {
+					success: false,
+					error: data.error || "Просмотрщик КТ не найден на данном компьютере",
+					canFallbackToInternalStudio: true,
+				};
+			}
+		} catch {
+			// API not reachable locally
+		}
 	}
 
 	return {
 		success: false,
-		error: "Запуск нативного вьюера томографа (Picasso, Ez3D, Romexis) доступен в приложении DENTE Desktop (.exe).",
+		error: "Просмотрщик томографа не найден на данном компьютере.",
+		canFallbackToInternalStudio: true,
 	};
 }
 
@@ -198,14 +250,21 @@ export async function launchExternalCtViewer(params: LaunchCtViewerParams): Prom
  */
 export async function openInExternalViewer(params: {
 	viewerId: string;
-	filePath?: string;
-	archivePath?: string;
-}): Promise<{ success: boolean; error?: string }> {
-	const res = await launchExternalCtViewer({
+	filePath?: string | undefined;
+	archivePath?: string | undefined;
+}): Promise<{ success: boolean; error?: string | undefined; canFallbackToInternalStudio?: boolean | undefined }> {
+	const launchParams: LaunchCtViewerParams = {
 		viewerId: params.viewerId,
-		studyPath: params.filePath || params.archivePath,
-	});
-	return { success: res.success, error: res.error };
+	};
+	const p = params.filePath || params.archivePath;
+	if (p) launchParams.studyPath = p;
+	const res = await launchExternalCtViewer(launchParams);
+	const out: { success: boolean; error?: string | undefined; canFallbackToInternalStudio?: boolean | undefined } = {
+		success: res.success,
+	};
+	if (res.error !== undefined) out.error = res.error;
+	if (res.canFallbackToInternalStudio !== undefined) out.canFallbackToInternalStudio = res.canFallbackToInternalStudio;
+	return out;
 }
 
 /**
@@ -213,10 +272,10 @@ export async function openInExternalViewer(params: {
  */
 export async function openInNewWindow(params: {
 	url: string;
-	title?: string;
-	studyId?: string;
-	patientId?: string;
-}): Promise<{ success: boolean; error?: string }> {
+	title?: string | undefined;
+	studyId?: string | undefined;
+	patientId?: string | undefined;
+}): Promise<{ success: boolean; error?: string | undefined }> {
 	const api = getDesktopNativeApi();
 	if (api?.openInNewWindow) {
 		try {
@@ -227,11 +286,14 @@ export async function openInNewWindow(params: {
 		}
 	}
 
-	const res = await openCbctPopoutWindow({
+	const popoutParams: Parameters<typeof openCbctPopoutWindow>[0] = {
 		url: params.url,
-		title: params.title,
-		studyId: params.studyId,
-		patientId: params.patientId,
-	});
-	return { success: res.success, error: res.error };
+	};
+	if (params.title !== undefined) popoutParams.title = params.title;
+	if (params.studyId !== undefined) popoutParams.studyId = params.studyId;
+	if (params.patientId !== undefined) popoutParams.patientId = params.patientId;
+	const res = await openCbctPopoutWindow(popoutParams);
+	const out: { success: boolean; error?: string | undefined } = { success: res.success };
+	if (res.error !== undefined) out.error = res.error;
+	return out;
 }

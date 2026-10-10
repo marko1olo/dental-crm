@@ -171,7 +171,7 @@ export const PediatricVisitAdaptationTab: React.FC<PediatricVisitAdaptationTabPr
 		}
 		setToothFindings(healthyAll);
 		onApplyNorm?.();
-		showToast("Молочный прикус: физиологическая норма установлена в 1 клик", "success", 2000);
+		showToast("Молочный прикус: физиологическая норма установлена", "success", 2000);
 	}, [dentitionMode, onApplyNorm]);
 
 	const handleSaveAdaptationProtocol = useCallback(() => {
@@ -209,24 +209,22 @@ export const PediatricVisitAdaptationTab: React.FC<PediatricVisitAdaptationTabPr
 				</div>
 
 				<div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-					{/* 1-Клик Норма прикуса (Мандат 8e) */}
 					<button
 						type="button"
 						onClick={handle1ClickNorm}
 						className="secondary-button h-8 px-3 rounded-lg text-emerald-800 dark:text-emerald-200 border-emerald-500/50 bg-emerald-50/60 dark:bg-emerald-950/30 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 shrink-0"
-						title="1-клик: Физиологическая норма прикуса (Мандат 8e)"
+						title="Физиологическая норма прикуса"
 						data-testid="btn-adaptation-1click-norm"
 					>
 						<Zap className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span>Норма прикуса</span>
 					</button>
 
-					{/* 1-Клик Грамота за смелость (Мандат 8e) */}
 					<button
 						type="button"
 						onClick={() => setIsDiplomaModalOpen(true)}
 						className="secondary-button h-8 px-3 rounded-lg text-amber-900 dark:text-amber-200 border-amber-500/50 bg-amber-50/60 dark:bg-amber-950/30 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 shrink-0"
-						title="1-клик: Печать грамоты за смелость маленькому пациенту"
+						title="Печать грамоты за смелость маленькому пациенту"
 						data-testid="btn-adaptation-open-diploma"
 					>
 						<Award className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -267,7 +265,7 @@ export const PediatricVisitAdaptationTab: React.FC<PediatricVisitAdaptationTabPr
 			<div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] space-y-2">
 				<div className="flex items-center justify-between">
 					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
-						Поведение ребёнка по шкале Франкла (1-клик выбор):
+						Поведение ребёнка по шкале Франкла:
 					</span>
 					<span className={`text-xs font-extrabold px-2 py-0.5 rounded-md border ${activeFranklItem.badgeClass}`}>
 						{activeFranklItem.shortLabelRu}

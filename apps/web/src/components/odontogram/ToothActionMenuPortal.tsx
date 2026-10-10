@@ -255,7 +255,7 @@ export const ToothActionMenuPortal: React.FC<ToothActionMenuPortalProps> = ({
 					className="col-span-2 flex items-center justify-center min-h-[48px] sm:min-h-[36px] p-3 sm:p-2 rounded-xl border transition-all duration-200 font-bold text-sm bg-teal-500/10 text-teal-800 dark:text-teal-200 border-teal-500/30 hover:bg-teal-500/20 cursor-pointer min-w-0 text-center leading-tight active:scale-95"
 				>
 					<Stethoscope className="w-4 h-4 inline mr-2 text-teal-600 shrink-0" />
-					<span className="min-w-0 break-words">Карточка зуба / Детали (Tier 2)</span>
+					<span className="min-w-0 break-words">Карточка зуба / Клинические детали</span>
 				</button>
 				<button
 					type="button"

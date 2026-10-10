@@ -38,7 +38,7 @@ describe("BotStudioModal & Onboarding Suite", () => {
 		expect(html).toContain('aria-labelledby="bot-modal-title"');
 
 		// Check header
-		expect(html).toContain("Студия ботов DENTE: Запуск в 2 клика");
+		expect(html).toContain("Студия ботов DENTE: Быстрый запуск");
 		expect(html).toContain("152-ФЗ Безопасно");
 
 		// Check 2-column layout elements
@@ -53,7 +53,7 @@ describe("BotStudioModal & Onboarding Suite", () => {
 		expect(html).toContain("Канал связи");
 		expect(html).toContain("Профиль клиники");
 		expect(html).toContain("Выбор плагинов");
-		expect(html).toContain("Запуск в 1 клик");
+		expect(html).toContain("Быстрый запуск");
 
 		// 4 Channel cards
 		expect(html).toContain("Telegram Bot");

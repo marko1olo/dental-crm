@@ -6,6 +6,7 @@ import { registerOrderItemsRoutes } from "./orderItemsRoutes.js";
 import { registerLabPipelineRoutes } from "./pipelineRoutes.js";
 import { registerTechnicianPortalRoutes } from "./technicianPortalRoutes.js";
 import { registerLabScansUploadRoutes } from "./scansUploadRoutes.js";
+import { registerAutonomousTrackerRoutes } from "./autonomousTrackerRoutes.js";
 
 export async function registerLabRoutes(app: FastifyInstance) {
 	await registerExpressOrderRoutes(app);
@@ -15,6 +16,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 	await registerLabPipelineRoutes(app);
 	await registerTechnicianPortalRoutes(app);
 	await registerLabScansUploadRoutes(app);
+	await registerAutonomousTrackerRoutes(app);
 }
 
 // Backward compatibility re-export aliases

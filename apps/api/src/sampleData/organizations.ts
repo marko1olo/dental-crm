@@ -7,6 +7,7 @@ import type {
 	Chair,
 	ClinicProfile,
 	ClinicScheduleDefaults,
+	StaffWorkingHours,
 } from "@dental/shared";
 
 import { organizationId, chairId, defaultClinicTimezone, nowIso } from "./fixtureIds.js";

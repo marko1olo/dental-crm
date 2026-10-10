@@ -8,3 +8,4 @@
 
 export * from "./pediatric/index.js";
 export * from "./pediatricPhysiologicalNorms.js";
+export type { CariogramRiskLevel } from "./pediatric/index.js";

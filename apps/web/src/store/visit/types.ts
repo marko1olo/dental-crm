@@ -36,6 +36,7 @@ export interface VisitToothTreatmentRecord {
 	state: ToothState;
 	diagnosis?: string;
 	diagnosisIcd10?: string;
+	appliedPresetId?: string;
 	cavity?: string; // "MOD", "MO", "OD", "O", "V", "B", "L", "P"
 	surfaces?: string[]; // ["M", "O", "D"]
 	preparationFormula?: string;

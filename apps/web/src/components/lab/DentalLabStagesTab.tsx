@@ -129,10 +129,10 @@ export function DentalLabStagesTab({
 					<div className="flex items-center gap-2">
 						<Sparkles className="w-4 h-4 text-[var(--teal)]" />
 						<span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-							Канонический 5-этапный клинический трекер (ГОСТ Р 51087-97)
+							Этапы изготовления конструкции
 						</span>
 					</div>
-					<span className="text-xs text-slate-500 font-medium">1 клик для переключения</span>
+					<span className="text-xs text-slate-500 font-medium">Клинический статус</span>
 				</div>
 
 				<div className="grid grid-cols-5 gap-2">

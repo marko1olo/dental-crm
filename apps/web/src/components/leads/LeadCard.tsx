@@ -511,31 +511,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 				) : null}
 			</div>
 
-			{/* Перевод на следующий этап воронки */}
-			{NEXT_STAGE_MAP[lead.status] ? (
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						onStatusChange(e, lead.id, NEXT_STAGE_MAP[lead.status]!.status);
-					}}
-					className="w-full h-7 px-2.5 rounded-lg text-[12px] font-semibold bg-[var(--teal-soft)] text-[var(--teal-dark,var(--teal))] border border-[var(--teal)] flex items-center justify-center gap-1.5 cursor-pointer transition-all hover:bg-[var(--teal)] hover:text-white mb-1.5"
-					title={`Перевести на этап ${NEXT_STAGE_MAP[lead.status]!.label}`}
-					data-testid={`advance-stage-btn-${lead.id}`}
-				>
-					<span>{NEXT_STAGE_MAP[lead.status]!.label}</span>
-					<ArrowRight size={12} className="shrink-0" />
-				</button>
-			) : lead.status === "showed_up" ? (
-				<div
-					className="w-full h-7 px-2.5 rounded-lg text-[11.5px] font-semibold bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--line)] flex items-center justify-center gap-1.5 mb-1.5"
-				>
-					<Check size={12} className="shrink-0" />
-					<span>Пациент в клинике</span>
-				</div>
-			) : null}
-
-			{/* Селектор статуса */}
+			{/* Селектор статуса и быстрый переход */}
 			<div
 				style={{
 					display: "flex",
@@ -548,15 +524,6 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 				}}
 				onClick={(e) => e.stopPropagation()}
 			>
-				<span
-					style={{
-						fontSize: 11,
-						color: "var(--muted)",
-						fontWeight: 500,
-					}}
-				>
-					Статус:
-				</span>
 				<select
 					value={lead.status}
 					onClick={(e) => e.stopPropagation()}
@@ -570,7 +537,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 							onStatusChange(e, lead.id, nextVal);
 						}
 					}}
-					className="h-7 text-[11.5px] font-medium px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer outline-none max-w-[155px] hover:border-[var(--line-strong,var(--line))]"
+					className="h-7 text-[11.5px] font-medium px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer outline-none flex-1 min-w-0 hover:border-[var(--line-strong,var(--line))]"
 					title="Сменить статус обращения"
 					aria-label="Выбрать статус обращения"
 				>
@@ -581,6 +548,29 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 					<option value="no_answer">Недозвон</option>
 					<option value="trash">Отказ</option>
 				</select>
+				{NEXT_STAGE_MAP[lead.status] ? (
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							onStatusChange(e, lead.id, NEXT_STAGE_MAP[lead.status]!.status);
+						}}
+						className="h-7 px-2 rounded-lg text-[11px] font-semibold bg-[var(--paper-soft)] text-[var(--teal)] border border-[var(--line)] inline-flex items-center justify-center gap-1 cursor-pointer transition-all hover:border-[var(--teal)] shrink-0"
+						title={`Перевести на этап ${NEXT_STAGE_MAP[lead.status]!.label}`}
+						data-testid={`advance-stage-btn-${lead.id}`}
+					>
+						<span>Далее</span>
+						<ArrowRight size={11} className="shrink-0" />
+					</button>
+				) : lead.status === "showed_up" ? (
+					<span
+						className="h-7 px-2 rounded-lg text-[11px] font-semibold bg-[var(--teal-soft)] text-[var(--teal)] border border-[var(--line)] inline-flex items-center justify-center gap-1 shrink-0"
+						title="Пациент пришёл в клинику"
+					>
+						<Check size={11} className="shrink-0" />
+						<span>В клинике</span>
+					</span>
+				) : null}
 			</div>
 
 			{/* Ровно 2 первичных действия карточки согласно Мандату 8n (Anti-Landfill) */}

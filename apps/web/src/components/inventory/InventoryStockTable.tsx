@@ -259,7 +259,7 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
-								width: 105,
+								width: 100,
 							}}
 						>
 							Категория
@@ -277,7 +277,7 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
-								width: 175,
+								width: 165,
 							}}
 						>
 							<div className="leading-tight">
@@ -298,7 +298,7 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
-								width: 120,
+								width: 95,
 								textAlign: "right",
 							}}
 						>
@@ -317,7 +317,7 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
-								width: 85,
+								width: 80,
 								textAlign: "right",
 							}}
 						>
@@ -328,7 +328,7 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 						<th
 							className="inventory-col-cost"
 							style={{
-								padding: "8px 12px 8px 8px",
+								padding: "8px 10px 8px 8px",
 								fontSize: 11,
 								color: "var(--muted)",
 								fontWeight: 600,
@@ -336,7 +336,7 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
-								width: 125,
+								width: 110,
 								textAlign: "right",
 							}}
 						>
@@ -350,7 +350,7 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 						<th
 							className="inventory-col-actions"
 							style={{
-								padding: "8px 12px 8px 8px",
+								padding: "8px 10px 8px 8px",
 								fontSize: 11,
 								color: "var(--muted)",
 								fontWeight: 600,
@@ -358,7 +358,7 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								textAlign: "right",
-								width: 265,
+								width: 215,
 								whiteSpace: "nowrap",
 							}}
 						>
@@ -389,7 +389,8 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 												type="button"
 												onClick={onRetry}
 												disabled={isLoading}
-												className="h-8 px-4 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-bold hover:bg-[var(--teal-surface)] hover:border-[var(--teal)] transition-colors cursor-pointer"
+												className="secondary-button h-8 px-4 rounded-lg text-xs font-bold inline-flex items-center justify-center cursor-pointer"
+												style={{ height: 32, minHeight: 32, borderRadius: 8 }}
 											>
 												{isLoading ? "Загружаем..." : "Повторить"}
 											</button>
@@ -419,7 +420,8 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 												<button
 													type="button"
 													onClick={onOpenWaybills}
-													className="h-8 px-3.5 rounded-lg bg-[var(--teal)] text-white text-xs font-bold shadow-xs hover:bg-[var(--teal-dark,#0f766e)] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+													className="primary-button h-8 px-3.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+													style={{ height: 32, minHeight: 32, borderRadius: 8 }}
 													data-testid="empty-state-acceptance-waybills-btn"
 												>
 													<FileText size={14} />
@@ -430,7 +432,15 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 												<button
 													type="button"
 													onClick={onOpenAddModal}
-													className="h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold hover:border-[var(--teal)] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+													className="secondary-button h-8 px-3.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+													style={{
+														height: 32,
+														minHeight: 32,
+														borderRadius: 8,
+														border: "1px solid var(--line)",
+														background: "var(--paper-soft)",
+														color: "var(--ink)",
+													}}
 													data-testid="empty-state-add-first-material-btn"
 												>
 													<Plus size={14} />

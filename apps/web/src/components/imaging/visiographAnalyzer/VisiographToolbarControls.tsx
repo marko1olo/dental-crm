@@ -78,16 +78,32 @@ export function VisiographToolbarControls({
 					)}
 				</button>
 
-				{/* EzDent-i 2D Fullscreen Sensor Viewer Button (Screenshot 24) */}
+				{/* EzDent-i 2D Fullscreen Sensor Viewer Button */}
 				<button
 					type="button"
 					data-testid="btn-open-ezdent-sensor-viewer"
 					onClick={onOpenSensorViewer}
-					className="h-8 px-2.5 rounded-xl text-[13px] font-semibold border border-[var(--line-strong,var(--line))] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)]/40 cursor-pointer inline-flex items-center gap-1.5 transition-all shadow-xs active:scale-98 shrink-0"
-					title="Открыть полноэкранный 2D HUD со шкалой 5 мм и фильтрами"
+					className="emk-toolbar-btn shrink-0"
+					style={{
+						height: "32px",
+						minHeight: "32px",
+						padding: "0 10px",
+						borderRadius: "8px",
+						border: "1px solid var(--line)",
+						background: "var(--paper-soft)",
+						color: "var(--ink)",
+						fontSize: "12px",
+						fontWeight: 600,
+						display: "inline-flex",
+						alignItems: "center",
+						gap: "6px",
+						cursor: "pointer",
+						whiteSpace: "nowrap",
+					}}
+					title="Открыть полноэкранный режим 2D-разметки со шкалой 5 мм и фильтрами"
 				>
 					<Maximize2 size={14} className="text-[var(--teal)]" />
-					<span>2D HUD</span>
+					<span>2D Разметка</span>
 				</button>
 			</div>
 		</div>

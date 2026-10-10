@@ -3,7 +3,8 @@
  * Compliant with Orders No. 1094n, No. 804n, and Federal Law No. 63-FZ
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
 	DENTAL_PRESCRIPTION_DRUG_CATALOG,
 	calculatePrescriptionExpiration,
@@ -81,39 +82,22 @@ export interface PrescriptionPrintModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly patient?: {
-		readonly id?: string | null | undefined;
-		readonly fullName?: string | null | undefined;
-		readonly birthDate?: string | null | undefined;
-		readonly cardNumber?: string | null | undefined;
-		readonly medicalCardNumber?: string | null | undefined;
-		readonly passport?: string | null | undefined;
-		readonly address?: string | null | undefined;
-		readonly phone?: string | null | undefined;
-		readonly gender?: string | null | undefined;
-		readonly snils?: string | null | undefined;
-		readonly omsPolicy?: string | null | undefined;
-		readonly allergies?: readonly string[] | string[] | string | null | undefined;
-		readonly weightKg?: number | null | undefined;
+		readonly id?: string | null | undefined; readonly fullName?: string | null | undefined; readonly birthDate?: string | null | undefined;
+		readonly cardNumber?: string | null | undefined; readonly medicalCardNumber?: string | null | undefined; readonly passport?: string | null | undefined;
+		readonly address?: string | null | undefined; readonly phone?: string | null | undefined; readonly gender?: string | null | undefined;
+		readonly snils?: string | null | undefined; readonly omsPolicy?: string | null | undefined;
+		readonly allergies?: readonly string[] | string[] | string | null | undefined; readonly weightKg?: number | null | undefined;
 	} | null | undefined;
 	readonly allergies?: readonly string[] | string[] | string | null | undefined;
-	readonly diary?: DiaryState | {
-		readonly diagnosisIcd10?: string | null;
-		readonly treatmentDescription?: string | null;
-		readonly anamnesis?: string | null;
-		readonly statusLocalis?: string | null;
-	} | null;
-	readonly doctorName?: string | null | undefined;
-	readonly doctorSpecialty?: string | null | undefined;
-	readonly doctorSnils?: string | null | undefined;
-	readonly clinicName?: string | null | undefined;
-	readonly clinicAddress?: string | null | undefined;
-	readonly clinicPhone?: string | null | undefined;
-	readonly clinicOgrn?: string | null | undefined;
-	readonly clinicInn?: string | null | undefined;
-	readonly medicalLicenseNumber?: string | null | undefined;
-	readonly initialSelectedDrugIds?: readonly string[] | undefined;
-	readonly patientName?: string | null | undefined;
-	readonly disablePortal?: boolean | undefined;
+	readonly diary?: (DiaryState | {
+		readonly diagnosisIcd10?: string | null | undefined; readonly treatmentDescription?: string | null | undefined;
+		readonly anamnesis?: string | null | undefined; readonly statusLocalis?: string | null | undefined;
+	} | null) | undefined;
+	readonly doctorName?: string | null | undefined; readonly doctorSpecialty?: string | null | undefined; readonly doctorSnils?: string | null | undefined;
+	readonly clinicName?: string | null | undefined; readonly clinicAddress?: string | null | undefined; readonly clinicPhone?: string | null | undefined;
+	readonly clinicOgrn?: string | null | undefined; readonly clinicInn?: string | null | undefined;
+	readonly medicalLicenseNumber?: string | null | undefined; readonly initialSelectedDrugIds?: readonly string[] | undefined;
+	readonly patientName?: string | null | undefined; readonly disablePortal?: boolean | undefined;
 	readonly onPrescriptionCreated?: ((prescription: any) => void) | undefined;
 	readonly onInsertToDiary?: ((diaryText: string) => void) | undefined;
 }
@@ -186,25 +170,68 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	const [customDrugsList, setCustomDrugsList] = useState<PrescriptionDrugItem[]>([]);
 	const [isMemoCopied, setIsMemoCopied] = useState<boolean>(false);
 
+	const prevIsOpenRef = useRef(false);
+	const onCloseRef = useRef(onClose);
 	useEffect(() => {
-		if (!isOpen) return;
+		onCloseRef.current = onClose;
+	}, [onClose]);
 
-		const today = new Date().toISOString().slice(0, 10);
-		setPrescriptionDate(today);
-
-		if (initialSelectedDrugIds !== undefined) {
-			setSelectedDrugIds([...initialSelectedDrugIds]);
-		} else {
-			const icd = (diary?.diagnosisIcd10 || "K02.1").toUpperCase();
-			const matching = DENTAL_PRESCRIPTION_DRUG_CATALOG.filter((d) =>
-				d.recommendedForIcd10.some((code) => icd.startsWith(code)),
-			);
-			setSelectedDrugIds(matching.length > 0 ? matching.slice(0, 2).map((d) => d.id) : ["nimesulide_100"]);
+	useEffect(() => {
+		if (!isOpen) {
+			prevIsOpenRef.current = false;
+			return;
 		}
 
+		const isNewlyOpened = !prevIsOpenRef.current;
+		prevIsOpenRef.current = true;
+
+		if (isNewlyOpened) {
+			const today = new Date().toISOString().slice(0, 10);
+			setPrescriptionDate(today);
+
+			if (initialSelectedDrugIds !== undefined) {
+				setSelectedDrugIds([...initialSelectedDrugIds]);
+			} else {
+				const icd = (diary?.diagnosisIcd10 || "K02.1").toUpperCase();
+				const matching = DENTAL_PRESCRIPTION_DRUG_CATALOG.filter((d) =>
+					d.recommendedForIcd10.some((code) => icd.startsWith(code)),
+				);
+				setSelectedDrugIds(matching.length > 0 ? matching.slice(0, 2).map((d) => d.id) : ["nimesulide_100"]);
+			}
+
+			const year = new Date().getFullYear();
+			const patSuffix = (patient?.id ? patient.id.replace(/\D/g, "").slice(-4) : "").padStart(4, "0") || "0001";
+			if (activeForm === "107-1u") {
+				setCustomSeriesNumber(`РЕЦ-${year}-${patSuffix}`);
+				setValidityDays("60");
+			} else {
+				setCustomSeriesNumber(`ПКУ-${year}-${patSuffix.padStart(6, "0")}`);
+				setValidityDays("15");
+				setSelectedDrugIds(["nimesulide_100"]);
+			}
+
+			setPatientAddress(patient?.address || "");
+			setPatientSnils(patient?.snils || "");
+			setPatientOmsPolicy(patient?.omsPolicy || "");
+			setPatientWeightKg(patient?.weightKg ?? undefined);
+			setIsUkepSigned(false);
+			setUkepSignature(null);
+
+			if (patient?.id) fetchPatientPrescriptions(patient.id).catch(() => {});
+		}
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") onCloseRef.current?.();
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, diary?.diagnosisIcd10, patient?.id, patient?.address, patient?.snils, patient?.omsPolicy, patient?.weightKg]);
+
+	const handleSelectFormType = useCallback((type: PrescriptionFormType) => {
+		setActiveForm(type);
 		const year = new Date().getFullYear();
 		const patSuffix = (patient?.id ? patient.id.replace(/\D/g, "").slice(-4) : "").padStart(4, "0") || "0001";
-		if (activeForm === "107-1u") {
+		if (type === "107-1u") {
 			setCustomSeriesNumber(`РЕЦ-${year}-${patSuffix}`);
 			setValidityDays("60");
 		} else {
@@ -212,22 +239,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 			setValidityDays("15");
 			setSelectedDrugIds(["nimesulide_100"]);
 		}
-
-		setPatientAddress(patient?.address || "");
-		setPatientSnils(patient?.snils || "");
-		setPatientOmsPolicy(patient?.omsPolicy || "");
-		setPatientWeightKg(patient?.weightKg ?? undefined);
-		setIsUkepSigned(false);
-		setUkepSignature(null);
-
-		if (patient?.id) fetchPatientPrescriptions(patient.id).catch(() => {});
-
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape") onClose();
-		};
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, diary?.diagnosisIcd10, activeForm, patient?.id, patient?.address, patient?.snils, patient?.omsPolicy, patient?.weightKg, initialSelectedDrugIds, onClose]);
+	}, [patient?.id]);
 
 	const patientName = patient?.fullName || patientNameProp || "";
 	const patientBirth = patient?.birthDate || "";
@@ -544,7 +556,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 
 	if (!isOpen) return null;
 
-	return (
+	const modalContent = (
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/65 backdrop-blur-md animate-in fade-in duration-200"
 			role="dialog"
@@ -586,19 +598,27 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 					</div>
 
 					<div className="flex items-center gap-2">
-						<div className="hidden md:flex dente-segmented-bar shrink-0" role="tablist">
+						<div className="hidden md:flex p-1 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-800/80 shrink-0 gap-1" role="tablist">
 							<button
 								type="button"
-								onClick={() => setActiveForm("107-1u")}
-								className={`dente-segmented-item ${activeForm === "107-1u" ? "active" : ""}`}
+								onClick={() => handleSelectFormType("107-1u")}
+								className={`h-7 px-3 text-xs font-medium rounded-lg transition-all cursor-pointer select-none ${
+									activeForm === "107-1u"
+										? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-semibold shadow-xs"
+										: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+								}`}
 								data-active={activeForm === "107-1u"}
 							>
 								Рецепт на препараты (107-1/у)
 							</button>
 							<button
 								type="button"
-								onClick={() => setActiveForm("148-1u-88")}
-								className={`dente-segmented-item ${activeForm === "148-1u-88" ? "active" : ""}`}
+								onClick={() => handleSelectFormType("148-1u-88")}
+								className={`h-7 px-3 text-xs font-medium rounded-lg transition-all cursor-pointer select-none ${
+									activeForm === "148-1u-88"
+										? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-semibold shadow-xs"
+										: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+								}`}
 								data-active={activeForm === "148-1u-88"}
 							>
 								Рецепт строгого учета (№ 148-1/у-88)
@@ -677,31 +697,13 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 					<PrescriptionSheetPreview
 						customSeriesNumber={customSeriesNumber}
 						penicillinConflict={penicillinConflict}
-						nsaidConflict={nsaidConflict}
-						anestheticConflict={anestheticConflict}
-						ddiSafetyAudit={null}
-						withStampAndSignature={withStampAndSignature}
-						clinic={clinic}
-						address={address}
-						phone={phone}
-						ogrn={ogrn}
-						inn={inn}
-						licNum={licNum}
-						activeForm={activeForm}
-						prescriptionDate={prescriptionDate}
-						patientName={patientName}
-						patientBirth={patientBirth}
-						patientCard={patientCard}
-						patientAddress={patientAddress}
-						docName={docName}
-						docSpecialty={docSpecialty}
-						diary={diary}
-						activeItems={activeItems}
-						validityDays={validityDays}
-						isChronicSpecialCare={isChronicSpecialCare}
-						chronicPeriodicity={chronicPeriodicity}
-						isUkepSigned={isUkepSigned}
-						ukepSignature={ukepSignature}
+						nsaidConflict={nsaidConflict} anestheticConflict={anestheticConflict} ddiSafetyAudit={null}
+						withStampAndSignature={withStampAndSignature} clinic={clinic} address={address} phone={phone}
+						ogrn={ogrn} inn={inn} licNum={licNum} activeForm={activeForm} prescriptionDate={prescriptionDate}
+						patientName={patientName} patientBirth={patientBirth} patientCard={patientCard} patientAddress={patientAddress}
+						docName={docName} docSpecialty={docSpecialty} diary={diary} activeItems={activeItems}
+						validityDays={validityDays} isChronicSpecialCare={isChronicSpecialCare} chronicPeriodicity={chronicPeriodicity}
+						isUkepSigned={isUkepSigned} ukepSignature={ukepSignature}
 					/>
 				</div>
 
@@ -713,7 +715,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							data-testid="med-rx-copy-patient-btn"
 							onClick={handleCopyPatientMemo}
 							title="Скопировать схему приёма и памятку для отправки пациенту в WhatsApp/Telegram"
-							className="secondary-button h-8 min-h-[44px] md:min-h-[32px] px-3 text-[13px] font-medium rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
+							className="secondary-button h-8 min-h-[44px] md:min-h-[32px] px-3 text-xs font-medium rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
 						>
 							<Copy className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 							<span>{isMemoCopied ? "Скопировано!" : "Скопировать для пациента"}</span>
@@ -722,7 +724,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							type="button"
 							data-testid="insert-to-diary-btn"
 							onClick={() => handleInsertToDiary()}
-							className="secondary-button h-8 px-3 text-[13px] font-medium rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
+							className="secondary-button h-8 min-h-[44px] md:min-h-[32px] px-3 text-xs font-medium rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
 						>
 							<PenTool className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 							<span>Вставить в дневник</span>
@@ -733,7 +735,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						<button
 							type="button"
 							onClick={handleSignUkep}
-							className={`h-8 px-3 text-[13px] font-medium rounded-lg border transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+							className={`h-8 min-h-[44px] md:min-h-[32px] px-3 text-xs font-medium rounded-lg border transition-all cursor-pointer inline-flex items-center gap-1.5 ${
 								isUkepSigned
 									? "bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-bold"
 									: "secondary-button text-[var(--ink)]"
@@ -747,7 +749,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							data-testid="print-patient-memo-btn"
 							onClick={handlePrintPatientMemo}
 							title="Распечатать понятную памятку со схемой приёма для пациента (без латыни)"
-							className="secondary-button h-8 px-3 text-[13px] font-medium rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
+							className="secondary-button h-8 min-h-[44px] md:min-h-[32px] px-3 text-xs font-medium rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
 						>
 							<Printer className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 							<span>Печать памятки</span>
@@ -756,7 +758,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							type="button"
 							data-testid="print-prescription-btn"
 							onClick={() => handlePrint()}
-							className="primary-button h-8 px-4 text-[13px] font-semibold rounded-lg inline-flex items-center gap-1.5 shadow-sm cursor-pointer"
+							className="primary-button h-8 min-h-[44px] md:min-h-[32px] px-4 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 shadow-sm cursor-pointer"
 						>
 							<Printer className="w-4 h-4 shrink-0" />
 							<span>Печать бланка (А5)</span>
@@ -766,4 +768,10 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 			</div>
 		</div>
 	);
-};
+ 
+ 	if (disablePortal || typeof document === "undefined") {
+ 		return modalContent;
+ 	}
+
+ 	return createPortal(modalContent, document.body);
+ };

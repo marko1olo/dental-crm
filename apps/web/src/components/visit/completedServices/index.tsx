@@ -1,15 +1,15 @@
-import React from "react";
 import { Receipt } from "lucide-react";
+import React from "react";
 import { money } from "../../../AppHelpers";
 import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 import { countLabel } from "../../../lib/russianPlural";
 import { useVisitStore } from "../../../store/visitStore";
-import { showToast } from "../../GlobalToast";
+import { showRollbackToast, showToast } from "../../GlobalToast";
 import { CompletedServicesList } from "../CompletedServicesList";
 import {
 	type ChairsideExpressService,
-	type FilteredCatalogService,
 	calculateCompletedServicesSummary,
+	type FilteredCatalogService,
 	filterServiceCatalog,
 	formatCompletedServiceLine,
 	parseCompletedServiceLine,
@@ -38,11 +38,11 @@ import {
 export {
 	CLINICAL_SERVICE_BUNDLES,
 	type ClinicalServiceBundle,
-	type CompletedServicesChecklistProps,
 	CompletedServiceRowItem,
+	type CompletedServicesChecklistProps,
+	completedLineOf,
 	PreliminaryTreatmentPlanSection,
 	QuickServiceSearchAndPresets,
-	completedLineOf,
 	serviceTitleOf,
 	toothSuffixOf,
 };
@@ -554,19 +554,22 @@ export const CompletedServicesChecklist: React.FC<
 		}
 	};
 
-	// Удаление ошибочно внесенной строки
+	// Удаление ошибочно внесенной строки с возможностью мгновенного отката (Undo)
 	const handleRemoveCompletedLine = (rawLine: string) => {
 		if (!updateVisitNoteField) return;
 		const parsed = parseCompletedServiceLine(rawLine);
-		const kept = (planText ?? "")
+		const oldPlanText = planText ?? "";
+		const kept = oldPlanText
 			.split("\n")
 			.filter((existing) => (existing ?? "").trim() !== rawLine.trim());
-		updateVisitNoteField(
-			"treatmentPlan",
-			kept.join("\n").replace(/\n+$/, ""),
-		);
+		updateVisitNoteField("treatmentPlan", kept.join("\n").replace(/\n+$/, ""));
 
 		// Синхронное удаление из completedServices стора
+		// biome-ignore lint/suspicious/noExplicitAny: dynamic completedService restoration
+		let removedService: any = null;
+		// biome-ignore lint/suspicious/noExplicitAny: tooth state restoration
+		let previousToothState: any = null;
+
 		if (parsed) {
 			const currentList = useVisitStore.getState().completedServices;
 			const removeIdx = currentList.findIndex((item) => {
@@ -581,6 +584,7 @@ export const CompletedServicesChecklist: React.FC<
 				return (codeMatch || titleMatch) && toothMatch;
 			});
 			if (removeIdx !== -1) {
+				removedService = currentList[removeIdx];
 				useVisitStore.getState().removeCompletedService(removeIdx);
 			}
 
@@ -592,12 +596,36 @@ export const CompletedServicesChecklist: React.FC<
 						l.includes(`(зуб ${toothStr})`) || l.includes(`(зубы ${toothStr})`),
 				);
 				if (!hasOther && !toothStr.includes(",")) {
-					useVisitStore.getState().setToothState(toothStr, "idle");
+					const visitState = useVisitStore.getState();
+					previousToothState =
+						visitState.visitToothStateByCode?.[toothStr] ||
+						visitState.teeth?.[toothStr]?.state;
+					visitState.setToothState(toothStr, "idle");
 				}
 			}
 		}
 
-		showToast("Услуга удалена из карты приёма", "info", 2000);
+		const title = parsed?.title ? `«${parsed.title}»` : "Услуга";
+		showRollbackToast(
+			`${title} удалена из приёма`,
+			() => {
+				// Мгновенный откат: возвращаем строку в treatmentPlan
+				updateVisitNoteField("treatmentPlan", oldPlanText);
+
+				// Возвращаем услугу в completedServices
+				if (removedService) {
+					useVisitStore.getState().addCompletedService(removedService);
+				}
+
+				// Восстанавливаем статус зуба
+				if (parsed?.toothCode && previousToothState) {
+					useVisitStore
+						.getState()
+						.setToothState(parsed.toothCode, previousToothState);
+				}
+			},
+			5000,
+		);
 	};
 
 	// «Внести всё в кассовый счёт»

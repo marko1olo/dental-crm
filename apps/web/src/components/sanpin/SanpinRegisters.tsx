@@ -306,12 +306,12 @@ function SanpinRegistersInner() {
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "flex-start",
-					gap: "0.6rem",
+					gap: "0.35rem",
 					borderBottom: "1px solid var(--line, rgba(148, 163, 184, 0.2))",
 					padding: "0.2rem 0",
 					whiteSpace: "nowrap",
 					WebkitOverflowScrolling: "touch",
-					minHeight: "36px",
+					minHeight: "34px",
 				}}
 			>
 				<div className="sanpin-category-nav flex items-center gap-1 shrink-0" role="tablist" aria-label="Категории журналов контроля стерильности">
@@ -326,25 +326,25 @@ function SanpinRegistersInner() {
 								aria-selected={isActive}
 								className={`sanpin-category-btn touch-manipulation ${isActive ? "active" : ""}`}
 								style={{
-									minHeight: "32px",
-									height: "32px",
+									minHeight: "30px",
+									height: "30px",
 									display: "inline-flex",
 									alignItems: "center",
-									gap: "0.35rem",
-									padding: "0.2rem 0.65rem",
-									borderRadius: "6px",
+									gap: "0.25rem",
+									padding: "0.15rem 0.5rem",
+									borderRadius: "8px",
 									cursor: "pointer",
 								}}
 								onClick={() => handleSelectCategory(cat.id)}
 								data-testid={`category-tab-${cat.id}`}
 							>
-								<Icon size={14} color={isActive ? "var(--teal-600, #0d9488)" : "currentColor"} />
-								<span className="font-semibold text-xs whitespace-nowrap">{cat.shortLabel}</span>
+								<Icon size={13} color={isActive ? "var(--teal-600, #0d9488)" : "currentColor"} />
+								<span className="font-semibold text-[11.5px] whitespace-nowrap">{cat.shortLabel}</span>
 								<span
 									style={{
-										marginLeft: "0.25rem",
-										fontSize: "0.68rem",
-										padding: "0.05rem 0.35rem",
+										marginLeft: "0.15rem",
+										fontSize: "0.65rem",
+										padding: "0.05rem 0.3rem",
 										borderRadius: "9999px",
 										background: isActive ? "rgba(13, 148, 136, 0.15)" : "rgba(148, 163, 184, 0.15)",
 										color: isActive ? "var(--teal-600, #0d9488)" : "var(--muted, #64748b)",
@@ -359,10 +359,10 @@ function SanpinRegistersInner() {
 					})}
 				</div>
 
-				<div style={{ width: "1px", height: "20px", background: "var(--line, rgba(148, 163, 184, 0.3))", flexShrink: 0 }} />
+				<div style={{ width: "1px", height: "18px", background: "var(--line, rgba(148, 163, 184, 0.3))", flexShrink: 0 }} />
 
 				<div
-					className="flex-1 flex items-center justify-start flex-nowrap overflow-x-auto scrollbar-none gap-1 touch-pan-x min-w-0 pl-1"
+					className="flex-1 flex items-center justify-start flex-nowrap overflow-x-auto scrollbar-none gap-1 touch-pan-x min-w-0"
 					data-testid="sanpin-active-category-subtabs"
 				>
 					{activeCategoryTabs.map((tab) => {
@@ -375,18 +375,18 @@ function SanpinRegistersInner() {
 								onClick={() => handleSelectTab(tab.id)}
 								className={`sanpin-tab-btn touch-manipulation shrink-0 whitespace-nowrap ${isActive ? "active" : ""}`}
 								style={{
-									minHeight: "32px",
-									height: "32px",
-									padding: "0.2rem 0.65rem",
-									fontSize: "0.75rem",
+									minHeight: "30px",
+									height: "30px",
+									padding: "0.15rem 0.5rem",
+									fontSize: "0.72rem",
 									fontWeight: isActive ? 700 : 600,
 									display: "inline-flex",
 									alignItems: "center",
-									gap: "0.3rem",
+									gap: "0.25rem",
 									flexShrink: 0,
 									whiteSpace: "nowrap",
 									cursor: "pointer",
-									borderRadius: "0.375rem",
+									borderRadius: "8px",
 									border: "1px solid",
 									borderColor: isActive ? "var(--teal-600, #0d9488)" : "var(--line, rgba(148, 163, 184, 0.2))",
 									background: isActive ? "var(--teal-600, #0d9488)" : "var(--paper-soft, rgba(255, 255, 255, 0.05))",
@@ -395,7 +395,7 @@ function SanpinRegistersInner() {
 								}}
 								data-testid={`tab-${tab.id}-btn`}
 							>
-								<Icon size={13} color={isActive ? "#ffffff" : "currentColor"} className="shrink-0" />
+								<Icon size={12} color={isActive ? "#ffffff" : "currentColor"} className="shrink-0" />
 								<span className="whitespace-nowrap shrink-0">{tab.shortLabel}</span>
 							</button>
 						);

@@ -1,6 +1,7 @@
 import type { Appointment, Dashboard } from "@dental/shared";
 import {
   AlertTriangle,
+  Check,
   Clock,
   UserCheck,
   Zap,
@@ -73,6 +74,103 @@ export function AppointmentModalDoctorChairSection({
   timezone,
   hideAssistant = false,
 }: AppointmentModalDoctorChairSectionProps) {
+  const isDoctorOnShift = (dId: string) => {
+    if (dId === dutyDoctorId || (dutyDoc && dutyDoc.id === dId)) return true;
+    if (!chairDoctorAssignments) return false;
+    return Object.values(chairDoctorAssignments).some((assignment) => {
+      if (!assignment) return false;
+      if (assignment.doctorId === dId) return true;
+      if (assignment.subShifts?.some((s) => s.doctorId === dId)) return true;
+      return false;
+    });
+  };
+
+  const handleDoctorChange = (newDocId: string) => {
+    setDoctorUserId(newDocId);
+    if (
+      newDocId &&
+      (!appointment?.chairId || appointment.id.startsWith("new"))
+    ) {
+      let targetChairId: string | null = null;
+      const doc =
+        doctors.find((d) => d.id === newDocId) ||
+        dashboard?.clinicSettings?.staff?.find(
+          (s) => s.id === newDocId,
+        );
+
+      // 1. Doctor's preferred chair
+      if ((doc as any)?.preferredChairId) {
+        const pref = chairs.find(
+          (c) => c.id === (doc as any).preferredChairId,
+        );
+        if (pref) targetChairId = pref.id;
+      }
+      if (!targetChairId && typeof window !== "undefined") {
+        const storedPref = safeLocalStorageGetJson<
+          Record<string, string>
+        >("dente_doctor_preferred_chairs", {});
+        if (storedPref[newDocId]) {
+          const pref = chairs.find(
+            (c) => c.id === storedPref[newDocId],
+          );
+          if (pref) targetChairId = pref.id;
+        }
+      }
+
+      // 2. Chair default doctor
+      if (!targetChairId) {
+        const def = chairs.find(
+          (c) => (c as any).defaultDoctorId === newDocId,
+        );
+        if (def) targetChairId = def.id;
+      }
+      if (!targetChairId && typeof window !== "undefined") {
+        const storedChairDef = safeLocalStorageGetJson<
+          Record<string, string>
+        >("dente_chair_default_doctors", {});
+        for (const [cId, dId] of Object.entries(storedChairDef)) {
+          if (dId === newDocId) {
+            const def = chairs.find((c) => c.id === cId);
+            if (def) {
+              targetChairId = def.id;
+              break;
+            }
+          }
+        }
+      }
+
+      // 3. Duty chair on scheduled time
+      if (!targetChairId) {
+        const assignedChair = chairs.find((c) => {
+          const duty = resolveChairDutyDoctor(
+            c.id,
+            startsAtLocal,
+            chairDoctorAssignments,
+            startsAtLocal
+              ? startsAtLocal.slice(0, 10)
+              : undefined,
+          );
+          return duty.doctorId === newDocId;
+        });
+        if (assignedChair) targetChairId = assignedChair.id;
+      }
+
+      // 4. Specialization match
+      if (!targetChairId && doc?.specialties?.length) {
+        const matchingChair = chairs.find(
+          (c) =>
+            c.specialization &&
+            doc.specialties?.includes(c.specialization),
+        );
+        if (matchingChair) targetChairId = matchingChair.id;
+      }
+
+      if (targetChairId) {
+        setChairId(targetChairId);
+      }
+    }
+  };
+
   return (
     <>
       {/* CITO / Urgent Overbooking warning */}
@@ -184,21 +282,48 @@ export function AppointmentModalDoctorChairSection({
         />
       </div>
 
-      {/* Quick Duration Buttons (Anti-Clickfest) */}
+      {/* Quick Duration Buttons (Anti-Clickfest) & Custom Duration Input */}
       <div className="sm:col-span-2">
-        <div className="flex items-center justify-between gap-2 mb-1">
+        <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
           <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
             <Zap size={13} className="text-[var(--teal)]" />
-            <span>Быстрый выбор длительности:</span>
+            <span>Длительность приёма:</span>
           </label>
-          {currentDurationMinutes > 0 && (
-            <span className="text-xs font-mono font-bold text-[var(--teal)]">
-              {currentDurationMinutes} мин
-              {currentDurationMinutes >= 60
-                ? ` (${Math.floor(currentDurationMinutes / 60)} ч ${currentDurationMinutes % 60 ? `${currentDurationMinutes % 60} мин` : ""})`
-                : ""}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {currentDurationMinutes > 0 && (
+              <span className="text-xs font-mono font-bold text-[var(--teal)]">
+                {currentDurationMinutes} мин
+                {currentDurationMinutes >= 60
+                  ? ` (${Math.floor(currentDurationMinutes / 60)} ч ${currentDurationMinutes % 60 ? `${currentDurationMinutes % 60} мин` : ""})`
+                  : ""}
+              </span>
+            )}
+            <div
+              className="flex items-center gap-1.5 bg-[var(--paper-soft)] px-2.5 py-1 rounded-lg border border-[var(--line)]"
+              style={{ border: "1px solid var(--line)", background: "var(--paper-soft)", borderRadius: "8px", padding: "2px 8px" }}
+            >
+              <span className="text-[11px] text-[var(--muted)] font-medium">Своя:</span>
+              <input
+                type="number"
+                min="5"
+                max="720"
+                step="5"
+                placeholder="мин"
+                value={currentDurationMinutes > 0 ? currentDurationMinutes : ""}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val) && val > 0) {
+                    applyDuration(val);
+                  }
+                }}
+                className="text-xs text-center font-bold font-mono rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--line-strong)] focus:ring-1 focus:ring-[var(--teal)] outline-none"
+                style={{ width: "58px", minWidth: "58px", height: "24px", padding: "0 4px" }}
+                data-testid="appointment-custom-duration-input"
+                title="Произвольная длительность приёма в минутах"
+              />
+              <span className="text-[11px] text-[var(--muted)]">мин</span>
+            </div>
+          </div>
         </div>
         <div
           className="flex items-center gap-1.5 flex-wrap"
@@ -211,119 +336,89 @@ export function AppointmentModalDoctorChairSection({
                 key={mins}
                 type="button"
                 onClick={() => applyDuration(mins)}
+                data-testid={`appointment-duration-pill-${mins}`}
                 className={`appointment-modal-duration-chip ${isSelected ? "active" : ""} h-8 sm:h-8.5 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer select-none active:scale-95 flex items-center justify-center ${
                   isSelected
                     ? "!bg-[var(--teal)] !text-white !border-[var(--teal)] shadow-sm ring-2 ring-[var(--teal)]/25 font-bold"
                     : "bg-[var(--paper-soft)] border-[var(--line-strong)] text-[var(--ink)] hover:bg-[var(--paper-subtle)]"
                 }`}
               >
-                {mins < 60
-                  ? `${mins} мин`
-                  : mins === 60
-                    ? "1 час"
-                    : mins === 90
-                      ? "1.5 ч"
-                      : "2 часа"}
+                {mins} мин
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Doctor */}
-      <div className={hideAssistant ? "sm:col-span-1" : ""}>
-        <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
-          Врач {isSoloDoctor ? "(соло-врач)" : "*"}
-        </label>
+      {/* Doctor (1-Click Chips Strip with Status Indicators) */}
+      <div className="sm:col-span-2">
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block">
+            Врач {isSoloDoctor ? "(соло-врач)" : "*"}
+          </label>
+          {dutyDoc && (
+            <span
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--teal-dark,var(--teal))]"
+              data-testid="duty-doctor-badge"
+            >
+              <UserCheck size={12} className="shrink-0 text-[var(--teal)]" />
+              <span>
+                Дежурный: {formatDoctorShortName(dutyDoc.fullName)} ({dutyDocHours || "смена"})
+              </span>
+            </span>
+          )}
+        </div>
+
+        {/* 1-Click Interactive Doctor Chips Strip */}
+        <div
+          className="flex items-center gap-2 flex-wrap"
+          data-testid="appointment-doctor-chips-strip"
+        >
+          {doctors.map((d) => {
+            const isSelected = doctorUserId === d.id;
+            const onShift = isDoctorOnShift(d.id);
+            return (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => handleDoctorChange(d.id)}
+                data-testid={`chip-doctor-${d.id}`}
+                className={`appointment-modal-doctor-chip ${isSelected ? "active" : ""} shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer select-none`}
+                style={{
+                  height: "32px",
+                  padding: "0 12px",
+                  borderRadius: "10px",
+                  border: isSelected ? "1px solid var(--teal)" : "1px solid var(--line-strong)",
+                  backgroundColor: isSelected ? "var(--teal)" : "var(--paper-soft)",
+                  color: isSelected ? "#ffffff" : "var(--ink)",
+                  fontWeight: isSelected ? 700 : 600,
+                }}
+                title={onShift ? "Врач на смене в клинике" : "Врач доступен для плановой записи"}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: "7px",
+                    height: "7px",
+                    borderRadius: "50%",
+                    backgroundColor: isSelected ? "#ffffff" : onShift ? "#10b981" : "var(--teal)",
+                    flexShrink: 0,
+                  }}
+                />
+                <span className="whitespace-nowrap">{formatDoctorShortName(d.fullName)}</span>
+                {isSelected && <Check size={12} className="shrink-0 ml-0.5" />}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Backwards-compatible select for automated tests */}
         <select
           value={doctorUserId}
-          onChange={(e) => {
-            const newDocId = e.target.value;
-            setDoctorUserId(newDocId);
-            if (
-              newDocId &&
-              (!appointment?.chairId || appointment.id.startsWith("new"))
-            ) {
-              let targetChairId: string | null = null;
-              const doc =
-                doctors.find((d) => d.id === newDocId) ||
-                dashboard?.clinicSettings?.staff?.find(
-                  (s) => s.id === newDocId,
-                );
-
-              // 1. Doctor's preferred chair
-              if ((doc as any)?.preferredChairId) {
-                const pref = chairs.find(
-                  (c) => c.id === (doc as any).preferredChairId,
-                );
-                if (pref) targetChairId = pref.id;
-              }
-              if (!targetChairId && typeof window !== "undefined") {
-                const storedPref = safeLocalStorageGetJson<
-                  Record<string, string>
-                >("dente_doctor_preferred_chairs", {});
-                if (storedPref[newDocId]) {
-                  const pref = chairs.find(
-                    (c) => c.id === storedPref[newDocId],
-                  );
-                  if (pref) targetChairId = pref.id;
-                }
-              }
-
-              // 2. Chair default doctor
-              if (!targetChairId) {
-                const def = chairs.find(
-                  (c) => (c as any).defaultDoctorId === newDocId,
-                );
-                if (def) targetChairId = def.id;
-              }
-              if (!targetChairId && typeof window !== "undefined") {
-                const storedChairDef = safeLocalStorageGetJson<
-                  Record<string, string>
-                >("dente_chair_default_doctors", {});
-                for (const [cId, dId] of Object.entries(storedChairDef)) {
-                  if (dId === newDocId) {
-                    const def = chairs.find((c) => c.id === cId);
-                    if (def) {
-                      targetChairId = def.id;
-                      break;
-                    }
-                  }
-                }
-              }
-
-              // 3. Duty chair on scheduled time
-              if (!targetChairId) {
-                const assignedChair = chairs.find((c) => {
-                  const duty = resolveChairDutyDoctor(
-                    c.id,
-                    startsAtLocal,
-                    chairDoctorAssignments,
-                    startsAtLocal
-                      ? startsAtLocal.slice(0, 10)
-                      : undefined,
-                  );
-                  return duty.doctorId === newDocId;
-                });
-                if (assignedChair) targetChairId = assignedChair.id;
-              }
-
-              // 4. Specialization match
-              if (!targetChairId && doc?.specialties?.length) {
-                const matchingChair = chairs.find(
-                  (c) =>
-                    c.specialization &&
-                    doc.specialties?.includes(c.specialization),
-                );
-                if (matchingChair) targetChairId = matchingChair.id;
-              }
-
-              if (targetChairId) {
-                setChairId(targetChairId);
-              }
-            }
-          }}
-          className="w-full px-3 h-9 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] cursor-pointer"
+          onChange={(e) => handleDoctorChange(e.target.value)}
+          className="sr-only"
+          aria-hidden="true"
+          tabIndex={-1}
           data-testid="select-appointment-doctor"
         >
           <option value="">-- Выберите врача --</option>
@@ -333,21 +428,6 @@ export function AppointmentModalDoctorChairSection({
             </option>
           ))}
         </select>
-        {dutyDoc && (
-          <div
-            className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal)]/25 shadow-2xs"
-            data-testid="duty-doctor-badge"
-          >
-            <UserCheck
-              size={12}
-              className="shrink-0 text-[var(--teal)]"
-            />
-            <span>
-              Дежурный: {formatDoctorShortName(dutyDoc.fullName)} (
-              {dutyDocHours || "смена"})
-            </span>
-          </div>
-        )}
         {dutyDoc &&
           doctorUserId &&
           dutyDoc.id &&
@@ -398,7 +478,7 @@ export function AppointmentModalDoctorChairSection({
       )}
 
       {/* Chair */}
-      <div className={hideAssistant ? "sm:col-span-1" : isSoloDoctor ? "sm:col-span-1" : "sm:col-span-2"}>
+      <div className="sm:col-span-2">
         <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
           Кресло / Кабинет {chairs.length <= 1 ? "(авто)" : "*"}
         </label>

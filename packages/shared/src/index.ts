@@ -60,6 +60,7 @@ export * from "./documents/index.js";
 export * from "./toothCanalsAndBilling804n.js";
 export * from "./clinical/index.js";
 export * from "./pricelist/index.js";
+export { ORDER_804N_CODE_REGEX } from "./pricelist/index.js";
 export * from "./perio/index.js";
 export * from "./emr/index.js";
 export * from "./egisz/index.js";
@@ -169,3 +170,4 @@ export * from "./inventory/consumables.js";
 export * from "./lab/index.js";
 export * from "./knowledge/index.js";
 export * from "./demo/demoConstants.js";
+

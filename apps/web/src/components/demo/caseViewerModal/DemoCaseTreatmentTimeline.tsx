@@ -33,13 +33,13 @@ export interface DemoCaseTreatmentTimelineProps {
 	readonly stages: DemoTreatmentStage[];
 	readonly activeRoleKey: string;
 	readonly clinicalDetails?: {
-		odontogram?: DemoOdontogramToothState[];
-		soapDiary?: DemoSoapDiary;
-		labOrder?: DemoLabOrderCase;
-		orthoCase?: DemoOrthoCase;
-		surgeonCase?: DemoSurgeonCase;
-		executiveKpis?: DemoExecutiveKpiCase;
-	};
+		odontogram?: DemoOdontogramToothState[] | undefined;
+		soapDiary?: DemoSoapDiary | undefined;
+		labOrder?: DemoLabOrderCase | undefined;
+		orthoCase?: DemoOrthoCase | undefined;
+		surgeonCase?: DemoSurgeonCase | undefined;
+		executiveKpis?: DemoExecutiveKpiCase | undefined;
+	} | undefined;
 }
 
 export const DemoCaseTreatmentTimeline: React.FC<DemoCaseTreatmentTimelineProps> = ({

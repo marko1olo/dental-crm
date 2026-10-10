@@ -76,12 +76,12 @@ export function DoctorAnesthesiaDefaultsSection() {
 					</div>
 					<div>
 						<h4 className="font-extrabold text-sm sm:text-base text-[var(--ink)] m-0">Быстрые дефолты анестезии и карпульных игл</h4>
-						<p className="text-xs text-[var(--muted)] m-0 mt-0.5">1-клик калибровка рабочего анестетика и типа игл. Автоматически подставляются в медицинскую карту.</p>
+						<p className="text-xs text-[var(--muted)] m-0 mt-0.5">Калибровка рабочего анестетика и типа игл. Автоматически подставляются в медицинскую карту.</p>
 					</div>
 				</div>
 				<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-teal-500/15 text-teal-800 dark:text-teal-300 border border-teal-500/30">
 					<ShieldCheck size={13} className="text-teal-600 dark:text-teal-400" />
-					1 клик = сохранено
+					Автосохранение
 				</span>
 			</div>
 
@@ -92,7 +92,7 @@ export function DoctorAnesthesiaDefaultsSection() {
 						<Syringe size={14} className="text-teal-600" />
 						<span>Основной рабочий анестетик (препарат выбора):</span>
 					</label>
-					<span className="text-[11px] text-[var(--muted)]">Подставляется при создании протокола в 1 клик</span>
+					<span className="text-[11px] text-[var(--muted)]">Подставляется при создании протокола</span>
 				</div>
 
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">

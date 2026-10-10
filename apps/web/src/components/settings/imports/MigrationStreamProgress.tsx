@@ -44,6 +44,20 @@ export function MigrationStreamProgress({
 
 	useEffect(() => {
 		let es: EventSource | null = null;
+		const handleProgress = (event: MessageEvent) => {
+			try {
+				const data = JSON.parse(event.data) as ImportProgressEvent;
+				if (!activeTaskId || data.taskId === activeTaskId) {
+					setProgress(data);
+					if (data.phase === "done" && onCompleted) {
+						onCompleted();
+					}
+				}
+			} catch (err) {
+				console.warn("[MigrationStream] Failed to parse progress event:", err);
+			}
+		};
+
 		try {
 			es = new EventSource("/api/imports/smart/progress/stream");
 
@@ -51,29 +65,19 @@ export function MigrationStreamProgress({
 				setConnected(true);
 			};
 
-			es.addEventListener("progress", (event: MessageEvent) => {
-				try {
-					const data = JSON.parse(event.data) as ImportProgressEvent;
-					if (!activeTaskId || data.taskId === activeTaskId) {
-						setProgress(data);
-						if (data.phase === "done" && onCompleted) {
-							onCompleted();
-						}
-					}
-				} catch {
-					// Ignore parse error
-				}
-			});
+			es.addEventListener("progress", handleProgress);
 
 			es.onerror = () => {
 				setConnected(false);
 			};
-		} catch {
+		} catch (err) {
+			console.warn("[MigrationStream] Failed to initialize EventSource:", err);
 			setConnected(false);
 		}
 
 		return () => {
 			if (es) {
+				es.removeEventListener("progress", handleProgress);
 				es.close();
 			}
 		};

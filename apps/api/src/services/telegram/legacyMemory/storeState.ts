@@ -168,7 +168,7 @@ export function persistMutableState(): void {
 
 const appointmentTimeFormatters = new Map<string, Intl.DateTimeFormat>();
 
-function getAppointmentTimeFormatter(timeZone: string): Intl.DateTimeFormat {
+export function getAppointmentTimeFormatter(timeZone: string): Intl.DateTimeFormat {
 	const cached = appointmentTimeFormatters.get(timeZone);
 	if (cached) return cached;
 	const formatter = new Intl.DateTimeFormat("en-CA", {

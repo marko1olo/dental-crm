@@ -122,7 +122,7 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 					<PatientMedicalFlagsStep
 						isEmergencyOrPrimary={isEmergencyOrPrimary}
 						onToggleEmergency={() => setIsEmergencyOrPrimary((prev) => !prev)}
-						isAnonymous={patientAdministrativeProfileDraft.isAnonymous}
+						isAnonymous={Boolean(patientAdministrativeProfileDraft.isAnonymous)}
 						onToggleAnonymous={handleToggleAnonymous}
 						isSomaticNorm={isSomaticNorm}
 						onToggleSomaticNorm={() => {
@@ -159,7 +159,7 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 						advertisingSource={advertisingSource}
 						onAdvertisingSourceChange={setAdvertisingSource}
 						fieldRequirements={fieldRequirements}
-						isAnonymous={patientAdministrativeProfileDraft.isAnonymous}
+						isAnonymous={Boolean(patientAdministrativeProfileDraft.isAnonymous)}
 						updatePatientCoreDraft={updatePatientCoreDraft}
 					/>
 

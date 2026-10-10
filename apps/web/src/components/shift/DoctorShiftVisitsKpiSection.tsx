@@ -49,6 +49,13 @@ function formatClockTime(value: unknown): string {
 	});
 }
 
+const STATUS_LABELS: Record<string, string> = {
+	planned: "Ожидает приема", scheduled: "Ожидает приема", pending: "Ожидает приема",
+	confirmed: "Подтвержден", arrived: "Ожидает приема", waiting: "Ожидает приема",
+	in_chair: "На приеме", in_treatment: "На приеме", in_progress: "На приеме",
+	completed: "Завершен", done: "Завершен", cancelled: "Отменен", no_show: "Не пришел",
+};
+
 /**
  * DoctorShiftVisitsKpiSection — Сводка визитов врача за смену и KPI (StomX оперативная доска).
  *
@@ -98,11 +105,11 @@ export const DoctorShiftVisitsKpiSection: React.FC<DoctorShiftVisitsKpiSectionPr
 			data-testid="doctor-shift-visits-kpi-section"
 		>
 			<div className="today-schedule-header">
-				<h3 style={{ color: "var(--ink)" }}>
+				<h3 style={{ color: "var(--ink)", margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", fontWeight: 700 }}>
 					<ClipboardCheck size={16} aria-hidden="true" /> Журнал приёмов за смену
 				</h3>
 				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-					<span className="today-schedule-count">
+					<span className="today-schedule-count" style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)" }}>
 						{appointmentsCountLabel(todayAppointments.length)}
 					</span>
 					{onOpenQueueBoardModal && (
@@ -110,18 +117,24 @@ export const DoctorShiftVisitsKpiSection: React.FC<DoctorShiftVisitsKpiSectionPr
 							type="button"
 							className="secondary-button"
 							style={{
-								fontSize: "11.5px",
-								padding: "3px 8px",
-								minHeight: "28px",
+								fontSize: "12px",
+								fontWeight: 600,
+								padding: "0 10px",
+								height: "32px",
+								borderRadius: "8px",
 								display: "inline-flex",
 								alignItems: "center",
-								gap: "4px",
+								gap: "5px",
+								background: "var(--paper-soft)",
+								border: "1px solid var(--line)",
+								color: "var(--ink)",
+								cursor: "pointer",
 							}}
 							onClick={onOpenQueueBoardModal}
 							title="Открыть интерактивную доску очереди и ТВ-табло"
 							data-testid="btn-open-today-queue-board"
 						>
-							<Monitor size={13} aria-hidden="true" /> Доска очереди
+							<Monitor size={14} aria-hidden="true" /> Доска очереди
 						</button>
 					)}
 					{onOpenSchedule && (
@@ -129,66 +142,80 @@ export const DoctorShiftVisitsKpiSection: React.FC<DoctorShiftVisitsKpiSectionPr
 							type="button"
 							className="secondary-button"
 							style={{
-								fontSize: "11.5px",
-								padding: "3px 8px",
-								minHeight: "28px",
+								fontSize: "12px",
+								fontWeight: 600,
+								padding: "0 10px",
+								height: "32px",
+								borderRadius: "8px",
 								display: "inline-flex",
 								alignItems: "center",
-								gap: "4px",
+								gap: "5px",
+								background: "var(--paper-soft)",
+								border: "1px solid var(--line)",
+								color: "var(--ink)",
+								cursor: "pointer",
 							}}
 							onClick={onOpenSchedule}
 							title="Перейти к полной сетке расписания"
 						>
-							<Calendar size={13} aria-hidden="true" /> В расписание →
+							<Calendar size={14} aria-hidden="true" /> В расписание →
 						</button>
 					)}
 				</div>
 			</div>
 
-			{/* Queue Filter Tabs */}
+			{/* Queue Filter Tabs (Apple-style Segmented Control) */}
 			<div
 				className="stomx-queue-strip"
 				role="tablist"
 				aria-label="Очереди приёмов смены"
 				style={{
-					display: "flex",
+					display: "inline-flex",
 					alignItems: "center",
-					gap: "6px",
+					gap: "3px",
+					background: "var(--paper-soft)",
+					border: "1px solid var(--line)",
+					borderRadius: "8px",
+					padding: "3px",
+					marginBottom: "12px",
+					maxWidth: "100%",
 					overflowX: "auto",
-					paddingBottom: "6px",
-					marginBottom: "10px",
 				}}
 			>
 				{(
 					[
-						{ id: "all", label: `Все (${todayAppointments.length})`, activeBg: "var(--teal-dark, #0d9488)" },
-						{ id: "in_chair", label: `В кресле (${inChairAppointments.length})`, activeBg: "var(--teal-dark, #0f766e)" },
-						{ id: "waiting", label: `Ожидают (${waitingAppointments.length})`, activeBg: "var(--warn-fg, #b45309)" },
-						{ id: "payment", label: `Оплата (${awaitingPaymentAppointments.length})`, activeBg: "var(--teal-dark, #0d9488)" },
+						{ id: "all", label: `Все (${todayAppointments.length})` },
+						{ id: "in_chair", label: `В кресле (${inChairAppointments.length})` },
+						{ id: "waiting", label: `Ожидают (${waitingAppointments.length})` },
+						{ id: "payment", label: `Оплата (${awaitingPaymentAppointments.length})` },
 					] as const
-				).map((pill) => (
-					<button
-						key={pill.id}
-						type="button"
-						role="tab"
-						aria-selected={queueFilter === pill.id}
-						className={`filter-pill ${queueFilter === pill.id ? "active" : ""}`}
-						style={{
-							fontSize: "12px",
-							padding: "4px 10px",
-							borderRadius: "8px",
-							fontWeight: queueFilter === pill.id ? 700 : 500,
-							background: queueFilter === pill.id ? pill.activeBg : "var(--paper-soft, rgba(0,0,0,0.04))",
-							color: queueFilter === pill.id ? "#ffffff" : "var(--ink)",
-							border: "1px solid var(--line)",
-							cursor: "pointer",
-							whiteSpace: "nowrap",
-						}}
-						onClick={() => setQueueFilter(pill.id)}
-					>
-						{pill.label}
-					</button>
-				))}
+				).map((tab) => {
+					const isActive = queueFilter === tab.id;
+					return (
+						<button
+							key={tab.id}
+							type="button"
+							role="tab"
+							aria-selected={isActive}
+							style={{
+								fontSize: "12px",
+								padding: "4px 10px",
+								borderRadius: "6px",
+								fontWeight: isActive ? 700 : 500,
+								background: isActive ? "var(--paper)" : "transparent",
+								color: isActive ? "var(--ink)" : "var(--muted)",
+								border: isActive ? "1px solid var(--line)" : "1px solid transparent",
+								boxShadow: isActive ? "var(--shadow-1)" : "none",
+								cursor: "pointer",
+								whiteSpace: "nowrap",
+								transition: "all 0.15s ease",
+							}}
+							onClick={() => setQueueFilter(tab.id)}
+						>
+							{tab.label}
+						</button>
+					);
+				})}
 			</div>
 
 			{displayedAppointments.length > 0 ? (
@@ -209,21 +236,6 @@ export const DoctorShiftVisitsKpiSection: React.FC<DoctorShiftVisitsKpiSectionPr
 						const statusRaw =
 							app.status || app.appointmentStatus || app.state || "planned";
 						const statusKey = String(statusRaw).toLowerCase();
-						const statusLabels: Record<string, string> = {
-							planned: "Ожидает приема",
-							scheduled: "Ожидает приема",
-							pending: "Ожидает приема",
-							confirmed: "Подтвержден",
-							arrived: "Ожидает приема",
-							waiting: "Ожидает приема",
-							in_chair: "На приеме",
-							in_treatment: "На приеме",
-							in_progress: "На приеме",
-							completed: "Завершен",
-							done: "Завершен",
-							cancelled: "Отменен",
-							no_show: "Не пришел",
-						};
 
 						const isInChair = [
 							"in_chair",
@@ -282,7 +294,7 @@ export const DoctorShiftVisitsKpiSection: React.FC<DoctorShiftVisitsKpiSectionPr
 									}}
 								>
 									<span className={`status-pill status-${statusKey} shrink-0`}>
-										{statusLabels[statusKey] ?? "Ожидает приема"}
+										{STATUS_LABELS[statusKey] ?? "Ожидает приема"}
 									</span>
 
 									{/* 1-Click Action Buttons */}
@@ -291,12 +303,18 @@ export const DoctorShiftVisitsKpiSection: React.FC<DoctorShiftVisitsKpiSectionPr
 											type="button"
 											className="secondary-button"
 											style={{
-												fontSize: "11px",
-												padding: "3px 7px",
-												minHeight: "26px",
+												fontSize: "11.5px",
+												fontWeight: 600,
+												padding: "0 8px",
+												height: "28px",
+												borderRadius: "6px",
 												display: "inline-flex",
 												alignItems: "center",
 												gap: "4px",
+												background: "var(--paper-soft)",
+												border: "1px solid var(--line)",
+												color: "var(--ink)",
+												cursor: "pointer",
 											}}
 											onClick={() => {
 												if (patient && onOpenCashier) {
@@ -312,12 +330,18 @@ export const DoctorShiftVisitsKpiSection: React.FC<DoctorShiftVisitsKpiSectionPr
 											type="button"
 											className="primary-button"
 											style={{
-												fontSize: "11px",
-												padding: "3px 7px",
-												minHeight: "26px",
+												fontSize: "11.5px",
+												fontWeight: 600,
+												padding: "0 8px",
+												height: "28px",
+												borderRadius: "6px",
 												display: "inline-flex",
 												alignItems: "center",
 												gap: "4px",
+												background: "var(--teal)",
+												border: "1px solid transparent",
+												color: "#ffffff",
+												cursor: "pointer",
 											}}
 											onClick={() => {
 												if (patient && onOpenAppointmentEmk) {
@@ -333,12 +357,18 @@ export const DoctorShiftVisitsKpiSection: React.FC<DoctorShiftVisitsKpiSectionPr
 											type="button"
 											className="secondary-button"
 											style={{
-												fontSize: "11px",
-												padding: "3px 7px",
-												minHeight: "26px",
+												fontSize: "11.5px",
+												fontWeight: 600,
+												padding: "0 8px",
+												height: "28px",
+												borderRadius: "6px",
 												display: "inline-flex",
 												alignItems: "center",
 												gap: "4px",
+												background: "var(--paper-soft)",
+												border: "1px solid var(--line)",
+												color: "var(--ink)",
+												cursor: "pointer",
 											}}
 											onClick={() => {
 												if (patient && onOpenAppointmentEmk) {

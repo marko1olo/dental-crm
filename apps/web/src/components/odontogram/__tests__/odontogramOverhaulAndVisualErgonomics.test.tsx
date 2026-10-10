@@ -14,7 +14,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
@@ -150,31 +150,34 @@ describe("CLIN-05: 3-Tier Architecture & Elimination of Giant Checkout Ribbon (M
 		);
 	});
 
-	it("verifies OdontogramModule.tsx has the compact 32-34px header financial badge and 1-click FastCheckout button", () => {
-		const modulePath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/OdontogramModule.tsx",
-		);
-		const containerPath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/OdontogramViewContainer.tsx",
-		);
+	it("verifies cashier duplication is eradicated from OdontogramToolbar and centralized in VisitViewHeader", () => {
 		const toolbarPath = path.resolve(
 			__dirname,
 			"../../../../src/components/odontogram/OdontogramToolbar.tsx",
 		);
-		const content =
-			fs.readFileSync(modulePath, "utf-8") +
-			fs.readFileSync(containerPath, "utf-8") +
-			(fs.existsSync(toolbarPath) ? fs.readFileSync(toolbarPath, "utf-8") : "");
-
-		assert.ok(
-			content.includes("data-testid=\"odontogram-compact-bill-badge\""),
-			"OdontogramViewContainer.tsx must contain compact bill badge in header",
+		const visitHeaderPath = path.resolve(
+			__dirname,
+			"../../visit/view/VisitViewHeader.tsx",
 		);
+		const toolbarContent = fs.existsSync(toolbarPath) ? fs.readFileSync(toolbarPath, "utf-8") : "";
+		const headerContent = fs.existsSync(visitHeaderPath) ? fs.readFileSync(visitHeaderPath, "utf-8") : "";
+
+		// Invariant: Cashier buttons must NOT be duplicated in OdontogramToolbar
+		assert.strictEqual(
+			toolbarContent.includes("data-testid=\"odontogram-compact-bill-badge\""),
+			false,
+			"OdontogramToolbar must NOT contain duplicate cash badge",
+		);
+		assert.strictEqual(
+			toolbarContent.includes("data-testid=\"btn-open-fast-checkout\""),
+			false,
+			"OdontogramToolbar must NOT contain duplicate checkout button",
+		);
+
+		// Centralized checkout lives in VisitViewHeader
 		assert.ok(
-			content.includes("data-testid=\"btn-open-fast-checkout\""),
-			"OdontogramViewContainer.tsx must contain 1-click modal checkout button",
+			headerContent.includes("data-testid=\"btn-complete-visit-header\""),
+			"VisitViewHeader must centralize the primary complete visit & checkout CTA",
 		);
 	});
 });
@@ -343,7 +346,13 @@ describe("CLIN-09: 0-Click Somatic Norm Default & Cargo Cult Eradication (Mandat
 			__dirname,
 			"../../../../src/VisitView.tsx",
 		);
-		const content = fs.readFileSync(visitViewPath, "utf-8");
+		const viewStatePath = path.resolve(
+			__dirname,
+			"../../visit/view/useVisitViewState.ts",
+		);
+		const content =
+			fs.readFileSync(visitViewPath, "utf-8") +
+			(fs.existsSync(viewStatePath) ? fs.readFileSync(viewStatePath, "utf-8") : "");
 
 		assert.ok(
 			content.includes('updateVisitNoteField("anamnesis", "Соматически здоров. Аллергоанамнез не отягощен.");'),

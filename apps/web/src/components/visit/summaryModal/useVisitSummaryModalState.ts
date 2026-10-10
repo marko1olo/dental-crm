@@ -15,6 +15,11 @@ import {
 	resolveEffectiveFamilyBalanceRub,
 	extractAbnormalTeeth,
 } from "./summaryCalculations";
+import {
+	detectUnbilledConsumables,
+	convertUnbilledConsumableToChairsideService,
+	type ConsumablesReconciliationResult,
+} from "../../odontogram/treatmentEstimatorReconciler";
 import type { VisitSummaryModalProps } from "./types";
 
 export function useVisitSummaryModalState(
@@ -65,19 +70,62 @@ export function useVisitSummaryModalState(
 		}
 	}, [isPaidProp]);
 
+	const [appendedServices, setAppendedServices] = useState<readonly any[]>([]);
+
 	const chairsideServices = useMemo(() => {
 		const storeServices = assembleVisitStoreCompletedServices();
 		const activeVisitServices = appLogic?.dashboard?.activeVisit?.completedServices;
 		return resolveChairsideServices(servicesProp, storeServices, activeVisitServices, patient?.id);
 	}, [servicesProp, patient?.id, appLogic?.dashboard?.activeVisit?.completedServices]);
 
+	const effectiveChairsideServices = useMemo(() => {
+		return [...chairsideServices, ...appendedServices];
+	}, [chairsideServices, appendedServices]);
+
 	const calculatedServicesTotalRub = useMemo(() => {
-		return calculateServicesTotalRub(chairsideServices);
-	}, [chairsideServices]);
+		return calculateServicesTotalRub(effectiveChairsideServices);
+	}, [effectiveChairsideServices]);
+
+	const protocolSource = useMemo(() => ({
+		treatmentDescription: diary?.treatmentDescription,
+		procedureProtocol: synthesizedDiaryPreview?.procedureProtocol,
+		statusLocalis: diary?.statusLocalis,
+		objectiveStatusLocalis: synthesizedDiaryPreview?.objectiveStatusLocalis,
+		treatmentPlan: appLogic?.visitNoteForm?.treatmentPlan,
+		diagnosis: diary?.diagnosisIcd10,
+	}), [
+		diary?.treatmentDescription,
+		diary?.statusLocalis,
+		diary?.diagnosisIcd10,
+		synthesizedDiaryPreview?.procedureProtocol,
+		synthesizedDiaryPreview?.objectiveStatusLocalis,
+		appLogic?.visitNoteForm?.treatmentPlan,
+	]);
+
+	const consumablesReconciliation = useMemo(() => {
+		const catalog =
+			(appLogic?.catalog as any[]) ||
+			(appLogic?.dashboard?.clinicSettings?.priceList as any[]) ||
+			[];
+		return detectUnbilledConsumables(protocolSource, effectiveChairsideServices, catalog);
+	}, [protocolSource, effectiveChairsideServices, appLogic?.catalog, appLogic?.dashboard?.clinicSettings?.priceList]);
+
+	const handleAddAllUnbilledToBill = () => {
+		if (!consumablesReconciliation.hasUnbilled) return;
+		const newServices = consumablesReconciliation.unbilledItems.map(convertUnbilledConsumableToChairsideService);
+		setAppendedServices((prev) => [...prev, ...newServices]);
+		showToast(
+			`В счёт добавлено: ${consumablesReconciliation.detectedMarkers.join(", ")} (+${consumablesReconciliation.totalUnbilledRub.toLocaleString("ru-RU")} ₽)`,
+			"success",
+			3500,
+		);
+	};
 
 	const effectiveTotalDueRub = useMemo(() => {
-		return resolveEffectiveTotalDueRub(totalDueRubProp, calculatedServicesTotalRub, patient?.id);
-	}, [totalDueRubProp, calculatedServicesTotalRub, patient?.id]);
+		const baseDue = resolveEffectiveTotalDueRub(totalDueRubProp, calculateServicesTotalRub(chairsideServices), patient?.id);
+		const addedRub = calculateServicesTotalRub(appendedServices);
+		return baseDue + addedRub;
+	}, [totalDueRubProp, chairsideServices, appendedServices, patient?.id]);
 
 	const effectiveDepositRub = useMemo(() => {
 		return resolveEffectiveDepositRub(
@@ -346,6 +394,10 @@ export function useVisitSummaryModalState(
 		handleSaveNextStageAppointment,
 		handlePaymentSuccessCallback,
 		handleCompleteVisitAction,
+		consumablesReconciliation,
+		handleAddAllUnbilledToBill,
+		appendedServices,
+		effectiveChairsideServices,
 	};
 }
 

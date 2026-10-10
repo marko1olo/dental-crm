@@ -4,8 +4,8 @@ import type {
 	EmrBatchSigningSession,
 	calculateDoctorShiftEarnings,
 } from "@dental/shared";
-import type { DoctorShiftStats } from "../shift/DoctorShiftControlBar";
-import type { DoctorShiftEmrSummary } from "../shift/DoctorShiftCloseModal";
+import type { DoctorShiftStats } from "../../shift/DoctorShiftControlBar";
+import type { DoctorShiftEmrSummary } from "../../shift/DoctorShiftCloseModal";
 
 export type DoctorShiftTab =
 	| "all"

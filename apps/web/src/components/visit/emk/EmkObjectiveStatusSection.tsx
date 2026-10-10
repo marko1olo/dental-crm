@@ -136,7 +136,7 @@ export function EmkObjectiveStatusSection({
 							title="Полная норма осмотра: санирована, прикус ортогнатический, слизистая интактна"
 						>
 							<ShieldCheck size={14} className="shrink-0" />
-							<span>✓ Физиологическая норма осмотра</span>
+							<span>Физиологическая норма осмотра</span>
 						</button>
 					</div>
 				</div>
@@ -150,59 +150,71 @@ export function EmkObjectiveStatusSection({
 					className="w-full min-h-[90px] p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 				/>
 
-				{/* Открытые чипы осмотра без прячущих details (Эргономика у кресла) */}
-				<div className="flex flex-col gap-2 pt-0.5" data-testid="emk-objective-quick-chips">
-					{/* Ряд базовых норм осмотра */}
-					<div className="flex items-center gap-1.5 flex-wrap">
-						<button
-							type="button"
-							data-testid="btn-emk-sanitized-norm"
-							onClick={handleApplySanitizedNorm}
-							className="min-h-[44px] sm:min-h-[28px] sm:h-7 px-2.5 py-1 sm:py-0.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:border-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-300 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs active:scale-95 touch-manipulation"
-							title="Полость рта санирована / норма"
-						>
-							<Sparkles size={12} className="text-emerald-500 shrink-0" />
-							<span>Полость рта санирована</span>
-						</button>
-						<button
-							type="button"
-							data-testid="btn-emk-bite-norm"
-							onClick={handleApplyBiteNorm}
-							className="min-h-[44px] sm:min-h-[28px] sm:h-7 px-2.5 py-1 sm:py-0.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:border-blue-500 hover:text-blue-700 dark:hover:text-blue-300 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs active:scale-95 touch-manipulation"
-							title="Прикус физиологический / ортогнатический"
-						>
-							<Sparkles size={12} className="text-blue-500 shrink-0" />
-							<span>Прикус ортогнатический</span>
-						</button>
-						<button
-							type="button"
-							data-testid="btn-emk-mucosa-norm"
-							onClick={handleApplyMucosaNorm}
-							className="min-h-[44px] sm:min-h-[28px] sm:h-7 px-2.5 py-1 sm:py-0.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:border-teal-500 hover:text-teal-700 dark:hover:text-teal-300 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs active:scale-95 touch-manipulation"
-							title="Слизистая интактна"
-						>
-							<Sparkles size={12} className="text-teal-500 shrink-0" />
-							<span>Слизистая интактна</span>
-						</button>
-					</div>
-
-					{/* 8 ключевых чипов осмотра (открыты сразу) */}
-					<div className="flex items-center gap-1.5 flex-wrap">
-						{OBJECTIVE_TARGET_CHIPS.map((chip) => (
+				{/* Чипы быстрого статуса осмотра под спойлером для сохранения Fold Line */}
+				<details className="group text-xs transition-all pt-0.5" data-testid="emk-objective-quick-chips">
+					<summary className="inline-flex items-center gap-1.5 px-2 py-1 cursor-pointer select-none text-xs font-semibold text-[var(--muted)] hover:text-[var(--teal)] transition-colors rounded-lg hover:bg-[var(--paper-soft)]">
+						<Sparkles size={12} className="text-[var(--teal,var(--brand-primary))]" />
+						<span>Шаблоны осмотра и статуса</span>
+					</summary>
+					<div className="pt-2 flex flex-col gap-2">
+						{/* Ряд базовых норм осмотра */}
+						<div className="dente-filter-chips">
+							<span className="text-[11px] font-semibold text-[var(--muted)] shrink-0 hidden sm:inline">
+								Норма:
+							</span>
 							<button
-								key={chip.id}
 								type="button"
-								data-testid={`btn-objective-chip-${chip.id}`}
-								onClick={() => handleAddChip("objectiveStatus", chip.text(toothPrefix))}
-								className="min-h-[44px] sm:min-h-[28px] sm:h-7 px-2.5 py-1 sm:py-0.5 rounded-lg text-xs font-medium bg-[var(--paper-soft)] border border-[var(--line-subtle)] text-[var(--ink)] hover:border-[var(--teal)] hover:text-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs active:scale-95 touch-manipulation"
-								title={chip.text(toothPrefix)}
+								data-testid="btn-emk-sanitized-norm"
+								onClick={handleApplySanitizedNorm}
+								className="dente-filter-chip"
+								title="Полость рта санирована / норма"
 							>
-								<PlusCircle size={12} className="text-[var(--muted)] shrink-0" />
-								<span>{chip.label}</span>
+								<Sparkles size={12} className="text-emerald-500 shrink-0" />
+								<span>Полость рта санирована</span>
 							</button>
-						))}
+							<button
+								type="button"
+								data-testid="btn-emk-bite-norm"
+								onClick={handleApplyBiteNorm}
+								className="dente-filter-chip"
+								title="Прикус физиологический / ортогнатический"
+							>
+								<Sparkles size={12} className="text-blue-500 shrink-0" />
+								<span>Прикус ортогнатический</span>
+							</button>
+							<button
+								type="button"
+								data-testid="btn-emk-mucosa-norm"
+								onClick={handleApplyMucosaNorm}
+								className="dente-filter-chip"
+								title="Слизистая интактна"
+							>
+								<Sparkles size={12} className="text-teal-500 shrink-0" />
+								<span>Слизистая интактна</span>
+							</button>
+						</div>
+
+						{/* 8 ключевых чипов осмотра */}
+						<div className="dente-filter-chips">
+							<span className="text-[11px] font-semibold text-[var(--muted)] shrink-0 hidden sm:inline">
+								Статус зуба:
+							</span>
+							{OBJECTIVE_TARGET_CHIPS.map((chip) => (
+								<button
+									key={chip.id}
+									type="button"
+									data-testid={`btn-objective-chip-${chip.id}`}
+									onClick={() => handleAddChip("objectiveStatus", chip.text(toothPrefix))}
+									className="dente-filter-chip"
+									title={chip.text(toothPrefix)}
+								>
+									<PlusCircle size={12} className="text-[var(--muted)] shrink-0" />
+									<span>{chip.label}</span>
+								</button>
+							))}
+						</div>
 					</div>
-				</div>
+				</details>
 			</div>
 
 			{/* 2. Дополнительные исследования */}
@@ -226,24 +238,30 @@ export function EmkObjectiveStatusSection({
 					className="w-full min-h-[75px] p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 				/>
 
-				{/* Открытые чипы аппаратных исследований */}
-				<div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-					<span className="text-[11px] font-semibold text-[var(--muted)] shrink-0 hidden sm:inline">
-						Исследования:
-					</span>
-					{EXAMINATION_CHIPS.map((chip, idx) => (
-						<button
-							key={idx}
-							type="button"
-							onClick={() => handleAddChip("examination", chip)}
-							className="min-h-[44px] sm:min-h-[28px] sm:h-7 px-2.5 py-1 sm:py-0.5 rounded-lg text-xs font-normal bg-[var(--paper-soft)] border border-[var(--line-subtle)] text-[var(--ink)] hover:border-[var(--teal)] hover:text-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs active:scale-95 touch-manipulation"
-							title={chip}
-						>
-							<PlusCircle size={11} className="text-[var(--muted)] shrink-0" />
-							<span className="max-w-[260px] truncate">{chip}</span>
-						</button>
-					))}
-				</div>
+				{/* Быстрые шаблоны исследований */}
+				<details className="group text-xs transition-all pt-0.5">
+					<summary className="inline-flex items-center gap-1.5 px-2 py-1 cursor-pointer select-none text-xs font-semibold text-[var(--muted)] hover:text-[var(--teal)] transition-colors rounded-lg hover:bg-[var(--paper-soft)]">
+						<Sparkles size={12} className="text-[var(--teal,var(--brand-primary))]" />
+						<span>Шаблоны исследований</span>
+					</summary>
+					<div className="pt-2 dente-filter-chips">
+						<span className="text-[11px] font-semibold text-[var(--muted)] shrink-0 hidden sm:inline">
+							Исследования:
+						</span>
+						{EXAMINATION_CHIPS.map((chip, idx) => (
+							<button
+								key={idx}
+								type="button"
+								onClick={() => handleAddChip("examination", chip)}
+								className="dente-filter-chip"
+								title={chip}
+							>
+								<PlusCircle size={11} className="text-[var(--muted)] shrink-0" />
+								<span>{chip}</span>
+							</button>
+						))}
+					</div>
+				</details>
 			</div>
 		</div>
 	);

@@ -71,7 +71,18 @@ export function useCtSelector(props: CtSelectorModalProps) {
 		setIsScanningDownloads(true);
 		try {
 			const items = await scanDownloadsForCt();
-			setDownloads(items);
+			const mapped: DesktopCtDownloadItem[] = items.map((it, idx) => ({
+				id: `dl-${idx}-${it.fileName}`,
+				fileName: it.fileName,
+				filePath: it.path,
+				fileSizeBytes: it.sizeBytes,
+				detectedAtIso: it.createdAt,
+				patientName: it.patientHint || "Неизвестный пациент",
+				modality: "cbct",
+				source: "downloads",
+				isZip: it.fileName.toLowerCase().endsWith(".zip"),
+			}));
+			setDownloads(mapped);
 		} catch (err) {
 			logger.warn("[CtSelectorModal] Scan downloads error:", err);
 			setDownloads([]);
@@ -92,7 +103,7 @@ export function useCtSelector(props: CtSelectorModalProps) {
 				const available = viewers.find((v) => v.isAvailable);
 				if (available) {
 					setSelectedViewerId(available.id);
-				} else {
+				} else if (viewers[0]) {
 					setSelectedViewerId(viewers[0].id);
 				}
 			}
@@ -398,7 +409,7 @@ export function useCtSelector(props: CtSelectorModalProps) {
 			const files: File[] = [];
 			for (let i = 0; i < items.length; i++) {
 				const item = items[i];
-				if (item.kind === "file") {
+				if (item && item.kind === "file") {
 					const file = item.getAsFile();
 					if (file) files.push(file);
 				}

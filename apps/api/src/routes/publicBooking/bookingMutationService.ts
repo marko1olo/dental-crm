@@ -21,7 +21,7 @@ export interface BookingMutationParams {
 	endDate: Date;
 	patientName: string;
 	patientPhone: string;
-	comment?: string;
+	comment?: string | undefined;
 }
 
 export type BookingMutationResult =

@@ -396,6 +396,8 @@ export interface FastPrintCompletedActParams {
 	dashboard?: any;
 	// biome-ignore lint/suspicious/noExplicitAny: active plan
 	activePlan?: any;
+	selectedToothForMenu?: any;
+	toothNumber?: number | string;
 	isClosed?: boolean;
 }
 
@@ -406,6 +408,8 @@ export function executeFastPrintCompletedAct({
 	visitNoteForm: _visitNoteForm,
 	dashboard,
 	activePlan,
+	selectedToothForMenu,
+	toothNumber,
 	isClosed = false,
 }: FastPrintCompletedActParams) {
 	if (typeof window === "undefined") return;
@@ -417,6 +421,19 @@ export function executeFastPrintCompletedAct({
 		activePatient?.contractNumber ||
 		`ДОГ-${new Date().getFullYear()}/${activePatient?.cardNumber || "043"}`;
 	const contractDate = activePatient?.contractDate || actDate;
+
+	const effectiveTooth =
+		toothNumber != null
+			? String(toothNumber)
+			: selectedToothForMenu?.code != null
+				? String(selectedToothForMenu.code)
+				: typeof selectedToothForMenu === "number" || typeof selectedToothForMenu === "string"
+					? String(selectedToothForMenu)
+					: _visitNoteForm?.tooth != null
+						? String(_visitNoteForm.tooth)
+						: activeAppointment?.tooth != null
+							? String(activeAppointment.tooth)
+							: undefined;
 
 	// Извлекаем перечень услуг из визита / записи / плана
 	const rawItems: any[] =
@@ -435,9 +452,9 @@ export function executeFastPrintCompletedAct({
 			const sum = it.totalRub != null ? Number(it.totalRub) : qty * price;
 			runningTotal += sum;
 			items.push({
-				code804n: it.code804n || it.code || "A16.07.002",
+				code804n: it.code804n || it.code || "A16.07.002.001",
 				serviceName: it.serviceName || it.name || it.title || "Стоматологическая услуга",
-				toothNumber: it.toothNumber ? String(it.toothNumber) : undefined,
+				toothNumber: it.toothNumber ? String(it.toothNumber) : effectiveTooth,
 				quantity: qty,
 				unitPriceRub: price,
 				totalRub: sum,
@@ -450,6 +467,7 @@ export function executeFastPrintCompletedAct({
 		items.push({
 			code804n: "B01.065.001",
 			serviceName: "Прием (осмотр, консультация) врача-стоматолога первичный",
+			toothNumber: effectiveTooth,
 			quantity: 1,
 			unitPriceRub: defPrice,
 			totalRub: defPrice,
@@ -677,4 +695,10 @@ export function executeFastPrintTreatmentPlanEstimate({
 		patientId: activePatient?.id,
 	});
 	showToast("Смета / План лечения отправлен на печать", "success", 4000);
+}
+
+export function handlePrintForm043uFast(): void {
+	if (typeof window !== "undefined") {
+		window.dispatchEvent(new CustomEvent("dente:fast-print-043u"));
+	}
 }

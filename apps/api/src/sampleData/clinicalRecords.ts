@@ -4,7 +4,6 @@
  */
 import { inMemoryDomainState } from "./domainState.js";
 
-
 import type {
 	ProtocolTemplate,
 	TreatmentPlanItem,
@@ -12,6 +11,7 @@ import type {
 	Visit,
 } from "@dental/shared";
 
+import type { DomainState } from "./types.js";
 import { organizationId, marinaPatientId, alexeyPatientId, doctorUserId, chairId, activeAppointmentId, activeVisitId, nowIso } from "./fixtureIds.js";
 
 export const activeVisit: Visit = {

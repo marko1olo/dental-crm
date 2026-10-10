@@ -28,6 +28,7 @@ import {
 	executeSaveConsultationWithoutCeph,
 	executeOpenPopoutStudio,
 } from "./cephConsultationPersistence";
+import { useVisitStore } from "../../../store/visitStore";
 import type {
 	CephalometricAnalysisModalProps,
 	CephAiStats,

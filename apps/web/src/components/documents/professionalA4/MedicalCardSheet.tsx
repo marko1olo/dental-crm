@@ -129,7 +129,7 @@ export const MedicalCardSheet: React.FC<MedicalCardSheetProps> = ({
 
 							<div className="a4-running-footer">
 								<span>Медицинская карта № {medicalCardData.cardNumber} — Пациент: {medicalCardData.patient.fullName}</span>
-								<span>Стр. 1 из 2</span>
+								<span>Лист 1 из 2</span>
 							</div>
 						</section>
 
@@ -138,7 +138,7 @@ export const MedicalCardSheet: React.FC<MedicalCardSheetProps> = ({
 							<div className="a4-sheet-body">
 								<div className="a4-running-header">
 									<span>{medicalCardData.clinic.legalName || medicalCardData.clinic.name} · Карта № {medicalCardData.cardNumber}</span>
-									<span>Пациент: {medicalCardData.patient.fullName} · Стр. 2 из 2</span>
+									<span>Пациент: {medicalCardData.patient.fullName} · Лист 2 из 2</span>
 								</div>
 
 								<h2 className="a4-section-heading">4. Клинический диагноз (МКБ-10)</h2>
@@ -181,7 +181,7 @@ export const MedicalCardSheet: React.FC<MedicalCardSheetProps> = ({
 
 							<div className="a4-running-footer">
 								<span>Медицинская карта № {medicalCardData.cardNumber} — Пациент: {medicalCardData.patient.fullName}</span>
-								<span>Стр. 2 из 2</span>
+								<span>Лист 2 из 2</span>
 							</div>
 						</section>
 					</div>

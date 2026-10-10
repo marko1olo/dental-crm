@@ -435,11 +435,11 @@
 	display: block;
 	width: 100%;
 	max-width: 100%;
-	min-height: 300px;
+	min-height: 220px;
 	margin: 0 auto;
 	overflow-x: auto;
 	overflow-y: visible;
-	padding: 12px 6px 14px;
+	padding: 4px 6px 6px;
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: thin;
 	touch-action: pan-x pan-y;
@@ -2105,7 +2105,6 @@
 
 .tooth-svg-wrapper:hover .tooth-hover-quick-hud,
 .tooth-svg-wrapper:focus-within .tooth-hover-quick-hud,
-.group:hover .tooth-hover-quick-hud,
 .group\/badge:hover .tooth-hover-quick-hud {
 	display: flex !important;
 	z-index: 110 !important;

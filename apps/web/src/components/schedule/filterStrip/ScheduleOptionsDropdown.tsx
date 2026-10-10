@@ -18,12 +18,12 @@ export interface ScheduleOptionsDropdownProps {
 	isOptionsMenuOpen: boolean;
 	setIsOptionsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	optionsMenuRef: React.RefObject<HTMLDivElement | null>;
-	onQuickBooking?: () => void;
-	setScheduleViewMode?: (mode: "timeline" | "grid" | "chairs") => void;
-	scheduleViewMode?: "timeline" | "grid" | "chairs";
+	onQuickBooking?: (() => void) | undefined;
+	setScheduleViewMode?: ((mode: "timeline" | "grid" | "chairs") => void) | undefined;
+	scheduleViewMode?: ("timeline" | "grid" | "chairs") | undefined;
 	hasMultipleBranches: boolean;
-	selectedBranchId?: string | null;
-	onSelectBranch?: (branchId: string | null) => void;
+	selectedBranchId?: string | null | undefined;
+	onSelectBranch?: ((branchId: string | null) => void) | undefined;
 	activeBranches: ScheduleBranch[];
 	activeScheduleFilterCount: number;
 	resetScheduleFilters: () => void;
@@ -33,39 +33,41 @@ export interface ScheduleOptionsDropdownProps {
 	handleSelectMyChair: () => void;
 	hasMultipleDoctors: boolean;
 	activeDoctors: ScheduleStaffMember[];
-	scheduleDoctorFilterId?: string | null;
-	setScheduleDoctorFilterId?: (id: string | null) => void;
+	scheduleDoctorFilterId?: string | null | undefined;
+	setScheduleDoctorFilterId?: ((id: string | null) => void) | undefined;
 	displayChairs: readonly ScheduleChair[];
-	scheduleChairFilterId?: string | null;
-	setScheduleChairFilterId?: (id: string | null) => void;
+	scheduleChairFilterId?: string | null | undefined;
+	setScheduleChairFilterId?: ((id: string | null) => void) | undefined;
 	setScheduleDateFilter: (date: string) => void;
 	tomorrowIso: string;
-	scheduleStatusFilter?: string | null;
-	setScheduleStatusFilter?: (status: string | null) => void;
-	onSelectWholeWeek?: () => void;
+	scheduleStatusFilter?: string | null | undefined;
+	setScheduleStatusFilter?: ((status: string | null) => void) | undefined;
+	onSelectWholeWeek?: (() => void) | undefined;
 	handleRepeatBookingOffset: (days: 7 | 14 | 30) => void;
-	gridStepMinutes?: 15 | 30 | 60;
-	onGridStepChange?: (step: 15 | 30 | 60) => void;
+	gridStepMinutes?: (15 | 30 | 60) | undefined;
+	onGridStepChange?: ((step: 15 | 30 | 60) => void) | undefined;
 	handleOpenAddChair: () => void;
-	onOpenPatientSearch?: () => void;
-	onToggleSmartAi?: () => void;
-	onOpenDoctorFreeSlots?: () => void;
-	onOpenPreventiveInspection?: () => void;
-	preventiveInspectionCount?: number;
-	onOpenTomorrowReminders?: () => void;
-	onEmergencyCitoBooking?: () => void;
-	onToggleShiftAnalytics?: () => void;
-	showShiftAnalytics?: boolean;
-	onOpenShiftRoster?: () => void;
-	onOpenWaitlist?: () => void;
-	waitlistCount?: number;
-	onToggleConfirmations?: () => void;
-	showConfirmationsPanel?: boolean;
-	onToggleFreedSlots?: () => void;
-	showFreedSlotsPanel?: boolean;
-	onToggleClipboard?: () => void;
-	showClipboardPanel?: boolean;
-	onOpenCalendarSync?: () => void;
+	onOpenPatientSearch?: (() => void) | undefined;
+	onToggleSmartAi?: (() => void) | undefined;
+	onOpenDoctorFreeSlots?: (() => void) | undefined;
+	onOpenPreventiveInspection?: (() => void) | undefined;
+	preventiveInspectionCount?: number | undefined;
+	onOpenTomorrowReminders?: (() => void) | undefined;
+	onEmergencyCitoBooking?: (() => void) | undefined;
+	onToggleShiftAnalytics?: (() => void) | undefined;
+	showShiftAnalytics?: boolean | undefined;
+	onOpenShiftRoster?: (() => void) | undefined;
+	onOpenDoctorShiftDrawer?: (() => void) | undefined;
+	onOpenChairDateRangeModal?: (() => void) | undefined;
+	onOpenWaitlist?: (() => void) | undefined;
+	waitlistCount?: number | undefined;
+	onToggleConfirmations?: (() => void) | undefined;
+	showConfirmationsPanel?: boolean | undefined;
+	onToggleFreedSlots?: (() => void) | undefined;
+	showFreedSlotsPanel?: boolean | undefined;
+	onToggleClipboard?: (() => void) | undefined;
+	showClipboardPanel?: boolean | undefined;
+	onOpenCalendarSync?: (() => void) | undefined;
 }
 
 export function ScheduleOptionsDropdown({
@@ -111,6 +113,8 @@ export function ScheduleOptionsDropdown({
 	onToggleShiftAnalytics,
 	showShiftAnalytics = false,
 	onOpenShiftRoster,
+	onOpenDoctorShiftDrawer,
+	onOpenChairDateRangeModal,
 	onOpenWaitlist,
 	waitlistCount = 0,
 	onToggleConfirmations,
@@ -178,7 +182,7 @@ export function ScheduleOptionsDropdown({
 
 				{/* Mobile filters & view switchers */}
 				<ScheduleOptionsMobileSection
-					setScheduleViewMode={setScheduleViewMode}
+					setScheduleViewMode={setScheduleViewMode || (() => {})}
 					scheduleViewMode={scheduleViewMode}
 					setIsOptionsMenuOpen={setIsOptionsMenuOpen}
 					hasMultipleBranches={hasMultipleBranches}
@@ -238,10 +242,10 @@ export function ScheduleOptionsDropdown({
 					}}
 					className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 					role="menuitem"
-					title="Перейти на сводку смены и оперативные очереди"
+					title="Перейти в журнал приёмов и очередей за смену"
 				>
 					<Clock size={14} className="text-[var(--teal,var(--brand-primary))]" />
-					<span>Оперативная сводка смены</span>
+					<span>Журнал приёмов за смену</span>
 				</button>
 
 				{/* Shift Queue Statuses in Options Menu */}
@@ -420,28 +424,32 @@ export function ScheduleOptionsDropdown({
 
 				{/* Secondary tools & panels section */}
 				<ScheduleOptionsToolsSection
-					setIsOptionsMenuOpen={setIsOptionsMenuOpen}
-					onOpenPatientSearch={onOpenPatientSearch}
-					onToggleSmartAi={onToggleSmartAi}
-					setScheduleViewMode={setScheduleViewMode}
-					scheduleViewMode={scheduleViewMode}
-					onOpenDoctorFreeSlots={onOpenDoctorFreeSlots}
-					onOpenPreventiveInspection={onOpenPreventiveInspection}
-					preventiveInspectionCount={preventiveInspectionCount}
-					onOpenTomorrowReminders={onOpenTomorrowReminders}
-					onEmergencyCitoBooking={onEmergencyCitoBooking}
-					onToggleShiftAnalytics={onToggleShiftAnalytics}
-					showShiftAnalytics={showShiftAnalytics}
-					onOpenShiftRoster={onOpenShiftRoster}
-					onOpenWaitlist={onOpenWaitlist}
-					waitlistCount={waitlistCount}
-					onToggleConfirmations={onToggleConfirmations}
-					showConfirmationsPanel={showConfirmationsPanel}
-					onToggleFreedSlots={onToggleFreedSlots}
-					showFreedSlotsPanel={showFreedSlotsPanel}
-					onToggleClipboard={onToggleClipboard}
-					showClipboardPanel={showClipboardPanel}
-					onOpenCalendarSync={onOpenCalendarSync}
+					{...({
+						setIsOptionsMenuOpen,
+						onOpenPatientSearch: onOpenPatientSearch || (() => {}),
+						onToggleSmartAi: onToggleSmartAi || (() => {}),
+						setScheduleViewMode: setScheduleViewMode || (() => {}),
+						scheduleViewMode,
+						onOpenDoctorFreeSlots: onOpenDoctorFreeSlots || (() => {}),
+						onOpenPreventiveInspection: onOpenPreventiveInspection || (() => {}),
+						preventiveInspectionCount,
+						onOpenTomorrowReminders: onOpenTomorrowReminders || (() => {}),
+						onEmergencyCitoBooking: onEmergencyCitoBooking || (() => {}),
+						onToggleShiftAnalytics: onToggleShiftAnalytics || (() => {}),
+						showShiftAnalytics,
+						onOpenShiftRoster: onOpenShiftRoster || (() => {}),
+						onOpenDoctorShiftDrawer: onOpenDoctorShiftDrawer || (() => {}),
+						onOpenChairDateRangeModal: onOpenChairDateRangeModal || (() => {}),
+						onOpenWaitlist: onOpenWaitlist || (() => {}),
+						waitlistCount,
+						onToggleConfirmations: onToggleConfirmations || (() => {}),
+						showConfirmationsPanel,
+						onToggleFreedSlots: onToggleFreedSlots || (() => {}),
+						showFreedSlotsPanel,
+						onToggleClipboard: onToggleClipboard || (() => {}),
+						showClipboardPanel,
+						onOpenCalendarSync: onOpenCalendarSync || (() => {}),
+					} as any)}
 				/>
 			</div>
 		</div>

@@ -246,7 +246,7 @@ const mockDashboard = {
 async function main() {
   const targetDirs = [
     path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/visit_tabs"),
-    path.resolve("C:/Users/Admin/.gemini/antigravity/brain/a6e95988-e8e4-4c72-89a6-8b1d0b01322f"),
+    path.resolve("C:/Users/Admin/.gemini/antigravity/brain/9d29680f-5f92-41b2-8075-fb545edb680b"),
     path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/inquisition_live"),
     path.resolve("C:/Clinic_MVP/dental-crm/apps/web/public/screenshots"),
   ];

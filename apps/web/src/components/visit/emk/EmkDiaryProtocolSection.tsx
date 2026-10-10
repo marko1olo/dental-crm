@@ -347,11 +347,11 @@ export function EmkDiaryProtocolSection({
 							<button
 								type="button"
 								onClick={onOpenTemplatesModal}
-								className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-teal-500/10 text-teal-800 dark:text-teal-200 hover:bg-teal-500/20 border border-teal-500/30 transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.98]"
+								className="emk-toolbar-btn"
 								data-testid="btn-open-protocols-catalog-diary"
 								title="Открыть полный каталог клинических протоколов (1 142 шаблона)"
 							>
-								<BookOpen size={13} className="text-teal-600 dark:text-teal-400" />
+								<BookOpen size={13} className="text-[var(--teal)]" />
 								<span>Каталог протоколов (1 142)</span>
 							</button>
 						)}
@@ -431,17 +431,17 @@ export function EmkDiaryProtocolSection({
 						<BookOpen size={12} className="text-[var(--teal)] shrink-0" />
 						<span className="font-medium">Шаблоны рекомендаций</span>
 					</summary>
-					<div className="pt-2 flex items-center gap-1.5 flex-wrap">
+					<div className="pt-2 dente-filter-chips">
 						{recommendationChips.map((chip, idx) => (
 							<button
 								key={idx}
 								type="button"
 								onClick={() => handleAddChip("recommendations", chip)}
-								className="px-2.5 py-1 rounded-lg text-xs font-normal bg-[var(--paper-soft)] border border-[var(--line-subtle)] text-[var(--ink)] hover:border-[var(--teal)] hover:text-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs active:scale-95"
+								className="dente-filter-chip"
 								title={chip}
 							>
 								<PlusCircle size={11} className="text-[var(--muted)] shrink-0" />
-								<span className="max-w-[280px] truncate">{chip}</span>
+								<span>{chip}</span>
 							</button>
 						))}
 					</div>

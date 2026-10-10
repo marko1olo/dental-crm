@@ -11,7 +11,7 @@ export interface PediatricArchVisualizerProps {
 	upperRow: number[];
 	lowerRow: number[];
 	timelineAnalysis: EruptionTimelineAnalysis;
-	onApplyAgeArch?: (teethNumbers: number[]) => void;
+	onApplyAgeArch?: ((teethNumbers: number[]) => void) | undefined;
 }
 
 export const PediatricArchVisualizer: React.FC<PediatricArchVisualizerProps> = ({

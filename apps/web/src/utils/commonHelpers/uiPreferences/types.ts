@@ -2,7 +2,7 @@ import type {
 	ClinicProfileDraft,
 	PatientAdministrativeProfileDraft,
 	StaffScheduleDraft,
-} from "../clinicProfileUtils";
+} from "../../clinicProfileUtils";
 
 export type ThemeMode = "light" | "dark" | "system";
 

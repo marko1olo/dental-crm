@@ -2,9 +2,13 @@
  * @file imaging.ts
  * @description Layer 2: Imaging studies, DICOM workbench manifests, viewer sessions, sanitation.
  */
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { recordAuditEvent } from "./audit.js";
 
+const shortHash = (value: string): string =>
+	createHash("sha256").update(value).digest("hex").slice(0, 16);
+const uniqueStrings = (values: string[]): string[] =>
+	Array.from(new Set(values.filter(Boolean)));
 
 import type {
 	DicomViewerWorkbenchManifestResponse,
@@ -38,12 +42,9 @@ export const imagingStudies: ImagingStudy[] = [
 		sourceKind: "sensor_bridge",
 		sourceName: "RVG-датчик",
 		status: "available",
-		aiSummary:
-			"Черновик: область 36, контроль кариозной полости. Требует проверки врача.",
-		previewUrl:
-			"/api/imaging/studies/fbe3704c-9b37-4149-ae4b-e99e46d7599f/preview.svg",
-		viewerUrl:
-			"/api/imaging/studies/fbe3704c-9b37-4149-ae4b-e99e46d7599f/preview.svg",
+		aiSummary: "Черновик: область 36, контроль кариозной полости. Требует проверки врача.",
+		previewUrl: "/api/imaging/studies/fbe3704c-9b37-4149-ae4b-e99e46d7599f/preview.svg",
+		viewerUrl: "/api/imaging/studies/fbe3704c-9b37-4149-ae4b-e99e46d7599f/preview.svg",
 	},
 	{
 		id: "b0b5961f-4d64-45a6-88e9-a77e87d7ec51",
@@ -58,12 +59,9 @@ export const imagingStudies: ImagingStudy[] = [
 		sourceKind: "dicom_file",
 		sourceName: "Импорт ОПТГ/снимков",
 		status: "needs_review",
-		aiSummary:
-			"Черновик: панорамный обзор, проверить 36/46 и ретинированные восьмые зубы.",
-		previewUrl:
-			"/api/imaging/studies/b0b5961f-4d64-45a6-88e9-a77e87d7ec51/preview.svg",
-		viewerUrl:
-			"/api/imaging/studies/b0b5961f-4d64-45a6-88e9-a77e87d7ec51/preview.svg",
+		aiSummary: "Черновик: панорамный обзор, проверить 36/46 и ретинированные восьмые зубы.",
+		previewUrl: "/api/imaging/studies/b0b5961f-4d64-45a6-88e9-a77e87d7ec51/preview.svg",
+		viewerUrl: "/api/imaging/studies/b0b5961f-4d64-45a6-88e9-a77e87d7ec51/preview.svg",
 	},
 	{
 		id: "e0d93a8c-5f3b-49d6-bc21-0b5ab45eb6fa",

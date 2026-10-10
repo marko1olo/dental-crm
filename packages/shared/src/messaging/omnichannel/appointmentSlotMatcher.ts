@@ -595,7 +595,7 @@ export function buildHygieneRecall6m(
 /**
  * Filters available doctor slots by criteria (specialty, doctor, date, time of day).
  */
-export function findAvailableSlots(
+export function findAvailableOmnichannelSlots(
 	slots: DoctorAvailableSlot[],
 	criteria: SlotMatchCriteria = {},
 ): SlotMatchResult {
@@ -667,3 +667,5 @@ export function findAvailableSlots(
 		suggestedButtons: buttonRows,
 	};
 }
+
+export const findAvailableSlots = findAvailableOmnichannelSlots;

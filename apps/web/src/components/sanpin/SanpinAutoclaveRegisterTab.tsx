@@ -133,8 +133,7 @@ export function SanpinAutoclaveRegisterTab() {
 	const [clinicDevices, setClinicDevices] = useState<ClinicAutoclaveDevice[]>(() => {
 		const saved = loadSavedClinicAutoclaves();
 		if (saved.length > 0) return saved;
-		if (isDemoShowcaseMode()) return DEFAULT_CLINIC_DEVICES;
-		return [];
+		return DEFAULT_CLINIC_DEVICES;
 	});
 	const [isEquipmentModalOpen, setIsEquipmentModalOpen] = useState(false);
 	const [stampedRows, setStampedRows] = useState<Record<string, boolean>>({});

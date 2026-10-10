@@ -29,7 +29,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> = React.m
 				<div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-[var(--line)] pb-3">
 					<PatientWorkspaceHeader
 						patientId={patientId}
-						patientName={patientName}
+						patientName={patientName ?? undefined}
 						currentPatient={logic.currentPatient}
 						patientCardNumber={logic.patientCardNumber}
 						patientBalanceRub={logic.patientBalanceRub}
@@ -38,7 +38,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> = React.m
 					<div className="flex items-center gap-1.5 flex-wrap">
 						<PatientWorkspaceToolbar
 							patientId={patientId}
-							patientName={patientName}
+							patientName={patientName ?? undefined}
 							dashboard={logic.dashboard}
 							onOpenPlan={onOpenPlan}
 							handleCreateNewPlanCallback={logic.handleCreateNewPlanCallback}
@@ -72,7 +72,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> = React.m
 					<PatientWorkspacePlansTab
 						patientPlanItems={logic.patientPlanItems}
 						patientAddendums={logic.patientAddendums}
-						plansSlice={logic.plansSlice}
+						plansSlice={logic.plansSlice as any}
 						pageSize={DEFAULT_WORKSPACE_PAGE_SIZE}
 						onShowMore={() => logic.setVisiblePlansLimit((p) => p + DEFAULT_WORKSPACE_PAGE_SIZE)}
 						handleCreateNewPlanCallback={logic.handleCreateNewPlanCallback}
@@ -83,7 +83,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> = React.m
 				{logic.activeTab === "visits" && (
 					<PatientWorkspaceVisitsTab
 						patientAppointments={logic.patientAppointments}
-						visitsSlice={logic.visitsSlice}
+						visitsSlice={logic.visitsSlice as any}
 						staffMap={logic.staffMap}
 						pageSize={DEFAULT_WORKSPACE_PAGE_SIZE}
 						onShowMore={() => logic.setVisibleVisitsLimit((p) => p + DEFAULT_WORKSPACE_PAGE_SIZE)}
@@ -105,7 +105,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> = React.m
 
 				<PatientWorkspaceModalsWrapper
 					patientId={patientId}
-					patientName={patientName}
+					patientName={patientName ?? undefined}
 					logic={logic}
 				/>
 

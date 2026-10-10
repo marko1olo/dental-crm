@@ -35,7 +35,7 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
 					<div>
 						<h3 className="text-base sm:text-lg font-black text-[var(--odontogram-ink,var(--ink,#0f172a))]">
-							Клиническая оценка риска кариеса (1 клик)
+							Клиническая оценка риска кариеса
 						</h3>
 						<p className="text-xs sm:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] font-medium">
 							Выберите статус кариесогенного риска для автоматического формирования протокола профилактики

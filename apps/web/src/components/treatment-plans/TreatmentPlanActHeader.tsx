@@ -218,7 +218,8 @@ export const TreatmentPlanActHeader: React.FC<TreatmentPlanActHeaderProps> = ({
 				</h1>
 				<div className="doc-form-sub text-xs font-bold text-slate-600 uppercase tracking-wide mt-1">
 					И НАКЛАДНАЯ НА СПИСАНИЕ МАТЕРИАЛОВ И МЕДИКАМЕНТОВ (ТМЦ) •
-					ЭТАП&nbsp;№&nbsp;{actData.stageNumber} («{actData.stageTitle}»)
+					ЭТАП&nbsp;№&nbsp;{actData.stageNumber} («
+					{actData.stageTitle.replace(/^Этап\s*\d+\s*[:.—-]\s*/i, "")}»)
 				</div>
 				<p className="text-[10px] text-slate-500 mt-0.5">
 					Составлен во исполнение ст.&nbsp;779–783 ГК&nbsp;РФ, ст.&nbsp;20, 79

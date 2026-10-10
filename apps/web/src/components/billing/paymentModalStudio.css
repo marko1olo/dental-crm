@@ -858,30 +858,23 @@
 	width: 100%;
 	display: flex;
 	justify-content: center;
-	padding: 12px 8px;
+	padding: 6px 4px;
 }
 
 .receipt-tape-paper {
 	background: #ffffff !important;
 	color: #0f172a !important;
-	color-scheme: light !important;
-	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
+	box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.12);
 	border: 1px solid #cbd5e1;
-	border-radius: 4px;
+	border-radius: 6px;
 	width: 100%;
 	max-width: 360px;
-	padding: 24px 20px;
+	padding: 14px 16px;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-	font-size: 12px;
-	line-height: 1.45;
+	font-size: 11.5px;
+	line-height: 1.4;
 	user-select: text;
 	position: relative;
-}
-
-/* Ensure deep physical black/charcoal text on thermal paper in all themes */
-.receipt-tape-paper,
-.receipt-tape-paper * {
-	color-scheme: light !important;
 }
 
 .receipt-tape-paper h1,
@@ -892,7 +885,7 @@
 .receipt-tape-paper span,
 .receipt-tape-paper strong,
 .receipt-tape-paper div {
-	color: #0f172a !important;
+	color: #0f172a;
 }
 
 .receipt-tape-paper .text-slate-950,
@@ -925,13 +918,79 @@
 	color: #047857 !important;
 }
 
+/* Dark Mode Receipt Tape: Zero blinding white glare (Sin #4 WCAG AAA) */
+[data-theme="dark"] .receipt-tape-paper,
+.dark .receipt-tape-paper {
+	background: #0f172a !important;
+	color: #f1f5f9 !important;
+	border-color: #334155 !important;
+	box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .receipt-tape-paper h1,
+[data-theme="dark"] .receipt-tape-paper h2,
+[data-theme="dark"] .receipt-tape-paper h3,
+[data-theme="dark"] .receipt-tape-paper h4,
+[data-theme="dark"] .receipt-tape-paper p,
+[data-theme="dark"] .receipt-tape-paper span,
+[data-theme="dark"] .receipt-tape-paper strong,
+[data-theme="dark"] .receipt-tape-paper div,
+.dark .receipt-tape-paper h1,
+.dark .receipt-tape-paper h2,
+.dark .receipt-tape-paper h3,
+.dark .receipt-tape-paper h4,
+.dark .receipt-tape-paper p,
+.dark .receipt-tape-paper span,
+.dark .receipt-tape-paper strong,
+.dark .receipt-tape-paper div {
+	color: #e2e8f0;
+}
+
+[data-theme="dark"] .receipt-tape-paper .text-slate-950,
+[data-theme="dark"] .receipt-tape-paper .text-slate-900,
+.dark .receipt-tape-paper .text-slate-950,
+.dark .receipt-tape-paper .text-slate-900 {
+	color: #f8fafc !important;
+}
+
+[data-theme="dark"] .receipt-tape-paper .text-slate-800,
+[data-theme="dark"] .receipt-tape-paper .text-slate-700,
+.dark .receipt-tape-paper .text-slate-800,
+.dark .receipt-tape-paper .text-slate-700 {
+	color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .receipt-tape-paper .text-slate-600,
+[data-theme="dark"] .receipt-tape-paper .text-slate-500,
+.dark .receipt-tape-paper .text-slate-600,
+.dark .receipt-tape-paper .text-slate-500 {
+	color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .receipt-tape-paper .text-teal-700,
+[data-theme="dark"] .receipt-tape-paper .text-teal-800,
+.dark .receipt-tape-paper .text-teal-700,
+.dark .receipt-tape-paper .text-teal-800 {
+	color: #2dd4bf !important;
+}
+
+[data-theme="dark"] .receipt-tape-paper .text-emerald-700,
+.dark .receipt-tape-paper .text-emerald-700 {
+	color: #34d399 !important;
+}
+
+[data-theme="dark"] .receipt-tape-paper .border-slate-200,
+.dark .receipt-tape-paper .border-slate-200 {
+	border-color: #334155 !important;
+}
+
 /* Authentic tear/perforation edge simulation */
 .receipt-tape-tear-top {
 	position: absolute;
-	top: -6px;
+	top: -5px;
 	left: 0;
 	right: 0;
-	height: 6px;
+	height: 5px;
 	background: radial-gradient(circle, transparent, transparent 50%, #ffffff 50%, #ffffff 100%);
 	background-size: 10px 10px;
 	opacity: 0.95;
@@ -939,24 +998,54 @@
 
 .receipt-tape-tear-bottom {
 	position: absolute;
-	bottom: -6px;
+	bottom: -5px;
 	left: 0;
 	right: 0;
-	height: 6px;
+	height: 5px;
 	background: radial-gradient(circle, transparent, transparent 50%, #ffffff 50%, #ffffff 100%);
 	background-size: 10px 10px;
 	opacity: 0.95;
 }
 
+[data-theme="dark"] .receipt-tape-tear-top,
+[data-theme="dark"] .receipt-tape-tear-bottom,
+.dark .receipt-tape-tear-top,
+.dark .receipt-tape-tear-bottom {
+	background: radial-gradient(circle, transparent, transparent 50%, #0f172a 50%, #0f172a 100%);
+	background-size: 10px 10px;
+}
+
 /* Receipt Typography Helpers */
 .receipt-divider-dashed {
 	border-top: 1px dashed #cbd5e1;
-	margin: 10px 0;
+	margin: 8px 0;
 }
 
 .receipt-divider-double {
 	border-top: 2px dashed #94a3b8;
-	margin: 12px 0;
+	margin: 10px 0;
+}
+
+[data-theme="dark"] .receipt-divider-dashed,
+.dark .receipt-divider-dashed {
+	border-top-color: #334155;
+}
+
+[data-theme="dark"] .receipt-divider-double,
+.dark .receipt-divider-double {
+	border-top-color: #475569;
+}
+
+/* Anti-Matryoshka (Sin #6): Strictly 1 active modal layer & hide bottom checkout bar when modal is open */
+body:has(.payment-modal-backdrop) #payment-checkout-bar,
+body:has([data-testid="modal-finance-cashbox"]) #payment-checkout-bar {
+	display: none !important;
+}
+
+body:has([data-testid="cash-register-checkout-modal"]) [data-testid="modal-finance-cashbox"],
+body:has([data-testid="split-payment-modal"]) [data-testid="modal-finance-cashbox"] {
+	opacity: 0 !important;
+	pointer-events: none !important;
 }
 
 .receipt-qr-box {
@@ -1189,5 +1278,40 @@
 		padding: 18px 14px !important;
 		font-size: 11px !important;
 	}
+}
+
+/* ==========================================================================
+   LOW-END HARDWARE ACCELERATOR (Intel Celeron, 4 GB RAM)
+   Replaces expensive GPU backdrop-filter: blur with zero-GPU solid/semi-opaque
+   fallbacks, prevents frame drops and excessive repaint cycles.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce), (update: slow) {
+	.payment-modal-backdrop,
+	.backdrop-blur-xs,
+	.backdrop-blur-sm,
+	.backdrop-blur-md,
+	.backdrop-blur {
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+		background-color: rgba(15, 23, 42, 0.85) !important;
+	}
+
+	.payment-modal,
+	.receipt-tape-paper,
+	.receipt-preview-root {
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+		transition: none !important;
+		animation: none !important;
+	}
+}
+
+.low-end-hardware-mode .payment-modal-backdrop,
+.low-end-hardware-mode .backdrop-blur-xs,
+.low-end-hardware-mode .backdrop-blur-sm,
+.low-end-hardware-mode .backdrop-blur-md,
+.low-end-hardware-mode .backdrop-blur {
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+	background-color: rgba(15, 23, 42, 0.85) !important;
 }
 

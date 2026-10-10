@@ -248,12 +248,13 @@ export function publicPortalRouteFromHash(
 		}
 	}
 
-	if (path.startsWith(BUDGET_PORTAL_PATH)) {
-		const rawToken =
-			path.slice(BUDGET_PORTAL_PATH.length).split(/[/?#&]/)[0] ?? "";
-		if (!rawToken) return null;
-		const token = decodeSegment(rawToken);
-		return token ? { kind: "budget", token } : null;
+	for (const bPath of [BUDGET_PORTAL_PATH, "/public/budget/", "/public/budgets/"]) {
+		if (path.startsWith(bPath)) {
+			const rawToken = path.slice(bPath.length).split(/[/?#&]/)[0] ?? "";
+			if (!rawToken) return null;
+			const token = decodeSegment(rawToken);
+			return token ? { kind: "budget", token } : null;
+		}
 	}
 
 	if (!path.startsWith(LAB_ORDER_PORTAL_PATH)) return null;

@@ -138,7 +138,7 @@ export function generateTierPlanStages(
 			continue;
 		}
 
-		if (state === "Retained" || state === "Impacted") {
+		if (state === "Retained") {
 			const defComplexExt = ORDER_804N_DICTIONARY.ComplexExtraction!;
 			if (tierId === "optimum") {
 				stage2Items.push(

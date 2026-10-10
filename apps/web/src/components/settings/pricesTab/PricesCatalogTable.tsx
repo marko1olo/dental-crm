@@ -32,8 +32,8 @@ export function PricesCatalogTable({
 						items={items}
 						categoryLimits={categoryLimits}
 						setCategoryLimits={setCategoryLimits}
-						serviceCategoryLabels={serviceCategoryLabels}
-						specialtyLabels={specialtyLabels}
+						serviceCategoryLabels={serviceCategoryLabels || {}}
+						specialtyLabels={specialtyLabels || {}}
 						deletingServiceId={deletingServiceId}
 						onEditService={onEditService}
 						onDeleteService={onDeleteService}

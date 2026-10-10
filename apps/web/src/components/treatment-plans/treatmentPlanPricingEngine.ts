@@ -20,6 +20,8 @@ import type {
 } from "./types";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 
+export type LoyaltyBonusCalculationResult = LoyaltyBonusDeduction;
+
 export interface CatalogServiceLookupItem {
 	readonly id: string;
 	readonly title: string;

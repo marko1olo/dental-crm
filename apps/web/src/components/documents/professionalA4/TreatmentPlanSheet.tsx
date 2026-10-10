@@ -33,7 +33,7 @@ export const TreatmentPlanSheet: React.FC<TreatmentPlanSheetProps> = ({
 									</div>
 								</header>
 
-								<h1 className="a4-doc-title">ПЛАН КОМПЛЕКСНОГО ЛЕЧЕНИЯ СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА</h1>
+								<h1 className="a4-doc-title">ПЛАН КОМПЛЕКСНОГО СТОМАТОЛОГИЧЕСКОГО ЛЕЧЕНИЯ И СМЕТА</h1>
 								<div className="a4-doc-subtitle">Приложение к Договору на оказание платных медицинских услуг · Дата составления: «{treatmentPlanData.planDate}» г.</div>
 
 								<table className="a4-table" style={{ marginBottom: "6px" }}>
@@ -97,7 +97,7 @@ export const TreatmentPlanSheet: React.FC<TreatmentPlanSheetProps> = ({
 
 							<div className="a4-running-footer">
 								<span>План комплексного лечения — Пациент: {treatmentPlanData.patient.fullName}</span>
-								<span>Стр. 1 из 2</span>
+								<span>Лист 1 из 2</span>
 							</div>
 						</section>
 
@@ -106,7 +106,7 @@ export const TreatmentPlanSheet: React.FC<TreatmentPlanSheetProps> = ({
 							<div className="a4-sheet-body">
 								<div className="a4-running-header">
 									<span>{cl.legalName || cl.name} · План лечения</span>
-									<span>Пациент: {treatmentPlanData.patient.fullName} · Стр. 2 из 2</span>
+									<span>Пациент: {treatmentPlanData.patient.fullName} · Лист 2 из 2</span>
 								</div>
 
 								{treatmentPlanData.stages.slice(2).map((st) => (
@@ -165,7 +165,7 @@ export const TreatmentPlanSheet: React.FC<TreatmentPlanSheetProps> = ({
 									Пациенту разъяснены возможные альтернативные планы лечения, включая сохранение зубов под коронками vs удаление с одномоментной дентальной имплантацией, а также риски отказа от эндодонтического перелечивания. При несоблюдении сроков этапов возможно смещение опорных зубов и удорожание ортопедического этапа.
 								</p>
 
-								<h2 className="a4-section-heading">Блок согласования плана лечения пациентом</h2>
+								<h2 className="a4-section-heading">Блок информированного согласования плана лечения пациентом</h2>
 								<p className="a4-p-noindent" style={{ fontSize: "8pt", lineHeight: 1.3, textAlign: "justify" }}>
 									Мне понятен план, этапность, ориентировочные сроки и предполагаемый результат лечения, возможные риски и осложнения на каждом этапе, необходимость контрольных рентгеновских снимков, а также порядок оплаты. Мне были представлены альтернативные варианты лечения. Я проинформирован(а) о необходимости явки на контрольные осмотры 1 раз в 6 месяцев для сохранения гарантий клиники. Врачом даны исчерпывающие ответы на все вопросы.
 								</p>
@@ -193,7 +193,7 @@ export const TreatmentPlanSheet: React.FC<TreatmentPlanSheetProps> = ({
 
 							<div className="a4-running-footer">
 								<span>План комплексного лечения — Пациент: {treatmentPlanData.patient.fullName}</span>
-								<span>Стр. 2 из 2</span>
+								<span>Лист 2 из 2</span>
 							</div>
 						</section>
 					</div>

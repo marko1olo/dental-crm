@@ -618,7 +618,7 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
                 durationMinutes: 30,
               })
             }
-            className="w-full h-full min-h-[30px] sm:min-h-[32px] rounded-lg border border-dashed border-[var(--line)] bg-[var(--paper-soft)]/40 hover:bg-[var(--paper-soft)] flex items-center justify-center gap-1 px-2 cursor-pointer transition-colors"
+            className="schedule-slot-hatched schedule-slot--off-duty w-full h-full min-h-[30px] sm:min-h-[32px] rounded-lg border border-dashed border-[var(--line)] bg-[var(--paper-soft)]/40 hover:bg-[var(--paper-soft)] flex items-center justify-center gap-1 px-2 cursor-pointer transition-colors"
             title={`Вне графика смены врача на ${hour} (${chair.name}). Нажмите для записи`}
             aria-label={`Вне графика врача на ${hour}, кресло ${chair.name}`}
             data-testid={`btn-slot-${chair.id}-${hour.replace(":", "")}`}
@@ -641,7 +641,7 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
                 durationMinutes: 30,
               })
             }
-            className="schedule-empty-slot-btn group w-full h-full min-h-[30px] sm:min-h-[32px] rounded-lg border border-dashed border-[var(--line)] bg-transparent hover:border-[var(--teal)] hover:bg-[var(--teal-soft,var(--paper-soft))] flex items-center justify-center gap-1 px-2 cursor-pointer transition-all"
+            className="schedule-empty-slot-btn group w-full h-full min-h-[30px] sm:min-h-[32px] rounded-lg border border-transparent hover:border-dashed hover:border-[var(--teal)]/60 bg-transparent hover:bg-[var(--teal)]/[0.04] flex items-center justify-center gap-1 px-2 cursor-pointer transition-all"
             title={`Записать на ${hour} (${chair.name})`}
             aria-label={`Свободно на ${hour}, кресло ${chair.name}. Нажмите для быстрой записи`}
             data-testid={`btn-slot-${chair.id}-${hour.replace(":", "")}`}
@@ -649,9 +649,9 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
           >
             <Plus
               size={13}
-              className="text-[var(--teal)] opacity-70 group-hover:opacity-100 shrink-0"
+              className="text-[var(--teal)] opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity shrink-0"
             />
-            <span className="text-[11px] font-semibold whitespace-nowrap shrink-0 opacity-80 group-hover:opacity-100 text-[var(--muted)] group-hover:text-[var(--teal)]">
+            <span className="text-[11px] font-semibold whitespace-nowrap shrink-0 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 text-[var(--teal)] transition-opacity">
               Записать на {hour}
             </span>
           </button>

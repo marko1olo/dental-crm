@@ -154,7 +154,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 			const q = searchQuery.toLowerCase().trim();
 			const cleanQ = q.replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, "");
 			items = items.filter((s) => {
-				const titleMatch = s.title.toLowerCase().includes(q);
+				const titleMatch = (s.title || s.name || "").toLowerCase().includes(q);
 				const codeMatch = s.code?.toLowerCase().includes(q);
 				const cleanCodeMatch =
 					cleanQ.length >= 2 &&
@@ -165,7 +165,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 				return titleMatch || codeMatch || cleanCodeMatch;
 			});
 		}
-		return items.sort((a, b) => a.title.localeCompare(b.title));
+		return items.sort((a, b) => (a.title || a.name || "").localeCompare(b.title || b.name || ""));
 	}, [typedServiceCatalog, searchQuery, selectedCategoryFilter]);
 
 	const groupedCatalog = useMemo(() => {

@@ -591,6 +591,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 
 						<button
 							type="button"
+							data-testid="btn-open-create-lab-order"
 							className="ztl-btn-primary"
 							onClick={() => setIsCreateModalOpen(true)}
 							title="Создать новый наряд в лабораторию"

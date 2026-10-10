@@ -19,6 +19,7 @@ import {
 	VisitSignedResponseIncompleteError,
 } from "../../db/visitsQuery.js";
 import { wsBroker } from "../../services/websocketBroker.js";
+import { TelegramPostOpCarePipeline } from "../../services/telegram/TelegramPostOpCarePipeline.js";
 import {
 	noActiveVisitId,
 	parseVisitPayload,
@@ -160,6 +161,37 @@ export function registerVisitDraftRoutes(app: FastifyInstance) {
 						status: "completed",
 					},
 				});
+			}
+
+			wsBroker.broadcastToOrganization(orgId, {
+				type: "INVENTORY_STOCK_CHANGED",
+				payload: {
+					visitId: result.visit.id,
+					action: "auto_deduct",
+				},
+			});
+
+			try {
+				if (result?.visit) {
+					await TelegramPostOpCarePipeline.schedulePostVisitSurveyIfNeeded({
+						organizationId: orgId,
+						clinicId: orgId,
+						visitId: result.visit.id,
+						patientId: result.visit.patientId,
+						doctorId: (request as { user?: { id?: string } }).user?.id ?? null,
+						appointmentId: result.visit.appointmentId,
+						diagnosis: result.visit.diagnosis,
+						treatmentPlan: result.visit.treatmentPlan,
+						complaint: result.visit.complaint,
+						objectiveStatus: result.visit.objectiveStatus,
+						doctorSummary: result.visit.doctorSummary,
+					});
+				}
+			} catch (postOpError) {
+				request.log.warn(
+					{ error: postOpError, visitId: result?.visit?.id },
+					"Не удалось автоматически поставить опрос после приёма (не блокирует подписание)",
+				);
 			}
 		} catch (error) {
 			if (error instanceof VisitSignedResponseIncompleteError) {

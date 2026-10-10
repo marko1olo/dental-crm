@@ -8,5 +8,4 @@
  * Decomposed into modular architecture under ./sensorGateway/ (Layer 0 Types, Layer 1 Drivers, Layer 2 Detection).
  */
 
-export type * from "./sensorGateway";
 export * from "./sensorGateway";

@@ -180,7 +180,7 @@ export const PediatricResorptionTab: React.FC<PediatricResorptionTabProps> = ({
 							Клиническая шкала физиологической резорбции корней молочных зубов
 						</h3>
 						<p className="text-xs sm:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400 leading-relaxed font-medium mt-0.5">
-							Оценка степени рассасывания корней под давлением зачатка постоянного зуба (1-клик пресет нормы по возрасту).
+							Оценка степени рассасывания корней под давлением зачатка постоянного зуба (пресет нормы по возрасту).
 						</p>
 					</div>
 
@@ -226,10 +226,10 @@ export const PediatricResorptionTab: React.FC<PediatricResorptionTabProps> = ({
 					<div className="space-y-1">
 						<div className="flex items-center gap-2 text-teal-700 dark:text-teal-300 font-black text-sm sm:text-base">
 							<Sparkles className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0" />
-							<span>Физиологическая резорбция корней в 1 клик</span>
+							<span>Физиологическая резорбция корней</span>
 						</div>
 						<p className="text-xs sm:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-300 font-medium">
-							Автоматическая установка клинической нормы рассасывания корней для всех 20 молочных зубов по возрасту пациента ({currentAge.toFixed(1)} лет) без ручного кликанья по каждому зубу.
+							Автоматическая установка клинической нормы рассасывания корней для всех 20 молочных зубов по возрасту пациента ({currentAge.toFixed(1)} лет).
 						</p>
 					</div>
 

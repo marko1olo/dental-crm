@@ -20,6 +20,8 @@ import { useVisitDiaryStatusHandlers } from "./visit/diaryLogic/useVisitDiarySta
 import { useVisitDiaryToothLinking } from "./visit/diaryLogic/useVisitDiaryToothLinking";
 import { showToast } from "./GlobalToast";
 
+const NOOP = () => {};
+
 export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	const appLogic = useAppLogicContext();
 	// Mandate 8e: Doctor autonomy — resolve effective doctor so saving/signing is never blocked by unselected doctor in schedule
@@ -161,12 +163,12 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		setLockedAt,
 		setDiaryHash,
 		setHasCryptoSignature,
-		setTrayBarcode: () => {}, // delegated to status handlers
-		setIsRevising: () => {},
-		setRevisionReason: () => {},
-		setIsRevisingBusy: () => {},
-		setReviseSnapshot: () => {},
-		setReviseTraySnapshot: () => {},
+		setTrayBarcode: NOOP, // delegated to status handlers
+		setIsRevising: NOOP,
+		setRevisionReason: NOOP,
+		setIsRevisingBusy: NOOP,
+		setReviseSnapshot: NOOP,
+		setReviseTraySnapshot: NOOP,
 		doSaveRef,
 	});
 

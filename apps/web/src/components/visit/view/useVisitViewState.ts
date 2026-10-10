@@ -110,7 +110,14 @@ export function useVisitViewState(rawProps?: Partial<VisitViewProps>) {
 	const [isWarrantyModalOpen, setIsWarrantyModalOpen] = useState(false);
 	const [isDoctorShiftModalOpen, setIsDoctorShiftModalOpen] = useState(false);
 	const [isInformedConsentModalOpen, setIsInformedConsentModalOpen] = useState(false);
+	const [isVisiographComparisonModalOpen, setIsVisiographComparisonModalOpen] = useState(false);
 	const [isHeaderMoreMenuOpen, setIsHeaderMoreMenuOpen] = useState(false);
+
+	useEffect(() => {
+		const handleOpenComp = () => setIsVisiographComparisonModalOpen(true);
+		window.addEventListener("dente-open-visiograph-comparison", handleOpenComp);
+		return () => window.removeEventListener("dente-open-visiograph-comparison", handleOpenComp);
+	}, []);
 
 	const handleOpenLabOrder = useCallback((targetTooth?: string | number | null | unknown) => {
 		if (typeof props.onOpenLabOrderModal === "function") {
@@ -232,7 +239,8 @@ export function useVisitViewState(rawProps?: Partial<VisitViewProps>) {
 		const allergyStr = Array.isArray(rawAllergies) ? rawAllergies.join(", ") : String(rawAllergies || "");
 		const parts: string[] = [];
 		if (allergyStr.trim()) {
-			parts.push(allergyStr.trim());
+			const cleaned = allergyStr.trim().replace(/^аллерги[яи][: \t-]*/i, "").replace(/^на\s+/i, "").trim();
+			if (cleaned) parts.push(cleaned.charAt(0).toUpperCase() + cleaned.slice(1));
 		}
 		for (const b of activePatientCriticalBadges) {
 			if (b.id !== "allergy") {
@@ -339,9 +347,7 @@ export function useVisitViewState(rawProps?: Partial<VisitViewProps>) {
 	}, [activeAppointment, activeDoctor, activePatient, activePlan, dashboard]);
 
 	const flushAll = useCallback(async () => {
-		if (typeof flushPendingVisitSaves === "function") {
-			await flushPendingVisitSaves();
-		}
+		if (typeof flushPendingVisitSaves === "function") await flushPendingVisitSaves();
 	}, [flushPendingVisitSaves]);
 
 	const handleFinishVisitAction = useCallback(async () => {
@@ -369,7 +375,7 @@ export function useVisitViewState(rawProps?: Partial<VisitViewProps>) {
 					sessionStorage.setItem("dente_pending_checkout", JSON.stringify(fallbackCheckout));
 					localStorage.setItem("dente_pending_checkout", JSON.stringify(fallbackCheckout));
 				}
-			} catch {}
+			} catch (err) { console.warn("[VisitViewState] Failed to write fallback checkout to storage:", err); }
 		}
 
 		if (typeof window !== "undefined") {
@@ -594,36 +600,22 @@ export function useVisitViewState(rawProps?: Partial<VisitViewProps>) {
 		setMaterialCategory,
 		selectedSurfaces,
 		setSelectedSurfaces,
-		isSurfaceMode,
-		setIsSurfaceMode,
-		isQueueCockpitForced,
-		setIsQueueCockpitForced,
-		endoModalToothNumber,
-		setEndoModalToothNumber,
-		endoModalToothState,
-		setEndoModalToothState,
-		labOrderModalToothNumber,
-		setLabOrderModalToothNumber,
-		isEndoModalOpen,
-		setIsEndoModalOpen,
-		isLabOrderModalOpen,
-		setIsLabOrderModalOpen,
-		isStagePaymentModalOpen,
-		setIsStagePaymentModalOpen,
-		isPriceValidatorModalOpen,
-		setIsPriceValidatorModalOpen,
-		isEmergencyModalOpen,
-		setIsEmergencyModalOpen,
-		isVoiceDictationModalOpen,
-		setIsVoiceDictationModalOpen,
-		isWarrantyModalOpen,
-		setIsWarrantyModalOpen,
-		isDoctorShiftModalOpen,
-		setIsDoctorShiftModalOpen,
-		isInformedConsentModalOpen,
-		setIsInformedConsentModalOpen,
-		isHeaderMoreMenuOpen,
-		setIsHeaderMoreMenuOpen,
+		isSurfaceMode, setIsSurfaceMode,
+		isQueueCockpitForced, setIsQueueCockpitForced,
+		endoModalToothNumber, setEndoModalToothNumber,
+		endoModalToothState, setEndoModalToothState,
+		labOrderModalToothNumber, setLabOrderModalToothNumber,
+		isEndoModalOpen, setIsEndoModalOpen,
+		isLabOrderModalOpen, setIsLabOrderModalOpen,
+		isStagePaymentModalOpen, setIsStagePaymentModalOpen,
+		isPriceValidatorModalOpen, setIsPriceValidatorModalOpen,
+		isEmergencyModalOpen, setIsEmergencyModalOpen,
+		isVoiceDictationModalOpen, setIsVoiceDictationModalOpen,
+		isWarrantyModalOpen, setIsWarrantyModalOpen,
+		isDoctorShiftModalOpen, setIsDoctorShiftModalOpen,
+		isInformedConsentModalOpen, setIsInformedConsentModalOpen,
+		isVisiographComparisonModalOpen, setIsVisiographComparisonModalOpen,
+		isHeaderMoreMenuOpen, setIsHeaderMoreMenuOpen,
 		handleOpenLabOrder,
 		headerMoreMenuRef,
 		loadedTreatmentPlan,

@@ -96,11 +96,44 @@ export async function compressChairsidePhoto(
 		});
 
 		if (!blob) {
-			throw new Error("COMPRESSION_FAILED");
+			throw new Error("CANVAS_TO_BLOB_FAILED");
 		}
 
-		return blob;
+		const resultBlob = blob;
+		// Explicit memory cleanup for GPU texture and canvas buffer
+		img.src = '';
+		canvas.width = 0;
+		canvas.height = 0;
+
+		return resultBlob;
 	} finally {
 		URL.revokeObjectURL(objectUrl);
 	}
+}
+
+export interface CompressedPhotoResult {
+	blob: Blob;
+	blobUrl: string;
+	sizeBytes: number;
+	revoke: () => void;
+}
+
+/**
+ * Compresses an intraoral or facial photo and returns an optimized blob URL
+ * with an explicit revoke callback to prevent memory leaks.
+ */
+export async function compressChairsidePhotoToBlobUrl(
+	fileOrBlob: File | Blob,
+	options: CompressPhotoOptions = {},
+): Promise<CompressedPhotoResult> {
+	const blob = await compressChairsidePhoto(fileOrBlob, options);
+	const blobUrl = URL.createObjectURL(blob);
+	return {
+		blob,
+		blobUrl,
+		sizeBytes: blob.size,
+		revoke: () => {
+			URL.revokeObjectURL(blobUrl);
+		},
+	};
 }

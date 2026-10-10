@@ -1,6 +1,6 @@
-import type React from "react";
-import { Check, CheckCircle2, CreditCard, QrCode, Wallet } from "lucide-react";
+import { Banknote, Check, CheckCircle2, CreditCard, Layers, Lightbulb, Plus, QrCode, Wallet } from "lucide-react";
 import type { PaymentMethodTab } from "../../finance/modal/payment/paymentModalTypes.js";
+import type { ConsumablesReconciliationResult } from "../../odontogram/treatmentEstimatorReconciler";
 
 export interface VisitBillingSummarySectionProps {
 	isVisitPaid: boolean;
@@ -9,6 +9,8 @@ export interface VisitBillingSummarySectionProps {
 	effectiveTotalDueRub: number;
 	effectiveDepositRub: number;
 	onOpenPaymentModal: (method: PaymentMethodTab) => void;
+	consumablesReconciliation?: ConsumablesReconciliationResult | undefined;
+	onAddAllUnbilledToBill?: (() => void) | undefined;
 }
 
 export const VisitBillingSummarySection: React.FC<VisitBillingSummarySectionProps> = ({
@@ -18,6 +20,8 @@ export const VisitBillingSummarySection: React.FC<VisitBillingSummarySectionProp
 	effectiveTotalDueRub,
 	effectiveDepositRub,
 	onOpenPaymentModal,
+	consumablesReconciliation,
+	onAddAllUnbilledToBill,
 }) => {
 	const displayAmount = isVisitPaid
 		? paidAmountRub || effectiveTotalDueRub
@@ -32,7 +36,9 @@ export const VisitBillingSummarySection: React.FC<VisitBillingSummarySectionProp
 					? "Депозит / аванс"
 					: paidTenderMethod === "cash"
 						? "Наличные"
-						: "Безналичный расчёт";
+						: paidTenderMethod === "split"
+							? "Сплит-оплата (комбо)"
+							: "Безналичный расчёт";
 
 	return (
 		<div
@@ -90,6 +96,40 @@ export const VisitBillingSummarySection: React.FC<VisitBillingSummarySectionProp
 				</div>
 			</div>
 
+			{/* Детектив расходников (Leak-Proof Billing & Consumables Detective) */}
+			{!isVisitPaid && consumablesReconciliation?.hasUnbilled && (
+				<div
+					className="mt-3 p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/20 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 animate-in fade-in duration-150"
+					data-testid="unbilled-consumables-alert"
+				>
+					<div className="flex items-start sm:items-center gap-2 min-w-0">
+						<Lightbulb className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
+						<div className="text-[var(--ink)] leading-snug">
+							<span className="font-semibold text-amber-700 dark:text-amber-300">
+								В дневнике зафиксировано, но не включено в счёт:
+							</span>{" "}
+							<span className="text-[var(--ink)]">
+								{consumablesReconciliation.unbilledItems
+									.map((it) => `${it.matchedMarker} (${it.priceRub.toLocaleString("ru-RU")} ₽)`)
+									.join(", ")}
+							</span>
+						</div>
+					</div>
+					{onAddAllUnbilledToBill && (
+						<button
+							type="button"
+							onClick={onAddAllUnbilledToBill}
+							className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[32px] rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white font-bold text-xs shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-[0.98]"
+							data-testid="add-unbilled-consumables-btn"
+							title="Добавить все пропущенные расходники в смету и чек в 1 клик"
+						>
+							<Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+							<span>+ Добавить всё в счёт (1 клик)</span>
+						</button>
+					)}
+				</div>
+			)}
+
 			{isVisitPaid ? (
 				<div className="mt-3 flex items-center justify-between flex-wrap gap-2 pt-1 text-xs">
 					<div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-semibold">
@@ -115,7 +155,7 @@ export const VisitBillingSummarySection: React.FC<VisitBillingSummarySectionProp
 							</span>
 						)}
 					</div>
-					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+					<div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
 						{/* SBP QR */}
 						<button
 							type="button"
@@ -140,6 +180,18 @@ export const VisitBillingSummarySection: React.FC<VisitBillingSummarySectionProp
 							<span>Банковская карта</span>
 						</button>
 
+						{/* Cash */}
+						<button
+							type="button"
+							onClick={() => onOpenPaymentModal("cash")}
+							className="inline-flex items-center justify-center gap-2 px-3 py-2.5 min-h-[44px] rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] text-xs font-bold shadow-2xs transition-all cursor-pointer active:scale-[0.98]"
+							data-testid="chairside-pay-cash-btn"
+							title="Оплата наличными средствами"
+						>
+							<Banknote className="w-4 h-4 text-emerald-600 shrink-0" />
+							<span>Наличные</span>
+						</button>
+
 						{/* Patient Family Deposit */}
 						<button
 							type="button"
@@ -158,6 +210,18 @@ export const VisitBillingSummarySection: React.FC<VisitBillingSummarySectionProp
 									? `Списать с депозита (${effectiveDepositRub.toLocaleString("ru-RU")} ₽)`
 									: "Списать с депозита"}
 							</span>
+						</button>
+
+						{/* Split / Combo */}
+						<button
+							type="button"
+							onClick={() => onOpenPaymentModal("split")}
+							className="inline-flex items-center justify-center gap-2 px-3 py-2.5 min-h-[44px] rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-400 border border-teal-500/30 text-xs font-bold shadow-2xs transition-all cursor-pointer active:scale-[0.98] col-span-2 sm:col-span-1"
+							data-testid="chairside-pay-split-btn"
+							title="Комбинированная сплит-оплата (несколько способов)"
+						>
+							<Layers className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+							<span>Сплит (Комбо)</span>
 						</button>
 					</div>
 				</div>

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { countLabel } from "../../AppHelpers.js";
-import { useAppLogicContext } from "../../contexts/AppLogicContext.js";
-import { resolvePanelPhase } from "../../lib/panelStateText.js";
-import { usePatientStore } from "../../store/patientStore.js";
-import { logger } from "../../utils/logger.js";
-import { showToast } from "../GlobalToast.js";
-import type { ToothState } from "../odontogram/ToothChart.js";
+import { countLabel } from "../../../AppHelpers.js";
+import { useAppLogicContext } from "../../../contexts/AppLogicContext.js";
+import { resolvePanelPhase } from "../../../lib/panelStateText.js";
+import { usePatientStore } from "../../../store/patientStore.js";
+import { logger } from "../../../utils/logger.js";
+import { showToast } from "../../GlobalToast.js";
+import type { ToothState } from "../../odontogram/ToothChart.js";
 import { planVisiographFindings } from "../visiographFindings.js";
-import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode.js";
+import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import {
 	buildFindingsNotice,
 	extractSummary,
@@ -19,8 +19,8 @@ import {
 } from "../VisiographScanHelpers.js";
 import { useVisiographArchive } from "../useVisiographArchive.js";
 import type { VisiographPresetType } from "../VisiographCockpitPresets.js";
-import type { RadiologyFilmstripItem } from "../radiology/RadiologyFilmstripDock.js";
-import { useAppStore } from "../../store/appStore.js";
+import type { RadiologyFilmstripItem } from "../../radiology/RadiologyFilmstripDock.js";
+import { useAppStore } from "../../../store/appStore.js";
 import type {
 	VisiographAnalyzerProps,
 	VisiographScaleCalibration,
@@ -297,11 +297,11 @@ export function useVisiographAnalyzer({
 		if (scanHistory && scanHistory.length > 0) {
 			return scanHistory.map((s) => ({
 				id: s.id,
-				title: s.originalFilename || `Зуб #${s.toothCode || toothCode || "16"}`,
+				title: s.originalFilename || (s.toothCode || toothCode ? `Зуб #${s.toothCode || toothCode}` : "Снимок RVG"),
 				modality: "intraoral_rvg",
 				modalityLabel: "IO-СЕНСОР",
 				studyDate: s.capturedAt || s.createdAt || "01.10.2026",
-				teethFdi: s.toothCode ? [s.toothCode] : toothCode ? [toothCode] : ["16"],
+				teethFdi: s.toothCode ? [s.toothCode] : toothCode ? [toothCode] : [],
 				imageUrl: s.imageDataUri || "",
 				thumbnailUrl: s.imageDataUri || "",
 			}));
@@ -312,7 +312,7 @@ export function useVisiographAnalyzer({
 					id: currentScan.id,
 					title:
 						currentScan.originalFilename ||
-						`Зуб #${currentScan.toothCode || toothCode || "16"}`,
+						(currentScan.toothCode || toothCode ? `Зуб #${currentScan.toothCode || toothCode}` : "Снимок RVG"),
 					modality: "intraoral_rvg",
 					modalityLabel: "IO-СЕНСОР",
 					studyDate: currentScan.capturedAt || currentScan.createdAt || "01.10.2026",
@@ -320,7 +320,7 @@ export function useVisiographAnalyzer({
 						? [currentScan.toothCode]
 						: toothCode
 							? [toothCode]
-							: ["16"],
+							: [],
 					imageUrl: currentScan.imageDataUri || currentImageUrl || "",
 					thumbnailUrl: currentScan.imageDataUri || currentImageUrl || "",
 				},
@@ -600,7 +600,7 @@ export function useVisiographAnalyzer({
 		applyNormaTo043({
 			targetToothCode,
 			currentScanId: currentScan?.id,
-			effectivePatientId,
+			effectivePatientId: effectivePatientId ?? undefined,
 			onInsertToProtocol,
 			mutationHeaders: denteClinicalMutationHeaders,
 		});

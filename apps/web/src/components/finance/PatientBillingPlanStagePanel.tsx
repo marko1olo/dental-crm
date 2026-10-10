@@ -136,11 +136,11 @@ export const PatientBillingPlanStagePanel: React.FC<PatientBillingPlanStagePanel
 					onClick={() => onTenderPlanStage(selectedStage)}
 					className="min-h-[44px] px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
 					data-testid="btn-tender-plan-stage"
-					title="Оплатить выбранный этап плана лечения в 1 клик"
+					title="Оплатить выбранный этап плана лечения"
 				>
 					<Zap className="w-4 h-4 text-amber-300 fill-amber-300 shrink-0" />
 					<span>
-						Оплатить этап в 1 клик • {getStageAmountRub(selectedStage).toLocaleString("ru-RU")} ₽
+						Оплатить этап • {getStageAmountRub(selectedStage).toLocaleString("ru-RU")} ₽
 					</span>
 				</button>
 			</div>

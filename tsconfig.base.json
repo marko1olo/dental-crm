@@ -15,6 +15,7 @@
 		"isolatedModules": true,
 		"noUncheckedIndexedAccess": true,
 		"exactOptionalPropertyTypes": true,
-		"noImplicitAny": false
+		"noImplicitAny": false,
+		"incremental": true
 	}
 }

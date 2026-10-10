@@ -141,7 +141,7 @@ export const BeforeAfterExportModal: React.FC<BeforeAfterExportModalProps> = ({
 						className="photo-touch-btn"
 						onClick={onExportPdf}
 						style={{ minHeight: '44px', minWidth: '44px', padding: '8px 16px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-						title="1-клик печать или экспорт листа сравнения в PDF"
+						title="Печать или экспорт листа сравнения в PDF"
 					>
 						<Printer size={16} />
 						Печать в PDF

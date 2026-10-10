@@ -302,7 +302,7 @@ export const Icd10ClinicalSelector: React.FC<Icd10ClinicalSelectorProps> = ({
 				<div className="icd10-quick-presets-section" data-testid="icd10-top12-section">
 					<div className="icd10-section-label">
 						<ToothCaries size={16} aria-hidden="true" />
-						<span>ТОП-12 амбулаторных диагнозов (1 клик):</span>
+						<span>ТОП-12 амбулаторных диагнозов:</span>
 					</div>
 					<div className="icd10-chips-grid" role="group" aria-label="Быстрый выбор ТОП-12 стоматологических диагнозов">
 						{TOP_12_AMBULATORY_PRESETS.map((preset) => {
@@ -314,7 +314,7 @@ export const Icd10ClinicalSelector: React.FC<Icd10ClinicalSelectorProps> = ({
 									className={`min-w-0 icd10-preset-chip ${isSelected ? "is-selected" : ""}`}
 									onClick={() => handleSelectDiagnosis(preset)}
 									data-testid={`top12-preset-${preset.code}`}
-									title={`1 клик: ${preset.code} — ${preset.titleRu}`}
+									title={`${preset.code} — ${preset.titleRu}`}
 								>
 									<span className="icd10-chip-code shrink-0">{preset.code}</span>
 									<span className="icd10-chip-title truncate min-w-0">{preset.shortTitleRu}</span>

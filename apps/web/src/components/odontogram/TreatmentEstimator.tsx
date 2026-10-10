@@ -1,9 +1,5 @@
+import type { ServiceCatalogItem } from "@dental/shared";
 import {
-	kopecksToNumericString,
-	type ServiceCatalogItem,
-} from "@dental/shared";
-import {
-	Calculator,
 	FileText,
 	PenTool,
 	Printer,
@@ -16,22 +12,28 @@ import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
 	denteAdminSecretRequestHeaders,
-	money,
 	operatorReadableErrorDetail,
 } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
 	actionFailureToast,
-	type PanelSubject,
 	requestFailureCause,
 } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
-import { showToast } from "../GlobalToast.js";
-import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
 import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
-import type { ToothData } from "./ToothChart";
+import { showRollbackToast, showToast } from "../GlobalToast.js";
+import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
+import { TreatmentEstimatorAlerts } from "./TreatmentEstimatorAlerts";
+import { TreatmentEstimatorItemCard } from "./TreatmentEstimatorItemCard";
+import { TreatmentEstimatorSignModal } from "./TreatmentEstimatorSignModal";
 import {
+	convertGhostItemToImplant,
+	convertUnbilledConsumableToPlanItem,
+	detectGhostTeethConflicts,
+	detectPlanItemCollisions,
+	detectUnbilledConsumables,
 	type EstimatorContract,
+	type EstimatorToothInput,
 	estimatorContractFrom,
 	estimatorDismissalKeys,
 	estimatorIssueMessages,
@@ -39,74 +41,21 @@ import {
 	estimatorSaveBlock,
 	estimatorTotals,
 	exportEstimatorToCashier54Fz,
+	getGhostToothConflict,
 	type PlanItem,
+	type PlanPriceCatalogItem,
 	planItemFromServer,
 	reconcileAutoSuggestions,
-	convertGhostItemToImplant,
-	detectGhostTeethConflicts,
-	getGhostToothConflict,
-	detectPlanItemCollisions,
-	type EstimatorToothInput,
-	type GhostToothConflict,
-	type PlanItemCollision,
-	type PlanPriceCatalogItem,
 } from "./treatmentEstimatorPricing";
-import { TreatmentEstimatorAlerts } from "./TreatmentEstimatorAlerts";
-import { TreatmentEstimatorItemCard } from "./TreatmentEstimatorItemCard";
-import { TreatmentEstimatorSignModal } from "./TreatmentEstimatorSignModal";
 
-interface EstimatorProps {
-	patientId: string;
-	currentTeeth: ToothData[];
-}
-
-interface SavedTreatmentPlan {
-	id: string;
-	name: string;
-	totalPrice: number;
-	patientSignature?: string | null;
-	items: PlanItem[];
-}
-
-/**
- * Сумма к показу.
- * Считается всё целыми копейками, а печатается общим money().
- */
-function rub(kopecks: number): string {
-	return money(kopecksToNumericString(kopecks));
-}
-
-type PlanLoadState =
-	| { readonly phase: "loading" }
-	| { readonly phase: "ready" }
-	| { readonly phase: "failed"; readonly status: number | null };
-
-/** Названия состояний этой панели. Формулировки общие с панелями карточки пациента. */
-const PLAN_SUBJECT: PanelSubject = {
-	notLoadedTitle: "Позиции плана лечения не загружены",
-	accusative: "план лечения",
-	emptyTitle: "План лечения пуст",
-	emptyHint:
-		"Выберите зуб на зубной формуле слева, укажите клинический статус, и система автоматически сформирует смету из прайс-листа",
-	failureConsequence:
-		"Не считайте, что плана нет: он не прочитан. Сохранение и подписание отключены — иначе рядом с сохранённым планом появится второй, а подпись пациента останется у старого.",
-};
-
-/** Объект из тела ответа или null. Массив и скаляр объектом не считаются. */
-function jsonObjectOrNull(rawBody: string): Record<string, unknown> | null {
-	const trimmed = rawBody.trim();
-	if (!trimmed) return null;
-	try {
-		const parsed: unknown = JSON.parse(trimmed);
-		return typeof parsed === "object" &&
-			parsed !== null &&
-			!Array.isArray(parsed)
-			? (parsed as Record<string, unknown>)
-			: null;
-	} catch {
-		return null;
-	}
-}
+import {
+	type EstimatorProps,
+	jsonObjectOrNull,
+	PLAN_SUBJECT,
+	type PlanLoadState,
+	rub,
+	type SavedTreatmentPlan,
+} from "./treatmentEstimatorTypes";
 
 export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	patientId,
@@ -137,9 +86,9 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		(patient?.administrativeProfile as any)?.insuranceContractId;
 
-	const [plannerTab, setPlannerTab] = useState<"comprehensive_804n" | "manual_lines">(
-		"comprehensive_804n",
-	);
+	const [plannerTab, setPlannerTab] = useState<
+		"comprehensive_804n" | "manual_lines"
+	>("comprehensive_804n");
 	const [isFiscalModalOpen, setIsFiscalModalOpen] = useState(false);
 
 	const treatmentPlanItemsForFiscalModal = useMemo(() => {
@@ -149,6 +98,36 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			patient?.fullName || "Пациент",
 		).items;
 	}, [items, patientId, patient?.fullName]);
+
+	const diaryProtocolSource = useMemo(
+		() => ({
+			treatmentPlan: (dashboard?.activeVisit as any)?.treatmentPlan,
+			treatmentDescription: (dashboard?.activeVisit as any)
+				?.treatmentDescription,
+			complaint: (dashboard?.activeVisit as any)?.complaint,
+			diagnosis: (dashboard?.activeVisit as any)?.diagnosis,
+		}),
+		[dashboard?.activeVisit],
+	);
+
+	const estimatorConsumablesReconciliation = useMemo(() => {
+		const catalog =
+			(dashboard?.clinicSettings?.priceList as PlanPriceCatalogItem[]) || [];
+		return detectUnbilledConsumables(diaryProtocolSource, items, catalog);
+	}, [diaryProtocolSource, items, dashboard?.clinicSettings?.priceList]);
+
+	const handleAddAllUnbilledToPlan = () => {
+		if (!estimatorConsumablesReconciliation.hasUnbilled) return;
+		const newItems = estimatorConsumablesReconciliation.unbilledItems.map((c) =>
+			convertUnbilledConsumableToPlanItem(c, 0),
+		);
+		setItems((prev) => [...prev, ...newItems]);
+		showToast(
+			`В смету плана добавлено: ${estimatorConsumablesReconciliation.detectedMarkers.join(", ")} (+${estimatorConsumablesReconciliation.totalUnbilledRub.toLocaleString("ru-RU")} ₽)`,
+			"success",
+			3500,
+		);
+	};
 
 	useEffect(() => {
 		if (!insuranceContractId) {
@@ -329,7 +308,9 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 
 	const handleReplaceWithImplant = (toothNumber: number) => {
 		const catalogSource = dashboard?.serviceCatalog;
-		const catalog: readonly PlanPriceCatalogItem[] = Array.isArray(catalogSource)
+		const catalog: readonly PlanPriceCatalogItem[] = Array.isArray(
+			catalogSource,
+		)
 			? catalogSource
 			: [];
 		setItems((prev) =>
@@ -409,11 +390,24 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				const apiItem = estimatorItemForApi(item);
 				if (apiItem) return apiItem;
 				return {
-					...(item.toothNumber !== undefined ? { toothNumber: item.toothNumber } : {}),
-					priceId: item.priceId || `custom_${item.id || item.toothNumber || "service"}`,
-					name: item.name ? (item.price === null ? `${item.name} (Цена уточняется)` : item.name) : "Услуга (цена уточняется)",
+					...(item.toothNumber !== undefined
+						? { toothNumber: item.toothNumber }
+						: {}),
+					priceId:
+						item.priceId ||
+						`custom_${item.id || item.toothNumber || "service"}`,
+					name: item.name
+						? item.price === null
+							? `${item.name} (Цена уточняется)`
+							: item.name
+						: "Услуга (цена уточняется)",
 					quantity: Math.max(1, item.quantity || 1),
-					price: item.price !== null && Number.isFinite(item.price) && item.price >= 0 ? item.price : 0,
+					price:
+						item.price !== null &&
+						Number.isFinite(item.price) &&
+						item.price >= 0
+							? item.price
+							: 0,
 					discount: item.discount || 0,
 					phase: item.phase || 1,
 					...(item.isAuto !== undefined ? { isAuto: item.isAuto } : {}),
@@ -493,15 +487,38 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 
 	const removeItem = (idx: number) => {
 		const removed = items[idx];
-		setItems(items.filter((_, i) => i !== idx));
 		if (!removed) return;
+		setItems((prev) => prev.filter((_, i) => i !== idx));
 		const keys = estimatorDismissalKeys(removed);
-		if (keys.length === 0) return;
-		setDismissedSuggestions((prev) => {
-			const next = new Set(prev);
-			for (const key of keys) next.add(key);
-			return next;
-		});
+		if (keys.length > 0) {
+			setDismissedSuggestions((prev) => {
+				const next = new Set(prev);
+				for (const key of keys) next.add(key);
+				return next;
+			});
+		}
+
+		const toothBadge = removed.toothNumber
+			? ` [зуб ${removed.toothNumber}]`
+			: "";
+		showRollbackToast(
+			`Услуга «${removed.name}»${toothBadge} удалена из сметы`,
+			() => {
+				setItems((prev) => {
+					const next = [...prev];
+					next.splice(idx, 0, removed);
+					return next;
+				});
+				if (keys.length > 0) {
+					setDismissedSuggestions((prev) => {
+						const next = new Set(prev);
+						for (const key of keys) next.delete(key);
+						return next;
+					});
+				}
+			},
+			5000,
+		);
 	};
 
 	const setPhase = (idx: number, phase: number) => {
@@ -619,7 +636,9 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					<>
 						<TreatmentEstimatorAlerts
 							planLoadPhase={planLoad.phase}
-							planLoadStatus={planLoad.phase === "failed" ? planLoad.status : null}
+							planLoadStatus={
+								planLoad.phase === "failed" ? planLoad.status : null
+							}
 							planSubject={PLAN_SUBJECT}
 							contractFailure={contractFailure}
 							issueMessages={issueMessages}
@@ -631,6 +650,8 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 							onReplaceWithImplant={handleReplaceWithImplant}
 							onRestoreToothStatus={handleRestoreToothStatus}
 							onRemoveItemByTooth={handleRemoveItemByTooth}
+							consumablesReconciliation={estimatorConsumablesReconciliation}
+							onAddAllUnbilledToPlan={handleAddAllUnbilledToPlan}
 						/>
 
 						{phases.map((phase) => {
@@ -648,10 +669,16 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 									<div className="phase-items-list">
 										{phaseItems.map((item) => {
 											const globalIdx = items.indexOf(item);
-											const itemGhostConflict = getGhostToothConflict(item, currentTeeth);
-											const itemCollision = item.toothNumber !== undefined
-												? planCollisions.find((c) => c.toothNumber === item.toothNumber)
-												: null;
+											const itemGhostConflict = getGhostToothConflict(
+												item,
+												currentTeeth,
+											);
+											const itemCollision =
+												item.toothNumber !== undefined
+													? planCollisions.find(
+															(c) => c.toothNumber === item.toothNumber,
+														)
+													: null;
 											return (
 												<TreatmentEstimatorItemCard
 													key={globalIdx}
@@ -692,7 +719,11 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 							type="button"
 							onClick={() => {
 								if (treatmentPlanItemsForFiscalModal.length === 0) {
-									showToast("В смете нет позиций с подтвержденной ценой", "warning", 3000);
+									showToast(
+										"В смете нет позиций с подтвержденной ценой",
+										"warning",
+										3000,
+									);
 									return;
 								}
 								setIsFiscalModalOpen(true);
@@ -741,7 +772,11 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					patientDepositRub={Number(patient?.depositRub) || 0}
 					onClose={() => setIsFiscalModalOpen(false)}
 					onReceiptFiscalized={(receiptNum) => {
-						showToast(`Чек №${receiptNum} успешно фискализирован`, "success", 4000);
+						showToast(
+							`Чек №${receiptNum} успешно фискализирован`,
+							"success",
+							4000,
+						);
 						setIsFiscalModalOpen(false);
 					}}
 				/>
@@ -751,7 +786,8 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				isOpen={showSignModal}
 				onClose={() => setShowSignModal(false)}
 				onConfirmPaper={() => {
-					const paperStamp = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='60'><rect width='100%' height='100%' fill='%23f0fdf4' stroke='%2316a34a' rx='6'/><text x='120' y='25' text-anchor='middle' font-family='sans-serif' font-size='11' font-weight='bold' fill='%2315803d'>ПОДПИСАНО НА БУМАГЕ</text><text x='120' y='45' text-anchor='middle' font-family='sans-serif' font-size='10' fill='%23166534'>Смета согласована</text></svg>";
+					const paperStamp =
+						"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='60'><rect width='100%' height='100%' fill='%23f0fdf4' stroke='%2316a34a' rx='6'/><text x='120' y='25' text-anchor='middle' font-family='sans-serif' font-size='11' font-weight='bold' fill='%2315803d'>ПОДПИСАНО НА БУМАГЕ</text><text x='120' y='45' text-anchor='middle' font-family='sans-serif' font-size='10' fill='%23166534'>Смета согласована</text></svg>";
 					setSignatureUrl(paperStamp);
 					setShowSignModal(false);
 					showToast("План лечения и смета подтверждены на бумаге", "success");

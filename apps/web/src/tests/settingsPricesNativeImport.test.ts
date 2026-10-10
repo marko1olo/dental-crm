@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -18,7 +18,15 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const sourcePath = join(here, "..", "components", "settings", "SettingsPricesTab.tsx");
-const source = readFileSync(sourcePath, "utf8");
+const pricesTabDir = join(here, "..", "components", "settings", "pricesTab");
+let source = readFileSync(sourcePath, "utf8");
+if (existsSync(pricesTabDir)) {
+	for (const file of readdirSync(pricesTabDir)) {
+		if (/\.(tsx|ts)$/.test(file)) {
+			source += `\n${readFileSync(join(pricesTabDir, file), "utf8")}`;
+		}
+	}
+}
 
 function withoutComments(code: string): string {
 	return code

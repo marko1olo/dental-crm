@@ -15,7 +15,11 @@ const __dirname = path.dirname(__filename);
 
 describe("Mandate 8d Greed #7 — Elimination of raw checkmarks & emojis in SBP modal (VisitEmkTab)", () => {
 	const emkTabPath = path.resolve(__dirname, "../VisitEmkTab.tsx");
-	const sourceCode = fs.readFileSync(emkTabPath, "utf8");
+	const modalsPath = path.resolve(__dirname, "../emkTab/VisitEmkModals.tsx");
+	const sourceCode =
+		fs.readFileSync(emkTabPath, "utf8") +
+		"\n" +
+		(fs.existsSync(modalsPath) ? fs.readFileSync(modalsPath, "utf8") : "");
 
 	it("1. guarantees btn-confirm-sbp-paid uses Lucide Check vector icon instead of raw <span>✓</span>", () => {
 		// Strict ban on raw checkmark span in SBP confirm button

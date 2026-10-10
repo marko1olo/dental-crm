@@ -282,7 +282,7 @@ export function SettingsProtocolsTab() {
 						className="dente-segmented-item"
 						onClick={handleSeedStandardProtocols}
 						disabled={loading}
-						title="Подключить стандартные протоколы клиники в 1 клик"
+						title="Подключить стандартные протоколы клиники"
 					>
 						<Sparkles size={14} style={{ color: "var(--teal)" }} />
 						<span>Базовые протоколы</span>
@@ -319,7 +319,7 @@ export function SettingsProtocolsTab() {
 				<EmptyState
 					icon={<ClipboardCheck aria-hidden="true" />}
 					title="Шаблонов приёма пока нет"
-					description="Шаблон подставляет врачу причину визита, длительность, нужные документы и снимки. Подключите стандартный пакет в 1 клик или добавьте вручную."
+					description="Шаблон подставляет врачу причину визита, длительность, нужные документы и снимки. Подключите стандартный пакет или добавьте вручную."
 					action={
 						<div
 							style={{

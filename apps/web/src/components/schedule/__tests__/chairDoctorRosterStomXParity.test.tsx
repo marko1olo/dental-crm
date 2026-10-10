@@ -913,10 +913,14 @@ describe("StomX / DentalPRO Parity: Chair Roster, Doctor Shifts & Week Copy", ()
 			// Click to open modal
 			await clickNode(menuBtn);
 
-			const modal = findNodeByTestId(container, "chair-schedule-date-range-modal");
+			const modal =
+				findNodeByTestId(container, "chair-schedule-date-range-modal") ||
+				findNodeByTestId(document.body as any, "chair-schedule-date-range-modal");
 			assert.ok(modal, "chair-schedule-date-range-modal must open");
 
-			const applyModalBtn = findNodeByTestId(container, "chair-range-modal-apply-btn");
+			const applyModalBtn =
+				findNodeByTestId(container, "chair-range-modal-apply-btn") ||
+				findNodeByTestId(document.body as any, "chair-range-modal-apply-btn");
 			assert.ok(applyModalBtn, "chair-range-modal-apply-btn must exist in modal");
 		});
 	});

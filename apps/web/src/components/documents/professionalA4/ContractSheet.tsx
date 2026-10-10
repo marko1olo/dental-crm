@@ -86,7 +86,7 @@ export const ContractSheet: React.FC<ContractSheetProps> = ({
 
 							<div className="a4-running-footer">
 								<span>Договор № {contractData.contractNumber} от {contractData.contractDate} г.</span>
-								<span>Стр. 1 из 3</span>
+								<span>Лист 1 из 3</span>
 							</div>
 						</section>
 
@@ -95,7 +95,7 @@ export const ContractSheet: React.FC<ContractSheetProps> = ({
 							<div className="a4-sheet-body">
 								<div className="a4-running-header">
 									<span>{cl.legalName || cl.name} · Лицензия № {cl.licenseNumber}</span>
-									<span>Договор № {contractData.contractNumber} · Стр. 2 из 3</span>
+									<span>Договор № {contractData.contractNumber} · Лист 2 из 3</span>
 								</div>
 
 								<h2 className="a4-section-heading">4. Перечень и предварительная спецификация услуг (Номенклатура МЗ РФ № 804н)</h2>
@@ -170,7 +170,7 @@ export const ContractSheet: React.FC<ContractSheetProps> = ({
 
 							<div className="a4-running-footer">
 								<span>Договор № {contractData.contractNumber} от {contractData.contractDate} г.</span>
-								<span>Стр. 2 из 3</span>
+								<span>Лист 2 из 3</span>
 							</div>
 						</section>
 
@@ -179,7 +179,7 @@ export const ContractSheet: React.FC<ContractSheetProps> = ({
 							<div className="a4-sheet-body">
 								<div className="a4-running-header">
 									<span>{cl.legalName || cl.name} · Лицензия № {cl.licenseNumber}</span>
-									<span>Договор № {contractData.contractNumber} · Стр. 3 из 3</span>
+									<span>Договор № {contractData.contractNumber} · Лист 3 из 3</span>
 								</div>
 
 								<h2 className="a4-section-heading">7. Конфиденциальность, врачебная тайна и персональные данные (152-ФЗ)</h2>
@@ -243,7 +243,7 @@ export const ContractSheet: React.FC<ContractSheetProps> = ({
 
 							<div className="a4-running-footer">
 								<span>Договор № {contractData.contractNumber} от {contractData.contractDate} г.</span>
-								<span>Стр. 3 из 3</span>
+								<span>Лист 3 из 3</span>
 							</div>
 						</section>
 					</div>

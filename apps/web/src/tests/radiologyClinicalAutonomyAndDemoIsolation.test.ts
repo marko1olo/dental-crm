@@ -59,7 +59,13 @@ describe("Radiology Clinical Autonomy & Demo Isolation Mandate (8c, 8e, 8n)", ()
 
 	it("verifies VisiographAnalyzer source code enforces demoMode isolation and never auto-injects fake caries for real patients", () => {
 		const sourcePath = path.resolve(getWebRoot(), "src/components/imaging/VisiographAnalyzer.tsx");
-		const source = fs.readFileSync(sourcePath, "utf-8");
+		const hookPath = path.resolve(getWebRoot(), "src/components/imaging/visiographAnalyzer/useVisiographAnalyzer.ts");
+		const viewPath = path.resolve(getWebRoot(), "src/components/imaging/visiographAnalyzer/index.tsx");
+		const source = [
+			fs.existsSync(sourcePath) ? fs.readFileSync(sourcePath, "utf-8") : "",
+			fs.existsSync(hookPath) ? fs.readFileSync(hookPath, "utf-8") : "",
+			fs.existsSync(viewPath) ? fs.readFileSync(viewPath, "utf-8") : "",
+		].join("\n");
 
 		// Import check
 		assert.ok(source.includes("isDemoShowcaseMode"), "Imports isDemoShowcaseMode");

@@ -54,16 +54,16 @@ export function ToothTherapyTab({
 					<div className="_ccm-items-grid">
 						{[
 							{
-								name: "Световой композит Filtek Z250 / Gradia",
-								desc: "композит Filtek Z250 / Gradia Direct",
+								name: "Светоотверждаемый композит (Микрогибрид)",
+								desc: "светоотверждаемый микрогибридный композит",
 							},
 							{
-								name: "Нанокомпозит Ceram.x Spectra ST",
-								desc: "эстетический нанокомпозит Ceram.x Spectra ST",
+								name: "Нанокомпозит светового отверждения",
+								desc: "эстетический нанокомпозит светового отверждения",
 							},
 							{
-								name: "Премиум Estelite Asteria Tokuyama",
-								desc: "высокоэстетическая пломба Estelite Asteria Tokuyama",
+								name: "Высокоэстетический наногибридный композит",
+								desc: "высокоэстетическая анатомическая реставрация",
 							},
 						].map((mat) => (
 							<button

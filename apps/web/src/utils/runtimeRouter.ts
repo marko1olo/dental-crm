@@ -423,7 +423,7 @@ export interface CbctStudioRouteParams {
  * Authoritatively parses whether the current window/URL is directed to the standalone
  * CBCT Radiology Studio Cockpit (/cbct-studio or ?view=cbct-studio).
  */
-export function parseCbctStudioRoute(targetUrl?: string | Location): CbctStudioRouteParams {
+export function parseCbctStudioRoute(targetUrl?: string | Location | { pathname?: string; search?: string; hash?: string }): CbctStudioRouteParams {
 	if (typeof window === "undefined" && !targetUrl) {
 		return { isCbctStudio: false };
 	}
@@ -519,11 +519,11 @@ export function parseCbctStudioRoute(targetUrl?: string | Location): CbctStudioR
  * Builds the canonical URL for launching the standalone CBCT Studio in a separate window.
  */
 export function buildCbctStudioPopoutUrl(params: {
-	studyId?: string;
-	patientId?: string;
-	patientName?: string;
-	mode?: string;
-	demo?: boolean;
+	studyId?: string | undefined;
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	mode?: string | undefined;
+	demo?: boolean | undefined;
 }): string {
 	const query = new URLSearchParams();
 	query.set("view", "cbct-studio");
@@ -540,17 +540,17 @@ export function buildCbctStudioPopoutUrl(params: {
  * Dispatches opening the CBCT Studio into an autonomous window across Desktop .EXE and Web Browser.
  */
 export async function routeOpenCbctPopout(params: {
-	studyId?: string;
-	patientId?: string;
-	patientName?: string;
-	mode?: string;
-	demo?: boolean;
-	width?: number;
-	height?: number;
+	studyId?: string | undefined;
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	mode?: string | undefined;
+	demo?: boolean | undefined;
+	width?: number | undefined;
+	height?: number | undefined;
 }): Promise<{ success: boolean; popoutWindow?: Window | null; fallbackUrl?: string; error?: string }> {
 	const url = buildCbctStudioPopoutUrl(params);
 	const { openCbctPopoutWindow } = await import("../native/desktopBridge.js");
-	return openCbctPopoutWindow({
+	const res = await openCbctPopoutWindow({
 		url,
 		...(params.studyId !== undefined ? { studyId: params.studyId } : {}),
 		...(params.patientId !== undefined ? { patientId: params.patientId } : {}),
@@ -558,7 +558,179 @@ export async function routeOpenCbctPopout(params: {
 		width: params.width ?? 1600,
 		height: params.height ?? 1000,
 	});
+	return {
+		success: res.success,
+		...(res.popoutWindow !== undefined ? { popoutWindow: res.popoutWindow } : {}),
+		...(res.fallbackUrl !== undefined ? { fallbackUrl: res.fallbackUrl } : {}),
+		...(res.error !== undefined ? { error: res.error } : {}),
+	};
+}
+
+export interface CephStudioRouteParams {
+	readonly isCephStudio: boolean;
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly imageUrl?: string | undefined;
+	readonly mode?: string | undefined;
+	readonly isDemo?: boolean | undefined;
+	readonly demoMode?: boolean | undefined;
+}
+
+/**
+ * Authoritatively parses whether the current window/URL is directed to the standalone
+ * Cephalometric TRG Studio (/radiology/ceph-studio, /ceph-studio or ?view=ceph-studio).
+ */
+export function parseCephStudioRoute(targetUrl?: string | Location): CephStudioRouteParams {
+	if (typeof window === "undefined" && !targetUrl) {
+		return { isCephStudio: false };
+	}
+
+	let pathname = "";
+	let search = "";
+	let hash = "";
+
+	if (typeof targetUrl === "string") {
+		try {
+			const parsed = new URL(targetUrl, "http://localhost");
+			pathname = parsed.pathname;
+			search = parsed.search;
+			hash = parsed.hash;
+		} catch {
+			pathname = targetUrl;
+		}
+	} else if (targetUrl) {
+		pathname = targetUrl.pathname || "";
+		search = targetUrl.search || "";
+		hash = targetUrl.hash || "";
+	} else if (typeof window !== "undefined") {
+		pathname = window.location.pathname || "";
+		search = window.location.search || "";
+		hash = window.location.hash || "";
+	}
+
+	const searchParams = new URLSearchParams(search);
+	const hashClean = hash.replace(/^#\/?/, "");
+	const hashParams = new URLSearchParams(hashClean.includes("?") ? hashClean.slice(hashClean.indexOf("?")) : "");
+
+	const isPathMatch =
+		pathname === "/ceph-studio" ||
+		pathname.startsWith("/ceph-studio/") ||
+		pathname === "/radiology/ceph-studio" ||
+		pathname.startsWith("/radiology/ceph-studio/") ||
+		pathname === "/ceph" ||
+		pathname.startsWith("/ceph/");
+
+	const isSearchMatch =
+		searchParams.get("view") === "ceph-studio" ||
+		searchParams.get("view") === "ceph" ||
+		searchParams.get("ceph") === "studio" ||
+		searchParams.get("ceph") === "standalone";
+
+	const isHashMatch =
+		hashClean === "ceph-studio" ||
+		hashClean.startsWith("ceph-studio?") ||
+		hashClean.startsWith("ceph-studio/") ||
+		hashClean === "radiology/ceph-studio" ||
+		hashParams.get("view") === "ceph-studio";
+
+	const isCephStudio = isPathMatch || isSearchMatch || isHashMatch;
+
+	const patientId =
+		searchParams.get("patientId") ||
+		searchParams.get("patient_id") ||
+		hashParams.get("patientId") ||
+		undefined;
+
+	const patientName =
+		searchParams.get("patientName") ||
+		searchParams.get("patient_name") ||
+		hashParams.get("patientName") ||
+		undefined;
+
+	const imageUrl =
+		searchParams.get("imageUrl") ||
+		searchParams.get("image_url") ||
+		hashParams.get("imageUrl") ||
+		undefined;
+
+	const mode =
+		searchParams.get("mode") ||
+		hashParams.get("mode") ||
+		undefined;
+
+	const isDemo =
+		searchParams.get("demo") === "true" ||
+		searchParams.get("ceph") === "demo" ||
+		hashClean.includes("demo") ||
+		undefined;
+
+	const demoMode =
+		searchParams.get("patientDemo") === "true" ||
+		hashParams.get("patientDemo") === "true" ||
+		undefined;
+
+	return {
+		isCephStudio,
+		patientId,
+		patientName,
+		imageUrl,
+		mode,
+		isDemo,
+		demoMode,
+	};
+}
+
+/**
+ * Builds the canonical URL for launching the standalone Cephalometric TRG Studio in a separate window.
+ */
+export function buildCephStudioPopoutUrl(params: {
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	imageUrl?: string | undefined;
+	mode?: string | undefined;
+	demo?: boolean | undefined;
+	patientDemo?: boolean | undefined;
+}): string {
+	const query = new URLSearchParams();
+	query.set("view", "ceph-studio");
+	if (params.patientId) query.set("patientId", params.patientId);
+	if (params.patientName) query.set("patientName", params.patientName);
+	if (params.imageUrl) query.set("imageUrl", params.imageUrl);
+	if (params.mode) query.set("mode", params.mode);
+	if (params.demo) query.set("demo", "true");
+	if (params.patientDemo) query.set("patientDemo", "true");
+
+	return `/radiology/ceph-studio?${query.toString()}`;
+}
+
+/**
+ * Dispatches opening the Cephalometric TRG Studio into an autonomous window across Desktop .EXE and Web Browser.
+ */
+export async function routeOpenCephPopout(params: {
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	imageUrl?: string | undefined;
+	mode?: string | undefined;
+	demo?: boolean | undefined;
+	width?: number | undefined;
+	height?: number | undefined;
+}): Promise<{ success: boolean; popoutWindow?: Window | null | undefined; fallbackUrl?: string | undefined; error?: string | undefined }> {
+	const url = buildCephStudioPopoutUrl(params);
+	const { openCbctPopoutWindow } = await import("../native/desktopBridge.js");
+	const res = await openCbctPopoutWindow({
+		url,
+		...(params.patientId !== undefined ? { patientId: params.patientId } : {}),
+		...(params.patientName !== undefined ? { patientName: params.patientName } : {}),
+		title: `ТРГ Цефалометрия - ${params.patientName || "Пациент"}`,
+		width: params.width ?? 1600,
+		height: params.height ?? 1000,
+	});
+	return {
+		success: res.success,
+		...(res.popoutWindow !== undefined ? { popoutWindow: res.popoutWindow } : {}),
+		...(res.fallbackUrl !== undefined ? { fallbackUrl: res.fallbackUrl } : {}),
+		...(res.error !== undefined ? { error: res.error } : {}),
+	};
 }
 
 export type { DispatchFiscalReceiptParams };
-

@@ -138,12 +138,19 @@ describe("CommerceML Decomposed Modular Architecture Tests", () => {
 	it("CommerceMlService facade delegates methods transparently", async () => {
 		const catalogRes = await CommerceMlService.buildCatalogXml({
 			organizationId: TEST_ORG_ID,
+			classifierName: "Классификатор стоматологических услуг",
+			catalogName: "Прейскурант клиники",
+			includeInactive: false,
+			priceTypeTitle: "Основной прайс-лист",
 		});
 		assert.ok(catalogRes.xml);
 		assert.ok(catalogRes.sha256);
 
 		const offersRes = await CommerceMlService.buildOffersXml({
 			organizationId: TEST_ORG_ID,
+			warehouseName: "Основной склад клиники",
+			priceTypeTitle: "Учетная цена списания",
+			includeZeroStock: true,
 		});
 		assert.ok(offersRes.xml);
 		assert.ok(offersRes.sha256);

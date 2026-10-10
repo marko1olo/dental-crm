@@ -40,6 +40,7 @@ describe("StomtDefects Monolith Decomposition Suite", () => {
 
 		// 1. Healthy
 		const healthy = STOMX_TOOTH_DEFECTS[0];
+		assert.ok(healthy, "Дефект Healthy обязан присутствовать");
 		assert.strictEqual(healthy.id, 2);
 		assert.strictEqual(healthy.alias, "ok");
 		assert.strictEqual(healthy.color, "green");
@@ -147,7 +148,7 @@ describe("StomtDefects Monolith Decomposition Suite", () => {
 		assert.ok(blackI);
 		assert.strictEqual(blackI?.mkb10, "K02.1");
 		assert.ok(blackI?.recommended804nCodes?.includes("A16.07.002.001"));
-		assert.ok(blackI?.doctorFastNoteTemplate?.length > 20);
+		assert.ok((blackI?.doctorFastNoteTemplate?.length ?? 0) > 20);
 
 		// Non-caries presets
 		assert.ok(CLINICAL_NON_CARIES_PRESETS.length >= 5);

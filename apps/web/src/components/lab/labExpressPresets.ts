@@ -69,7 +69,7 @@ export const EXPRESS_PRESET_ZIRCONIA_CROWN: ExpressLabPreset = {
 
 export const EXPRESS_PRESET_PMMA_TEMPORARY: ExpressLabPreset = {
 	id: "pmma_temporary_express",
-	title: "Временная фрезерованная коронка PMMA (1 клик)",
+	title: "Временная фрезерованная коронка PMMA",
 	shortDesc: "Фрезерованная провизорная пластмасса CAD/CAM PMMA, зазор 40 мкм, срок 2 раб. дня (3 500 ₽ / 1 200 ₽)",
 	constructionType: "single_crown",
 	materialId: "pmma_temporary",

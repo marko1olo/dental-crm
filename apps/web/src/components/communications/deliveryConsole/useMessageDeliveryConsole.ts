@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../../contexts/AppLogicContext";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { showToast } from "../../GlobalToast";
 import {
@@ -98,7 +99,41 @@ export function useMessageDeliveryConsole(props?: MessageDeliveryConsoleProps) {
 				commQueries.getChatQuota(),
 			]);
 
-			const gatewayData = await readJson<GatewayStatus>(gatewayResponse);
+			const rawGatewayData = await readJson<GatewayStatus>(gatewayResponse);
+			const hasAnyConfigured = Object.values(rawGatewayData?.channels ?? {}).some(
+				(ch) => ch?.configured,
+			);
+			const gatewayData: GatewayStatus =
+				!hasAnyConfigured && isDemoShowcaseMode()
+					? {
+							...rawGatewayData,
+							channels: {
+								...rawGatewayData.channels,
+								sms: {
+									configured: true,
+									provider: "SMS.RU",
+									sender: "DENTE",
+									balance: { amount: 4850, currency: "₽" },
+									balanceError: null,
+								},
+								whatsapp: { configured: true },
+								telegram: { configured: true },
+								email: rawGatewayData.channels?.email ?? {
+									configured: true,
+									host: "smtp.dente-demo.ru",
+									from: "clinic@dente-demo.ru",
+									requireTls: true,
+								},
+							},
+							automaticSending: {
+								...(rawGatewayData.automaticSending ?? {
+									waiting: 0,
+									oldestWaitingAt: null,
+								}),
+								enabled: true,
+							},
+						}
+					: rawGatewayData;
 			const templateData = await readJson<{ templates: TemplateItem[] }>(
 				templateResponse,
 			);

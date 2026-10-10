@@ -4,11 +4,11 @@ import { Users, UserCheck, CalendarCheck, CheckCircle2 } from "lucide-react";
 import type { ShiftQueueCounts } from "./types";
 
 export interface StatusFilterToggleGroupProps {
-	scheduleStatusFilter?: string | null;
-	setScheduleStatusFilter?: (status: string | null) => void;
-	queueCounts?: ShiftQueueCounts;
-	activeScheduleFilterCount?: number;
-	resetScheduleFilters?: () => void;
+	scheduleStatusFilter?: string | null | undefined;
+	setScheduleStatusFilter?: ((status: string | null) => void) | undefined;
+	queueCounts?: ShiftQueueCounts | undefined;
+	activeScheduleFilterCount?: number | undefined;
+	resetScheduleFilters?: (() => void) | undefined;
 }
 
 export function StatusFilterToggleGroup({
@@ -34,7 +34,7 @@ export function StatusFilterToggleGroup({
 			<button
 				type="button"
 				data-testid="schedule-status-filter-all"
-				className={`quick-chip ${isAllActive ? "active font-semibold bg-[var(--paper)] text-[var(--ink)] shadow-2xs border border-[var(--line)]/60" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"} dente-segmented-item schedule-queue-tab-all h-7 min-h-[26px] max-h-7 shrink-0 px-2 text-[12px] font-medium cursor-pointer rounded-md inline-flex items-center gap-1.5 select-none whitespace-nowrap transition-all`}
+				className={`dente-segmented-item schedule-queue-tab-all ${isAllActive ? "active font-semibold bg-[var(--paper)] text-[var(--ink)] shadow-2xs border border-[var(--line)]/60" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"} h-7 min-h-[26px] max-h-7 shrink-0 px-2 text-[12px] font-medium cursor-pointer rounded-md inline-flex items-center gap-1.5 select-none whitespace-nowrap transition-all`}
 				onClick={() => {
 					resetScheduleFilters?.();
 					if (setScheduleStatusFilter) {
@@ -46,8 +46,8 @@ export function StatusFilterToggleGroup({
 				aria-pressed={isAllActive}
 			>
 				<Users size={13} className="shrink-0 text-teal-600 dark:text-teal-400" />
-				<span className="hidden xl:inline whitespace-nowrap shrink-0">Все записи</span>
-				<span className="xl:hidden whitespace-nowrap shrink-0">Все</span>
+				<span className="hidden 2xl:inline whitespace-nowrap shrink-0">Все записи</span>
+				<span className="2xl:hidden whitespace-nowrap shrink-0">Все</span>
 				{queueCounts?.all !== undefined && (
 					<span
 						data-testid="schedule-queue-count-all"
@@ -66,7 +66,7 @@ export function StatusFilterToggleGroup({
 			<button
 				type="button"
 				data-testid="schedule-status-filter-arrived"
-				className={`quick-chip dente-segmented-item schedule-queue-tab-arrived ${
+				className={`dente-segmented-item schedule-queue-tab-arrived ${
 					scheduleStatusFilter === "arrived"
 						? "active font-semibold bg-[var(--paper)] text-[var(--ink)] shadow-2xs border border-[var(--line)]/60"
 						: "border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"
@@ -103,7 +103,7 @@ export function StatusFilterToggleGroup({
 			<button
 				type="button"
 				data-testid="schedule-status-filter-in-treatment"
-				className={`quick-chip dente-segmented-item schedule-queue-tab-in-treatment ${
+				className={`dente-segmented-item schedule-queue-tab-in-treatment ${
 					scheduleStatusFilter === "in_treatment"
 						? "active font-semibold bg-[var(--paper)] text-[var(--ink)] shadow-2xs border border-[var(--line)]/60"
 						: "border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"
@@ -140,7 +140,7 @@ export function StatusFilterToggleGroup({
 			<button
 				type="button"
 				data-testid="schedule-status-filter-completed"
-				className={`quick-chip dente-segmented-item schedule-queue-tab-completed ${
+				className={`dente-segmented-item schedule-queue-tab-completed ${
 					scheduleStatusFilter === "completed"
 						? "active font-semibold bg-[var(--paper)] text-[var(--ink)] shadow-2xs border border-[var(--line)]/60"
 						: "border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"

@@ -91,7 +91,7 @@ export function MarketingView({
 						data-testid="tab-nav-analytics"
 					>
 						<TrendingUp size={14} aria-hidden="true" />
-						<span>Сквозная аналитика и воронка</span>
+						<span>Сводка и воронка</span>
 					</button>
 
 					<button
@@ -111,7 +111,7 @@ export function MarketingView({
 						data-testid="tab-nav-recalls"
 					>
 						<Users size={14} aria-hidden="true" />
-						<span>Плановый профосмотр / Возврат пациентов</span>
+						<span>Профосмотр и возврат</span>
 					</button>
 
 					<button
@@ -121,7 +121,7 @@ export function MarketingView({
 						data-testid="tab-nav-romi"
 					>
 						<BarChart3 size={14} aria-hidden="true" />
-						<span>Окупаемость рекламы (ROMI)</span>
+						<span>Окупаемость (ROMI)</span>
 					</button>
 				</nav>
 			</div>
@@ -131,6 +131,7 @@ export function MarketingView({
 				<MarketingDashboardView
 					clinicName={clinicName}
 					onNavigateToRecalls={() => setActiveTab("recalls")}
+					embedded={true}
 				/>
 			)}
 

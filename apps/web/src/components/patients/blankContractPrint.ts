@@ -4,3 +4,4 @@
  * Facade file. See ./blankContract/ for implementation.
  */
 export * from "./blankContract/index";
+export { printBlankMedicalContract, printBlankMedicalConsent } from "./blankContract/index";

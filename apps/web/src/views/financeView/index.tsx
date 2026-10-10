@@ -7,7 +7,7 @@ import { QuickExpenseModal } from "../../components/finance/QuickExpenseModal";
 import { TaxDeductionCertificateModal } from "../../components/finance/TaxDeductionCertificateModal";
 import { TimesheetT13Modal } from "../../components/payroll/TimesheetT13Modal";
 import { FamilyCombinedBillingModal } from "../../components/finance/FamilyCombinedBillingModal";
-import { PaymentSplitModal } from "../../components/finance/PaymentSplitModal";
+import { PaymentModal } from "../../components/finance/PaymentModal";
 import { ServiceCatalogStrip } from "../../FinancePlanning";
 import { PaymentCapture } from "../../PaymentCapture";
 import { FinanceOperationsToolbar } from "./FinanceOperationsToolbar";
@@ -282,17 +282,18 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 			)}
 
 			{s.isSplitPaymentOpen && (
-				<PaymentSplitModal
+				<PaymentModal
 					isOpen={s.isSplitPaymentOpen}
 					onClose={() => s.setIsSplitPaymentOpen(false)}
-					totalBillRub={s.effectiveBillingSummary?.totalDueRub ?? 0}
+					amountRub={s.effectiveBillingSummary?.totalDueRub ?? 0}
 					patientId={s.effectivePatient?.id}
 					patientName={s.effectivePatient?.fullName}
 					patientPhone={s.effectivePatient?.phone ?? undefined}
 					patientDepositRub={s.effectivePatient && typeof s.effectivePatient.depositRub === "number" ? s.effectivePatient.depositRub : 0}
 					patientFamilyBalanceRub={s.effectivePatient?.familyBalanceRub ?? 0}
-					cashierFullName={s.paymentFiscalCashierName || undefined}
-					onPaymentComplete={() => {
+					cashierName={s.paymentFiscalCashierName || undefined}
+					defaultMethod="split"
+					onSuccess={() => {
 						void s.loadDashboard?.();
 						s.setIsSplitPaymentOpen(false);
 					}}

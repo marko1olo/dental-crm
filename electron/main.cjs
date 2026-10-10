@@ -2971,6 +2971,28 @@ if (app && app.commandLine) {
 	app.commandLine.appendSwitch("media-cache-size", "134217728");
 }
 
+/**
+ * Dispatches dental-dicom:// and dente-ct:// URI protocol requests.
+ * Format: dental-dicom://open?studyPath=...&viewer=...
+ */
+function handleProtocolUrl(urlStr) {
+	if (!urlStr || typeof urlStr !== "string") return;
+	try {
+		if (!urlStr.startsWith("dental-dicom://") && !urlStr.startsWith("dente-ct://")) return;
+		const parsed = new URL(urlStr);
+		const search = parsed.searchParams;
+		const viewerId = search.get("viewer") || search.get("viewerId") || undefined;
+		const exePath = search.get("exe") || search.get("exePath") || undefined;
+		const studyPath = search.get("path") || search.get("studyPath") || undefined;
+
+		if (studyPath || viewerId || exePath) {
+			void launchExternalCtViewer({ viewerId, exePath, studyPath });
+		}
+	} catch (e) {
+		console.warn("[Desktop Main] Error handling protocol URL:", e);
+	}
+}
+
 if (app && app.whenReady) {
 	app.whenReady().then(() => {
 		// Aggressive static asset caching for low-spec HDDs (5400 RPM)
@@ -2993,6 +3015,31 @@ if (app && app.whenReady) {
 				callback({ responseHeaders });
 			});
 		}
+
+		if (app?.setAsDefaultProtocolClient) {
+			try {
+				app.setAsDefaultProtocolClient("dental-dicom");
+				app.setAsDefaultProtocolClient("dente-ct");
+			} catch (protoErr) {
+				console.warn("[Desktop Main] Protocol client registration failed:", protoErr);
+			}
+		}
+
+		app.on("second-instance", (_event, argv) => {
+			if (mainWindow) {
+				if (mainWindow.isMinimized()) mainWindow.restore();
+				mainWindow.focus();
+			}
+			const uriArg = argv?.find((arg) => arg.startsWith("dental-dicom://") || arg.startsWith("dente-ct://"));
+			if (uriArg) {
+				handleProtocolUrl(uriArg);
+			}
+		});
+
+		app.on("open-url", (event, url) => {
+			event.preventDefault();
+			handleProtocolUrl(url);
+		});
 
 		registerIpcHandlers();
 		createWindow();
@@ -3195,6 +3242,18 @@ const KNOWN_CT_VIEWER_CANDIDATES = [
 			"C:\\Program Files (x86)\\Morita\\iDixel\\iDixel.exe",
 		],
 	},
+	{
+		id: "icat-vision",
+		name: "i-CATVision (Imaging Sciences)",
+		vendor: "icat",
+		iconKey: "icat",
+		paths: [
+			"C:\\Program Files\\i-CAT\\i-CATVision.exe",
+			"C:\\Program Files (x86)\\i-CAT\\i-CATVision.exe",
+			"C:\\i-CAT\\i-CATVision.exe",
+			"C:\\i-CATVision\\i-CATVision.exe",
+		],
+	},
 ];
 
 /**
@@ -3300,6 +3359,158 @@ async function detectInstalledCtViewers() {
 }
 
 /**
+ * Unpacks CT zip archive to temporary folder for external viewer ingestion
+ */
+async function extractCtZipForExternalViewer(zipPath) {
+	const os = require("node:os");
+	const { execSync } = require("node:child_process");
+	const extractFolder = path.join(
+		os.tmpdir(),
+		"DenteCT",
+		`ct_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`
+	);
+	fs.mkdirSync(extractFolder, { recursive: true });
+
+	try {
+		// 1. Try Windows native bsdtar (instant C libarchive decompression)
+		execSync(`tar -xf "${zipPath}" -C "${extractFolder}"`, { stdio: "ignore", timeout: 30000 });
+	} catch (tarErr) {
+		console.warn("[Desktop Main] tar extraction failed, trying PowerShell Expand-Archive:", tarErr);
+		try {
+			execSync(
+				`powershell.exe -NoProfile -NonInteractive -Command "Expand-Archive -LiteralPath '${zipPath.replace(/'/g, "''")}' -DestinationPath '${extractFolder.replace(/'/g, "''")}' -Force"`,
+				{ stdio: "ignore", timeout: 45000 }
+			);
+		} catch (psErr) {
+			console.error("[Desktop Main] Failed to extract CT zip:", psErr);
+			return zipPath;
+		}
+	}
+
+	// Find DICOMDIR or first directory containing DICOM files
+	function findDicomTarget(dir, depth = 0) {
+		if (depth > 4) return null;
+		try {
+			const entries = fs.readdirSync(dir, { withFileTypes: true });
+			// Priority 1: DICOMDIR file
+			const dicomdir = entries.find((e) => e.isFile() && e.name.toUpperCase() === "DICOMDIR");
+			if (dicomdir) return path.join(dir, dicomdir.name);
+
+			// Priority 2: Subfolder with DICOM files
+			const hasDcm = entries.some(
+				(e) => e.isFile() && (e.name.toLowerCase().endsWith(".dcm") || /^[0-9A-Fa-f._-]+$/.test(e.name))
+			);
+			if (hasDcm) return dir;
+
+			// Priority 3: First sub-directory
+			for (const e of entries) {
+				if (e.isDirectory()) {
+					const sub = findDicomTarget(path.join(dir, e.name), depth + 1);
+					if (sub) return sub;
+				}
+			}
+		} catch {
+			// ignore read errors
+		}
+		return null;
+	}
+
+	const targetPath = findDicomTarget(extractFolder);
+	return targetPath || extractFolder;
+}
+
+/**
+ * Resolves vendor-specific CLI launch arguments for CT viewers.
+ * Different CBCT viewer suites require specific command line flags
+ * to immediately open a DICOMDIR, study folder, or series slices,
+ * preventing empty splash screens that force doctors to search manually.
+ */
+function buildVendorCtCliArgs(viewerId, targetExe, effectiveStudyPath) {
+	if (!effectiveStudyPath) return [];
+
+	let dicomDirTarget = null;
+	try {
+		if (fs.existsSync(effectiveStudyPath) && fs.statSync(effectiveStudyPath).isDirectory()) {
+			const files = fs.readdirSync(effectiveStudyPath);
+			const dicomDirName = files.find((f) => /^dicomdir(\.dir)?$/i.test(f));
+			if (dicomDirName) {
+				dicomDirTarget = path.join(effectiveStudyPath, dicomDirName);
+			}
+		}
+	} catch {}
+
+	const pathToUse = dicomDirTarget || effectiveStudyPath;
+	const lowerId = (viewerId || "").toLowerCase();
+	const lowerExe = path.basename(targetExe || "").toLowerCase();
+
+	// 1. Planmeca Romexis 3D
+	if (lowerId.includes("romexis") || lowerExe.includes("romexis")) {
+		return ["-study", pathToUse];
+	}
+
+	// 2. Vatech Ez3D-i
+	if (lowerId.includes("ez3d-i") || lowerId.includes("vatech") || lowerExe.includes("ez3d-i")) {
+		return ["/open", pathToUse];
+	}
+
+	// 3. Picasso / Ez3D2009
+	if (
+		lowerId.includes("picasso") ||
+		lowerId.includes("ez3d2009") ||
+		lowerExe.includes("picasso") ||
+		lowerExe.includes("ez3d2009")
+	) {
+		return [pathToUse];
+	}
+
+	// 4. CyberMed OnDemand3D
+	if (lowerId.includes("ondemand3d") || lowerExe.includes("ondemand3d")) {
+		if (dicomDirTarget) {
+			return ["-dicomdir", dicomDirTarget];
+		}
+		return ["-f", effectiveStudyPath];
+	}
+
+	// 5. Dentsply Sirona Sidexis 4 / Galileos
+	if (
+		lowerId.includes("sidexis") ||
+		lowerId.includes("galileos") ||
+		lowerId.includes("sirona") ||
+		lowerExe.includes("sidexis") ||
+		lowerExe.includes("galileos")
+	) {
+		return ["/open", pathToUse];
+	}
+
+	// 6. Carestream CS 3D Imaging
+	if (
+		lowerId.includes("carestream") ||
+		lowerId.includes("cs3d") ||
+		lowerExe.includes("cs 3d imaging") ||
+		lowerExe.includes("csimaging")
+	) {
+		return ["/open", pathToUse];
+	}
+
+	// 7. NewTom NNT
+	if (lowerId.includes("newtom") || lowerId.includes("nnt") || lowerExe.includes("nnt")) {
+		return ["-study", pathToUse];
+	}
+
+	// 8. J. Morita i-Dixel
+	if (lowerId.includes("morita") || lowerId.includes("idixel") || lowerExe.includes("idixel")) {
+		return [pathToUse];
+	}
+
+	// 9. i-CAT / i-CATVision
+	if (lowerId.includes("icat") || lowerExe.includes("icat")) {
+		return [pathToUse];
+	}
+
+	return [pathToUse];
+}
+
+/**
  * Safely launches external CT / DICOM viewer process.
  * Protected against process hangs (detached: true, stdio: 'ignore', unref).
  */
@@ -3334,6 +3545,7 @@ async function launchExternalCtViewer({ viewerId, exePath, studyPath } = {}) {
 			success: false,
 			viewerName: viewerId || "Неизвестный просмотрщик",
 			error: "Не указан исполняемый файл или просмотрщик КТ не найден на данном компьютере",
+			canFallbackToInternalStudio: true,
 		};
 	}
 
@@ -3342,6 +3554,7 @@ async function launchExternalCtViewer({ viewerId, exePath, studyPath } = {}) {
 			success: false,
 			viewerName: path.basename(targetExe),
 			error: `Исполняемый файл КТ-просмотрщика не найден по пути: ${targetExe}`,
+			canFallbackToInternalStudio: true,
 		};
 	}
 
@@ -3350,14 +3563,25 @@ async function launchExternalCtViewer({ viewerId, exePath, studyPath } = {}) {
 			success: false,
 			viewerName: path.basename(targetExe),
 			error: `Папка исследования или DICOM-файл не найден: ${studyPath}`,
+			canFallbackToInternalStudio: true,
 		};
+	}
+
+	let effectiveStudyPath = studyPath;
+	if (studyPath && (studyPath.toLowerCase().endsWith(".zip") || studyPath.toLowerCase().endsWith(".7z"))) {
+		try {
+			effectiveStudyPath = await extractCtZipForExternalViewer(studyPath);
+		} catch (extractErr) {
+			console.warn("[Desktop Main] Automatic CT ZIP extraction failed, using original path:", extractErr);
+		}
 	}
 
 	try {
 		const { spawn } = require("node:child_process");
-		const args = studyPath ? [studyPath] : [];
+		const args = buildVendorCtCliArgs(viewerId, targetExe, effectiveStudyPath);
 
 		const child = spawn(targetExe, args, {
+			cwd: path.dirname(targetExe),
 			detached: true,
 			stdio: "ignore",
 			windowsHide: false,
@@ -3369,12 +3593,14 @@ async function launchExternalCtViewer({ viewerId, exePath, studyPath } = {}) {
 			success: true,
 			pid: child.pid,
 			viewerName: path.basename(targetExe),
+			commandLine: `${targetExe} ${args.join(" ")}`,
 		};
 	} catch (err) {
 		return {
 			success: false,
 			viewerName: path.basename(targetExe),
 			error: `Ошибка запуска КТ-просмотрщика: ${err.message}`,
+			canFallbackToInternalStudio: true,
 		};
 	}
 }
@@ -3422,18 +3648,18 @@ async function scanDownloadsForCt({ hotFolderPath, maxDays = 7, maxDepth = 2 } =
 	const cutoffTime = Date.now() - maxDays * 24 * 60 * 60 * 1000;
 	const candidateRoots = [];
 
-	const userDownloads = path.join(require("node:os").homedir(), "Downloads");
-	if (fs.existsSync(userDownloads)) {
-		candidateRoots.push(userDownloads);
-	}
-	if (hotFolderPath && fs.existsSync(hotFolderPath) && hotFolderPath !== userDownloads) {
+	if (hotFolderPath && fs.existsSync(hotFolderPath)) {
 		candidateRoots.push(hotFolderPath);
+	}
+	const userDownloads = path.join(require("node:os").homedir(), "Downloads");
+	if (fs.existsSync(userDownloads) && userDownloads !== hotFolderPath) {
+		candidateRoots.push(userDownloads);
 	}
 
 	const results = [];
 	const visitedDirs = new Set();
 	const startTime = Date.now();
-	const scanTimeoutMs = 450;
+	const scanTimeoutMs = 2500;
 
 	async function walkDir(currentDir, depth) {
 		if (depth > maxDepth || Date.now() - startTime > scanTimeoutMs) {
@@ -3658,6 +3884,8 @@ module.exports = {
 	launchCliBridge,
 	KNOWN_CT_VIEWER_CANDIDATES,
 	detectInstalledCtViewers,
+	buildVendorCtCliArgs,
+	handleProtocolUrl,
 	launchExternalCtViewer,
 	extractPatientHint,
 	detectCtModality,

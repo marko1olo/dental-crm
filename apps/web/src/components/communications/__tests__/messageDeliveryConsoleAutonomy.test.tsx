@@ -21,6 +21,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 const expect = (actual: any) => ({
@@ -204,11 +205,12 @@ describe("MessageDeliveryConsole Omnichannel Textarea Autonomy (Mandates 8e & 8n
 	});
 
 	it("5. source code audit: textarea #enqueue-body has no disabled property", () => {
-		const consolePath = path.resolve(
-			__dirname,
-			"../MessageDeliveryConsole.tsx",
-		);
-		const sourceCode = fs.readFileSync(consolePath, "utf-8");
+		const enqueuePath = fs.existsSync(
+			path.resolve(__dirname, "../deliveryConsole/DeliveryEnqueueForm.tsx"),
+		)
+			? path.resolve(__dirname, "../deliveryConsole/DeliveryEnqueueForm.tsx")
+			: path.resolve(__dirname, "../MessageDeliveryConsole.tsx");
+		const sourceCode = fs.readFileSync(enqueuePath, "utf-8");
 
 		// Extract textarea block
 		const textareaMatch = sourceCode.match(/<textarea[\s\S]*?id="enqueue-body"[\s\S]*?\/>/);
@@ -219,19 +221,26 @@ describe("MessageDeliveryConsole Omnichannel Textarea Autonomy (Mandates 8e & 8n
 	});
 
 	it("6. source code audit: outbox enqueue button and template save button are not blocked by empty inputs or background sync (Mandate 8e)", () => {
-		const consolePath = path.resolve(
-			__dirname,
-			"../MessageDeliveryConsole.tsx",
-		);
-		const sourceCode = fs.readFileSync(consolePath, "utf-8");
+		const enqueuePath = fs.existsSync(
+			path.resolve(__dirname, "../deliveryConsole/DeliveryEnqueueForm.tsx"),
+		)
+			? path.resolve(__dirname, "../deliveryConsole/DeliveryEnqueueForm.tsx")
+			: path.resolve(__dirname, "../MessageDeliveryConsole.tsx");
+		const templatePath = fs.existsSync(
+			path.resolve(__dirname, "../deliveryConsole/DeliveryTemplatesSection.tsx"),
+		)
+			? path.resolve(__dirname, "../deliveryConsole/DeliveryTemplatesSection.tsx")
+			: path.resolve(__dirname, "../MessageDeliveryConsole.tsx");
+		const enqueueCode = fs.readFileSync(enqueuePath, "utf-8");
+		const templateCode = fs.readFileSync(templatePath, "utf-8");
 
 		// Outbox enqueue submit button is only disabled when enqueueBusy (never dead grey button)
-		expect(sourceCode).not.toContain("disabled={!enqueueCanSubmit || !enqueueRecipient");
-		expect(sourceCode).toContain("disabled={enqueueBusy}");
+		expect(enqueueCode).not.toContain("disabled={!enqueueCanSubmit || !enqueueRecipient");
+		expect(enqueueCode).toContain("disabled={enqueueBusy}");
 
 		// Template save button is not disabled when title or body is empty
-		expect(sourceCode).not.toContain("disabled={busy || !draftTitle.trim() || !draftBody.trim()}");
-		expect(sourceCode).toContain("disabled={busy}\n\t\t\t\t\tonClick={() => void saveTemplate()}");
+		expect(templateCode).not.toContain("disabled={busy || !draftTitle.trim() || !draftBody.trim()}");
+		expect(templateCode).toContain("disabled={busy}\n\t\t\t\t\tonClick={() => void saveTemplate()}");
 	});
 
 	it("7. rendered markup: outbox enqueue button is clickable without being disabled by default", () => {

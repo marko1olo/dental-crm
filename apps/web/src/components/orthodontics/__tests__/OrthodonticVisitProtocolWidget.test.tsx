@@ -153,10 +153,10 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 		assert.ok(html.includes("data-testid=\"ortho-preset-debonding-retainer\""));
 		assert.ok(html.includes("Снятие брекет-системы"));
 
-		// 5. Aligner Lab Order (Mandate 8e)
+		// 5. Aligner Lab Order
 		assert.ok(html.includes("data-testid=\"ortho-preset-aligner-lab-order\""));
 		assert.ok(html.includes("Наряд ЗТЛ (Элайнеры / Каппа)"));
-		assert.ok(html.includes("Мандат 8e: Истечение 30 дней плана НЕ БЛОКИРУЕТ"));
+		assert.ok(html.includes("срок 5-7 дней"));
 	});
 
 	it("renders aligner attachments express block with 4 presets, delivery sets, and SOAP append button", () => {

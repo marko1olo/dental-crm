@@ -6,6 +6,7 @@ import { SoftPresenceIndicator } from "../../../presence/SoftPresenceIndicator";
 import { usePatientStore } from "../../../../store/patientStore";
 import { useAppStore } from "../../../../store/appStore";
 import { showToast } from "../../../GlobalToast";
+import type { SoftPeerPresence } from "../../../../hooks/useSoftPresence";
 import type { ShiftDayQueue } from "./types";
 
 export interface VisitShiftQueueControlsProps {
@@ -149,8 +150,8 @@ export interface VisitTimerAndPresenceControlsProps {
 	activeAppointment: any;
 	// biome-ignore lint/suspicious/noExplicitAny: doctor
 	activeDoctor: any;
-	activePeers?: string[];
-	summaryText?: string;
+	activePeers?: readonly SoftPeerPresence[] | undefined;
+	summaryText?: string | null | undefined;
 }
 
 /**
@@ -160,7 +161,7 @@ export function VisitTimerAndPresenceControls({
 	activeAppointment,
 	activeDoctor,
 	activePeers = [],
-	summaryText,
+	summaryText = null,
 }: VisitTimerAndPresenceControlsProps) {
 	const appointmentStartTime =
 		activeAppointment?.startTime ||

@@ -3,6 +3,6 @@
  * Conforming to Ministry of Health of the Russian Federation Order № 1089н
  */
 
-export * from './types.js';
-export * from './dentalIcd10DurationNorms.js';
-export * from './elnValidatorAndXmlBuilder.js';
+export * from "./types";
+export * from "./dentalIcd10DurationNorms";
+export * from "./elnValidatorAndXmlBuilder";

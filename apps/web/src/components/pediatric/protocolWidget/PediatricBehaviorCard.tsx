@@ -1,6 +1,6 @@
 import React from "react";
 import { Check } from "lucide-react";
-import type { FranklRating } from "../odontogram/pediatricDentitionEngine";
+import type { FranklRating } from "../../odontogram/pediatricDentitionEngine";
 import { FRANKL_EXPRESS_ITEMS } from "./constants";
 import type { FranklExpressItem } from "./types";
 

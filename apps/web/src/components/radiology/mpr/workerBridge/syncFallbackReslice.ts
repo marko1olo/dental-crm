@@ -10,15 +10,15 @@ import type {
 	CbctVoxelVolume,
 	MprPlane,
 	MprSliceExtractionResult,
-} from "../cbctMprMath";
+} from "../../cbctMprMath";
 import {
 	extractObliqueMprSlice,
 	type ObliqueSliceRenderOptions,
-} from "../cbctObliqueSliceMath";
+} from "../../cbctObliqueSliceMath";
 import {
 	extractArchCrossSectionSeries,
 	type CrossSectionSliceData,
-} from "../cbctCrossSectionResliceMath";
+} from "../../cbctCrossSectionResliceMath";
 import type {
 	DecodeDicomSliceTask,
 	DecodedSliceResult,

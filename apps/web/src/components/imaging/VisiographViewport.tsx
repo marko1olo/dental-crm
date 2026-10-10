@@ -9,7 +9,7 @@ export interface VisiographViewportProps {
 	readonly isStudioMode: boolean;
 	readonly currentImageUrl: string;
 	readonly effectivePatientId?: string | null | undefined;
-	readonly currentScan: XrayScan;
+	readonly currentScan?: XrayScan | null | undefined;
 	readonly initialStudioTool: "pointer" | "root_canal";
 	readonly quickPreset: VisiographPresetType;
 	readonly onCloseStudio: () => void;
@@ -30,8 +30,8 @@ export function VisiographViewport({
 				imageUrl={currentImageUrl}
 				patientId={effectivePatientId}
 				patientFullName={effectivePatientId ? `Пациент #${effectivePatientId}` : undefined}
-				toothCode={currentScan.toothCode}
-				studyId={currentScan.id}
+				toothCode={currentScan?.toothCode}
+				studyId={currentScan?.id}
 				initialTool={initialStudioTool}
 				onClose={onCloseStudio}
 			/>
@@ -55,9 +55,9 @@ export function VisiographViewport({
 			data-testid="visiograph-dominant-canvas"
 			style={{
 				width: "100%",
-				minHeight: "480px",
-				height: "560px",
-				maxHeight: "72vh",
+				minHeight: "540px",
+				height: "calc(100vh - 210px)",
+				maxHeight: "calc(100vh - 200px)",
 				borderRadius: "12px",
 				overflow: "hidden",
 				border: "1px solid var(--line)",
@@ -68,6 +68,35 @@ export function VisiographViewport({
 				justifyContent: "center",
 			}}
 		>
+			{/* Чистый русский паспорт снимка поверх запечённого текста датчика */}
+			<div
+				data-testid="visiograph-patient-passport-badge"
+				style={{
+					position: "absolute",
+					top: "6px",
+					left: "6px",
+					zIndex: 20,
+					display: "inline-flex",
+					alignItems: "center",
+					gap: "8px",
+					padding: "4px 10px",
+					borderRadius: "6px",
+					background: "rgba(10, 14, 23, 0.92)",
+					border: "1px solid rgba(45, 212, 191, 0.35)",
+					color: "#f8fafc",
+					fontSize: "11.5px",
+					fontWeight: 600,
+					pointerEvents: "none",
+				}}
+			>
+				<span style={{ color: "#2dd4bf", fontWeight: 700 }}>
+					{currentScan?.toothCode ? `RVG · Зуб #${currentScan.toothCode}` : "Прицельный снимок RVG"}
+				</span>
+				<span style={{ opacity: 0.85 }}>
+					{currentScan?.originalFilename || "Цифровой радиовизиограф"}
+				</span>
+			</div>
+
 			<ShadowAnalystImageSlider
 				imageUrl={currentImageUrl}
 				enhanced={true}

@@ -27,6 +27,7 @@ import { SURGICAL_MATERIAL_NORMS } from "./treatmentPlanSurgicalNorms";
 
 export { THERAPY_MATERIAL_NORMS } from "./treatmentPlanTherapyNorms";
 export { SURGICAL_MATERIAL_NORMS } from "./treatmentPlanSurgicalNorms";
+export type CompletedWorksActResult = CompletedWorksActAndWriteOffData;
 
 export interface InventoryItemLookup {
 	readonly id: string;

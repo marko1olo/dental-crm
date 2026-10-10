@@ -2,7 +2,7 @@
  * voiceCommandInterpreter.ts — Layer 2: Интерпретатор составных высказываний у кресла и генератор действий для ЭМК/зубной формулы
  */
 
-import type { OdontogramQuadrantId } from "../../components/odontogram/ToothChart";
+import type { OdontogramQuadrantId } from "../../../components/odontogram/ToothChart";
 import type {
 	AnesthesiaVoiceItem,
 	Procedure804nVoiceItem,

@@ -13,10 +13,6 @@ import {
 import { OdontogramViewContainer } from "./OdontogramViewContainer";
 import type { CheckoutPaymentMethodType } from "../payments/checkout/fastCheckoutPresets";
 import { calculateLiveInvoiceItems } from "./OdontogramLiveInvoice";
-import {
-	generateSoapFromOdontogramFinding,
-	generateSoapFromOdontogramStates,
-} from "../../lib/clinicalProtocols043";
 import "./odontogram.css";
 import { usePerspectiveStore } from "../../store/perspectiveStore";
 import { useAppStore } from "../../store/appStore";
@@ -25,6 +21,8 @@ import {
 	TOOTH_STATE_ACTIONS,
 	TEETH_SUBJECT,
 	getInitialShowcaseTeeth,
+	getClinicalBundleForToothState,
+	dispatchOdontogramSoapAndBundle,
 } from "./odontogramModuleConstants";
 import {
 	ToothActionMenuPortal,
@@ -37,23 +35,6 @@ import { OdontogramModalsLayer } from "./OdontogramModalsLayer";
 import { useOdontogramSync } from "./useOdontogramSync";
 import { useOdontogramAiIntegration } from "./useOdontogramAiIntegration";
 import { useOdontogramQuickActions } from "./useOdontogramQuickActions";
-import {
-	CLINICAL_SERVICE_BUNDLES,
-	type ClinicalServiceBundle,
-} from "../visit/clinicalServiceBundles";
-
-function getClinicalBundleForToothState(state: ToothState): ClinicalServiceBundle | null {
-	if (state === "Caries") {
-		return CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "caries") ?? null;
-	}
-	if (state === "Pulpitis" || state === "Periodontitis") {
-		return CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "endo_1") ?? null;
-	}
-	if (state === "Missing") {
-		return CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "surgery_extraction") ?? null;
-	}
-	return null;
-}
 
 // Re-exports for 100% backward compatibility
 export {
@@ -260,59 +241,16 @@ export const OdontogramModule = React.memo(({
 			const toothSurfaces =
 				activeSurfaces.length > 0 ? [...activeSurfaces] : undefined;
 			void updateToothState(targets, state, toothSurfaces ?? []);
-			try {
-				const findingPayload =
-					toothSurfaces && toothSurfaces.length > 0
-						? {
-								toothNumber: num,
-								state,
-								surfaces: toothSurfaces,
-						  }
-						: { toothNumber: num, state };
-				const soap = generateSoapFromOdontogramFinding(findingPayload);
-				window.dispatchEvent(
-					new CustomEvent("dente-apply-soap-protocol", {
-						detail: {
-							finding: findingPayload,
-							soap,
-							mode: "smart_append",
-							immediate: true,
-						},
-					}),
-				);
-
-				const bundle = getClinicalBundleForToothState(state);
-				if (bundle) {
-					targets.forEach((tNum) => {
-						window.dispatchEvent(
-							new CustomEvent("dente-add-services-to-invoice", {
-								detail: {
-									bundleId: bundle.id,
-									bundleTitle: bundle.title,
-									toothNumber: tNum,
-									toothCode: String(tNum),
-									patientId,
-									source: "odontogram_bundle",
-									services: bundle.services.map((s, idx) => ({
-										id: `srv_${patientId || "pat"}_tooth_${tNum}_${bundle.id}_${s.code804n}_${idx}`,
-										code: s.code804n,
-										code804n: s.code804n,
-										title: s.title,
-										price: s.priceRub,
-										priceRub: s.priceRub,
-										unitPriceRub: s.priceRub,
-										quantity: 1,
-										toothCode: String(tNum),
-										toothNumber: tNum,
-									})),
-								},
-							}),
-						);
-					});
-				}
-			} catch {
-				// Safe event dispatch fallback
-			}
+			const findingPayload =
+				toothSurfaces && toothSurfaces.length > 0
+					? { toothNumber: num, state, surfaces: toothSurfaces }
+					: { toothNumber: num, state };
+			dispatchOdontogramSoapAndBundle({
+				targets,
+				state,
+				findings: [findingPayload],
+				patientId,
+			});
 			setMenuConfig(null);
 		},
 		[menuConfig, selectedTeeth, updateToothState, activeSurfaces, patientId],
@@ -522,66 +460,24 @@ export const OdontogramModule = React.memo(({
 	const handleQuickStateChange = useCallback(
 		(targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => {
 			void updateToothState(targets, state, surfaces ? [...surfaces] : undefined);
-			try {
-				const findings = targets.map((num) => {
-					const existing = teethDataRef.current.find((t) => t.toothNumber === num);
-					const toothSurfaces =
-						surfaces && surfaces.length > 0
-							? surfaces
-							: existing?.surfaces && existing.surfaces.length > 0
-								? existing.surfaces
-								: undefined;
-					return toothSurfaces && toothSurfaces.length > 0
-						? { toothNumber: num, state, surfaces: toothSurfaces }
-						: { toothNumber: num, state };
-				});
-				const soap =
-					findings.length > 1
-						? generateSoapFromOdontogramStates(findings)
-						: generateSoapFromOdontogramFinding(findings[0]!);
-				window.dispatchEvent(
-					new CustomEvent("dente-apply-soap-protocol", {
-						detail: {
-							finding: findings[0],
-							soap,
-							mode: "smart_append",
-							immediate: true,
-						},
-					}),
-				);
-
-				const bundle = getClinicalBundleForToothState(state);
-				if (bundle) {
-					targets.forEach((tNum) => {
-						window.dispatchEvent(
-							new CustomEvent("dente-add-services-to-invoice", {
-								detail: {
-									bundleId: bundle.id,
-									bundleTitle: bundle.title,
-									toothNumber: tNum,
-									toothCode: String(tNum),
-									patientId,
-									source: "odontogram_bundle",
-									services: bundle.services.map((s, idx) => ({
-										id: `srv_${patientId || "pat"}_tooth_${tNum}_${bundle.id}_${s.code804n}_${idx}`,
-										code: s.code804n,
-										code804n: s.code804n,
-										title: s.title,
-										price: s.priceRub,
-										priceRub: s.priceRub,
-										unitPriceRub: s.priceRub,
-										quantity: 1,
-										toothCode: String(tNum),
-										toothNumber: tNum,
-									})),
-								},
-							}),
-						);
-					});
-				}
-			} catch {
-				// Safe event dispatch fallback
-			}
+			const findings = targets.map((num) => {
+				const existing = teethDataRef.current.find((t) => t.toothNumber === num);
+				const toothSurfaces =
+					surfaces && surfaces.length > 0
+						? surfaces
+						: existing?.surfaces && existing.surfaces.length > 0
+							? existing.surfaces
+							: undefined;
+				return toothSurfaces && toothSurfaces.length > 0
+					? { toothNumber: num, state, surfaces: toothSurfaces }
+					: { toothNumber: num, state };
+			});
+			dispatchOdontogramSoapAndBundle({
+				targets,
+				state,
+				findings,
+				patientId,
+			});
 		},
 		[updateToothState, teethDataRef, patientId],
 	);
@@ -696,59 +592,16 @@ export const OdontogramModule = React.memo(({
 							const toothSurfaces =
 								surfs && surfs.length > 0 ? [...surfs] : undefined;
 							void updateToothState(targets, state, toothSurfaces ?? []);
-							try {
-								const findingPayload =
-									toothSurfaces && toothSurfaces.length > 0
-										? {
-												toothNumber: num,
-												state,
-												surfaces: toothSurfaces,
-										  }
-										: { toothNumber: num, state };
-								const soap = generateSoapFromOdontogramFinding(findingPayload);
-								window.dispatchEvent(
-									new CustomEvent("dente-apply-soap-protocol", {
-										detail: {
-											finding: findingPayload,
-											soap,
-											mode: "smart_append",
-											immediate: true,
-										},
-									}),
-								);
-
-								const bundle = getClinicalBundleForToothState(state);
-								if (bundle) {
-									targets.forEach((tNum) => {
-										window.dispatchEvent(
-											new CustomEvent("dente-add-services-to-invoice", {
-												detail: {
-													bundleId: bundle.id,
-													bundleTitle: bundle.title,
-													toothNumber: tNum,
-													toothCode: String(tNum),
-													patientId,
-													source: "odontogram_bundle",
-													services: bundle.services.map((s, idx) => ({
-														id: `srv_${patientId || "pat"}_tooth_${tNum}_${bundle.id}_${s.code804n}_${idx}`,
-														code: s.code804n,
-														code804n: s.code804n,
-														title: s.title,
-														price: s.priceRub,
-														priceRub: s.priceRub,
-														unitPriceRub: s.priceRub,
-														quantity: 1,
-														toothCode: String(tNum),
-														toothNumber: tNum,
-													})),
-												},
-											}),
-										);
-									});
-								}
-							} catch {
-								// Safe event dispatch fallback
-							}
+							const findingPayload =
+								toothSurfaces && toothSurfaces.length > 0
+									? { toothNumber: num, state, surfaces: toothSurfaces }
+									: { toothNumber: num, state };
+							dispatchOdontogramSoapAndBundle({
+								targets,
+								state,
+								findings: [findingPayload],
+								patientId,
+							});
 							setRadialMenuData(null);
 						}}
 						onSelectSurfaces={(surfs) => {

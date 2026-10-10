@@ -240,7 +240,7 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 							title="Мягкий учет расхода при нехватке (списание с дефицитом): не блокирует приём пациента"
 						>
 							<ShieldAlert size={10} className="shrink-0" />
-							<span>Мягкий учет расхода (дефицит)</span>
+							<span>Дефицит</span>
 						</span>
 					)}
 				</div>
@@ -293,18 +293,19 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 					whiteSpace: "nowrap",
 				}}
 			>
-				<div className="flex items-center justify-end gap-1 whitespace-nowrap shrink-0">
+				<div className="flex items-center justify-end gap-1.5 whitespace-nowrap shrink-0">
 					{expiryTraffic.isBlocked ? (
-						/* Красный: блокировка отпуска пациентам + Акт утилизации СанПиН 3.3686-21 */
+						/* Красный: блокировка отпуска пациентам + Акт утилизации */
 						<button
 							type="button"
 							onClick={() => onOpenDisposalModal(item)}
 							className="h-7 px-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-98"
-							title="Срок годности истек: сформировать Акт утилизации по СанПиН 3.3686-21"
+							style={{ height: 28, minHeight: 28, borderRadius: 8 }}
+							title="Срок годности истек: сформировать акт утилизации"
 							data-testid={`btn-sanpin-disposal-act-${item.id}`}
 						>
 							<Trash2 size={12} className="shrink-0" />
-							<span>Акт утилизации СанПиН 3.3686-21</span>
+							<span>Акт утилизации</span>
 						</button>
 					) : (
 						/* Разрешено: списание по FEFO с поддержкой мягкого овердрафта */
@@ -315,10 +316,9 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 								className={`h-7 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0 ${
 									isOverdraft
 										? "bg-amber-600 hover:bg-amber-500 text-white shadow-xs"
-										: expiryTraffic.status === "warning_soon"
-										? "bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 border border-rose-500/25 ring-1 ring-amber-400"
 										: "bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 border border-rose-500/25"
 								}`}
+								style={{ height: 28, minHeight: 28, borderRadius: 8 }}
 								title={
 									isOverdraft
 										? "Списать расход сверх остатка (списание с дефицитом): клинический процесс не блокируется"
@@ -332,7 +332,7 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 								{isOverdraft ? (
 									<>
 										<ShieldAlert size={12} className="shrink-0" />
-										<span>Списать (с дефицитом)</span>
+										<span>Списание</span>
 									</>
 								) : (
 									<>
@@ -345,7 +345,15 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 							<button
 								type="button"
 								onClick={() => onReceiveItem(item, writeQty)}
-								className="h-7 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0 bg-[var(--teal-soft)] text-[var(--teal-dark,#0f766e)] hover:bg-[var(--teal-surface)] border border-[var(--teal)]"
+								className="secondary-button h-7 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0"
+								style={{
+									height: 28,
+									minHeight: 28,
+									borderRadius: 8,
+									background: "var(--teal-soft)",
+									color: "var(--teal-dark, #0f766e)",
+									borderColor: "var(--teal)",
+								}}
 								title="Оприходовать материал на склад"
 								data-testid={`btn-item-arrival-${item.id}`}
 							>
@@ -360,7 +368,8 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 						<button
 							type="button"
 							onClick={onToggleMenu}
-							className="w-6 h-7 rounded-lg text-xs transition-all cursor-pointer inline-flex items-center justify-center bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
+							className="secondary-button w-7 h-7 rounded-lg text-xs transition-all cursor-pointer inline-flex items-center justify-center"
+							style={{ height: 28, minHeight: 28, width: 28, padding: 0, borderRadius: 8 }}
 							title="Дополнительные операции"
 							data-testid={`btn-item-more-${item.id}`}
 							aria-expanded={isMenuOpen}

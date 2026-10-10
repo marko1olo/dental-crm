@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const odontogramRoutes = readFileSync(
 	"apps/api/src/routes/odontogram.ts",
@@ -56,10 +56,12 @@ const treatmentEstimator = readFileSync(
  * стража симметричным: маршрут и его клиент проверяются вместе. Стереть эти две
  * проверки вместе с файлом значило бы снять требование, у которого субъект есть.
  */
-const familyWalletPanel = readFileSync(
+const familyWalletPanel = [
 	"apps/web/src/components/finance/FamilyWalletPanel.tsx",
-	"utf8",
-);
+	"apps/web/src/components/finance/familyWallet/useFamilyWallet.ts",
+]
+	.map((p) => (existsSync(p) ? readFileSync(p, "utf8") : ""))
+	.join("\n");
 
 /*
  * ЧЕК: СУБЪЕКТОМ ТРЁХ ПРОВЕРОК БЫЛ МОК, ЖИВОЙ ВЛАДЕЛЕЦ — СЕРВЕРНЫЙ РЕНДЕР.

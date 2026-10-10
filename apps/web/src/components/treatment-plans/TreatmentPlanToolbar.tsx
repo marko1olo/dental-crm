@@ -292,7 +292,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 
 					{/* Action Buttons Right Group */}
 					<div className="flex flex-wrap items-center gap-2 shrink-0">
-						{/* Secondary 1: Digital Signature Indicator / Button */}
+						{/* Digital Signature: Primary CTA if not signed, or Green Verified Badge if signed */}
 						{signedAgreement ? (
 							<div
 								className="flex items-center gap-1.5 px-3 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-[12.5px] font-semibold h-8 touch-manipulation whitespace-nowrap shrink-0"
@@ -305,7 +305,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 							<button
 								type="button"
 								onClick={onOpenSignModal}
-								className="h-8 flex items-center gap-1.5 px-3 rounded-lg text-[13px] font-medium bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] cursor-pointer transition-colors touch-manipulation shadow-2xs whitespace-nowrap shrink-0"
+								className="primary-button h-8 flex items-center gap-1.5 px-3.5 rounded-lg text-[13px] font-semibold cursor-pointer transition-all shadow-xs active:scale-98 shrink-0 whitespace-nowrap touch-manipulation"
 								title="Открыть окно цифровой подписи согласия"
 								data-testid="tp-sign-btn"
 							>
@@ -314,11 +314,15 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 							</button>
 						)}
 
-						{/* Secondary 2: Quick Export to Cashier */}
+						{/* Quick Export to Cashier: Primary CTA if signed, Secondary if not yet signed */}
 						<button
 							type="button"
 							onClick={onExportCashier}
-							className="h-8 flex items-center gap-1.5 px-3 rounded-lg text-[13px] font-medium text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 shadow-2xs cursor-pointer transition-colors touch-manipulation whitespace-nowrap shrink-0"
+							className={
+								signedAgreement
+									? "primary-button h-8 flex items-center gap-1.5 px-3.5 rounded-lg text-[13px] font-semibold cursor-pointer transition-all shadow-xs active:scale-98 shrink-0 whitespace-nowrap touch-manipulation"
+									: "h-8 flex items-center gap-1.5 px-3 rounded-lg text-[13px] font-medium text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 shadow-2xs cursor-pointer transition-colors touch-manipulation whitespace-nowrap shrink-0"
+							}
 							title="Мгновенно отправить счет кассиру"
 							data-testid="tp-quick-cashier-btn"
 						>
@@ -326,24 +330,24 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 							<span>В кассу</span>
 						</button>
 
-						{/* Secondary 3: 1-Click CBCT Auto-Plan (Findings to 3-Tier Estimate) */}
+						{/* Secondary Action: Save to DB */}
 						<button
 							type="button"
-							onClick={onGenerateCbctAutoPlan}
-							className="h-8 flex items-center gap-1.5 px-3 rounded-lg text-[13px] font-medium text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 shadow-2xs cursor-pointer transition-colors touch-manipulation whitespace-nowrap shrink-0"
-							title="Сформировать 3 сценария плана лечения на основе находок 3D КЛКТ (имплантация, синус-лифтинг, санация, ортопедия)"
-							data-testid="generate-cbct-auto-plan-btn"
+							onClick={onSavePlanToDatabase}
+							className="h-8 flex items-center gap-1.5 px-3 rounded-lg text-[13px] font-medium bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] cursor-pointer transition-colors touch-manipulation shadow-2xs whitespace-nowrap shrink-0"
+							title="Сохранить план лечения в базе данных"
+							data-testid="treatment-plan-save-btn"
 						>
-							<Sparkles size={14} className="text-amber-600 dark:text-amber-400" />
-							<span>Автоплан по КЛКТ</span>
+							<Save size={14} className={isSaving ? "animate-spin" : ""} />
+							<span>{isSaving ? "Сохранение..." : "Сохранить"}</span>
 						</button>
 
-						{/* Secondary 4: Overflow Dropdown Menu [⋮ Опции] */}
+						{/* Overflow Dropdown Menu [⋮ Опции] */}
 						<div className="relative inline-flex items-center" ref={optionsMenuRef}>
 							<button
 								type="button"
 								onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
-								className="h-8 px-3 rounded-lg text-[13px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-2xs transition-colors touch-manipulation whitespace-nowrap"
+								className="h-8 px-2.5 sm:px-3 rounded-lg text-[13px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-2xs transition-colors touch-manipulation whitespace-nowrap"
 								title="Дополнительные студии, валидация и печать"
 								aria-label="Опции плана лечения"
 								aria-expanded={isOptionsMenuOpen}
@@ -585,17 +589,6 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 							</button>
 						</div>
 					</div>
-
-					{/* STRICTLY 1 DOMINANT PRIMARY ACTION: Save to DB with High-Contrast Teal in Light and Dark mode */}
-					<button
-						type="button"
-						onClick={onSavePlanToDatabase}
-						className="primary-button h-8 flex items-center gap-1.5 px-4 rounded-lg text-[13px] font-semibold cursor-pointer transition-all shadow-xs active:scale-98 shrink-0 whitespace-nowrap touch-manipulation"
-						data-testid="treatment-plan-save-btn"
-					>
-						<Save size={14} className={isSaving ? "animate-spin" : ""} />
-						<span>{isSaving ? "Сохранение..." : "Сохранить"}</span>
-					</button>
 				</div>
 			</div>
 		</div>

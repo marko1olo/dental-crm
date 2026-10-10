@@ -2,35 +2,28 @@ import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
 import { db } from "../../db/client.js";
 import { communicationTasks } from "../../db/schema.js";
-import type {
-	DenteTelegramOutboxItem,
-	DenteTelegramOutboxSendRequest,
-	DenteTelegramOutboxDeliveryStatus,
-	DenteTelegramOutboxDeliveryReceipt,
+import {
+	denteTelegramOutboxSendResponseSchema,
+	type DenteTelegramOutboxItem, type DenteTelegramOutboxSendRequest,
+	type DenteTelegramOutboxDeliveryStatus, type DenteTelegramOutboxDeliveryReceipt,
 } from "@dental/shared";
 import type { DomainState } from "../../services/telegram/telegramLegacyMemoryStore.js";
 import {
-	claimDenteTelegramOutboxDeliveryReceipt,
-	denteTelegramOutboxDeliveryReceipts,
-	findDenteTelegramOutboxDeliveryReceipt,
-	prepareDenteTelegramOutboxDelivery,
+	claimDenteTelegramOutboxDeliveryReceipt, denteTelegramOutboxDeliveryReceipts,
+	findDenteTelegramOutboxDeliveryReceipt, prepareDenteTelegramOutboxDelivery,
 	recordDenteTelegramOutboxDelivery,
 } from "../../services/telegram/telegramLegacyMemoryStore.js";
 import {
-	sendTelegramPhotoMessage,
-	sendTelegramTextMessage,
-	type SendTelegramPhotoMessageInput,
-	type TelegramTransportResult,
+	sendTelegramPhotoMessage, sendTelegramTextMessage,
+	type SendTelegramPhotoMessageInput, type TelegramTransportResult,
 } from "../../telegramTransport.js";
+import { TelegramBotBillingService } from "../../services/telegram/TelegramBotBillingService.js";
+import { repairMojibakeText } from "../../text/repairMojibake.js";
+import { configuredSendTimeoutMs, resolveTelegramOutboxRuntimeScopeFromQuery } from "./telegramRuntimeContext.js";
 import {
-	telegramPhotoSentTextFailedBlockedReason,
-	telegramOutboxScheduleUnreadableBlockedReason,
-	type TelegramOutboxScheduleState,
-	type TelegramOutboxDeliveredParts,
-	type TelegramOutboxTransportSenders,
-	type TelegramOutboxPartDeliveryInput,
-	type TelegramOutboxPartDeliveryOutcome,
-	type TelegramOutboxSendExecutionResult,
+	telegramPhotoSentTextFailedBlockedReason, telegramOutboxScheduleUnreadableBlockedReason,
+	type TelegramOutboxScheduleState, type TelegramOutboxDeliveredParts,
+	type TelegramOutboxTransportSenders, type TelegramOutboxSendExecutionResult,
 	type TelegramResolvedOutboxRuntime,
 } from "./types.js";
 import {
@@ -42,63 +35,41 @@ import {
 	telegramOutboxTransportFailureWarning,
 	outboxDeliveryClaimKey,
 	readableTelegramText,
+	readableTelegramPayload,
+	telegramRetryAfterSeconds,
 } from "./telegramUtils.js";
 
 export const telegramPhotoCaptionMaxLength = 1024;
 export const telegramSplitPhotoCaption =
 	"DENTE: сообщение клиники. Полный текст ниже.";
 
-export const telegramOutboxNothingDelivered: TelegramOutboxDeliveredParts = {
-	photoDelivered: false,
-	photoMessageId: null,
-};
+const telegramOutboxDeliveryClaims = new Set<string>();
 
-/**
- * БЫЛО: `return !Number.isFinite(scheduledAtMs) || scheduledAtMs <= nowMs;` — неразобранная дата
- * означала «пора отправлять». То есть отказ прочитать время превращался в разрешение отправить
- * немедленно: напоминание, назначенное на следующий вторник, ушло бы пациенту сегодня ночью.
- * Fail-open на времени отправки не бывает правильным ни в одном случае, поэтому нечитаемое время —
- * отдельное состояние, и вызывающий обязан его обработать, а не спутать с «пора».
- */
-export function telegramOutboxScheduleState(
-	scheduledAt: string,
-	nowMs: number,
-): TelegramOutboxScheduleState {
+export const telegramOutboxNothingDelivered: TelegramOutboxDeliveredParts = { photoDelivered: false, photoMessageId: null };
+
+export function telegramOutboxScheduleState(scheduledAt: string, nowMs: number): TelegramOutboxScheduleState {
 	const scheduledAtMs = Date.parse(scheduledAt);
 	if (!Number.isFinite(scheduledAtMs)) return "unreadable";
 	return scheduledAtMs <= nowMs ? "due" : "not_due";
 }
 
-export function isDenteTelegramOutboxItemDue(
-	item: DenteTelegramOutboxItem,
-	nowMs: number,
-): boolean {
+export function isDenteTelegramOutboxItemDue(item: DenteTelegramOutboxItem, nowMs: number): boolean {
 	return telegramOutboxScheduleState(item.scheduledAt, nowMs) === "due";
 }
 
-/** Значение показывается оператору как есть, поэтому обрезается: в поле может лежать что угодно. */
 export function telegramOutboxScheduleUnreadableWarning(scheduledAt: string): string {
 	const shown = scheduledAt.trim().slice(0, 64) || "пусто";
 	return `Время отправки не распознано как дата (${shown}). Сообщение НЕ отправлено; исправьте время в задаче коммуникации.`;
 }
 
-/**
- * Какие части сообщения уже лежат у пациента в чате. "Фото + текст" уходит двумя вызовами
- * Telegram, поэтому провал второго вызова НЕ означает, что не доставлено ничего.
- */
-
 export function telegramOutboxDeliveredParts(
 	receipt: DenteTelegramOutboxDeliveryReceipt | null | undefined,
 ): TelegramOutboxDeliveredParts {
 	if (receipt?.status !== "failed") return telegramOutboxNothingDelivered;
-	if (receipt.blockedReason !== telegramPhotoSentTextFailedBlockedReason)
-		return telegramOutboxNothingDelivered;
+	if (receipt.blockedReason !== telegramPhotoSentTextFailedBlockedReason) return telegramOutboxNothingDelivered;
 	return {
 		photoDelivered: true,
-		photoMessageId:
-			typeof receipt.telegramMessageId === "number"
-				? receipt.telegramMessageId
-				: null,
+		photoMessageId: typeof receipt.telegramMessageId === "number" ? receipt.telegramMessageId : null,
 	};
 }
 
@@ -255,10 +226,17 @@ export async function executeTelegramOutboxSend(
 	if (!runtimeResult.ok) {
 		return {
 			statusCode: runtimeResult.statusCode,
-			body: {
-				error: runtimeResult.error,
-				message: runtimeResult.message,
-			},
+			body: denteTelegramOutboxSendResponseSchema.parse({
+				status: "blocked",
+				outboxItem: null,
+				taskId: null,
+				eventId: null,
+				telegramMessageId: null,
+				clientMutationId,
+				warnings: [`${runtimeResult.error}: ${runtimeResult.message}`],
+				retryAfterSeconds: null,
+				blockedReason: "runtime_resolution_failed",
+			}),
 		};
 	}
 

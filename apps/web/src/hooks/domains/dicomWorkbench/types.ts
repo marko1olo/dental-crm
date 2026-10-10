@@ -5,12 +5,12 @@
  * Hounsfield Unit (HU) windowing, MPR slice synchronization, 3D measurements.
  */
 
+import type { Dashboard } from "@dental/shared";
 import type {
-	Dashboard,
 	DicomFirstFramePreviewMetadata,
 	DicomFirstFramePreviewOptions,
 	LocalImagingFolderDraft,
-} from "../../AppConstants";
+} from "../../../AppConstants";
 
 export interface DicomAuthContext {
 	denteClinicalReadHeaders(

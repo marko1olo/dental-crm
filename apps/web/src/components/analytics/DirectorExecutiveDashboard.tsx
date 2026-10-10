@@ -430,7 +430,7 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 				<div
 					className="executive-kpi-card"
 					style={{
-						"--card-accent": "var(--accent, #6366f1)",
+						"--card-accent": "var(--teal, #0d9488)",
 						cursor: onNavigateToSection ? "pointer" : "default",
 					} as React.CSSProperties}
 					onClick={onNavigateToSection ? () => onNavigateToSection("curators") : undefined}
@@ -438,8 +438,8 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 				>
 					<div>
 						<div className="executive-kpi-header">
-							<span className="executive-kpi-label">Сквозная конверсия (Лид → Санация)</span>
-							<div className="executive-kpi-icon-wrap executive-kpi-icon-accent">
+							<span className="executive-kpi-label">Конверсия (Лид → Санация)</span>
+							<div className="executive-kpi-icon-wrap executive-kpi-icon-teal">
 								<Filter size={18} aria-hidden="true" />
 							</div>
 						</div>
@@ -448,7 +448,7 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 					<div className="executive-kpi-subtext">
 						<span>Лидов: {kpis.totalLeadsCount ?? 0} пац.</span>
 						<span className="executive-pill executive-pill-neutral">
-							ИИ Diagnocat: {kpis.aiDiagnosticRatePercent ?? 0}%
+							ИИ-скрининг: {kpis.aiDiagnosticRatePercent ?? 0}%
 						</span>
 					</div>
 				</div>
@@ -457,7 +457,7 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 				<div
 					className="executive-kpi-card"
 					style={{
-						"--card-accent": "var(--ok-fg, #10b981)",
+						"--card-accent": "var(--teal, #0d9488)",
 						cursor: onNavigateToSection ? "pointer" : "default",
 					} as React.CSSProperties}
 					onClick={onNavigateToSection ? () => onNavigateToSection("marketing") : undefined}
@@ -466,7 +466,7 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 					<div>
 						<div className="executive-kpi-header">
 							<span className="executive-kpi-label">LTV / CAC (Unit-экономика)</span>
-							<div className="executive-kpi-icon-wrap executive-kpi-icon-ok">
+							<div className="executive-kpi-icon-wrap executive-kpi-icon-teal">
 								<TrendingUp size={18} aria-hidden="true" />
 							</div>
 						</div>
@@ -492,7 +492,7 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 				<div
 					className="executive-kpi-card"
 					style={{
-						"--card-accent": "var(--warn-fg, #f59e0b)",
+						"--card-accent": "var(--teal, #0d9488)",
 						cursor: onNavigateToSection ? "pointer" : "default",
 					} as React.CSSProperties}
 					onClick={onNavigateToSection ? () => onNavigateToSection("freed_slots") : undefined}
@@ -501,7 +501,7 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 					<div>
 						<div className="executive-kpi-header">
 							<span className="executive-kpi-label">Загрузка кресел клиники</span>
-							<div className="executive-kpi-icon-wrap executive-kpi-icon-warn">
+							<div className="executive-kpi-icon-wrap executive-kpi-icon-teal">
 								<Activity size={18} aria-hidden="true" />
 							</div>
 						</div>
@@ -535,7 +535,7 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 				<section className="executive-panel" aria-label="План/факт выручки по отделениям">
 					<div className="executive-panel-header">
 						<h2 className="executive-panel-title">
-							<Layers size={18} style={{ color: "var(--accent, #6366f1)" }} aria-hidden="true" />
+							<Layers size={18} style={{ color: "var(--teal, #0d9488)" }} aria-hidden="true" />
 							План / факт выручки по 5 отделениям
 						</h2>
 						<span className="executive-panel-badge">Структура P&amp;L</span>

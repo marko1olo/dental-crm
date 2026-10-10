@@ -13,5 +13,4 @@
  * Layer 5: ./omniPlatform/index.ts
  */
 
-export type * from "./omniPlatform/index.js";
 export * from "./omniPlatform/index.js";

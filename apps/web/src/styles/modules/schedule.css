@@ -319,50 +319,31 @@
 	margin-top: auto;
 }
 
-/* Quick Actions Ergonomics for multi-chair / compact cards (< 480px) */
+/* Quick Actions Ergonomics for multi-chair / compact cards */
 .appointment-card-actions {
 	display: flex;
 	align-items: center;
 	gap: 4px;
-	width: 100%;
+	width: auto;
 	max-width: 100%;
-	overflow: hidden;
 }
 
-@container apptcard (max-width: 480px) {
-	.appointment-card-actions {
-		gap: 3px;
-	}
-	.appointment-action-pay .appointment-action-label,
-	.appointment-action-call .appointment-action-label {
-		display: none !important;
-	}
-	.appointment-action-pay,
-	.appointment-action-call {
-		width: 28px !important;
-		min-width: 28px !important;
-		max-width: 28px !important;
-		padding: 0 !important;
-		justify-content: center !important;
-	}
+.appointment-action-pay,
+.appointment-action-visit,
+.appointment-action-call {
+	width: auto !important;
+	min-width: max-content !important;
+	max-width: none !important;
+	flex-shrink: 0 !important;
+	white-space: nowrap !important;
+	box-sizing: border-box !important;
 }
 
-@container (max-width: 480px) {
-	.appointment-card-actions {
-		gap: 3px;
-	}
-	.appointment-action-pay .appointment-action-label,
-	.appointment-action-call .appointment-action-label {
-		display: none !important;
-	}
-	.appointment-action-pay,
-	.appointment-action-call {
-		width: 28px !important;
-		min-width: 28px !important;
-		max-width: 28px !important;
-		padding: 0 !important;
-		justify-content: center !important;
-	}
+.appointment-action-pay .appointment-action-label,
+.appointment-action-visit .appointment-action-label,
+.appointment-action-call .appointment-action-label {
+	display: inline !important;
+	white-space: nowrap !important;
 }
 
 /* Split-Day (2-Shift Timeline: 08:00-14:00 & 14:00-20:00) */
@@ -524,9 +505,9 @@
 	text-align: center;
 }
 .schedule-filter-strip .quick-chip {
-	height: 28px;
-	min-height: 28px;
-	max-height: 28px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
 	line-height: 1;
 	box-sizing: border-box;
 	display: inline-flex;
@@ -536,7 +517,7 @@
 	margin: 0;
 	align-self: center;
 	border-radius: 8px;
-	font-size: 12px;
+	font-size: 12.5px;
 	flex-shrink: 0;
 	white-space: nowrap;
 	min-width: max-content;
@@ -965,103 +946,121 @@ body.dark-mode .schedule-secret-collapsible .schedule-admin-unlock {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   GLOBAL HIGH CONTRAST SCHEDULE EMPTY SLOTS (WCAG AAA >= 7:1)
+   CLEAN CALM CALENDAR EMPTY SLOTS (APPLE CALENDAR / LINEAR STYLE)
    ═══════════════════════════════════════════════════════════════════ */
 button[data-testid^="btn-slot-"],
 [data-testid^="btn-slot-"],
 .schedule-empty-slot-btn {
 	background-color: transparent !important;
-	color: var(--ink-muted, #334155) !important;
-	border-color: var(--line-strong, #94a3b8) !important;
+	border-color: transparent !important;
+	transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 button[data-testid^="btn-slot-"] span,
 [data-testid^="btn-slot-"] span,
 .schedule-empty-slot-btn span {
-	color: var(--ink-muted, #334155) !important;
-	font-weight: 600 !important;
+	opacity: 0;
+	transition: opacity 0.15s ease;
 }
 
 button[data-testid^="btn-slot-"] svg,
 [data-testid^="btn-slot-"] svg,
 .schedule-empty-slot-btn svg {
+	opacity: 0;
+	transition: opacity 0.15s ease;
 	color: var(--teal, #0d9488) !important;
-	opacity: 0.95 !important;
 }
 
 button[data-testid^="btn-slot-"]:hover,
+button[data-testid^="btn-slot-"]:focus-visible,
 [data-testid^="btn-slot-"]:hover,
-.schedule-empty-slot-btn:hover {
+.schedule-empty-slot-btn:hover,
+.schedule-empty-slot-btn:focus-visible {
 	color: var(--teal-dark, #0f766e) !important;
 	background-color: var(--teal-surface, rgba(13, 148, 136, 0.08)) !important;
 	border-color: var(--teal, #0d9488) !important;
+	border-style: dashed !important;
 }
 
 button[data-testid^="btn-slot-"]:hover span,
-[data-testid^="btn-slot-"]:hover span,
-.schedule-empty-slot-btn:hover span {
+button[data-testid^="btn-slot-"]:focus-visible span,
+.schedule-empty-slot-btn:hover span,
+.schedule-empty-slot-btn:focus-visible span {
+	opacity: 1 !important;
 	color: var(--teal-dark, #0f766e) !important;
+	font-weight: 600 !important;
+}
+
+button[data-testid^="btn-slot-"]:hover svg,
+button[data-testid^="btn-slot-"]:focus-visible svg,
+.schedule-empty-slot-btn:hover svg,
+.schedule-empty-slot-btn:focus-visible svg {
+	opacity: 1 !important;
 }
 
 [data-theme="dark"] button[data-testid^="btn-slot-"],
 [data-theme="dark"] [data-testid^="btn-slot-"],
 [data-theme="dark"] .schedule-empty-slot-btn {
 	background-color: transparent !important;
-	color: #cbd5e1 !important;
-	border-color: rgba(255, 255, 255, 0.2) !important;
-}
-
-[data-theme="dark"] button[data-testid^="btn-slot-"] span,
-[data-theme="dark"] [data-testid^="btn-slot-"] span,
-[data-theme="dark"] .schedule-empty-slot-btn span {
-	color: #cbd5e1 !important;
-	font-weight: 700 !important;
+	border-color: transparent !important;
 }
 
 [data-theme="dark"] button[data-testid^="btn-slot-"]:hover,
+[data-theme="dark"] button[data-testid^="btn-slot-"]:focus-visible,
 [data-theme="dark"] [data-testid^="btn-slot-"]:hover,
-[data-theme="dark"] .schedule-empty-slot-btn:hover {
+[data-theme="dark"] .schedule-empty-slot-btn:hover,
+[data-theme="dark"] .schedule-empty-slot-btn:focus-visible {
 	color: #ffffff !important;
 	background-color: rgba(13, 148, 136, 0.22) !important;
 	border-color: var(--teal, #0d9488) !important;
+	border-style: dashed !important;
 }
 
 [data-theme="dark"] button[data-testid^="btn-slot-"]:hover span,
-[data-theme="dark"] [data-testid^="btn-slot-"]:hover span,
-[data-theme="dark"] .schedule-empty-slot-btn:hover span {
+[data-theme="dark"] button[data-testid^="btn-slot-"]:focus-visible span,
+[data-theme="dark"] .schedule-empty-slot-btn:hover span,
+[data-theme="dark"] .schedule-empty-slot-btn:focus-visible span {
+	opacity: 1 !important;
 	color: #ffffff !important;
+	font-weight: 700 !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   THEME SAKURA: HIGH CONTRAST SCHEDULE EMPTY SLOTS (WCAG AAA >= 7:1)
+   THEME SAKURA: HIGH CONTRAST SCHEDULE EMPTY SLOTS
    ═══════════════════════════════════════════════════════════════════ */
 [data-theme="sakura"] button[data-testid^="btn-slot-"],
 [data-theme="sakura"] [data-testid^="btn-slot-"],
 [data-theme="sakura"] .schedule-empty-slot-btn {
-	color: #9d174d !important;
-	border-color: #f472b6 !important;
+	background-color: transparent !important;
+	border-color: transparent !important;
 }
 
-[data-theme="sakura"] button[data-testid^="btn-slot-"] span,
-[data-theme="sakura"] [data-testid^="btn-slot-"] span,
-[data-theme="sakura"] .schedule-empty-slot-btn span {
+[data-theme="sakura"] button[data-testid^="btn-slot-"]:hover,
+[data-theme="sakura"] button[data-testid^="btn-slot-"]:focus-visible,
+[data-theme="sakura"] [data-testid^="btn-slot-"]:hover,
+[data-theme="sakura"] .schedule-empty-slot-btn:hover,
+[data-theme="sakura"] .schedule-empty-slot-btn:focus-visible {
+	color: #70072e !important;
+	background-color: #fce7f3 !important;
+	border-color: #db2777 !important;
+	border-style: dashed !important;
+}
+
+[data-theme="sakura"] button[data-testid^="btn-slot-"]:hover span,
+[data-theme="sakura"] button[data-testid^="btn-slot-"]:focus-visible span,
+[data-theme="sakura"] .schedule-empty-slot-btn:hover span,
+[data-theme="sakura"] .schedule-empty-slot-btn:focus-visible span {
+	opacity: 1 !important;
 	color: #9d174d !important;
 	font-weight: 700 !important;
 }
 
-[data-theme="sakura"] button[data-testid^="btn-slot-"] svg,
-[data-theme="sakura"] [data-testid^="btn-slot-"] svg,
-[data-theme="sakura"] .schedule-empty-slot-btn svg {
+[data-theme="sakura"] button[data-testid^="btn-slot-"]:hover svg,
+[data-theme="sakura"] button[data-testid^="btn-slot-"]:focus-visible svg,
+[data-theme="sakura"] .schedule-empty-slot-btn:hover svg,
+[data-theme="sakura"] .schedule-empty-slot-btn:focus-visible svg {
+	opacity: 1 !important;
 	color: #9d174d !important;
-	opacity: 0.95 !important;
-}
-
-[data-theme="sakura"] button[data-testid^="btn-slot-"]:hover,
-[data-theme="sakura"] [data-testid^="btn-slot-"]:hover,
-[data-theme="sakura"] .schedule-empty-slot-btn:hover {
-	color: #70072e !important;
-	background-color: #fce7f3 !important;
-	border-color: #db2777 !important;
 }
 
 [data-theme="sakura"] button[data-testid^="btn-slot-"]:hover span,

@@ -461,15 +461,15 @@
 }
 
 .document-intake-quick-print-btn {
-	width: 100%;
-	display: flex;
+	width: auto;
+	display: inline-flex;
 	align-items: center;
-	justify-content: space-between;
-	flex-wrap: wrap;
+	justify-content: center;
+	flex-wrap: nowrap;
 	gap: 8px;
 	padding: 0 12px;
-	min-height: 34px;
-	height: 34px;
+	min-height: 32px;
+	height: 32px;
 	border-radius: 8px;
 	background: var(--paper);
 	border: 1px solid var(--line);
@@ -603,19 +603,20 @@
 
 .document-scenario-card {
 	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
+	flex-direction: row;
+	align-items: center;
 	justify-content: space-between;
-	padding: 12px 14px;
+	padding: 0 10px;
 	background: var(--paper);
 	border: 1px solid var(--line);
-	border-radius: 10px;
+	border-radius: 8px;
 	text-align: left;
 	cursor: pointer;
 	transition: all var(--transition-fast);
 	position: relative;
 	overflow: hidden;
-	min-height: 96px;
+	height: 38px;
+	min-height: 38px;
 	font-family: inherit;
 }
 
@@ -890,24 +891,45 @@
 
 .document-search-icon {
 	position: absolute;
-	left: 10px;
+	left: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 16px;
+	height: 16px;
 	color: var(--muted);
 	pointer-events: none;
+	z-index: 2;
 }
 
 .document-search-input {
 	width: 100%;
 	min-height: 34px;
 	height: 34px;
-	padding: 4px 30px 4px 32px;
+	padding-top: 4px;
+	padding-bottom: 4px;
+	padding-left: 38px !important;
+	padding-right: 36px !important;
 	font-size: 13px;
-	border: 1px solid var(--line-strong);
-	border-radius: 6px;
+	border: 1px solid var(--line-strong, var(--line));
+	border-radius: 8px;
 	background: var(--paper);
 	color: var(--ink);
 	box-sizing: border-box;
 	transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 	font-family: inherit;
+}
+
+.dente-tile-card {
+	background: var(--paper-card, var(--paper));
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dente-tile-card:hover {
+	border-color: var(--teal);
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.1);
 }
 
 .document-search-input:focus {

@@ -135,9 +135,12 @@ export function calculateApexCoordinates(
 	angulationDeg: number,
 	lengthMm: number,
 ): { readonly x: number; readonly y: number } {
-	const angRad = (angulationDeg * Math.PI) / 180.0;
-	const apexX = entryPoint.x + lengthMm * Math.sin(angRad);
-	const apexY = entryPoint.y + lengthMm * Math.cos(angRad);
+	const angRad = (((angulationDeg ?? 0) * Math.PI) / 180.0);
+	const entryX = entryPoint?.x ?? 0;
+	const entryY = entryPoint?.y ?? 0;
+	const len = lengthMm ?? 10.0;
+	const apexX = entryX + len * Math.sin(angRad);
+	const apexY = entryY + len * Math.cos(angRad);
 	return {
 		x: Math.round(apexX * 100) / 100,
 		y: Math.round(apexY * 100) / 100,
@@ -152,19 +155,26 @@ export function pointToSegmentDistance2D(
 	a: { readonly x: number; readonly y: number },
 	b: { readonly x: number; readonly y: number },
 ): { distance: number; closestPoint: { readonly x: number; readonly y: number } } {
-	const dx = b.x - a.x;
-	const dy = b.y - a.y;
+	const px = p?.x ?? 0;
+	const py = p?.y ?? 0;
+	const ax = a?.x ?? 0;
+	const ay = a?.y ?? 0;
+	const bx = b?.x ?? 0;
+	const by = b?.y ?? 0;
+
+	const dx = bx - ax;
+	const dy = by - ay;
 	const lenSq = dx * dx + dy * dy;
 
 	if (lenSq <= 0.00001) {
-		const dist = Math.hypot(p.x - a.x, p.y - a.y);
-		return { distance: dist, closestPoint: { x: a.x, y: a.y } };
+		const dist = Math.hypot(px - ax, py - ay);
+		return { distance: dist, closestPoint: { x: ax, y: ay } };
 	}
 
-	const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq));
-	const projX = a.x + t * dx;
-	const projY = a.y + t * dy;
-	const dist = Math.hypot(p.x - projX, p.y - projY);
+	const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+	const projX = ax + t * dx;
+	const projY = ay + t * dy;
+	const dist = Math.hypot(px - projX, py - projY);
 
 	return {
 		distance: dist,
@@ -181,30 +191,33 @@ export function auditMandibularNerveSafety(
 	implantPose: CrossSectionImplantPose,
 	canal?: MandibularCanalCrossSection | null,
 ): NerveSafetyAuditResult {
-	if (!canal) {
+	const resolvedCenter = canal?.center ?? (canal as unknown as { canalCenterMm?: { x: number; y: number } })?.canalCenterMm;
+	if (!canal || !resolvedCenter || !implantPose?.entryPoint || !implantPose?.implantSpec) {
 		return createUnmeasuredNerveSafety();
 	}
-	const apex = calculateApexCoordinates(
+	const apex = implantPose.apexPoint ?? calculateApexCoordinates(
 		implantPose.entryPoint,
-		implantPose.angulationDeg,
-		implantPose.implantSpec.lengthMm,
+		implantPose.angulationDeg ?? 0,
+		implantPose.implantSpec.lengthMm ?? 10.0,
 	);
 
 	// Find closest point on implant axis segment to nerve center
-	const segResult = pointToSegmentDistance2D(canal.center, implantPose.entryPoint, apex);
+	const segResult = pointToSegmentDistance2D(resolvedCenter, implantPose.entryPoint, apex);
 	const distCenterToAxis = segResult.distance;
 
 	// Physical clearance from outer implant cylinder to outer canal wall
-	const implantRadius = implantPose.implantSpec.diameterMm / 2.0;
-	const netClearanceWall = distCenterToAxis - (implantRadius + canal.radiusMm);
-	const netClearanceSafety = netClearanceWall - canal.safetyMarginMm;
+	const implantRadius = (implantPose.implantSpec.diameterMm ?? 4.0) / 2.0;
+	const canalRadius = canal.radiusMm ?? (canal as unknown as { canalRadiusMm?: number })?.canalRadiusMm ?? 1.5;
+	const safetyMargin = canal.safetyMarginMm ?? 2.0;
+	const netClearanceWall = distCenterToAxis - (implantRadius + canalRadius);
+	const netClearanceSafety = netClearanceWall - safetyMargin;
 
 	// Calculate closest point on nerve circle boundary
-	const dirX = segResult.closestPoint.x - canal.center.x;
-	const dirY = segResult.closestPoint.y - canal.center.y;
+	const dirX = segResult.closestPoint.x - (resolvedCenter.x ?? 0);
+	const dirY = segResult.closestPoint.y - (resolvedCenter.y ?? 0);
 	const dirLen = Math.hypot(dirX, dirY) || 1;
-	const closestNerveX = canal.center.x + (dirX / dirLen) * canal.radiusMm;
-	const closestNerveY = canal.center.y + (dirY / dirLen) * canal.radiusMm;
+	const closestNerveX = (resolvedCenter.x ?? 0) + (dirX / dirLen) * canalRadius;
+	const closestNerveY = (resolvedCenter.y ?? 0) + (dirY / dirLen) * canalRadius;
 
 	let status: "safe" | "warning" | "danger" = "safe";
 	let message = "";

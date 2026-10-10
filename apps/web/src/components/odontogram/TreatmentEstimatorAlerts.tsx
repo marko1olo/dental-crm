@@ -1,5 +1,5 @@
 import type React from "react";
-import { AlertTriangle, Calculator, Loader2 } from "lucide-react";
+import { AlertTriangle, Calculator, Lightbulb, Loader2, Plus } from "lucide-react";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 import {
 	type PanelSubject,
@@ -9,6 +9,7 @@ import {
 import type {
 	GhostToothConflict,
 	PlanItemCollision,
+	ConsumablesReconciliationResult,
 } from "./treatmentEstimatorPricing";
 
 export interface TreatmentEstimatorAlertsProps {
@@ -25,6 +26,8 @@ export interface TreatmentEstimatorAlertsProps {
 	onReplaceWithImplant?: ((toothNumber: number) => void) | undefined;
 	onRestoreToothStatus?: ((toothNumber: number) => void) | undefined;
 	onRemoveItemByTooth?: ((toothNumber: number) => void) | undefined;
+	consumablesReconciliation?: ConsumablesReconciliationResult | undefined;
+	onAddAllUnbilledToPlan?: (() => void) | undefined;
 }
 
 export const TreatmentEstimatorAlerts: React.FC<TreatmentEstimatorAlertsProps> = ({
@@ -41,6 +44,8 @@ export const TreatmentEstimatorAlerts: React.FC<TreatmentEstimatorAlertsProps> =
 	onReplaceWithImplant,
 	onRestoreToothStatus,
 	onRemoveItemByTooth,
+	consumablesReconciliation,
+	onAddAllUnbilledToPlan,
 }) => {
 	return (
 		<>
@@ -83,6 +88,45 @@ export const TreatmentEstimatorAlerts: React.FC<TreatmentEstimatorAlertsProps> =
 					>
 						Повторить
 					</button>
+				</div>
+			)}
+
+			{/* Интеллектуальный анализатор дневника приёма (Zero-Leakage Reconciler) */}
+			{consumablesReconciliation?.hasUnbilled && (
+				<div
+					role="status"
+					className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 p-3 mb-3 rounded-xl border text-xs leading-relaxed border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/20 text-[var(--ink)] animate-in fade-in duration-150"
+					data-testid="unbilled-consumables-estimator-alert"
+				>
+					<div className="flex items-center gap-2 min-w-0">
+						<Lightbulb
+							size={16}
+							className="shrink-0 text-amber-600 dark:text-amber-400"
+							aria-hidden="true"
+						/>
+						<div className="min-w-0 leading-snug">
+							<span className="font-semibold text-amber-700 dark:text-amber-300">
+								В дневнике зафиксировано, но не включено в смету:
+							</span>{" "}
+							<span>
+								{consumablesReconciliation.unbilledItems
+									.map((it) => `${it.matchedMarker} (${it.priceRub.toLocaleString("ru-RU")} ₽)`)
+									.join(", ")}
+							</span>
+						</div>
+					</div>
+					{onAddAllUnbilledToPlan && (
+						<button
+							type="button"
+							onClick={onAddAllUnbilledToPlan}
+							className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white font-bold text-xs shadow-xs transition-all cursor-pointer whitespace-nowrap active:scale-[0.98]"
+							data-testid="add-unbilled-consumables-to-plan-btn"
+							title="Добавить выявленные расходники в смету плана в 1 клик"
+						>
+							<Plus size={14} className="stroke-[2.5]" />
+							<span>+ Добавить всё в смету (1 клик)</span>
+						</button>
+					)}
 				</div>
 			)}
 

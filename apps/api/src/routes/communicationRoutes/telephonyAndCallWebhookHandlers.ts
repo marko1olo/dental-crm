@@ -172,12 +172,42 @@ export async function registerTelephonyAndCallWebhookHandlers(
 				? `Звонок (${direction}): ${transcriptionText}`
 				: `Звонок (${direction}) от ${callerNumber} [callId:${callId}]`;
 
+			let effectivePatientId = matchedPatient?.id;
+			let effectivePatientName = matchedPatient?.fullName ?? null;
+
+			if (!effectivePatientId) {
+				const fallbackName = callerNumber
+					? `Входящий вызов ${callerNumber}`
+					: "Неизвестный абонент";
+				const [newPatient] = await db
+					.insert(patients)
+					.values({
+						organizationId: orgId,
+						fullName: fallbackName,
+						phone: callerNumber || null,
+						notes: `Автоматически создан из телефонии (${direction}${callId ? `, callId: ${callId}` : ""})`,
+						status: "active",
+					})
+					.returning();
+				if (newPatient) {
+					effectivePatientId = newPatient.id;
+					effectivePatientName = newPatient.fullName;
+				}
+			}
+
+			if (!effectivePatientId) {
+				return reply.code(500).send({
+					error: "PatientCreationError",
+					message: "Не удалось привязать звонок к карточке пациента.",
+				});
+			}
+
 			const [inserted] = await db
 				.insert(communicationEvents)
 				.values({
 					organizationId: orgId,
 					clinicId: clinicId ?? null,
-					patientId: matchedPatient?.id ?? null,
+					patientId: effectivePatientId,
 					actorUserId: actorUserId ?? null,
 					channel: "phone",
 					direction: direction as "inbound" | "outbound",
@@ -192,8 +222,8 @@ export async function registerTelephonyAndCallWebhookHandlers(
 			return reply.code(201).send({
 				success: true,
 				event: inserted,
-				matchedPatientId: matchedPatient?.id ?? null,
-				matchedPatientName: matchedPatient?.fullName ?? null,
+				matchedPatientId: effectivePatientId,
+				matchedPatientName: effectivePatientName,
 			});
 		},
 	);

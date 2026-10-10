@@ -151,7 +151,7 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 								cursor: "pointer",
 							}}
 							onClick={() => fileInputRef.current?.click()}
-							title="Нажмите, чтобы прикрепить снимок (1 клик)"
+							title="Нажмите, чтобы прикрепить снимок"
 						>
 							<Scan size={28} color="var(--teal)" />
 							<span style={{ fontSize: "11px", fontWeight: 600, color: "var(--paper-soft, #e2e8f0)" }}>
@@ -235,7 +235,7 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 							className="dente-primary-action-btn"
 							data-testid="attach-rvg-scan-btn"
 							style={{ fontSize: 11, minHeight: 36, gap: 4 }}
-							title="Прикрепить прицельный снимок или рентген к зубу в 1 клик"
+							title="Прикрепить прицельный снимок к зубу"
 						>
 							<Paperclip size={13} />
 							<span>Прикрепить снимок</span>

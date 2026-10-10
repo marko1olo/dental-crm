@@ -86,7 +86,7 @@ export const PaymentFamilyDepositView: React.FC<PaymentFamilyDepositViewProps> =
 									: patientDepositRub >= totalDueRub
 										? `Списать ${displayAmount} с личного депозита пациента`
 										: patientDepositRub > 0
-											? `Зачесть ${formatMoneyClean(patientDepositRub)} с аванса + остаток ${formatMoneyClean(Math.max(0, totalDueRub - patientDepositRub))} оплатить картой (в 1 клик)`
+											? `Зачесть ${formatMoneyClean(patientDepositRub)} с аванса + остаток ${formatMoneyClean(Math.max(0, totalDueRub - patientDepositRub))} оплатить картой`
 											: "Нажмите для проверки баланса или пополнения"
 							}
 							className="w-full min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs flex items-center justify-center gap-1.5"
@@ -136,7 +136,7 @@ export const PaymentFamilyDepositView: React.FC<PaymentFamilyDepositViewProps> =
 									: patientFamilyBalanceRub >= totalDueRub
 										? `Списать ${displayAmount} с семейного баланса`
 										: patientFamilyBalanceRub > 0
-											? `Зачесть ${formatMoneyClean(patientFamilyBalanceRub)} из семьи + остаток ${formatMoneyClean(Math.max(0, totalDueRub - patientFamilyBalanceRub))} оплатить картой (в 1 клик)`
+											? `Зачесть ${formatMoneyClean(patientFamilyBalanceRub)} из семьи + остаток ${formatMoneyClean(Math.max(0, totalDueRub - patientFamilyBalanceRub))} оплатить картой`
 											: "Нажмите для проверки семейного счета или пополнения"
 							}
 							className="w-full min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-pink-600 hover:bg-pink-700 text-white cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs flex items-center justify-center gap-1.5"
@@ -159,7 +159,7 @@ export const PaymentFamilyDepositView: React.FC<PaymentFamilyDepositViewProps> =
 					</div>
 				</div>
 
-				{/* 1-Click Combo Resolvers for Partial Balances */}
+				{/* Quick Combo Resolvers for Partial Balances */}
 				{patientDepositRub < totalDueRub &&
 					patientFamilyBalanceRub < totalDueRub &&
 					(patientDepositRub > 0 || patientFamilyBalanceRub > 0) && (
@@ -167,7 +167,7 @@ export const PaymentFamilyDepositView: React.FC<PaymentFamilyDepositViewProps> =
 							<div className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
 								<Sparkles size={14} className="shrink-0" />
 								<span>
-									Недостаточно средств для 100% оплаты со счета. Примените 1-клик сплит-комбо:
+									Недостаточно средств для 100% оплаты со счета. Выберите комбинированный вариант:
 								</span>
 							</div>
 

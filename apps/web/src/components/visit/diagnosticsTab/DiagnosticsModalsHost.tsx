@@ -53,6 +53,11 @@ const IntraoralScan3DViewerModal = React.lazy(() =>
 		default: m.IntraoralScan3DViewerModal,
 	})),
 );
+const VisiographComparisonModal = React.lazy(() =>
+	import("../../visiograph/VisiographComparisonModal").then((m) => ({
+		default: m.VisiographComparisonModal,
+	})),
+);
 
 export interface DiagnosticsModalsHostProps {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -90,6 +95,8 @@ export interface DiagnosticsModalsHostProps {
 	selected3DScanTitle?: string;
 	isHotFolderModalOpen: boolean;
 	setIsHotFolderModalOpen: (open: boolean) => void;
+	isComparisonModalOpen?: boolean;
+	setIsComparisonModalOpen?: (open: boolean) => void;
 }
 
 export function DiagnosticsModalsHost({
@@ -124,6 +131,8 @@ export function DiagnosticsModalsHost({
 	selected3DScanTitle,
 	isHotFolderModalOpen,
 	setIsHotFolderModalOpen,
+	isComparisonModalOpen,
+	setIsComparisonModalOpen,
 }: DiagnosticsModalsHostProps) {
 	return (
 		<React.Suspense fallback={null}>
@@ -354,6 +363,20 @@ export function DiagnosticsModalsHost({
 					modelUrl={selected3DScanModelUrl}
 					patientName={visitPatientName ?? activePatient?.fullName}
 					scanTitle={selected3DScanTitle || "Интраоральный 3D-скан (STL/PLY)"}
+				/>
+			)}
+
+			{/* Visiograph Dual-View Comparison Modal (EzDent-i Pre/Post Op) */}
+			{isComparisonModalOpen && (
+				<VisiographComparisonModal
+					isOpen={Boolean(isComparisonModalOpen)}
+					onClose={() => setIsComparisonModalOpen?.(false)}
+					patientName={visitPatientName ?? activePatient?.fullName ?? activePatient?.name}
+					patientCardNumber={activePatient?.cardNumber ?? activePatient?.medicalCardNumber}
+					activeToothFdi={initialToothNumber}
+					currentStudy={patientStudies?.[0]}
+					historyStudies={patientStudies}
+					onInsertProtocol={onInsertToProtocol}
 				/>
 			)}
 		</React.Suspense>

@@ -55,29 +55,7 @@ export interface OmnichannelModalFooterProps {
 }
 
 export interface OmnichannelChatTabProps {
-	readonly contacts: readonly PatientOmnichannelContact[];
-	readonly selectedPatientId: string;
-	readonly setSelectedPatientId: (id: string) => void;
-	readonly patientSearchQuery: string;
-	readonly setPatientSearchQuery: (q: string) => void;
-	readonly selectedContact: PatientOmnichannelContact;
-	readonly channelFilter: OmnichannelChannelFilter;
-	readonly setChannelFilter: (f: OmnichannelChannelFilter) => void;
-	readonly currentThreadMessages: readonly OmnichannelMessage[];
-	readonly isCurrentPatientIntercepted: boolean;
-	readonly onTakeoverChat: () => void;
-	readonly onOpenSbpModal: () => void;
-	readonly onInteractiveButtonClick: (btn: InteractiveButtonPayload, msg: OmnichannelMessage) => void;
-	readonly inputChannel: OmnichannelChannel;
-	readonly setInputChannel: (ch: OmnichannelChannel) => void;
-	readonly messageText: string;
-	readonly setMessageText: (text: string) => void;
-	readonly selectedTemplateCategory: string;
-	readonly setSelectedTemplateCategory: (cat: string) => void;
-	readonly isSending: boolean;
-	readonly onSendMessage: () => void;
-	readonly onAttachFile: (e: React.ChangeEvent<HTMLInputElement>) => void;
-	readonly onApplyTemplate: (tpl: OmnichannelTemplate) => void;
+	readonly hub: import("./useOmnichannelHubState.js").UseOmnichannelHubStateReturn;
 }
 
 export type {

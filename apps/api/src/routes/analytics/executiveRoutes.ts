@@ -17,6 +17,7 @@ import {
 	serviceCatalogItems,
 	treatmentItems,
 	treatmentPlans,
+	visits,
 } from "../../db/schema.js";
 import {
 	type ExecutiveDashboardPayload,

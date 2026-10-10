@@ -157,7 +157,7 @@ export const PatientRecallsKanbanView: React.FC<PatientRecallsKanbanViewProps> =
 													}}
 													onClick={() => onStatusUpdate(candidate.id, "scheduled")}
 													data-testid={`kanban-fast-scheduled-btn-${candidate.id}`}
-													title="Связались — записан на прием (1 клик)"
+													title="Связались — записан на прием"
 												>
 													<Check size={12} />
 													<span>Записан</span>

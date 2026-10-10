@@ -36,52 +36,61 @@ export async function awardBonusPoints(
 	amountPoints: number,
 	description: string,
 	transactionType = "accrual",
+	dbClient: any = db,
 ): Promise<number> {
 	return withTenantCtx(organizationId, async () => {
-		const [balance] = await db
-			.select()
-			.from(patientBonusBalances)
-			.where(
-				and(
-					eq(patientBonusBalances.organizationId, organizationId),
-					eq(patientBonusBalances.patientId, patientId),
-				),
-			)
-			.limit(1);
+		const execute = async (tx: any) => {
+			const [balance] = await tx
+				.select()
+				.from(patientBonusBalances)
+				.where(
+					and(
+						eq(patientBonusBalances.organizationId, organizationId),
+						eq(patientBonusBalances.patientId, patientId),
+					),
+				)
+				.for("update")
+				.limit(1);
 
-		const currentActive = balance ? Number(balance.activePoints || 0) : 0;
-		const currentLifetime = balance ? Number(balance.lifetimeEarnedPoints || 0) : 0;
-		const newActive = currentActive + amountPoints;
-		const newLifetime = currentLifetime + amountPoints;
+			const currentActive = balance ? Number(balance.activePoints || 0) : 0;
+			const currentLifetime = balance ? Number(balance.lifetimeEarnedPoints || 0) : 0;
+			const newActive = currentActive + amountPoints;
+			const newLifetime = currentLifetime + amountPoints;
 
-		if (balance) {
-			await db
-				.update(patientBonusBalances)
-				.set({
+			if (balance) {
+				await tx
+					.update(patientBonusBalances)
+					.set({
+						activePoints: String(newActive),
+						lifetimeEarnedPoints: String(newLifetime),
+						updatedAt: new Date(),
+					})
+					.where(eq(patientBonusBalances.id, balance.id));
+			} else {
+				await tx.insert(patientBonusBalances).values({
+					organizationId,
+					patientId,
 					activePoints: String(newActive),
 					lifetimeEarnedPoints: String(newLifetime),
-					updatedAt: new Date(),
-				})
-				.where(eq(patientBonusBalances.id, balance.id));
-		} else {
-			await db.insert(patientBonusBalances).values({
+				});
+			}
+
+			await tx.insert(bonusTransactions).values({
 				organizationId,
 				patientId,
-				activePoints: String(newActive),
-				lifetimeEarnedPoints: String(newLifetime),
+				type: "accrual",
+				amountPoints: String(amountPoints),
+				balanceAfterPoints: String(newActive),
+				description,
 			});
+
+			return newActive;
+		};
+
+		if (dbClient === db) {
+			return await db.transaction(execute);
 		}
-
-		await db.insert(bonusTransactions).values({
-			organizationId,
-			patientId,
-			type: "accrual",
-			amountPoints: String(amountPoints),
-			balanceAfterPoints: String(newActive),
-			description,
-		});
-
-		return newActive;
+		return await execute(dbClient);
 	});
 }
 
@@ -289,46 +298,50 @@ export async function processReferralStart(
 			let isNew = false;
 			if (!existingReferral) {
 				isNew = true;
-				// Создаем запись в patient_referrals
-				await db.insert(patientReferrals).values({
-					organizationId,
-					referrerPatientId: referrerId,
-					refereePatientId: refereeId,
-					status: "completed",
-					qualifyingAmountRub: String(config.refereeWelcomeBonusRub),
-				});
+				await db.transaction(async (tx) => {
+					// Создаем запись в patient_referrals
+					await tx.insert(patientReferrals).values({
+						organizationId,
+						referrerPatientId: referrerId,
+						refereePatientId: refereeId,
+						status: "completed",
+						qualifyingAmountRub: String(config.refereeWelcomeBonusRub),
+					});
 
-				// Начисляем приветственные 1 000 ₽ другу
-				await awardBonusPoints(
-					organizationId,
-					refereeId,
-					config.refereeWelcomeBonusRub,
-					`Приветственный бонус по приглашению от ${referrerPatient.fullName}`,
-					"welcome_bonus",
-				);
-
-				// Начисляем кэшбэк +500 ₽ пригласившему
-				await awardBonusPoints(
-					organizationId,
-					referrerId,
-					config.referrerBonusRub,
-					`Кэшбэк за приглашение друга (${refereePatient.fullName})`,
-					"referral_reward",
-				);
-
-				// Обновляем статистику в кодах
-				await db
-					.update(patientReferralCodes)
-					.set({
-						signupCount: sql`${patientReferralCodes.signupCount} + 1`,
-						convertedCount: sql`${patientReferralCodes.convertedCount} + 1`,
-					})
-					.where(
-						and(
-							eq(patientReferralCodes.organizationId, organizationId),
-							eq(patientReferralCodes.patientId, referrerId),
-						),
+					// Начисляем приветственные 1 000 ₽ другу
+					await awardBonusPoints(
+						organizationId,
+						refereeId,
+						config.refereeWelcomeBonusRub,
+						`Приветственный бонус по приглашению от ${referrerPatient.fullName}`,
+						"welcome_bonus",
+						tx,
 					);
+
+					// Начисляем кэшбэк +500 ₽ пригласившему
+					await awardBonusPoints(
+						organizationId,
+						referrerId,
+						config.referrerBonusRub,
+						`Кэшбэк за приглашение друга (${refereePatient.fullName})`,
+						"referral_reward",
+						tx,
+					);
+
+					// Обновляем статистику в кодах
+					await tx
+						.update(patientReferralCodes)
+						.set({
+							signupCount: sql`${patientReferralCodes.signupCount} + 1`,
+							convertedCount: sql`${patientReferralCodes.convertedCount} + 1`,
+						})
+						.where(
+							and(
+								eq(patientReferralCodes.organizationId, organizationId),
+								eq(patientReferralCodes.patientId, referrerId),
+							),
+						);
+				});
 
 				// Отправляем WebSocket уведомление в CRM
 				wsBroker.broadcastToOrganization(organizationId, {

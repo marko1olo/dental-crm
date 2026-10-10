@@ -84,7 +84,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 							{(activeStudy as any)?.patientName || patientName || "Пациент"}
 						</span>
 						<span className="text-[10px] text-slate-400 truncate">
-							Зуб #{effectiveTooth} • {(activeStudy as any)?.modalityLabel || "Прицельный снимок RVG"}
+							{effectiveTooth ? `Зуб #${effectiveTooth} • ` : ""}{(activeStudy as any)?.modalityLabel || "Прицельный снимок RVG"}
 						</span>
 					</div>
 				</div>
@@ -266,10 +266,10 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 							: "bg-[#064e3b] border-[#10b981] text-[#a7f3d0] hover:bg-[#047857]"
 					}`}
 					data-testid="btn-sensor-norma"
-					title="Внести норму патологии в медицинскую карту в 1 клик"
+					title="Внести заключение о норме в медицинскую карту"
 				>
 					{isNormaApplied ? <CheckCircle2 size={12} /> : <Zap size={12} className="text-[#34d399]" />}
-					<span>{isNormaApplied ? "Норма внесена ✓" : "Норма: патологии нет ✓"}</span>
+					<span>{isNormaApplied ? "Норма внесена" : "Норма: патологии нет"}</span>
 				</button>
 
 				{/* Standard Protocols Dropdown */}

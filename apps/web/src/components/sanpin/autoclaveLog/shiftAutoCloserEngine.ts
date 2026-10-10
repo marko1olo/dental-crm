@@ -18,5 +18,5 @@
  * - <shiftCloser/batchOrchestrator.ts>
  */
 
-export type * from "./shiftCloser/index.js";
 export * from "./shiftCloser/index.js";
+

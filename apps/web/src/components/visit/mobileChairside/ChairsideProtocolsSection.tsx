@@ -102,7 +102,7 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
           <ChairsideTeethQuickSelector
             activeQuadrant={activeQuadrant}
             onQuadrantChange={onQuadrantChange}
-            toothStateByCode={toothStateByCode}
+            toothStateByCode={toothStateByCode ?? {}}
             setToothState={setToothState}
             testId={testId}
           />

@@ -65,7 +65,7 @@ describe("VisitSoapEditor & Form 043/u StomX 448 Protocols Integration", () => {
 			}),
 		);
 
-		assert.ok(html.includes("Клинические протоколы StomX"), "Renders drawer header");
+		assert.ok(html.includes("Клинические протоколы (448 шаблонов)"), "Renders drawer header");
 		assert.ok(html.includes("Все протоколы"), "Renders all protocols button");
 		assert.ok(html.includes("Терапия"), "Renders Therapy category filter");
 		assert.ok(html.includes("Ортопедия"), "Renders Orthopedics category filter");

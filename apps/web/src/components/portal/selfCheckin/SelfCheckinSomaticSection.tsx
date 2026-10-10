@@ -85,7 +85,7 @@ export const SelfCheckinSomaticSection: React.FC<SelfCheckinSomaticSectionProps>
 					className="selfcheckin-btn-norm-dominant"
 					onClick={onApplyPhysiologicalNorm}
 					data-testid="somatic-norm-dominant-btn"
-					title="Заполнить весь опросник (давление, аллергии, соматика) физиологической нормой в 1 клик"
+					title="Заполнить весь опросник (давление, аллергии, соматика) физиологической нормой"
 				>
 					<CheckCircle2 size={26} className="selfcheckin-dominant-check-icon shrink-0" />
 					<div className="selfcheckin-dominant-text-col text-left">

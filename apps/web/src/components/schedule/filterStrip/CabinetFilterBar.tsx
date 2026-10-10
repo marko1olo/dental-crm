@@ -12,13 +12,13 @@ import type {
 
 export interface CabinetFilterBarProps {
 	activeScheduleFilterCount: number;
-	scheduleStatusFilter?: string | null;
+	scheduleStatusFilter?: string | null | undefined;
 	resetScheduleFilters: () => void;
-	setScheduleStatusFilter?: (status: string | null) => void;
-	queueCounts?: ShiftQueueCounts;
+	setScheduleStatusFilter?: ((status: string | null) => void) | undefined;
+	queueCounts?: ShiftQueueCounts | undefined;
 	hasMultipleBranches: boolean;
-	selectedBranchId?: string | null;
-	onSelectBranch?: (branchId: string | null) => void;
+	selectedBranchId?: string | null | undefined;
+	onSelectBranch?: ((branchId: string | null) => void) | undefined;
 	activeBranches: ScheduleBranch[];
 	hasMultipleChairs: boolean;
 	myChair: ScheduleChair | null;
@@ -26,13 +26,13 @@ export interface CabinetFilterBarProps {
 	handleSelectMyChair: () => void;
 	hasMultipleDoctors: boolean;
 	activeDoctors: ScheduleStaffMember[];
-	scheduleDoctorFilterId?: string | null;
-	setScheduleDoctorFilterId?: (id: string | null) => void;
+	scheduleDoctorFilterId?: string | null | undefined;
+	setScheduleDoctorFilterId?: ((id: string | null) => void) | undefined;
 	displayChairs: readonly ScheduleChair[];
-	scheduleChairFilterId?: string | null;
-	setScheduleChairFilterId?: (id: string | null) => void;
+	scheduleChairFilterId?: string | null | undefined;
+	setScheduleChairFilterId?: ((id: string | null) => void) | undefined;
 	handleOpenAddChair: () => void;
-	activeFilterSummary?: React.ReactNode;
+	activeFilterSummary?: React.ReactNode | undefined;
 }
 
 export function CabinetFilterBar({
@@ -78,33 +78,6 @@ export function CabinetFilterBar({
 					}
 				}}
 			>
-				{/* "Все записи" filter chip */}
-				<button
-					type="button"
-					className={`quick-chip dente-filter-chip ${activeScheduleFilterCount === 0 && (!scheduleStatusFilter || scheduleStatusFilter === "all") ? "active font-semibold" : ""} shrink-0 cursor-pointer inline-flex items-center justify-center gap-1.5 select-none`}
-					style={{ flexShrink: 0, whiteSpace: "nowrap" }}
-					onClick={() => {
-						resetScheduleFilters();
-						if (setScheduleStatusFilter) {
-							setScheduleStatusFilter("all");
-						}
-					}}
-				>
-					<span className="whitespace-nowrap shrink-0">Все записи</span>
-					{queueCounts?.all !== undefined && (
-						<span
-							data-testid="schedule-queue-count-all"
-							className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-								activeScheduleFilterCount === 0 && (!scheduleStatusFilter || scheduleStatusFilter === "all")
-									? "bg-white/30 text-white"
-									: "bg-[var(--line)] text-[var(--ink-soft)]"
-							}`}
-						>
-							{queueCounts.all}
-						</span>
-					)}
-				</button>
-
 				{/* 1-Click Branch Selector: auto-hidden when branches <= 1 (Mandates 8n, 8p) */}
 				{hasMultipleBranches && (
 					<div
@@ -114,7 +87,7 @@ export function CabinetFilterBar({
 						<select
 							value={selectedBranchId || ""}
 							onChange={(e) => onSelectBranch?.(e.target.value ? e.target.value : null)}
-							className="h-7 px-2 text-[12.5px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all"
+							className="h-8 min-h-[32px] max-h-8 px-2 text-[12.5px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all"
 							aria-label="Выбор филиала клиники"
 							data-testid="schedule-branch-select"
 						>
@@ -134,8 +107,8 @@ export function CabinetFilterBar({
 					return (
 						<button
 							type="button"
-							className={`quick-chip dente-filter-chip schedule-my-chair-chip min-h-[44px] ${isMyChairActive ? "active font-semibold" : ""} shrink-0 flex-shrink-0 cursor-pointer inline-flex items-center gap-1.5 transition-all select-none`}
-							style={{ whiteSpace: "nowrap", flexShrink: 0, minHeight: "44px" }}
+							className={`quick-chip dente-filter-chip schedule-my-chair-chip h-8 min-h-[44px] sm:min-h-[32px] max-h-8 rounded-lg px-2 text-[12px] ${isMyChairActive ? "active font-semibold" : ""} shrink-0 flex-shrink-0 cursor-pointer inline-flex items-center gap-1.5 transition-all select-none`}
+							style={{ whiteSpace: "nowrap", flexShrink: 0 }}
 							onClick={handleSelectMyChair}
 							title={`Моё дежурное кресло: ${cleanChairName}. Быстрая фильтрация`}
 							aria-label={`Моё дежурное кресло: ${cleanChairName}`}
@@ -143,7 +116,7 @@ export function CabinetFilterBar({
 						>
 							<Armchair size={13} className="shrink-0 text-current" aria-hidden="true" />
 							<span className="whitespace-nowrap shrink-0 flex-shrink-0">
-								Моё кресло ({cleanChairName})
+								Моё кресло
 							</span>
 						</button>
 					);
@@ -153,8 +126,8 @@ export function CabinetFilterBar({
 				<DoctorFilterDropdown
 					hasMultipleDoctors={hasMultipleDoctors}
 					activeDoctors={activeDoctors}
-					scheduleDoctorFilterId={scheduleDoctorFilterId}
-					setScheduleDoctorFilterId={setScheduleDoctorFilterId}
+					scheduleDoctorFilterId={scheduleDoctorFilterId ?? null}
+					setScheduleDoctorFilterId={setScheduleDoctorFilterId ?? (() => {})}
 				/>
 
 				{/* Chair filter chips with specializations */}
@@ -182,7 +155,7 @@ export function CabinetFilterBar({
 								key={chair.id}
 								type="button"
 								data-testid={`chair-view-badge-${chair.id}`}
-								className={`quick-chip dente-filter-chip ${scheduleChairFilterId === chair.id ? "active font-semibold" : ""} shrink-0 flex-shrink-0 cursor-pointer inline-flex items-center gap-1 select-none whitespace-nowrap`}
+								className={`quick-chip dente-filter-chip h-8 min-h-[32px] max-h-8 rounded-lg px-2.5 text-[12.5px] ${scheduleChairFilterId === chair.id ? "active font-semibold" : ""} shrink-0 flex-shrink-0 cursor-pointer inline-flex items-center gap-1 select-none whitespace-nowrap`}
 								style={{ whiteSpace: "nowrap", flexShrink: 0 }}
 								onClick={() =>
 									setScheduleChairFilterId?.(
@@ -204,7 +177,7 @@ export function CabinetFilterBar({
 					<button
 						type="button"
 						onClick={handleOpenAddChair}
-						className="schedule-add-chair-chip-btn dente-filter-chip min-h-[44px] min-w-[44px] shrink-0 flex-shrink-0 px-2.5 mr-1 border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-[var(--paper)] text-[var(--teal-dark)] dark:text-[var(--teal)] text-[12.5px] font-semibold inline-flex items-center justify-center gap-1 cursor-pointer transition-all select-none whitespace-nowrap"
+						className="schedule-add-chair-chip-btn dente-filter-chip h-8 min-h-[44px] sm:min-h-[32px] max-h-8 min-w-[44px] rounded-lg shrink-0 flex-shrink-0 px-2.5 mr-1 border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-[var(--paper)] text-[var(--teal-dark)] dark:text-[var(--teal)] text-[12px] font-semibold inline-flex items-center justify-center gap-1 cursor-pointer transition-all select-none whitespace-nowrap"
 						style={{ whiteSpace: "nowrap", flexShrink: 0, minHeight: "44px", minWidth: "44px" }}
 						title="Быстрое добавление кресла или кабинета в расписание"
 						aria-label="Добавить кресло в расписание"

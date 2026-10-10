@@ -113,8 +113,8 @@ describe("ImagingStore Decomposed Architecture Integration Suite (Wave 24)", () 
 		it("manages active tool selection and quick actions", () => {
 			const store = useImagingStore.getState();
 
-			store.setImagingViewerActiveTool("ruler");
-			assert.equal(useImagingStore.getState().imagingViewerActiveTool, "ruler");
+			store.setImagingViewerActiveTool("measure_distance");
+			assert.equal(useImagingStore.getState().imagingViewerActiveTool, "measure_distance");
 
 			store.setCtPlanningActiveQuickActionId("implant_safety_zone");
 			assert.equal(
@@ -127,13 +127,13 @@ describe("ImagingStore Decomposed Architecture Integration Suite (Wave 24)", () 
 			const store = useImagingStore.getState();
 			const mockAnnotation = {
 				id: "ann_calib_5mm",
-				type: "ruler" as const,
+				type: "distance" as const,
 				points: [
 					{ x: 10, y: 20 },
 					{ x: 60, y: 20 },
 				],
 				label: "5.0 mm calibration",
-			};
+			} as any;
 
 			store.setImagingViewerAnnotations([mockAnnotation]);
 			assert.equal(
@@ -141,11 +141,11 @@ describe("ImagingStore Decomposed Architecture Integration Suite (Wave 24)", () 
 				1,
 			);
 			assert.equal(
-				useImagingStore.getState().imagingViewerAnnotations[0].id,
+				useImagingStore.getState().imagingViewerAnnotations[0]?.id,
 				"ann_calib_5mm",
 			);
 
-			store.setImagingViewerAnnotations((prev) => [
+			store.setImagingViewerAnnotations((prev: any) => [
 				...prev,
 				{
 					id: "ann_nerve",
@@ -154,7 +154,7 @@ describe("ImagingStore Decomposed Architecture Integration Suite (Wave 24)", () 
 						{ x: 10, y: 10 },
 						{ x: 30, y: 30 },
 					],
-				},
+				} as any,
 			]);
 			assert.equal(
 				useImagingStore.getState().imagingViewerAnnotations.length,
@@ -264,7 +264,7 @@ describe("ImagingStore Decomposed Architecture Integration Suite (Wave 24)", () 
 			store.setImagingViewerActiveTool("pan");
 			store.setImagingViewerNote("Временная заметка");
 			store.setImagingViewerAnnotations([
-				{ id: "ann1", type: "ruler" as const, points: [] },
+				{ id: "ann1", type: "distance" as const, points: [] } as any,
 			]);
 			// biome-ignore lint/suspicious/noExplicitAny: test payload
 			store.setCtPlanningImplantPlan({ toothNumber: 46 } as any);

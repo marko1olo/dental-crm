@@ -198,7 +198,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
       <div
         data-testid="appointment-modal-container"
-        className="relative w-full max-w-3xl bg-[var(--paper)] border-t sm:border border-[var(--line-strong)] rounded-t-3xl sm:rounded-2xl shadow-2xl z-10 text-[var(--ink)] flex flex-col max-h-[90dvh] sm:max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom sm:animate-scale-in"
+        className="relative w-full max-w-xl sm:max-w-[540px] bg-[var(--paper)] border-t sm:border border-[var(--line-strong)] rounded-t-3xl sm:rounded-2xl shadow-2xl z-10 text-[var(--ink)] flex flex-col max-h-[90dvh] sm:max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom sm:animate-scale-in"
       >
         {/* Mobile Tactile Drag Handle */}
         <div className="sm:hidden w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto my-2 shrink-0" />
@@ -219,7 +219,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
         />
 
         {/* Body Form */}
-        <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 space-y-3.5 sm:space-y-4 pb-12 sm:pb-16">
+        <div className="flex-1 overflow-y-auto min-h-0 p-3.5 sm:p-4 space-y-2.5 pb-4">
           {/* Online Booking Notice Banner & 1-Click Confirmation */}
           {Boolean(
             (appointment?.comment &&
@@ -283,7 +283,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
           )}
 
           {/* Form Fields: Layer A (Base Mandatory Layer) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
             {/* 1. Patient Section */}
             <AppointmentModalPatientSection
               appointment={appointment}
@@ -611,7 +611,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
               type="button"
               onClick={onClose}
               disabled={isSaving}
-              className="appointment-modal-cta-cancel h-11 px-5 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper-subtle)] text-[var(--ink)] text-sm font-bold transition-all cursor-pointer active:scale-95 shadow-2xs flex items-center justify-center text-center"
+              className="appointment-modal-cta-cancel h-11 px-5 rounded-[14px] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 text-sm font-medium transition-all cursor-pointer active:scale-95 shadow-2xs flex items-center justify-center text-center select-none"
             >
               Отмена
             </button>
@@ -619,28 +619,26 @@ export function AppointmentModal(props: AppointmentModalProps) {
               type="button"
               onClick={(e) => handleSave(e)}
               disabled={isSaving}
-              className={`appointment-modal-cta-save h-11 px-6 font-extrabold rounded-xl text-sm sm:text-base transition-all shadow-md hover:brightness-105 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer ${
+              className={`appointment-modal-cta-save h-11 px-6 font-medium rounded-[14px] text-sm transition-all shadow-md hover:brightness-105 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer select-none ${
                 collision.isCitoOverbooking || isCito
                   ? "!bg-rose-600 hover:!bg-rose-700 !text-white shadow-rose-500/25"
                   : collision.hasCollision
                     ? "!bg-amber-600 hover:!bg-amber-700 !text-white shadow-amber-500/25"
-                    : "!bg-[var(--teal)] hover:brightness-105 active:brightness-95 !text-white shadow-teal-500/20"
+                    : "!bg-[var(--teal,#0d9488)] hover:brightness-105 active:brightness-95 !text-white shadow-teal-500/20"
               }`}
               data-testid="appointment-modal-save-btn"
             >
               <Check size={18} className="stroke-[2.5]" />
               <span>
-                {isSaving ? (
-                  "Сохраняю…"
-                ) : collision.isCitoOverbooking || isCito ? (
-                  "Сохранить срочно (Острая боль)"
-                ) : collision.hasCollision ? (
-                  "Записать на это время (острая боль)"
-                ) : isNewAppointment ? (
-                  "Записать на приём"
-                ) : (
-                  "Сохранить запись"
-                )}
+                {isSaving
+                  ? "Сохраняю…"
+                  : collision.isCitoOverbooking || isCito
+                    ? "Сохранить срочно (Острая боль)"
+                    : collision.hasCollision
+                      ? "Записать на это время (острая боль)"
+                      : isNewAppointment
+                        ? "Записать на приём"
+                        : "Сохранить запись"}
               </span>
             </button>
           </div>

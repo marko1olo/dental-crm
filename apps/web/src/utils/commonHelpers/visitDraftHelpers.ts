@@ -6,3 +6,4 @@
  */
 export * from "./visitDraft";
 export type * from "./visitDraft";
+// /^[^\s@]+@[^\s@]+\.[^\s@]+$/

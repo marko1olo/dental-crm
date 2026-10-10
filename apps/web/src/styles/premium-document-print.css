@@ -513,6 +513,15 @@
 		break-after: avoid !important;
 	}
 
+	table thead {
+		display: table-header-group !important;
+	}
+
+	table tr {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+
 	/* Ensure background colors and borders print faithfully */
 	* {
 		-webkit-print-color-adjust: exact !important;

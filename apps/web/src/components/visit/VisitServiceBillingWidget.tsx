@@ -456,19 +456,12 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 	};
 
 	const handlePrintEstimate = () => {
-		const printRows = services
-			.map((s, idx) => `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${idx + 1}</td><td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${s.code804n}</td><td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${s.title}${s.toothCode ? ` (зуб ${s.toothCode})` : ""}${s.isWarranty ? '<span style="color: #15803d; font-weight: bold;"> [Гарантия 100%]</span>' : ""}</td><td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">${s.quantity}</td><td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${s.unitPriceRub.toLocaleString("ru-RU")} ₽</td><td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">${s.isWarranty ? "0 ₽" : `${(s.unitPriceRub * s.quantity).toLocaleString("ru-RU")} ₽`}</td></tr>`)
-			.join("");
-
-		const html = `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>Смета оказанных стоматологических услуг</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:30px;color:#0f172a}.header{border-bottom:2px solid #0f172a;padding-bottom:12px;margin-bottom:16px}h1{margin:0 0 6px 0;font-size:18px;font-weight:800}.clinic{font-size:12px;color:#475569}.patient{margin:12px 0;font-size:13px}table{width:100%;border-collapse:collapse;margin:16px 0;font-size:12px}th,td{padding:8px 10px;border-bottom:1px solid #cbd5e1;text-align:left}th{background:#f8fafc;font-weight:700;border-bottom:2px solid #94a3b8}.total-box{margin-top:20px;text-align:right;font-size:13px}.total-due{font-size:16px;font-weight:800;color:#0f172a;margin-top:6px}</style></head><body><div class="header"><h1>СМЕТА ОКАЗАННЫХ СТОМАТОЛОГИЧЕСКИХ УСЛУГ</h1><div class="clinic">${clinicLegalName} • Прейскурант услуг</div></div><div class="patient"><div><strong>Пациент:</strong> ${patientName}</div><div><strong>Лечащий врач:</strong> ${doctorName}</div><div><strong>Дата:</strong> ${new Date().toLocaleDateString("ru-RU")}</div></div><table><thead><tr><th>№</th><th>Код услуги</th><th>Наименование услуги</th><th style="text-align:center;">Кол-во</th><th style="text-align:right;">Цена</th><th style="text-align:right;">Сумма</th></tr></thead><tbody>${printRows}</tbody></table><div class="total-box"><div>Сумма по прейскуранту: <strong>${totals.rawTotalRub.toLocaleString("ru-RU")} ₽</strong></div>${totals.discountRub > 0 ? `<div style="color:#b45309;">Скидка врача: <strong>-${totals.discountRub.toLocaleString("ru-RU")} ₽ (${totals.effectiveDiscountPercent}%)</strong></div>` : ""}<div class="total-due">Итого к оплате: ${totals.isWarranty100 ? "0 ₽ (Скидка 100% — Гарантийный прием)" : `${totals.totalDueRub.toLocaleString("ru-RU")} ₽`}</div></div></body></html>`;
-
-		void hardwarePrinter.printHtmlWithPopupFallback(html, {
-			title: "Смета услуг визита",
-			downloadFilename: `Smeta_${Date.now()}.html`,
-		}).then(() => {
-			showToast("Смета отправлена на печать", "success", 2000);
-		}).catch(() => {
-			showToast("Ошибка отправки сметы на печать", "error", 2500);
+		printVisitBillingEstimate({
+			services,
+			totals,
+			clinicLegalName,
+			patientName,
+			doctorName,
 		});
 	};
 
@@ -737,11 +730,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 
 					<div className="flex items-center gap-2 flex-wrap">
 						{effectiveDmsCoverage > 0 && (
-							<div
-								className="h-9 px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-500/30 text-teal-800 dark:text-teal-300 text-xs font-semibold flex items-center gap-1.5 shadow-2xs"
-								data-testid="badge-visit-dms-coverage"
-								title={`Гарантийное письмо № ${effectiveDmsNumber || ""} (${effectiveDmsInsurer || ""})`}
-							>
+							<div className="h-9 px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-500/30 text-teal-800 dark:text-teal-300 text-xs font-semibold flex items-center gap-1.5 shadow-2xs" data-testid="badge-visit-dms-coverage" title={`Гарантийное письмо № ${effectiveDmsNumber || ""} (${effectiveDmsInsurer || ""})`}>
 								<ShieldCheck size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
 								<span>ДМС: {effectiveDmsInsurer || "ГП"} ({effectiveDmsCoverage.toLocaleString("ru-RU")} ₽)</span>
 							</div>
@@ -749,29 +738,15 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 						<button
 							type="button"
 							onClick={handleOpenPaymentModal}
-							title={
-								totals.isWarranty100
-									? "Закрыть визит по 100% гарантии (0 ₽)"
-									: `Перейти к оплате ${totals.totalDueRub.toLocaleString("ru-RU")} ₽ в кассу`
-							}
-							className={`h-9 px-5 rounded-xl text-white text-xs font-bold cursor-pointer transition-all flex items-center gap-2 shadow-sm ${
-								totals.isWarranty100
-									? "bg-emerald-600 hover:bg-emerald-700"
-									: "bg-teal-600 hover:bg-teal-700"
-							}`}
+							title={totals.isWarranty100 ? "Закрыть визит по 100% гарантии (0 ₽)" : `Перейти к оплате ${totals.totalDueRub.toLocaleString("ru-RU")} ₽ в кассу`}
+							className={`h-9 px-5 rounded-xl text-white text-xs font-bold cursor-pointer transition-all flex items-center gap-2 shadow-sm ${totals.isWarranty100 ? "bg-emerald-600 hover:bg-emerald-700" : "bg-teal-600 hover:bg-teal-700"}`}
 							data-testid="btn-open-payment-modal"
 							data-tour="cashier-pay"
 						>
 							{totals.isWarranty100 ? (
-								<>
-									<ShieldCheck size={16} />
-									<span>Закрыть по гарантии (0 ₽)</span>
-								</>
+								<><ShieldCheck size={16} /><span>Закрыть по гарантии (0 ₽)</span></>
 							) : (
-								<>
-									<CreditCard size={16} />
-									<span>Оплатить в кассу ({totals.totalDueRub.toLocaleString("ru-RU")} ₽)</span>
-								</>
+								<><CreditCard size={16} /><span>Оплатить в кассу ({totals.totalDueRub.toLocaleString("ru-RU")} ₽)</span></>
 							)}
 						</button>
 					</div>
@@ -782,22 +757,23 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 			{isPaymentModalOpen && (
 				<PaymentModal
 					isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)}
-					patientId={patientId} patientName={patientName} patientPhone={patientPhone}
-					visitId={visitId}
+					patientId={patientId} patientName={patientName} patientPhone={patientPhone} visitId={visitId}
 					amountRub={totals.totalDueRub} patientDepositRub={patientDepositRub}
 					patientFamilyBalanceRub={patientFamilyBalanceRub} cashierName={cashierName || doctorName}
 					doctorName={doctorName} clinicLegalName={clinicLegalName}
 					initialDiscountPercent={globalDiscountPercent} initialWarranty100={totals.isWarranty100}
 					initialDiscountReason={globalDiscountReason}
-					dmsGuaranteeLetterId={effectiveDmsId}
-					dmsGuaranteeLetterNumber={effectiveDmsNumber}
-					dmsInsurerName={effectiveDmsInsurer}
-					availableDmsCoverageRub={effectiveDmsCoverage > 0 ? effectiveDmsCoverage : undefined}
+					dmsGuaranteeLetterId={effectiveDmsId} dmsGuaranteeLetterNumber={effectiveDmsNumber}
+					dmsInsurerName={effectiveDmsInsurer} availableDmsCoverageRub={effectiveDmsCoverage > 0 ? effectiveDmsCoverage : undefined}
 					initialSplitDmsRub={initialSplitDmsRub}
-					onSuccess={() => {
-						setIsPaymentModalOpen(false);
-						showToast("Оплата успешно принята в кассу!", "success", 3000);
-					}}
+					items={services.map((s, idx) => ({
+						id: s.id || `bill-${idx}`, name: s.title, code804n: s.code804n || "A16.07.002.001",
+						quantity: s.quantity || 1, priceRub: s.unitPriceRub || 0, discountRub: s.discountRub,
+						amountRub: Math.max(0, (s.unitPriceRub || 0) * (s.quantity || 1) - (s.discountRub || 0)),
+						toothNumber: s.toothCode ? (Number(s.toothCode) || s.toothCode) : undefined,
+					}))}
+					toothNumber={services[0]?.toothCode ? (Number(services[0].toothCode) || services[0].toothCode) : undefined}
+					onSuccess={() => { setIsPaymentModalOpen(false); showToast("Оплата успешно принята в кассу!", "success", 3000); }}
 				/>
 			)}
 		</div>

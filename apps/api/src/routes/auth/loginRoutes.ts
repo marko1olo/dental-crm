@@ -652,9 +652,13 @@ export function registerLoginRoutes(app: FastifyInstance): void {
 		"/api/auth/demo/seed",
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			if (!demoLoginAllowed()) {
+				request.log.warn(
+					{ url: request.url },
+					"[DEMO_SEED_FORBIDDEN] Инициализация демо-контура доступна только при включенном DENTE_ALLOW_DEMO_LOGIN в dev/test.",
+				);
 				return reply.code(403).send({
 					error: "Forbidden",
-					message: "Инициализация демо-контура доступна только при включенном DENTE_ALLOW_DEMO_LOGIN в dev/test.",
+					message: "Инициализация демо-контура недоступна в текущей конфигурации сервера.",
 				});
 			}
 			const body = authBodyRecord(request.body);

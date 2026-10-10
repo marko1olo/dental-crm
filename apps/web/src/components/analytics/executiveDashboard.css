@@ -260,40 +260,28 @@
 .executive-kpi-label {
 	font-size: 0.8125rem;
 	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
 	color: var(--muted, #64748b);
+	white-space: nowrap;
 }
 
 .executive-kpi-icon-wrap {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 34px;
-	height: 34px;
+	width: 32px;
+	height: 32px;
 	border-radius: 8px;
-	background: rgba(13, 148, 136, 0.1);
-	color: var(--teal, #0d9488);
-}
-
-.executive-kpi-icon-teal {
 	background: rgba(13, 148, 136, 0.12);
 	color: var(--teal, #0d9488);
+	flex-shrink: 0;
 }
 
-.executive-kpi-icon-accent {
-	background: rgba(99, 102, 241, 0.12);
-	color: var(--accent, #6366f1);
-}
-
-.executive-kpi-icon-ok {
-	background: rgba(16, 185, 129, 0.12);
-	color: var(--ok-fg, #10b981);
-}
-
+.executive-kpi-icon-teal,
+.executive-kpi-icon-accent,
+.executive-kpi-icon-ok,
 .executive-kpi-icon-warn {
-	background: rgba(245, 158, 11, 0.12);
-	color: var(--warn-fg, #f59e0b);
+	background: rgba(13, 148, 136, 0.12);
+	color: var(--teal, #0d9488);
 }
 
 .executive-kpi-main-val {

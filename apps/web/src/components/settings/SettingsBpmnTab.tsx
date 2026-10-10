@@ -344,10 +344,10 @@ export function SettingsBpmnTab() {
 									style={{ display: "flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 									onClick={handleSeedStandardWorkflows}
 									disabled={adding}
-									title="Подключить 4 стандартных сценария стоматологии в 1 клик"
+									title="Подключить 4 стандартных сценария стоматологии"
 								>
 									<Zap size={14} className="inline mr-1" />
-									<span>Стандартные сценарии (1 клик)</span>
+									<span>Стандартные сценарии</span>
 								</button>
 								<button
 									type="button"

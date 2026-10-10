@@ -217,6 +217,12 @@ export function baseDocument(
       width: 100%;
       font-size: 8.5pt;
       line-height: 1.25;
+      page-break-inside: auto;
+    }
+    thead {
+      display: table-header-group;
+    }
+    tr {
       page-break-inside: avoid;
       break-inside: avoid;
     }

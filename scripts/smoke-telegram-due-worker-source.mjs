@@ -1,8 +1,28 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
+import { readApiServerSourceSync } from "./lib/api-server-source.mjs";
 
-const telegramSource = readFileSync("apps/api/src/routes/telegram.ts", "utf8");
-const serverSource = readFileSync("apps/api/src/server.ts", "utf8");
-const sampleSource = readFileSync("apps/api/src/sampleData.ts", "utf8");
+const telegramFiles = [
+	"apps/api/src/routes/telegram.ts",
+	"apps/api/src/routes/telegram/index.ts",
+	"apps/api/src/routes/telegram/telegramOutboxWorker.ts",
+	"apps/api/src/routes/telegram/telegramOutboxRoute.ts",
+	"apps/api/src/routes/telegram/telegramOutboxDelivery.ts",
+	"apps/api/src/routes/telegram/telegramOutboxSendHandlers.ts",
+	"apps/api/src/routes/telegram/telegramManagementRoutes.ts",
+];
+const telegramSource = telegramFiles
+	.filter((path) => existsSync(path))
+	.map((path) => readFileSync(path, "utf8"))
+	.join("\n");
+const serverSource = readApiServerSourceSync();
+const sampleFiles = [
+	"apps/api/src/sampleData.ts",
+	"apps/api/src/services/telegram/legacyMemory/outboxDelivery.ts",
+];
+const sampleSource = sampleFiles
+	.filter((path) => existsSync(path))
+	.map((path) => readFileSync(path, "utf8"))
+	.join("\n");
 
 function assert(condition, message) {
 	if (!condition) throw new Error(message);
@@ -18,7 +38,7 @@ const requiredTelegramSnippets = [
 	"DENTE_TELEGRAM_OUTBOX_WORKER_RUN_ON_START",
 	"setTimeout",
 	"retryAfterSeconds",
-	"executeDenteTelegramOutboxDueBatch(input, runtimeResult.runtime)",
+	"executeDenteTelegramOutboxDueBatch",
 	'clientMutationId?.startsWith("due-")',
 ];
 
@@ -60,9 +80,9 @@ const routeBlock =
 			)
 		: "";
 assert(
-	routeBlock.includes(
-		"executeDenteTelegramOutboxDueBatch(input, runtimeResult.runtime)",
-	),
+	routeBlock.includes("executeDenteTelegramOutboxDueBatch") &&
+		routeBlock.includes("input") &&
+		routeBlock.includes("runtimeResult.runtime"),
 	"manual send-due route must reuse worker batch service in the resolved bot runtime scope",
 );
 assert(

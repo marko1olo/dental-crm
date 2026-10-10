@@ -382,7 +382,7 @@ export function buildForm043ProtocolText(
 			? ` (${payload.calibration.referenceType}${payload.calibration.referenceMm ? ` ${payload.calibration.referenceMm} мм` : ""})`
 			: "";
 		lines.push(
-			`Калибровка масштаба: 1 px = ${payload.calibration.scaleMmPerPx.toFixed(4)} мм${ref}`,
+			`Калибровка масштаба: 1 px = ${(payload.calibration.scaleMmPerPx ?? 0).toFixed(4)} мм${ref}`,
 		);
 	}
 
@@ -390,14 +390,14 @@ export function buildForm043ProtocolText(
 		const { rulers = [], angles = [], lesions = [] } = payload.measurements;
 		if (rulers.length > 0) {
 			const rulerLines = rulers.map(
-				(r, i) => `${r.label || `L${i + 1}`}: ${r.lengthMm.toFixed(1)} мм`,
+				(r, i) => `${r.label || `L${i + 1}`}: ${(r.lengthMm ?? 0).toFixed(1)} мм`,
 			);
 			lines.push(`Линейные замеры: ${rulerLines.join(", ")}`);
 		}
 		if (angles.length > 0) {
 			const angleLines = angles.map(
 				(a, i) =>
-					`${a.label || `∠${i + 1}`}: ${a.angleDeg.toFixed(1)}°${a.deviationFromVerticalDeg !== undefined ? ` (наклон: ${a.deviationFromVerticalDeg.toFixed(1)}°)` : ""}`,
+					`${a.label || `∠${i + 1}`}: ${(a.angleDeg ?? 0).toFixed(1)}°${a.deviationFromVerticalDeg !== undefined ? ` (наклон: ${(a.deviationFromVerticalDeg ?? 0).toFixed(1)}°)` : ""}`,
 			);
 			lines.push(`Угловые измерения: ${angleLines.join(", ")}`);
 		}
@@ -406,7 +406,7 @@ export function buildForm043ProtocolText(
 				const les = lesions[i];
 				if (les) {
 					lines.push(
-						`Очаг деструкции #${i + 1}: ${les.classificationLabel} — площадь: ${les.areaMm2.toFixed(1)} мм² (экв. Ø: ${les.equivalentDiameterMm.toFixed(1)} мм)${les.treatmentRecommendation ? ` [Тактика: ${les.treatmentRecommendation}]` : ""}`,
+						`Очаг деструкции #${i + 1}: ${les.classificationLabel} — площадь: ${(les.areaMm2 ?? 0).toFixed(1)} мм² (экв. Ø: ${(les.equivalentDiameterMm ?? 0).toFixed(1)} мм)${les.treatmentRecommendation ? ` [Тактика: ${les.treatmentRecommendation}]` : ""}`,
 					);
 				}
 			}
@@ -419,13 +419,13 @@ export function buildForm043ProtocolText(
 
 	if (payload.boneDensity) {
 		lines.push(
-			`Плотность костной ткани (Misch): ${payload.boneDensity.classification} (среднее значение: ${Math.round(payload.boneDensity.averageHU)} HU)`,
+			`Плотность костной ткани (Misch): ${payload.boneDensity.classification} (среднее значение: ${Math.round(payload.boneDensity.averageHU ?? 0)} HU)`,
 		);
 	}
 
 	if (payload.implantDetails) {
 		lines.push(
-			`Параметры планируемого имплантата: Ø ${payload.implantDetails.diameterMm.toFixed(1)} мм × L ${payload.implantDetails.lengthMm.toFixed(1)} мм${
+			`Параметры планируемого имплантата: Ø ${(payload.implantDetails.diameterMm ?? 0).toFixed(1)} мм × L ${(payload.implantDetails.lengthMm ?? 0).toFixed(1)} мм${
 				payload.implantDetails.system ? ` (Система: ${payload.implantDetails.system})` : ""
 			}`,
 		);

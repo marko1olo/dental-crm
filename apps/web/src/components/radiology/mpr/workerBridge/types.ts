@@ -9,14 +9,14 @@ import type {
 	MprSliceExtractionResult,
 	Point3D,
 	SlabProjectionMode,
-} from "../cbctMprMath";
-import type { ObliqueRotationAngles } from "../cbctObliqueMatrixMath";
+} from "../../cbctMprMath";
+import type { ObliqueRotationAngles } from "../../cbctObliqueMatrixMath";
 import type {
 	CrossSectionSeriesOptions,
 	CrossSectionSliceData,
-} from "../cbctCrossSectionResliceMath";
-import type { DentalArchCurve } from "../cbctArchSplineMath";
-import type { CbctInterpolationMethod } from "../cbctLutMath";
+} from "../../cbctCrossSectionResliceMath";
+import type { DentalArchCurve } from "../../cbctArchSplineMath";
+import type { CbctInterpolationMethod } from "../../cbctLutMath";
 import type {
 	CbctWorkerInboundMessage,
 	CbctWorkerOutboundMessage,

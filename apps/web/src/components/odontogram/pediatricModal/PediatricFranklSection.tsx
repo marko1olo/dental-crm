@@ -1,6 +1,6 @@
 import React from "react";
 import { Printer } from "lucide-react";
-import { FranklBehaviorBadge } from "../pediatric";
+import { FranklBehaviorBadge } from "../../pediatric";
 import type { FranklRating } from "../pediatricDentitionEngine";
 
 export interface PediatricFranklSectionProps {

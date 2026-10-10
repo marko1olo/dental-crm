@@ -330,6 +330,13 @@ export async function performAutoVisitBomDeduction(
 				reason: `Автосписание расходников по визиту ${options.visitNumber || options.visitId}`,
 			},
 		).catch(() => {});
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-inventory-reload", {
+					detail: { visitId: options.visitId, organizationId: options.organizationId },
+				}),
+			);
+		}
 	} catch {
 		// Non-blocking local store update
 	}

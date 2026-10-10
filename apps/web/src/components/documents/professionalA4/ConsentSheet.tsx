@@ -53,7 +53,7 @@ export const ConsentSheet: React.FC<ConsentSheetProps> = ({
 									Я, гражданин(ка) <strong>{pt.fullName}</strong>, дата рождения: {pt.birthDate || "«___» _________ _____ г."}, документ, удостоверяющий личность: {formatPassportString(pt)}, проживающий(ая) по адресу: {pt.registrationAddress || pt.address || "____________________________________"}, настоящим даю информированное добровольное согласие на проведение медицинского вмешательства лечащим врачом <strong>{doctor}</strong>.
 								</p>
 
-								<h2 className="a4-section-heading">1. Цели, методы и характер медицинского вмешательства</h2>
+								<h2 className="a4-section-heading">1. Характер и цели медицинского вмешательства</h2>
 								<p className="a4-p">
 									1.1. Мне в доступной форме разъяснены цели вмешательства: диагностика состояния зубочелюстной системы, купирование воспалительного процесса, восстановление анатомической формы, жевательной функции и эстетики зубов.
 								</p>
@@ -80,7 +80,7 @@ export const ConsentSheet: React.FC<ConsentSheetProps> = ({
 
 							<div className="a4-running-footer">
 								<span>ИДС (Приказ МЗ РФ № 1051н) — Пациент: {pt.fullName}</span>
-								<span>Стр. 1 из 2</span>
+								<span>Лист 1 из 2</span>
 							</div>
 						</section>
 
@@ -89,7 +89,7 @@ export const ConsentSheet: React.FC<ConsentSheetProps> = ({
 							<div className="a4-sheet-body">
 								<div className="a4-running-header">
 									<span>{cl.legalName || cl.name} · ИДС (Приказ МЗ РФ № 1051н)</span>
-									<span>Пациент: {pt.fullName} · Стр. 2 из 2</span>
+									<span>Пациент: {pt.fullName} · Лист 2 из 2</span>
 								</div>
 
 								<h2 className="a4-section-heading">4. Альтернативные методы лечения</h2>
@@ -114,7 +114,7 @@ export const ConsentSheet: React.FC<ConsentSheetProps> = ({
 
 								<div className="a4-sign-grid" style={{ marginTop: "30px" }}>
 									<div className="a4-sign-col">
-										<strong>ЛЕЧАЩИЙ ВРАЧ:</strong><br /><br />
+										<strong>ВРАЧ, ПРОВЕДШИЙ БЕСЕДУ:</strong><br /><br />
 										Врач-стоматолог:<br />
 										<div className="a4-sign-line" />
 										<div className="a4-sign-hint">/ {doctor} / <span className="stamp-box">М.П.</span></div>
@@ -130,7 +130,7 @@ export const ConsentSheet: React.FC<ConsentSheetProps> = ({
 
 							<div className="a4-running-footer">
 								<span>ИДС (Приказ МЗ РФ № 1051н) — Пациент: {pt.fullName}</span>
-								<span>Стр. 2 из 2</span>
+								<span>Лист 2 из 2</span>
 							</div>
 						</section>
 					</div>

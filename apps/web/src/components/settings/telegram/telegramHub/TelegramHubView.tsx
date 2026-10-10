@@ -110,18 +110,18 @@ export function TelegramHubView({
 
 			{activeMainTab === "bot" && (
 				<BotConfigurationCard
-					clinicId={clinicId}
+					clinicId={clinicId || ""}
 					botStatus={botStatus}
 					isBotLoading={isBotLoading}
 					onRefreshStatus={loadBotStatus}
-					onBotStatusChange={onBotStatusChange}
+					onBotStatusChange={onBotStatusChange || (() => {})}
 				/>
 			)}
 
 			{activeMainTab === "account" && (
 				<StaffBindingCard
-					clinicId={clinicId}
-					userId={userId}
+					clinicId={clinicId || ""}
+					userId={userId || ""}
 					accountStatus={accountStatus}
 					isAccountLoading={isAccountLoading}
 					onRefreshStatus={loadAccountStatus}
@@ -129,11 +129,11 @@ export function TelegramHubView({
 			)}
 
 			{activeMainTab === "templates" && (
-				<NotificationTemplatesEditor clinicId={clinicId} />
+				<NotificationTemplatesEditor clinicId={clinicId || ""} />
 			)}
 
 			{activeMainTab === "queue" && (
-				<DeliveryQueueMonitor clinicId={clinicId} />
+				<DeliveryQueueMonitor clinicId={clinicId || ""} />
 			)}
 		</div>
 	);

@@ -96,7 +96,7 @@ export function getRepresentativeLegalStatus(type: string | null | undefined): {
 		labelRu: match?.nameRu ?? type,
 		idsSigningAllowed: isLegal,
 		descriptionRu: isLegal
-			? "Законный представитель: имеет право подписывать согласия за несовершеннолетнего (ст. 20 323-ФЗ, ст. 64 СК РФ)"
+			? "Законный представитель: имеет право подписывать согласия за несовершеннолетнего"
 			: "Член семьи: подписание согласий за несовершеннолетнего требует доверенности",
 	};
 }
@@ -282,6 +282,14 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 									data-testid="btn-patient-card-diploma"
 									onClick={() => setIsDiplomaModalOpen(true)}
 									className="border border-amber-500/40 bg-amber-500/15 text-amber-900 dark:text-amber-200 hover:bg-amber-500/25 min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-bold rounded-lg inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none transition-all shadow-2xs"
+									style={{
+										height: "32px",
+										padding: "0 12px",
+										borderRadius: "8px",
+										border: "1px solid var(--amber-border, rgba(245, 158, 11, 0.35))",
+										background: "var(--amber-soft, rgba(245, 158, 11, 0.1))",
+										color: "var(--amber-text, #d97706)",
+									}}
 									title="Распечатать «Диплом за храбрость» маленькому пациенту"
 								>
 									<Award className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -308,6 +316,14 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 									setIsTaxDeductionModalOpen(true);
 								}}
 								className="border border-teal-500/30 bg-teal-500/10 text-teal-800 dark:text-teal-200 hover:bg-teal-500/20 min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none transition-all shadow-2xs"
+								style={{
+									height: "32px",
+									padding: "0 12px",
+									borderRadius: "8px",
+									border: "1px solid var(--teal-border, rgba(13, 148, 136, 0.35))",
+									background: "var(--teal-soft, rgba(13, 148, 136, 0.08))",
+									color: "var(--teal)",
+								}}
 								title="Справка об оплате медицинских услуг для налогового вычета (13%)"
 							>
 								<FileCheck className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
@@ -320,6 +336,14 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								data-testid="btn-print-patient-card"
 								onClick={handlePrint}
 								className="border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--glass-hover,var(--paper-soft))] min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none transition-all shadow-2xs"
+								style={{
+									height: "32px",
+									padding: "0 12px",
+									borderRadius: "8px",
+									border: "1px solid var(--line-strong, var(--line))",
+									background: "var(--paper-soft)",
+									color: "var(--ink)",
+								}}
 								title="Печать карты пациента"
 							>
 								<Printer className="w-4 h-4 shrink-0" />
@@ -331,6 +355,15 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								data-testid="btn-close-patient-card-modal"
 								onClick={onClose}
 								className="border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--glass-hover,var(--paper-soft))] min-h-[44px] sm:min-h-[32px] h-8 w-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs"
+								style={{
+									height: "32px",
+									width: "32px",
+									padding: "0",
+									borderRadius: "8px",
+									border: "1px solid var(--line-strong, var(--line))",
+									background: "var(--paper-soft)",
+									color: "var(--ink)",
+								}}
 								aria-label="Закрыть окно"
 							>
 								<X className="w-4 h-4" />
@@ -393,117 +426,63 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 					{/* Navigation Tabs Bar */}
 					<div className="flex items-center justify-between px-3.5 sm:px-4 py-2 border-b border-[var(--glass-border)] bg-[var(--paper-strong)] flex-nowrap overflow-x-auto gap-2 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth print:hidden">
 						<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-							{/* Вкладка 1: Основные и паспортные */}
-							<button
-								type="button"
-								data-testid="tab-patient-general"
-								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
-									activeTab === "general"
-										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
-										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
-								}`}
-								onClick={() => setActiveTab("general")}
-							>
-								<FileText className="w-3.5 h-3.5 shrink-0" />
-								<span>Основные</span>
-							</button>
-
-							{/* Вкладка 2: Зубная формула (Одонтограмма) */}
-							<button
-								type="button"
-								data-testid="tab-patient-formula"
-								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
-									activeTab === "formula"
-										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
-										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
-								}`}
-								onClick={() => setActiveTab("formula")}
-							>
-								<ToothMolar className="w-3.5 h-3.5 shrink-0" />
-								<span>Формула</span>
-							</button>
-
-							{/* Вкладка 3: Медицинский статус и соматика */}
-							<button
-								type="button"
-								data-testid="tab-patient-anamnesis"
-								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
-									activeTab === "anamnesis"
-										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
-										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
-								}`}
-								onClick={() => setActiveTab("anamnesis")}
-							>
-								<HeartPulse className="w-3.5 h-3.5 shrink-0" />
-								<span>Соматика</span>
-							</button>
-
-							{/* Вкладка 4: История визитов */}
-							<button
-								type="button"
-								data-testid="tab-patient-visits"
-								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
-									activeTab === "visits"
-										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
-										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
-								}`}
-								onClick={() => setActiveTab("visits")}
-							>
-								<History className="w-3.5 h-3.5 shrink-0" />
-								<span>Визиты</span>
-							</button>
-
-							{/* Вкладка 5: Финансы и аванс (Депозиты) */}
-							<button
-								type="button"
-								data-testid="tab-patient-finance"
-								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
-									activeTab === "finance"
-										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
-										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
-								}`}
-								onClick={() => setActiveTab("finance")}
-							>
-								<Wallet className="w-3.5 h-3.5 shrink-0" />
-								<span>Финансы и аванс</span>
-							</button>
-
-							{/* Вкладка 6: Снимки и КТ */}
-							<button
-								type="button"
-								data-testid="tab-patient-radiology"
-								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
-									activeTab === "radiology"
-										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
-										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
-								}`}
-								onClick={() => setActiveTab("radiology")}
-							>
-								<Scan className="w-3.5 h-3.5 shrink-0" />
-								<span>Снимки и КТ</span>
-							</button>
-
-							{/* Вкладка 7: Семья и представители */}
-							<button
-								type="button"
-								data-testid="tab-patient-family"
-								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
-									activeTab === "family"
-										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
-										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
-								}`}
-								onClick={() => setActiveTab("family")}
-							>
-								<Users className="w-3.5 h-3.5 shrink-0" />
-								<span>Семья</span>
-							</button>
+							{(
+								[
+									{ id: "general", testId: "tab-patient-general", label: "Основные", Icon: FileText },
+									{ id: "formula", testId: "tab-patient-formula", label: "Формула", Icon: ToothMolar },
+									{ id: "anamnesis", testId: "tab-patient-anamnesis", label: "Соматика", Icon: HeartPulse },
+									{ id: "visits", testId: "tab-patient-visits", label: "Визиты", Icon: History },
+									{ id: "finance", testId: "tab-patient-finance", label: "Финансы и аванс", Icon: Wallet },
+									{ id: "radiology", testId: "tab-patient-radiology", label: "Снимки и КТ", Icon: Scan },
+									{ id: "family", testId: "tab-patient-family", label: "Семья", Icon: Users },
+								] as const
+							).map((tab) => {
+								const isActive = activeTab === tab.id;
+								const Icon = tab.Icon;
+								return (
+									<button
+										key={tab.id}
+										type="button"
+										data-testid={tab.testId}
+										className={`min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
+											isActive
+												? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
+												: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
+										}`}
+										style={{
+											height: "32px",
+											padding: "0 12px",
+											borderRadius: "8px",
+											border: isActive
+												? "1px solid var(--teal)"
+												: "1px solid var(--line-strong, var(--line))",
+											background: isActive ? "var(--teal)" : "var(--paper-soft)",
+											color: isActive ? "var(--on-teal, #ffffff)" : "var(--ink)",
+											fontWeight: isActive ? 700 : 600,
+										}}
+										onClick={() => setActiveTab(tab.id)}
+									>
+										<Icon className="w-3.5 h-3.5 shrink-0" />
+										<span>{tab.label}</span>
+									</button>
+								);
+							})}
 						</div>
 
-						{/* 1-Click Norm Fast Action in Header Toolbar (Мандат 8e п. 3, Мандат 8p §206) */}
+						{/* Fast Action in Header Toolbar */}
 						<button
 							type="button"
 							data-testid="btn-somatic-healthy-norm"
 							className="min-h-[44px] sm:min-h-[32px] h-8 px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98 shrink-0 whitespace-nowrap select-none"
+							style={{
+								height: "32px",
+								padding: "0 12px",
+								borderRadius: "8px",
+								border: "1px solid var(--teal-border, rgba(13, 148, 136, 0.35))",
+								background: "var(--teal-soft, rgba(13, 148, 136, 0.1))",
+								color: "var(--teal)",
+								fontWeight: 700,
+							}}
 							onClick={handleApplyNorm}
 							title="Зафиксировать физиологическую норму: соматически здоров"
 						>
@@ -588,6 +567,15 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								onClick={onClose}
 								className="border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--glass-hover,var(--paper-soft))] min-h-[44px] sm:min-h-[32px] h-8 px-4 text-xs font-semibold rounded-lg cursor-pointer select-none transition-all shadow-2xs"
+								style={{
+									height: "32px",
+									padding: "0 16px",
+									borderRadius: "8px",
+									border: "1px solid var(--line-strong, var(--line))",
+									background: "var(--paper-soft)",
+									color: "var(--ink)",
+									fontWeight: 600,
+								}}
 							>
 								Закрыть
 							</button>
@@ -596,6 +584,15 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								data-testid="btn-save-patient-card"
 								onClick={handleSave}
 								className="bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] hover:opacity-95 min-h-[44px] sm:min-h-[32px] h-8 px-4 text-xs font-semibold rounded-lg shadow-xs cursor-pointer select-none transition-all"
+								style={{
+									height: "32px",
+									padding: "0 18px",
+									borderRadius: "8px",
+									border: "1px solid var(--teal)",
+									background: "var(--teal)",
+									color: "var(--on-teal, #ffffff)",
+									fontWeight: 700,
+								}}
 							>
 								Сохранить
 							</button>

@@ -45,6 +45,8 @@ export interface PaymentModalProps {
 	readonly dmsInsurerName?: string | undefined;
 	readonly availableDmsCoverageRub?: number | undefined;
 	readonly initialSplitDmsRub?: number | undefined;
+	readonly items?: readonly import("../../../billing/ReceiptPreview.js").ReceiptItem[] | undefined;
+	readonly toothNumber?: number | string | undefined;
 	readonly onPrintInvoice?: (() => void) | undefined;
 	readonly onPrintAct?: (() => void) | undefined;
 	readonly onClose: () => void;

@@ -76,8 +76,8 @@ export async function seedClinicalSchedule(
 				status: "completed",
 				startsAt: today10,
 				endsAt: today1045,
-				reason: "Консультация и лечение кариеса",
-				comment: "Демо-запись: первичный терапевтический приём завершен",
+				reason: "Эстетическая реставрация и эндодонтия",
+				comment: "Коффердам, прицельный снимок после обтурации",
 			},
 			{
 				organizationId,
@@ -87,8 +87,8 @@ export async function seedClinicalSchedule(
 				status: "planned",
 				startsAt: today1130,
 				endsAt: today1230,
-				reason: "Ортопедическая примерка коронки 11",
-				comment: "Демо-запись: примерка циркониевой коронки из ЗТЛ",
+				reason: "Примерка циркониевой коронки на винтовой фиксации",
+				comment: "Проверить окклюзию и цвет A2 по шкале VITA",
 			},
 			{
 				organizationId,
@@ -98,8 +98,8 @@ export async function seedClinicalSchedule(
 				status: "planned",
 				startsAt: today1400,
 				endsAt: today1500,
-				reason: "Контроль элайнеров (капа 12/30)",
-				comment: "Демо-запись: ортодонтическая активация",
+				reason: "Комплексная профгигиена AirFlow и реминерализация",
+				comment: "Чувствительность эмали в области шеек",
 			},
 			{
 				organizationId,
@@ -109,8 +109,8 @@ export async function seedClinicalSchedule(
 				status: "planned",
 				startsAt: today1600,
 				endsAt: today1730,
-				reason: "Дентальная имплантация зуба 46",
-				comment: "Демо-запись: операция имплантации Straumann BLX",
+				reason: "Хирургическая имплантация Osstem TS III",
+				comment: "Установка формирователя десны, анестезия Ubistesin 4%",
 			},
 			{
 				organizationId,
@@ -120,8 +120,8 @@ export async function seedClinicalSchedule(
 				status: "planned",
 				startsAt: tomorrow10,
 				endsAt: tomorrow11,
-				reason: "Лечение пульпита 36 (этап 2)",
-				comment: "Демо-запись: пломбирование корневых каналов",
+				reason: "Обтурация корневых каналов гуттаперчей",
+				comment: "Латеральная компакция, контрольная визиография",
 			},
 			{
 				organizationId,
@@ -131,8 +131,8 @@ export async function seedClinicalSchedule(
 				status: "planned",
 				startsAt: tomorrow12,
 				endsAt: tomorrow13,
-				reason: "Постоянная фиксация коронки 11",
-				comment: "Демо-запись: фиксация на RelyX U200",
+				reason: "Постоянная фиксация мостовидного протеза",
+				comment: "Адгезивный протокол, композитный цемент RelyX U200",
 			},
 		])
 		.onConflictDoNothing()

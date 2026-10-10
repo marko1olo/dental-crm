@@ -144,7 +144,7 @@ export function checkDentalLabFinancialGate(
 
 	const detailedReasonRu =
 		gateStatus === "BLOCKED_REQUIRES_ADVANCE"
-			? `По этапу внесено ${paidPercent}% (${formatKopecksRu(totalCovered)}) из требуемых ${minAdvancePercent}% (${formattedRequiredAdvance}). Врач вправе отправить наряд в ЗТЛ в 1 клик («Отправить наряд в ЗТЛ — клиническое решение лечащего врача»).`
+			? `По этапу внесено ${paidPercent}% (${formatKopecksRu(totalCovered)}) из требуемых ${minAdvancePercent}% (${formattedRequiredAdvance}). Врач вправе отправить наряд в ЗТЛ («Отправить наряд в ЗТЛ — клиническое решение лечащего врача»).`
 			: gateStatus === "DOCTOR_OVERRIDE"
 				? `Клиническое решение лечащего врача: ${activeOverride?.doctorName} в ${activeOverride?.timestampIso?.slice(0, 16) || "сегодня"}. Основание: ${activeOverride?.reason || "Клиническая необходимость"}.`
 				: gateStatus === "CHIEF_DOCTOR_OVERRIDE"

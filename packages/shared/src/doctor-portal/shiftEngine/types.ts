@@ -265,7 +265,7 @@ export interface ShiftTimeInterval {
 
 export interface ChairShiftConflict {
 	readonly chairId: string;
-	readonly chairName?: string;
+	readonly chairName?: string | undefined;
 	readonly dateIso: string;
 	readonly overlappingShifts: readonly {
 		readonly shiftId: string;
@@ -285,7 +285,7 @@ export interface DoctorShiftCollision {
 		readonly shiftId: string;
 		readonly startsAtIso: string;
 		readonly endsAtIso: string;
-		readonly chairId?: string;
+		readonly chairId?: string | undefined;
 	}[];
 }
 

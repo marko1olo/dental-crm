@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 import {
 	PACKAGE_SHORT_TITLES,
 	TEMPLATE_SHORT_TITLES,
+	getConsentTemplate,
 } from "../consentTemplates.js";
 import { showToast } from "../../GlobalToast.js";
 import {
@@ -126,15 +127,15 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = (props)
 						<div className="consent-header-badge-row">
 							<span className="consent-statutory-badge shrink-0">
 								<ShieldCheck size={14} />
-								323-ФЗ • 1051н
+								Официальная медицинская форма
 							</span>
 							<span className="consent-code-badge shrink-0">
-								{activeMode === "packages" ? currentPackage.code : currentTemplate.code}
+								{activeMode === "packages" ? `Пакет (${currentPackage.templateKeys.length} док.)` : "Бланк согласия"}
 							</span>
 						</div>
 						<h2 id="consent-modal-title" className="consent-title truncate">
 							{isMobile
-								? (activeMode === "packages" ? "Пакет согласий ИДС (1051н)" : "Согласие на лечение (ИДС)")
+								? (activeMode === "packages" ? "Пакет согласий ИДС" : "Согласие на лечение (ИДС)")
 								: (activeMode === "packages"
 									? "Пакет информированных добровольных согласий (ИДС)"
 									: "Информированное добровольное согласие (ИДС)")}
@@ -163,7 +164,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = (props)
 					allPackages={allPackages}
 					allTemplates={allTemplates}
 					currentPackage={currentPackage}
-					getConsentTemplate={() => currentTemplate}
+					getConsentTemplate={getConsentTemplate}
 					substitutionContext={substitutionContext}
 				/>
 

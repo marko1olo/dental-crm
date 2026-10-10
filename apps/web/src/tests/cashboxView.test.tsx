@@ -52,7 +52,7 @@ describe("CashboxView (54-FZ & Patient Debt Autonomy)", () => {
 		assert.ok(html.includes("Всё картой"), "Must render 1-click card tender");
 		assert.ok(html.includes("Всё наличными"), "Must render 1-click cash tender");
 		assert.ok(html.includes("Всё по СБП"), "Must render 1-click SBP tender");
-		assert.ok(html.includes("Сплит / Терминал..."), "Must render split tender modal button");
+		assert.ok(html.includes("Терминал / Сплит") || html.includes("Сплит / Терминал"), "Must render split tender modal button");
 	});
 
 	it("renders 0 ₽ fiscalization action button when initialAmountRub is 0", () => {

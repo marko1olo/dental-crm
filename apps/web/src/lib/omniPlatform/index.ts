@@ -5,7 +5,6 @@
  * preserving 100% backward compatibility and AST export parity.
  */
 
-export type * from "./types.js";
 export * from "./types.js";
 
 export * from "./environmentDetector.js";

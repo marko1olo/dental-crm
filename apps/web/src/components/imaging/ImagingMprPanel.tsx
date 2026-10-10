@@ -25,74 +25,74 @@ export interface ImagingMprPanelProps {
 	dicomTextureStrategyLabels?: any;
 	imagingViewerSaveTitle: Record<string, string>;
 	imagingViewerSaveState: string;
-	imagingViewerAnnotations?: any[];
-	mprClinicalNextStep?: string;
-	mprClinicalChecklist?: any[];
-	mprOperatorSummaryCards?: any[];
+	imagingViewerAnnotations?: any[] | undefined;
+	mprClinicalNextStep?: string | undefined;
+	mprClinicalChecklist?: any[] | undefined;
+	mprOperatorSummaryCards?: any[] | undefined;
 	mprControlsReady: boolean;
 	imagingViewerActiveTool: string;
-	ctPlanningActiveQuickActionId?: string | null;
+	ctPlanningActiveQuickActionId?: string | null | undefined;
 	applyCtPlanningQuickAction: (actionId: string) => void;
 	ctPlanningImplantPlan?: any;
 	selectCtPlanningImplant: (implantId: string | null) => void;
-	ctPlanningAnnotationRefs?: any[];
-	createCtPlanningArtifact?: () => void;
+	ctPlanningAnnotationRefs?: any[] | undefined;
+	createCtPlanningArtifact?: (() => void) | undefined;
 	dicomViewerToolStateBundle?: any;
-	mprControlsAutoOpen?: boolean;
+	mprControlsAutoOpen?: boolean | undefined;
 	setLocalImageIds: (ids: string[]) => void;
-	cbctWorkbenchPlanes?: any[];
-	cbctWorkbenchProjections?: string[];
-	mprProjection?: string;
+	cbctWorkbenchPlanes?: any[] | undefined;
+	cbctWorkbenchProjections?: string[] | undefined;
+	mprProjection?: string | undefined;
 	setMprProjection: (proj: string) => void;
-	mprSeriesRequiredProjectionLabel?: string;
-	mprUnavailableProjectionLabel?: string;
-	mprAxisVisualizerStyle?: React.CSSProperties;
-	mprAxisVisualizerLabel?: string;
-	handleMprKeyboardNavigation?: (e: React.KeyboardEvent) => void;
+	mprSeriesRequiredProjectionLabel?: string | undefined;
+	mprUnavailableProjectionLabel?: string | undefined;
+	mprAxisVisualizerStyle?: React.CSSProperties | undefined;
+	mprAxisVisualizerLabel?: string | undefined;
+	handleMprKeyboardNavigation?: ((e: React.KeyboardEvent) => void) | undefined;
 	mprProjectionCompass?: any;
-	mprCrosshairEnabled?: boolean;
-	mprAxisAngleBadge?: string;
-	mprSlabBadge?: string;
-	mprSliceBadge?: string;
-	mprActiveProjectionLabel?: string;
-	mprActiveProjectionOrientation?: string;
-	mprAxisDirectionLabel?: string;
-	mprSlabMm?: number;
-	mprSliceLabel?: string;
+	mprCrosshairEnabled?: boolean | undefined;
+	mprAxisAngleBadge?: string | undefined;
+	mprSlabBadge?: string | undefined;
+	mprSliceBadge?: string | undefined;
+	mprActiveProjectionLabel?: string | undefined;
+	mprActiveProjectionOrientation?: string | undefined;
+	mprAxisDirectionLabel?: string | undefined;
+	mprSlabMm?: number | undefined;
+	mprSliceLabel?: string | undefined;
 	mprAxisGuidance?: any;
-	mprWorkbenchSummaryText?: string;
-	mprLinkedPlanesEnabled?: boolean;
+	mprWorkbenchSummaryText?: string | undefined;
+	mprLinkedPlanesEnabled?: boolean | undefined;
 	mprNearestClinicalPreset?: any;
-	applyNearestMprClinicalPreset?: () => void;
+	applyNearestMprClinicalPreset?: (() => void) | undefined;
 	mprProjectionLabels: Record<string, string>;
 	mprAxisDeg: number;
-	mprAxisRangeValue?: string;
+	mprAxisRangeValue?: string | undefined;
 	mprAxisBounds: { min: number; max: number };
 	clampMprAxisDeg: (deg: number) => number;
 	setMprAxisDeg: (deg: number) => void;
-	mprAxisNudgeDeg?: number[];
+	mprAxisNudgeDeg?: number[] | undefined;
 	formatSignedMprStep: (val: number, unit: string) => string;
-	mprAxisPresetDeg?: number[];
-	mprSlabRangeValue?: string;
+	mprAxisPresetDeg?: number[] | undefined;
+	mprSlabRangeValue?: string | undefined;
 	mprSlabBounds: { min: number; max: number };
 	clampMprSlabMm: (mm: number) => number;
 	setMprSlabMm: (mm: number) => void;
-	mprSlabNudgeMm?: number[];
-	mprSlabPresetMm?: number[];
+	mprSlabNudgeMm?: number[] | undefined;
+	mprSlabPresetMm?: number[] | undefined;
 	mprSliceMaxIndex: number;
 	mprSafeSliceIndex: number;
-	mprSliceRangeValue?: string;
+	mprSliceRangeValue?: string | undefined;
 	clampMprSliceIndex: (idx: number, max: number) => number;
 	setMprSliceIndex: (idx: number) => void;
-	mprSliceNudgeSteps?: number[];
-	mprSlicePresetFractions?: any[];
+	mprSliceNudgeSteps?: number[] | undefined;
+	mprSlicePresetFractions?: any[] | undefined;
 	mprSliceIndexFromFraction: (frac: number, max: number) => number;
 	resetMprControls: () => void;
 	mprWorkbenchLocalSavedAt?: any;
 	formatTime: (t: any) => string;
-	mprWorkbenchDraftRestored?: boolean;
+	mprWorkbenchDraftRestored?: boolean | undefined;
 	restoreMprWorkbenchLocalDraft: () => void;
-	mprClinicalPresets?: any[];
+	mprClinicalPresets?: any[] | undefined;
 	describeMprClinicalPresetProjectionFallback: any;
 	mprClinicalPresetButtonClass?: any;
 	applyMprClinicalPreset?: any;
@@ -299,12 +299,26 @@ export function ImagingMprPanel(props: ImagingMprPanelProps) {
 			<Suspense fallback={null}>
 				<CtPlanningToolsPanel
 					canPlan={mprControlsReady}
-					activeTool={imagingViewerActiveTool}
+					activeTool={(imagingViewerActiveTool as any) ?? null}
 					activeQuickActionId={ctPlanningActiveQuickActionId}
-					onActivateTool={applyCtPlanningQuickAction}
+					onActivateTool={(action) => {
+						if (typeof action === "string") {
+							applyCtPlanningQuickAction(action);
+						} else if (action && typeof (action as any).id === "string") {
+							applyCtPlanningQuickAction((action as any).id);
+						}
+					}}
 					selectedImplantId={ctPlanningImplantPlan?.itemId ?? null}
 					selectedImplantPlan={ctPlanningImplantPlan}
-					onSelectImplant={selectCtPlanningImplant}
+					onSelectImplant={(implant) => {
+						if (typeof implant === "string") {
+							selectCtPlanningImplant(implant);
+						} else if (implant && typeof (implant as any).id === "string") {
+							selectCtPlanningImplant((implant as any).id);
+						} else {
+							selectCtPlanningImplant(null);
+						}
+					}}
 					localAnnotations={imagingViewerAnnotations}
 					annotationRefs={ctPlanningAnnotationRefs}
 					onCreateArtifact={createCtPlanningArtifact}
@@ -469,10 +483,7 @@ export function ImagingMprPanel(props: ImagingMprPanelProps) {
 				</div>
 			</details>
 			<div className="clinical-mpr-safety">
-				<span>
-					{selectedImagingViewerPlan?.nextAction ??
-						"Подготовить серию КЛКТ/КТ к просмотру срезов."}
-				</span>
+				<span>{selectedImagingViewerPlan?.nextAction ?? "Подготовить серию КЛКТ/КТ к просмотру срезов."}</span>
 				<span>
 					{cbctWorkbenchSeries?.mprReadiness.resourcePolicy.nextAction ??
 						"Метаданные серии пока не загружены: сначала открываем предпросмотр и внешний просмотр."}

@@ -10,7 +10,7 @@ const DicomViewerModal = React.lazy(() =>
 
 export interface PatientWorkspaceModalsWrapperProps {
 	patientId: string;
-	patientName?: string | null;
+	patientName?: string | null | undefined;
 	logic: any;
 }
 

@@ -1,9 +1,9 @@
-import { countLabel } from "../../AppHelpers.js";
-import { actionFailureToast } from "../../lib/panelStateText.js";
-import { useVisitStore } from "../../store/visitStore.js";
-import { logger } from "../../utils/logger.js";
-import { showToast } from "../GlobalToast.js";
-import { TOOTH_STATE_LABELS, type ToothState } from "../odontogram/ToothChart.js";
+import { countLabel } from "../../../AppHelpers.js";
+import { actionFailureToast } from "../../../lib/panelStateText.js";
+import { useVisitStore } from "../../../store/visitStore.js";
+import { logger } from "../../../utils/logger.js";
+import { showToast } from "../../GlobalToast.js";
+import { TOOTH_STATE_LABELS, type ToothState } from "../../odontogram/ToothChart.js";
 import { updateVisiographScanMeta } from "../VisiographScanHelpers.js";
 
 export async function writeToothStatesToChart(

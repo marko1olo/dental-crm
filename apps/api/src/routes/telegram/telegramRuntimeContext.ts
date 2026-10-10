@@ -14,12 +14,8 @@ import {
 } from "../../accessGuard.js";
 import { timingSafeSecretEqual } from "../../utils/timingSafeSecretEqual.js";
 import { TelegramTokenVault } from "../../services/telegram/TelegramTokenVault.js";
-import type {
-	DenteTelegramBotSettings,
-	DenteTelegramChatLink,
-	DenteTelegramVisualCardUrls,
-	DenteTelegramPostVisitCheckupDelayHoursByTopic,
-} from "@dental/shared";
+import type { DenteTelegramBotSettings, DenteTelegramChatLink, DenteTelegramVisualCardUrls, DenteTelegramPostVisitCheckupDelayHoursByTopic } from "@dental/shared";
+import { isDbConnectionError } from "../../services/telegram/TelegramReferralLoyaltyService.js";
 import type {
 	DomainState,
 	DenteTelegramOutboxRuntimeScope,
@@ -28,18 +24,19 @@ import {
 	safeDenteTelegramPublicHttpsUrl,
 	getDenteTelegramBotSettings,
 	updateDenteTelegramBotSettings,
+	inMemoryDomainState,
 } from "../../services/telegram/telegramLegacyMemoryStore.js";
 import type {
 	UnknownRecord,
 	TelegramClinicBotEnvConfig,
 	TelegramRuntimeSettingsResolution,
 	TelegramRuntimeContext,
-	TelegramResolvedOutboxRuntime,
 } from "./types.js";
 import {
 	isRecord,
 	stringFromUnknown,
 	firstTelegramQueryValue,
+	parseTelegramOutboxRuntimeScopeQuery,
 } from "./telegramUtils.js";
 
 export const telegramSecretHeader = "x-telegram-bot-api-secret-token";
@@ -497,7 +494,7 @@ export function resolveTelegramRuntimeContext(
 		context: {
 			settings,
 			organizationId: settings.organizationId,
-			clinicId: runtimeSettings.clinicId,
+			clinicId: runtimeSettings.clinicId ?? settings.organizationId,
 			botConfigId:
 				runtimeSettings.envConfig?.botConfigId ??
 				telegramBotConfigId(settings, botUsername),
@@ -526,7 +523,7 @@ export function denteTelegramOutboxRuntimeScope(
 	};
 }
 
-type TelegramResolvedOutboxRuntime = {
+export type TelegramResolvedOutboxRuntime = {
 	context: TelegramRuntimeContext;
 	runtimeScope: DenteTelegramOutboxRuntimeScope;
 };

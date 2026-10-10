@@ -407,7 +407,7 @@ export function CephalometricPresetsBar({
 					<div className="flex items-center gap-1.5 min-w-0">
 						<Sparkles size={14} className="text-teal-400 shrink-0" />
 						<span className="text-xs font-black uppercase tracking-wider text-teal-300 truncate">
-							Клинические пресеты (1 клик):
+							Клинические пресеты:
 						</span>
 					</div>
 					<span className="text-[11.5px] text-slate-400 shrink-0 hidden sm:inline">
@@ -418,13 +418,13 @@ export function CephalometricPresetsBar({
 				<div className="grid grid-cols-2 gap-2">
 					<button
 						type="button"
-						onClick={() => onApplyPreset(CLASS_I_NORMAL_LANDMARKS_PRESET, "★ I Класс (Норма)")}
+						onClick={() => onApplyPreset(CLASS_I_NORMAL_LANDMARKS_PRESET, "I Класс (Норма)")}
 						data-testid="tab1-preset-class-1"
 						className="h-8 px-2.5 rounded-lg bg-emerald-950/90 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/50 text-[12.5px] font-semibold transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
-						title="★ I Класс (Норма) — выставляет все 16 ориентиров по анатомической норме I класса"
+						title="I Класс (Норма) — выставляет все 16 ориентиров по анатомической норме I класса"
 					>
 						<Sparkles size={13} className="text-emerald-400 shrink-0" />
-						<span>★ I Класс (Норма)</span>
+						<span>I Класс (Норма)</span>
 					</button>
 
 					<button
@@ -465,19 +465,19 @@ export function CephalometricPresetsBar({
 	return (
 		<div className="mb-3 p-3 rounded-xl bg-slate-900 border border-slate-800 flex flex-col gap-2 shrink-0">
 			<div className="text-xs font-bold text-slate-300 flex items-center justify-between">
-				<span>Ввод по протоколу лаборатории (1 клик):</span>
+				<span>Ввод по протоколу лаборатории:</span>
 				<span className="text-[11.5px] text-slate-400">Пикассо / Золотое Сечение / КЛКТ</span>
 			</div>
 			<div className="grid grid-cols-2 gap-2">
 				<button
 					type="button"
-					onClick={() => onApplyPreset(CLASS_I_NORMAL_LANDMARKS_PRESET, "★ I Класс (Норма)")}
+					onClick={() => onApplyPreset(CLASS_I_NORMAL_LANDMARKS_PRESET, "I Класс (Норма)")}
 					className="h-8 px-2.5 rounded-lg bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 text-[12.5px] font-semibold transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
 					data-testid="btn-ceph-preset-class-1"
-					title="★ I Класс (Норма) — выставляет все 16 ориентиров по анатомической норме I класса"
+					title="I Класс (Норма) — выставляет все 16 ориентиров по анатомической норме I класса"
 				>
 					<Sparkles size={12} className="text-emerald-400 shrink-0" />
-					<span>★ I Класс (Норма)</span>
+					<span>I Класс (Норма)</span>
 				</button>
 				<button
 					type="button"

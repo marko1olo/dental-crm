@@ -5,6 +5,8 @@ import { renderToString } from "react-dom/server";
 import {
 	IntraoralScan3DViewerModal,
 	build3DViewerIframeSrc,
+	buildScan3dPopoutUrl,
+	openScan3dPopoutWindow,
 } from "../IntraoralScan3DViewerModal.js";
 import { is3DScanUrl } from "../../lab/LabAttachScanModal.js";
 import { DentalLabOrderDetailsModal } from "../../lab/DentalLabOrderDetailsModal.js";
@@ -27,6 +29,30 @@ describe("IntraoralScan3DViewerModal Component Specs", () => {
 		);
 	});
 
+	test("buildScan3dPopoutUrl generates standalone popout URL with clinical parameters", () => {
+		const url = buildScan3dPopoutUrl({
+			modelUrl: "/models/mandible_scan_16.stl",
+			modelFormat: "stl",
+			scanTitle: "Скан нижней челюсти",
+			patientName: "Барабаш С.В.",
+			toothCode: 16,
+			orderId: "lab-demo-001",
+		});
+		assert.ok(url.startsWith("/viewer3d.html?"));
+		assert.ok(url.includes("popout=1"));
+		assert.ok(url.includes("model=%2Fmodels%2Fmandible_scan_16.stl"));
+		assert.ok(url.includes("ext=stl"));
+		assert.ok(url.includes("patient=%D0%91%D0%B0%D1%80%D0%B0%D0%B1%D0%B0%D1%88+%D0%A1.%D0%92."));
+		assert.ok(url.includes("tooth=16"));
+		assert.ok(url.includes("orderId=lab-demo-001"));
+	});
+
+	test("openScan3dPopoutWindow is exported and safe for SSR", () => {
+		assert.equal(typeof openScan3dPopoutWindow, "function");
+		// In node environment without window, returns null without crashing
+		assert.equal(openScan3dPopoutWindow({ modelUrl: "/test.stl" }), null);
+	});
+
 	test("IntraoralScan3DViewerModal renders empty string when isOpen is false", () => {
 		const html = renderToString(
 			React.createElement(IntraoralScan3DViewerModal, {
@@ -37,7 +63,7 @@ describe("IntraoralScan3DViewerModal Component Specs", () => {
 		assert.equal(html, "");
 	});
 
-	test("IntraoralScan3DViewerModal renders dialog, patient badge and iframe when isOpen is true", () => {
+	test("IntraoralScan3DViewerModal renders dialog, patient badge, tooth badge, popout button and iframe when isOpen is true", () => {
 		const html = renderToString(
 			React.createElement(IntraoralScan3DViewerModal, {
 				isOpen: true,
@@ -45,10 +71,15 @@ describe("IntraoralScan3DViewerModal Component Specs", () => {
 				modelUrl: "https://clinic.example.com/scans/mandible.ply",
 				modelFormat: "ply",
 				patientName: "Кузнецов А.В.",
+				toothCode: 26,
 			}),
 		);
 		assert.ok(html.includes('role="dialog"'));
+		assert.ok(html.includes('data-testid="intraoral-scan-3d-viewer-modal"'));
 		assert.ok(html.includes("Кузнецов А.В."));
+		assert.ok(html.includes("Зуб № 26"));
+		assert.ok(html.includes('data-testid="btn-scan3d-popout"'));
+		assert.ok(html.includes("На 2-й монитор"));
 		assert.ok(html.includes("viewer3d.html"));
 		assert.ok(html.includes("ext=ply"));
 	});
@@ -110,7 +141,7 @@ describe("IntraoralScan3DViewerModal Component Specs", () => {
 				hasAlert: false,
 				isDelayedAlert: false,
 				lab_delay_alert: false,
-				status: "NORMAL",
+				status: "ON_TRACK",
 				severity: "OK",
 				daysDifference: 6,
 				expectedLabDateIso: "2026-10-15",

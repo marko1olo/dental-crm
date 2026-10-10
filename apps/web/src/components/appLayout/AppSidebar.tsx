@@ -1,7 +1,7 @@
 import React from "react";
 import { preloadWorkspaceView } from "../../workspacePreload";
-import { getFilteredAppViews, WorkspaceSidebar } from "../../workspaceShell";
-import { MobileTabBar } from "../layout/MobileTabBar";
+import { getFilteredAppViews, WorkspaceSidebar, type AppView } from "../../workspaceShell";
+import { MobileTabBar, type MobileTabBarProps } from "../layout/MobileTabBar";
 import type { AppSidebarProps } from "./types";
 
 export function AppSidebar(props: AppSidebarProps) {
@@ -19,7 +19,7 @@ export function AppSidebar(props: AppSidebarProps) {
 				Перейти к рабочей области
 			</a>
 			<WorkspaceSidebar
-				currentView={currentView}
+				currentView={currentView as AppView}
 				onViewIntent={preloadWorkspaceView}
 				role={selectedWorkspaceRole}
 				collapsed={sidebarCollapsed}
@@ -30,24 +30,7 @@ export function AppSidebar(props: AppSidebarProps) {
 	);
 }
 
-export function AppMobileTabBar(props: {
-	currentView: string;
-	selectedWorkspaceRole: any;
-	setCurrentView: (view: string) => void;
-}) {
-	const { currentView, selectedWorkspaceRole, setCurrentView } = props;
-
-	return (
-		<MobileTabBar
-			currentView={currentView}
-			onSelectView={(view) => {
-				setCurrentView(view);
-				if (typeof window !== "undefined") {
-					window.location.hash = view;
-				}
-			}}
-			onViewIntent={preloadWorkspaceView}
-			allowedViews={getFilteredAppViews(selectedWorkspaceRole)}
-		/>
-	);
+export function AppMobileTabBar(props: MobileTabBarProps) {
+	return <MobileTabBar {...props} />;
 }
+

@@ -11,6 +11,7 @@ import type {
 	ClinicProfile,
 	ClinicSettings,
 	ClinicWorkspaceProfile,
+	DenteTelegramBotSettings,
 	DenteTelegramVisualCardUrls,
 	IntegrationPreset,
 	PostVisitCareTopic,

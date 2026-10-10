@@ -73,17 +73,34 @@ export const ConsultationViewportPane: React.FC<ConsultationViewportPaneProps> =
 			className={`viewport-${slot} flex flex-col transition-all duration-150`}
 		>
 			{/* Top Header Floating Telemetry Pill */}
-			<div className="absolute top-2 left-2 z-10 flex items-center gap-2 bg-[#070b14]/90 backdrop-blur-xs px-2.5 py-1 rounded border border-[#334155] shadow-sm select-none">
+			<div
+				style={{
+					backgroundColor: "rgba(7, 11, 20, 0.92)",
+					borderColor: "#334155",
+					color: "#f8fafc",
+					boxShadow: "0 2px 8px rgba(0, 0, 0, 0.5)",
+				}}
+				className="absolute top-2 left-2 z-10 flex items-center gap-2 backdrop-blur-xs px-2.5 py-1 rounded border select-none"
+			>
 				<span
 					style={{ backgroundColor: badgeColor }}
 					className="w-2.5 h-2.5 rounded-full animate-pulse"
 				/>
 				<span
+					style={{
+						backgroundColor: isLeft
+							? "rgba(6, 78, 59, 0.85)"
+							: isAtlas
+								? "rgba(22, 78, 99, 0.85)"
+								: "rgba(12, 74, 110, 0.85)",
+						color: isLeft ? "#34d399" : isAtlas ? "#22d3ee" : "#38bdf8",
+						borderColor: isLeft ? "#059669" : isAtlas ? "#0891b2" : "#0284c7",
+					}}
 					className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${badgeBg}`}
 				>
 					{badgeLabel}
 				</span>
-				<span className="text-[11px] font-bold text-white max-w-[260px] truncate">
+				<span style={{ color: "#f8fafc" }} className="text-[11px] font-bold max-w-[260px] truncate">
 					{state.title}
 				</span>
 				{state.toothCode && (
@@ -97,7 +114,7 @@ export const ConsultationViewportPane: React.FC<ConsultationViewportPaneProps> =
 						#{state.toothCode}
 					</span>
 				)}
-				<span className="text-[10px] text-slate-400 font-mono">{state.subtitle}</span>
+				<span style={{ color: "#94a3b8" }} className="text-[10px] font-mono">{state.subtitle}</span>
 			</div>
 
 			{/* HTML5 Diagnostic Canvas */}

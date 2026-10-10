@@ -6,11 +6,13 @@
  *
  * Принципы ГОСТ Р 7.0.97-2016 и Минздрава РФ:
  * - Белый лист бумаги (#ffffff) с черным текстом (#000000).
- * - Нулевая инверсия в тёмных темах CRM (изоляция листа от темного фона).
- * - Поля: левое 20мм (подшив в архив), правое 15мм, верх/низ 15мм.
- * - 1px/0.75pt рамки таблиц, строгая типографика PT Serif / Times New Roman (10-12pt).
+ * - Нулевая инверсия в тёмных темах CRM (абсолютная изоляция белого листа).
+ * - Стопка реальных дискретных листов бумаги на столе (margin-bottom: 28px, глубокая тень).
+ * - Поля: левое 20мм (подшив в архив), правое 12-15мм, верх/низ 15-18мм.
+ * - 0.75pt/1px рамки таблиц, строгая классическая типографика: "PT Astra Serif", "Times New Roman", Times, serif.
  * - Блоки подписей «Врач / Пациент» и место для круглой печати М.П.
- * - Адаптивный предпросмотр на экранах и 100% идеальный вывод на принтер через @media print.
+ * - Однострочный компактный тулбар (32–36px) с табами, масштабированием и быстрой печатью.
+ * - Идеальный вывод на принтер через @media print без экранных панелей.
  */
 
 /* ── Screen Viewport Wrapper ── */
@@ -25,24 +27,38 @@
 }
 
 :is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-viewport {
-	background-color: #0b1120;
+	background-color: #0b1120 !important;
 	color: #f8fafc;
 }
 
-/* ── Top Utility Toolbar (Hidden on Print) ── */
+/* ── Top Utility Toolbar (Strictly 1 Line, 32–36px, Hidden on Print) ── */
 .pro-a4-toolbar {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	flex-wrap: wrap;
-	gap: 12px;
-	padding: 10px 16px;
+	height: 36px;
+	min-height: 36px;
+	max-height: 36px;
+	padding: 0 12px;
+	gap: 8px;
+	flex-wrap: nowrap;
+	overflow-x: auto;
+	overflow-y: hidden;
 	background-color: var(--paper, #ffffff);
 	border-bottom: 1px solid var(--line, #e2e8f0);
 	position: sticky;
 	top: 0;
 	z-index: 20;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	white-space: nowrap;
+}
+
+.pro-a4-toolbar::-webkit-scrollbar {
+	height: 3px;
+}
+.pro-a4-toolbar::-webkit-scrollbar-thumb {
+	background: rgba(0, 0, 0, 0.15);
+	border-radius: 2px;
 }
 
 :is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-toolbar {
@@ -53,12 +69,14 @@
 .pro-a4-tab-selector {
 	display: inline-flex;
 	align-items: center;
-	gap: 3px;
-	padding: 3px;
+	gap: 2px;
+	padding: 2px;
+	height: 30px;
 	background-color: var(--paper-soft, #f1f5f9);
 	border: 1px solid var(--line-subtle, #e2e8f0);
-	border-radius: 10px;
+	border-radius: 8px;
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	flex-shrink: 0;
 }
 
 :is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-tab-selector {
@@ -67,11 +85,11 @@
 }
 
 .pro-a4-tab-btn {
-	height: 28px;
-	min-height: 28px;
-	padding: 0 10px;
-	border-radius: 7px;
-	font-size: 12.5px;
+	height: 26px;
+	min-height: 26px;
+	padding: 0 8px;
+	border-radius: 6px;
+	font-size: 11.5px;
 	font-weight: 500;
 	line-height: 1;
 	color: var(--ink-muted, #64748b);
@@ -118,16 +136,82 @@
 .pro-a4-toolbar-actions {
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+/* ── Zoom Controls (80%, 100%, По ширине) ── */
+.pro-a4-zoom-group {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 2px;
+	height: 28px;
+	background-color: var(--paper-soft, #f1f5f9);
+	border: 1px solid var(--line-subtle, #e2e8f0);
+	border-radius: 6px;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-zoom-group {
+	background-color: #0f172a;
+	border-color: #334155;
+}
+
+.pro-a4-zoom-btn {
+	height: 24px;
+	min-height: 24px;
+	padding: 0 8px;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 1;
+	border-radius: 4px;
+	background: transparent;
+	border: 1px solid transparent;
+	cursor: pointer;
+	color: var(--ink-muted, #64748b);
+	transition: all 0.15s ease-in-out;
+	user-select: none;
+	white-space: nowrap;
+}
+
+.pro-a4-zoom-btn:hover {
+	color: var(--ink, #0f172a);
+	background-color: var(--paper-hover, rgba(0, 0, 0, 0.04));
+}
+
+.pro-a4-zoom-btn.active {
+	color: var(--ink, #0f172a);
+	background-color: var(--paper, #ffffff);
+	border-color: var(--line-subtle, #cbd5e1);
+	font-weight: 600;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-zoom-btn {
+	color: #94a3b8;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-zoom-btn:hover {
+	color: #f8fafc;
+	background-color: rgba(255, 255, 255, 0.06);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-zoom-btn.active {
+	color: #ffffff;
+	background-color: #1e293b;
+	border-color: #475569;
 }
 
 .pro-a4-format-badge {
-	font-size: 12px;
+	font-size: 11px;
 	font-weight: 600;
+	height: 26px;
+	display: inline-flex;
+	align-items: center;
 	color: var(--teal, #0f766e);
 	background-color: var(--teal-soft, #ccfbf1);
 	border: 1px solid var(--teal-line, rgba(13, 148, 136, 0.3));
-	padding: 4px 8px;
+	padding: 0 8px;
 	border-radius: 6px;
 	white-space: nowrap;
 }
@@ -143,15 +227,15 @@
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
-	height: 32px;
-	min-height: 32px;
+	height: 28px;
+	min-height: 28px;
 	padding: 0 12px;
-	font-size: 13px;
+	font-size: 12px;
 	font-weight: 600;
 	background-color: var(--teal, #0f766e);
 	color: #ffffff;
 	border: none;
-	border-radius: 8px;
+	border-radius: 6px;
 	cursor: pointer;
 	box-shadow: 0 1px 3px rgba(15, 118, 110, 0.25);
 	transition: background-color 0.15s ease, transform 0.1s ease;
@@ -176,36 +260,69 @@
 	padding: 24px 16px 48px;
 	overflow-x: auto;
 	box-sizing: border-box;
+	background-color: var(--slate-100, #f1f5f9);
 }
 
-/* ── Multi-sheet Stack & Real A4 Pages ── */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-paper-container {
+	background-color: #0b1120 !important;
+}
+
+/* ── Multi-sheet Stack & Scale Transformations ── */
 .pro-a4-sheet-stack {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: 28px;
 	width: 100%;
+	transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	transform-origin: top center;
 }
 
+.pro-a4-sheet-stack.zoom-80 {
+	transform: scale(0.8);
+	transform-origin: top center;
+	margin-bottom: -10%;
+}
+
+.pro-a4-sheet-stack.zoom-100 {
+	transform: scale(1);
+	transform-origin: top center;
+}
+
+.pro-a4-sheet-stack.zoom-fit {
+	transform: none;
+	max-width: 100%;
+}
+
+.pro-a4-sheet-stack.zoom-fit .pro-a4-page-sheet {
+	width: min(210mm, 100%);
+	max-width: 100%;
+}
+
+/* ── Physical Discrete A4 Page Sheets (210 × 297 mm) ── */
 .pro-a4-page-sheet {
 	width: 210mm;
 	min-height: 297mm;
+	height: 297mm;
 	max-width: 100%;
 	background: #ffffff !important;
 	background-color: #ffffff !important;
 	color: #000000 !important;
 	color-scheme: light !important;
 	box-sizing: border-box;
-	margin: 0 auto;
+	margin: 0 auto 28px auto;
 	padding: 18mm 12mm 18mm 20mm;
 	box-shadow: 0 4px 25px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.08);
-	font-family: "PT Serif", "Times New Roman", "PT Astra Serif", Georgia, serif;
+	font-family: "PT Astra Serif", "Times New Roman", Times, Georgia, serif;
 	font-size: 9pt;
 	line-height: 1.35;
 	position: relative;
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
+}
+
+.pro-a4-page-sheet:last-child {
+	margin-bottom: 0;
 }
 
 .pro-a4-page-sheet .a4-sheet-body {
@@ -238,7 +355,7 @@
 	line-height: 1.2;
 }
 
-/* ── Physical A4 Paper Sheet (Legacy & Single-Page Fallback) ── */
+/* ── Physical A4 Paper Sheet (Legacy Fallback) ── */
 .pro-a4-physical-sheet {
 	width: 210mm;
 	min-height: 297mm;
@@ -251,12 +368,13 @@
 	margin: 0 auto;
 	padding: 20mm 10mm 20mm 25mm;
 	box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.08);
-	font-family: "PT Serif", "Times New Roman", "PT Astra Serif", Georgia, serif;
+	font-family: "PT Astra Serif", "Times New Roman", Times, Georgia, serif;
 	font-size: 9.5pt;
 	line-height: 1.35;
 	position: relative;
 }
 
+/* ── Absolute Dark Mode Isolation (Paper Invariant) ── */
 :is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet),
 :is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet) * {
 	color-scheme: light !important;
@@ -268,7 +386,16 @@
 	color: #000000 !important;
 }
 
-:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet) :is(h1, h2, h3, h4, h5, h6, p, span, div, td, th, strong, .a4-doc-title, .a4-doc-subtitle, .a4-section-heading, .a4-p, .a4-p-noindent, .a4-meta-row, .a4-meta-row *) {
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet) :is(
+	h1, h2, h3, h4, h5, h6,
+	p, span, div, td, th, strong, em, b, u, i, small,
+	.a4-doc-title, .a4-doc-subtitle, .a4-section-heading,
+	.a4-p, .a4-p-noindent, .a4-meta-row, .a4-meta-row *,
+	.a4-clinic-name, .a4-clinic-requisites,
+	.a4-running-header, .a4-running-header *,
+	.a4-running-footer, .a4-running-footer *,
+	.a4-sign-col, .a4-sign-hint, .stamp-box
+) {
 	color: #000000 !important;
 }
 
@@ -276,15 +403,15 @@
 	color: #000000 !important;
 }
 
-/* ── Typography & Official Elements ── */
-.pro-a4-physical-sheet .a4-header {
+/* ── Typography & Official Document Headers ── */
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-header {
 	border-bottom: 1.5pt solid #000000;
 	padding-bottom: 6px;
 	margin-bottom: 10px;
 	text-align: center;
 }
 
-.pro-a4-physical-sheet .a4-clinic-name {
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-clinic-name {
 	font-size: 11.5pt;
 	font-weight: 800;
 	text-transform: uppercase;
@@ -292,14 +419,14 @@
 	color: #000000 !important;
 }
 
-.pro-a4-physical-sheet .a4-clinic-requisites {
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-clinic-requisites {
 	font-size: 8pt;
 	color: #222222 !important;
 	margin-top: 3px;
 	line-height: 1.3;
 }
 
-.pro-a4-physical-sheet .a4-doc-title {
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-doc-title {
 	font-size: 13pt;
 	font-weight: 800;
 	text-align: center;
@@ -309,7 +436,7 @@
 	letter-spacing: 0.02em;
 }
 
-.pro-a4-physical-sheet .a4-doc-subtitle {
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-doc-subtitle {
 	font-size: 9pt;
 	text-align: center;
 	color: #222222 !important;
@@ -317,7 +444,7 @@
 	line-height: 1.3;
 }
 
-.pro-a4-physical-sheet .a4-meta-row {
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-meta-row {
 	display: flex;
 	justify-content: space-between;
 	font-size: 9pt;
@@ -328,7 +455,7 @@
 	color: #000000 !important;
 }
 
-.pro-a4-physical-sheet .a4-section-heading {
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-section-heading {
 	font-size: 10pt;
 	font-weight: 800;
 	margin: 10px 0 5px 0;
@@ -339,7 +466,7 @@
 	letter-spacing: 0.01em;
 }
 
-.pro-a4-physical-sheet .a4-p {
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-p {
 	font-size: 8.5pt;
 	text-align: justify;
 	text-indent: 1.25cm;
@@ -348,7 +475,7 @@
 	color: #000000 !important;
 }
 
-.pro-a4-physical-sheet .a4-p-noindent {
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-p-noindent {
 	font-size: 8.5pt;
 	text-align: justify;
 	margin: 4px 0;
@@ -357,7 +484,7 @@
 }
 
 /* ── Canonical Medical Tables ── */
-.pro-a4-physical-sheet .a4-table {
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-table {
 	width: 100%;
 	border-collapse: collapse;
 	margin: 6px 0;
@@ -367,8 +494,17 @@
 	page-break-inside: auto;
 }
 
-.pro-a4-physical-sheet .a4-table th,
-.pro-a4-physical-sheet .a4-table td {
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-table thead {
+	display: table-header-group;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-table tr {
+	page-break-inside: avoid;
+	break-inside: avoid;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-table th,
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-table td {
 	border: 0.75pt solid #000000 !important;
 	padding: 3px 5px !important;
 	color: #000000 !important;
@@ -376,19 +512,21 @@
 	background-color: #ffffff;
 }
 
-.pro-a4-physical-sheet .a4-table th {
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-table th {
 	background-color: #f0f0f0 !important;
 	font-weight: 700 !important;
 	text-align: center;
+	color: #000000 !important;
 }
 
-.pro-a4-physical-sheet .a4-table .total-row td {
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-table .total-row td {
 	font-weight: 800 !important;
 	background-color: #f7f7f7 !important;
+	color: #000000 !important;
 }
 
 /* ── Signatures & Stamp Blocks ── */
-.pro-a4-physical-sheet .a4-sign-grid {
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-sign-grid {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
 	gap: 20px;
@@ -398,24 +536,24 @@
 	break-inside: avoid;
 }
 
-.pro-a4-physical-sheet .a4-sign-col {
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-sign-col {
 	line-height: 1.35;
 	color: #000000 !important;
 }
 
-.pro-a4-physical-sheet .a4-sign-line {
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-sign-line {
 	border-bottom: 0.75pt solid #000000;
 	height: 26px;
 	margin: 4px 0 2px 0;
 	width: 100%;
 }
 
-.pro-a4-physical-sheet .a4-sign-hint {
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-sign-hint {
 	font-size: 7.5pt;
 	color: #333333 !important;
 }
 
-.pro-a4-physical-sheet .stamp-box {
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .stamp-box {
 	display: inline-block;
 	border: 0.75pt dashed #555555;
 	padding: 0 4px;
@@ -426,11 +564,11 @@
 	color: #333333 !important;
 }
 
-/* ── Print Media Optimization ── */
+/* ── Print Media Optimization (@media print) ── */
 @media print {
 	@page {
 		size: A4 portrait;
-		margin: 20mm 10mm 20mm 25mm;
+		margin: 15mm 10mm 15mm 20mm;
 	}
 
 	html,
@@ -464,10 +602,13 @@
 		margin: 0 !important;
 		display: block !important;
 		overflow: visible !important;
+		background: transparent !important;
 	}
 
 	.pro-a4-sheet-stack {
 		display: block !important;
+		transform: none !important;
+		margin-bottom: 0 !important;
 		gap: 0 !important;
 	}
 
@@ -479,18 +620,29 @@
 		max-width: none !important;
 		box-shadow: none !important;
 		margin: 0 !important;
+		margin-bottom: 0 !important;
 		padding: 15mm 10mm 15mm 20mm !important;
 		border: none !important;
 		page-break-after: always !important;
 		break-after: page !important;
 	}
 
-	.pro-a4-page-sheet:last-child {
+	.pro-a4-page-sheet:last-child,
+	.pro-a4-physical-sheet:last-child {
 		page-break-after: auto !important;
 		break-after: auto !important;
 	}
 
 	.a4-sign-grid {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+
+	.a4-table thead {
+		display: table-header-group !important;
+	}
+
+	.a4-table tr {
 		page-break-inside: avoid !important;
 		break-inside: avoid !important;
 	}

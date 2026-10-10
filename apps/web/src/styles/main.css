@@ -19,6 +19,7 @@
 @import "../components/telephony/telephonyFloatingWidget.css";
 @import "../components/visit/VisitAnamnesisTab.css";
 @import "./low-spec-hardware.css";
+@import "../components/radiology/mobileRadiology.css";
 
 :root {
 	/* LIGHT THEME (Premium Aesthetics) */
@@ -1535,28 +1536,35 @@ html.dark .boot-state .boot-subtitle,
 	background: var(--teal-surface);
 	border: 1px solid var(--line-strong);
 	border-radius: 8px;
-	display: grid;
-	gap: 12px;
-	grid-template-columns: minmax(0, 1fr) auto auto auto;
-	padding: 12px 14px;
+	display: flex;
+	gap: 10px;
+	padding: 4px 12px;
+	min-height: 34px;
 }
 
 .onboarding-compact-strip > div {
-	display: grid;
-	gap: 3px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1;
+	min-width: 0;
 }
 
 .onboarding-compact-strip strong {
 	color: var(--ink);
-	font-size: 16px;
-	line-height: 1.15;
+	font-size: 13px;
+	line-height: 1.2;
+	white-space: nowrap;
 }
 
 .onboarding-compact-strip span {
 	color: var(--ink-2);
-	font-size: 13px;
+	font-size: 12px;
 	font-weight: 750;
-	line-height: 1.25;
+	line-height: 1.2;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .onboarding-compact-score {
@@ -1564,9 +1572,9 @@ html.dark .boot-state .boot-subtitle,
 	border: 1px solid var(--line);
 	border-radius: 999px;
 	color: var(--teal-dark);
-	font-size: 12px;
+	font-size: 11px;
 	font-weight: 900;
-	padding: 7px 10px;
+	padding: 4px 8px;
 	white-space: nowrap;
 }
 
@@ -2955,9 +2963,10 @@ section.imaging-panel {
 }
 
 .imaging-copy h2 {
-	font-size: 21px;
-	line-height: 1.1;
+	font-size: 18px;
+	line-height: 1.2;
 	margin: 0;
+	white-space: nowrap;
 }
 
 .imaging-actions {
@@ -3027,62 +3036,87 @@ section.imaging-panel {
 }
 
 .imaging-patient-strip {
-	display: grid;
-	gap: 10px;
-	grid-template-columns: 1.15fr 0.7fr 1.15fr;
+	display: inline-flex !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	justify-content: flex-start !important;
+	flex-wrap: nowrap !important;
+	gap: 6px !important;
+	padding: 2px 8px !important;
+	min-height: 26px !important;
+	height: 26px !important;
+	border-radius: 6px !important;
+	background: var(--paper) !important;
+	border: 1px solid var(--line) !important;
+	white-space: nowrap !important;
 }
 
 .imaging-patient-strip article {
-	background: var(--paper-strong);
-	border: 1px solid var(--line);
-	border-radius: 8px;
-	display: grid;
-	gap: 5px;
-	min-width: 0;
-	padding: 12px;
+	background: transparent !important;
+	border: none !important;
+	border-radius: 0 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	min-width: 0 !important;
+	padding: 0 !important;
+	width: auto !important;
 }
 
 .imaging-patient-strip span,
 .imaging-patient-strip small {
-	color: var(--muted);
-	font-size: 12px;
-	font-weight: 850;
-	line-height: 1.25;
+	color: var(--muted) !important;
+	font-size: 11px !important;
+	font-weight: 600 !important;
+	line-height: 1 !important;
 }
 
 .imaging-patient-strip strong {
-	color: var(--ink);
-	font-size: 18px;
-	line-height: 1.15;
-	overflow-wrap: break-word;
-	word-break: normal;
-	hyphens: manual;
+	color: var(--ink) !important;
+	font-size: 12px !important;
+	font-weight: 700 !important;
+	line-height: 1 !important;
 }
 
 .imaging-kind-filter {
 	display: flex;
-	flex-wrap: wrap;
-	gap: 7px;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: 3px;
 }
 
 .imaging-kind-filter button {
-	background: var(--paper-strong);
-	border: 1px solid var(--line);
-	border-radius: 999px;
-	color: var(--ink);
-	font-weight: 900;
-	min-height: 34px;
-	padding: 0 11px;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 6px;
+	color: var(--muted);
+	font-weight: 700;
+	min-height: 24px;
+	height: 24px;
+	padding: 0 7px;
+	font-size: 11px;
+	white-space: nowrap;
 }
 
 .imaging-kind-filter button.active,
+.imaging-kind-filter button[aria-selected="true"],
 .imaging-kind-filter button:hover {
 	background: var(--teal);
 	border-color: var(--teal);
 	color: #fff;
 }
 
+.imaging-unified-toolbar .secondary-button {
+	height: 26px !important;
+	min-height: 26px !important;
+	padding: 0 7px !important;
+	font-size: 11px !important;
+	gap: 4px !important;
+	border-radius: 6px !important;
+}
+
 .imaging-layout {
+	align-items: start;
 	display: grid;
 	gap: 12px;
 	grid-template-columns: minmax(360px, 0.9fr) minmax(360px, 1.1fr);
@@ -3377,11 +3411,11 @@ section.imaging-panel {
 }
 
 .viewer-session-strip {
-	align-items: center;
+	align-items: start;
 	border-top: 1px solid var(--line);
 	display: grid;
 	gap: 8px;
-	grid-template-columns: minmax(130px, 0.8fr) minmax(160px, 1fr) auto;
+	grid-template-columns: minmax(110px, auto) minmax(200px, 1fr) auto;
 	padding-top: 8px;
 }
 
@@ -3396,35 +3430,36 @@ section.imaging-panel {
 	padding-left: 9px;
 }
 
-.viewer-session-strip div {
+.viewer-session-strip > div:first-child {
 	display: grid;
 	gap: 2px;
 }
 
 .viewer-session-strip strong {
-	color: #f3fffd;
+	color: var(--ink);
 	font-size: 13px;
 	line-height: 1.25;
 }
 
 .viewer-session-strip span {
-	color: #c4eee8;
+	color: var(--muted);
 	font-size: 12px;
-	font-weight: 800;
+	font-weight: 700;
 }
 
-.viewer-session-strip input {
-	background: #102727;
-	border: 1px solid rgba(215, 255, 246, 0.24);
+.viewer-session-strip input,
+.viewer-session-strip textarea {
+	background: var(--paper);
+	border: 1px solid var(--line);
 	border-radius: 8px;
-	color: #f3fffd;
-	min-height: 38px;
-	padding: 8px 10px;
+	color: var(--ink);
+	min-height: 36px;
+	padding: 6px 10px;
 	width: 100%;
 }
 
 .viewer-session-strip .secondary-button {
-	min-height: 38px;
+	min-height: 34px;
 }
 
 .viewer-session-strip .viewer-session-actions {
@@ -3435,15 +3470,15 @@ section.imaging-panel {
 }
 
 .viewer-note-missing {
-	background: rgba(215, 255, 246, 0.08);
-	border: 1px solid rgba(215, 255, 246, 0.18);
+	background: var(--paper);
+	border: 1px solid var(--line);
 	border-radius: 8px;
-	color: #c4eee8;
+	color: var(--muted);
 	font-size: 12px;
-	font-weight: 850;
+	font-weight: 700;
 	grid-column: 1 / -1;
 	margin: 0;
-	padding: 8px 10px;
+	padding: 6px 10px;
 }
 
 .viewer-annotation-list {
@@ -3489,6 +3524,7 @@ section.imaging-panel {
 }
 
 .imaging-list {
+	align-content: start;
 	display: grid;
 	gap: 9px;
 }
@@ -3497,13 +3533,13 @@ section.imaging-panel {
 	align-items: center;
 	background: var(--paper-strong, var(--paper, #fbfefd));
 	border: 1px solid var(--line);
-	border-radius: 8px;
+	border-radius: 10px;
 	color: var(--ink);
 	display: grid;
-	gap: 10px;
-	grid-template-columns: 92px minmax(0, 1fr) auto;
-	min-height: 86px;
-	padding: 10px;
+	gap: 12px;
+	grid-template-columns: 48px minmax(0, 1fr) auto;
+	min-height: 76px;
+	padding: 12px;
 	text-align: left;
 }
 

@@ -142,11 +142,6 @@ export const PLAN_SERVICE_RULES: Partial<Record<ToothState, PlanServiceRule>> =
 			keywords: ["ретенир", "удалени", "дистопир", "атипичн"],
 			humanName: "удаление ретенированного зуба",
 		},
-		Impacted: {
-			category: "surgery",
-			keywords: ["ретенир", "удалени", "дистопир", "атипичн"],
-			humanName: "удаление ретенированного зуба",
-		},
 	};
 
 /** Почему у строки нет цены. */
