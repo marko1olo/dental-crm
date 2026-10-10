@@ -232,6 +232,7 @@ function setupMockDom() {
 			}),
 			focus: () => {},
 			blur: () => {},
+			scrollIntoView: () => {},
 			contains: (other: MockDomNode) => {
 				let curr: MockDomNode | null = other;
 				while (curr) {
@@ -259,6 +260,20 @@ function setupMockDom() {
 		createComment: () => ({ nodeType: 8, parentNode: null, ownerDocument: null }),
 		addEventListener: () => {},
 		removeEventListener: () => {},
+		getElementById: (id: string): MockDomNode | null => {
+			function findById(n: MockDomNode | null): MockDomNode | null {
+				if (!n) return null;
+				if (n.id === id || n.getAttribute?.("id") === id) return n;
+				if (n.children) {
+					for (const c of n.children) {
+						const found = findById(c);
+						if (found) return found;
+					}
+				}
+				return null;
+			}
+			return findById(doc.body);
+		},
 		documentElement: createMockElement("html"),
 		body: createMockElement("body"),
 		activeElement: null,

@@ -750,7 +750,9 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 										setSelectedSlot(slots[0] || null);
 									}
 									handleStepChange(4);
-									document.getElementById("dbw-step-contacts")?.scrollIntoView({ behavior: "smooth" });
+									if (typeof document !== "undefined" && typeof document.getElementById === "function") {
+										document.getElementById("dbw-step-contacts")?.scrollIntoView?.({ behavior: "smooth" });
+									}
 								}}
 							/>
 						</div>
