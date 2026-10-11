@@ -26,8 +26,16 @@ export const createNavigationAndThemeSlice: AppSliceCreator<
 			})),
 		setClinicProfileSaveState: (val) => set({ clinicProfileSaveState: val }),
 		setClinicProfileDirty: (val) => set({ clinicProfileDirty: val }),
-		setCurrentView: (val) => set({ currentView: val }),
-		setSettingsTab: (val) => set({ settingsTab: val }),
+		setCurrentView: (val) =>
+			set((state) => ({
+				currentView:
+					typeof val === "function" ? val(state.currentView) : val,
+			})),
+		setSettingsTab: (val) =>
+			set((state) => ({
+				settingsTab:
+					typeof val === "function" ? val(state.settingsTab) : val,
+			})),
 		setSelectedWorkspaceRole: (val) => set({ selectedWorkspaceRole: val }),
 		setNewStaffName: (val) => set({ newStaffName: val }),
 		setNewStaffRole: (val) => set({ newStaffRole: val }),

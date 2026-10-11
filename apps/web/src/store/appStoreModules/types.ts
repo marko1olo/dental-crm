@@ -1,5 +1,48 @@
-import type { Dashboard, OdontogramViewMode } from "@dental/shared";
+import type {
+	AiJobKind,
+	AiRecognitionJob,
+	AiRecognitionTarget,
+	ClinicalRuleAction,
+	ClinicalRuleSeverity,
+	ClinicPublicLookupResponse,
+	Dashboard,
+	DentalPricelistAnalysisResponse,
+	DentalSpecialty,
+	ImportCommitResponse,
+	ImportIntakeResponse,
+	ImportPreviewResponse,
+	ImportSourceKind,
+	LocalBridgeReadinessResponse,
+	LocalBridgeUsePlansResponse,
+	MigrationAutopilotResponse,
+	MigrationLocalSourceDiscoveryResponse,
+	MigrationLocalSourceProbeResponse,
+	MigrationLocalSourceWorkupResponse,
+	OdontogramViewMode,
+	PricelistSourceKind,
+	ServiceCategory,
+	SmartImportCommitResponse,
+	SmartImportMode,
+	SmartImportPreviewResponse,
+	SpeechGatewayHealthReport,
+	SpeechGatewayStatus,
+	SpeechProviderRuntimeStatus,
+	SpeechRecordingRecoveryList,
+	SpeechRecordingStrategy,
+	StaffRole,
+	UiLanguage,
+} from "@dental/shared";
 import type { StateCreator } from "zustand";
+import type {
+	BrowserMigrationScanProgress,
+	ClinicProfileDraft,
+	ClinicProfileSaveState,
+	PersistenceHealth,
+	PersistenceIntegrityReport,
+	PricelistImageMimeType,
+} from "../../AppHelpers";
+import type { BrowserContinuityStatus } from "../../browserContinuity";
+import type { AppView, SettingsTab } from "../../utils/routeUtils";
 
 export interface NavigationAndThemeSlice {
 	odontogramUseSurfaces: boolean;
@@ -10,114 +53,66 @@ export interface NavigationAndThemeSlice {
 	setOdontogramViewMode: (
 		val: OdontogramViewMode | ((prev: OdontogramViewMode) => OdontogramViewMode),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	uiPreferencesHydrated: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setUiPreferencesHydrated: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	uiLanguage: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setUiLanguage: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	clinicProfileDraft: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setClinicProfileDraft: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	clinicProfileSaveState: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setClinicProfileSaveState: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	clinicProfileDirty: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setClinicProfileDirty: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	currentView: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setCurrentView: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	settingsTab: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setSettingsTab: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	selectedWorkspaceRole: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setSelectedWorkspaceRole: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newStaffName: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewStaffName: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newStaffRole: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewStaffRole: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newStaffSpecialty: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewStaffSpecialty: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newChairName: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewChairName: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newChairHasXraySensor: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewChairHasXraySensor: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newChairHasMicroscope: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewChairHasMicroscope: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newChairHasSurgeryKit: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewChairHasSurgeryKit: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newRuleTitle: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewRuleTitle: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newRuleAction: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewRuleAction: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newRuleSeverity: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewRuleSeverity: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newRuleOwnerRole: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewRuleOwnerRole: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newRuleSpecialty: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewRuleSpecialty: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newRuleCategory: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewRuleCategory: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newRuleTriggerServiceId: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewRuleTriggerServiceId: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newRuleRequiredServiceId: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewRuleRequiredServiceId: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newRuleCompletedServiceId: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewRuleCompletedServiceId: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newRuleBlockedServiceId: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewRuleBlockedServiceId: (val: any) => void;
+	uiPreferencesHydrated: boolean;
+	setUiPreferencesHydrated: (val: boolean) => void;
+	uiLanguage: UiLanguage;
+	setUiLanguage: (val: UiLanguage) => void;
+	clinicProfileDraft: ClinicProfileDraft;
+	setClinicProfileDraft: (
+		val: ClinicProfileDraft | ((prev: ClinicProfileDraft) => ClinicProfileDraft),
+	) => void;
+	clinicProfileSaveState: ClinicProfileSaveState;
+	setClinicProfileSaveState: (val: ClinicProfileSaveState) => void;
+	clinicProfileDirty: boolean;
+	setClinicProfileDirty: (val: boolean) => void;
+	currentView: AppView;
+	setCurrentView: (val: AppView | ((prev: AppView) => AppView)) => void;
+	settingsTab: SettingsTab | string;
+	setSettingsTab: (
+		val: SettingsTab | string | ((prev: string) => string),
+	) => void;
+	selectedWorkspaceRole: StaffRole;
+	setSelectedWorkspaceRole: (val: StaffRole) => void;
+	newStaffName: string;
+	setNewStaffName: (val: string) => void;
+	newStaffRole: StaffRole;
+	setNewStaffRole: (val: StaffRole) => void;
+	newStaffSpecialty: DentalSpecialty | string;
+	setNewStaffSpecialty: (val: DentalSpecialty | string) => void;
+	newChairName: string;
+	setNewChairName: (val: string) => void;
+	newChairHasXraySensor: boolean;
+	setNewChairHasXraySensor: (val: boolean) => void;
+	newChairHasMicroscope: boolean;
+	setNewChairHasMicroscope: (val: boolean) => void;
+	newChairHasSurgeryKit: boolean;
+	setNewChairHasSurgeryKit: (val: boolean) => void;
+	newRuleTitle: string;
+	setNewRuleTitle: (val: string) => void;
+	newRuleAction: ClinicalRuleAction;
+	setNewRuleAction: (val: ClinicalRuleAction) => void;
+	newRuleSeverity: ClinicalRuleSeverity;
+	setNewRuleSeverity: (val: ClinicalRuleSeverity) => void;
+	newRuleOwnerRole: StaffRole;
+	setNewRuleOwnerRole: (val: StaffRole) => void;
+	newRuleSpecialty: DentalSpecialty;
+	setNewRuleSpecialty: (val: DentalSpecialty) => void;
+	newRuleCategory: ServiceCategory;
+	setNewRuleCategory: (val: ServiceCategory) => void;
+	newRuleTriggerServiceId: string;
+	setNewRuleTriggerServiceId: (val: string) => void;
+	newRuleRequiredServiceId: string;
+	setNewRuleRequiredServiceId: (val: string) => void;
+	newRuleCompletedServiceId: string;
+	setNewRuleCompletedServiceId: (val: string) => void;
+	newRuleBlockedServiceId: string;
+	setNewRuleBlockedServiceId: (val: string) => void;
 	newRuleWarningText: string;
 	setNewRuleWarningText: (val: string) => void;
 	newRulePatientText: string;
 	setNewRulePatientText: (val: string) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	ohifBaseUrl: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setOhifBaseUrl: (val: any) => void;
+	ohifBaseUrl: string;
+	setOhifBaseUrl: (val: string) => void;
 }
 
 export interface ModalsAndSelectionSlice {
@@ -133,138 +128,82 @@ export interface ModalsAndSelectionSlice {
 	setDashboard: (
 		val: Dashboard | null | ((current: Dashboard | null) => Dashboard | null),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	accessUnlockRequired: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setAccessUnlockRequired: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	accessUnlockMessage: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setAccessUnlockMessage: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	query: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setQuery: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	editingAppointmentId: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setEditingAppointmentId: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	newAppointmentError: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setNewAppointmentError: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	importText: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setImportText: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	smartImportText: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setSmartImportText: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	pricelistText: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPricelistText: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	pricelistSourceKind: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPricelistSourceKind: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	usePricelistAi: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setUsePricelistAi: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	pricelistAnalysis: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPricelistAnalysis: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	pricelistImageBase64: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPricelistImageBase64: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	pricelistImageMimeType: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPricelistImageMimeType: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	pricelistImageName: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPricelistImageName: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	pricelistImageNote: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPricelistImageNote: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	recognitionKind: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setRecognitionKind: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	recognitionTarget: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setRecognitionTarget: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	recognitionText: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setRecognitionText: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	importSourceKind: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setImportSourceKind: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	smartImportMode: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setSmartImportMode: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	browserMigrationDiscovery: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setBrowserMigrationDiscovery: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	browserMigrationScanProgress: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setBrowserMigrationScanProgress: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	importIntake: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setImportIntake: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	importPreview: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setImportPreview: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	importCommit: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setImportCommit: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	migrationAutopilot: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setMigrationAutopilot: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	migrationSourceDiscovery: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setMigrationSourceDiscovery: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	migrationSourceWorkup: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setMigrationSourceWorkup: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	migrationSourceProbe: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setMigrationSourceProbe: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	clinicPublicLookup: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setClinicPublicLookup: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	smartImportPreview: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setSmartImportPreview: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	smartImportCommit: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setSmartImportCommit: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	recognitionJob: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setRecognitionJob: (val: any) => void;
+	accessUnlockRequired: boolean;
+	setAccessUnlockRequired: (val: boolean) => void;
+	accessUnlockMessage: string;
+	setAccessUnlockMessage: (val: string) => void;
+	query: string;
+	setQuery: (val: string) => void;
+	editingAppointmentId: string | null;
+	setEditingAppointmentId: (val: string | null) => void;
+	newAppointmentError: string | null;
+	setNewAppointmentError: (val: string | null) => void;
+	importText: string;
+	setImportText: (val: string | ((prev: string) => string)) => void;
+	smartImportText: string;
+	setSmartImportText: (val: string) => void;
+	pricelistText: string;
+	setPricelistText: (val: string) => void;
+	pricelistSourceKind: PricelistSourceKind;
+	setPricelistSourceKind: (val: PricelistSourceKind) => void;
+	usePricelistAi: boolean;
+	setUsePricelistAi: (val: boolean) => void;
+	pricelistAnalysis: DentalPricelistAnalysisResponse | null;
+	setPricelistAnalysis: (val: DentalPricelistAnalysisResponse | null) => void;
+	pricelistImageBase64: string | null;
+	setPricelistImageBase64: (val: string | null) => void;
+	pricelistImageMimeType: PricelistImageMimeType | null;
+	setPricelistImageMimeType: (val: PricelistImageMimeType | null) => void;
+	pricelistImageName: string | null;
+	setPricelistImageName: (val: string | null) => void;
+	pricelistImageNote: string | null;
+	setPricelistImageNote: (val: string | null) => void;
+	recognitionKind: AiJobKind;
+	setRecognitionKind: (val: AiJobKind) => void;
+	recognitionTarget: AiRecognitionTarget;
+	setRecognitionTarget: (val: AiRecognitionTarget) => void;
+	recognitionText: string;
+	setRecognitionText: (val: string) => void;
+	importSourceKind: ImportSourceKind;
+	setImportSourceKind: (val: ImportSourceKind) => void;
+	smartImportMode: SmartImportMode;
+	setSmartImportMode: (val: SmartImportMode) => void;
+	browserMigrationDiscovery: MigrationLocalSourceDiscoveryResponse | null;
+	setBrowserMigrationDiscovery: (
+		val: MigrationLocalSourceDiscoveryResponse | null,
+	) => void;
+	browserMigrationScanProgress: BrowserMigrationScanProgress | null;
+	setBrowserMigrationScanProgress: (
+		val: BrowserMigrationScanProgress | null,
+	) => void;
+	importIntake: ImportIntakeResponse | null;
+	setImportIntake: (val: ImportIntakeResponse | null) => void;
+	importPreview: ImportPreviewResponse | null;
+	setImportPreview: (val: ImportPreviewResponse | null) => void;
+	importCommit: ImportCommitResponse | null;
+	setImportCommit: (val: ImportCommitResponse | null) => void;
+	migrationAutopilot: MigrationAutopilotResponse | null;
+	setMigrationAutopilot: (val: MigrationAutopilotResponse | null) => void;
+	migrationSourceDiscovery: MigrationLocalSourceDiscoveryResponse | null;
+	setMigrationSourceDiscovery: (
+		val: MigrationLocalSourceDiscoveryResponse | null,
+	) => void;
+	migrationSourceWorkup: MigrationLocalSourceWorkupResponse | null;
+	setMigrationSourceWorkup: (
+		val: MigrationLocalSourceWorkupResponse | null,
+	) => void;
+	migrationSourceProbe: MigrationLocalSourceProbeResponse | null;
+	setMigrationSourceProbe: (
+		val: MigrationLocalSourceProbeResponse | null,
+	) => void;
+	clinicPublicLookup: ClinicPublicLookupResponse | null;
+	setClinicPublicLookup: (val: ClinicPublicLookupResponse | null) => void;
+	smartImportPreview: SmartImportPreviewResponse | null;
+	setSmartImportPreview: (val: SmartImportPreviewResponse | null) => void;
+	smartImportCommit: SmartImportCommitResponse | null;
+	setSmartImportCommit: (val: SmartImportCommitResponse | null) => void;
+	recognitionJob: AiRecognitionJob | null;
+	setRecognitionJob: (val: AiRecognitionJob | null) => void;
 	activeTooth: number | string | null;
 	setActiveTooth: (
 		val:
@@ -286,40 +225,30 @@ export interface ModalsAndSelectionSlice {
 export interface NotificationsAndSyncSlice {
 	releaseProtectionNote: string;
 	setReleaseProtectionNote: (val: string) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	communicationNote: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setCommunicationNote: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	localAutosaveReady: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setLocalAutosaveReady: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	lastLocalSavedAt: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setLastLocalSavedAt: (val: any) => void;
+	communicationNote: string;
+	setCommunicationNote: (val: string) => void;
+	localAutosaveReady: boolean;
+	setLocalAutosaveReady: (val: boolean) => void;
+	lastLocalSavedAt: string | null;
+	setLastLocalSavedAt: (val: string | null) => void;
 	isOnline: boolean;
 	setIsOnline: (val: boolean | ((prev: boolean) => boolean)) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	speechGatewayStatus: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setSpeechGatewayStatus: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	speechGatewayHealthReport: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setSpeechGatewayHealthReport: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	speechProviderRuntimeStatuses: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setSpeechProviderRuntimeStatuses: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	speechRecordingStrategy: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setSpeechRecordingStrategy: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	speechRecordingRecovery: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setSpeechRecordingRecovery: (val: any) => void;
+	speechGatewayStatus: SpeechGatewayStatus | null;
+	setSpeechGatewayStatus: (val: SpeechGatewayStatus | null) => void;
+	speechGatewayHealthReport: SpeechGatewayHealthReport | null;
+	setSpeechGatewayHealthReport: (
+		val: SpeechGatewayHealthReport | null,
+	) => void;
+	speechProviderRuntimeStatuses: SpeechProviderRuntimeStatus[];
+	setSpeechProviderRuntimeStatuses: (
+		val: SpeechProviderRuntimeStatus[],
+	) => void;
+	speechRecordingStrategy: SpeechRecordingStrategy | null;
+	setSpeechRecordingStrategy: (val: SpeechRecordingStrategy | null) => void;
+	speechRecordingRecovery: SpeechRecordingRecoveryList | null;
+	setSpeechRecordingRecovery: (
+		val: SpeechRecordingRecoveryList | null,
+	) => void;
 	pendingSpeechChunkCount: number;
 	setPendingSpeechChunkCount: (
 		val: number | ((prev: number) => number),
@@ -328,138 +257,72 @@ export interface NotificationsAndSyncSlice {
 	setSpeechStatusNote: (
 		val: string | null | ((prev: string | null) => string | null),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	browserContinuity: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setBrowserContinuity: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	localBridgeReadiness: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setLocalBridgeReadiness: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	localBridgeUsePlans: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setLocalBridgeUsePlans: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isImportDictating: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsImportDictating: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isImportLoading: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsImportLoading: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isImportCommitting: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsImportCommitting: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isMigrationAutopilotLoading: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsMigrationAutopilotLoading: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isMigrationHandoffReportLoading: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsMigrationHandoffReportLoading: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isMigrationSourceDiscovering: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsMigrationSourceDiscovering: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isMigrationSourceWorkupLoading: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsMigrationSourceWorkupLoading: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isMigrationSourceProbeLoading: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsMigrationSourceProbeLoading: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isClinicPublicLookupLoading: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsClinicPublicLookupLoading: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isBrowserMigrationScanning: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsBrowserMigrationScanning: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isSmartImportLoading: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsSmartImportLoading: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isSmartImportCommitting: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsSmartImportCommitting: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isSmartReportLoading: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsSmartReportLoading: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isSmartSafeReportLoading: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsSmartSafeReportLoading: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isRecognitionLoading: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsRecognitionLoading: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isPricelistAnalyzing: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsPricelistAnalyzing: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isServerVoiceRecording: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsServerVoiceRecording: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isPaymentSaving: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsPaymentSaving: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	communicationSavingTaskId: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setCommunicationSavingTaskId: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isClinicalRuleSaving: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsClinicalRuleSaving: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	persistenceHealth: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPersistenceHealth: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	persistenceIntegrity: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPersistenceIntegrity: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isPersistenceExporting: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsPersistenceExporting: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isTelegramLoading: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsTelegramLoading: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isTelegramLinkCreating: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsTelegramLinkCreating: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isTelegramSettingsSaving: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsTelegramSettingsSaving: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isTelegramSendingDue: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsTelegramSendingDue: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isTelegramOutboxLoadingMore: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsTelegramOutboxLoadingMore: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isTelegramLinkCodesLoadingMore: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsTelegramLinkCodesLoadingMore: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isTelegramChatLinksLoadingMore: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsTelegramChatLinksLoadingMore: (val: any) => void;
+	browserContinuity: BrowserContinuityStatus | null;
+	setBrowserContinuity: (val: BrowserContinuityStatus | null) => void;
+	localBridgeReadiness: LocalBridgeReadinessResponse | null;
+	setLocalBridgeReadiness: (val: LocalBridgeReadinessResponse | null) => void;
+	localBridgeUsePlans: LocalBridgeUsePlansResponse | null;
+	setLocalBridgeUsePlans: (val: LocalBridgeUsePlansResponse | null) => void;
+	isImportDictating: boolean;
+	setIsImportDictating: (val: boolean) => void;
+	isImportLoading: boolean;
+	setIsImportLoading: (val: boolean) => void;
+	isImportCommitting: boolean;
+	setIsImportCommitting: (val: boolean) => void;
+	isMigrationAutopilotLoading: boolean;
+	setIsMigrationAutopilotLoading: (val: boolean) => void;
+	isMigrationHandoffReportLoading: boolean;
+	setIsMigrationHandoffReportLoading: (val: boolean) => void;
+	isMigrationSourceDiscovering: boolean;
+	setIsMigrationSourceDiscovering: (val: boolean) => void;
+	isMigrationSourceWorkupLoading: boolean;
+	setIsMigrationSourceWorkupLoading: (val: boolean) => void;
+	isMigrationSourceProbeLoading: boolean;
+	setIsMigrationSourceProbeLoading: (val: boolean) => void;
+	isClinicPublicLookupLoading: boolean;
+	setIsClinicPublicLookupLoading: (val: boolean) => void;
+	isBrowserMigrationScanning: boolean;
+	setIsBrowserMigrationScanning: (val: boolean) => void;
+	isSmartImportLoading: boolean;
+	setIsSmartImportLoading: (val: boolean) => void;
+	isSmartImportCommitting: boolean;
+	setIsSmartImportCommitting: (val: boolean) => void;
+	isSmartReportLoading: boolean;
+	setIsSmartReportLoading: (val: boolean) => void;
+	isSmartSafeReportLoading: boolean;
+	setIsSmartSafeReportLoading: (val: boolean) => void;
+	isRecognitionLoading: boolean;
+	setIsRecognitionLoading: (val: boolean) => void;
+	isPricelistAnalyzing: boolean;
+	setIsPricelistAnalyzing: (val: boolean) => void;
+	isServerVoiceRecording: boolean;
+	setIsServerVoiceRecording: (val: boolean) => void;
+	isPaymentSaving: boolean;
+	setIsPaymentSaving: (val: boolean) => void;
+	communicationSavingTaskId: string | null;
+	setCommunicationSavingTaskId: (val: string | null) => void;
+	isClinicalRuleSaving: boolean;
+	setIsClinicalRuleSaving: (val: boolean) => void;
+	persistenceHealth: PersistenceHealth | null;
+	setPersistenceHealth: (val: PersistenceHealth | null) => void;
+	persistenceIntegrity: PersistenceIntegrityReport | null;
+	setPersistenceIntegrity: (val: PersistenceIntegrityReport | null) => void;
+	isPersistenceExporting: boolean;
+	setIsPersistenceExporting: (val: boolean) => void;
+	isTelegramLoading: boolean;
+	setIsTelegramLoading: (val: boolean) => void;
+	isTelegramLinkCreating: boolean;
+	setIsTelegramLinkCreating: (val: boolean) => void;
+	isTelegramSettingsSaving: boolean;
+	setIsTelegramSettingsSaving: (val: boolean) => void;
+	isTelegramSendingDue: boolean;
+	setIsTelegramSendingDue: (val: boolean) => void;
+	isTelegramOutboxLoadingMore: boolean;
+	setIsTelegramOutboxLoadingMore: (val: boolean) => void;
+	isTelegramLinkCodesLoadingMore: boolean;
+	setIsTelegramLinkCodesLoadingMore: (val: boolean) => void;
+	isTelegramChatLinksLoadingMore: boolean;
+	setIsTelegramChatLinksLoadingMore: (val: boolean) => void;
 	error: string | null;
 	setError: (
 		val: string | null | ((prev: string | null) => string | null),

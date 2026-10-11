@@ -1,6 +1,7 @@
-import React from "react";
-import { Calculator } from "lucide-react";
+import React, { useState } from "react";
+import { Calculator, Tablet } from "lucide-react";
 import { ClinicalErrorBoundary } from "../../common/ClinicalErrorBoundary";
+import { TreatmentPlanPresenterModal } from "../../treatment-plans/TreatmentPlanPresenterModal";
 import { VisitOdontogramTab } from "../VisitOdontogramTab";
 import { VisitEmkTab } from "../VisitEmkTab";
 import { VisitDiagnosticsTab } from "../VisitDiagnosticsTab";
@@ -8,23 +9,25 @@ import { VisitAnamnesisTab } from "../VisitAnamnesisTab";
 import { VisitConsentsTab } from "../VisitConsentsTab";
 import { VisitPlanStageHandoffBanner } from "../VisitPlanStageHandoffBanner";
 
+import type { Dashboard } from "@dental/shared";
+import type {
+	VisitAppointmentEntity,
+	VisitDoctorEntity,
+	VisitLoadedTreatmentPlan,
+	VisitNoteFormExtended,
+	VisitPatientEntity,
+} from "./types";
+
 export interface VisitTabContentProps {
 	visitSubViewTab: string;
-	// biome-ignore lint/suspicious/noExplicitAny: appointment
-	activeAppointment?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: patient
-	activePatient?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: doctor
-	activeDoctor?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: note form
-	visitNoteForm?: any;
+	activeAppointment?: VisitAppointmentEntity | null;
+	activePatient?: VisitPatientEntity | null;
+	activeDoctor?: VisitDoctorEntity | null;
+	visitNoteForm?: VisitNoteFormExtended | null;
 	updateVisitNoteField?: (field: string, val: string) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: plan
-	loadedTreatmentPlan?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: dashboard
-	dashboard?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: selection
-	selectedToothForMenu?: any;
+	loadedTreatmentPlan?: VisitLoadedTreatmentPlan | null;
+	dashboard?: Dashboard | null;
+	selectedToothForMenu?: { code: string; label?: string } | null;
 	handlePrintEstimateFast: () => void;
 	handlePrintForm043uFast: () => void;
 	handlePrintInformedConsentFast: () => void;
@@ -48,11 +51,13 @@ export function VisitTabContent({
 	setIsInformedConsentModalOpen,
 	setIsWarrantyModalOpen,
 }: VisitTabContentProps) {
+	const [isPresenterModalOpen, setIsPresenterModalOpen] = useState(false);
+
 	return (
 		<ClinicalErrorBoundary
 			workspaceName="Клинические вкладки приёма"
 			workspaceKey="visit"
-			visitId={activeAppointment?.id}
+			visitId={activeAppointment?.id ?? ""}
 		>
 			<div style={{ display: visitSubViewTab === "odontogram" ? "block" : "none" }}>
 				<VisitOdontogramTab />
@@ -71,19 +76,30 @@ export function VisitTabContent({
 					className="p-3 bg-[var(--paper)] rounded-xl border border-[var(--line)] shadow-xs space-y-3"
 					data-testid="visit-treatment-plan-tab-content"
 				>
-					<div className="flex items-center justify-between pb-2 border-b border-[var(--line)]">
+					<div className="flex items-center justify-between gap-2 pb-2 border-b border-[var(--line)] flex-wrap">
 						<h3 className="text-sm font-bold text-[var(--ink)] m-0">
 							Комплексный план лечения пациента
 						</h3>
-						<button
-							type="button"
-							onClick={handlePrintEstimateFast}
-							className="secondary-button text-xs py-1 px-2.5 inline-flex items-center gap-1.5"
-							data-testid="btn-plan-tab-print-estimate"
-						>
-							<Calculator size={13} className="text-violet-600" />
-							<span>Печать сметы</span>
-						</button>
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={() => setIsPresenterModalOpen(true)}
+								className="secondary-button text-xs py-1 px-2.5 inline-flex items-center gap-1.5"
+								data-testid="btn-open-treatment-presenter-from-visit"
+							>
+								<Tablet size={13} className="text-[var(--teal)]" />
+								<span>Презентация вариантов (3-Tier)</span>
+							</button>
+							<button
+								type="button"
+								onClick={handlePrintEstimateFast}
+								className="secondary-button text-xs py-1 px-2.5 inline-flex items-center gap-1.5"
+								data-testid="btn-plan-tab-print-estimate"
+							>
+								<Calculator size={13} className="text-[var(--teal)]" />
+								<span>Печать сметы</span>
+							</button>
+						</div>
 					</div>
 					<VisitPlanStageHandoffBanner
 						loadedTreatmentPlan={loadedTreatmentPlan}
@@ -91,6 +107,15 @@ export function VisitTabContent({
 						activePatient={activePatient}
 					/>
 				</div>
+				{isPresenterModalOpen && (
+					<TreatmentPlanPresenterModal
+						isOpen={isPresenterModalOpen}
+						onClose={() => setIsPresenterModalOpen(false)}
+						patientId={activePatient?.id}
+						patientName={activePatient?.fullName || activePatient?.name}
+						doctorFullName={activeDoctor?.fullName || activeDoctor?.name}
+					/>
+				)}
 			</div>
 
 			<div style={{ display: visitSubViewTab === "anamnesis" ? "block" : "none" }}>

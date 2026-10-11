@@ -143,7 +143,6 @@ export interface VisitConsentsTabPatient {
 	cardOpenedAt?: string | null | undefined;
 	allergies?: string | null | undefined;
 	somaticNotes?: string | null | undefined;
-	[key: string]: unknown;
 }
 
 export interface VisitConsentsTabDoctor {
@@ -152,14 +151,12 @@ export interface VisitConsentsTabDoctor {
 	name?: string | null | undefined;
 	specialty?: string | null | undefined;
 	specialtyRu?: string | null | undefined;
-	[key: string]: unknown;
 }
 
 export interface VisitConsentsTabAppointment {
 	id?: string | null | undefined;
 	status?: string | null | undefined;
 	appointmentDate?: string | null | undefined;
-	[key: string]: unknown;
 }
 
 export interface VisitConsentsTabNoteForm {
@@ -169,26 +166,22 @@ export interface VisitConsentsTabNoteForm {
 	anamnesis?: string | null | undefined;
 	objectiveStatus?: string | null | undefined;
 	status?: string | null | undefined;
-	[key: string]: unknown;
 }
 
 export interface VisitConsentsTabDashboard {
 	clinicSettings?: {
 		profile?: {
 			brandName?: string | undefined;
+			clinicName?: string | undefined;
 			legalEntityName?: string | undefined;
-			address?: string | undefined;
-			ogrn?: string | undefined;
-			medicalLicenseNumber?: string | undefined;
-			[key: string]: unknown;
+			address?: string | null | undefined;
+			ogrn?: string | null | undefined;
+			medicalLicenseNumber?: string | null | undefined;
 		} | undefined;
-		[key: string]: unknown;
 	} | undefined;
 	organization?: {
 		name?: string | undefined;
-		[key: string]: unknown;
 	} | undefined;
-	[key: string]: unknown;
 }
 
 export interface VisitConsentsTabProps {
@@ -197,7 +190,7 @@ export interface VisitConsentsTabProps {
 	readonly activeAppointment?: VisitConsentsTabAppointment | null | undefined;
 	readonly visitNoteForm?: VisitConsentsTabNoteForm | null | undefined;
 	readonly dashboard?: VisitConsentsTabDashboard | null | undefined;
-	readonly selectedToothForMenu?: any;
+	readonly selectedToothForMenu?: { code: string; label?: string } | null | undefined;
 	readonly onOpenInformedConsentModal?: () => void;
 	readonly onOpenWarrantyModal?: () => void;
 	readonly onFastPrint043u?: () => void;

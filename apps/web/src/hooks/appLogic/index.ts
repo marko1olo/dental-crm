@@ -269,6 +269,7 @@ export function useAppLogic(): any {
 		downloadPersistenceExport, refreshBrowserContinuity, requestBrowserStoragePersistence, localBridgeReadiness,
 		setLocalBridgeReadiness, localBridgeUsePlans, setLocalBridgeUsePlans, loadLocalBridgeUsePlans,
 	} = offlineSync;
+	loadPersistenceHealthRef.current = loadPersistenceHealth;
 
 	const settingsAndIntegrations = useSettingsAndIntegrationsLogic({
 		auth,
@@ -355,7 +356,10 @@ export function useAppLogic(): any {
 		recordPayment = async () => {},
 	} = finance ?? {};
 
-	const activeQueueRole = selectedWorkspaceRole === "all" ? "doctor" : selectedWorkspaceRole;
+	const activeQueueRole: StaffRole =
+		(selectedWorkspaceRole as string) === "all"
+			? "doctor"
+			: selectedWorkspaceRole;
 	const activeImagingStudies = visibleImagingStudies;
 	const canRetryImagingViewerSave = false;
 	const imagingViewerSaveTitle: Record<ImagingViewerSaveState, string> = {
@@ -385,8 +389,6 @@ export function useAppLogic(): any {
 	const createImagingStudy = useCallback(async (kind: ImagingStudyKind) => {}, []);
 	const attachPricelistImage = useCallback(async (file: File) => {}, []);
 	const clearPricelistImage = useCallback(() => {}, []);
-	const previewImport = useCallback(async () => {}, []);
-	const commitImport = useCallback(async () => {}, []);
 
 	const draft = null;
 	const isDraftAccepting = false;
@@ -620,7 +622,7 @@ export function useAppLogic(): any {
 		visibleScheduleSuggestions, visibleTelegramOutboxItems, visitCloseChecklist, visitDraftBuildMissingSteps, visitDraftMissingFieldLabel, visitDraftQualityLabels, visitDraftReadyToBuild, visitDraftSignalLabel,
 		visitDraftUserEditedRef, visitNoteAcceptMissingSteps, visitNoteActionLabel, visitNoteFieldDefinitions, visitNoteForm, visitNoteReadyToAccept, visitNoteStatusLabel, visitSaveReceiptText,
 		visitWarnings, warningSeverityLabels, weekdayOptions, workspaceScopeLabels, xrayPregnancyStatusOptions, xrayStudyTypeOptions, accessUnlockRequired, accessUnlockMessage,
-		clinicalAdminSecretDraft, setClinicalAdminSecretDraft, loadDashboard, operatorWorkflowFailureMessage, previewImport, commitImport,
+		clinicalAdminSecretDraft, setClinicalAdminSecretDraft, loadDashboard, operatorWorkflowFailureMessage,
 		activeCommunicationTasks: null,
 		activeImagingStudies, activePayments, activeTreatmentPlanItems,
 		addImagingViewerNoteAnnotation: null,
@@ -633,11 +635,51 @@ export function useAppLogic(): any {
 		applyProtocolTemplateDirectly: null,
 		assembleSpeechRecording: async () => {},
 		attachPricelistImage,
-		browserCanRequestPersistentStorage: null,
-		browserContinuityChecks: null,
-		browserContinuityCritical: null,
-		browserContinuityState: "",
-		browserContinuityValue: null,
+		browserCanRequestPersistentStorage:
+			typeof navigator !== "undefined" &&
+			Boolean(navigator.storage && typeof navigator.storage.persist === "function"),
+		browserContinuityChecks: browserContinuity
+			? [
+					{
+						label: "Локальные черновики",
+						value: browserContinuity.localStorageWritable ? "доступно" : "ограничено",
+						detail: "Сохранение черновика визита в браузере",
+					},
+					{
+						label: "Очередь офлайн-мутаций (IndexedDB)",
+						value: browserContinuity.indexedDbSupported ? "активна" : "недоступна",
+						detail: "Буфер изменений и голосовых записей без сети",
+					},
+					{
+						label: "Кэш экранов (Service Worker)",
+						value: browserContinuity.serviceWorkerSupported ? "поддерживается" : "нет",
+						detail: "Работа интерфейса при обрыве связи",
+					},
+					{
+						label: "Хранилище браузера",
+						value:
+							browserContinuity.storageUsageMb !== null
+								? `${browserContinuity.storageUsageMb} МБ`
+								: "активно",
+						detail: browserContinuity.storagePersisted
+							? "Защищено от автоочистки ОС"
+							: "Стандартный режим хранения",
+					},
+				]
+			: [],
+		browserContinuityCritical: Boolean(
+			browserContinuity && !browserContinuity.localStorageWritable,
+		),
+		browserContinuityState: browserContinuity
+			? browserContinuity.warnings.length === 0
+				? "ready"
+				: "warning"
+			: "planned",
+		browserContinuityValue: browserContinuity
+			? browserContinuity.warnings.length === 0
+				? "защищено"
+				: "внимание"
+			: "проверка",
 		browserImagingFileInputAccept: ".dcm,.dicom,.zip,.png,.jpg,.jpeg,.stl,.obj",
 		browserImagingFilesInputRef: { current: null },
 		cancelBrowserImagingFolderScan: false,
@@ -665,7 +707,14 @@ export function useAppLogic(): any {
 		inn: documentPatient?.administrativeProfile?.taxpayerInn ?? "",
 		lastName: documentPatient?.fullName?.split(" ")[0] ?? "",
 		loadSpeechRecordingRecovery: async () => {},
-		localBridgeStatusState: "",
+		localBridgeStatusState: localBridgeReadiness
+			? localBridgeReadiness.readyCount > 0
+				? "ready"
+				: "planned"
+			: "planned",
+		localBridgeStatusValue: localBridgeReadiness
+			? `готово: ${localBridgeReadiness.readyCount} · ожидание: ${Math.max(0, localBridgeReadiness.configuredCount - localBridgeReadiness.readyCount)}`
+			: "проверка",
 		loyaltyTier: "standard",
 		middleName: documentPatient?.fullName?.split(" ")[2] ?? "",
 		mostLoadedResource: null,

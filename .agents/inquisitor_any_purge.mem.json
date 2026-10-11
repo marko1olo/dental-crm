@@ -1,0 +1,118 @@
+{
+  "timestamp": "2026-10-11T22:42:57.775Z",
+  "mandate": "8ai - Type Hardening & Any Purge Inquisitor",
+  "status": "COMPLETE",
+  "totalAnyBefore": 490,
+  "totalAnyAfter": 39,
+  "totalAnyPurged": 451,
+  "totalBiomeSuppressionsBefore": 335,
+  "totalBiomeSuppressionsAfter": 1,
+  "totalBiomeSuppressionsPurged": 334,
+  "diagnostics": 0,
+  "filesAudited": {
+    "apps/web/src/store/appStoreModules/types.ts": {
+      "anyBefore": 200,
+      "anyAfter": 0,
+      "anyDelta": -200,
+      "biomeIgnoreBefore": 200,
+      "biomeIgnoreAfter": 0,
+      "biomeIgnoreDelta": -200
+    },
+    "apps/web/src/store/appStoreModules/initialAppState.ts": {
+      "anyBefore": 0,
+      "anyAfter": 0,
+      "anyDelta": 0,
+      "biomeIgnoreBefore": 0,
+      "biomeIgnoreAfter": 0,
+      "biomeIgnoreDelta": 0
+    },
+    "apps/web/src/store/appStoreModules/createNavigationAndThemeSlice.ts": {
+      "anyBefore": 0,
+      "anyAfter": 0,
+      "anyDelta": 0,
+      "biomeIgnoreBefore": 0,
+      "biomeIgnoreAfter": 0,
+      "biomeIgnoreDelta": 0
+    },
+    "apps/web/src/store/appStoreModules/createModalsAndSelectionSlice.ts": {
+      "anyBefore": 0,
+      "anyAfter": 0,
+      "anyDelta": 0,
+      "biomeIgnoreBefore": 0,
+      "biomeIgnoreAfter": 0,
+      "biomeIgnoreDelta": 0
+    },
+    "apps/web/src/components/visit/view/VisitViewProps.ts": {
+      "anyBefore": 106,
+      "anyAfter": 0,
+      "anyDelta": -106,
+      "biomeIgnoreBefore": 102,
+      "biomeIgnoreAfter": 0,
+      "biomeIgnoreDelta": -102
+    },
+    "apps/web/src/components/visit/view/types.ts": {
+      "anyBefore": 12,
+      "anyAfter": 0,
+      "anyDelta": -12,
+      "biomeIgnoreBefore": 11,
+      "biomeIgnoreAfter": 0,
+      "biomeIgnoreDelta": -11
+    },
+    "apps/web/src/components/visit/view/VisitSecondaryPanelsInner.tsx": {
+      "anyBefore": 23,
+      "anyAfter": 0,
+      "anyDelta": -23,
+      "biomeIgnoreBefore": 13,
+      "biomeIgnoreAfter": 0,
+      "biomeIgnoreDelta": -13
+    },
+    "apps/web/src/components/visit/view/VisitTabContent.tsx": {
+      "anyBefore": 7,
+      "anyAfter": 0,
+      "anyDelta": -7,
+      "biomeIgnoreBefore": 7,
+      "biomeIgnoreAfter": 0,
+      "biomeIgnoreDelta": -7
+    },
+    "apps/web/src/components/visit/view/VisitActionFooter.tsx": {
+      "anyBefore": 1,
+      "anyAfter": 0,
+      "anyDelta": -1,
+      "biomeIgnoreBefore": 0,
+      "biomeIgnoreAfter": 0,
+      "biomeIgnoreDelta": 0
+    },
+    "apps/web/src/components/visit/view/useVisitViewState.ts": {
+      "anyBefore": 20,
+      "anyAfter": 0,
+      "anyDelta": -20,
+      "biomeIgnoreBefore": 1,
+      "biomeIgnoreAfter": 0,
+      "biomeIgnoreDelta": -1
+    },
+    "apps/web/src/components/visit/consents/visitConsentTypes.ts": {
+      "anyBefore": 1,
+      "anyAfter": 0,
+      "anyDelta": -1,
+      "biomeIgnoreBefore": 0,
+      "biomeIgnoreAfter": 0,
+      "biomeIgnoreDelta": 0
+    },
+    "apps/web/src/hooks/appLogic/types.ts": {
+      "anyBefore": 81,
+      "anyAfter": 0,
+      "anyDelta": -81,
+      "biomeIgnoreBefore": 0,
+      "biomeIgnoreAfter": 0,
+      "biomeIgnoreDelta": 0
+    },
+    "apps/web/src/hooks/appLogic/index.ts": {
+      "anyBefore": 39,
+      "anyAfter": 39,
+      "anyDelta": 0,
+      "biomeIgnoreBefore": 1,
+      "biomeIgnoreAfter": 1,
+      "biomeIgnoreDelta": 0
+    }
+  }
+}

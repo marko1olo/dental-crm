@@ -20,7 +20,11 @@ export const createModalsAndSelectionSlice: AppSliceCreator<
 		setQuery: (val) => set({ query: val }),
 		setEditingAppointmentId: (val) => set({ editingAppointmentId: val }),
 		setNewAppointmentError: (val) => set({ newAppointmentError: val }),
-		setImportText: (val) => set({ importText: val }),
+		setImportText: (val) =>
+			set((state) => ({
+				importText:
+					typeof val === "function" ? val(state.importText) : val,
+			})),
 		setSmartImportText: (val) => set({ smartImportText: val }),
 		setPricelistText: (val) => set({ pricelistText: val }),
 		setPricelistSourceKind: (val) => set({ pricelistSourceKind: val }),

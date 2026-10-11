@@ -1,214 +1,309 @@
+import type {
+	AcceptVisitDraftResponse,
+	Appointment,
+	Chair,
+	ClinicalRuleAction,
+	ClinicalRuleEvaluation,
+	ClinicalRuleSeverity,
+	ClinicalRuleSummary,
+	Dashboard,
+	DentalSpecialty,
+	GeneratedDocument,
+	ImagingStudy,
+	ImagingStudyKind,
+	Patient,
+	PatientInsight,
+	ProtocolTemplate,
+	SpeechGatewayStatus,
+	StaffMember,
+	StaffRole,
+	VisitCloseChecklistItem,
+	VisitNoteDraft,
+} from "@dental/shared";
+import type React from "react";
+import type { VisitNoteField, VisitNoteForm } from "../../../AppHelpers";
+import type { ToothState } from "../../../store/visit/types";
+
+export type VisitIconComponent = React.ComponentType<{
+	size?: number | string;
+	className?: string;
+	"aria-hidden"?: boolean | "true" | "false";
+}>;
+
+export interface VisitClinicalRulePanelComponentProps {
+	actionLabels: Record<ClinicalRuleAction, string>;
+	context: "visit" | "finance";
+	evaluations: ClinicalRuleEvaluation[];
+	patientId?: string | null;
+	serviceTitle: (serviceId: string) => string;
+	severityLabels: Record<ClinicalRuleSeverity, string>;
+	staffRoleLabels: Record<StaffRole, string>;
+	summary: ClinicalRuleSummary;
+}
+
+export interface VisitPatientEntity
+	extends Omit<
+		Partial<Patient>,
+		| "id"
+		| "fullName"
+		| "birthDate"
+		| "phone"
+		| "address"
+		| "allergies"
+		| "somaticNotes"
+		| "chronicDiseases"
+	> {
+	id: string;
+	fullName: string;
+	name?: string;
+	birthDate?: string | null;
+	phone?: string | null;
+	address?: string | null;
+	activeTreatmentPlanId?: string | null;
+	allergies?: string | null;
+	allergyHistory?: string | null;
+	somaticNotes?: string | null;
+	somaticHistory?: string | null;
+	concomitantDiseases?: string | null;
+	chronicDiseases?: string | null;
+}
+
+export interface VisitAppointmentEntity
+	extends Omit<
+		Partial<Appointment>,
+		| "id"
+		| "patientId"
+		| "doctorUserId"
+		| "chairId"
+		| "status"
+		| "startsAt"
+		| "endsAt"
+		| "reason"
+		| "diagnosisMkb10"
+		| "clinicalStage"
+		| "toothNumber"
+	> {
+	id: string;
+	patientId: string;
+	doctorUserId?: string | null;
+	chairId?: string | null;
+	status?: Appointment["status"] | "signed" | "closed" | string;
+	startsAt?: string | null;
+	endsAt?: string | null;
+	startTime?: string | null;
+	startAt?: string | null;
+	createdAt?: string | null;
+	date?: string | null;
+	reason?: string | null;
+	diagnosisMkb10?: string | null;
+	clinicalStage?: string | null;
+	stageIndex?: number | null;
+	toothNumber?: number | null;
+	treatmentPlanId?: string | null;
+	stageNumber?: number | null;
+	stageTitle?: string | null;
+	stageId?: string | null;
+}
+
+export interface VisitDoctorEntity
+	extends Omit<
+		Partial<StaffMember>,
+		"id" | "fullName" | "role" | "specialty" | "specialties"
+	> {
+	id?: string;
+	userId?: string;
+	fullName?: string;
+	name?: string;
+	role?: StaffRole;
+	specialty?: DentalSpecialty | string;
+	specialties?: DentalSpecialty[];
+}
+
+export interface VisitProtocolTemplateItem
+	extends Omit<Partial<ProtocolTemplate>, "id" | "title" | "specialty"> {
+	id: string;
+	title: string;
+	specialty: DentalSpecialty | string;
+	summary?: string;
+	primaryComplaint?: string;
+	diagnosisICD?: string;
+}
+
+export interface VisitNoteFormExtended extends VisitNoteForm {
+	status?: string | undefined;
+	complaints?: string | undefined;
+	objective?: string | undefined;
+	treatment?: string | undefined;
+}
+
+export interface VisitPrimaryActionConfig {
+	label: string;
+	detail: string;
+	onClick: () => Promise<void> | void;
+	kind?: string | undefined;
+}
+
+export interface VisitSafetyCard {
+	id?: string | undefined;
+	title: string;
+	detail?: string | undefined;
+	severity?: "info" | "warning" | "critical" | "blocker" | string | undefined;
+}
+
+export interface VisitWorkflowStep {
+	id: string;
+	label: string;
+	completed?: boolean | undefined;
+	active?: boolean | undefined;
+}
+
+export interface VisitSpecialtyFocusOption {
+	id?: string | undefined;
+	specialty: DentalSpecialty | string;
+	label: string;
+}
+
+export interface VisitNoteFieldDefinitionItem {
+	key: VisitNoteField;
+	label: string;
+	placeholder?: string | undefined;
+	rows?: number | undefined;
+}
+
 export interface VisitViewProps {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	AlertTriangle: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	Bot: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	Check: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	CheckCircle2: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	ClinicalRulePanel: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	ClipboardCheck: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	Mic: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	Sparkles: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	acceptDraftToVisit: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeAppointment: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeChair: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeDoctor: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeImagingStudies: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activePatient: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activePatientInsight: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeUsableDocuments: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeVisitClinicalRuleEvaluations: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	polishingField: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	polishSingleField: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	selectedWorkspaceRole: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeVisitClinicalRuleSummary: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	appendToTranscript: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	applyProtocolTemplate: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	buildDraft: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	buildOfflineDraft: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	clearTranscriptWithUndo: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	clearedTranscriptSnapshot: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	clinicalRuleActionLabels: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	clinicalRuleSeverityLabels: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	dashboard: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	dictationQuickPhrases: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	draft: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	emptyDictationVoiceActionLabel: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	flushPendingSpeechChunks: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	flushPendingVisitSaves: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	formatTime: any;
-	handleApplySomaticNormQuick?: any;
-	handlePolishTranscriptWithAi?: any;
-	onOpenLabOrderModal?: () => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	hasVisitTranscriptText: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	imagingKindLabels: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isDraftAccepting: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isDraftLoading: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isOnline: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isPendingVisitSyncing: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isServerVoiceRecording: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isTranscriptPolishing: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isVisitDictating: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isVisitNoteDirty: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	lastLocalSavedAt: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	lastPendingVisitSaveAt: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	lastServerDraftSavedAt: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	lastVisitSaveReceipt: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	localDraftWasRestored: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	openVisitWarningAction: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	pendingSpeechChunkCount: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	pendingSpeechFlushActionLabel: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	pendingSpeechFlushActionTitle: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	pendingVisitSaveCount: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	polishTranscript: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	primaryVisitWarning: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	scrollToVisitArea: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	selectedProtocolTemplate: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	selectedSpecialty: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	serverDraftSyncState: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	serviceTitle: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setClearedTranscriptSnapshot: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setSelectedProtocolId: any;
+	AlertTriangle: VisitIconComponent;
+	Bot: VisitIconComponent;
+	Check: VisitIconComponent;
+	CheckCircle2: VisitIconComponent;
+	ClinicalRulePanel: React.ComponentType<VisitClinicalRulePanelComponentProps>;
+	ClipboardCheck: VisitIconComponent;
+	Mic: VisitIconComponent;
+	Sparkles: VisitIconComponent;
+	acceptDraftToVisit: () => Promise<void> | void;
+	activeAppointment: VisitAppointmentEntity | null;
+	activeChair: Chair | null;
+	activeDoctor: VisitDoctorEntity | null;
+	activeImagingStudies: ImagingStudy[];
+	activePatient: VisitPatientEntity | null;
+	activePatientInsight: PatientInsight | null;
+	activeUsableDocuments: GeneratedDocument[];
+	activeVisitClinicalRuleEvaluations: ClinicalRuleEvaluation[];
+	polishingField: VisitNoteField | string | null;
+	polishSingleField: (field: VisitNoteField | string) => Promise<void> | void;
+	selectedWorkspaceRole: StaffRole | "all";
+	activeVisitClinicalRuleSummary: ClinicalRuleSummary;
+	appendToTranscript: (text: string) => void;
+	applyProtocolTemplate: (template: VisitProtocolTemplateItem) => void;
+	buildDraft: () => Promise<void> | void;
+	buildOfflineDraft: () => void;
+	clearTranscriptWithUndo: () => void;
+	clearedTranscriptSnapshot: string | null;
+	clinicalRuleActionLabels: Record<ClinicalRuleAction, string>;
+	clinicalRuleSeverityLabels: Record<ClinicalRuleSeverity, string>;
+	dashboard:
+		| (Dashboard & {
+				organization?: {
+					name?: string;
+					phone?: string;
+					address?: string;
+					inn?: string;
+					ogrn?: string;
+					licenseNumber?: string;
+				} | null;
+		  })
+		| null;
+	dictationQuickPhrases: readonly string[] | null;
+	draft: VisitNoteDraft | null;
+	emptyDictationVoiceActionLabel: string | null;
+	flushPendingSpeechChunks: (options?: { silent?: boolean }) => Promise<void>;
+	flushPendingVisitSaves: (options?: { silent?: boolean }) => Promise<void>;
+	formatTime: (iso: string | null | undefined) => string;
+	handleApplySomaticNormQuick?: (() => void) | undefined;
+	handlePolishTranscriptWithAi?: (() => Promise<void> | void) | undefined;
+	onOpenLabOrderModal?: (() => void) | undefined;
+	onCloseVisit?: (() => void) | undefined;
+	hasVisitTranscriptText: boolean;
+	imagingKindLabels: Record<ImagingStudyKind, string>;
+	isDraftAccepting: boolean;
+	isDraftLoading: boolean;
+	isOnline: boolean;
+	isPendingVisitSyncing: boolean;
+	isServerVoiceRecording: boolean;
+	isTranscriptPolishing: boolean;
+	isVisitDictating: boolean;
+	isVisitNoteDirty: boolean;
+	lastLocalSavedAt: string | null;
+	lastPendingVisitSaveAt: string | null;
+	lastServerDraftSavedAt: string | null;
+	lastVisitSaveReceipt: AcceptVisitDraftResponse["saveReceipt"] | null;
+	localDraftWasRestored: boolean;
+	openVisitWarningAction: () => void;
+	pendingSpeechChunkCount: number;
+	pendingSpeechFlushActionLabel: string | null;
+	pendingSpeechFlushActionTitle: string;
+	pendingVisitSaveCount: number;
+	polishTranscript: () => Promise<void> | void;
+	primaryVisitWarning: VisitCloseChecklistItem | null;
+	scrollToVisitArea: (selector: string) => void;
+	selectedProtocolTemplate: VisitProtocolTemplateItem | null;
+	selectedSpecialty: DentalSpecialty | string;
+	serverDraftSyncState: "idle" | "saving" | "saved" | "queued" | "error";
+	serviceTitle: ((serviceId: string) => string) | string;
+	setClearedTranscriptSnapshot: (
+		val: string | null | ((prev: string | null) => string | null),
+	) => void;
+	setSelectedProtocolId: (
+		val: string | null | ((prev: string | null) => string | null),
+	) => void;
 	setSelectedPatientId?: ((id: string | null) => void) | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setSelectedSpecialty: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setTranscript: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	specialtiesWithTemplates: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	specialtyLabels: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	specialtyProtocolTemplates: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	speechGatewayActiveProviderIsLocal: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	speechGatewayStatus: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	speechRecognitionReady: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	speechStatusNote: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	speechTranscriptionBusy: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	staffRoleLabels: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	startServerVoiceRecording: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	startVisitDictation: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	stopServerVoiceRecording: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	toothRows: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	toothStateByCode: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	transcript: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	undoTranscriptClear: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	updateVisitNoteField: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visibleVisitSpecialtyFocusOptions: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitDraftBuildMissingSteps: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitDraftMissingFieldLabel: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitDraftQualityLabels: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitDraftReadyToBuild: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitDraftSignalLabel: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitDraftUserEditedRef: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitNoteAcceptMissingSteps: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitNoteActionLabel: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitNoteFieldDefinitions: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitNoteForm: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitNoteReadyToAccept: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitNoteStatusLabel: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitPrimaryAction: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitSafetyCards: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitSaveReceiptText: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitWarnings: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitWorkflowSteps: any;
-	setToothState: (code: string, state: string) => void;
+	setSelectedSpecialty: (
+		val:
+			| DentalSpecialty
+			| string
+			| ((prev: DentalSpecialty) => DentalSpecialty),
+	) => void;
+	setTranscript: (val: string | ((prev: string) => string)) => void;
+	specialtiesWithTemplates: Array<DentalSpecialty | string>;
+	specialtyLabels: Record<DentalSpecialty, string>;
+	specialtyProtocolTemplates: VisitProtocolTemplateItem[];
+	speechGatewayActiveProviderIsLocal: boolean | null;
+	speechGatewayStatus: SpeechGatewayStatus | null;
+	speechRecognitionReady: boolean | null;
+	speechStatusNote: string | null;
+	speechTranscriptionBusy: boolean;
+	staffRoleLabels: Record<StaffRole, string>;
+	startServerVoiceRecording: (() => Promise<void> | void) | null;
+	startVisitDictation: () => void;
+	stopServerVoiceRecording: (() => Promise<void> | void) | null;
+	toothRows: ReadonlyArray<ReadonlyArray<string>>;
+	toothStateByCode: Record<string, ToothState | string>;
+	transcript: string;
+	undoTranscriptClear: () => void;
+	updateVisitNoteField: (field: VisitNoteField | string, value: string) => void;
+	visibleVisitSpecialtyFocusOptions: VisitSpecialtyFocusOption[];
+	visitDraftBuildMissingSteps: string[];
+	visitDraftMissingFieldLabel: (field: string) => string;
+	visitDraftQualityLabels: Record<string, string>;
+	visitDraftReadyToBuild: boolean;
+	visitDraftSignalLabel: (signal: string) => string;
+	visitDraftUserEditedRef: { current: boolean };
+	visitNoteAcceptMissingSteps: string[];
+	visitNoteActionLabel: string;
+	visitNoteFieldDefinitions: readonly VisitNoteFieldDefinitionItem[];
+	visitNoteForm: VisitNoteFormExtended;
+	visitNoteReadyToAccept: boolean;
+	visitNoteStatusLabel: string;
+	visitPrimaryAction: VisitPrimaryActionConfig | null;
+	visitSafetyCards: VisitSafetyCard[];
+	visitSaveReceiptText: (
+		receipt: AcceptVisitDraftResponse["saveReceipt"] | null | undefined,
+	) => string | null;
+	visitWarnings: VisitCloseChecklistItem[];
+	visitWorkflowSteps: VisitWorkflowStep[];
+	setToothState: (code: string, state: ToothState | string) => void;
 	safeSpecialtyLabels?: Record<string, string> | undefined;
-	visitCloseChecklist?: any[] | undefined;
-	openCloseChecklistSection?: ((task: any) => void) | undefined;
+	visitCloseChecklist?: VisitCloseChecklistItem[] | undefined;
+	openCloseChecklistSection?:
+		| ((task: VisitCloseChecklistItem) => void)
+		| undefined;
 }

@@ -1,7 +1,28 @@
+import type {
+	TreatmentPlanItem,
+	TreatmentPlanScenario,
+	VisitCloseChecklistItem,
+} from "@dental/shared";
 import type React from "react";
-import type { VisitViewProps } from "./VisitViewProps";
+import type { SoftPeerPresence } from "../../../hooks/useSoftPresence";
+import type { VisitCriticalBadge } from "./visitCriticalBadges";
+import type {
+	VisitAppointmentEntity,
+	VisitDoctorEntity,
+	VisitNoteFormExtended,
+	VisitPatientEntity,
+	VisitPrimaryActionConfig,
+	VisitViewProps,
+} from "./VisitViewProps";
 
-export type { VisitViewProps };
+export type {
+	VisitAppointmentEntity,
+	VisitDoctorEntity,
+	VisitNoteFormExtended,
+	VisitPatientEntity,
+	VisitPrimaryActionConfig,
+	VisitViewProps,
+};
 
 export type VisitSubViewTabType =
 	| "odontogram"
@@ -12,22 +33,31 @@ export type VisitSubViewTabType =
 	| "anamnesis"
 	| string;
 
+export interface VisitLoadedTreatmentPlan
+	extends Omit<Partial<TreatmentPlanScenario>, "id" | "status" | "createdAt">,
+		Omit<Partial<TreatmentPlanItem>, "id" | "status" | "createdAt"> {
+	id?: string;
+	status?: TreatmentPlanItem["status"] | string;
+	createdAt?: string;
+	plannedAt?: string;
+	date?: string;
+	stages?: unknown[];
+	items?: unknown[];
+}
+
 export interface VisitViewHeaderProps {
-	// biome-ignore lint/suspicious/noExplicitAny: patient entity
-	activePatient: any;
+	activePatient: VisitPatientEntity;
 	patientAge: string | null;
-	// biome-ignore lint/suspicious/noExplicitAny: appointment entity
-	activeAppointment?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: doctor entity
-	activeDoctor?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: badges list
-	activePatientCriticalBadges: readonly any[];
+	activeAppointment?: VisitAppointmentEntity | null | undefined;
+	activeDoctor?: VisitDoctorEntity | null | undefined;
+	activePatientCriticalBadges: readonly VisitCriticalBadge[];
 	consolidatedAllergyChip: string | null;
-	activePeers: readonly any[];
+	activePeers: readonly SoftPeerPresence[];
 	summaryText: string | null;
-	// biome-ignore lint/suspicious/noExplicitAny: note form
-	visitNoteForm?: any;
-	updateVisitNoteField?: (field: string, value: string) => void;
+	visitNoteForm?: VisitNoteFormExtended | undefined;
+	updateVisitNoteField?:
+		| ((field: string, value: string) => void)
+		| undefined;
 	handleApplySomaticNormQuick: () => void;
 	handlePrintForm043uFast: () => void;
 	handlePrintCompletedActFast: () => void;
@@ -38,16 +68,19 @@ export interface VisitViewHeaderProps {
 	handleFinishVisitAction: () => void;
 	setIsQueueCockpitForced: (forced: boolean) => void;
 	setSelectedPatientId?: ((id: string | null) => void) | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: appLogic fallback
-	appLogic?: any;
+	appLogic?:
+		| (Partial<VisitViewProps> & {
+				setSelectedPatientId?: ((id: string | null) => void) | undefined;
+		  })
+		| undefined;
 	isHeaderMoreMenuOpen: boolean;
 	setIsHeaderMoreMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	headerMoreMenuRef: React.RefObject<HTMLDivElement | null>;
 	setIsDoctorShiftModalOpen: (open: boolean) => void;
 	setIsPriceValidatorModalOpen: (open: boolean) => void;
 	setIsStagePaymentModalOpen: (open: boolean) => void;
-	onOpenVisiographComparison?: () => void;
-	setIsVisiographComparisonModalOpen?: (open: boolean) => void;
+	onOpenVisiographComparison?: (() => void) | undefined;
+	setIsVisiographComparisonModalOpen?: ((open: boolean) => void) | undefined;
 }
 
 export interface VisitTabItem {
@@ -62,32 +95,24 @@ export interface VisitTabNavProps {
 }
 
 export interface VisitActionFooterProps {
-	// biome-ignore lint/suspicious/noExplicitAny: plan payload
-	loadedTreatmentPlan: any;
-	// biome-ignore lint/suspicious/noExplicitAny: appointment entity
-	activeAppointment: any;
-	// biome-ignore lint/suspicious/noExplicitAny: patient entity
-	activePatient: any;
+	loadedTreatmentPlan: VisitLoadedTreatmentPlan | null | undefined;
+	activeAppointment: VisitAppointmentEntity | null | undefined;
+	activePatient: VisitPatientEntity | null | undefined;
 	visitSubViewTab: string;
-	safeVisitPrimaryAction: {
-		label: string;
-		detail: string;
-		onClick: () => Promise<void> | void;
-		kind?: string;
-	};
+	safeVisitPrimaryAction: VisitPrimaryActionConfig;
 	isTreatmentPlanExpiredSoft: boolean;
 	treatmentPlanAgeDays: number;
-	// Smoke compat & secondary panels props
-	// biome-ignore lint/suspicious/noExplicitAny: full props forward
 	props: VisitViewProps;
 	transcript: string;
-	setTranscript?: (val: string) => void;
-	isTranscriptPolishing?: boolean;
-	polishTranscript?: any;
-	updateVisitNoteField?: (field: string, val: string) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: form
-	visitNoteForm?: any;
+	setTranscript?: ((val: string | ((prev: string) => string)) => void) | undefined;
+	isTranscriptPolishing?: boolean | undefined;
+	polishTranscript?: (() => Promise<void> | void) | undefined;
+	updateVisitNoteField?: ((field: string, val: string) => void) | undefined;
+	visitNoteForm?: VisitNoteFormExtended | undefined;
 	handlePrintForm043uFast: () => void;
 	setIsPriceValidatorModalOpen: (open: boolean) => void;
 	setIsStagePaymentModalOpen: (open: boolean) => void;
+	openCloseChecklistSection?:
+		| ((task: VisitCloseChecklistItem) => void)
+		| undefined;
 }

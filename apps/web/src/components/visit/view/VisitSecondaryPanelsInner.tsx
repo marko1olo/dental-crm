@@ -1,53 +1,71 @@
+import type {
+	ClinicalRuleAction,
+	ClinicalRuleEvaluation,
+	ClinicalRuleSeverity,
+	ClinicalRuleSummary,
+	Dashboard,
+	DentalSpecialty,
+	StaffRole,
+	VisitCloseChecklistItem,
+	VisitNoteDraft,
+} from "@dental/shared";
 import React from "react";
 import { CheckCircle2, Clock, Lock, ShieldCheck } from "lucide-react";
 import { ClinicalAiPersonalizePanel } from "../../../ClinicalAiPersonalizePanel";
 import { ClinicalTasksPanel } from "../../../ClinicalTasksPanel";
 import { ClinicalRulePanel as DefaultClinicalRulePanel } from "../../../ClinicalRulePanel";
 import { VisitNoteDraftPanel } from "../../../VisitNoteDraftPanel";
+import type {
+	VisitAppointmentEntity,
+	VisitDoctorEntity,
+	VisitNoteFormExtended,
+	VisitPatientEntity,
+	VisitProtocolTemplateItem,
+} from "./VisitViewProps";
 
 export interface VisitSecondaryPanelsInnerProps {
-	// biome-ignore lint/suspicious/noExplicitAny: props
-	selectedProtocolTemplate: any;
+	selectedProtocolTemplate: VisitProtocolTemplateItem | null;
 	safeSpecialtyLabels?: Record<string, string> | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: props
-	dashboard: any;
-	specialtiesWithTemplates?: string[] | undefined;
-	selectedSpecialty?: string | undefined;
-	setSelectedSpecialty?: ((s: string) => void) | undefined;
-	setSelectedProtocolId?: ((id: string | null) => void) | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: props
-	specialtyProtocolTemplates?: any[] | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: props
-	applyProtocolTemplate?: ((t: any) => void) | undefined;
-	activeWorkspaceRole?: string | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: props
-	activeVisitClinicalRuleEvaluations?: any[] | undefined;
-	clinicalRuleActionLabels?: Record<string, string> | undefined;
-	clinicalRuleSeverityLabels?: Record<string, string> | undefined;
-	staffRoleLabels?: Record<string, string> | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: props
-	activeVisitClinicalRuleSummary?: any | undefined;
-	serviceTitle?: string | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: props
-	activePatient: any;
-	// biome-ignore lint/suspicious/noExplicitAny: props
-	activeDoctor: any;
-	// biome-ignore lint/suspicious/noExplicitAny: props
-	activeAppointment: any;
-	// biome-ignore lint/suspicious/noExplicitAny: props
-	visitNoteForm: any;
-	// biome-ignore lint/suspicious/noExplicitAny: props
-	draft: any;
+	dashboard: Dashboard | null;
+	specialtiesWithTemplates?: Array<DentalSpecialty | string> | undefined;
+	selectedSpecialty?: DentalSpecialty | string | undefined;
+	setSelectedSpecialty?:
+		| ((
+				s:
+					| DentalSpecialty
+					| string
+					| ((prev: DentalSpecialty) => DentalSpecialty),
+		  ) => void)
+		| undefined;
+	setSelectedProtocolId?:
+		| ((val: string | null | ((prev: string | null) => string | null)) => void)
+		| undefined;
+	specialtyProtocolTemplates?: VisitProtocolTemplateItem[] | undefined;
+	applyProtocolTemplate?:
+		| ((t: VisitProtocolTemplateItem) => void)
+		| undefined;
+	activeWorkspaceRole?: StaffRole | string | undefined;
+	activeVisitClinicalRuleEvaluations?: ClinicalRuleEvaluation[] | undefined;
+	clinicalRuleActionLabels?: Record<ClinicalRuleAction, string> | undefined;
+	clinicalRuleSeverityLabels?: Record<ClinicalRuleSeverity, string> | undefined;
+	staffRoleLabels?: Record<StaffRole, string> | undefined;
+	activeVisitClinicalRuleSummary?: ClinicalRuleSummary | undefined;
+	serviceTitle?: ((serviceId: string) => string) | string | undefined;
+	activePatient: VisitPatientEntity | null;
+	activeDoctor: VisitDoctorEntity | null;
+	activeAppointment: VisitAppointmentEntity | null;
+	visitNoteForm: VisitNoteFormExtended;
+	draft: VisitNoteDraft | null;
 	isTreatmentPlanExpiredSoft: boolean;
 	treatmentPlanAgeDays: number;
 	setIsPriceValidatorModalOpen: (v: boolean) => void;
 	setIsStagePaymentModalOpen: (v: boolean) => void;
 	transcript: string;
-	setVisitNoteForm: React.Dispatch<React.SetStateAction<any>>;
-	// biome-ignore lint/suspicious/noExplicitAny: props
-	visitCloseChecklist?: any[] | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: props
-	openCloseChecklistSection?: ((task: any) => void) | undefined;
+	setVisitNoteForm: React.Dispatch<React.SetStateAction<VisitNoteFormExtended>>;
+	visitCloseChecklist?: VisitCloseChecklistItem[] | undefined;
+	openCloseChecklistSection?:
+		| ((task: VisitCloseChecklistItem) => void)
+		| undefined;
 }
 
 export function VisitSecondaryPanelsInner({
@@ -113,7 +131,7 @@ export function VisitSecondaryPanelsInner({
 					<span>{dashboard?.protocolTemplates?.length ?? 0}</span>
 				</div>
 				<div className="specialty-strip flex items-center gap-1.5 overflow-x-auto whitespace-nowrap">
-					{(specialtiesWithTemplates || []).map((specialty: any) => (
+					{(specialtiesWithTemplates || []).map((specialty) => (
 						<button
 							className={`min-h-[44px] px-3 py-2 shrink-0 ${selectedSpecialty === specialty ? "active" : ""}`}
 							key={specialty}
@@ -129,7 +147,7 @@ export function VisitSecondaryPanelsInner({
 					))}
 				</div>
 				<div className="protocol-list">
-					{(specialtyProtocolTemplates || []).map((template: any) => (
+					{(specialtyProtocolTemplates || []).map((template) => (
 						<button
 							className={`protocol-card min-h-[44px] px-3 py-2 ${selectedProtocolTemplate?.id === template.id ? "active" : ""}`}
 							key={template.id}
@@ -156,11 +174,14 @@ export function VisitSecondaryPanelsInner({
 			<div className="clinical-rule-panel" aria-label="Клинические правила">
 				<DefaultClinicalRulePanel
 					context="visit"
-					actionLabels={clinicalRuleActionLabels as any}
+					actionLabels={
+						clinicalRuleActionLabels ??
+						({} as Record<ClinicalRuleAction, string>)
+					}
 					evaluations={
 						activeWorkspaceRole === "doctor"
 							? (activeVisitClinicalRuleEvaluations || []).filter(
-									(e: any) => e.ownerRole !== "assistant",
+									(e) => e.ownerRole !== "assistant",
 								)
 							: activeVisitClinicalRuleEvaluations || []
 					}
@@ -171,9 +192,24 @@ export function VisitSecondaryPanelsInner({
 						null
 					}
 					serviceTitle={typeof serviceTitle === "function" ? serviceTitle : (id: string) => String(id)}
-					severityLabels={clinicalRuleSeverityLabels as any}
-					staffRoleLabels={staffRoleLabels as any}
-					summary={activeVisitClinicalRuleSummary}
+					severityLabels={
+						clinicalRuleSeverityLabels ??
+						({} as Record<ClinicalRuleSeverity, string>)
+					}
+					staffRoleLabels={
+						staffRoleLabels ?? ({} as Record<StaffRole, string>)
+					}
+					summary={
+						activeVisitClinicalRuleSummary ?? {
+							blockers: 0,
+							warnings: 0,
+							activeRules: 0,
+							evaluatedRules: 0,
+							unresolved: 0,
+							requiredServices: 0,
+							coveredRules: 0,
+						}
+					}
 				/>
 			</div>
 
@@ -342,7 +378,7 @@ export function VisitSecondaryPanelsInner({
 						initialTranscript={transcript}
 						onApply={(draft) => {
 							if (draft) {
-								setVisitNoteForm((prev: any) => ({
+								setVisitNoteForm((prev) => ({
 									...prev,
 									complaint: draft.complaint ?? prev.complaint,
 									anamnesis: draft.anamnesis ?? prev.anamnesis,
@@ -359,12 +395,12 @@ export function VisitSecondaryPanelsInner({
 			{Array.isArray(visitCloseChecklist) && visitCloseChecklist.length > 0 ? (
 				<section className="close-checklist" aria-label="Чек-лист закрытия приема">
 					{(visitCloseChecklist || [])
-						.filter((task: any) =>
+						.filter((task) =>
 							dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
 								? task.ownerRole !== "assistant"
 								: true,
 						)
-						.map((task: any) => (
+						.map((task) => (
 							<button
 								className={`close-task min-h-[44px] px-3 py-2 min-w-0 ${task.ready ? "done" : ""} ${task.blocking && !task.ready ? "blocking" : ""}`}
 								key={task.id}
