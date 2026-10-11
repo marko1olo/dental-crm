@@ -154,7 +154,11 @@ export function SettingsAuditTab(props: Record<string, any>) {
 									: "Проверяю черновики, работу без сети и локальные очереди"}
 							</p>
 						</div>
-						<span>{browserContinuityValue}</span>
+						<span>
+							{typeof browserContinuityValue === "object" && browserContinuityValue !== null
+								? (browserContinuityValue as any).status ?? "—"
+								: String(browserContinuityValue ?? "—")}
+						</span>
 					</article>
 					<section
 						className="browser-continuity-grid"
@@ -202,7 +206,11 @@ export function SettingsAuditTab(props: Record<string, any>) {
 									: "Проверяю диктовку, просмотр КЛКТ/КТ, распознавание файлов и внешний просмотр"}
 							</p>
 						</div>
-						<span>{localBridgeStatusValue}</span>
+						<span>
+							{typeof localBridgeStatusValue === "object" && localBridgeStatusValue !== null
+								? (localBridgeStatusValue as any).status ?? "—"
+								: String(localBridgeStatusValue ?? "—")}
+						</span>
 					</article>
 					<section
 						className="local-bridge-grid"
