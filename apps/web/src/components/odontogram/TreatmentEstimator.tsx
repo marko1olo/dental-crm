@@ -529,12 +529,10 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 
 	const phases = [1, 2, 3];
 
-	const unpricedWarning: string | null = saveBlock
-		? "Внимание: в смете есть позиции без утвержденного прайса — сохраняются с пометкой «Цена уточняется»"
-		: null;
+	const unpricedWarning = saveBlock ? "Внимание: в смете есть позиции без утвержденного прайса — сохраняются с пометкой «Цена уточняется»" : null;
 
 	return (
-		<div className="flex flex-col h-full bg-zinc-50/40 dark:bg-zinc-950/40 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-xl overflow-hidden text-slate-900 dark:text-zinc-100">
+		<div className="flex flex-col h-full bg-zinc-50/40 dark:bg-zinc-950/40 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-xl overflow-hidden text-slate-900 dark:text-zinc-100" data-testid="treatment-estimator-container">
 			{/* Hidden X icon reference for static icon suite assertion */}
 			<X size={16} className="hidden" aria-hidden="true" />
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">

@@ -8,6 +8,8 @@ export {
 	calculateInstallmentScheduleKopecks,
 	type StagedPaymentBreakdownKopecks,
 	calculateStagedPaymentScheduleKopecks,
+	type PrepaymentDiscountCalculation,
+	calculatePrepaymentDiscountKopecks,
 	formatPlanPriceRub,
 } from "./treatmentPlanPricingEngine";
 

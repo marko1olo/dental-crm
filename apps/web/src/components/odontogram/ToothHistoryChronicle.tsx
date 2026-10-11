@@ -1,5 +1,17 @@
-import { Activity, Calendar, Camera, CheckCircle2, FileEdit, FileText, History, Image, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Activity, Calendar, Camera, CheckCircle2, FileEdit, FileText, History, Image, Radio, X } from "lucide-react";
+import React, { useEffect, useState, Suspense } from "react";
+
+const DirectRvgCaptureModal = React.lazy(() =>
+	import("../radiology/DirectRvgCaptureModal").then((m) => ({
+		default: m.DirectRvgCaptureModal,
+	})),
+);
+
+const DicomViewerModal = React.lazy(() =>
+	import("../imaging/DicomViewerModal").then((m) => ({
+		default: m.DicomViewerModal,
+	})),
+);
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import {
 	actionFailureToast,
@@ -58,6 +70,8 @@ export function ToothHistoryChronicle({
 	const [load, setLoad] = useState<HistoryLoadState>({ phase: "loading" });
 	/** Счётчик кнопки «Повторить»: меняется — запрос идёт заново. */
 	const [reloadToken, setReloadToken] = useState(0);
+	const [isDirectRvgOpen, setIsDirectRvgOpen] = useState(false);
+	const [selectedViewerMedia, setSelectedViewerMedia] = useState<StoredMediaItem | null>(null);
 
 	useEffect(() => {
 		let active = true;
@@ -141,9 +155,21 @@ export function ToothHistoryChronicle({
 					<History className="w-5 h-5 text-indigo-500" />
 					<h3>История зуба {toothNumber}</h3>
 				</div>
-				<button type="button" onClick={onClose} className="history-close-btn">
-					<X className="w-5 h-5" />
-				</button>
+				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						data-testid="btn-chronicle-direct-rvg"
+						onClick={() => setIsDirectRvgOpen(true)}
+						className="secondary-button min-h-[28px] h-7 px-2.5 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/10"
+						title={`Сделать снимок RVG датчиком для зуба #${toothNumber}`}
+					>
+						<Radio className="w-3.5 h-3.5 text-emerald-500" />
+						<span>Снимок RVG (#{toothNumber})</span>
+					</button>
+					<button type="button" onClick={onClose} className="history-close-btn" title="Закрыть историю">
+						<X className="w-5 h-5" />
+					</button>
+				</div>
 			</div>
 
 			<div className="history-body">
@@ -163,7 +189,10 @@ export function ToothHistoryChronicle({
 							{toothMedia.map((m) => (
 								<div
 									key={m.mediaId}
-									className="group relative rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 shadow-xs transition-transform hover:scale-[1.02]"
+									onClick={() => setSelectedViewerMedia(m)}
+									className="group relative rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 shadow-xs transition-transform hover:scale-[1.02] cursor-pointer hover:border-[var(--teal,#0d9488)]"
+									title="Открыть снимок в RVG / DICOM просмотрщике"
+									data-testid={`tooth-media-card-${m.mediaId}`}
 								>
 									<img
 										src={m.thumbnailWebpDataUrl}
@@ -303,6 +332,32 @@ export function ToothHistoryChronicle({
 					</div>
 				)}
 			</div>
+
+			{isDirectRvgOpen && (
+				<Suspense fallback={null}>
+					<DirectRvgCaptureModal
+						isOpen={isDirectRvgOpen}
+						onClose={() => setIsDirectRvgOpen(false)}
+						selectedTeeth={[toothNumber]}
+						onCaptureComplete={() => {
+							setIsDirectRvgOpen(false);
+							setReloadToken((t) => t + 1);
+						}}
+					/>
+				</Suspense>
+			)}
+
+			{selectedViewerMedia && (
+				<Suspense fallback={null}>
+					<DicomViewerModal
+						isOpen={Boolean(selectedViewerMedia)}
+						onClose={() => setSelectedViewerMedia(null)}
+						imageSrc={selectedViewerMedia.thumbnailWebpDataUrl || (selectedViewerMedia as any).encryptedPayloadRef || ""}
+						toothFdiCode={String(toothNumber)}
+						title={`Снимок зуба #${toothNumber}`}
+					/>
+				</Suspense>
+			)}
 		</div>
 	);
 }

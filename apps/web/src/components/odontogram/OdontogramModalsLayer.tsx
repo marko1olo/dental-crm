@@ -33,11 +33,6 @@ const TreatmentEstimator = React.lazy(() =>
 		default: m.TreatmentEstimator,
 	})),
 );
-const TreatmentPlanModule = React.lazy(() =>
-	import("../treatment-plans/TreatmentPlanModule").then((m) => ({
-		default: m.TreatmentPlanModule,
-	})),
-);
 const PeriodontogramChart = React.lazy(() =>
 	import("../perio/PeriodontogramChart").then((m) => ({
 		default: m.PeriodontogramChart,
@@ -192,7 +187,6 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 				<div className="w-full flex flex-col gap-6 mt-2 animate-in fade-in duration-200">
 					<React.Suspense fallback={null}>
 						<TreatmentEstimator patientId={patientId} currentTeeth={teethData} />
-						<TreatmentPlanModule patientId={patientId} teethData={teethData} />
 					</React.Suspense>
 				</div>
 			)}

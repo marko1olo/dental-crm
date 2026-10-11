@@ -1,0 +1,40 @@
+import type { OdontogramViewMode } from "@dental/shared";
+import type { ToothState } from "./ToothChart";
+
+export interface OdontogramToolbarMoreMenuProps {
+	isMoreMenuOpen: boolean;
+	setIsMoreMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	activeStampTool: ToothState | null;
+	setActiveStampTool: React.Dispatch<React.SetStateAction<ToothState | null>>;
+	isFastExtractMode: boolean;
+	setIsFastExtractMode: React.Dispatch<React.SetStateAction<boolean>>;
+	isMultiSelectMode?: boolean | undefined;
+	onToggleMultiSelect?: ((enabled: boolean) => void) | undefined;
+	isPerioOpen?: boolean | undefined;
+	onTogglePerio?: (() => void) | undefined;
+	isOrthoCephOpen: boolean;
+	setIsOrthoCephOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	isSmartOpgOpen?: boolean | undefined;
+	setIsSmartOpgOpen?: React.Dispatch<React.SetStateAction<boolean>> | undefined;
+	handleMarkIntactDentition: () => void;
+	handleMarkWisdomTeethMissing: () => void;
+	setIsPlanWizardOpen: (open: boolean) => void;
+	onOpenVoiceDictation?: (() => void) | undefined;
+	toggleVoiceEngine: () => void;
+	isVoiceListening: boolean;
+	selectedTeeth?: number[] | undefined;
+	isPediatricEffective: boolean;
+	setContextDrawerTooth: (tooth: number | null) => void;
+	onOpenPediatricModal?: (() => void) | undefined;
+	onLoadDiagnocat?: (() => void) | undefined;
+	diagnocatLoading?: boolean | undefined;
+	showWisdomTeeth: boolean;
+	setShowWisdomTeeth: React.Dispatch<React.SetStateAction<boolean>>;
+	activeMode: OdontogramViewMode;
+	showPulpAndCanals: boolean;
+	setShowPulpAndCanals: React.Dispatch<React.SetStateAction<boolean>>;
+	onSyncAllToDiary?: (() => void) | undefined;
+	onOneClickLabOrder?: ((teeth: number[]) => void) | undefined;
+	onToggleEstimator?: (() => void) | undefined;
+	isEstimatorOpen?: boolean | undefined;
+}

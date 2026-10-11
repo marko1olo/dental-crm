@@ -111,8 +111,8 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 	allergyText,
 	selectedTeeth,
 	onOneClickLabOrder,
-	onToggleEstimator: _onToggleEstimator,
-	isEstimatorOpen: _isEstimatorOpen,
+	onToggleEstimator,
+	isEstimatorOpen,
 	isLiveInvoiceOpen: _isLiveInvoiceOpen,
 	setIsLiveInvoiceOpen: _setIsLiveInvoiceOpen,
 	setIsPlanWizardOpen,
@@ -325,6 +325,8 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 					setShowPulpAndCanals={setShowPulpAndCanals}
 					onSyncAllToDiary={onSyncAllToDiary}
 					onOneClickLabOrder={onOneClickLabOrder}
+					onToggleEstimator={onToggleEstimator}
+					isEstimatorOpen={isEstimatorOpen}
 				/>
 			</div>
 		</div>

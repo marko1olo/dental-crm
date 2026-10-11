@@ -41,6 +41,7 @@ import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
 import {
 	calculateInstallmentScheduleKopecks,
 	calculateStagedPaymentScheduleKopecks,
+	calculatePrepaymentDiscountKopecks,
 	formatPlanPriceRub,
 	isPlanPriceImmutable,
 } from "./planPricing";
@@ -106,12 +107,13 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 		tier.installments?.[installmentMonths]?.monthlyPaymentRub ??
 		exactInstallment.monthlyPaymentRub;
 
-	const discount5PctKopecks = Math.round(effectiveTotalKopecks * 0.05);
-	const discount5PctAmount = Math.round(discount5PctKopecks / 100);
-	const priceWith5PctDiscount = Math.max(
-		0,
-		Math.round((effectiveTotalKopecks - discount5PctKopecks) / 100),
+	const prepaymentDiscount = calculatePrepaymentDiscountKopecks(
+		effectiveTotalKopecks,
+		5,
+		true,
 	);
+	const discount5PctAmount = prepaymentDiscount.discountRub;
+	const priceWith5PctDiscount = prepaymentDiscount.finalPriceRub;
 
 	// Staged 30/40/30 from exact kopeck schedule
 	const exactStaged = calculateStagedPaymentScheduleKopecks(effectiveTotalKopecks, [30, 40, 30]);

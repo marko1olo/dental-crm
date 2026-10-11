@@ -24,6 +24,7 @@ import test from "node:test";
 import { parse } from "@babel/parser";
 import { formatKopecksRu, parseKopecks, RU_MONEY_NBSP } from "@dental/shared";
 import type { PlanPriceCatalogItem } from "../treatment-plans/planPricing";
+import { calculatePrepaymentDiscountKopecks } from "../treatment-plans/treatmentPlanPricingEngine";
 import {
 	calculateTreatmentWarranty,
 	convertGhostItemToImplant,
@@ -1442,6 +1443,43 @@ test("декомпозиция сметчика на модули: каждый 
 		);
 	}
 });
+
+test("calculatePrepaymentDiscountKopecks: расчет 5% скидки за единовременную оплату с копеечной точностью", () => {
+	// 1. Стандартная сумма 100 000 руб (10 000 000 копеек)
+	const res1 = calculatePrepaymentDiscountKopecks(10_000_000, 5, true);
+	assert.equal(res1.totalKopecks, 10_000_000);
+	assert.equal(res1.discountPercent, 5);
+	assert.equal(res1.discountKopecks, 500_000);
+	assert.equal(res1.discountRub, 5_000);
+	assert.equal(res1.finalPriceKopecks, 9_500_000);
+	assert.equal(res1.finalPriceRub, 95_000);
+
+	// 2. Нестандартная сумма с неровными копейками 12 345,67 руб (1 234 567 копеек)
+	const res2 = calculatePrepaymentDiscountKopecks(1_234_567, 5, true);
+	assert.equal(res2.totalKopecks, 1_234_567);
+	assert.equal(res2.discountKopecks, 61_728);
+	assert.equal(res2.discountRub, 617);
+	assert.equal(res2.finalPriceKopecks, 1_172_839);
+	assert.equal(res2.finalPriceRub, 11_728);
+
+	// 3. Передача в рублях (isKopecks = false)
+	const res3 = calculatePrepaymentDiscountKopecks(50_000, 5, false);
+	assert.equal(res3.totalKopecks, 5_000_000);
+	assert.equal(res3.discountKopecks, 250_000);
+	assert.equal(res3.finalPriceKopecks, 4_750_000);
+	assert.equal(res3.finalPriceRub, 47_500);
+
+	// 4. Граничные значения: 0 и отрицательные/некорректные проценты
+	const resZero = calculatePrepaymentDiscountKopecks(0, 5, true);
+	assert.equal(resZero.discountKopecks, 0);
+	assert.equal(resZero.finalPriceKopecks, 0);
+
+	const resClamped = calculatePrepaymentDiscountKopecks(100_000, -10, true);
+	assert.equal(resClamped.discountPercent, 0);
+	assert.equal(resClamped.discountKopecks, 0);
+	assert.equal(resClamped.finalPriceKopecks, 100_000);
+});
+
 
 
 

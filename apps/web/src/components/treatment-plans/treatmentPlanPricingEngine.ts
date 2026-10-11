@@ -502,3 +502,44 @@ export function calculatePlanNdflDeduction(
 ) {
 	return calculatePlanTaxDeductionBreakdown(items as any);
 }
+
+/**
+ * Результат расчета скидки при 100% единовременной предоплате (DENTE SSOT).
+ */
+export interface PrepaymentDiscountCalculation {
+	readonly totalKopecks: Kopecks;
+	readonly discountPercent: number;
+	readonly discountKopecks: Kopecks;
+	readonly discountRub: number;
+	readonly finalPriceKopecks: Kopecks;
+	readonly finalPriceRub: number;
+}
+
+/**
+ * Расчет скидки при 100% единовременной предоплате (по умолчанию 5%) с копеечной точностью (Мандаты 8b, 8e, 8n).
+ */
+export function calculatePrepaymentDiscountKopecks(
+	totalKopecksOrRub: number | string | null | undefined,
+	discountPercent: number = 5,
+	isKopecks: boolean = true,
+): PrepaymentDiscountCalculation {
+	const rawKopecks = Math.max(
+		0,
+		isKopecks
+			? Math.round(Number(totalKopecksOrRub) || 0)
+			: (safeKopecks(totalKopecksOrRub, { allowEmptyAsZero: true }) ?? 0),
+	) as Kopecks;
+
+	const safePct = Math.max(0, Math.min(100, Number.isFinite(discountPercent) ? discountPercent : 5));
+	const discountKopecks = Math.round(rawKopecks * (safePct / 100)) as Kopecks;
+	const finalPriceKopecks = Math.max(0, rawKopecks - discountKopecks) as Kopecks;
+
+	return {
+		totalKopecks: rawKopecks,
+		discountPercent: safePct,
+		discountKopecks,
+		discountRub: Math.round(discountKopecks / 100),
+		finalPriceKopecks,
+		finalPriceRub: Math.round(finalPriceKopecks / 100),
+	};
+}

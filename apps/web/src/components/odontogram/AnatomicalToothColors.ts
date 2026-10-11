@@ -30,12 +30,20 @@ export function scaleCssPx(value: string, factor: number): string {
 export function isLowSpecFilterDisabled(): boolean {
 	if (typeof document === "undefined") return false;
 	const root = document.documentElement;
-	return (
+	const body = document.body;
+	const hasReducedMotion =
+		typeof window !== "undefined" &&
+		typeof window.matchMedia === "function" &&
+		window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	return Boolean(
+		hasReducedMotion ||
 		root.getAttribute("data-hardware-tier") === "low" ||
 		root.getAttribute("data-low-spec") === "true" ||
 		root.getAttribute("data-perf") === "low" ||
 		root.classList.contains("low-spec-mode") ||
-		root.classList.contains("low-spec-perf")
+		root.classList.contains("low-spec-perf") ||
+		root.classList.contains("low-end-hardware-mode") ||
+		body?.classList.contains("low-end-hardware-mode")
 	);
 }
 

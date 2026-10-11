@@ -22,6 +22,12 @@ import {
 	executeFastPrintTreatmentPlanEstimate,
 } from "./visitFastPrint";
 import type { VisitViewProps } from "./types";
+import {
+	loadStoredTeethData,
+	saveStoredTeethData,
+} from "../../odontogram/odontogramStorage";
+import { dispatchOdontogramSoapAndBundle } from "../../odontogram/odontogramModuleConstants";
+import type { ToothData, ToothState } from "../../odontogram/ToothChart";
 
 export function useVisitViewState(rawProps?: Partial<VisitViewProps>) {
 	// biome-ignore lint/suspicious/noExplicitAny: app logic fallback
@@ -528,6 +534,58 @@ export function useVisitViewState(rawProps?: Partial<VisitViewProps>) {
 				...(field === "diagnosis" && text ? { diagnosis: text } : {}),
 			});
 
+			// Бесшовный мост в одонтограмму и сметчик (SSOT & Doctor Autonomy)
+			if (activePatient?.id && Number.isFinite(toothNum)) {
+				const existingTeeth = loadStoredTeethData(activePatient.id) ?? [];
+				const updatedTeeth: ToothData[] = [...existingTeeth];
+				const idx = updatedTeeth.findIndex((t) => t.toothNumber === toothNum);
+				const nowIso = new Date().toISOString();
+				const surfacesProp = selectedSurfaces.length > 0 ? { surfaces: selectedSurfaces } : {};
+				if (idx >= 0 && updatedTeeth[idx]) {
+					updatedTeeth[idx] = {
+						...updatedTeeth[idx],
+						toothNumber: toothNum,
+						state: state as ToothState,
+						...surfacesProp,
+						updatedAt: nowIso,
+					};
+				} else {
+					updatedTeeth.push({
+						toothNumber: toothNum,
+						state: state as ToothState,
+						...surfacesProp,
+						updatedAt: nowIso,
+					});
+				}
+
+				saveStoredTeethData(activePatient.id, updatedTeeth, true);
+
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(
+						new CustomEvent("dente-odontogram-update", {
+							detail: {
+								patientId: activePatient.id,
+								states: updatedTeeth,
+								teeth: updatedTeeth,
+							},
+						}),
+					);
+				}
+
+				dispatchOdontogramSoapAndBundle({
+					targets: [toothNum],
+					state: state as ToothState,
+					findings: [
+						{
+							toothNumber: toothNum,
+							state: state as ToothState,
+							...surfacesProp,
+						},
+					],
+					patientId: activePatient.id,
+				});
+			}
+
 			if (text && field) {
 				if (field === "diagnosis") {
 					const nextDiag = mergeMultiToothDiagnoses(visitNoteForm?.diagnosis || "", {
@@ -550,7 +608,7 @@ export function useVisitViewState(rawProps?: Partial<VisitViewProps>) {
 		}
 		setSelectedSurfaces([]);
 		setSelectedToothForMenu(null);
-	}, [selectedToothForMenu, selectedSurfaces, setToothState, visitNoteForm, updateVisitNoteField, appendToEMKField]);
+	}, [selectedToothForMenu, selectedSurfaces, setToothState, activePatient, visitNoteForm, updateVisitNoteField, appendToEMKField]);
 
 	const handleSelectSurface = useCallback((surf: string) => {
 		setSelectedSurfaces((prev) =>

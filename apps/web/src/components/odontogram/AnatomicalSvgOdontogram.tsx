@@ -443,6 +443,22 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 		};
 	}, [selectedTeeth, onQuickStateChange, isPediatricEffective, currentQuadrant, teethDataMap]);
 
+	const onToothClickRef = React.useRef(onToothClick);
+	onToothClickRef.current = onToothClick;
+
+	const useSurfacesRef = React.useRef(useSurfaces);
+	useSurfacesRef.current = useSurfaces;
+
+	const onQuickStateChangeRef = React.useRef(onQuickStateChange);
+	onQuickStateChangeRef.current = onQuickStateChange;
+
+	const stableQuickStateChange = React.useCallback(
+		(targets: number[], state: ToothState, surfaces?: readonly string[]) => {
+			onQuickStateChangeRef.current?.(targets, state, surfaces);
+		},
+		[],
+	);
+
 	const handleToothClick = React.useCallback(
 		(
 			e: React.MouseEvent,
@@ -457,10 +473,10 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 			// Передача конкретной поверхности (surface) допустима ТОЛЬКО если активен специальный
 			// режим разметки поверхностей (useSurfaces === true) и/или зажат модификатор (e.shiftKey / e.altKey).
 			const isModifierPressed = Boolean(e?.shiftKey || e?.altKey);
-			const effectiveSurface = (useSurfaces || isModifierPressed) ? surface : undefined;
-			onToothClick(num, rect, effectiveSurface);
+			const effectiveSurface = (useSurfacesRef.current || isModifierPressed) ? surface : undefined;
+			onToothClickRef.current(num, rect, effectiveSurface);
 		},
-		[onToothClick, useSurfaces],
+		[],
 	);
 
 	const topSplit = React.useMemo(() => splitArchAtMidline(topTeethList), [topTeethList]);
@@ -639,7 +655,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 											selectedTeeth={selectedTeeth}
 											activeStamp={activeStamp}
 											onClick={handleToothClick}
-											onQuickStateChange={onQuickStateChange}
+											onQuickStateChange={stableQuickStateChange}
 											useSurfaces={useSurfaces}
 											showPulpAndCanals={showPulpAndCanals}
 											showPeriapicalHalos={showPeriapicalHalos}
@@ -668,7 +684,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 						archScale={archScale}
 						activeStamp={activeStamp}
 						handleToothClick={handleToothClick}
-						onQuickStateChange={onQuickStateChange}
+						onQuickStateChange={stableQuickStateChange}
 						useSurfaces={useSurfaces}
 						showPulpAndCanals={showPulpAndCanals}
 						showPeriapicalHalos={showPeriapicalHalos}

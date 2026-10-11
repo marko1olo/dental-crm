@@ -334,16 +334,28 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 		currentState?: ToothState;
 	} | null>(null);
 
+	const toothDataMapRef = useRef(toothDataMap);
+	toothDataMapRef.current = toothDataMap;
+
+	const onToothClickRef = useRef(onToothClick);
+	onToothClickRef.current = onToothClick;
+
+	const onSurfacesChangeRef = useRef(onSurfacesChange);
+	onSurfacesChangeRef.current = onSurfacesChange;
+
+	const useSurfacesRef = useRef(useSurfaces);
+	useSurfacesRef.current = useSurfaces;
+
 	const handleToothClick = useCallback(
 		(e: React.MouseEvent, num: number, surface?: string) => {
 			const isModifierPressed = Boolean(e?.shiftKey || e?.altKey);
-			const effectiveSurface = (useSurfaces || isModifierPressed) ? surface : undefined;
-			if (effectiveSurface && onSurfacesChange) {
-				const current = toothDataMap.get(num)?.surfaces ?? [];
+			const effectiveSurface = (useSurfacesRef.current || isModifierPressed) ? surface : undefined;
+			if (effectiveSurface && onSurfacesChangeRef.current) {
+				const current = toothDataMapRef.current.get(num)?.surfaces ?? [];
 				const nextSurfaces = current.includes(effectiveSurface)
 					? current.filter((s) => s !== effectiveSurface)
 					: [...current, effectiveSurface];
-				onSurfacesChange([num], nextSurfaces);
+				onSurfacesChangeRef.current([num], nextSurfaces);
 			}
 			const el = (e?.currentTarget as HTMLElement) ?? (e?.target as HTMLElement);
 			const rect =
@@ -353,8 +365,8 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 						? new DOMRect(0, 0, 0, 0)
 						: ({ left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect);
 
-			if (onToothClick) {
-				(onToothClick as any)(num, rect, effectiveSurface);
+			if (onToothClickRef.current) {
+				(onToothClickRef.current as any)(num, rect, effectiveSurface);
 			} else if (!effectiveSurface) {
 				setLocalRadialData({
 					toothNumber: num,
@@ -364,12 +376,12 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 						width: rect?.width || 48,
 						height: rect?.height || 90,
 					},
-					currentState: toothDataMap.get(num)?.state ?? "Healthy",
+					currentState: toothDataMapRef.current.get(num)?.state ?? "Healthy",
 				});
 			}
 			setCarouselTooth(num);
 		},
-		[onToothClick, onSurfacesChange, toothDataMap, useSurfaces],
+		[],
 	);
 
 	const topSplit = useMemo(() => splitArchAtMidline(topTeethList), [topTeethList]);

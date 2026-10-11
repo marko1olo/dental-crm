@@ -1,0 +1,595 @@
+/**
+ * DENTE Dental CRM — Odontogram Unified Clinical Toolbar Styles
+ * Apple HIG & Studio Clinical Ergonomics (34-36px height, 3 Island Layout)
+ */
+
+.odontogram-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+	padding: 2px 8px;
+	border-bottom: 1px solid var(--line-strong, var(--odontogram-border, #cbd5e1));
+	background: var(--paper, #ffffff);
+	width: 100%;
+	max-width: 100%;
+	user-select: none;
+	flex-wrap: nowrap;
+	overflow-x: clip;
+	min-height: 36px;
+	height: 36px;
+	max-height: 36px;
+	position: relative;
+	z-index: 25;
+}
+
+/* Functional Island Containers */
+.odontogram-toolbar__island {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-shrink: 0;
+	flex-wrap: nowrap;
+}
+
+.odontogram-toolbar__island--left {
+	justify-content: flex-start;
+}
+
+.odontogram-toolbar__island--center {
+	justify-content: center;
+}
+
+.odontogram-toolbar__island--right {
+	justify-content: flex-end;
+	margin-left: auto;
+}
+
+/* Apple HIG Segmented Controls (30px container) */
+.odontogram-toolbar__segmented {
+	display: inline-flex;
+	align-items: center;
+	padding: 1.5px;
+	border-radius: 8px;
+	background: var(--paper-soft, var(--odontogram-surface, #f8fafc));
+	border: 1px solid var(--line-strong, var(--odontogram-border, #cbd5e1));
+	height: 30px;
+	gap: 1.5px;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+	flex-shrink: 0;
+}
+
+.odontogram-toolbar__segment-btn {
+	height: 25px;
+	display: inline-flex;
+	align-items: center;
+	gap: 3.5px;
+	padding: 0 7px;
+	border-radius: 6px;
+	font-size: 11px;
+	white-space: nowrap;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	cursor: pointer;
+	user-select: none;
+	flex-shrink: 0;
+	font-weight: 500;
+	color: var(--muted, #64748b);
+	border: 1px solid transparent;
+	background: transparent;
+}
+
+.odontogram-toolbar__segment-btn:hover {
+	color: var(--ink, #0f172a);
+	background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+}
+
+.odontogram-toolbar__segment-btn--active {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-weight: 600;
+	border-color: var(--line, var(--odontogram-border, #cbd5e1));
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.odontogram-toolbar__segment-btn--teal-active {
+	background: var(--teal, #0d9488);
+	color: var(--on-teal, #ffffff);
+	font-weight: 600;
+	border-color: var(--teal-dark, #0f766e);
+	box-shadow: 0 1px 2px rgba(13, 148, 136, 0.25);
+}
+
+/* Tactile 30px Toolbar Action Buttons */
+.odontogram-toolbar__btn {
+	height: 30px;
+	min-height: 30px;
+	max-height: 30px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	padding: 0 7px;
+	border-radius: 8px;
+	font-size: 11px;
+	font-weight: 600;
+	white-space: nowrap;
+	flex-shrink: 0;
+	cursor: pointer;
+	user-select: none;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	border: 1px solid var(--line-strong, var(--odontogram-border, #cbd5e1));
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.odontogram-toolbar__btn:hover {
+	background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+	border-color: var(--line-strong, var(--ink, #0f172a));
+}
+
+.odontogram-toolbar__btn:active {
+	transform: scale(0.98);
+}
+
+/* Tools Trigger Button (Unified 30px Geometry) */
+.odontogram-tools-trigger-btn {
+	height: 30px;
+	min-height: 30px;
+	max-height: 30px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	padding: 0 7px;
+	border-radius: 8px;
+	font-size: 11px;
+	font-weight: 600;
+	white-space: nowrap;
+	flex-shrink: 0;
+	cursor: pointer;
+	user-select: none;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	border: 1px solid var(--line-strong, var(--odontogram-border, #cbd5e1));
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.odontogram-tools-trigger-btn:hover {
+	background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+	border-color: var(--line-strong, var(--ink, #0f172a));
+}
+
+.odontogram-tools-trigger-btn--active {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--teal, #0d9488);
+	color: var(--ink, #0f172a);
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-tools-trigger-btn {
+	background: var(--paper, #0f172a);
+	border-color: rgba(255, 255, 255, 0.15);
+	color: var(--ink, #f1f5f9);
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-tools-trigger-btn:hover {
+	background: rgba(255, 255, 255, 0.06);
+	border-color: rgba(255, 255, 255, 0.25);
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-tools-trigger-btn--active {
+	background: rgba(13, 148, 136, 0.15);
+	border-color: var(--teal, #0d9488);
+	color: #5eead4;
+}
+
+/* Green Sanitation Button */
+.odontogram-toolbar__btn--sanitation {
+	background: rgba(16, 185, 129, 0.08);
+	color: #047857;
+	border-color: rgba(16, 185, 129, 0.35);
+}
+
+.odontogram-toolbar__btn--sanitation:hover {
+	background: rgba(16, 185, 129, 0.16);
+	border-color: rgba(16, 185, 129, 0.5);
+	color: #065f46;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-toolbar__btn--sanitation {
+	background: rgba(16, 185, 129, 0.15);
+	color: #6ee7b7;
+	border-color: rgba(16, 185, 129, 0.4);
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-toolbar__btn--sanitation:hover {
+	background: rgba(16, 185, 129, 0.25);
+	color: #a7f3d0;
+}
+
+/* Calm Neutral Diary Button (Anti-Confetti) */
+.odontogram-toolbar__btn--diary {
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
+	border-color: var(--line-strong, #cbd5e1);
+}
+
+.odontogram-toolbar__btn--diary:hover {
+	background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+	border-color: var(--ink, #0f172a);
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-toolbar__btn--diary {
+	background: var(--paper-soft, #1e293b);
+	color: var(--ink, #f1f5f9);
+	border-color: rgba(255, 255, 255, 0.15);
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-toolbar__btn--diary:hover {
+	background: rgba(255, 255, 255, 0.08);
+	border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Passive Medical Allergy Alert Badge */
+.odontogram-toolbar__allergy-badge {
+	height: 30px;
+	padding: 0 7px;
+	border-radius: 8px;
+	background: rgba(244, 63, 94, 0.08);
+	border: 1px solid rgba(244, 63, 94, 0.35);
+	color: #be123c;
+	font-size: 11px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	flex-shrink: 0;
+	white-space: nowrap;
+	cursor: default;
+	user-select: none;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-toolbar__allergy-badge {
+	background: rgba(244, 63, 94, 0.15);
+	border-color: rgba(244, 63, 94, 0.45);
+	color: #fda4af;
+}
+
+/* Compact Financial Badge */
+.odontogram-toolbar__finance-badge {
+	height: 30px;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 0 3px 0 7px;
+	border-radius: 8px;
+	background: rgba(13, 148, 136, 0.08);
+	border: 1px solid rgba(13, 148, 136, 0.35);
+	color: var(--teal, #0d9488);
+	font-size: 11.5px;
+	font-weight: 500;
+	flex-shrink: 0;
+	white-space: nowrap;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-toolbar__finance-badge {
+	background: rgba(13, 148, 136, 0.15);
+	border-color: rgba(13, 148, 136, 0.45);
+	color: #5eead4;
+}
+
+.odontogram-toolbar__checkout-btn {
+	height: 23px;
+	padding: 0 7px;
+	border-radius: 6px;
+	background: var(--teal, #0d9488);
+	color: var(--on-teal, #ffffff);
+	font-size: 11px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	border: none;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-shadow: 0 1px 2px rgba(13, 148, 136, 0.25);
+}
+
+.odontogram-toolbar__checkout-btn:hover {
+	background: var(--teal-dark, #0f766e);
+}
+
+.odontogram-toolbar__checkout-btn:active {
+	transform: scale(0.96);
+}
+
+/* ZTL Order Button */
+.odontogram-toolbar__btn--ztl {
+	background: rgba(245, 158, 11, 0.1);
+	border-color: rgba(245, 158, 11, 0.4);
+	color: #b45309;
+}
+
+.odontogram-toolbar__btn--ztl:hover {
+	background: rgba(245, 158, 11, 0.2);
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-toolbar__btn--ztl {
+	background: rgba(245, 158, 11, 0.18);
+	border-color: rgba(245, 158, 11, 0.45);
+	color: #fcd34d;
+}
+
+/* Voice Dictation Button */
+.odontogram-toolbar__btn--voice-active {
+	background: #e11d48;
+	color: #ffffff;
+	border-color: #be123c;
+	animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+	box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.25);
+}
+
+@keyframes pulse {
+	0%, 100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.85;
+	}
+}
+
+/* ==========================================================================
+   Clinical Stamp Palette — Tactile Apple HIG / Studio Mac Stamp Buttons
+   ========================================================================== */
+
+.odontogram-stamp-palette {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line-strong, var(--odontogram-border, #cbd5e1));
+	border-radius: 12px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-palette {
+	background: var(--paper-soft, #0f172a);
+	border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Base Clinical Stamp Tool Button (Monochrome clinical base) */
+.odontogram-stamp-tool-btn {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	flex-shrink: 0;
+	cursor: pointer;
+	user-select: none;
+	border: 1.5px solid var(--line-strong, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.odontogram-stamp-tool-btn:hover {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--ink-muted, #64748b);
+	color: var(--ink, #0f172a);
+}
+
+.odontogram-stamp-tool-btn:active {
+	transform: scale(0.97);
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn {
+	background: var(--paper, #18181b);
+	border-color: rgba(255, 255, 255, 0.18);
+	color: var(--ink, #f4f4f5);
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn:hover {
+	background: var(--paper-soft, #27272a);
+	border-color: rgba(255, 255, 255, 0.35);
+	color: var(--ink, #ffffff);
+}
+
+/* ACTIVE SELECTED STAMP STATE (Highlight & Ring: Professional Teal Accent) */
+.odontogram-stamp-tool-btn--active {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.14)) !important;
+	border-color: var(--teal, #0d9488) !important;
+	color: var(--teal-dark, #0f766e) !important;
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.3) !important;
+	font-weight: 800 !important;
+	transform: scale(1.02);
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--active {
+	background: rgba(13, 148, 136, 0.25) !important;
+	border-color: var(--teal, #14b8a6) !important;
+	color: #2dd4bf !important;
+	box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.35) !important;
+}
+
+/* ==========================================================================
+   Tactile High-Contrast Trigger Buttons (Инструменты, Выделение, Осмотр)
+   ========================================================================== */
+
+/* 1. Odontogram Tools / Quick Actions Dropdown Trigger Button */
+.odontogram-tools-trigger-btn {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 10px;
+	border-radius: 8px;
+	font-size: 11.5px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	white-space: nowrap;
+	flex-shrink: 0;
+	cursor: pointer;
+	user-select: none;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	/* Физическая выпуклая кнопка с видимой рамкой и тенью */
+	background: var(--paper, #ffffff) !important;
+	border: 1.5px solid var(--line-strong, #94a3b8) !important;
+	color: var(--ink, #0f172a) !important;
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+.odontogram-tools-trigger-btn:hover {
+	background: #e2e8f0 !important;
+	border-color: #64748b !important;
+	color: #000000 !important;
+	box-shadow: 0 2px 5px rgba(15, 23, 42, 0.12) !important;
+}
+
+.odontogram-tools-trigger-btn:active {
+	transform: scale(0.97);
+	background: #cbd5e1 !important;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-tools-trigger-btn {
+	background: #1e293b !important;
+	border: 1.5px solid #475569 !important;
+	color: #f8fafc !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-tools-trigger-btn:hover {
+	background: #334155 !important;
+	border-color: #64748b !important;
+	color: #ffffff !important;
+}
+
+.odontogram-tools-trigger-btn--active {
+	background: #e0e7ff !important;
+	border-color: #6366f1 !important;
+	color: #3730a3 !important;
+	box-shadow: 0 0 0 2.5px rgba(99, 102, 241, 0.25), 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-tools-trigger-btn--active {
+	background: #1e1b4b !important;
+	border-color: #818cf8 !important;
+	color: #c7d2fe !important;
+}
+
+/* 2. Inspection Mode Button (Режим осмотра [Esc]) */
+.odontogram-stamp-inspection-btn {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	flex-shrink: 0;
+	cursor: pointer;
+	user-select: none;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	/* Физическая выпуклая кнопка с видимой рамкой и тенью */
+	background: var(--paper, #ffffff) !important;
+	border: 1.5px solid var(--line-strong, #94a3b8) !important;
+	color: var(--ink, #0f172a) !important;
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+.odontogram-stamp-inspection-btn:hover {
+	background: #e2e8f0 !important;
+	border-color: #64748b !important;
+	color: #000000 !important;
+	box-shadow: 0 2px 5px rgba(15, 23, 42, 0.12) !important;
+}
+
+.odontogram-stamp-inspection-btn:active {
+	transform: scale(0.97);
+	background: #cbd5e1 !important;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-inspection-btn {
+	background: #1e293b !important;
+	border: 1.5px solid #475569 !important;
+	color: #f8fafc !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-inspection-btn:hover {
+	background: #334155 !important;
+	border-color: #64748b !important;
+	color: #ffffff !important;
+}
+
+/* Global Treatments Action Buttons */
+.odontogram-global-btn {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 12px;
+	border-radius: 8px;
+	font-size: 11.5px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	white-space: nowrap;
+	flex-shrink: 0;
+	cursor: pointer;
+	user-select: none;
+	border: 1.5px solid transparent !important;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.odontogram-global-btn:active {
+	transform: scale(0.97);
+}
+
+.odontogram-global-btn--airflow {
+	background: #ecfdf5 !important;
+	border-color: #6ee7b7 !important;
+	color: #064e3b !important;
+}
+.odontogram-global-btn--airflow:hover {
+	background: #d1fae5 !important;
+	border-color: #34d399 !important;
+}
+:is([data-theme="dark"], html.dark) .odontogram-global-btn--airflow {
+	background: rgba(6, 78, 59, 0.45) !important;
+	border-color: rgba(52, 211, 153, 0.5) !important;
+	color: #a7f3d0 !important;
+}
+:is([data-theme="dark"], html.dark) .odontogram-global-btn--airflow:hover {
+	background: rgba(6, 78, 59, 0.65) !important;
+}
+
+.odontogram-global-btn--aligners {
+	background: #f0f9ff !important;
+	border-color: #7dd3fc !important;
+	color: #0c4a6e !important;
+}
+.odontogram-global-btn--aligners:hover {
+	background: #e0f2fe !important;
+	border-color: #38bdf8 !important;
+}
+:is([data-theme="dark"], html.dark) .odontogram-global-btn--aligners {
+	background: rgba(12, 74, 110, 0.45) !important;
+	border-color: rgba(56, 189, 248, 0.5) !important;
+	color: #bae6fd !important;
+}
+:is([data-theme="dark"], html.dark) .odontogram-global-btn--aligners:hover {
+	background: rgba(12, 74, 110, 0.65) !important;
+}

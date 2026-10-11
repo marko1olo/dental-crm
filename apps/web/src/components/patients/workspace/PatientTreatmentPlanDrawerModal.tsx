@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { Layers, X } from "lucide-react";
 import { TreatmentPlanModule } from "../../treatment-plans/TreatmentPlanModule";
 import { loadStoredTeethData } from "../../odontogram/odontogramStorage";
@@ -77,11 +78,11 @@ export const PatientTreatmentPlanDrawerModal: React.FC<PatientTreatmentPlanDrawe
 			[onPlanSaved],
 		);
 
-		if (!isOpen) {
+		if (!isOpen || typeof document === "undefined") {
 			return null;
 		}
 
-		return (
+		return createPortal(
 			<div
 				className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-black/60 backdrop-blur-md transition-opacity animate-fadeIn"
 				onClick={handleBackdropClick}
@@ -147,7 +148,8 @@ export const PatientTreatmentPlanDrawerModal: React.FC<PatientTreatmentPlanDrawe
 						/>
 					</div>
 				</div>
-			</div>
+			</div>,
+			document.body,
 		);
 	},
 );

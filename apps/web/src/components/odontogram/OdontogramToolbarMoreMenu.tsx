@@ -9,6 +9,7 @@
 import React, { useRef, useEffect } from "react";
 import {
 	Activity,
+	Calculator,
 	Check,
 	ChevronDown,
 	Eye,
@@ -63,6 +64,8 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 	setShowPulpAndCanals,
 	onSyncAllToDiary,
 	onOneClickLabOrder,
+	onToggleEstimator,
+	isEstimatorOpen,
 }) => {
 	const moreMenuRef = useRef<HTMLDivElement>(null);
 
@@ -242,6 +245,32 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 									<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">Автогенерация сметы по МКБ-10</span>
 								</div>
 							</button>
+
+							{/* Interactive Treatment Estimator (SSOT 804n) */}
+							{onToggleEstimator && (
+								<button
+									type="button"
+									onClick={() => { onToggleEstimator(); setIsMoreMenuOpen(false); }}
+									className={`min-h-[44px] sm:min-h-[38px] flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left ${
+										isEstimatorOpen
+											? "bg-indigo-500/20 border-indigo-500/50 shadow-xs"
+											: "bg-indigo-500/10 border-indigo-500/30 hover:bg-indigo-500/20"
+									}`}
+									title="Смета и калькулятор комплексного плана лечения по клиническим этапам и номенклатуре 804н"
+									aria-label="Смета плана лечения"
+									data-testid="btn-toggle-treatment-estimator"
+								>
+									<Calculator size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+									<div className="flex flex-col min-w-0">
+										<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">
+											Смета плана лечения (804н)
+										</span>
+										<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">
+											Калькулятор этапов с копеечной точностью
+										</span>
+									</div>
+								</button>
+							)}
 
 							{/* Periodontal Charting Module */}
 							<button
