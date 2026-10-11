@@ -96,11 +96,6 @@
 			"import": "./dist/payroll/index.js",
 			"default": "./dist/payroll/index.js"
 		},
-		"./egisz": {
-			"types": "./dist/egisz/index.d.ts",
-			"import": "./dist/egisz/index.js",
-			"default": "./dist/egisz/index.js"
-		},
 		"./cda": {
 			"types": "./dist/cda/index.d.ts",
 			"import": "./dist/cda/index.js",

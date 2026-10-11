@@ -1,22 +1,16 @@
 import {
-	AlertTriangle,
-	Check,
-	CheckCircle2,
-	Clock,
-	Minus,
-	Package,
-	Plus,
-	ShieldAlert,
-	Syringe,
-	X,
-	Zap,
+	AlertTriangle, Check, CheckCircle2, Clock, Minus,
+	Package, Plus, ShieldAlert, Syringe, X, Zap,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { money } from "../../AppHelpers.js";
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+import { useInventoryStore } from "../../store/inventoryStore.js";
 import {
 	DEFAULT_804N_CONSUMABLE_LINKS,
 	getDefaultBomLinksForService804n,
+	formatInventoryUnitRu,
 } from "@dental/shared";
 import type { ConsumableItemLink } from "@dental/shared";
 
@@ -56,30 +50,22 @@ export interface ConsumablesDeductionModalProps {
  * - Крупные сенсорные кнопки [ - ] и [ + ] (>= 44x44px на таче, 32px на ПК).
  * - Закон Анти-Матрёшки: строго 1 уровень модалки, единая чистая поверхность.
  */
-function formatCategoryRu(cat?: string): string {
-	if (!cat) return "Расходный";
-	switch (cat.toLowerCase()) {
-		case "composite": return "Композит";
-		case "anesthetic": return "Анестезия";
-		case "disinfection": return "Дезинфекция";
-		case "ppe": return "СИЗ";
-		case "other": return "Расходный";
-		case "surgery": return "Хирургия";
-		case "orthopedics": return "Ортопедия";
-		case "therapy": return "Терапия";
-		case "endodontics": return "Эндодонтия";
-		default: return cat;
-	}
-}
+const CATEGORY_RU_MAP: Record<string, string> = {
+	composite: "Композит",
+	anesthetic: "Анестезия",
+	disinfection: "Дезинфекция",
+	ppe: "СИЗ",
+	other: "Расходный",
+	surgery: "Хирургия",
+	orthopedics: "Ортопедия",
+	therapy: "Терапия",
+	endodontics: "Эндодонтия",
+};
+const formatCategoryRu = (cat?: string): string => (cat ? CATEGORY_RU_MAP[cat.toLowerCase()] || cat : "Расходный");
 
-function formatUnitRu(unit?: string): string {
-	if (!unit) return "шт.";
-	const u = unit.toLowerCase().trim();
-	if (u === "шприц_гр" || u === "шприц _гр") return "шприц (г)";
-	if (u === "dose") return "доз";
-	if (u === "piece" || u === "pcs") return "шт.";
-	return unit;
-}
+const formatUnitRu = (unit?: string): string => (unit ? formatInventoryUnitRu(unit) : "шт.");
+
+const EMPTY_STOCK_MAP: Readonly<Record<string, number>> = Object.freeze({});
 
 export const ConsumablesDeductionModal: React.FC<ConsumablesDeductionModalProps> = ({
 	isOpen,
@@ -89,7 +75,7 @@ export const ConsumablesDeductionModal: React.FC<ConsumablesDeductionModalProps>
 	doctorName = "Кузнецов А.В.",
 	patientName = "Смирнова Е.А.",
 	toothNumber = 16,
-	currentStockMap = {},
+	currentStockMap = EMPTY_STOCK_MAP,
 	onConfirmDeduction,
 }) => {
 	// Подбор ссылок на расходные материалы из SSOT каталога
@@ -118,39 +104,33 @@ export const ConsumablesDeductionModal: React.FC<ConsumablesDeductionModalProps>
 		return isDemoShowcaseMode() ? 12 : 0;
 	};
 
-	const [deductionItems, setDeductionItems] = useState<ConsumablesDeductionModalItem[]>(() => {
-		return defaultLinks.map((link) => {
+	const [deductionItems, setDeductionItems] = useState<ConsumablesDeductionModalItem[]>(() =>
+		defaultLinks.map((link) => {
 			const currentStock = resolveStock(link.inventoryItemId);
-			const unitCostRub = link.costPriceKopecks / 100;
 			const deductedQty = link.quantityPerService;
-			const isOverdraft = currentStock - deductedQty < 0;
-
 			return {
 				id: link.id,
 				inventoryItemId: link.inventoryItemId,
 				itemName: link.itemName,
 				category: link.category ?? "Расходные",
 				unit: link.unit,
-				standardQty: link.quantityPerService,
+				standardQty: deductedQty,
 				deductedQty,
 				currentStock,
-				unitCostRub,
-				isOverdraft,
+				unitCostRub: link.costPriceKopecks / 100,
+				isOverdraft: currentStock - deductedQty < 0,
 				isMandatory: link.isMandatory ?? true,
 			};
-		});
-	});
+		}),
+	);
 
 	// Синхронизация при изменении currentStockMap
 	React.useEffect(() => {
+		if (!currentStockMap || Object.keys(currentStockMap).length === 0) return;
 		setDeductionItems((prev) =>
 			prev.map((it) => {
 				const stock = resolveStock(it.inventoryItemId);
-				return {
-					...it,
-					currentStock: stock,
-					isOverdraft: stock - it.deductedQty < 0,
-				};
+				return { ...it, currentStock: stock, isOverdraft: stock - it.deductedQty < 0 };
 			}),
 		);
 	}, [currentStockMap]);
@@ -164,12 +144,7 @@ export const ConsumablesDeductionModal: React.FC<ConsumablesDeductionModalProps>
 				if (it.id !== itemId) return it;
 				const step = it.unit === "шприц_гр" || it.unit === "ml" ? 0.1 : 1;
 				const newQty = Math.max(0, Math.round((it.deductedQty + delta * step) * 10) / 10);
-				const isOverdraft = it.currentStock - newQty < 0;
-				return {
-					...it,
-					deductedQty: newQty,
-					isOverdraft,
-				};
+				return { ...it, deductedQty: newQty, isOverdraft: it.currentStock - newQty < 0 };
 			}),
 		);
 	};
@@ -201,6 +176,8 @@ export const ConsumablesDeductionModal: React.FC<ConsumablesDeductionModalProps>
 		return {
 			totalCostRub: Math.round(totalCostRub * 100) / 100,
 			overdraftCount,
+			hasOverdraft: overdraftCount > 0,
+			overdraftItemsCount: overdraftCount,
 			activeItemsCount,
 			carpulesCount,
 			sharpsCount,
@@ -215,6 +192,32 @@ export const ConsumablesDeductionModal: React.FC<ConsumablesDeductionModalProps>
 			if (onConfirmDeduction) {
 				await onConfirmDeduction(deductionItems);
 			}
+			// Фоновая синхронизация остатков со store и оповещение склада (Mandate 8e, 8n)
+			try {
+				useInventoryStore.getState().deductStock(
+					"org-default",
+					deductionItems.map((d) => ({
+						inventoryItemId: d.inventoryItemId,
+						itemName: d.itemName,
+						quantity: d.deductedQty,
+						reason: `Списание по протоколу: ${procedureTitle}`,
+						unitCostRub: d.unitCostRub,
+					})),
+					{
+						allowOverdraft: true,
+						reason: `Списание по протоколу: ${procedureTitle}`,
+					},
+				).catch(() => {});
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(
+						new CustomEvent("dente-inventory-reload", {
+							detail: { procedureTitle, service804nCode },
+						}),
+					);
+				}
+			} catch {
+				// Ошибки не блокируют приём врача
+			}
 			onClose();
 		} catch {
 			// Ошибки логируются, врач не блокируется
@@ -223,7 +226,7 @@ export const ConsumablesDeductionModal: React.FC<ConsumablesDeductionModalProps>
 		}
 	};
 
-	return (
+	const modalContent = (
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-xs"
 			data-testid="consumables-deduction-modal-overlay"
@@ -428,16 +431,11 @@ export const ConsumablesDeductionModal: React.FC<ConsumablesDeductionModalProps>
 						</div>
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2.5 shrink-0">
 						<button
 							type="button"
 							onClick={onClose}
-							style={{
-								backgroundColor: "var(--paper, #ffffff)",
-								color: "var(--ink, #0f172a)",
-								border: "1px solid var(--line, #cbd5e1)",
-							}}
-							className="h-10 sm:h-9 px-4 rounded-xl text-xs font-semibold cursor-pointer transition-colors shadow-xs"
+							className="h-10 sm:h-9 px-4 rounded-xl text-xs font-semibold cursor-pointer transition-colors border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--line-subtle,rgba(0,0,0,0.05))] shadow-xs"
 							data-testid="btn-cancel-deduction"
 						>
 							Отмена
@@ -448,22 +446,36 @@ export const ConsumablesDeductionModal: React.FC<ConsumablesDeductionModalProps>
 							onClick={handleConfirm}
 							disabled={isSubmitting}
 							style={{
-								backgroundColor: "var(--brand, #0d9488)",
+								backgroundColor: totals.hasOverdraft ? "var(--warning, #d97706)" : "var(--brand, #0d9488)",
 								color: "#ffffff",
 								border: "1px solid transparent",
 							}}
-							className="h-10 sm:h-9 px-5 rounded-xl font-bold text-xs shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-98"
+							className="h-10 sm:h-9 px-4 rounded-xl font-bold text-xs shadow-md flex items-center gap-1.5 cursor-pointer transition-all active:scale-98 whitespace-nowrap"
 							data-testid="btn-confirm-deduction"
-							title="Подтвердить списание расходных материалов по протоколу"
+							title={
+								totals.hasOverdraft
+									? `Списание с мягким овердрафтом (${totals.overdraftItemsCount} поз.). Приём не блокируется.`
+									: "Подтвердить списание расходных материалов по протоколу"
+							}
 						>
-							<Check size={16} />
-							<span>{isSubmitting ? "Списание..." : "Подтвердить списание материалов"}</span>
+							<Check size={16} className="shrink-0" />
+							<span className="whitespace-nowrap">
+								{isSubmitting
+									? "Списание..."
+									: totals.hasOverdraft
+										? `Списать (овердрафт: ${totals.overdraftItemsCount})`
+										: "Подтвердить списание"}
+							</span>
 						</button>
 					</div>
 				</div>
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 };
 
 export default ConsumablesDeductionModal;
