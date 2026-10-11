@@ -149,6 +149,30 @@ const VERSION_TABLE: Record<number, Record<QrErrorCorrectionLevel, VersionEcBloc
 		Q: { totalDataBytes: 154, ecBytesPerBlock: 24, group1Blocks: 6, group1DataBytesPerBlock: 19, group2Blocks: 2, group2DataBytesPerBlock: 20, alignmentPatterns: [6, 28, 50] },
 		H: { totalDataBytes: 122, ecBytesPerBlock: 28, group1Blocks: 6, group1DataBytesPerBlock: 15, group2Blocks: 2, group2DataBytesPerBlock: 16, alignmentPatterns: [6, 28, 50] },
 	},
+	11: {
+		L: { totalDataBytes: 324, ecBytesPerBlock: 20, group1Blocks: 4, group1DataBytesPerBlock: 81, group2Blocks: 0, group2DataBytesPerBlock: 0, alignmentPatterns: [6, 30, 54] },
+		M: { totalDataBytes: 252, ecBytesPerBlock: 28, group1Blocks: 1, group1DataBytesPerBlock: 50, group2Blocks: 4, group2DataBytesPerBlock: 51, alignmentPatterns: [6, 30, 54] },
+		Q: { totalDataBytes: 180, ecBytesPerBlock: 24, group1Blocks: 4, group1DataBytesPerBlock: 22, group2Blocks: 4, group2DataBytesPerBlock: 23, alignmentPatterns: [6, 30, 54] },
+		H: { totalDataBytes: 140, ecBytesPerBlock: 30, group1Blocks: 3, group1DataBytesPerBlock: 12, group2Blocks: 8, group2DataBytesPerBlock: 13, alignmentPatterns: [6, 30, 54] },
+	},
+	12: {
+		L: { totalDataBytes: 370, ecBytesPerBlock: 24, group1Blocks: 2, group1DataBytesPerBlock: 92, group2Blocks: 2, group2DataBytesPerBlock: 93, alignmentPatterns: [6, 32, 58] },
+		M: { totalDataBytes: 290, ecBytesPerBlock: 22, group1Blocks: 6, group1DataBytesPerBlock: 36, group2Blocks: 2, group2DataBytesPerBlock: 37, alignmentPatterns: [6, 32, 58] },
+		Q: { totalDataBytes: 206, ecBytesPerBlock: 28, group1Blocks: 4, group1DataBytesPerBlock: 20, group2Blocks: 6, group2DataBytesPerBlock: 21, alignmentPatterns: [6, 32, 58] },
+		H: { totalDataBytes: 158, ecBytesPerBlock: 24, group1Blocks: 7, group1DataBytesPerBlock: 14, group2Blocks: 4, group2DataBytesPerBlock: 15, alignmentPatterns: [6, 32, 58] },
+	},
+	13: {
+		L: { totalDataBytes: 428, ecBytesPerBlock: 26, group1Blocks: 4, group1DataBytesPerBlock: 107, group2Blocks: 0, group2DataBytesPerBlock: 0, alignmentPatterns: [6, 34, 62] },
+		M: { totalDataBytes: 334, ecBytesPerBlock: 22, group1Blocks: 8, group1DataBytesPerBlock: 37, group2Blocks: 1, group2DataBytesPerBlock: 38, alignmentPatterns: [6, 34, 62] },
+		Q: { totalDataBytes: 244, ecBytesPerBlock: 22, group1Blocks: 8, group1DataBytesPerBlock: 20, group2Blocks: 4, group2DataBytesPerBlock: 21, alignmentPatterns: [6, 34, 62] },
+		H: { totalDataBytes: 180, ecBytesPerBlock: 22, group1Blocks: 12, group1DataBytesPerBlock: 11, group2Blocks: 4, group2DataBytesPerBlock: 12, alignmentPatterns: [6, 34, 62] },
+	},
+	14: {
+		L: { totalDataBytes: 461, ecBytesPerBlock: 30, group1Blocks: 3, group1DataBytesPerBlock: 115, group2Blocks: 1, group2DataBytesPerBlock: 116, alignmentPatterns: [6, 26, 46, 66] },
+		M: { totalDataBytes: 365, ecBytesPerBlock: 24, group1Blocks: 4, group1DataBytesPerBlock: 40, group2Blocks: 5, group2DataBytesPerBlock: 41, alignmentPatterns: [6, 26, 46, 66] },
+		Q: { totalDataBytes: 261, ecBytesPerBlock: 24, group1Blocks: 11, group1DataBytesPerBlock: 16, group2Blocks: 5, group2DataBytesPerBlock: 17, alignmentPatterns: [6, 26, 46, 66] },
+		H: { totalDataBytes: 197, ecBytesPerBlock: 24, group1Blocks: 11, group1DataBytesPerBlock: 12, group2Blocks: 5, group2DataBytesPerBlock: 13, alignmentPatterns: [6, 26, 46, 66] },
+	},
 };
 
 const FORMAT_INFO: Record<QrErrorCorrectionLevel, number[]> = {
@@ -299,7 +323,7 @@ function createEcBlocks(data: Uint8Array, version: number, ecLevel: QrErrorCorre
  */
 function findSmallestVersion(text: string, ecLevel: QrErrorCorrectionLevel): number {
 	const byteLen = new TextEncoder().encode(text).length;
-	for (let v = 1; v <= 10; v++) {
+	for (let v = 1; v <= 14; v++) {
 		const ecInfo = VERSION_TABLE[v]![ecLevel];
 		const overhead = v >= 10 ? 3 : 2; // mode (4b) + length indicator (8b / 16b)
 		if (byteLen + overhead <= ecInfo.totalDataBytes) {

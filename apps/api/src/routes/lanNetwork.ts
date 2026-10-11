@@ -69,6 +69,7 @@ export interface ActivePairingNonceEntry {
 const DEFAULT_PAIRING_TTL_SECONDS = 15 * 60; // 15 minutes fresh pairing window
 
 const activePairingNonces = new Map<string, ActivePairingNonceEntry>();
+const usedPairingNonces = new Set<string>();
 
 export function purgeExpiredPairingNonces(): void {
 	const now = Date.now();
@@ -85,6 +86,7 @@ export function getActivePairingNoncesCount(): number {
 
 export function clearPairingNoncesForTest(): void {
 	activePairingNonces.clear();
+	usedPairingNonces.clear();
 }
 
 function createPairingTokenRecord(options: {
@@ -116,20 +118,9 @@ function createPairingTokenRecord(options: {
 		expiresAt: expiresAtMs,
 	});
 
-	const token = signToken(
-		{
-			type: "dente_lan_pairing",
-			role: options.role,
-			organizationId: options.organizationId,
-			staffUserId: options.staffUserId,
-			serverId: options.serverId,
-			nonce,
-			pin,
-			issuedAt: Date.now(),
-		} satisfies LanPairingPayload,
-		authTokenSecret(),
-		DEFAULT_PAIRING_TTL_SECONDS,
-	);
+	// Compact pairing token: 128-bit CSPRNG UUID nonce stored in server memory.
+	// Generates a clean ~80-byte QR code for fast, high-contrast chairside scanning.
+	const token = nonce;
 
 	const url = `http://${options.targetIp}:${options.webPort}/?pair=${encodeURIComponent(token)}&role=${options.role}&pin=${pin}`;
 
@@ -145,11 +136,11 @@ function createPairingTokenRecord(options: {
 
 export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<void> {
 	/**
-	 * GET /api/network/lan-info
+	 * GET /api/network/lan-info & /api/lan/status
 	 * Returns verified physical LAN IPs (Ethernet / Wi-Fi), filtering out virtual adapters (WSL, Hyper-V, Docker).
 	 * Handing out pairing tokens requires an authenticated clinic session on the server PC.
 	 */
-	app.get("/api/network/lan-info", async (request: FastifyRequest, reply: FastifyReply) => {
+	const handleLanInfo = async (request: FastifyRequest, reply: FastifyReply) => {
 		const metadata = getLanServerDiscoveryMetadata();
 		const rankedInterfaces = getRankedLanInterfaces();
 		const activeLanAddresses = getLocalLanAddresses();
@@ -190,41 +181,26 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			pairingExpiresAt: pairingInfo?.expiresAt ?? null,
 			hotspotGuide: {
 				title: "Включение мобильной точки доступа Windows (Hotspot)",
-				apIsolationWarning:
-					"Если планшет врача или ассистента подключен к Wi-Fi клиники, но страница не открывается, на роутере включена изоляция клиентов (AP Isolation / Station Separation).",
-				solution:
-					"Включите мобильную точку доступа прямо на компьютере сервера клиники в 1 клик, чтобы планшеты подключались напрямую без ограничений роутера.",
+				apIsolationWarning: "Если планшет врача или ассистента подключен к Wi-Fi клиники, но страница не открывается, на роутере включена изоляция клиентов (AP Isolation / Station Separation).",
+				solution: "Включите мобильную точку доступа прямо на компьютере сервера клиники в 1 клик, чтобы планшеты подключались напрямую без ограничений роутера.",
 				steps: [
-					{
-						step: 1,
-						title: "Параметры мобильного хот-спота",
-						description:
-							"Нажмите Win+I -> 'Сеть и Интернет' -> 'Мобильный хот-спот' (или запустите 'ms-settings:network-mobilehotspot').",
-						command: "ms-settings:network-mobilehotspot",
-					},
-					{
-						step: 2,
-						title: "Включить раздачу Wi-Fi",
-						description:
-							"Включите тумблер 'Поделиться моим сетевым подключением'. Имя Wi-Fi сети и пароль отобразятся на экране.",
-					},
-					{
-						step: 3,
-						title: "Подключить планшет к хот-споту",
-						description:
-							"На iPad или планшете выберите Wi-Fi сеть компьютера сервера, введите пароль и отсканируйте обновленный QR-код.",
-					},
+					{ step: 1, title: "Параметры мобильного хот-спота", description: "Нажмите Win+I -> 'Сеть и Интернет' -> 'Мобильный хот-спот' (или запустите 'ms-settings:network-mobilehotspot').", command: "ms-settings:network-mobilehotspot" },
+					{ step: 2, title: "Включить раздачу Wi-Fi", description: "Включите тумблер 'Поделиться моим сетевым подключением'. Имя Wi-Fi сети и пароль отобразятся на экране." },
+					{ step: 3, title: "Подключить планшет к хот-споту", description: "На iPad или планшете выберите Wi-Fi сеть компьютера сервера, введите пароль и отсканируйте обновленный QR-код." },
 				],
 			},
 		});
-	});
+	};
+
+	app.get("/api/network/lan-info", handleLanInfo);
+	app.get("/api/lan/status", handleLanInfo);
 
 	/**
-	 * POST /api/network/pair/generate
+	 * POST /api/network/pair/generate & /api/lan/token
 	 * Generates customized pairing token for doctor or assistant role.
 	 * Requires authenticated clinic session. Validates targetIp against physical LAN interfaces.
 	 */
-	app.post("/api/network/pair/generate", async (request: FastifyRequest, reply: FastifyReply) => {
+	const handlePairGenerate = async (request: FastifyRequest, reply: FastifyReply) => {
 		const identity = getRequestIdentity(request);
 		if (!identity.verified || !identity.organizationId) {
 			return reply.code(401).send({
@@ -274,7 +250,10 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			expiresInSeconds: pairingInfo.expiresInSeconds,
 			expiresAt: pairingInfo.expiresAt,
 		});
-	});
+	};
+
+	app.post("/api/network/pair/generate", handlePairGenerate);
+	app.post("/api/lan/token", handlePairGenerate);
 
 	/**
 	 * POST /api/network/pair/verify
@@ -290,32 +269,55 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		}
 
 		const { token, pin, deviceName } = parseRes.data;
-		const verified = verifyToken(token, authTokenSecret());
+		purgeExpiredPairingNonces();
 
-		if (!verified || verified.type !== "dente_lan_pairing") {
+		if (usedPairingNonces.has(token)) {
+			return reply.code(401).send({
+				error: "PairingTokenExpiredOrUsed",
+				message: "Данный QR-код уже был использован или срок его действия истек. Обновите QR-код на сервере.",
+			});
+		}
+
+		let nonce = "";
+		let orgId = "";
+		let role: "doctor" | "assistant" = "doctor";
+
+		// 1. Direct high-entropy nonce lookup
+		const directEntry = activePairingNonces.get(token);
+		if (directEntry) {
+			nonce = directEntry.nonce;
+			orgId = directEntry.organizationId;
+			role = directEntry.role;
+		} else {
+			// 2. Fallback to signed JWT pairing payload
+			const verified = verifyToken(token, authTokenSecret());
+			if (verified && (verified as any).type === "dente_lan_pairing") {
+				const payload = verified as unknown as LanPairingPayload;
+				nonce = payload.nonce;
+				orgId = payload.organizationId;
+				role = payload.role || "doctor";
+			}
+		}
+
+		if (nonce && usedPairingNonces.has(nonce)) {
+			return reply.code(401).send({
+				error: "PairingTokenExpiredOrUsed",
+				message: "Данный QR-код уже был использован или срок его действия истек. Обновите QR-код на сервере.",
+			});
+		}
+
+		if (!nonce || !orgId) {
 			return reply.code(401).send({
 				error: "InvalidPairingToken",
 				message: "Недействительный или просроченный QR-код сопряжения. Обновите QR-код на сервере.",
 			});
 		}
 
-		const payload = verified as unknown as LanPairingPayload;
-		const orgId = payload.organizationId;
-		const role = payload.role || "doctor";
-		const nonce = payload.nonce;
-
-		if (!nonce) {
-			return reply.code(401).send({
-				error: "InvalidPairingToken",
-				message: "Недействительный формат токена сопряжения (отсутствует одноразовый nonce).",
-			});
-		}
-
 		// Anti-Replay: Verify single-use nonce exists and has not expired
-		purgeExpiredPairingNonces();
 		const nonceEntry = activePairingNonces.get(nonce);
 		if (!nonceEntry || nonceEntry.expiresAt <= Date.now()) {
 			if (nonceEntry) activePairingNonces.delete(nonce);
+			usedPairingNonces.add(nonce);
 			return reply.code(401).send({
 				error: "PairingTokenExpiredOrUsed",
 				message: "Данный QR-код уже был использован или срок его действия истек. Обновите QR-код на сервере.",
@@ -332,6 +334,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 
 		// SINGLE-USE GUARANTEE: Invalidate nonce immediately so token can NEVER be reused!
 		activePairingNonces.delete(nonce);
+		usedPairingNonces.add(nonce);
 
 		// Issue valid clinic token
 		const clinicToken = signToken(

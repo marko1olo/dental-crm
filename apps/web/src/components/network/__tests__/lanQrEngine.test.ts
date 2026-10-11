@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, expect, it } from "vitest";
 import {
 	buildLanConnectionUrl,
 	formatAdapterDisplayName,
@@ -9,7 +9,7 @@ import {
 	parsePairingUrlParams,
 	type LanConnectionConfig,
 	type LanServerInterfaceItem,
-} from "../lanQrEngine.js";
+} from "../lanQrEngine";
 
 describe("LAN QR Engine & Discovery Verification", () => {
 	it("1. buildLanConnectionUrl correctly constructs tablet pairing URLs with port and role", () => {
@@ -146,6 +146,29 @@ describe("LAN QR Engine & Discovery Verification", () => {
 		};
 
 		const formattedHotspot = formatAdapterDisplayName(hotspotAdapter, false);
-		assert.strictEqual(formattedHotspot.tag, "Hotspot Wi-Fi");
+		expect(formattedHotspot.tag).toBe("Hotspot Wi-Fi");
+	});
+
+	it("9. buildLanConnectionUrl supports custom path such as /mobile", () => {
+		const config: LanConnectionConfig = {
+			lanIp: "192.168.1.103",
+			port: 5173,
+			pairingToken: "mobile-token-999",
+			role: "doctor",
+			path: "/mobile",
+		};
+		const url = buildLanConnectionUrl(config);
+		expect(url).toBe("http://192.168.1.103:5173/mobile?pair=mobile-token-999&role=doctor");
+	});
+
+	it("10. parsePairingUrlParams accepts both pair and token query params", () => {
+		const parsedToken = parsePairingUrlParams("?token=alt-token-123&role=doctor");
+		expect(parsedToken.pairingToken).toBe("alt-token-123");
+		expect(parsedToken.role).toBe("doctor");
+
+		const parsedPair = parsePairingUrlParams("?pair=main-token-456&role=assistant");
+		expect(parsedPair.pairingToken).toBe("main-token-456");
+		expect(parsedPair.role).toBe("assistant");
 	});
 });
+

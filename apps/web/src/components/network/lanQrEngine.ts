@@ -20,6 +20,7 @@ export interface LanConnectionConfig {
 	readonly pairingPin?: string | null | undefined;
 	readonly role?: DeviceRole;
 	readonly protocol?: "http" | "https";
+	readonly path?: string;
 }
 
 export interface LanQrCodeResult {
@@ -104,8 +105,11 @@ export function buildLanConnectionUrl(config: LanConnectionConfig): string {
 	const cleanToken = config.pairingToken.trim();
 	const roleParam = config.role ? `&role=${encodeURIComponent(config.role)}` : "";
 	const pinParam = config.pairingPin ? `&pin=${encodeURIComponent(config.pairingPin.trim())}` : "";
+	const rawPath = config.path
+		? (config.path.startsWith("/") ? config.path : `/${config.path}`)
+		: "/";
 
-	return `${protocol}://${cleanIp}${portPart}/?pair=${encodeURIComponent(cleanToken)}${roleParam}${pinParam}`;
+	return `${protocol}://${cleanIp}${portPart}${rawPath}?pair=${encodeURIComponent(cleanToken)}${roleParam}${pinParam}`;
 }
 
 /**
@@ -132,7 +136,7 @@ export function parsePairingUrlParams(searchParamsString?: string): {
 	}
 
 	const params = new URLSearchParams(search);
-	const token = params.get("pair")?.trim() || null;
+	const token = (params.get("pair") || params.get("token"))?.trim() || null;
 	const rawRole = params.get("role")?.toLowerCase().trim();
 	const role: DeviceRole | null =
 		rawRole === "assistant" ? "assistant" : rawRole === "doctor" ? "doctor" : null;
