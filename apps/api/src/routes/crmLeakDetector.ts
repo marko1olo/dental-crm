@@ -118,6 +118,8 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 
 			const data = rows.map((r) => ({
 				...r.lead,
+				phone: r.patientPhone || "Не указан",
+				fullName: r.patientFullName || "Пациент",
 				patientFullName: r.patientFullName || "Пациент",
 				patientPhone: r.patientPhone || "Не указан",
 				patientBirthDate: r.patientBirthDate,
@@ -131,13 +133,15 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 	 * 2. POST /api/crm/leak-detector/sync — Автоматический сбор пациентов > 210 дней
 	 */
 	app.post("/api/crm/leak-detector/sync", async (req: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(req, reply, "crm leak detector sync");
-		if (!orgId) return;
+		try {
+			const orgId = await requireResolvedOrganizationId(req, reply, "crm leak detector sync");
+			if (!orgId) return;
 
-		const now = new Date();
-		const thresholdDate = new Date(now.getTime() - CLINICAL_LEAK_THRESHOLD_DAYS * MS_PER_DAY);
+			const now = new Date();
+			const nowIso = now.toISOString();
+			const thresholdDate = new Date(now.getTime() - CLINICAL_LEAK_THRESHOLD_DAYS * MS_PER_DAY);
 
-		return withTenantCtx(orgId, async (tx) => {
+			return await withTenantCtx(orgId, async (tx) => {
 			// Находим клинику для текста скрипта
 			const [clinic] = await tx.select({ name: clinics.name }).from(clinics).where(eq(clinics.organizationId, orgId)).limit(1);
 			const clinicName = clinic?.name || "ДЕНТЕ";
@@ -156,14 +160,14 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 						SELECT max(a.starts_at) FROM ${appointments} a
 						WHERE a.organization_id = ${orgId}
 						  AND a.patient_id = ${patients.id}
-						  AND a.starts_at <= ${now}
+						  AND a.starts_at <= ${nowIso}
 						  AND a.status IN ('completed', 'arrived', 'in_treatment')
 					)`,
 					lastDoctorId: sql<string | null>`(
 						SELECT a.doctor_user_id FROM ${appointments} a
 						WHERE a.organization_id = ${orgId}
 						  AND a.patient_id = ${patients.id}
-						  AND a.starts_at <= ${now}
+						  AND a.starts_at <= ${nowIso}
 						  AND a.status IN ('completed', 'arrived', 'in_treatment')
 						ORDER BY a.starts_at DESC LIMIT 1
 					)`,
@@ -171,15 +175,15 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 						SELECT a.reason FROM ${appointments} a
 						WHERE a.organization_id = ${orgId}
 						  AND a.patient_id = ${patients.id}
-						  AND a.starts_at <= ${now}
+						  AND a.starts_at <= ${nowIso}
 						  AND a.status IN ('completed', 'arrived', 'in_treatment')
 						ORDER BY a.starts_at DESC LIMIT 1
 					)`,
 					uncompletedPlansSum: sql<number>`COALESCE((
-						SELECT sum(tp.total_amount_rub) FROM ${treatmentPlans} tp
+						SELECT sum(COALESCE(tp.total_price_rub, tp.total_price, 0)) FROM ${treatmentPlans} tp
 						WHERE tp.organization_id = ${orgId}
 						  AND tp.patient_id = ${patients.id}
-						  AND tp.status IN ('active', 'in_progress', 'draft')
+						  AND tp.status IN ('Draft', 'Active', 'Approved')
 					), 0)`,
 				})
 				.from(patients)
@@ -344,7 +348,14 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 				updatedCount,
 			});
 		});
-	});
+	} catch (err: any) {
+		req.log.error({ err }, "[CrmLeakDetector] Sync failed");
+		return reply.status(500).send({
+			error: "SyncError",
+			message: err.message,
+		});
+	}
+});
 
 	/**
 	 * 3. POST /api/crm/leak-detector/:id/start-lead — Взять лид в работу администратором

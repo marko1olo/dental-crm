@@ -1,5 +1,6 @@
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
 	AlertTriangle,
 	Calendar,
@@ -8,6 +9,7 @@ import {
 	ChevronRight,
 	Clock,
 	Copy,
+	ExternalLink,
 	FileText,
 	MessageCircle,
 	Phone,
@@ -80,6 +82,8 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 	const [declineModalLead, setDeclineModalLead] = useState<CrmLeakLeadItem | null>(null);
 	const [declineReason, setDeclineReason] = useState<CrmDeclineReason>("too_expensive");
 	const [declineComment, setDeclineComment] = useState<string>("");
+
+	const [selectedLeakLead, setSelectedLeakLead] = useState<CrmLeakLeadItem | null>(null);
 
 	const loadData = useCallback(async () => {
 		try {
@@ -221,6 +225,19 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 		);
 	};
 
+	const handleOpenPatientWorkspace = (patientId: string) => {
+		usePatientStore.getState().setSelectedPatientId(patientId);
+		useAppStore.getState().setCurrentView("patients");
+		if (typeof window !== "undefined") {
+			window.location.hash = "patients";
+		}
+		onClose();
+		showToast(
+			"Открыта карта пациента в амбулаторном рабочем пространстве",
+			"info",
+		);
+	};
+
 	if (!isOpen) return null;
 
 	const filteredLeads = leads.filter((lead) => {
@@ -233,7 +250,7 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 		);
 	});
 
-	return (
+	const modalContent = (
 		<div className="cld-modal-overlay">
 			<div className="cld-modal-dialog">
 				{/* Шапка */}
@@ -393,11 +410,29 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 							</thead>
 							<tbody>
 								{filteredLeads.map((lead) => {
-									const cleanPhone = lead.phone.replace(/[^0-9]/g, "");
+									const rawPhone = lead.phone || lead.patientPhone || "";
+									const cleanPhone = rawPhone.replace(/[^0-9]/g, "");
 									return (
 										<tr key={lead.id}>
 											<td>
-												<div className="cld-patient-title">{lead.patientFullName}</div>
+												<button
+													type="button"
+													className="cld-patient-title-btn"
+													data-testid={`lead-patient-link-${lead.id}`}
+													onClick={() => setSelectedLeakLead(lead)}
+													title={`Карточка утечки: ${lead.patientFullName}`}
+													style={{
+														background: "none",
+														border: "none",
+														padding: 0,
+														textAlign: "left",
+														cursor: "pointer",
+														display: "block",
+														width: "100%",
+													}}
+												>
+													<div className="cld-patient-title hover:underline">{lead.patientFullName}</div>
+												</button>
 												<div className="cld-phone-row">
 													<a href={`tel:${lead.phone}`} className="cld-phone-link">
 														<Phone size={12} className="inline mr-1" />
@@ -483,9 +518,9 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 													{/* Быстрые 1-клик действия без модальных барьеров */}
 													<div className="cld-actions-quick-row">
 														<a
-															href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}
+															href={`tel:${rawPhone.replace(/[^\d+]/g, "")}`}
 															className="cld-action-btn primary"
-															title={`Позвонить пациенту ${lead.phone}`}
+															title={`Позвонить пациенту ${rawPhone}`}
 														>
 															<Phone size={12} />
 															Звонок
@@ -509,6 +544,17 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 														>
 															<Calendar size={12} />
 															Записать
+														</button>
+
+														<button
+															type="button"
+															className="cld-action-btn"
+															data-testid={`btn-open-workspace-${lead.id}`}
+															onClick={() => handleOpenPatientWorkspace(lead.patientId)}
+															title="Открыть амбулаторную карту пациента (Workspace)"
+														>
+															<ExternalLink size={12} />
+															Карта
 														</button>
 													</div>
 
@@ -597,8 +643,17 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 					onSetDeclineComment={setDeclineComment}
 					onSaveDecline={handleSaveDecline}
 					onCloseDecline={() => setDeclineModalLead(null)}
+					selectedLeakLead={selectedLeakLead}
+					onCloseLeakLead={() => setSelectedLeakLead(null)}
+					onOpenPatientWorkspace={handleOpenPatientWorkspace}
 				/>
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 };
+
+export default CrmLeakDetectorModal;

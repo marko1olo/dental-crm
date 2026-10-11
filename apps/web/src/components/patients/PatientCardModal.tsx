@@ -4,6 +4,7 @@ import {
 	AlertOctagon,
 	Award,
 	CreditCard,
+	ExternalLink,
 	FileCheck,
 	FileText,
 	HeartPulse,
@@ -42,6 +43,8 @@ import {
 	type StomxRepresentativeTypeMeta,
 } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { useAppStore } from "../../store/appStore";
+import { usePatientStore } from "../../store/patientStore";
 
 const DmsGuaranteeLetterModal = React.lazy(() =>
 	import("../insurance/DmsGuaranteeLetterModal").then((m) => ({
@@ -349,6 +352,34 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								<Printer className="w-4 h-4 shrink-0" />
 								<span>Печать</span>
 							</button>
+
+							{patientData.id && (
+								<button
+									type="button"
+									data-testid="btn-open-patient-workspace"
+									onClick={() => {
+										usePatientStore.getState().setSelectedPatientId(patientData.id ?? null);
+										useAppStore.getState().setCurrentView("patients");
+										if (typeof window !== "undefined") {
+											window.location.hash = "patients";
+										}
+										onClose();
+									}}
+									className="border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--glass-hover,var(--paper-soft))] min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none transition-all shadow-2xs"
+									style={{
+										height: "32px",
+										padding: "0 12px",
+										borderRadius: "8px",
+										border: "1px solid var(--line-strong, var(--line))",
+										background: "var(--paper-soft)",
+										color: "var(--ink)",
+									}}
+									title="Перейти в полную рабочую область пациента (PatientWorkspace)"
+								>
+									<ExternalLink className="w-4 h-4 shrink-0" />
+									<span className="hidden sm:inline">Рабочая область</span>
+								</button>
+							)}
 
 							<button
 								type="button"

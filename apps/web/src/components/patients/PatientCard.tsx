@@ -48,6 +48,7 @@ import { PatientHistoryTab, type ClinicalVisitItem, DEFAULT_CLINICAL_VISITS } fr
 import { PatientDentalFormulaTab } from "./formula/PatientDentalFormulaTab";
 import { SomaticAnamnesisCard } from "../clinical/SomaticAnamnesisCard";
 import type { PatientGeneralInfo } from "./tabs/PatientGeneralInfoTab";
+import { PatientDocumentsTab } from "./tabs/PatientDocumentsTab";
 import type { Dashboard } from "@dental/shared";
 import "./PatientHistoryTab.css";
 
@@ -406,24 +407,10 @@ export const PatientCard: React.FC<PatientCardProps> = React.memo(
 					)}
 
 					{activeTab === "documents" && (
-						<div className="p-4 sm:p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col gap-3">
-							<h3 className="text-sm font-bold text-[var(--ink)] uppercase tracking-wider m-0">
-								Официальная документация ЭМК Формы 043/у (Приказ 834н)
-							</h3>
-							<p className="text-xs text-[var(--muted)] m-0">
-								Амбулаторная медицинская карта, информированные согласия (ИДС) и выписки.
-							</p>
-							<div className="flex gap-2 flex-wrap pt-2">
-								<button
-									type="button"
-									onClick={handlePrint}
-									className="min-h-[44px] px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs inline-flex items-center gap-2 cursor-pointer shadow-xs transition-colors"
-								>
-									<Printer className="w-4 h-4" />
-									<span>Печать выписки из амбулаторной карты</span>
-								</button>
-							</div>
-						</div>
+						<PatientDocumentsTab
+							patient={patientData as any}
+							onPrintOutpatientCard={handlePrint}
+						/>
 					)}
 				</div>
 			</div>

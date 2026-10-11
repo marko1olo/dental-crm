@@ -1,5 +1,15 @@
 import type React from "react";
-import { Check, Copy, MessageCircle, Phone, X } from "lucide-react";
+import { createPortal } from "react-dom";
+import {
+	AlertTriangle,
+	Check,
+	Copy,
+	ExternalLink,
+	MessageCircle,
+	Phone,
+	User,
+	X,
+} from "lucide-react";
 import {
 	type CrmDeclineReason,
 	type CrmLeakLeadItem,
@@ -29,6 +39,10 @@ interface Props {
 	onSetDeclineComment: (comment: string) => void;
 	onSaveDecline: () => void;
 	onCloseDecline: () => void;
+
+	selectedLeakLead?: CrmLeakLeadItem | null;
+	onCloseLeakLead?: () => void;
+	onOpenPatientWorkspace?: (patientId: string) => void;
 }
 
 export const CrmLeakDetectorDrawer: React.FC<Props> = ({
@@ -50,12 +64,20 @@ export const CrmLeakDetectorDrawer: React.FC<Props> = ({
 	onSetDeclineComment,
 	onSaveDecline,
 	onCloseDecline,
+	selectedLeakLead,
+	onCloseLeakLead,
+	onOpenPatientWorkspace,
 }) => {
-	if (!activeScriptLead && !contactModalLead && !declineModalLead) {
+	if (
+		!activeScriptLead &&
+		!contactModalLead &&
+		!declineModalLead &&
+		!selectedLeakLead
+	) {
 		return null;
 	}
 
-	return (
+	const content = (
 		<div className="cld-drawer-backdrop" role="region" aria-label="Панель действий">
 			{/* Drawer: Script Preview */}
 			{activeScriptLead && (
@@ -253,6 +275,118 @@ export const CrmLeakDetectorDrawer: React.FC<Props> = ({
 					</div>
 				</div>
 			)}
+
+			{/* Drawer: Lead Inspection / Patient Overview */}
+			{selectedLeakLead && (
+				<div className="cld-drawer-card" data-testid="cld-drawer-inspection-card">
+					<div className="cld-header">
+						<h3 className="cld-title">
+							<User size={16} className="text-teal-600" />
+							Карточка утечки: {selectedLeakLead.patientFullName}
+						</h3>
+						<button
+							type="button"
+							className="cld-btn-close"
+							onClick={onCloseLeakLead}
+							title="Закрыть"
+						>
+							<X size={16} />
+						</button>
+					</div>
+					<div
+						style={{
+							padding: "16px",
+							display: "flex",
+							flexDirection: "column",
+							gap: "12px",
+							flex: 1,
+							overflowY: "auto",
+						}}
+					>
+						<div className="flex flex-col gap-1 p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)]">
+							<span className="text-xs text-[var(--muted)] font-semibold">Телефон:</span>
+							<a
+								href={`tel:${(selectedLeakLead.phone || selectedLeakLead.patientPhone || "").replace(/[^\d+]/g, "")}`}
+								className="text-sm font-medium text-[var(--accent)] hover:underline"
+							>
+								{selectedLeakLead.phone || selectedLeakLead.patientPhone || "Не указан"}
+							</a>
+						</div>
+
+						<div className="grid grid-cols-2 gap-2">
+							<div className="p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)]">
+								<span className="text-xs text-[var(--muted)] block font-semibold mb-1">Без визита:</span>
+								<span className="text-sm font-bold text-amber-600">
+									{selectedLeakLead.daysSinceLastVisit} дн.
+								</span>
+								{selectedLeakLead.lastVisitDate && (
+									<span className="text-xs text-[var(--muted)] block mt-0.5">
+										({new Date(selectedLeakLead.lastVisitDate).toLocaleDateString("ru-RU")})
+									</span>
+								)}
+							</div>
+							<div className="p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)]">
+								<span className="text-xs text-[var(--muted)] block font-semibold mb-1">Лечащий врач:</span>
+								<span className="text-sm font-medium text-[var(--ink)] block">
+									{selectedLeakLead.lastDoctorName || "Не назначен"}
+								</span>
+								<span className="text-xs text-[var(--muted)]">
+									{selectedLeakLead.lastSpecialty || "Терапия"}
+								</span>
+							</div>
+						</div>
+
+						<div className="p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)]">
+							<span className="text-xs text-[var(--muted)] block font-semibold mb-1">Клинический риск:</span>
+							<p className="text-xs text-[var(--ink)] m-0 leading-relaxed">
+								{selectedLeakLead.clinicalRiskReason}
+							</p>
+							{selectedLeakLead.hasUncompletedPlan && (
+								<div className="cld-plan-alert mt-2">
+									<AlertTriangle size={12} />
+									Брошенный план: {selectedLeakLead.uncompletedPlanSumRub.toLocaleString("ru-RU")} ₽
+								</div>
+							)}
+						</div>
+
+						{selectedLeakLead.aiReactivationSuggestion && (
+							<div className="p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)]">
+								<span className="text-xs text-[var(--muted)] block font-semibold mb-1">Скрипт реактивации:</span>
+								<p className="text-xs text-[var(--ink)] m-0 leading-relaxed italic">
+									{selectedLeakLead.aiReactivationSuggestion}
+								</p>
+							</div>
+						)}
+
+						<div className="flex justify-end gap-2 mt-auto pt-4">
+							{onCloseLeakLead && (
+								<button
+									type="button"
+									className="cld-action-btn"
+									onClick={onCloseLeakLead}
+								>
+									Закрыть
+								</button>
+							)}
+							<button
+								type="button"
+								className="cld-btn-sync"
+								data-testid="cld-drawer-open-patient-workspace-btn"
+								onClick={() =>
+									onOpenPatientWorkspace?.(selectedLeakLead.patientId)
+								}
+							>
+								<ExternalLink size={14} />
+								Открыть карту пациента
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(content, document.body)
+		: content;
 };

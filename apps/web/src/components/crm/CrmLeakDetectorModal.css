@@ -415,13 +415,13 @@
 }
 
 .cld-drawer-backdrop {
-	position: absolute;
+	position: fixed;
 	inset: 0;
-	background: rgba(15, 23, 42, 0.45);
+	background: rgba(15, 23, 42, 0.5);
 	backdrop-filter: blur(2px);
 	display: flex;
 	justify-content: flex-end;
-	z-index: 40;
+	z-index: 1100;
 }
 
 .cld-drawer-card {
