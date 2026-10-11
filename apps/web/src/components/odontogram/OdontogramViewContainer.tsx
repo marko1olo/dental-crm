@@ -6,7 +6,7 @@
  * and secondary clinical drawers/modals.
  */
 
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { Sparkles } from "lucide-react";
 import type { OdontogramViewMode } from "@dental/shared";
 import { globalDentalVoiceEngine } from "../../services/voice";
@@ -311,6 +311,32 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 		[setStoreMode, onViewModeChange],
 	);
 
+	// Stable refs for 60 FPS vector mesh isolation (preventing callback regeneration and 32-tooth re-renders)
+	const teethDataRef = useRef(teethData);
+	teethDataRef.current = teethData;
+
+	const onToothClickRef = useRef(onToothClick);
+	onToothClickRef.current = onToothClick;
+
+	const onQuickStateChangeRef = useRef(onQuickStateChange);
+	onQuickStateChangeRef.current = onQuickStateChange;
+
+	const activeStampToolRef = useRef(activeStampTool);
+	activeStampToolRef.current = activeStampTool;
+
+	const isFastExtractModeRef = useRef(isFastExtractMode);
+	isFastExtractModeRef.current = isFastExtractMode;
+
+	const useSurfacesRef = useRef(useSurfaces);
+	useSurfacesRef.current = useSurfaces;
+
+	const stableQuickStateChange = useCallback(
+		(targets: number[], state: ToothState, surfaces?: readonly string[]) => {
+			onQuickStateChangeRef.current?.(targets, state, surfaces);
+		},
+		[],
+	);
+
 	const handleToothClickIntercept = useCallback(
 		(arg1: number | React.MouseEvent, arg2?: DOMRect | null | number, surface?: string) => {
 			let num: number;
@@ -361,26 +387,26 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			triggerHaptic("selection");
 
 			// Если режим разметки поверхностей не включен (useSurfaces !== true), выбираем зуб целиком (surface: undefined)
-			const effectiveSurface = useSurfaces ? surface : undefined;
+			const effectiveSurface = useSurfacesRef.current ? surface : undefined;
 
-			if (activeStampTool) {
+			if (activeStampToolRef.current) {
 				triggerHaptic("success");
-				onQuickStateChange?.([num], activeStampTool, []);
+				onQuickStateChangeRef.current?.([num], activeStampToolRef.current, []);
 				return;
 			}
 
-			if (isFastExtractMode) {
+			if (isFastExtractModeRef.current) {
 				triggerHaptic("success");
-				onQuickStateChange?.([num], "Missing", []);
+				onQuickStateChangeRef.current?.([num], "Missing", []);
 				return;
 			}
 
-			if (onToothClick) {
-				onToothClick(num, safeRect, effectiveSurface);
+			if (onToothClickRef.current) {
+				onToothClickRef.current(num, safeRect, effectiveSurface);
 				return;
 			}
 
-			const currentTooth = teethData.find((t) => t.toothNumber === num);
+			const currentTooth = teethDataRef.current.find((t) => t.toothNumber === num);
 			setRadialMenuData({
 				toothNumber: num,
 				rect: {
@@ -393,7 +419,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 				surfaces: effectiveSurface ? [effectiveSurface] : undefined,
 			});
 		},
-		[activeStampTool, isFastExtractMode, onQuickStateChange, teethData, onToothClick, useSurfaces],
+		[],
 	);
 
 	// Global Escape hotkey to exit Stamp tool
@@ -507,7 +533,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			bottomTeeth,
 			selectedTeeth,
 			onToothClick: handleToothClickIntercept,
-			onQuickStateChange,
+			onQuickStateChange: stableQuickStateChange,
 			useSurfaces,
 			hideHeader,
 			hideLegend,
@@ -533,7 +559,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			bottomTeeth,
 			selectedTeeth,
 			handleToothClickIntercept,
-			onQuickStateChange,
+			stableQuickStateChange,
 			useSurfaces,
 			hideHeader,
 			hideLegend,

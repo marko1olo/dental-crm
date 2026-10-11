@@ -79,6 +79,7 @@ describe("Schedule Quantum Time Engine & O(1) Collision Index", () => {
 
     const apptChair1: Appointment = {
       id: "appt-1",
+      organizationId: "org-1",
       patientId: "patient-100",
       chairId: "chair-alpha",
       doctorUserId: "doc-1",
@@ -86,11 +87,11 @@ describe("Schedule Quantum Time Engine & O(1) Collision Index", () => {
       endsAt: `${testDate}T10:00:00.000Z`,
       status: "confirmed",
       reason: "Лечение кариеса",
-      durationMinutes: 60,
     };
 
     const apptChair2: Appointment = {
       id: "appt-2",
+      organizationId: "org-1",
       patientId: "patient-200",
       chairId: "chair-beta",
       doctorUserId: "doc-2",
@@ -98,13 +99,11 @@ describe("Schedule Quantum Time Engine & O(1) Collision Index", () => {
       endsAt: `${testDate}T11:15:00.000Z`,
       status: "confirmed",
       reason: "Чистка AirFlow",
-      durationMinutes: 45,
     };
 
     const maintenanceBlock: ChairMaintenanceBlock = {
       id: "maint-1",
       chairId: "chair-alpha",
-      dateKey: testDate,
       startsAt: `${testDate}T12:00:00.000Z`,
       endsAt: `${testDate}T12:30:00.000Z`,
       reason: "sanitation",
@@ -210,6 +209,7 @@ describe("Schedule Quantum Time Engine & O(1) Collision Index", () => {
 
     const standardAppt: Appointment = {
       id: "appt-standard",
+      organizationId: "org-1",
       patientId: "patient-10",
       chairId: "chair-1",
       doctorUserId: "doc-1",
@@ -217,7 +217,6 @@ describe("Schedule Quantum Time Engine & O(1) Collision Index", () => {
       endsAt: `${testDate}T16:00:00.000Z`,
       status: "confirmed",
       reason: "Плановый осмотр",
-      durationMinutes: 60,
     };
 
     const index = new ScheduleQuantumCollisionIndex({
@@ -247,22 +246,22 @@ describe("Schedule Quantum Time Engine & O(1) Collision Index", () => {
 
     const appt1: Appointment = {
       id: "appt-morning-1",
+      organizationId: "org-1",
       patientId: "p-1",
       chairId: "chair-1",
       startsAt: `${testDate}T08:00:00.000Z`,
       endsAt: `${testDate}T09:00:00.000Z`,
       status: "confirmed",
-      durationMinutes: 60,
     };
 
     const appt2: Appointment = {
       id: "appt-morning-2",
+      organizationId: "org-1",
       patientId: "p-2",
       chairId: "chair-1",
       startsAt: `${testDate}T09:00:00.000Z`,
       endsAt: `${testDate}T09:30:00.000Z`,
       status: "confirmed",
-      durationMinutes: 30,
     };
 
     const index = new ScheduleQuantumCollisionIndex({
