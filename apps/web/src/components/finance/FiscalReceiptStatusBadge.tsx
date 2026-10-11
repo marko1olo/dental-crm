@@ -91,7 +91,12 @@ export const FiscalReceiptStatusBadge: React.FC<FiscalReceiptStatusBadgeProps> =
 			icon: AlertTriangle,
 			title: "Ошибка связи с кассовым аппаратом или исчерпан ресурс ФН",
 		},
-	}[status];
+	}[status] ?? {
+		labelRu: "Фискализация",
+		bgClass: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30",
+		icon: CheckCircle2,
+		title: "Кассовый чек фискализирован",
+	};
 
 	const Icon = config.icon;
 

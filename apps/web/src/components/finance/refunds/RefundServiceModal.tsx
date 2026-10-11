@@ -1,810 +1,101 @@
 /**
  * RefundServiceModal.tsx — 1-Click Partial Service Refund & Doctor Commission Clawback Modal.
- *
- * Implements:
- * 1. 1-Click selective refund of 1 or more services from an invoice/act (e.g. 1 tooth filling out of 5 services).
- * 2. 54-FZ "Возврат прихода" (Tag 1054 = 2) fiscal thermal receipt generation with QR payload.
- * 3. Automatic calculation and display of Doctor Piece-Rate Commission Clawback (вычет из зарплаты врача).
- * 4. Multi-theme compliance (light/dark semantic design tokens) and gloved >= 44px touch targets.
+ * Decomposed canonical UI facade (Mandate 8b <= 120 lines, DAG Layer 5).
  */
 
-import React, { useMemo, useState } from "react";
+import React from "react";
+import { createPortal } from "react-dom";
+import type { RefundServiceModalProps } from "./refundServiceModalModules/types";
 import {
-	AlertCircle,
-	ArrowLeftRight,
-	Check,
-	CheckCircle2,
-	Clock,
-	Coins,
-	CreditCard,
-	Info,
-	Printer,
-	QrCode,
-	RotateCcw,
-	ShieldAlert,
-	Wallet,
-	X,
-} from "lucide-react";
-import {
-	calculatePartialRefund,
-	generate54FzIncomeReturnQrPayload,
-	generateThermalRefundReceiptText,
-	type PartialRefundCalculationResult,
-	type RefundableInvoiceItem,
-	type RefundReasonCategory,
-	REFUND_REASON_LABELS,
-} from "@dental/shared";
-import { generateQrCodeSvg } from "../../portal/patientCabinet/patientCabinetEngine";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
-import { FiscalReceiptQueueManager } from "../../../services/hardware/fiscalReceiptQueueManager";
-import { showToast } from "../../GlobalToast";
-import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
-import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
+	RefundItemsSelectionTable,
+	RefundModalFooter,
+	RefundModalHeader,
+	RefundPaymentMethodSelector,
+	RefundReceiptVerificationView,
+	RefundSummaryCalculationPanel,
+	useRefundServiceModalController,
+} from "./refundServiceModalModules";
 
-let refundMutationSeq = 0;
+export type { RefundServiceModalProps };
 
-
-export interface RefundServiceModalProps {
-	readonly isOpen: boolean;
-	readonly onClose: () => void;
-	readonly invoiceId: string;
-	readonly invoiceNumber: string;
-	readonly patientId: string;
-	readonly patientName: string;
-	readonly patientPhone?: string | undefined;
-	readonly originalPaymentId?: string | undefined;
-	readonly paymentId?: string | undefined;
-	readonly originalReceiptNumber?: string | undefined;
-	readonly originalFiscalSign?: string | undefined;
-	readonly fnSerial?: string | undefined;
-	readonly doctorName?: string | undefined;
-	readonly doctorCommissionPct?: number | undefined;
-	readonly services?: readonly {
-		readonly id: string;
-		readonly name: string;
-		readonly code804n?: string | undefined;
-		readonly toothNumber?: number | undefined;
-		readonly priceRub: number;
-		readonly quantity: number;
-		readonly doctorName?: string | undefined;
-		readonly commissionPct?: number | undefined;
-		readonly materialCostRub?: number | undefined;
-	}[] | undefined;
-	readonly onRefundSuccess?: ((result: PartialRefundCalculationResult) => void) | undefined;
-}
-
-const DEFAULT_FALLBACK_SERVICES = [
-	{ id: "srv-1", name: "Восстановление зуба пломбой (светоотверждаемый композит Filtek)", code804n: "A16.07.002.001", toothNumber: 46, priceRub: 4500, quantity: 1, doctorName: "Лечащий врач", commissionPct: 30, materialCostRub: 350 },
-	{ id: "srv-2", name: "Анестезия инфильтрационная (Убистезин Форте 1:100000)", code804n: "B01.003.004.004", toothNumber: 46, priceRub: 900, quantity: 1, doctorName: "Лечащий врач", commissionPct: 30, materialCostRub: 120 },
-	{ id: "srv-3", name: "Изоляция операционного поля (Коффердам / Раббердам)", code804n: "A16.07.002", toothNumber: 46, priceRub: 800, quantity: 1, doctorName: "Лечащий врач", commissionPct: 30, materialCostRub: 150 },
-	{ id: "srv-4", name: "Прицельная внутриротовая радиовизиография", code804n: "A06.07.007", toothNumber: 46, priceRub: 600, quantity: 1, doctorName: "Лечащий врач", commissionPct: 20, materialCostRub: 0 },
-	{ id: "srv-5", name: "Полировка и финишная обработка реставрации Enhance", code804n: "A16.07.025", toothNumber: 46, priceRub: 700, quantity: 1, doctorName: "Лечащий врач", commissionPct: 30, materialCostRub: 80 },
-];
-
-export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
-	isOpen,
-	onClose,
-	invoiceId,
-	invoiceNumber,
-	patientId,
-	patientName,
-	patientPhone,
-	originalPaymentId,
-	paymentId,
-	originalReceiptNumber,
-	originalFiscalSign,
-	fnSerial,
-	doctorName = "Лечащий врач",
-	doctorCommissionPct = 30,
-	services = [],
-	onRefundSuccess,
-}) => {
-	// Fallback sample services only in Demo Showcase Mode (Mandate 8y)
-	const isDemo = isDemoShowcaseMode();
-	const rawServices = useMemo(() => {
-		if (services && services.length > 0) return services;
-		if (isDemo) return DEFAULT_FALLBACK_SERVICES;
-		return [];
-	}, [services, isDemo]);
-
-	// State
-	const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
-		() => (rawServices[0]?.id ? new Set([rawServices[0].id]) : new Set())
-	);
-	const [reasonCategory, setReasonCategory] = useState<RefundReasonCategory>("warranty_case");
-	const [customReason, setCustomReason] = useState("");
-	const [paymentMethod, setPaymentMethod] = useState<"card" | "cash" | "advance_deposit">("card");
-	const [isProcessing, setIsProcessing] = useState(false);
-	const [completedResult, setCompletedResult] = useState<PartialRefundCalculationResult | null>(null);
-	const [fiscalInfo, setFiscalInfo] = useState<{
-		fnSerial?: string | undefined;
-		fiscalDocNumber?: string | undefined;
-		fiscalSign?: string | undefined;
-		ofdUrl?: string | undefined;
-		queueId?: string | undefined;
-		isOfflineBuffered: boolean;
-	} | null>(null);
-	const [activeTab, setActiveTab] = useState<"form" | "receipt">("form");
-
-	// Convert raw services into RefundableInvoiceItem
-	const refundableItems: RefundableInvoiceItem[] = useMemo(() => {
-		return rawServices.map((s) => {
-			const rawUnitPriceKop =
-				typeof (s as unknown as { priceKop?: number }).priceKop === "number"
-					? (s as unknown as { priceKop: number }).priceKop
-					: Math.round((Number.isFinite(s.priceRub) ? s.priceRub : 0) * 100);
-			const unitPriceKop = Number.isFinite(rawUnitPriceKop) ? Math.max(0, Math.round(rawUnitPriceKop)) : 0;
-			const quantity = Number.isFinite(s.quantity) && s.quantity > 0 ? s.quantity : 1;
-			const totalAmountKop = Math.round(unitPriceKop * quantity);
-			return {
-				id: s.id,
-				name: s.name || (s as unknown as { nameRu?: string }).nameRu || "Медицинская услуга",
-				code804n: s.code804n || "A16.07.002",
-				toothNumber: s.toothNumber,
-				unitPriceKop,
-				quantity,
-				grossAmountKop: totalAmountKop,
-				netAmountKop: totalAmountKop,
-				doctorName: s.doctorName || doctorName,
-				commissionPct: s.commissionPct ?? doctorCommissionPct,
-				materialCostKop: Math.round((Number.isFinite(s.materialCostRub) ? s.materialCostRub! : 0) * 100),
-			};
-		});
-	}, [rawServices, doctorName, doctorCommissionPct]);
-
-	// Live Calculation
-	const calculation: PartialRefundCalculationResult = useMemo(() => {
-		const requests = Array.from(selectedItemIds).map((id) => ({
-			itemId: id,
-			quantityToRefund: 1,
-		}));
-
-		return calculatePartialRefund({
-			invoiceId,
-			invoiceNumber,
-			patientId,
-			patientName,
-			cashierFullName: "Кассир-администратор",
-			paymentMethod,
-			items: refundableItems,
-			refundRequests: requests,
-			reasonCategory,
-			customReasonDetailsRu: customReason,
-			defaultDoctorCommissionPct: doctorCommissionPct,
-		});
-	}, [
-		invoiceId,
+export const RefundServiceModal: React.FC<RefundServiceModalProps> = (props) => {
+	const {
+		isOpen,
+		onClose,
 		invoiceNumber,
-		patientId,
 		patientName,
-		paymentMethod,
-		refundableItems,
-		selectedItemIds,
-		reasonCategory,
-		customReason,
-		doctorCommissionPct,
-	]);
-
-	const toggleSelectItem = (id: string) => {
-		setSelectedItemIds((prev) => {
-			const next = new Set(prev);
-			if (next.has(id)) {
-				next.delete(id);
-			} else {
-				next.add(id);
-			}
-			return next;
-		});
-	};
-
-	const handleExecuteRefund = async () => {
-		if (selectedItemIds.size === 0 || rawServices.length === 0) {
-			showToast("Выберите хотя бы одну позицию для возврата средств.", "warning");
-			return;
-		}
-		setIsProcessing(true);
-
-		const isPatientUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId || "");
-		const effectivePatientId = isPatientUuid ? patientId : "00000000-0000-0000-0000-000000000001";
-
-		const rawPaymentId = originalPaymentId || invoiceId;
-		const isPaymentUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawPaymentId || "");
-		const effectivePaymentId = isPaymentUuid ? rawPaymentId : "00000000-0000-0000-0000-000000000001";
-
-		const effectiveOriginalReceiptNumber = originalReceiptNumber?.trim() || invoiceNumber || "CHK-1";
-
-		const refundItems = calculation.refundedItems.map((item) => ({
-			name: item.name.length > 128 ? item.name.slice(0, 128) : item.name,
-			priceKopecks: item.unitPriceKop,
-			quantity: item.quantityRefunded,
-			amountKopecks: item.refundedNetKop,
-			subject: "service" as const,
-			method: "full_payment" as const,
-			vatRate: "vat_none" as const,
-			measure: "piece" as const,
-			taxDeductionCode: "code_1_standard" as const,
-			medicalServiceCode804n: item.code804n || undefined,
-			toothFdiNumber: item.toothNumber,
-		}));
-
-		const refundCashKopecks = paymentMethod === "cash" ? calculation.totalRefundKop : 0;
-		const refundElectronicKopecks = paymentMethod === "card" ? calculation.totalRefundKop : 0;
-		const refundPrepaidKopecks = paymentMethod === "advance_deposit" ? calculation.totalRefundKop : 0;
-
-		const reasonText = customReason.trim()
-			? `${REFUND_REASON_LABELS[reasonCategory] || reasonCategory}: ${customReason.trim()}`
-			: (REFUND_REASON_LABELS[reasonCategory] || "Возврат средств за услуги");
-
-		const clientMutationId = `refund-${invoiceId || "inv"}-${Date.now()}-${++refundMutationSeq}`;
-
-		const refundPayload = {
-			clientMutationId,
-			originalPaymentId: effectivePaymentId,
-			originalReceiptNumber: effectiveOriginalReceiptNumber,
-			originalFiscalSign: originalFiscalSign || undefined,
-			patientId: effectivePatientId,
-			refundCashKopecks,
-			refundElectronicKopecks,
-			refundPrepaidKopecks,
-			totalRefundKopecks: calculation.totalRefundKop,
-			reason: reasonText.slice(0, 256),
-			cashierFullName: "Кассир-администратор",
-			items: refundItems,
-		};
-
-		let finalFnSerial: string | undefined = fnSerial || undefined;
-		let finalDocNumber: string | undefined = undefined;
-		let finalFiscalSign: string | undefined = undefined;
-		let finalOfdUrl: string | undefined = undefined;
-		let finalQueueId: string | undefined = undefined;
-		let isOffline = false;
-
-		try {
-			const headers = denteAdminSecretRequestHeaders({
-				"Content-Type": "application/json",
-				"Idempotency-Key": clientMutationId,
-			});
-
-			const res = await fetch("/api/fiscal/refund", {
-				method: "POST",
-				headers,
-				body: JSON.stringify(refundPayload),
-			});
-
-			if (res.ok) {
-				const resData = (await res.json()) as {
-					success?: boolean;
-					replayed?: boolean;
-					refundQueueId?: string;
-					queueId?: string;
-					status?: string;
-					originalReceiptNumber?: string;
-					fnSerial?: string;
-					fiscalDocumentNumber?: string | number;
-					fiscalSign?: string;
-					ofdVerificationUrl?: string;
-					totalRefundRub?: string;
-				};
-				isOffline = resData.status === "hardware_offline";
-				finalQueueId = resData.refundQueueId || resData.queueId || clientMutationId;
-				if (resData.fnSerial) {
-					finalFnSerial = resData.fnSerial;
-				}
-				if (resData.fiscalDocumentNumber != null) {
-					finalDocNumber = String(resData.fiscalDocumentNumber);
-				}
-				if (resData.fiscalSign != null) {
-					finalFiscalSign = String(resData.fiscalSign);
-				}
-				if (resData.ofdVerificationUrl) {
-					finalOfdUrl = resData.ofdVerificationUrl;
-				}
-
-				if (isOffline) {
-					FiscalReceiptQueueManager.enqueueReceipt(
-						{
-							operationType: "income_return",
-							customerContact: patientPhone || "",
-							cashierFullName: "Кассир-администратор",
-							totalRub: calculation.totalRefundRub,
-							items: calculation.refundedItems.map((it) => ({
-								name: it.name,
-								priceRub: it.unitPriceRub,
-								quantity: it.quantityRefunded,
-								amountRub: it.refundedNetRub,
-								paymentMethod: "full_payment",
-								paymentSubject: "service",
-							})),
-							cashRub: refundCashKopecks / 100,
-							electronicRub: refundElectronicKopecks / 100,
-							prepaidRub: refundPrepaidKopecks / 100,
-							taxationSystem: "usn_income",
-						},
-						"ККТ временно офлайн при фискализации возврата",
-						finalQueueId
-					);
-					showToast("ККТ временно офлайн: чек возврата помещен в буфер отложенной печати", "warning");
-				} else {
-					showToast(`Чек возврата «Возврат прихода» №${finalDocNumber || "б/н"} успешно фискализирован!`, "success");
-				}
-				StaffActionAuditService.logPaymentRefund({
-					patientId,
-					billId: invoiceId,
-					amountKopecks: calculation.totalRefundKop,
-					reason: reasonText || "Возврат услуги",
-					paymentMethod: refundCashKopecks > 0 ? "cash" : "card",
-				});
-			} else {
-				const errData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-				console.warn("[RefundServiceModal] /api/fiscal/refund returned status:", res.status, errData);
-				isOffline = true;
-				finalQueueId = clientMutationId;
-				FiscalReceiptQueueManager.enqueueReceipt(
-					{
-						operationType: "income_return",
-						customerContact: patientPhone || "",
-						cashierFullName: "Кассир-администратор",
-						totalRub: calculation.totalRefundRub,
-						items: calculation.refundedItems.map((it) => ({
-							name: it.name,
-							priceRub: it.unitPriceRub,
-							quantity: it.quantityRefunded,
-							amountRub: it.refundedNetRub,
-							paymentMethod: "full_payment",
-							paymentSubject: "service",
-						})),
-						cashRub: refundCashKopecks / 100,
-						electronicRub: refundElectronicKopecks / 100,
-						prepaidRub: refundPrepaidKopecks / 100,
-						taxationSystem: "usn_income",
-					},
-					"Сбой связи с сервером кассы: чек возврата сохранен локально",
-					finalQueueId
-				);
-				showToast("Сбой связи с сервером кассы: операция возврата зафиксирована локально", "warning");
-			}
-		} catch (fetchErr) {
-			console.warn("[RefundServiceModal] Network error during refund fiscalization:", fetchErr);
-			isOffline = true;
-			finalQueueId = clientMutationId;
-			FiscalReceiptQueueManager.enqueueReceipt(
-				{
-					operationType: "income_return",
-					customerContact: patientPhone || "",
-					cashierFullName: "Кассир-администратор",
-					totalRub: calculation.totalRefundRub,
-					items: calculation.refundedItems.map((it) => ({
-						name: it.name,
-						priceRub: it.unitPriceRub,
-						quantity: it.quantityRefunded,
-						amountRub: it.refundedNetRub,
-						paymentMethod: "full_payment",
-						paymentSubject: "service",
-					})),
-					cashRub: refundCashKopecks / 100,
-					electronicRub: refundElectronicKopecks / 100,
-					prepaidRub: refundPrepaidKopecks / 100,
-					taxationSystem: "usn_income",
-				},
-				"ККТ временно недоступна: чек возврата сохранен в локальную очередь",
-				finalQueueId
-			);
-			showToast("ККТ временно недоступна: чек возврата сохранен в локальную очередь", "warning");
-		} finally {
-			setFiscalInfo({
-				fnSerial: finalFnSerial,
-				fiscalDocNumber: finalDocNumber,
-				fiscalSign: finalFiscalSign,
-				ofdUrl: finalOfdUrl,
-				queueId: finalQueueId,
-				isOfflineBuffered: isOffline,
-			});
-			setCompletedResult(calculation);
-			setActiveTab("receipt");
-			setIsProcessing(false);
-			if (onRefundSuccess) {
-				onRefundSuccess(calculation);
-			}
-		}
-	};
+		doctorName = "Лечащий врач",
+		doctorCommissionPct = 30,
+	} = props;
+	const controller = useRefundServiceModalController(props);
 
 	if (!isOpen) return null;
 
-	const clinicInfo = {
-		name: "ООО «СТОМАТОЛОГИЯ ДЕНТЕ»",
-		inn: "7801234567",
-		kpp: "780101001",
-		address: "г. Санкт-Петербург, Невский пр-т, д. 140",
-	};
-
-	const hasRealFiscalData = Boolean(
-		fiscalInfo &&
-		fiscalInfo.fnSerial &&
-		fiscalInfo.fiscalDocNumber &&
-		fiscalInfo.fiscalSign &&
-		!fiscalInfo.isOfflineBuffered
-	);
-
-	const receiptQrPayload =
-		completedResult && hasRealFiscalData && fiscalInfo?.fnSerial && fiscalInfo?.fiscalDocNumber && fiscalInfo?.fiscalSign
-			? generate54FzIncomeReturnQrPayload({
-					result: completedResult,
-					fnSerial: fiscalInfo.fnSerial,
-					fdNumber: fiscalInfo.fiscalDocNumber,
-					fpdNumber: fiscalInfo.fiscalSign,
-				})
-			: "";
-
-	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto">
+	const modalContent = (
+		<div
+			className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto"
+			data-testid="refund-service-modal"
+		>
 			<div className="relative w-full max-w-2xl rounded-2xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--border,#e2e8f0)] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-				{/* Top Header */}
-				<div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] shrink-0">
-					<div className="flex items-center gap-3">
-						<div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/30">
-							<RotateCcw className="w-5 h-5" />
-						</div>
-						<div>
-							<h3 className="text-base font-extrabold text-[var(--ink,#0f172a)] m-0 leading-snug">
-								Оформление частичного возврата
-							</h3>
-							<p className="text-xs text-[var(--muted,#64748b)] m-0">
-								Счет: <span className="font-mono font-bold text-[var(--ink,#0f172a)]">{invoiceNumber}</span> • Пациент: {patientName}
-							</p>
-						</div>
-					</div>
-					<button
-						type="button"
-						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-[var(--muted,#64748b)] flex items-center justify-center transition-colors"
-						aria-label="Закрыть"
-					>
-						<X className="w-5 h-5" />
-					</button>
-				</div>
+				<RefundModalHeader
+					invoiceNumber={invoiceNumber}
+					patientName={patientName}
+					onClose={onClose}
+				/>
 
-				{/* Modal Body */}
 				<div className="flex-1 overflow-y-auto p-5 space-y-5">
-					{activeTab === "form" ? (
+					{controller.activeTab === "form" ? (
 						<>
-							{/* Step 1: Select services to refund */}
-							<div>
-								<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] mb-2">
-									1. Выберите позицию(и) из счета для возврата:
-								</label>
-								{rawServices.length === 0 ? (
-									<div
-										data-testid="refund-empty-services"
-										className="p-8 rounded-xl border border-dashed border-[var(--border,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-center flex flex-col items-center justify-center gap-2"
-									>
-										<AlertCircle className="w-8 h-8 text-[var(--muted,#64748b)]" />
-										<p className="text-sm font-semibold text-[var(--ink,#0f172a)] m-0">
-											Позиции для возврата не найдены. Проверьте номер счёта или обратитесь к администратору
-										</p>
-										<p className="text-xs text-[var(--muted,#64748b)] m-0">
-											В данном счёте отсутствуют позиции для оформления частичного возврата средств.
-										</p>
-									</div>
-								) : (
-									<div className="space-y-2 border border-[var(--border,#e2e8f0)] rounded-xl p-2.5 bg-[var(--paper-soft,#f8fafc)]">
-										{rawServices.map((srv) => {
-											const isSelected = selectedItemIds.has(srv.id);
-											const itemClawback = Math.round(
-												(srv.priceRub - (srv.materialCostRub || 0)) * ((srv.commissionPct ?? doctorCommissionPct) / 100)
-											);
+							<RefundItemsSelectionTable
+								rawServices={controller.rawServices}
+								selectedItemIds={controller.selectedItemIds}
+								toggleSelectItem={controller.toggleSelectItem}
+								doctorCommissionPct={doctorCommissionPct}
+								doctorName={doctorName}
+							/>
 
-											return (
-												<button
-													key={srv.id}
-													type="button"
-													onClick={() => toggleSelectItem(srv.id)}
-													className={`w-full text-left p-3 rounded-xl border transition-all flex items-start gap-3 min-h-[48px] ${
-														isSelected
-															? "bg-amber-500/10 border-amber-500/40 text-[var(--ink,#0f172a)] shadow-sm"
-															: "bg-[var(--paper,#ffffff)] border-[var(--border,#e2e8f0)] text-[var(--muted,#64748b)] hover:border-slate-300"
-													}`}
-												>
-													<div
-														className={`w-5 h-5 rounded-md border flex items-center justify-center mt-0.5 shrink-0 ${
-															isSelected
-																? "bg-amber-500 border-amber-500 text-white"
-																: "border-slate-300 dark:border-slate-600 bg-[var(--paper,#ffffff)]"
-														}`}
-													>
-														{isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-													</div>
+							<RefundPaymentMethodSelector
+								reasonCategory={controller.reasonCategory}
+								setReasonCategory={controller.setReasonCategory}
+								paymentMethod={controller.paymentMethod}
+								setPaymentMethod={controller.setPaymentMethod}
+							/>
 
-													<div className="flex-1 min-w-0">
-														<div className="flex items-center justify-between gap-2">
-															<div className="font-bold text-xs sm:text-sm text-[var(--ink,#0f172a)] truncate" title={srv.name}>
-																{srv.toothNumber && (
-																	<span className="px-1.5 py-0.5 rounded bg-teal-500/15 text-teal-600 dark:text-teal-400 font-mono text-xs mr-1.5">
-																		Зуб {srv.toothNumber}
-																	</span>
-																)}
-																{srv.name}
-															</div>
-															<div className="font-extrabold text-xs sm:text-sm text-[var(--ink,#0f172a)] shrink-0">
-																{srv.priceRub.toLocaleString("ru-RU")} ₽
-															</div>
-														</div>
-
-														<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--muted,#64748b)] mt-1">
-															<span>Код: {srv.code804n || "A16.07.002"}</span>
-															<span>•</span>
-															<span>Врач: {srv.doctorName || doctorName}</span>
-															<span>•</span>
-															<span className="text-amber-600 dark:text-amber-400 font-bold">
-																Вычет з/п: -{itemClawback.toLocaleString("ru-RU")} ₽ ({srv.commissionPct ?? doctorCommissionPct}%)
-															</span>
-														</div>
-													</div>
-												</button>
-											);
-										})}
-									</div>
-								)}
-							</div>
-
-							{/* Step 2: Reason & Payment Method */}
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-								<div>
-									<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] mb-1.5">
-										2. Причина возврата:
-									</label>
-									<select
-										value={reasonCategory}
-										onChange={(e) => setReasonCategory(e.target.value as RefundReasonCategory)}
-										className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--border,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-medium text-[var(--ink,#0f172a)] focus:ring-2 focus:ring-amber-500 outline-none"
-									>
-										{Object.entries(REFUND_REASON_LABELS).map(([cat, label]) => (
-											<option key={cat} value={cat}>
-												{label}
-											</option>
-										))}
-									</select>
-								</div>
-
-								<div>
-									<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] mb-1.5">
-										3. Способ возврата средств:
-									</label>
-									<div className="grid grid-cols-3 gap-1.5">
-										<button
-											type="button"
-											onClick={() => setPaymentMethod("card")}
-											className={`min-h-[44px] px-2 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 transition-all ${
-												paymentMethod === "card"
-													? "bg-teal-500/15 border-teal-500 text-teal-700 dark:text-teal-300"
-													: "border-[var(--border,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)]"
-											}`}
-										>
-											<CreditCard className="w-3.5 h-3.5" />
-											<span>Карта</span>
-										</button>
-										<button
-											type="button"
-											onClick={() => setPaymentMethod("cash")}
-											className={`min-h-[44px] px-2 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 transition-all ${
-												paymentMethod === "cash"
-													? "bg-teal-500/15 border-teal-500 text-teal-700 dark:text-teal-300"
-													: "border-[var(--border,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)]"
-											}`}
-										>
-											<Coins className="w-3.5 h-3.5" />
-											<span>Нал</span>
-										</button>
-										<button
-											type="button"
-											onClick={() => setPaymentMethod("advance_deposit")}
-											className={`min-h-[44px] px-2 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 transition-all ${
-												paymentMethod === "advance_deposit"
-													? "bg-teal-500/15 border-teal-500 text-teal-700 dark:text-teal-300"
-													: "border-[var(--border,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)]"
-											}`}
-										>
-											<Wallet className="w-3.5 h-3.5" />
-											<span>Аванс</span>
-										</button>
-									</div>
-								</div>
-							</div>
-
-							{/* Summary & Live Calculation Banner */}
-							<div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-3">
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 font-bold text-xs uppercase tracking-wider">
-										<ShieldAlert className="w-4 h-4" />
-										<span>Итоговый пересчет операции (ACID):</span>
-									</div>
-									<span className="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold">
-										Фискальный чек возврата
-									</span>
-								</div>
-
-								<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-									<div className="bg-[var(--paper,#ffffff)] p-3 rounded-xl border border-[var(--border,#e2e8f0)] shadow-sm">
-										<div className="text-[11px] text-[var(--muted,#64748b)]">Возврат пациенту:</div>
-										<div className="text-lg font-black text-rose-600 dark:text-rose-400 mt-0.5">
-											{calculation.totalRefundRub.toLocaleString("ru-RU")} ₽
-										</div>
-										<div className="text-[10px] text-[var(--muted,#64748b)] mt-0.5">Чек «Возврат прихода»</div>
-									</div>
-
-									<div className="bg-[var(--paper,#ffffff)] p-3 rounded-xl border border-[var(--border,#e2e8f0)] shadow-sm">
-										<div className="text-[11px] text-[var(--muted,#64748b)]">Вычет из з/п врача:</div>
-										<div className="text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5">
-											-{calculation.totalDoctorClawbackRub.toLocaleString("ru-RU")} ₽
-										</div>
-										<div className="text-[10px] text-[var(--muted,#64748b)] mt-0.5">
-											Ставка: {doctorCommissionPct}%
-										</div>
-									</div>
-
-									<div className="bg-[var(--paper,#ffffff)] p-3 rounded-xl border border-[var(--border,#e2e8f0)] shadow-sm">
-										<div className="text-[11px] text-[var(--muted,#64748b)]">Остаток по счету:</div>
-										<div className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
-											{calculation.totalRemainingInvoiceRub.toLocaleString("ru-RU")} ₽
-										</div>
-										<div className="text-[10px] text-[var(--muted,#64748b)] mt-0.5">
-											{calculation.remainingActiveItemsCount} активных услуг
-										</div>
-									</div>
-								</div>
-
-								<p className="text-xs text-amber-800 dark:text-amber-200/90 leading-relaxed m-0 flex items-start gap-2">
-									<Info className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
-									<span>
-										Сумма возврата будет автоматически вычтена из сдельной ведомости врача{" "}
-										<strong>{doctorName}</strong>. Клиника не выплатит зарплату за возвращенную работу.
-									</span>
-								</p>
-							</div>
+							<RefundSummaryCalculationPanel
+								calculation={controller.calculation}
+								doctorCommissionPct={doctorCommissionPct}
+								doctorName={doctorName}
+							/>
 						</>
 					) : (
-						/* Receipt & Verification View */
-						<div className="space-y-4">
-							<div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-3 text-emerald-800 dark:text-emerald-300">
-								<CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600 dark:text-emerald-400" />
-								<div>
-									<div className="font-bold text-sm">Возврат успешно проведен в кассе!</div>
-									<div className="text-xs opacity-90">
-										Чек «Возврат прихода» поставлен в фискальную очередь ОФД. Комиссия врача удержана.
-									</div>
-								</div>
-							</div>
-
-							{completedResult && (
-								<div className="flex flex-col sm:flex-row gap-4 items-start">
-									{/* Thermal ASCII Receipt Paper */}
-									<div className="flex-1 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900 text-[var(--ink,#0f172a)] font-mono text-[11px] p-4 rounded-xl border border-[var(--border,#cbd5e1)] shadow-inner space-y-1 w-full whitespace-pre-wrap">
-										{generateThermalRefundReceiptText(completedResult, clinicInfo)}
-									</div>
-
-									{/* QR Code & Verification */}
-									<div className="w-full sm:w-56 flex flex-col items-center gap-3 p-4 rounded-xl border border-[var(--border,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-center">
-										<div className="font-bold text-xs text-[var(--ink,#0f172a)] flex items-center gap-1.5">
-											<QrCode className="w-4 h-4 text-teal-600" />
-											<span>QR-код чека ФНС</span>
-										</div>
-
-										{receiptQrPayload ? (
-											<div
-												className="p-2 bg-white rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm"
-												dangerouslySetInnerHTML={{
-													__html: generateQrCodeSvg(receiptQrPayload, {
-														size: 140,
-														colorDark: "#0f172a",
-														colorLight: "#ffffff",
-													}),
-												}}
-											/>
-										) : (
-											<div className="w-[140px] h-[140px] p-2 bg-slate-100 dark:bg-slate-800/60 rounded-xl border border-dashed border-[var(--border,#e2e8f0)] flex flex-col items-center justify-center text-center text-[10px] text-[var(--muted,#64748b)]">
-												<Clock className="w-6 h-6 mb-1 text-amber-500" />
-												<span>Чек буферизован</span>
-												<span className="font-mono mt-0.5 text-[9px]">{fiscalInfo?.queueId ? `№ ${fiscalInfo.queueId.slice(-8)}` : "Офлайн"}</span>
-											</div>
-										)}
-
-										<div className="text-[10px] text-[var(--muted,#64748b)] font-mono">
-											{fiscalInfo?.isOfflineBuffered ? (
-												<>
-													<div>
-														Чек в очереди:{" "}
-														<span className="font-bold text-[var(--ink,#0f172a)]">
-															№ {fiscalInfo?.queueId || "Буферизован"}
-														</span>
-													</div>
-													<span className="block text-amber-600 dark:text-amber-400 font-sans font-bold mt-0.5">
-														(Отложенная фискализация / Буфер ОФД)
-													</span>
-												</>
-											) : (
-												<>
-													{fiscalInfo?.fnSerial && <div>ФН: {fiscalInfo.fnSerial}</div>}
-													<div>
-														ФД: {fiscalInfo?.fiscalDocNumber || "—"} • ФПД: {fiscalInfo?.fiscalSign || "—"}
-													</div>
-													{fiscalInfo?.ofdUrl && (
-														<a
-															href={fiscalInfo.ofdUrl}
-															target="_blank"
-															rel="noopener noreferrer"
-															className="block text-teal-600 dark:text-teal-400 underline mt-1 font-sans font-medium hover:text-teal-700"
-														>
-															Проверить чек в ОФД ↗
-														</a>
-													)}
-												</>
-											)}
-										</div>
-									</div>
-								</div>
-							)}
-						</div>
+						controller.completedResult && (
+							<RefundReceiptVerificationView
+								completedResult={controller.completedResult}
+								clinicInfo={controller.clinicInfo}
+								receiptQrPayload={controller.receiptQrPayload}
+								fiscalInfo={controller.fiscalInfo}
+							/>
+						)
 					)}
 				</div>
 
-				{/* Modal Footer */}
-				<div className="flex items-center justify-between px-5 py-4 border-t border-[var(--border,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] shrink-0 gap-3">
-					{activeTab === "form" ? (
-						<>
-							<button
-								type="button"
-								onClick={onClose}
-								className="min-h-[44px] px-4 rounded-xl text-xs font-bold border border-[var(--border,#e2e8f0)] hover:bg-slate-200 dark:hover:bg-slate-800 text-[var(--muted,#64748b)] transition-all"
-							>
-								Отмена
-							</button>
-
-							<button
-								type="button"
-								onClick={handleExecuteRefund}
-								disabled={isProcessing || selectedItemIds.size === 0 || rawServices.length === 0}
-								className="min-h-[44px] px-5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition-all shadow-md flex items-center gap-2 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-							>
-								<RotateCcw className="w-4 h-4" />
-								<span>
-									{isProcessing
-										? "Проведение в кассе..."
-										: `Провести возврат (${calculation.totalRefundRub.toLocaleString("ru-RU")} ₽)`}
-								</span>
-							</button>
-						</>
-					) : (
-						<>
-							<button
-								type="button"
-								onClick={() => setActiveTab("form")}
-								className="min-h-[44px] px-4 rounded-xl text-xs font-bold border border-[var(--border,#e2e8f0)] hover:bg-slate-200 dark:hover:bg-slate-800 text-[var(--muted,#64748b)] transition-all flex items-center gap-2"
-							>
-								<ArrowLeftRight className="w-4 h-4" />
-								<span>Вернуться к параметрам</span>
-							</button>
-
-							<div className="flex items-center gap-2">
-								<button
-									type="button"
-									onClick={() => window.print()}
-									className="min-h-[44px] px-4 rounded-xl text-xs font-bold border border-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 text-[var(--ink,#0f172a)] transition-all flex items-center gap-2"
-								>
-									<Printer className="w-4 h-4" />
-									<span>Печать чека</span>
-								</button>
-								<button
-									type="button"
-									onClick={onClose}
-									className="min-h-[44px] px-5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white transition-all shadow-md flex items-center gap-2"
-								>
-									<Check className="w-4 h-4" />
-									<span>Готово</span>
-								</button>
-							</div>
-						</>
-					)}
-				</div>
+				<RefundModalFooter
+					activeTab={controller.activeTab}
+					setActiveTab={controller.setActiveTab}
+					onClose={onClose}
+					handleExecuteRefund={controller.handleExecuteRefund}
+					isProcessing={controller.isProcessing}
+					hasSelection={controller.selectedItemIds.size > 0 && controller.rawServices.length > 0}
+					calculation={controller.calculation}
+				/>
 			</div>
 		</div>
 	);
+
+	if (typeof document === "undefined") {
+		return modalContent;
+	}
+	return createPortal(modalContent, document.body);
 };
+
+export default RefundServiceModal;
