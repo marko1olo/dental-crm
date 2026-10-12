@@ -1,0 +1,118 @@
+/* ==========================================================================
+   DENTE CRM — BASE RESETS, ACCESSIBILITY & BOX-SIZING (base.css)
+   ==========================================================================
+   CSS Layer 1 (Reset & Base). Authority: decomposer/SKILL.md & frontend.md
+   Zero component classes. Browser normalization, focus-visible, reduced-motion.
+   ========================================================================== */
+* {
+	box-sizing: border-box;
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	margin: 0;
+	min-width: 320px;
+	min-height: 100vh;
+	overflow-x: hidden;
+}
+
+button,
+input,
+select,
+textarea {
+	font: inherit;
+}
+
+button,
+a {
+	-webkit-tap-highlight-color: transparent;
+}
+
+button {
+	cursor: pointer;
+	background: transparent;
+	border: 0 solid transparent;
+	color: inherit;
+	padding: 0;
+	margin: 0;
+	font: inherit;
+}
+
+button:disabled {
+	cursor: not-allowed;
+	opacity: 0.68;
+}
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+	outline: 3px solid rgba(15, 118, 110, 0.72);
+	outline-offset: 3px;
+}
+
+.skip-link {
+	background: var(--paper-strong);
+	border: 2px solid var(--teal);
+	border-radius: 8px;
+	color: var(--teal-dark);
+	font-weight: 900;
+	padding: 10px 12px;
+	position: absolute;
+	text-decoration: none;
+	z-index: 1000;
+	clip: rect(0 0 0 0);
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+}
+
+.skip-link:focus-visible {
+	clip: auto;
+	width: auto;
+	height: auto;
+	margin: 0;
+	overflow: visible;
+	position: fixed;
+	top: 12px;
+	left: 12px;
+}
+
+.visually-hidden {
+	border: 0;
+	clip: rect(0 0 0 0);
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	padding: 0;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto !important;
+	}
+
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms;
+		/* Обнулённой длительности НЕ ДОСТАТОЧНО. Задержка здесь не гасилась, а при
+       `animation-fill-mode: backwards`/`both` элемент всё время задержки держит
+       кадр `from` — у входных анимаций это `opacity: 0`. Врач, выключивший
+       анимацию в системе, всё равно получал раздел, невидимый до 0,22 с.
+       Отрицательная задержка сдвигает анимацию за её собственный конец, поэтому
+       элемент сразу показывается в конечном кадре. */
+		animation-delay: -0.01ms;
+		animation-iteration-count: 1;
+		scroll-behavior: auto;
+		transition-duration: 0.01ms !important;
+	}
+}
+
+[hidden] {
+	display: none;
+}

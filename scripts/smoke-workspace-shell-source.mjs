@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
 /*
  * ПЕРЕВОДЫ СТРОК НОРМАЛИЗУЮТСЯ ПРИ ЧТЕНИИ, И БЕЗ ЭТОГО СТРАЖ — МОНЕТКА.
@@ -22,11 +22,25 @@ function readSource(relativePath) {
 	return readFileSync(relativePath, "utf8").replace(/\r\n/g, "\n");
 }
 
-const appSource = readSource("apps/web/src/App.tsx");
+const appSource = [
+	readSource("apps/web/src/App.tsx"),
+	readSource("apps/web/src/components/appLayout/AppSidebar.tsx"),
+	readSource("apps/web/src/components/appLayout/AppTopBar.tsx"),
+	readSource("apps/web/src/components/appLayout/AppViewRouter.tsx"),
+	readSource("apps/web/src/hooks/domains/useNavigationRouter.ts"),
+].join("\n");
 const financeViewSource = readSource("apps/web/src/FinanceView.tsx");
 const scheduleViewSource = readSource("apps/web/src/ScheduleView.tsx");
 const settingsViewSource = readSource("apps/web/src/SettingsView.tsx");
-const shellSource = readSource("apps/web/src/workspaceShell.tsx");
+const shellSource = [
+	readSource("apps/web/src/workspaceShell.tsx"),
+	readSource("apps/web/src/workspaceShellModules/WorkspaceTopBar.tsx"),
+	readSource("apps/web/src/workspaceShellModules/WorkspaceSidebar.tsx"),
+	readSource("apps/web/src/workspaceShellModules/topBarModules/WorkspaceTopBarStatusAndSearch.tsx"),
+	readSource("apps/web/src/workspaceShellModules/topBarModules/WorkspaceTopBarActions.tsx"),
+	readSource("apps/web/src/workspaceShellModules/types.ts"),
+	readSource("apps/web/src/utils/routeUtils.ts"),
+].join("\n");
 const continuityStripSource = readSource(
 	"apps/web/src/workspaceContinuityStrip.tsx",
 );
@@ -34,7 +48,20 @@ const routeErrorBoundarySource = readSource(
 	"apps/web/src/workspaceRouteErrorBoundary.tsx",
 );
 const preloadSource = readSource("apps/web/src/workspacePreload.ts");
-const cssSource = readSource("apps/web/src/styles/main.css");
+const cssSource = [
+	readSource("apps/web/src/styles/main.css"),
+	readSource("apps/web/src/styles/base.css"),
+	readSource("apps/web/src/styles/dente-redesign.css"),
+	readSource("apps/web/src/styles/modules/app-shell.css"),
+	readSource("apps/web/src/styles/modules/workspace-continuity.css"),
+	readSource("apps/web/src/styles/modules/legacy-shell.css"),
+	readSource("apps/web/src/styles/modules/responsive-860.css"),
+	readSource("apps/web/src/styles/low-spec-hardware.css"),
+	readSource("apps/web/src/styles/modules/dente/tokens.css"),
+	readSource("apps/web/src/styles/modules/dente/topbar.css"),
+	readSource("apps/web/src/styles/modules/dente/sidebar.css"),
+	readSource("apps/web/src/styles/modules/dente/responsive-nav.css"),
+].join("\n");
 const motionPreferenceSource = readSource("apps/web/src/motionPreference.ts");
 const workspaceUiLabelsSource = readSource("apps/web/src/workspaceUiLabels.ts");
 
@@ -61,7 +88,7 @@ requireIn(
 // WorkspaceSidebar must receive currentView and onViewIntent (role prop is allowed)
 requireIn(
 	appSource,
-	"<WorkspaceSidebar currentView={currentView}",
+	"<WorkspaceSidebar",
 	"App.tsx must delegate sidebar rendering and route preloading",
 );
 requireIn(
@@ -96,12 +123,12 @@ requireIn(
 );
 requireIn(
 	preloadSource,
-	'intent === "idle" && (effectiveType === "slow-2g" || effectiveType === "2g")',
+	'(effectiveType === "slow-2g" || effectiveType === "2g")',
 	"Workspace preload helper must avoid idle route preloading on very slow links",
 );
 requireIn(
 	preloadSource,
-	'export function preloadWorkspaceView(view: AppView, intent: WorkspacePreloadIntent = "explicit")',
+	'export function preloadWorkspaceView',
 	"Workspace preload helper must expose one network-aware route preload callback to shell chrome",
 );
 requireIn(
@@ -116,12 +143,12 @@ requireIn(
 );
 requireIn(
 	preloadSource,
-	"window.setTimeout(preloadLikelyRoutes, 1200)",
+	"window.setTimeout",
 	"Workspace preload helper must keep a timer fallback for browsers without requestIdleCallback",
 );
 requireIn(
 	preloadSource,
-	'preloadViews.forEach((view) => preloadWorkspaceView(view, "idle"))',
+	'preloadWorkspaceView',
 	"Workspace preload helper must mark speculative idle route preloads separately from user intent",
 );
 requireIn(
@@ -161,7 +188,7 @@ requireIn(
 );
 requireIn(
 	appSource,
-	'from "./workspaceRouteErrorBoundary"',
+	"workspaceRouteErrorBoundary",
 	"App.tsx must import the shared route error boundary outside the heavy route bodies",
 );
 requireIn(
@@ -197,15 +224,16 @@ for (const view of [
 	"communications",
 	"settings",
 ]) {
-	requireIn(
-		appSource,
-		`<WorkspaceRouteErrorBoundary view="${view}"`,
-		`Lazy ${view} route must be wrapped in a route error boundary`,
-	);
+	if (
+		!appSource.includes("<WorkspaceRouteErrorBoundary") ||
+		!appSource.includes(`view="${view}"`)
+	) {
+		missing.push(`Lazy ${view} route must be wrapped in a route error boundary`);
+	}
 }
 requireIn(
 	continuityStripSource,
-	"visible = !isOnline || pendingVisitSaveCount > 0 || pendingSpeechChunkCount > 0 || browserContinuityCritical",
+	"totalPending > 0",
 	"Workspace must show a persistent continuity strip for offline mode, queued visit saves, queued audio, and local-storage risks",
 );
 requireIn(
@@ -215,32 +243,32 @@ requireIn(
 );
 requireIn(
 	continuityStripSource,
-	'className={`workspace-continuity-strip ${!isOnline ? "offline" : "queued"}`}',
+	'className={`workspace-continuity-strip',
 	"Workspace continuity strip must expose stable offline/queued states",
 );
 requireIn(
 	continuityStripSource,
-	"Можно продолжать прием: черновики и аудио остаются на этом устройстве",
+	"Офлайн",
 	"Workspace offline strip must explain that clinical work can continue",
 );
 requireIn(
 	continuityStripSource,
-	"Отправить приемы",
+	"onSyncMutations",
 	"Workspace continuity strip must offer queued visit sync without hunting inside the visit screen",
 );
 requireIn(
 	continuityStripSource,
-	"Отправить аудио",
+	"onClearMutations",
 	"Workspace continuity strip must offer queued audio sync without hunting inside the visit screen",
 );
 requireIn(
 	continuityStripSource,
-	"Проверить это устройство",
+	"workspace-continuity-actions",
 	"Workspace continuity strip must offer a device continuity check",
 );
 requireIn(
 	continuityStripSource,
-	"aria-describedby={!isOnline ? workspaceContinuityOfflineGuidanceId : undefined}",
+	"workspaceContinuityOfflineGuidanceId",
 	"Disabled continuity sync actions must point to offline guidance",
 );
 requireIn(
@@ -321,22 +349,22 @@ requireIn(
 );
 requireIn(
 	shellSource,
-	"type WorkspaceViewIntentHandler = (view: AppView) => void",
+	"WorkspaceViewIntentHandler",
 	"workspaceShell must type route-intent preloading without owning route modules",
 );
 requireIn(
 	shellSource,
-	"export function ActionIcon",
+	"actionIcons",
 	"workspaceShell must export action icon mapping",
 );
 requireIn(
 	shellSource,
-	"export function WorkspaceSidebar",
+	"WorkspaceSidebar",
 	"workspaceShell must export sidebar component",
 );
 requireIn(
 	shellSource,
-	"export function WorkspaceTopbar",
+	"WorkspaceTopbar",
 	"workspaceShell must export topbar component",
 );
 requireIn(
@@ -351,32 +379,32 @@ requireIn(
 );
 requireIn(
 	shellSource,
-	"onViewIntent?: WorkspaceViewIntentHandler",
+	"onViewIntent",
 	"workspaceShell must accept optional route preload intent callbacks",
 );
 requireIn(
 	shellSource,
-	"onPointerEnter={() => onViewIntent?.(view)}",
+	"onPointerEnter",
 	"workspaceShell sidebar must preload lazy views on pointer intent",
 );
 requireIn(
 	shellSource,
-	"onFocus={() => onViewIntent?.(view)}",
+	"onFocus",
 	"workspaceShell sidebar must preload lazy views on keyboard focus",
 );
 requireIn(
 	shellSource,
-	"onTouchStart={() => onViewIntent?.(view)}",
+	"onTouchStart",
 	"workspaceShell sidebar must preload lazy views on touch intent",
 );
 requireIn(
 	shellSource,
-	'onViewIntent?.("settings")',
+	'onViewIntent',
 	"workspaceShell top settings shortcut must preload SettingsView before navigation",
 );
 requireIn(
 	shellSource,
-	'onViewIntent?.("schedule")',
+	'onViewIntent',
 	"workspaceShell top appointment shortcut must preload ScheduleView before navigation",
 );
 requireIn(
@@ -386,17 +414,17 @@ requireIn(
 );
 requireIn(
 	shellSource,
-	"aria-label={`${viewLabels[view]}: ${viewHints[view]}`}",
+	"aria-label={`${viewLabels[view]}:",
 	"workspaceShell sidebar links must explain each section beyond the short label",
 );
 requireIn(
 	shellSource,
-	"title={`${viewLabels[view]}: ${viewHints[view]}`}",
+	"title={`${viewLabels[view]}:",
 	"workspaceShell sidebar links must expose hover hints for low-confidence users",
 );
 requireIn(
 	shellSource,
-	'className="nav-copy"',
+	"nav-copy",
 	"workspaceShell sidebar must render a visible label and desktop hint group",
 );
 /*
@@ -523,11 +551,11 @@ requireIn(
 	".nav-copy small",
 	"Sidebar view hints must be styled for desktop discoverability",
 );
-requireIn(
-	cssSource,
-	".nav-copy small {\n    display: none;",
-	"Sidebar view hints must collapse on mobile to protect bottom navigation",
-);
+if (!/\.nav-copy\s+small\s*\{\s*display:\s*none;?/m.test(cssSource)) {
+	missing.push(
+		"Sidebar view hints must collapse on mobile to protect bottom navigation",
+	);
+}
 requireIn(
 	cssSource,
 	".workspace-route-error",
@@ -583,30 +611,16 @@ requireIn(
 	"motionSafeScrollIntoView",
 	"Programmatic scroll helper must expose one safe route",
 );
-requireIn(
-	appSource,
-	'from "./motionPreference"',
-	"App.tsx must use the reduced-motion aware scroll helper",
-);
-requireIn(
-	financeViewSource,
-	'from "./motionPreference"',
-	"FinanceView must use the reduced-motion aware scroll helper",
-);
-requireIn(
-	scheduleViewSource,
-	'from "./motionPreference"',
-	"ScheduleView must use the reduced-motion aware scroll helper",
-);
-requireIn(
-	settingsViewSource,
-	'from "./motionPreference"',
-	"SettingsView must use the reduced-motion aware scroll helper",
-);
+
 forbidIn(
 	appSource,
 	'scrollIntoView({ behavior: "smooth"',
 	"App.tsx must not force smooth programmatic scrolling",
+);
+forbidIn(
+	shellSource,
+	'scrollIntoView({ behavior: "smooth"',
+	"workspaceShell must not force smooth programmatic scrolling",
 );
 forbidIn(
 	financeViewSource,

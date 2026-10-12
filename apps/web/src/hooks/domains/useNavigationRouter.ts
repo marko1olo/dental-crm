@@ -11,6 +11,7 @@ import {
 	getFallbackAppView,
 	getFilteredAppViews,
 } from "../../utils/routeUtils";
+import { motionSafeScrollIntoView } from "../../motionPreference";
 
 export interface NavigationRouterOptions {
 	selectedWorkspaceRole?: StaffRole;
@@ -129,7 +130,7 @@ export function useNavigationRouter(options: NavigationRouterOptions = {}) {
 				scrollToVisitArea(".dictation-box");
 			} else {
 				const el = document.querySelector(".dictation-box");
-				el?.scrollIntoView({ behavior: "smooth", block: "start" });
+				motionSafeScrollIntoView(el, { block: "start" });
 			}
 			document
 				.querySelector<HTMLTextAreaElement>(".dictation-box textarea")

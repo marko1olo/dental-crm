@@ -1,0 +1,286 @@
+/* ==========================================================================
+   DENTE CRM — LEGACY APP SHELL FALLBACK LAYER (modules/legacy-shell.css)
+   ==========================================================================
+   CSS Layer 3 (@layer legacy). Authority: decomposer/SKILL.md
+   ========================================================================== */
+/* ═══════ LEGACY SHELL LAYER ═══════
+   Old sidebar/topbar/nav definitions retained as fallback.
+   dente-redesign.css (unlayered) wins by CSS cascade. */
+@layer legacy {
+	.app-shell {
+		display: grid;
+		grid-template-columns: 236px minmax(0, 1fr);
+		max-width: 100%;
+		min-height: 100vh;
+	}
+
+	.sidebar {
+		background:
+			linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+			var(--nav);
+		color: #f8efe1;
+		display: flex;
+		flex-wrap: nowrap;
+		flex-direction: column;
+		gap: 28px;
+		padding: 22px 14px;
+	}
+
+	.brand-mark {
+		align-items: center;
+		display: flex;
+		font-size: 17px;
+		font-weight: 800;
+		gap: 10px;
+		padding: 0 10px;
+	}
+
+	.brand-mark svg,
+	.nav-item svg {
+		flex: 0 0 auto;
+		height: 20px;
+		width: 20px;
+	}
+
+	.sidebar nav {
+		display: grid;
+		gap: 6px;
+	}
+
+	.nav-item {
+		align-items: center;
+		border-radius: 8px;
+		color: #ddcfbf;
+		display: flex;
+		gap: 10px;
+		min-height: 44px;
+		padding: 10px;
+		text-decoration: none;
+		min-width: 0;
+		max-width: 100%;
+		overflow: hidden;
+	}
+
+	.nav-label {
+		display: block;
+		font-weight: 900;
+		min-width: 0;
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.nav-copy {
+		display: grid;
+		gap: 2px;
+		min-width: 0;
+		max-width: 100%;
+		overflow: hidden;
+	}
+
+	.nav-copy small {
+		color: rgba(221, 207, 191, 0.72);
+		font-size: 11px;
+		font-weight: 800;
+		line-height: 1.2;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		min-width: 0;
+		max-width: 100%;
+	}
+
+	.nav-item.active,
+	.nav-item:hover {
+		background: #403a33;
+		color: #ffffff;
+	}
+
+	.nav-item.active .nav-copy small,
+	.nav-item:hover .nav-copy small {
+		color: rgba(255, 255, 255, 0.78);
+	}
+
+	.workspace {
+		display: grid;
+		gap: 18px;
+		grid-template-columns: minmax(0, 1fr);
+		min-width: 0;
+		overflow-x: hidden;
+		padding: 22px;
+	}
+
+	.workspace section,
+	.workspace article,
+	.workspace div {
+		min-width: 0;
+	}
+
+	/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	h1,
+	h2,
+	h3,
+	/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	p,
+	span,
+	/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	strong,
+	button,
+	a {
+		max-width: 100%;
+		overflow-wrap: break-word;
+		word-break: normal;
+	}
+
+	button,
+	a {
+		min-width: 0;
+	}
+
+	img {
+		max-width: 100%;
+	}
+
+	.topbar {
+		align-items: center;
+		display: flex;
+		gap: 16px;
+		justify-content: space-between;
+	}
+
+	.topbar > div {
+		min-width: 0;
+	}
+
+	.eyebrow {
+		color: var(--muted);
+		font-size: 13px;
+		font-weight: 800;
+		margin: 0 0 5px;
+	}
+
+	.topbar h1 {
+		font-size: 28px;
+		line-height: 1.1;
+		margin: 0;
+	}
+
+	.workspace-role-switcher {
+		display: inline-block;
+		margin-top: 0;
+		position: relative;
+	}
+
+	.workspace-role-switcher summary {
+		align-items: center;
+		background: var(--paper-soft);
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		cursor: pointer;
+		display: inline-flex;
+		gap: 6px;
+		list-style: none;
+		min-height: 32px;
+		padding: 4px 10px;
+	}
+
+	.workspace-role-switcher summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.workspace-role-switcher span,
+	.workspace-role-switcher summary strong {
+		color: var(--ink-2);
+		font-size: 12px;
+		font-weight: 600;
+	}
+
+	.workspace-role-switcher summary strong {
+		color: var(--ink);
+	}
+
+	.role-switcher-options {
+		background: var(--paper);
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		box-shadow:
+			0 10px 15px -3px rgba(0, 0, 0, 0.1),
+			0 4px 6px -4px rgba(0, 0, 0, 0.1);
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: 6px;
+		position: absolute;
+		top: calc(100% + 4px);
+		left: 0;
+		min-width: 160px;
+		z-index: 100;
+	}
+
+	.workspace-role-switcher button {
+		background: none;
+		border: none;
+		border-radius: 6px;
+		color: var(--muted);
+		display: block;
+		font-size: 13px;
+		font-weight: 500;
+		min-height: 36px;
+		padding: 8px 12px;
+		text-align: left;
+		width: 100%;
+		cursor: pointer;
+		transition:
+			background 0.2s,
+			color 0.2s;
+	}
+
+	.workspace-role-switcher button:hover {
+		background: #f3f4f6;
+		color: var(--teal-dark);
+	}
+
+	.workspace-role-switcher button.active {
+		background: rgba(13, 148, 136, 0.1);
+		border-color: transparent;
+		color: var(--teal-dark);
+		font-weight: 700;
+	}
+
+	.top-actions,
+	.hero-actions {
+		display: flex;
+		gap: 10px;
+	}
+
+	.workspace-route-error {
+		align-content: start;
+		display: grid;
+		gap: 10px;
+		min-height: 180px;
+	}
+
+	.workspace-route-error p {
+		color: var(--ink);
+		font-weight: 850;
+		line-height: 1.4;
+		margin: 0;
+		max-width: min(640px, calc(100vw - 40px));
+	}
+
+	.workspace-route-error small {
+		color: var(--muted);
+		line-height: 1.45;
+		max-width: min(640px, calc(100vw - 40px));
+	}
+
+	.workspace-route-error .secondary-button {
+		justify-self: start;
+	}
+
+	.status-needs_review {
+		background: #fff3d7;
+		color: #744d18;
+	}
+} /* end @layer legacy */
