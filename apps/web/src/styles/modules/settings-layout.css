@@ -1,0 +1,224 @@
+/* --- SETTINGS FLEXBOX UX LAYOUT (T.A.R.S.) --- */
+.settings-grid,
+.clinic-profile-form-grid,
+.workspace-profile-grid,
+.access-policy-grid,
+.telegram-status-grid,
+.telegram-feature-grid,
+.protocol-settings-grid,
+.rule-form-grid,
+.taxonomy-grid,
+.connector-grid,
+.dicom-capability-grid,
+.mpr-plane-grid,
+.mpr-manual-grid,
+.mpr-clinical-preset-grid,
+.dicomweb-input-grid,
+.dicomweb-status-grid,
+.preset-grid,
+.import-source-grid,
+.migration-kickstart-grid,
+.migration-triage-grid,
+.dicom-discovery-grid,
+.local-imaging-case-grid,
+.ops-grid,
+.browser-continuity-grid,
+.local-bridge-grid,
+.local-bridge-plan-grid,
+.backup-check-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+	align-items: start;
+	padding: 0.5rem 0;
+}
+
+/* Make all direct children flexible */
+.settings-grid > *,
+.clinic-profile-form-grid > *,
+.workspace-profile-grid > *,
+.access-policy-grid > *,
+.telegram-status-grid > *,
+.telegram-feature-grid > *,
+.protocol-settings-grid > *,
+.rule-form-grid > *,
+.taxonomy-grid > *,
+.connector-grid > *,
+.dicom-capability-grid > *,
+.mpr-plane-grid > *,
+.mpr-manual-grid > *,
+.mpr-clinical-preset-grid > *,
+.dicomweb-input-grid > *,
+.dicomweb-status-grid > *,
+.preset-grid > *,
+.import-source-grid > *,
+.migration-kickstart-grid > *,
+.migration-triage-grid > *,
+.dicom-discovery-grid > *,
+.local-imaging-case-grid > *,
+.ops-grid > *,
+.browser-continuity-grid > *,
+.local-bridge-grid > *,
+.local-bridge-plan-grid > *,
+.backup-check-grid > * {
+	flex: 1 1 200px;
+	min-width: 0;
+}
+
+/* Wide elements */
+.form-span-2,
+.settings-grid > .form-span-2,
+.settings-grid > .col-span-full,
+.settings-grid > [class*="col-span-full"] {
+	flex: 1 1 100% !important;
+	min-width: 100% !important;
+	width: 100% !important;
+}
+
+/* Card aesthetics for forms to reduce clutter */
+.settings-grid label,
+.clinic-profile-form-grid label,
+.rule-form-grid label {
+	background: var(--paper-soft);
+	padding: 12px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	color: var(--ink);
+}
+
+html.dark .settings-grid label,
+html.dark .clinic-profile-form-grid label,
+html.dark .rule-form-grid label,
+html.dark .weekday-toggle-row,
+[data-theme="dark"] .settings-grid label,
+[data-theme="dark"] .clinic-profile-form-grid label,
+[data-theme="dark"] .rule-form-grid label,
+[data-theme="dark"] .weekday-toggle-row,
+[data-theme="night"] .settings-grid label,
+[data-theme="night"] .clinic-profile-form-grid label,
+[data-theme="night"] .rule-form-grid label,
+[data-theme="night"] .weekday-toggle-row {
+	background: var(--paper-soft);
+	border-color: var(--line);
+	color: var(--ink);
+}
+
+html.dark .clinic-profile-form-grid input,
+html.dark .clinic-profile-form-grid select,
+html.dark .clinic-profile-form-grid textarea,
+[data-theme="dark"] .clinic-profile-form-grid input,
+[data-theme="dark"] .clinic-profile-form-grid select,
+[data-theme="dark"] .clinic-profile-form-grid textarea,
+[data-theme="night"] .clinic-profile-form-grid input,
+[data-theme="night"] .clinic-profile-form-grid select,
+[data-theme="night"] .clinic-profile-form-grid textarea {
+	background: var(--paper);
+	border-color: var(--line);
+	color: var(--ink);
+}
+
+.weekday-toggle-row {
+	background: var(--paper-soft);
+	padding: 12px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+}
+
+/* --- GLOBAL FLEXBOX UX OVERHAUL (T.A.R.S.) --- */
+.clinical-mpr-grid,
+.clinical-mpr-summary-grid,
+.clinical-rule-grid,
+.clinic-config-grid,
+.patient-admin-form-grid,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.settings-advanced-form,
+.settings-essential-block,
+.communications-summary-grid,
+.ct-implant-library-grid,
+.ct-planning-artifact-grid,
+.ct-planning-geometry-grid,
+.ct-planning-implant-fit-grid,
+.ct-planning-implant-grid,
+.ct-planning-measurement-grid,
+.ct-planning-metric-grid,
+.ct-planning-reconstruction-grid,
+.ct-planning-tool-grid,
+.ct-planning-validation-grid,
+.ct-planning-workflow-grid,
+.document-audit-facts-grid,
+.document-issue-attestation-grid,
+.imaging-source-grid,
+.smart-mode-grid,
+.marketing-form-grid,
+.onboarding-form-grid,
+.onboarding-readiness-grid,
+.onboarding-schedule-grid,
+.onboarding-source-grid,
+.onboarding-source-url-grid,
+.patient-feature-grid,
+.payment-capture-detail-grid,
+.plan-scenario-grid,
+.role-queue-grid,
+.schedule-command-grid,
+.schedule-shift-summary-grid,
+.seo-keys-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+	align-items: start;
+	padding: 0.5rem 0;
+}
+
+.clinical-mpr-grid > *,
+.clinical-mpr-summary-grid > *,
+.clinical-rule-grid > *,
+.clinic-config-grid > *,
+.patient-admin-form-grid > *,
+.settings-advanced-form > *,
+.settings-essential-block > *,
+.communications-summary-grid > *,
+.ct-implant-library-grid > *,
+.ct-planning-artifact-grid > *,
+.ct-planning-geometry-grid > *,
+.ct-planning-implant-fit-grid > *,
+.ct-planning-implant-grid > *,
+.ct-planning-measurement-grid > *,
+.ct-planning-metric-grid > *,
+.ct-planning-reconstruction-grid > *,
+.ct-planning-tool-grid > *,
+.ct-planning-validation-grid > *,
+.ct-planning-workflow-grid > *,
+.document-audit-facts-grid > *,
+.document-issue-attestation-grid > *,
+.imaging-source-grid > *,
+.smart-mode-grid > *,
+.marketing-form-grid > *,
+.onboarding-form-grid > *,
+.onboarding-readiness-grid > *,
+.onboarding-schedule-grid > *,
+.onboarding-source-grid > *,
+.onboarding-source-url-grid > *,
+.patient-feature-grid > *,
+.payment-capture-detail-grid > *,
+.plan-scenario-grid > *,
+.role-queue-grid > *,
+.schedule-command-grid > *,
+.schedule-shift-summary-grid > *,
+.seo-keys-grid > * {
+	flex: 1 1 200px;
+	min-width: 0;
+}
+
+.clinic-config-grid > article[data-testid="clinic-chairs-section"],
+.clinic-config-grid > .clinic-chairs-section-container {
+	flex: 1 1 100% !important;
+	width: 100% !important;
+}
+
+.clinic-config-grid > article {
+	flex: 1 1 min(460px, 100%);
+}

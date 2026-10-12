@@ -82,28 +82,28 @@ export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSecti
 			{/* Section Header */}
 			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-[var(--line)] pb-3">
 				<div className="flex items-center gap-2.5">
-					<div className="w-9 h-9 rounded-xl bg-teal-500/15 text-teal-700 dark:text-teal-300 flex items-center justify-center shrink-0">
+					<div className="w-9 h-9 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--primary)] flex items-center justify-center shrink-0">
 						<Clock size={18} />
 					</div>
 					<div>
 						<h3 className="font-extrabold text-sm sm:text-base text-[var(--ink)] m-0">
 							График работы клиники и сетка расписания
 						</h3>
-						<p className="text-xs text-[var(--muted)] m-0 mt-0.5">
+						<p className="text-xs text-[var(--ink-muted)] m-0 mt-0.5">
 							Часы приёма, дни работы, длительность визитов и интервалы санобработки
 						</p>
 					</div>
 				</div>
 
-				<div className="flex items-center gap-1.5 text-xs text-[var(--muted)] bg-[var(--paper)] px-2.5 py-1 rounded-lg border border-[var(--line)]">
-					<Timer size={13} className="text-teal-600" />
+				<div className="flex items-center gap-1.5 text-xs text-[var(--ink-muted)] bg-[var(--paper)] px-3 h-9 min-h-[36px] rounded-xl border border-[var(--line)]">
+					<Timer size={14} className="text-[var(--primary)]" />
 					<span>Шаг расписания: <strong>{currentDuration} мин</strong> + буфер <strong>{currentBuffer} мин</strong></span>
 				</div>
 			</div>
 
 			{/* Operating Mode: Solo vs Standard */}
 			<div>
-				<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-2">
+				<span className="text-xs font-semibold text-[var(--ink-muted)] block mb-2">
 					Режим приёма в клинике:
 				</span>
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -125,21 +125,23 @@ export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSecti
 								key={opt.value}
 								type="button"
 								onClick={() => updateClinicProfileDraft("mode", opt.value)}
-								className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+								className={`rounded-xl border text-left transition-all cursor-pointer overflow-hidden flex flex-col ${
 									isSelected
-										? "bg-teal-500/10 border-teal-500/40 text-[var(--ink)] shadow-xs"
-										: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:border-slate-400"
+										? "bg-[var(--paper)] border-2 border-[var(--primary)] text-[var(--ink)] shadow-xs"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink-muted)] hover:border-[var(--line-strong)]"
 								}`}
 							>
-								<div className="flex items-center justify-between">
-									<strong className="text-xs text-[var(--ink)]">{opt.title}</strong>
+								<div className="px-3.5 py-2.5 border-b border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-2 w-full">
+									<strong className="text-xs font-bold text-[var(--ink)]">{opt.title}</strong>
 									{isSelected && (
-										<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-600 text-white">
-											АКТИВЕН
+										<span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[var(--primary)] text-white shrink-0">
+											Активен
 										</span>
 									)}
 								</div>
-								<span className="text-[11px] text-[var(--muted)] mt-1">{opt.desc}</span>
+								<div className="px-3.5 py-2.5 text-xs text-[var(--ink-muted)] leading-relaxed w-full">
+									{opt.desc}
+								</div>
 							</button>
 						);
 					})}
@@ -149,29 +151,29 @@ export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSecti
 			{/* Working Hours + Presets */}
 			<div className="space-y-2">
 				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+					<span className="text-xs font-semibold text-[var(--ink-muted)]">
 						Часы работы клиники:
 					</span>
 					<div className="flex items-center gap-1.5 flex-wrap">
-						<span className="text-[11px] text-[var(--muted)]">Быстрый выбор:</span>
+						<span className="text-[11px] text-[var(--ink-muted)]">Быстрый выбор:</span>
 						<button
 							type="button"
 							onClick={() => applyHoursPreset("08:00", "20:00", "08:00–20:00")}
-							className="px-2.5 h-8 min-h-[32px] rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer inline-flex items-center"
+							className="px-3 h-9 min-h-[36px] rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer inline-flex items-center"
 						>
 							08:00–20:00
 						</button>
 						<button
 							type="button"
 							onClick={() => applyHoursPreset("08:00", "21:00", "08:00–21:00")}
-							className="px-2.5 h-8 min-h-[32px] rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer inline-flex items-center"
+							className="px-3 h-9 min-h-[36px] rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer inline-flex items-center"
 						>
 							08:00–21:00
 						</button>
 						<button
 							type="button"
 							onClick={() => applyHoursPreset("09:00", "21:00", "09:00–21:00")}
-							className="px-2.5 h-8 min-h-[32px] rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer inline-flex items-center"
+							className="px-3 h-9 min-h-[36px] rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer inline-flex items-center"
 						>
 							09:00–21:00
 						</button>
@@ -187,7 +189,7 @@ export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSecti
 							onChange={(e: InputChangeEvent) =>
 								updateClinicProfileDraft("workdayStart", e.target.value)
 							}
-							className="px-3 h-8 min-h-[32px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-sm font-semibold text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+							className="px-3 h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm font-semibold text-[var(--ink)] focus:outline-none focus:border-[var(--primary)]"
 						/>
 					</label>
 
@@ -199,7 +201,7 @@ export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSecti
 							onChange={(e: InputChangeEvent) =>
 								updateClinicProfileDraft("workdayEnd", e.target.value)
 							}
-							className="px-3 h-8 min-h-[32px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-sm font-semibold text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+							className="px-3 h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm font-semibold text-[var(--ink)] focus:outline-none focus:border-[var(--primary)]"
 						/>
 					</label>
 				</div>
@@ -208,29 +210,29 @@ export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSecti
 			{/* Working Days + Presets */}
 			<div className="space-y-2">
 				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+					<span className="text-xs font-semibold text-[var(--ink-muted)]">
 						Рабочие дни недели:
 					</span>
 					<div className="flex items-center gap-1.5 flex-wrap">
-						<span className="text-[11px] text-[var(--muted)]">Пресеты:</span>
+						<span className="text-[11px] text-[var(--ink-muted)]">Пресеты:</span>
 						<button
 							type="button"
 							onClick={() => applyDaysPreset([1, 2, 3, 4, 5], "Пн–Пт")}
-							className="px-2.5 h-8 min-h-[32px] rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer inline-flex items-center"
+							className="px-3 h-9 min-h-[36px] rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer inline-flex items-center"
 						>
 							Пн–Пт
 						</button>
 						<button
 							type="button"
 							onClick={() => applyDaysPreset([1, 2, 3, 4, 5, 6], "Пн–Сб")}
-							className="px-2.5 h-8 min-h-[32px] rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer inline-flex items-center"
+							className="px-3 h-9 min-h-[36px] rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer inline-flex items-center"
 						>
 							Пн–Сб
 						</button>
 						<button
 							type="button"
 							onClick={() => applyDaysPreset([1, 2, 3, 4, 5, 6, 7], "Без выходных")}
-							className="px-2.5 h-8 min-h-[32px] rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer inline-flex items-center"
+							className="px-3 h-9 min-h-[36px] rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer inline-flex items-center"
 						>
 							Все 7 дней
 						</button>
@@ -246,10 +248,10 @@ export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSecti
 								type="button"
 								onClick={() => toggleClinicWorkingDay(day.value)}
 								aria-pressed={isActive}
-								className={`h-8 min-h-[32px] px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border inline-flex items-center justify-center ${
+								className={`h-9 min-h-[36px] px-3 rounded-xl text-xs font-bold transition-all cursor-pointer border inline-flex items-center justify-center ${
 									isActive
-										? "bg-teal-600 text-white border-teal-600 shadow-xs"
-										: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:border-slate-400"
+										? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+										: "bg-[var(--paper)] text-[var(--ink-muted)] border-[var(--line)] hover:border-[var(--line-strong)]"
 								}`}
 							>
 								{day.label}
@@ -265,10 +267,10 @@ export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSecti
 				<div className="space-y-1.5">
 					<div className="flex items-center justify-between">
 						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1">
-							<Timer size={14} className="text-teal-600" />
+							<Timer size={14} className="text-[var(--primary)]" />
 							Длительность визита по умолчанию:
 						</span>
-						<span className="text-xs font-mono font-bold text-teal-600">
+						<span className="text-xs font-mono font-bold text-[var(--primary)]">
 							{currentDuration} мин
 						</span>
 					</div>
@@ -278,17 +280,17 @@ export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSecti
 								key={mins}
 								type="button"
 								onClick={() => applyDurationPreset(mins)}
-								className={`flex-1 h-8 min-h-[32px] rounded-lg text-xs font-semibold border transition-all cursor-pointer inline-flex items-center justify-center ${
+								className={`flex-1 h-9 min-h-[36px] rounded-xl text-xs font-semibold border transition-all cursor-pointer inline-flex items-center justify-center ${
 									currentDuration === mins
-										? "bg-teal-600 text-white border-teal-600"
-										: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+										? "bg-[var(--primary)] text-white border-[var(--primary)]"
+										: "bg-[var(--paper)] text-[var(--ink-muted)] border-[var(--line)] hover:text-[var(--ink)]"
 								}`}
 							>
 								{mins} мин
 							</button>
 						))}
 					</div>
-					<p className="text-[11px] text-[var(--muted)] m-0">
+					<p className="text-[11px] text-[var(--ink-muted)] m-0">
 						Базовый слот в расписании при создании новой записи пациента
 					</p>
 				</div>
@@ -297,10 +299,10 @@ export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSecti
 				<div className="space-y-1.5">
 					<div className="flex items-center justify-between">
 						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1">
-							<ShieldAlert size={14} className="text-indigo-600" />
+							<ShieldAlert size={14} className="text-[var(--primary)]" />
 							Санитарная обработка кабинета:
 						</span>
-						<span className="text-xs font-mono font-bold text-indigo-600">
+						<span className="text-xs font-mono font-bold text-[var(--primary)]">
 							{currentBuffer > 0 ? `+${currentBuffer} мин` : "0 мин"}
 						</span>
 					</div>
@@ -314,17 +316,17 @@ export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSecti
 								key={item.val}
 								type="button"
 								onClick={() => applyBufferPreset(item.val)}
-								className={`flex-1 h-8 min-h-[32px] rounded-lg text-xs font-semibold border transition-all cursor-pointer inline-flex items-center justify-center ${
+								className={`flex-1 h-9 min-h-[36px] rounded-xl text-xs font-semibold border transition-all cursor-pointer inline-flex items-center justify-center ${
 									currentBuffer === item.val
-										? "bg-indigo-600 text-white border-indigo-600"
-										: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+										? "bg-[var(--primary)] text-white border-[var(--primary)]"
+										: "bg-[var(--paper)] text-[var(--ink-muted)] border-[var(--line)] hover:text-[var(--ink)]"
 								}`}
 							>
 								{item.label}
 							</button>
 						))}
 					</div>
-					<p className="text-[11px] text-[var(--muted)] m-0">
+					<p className="text-[11px] text-[var(--ink-muted)] m-0">
 						Автоматический перерыв между приёмами для дезинфекции установки и проветривания
 					</p>
 				</div>

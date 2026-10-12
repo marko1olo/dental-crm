@@ -2,15 +2,15 @@
  * apps/web/src/styles/modules/settings.css
  *
  * DENTE Design System: Settings & Configuration Hub Architecture Styles.
- * Mandates 8b, 8c, 8d, 8e:
- * - Segmented Control Strip (macOS / Linear style, 32px, 8px radius, quiet telemetry).
- * - Uniform 32px controls, 8px radius, elimination of system ButtonFace styles.
- * - Single-row toolbar hygiene, full dark/light theme consistency.
+ * Mandates 8b, 8c, 8d, 8e, 8am:
+ * - Segmented Control Strip (36px container / 12px radius, 32px inner buttons / 8px radius).
+ * - Uniform 36px controls, 12px (rounded-xl) radius, elimination of system ButtonFace styles.
+ * - Single-row toolbar hygiene, 100% semantic tokens across dark/light themes.
  * - Strictly <= 800 lines.
  */
 
 /* ==========================================================================
-   1. ROLE SWITCHER SEGMENTED CONTROL STRIP (macOS / Linear style)
+   1. ROLE SWITCHER SEGMENTED CONTROL STRIP (Mandate 8am)
    ========================================================================== */
 
 .settings-role-strip-container {
@@ -19,7 +19,7 @@
 	justify-content: space-between;
 	flex-wrap: wrap;
 	gap: 12px;
-	margin-bottom: 20px;
+	margin-bottom: 16px;
 	width: 100%;
 }
 
@@ -28,12 +28,13 @@
 	align-items: center;
 	background: var(--paper-soft);
 	border: 1px solid var(--line);
-	border-radius: 10px;
-	padding: 3px;
+	border-radius: 12px;
+	padding: 2px;
 	gap: 2px;
 	box-sizing: border-box;
 	user-select: none;
 	height: 36px;
+	min-height: 36px;
 	max-height: 36px;
 	max-width: 100%;
 	overflow-x: auto;
@@ -56,12 +57,12 @@
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
-	height: 28px;
-	min-height: 28px;
-	max-height: 28px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
 	padding: 0 12px;
-	border-radius: 7px;
-	font-size: 12.5px;
+	border-radius: 8px;
+	font-size: 13px;
 	font-weight: 500;
 	white-space: nowrap;
 	width: auto;
@@ -69,45 +70,40 @@
 	text-overflow: clip;
 	border: 1px solid transparent;
 	background: transparent;
-	color: var(--muted);
+	color: var(--ink-muted);
 	cursor: pointer;
 	transition: all 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
 	box-sizing: border-box;
 	line-height: 1;
 }
 
-.settings-segment-btn:hover {
-	color: var(--ink);
-	background: rgba(0, 0, 0, 0.04);
+.settings-heading .settings-segment-btn span,
+.settings-segment-btn span {
+	background: transparent !important;
+	color: inherit !important;
+	padding: 0 !important;
+	border: none !important;
+	border-radius: 0 !important;
+	font-size: inherit !important;
+	font-weight: inherit !important;
+	box-shadow: none !important;
 }
 
-[data-theme="dark"] .settings-segment-btn:hover,
-[data-theme="night"] .settings-segment-btn:hover,
-[data-theme="oled"] .settings-segment-btn:hover,
-[data-theme="cyber_xray"] .settings-segment-btn:hover {
-	background: rgba(255, 255, 255, 0.05);
+.settings-segment-btn:hover {
+	color: var(--ink);
+	background: var(--paper);
 }
 
 .settings-segment-btn.active {
-	background: var(--paper);
-	border-color: var(--line-subtle, var(--line));
-	color: var(--teal-dark, var(--teal));
+	background: var(--teal-fill);
+	border-color: var(--primary);
+	color: var(--on-teal);
 	font-weight: 600;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="dark"] .settings-segment-btn.active,
-[data-theme="night"] .settings-segment-btn.active,
-[data-theme="oled"] .settings-segment-btn.active,
-[data-theme="cyber_xray"] .settings-segment-btn.active {
-	background: var(--paper-card, var(--paper-strong));
-	border-color: var(--line);
-	color: var(--teal-light, var(--teal));
-	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+	box-shadow: var(--shadow-1);
 }
 
 .settings-segment-btn:focus-visible {
-	outline: 2px solid var(--teal);
+	outline: 2px solid var(--primary);
 	outline-offset: 1px;
 }
 
@@ -124,9 +120,9 @@
 	align-items: center;
 	gap: 6px;
 	font-size: 12px;
-	color: var(--muted);
+	color: var(--ink-muted);
 	padding: 4px 10px;
-	border-radius: 6px;
+	border-radius: 9999px;
 	background: var(--paper-soft);
 	border: 1px solid var(--line);
 }
@@ -134,13 +130,13 @@
 .settings-role-hint-dot {
 	width: 6px;
 	height: 6px;
-	border-radius: 50%;
-	background: var(--teal);
+	border-radius: 9999px;
+	background: var(--primary);
 	flex-shrink: 0;
 }
 
 /* ==========================================================================
-   2. COCKPIT SUB-NAVIGATION STRIPS (Doctor, Admin, Owner)
+   2. COCKPIT SUB-NAVIGATION STRIPS (Doctor, Admin, Owner — 36px / rounded-xl)
    ========================================================================== */
 
 .settings-subnav-strip {
@@ -160,12 +156,12 @@
 }
 
 .settings-subnav-btn {
-	height: 32px;
-	min-height: 32px;
-	max-height: 32px;
+	height: 36px;
+	min-height: 36px;
+	max-height: 36px;
 	padding: 0 12px;
-	border-radius: 8px;
-	font-size: 12.5px;
+	border-radius: 12px;
+	font-size: 13px;
 	font-weight: 600;
 	display: inline-flex;
 	align-items: center;
@@ -178,7 +174,7 @@
 	cursor: pointer;
 	border: 1px solid var(--line);
 	background: var(--paper-soft);
-	color: var(--muted);
+	color: var(--ink-muted);
 	transition: all 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
 	box-sizing: border-box;
 	line-height: 1;
@@ -188,37 +184,28 @@
 .settings-subnav-btn:hover {
 	color: var(--ink);
 	background: var(--paper);
-	border-color: var(--line-strong, var(--line));
+	border-color: var(--line-strong);
 }
 
 .settings-subnav-btn.active {
-	background: var(--teal);
-	border-color: var(--teal);
-	color: #ffffff;
+	background: var(--teal-fill);
+	border-color: var(--primary);
+	color: var(--on-teal);
 	font-weight: 700;
-	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
-}
-
-[data-theme="dark"] .settings-subnav-btn.active,
-[data-theme="night"] .settings-subnav-btn.active,
-[data-theme="oled"] .settings-subnav-btn.active,
-[data-theme="cyber_xray"] .settings-subnav-btn.active {
-	background: var(--teal);
-	border-color: var(--teal);
-	color: #ffffff;
-	box-shadow: 0 1px 4px rgba(13, 148, 136, 0.4);
+	box-shadow: var(--shadow-1);
 }
 
 .settings-subnav-btn:focus-visible {
-	outline: 2px solid var(--teal);
+	outline: 2px solid var(--primary);
 	outline-offset: 1px;
 }
 
 /* ==========================================================================
-   3. ALL SECTIONS SIDEBAR CATALOGUE (roleMode === "all")
+   3. ALL SECTIONS SIDEBAR CATALOGUE (roleMode === "all" — 36px / rounded-xl)
    ========================================================================== */
 
-.settings-catalogue-sidebar {
+.settings-catalogue-sidebar,
+.settings-catalogue-sidebar.settings-tabs {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
@@ -230,80 +217,108 @@
 	padding-right: 4px;
 }
 
-.settings-catalogue-group {
+.settings-catalogue-group,
+.settings-catalogue-sidebar .settings-catalogue-group {
 	display: flex;
 	flex-direction: column;
-	gap: 3px;
-	margin-bottom: 14px;
+	gap: 4px;
+	margin-bottom: 12px;
 }
 
-.settings-catalogue-group-header {
+.settings-catalogue-group-header,
+.settings-catalogue-sidebar .settings-catalogue-group-header {
 	font-size: 11px;
 	font-weight: 800;
 	text-transform: uppercase;
 	letter-spacing: 0.08em;
-	color: var(--muted);
-	padding: 4px 10px;
+	color: var(--ink-muted);
+	padding: 4px 12px;
 	margin-bottom: 2px;
 	user-select: none;
 }
 
-.settings-catalogue-btn {
-	height: 32px;
-	min-height: 32px;
-	max-height: 32px;
-	padding: 0 10px;
-	border-radius: 8px;
+.settings-catalogue-btn,
+.settings-catalogue-sidebar .settings-catalogue-btn,
+.settings-tabs button.settings-catalogue-btn {
+	height: 36px;
+	min-height: 36px;
+	max-height: 36px;
+	padding: 0 12px;
+	border-radius: 12px;
 	font-size: 13px;
 	font-weight: 500;
 	display: flex;
 	align-items: center;
+	justify-content: flex-start;
 	gap: 8px;
 	text-align: left;
 	width: 100%;
 	border: 1px solid transparent;
 	background: transparent;
-	color: var(--ink);
+	color: var(--ink-muted);
 	transition: all 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
 	box-sizing: border-box;
 	cursor: pointer;
 	white-space: nowrap;
+	transform: none;
+	box-shadow: none;
 }
 
-.settings-catalogue-btn:hover {
+.settings-catalogue-btn svg,
+.settings-catalogue-sidebar .settings-catalogue-btn svg {
+	color: var(--ink-muted);
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+}
+
+.settings-catalogue-btn:hover,
+.settings-catalogue-sidebar .settings-catalogue-btn:hover,
+.settings-tabs button.settings-catalogue-btn:hover {
 	background: var(--paper-soft);
 	border-color: var(--line);
 	color: var(--ink);
+	transform: none;
 }
 
-.settings-catalogue-btn.active {
-	background: var(--teal);
-	border-color: var(--teal);
-	color: #ffffff;
-	font-weight: 700;
-	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
+.settings-catalogue-btn:hover svg,
+.settings-catalogue-sidebar .settings-catalogue-btn:hover svg {
+	color: var(--ink);
 }
 
-.settings-catalogue-btn.active svg {
-	color: #ffffff;
+.settings-catalogue-btn.active,
+.settings-catalogue-sidebar .settings-catalogue-btn.active,
+.settings-tabs button.settings-catalogue-btn.active {
+	background: var(--paper-soft);
+	border-color: var(--primary);
+	color: var(--ink);
+	font-weight: 600;
+	box-shadow: var(--shadow-1);
+	transform: none;
+}
+
+.settings-catalogue-btn.active svg,
+.settings-catalogue-sidebar .settings-catalogue-btn.active svg,
+.settings-tabs button.settings-catalogue-btn.active svg {
+	color: var(--primary);
 }
 
 /* ==========================================================================
-   4. CLINIC SECTION CARDS & PRESETS (DENTE 32px & 8px Radius)
+   4. CLINIC SECTION CARDS & PRESETS (Mandate 8am 36px & 12px Radius)
    ========================================================================== */
 
 .settings-action-btn-32 {
-	height: 32px;
-	min-height: 32px;
-	max-height: 32px;
+	height: 36px;
+	min-height: 36px;
+	max-height: 36px;
 	padding: 0 12px;
-	border-radius: 8px;
-	font-size: 12px;
+	border-radius: 12px;
+	font-size: 13px;
 	font-weight: 600;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 5px;
+	gap: 6px;
 	border: 1px solid var(--line);
 	background: var(--paper);
 	color: var(--ink);
@@ -316,25 +331,25 @@
 
 .settings-action-btn-32:hover {
 	background: var(--paper-soft);
-	border-color: var(--line-strong, var(--line));
+	border-color: var(--line-strong);
 	color: var(--ink);
 }
 
 .settings-action-btn-32.active,
 .settings-action-btn-32.selected {
-	background: var(--teal);
-	border-color: var(--teal);
-	color: #ffffff;
+	background: var(--teal-fill);
+	border-color: var(--primary);
+	color: var(--on-teal);
 	font-weight: 700;
 }
 
 .settings-preset-chip-32 {
-	height: 32px;
-	min-height: 32px;
-	max-height: 32px;
-	padding: 0 10px;
-	border-radius: 8px;
-	font-size: 11.5px;
+	height: 36px;
+	min-height: 36px;
+	max-height: 36px;
+	padding: 0 12px;
+	border-radius: 12px;
+	font-size: 12px;
 	font-weight: 600;
 	display: inline-flex;
 	align-items: center;
@@ -342,7 +357,7 @@
 	gap: 4px;
 	border: 1px solid var(--line);
 	background: var(--paper);
-	color: var(--muted);
+	color: var(--ink-muted);
 	cursor: pointer;
 	transition: all 0.15s ease;
 	box-sizing: border-box;
@@ -352,14 +367,14 @@
 
 .settings-preset-chip-32:hover {
 	color: var(--ink);
-	border-color: var(--teal);
+	border-color: var(--primary);
 	background: var(--paper-soft);
 }
 
 .settings-preset-chip-32.active {
-	background: var(--teal);
-	border-color: var(--teal);
-	color: #ffffff;
+	background: var(--teal-fill);
+	border-color: var(--primary);
+	color: var(--on-teal);
 	font-weight: 700;
 }
 
@@ -370,21 +385,21 @@
 
 .settings-zone input:not([type="checkbox"]):not([type="radio"]),
 .settings-zone select {
-	height: 32px;
-	min-height: 32px;
-	border-radius: 8px;
+	height: 36px;
+	min-height: 36px;
+	border-radius: 12px;
 	border: 1px solid var(--line);
 	background: var(--paper);
 	color: var(--ink);
 	font-size: 13px;
-	padding: 0 10px;
+	padding: 0 12px;
 	box-sizing: border-box;
 	transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .settings-zone input:not([type="checkbox"]):not([type="radio"]):focus,
 .settings-zone select:focus {
-	border-color: var(--teal);
+	border-color: var(--primary);
 	outline: none;
-	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+	box-shadow: 0 0 0 2px var(--teal-ring);
 }

@@ -38,10 +38,26 @@ export const OWNER_TABS = new Set<string>([
 	"insurance",
 	"reporting",
 	"imports",
+	"backup",
 	"audit",
 	"sources",
 	"deep-clinical",
 ]);
+
+export const ENTERPRISE_ADVANCED_TABS = new Set<string>([
+	"bpmn",
+	"sources",
+	"insurance",
+	"marketing",
+	"reporting",
+]);
+
+export const SETTINGS_ROLE_LABELS: Record<SettingsRoleMode, string> = {
+	doctor: "Кабинет врача",
+	admin: "Ресепшен и смены",
+	owner: "Управление клиникой",
+	all: "Полный каталог",
+};
 
 export interface SettingsViewProps {
 	// biome-ignore lint/suspicious/noExplicitAny: universal props

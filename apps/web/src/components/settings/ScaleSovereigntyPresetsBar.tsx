@@ -225,7 +225,7 @@ export function ScaleSovereigntyPresetsBar() {
 		<div className="mb-6 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] p-4 sm:p-5">
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-[var(--line)]">
 				<div className="flex items-center gap-2.5">
-					<div className="w-8 h-8 rounded-lg bg-[var(--paper-card)] border border-[var(--line-subtle)] text-[var(--teal)] flex items-center justify-center">
+					<div className="w-8 h-8 rounded-xl bg-[var(--paper-card)] border border-[var(--line-subtle)] text-[var(--primary)] flex items-center justify-center">
 						<Sparkles size={18} />
 					</div>
 					<div>
@@ -235,7 +235,7 @@ export function ScaleSovereigntyPresetsBar() {
 								Быстрый выбор
 							</span>
 						</h3>
-						<p className="m-0 text-xs text-[var(--muted)]">
+						<p className="m-0 text-xs text-[var(--ink-muted)]">
 							Выберите профиль — интерфейс мгновенно адаптируется, скрыв
 							неактуальные разделы
 						</p>
@@ -254,20 +254,20 @@ export function ScaleSovereigntyPresetsBar() {
 							key={preset.id}
 							className={`relative flex flex-col justify-between p-4 rounded-xl border transition-all ${
 								isActive
-									? "bg-[var(--paper-card)] border-[var(--teal)] shadow-xs"
+									? "bg-[var(--paper-card)] border-[var(--primary)] shadow-xs"
 									: "bg-[var(--paper-card)] border-[var(--line)] hover:border-[var(--line-strong)]"
 							}`}
 						>
 							<div>
 								<div className="flex items-start justify-between gap-2 mb-2.5">
-									<div className="w-9 h-9 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] text-[var(--teal)] flex items-center justify-center shrink-0">
+									<div className="w-9 h-9 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] text-[var(--primary)] flex items-center justify-center shrink-0">
 										<Icon size={18} />
 									</div>
 									<span
 										className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
 											isActive
-												? "bg-[var(--teal)] text-[var(--on-teal)] font-semibold"
-												: "bg-[var(--paper-soft)] border border-[var(--line-subtle)] text-[var(--muted)]"
+												? "bg-[var(--teal-fill)] text-[var(--on-teal)] font-semibold"
+												: "bg-[var(--paper-soft)] border border-[var(--line-subtle)] text-[var(--ink-muted)]"
 										}`}
 									>
 										{isActive ? "Активный профиль" : preset.badge}
@@ -277,16 +277,16 @@ export function ScaleSovereigntyPresetsBar() {
 								<h4 className="m-0 text-sm font-bold text-[var(--ink)] mb-0.5">
 									{preset.title}
 								</h4>
-								<div className="text-xs text-[var(--muted)] font-medium mb-2">
+								<div className="text-xs text-[var(--ink-muted)] font-medium mb-2">
 									{preset.subtitle}
 								</div>
 
-								<div className="mb-3 text-[11px] text-[var(--ink)] bg-[var(--paper-soft)] border border-[var(--line-subtle)] p-2 rounded-lg leading-snug">
+								<div className="mb-3 text-[11px] text-[var(--ink)] bg-[var(--paper-soft)] border border-[var(--line-subtle)] p-2.5 rounded-xl leading-snug">
 									<strong>Назначение:</strong> {preset.targetAudience}
 								</div>
 
 								<div className="space-y-1 mb-3 text-xs">
-									<div className="text-[11px] font-semibold text-[var(--muted)] mb-1">
+									<div className="text-[11px] font-semibold text-[var(--ink-muted)] mb-1">
 										Включено:
 									</div>
 									{preset.keyFeatures.map((feat) => (
@@ -296,7 +296,7 @@ export function ScaleSovereigntyPresetsBar() {
 										>
 											<CheckCircle2
 												size={13}
-												className="text-[var(--teal)] shrink-0 mt-0.5"
+												className="text-[var(--primary)] shrink-0 mt-0.5"
 											/>
 											<span>{feat}</span>
 										</div>
@@ -305,15 +305,15 @@ export function ScaleSovereigntyPresetsBar() {
 
 								{preset.excludedFeatures && (
 									<div className="space-y-1 mb-4 text-xs opacity-75">
-										<div className="text-[11px] font-semibold text-[var(--muted)] mb-1">
+										<div className="text-[11px] font-semibold text-[var(--ink-muted)] mb-1">
 											Скрыто для чистоты:
 										</div>
 										{preset.excludedFeatures.map((feat) => (
 											<div
 												key={feat}
-												className="flex items-start gap-1.5 text-[var(--muted)] text-[11px] leading-snug"
+												className="flex items-start gap-1.5 text-[var(--ink-muted)] text-[11px] leading-snug"
 											>
-												<span className="text-[var(--muted)] font-bold shrink-0">
+												<span className="text-[var(--ink-muted)] font-bold shrink-0">
 													—
 												</span>
 												<span>{feat}</span>
@@ -327,25 +327,25 @@ export function ScaleSovereigntyPresetsBar() {
 								type="button"
 								onClick={() => void handleApplyPreset(preset)}
 								disabled={isActive || isApplying}
-								className={`w-full mt-2 h-9 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+								className={`w-full mt-2 h-9 min-h-[36px] px-3.5 rounded-xl text-[13px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
 									isActive
-										? "bg-[var(--teal-soft)] text-[var(--teal-dark)] border border-[var(--line)] cursor-default"
-										: "bg-[var(--teal)] text-[var(--on-teal)] hover:opacity-90"
+										? "bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)] cursor-default"
+										: "bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs"
 								}`}
 							>
 								{isApplying ? (
 									<>
-										<Loader2 size={13} className="animate-spin" />
+										<Loader2 size={14} className="w-4 h-4 animate-spin" />
 										<span>Применение...</span>
 									</>
 								) : isActive ? (
 									<>
-										<CheckCircle2 size={13} className="text-[var(--teal)]" />
+										<CheckCircle2 size={14} className="w-4 h-4 text-[var(--primary)]" />
 										<span>Активен</span>
 									</>
 								) : (
 									<>
-										<Flame size={13} />
+										<Flame size={14} className="w-4 h-4" />
 										<span>Включить профиль</span>
 									</>
 								)}

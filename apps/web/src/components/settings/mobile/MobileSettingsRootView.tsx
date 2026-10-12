@@ -21,7 +21,6 @@ import {
 	CalendarDays,
 	ChevronRight,
 	CreditCard,
-	DollarSign,
 	FileSpreadsheet,
 	FileText,
 	HardDriveDownload,
@@ -29,18 +28,16 @@ import {
 	Lock,
 	MessageSquare,
 	Percent,
-	Puzzle,
 	Search,
 	ShieldAlert,
 	ShieldCheck,
-	SlidersHorizontal,
-	Stethoscope,
 	Users,
-	Wand2,
 	X,
 	Globe,
 	Tag,
 } from "lucide-react";
+import { SovereignScalePresetsCard } from "../../onboarding/SovereignScalePresetsCard";
+import { useClinicCapabilities } from "../../../hooks/useClinicCapabilities";
 
 export interface MobileSettingsRootViewProps {
 	// biome-ignore lint/suspicious/noExplicitAny: app logic bag
@@ -71,18 +68,23 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 	const { dashboard } = appLogic;
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedCategory, setSelectedCategory] = useState<string>("all");
+	const capabilities = useClinicCapabilities(
+		dashboard?.clinicSettings?.profile?.mode,
+	);
 
 	const SETTING_CATEGORIES = [
 		{ id: "all", label: "Все" },
 		{ id: "clinic_org", label: "Клиника" },
-		{ id: "prices_services", label: "Прейскурант услуг" },
+		{ id: "prices_services", label: "Прейскурант" },
 		{ id: "staff_team", label: "Персонал" },
 		{ id: "clinical_standards", label: "Стандарты" },
 		{ id: "integrations_sync", label: "Интеграции" },
 	];
 
-	const clinicName = dashboard?.clinicSettings?.profile?.clinicName || dashboard?.clinicName || "Стоматология ДЕНТЕ";
-	const clinicMode = dashboard?.clinicSettings?.profile?.mode || "small_clinic";
+	const clinicName =
+		dashboard?.clinicSettings?.profile?.clinicName ||
+		dashboard?.clinicName ||
+		"Стоматология ДЕНТЕ";
 	const serviceCatalogCount = (dashboard?.serviceCatalog ?? []).length;
 	const staffCount = (dashboard?.clinicSettings?.staff ?? []).length;
 	const chairsCount = (dashboard?.clinicSettings?.chairs ?? []).length;
@@ -96,26 +98,29 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 					{
 						id: "clinic",
 						title: "Реквизиты и юрлицо",
-						subtitle: "ИНН, ОГРН, лицензия, юридический адрес",
+						subtitle: "ИНН, ОГРН, лицензия, адрес",
 						icon: Building2,
-						iconBg: "rgba(59, 130, 246, 0.12)",
-						iconColor: "#2563eb",
+						iconBg: "var(--paper-muted)",
+						iconColor: "var(--teal)",
 					},
 					{
 						id: "clinic_fiscal",
 						title: "Касса и 54-ФЗ",
-						subtitle: "Кассовый аппарат ККТ, чеки, ставки НДС",
+						subtitle: "ККТ, фискальные чеки, НДС",
 						icon: CreditCard,
-						iconBg: "rgba(16, 185, 129, 0.12)",
-						iconColor: "#059669",
+						iconBg: "var(--paper-muted)",
+						iconColor: "var(--ink)",
 					},
 					{
 						id: "clinic_schedule",
 						title: "График работы и кресла",
-						subtitle: `Часы приёма, ${chairsCount || 1} стоматологических установок`,
+						subtitle:
+							chairsCount > 0
+								? `Часы приёма, ${chairsCount} установок`
+								: "Часы приёма, кресла",
 						icon: CalendarDays,
-						iconBg: "rgba(99, 102, 241, 0.12)",
-						iconColor: "#4f46e5",
+						iconBg: "var(--paper-muted)",
+						iconColor: "var(--ink)",
 					},
 				],
 			},
@@ -126,19 +131,20 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 					{
 						id: "prices",
 						title: "Прейскурант услуг",
-						subtitle: "Номенклатура услуг клиники, базовые цены",
+						subtitle: "Номенклатура услуг, базовые тарифы",
 						icon: Tag,
-						iconBg: "rgba(13, 148, 136, 0.12)",
+						iconBg: "var(--paper-muted)",
 						iconColor: "var(--teal)",
-						badge: serviceCatalogCount > 0 ? `${serviceCatalogCount} услуг` : "Настроить",
+						badge:
+							serviceCatalogCount > 0 ? `${serviceCatalogCount} услуг` : "Настроить",
 					},
 					{
 						id: "prices_import",
 						title: "Импорт прайс-листа",
-						subtitle: "Excel, CSV, умный ИИ-разбор тарифов",
+						subtitle: "Excel, CSV, сопоставление тарифов",
 						icon: FileSpreadsheet,
-						iconBg: "rgba(20, 184, 166, 0.12)",
-						iconColor: "#0d9488",
+						iconBg: "var(--paper-muted)",
+						iconColor: "var(--ink)",
 					},
 				],
 			},
@@ -149,27 +155,27 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 					{
 						id: "staff",
 						title: "Врачи и сотрудники",
-						subtitle: "Список персонала, смены, телефоны",
+						subtitle: "Персонал клиники, график, телефоны",
 						icon: Users,
-						iconBg: "rgba(168, 85, 247, 0.12)",
-						iconColor: "#9333ea",
+						iconBg: "var(--paper-muted)",
+						iconColor: "var(--teal)",
 						badge: staffCount > 0 ? `${staffCount} в штате` : "Добавить",
 					},
 					{
 						id: "access",
-						title: "Права доступа (RBAC)",
-						subtitle: "Роли, секрет администратора, безопасность",
+						title: "Права доступа",
+						subtitle: "Роли сотрудников, матрица доступов",
 						icon: Lock,
-						iconBg: "rgba(245, 158, 11, 0.12)",
-						iconColor: "#d97706",
+						iconBg: "var(--paper-muted)",
+						iconColor: "var(--ink)",
 					},
 					{
 						id: "commissions",
 						title: "Комиссии и мотивация",
-						subtitle: "Ставки врачей %, сдельная оплата труда",
+						subtitle: "Ставки врачей %, сдельная оплата",
 						icon: Percent,
-						iconBg: "rgba(236, 72, 153, 0.12)",
-						iconColor: "#db2777",
+						iconBg: "var(--paper-muted)",
+						iconColor: "var(--ink)",
 					},
 				],
 			},
@@ -180,26 +186,26 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 					{
 						id: "protocols",
 						title: "Протоколы лечения",
-						subtitle: "Шаблоны дневника приёма, стандарты ЭМК",
+						subtitle: "Шаблоны дневника приёма, ЭМК 043/у",
 						icon: FileText,
-						iconBg: "rgba(59, 130, 246, 0.12)",
-						iconColor: "#2563eb",
+						iconBg: "var(--paper-muted)",
+						iconColor: "var(--teal)",
 					},
 					{
 						id: "rules",
-						title: "Клинические правила и алерты",
-						subtitle: "Безопасность, соматика, аллергоанамнез",
+						title: "Клинические правила и контроль",
+						subtitle: "Безопасность приёма и уведомления",
 						icon: ShieldCheck,
-						iconBg: "rgba(16, 185, 129, 0.12)",
-						iconColor: "#059669",
+						iconBg: "var(--paper-muted)",
+						iconColor: "var(--ink)",
 					},
 					{
 						id: "procedure-boms",
-						title: "Техкарты расхода материалов (BOM)",
-						subtitle: "Нормы автоматического списания расходников",
+						title: "Техкарты расхода материалов",
+						subtitle: "Нормы списания расходных материалов",
 						icon: Layers,
-						iconBg: "rgba(249, 115, 22, 0.12)",
-						iconColor: "#ea580c",
+						iconBg: "var(--paper-muted)",
+						iconColor: "var(--ink)",
 					},
 				],
 			},
@@ -210,34 +216,34 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 					{
 						id: "messengers",
 						title: "Мессенджеры и рассылки",
-						subtitle: "WhatsApp, Telegram, напоминания визитов",
+						subtitle: "WhatsApp, Telegram, напоминания",
 						icon: MessageSquare,
-						iconBg: "rgba(34, 197, 94, 0.12)",
-						iconColor: "#16a34a",
+						iconBg: "var(--paper-muted)",
+						iconColor: "var(--teal)",
 					},
 					{
 						id: "booking",
 						title: "Онлайн-запись",
-						subtitle: "Виджет для сайта клиники и карт (Яндекс, 2ГИС)",
+						subtitle: "Виджет для сайта клиники и карт",
 						icon: Globe,
-						iconBg: "rgba(6, 182, 212, 0.12)",
-						iconColor: "#0891b2",
+						iconBg: "var(--paper-muted)",
+						iconColor: "var(--ink)",
 					},
 					{
 						id: "imports",
-						title: "Перенос данных (Миграция)",
+						title: "Перенос данных",
 						subtitle: "Импорт из IDENT, DentalPRO, Инфодент",
 						icon: HardDriveDownload,
-						iconBg: "rgba(100, 116, 139, 0.12)",
-						iconColor: "#475569",
+						iconBg: "var(--paper-muted)",
+						iconColor: "var(--ink)",
 					},
 					{
 						id: "audit",
 						title: "Журнал аудита",
-						subtitle: "152-ФЗ, безопасность персональных данных",
+						subtitle: "Безопасность и журнал доступа",
 						icon: ShieldAlert,
-						iconBg: "rgba(239, 68, 68, 0.12)",
-						iconColor: "#dc2626",
+						iconBg: "var(--paper-muted)",
+						iconColor: "var(--ink)",
 					},
 				],
 			},
@@ -271,18 +277,33 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 			className="mobile-settings-root flex flex-col w-full max-w-[100vw] overflow-x-clip pb-24"
 			data-testid="mobile-settings-root-view"
 		>
-			{/* Apple iOS Large Title Header */}
-			<div className="px-4 pt-4 pb-2">
-				<p className="text-[12px] font-semibold uppercase tracking-wider text-[var(--teal)] mb-0.5">
-					Конфигурация DENTE
-				</p>
-				<h1 className="text-[28px] font-extrabold text-[var(--ink)] tracking-tight leading-tight">
+			{/* Header */}
+			<div className="px-4 pt-3 pb-1 flex flex-col gap-1.5">
+				<div className="flex items-center justify-between gap-2 flex-wrap">
+					<p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--primary)] m-0">
+						Конфигурация клиники
+					</p>
+					<span
+						className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)] max-w-full"
+					>
+						<ShieldCheck size={12} className="shrink-0" />
+						<span className="truncate">{capabilities.presetLabel}</span>
+					</span>
+				</div>
+				<h1 className="text-[22px] font-extrabold text-[var(--ink)] tracking-tight leading-tight m-0">
 					Настройки
 				</h1>
 			</div>
 
+			{/* Scale Sovereignty Presets Card directly accessible in 1 click on Mobile above the fold */}
+			{!searchQuery && (
+				<div className="px-4 py-1">
+					<SovereignScalePresetsCard mode="settings" compactMode={true} />
+				</div>
+			)}
+
 			{/* Search Input */}
-			<div className="px-4 py-2">
+			<div className="px-4 py-1.5">
 				<div className="dente-search-wrap">
 					<Search
 						size={14}
@@ -312,13 +333,18 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 
 			{/* Category Filter Chips */}
 			<div className="px-4 pb-2 overflow-x-auto">
-				<div className="dente-filter-chips flex-nowrap" role="group" aria-label="Категории настроек">
+				<div
+					className="dente-filter-chips flex-nowrap"
+					style={{ flexWrap: "nowrap", overflowX: "auto" }}
+					role="group"
+					aria-label="Категории настроек"
+				>
 					{SETTING_CATEGORIES.map((cat) => (
 						<button
 							key={cat.id}
 							type="button"
 							onClick={() => setSelectedCategory(cat.id)}
-							className={`dente-filter-chip ${selectedCategory === cat.id ? "active" : ""}`}
+							className={`dente-filter-chip shrink-0 whitespace-nowrap ${selectedCategory === cat.id ? "active" : ""}`}
 							data-active={selectedCategory === cat.id}
 						>
 							<span>{cat.label}</span>
@@ -327,9 +353,9 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 				</div>
 			</div>
 
-			{/* Clinic Identity Card (Apple Health / Apple ID Profile Inset Style) */}
+			{/* Clinic Identity Card */}
 			{!searchQuery && (
-				<div className="px-4 py-2">
+				<div className="px-4 py-1">
 					<div
 						onClick={() => onSelectSection("clinic")}
 						className="p-3.5 rounded-[16px] bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between gap-3 shadow-xs active:bg-[var(--paper-soft)] cursor-pointer transition-colors"
@@ -344,19 +370,22 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 						data-testid="mobile-clinic-profile-card"
 					>
 						<div className="flex items-center gap-3 min-w-0 flex-1">
-							<div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--teal)] to-cyan-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-								<Building2 size={24} />
+							<div
+								className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+								style={{
+									backgroundColor: "var(--teal)",
+									color: "#ffffff",
+								}}
+							>
+								<Building2 size={22} />
 							</div>
 							<div className="min-w-0 flex-1">
-								<h3 className="text-[16px] font-bold text-[var(--ink)] truncate leading-tight">
+								<h3 className="text-[15px] font-bold text-[var(--ink)] leading-snug break-words">
 									{clinicName}
 								</h3>
-								<div className="flex items-center gap-2 mt-0.5">
+								<div className="flex items-center flex-wrap gap-1.5 mt-0.5">
 									<span className="text-[12px] text-[var(--muted)]">
-										{clinicMode === "solo_doctor" ? "Частный кабинет" : "Стандартная клиника"}
-									</span>
-									<span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.2 rounded bg-teal-500/10 text-teal-800 dark:text-teal-300">
-										<ShieldCheck size={10} /> Автономия
+										{capabilities.presetLabel}
 									</span>
 								</div>
 							</div>
@@ -367,7 +396,7 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 			)}
 
 			{/* Grouped Inset Sections */}
-			<div className="space-y-5 mt-1 px-4">
+			<div className="space-y-5 mt-2 px-4">
 				{filteredGroups.map((group) => (
 					<div key={group.id} className="space-y-1.5">
 						{/* Group Header */}
@@ -407,10 +436,10 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 											</div>
 
 											<div className="min-w-0 flex-1">
-												<h4 className="text-[15px] font-semibold text-[var(--ink)] truncate leading-tight">
+												<h4 className="text-[15px] font-semibold text-[var(--ink)] leading-snug">
 													{item.title}
 												</h4>
-												<p className="text-[12px] text-[var(--muted)] truncate mt-0.5">
+												<p className="text-[12px] text-[var(--muted)] leading-snug mt-0.5">
 													{item.subtitle}
 												</p>
 											</div>
@@ -447,14 +476,9 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 					</div>
 				)}
 			</div>
-
-			{/* Quiet Telemetry Footer */}
-			<div className="mt-8 px-6 text-center text-[11px] text-[var(--muted)] space-y-1">
-				<p>DENTE Dental CRM • Версия 0.1.0 (iOS Settings standard)</p>
-				<p>Автономный медицинский контур • 127.0.0.1:5432</p>
-			</div>
 		</div>
 	);
 };
 
 export default MobileSettingsRootView;
+
