@@ -273,22 +273,46 @@ export async function buildDocumentAuditFacts(
 			? "DENTE хранит только черновик XML и внутреннюю предпроверку. Официальная XSD-валидация, КЭП и отправка ЭДО/ТКС выполняются вне DENTE."
 			: null;
 
+	const toIsoDateString = (val: unknown): string | null => {
+		if (!val) return null;
+		if (val instanceof Date) return val.toISOString();
+		if (typeof val === "string") {
+			const trimmed = val.trim();
+			return trimmed ? trimmed : null;
+		}
+		return String(val);
+	};
+
+	const toValidSha256 = (val: unknown): string | null => {
+		if (typeof val !== "string") return null;
+		const trimmed = val.trim().toLowerCase();
+		return /^[a-f0-9]{64}$/.test(trimmed) ? trimmed : null;
+	};
+
+	const toValidUuid = (val: unknown): string | null => {
+		if (typeof val !== "string") return null;
+		const trimmed = val.trim();
+		return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed)
+			? trimmed
+			: null;
+	};
+
 	return documentAuditFactsSchema.parse({
 		documentId: document.id,
 		organizationId: document.organizationId,
 		patientId: document.patientId,
-		visitId: document.visitId,
+		visitId: toValidUuid(document.visitId),
 		kind: document.kind,
 		title: document.title,
 		status: document.status,
-		issuedAt: document.issuedAt,
-		issuedByUserId: document.issuedByUserId ?? null,
+		issuedAt: toIsoDateString(document.issuedAt),
+		issuedByUserId: toValidUuid(document.issuedByUserId),
 		signatureAttestation: document.signatureAttestation ?? null,
 		voidAttestation: document.voidAttestation ?? null,
 		releaseJournalEntry: document.releaseJournalEntry ?? null,
 		generatedAt: new Date().toISOString(),
-		snapshotSha256: document.issuedSnapshotSha256 ?? null,
-		snapshotCreatedAt: document.issuedSnapshotCreatedAt ?? null,
+		snapshotSha256: toValidSha256(document.issuedSnapshotSha256),
+		snapshotCreatedAt: toIsoDateString(document.issuedSnapshotCreatedAt),
 		immutableSnapshotReady,
 		canPreviewHtml: blockers.length === 0 || immutableSnapshotReady,
 		canDownloadHtml: Boolean(htmlDownloadUrl),
@@ -300,9 +324,9 @@ export async function buildDocumentAuditFacts(
 		taxXmlDownloadUrl: canExportFnsXml
 			? `/api/documents/${document.id}/tax-xml`
 			: null,
-		taxXmlSourceSnapshotSha256: taxXmlSourceSnapshotDigest,
-		taxXmlSnapshotSha256: document.taxXmlSnapshot?.sha256 ?? null,
-		taxXmlSnapshotCreatedAt: document.taxXmlSnapshot?.createdAt ?? null,
+		taxXmlSourceSnapshotSha256: toValidSha256(taxXmlSourceSnapshotDigest),
+		taxXmlSnapshotSha256: toValidSha256(document.taxXmlSnapshot?.sha256),
+		taxXmlSnapshotCreatedAt: toIsoDateString(document.taxXmlSnapshot?.createdAt),
 		taxXmlOfficialValidationStatus,
 		taxXmlOfficialValidationNote,
 		sourceStatus: metadata.sourceStatus,
@@ -316,8 +340,6 @@ export async function buildDocumentAuditFacts(
 		cryptoSignaturePkcs7: document.cryptoSignaturePkcs7 ?? null,
 		doctorCertSerial: document.doctorCertSerial ?? null,
 		doctorCertSubject: document.doctorCertSubject ?? null,
-		doctorSignedAt: document.doctorSignedAt
-			? String(document.doctorSignedAt)
-			: null,
+		doctorSignedAt: toIsoDateString(document.doctorSignedAt),
 	});
 }

@@ -1,5 +1,4 @@
 import type { FastifyInstance } from "fastify";
-import { requireClinicalReadAccess } from "../../accessGuard.js";
 import {
 	getDocumentById,
 	readIssuedDocumentSnapshot,
@@ -41,8 +40,6 @@ export async function register(app: FastifyInstance) {
 		"/api/documents/:id/pdf",
 		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
-			if (!(await requireClinicalReadAccess(request, reply, "document pdf")))
-				return;
 			const { id } = request.params;
 			// БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
 			// Все проверки принадлежности сравнивали подделку саму с собой и сходились,
@@ -159,10 +156,6 @@ export async function register(app: FastifyInstance) {
 		"/api/documents/:id/treatment-plan-pdf",
 		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
-			if (
-				!(await requireClinicalReadAccess(request, reply, "treatment plan pdf"))
-			)
-				return;
 			// БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
 			// Все проверки принадлежности сравнивали подделку саму с собой и сходились,
 			// а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.

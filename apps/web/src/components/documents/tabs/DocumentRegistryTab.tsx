@@ -187,16 +187,10 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 										{document.taxYear ? ` · ${document.taxYear}` : ""}
 										{document.doctorSignedAt || document.cryptoSignaturePkcs7 ? (
 											<span
-												className="document-source-badge official-form"
-												style={{
-													borderColor: "#003399",
-													color: "#003399",
-													backgroundColor: "rgba(0, 51, 153, 0.08)",
-													fontWeight: 600,
-												}}
-												title={`Подписан УКЭП: ${document.doctorCertSubject || ""}${document.doctorCertSerial ? ` (${document.doctorCertSerial})` : ""}`}
+												className="document-source-badge official-form border border-[var(--primary,#0d9488)] text-[var(--primary,#0d9488)] bg-[var(--primary,#0d9488)]/10 font-semibold rounded px-1.5 py-0.5 text-[11px]"
+												title={`Подписано электронной подписью: ${document.doctorCertSubject || ""}${document.doctorCertSerial ? ` (${document.doctorCertSerial})` : ""}`}
 											>
-												УКЭП (ГОСТ)
+												Подписан ЭЦП
 											</span>
 										) : null}
 										{document.issuedAt
@@ -215,16 +209,8 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 									</small>
 								</div>
 								<fieldset
-									className="document-actions"
+									className="document-actions flex items-center gap-1.5 m-0 p-0 border-0"
 									aria-label={`Действия с документом: ${documentActionContext}`}
-									style={{
-										border: "none",
-										padding: 0,
-										margin: 0,
-										display: "flex",
-										alignItems: "center",
-										gap: "6px",
-									}}
 								>
 									<legend className="sr-only">{`Действия с документом: ${documentActionContext}`}</legend>
 
@@ -236,12 +222,12 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 											aria-busy={documentStatusSaving || undefined}
 											onClick={() => requestDocumentIssue(document)}
 											aria-describedby={documentLifecycleGuidanceId}
-											aria-label={`Проверить и выдать документ: ${documentActionContext}`}
-											title={`Проверить и выдать документ: ${documentActionContext}`}
+											aria-label={`Выдать на бумаге: ${documentActionContext}`}
+											title={`Выдать на бумаге или подтвердить выдачу: ${documentActionContext}`}
 											data-testid={`btn-issue-doc-${document.id}`}
 										>
 											<FileSignature size={14} className="shrink-0" aria-hidden="true" />
-											<span>Проверить и выдать</span>
+											<span>Выдать на бумаге</span>
 										</button>
 									) : (
 										<button
@@ -255,7 +241,7 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 											title={`Печать / Скачать PDF: ${documentActionContext}`}
 											data-testid={`btn-pdf-doc-${document.id}`}
 										>
-											<Printer size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+											<Printer size={14} className="text-[var(--primary,#0d9488)] shrink-0" aria-hidden="true" />
 											<span>Печать / PDF</span>
 										</button>
 									)}
@@ -273,11 +259,9 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 										<span>Открыть</span>
 									</button>
 
-									<div
-										style={{ position: "relative", display: "inline-block" }}
-									>
+									<div className="relative inline-block">
 										<button
-											className="tactile-doc-btn tactile-doc-btn--icon doc-link document-row-actions-btn min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 sm:w-8"
+											className="tactile-doc-btn tactile-doc-btn--icon doc-link document-row-actions-btn min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 sm:w-8 inline-flex items-center justify-center px-1.5"
 											type="button"
 											onClick={() =>
 												setOpenDocActionMenuId(
@@ -289,39 +273,14 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 											aria-label={`Дополнительные действия с документом: ${documentActionContext}`}
 											title="Дополнительные действия"
 											aria-expanded={openDocActionMenuId === document.id}
-											style={{
-												display: "inline-flex",
-												alignItems: "center",
-												justifyContent: "center",
-												padding: "0 6px",
-											}}
 										>
 											<MoreHorizontal size={15} aria-hidden="true" />
 										</button>
 
 										{openDocActionMenuId === document.id && (
-											<div
-												className="document-row-actions-dropdown"
-												style={{
-													position: "absolute",
-													right: 0,
-													top: "calc(100% + 4px)",
-													zIndex: 50,
-													minWidth: "220px",
-													boxShadow:
-														"var(--shadow-3, 0 10px 25px -5px rgba(0,0,0,0.15))",
-													background: "var(--paper, #ffffff)",
-													border:
-														"1px solid var(--border, var(--line, #cbd5e1))",
-													borderRadius: "8px",
-													padding: "4px",
-													display: "flex",
-													flexDirection: "column",
-													gap: "2px",
-												}}
-											>
+											<div className="document-row-actions-dropdown absolute right-0 top-[calc(100%+4px)] z-50 min-w-[220px] shadow-lg bg-[var(--paper)] border border-[var(--line)] rounded-xl p-1 flex flex-col gap-0.5">
 												<button
-													className="doc-dropdown-item"
+													className="doc-dropdown-item w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] rounded-lg transition-colors cursor-pointer text-left border-0 bg-transparent min-h-[44px] sm:min-h-[36px]"
 													type="button"
 													onClick={() => {
 														setOpenDocActionMenuId(null);
@@ -329,33 +288,19 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 													}}
 													disabled={documentAuditLoading}
 													aria-busy={documentAuditLoading || undefined}
-													aria-label={`Открыть паспорт выдачи: ${documentActionContext}`}
-													title={`Открыть паспорт выдачи: ${documentActionContext}`}
-													style={{
-														display: "flex",
-														alignItems: "center",
-														gap: "8px",
-														width: "100%",
-														padding: "6px 10px",
-														fontSize: "12.5px",
-														fontWeight: 500,
-														border: "none",
-														background: "transparent",
-														color: "var(--ink, #0f172a)",
-														borderRadius: "4px",
-														cursor: "pointer",
-														textAlign: "left",
-													}}
+													aria-label={`Журнал проверки документа: ${documentActionContext}`}
+													title={`Журнал проверки документа: ${documentActionContext}`}
+													data-testid={`btn-audit-doc-${document.id}`}
 												>
 													<Shield
 														size={14}
-														className="text-teal-600 dark:text-teal-400 shrink-0"
+														className="text-[var(--primary,#0d9488)] shrink-0"
 														aria-hidden="true"
 													/>
 													<span>
 														{documentAuditLoading
-															? "Загрузка паспорта..."
-															: "Паспорт выдачи"}
+															? "Загрузка журнала..."
+															: "Журнал проверки документа"}
 													</span>
 												</button>
 
@@ -363,42 +308,27 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 												!document.cryptoSignaturePkcs7 &&
 												!document.doctorSignedAt ? (
 													<button
-														className="doc-dropdown-item"
+														className="doc-dropdown-item w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-[var(--primary,#0d9488)] font-semibold hover:bg-[var(--paper-soft)] rounded-lg transition-colors cursor-pointer text-left border-0 bg-transparent min-h-[44px] sm:min-h-[36px]"
 														type="button"
 														onClick={() => {
 															setOpenDocActionMenuId(null);
 															void loadDocumentAuditFacts(document.id);
 														}}
-														aria-label={`Подписать УКЭП (КриптоПро): ${documentActionContext}`}
-														title={`Подписать усиленной квалифицированной подписью врача (КриптоПро): ${documentActionContext}`}
-														style={{
-															display: "flex",
-															alignItems: "center",
-															gap: "8px",
-															width: "100%",
-															padding: "6px 10px",
-															fontSize: "12.5px",
-															fontWeight: 600,
-															border: "none",
-															background: "transparent",
-															color: "var(--teal, #0d9488)",
-															borderRadius: "4px",
-															cursor: "pointer",
-															textAlign: "left",
-														}}
+														aria-label={`Подписать ЭЦП: ${documentActionContext}`}
+														title={`Подписать документ электронной подписью врача: ${documentActionContext}`}
 													>
 														<FileSignature
 															size={14}
-															className="text-teal-600 dark:text-teal-400 shrink-0"
+															className="text-[var(--primary,#0d9488)] shrink-0"
 															aria-hidden="true"
 														/>
-														<span>Подписать УКЭП (КриптоПро)</span>
+														<span>Подписать ЭЦП</span>
 													</button>
 												) : null}
 
 												{documentArchiveAvailable ? (
 													<button
-														className="doc-dropdown-item"
+														className="doc-dropdown-item w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] rounded-lg transition-colors cursor-pointer text-left border-0 bg-transparent min-h-[44px] sm:min-h-[36px]"
 														type="button"
 														onClick={() => {
 															setOpenDocActionMenuId(null);
@@ -406,21 +336,6 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 														}}
 														aria-label={`Скачать HTML документа: ${documentActionContext}`}
 														title={`Скачать HTML документа: ${documentActionContext}`}
-														style={{
-															display: "flex",
-															alignItems: "center",
-															gap: "8px",
-															width: "100%",
-															padding: "6px 10px",
-															fontSize: "12.5px",
-															fontWeight: 500,
-															border: "none",
-															background: "transparent",
-															color: "var(--ink, #0f172a)",
-															borderRadius: "4px",
-															cursor: "pointer",
-															textAlign: "left",
-														}}
 													>
 														<FileCode2
 															size={14}
@@ -433,7 +348,7 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 
 												{document.status === "draft" ? (
 													<button
-														className="doc-dropdown-item"
+														className="doc-dropdown-item w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] rounded-lg transition-colors cursor-pointer text-left border-0 bg-transparent min-h-[44px] sm:min-h-[36px]"
 														type="button"
 														onClick={() => {
 															setOpenDocActionMenuId(null);
@@ -441,21 +356,6 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 														}}
 														aria-label={`Печать PDF (Черновик): ${documentActionContext}`}
 														title={`Печать PDF (Черновик со штампом): ${documentActionContext}`}
-														style={{
-															display: "flex",
-															alignItems: "center",
-															gap: "8px",
-															width: "100%",
-															padding: "6px 10px",
-															fontSize: "12.5px",
-															fontWeight: 500,
-															border: "none",
-															background: "transparent",
-															color: "var(--ink, #0f172a)",
-															borderRadius: "4px",
-															cursor: "pointer",
-															textAlign: "left",
-														}}
 													>
 														<Printer
 															size={14}
@@ -467,7 +367,7 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 												) : null}
 
 												<button
-													className="doc-dropdown-item"
+													className="doc-dropdown-item w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] rounded-lg transition-colors cursor-pointer text-left border-0 bg-transparent min-h-[44px] sm:min-h-[36px]"
 													type="button"
 													onClick={() => {
 														setOpenDocActionMenuId(null);
@@ -482,25 +382,10 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 													}}
 													aria-label={`Прямая печать (A4): ${documentActionContext}`}
 													title={`Печать документа через системный принтер A4: ${documentActionContext}`}
-													style={{
-														display: "flex",
-														alignItems: "center",
-														gap: "8px",
-														width: "100%",
-														padding: "6px 10px",
-														fontSize: "12.5px",
-														fontWeight: 500,
-														border: "none",
-														background: "transparent",
-														color: "var(--ink, #0f172a)",
-														borderRadius: "4px",
-														cursor: "pointer",
-														textAlign: "left",
-													}}
 												>
 													<Printer
 														size={14}
-														className="text-teal-600 dark:text-teal-400 shrink-0"
+														className="text-[var(--primary,#0d9488)] shrink-0"
 														aria-hidden="true"
 													/>
 													<span>Прямая печать (A4)</span>
@@ -510,68 +395,38 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 												document.status === "issued" ? (
 													<>
 														<button
-															className="doc-dropdown-item"
+															className="doc-dropdown-item w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] rounded-lg transition-colors cursor-pointer text-left border-0 bg-transparent min-h-[44px] sm:min-h-[36px]"
 															type="button"
 															onClick={() => {
 																setOpenDocActionMenuId(null);
 																void downloadTaxDocumentXml?.(document.id);
 															}}
-															aria-label={`Скачать XML-файл справки НДФЛ: ${documentActionContext}`}
-															title={`Черновой файл ФНС: ${documentActionContext}`}
-															style={{
-																display: "flex",
-																alignItems: "center",
-																gap: "8px",
-																width: "100%",
-																padding: "6px 10px",
-																fontSize: "12.5px",
-																fontWeight: 500,
-																border: "none",
-																background: "transparent",
-																color: "var(--ink, #0f172a)",
-																borderRadius: "4px",
-																cursor: "pointer",
-																textAlign: "left",
-															}}
+															aria-label={`Скачать электронный файл справки для налоговой: ${documentActionContext}`}
+															title={`Черновой файл для налоговой: ${documentActionContext}`}
 														>
 															<FileText
 																size={14}
-																className="text-teal-600 dark:text-teal-400 shrink-0"
+																className="text-[var(--primary,#0d9488)] shrink-0"
 																aria-hidden="true"
 															/>
-															<span>Черновой файл ФНС</span>
+															<span>Файл для налоговой</span>
 														</button>
 														<button
-															className="doc-dropdown-item"
+															className="doc-dropdown-item w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] rounded-lg transition-colors cursor-pointer text-left border-0 bg-transparent min-h-[44px] sm:min-h-[36px]"
 															type="button"
 															onClick={() => {
 																setOpenDocActionMenuId(null);
 																setIsFnsNdflXmlOpen?.(true);
 															}}
-															aria-label={`Справка для ФНС (XML): ${documentActionContext}`}
-															title={`Справка для ФНС (XML): ${documentActionContext}`}
-															style={{
-																display: "flex",
-																alignItems: "center",
-																gap: "8px",
-																width: "100%",
-																padding: "6px 10px",
-																fontSize: "12.5px",
-																fontWeight: 500,
-																border: "none",
-																background: "transparent",
-																color: "var(--ink, #0f172a)",
-																borderRadius: "4px",
-																cursor: "pointer",
-																textAlign: "left",
-															}}
+															aria-label={`Справка для налогового вычета: ${documentActionContext}`}
+															title={`Справка для налогового вычета: ${documentActionContext}`}
 														>
 															<FileText
 																size={14}
-																className="text-teal-600 dark:text-teal-400 shrink-0"
+																className="text-[var(--primary,#0d9488)] shrink-0"
 																aria-hidden="true"
 															/>
-															<span>Справка для ФНС (XML)</span>
+															<span>Справка для налогового вычета</span>
 														</button>
 													</>
 												) : null}
@@ -580,42 +435,27 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 												document.kind === "orthodontic_medical_card_043_1u" ||
 												document.kind === "medical_record_extract" ? (
 													<button
-														className="doc-dropdown-item"
+														className="doc-dropdown-item w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] rounded-lg transition-colors cursor-pointer text-left border-0 bg-transparent min-h-[44px] sm:min-h-[36px]"
 														type="button"
 														onClick={() => {
 															setOpenDocActionMenuId(null);
 															setIsEgiszRemdOpen?.(true);
 														}}
-														aria-label={`Выгрузка СЭМД в ЕГИСЗ: ${documentActionContext}`}
-														title={`Выгрузка СЭМД в ЕГИСЗ: ${documentActionContext}`}
-														style={{
-															display: "flex",
-															alignItems: "center",
-															gap: "8px",
-															width: "100%",
-															padding: "6px 10px",
-															fontSize: "12.5px",
-															fontWeight: 500,
-															border: "none",
-															background: "transparent",
-															color: "var(--ink, #0f172a)",
-															borderRadius: "4px",
-															cursor: "pointer",
-															textAlign: "left",
-														}}
+														aria-label={`Отправка в ЕГИСЗ: ${documentActionContext}`}
+														title={`Отправка электронного медицинского документа в ЕГИСЗ: ${documentActionContext}`}
 													>
 														<FileCheck
 															size={14}
-															className="text-teal-600 dark:text-teal-400 shrink-0"
+															className="text-[var(--primary,#0d9488)] shrink-0"
 															aria-hidden="true"
 														/>
-														<span>Выгрузка СЭМД в ЕГИСЗ</span>
+														<span>Отправка в ЕГИСЗ</span>
 													</button>
 												) : null}
 
 												{document.status !== "voided" ? (
 													<button
-														className="doc-dropdown-item"
+														className="doc-dropdown-item w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-[var(--bad-fg,#ef4444)] hover:bg-[var(--bad-fg,#ef4444)]/10 rounded-lg transition-colors cursor-pointer text-left border-0 bg-transparent min-h-[44px] sm:min-h-[36px]"
 														type="button"
 														disabled={documentStatusSaving}
 														aria-busy={documentStatusSaving || undefined}
@@ -625,21 +465,6 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 														}}
 														aria-label={`Аннулировать документ: ${documentActionContext}`}
 														title={`Аннулировать документ: ${documentActionContext}`}
-														style={{
-															display: "flex",
-															alignItems: "center",
-															gap: "8px",
-															width: "100%",
-															padding: "6px 10px",
-															fontSize: "12.5px",
-															fontWeight: 500,
-															border: "none",
-															background: "transparent",
-															color: "var(--bad-fg, #ef4444)",
-															borderRadius: "4px",
-															cursor: "pointer",
-															textAlign: "left",
-														}}
 													>
 														<X size={14} className="shrink-0" aria-hidden="true" />
 														<span>Аннулировать</span>
@@ -653,33 +478,12 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 						);
 					})}
 					{documentsSlice.hasMore && (
-						<div
-							style={{
-								padding: "16px",
-								textAlign: "center",
-								background: "var(--paper-strong, #f8fafc)",
-								borderRadius: "8px",
-								margin: "8px 0",
-							}}
-						>
+						<div className="py-4 text-center bg-[var(--paper-soft)] rounded-xl my-2">
 							<button
 								type="button"
-								className="btn-documents-show-more"
+								className="btn-documents-show-more h-9 px-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-semibold text-xs inline-flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer transition-colors"
 								data-testid="btn-documents-show-more"
 								onClick={() => setDisplayLimit((prev) => prev + 40)}
-								style={{
-									background: "var(--paper, #ffffff)",
-									border: "1px solid var(--border, #cbd5e1)",
-									color: "var(--ink, #0f172a)",
-									padding: "8px 18px",
-									borderRadius: "8px",
-									fontSize: "13px",
-									fontWeight: 600,
-									cursor: "pointer",
-									display: "inline-flex",
-									alignItems: "center",
-									gap: "6px",
-								}}
 								title="Загрузить следующие документы"
 							>
 								<span>

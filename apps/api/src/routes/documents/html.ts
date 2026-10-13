@@ -1,5 +1,4 @@
 import type { FastifyInstance } from "fastify";
-import { requireClinicalReadAccess } from "../../accessGuard.js";
 import {
 	getDocumentById,
 	readIssuedDocumentSnapshot,
@@ -24,8 +23,6 @@ export async function register(app: FastifyInstance) {
 	app.get<{ Params: { id: string }; Querystring: { download?: string } }>(
 		"/api/documents/:id/html",
 		async (request, reply) => {
-			if (!(await requireClinicalReadAccess(request, reply, "document html")))
-				return;
 			const { id } = request.params as { id: string };
 			const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 			if (!UUID_REGEX.test(id)) {

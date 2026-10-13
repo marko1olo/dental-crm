@@ -58,7 +58,7 @@ export async function register(app: FastifyInstance) {
 			return reply.code(404).send(apiError("Документ не найден"));
 		}
 
-		// 152-ФЗ / 323-ФЗ: Выдача клинических медицинских документов разрешена только клиническому персоналу
+		// Выдача клинических медицинских документов разрешена только клиническому персоналу
 		const identity = getRequestIdentity(request);
 		const staffRole =
 			identity.role ??
@@ -75,7 +75,7 @@ export async function register(app: FastifyInstance) {
 				permission: "clinical.document.issue",
 				role: staffRole,
 				message:
-					"Выдача медицинских документов ограничена 323-ФЗ и 152-ФЗ: требуются права клинического персонала (врач / ассистент).",
+					"Выдача клинических медицинских документов доступна только медицинскому персоналу (врачу или ассистенту).",
 			});
 		}
 		if (existing.status === "voided") {
@@ -244,6 +244,7 @@ export async function register(app: FastifyInstance) {
 			releaseJournalEntry,
 			snapshotHtml: issuedHtml,
 			signatureAttestation,
+			signatureSvg: parsedIssueInput.data.signatureSvg ?? null,
 			taxPaymentSnapshot,
 			taxXmlSourceSnapshot,
 			totalAmountRub: issueCandidate.totalAmountRub,

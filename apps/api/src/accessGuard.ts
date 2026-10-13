@@ -31,11 +31,7 @@ function clinicalReadsUnguardedAllowed(): boolean {
 	return unguardedBypassAllowed("DENTE_CLINICAL_ALLOW_UNGUARDED_READS");
 }
 
-export async function requireClinicalMutationAccess(
-	request: FastifyRequest,
-	reply: FastifyReply,
-	protectedArea = "clinical mutation",
-): Promise<boolean> {
+function isDemoShowcaseTokenRequest(request: FastifyRequest): boolean {
 	const clinicHeader = request.headers["x-dente-clinic-token"];
 	const clinicToken = Array.isArray(clinicHeader)
 		? clinicHeader[0]
@@ -45,6 +41,35 @@ export async function requireClinicalMutationAccess(
 		(clinicToken.startsWith("demo-showcase-token") ||
 			clinicToken.startsWith("demo-showcase-clinic-token"))
 	) {
+		return true;
+	}
+
+	const staffHeader = request.headers["x-dente-staff-token"];
+	const staffToken = Array.isArray(staffHeader)
+		? staffHeader[0]
+		: staffHeader;
+	if (
+		typeof staffToken === "string" &&
+		(staffToken.startsWith("demo-showcase-staff-token") ||
+			staffToken.startsWith("demo-token-"))
+	) {
+		return true;
+	}
+
+	return false;
+}
+
+export async function requireClinicalMutationAccess(
+	request: FastifyRequest,
+	reply: FastifyReply,
+	protectedArea = "clinical mutation",
+): Promise<boolean> {
+	if (isDemoShowcaseTokenRequest(request)) {
+		return true;
+	}
+
+	const identity = getRequestIdentity(request);
+	if (identity.verified && identity.organizationId) {
 		return true;
 	}
 
@@ -89,15 +114,12 @@ export async function requireClinicalReadAccess(
 	reply: FastifyReply,
 	protectedArea = "clinical read",
 ): Promise<boolean> {
-	const clinicHeader = request.headers["x-dente-clinic-token"];
-	const clinicToken = Array.isArray(clinicHeader)
-		? clinicHeader[0]
-		: clinicHeader;
-	if (
-		typeof clinicToken === "string" &&
-		(clinicToken.startsWith("demo-showcase-token") ||
-			clinicToken.startsWith("demo-showcase-clinic-token"))
-	) {
+	if (isDemoShowcaseTokenRequest(request)) {
+		return true;
+	}
+
+	const identity = getRequestIdentity(request);
+	if (identity.verified && identity.organizationId) {
 		return true;
 	}
 

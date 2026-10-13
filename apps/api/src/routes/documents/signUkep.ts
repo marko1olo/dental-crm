@@ -25,17 +25,17 @@ import { clinicalDocKinds } from "./query.js";
  */
 const documentUkepSignParamsSchema = z.object({
 	id: z.string().uuid({
-		message: "ID and pkcs7Signature are required",
+		message: "Не указан идентификатор документа или электронная подпись.",
 	}),
 });
 
 const documentUkepSignBodySchema = z.object({
 	pkcs7Signature: z
 		.string({
-			required_error: "ID and pkcs7Signature are required",
-			invalid_type_error: "ID and pkcs7Signature are required",
+			required_error: "Не указан идентификатор документа или электронная подпись.",
+			invalid_type_error: "Не указан идентификатор документа или электронная подпись.",
 		})
-		.min(1, { message: "ID and pkcs7Signature are required" }),
+		.min(1, { message: "Не указан идентификатор документа или электронная подпись." }),
 	certificateSerialNumber: z.string().trim().optional(),
 	certificateSubject: z.string().trim().optional(),
 	certificateIssuer: z.string().trim().optional(),
@@ -59,7 +59,7 @@ export async function register(app: FastifyInstance) {
 		if (!parsedParams.success || !parsedBody.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "ID and pkcs7Signature are required",
+				message: "Не указан идентификатор документа или электронная подпись.",
 			});
 		}
 
@@ -91,10 +91,13 @@ export async function register(app: FastifyInstance) {
 				.limit(1);
 
 			if (!doc) {
-				return reply.code(404).send({ error: "DocumentNotFound" });
+				return reply.code(404).send({
+					error: "DocumentNotFound",
+					message: "Документ не найден.",
+				});
 			}
 
-			// 63-ФЗ, 323-ФЗ и Приказ Минздрава 947н: Медицинские документы могут подписываться УКЭП только медицинским персоналом (врачом/главным врачом)
+			// Медицинские документы могут подписываться электронной подписью только медицинским персоналом (врачом/главным врачом)
 			const identity = getRequestIdentity(request);
 			const staffRole =
 				identity.role ??
@@ -107,17 +110,17 @@ export async function register(app: FastifyInstance) {
 					permission: "clinical.document.sign_ukep",
 					role: staffRole,
 					message:
-						"Подписание медицинских документов УКЭП ограничено 63-ФЗ, 323-ФЗ и Приказом Минздрава 947н: требуются права врача или главного врача.",
+						"Подписание клинических медицинских документов электронной подписью доступно только врачу или главному врачу.",
 				});
 			}
 
-			// Валидация криптографического формата отсоединенной подписи CMS PKCS#7
+			// Валидация криптографического формата отсоединенной подписи
 			const signatureValidation = validateGostCmsPkcs7Signature(pkcs7Signature);
 			if (!signatureValidation.valid) {
 				return reply.code(400).send({
 					error: "SignatureVerificationFailed",
 					errorCode: signatureValidation.errorCode ?? "SignatureVerificationFailed",
-					message: `Предоставленная подпись не является корректной отсоединенной подписью CMS (PKCS#7) по ГОСТ Р 34.10-2012. ${signatureValidation.error}`,
+					message: `Файл электронной подписи поврежден или имеет неверный формат. ${signatureValidation.error ?? ""}`.trim(),
 				});
 			}
 
@@ -140,7 +143,7 @@ export async function register(app: FastifyInstance) {
 			if (doc.status === "voided") {
 				return reply.code(409).send({
 					error: "Conflict",
-					message: "Подписание УКЭП невозможно: документ аннулирован.",
+					message: "Невозможно подписать аннулированный документ электронной подписью.",
 				});
 			}
 
@@ -152,7 +155,7 @@ export async function register(app: FastifyInstance) {
 				return reply.code(409).send({
 					error: "AlreadySigned",
 					message:
-						"Документ уже подписан УКЭП. Замена подписи запрещена: аннулируйте документ и выпустите исправляющий.",
+						"Документ уже подписан электронной подписью. Замена подписи запрещена: аннулируйте документ и выпустите исправляющий.",
 				});
 			}
 
@@ -212,7 +215,7 @@ export async function register(app: FastifyInstance) {
 				return reply.code(400).send({
 					error: "MissingCertificateSerialNumber",
 					message:
-						"Не удалось определить серийный номер сертификата из подписи PKCS#7. Передайте certificateSerialNumber явно или используйте валидный контейнер CAdES.",
+						"Не удалось определить серийный номер сертификата электронной подписи. Выберите действующий сертификат врача и повторите подписание.",
 				});
 			}
 
@@ -300,14 +303,17 @@ export async function register(app: FastifyInstance) {
 			if ("conflict" in signResult && signResult.conflict) {
 				return reply.code(409).send({
 					error: "AlreadySigned",
-					message: "Документ уже подписан УКЭП или недоступен.",
+					message: "Документ уже подписан электронной подписью или недоступен.",
 				});
 			}
 
 			return { success: true, id: signResult.id };
 		} catch (e) {
 			console.error("[DocumentSignUkep] Error:", e);
-			return reply.code(500).send({ error: "DatabaseError" });
+			return reply.code(500).send({
+				error: "DatabaseError",
+				message: "Не удалось сохранить электронную подпись документа. Повторите попытку.",
+			});
 		}
 	});
 }
