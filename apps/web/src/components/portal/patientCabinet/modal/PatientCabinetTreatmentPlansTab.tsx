@@ -88,6 +88,7 @@ export const PatientCabinetTreatmentPlansTab: React.FC<PatientCabinetTreatmentPl
 						plan={data.treatmentPlans[0] as any}
 						nextAppointment={summary.nextAppointment as any}
 						fullCabinetData={data as any}
+						scans={data.scans}
 					/>
 				</div>
 			)}

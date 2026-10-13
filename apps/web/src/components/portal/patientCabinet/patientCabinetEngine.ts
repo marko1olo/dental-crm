@@ -306,6 +306,19 @@ export interface PatientPersonalCabinetData {
 	readonly somaticRiskLevel?: "high" | "moderate" | "low" | undefined;
 	readonly documents?: readonly GeneratedDocumentSummary[] | undefined;
 	readonly prescriptions?: readonly PatientPrescriptionItem[] | undefined;
+	readonly scans?: readonly PatientDiagnosticScan[] | undefined;
+}
+
+export interface PatientDiagnosticScan {
+	readonly id: string;
+	readonly titleRu: string;
+	readonly modality: "rvg" | "optg" | "cbct" | "trg";
+	readonly modalityRu: string;
+	readonly dateRu: string;
+	readonly toothFdi?: string | undefined;
+	readonly doseMicroSv: number;
+	readonly previewUrl: string;
+	readonly conclusionRu: string;
 }
 
 export interface PatientCabinetSummary {

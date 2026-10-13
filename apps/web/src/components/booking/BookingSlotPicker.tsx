@@ -41,6 +41,7 @@ export interface BookingSlotPickerProps {
 	readonly onSelectSlot: (slot: BookingSlotItem) => void;
 	readonly slotsLoading: boolean;
 	readonly className?: string;
+	readonly onJoinWaitlist?: (() => void) | undefined;
 }
 
 export const BookingSlotPicker: React.FC<BookingSlotPickerProps> = ({
@@ -56,6 +57,7 @@ export const BookingSlotPicker: React.FC<BookingSlotPickerProps> = ({
 	onSelectSlot,
 	slotsLoading,
 	className = "",
+	onJoinWaitlist,
 }) => {
 	const [activePeriodFilter, setActivePeriodFilter] = useState<
 		"all" | "morning" | "afternoon" | "evening"
@@ -305,14 +307,27 @@ export const BookingSlotPicker: React.FC<BookingSlotPickerProps> = ({
 						</div>
 					</div>
 				) : filteredSlots.length === 0 ? (
-					<div className="dbw-slots-empty-container">
-						<Clock size={32} className="text-slate-400 mb-2" />
-						<div className="text-sm font-bold text-slate-700 dark:text-slate-200">
-							На выбранный период нет свободных мест
+					<div
+						className="dbw-slots-empty-container text-center p-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50"
+						data-testid="booking-slots-empty-state"
+					>
+						<Clock size={36} className="text-slate-400 mb-3" aria-hidden="true" />
+						<div className="text-sm font-bold text-slate-800 dark:text-slate-100">
+							На выбранную дату нет свободных окон для записи
 						</div>
-						<div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-							Попробуйте выбрать другую дату в ленте дней или переключить фильтр времени
+						<div className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
+							Выберите другой день в ленте выше или оставьте заявку в лист ожидания — администратор свяжется с вами при отмене записи
 						</div>
+						{onJoinWaitlist && (
+							<button
+								type="button"
+								className="mt-4 px-4 py-2 text-xs font-semibold rounded-lg bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition-all min-h-[44px] flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+								data-testid="join-waitlist-btn"
+								onClick={onJoinWaitlist}
+							>
+								<span>Оставить заявку в лист ожидания</span>
+							</button>
+						)}
 					</div>
 				) : (
 					<div className="dbw-slots-groups">

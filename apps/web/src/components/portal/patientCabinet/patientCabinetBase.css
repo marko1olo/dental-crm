@@ -43,6 +43,8 @@
 	--pc-radius-sm: 6px;
 	--pc-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 
+	position: relative;
+	z-index: 10;
 	background: var(--pc-bg);
 	color: var(--pc-text-main);
 	border: 1px solid var(--pc-border);

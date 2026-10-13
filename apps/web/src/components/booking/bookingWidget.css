@@ -634,6 +634,13 @@
 	border-radius: 4px;
 }
 
+.dente-booking-widget[data-theme="dark"] .dbw-badge-rating,
+.dark .dbw-badge-rating {
+	color: #fbbf24;
+	background: rgba(245, 158, 11, 0.18);
+	border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
 .dbw-badge-exp {
 	font-size: 0.8125rem;
 	font-weight: 600;

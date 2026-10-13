@@ -16,6 +16,7 @@ export const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
 	slotsLoading,
 	slotError,
 	onNextStep,
+	onJoinWaitlist,
 }) => {
 	return (
 		<div id="dbw-step-slots" className="dbw-step-card">
@@ -33,6 +34,7 @@ export const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
 				slotsLoading={slotsLoading}
 				slotError={slotError}
 				onNextStep={onNextStep}
+				onJoinWaitlist={onJoinWaitlist}
 			/>
 		</div>
 	);

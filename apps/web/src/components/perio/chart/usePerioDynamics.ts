@@ -3,7 +3,7 @@ import {
 	type PerioChartSummary,
 	type PerioDynamicsSummary,
 } from "@dental/shared";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { isDemoPatientId } from "../../../lib/demoMode";
 
 export interface SnapshotIndicesData {
@@ -48,45 +48,41 @@ export function usePerioDynamics({
 	const [baselineSnapshot, setBaselineSnapshot] =
 		useState<HistoricalSnapshotItem | null>(null);
 
-	// Load historical closed snapshots for visit dynamics comparison (Было / Стало)
-	useEffect(() => {
+	const refetchSnapshots = useCallback(async () => {
 		if (!patientId || isDemoPatientId(patientId)) return;
 		const UUID_REGEX =
 			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 		if (!UUID_REGEX.test(patientId)) return;
 
-		let isMounted = true;
-		async function loadSnapshots() {
-			try {
-				const res = await fetch(
-					`/api/periodontogram/patients/${patientId}/snapshots`,
-				);
-				if (!res.ok) return;
-				const json = (await res.json()) as {
-					success: boolean;
-					data?: HistoricalSnapshotItem[];
-				};
-				if (
-					isMounted &&
-					json.success &&
-					Array.isArray(json.data) &&
-					json.data.length > 0
-				) {
-					setHistoricalSnapshots(json.data);
-					const latest = json.data[0];
-					if (latest && latest.indices) {
-						setBaselineSnapshot(latest);
-					}
+		try {
+			const res = await fetch(
+				`/api/periodontogram/patients/${patientId}/snapshots`,
+			);
+			if (!res.ok) return;
+			const json = (await res.json()) as {
+				success: boolean;
+				data?: HistoricalSnapshotItem[];
+			};
+			if (
+				json.success &&
+				Array.isArray(json.data) &&
+				json.data.length > 0
+			) {
+				setHistoricalSnapshots(json.data);
+				const latest = json.data[0];
+				if (latest && latest.indices) {
+					setBaselineSnapshot(latest);
 				}
-			} catch {
-				// Offline or non-blocking graceful fallback
 			}
+		} catch {
+			// Offline or non-blocking graceful fallback
 		}
-		void loadSnapshots();
-		return () => {
-			isMounted = false;
-		};
 	}, [patientId]);
+
+	// Load historical closed snapshots for visit dynamics comparison (Было / Стало)
+	useEffect(() => {
+		void refetchSnapshots();
+	}, [refetchSnapshots]);
 
 	const previousSnapshotSummary: PerioChartSummary | null = useMemo(() => {
 		if (previousSummary) return previousSummary;
@@ -137,5 +133,6 @@ export function usePerioDynamics({
 		dynamics,
 		historicalSnapshots,
 		baselineSnapshot,
+		refetchSnapshots,
 	};
 }

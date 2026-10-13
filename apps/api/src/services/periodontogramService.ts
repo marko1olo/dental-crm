@@ -20,6 +20,8 @@ import type { SiteRow, ToothRow } from "./periodontogramIndices.js";
 
 export const patchToothBodySchema = z
 	.object({
+		toothNumber: z.number().int().min(11).max(48).optional(),
+		tooth_number: z.number().int().min(11).max(48).optional(),
 		isPresent: z.boolean().optional(),
 		is_present: z.boolean().optional(),
 		isImplant: z.boolean().optional(),
@@ -45,6 +47,11 @@ export const patchToothBodySchema = z
 	.passthrough();
 
 export type PatchToothInput = z.infer<typeof patchToothBodySchema>;
+
+export const patchTeethPayloadSchema = z.union([
+	z.array(patchToothBodySchema),
+	z.object({ teeth: z.array(patchToothBodySchema) }),
+]);
 
 export const siteItemSchema = z.object({
 	toothNumber: z.number().int().min(11).max(48).optional(),

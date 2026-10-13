@@ -59,7 +59,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 				<div className="flex items-center gap-2 min-w-0">
 					<PerioProbe size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />
 					<h4 className="text-sm font-black text-teal-900 dark:text-teal-300 truncate">
-						Скрининг пародонта PSR / CPITN (ВОЗ / СтАР) и клинические протоколы
+						Экспресс-скрининг пародонта PSR / CPITN (ВОЗ / СтАР) и клинические протоколы
 					</h4>
 				</div>
 

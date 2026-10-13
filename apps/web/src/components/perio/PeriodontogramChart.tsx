@@ -128,6 +128,9 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 		handleInsertToProtocol,
 		handleCopyProtocol,
 		dynamics,
+		syncStatus,
+		lastSavedAt,
+		handleSaveDraft,
 	} = usePerioChartLogic({
 		initialTeeth,
 		patientId: _patientId,
@@ -263,6 +266,9 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 				isHygieneExpanded={isHygieneExpanded}
 				insertStatus={insertStatus}
 				copyStatus={copyStatus}
+				syncStatus={syncStatus}
+				lastSavedAt={lastSavedAt}
+				onSaveDraft={() => void handleSaveDraft({ closeAfter: false })}
 				onApplyExpressPreset={handleApplyExpressPreset}
 				onSetAllIntact={handleSetAllIntact}
 				onMarkSelectedToothPathology={handleMarkSelectedToothPathology}

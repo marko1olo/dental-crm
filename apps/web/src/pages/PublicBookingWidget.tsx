@@ -38,18 +38,45 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 	const [isLoading, setIsLoading] = useState(false);
 	const [authError, setAuthError] = useState<string | null>(null);
 
+	const [effectiveOrgId, setEffectiveOrgId] = useState<string | null>(organizationId);
+	const [isResolvingClinic, setIsResolvingClinic] = useState(!organizationId);
+
+	useEffect(() => {
+		if (organizationId) {
+			setEffectiveOrgId(organizationId);
+			setIsResolvingClinic(false);
+			return;
+		}
+		let cancelled = false;
+		fetch("/api/public/booking/default-clinic")
+			.then((res) => (res.ok ? res.json() : null))
+			.then((json) => {
+				if (cancelled) return;
+				if (json?.organizationId) {
+					setEffectiveOrgId(json.organizationId);
+				}
+				setIsResolvingClinic(false);
+			})
+			.catch(() => {
+				if (!cancelled) setIsResolvingClinic(false);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [organizationId]);
+
 	// Определение Telegram WebApp
 	useEffect(() => {
 		const tg = (window as unknown as { Telegram?: { WebApp?: { expand?: () => void; ready?: () => void; initData?: string; initDataUnsafe?: { user?: { first_name?: string } } } } }).Telegram?.WebApp;
 		if (tg) {
 			tg.ready?.();
 			tg.expand?.();
-			if (tg.initData && organizationId) {
+			if (tg.initData && effectiveOrgId) {
 				// Автоматический вход через Telegram WebApp
 				void fetch("/api/portal/auth/telegram-webapp", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ initData: tg.initData, organizationId }),
+					body: JSON.stringify({ initData: tg.initData, organizationId: effectiveOrgId }),
 				})
 					.then((res) => (res.ok ? res.json() : null))
 					.then((json) => {
@@ -62,7 +89,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 					.catch(() => {});
 			}
 		}
-	}, [organizationId]);
+	}, [effectiveOrgId]);
 
 	const handleSendOtp = async () => {
 		if (!loginPhone.trim()) {
@@ -75,7 +102,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 			const res = await fetch("/api/portal/auth/send-otp", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ phone: loginPhone.trim(), organizationId: organizationId || "default" }),
+				body: JSON.stringify({ phone: loginPhone.trim(), organizationId: effectiveOrgId || "default" }),
 			});
 			if (res.ok || res.status === 202) {
 				setOtpSent(true);
@@ -101,7 +128,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 			const res = await fetch("/api/portal/auth/verify-otp", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ phone: loginPhone.trim(), code: otpCode.trim(), organizationId: organizationId || "default" }),
+				body: JSON.stringify({ phone: loginPhone.trim(), code: otpCode.trim(), organizationId: effectiveOrgId || "default" }),
 			});
 			if (res.ok) {
 				const json = await res.json();
@@ -120,7 +147,18 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 		}
 	};
 
-	if (!organizationId) {
+	if (isResolvingClinic) {
+		return (
+			<div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-slate-950 p-6 text-center text-slate-900 dark:text-slate-100">
+				<div className="w-8 h-8 border-3 border-sky-600 border-t-transparent rounded-full animate-spin mb-3" />
+				<p className="text-sm text-gray-600 dark:text-slate-400">
+					Загрузка расписания клиники...
+				</p>
+			</div>
+		);
+	}
+
+	if (!effectiveOrgId) {
 		return (
 			<div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-slate-950 p-6 text-center text-slate-900 dark:text-slate-100">
 				<h2 className="text-xl font-bold mb-2">
@@ -158,7 +196,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 					type="button"
 					onClick={() => {
 						setActiveMode("cabinet");
-						if (portalToken) {
+						if (portalToken || patientData) {
 							setIsCabinetModalOpen(true);
 						}
 					}}
@@ -176,7 +214,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 			{/* Режим 1: Онлайн-запись */}
 			{activeMode === "booking" && (
 				<PublicOnlineBookingWidget
-					organizationId={organizationId}
+					organizationId={effectiveOrgId}
 					className="dbw-with-art-bg"
 				/>
 			)}
@@ -226,6 +264,17 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 								<span>{isLoading ? "Отправка кода..." : "Получить код входа"}</span>
 								<ArrowRight className="w-4 h-4" />
 							</button>
+							{patientData && (
+								<button
+									type="button"
+									onClick={() => setIsCabinetModalOpen(true)}
+									className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer"
+									data-testid="open-demo-cabinet-btn"
+								>
+									<span>Открыть кабинет пациента (Тест-драйв)</span>
+									<ArrowRight className="w-3.5 h-3.5" />
+								</button>
+							)}
 							<p className="text-[11px] text-center text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
 								Нажимая «Получить код входа», вы подтверждаете согласие на обработку персональных данных для безопасного входа в личный кабинет.
 							</p>

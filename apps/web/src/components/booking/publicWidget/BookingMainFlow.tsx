@@ -1,4 +1,5 @@
 import type React from "react";
+import { showToast } from "../../GlobalToast";
 import { BookingDateTimeStep } from "./BookingDateTimeStep";
 import { BookingFloatingBottomBar } from "./BookingFloatingBottomBar";
 import { BookingPatientFormStep } from "./BookingPatientFormStep";
@@ -47,6 +48,16 @@ export const BookingMainFlow: React.FC<BookingMainFlowProps> = ({ state }) => {
 						state.setSelectedSlot(state.slots[0] || null);
 					}
 					state.handleStepChange(4);
+					if (typeof document !== "undefined" && typeof document.getElementById === "function") {
+						document.getElementById("dbw-step-contacts")?.scrollIntoView?.({ behavior: "smooth" });
+					}
+				}}
+				onJoinWaitlist={() => {
+					state.handleStepChange(4);
+					showToast(
+						"Заполните контакты, чтобы администратор записал вас при появлении свободного окна",
+						"info",
+					);
 					if (typeof document !== "undefined" && typeof document.getElementById === "function") {
 						document.getElementById("dbw-step-contacts")?.scrollIntoView?.({ behavior: "smooth" });
 					}

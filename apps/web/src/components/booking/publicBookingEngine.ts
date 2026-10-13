@@ -71,48 +71,8 @@ export interface CalendarExportPayload {
 	endsAt: string; // ISO
 }
 
-export const DEFAULT_DOCTORS_LIST: BookingDoctor[] = [
-	{
-		id: "doc-solo-default",
-		fullName: "Барабаш Сергей Васильевич",
-		specialties: ["Главный врач", "Стоматолог-терапевт", "Ортопед"],
-		categoryIds: ["therapy", "orthopedics"],
-		experienceYears: 14,
-		rating: 4.95,
-		reviewsCount: 142,
-		isAvailable: true,
-	},
-	{
-		id: "doc-surgeon-default",
-		fullName: "Смирнова Елена Александровна",
-		specialties: ["Хирург-имплантолог", "Пародонтолог"],
-		categoryIds: ["surgery", "periodontics"],
-		experienceYears: 11,
-		rating: 4.98,
-		reviewsCount: 98,
-		isAvailable: true,
-	},
-	{
-		id: "doc-orthodontist-default",
-		fullName: "Волков Артём Николаевич",
-		specialties: ["Ортодонт"],
-		categoryIds: ["orthodontics"],
-		experienceYears: 8,
-		rating: 4.91,
-		reviewsCount: 76,
-		isAvailable: true,
-	},
-	{
-		id: "doc-hygienist-default",
-		fullName: "Кузнецова Ирина Викторовна",
-		specialties: ["Гигиенист стоматологический"],
-		categoryIds: ["hygiene"],
-		experienceYears: 6,
-		rating: 4.88,
-		reviewsCount: 54,
-		isAvailable: true,
-	},
-];
+export const DEFAULT_DOCTORS_LIST: BookingDoctor[] = [];
+
 
 export const SERVICE_CATEGORIES = [
 	{ id: "all", label: "Все специалисты" },
@@ -320,39 +280,13 @@ export function generateIcsCalendarContent(payload: CalendarExportPayload): stri
 }
 
 /**
- * Generates a mock schedule of slots for testing or when API is unreachable.
+ * Honest empty slots list when clinic has no available windows or API is offline.
+ * Zero fake slots per Mandate 8a & 8k (No mocks / Truth in booking).
  */
-export function generateFallbackSlots(selectedDate: string): BookingSlot[] {
-	const times = [
-		"09:00",
-		"09:30",
-		"10:00",
-		"10:30",
-		"11:00",
-		"11:30",
-		"12:30",
-		"13:00",
-		"14:00",
-		"15:00",
-		"15:30",
-		"16:30",
-		"17:00",
-		"18:00",
-		"19:00",
-	];
-
-	return times.map((time) => {
-		const [hh, mm] = time.split(":").map(Number);
-		const start = new Date(`${selectedDate}T${time}:00+03:00`);
-		const end = new Date(start.getTime() + 30 * 60_000);
-		return {
-			time,
-			startsAt: start.toISOString(),
-			endsAt: end.toISOString(),
-			period: (hh ?? 12) < 12 ? "morning" : (hh ?? 12) < 17 ? "afternoon" : "evening",
-		};
-	});
+export function generateFallbackSlots(_selectedDate: string): BookingSlot[] {
+	return [];
 }
+
 
 export interface SendOtpResult {
 	success: boolean;
@@ -405,9 +339,9 @@ export async function sendOtpVerificationRequest(
 		};
 	} catch {
 		return {
-			success: true,
-			message: "Тестовый режим (введите 1234 или 0000)",
-			cooldownSeconds: 60,
+			success: false,
+			message: "Сбой сети при отправке кода подтверждения. Пожалуйста, проверьте подключение.",
+			cooldownSeconds: 15,
 		};
 	}
 }

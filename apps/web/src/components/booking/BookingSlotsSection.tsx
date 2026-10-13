@@ -27,6 +27,7 @@ export interface BookingSlotsSectionProps {
 	slotsLoading: boolean;
 	slotError: string | null;
 	onNextStep: () => void;
+	onJoinWaitlist?: (() => void) | undefined;
 }
 
 export const BookingSlotsSection: React.FC<BookingSlotsSectionProps> = ({
@@ -43,6 +44,7 @@ export const BookingSlotsSection: React.FC<BookingSlotsSectionProps> = ({
 	slotsLoading,
 	slotError,
 	onNextStep,
+	onJoinWaitlist,
 }) => {
 	return (
 		<section aria-labelledby="booking-slots-heading" className="mb-5">
@@ -62,6 +64,7 @@ export const BookingSlotsSection: React.FC<BookingSlotsSectionProps> = ({
 				selectedSlot={selectedSlot}
 				onSelectSlot={onSelectSlot}
 				slotsLoading={slotsLoading}
+				onJoinWaitlist={onJoinWaitlist}
 			/>
 
 			{selectedSlot && (

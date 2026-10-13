@@ -7,6 +7,7 @@ import {
 	Droplets,
 	HelpCircle,
 	RotateCcw,
+	Save,
 	ShieldCheck,
 } from "lucide-react";
 import React from "react";
@@ -24,6 +25,16 @@ export interface PerioToolbarProps {
 	readonly isHygieneExpanded: boolean;
 	readonly insertStatus: boolean;
 	readonly copyStatus: boolean;
+	readonly syncStatus?:
+		| "idle"
+		| "loading"
+		| "saving"
+		| "synced"
+		| "closed"
+		| "error"
+		| undefined;
+	readonly lastSavedAt?: Date | null | undefined;
+	readonly onSaveDraft?: (() => void) | undefined;
 	readonly onApplyExpressPreset: (presetId: PerioExpressPresetId) => void;
 	readonly onSetAllIntact: () => void;
 	readonly onMarkSelectedToothPathology: (depth: number, hasBop: boolean) => void;
@@ -42,6 +53,9 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 	isHygieneExpanded,
 	insertStatus,
 	copyStatus,
+	syncStatus = "idle",
+	lastSavedAt: _lastSavedAt,
+	onSaveDraft,
 	onApplyExpressPreset,
 	onSetAllIntact,
 	onMarkSelectedToothPathology,
@@ -77,6 +91,41 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 							{aapDiagnosis.icd10Code} •{" "}
 							{aapDiagnosis.diagnosisNameRu.split("(")[0]}
 						</span>
+						{syncStatus && syncStatus !== "idle" && (
+							<span
+								className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border shrink-0 ${
+									syncStatus === "saving" || syncStatus === "loading"
+										? "bg-teal-500/10 text-teal-400 border-teal-500/30"
+										: syncStatus === "synced"
+											? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+											: syncStatus === "closed"
+												? "bg-sky-500/10 text-sky-400 border-sky-500/30"
+												: "bg-amber-500/10 text-amber-400 border-amber-500/30"
+								}`}
+								data-testid="perio-sync-status-badge"
+							>
+								{syncStatus === "saving" || syncStatus === "loading" ? (
+									<span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-ping shrink-0" />
+								) : syncStatus === "synced" ? (
+									<Check size={11} className="text-emerald-400 shrink-0" />
+								) : syncStatus === "closed" ? (
+									<ShieldCheck size={11} className="text-sky-400 shrink-0" />
+								) : (
+									<span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+								)}
+								<span>
+									{syncStatus === "saving"
+										? "Сохранение..."
+										: syncStatus === "loading"
+											? "Загрузка..."
+											: syncStatus === "synced"
+												? "В ЭМК"
+												: syncStatus === "closed"
+													? "Зафиксирован"
+													: "Офлайн"}
+								</span>
+							</span>
+						)}
 					</div>
 					<p className="text-xs text-[var(--muted)] mt-0.5 truncate">
 						{aapDiagnosis.stageDescriptionRu}
@@ -173,6 +222,20 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 							<ChevronDown size={12} />
 						)}
 					</button>
+
+					{onSaveDraft && (
+						<button
+							type="button"
+							onClick={onSaveDraft}
+							disabled={syncStatus === "saving"}
+							className="secondary-button shrink-0"
+							title="Сохранить черновик перио-карты в ЭМК (PostgreSQL 18)"
+							data-testid="perio-save-draft-btn"
+						>
+							<Save size={14} className={syncStatus === "saving" ? "animate-spin text-teal-400" : "text-[var(--muted)]"} />
+							<span>Сохранить</span>
+						</button>
+					)}
 
 					{/* 1-Click Insert into 043/u: SINGLE PRIMARY CTA */}
 					<button

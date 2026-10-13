@@ -7,7 +7,6 @@
 import { useEffect, useState } from "react";
 import type { BookingDoctorData } from "./BookingDoctorCard";
 import type { BookingSlotItem } from "./BookingSlotPicker";
-import { generateFallbackSlots } from "./publicBookingEngine";
 
 export interface UseBookingAvailabilityOptions {
 	organizationId?: string | null;
@@ -22,16 +21,39 @@ export function useBookingAvailability({
 	selectedDate,
 	selectedDoctorId,
 }: UseBookingAvailabilityOptions) {
+	// Auto-resolve organization ID if not provided (fallback to live default-clinic)
+	const [effectiveOrgId, setEffectiveOrgId] = useState<string | null>(organizationId ?? null);
+
+	useEffect(() => {
+		if (organizationId) {
+			setEffectiveOrgId(organizationId);
+			return;
+		}
+		let isCancelled = false;
+		fetch(`${apiBaseUrl}/default-clinic`)
+			.then((res) => (res.ok ? res.json() : null))
+			.then((data) => {
+				if (isCancelled || !data?.organizationId) return;
+				setEffectiveOrgId(data.organizationId);
+			})
+			.catch(() => {
+				// Failed to resolve default clinic
+			});
+		return () => {
+			isCancelled = true;
+		};
+	}, [organizationId, apiBaseUrl]);
+
 	// Doctors loading from live backend
 	const [loadedDoctors, setLoadedDoctors] = useState<BookingDoctorData[]>([]);
 	const [doctorsLoading, setDoctorsLoading] = useState(false);
 
 	useEffect(() => {
-		if (!organizationId) return;
+		if (!effectiveOrgId) return;
 		let isCancelled = false;
 		setDoctorsLoading(true);
 
-		fetch(`${apiBaseUrl}/${organizationId}/doctors`)
+		fetch(`${apiBaseUrl}/${effectiveOrgId}/doctors`)
 			.then((res) => {
 				if (!res.ok) throw new Error("Failed to load doctors");
 				return res.json();
@@ -65,10 +87,12 @@ export function useBookingAvailability({
 						}),
 					);
 					setLoadedDoctors(mapped);
+				} else {
+					setLoadedDoctors([]);
 				}
 			})
 			.catch(() => {
-				// Non-blocking fallback
+				if (!isCancelled) setLoadedDoctors([]);
 			})
 			.finally(() => {
 				if (!isCancelled) setDoctorsLoading(false);
@@ -77,7 +101,7 @@ export function useBookingAvailability({
 		return () => {
 			isCancelled = true;
 		};
-	}, [organizationId, apiBaseUrl]);
+	}, [effectiveOrgId, apiBaseUrl]);
 
 	// Slots loading from live backend
 	const [slots, setSlots] = useState<BookingSlotItem[]>([]);
@@ -87,93 +111,97 @@ export function useBookingAvailability({
 
 	useEffect(() => {
 		let isCancelled = false;
-		if (!selectedDate) return;
-
-		if (organizationId) {
-			setSlotsLoading(true);
-			setSlotError(null);
-
-			const doctorParam = selectedDoctorId
-				? `&doctorId=${encodeURIComponent(selectedDoctorId)}`
-				: "";
-			fetch(
-				`${apiBaseUrl}/${organizationId}/slots?date=${encodeURIComponent(selectedDate)}${doctorParam}`,
-			)
-				.then((res) => {
-					if (!res.ok) throw new Error("Failed to load slots");
-					return res.json();
-				})
-				.then((data) => {
-					if (isCancelled) return;
-					if (Array.isArray(data) && data.length > 0) {
-						const mapped: BookingSlotItem[] = data.map(
-							(item: {
-								time: string;
-								startsAt: string;
-								endsAt: string;
-								availableDoctorIds?: string[];
-							}) => {
-								const hour =
-									Number.parseInt(item.time.split(":")[0] ?? "10", 10) || 10;
-								const period: "morning" | "afternoon" | "evening" =
-									hour < 12 ? "morning" : hour < 16 ? "afternoon" : "evening";
-								return {
-									time: item.time,
-									startsAt: item.startsAt,
-									endsAt: item.endsAt,
-									period,
-									availableDoctorIds: item.availableDoctorIds,
-								};
-							},
-						);
-						setSlots(mapped);
-						setSelectedSlot((prev) => {
-							if (prev && mapped.some((s) => s.time === prev.time)) {
-								return (
-									mapped.find((s) => s.time === prev.time) || mapped[0] || null
-								);
-							}
-							return mapped[0] || null;
-						});
-					} else {
-						const rawFallback = generateFallbackSlots(selectedDate);
-						const fallback: BookingSlotItem[] = rawFallback.map((s) => ({
-							...s,
-							period: s.period ?? (Number.parseInt(s.time.split(":")[0] ?? "10", 10) < 12 ? "morning" : Number.parseInt(s.time.split(":")[0] ?? "10", 10) < 16 ? "afternoon" : "evening"),
-						}));
-						setSlots(fallback);
-						setSelectedSlot(fallback[0] || null);
-					}
-				})
-				.catch(() => {
-					if (!isCancelled) {
-						const rawFallback = generateFallbackSlots(selectedDate);
-						const fallback: BookingSlotItem[] = rawFallback.map((s) => ({
-							...s,
-							period: s.period ?? (Number.parseInt(s.time.split(":")[0] ?? "10", 10) < 12 ? "morning" : Number.parseInt(s.time.split(":")[0] ?? "10", 10) < 16 ? "afternoon" : "evening"),
-						}));
-						setSlots(fallback);
-						setSelectedSlot(fallback[0] || null);
-					}
-				})
-				.finally(() => {
-					if (!isCancelled) setSlotsLoading(false);
-				});
-		} else {
-			const rawFallback = generateFallbackSlots(selectedDate);
-			const fallback: BookingSlotItem[] = rawFallback.map((s) => ({
-				...s,
-				period: s.period ?? (Number.parseInt(s.time.split(":")[0] ?? "10", 10) < 12 ? "morning" : Number.parseInt(s.time.split(":")[0] ?? "10", 10) < 16 ? "afternoon" : "evening"),
-			}));
-			setSlots(fallback);
-			setSelectedSlot(fallback[0] || null);
-			setSlotsLoading(false);
+		if (!selectedDate) {
+			setSlots([]);
+			setSelectedSlot(null);
+			return;
 		}
+
+		if (!effectiveOrgId) {
+			setSlots([]);
+			setSelectedSlot(null);
+			return;
+		}
+
+		setSlotsLoading(true);
+		setSlotError(null);
+
+		const doctorParam = selectedDoctorId
+			? `&doctorId=${encodeURIComponent(selectedDoctorId)}`
+			: "";
+
+		fetch(
+			`${apiBaseUrl}/${effectiveOrgId}/slots?date=${encodeURIComponent(selectedDate)}${doctorParam}`,
+		)
+			.then(async (res) => {
+				const data = await res.json().catch(() => null);
+				if (!res.ok) {
+					const errMsg =
+						data?.message ||
+						data?.error ||
+						"На выбранную дату приём не ведётся. Выберите другую дату.";
+					throw new Error(errMsg);
+				}
+				return data;
+			})
+			.then((data) => {
+				if (isCancelled) return;
+				if (Array.isArray(data) && data.length > 0) {
+					const mapped: BookingSlotItem[] = data.map(
+						(item: {
+							time: string;
+							startsAt: string;
+							endsAt: string;
+							availableDoctorIds?: string[];
+						}) => {
+							const hour =
+								Number.parseInt(item.time.split(":")[0] ?? "10", 10) || 10;
+							const period: "morning" | "afternoon" | "evening" =
+								hour < 12 ? "morning" : hour < 16 ? "afternoon" : "evening";
+							return {
+								time: item.time,
+								startsAt: item.startsAt,
+								endsAt: item.endsAt,
+								period,
+								availableDoctorIds: item.availableDoctorIds,
+							};
+						},
+					);
+					setSlots(mapped);
+					setSelectedSlot((prev) => {
+						if (prev && mapped.some((s) => s.time === prev.time)) {
+							return (
+								mapped.find((s) => s.time === prev.time) || mapped[0] || null
+							);
+						}
+						return mapped[0] || null;
+					});
+					setSlotError(null);
+				} else {
+					setSlots([]);
+					setSelectedSlot(null);
+					setSlotError(
+						"На выбранную дату нет свободных окон для записи. Выберите другой день или оставьте заявку в лист ожидания.",
+					);
+				}
+			})
+			.catch((err: Error) => {
+				if (isCancelled) return;
+				setSlots([]);
+				setSelectedSlot(null);
+				setSlotError(
+					err.message ||
+						"На выбранную дату нет свободных окон для записи. Выберите другой день или оставьте заявку в лист ожидания.",
+				);
+			})
+			.finally(() => {
+				if (!isCancelled) setSlotsLoading(false);
+			});
 
 		return () => {
 			isCancelled = true;
 		};
-	}, [organizationId, selectedDate, selectedDoctorId, apiBaseUrl]);
+	}, [effectiveOrgId, selectedDate, selectedDoctorId, apiBaseUrl]);
 
 	return {
 		loadedDoctors,

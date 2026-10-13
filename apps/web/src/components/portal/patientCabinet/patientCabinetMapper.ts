@@ -2,6 +2,7 @@ import type {
 	GeneratedDocumentSummary,
 	PatientAppointment,
 	PatientCabinetFamilyMember,
+	PatientDiagnosticScan,
 	PatientInvoiceItem,
 	PatientPersonalCabinetData,
 	PatientPrescriptionItem,
@@ -26,6 +27,7 @@ export function mapServerPortalMeToCabinetData(
 		} | null;
 		familyMembers?: Array<PatientCabinetFamilyMember>;
 		doctors?: Array<{ id: string; fullName: string; specialties?: string[] | null }>;
+		scans?: Array<Record<string, unknown>>;
 	},
 	serverConsents?: Array<Record<string, unknown>>,
 ): PatientPersonalCabinetData {
@@ -36,6 +38,43 @@ export function mapServerPortalMeToCabinetData(
 	const plans = Array.isArray(payload.plans) ? payload.plans : [];
 	const invoices = Array.isArray(payload.invoices) ? payload.invoices : [];
 	const documents = Array.isArray(payload.documents) ? payload.documents : [];
+	const rawScans = Array.isArray(payload.scans) ? payload.scans : [];
+
+	// Map real clinical scans (RVG / OPTG / CT / TRG)
+	const mappedScans: PatientDiagnosticScan[] = rawScans.map((s, index) => {
+		const capDate = s.capturedAt ? new Date(s.capturedAt as string) : new Date();
+		const dateRu = !Number.isNaN(capDate.getTime())
+			? capDate.toLocaleDateString("ru-RU")
+			: "Недавно";
+		const rawMod = ((s.modality as string) || (s.kind as string) || "rvg").toLowerCase();
+		const modality: "rvg" | "optg" | "cbct" | "trg" =
+			rawMod === "optg" ? "optg" : rawMod === "ct" || rawMod === "cbct" ? "cbct" : rawMod === "trg" ? "trg" : "rvg";
+		const modalityRu =
+			modality === "optg"
+				? "Панорама ОПТГ"
+				: modality === "cbct"
+					? "3D КТ / КЛКТ"
+					: modality === "trg"
+						? "ТРГ снимок"
+						: "Прицельный снимок RVG";
+
+		return {
+			id: (s.id as string) || `scan-${index}`,
+			titleRu: (s.titleRu as string) || (s.title as string) || `Снимок (${modalityRu})`,
+			modality,
+			modalityRu,
+			dateRu,
+			toothFdi: (s.toothCode as string) || (s.toothFdi as string) || undefined,
+			doseMicroSv: Number(s.doseMicroSv || 2.0),
+			previewUrl:
+				(s.previewUrl as string) ||
+				(s.storagePath ? `/api/imaging/file/${s.id}` : "/radiology/sample_rvg_tooth16.jpg"),
+			conclusionRu:
+				(s.conclusionRu as string) ||
+				(s.aiSummary as string) ||
+				"Контрольный снимок без признаков патологических изменений.",
+		};
+	});
 
 	// Map appointments from real schedule (payload.appointments) or fall back to visits
 	let appointments: PatientAppointment[] = [];
@@ -362,5 +401,6 @@ export function mapServerPortalMeToCabinetData(
 		consents: mappedConsents,
 		documents: mappedDocuments,
 		prescriptions: mappedPrescriptions.length > 0 ? mappedPrescriptions : undefined,
+		scans: mappedScans,
 	};
 }

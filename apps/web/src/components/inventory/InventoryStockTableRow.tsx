@@ -17,6 +17,7 @@ import {
 	Trash2,
 	TrendingUp,
 } from "lucide-react";
+import { formatInventoryUnitRu } from "@dental/shared";
 import React from "react";
 import { money } from "../../AppHelpers.js";
 import { showToast } from "../GlobalToast.js";
@@ -113,15 +114,15 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 							/>
 						</span>
 					)}
-					<div className="min-w-0 flex-1">
+					<div className="min-w-0 flex-1" style={{ flex: "1 1 auto", minWidth: 0 }}>
 						<div
-							className="font-bold text-[13px] text-[var(--ink)] truncate cursor-pointer hover:text-[var(--teal)] transition-colors"
+							className="font-bold text-[13px] text-[var(--ink)] cursor-pointer hover:text-[var(--teal)] transition-colors leading-snug"
 							title={item.name}
 							onClick={() => onSelectItem?.(item)}
 						>
 							{item.name}
 						</div>
-						<div className="text-[10px] text-[var(--muted)] font-mono flex items-center gap-2 mt-0.5 truncate">
+						<div className="text-[10px] text-[var(--muted)] font-mono flex items-center gap-2 mt-0.5">
 							{item.sku && <span>SKU: {item.sku}</span>}
 							{item.barcode && <span>ШК: {item.barcode}</span>}
 							{item.lotNumber && (
@@ -231,13 +232,13 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 							isOverdraft ? "overdraft text-amber-600 dark:text-amber-400" : isLowStock ? "low text-orange-600 dark:text-orange-400" : "normal text-[var(--ink)]"
 						}`}
 					>
-						{stock}&nbsp;{item.unit || "шт."}
+						{stock}&nbsp;{formatInventoryUnitRu(item.unit || "шт.")}
 					</span>
 					{isOverdraft && (
 						<span
 							className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30"
 							data-testid={`soft-overdraft-badge-${item.id}`}
-							title="Мягкий учет расхода при нехватке (списание с дефицитом): не блокирует приём пациента"
+							title="Мягкий учет расхода (дефицит): не блокирует приём пациента"
 						>
 							<ShieldAlert size={10} className="shrink-0" />
 							<span>Дефицит</span>
@@ -257,7 +258,7 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 				}}
 			>
 				<span className="font-mono text-xs text-[var(--muted)]">
-					{item.criticalThreshold ?? 5}&nbsp;{item.unit || "шт."}
+					{item.criticalThreshold ?? 5}&nbsp;{formatInventoryUnitRu(item.unit || "шт.")}
 				</span>
 			</td>
 
@@ -301,7 +302,7 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 							onClick={() => onOpenDisposalModal(item)}
 							className="h-7 px-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-98"
 							style={{ height: 28, minHeight: 28, borderRadius: 8 }}
-							title="Срок годности истек: сформировать акт утилизации"
+							title="Срок годности истек: сформировать Акт утилизации СанПиН 3.3686-21"
 							data-testid={`btn-sanpin-disposal-act-${item.id}`}
 						>
 							<Trash2 size={12} className="shrink-0" />
@@ -313,15 +314,10 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 							<button
 								type="button"
 								onClick={() => onDeductItem(item, writeQty, isOverdraft)}
-								className={`h-7 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0 ${
-									isOverdraft
-										? "bg-amber-600 hover:bg-amber-500 text-white shadow-xs"
-										: "bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 border border-rose-500/25"
-								}`}
-								style={{ height: 28, minHeight: 28, borderRadius: 8 }}
+								className="h-7 px-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
 								title={
 									isOverdraft
-										? "Списать расход сверх остатка (списание с дефицитом): клинический процесс не блокируется"
+										? "Списать расход сверх остатка (мягкий овердрафт): клинический процесс не блокируется"
 										: "Списать расход материала по FEFO"
 								}
 								data-testid={`btn-item-writeoff-${item.id}`}
@@ -329,35 +325,18 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 								<span className="hidden" data-testid={`btn-deduct-fefo-${item.id}`}>
 									{isOverdraft ? "Списать (с дефицитом)" : "Списать"}
 								</span>
-								{isOverdraft ? (
-									<>
-										<ShieldAlert size={12} className="shrink-0" />
-										<span>Списание</span>
-									</>
-								) : (
-									<>
-										<ArrowUpFromLine size={12} className="shrink-0" />
-										<span>Списание</span>
-									</>
-								)}
+								<ArrowUpFromLine size={12} className="shrink-0 text-[var(--ink-muted)]" />
+								<span>Списание</span>
 							</button>
 
 							<button
 								type="button"
 								onClick={() => onReceiveItem(item, writeQty)}
-								className="secondary-button h-7 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0"
-								style={{
-									height: 28,
-									minHeight: 28,
-									borderRadius: 8,
-									background: "var(--teal-soft)",
-									color: "var(--teal-dark, #0f766e)",
-									borderColor: "var(--teal)",
-								}}
+								className="h-7 px-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
 								title="Оприходовать материал на склад"
 								data-testid={`btn-item-arrival-${item.id}`}
 							>
-								<ArrowDownToLine size={12} className="shrink-0" />
+								<ArrowDownToLine size={12} className="shrink-0 text-[var(--ink-muted)]" />
 								<span>Приход</span>
 							</button>
 						</>
@@ -368,8 +347,7 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 						<button
 							type="button"
 							onClick={onToggleMenu}
-							className="secondary-button w-7 h-7 rounded-lg text-xs transition-all cursor-pointer inline-flex items-center justify-center"
-							style={{ height: 28, minHeight: 28, width: 28, padding: 0, borderRadius: 8 }}
+							className="w-7 h-7 rounded-lg text-xs transition-all cursor-pointer inline-flex items-center justify-center border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] shadow-xs"
 							title="Дополнительные операции"
 							data-testid={`btn-item-more-${item.id}`}
 							aria-expanded={isMenuOpen}

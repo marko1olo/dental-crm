@@ -7,6 +7,7 @@ import {
 	appointments,
 	familyGroups,
 	generatedDocuments,
+	imagingStudies,
 	patientDrugAllergies,
 	patientInvoices,
 	patientRelationships,
@@ -120,6 +121,26 @@ export async function registerPortalPatientProfileRoutes(server: FastifyInstance
 						eq(generatedDocuments.status, "issued"),
 					),
 				);
+
+			// 152-ФЗ / 323-ФЗ ст. 13: Снимки визиографа/КТ без служебных заметок врача/куратора
+			const scans = await db
+				.select({
+					id: imagingStudies.id,
+					titleRu: imagingStudies.title,
+					modality: imagingStudies.kind,
+					toothCode: imagingStudies.toothCode,
+					capturedAt: imagingStudies.capturedAt,
+					aiSummary: imagingStudies.aiSummary,
+					storagePath: imagingStudies.storagePath,
+				})
+				.from(imagingStudies)
+				.where(
+					and(
+						eq(imagingStudies.patientId, patient.id),
+						eq(imagingStudies.organizationId, organizationId),
+					),
+				)
+				.orderBy(desc(imagingStudies.capturedAt));
 
 			// 152-ФЗ / Врачебная тайна: Защита от утечки служебных заметок врача/ресепшн,
 			// коммерческих заметок куратора и комиссионных ставок.
@@ -292,6 +313,7 @@ export async function registerPortalPatientProfileRoutes(server: FastifyInstance
 				familyGroup: familyGroupData,
 				familyMembers: familyMembersList,
 				doctors: clinicDoctors,
+				scans,
 			};
 		});
 	};

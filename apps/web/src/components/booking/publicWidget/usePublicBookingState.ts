@@ -426,14 +426,15 @@ export function usePublicBookingState({
 			return;
 		}
 
-		const activeSlot =
-			selectedSlot ||
-			slots[0] || {
-				time: "10:00",
-				startsAt: new Date(selectedDate).toISOString(),
-				endsAt: new Date(new Date(selectedDate).getTime() + 30 * 60_000).toISOString(),
-				period: "morning" as const,
-			};
+		const activeSlot = selectedSlot || slots[0] || null;
+
+		if (!activeSlot) {
+			const errMsg =
+				"На выбранную дату нет свободных окон для записи. Пожалуйста, выберите другой день или оставьте заявку в лист ожидания.";
+			setSubmitError(errMsg);
+			showToast?.(errMsg, "warning");
+			return;
+		}
 
 		if (!selectedSlot && activeSlot) {
 			setSelectedSlot(activeSlot);
