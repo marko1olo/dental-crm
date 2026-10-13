@@ -53,6 +53,7 @@ export function useDentalLabOrders({
 
 	// Модалка наряда
 	const [isWorkOrderModalOpen, setIsWorkOrderModalOpen] = useState(false);
+	const [isOrderDrawerOpen, setIsOrderDrawerOpen] = useState(false);
 	const [selectedOrderForEdit, setSelectedOrderForEdit] = useState<DentalLabOrderData | null>(null);
 	const [modalInitialTab, setModalInitialTab] = useState<"main" | "shades" | "stages" | "print">("main");
 
@@ -400,24 +401,6 @@ export function useDentalLabOrders({
 			setOpenMenuOrderId(null);
 			if (!order.id) return;
 			try {
-				if (isDemoShowcaseMode()) {
-					setOrders((prev) =>
-						prev.map((o) =>
-							o.id === order.id
-								? { ...o, paidFromCashOperationId: `demo-cash-op-${Date.now()}` }
-								: o,
-						),
-					);
-					showToast(
-						`Наряд ЗТЛ оплачен из кассы (${
-							order.priceRub?.toLocaleString("ru-RU") || 0
-						} ₽, статья 11: Оплата услуг лаборатории)`,
-						"success",
-						4000,
-					);
-					return;
-				}
-
 				const res = await fetch(`/api/lab-orders/${order.id}/pay`, {
 					method: "POST",
 					headers: {
@@ -456,20 +439,6 @@ export function useDentalLabOrders({
 			setOpenMenuOrderId(null);
 			if (!order.id) return;
 			try {
-				if (isDemoShowcaseMode()) {
-					setOrders((prev) =>
-						prev.map((o) =>
-							o.id === order.id ? { ...o, status: "completed" as any } : o,
-						),
-					);
-					showToast(
-						"Конструкция сдана и зафиксирована во рту пациента (наряд заблокирован)",
-						"success",
-						4000,
-					);
-					return;
-				}
-
 				const res = await fetch(`/api/lab-orders/${order.id}/mark-installed`, {
 					method: "POST",
 					headers: {
@@ -489,6 +458,32 @@ export function useDentalLabOrders({
 					"success",
 					4000,
 				);
+
+				// Переводим зубы в одонтограмме в статус постоянной зафиксированной коронки «Crown»
+				if (typeof window !== "undefined") {
+					const teethToUpdate: number[] = [];
+					if (Array.isArray(order.selectedTeeth) && order.selectedTeeth.length > 0) {
+						teethToUpdate.push(...order.selectedTeeth);
+					} else if (order.toothFdi) {
+						const parsed = String(order.toothFdi)
+							.split(/[\s,;-]+/)
+							.map(Number)
+							.filter((n) => !isNaN(n) && n >= 11 && n <= 85);
+						teethToUpdate.push(...parsed);
+					}
+					for (const t of teethToUpdate) {
+						window.dispatchEvent(
+							new CustomEvent("dente-quick-tooth-apply", {
+								detail: {
+									toothNumber: t,
+									state: "Crown",
+									patientId: order.patientId,
+								},
+							}),
+						);
+					}
+				}
+
 				void fetchOrders();
 			} catch (err: unknown) {
 				const msg = err instanceof Error ? err.message : "Не удалось зафиксировать установку";
@@ -701,6 +696,8 @@ export function useDentalLabOrders({
 		scanAttachType,
 		isWorkOrderModalOpen,
 		setIsWorkOrderModalOpen,
+		isOrderDrawerOpen,
+		setIsOrderDrawerOpen,
 		selectedOrderForEdit,
 		setSelectedOrderForEdit,
 		modalInitialTab,
@@ -724,6 +721,10 @@ export function useDentalLabOrders({
 		handleOpenReadyInClinicPrompt,
 		copyPortalLink,
 		handleOpenNewOrder,
+		handleOpenOrderDrawer: () => {
+			setSelectedOrderForEdit(null);
+			setIsOrderDrawerOpen(true);
+		},
 		handleOpenEditOrder,
 		handleOpenPrintOrder,
 		handleOpenTracking,

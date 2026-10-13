@@ -61,6 +61,8 @@ export function DentalLabOrdersMainContent({
 		scanAttachType,
 		isWorkOrderModalOpen,
 		setIsWorkOrderModalOpen,
+		isOrderDrawerOpen,
+		setIsOrderDrawerOpen,
 		selectedOrderForEdit,
 		modalInitialTab,
 		isPriceMatrixModalOpen,
@@ -140,7 +142,7 @@ export function DentalLabOrdersMainContent({
 					<button
 						type="button"
 						onClick={() => setSelectedTimelineOrderId(null)}
-						className="absolute top-2 right-2 p-1 text-[var(--muted)] hover:text-[var(--ink)] rounded-md hover:bg-[var(--line)]"
+						className="absolute top-2 right-2 p-1.5 text-[var(--ink-muted)] hover:text-[var(--ink)] rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer transition-colors"
 						title="Закрыть таймлайн"
 					>
 						<X className="w-4 h-4" />
@@ -161,7 +163,7 @@ export function DentalLabOrdersMainContent({
 			{/* ─── ОСНОВНОЙ РЕЕСТР: ТАБЛИЦА / КАРТОЧКИ / КАНБАН ─── */}
 			{isLoading ? (
 				<div className="p-12 text-center text-[var(--muted)] flex items-center justify-center gap-2">
-					<Loader2 className="w-5 h-5 animate-spin text-teal-600" />
+					<Loader2 className="w-5 h-5 animate-spin text-[var(--primary)]" />
 					<span>Загрузка нарядов лаборатории...</span>
 				</div>
 			) : error ? (
@@ -174,7 +176,7 @@ export function DentalLabOrdersMainContent({
 				</div>
 			) : filteredOrders.length === 0 ? (
 				<div className="p-12 text-center bg-[var(--paper)] rounded-2xl border border-dashed border-[var(--line)] text-[var(--muted)] text-xs space-y-3">
-					<FlaskConical className="w-10 h-10 mx-auto text-teal-600 dark:text-teal-400" />
+					<FlaskConical className="w-10 h-10 mx-auto text-[var(--primary)]" />
 					<p
 						className="font-bold text-sm text-[var(--ink)]"
 						data-testid="lab-orders-empty-state-title"
@@ -188,7 +190,7 @@ export function DentalLabOrdersMainContent({
 					<button
 						type="button"
 						onClick={handleOpenNewOrder}
-						className="min-h-[44px] h-11 px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold inline-flex items-center gap-2 shadow-2xs cursor-pointer transition-all active:scale-95 text-xs"
+						className="min-h-[44px] h-11 px-5 py-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white font-medium inline-flex items-center gap-2 shadow-xs cursor-pointer transition-all active:scale-95 text-xs"
 						data-testid="empty-state-add-first-lab-order-btn"
 					>
 						<Plus className="w-4 h-4" />
@@ -326,6 +328,8 @@ export function DentalLabOrdersMainContent({
 				onClose3DScanViewer={() => setView3DScanOrder(null)}
 				isHubModalOpen={isHubModalOpen}
 				onCloseHubModal={() => setIsHubModalOpen(false)}
+				isOrderDrawerOpen={isOrderDrawerOpen}
+				onCloseOrderDrawer={() => setIsOrderDrawerOpen(false)}
 			/>
 		</main>
 	);

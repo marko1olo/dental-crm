@@ -42,6 +42,11 @@ export {
 
 // Drawers & Cards
 export {
+	DentalLabOrderDrawer,
+	type DentalLabOrderDrawerProps,
+} from "./DentalLabOrderDrawer";
+
+export {
 	LabTrackingDrawer,
 } from "./LabTrackingDrawer";
 

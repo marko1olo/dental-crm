@@ -144,9 +144,12 @@ export function DentalLabOrderDrawer({
 		} else {
 			const cat = getLabWorkTypeById(val);
 			if (cat) {
-				setFormPatientPriceRub(cat.defaultPatientPriceRub);
-				setFormZtlCostRub(cat.defaultCostLabRub);
-				setFormDeadlineDate(toIsoDate(addWorkingDaysRu(formSentDate, cat.turnaroundWorkingDays)));
+				const defaultTurnaround = cat.category === "auxiliary" ? 3 : cat.category === "removable_prosthetics" ? 8 : 5;
+				const defaultPatient = cat.category === "auxiliary" ? 3000 : cat.category === "removable_prosthetics" ? 22000 : 18000;
+				const defaultCost = cat.category === "auxiliary" ? 1000 : cat.category === "removable_prosthetics" ? 7500 : 5500;
+				setFormPatientPriceRub(defaultPatient);
+				setFormZtlCostRub(defaultCost);
+				setFormDeadlineDate(toIsoDate(addWorkingDaysRu(formSentDate, defaultTurnaround)));
 			}
 		}
 	};

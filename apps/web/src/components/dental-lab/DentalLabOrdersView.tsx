@@ -28,6 +28,12 @@ export function DentalLabOrdersView({
 		...(onOrdersChanged !== undefined ? { onOrdersChanged } : {}),
 	});
 
+	React.useEffect(() => {
+		const handleOpenDrawer = () => logic.setIsOrderDrawerOpen(true);
+		window.addEventListener("dente-open-lab-order-drawer", handleOpenDrawer);
+		return () => window.removeEventListener("dente-open-lab-order-drawer", handleOpenDrawer);
+	}, [logic]);
+
 	return (
 		<>
 			{isMobile ? (
@@ -82,6 +88,8 @@ export function DentalLabOrdersView({
 					onClose3DScanViewer={() => logic.setView3DScanOrder(null)}
 					isHubModalOpen={logic.isHubModalOpen}
 					onCloseHubModal={() => logic.setIsHubModalOpen(false)}
+					isOrderDrawerOpen={logic.isOrderDrawerOpen}
+					onCloseOrderDrawer={() => logic.setIsOrderDrawerOpen(false)}
 				/>
 			)}
 		</>

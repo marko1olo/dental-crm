@@ -28,6 +28,12 @@ const DentalLabOrdersHubModal = lazy(() =>
 	})),
 );
 
+const DentalLabOrderDrawer = lazy(() =>
+	import("../../lab/DentalLabOrderDrawer").then((module) => ({
+		default: module.DentalLabOrderDrawer,
+	})),
+);
+
 export interface LabOrderDetailsDrawerProps {
 	readonly isWorkOrderModalOpen: boolean;
 	readonly onCloseWorkOrderModal: () => void;
@@ -65,6 +71,9 @@ export interface LabOrderDetailsDrawerProps {
 
 	readonly isHubModalOpen: boolean;
 	readonly onCloseHubModal: () => void;
+
+	readonly isOrderDrawerOpen?: boolean;
+	readonly onCloseOrderDrawer?: () => void;
 }
 
 export function LabOrderDetailsDrawer({
@@ -77,6 +86,8 @@ export function LabOrderDetailsDrawer({
 	onClosePriceMatrixModal,
 	onSelectWorkType,
 	isTrackingDrawerOpen,
+	isOrderDrawerOpen,
+	onCloseOrderDrawer,
 	onCloseTrackingDrawer,
 	selectedOrderForTracking,
 	onStageUpdate,
@@ -193,6 +204,22 @@ export function LabOrderDetailsDrawer({
 						isOpen={isHubModalOpen}
 						onClose={onCloseHubModal}
 						onSaveOrder={onOrderSaved}
+					/>
+				</Suspense>
+			)}
+
+			{/* Канонический эргономичный SSOT-дравер наряда ЗТЛ */}
+			{isOrderDrawerOpen && (
+				<Suspense fallback={null}>
+					<DentalLabOrderDrawer
+						isOpen={isOrderDrawerOpen}
+						onClose={onCloseOrderDrawer || (() => {})}
+						editingOrder={null}
+						treatmentPlanId={selectedOrderForEdit?.treatmentPlanId ?? undefined}
+						stageNumber={selectedOrderForEdit?.stageNumber ?? undefined}
+						stageTitle={selectedOrderForEdit?.stageTitle ?? undefined}
+						stageId={selectedOrderForEdit?.stageId ?? undefined}
+						onSaveOrder={() => onOrderSaved()}
 					/>
 				</Suspense>
 			)}

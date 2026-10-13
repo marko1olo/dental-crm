@@ -490,6 +490,10 @@ export interface DentalLabOrderRecord {
 	readonly doctorSharePercent: number;
 	readonly scheduledVisitDate?: string | undefined; // YYYY-MM-DD
 	readonly appointmentId?: string | undefined;
+	readonly treatmentPlanId?: string | undefined;
+	readonly stageNumber?: number | undefined;
+	readonly stageTitle?: string | undefined;
+	readonly stageId?: string | undefined;
 	readonly isWarrantyRemake?: boolean | undefined;
 	readonly isWarrantyRework?: boolean | undefined;
 	readonly warrantyReason?: string | undefined;
@@ -746,6 +750,10 @@ export function createDentalLabOrderRecord(partial: any): DentalLabOrderRecord {
 		doctorSharePercent: financials.doctorSharePercent,
 		scheduledVisitDate: partial.scheduledVisitDate,
 		appointmentId: partial.appointmentId,
+		treatmentPlanId: partial.treatmentPlanId,
+		stageNumber: partial.stageNumber,
+		stageTitle: partial.stageTitle,
+		stageId: partial.stageId,
 		isWarrantyRemake: Boolean(partial.isWarrantyRemake || partial.isWarrantyRework),
 		isWarrantyRework: Boolean(partial.isWarrantyRemake || partial.isWarrantyRework),
 		warrantyReason: partial.warrantyReason || partial.reworkReason,
