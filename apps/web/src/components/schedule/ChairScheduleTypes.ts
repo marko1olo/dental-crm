@@ -316,7 +316,10 @@ export async function syncShiftsWithServer(
           ...denteAdminSecretRequestHeaders(),
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ shifts: shiftsToSend }),
+        body: JSON.stringify({
+          shifts: shiftsToSend,
+          dateIso: targetDateKey,
+        }),
       });
       return response.ok;
     } catch {

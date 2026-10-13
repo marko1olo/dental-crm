@@ -15,6 +15,10 @@ export interface UseAppointmentDraftsProps {
 	setSelectedPatientId: (id: string | null) => void;
 	setNewAppointmentError: (msg: string | null) => void;
 	setSettingsTab: (tab: string) => void;
+	appointmentScheduleDraftsRef?: React.MutableRefObject<
+		Record<string, AppointmentScheduleDraft>
+	>;
+	newAppointmentDraftRef?: { current: AppointmentScheduleDraft };
 	newAppointmentDraftUserEditedRef: React.MutableRefObject<boolean>;
 	scheduleStore: any;
 }
@@ -27,6 +31,8 @@ export function useAppointmentDrafts({
 	setSelectedPatientId,
 	setNewAppointmentError,
 	setSettingsTab,
+	appointmentScheduleDraftsRef,
+	newAppointmentDraftRef,
 	newAppointmentDraftUserEditedRef,
 	scheduleStore,
 }: UseAppointmentDraftsProps) {
@@ -49,11 +55,17 @@ export function useAppointmentDrafts({
 
 	function openAppointmentEditor(appointment: Appointment) {
 		setEditingAppointmentId(appointment.id);
+		const fallbackDraft = appointmentScheduleDraftFromAppointment(appointment);
+		if (appointmentScheduleDraftsRef?.current) {
+			appointmentScheduleDraftsRef.current = {
+				...appointmentScheduleDraftsRef.current,
+				[appointment.id]:
+					appointmentScheduleDraftsRef.current[appointment.id] ?? fallbackDraft,
+			};
+		}
 		setAppointmentScheduleDrafts((current: any) => ({
 			...current,
-			[appointment.id]:
-				current[appointment.id] ??
-				appointmentScheduleDraftFromAppointment(appointment),
+			[appointment.id]: current[appointment.id] ?? fallbackDraft,
 		}));
 		setAppointmentScheduleSaveStates((current: any) => ({
 			...current,
@@ -87,13 +99,26 @@ export function useAppointmentDrafts({
 		const sourceAppointment = dashboard?.appointments?.find(
 			(appointment: any) => appointment.id === appointmentId,
 		);
+		const baseFromRef =
+			appointmentScheduleDraftsRef?.current?.[appointmentId] ??
+			scheduleStore?.appointmentScheduleDrafts?.[appointmentId] ??
+			(sourceAppointment
+				? appointmentScheduleDraftFromAppointment(sourceAppointment)
+				: {});
+		const nextDraft = {
+			...baseFromRef,
+			[key]: value,
+		} as AppointmentScheduleDraft;
+		if (appointmentScheduleDraftsRef?.current) {
+			appointmentScheduleDraftsRef.current = {
+				...appointmentScheduleDraftsRef.current,
+				[appointmentId]: nextDraft,
+			};
+		}
 		setAppointmentScheduleDrafts((current: any) => ({
 			...current,
 			[appointmentId]: {
-				...(current[appointmentId] ??
-					(sourceAppointment
-						? appointmentScheduleDraftFromAppointment(sourceAppointment)
-						: {})),
+				...(current[appointmentId] ?? baseFromRef),
 				[key]: value,
 			} as AppointmentScheduleDraft,
 		}));
@@ -127,6 +152,12 @@ export function useAppointmentDrafts({
 		value: AppointmentScheduleDraft[K],
 	) {
 		newAppointmentDraftUserEditedRef.current = true;
+		if (newAppointmentDraftRef) {
+			newAppointmentDraftRef.current = {
+				...(newAppointmentDraftRef.current ?? newAppointmentDraft),
+				[key]: value,
+			};
+		}
 		setNewAppointmentDraft((current: any) => ({ ...current, [key]: value }));
 		if (key === "patientId" && typeof value === "string")
 			setSelectedPatientId(value || null);
@@ -143,12 +174,14 @@ export function useAppointmentDrafts({
 	function resetNewAppointmentDraft() {
 		if (!dashboard) return;
 		newAppointmentDraftUserEditedRef.current = false;
-		setNewAppointmentDraft(
-			newAppointmentDraftFromDashboard(
-				dashboard,
-				newAppointmentPreferenceDefaults() as any,
-			),
+		const freshDraft = newAppointmentDraftFromDashboard(
+			dashboard,
+			newAppointmentPreferenceDefaults() as any,
 		);
+		if (newAppointmentDraftRef) {
+			newAppointmentDraftRef.current = freshDraft;
+		}
+		setNewAppointmentDraft(freshDraft);
 		setNewAppointmentSaveState("idle");
 		setNewAppointmentError(null);
 	}

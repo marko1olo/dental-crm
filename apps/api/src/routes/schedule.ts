@@ -1,7 +1,8 @@
+import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { dashboardSchema } from "@dental/shared";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { DEMO_SHOWCASE_ORG_ID, dashboardSchema } from "@dental/shared";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId as requireOrganizationContext } from "../accessGuard.js";
@@ -11,6 +12,7 @@ import { getDashboardFromDb } from "../db/dashboardQuery.js";
 import {
 	appointments,
 	chairs,
+	doctorShiftRosters,
 	patients,
 	scheduleClipboardItems,
 	urgentScheduleRequests,
@@ -488,40 +490,36 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 		),
 	});
 
-	const getScheduleShiftsFilePath = (): string => {
-		const dataDir = path.resolve(process.cwd(), ".data");
-		if (!fs.existsSync(dataDir)) {
-			try {
-				fs.mkdirSync(dataDir, { recursive: true });
-			} catch (err: unknown) {
-				app.log.warn({ err }, "[scheduleRoutes] Failed to create .data directory for doctor shifts");
-			}
-		}
-		return path.join(dataDir, "doctor-shifts.json");
-	};
-
-	let inMemoryScheduleShiftsCache: Array<Record<string, unknown>> = [];
-
-	app.get("/api/schedule/shifts", async (_req, reply) => {
-		try {
-			const filePath = getScheduleShiftsFilePath();
-			if (fs.existsSync(filePath)) {
-				const content = fs.readFileSync(filePath, "utf-8");
-				const parsed = JSON.parse(content);
-				if (Array.isArray(parsed)) {
-					return reply.send({ ok: true, shifts: parsed });
-				}
-			}
-			return reply.send({ ok: true, shifts: inMemoryScheduleShiftsCache });
-		} catch {
-			return reply.send({ ok: true, shifts: inMemoryScheduleShiftsCache });
-		}
+	app.get("/api/schedule/shifts", async (req, reply) => {
+		const orgId =
+			(await requireOrganizationContext(req, reply)) ||
+			requireClinicOrganizationId(req, reply) ||
+			DEMO_SHOWCASE_ORG_ID;
+		const rows = await db
+			.select()
+			.from(doctorShiftRosters)
+			.where(eq(doctorShiftRosters.organizationId, orgId));
+		const shifts = rows.map((s) => ({
+			id: s.id,
+			doctorId: s.doctorId,
+			doctorName: s.doctorName,
+			cabinetId: s.cabinetId ?? "",
+			chairId: s.chairId ?? "",
+			dateIso: s.dateIso,
+			startTime: s.startTime,
+			endTime: s.endTime,
+			role: s.role ?? undefined,
+			specialty: s.specialty ?? undefined,
+		}));
+		return reply.send({ ok: true, shifts });
 	});
 
 	app.post("/api/schedule/shifts", async (req, reply) => {
-		if (!(await requireScheduleMutationAccess(req, reply, "schedule shifts update"))) {
-			return;
-		}
+		if (!(await requireScheduleMutationAccess(req, reply, "schedule shifts update"))) return;
+		const orgId =
+			(await requireOrganizationContext(req, reply)) ||
+			requireClinicOrganizationId(req, reply) ||
+			DEMO_SHOWCASE_ORG_ID;
 		const parsed = scheduleShiftsSchema.safeParse(req.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -530,13 +528,39 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 			});
 		}
 		const { shifts } = parsed.data;
-		inMemoryScheduleShiftsCache = shifts as unknown as Array<Record<string, unknown>>;
-		try {
-			const filePath = getScheduleShiftsFilePath();
-			fs.writeFileSync(filePath, JSON.stringify(shifts, null, 2), "utf-8");
-		} catch (err) {
-			req.log.warn({ err }, "Could not persist doctor-shifts.json; using cache");
-		}
+		const rawObj = (req.body && typeof req.body === "object" ? req.body : {}) as Record<string, unknown>;
+		const explicitDate = typeof rawObj.dateIso === "string" ? rawObj.dateIso.trim() : "";
+		const targetDates = Array.from(
+			new Set([...shifts.map((s) => s.dateIso), explicitDate].filter(Boolean)),
+		);
+
+		await db.transaction(async (tx) => {
+			const deleteCond =
+				rawObj.replaceAll !== true && targetDates.length > 0
+					? and(eq(doctorShiftRosters.organizationId, orgId), inArray(doctorShiftRosters.dateIso, targetDates))
+					: eq(doctorShiftRosters.organizationId, orgId);
+			await tx.delete(doctorShiftRosters).where(deleteCond);
+
+			if (shifts.length > 0) {
+				await tx.insert(doctorShiftRosters).values(
+					shifts.map((s) => ({
+						id: s.id || randomUUID(),
+						organizationId: orgId,
+						doctorId: s.doctorId,
+						doctorName: s.doctorName,
+						cabinetId: s.cabinetId || null,
+						chairId: s.chairId || null,
+						dateIso: s.dateIso,
+						startTime: s.startTime,
+						endTime: s.endTime,
+						role: (s as any).role || null,
+						specialty: (s as any).specialty || null,
+						updatedAt: new Date(),
+					})),
+				);
+			}
+		});
+
 		return reply.send({ ok: true, savedCount: shifts.length });
 	});
 }

@@ -428,9 +428,7 @@ export function useWaitlistDrawerOperations({
 	const handleQuickAdd = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (isSubmitting) return;
-
 		let effectivePatientId = selectedPatientId;
-
 		setIsSubmitting(true);
 		try {
 			if (quickNewPatientMode) {
@@ -438,10 +436,8 @@ export function useWaitlistDrawerOperations({
 				const fPhone = quickPhone.trim();
 				if (!fName && !fPhone) {
 					showToast("Укажите имя или телефон пациента", "warning");
-					setIsSubmitting(false);
 					return;
 				}
-
 				try {
 					const patRes = await fetch("/api/patients", {
 						method: "POST",
@@ -449,46 +445,40 @@ export function useWaitlistDrawerOperations({
 						body: JSON.stringify({
 							fullName: fName || `Пациент (${fPhone})`,
 							phone: fPhone || null,
+							allowDuplicate: true,
 						}),
 					});
 					if (patRes.ok) {
 						const patData = await patRes.json();
-						if (patData?.id) {
-							effectivePatientId = patData.id;
-						}
+						const patObj = patData?.patient || patData;
+						if (patObj?.id) effectivePatientId = patObj.id;
 					} else {
 						const errData = await patRes.json().catch(() => null);
-						showToast(
-							errData?.message || "Не удалось создать карту нового пациента",
-							"error",
-						);
-						setIsSubmitting(false);
-						return;
+						const existingId = errData?.existingPatient?.id || errData?.existingPatientId;
+						if (patRes.status === 409 && existingId) {
+							effectivePatientId = existingId;
+						} else {
+							showToast(errData?.message || "Не удалось создать карту нового пациента", "error");
+							return;
+						}
 					}
 				} catch {
 					showToast("Ошибка связи с сервером при создании карты пациента", "error");
-					setIsSubmitting(false);
 					return;
 				}
 			}
 
 			if (!effectivePatientId) {
 				showToast("Выберите или укажите пациента", "warning");
-				setIsSubmitting(false);
 				return;
 			}
 
 			const urgencyCfg = URGENCY_CONFIG[addUrgency];
 			const priorityLevel =
-				addUrgency === "acute_pain"
-					? "high"
-					: addUrgency === "ortho_endo"
-						? "medium"
-						: "low";
-
+				addUrgency === "acute_pain" ? "high" : addUrgency === "ortho_endo" ? "medium" : "low";
 			const preferredTimeRanges =
-				addPreferredTime !== "any"
-					? [{ day: "any", slot: addPreferredTime }]
+				addPreferredTime !== "any" || notes.trim()
+					? [{ day: "any", slot: addPreferredTime, ...(notes.trim() ? { notes: notes.trim() } : {}), urgency: addUrgency }]
 					: [];
 
 			const res = await fetch("/api/waitlist", {
@@ -499,14 +489,13 @@ export function useWaitlistDrawerOperations({
 					preferredDoctorId: preferredDoctorId || null,
 					priorityLevel,
 					preferredTimeRanges,
+					notes: notes.trim() || null,
+					urgency: addUrgency,
 				}),
 			});
 
 			if (res.ok) {
-				showToast(
-					`Пациент добавлен в лист ожидания (${urgencyCfg.shortLabel}) за 5 сек!`,
-					"success",
-				);
+				showToast(`Пациент добавлен в лист ожидания (${urgencyCfg.shortLabel}) за 5 сек!`, "success");
 				setSelectedPatientId("");
 				setQuickFullName("");
 				setQuickPhone("");
@@ -515,10 +504,7 @@ export function useWaitlistDrawerOperations({
 				setIsAddFormOpen(false);
 				fetchWaitlist();
 			} else {
-				showToast(
-					await writeFailureText(res, "добавить в лист ожидания"),
-					"error",
-				);
+				showToast(await writeFailureText(res, "добавить в лист ожидания"), "error");
 			}
 		} catch {
 			showToast("Ошибка соединения с сервером клиники", "error");

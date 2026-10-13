@@ -1,4 +1,4 @@
-import { Armchair, CalendarRange, Clock, LayoutGrid, List, Plus, Users } from "lucide-react";
+import { Armchair, CalendarRange, Clock, Globe, LayoutGrid, List, Plus, Users } from "lucide-react";
 import type React from "react";
 import type { ReactElement } from "react";
 import { QuickAddChairModal } from "../QuickAddChairModal";
@@ -55,6 +55,8 @@ export function ScheduleFilterStripContent(props: ScheduleFilterStripProps): Rea
 		scheduleStatusFilter,
 		setScheduleStatusFilter,
 		queueCounts,
+		pendingOnlineBookingsCount = 0,
+		onOpenPendingOnlineBookings,
 		chairs = [],
 	} = props;
 
@@ -84,7 +86,7 @@ export function ScheduleFilterStripContent(props: ScheduleFilterStripProps): Rea
 	return (
 		<>
 			<section
-				className="schedule-filter-strip min-h-[48px] h-12 max-h-12 sm:h-9 sm:max-h-9 flex flex-nowrap items-center justify-start sm:justify-between gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-hidden shrink-0 select-none"
+				className="schedule-filter-strip min-h-[48px] h-12 max-h-12 sm:min-h-[36px] sm:h-9 sm:max-h-9 flex flex-nowrap items-center justify-start sm:justify-between gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-hidden shrink-0 select-none"
 				aria-label="Сохраненные фильтры расписания"
 				data-testid="schedule-toolbar"
 				role="toolbar"
@@ -109,6 +111,38 @@ export function ScheduleFilterStripContent(props: ScheduleFilterStripProps): Rea
 						activeScheduleFilterCount={activeScheduleFilterCount}
 						resetScheduleFilters={resetScheduleFilters}
 					/>
+
+					{/* Online Bookings Badge (1-Click Pending Approvals) */}
+					{onOpenPendingOnlineBookings && (
+						<button
+							type="button"
+							onClick={onOpenPendingOnlineBookings}
+							className={`schedule-pending-online-badge h-7 min-h-[26px] max-h-7 px-2 rounded-lg border text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 shadow-2xs ${
+								(pendingOnlineBookingsCount ?? 0) > 0
+									? "bg-cyan-500/15 border-cyan-500/50 text-cyan-950 dark:text-cyan-100 hover:bg-cyan-500/25"
+									: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							data-testid="schedule-pending-online-bookings-badge"
+							title={`Входящие онлайн-заявки: ${pendingOnlineBookingsCount ?? 0}. Нажмите для просмотра и подтверждения.`}
+							aria-label={`Входящие онлайн-заявки: ${pendingOnlineBookingsCount ?? 0}`}
+						>
+							<Globe
+								size={13}
+								className={(pendingOnlineBookingsCount ?? 0) > 0 ? "text-cyan-600 dark:text-cyan-400 shrink-0" : "shrink-0 opacity-70"}
+								aria-hidden="true"
+							/>
+							<span className="hidden xl:inline">Онлайн-заявки:</span>
+							<span
+								className={`px-1.5 py-0.2 rounded-full text-[11px] font-extrabold ${
+									(pendingOnlineBookingsCount ?? 0) > 0
+										? "bg-cyan-600 text-white"
+										: "bg-[var(--line)] text-[var(--muted)]"
+								}`}
+							>
+								{pendingOnlineBookingsCount ?? 0}
+							</span>
+						</button>
+					)}
 
 					<CabinetFilterBar
 						activeScheduleFilterCount={activeScheduleFilterCount}

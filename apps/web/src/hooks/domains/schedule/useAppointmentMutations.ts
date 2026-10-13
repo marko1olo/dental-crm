@@ -14,6 +14,7 @@ import {
 import { showToast } from "../../../components/GlobalToast";
 import { DEFAULT_SOLO_CHAIR } from "../../../components/schedule/ScheduleGrid";
 import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
+import { useScheduleStore } from "../../../store/scheduleStore";
 import { useSettingsStore } from "../../../store/settingsStore";
 import { fetchWithHandling } from "../../../utils/networkUtils";
 import { scheduleAdminSecretRefusal } from "./scheduleAdminSecretRefusal";
@@ -29,6 +30,7 @@ export interface UseAppointmentMutationsProps {
 	setSelectedPatientId: (id: string | null) => void;
 	setNewAppointmentError: (msg: string | null) => void;
 	appointmentScheduleDraftsRef: React.MutableRefObject<Record<string, AppointmentScheduleDraft>>;
+	newAppointmentDraftRef?: { current: AppointmentScheduleDraft };
 	newAppointmentDraftUserEditedRef: React.MutableRefObject<boolean>;
 	scheduleStore: any;
 }
@@ -44,6 +46,7 @@ export function useAppointmentMutations({
 	setSelectedPatientId,
 	setNewAppointmentError,
 	appointmentScheduleDraftsRef,
+	newAppointmentDraftRef,
 	newAppointmentDraftUserEditedRef,
 	scheduleStore,
 }: UseAppointmentMutationsProps) {
@@ -86,6 +89,19 @@ export function useAppointmentMutations({
 		);
 	}
 
+	function fillDefaultResources(draft: AppointmentScheduleDraft) {
+		if (!draft.chairId) {
+			const activeChairs = (dashboard?.clinicSettings?.chairs ?? []).filter((c: any) => c.active);
+			draft.chairId = activeChairs[0]?.id || DEFAULT_SOLO_CHAIR.id;
+		}
+		if (!draft.doctorUserId && dashboard?.clinicSettings?.staff) {
+			const activeDocs = dashboard.clinicSettings.staff.filter(
+				(m: any) => m.active && (m.role === "doctor" || m.role === "owner"),
+			);
+			if (activeDocs[0]) draft.doctorUserId = activeDocs[0].id;
+		}
+	}
+
 	async function saveAppointmentSchedule(
 		appointmentId: string,
 		options: {
@@ -98,70 +114,38 @@ export function useAppointmentMutations({
 			setError("Дождитесь завершения текущего сохранения записи.");
 			return false;
 		}
-		const draft = appointmentScheduleDrafts[appointmentId];
-		if (!draft) {
+		const sourceAppointment = dashboard?.appointments?.find((a: any) => a.id === appointmentId);
+		const rawDraft =
+			appointmentScheduleDraftsRef?.current?.[appointmentId] ??
+			useScheduleStore.getState().appointmentScheduleDrafts?.[appointmentId] ??
+			appointmentScheduleDrafts?.[appointmentId] ??
+			(sourceAppointment ? appointmentScheduleDraftFromAppointment(sourceAppointment) : undefined);
+		if (!rawDraft) {
 			const message = "Откройте запись в расписании перед сохранением.";
-			setAppointmentScheduleErrors((current: any) => ({
-				...current,
-				[appointmentId]: message,
-			}));
-			setAppointmentScheduleSaveStates((current: any) => ({
-				...current,
-				[appointmentId]: "error",
-			}));
+			setAppointmentScheduleErrors((current: any) => ({ ...current, [appointmentId]: message }));
+			setAppointmentScheduleSaveStates((current: any) => ({ ...current, [appointmentId]: "error" }));
 			setError(message);
 			return false;
 		}
-
-		// Авто-подстановка кресла и врача при их отсутствии перед валидацией (Мандат 8e / 8n)
-		if (!draft.chairId && dashboard?.clinicSettings?.chairs) {
-			const activeChairs = dashboard.clinicSettings.chairs.filter(
-				(c: any) => c.active,
-			);
-			if (activeChairs.length > 0 && activeChairs[0]) {
-				draft.chairId = activeChairs[0].id;
-			}
-		}
-		if (!draft.doctorUserId && dashboard?.clinicSettings?.staff) {
-			const activeDocs = dashboard.clinicSettings.staff.filter(
-				(m: any) => m.active && (m.role === "doctor" || m.role === "owner"),
-			);
-			if (activeDocs.length > 0 && activeDocs[0]) {
-				draft.doctorUserId = activeDocs[0].id;
-			}
-		}
+		const draft: AppointmentScheduleDraft = { ...rawDraft };
+		fillDefaultResources(draft);
 
 		const missing = appointmentScheduleMissingFields(
 			draft,
 			dashboard?.clinicSettings?.profile?.mode,
 			dashboard?.clinicSettings?.staff,
-			{
-				chairs: dashboard?.clinicSettings?.chairs,
-				patients: dashboard?.patients,
-			},
+			{ chairs: dashboard?.clinicSettings?.chairs, patients: dashboard?.patients },
 		);
 		if (missing.length) {
 			const message = `Перед сохранением записи: ${missing.join("; ")}.`;
-			setAppointmentScheduleErrors((current: any) => ({
-				...current,
-				[appointmentId]: message,
-			}));
-			setAppointmentScheduleSaveStates((current: any) => ({
-				...current,
-				[appointmentId]: "error",
-			}));
+			setAppointmentScheduleErrors((current: any) => ({ ...current, [appointmentId]: message }));
+			setAppointmentScheduleSaveStates((current: any) => ({ ...current, [appointmentId]: "error" }));
 			setError(message);
 			return false;
 		}
 		const expectedSignature = appointmentScheduleDraftSignature(draft);
-		setAppointmentScheduleSaveStates((current: any) => ({
-			...current,
-			[appointmentId]: "saving",
-		}));
-		setAppointmentScheduleErrors((current: any) => ({
-			...current,
-			[appointmentId]: null,
-		}));
+		setAppointmentScheduleSaveStates((current: any) => ({ ...current, [appointmentId]: "saving" }));
+		setAppointmentScheduleErrors((current: any) => ({ ...current, [appointmentId]: null }));
 		try {
 			if (!appointmentMutationIdRef.current) {
 				appointmentMutationIdRef.current =
@@ -170,34 +154,22 @@ export function useAppointmentMutations({
 						: `appointment-${Date.now()}`;
 			}
 			const mutationId = appointmentMutationIdRef.current;
-			const response = await fetchWithHandling(
-				`/api/appointments/${appointmentId}`,
-				{
-					method: "PATCH",
-					headers: auth.scheduleMutationHeaders({
-						"Content-Type": "application/json",
-					}),
-					body: JSON.stringify({
-						...appointmentUpdateInputFromDraft(draft),
-						clientMutationId: mutationId,
-						...(options.allowOverbooking !== undefined
-							? { allowOverbooking: options.allowOverbooking }
-							: {}),
-						...(options.allowEmergencyOverride !== undefined
-							? { allowEmergencyOverride: options.allowEmergencyOverride }
-							: {}),
-					}),
-				},
-			);
+			const response = await fetchWithHandling(`/api/appointments/${appointmentId}`, {
+				method: "PATCH",
+				headers: auth.scheduleMutationHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify({
+					...appointmentUpdateInputFromDraft(draft),
+					clientMutationId: mutationId,
+					...(options.allowOverbooking !== undefined ? { allowOverbooking: options.allowOverbooking } : {}),
+					...(options.allowEmergencyOverride !== undefined
+						? { allowEmergencyOverride: options.allowEmergencyOverride }
+						: {}),
+				}),
+			});
 			if (!response.ok) {
-				setScheduleAdminSecretDemand(
-					(await scheduleAdminSecretRefusal(response)) ?? "",
-				);
+				setScheduleAdminSecretDemand((await scheduleAdminSecretRefusal(response)) ?? "");
 				if (response.status === 409) {
-					const errPayload = (await response
-						.clone()
-						.json()
-						.catch(() => null)) as {
+					const errPayload = (await response.clone().json().catch(() => null)) as {
 						message?: string;
 						suggestedSlots?: string[];
 					} | null;
@@ -209,9 +181,7 @@ export function useAppointmentMutations({
 						});
 					}
 				}
-				throw new Error(
-					await responseErrorMessage(response, "Запись не сохранена"),
-				);
+				throw new Error(await responseErrorMessage(response, "Запись не сохранена"));
 			}
 			appointmentMutationIdRef.current = null;
 			setScheduleAdminSecretDemand("");
@@ -296,22 +266,25 @@ export function useAppointmentMutations({
 			setError("Дождитесь завершения текущего создания записи.");
 			return false;
 		}
-		if (!newAppointmentDraft.chairId) {
+		const activeNewDraft: AppointmentScheduleDraft = {
+			...(newAppointmentDraftRef?.current ?? newAppointmentDraft),
+		};
+		if (!activeNewDraft.chairId) {
 			const activeChairs = (dashboard?.clinicSettings?.chairs ?? []).filter(
 				(c: any) => c.active,
 			);
-			newAppointmentDraft.chairId = activeChairs[0]?.id || DEFAULT_SOLO_CHAIR.id;
+			activeNewDraft.chairId = activeChairs[0]?.id || DEFAULT_SOLO_CHAIR.id;
 		}
-		if (!newAppointmentDraft.doctorUserId && dashboard?.clinicSettings?.staff) {
+		if (!activeNewDraft.doctorUserId && dashboard?.clinicSettings?.staff) {
 			const activeDocs = dashboard.clinicSettings.staff.filter(
 				(m: any) => m.active && (m.role === "doctor" || m.role === "owner"),
 			);
 			if (activeDocs.length > 0 && activeDocs[0]) {
-				newAppointmentDraft.doctorUserId = activeDocs[0].id;
+				activeNewDraft.doctorUserId = activeDocs[0].id;
 			}
 		}
 
-		const missing = newAppointmentMissingFields(newAppointmentDraft);
+		const missing = newAppointmentMissingFields(activeNewDraft);
 		if (missing.length) {
 			const message = `Перед созданием записи: ${missing.join("; ")}.`;
 			setNewAppointmentError(message);
@@ -338,7 +311,7 @@ export function useAppointmentMutations({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
-					...appointmentCreateInputFromDraft(newAppointmentDraft),
+					...appointmentCreateInputFromDraft(activeNewDraft),
 					clientMutationId: mutationId,
 					...(options.allowOverbooking !== undefined
 						? { allowOverbooking: options.allowOverbooking }
@@ -387,12 +360,12 @@ export function useAppointmentMutations({
 					(appointment) => !previousIds.has(appointment.id),
 				) ?? null;
 			const nextDraftPreferences = {
-				selectedPatientId: newAppointmentDraft.patientId || selectedPatientId,
+				selectedPatientId: activeNewDraft.patientId || selectedPatientId,
 				selectedSpecialty: (selectedSpecialty as any) || undefined,
-				scheduleDefaultDoctorUserId: newAppointmentDraft.doctorUserId || null,
+				scheduleDefaultDoctorUserId: activeNewDraft.doctorUserId || null,
 				scheduleDefaultAssistantUserId:
-					newAppointmentDraft.assistantUserId || null,
-				scheduleDefaultChairId: newAppointmentDraft.chairId || null,
+					activeNewDraft.assistantUserId || null,
+				scheduleDefaultChairId: activeNewDraft.chairId || null,
 			};
 			setSelectedPatientId(nextDraftPreferences.selectedPatientId ?? null);
 			setScheduleDefaultDoctorUserId(
@@ -404,9 +377,14 @@ export function useAppointmentMutations({
 			setScheduleDefaultChairId(nextDraftPreferences.scheduleDefaultChairId);
 			setDashboard(nextDashboard);
 			newAppointmentDraftUserEditedRef.current = false;
-			setNewAppointmentDraft(
-				newAppointmentDraftFromDashboard(nextDashboard, nextDraftPreferences),
+			const freshNewDraft = newAppointmentDraftFromDashboard(
+				nextDashboard,
+				nextDraftPreferences,
 			);
+			if (newAppointmentDraftRef) {
+				newAppointmentDraftRef.current = freshNewDraft;
+			}
+			setNewAppointmentDraft(freshNewDraft);
 			setNewAppointmentSaveState("saved");
 			if (createdAppointment) {
 				setAppointmentScheduleDrafts((current: any) => ({

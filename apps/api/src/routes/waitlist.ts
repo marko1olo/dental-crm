@@ -9,19 +9,48 @@ import { db } from "../db/client.js";
 import { appointmentWaitlists, patients, users } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
+const waitlistTimeRangeSchema = z.object({
+	day: z.string(),
+	slot: z.string(),
+	notes: z.string().optional(),
+	urgency: z.string().optional(),
+	treatmentCategory: z.string().optional(),
+});
+
 const waitlistSchema = z.object({
 	patientId: z.string().uuid(),
 	preferredDoctorId: z.string().uuid().nullable().optional(),
 	priorityLevel: z.enum(["high", "medium", "low"]).default("medium"),
-	preferredTimeRanges: z
-		.array(
-			z.object({
-				day: z.string(),
-				slot: z.string(),
-			}),
-		)
-		.optional(),
+	notes: z.string().optional(),
+	urgency: z.string().optional(),
+	treatmentCategory: z.string().optional(),
+	preferredTimeRanges: z.array(waitlistTimeRangeSchema).optional(),
 });
+
+function extractWaitlistMetadata(preferredTimeRanges: unknown): {
+	notes: string;
+	urgency?: string;
+	treatmentCategory?: string;
+} {
+	if (!Array.isArray(preferredTimeRanges) || preferredTimeRanges.length === 0) {
+		return { notes: "" };
+	}
+	const first = preferredTimeRanges[0] as Record<string, unknown> | undefined;
+	const notes =
+		typeof first?.notes === "string" && first.notes.trim().length > 0
+			? first.notes.trim()
+			: "";
+	const urgency =
+		typeof first?.urgency === "string" && first.urgency.trim().length > 0
+			? first.urgency.trim()
+			: undefined;
+	const treatmentCategory =
+		typeof first?.treatmentCategory === "string" &&
+		first.treatmentCategory.trim().length > 0
+			? first.treatmentCategory.trim()
+			: undefined;
+	return { notes, urgency, treatmentCategory };
+}
 
 export async function registerWaitlistRoutes(
 	app: FastifyInstance,
@@ -45,6 +74,8 @@ export async function registerWaitlistRoutes(
 					patientId: appointmentWaitlists.patientId,
 					patientName: patients.fullName,
 					patientPhone: patients.phone,
+					storedPatientName: appointmentWaitlists.patientName,
+					storedPatientPhone: appointmentWaitlists.patientPhone,
 					preferredDoctorId: appointmentWaitlists.preferredDoctorId,
 					preferredDoctorName: users.fullName,
 					priorityLevel: appointmentWaitlists.priorityLevel,
@@ -63,7 +94,26 @@ export async function registerWaitlistRoutes(
 				)
 				.orderBy(desc(appointmentWaitlists.createdAt));
 
-			return items;
+			return items.map((item) => {
+				const meta = extractWaitlistMetadata(item.preferredTimeRanges);
+				return {
+					id: item.id,
+					patientId: item.patientId,
+					patientName: item.patientName ?? item.storedPatientName ?? null,
+					patientPhone: item.patientPhone ?? item.storedPatientPhone ?? null,
+					preferredDoctorId: item.preferredDoctorId,
+					preferredDoctorName: item.preferredDoctorName,
+					priorityLevel: item.priorityLevel,
+					preferredTimeRanges: item.preferredTimeRanges,
+					notes: meta.notes,
+					...(meta.urgency ? { urgency: meta.urgency } : {}),
+					...(meta.treatmentCategory
+						? { treatmentCategory: meta.treatmentCategory }
+						: {}),
+					status: item.status,
+					createdAt: item.createdAt,
+				};
+			});
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (error: any) {
 			request.log.error(error);
@@ -138,14 +188,49 @@ export async function registerWaitlistRoutes(
 				}
 			}
 
+			const normalizedTimeRanges =
+				data.preferredTimeRanges && data.preferredTimeRanges.length > 0
+					? data.preferredTimeRanges.map((tr, index) =>
+							index === 0
+								? {
+										...tr,
+										...(data.notes !== undefined && !tr.notes
+											? { notes: data.notes }
+											: {}),
+										...(data.urgency !== undefined && !tr.urgency
+											? { urgency: data.urgency }
+											: {}),
+										...(data.treatmentCategory !== undefined &&
+										!tr.treatmentCategory
+											? { treatmentCategory: data.treatmentCategory }
+											: {}),
+									}
+								: tr,
+						)
+					: data.notes || data.urgency || data.treatmentCategory
+						? [
+								{
+									day: "Любой",
+									slot: "any",
+									...(data.notes ? { notes: data.notes } : {}),
+									...(data.urgency ? { urgency: data.urgency } : {}),
+									...(data.treatmentCategory
+										? { treatmentCategory: data.treatmentCategory }
+										: {}),
+								},
+							]
+						: [];
+
 			const [newItem] = await db
 				.insert(appointmentWaitlists)
 				.values({
 					organizationId: orgId,
 					patientId: data.patientId,
+					patientName: patient.fullName,
+					patientPhone: patient.phone,
 					preferredDoctorId: data.preferredDoctorId ?? null,
 					priorityLevel: data.priorityLevel,
-					preferredTimeRanges: data.preferredTimeRanges ?? [],
+					preferredTimeRanges: normalizedTimeRanges,
 					status: "active",
 				})
 				.returning();
@@ -158,10 +243,16 @@ export async function registerWaitlistRoutes(
 				});
 			}
 
+			const meta = extractWaitlistMetadata(newItem.preferredTimeRanges);
 			const responseItem = {
 				...newItem,
 				patientName: patient.fullName,
 				patientPhone: patient.phone,
+				notes: meta.notes,
+				...(meta.urgency ? { urgency: meta.urgency } : {}),
+				...(meta.treatmentCategory
+					? { treatmentCategory: meta.treatmentCategory }
+					: {}),
 			};
 
 			// Notify UI via WebSocket

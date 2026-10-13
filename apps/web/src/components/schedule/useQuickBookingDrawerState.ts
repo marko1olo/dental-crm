@@ -435,22 +435,32 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
           try {
             const resp = await fetch("/api/patients", {
               method: "POST",
-              headers: denteAdminSecretRequestHeaders({
-                "Content-Type": "application/json",
-              }),
+              headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
               body: JSON.stringify({
                 fullName: fallbackName,
                 phone: rawPhone || null,
                 birthDate: patientSearch.newPatientBirthDate.trim() || null,
+                allowDuplicate: true,
               }),
             });
             if (resp.ok) {
               const body = await resp.json();
               inlinePat = body.patient || body;
+            } else if (resp.status === 409) {
+              const errBody = await resp.json().catch(() => null);
+              const existingId = errBody?.existingPatient?.id || errBody?.existingPatientId;
+              if (existingId) {
+                inlinePat = (errBody?.existingPatient || {
+                  id: existingId,
+                  fullName: fallbackName,
+                  phone: cleanPhone || rawPhone || null,
+                  status: "active",
+                }) as Patient;
+              }
             }
           } catch {}
 
-          if (!inlinePat || !inlinePat.id) {
+          if (!inlinePat?.id) {
             inlinePat = {
               id: `pat-${Date.now()}`,
               fullName: fallbackName,
@@ -460,7 +470,6 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
               updatedAt: new Date().toISOString(),
             } as Patient;
           }
-
           activePatientId = inlinePat.id;
           patientSearch.setSelectedPatient(inlinePat);
           patientSearch.setPatientId(inlinePat.id);
@@ -489,7 +498,6 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
 
     const startMs = Date.parse(startsAtIso);
     const endsAtIso = new Date(startMs + durationMinutes * 60_000).toISOString();
-
     const isEmergency = appointmentType === "emergency";
     const effectiveReason = reason.trim() || (isEmergency ? "Срочно! Острая боль" : "Приём врача");
 
@@ -519,6 +527,7 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
         effectiveComment = effectiveComment ? `${planMarker}\n${effectiveComment}` : planMarker;
       }
 
+      const allowOverbookingFlag = Boolean(isEmergency || opts?.overbookOverride);
       const payload: Record<string, any> = {
         patientId: activePatientId || null,
         doctorUserId: effDoctor,
@@ -531,6 +540,8 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
         comment: effectiveComment,
         isCito: isEmergency,
         cito: isEmergency,
+        allowOverbooking: allowOverbookingFlag,
+        allowEmergencyOverride: allowOverbookingFlag,
         treatmentPlanId: planId,
         stageId,
         invoice_items: stageServices,
@@ -540,17 +551,12 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
 
       const res = await fetchWithHandling("/api/appointments", {
         method: "POST",
-        headers: denteAdminSecretRequestHeaders({
-          "Content-Type": "application/json",
-        }),
+        headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
-        showToast(
-          actionFailureToast("Ошибка создания записи на сервере", res.status),
-          "warning",
-        );
+        showToast(actionFailureToast("Ошибка создания записи на сервере", res.status), "warning");
         setSubmitError(`Ошибка при создании записи (${res.status})`);
         return;
       }
@@ -560,33 +566,28 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
         appointments?: Appointment[];
         dashboard?: Dashboard;
       };
+      const nextDashboard =
+        result?.dashboard ?? (Array.isArray(result?.appointments) ? (result as unknown as Dashboard) : undefined);
+      if (nextDashboard && typeof setDashboard === "function") setDashboard(nextDashboard);
+      if (typeof loadDashboard === "function") await loadDashboard();
 
-      if (typeof loadDashboard === "function") {
-        await loadDashboard();
-      }
-
-      const nextDashboard = result?.dashboard;
       const patientName =
         patientSearch.selectedPatient?.fullName ||
         patientSearch.newPatientFullName.trim() ||
         (patientSearch.newPatientPhone.trim() ? `Пациент (${patientSearch.newPatientPhone.trim()})` : "") ||
         patientSearch.searchQuery.trim() ||
         "Пациент";
-      const timeLabel = startsAtLocal.slice(11, 16);
-      showToast(`Запись для «${patientName}» создана на ${timeLabel}!`, "success", 5000);
+      showToast(`Запись для «${patientName}» создана на ${startsAtLocal.slice(11, 16)}!`, "success", 5000);
 
+      let createdAppt: Appointment | undefined;
       if (nextDashboard?.appointments) {
-        const created = nextDashboard.appointments.find(
-          (a) =>
-            (a.patientId === activePatientId || a.patientId === patientSearch.patientId) &&
-            a.startsAt === startsAtIso,
+        createdAppt = nextDashboard.appointments.find(
+          (a) => (a.patientId === activePatientId || a.patientId === patientSearch.patientId) && a.startsAt === startsAtIso,
         );
-        if (created) {
-          (created as any).treatmentPlanId = planId;
-          (created as any).stageId = stageId;
-          if (typeof onAppointmentCreated === "function") {
-            onAppointmentCreated(created);
-          }
+        if (createdAppt) {
+          (createdAppt as any).treatmentPlanId = planId;
+          (createdAppt as any).stageId = stageId;
+          if (typeof onAppointmentCreated === "function") onAppointmentCreated(createdAppt);
         }
       }
 
@@ -594,7 +595,7 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
         window.dispatchEvent(
           new CustomEvent("dente-stage-appointment-booked", {
             detail: {
-              appointmentId: result?.appointment?.id || null,
+              appointmentId: result?.appointment?.id || createdAppt?.id || null,
               patientId: activePatientId,
               treatmentPlanId: planId,
               stageId,
@@ -619,12 +620,9 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
   const handleCopyBookingConfirmation = async () => {
     const candidateName =
       patientSearch.newPatientFullName.trim() ||
-      (patientSearch.newPatientPhone.trim()
-        ? `Пациент (${patientSearch.newPatientPhone.trim()})`
-        : "") ||
+      (patientSearch.newPatientPhone.trim() ? `Пациент (${patientSearch.newPatientPhone.trim()})` : "") ||
       patientSearch.searchQuery.trim() ||
       (appointmentType === "emergency" ? "Пациент с острой болью (срочно)" : "");
-
     const patientName = patientSearch.selectedPatient?.fullName || candidateName || "Пациент";
 
     let formattedDate = "";
@@ -633,15 +631,9 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
       const [dPart, tPart] = startsAtLocal.split("T");
       if (dPart) {
         const parts = dPart.split("-");
-        if (parts.length === 3) {
-          formattedDate = `${parts[2]}.${parts[1]}.${parts[0]}`;
-        } else {
-          formattedDate = dPart;
-        }
+        formattedDate = parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : dPart;
       }
-      if (tPart) {
-        formattedTime = tPart.slice(0, 5);
-      }
+      if (tPart) formattedTime = tPart.slice(0, 5);
     }
     if (!formattedDate) {
       try {
@@ -650,21 +642,16 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
         formattedDate = "01.01.2026";
       }
     }
-    if (!formattedTime) {
-      formattedTime = "10:00";
-    }
+    if (!formattedTime) formattedTime = "10:00";
 
     const clinicName =
       dashboard?.clinicSettings?.profile?.clinicName ||
       dashboard?.clinicSettings?.profile?.legalName ||
       "ДЕНТЕ";
-    const clinicAddress =
-      dashboard?.clinicSettings?.profile?.address || "г. Москва";
+    const clinicAddress = dashboard?.clinicSettings?.profile?.address || "г. Москва";
     const clinicPhone = dashboard?.clinicSettings?.profile?.phone || "";
-
     const selectedDoc = doctors.find((d) => d.id === doctorUserId) || dutyDoc;
     const doctorName = selectedDoc?.fullName || "Врач клиники";
-
     const selectedChair = chairs.find((c) => c.id === chairId) || currentChair;
     const chairName = selectedChair?.name || "Основное кресло";
 

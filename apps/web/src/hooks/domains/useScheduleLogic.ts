@@ -29,6 +29,9 @@ export function useScheduleLogic({
 	selectedSpecialty,
 }: any) {
 	const scheduleStore = useScheduleStore();
+	const internalNewAppointmentDraftRef = {
+		current: scheduleStore.newAppointmentDraft,
+	};
 
 	const staffChairDrafts = useStaffChairScheduleDrafts({
 		dashboard,
@@ -49,6 +52,8 @@ export function useScheduleLogic({
 		setSelectedPatientId,
 		setNewAppointmentError,
 		setSettingsTab,
+		appointmentScheduleDraftsRef,
+		newAppointmentDraftRef: internalNewAppointmentDraftRef,
 		newAppointmentDraftUserEditedRef,
 		scheduleStore,
 	});
@@ -64,6 +69,7 @@ export function useScheduleLogic({
 		setSelectedPatientId,
 		setNewAppointmentError,
 		appointmentScheduleDraftsRef,
+		newAppointmentDraftRef: internalNewAppointmentDraftRef,
 		newAppointmentDraftUserEditedRef,
 		scheduleStore,
 	});

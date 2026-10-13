@@ -123,15 +123,30 @@ export function useAppointmentModalPatient({
               body: JSON.stringify({
                 fullName: effectiveName,
                 phone: rawPhone || null,
+                allowDuplicate: true,
               }),
             });
             if (res.ok) {
               const data = await res.json();
-              if (data?.id) {
+              const pat = data?.patient || data;
+              if (pat?.id) {
                 created = {
-                  id: data.id,
-                  fullName: data.fullName || effectiveName,
-                  phone: data.phone || rawPhone || null,
+                  id: pat.id,
+                  fullName: pat.fullName || effectiveName,
+                  phone: pat.phone || rawPhone || null,
+                };
+              }
+            } else if (res.status === 409) {
+              const errBody = await res.json().catch(() => null);
+              const existingId =
+                errBody?.existingPatient?.id || errBody?.existingPatientId;
+              if (existingId) {
+                created = {
+                  id: existingId,
+                  fullName:
+                    errBody?.existingPatient?.fullName || effectiveName,
+                  phone:
+                    errBody?.existingPatient?.phone || rawPhone || null,
                 };
               }
             }

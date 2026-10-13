@@ -199,11 +199,28 @@ export function useQuickBookingPatientSearch({
             fullName: nameCandidate,
             phone: cleanPhone || newPatientPhone.trim() || null,
             birthDate: newPatientBirthDate.trim() || null,
+            allowDuplicate: true,
           }),
         });
         if (resp.ok) {
           const body = await resp.json();
           createdPatient = body.patient || body;
+        } else if (resp.status === 409) {
+          const errBody = await resp.json().catch(() => null);
+          const existing =
+            errBody?.existingPatient ||
+            (errBody?.existingPatientId
+              ? {
+                  id: errBody.existingPatientId,
+                  fullName: nameCandidate,
+                  phone: cleanPhone || newPatientPhone.trim() || null,
+                  birthDate: newPatientBirthDate.trim() || null,
+                  status: "active",
+                }
+              : null);
+          if (existing?.id) {
+            createdPatient = existing as Patient;
+          }
         }
       } catch {
         // Fallback optimistic
