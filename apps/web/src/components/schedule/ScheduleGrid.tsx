@@ -218,7 +218,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(
 
       <div
         ref={interactions.gridContainerRef}
-        className="schedule-grid-container overflow-x-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-xs select-none"
+        className="schedule-grid-container overflow-x-auto overflow-y-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-xs select-none"
+        style={{ maxHeight: "calc(100vh - 156px)", overflowY: "auto" }}
         data-testid="schedule-grid-view"
         role="region"
         aria-label="Сетка расписания по креслам и времени"
@@ -230,7 +231,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(
               duty.effectiveChairs.length > 1
                 ? `${Math.max(260, 72 + duty.effectiveChairs.length * 220)}px`
                 : undefined,
-            gridTemplateColumns: `clamp(112px, 10vw, 150px) repeat(${duty.effectiveChairs.length}, minmax(180px, 1fr))`,
+            gridTemplateColumns: `clamp(68px, 5.5vw, 76px) repeat(${duty.effectiveChairs.length}, minmax(180px, 1fr))`,
           }}
         >
           {/* Time corner header with Grid Step Selector */}

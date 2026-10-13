@@ -67,12 +67,12 @@ export function ScheduleGridTimeCorner({
   handleSetGridStep,
 }: ScheduleGridTimeCornerProps) {
   return (
-    <div className="px-1.5 h-full min-h-[58px] text-xs font-medium text-[var(--muted)] border-r border-[var(--line)] flex flex-col justify-center items-center py-1 gap-1 sticky left-0 z-20 bg-[var(--paper-soft)] select-none">
-      <span className="hidden sm:inline text-[11px] font-medium text-[var(--muted)] tracking-tight shrink-0 select-none">
-        Сетка:
+    <div className="px-1 h-full min-h-[58px] text-xs font-medium text-[var(--muted)] border-r border-[var(--line)] flex flex-col justify-center items-center py-1 gap-1 sticky left-0 z-20 bg-[var(--paper-soft)] select-none">
+      <span className="text-[10px] font-bold text-[var(--muted)] tracking-tight shrink-0 select-none uppercase">
+        Сетка
       </span>
       <div
-        className="schedule-grid-step-segmented shrink-0 select-none"
+        className="schedule-grid-step-segmented w-full max-w-[66px] justify-center shrink-0 select-none"
         data-testid="schedule-grid-step-selector"
         role="group"
         aria-label="Шаг сетки расписания"
