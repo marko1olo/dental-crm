@@ -1,5 +1,6 @@
 import React from "react";
 import {
+	Check,
 	ClipboardList,
 	Contrast,
 	FlipHorizontal,
@@ -54,6 +55,9 @@ export interface ImagingToolbarProps {
 	}> | undefined;
 	formatShortDate?: ((date: string) => string) | undefined;
 	isOnline?: boolean | undefined;
+	activeAppointment?: { id: string; date?: string; patientName?: string } | null | undefined;
+	onAttachToTooth?: (toothCode: string) => Promise<void> | void;
+	onAttachToVisit?: (visitId: string) => Promise<void> | void;
 }
 
 export function ImagingToolbar({
@@ -84,6 +88,9 @@ export function ImagingToolbar({
 	imagingViewerAnnotations,
 	formatShortDate,
 	isOnline = true,
+	activeAppointment,
+	onAttachToTooth,
+	onAttachToVisit,
 }: ImagingToolbarProps) {
 	return (
 		<div
@@ -91,16 +98,16 @@ export function ImagingToolbar({
 			role="toolbar"
 			aria-label="Настройки рентген-снимка"
 		>
-			<div className="imaging-viewer-tools flex flex-wrap items-center justify-between gap-1.5 min-h-[32px]">
+			<div className="imaging-viewer-tools flex flex-wrap items-center justify-between gap-1.5 min-h-[36px]">
 				<div className="flex items-center gap-1.5 flex-wrap">
 					{/* Group 1: [ ↺ | ↻ | ⇄ | 180° ] Rotation & Orientation Segmented Controls */}
 					<div
-						className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] p-0.5 shadow-2xs shrink-0 gap-0.5"
+						className="inline-flex items-center rounded-xl border border-[var(--line)] bg-[var(--paper)] p-0.5 shadow-2xs shrink-0 gap-0.5"
 						role="group"
 						aria-label="Ориентация и поворот"
 					>
 						<button
-							className="viewer-tool-button h-7 px-2 rounded text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
+							className="viewer-tool-button h-8 px-2.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
 							type="button"
 							title="Повернуть влево"
 							aria-label="Повернуть снимок влево"
@@ -111,10 +118,10 @@ export function ImagingToolbar({
 								}))
 							}
 						>
-							<RotateCcw size={13} aria-hidden="true" />
+							<RotateCcw size={14} aria-hidden="true" />
 						</button>
 						<button
-							className="viewer-tool-button h-7 px-2 rounded text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
+							className="viewer-tool-button h-8 px-2.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
 							type="button"
 							title="Повернуть вправо"
 							aria-label="Повернуть снимок вправо"
@@ -125,10 +132,10 @@ export function ImagingToolbar({
 								}))
 							}
 						>
-							<RotateCw size={13} aria-hidden="true" />
+							<RotateCw size={14} aria-hidden="true" />
 						</button>
 						<button
-							className={`viewer-tool-button h-7 px-2 rounded text-xs transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${imagingViewerState.flipHorizontal ? "bg-[var(--teal)] text-white font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
+							className={`viewer-tool-button h-8 px-2.5 rounded-lg text-xs transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${imagingViewerState.flipHorizontal ? "bg-[var(--primary)] text-white font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
 							type="button"
 							title="Зеркально"
 							aria-label="Зеркально отразить снимок"
@@ -140,10 +147,10 @@ export function ImagingToolbar({
 								}))
 							}
 						>
-							<FlipHorizontal size={13} aria-hidden="true" />
+							<FlipHorizontal size={14} aria-hidden="true" />
 						</button>
 						<button
-							className="viewer-tool-button h-7 px-1.5 rounded text-[11px] font-bold text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
+							className="viewer-tool-button h-8 px-2 rounded-lg text-xs font-bold text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
 							type="button"
 							title="Повернуть на 180° (верхняя / нижняя челюсть)"
 							aria-label="Повернуть снимок на 180 градусов"
@@ -160,12 +167,12 @@ export function ImagingToolbar({
 
 					{/* Group 2: [ - | + | 100% | Hand ] Zoom Segmented Controls */}
 					<div
-						className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] p-0.5 shadow-2xs shrink-0 gap-0.5"
+						className="inline-flex items-center rounded-xl border border-[var(--line)] bg-[var(--paper)] p-0.5 shadow-2xs shrink-0 gap-0.5"
 						role="group"
 						aria-label="Масштаб снимка"
 					>
 						<button
-							className="viewer-tool-button h-7 px-2 rounded text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
+							className="viewer-tool-button h-8 px-2.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
 							type="button"
 							title="Уменьшить"
 							aria-label="Уменьшить снимок"
@@ -176,10 +183,10 @@ export function ImagingToolbar({
 								}))
 							}
 						>
-							<ZoomOut size={13} aria-hidden="true" />
+							<ZoomOut size={14} aria-hidden="true" />
 						</button>
 						<button
-							className="viewer-tool-button h-7 px-2 rounded text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
+							className="viewer-tool-button h-8 px-2.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
 							type="button"
 							title="Увеличить"
 							aria-label="Увеличить снимок"
@@ -190,10 +197,10 @@ export function ImagingToolbar({
 								}))
 							}
 						>
-							<ZoomIn size={13} aria-hidden="true" />
+							<ZoomIn size={14} aria-hidden="true" />
 						</button>
 						<button
-							className={`viewer-tool-button h-7 px-2 rounded text-[11px] font-bold transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${Math.abs((imagingViewerState.zoom || 1) - 1.0) < 0.05 ? "bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)]" : "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
+							className={`viewer-tool-button h-8 px-2.5 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${Math.abs((imagingViewerState.zoom || 1) - 1.0) < 0.05 ? "bg-[var(--primary-soft,rgba(13,148,136,0.12))] text-[var(--primary)] font-bold" : "text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
 							type="button"
 							title="Сбросить масштаб (100%)"
 							aria-label="Сбросить масштаб до 100%"
@@ -208,7 +215,7 @@ export function ImagingToolbar({
 							100%
 						</button>
 						<button
-							className={`viewer-tool-button h-7 px-2 rounded text-xs transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${isPanActive ? "bg-[var(--teal)] text-white font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
+							className={`viewer-tool-button h-8 px-2.5 rounded-lg text-xs transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${isPanActive ? "bg-[var(--primary)] text-white font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
 							type="button"
 							title="Панорамирование (перетаскивание снимка)"
 							aria-label="Панорамирование снимка"
@@ -218,18 +225,18 @@ export function ImagingToolbar({
 								if (!isPanActive) setIsRulerActive(false);
 							}}
 						>
-							<Hand size={13} aria-hidden="true" />
+							<Hand size={14} aria-hidden="true" />
 						</button>
 					</div>
 
 					{/* Group 3: [ Негатив | CLAHE | Линейка ] Clinical Contrast & Enhancement */}
 					<div
-						className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] p-0.5 shadow-2xs shrink-0 gap-0.5"
+						className="inline-flex items-center rounded-xl border border-[var(--line)] bg-[var(--paper)] p-0.5 shadow-2xs shrink-0 gap-0.5"
 						role="group"
 						aria-label="Фильтры контраста и измерения"
 					>
 						<button
-							className={`viewer-tool-button h-7 px-2.5 rounded text-xs font-semibold gap-1 transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${imagingViewerState.inverted ? "bg-[var(--teal)] text-white shadow-2xs font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
+							className={`viewer-tool-button h-8 px-3 rounded-lg text-xs font-semibold gap-1.5 transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${imagingViewerState.inverted ? "bg-[var(--primary)] text-white shadow-2xs font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
 							type="button"
 							title="Инверсия (Негатив для верхушек корней и эндодонтии)"
 							aria-label="Инвертировать снимок в негатив"
@@ -241,22 +248,22 @@ export function ImagingToolbar({
 								}))
 							}
 						>
-							<Contrast size={13} aria-hidden="true" />
+							<Contrast size={14} aria-hidden="true" />
 							<span>Негатив</span>
 						</button>
 						<button
-							className={`viewer-tool-button h-7 px-2.5 rounded text-xs font-semibold gap-1 transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${enhancementOn ? "bg-[var(--teal)] text-white shadow-2xs font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
+							className={`viewer-tool-button h-8 px-3 rounded-lg text-xs font-semibold gap-1.5 transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${enhancementOn ? "bg-[var(--primary)] text-white shadow-2xs font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
 							type="button"
 							title="Включить/выключить улучшение снимка (CLAHE симуляция)"
 							aria-label="Переключить CLAHE улучшение снимка"
 							aria-pressed={enhancementOn}
 							onClick={() => setEnhancementOn(!enhancementOn)}
 						>
-							<Sparkles size={13} aria-hidden="true" />
+							<Sparkles size={14} aria-hidden="true" />
 							<span>CLAHE</span>
 						</button>
 						<button
-							className={`viewer-tool-button h-7 px-2.5 rounded text-xs font-semibold gap-1 transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${isRulerActive ? "bg-[var(--teal)] text-white shadow-2xs font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
+							className={`viewer-tool-button h-8 px-3 rounded-lg text-xs font-semibold gap-1.5 transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${isRulerActive ? "bg-[var(--primary)] text-white shadow-2xs font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
 							type="button"
 							title="Калиброванная линейка (измерение расстояний в мм)"
 							aria-label="Включить режим калиброванной линейки"
@@ -266,10 +273,10 @@ export function ImagingToolbar({
 								if (!isRulerActive) setIsPanActive(false);
 							}}
 						>
-							<Ruler size={13} aria-hidden="true" />
+							<Ruler size={14} aria-hidden="true" />
 							<span>Линейка</span>
 							{rulerMeasurements.length > 0 && (
-								<span className="ml-0.5 px-1 py-0.2 bg-teal-800 text-[10px] rounded-full text-white">
+								<span className="ml-0.5 px-1.5 py-0.5 bg-[var(--primary-strong)] text-[10px] rounded-full text-white font-bold">
 									{rulerMeasurements.length}
 								</span>
 							)}
@@ -277,7 +284,7 @@ export function ImagingToolbar({
 						{rulerMeasurements.length > 0 && (
 							<button
 								type="button"
-								className="viewer-tool-button h-7 px-1.5 rounded text-[11px] text-[var(--muted)] hover:text-red-400 hover:bg-[var(--paper-soft)] transition-all cursor-pointer"
+								className="viewer-tool-button h-8 px-2 rounded-lg text-xs text-[var(--ink-muted)] hover:text-rose-500 hover:bg-[var(--paper-soft)] transition-all cursor-pointer font-semibold"
 								title="Удалить все измерения линейки"
 								onClick={() => setRulerMeasurements([])}
 							>
@@ -287,29 +294,90 @@ export function ImagingToolbar({
 					</div>
 				</div>
 
+				{/* 1-Click Tooth (FDI) & Visit Binding */}
+				<div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+					<div className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] px-2.5 h-8 shadow-2xs text-xs shrink-0">
+						<span className="text-xs font-medium text-[var(--ink-muted)] shrink-0">Зуб:</span>
+						<select
+							data-testid="study-tooth-selector"
+							aria-label="Привязать снимок к зубу FDI"
+							className="bg-transparent font-bold text-xs text-[var(--primary)] cursor-pointer focus:outline-none"
+							style={{
+								border: "none",
+								background: "transparent",
+								width: "auto",
+								minWidth: "44px",
+								height: "26px",
+								minHeight: "26px",
+								padding: "0 18px 0 2px",
+								boxShadow: "none",
+							}}
+							value={selectedImagingStudy?.toothCode ?? ""}
+							onChange={(e) => onAttachToTooth?.(e.target.value)}
+						>
+							<option value="">Все</option>
+							<optgroup label="Верхняя челюсть (Q1/Q2)">
+								{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
+									<option key={t} value={String(t)}>#{t}</option>
+								))}
+							</optgroup>
+							<optgroup label="Нижняя челюсть (Q4/Q3)">
+								{[48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
+									<option key={t} value={String(t)}>#{t}</option>
+								))}
+							</optgroup>
+						</select>
+					</div>
+
+					{activeAppointment?.id && (
+						<button
+							data-testid="study-attach-visit-btn"
+							type="button"
+							className={`h-8 px-3 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
+								selectedImagingStudy?.visitId === activeAppointment.id
+									? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold"
+									: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+							}`}
+							title={
+								selectedImagingStudy?.visitId === activeAppointment.id
+									? "Снимок прикреплен к текущему приёму"
+									: "Привязать снимок к текущему приёму в 1 клик"
+							}
+							onClick={() => onAttachToVisit?.(activeAppointment.id)}
+						>
+							<Check size={14} className={selectedImagingStudy?.visitId === activeAppointment.id ? "text-emerald-500" : "text-[var(--ink-muted)]"} />
+							<span>
+								{selectedImagingStudy?.visitId === activeAppointment.id
+									? "В приёме"
+									: "В приём"}
+							</span>
+						</button>
+					)}
+				</div>
+
 				{/* Secondary Reset Button */}
 				<button
-					className="viewer-tool-button h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center gap-1 text-xs shrink-0 cursor-pointer shadow-2xs"
+					className="viewer-tool-button h-8 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer shadow-2xs"
 					type="button"
 					title="Сбросить все параметры просмотра"
 					aria-label="Сбросить настройки снимка"
 					onClick={onReset}
 				>
-					<RefreshCw size={12} aria-hidden="true" />
-					<span className="text-[11px] font-medium">Сброс</span>
+					<RefreshCw size={13} aria-hidden="true" />
+					<span className="text-xs font-semibold">Сброс</span>
 				</button>
 			</div>
 
 			{/* Compact Single-Line Slider Bar for Brightness & Contrast */}
 			<div className="viewer-slider-grid flex flex-wrap sm:flex-nowrap items-center gap-3 w-full static pt-1 px-0.5">
-				<label className="text-[11px] font-medium text-[var(--muted)] flex items-center gap-2 flex-1 min-w-[140px]">
+				<label className="text-xs font-medium text-[var(--ink-muted)] flex items-center gap-2 flex-1 min-w-[140px]">
 					<span className="shrink-0 font-semibold text-[var(--ink)]">Яркость:</span>
 					<input
 						min="0.65"
 						max="1.45"
 						step="0.05"
 						type="range"
-						className="flex-1 h-1.5 accent-[var(--teal,#0d9488)] cursor-pointer"
+						className="flex-1 h-1.5 accent-[var(--primary)] cursor-pointer"
 						value={imagingViewerState.brightness ?? 1}
 						onChange={(event) =>
 							setImagingViewerState((state: any) => ({
@@ -318,18 +386,18 @@ export function ImagingToolbar({
 							}))
 						}
 					/>
-					<span className="text-[10px] text-[var(--teal,#0d9488)] font-mono w-8 text-right font-bold">
+					<span className="text-xs text-[var(--primary)] font-mono w-9 text-right font-bold">
 						{Math.round((imagingViewerState.brightness ?? 1) * 100)}%
 					</span>
 				</label>
-				<label className="text-[11px] font-medium text-[var(--muted)] flex items-center gap-2 flex-1 min-w-[140px]">
+				<label className="text-xs font-medium text-[var(--ink-muted)] flex items-center gap-2 flex-1 min-w-[140px]">
 					<span className="shrink-0 font-semibold text-[var(--ink)]">Контраст:</span>
 					<input
 						min="0.75"
 						max="1.85"
 						step="0.05"
 						type="range"
-						className="flex-1 h-1.5 accent-[var(--teal,#0d9488)] cursor-pointer"
+						className="flex-1 h-1.5 accent-[var(--primary)] cursor-pointer"
 						value={imagingViewerState.contrast ?? 1}
 						onChange={(event) =>
 							setImagingViewerState((state: any) => ({
@@ -338,7 +406,7 @@ export function ImagingToolbar({
 							}))
 						}
 					/>
-					<span className="text-[10px] text-[var(--teal,#0d9488)] font-mono w-8 text-right font-bold">
+					<span className="text-xs text-[var(--primary)] font-mono w-9 text-right font-bold">
 						{Math.round((imagingViewerState.contrast ?? 1) * 100)}%
 					</span>
 				</label>

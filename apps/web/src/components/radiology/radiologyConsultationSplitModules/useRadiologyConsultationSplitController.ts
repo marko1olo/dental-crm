@@ -1,51 +1,39 @@
 /**
  * DENTE CRM — Radiology Consultation Split Controller Hook (Layer 3)
  * Directed Acyclic Graph (DAG): Layer 3 (State, custom hooks, handlers, subscriptions)
+ * Strictly <= 500 lines (Mandate 8b & Engineering Route).
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { DentalDisciplineId, ConsultationPathologyItem } from "../ConsultationPathologyLibrary.js";
-import { formatFilmstripDateTime, type RadiologyFilmstripItem } from "../RadiologyFilmstripDock.js";
 import { teardownViewportCanvases } from "../../../utils/viewportTeardownHelper.js";
-import { applyRadiologyProtocolToForm043 } from "../radiologyProtocols.js";
-import { showToast } from "../../GlobalToast.js";
-import type { RadiologyStudy } from "../types.js";
 import {
 	type ConsultationSlot,
 	type ViewportAnnotation,
 	type ViewportState,
 	getImageCoords,
 	renderViewportToCanvas,
-	captureCompositeSnapshot,
 } from "../consultationCanvasRenderers.js";
 import type { ConsultationSplitMode } from "../ConsultationTopToolbar.js";
-import {
-	computeSynchronizedSliceIndices,
-	type BoneDimensionPoint,
-	type StudySliceSeriesInfo,
-} from "../cbctComparisonMath.js";
 import type {
 	RadiologyConsultationSplitProps,
 	ActiveConsultationTool,
-	ConsultationParticipant,
-	ConsultationNoteItem,
 } from "./types.js";
 import {
-	DEFAULT_CONSULTATION_PARTICIPANTS,
 	DEFAULT_ANNOTATION_COLOR,
-	DEFAULT_Z_MM,
 } from "./consultationConstants.js";
 import {
 	resolvePatientGender,
-	buildForm043ConsultationStatement,
-	formatConsultationTimestamp,
 } from "./consultationUtils.js";
 import {
 	createDefaultEffectivePatientStudies,
 	createInitialLeftViewport,
 	createInitialRightViewport,
-	createInitialConsiliumNotes,
 } from "./consultationInitialState.js";
+import { formatFilmstripDateTime } from "../RadiologyFilmstripDock.js";
+import { showToast } from "../../GlobalToast.js";
+import { useRadiologySliceSyncController } from "./useRadiologySliceSyncController.js";
+import { useRadiologyDiagnosticSyncController } from "./useRadiologyDiagnosticSyncController.js";
+import { useRadiologyExportConsultationController } from "./useRadiologyExportConsultationController.js";
 
 export function useRadiologyConsultationSplitController(props: RadiologyConsultationSplitProps) {
 	const {
@@ -75,69 +63,6 @@ export function useRadiologyConsultationSplitController(props: RadiologyConsulta
 	// Synchronous Pan & Zoom toggle (EzDent-i Screenshot 25 invariant)
 	const [isSyncNav, setIsSyncNav] = useState<boolean>(true);
 
-	// Synchronous Slice Z-scroll toggle & physical Z coordinate for CT series
-	const [isSyncSlices] = useState<boolean>(true);
-	const [currentZMm, setCurrentZMm] = useState<number>(DEFAULT_Z_MM);
-
-	// Consilium participants state
-	const [participants, setParticipants] = useState<readonly ConsultationParticipant[]>(
-		DEFAULT_CONSULTATION_PARTICIPANTS,
-	);
-	const [isParticipantsBarOpen, setIsParticipantsBarOpen] = useState<boolean>(false);
-
-	// Consilium notes & treatment protocol
-	const [notes, setNotes] = useState<readonly ConsultationNoteItem[]>(() =>
-		createInitialConsiliumNotes(activeToothFdi),
-	);
-	const [isNotesPanelOpen, setIsNotesPanelOpen] = useState<boolean>(false);
-
-	// Bone measurements for Pre-op (baseline) and Post-op (followup)
-	const [baselineBone] = useState<BoneDimensionPoint>({
-		heightMm: 7.5,
-		widthMm: 5.0,
-		densityHU: 420,
-		toothFdi: activeToothFdi ? String(activeToothFdi) : "16",
-		measurementDate: "12.01.2024",
-	});
-
-	const [followupBone] = useState<BoneDimensionPoint>({
-		heightMm: 11.7,
-		widthMm: 6.5,
-		densityHU: 840,
-		toothFdi: activeToothFdi ? String(activeToothFdi) : "16",
-		measurementDate: "15.07.2024",
-	});
-
-	// Synchronized slice calculation with slice thickness compensation
-	const sliceSyncState = useMemo(() => {
-		const baselineSeries: StudySliceSeriesInfo = {
-			sliceCount: 300,
-			sliceThicknessMm: 0.5,
-		};
-		const followupSeries: StudySliceSeriesInfo = {
-			sliceCount: 150,
-			sliceThicknessMm: 1.0,
-		};
-		return computeSynchronizedSliceIndices({
-			currentZMm,
-			baseline: baselineSeries,
-			followup: followupSeries,
-		});
-	}, [currentZMm]);
-
-	// Active Interactive Tool: "pan" | "laser" | "arrow" | "pencil" | "eraser"
-	const [activeTool, setActiveTool] = useState<ActiveConsultationTool>("pan");
-	const [annotationColor] = useState<string>(DEFAULT_ANNOTATION_COLOR);
-
-	// Laser pointer coordinates (in image plane coordinates)
-	const [laserPoint, setLaserPoint] = useState<{ x: number; y: number } | null>(null);
-
-	// Fullscreen Presentation Mode
-	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-
-	// 8 Dental Disciplines State
-	const [selectedDiscipline, setSelectedDiscipline] = useState<DentalDisciplineId>("conservative");
-
 	// Effective guaranteed patient studies list
 	const effectivePatientStudies = useMemo(
 		() => createDefaultEffectivePatientStudies(patientStudiesHistory),
@@ -162,6 +87,16 @@ export function useRadiologyConsultationSplitController(props: RadiologyConsulta
 		}),
 	);
 
+	// Active Interactive Tool: "pan" | "laser" | "arrow" | "pencil" | "eraser"
+	const [activeTool, setActiveTool] = useState<ActiveConsultationTool>("pan");
+	const [annotationColor] = useState<string>(DEFAULT_ANNOTATION_COLOR);
+
+	// Laser pointer coordinates (in image plane coordinates)
+	const [laserPoint, setLaserPoint] = useState<{ x: number; y: number } | null>(null);
+
+	// Fullscreen Presentation Mode
+	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+
 	// Canvas and image refs for both viewports
 	const leftCanvasRef = useRef<HTMLCanvasElement>(null);
 	const rightCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -177,6 +112,38 @@ export function useRadiologyConsultationSplitController(props: RadiologyConsulta
 
 	// Active annotation drafting
 	const [draftPoints, setDraftPoints] = useState<{ x: number; y: number }[]>([]);
+
+	// 1. Subcontroller: Slice navigation and Z-synchronization
+	const sliceSyncCtrl = useRadiologySliceSyncController({
+		activeToothFdi,
+		isSyncNav,
+		setLeftViewport,
+		setRightViewport,
+	});
+
+	// 2. Subcontroller: Diagnostic sync with Odontogram & Form 043/u EHR
+	const diagnosticSyncCtrl = useRadiologyDiagnosticSyncController({
+		activeToothFdi,
+		leftViewport,
+		setLeftViewport,
+		setRightViewport,
+		activeSlot,
+		setActiveSlot,
+	});
+
+	// 3. Subcontroller: Export, Snapshot, Notes, Consilium Protocol
+	const exportCtrl = useRadiologyExportConsultationController({
+		leftCanvasRef,
+		rightCanvasRef,
+		leftViewport,
+		rightViewport,
+		splitMode,
+		patientName,
+		patientCardNumber,
+		activeToothFdi,
+		onInsertProtocol,
+		onSaveSnapshot,
+	});
 
 	// Render both viewports with responsive fitting & laser spotlight
 	const renderBoth = useCallback(() => {
@@ -262,38 +229,6 @@ export function useRadiologyConsultationSplitController(props: RadiologyConsulta
 			}
 		};
 	}, []);
-
-	// Step Slice Z in physical millimeters
-	const handleStepSliceZ = useCallback((deltaZMm: number) => {
-		setCurrentZMm((prev) => Math.max(0, Math.min(150, prev + deltaZMm)));
-	}, []);
-
-	// Wheel Zoom with Synchronization & Slice Z-scroll
-	const handleViewportWheel = (slot: ConsultationSlot, e: React.WheelEvent<HTMLCanvasElement>) => {
-		e.preventDefault();
-
-		if (isSyncSlices && (e.shiftKey || e.altKey)) {
-			const deltaZ = e.deltaY < 0 ? -1.0 : 1.0;
-			handleStepSliceZ(deltaZ);
-			return;
-		}
-
-		const factor = e.deltaY < 0 ? 1.15 : 0.87;
-
-		const updateZoom = (prev: ViewportState) => {
-			const nextZoom = Math.min(16.0, Math.max(0.2, prev.zoom * factor));
-			return { ...prev, zoom: nextZoom };
-		};
-
-		if (isSyncNav) {
-			setLeftViewport(updateZoom);
-			setRightViewport(updateZoom);
-		} else if (slot === "left") {
-			setLeftViewport(updateZoom);
-		} else {
-			setRightViewport(updateZoom);
-		}
-	};
 
 	// Mouse Down (Pan vs Annotation Drawing vs Laser)
 	const handleCanvasMouseDown = (
@@ -454,103 +389,6 @@ export function useRadiologyConsultationSplitController(props: RadiologyConsulta
 		else setRightViewport(toggle);
 	};
 
-	// Select Study from Patient Captured Tape
-	const handleSelectCapturedStudy = (study: RadiologyStudy | RadiologyFilmstripItem) => {
-		const imgSrc = study.imageUrl || study.thumbnailUrl || "";
-		const title =
-			(study as any).title ||
-			(study as any).studyDescription ||
-			(study.teethFdi?.[0] ? `Зуб ${study.teethFdi[0]}` : "Рентген визиографа");
-		const dateStr = formatFilmstripDateTime(study.studyDate).dateStr;
-
-		const targetUpdater = (prev: ViewportState) => ({
-			...prev,
-			imageSrc: imgSrc,
-			title,
-			subtitle: dateStr,
-			toothCode: study.teethFdi?.[0] || prev.toothCode,
-			zoom: 1.0,
-			panX: 0,
-			panY: 0,
-		});
-
-		if (activeSlot === "left") {
-			setLeftViewport(targetUpdater);
-		} else {
-			setRightViewport(targetUpdater);
-		}
-		showToast(
-			`Снимок назначен в ${activeSlot === "left" ? "левое (До)" : "правое (После)"} окно`,
-			"info",
-		);
-	};
-
-	// Select Pathology from Consultation Catalog (Switches into Right slot)
-	const handleSelectPathology = (pathology: ConsultationPathologyItem) => {
-		const src = pathology.imageUrl || pathology.previewUrl || "/radiology/sample_rvg_tooth16.jpg";
-		setRightViewport((prev) => ({
-			...prev,
-			imageSrc: src,
-			title: pathology.titleRu,
-			subtitle: `${pathology.code} · ${pathology.titleEn}`,
-			zoom: 1.0,
-			panX: 0,
-			panY: 0,
-			annotations: [],
-		}));
-		setActiveSlot("right");
-		showToast(`Атлас «${pathology.titleRu}» выведен в демонстрационный экран`, "success");
-	};
-
-	// Snapshot (Camera) Action — Captures composite comparison card
-	const handleTakeSnapshot = () => {
-		const snapshotDataUrl = captureCompositeSnapshot({
-			leftCanvas: leftCanvasRef.current,
-			rightCanvas: rightCanvasRef.current,
-			leftTitle: leftViewport.title,
-			rightTitle: rightViewport.title,
-			patientName,
-			patientCardNumber,
-		});
-
-		if (snapshotDataUrl) {
-			if (onSaveSnapshot) {
-				onSaveSnapshot(snapshotDataUrl);
-			}
-			showToast("Снимок консультации (Сплит) успешно сохранён в карту пациента", "success");
-		} else {
-			showToast("Не удалось сформировать снимок экрана", "error");
-		}
-	};
-
-	// 1-Click Form 043/u Consultation Protocol Injection
-	const handleInsertConsultationNote = () => {
-		const isAtlas = splitMode === "atlas";
-		const targetTooth = leftViewport.toothCode || activeToothFdi;
-		const note = buildForm043ConsultationStatement({
-			isAtlas,
-			targetTooth,
-			leftTitle: leftViewport.title,
-			leftSubtitle: leftViewport.subtitle,
-			rightTitle: rightViewport.title,
-			rightSubtitle: rightViewport.subtitle,
-		});
-
-		applyRadiologyProtocolToForm043({
-			protocol: note,
-			options: {
-				toothFdi:
-					leftViewport.toothCode || activeToothFdi
-						? String(leftViewport.toothCode || activeToothFdi)
-						: undefined,
-				modalityLabel: isAtlas ? "Консультация (Атлас)" : "Сплит «До / После»",
-			},
-			onInsertToProtocol: onInsertProtocol,
-			showNotification: true,
-			copyToClipboard: true,
-		});
-	};
-
 	// Toggle split mode between comparison and atlas
 	const handleToggleSplitMode = useCallback(() => {
 		const nextMode = splitMode === "atlas" ? "comparison" : "atlas";
@@ -595,59 +433,6 @@ export function useRadiologyConsultationSplitController(props: RadiologyConsulta
 		}
 	}, [splitMode, effectivePatientStudies, activeToothFdi]);
 
-	// Assign selected study to a specific slot (Left or Right)
-	const handleAssignStudyToSlot = useCallback(
-		(study: RadiologyStudy | RadiologyFilmstripItem, slot: ConsultationSlot) => {
-			const imgSrc = study.imageUrl || study.thumbnailUrl || "";
-			const dateStr = formatFilmstripDateTime(study.studyDate).dateStr;
-			const title =
-				(study as any).title ||
-				(study as any).studyDescription ||
-				(slot === "left" ? "Снимок ДО лечения" : "Контроль ПОСЛЕ лечения");
-
-			const updater = (prev: ViewportState) => ({
-				...prev,
-				imageSrc: imgSrc,
-				title,
-				subtitle: dateStr,
-				toothCode: study.teethFdi?.[0] || prev.toothCode,
-				zoom: 1.0,
-				panX: 0,
-				panY: 0,
-			});
-
-			if (slot === "left") {
-				setLeftViewport(updater);
-			} else {
-				setRightViewport(updater);
-			}
-			setActiveSlot(slot);
-			showToast(
-				`Снимок назначен в ${slot === "left" ? "левое окно (До)" : "правое окно (После)"}`,
-				"info",
-			);
-		},
-		[],
-	);
-
-	// Add note to consilium log
-	const handleAddNote = useCallback(
-		(text: string) => {
-			if (!text.trim()) return;
-			const newNote: ConsultationNoteItem = {
-				id: `note-${Date.now()}`,
-				authorRole: "surgeon",
-				authorName: "Д-р Романенко А. И.",
-				text: text.trim(),
-				timestamp: formatConsultationTimestamp(),
-				targetTooth: activeToothFdi ? String(activeToothFdi) : "16",
-			};
-			setNotes((prev) => [...prev, newNote]);
-			showToast("Заметка консилиума добавлена", "success");
-		},
-		[activeToothFdi],
-	);
-
 	// Current active study image source for bottom dock highlight
 	const activeStudySrc = activeSlot === "left" ? leftViewport.imageSrc : rightViewport.imageSrc;
 	const resolvedGender = resolvePatientGender(patientGender, patientName);
@@ -665,48 +450,48 @@ export function useRadiologyConsultationSplitController(props: RadiologyConsulta
 		setActiveSlot,
 		isSyncNav,
 		setIsSyncNav,
-		isSyncSlices,
-		currentZMm,
-		handleStepSliceZ,
-		sliceSyncState,
-		baselineBone,
-		followupBone,
+		isSyncSlices: sliceSyncCtrl.isSyncSlices,
+		currentZMm: sliceSyncCtrl.currentZMm,
+		handleStepSliceZ: sliceSyncCtrl.handleStepSliceZ,
+		sliceSyncState: sliceSyncCtrl.sliceSyncState,
+		baselineBone: sliceSyncCtrl.baselineBone,
+		followupBone: sliceSyncCtrl.followupBone,
+		handleViewportWheel: sliceSyncCtrl.handleViewportWheel,
 		activeTool,
 		setActiveTool,
 		annotationColor,
 		laserPoint,
 		isFullscreen,
 		setIsFullscreen,
-		selectedDiscipline,
-		setSelectedDiscipline,
+		selectedDiscipline: diagnosticSyncCtrl.selectedDiscipline,
+		setSelectedDiscipline: diagnosticSyncCtrl.setSelectedDiscipline,
 		effectivePatientStudies,
 		leftViewport,
 		rightViewport,
 		activeStudySrc,
-		participants,
-		setParticipants,
-		isParticipantsBarOpen,
-		setIsParticipantsBarOpen,
-		notes,
-		setNotes,
-		isNotesPanelOpen,
-		setIsNotesPanelOpen,
-		handleAddNote,
+		participants: exportCtrl.participants,
+		setParticipants: exportCtrl.setParticipants,
+		isParticipantsBarOpen: exportCtrl.isParticipantsBarOpen,
+		setIsParticipantsBarOpen: exportCtrl.setIsParticipantsBarOpen,
+		notes: exportCtrl.notes,
+		setNotes: exportCtrl.setNotes,
+		isNotesPanelOpen: exportCtrl.isNotesPanelOpen,
+		setIsNotesPanelOpen: exportCtrl.setIsNotesPanelOpen,
+		handleAddNote: exportCtrl.handleAddNote,
+		handleTakeSnapshot: exportCtrl.handleTakeSnapshot,
+		handleInsertConsultationNote: exportCtrl.handleInsertConsultationNote,
+		handleSelectCapturedStudy: diagnosticSyncCtrl.handleSelectCapturedStudy,
+		handleSelectPathology: diagnosticSyncCtrl.handleSelectPathology,
+		handleAssignStudyToSlot: diagnosticSyncCtrl.handleAssignStudyToSlot,
 		leftCanvasRef,
 		rightCanvasRef,
 		containerRef,
-		handleViewportWheel,
 		handleCanvasMouseDown,
 		handleCanvasMouseMove,
 		handleCanvasMouseUp,
 		handleResetView,
 		handleClearAnnotations,
 		handleToggleInvert,
-		handleSelectCapturedStudy,
-		handleSelectPathology,
-		handleTakeSnapshot,
-		handleInsertConsultationNote,
 		handleToggleSplitMode,
-		handleAssignStudyToSlot,
 	};
 }

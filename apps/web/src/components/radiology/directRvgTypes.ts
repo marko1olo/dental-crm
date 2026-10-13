@@ -56,6 +56,8 @@ export interface DirectRvgCaptureModalProps {
 	doctorName?: string | undefined;
 	initialToothFdi?: string | undefined;
 	initialImageUrl?: string | undefined;
+	selectedTeeth?: (number | string)[] | undefined;
+	onCaptureComplete?: (() => void) | undefined;
 	onSaveToEmr?: ((study: RadiologyStudy) => void) | undefined;
 	onSendToLab?: ((orderData: {
 		study: RadiologyStudy;

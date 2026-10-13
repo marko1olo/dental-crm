@@ -37,37 +37,39 @@ export function ChairScheduleFilterChips({
     <>
       {/* Left: Установки Counter */}
       <div className="flex items-center gap-1.5 shrink-0">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted)] hidden 2xl:inline">
+        <span className="text-[11px] font-semibold text-[var(--muted)] hidden 2xl:inline">
           Стоматологические установки:
         </span>
         <span
-          className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--teal)]/10 text-[var(--teal-dark)] border border-[var(--teal)]/20 shrink-0"
+          className={`items-center px-2.5 h-9 min-h-[36px] max-h-[36px] rounded-xl text-xs font-bold bg-[var(--primary-soft)] text-[var(--primary-dark)] border border-[var(--primary)]/20 shadow-2xs shrink-0 select-none ${
+            chairs.length > 2 ? "inline-flex" : "hidden 2xl:inline-flex"
+          }`}
           data-testid="chair-view-count-badge"
         >
           {countLabel(chairs.length || 1, "кресло", "кресла", "кресел")}
         </span>
         {chairs.length > 3 && (
           <span
-            className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] shrink-0"
+            className="inline-flex items-center px-2 h-9 min-h-[36px] max-h-[36px] rounded-xl text-xs font-bold bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] shadow-2xs shrink-0 select-none"
             title={`Всего установок: ${chairs.length}. Все установки доступны в полосе фильтров`}
           >
             +{chairs.length - 3}
           </span>
         )}
         {isSoloDoctor && (
-          <span className="text-[10px] text-[var(--muted)] hidden 2xl:inline">
-            (Соло: авто-привязка)
+          <span className="text-xs text-[var(--muted)] hidden 2xl:inline">
+            (Авто-привязка)
           </span>
         )}
 
         {/* Auto-hide branch selector when branches <= 1 */}
         {hasMultipleBranches && (
-          <div className="flex items-center gap-1 ml-1 pl-1.5 border-l border-[var(--line)] shrink-0">
-            <span className="text-[10px] text-[var(--muted)] font-medium hidden lg:inline">Филиал:</span>
+          <div className="flex items-center gap-1.5 ml-1 pl-2 border-l border-[var(--line)] shrink-0">
+            <span className="text-xs text-[var(--muted)] font-medium hidden lg:inline">Филиал:</span>
             <select
               value={selectedBranchId || ""}
               onChange={(e) => onSelectBranch?.(e.target.value || null)}
-              className="text-[11px] h-6 px-1.5 rounded-md border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium cursor-pointer hover:border-[var(--teal)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)] transition-colors"
+              className="text-xs h-9 min-h-[36px] max-h-[36px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium cursor-pointer hover:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)] transition-colors shadow-2xs shrink-0 touch-manipulation"
               data-testid="chair-view-branch-select"
               aria-label="Выбор филиала клиники"
             >
@@ -114,6 +116,7 @@ export function ChairScheduleFilterChips({
             )
           );
           const cleanChairTitle = chair.name.replace(/^Кабинет\s+/i, "Каб. ");
+          const displayChairTitle = cleanChairTitle.replace(/\s*\([^)]*\)/g, "").trim() || cleanChairTitle;
 
           return (
             <div
@@ -126,10 +129,10 @@ export function ChairScheduleFilterChips({
                 }
               }}
               tabIndex={0}
-              className={`relative px-2 py-1 rounded-lg border text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 shrink-0 shadow-2xs transition-all cursor-pointer select-none text-left h-7 whitespace-nowrap ${
+              className={`relative px-2.5 py-1 rounded-xl border text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 shrink-0 shadow-2xs transition-all cursor-pointer select-none text-left h-9 min-h-[36px] max-h-[36px] whitespace-nowrap touch-manipulation ${
                 isSelected
-                  ? "border-[var(--teal)] ring-1 ring-[var(--teal)] bg-[var(--teal-soft)] shadow-sm"
-                  : "border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)]/60"
+                  ? "border-[var(--primary)] ring-2 ring-[var(--primary)]/30 bg-[var(--primary-soft)] shadow-sm"
+                  : "border-[var(--line)] bg-[var(--paper)] hover:border-[var(--primary)]/60 hover:bg-[var(--paper-soft)]"
               }`}
               data-testid={`chair-view-badge-${chair.id}`}
               role="button"
@@ -146,12 +149,12 @@ export function ChairScheduleFilterChips({
             >
               {/* Accent Color Strip */}
               <div
-                className="h-1 w-full absolute top-0 left-0 right-0 rounded-t-lg"
+                className="h-1 w-full absolute top-0 left-0 right-0 rounded-t-xl"
                 style={{ backgroundColor: chairColor }}
                 data-testid={`chair-view-accent-strip-${chair.id}`}
               />
               <span
-                className={`w-2 h-2 rounded-full shrink-0 transition-transform ${
+                className={`w-2.5 h-2.5 rounded-full shrink-0 transition-transform ${
                   isSelected ? "scale-125" : ""
                 }`}
                 style={{ backgroundColor: chairColor }}
@@ -161,11 +164,11 @@ export function ChairScheduleFilterChips({
                 className="font-bold text-xs whitespace-nowrap shrink-0"
                 title={chair.name}
               >
-                {cleanChairTitle}
+                {displayChairTitle}
               </span>
               {roomLabel && !isRoomAlreadyInName && (
                 <span
-                  className="text-xs text-[var(--muted)] font-normal shrink-0 whitespace-nowrap"
+                  className="text-[11px] text-[var(--muted)] font-normal shrink-0 whitespace-nowrap"
                   data-testid={`chair-view-room-${chair.id}`}
                 >
                   ({typeof roomLabel === "string" && roomLabel.startsWith("Каб") ? roomLabel : `Каб. ${roomLabel}`})
@@ -173,7 +176,7 @@ export function ChairScheduleFilterChips({
               )}
               {(assignedDocName || hasTwoSubShifts) && (
                 <span
-                  className="text-xs text-[var(--muted)] font-normal whitespace-nowrap hidden xl:inline shrink-0"
+                  className="text-[11px] text-[var(--muted)] font-normal whitespace-nowrap hidden 2xl:inline shrink-0"
                   title={
                     hasTwoSubShifts && morningSub && eveningSub
                       ? `У: ${morningSub.doctorName} / В: ${eveningSub.doctorName}`
@@ -182,7 +185,7 @@ export function ChairScheduleFilterChips({
                   data-testid={`chair-view-doc-${chair.id}`}
                 >
                   {hasTwoSubShifts && morningSub && eveningSub
-                    ? `(У: ${formatDoctorShortName(morningSub.doctorName)} / В: ${formatDoctorShortName(eveningSub.doctorName)})`
+                    ? `(${morningSub.doctorName.split(" ")[0]} / ${eveningSub.doctorName.split(" ")[0]})`
                     : `(${formatDoctorShortName(assignedDocName)})`}
                 </span>
               )}
@@ -193,7 +196,7 @@ export function ChairScheduleFilterChips({
                     e.stopPropagation();
                     setActiveShiftChairId((prev) => (prev === chair.id ? null : chair.id));
                   }}
-                  className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30 shrink-0 cursor-pointer hover:bg-amber-500/20 transition-colors"
+                  className="text-xs font-semibold text-amber-800 dark:text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 px-2 py-0.5 rounded-lg border border-amber-500/35 shrink-0 cursor-pointer transition-all inline-flex items-center justify-center gap-1 touch-manipulation active:scale-95 shadow-2xs h-7 min-h-[28px] max-h-[32px]"
                   title="Кресло свободно (врач не назначен). Нажмите для назначения смены"
                   data-testid={`chair-view-unstaffed-badge-${chair.id}`}
                 >
@@ -207,7 +210,7 @@ export function ChairScheduleFilterChips({
               )}
               {isSelected && (
                 <span
-                  className="px-1.5 py-0.5 rounded text-[11px] font-extrabold bg-[var(--teal)] text-white uppercase tracking-wider"
+                  className="px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-[var(--primary)] text-white uppercase tracking-wider shadow-2xs"
                   data-testid={`chair-view-badge-selected-${chair.id}`}
                 >
                   Выбрано
@@ -222,14 +225,14 @@ export function ChairScheduleFilterChips({
                     e.stopPropagation();
                     setActiveShiftChairId((prev) => (prev === chair.id ? null : chair.id));
                   }}
-                  className="h-6 w-6 inline-flex items-center justify-center rounded text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
+                  className="h-7 w-7 inline-flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--primary)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0 touch-manipulation"
                   title="Изменить врача и смену"
                   data-testid={`chair-view-assign-doctor-${chair.id}`}
                   aria-label={`Изменить врача на кресле ${chair.name}`}
                 >
                   <UserCheck
-                    size={13}
-                    className="text-[var(--teal)]"
+                    size={14}
+                    className="text-[var(--primary)]"
                   />
                 </button>
               ) : (
@@ -255,12 +258,12 @@ export function ChairScheduleFilterChips({
                   e.stopPropagation();
                   handleEditChair(chair as any);
                 }}
-                className="h-6 w-6 inline-flex items-center justify-center rounded text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
+                className="h-7 w-7 inline-flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0 touch-manipulation"
                 title={`Настройки кресла «${chair.name}» (смена врача / кабинета)`}
                 data-testid={`chair-view-settings-${chair.id}`}
                 aria-label={`Настройки кресла ${chair.name}`}
               >
-                <Settings2 size={13} />
+                <Settings2 size={14} />
               </button>
 
               {/* 1-Click Shift Popover */}
@@ -292,11 +295,11 @@ export function ChairScheduleFilterChips({
           <button
             type="button"
             onClick={handleOpenAddChair}
-            className="dente-filter-chip h-7 px-2 border-dashed text-xs font-semibold flex items-center gap-1 shrink-0 transition-colors cursor-pointer bg-[var(--paper)]"
+            className="dente-filter-chip h-9 min-h-[36px] max-h-[36px] px-3 border border-dashed border-[var(--line-strong)] hover:border-[var(--primary)] hover:bg-[var(--primary-soft)] text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] rounded-xl flex items-center gap-1.5 shrink-0 transition-all cursor-pointer bg-[var(--paper)] shadow-2xs touch-manipulation"
             title="Добавить еще одно стоматологическое кресло"
             data-testid="chair-view-add-chair-strip-btn"
           >
-            <Plus size={12} />
+            <Plus size={13} />
             <span>+ Кресло</span>
           </button>
         )}

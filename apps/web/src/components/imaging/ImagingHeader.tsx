@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
 	Activity,
 	Camera,
+	ChevronDown,
 	Columns2,
 	Download,
 	ExternalLink,
@@ -91,33 +92,37 @@ export function ImagingHeader({
 			window.removeEventListener("keydown", handleEscape);
 		};
 	}, [isMoreMenuOpen]);
+
 	const studiesCount = activeImagingStudies?.length ?? 0;
 	const patientName = activePatient?.fullName ?? activePatient?.name ?? null;
 	const compactPatientName = formatCompactPatientName(patientName);
 
 	return (
 		<header
-			className="imaging-unified-toolbar flex items-center justify-between gap-1.5 h-9 min-h-[36px] max-h-[36px] px-2.5 py-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] shadow-xs select-none w-full overflow-hidden"
+			className="imaging-unified-toolbar flex items-center justify-between gap-2 h-12 min-h-[48px] max-h-[52px] px-3 py-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] shadow-xs select-none w-full max-w-[100vw] overflow-x-clip"
 			data-testid="imaging-unified-toolbar"
 			aria-label="Панель управления снимками"
 		>
-			{/* Left Island: Title, Patient badge & Counter (Mandate 8d, Zero Matryoshka) */}
-			<div className="flex items-center gap-1.5 min-w-0 shrink-0">
-				<h2 className="text-xs font-bold text-[var(--ink)] m-0 tracking-tight whitespace-nowrap">
-					Снимки и КТ
-				</h2>
+			{/* Left Island: Title, Patient badge & Counter (Mandate 8am / 8d, Zero Matryoshka) */}
+			<div className="flex items-center gap-2 min-w-0 shrink-0">
+				<div className="flex items-center gap-1.5 shrink-0">
+					<Scan aria-hidden="true" size={18} className="text-[var(--primary)] shrink-0" />
+					<h2 className="text-xs sm:text-sm font-bold text-[var(--ink)] m-0 tracking-tight whitespace-nowrap">
+						Снимки и КТ
+					</h2>
+				</div>
 
 				<div
-					className="imaging-patient-strip"
+					className="imaging-patient-strip flex items-center gap-1.5 px-2.5 h-9 min-h-[36px] rounded-xl bg-[var(--paper)] border border-[var(--line)] whitespace-nowrap shrink-0"
 					aria-label="Контекст снимков"
 					title={patientName ?? "Пациент не выбран"}
 				>
-					<span>Пациент:</span>
-					<strong>{compactPatientName}</strong>
+					<span className="text-xs text-[var(--ink-muted)] font-medium">Пациент:</span>
+					<strong className="text-xs text-[var(--ink)] font-bold">{compactPatientName}</strong>
 				</div>
 
 				<span
-					className="px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-600 dark:text-teal-400 font-mono text-[10px] font-bold shrink-0 leading-none"
+					className="px-2 py-0.5 rounded-full bg-[var(--primary-soft,rgba(13,148,136,0.12))] text-[var(--primary)] font-mono text-xs font-bold shrink-0 leading-normal"
 					title="Количество снимков в ленте"
 				>
 					{studiesCount}
@@ -127,7 +132,7 @@ export function ImagingHeader({
 			{/* Center Island: Compact Filter Chips (Hick's Law / Segmented Bar) */}
 			{setImagingKindFilter && (
 				<nav
-					className="imaging-kind-filter shrink-0 p-0.5 rounded-lg bg-[var(--paper)] border border-[var(--line)]"
+					className="imaging-kind-filter inline-flex items-center p-0.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shrink-0 h-9 min-h-[36px]"
 					role="tablist"
 					aria-label="Фильтр типа снимка"
 				>
@@ -140,7 +145,11 @@ export function ImagingHeader({
 								role="tab"
 								aria-selected={isSelected}
 								onClick={() => setImagingKindFilter(tab.key)}
-								className={isSelected ? "active" : ""}
+								className={`h-8 min-h-[32px] px-2.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+									isSelected
+										? "bg-[var(--paper-soft)] text-[var(--ink)] font-bold shadow-xs border border-[var(--line)]"
+										: "text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-transparent"
+								}`}
 							>
 								{tab.label}
 							</button>
@@ -149,107 +158,125 @@ export function ImagingHeader({
 				</nav>
 			)}
 
-			{/* Right Island: CT Quickbar & Actions (1-row dense, 28px buttons) */}
-			<div className="imaging-actions flex items-center gap-1 shrink-0">
-				<div
-					className="imaging-header-ct-quickbar flex items-center gap-0.5 p-0.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] shrink-0"
-					data-testid="imaging-header-ct-quickbar"
-				>
-					<button
-						className="secondary-button h-6 min-h-[24px] px-1.5 text-[11px] font-bold shrink-0 whitespace-nowrap inline-flex items-center gap-1 cursor-pointer bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-teal-500 transition-colors rounded"
-						type="button"
-						data-testid="btn-open-ct-selector"
-						onClick={onOpenCtSelector}
-						title="Открыть клинический КТ-селектор: быстрый выбор из Загрузок, 2-й монитор, вьюер томографа"
-					>
-						<Scan aria-hidden="true" size={12} className="shrink-0 text-[var(--teal,#0d9488)]" />
-						<span>КТ / Снимки</span>
-					</button>
-					<button
-						className="secondary-button h-6 min-h-[24px] px-1.5 text-[11px] font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1 cursor-pointer bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-teal-500 transition-colors rounded"
-						type="button"
-						data-testid="imaging-open-3d-mpr"
-						onClick={onOpenCbctStudio}
-						title="3D КЛКТ Студия: панорама, срезы, импланты, нижнечелюстной канал"
-					>
-						<Activity aria-hidden="true" size={12} className="shrink-0 text-[var(--teal,#0d9488)]" />
-						<span>3D КТ</span>
-					</button>
-					<button
-						className="secondary-button h-6 min-h-[24px] px-1.5 text-[11px] font-medium shrink-0 whitespace-nowrap inline-flex items-center gap-1 cursor-pointer text-[var(--muted)] hover:text-[var(--ink)] rounded"
-						type="button"
-						data-testid="ct-popout-open-btn"
-						onClick={onOpenPopoutStudio}
-						title="Открыть 3D КТ в отдельном окне для второго монитора"
-					>
-						<ExternalLink aria-hidden="true" size={11} className="shrink-0 text-[var(--muted)]" />
-						<span className="hidden 2xl:inline">В окно</span>
-					</button>
-				</div>
-
+			{/* Right Island: Streamlined Fast Actions & Overflow Menu (Mandate 8am, 36px buttons, 1-row) */}
+			<div className="imaging-actions flex items-center gap-1.5 shrink-0">
+				{/* 1. Primary CTA: 3D КТ */}
 				<button
-					className="secondary-button h-7 min-h-[26px] px-2 text-[11px] font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1 rounded bg-[var(--paper)] border border-[var(--line)] hover:border-teal-500 cursor-pointer"
+					className="secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs cursor-pointer transition-colors"
+					type="button"
+					data-testid="imaging-open-3d-mpr"
+					onClick={onOpenCbctStudio}
+					title="3D КЛКТ Студия: панорама, срезы, импланты, нижнечелюстной канал"
+				>
+					<Activity aria-hidden="true" size={16} className="shrink-0" />
+					<span>3D КТ</span>
+				</button>
+
+				{/* 2. Secondary: Camera */}
+				<button
+					className="secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors shadow-xs"
 					type="button"
 					data-testid="imaging-camera-capture-btn"
 					onClick={onCaptureCamera}
 					disabled={isCapturingCameraPhoto || isBrowserImagingFolderPicking}
 					title="Сделать снимок с камеры (негатоскоп, фотопротокол)"
 				>
-					<Camera aria-hidden="true" size={12} className="shrink-0 text-[var(--teal,#0d9488)]" />
+					<Camera aria-hidden="true" size={16} className="shrink-0 text-[var(--ink-muted)]" />
 					<span>{isCapturingCameraPhoto ? "Загрузка..." : "Камера"}</span>
 				</button>
 
+				{/* 3. Secondary: Pick Files */}
 				<button
-					className="secondary-button h-7 min-h-[26px] px-2 text-[11px] font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1 rounded bg-[var(--paper)] border border-[var(--line)] hover:border-teal-500 cursor-pointer"
+					className="secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors shadow-xs"
 					type="button"
 					data-testid="imaging-pick-dicom-files"
 					onClick={onPickFiles}
 					disabled={isBrowserImagingFolderPicking}
 					title="Выбрать отдельные DICOM, RVG, JPG/PNG, ZIP файлы"
 				>
-					<FileText aria-hidden="true" size={12} className="shrink-0 text-[var(--muted)]" />
+					<FileText aria-hidden="true" size={16} className="shrink-0 text-[var(--ink-muted)]" />
 					<span>Файлы</span>
 				</button>
 
+				{/* 4. Secondary: Pick Folder */}
 				<button
-					className="secondary-button h-7 min-h-[26px] px-2 text-[11px] font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1 rounded bg-[var(--paper)] border border-[var(--line)] hover:border-teal-500 cursor-pointer"
+					className="secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors shadow-xs"
 					type="button"
 					data-testid="imaging-pick-dicom-folder"
 					onClick={onPickFolder}
 					disabled={isBrowserImagingFolderPicking}
 					title="Выбрать папку DICOM/КТ со снимками"
 				>
-					<UploadCloud aria-hidden="true" size={12} className="shrink-0 text-[var(--muted)]" />
-					<span>{isBrowserImagingFolderPicking ? "Сканирую" : "Папка"}</span>
+					<UploadCloud aria-hidden="true" size={16} className="shrink-0 text-[var(--ink-muted)]" />
+					<span>{isBrowserImagingFolderPicking ? "Сканирую..." : "Папка"}</span>
 				</button>
 
-				{/* Secondary tools popover / Hick's Law overflow menu */}
+				{/* 5. Overflow Menu: «··· Ещё ▾» (Hick's Law / Mandate 8am) */}
 				<div className="relative shrink-0" ref={moreMenuRef}>
 					<button
-						className={`secondary-button h-7 min-h-[26px] px-2 text-[11px] font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1 rounded bg-[var(--paper)] border transition-colors cursor-pointer ${
+						className={`secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl border transition-colors cursor-pointer shadow-xs ${
 							isMoreMenuOpen
-								? "border-teal-500 text-[var(--ink)] bg-[var(--paper-soft)]"
-								: "border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-teal-500"
+								? "border-[var(--primary)] text-[var(--ink)] bg-[var(--paper-soft)]"
+								: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 						}`}
 						type="button"
 						data-testid="imaging-more-menu-btn"
 						aria-label="Дополнительные клинические модули"
 						aria-expanded={isMoreMenuOpen}
-						title="Дополнительно: ОПТГ, Рентген-кабинет, Сравнение До/После, Экспорт"
+						title="Дополнительно: КТ-селектор, В окно, ОПТГ, Рентген-кабинет, Сравнение, Экспорт"
 						onClick={() => setIsMoreMenuOpen((v) => !v)}
 					>
-						<MoreHorizontal size={14} aria-hidden="true" />
+						<MoreHorizontal size={16} aria-hidden="true" />
 						<span>Ещё</span>
+						<ChevronDown size={14} aria-hidden="true" className="text-[var(--ink-muted)]" />
 					</button>
 
 					{isMoreMenuOpen && (
 						<div
-							className="absolute right-0 top-full mt-1.5 w-56 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl p-1 z-50 flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-1 duration-150"
+							className="absolute right-0 top-full mt-1.5 w-60 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl p-1.5 z-50 flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-1 duration-150"
 							role="menu"
 							aria-label="Дополнительные модули снимков"
 						>
+							{onOpenCtSelector && (
+								<button
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-2.5 cursor-pointer transition-colors"
+									type="button"
+									role="menuitem"
+									data-testid="btn-open-ct-selector"
+									onClick={() => {
+										setIsMoreMenuOpen(false);
+										onOpenCtSelector();
+									}}
+								>
+									<Scan aria-hidden="true" size={16} className="text-[var(--primary)] shrink-0" />
+									<div className="flex flex-col">
+										<span>КТ / Снимки</span>
+										<span className="text-[10px] text-[var(--ink-muted)] font-normal">Выбор томографа и архивов</span>
+									</div>
+								</button>
+							)}
+
+							{onOpenPopoutStudio && (
+								<button
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-2.5 cursor-pointer transition-colors"
+									type="button"
+									role="menuitem"
+									data-testid="ct-popout-open-btn"
+									onClick={() => {
+										setIsMoreMenuOpen(false);
+										onOpenPopoutStudio();
+									}}
+								>
+									<ExternalLink aria-hidden="true" size={16} className="text-[var(--primary)] shrink-0" />
+									<div className="flex flex-col">
+										<span>В отдельное окно</span>
+										<span className="text-[10px] text-[var(--ink-muted)] font-normal">Для второго монитора</span>
+									</div>
+								</button>
+							)}
+
 							<button
-								className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer transition-colors"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-2.5 cursor-pointer transition-colors"
 								type="button"
 								role="menuitem"
 								data-testid="imaging-open-panoramic"
@@ -258,15 +285,15 @@ export function ImagingHeader({
 									onOpenPanoramic();
 								}}
 							>
-								<Sparkles aria-hidden="true" size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
+								<Sparkles aria-hidden="true" size={16} className="text-[var(--primary)] shrink-0" />
 								<div className="flex flex-col">
 									<span>Панорама (ОПТГ)</span>
-									<span className="text-[10px] text-[var(--muted)] font-normal">Ортопантомограмма</span>
+									<span className="text-[10px] text-[var(--ink-muted)] font-normal">Ортопантомограмма</span>
 								</div>
 							</button>
 
 							<button
-								className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer transition-colors"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-2.5 cursor-pointer transition-colors"
 								type="button"
 								role="menuitem"
 								data-testid="imaging-open-radiology-module"
@@ -275,16 +302,16 @@ export function ImagingHeader({
 									onOpenRadiologyModule();
 								}}
 							>
-								<Layers aria-hidden="true" size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
+								<Layers aria-hidden="true" size={16} className="text-[var(--primary)] shrink-0" />
 								<div className="flex flex-col">
 									<span>Рентген-кабинет</span>
-									<span className="text-[10px] text-[var(--muted)] font-normal">Направления и дозиметрия</span>
+									<span className="text-[10px] text-[var(--ink-muted)] font-normal">Направления и дозиметрия</span>
 								</div>
 							</button>
 
 							{onOpenComparison && (
 								<button
-									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer transition-colors"
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-2.5 cursor-pointer transition-colors"
 									type="button"
 									role="menuitem"
 									data-testid="imaging-open-comparison-btn"
@@ -293,17 +320,17 @@ export function ImagingHeader({
 										onOpenComparison();
 									}}
 								>
-									<Columns2 aria-hidden="true" size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
+									<Columns2 aria-hidden="true" size={16} className="text-[var(--primary)] shrink-0" />
 									<div className="flex flex-col">
 										<span>Сравнение «До / После»</span>
-										<span className="text-[10px] text-[var(--muted)] font-normal">Сплит-визиограф</span>
+										<span className="text-[10px] text-[var(--ink-muted)] font-normal">Сплит-визиограф</span>
 									</div>
 								</button>
 							)}
 
 							{onOpenExport && (
 								<button
-									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-teal-500/10 text-teal-700 dark:text-teal-300 inline-flex items-center gap-2 cursor-pointer transition-colors border-t border-[var(--line-subtle,#e2e8f0)] mt-0.5 pt-1.5"
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-2.5 cursor-pointer transition-colors border-t border-[var(--line-subtle)] mt-1 pt-2"
 									type="button"
 									role="menuitem"
 									data-testid="imaging-open-export-btn"
@@ -312,10 +339,10 @@ export function ImagingHeader({
 										onOpenExport();
 									}}
 								>
-									<Download aria-hidden="true" size={14} className="shrink-0" />
+									<Download aria-hidden="true" size={16} className="text-[var(--primary)] shrink-0" />
 									<div className="flex flex-col">
-										<span>Экспорт (152-ФЗ)</span>
-										<span className="text-[10px] text-teal-600/80 dark:text-teal-400/80 font-normal">Флешка / Telegram / Архив</span>
+										<span>Экспорт снимков</span>
+										<span className="text-[10px] text-[var(--ink-muted)] font-normal">Флешка / Telegram / Архив</span>
 									</div>
 								</button>
 							)}
@@ -326,3 +353,4 @@ export function ImagingHeader({
 		</header>
 	);
 }
+

@@ -166,7 +166,7 @@ export function CephalometricAnalysisModal(props: CephalometricAnalysisModalProp
 							title="Открыть полноэкранную студию цефалометрии на втором мониторе для демонстрации пациенту"
 						>
 							<ExternalLink size={14} />
-							<span className="whitespace-nowrap">2-й монитор</span>
+							<span className="whitespace-nowrap">2-й монитор / Студия</span>
 						</button>
 
 						<button

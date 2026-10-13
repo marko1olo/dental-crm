@@ -367,52 +367,58 @@ export function ShadowAnalystImageSlider({
 								strokeWidth="2"
 							/>
 							{/* Distance badge with delete button */}
-							<g
-								transform={`translate(${midX}%, ${midY}%) scale(${badgeCounterScale})`}
-								style={{ pointerEvents: "auto", cursor: "pointer" }}
-								onClick={(e) => {
-									e.stopPropagation();
-									deleteMeasurement(m.id);
-								}}
+							<svg
+								x={`${midX}%`}
+								y={`${midY}%`}
+								overflow="visible"
 							>
-							<rect
-								x="-32"
-								y="-11"
-								width="64"
-								height="22"
-								rx="5"
-								fill="rgba(15, 23, 42, 0.94)"
-								stroke="#06b6d4"
-								strokeWidth="1.2"
-							/>
-							<text
-								x="-6"
-								y="4"
-								textAnchor="middle"
-								fill="#f8fafc"
-								fontSize="11"
-								fontFamily="ui-monospace, monospace"
-								fontWeight="700"
-							>
-								{m.lengthMm.toFixed(1)} мм
-							</text>
-							<g>
-								<title>Удалить измерение</title>
-								<text
-									x="22"
-									y="4"
-									textAnchor="middle"
-									fill="#ef4444"
-									fontSize="11"
-									fontWeight="900"
+								<g
+									transform={`scale(${badgeCounterScale})`}
+									style={{ pointerEvents: "auto", cursor: "pointer" }}
+									onClick={(e) => {
+										e.stopPropagation();
+										deleteMeasurement(m.id);
+									}}
 								>
-									×
-								</text>
-							</g>
+									<rect
+										x="-34"
+										y="-11"
+										width="68"
+										height="22"
+										rx="5"
+										fill="rgba(15, 23, 42, 0.94)"
+										stroke="#06b6d4"
+										strokeWidth="1.2"
+									/>
+									<text
+										x="-6"
+										y="4"
+										textAnchor="middle"
+										fill="#f8fafc"
+										fontSize="11"
+										fontFamily="ui-monospace, monospace"
+										fontWeight="700"
+									>
+										{m.lengthMm.toFixed(1)} мм
+									</text>
+									<g>
+										<title>Удалить измерение</title>
+										<text
+											x="24"
+											y="4"
+											textAnchor="middle"
+											fill="#ef4444"
+											fontSize="11"
+											fontWeight="900"
+										>
+											×
+										</text>
+									</g>
+								</g>
+							</svg>
 						</g>
-					</g>
-				);
-			})}
+					);
+				})}
 
 			{drawingRuler && (
 				<g className="sa-ruler-drawing-group">
@@ -443,7 +449,7 @@ export function ShadowAnalystImageSlider({
 	if (!enhanced) {
 		return (
 			<div
-				className="sa-image-container min-h-[500px] h-[520px] max-h-[calc(100vh-280px)] flex-1"
+				className="sa-image-container w-full h-full min-h-[280px] max-h-full flex-1"
 				ref={containerRef}
 				style={{
 					...viewerVariables,
@@ -466,7 +472,7 @@ export function ShadowAnalystImageSlider({
 
 	return (
 		<div
-			className="sa-image-container min-h-[500px] h-[520px] max-h-[calc(100vh-280px)] flex-1"
+			className="sa-image-container w-full h-full min-h-[280px] max-h-full flex-1"
 			ref={containerRef}
 			role={isRulerActive || isPanActive ? "region" : "slider"}
 			tabIndex={0}

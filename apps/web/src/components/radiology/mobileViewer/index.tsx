@@ -120,7 +120,7 @@ export const MobileChairsideRadiologyViewer: React.FC<MobileChairsideRadiologyVi
 		? imagingKindLabels?.[selectedImagingStudy.kind] ||
 			kindShortMap[selectedImagingStudy.kind] ||
 			selectedImagingStudy.kind
-		: "Рентгенодиагностика";
+		: "Рентген";
 	const studyDateStr = selectedImagingStudy?.capturedAt
 		? formatShortDate(selectedImagingStudy.capturedAt)
 		: "Сегодня";

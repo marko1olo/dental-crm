@@ -178,5 +178,10 @@ export function imagingDescriptionTemplate(
 export function imagingStudyHasFile(study: unknown): boolean {
 	if (!study || typeof study !== "object") return false;
 	const s = study as Record<string, unknown>;
-	return typeof s.storagePath === "string" && s.storagePath.trim().length > 0;
+	return (
+		(typeof s.storagePath === "string" && s.storagePath.trim().length > 0) ||
+		(typeof s.previewUrl === "string" && s.previewUrl.trim().length > 0) ||
+		(typeof s.imageUrl === "string" && s.imageUrl.trim().length > 0) ||
+		(typeof s.id === "string" && s.id.trim().length > 0)
+	);
 }

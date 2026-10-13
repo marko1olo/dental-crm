@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import {
 	demoScanButtonStyle,
 	visiographContainerStyle,
@@ -263,8 +264,8 @@ export function VisiographAnalyzer(props: VisiographAnalyzerProps = {}) {
 			</div>
 
 			{/* EzDent-i 2D Fullscreen Sensor Modal Viewer (Screenshot 24) */}
-			{isSensorViewerOpen && (
-				<div className="fixed inset-0 z-[99999] bg-[#020617] flex flex-col">
+			{isSensorViewerOpen && typeof document !== "undefined" && createPortal(
+				<div className="fixed inset-0 z-[99999] bg-[#020617] flex flex-col" data-testid="visiograph-sensor-viewer-portal">
 					<SensorStudyViewer
 						initialImageUrl={currentImageUrl || undefined}
 						studiesHistory={filmstripItems}
@@ -278,7 +279,8 @@ export function VisiographAnalyzer(props: VisiographAnalyzerProps = {}) {
 						onInsertToProtocol={onInsertToProtocol}
 						onClose={() => setIsSensorViewerOpen(false)}
 					/>
-				</div>
+				</div>,
+				document.body
 			)}
 		</div>
 	);

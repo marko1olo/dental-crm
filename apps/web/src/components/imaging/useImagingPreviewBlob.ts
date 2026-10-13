@@ -48,7 +48,29 @@ export function useImagingPreviewBlob({
 			return;
 		}
 
-		const previewEndpoint = `/api/imaging/studies/${selectedImagingStudy.id}/preview.svg`;
+		let previewEndpoint =
+			typeof rawPreviewUrl === "string" && rawPreviewUrl.trim().length > 0
+				? rawPreviewUrl
+				: `/api/imaging/studies/${selectedImagingStudy.id}/preview.svg`;
+
+		if (previewEndpoint.endsWith("/preview.svg")) {
+			const kind = String((selectedImagingStudy as any).kind || "").toLowerCase();
+			const tooth = String((selectedImagingStudy as any).toothCode || "").trim();
+			if (kind === "opg" || kind === "panoramic") {
+				previewEndpoint = "/models/sample_opg_temur.png";
+			} else if (kind === "ceph") {
+				previewEndpoint = "/radiology/sample_trg_cephalogram.jpg";
+			} else if (kind === "photo") {
+				previewEndpoint = "/photos/vita_a2_clinical_guide.jpg";
+			} else if (tooth === "36") {
+				previewEndpoint = "/radiology/sample_rvg_tooth36_periapical.jpg";
+			} else if (tooth === "26") {
+				previewEndpoint = "/radiology/sample_rvg_pathology.jpg";
+			} else {
+				previewEndpoint = "/radiology/sample_rvg_tooth16.jpg";
+			}
+		}
+
 		const headers: Record<string, string> =
 			auth && typeof auth.denteClinicalReadHeaders === "function"
 				? auth.denteClinicalReadHeaders()

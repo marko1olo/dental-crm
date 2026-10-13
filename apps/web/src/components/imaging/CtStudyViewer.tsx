@@ -15,6 +15,7 @@ import {
 	Settings,
 } from "lucide-react";
 import { DicomViewerModal } from "./DicomViewerModal.js";
+import { CbctMprImplantStudioModal } from "../radiology/CbctMprImplantStudioModal.js";
 import { showToast } from "../GlobalToast.js";
 
 export interface CtStudyViewerProps {
@@ -59,6 +60,7 @@ export const CtStudyViewer: React.FC<CtStudyViewerProps> = ({
 	dataTestId,
 }) => {
 	const [isViewerOpen, setIsViewerOpen] = useState<boolean>(false);
+	const [isStudioOpen, setIsStudioOpen] = useState<boolean>(false);
 	const [selectedViewMode, setSelectedViewMode] = useState<"2d" | "3d_mpr" | "sectioning">("3d_mpr");
 
 	const isAutoBound = bindingStatus === "auto_bound";
@@ -144,8 +146,7 @@ export const CtStudyViewer: React.FC<CtStudyViewerProps> = ({
 							if (onOpenStudio) {
 								onOpenStudio(studyId);
 							} else {
-								setSelectedViewMode("3d_mpr");
-								setIsViewerOpen(true);
+								setIsStudioOpen(true);
 							}
 						}}
 						className="inline-flex items-center gap-1.5 h-8 px-3.5 text-[13px] font-semibold rounded-lg bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer"
@@ -237,6 +238,17 @@ export const CtStudyViewer: React.FC<CtStudyViewerProps> = ({
 					patientId={patientId ?? undefined}
 					studyDate={capturedAt ?? undefined}
 					initialViewMode={selectedViewMode}
+				/>
+			)}
+
+			{/* Каноническая 3D КЛКТ Студия имплантации (SSOT) */}
+			{isStudioOpen && (
+				<CbctMprImplantStudioModal
+					isOpen={isStudioOpen}
+					onClose={() => setIsStudioOpen(false)}
+					patientName={patientName ?? undefined}
+					patientId={patientId ?? undefined}
+					initialStudioMode="implant"
 				/>
 			)}
 		</div>

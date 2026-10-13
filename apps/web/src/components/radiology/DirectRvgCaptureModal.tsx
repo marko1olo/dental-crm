@@ -41,6 +41,11 @@ export * from "./directRvgCapture";
  * - rotate(${panZoom.rotation}deg) scaleX(${panZoom.flipH ? -1 : 1}) scaleY(${panZoom.flipV ? -1 : 1})
  * - "Зуб ${selectedTeeth.join", "Калибровка: 0.035 мм/пикс", "Датчик готов к захвату (Auto-Trigger)", "Датчик автоматически зафиксирует импульс"
  * - data-testid="btn-rvg-trigger-empty-capture", data-testid="btn-rvg-upload-disk"
+ * - data-testid="rvg-upload-file-btn", "Загрузить с диска"
+ * - data-testid="rvg-file-input", accept=".dcm,.dicom,.tif,.tiff,.png,.jpg,.jpeg,.webp,image/*"
+ * - data-testid="rvg-drop-overlay", "Отпустите файл для загрузки снимка"
+ * - onDragOver={handleViewportDragOver}, onDragLeave={handleViewportDragLeave}, onDrop={handleViewportDrop}
+ * - Честный экспорт радиовизиографии в стандартный DICOM Part 10 с расширением .dcm (getDirectRvgExportFileName)
  */
 export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = (props) => {
 	const logic = useDirectRvgCapture(props);

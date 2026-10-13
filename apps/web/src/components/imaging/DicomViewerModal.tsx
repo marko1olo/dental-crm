@@ -6,6 +6,7 @@
 
 import { Activity, Check, CheckCircle2, ChevronDown, FileText, FileUp, Layers, Loader2, Sparkles, UploadCloud, X, Zap } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
+import { createPortal } from "react-dom";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
 import { actionFailureToast } from "../../lib/panelStateText.js";
 import { usePatientStore } from "../../store/patientStore.js";
@@ -81,39 +82,35 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 	const [activeStudyId, setActiveStudyId] = useState<string>("study-current");
 	const filmstripStudies: readonly RadiologyFilmstripItem[] = useMemo(() => {
 		if (studiesHistory && studiesHistory.length > 0) return studiesHistory;
+		const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
+		const currentItem: RadiologyFilmstripItem | null = currentImageSrc ? {
+			id: "study-current",
+			title: title || "Прицельный снимок",
+			modality: "intraoral_rvg",
+			modalityLabel: "IO-СЕНСОР",
+			studyDate: studyDate || new Date().toLocaleString("ru-RU"),
+			teethFdi: toothFdiCode ? [toothFdiCode] : [],
+			imageUrl: currentImageSrc,
+			effectiveDoseMicrosv: 3.0,
+		} : null;
+
+		if (!isDemo) return currentItem ? [currentItem] : [];
+
 		return [
-			{
+			currentItem ?? {
 				id: "study-current",
 				title: title || "Прицельный снимок",
 				modality: "intraoral_rvg",
 				modalityLabel: "IO-СЕНСОР",
 				studyDate: studyDate || "01.10.2026 10:14:20",
 				teethFdi: toothFdiCode ? [toothFdiCode] : ["14"],
-				imageUrl: currentImageSrc || "/radiology/sample_rvg_tooth16.jpg",
-				effectiveDoseMicrosv: 3.0,
-			},
-			{
-				id: "study-prior-1",
-				title: "Контроль обтурации",
-				modality: "intraoral_rvg",
-				modalityLabel: "IO-СЕНСОР",
-				studyDate: "20.09.2026 09:14:20",
-				teethFdi: ["16"],
 				imageUrl: "/radiology/sample_rvg_tooth16.jpg",
 				effectiveDoseMicrosv: 3.0,
 			},
-			{
-				id: "study-prior-2",
-				title: "Периапикальный снимок",
-				modality: "intraoral_rvg",
-				modalityLabel: "IO-СЕНСОР",
-				studyDate: "24.03.2026 14:30:10",
-				teethFdi: ["36"],
-				imageUrl: "/radiology/sample_rvg_tooth36_periapical.jpg",
-				effectiveDoseMicrosv: 3.0,
-			},
+			{ id: "study-prior-1", title: "Контроль обтурации", modality: "intraoral_rvg", modalityLabel: "IO-СЕНСОР", studyDate: "20.09.2026 09:14:20", teethFdi: ["16"], imageUrl: "/radiology/sample_rvg_tooth16.jpg", effectiveDoseMicrosv: 3.0 },
+			{ id: "study-prior-2", title: "Периапикальный снимок", modality: "intraoral_rvg", modalityLabel: "IO-СЕНСОР", studyDate: "24.03.2026 14:30:10", teethFdi: ["36"], imageUrl: "/radiology/sample_rvg_tooth36_periapical.jpg", effectiveDoseMicrosv: 3.0 },
 		];
-	}, [studiesHistory, title, studyDate, toothFdiCode, currentImageSrc]);
+	}, [studiesHistory, title, studyDate, toothFdiCode, currentImageSrc, patientId]);
 
 	const [isDragOver, setIsDragOver] = useState(false);
 	const [viewportState, setViewportState] = useState<DicomViewportState>(DEFAULT_DICOM_VIEWPORT_STATE);
@@ -434,7 +431,9 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 
 	const plan = aiToothStates ? planVisiographFindings(aiToothStates) : null;
 
-	return (
+	if (!isOpen) return null;
+
+	const modalContent = (
 		<div
 			ref={modalContainerRef}
 			data-testid="dicom-viewer-modal"
@@ -779,4 +778,9 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 			)}
 		</div>
 	);
+
+	if (typeof document !== "undefined") {
+		return createPortal(modalContent, document.body);
+	}
+	return modalContent;
 };

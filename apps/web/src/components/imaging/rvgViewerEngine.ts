@@ -70,39 +70,58 @@ export function clampZoom(zoom: number, min = 0.2, max = 16.0): number {
 export const DENTAL_RADIOGRAPHY_PRESETS = [
 	{
 		id: "bone_structure",
-		labelRu: "Костная ткань / Остеоинтеграция",
+		labelRu: "Кость / Периодонт",
+		shortLabelRu: "Кость",
 		windowWidth: 2000,
 		windowCenter: 500,
 		gamma: 1.0,
-		sharpen: 25,
+		sharpen: 35,
 		emboss: false,
+		invert: false,
 	},
 	{
 		id: "caries_enamel",
-		labelRu: "Эмаль / Скрытый апроксимальный кариес",
+		labelRu: "Эмаль / Кариес",
+		shortLabelRu: "Эмаль",
 		windowWidth: 4000,
 		windowCenter: 1500,
 		gamma: 1.2,
 		sharpen: 40,
-		emboss: true,
+		emboss: false,
+		invert: false,
 	},
 	{
 		id: "endo_apex",
-		labelRu: "Эндодонтия / Апекс и периодонтальная щель",
+		labelRu: "Дентин / Эндодонтия",
+		shortLabelRu: "Дентин",
 		windowWidth: 1500,
 		windowCenter: 300,
 		gamma: 0.9,
 		sharpen: 30,
 		emboss: false,
+		invert: false,
+	},
+	{
+		id: "negative_cracks",
+		labelRu: "Негатив / Трещины",
+		shortLabelRu: "Негатив",
+		windowWidth: 2000,
+		windowCenter: 500,
+		gamma: 1.0,
+		sharpen: 30,
+		emboss: false,
+		invert: true,
 	},
 	{
 		id: "soft_tissue",
 		labelRu: "Мягкие ткани / Десна",
+		shortLabelRu: "Десна",
 		windowWidth: 400,
 		windowCenter: 40,
 		gamma: 1.0,
 		sharpen: 0,
 		emboss: false,
+		invert: false,
 	},
 ] as const;
 
@@ -199,11 +218,8 @@ export function calculateBoneDensityProfile(
 			const b = imgData.data[idx + 2] ?? 128;
 			intensity = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
 		} else {
-			// Synthetic realistic dental bone profile simulation if canvas context is unreadable
-			const normDist = t;
-			// Cortical plate at crest (higher HU), porous trabecular core (lower HU), cortical plate at base
-			const corticalEnvelope = Math.sin(normDist * Math.PI) * 0.4 + 0.6;
-			intensity = Math.round(Math.min(255, Math.max(0, 140 * corticalEnvelope + Math.sin(normDist * 12) * 15)));
+			// Честное пустое значение при недоступности контекста холста
+			intensity = 0;
 		}
 
 		// Calculate calibrated Hounsfield Unit from Window Width and Window Center

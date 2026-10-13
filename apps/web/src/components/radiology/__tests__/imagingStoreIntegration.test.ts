@@ -237,6 +237,19 @@ describe("ImagingStore Decomposed Architecture Integration Suite (Wave 24)", () 
 			store.setImagingKindFilter("all");
 			assert.equal(useImagingStore.getState().imagingKindFilter, "all");
 		});
+
+		it("filters studies by FDI tooth code (11..48, 51..85)", () => {
+			const store = useImagingStore.getState();
+
+			store.setImagingToothFilter("16");
+			assert.equal(useImagingStore.getState().imagingToothFilter, "16");
+
+			store.setImagingToothFilter("46");
+			assert.equal(useImagingStore.getState().imagingToothFilter, "46");
+
+			store.setImagingToothFilter("all");
+			assert.equal(useImagingStore.getState().imagingToothFilter, "all");
+		});
 	});
 
 	describe("Gate 5: DicomWorkstationSlice & Reset Invariants", () => {

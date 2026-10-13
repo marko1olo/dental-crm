@@ -75,12 +75,12 @@ export const ConsultationViewportPane: React.FC<ConsultationViewportPaneProps> =
 			{/* Top Header Floating Telemetry Pill */}
 			<div
 				style={{
-					backgroundColor: "rgba(7, 11, 20, 0.92)",
+					backgroundColor: "rgba(7, 11, 20, 0.94)",
 					borderColor: "#334155",
 					color: "#f8fafc",
 					boxShadow: "0 2px 8px rgba(0, 0, 0, 0.5)",
 				}}
-				className="absolute top-2 left-2 z-10 flex items-center gap-2 backdrop-blur-xs px-2.5 py-1 rounded border select-none"
+				className="absolute top-2 left-2 z-10 flex items-center gap-2 px-2.5 py-1 rounded border border-slate-700 select-none"
 			>
 				<span
 					style={{ backgroundColor: badgeColor }}

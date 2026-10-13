@@ -39,7 +39,7 @@ export const ConsultationNotesSidePanel: React.FC<ConsultationNotesSidePanelProp
 	return (
 		<aside
 			data-testid="consultation-notes-side-panel"
-			className="w-80 border-l border-slate-800 bg-slate-950/95 flex flex-col z-20 shadow-2xl backdrop-blur-md animate-in slide-in-from-right duration-200"
+			className="w-80 border-l border-slate-800 bg-[#070b14] flex flex-col z-20 shadow-2xl animate-in slide-in-from-right duration-200"
 		>
 			{/* Header */}
 			<div className="h-10 px-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">

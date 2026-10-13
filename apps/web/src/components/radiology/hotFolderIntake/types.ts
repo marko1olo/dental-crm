@@ -21,7 +21,7 @@ export interface HotFolderDirectoryConfigProps {
 
 export interface HotFolderIncomingQueueListProps {
 	items: HotFolderItem[];
-	activeItemId?: string;
+	activeItemId?: string | undefined;
 	onSelectItem: (id: string) => void;
 	onDropFile: (file: File) => void;
 	isDragOver: boolean;
@@ -51,8 +51,8 @@ export interface HotFolderIntakeFooterActionsProps {
 	activeItem: HotFolderItem | null;
 	protocolNote: string;
 	onAttachToEmr: () => void;
-	onExportDicom?: (item: HotFolderItem) => void;
-	onSendToLab?: (item: HotFolderItem, note: string) => void;
+	onExportDicom?: ((item: HotFolderItem) => void) | undefined;
+	onSendToLab?: ((item: HotFolderItem, note: string) => void) | undefined;
 }
 
 export interface HotFolderIntakeHeaderProps {
@@ -64,11 +64,11 @@ export interface HotFolderIntakeHeaderProps {
 }
 
 export interface UseHotFolderIntakeLogicProps {
-	patientId?: string;
-	patientName?: string;
-	patientCardNumber?: string;
-	doctorName?: string;
-	activeToothFdi?: string;
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	patientCardNumber?: string | undefined;
+	doctorName?: string | undefined;
+	activeToothFdi?: string | undefined;
 	flipV: boolean;
 	setFlipV: (val: boolean) => void;
 	onAttachToEmr?: ((result: {

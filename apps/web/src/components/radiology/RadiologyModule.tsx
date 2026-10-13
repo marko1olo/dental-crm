@@ -16,6 +16,7 @@ import {
 	SplitSquareHorizontal,
 } from "lucide-react";
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { DicomViewerModal } from "../imaging/DicomViewerModal.js";
 import { SensorStudyViewer } from "./SensorStudyViewer.js";
 import { RadiologyConsultationSplit } from "./RadiologyConsultationSplit.js";
@@ -605,8 +606,8 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 				/>
 			)}
 
-			{showConsultationModal && (
-				<div className="fixed inset-0 z-50 bg-[#020617] flex flex-col">
+			{showConsultationModal && typeof document !== "undefined" && createPortal(
+				<div className="fixed inset-0 z-50 bg-[#020617] flex flex-col" data-testid="radiology-consultation-modal-portal">
 					<RadiologyConsultationSplit
 						patientName={patientName}
 						patientCardNumber={cardNum}
@@ -637,7 +638,8 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						}}
 						onClose={() => setShowConsultationModal(false)}
 					/>
-				</div>
+				</div>,
+				document.body
 			)}
 
 			{/* Чистый фильтр снимков визиографа по датам и визитам */}
