@@ -24,11 +24,17 @@ export interface OpenAIToolDefinition {
 export interface DentalToolContext {
 	organizationId: string;
 	userId?: string;
+	doctorId?: string;
+	patientId?: string;
+	activeVisitId?: string;
 	runtimeMode?: AgentRuntimeMode;
 	// biome-ignore lint/suspicious/noExplicitAny: Drizzle database instance
 	db?: any;
 	allowLocalExecution?: boolean;
 }
+
+// biome-ignore lint/suspicious/noExplicitAny: Generic dental tool entry
+export type AnyDentalToolEntry = DentalToolEntry<any, any>;
 
 export interface DentalToolEntry<TSchema extends z.ZodTypeAny = z.ZodTypeAny, TResult = unknown> {
 	name: string;
@@ -72,7 +78,7 @@ export function zodToJsonSchema(schema: z.ZodTypeAny): Record<string, unknown> {
 		return {
 			type: "object",
 			properties,
-			...(required.length > 0 ? { required } : {}),
+			required,
 			additionalProperties: false,
 		};
 	}

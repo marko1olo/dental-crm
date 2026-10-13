@@ -296,7 +296,11 @@ export class OmniLlmGateway {
 			chain.push(defaultProv);
 		}
 
-		for (const def of DEFAULT_FALLBACK_CHAIN) {
+		const defaultChain = process.env.AGENTROUTER_API_KEYS
+			? (["deepseek", ...DEFAULT_FALLBACK_CHAIN] as readonly LlmProviderId[])
+			: DEFAULT_FALLBACK_CHAIN;
+
+		for (const def of defaultChain) {
 			if (!chain.includes(def)) {
 				chain.push(def);
 			}
@@ -458,10 +462,14 @@ export class OmniLlmGateway {
 				temperature?: number;
 			}): AsyncIterable<LLMStreamEvent> {
 				async function* bridgeGenerator(): AsyncGenerator<LLMStreamEvent, void, unknown> {
+					const defaultModel = process.env.AGENTROUTER_API_KEYS
+						? process.env.AGENTROUTER_MODEL || "deepseek-v4-flash"
+						: undefined;
+
 					const chatOptions: ChatOptions = {
 						...defaultOptions,
 						system: params.system,
-						...(params.model !== undefined ? { modelId: params.model } : {}),
+						modelId: params.model ?? defaultOptions.modelId ?? defaultModel,
 						...(params.maxTokens !== undefined ? { maxTokens: params.maxTokens } : {}),
 						...(params.temperature !== undefined ? { temperature: params.temperature } : {}),
 					};

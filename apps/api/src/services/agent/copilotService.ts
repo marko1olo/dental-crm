@@ -422,7 +422,13 @@ export const defaultCopilotActionManager = new CopilotActionManager();
  * Creates the default LLM provider for the AI Clinical Copilot with streaming and heuristic fallbacks.
  */
 export function createDefaultLlmProvider(): LLMProvider {
-	const omniProvider = omniLlmGateway.asLlmProvider();
+	const defaultOptions = process.env.AGENTROUTER_API_KEYS
+		? {
+				modelId: process.env.AGENTROUTER_MODEL || "deepseek-v4-flash",
+				fallbackChain: ["deepseek", "groq", "gemini"] as const,
+		  }
+		: {};
+	const omniProvider = omniLlmGateway.asLlmProvider(defaultOptions);
 
 	return {
 		async *complete(params): AsyncIterable<LLMStreamEvent> {

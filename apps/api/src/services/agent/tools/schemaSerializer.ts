@@ -34,7 +34,7 @@ export function zodToJsonSchema(schema: z.ZodTypeAny): Record<string, unknown> {
 		return {
 			type: "object",
 			properties,
-			...(required.length > 0 ? { required } : {}),
+			required,
 			additionalProperties: false,
 		};
 	}
