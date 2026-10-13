@@ -19,17 +19,66 @@
  * `readDenteStaffToken`) — try/catch внутри, без throw в private mode.
  */
 
-import { readDenteClinicToken, readDenteStaffToken } from "./safeLocalStorage";
+import {
+	readDenteClinicToken,
+	readDenteStaffToken,
+	safeLocalStorageGetItem,
+} from "./safeLocalStorage";
 
 /** Имя заголовка админского секрета. Реэкспортируется из `AppHelpers.tsx` для совместимости. */
 export const denteAdminSecretHeaderName = "x-dente-admin-secret";
+
+/**
+ * Проверка активного демо-режима без импорта `demoModeEngine` (чтобы не замыкать цикл с `AppHelpers`).
+ */
+export function isDemoRuntimeContext(): boolean {
+	try {
+		if (safeLocalStorageGetItem("dente_demo_showcase") === "true") {
+			return true;
+		}
+		if (typeof window !== "undefined" && window.location) {
+			const search = window.location.search || "";
+			const hash = window.location.hash || "";
+			if (
+				search.includes("demo=false") ||
+				hash.includes("demo=false") ||
+				search.includes("showcase=false")
+			) {
+				return false;
+			}
+			if (
+				search.includes("demo=true") ||
+				search.includes("demo=1") ||
+				search.includes("showcase=true") ||
+				hash.includes("demo=true") ||
+				hash === "#demo"
+			) {
+				return true;
+			}
+		}
+	} catch {
+		// ignore
+	}
+	return false;
+}
 
 export function getDenteAuthHeaders(
 	extra: Record<string, string> = {},
 ): Record<string, string> {
 	const headers: Record<string, string> = { ...extra };
-	const clinicToken = readDenteClinicToken();
-	const staffToken = readDenteStaffToken();
+	const rawClinicToken = readDenteClinicToken();
+	const rawStaffToken = readDenteStaffToken();
+	const inDemoContext = isDemoRuntimeContext();
+	const useDemoFallback =
+		inDemoContext ||
+		Boolean(rawClinicToken?.startsWith("demo-")) ||
+		Boolean(rawStaffToken?.startsWith("demo-"));
+	const clinicToken = inDemoContext
+		? (rawClinicToken?.startsWith("demo-") ? rawClinicToken : "demo-showcase-token-owner")
+		: (rawClinicToken || (useDemoFallback ? "demo-showcase-token-owner" : null));
+	const staffToken = inDemoContext
+		? (rawStaffToken?.startsWith("demo-") ? rawStaffToken : "demo-showcase-staff-token-owner")
+		: (rawStaffToken || (useDemoFallback ? "demo-showcase-staff-token-owner" : null));
 	if (clinicToken) {
 		headers["x-dente-clinic-token"] = clinicToken;
 	}

@@ -780,7 +780,9 @@ export function App() {
 	const isDemoParam =
 		typeof window !== "undefined" &&
 		((window.location.search || "").includes("demo=true") ||
-			(window.location.hash || "").includes("demo=true"));
+			(window.location.search || "").includes("demo=1") ||
+			(window.location.hash || "").includes("demo=true") ||
+			(window.location.hash || "").includes("demo=1"));
 	const [clinicAuthed, setClinicAuthed] = useState<boolean>(
 		() => isDemoParam || Boolean(readDenteClinicToken()),
 	);

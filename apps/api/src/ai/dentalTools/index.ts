@@ -29,6 +29,7 @@ import {
 } from "./desktopSystemTools.js";
 import type {
 	AgentRuntimeMode,
+	AnyDentalToolEntry,
 	DentalToolContext,
 	DentalToolEntry,
 	OpenAIToolDefinition,
@@ -42,7 +43,7 @@ export * from "./desktopSystemTools.js";
 /**
  * Полный реестр всех 18 стоматологических и системных инструментов
  */
-export const dentalToolsRegistry: readonly DentalToolEntry[] = [
+export const dentalToolsRegistry: readonly AnyDentalToolEntry[] = [
 	// Клинический уровень (везде)
 	calculateAnesthesiaTool,
 	checkSomaticRisksTool,

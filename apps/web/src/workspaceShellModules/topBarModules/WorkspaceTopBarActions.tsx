@@ -15,6 +15,7 @@ import {
 	Plus,
 	QrCode,
 	Shield,
+	Sparkles,
 	User,
 } from "lucide-react";
 import { NotificationBell } from "../../components/notifications/NotificationBell";
@@ -78,28 +79,26 @@ export function WorkspaceTopBarActions({
 	return (
 		<div className="top-actions">
 			{/* 1. Единственный Primary CTA всей клиники — «+ Запись» */}
-			{effectiveView !== "schedule" ? (
-				<button
-					className="primary-button"
-					type="button"
-					id="topbar-booking-action-btn"
-					data-tour="schedule-booking"
-					title={workspaceTopbarLabels.book.title}
-					onPointerEnter={() => onViewIntent?.("schedule", "hover")}
-					onPointerLeave={() => onViewIntent?.("schedule", "cancel")}
-					onFocus={() => onViewIntent?.("schedule", "hover")}
-					onBlur={() => onViewIntent?.("schedule", "cancel")}
-					onTouchStart={() => onViewIntent?.("schedule", "hover")}
-					onClick={onGoToSchedule}
-				>
-					<Plus aria-hidden="true" /> {workspaceTopbarLabels.book.label}
-				</button>
-			) : null}
+			<button
+				className="primary-button"
+				type="button"
+				id="topbar-booking-action-btn"
+				data-tour="schedule-booking"
+				title={workspaceTopbarLabels.book.title}
+				onPointerEnter={() => onViewIntent?.("schedule", "hover")}
+				onPointerLeave={() => onViewIntent?.("schedule", "cancel")}
+				onFocus={() => onViewIntent?.("schedule", "hover")}
+				onBlur={() => onViewIntent?.("schedule", "cancel")}
+				onTouchStart={() => onViewIntent?.("schedule", "hover")}
+				onClick={onGoToSchedule}
+			>
+				<Plus aria-hidden="true" /> {workspaceTopbarLabels.book.label}
+			</button>
 
 			{/* 2. Быстрый переход в дневник приёма для врача у кресла */}
 			{showDoctorVisitShortcut ? (
 				<button
-					className="secondary-button compact-top-button hidden lg:inline-flex"
+					className="secondary-button compact-top-button inline-flex"
 					type="button"
 					id="topbar-doctor-visit-btn"
 					data-tour="visit-diary"
@@ -115,6 +114,21 @@ export function WorkspaceTopBarActions({
 					{workspaceTopbarLabels.visit.label}
 				</button>
 			) : null}
+
+			{/* 2.5. Вызов клинического ассистента у кресла */}
+			<button
+				className="secondary-button compact-top-button inline-flex items-center gap-1.5"
+				type="button"
+				id="topbar-ai-agent-btn"
+				data-testid="topbar-ai-agent-btn"
+				title="Клинический ассистент"
+				onClick={() => {
+					window.dispatchEvent(new CustomEvent("dente:open-agent-cockpit"));
+				}}
+			>
+				<Sparkles className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" aria-hidden="true" />
+				<span>Ассистент</span>
+			</button>
 
 			{/* 3. Тихий статус уведомлений */}
 			<NotificationBell />

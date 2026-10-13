@@ -17,7 +17,7 @@ export function WorkspaceTopBarCommandHub() {
 	};
 
 	return (
-		<div className="topbar-command-hub flex-1 max-w-[420px] mx-auto hidden sm:flex items-center z-10">
+		<div className="topbar-command-hub flex-1 max-w-[420px] mx-auto flex items-center z-10">
 			<button
 				type="button"
 				id="topbar-command-hud-btn"
@@ -31,7 +31,7 @@ export function WorkspaceTopBarCommandHub() {
 					<Search size={14} className="text-[var(--teal)] shrink-0 opacity-80 group-hover:opacity-100" aria-hidden="true" />
 					<span className="truncate">Поиск пациента, карты, команды...</span>
 				</span>
-				<kbd className="hidden md:inline-flex items-center text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)] shrink-0">
+				<kbd className="topbar-kbd-shortcut inline-flex items-center text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)] shrink-0">
 					Ctrl+K
 				</kbd>
 			</button>

@@ -38,6 +38,7 @@ import {
 	readCatalogFromPersistentStorage,
 	setCachedApiResponse,
 } from "./apiCacheEngine";
+import { isDemoRuntimeContext } from "./denteRequestHeaders";
 import {
 	DENTE_CLINIC_TOKEN_KEY,
 	DENTE_STAFF_TOKEN_KEY,
@@ -287,8 +288,19 @@ export function installApiAuthFetch(): void {
 			return originalFetch(input, init);
 		}
 
-		const clinicToken = readToken(CLINIC_TOKEN_STORAGE_KEY);
-		const staffToken = readToken(STAFF_TOKEN_STORAGE_KEY);
+		const rawClinicToken = readToken(CLINIC_TOKEN_STORAGE_KEY);
+		const rawStaffToken = readToken(STAFF_TOKEN_STORAGE_KEY);
+		const inDemoContext = isDemoRuntimeContext();
+		const useDemoFallback =
+			inDemoContext ||
+			Boolean(rawClinicToken?.startsWith("demo-")) ||
+			Boolean(rawStaffToken?.startsWith("demo-"));
+		const clinicToken = inDemoContext
+			? (rawClinicToken?.startsWith("demo-") ? rawClinicToken : "demo-showcase-token-owner")
+			: (rawClinicToken || (useDemoFallback ? "demo-showcase-token-owner" : null));
+		const staffToken = inDemoContext
+			? (rawStaffToken?.startsWith("demo-") ? rawStaffToken : "demo-showcase-staff-token-owner")
+			: (rawStaffToken || (useDemoFallback ? "demo-showcase-staff-token-owner" : null));
 
 		// Формируем заголовки авторизации без лишней нагрузки на сборщик мусора
 		const headers = new Headers(

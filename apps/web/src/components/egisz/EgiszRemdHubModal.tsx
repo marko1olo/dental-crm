@@ -286,7 +286,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 					doctorSig: crypto.doctorSig,
 					moSig: crypto.moSig,
 				});
-				showToast(`СЭМД ф. 043/у успешно передан в РЭМД ЕГИСЗ (Рег. №: ${txId})`, "success");
+				showToast(`СЭМД успешно передан в РЭМД ЕГИСЗ (Рег. №: ${txId})`, "success");
 				if (onSentSuccess) {
 					onSentSuccess({
 						type: activeDocType,
@@ -365,11 +365,11 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 						</div>
 						<div className="egisz-header-title-group">
 							<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-								<h2 className="egisz-modal-title" style={{ fontSize: "1.05rem", margin: 0 }}>ЕГИСЗ РЭМД и справки ФНС</h2>
+								<h2 className="egisz-modal-title" style={{ fontSize: "1.05rem", margin: 0 }}>Государственная отчётность и справки</h2>
 								<span className="egisz-moh-badge egisz-badge-teal" style={{ fontSize: "0.7rem", padding: "0.12rem 0.4rem", borderRadius: "4px", fontWeight: 700 }}>Минздрав РФ</span>
 							</div>
 							<div className="egisz-modal-subtitle" style={{ fontSize: "0.75rem", margin: 0 }}>
-								Электронные карты 043/у (Приказ 947н) и справки КНД 1151156
+								Электронные медицинские карты и справки на налоговый вычет
 							</div>
 						</div>
 					</div>
@@ -387,7 +387,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 									setActiveTab("xml_preview");
 								}}
 							>
-								302 &bull; Консультация
+								Консультация
 							</button>
 							<button
 								type="button"
@@ -399,7 +399,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 									setActiveTab("xml_preview");
 								}}
 							>
-								303 &bull; Вмешательство
+								Вмешательство
 							</button>
 							<button
 								type="button"
@@ -410,7 +410,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 									setActiveTab("clinical");
 								}}
 							>
-								105 &bull; Медкарта
+								Медкарта
 							</button>
 							<button
 								type="button"
@@ -507,7 +507,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 				</nav>
 
 				{/* TAB BODY CONTENTS */}
-				<div style={{ flex: 1, overflowY: "auto", padding: "1.25rem" }}>
+				<div className="egisz-modal-body" style={{ flex: 1, overflowY: "auto", padding: "1.25rem", minHeight: 0 }}>
 					{/* TAB 1: DENTAL CLINICAL SEMD */}
 					{activeTab === "clinical" && activeDocType === "cda_semd" && (
 						<EgiszClinicalTab

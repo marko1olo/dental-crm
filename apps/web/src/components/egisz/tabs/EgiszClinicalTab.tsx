@@ -17,6 +17,7 @@ import {
 	type EgiszProcedureItem,
 	FDI_ADULT_TEETH,
 } from "../egiszRemdEngine";
+import { EgiszMultipleDiagnosesWidget } from "../../visit/EgiszMultipleDiagnosesWidget";
 
 export interface EgiszClinicalTabProps {
 	readonly semdDocCode: EgiszDentalSemdCode;
@@ -76,7 +77,9 @@ export const EgiszClinicalTab: React.FC<EgiszClinicalTabProps> = ({
 						onChange={(e) => onSemdDocCodeChange(e.target.value as EgiszDentalSemdCode)}
 						style={{
 							width: "100%",
-							padding: "0.5rem",
+							minHeight: "38px",
+							lineHeight: 1.4,
+							padding: "0.375rem 0.625rem",
 							marginTop: "0.35rem",
 							borderRadius: "6px",
 							border: "1px solid var(--line)",
@@ -101,7 +104,9 @@ export const EgiszClinicalTab: React.FC<EgiszClinicalTabProps> = ({
 						onChange={(e) => onPatientChange({ ...patient, patientFullName: e.target.value })}
 						style={{
 							width: "100%",
-							padding: "0.5rem",
+							minHeight: "38px",
+							lineHeight: 1.4,
+							padding: "0.375rem 0.625rem",
 							marginTop: "0.35rem",
 							borderRadius: "6px",
 							border: "1px solid var(--line)",
@@ -122,7 +127,9 @@ export const EgiszClinicalTab: React.FC<EgiszClinicalTabProps> = ({
 						onChange={(e) => onDoctorChange({ ...doctor, doctorFullName: e.target.value })}
 						style={{
 							width: "100%",
-							padding: "0.5rem",
+							minHeight: "38px",
+							lineHeight: 1.4,
+							padding: "0.375rem 0.625rem",
 							marginTop: "0.35rem",
 							borderRadius: "6px",
 							border: "1px solid var(--line)",
@@ -138,7 +145,7 @@ export const EgiszClinicalTab: React.FC<EgiszClinicalTabProps> = ({
 			<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
 				<div>
 					<label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
-						Жалобы пациента (LOINC 10154-3)
+						Жалобы пациента
 					</label>
 					<textarea
 						rows={3}
@@ -160,7 +167,7 @@ export const EgiszClinicalTab: React.FC<EgiszClinicalTabProps> = ({
 
 				<div>
 					<label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
-						Анамнез заболевания (LOINC 10164-2)
+						Анамнез заболевания
 					</label>
 					<textarea
 						rows={3}
@@ -326,6 +333,10 @@ export const EgiszClinicalTab: React.FC<EgiszClinicalTabProps> = ({
 							</button>
 						</div>
 					))}
+
+					<div style={{ marginTop: diagnoses.length > 0 ? "0.75rem" : "0.25rem" }}>
+						<EgiszMultipleDiagnosesWidget patientId={patient?.patientId} />
+					</div>
 				</div>
 
 				{/* Procedures List */}
