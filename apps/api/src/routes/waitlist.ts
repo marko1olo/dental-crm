@@ -49,7 +49,11 @@ function extractWaitlistMetadata(preferredTimeRanges: unknown): {
 		first.treatmentCategory.trim().length > 0
 			? first.treatmentCategory.trim()
 			: undefined;
-	return { notes, urgency, treatmentCategory };
+	return {
+		notes,
+		...(urgency ? { urgency } : {}),
+		...(treatmentCategory ? { treatmentCategory } : {}),
+	};
 }
 
 export async function registerWaitlistRoutes(
