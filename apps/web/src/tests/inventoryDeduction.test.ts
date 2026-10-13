@@ -824,3 +824,114 @@ describe("Automated BOM Deduction and Automatic Storno on Service Removal (Manda
 	});
 });
 
+describe("SSOT Unification & Facade Parity (Mandates 8e, 8n, 8s, 8zh)", () => {
+	it("ConsumablesDeductionModal из components/inventory и components/warehouse ссылаются на единый SSOT", async () => {
+		const warehouseModule = await import("../components/warehouse/ConsumablesDeductionModal.js");
+		const inventoryModule = await import("../components/inventory/ConsumablesDeductionModal.js");
+
+		assert.strictEqual(
+			inventoryModule.ConsumablesDeductionModal,
+			warehouseModule.ConsumablesDeductionModal,
+			"Фасад в components/inventory обязан ссылаться на канонический компонент в components/warehouse",
+		);
+	});
+
+	it("WarehouseInventoryTab из components/inventory и components/warehouse ссылаются на единый SSOT", async () => {
+		const warehouseModule = await import("../components/warehouse/WarehouseInventoryTab.js");
+		const inventoryModule = await import("../components/inventory/WarehouseInventoryTab.js");
+
+		assert.strictEqual(
+			inventoryModule.WarehouseInventoryTab,
+			warehouseModule.WarehouseInventoryTab,
+			"Фасад в components/inventory обязан ссылаться на канонический компонент в components/warehouse",
+		);
+	});
+
+	it("Канонический SSOT materialsAutoDeductionSsot рассчитывает техкарты 804н и мягкий овердрафт без блокировок", async () => {
+		const {
+			getCanonicalProcedureRecipe,
+			resolveProcedureDeductionItems,
+			calculateProcedureDeductionSummary,
+			generateSanpinClassBWasteRecords,
+		} = await import("@dental/shared");
+
+		// 1. Поиск рецепта по коду услуги 804н
+		const cariesRecipe = getCanonicalProcedureRecipe("A16.07.002.011");
+		assert.ok(cariesRecipe, "Рецепт пломбирования A16.07.002.011 должен существовать");
+		assert.ok(cariesRecipe.items.length >= 3, "Рецепт должен содержать не менее 3 материалов");
+
+		// 2. Резолв позиций
+		const resolvedItems = resolveProcedureDeductionItems("A16.07.002.011", { surfaceCount: 2 });
+		assert.ok(resolvedItems.length > 0);
+		const compositeItem = resolvedItems.find((i) => i.inventoryItemId === "mat-composite-filtek");
+		assert.ok(compositeItem);
+		assert.equal(compositeItem.standardQuantity, 0.4); // 0.2 * 2 поверхности
+
+		// 3. Мягкий овердрафт при дефиците склада (Мандат 8e, 8n)
+		const summary = calculateProcedureDeductionSummary([
+			{
+				inventoryItemId: "mat-composite-filtek",
+				nameRu: "Композит Filtek",
+				standardQuantity: 0.4,
+				deductedQuantity: 0.4,
+				currentStock: 0, // нулевой остаток!
+				unitCostKopecks: 38000,
+			},
+		]);
+
+		assert.equal(summary.hasOverdraft, true);
+		assert.equal(summary.overdraftItemCount, 1);
+		assert.ok(summary.softWarningMessageRu?.includes("мягкий овердрафт склада"));
+		assert.equal(summary.totalCostKopecks, 15200);
+
+		// 4. СанПиН отходы Класса Б (без эмодзи)
+		const wasteRecords = generateSanpinClassBWasteRecords(
+			[
+				{
+					inventoryItemId: "mat-anes-needle-30g",
+					nameRu: "Игла карпульная",
+					deductedQuantity: 1,
+					isClassBWaste: true,
+					classBWasteType: "sharp",
+				},
+			],
+			{
+				procedureCode804n: "A11.07.012",
+				procedureTitleRu: "Анестезия",
+				doctorName: "Кузнецов А.В.",
+				visitId: "test-visit-1",
+			},
+		);
+
+		assert.equal(wasteRecords.length, 1);
+		assert.equal(wasteRecords[0].wasteCategory, "sharp");
+		assert.ok(wasteRecords[0].containerTypeRu.toLowerCase().includes("желтый"));
+	});
+
+	it("ConsumablesDeductionModal рендерится с кнопкой списания, не заблокированной при дефиците склада (Мандат 8e)", async () => {
+		const { ConsumablesDeductionModal } = await import(
+			"../components/warehouse/ConsumablesDeductionModal.js"
+		);
+
+		const html = renderToStaticMarkup(
+			createElement(ConsumablesDeductionModal, {
+				isOpen: true,
+				onClose: () => {},
+				procedureTitle: "Лечение кариеса дентина",
+				service804nCode: "A16.07.002.011",
+				currentStockMap: { "mat-composite-filtek": 0 }, // Дефицит!
+			}),
+		);
+
+		assert.ok(html.includes("data-testid=\"consumables-deduction-modal\""));
+		assert.ok(html.includes("Расходные материалы приёма"));
+		assert.ok(html.includes("data-testid=\"btn-confirm-deduction\""));
+		// Кнопка подтверждения CTA НЕ заблокирована:
+		assert.ok(
+			!html.includes('data-testid="btn-confirm-deduction" disabled'),
+			"Кнопка списания не должна быть заблокирована при нулевом остатке",
+		);
+	});
+});
+
+

@@ -124,7 +124,8 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[1100] flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto"
+			className="fixed inset-0 z-[1100] flex items-center justify-center backdrop-blur-xs p-3 sm:p-5 overflow-y-auto"
+			style={{ backgroundColor: "rgba(15, 23, 42, 0.65)" }}
 			data-testid="warehouse-batch-tracking-modal"
 			role="dialog"
 			aria-modal="true"

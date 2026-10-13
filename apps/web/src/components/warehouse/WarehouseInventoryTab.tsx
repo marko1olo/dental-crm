@@ -295,19 +295,19 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 		>
 			{/* KPI ПАНЕЛЬ ИНВЕНТАРИЗАЦИИ */}
 			<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 shrink-0">
-				<div className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col">
-					<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] uppercase tracking-wider">
+				<div className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col">
+					<span className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider">
 						Позиций в описи
 					</span>
-					<span className="text-lg font-bold text-[var(--ink,#0f172a)] leading-tight mt-0.5">
+					<span className="text-lg font-bold text-[var(--ink)] leading-tight mt-0.5">
 						{totals.totalItemsCount}
 					</span>
-					<span className="text-[11px] text-[var(--muted,#64748b)]">
+					<span className="text-[11px] text-[var(--muted)]">
 						Совпадений: {totals.matchedItemsCount}
 					</span>
 				</div>
 
-				<div className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col">
+				<div className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col">
 					<span className="text-[11px] font-semibold text-rose-700 dark:text-rose-400 uppercase tracking-wider">
 						Недостача к списанию
 					</span>
@@ -319,7 +319,7 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 					</span>
 				</div>
 
-				<div className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col">
+				<div className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col">
 					<span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
 						Излишки
 					</span>
@@ -331,19 +331,19 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 					</span>
 				</div>
 
-				<div className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col">
+				<div className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col">
 					<span className="text-[11px] font-semibold text-teal-700 dark:text-teal-400 uppercase tracking-wider">
 						Фактический баланс
 					</span>
 					<span className="text-lg font-bold text-teal-700 dark:text-teal-300 leading-tight mt-0.5">
 						{money(kopecksToRubles(totals.totalActualCostKopecks))}
 					</span>
-					<span className="text-[11px] text-[var(--muted,#64748b)]">По результатам сверки</span>
+					<span className="text-[11px] text-[var(--muted)]">По результатам сверки</span>
 				</div>
 			</div>
 
 			{/* ТУЛБАР УПРАВЛЕНИЯ ИНВЕНТАРИЗАЦИЕЙ (СТРОГО 1 СТРОКА 36PX ПО ЗАКОНУ ХИКА) */}
-			<div className="h-9 min-h-[36px] px-3 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-xl flex items-center justify-between gap-2 shrink-0">
+			<div className="h-9 min-h-[36px] px-3 bg-[var(--paper)] border border-[var(--line)] rounded-xl flex items-center justify-between gap-2 shrink-0">
 				<div className="flex items-center gap-2 flex-1 min-w-0">
 					{/* Поиск */}
 					<div className="dente-search-wrap relative w-64 max-w-xs shrink-0">
@@ -374,7 +374,7 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 						className={`h-7 px-2.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 ${
 							discrepancyOnly
 								? "bg-amber-500/20 text-amber-900 dark:text-amber-200 border-amber-500/40"
-								: "border-[var(--line,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								: "border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="btn-filter-discrepancies"
 					>
@@ -384,7 +384,7 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 					<button
 						type="button"
 						onClick={handleReconcileAllMatch}
-						className="h-7 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-medium cursor-pointer shrink-0"
+						className="h-7 px-2.5 rounded-lg border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer shrink-0"
 						title="Приравнять все фактические остатки к учетным"
 						data-testid="btn-reconcile-match-all"
 					>
@@ -397,7 +397,7 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 					<button
 						type="button"
 						onClick={handlePrintInv3}
-						className="h-7 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-semibold flex items-center gap-1 cursor-pointer"
+						className="h-7 px-2.5 rounded-lg border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1 cursor-pointer"
 						data-testid="btn-print-inv3"
 						title="Печать описи фактических остатков"
 					>
@@ -408,7 +408,7 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 					<button
 						type="button"
 						onClick={handlePrintInv19}
-						className="h-7 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-semibold flex items-center gap-1 cursor-pointer"
+						className="h-7 px-2.5 rounded-lg border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1 cursor-pointer"
 						data-testid="btn-print-inv19"
 						title="Печать сличительной ведомости расхождений"
 					>
@@ -567,7 +567,7 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 															? "bg-rose-500/20 text-rose-800 dark:text-rose-200"
 															: isSurplus
 																? "bg-emerald-500/20 text-emerald-800 dark:text-emerald-200"
-																: "bg-slate-500/10 text-slate-700 dark:text-slate-300"
+																: "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]"
 													}`}
 												>
 													{isShortage && `-${line.discrepancyQuantity} ${line.unitRu}`}

@@ -235,11 +235,11 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 			data-testid="warehouse-overview-tab"
 		>
 			{/* 1. КОМПАКТНЫЙ 32PX МЕТРИЧЕСКИЙ СТРИП (СОХРАНЕНИЕ FOLD LINE) */}
-			<div className="min-h-[32px] py-1 px-3 bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] rounded-lg flex flex-wrap items-center justify-between gap-2 shrink-0 text-xs">
+			<div className="min-h-[32px] py-1 px-3 bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg flex flex-wrap items-center justify-between gap-2 shrink-0 text-xs">
 				<div className="flex items-center gap-3.5 flex-wrap">
 					<div className="flex items-center gap-1.5">
-						<span className="text-[var(--muted,#64748b)]">Всего позиций:</span>
-						<span className="font-bold text-[var(--ink,#0f172a)]">{kpis.totalCount}</span>
+						<span className="text-[var(--muted)]">Всего позиций:</span>
+						<span className="font-bold text-[var(--ink)]">{kpis.totalCount}</span>
 					</div>
 
 					<div className="flex items-center gap-1.5">
@@ -258,7 +258,7 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 					</div>
 
 					<div className="flex items-center gap-1.5 hidden sm:flex">
-						<span className="text-[var(--muted,#64748b)]">Стоимость запасов:</span>
+						<span className="text-[var(--muted)]">Стоимость запасов:</span>
 						<span className="font-bold text-teal-700 dark:text-teal-300">{money(kpis.totalRub)}</span>
 					</div>
 				</div>
@@ -285,8 +285,8 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 				onOpenInventoryAudit={onOpenInventoryAudit}
 			/>
 
-			{/* 3. ЕДИНЫЙ 32PX ТУЛБАР УПРАВЛЕНИЯ И СЕГМЕНТИРОВАННЫЙ БАР КАТЕГОРИЙ */}
-			<div className="min-h-[36px] py-1 px-2.5 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-lg flex flex-wrap items-center justify-between gap-2 shrink-0">
+			{/* 3. ЕДИНЫЙ 36PX ТУЛБАР УПРАВЛЕНИЯ И СЕГМЕНТИРОВАННЫЙ БАР КАТЕГОРИЙ (СТРОГО 1 СТРОКА) */}
+			<div className="h-9 min-h-[36px] px-3 bg-[var(--paper)] border border-[var(--line)] rounded-xl flex items-center justify-between gap-2 shrink-0">
 				{/* Поиск */}
 				<div className="dente-search-wrap relative min-w-[180px] max-w-xs flex-1">
 					<Search size={14} className="dente-search-icon" />
