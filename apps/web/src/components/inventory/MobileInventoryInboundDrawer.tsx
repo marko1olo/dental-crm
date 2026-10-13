@@ -235,7 +235,7 @@ export const MobileInventoryInboundDrawer: React.FC<
 									onOpenInboundInvoice();
 								}}
 							>
-								Оформить официальную накладную поставщика (ТОРГ-12)
+								Оформить приходную накладную поставщика
 							</button>
 						)}
 					</div>

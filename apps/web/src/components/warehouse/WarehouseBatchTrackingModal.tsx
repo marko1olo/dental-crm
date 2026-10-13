@@ -12,6 +12,7 @@ import {
 	X,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { money } from "../../AppHelpers.js";
 import type { InventoryItem } from "../inventory/useInventoryLogic.js";
 import {
@@ -121,7 +122,7 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 
 	if (!isOpen) return null;
 
-	return (
+	const modalContent = (
 		<div
 			className="fixed inset-0 z-[1100] flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto"
 			data-testid="warehouse-batch-tracking-modal"
@@ -129,9 +130,9 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 			aria-modal="true"
 			aria-label="Партионный учёт и контроль сроков годности FEFO"
 		>
-			<div className="bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+			<div className="bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
 				{/* ШАПКА МОДАЛЬНОГО ОКНА */}
-				<header className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] shrink-0">
+				<header className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-3 min-w-0">
 						<div className="w-9 h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-xs">
 							<Layers size={18} />
@@ -140,7 +141,7 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 							<h2 className="text-base font-bold leading-tight truncate">
 								Партионный учёт и контроль сроков (FEFO)
 							</h2>
-							<p className="text-xs text-[var(--muted,#64748b)] truncate">
+							<p className="text-xs text-[var(--muted)] truncate">
 								Приоритетный отпуск серий с минимальным остаточным сроком • СанПиН 3.3686-21
 							</p>
 						</div>
@@ -148,7 +149,7 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-card,#f1f5f9)] transition-colors cursor-pointer"
+						className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 						aria-label="Закрыть окно партионного учёта"
 						data-testid="btn-close-batch-modal"
 					>
@@ -157,7 +158,7 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 				</header>
 
 				{/* ПАНЕЛЬ ФИЛЬТРОВ И ПОИСКА */}
-				<div className="p-3 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
+				<div className="p-3 border-b border-[var(--line)] bg-[var(--paper)] flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
 					{/* Поиск */}
 					<div className="dente-search-wrap relative flex-1 min-w-[200px] max-w-xs">
 						<Search size={14} className="dente-search-icon" />
@@ -182,14 +183,14 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 					</div>
 
 					{/* Сегментированные фильтры статуса FEFO */}
-					<div className="dente-segmented-bar inline-flex items-center gap-1 p-0.5 rounded-lg bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)]">
+					<div className="dente-segmented-bar inline-flex items-center gap-1 p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
 						<button
 							type="button"
 							onClick={() => setActiveFilter("all")}
 							className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
 								activeFilter === "all"
-									? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-xs"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 							data-testid="batch-filter-all"
 						>
@@ -201,7 +202,7 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 							className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
 								activeFilter === "warning_soon"
 									? "bg-amber-500/20 text-amber-900 dark:text-amber-200 shadow-xs"
-									: "text-[var(--muted,#64748b)] hover:text-amber-700"
+									: "text-[var(--muted)] hover:text-amber-700"
 							}`}
 							data-testid="batch-filter-warning"
 						>
@@ -213,7 +214,7 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 							className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
 								activeFilter === "expired"
 									? "bg-rose-500/20 text-rose-900 dark:text-rose-200 shadow-xs"
-									: "text-[var(--muted,#64748b)] hover:text-rose-700"
+									: "text-[var(--muted)] hover:text-rose-700"
 							}`}
 							data-testid="batch-filter-expired"
 						>
@@ -225,7 +226,7 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 						<button
 							type="button"
 							onClick={() => setSelectedTargetItem(null)}
-							className="h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors text-xs flex items-center gap-1 cursor-pointer"
+							className="h-8 px-2.5 rounded-lg border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors text-xs flex items-center gap-1 cursor-pointer"
 							title="Показать партии всех материалов"
 							data-testid="batch-reset-item-filter"
 						>
@@ -238,7 +239,7 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 				{/* СПИСОК ПАРТИЙ */}
 				<div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2.5 min-h-[240px]">
 					{filteredBatches.length === 0 ? (
-						<div className="flex flex-col items-center justify-center h-48 text-[var(--muted,#64748b)] text-xs gap-2">
+						<div className="flex flex-col items-center justify-center h-48 text-[var(--muted)] text-xs gap-2">
 							<Package size={28} className="stroke-[1.5]" />
 							<p className="font-medium">Партии по выбранным критериям не найдены</p>
 						</div>
@@ -257,27 +258,27 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 												? "bg-rose-500/5 border-rose-500/30"
 												: isWarning
 													? "bg-amber-500/5 border-amber-500/30"
-													: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-500/40"
+													: "bg-[var(--paper)] border-[var(--line)] hover:border-teal-500/40"
 										}`}
 										data-testid={`batch-card-${batch.item.id}`}
 									>
 										{/* Информация о партии */}
 										<div className="flex-1 min-w-0">
 											<div className="flex items-center gap-2 flex-wrap mb-1">
-												<span className="font-bold text-xs text-[var(--ink,#0f172a)] truncate">
+												<span className="font-bold text-xs text-[var(--ink)] truncate">
 													{batch.item.name}
 												</span>
-												<span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]">
+												<span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)]">
 													Серия: {batch.lotNumber}
 												</span>
 												{batch.item.sku && (
-													<span className="text-[11px] text-[var(--muted,#64748b)]">
+													<span className="text-[11px] text-[var(--muted)]">
 														{batch.item.sku}
 													</span>
 												)}
 											</div>
 
-											<div className="flex items-center gap-3 text-xs text-[var(--muted,#64748b)] flex-wrap">
+											<div className="flex items-center gap-3 text-xs text-[var(--muted)] flex-wrap">
 												<span className="flex items-center gap-1 font-medium">
 													<Clock size={13} className={isExpired ? "text-rose-600" : isWarning ? "text-amber-600" : "text-teal-600"} />
 													Срок годности: <strong>{batch.expirationDate}</strong>
@@ -295,7 +296,7 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 													{batch.fefoBadge}
 												</span>
 
-												<span className="font-semibold text-[var(--ink,#0f172a)]">
+												<span className="font-semibold text-[var(--ink)]">
 													Остаток:{" "}
 													<span className={isOverdraft ? "text-amber-600 dark:text-amber-400" : ""}>
 														{batch.quantity} {batch.item.unit || "шт."}
@@ -313,7 +314,7 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 													onClick={() => onWriteOffExpired?.(batch.item, batch.lotNumber)}
 													className="h-8 min-h-[32px] sm:h-8 px-3 rounded-lg text-xs font-semibold bg-rose-600 text-white hover:bg-rose-700 active:scale-98 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
 													data-testid={`btn-writeoff-expired-${batch.item.id}`}
-													title="Списать просроченную серию по акту утилизации (ТОРГ-16)"
+													title="Списать просроченную серию по акту утилизации"
 												>
 													<Trash2 size={13} />
 													<span>Акт утилизации</span>
@@ -323,7 +324,7 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 													<button
 														type="button"
 														onClick={() => onDeductBatch?.(batch.item, 1, batch.lotNumber)}
-														className="h-8 min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-semibold border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-teal-50 dark:hover:bg-teal-950/40 hover:border-teal-500 transition-all flex items-center gap-1.5 cursor-pointer"
+														className="h-8 min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] text-[var(--ink)] hover:bg-teal-50 dark:hover:bg-teal-950/40 hover:border-teal-500 transition-all flex items-center gap-1.5 cursor-pointer"
 														data-testid={`btn-deduct-batch-${batch.item.id}`}
 														title="Списать 1 ед. из этой серии по регламенту FEFO"
 													>
@@ -333,7 +334,7 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 													<button
 														type="button"
 														onClick={() => onReceiveBatch?.(batch.item, 10, batch.lotNumber, batch.expirationDate)}
-														className="h-8 min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-semibold border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-all flex items-center gap-1 cursor-pointer"
+														className="h-8 min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all flex items-center gap-1 cursor-pointer"
 														data-testid={`btn-receive-batch-${batch.item.id}`}
 														title="Оприходовать партию (+10 ед.)"
 													>
@@ -351,7 +352,7 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 				</div>
 
 				{/* ФУТЕР */}
-				<footer className="px-5 py-3 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between text-xs text-[var(--muted,#64748b)] shrink-0">
+				<footer className="px-5 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between text-xs text-[var(--muted)] shrink-0">
 					<div className="flex items-center gap-2">
 						<ShieldAlert size={14} className="text-teal-600 shrink-0" />
 						<span>
@@ -361,7 +362,7 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 					<button
 						type="button"
 						onClick={onClose}
-						className="h-8 min-h-[32px] sm:h-8 px-4 rounded-lg text-xs font-semibold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] cursor-pointer"
+						className="h-8 min-h-[32px] sm:h-8 px-4 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 						data-testid="btn-batch-footer-close"
 					>
 						Закрыть
@@ -370,6 +371,10 @@ export const WarehouseBatchTrackingModal: React.FC<WarehouseBatchTrackingModalPr
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 };
 
 export default WarehouseBatchTrackingModal;

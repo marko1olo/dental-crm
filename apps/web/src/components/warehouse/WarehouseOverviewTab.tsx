@@ -312,16 +312,7 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 
 				{/* Apple HIG 32px Segmented Bar категорий */}
 				<div
-					style={{
-						height: 32,
-						padding: 2,
-						background: "var(--paper-soft, #f1f5f9)",
-						border: "1px solid var(--line, #cbd5e1)",
-						borderRadius: 8,
-						display: "inline-flex",
-						alignItems: "center",
-						gap: 3,
-					}}
+					className="h-8 p-0.5 bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg inline-flex items-center gap-0.5"
 					role="tablist"
 					aria-label="Категории ТМЦ"
 					data-testid="warehouse-category-filters"
@@ -335,20 +326,11 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 								role="tab"
 								aria-selected={isActive}
 								onClick={() => setSelectedCategory(tab.id)}
-								style={{
-									height: 26,
-									padding: "0 10px",
-									borderRadius: 6,
-									fontSize: "0.75rem",
-									fontWeight: isActive ? 700 : 500,
-									border: isActive ? "1px solid var(--line, #cbd5e1)" : "1px solid transparent",
-									background: isActive ? "var(--paper, #ffffff)" : "transparent",
-									color: isActive ? "var(--teal-700, #0f766e)" : "var(--muted, #64748b)",
-									boxShadow: isActive ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-									cursor: "pointer",
-									whiteSpace: "nowrap",
-									transition: "all 0.15s ease",
-								}}
+								className={`h-6.5 px-2.5 rounded-md text-xs whitespace-nowrap cursor-pointer transition-all ${
+									isActive
+										? "font-bold border border-[var(--line)] bg-[var(--paper)] text-teal-700 dark:text-teal-300 shadow-xs"
+										: "font-medium border border-transparent bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+								}`}
 								data-testid={`warehouse-category-${tab.id}`}
 							>
 								{tab.label}
@@ -382,7 +364,7 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 						className={`h-8 min-h-[32px] px-2.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer ${
 							isExpressBarOpen
 								? "bg-teal-600 text-white border-teal-600 shadow-xs"
-								: "border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)]"
+								: "border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 						}`}
 						data-testid="toggle-express-writeoff-btn"
 						title="Открыть экспресс-панель списания клинических наборов"
@@ -431,10 +413,10 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 			)}
 
 			{/* 5. ПОЛНОЦЕННАЯ ТАБЛИЦА ОСТАТКОВ МАТЕРИАЛОВ */}
-			<div className="flex-1 border border-[var(--line,#e2e8f0)] rounded-lg overflow-hidden flex flex-col bg-[var(--paper,#ffffff)] min-h-[300px]">
+			<div className="flex-1 border border-[var(--line)] rounded-lg overflow-hidden flex flex-col bg-[var(--paper)] min-h-[300px]">
 				<div className="overflow-x-auto flex-1">
 					<table className="w-full text-left text-xs border-collapse" data-testid="warehouse-overview-table">
-						<thead className="bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] border-b border-[var(--line,#e2e8f0)] sticky top-0 z-10 font-semibold">
+						<thead className="bg-[var(--paper-soft)] text-[var(--muted)] border-b border-[var(--line)] sticky top-0 z-10 font-semibold">
 							<tr>
 								<th className="py-2.5 px-3">Материал</th>
 								<th className="py-2.5 px-3 hidden sm:table-cell">Категория</th>
@@ -445,19 +427,19 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 								<th className="py-2.5 px-3 text-right">Действия</th>
 							</tr>
 						</thead>
-						<tbody className="divide-y divide-[var(--line,#e2e8f0)]">
+						<tbody className="divide-y divide-[var(--line)]">
 							{filteredItems.length === 0 ? (
 								<tr>
-									<td colSpan={7} className="py-12 text-center text-[var(--muted,#64748b)]" data-testid="overview-empty-state">
+									<td colSpan={7} className="py-12 text-center text-[var(--muted)]" data-testid="overview-empty-state">
 										<Package size={32} className="mx-auto mb-2 opacity-50 text-teal-600" />
-										<p className="font-semibold text-sm text-[var(--ink,#0f172a)]">
+										<p className="font-semibold text-sm text-[var(--ink)]">
 											{items.length === 0
 												? "Склад пуст — проведите первую приходную накладную"
 												: "Позиции по выбранным критериям не найдены"}
 										</p>
-										<p className="text-xs text-[var(--muted,#64748b)] mt-1 max-w-md mx-auto">
+										<p className="text-xs text-[var(--muted)] mt-1 max-w-md mx-auto">
 											{items.length === 0
-												? "В боевом режиме остатки формируются по приходным накладным ТОРГ-12 от поставщиков или ручному оприходованию."
+												? "В рабочем режиме остатки формируются по приходным накладным от поставщиков или ручному оприходованию."
 												: "Попробуйте изменить категорию или поисковый запрос."}
 										</p>
 										{items.length === 0 && onOpenWaybills && (
@@ -612,7 +594,7 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 													<button
 														type="button"
 														onClick={() => onDeductItem?.(item, 1)}
-														className="h-7 px-2 rounded-md border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-300 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+														className="h-7 px-2 rounded-md border border-[var(--line)] text-[var(--ink)] hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-300 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
 														data-testid={`btn-deduct-item-${item.id}`}
 														title="Списать 1 ед. (мягкий овердрафт разрешен при остатке <= 0)"
 													>
@@ -623,7 +605,7 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 													<button
 														type="button"
 														onClick={() => onReceiveItem?.(item, 1)}
-														className="h-7 px-2 rounded-md border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:border-emerald-300 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+														className="h-7 px-2 rounded-md border border-[var(--line)] text-[var(--ink)] hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:border-emerald-300 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
 														data-testid={`btn-receive-item-${item.id}`}
 														title="Оприходовать (+1 ед.)"
 													>
@@ -634,7 +616,7 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 													<button
 														type="button"
 														onClick={() => onOpenBatchTracking?.(item)}
-														className="h-7 w-7 rounded-md border border-[var(--line,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-teal-600 hover:border-teal-400 flex items-center justify-center transition-colors cursor-pointer"
+														className="h-7 w-7 rounded-md border border-[var(--line)] text-[var(--muted)] hover:text-teal-600 hover:border-teal-400 flex items-center justify-center transition-colors cursor-pointer"
 														data-testid={`btn-batches-item-${item.id}`}
 														title="Партии и серии (FEFO)"
 													>

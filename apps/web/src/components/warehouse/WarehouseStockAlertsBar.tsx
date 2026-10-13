@@ -95,7 +95,7 @@ export const WarehouseStockAlertsBar: React.FC<WarehouseStockAlertsBarProps> = (
 
 	return (
 		<div
-			className={`warehouse-stock-alerts-bar p-2.5 rounded-xl border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-[var(--paper-soft,#f8fafc)] border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] ${className}`}
+			className={`warehouse-stock-alerts-bar p-2.5 rounded-xl border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] ${className}`}
 			data-testid="warehouse-stock-alerts-bar"
 			role="region"
 			aria-label="Оперативные складские предупреждения"
@@ -152,7 +152,7 @@ export const WarehouseStockAlertsBar: React.FC<WarehouseStockAlertsBarProps> = (
 						onClick={onOpenWaybills}
 						className="h-8 min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-semibold bg-teal-600 text-white hover:bg-teal-700 active:scale-98 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
 						data-testid="alert-action-open-waybills"
-						title="Оприходовать приходную накладную от поставщика (ТОРГ-12) и закрыть овердрафт"
+						title="Оприходовать накладную поставщика и закрыть дефицит"
 					>
 						<Truck size={14} className="shrink-0" />
 						<span className="whitespace-nowrap">Приход накладной</span>
@@ -163,7 +163,7 @@ export const WarehouseStockAlertsBar: React.FC<WarehouseStockAlertsBarProps> = (
 					<button
 						type="button"
 						onClick={onOpenBatchTracking}
-						className="h-8 min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-semibold border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] active:scale-98 transition-all flex items-center gap-1.5 cursor-pointer"
+						className="h-8 min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition-all flex items-center gap-1.5 cursor-pointer"
 						data-testid="alert-action-open-batches"
 						title="Партионный учёт и контроль сроков годности FEFO"
 					>
@@ -176,9 +176,9 @@ export const WarehouseStockAlertsBar: React.FC<WarehouseStockAlertsBarProps> = (
 					<button
 						type="button"
 						onClick={onOpenInventoryAudit}
-						className="h-8 min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-semibold border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] active:scale-98 transition-all flex items-center gap-1.5 cursor-pointer"
+						className="h-8 min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition-all flex items-center gap-1.5 cursor-pointer"
 						data-testid="alert-action-open-audit"
-						title="Провести инвентаризацию и сличительную ведомость остатков (ИНВ-3/19)"
+						title="Провести инвентаризацию и сверку остатков"
 					>
 						<FileText size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span className="whitespace-nowrap">Инвентаризация</span>

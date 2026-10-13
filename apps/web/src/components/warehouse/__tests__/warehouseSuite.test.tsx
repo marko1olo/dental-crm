@@ -14,13 +14,11 @@ import { describe, it } from "vitest";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import {
-	WarehouseStockAlertsBar,
-	WarehouseOverviewTab,
-	WarehouseWaybillsTab,
-	WarehouseInventoryTab,
-	WarehouseBatchTrackingModal,
-} from "../index.js";
+import { WarehouseStockAlertsBar } from "../WarehouseStockAlertsBar.js";
+import { WarehouseOverviewTab } from "../WarehouseOverviewTab.js";
+import { WarehouseWaybillsTab } from "../WarehouseWaybillsTab.js";
+import { WarehouseInventoryTab } from "../WarehouseInventoryTab.js";
+import { WarehouseBatchTrackingModal } from "../WarehouseBatchTrackingModal.js";
 import type { InventoryItem } from "../../inventory/useInventoryLogic.js";
 import {
 	getFefoTrafficLight,

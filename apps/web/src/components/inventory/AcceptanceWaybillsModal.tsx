@@ -16,43 +16,22 @@
  */
 
 import {
-	AlertTriangle,
-	CheckCircle2,
-	Download,
-	FileDown,
-	FileText,
-	Layers,
-	Plus,
-	Printer,
-	Sparkles,
-	Trash2,
-	X,
+	AlertTriangle, CheckCircle2, Download, FileDown, FileText, Layers,
+	Plus, Printer, Sparkles, Trash2, X,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders.js";
 import { showToast } from "../GlobalToast.js";
 import {
-	type AcceptanceSupplier,
-	type AcceptanceWaybillDocument,
-	type AcceptanceWaybillItem,
-	CANONICAL_DENTAL_MATERIAL_TEMPLATES,
-	CANONICAL_DENTAL_SUPPLIERS,
-	type DentalMaterialTemplate,
-	type VatRate,
-	calculateFefoStatus,
-	calculateWaybillTotals,
-	createDraftAcceptanceWaybill,
-	createSampleDentalWaybill,
-	createWaybillItem,
-	exportWaybillToCsv,
-	formatRubCurrency,
-	generateTorg12Html,
-	kopecksToRubles,
-	reconcileOverdraftOnReceipt,
-	rublesToKopecks,
-	sortWaybillItemsByFefo,
-	validateWaybillDraft,
+	type AcceptanceSupplier, type AcceptanceWaybillDocument, type AcceptanceWaybillItem,
+	CANONICAL_DENTAL_MATERIAL_TEMPLATES, CANONICAL_DENTAL_SUPPLIERS,
+	type DentalMaterialTemplate, type VatRate, calculateFefoStatus,
+	calculateWaybillTotals, createDraftAcceptanceWaybill, createSampleDentalWaybill,
+	createWaybillItem, exportWaybillToCsv, formatRubCurrency, generateTorg12Html,
+	kopecksToRubles, reconcileOverdraftOnReceipt, rublesToKopecks,
+	sortWaybillItemsByFefo, validateWaybillDraft,
 } from "./acceptanceWaybillsEngine.js";
 import "./acceptanceWaybills.css";
 
@@ -69,6 +48,7 @@ export interface AcceptanceWaybillsModalProps {
 		readonly unitCostRub?: string | undefined;
 		readonly unit?: string | undefined;
 	}[] | undefined;
+	readonly getHeaders?: ((extra?: Record<string, string>) => Record<string, string>) | undefined;
 }
 
 export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = ({
@@ -78,6 +58,7 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 	initialWaybill,
 	onWaybillPosted,
 	inventoryItems = [],
+	getHeaders,
 }) => {
 	// Состояние формы накладной
 	const [waybill, setWaybill] = useState<AcceptanceWaybillDocument>(() =>
@@ -316,9 +297,12 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 		try {
 			// Вызов API эндпоинта если передан organizationId
 			if (organizationId) {
+				const requestHeaders = getHeaders
+					? getHeaders({ "Content-Type": "application/json" })
+					: getDenteAuthHeaders({ "Content-Type": "application/json" });
 				const response = await fetch(`/api/inventory/${organizationId}/acceptance-waybill`, {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
+					headers: requestHeaders,
 					body: JSON.stringify({
 						supplierName: waybill.supplier.name,
 						supplierInn: waybill.supplier.inn,
@@ -725,12 +709,11 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 							type="button"
 							className="acceptance-btn-secondary"
 							onClick={handlePrintTorg12}
-							title="Печать приходной накладной (форма ТОРГ-12)"
+							title="Печать приходной накладной"
 							data-testid="btn-print-torg12"
 						>
 							<Printer size={15} />
 							<span>Печать накладной</span>
-							<span className="text-[10px] opacity-60 ml-1 font-mono">ТОРГ-12</span>
 						</button>
 
 						<button

@@ -449,7 +449,7 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 								title="Быстро утилизировать пустую карпулу анестетика"
 								data-testid="mobile-btn-quick-carpules"
 							>
-								<Syringe size={15} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
+								<Syringe size={15} className="text-[var(--primary)]" aria-hidden="true" />
 								<span>{isWritingOffCarpules ? "..." : "Карпула"}</span>
 							</button>
 						)}
@@ -675,7 +675,7 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 						type="button"
 						className="mobile-inventory-secondary-btn"
 						onClick={onOpenInboundInvoice}
-						title="Накладные ТОРГ-12 / УПД"
+						title="Приходные накладные поставщиков"
 						aria-label="Открыть накладные"
 						data-testid="mobile-btn-waybills"
 					>
