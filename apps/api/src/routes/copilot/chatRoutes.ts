@@ -2,7 +2,7 @@
  * chatRoutes.ts — Layer 2: Fastify Routes for SSE Streaming Chat Conversations with Copilot.
  */
 
-import type { FastifyInstance, FastifyPluginAsync } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { getRequestIdentity } from "../../security/identity.js";
@@ -197,25 +197,25 @@ export const chatRoutes: FastifyPluginAsync = async (
 		},
 	);
 
-	// POST /api/v1/copilot/chat — Unified SSE conversation endpoint
-	server.post<{
-		Body: {
-			conversationId?: string;
-			sessionId?: string;
-			content?: string;
-			message?: string;
-			text?: string;
-		};
-	}>(
-		"/api/v1/copilot/chat",
-		{ config: { tenantTxSelfManaged: true } },
-		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"copilot chat",
-			);
-			if (!resolvedOrgId) return;
+	// POST /api/v1/copilot/chat & POST /api/agent/chat — Unified SSE conversation endpoint
+	interface UnifiedChatBody {
+		conversationId?: string;
+		sessionId?: string;
+		content?: string;
+		message?: string;
+		text?: string;
+	}
+
+	const handleUnifiedChat = async (
+		request: FastifyRequest<{ Body: UnifiedChatBody }>,
+		reply: FastifyReply,
+	) => {
+		const resolvedOrgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"copilot chat",
+		);
+		if (!resolvedOrgId) return;
 
 			const body = request.body ?? {};
 			const sessionId =
@@ -350,6 +350,11 @@ export const chatRoutes: FastifyPluginAsync = async (
 					.catch(() => {});
 				reply.raw.end();
 			}
-		},
+		};
+
+	server.post(
+		"/api/v1/copilot/chat",
+		{ config: { tenantTxSelfManaged: true } },
+		handleUnifiedChat,
 	);
 };

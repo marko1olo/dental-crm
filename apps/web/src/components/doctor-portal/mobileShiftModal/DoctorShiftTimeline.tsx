@@ -6,6 +6,7 @@ import {
 	ChevronUp,
 	Clock,
 	FileBadge,
+	Printer,
 	ShieldCheck,
 	Smartphone,
 	Zap,
@@ -30,6 +31,7 @@ export const DoctorShiftTimeline: React.FC<DoctorShiftTimelineProps> = ({
 	onSessionPepSigning,
 	onInitiateSingleSmsSigning,
 	onEmergencyVisit,
+	onPrintInsert,
 }) => {
 	return (
 		<>
@@ -77,6 +79,14 @@ export const DoctorShiftTimeline: React.FC<DoctorShiftTimelineProps> = ({
 						Нужна подпись ({unsignedAppointmentIds.length})
 					</button>
 				)}
+				<button
+					type="button"
+					onClick={() => setActiveTab("wallet")}
+					className={`doctor-pwa-tab-btn ${activeTab === "wallet" ? "active" : ""}`}
+					data-testid="tab-wallet"
+				>
+					💼 Сделка и ЗТЛ
+				</button>
 			</div>
 
 			{/* Chronological Appointments Feed */}
@@ -272,6 +282,19 @@ export const DoctorShiftTimeline: React.FC<DoctorShiftTimelineProps> = ({
 												<span>Через СМС</span>
 											</button>
 										</div>
+									)}
+
+									{onPrintInsert && (
+										<button
+											type="button"
+											onClick={() => onPrintInsert(apt)}
+											className="doctor-pwa-action-btn secondary text-xs px-2.5"
+											data-testid={`btn-print-insert-${apt.id}`}
+											title="Распечатать вкладыш в медицинскую карту"
+										>
+											<Printer size={13} />
+											<span>Вкладыш в карту</span>
+										</button>
 									)}
 
 									<button

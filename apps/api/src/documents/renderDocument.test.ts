@@ -511,6 +511,22 @@ describe("Бланки договора и ИДС с 0 ₽ и без врача 
 			true,
 		);
 		assert.strictEqual(
+			isReceptionistAllowedPrimaryDoc("treatment_cost_estimate", "receptionist"),
+			true,
+		);
+		assert.strictEqual(
+			isReceptionistAllowedPrimaryDoc("payment_receipt", "receptionist"),
+			true,
+		);
+		assert.strictEqual(
+			isReceptionistAllowedPrimaryDoc("tax_deduction_certificate", "receptionist"),
+			true,
+		);
+		assert.strictEqual(
+			isReceptionistAllowedPrimaryDoc("medical_document_release_receipt", "receptionist"),
+			true,
+		);
+		assert.strictEqual(
 			isReceptionistAllowedPrimaryDoc("dental_medical_card_043u", "receptionist"),
 			false,
 		);

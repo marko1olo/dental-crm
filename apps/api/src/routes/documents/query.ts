@@ -62,11 +62,19 @@ export function isReceptionistAllowedPrimaryDoc(
 		kind === "post_visit_recommendations" ||
 		kind === "medical_intervention_refusal" ||
 		kind === "tax_deduction_certificate" ||
+		kind === "legacy_tax_deduction_certificate" ||
+		kind === "tax_deduction_application" ||
 		kind === "personal_data_processing_consent" ||
 		kind === "photo_video_consent" ||
 		kind === "warranty_service_memo" ||
 		kind === "minor_legal_representative_consent" ||
-		kind === "visit_attendance_certificate";
+		kind === "visit_attendance_certificate" ||
+		kind === "treatment_cost_estimate" ||
+		kind === "payment_invoice" ||
+		kind === "payment_receipt" ||
+		kind === "installment_payment_schedule" ||
+		kind === "medical_record_copy_request" ||
+		kind === "medical_document_release_receipt";
 	if (!isAllowedFrontDeskDoc) return false;
 	if (!role) return true;
 	const normalizedRole = role.trim().toLowerCase();

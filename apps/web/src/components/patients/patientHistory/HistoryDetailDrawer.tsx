@@ -297,7 +297,7 @@ export const HistoryDetailDrawer: React.FC<HistoryDetailDrawerProps> = React.mem
 							title="Сформировать медицинскую выписку из карты"
 						>
 							<Printer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-							<span>Выписка 043/у</span>
+							<span>Выписка из карты</span>
 						</button>
 
 						<button
