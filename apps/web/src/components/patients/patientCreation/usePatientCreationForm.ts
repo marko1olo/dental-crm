@@ -99,6 +99,12 @@ export function usePatientCreationForm({
 			: DEFAULT_ADVERTISING_SOURCE,
 	);
 
+	const [duplicateConflict, setDuplicateConflict] = useState<{
+		message: string;
+		existingPatientId?: string;
+		isNameOnlyDuplicate?: boolean;
+	} | null>(null);
+
 	const potentialDuplicates: PotentialDuplicateItem[] = useMemo(() => {
 		return findPotentialDuplicates(patients, {
 			fullName: newPatientName,
@@ -107,6 +113,10 @@ export function usePatientCreationForm({
 			limit: 3,
 		});
 	}, [patients, newPatientName, newPatientPhone]);
+
+	useEffect(() => {
+		setDuplicateConflict(null);
+	}, [newPatientName, newPatientPhone, isOpen]);
 
 	const [showDocFields, setShowDocFields] = useState(false);
 	const [isEmergencyOrPrimary, setIsEmergencyOrPrimary] = useState(true);
@@ -257,7 +267,7 @@ export function usePatientCreationForm({
 		showToast(TOAST_BLANK_CONTRACT_PRINTED, "info", 4000);
 	};
 
-	const handleCreate = async () => {
+	const handleCreate = async (options?: { allowDuplicate?: boolean }) => {
 		if (isPatientCreating) return;
 		const inputElem =
 			typeof document !== "undefined"
@@ -323,8 +333,9 @@ export function usePatientCreationForm({
 				parentPhone,
 				isSomaticNorm,
 			});
-			const created = await createPatient();
+			const created = await createPatient(options);
 			if (created === null) return;
+			setDuplicateConflict(null);
 			onClose();
 			if (validationResult.missingRequiredLabels.length > 0) {
 				showToast(
@@ -333,12 +344,31 @@ export function usePatientCreationForm({
 					4000,
 				);
 			}
-		} catch {
-			// Managed by store/appLogic
+		} catch (err: any) {
+			if (err?.status === 409 || err?.duplicateData) {
+				const dup = err.duplicateData;
+				setDuplicateConflict({
+					message: err.message || "Обнаружена похожая карта пациента в картотеке.",
+					existingPatientId: dup?.existingPatientId || dup?.existingPatient?.id,
+					isNameOnlyDuplicate:
+						dup?.error === "PatientNameDuplicateError" ||
+						Boolean(dup?.isNameOnlyDuplicate),
+				});
+				showToast(
+					err.message || "Найден однофамилец или совпадение карты",
+					"warning",
+					5000,
+				);
+				return;
+			}
 		}
 	};
 
-	const handleCreateAndBook = async () => {
+	const handleCreateAsNewDuplicate = async () => {
+		await handleCreate({ allowDuplicate: true });
+	};
+
+	const handleCreateAndBook = async (options?: { allowDuplicate?: boolean }) => {
 		if (isPatientCreating) return;
 		let effectiveName = newPatientName.trim();
 		if (!effectiveName) {
@@ -362,8 +392,9 @@ export function usePatientCreationForm({
 				parentPhone,
 				isSomaticNorm,
 			});
-			const created = await createPatient();
+			const created = await createPatient(options);
 			if (created === null) return;
+			setDuplicateConflict(null);
 			onClose();
 
 			const targetId =
@@ -393,12 +424,27 @@ export function usePatientCreationForm({
 			});
 			useAppStore.getState().setCurrentView("schedule");
 			showToast(TOAST_PATIENT_CREATED_SCHEDULE, "success");
-		} catch {
-			// Managed by store/appLogic
+		} catch (err: any) {
+			if (err?.status === 409 || err?.duplicateData) {
+				const dup = err.duplicateData;
+				setDuplicateConflict({
+					message: err.message || "Обнаружена похожая карта пациента в картотеке.",
+					existingPatientId: dup?.existingPatientId || dup?.existingPatient?.id,
+					isNameOnlyDuplicate:
+						dup?.error === "PatientNameDuplicateError" ||
+						Boolean(dup?.isNameOnlyDuplicate),
+				});
+				showToast(
+					err.message || "Найден однофамилец или совпадение карты",
+					"warning",
+					5000,
+				);
+				return;
+			}
 		}
 	};
 
-	const handleCreateAndOpenVisit = async () => {
+	const handleCreateAndOpenVisit = async (options?: { allowDuplicate?: boolean }) => {
 		if (isPatientCreating) return;
 		let effectiveName = newPatientName.trim();
 		if (!effectiveName) {
@@ -422,8 +468,9 @@ export function usePatientCreationForm({
 				parentPhone,
 				isSomaticNorm,
 			});
-			const created = await createPatient();
+			const created = await createPatient(options);
 			if (created === null) return;
+			setDuplicateConflict(null);
 			onClose();
 
 			const targetId =
@@ -434,8 +481,23 @@ export function usePatientCreationForm({
 			}
 			useAppStore.getState().setCurrentView("visit");
 			showToast(TOAST_PATIENT_CREATED_VISIT, "success");
-		} catch {
-			// Managed by store/appLogic
+		} catch (err: any) {
+			if (err?.status === 409 || err?.duplicateData) {
+				const dup = err.duplicateData;
+				setDuplicateConflict({
+					message: err.message || "Обнаружена похожая карта пациента в картотеке.",
+					existingPatientId: dup?.existingPatientId || dup?.existingPatient?.id,
+					isNameOnlyDuplicate:
+						dup?.error === "PatientNameDuplicateError" ||
+						Boolean(dup?.isNameOnlyDuplicate),
+				});
+				showToast(
+					err.message || "Найден однофамилец или совпадение карты",
+					"warning",
+					5000,
+				);
+				return;
+			}
 		}
 	};
 
@@ -498,6 +560,9 @@ export function usePatientCreationForm({
 		setParentPhone,
 		nameInputRef,
 		potentialDuplicates,
+		duplicateConflict,
+		setDuplicateConflict,
+		handleCreateAsNewDuplicate,
 		validationResult,
 		patientCreateReady,
 		patientCreateGuidance,

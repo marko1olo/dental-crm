@@ -21,7 +21,7 @@ import type {
 export interface PatientCreationModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly createPatient: () => void | Promise<void | Patient | null>;
+	readonly createPatient: (options?: { allowDuplicate?: boolean }) => void | Promise<void | Patient | null>;
 	readonly updatePatientCoreDraft?: (
 		field: keyof PatientCoreDraft,
 		value: string,
@@ -79,6 +79,8 @@ export interface PatientContactsRepresentativeStepProps {
 		field: keyof PatientCoreDraft,
 		value: string,
 	) => void) | undefined;
+	readonly duplicateConflict?: { message: string; existingPatientId?: string; isNameOnlyDuplicate?: boolean } | null;
+	readonly onCreateAsNewDuplicate?: () => void;
 }
 
 export interface PatientMedicalFlagsStepProps {
@@ -93,7 +95,7 @@ export interface PatientMedicalFlagsStepProps {
 export interface UsePatientCreationFormOptions {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly createPatient: () => void | Promise<void | Patient | null>;
+	readonly createPatient: (options?: { allowDuplicate?: boolean }) => void | Promise<void | Patient | null>;
 	readonly updatePatientCoreDraft?: ((
 		field: keyof PatientCoreDraft,
 		value: string,
@@ -124,14 +126,17 @@ export interface UsePatientCreationFormResult {
 	readonly setParentPhone: React.Dispatch<React.SetStateAction<string>>;
 	readonly nameInputRef: React.RefObject<HTMLInputElement | null>;
 	readonly potentialDuplicates: PotentialDuplicateItem[];
+	readonly duplicateConflict: { message: string; existingPatientId?: string; isNameOnlyDuplicate?: boolean } | null;
+	readonly setDuplicateConflict: React.Dispatch<React.SetStateAction<{ message: string; existingPatientId?: string; isNameOnlyDuplicate?: boolean } | null>>;
 	readonly validationResult: ValidationResult;
 	readonly patientCreateReady: boolean;
 	readonly patientCreateGuidance: string | null;
 	readonly quickActionReady: boolean;
 	readonly handlePrintBlankContract: () => void;
-	readonly handleCreate: () => Promise<void>;
-	readonly handleCreateAndBook: () => Promise<void>;
-	readonly handleCreateAndOpenVisit: () => Promise<void>;
+	readonly handleCreate: (options?: { allowDuplicate?: boolean }) => Promise<void>;
+	readonly handleCreateAndBook: (options?: { allowDuplicate?: boolean }) => Promise<void>;
+	readonly handleCreateAndOpenVisit: (options?: { allowDuplicate?: boolean }) => Promise<void>;
+	readonly handleCreateAsNewDuplicate: () => Promise<void>;
 	readonly handleQuickCreateKeyDown: (
 		event: React.KeyboardEvent<HTMLInputElement>,
 	) => void;

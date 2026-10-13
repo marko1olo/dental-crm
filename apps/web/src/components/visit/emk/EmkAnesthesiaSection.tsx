@@ -1,5 +1,6 @@
 import {
 	AlertTriangle,
+	CheckCircle2,
 	ChevronDown,
 	ChevronUp,
 	Minus,
@@ -41,7 +42,7 @@ export function EmkAnesthesiaSection({
 		[],
 	);
 
-	const [selectedAnesDrugKey, setSelectedAnesDrugKey] = React.useState<string>(
+	const [selectedAnesDrugKey, setSelectedAnesDrugKey] = React.useState<string | null>(
 		() => resolveDrugKeyFromPreference(favoriteAnes),
 	);
 	const [carpuleCount, setCarpuleCount] = React.useState<number>(1);
@@ -56,7 +57,7 @@ export function EmkAnesthesiaSection({
 
 	const anesthesiaSafety = React.useMemo(() => {
 		return calculateAnesthesiaCarpulesSafety({
-			drugKey: selectedAnesDrugKey,
+			drugKey: selectedAnesDrugKey || undefined,
 			carpulesCount: carpuleCount,
 			patientWeightKg,
 			patientAgeYears: patientAge ?? null,
@@ -65,7 +66,7 @@ export function EmkAnesthesiaSection({
 
 	const anamnesis = visitNoteForm?.anamnesis || "";
 	const anesthesiaRisk = React.useMemo(() => {
-		return evaluateAnesthesiaRisk(anamnesis, selectedAnesDrugKey);
+		return evaluateAnesthesiaRisk(anamnesis, selectedAnesDrugKey || undefined);
 	}, [anamnesis, selectedAnesDrugKey]);
 
 	const [showDetailedMrd, setShowDetailedMrd] = React.useState<boolean>(false);
@@ -221,6 +222,30 @@ export function EmkAnesthesiaSection({
 								<span>Выбор врача</span>
 							</span>
 						)}
+					</button>
+
+					{/* 4. Без анестезии (0 ₽, фиксация лечения без анестезии) */}
+					<button
+						type="button"
+						onClick={() => {
+							setSelectedAnesDrugKey("");
+							const currentPlan = visitNoteForm?.treatmentPlan || "";
+							const noAnesNote = "Анестезия: не применялась (лечение без анестезии по согласию пациента).";
+							if (updateVisitNoteField) {
+								updateVisitNoteField(
+									"treatmentPlan",
+									appendClinicalText(currentPlan, noAnesNote, "\n\n"),
+								);
+							}
+							showToast("Зафиксировано: лечение без анестезии", "info", 2500);
+						}}
+						style={{ padding: "6px 12px", gap: "6px" }}
+						className="dente-filter-chip min-h-[34px] h-8.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--line-strong)] transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0"
+						data-testid="btn-anes-none"
+						title="Лечение без анестезии (0 ₽, без внесения услуги в чек)"
+					>
+						<CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
+						<span>Без анестезии</span>
 					</button>
 
 					{/* Кнопка раскрытия детального фармакологического расчета */}

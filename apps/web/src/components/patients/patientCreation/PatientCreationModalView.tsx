@@ -48,6 +48,8 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 		setParentPhone,
 		nameInputRef,
 		potentialDuplicates,
+		duplicateConflict,
+		handleCreateAsNewDuplicate,
 		validationResult,
 		patientCreateGuidance,
 		handlePrintBlankContract,
@@ -161,6 +163,8 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 						fieldRequirements={fieldRequirements}
 						isAnonymous={Boolean(patientAdministrativeProfileDraft.isAnonymous)}
 						updatePatientCoreDraft={updatePatientCoreDraft}
+						duplicateConflict={duplicateConflict}
+						onCreateAsNewDuplicate={handleCreateAsNewDuplicate}
 					/>
 
 					{/* Passport, SNILS and Insurance Step */}
@@ -238,7 +242,7 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 						<button
 							type="button"
 							className="secondary-button quick-create-book-action"
-							onClick={handleCreateAndBook}
+							onClick={() => void handleCreateAndBook()}
 							disabled={isPatientCreating}
 							title="Создать карту и сразу открыть расписание с выбранным пациентом"
 							data-testid="patient-creation-submit-and-book-btn"
@@ -255,7 +259,7 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 						<button
 							type="button"
 							className="secondary-button quick-create-visit-action"
-							onClick={handleCreateAndOpenVisit}
+							onClick={() => void handleCreateAndOpenVisit()}
 							disabled={isPatientCreating}
 							title="Создать карту и сразу открыть приём (для дежурного врача)"
 							data-testid="patient-creation-submit-and-visit-btn"
@@ -269,10 +273,28 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 							<Stethoscope size={15} aria-hidden="true" />
 							<span>Создать и начать приём</span>
 						</button>
+						{duplicateConflict ? (
+							<button
+								type="button"
+								className="secondary-button !bg-amber-500/15 !text-amber-800 dark:!text-amber-200 !border-amber-500/40 hover:!bg-amber-500/25"
+								onClick={() => void handleCreateAsNewDuplicate()}
+								disabled={isPatientCreating}
+								data-testid="footer-allow-duplicate-create-btn"
+								title="Подтвердить создание новой карты для тёзки / однофамильца"
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "6px",
+									minHeight: "36px",
+								}}
+							>
+								<span>Создать как однофамильца</span>
+							</button>
+						) : null}
 						<button
 							type="button"
 							className="primary-button quick-create-action"
-							onClick={handleCreate}
+							onClick={() => void handleCreate()}
 							disabled={isPatientCreating}
 							aria-busy={isPatientCreating || undefined}
 							aria-describedby={
