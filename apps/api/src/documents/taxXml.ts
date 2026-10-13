@@ -292,8 +292,8 @@ export function buildKnd1151156Xml(
 	);
 
 	const clinicKpp = cleanDigits(clinicProfileAny.kpp) || undefined;
-	const clinicOgrn = cleanDigits(clinicProfileAny.ogrn);
-	if (!clinicOgrn || (clinicOgrn.length !== 13 && clinicOgrn.length !== 15)) {
+	const clinicOgrn = cleanDigits(clinicProfileAny.ogrn) || undefined;
+	if (clinicOgrn && clinicOgrn.length !== 13 && clinicOgrn.length !== 15) {
 		return {
 			ok: false,
 			statusCode: 409,
@@ -334,7 +334,7 @@ export function buildKnd1151156Xml(
 		clinic: {
 			inn: clinicInn,
 			kpp: clinicKpp,
-			ogrn: clinicOgrn,
+			ogrn: clinicOgrn || "",
 			name: clinicLegalName,
 			isIndividualEntrepreneur: clinicInn.length === 12,
 			directorName: clinicDirector,

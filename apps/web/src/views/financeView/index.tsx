@@ -161,10 +161,10 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				services={s.dashboard?.serviceCatalog ?? []}
 			/>
 
-			<div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+			<div className="mt-6">
 				<FamilyWalletPanel
-					patientId={s.documentPatient?.id ?? ""}
-					remainingDebtRub={s.billingSummary?.totalDueRub ?? 0}
+					patientId={s.effectivePatient?.id || s.documentPatient?.id || ""}
+					remainingDebtRub={s.effectiveBillingSummary?.totalDueRub ?? s.billingSummary?.totalDueRub ?? 0}
 					onPaymentSuccess={s.reloadAfterFamilyPayment}
 				/>
 			</div>
@@ -285,7 +285,13 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				<PaymentModal
 					isOpen={s.isSplitPaymentOpen}
 					onClose={() => s.setIsSplitPaymentOpen(false)}
-					amountRub={s.effectiveBillingSummary?.totalDueRub ?? 0}
+					amountRub={
+						(s.effectiveBillingSummary?.totalDueRub ?? 0) > 0
+							? s.effectiveBillingSummary!.totalDueRub
+							: Number(s.paymentAmount) > 0
+							? Number(s.paymentAmount)
+							: 4500
+					}
 					patientId={s.effectivePatient?.id}
 					patientName={s.effectivePatient?.fullName}
 					patientPhone={s.effectivePatient?.phone ?? undefined}

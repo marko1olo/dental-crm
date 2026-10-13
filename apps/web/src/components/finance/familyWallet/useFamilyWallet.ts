@@ -74,9 +74,7 @@ export function useFamilyWallet({
 	const loadFamily = useCallback(async () => {
 		const generation = requestGenerationRef.current + 1;
 		requestGenerationRef.current = generation;
-		const isStale = () =>
-			requestGenerationRef.current !== generation ||
-			selectedPatientIdRef.current !== patientId;
+		const isStale = () => requestGenerationRef.current !== generation || selectedPatientIdRef.current !== patientId;
 		setIsLoading(true);
 		try {
 			const res = await fetch(`/api/finance/family/patient/${patientId}`, {
@@ -89,6 +87,11 @@ export function useFamilyWallet({
 				setFamily(data);
 				if (data.ledger && Array.isArray(data.ledger)) {
 					setLedgerEntries(data.ledger);
+				} else if (data.id) {
+					void fetch(`/api/finance/family/${data.id}/history`, { headers: denteAdminSecretRequestHeaders() })
+						.then((hRes) => (hRes.ok ? hRes.json() : []))
+						.then((rows) => { if (Array.isArray(rows) && !isStale()) setLedgerEntries(rows); })
+						.catch(() => {});
 				}
 				setLoadFailure(null);
 				return;
@@ -131,13 +134,10 @@ export function useFamilyWallet({
 
 	// Sync balance with WS
 	const wsUrl = (() => {
-		const wsHost = (
-			import.meta as unknown as { env?: Record<string, string> }
-		).env?.VITE_WS_URL;
+		const wsHost = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_WS_URL;
 		if (wsHost) return wsHost;
 		if (typeof window !== "undefined" && window.location) {
-			const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-			return `${protocol}//${window.location.host}/api/ws/schedule`;
+			return `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/api/ws/schedule`;
 		}
 		return "ws://127.0.0.1:4100/api/ws/schedule";
 	})();

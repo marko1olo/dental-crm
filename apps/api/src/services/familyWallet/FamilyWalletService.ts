@@ -224,6 +224,7 @@ export class FamilyWalletService {
 					method,
 					status: "planned",
 					clientMutationId: clientMutationId.trim(),
+					note: params.notes?.trim() || `Пополнение семейного депозита (${method})`,
 				})
 				.returning();
 
@@ -724,7 +725,7 @@ export class FamilyWalletService {
 				}
 			}
 
-			// 6. Record payment record with status "refund"
+			// 6. Record payment record with status "refunded"
 			const [payment] = await tx
 				.insert(payments)
 				.values({
@@ -734,9 +735,9 @@ export class FamilyWalletService {
 					method,
 					status: "refunded",
 					clientMutationId: clientMutationId.trim(),
+					note: reasonText?.trim() ? `Возврат с семейного депозита: ${reasonText.trim()}` : "Возврат с семейного депозита",
 				})
 				.returning();
-
 			if (!payment) {
 				throw new FamilyWalletError("Не удалось создать запись возврата", 500, "REFUND_PAYMENT_CREATION_FAILED");
 			}
@@ -744,11 +745,7 @@ export class FamilyWalletService {
 			// 7. Broadcast WebSocket events
 			wsBroker.broadcastToOrganization(organizationId, {
 				type: "FAMILY_BALANCE_UPDATED",
-				payload: {
-					organizationId,
-					familyGroupId,
-					balance: newBalanceStr,
-				},
+				payload: { organizationId, familyGroupId, balance: newBalanceStr },
 			});
 			wsBroker.broadcastToOrganization(organizationId, {
 				type: "PAYMENT_CREATED",

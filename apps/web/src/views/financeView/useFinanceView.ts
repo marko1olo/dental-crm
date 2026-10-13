@@ -119,6 +119,9 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 				if (raw) {
 					const parsed = JSON.parse(raw);
 					setPendingCheckout(parsed);
+					if (parsed?.autoOpen) {
+						setIsSplitPaymentOpen(true);
+					}
 				}
 			} catch {}
 		};
@@ -134,9 +137,10 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 		if (pendingCheckout?.totalDueRub && pendingCheckout.totalDueRub > 0) {
 			return {
 				totalDueRub: pendingCheckout.totalDueRub,
-				totalPlannedRub: pendingCheckout.totalDueRub,
-				totalPaidRub: 0,
+				totalPlannedRub: pendingCheckout.totalDueRub + (billingSummary?.totalPaidRub ?? 0),
+				totalPaidRub: billingSummary?.totalPaidRub ?? 0,
 				totalInvoicedRub: pendingCheckout.totalDueRub,
+				taxDeductionEligibleRub: billingSummary?.taxDeductionEligibleRub || pendingCheckout.totalDueRub,
 				openTreatmentItems: (pendingCheckout.services || []).length || 1,
 				unpaidDocuments: 1,
 				unpaidInvoicesCount: 1,
@@ -144,15 +148,7 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 		}
 		if (billingSummary && billingSummary.totalDueRub > 0) return billingSummary;
 		if (billingSummary) return billingSummary;
-		return {
-			totalDueRub: 1500,
-			totalPlannedRub: 1500,
-			totalPaidRub: 0,
-			totalInvoicedRub: 1500,
-			openTreatmentItems: 1,
-			unpaidDocuments: 1,
-			unpaidInvoicesCount: 1,
-		};
+		return null;
 	}, [billingSummary, pendingCheckout]);
 
 	const remainingDebtProp = effectiveBillingSummary

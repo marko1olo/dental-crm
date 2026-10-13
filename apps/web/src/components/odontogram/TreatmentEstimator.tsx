@@ -19,6 +19,7 @@ import {
 	actionFailureToast,
 	requestFailureCause,
 } from "../../lib/panelStateText";
+import { pushDestructiveActionWithRollback } from "../../services/undo/globalUndoRollbackStack.js";
 import { logger } from "../../utils/logger";
 import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
 import { showRollbackToast, showToast } from "../GlobalToast.js";
@@ -80,10 +81,9 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const patient = dashboard?.patients?.find((p: any) => p.id === patientId);
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const insuranceContractId =
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		(patient as any)?.insuranceContractId ||
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		(patient?.administrativeProfile as any)?.insuranceContractId;
 
 	const [plannerTab, setPlannerTab] = useState<
@@ -501,12 +501,15 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		const toothBadge = removed.toothNumber
 			? ` [зуб ${removed.toothNumber}]`
 			: "";
-		showRollbackToast(
-			`Услуга «${removed.name}»${toothBadge} удалена из сметы`,
-			() => {
+		pushDestructiveActionWithRollback({
+			entityType: "estimator_item",
+			description: `Услуга «${removed.name}»${toothBadge} удалена из сметы`,
+			item: removed,
+			index: idx,
+			onRollback: (item, index) => {
 				setItems((prev) => {
 					const next = [...prev];
-					next.splice(idx, 0, removed);
+					next.splice(index, 0, item as PlanItem);
 					return next;
 				});
 				if (keys.length > 0) {
@@ -517,8 +520,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					});
 				}
 			},
-			5000,
-		);
+		});
 	};
 
 	const setPhase = (idx: number, phase: number) => {
@@ -527,28 +529,78 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		setItems(n);
 	};
 
+	const handlePriceChange = (idx: number, newPrice: number | null) => {
+		setItems((prev) => {
+			const next = [...prev];
+			const current = next[idx];
+			if (!current) return prev;
+			next[idx] = {
+				...current,
+				price: newPrice,
+				issue: newPrice !== null ? null : (current.issue ?? null),
+			};
+			return next;
+		});
+		if (newPrice === 0) {
+			showToast("Установлена гарантийная цена 0 ₽ (Мандат 8e)", "info", 2500);
+		} else if (newPrice !== null) {
+			showToast(`Установлена цена врача: ${newPrice} ₽`, "success", 2500);
+		}
+	};
+
 	const phases = [1, 2, 3];
 
-	const unpricedWarning = saveBlock ? "Внимание: в смете есть позиции без утвержденного прайса — сохраняются с пометкой «Цена уточняется»" : null;
+	const unpricedWarning = saveBlock
+		? "Внимание: в смете есть позиции без утвержденного прайса — сохраняются с пометкой «Цена уточняется»"
+		: null;
 
 	return (
-		<div className="flex flex-col h-full bg-zinc-50/40 dark:bg-zinc-950/40 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-xl overflow-hidden text-slate-900 dark:text-zinc-100" data-testid="treatment-estimator-container">
+		<div
+			className="flex flex-col h-full bg-zinc-50/40 dark:bg-zinc-950/40 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-xl overflow-hidden text-slate-900 dark:text-zinc-100"
+			data-testid="treatment-estimator-container"
+		>
 			{/* Hidden X icon reference for static icon suite assertion */}
 			<X size={16} className="hidden" aria-hidden="true" />
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
-				<div className="flex flex-wrap items-center gap-3 min-w-0">
-					<h2 className="flex items-center gap-2 text-base font-bold truncate whitespace-nowrap">
+			<div
+				className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-[var(--line)] bg-[var(--paper-soft)]"
+				style={{ padding: "12px 16px", gap: "12px" }}
+			>
+				<div
+					className="flex flex-wrap items-center gap-3 min-w-0"
+					style={{ gap: "12px" }}
+				>
+					<h2
+						className="flex items-center gap-2 text-base font-bold truncate whitespace-nowrap"
+						style={{ gap: "8px" }}
+					>
 						<FileText
 							size={16}
-							className="text-indigo-500 dark:text-indigo-400 shrink-0"
+							className="text-teal-600 dark:text-teal-400 shrink-0"
 						/>
 						<span className="truncate">План лечения</span>
 					</h2>
-					<div className="flex items-center gap-1 bg-zinc-200/60 dark:bg-zinc-800/60 p-0.5 rounded-lg text-xs font-bold flex-wrap">
+					<div
+						className="flex items-center gap-1 bg-[var(--paper)] border border-[var(--line)] p-1 rounded-lg text-xs font-bold flex-wrap"
+						style={{ padding: "3px", gap: "4px" }}
+					>
 						<button
 							type="button"
 							onClick={() => setPlannerTab("comprehensive_804n")}
-							className={`px-3 py-1.5 min-h-[44px] sm:min-h-[32px] sm:min-h-[30px] sm:h-[30px] inline-flex items-center justify-center rounded-md transition-all cursor-pointer touch-manipulation ${
+							style={
+								plannerTab === "comprehensive_804n"
+									? {
+											padding: "5px 12px",
+											backgroundColor: "#0d9488",
+											color: "#ffffff",
+											borderRadius: "6px",
+										}
+									: {
+											padding: "5px 12px",
+											color: "var(--muted)",
+											borderRadius: "6px",
+										}
+							}
+							className={`px-3 py-1.5 min-h-[44px] sm:min-h-[30px] sm:h-[30px] inline-flex items-center justify-center rounded-md transition-all cursor-pointer touch-manipulation ${
 								plannerTab === "comprehensive_804n"
 									? "bg-teal-600 text-white shadow-xs font-black"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -560,7 +612,21 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						<button
 							type="button"
 							onClick={() => setPlannerTab("manual_lines")}
-							className={`px-3 py-1.5 min-h-[44px] sm:min-h-[32px] sm:min-h-[30px] sm:h-[30px] inline-flex items-center justify-center rounded-md transition-all cursor-pointer touch-manipulation ${
+							style={
+								plannerTab === "manual_lines"
+									? {
+											padding: "5px 12px",
+											backgroundColor: "#0d9488",
+											color: "#ffffff",
+											borderRadius: "6px",
+										}
+									: {
+											padding: "5px 12px",
+											color: "var(--muted)",
+											borderRadius: "6px",
+										}
+							}
+							className={`px-3 py-1.5 min-h-[44px] sm:min-h-[30px] sm:h-[30px] inline-flex items-center justify-center rounded-md transition-all cursor-pointer touch-manipulation ${
 								plannerTab === "manual_lines"
 									? "bg-teal-600 text-white shadow-xs font-black"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -570,9 +636,15 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						</button>
 					</div>
 				</div>
-				<div className="flex gap-2 flex-wrap sm:flex-nowrap shrink-0">
+				<div
+					className="flex gap-2 flex-wrap sm:flex-nowrap shrink-0"
+					style={{ gap: "8px" }}
+				>
 					{signatureUrl && (
-						<span className="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-100/50 dark:bg-emerald-500/20 dark:text-emerald-400 rounded-full border border-emerald-200/50 dark:border-emerald-500/30 flex items-center">
+						<span
+							className="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-100/50 dark:bg-emerald-500/20 dark:text-emerald-400 rounded-full border border-emerald-200/50 dark:border-emerald-500/30 flex items-center"
+							style={{ padding: "4px 10px" }}
+						>
 							ПОДПИСАНО
 						</span>
 					)}
@@ -582,21 +654,26 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 							setSignatureUrl("paper_confirmed_" + Date.now());
 							showToast("План лечения подтвержден на бумаге", "success");
 						}}
-						className="flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:h-[34px] text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors cursor-pointer"
+						style={{ padding: "6px 12px", gap: "6px" }}
+						className="dente-filter-chip flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-[34px] text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-lg hover:bg-emerald-500/20 transition-colors cursor-pointer"
 						title="Пациент подписал распечатанную смету — подтвердить"
 						data-testid="estimator-paper-confirm-btn"
 					>
-						<ShieldCheck size={14} className="text-emerald-600" />
+						<ShieldCheck
+							size={14}
+							className="text-emerald-600 dark:text-emerald-400 shrink-0"
+						/>
 						<span>На бумаге</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => window.print()}
-						className="flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:h-[34px] text-xs font-bold text-slate-700 dark:text-slate-300 bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer"
+						style={{ padding: "6px 12px", gap: "6px" }}
+						className="dente-filter-chip flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-[34px] text-xs font-bold text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] rounded-lg hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 						title="Распечатать смету плана лечения для согласования с пациентом"
 						data-testid="estimator-direct-print-btn"
 					>
-						<Printer size={14} />
+						<Printer size={14} className="shrink-0" />
 						<span>Печать сметы</span>
 					</button>
 					<button
@@ -604,10 +681,11 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						onClick={() => setShowSignModal(true)}
 						disabled={planLoad.phase === "loading"}
 						title={unpricedWarning ?? "Подписать план у пациента"}
-						className="flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:h-[34px] text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+						style={{ padding: "6px 12px", gap: "6px" }}
+						className="dente-filter-chip flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-[34px] text-xs font-bold text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] rounded-lg hover:bg-[var(--paper-soft)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation cursor-pointer"
 						data-testid="estimator-open-sign-modal-btn"
 					>
-						<PenTool size={14} />
+						<PenTool size={14} className="shrink-0" />
 						<span>Подписать</span>
 					</button>
 					<button
@@ -615,9 +693,16 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						onClick={savePlan}
 						disabled={isSaving || planLoad.phase === "loading"}
 						title={unpricedWarning ?? "Сохранить план лечения"}
-						className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:h-[34px] text-xs sm:text-sm font-medium text-white bg-indigo-600 border border-indigo-500 rounded-lg shadow-md shadow-indigo-500/20 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+						style={{
+							padding: "6px 14px",
+							gap: "6px",
+							backgroundColor: "#0d9488",
+							color: "#ffffff",
+							borderColor: "#0f766e",
+						}}
+						className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-[34px] text-xs font-bold text-white bg-teal-600 border border-teal-500 rounded-lg shadow-xs hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation cursor-pointer"
 					>
-						<Save size={14} />
+						<Save size={14} className="shrink-0" />
 						<span>{isSaving ? "Сохранение..." : "Сохранить"}</span>
 					</button>
 				</div>
@@ -690,6 +775,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 													collision={itemCollision}
 													onReplaceWithImplant={handleReplaceWithImplant}
 													onRestoreToothStatus={handleRestoreToothStatus}
+													onPriceChange={handlePriceChange}
 												/>
 											);
 										})}
@@ -784,9 +870,9 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				isOpen={showSignModal}
 				onClose={() => setShowSignModal(false)}
 				onConfirmPaper={() => {
-					const paperStamp =
-						"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='60'><rect width='100%' height='100%' fill='%23f0fdf4' stroke='%2316a34a' rx='6'/><text x='120' y='25' text-anchor='middle' font-family='sans-serif' font-size='11' font-weight='bold' fill='%2315803d'>ПОДПИСАНО НА БУМАГЕ</text><text x='120' y='45' text-anchor='middle' font-family='sans-serif' font-size='10' fill='%23166534'>Смета согласована</text></svg>";
-					setSignatureUrl(paperStamp);
+					setSignatureUrl(
+						"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='60'><rect width='100%' height='100%' fill='%23f0fdf4' stroke='%2316a34a' rx='6'/><text x='120' y='25' text-anchor='middle' font-family='sans-serif' font-size='11' font-weight='bold' fill='%2315803d'>ПОДПИСАНО НА БУМАГЕ</text><text x='120' y='45' text-anchor='middle' font-family='sans-serif' font-size='10' fill='%23166534'>Смета согласована</text></svg>",
+					);
 					setShowSignModal(false);
 					showToast("План лечения и смета подтверждены на бумаге", "success");
 				}}

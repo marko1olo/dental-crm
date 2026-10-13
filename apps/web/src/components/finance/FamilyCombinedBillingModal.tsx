@@ -17,6 +17,7 @@ import {
 	X,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	type CombinedFamilyBillingDraft,
 	type CombinedFamilyBillingResult,
@@ -69,32 +70,8 @@ export function FamilyCombinedBillingModal({
 }: FamilyCombinedBillingModalProps) {
 	const initialItems: readonly FamilyMemberBillingItem[] = useMemo(() => {
 		if (propInitialItems && propInitialItems.length > 0) return propInitialItems;
-		return [
-			{
-				id: "fam-seed-1",
-				patientId: initialPayer.payerId || "pat-seed-parent",
-				patientFullName: initialPayer.payerFullName || "Кузнецов Дмитрий Анатольевич",
-				relationship: "self",
-				serviceName: "Профессиональная гигиена полости рта и AirFlow",
-				code804n: "A16.07.051",
-				priceRub: 4500,
-				quantity: 1,
-				taxDeductionCategory: "1",
-			},
-			{
-				id: "fam-seed-2",
-				patientId: "pat-seed-child",
-				patientFullName: "Кузнецова София Дмитриевна",
-				relationship: "child",
-				serviceName: "Лечение кариеса молочного зуба с пломбированием",
-				code804n: "A16.07.002",
-				toothNumber: 54,
-				priceRub: 5500,
-				quantity: 1,
-				taxDeductionCategory: "1",
-			},
-		];
-	}, [propInitialItems, initialPayer.payerId, initialPayer.payerFullName]);
+		return [];
+	}, [propInitialItems]);
 
 	const [activeTab, setActiveTab] = useState<"items" | "payment" | "tax">("items");
 	const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
@@ -188,19 +165,38 @@ export function FamilyCombinedBillingModal({
 		});
 	};
 
-	const handleExecuteFiscalization = () => {
+	const handleExecuteFiscalization = async () => {
 		if (activeItems.length === 0) {
 			showToast("Выберите хотя бы одну позицию для формирования чека", "warning", 3500);
 			return;
 		}
 		setIsFiscalizing(true);
 		try {
+			const targetPatientId = initialPayer.payerId || activeItems[0]?.patientId || "";
+			if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetPatientId) && typeof fetch === "function") {
+				const headers = { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() };
+				const walletOffsetRub = useFamilyWallet ? billingResult.defaultSplit.familyWalletOffsetRub : 0;
+				const remainingRub = billingResult.defaultSplit.remainingDueRub;
+				if (_familyGroupId && walletOffsetRub > 0) {
+					const mutId = `fambill_w_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+					await fetch("/api/finance/family/pay", {
+						method: "POST",
+						headers: { ...headers, "Idempotency-Key": mutId },
+						body: JSON.stringify({ familyGroupId: _familyGroupId, patientId: targetPatientId, payerPatientId: initialPayer.payerId || targetPatientId, amountRub: walletOffsetRub, clientMutationId: mutId }),
+					});
+				}
+				if (remainingRub > 0) {
+					const mutId = `fambill_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+					const method = additionalPaymentMethod === "sbp" ? "online" : additionalPaymentMethod === "card" ? "card" : "cash";
+					await fetch("/api/billing/payments", {
+						method: "POST",
+						headers: { ...headers, "Idempotency-Key": mutId },
+						body: JSON.stringify({ patientId: targetPatientId, amountRub: remainingRub, method, clientMutationId: mutId, payerFullName: initialPayer.payerFullName || undefined, payerInn: initialPayer.payerInn || undefined, note: `Семейный расчет (${familyGroupName})` }),
+					});
+				}
+			}
 			onCheckoutComplete?.(billingResult);
-			showToast(
-				`Семейная оплата на ${billingResult.totalAmountFormattedRu} успешно принята, чек выдан!`,
-				"success",
-				5000,
-			);
+			showToast(`Семейная оплата на ${billingResult.totalAmountFormattedRu} успешно принята, чек выдан!`, "success", 5000);
 			onClose();
 		} catch (e: any) {
 			showToast(`Ошибка фискализации: ${e?.message || e}`, "error");

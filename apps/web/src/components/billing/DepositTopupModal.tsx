@@ -30,6 +30,7 @@ import {
 	Users,
 } from "lucide-react";
 import { showToast } from "../GlobalToast.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import { ReceiptPreview } from "./ReceiptPreview.js";
 import {
 	DEPOSIT_QUICK_PRESETS_RUB,
@@ -49,6 +50,7 @@ export interface DepositTopupModalProps {
 	readonly patientEmail?: string | undefined;
 	readonly currentDepositRub?: number | undefined;
 	readonly isFamilyShared?: boolean | undefined;
+	readonly familyGroupId?: string | undefined;
 	readonly sponsorPatientId?: string | undefined;
 	readonly cashierFullName?: string | undefined;
 	readonly clinicLegalName?: string | undefined;
@@ -64,6 +66,7 @@ export const DepositTopupModal: React.FC<DepositTopupModalProps> = ({
 	patientEmail = "",
 	currentDepositRub = 0,
 	isFamilyShared = false,
+	familyGroupId,
 	sponsorPatientId,
 	cashierFullName = "Администратор / Кассир",
 	clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
@@ -93,7 +96,6 @@ export const DepositTopupModal: React.FC<DepositTopupModalProps> = ({
 		if (isSubmitting || isCompleted || amountRub <= 0) return;
 		setIsSubmitting(true);
 
-		const isElectronicOnly = deliveryMode === "electronic_sms" || deliveryMode === "electronic_email";
 		const payload: DepositTopupPayload = {
 			patientId,
 			patientName,
@@ -113,11 +115,6 @@ export const DepositTopupModal: React.FC<DepositTopupModalProps> = ({
 		};
 
 		try {
-			const token =
-				localStorage.getItem("dente_staff_token") ||
-				localStorage.getItem("dente_clinic_token") ||
-				"";
-
 			const methodMappedForApi =
 				paymentMethod === "card"
 					? "card"
@@ -127,38 +124,60 @@ export const DepositTopupModal: React.FC<DepositTopupModalProps> = ({
 					? "cash"
 					: "bank_transfer";
 
-			const response = await fetch("/api/billing/payments", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: token ? `Bearer ${token}` : "",
-					"Idempotency-Key": clientMutationId,
-				},
-				body: JSON.stringify({
-					patientId,
-					amountRub,
-					method: methodMappedForApi,
-					clientMutationId,
-					payerFullName: patientName,
-					fiscalReceiptNumber: `АВАНС-${Date.now().toString().slice(-6)}`,
-					fiscalReceiptIssuedAt: new Date().toISOString(),
-					note: `Внесение аванса (Тег 1213) на ${formatDisplayCurrency(amountRub)}`,
-				}),
-			});
+			const headers: Record<string, string> = {
+				"Content-Type": "application/json",
+				"Idempotency-Key": clientMutationId,
+				...denteAdminSecretRequestHeaders(),
+			};
+
+			const response =
+				isFamilyWallet && familyGroupId
+					? await fetch("/api/finance/family/topup", {
+							method: "POST",
+							headers,
+							body: JSON.stringify({
+								familyGroupId,
+								patientId: sponsorPatientId || patientId,
+								amountRub,
+								method: methodMappedForApi,
+								clientMutationId,
+								comment: `Пополнение семейного депозита (Тег 1213) на ${formatDisplayCurrency(amountRub)}`,
+							}),
+					  })
+					: await fetch("/api/billing/payments", {
+							method: "POST",
+							headers,
+							body: JSON.stringify({
+								patientId,
+								amountRub,
+								method: methodMappedForApi,
+								clientMutationId,
+								payerFullName: patientName,
+								fiscalReceiptNumber: `АВАНС-${Date.now().toString().slice(-6)}`,
+								fiscalReceiptIssuedAt: new Date().toISOString(),
+								note: `Внесение аванса (Тег 1213, ${isFamilyWallet ? "Семейный депозит" : "Личный депозит"}) на ${formatDisplayCurrency(amountRub)}`,
+							}),
+					  });
 
 			if (!response.ok) {
 				const errorData = await response.json().catch(() => null);
-				console.warn("[DepositTopupModal] API returned error, saving locally:", errorData);
+				const errMessage =
+					errorData?.message ||
+					errorData?.error ||
+					`Ошибка сервера (${response.status})`;
+				showToast(`Не удалось пополнить депозит: ${errMessage}`, "error");
+				return;
 			}
 
 			setIsCompleted(true);
 			showToast(`Депозит пополнен на ${formatDisplayCurrency(amountRub)}! Чек аванса 54-ФЗ пробит.`, "success");
 			onSuccess?.(payload);
-		} catch (err) {
+		} catch (err: any) {
 			console.error("[DepositTopupModal] Network error during deposit topup:", err);
-			setIsCompleted(true);
-			showToast(`Пополнение депозита на ${formatDisplayCurrency(amountRub)} сохранено.`, "success");
-			onSuccess?.(payload);
+			showToast(
+				`Ошибка сети при пополнении депозита: ${err?.message || "неизвестная ошибка"}`,
+				"error",
+			);
 		} finally {
 			setIsSubmitting(false);
 		}

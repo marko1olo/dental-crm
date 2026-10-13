@@ -23,9 +23,9 @@ import React, { useCallback, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { PatientAnamnesisModal } from "./PatientAnamnesisModal";
 import {
-	type PatientClinicalSafetyProfile,
 	evaluatePatientSafetyFlags,
 	formatSafetyProfileToDiaryText,
+	type PatientClinicalSafetyProfile,
 	parseSafetyProfileFromText,
 } from "./safetyMath";
 import "./safetyBanner.css";
@@ -33,9 +33,15 @@ import "./safetyBanner.css";
 export interface PatientAllergySafetyBannerProps {
 	readonly patientId?: string | null | undefined;
 	readonly patientName?: string | null | undefined;
-	readonly profile?: Partial<PatientClinicalSafetyProfile> | string | null | undefined;
+	readonly profile?:
+		| Partial<PatientClinicalSafetyProfile>
+		| string
+		| null
+		| undefined;
 	readonly notes?: string | null | undefined;
-	readonly onUpdateProfile?: ((profile: PatientClinicalSafetyProfile) => void) | undefined;
+	readonly onUpdateProfile?:
+		| ((profile: PatientClinicalSafetyProfile) => void)
+		| undefined;
 	readonly onSyncToEmkDiary?: ((diarySnippet: string) => void) | undefined;
 	readonly showModalButton?: boolean | undefined;
 	readonly compact?: boolean | undefined;
@@ -59,7 +65,8 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 		}) => {
 			const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 			const [isModalOpen, setIsModalOpen] = useState(false);
-			const [localProfile, setLocalProfile] = useState<Partial<PatientClinicalSafetyProfile> | null>(null);
+			const [localProfile, setLocalProfile] =
+				useState<Partial<PatientClinicalSafetyProfile> | null>(null);
 
 			React.useEffect(() => {
 				setLocalProfile(null);
@@ -78,7 +85,9 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 					if (!fromNotes) return fromProp;
 					const merged: Record<string, unknown> = { ...fromNotes, ...fromProp };
 					for (const key of Object.keys(fromNotes)) {
-						if ((fromNotes as unknown as Record<string, unknown>)[key] === true) {
+						if (
+							(fromNotes as unknown as Record<string, unknown>)[key] === true
+						) {
 							merged[key] = true;
 						}
 					}
@@ -153,9 +162,11 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 			}, [onUpdateProfile, onSyncToEmkDiary]);
 
 			const bannerStyleClass = useMemo(() => {
-				if (evaluation.hasCriticalStopFlags) return "patient-safety-banner--critical";
+				if (evaluation.hasCriticalStopFlags)
+					return "patient-safety-banner--critical";
 				if (evaluation.hasHighRiskFlags) return "patient-safety-banner--high";
-				if (evaluation.totalAlertCount > 0) return "patient-safety-banner--moderate";
+				if (evaluation.totalAlertCount > 0)
+					return "patient-safety-banner--moderate";
 				return "patient-safety-banner--safe";
 			}, [evaluation]);
 
@@ -169,7 +180,9 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 				if (evaluation.totalAlertCount > 0) {
 					return <HeartPulse className="w-5 h-5" />;
 				}
-				return <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />;
+				return (
+					<CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+				);
 			}, [evaluation]);
 
 			if (hideWhenClean && evaluation.totalAlertCount === 0) {
@@ -199,7 +212,10 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 					>
 						<div className="patient-safety-banner__header">
 							<div className="flex items-center gap-3 min-w-0 flex-1">
-								<div className="patient-safety-banner__beacon" aria-hidden="true">
+								<div
+									className="patient-safety-banner__beacon"
+									aria-hidden="true"
+								>
 									{beaconIcon}
 								</div>
 
@@ -207,12 +223,18 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 									<h2 className="patient-safety-banner__title">
 										{evaluation.hasCriticalStopFlags ? (
 											<span className="inline-flex items-center gap-1.5 font-black uppercase text-xs tracking-wider">
-												<span className="safety-beacon-ping" aria-hidden="true" />
+												<span
+													className="safety-beacon-ping"
+													aria-hidden="true"
+												/>
 												КРИТИЧЕСКИЕ СТОП-ФАКТОРЫ ПАЦИЕНТА:
 											</span>
 										) : evaluation.hasHighRiskFlags ? (
 											<span className="font-black uppercase text-xs tracking-wider inline-flex items-center gap-1.5">
-												<AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" aria-hidden="true" />
+												<AlertTriangle
+													className="w-3.5 h-3.5 text-amber-600 shrink-0"
+													aria-hidden="true"
+												/>
 												СОМАТИЧЕСКИЕ ФАКТОРЫ РИСКА:
 											</span>
 										) : (
@@ -317,15 +339,33 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 										>
 											<div className="safety-flag-card__header">
 												<div className="safety-flag-card__title">
-													{flag.id.includes("pacemaker") && <ZapOff className="w-4 h-4 text-rose-600" />}
-													{flag.id.includes("bisphosphonate") && <ShieldAlert className="w-4 h-4 text-rose-600" />}
-													{flag.id.includes("anticoagulant") && <Pill className="w-4 h-4 text-rose-600" />}
-													{flag.id.includes("pregnancy") && <Baby className="w-4 h-4 text-pink-500" />}
-													{flag.id.includes("hypertension") && <HeartPulse className="w-4 h-4 text-amber-600" />}
-													{flag.id.includes("asthma") && <Activity className="w-4 h-4 text-amber-600" />}
-													{flag.id.includes("nsaid") && <ShieldAlert className="w-4 h-4 text-rose-600" />}
-													{flag.id.includes("penicillin") && <Pill className="w-4 h-4 text-amber-600" />}
-													{flag.id.includes("latex") && <AlertOctagon className="w-4 h-4 text-amber-600" />}
+													{flag.id.includes("pacemaker") && (
+														<ZapOff className="w-4 h-4 text-rose-600" />
+													)}
+													{flag.id.includes("bisphosphonate") && (
+														<ShieldAlert className="w-4 h-4 text-rose-600" />
+													)}
+													{flag.id.includes("anticoagulant") && (
+														<Pill className="w-4 h-4 text-rose-600" />
+													)}
+													{flag.id.includes("pregnancy") && (
+														<Baby className="w-4 h-4 text-pink-500" />
+													)}
+													{flag.id.includes("hypertension") && (
+														<HeartPulse className="w-4 h-4 text-amber-600" />
+													)}
+													{flag.id.includes("asthma") && (
+														<Activity className="w-4 h-4 text-amber-600" />
+													)}
+													{flag.id.includes("nsaid") && (
+														<ShieldAlert className="w-4 h-4 text-rose-600" />
+													)}
+													{flag.id.includes("penicillin") && (
+														<Pill className="w-4 h-4 text-amber-600" />
+													)}
+													{flag.id.includes("latex") && (
+														<AlertOctagon className="w-4 h-4 text-amber-600" />
+													)}
 													<span>{flag.titleRu}</span>
 												</div>
 												<span
@@ -335,7 +375,9 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 															: "safety-flag-card__badge--high"
 													}`}
 												>
-													{flag.severity === "critical" ? "Стоп-фактор" : "Внимание"}
+													{flag.severity === "critical"
+														? "Стоп-фактор"
+														: "Внимание"}
 												</span>
 											</div>
 
@@ -347,7 +389,10 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 											{flag.forbiddenProcedures.length > 0 && (
 												<div className="safety-flag-card__section">
 													<div className="safety-flag-card__section-title safety-flag-card__section-title--forbidden inline-flex items-center gap-1.5">
-														<AlertOctagon className="w-3.5 h-3.5 text-rose-600 shrink-0" aria-hidden="true" />
+														<AlertOctagon
+															className="w-3.5 h-3.5 text-rose-600 shrink-0"
+															aria-hidden="true"
+														/>
 														<span>Категорически противопоказано:</span>
 													</div>
 													<ul className="safety-flag-card__list">
@@ -362,7 +407,10 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 											{flag.mandatoryPrecautions.length > 0 && (
 												<div className="safety-flag-card__section">
 													<div className="safety-flag-card__section-title safety-flag-card__section-title--precautions inline-flex items-center gap-1.5">
-														<ShieldAlert className="w-3.5 h-3.5 text-amber-600 shrink-0" aria-hidden="true" />
+														<ShieldAlert
+															className="w-3.5 h-3.5 text-amber-600 shrink-0"
+															aria-hidden="true"
+														/>
 														<span>Обязательный протокол ведения:</span>
 													</div>
 													<ul className="safety-flag-card__list">
@@ -376,8 +424,13 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 											{/* Рекомендации по анестезии */}
 											{flag.recommendedAnesthesiaNotes && (
 												<div className="safety-flag-card__anesthesia-badge inline-flex items-center gap-1.5">
-													<Syringe className="w-3.5 h-3.5 text-teal-600 shrink-0" aria-hidden="true" />
-													<span>Обезболивание: {flag.recommendedAnesthesiaNotes}</span>
+													<Syringe
+														className="w-3.5 h-3.5 text-teal-600 shrink-0"
+														aria-hidden="true"
+													/>
+													<span>
+														Обезболивание: {flag.recommendedAnesthesiaNotes}
+													</span>
 												</div>
 											)}
 										</div>
@@ -388,8 +441,13 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 								{evaluation.anestheticRecommendations.length > 0 && (
 									<div className="p-3 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/20 text-xs text-[var(--teal-dark,var(--teal))] flex flex-col gap-1">
 										<span className="font-bold uppercase tracking-wide inline-flex items-center gap-1.5">
-											<Syringe className="w-3.5 h-3.5 text-teal-600 shrink-0" aria-hidden="true" />
-											<span>Сводные клинические рекомендации по анестезии:</span>
+											<Syringe
+												className="w-3.5 h-3.5 text-teal-600 shrink-0"
+												aria-hidden="true"
+											/>
+											<span>
+												Сводные клинические рекомендации по анестезии:
+											</span>
 										</span>
 										<ul className="m-0 pl-4 space-y-0.5">
 											{evaluation.anestheticRecommendations.map((rec, i) => (

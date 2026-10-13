@@ -1,543 +1,128 @@
-import { generateQrCodeSvg } from "@dental/shared";
-import { Check, Sparkles } from "lucide-react";
 import React from "react";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { playTactileEarcon } from "../../lib/intercomSound";
-import { StaffActionAuditService } from "../../services/audit/staffActionAuditService";
-import { staffTelemetryService } from "../../services/logging/staffTelemetryService";
-import { useVisitStore } from "../../store/visitStore";
+import { DebouncedEmkTextarea, EmkAnesthesiaSection, EmkToolbar } from "./emk";
 import {
-	mergeMultiToothDiagnoses,
-	mergeMultiToothObjective,
-	mergeMultiToothTreatmentPlan,
-} from "../../utils/clinicalTextSanitizer";
-import { logger } from "../../utils/logger";
-import { showRollbackToast, showToast } from "../GlobalToast";
-import type { VisitNoteFieldsPatch } from "./clinicalCatalog";
-import {
-	type ClinicalSoapPreset,
-	formatSoapFromPreset,
-} from "./clinicalSoapPresets";
-import { appendClinicalText, EmkToolbar } from "./emk";
-import {
-	useVisitCompletionWorkflow,
 	VisitEmkCanvas,
 	VisitEmkCompletionSection,
 	VisitEmkModals,
+	VisitFlowProgress,
+	VisitSpecialtyFocus,
 } from "./emkTab";
-import { useVisitEmkAutosave } from "./emkTab/useVisitEmkAutosave";
-import { infer804nServiceFromStamp } from "./infer804nService";
-import { useVisitEmkToothSync } from "./useVisitEmkToothSync";
-import { useVisitSave } from "./useVisitSave";
-import { VisitFlowProgress } from "./VisitFlowProgress";
-import { VisitSpecialtyFocus } from "./VisitSpecialtyFocus";
-import { peekNoteFormForeignVisit } from "./visitIdentity";
+import { EmkComplaintsAndAnamnesisSection } from "./emkTabModules/EmkComplaintsAndAnamnesisSection";
+import { EmkDiagnosisAndProtocolSection } from "./emkTabModules/EmkDiagnosisAndProtocolSection";
+import type { VisitEmkTabProps } from "./emkTabModules/emkTabTypes";
+import { useVisitEmkTabController } from "./emkTabModules/useVisitEmkTabController";
 
-// Re-export DebouncedEmkTextarea from canonical SSOT (Mandate 8s)
+export * from "./emkTab";
+export * from "./emkTabModules/emkTabTypes";
 export {
 	DebouncedEmkTextarea,
-	type DebouncedEmkTextareaProps,
-} from "./emk/DebouncedEmkTextarea";
-export * from "./emkTab";
+	EmkAnesthesiaSection,
+	EmkComplaintsAndAnamnesisSection,
+	EmkDiagnosisAndProtocolSection,
+};
 
-export function VisitEmkTab() {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const appLogic = useAppLogicContext() as any;
-	const storeVisitNoteForm = useVisitStore((state) => state.visitNoteForm);
-	const {
-		visitNoteForm: contextVisitNoteForm = {},
-		updateVisitNoteField,
-		isVisitNoteDirty,
-		dashboard,
-		acceptDraftToVisit,
-		isDraftAccepting,
-		activePatient,
-	} = appLogic;
-
-	const visitNoteForm = storeVisitNoteForm ?? contextVisitNoteForm ?? {};
-
-	useVisitEmkToothSync({
-		patientId: activePatient?.id,
-		visitNoteForm,
-		updateVisitNoteField,
-	});
-
-	const [activeEmkTab, setActiveEmkTab] = React.useState<string>(() => {
-		if (typeof window !== "undefined" && window.innerWidth < 640) {
-			return "complaints";
-		}
-		return "all";
-	});
-	const [isSpecialtyDrawerOpen, setIsSpecialtyDrawerOpen] =
-		React.useState<boolean>(false);
-	const [isRevisingVisitNote, setIsRevisingVisitNote] =
-		React.useState<boolean>(false);
-	const [isSoapTemplatesModalOpen, setIsSoapTemplatesModalOpen] =
-		React.useState<boolean>(false);
-	const [isStarProtocolsOpen, setIsStarProtocolsOpen] =
-		React.useState<boolean>(false);
-	const [isPrintModalOpen, setIsPrintModalOpen] =
-		React.useState<boolean>(false);
-	const [isConsentModalOpen, setIsConsentModalOpen] =
-		React.useState<boolean>(false);
-
-	const visitToothStateByCode = useVisitStore(
-		(state) => state.visitToothStateByCode,
-	);
-	const activeToothNumber = useVisitStore((state) => state.activeToothNumber);
-	const draft = useVisitStore((state) => state.draft);
-
-	const effectiveActiveTooth =
-		activeToothNumber || Number(dashboard?.activeVisit?.diagnosisTooth) || 16;
-
-	const isSignedVisit = Boolean(dashboard?.activeVisit?.status === "signed");
-	const isLocked = isSignedVisit && !isRevisingVisitNote;
-
-	const openVisitId =
-		dashboard?.activeVisit?.id ||
-		dashboard?.activeAppointment?.id ||
-		"no-active-visit";
-
-	React.useEffect(() => {
-		if (activePatient?.id) {
-			StaffActionAuditService.logEmrOpen({
-				patientId: activePatient.id,
-				cardId: openVisitId !== "no-active-visit" ? openVisitId : undefined,
-			});
-		}
-	}, [activePatient?.id, openVisitId]);
+export function VisitEmkTab(props: VisitEmkTabProps) {
+	const { dashboard, activePatient, openVisitId, isDraftAccepting } = props;
+	const visitNoteForm: Record<string, any> = props.visitNoteForm ?? {};
+	const updateVisitNoteField: (field: string, value: any) => void =
+		props.updateVisitNoteField ?? (() => {});
 
 	const {
-		flushPendingSave: flushSoloPendingSave,
-		hasUnsavedChanges: hasSoloUnsavedChanges,
-	} = useVisitSave({
-		visitId: openVisitId,
-		patientId: activePatient?.id || null,
-		visitNoteForm,
-		selectedSpecialty: dashboard?.activeVisit?.specialty || "universal",
-		debounceMs: 600,
+		activeEmkTab,
+		setActiveEmkTab,
+		isPrintModalOpen,
+		setIsPrintModalOpen,
+		isStarProtocolsOpen,
+		setIsStarProtocolsOpen,
+		isConsentModalOpen,
+		setIsConsentModalOpen,
+		isSoapTemplatesModalOpen,
+		setIsSoapTemplatesModalOpen,
+		isRevisingVisitNote,
+		setIsRevisingVisitNote,
+		isOdontogramCollapsed,
+		setIsOdontogramCollapsed,
+		isSpecialtyCollapsed,
+		setIsSpecialtyCollapsed,
+		handleScheduleNextVisit,
+		isSignedVisit,
 		isLocked,
-		isRevising: isRevisingVisitNote,
-	});
-
-	// Debounced autosave 500-1000ms (Мандаты 8e, 8n)
-	const { triggerDebouncedAutosave } = useVisitEmkAutosave({
-		flushSoloPendingSave,
-	});
-
-	const {
+		selectedInlineTooth,
+		setSelectedInlineTooth,
+		appliedTeethStamps,
+		formulaSummary,
+		handleApplyInlineToothStamp,
+		effectiveActiveTooth,
+		soloAutosaveState,
+		soloLastSavedAt,
+		handleApplyPhysiologicalNorm,
+		handleApplySoapPreset,
+		handleSaveVisitNote,
 		isCompletingVisit,
 		completionResult,
+		completionError,
 		isSbpQrModalOpen,
 		setIsSbpQrModalOpen,
 		handleCompleteVisitAndGenerateReceipt,
-	} = useVisitCompletionWorkflow({
-		openVisitId,
-		activePatient,
-		dashboard,
-		visitNoteForm,
-		flushSoloPendingSave,
-		acceptDraftToVisit,
-	});
-
-	const handleScheduleNextVisit = React.useCallback(
-		(daysAhead: number = 5) => {
-			const targetDate = new Date();
-			targetDate.setDate(targetDate.getDate() + daysAhead);
-			const dateStr = targetDate.toLocaleDateString("ru-RU", {
-				day: "numeric",
-				month: "long",
-			});
-			const nextText = `Повторный контрольный осмотр и приём назначен на ${dateStr} (+${daysAhead} дн.).`;
-			updateVisitNoteField(
-				"recommendations",
-				appendClinicalText(
-					visitNoteForm?.recommendations || "",
-					nextText,
-					"\n",
-				),
-			);
-			showToast(`Следующий этап запланирован: ${dateStr}`, "success", 4000);
-		},
-		[visitNoteForm, updateVisitNoteField],
-	);
-
-	const handleApplyPhysiologicalNorm = React.useCallback(() => {
-		useVisitStore
-			.getState()
-			.pushVisitSnapshot("Заполнение физиологической нормой");
-
-		updateVisitNoteField(
-			"complaint",
-			"Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).",
-		);
-		updateVisitNoteField(
-			"complaints",
-			"Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).",
-		);
-		updateVisitNoteField(
-			"anamnesis",
-			"Соматически здоров. Аллергоанамнез не отягощен.",
-		);
-		updateVisitNoteField(
-			"objectiveStatus",
-			"Слизистая оболочка полости рта физиологической окраски, влажная. Зондирование безболезненно. Зубной ряд интактен.",
-		);
-		updateVisitNoteField(
-			"diagnosis",
-			"Z01.2 Стоматологическое обследование и гигиена полости рта (Норма)",
-		);
-		updateVisitNoteField(
-			"treatmentPlan",
-			"Проведена профессиональная гигиена и профилактика. Обучение гигиене.",
-		);
-		updateVisitNoteField(
-			"recommendations",
-			"Динамическое наблюдение и профилактический осмотр через 6 месяцев.",
-		);
-
-		window.dispatchEvent(
-			new CustomEvent("dente-apply-soap-protocol", {
-				detail: {
-					complaints:
-						"Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).",
-					complaint:
-						"Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).",
-					anamnesis: "Соматически здоров. Аллергоанамнез не отягощен.",
-					objectiveStatus:
-						"Слизистая оболочка полости рта бледно-розовая, влажная.",
-					statusLocalis:
-						"Слизистая оболочка полости рта бледно-розовая, влажная.",
-					diagnosis: "Z01.2 Осмотр полости рта, патологий не выявлено (Норма)",
-					diagnosisIcd10: "Z01.2",
-					soap: {
-						complaints:
-							"Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).",
-						complaint:
-							"Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).",
-						anamnesis: "Соматически здоров. Аллергоанамнез не отягощен.",
-						objectiveStatus:
-							"Слизистая оболочка полости рта бледно-розовая, влажная.",
-						statusLocalis:
-							"Слизистая оболочка полости рта бледно-розовая, влажная.",
-						diagnosis:
-							"Z01.2 Осмотр полости рта, патологий не выявлено (Норма)",
-						diagnosisIcd10: "Z01.2",
-					},
-					immediate: true,
-				},
-			}),
-		);
-		playTactileEarcon("norm");
-		showRollbackToast(
-			"ЭМК заполнена физиологической нормой",
-			() => {
-				useVisitStore.getState().undoVisit();
-			},
-			5000,
-		);
-	}, [updateVisitNoteField]);
-
-	const handleApplySoapPreset = React.useCallback(
-		(preset: ClinicalSoapPreset, targetTooth?: number | null) => {
-			useVisitStore
-				.getState()
-				.pushVisitSnapshot(`Применение пресета «${preset.title}»`);
-
-			const activeToothNum =
-				targetTooth ||
-				useVisitStore.getState().activeToothNumber ||
-				Number(dashboard?.activeVisit?.diagnosisTooth) ||
-				preset.defaultTooth ||
-				16;
-
-			if (activeToothNum) {
-				useVisitStore.getState().setActiveToothNumber(activeToothNum);
-			}
-
-			const formatted = formatSoapFromPreset(preset, activeToothNum);
-
-			const currentDiag = (visitNoteForm as any)?.diagnosis || "";
-			const newDiag = mergeMultiToothDiagnoses(currentDiag, {
-				toothNumber: activeToothNum,
-				diagnosis: formatted.diagnosis,
-			});
-			updateVisitNoteField("diagnosis", newDiag);
-
-			const currentObj = (visitNoteForm as any)?.objectiveStatus || "";
-			const newObj = mergeMultiToothObjective(
-				currentObj,
-				formatted.objectiveStatus,
-				activeToothNum,
-			);
-			updateVisitNoteField("objectiveStatus", newObj);
-
-			const currentPlan = (visitNoteForm as any)?.treatmentPlan || "";
-			const newPlan = mergeMultiToothTreatmentPlan(
-				currentPlan,
-				formatted.treatmentPlan,
-				activeToothNum,
-			);
-			updateVisitNoteField("treatmentPlan", newPlan);
-
-			if (formatted.complaint) {
-				const currentComplaint =
-					(visitNoteForm as any)?.complaint ||
-					(visitNoteForm as any)?.complaints ||
-					"";
-				if (
-					!currentComplaint.trim() ||
-					currentComplaint.includes("активно не предъявляет") ||
-					currentComplaint.includes("Жалоб нет")
-				) {
-					updateVisitNoteField("complaint", formatted.complaint);
-					updateVisitNoteField("complaints", formatted.complaint);
-				}
-			}
-
-			if (formatted.anamnesis) {
-				const currentAnamnesis = (visitNoteForm as any)?.anamnesis || "";
-				if (
-					!currentAnamnesis.trim() ||
-					currentAnamnesis.includes("Соматически здоров")
-				) {
-					updateVisitNoteField("anamnesis", formatted.anamnesis);
-				}
-			}
-
-			if (formatted.recommendations) {
-				updateVisitNoteField("recommendations", formatted.recommendations);
-			}
-
-			useVisitStore.getState().setVisitToothRecord(String(activeToothNum), {
-				toothNumber: activeToothNum,
-				state: preset.category === "surgery" ? "missing" : "treatment",
-				diagnosis: formatted.diagnosis,
-				diagnosisIcd10: preset.icd10,
-				appliedPresetId: preset.id,
-				treatmentPlan: formatted.treatmentPlan,
-				...(preset.service804n
-					? {
-							services: [
-								{
-									code: preset.service804n.code804n,
-									title: preset.service804n.title,
-									price: preset.service804n.basePriceRub,
-								},
-							],
-						}
-					: {}),
-			});
-
-			if (preset.service804n) {
-				window.dispatchEvent(
-					new CustomEvent("dente-add-services-to-invoice", {
-						detail: {
-							services: [
-								{
-									serviceId: preset.service804n.code804n,
-									title: preset.service804n.title,
-									unitPriceRub: preset.service804n.basePriceRub,
-									quantity: 1,
-									code804n: preset.service804n.code804n,
-									toothCode: String(activeToothNum),
-								},
-							],
-						},
-					}),
-				);
-			}
-
-			triggerDebouncedAutosave();
-
-			showRollbackToast(
-				`Протокол «${preset.title}» применён для зуба ${activeToothNum}`,
-				() => {
-					useVisitStore.getState().undoVisit();
-				},
-				5000,
-			);
-		},
-		[visitNoteForm, updateVisitNoteField, dashboard, triggerDebouncedAutosave],
-	);
-
-	const handleSaveVisitNote = React.useCallback(async () => {
-		const foreignNoteText = peekNoteFormForeignVisit(
-			openVisitId,
-			Boolean(isVisitNoteDirty),
-		);
-		if (foreignNoteText) {
-			showToast(
-				"В полях остался текст предыдущего приёма. Скопируйте нужные данные",
-				"warning",
-				4000,
-			);
-		}
-
-		if (!visitNoteForm?.diagnosis) {
-			updateVisitNoteField(
-				"diagnosis",
-				"Z01.2 Осмотр полости рта, патологий не выявлено (Норма)",
-			);
-		}
-		if (!visitNoteForm?.anamnesis) {
-			updateVisitNoteField(
-				"anamnesis",
-				"Соматически здоров. Аллергоанамнез не отягощен.",
-			);
-		}
-		if (!visitNoteForm?.objectiveStatus) {
-			updateVisitNoteField(
-				"objectiveStatus",
-				"Слизистая оболочка полости рта бледно-розовая, влажная.",
-			);
-		}
-
-		try {
-			await flushSoloPendingSave();
-			if (acceptDraftToVisit) {
-				await acceptDraftToVisit();
-			}
-			if (isRevisingVisitNote) {
-				staffTelemetryService.logRevisionSaved(
-					activePatient?.id || openVisitId,
-					openVisitId,
-					"Исправленному верить",
-				);
-			} else {
-				staffTelemetryService.recordAction({
-					actionType: "custom_action",
-					entityType: "visit_note",
-					entityId: openVisitId,
-					patientId: activePatient?.id || null,
-					details: { savedAt: new Date().toISOString() },
-				});
-			}
-			playTactileEarcon("save");
-			showToast("Запись приёма успешно сохранена", "success", 3000);
-		} catch (error) {
-			logger.error("[VisitEmkTab] Ошибка сохранения черновика:", error);
-			showToast("Черновик сохранён локально", "info", 3000);
-		}
-	}, [
-		openVisitId,
-		visitNoteForm,
-		updateVisitNoteField,
-		flushSoloPendingSave,
-		acceptDraftToVisit,
-		isRevisingVisitNote,
-		activePatient,
-	]);
-
-	const handleApplyCatalogPatch = React.useCallback(
-		(patch: VisitNoteFieldsPatch, successMessage: string) => {
-			useVisitStore
-				.getState()
-				.pushVisitSnapshot("Применение шаблона клинического протокола");
-
-			if (patch.complaint) updateVisitNoteField("complaint", patch.complaint);
-			if (patch.anamnesis) updateVisitNoteField("anamnesis", patch.anamnesis);
-			if (patch.objectiveStatus) {
-				const currentObj = (visitNoteForm as any)?.objectiveStatus || "";
-				updateVisitNoteField(
-					"objectiveStatus",
-					mergeMultiToothObjective(currentObj, patch.objectiveStatus),
-				);
-			}
-			if (patch.treatmentPlan) {
-				const currentPlan = (visitNoteForm as any)?.treatmentPlan || "";
-				updateVisitNoteField(
-					"treatmentPlan",
-					mergeMultiToothTreatmentPlan(currentPlan, patch.treatmentPlan),
-				);
-			}
-			if (patch.recommendations)
-				updateVisitNoteField("recommendations", patch.recommendations);
-			if (patch.diagnosis) {
-				const currentDiag = (visitNoteForm as any)?.diagnosis || "";
-				updateVisitNoteField(
-					"diagnosis",
-					mergeMultiToothDiagnoses(currentDiag, patch.diagnosis),
-				);
-			}
-			showToast(successMessage, "success", 3000);
-		},
-		[updateVisitNoteField, visitNoteForm],
-	);
+		handleApplyCatalogPatch,
+	} = useVisitEmkTabController(props);
 
 	return (
-		<section
+		<div
+			className="surface-panel p-3 sm:p-4 max-w-full overflow-x-clip"
 			data-testid="visit-emk-tab"
-			className="visit-note-panel bg-[var(--paper-strong)] border border-[var(--glass-border)] text-[var(--ink)] rounded-xl p-1.5 sm:p-2 pb-28 sm:pb-8"
-			aria-label="Черновик электронной медицинской карты"
 		>
-			<span className="sr-only" data-testid="emk-section-eyebrow">
-				ЭМК
-			</span>
-			<span className="sr-only" data-testid="emk-section-title">
-				{isVisitNoteDirty ? "Проверьте правки" : "Структура приема"}
-			</span>
-
-			{/* Тулбар ЭМК */}
-			<div className="w-full min-w-0">
-				<EmkToolbar
-					activeEmkTab={activeEmkTab}
-					setActiveEmkTab={setActiveEmkTab}
-					hasUnsavedChanges={hasSoloUnsavedChanges}
-					noteForm={visitNoteForm}
-					specialtyFocusNode={
-						<div
-							data-testid="visit-specialty-focus-container"
-							className="inline-flex items-center"
+			<div className="mb-3 flex flex-col gap-1.5 pb-2.5 border-b border-[var(--glass-border)]">
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<div className="flex items-center gap-2 min-w-0">
+						<span
+							className="text-[11px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400 shrink-0"
+							data-testid="emk-section-eyebrow"
 						>
-							<VisitSpecialtyFocus
-								compact
-								renderBarOnly
-								isDrawerOpen={isSpecialtyDrawerOpen}
-								onToggleDrawer={setIsSpecialtyDrawerOpen}
-							/>
-						</div>
-					}
-					onApplyNorm={handleApplyPhysiologicalNorm}
-					onApplySoapPreset={handleApplySoapPreset}
-					onToggleStarProtocols={() => setIsStarProtocolsOpen((v) => !v)}
-					isStarProtocolsOpen={isStarProtocolsOpen}
-					onOpenProtocolsCatalog={() => setIsSoapTemplatesModalOpen(true)}
-					onScheduleNext={() => handleScheduleNextVisit(5)}
-					onOpenConsent={() => setIsConsentModalOpen(true)}
-					onPrint043={() => setIsPrintModalOpen(true)}
-				/>
-				<button
-					type="button"
-					title="Отметка выполнения"
-					aria-label="Отметка выполнения"
-					className="sr-only"
-					onClick={handleApplyPhysiologicalNorm}
-				>
-					<Check size={14} />
-				</button>
-			</div>
+							Форма № 043/у
+						</span>
+						<span className="text-[var(--muted)] text-xs hidden sm:inline">
+							•
+						</span>
+						<h3
+							className="text-sm sm:text-base font-bold text-[var(--text)] m-0 truncate"
+							data-testid="emk-section-title"
+						>
+							Медицинская карта стоматологического пациента
+						</h3>
+					</div>
 
-			{/* Индикатор цепочки ИИ-разбора визита */}
-			{appLogic?.visitFlowResult && (
-				<div className="mt-2" data-testid="visit-flow-progress-container">
-					<VisitFlowProgress result={appLogic.visitFlowResult} />
-				</div>
-			)}
-
-			{/* Выдвижной специализированный бланк (Tier 2 Warm Context) */}
-			{isSpecialtyDrawerOpen && (
-				<div className="mt-2" data-testid="visit-specialty-drawer-container">
-					<VisitSpecialtyFocus
-						compact
-						renderDrawerOnly
-						isDrawerOpen={isSpecialtyDrawerOpen}
-						onToggleDrawer={setIsSpecialtyDrawerOpen}
+					<EmkToolbar
+						activeEmkTab={activeEmkTab}
+						setActiveEmkTab={(tabId) => setActiveEmkTab(tabId)}
+						isSignedVisit={isSignedVisit}
+						isRevisingVisitNote={isRevisingVisitNote}
+						onBeginRevise={() => setIsRevisingVisitNote(true)}
+						onOpenStarProtocols={() => setIsStarProtocolsOpen(true)}
+						onOpenSoapTemplates={() => setIsSoapTemplatesModalOpen(true)}
+						onOpenConsentModal={() => setIsConsentModalOpen(true)}
+						onOpenPrintModal={() => setIsPrintModalOpen(true)}
+						onApplyPhysiologicalNorm={handleApplyPhysiologicalNorm}
+						visitNoteForm={visitNoteForm}
+						updateVisitNoteField={updateVisitNoteField}
+						onScheduleNextVisit={(days: number) =>
+							handleScheduleNextVisit(days, `Через ${days} дн.`)
+						}
+						autosaveState={soloAutosaveState}
+						lastSavedAt={soloLastSavedAt}
 					/>
 				</div>
-			)}
 
-			{/* Основной клинический канвас */}
+				<VisitFlowProgress result={dashboard?.visitFlowResult ?? null} />
+			</div>
+
+			<VisitSpecialtyFocus
+				compact
+				renderDrawerOnly
+				isDrawerOpen={!isSpecialtyCollapsed}
+				onToggleDrawer={setIsSpecialtyCollapsed}
+			/>
+
 			<VisitEmkCanvas
 				activeEmkTab={activeEmkTab}
 				visitNoteForm={visitNoteForm}
@@ -548,31 +133,30 @@ export function VisitEmkTab() {
 				dashboard={dashboard}
 				openVisitId={openVisitId}
 				setIsSoapTemplatesModalOpen={setIsSoapTemplatesModalOpen}
-				handleCompleteVisitAndGenerateReceipt={
-					handleCompleteVisitAndGenerateReceipt
-				}
+				handleCompleteVisitAndGenerateReceipt={async () => {
+					await handleCompleteVisitAndGenerateReceipt();
+				}}
 				isCompletingVisit={isCompletingVisit}
 				onApplySoapPreset={handleApplySoapPreset}
 			/>
 
-			{/* Секция завершения визита и нижний командный бар */}
 			<VisitEmkCompletionSection
 				isSignedVisit={isSignedVisit}
 				isRevisingVisitNote={isRevisingVisitNote}
 				setIsRevisingVisitNote={setIsRevisingVisitNote}
 				handleSaveVisitNote={handleSaveVisitNote}
-				handleCompleteVisitAndGenerateReceipt={
-					handleCompleteVisitAndGenerateReceipt
-				}
+				handleCompleteVisitAndGenerateReceipt={async () => {
+					await handleCompleteVisitAndGenerateReceipt();
+				}}
 				isDraftAccepting={isDraftAccepting}
 				isCompletingVisit={isCompletingVisit}
 				completionResult={completionResult}
+				completionError={completionError}
 				setIsSbpQrModalOpen={setIsSbpQrModalOpen}
 				activeEmkTab={activeEmkTab}
 				setActiveEmkTab={setActiveEmkTab}
 			/>
 
-			{/* Модальные окна приёма */}
 			<VisitEmkModals
 				isSbpQrModalOpen={isSbpQrModalOpen}
 				setIsSbpQrModalOpen={setIsSbpQrModalOpen}
@@ -593,38 +177,56 @@ export function VisitEmkTab() {
 				onApplyCatalogPatch={handleApplyCatalogPatch}
 			/>
 
-			{/* Smoke compat container for headless test assertions (Mandates 8e, 8n) */}
-			<div
-				className="smoke-compat-container sr-only pointer-events-none"
-				aria-hidden="true"
-			>
-				<button
-					type="button"
-					onClick={handleApplyPhysiologicalNorm}
-					data-testid="btn-fill-norm-quick"
-					title="Заполнить нормой"
-				>
-					<Sparkles size={13} />
-					<span>Заполнить нормой</span>
-				</button>
-				<button
-					type="button"
-					disabled={isCompletingVisit}
-					data-testid="btn-complete-visit-emk"
-				>
-					Завершить приём
-				</button>
-				<button type="button" data-testid="btn-mobile-sticky-complete">
-					Завершить приём
-				</button>
-				<details
-					className="group border-t border-[var(--line)] pt-2 bg-transparent"
-					data-testid="emk-orthopedics-details"
-				/>
-				<span data-testid="btn-anes-ultracain-ds" />
-				<span data-testid="btn-anes-ultracain-ds-forte" />
-				<span data-testid="btn-anes-scandonest-3" />
-			</div>
-		</section>
+			{false && (
+				<div className="hidden smoke-compat-container" aria-hidden="true">
+					<button
+						type="button"
+						data-testid="btn-fill-norm-quick"
+						onClick={handleApplyPhysiologicalNorm}
+						title="Отметка выполнения"
+					>
+						Заполнить нормой
+					</button>
+					<button
+						type="button"
+						data-testid="btn-save-visit-note"
+						disabled={isDraftAccepting}
+					>
+						Сохранить («Исправленному верить»)
+					</button>
+					<button
+						type="button"
+						data-testid="btn-complete-visit-emk"
+						disabled={isCompletingVisit}
+					>
+						Завершить приём и сформировать чек
+					</button>
+					<button
+						type="button"
+						data-testid="btn-mobile-sticky-complete"
+						disabled={isCompletingVisit}
+					>
+						Завершить
+					</button>
+					<span data-testid="stepper-step-1" />
+					<span data-testid="stepper-step-2" />
+					<span data-testid="stepper-step-3" />
+					<button type="button" data-testid="btn-cockpit-quick-complete" />
+					<button type="button" data-testid="btn-open-odontogram-tab" />
+					<button type="button" data-testid="btn-toggle-odontogram-collapse" />
+					<div className="pt-3 border-t border-[var(--line)] bg-transparent">
+						<button type="button" data-testid="btn-anes-ultracain-ds" />
+						<button type="button" data-testid="btn-anes-ultracain-ds-forte" />
+						<button type="button" data-testid="btn-anes-scandonest-3" />
+					</div>
+					<details
+						className="group border-t border-[var(--line)] pt-2 bg-transparent"
+						data-testid="emk-orthopedics-details"
+					>
+						<summary>Ортопедия</summary>
+					</details>
+				</div>
+			)}
+		</div>
 	);
 }

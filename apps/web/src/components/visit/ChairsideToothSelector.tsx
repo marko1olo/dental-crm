@@ -1,7 +1,7 @@
-import React from "react";
 import { ChevronDown, ChevronUp, Layers, Target, X } from "lucide-react";
+import React from "react";
+import { type ToothState, useVisitStore } from "../../store/visitStore";
 import { FDI_LOWER_TEETH, FDI_UPPER_TEETH } from "./completedServicesPlan";
-import { useVisitStore, type ToothState } from "../../store/visitStore";
 
 function getToothBadgeColor(state: ToothState | undefined): string | null {
 	switch (state) {
@@ -38,7 +38,9 @@ export const ChairsideToothSelector: React.FC<ChairsideToothSelectorProps> = ({
 	isToothGridOpen,
 	onToggleToothGrid,
 }) => {
-	const toothStateByCode = useVisitStore((state) => state.visitToothStateByCode);
+	const toothStateByCode = useVisitStore(
+		(state) => state.visitToothStateByCode,
+	);
 	const [isMultiSelect, setIsMultiSelect] = React.useState<boolean>(() => {
 		return Boolean(selectedTooth && selectedTooth.includes(","));
 	});
@@ -60,7 +62,9 @@ export const ChairsideToothSelector: React.FC<ChairsideToothSelectorProps> = ({
 			if (selectedTeethList.includes(str)) {
 				next = selectedTeethList.filter((x) => x !== str);
 			} else {
-				next = [...selectedTeethList, str].sort((a, b) => Number(a) - Number(b));
+				next = [...selectedTeethList, str].sort(
+					(a, b) => Number(a) - Number(b),
+				);
 			}
 			const result = next.length > 0 ? next.join(", ") : null;
 			onSelectTooth(result);
@@ -110,7 +114,8 @@ export const ChairsideToothSelector: React.FC<ChairsideToothSelectorProps> = ({
 					</span>
 					{selectedTeethList.length > 0 ? (
 						<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700">
-							{selectedTeethList.length === 1 && firstSelectedTooth !== undefined ? (
+							{selectedTeethList.length === 1 &&
+							firstSelectedTooth !== undefined ? (
 								<>
 									<span>Зуб {firstSelectedTooth}</span>
 									{getToothBadgeColor(toothStateByCode[firstSelectedTooth]) && (
@@ -126,7 +131,10 @@ export const ChairsideToothSelector: React.FC<ChairsideToothSelectorProps> = ({
 									)}
 								</>
 							) : (
-								<span>Зубы: {selectedTeethList.join(", ")} ({selectedTeethList.length})</span>
+								<span>
+									Зубы: {selectedTeethList.join(", ")} (
+									{selectedTeethList.length})
+								</span>
 							)}
 							<button
 								type="button"
@@ -145,14 +153,18 @@ export const ChairsideToothSelector: React.FC<ChairsideToothSelectorProps> = ({
 					)}
 				</div>
 
-				<div className="flex items-center gap-2 flex-wrap">
+				<div
+					className="flex items-center gap-2 flex-wrap"
+					style={{ gap: "8px" }}
+				>
 					<button
 						type="button"
 						onClick={() => setIsMultiSelect(!isMultiSelect)}
-						className={`text-xs min-h-[44px] py-1.5 px-3 rounded-md font-medium flex items-center gap-1.5 transition-colors cursor-pointer border ${
+						style={{ padding: "5px 10px", gap: "6px" }}
+						className={`dente-filter-chip text-xs min-h-[34px] py-1.5 px-3 rounded-md font-medium flex items-center gap-1.5 transition-colors cursor-pointer border ${
 							isMultiSelect
-								? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-								: "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+								? "bg-teal-600 text-white border-teal-600 shadow-xs"
+								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-teal-600"
 						}`}
 						title={
 							isMultiSelect
@@ -167,7 +179,8 @@ export const ChairsideToothSelector: React.FC<ChairsideToothSelectorProps> = ({
 					<button
 						type="button"
 						onClick={onToggleToothGrid}
-						className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium flex items-center gap-1 min-h-[44px] py-1.5 px-3 rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors cursor-pointer border border-transparent hover:border-indigo-200"
+						style={{ padding: "5px 10px", gap: "5px" }}
+						className="dente-filter-chip text-xs text-[var(--ink)] hover:text-teal-600 font-medium flex items-center gap-1 min-h-[34px] py-1.5 px-3 rounded-md bg-[var(--paper)] transition-colors cursor-pointer border border-[var(--line)] hover:border-teal-600"
 					>
 						{isToothGridOpen ? (
 							<>
@@ -229,14 +242,18 @@ export const ChairsideToothSelector: React.FC<ChairsideToothSelectorProps> = ({
 			)}
 
 			{/* 1-tap quick tooth chips */}
-			<div className="flex flex-wrap items-center gap-1.5">
+			<div
+				className="flex flex-wrap items-center gap-1.5"
+				style={{ gap: "6px" }}
+			>
 				<button
 					type="button"
 					onClick={handleClear}
-					className={`min-h-[44px] px-3 py-1.5 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
+					style={{ padding: "5px 10px" }}
+					className={`dente-filter-chip min-h-[34px] px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
 						selectedTeethList.length === 0
-							? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-							: "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+							? "bg-teal-600 text-white border-teal-600 shadow-xs font-bold"
+							: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-teal-600"
 					}`}
 				>
 					Без зуба
@@ -250,10 +267,11 @@ export const ChairsideToothSelector: React.FC<ChairsideToothSelectorProps> = ({
 							key={t}
 							type="button"
 							onClick={() => handleToothClick(t)}
-							className={`min-w-[44px] min-h-[44px] px-2 py-1.5 rounded-md text-xs font-mono font-semibold border transition-all cursor-pointer inline-flex items-center justify-center gap-1 ${
+							style={{ padding: "5px 10px", minWidth: "36px", gap: "4px" }}
+							className={`dente-filter-chip min-w-[36px] min-h-[34px] px-2.5 py-1 rounded-md text-xs font-mono font-semibold border transition-all cursor-pointer inline-flex items-center justify-center gap-1 ${
 								active
-									? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-									: "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+									? "bg-teal-600 text-white border-teal-600 shadow-xs font-bold"
+									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-teal-600"
 							}`}
 							title={state ? `Зуб ${t} (${state})` : `Зуб ${t}`}
 						>

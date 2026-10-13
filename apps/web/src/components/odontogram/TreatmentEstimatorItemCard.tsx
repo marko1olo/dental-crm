@@ -1,5 +1,12 @@
+import {
+	AlertTriangle,
+	ArrowRightLeft,
+	RotateCcw,
+	ShieldCheck,
+	Trash2,
+} from "lucide-react";
 import type React from "react";
-import { AlertTriangle, ArrowRightLeft, RotateCcw, ShieldCheck, Trash2 } from "lucide-react";
+import { useState } from "react";
 import {
 	calculateTreatmentWarranty,
 	type EstimatorContract,
@@ -21,9 +28,12 @@ export interface TreatmentEstimatorItemCardProps {
 	collision?: PlanItemCollision | null | undefined;
 	onReplaceWithImplant?: ((toothNumber: number) => void) | undefined;
 	onRestoreToothStatus?: ((toothNumber: number) => void) | undefined;
+	onPriceChange?: ((idx: number, newPrice: number | null) => void) | undefined;
 }
 
-export const TreatmentEstimatorItemCard: React.FC<TreatmentEstimatorItemCardProps> = ({
+export const TreatmentEstimatorItemCard: React.FC<
+	TreatmentEstimatorItemCardProps
+> = ({
 	item,
 	globalIdx,
 	contract,
@@ -34,12 +44,34 @@ export const TreatmentEstimatorItemCard: React.FC<TreatmentEstimatorItemCardProp
 	collision,
 	onReplaceWithImplant,
 	onRestoreToothStatus,
+	onPriceChange,
 }) => {
+	const [isCollapsing, setIsCollapsing] = useState(false);
+	const [isEditingPrice, setIsEditingPrice] = useState(false);
+	const [customPriceInput, setCustomPriceInput] = useState("");
 	const warranty = calculateTreatmentWarranty(item);
 	const rowMoney = estimatorRowMoney(item, contract);
 
+	const handleSaveCustomPrice = () => {
+		const parsed = parseFloat(customPriceInput);
+		if (!Number.isNaN(parsed) && parsed >= 0) {
+			onPriceChange?.(globalIdx, parsed);
+			setIsEditingPrice(false);
+		} else {
+			setIsEditingPrice(false);
+		}
+	};
+
+	const handleRemoveClick = () => {
+		if (isCollapsing) return;
+		setIsCollapsing(true);
+		setTimeout(() => {
+			onRemove(globalIdx);
+		}, 180);
+	};
+
 	return (
-		<div className="plan-item-card">
+		<div className={`plan-item-card ${isCollapsing ? "animate-collapse" : ""}`}>
 			<div className="plan-item-row">
 				<div className="plan-item-info">
 					<div className="plan-item-header flex items-center justify-between gap-2 flex-wrap">
@@ -63,12 +95,113 @@ export const TreatmentEstimatorItemCard: React.FC<TreatmentEstimatorItemCardProp
 					</div>
 					<div className="plan-item-price-quantity">
 						{!rowMoney.known ? (
-							<span className="text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-1.5 flex-wrap">
-								<span>Цена не назначена</span>
-								<span className="text-xs font-semibold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">
-									{item.issue ? "нет в вашем прайсе" : "сумма в плане не читается"}
+							<div className="flex items-center gap-2 flex-wrap">
+								<span className="text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-1.5 flex-wrap">
+									<span>Цена не назначена</span>
+									<span className="text-xs font-semibold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">
+										{item.issue
+											? "нет в вашем прайсе"
+											: "сумма в плане не читается"}
+									</span>
 								</span>
-							</span>
+								{onPriceChange && (
+									<div
+										className="flex items-center gap-1.5"
+										style={{ gap: "6px" }}
+									>
+										<button
+											type="button"
+											onClick={() => onPriceChange(globalIdx, 0)}
+											style={{ padding: "4px 10px" }}
+											className="dente-filter-chip px-2.5 py-1 text-xs font-bold rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all cursor-pointer min-h-[30px]"
+											title="Установить цену 0 ₽ (Гарантийный случай / контрольный осмотр)"
+											data-testid={`btn-set-warranty-zero-${item.toothNumber || globalIdx}`}
+										>
+											0 ₽ (Гарантия)
+										</button>
+										{isEditingPrice ? (
+											<div
+												className="flex items-center gap-1"
+												style={{ gap: "6px" }}
+											>
+												<input
+													type="number"
+													min="0"
+													step="100"
+													value={customPriceInput}
+													onChange={(e) => setCustomPriceInput(e.target.value)}
+													style={{ padding: "4px 8px" }}
+													className="w-20 px-2 py-1 text-xs rounded-md border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-mono min-h-[30px]"
+													placeholder="Цена ₽"
+													autoFocus
+												/>
+												<button
+													type="button"
+													onClick={handleSaveCustomPrice}
+													style={{
+														padding: "4px 10px",
+														backgroundColor: "#0d9488",
+														color: "#ffffff",
+													}}
+													className="px-2.5 py-1 text-xs font-bold rounded-md bg-teal-600 text-white hover:bg-teal-700 cursor-pointer min-h-[30px]"
+												>
+													✓
+												</button>
+												<button
+													type="button"
+													onClick={() => setIsEditingPrice(false)}
+													style={{ padding: "4px 8px" }}
+													className="px-2 py-1 text-xs text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer min-h-[30px]"
+												>
+													Отмена
+												</button>
+											</div>
+										) : (
+											<button
+												type="button"
+												onClick={() => {
+													setCustomPriceInput(
+														item.price !== null ? String(item.price) : "",
+													);
+													setIsEditingPrice(true);
+												}}
+												style={{ padding: "4px 10px" }}
+												className="dente-filter-chip px-2.5 py-1 text-xs font-semibold rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] transition-all cursor-pointer min-h-[30px]"
+												title="Ввести цену вручную"
+												data-testid={`btn-custom-price-${item.toothNumber || globalIdx}`}
+											>
+												Ввести цену
+											</button>
+										)}
+									</div>
+								)}
+							</div>
+						) : item.price === 0 ? (
+							<div
+								className="flex items-center gap-2 flex-wrap"
+								style={{ gap: "8px" }}
+							>
+								<span
+									style={{ padding: "3px 10px" }}
+									className="text-emerald-700 dark:text-emerald-300 font-bold text-xs px-2.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30"
+								>
+									0 ₽ (Гарантия / Без оплаты)
+								</span>
+								{onPriceChange && (
+									<button
+										type="button"
+										onClick={() => {
+											setCustomPriceInput("0");
+											setIsEditingPrice(true);
+										}}
+										style={{ padding: "2px 8px" }}
+										className="text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] underline cursor-pointer"
+										title="Изменить цену"
+									>
+										Изменить
+									</button>
+								)}
+							</div>
 						) : rowMoney.hasContract && rowMoney.coveragePct === 0 ? (
 							<span className="text-rose-500 font-semibold flex items-center gap-1.5 flex-wrap">
 								<span>{formatRub(rowMoney.unitKopecks)}</span>
@@ -101,9 +234,25 @@ export const TreatmentEstimatorItemCard: React.FC<TreatmentEstimatorItemCardProp
 								</span>
 							</span>
 						) : (
-							<span>
-								{formatRub(rowMoney.unitKopecks)} x {item.quantity}
-							</span>
+							<div
+								className="flex items-center gap-2 flex-wrap"
+								style={{ gap: "8px" }}
+							>
+								<span>
+									{formatRub(rowMoney.unitKopecks)} x {item.quantity}
+								</span>
+								{onPriceChange && (
+									<button
+										type="button"
+										onClick={() => onPriceChange(globalIdx, 0)}
+										style={{ padding: "2px 8px" }}
+										className="dente-filter-chip text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-md hover:bg-emerald-500/20 cursor-pointer"
+										title="Сделать услугу гарантийной (0 ₽)"
+									>
+										Сделать 0 ₽
+									</button>
+								)}
+							</div>
 						)}
 					</div>
 
@@ -130,7 +279,9 @@ export const TreatmentEstimatorItemCard: React.FC<TreatmentEstimatorItemCardProp
 											!isDeciduousFdiToothNumber(item.toothNumber) && (
 												<button
 													type="button"
-													onClick={() => onReplaceWithImplant(item.toothNumber!)}
+													onClick={() =>
+														onReplaceWithImplant(item.toothNumber!)
+													}
 													className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-md bg-amber-600 hover:bg-amber-700 text-white transition-colors cursor-pointer"
 													title="Заменить позицию на дентальную имплантацию"
 													data-testid={`btn-ghost-replace-implant-${item.toothNumber}`}
@@ -153,7 +304,7 @@ export const TreatmentEstimatorItemCard: React.FC<TreatmentEstimatorItemCardProp
 										)}
 										<button
 											type="button"
-											onClick={() => onRemove(globalIdx)}
+											onClick={handleRemoveClick}
 											className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-md bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-200 hover:bg-rose-200 dark:hover:bg-rose-900/70 transition-colors cursor-pointer"
 											title="Удалить недействительную услугу"
 											data-testid={`btn-ghost-remove-item-${item.toothNumber}`}
@@ -180,7 +331,7 @@ export const TreatmentEstimatorItemCard: React.FC<TreatmentEstimatorItemCardProp
 				</div>
 				<button
 					type="button"
-					onClick={() => onRemove(globalIdx)}
+					onClick={handleRemoveClick}
 					className="btn-remove-item"
 					title="Удалить"
 				>

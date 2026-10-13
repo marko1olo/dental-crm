@@ -27,8 +27,10 @@ export const FinanceTaxDeductionCard: React.FC<FinanceTaxDeductionCardProps> = (
 			className={`finance-tax-deduction-card pb-3 flex flex-col justify-between ${className}`.trim()}
 			data-testid="finance-tax-deduction-card"
 		>
-			<span>Вычет</span>
-			<strong>{displayValue}</strong>
+			<div className="finance-tax-card-header flex items-center justify-between w-full">
+				<span>Вычет</span>
+				<strong>{displayValue}</strong>
+			</div>
 			<p className="leading-relaxed text-xs text-[var(--muted,#64748b)] mt-1.5 m-0">
 				медицинские услуги, пригодные для справки
 			</p>
@@ -36,7 +38,7 @@ export const FinanceTaxDeductionCard: React.FC<FinanceTaxDeductionCardProps> = (
 				<button
 					type="button"
 					onClick={onOpenCertificateModal}
-					className="mt-2 text-xs font-semibold text-[var(--teal,var(--brand-primary))] hover:underline text-left cursor-pointer p-0 bg-transparent border-none"
+					className="mt-2 text-xs font-semibold text-[var(--teal,var(--brand-primary))] hover:underline text-left cursor-pointer p-0 bg-transparent border-none whitespace-nowrap shrink-0"
 				>
 					Сформировать справку для ФНС →
 				</button>

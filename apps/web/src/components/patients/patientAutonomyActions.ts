@@ -1,10 +1,10 @@
 import type { Patient } from "@dental/shared";
-import { showToast } from "../GlobalToast";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { useScheduleStore } from "../../store/scheduleStore";
-import { applySomaticNormToText } from "../../utils/somaticNorm";
 import type { AppView } from "../../utils/routeUtils";
+import { applySomaticNormToText } from "../../utils/somaticNorm";
+import { showToast } from "../GlobalToast";
 import type { PatientCoreDraft } from "./PatientCoreEditorForm";
 
 export async function executePatientCoreSaveAutonomy({
@@ -102,9 +102,8 @@ export function executeOpenPatientVisitAutonomy({
 	selectedPatient,
 	setSelectedPatientId = (id: string) =>
 		usePatientStore.getState().setSelectedPatientId(id),
-	setCurrentView = (
-		view: AppView,
-	) => useAppStore.getState().setCurrentView(view),
+	setCurrentView = (view: AppView) =>
+		useAppStore.getState().setCurrentView(view),
 	showToastFn = showToast,
 }: {
 	selectedPatient: Patient | null | undefined;
@@ -134,7 +133,8 @@ export function executeBookPatientAppointmentAutonomy({
 	selectedPatient,
 	setNewAppointmentDraft = (draft: any) =>
 		useScheduleStore.getState().setNewAppointmentDraft(draft),
-	setCurrentView = (view: AppView) => useAppStore.getState().setCurrentView(view),
+	setCurrentView = (view: AppView) =>
+		useAppStore.getState().setCurrentView(view),
 	showToastFn = showToast,
 }: {
 	selectedPatient: Patient | null | undefined;
@@ -211,10 +211,7 @@ export function executePatientSomaticNormAutonomy({
 	if (typeof updatePatientCoreDraft === "function") {
 		updatePatientCoreDraft("notes", newNotes);
 	}
-	showToastFn(
-		"Установлена норма соматического статуса",
-		"success",
-	);
+	showToastFn("Установлена норма соматического статуса", "success");
 	return { executed: true, notes: newNotes };
 }
 
@@ -239,8 +236,10 @@ export function mapPatientToGeneralInfo(raw: any): PatientGeneralInfo {
 		snils: raw.snils ?? admin.snils ?? "",
 		inn: raw.inn ?? admin.taxpayerInn ?? "",
 		omsPolicyNumber: raw.omsPolicyNumber ?? admin.insurancePolicyNumber ?? "",
-		registrationAddress: raw.registrationAddress ?? admin.registrationAddress ?? "",
-		residentialAddress: raw.residentialAddress ?? admin.residentialAddress ?? "",
+		registrationAddress:
+			raw.registrationAddress ?? admin.registrationAddress ?? "",
+		residentialAddress:
+			raw.residentialAddress ?? admin.residentialAddress ?? "",
 		representativeFullName:
 			raw.representativeFullName ?? admin.legalRepresentativeFullName ?? "",
 		representativeType:
@@ -283,7 +282,10 @@ export function resolveInitialSafetyProfile(
 		...(explicitSafety ?? {}),
 	};
 	for (const key of Object.keys(fromNotes)) {
-		if ((fromNotes as unknown as Record<string, unknown>)[key] === true && !explicitSafety) {
+		if (
+			(fromNotes as unknown as Record<string, unknown>)[key] === true &&
+			!explicitSafety
+		) {
 			merged[key] = true;
 		}
 	}
@@ -368,7 +370,10 @@ export async function executePatientCardModalSaveAutonomy({
 	selectedPatient: Patient;
 	updatedGeneral: PatientGeneralInfo;
 	updatedSafety: PatientClinicalSafetyProfile;
-	updatePatientCoreDraft: (field: keyof PatientCoreDraft, value: string) => void;
+	updatePatientCoreDraft: (
+		field: keyof PatientCoreDraft,
+		value: string,
+	) => void;
 	updatePatientAdministrativeProfileDraft: (field: any, value: any) => void;
 	setDashboard?: (updater: (curr: any) => any) => void;
 }) {
@@ -385,10 +390,16 @@ export async function executePatientCardModalSaveAutonomy({
 		updatePatientCoreDraft("notes", updatedGeneral.doctorClinicalNotes ?? "");
 	}
 	if (updatedGeneral.snils !== undefined) {
-		updatePatientAdministrativeProfileDraft("snils", updatedGeneral.snils ?? "");
+		updatePatientAdministrativeProfileDraft(
+			"snils",
+			updatedGeneral.snils ?? "",
+		);
 	}
 	if (updatedGeneral.inn !== undefined) {
-		updatePatientAdministrativeProfileDraft("taxpayerInn", updatedGeneral.inn ?? "");
+		updatePatientAdministrativeProfileDraft(
+			"taxpayerInn",
+			updatedGeneral.inn ?? "",
+		);
 	}
 	if (updatedGeneral.omsPolicyNumber !== undefined) {
 		updatePatientAdministrativeProfileDraft(
@@ -409,20 +420,23 @@ export async function executePatientCardModalSaveAutonomy({
 		);
 	}
 	try {
-		const resCore = await fetchWithHandling(`/api/patients/${selectedPatient.id}`, {
-			method: "PUT",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				fullName: updatedGeneral.fullName?.trim() || selectedPatient.fullName,
-				phone: updatedGeneral.phone?.trim() || null,
-				birthDate: updatedGeneral.birthDate?.trim() || null,
-				email: updatedGeneral.email?.trim() || selectedPatient.email || null,
-				notes:
-					updatedGeneral.doctorClinicalNotes?.trim() ||
-					selectedPatient.notes ||
-					null,
-			}),
-		});
+		const resCore = await fetchWithHandling(
+			`/api/patients/${selectedPatient.id}`,
+			{
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					fullName: updatedGeneral.fullName?.trim() || selectedPatient.fullName,
+					phone: updatedGeneral.phone?.trim() || null,
+					birthDate: updatedGeneral.birthDate?.trim() || null,
+					email: updatedGeneral.email?.trim() || selectedPatient.email || null,
+					notes:
+						updatedGeneral.doctorClinicalNotes?.trim() ||
+						selectedPatient.notes ||
+						null,
+				}),
+			},
+		);
 		const resAdmin = await fetchWithHandling(
 			`/api/patients/${selectedPatient.id}/administrative-profile`,
 			{
@@ -431,11 +445,13 @@ export async function executePatientCardModalSaveAutonomy({
 				body: JSON.stringify({
 					snils: updatedGeneral.snils?.trim() || null,
 					taxpayerInn:
-						updatedGeneral.inn && /^\d{10}$|^\d{12}$/.test(updatedGeneral.inn.trim())
+						updatedGeneral.inn &&
+						/^\d{10}$|^\d{12}$/.test(updatedGeneral.inn.trim())
 							? updatedGeneral.inn.trim()
 							: null,
 					insurancePolicyNumber: updatedGeneral.omsPolicyNumber?.trim() || null,
-					registrationAddress: updatedGeneral.registrationAddress?.trim() || null,
+					registrationAddress:
+						updatedGeneral.registrationAddress?.trim() || null,
 					residentialAddress: updatedGeneral.residentialAddress?.trim() || null,
 					clinicalSafetyProfile: updatedSafety,
 				}),
@@ -459,4 +475,3 @@ export async function executePatientCardModalSaveAutonomy({
 		// Handled by fetchWithHandling/toast
 	}
 }
-

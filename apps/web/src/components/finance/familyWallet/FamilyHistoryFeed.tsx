@@ -68,13 +68,29 @@ export const FamilyHistoryFeed: React.FC<FamilyHistoryFeedProps> = ({
 							</thead>
 							<tbody className="divide-y divide-[var(--line,#e2e8f0)]">
 								{ledgerEntries.map((entry) => {
+									const rawDate = entry.createdAt || (entry as any).date;
+									const dateStr = rawDate ? new Date(rawDate).toLocaleDateString("ru-RU") : "—";
+									const opType = (entry as any).operationType;
 									const isPlus =
 										entry.entryType === "deposit" ||
-										entry.entryType === "refund_deposit";
+										entry.entryType === "refund_deposit" ||
+										opType === "topup" ||
+										opType === "refund";
+									const isDeposit = entry.entryType === "deposit" || opType === "topup";
+									const isRefund = entry.entryType === "refund_deposit" || opType === "refund";
+									const typeLabel = isDeposit
+										? "Пополнение"
+										: isRefund
+											? "Возврат на депозит"
+											: "Списание";
+									const payer = entry.payerFullName || (entry as any).payerName || headFullName;
+									const target = entry.targetPatientFullName || (entry as any).targetName || "—";
+									const noteText = entry.actNumber || entry.visitId || entry.notes || (entry as any).note || "—";
+
 									return (
 										<tr key={entry.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/40">
 											<td className="py-2.5 px-3 whitespace-nowrap font-mono text-[11px]">
-												{new Date(entry.createdAt).toLocaleDateString("ru-RU")}
+												{dateStr}
 											</td>
 											<td className="py-2.5 px-3">
 												<span
@@ -84,24 +100,20 @@ export const FamilyHistoryFeed: React.FC<FamilyHistoryFeedProps> = ({
 															: "bg-rose-500/15 text-rose-800 dark:text-rose-300"
 													}`}
 												>
-													{entry.entryType === "deposit"
-														? "Пополнение"
-														: entry.entryType === "refund_deposit"
-															? "Возврат на депозит"
-															: "Списание"}
+													{typeLabel}
 												</span>
 											</td>
 											<td className="py-2.5 px-3 font-medium">
-												{entry.payerFullName || headFullName}
+												{payer}
 											</td>
 											<td className="py-2.5 px-3 font-medium">
-												{entry.targetPatientFullName || "—"}
+												{target}
 											</td>
 											<td
 												className="py-2.5 px-3 text-[11px] text-[var(--muted,#64748b)] truncate max-w-[200px]"
-												title={entry.notes}
+												title={noteText}
 											>
-												{entry.actNumber || entry.visitId || entry.notes || "—"}
+												{noteText}
 											</td>
 											<td
 												className={`py-2.5 px-3 text-right font-mono font-bold whitespace-nowrap ${

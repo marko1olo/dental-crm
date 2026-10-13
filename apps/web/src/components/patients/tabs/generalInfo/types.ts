@@ -31,6 +31,7 @@ export interface PatientGeneralInfo {
 	cardNumber?: string | null | undefined;
 	medicalCardNumber?: string | null | undefined;
 	phone?: string | null | undefined;
+	email?: string | null | undefined;
 	birthDate?: string | null | undefined;
 	gender?: "male" | "female" | "other" | string | null | undefined;
 	address?: string | null | undefined;
@@ -80,11 +81,21 @@ export interface PatientGeneralInfo {
 export interface PatientGeneralInfoTabProps {
 	patient?: PatientGeneralInfo | null | undefined;
 	safetyProfile?: PatientClinicalSafetyProfile | null | undefined;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
-	onUpdateSafetyProfile?: ((profile: PatientClinicalSafetyProfile) => void) | undefined;
+	onUpdatePatient?:
+		| ((field: keyof PatientGeneralInfo, value: any) => void)
+		| undefined;
+	onUpdateSafetyProfile?:
+		| ((profile: PatientClinicalSafetyProfile) => void)
+		| undefined;
 	onApplySomaticNorm?: (() => void) | undefined;
 	disabled?: boolean | undefined;
-	activeSection?: "all" | "general" | "somatic" | "visits" | "family" | undefined;
+	activeSection?:
+		| "all"
+		| "general"
+		| "somatic"
+		| "visits"
+		| "family"
+		| undefined;
 	onNavigateToVisit?: ((visitId: string) => void) | undefined;
 	onNewAppointment?: ((patientId?: string) => void) | undefined;
 	onOpenDmsLetters?: (() => void) | undefined;
@@ -93,7 +104,9 @@ export interface PatientGeneralInfoTabProps {
 
 export interface PatientIdentitySectionProps {
 	patient?: PatientGeneralInfo | null | undefined;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?:
+		| ((field: keyof PatientGeneralInfo, value: any) => void)
+		| undefined;
 	disabled?: boolean | undefined;
 	isOpen?: boolean | undefined;
 	onToggle?: (() => void) | undefined;
@@ -104,7 +117,9 @@ export interface PatientIdentitySectionProps {
 
 export interface PatientInsuranceSectionProps {
 	patient?: PatientGeneralInfo | null | undefined;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?:
+		| ((field: keyof PatientGeneralInfo, value: any) => void)
+		| undefined;
 	disabled?: boolean | undefined;
 	isOpen?: boolean | undefined;
 	onToggle?: (() => void) | undefined;
@@ -115,7 +130,9 @@ export interface PatientInsuranceSectionProps {
 
 export interface PatientTagsMarketingSectionProps {
 	patient?: PatientGeneralInfo | null | undefined;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?:
+		| ((field: keyof PatientGeneralInfo, value: any) => void)
+		| undefined;
 	disabled?: boolean | undefined;
 	isOpen?: boolean | undefined;
 	onToggle?: (() => void) | undefined;
@@ -126,7 +143,9 @@ export interface PatientTagsMarketingSectionProps {
 
 export interface PatientRepresentativesSectionProps {
 	patient?: PatientGeneralInfo | null | undefined;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?:
+		| ((field: keyof PatientGeneralInfo, value: any) => void)
+		| undefined;
 	disabled?: boolean | undefined;
 	mode?: "compact" | "full" | undefined;
 }
@@ -137,28 +156,39 @@ export interface PatientSafetyBannerProps {
 	mode?: "compact" | "full" | undefined;
 	patientId?: string | null | undefined;
 	patientName?: string | null | undefined;
-	onToggleAllergy: (field: "hasPenicillinAllergy" | "hasNsaidAllergy" | "hasLatexAllergy") => void;
+	onToggleAllergy: (
+		field: "hasPenicillinAllergy" | "hasNsaidAllergy" | "hasLatexAllergy",
+	) => void;
 	onApplySomaticNorm?: (() => void) | undefined;
-	onUpdateSafetyProfile?: ((profile: PatientClinicalSafetyProfile) => void) | undefined;
+	onUpdateSafetyProfile?:
+		| ((profile: PatientClinicalSafetyProfile) => void)
+		| undefined;
 }
 
 export interface PatientDemographicsBasicCardProps {
 	patient?: PatientGeneralInfo | null | undefined;
 	currentProfile: PatientClinicalSafetyProfile;
 	disabled?: boolean | undefined;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
-	onToggleAllergy: (field: "hasPenicillinAllergy" | "hasNsaidAllergy" | "hasLatexAllergy") => void;
+	onUpdatePatient?:
+		| ((field: keyof PatientGeneralInfo, value: any) => void)
+		| undefined;
+	onToggleAllergy: (
+		field: "hasPenicillinAllergy" | "hasNsaidAllergy" | "hasLatexAllergy",
+	) => void;
 	onApplySomaticNorm?: (() => void) | undefined;
-	onUpdateSafetyProfile?: ((profile: PatientClinicalSafetyProfile) => void) | undefined;
+	onUpdateSafetyProfile?:
+		| ((profile: PatientClinicalSafetyProfile) => void)
+		| undefined;
 }
 
 export interface PatientVisitsOverviewSectionProps {
 	patient?: PatientGeneralInfo | null | undefined;
 	disabled?: boolean | undefined;
 	clinicalTimelineVisits: import("../../PatientHistoryTab").ClinicalVisitItem[];
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?:
+		| ((field: keyof PatientGeneralInfo, value: any) => void)
+		| undefined;
 	onNavigateToVisit?: ((visitId: string) => void) | undefined;
 	onNewAppointment?: ((patientId?: string) => void) | undefined;
 	onOpenTaxCertificate?: (() => void) | undefined;
 }
-
