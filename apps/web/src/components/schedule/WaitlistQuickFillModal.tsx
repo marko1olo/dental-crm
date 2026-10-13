@@ -20,6 +20,7 @@ import { WaitlistAddPatientForm } from "./WaitlistAddPatientForm";
 import { WaitlistMatchTab } from "./WaitlistMatchTab";
 import { WaitlistListTab } from "./WaitlistListTab";
 import type { TargetSlotInfo } from "./waitlistCancellationEngine";
+import type { WaitlistMatchRow } from "./WaitlistMatchesBlock";
 import {
 	calculateMatchScore,
 	DEMO_SHOWCASE_WAITLIST_ENTRIES,
@@ -202,19 +203,132 @@ export function WaitlistQuickFillModal({
 	const [activeMenuPatientId, setActiveMenuPatientId] = useState<string | null>(
 		null,
 	);
+	const [freedSlotsFromServer, setFreedSlotsFromServer] = useState<
+		TargetSlotInfo[]
+	>([]);
+	const [serverMatchesMap, setServerMatchesMap] = useState<Map<
+		string,
+		WaitlistMatchRow
+	> | null>(null);
+
+	// Load real freed slots from backend when modal opens without a predetermined targetSlot
+	useEffect(() => {
+		if (!isOpen || targetSlot) return;
+		let isCancelled = false;
+		async function fetchFreedSlots() {
+			try {
+				const res = await fetch("/api/schedule/freed-slots", {
+					headers: auth?.denteClinicalReadHeaders
+						? auth.denteClinicalReadHeaders()
+						: {},
+				});
+				if (res.ok) {
+					const data = await res.json();
+					if (!isCancelled && data && Array.isArray(data.slots)) {
+						const mapped: TargetSlotInfo[] = data.slots.map(
+							// biome-ignore lint/suspicious/noExplicitAny: server slot shape
+							(s: any) => ({
+								appointmentId: s.appointmentId,
+								startsAt:
+									typeof s.startsAt === "string"
+										? s.startsAt
+										: new Date(s.startsAt).toISOString(),
+								endsAt:
+									typeof s.endsAt === "string"
+										? s.endsAt
+										: new Date(s.endsAt).toISOString(),
+								doctorUserId: s.doctorUserId || null,
+								doctorName: s.doctorName || "Дежурный врач",
+								freedBecause: s.freedBecause || "приём отменён",
+							}),
+						);
+						setFreedSlotsFromServer(mapped);
+					}
+				}
+			} catch (err) {
+				logger.warn("Failed to load freed slots from server", err);
+			}
+		}
+		void fetchFreedSlots();
+		return () => {
+			isCancelled = true;
+		};
+	}, [isOpen, targetSlot, auth]);
+
+	const combinedDiscoveredSlots: TargetSlotInfo[] = useMemo(() => {
+		if (targetSlot) return [targetSlot];
+		const combined = [...freedSlotsFromServer];
+		for (const slot of discoveredFreeSlots) {
+			if (
+				!combined.some(
+					(c) =>
+						c.startsAt === slot.startsAt &&
+						c.doctorUserId === slot.doctorUserId,
+				)
+			) {
+				combined.push(slot);
+			}
+			if (combined.length >= 8) break;
+		}
+		return combined.length > 0 ? combined : discoveredFreeSlots;
+	}, [targetSlot, freedSlotsFromServer, discoveredFreeSlots]);
+
 	const activeTargetSlot =
-		targetSlot || discoveredFreeSlots[selectedSlotIndex] || null;
+		targetSlot || combinedDiscoveredSlots[selectedSlotIndex] || null;
+
+	// Query /api/appointments/:appointmentId/waitlist-matches when activeTargetSlot has an appointmentId
+	useEffect(() => {
+		const apptId = activeTargetSlot?.appointmentId;
+		if (!apptId || !isOpen) {
+			setServerMatchesMap(null);
+			return;
+		}
+		const validApptId: string = apptId;
+		let isCancelled = false;
+		async function fetchServerMatches() {
+			try {
+				const res = await fetch(
+					`/api/appointments/${encodeURIComponent(validApptId)}/waitlist-matches`,
+					{
+						headers: auth?.denteClinicalReadHeaders
+							? auth.denteClinicalReadHeaders()
+							: {},
+					},
+				);
+				if (res.ok) {
+					const data = await res.json();
+					if (!isCancelled && data && Array.isArray(data.matches)) {
+						const map = new Map<string, WaitlistMatchRow>();
+						for (const m of data.matches as WaitlistMatchRow[]) {
+							if (m.entryId) map.set(m.entryId, m);
+							if (m.patientId) map.set(m.patientId, m);
+						}
+						setServerMatchesMap(map);
+					}
+				} else {
+					if (!isCancelled) setServerMatchesMap(null);
+				}
+			} catch (err) {
+				logger.warn("Failed to fetch server waitlist matches", err);
+				if (!isCancelled) setServerMatchesMap(null);
+			}
+		}
+		void fetchServerMatches();
+		return () => {
+			isCancelled = true;
+		};
+	}, [activeTargetSlot?.appointmentId, isOpen, auth]);
 
 	useEffect(() => {
 		if (isOpen) {
 			fetchWaitlist();
-			if (targetSlot || discoveredFreeSlots.length > 0) {
+			if (targetSlot || combinedDiscoveredSlots.length > 0) {
 				setActiveTab("match");
 			}
 		} else {
 			setActiveMenuPatientId(null);
 		}
-	}, [isOpen, targetSlot, discoveredFreeSlots.length, fetchWaitlist]);
+	}, [isOpen, targetSlot, combinedDiscoveredSlots.length, fetchWaitlist]);
 
 	// Close dropdown action menu on click outside
 	useEffect(() => {
@@ -240,19 +354,70 @@ export function WaitlistQuickFillModal({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, onClose]);
 
-	// Calculate matches & scores
+	// Calculate matches & scores (enriched by server API matches when activeTargetSlot.appointmentId is present)
 	const scoredPatients = useMemo(() => {
 		return items
 			.filter((item) => item.status === "active" || item.status === "waiting")
 			.map((item) => {
-				const scoring = calculateMatchScore(item, activeTargetSlot);
+				const baseScoring = calculateMatchScore(item, activeTargetSlot);
+				const serverMatch = serverMatchesMap
+					? serverMatchesMap.get(item.id) ||
+						serverMatchesMap.get(item.patientId)
+					: null;
+
+				if (serverMatch) {
+					const reasons = [...baseScoring.matchReasons];
+					if (serverMatch.reason && !reasons.includes(serverMatch.reason)) {
+						reasons.unshift(serverMatch.reason);
+					}
+					const mismatches = [...baseScoring.mismatchReasons];
+					if (
+						serverMatch.alreadyBooked &&
+						!mismatches.includes("Уже есть будущая запись")
+					) {
+						mismatches.push("Уже есть будущая запись");
+					}
+
+					let calculatedScore = baseScoring.score;
+					if (serverMatch.sameDoctor && serverMatch.timeFits) {
+						calculatedScore = Math.max(calculatedScore, 95);
+					} else if (serverMatch.sameDoctor || serverMatch.timeFits) {
+						calculatedScore = Math.max(calculatedScore, 80);
+					}
+					if (serverMatch.alreadyBooked) {
+						calculatedScore = Math.max(15, calculatedScore - 35);
+					}
+
+					let calculatedRank = baseScoring.priorityRank;
+					if (serverMatch.alreadyBooked) {
+						calculatedRank -= 5000;
+					} else {
+						if (serverMatch.sameDoctor) calculatedRank += 1000;
+						if (serverMatch.timeFits) calculatedRank += 500;
+						calculatedRank += (serverMatch.waitingDays || 0) * 10;
+					}
+
+					return {
+						patient: item,
+						scoring: {
+							...baseScoring,
+							score: calculatedScore,
+							priorityRank: calculatedRank,
+							sameDoctor: serverMatch.sameDoctor ?? baseScoring.sameDoctor,
+							timeFits: serverMatch.timeFits ?? baseScoring.timeFits,
+							matchReasons: reasons,
+							mismatchReasons: mismatches,
+						},
+					};
+				}
+
 				return {
 					patient: item,
-					scoring,
+					scoring: baseScoring,
 				};
 			})
 			.sort((a, b) => b.scoring.priorityRank - a.scoring.priorityRank);
-	}, [items, activeTargetSlot]);
+	}, [items, activeTargetSlot, serverMatchesMap]);
 
 	// Filtered for "list" tab
 	const filteredList = useMemo(() => {
@@ -603,7 +768,7 @@ export function WaitlistQuickFillModal({
 				{/* Target Slot Banner */}
 				<WaitlistSlotSelectorBanner
 					activeTargetSlot={activeTargetSlot}
-					discoveredFreeSlots={discoveredFreeSlots}
+					discoveredFreeSlots={combinedDiscoveredSlots}
 					selectedSlotIndex={selectedSlotIndex}
 					onSelectSlotIndex={setSelectedSlotIndex}
 					scoredPatientsCount={scoredPatients.length}

@@ -37,6 +37,14 @@ async function capture() {
     const lightStat = fs.statSync(lightPath);
     console.log(`Saved PC Light screenshot: ${lightPath} (${lightStat.size} bytes)`);
 
+    const redteamDir = path.resolve(__dirname, "../docs/proofs/redteam_ui_unification");
+    if (!fs.existsSync(redteamDir)) {
+      fs.mkdirSync(redteamDir, { recursive: true });
+    }
+    const redteamLightPath = path.join(redteamDir, "waitlist_quickfill_pc_light.png");
+    fs.copyFileSync(lightPath, redteamLightPath);
+    console.log(`Copied PC Light to: ${redteamLightPath}`);
+
     // 2. Dark theme
     console.log("Navigating to dark preview...");
     await page.goto("http://127.0.0.1:5173/waitlist_quickfill_preview.html?theme=dark", {
@@ -52,6 +60,10 @@ async function capture() {
     await page.screenshot({ path: darkPath });
     const darkStat = fs.statSync(darkPath);
     console.log(`Saved PC Dark screenshot: ${darkPath} (${darkStat.size} bytes)`);
+
+    const redteamDarkPath = path.join(redteamDir, "waitlist_quickfill_pc_dark.png");
+    fs.copyFileSync(darkPath, redteamDarkPath);
+    console.log(`Copied PC Dark to: ${redteamDarkPath}`);
 
     if (lightStat.size < 40000 || darkStat.size < 40000) {
       throw new Error(`Screenshots too small: light=${lightStat.size}, dark=${darkStat.size}`);

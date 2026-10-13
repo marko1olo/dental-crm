@@ -83,7 +83,7 @@ export const URGENCY_CONFIG: Record<
     label: "Плановый приём",
     shortLabel: "Плановый",
     badgeClass:
-      "bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-500/25 font-medium",
+      "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] font-medium",
     weight: 5,
   },
 };

@@ -256,7 +256,7 @@ export const FreedSlotsPanel: React.FC = () => {
 				</div>
 				<p
 					style={{
-						color: "var(--muted, #64748b)",
+						color: "var(--muted)",
 						fontSize: "0.8125rem",
 						padding: "1rem",
 						margin: 0,
@@ -419,7 +419,7 @@ export const FreedSlotsPanel: React.FC = () => {
 																</span>
 															) : (
 																<button
-																	className="secondary-button h-7 px-2 text-xs font-semibold inline-flex items-center cursor-pointer pointer-coarse:min-h-[44px]"
+																	className="secondary-button h-8 px-2.5 min-h-[32px] text-xs font-semibold inline-flex items-center cursor-pointer pointer-coarse:min-h-[44px]"
 																	type="button"
 																	disabled={false}
 																	onClick={() => {

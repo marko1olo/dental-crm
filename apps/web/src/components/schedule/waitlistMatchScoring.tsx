@@ -137,7 +137,7 @@ export const PRIORITY_CONFIG: Record<
 	low: {
 		label: "Лист ожидания",
 		badgeClass:
-			"bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-500/25 font-medium",
+			"bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] font-medium",
 		weight: 10,
 	},
 };
@@ -156,7 +156,7 @@ export function renderPriorityIcon(priorityKey: string, size = 12) {
 		case "medium":
 			return <CalendarDays size={size} className="shrink-0 text-sky-500" />;
 		default:
-			return <Clock size={size} className="shrink-0 text-slate-400" />;
+			return <Clock size={size} className="shrink-0 text-[var(--muted)]" />;
 	}
 }
 
