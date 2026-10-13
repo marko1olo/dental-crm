@@ -350,11 +350,20 @@ body:has([data-testid="preventive-inspection-modal"]) .dnt-telephony-patient-dra
 @media (max-width: 640px) {
 	.dnt-telephony-island-container,
 	.telephony-floating-widget,
-	.dnt-telephony-floating,
-	.dnt-incoming-call-badge-container {
+	.dnt-telephony-floating {
 		top: 8px;
 		right: 8px;
 		max-width: 100%;
+	}
+
+	.dnt-incoming-call-badge-container {
+		top: 8px !important;
+		left: 12px !important;
+		right: 12px !important;
+		transform: none !important;
+		max-width: calc(100% - 24px) !important;
+		width: auto !important;
+		margin: 0 auto !important;
 	}
 
 	.dnt-incoming-call-badge {
@@ -558,12 +567,41 @@ html.dark .dnt-telephony-primary-btn:hover {
 	color: #ffffff !important;
 }
 
+/* Bulletproof High-Contrast Play Button for CallAudioPlayer (WCAG AAA) */
+.dnt-player-play-btn {
+	background: #0d9488 !important;
+	background-color: #0d9488 !important;
+	color: #ffffff !important;
+	border: 1px solid #14b8a6 !important;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25) !important;
+}
+
+.dnt-player-play-btn svg {
+	color: #ffffff !important;
+	fill: #ffffff !important;
+}
+
+[data-theme="dark"] .dnt-player-play-btn,
+html.dark .dnt-player-play-btn {
+	background: #0d9488 !important;
+	background-color: #0d9488 !important;
+	color: #ffffff !important;
+	border: 1.5px solid #2dd4bf !important;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 12px 2px rgba(45, 212, 191, 0.45) !important;
+}
+
+[data-theme="dark"] .dnt-player-play-btn svg,
+html.dark .dnt-player-play-btn svg {
+	color: #ffffff !important;
+	fill: #ffffff !important;
+}
+
 /* ============================================================
    Mandate 8x Unlayered Semantic Styling for Telephony Components
    ============================================================ */
 
-/* Suppress WorkspaceTopBar duplicate capsule when TelephonyFloatingWidget is active */
-body:has([data-testid="telephony-floating-widget"]) .dnt-incoming-call-badge-container {
+/* Suppress WorkspaceTopBar duplicate capsule when TelephonyFloatingWidget is active, but preserve expanded popup */
+body:has([data-testid="telephony-floating-widget"]) .dnt-incoming-call-badge-container:not(:has(.dnt-incoming-call-badge)) {
 	display: none !important;
 }
 
@@ -636,7 +674,7 @@ body:has([aria-modal="true"]) .dnt-telephony-island-container {
 }
 
 .dnt-telephony-island-expanded {
-	width: 420px !important;
+	width: 476px !important;
 	max-width: 100% !important;
 	height: auto !important;
 	max-height: calc(100vh - 48px) !important;
@@ -665,8 +703,8 @@ body:has([aria-modal="true"]) .dnt-telephony-island-container {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 10px 14px;
-	gap: 12px;
+	padding: 10px 12px;
+	gap: 8px;
 	min-height: 48px;
 	box-sizing: border-box;
 }
@@ -689,11 +727,14 @@ body:has([aria-modal="true"]) .dnt-telephony-island-container {
 	color: var(--ink, #0f172a);
 	margin: 0;
 	line-height: 1.2;
+	white-space: nowrap;
 }
 
 .dnt-widget-timer-pill {
 	display: inline-flex;
 	align-items: center;
+	flex-shrink: 0;
+	white-space: nowrap;
 	padding: 1px 6px;
 	border-radius: 9999px;
 	background: var(--teal-surface, rgba(13, 148, 136, 0.12));
@@ -752,9 +793,9 @@ body:has([aria-modal="true"]) .dnt-telephony-island-container {
 .dnt-segmented-group {
 	display: flex;
 	align-items: center;
-	gap: 4px;
+	gap: 2px;
 	background: var(--paper-muted, rgba(0, 0, 0, 0.05));
-	padding: 3px;
+	padding: 2px;
 	border-radius: 8px;
 }
 
@@ -763,7 +804,7 @@ body:has([aria-modal="true"]) .dnt-telephony-island-container {
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
-	padding: 3px 8px;
+	padding: 3px 6px;
 	border-radius: 6px;
 	font-size: 11px;
 	font-weight: 600;

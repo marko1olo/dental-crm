@@ -1,9 +1,9 @@
-import { Calendar, Clock, Zap } from "lucide-react";
+import { Calendar, Clock, X, Zap } from "lucide-react";
 import React from "react";
 import type { Dashboard } from "@dental/shared";
 import { findNearestAvailableSlot } from "../../utils/scheduleCollisionUtils";
 
-export type QuickSlotType = "today_urgent" | "today_standard" | "tomorrow";
+export type QuickSlotType = "today_urgent" | "today_standard" | "tomorrow" | "today_cito";
 
 export interface QuickSlotOption {
 	type: QuickSlotType;
@@ -229,6 +229,7 @@ export interface IncomingCallQuickBookingProps {
 	onSelectSlot: (slotType: QuickSlotType) => void;
 	slots?: readonly QuickSlotOption[] | undefined;
 	className?: string | undefined;
+	onClose?: (() => void) | undefined;
 }
 
 /**
@@ -239,6 +240,7 @@ export function IncomingCallQuickBooking({
 	onSelectSlot,
 	slots,
 	className = "",
+	onClose,
 }: IncomingCallQuickBookingProps) {
 	const displaySlots = slots && slots.length > 0 ? slots : QUICK_SLOT_PRESETS;
 	return (
@@ -251,10 +253,22 @@ export function IncomingCallQuickBooking({
 					<Zap size={12} className="text-amber-500" />
 					Слоты быстрой записи:
 				</span>
-				<span className="text-[10px] text-[var(--muted,#64748b)] flex items-center gap-1">
-					<Clock size={10} />
-					В 1 клик
-				</span>
+				<div className="flex items-center gap-2">
+					<span className="text-[10px] text-[var(--muted,#64748b)] flex items-center gap-1">
+						<Clock size={10} />
+						В 1 клик
+					</span>
+					{onClose && (
+						<button
+							type="button"
+							onClick={onClose}
+							className="text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] p-0.5 text-xs leading-none flex items-center justify-center cursor-pointer"
+							title="Закрыть"
+						>
+							<X size={12} />
+						</button>
+					)}
+				</div>
 			</div>
 			<div className="grid grid-cols-3 gap-1.5">
 				{displaySlots.map((slot) => (

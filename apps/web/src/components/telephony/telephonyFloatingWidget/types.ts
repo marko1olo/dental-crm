@@ -6,6 +6,7 @@
 
 import type { RefObject } from "react";
 import type {
+	CallHistoryItem,
 	IncomingCallPayload,
 	PatientFinancialSummary,
 	PatientLastVisitSummary,
@@ -109,7 +110,7 @@ export interface TelephonyActiveCallHudProps {
 }
 
 export interface TelephonyRecentCallsListProps {
-	callHistory: IncomingCallPayload[];
+	callHistory: CallHistoryItem[];
 	onRedial: (phone: string) => void;
 	onSendWhatsApp: (phone: string) => void;
 }

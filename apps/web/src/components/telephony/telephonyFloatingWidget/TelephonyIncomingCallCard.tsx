@@ -132,7 +132,7 @@ export function TelephonyIncomingCallCard({
 						)}
 						{callAttribution && (
 							<span className="dnt-badge-source">
-								{callAttribution.sourceName}
+								{callAttribution.channelLabel}
 							</span>
 						)}
 					</div>
@@ -180,7 +180,11 @@ export function TelephonyIncomingCallCard({
 								data-testid="telephony-widget-allergy-alert"
 							>
 								<AlertTriangle size={12} />
-								<span>Аллергия: {alert.label}</span>
+								<span>
+									{alert.label.toLowerCase().startsWith("аллерги")
+										? alert.label
+										: `Аллергия: ${alert.label}`}
+								</span>
 							</span>
 						))}
 						{acutePainAlerts.map((alert) => (
@@ -190,7 +194,11 @@ export function TelephonyIncomingCallCard({
 								data-testid="telephony-widget-acute-pain-alert"
 							>
 								<Zap size={12} />
-								<span>Острая боль: {alert.label}</span>
+								<span>
+									{alert.label.toLowerCase().startsWith("острая боль")
+										? alert.label
+										: `Острая боль: ${alert.label}`}
+								</span>
 							</span>
 						))}
 					</div>
@@ -279,10 +287,10 @@ export function TelephonyIncomingCallCard({
 					onClick={() => onQuickBook("urgent")}
 					className="dnt-cta-primary flex-1"
 					data-testid="widget-action-book"
-					title="Записать пациента на приём в расписание"
+					title={isKnownPatient ? "Записать пациента на приём в расписание" : "+ Записать нового пациента"}
 				>
-					<CalendarCheck size={14} />
-					<span>Записать на приём</span>
+					<CalendarCheck size={14} className="shrink-0" />
+					<span>{isKnownPatient ? "Записать на приём" : "+ Записать нового пациента"}</span>
 				</button>
 
 				<button
@@ -310,16 +318,21 @@ export function TelephonyIncomingCallCard({
 
 					{showWidgetMoreMenu && (
 						<TelephonyWidgetMoreMenu
+							isOpen={showWidgetMoreMenu}
+							onClose={onCloseWidgetMoreMenu}
 							activeCall={activeCall}
-							isHeld={isHeld}
-							onToggleHold={onToggleHold}
-							whatsappSent={whatsappSent}
-							onSendWhatsApp={onSendWhatsApp}
-							onQuickBook={onQuickBook}
-							onCopyPhone={onCopyPhone}
+							resolvedPatient={resolvedPatient}
+							callAttribution={callAttribution}
 							isCapturingLead={isCapturingLead}
 							onCaptureLead={onCaptureLead}
-							onClose={onCloseWidgetMoreMenu}
+							onQuickBook={onQuickBook}
+							isCreatingPatient={isCreatingPatient}
+							onQuickCreatePatient={() => onQuickCreatePatient(customPatientName)}
+							onSendWhatsApp={onSendWhatsApp}
+							onToggleTransferPanel={() => {}}
+							isHeld={isHeld}
+							onToggleHold={onToggleHold}
+							onCopyPhone={onCopyPhone}
 						/>
 					)}
 				</div>

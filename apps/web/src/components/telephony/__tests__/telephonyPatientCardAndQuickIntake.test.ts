@@ -21,27 +21,36 @@ describe("Telephony + Patient Registry & Fast Clinical Intake Suite (Mandates 8b
 
 	const popupPath = path.resolve(srcDir, "components/telephony/IncomingCallPopup.tsx");
 	const drawerPath = path.resolve(srcDir, "components/telephony/TelephonyDrawer.tsx");
+	const drawerPanelPath = path.resolve(srcDir, "components/telephony/drawerModules/TelephonyActiveCallPanel.tsx");
+	const callerCardPath = path.resolve(srcDir, "components/telephony/IncomingCallerCard.tsx");
+	const quickActionsPath = path.resolve(srcDir, "components/telephony/incomingCallPopupModules/useIncomingCallQuickActions.ts");
+	const popupDrawerPath = path.resolve(srcDir, "components/telephony/IncomingCallPatientDrawer.tsx");
+
 	const popupSource = fs.readFileSync(popupPath, "utf-8");
 	const drawerSource = fs.readFileSync(drawerPath, "utf-8");
+	const drawerPanelSource = fs.readFileSync(drawerPanelPath, "utf-8");
+	const callerCardSource = fs.readFileSync(callerCardPath, "utf-8");
+	const quickActionsSource = fs.readFileSync(quickActionsPath, "utf-8");
+	const popupDrawerSource = fs.readFileSync(popupDrawerPath, "utf-8");
 
 	it("1. Existing Patient: 1-Click Card Access Without Resetting Active Form 043/u Visit (Doctor Autonomy)", () => {
 		// Drawer toggle retains doctor context
 		assert.ok(
-			popupSource.includes("const handleToggleCardDrawer = () => {"),
-			"IncomingCallPopup must provide handleToggleCardDrawer",
+			quickActionsSource.includes("const handleToggleCardDrawer = () => {"),
+			"IncomingCallPopup controller must provide handleToggleCardDrawer",
 		);
 		assert.ok(
-			popupSource.includes("toggleCallDrawer();"),
-			"IncomingCallPopup must toggle drawer state without calling setCurrentView('patients')",
+			quickActionsSource.includes("toggleCallDrawer();"),
+			"IncomingCallPopup controller must toggle drawer state without calling setCurrentView('patients')",
 		);
 
 		// Route guard against abandoning active 043/u visit
 		assert.ok(
-			popupSource.includes('if (currentView === "visit") {'),
+			quickActionsSource.includes('if (currentView === "visit") {'),
 			"Must check if currentView === 'visit' before full page navigation",
 		);
 		assert.ok(
-			popupSource.includes("Приём пациента активен. Карта доступна в текущей шторке без сброса визита."),
+			quickActionsSource.includes("Приём пациента активен. Карта доступна в текущей шторке без сброса визита."),
 			"Must warn doctor that active visit is preserved and card is accessible in current drawer",
 		);
 	});
@@ -77,12 +86,12 @@ describe("Telephony + Patient Registry & Fast Clinical Intake Suite (Mandates 8b
 
 		// Check UI rendering in TelephonyDrawer and IncomingCallPopup
 		assert.ok(
-			drawerSource.includes("somaticAlerts.map"),
-			"TelephonyDrawer must render somatic alerts list",
+			drawerPanelSource.includes("somaticAlerts.map"),
+			"TelephonyDrawer panel must render somatic alerts list",
 		);
 		assert.ok(
-			popupSource.includes("allergyAlerts.length > 0"),
-			"IncomingCallPopup must render dedicated allergy pill",
+			callerCardSource.includes("allergyAlerts.length > 0"),
+			"IncomingCallerCard must render dedicated allergy pill",
 		);
 	});
 
@@ -146,48 +155,48 @@ describe("Telephony + Patient Registry & Fast Clinical Intake Suite (Mandates 8b
 
 		// TelephonyDrawer & IncomingCallPopup UI assertions
 		assert.ok(
-			drawerSource.includes('data-testid="telephony-drawer-active-plan-card"'),
-			"TelephonyDrawer must render dedicated active treatment plan card",
+			drawerPanelSource.includes('data-testid="telephony-drawer-active-plan-card"'),
+			"TelephonyDrawer active panel must render dedicated active treatment plan card",
 		);
 		assert.ok(
-			popupSource.includes('data-testid="incoming-call-active-plan-badge"'),
-			"IncomingCallPopup must render active treatment plan badge in caller snapshot",
+			callerCardSource.includes('data-testid="incoming-call-active-plan-badge"'),
+			"IncomingCallerCard must render active treatment plan badge in caller snapshot",
 		);
 	});
 
 	it("4. New Patient: 1-Click Fast Intake Without Bureaucratic Red Tape (SNILS/Passport/INN Free)", () => {
-		// Verify handleQuickCreatePatient payload in IncomingCallPopup
+		// Verify handleQuickCreatePatient payload in useIncomingCallQuickActions
 		assert.ok(
-			popupSource.includes("const targetName = entered.trim() || `Пациент ${formattedPhone}`;"),
+			quickActionsSource.includes("const targetName = entered.trim() || `Пациент ${formattedPhone}`;"),
 			"Must auto-populate default fallback name 'Пациент {phone}' if doctor does not enter custom name",
 		);
 		assert.ok(
-			popupSource.includes("body: JSON.stringify({\n\t\t\t\t\tfullName: targetName,\n\t\t\t\t\tphone: currentCall.phone,\n\t\t\t\t}),"),
+			quickActionsSource.includes("body: JSON.stringify({\n\t\t\t\t\tfullName: targetName,\n\t\t\t\t\tphone: currentCall.phone,\n\t\t\t\t}),"),
 			"Payload must contain strictly fullName and phone, with zero mandatory bureaucratic fields",
 		);
 
-		// Verify 5-second quick registration button and test id in TelephonyDrawer
+		// Verify 5-second quick registration button and test id in TelephonyDrawer panel
 		assert.ok(
-			drawerSource.includes('data-testid="drawer-quick-create-patient-btn"'),
-			"TelephonyDrawer must provide drawer-quick-create-patient-btn",
+			drawerPanelSource.includes('data-testid="drawer-quick-create-patient-btn"'),
+			"TelephonyDrawer active panel must provide drawer-quick-create-patient-btn",
 		);
 		assert.ok(
-			drawerSource.includes('data-testid="drawer-new-patient-name-input"'),
-			"TelephonyDrawer must provide drawer-new-patient-name-input",
+			drawerPanelSource.includes('data-testid="drawer-new-patient-name-input"'),
+			"TelephonyDrawer active panel must provide drawer-new-patient-name-input",
 		);
 		assert.ok(
-			drawerSource.includes("+ Создать пациента за 5 секунд"),
+			drawerPanelSource.includes("+ Создать пациента за 5 секунд"),
 			"Must provide explicit 5-second clinical button label",
 		);
 
-		// Verify quick registration in IncomingCallPopup
+		// Verify quick registration in IncomingCallPatientDrawer
 		assert.ok(
-			popupSource.includes('data-testid="popup-drawer-quick-create-patient-btn"'),
-			"IncomingCallPopup must provide popup-drawer-quick-create-patient-btn",
+			popupDrawerSource.includes('data-testid="popup-drawer-quick-create-patient-btn"'),
+			"IncomingCallPatientDrawer must provide popup-drawer-quick-create-patient-btn",
 		);
 		assert.ok(
-			popupSource.includes('data-testid="popup-drawer-new-patient-name-input"'),
-			"IncomingCallPopup must provide popup-drawer-new-patient-name-input",
+			popupDrawerSource.includes('data-testid="popup-drawer-new-patient-name-input"'),
+			"IncomingCallPatientDrawer must provide popup-drawer-new-patient-name-input",
 		);
 	});
 

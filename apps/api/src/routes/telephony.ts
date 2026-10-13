@@ -21,6 +21,7 @@ import {
 } from "../services/telephony/telephonySecurity.js";
 import { telephonyOutboxService } from "../services/telephonyOutboxService.js";
 import { wsBroker } from "../services/websocketBroker.js";
+import { telephonyCallerLookupRoutes } from "./telephonyCallerLookupRoutes.js";
 import { telephonyRecordingRoutes } from "./telephonyRecordingRoutes.js";
 import { telephonySipRoutes } from "./telephonySipRoutes.js";
 
@@ -785,13 +786,8 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 		});
 	};
 
-	server.post<{ Params: { organizationId: string } }>(
-		"/:organizationId/sms/webhook",
-		handleSmsWebhook,
-	);
-	server.post<{ Params: { organizationId?: string } }>(
-		"/sms/webhook",
-		handleSmsWebhook,
-	);
-};
+	server.post<{ Params: { organizationId: string } }>("/:organizationId/sms/webhook", handleSmsWebhook);
+	server.post<{ Params: { organizationId?: string } }>("/sms/webhook", handleSmsWebhook);
 
+	await server.register(telephonyCallerLookupRoutes);
+};

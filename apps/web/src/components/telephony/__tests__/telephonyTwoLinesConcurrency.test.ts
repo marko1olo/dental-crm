@@ -169,22 +169,23 @@ describe("Telephony Two-Line Concurrency & Store State Invariants", () => {
 	});
 
 	it("5. Anti-Matryoshka two-line UI contracts in IncomingCallPopup and TelephonyWidgetHeader", () => {
-		const popupSource = fs.readFileSync(path.join(telephonyDir, "IncomingCallPopup.tsx"), "utf-8");
+		const contextCardSource = fs.readFileSync(path.join(telephonyDir, "incomingCallPopupModules/IncomingCallPatientContextCard.tsx"), "utf-8");
+		const headerBarSource = fs.readFileSync(path.join(telephonyDir, "incomingCallPopupModules/IncomingCallHeaderBar.tsx"), "utf-8");
 		const headerSource = fs.readFileSync(path.join(telephonyDir, "TelephonyWidgetHeader.tsx"), "utf-8");
 		const moreMenuSource = fs.readFileSync(path.join(telephonyDir, "IncomingCallBadgeMoreMenu.tsx"), "utf-8");
 
 		// Anti-Matryoshka banner in expanded badge
 		assert.ok(
-			popupSource.includes('data-testid="incoming-secondary-line-banner"'),
-			"IncomingCallPopup must include secondary line banner rather than launching nested modals",
+			contextCardSource.includes('data-testid="incoming-secondary-line-banner"'),
+			"IncomingCallPatientContextCard must include secondary line banner rather than launching nested modals",
 		);
 		assert.ok(
-			popupSource.includes('data-testid="answer-secondary-line-btn"'),
-			"IncomingCallPopup must provide 1-tap answer button with automatic hold on active line",
+			contextCardSource.includes('data-testid="answer-secondary-line-btn"'),
+			"IncomingCallPatientContextCard must provide 1-tap answer button with automatic hold on active line",
 		);
 		assert.ok(
-			popupSource.includes('data-testid="capsule-switch-secondary-line-btn"'),
-			"IncomingCallPopup capsule must show secondary incoming line pill",
+			headerBarSource.includes('data-testid="capsule-switch-secondary-line-btn"'),
+			"IncomingCallCapsuleBar must show secondary incoming line pill",
 		);
 
 		// TelephonyWidgetHeader two-line tabs

@@ -21,7 +21,7 @@ export interface TelephonyDrawerHeaderProps {
 	onClose: () => void;
 	isKnownPatient: boolean;
 	callAttribution: CallAttribution | null;
-	currentCall: IncomingCallPayload;
+	currentCall: IncomingCallPayload | null;
 	isCapturingLead: boolean;
 	onCaptureLead: () => void;
 	upcomingAppointment: PatientUpcomingAppointmentSummary | null;
@@ -95,18 +95,18 @@ export function TelephonyDrawerHeader({
 										onCaptureLead();
 										setShowMoreMenu(false);
 									}}
-									disabled={isCapturingLead || currentCall.isLeadCaptured}
+									disabled={isCapturingLead || Boolean(currentCall?.isLeadCaptured)}
 									className="w-full text-left px-2.5 py-2 rounded-lg bg-[var(--teal-surface)] hover:opacity-90 text-[var(--teal)] font-bold flex items-center gap-2 transition-colors cursor-pointer border border-[var(--teal-soft)] mb-1"
 									data-testid="drawer-more-action-capture-lead"
 									title={`Захват в лиды с авторазметкой канала (${callAttribution.channelLabel})`}
 								>
-									{currentCall.isLeadCaptured ? (
+									{currentCall?.isLeadCaptured ? (
 										<Check size={14} className="text-emerald-500 shrink-0" />
 									) : (
 										<UserPlus size={14} className="text-[var(--teal)] shrink-0" />
 									)}
 									<span className="truncate">
-										{currentCall.isLeadCaptured
+										{currentCall?.isLeadCaptured
 											? "Лид захвачен"
 											: isCapturingLead
 												? "Захват лида..."
@@ -149,8 +149,11 @@ export function TelephonyDrawerHeader({
 							<button
 								type="button"
 								onClick={() => {
-									navigator.clipboard?.writeText(currentCall.phone);
-									showToast("Номер телефона скопирован", "info");
+									const phoneToCopy = currentCall?.phone;
+									if (phoneToCopy) {
+										navigator.clipboard?.writeText(phoneToCopy);
+										showToast("Номер телефона скопирован", "info");
+									}
 									setShowMoreMenu(false);
 								}}
 								className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium flex items-center gap-2 transition-colors cursor-pointer"

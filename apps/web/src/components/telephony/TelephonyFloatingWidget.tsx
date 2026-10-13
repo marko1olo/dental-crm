@@ -11,13 +11,7 @@ import { useTelephonyFloatingState } from "./telephonyFloatingWidget/useTelephon
 import type { TelephonyFloatingWidgetProps } from "./telephonyFloatingWidget/types";
 import "./telephonyFloatingWidget.css";
 
-// MANDATE 8x CONTRACT STRINGS & AUDIT ANCHORS:
-// data-testid="widget-action-book" data-testid="widget-action-open-card" data-testid="widget-more-menu-btn"
-// data-testid="widget-more-menu-dropdown" data-testid="widget-action-capture-lead" assistantUserId: ""
-// const [audioDuration, setAudioDuration] = useState(0)
-// audioRef.current.pause(); audioRef.current.src = ""; audioRef.current.load();
-// dialInputRef = useRef<HTMLInputElement | null>(null) dialInputRef.current?.focus() showToast("Введите номер телефона для набора", "warning")
-export * from "./telephonyFloatingWidget";
+export * from "./telephonyFloatingWidget/index";
 export * from "./TelephonyDialerPad";
 export * from "./TelephonyRecentCallsJournal";
 export * from "./TelephonyMiniControlPanel";
@@ -27,6 +21,7 @@ export type { TelephonyFloatingWidgetProps };
 
 export function TelephonyFloatingWidget(props: TelephonyFloatingWidgetProps) {
 	const s = useTelephonyFloatingState(props);
+	const dialInputRef = s.dialInputRef;
 	const isDoctorChairsideMode = s.isDoctorChairsideMode;
 	if (isDoctorChairsideMode) {
 		return null;
@@ -49,7 +44,7 @@ export function TelephonyFloatingWidget(props: TelephonyFloatingWidgetProps) {
 					</div>
 					<div className="flex items-center gap-1.5 shrink-0">
 						{s.activeCall && !s.isCallAnswered && (
-							<button type="button" onClick={() => { s.answerCall(); showToast("Вызов принят", "success"); }} className="dnt-btn-answer" title="Ответить на звонок">
+							<button type="button" onClick={() => { s.answerCall(); showToast("Вызов принят", "success"); }} className="dnt-btn-answer min-h-[32px] sm:min-h-[34px] px-3 rounded-full bg-emerald-600" title="Ответить на звонок">
 								<PhoneCall size={13} /><span>Ответить</span>
 							</button>
 						)}
@@ -80,7 +75,7 @@ export function TelephonyFloatingWidget(props: TelephonyFloatingWidgetProps) {
 							</>
 						)}
 						{s.activeTab === "dialer" && (
-							<TelephonyDialpad dialNumber={s.dialNumber} onDialNumberChange={s.setDialNumber} onDialDigit={s.handleDialDigit} onDialBackspace={s.handleDialBackspace} onStartOutgoingCall={s.handleStartOutgoingCall} dialInputRef={s.dialInputRef} />
+							<TelephonyDialpad dialNumber={s.dialNumber} onDialNumberChange={s.setDialNumber} onDialDigit={s.handleDialDigit} onDialBackspace={s.handleDialBackspace} onStartOutgoingCall={s.handleStartOutgoingCall} dialInputRef={dialInputRef} />
 						)}
 						{s.activeTab === "history" && (
 							<TelephonyRecentCallsList callHistory={s.callHistory} onRedial={(phone) => { s.setDialNumber(phone); s.setActiveTab("dialer"); }} onSendWhatsApp={() => s.handleSendWhatsApp()} />

@@ -254,57 +254,67 @@ describe("Telephony & Inbound Lead Capture with Marketing Attribution", () => {
 			? path.resolve(process.cwd(), "apps/web/src")
 			: path.resolve(process.cwd(), "src");
 
-		const popupPath = path.resolve(
+		const callerCardPath = path.resolve(
 			srcDir,
-			"components/telephony/IncomingCallPopup.tsx",
+			"components/telephony/IncomingCallerCard.tsx",
 		);
-		const drawerPath = path.resolve(
+		const badgeMoreMenuPath = path.resolve(
 			srcDir,
-			"components/telephony/TelephonyDrawer.tsx",
+			"components/telephony/IncomingCallBadgeMoreMenu.tsx",
 		);
-		const widgetPath = path.resolve(
+		const patientDrawerPath = path.resolve(
 			srcDir,
-			"components/telephony/TelephonyFloatingWidget.tsx",
+			"components/telephony/IncomingCallPatientDrawer.tsx",
+		);
+		const drawerPanelPath = path.resolve(
+			srcDir,
+			"components/telephony/drawerModules/TelephonyActiveCallPanel.tsx",
+		);
+		const widgetMoreMenuPath = path.resolve(
+			srcDir,
+			"components/telephony/TelephonyWidgetMoreMenu.tsx",
 		);
 
-		const popupSource = fs.readFileSync(popupPath, "utf-8");
-		const drawerSource = fs.readFileSync(drawerPath, "utf-8");
-		const widgetSource = fs.readFileSync(widgetPath, "utf-8");
+		const callerCardSource = fs.readFileSync(callerCardPath, "utf-8");
+		const badgeMoreMenuSource = fs.readFileSync(badgeMoreMenuPath, "utf-8");
+		const patientDrawerSource = fs.readFileSync(patientDrawerPath, "utf-8");
+		const drawerPanelSource = fs.readFileSync(drawerPanelPath, "utf-8");
+		const widgetMoreMenuSource = fs.readFileSync(widgetMoreMenuPath, "utf-8");
 
 		it("3.1. IncomingCallPopup provides 1-click lead capture and marketing attribution badge", () => {
 			assert.ok(
-				popupSource.includes('data-testid="incoming-call-marketing-channel-badge"'),
-				"IncomingCallPopup must display marketing channel attribution badge for unfamiliar callers",
+				callerCardSource.includes('data-testid="incoming-call-marketing-channel-badge"'),
+				"IncomingCallerCard must display marketing channel attribution badge for unfamiliar callers",
 			);
 			assert.ok(
-				popupSource.includes('data-testid="badge-action-capture-lead"'),
-				"IncomingCallPopup must provide 1-click capture action in more menu",
+				badgeMoreMenuSource.includes('data-testid="badge-action-capture-lead"'),
+				"IncomingCallBadgeMoreMenu must provide 1-click capture action in more menu",
 			);
 			assert.ok(
-				popupSource.includes('data-testid="drawer-action-capture-lead"'),
-				"IncomingCallPopup drawer view must provide 1-click lead capture button",
+				callerCardSource.includes('data-testid="drawer-action-capture-lead"'),
+				"IncomingCallerCard view must provide 1-click lead capture button",
 			);
 		});
 
 		it("3.2. TelephonyDrawer provides dedicated 1-click lead capture card with attribution", () => {
 			assert.ok(
-				drawerSource.includes('data-testid="telephony-drawer-marketing-channel-badge"'),
-				"TelephonyDrawer must display marketing channel badge in caller header",
+				drawerPanelSource.includes('data-testid="telephony-drawer-marketing-channel-badge"'),
+				"TelephonyActiveCallPanel must display marketing channel badge in caller header",
 			);
 			assert.ok(
-				drawerSource.includes('data-testid="telephony-drawer-lead-capture-card"'),
-				"TelephonyDrawer must render dedicated 1-click lead capture card for unknown callers",
+				drawerPanelSource.includes('data-testid="telephony-drawer-lead-capture-card"'),
+				"TelephonyActiveCallPanel must render dedicated 1-click lead capture card for unknown callers",
 			);
 			assert.ok(
-				drawerSource.includes('data-testid="drawer-action-capture-lead"'),
-				"TelephonyDrawer must provide drawer-action-capture-lead button",
+				drawerPanelSource.includes('data-testid="drawer-action-capture-lead"'),
+				"TelephonyActiveCallPanel must provide drawer-action-capture-lead button",
 			);
 		});
 
 		it("3.3. TelephonyFloatingWidget provides 1-click lead capture in consolidated more menu", () => {
 			assert.ok(
-				widgetSource.includes('data-testid="widget-action-capture-lead"'),
-				"TelephonyFloatingWidget must provide 1-click lead capture option in widget-more-menu-dropdown",
+				widgetMoreMenuSource.includes('data-testid="widget-action-capture-lead"'),
+				"TelephonyWidgetMoreMenu must provide 1-click lead capture option in widget-more-menu-dropdown",
 			);
 		});
 

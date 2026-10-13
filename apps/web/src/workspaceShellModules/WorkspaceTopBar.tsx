@@ -94,7 +94,6 @@ export function WorkspaceTopbar({
 	const isDndActive = agentState === "dnd";
 	const isIncomingCall = Boolean(
 		(activeCall || isCallDrawerOpen) &&
-			!isDoctorMode &&
 			!isDndActive &&
 			!isFullScreenStudioActive,
 	);
@@ -165,8 +164,8 @@ export function WorkspaceTopbar({
 				initialRole={selectedWorkspaceRole === "assistant" ? "assistant" : "doctor"}
 			/>
 
-			{/* Всплывающий звонок (без дублирования TelephonyFloatingWidget) */}
-			{!isDoctorMode && !isFullScreenStudioActive && isIncomingCall ? (
+			{/* Всплывающий звонок (в режиме врача деликатно сворачивается в капсулу) */}
+			{!isFullScreenStudioActive && isIncomingCall ? (
 				<Suspense fallback={null}>
 					<IncomingCallPopup />
 				</Suspense>

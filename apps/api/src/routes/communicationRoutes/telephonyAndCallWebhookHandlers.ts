@@ -145,8 +145,31 @@ export async function registerTelephonyAndCallWebhookHandlers(
 			} = parsed.data;
 
 			const phoneToSearch = normalizePhoneNumber(callerNumber);
+			const digits = callerNumber.replace(/\D/g, "");
+			const national10 = digits.length >= 10 ? digits.slice(-10) : "";
 
-			// Поиск пациента по номеру телефона
+			// Deduplication: if webhook with this callId was already processed, return existing
+			if (callId) {
+				const [existingCall] = await db
+					.select({ id: communicationEvents.id })
+					.from(communicationEvents)
+					.where(
+						and(
+							eq(communicationEvents.organizationId, orgId),
+							sql`${communicationEvents.message} LIKE ${`%[callId:${callId}]%`}`,
+						),
+					)
+					.limit(1);
+				if (existingCall) {
+					return reply.code(200).send({
+						success: true,
+						duplicate: true,
+						event: existingCall,
+					});
+				}
+			}
+
+			// Поиск пациента по номеру телефона (включая неформатированные цифры и последние 10 цифр)
 			const [matchedPatient] = await db
 				.select({ id: patients.id, fullName: patients.fullName })
 				.from(patients)
@@ -156,6 +179,11 @@ export async function registerTelephonyAndCallWebhookHandlers(
 						or(
 							eq(patients.phone, phoneToSearch),
 							eq(patients.phone, callerNumber),
+							...(national10.length === 10
+								? [
+										sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${national10}%`}`,
+									]
+								: []),
 						),
 					),
 				)

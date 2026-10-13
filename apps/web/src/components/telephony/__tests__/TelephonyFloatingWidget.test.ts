@@ -266,3 +266,57 @@ test("Telephony - somatic alerts resolution (allergies & acute pain)", async () 
 	assert.ok(alerts4.some((a) => a.category === "pain"));
 });
 
+test("Telephony - fetchCallHistory hydrates call log from backend endpoint", async () => {
+	const originalFetch = globalThis.fetch;
+	try {
+		useTelephonyStore.getState().clearHistory();
+		globalThis.fetch = (async (input: RequestInfo | URL) => {
+			if (String(input).includes("/api/communications/telephony/calls")) {
+				return {
+					ok: true,
+					json: async () => ({
+						success: true,
+						calls: [
+							{
+								id: "db-call-1",
+								patientId: "pat-db-1",
+								patientName: "Смирнова Анна Сергеевна",
+								patientPhone: "+79162345678",
+								status: "completed",
+								recordingUrl: "https://cdn.dente.ru/rec/call-1.mp3",
+								durationSeconds: 142,
+								createdAt: "2026-10-12T10:15:00.000Z",
+								message: "Запись на гигиену",
+							},
+							{
+								id: "db-call-2",
+								patientId: null,
+								patientName: "Входящий вызов +79998887766",
+								patientPhone: "+79998887766",
+								status: "needs_call",
+								recordingUrl: null,
+								durationSeconds: 0,
+								createdAt: "2026-10-12T10:05:00.000Z",
+								message: "Пропущенный вызов",
+							},
+						],
+					}),
+				} as Response;
+			}
+			throw new Error("Unexpected URL");
+		}) as typeof fetch;
+
+		await useTelephonyStore.getState().fetchCallHistory();
+		const history = useTelephonyStore.getState().callHistory;
+		assert.strictEqual(history.length, 2);
+		assert.strictEqual(history[0]?.id, "db-call-1");
+		assert.strictEqual(history[0]?.status, "answered");
+		assert.strictEqual(history[0]?.recordingUrl, "https://cdn.dente.ru/rec/call-1.mp3");
+		assert.strictEqual(history[1]?.id, "db-call-2");
+		assert.strictEqual(history[1]?.status, "missed");
+	} finally {
+		globalThis.fetch = originalFetch;
+	}
+});
+
+

@@ -124,16 +124,22 @@ export function TelephonyDialerModal({
 
 	return createPortal(
 		<div
-			className="fixed inset-0 z-[9995] flex items-center justify-center p-3 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200"
+			className="fixed inset-0 z-[9995] flex items-end sm:items-center justify-center p-0 sm:p-3 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Софтфон клиники и номеронабиратель"
 			data-testid="telephony-dialer-modal"
+			onClick={(e) => {
+				if (e.target === e.currentTarget) onClose();
+			}}
 		>
 			<div
-				className="w-full max-w-[380px] rounded-2xl bg-[var(--paper-strong)] border border-[var(--line)] shadow-2xl text-[var(--ink)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
-				style={{ maxHeight: "calc(100dvh - 32px)" }}
+				className="w-full max-w-full sm:max-w-[380px] rounded-t-3xl sm:rounded-2xl bg-[var(--paper-strong)] border border-[var(--line)] shadow-2xl text-[var(--ink)] overflow-hidden flex flex-col animate-in slide-in-from-bottom sm:zoom-in-95 duration-200 pb-[env(safe-area-inset-bottom)]"
+				style={{ maxHeight: "calc(100dvh - 16px)" }}
 			>
+				{/* Mobile Bottom Sheet Drag Handle */}
+				<div className="w-9 h-1.5 rounded-full bg-[var(--line)] mx-auto mt-2.5 mb-1 sm:hidden" aria-hidden="true" />
+
 				{/* Modal Header */}
 				<div className="flex items-center justify-between px-4 py-3 border-b border-[var(--line)] bg-[var(--paper-soft)]">
 					<div className="flex items-center gap-2">
@@ -189,7 +195,7 @@ export function TelephonyDialerModal({
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[36px] min-w-[36px] rounded-lg hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer"
+							className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] rounded-lg hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer"
 							title="Закрыть номеронабиратель (Esc)"
 							aria-label="Закрыть"
 						>

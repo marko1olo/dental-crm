@@ -103,6 +103,66 @@ export function formatPhoneDisplay(phone: string | null | undefined): string {
 }
 
 /**
+ * Автоформатирование номера телефона РФ в реальном времени при вводе в инпут:
+ * Формат: +7 (XXX) XXX-XX-XX
+ */
+export function formatPhoneNumber(value: string | null | undefined): string {
+	if (!value) return "";
+	const rawDigits = String(value).replace(/\D/g, "");
+	if (rawDigits.length === 0) return "";
+
+	let prefix = "+7 ";
+	let rest = rawDigits;
+
+	if (rawDigits.startsWith("7") || rawDigits.startsWith("8")) {
+		rest = rawDigits.substring(1);
+	} else if (rawDigits.startsWith("9")) {
+		rest = rawDigits;
+	} else if (rawDigits.length >= 10) {
+		if (rawDigits.length === 11 && (rawDigits.startsWith("7") || rawDigits.startsWith("8"))) {
+			rest = rawDigits.substring(1);
+		} else {
+			rest = rawDigits.slice(-10);
+		}
+	} else {
+		prefix = "+";
+	}
+
+	rest = rest.slice(0, 10);
+	if (rest.length === 0) return prefix;
+
+	let formatted = `${prefix}(${rest.substring(0, 3)}`;
+	if (rest.length >= 4) {
+		formatted += `) ${rest.substring(3, 6)}`;
+	}
+	if (rest.length >= 7) {
+		formatted += `-${rest.substring(6, 8)}`;
+	}
+	if (rest.length >= 9) {
+		formatted += `-${rest.substring(8, 10)}`;
+	}
+	return formatted;
+}
+
+export const formatRussianPhone = formatPhoneNumber;
+export const formatPhoneRu = formatPhoneNumber;
+
+export function normalizePhoneToNational(value: string | null | undefined): string {
+	return getNationalPhoneDigits(value);
+}
+
+export function normalizePhoneToE164(value: string | null | undefined): string | null {
+	return normalizePhone(value);
+}
+
+export function isValidRussianPhone(value: string | null | undefined): boolean {
+	if (!value) return false;
+	const nat = getNationalPhoneDigits(value);
+	return nat.length === 10 && nat.startsWith("9");
+}
+
+
+/**
  * Formats a phone number with 152-FZ privacy masking (e.g. for reception displays, logs or public mode).
  * Example: "+79991234567" -> "+7 (999) ***-**-67"
  */

@@ -16,18 +16,46 @@ describe("Telephony Miller's Law & Doctor Autonomy Suite (Mandates 8d, 8e, 8n, 8
 		"components/telephony/TelephonyFloatingWidget.tsx",
 	);
 
+	const actionFooterPath = path.resolve(
+		srcDir,
+		"components/telephony/incomingCallPopupModules/IncomingCallActionFooter.tsx",
+	);
+	const floatingCardPath = path.resolve(
+		srcDir,
+		"components/telephony/telephonyFloatingWidget/TelephonyIncomingCallCard.tsx",
+	);
+	const floatingMoreMenuPath = path.resolve(
+		srcDir,
+		"components/telephony/TelephonyWidgetMoreMenu.tsx",
+	);
+	const quickActionsPath = path.resolve(
+		srcDir,
+		"components/telephony/incomingCallPopupModules/useIncomingCallQuickActions.ts",
+	);
+	const floatingQuickActionsPath = path.resolve(
+		srcDir,
+		"components/telephony/telephonyFloatingWidget/useFloatingCallQuickActions.ts",
+	);
+
 	const popupSource = fs.readFileSync(popupPath, "utf-8");
 	const widgetSource = fs.readFileSync(widgetPath, "utf-8");
+	const actionFooterSource = fs.readFileSync(actionFooterPath, "utf-8");
+	const floatingCardSource = fs.readFileSync(floatingCardPath, "utf-8");
+	const floatingMoreMenuSource = fs.readFileSync(floatingMoreMenuPath, "utf-8");
+	const quickActionsSource = fs.readFileSync(quickActionsPath, "utf-8");
+	const floatingQuickActionsSource = fs.readFileSync(floatingQuickActionsPath, "utf-8");
 
 	it(
-		"1. Doctor Sterile Zone & Draft Immunity (Mandate 8e p. 6)",
+		"1. Doctor Sterile Zone & Draft Immunity (Mandate 8e p. 6, 8n)",
 		() => {
-			// Doctor view/mode suppression in IncomingCallPopup
+			// Doctor view/mode in IncomingCallPopup: delicate collapse into capsule to protect Form 043/u
 			assert.ok(
-				popupSource.includes(
-					"if (!activeCall || isDoctorMode || isDndActive) return null;",
-				),
-				"IncomingCallPopup must suppress rendering when isDoctorMode is active to protect Form 043/u drafts",
+				popupSource.includes("const shouldShowCapsule = isDoctorMode || !isPopupExpanded;"),
+				"IncomingCallPopup must collapse into IncomingCallCapsuleBar in doctor mode to protect Form 043/u drafts",
+			);
+			assert.ok(
+				popupSource.includes("<IncomingCallCapsuleBar ctrl={ctrl} />"),
+				"IncomingCallPopup must render non-blocking capsule bar in doctor mode",
 			);
 
 			// Doctor view suppression in TelephonyFloatingWidget
@@ -47,18 +75,18 @@ describe("Telephony Miller's Law & Doctor Autonomy Suite (Mandates 8d, 8e, 8n, 8
 	it(
 		"2. Miller's Law: Strictly <= 2 Primary Direct Buttons on IncomingCallPopup Badge (Mandate 8d & 8p)",
 		() => {
-			// Check primary action buttons
+			// Check primary action buttons in IncomingCallActionFooter
 			assert.ok(
-				popupSource.includes('data-testid="badge-action-book"'),
-				"IncomingCallPopup must provide 'Создать запись' as primary action 1",
+				actionFooterSource.includes('data-testid="badge-action-book"'),
+				"IncomingCallPopup action footer must provide 'Создать запись' as primary action 1",
 			);
 			assert.ok(
-				popupSource.includes('data-testid="badge-action-card"'),
-				"IncomingCallPopup must provide 'Открыть карту / Создать' as primary action 2",
+				actionFooterSource.includes('data-testid="badge-action-card"'),
+				"IncomingCallPopup action footer must provide 'Открыть карту / Создать' as primary action 2",
 			);
 			assert.ok(
-				popupSource.includes('data-testid="badge-more-menu-btn"'),
-				"IncomingCallPopup must consolidate secondary actions into '...' more menu button",
+				actionFooterSource.includes('data-testid="badge-more-menu-btn"'),
+				"IncomingCallPopup action footer must consolidate secondary actions into '...' more menu button",
 			);
 		},
 	);
@@ -68,19 +96,19 @@ describe("Telephony Miller's Law & Doctor Autonomy Suite (Mandates 8d, 8e, 8n, 8
 		() => {
 			// Check primary action buttons in widget
 			assert.ok(
-				widgetSource.includes('data-testid="widget-action-book"'),
-				"TelephonyFloatingWidget must provide 'Создать запись' as primary action 1",
+				floatingCardSource.includes('data-testid="widget-action-book"'),
+				"TelephonyFloatingWidget card must provide 'Создать запись' as primary action 1",
 			);
 			assert.ok(
-				widgetSource.includes('data-testid="widget-action-open-card"'),
-				"TelephonyFloatingWidget must provide 'Открыть карту / Создать' as primary action 2",
+				floatingCardSource.includes('data-testid="widget-action-open-card"'),
+				"TelephonyFloatingWidget card must provide 'Открыть карту / Создать' as primary action 2",
 			);
 			assert.ok(
-				widgetSource.includes('data-testid="widget-more-menu-btn"'),
-				"TelephonyFloatingWidget must consolidate secondary actions into '...' more menu button",
+				floatingCardSource.includes('data-testid="widget-more-menu-btn"'),
+				"TelephonyFloatingWidget card must consolidate secondary actions into '...' more menu button",
 			);
 			assert.ok(
-				widgetSource.includes('data-testid="widget-more-menu-dropdown"'),
+				floatingMoreMenuSource.includes('data-testid="widget-more-menu-dropdown"'),
 				"TelephonyFloatingWidget must render popover dropdown with slots, WhatsApp, SIP transfer, Hold, and Copy phone",
 			);
 		},
@@ -91,11 +119,11 @@ describe("Telephony Miller's Law & Doctor Autonomy Suite (Mandates 8d, 8e, 8n, 8
 		() => {
 			// assistantUserId must be empty string in appointment draft
 			assert.ok(
-				popupSource.includes('assistantUserId: ""'),
-				"IncomingCallPopup handleQuickBook must set assistantUserId: '' to prevent blocking solo doctors",
+				quickActionsSource.includes('assistantUserId: ""'),
+				"IncomingCallPopup quick actions handleQuickBook must set assistantUserId: '' to prevent blocking solo doctors",
 			);
 			assert.ok(
-				widgetSource.includes('assistantUserId: ""'),
+				floatingQuickActionsSource.includes('assistantUserId: ""'),
 				"TelephonyFloatingWidget handleQuickBook must set assistantUserId: '' to prevent blocking solo doctors",
 			);
 		},

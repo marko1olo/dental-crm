@@ -44,6 +44,7 @@ export interface IncomingCallPayload {
 
 export type CallOutcome =
 	| "booked"
+	| "consultation_booked"
 	| "callback_15m"
 	| "consultation"
 	| "spam"
@@ -189,3 +190,46 @@ export interface PatientNextVisitSummary {
 }
 
 export type TelephonyPatientCategory = "VIP" | "Постоянный" | "Первичный";
+
+export interface PatientActiveTreatmentPlanSummary {
+	readonly hasActivePlan: boolean;
+	readonly planTitle: string | null;
+	readonly totalCostRub: number;
+	readonly formattedTotalCost: string;
+	readonly itemsCount: number;
+	readonly completedCount: number;
+	readonly pendingCount: number;
+	readonly progressPercent: number;
+	readonly nextService: string | null;
+}
+
+export type PatientTreatmentPlanSummary = PatientActiveTreatmentPlanSummary;
+
+export interface CallerLookupResult {
+	found: boolean;
+	patient: {
+		id: string;
+		fullName: string;
+		phone: string | null;
+		birthDate: string | null;
+		notes: string | null;
+		status: string;
+		administrativeProfile?: Record<string, unknown> | null;
+	} | null;
+	lead: {
+		id: string;
+		name: string;
+		phone: string;
+		status: string;
+		source: string | null;
+	} | null;
+	financialSummary: PatientFinancialSummary;
+	upcomingAppointment: PatientUpcomingAppointmentSummary | null;
+	lastVisitSummary: PatientLastVisitSummary | null;
+	somaticAlerts: PatientSomaticAlert[];
+	allergyAlerts: PatientSomaticAlert[];
+	acutePainAlerts: PatientSomaticAlert[];
+	activeTreatmentPlan: PatientActiveTreatmentPlanSummary;
+	patientCategory: TelephonyPatientCategory;
+}
+

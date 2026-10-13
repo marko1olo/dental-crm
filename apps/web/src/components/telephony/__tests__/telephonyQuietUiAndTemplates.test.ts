@@ -142,7 +142,9 @@ describe("Telephony Quiet UI & Communication Templates Suite (Mandates 8b, 8d, 8
 
 	it("4. Quiet UI: Non-Blocking Translucent Dynamic Island Capsule & Backdrop Blur", () => {
 		const popupPath = path.resolve(srcDir, "components/telephony/IncomingCallPopup.tsx");
+		const headerBarPath = path.resolve(srcDir, "components/telephony/incomingCallPopupModules/IncomingCallHeaderBar.tsx");
 		const popupSource = fs.readFileSync(popupPath, "utf-8");
+		const headerBarSource = fs.readFileSync(headerBarPath, "utf-8");
 
 		// Non-blocking container
 		assert.ok(
@@ -150,10 +152,10 @@ describe("Telephony Quiet UI & Communication Templates Suite (Mandates 8b, 8d, 8
 			"Container must have pointer-events-none so surrounding clinical workspace remains interactive",
 		);
 
-		// Dynamic island capsule test id
+		// Dynamic island capsule test id in IncomingCallHeaderBar / IncomingCallCapsuleBar
 		assert.ok(
-			popupSource.includes('data-testid="incoming-call-capsule"'),
-			"IncomingCallPopup must provide a compact dynamic island capsule",
+			headerBarSource.includes('data-testid="incoming-call-capsule"'),
+			"IncomingCallCapsuleBar must provide a compact dynamic island capsule",
 		);
 
 		// Translucent styling and backdrop blur
@@ -169,48 +171,56 @@ describe("Telephony Quiet UI & Communication Templates Suite (Mandates 8b, 8d, 8
 		);
 	});
 
-	it("5. Doctor Mode & Form 043/u Sterile Zone Immunity (Mandate 8e)", () => {
+	it("5. Doctor Mode & Form 043/u Sterile Zone Immunity (Mandate 8e, 8n)", () => {
 		const popupPath = path.resolve(srcDir, "components/telephony/IncomingCallPopup.tsx");
+		const controllerPath = path.resolve(srcDir, "components/telephony/incomingCallPopupModules/useIncomingCallPopupController.ts");
 		const popupSource = fs.readFileSync(popupPath, "utf-8");
+		const controllerSource = fs.readFileSync(controllerPath, "utf-8");
 
 		assert.ok(
-			popupSource.includes('selectedWorkspaceRole === "doctor" || currentView === "visit"'),
-			"isDoctorMode must identify both doctor role and active visit view",
+			controllerSource.includes('selectedWorkspaceRole === "doctor" || currentView === "visit"'),
+			"isDoctorMode in useIncomingCallPopupController must identify both doctor role and active visit view",
 		);
 
 		assert.ok(
-			popupSource.includes("if (isDoctorMode || isDndActive) return null;"),
-			"IncomingCallPopup must completely suppress popup during doctor mode to protect EMK Form 043/u",
+			popupSource.includes("const shouldShowCapsule = isDoctorMode || !isPopupExpanded;"),
+			"IncomingCallPopup must delicately collapse into capsule during doctor mode to protect EMK Form 043/u",
+		);
+		assert.ok(
+			popupSource.includes("<IncomingCallCapsuleBar ctrl={ctrl} />"),
+			"IncomingCallPopup must render non-blocking capsule bar in doctor mode",
 		);
 	});
 
 	it("6. Miller's Law: Strictly <= 2 Primary Direct Buttons (Mandates 8d & 8p)", () => {
-		const popupPath = path.resolve(srcDir, "components/telephony/IncomingCallPopup.tsx");
-		const popupSource = fs.readFileSync(popupPath, "utf-8");
+		const headerBarPath = path.resolve(srcDir, "components/telephony/incomingCallPopupModules/IncomingCallHeaderBar.tsx");
+		const actionFooterPath = path.resolve(srcDir, "components/telephony/incomingCallPopupModules/IncomingCallActionFooter.tsx");
+		const headerBarSource = fs.readFileSync(headerBarPath, "utf-8");
+		const actionFooterSource = fs.readFileSync(actionFooterPath, "utf-8");
 
 		// In ringing state: Answer and Reject
 		assert.ok(
-			popupSource.includes('data-testid="badge-header-answer-btn"'),
+			headerBarSource.includes('data-testid="badge-header-answer-btn"'),
 			"Header must provide 'Ответить' as primary button 1",
 		);
 		assert.ok(
-			popupSource.includes('data-testid="badge-header-reject-btn"'),
+			headerBarSource.includes('data-testid="badge-header-reject-btn"'),
 			"Header must provide 'Сброс' as primary button 2",
 		);
 
 		// In main action row: Book and Open Card
 		assert.ok(
-			popupSource.includes('data-testid="badge-action-book"'),
+			actionFooterSource.includes('data-testid="badge-action-book"'),
 			"Action row must provide 'Создать запись' as primary action 1",
 		);
 		assert.ok(
-			popupSource.includes('data-testid="badge-action-card"'),
+			actionFooterSource.includes('data-testid="badge-action-card"'),
 			"Action row must provide 'Открыть карту / Создать' as primary action 2",
 		);
 
 		// Secondary actions consolidated in More Menu
 		assert.ok(
-			popupSource.includes('data-testid="badge-more-menu-btn"'),
+			actionFooterSource.includes('data-testid="badge-more-menu-btn"'),
 			"Secondary actions must be consolidated into '...' more menu button",
 		);
 	});
