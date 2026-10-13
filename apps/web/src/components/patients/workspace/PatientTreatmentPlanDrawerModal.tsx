@@ -78,11 +78,11 @@ export const PatientTreatmentPlanDrawerModal: React.FC<PatientTreatmentPlanDrawe
 			[onPlanSaved],
 		);
 
-		if (!isOpen || typeof document === "undefined") {
+		if (!isOpen) {
 			return null;
 		}
 
-		return createPortal(
+		const modalContent = (
 			<div
 				className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-black/60 backdrop-blur-md transition-opacity animate-fadeIn"
 				onClick={handleBackdropClick}
@@ -148,9 +148,12 @@ export const PatientTreatmentPlanDrawerModal: React.FC<PatientTreatmentPlanDrawe
 						/>
 					</div>
 				</div>
-			</div>,
-			document.body,
+			</div>
 		);
+
+		return typeof document !== "undefined"
+			? createPortal(modalContent, document.body)
+			: modalContent;
 	},
 );
 

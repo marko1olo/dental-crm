@@ -30,7 +30,7 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 							</div>
 							<div>
 								<h3 className="text-sm font-black m-0 text-[var(--ink)]">
-									Законный представитель / Член семьи
+									Законный представитель / Член семьи (ст. 64 СК РФ / 323-ФЗ)
 								</h3>
 								<p className="text-[11px] text-[var(--muted)] m-0">
 									Правовая основа подписания согласий за несовершеннолетних и доступ к семейному счету
@@ -247,7 +247,7 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 					<div className="flex items-center gap-2">
 						<Users className="w-3.5 h-3.5 text-[var(--teal)]" />
 						<span className="font-bold text-xs text-[var(--ink)]">
-							Законный представитель / Член семьи:
+							Законный представитель / Член семьи (ст. 64 СК РФ / 323-ФЗ):
 						</span>
 					</div>
 					{patient?.representativeType && (

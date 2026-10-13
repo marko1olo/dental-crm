@@ -34,7 +34,13 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 
 	it("2. VisitSoapEditor.tsx: SOAP labels use natural Russian instead of Latin and academic jargon", () => {
 		const filePath = path.join(webSrcRoot, "components/visit/VisitSoapEditor.tsx");
-		const content = fs.readFileSync(filePath, "utf-8");
+		const content =
+			fs.readFileSync(filePath, "utf-8") +
+			"\n" +
+			fs.readFileSync(
+				path.join(webSrcRoot, "components/visit/soapEditor/SoapFieldsEditor.tsx"),
+				"utf-8",
+			);
 
 		// Latin and English bloat banned from labels
 		assert.ok(
@@ -272,7 +278,13 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 		assert.ok(diaryContent.includes("Клинические протоколы"));
 
 		const modalPath = path.join(webSrcRoot, "components/visit/VisitSummaryModal.tsx");
-		const modalContent = fs.readFileSync(modalPath, "utf-8");
+		const modalContent =
+			fs.readFileSync(modalPath, "utf-8") +
+			"\n" +
+			fs.readFileSync(
+				path.join(webSrcRoot, "components/visit/summaryModal/VisitRecommendationsSection.tsx"),
+				"utf-8",
+			);
 		assert.ok(!modalContent.includes("1-Click Синтез дневника по МКБ-10 и формуле"), "Must not use bird language in synthesis modal");
 		assert.ok(modalContent.includes("Заполнение дневника по диагнозу и формуле"));
 	});
@@ -309,18 +321,36 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 
 	it("18. VisitView.tsx, VisitEmkTab.tsx, VisitSoapEditor.tsx: treatment plan defaults free of bare 'Санация'", () => {
 		const visitViewPath = path.join(webSrcRoot, "VisitView.tsx");
-		const visitViewContent = fs.readFileSync(visitViewPath, "utf-8");
+		const visitViewContent =
+			fs.readFileSync(visitViewPath, "utf-8") +
+			"\n" +
+			fs.readFileSync(
+				path.join(webSrcRoot, "components/visit/view/VisitViewHeader.tsx"),
+				"utf-8",
+			);
 		assert.ok(!visitViewContent.includes("патологий не выявлено. Санация."), "Must not use bare 'Санация' in default plan");
 		assert.ok(visitViewContent.includes("Полость рта здорова, гигиена удовлетворительная."));
 
 		const emkPath = path.join(webSrcRoot, "components/visit/VisitEmkTab.tsx");
-		const emkContent = fs.readFileSync(emkPath, "utf-8");
+		const emkContent =
+			fs.readFileSync(emkPath, "utf-8") +
+			"\n" +
+			fs.readFileSync(
+				path.join(webSrcRoot, "components/visit/emkTabModules/useVisitEmkTabController.ts"),
+				"utf-8",
+			);
 		assert.ok(!emkContent.includes("санация полости рта. Обучение гигиене."), "Must not use raw 'санация полости рта' in norm plan");
 		assert.ok(!emkContent.includes('treatmentPlan || "Санация полости рта"'), "Must not use bare 'Санация полости рта' fallback");
 		assert.ok(emkContent.includes("Проведена профессиональная гигиена и профилактика."));
 
 		const soapPath = path.join(webSrcRoot, "components/visit/VisitSoapEditor.tsx");
-		const soapContent = fs.readFileSync(soapPath, "utf-8");
+		const soapContent =
+			fs.readFileSync(soapPath, "utf-8") +
+			"\n" +
+			fs.readFileSync(
+				path.join(webSrcRoot, "components/visit/soapEditor/useVisitSoapEditor.ts"),
+				"utf-8",
+			);
 		assert.ok(!soapContent.includes('values.treatmentPlan || "Санация"'), "Must not use bare 'Санация' in clipboard protocol");
 		assert.ok(soapContent.includes('values.treatmentPlan || "Лечение и гигиена"'));
 	});

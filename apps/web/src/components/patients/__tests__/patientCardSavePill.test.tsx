@@ -162,10 +162,13 @@ describe("плашка сохранения на живом экране кар�
 	 * удалили.
 	 */
 	test("экран монтирует плашку в оба места и не держит своей копии правила", () => {
-		const rawSource = readFileSync(
-			join(here, "..", "..", "..", "PatientsView.tsx"),
-			"utf8",
-		);
+		const rawSource =
+			readFileSync(
+				join(here, "..", "..", "..", "PatientsView.tsx"),
+				"utf8",
+			) +
+			"\n" +
+			readFileSync(join(here, "..", "PatientDetailsPanel.tsx"), "utf8");
 		// Слова плашки ищутся в коде, а не в объяснениях: см. stripComments выше.
 		const source = stripComments(rawSource);
 		const mounts = source.match(/<PatientCardSavePill/g) ?? [];

@@ -52,7 +52,12 @@ describe("PatientTreatmentPlanDrawerModal & PatientWorkspaceView Integration", (
 	const drawerFilePath = path.resolve(__dirname, "../workspace/PatientTreatmentPlanDrawerModal.tsx");
 
 	it("1. PatientWorkspaceView eliminates #documents redirect bug and uses modal state", () => {
-		const workspaceCode = fs.readFileSync(workspaceFilePath, "utf8");
+		const workspaceCode =
+			fs.readFileSync(workspaceFilePath, "utf8") +
+			"\n" +
+			fs.readFileSync(path.resolve(__dirname, "../workspaceView/usePatientWorkspaceViewLogic.ts"), "utf8") +
+			"\n" +
+			fs.readFileSync(path.resolve(__dirname, "../workspaceView/PatientWorkspaceModalsWrapper.tsx"), "utf8");
 
 		// Гарантируем, что клик по плану лечения больше не выбрасывает в #documents
 		assert.ok(
