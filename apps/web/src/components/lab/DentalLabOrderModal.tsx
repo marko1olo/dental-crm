@@ -65,16 +65,16 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 max-sm:p-0 bg-slate-900/80 backdrop-blur-sm overflow-y-auto"
+			className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 max-sm:p-0 bg-black/75 backdrop-blur-sm overflow-y-auto"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="dental-lab-modal-title"
 			data-testid="dental-lab-work-order-modal"
 		>
-			<div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-sm:rounded-none shadow-2xl overflow-hidden flex flex-col max-h-[92vh] max-sm:h-full max-sm:max-h-full">
+			<div className="relative w-full max-w-5xl bg-[var(--paper)] border border-[var(--line)] rounded-2xl max-sm:rounded-none shadow-2xl overflow-hidden flex flex-col max-h-[92vh] max-sm:h-full max-sm:max-h-full">
 				
 				{/* ─── MODAL HEADER ──────────────────────────────────────────────── */}
-				<div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 gap-2">
+				<div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-[var(--line)] bg-[var(--paper-soft)] gap-2">
 					<div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
 						<div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex items-center justify-center text-[var(--teal)] shadow-sm shrink-0">
 							<FlaskConical className="w-4 h-4 sm:w-6 sm:h-6" />
@@ -83,7 +83,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							<div className="flex items-center flex-wrap gap-1.5 sm:gap-2">
 								<h2
 									id="dental-lab-modal-title"
-									className="text-xs sm:text-base md:text-lg font-bold text-slate-900 dark:text-white m-0 leading-tight truncate"
+									className="text-xs sm:text-base md:text-lg font-bold text-[var(--ink)] m-0 leading-tight truncate"
 								>
 									Заказ в лабораторию (ЗТЛ)
 								</h2>
@@ -101,10 +101,10 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 									</span>
 								)}
 							</div>
-							<p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-								<span>Пациент: <strong className="font-bold text-slate-800 dark:text-slate-200">{form.formPatientName}</strong>{patientChartNumber ? ` (${patientChartNumber})` : ""}</span>
-								<span className="text-slate-300 dark:text-slate-700 hidden sm:inline">·</span>
-								<span>Врач: <strong className="font-bold text-slate-800 dark:text-slate-200">{form.formDoctorName}</strong></span>
+							<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+								<span>Пациент: <strong className="font-bold text-[var(--ink)]">{form.formPatientName}</strong>{patientChartNumber ? ` (${patientChartNumber})` : ""}</span>
+								<span className="text-[var(--line)] hidden sm:inline">·</span>
+								<span>Врач: <strong className="font-bold text-[var(--ink)]">{form.formDoctorName}</strong></span>
 							</p>
 						</div>
 					</div>
@@ -123,7 +123,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 						<button
 							type="button"
 							onClick={form.handlePrint}
-							className="min-h-[44px] sm:min-h-8 sm:h-8 inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-0 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shadow-sm shrink-0"
+							className="min-h-[44px] sm:min-h-8 sm:h-8 inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-0 text-xs font-bold rounded-xl border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors shadow-sm shrink-0"
 							title="Печать бланка наряда"
 						>
 							<Printer className="w-4 h-4" />
@@ -133,7 +133,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							type="button"
 							onClick={onClose}
 							data-testid="lab-order-modal-close-btn"
-							className="min-h-[44px] min-w-[44px] sm:min-h-8 sm:min-w-8 sm:h-8 sm:w-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
+							className="min-h-[44px] min-w-[44px] sm:min-h-8 sm:min-w-8 sm:h-8 sm:w-8 rounded-xl flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
 							aria-label="Закрыть модальное окно"
 						>
 							<X className="w-5 h-5 sm:w-5 sm:h-5" />
@@ -142,7 +142,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 				</div>
 
 				{/* ─── NAVIGATION TABS (Strictly 1 Clean Toolbar Row 32–36px / Hick's Law) ─── */}
-				<div className="flex items-center gap-1 px-2.5 sm:px-6 py-1.5 border-b border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/60 text-xs shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden whitespace-nowrap touch-pan-x">
+				<div className="flex items-center gap-1 px-2.5 sm:px-6 py-1.5 border-b border-[var(--line)] bg-[var(--paper-soft)] text-xs shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden whitespace-nowrap touch-pan-x">
 					{[
 						{ id: "main", label: "1. Зубы и Конструкция", shortLabel: "1. Зубы", icon: DentalBridge, fullTitle: "1. Зубная формула и Конструкция" },
 						{ id: "shades", label: "2. Расцветка VITA", shortLabel: "2. VITA", icon: ToothShadeGuide, fullTitle: "2. Расцветка VITA и Культя" },
@@ -179,10 +179,10 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							<div className="flex items-start gap-2.5 min-w-0">
 								<Sparkles size={18} className="text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
 								<div>
-									<div className="font-extrabold text-teal-950 dark:text-teal-100 text-xs">
+									<div className="font-extrabold text-[var(--ink)] text-xs">
 										Финансовый контроль ЗТЛ: Внесено {form.financialGateResult.paidPercent}% (порог аванса 50%)
 									</div>
-									<div className="text-[11px] text-teal-900/80 dark:text-teal-300/80 mt-0.5">
+									<div className="text-[11px] text-[var(--muted)] mt-0.5">
 										Экстренное показание (временная PMMA, примерка моста). Врач может отправить наряд без ожидания оплаты.
 									</div>
 									{form.financialGateResult.isPlanExpiredNotice && (
@@ -263,22 +263,22 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							{/* Express Presets Bar (Integrated inside Tab 1) */}
 							<div className="flex flex-col gap-2 p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 w-full max-w-full overflow-hidden">
 								<div className="flex items-center justify-between gap-2 w-full">
-									<span className="text-xs font-black text-amber-900 dark:text-amber-200 flex items-center gap-1 shrink-0">
+									<span className="text-xs font-black text-[var(--ink)] flex items-center gap-1 shrink-0">
 										<Sparkles size={14} className="text-amber-500" />
 										<span>Быстрые шаблоны:</span>
 									</span>
-									<span className="text-[11px] text-amber-800/80 dark:text-amber-300/80 font-medium hidden sm:inline flex items-center gap-1 shrink-0">
+									<span className="text-[11px] text-[var(--muted)] font-medium hidden sm:inline flex items-center gap-1 shrink-0">
 										<Sparkles size={12} className="text-amber-500 shrink-0" />
 										<span>Автозаполнение конструкции, материала, цвета A2 и сроков</span>
 									</span>
 								</div>
-								<div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full max-w-full py-0.5">
+								<div className="flex flex-wrap items-center gap-1.5 w-full max-w-full py-0.5">
 									{MODAL_EXPRESS_LAB_PRESETS.map((preset) => (
 										<button
 											key={preset.id}
 											type="button"
 											onClick={() => form.handleApplyExpressPreset(preset)}
-											className="min-h-[36px] px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-amber-500/20 text-amber-900 dark:text-amber-100 border border-amber-500/30 text-xs font-bold transition-all shadow-2xs hover:scale-102 active:scale-95 cursor-pointer flex items-center gap-1.5 touch-manipulation shrink-0 whitespace-nowrap"
+											className="min-h-[36px] px-3 py-1.5 rounded-xl bg-[var(--paper)] hover:bg-amber-500/20 text-[var(--ink)] border border-amber-500/30 text-xs font-bold transition-all shadow-2xs hover:scale-102 active:scale-95 cursor-pointer flex items-center gap-1.5 touch-manipulation shrink-0 whitespace-nowrap"
 											title={preset.shortDesc}
 											data-testid={`lab-preset-btn-${preset.id}`}
 										>
@@ -382,8 +382,8 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 					{/* ═══ TAB 4: PRINTABLE BLANK & QR CODE ══════════════════ */}
 					{form.activeTab === "print" && (
 						<div className="flex flex-col gap-3">
-							<div className="flex items-center justify-between gap-2 px-2 py-1 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800">
-								<div className="text-xs font-semibold text-slate-500">
+							<div className="flex items-center justify-between gap-2 px-2 py-1 bg-[var(--paper-soft)] rounded-lg border border-[var(--line)]">
+								<div className="text-xs font-semibold text-[var(--muted)]">
 									Наряд-заказ в зуботехническую лабораторию
 								</div>
 								<button
@@ -433,18 +433,18 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 
 				{/* ─── MODAL FOOTER WITH SAVE / SUBMIT (DESKTOP & DEDICATED APPLE HIG MOBILE) ─── */}
 				{/* 1. Десктопный футер (от 640px) */}
-				<div className="hidden sm:flex items-center justify-between gap-3 px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 shrink-0">
-					<div className="text-xs text-slate-500 dark:text-slate-400 font-bold min-w-0 flex-initial">
+				<div className="hidden sm:flex items-center justify-between gap-3 px-6 py-3.5 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
+					<div className="text-xs text-[var(--muted)] font-bold min-w-0 flex-initial">
 						{form.jawScope ? (
 							<span className="break-words">
 								Наряд на челюсть: <strong className="text-emerald-700 dark:text-emerald-300 text-sm font-extrabold">{formatJawScopeLabel(form.jawScope)}</strong>
 							</span>
 						) : form.selectedTeeth.length > 0 ? (
 							<span className="break-words">
-								Зубы FDI: <strong className="text-slate-800 dark:text-slate-200 text-sm">{form.selectedTeeth.join(", ")}</strong>
+								Зубы FDI: <strong className="text-[var(--ink)] text-sm">{form.selectedTeeth.join(", ")}</strong>
 							</span>
 						) : (
-							<span>Зубы FDI: <strong className="text-slate-800 dark:text-slate-200 text-sm">Общий наряд / Челюсть</strong></span>
+							<span>Зубы FDI: <strong className="text-[var(--ink)] text-sm">Общий наряд / Челюсть</strong></span>
 						)}
 					</div>
 
@@ -453,7 +453,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							type="button"
 							onClick={form.handleCopyMessengerSummary}
 							data-testid="lab-order-copy-messenger-btn"
-							className="min-h-[44px] h-11 px-3.5 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+							className="min-h-[44px] h-11 px-3.5 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
 							title="Скопировать выжимку наряда для отправки курьеру или зубному технику в WhatsApp/Telegram"
 						>
 							<Copy className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
@@ -463,7 +463,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							type="button"
 							onClick={form.handlePrint}
 							data-testid="lab-order-footer-print-btn"
-							className="min-h-[44px] h-11 px-3.5 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+							className="min-h-[44px] h-11 px-3.5 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
 							title="Распечатать наряд-заказ (А4)"
 						>
 							<Printer className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
@@ -473,7 +473,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							type="button"
 							onClick={onClose}
 							disabled={form.isSubmitting}
-							className="h-9 px-4 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer select-none inline-flex items-center justify-center shadow-2xs"
+							className="h-9 px-4 text-xs font-bold rounded-xl border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer select-none inline-flex items-center justify-center shadow-2xs"
 						>
 							Отмена
 						</button>
@@ -501,13 +501,13 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 				</div>
 
 				{/* 2. Мобильный футер (Apple HIG / Floating Bottom Bar) */}
-				<div className="flex sm:hidden flex-col gap-2 p-3 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
+				<div className="flex sm:hidden flex-col gap-2 p-3 border-t border-[var(--line)] bg-[var(--paper)]/95 backdrop-blur-md shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
 					<div className="flex items-center justify-between gap-2">
-						<div className="text-[11.5px] font-bold text-slate-600 dark:text-slate-300 truncate min-w-0">
+						<div className="text-[11.5px] font-bold text-[var(--muted)] truncate min-w-0">
 							{form.jawScope ? (
 								<span>Наряд: <strong className="text-emerald-600 dark:text-emerald-400">{formatJawScopeLabel(form.jawScope)}</strong></span>
 							) : form.selectedTeeth.length > 0 ? (
-								<span>Зубы FDI: <strong className="text-slate-900 dark:text-white">{form.selectedTeeth.join(", ")}</strong></span>
+								<span>Зубы FDI: <strong className="text-[var(--ink)]">{form.selectedTeeth.join(", ")}</strong></span>
 							) : (
 								<span>Зубы: <strong>Общий наряд</strong></span>
 							)}
@@ -516,7 +516,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							<button
 								type="button"
 								onClick={form.handleCopyMessengerSummary}
-								className="h-8 px-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1 active:scale-95"
+								className="h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[11px] font-bold text-[var(--ink)] inline-flex items-center gap-1 active:scale-95"
 								title="Скопировать выжимку"
 							>
 								<Copy size={13} className="text-teal-600 dark:text-teal-400" />
@@ -525,7 +525,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							<button
 								type="button"
 								onClick={form.handlePrint}
-								className="h-8 px-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1 active:scale-95"
+								className="h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[11px] font-bold text-[var(--ink)] inline-flex items-center gap-1 active:scale-95"
 								title="Печать (А4)"
 							>
 								<Printer size={13} className="text-teal-600 dark:text-teal-400" />
@@ -534,7 +534,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							<button
 								type="button"
 								onClick={onClose}
-								className="h-8 px-2.5 rounded-lg border border-slate-300 dark:border-slate-700 text-[11px] font-bold text-slate-600 dark:text-slate-400 active:scale-95"
+								className="h-8 px-2.5 rounded-lg border border-[var(--line)] text-[11px] font-bold text-[var(--muted)] active:scale-95"
 							>
 								Отмена
 							</button>

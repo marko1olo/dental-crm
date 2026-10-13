@@ -129,9 +129,12 @@ export function getAttachmentFileSize(url: string): string {
 	} catch {
 		// fallback
 	}
+	if (url.startsWith("data:")) {
+		const bytes = Math.round((url.length * 3) / 4);
+		if (bytes > 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
+		if (bytes > 1024) return `${Math.round(bytes / 1024)} КБ`;
+		return `${bytes} Б`;
+	}
 	const ext = getAttachmentExtension(url).toLowerCase();
-	if (ext === "ply") return "42.8 МБ";
-	if (ext === "obj") return "35.2 МБ";
-	if (ext === "3mf") return "18.6 МБ";
-	return "28.4 МБ";
+	return `CAD/CAM (${ext.toUpperCase()})`;
 }

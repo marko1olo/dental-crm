@@ -13,10 +13,9 @@ import { wsBroker } from "../../services/websocketBroker.js";
 
 export async function registerTechnicianPortalRoutes(app: FastifyInstance) {
 	/**
-	 * GET /api/portal/lab-order/:token
-	 * Публичный защищенный портал зубного техника (доступ по криптографическому токену наряда).
+	 * Обработчик чтения деталей заказа техником по токену наряда.
 	 */
-	app.get("/api/portal/lab-order/:token", async (request, reply) => {
+	const handleGetPortalOrder = async (request: any, reply: any) => {
 		const { token } = request.params as { token: string };
 		if (!token) return reply.code(400).send({ error: "TokenRequired", message: "Токен наряда обязателен." });
 
@@ -49,13 +48,12 @@ export async function registerTechnicianPortalRoutes(app: FastifyInstance) {
 					"Портал лаборатории временно недоступен. Повторите попытку позже.",
 			});
 		}
-	});
+	};
 
 	/**
-	 * POST /api/portal/lab-order/:token/status
-	 * Обновление статуса заказа зубным техником по токену наряда с валидацией автомата переходов.
+	 * Обработчик смены статуса наряда зубным техником по токену.
 	 */
-	app.post("/api/portal/lab-order/:token/status", async (request, reply) => {
+	const handlePostPortalOrderStatus = async (request: any, reply: any) => {
 		const { token } = request.params as { token: string };
 
 		const technicianAllowedStatuses = z.enum([
@@ -145,5 +143,83 @@ export async function registerTechnicianPortalRoutes(app: FastifyInstance) {
 					"Портал лаборатории временно недоступен. Повторите попытку позже.",
 			});
 		}
-	});
+	};
+
+	/**
+	 * Обработчик прикрепления фото готовой работы или промежуточного этапа техником.
+	 */
+	const handlePostPortalOrderPhoto = async (request: any, reply: any) => {
+		const { token } = request.params as { token: string };
+
+		const parsedBody = z
+			.object({
+				photoUrl: z.string().trim().max(500000).optional(),
+				attachedImageUrl: z.string().trim().max(500000).optional(),
+			})
+			.safeParse(request.body);
+
+		if (!token || !parsedBody.success) {
+			return reply.code(400).send({
+				error: "InvalidRequest",
+				message: "Некорректный запрос прикрепления фотографии.",
+			});
+		}
+
+		const photoUrl = parsedBody.data.attachedImageUrl ?? parsedBody.data.photoUrl;
+		if (!photoUrl) {
+			return reply.code(400).send({
+				error: "MissingPhotoUrl",
+				message: "URL или данные фотографии обязательны.",
+			});
+		}
+
+		try {
+			const order = await getLabOrderByToken(token);
+			if (!order) {
+				return reply.code(404).send({
+					error: "OrderNotFound",
+					message: "Наряд-заказ не найден или ссылка устарела.",
+				});
+			}
+
+			await db
+				.update(labOrders)
+				.set({ attachedImageUrl: photoUrl, updatedAt: new Date() })
+				.where(
+					and(
+						eq(labOrders.id, order.id),
+						eq(labOrders.organizationId, order.organizationId),
+					),
+				);
+
+			wsBroker.broadcastToOrganization(order.organizationId, {
+				type: "LAB_ORDER_UPDATED",
+				payload: {
+					patientId: order.patientId,
+					orderId: order.id,
+					status: order.status,
+					attachedImageUrl: photoUrl,
+				},
+			});
+
+			return { success: true, attachedImageUrl: photoUrl };
+		} catch (e) {
+			request.log.error({ err: e }, "[LabPortal] POST photo error");
+			return reply.code(500).send({
+				error: "LabPortalError",
+				message:
+					"Портал лаборатории временно недоступен. Повторите попытку позже.",
+			});
+		}
+	};
+
+	// ─── Канонические маршруты и алиасы портала ЗТЛ ───
+	app.get("/api/portal/lab-order/:token", handleGetPortalOrder);
+	app.get("/api/lab/portal/:token", handleGetPortalOrder);
+
+	app.post("/api/portal/lab-order/:token/status", handlePostPortalOrderStatus);
+	app.post("/api/lab/portal/:token/status", handlePostPortalOrderStatus);
+
+	app.post("/api/portal/lab-order/:token/photo", handlePostPortalOrderPhoto);
+	app.post("/api/lab/portal/:token/photo", handlePostPortalOrderPhoto);
 }

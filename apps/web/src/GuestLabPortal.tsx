@@ -3,6 +3,7 @@ import {
 	Beaker,
 	Box,
 	Calendar,
+	Camera,
 	CheckCircle2,
 	Clock,
 	Download,
@@ -47,6 +48,7 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [isUpdating, setIsUpdating] = useState(false);
+	const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 	const [showCourierWaybill, setShowCourierWaybill] = useState(false);
 
 	useEffect(() => {
@@ -58,9 +60,16 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 
 		void (async () => {
 			try {
-				const res = await fetch(
+				let res = await fetch(
 					`/api/portal/lab-order/${encodeURIComponent(token)}`,
 				);
+				if (!res.ok && res.status === 404) {
+					// Прозрачный fallback на канонический алиас /api/lab/portal/:token
+					const alt = await fetch(
+						`/api/lab/portal/${encodeURIComponent(token)}`,
+					);
+					if (alt.ok) res = alt;
+				}
 				if (!res.ok) throw new Error(labOrderLoadFailureText(res.status));
 				const data = (await res.json()) as LabOrderData;
 				if (!cancelled) setOrder(data);
@@ -90,7 +99,7 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 		if (!token || !order) return;
 		try {
 			setIsUpdating(true);
-			const res = await fetch(
+			let res = await fetch(
 				`/api/portal/lab-order/${encodeURIComponent(token)}/status`,
 				{
 					method: "POST",
@@ -103,6 +112,23 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 					}),
 				},
 			);
+
+			if (!res.ok && res.status === 404) {
+				const alt = await fetch(
+					`/api/lab/portal/${encodeURIComponent(token)}/status`,
+					{
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify({
+							status: newStatus,
+							...(comments ? { labComments: comments } : {}),
+						}),
+					},
+				);
+				if (alt.ok) res = alt;
+			}
 
 			if (!res.ok) throw new Error(statusSaveFailureText(res.status));
 
@@ -147,6 +173,64 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 			);
 		} finally {
 			setIsUpdating(false);
+		}
+	};
+
+	const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+		const file = event.target.files?.[0];
+		if (!file || !token || !order) return;
+
+		if (!file.type.startsWith("image/")) {
+			showToast("Пожалуйста, выберите файл изображения (JPG, PNG, WebP).", "error");
+			return;
+		}
+
+		if (file.size > 15 * 1024 * 1024) {
+			showToast("Размер снимка превышает 15 МБ.", "error");
+			return;
+		}
+
+		setIsUploadingPhoto(true);
+		try {
+			const dataUrl = await new Promise<string>((resolve, reject) => {
+				const reader = new FileReader();
+				reader.onload = () => resolve(reader.result as string);
+				reader.onerror = reject;
+				reader.readAsDataURL(file);
+			});
+
+			let res = await fetch(
+				`/api/portal/lab-order/${encodeURIComponent(token)}/photo`,
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ attachedImageUrl: dataUrl }),
+				},
+			);
+
+			if (!res.ok && res.status === 404) {
+				const alt = await fetch(
+					`/api/lab/portal/${encodeURIComponent(token)}/photo`,
+					{
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ attachedImageUrl: dataUrl }),
+					},
+				);
+				if (alt.ok) res = alt;
+			}
+
+			if (!res.ok) {
+				throw new Error("Не удалось загрузить фото работы в клинику.");
+			}
+
+			setOrder({ ...order, attachedImageUrl: dataUrl });
+			showToast("Фотография работы успешно передана врачу в клинику!", "success");
+		} catch (err: any) {
+			showToast(err.message || "Ошибка загрузки фотографии", "error");
+		} finally {
+			setIsUploadingPhoto(false);
+			event.target.value = "";
 		}
 	};
 
@@ -551,6 +635,64 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 								Нет приложенных снимков и 3D-сканов
 							</div>
 						)}
+
+						{/* Загрузка фото готовой работы зубным техником для клиники */}
+						<div
+							style={{
+								marginTop: "14px",
+								padding: "12px 16px",
+								background: "var(--paper)",
+								border: "1px solid var(--line)",
+								borderRadius: "10px",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "space-between",
+								flexWrap: "wrap",
+								gap: "10px",
+							}}
+							data-testid="guest-portal-photo-upload-panel"
+						>
+							<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+								<Camera size={18} style={{ color: "var(--teal)" }} />
+								<div>
+									<div style={{ fontSize: "13px", fontWeight: 700, color: "var(--ink)" }}>
+										Фотография готового изделия
+									</div>
+									<div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>
+										Прикрепите фото коронки/протеза для врача перед отправкой курьером
+									</div>
+								</div>
+							</div>
+
+							<label
+								className="secondary-button"
+								style={{
+									minHeight: "40px",
+									padding: "8px 16px",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "8px",
+									fontWeight: 700,
+									fontSize: "12px",
+									cursor: isUploadingPhoto ? "wait" : "pointer",
+									background: "var(--teal-soft)",
+									color: "var(--teal)",
+									borderColor: "var(--teal)",
+								}}
+								data-testid="guest-portal-upload-photo-label"
+							>
+								<input
+									type="file"
+									accept="image/*"
+									style={{ display: "none" }}
+									disabled={isUploadingPhoto}
+									onChange={handlePhotoUpload}
+									data-testid="guest-portal-photo-input"
+								/>
+								<Camera size={15} />
+								<span>{isUploadingPhoto ? "Отправка фото..." : "Загрузить фото работы"}</span>
+							</label>
+						</div>
 					</div>
 
 					<div className="guest-portal-actions">

@@ -904,8 +904,10 @@ describe("SSOT Unification & Facade Parity (Mandates 8e, 8n, 8s, 8zh)", () => {
 		);
 
 		assert.equal(wasteRecords.length, 1);
-		assert.equal(wasteRecords[0].wasteCategory, "sharp");
-		assert.ok(wasteRecords[0].containerTypeRu.toLowerCase().includes("желтый"));
+		const rec0 = wasteRecords[0];
+		assert.ok(rec0);
+		assert.equal(rec0.wasteCategory, "sharp");
+		assert.ok(rec0.containerTypeRu.toLowerCase().includes("желтый"));
 	});
 
 	it("ConsumablesDeductionModal рендерится с кнопкой списания, не заблокированной при дефиците склада (Мандат 8e)", async () => {

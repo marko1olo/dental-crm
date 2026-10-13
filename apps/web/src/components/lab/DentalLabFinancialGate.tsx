@@ -214,7 +214,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 							Мин. аванс 50%: {formatKopecksRu(gateResult.requiredAdvanceKopecks)}
 						</span>
 					</div>
-					<div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+					<div className="w-full h-2 rounded-full bg-[var(--line)] overflow-hidden">
 						<div
 							className={`h-full rounded-full transition-all ${
 								gateResult.paidPercent >= 50 ? "bg-emerald-500" : "bg-rose-500"
@@ -245,7 +245,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 	// ─── 3. MODAL CONFIRMATION DIALOG ────────────────────────────────────────────
 	return (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/80 backdrop-blur-sm overflow-y-auto"
+			className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm overflow-y-auto"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="lab-financial-gate-title"
@@ -275,7 +275,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+							className="min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)] transition-colors"
 							aria-label="Закрыть"
 							data-testid="lab-gate-close-btn"
 						>
@@ -302,7 +302,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 								<span>{gateResult.isPlanExpiredNotice}</span>
 							</div>
 						)}
-						<div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-amber-500/20 flex items-center justify-between font-mono">
+						<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-amber-500/20 flex items-center justify-between font-mono">
 							<span className="text-[var(--muted,#64748b)]">Недостающий аванс:</span>
 							<strong className="text-amber-700 dark:text-amber-300 text-sm">
 								{formatKopecksRu(gateResult.missingAdvanceKopecks)}
@@ -338,7 +338,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 										if (onClose) onClose();
 										onAcceptAdvancePayment();
 									}}
-									className="min-h-[44px] flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--border,#cbd5e1)] transition cursor-pointer"
+									className="min-h-[44px] flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] transition cursor-pointer"
 									data-testid="lab-gate-accept-payment-btn"
 								>
 									<DollarSign size={15} />
@@ -383,7 +383,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 							if (onBlock) onBlock();
 							if (onClose) onClose();
 						}}
-						className="min-h-[44px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-[var(--muted,#64748b)] hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition cursor-pointer"
+						className="min-h-[44px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition cursor-pointer"
 						data-testid="lab-gate-block-btn"
 					>
 						<XCircle size={15} />

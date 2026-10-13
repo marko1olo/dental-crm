@@ -128,7 +128,7 @@ function getUrgencyBadgeStyle(urgency: WaitlistUrgency): string {
     case "hygiene":
       return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/35 font-bold";
     default:
-      return "bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/25 font-medium";
+      return "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] font-medium";
   }
 }
 
@@ -139,7 +139,7 @@ function getScoreBadgeStyle(score: number): string {
   if (score >= 60) {
     return "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30";
   }
-  return "bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/30";
+  return "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]";
 }
 
 export const SmartSlotRecoveryPopover: React.FC<SmartSlotRecoveryPopoverProps> = ({
@@ -165,6 +165,58 @@ export const SmartSlotRecoveryPopover: React.FC<SmartSlotRecoveryPopoverProps> =
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [contactedSet, setContactedSet] = useState<Set<string>>(new Set());
   const [copiedSet, setCopiedSet] = useState<Set<string>>(new Set());
+  const [serverMatchesMap, setServerMatchesMap] = useState<Map<
+    string,
+    {
+      entryId: string;
+      patientId: string;
+      reason: string;
+      sameDoctor: boolean;
+      timeFits: boolean;
+      alreadyBooked: boolean;
+    }
+  > | null>(null);
+
+  // Synchronize with backend waitlist matches when appointmentId is available
+  useEffect(() => {
+    const apptId = slot?.appointmentId;
+    if (!apptId || !isOpen) {
+      setServerMatchesMap(null);
+      return;
+    }
+    const validApptId: string = apptId;
+    let isCancelled = false;
+    fetch(
+      `/api/appointments/${encodeURIComponent(validApptId)}/waitlist-matches`,
+      {
+        headers: appLogic?.auth?.denteClinicalReadHeaders
+          ? appLogic.auth.denteClinicalReadHeaders()
+          : {},
+      },
+    )
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!isCancelled && data && Array.isArray(data.matches)) {
+          // biome-ignore lint/suspicious/noExplicitAny: server match structure
+          const map = new Map<string, any>();
+          for (const m of data.matches) {
+            if (m.entryId) map.set(m.entryId, m);
+            if (m.patientId) map.set(m.patientId, m);
+          }
+          setServerMatchesMap(map);
+        }
+      })
+      .catch((err) => {
+        logger.warn(
+          "Could not load server matches for smart slot recovery:",
+          err,
+        );
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [slot?.appointmentId, isOpen, appLogic?.auth]);
 
   // Load waitlist entries if not provided via props
   useEffect(() => {
@@ -227,7 +279,46 @@ export const SmartSlotRecoveryPopover: React.FC<SmartSlotRecoveryPopoverProps> =
     });
   }, [slot, entries, clinicName]);
 
-  const matches = recoveryResult?.matches || [];
+  const matches = useMemo(() => {
+    const baseMatches = recoveryResult?.matches || [];
+    if (!serverMatchesMap) return baseMatches;
+
+    return baseMatches
+      .map((m) => {
+        const serverMatch =
+          serverMatchesMap.get(m.id) ||
+          (m.patientId ? serverMatchesMap.get(m.patientId) : null);
+        if (!serverMatch) return m;
+
+        const reasons = [...(m.matchReasons || [])];
+        if (serverMatch.reason && !reasons.includes(serverMatch.reason)) {
+          reasons.unshift(serverMatch.reason);
+        }
+        if (
+          serverMatch.alreadyBooked &&
+          !reasons.includes("Уже есть будущая запись")
+        ) {
+          reasons.push("Уже есть будущая запись");
+        }
+
+        let score = m.score;
+        if (serverMatch.sameDoctor && serverMatch.timeFits) {
+          score = Math.max(score, 95);
+        } else if (serverMatch.sameDoctor || serverMatch.timeFits) {
+          score = Math.max(score, 80);
+        }
+        if (serverMatch.alreadyBooked) {
+          score = Math.max(15, score - 35);
+        }
+
+        return {
+          ...m,
+          score,
+          matchReasons: reasons,
+        };
+      })
+      .sort((a, b) => b.score - a.score);
+  }, [recoveryResult?.matches, serverMatchesMap]);
   const durationMinutes = recoveryResult?.slot?.durationMinutes || 30;
 
   // Handle WhatsApp Offer Click
@@ -561,7 +652,7 @@ export const SmartSlotRecoveryPopover: React.FC<SmartSlotRecoveryPopoverProps> =
                       type="button"
                       onClick={() => handleCopyMessage(match)}
                       className="ghost-button w-8 h-8 min-h-[32px] p-0 rounded-lg text-xs cursor-pointer inline-flex items-center justify-center"
-                      title="Скопировать текст сообщения 152-ФЗ"
+                      title="Скопировать текст сообщения"
                       data-testid={`smart-slot-copy-btn-${idx}`}
                     >
                       {isCopied ? (

@@ -63,6 +63,8 @@ export interface DentalLabFinancialGateResult {
 	readonly detailedReasonRu: string;
 	readonly chiefDoctorOverrideAuthorized: boolean;
 	readonly isPlanExpiredNotice?: string | undefined;
+	readonly canSendInOneClick: boolean;
+	readonly isSoftWarning: boolean;
 	readonly overrideMeta?: {
 		readonly doctorName: string;
 		readonly timestampIso: string;
@@ -135,7 +137,7 @@ export function checkDentalLabFinancialGate(
 
 	const warningMessageRu =
 		gateStatus === "BLOCKED_REQUIRES_ADVANCE"
-			? `Внимание: этап не оплачен. Требуется аванс ${formattedMissingAdvance}. Отправить наряд под ответственность главврача? Лечащий врач вправе отправить наряд в ЗТЛ под личную клиническую ответственность (Автономия врача).`
+			? `Рекомендуется аванс 50%. Внимание: этап не оплачен. Требуется аванс ${formattedMissingAdvance}. Отправить наряд под ответственность главврача? Лечащий врач вправе отправить наряд в ЗТЛ под личную клиническую ответственность (Автономия врача).`
 			: gateStatus === "DOCTOR_OVERRIDE"
 				? `Наряд ЗТЛ отправлен в производство под клиническую ответственность лечащего врача (${activeOverride?.doctorName || "Лечащий врач"}).`
 				: gateStatus === "CHIEF_DOCTOR_OVERRIDE"
@@ -165,6 +167,8 @@ export function checkDentalLabFinancialGate(
 		detailedReasonRu,
 		chiefDoctorOverrideAuthorized: isOverrideActive,
 		isPlanExpiredNotice: planExpiredNotice,
+		canSendInOneClick: true,
+		isSoftWarning: gateStatus === "BLOCKED_REQUIRES_ADVANCE",
 		...(isOverrideActive && activeOverride
 			? {
 					overrideMeta: {

@@ -71,6 +71,10 @@ describe("CloudRelayClient (Clinic Edge NAT Traversal)", () => {
 		test("разрешает доступ только к порталу ЗТЛ и публичным пресетам", () => {
 			assert.strictEqual(isRouteAllowedForTunnel("/api/portal/lab-order/token-123"), true);
 			assert.strictEqual(isRouteAllowedForTunnel("/api/portal/lab-order/token-123/status"), true);
+			assert.strictEqual(isRouteAllowedForTunnel("/api/portal/lab-order/token-123/photo"), true);
+			assert.strictEqual(isRouteAllowedForTunnel("/api/lab/portal/token-123"), true);
+			assert.strictEqual(isRouteAllowedForTunnel("/api/lab/portal/token-123/status"), true);
+			assert.strictEqual(isRouteAllowedForTunnel("/api/lab/portal/token-123/photo"), true);
 			assert.strictEqual(isRouteAllowedForTunnel("/api/portal/scans/upload"), true);
 			assert.strictEqual(isRouteAllowedForTunnel("/api/clinical/dental-lab/presets"), true);
 			assert.strictEqual(isRouteAllowedForTunnel("/health"), true);
