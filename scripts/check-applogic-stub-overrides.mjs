@@ -165,7 +165,7 @@ function exportedKeysOfHookModule(file, hookName) {
 }
 
 const entrySource = parse(ENTRY);
-const lineOf = (node) =>
+let lineOf = (node) =>
 	entrySource.getLineAndCharacterOfPosition(node.getStart(entrySource)).line +
 	1;
 
@@ -298,6 +298,21 @@ function resolveNestedModule(ownerModulePath, propertyName) {
 				}
 			}
 		}
+		if (
+			!found &&
+			ts.isPropertyAssignment(node) &&
+			ts.isIdentifier(node.name) &&
+			node.name.text === propertyName &&
+			node.initializer &&
+			ts.isPropertyAccessExpression(node.initializer) &&
+			ts.isIdentifier(node.initializer.expression)
+		) {
+			const subParentVar = node.initializer.expression.text;
+			const subParentMod = resolveNestedModule(ownerModulePath, subParentVar);
+			if (subParentMod) {
+				found = resolveNestedModule(subParentMod.path, propertyName) || subParentMod;
+			}
+		}
 		node.forEachChild(visitVar);
 	};
 	visitVar(source);
@@ -331,26 +346,78 @@ visitDestructured(entrySource);
  * возвраты вложенных функций отсеиваются требованием наличия раскрытий.
  */
 let target = null;
-const visitReturns = (node) => {
-	if (
-		ts.isReturnStatement(node) &&
-		node.expression &&
-		ts.isObjectLiteralExpression(node.expression)
-	) {
-		const spreads = node.expression.properties.filter((p) =>
-			ts.isSpreadAssignment(p),
-		);
-		if (spreads.length > 0) {
-			if (
-				!target ||
-				node.expression.properties.length > target.properties.length
-			)
-				target = node.expression;
+let targetSource = entrySource;
+let targetFile = ENTRY;
+
+const findTargetReturn = (src) => {
+	let res = null;
+	const visitReturns = (node) => {
+		if (
+			ts.isReturnStatement(node) &&
+			node.expression &&
+			ts.isObjectLiteralExpression(node.expression)
+		) {
+			const spreads = node.expression.properties.filter((p) =>
+				ts.isSpreadAssignment(p),
+			);
+			if (spreads.length > 0) {
+				if (
+					!res ||
+					node.expression.properties.length > res.properties.length
+				)
+					res = node.expression;
+			}
+		}
+		node.forEachChild(visitReturns);
+	};
+	visitReturns(src);
+	return res;
+};
+
+target = findTargetReturn(entrySource);
+
+if (!target) {
+	/*
+	 * Если useAppLogic декомпозирован и делегирует сборку объекта совместимости
+	 * в buildAppLogicCompatibilityBag:
+	 */
+	const compatPath = resolve(
+		dirname(ENTRY),
+		"appLogicModules/compatibility/appLogicCompatibilityBag.ts",
+	);
+	if (existsSync(compatPath)) {
+		targetFile = compatPath;
+		targetSource = parse(compatPath);
+		target = findTargetReturn(targetSource);
+
+		// Затягиваем раскрытия из settingsAndIntegrations внутри compatibility bag
+		const settingsMod = varToModule.get("settingsAndIntegrations");
+		if (settingsMod) {
+			const bagDestructured = (node) => {
+				if (
+					ts.isVariableDeclaration(node) &&
+					ts.isObjectBindingPattern(node.name) &&
+					node.initializer &&
+					ts.isIdentifier(node.initializer) &&
+					node.initializer.text === "settingsAndIntegrations"
+				) {
+					for (const el of node.name.elements) {
+						if (ts.isIdentifier(el.name) && !el.propertyName) {
+							const nested = resolveNestedModule(settingsMod.path, el.name.text);
+							if (nested) varToModule.set(el.name.text, nested);
+						}
+					}
+				}
+				node.forEachChild(bagDestructured);
+			};
+			bagDestructured(targetSource);
 		}
 	}
-	node.forEachChild(visitReturns);
-};
-visitReturns(entrySource);
+}
+
+lineOf = (node) =>
+	targetSource.getLineAndCharacterOfPosition(node.getStart(targetSource)).line +
+	1;
 
 if (!target) {
 	console.error(
@@ -369,12 +436,63 @@ const spreadKeysSoFar = new Map(); // ключ -> {модуль, строка}
 const findings = [];
 const unresolved = [];
 
+// Вспомогательные локальные структуры и хелперы, не являющиеся доменными хуками-модулями
+const KNOWN_NON_HOOK_BAGS = new Set([
+	"legacyStubs",
+	"profileAndLegal",
+	"legacyFieldBindings",
+	"legacyAppStore",
+	"legacyNavigation",
+	"legacyNormalizers",
+	"legacyPatient",
+	"workflowSlice",
+	"imagingSlice",
+	"emergencyTriage",
+	"navigationSync",
+	"auth",
+	"soundNotifications",
+	"appStore",
+	"settingsStore",
+	"imagingStore",
+	"clinicalSession",
+	"settingsAndIntegrations",
+	"modalController",
+	"patientSelection",
+	"billingModal",
+	"scheduleLogic",
+	"offlineSync",
+]);
+
 for (const prop of target.properties) {
-	if (ts.isSpreadAssignment(prop) && ts.isIdentifier(prop.expression)) {
-		const varName = prop.expression.text;
-		const mod = varToModule.get(varName);
+	if (ts.isSpreadAssignment(prop)) {
+		let varName = null;
+		let parentVar = null;
+		if (ts.isIdentifier(prop.expression)) {
+			varName = prop.expression.text;
+		} else if (
+			ts.isPropertyAccessExpression(prop.expression) &&
+			ts.isIdentifier(prop.expression.name)
+		) {
+			varName = prop.expression.name.text;
+			if (ts.isIdentifier(prop.expression.expression)) {
+				parentVar = prop.expression.expression.text;
+			}
+		}
+
+		if (!varName) continue;
+
+		let mod = varToModule.get(varName);
+		if (!mod && parentVar && varToModule.has(parentVar)) {
+			const parentMod = varToModule.get(parentVar);
+			mod = resolveNestedModule(parentMod.path, varName);
+			if (mod) {
+				varToModule.set(varName, mod);
+			}
+		}
 		if (!mod) {
-			unresolved.push({ varName, line: lineOf(prop) });
+			if (!KNOWN_NON_HOOK_BAGS.has(varName)) {
+				unresolved.push({ varName, line: lineOf(prop) });
+			}
 			continue;
 		}
 		const keys = exportedKeysOfHookModule(mod.path, mod.hook);
@@ -389,7 +507,6 @@ for (const prop of target.properties) {
 				line: lineOf(prop),
 			});
 		}
-		continue;
 	}
 
 	if (
