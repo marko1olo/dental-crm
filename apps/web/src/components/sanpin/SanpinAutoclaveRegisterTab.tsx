@@ -1,4 +1,6 @@
 import {
+	getSanpinSterilizationRegime,
+	getSanpinPackagingMaterial,
 	type SterilizationLogRecord,
 } from "@dental/shared";
 import {
@@ -11,6 +13,7 @@ import {
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import {
@@ -35,6 +38,10 @@ import {
 } from "./AutoclavePrintHelpers";
 import { SterilizationCycleModal } from "./SterilizationCycleModal";
 import { AutoclaveRegisterTable } from "./AutoclaveRegisterTable";
+import { SanPinSterilizationJournal } from "./SanPinSterilizationJournal";
+
+const STANDARD_CYCLE_134 = getSanpinSterilizationRegime("steam_134_5min");
+const KRAFT_SELF_SEAL = getSanpinPackagingMaterial("kraft_self_seal");
 
 export const DEFAULT_SHOWCASE_STERILIZATION_LOGS: SterilizationLogRecord[] = [
 	{
@@ -47,9 +54,9 @@ export const DEFAULT_SHOWCASE_STERILIZATION_LOGS: SterilizationLogRecord[] = [
 		cycleNumber: 3,
 		itemsDescription: "Хирургические наборы имплантации (лотки, элеваторы, кюреты), наконечники",
 		packagingType: "kraft_heat_sealed",
-		temperatureCelsius: 134,
-		pressureBar: 2.1,
-		durationMin: 5,
+		temperatureCelsius: STANDARD_CYCLE_134.targetTemperatureCelsius,
+		pressureBar: STANDARD_CYCLE_134.targetPressureBar,
+		durationMin: STANDARD_CYCLE_134.targetExposureMinutes,
 		indicatorType: "class6_emulating",
 		passedIndicator: true,
 		biologicalTestResult: "not_conducted",
@@ -72,15 +79,15 @@ export const DEFAULT_SHOWCASE_STERILIZATION_LOGS: SterilizationLogRecord[] = [
 		cycleNumber: 2,
 		itemsDescription: "Терапевтический смотровой набор (зеркала, зонды, пинцеты, гладилки)",
 		packagingType: "kraft_self_adhesive",
-		temperatureCelsius: 134,
-		pressureBar: 2.1,
-		durationMin: 5,
+		temperatureCelsius: STANDARD_CYCLE_134.targetTemperatureCelsius,
+		pressureBar: STANDARD_CYCLE_134.targetPressureBar,
+		durationMin: STANDARD_CYCLE_134.targetExposureMinutes,
 		indicatorType: "class5_integrating",
 		passedIndicator: true,
 		biologicalTestResult: "not_conducted",
 		status: "passed",
 		barcode: "STER-2026-002",
-		expiresAt: new Date(Date.now() + 50 * 86400000).toISOString(),
+		expiresAt: new Date(Date.now() + KRAFT_SELF_SEAL.statutoryShelfLifeDays * 86400000).toISOString(),
 		operatorId: "8356141b-7cfa-4221-95f7-70f47e7344b1",
 		operatorName: "Иванова А. С. (Медсестра ЦСО)",
 		notes: "ЭЦП проверена. Норма 100%.",
@@ -137,17 +144,13 @@ export function SanpinAutoclaveRegisterTab() {
 	});
 	const [isEquipmentModalOpen, setIsEquipmentModalOpen] = useState(false);
 	const [stampedRows, setStampedRows] = useState<Record<string, boolean>>({});
+	const [viewSubMode, setViewSubMode] = useState<"journal" | "table">("journal");
 
 	const fetchLogs = async () => {
 		try {
 			setLoading(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
 			const res = await fetch("/api/registers/sterilization", {
-				headers: {
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
+				headers: getDenteAuthHeaders(),
 			});
 			if (res.ok) {
 				const data = await res.json();
@@ -179,13 +182,8 @@ export function SanpinAutoclaveRegisterTab() {
 
 	const fetchDevices = async () => {
 		try {
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
 			const res = await fetch("/api/registers/sterilizers/equipments", {
-				headers: {
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
+				headers: getDenteAuthHeaders(),
 			}).catch(() => null);
 
 			if (res && res.ok) {
@@ -276,11 +274,9 @@ export function SanpinAutoclaveRegisterTab() {
 
 			const res = await fetch("/api/registers/sterilization", {
 				method: "POST",
-				headers: {
+				headers: getDenteAuthHeaders({
 					"Content-Type": "application/json",
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
+				}),
 				body: JSON.stringify(payload),
 			});
 
@@ -355,38 +351,102 @@ export function SanpinAutoclaveRegisterTab() {
 
 	return (
 		<div className="sanpin-tab-content">
-			{/* Official Form Header for Print */}
-			<div className="sanpin-print-title">
-				<h2>ЖУРНАЛ РАБОТЫ СТЕРИЛИЗАТОРОВ (АВТОКЛАВОВ)</h2>
-				<p title="Контроль работы стерилизаторов">Стерилизация инструментов и контроль качества (индикаторы 4–5 класса)</p>
+			{/* Sub-mode switcher between SanPinSterilizationJournal and AutoclaveRegisterTable */}
+			<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+				<div
+					className="sanpin-segmented-control"
+					style={{
+						display: "inline-flex",
+						background: "var(--line-subtle, #f1f5f9)",
+						padding: 3,
+						borderRadius: 8,
+						border: "1px solid var(--line, #e2e8f0)",
+					}}
+				>
+					<button
+						type="button"
+						onClick={() => setViewSubMode("journal")}
+						className="touch-manipulation"
+						style={{
+							height: 28,
+							padding: "0 12px",
+							borderRadius: 6,
+							border: "none",
+							background: viewSubMode === "journal" ? "var(--paper, #fff)" : "transparent",
+							color: viewSubMode === "journal" ? "var(--ink, #0f172a)" : "var(--muted, #64748b)",
+							fontWeight: viewSubMode === "journal" ? 600 : 500,
+							fontSize: "0.8125rem",
+							cursor: "pointer",
+							boxShadow: viewSubMode === "journal" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+						}}
+						data-testid="subtab-journal-btn"
+					>
+						Журнал стерилизации и экспресс-сканер
+					</button>
+					<button
+						type="button"
+						onClick={() => setViewSubMode("table")}
+						className="touch-manipulation"
+						style={{
+							height: 28,
+							padding: "0 12px",
+							borderRadius: 6,
+							border: "none",
+							background: viewSubMode === "table" ? "var(--paper, #fff)" : "transparent",
+							color: viewSubMode === "table" ? "var(--ink, #0f172a)" : "var(--muted, #64748b)",
+							fontWeight: viewSubMode === "table" ? 600 : 500,
+							fontSize: "0.8125rem",
+							cursor: "pointer",
+							boxShadow: viewSubMode === "table" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+						}}
+						data-testid="subtab-table-btn"
+					>
+						Регламентные карточки циклов
+					</button>
+				</div>
 			</div>
 
-			{/* Table of Sterilization Cycles with Integrated Compact Header */}
-			<AutoclaveRegisterTable
-				logs={logs}
-				filteredLogs={filteredLogs}
-				logsSlice={logsSlice}
-				loading={loading}
-				clinicDevices={clinicDevices}
-				searchQuery={searchQuery}
-				setSearchQuery={setSearchQuery}
-				deviceFilter={deviceFilter}
-				setDeviceFilter={setDeviceFilter}
-				onLoadMore={() => setDisplayLimit((prev) => prev + DEFAULT_DOM_CHUNK_STEP)}
-				onLoadAll={() => setDisplayLimit(logs.length || 1000)}
-				stampedRows={stampedRows}
-				onStampVerification={handleStampVerification}
-				onPrintSinglePouch={handlePrintPouch}
-				onPrintBatchPouches={handlePrintBatch}
-				onOpenKraftForLog={handleOpenKraftForLog}
-				onOpenKraftModal={() => setIsKraftModalOpen(true)}
-				onOpenJournal257Modal={() => setIsJournal257ModalOpen(true)}
-				onOpenNewCycleModal={() => setIsNewCycleModalOpen(true)}
-				onOpenEquipmentModal={() => setIsEquipmentModalOpen(true)}
-				onQuickShiftBatch={handleQuickShiftBatch}
-				isLoggingBatch={isLoggingBatch}
-				onGenerateMonthlyForm257={() => handleGenerateMonthlyForm257(deviceFilter !== "all" ? deviceFilter : undefined, clinicDevices)}
-			/>
+			{viewSubMode === "journal" ? (
+				<SanPinSterilizationJournal
+					onOpenEquipmentModal={() => setIsEquipmentModalOpen(true)}
+					onOpenNewCycleModal={() => setIsNewCycleModalOpen(true)}
+				/>
+			) : (
+				<>
+					{/* Official Form Header for Print */}
+					<div className="sanpin-print-title">
+						<h2>ЖУРНАЛ РАБОТЫ СТЕРИЛИЗАТОРОВ (АВТОКЛАВОВ)</h2>
+						<p title="Контроль работы стерилизаторов">Стерилизация инструментов и контроль качества (индикаторы 4–5 класса)</p>
+					</div>
+
+					{/* Table of Sterilization Cycles with Integrated Compact Header */}
+					<AutoclaveRegisterTable
+						logs={logs}
+						filteredLogs={filteredLogs}
+						logsSlice={logsSlice}
+						loading={loading}
+						clinicDevices={clinicDevices}
+						searchQuery={searchQuery}
+						setSearchQuery={setSearchQuery}
+						deviceFilter={deviceFilter}
+						setDeviceFilter={setDeviceFilter}
+						onLoadMore={() => setDisplayLimit((prev) => prev + DEFAULT_DOM_CHUNK_STEP)}
+						onLoadAll={() => setDisplayLimit(logs.length || 1000)}
+						stampedRows={stampedRows}
+						onStampVerification={handleStampVerification}
+						onPrintSinglePouch={handlePrintPouch}
+						onPrintBatchPouches={handlePrintBatch}
+						onOpenKraftForLog={handleOpenKraftForLog}
+						onOpenKraftModal={() => setIsKraftModalOpen(true)}
+						onOpenJournal257Modal={() => setIsJournal257ModalOpen(true)}
+						onOpenNewCycleModal={() => setIsNewCycleModalOpen(true)}
+						onOpenEquipmentModal={() => setIsEquipmentModalOpen(true)}
+						onQuickShiftBatch={handleQuickShiftBatch}
+						isLoggingBatch={isLoggingBatch}
+						onGenerateMonthlyForm257={() => handleGenerateMonthlyForm257(deviceFilter !== "all" ? deviceFilter : undefined, clinicDevices)}
+					/>
+				</>
+			)}
 
 			{/* Barcode / Kraft Packaging Studio Modal */}
 			<KraftPackageBarcodeModal

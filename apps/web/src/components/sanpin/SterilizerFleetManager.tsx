@@ -7,12 +7,7 @@ import {
 import { ShieldAlert } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
-import {
-	readDenteClinicToken,
-	readDenteStaffToken,
-	safeLocalStorageGetItem,
-	safeLocalStorageSetItem,
-} from "../../lib/safeLocalStorage";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
 import { SterilizerFleetToolbar } from "./SterilizerFleetToolbar";
 import { SterilizerFleetOnboarding } from "./SterilizerFleetOnboarding";
@@ -25,7 +20,7 @@ export { SterilizerFleetOnboarding } from "./SterilizerFleetOnboarding";
 export { SterilizerFleetCard } from "./SterilizerFleetCard";
 export { SterilizerDecommissionModal } from "./SterilizerDecommissionModal";
 
-const LOCAL_STORAGE_KEY = "dente_sterilizer_equipments";
+let inMemoryFleetEquipments: SterilizerEquipment[] = [];
 
 export interface SterilizerFleetManagerProps {
 	readonly onEquipmentsChange?: (equipments: SterilizerEquipment[]) => void;
@@ -36,7 +31,7 @@ export function SterilizerFleetManager({
 	onEquipmentsChange,
 	compactMode = false,
 }: SterilizerFleetManagerProps) {
-	const [equipments, setEquipments] = useState<SterilizerEquipment[]>([]);
+	const [equipments, setEquipments] = useState<SterilizerEquipment[]>(() => inMemoryFleetEquipments);
 	const [loading, setLoading] = useState(true);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<"all" | SterilizerEquipmentStatus>("all");
@@ -48,41 +43,28 @@ export function SterilizerFleetManager({
 	const [decommissionReason, setDecommissionReason] = useState("");
 	const [decommissionSubmitting, setDecommissionSubmitting] = useState(false);
 
-	// Load from server with local cache fallback
+	// Load from server with memory cache fallback
 	const fetchEquipments = async () => {
 		try {
 			setLoading(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
-			const headers = {
-				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-			};
+			const headers = getDenteAuthHeaders();
 
 			const res = await fetch("/api/registers/sterilizers/equipments", { headers }).catch(() => null);
 			if (res && res.ok) {
 				const data = await res.json();
 				if (Array.isArray(data)) {
 					setEquipments(data);
-					safeLocalStorageSetItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+					inMemoryFleetEquipments = data;
 					if (onEquipmentsChange) onEquipmentsChange(data);
 					return;
 				}
 			}
 
-			// Fallback to local storage cache if server response is not available
-			const cached = safeLocalStorageGetItem(LOCAL_STORAGE_KEY);
-			if (cached) {
-				try {
-					const parsed = JSON.parse(cached);
-					if (Array.isArray(parsed)) {
-						setEquipments(parsed);
-						if (onEquipmentsChange) onEquipmentsChange(parsed);
-						return;
-					}
-				} catch (e) {
-					console.error("Failed to parse cached sterilizer equipments", e);
-				}
+			// Fallback to in-memory cache if server response is not available
+			if (inMemoryFleetEquipments.length > 0) {
+				setEquipments(inMemoryFleetEquipments);
+				if (onEquipmentsChange) onEquipmentsChange(inMemoryFleetEquipments);
+				return;
 			}
 
 			// Clean zero state (no fake items)
@@ -90,7 +72,7 @@ export function SterilizerFleetManager({
 			if (onEquipmentsChange) onEquipmentsChange([]);
 		} catch (err) {
 			console.error("Failed to load sterilizer equipments", err);
-			setEquipments([]);
+			setEquipments(inMemoryFleetEquipments);
 		} finally {
 			setLoading(false);
 		}
@@ -133,13 +115,7 @@ export function SterilizerFleetManager({
 		};
 
 		try {
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
-			const headers = {
-				"Content-Type": "application/json",
-				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-			};
+			const headers = getDenteAuthHeaders({ "Content-Type": "application/json" });
 
 			const res = await fetch("/api/registers/sterilizers/equipments", {
 				method: "POST",
@@ -176,7 +152,7 @@ export function SterilizerFleetManager({
 				};
 				const updated = [...equipments, newLocalItem];
 				setEquipments(updated);
-				safeLocalStorageSetItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+				inMemoryFleetEquipments = updated;
 				if (onEquipmentsChange) onEquipmentsChange(updated);
 				showToast(`Аппарат «${preset.brandModel}» добавлен в парк клиники!`, "success");
 			}
@@ -190,15 +166,10 @@ export function SterilizerFleetManager({
 	const handleToggleMaintenance = async (item: SterilizerEquipment) => {
 		const newAction = item.status === "in_maintenance" ? "return_to_service" : "put_in_maintenance";
 		try {
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
+			const headers = getDenteAuthHeaders({ "Content-Type": "application/json" });
 			const res = await fetch(`/api/registers/sterilizers/equipments/${item.id}`, {
 				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
+				headers,
 				body: JSON.stringify({ action: newAction }),
 			}).catch(() => null);
 
@@ -215,7 +186,7 @@ export function SterilizerFleetManager({
 				const updatedStatus: SterilizerEquipmentStatus = item.status === "in_maintenance" ? "active" : "in_maintenance";
 				const updated = equipments.map((e) => (e.id === item.id ? { ...e, status: updatedStatus } : e));
 				setEquipments(updated);
-				safeLocalStorageSetItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+				inMemoryFleetEquipments = updated;
 				if (onEquipmentsChange) onEquipmentsChange(updated);
 				showToast(`Статус аппарата «${item.name}» обновлен`, "success");
 			}
@@ -229,15 +200,10 @@ export function SterilizerFleetManager({
 		if (item.status === "decommissioned") {
 			// Recommission
 			try {
-				const clinicToken = readDenteClinicToken();
-				const staffToken = readDenteStaffToken();
+				const headers = getDenteAuthHeaders({ "Content-Type": "application/json" });
 				const res = await fetch(`/api/registers/sterilizers/equipments/${item.id}`, {
 					method: "PUT",
-					headers: {
-						"Content-Type": "application/json",
-						...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-						...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-					},
+					headers,
 					body: JSON.stringify({ action: "recommission" }),
 				}).catch(() => null);
 
@@ -247,7 +213,7 @@ export function SterilizerFleetManager({
 				} else {
 					const updated = equipments.map((e) => (e.id === item.id ? { ...e, status: "active" as const, isCommissioned: true } : e));
 					setEquipments(updated);
-					safeLocalStorageSetItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+					inMemoryFleetEquipments = updated;
 					if (onEquipmentsChange) onEquipmentsChange(updated);
 					showToast(`Аппарат «${item.name}» восстановлен`, "success");
 				}
@@ -267,15 +233,10 @@ export function SterilizerFleetManager({
 
 		try {
 			setDecommissionSubmitting(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
+			const headers = getDenteAuthHeaders({ "Content-Type": "application/json" });
 			const res = await fetch(`/api/registers/sterilizers/equipments/${decommissionTarget.id}`, {
 				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
+				headers,
 				body: JSON.stringify({ action: "decommission", decommissionReason: reason }),
 			}).catch(() => null);
 
@@ -295,7 +256,7 @@ export function SterilizerFleetManager({
 						: e,
 				);
 				setEquipments(updated);
-				safeLocalStorageSetItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+				inMemoryFleetEquipments = updated;
 				if (onEquipmentsChange) onEquipmentsChange(updated);
 				showToast(`Аппарат «${decommissionTarget.name}» списан`, "success");
 			}
@@ -310,14 +271,10 @@ export function SterilizerFleetManager({
 	// Delete item from register
 	const handleDelete = async (item: SterilizerEquipment) => {
 		try {
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
+			const headers = getDenteAuthHeaders();
 			const res = await fetch(`/api/registers/sterilizers/equipments/${item.id}`, {
 				method: "DELETE",
-				headers: {
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
+				headers,
 			}).catch(() => null);
 
 			if (res && res.ok) {
@@ -326,7 +283,7 @@ export function SterilizerFleetManager({
 			} else {
 				const updated = equipments.filter((e) => e.id !== item.id);
 				setEquipments(updated);
-				safeLocalStorageSetItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+				inMemoryFleetEquipments = updated;
 				if (onEquipmentsChange) onEquipmentsChange(updated);
 				showToast(`Аппарат «${item.name}» удален`, "success");
 			}

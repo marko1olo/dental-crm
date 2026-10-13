@@ -15,6 +15,7 @@ import {
 import { showToast } from "../GlobalToast.js";
 import { ReceiptPreview, type ReceiptItem } from "./ReceiptPreview.js";
 import { CashRegisterPaymentPane } from "./CashRegisterPaymentPane.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import "./paymentModalStudio.css";
 
 export interface CashRegisterDrawerProps {
@@ -24,6 +25,9 @@ export interface CashRegisterDrawerProps {
 	readonly clinicLegalName?: string | undefined;
 	readonly onOpenPaymentModal?: () => void;
 	readonly invoices?: readonly any[] | undefined;
+	readonly activeInvoice?: any | undefined;
+	readonly onPaymentSuccess?: ((invoice: any, receipt: any) => void) | undefined;
+	readonly initialMethod?: any | undefined;
 }
 
 import {
@@ -39,20 +43,34 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 	clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	onOpenPaymentModal,
 	invoices,
+	activeInvoice,
+	onPaymentSuccess,
+	initialMethod,
 }) => {
 	const [activeTab, setActiveTab] = useState<"payment" | "shift" | "receipts" | "operations">("payment");
 	const [selectedReceipt, setSelectedReceipt] = useState<ShiftReceiptEntry | null>(null);
-	const [cashInDrawerRub, setCashInDrawerRub] = useState<number>(24500);
+	const [cashInDrawerRub, setCashInDrawerRub] = useState<number>(0);
+	const [selectedInvoice, setSelectedInvoice] = useState<any>(
+		activeInvoice || (invoices && invoices.length > 0 ? invoices[0] : null),
+	);
+
+	useEffect(() => {
+		if (activeInvoice) {
+			setSelectedInvoice(activeInvoice);
+		} else if (invoices && invoices.length > 0) {
+			setSelectedInvoice(invoices[0]);
+		}
+	}, [activeInvoice, invoices]);
 
 	// Live 54-FZ Shift Telemetry State
 	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(true);
 	const [shiftNumber, setShiftNumber] = useState<number>(14);
-	const [openedAt, setOpenedAt] = useState<string>("08:30");
-	const [cashTotalRub, setCashTotalRub] = useState<number>(14000);
-	const [cardTotalRub, setCardTotalRub] = useState<number>(48500);
-	const [sbpTotalRub, setSbpTotalRub] = useState<number>(32000);
-	const [grandTotalRub, setGrandTotalRub] = useState<number>(94500);
-	const [receiptsCount, setReceiptsCount] = useState<number>(8);
+	const [openedAt, setOpenedAt] = useState<string>("09:00");
+	const [cashTotalRub, setCashTotalRub] = useState<number>(0);
+	const [cardTotalRub, setCardTotalRub] = useState<number>(0);
+	const [sbpTotalRub, setSbpTotalRub] = useState<number>(0);
+	const [grandTotalRub, setGrandTotalRub] = useState<number>(0);
+	const [receiptsCount, setReceiptsCount] = useState<number>(DEFAULT_RECENT_RECEIPTS.length);
 	const [recentReceipts, setRecentReceipts] = useState<readonly ShiftReceiptEntry[]>(DEFAULT_RECENT_RECEIPTS);
 
 	const shiftStats = {
@@ -70,9 +88,10 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 	// Live telemetry synchronizer
 	const fetchShiftTelemetry = useCallback(async () => {
 		try {
+			const authHeaders = denteAdminSecretRequestHeaders();
 			const [xRes, boxesRes] = await Promise.all([
-				fetch("/api/cash/x-report").catch(() => null),
-				fetch("/api/cash/cash-box").catch(() => null),
+				fetch("/api/cash/x-report", { headers: authHeaders }).catch(() => null),
+				fetch("/api/cash/cash-box", { headers: authHeaders }).catch(() => null),
 			]);
 
 			if (xRes && xRes.ok) {
@@ -85,10 +104,10 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 						setOpenedAt(d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }));
 					}
 				}
-				if (typeof xData.totalIncomeRub === "number" && xData.totalIncomeRub > 0) {
+				if (typeof xData.totalIncomeRub === "number") {
 					setGrandTotalRub(xData.totalIncomeRub);
 				}
-				if (typeof xData.totalCashInDrawerRub === "number" && xData.totalCashInDrawerRub > 0) {
+				if (typeof xData.totalCashInDrawerRub === "number") {
 					setCashInDrawerRub(xData.totalCashInDrawerRub);
 					setCashTotalRub(xData.totalCashInDrawerRub);
 				}
@@ -149,7 +168,7 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 		try {
 			const res = await fetch("/api/cash/cash-introduction", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
 					amountRub: amt,
 					reasonText: "Внесение разменного фонда",
@@ -180,7 +199,7 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 		try {
 			const res = await fetch("/api/cash/cash-withdrawal", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
 					amountRub: amt,
 					reasonText: "Инкассация наличной выручки",
@@ -205,7 +224,7 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 		try {
 			const res = await fetch("/api/cash/x-report", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
 					cashierFullName,
 					shiftNumber,
@@ -227,11 +246,12 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 		try {
 			const res = await fetch("/api/fiscal/shift/close", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
 					cashierFullName,
 					shiftNumber,
 					countedCashRub: cashInDrawerRub,
+					force: true,
 				}),
 			});
 			if (res.ok) {
@@ -377,9 +397,19 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 						<>
 							<div hidden={activeTab !== "payment"} style={{ display: activeTab === "payment" ? undefined : "none" }}>
 								<CashRegisterPaymentPane
-									defaultAmountRub={invoices && invoices[0]?.totalAmountRub ? invoices[0].totalAmountRub : 8500}
+									defaultAmountRub={
+										selectedInvoice?.totalAmountRub ??
+										selectedInvoice?.amountRub ??
+										(invoices && invoices[0]?.totalAmountRub ? invoices[0].totalAmountRub : 8500)
+									}
 									cashierFullName={cashierFullName}
 									clinicLegalName={clinicLegalName}
+									activeInvoice={selectedInvoice}
+									invoices={invoices}
+									onSelectInvoice={setSelectedInvoice}
+									initialMethod={initialMethod}
+									patientDepositRub={selectedInvoice?.patientDepositRub ?? 0}
+									patientFamilyBalanceRub={selectedInvoice?.patientFamilyBalanceRub ?? 0}
 									onPaymentCompleted={(newReceipt) => {
 										setRecentReceipts((prev) => [newReceipt, ...prev]);
 										setReceiptsCount((prev) => prev + 1);
@@ -393,6 +423,7 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 											setCashInDrawerRub((prev) => prev + newReceipt.totalRub);
 										}
 										setSelectedReceipt(newReceipt);
+										onPaymentSuccess?.(selectedInvoice, newReceipt);
 									}}
 									onOpenFullSplitModal={onOpenPaymentModal}
 								/>
@@ -609,10 +640,7 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 
 					<button
 						type="button"
-						onClick={() => {
-							setActiveTab("payment");
-							setSelectedReceipt(null);
-						}}
+						onClick={() => { setActiveTab("payment"); setSelectedReceipt(null); }}
 						className="flex-1 min-h-[46px] px-4 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-sm font-extrabold flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98 transition-all"
 						data-testid="btn-drawer-new-payment"
 					>

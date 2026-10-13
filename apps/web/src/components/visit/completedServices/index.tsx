@@ -5,7 +5,10 @@ import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 import { countLabel } from "../../../lib/russianPlural";
 import { useVisitStore } from "../../../store/visitStore";
 import { showRollbackToast, showToast } from "../../GlobalToast";
-import { CompletedServicesList } from "../CompletedServicesList";
+import {
+	CompletedServicesList,
+	type CompletedServicesListProps,
+} from "../CompletedServicesList";
 import {
 	type ChairsideExpressService,
 	calculateCompletedServicesSummary,
@@ -40,6 +43,8 @@ export {
 	type ClinicalServiceBundle,
 	CompletedServiceRowItem,
 	type CompletedServicesChecklistProps,
+	CompletedServicesList,
+	type CompletedServicesListProps,
 	completedLineOf,
 	PreliminaryTreatmentPlanSection,
 	QuickServiceSearchAndPresets,

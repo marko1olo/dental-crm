@@ -37,12 +37,7 @@ import {
 	type UpdateSterilizerEquipmentDto,
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
-import {
-	readDenteClinicToken,
-	readDenteStaffToken,
-	safeLocalStorageGetItem,
-	safeLocalStorageSetItem,
-} from "../../lib/safeLocalStorage";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 
 export interface ClinicAutoclaveDevice {
 	id: string;
@@ -113,29 +108,14 @@ export const DEFAULT_CLINIC_DEVICES: ClinicAutoclaveDevice[] = [
 	},
 ];
 
-const STORAGE_KEY = "dente_clinic_autoclaves_v1";
+let inMemoryCachedAutoclaves: ClinicAutoclaveDevice[] = [];
 
 export function loadSavedClinicAutoclaves(): ClinicAutoclaveDevice[] {
-	try {
-		const raw = safeLocalStorageGetItem(STORAGE_KEY);
-		if (raw !== null) {
-			const parsed = JSON.parse(raw);
-			if (Array.isArray(parsed)) {
-				return parsed;
-			}
-		}
-	} catch (e) {
-		console.warn("Failed to parse saved clinic autoclaves", e);
-	}
-	return [];
+	return inMemoryCachedAutoclaves.length > 0 ? inMemoryCachedAutoclaves : DEFAULT_CLINIC_DEVICES;
 }
 
 export function saveClinicAutoclaves(devices: ClinicAutoclaveDevice[]): void {
-	try {
-		safeLocalStorageSetItem(STORAGE_KEY, JSON.stringify(devices));
-	} catch (e) {
-		console.warn("Failed to persist clinic autoclaves", e);
-	}
+	inMemoryCachedAutoclaves = devices;
 }
 
 export interface AutoclaveEquipmentModalProps {
@@ -170,13 +150,8 @@ export function AutoclaveEquipmentModal({
 
 	const loadEquipments = async () => {
 		try {
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
 			const res = await fetch("/api/registers/sterilizers/equipments", {
-				headers: {
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
+				headers: getDenteAuthHeaders(),
 			}).catch(() => null);
 
 			if (res && res.ok) {
@@ -185,7 +160,7 @@ export function AutoclaveEquipmentModal({
 					setServerEquipments(data);
 					const mapped: ClinicAutoclaveDevice[] = data.map((d) => ({
 						id: d.id,
-						brandModelRu: d.brandModel,
+						brandModelRu: d.brandModel || d.name,
 						serialNumber: d.serialNumber,
 						inventoryNumber: d.inventoryNumber || "",
 						deviceType: (d.deviceClass === "dry_heat_air" ? "dry_heat_air" : d.deviceClass === "autoclave_class_s" ? "autoclave_class_s" : d.deviceClass === "autoclave_class_n" ? "autoclave_class_n" : "autoclave_class_b") as ClinicAutoclaveDevice["deviceType"],
@@ -197,7 +172,7 @@ export function AutoclaveEquipmentModal({
 						notes: d.notes || "",
 					}));
 					setDevices(mapped);
-					saveClinicAutoclaves(mapped);
+					inMemoryCachedAutoclaves = mapped;
 					onDevicesUpdated?.(mapped);
 					return;
 				}
@@ -206,7 +181,7 @@ export function AutoclaveEquipmentModal({
 			console.error("Failed to load server sterilizers", e);
 		}
 
-		// Fallback to local storage
+		// Fallback to in-memory cached devices
 		const loaded = loadSavedClinicAutoclaves();
 		setDevices(loaded);
 		onDevicesUpdated?.(loaded);
@@ -266,19 +241,12 @@ export function AutoclaveEquipmentModal({
 		}
 
 		try {
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
-			const headers = {
-				"Content-Type": "application/json",
-				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-			};
-
+			const headers = getDenteAuthHeaders({ "Content-Type": "application/json" });
 			const mappedDeviceType: SterilizationDeviceType = deviceType === "dry_heat_air" ? "dry_heat" : "autoclave_steam";
 			const mappedDeviceClass: SterilizerDeviceClass = deviceType === "dry_heat_air" ? "dry_heat_air" : deviceType === "autoclave_class_s" ? "autoclave_class_s" : deviceType === "autoclave_class_n" ? "autoclave_class_n" : "autoclave_class_b";
 
-			if (editId && !editId.startsWith("AUTO-") && !editId.startsWith("local-")) {
-				// Server update
+			if (editId) {
+				// Server update in PostgreSQL sterilizer_equipments
 				const updateDto: UpdateSterilizerEquipmentDto = {
 					name: brandModelRu.trim(),
 					brandModel: brandModelRu.trim(),
@@ -293,13 +261,37 @@ export function AutoclaveEquipmentModal({
 					notes: notes.trim() || null,
 				};
 
-				await fetch(`/api/registers/sterilizers/equipments/${editId}`, {
+				const res = await fetch(`/api/registers/sterilizers/equipments/${editId}`, {
 					method: "PUT",
 					headers,
 					body: JSON.stringify(updateDto),
-				}).catch(() => null);
-			} else if (!editId) {
-				// Server create
+				});
+				if (!res.ok) {
+					const errJson = await res.json().catch(() => ({}));
+					showToast(errJson.message || "Ошибка обновления автоклава на сервере", "error");
+					return;
+				}
+				const updatedServer = await res.json();
+				const mappedUpdated: ClinicAutoclaveDevice = {
+					id: updatedServer.id,
+					brandModelRu: updatedServer.brandModel || updatedServer.name,
+					serialNumber: updatedServer.serialNumber,
+					inventoryNumber: updatedServer.inventoryNumber || "",
+					deviceType,
+					chamberVolumeLiters: Number(updatedServer.chamberVolumeLiters) || 22,
+					locationRu: updatedServer.locationRoom || locationRu.trim(),
+					lastMaintenanceDate: updatedServer.lastMaintenanceDate || lastMaintenanceDate,
+					nextMaintenanceDate: updatedServer.nextMaintenanceDate || nextMaintenanceDate,
+					isOperational: updatedServer.status === "active",
+					notes: updatedServer.notes || notes.trim(),
+				};
+				const nextList = devices.map((d) => (d.id === editId ? mappedUpdated : d));
+				setDevices(nextList);
+				inMemoryCachedAutoclaves = nextList;
+				onDevicesUpdated?.(nextList);
+				showToast("Данные автоклава успешно обновлены в базе клиники", "success");
+			} else {
+				// Server create in PostgreSQL sterilizer_equipments
 				const createDto: CreateSterilizerEquipmentDto = {
 					name: brandModelRu.trim(),
 					brandModel: brandModelRu.trim(),
@@ -317,57 +309,41 @@ export function AutoclaveEquipmentModal({
 					notes: notes.trim() || null,
 				};
 
-				await fetch("/api/registers/sterilizers/equipments", {
+				const res = await fetch("/api/registers/sterilizers/equipments", {
 					method: "POST",
 					headers,
 					body: JSON.stringify(createDto),
-				}).catch(() => null);
+				});
+				if (!res.ok) {
+					const errJson = await res.json().catch(() => ({}));
+					showToast(errJson.message || "Ошибка регистрации автоклава на сервере", "error");
+					return;
+				}
+				const createdServer = await res.json();
+				const mappedNew: ClinicAutoclaveDevice = {
+					id: createdServer.id,
+					brandModelRu: createdServer.brandModel || createdServer.name,
+					serialNumber: createdServer.serialNumber,
+					inventoryNumber: createdServer.inventoryNumber || "",
+					deviceType,
+					chamberVolumeLiters: Number(createdServer.chamberVolumeLiters) || 22,
+					locationRu: createdServer.locationRoom || locationRu.trim(),
+					lastMaintenanceDate: createdServer.lastMaintenanceDate || lastMaintenanceDate,
+					nextMaintenanceDate: createdServer.nextMaintenanceDate || nextMaintenanceDate,
+					isOperational: true,
+					notes: createdServer.notes || notes.trim(),
+				};
+				const nextList = [...devices, mappedNew];
+				setDevices(nextList);
+				inMemoryCachedAutoclaves = nextList;
+				onDevicesUpdated?.(nextList);
+				showToast("Новый автоклав успешно зарегистрирован в базе данных ЦСО", "success");
 			}
+			setIsEditing(false);
 		} catch (err) {
 			console.error("Failed to sync sterilizer to server", err);
+			showToast("Сетевая ошибка при синхронизации автоклава", "error");
 		}
-
-		let updated: ClinicAutoclaveDevice[];
-		if (editId) {
-			updated = devices.map((d) =>
-				d.id === editId
-					? {
-							...d,
-							brandModelRu: brandModelRu.trim(),
-							serialNumber: serialNumber.trim(),
-							inventoryNumber: inventoryNumber.trim(),
-							deviceType,
-							chamberVolumeLiters: Number(chamberVolumeLiters) || 22,
-							locationRu: locationRu.trim(),
-							lastMaintenanceDate,
-							nextMaintenanceDate,
-							notes: notes.trim(),
-						}
-					: d,
-			);
-			showToast("Данные автоклава успешно обновлены", "success");
-		} else {
-			const newDev: ClinicAutoclaveDevice = {
-				id: `AUTO-${String(devices.length + 1).padStart(2, "0")}`,
-				brandModelRu: brandModelRu.trim(),
-				serialNumber: serialNumber.trim(),
-				inventoryNumber: inventoryNumber.trim(),
-				deviceType,
-				chamberVolumeLiters: Number(chamberVolumeLiters) || 22,
-				locationRu: locationRu.trim(),
-				lastMaintenanceDate,
-				nextMaintenanceDate,
-				isOperational: true,
-				notes: notes.trim(),
-			};
-			updated = [...devices, newDev];
-			showToast("Новый автоклав успешно зарегистрирован в реестре клиники", "success");
-		}
-
-		setDevices(updated);
-		saveClinicAutoclaves(updated);
-		onDevicesUpdated?.(updated);
-		setIsEditing(false);
 	};
 
 	const handleDeleteDevice = async (id: string) => {
@@ -375,26 +351,23 @@ export function AutoclaveEquipmentModal({
 		if (!target) return;
 
 		try {
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
-			if (!id.startsWith("AUTO-") && !id.startsWith("local-")) {
-				await fetch(`/api/registers/sterilizers/equipments/${id}`, {
-					method: "DELETE",
-					headers: {
-						...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-						...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-					},
-				}).catch(() => null);
+			const res = await fetch(`/api/registers/sterilizers/equipments/${id}`, {
+				method: "DELETE",
+				headers: getDenteAuthHeaders(),
+			});
+			if (!res.ok) {
+				showToast("Не удалось удалить аппарат из базы данных", "error");
+				return;
 			}
+			const nextList = devices.filter((d) => d.id !== id);
+			setDevices(nextList);
+			inMemoryCachedAutoclaves = nextList;
+			onDevicesUpdated?.(nextList);
+			showToast(`Автоклав «${target.brandModelRu}» удален из базы данных оборудования`, "info");
 		} catch (err) {
 			console.error("Failed to delete server sterilizer", err);
+			showToast("Сетевая ошибка при удалении автоклава", "error");
 		}
-
-		const updated = devices.filter((d) => d.id !== id);
-		setDevices(updated);
-		saveClinicAutoclaves(updated);
-		onDevicesUpdated?.(updated);
-		showToast(`Автоклав «${target.brandModelRu}» удален из списка оборудования`, "info");
 	};
 
 	return (

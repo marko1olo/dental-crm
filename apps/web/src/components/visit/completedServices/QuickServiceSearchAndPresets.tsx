@@ -4,7 +4,10 @@ import { money } from "../../../AppHelpers";
 import { ChairsideDiagnosisPackageCard } from "../ChairsideDiagnosisPackageCard";
 import { ChairsideExpressGrid } from "../ChairsideExpressGrid";
 import { ChairsideToothSelector } from "../ChairsideToothSelector";
-import { CLINICAL_SERVICE_BUNDLES } from "../clinicalServiceBundles";
+import {
+	CLINICAL_SERVICE_BUNDLES,
+	resolveClinicalServiceBundlesAgainstCatalog,
+} from "../clinicalServiceBundles";
 import type { QuickServiceSearchAndPresetsProps } from "./types";
 
 export const QuickServiceSearchAndPresets: React.FC<
@@ -27,6 +30,14 @@ export const QuickServiceSearchAndPresets: React.FC<
 	onToggleBundlesExpanded,
 	onAddBundle,
 }) => {
+	const resolvedBundles = React.useMemo(
+		() =>
+			Array.isArray(effectiveCatalog) && effectiveCatalog.length > 0
+				? resolveClinicalServiceBundlesAgainstCatalog(effectiveCatalog)
+				: CLINICAL_SERVICE_BUNDLES,
+		[effectiveCatalog],
+	);
+
 	return (
 		<>
 			{/* 1. БЫСТРЫЙ ВЫБОР ЗУБА ДЛЯ ПРИВЯЗКИ (FDI 11..48, «Без зуба») */}
@@ -41,6 +52,7 @@ export const QuickServiceSearchAndPresets: React.FC<
 			<ChairsideExpressGrid
 				selectedTooth={selectedTooth}
 				onAddExpressService={onAddExpressService}
+				catalog={effectiveCatalog}
 			/>
 
 			{/* 3. БЫСТРЫЙ ИНЛАЙН-ПОИСК ПО ПРЕЙСКУРАНТУ КЛИНИКИ */}
@@ -148,7 +160,7 @@ export const QuickServiceSearchAndPresets: React.FC<
 						bundlesExpanded ? "" : "max-h-[120px] overflow-hidden"
 					}`}
 				>
-					{CLINICAL_SERVICE_BUNDLES.map((b) => (
+					{resolvedBundles.map((b) => (
 						<button
 							key={b.id}
 							type="button"

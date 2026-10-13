@@ -46,6 +46,9 @@
 	padding: 0 16px;
 	gap: 4px;
 	flex-shrink: 0;
+	overflow-x: auto;
+	scrollbar-width: none;
+	white-space: nowrap;
 }
 
 [data-theme="dark"] .cash-drawer-tabs {
@@ -66,6 +69,8 @@
 	gap: 6px;
 	cursor: pointer;
 	transition: all 0.15s ease;
+	white-space: nowrap;
+	flex-shrink: 0;
 }
 
 .cash-drawer-tab-btn:hover {
@@ -166,8 +171,8 @@
 }
 
 .cash-bill-chip {
-	min-height: 38px;
-	height: 38px;
+	min-height: 34px;
+	height: 34px;
 	padding: 0 8px;
 	border-radius: 10px;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -227,8 +232,8 @@
 
 /* Add-amount chip (+1 000, +2 000, +5 000) */
 .cash-add-chip {
-	min-height: 38px;
-	height: 38px;
+	min-height: 34px;
+	height: 34px;
 	padding: 0 8px;
 	border-radius: 10px;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -273,8 +278,8 @@
 
 /* Exact ("Ровно") chip */
 .cash-exact-chip {
-	min-height: 38px;
-	height: 38px;
+	min-height: 34px;
+	height: 34px;
 	padding: 0 8px;
 	border-radius: 10px;
 	font-weight: 800;
@@ -319,8 +324,8 @@
 
 /* Inline "Без сдачи" button next to cash input */
 .cash-quick-match-btn {
-	height: 40px;
-	padding: 0 14px;
+	height: 38px;
+	padding: 0 12px;
 	border-radius: 12px;
 	background: #ecfdf5 !important;
 	border: 1.5px solid #a7f3d0 !important;
@@ -331,7 +336,7 @@
 	align-items: center;
 	gap: 6px;
 	cursor: pointer;
-	shrink: 0;
+	flex-shrink: 0;
 	transition: all 0.15s ease;
 	box-shadow: 0 1px 2px rgba(16, 185, 129, 0.1);
 	white-space: nowrap;
@@ -405,10 +410,11 @@
 
 .discount-preset-chip {
 	height: 32px;
-	padding: 0 10px;
-	border-radius: 10px;
+	width: 100%;
+	padding: 0 6px;
+	border-radius: 9px;
 	font-weight: 700;
-	font-size: 12px;
+	font-size: 11.5px;
 	border: 1.5px solid var(--line, #cbd5e1) !important;
 	background: var(--paper-soft, #f8fafc) !important;
 	color: var(--ink, #0f172a) !important;
@@ -417,7 +423,8 @@
 	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 	display: inline-flex;
 	align-items: center;
-	gap: 5px;
+	justify-content: center;
+	gap: 4px;
 	white-space: nowrap;
 	flex-shrink: 0;
 	user-select: none;
@@ -461,38 +468,38 @@
 
 /* Warranty 100% preset chip */
 .discount-preset-chip.discount-preset-warranty {
-	border-color: #e9d5ff !important;
-	background: #faf5ff !important;
-	color: #7e22ce !important;
+	border-color: var(--line, #cbd5e1) !important;
+	background: var(--paper-soft, #f8fafc) !important;
+	color: var(--ink, #0f172a) !important;
 }
 
 .discount-preset-chip.discount-preset-warranty:hover {
-	border-color: #9333ea !important;
-	background: #f3e8ff !important;
-	color: #6b21a8 !important;
+	border-color: #0d9488 !important;
+	background: #f0fdfa !important;
+	color: #0f766e !important;
 }
 
 .discount-preset-chip.discount-preset-warranty.is-active {
-	background: linear-gradient(135deg, #9333ea, #7e22ce) !important;
-	border-color: #9333ea !important;
+	background: linear-gradient(135deg, #0d9488, #0f766e) !important;
+	border-color: #0d9488 !important;
 	color: #ffffff !important;
-	box-shadow: 0 2px 8px rgba(147, 51, 234, 0.35);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
 }
 
 [data-theme="dark"] .discount-preset-chip.discount-preset-warranty {
-	background: rgba(88, 28, 135, 0.3) !important;
-	border-color: rgba(192, 132, 252, 0.4) !important;
-	color: #e9d5ff !important;
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	color: #f1f5f9 !important;
 }
 
 [data-theme="dark"] .discount-preset-chip.discount-preset-warranty:hover {
-	background: rgba(88, 28, 135, 0.6) !important;
-	border-color: #c084fc !important;
+	background: rgba(19, 78, 74, 0.5) !important;
+	border-color: #2dd4bf !important;
 }
 
 [data-theme="dark"] .discount-preset-chip.discount-preset-warranty.is-active {
-	background: linear-gradient(135deg, #a855f7, #9333ea) !important;
-	border-color: #c084fc !important;
+	background: linear-gradient(135deg, #0d9488, #14b8a6) !important;
+	border-color: #2dd4bf !important;
 	color: #ffffff !important;
 }
 
@@ -594,7 +601,7 @@
 	justify-content: center;
 	cursor: pointer;
 	transition: all 0.15s ease;
-	shrink: 0;
+	flex-shrink: 0;
 }
 
 .payment-modal-close-btn:hover {
@@ -629,6 +636,9 @@
 	color: var(--muted, #64748b) !important;
 	font-size: 12px;
 	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	cursor: pointer;
 	transition: all 0.15s ease;
 }
@@ -659,6 +669,7 @@
 	font-weight: 800;
 	display: inline-flex;
 	align-items: center;
+	justify-content: center;
 	gap: 6px;
 	cursor: pointer;
 	border: 1px solid transparent !important;
@@ -677,34 +688,14 @@
 	transform: scale(0.98);
 }
 
-.payment-footer-submit-btn.btn-cash {
-	background: linear-gradient(135deg, #059669, #047857) !important;
-	box-shadow: 0 3px 10px rgba(5, 150, 105, 0.35);
-}
-
-.payment-footer-submit-btn.btn-card {
-	background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
-	box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
-}
-
-.payment-footer-submit-btn.btn-sbp {
+.payment-footer-submit-btn.btn-cash,
+.payment-footer-submit-btn.btn-card,
+.payment-footer-submit-btn.btn-sbp,
+.payment-footer-submit-btn.btn-split,
+.payment-footer-submit-btn.btn-deposit,
+.payment-footer-submit-btn.btn-warranty {
 	background: linear-gradient(135deg, #0d9488, #0f766e) !important;
 	box-shadow: 0 3px 10px rgba(13, 148, 136, 0.35);
-}
-
-.payment-footer-submit-btn.btn-split {
-	background: linear-gradient(135deg, #9333ea, #7e22ce) !important;
-	box-shadow: 0 3px 10px rgba(147, 51, 234, 0.35);
-}
-
-.payment-footer-submit-btn.btn-deposit {
-	background: linear-gradient(135deg, #4f46e5, #4338ca) !important;
-	box-shadow: 0 3px 10px rgba(79, 70, 229, 0.35);
-}
-
-.payment-footer-submit-btn.btn-warranty {
-	background: linear-gradient(135deg, #059669, #047857) !important;
-	box-shadow: 0 3px 10px rgba(5, 150, 105, 0.35);
 }
 
 /* ==========================================================================
@@ -858,7 +849,7 @@
 	width: 100%;
 	display: flex;
 	justify-content: center;
-	padding: 6px 4px;
+	padding: 2px 4px;
 }
 
 .receipt-tape-paper {
@@ -869,10 +860,10 @@
 	border-radius: 6px;
 	width: 100%;
 	max-width: 360px;
-	padding: 14px 16px;
+	padding: 8px 12px;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-	font-size: 11.5px;
-	line-height: 1.4;
+	font-size: 11px;
+	line-height: 1.25;
 	user-select: text;
 	position: relative;
 }
@@ -1018,12 +1009,12 @@
 /* Receipt Typography Helpers */
 .receipt-divider-dashed {
 	border-top: 1px dashed #cbd5e1;
-	margin: 8px 0;
+	margin: 4px 0;
 }
 
 .receipt-divider-double {
 	border-top: 2px dashed #94a3b8;
-	margin: 10px 0;
+	margin: 5px 0;
 }
 
 [data-theme="dark"] .receipt-divider-dashed,
@@ -1067,8 +1058,8 @@ body:has([data-testid="split-payment-modal"]) [data-testid="modal-finance-cashbo
 
 /* Live Change HUD */
 .change-display-hud {
-	padding: 12px 16px;
-	border-radius: 12px;
+	padding: 8px 14px;
+	border-radius: 10px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -1293,7 +1284,7 @@ body:has([data-testid="split-payment-modal"]) [data-testid="modal-finance-cashbo
 	.backdrop-blur {
 		backdrop-filter: none !important;
 		-webkit-backdrop-filter: none !important;
-		background-color: rgba(15, 23, 42, 0.85) !important;
+		background-color: rgba(15, 23, 42, 0.45) !important;
 	}
 
 	.payment-modal,
@@ -1312,6 +1303,6 @@ body:has([data-testid="split-payment-modal"]) [data-testid="modal-finance-cashbo
 .low-end-hardware-mode .backdrop-blur {
 	backdrop-filter: none !important;
 	-webkit-backdrop-filter: none !important;
-	background-color: rgba(15, 23, 42, 0.85) !important;
+	background-color: rgba(15, 23, 42, 0.45) !important;
 }
 

@@ -708,18 +708,68 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 	app.get("/api/billing/payouts", handleGetPayouts);
 	app.post("/api/billing/payments", handleCreatePayment);
 	app.post("/api/finance/payments", handleCreatePayment);
+	app.post("/api/v1/billing/payments", handleCreatePayment);
+	app.post("/api/v1/finance/payments", handleCreatePayment);
+
+	const invoicePayHandler = async (
+		request: FastifyRequest<{ Params: { id: string }; Body: Record<string, unknown> }>,
+		reply: FastifyReply,
+	) => {
+		const invoiceId = request.params?.id;
+		const body = request.body || {};
+		const mutationId =
+			(typeof body.clientMutationId === "string" && body.clientMutationId.trim())
+				? body.clientMutationId.trim()
+				: (request.headers["idempotency-key"] as string | undefined)?.trim() || `pay-${invoiceId}-${Date.now()}`;
+		let patientId = body.patientId;
+		let amountRub = body.amountRub;
+		if (!patientId || amountRub === undefined) {
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"billing invoice payment",
+			);
+			if (orgId && invoiceId) {
+				const resolvedDoc = await getDocumentForBilling(orgId, invoiceId);
+				if (resolvedDoc) {
+					if (!patientId && resolvedDoc.patientId) patientId = resolvedDoc.patientId;
+					if (amountRub === undefined && resolvedDoc.totalAmountRub !== undefined) {
+						amountRub = Number(resolvedDoc.totalAmountRub);
+					}
+				}
+			}
+		}
+		request.body = {
+			...body,
+			documentId: body.documentId || invoiceId,
+			clientMutationId: mutationId,
+			...(patientId ? { patientId } : {}),
+			...(amountRub !== undefined ? { amountRub } : {}),
+		};
+		return handleCreatePayment(request, reply);
+	};
+
 	app.post<{ Params: { id: string }; Body: Record<string, unknown> }>(
 		"/api/billing/invoices/:id/payments",
-		async (request, reply) => {
-			const invoiceId = request.params?.id;
-			const body = request.body || {};
-			request.body = {
-				...body,
-				documentId: body.documentId || invoiceId,
-			};
-			return handleCreatePayment(request, reply);
-		},
+		invoicePayHandler,
 	);
+	app.post<{ Params: { id: string }; Body: Record<string, unknown> }>(
+		"/api/invoices/:id/pay",
+		invoicePayHandler,
+	);
+	app.post<{ Params: { id: string }; Body: Record<string, unknown> }>(
+		"/api/v1/invoices/:id/pay",
+		invoicePayHandler,
+	);
+	app.post<{ Params: { id: string }; Body: Record<string, unknown> }>(
+		"/api/invoices/:id/payments",
+		invoicePayHandler,
+	);
+	app.post<{ Params: { id: string }; Body: Record<string, unknown> }>(
+		"/api/v1/billing/invoices/:id/payments",
+		invoicePayHandler,
+	);
+
 	app.post("/api/billing/refunds/partial", handlePartialRefund);
 	app.get("/api/billing/fiscal-queue/pending", handleGetFiscalQueuePending);
 	app.post("/api/billing/fiscal-queue/:id/retry", handleRetryFiscalQueueItem);

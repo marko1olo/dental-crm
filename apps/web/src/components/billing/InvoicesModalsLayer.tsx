@@ -117,6 +117,21 @@ export const InvoicesModalsLayer: React.FC<InvoicesModalsLayerProps> = ({
 					cashierFullName={currentDoctorName}
 					clinicLegalName={clinicLegalName}
 					invoices={invoices}
+					onPaymentSuccess={(inv, receipt) => {
+						if (inv && onUpdateInvoice) {
+							onUpdateInvoice({
+								...inv,
+								status: (receipt.method === "warranty_100" || receipt.totalRub === 0 ? "warranty_100" : "paid") as any,
+								paidAmountRub: receipt.totalRub,
+								paidAt: new Date().toISOString(),
+								paymentMethod: receipt.method,
+							});
+						}
+						showToast(
+							`Оплата по счёту ${inv?.number || ""} (${receipt.totalRub} ₽) успешно зафиксирована в 54-ФЗ`,
+							"success",
+						);
+					}}
 					onOpenPaymentModal={() => {
 						if (invoices.length > 0 && invoices[0]) {
 							setActivePaymentInvoice(invoices[0]);
