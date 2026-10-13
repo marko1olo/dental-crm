@@ -12,7 +12,7 @@ import type { InventoryItem } from "./useInventoryLogic.js";
 
 export interface ProcedureRuleModalState {
 	isOpen: boolean;
-	ruleId?: string;
+	ruleId?: string | undefined;
 	serviceId: string;
 	inventoryItemId: string;
 	quantityToDeduct: string;
@@ -105,15 +105,13 @@ export function MaterialBomsRuleModal({
 										display: "flex",
 										alignItems: "center",
 										justifyContent: "center",
-										gap: "6px",
-										padding: "8px 12px",
-										borderColor: "var(--primary, #0d9488)",
-										color: "var(--primary, #0d9488)",
+										gap: "8px",
+										padding: "9px 14px",
 									}}
 									onClick={() => setIsCatalogOpen(true)}
 								>
-									<Sparkles size={16} />
-									Выбрать из каталога 90% рынка РФ (Osstem, Bio-Oss, ProTaper, Damon, RelyX)
+									<Sparkles size={15} className="text-teal-600" />
+									<span>Каталог 90% рынка РФ (Osstem, Bio-Oss, ProTaper, RelyX)</span>
 								</button>
 							</div>
 
@@ -127,11 +125,15 @@ export function MaterialBomsRuleModal({
 									}
 									required
 								>
-									{availableServices.map((s) => (
-										<option key={s.id} value={s.id}>
-											{s.code ? `[${s.code}] ` : ""}{s.title}
-										</option>
-									))}
+									{availableServices.length > 0 ? (
+										availableServices.map((s) => (
+											<option key={s.id} value={s.id}>
+												{s.code ? `[${s.code}] ` : ""}{s.title}
+											</option>
+										))
+									) : (
+										<option value="">Выберите услугу из прейскуранта</option>
+									)}
 								</select>
 							</div>
 
@@ -148,11 +150,15 @@ export function MaterialBomsRuleModal({
 									}
 									required
 								>
-									{warehouseItems.map((it) => (
-										<option key={it.id} value={it.id}>
-											{it.name} (остаток: {it.stockQuantity} {it.unit || "шт."}, {Number(it.unitCostRub || 0)} ₽)
-										</option>
-									))}
+									{warehouseItems.length > 0 ? (
+										warehouseItems.map((it) => (
+											<option key={it.id} value={it.id}>
+												{it.name} (остаток: {it.stockQuantity} {it.unit || "шт."}, {Number(it.unitCostRub || 0)} ₽)
+											</option>
+										))
+									) : (
+										<option value="">Выберите материал на складе</option>
+									)}
 								</select>
 							</div>
 

@@ -74,7 +74,7 @@ export const ProcedureMaterialAddCustomBar: React.FC<
 									: undefined,
 							}}
 						>
-							<option value="">-- Выберите из каталога склада --</option>
+							<option value="">Выберите со склада...</option>
 							{warehouseItems.map((item) => (
 								<option key={item.id} value={item.id}>
 									{item.name} (остаток: {item.stockQuantity} шт.)

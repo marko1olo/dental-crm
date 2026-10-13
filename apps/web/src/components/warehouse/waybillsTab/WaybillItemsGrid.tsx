@@ -19,6 +19,7 @@ export const WaybillItemsGrid: React.FC<WaybillItemsGridProps> = ({
 						<th className="py-1.5 px-2">Срок годности</th>
 						<th className="py-1.5 px-2">Кол-во</th>
 						<th className="py-1.5 px-2">Цена без НДС</th>
+						<th className="py-1.5 px-2 text-center">Ставка НДС</th>
 						<th className="py-1.5 px-2">Сумма с НДС</th>
 						<th className="py-1.5 px-2 w-8"></th>
 					</tr>
@@ -34,6 +35,9 @@ export const WaybillItemsGrid: React.FC<WaybillItemsGridProps> = ({
 							</td>
 							<td className="py-1.5 px-2">
 								{money(kopecksToRubles(it.unitPriceKopecks))}
+							</td>
+							<td className="py-1.5 px-2 text-center text-[11px] font-semibold text-[var(--muted,#64748b)]">
+								{it.vatRate === 0 ? "Без НДС" : `${it.vatRate}%`}
 							</td>
 							<td className="py-1.5 px-2 font-bold text-teal-700 dark:text-teal-300">
 								{money(kopecksToRubles(it.lineTotalKopecks))}
@@ -66,6 +70,7 @@ export const WaybillItemsGrid: React.FC<WaybillItemsGridProps> = ({
 					<th className="py-2 px-2.5">Срок годности</th>
 					<th className="py-2 px-2.5">Кол-во</th>
 					<th className="py-2 px-2.5">Цена без НДС</th>
+					<th className="py-2 px-2.5 text-center">Ставка НДС</th>
 					<th className="py-2 px-2.5 text-right">Сумма с НДС</th>
 				</tr>
 			</thead>
@@ -84,6 +89,9 @@ export const WaybillItemsGrid: React.FC<WaybillItemsGridProps> = ({
 						</td>
 						<td className="py-2 px-2.5 text-[var(--muted,#64748b)]">
 							{money(kopecksToRubles(it.unitPriceKopecks))}
+						</td>
+						<td className="py-2 px-2.5 text-center text-[11px] font-semibold text-[var(--muted,#64748b)]">
+							{it.vatRate === 0 ? "Без НДС" : `${it.vatRate}%`}
 						</td>
 						<td className="py-2 px-2.5 text-right font-bold text-teal-700 dark:text-teal-300">
 							{money(kopecksToRubles(it.lineTotalKopecks))}

@@ -76,17 +76,16 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 		<div ref={menuRef} className="shrink-0 relative inline-block">
 			<button
 				type="button"
-				className="secondary-button h-8 px-2.5 rounded-lg shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)]"
+				className="h-9 min-h-[36px] px-2.5 xl:px-3 rounded-xl shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 font-medium text-xs sm:text-sm cursor-pointer transition border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
 				onClick={onToggle}
 				title="Операции со складом: списание по наряду, перемещения, инвентаризация, маркировка, нормы расхода"
 				aria-expanded={isOpen}
 				data-testid="btn-warehouse-ops-menu"
 			>
-				<PackageCheck size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+				<PackageCheck className="w-4 h-4 text-[var(--primary)] shrink-0" />
 				<span>Операции</span>
 				<ChevronDown
-					size={12}
-					className={`transition-transform duration-150 ${isOpen ? "rotate-180" : ""}`}
+					className={`w-3.5 h-3.5 text-[var(--ink-muted)] transition-transform duration-150 ${isOpen ? "rotate-180" : ""}`}
 				/>
 			</button>
 
@@ -106,7 +105,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Приходная накладная от поставщика (Стомторг, KaVo, ВладМиВа): партии по срокам годности и оприходование"
 					>
-						<FileText size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<FileText size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Приходная накладная (партии по срокам)</span>
 					</button>
 
@@ -121,7 +120,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Управление складами и остатками: экспресс-пресеты, расход сверх остатка и списание"
 					>
-						<Warehouse size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<Warehouse size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Управление складами и остатками</span>
 					</button>
 
@@ -136,7 +135,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Сканирование маркировки препаратов (DataMatrix)"
 					>
-						<QrCode size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<QrCode size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Маркировка препаратов</span>
 					</button>
 
@@ -151,7 +150,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Клиническое списание расходников по нормам приёма и актам списания"
 					>
-						<PackageCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Списание по наряду</span>
 					</button>
 
@@ -166,7 +165,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Списание расходных материалов по технологическим картам процедур и нормам расхода"
 					>
-						<PackageCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Нормы расхода на услуги (BOM)</span>
 					</button>
 
@@ -181,7 +180,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Межфилиальное перемещение материалов и препаратов"
 					>
-						<Truck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<Truck size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Перемещение материалов</span>
 					</button>
 
@@ -196,7 +195,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Складская инвентаризация: опись остатков, сличительная ведомость и контроль сроков годности"
 					>
-						<PackageCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Инвентаризация склада</span>
 					</button>
 
@@ -211,7 +210,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Списание и вывод из оборота маркированных лекарственных препаратов"
 					>
-						<Package size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<Package size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Списание маркированных препаратов</span>
 					</button>
 
@@ -229,7 +228,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Быстрое списание базового набора приёма (перчатки, маска, слюноотсос, нагрудник, валики)"
 					>
-						<PackageCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Списать базовый набор</span>
 					</button>
 
@@ -244,7 +243,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Быстрое списание пустой карпулы анестетика врачом без комиссии"
 					>
-						<Syringe size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<Syringe size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Списать карпулу анестетика</span>
 					</button>
 
@@ -259,7 +258,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Учет и акт утилизации пустых карпул анестетиков без лишних комиссий"
 					>
-						<Syringe size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<Syringe size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Акт утилизации карпул</span>
 					</button>
 
@@ -274,7 +273,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Быстрое списание набора стерилизации: 1 лоток в крафт-пакете + перчатки"
 					>
-						<PackageCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Набор стерилизации (1 лоток + перчатки)</span>
 					</button>
 
@@ -289,7 +288,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Быстрое списание пустых карпул анестетиков без комиссии"
 					>
-						<Syringe size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<Syringe size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Списать карпулу (без комиссии)</span>
 					</button>
 
@@ -304,7 +303,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Списание набора визита «Терапия»"
 					>
-						<Sparkles size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<Sparkles size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Списать визит: Терапия</span>
 					</button>
 
@@ -319,7 +318,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Списание набора визита «Хирургия»"
 					>
-						<Sparkles size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<Sparkles size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Списать визит: Хирургия</span>
 					</button>
 
@@ -334,7 +333,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Списание расхода смены (Терапия)"
 					>
-						<Sparkles size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<Sparkles size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Списать смену: Терапия</span>
 					</button>
 
@@ -349,7 +348,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Списание расхода смены (Ортопедия)"
 					>
-						<PackageCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Списать смену: Ортопедия</span>
 					</button>
 
@@ -364,7 +363,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						role="menuitem"
 						title="Списание расхода смены (Хирургия)"
 					>
-						<ShieldCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<ShieldCheck size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Списать смену: Хирургия</span>
 					</button>
 				</div>

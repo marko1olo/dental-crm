@@ -88,19 +88,14 @@ export interface TransferTotalsSummary {
 	readonly hasDiscrepancy: boolean;
 }
 
+import { formatCurrencyRu, formatKopecksRu } from "@dental/shared";
 export { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 
 /**
- * Форматирование суммы в рублях
+ * Форматирование суммы в рублях через канонический SSOT @dental/shared
  */
 export function formatRubCurrency(rublesOrKopecks: number, isKopecks = false): string {
-	const rub = isKopecks ? kopecksToRubles(rublesOrKopecks) : rublesOrKopecks;
-	return new Intl.NumberFormat("ru-RU", {
-		style: "currency",
-		currency: "RUB",
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
-	}).format(rub);
+	return isKopecks ? formatKopecksRu(Math.round(rublesOrKopecks)) : formatCurrencyRu(rublesOrKopecks);
 }
 
 /**

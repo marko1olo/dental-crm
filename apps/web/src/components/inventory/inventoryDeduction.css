@@ -18,10 +18,10 @@
 	background: var(--paper);
 	color: var(--ink);
 	border: 1px solid var(--line-strong);
-	border-radius: 20px;
+	border-radius: 16px;
 	width: 100%;
-	max-width: 980px;
-	max-height: calc(100dvh - 24px);
+	max-width: 1120px;
+	max-height: calc(100dvh - 20px);
 	display: flex;
 	flex-direction: column;
 	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
@@ -42,7 +42,7 @@
 
 /* Header */
 .inventory-deduction-header {
-	padding: 12px 20px;
+	padding: 8px 20px;
 	background: var(--paper-strong);
 	border-bottom: 1px solid var(--line);
 	display: flex;
@@ -404,7 +404,7 @@
 }
 
 .inventory-dense-table th {
-	padding: 4px 10px;
+	padding: 4px 8px;
 	font-size: 10px;
 	font-weight: 700;
 	text-transform: uppercase;
@@ -439,19 +439,21 @@
 }
 
 .inventory-table-row td {
-	padding: 4px 10px;
+	padding: 4px 8px;
 	vertical-align: middle;
 	height: 38px;
 }
 
 .inventory-td-name {
-	min-width: 220px;
+	min-width: 200px;
 }
 
 .inventory-name-cell {
 	display: flex;
-	flex-direction: column;
-	gap: 2px;
+	flex-direction: row;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 6px;
 }
 
 .inventory-material-name {
@@ -877,13 +879,14 @@
 .inventory-confirm-deduct-btn {
 	min-height: 36px;
 	height: 36px;
-	padding: 0 18px;
+	padding: 0 16px;
 	border-radius: 8px;
 	border: none;
 	background: var(--teal);
 	color: #ffffff;
 	font-size: 13px;
 	font-weight: 700;
+	white-space: nowrap;
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
@@ -904,13 +907,13 @@
 }
 
 .inventory-confirm-deduct-btn.has-deficit-warning {
-	background: linear-gradient(135deg, #d97706 0%, #0d9488 100%);
+	background: var(--teal);
 	color: #ffffff;
-	box-shadow: 0 4px 14px rgba(217, 119, 6, 0.25);
+	box-shadow: 0 2px 8px var(--teal-glow);
 }
 
 .inventory-confirm-deduct-btn.has-deficit-warning:hover:not(:disabled) {
-	background: linear-gradient(135deg, #b45309 0%, #0f766e 100%);
+	background: var(--teal-dark);
 	transform: translateY(-1px);
 }
 

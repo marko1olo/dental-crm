@@ -5,4 +5,5 @@ export * from "./reorderEngine.js";
 export * from "./treatmentConsumablesSchema.js";
 export * from "./supplierRatingsEngine.js";
 export * from "./purchaseOrdersEngine.js";
-
+export * from "./inventoryUnitsSsot.js";
+export * from "./materialsAutoDeductionSsot.js";

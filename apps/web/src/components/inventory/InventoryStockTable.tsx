@@ -214,7 +214,7 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 				className="inventory-view-table hidden md:table"
 				style={{
 					width: "100%",
-					tableLayout: "fixed",
+					tableLayout: "auto",
 					borderCollapse: "collapse",
 					textAlign: "left",
 				}}

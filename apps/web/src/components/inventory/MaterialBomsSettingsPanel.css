@@ -14,23 +14,25 @@
 	flex-wrap: wrap;
 	justify-content: space-between;
 	align-items: center;
-	gap: 16px;
-	padding: 20px 24px;
+	gap: 12px;
+	padding: 14px 20px;
 	background: var(--paper);
 	border: 1px solid var(--line);
-	border-radius: 16px;
+	border-radius: 14px;
 }
 
 .material-boms-header-info {
 	display: flex;
 	align-items: center;
-	gap: 14px;
+	gap: 12px;
+	min-width: 0;
+	flex: 1 1 320px;
 }
 
 .material-boms-header-icon {
-	width: 48px;
-	height: 48px;
-	border-radius: 12px;
+	width: 40px;
+	height: 40px;
+	border-radius: 10px;
 	background: var(--teal-soft, rgba(20, 184, 166, 0.12));
 	color: var(--teal-dark, #0f766e);
 	display: flex;
@@ -41,36 +43,38 @@
 
 .material-boms-title {
 	margin: 0;
-	font-size: 18px;
+	font-size: 16px;
 	font-weight: 700;
 	color: var(--ink);
 }
 
 .material-boms-subtitle {
-	margin: 4px 0 0 0;
-	font-size: 13px;
+	margin: 2px 0 0 0;
+	font-size: 12.5px;
 	color: var(--muted);
 }
 
 .material-boms-header-actions {
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	gap: 8px;
 	flex-wrap: wrap;
+	flex-shrink: 0;
 }
 
 .material-boms-btn {
-	min-height: 44px;
-	padding: 10px 18px;
-	border-radius: 10px;
-	font-size: 14px;
+	min-height: 36px;
+	padding: 6px 14px;
+	border-radius: 8px;
+	font-size: 13px;
 	font-weight: 600;
 	cursor: pointer;
 	display: inline-flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 	transition: all 0.15s ease;
 	border: 1px solid transparent;
+	white-space: nowrap;
 }
 
 .material-boms-btn-primary {
@@ -372,7 +376,7 @@
 	border: 1px solid var(--line);
 	border-radius: 18px;
 	width: 100%;
-	max-width: 520px;
+	max-width: 640px;
 	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
 	overflow: hidden;
 	display: flex;
@@ -416,13 +420,23 @@
 .material-boms-form-select,
 .material-boms-form-input {
 	width: 100%;
-	padding: 10px 14px;
+	min-height: 42px;
+	height: 42px;
+	padding: 8px 12px;
 	border-radius: 8px;
 	border: 1px solid var(--line);
 	background: var(--paper-soft, rgba(0, 0, 0, 0.03));
 	color: var(--ink);
-	font-size: 14px;
+	font-size: 13px;
+	line-height: 1.4;
 	outline: none;
+	box-sizing: border-box;
+}
+
+.material-boms-form-select {
+	appearance: auto;
+	padding: 0 12px;
+	line-height: 40px;
 }
 
 .material-boms-form-select:focus,

@@ -214,6 +214,9 @@ export const InventoryExternalModals: React.FC<InventoryExternalModalsProps> = (
 									`Списано материалов по техкартам: ${lines.length} поз. на сумму ${summary.totalCostFormatted} (мягкий овердрафт разрешен)`,
 									"success",
 								);
+								if (typeof window !== "undefined") {
+									window.dispatchEvent(new CustomEvent("dente-inventory-reload"));
+								}
 							} catch (e) {
 								console.error(e);
 								showToast(
@@ -470,6 +473,7 @@ export const InventoryExternalModals: React.FC<InventoryExternalModalsProps> = (
 						onWaybillPosted={async () => {
 							fetchItems();
 						}}
+						getHeaders={getHeaders}
 					/>
 				</Suspense>
 			)}

@@ -121,7 +121,8 @@ export function calculateItemTotals(params: {
 	const unitPrice = Math.max(0, Math.round(params.unitPriceKopecks));
 	const lineSubtotalKopecks = Math.round(qty * unitPrice);
 
-	const rate = params.vatRate === 20 ? 20 : params.vatRate === 10 ? 10 : 0;
+	const validRates: readonly VatRate[] = [0, 5, 7, 10, 20];
+	const rate: VatRate = validRates.includes(params.vatRate) ? params.vatRate : 0;
 	const vatKopecks = Math.round((lineSubtotalKopecks * rate) / 100);
 	const lineTotalKopecks = lineSubtotalKopecks + vatKopecks;
 
@@ -346,18 +347,11 @@ export function validateWaybillDraft(waybill: {
 
 // ---------------------------------------------------------------------------
 // УТИЛИТЫ ДЕНЕЖНОГО ФОРМАТИРОВАНИЯ
-// ---------------------------------------------------------------------------
-
+import { formatKopecksRu } from "@dental/shared";
 export { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 
 export function formatRubCurrency(kopecks: number): string {
-	const rub = kopecksToRubles(kopecks);
-	return new Intl.NumberFormat("ru-RU", {
-		style: "currency",
-		currency: "RUB",
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
-	}).format(rub);
+	return formatKopecksRu(Math.round(kopecks));
 }
 
 export function formatKopecksToRublesPlain(kopecks: number): string {

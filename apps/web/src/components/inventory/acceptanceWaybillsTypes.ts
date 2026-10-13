@@ -5,7 +5,15 @@
  * ============================================================================
  */
 
-export type VatRate = 0 | 10 | 20;
+export type VatRate = 0 | 5 | 7 | 10 | 20;
+
+export const VAT_RATES: readonly { readonly rate: VatRate; readonly labelRu: string }[] = [
+	{ rate: 0, labelRu: "0% (Без НДС / Медизделия)" },
+	{ rate: 5, labelRu: "5% (Льготный УСН)" },
+	{ rate: 7, labelRu: "7% (Льготный УСН)" },
+	{ rate: 10, labelRu: "10% (Лекарственные препараты)" },
+	{ rate: 20, labelRu: "20% (Стандартная ставка)" },
+];
 
 export type AcceptanceFefoStatus = "fresh" | "warning" | "critical" | "expired";
 export type FefoStatus = AcceptanceFefoStatus;

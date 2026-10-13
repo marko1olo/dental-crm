@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { logger } from "../../utils/logger.js";
 import { showToast } from "../GlobalToast.js";
+import { buildCanonicalFallbackBomRules } from "./bomModules/materialBomTypes.js";
 
 export interface UseInventoryRulesParams {
 	readonly organizationId: string;
@@ -25,7 +26,9 @@ export function useInventoryRules({
 	);
 	const [selectedServiceId, setSelectedServiceId] = useState<string>("");
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const [rulesList, setRulesList] = useState<any[]>([]);
+	const [rulesList, setRulesList] = useState<any[]>(() =>
+		buildCanonicalFallbackBomRules(),
+	);
 	const [isLoadingRules, setIsLoadingRules] = useState(false);
 	const [selectedInventoryItemId, setSelectedInventoryItemId] =
 		useState<string>("");

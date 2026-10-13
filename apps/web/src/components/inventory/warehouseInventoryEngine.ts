@@ -146,17 +146,11 @@ export interface WarehouseTorg16WriteoffAct {
 // Конвертация валют и копеечная арифметика
 // ---------------------------------------------------------------------------
 
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { formatCurrencyRu, formatKopecksRu, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 export { kopecksToRubles, rublesToKopecks };
 
 export function formatRubCurrency(rublesOrKopecks: number, isKopecks = false): string {
-	const rub = isKopecks ? kopecksToRubles(rublesOrKopecks) : rublesOrKopecks;
-	return new Intl.NumberFormat("ru-RU", {
-		style: "currency",
-		currency: "RUB",
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
-	}).format(rub);
+	return isKopecks ? formatKopecksRu(Math.round(rublesOrKopecks)) : formatCurrencyRu(rublesOrKopecks);
 }
 
 export function formatKopecksToRublesPlain(kopecks: number): string {

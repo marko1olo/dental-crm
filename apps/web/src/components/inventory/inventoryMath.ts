@@ -17,8 +17,10 @@
 
 import {
 	type Kopecks,
+	formatInventoryUnitRu,
 	formatKopecksRu,
 	multiplyKopecks,
+	normalizeInventoryUnit,
 	parseKopecks,
 	sumKopecks,
 } from "@dental/shared";
@@ -48,39 +50,39 @@ export const TECH_MAP_CATEGORY_COLORS: Record<
 	{ bg: string; text: string; border: string }
 > = {
 	ppe: {
-		bg: "rgba(59, 130, 246, 0.12)",
-		text: "#2563eb",
-		border: "rgba(59, 130, 246, 0.3)",
+		bg: "var(--paper-soft)",
+		text: "var(--muted)",
+		border: "var(--line)",
 	},
 	anesthesia: {
-		bg: "rgba(245, 158, 11, 0.12)",
-		text: "#d97706",
-		border: "rgba(245, 158, 11, 0.3)",
+		bg: "var(--teal-soft)",
+		text: "var(--teal)",
+		border: "var(--teal)",
 	},
 	caries: {
-		bg: "rgba(13, 148, 136, 0.12)",
-		text: "#0d9488",
-		border: "rgba(13, 148, 136, 0.3)",
+		bg: "var(--teal-soft)",
+		text: "var(--teal)",
+		border: "var(--teal)",
 	},
 	endo: {
-		bg: "rgba(168, 85, 247, 0.12)",
-		text: "#9333ea",
-		border: "rgba(168, 85, 247, 0.3)",
+		bg: "var(--teal-soft)",
+		text: "var(--teal)",
+		border: "var(--teal)",
 	},
 	hygiene: {
-		bg: "rgba(16, 185, 129, 0.12)",
-		text: "#059669",
-		border: "rgba(16, 185, 129, 0.3)",
+		bg: "var(--paper-soft)",
+		text: "var(--ink)",
+		border: "var(--line)",
 	},
 	surgery: {
-		bg: "rgba(239, 68, 68, 0.12)",
-		text: "#dc2626",
-		border: "rgba(239, 68, 68, 0.3)",
+		bg: "var(--teal-soft)",
+		text: "var(--teal)",
+		border: "var(--teal)",
 	},
 	other: {
-		bg: "rgba(107, 114, 128, 0.12)",
-		text: "#4b5563",
-		border: "rgba(107, 114, 128, 0.3)",
+		bg: "var(--paper-soft)",
+		text: "var(--muted)",
+		border: "var(--line)",
 	},
 };
 
@@ -228,32 +230,8 @@ export function calculateTotalDeductionCostKopecks(
 	return sumKopecks(lineCosts);
 }
 
-/**
- * Склонение русского слова по числовому количеству (1, 2, 5).
- */
-export function pluralizeRussian(
-	quantity: number,
-	one: string,
-	few: string,
-	many: string,
-): string {
-	const abs = Math.abs(quantity);
-	if (!Number.isInteger(abs)) {
-		return few;
-	}
-	const mod100 = abs % 100;
-	const mod10 = abs % 10;
-	if (mod100 >= 11 && mod100 <= 19) {
-		return many;
-	}
-	if (mod10 === 1) {
-		return one;
-	}
-	if (mod10 >= 2 && mod10 <= 4) {
-		return few;
-	}
-	return many;
-}
+import { pluralizeRussian } from "../../lib/russianPlural";
+export { pluralizeRussian };
 
 /**
  * Правильное русское склонение единицы измерения в зависимости от количества:
@@ -311,28 +289,10 @@ export function formatQuantityWithUnitRu(quantity: number, unit: string): string
  */
 export function formatUnitPriceUnitRu(unit: string): string {
 	if (!unit) return "";
-	const clean = unit.trim().toLowerCase();
-
-	if (clean === "пары" || clean === "пар" || clean === "пара") {
-		return "пара";
-	}
-	if (clean === "штуки" || clean === "штук" || clean === "штука") {
-		return "шт.";
-	}
-	if (clean === "карпулы" || clean === "карпул" || clean === "карпула") {
-		return "карп.";
-	}
-	if (clean === "упаковки" || clean === "упаковок" || clean === "упаковка") {
-		return "упак.";
-	}
-	if (clean === "комплекты" || clean === "комплектов" || clean === "комплект") {
-		return "компл.";
-	}
-	if (clean === "дозы" || clean === "доз" || clean === "доза") {
-		return "доза";
-	}
-
-	return unit.trim();
+	const canonical = normalizeInventoryUnit(unit);
+	if (canonical === "pair") return "пара";
+	if (canonical === "dose") return "доза";
+	return formatInventoryUnitRu(unit);
 }
 
 /**

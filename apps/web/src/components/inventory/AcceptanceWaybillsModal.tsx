@@ -640,9 +640,11 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 													handleUpdateItem(idx, { vatRate: Number(e.target.value) as VatRate })
 												}
 											>
-												<option value={0}>0%</option>
-												<option value={10}>10%</option>
-												<option value={20}>20%</option>
+												<option value={0}>0% (Без НДС)</option>
+												<option value={5}>5% (УСН)</option>
+												<option value={7}>7% (УСН)</option>
+												<option value={10}>10% (ЛС)</option>
+												<option value={20}>20% (Стандарт)</option>
 											</select>
 										</td>
 										<td style={{ textAlign: "right", fontWeight: 700, whiteSpace: "nowrap" }}>

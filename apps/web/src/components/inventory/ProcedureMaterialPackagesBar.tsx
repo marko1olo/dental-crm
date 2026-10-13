@@ -11,6 +11,19 @@ export interface ProcedureMaterialPackagesBarProps {
 	readonly onToggleTechMap: (code: string) => void;
 }
 
+const COMPACT_TECH_MAP_LABELS: Record<string, string> = {
+	SANPIN_PPE: "СИЗ и расходники приема",
+	SANPIN_KRAFT: "Стерилизация и крафт-пакеты",
+	"A16.07.004": "Анестезия карпульная",
+	"A16.07.002.001": "Лечение кариеса и реставрация",
+	"A16.07.030.001": "Эндодонтия (1 канал)",
+	"A16.07.030.003": "Эндодонтия (3 канала)",
+	"A16.07.051": "Профгигиена (Air-Flow + УЗ)",
+	"A16.07.001.001": "Атравматичное удаление зуба",
+	"A16.07.054": "Дентальная имплантация",
+	"A16.07.055": "Костная пластика и синус-лифтинг",
+};
+
 export const ProcedureMaterialPackagesBar: React.FC<
 	ProcedureMaterialPackagesBarProps
 > = ({ selectedMapCodes, onApplyPackage, onToggleTechMap }) => {
@@ -20,17 +33,18 @@ export const ProcedureMaterialPackagesBar: React.FC<
 			<div
 				className="inventory-clinical-packages-bar"
 				data-testid="clinical-packages-bar"
+				style={{ padding: "6px 20px", gap: "4px" }}
 			>
 				<div className="inventory-clinical-packages-header">
 					<span className="inventory-clinical-packages-label">
-						<Zap size={14} className="shrink-0" />
+						<Zap size={13} className="shrink-0" />
 						Клинические пакеты материалов:
 					</span>
 					<span className="inventory-clinical-packages-hint">
 						СИЗ + Крафт + анестезия + протокол лечения
 					</span>
 				</div>
-				<div className="inventory-packages-chips">
+				<div className="inventory-packages-chips" style={{ gap: "6px" }}>
 					{/* Экспресс-пресеты медсестры и врача (Мандат 8e п. 10, Мандат 8k, Мандат 8n) */}
 					<button
 						type="button"
@@ -45,10 +59,10 @@ export const ProcedureMaterialPackagesBar: React.FC<
 						data-testid-alt="btn-dispense-standard-anesthesia-kit"
 						data-testid-package="btn-writeoff-anesthesia-packet"
 						onClick={() => onApplyPackage(["SANPIN_PPE", "A16.07.004"])}
-						title="Стандартный набор: анестезия 1.7 мл + карпульная игла + валики"
+						title="Стандартная анестезия 1.7 мл + карпульная игла + валики"
 					>
-						<Zap size={14} className="shrink-0 text-amber-500" />
-						<span>Стандартная анестезия 1.7 мл + карпульная игла + валики</span>
+						<Zap size={13} className="shrink-0 text-teal-600 dark:text-teal-400" />
+						<span>Стандартная анестезия 1.7 мл</span>
 					</button>
 
 					<button
@@ -67,8 +81,8 @@ export const ProcedureMaterialPackagesBar: React.FC<
 						}
 						title="Терапевтический набор (пломбирование зуба): СИЗ + Крафт + Анестезия + Композит/Адгезив"
 					>
-						<Package size={14} className="shrink-0" />
-						<span>Терапевтический набор / Пломбирование зуба</span>
+						<Package size={13} className="shrink-0" />
+						<span>Пломбирование зуба</span>
 					</button>
 
 					<button
@@ -83,7 +97,7 @@ export const ProcedureMaterialPackagesBar: React.FC<
 						}
 						title="Профгигиена: СИЗ + Крафт + Air-Flow + Паста + Оптрагейт"
 					>
-						<Package size={14} className="shrink-0" />
+						<Package size={13} className="shrink-0" />
 						<span>Профгигиена</span>
 					</button>
 
@@ -101,9 +115,9 @@ export const ProcedureMaterialPackagesBar: React.FC<
 								title={`${pkg.title}: ${pkg.description}`}
 							>
 								{isPackageActive ? (
-									<CheckCircle2 size={15} className="shrink-0" />
+									<CheckCircle2 size={14} className="shrink-0" />
 								) : (
-									<Package size={14} className="shrink-0 opacity-70" />
+									<Package size={13} className="shrink-0 opacity-70" />
 								)}
 								<span>{pkg.title}</span>
 							</button>
@@ -113,7 +127,7 @@ export const ProcedureMaterialPackagesBar: React.FC<
 			</div>
 
 			{/* TECH MAP SELECTOR BAR */}
-			<div className="inventory-tech-maps-bar">
+			<div className="inventory-tech-maps-bar" style={{ padding: "6px 20px", gap: "4px" }}>
 				<div className="inventory-tech-maps-label">
 					Технологические карты процедур:
 				</div>
@@ -121,11 +135,10 @@ export const ProcedureMaterialPackagesBar: React.FC<
 					className="inventory-tech-maps-chips"
 					style={{
 						display: "flex",
-						flexWrap: "nowrap",
-						overflowX: "auto",
-						scrollbarWidth: "none",
-						gap: "8px",
-						paddingBottom: "4px",
+						flexWrap: "wrap",
+						overflowX: "visible",
+						gap: "5px",
+						paddingBottom: "2px",
 					}}
 				>
 					{ALL_PROCEDURE_TECH_MAPS.map((tm) => {
@@ -139,11 +152,16 @@ export const ProcedureMaterialPackagesBar: React.FC<
 									flexShrink: 0,
 									whiteSpace: "nowrap",
 									minWidth: "max-content",
+									height: "28px",
+									minHeight: "28px",
+									padding: "0 9px",
+									fontSize: "11.5px",
 								}}
 								onClick={() => onToggleTechMap(tm.code)}
+								title={tm.title}
 							>
-								{isActive && <CheckCircle2 size={16} />}
-								{tm.title}
+								{isActive && <CheckCircle2 size={14} />}
+								{COMPACT_TECH_MAP_LABELS[tm.code] ?? tm.title}
 							</button>
 						);
 					})}

@@ -9,15 +9,48 @@ import type { DbTransaction } from "./types.js";
 
 /**
  * Чистая утилита сортировки партий по сроку годности (FEFO: ранний срок первым).
+ * При совпадении срока годности (tie-breaker) используется дата поступления/создания (FIFO).
  * Партии без срока годности отправляются в конец списка.
  */
-export function sortBatchesByFefo<T extends { expirationDate?: string | null }>(
-	batches: T[],
-): T[] {
+export function sortBatchesByFefo<
+	T extends {
+		expirationDate?: string | null;
+		createdAt?: string | Date | null;
+		receivedAt?: string | Date | null;
+	},
+>(batches: T[]): T[] {
 	return [...batches].sort((a, b) => {
+		if (!a.expirationDate && !b.expirationDate) {
+			const aTime = a.receivedAt
+				? new Date(a.receivedAt).getTime()
+				: a.createdAt
+					? new Date(a.createdAt).getTime()
+					: 0;
+			const bTime = b.receivedAt
+				? new Date(b.receivedAt).getTime()
+				: b.createdAt
+					? new Date(b.createdAt).getTime()
+					: 0;
+			return aTime - bTime;
+		}
 		if (!a.expirationDate) return 1;
 		if (!b.expirationDate) return -1;
-		return new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime();
+		const expDiff =
+			new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime();
+		if (expDiff !== 0) return expDiff;
+
+		// Tie-breaker: раннее поступление/создание списывается первым
+		const aTime = a.receivedAt
+			? new Date(a.receivedAt).getTime()
+			: a.createdAt
+				? new Date(a.createdAt).getTime()
+				: 0;
+		const bTime = b.receivedAt
+			? new Date(b.receivedAt).getTime()
+			: b.createdAt
+				? new Date(b.createdAt).getTime()
+				: 0;
+		return aTime - bTime;
 	});
 }
 

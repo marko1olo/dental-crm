@@ -114,19 +114,23 @@ export const ProcedureMaterialTable: React.FC<ProcedureMaterialTableProps> = ({
 										className="inventory-name-cell"
 										style={{
 											display: "flex",
+											flexDirection: "row",
 											alignItems: "center",
+											justifyContent: "flex-start",
 											gap: "6px",
 											flexWrap: "nowrap",
 										}}
 									>
 										<span
-											className="inventory-material-name truncate max-w-[220px]"
+											className="inventory-material-name"
 											style={{
 												fontSize: "12px",
 												fontWeight: 700,
+												maxWidth: "300px",
 												overflow: "hidden",
 												textOverflow: "ellipsis",
 												whiteSpace: "nowrap",
+												textAlign: "left",
 											}}
 											title={line.materialName}
 										>
@@ -159,18 +163,6 @@ export const ProcedureMaterialTable: React.FC<ProcedureMaterialTableProps> = ({
 												п. {line.lotNumber}
 											</span>
 										)}
-										{line.expirationDate && (
-											<span
-												className="inventory-exp-tag"
-												style={{
-													fontSize: "10px",
-													color: "var(--muted)",
-													flexShrink: 0,
-												}}
-											>
-												до {line.expirationDate}
-											</span>
-										)}
 									</div>
 								</td>
 
@@ -198,7 +190,7 @@ export const ProcedureMaterialTable: React.FC<ProcedureMaterialTableProps> = ({
 											style={{ fontSize: "10px", padding: "1px 5px" }}
 										>
 											<AlertTriangle size={11} />
-											Дефицит {formatQuantityWithUnitRu(stockStatus.deficit, line.unit)} (склад: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)})
+											Дефицит {formatQuantityWithUnitRu(stockStatus.deficit, line.unit)}
 										</span>
 									) : stockStatus.severity === "warning" ? (
 										<span
