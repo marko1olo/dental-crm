@@ -283,7 +283,7 @@ export async function savePlanToPostgres({
 				"Content-Type": "application/json",
 			}),
 			body: JSON.stringify({
-				...(currentPlanId ? { id: currentPlanId } : {}),
+				...(currentPlanId ? { id: currentPlanId, allowRevision: true } : {}),
 				name: `${currentTier.title} (${new Date().toLocaleDateString("ru-RU")})`,
 				status:
 					planStatus === "agreed"
@@ -451,23 +451,49 @@ export function dispatchStageStartEvents(
 		);
 	}
 
+	const estimatedDurationMinutes = stage.items?.length
+		? Math.min(120, Math.max(30, stage.items.length * 20))
+		: 30;
+
+	const bookingDraft = {
+		patientId,
+		patientName,
+		stageId: stage.stageKind || String(stage.stageNumber),
+		stageNumber: stage.stageNumber,
+		stageTitle: stage.title,
+		items: stage.items,
+		services: stage.items,
+		procedures: stage.items,
+		treatmentPlanId: `PLAN-${patientId.slice(0, 6).toUpperCase()}`,
+		planId: `PLAN-${patientId.slice(0, 6).toUpperCase()}`,
+		doctorId: stage.doctorId ?? null,
+		doctorName: stage.doctorName ?? null,
+		reason: `Этап ${stage.stageNumber}: ${stage.title}`,
+		durationMinutes: estimatedDurationMinutes,
+		estimatedDurationMinutes,
+	};
+
+	try {
+		window.localStorage.setItem("dente_schedule_quick_booking_draft", JSON.stringify(bookingDraft));
+	} catch {
+		// quota fallback
+	}
+
 	window.dispatchEvent(
 		new CustomEvent("dente-book-stage-appointment", {
-			detail: {
-				patientId,
-				patientName,
-				stageId: stage.stageKind || String(stage.stageNumber),
-				stageNumber: stage.stageNumber,
-				stageTitle: stage.title,
-				items: stage.items,
-				services: stage.items,
-				procedures: stage.items,
-				treatmentPlanId: `PLAN-${patientId.slice(0, 6).toUpperCase()}`,
-				planId: `PLAN-${patientId.slice(0, 6).toUpperCase()}`,
-				estimatedDurationMinutes: stage.items?.length
-					? Math.min(120, Math.max(30, stage.items.length * 20))
-					: 30,
-			},
+			detail: bookingDraft,
+		}),
+	);
+
+	window.dispatchEvent(
+		new CustomEvent("dente-quick-appointment-draft", {
+			detail: bookingDraft,
+		}),
+	);
+
+	window.dispatchEvent(
+		new CustomEvent("dente-open-quick-booking", {
+			detail: bookingDraft,
 		}),
 	);
 

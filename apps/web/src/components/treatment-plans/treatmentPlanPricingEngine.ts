@@ -19,6 +19,8 @@ import type {
 	NdflDeductionResult,
 	TierInstallmentPlan,
 	TreatmentPlanItem,
+	TreatmentPlanStage,
+	TreatmentPlanTier,
 } from "./types";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 
@@ -541,5 +543,231 @@ export function calculatePrepaymentDiscountKopecks(
 		discountRub: Math.round(discountKopecks / 100),
 		finalPriceKopecks,
 		finalPriceRub: Math.round(finalPriceKopecks / 100),
+	};
+}
+
+/**
+ * Лимит налоговой базы для обычного лечения (Код 01) по ст. 219 НК РФ: 150 000 руб = 15 000 000 копеек.
+ */
+export const NDFL_STANDARD_ANNUAL_LIMIT_RUB = ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024;
+export const NDFL_STANDARD_ANNUAL_LIMIT_KOPECKS = (ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024 * 100) as Kopecks;
+
+/**
+ * Рассчитывает рассрочку 0% на 3, 6, 12, 24 месяца равными долями в копейках (Мандаты 8b, 8e).
+ * Делегирует в канонический SSOT computeTierInstallments (Мандат 8za).
+ */
+export const calculateChairsideInstallments = computeTierInstallments;
+
+/**
+ * Рассчитывает социальный налоговый вычет 13% НДФЛ по ст. 219 НК РФ.
+ * - Код 01 (Обычное лечение): лимит базы 150 000 ₽ в год, максимум возврата 19 500 ₽.
+ * - Код 02 (Дорогостоящее лечение: имплантация, костная пластика, синус-лифтинг): без лимита базы!
+ */
+export function calculateChairsideTaxDeduction(
+	totalKopecks: Kopecks,
+	isHighCostTreatment: boolean,
+): NdflDeductionResult {
+	return calculateNdflDeduction(totalKopecks, isHighCostTreatment);
+}
+
+/**
+ * Рассчитывает общую сумму этапа в копейках и рублях на основе его процедур.
+ * Использует safeKopecks и multiplyKopecks для предотвращения дрейфа округления IEEE 754.
+ */
+export function calculateStageTotals(items: readonly TreatmentPlanItem[]): {
+	totalKopecks: Kopecks;
+	totalRub: number;
+} {
+	if (!items || items.length === 0) {
+		return { totalKopecks: 0 as Kopecks, totalRub: 0 };
+	}
+
+	const totalKopecks = sumKopecks(
+		items.map((it) => {
+			const unitKop = safeKopecks(it.unitPriceRub ?? 0, { allowEmptyAsZero: true }) ?? (0 as Kopecks);
+			const qty = Math.max(1, it.quantity || 1);
+			const discountKop = safeKopecks(it.discountRub ?? 0, { allowEmptyAsZero: true }) ?? (0 as Kopecks);
+			const lineTotalKop = Math.max(0, multiplyKopecks(unitKop, qty) - discountKop) as Kopecks;
+			return lineTotalKop;
+		}),
+	);
+
+	const totalRub = totalKopecks / 100;
+	return { totalKopecks, totalRub };
+}
+
+/**
+ * Рассчитывает общие финансовые итоги для всех этапов плана.
+ */
+export function calculatePlanStagesTotals(stages: readonly TreatmentPlanStage[]): {
+	totalKopecks: Kopecks;
+	totalRub: number;
+	itemsCount: number;
+	estimatedWeeks: number;
+	estimatedVisits: number;
+} {
+	if (!stages || stages.length === 0) {
+		return {
+			totalKopecks: 0 as Kopecks,
+			totalRub: 0,
+			itemsCount: 0,
+			estimatedWeeks: 0,
+			estimatedVisits: 0,
+		};
+	}
+
+	const totalKopecks = sumKopecks(stages.map((s) => s.totalKopecks));
+	const totalRub = totalKopecks / 100;
+	const itemsCount = stages.reduce((acc, s) => acc + s.items.length, 0);
+	const estimatedWeeks = stages.reduce((acc, s) => acc + (s.estimatedWeeks || 0), 0);
+	const estimatedVisits = stages.reduce((acc, s) => acc + (s.estimatedVisits || 0), 0);
+
+	return {
+		totalKopecks,
+		totalRub,
+		itemsCount,
+		estimatedWeeks,
+		estimatedVisits,
+	};
+}
+
+/**
+ * Применяет свободную скидку врача (0-100%) к процедурам этапа (Мандат 8e).
+ * При 100% скидке цена становится 0 ₽ (гарантия клиники).
+ */
+export function applyDoctorDiscountToStages(
+	stages: readonly TreatmentPlanStage[],
+	discountPercent: number,
+): readonly TreatmentPlanStage[] {
+	const validPct = Math.max(0, Math.min(100, discountPercent));
+
+	return stages.map((stage) => {
+		const updatedItems = stage.items.map((it) => {
+			const baseUnitPriceRub =
+				typeof it.unitPriceRub === "number" && it.unitPriceRub > 0
+					? it.unitPriceRub
+					: it.priceRub && it.quantity
+						? Math.round(it.priceRub / it.quantity)
+						: 0;
+
+			const baseUnitPriceKop = safeKopecks(baseUnitPriceRub, { allowEmptyAsZero: true }) ?? (0 as Kopecks);
+			const discountKopPerUnit =
+				validPct > 0 ? percentageOfKopecks(baseUnitPriceKop, validPct * 100) : (0 as Kopecks);
+			const finalUnitPriceKop = Math.max(0, baseUnitPriceKop - discountKopPerUnit) as Kopecks;
+
+			const qty = Math.max(1, it.quantity || 1);
+			const lineTotalKop = multiplyKopecks(finalUnitPriceKop, qty);
+			const lineDiscountKop = multiplyKopecks(discountKopPerUnit, qty);
+
+			return {
+				...it,
+				unitPriceRub: Math.round(baseUnitPriceKop / 100),
+				priceRub: Math.round(lineTotalKop / 100),
+				discountRub: Math.round(lineDiscountKop / 100),
+			};
+		});
+
+		const stageTotals = calculateStageTotals(updatedItems);
+		return {
+			...stage,
+			items: updatedItems,
+			totalRub: stageTotals.totalRub,
+			totalKopecks: stageTotals.totalKopecks,
+		};
+	});
+}
+
+/**
+ * Полный пересчёт варианта плана лечения (Tier) после любых изменений в этапах.
+ */
+export function recalculateTierTotals(
+	tier: TreatmentPlanTier,
+	updatedStages: readonly TreatmentPlanStage[],
+): TreatmentPlanTier {
+	const stageStats = calculatePlanStagesTotals(updatedStages);
+	const allItems = updatedStages.flatMap((s) => s.items);
+
+	// Проверяем наличие дорогостоящих услуг (имплантация, костная пластика, синус-лифтинг)
+	const isHighCost = allItems.some(
+		(i) =>
+			i.code804n === "A16.07.054.001" ||
+			i.code804n === "A16.07.041" ||
+			i.code804n === "A16.07.035" ||
+			(i.name &&
+				(i.name.toLowerCase().includes("имплантация") ||
+					i.name.toLowerCase().includes("синус-лифтинг") ||
+					i.name.toLowerCase().includes("костная пластика"))),
+	);
+
+	const ndflDetails = calculateChairsideTaxDeduction(stageStats.totalKopecks, isHighCost);
+	const installments = computeTierInstallments(stageStats.totalKopecks);
+	const stagedSchedule = calculateStaged304030Schedule(stageStats.totalKopecks, true);
+
+	return {
+		...tier,
+		stages: updatedStages,
+		totalRub: stageStats.totalRub,
+		totalKopecks: stageStats.totalKopecks,
+		itemsCount: stageStats.itemsCount,
+		durationWeeks: stageStats.estimatedWeeks,
+		durationVisits: stageStats.estimatedVisits,
+		installments,
+		stagedSchedule,
+		ndflDetails,
+		ndflRefundRub: ndflDetails.refundRub,
+		priceWithNdflRefundRub: ndflDetails.finalPriceWithRefundRub,
+		monthlyInstallment12Rub: installments[12]?.monthlyPaymentRub ?? 0,
+	};
+}
+
+/**
+ * Валидатор целостности математических сумм плана лечения (Parity Check).
+ */
+export function validatePlanFinancialIntegrity(tier: TreatmentPlanTier): {
+	readonly isValid: boolean;
+	readonly sumItemsKopecks: Kopecks;
+	readonly sumStagesKopecks: Kopecks;
+	readonly tierTotalKopecks: Kopecks;
+	readonly kopecksDrift: number;
+	readonly errors: readonly string[];
+} {
+	const errors: string[] = [];
+
+	// 1. Сумма всех процедур
+	const allItems = tier.stages.flatMap((s) => s.items);
+	const sumItemsKopecks = sumKopecks(
+		allItems.map((it) => safeKopecks(it.priceRub ?? 0, { allowEmptyAsZero: true }) ?? (0 as Kopecks)),
+	);
+
+	// 2. Сумма этапов
+	const sumStagesKopecks = sumKopecks(tier.stages.map((s) => s.totalKopecks));
+
+	// 3. Общая сумма варианта
+	const tierTotalKopecks = tier.totalKopecks;
+
+	const kopecksDrift = Math.abs(sumStagesKopecks - tierTotalKopecks);
+
+	if (kopecksDrift > 0) {
+		errors.push(`Рассинхрон сумм этапов и общего итога варианта: ${kopecksDrift} коп.`);
+	}
+
+	// 4. Проверка рассрочки
+	if (tier.installments && tier.installments[12]) {
+		const inst12 = tier.installments[12];
+		const sumParts = sumKopecks(inst12.partsKopecks);
+		if (tierTotalKopecks > 0 && Math.abs(sumParts - tierTotalKopecks) > 0) {
+			errors.push(
+				`Рассрочка на 12 мес не сходится с итогом: сумма частей ${sumParts} != ${tierTotalKopecks}`,
+			);
+		}
+	}
+
+	return {
+		isValid: errors.length === 0,
+		sumItemsKopecks,
+		sumStagesKopecks,
+		tierTotalKopecks,
+		kopecksDrift,
+		errors,
 	};
 }

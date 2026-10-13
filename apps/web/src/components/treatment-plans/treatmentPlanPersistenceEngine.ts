@@ -13,7 +13,11 @@ import {
 	type TreatmentPlanStageKind,
 	romanizeStageNumber,
 } from "./types";
-import type { CatalogServiceLookupItem } from "./treatmentPlanPricingEngine";
+import {
+	type CatalogServiceLookupItem,
+	calculateStageTotals,
+	planLineTotalKopecks,
+} from "./treatmentPlanPricingEngine";
 
 /**
  * Восстановление структурированных этапов плана лечения из плоских записей БД (treatment_plan_items).
@@ -116,9 +120,12 @@ export function buildStagesFromPlanItems(
 				stageKind = "stage_5_periodontics";
 			}
 
-			const lineGrossKopecks = Math.round(unitPriceRub * quantity * 100);
-			const lineDiscKopecks = Math.round(discountRub * 100);
-			const netKopecks = Math.max(0, lineGrossKopecks - lineDiscKopecks);
+			const netKopecks =
+				planLineTotalKopecks({
+					price: unitPriceRub,
+					quantity,
+					discount: discountRub,
+				}) ?? (0 as Kopecks);
 			const netRub = netKopecks / 100;
 
 			const isCompleted = Boolean(
@@ -186,12 +193,7 @@ export function buildStagesFromPlanItems(
 		}
 
 		// Расчёт финансовых итогов в целых копейках (Мандат 8k)
-		const totalKopecks = mappedItems.reduce((acc, it) => {
-			const gross = Math.round(it.unitPriceRub * it.quantity * 100);
-			const disc = Math.round(it.discountRub * 100);
-			return (acc + Math.max(0, gross - disc)) as Kopecks;
-		}, 0 as Kopecks);
-		const totalRub = totalKopecks / 100;
+		const { totalKopecks, totalRub } = calculateStageTotals(mappedItems);
 
 		const order804nCodes = Array.from(new Set(mappedItems.map((it) => it.code804n)));
 

@@ -295,24 +295,43 @@ export const RoadmapStageCard: React.FC<RoadmapStageCardProps> = ({
 									stage.procedures && stage.procedures.length > 0
 										? Math.min(120, Math.max(30, stage.procedures.length * 20))
 										: 30;
+								const bookingDetail = {
+									treatmentPlanId: planId || (effectivePlanNumber ? `PLAN-${effectivePlanNumber}` : undefined),
+									planId: planId || (effectivePlanNumber ? `PLAN-${effectivePlanNumber}` : undefined),
+									patientId: patientId || undefined,
+									patientName: effectivePatientName,
+									patientFullName: effectivePatientName,
+									stageId: stage.stageKind || String(stage.stageNumber),
+									stageNumber: stage.stageNumber,
+									stageTitle: stage.titleRu,
+									timelineRu: stage.timelineRu,
+									services: stage.procedures,
+									items: stage.procedures,
+									procedures: stage.procedures,
+									reason: `Этап ${stage.stageNumber}: ${stage.titleRu}`,
+									estimatedDurationMinutes: estimatedMins,
+									durationMinutes: estimatedMins,
+								};
+
+								try {
+									window.localStorage.setItem("dente_schedule_quick_booking_draft", JSON.stringify(bookingDetail));
+								} catch {
+									// quota fallback
+								}
+
 								window.dispatchEvent(
 									new CustomEvent("dente-book-stage-appointment", {
-										detail: {
-											treatmentPlanId: planId || (effectivePlanNumber ? `PLAN-${effectivePlanNumber}` : undefined),
-											planId: planId || (effectivePlanNumber ? `PLAN-${effectivePlanNumber}` : undefined),
-											patientId: patientId || undefined,
-											patientName: effectivePatientName,
-											patientFullName: effectivePatientName,
-											stageId: stage.stageKind || String(stage.stageNumber),
-											stageNumber: stage.stageNumber,
-											stageTitle: stage.titleRu,
-											timelineRu: stage.timelineRu,
-											services: stage.procedures,
-											items: stage.procedures,
-											procedures: stage.procedures,
-											estimatedDurationMinutes: estimatedMins,
-											durationMinutes: estimatedMins,
-										},
+										detail: bookingDetail,
+									}),
+								);
+								window.dispatchEvent(
+									new CustomEvent("dente-quick-appointment-draft", {
+										detail: bookingDetail,
+									}),
+								);
+								window.dispatchEvent(
+									new CustomEvent("dente-open-quick-booking", {
+										detail: bookingDetail,
 									}),
 								);
 								window.location.hash = "#schedule";
