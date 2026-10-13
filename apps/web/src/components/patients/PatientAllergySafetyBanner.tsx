@@ -262,11 +262,11 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 									<button
 										type="button"
 										onClick={handleApplySomaticNorm}
-										className="safety-btn safety-btn--outline text-xs text-emerald-700 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 min-h-[44px] sm:min-h-[32px]"
+										className="safety-btn safety-btn--outline"
 										data-testid="banner-apply-somatic-norm-btn"
 										title="Зафиксировать физиологическую норму"
 									>
-										<CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+										<CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
 										<span>Соматически здоров (норма)</span>
 									</button>
 								)}
@@ -277,17 +277,17 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 										type="button"
 										onClick={() => setIsDrawerOpen((prev) => !prev)}
 										aria-expanded={isDrawerOpen}
-										className="safety-btn safety-btn--outline text-xs min-h-[44px] sm:min-h-[32px]"
+										className="safety-btn safety-btn--outline"
 									>
 										{isDrawerOpen ? (
 											<>
-												<ChevronUp className="w-4 h-4" />
-												Скрыть протокол
+												<ChevronUp className="w-3.5 h-3.5 shrink-0" />
+												<span>Скрыть протокол</span>
 											</>
 										) : (
 											<>
-												<ChevronDown className="w-4 h-4" />
-												Протокол безопасности ({evaluation.activeFlags.length})
+												<ChevronDown className="w-3.5 h-3.5 shrink-0" />
+												<span>Протокол безопасности ({evaluation.activeFlags.length})</span>
 											</>
 										)}
 									</button>
@@ -299,10 +299,10 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 										type="button"
 										onClick={handleSyncToDiary}
 										title="Скопировать и вставить в дневник приёма"
-										className="safety-btn safety-btn--outline text-xs min-h-[44px] sm:min-h-[32px]"
+										className="safety-btn safety-btn--outline"
 									>
-										<Copy className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-										В карту
+										<Copy className="w-3.5 h-3.5 shrink-0" />
+										<span>В карту</span>
 									</button>
 								)}
 
@@ -311,14 +311,14 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 									<button
 										type="button"
 										onClick={() => setIsModalOpen(true)}
-										className={`safety-btn min-h-[44px] sm:min-h-[32px] ${
+										className={`safety-btn ${
 											evaluation.hasCriticalStopFlags
 												? "safety-btn--primary-red"
 												: "safety-btn--outline"
 										}`}
 									>
-										<ClipboardEdit className="w-4 h-4" />
-										Анкета здоровья
+										<ClipboardEdit className="w-3.5 h-3.5 shrink-0" />
+										<span>Анкета здоровья</span>
 									</button>
 								)}
 							</div>

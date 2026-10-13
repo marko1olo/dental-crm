@@ -170,6 +170,7 @@ export const STAGE_DISPLAY_LABELS: Record<LeadStatus, string> = {
 	contacted: "«2. Квалифицированные»",
 	consult_booked: "«3. Консультация»",
 	showed_up: "«4. Дошли»",
+	converted: "«Сконвертирован»",
 	no_answer: "«Недозвон»",
 	trash: "«Отказ»",
 };

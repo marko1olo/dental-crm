@@ -3,6 +3,7 @@ import type { GeneratedDocument, Patient, DocumentKind, DocumentStatus } from "@
 import {
 	AlertCircle,
 	CheckCircle2,
+	ChevronDown,
 	FileCheck,
 	FileSignature,
 	FileText,
@@ -86,6 +87,28 @@ export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.mem
 		const [isFastPrintOpen, setIsFastPrintOpen] = useState(false);
 		const [fastPrintDocType, setFastPrintDocType] = useState<FastPrintDocType>("form043u");
 		const [tabletSignDoc, setTabletSignDoc] = useState<GeneratedDocument | null>(null);
+		const [isBlanksMenuOpen, setIsBlanksMenuOpen] = useState(false);
+		const blanksMenuRef = React.useRef<HTMLDivElement>(null);
+
+		React.useEffect(() => {
+			if (!isBlanksMenuOpen) return;
+			const handleClickOutside = (e: MouseEvent) => {
+				if (blanksMenuRef.current && !blanksMenuRef.current.contains(e.target as Node)) {
+					setIsBlanksMenuOpen(false);
+				}
+			};
+			const handleKeyDown = (e: KeyboardEvent) => {
+				if (e.key === "Escape") {
+					setIsBlanksMenuOpen(false);
+				}
+			};
+			document.addEventListener("mousedown", handleClickOutside);
+			document.addEventListener("keydown", handleKeyDown);
+			return () => {
+				document.removeEventListener("mousedown", handleClickOutside);
+				document.removeEventListener("keydown", handleKeyDown);
+			};
+		}, [isBlanksMenuOpen]);
 
 		const handleTabletSignatureConfirm = async (sigData: any) => {
 			if (!tabletSignDoc) return;
@@ -129,85 +152,127 @@ export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.mem
 				className="flex flex-col gap-4 p-4 sm:p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xs"
 				data-testid="patient-documents-tab"
 			>
-				{/* Section Header */}
-				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--line)]">
-					<div>
+				{/* Section Header: Strictly 1 Row, 32px height, DENTE Tokens */}
+				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-[var(--line)]">
+					<div className="min-w-0">
 						<h3 className="text-sm font-bold text-[var(--ink)] uppercase tracking-wider m-0 flex items-center gap-2">
-							<FileText className="w-4 h-4 text-teal-600 dark:text-teal-400" aria-hidden="true" />
-							<span>Официальная документация пациента</span>
+							<FileText className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" aria-hidden="true" />
+							<span className="truncate">Официальная документация пациента</span>
 						</h3>
-						<p className="text-xs text-[var(--muted)] m-0 mt-0.5">
+						<p className="text-xs text-[var(--muted)] m-0 mt-0.5 truncate hidden sm:block">
 							Медицинские карты, договоры на оказание услуг, согласия (ИДС) и налоговые справки.
 						</p>
 					</div>
 
-					{/* Blanks Quick Bar */}
-					<div className="flex items-center gap-2 flex-wrap">
+					{/* Unified Action Bar: 1 Primary CTA + Clean Dropdown */}
+					<div className="flex items-center gap-2 shrink-0">
+						{/* Primary CTA: Векторная печать */}
 						<button
 							type="button"
 							onClick={() => {
 								setFastPrintDocType("form043u");
 								setIsFastPrintOpen(true);
 							}}
-							className="h-8 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+							className="h-8 min-h-[32px] px-3 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs shrink-0 active:scale-95"
 							data-testid="btn-fast-vector-print-hub"
 							title="Мгновенная векторная печать карты, акта и сметы (0 мс / без зависаний)"
 						>
-							<Printer size={13} />
+							<Printer size={13} className="shrink-0" />
 							<span>Векторная печать (0 мс)</span>
 						</button>
 
-						<button
-							type="button"
-							onClick={() => void printBlankMedicalContract(patient)}
-							className="h-8 px-3 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-							data-testid="btn-print-blank-contract"
-							title="Печать чистого бланка договора со строками заполнения"
-						>
-							<FileText size={13} className="text-teal-600 dark:text-teal-400" />
-							<span>Бланк договора</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => void printBlankMedicalConsent(patient)}
-							className="h-8 px-3 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-							data-testid="btn-print-blank-consent"
-							title="Печать чистого бланка информированного добровольного согласия (ИДС)"
-						>
-							<ShieldCheck size={13} className="text-teal-600 dark:text-teal-400" />
-							<span>Бланк ИДС</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => {
-								setFastPrintDocType("partisan_insert_043u");
-								setIsFastPrintOpen(true);
-							}}
-							className="h-8 px-3 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-							data-testid="btn-patient-print-insert"
-							title="Распечатать вкладыш в амбулаторную медицинскую карту"
-						>
-							<Printer size={13} />
-							<span>Вкладыш в карту</span>
-						</button>
-
-						{onPrintOutpatientCard && (
+						{/* Dropdown: Печать бланков ▾ */}
+						<div className="relative" ref={blanksMenuRef}>
 							<button
 								type="button"
-								onClick={() => {
-									setFastPrintDocType("form043u");
-									setIsFastPrintOpen(true);
-								}}
-								className="h-8 px-3 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-								data-testid="btn-print-outpatient-card"
-								title="Печать выписки из амбулаторной медицинской карты"
+								onClick={() => setIsBlanksMenuOpen((prev) => !prev)}
+								aria-expanded={isBlanksMenuOpen}
+								className={`h-8 min-h-[32px] px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs hover:border-[var(--teal,#0d9488)] shrink-0 active:scale-95 ${
+									isBlanksMenuOpen ? "border-[var(--teal,#0d9488)] bg-[var(--paper-soft)]" : ""
+								}`}
+								data-testid="btn-print-blanks-menu"
+								title="Печать чистых медицинских бланков и выписок"
 							>
-								<Printer size={13} />
-								<span>Выписка из карты</span>
+								<FileText size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+								<span>Печать бланков</span>
+								<ChevronDown
+									size={12}
+									className={`text-[var(--muted)] transition-transform duration-150 ${
+										isBlanksMenuOpen ? "rotate-180" : ""
+									}`}
+								/>
 							</button>
-						)}
+
+							{/* Dropdown Popover */}
+							{isBlanksMenuOpen && (
+								<div
+									className="absolute right-0 top-full mt-1.5 z-50 min-w-[230px] p-1.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-xl animate-in fade-in zoom-in-95"
+									data-testid="menu-print-blanks-dropdown"
+								>
+									<button
+										type="button"
+										onClick={() => {
+											setIsBlanksMenuOpen(false);
+											void printBlankMedicalContract(patient);
+										}}
+										className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
+										data-testid="btn-print-blank-contract"
+										title="Печать чистого бланка договора со строками заполнения"
+									>
+										<FileText size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+										<span className="truncate">Бланк договора</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => {
+											setIsBlanksMenuOpen(false);
+											void printBlankMedicalConsent(patient);
+										}}
+										className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
+										data-testid="btn-print-blank-consent"
+										title="Печать чистого бланка информированного добровольного согласия (ИДС)"
+									>
+										<ShieldCheck size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+										<span className="truncate">Бланк ИДС</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => {
+											setIsBlanksMenuOpen(false);
+											setFastPrintDocType("partisan_insert_043u");
+											setIsFastPrintOpen(true);
+										}}
+										className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
+										data-testid="btn-patient-print-insert"
+										title="Распечатать вкладыш в амбулаторную медицинскую карту"
+									>
+										<Printer size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+										<span className="truncate">Вкладыш в карту 043/у</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => {
+											setIsBlanksMenuOpen(false);
+											if (onPrintOutpatientCard) {
+												onPrintOutpatientCard();
+											} else {
+												setFastPrintDocType("form043u");
+												setIsFastPrintOpen(true);
+											}
+										}}
+										className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
+										data-testid="btn-print-outpatient-card"
+										title="Печать выписки из амбулаторной медицинской карты"
+									>
+										<FileText size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+										<span className="truncate">Выписка из карты</span>
+									</button>
+								</div>
+							)}
+						</div>
 					</div>
 				</div>
 

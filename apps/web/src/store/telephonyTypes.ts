@@ -1,3 +1,7 @@
+import type { TelephonyPatientLike, DashboardResponse } from "@dental/shared";
+export type PatientRecord = TelephonyPatientLike;
+export type { DashboardResponse, TelephonyPatientLike };
+
 export type TelephonyProvider =
 	| "mango"
 	| "uis"
@@ -12,6 +16,10 @@ export type TelephonyCallStatus =
 	| "ended"
 	| "rejected"
 	| "missed";
+export type CallStatus = TelephonyCallStatus;
+export type CallDirection = "inbound" | "outbound";
+export type AgentPresenceState = "available" | "busy" | "away" | "offline";
+export type PatientCategory = "vip" | "primary" | "regular" | "debtor" | "risk";
 export type PlaybackSpeed = 1 | 1.25 | 1.5 | 2;
 export type CallTransferType = "blind" | "attended";
 
@@ -31,6 +39,7 @@ export interface SpeechTranscriptUtterance {
 	confidence: number;
 	sentiment: "neutral" | "positive" | "negative";
 }
+export type CallTranscriptUtterance = SpeechTranscriptUtterance;
 
 export interface IncomingCallPayload {
 	id?: string | undefined;
@@ -57,12 +66,16 @@ export interface IncomingCallPayload {
 	advertisingChannel?: string | undefined;
 	leadId?: string | null | undefined;
 	isLeadCaptured?: boolean | undefined;
+	direction?: CallDirection | undefined;
+	actionTaken?: string | undefined;
+	outcome?: CallOutcome | undefined;
 }
 
 export type TelephonyCallPayload = IncomingCallPayload;
 
 export type CallOutcome =
 	| "booked"
+	| "consultation_booked"
 	| "callback_15m"
 	| "consultation"
 	| "spam"
@@ -93,6 +106,17 @@ export const CALL_OUTCOME_REGISTRY: Record<CallOutcome, CallOutcomeConfig> = {
 		badgeBorder: "rgba(13, 148, 136, 0.35)",
 		descriptionRu:
 			"Пациент успешно записан в расписание на консультацию или лечение",
+	},
+	consultation_booked: {
+		id: "consultation_booked",
+		label: "Записан на консультацию",
+		shortLabel: "Записан (конс.)",
+		iconName: "CalendarCheck",
+		color: "#0d9488",
+		badgeBg: "rgba(13, 148, 136, 0.12)",
+		badgeBorder: "rgba(13, 148, 136, 0.35)",
+		descriptionRu:
+			"Пациент успешно записан в расписание на консультационный приём",
 	},
 	callback_15m: {
 		id: "callback_15m",
@@ -175,7 +199,8 @@ export const CALL_OUTCOME_PRESETS = CALL_OUTCOME_REGISTRY;
 export interface CallHistoryItem extends IncomingCallPayload {
 	id: string;
 	status: TelephonyCallStatus;
-	actionTaken?: CallOutcome | undefined;
+	direction?: CallDirection | undefined;
+	actionTaken?: CallOutcome | string | undefined;
 	outcome?: CallOutcome | undefined;
 	outcomeNote?: string | undefined;
 	transferTarget?: string | undefined;
@@ -251,6 +276,7 @@ export interface TelephonyStore {
 	playRecording: (url: string) => void;
 	stopRecording: () => void;
 	clearHistory: () => void;
+	fetchCallHistory: () => Promise<void>;
 }
 
 export interface PatientUpcomingAppointmentSummary {
@@ -266,6 +292,7 @@ export interface PatientUpcomingAppointmentSummary {
 	readonly isToday: boolean;
 	readonly isTomorrow: boolean;
 }
+export type PatientUpcomingAppointment = PatientUpcomingAppointmentSummary;
 
 export interface PatientSomaticAlert {
 	readonly id: string;
@@ -326,6 +353,7 @@ export interface PatientActiveTreatmentPlanSummary {
 	readonly progressPercent: number;
 	readonly nextService: string | null;
 }
+export type PatientTreatmentPlanSummary = PatientActiveTreatmentPlanSummary;
 
 export interface CallerIdentificationResult {
 	readonly isKnownPatient: boolean;
@@ -343,4 +371,32 @@ export interface CallerIdentificationResult {
 }
 
 export type TelephonyPatientCategory = "VIP" | "Постоянный" | "Первичный";
+
+export interface CallerLookupResult {
+	found: boolean;
+	patient: {
+		id: string;
+		fullName: string;
+		phone: string | null;
+		birthDate: string | null;
+		notes: string | null;
+		status: string;
+		administrativeProfile?: Record<string, unknown> | null;
+	} | null;
+	lead: {
+		id: string;
+		name: string;
+		phone: string;
+		status: string;
+		source: string | null;
+	} | null;
+	financialSummary: PatientFinancialSummary;
+	upcomingAppointment: PatientUpcomingAppointmentSummary | null;
+	lastVisitSummary: PatientLastVisitSummary | null;
+	somaticAlerts: PatientSomaticAlert[];
+	allergyAlerts: PatientSomaticAlert[];
+	acutePainAlerts: PatientSomaticAlert[];
+	activeTreatmentPlan: PatientActiveTreatmentPlanSummary;
+	patientCategory: TelephonyPatientCategory;
+}
 
