@@ -1,6 +1,8 @@
+import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { and, eq } from "drizzle-orm";
+import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
+import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
@@ -12,7 +14,7 @@ import { getRequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { db } from "../../db/client.js";
-import { users, visitDiaries, visits } from "../../db/schema.js";
+import { doctorShiftRosters, users, visitDiaries, visits } from "../../db/schema.js";
 import {
 	DiarySigningError,
 	type DiarySigningResult,
@@ -76,7 +78,7 @@ export async function registerDiaryCrudRoutes(app: FastifyInstance): Promise<voi
 		 * как новый приём. СТАЛО: visit ∉ org → 404; пустой дневник — null.
 		 */
 		const [visitRow] = await db
-			.select({ id: visits.id, patientId: visits.patientId })
+			.select()
 			.from(visits)
 			.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
 			.limit(1);
@@ -98,7 +100,26 @@ export async function registerDiaryCrudRoutes(app: FastifyInstance): Promise<voi
 				),
 			);
 
+		const autosaveDraft = (((visitRow.draftAutosave as Record<string, any> | null)?.draft as Record<string, string | null | undefined> | undefined) ?? {});
+		const fallbackComplaint = visitRow.complaint || autosaveDraft.complaint || "";
+		const fallbackAnamnesis = visitRow.anamnesis || autosaveDraft.anamnesis || "";
+		const fallbackObjectiveStatus = visitRow.objectiveStatus || autosaveDraft.objectiveStatus || "";
+		const fallbackDiagnosis = visitRow.diagnosis || autosaveDraft.diagnosis || "";
+		const fallbackTreatmentPlan = visitRow.treatmentPlan || autosaveDraft.treatmentPlan || "";
+
 		if (!diary) {
+			if (fallbackAnamnesis || fallbackObjectiveStatus || fallbackDiagnosis || fallbackTreatmentPlan || fallbackComplaint) {
+				return reply.send({
+					diary: {
+						id: null, organizationId: orgId, visitId: visitRow.id, patientId: visitRow.patientId,
+						anamnesis: [fallbackComplaint, fallbackAnamnesis].filter(Boolean).join("\n\n") || "",
+						statusLocalis: fallbackObjectiveStatus, diagnosisIcd10: fallbackDiagnosis, diagnosisTooth: "",
+						treatmentDescription: fallbackTreatmentPlan, complications: "", comorbidities: "", content: "",
+						isLocked: false, lockedAt: null, diaryHash: null, instrumentTrayBarcode: null, version: 1,
+						cryptoSignaturePkcs7: null, isSynced: false, createdAt: visitRow.createdAt, updatedAt: visitRow.updatedAt,
+					},
+				});
+			}
 			return reply.send({ diary: null });
 		}
 
@@ -396,6 +417,23 @@ export async function registerDiaryCrudRoutes(app: FastifyInstance): Promise<voi
 					diaryId = insertedId;
 				}
 
+				// СИНХРОНИЗАЦИЯ SSOT (Мандат 8e/8h): Зеркалируем клинические поля в visits
+				const visitSyncData: Record<string, any> = { updatedAt: new Date() };
+				if (data.anamnesis !== undefined) visitSyncData.anamnesis = data.anamnesis;
+				if (data.statusLocalis !== undefined) visitSyncData.objectiveStatus = data.statusLocalis;
+				if (data.diagnosisIcd10 !== undefined) visitSyncData.diagnosis = data.diagnosisIcd10;
+				if (data.treatmentDescription !== undefined) visitSyncData.treatmentPlan = data.treatmentDescription;
+
+				await tx
+					.update(visits)
+					.set(visitSyncData)
+					.where(
+						and(
+							eq(visits.id, data.visitId),
+							eq(visits.organizationId, orgId),
+						),
+					);
+
 				if (!isSigning) {
 					/*
 					 * Отпечаток содержимого черновика — до подписания.
@@ -481,6 +519,7 @@ export async function registerDiaryCrudRoutes(app: FastifyInstance): Promise<voi
 					userId,
 					organizationId: orgId,
 					diaryHashForMark: null,
+					executor: tx,
 				});
 				if (!resolvedPost.ok) {
 					throw new DiarySigningError(
@@ -678,63 +717,77 @@ export async function registerDiaryCrudRoutes(app: FastifyInstance): Promise<voi
 		return reply.send({ success: true });
 	});
 
-	// Doctor Shifts Persistence (Schedule & Roster sync, Mandates 8e, 8n)
-	const getShiftsFilePath = (): string => {
-		const dataDir = path.resolve(process.cwd(), ".data");
-		if (!fs.existsSync(dataDir)) {
-			try {
-				fs.mkdirSync(dataDir, { recursive: true });
-			} catch (err: unknown) {
-				app.log.warn({ err }, "[diaryRoutes] Failed to create .data directory for doctor shifts");
-			}
-		}
-		return path.join(dataDir, "doctor-shifts.json");
-	};
-
-	let inMemoryShiftsCache: Array<Record<string, unknown>> = [];
-
+	// Doctor Shifts Persistence (Schedule & Roster sync in PostgreSQL 18, Mandates 8e, 8n)
 	const handleDoctorShiftsGet = async (
-		_req: FastifyRequest,
-		reply: FastifyReply,
-	) => {
-		try {
-			const filePath = getShiftsFilePath();
-			if (fs.existsSync(filePath)) {
-				const content = fs.readFileSync(filePath, "utf-8");
-				const parsed = JSON.parse(content);
-				if (Array.isArray(parsed)) {
-					return reply.send({ ok: true, shifts: parsed });
-				}
-			}
-			return reply.send({ ok: true, shifts: inMemoryShiftsCache });
-		} catch {
-			return reply.send({ ok: true, shifts: inMemoryShiftsCache });
-		}
-	};
-
-	const handleDoctorShiftsPost = async (
 		req: FastifyRequest,
 		reply: FastifyReply,
 	) => {
+		const orgId = (await resolveOrganizationId(req)) || DEMO_SHOWCASE_ORG_ID;
+
+		const rows = await db
+			.select()
+			.from(doctorShiftRosters)
+			.where(eq(doctorShiftRosters.organizationId, orgId));
+
+		const shifts = rows.map((s) => ({
+			id: s.id,
+			doctorId: s.doctorId,
+			doctorName: s.doctorName,
+			cabinetId: s.cabinetId ?? "",
+			chairId: s.chairId ?? "",
+			dateIso: s.dateIso,
+			startTime: s.startTime,
+			endTime: s.endTime,
+			role: s.role ?? undefined,
+			specialty: s.specialty ?? undefined,
+		}));
+
+		return reply.send({ ok: true, shifts });
+	};
+
+	const handleDoctorShiftsPost = async (req: FastifyRequest, reply: FastifyReply) => {
+		const orgId = (await resolveOrganizationId(req)) || DEMO_SHOWCASE_ORG_ID;
 		const parsed = shiftsPayloadSchema.safeParse(req.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message:
-					"Некорректная структура смен врачей (поле shifts обязательно).",
+				message: "Некорректная структура смен врачей (поле shifts обязательно).",
 			});
 		}
 		const { shifts } = parsed.data;
-		inMemoryShiftsCache = shifts as unknown as Array<Record<string, unknown>>;
-		try {
-			const filePath = getShiftsFilePath();
-			fs.writeFileSync(filePath, JSON.stringify(shifts, null, 2), "utf-8");
-		} catch (err) {
-			req.log.warn(
-				{ err },
-				"Could not persist doctor-shifts.json to disk; using in-memory cache",
-			);
-		}
+		const rawObj = (req.body && typeof req.body === "object" ? req.body : {}) as Record<string, unknown>;
+		const explicitDate = typeof rawObj.dateIso === "string" ? rawObj.dateIso.trim() : "";
+		const targetDates = Array.from(
+			new Set([...shifts.map((s) => s.dateIso), explicitDate].filter(Boolean)),
+		);
+
+		await db.transaction(async (tx) => {
+			const deleteCond =
+				rawObj.replaceAll !== true && targetDates.length > 0
+					? and(eq(doctorShiftRosters.organizationId, orgId), inArray(doctorShiftRosters.dateIso, targetDates))
+					: eq(doctorShiftRosters.organizationId, orgId);
+			await tx.delete(doctorShiftRosters).where(deleteCond);
+
+			if (shifts.length > 0) {
+				await tx.insert(doctorShiftRosters).values(
+					shifts.map((s) => ({
+						id: s.id || randomUUID(),
+						organizationId: orgId,
+						doctorId: s.doctorId,
+						doctorName: s.doctorName,
+						cabinetId: s.cabinetId || null,
+						chairId: s.chairId || null,
+						dateIso: s.dateIso,
+						startTime: s.startTime,
+						endTime: s.endTime,
+						role: (s as any).role || null,
+						specialty: (s as any).specialty || null,
+						updatedAt: new Date(),
+					})),
+				);
+			}
+		});
+
 		return reply.send({ ok: true, savedCount: shifts.length });
 	};
 

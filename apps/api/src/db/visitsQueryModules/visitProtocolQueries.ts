@@ -45,12 +45,7 @@ export async function getVisitDraftAutosaveFromDb(
 	const [visit] = await db
 		.select()
 		.from(schema.visits)
-		.where(
-			and(
-				eq(schema.visits.id, visitId),
-				eq(schema.visits.organizationId, organizationId),
-			),
-		)
+		.where(and(eq(schema.visits.id, visitId), eq(schema.visits.organizationId, organizationId)))
 		.limit(1);
 	if (!visit) return { outcome: "visit_absent" };
 	if (visit.status !== "draft") {
@@ -112,19 +107,10 @@ export async function upsertVisitDraftAutosaveInDb(
 			.for("update")
 			.limit(1);
 		if (!visit) throw new Error("Визит не найден");
-		if (visit.status === "voided")
+		if (visit.status === "voided" || visit.status === "signed")
 			throw new Error("Прием уже закрыт или аннулирован");
 
 		const existingDraftAutosave = (visit.draftAutosave as any) || {};
-
-		// Защита от гонки: если визит уже подписан и фоновое автосохранение пришло
-		// с устаревшей до-подписанной ревизией (input.baseRevision < visit.revision),
-		// мы не должны перезаписывать и откатывать черновик подписанного приема.
-		const isStaleAutosaveOnSigned =
-			visit.status === "signed" &&
-			input.baseRevision !== null &&
-			input.baseRevision !== undefined &&
-			input.baseRevision < visit.revision;
 
 		const serverDraft: VisitDraftAutosave & {
 			lastAcceptedMutationId?: string | null;
@@ -133,11 +119,9 @@ export async function upsertVisitDraftAutosaveInDb(
 			visitId: input.visitId,
 			patientId: input.patientId,
 			selectedSpecialty: input.selectedSpecialty,
-			transcript: isStaleAutosaveOnSigned ? visit.transcript || "" : input.transcript,
-			draft: isStaleAutosaveOnSigned
-				? (existingDraftAutosave.draft || input.draft)
-				: input.draft,
-			baseRevision: isStaleAutosaveOnSigned ? visit.revision : (input.baseRevision ?? null),
+			transcript: input.transcript,
+			draft: input.draft,
+			baseRevision: input.baseRevision ?? null,
 			clientDraftId: input.clientDraftId?.trim() || null,
 			clientSavedAt: input.clientSavedAt ?? null,
 			serverSavedAt: new Date().toISOString(),
@@ -161,10 +145,6 @@ export async function upsertVisitDraftAutosaveInDb(
 				: {}),
 		};
 
-		if (isStaleAutosaveOnSigned) {
-			return serverDraft;
-		}
-
 		/*
 		 * БЫЛО: `.where(eq(schema.visits.id, input.visitId))` без organizationId и без
 		 * проверки RETURNING. SELECT выше уже фильтрует по клинике, но между SELECT и
@@ -175,23 +155,51 @@ export async function upsertVisitDraftAutosaveInDb(
 		 * дальше, а после перезагрузки дневник был пуст.
 		 * СТАЛО: organizationId в WHERE + пустой RETURNING → throw (маршрут честный).
 		 */
+		const now = new Date();
+		const nextComplaint = input.draft.complaint?.trim() || visit.complaint || null;
+		const nextAnamnesis = input.draft.anamnesis?.trim() || visit.anamnesis || null;
+		const nextObjectiveStatus = input.draft.objectiveStatus?.trim() || visit.objectiveStatus || null;
+		const nextDiagnosis = input.draft.diagnosis?.trim() || visit.diagnosis || null;
+		const nextTreatmentPlan = input.draft.treatmentPlan?.trim() || visit.treatmentPlan || null;
+
 		const [saved] = await tx
 			.update(schema.visits)
 			.set({
-				draftAutosave: serverDraft,
-				transcript: input.transcript,
-				updatedAt: new Date(),
+				draftAutosave: serverDraft, transcript: input.transcript, complaint: nextComplaint,
+				anamnesis: nextAnamnesis, objectiveStatus: nextObjectiveStatus,
+				diagnosis: nextDiagnosis, treatmentPlan: nextTreatmentPlan, updatedAt: now,
 			})
-			.where(
-				and(
-					eq(schema.visits.organizationId, organizationId),
-					eq(schema.visits.id, input.visitId),
-				),
-			)
+			.where(and(eq(schema.visits.organizationId, organizationId), eq(schema.visits.id, input.visitId)))
 			.returning({ id: schema.visits.id });
 
-		if (!saved) {
-			throw new Error("Визит не найден");
+		if (!saved) throw new Error("Визит не найден");
+
+		if (nextComplaint || nextAnamnesis || nextObjectiveStatus || nextDiagnosis || nextTreatmentPlan) {
+			const [existingDiary] = await tx
+				.select()
+				.from(schema.visitDiaries)
+				.where(and(eq(schema.visitDiaries.visitId, input.visitId), eq(schema.visitDiaries.organizationId, organizationId)))
+				.limit(1);
+			const combinedAnamnesis = [nextComplaint, nextAnamnesis].filter(Boolean).join("\n\n");
+			if (existingDiary && !existingDiary.isLocked) {
+				await tx
+					.update(schema.visitDiaries)
+					.set({
+						anamnesis: combinedAnamnesis || existingDiary.anamnesis,
+						statusLocalis: nextObjectiveStatus || existingDiary.statusLocalis,
+						diagnosisIcd10: nextDiagnosis || existingDiary.diagnosisIcd10,
+						treatmentDescription: nextTreatmentPlan || existingDiary.treatmentDescription,
+						updatedAt: now,
+					})
+					.where(and(eq(schema.visitDiaries.id, existingDiary.id), eq(schema.visitDiaries.organizationId, organizationId), eq(schema.visitDiaries.isLocked, false)));
+			} else if (!existingDiary) {
+				await tx.insert(schema.visitDiaries).values({
+					organizationId, visitId: input.visitId, patientId: visit.patientId,
+					anamnesis: combinedAnamnesis || "", statusLocalis: nextObjectiveStatus || "",
+					diagnosisIcd10: nextDiagnosis || "", treatmentDescription: nextTreatmentPlan || "",
+					content: "", isLocked: false, version: 1, createdAt: now, updatedAt: now,
+				});
+			}
 		}
 
 		return serverDraft;
@@ -357,48 +365,39 @@ export async function acceptVisitDraftInDb(
 		// случилось, и обычный доменный отказ здесь правдив.
 		if (!signedRow) throw new Error("Прием не подписан");
 
-		// В частной стоматологии врач свободно вносит исправления в закрытый прием («Исправленному верить»).
-		// Создаем версионную запись аудита в visit_diary_revisions, если есть привязанный дневник:
-		if (isAmendingSigned) {
-			const [existingDiary] = await tx
-				.select()
-				.from(schema.visitDiaries)
-				.where(
-					and(
-						eq(schema.visitDiaries.visitId, input.visitId),
-						eq(schema.visitDiaries.organizationId, organizationId),
-					),
-				)
-				.limit(1);
+		// СИНХРОНИЗАЦИЯ SSOT (Мандат 8e/8h): Всегда синхронизируем visitDiaries при подписании
+		const [existingDiary] = await tx
+			.select()
+			.from(schema.visitDiaries)
+			.where(and(eq(schema.visitDiaries.visitId, input.visitId), eq(schema.visitDiaries.organizationId, organizationId)))
+			.limit(1);
 
-			if (existingDiary) {
+		if (existingDiary) {
+			if (isAmendingSigned) {
 				await tx.insert(schema.visitDiaryRevisions).values({
-					organizationId,
-					diaryId: existingDiary.id,
-					previousAnamnesis: existingDiary.anamnesis,
-					previousStatusLocalis: existingDiary.statusLocalis,
-					previousDiagnosisIcd10: existingDiary.diagnosisIcd10,
-					previousTreatmentDescription: existingDiary.treatmentDescription,
-					previousComplications: existingDiary.complications,
-					previousComorbidities: existingDiary.comorbidities,
-					previousInstrumentTrayBarcode: existingDiary.instrumentTrayBarcode,
-					revisionReason: "Исправленному верить",
-					revisedByUserId: existingDiary.authorId ?? null,
-					revisedAt: savedAt,
+					organizationId, diaryId: existingDiary.id,
+					previousAnamnesis: existingDiary.anamnesis, previousStatusLocalis: existingDiary.statusLocalis,
+					previousDiagnosisIcd10: existingDiary.diagnosisIcd10, previousTreatmentDescription: existingDiary.treatmentDescription,
+					previousComplications: existingDiary.complications, previousComorbidities: existingDiary.comorbidities,
+					previousInstrumentTrayBarcode: existingDiary.instrumentTrayBarcode, revisionReason: "Исправленному верить",
+					revisedByUserId: existingDiary.authorId ?? null, revisedAt: savedAt,
 				});
-
-				await tx
-					.update(schema.visitDiaries)
-					.set({
-						anamnesis: input.draft.anamnesis,
-						statusLocalis: input.draft.objectiveStatus,
-						treatmentDescription: input.draft.treatmentPlan,
-						diagnosisIcd10: input.draft.diagnosis,
-						version: (existingDiary.version ?? 1) + 1,
-						updatedAt: savedAt,
-					})
-					.where(eq(schema.visitDiaries.id, existingDiary.id));
 			}
+			await tx
+				.update(schema.visitDiaries)
+				.set({
+					anamnesis: input.draft.anamnesis, statusLocalis: input.draft.objectiveStatus,
+					treatmentDescription: input.draft.treatmentPlan, diagnosisIcd10: input.draft.diagnosis,
+					version: (existingDiary.version ?? 1) + 1, updatedAt: savedAt,
+				})
+				.where(eq(schema.visitDiaries.id, existingDiary.id));
+		} else {
+			await tx.insert(schema.visitDiaries).values({
+				organizationId, visitId: input.visitId, patientId: visit.patientId,
+				anamnesis: input.draft.anamnesis, statusLocalis: input.draft.objectiveStatus,
+				diagnosisIcd10: input.draft.diagnosis, treatmentDescription: input.draft.treatmentPlan,
+				content: "", isLocked: false, version: 1, createdAt: savedAt, updatedAt: savedAt,
+			});
 		}
 
 		let deductionWarning: string | null = null;

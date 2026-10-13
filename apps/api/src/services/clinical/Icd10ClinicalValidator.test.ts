@@ -65,37 +65,12 @@ describe("Icd10ClinicalValidator — Clinical Protocol & EMR Integrity", () => {
 	describe("2. Dental ICD-10 Section Verification (K00–K14 & Dental Z-Codes)", () => {
 		it("accepts all valid dental rubrics from K00 to K14", () => {
 			const validCodes = [
-				"K00.0", // Адентия
-				"K01.1", // Ретенированный зуб
-				"K02.0", // Кариес эмали
-				"K02.1", // Кариес дентина
-				"K02.2", // Кариес цемента
-				"K03.0", // Патологическая стираемость
-				"K03.1", // Клиновидный дефект
-				"K04.0", // Пульпит
-				"K04.02", // Гнойный пульпит
-				"K04.4", // Острый апикальный периодонтит
-				"K04.5", // Хронический апикальный периодонтит
-				"K04.6", // Периапикальный абсцесс со свищом
-				"K04.7", // Периапикальный абсцесс без свища
-				"K05.0", // Острый гингивит
-				"K05.1", // Хронический гингивит
-				"K05.2", // Пародонтит острый
-				"K05.3", // Пародонтит хронический
-				"K05.4", // Пародонтоз
-				"K06.0", // Рецессия десны
-				"K07.2", // Аномалии прикуса
-				"K07.6", // Синдром ВНЧС
-				"K08.1", // Потеря зубов (адентия)
-				"K09.0", // Одонтогенная киста
-				"K10.2", // Периостит челюсти
-				"K10.3", // Альвеолит
-				"K11.5", // Слюннокаменная болезнь
-				"K12.0", // Афтозный стоматит
-				"K13.0", // Хейлит
-				"K14.0", // Глоссит
+				"K00.0", "K01.1", "K02.0", "K02.1", "K02.2", "K03.0", "K03.1",
+				"K04.0", "K04.02", "K04.4", "K04.5", "K04.6", "K04.7",
+				"K05.0", "K05.1", "K05.2", "K05.3", "K05.4", "K06.0",
+				"K07.2", "K07.6", "K08.1", "K09.0", "K10.2", "K10.3",
+				"K11.5", "K12.0", "K13.0", "K14.0",
 			];
-
 			for (const code of validCodes) {
 				assert.equal(
 					Icd10ClinicalValidator.isDentalIcd10(code),
@@ -472,6 +447,36 @@ describe("Icd10ClinicalValidator — Clinical Protocol & EMR Integrity", () => {
 			assert.equal(resBad.isValid, false);
 			if (!resBad.isValid) {
 				assert.equal(resBad.errorCode, "ToothInvalid");
+			}
+		});
+
+		it("extracts ICD-10 code and embedded FDI tooth from human-readable clinical diagnosis strings", () => {
+			const resNorma = Icd10ClinicalValidator.validate(
+				"Z01.2 Стоматологическое обследование (Норма)",
+			);
+			assert.equal(resNorma.isValid, true);
+			if (resNorma.isValid) {
+				assert.equal(resNorma.normalizedCode, "Z01.2");
+			}
+
+			const resCariesWithEmbeddedTooth = Icd10ClinicalValidator.validate(
+				"Зуб 36: K02.1 — Кариес дентина (средний/глубокий кариес)",
+				"",
+			);
+			assert.equal(resCariesWithEmbeddedTooth.isValid, true);
+			if (resCariesWithEmbeddedTooth.isValid) {
+				assert.equal(resCariesWithEmbeddedTooth.normalizedCode, "K02.1");
+				assert.deepEqual(resCariesWithEmbeddedTooth.parsedTeeth, [36]);
+			}
+
+			const resPrefixTooth = Icd10ClinicalValidator.validate(
+				"46: K04.0 Пульпит",
+				null,
+			);
+			assert.equal(resPrefixTooth.isValid, true);
+			if (resPrefixTooth.isValid) {
+				assert.equal(resPrefixTooth.normalizedCode, "K04.0");
+				assert.deepEqual(resPrefixTooth.parsedTeeth, [46]);
 			}
 		});
 	});

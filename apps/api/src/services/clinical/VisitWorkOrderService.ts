@@ -576,65 +576,49 @@ export class VisitWorkOrderService {
 			// 1. Проверка существования и доступности приёма с блокировкой FOR UPDATE
 			const [visit] = await tx
 				.select({
-					id: visits.id,
-					organizationId: visits.organizationId,
-					patientId: visits.patientId,
-					status: visits.status,
+					id: visits.id, organizationId: visits.organizationId, patientId: visits.patientId,
+					status: visits.status, signedAt: visits.signedAt, complaint: visits.complaint,
+					anamnesis: visits.anamnesis, objectiveStatus: visits.objectiveStatus,
+					diagnosis: visits.diagnosis, treatmentPlan: visits.treatmentPlan, draftAutosave: visits.draftAutosave,
 				})
 				.from(visits)
-				.where(
-					and(
-						eq(visits.id, visitId),
-						eq(visits.organizationId, organizationId),
-					),
-				)
+				.where(and(eq(visits.id, visitId), eq(visits.organizationId, organizationId)))
 				.limit(1)
 				.for("update");
 
 			if (!visit) {
-				throw new VisitWorkOrderError(
-					"VISIT_NOT_FOUND",
-					"Приём не найден.",
-					404,
-				);
+				throw new VisitWorkOrderError("VISIT_NOT_FOUND", "Приём не найден.", 404);
 			}
-
-			if (visit.status === "signed" || visit.status === "voided") {
+			if (visit.status === "voided" || visit.status === "cancelled") {
 				throw new VisitWorkOrderError(
 					"VISIT_CLOSED",
-					"Нельзя списать материалы и завершить уже подписанный или аннулированный приём.",
+					"Нельзя списать материалы и завершить аннулированный приём.",
 					409,
 				);
 			}
 
-			// 2. Атомарное списание расходных материалов со склада клиники
+			// 2. Атомарное списание расходных материалов со склада клиники (идемпотентно для уже закрытых позиций)
 			const deductionResult = await deductMaterialsForVisit(tx, {
-				organizationId,
-				visitId: visit.id,
-				userId: actorUserId ?? null,
-				transactionType: "auto_deduct",
+				organizationId, visitId: visit.id, userId: actorUserId ?? null, transactionType: "auto_deduct",
 			});
 
-			// 3. Атомарная фиксация статуса визита
+			// 3. Атомарная фиксация статуса визита и синхронизация полей черновика
 			const now = new Date();
-			const finalStatus =
-				status === "completed"
-					? "signed"
-					: status === "in_progress"
-						? "draft"
-						: status;
+			const finalStatus = status === "completed" ? "signed" : status === "in_progress" ? "draft" : status;
+			const autosaveDraft = ((visit.draftAutosave as Record<string, any> | null)?.draft as Record<string, string | null | undefined> | undefined) ?? {};
 			await tx
 				.update(visits)
 				.set({
 					status: finalStatus,
+					signedAt: visit.signedAt ?? (finalStatus === "signed" ? now : null),
+					complaint: visit.complaint || autosaveDraft.complaint || null,
+					anamnesis: visit.anamnesis || autosaveDraft.anamnesis || null,
+					objectiveStatus: visit.objectiveStatus || autosaveDraft.objectiveStatus || null,
+					diagnosis: visit.diagnosis || autosaveDraft.diagnosis || null,
+					treatmentPlan: visit.treatmentPlan || autosaveDraft.treatmentPlan || null,
 					updatedAt: now,
 				})
-				.where(
-					and(
-						eq(visits.id, visit.id),
-						eq(visits.organizationId, organizationId),
-					),
-				);
+				.where(and(eq(visits.id, visit.id), eq(visits.organizationId, organizationId)));
 
 			// 4. Юридический след в клиническом журнале аудита
 			await tx.insert(clinicalAuditLogs).values({

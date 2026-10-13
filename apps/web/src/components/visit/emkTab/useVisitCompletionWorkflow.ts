@@ -2,19 +2,12 @@ import React from "react";
 import { logger } from "../../../utils/logger";
 import { showToast } from "../../GlobalToast";
 import { staffTelemetryService } from "../../../services/logging/staffTelemetryService";
-import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
-import { fetchWithHandling } from "../../../utils/networkUtils";
-import { useInventoryStore } from "../../../store/inventoryStore";
-import {
-	mapVisitUiStateToToothDataState,
-	inferToothStateFromService,
-} from "../../../store/visitStore";
 import {
 	type ClinicalVisitCompletionResult,
 	completeClinicalVisitAndAssembleEstimate,
 } from "../clinicalVisitWorkflow";
 import { assembleVisitStoreCompletedServices } from "../useVisitCompletion";
-import { performAutoVisitBomDeduction } from "../../inventory/autoBomDeductionEngine";
+import { executeVisitPostCompletionPipeline } from "../completionModules/visitCompletionPipeline";
 
 export interface UseVisitCompletionWorkflowOptions {
 	openVisitId: string;
@@ -36,10 +29,12 @@ export function useVisitCompletionWorkflow({
 	const [isCompletingVisit, setIsCompletingVisit] = React.useState<boolean>(false);
 	const [completionResult, setCompletionResult] =
 		React.useState<ClinicalVisitCompletionResult | null>(null);
+	const [completionError, setCompletionError] = React.useState<string | null>(null);
 	const [isSbpQrModalOpen, setIsSbpQrModalOpen] = React.useState<boolean>(false);
 
 	const handleCompleteVisitAndGenerateReceipt = React.useCallback(async () => {
 		setIsCompletingVisit(true);
+		setCompletionError(null);
 		try {
 			try {
 				await flushSoloPendingSave();
@@ -72,12 +67,17 @@ export function useVisitCompletionWorkflow({
 			};
 
 			const additionalServices = assembleVisitStoreCompletedServices();
+			const effectiveVisitId = openVisitId || `VIS-${Date.now()}`;
+			const effectivePatientId = activePatient?.id || "pat-default";
+			const effectivePatientName = activePatient?.fullName || "Пациент";
+			const effectiveDoctorName =
+				dashboard?.activeDoctor?.fullName || "Лечащий врач";
 
 			const result = await completeClinicalVisitAndAssembleEstimate({
 				visitId: openVisitId,
-				patientId: activePatient?.id || "pat-default",
-				patientName: activePatient?.fullName || "Пациент",
-				doctorName: dashboard?.activeDoctor?.fullName || "Лечащий врач",
+				patientId: effectivePatientId,
+				patientName: effectivePatientName,
+				doctorName: effectiveDoctorName,
 				diary: {
 					anamnesis: finalDiary.anamnesis,
 					statusLocalis: finalDiary.objectiveStatus,
@@ -87,86 +87,31 @@ export function useVisitCompletionWorkflow({
 				additionalServices,
 			});
 
-			try {
-				await performAutoVisitBomDeduction({
-					visitId: openVisitId || `VIS-${Date.now()}`,
-					patientId: activePatient?.id || "pat-default",
-					patientFullName: activePatient?.fullName || "Пациент",
-					doctorId: dashboard?.activeDoctor?.id || dashboard?.activeDoctor?.fullName || "Лечащий врач",
-					doctorFullName: dashboard?.activeDoctor?.fullName || "Лечащий врач",
-					renderedServices: result.items,
-					allowOverdraft: true,
-					includeStandardPpe: true,
-					organizationId: activePatient?.organizationId || (dashboard as any)?.clinicSettings?.profile?.organizationId || "org-default",
-					warehouseItems: useInventoryStore.getState().items as any,
-					fetchFn: fetchWithHandling as unknown as typeof fetch,
-				});
-			} catch (deductionErr) {
-				logger.warn("[useVisitCompletionWorkflow] Фоновое списание материалов выполнено в локальном режиме:", deductionErr);
-			}
-
-			const isUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
-			if (openVisitId && isUuid(openVisitId)) {
-				try {
-					await fetchWithHandling(`/api/visits/${openVisitId}/complete-work-order`, {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							...denteAdminSecretRequestHeaders(),
-						},
-						body: JSON.stringify({ status: "signed" }),
-					}).catch((workErr) => {
-						logger.warn("[useVisitCompletionWorkflow] Фоновое закрытие наряда на бэкенде:", workErr);
-					});
-				} catch {
-					// Мягкий режим
-				}
-			}
-
-			const effectivePatId = activePatient?.id;
-			if (effectivePatId && effectivePatId !== "pat-unknown" && effectivePatId !== "pat-default") {
-				try {
-					const treatedTeethMap = new Map<number, { state: string; reason: string }>();
-					for (const item of result.items) {
-						let toothNum: number | null = null;
-						if (item.toothNumber !== undefined && item.toothNumber !== null) {
-							const parsed = Number.parseInt(String(item.toothNumber), 10);
-							if (Number.isFinite(parsed) && parsed > 0) toothNum = parsed;
-						}
-						if (toothNum) {
-							const uiState = inferToothStateFromService({ code: item.code || "", title: item.name });
-							const clinicalState = mapVisitUiStateToToothDataState(uiState);
-							treatedTeethMap.set(toothNum, { state: clinicalState, reason: item.name });
-						}
-					}
-					if (treatedTeethMap.size > 0) {
-						const stateGroups = new Map<string, { teeth: number[]; reasons: string[] }>();
-						for (const [tNum, info] of treatedTeethMap.entries()) {
-							const group = stateGroups.get(info.state) || { teeth: [], reasons: [] };
-							group.teeth.push(tNum);
-							if (info.reason && !group.reasons.includes(info.reason)) group.reasons.push(info.reason);
-							stateGroups.set(info.state, group);
-						}
-						for (const [targetState, group] of stateGroups.entries()) {
-							await fetchWithHandling(`/api/patients/${effectivePatId}/tooth-states/batch`, {
-								method: "POST",
-								headers: {
-									"Content-Type": "application/json",
-									...denteAdminSecretRequestHeaders(),
-								},
-								body: JSON.stringify({
-									toothNumbers: group.teeth,
-									state: targetState,
-									visitId: openVisitId,
-									reason: group.reasons.join("; ") || "Завершение визита и оказание услуг",
-								}),
-							}).catch(() => {});
-						}
-					}
-				} catch {
-					// Мягкий режим
-				}
-			}
+			await executeVisitPostCompletionPipeline({
+				effectiveVisitId,
+				effectivePatientId,
+				effectivePatientName,
+				effectiveDoctorName,
+				effectiveDiary: {
+					anamnesis: finalDiary.anamnesis,
+					statusLocalis: finalDiary.objectiveStatus,
+					diagnosisIcd10: finalDiary.diagnosis,
+					diagnosisTooth: "",
+					treatmentDescription: finalDiary.treatmentPlan,
+				},
+				effectiveCompletedPlan: [],
+				targetPlanId:
+					(dashboard as any)?.activeVisit?.treatmentPlanId ||
+					(dashboard as any)?.activeAppointment?.treatmentPlanId ||
+					null,
+				stageNumber:
+					(dashboard as any)?.activeVisit?.stageNumber ??
+					(dashboard as any)?.activeAppointment?.stageNumber ??
+					undefined,
+				activeVisit: (dashboard as any)?.activeVisit,
+				dashboard,
+				result,
+			});
 
 			staffTelemetryService.recordAction({
 				actionType: "custom_action",
@@ -203,36 +148,35 @@ export function useVisitCompletionWorkflow({
 				window.dispatchEvent(new CustomEvent("dente:pending-checkout-ready", { detail: pendingCheckout }));
 				window.location.hash = "finance";
 			}
+			return true;
 		} catch (err) {
 			logger.error("[useVisitCompletionWorkflow] Ошибка завершения приёма:", err);
-			const fallbackCheckout = {
-				patientId: activePatient?.id || "pat-default",
-				patientName: activePatient?.fullName || (activePatient as any)?.name || "Пациент",
-				visitId: openVisitId,
-				services: [{ name: "Осмотр и консультация", priceRub: 1500, quantity: 1, totalRub: 1500 }],
-				totalDueRub: 1500,
-				receiptNumber: `REC-${Date.now().toString().slice(-5)}`,
-				timestamp: Date.now(),
-			};
-			try {
-				sessionStorage.setItem("dente_pending_checkout", JSON.stringify(fallbackCheckout));
-				localStorage.setItem("dente_pending_checkout", JSON.stringify(fallbackCheckout));
-			} catch (err) {
-				console.warn("[VisitCompletionWorkflow] Failed to write fallback checkout to storage:", err);
-			}
-			showToast("Приём сохранён. Переход в кассу...", "info", 3000);
-			if (typeof window !== "undefined") {
-				window.dispatchEvent(new CustomEvent("dente:pending-checkout-ready", { detail: fallbackCheckout }));
-				window.location.hash = "finance";
-			}
+			const errMsg =
+				err instanceof Error && err.message
+					? err.message
+					: "Не удалось рассчитать смету приёма. Проверьте данные и повторите расчёт.";
+			setCompletionError(errMsg);
+			showToast(
+				"Ошибка расчёта сметы. Нажмите «Повторить расчёт сметы»",
+				"error",
+				5000,
+			);
+			return false;
 		} finally {
 			setIsCompletingVisit(false);
 		}
 	}, [visitNoteForm, openVisitId, activePatient, dashboard, flushSoloPendingSave, acceptDraftToVisit]);
 
 	React.useEffect(() => {
-		const handleExternalTrigger = () => {
-			void handleCompleteVisitAndGenerateReceipt();
+		const handleExternalTrigger = (e: Event) => {
+			const detail = (
+				e as CustomEvent<{ promise?: Promise<boolean>; handled?: boolean }>
+			)?.detail;
+			const completionPromise = handleCompleteVisitAndGenerateReceipt();
+			if (detail && typeof detail === "object") {
+				detail.handled = true;
+				detail.promise = completionPromise;
+			}
 		};
 		if (typeof window !== "undefined") {
 			window.addEventListener("dente:trigger-complete-visit", handleExternalTrigger);
@@ -247,6 +191,8 @@ export function useVisitCompletionWorkflow({
 	return {
 		isCompletingVisit,
 		completionResult,
+		completionError,
+		clearCompletionError: () => setCompletionError(null),
 		isSbpQrModalOpen,
 		setIsSbpQrModalOpen,
 		handleCompleteVisitAndGenerateReceipt,

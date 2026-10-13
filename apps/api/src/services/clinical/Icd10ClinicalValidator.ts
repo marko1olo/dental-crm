@@ -57,17 +57,12 @@ export type Icd10ValidationResult =
  * Молочные зубы: квадранты 5-8, зубы 1-5.
  */
 export const VALID_FDI_PERMANENT_TEETH = new Set<number>([
-	11, 12, 13, 14, 15, 16, 17, 18,
-	21, 22, 23, 24, 25, 26, 27, 28,
-	31, 32, 33, 34, 35, 36, 37, 38,
-	41, 42, 43, 44, 45, 46, 47, 48,
+	11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 27, 28,
+	31, 32, 33, 34, 35, 36, 37, 38, 41, 42, 43, 44, 45, 46, 47, 48,
 ]);
 
 export const VALID_FDI_PRIMARY_TEETH = new Set<number>([
-	51, 52, 53, 54, 55,
-	61, 62, 63, 64, 65,
-	71, 72, 73, 74, 75,
-	81, 82, 83, 84, 85,
+	51, 52, 53, 54, 55, 61, 62, 63, 64, 65, 71, 72, 73, 74, 75, 81, 82, 83, 84, 85,
 ]);
 
 export const ALL_VALID_FDI_TEETH = new Set<number>([
@@ -75,114 +70,27 @@ export const ALL_VALID_FDI_TEETH = new Set<number>([
 	...VALID_FDI_PRIMARY_TEETH,
 ]);
 
-/**
- * Базовые рубрики стоматологического раздела МКБ-10 (K00–K14).
- */
 export const DENTAL_ICD10_RUBRICS: Readonly<Record<string, DentalIcd10Category>> = {
-	K00: {
-		code: "K00",
-		titleRu: "Нарушения развития и прорезывания зубов (адентия, гиподонтия, сверхкомплектные зубы)",
-		requiresTooth: false,
-	},
-	K01: {
-		code: "K01",
-		titleRu: "Вкрапленные и ретенированные зубы",
-		requiresTooth: false,
-	},
-	K02: {
-		code: "K02",
-		titleRu: "Кариес зубов (эмали, дентина, цемента, приостановившийся)",
-		requiresTooth: true,
-		description: "Кариозное поражение твердых тканей конкретного зуба",
-	},
-	K03: {
-		code: "K03",
-		titleRu: "Другие болезни твердых тканей зубов (стирание, сошлифовывание, эрозия, клиновидный дефект)",
-		requiresTooth: false,
-	},
-	K04: {
-		code: "K04",
-		titleRu: "Болезни пульпы и периапикальных тканей (пульпит, некроз, периодонтит, периапикальный абсцесс, корневая киста)",
-		requiresTooth: true,
-		description: "Эндодонтическое поражение пульпы и верхушечного периодонта конкретного зуба",
-	},
-	K05: {
-		code: "K05",
-		titleRu: "Гингивит и болезни пародонта (острый/хронический гингивит, пародонтит, пародонтоз)",
-		requiresTooth: false,
-		description: "Воспалительное или деструктивное поражение тканей пародонта (генерализованное или локализованное)",
-	},
-	K06: {
-		code: "K06",
-		titleRu: "Другие изменения десны и беззубого альвеолярного края (рецессия десны, гипертрофия)",
-		requiresTooth: false,
-	},
-	K07: {
-		code: "K07",
-		titleRu: "Челюстно-лицевые аномалии (включая аномалии прикуса и ВНЧС)",
-		requiresTooth: false,
-	},
-	K08: {
-		code: "K08",
-		titleRu: "Другие изменения зубов и их опорного аппарата (потеря зубов / адентия, атрофия альвеолярного края)",
-		requiresTooth: false,
-	},
-	K09: {
-		code: "K09",
-		titleRu: "Кисты области рта, не классифицированные в других рубриках (одонтогенные/неодонтогенные)",
-		requiresTooth: false,
-	},
-	K10: {
-		code: "K10",
-		titleRu: "Другие болезни челюстей (остеомиелит, альвеолит, периостит)",
-		requiresTooth: false,
-	},
-	K11: {
-		code: "K11",
-		titleRu: "Болезни слюнных желез (сиаладенит, сиалолитиаз, мукоцеле)",
-		requiresTooth: false,
-	},
-	K12: {
-		code: "K12",
-		titleRu: "Стоматит и родственные поражения (афтозный стоматит, язвенный стоматит)",
-		requiresTooth: false,
-	},
-	K13: {
-		code: "K13",
-		titleRu: "Другие болезни губ и слизистой оболочки полости рта (хейлит, лейкоплакия)",
-		requiresTooth: false,
-	},
-	K14: {
-		code: "K14",
-		titleRu: "Болезни языка (глоссит, географический язык, глоссодиния)",
-		requiresTooth: false,
-	},
-	// Z00–Z96: Профилактические осмотры, диспансеризация, скрининг, примерка устройств и имплантаты
-	Z00: {
-		code: "Z00",
-		titleRu: "Общий осмотр и обследование лиц, не имеющих жалоб или установленного диагноза (профилактический осмотр)",
-		requiresTooth: false,
-	},
-	Z01: {
-		code: "Z01",
-		titleRu: "Другие специальные осмотры и обследования (стоматологическое обследование, санация, гигиена полости рта)",
-		requiresTooth: false,
-	},
-	Z13: {
-		code: "Z13",
-		titleRu: "Специальное скрининговое обследование для выявления других болезней и нарушений (стоматологический скрининг)",
-		requiresTooth: false,
-	},
-	Z46: {
-		code: "Z46",
-		titleRu: "Примерка и подгонка других устройств (зубных протезных и ортодонтических аппаратов)",
-		requiresTooth: false,
-	},
-	Z96: {
-		code: "Z96",
-		titleRu: "Наличие других функциональных имплантатов (зубных и нижнечелюстных имплантатов)",
-		requiresTooth: false,
-	},
+	K00: { code: "K00", titleRu: "Нарушения развития и прорезывания зубов (адентия, гиподонтия, сверхкомплектные зубы)", requiresTooth: false },
+	K01: { code: "K01", titleRu: "Вкрапленные и ретенированные зубы", requiresTooth: false },
+	K02: { code: "K02", titleRu: "Кариес зубов (эмали, дентина, цемента, приостановившийся)", requiresTooth: true, description: "Кариозное поражение твердых тканей конкретного зуба" },
+	K03: { code: "K03", titleRu: "Другие болезни твердых тканей зубов (стирание, сошлифовывание, эрозия, клиновидный дефект)", requiresTooth: false },
+	K04: { code: "K04", titleRu: "Болезни пульпы и периапикальных тканей (пульпит, некроз, периодонтит, периапикальный абсцесс, корневая киста)", requiresTooth: true, description: "Эндодонтическое поражение пульпы и верхушечного периодонта конкретного зуба" },
+	K05: { code: "K05", titleRu: "Гингивит и болезни пародонта (острый/хронический гингивит, пародонтит, пародонтоз)", requiresTooth: false, description: "Воспалительное или деструктивное поражение тканей пародонта (генерализованное или локализованное)" },
+	K06: { code: "K06", titleRu: "Другие изменения десны и беззубого альвеолярного края (рецессия десны, гипертрофия)", requiresTooth: false },
+	K07: { code: "K07", titleRu: "Челюстно-лицевые аномалии (включая аномалии прикуса и ВНЧС)", requiresTooth: false },
+	K08: { code: "K08", titleRu: "Другие изменения зубов и их опорного аппарата (потеря зубов / адентия, атрофия альвеолярного края)", requiresTooth: false },
+	K09: { code: "K09", titleRu: "Кисты области рта, не классифицированные в других рубриках (одонтогенные/неодонтогенные)", requiresTooth: false },
+	K10: { code: "K10", titleRu: "Другие болезни челюстей (остеомиелит, альвеолит, периостит)", requiresTooth: false },
+	K11: { code: "K11", titleRu: "Болезни слюнных желез (сиаладенит, сиалолитиаз, мукоцеле)", requiresTooth: false },
+	K12: { code: "K12", titleRu: "Стоматит и родственные поражения (афтозный стоматит, язвенный стоматит)", requiresTooth: false },
+	K13: { code: "K13", titleRu: "Другие болезни губ и слизистой оболочки полости рта (хейлит, лейкоплакия)", requiresTooth: false },
+	K14: { code: "K14", titleRu: "Болезни языка (глоссит, географический язык, глоссодиния)", requiresTooth: false },
+	Z00: { code: "Z00", titleRu: "Общий осмотр и обследование лиц, не имеющих жалоб или установленного диагноза (профилактический осмотр)", requiresTooth: false },
+	Z01: { code: "Z01", titleRu: "Другие специальные осмотры и обследования (стоматологическое обследование, санация, гигиена полости рта)", requiresTooth: false },
+	Z13: { code: "Z13", titleRu: "Специальное скрининговое обследование для выявления других болезней и нарушений (стоматологический скрининг)", requiresTooth: false },
+	Z46: { code: "Z46", titleRu: "Примерка и подгонка других устройств (зубных протезных и ортодонтических аппаратов)", requiresTooth: false },
+	Z96: { code: "Z96", titleRu: "Наличие других функциональных имплантатов (зубных и нижнечелюстных имплантатов)", requiresTooth: false },
 };
 
 /**
@@ -305,11 +213,20 @@ export class Icd10ClinicalValidator {
 		let str = String(raw).trim();
 		if (!str) return "";
 
-		// Замена русских К/к на латинскую K
-		str = str.replace(/^[Кк]/u, "K").toUpperCase();
+		// Если передана полная клиническая формулировка диагноза (например, "Z01.2 Стоматологическое обследование (Норма)"
+		// или "Зуб 36: K02.1 — Кариес дентина"), извлекаем стоматологический код МКБ-10
+		const embeddedDentalMatch = str.match(
+			/(?:^|[^A-ZА-ЯЁ0-9])([KК](?:0[0-9]|1[0-4])(?:\.?\d{1,4})?|[Zz](?:01\.?2|00\.?0|13\.?84|46\.?[34]|96\.?5))(?=[^A-ZА-ЯЁ0-9]|$)/u,
+		);
+		if (embeddedDentalMatch?.[1]) {
+			str = embeddedDentalMatch[1].replace(/^[Кк]/u, "K").toUpperCase();
+		} else {
+			// Замена русских К/к на латинскую K
+			str = str.replace(/^[Кк]/u, "K").toUpperCase();
 
-		// Удаляем лишние спецсимволы по краям
-		str = str.replace(/^[^\w]+|[^\w]+$/g, "");
+			// Удаляем лишние спецсимволы по краям
+			str = str.replace(/^[^\w]+|[^\w]+$/g, "");
+		}
 
 		// Если код вида K021, Z012 или K0402 -> вставляем точку после первых 3 символов
 		if (/^[KZ]\d{3,4}$/i.test(str)) {
@@ -317,6 +234,31 @@ export class Icd10ClinicalValidator {
 		}
 
 		return str;
+	}
+
+	/**
+	 * Извлекает явно упомянутые номера зубов FDI из свободного клинического текста диагноза
+	 * (например: "Зуб 36: K02.1 Кариес дентина", "K04.0 Пульпит зуба 46", "36: K02.1").
+	 */
+	public static extractEmbeddedTeethFromText(rawText: unknown): string {
+		if (typeof rawText !== "string") return "";
+		const withoutIcd = rawText.replace(
+			/[KКZ]\d{2}(?:\.\d{1,4}|\d{1,2})?/giu,
+			" ",
+		);
+		const explicitMatch = withoutIcd.match(
+			/(?:зуб(?:а|у|ом|е|ы|ов)?|tooth|teeth|dentes|dens|№|#)\s*[:.-]?\s*([1-8]\.?[1-8](?:\s*[,;-]\s*[1-8]\.?[1-8])*)/iu,
+		);
+		if (explicitMatch?.[1]) {
+			return explicitMatch[1].trim();
+		}
+		const leadingPrefixMatch = rawText.match(
+			/^\s*([1-8][1-8](?:\s*[,;-]\s*[1-8][1-8])*)\s*[:—–-]/u,
+		);
+		if (leadingPrefixMatch?.[1]) {
+			return leadingPrefixMatch[1].trim();
+		}
+		return "";
 	}
 
 	/**
@@ -528,12 +470,15 @@ export class Icd10ClinicalValidator {
 		const categoryTitle = Icd10ClinicalValidator.getDiagnosisTitleRu(normalizedCode);
 		const isToothSpecific = TOOTH_SPECIFIC_RUBRICS.has(baseRubric);
 
-		const rawToothStr =
+		const explicitToothStr =
 			typeof diagnosisTooth === "string"
 				? diagnosisTooth.trim()
 				: diagnosisTooth != null
 					? String(diagnosisTooth).trim()
 					: "";
+		const rawToothStr =
+			explicitToothStr ||
+			Icd10ClinicalValidator.extractEmbeddedTeethFromText(rawCodeStr);
 
 		// 3. Проверка зубоспецифичных диагнозов (K02, K04)
 		if (isToothSpecific) {

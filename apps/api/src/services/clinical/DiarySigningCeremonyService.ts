@@ -23,7 +23,6 @@ import {
 	visitDiaryRevisions,
 	visits,
 } from "../../db/schema.js";
-import { DOCTOR_PEP_FORBIDDEN_MESSAGE } from "@dental/shared";
 import { verifyCredential } from "../../utils/cryptoHelper.js";
 import { Icd10ClinicalValidator } from "./Icd10ClinicalValidator.js";
 import {
@@ -32,11 +31,12 @@ import {
 
 export const SIMPLE_PIN_PREFIX = "PIN:";
 export const SIMPLE_PIN_EP_MARK = "SIMPLE_PIN_EP";
+export const SHIFT_SESSION_SIGNATURE = "SHIFT_SESSION";
 
 export const DIARY_PIN_USER_REQUIRED_MESSAGE =
 	"Простую подпись по ПИН-коду может поставить только сотрудник, вошедший в смену. Войдите в смену заново и повторите подписание.";
 export const DIARY_PIN_NOT_SET_MESSAGE =
-	"У вашей учётной записи не задан ПИН-код сотрудника, простую подпись поставить нельзя. Задайте ПИН в настройках персонала или подпишите дневник через КриптоПро.";
+	"У вашей учётной записи не задан ПИН-код сотрудника. Подпишите дневник в 1 клик учётной записью врача или задайте ПИН в настройках персонала.";
 export const DIARY_PIN_INVALID_MESSAGE =
 	"ПИН-код не принят. Проверьте раскладку и введите ПИН-код сотрудника заново.";
 
@@ -216,24 +216,91 @@ export async function syncVisitEmkFromDiarySoap(
 }
 
 /**
- * Простая ЭП по PIN сотрудника → непрозрачная отметка, не цифры PIN.
+ * Внутренняя операционная фиксация осмотра в CRM:
+ * - SHIFT_SESSION → непрозрачная отметка сессии врача (SIMPLE_PIN_EP|userId|iso|hashPrefix)
+ * - PIN:<4 цифры> → проверка users.pinCodeHash + непрозрачная отметка (SIMPLE_PIN_EP|userId|iso|hashPrefix)
+ * - УКЭП / PKCS#7 → сохранение криптографического оттиска
  */
 export async function resolveSignatureForStorage(params: {
 	pkcs7Signature: string | null | undefined;
 	userId: string | null;
 	organizationId: string;
 	diaryHashForMark?: string | null;
+	executor?: Pick<DiaryDbTransaction, "select">;
 }): Promise<SimplePinResolve> {
 	const raw =
 		typeof params.pkcs7Signature === "string" ? params.pkcs7Signature : null;
 	if (raw == null || raw.length === 0) {
 		return { ok: true, stored: null };
 	}
-	if (raw.startsWith(SIMPLE_PIN_PREFIX)) {
+
+	const hashPrefix =
+		typeof params.diaryHashForMark === "string" &&
+		params.diaryHashForMark.length > 0
+			? params.diaryHashForMark.slice(0, 12)
+			: "";
+
+	if (raw === SHIFT_SESSION_SIGNATURE) {
+		if (!params.userId) {
+			return {
+				ok: false,
+				code: "UserRequired",
+				message: DIARY_PIN_USER_REQUIRED_MESSAGE,
+			};
+		}
+		const nowIso = new Date().toISOString();
 		return {
-			ok: false,
-			code: "PepDoctorForbidden",
-			message: DOCTOR_PEP_FORBIDDEN_MESSAGE,
+			ok: true,
+			stored: `${SIMPLE_PIN_EP_MARK}|${params.userId}|${nowIso}|${hashPrefix}`,
+		};
+	}
+
+	if (raw.startsWith(SIMPLE_PIN_PREFIX)) {
+		if (!params.userId) {
+			return {
+				ok: false,
+				code: "UserRequired",
+				message: DIARY_PIN_USER_REQUIRED_MESSAGE,
+			};
+		}
+		const pin = raw.slice(SIMPLE_PIN_PREFIX.length).trim();
+		if (!/^\d{4}$/.test(pin)) {
+			return {
+				ok: false,
+				code: "PinInvalid",
+				message: DIARY_PIN_INVALID_MESSAGE,
+			};
+		}
+		const queryExecutor = params.executor ?? db;
+		const [userRow] = await queryExecutor
+			.select({ pinCodeHash: users.pinCodeHash })
+			.from(users)
+			.where(
+				and(
+					eq(users.id, params.userId),
+					eq(users.organizationId, params.organizationId),
+				),
+			)
+			.limit(1);
+		if (!userRow?.pinCodeHash) {
+			return {
+				ok: false,
+				code: "PinNotSet",
+				message: DIARY_PIN_NOT_SET_MESSAGE,
+			};
+		}
+		const verified = await verifyCredential(pin, userRow.pinCodeHash);
+		if (!verified) {
+			return {
+				ok: false,
+				code: "PinInvalid",
+				message: DIARY_PIN_INVALID_MESSAGE,
+			};
+		}
+		const nowIso = new Date().toISOString();
+		return {
+			ok: true,
+			stored: `${SIMPLE_PIN_EP_MARK}|${params.userId}|${nowIso}|${hashPrefix}`,
 		};
 	}
 
@@ -314,30 +381,27 @@ export async function runDiarySigningCeremony(
 		throw new DiarySigningError("AlreadyLocked", "Дневник уже подписан.");
 	}
 
-	const validation = Icd10ClinicalValidator.validate(
-		diary.diagnosisIcd10,
-		diary.diagnosisTooth,
-	);
+	const effectiveToothForSigning =
+		diary.diagnosisTooth?.trim() ||
+		Icd10ClinicalValidator.extractEmbeddedTeethFromText(diary.diagnosisIcd10) ||
+		Icd10ClinicalValidator.extractEmbeddedTeethFromText(diary.statusLocalis) ||
+		Icd10ClinicalValidator.extractEmbeddedTeethFromText(diary.treatmentDescription);
+	const validation = Icd10ClinicalValidator.validate(diary.diagnosisIcd10, effectiveToothForSigning);
 	if (!validation.isValid) {
-		throw new DiarySigningError(
-			validation.errorCode,
-			validation.errorMessage,
-		);
+		throw new DiarySigningError(validation.errorCode, validation.errorMessage);
 	}
-
 	const hash = computeDiaryHash(
-		diary.visitId,
-		diary.patientId ?? "",
-		diary.anamnesis,
-		diary.statusLocalis,
-		diary.treatmentDescription,
-		diary.diagnosisIcd10,
-		diary.diagnosisTooth,
-		diary.complications,
-		diary.comorbidities,
-		diary.instrumentTrayBarcode,
+		diary.visitId, diary.patientId ?? "", diary.anamnesis, diary.statusLocalis,
+		diary.treatmentDescription, diary.diagnosisIcd10, diary.diagnosisTooth,
+		diary.complications, diary.comorbidities, diary.instrumentTrayBarcode,
 	);
 	const lockedAt = new Date();
+	const finalizedSignature =
+		typeof params.pkcs7Signature === "string" &&
+		params.pkcs7Signature.startsWith(`${SIMPLE_PIN_EP_MARK}|`) &&
+		params.pkcs7Signature.endsWith("|")
+			? `${params.pkcs7Signature}${hash.slice(0, 12)}`
+			: params.pkcs7Signature;
 
 	// 1. Замок и печать
 	const lockedRows = await tx
@@ -350,7 +414,7 @@ export async function runDiarySigningCeremony(
 			authorId: userId,
 			doctorId: userId,
 			diaryHash: hash,
-			cryptoSignaturePkcs7: params.pkcs7Signature,
+			cryptoSignaturePkcs7: finalizedSignature,
 			updatedAt: lockedAt,
 		})
 		.where(
