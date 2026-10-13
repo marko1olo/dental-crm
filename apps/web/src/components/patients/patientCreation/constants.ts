@@ -46,3 +46,46 @@ export const TOAST_PATIENT_CREATED_SCHEDULE =
 
 export const TOAST_PATIENT_CREATED_VISIT =
 	"Пациент создан. Открыт амбулаторный приём (дежурный врач)";
+
+export const SOMATIC_NORM_DEFAULT_NOTE =
+	"Соматически здоров. Аллергоанамнез не отягощен. Инфекционные заболевания отрицает.";
+
+export function syncCreationDraftsToStore(
+	store: {
+		setPatientAdministrativeProfileDraft: (updater: (prev: any) => any) => void;
+		setPatientCoreDraft: (updater: (prev: any) => any) => void;
+	},
+	opts: {
+		advertisingSource: string;
+		isChild: boolean;
+		parentRole: string;
+		parentName: string;
+		parentPhone: string;
+		isSomaticNorm: boolean;
+	},
+): void {
+	store.setPatientAdministrativeProfileDraft((prev) => ({
+		...prev,
+		...(opts.advertisingSource
+			? { preferredAppointmentNote: `src:${opts.advertisingSource}` }
+			: {}),
+		...(opts.isChild && (opts.parentName.trim() || opts.parentPhone.trim())
+			? {
+					legalRepresentativeRelationship: opts.parentRole || "Мама",
+					legalRepresentativeFullName: opts.parentName.trim(),
+					legalRepresentativePhone: opts.parentPhone.trim(),
+				}
+			: {}),
+	}));
+	if (opts.isSomaticNorm) {
+		store.setPatientCoreDraft((prev) => ({
+			...prev,
+			notes: prev.notes?.includes("Соматически здоров")
+				? prev.notes
+				: prev.notes?.trim()
+					? `${prev.notes.trim()}\n${SOMATIC_NORM_DEFAULT_NOTE}`
+					: SOMATIC_NORM_DEFAULT_NOTE,
+		}));
+	}
+}
+

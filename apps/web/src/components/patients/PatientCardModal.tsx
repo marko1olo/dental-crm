@@ -27,12 +27,18 @@ import {
 	evaluatePatientSafetyFlags,
 } from "./safetyMath";
 import {
+	mapPatientToGeneralInfo,
+	persistPatientCardModalToApi,
+	resolveInitialSafetyProfile,
+} from "./patientAutonomyActions";
+import {
 	PatientGeneralInfoTab,
 	type PatientGeneralInfo,
 } from "./tabs/PatientGeneralInfoTab";
 import { PatientFinanceTab } from "./tabs/PatientFinanceTab";
 import { PatientRadiologyTab } from "./tabs/PatientRadiologyTab";
 import { PatientDentalFormulaTab } from "./formula/PatientDentalFormulaTab";
+import { PatientDocumentsTab } from "./tabs/PatientDocumentsTab";
 import { ToothMolar } from "../icons/DentalIcons";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { StaffActionAuditService } from "../../services/audit/staffActionAuditService";
@@ -83,28 +89,21 @@ export function getRepresentativeLegalStatus(type: string | null | undefined): {
 	descriptionRu: string;
 } {
 	if (!type) {
-		return {
-			isLegalRepresentative: false,
-			labelRu: "",
-			idsSigningAllowed: false,
-			descriptionRu: "Представитель не выбран",
-		};
+		return { isLegalRepresentative: false, labelRu: "", idsSigningAllowed: false, descriptionRu: "Представитель не выбран" };
 	}
-	const match = STOMX_REPRESENTATIVE_CATALOG.find(
-		(r) => r.nameRu === type || r.code === type,
-	);
+	const match = STOMX_REPRESENTATIVE_CATALOG.find((r) => r.nameRu === type || r.code === type);
 	const isLegal = match?.isLegalRepresentative ?? false;
 	return {
 		isLegalRepresentative: isLegal,
 		labelRu: match?.nameRu ?? type,
 		idsSigningAllowed: isLegal,
 		descriptionRu: isLegal
-			? "Законный представитель: имеет право подписывать согласия за несовершеннолетнего"
-			: "Член семьи: подписание согласий за несовершеннолетнего требует доверенности",
+			? "Законный представитель: имеет право подписывать согласия за несовершеннолетнего (ст. 20 323-ФЗ, СК РФ ст. 64)"
+			: "Член семьи: подписание согласий за несовершеннолетнего требует нотариальной доверенности",
 	};
 }
 
-export type PatientCardTab = "general" | "formula" | "anamnesis" | "visits" | "radiology" | "family" | "finance";
+export type PatientCardTab = "general" | "formula" | "anamnesis" | "visits" | "documents" | "radiology" | "family" | "finance";
 
 export interface PatientCardModalProps {
 	readonly isOpen: boolean;
@@ -114,7 +113,7 @@ export interface PatientCardModalProps {
 	readonly patientData?: PatientGeneralInfo | null | undefined;
 	readonly initialSafetyProfile?: Partial<PatientClinicalSafetyProfile> | null | undefined;
 	readonly safetyProfile?: PatientClinicalSafetyProfile | null | undefined;
-	readonly onSavePatient?: ((patient: PatientGeneralInfo, safetyProfile: PatientClinicalSafetyProfile) => void) | undefined;
+	readonly onSavePatient?: ((patient: PatientGeneralInfo, safetyProfile: PatientClinicalSafetyProfile) => void | Promise<void>) | undefined;
 	readonly onApplySomaticNorm?: (() => void) | undefined;
 	readonly disabled?: boolean | undefined;
 	readonly onNavigateToVisit?: ((visitId: string) => void) | undefined;
@@ -123,14 +122,6 @@ export interface PatientCardModalProps {
 
 /**
  * PatientCardModal — Комплексная медицинская и паспортная карта пациента (Форма 043/у / Регистратура / Врач).
- *
- * МАНДАТЫ КЛИНИЧЕСКОЙ АВТОНОМИИ И ЭРГОНОМИКИ:
- * 1. Мандат 8e п. 3: 1-клик заполнение физиологической нормой («Соматически здоров / Физиологическая норма»).
- * 2. Мандат 8e п. 4: Врач свободно правит свои записи в 1 клик. Запрещены блокировки без возможности редактирования.
- * 3. Мандат 8e п. 5: Печать доступна в любой момент со штампом «ЧЕРНОВИК» или «ПОДПИСАНО ВРАЧОМ».
- * 4. Мандат 8d п. 7: СТРОГО 0 эмодзи — исключительно векторные иконки Lucide.
- * 5. Вкладки: «Основные и паспортные данные», «Медицинский статус и соматика», «История визитов и финансы», «Семья и представители».
- * 6. WCAG AAA темная тема (data-theme="dark").
  */
 export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 	function PatientCardModal({
@@ -148,10 +139,11 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 		onNewAppointment,
 	}) {
 		const isDemo = isDemoShowcaseMode();
-		const effectiveInitialPatient =
+		const rawInitialPatient =
 			initialPatient ??
 			initialPatientDataAlias ??
 			(isDemo ? DEMO_SHOWCASE_MODAL_PATIENT : {});
+		const effectiveInitialPatient = mapPatientToGeneralInfo(rawInitialPatient);
 		const effectiveInitialSafety =
 			initialSafetyProfile ??
 			initialSafetyProfileAlias ??
@@ -165,9 +157,9 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 			}
 		}, [initialTab]);
 		const [patientData, setPatientData] = useState<PatientGeneralInfo>(() => effectiveInitialPatient);
-		const [safetyProfile, setSafetyProfile] = useState<PatientClinicalSafetyProfile>(() => {
-			return { ...DEFAULT_SOMATIC_HEALTHY_NORM, ...effectiveInitialSafety };
-		});
+		const [safetyProfile, setSafetyProfile] = useState<PatientClinicalSafetyProfile>(() =>
+			resolveInitialSafetyProfile(rawInitialPatient, effectiveInitialSafety),
+		);
 		const [isDiplomaModalOpen, setIsDiplomaModalOpen] = useState(false);
 		const [isDmsLetterModalOpen, setIsDmsLetterModalOpen] = useState(false);
 		const [isTaxDeductionModalOpen, setIsTaxDeductionModalOpen] = useState(false);
@@ -192,15 +184,11 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 
 		useEffect(() => {
 			if (initialPatient || initialPatientDataAlias) {
-				setPatientData((prev) => ({ ...prev, ...(initialPatient ?? initialPatientDataAlias) }));
+				const nextRaw = initialPatient ?? initialPatientDataAlias;
+				setPatientData((prev) => ({ ...prev, ...mapPatientToGeneralInfo(nextRaw) }));
+				setSafetyProfile(resolveInitialSafetyProfile(nextRaw, effectiveInitialSafety));
 			}
-		}, [initialPatient, initialPatientDataAlias]);
-
-		useEffect(() => {
-			if (effectiveInitialSafety) {
-				setSafetyProfile((prev) => ({ ...prev, ...effectiveInitialSafety }));
-			}
-		}, [effectiveInitialSafety]);
+		}, [initialPatient, initialPatientDataAlias, effectiveInitialSafety]);
 
 		const safetyEvaluation = React.useMemo(() => {
 			return evaluatePatientSafetyFlags(safetyProfile);
@@ -228,9 +216,15 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 			}
 		}, []);
 
-		const handleSave = useCallback(() => {
+		const handleSave = useCallback(async () => {
 			if (onSavePatient) {
-				onSavePatient(patientData, safetyProfile);
+				await onSavePatient(patientData, safetyProfile);
+			} else {
+				await persistPatientCardModalToApi(
+					patientData,
+					safetyProfile,
+					DEMO_SHOWCASE_MODAL_PATIENT.id || "",
+				);
 			}
 			showToast("Данные пациента сохранены", "success", 3000);
 			onClose();
@@ -463,6 +457,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 									{ id: "formula", testId: "tab-patient-formula", label: "Формула", Icon: ToothMolar },
 									{ id: "anamnesis", testId: "tab-patient-anamnesis", label: "Соматика", Icon: HeartPulse },
 									{ id: "visits", testId: "tab-patient-visits", label: "Визиты", Icon: History },
+									{ id: "documents", testId: "tab-patient-documents", label: "Документы", Icon: FileCheck },
 									{ id: "finance", testId: "tab-patient-finance", label: "Финансы и аванс", Icon: Wallet },
 									{ id: "radiology", testId: "tab-patient-radiology", label: "Снимки и КТ", Icon: Scan },
 									{ id: "family", testId: "tab-patient-family", label: "Семья", Icon: Users },
@@ -545,6 +540,11 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 									setIsTaxDeductionModalOpen(true);
 								}}
 								disabled={disabled}
+							/>
+						) : activeTab === "documents" ? (
+							<PatientDocumentsTab
+								patient={patientData as any}
+								onPrintOutpatientCard={handlePrint}
 							/>
 						) : activeTab === "formula" ? (
 							<PatientDentalFormulaTab

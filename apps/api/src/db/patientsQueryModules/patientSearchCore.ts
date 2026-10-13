@@ -82,6 +82,10 @@ export function rowToPatient(
 	p: typeof schema.patients.$inferSelect,
 	balanceRub: number | null = null,
 ): Patient {
+	const adminProfile =
+		p.administrativeProfile && typeof p.administrativeProfile === "object"
+			? (p.administrativeProfile as Record<string, unknown>)
+			: null;
 	return patientSchema.parse({
 		id: p.id,
 		organizationId: p.organizationId,
@@ -91,18 +95,10 @@ export function rowToPatient(
 		phone: p.phone,
 		email: p.email,
 		notes: p.notes,
-		weightKg:
-			p.weightKg !== null && p.weightKg !== undefined && p.weightKg !== ""
-				? Number(p.weightKg)
-				: null,
+		weightKg: p.weightKg !== null && p.weightKg !== undefined && p.weightKg !== "" ? Number(p.weightKg) : null,
+		isAnonymous: typeof adminProfile?.isAnonymous === "boolean" ? adminProfile.isAnonymous : false,
+		anonymousCode: typeof adminProfile?.anonymousCode === "string" ? adminProfile.anonymousCode : null,
 		administrativeProfile: p.administrativeProfile ?? null,
-		/*
-		 * Привязка к семейной группе (общий кошелёк).
-		 * БЫЛО: поле не отдавалось в DTO, даже если family_group_id был в строке
-		 * таблицы. GET/PUT-ответ без familyGroupId заставлял UI считать, что
-		 * пациент ни в какой семье, и предлагать создать вторую.
-		 * СТАЛО: nullable UUID группы; null — пациент не состоит в семье.
-		 */
 		familyGroupId: p.familyGroupId ?? null,
 		mergedIntoPatientId: p.mergedIntoPatientId ?? null,
 		...(balanceRub === null ? {} : { balanceRub }),
@@ -274,6 +270,14 @@ export async function createPatientInDb(
 		return createPatientInMemory(input);
 	}
 	try {
+		const mergedAdminProfile =
+			input.administrativeProfile || input.isAnonymous !== undefined || input.anonymousCode !== undefined
+				? {
+						...(input.administrativeProfile ?? {}),
+						...(input.isAnonymous !== undefined ? { isAnonymous: input.isAnonymous } : {}),
+						...(input.anonymousCode !== undefined ? { anonymousCode: input.anonymousCode } : {}),
+					}
+				: null;
 		const [created] = await db
 			.insert(schema.patients)
 			.values({
@@ -283,11 +287,8 @@ export async function createPatientInDb(
 				phone: input.phone ?? null,
 				email: input.email ?? null,
 				notes: input.notes ?? null,
-				weightKg:
-					input.weightKg !== undefined && input.weightKg !== null
-						? String(input.weightKg)
-						: null,
-				administrativeProfile: (input.administrativeProfile as any) ?? null,
+				weightKg: input.weightKg !== undefined && input.weightKg !== null ? String(input.weightKg) : null,
+				administrativeProfile: (mergedAdminProfile as any) ?? null,
 			})
 			.returning();
 
@@ -544,17 +545,11 @@ export async function updatePatientAdministrativeProfileInDb(
 
 		/* Та же причина, что в updatePatientInDb: ответ — полная карточка, и
 		   сальдо в ней обязано быть настоящим, а не нулём после правки анкеты. */
-		const balances = await patientAccountBalancesRub(organizationId, [
-			updated.id,
-		]);
+		const balances = await patientAccountBalancesRub(organizationId, [updated.id]);
 		return rowToPatient(updated, balances.get(updated.id) ?? null);
 	} catch (error) {
-		/* См. комментарий в createPatientInDb: сбой базы не должен выглядеть
-		   как успешное сохранение административного профиля. */
-		console.error(
-			"[patientsQuery] Не удалось обновить профиль пациента в базе:",
-			error,
-		);
+		/* См. комментарий в createPatientInDb: сбой базы не должен выглядеть как успешное сохранение. */
+		console.error("[patientsQuery] Не удалось обновить профиль пациента в базе:", error);
 		throw error;
 	}
 }

@@ -37,6 +37,7 @@ import {
 	EMERGENCY_APPOINTMENT_REASON,
 	EMERGENCY_PATIENT_FALLBACK_NAME,
 	ROUTINE_APPOINTMENT_REASON,
+	syncCreationDraftsToStore,
 	TOAST_BLANK_CONTRACT_PRINTED,
 	TOAST_PATIENT_CREATED_SCHEDULE,
 	TOAST_PATIENT_CREATED_VISIT,
@@ -314,22 +315,16 @@ export function usePatientCreationForm({
 			usePatientStore.getState().setNewPatientBirthDate(effectiveBirth);
 		}
 		try {
-			// Attach advertising source note to administrative profile draft
-			if (advertisingSource) {
-				setPatientAdministrativeProfileDraft((prev) => ({
-					...prev,
-					preferredAppointmentNote: `src:${advertisingSource}`,
-				}));
-			}
-			if (isChild && (parentName.trim() || parentPhone.trim() || parentRole)) {
-				setPatientAdministrativeProfileDraft((prev) => ({
-					...prev,
-					legalRepresentativeRelationship: parentRole || "Мама",
-					legalRepresentativeFullName: parentName.trim(),
-					legalRepresentativePhone: parentPhone.trim(),
-				}));
-			}
-			await createPatient();
+			syncCreationDraftsToStore(usePatientStore.getState(), {
+				advertisingSource,
+				isChild,
+				parentRole,
+				parentName,
+				parentPhone,
+				isSomaticNorm,
+			});
+			const created = await createPatient();
+			if (created === null) return;
 			onClose();
 			if (validationResult.missingRequiredLabels.length > 0) {
 				showToast(
@@ -359,21 +354,16 @@ export function usePatientCreationForm({
 			usePatientStore.getState().setNewPatientName(effectiveName);
 		}
 		try {
-			if (advertisingSource) {
-				setPatientAdministrativeProfileDraft((prev) => ({
-					...prev,
-					preferredAppointmentNote: `src:${advertisingSource}`,
-				}));
-			}
-			if (isChild && (parentName.trim() || parentPhone.trim() || parentRole)) {
-				setPatientAdministrativeProfileDraft((prev) => ({
-					...prev,
-					legalRepresentativeRelationship: parentRole || "Мама",
-					legalRepresentativeFullName: parentName.trim(),
-					legalRepresentativePhone: parentPhone.trim(),
-				}));
-			}
+			syncCreationDraftsToStore(usePatientStore.getState(), {
+				advertisingSource,
+				isChild,
+				parentRole,
+				parentName,
+				parentPhone,
+				isSomaticNorm,
+			});
 			const created = await createPatient();
+			if (created === null) return;
 			onClose();
 
 			const targetId =
@@ -424,21 +414,16 @@ export function usePatientCreationForm({
 			usePatientStore.getState().setNewPatientName(effectiveName);
 		}
 		try {
-			if (advertisingSource) {
-				setPatientAdministrativeProfileDraft((prev) => ({
-					...prev,
-					preferredAppointmentNote: `src:${advertisingSource}`,
-				}));
-			}
-			if (isChild && (parentName.trim() || parentPhone.trim() || parentRole)) {
-				setPatientAdministrativeProfileDraft((prev) => ({
-					...prev,
-					legalRepresentativeRelationship: parentRole || "Мама",
-					legalRepresentativeFullName: parentName.trim(),
-					legalRepresentativePhone: parentPhone.trim(),
-				}));
-			}
+			syncCreationDraftsToStore(usePatientStore.getState(), {
+				advertisingSource,
+				isChild,
+				parentRole,
+				parentName,
+				parentPhone,
+				isSomaticNorm,
+			});
 			const created = await createPatient();
+			if (created === null) return;
 			onClose();
 
 			const targetId =

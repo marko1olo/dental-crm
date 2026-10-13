@@ -18,11 +18,13 @@ import {
 	printBlankMedicalContract,
 } from "./blankContractPrint";
 import { PatientAdministrativeForm } from "./PatientAdministrativeForm";
+import { PatientAllergySafetyBanner } from "./PatientAllergySafetyBanner";
 import { PatientOverviewTab } from "./PatientOverviewTab";
 import { PatientCardSavePill } from "./patientCardSavePill";
 import { PatientCoreEditorForm, type PatientCoreDraft } from "./PatientCoreEditorForm";
 import { PatientFamilyAndInsuranceWidget } from "./PatientFamilyAndInsuranceWidget";
 import { PatientSecondaryActionsMenu } from "./PatientSecondaryActionsMenu";
+import { formatSafetyProfileToDiaryText } from "./safetyMath";
 import type {
 	PatientAdministrativeProfileDraft,
 	PatientAdministrativeProfileSaveState,
@@ -190,27 +192,16 @@ export function PatientDetailsPanel({
 
 			<div
 				className="panel-heading compact-heading flex flex-col gap-1.5"
-				style={{
-					borderBottom: "none",
-					paddingBottom: "0",
-					marginBottom: "8px",
-				}}
+				style={{ borderBottom: "none", paddingBottom: "0", marginBottom: "8px" }}
 			>
 				<div className="flex flex-wrap items-center justify-between gap-2.5 w-full min-w-0">
 					<div className="flex items-center gap-2.5 min-w-0 flex-1">
-						{selectedPatient && (
-							<PatientAvatar
-								fullName={selectedPatient.fullName}
-								size={36}
-							/>
-						)}
+						{selectedPatient && <PatientAvatar fullName={selectedPatient.fullName} size={36} />}
 						<span
 							className="break-words min-w-0 max-w-full sm:max-w-md leading-tight text-sm sm:text-base font-bold text-[var(--ink)]"
 							title={selectedPatient ? selectedPatient.fullName : undefined}
 						>
-							{selectedPatient
-								? selectedPatient.fullName
-								: "Карточка пациента"}
+							{selectedPatient ? selectedPatient.fullName : "Карточка пациента"}
 						</span>
 					</div>
 
@@ -218,14 +209,8 @@ export function PatientDetailsPanel({
 						<PatientCardSavePill
 							hasSelectedPatient={Boolean(selectedPatient)}
 							sections={[
-								{
-									dirty: patientCoreDirty,
-									saveState: patientCoreSaveState,
-								},
-								{
-									dirty: patientAdministrativeProfileDirty,
-									saveState: patientAdministrativeProfileSaveState,
-								},
+								{ dirty: patientCoreDirty, saveState: patientCoreSaveState },
+								{ dirty: patientAdministrativeProfileDirty, saveState: patientAdministrativeProfileSaveState },
 							]}
 						/>
 					</div>
@@ -247,7 +232,7 @@ export function PatientDetailsPanel({
 									: undefined
 							}
 							disabled={patientCoreSaveState === "saving"}
-							className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-all shadow-xs"
+							className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-all shadow-xs"
 							title="Сохранить изменения в карточке пациента"
 							data-testid="patient-core-save-btn"
 						>
@@ -260,7 +245,7 @@ export function PatientDetailsPanel({
 							type="button"
 							onClick={onOpenVisit}
 							disabled={false}
-							className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal-dark)] dark:text-[var(--teal)] border border-[var(--teal)]/30"
+							className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal-dark)] dark:text-[var(--teal)] border border-[var(--teal)]/30"
 							title="Открыть приём"
 							data-testid="patient-card-open-visit-btn"
 						>
@@ -325,7 +310,20 @@ export function PatientDetailsPanel({
 				)}
 			</div>
 
-			{/* Core Info Form (Subcomponent) */}
+			{selectedPatient && (
+				<div className="mb-3">
+					<PatientAllergySafetyBanner
+						patientId={selectedPatient.id}
+						patientName={patientCoreDraft.fullName || selectedPatient.fullName}
+						profile={((selectedPatient.administrativeProfile as any)?.clinicalSafetyProfile as any) ?? null}
+						notes={patientCoreDraft.notes || selectedPatient.notes}
+						hideWhenClean={false}
+						onUpdateProfile={(p) => updatePatientCoreDraft("notes", formatSafetyProfileToDiaryText(p))}
+						onSyncToEmkDiary={(s) => updatePatientCoreDraft("notes", s)}
+					/>
+				</div>
+			)}
+
 			<PatientCoreEditorForm
 				patientCoreDraft={patientCoreDraft}
 				updatePatientCoreDraft={updatePatientCoreDraft}
@@ -447,16 +445,9 @@ export function PatientDetailsPanel({
 						}
 					/>
 
-					<div
-						className="patient-admin-actions"
-						style={{
-							marginTop: "12px",
-							display: "flex",
-							justifyContent: "flex-start",
-						}}
-					>
+					<div className="patient-admin-actions mt-3 flex justify-start">
 						<button
-							className="primary-button"
+							className="primary-button min-h-[36px] h-9 px-3.5 rounded-xl font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
 							type="button"
 							onClick={savePatientAdministrativeProfile}
 							aria-busy={

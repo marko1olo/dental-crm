@@ -61,19 +61,30 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 			const [isModalOpen, setIsModalOpen] = useState(false);
 			const [localProfile, setLocalProfile] = useState<Partial<PatientClinicalSafetyProfile> | null>(null);
 
+			React.useEffect(() => {
+				setLocalProfile(null);
+				setIsDrawerOpen(false);
+			}, [patientId]);
+
 			// Вычисляем объединенный профиль безопасности
 			const effectiveProfile = useMemo(() => {
 				if (localProfile) return localProfile;
+				const fromNotes = notes ? parseSafetyProfileFromText(notes) : null;
 				if (propProfile) {
-					if (typeof propProfile === "string") {
-						return parseSafetyProfileFromText(propProfile);
+					const fromProp =
+						typeof propProfile === "string"
+							? parseSafetyProfileFromText(propProfile)
+							: propProfile;
+					if (!fromNotes) return fromProp;
+					const merged: Record<string, unknown> = { ...fromNotes, ...fromProp };
+					for (const key of Object.keys(fromNotes)) {
+						if ((fromNotes as unknown as Record<string, unknown>)[key] === true) {
+							merged[key] = true;
+						}
 					}
-					return propProfile;
+					return merged as Partial<PatientClinicalSafetyProfile>;
 				}
-				if (notes) {
-					return parseSafetyProfileFromText(notes);
-				}
-				return null;
+				return fromNotes;
 			}, [localProfile, propProfile, notes]);
 
 			const evaluation = useMemo(() => {

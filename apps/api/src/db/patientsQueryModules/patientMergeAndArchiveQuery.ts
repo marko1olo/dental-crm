@@ -75,6 +75,21 @@ export async function createPatientSafeInDb(
 		const duplicate = duplicateCheckFn(rawPatients, input);
 		if (duplicate) return { type: "duplicate", duplicate };
 
+		const mergedAdminProfile =
+			input.administrativeProfile ||
+			input.isAnonymous !== undefined ||
+			input.anonymousCode !== undefined
+				? {
+						...(input.administrativeProfile ?? {}),
+						...(input.isAnonymous !== undefined
+							? { isAnonymous: input.isAnonymous }
+							: {}),
+						...(input.anonymousCode !== undefined
+							? { anonymousCode: input.anonymousCode }
+							: {}),
+					}
+				: null;
+
 		const [created] = await tx
 			.insert(schema.patients)
 			.values({
@@ -84,7 +99,11 @@ export async function createPatientSafeInDb(
 				phone: input.phone ?? null,
 				email: input.email ?? null,
 				notes: input.notes ?? null,
-				administrativeProfile: (input.administrativeProfile as any) ?? null,
+				weightKg:
+					input.weightKg !== undefined && input.weightKg !== null
+						? String(input.weightKg)
+						: null,
+				administrativeProfile: (mergedAdminProfile as any) ?? null,
 			})
 			.returning();
 

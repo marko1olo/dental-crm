@@ -29,6 +29,7 @@ import {
 	executeBookPatientAppointmentAutonomy,
 	executeOpenPatientVisitAutonomy,
 	executePatientAdministrativeProfileSaveAutonomy,
+	executePatientCardModalSaveAutonomy,
 	executePatientCoreSaveAutonomy,
 	executePatientSomaticNormAutonomy,
 } from "./components/patients/patientAutonomyActions";
@@ -713,14 +714,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			{/* Global / Sub-Modals (Lazily Loaded) */}
 			{isCreateModalOpen && (
 				<Suspense fallback={null}>
-					<CreatePatientModal
-						isOpen={isCreateModalOpen}
-						onClose={() => setIsCreateModalOpen(false)}
-						createPatient={async () => {
-							await createPatient();
-							setIsCreateModalOpen(false);
-						}}
-					/>
+					<CreatePatientModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} createPatient={createPatient} />
 				</Suspense>
 			)}
 
@@ -730,25 +724,36 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						patient={selectedPatient}
 						isOpen={isPatientCardModalOpen}
 						onClose={() => setIsPatientCardModalOpen(false)}
+						onApplySomaticNorm={() =>
+							executePatientSomaticNormAutonomy({ selectedPatient, currentNotes: patientCoreDraft.notes, updatePatientCoreDraft, showToastFn: triggerToast })
+						}
+						onNavigateToVisit={() => {
+							setIsPatientCardModalOpen(false);
+							executeOpenPatientVisitAutonomy({ selectedPatient, showToastFn: triggerToast });
+						}}
+						onSavePatient={(updatedGeneral, updatedSafety) =>
+							executePatientCardModalSaveAutonomy({
+								selectedPatient,
+								updatedGeneral,
+								updatedSafety,
+								updatePatientCoreDraft,
+								updatePatientAdministrativeProfileDraft,
+								setDashboard: logicContext.setDashboard,
+							})
+						}
 					/>
 				</Suspense>
 			)}
 
 			{isLoyaltyModalOpen && (
 				<Suspense fallback={null}>
-					<LoyaltyProgramModal
-						isOpen={isLoyaltyModalOpen}
-						onClose={() => setIsLoyaltyModalOpen(false)}
-					/>
+					<LoyaltyProgramModal isOpen={isLoyaltyModalOpen} onClose={() => setIsLoyaltyModalOpen(false)} />
 				</Suspense>
 			)}
 
 			{isRecallsHubOpen && (
 				<Suspense fallback={null}>
-					<PatientRecallsHubModal
-						isOpen={isRecallsHubOpen}
-						onClose={() => setIsRecallsHubOpen(false)}
-					/>
+					<PatientRecallsHubModal isOpen={isRecallsHubOpen} onClose={() => setIsRecallsHubOpen(false)} />
 				</Suspense>
 			)}
 
@@ -759,19 +764,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					initialFilters={tactileFilters}
 					onApply={(filters) => setTactileFilters(filters)}
 				/>
-			)}
-
-			{false && (
-				<>
-					<PatientCardSavePill
-						hasSelectedPatient={Boolean(selectedPatient)}
-						sections={[]}
-					/>
-					<PatientCardSavePill
-						hasSelectedPatient={Boolean(selectedPatient)}
-						sections={[]}
-					/>
-				</>
 			)}
 		</div>
 	);
