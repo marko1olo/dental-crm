@@ -208,7 +208,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
 
   const drawerContent = (
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex justify-end bg-black/25 transition-opacity"
       data-testid="waitlist-drawer"
       role="dialog"
       aria-modal="true"
@@ -239,7 +239,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
               </h3>
               <p className="text-[11px] text-[var(--muted)] truncate m-0">
                 {targetSlot
-                  ? "Подбор пациентов на освободившееся окно"
+                  ? "Подбор на свободное окно"
                   : `В очереди: ${ops.items.length} пациентов`}
               </p>
             </div>
@@ -308,13 +308,15 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
                   month: "short",
                   weekday: "short",
                 })}{" "}
-                {targetSlot.startsAt.includes("T")
-                  ? targetSlot.startsAt.split("T")[1]?.slice(0, 5)
-                  : ""}
+                {new Date(targetSlot.startsAt).toLocaleTimeString("ru-RU", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
                 –
-                {targetSlot.endsAt.includes("T")
-                  ? targetSlot.endsAt.split("T")[1]?.slice(0, 5)
-                  : ""}
+                {new Date(targetSlot.endsAt).toLocaleTimeString("ru-RU", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </span>
               {targetSlot.doctorName && (
                 <span className="truncate max-w-[200px]">
