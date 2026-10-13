@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ChairScheduleToolbar } from "../ChairScheduleToolbar";
@@ -51,7 +51,7 @@ describe("ChairScheduleToolbar 1-line 36px & Responsive More Menu (Mandate 8p)",
     preventiveInspectionCount: 2,
   };
 
-  it("renders strictly 36px 1-line toolbar container with flex-nowrap", () => {
+  it("renders canonical 36px 1-line toolbar container with flex-nowrap", () => {
     const html = renderToStaticMarkup(React.createElement(ChairScheduleToolbar, defaultProps));
 
     assert.ok(html.includes('data-testid="chair-schedule-palette-strip"'), "Toolbar strip must exist");

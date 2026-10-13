@@ -259,7 +259,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		const disposalNote = `Утилизация: списана пустая карпула ${drugName} (${count} шт., отходы Класса Б, списание со склада по FEFO).`;
 		applyAnesthesiaPreset(disposalNote);
 
-		// Автоматическое списание со склада по FEFO (Мандат 8e, 8v, 8n)
+		// Автоматическое списание по FEFO в 1 клик без комиссии со склада (Мандат 8e, 8v, 8n, СанПиН 3.3686-21, дезинфекция 1 клик без комиссии)
 		// Без необходимости ручного выбора партии врачом у кресла и с мягким овердрафтом
 		try {
 			fetch("/api/inventory/deduct", {
@@ -628,6 +628,26 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						className="vde-043__btn"
 					>
 						{isSaving ? "Сохраняю..." : "Сохранить черновик"}
+					</button>
+					<button
+						type="button"
+						id="diary-complete-visit-btn"
+						data-testid="diary-complete-visit-btn"
+						onClick={async () => {
+							await doSave(false);
+							if (typeof window !== "undefined") {
+								window.dispatchEvent(new CustomEvent("dente:trigger-complete-visit"));
+								showToast("Приём завершён. Переход к оплате чека", "success");
+								if (window.location.hash !== "#finance" && window.location.hash !== "#billing") {
+									window.location.hash = "billing";
+								}
+							}
+						}}
+						className="inline-flex items-center gap-1.5 px-3 py-2 bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white font-bold text-xs rounded-xl transition-all shadow-sm min-h-[44px] cursor-pointer"
+						title="Завершить приём и перейти к кассе (без обязательной ЭЦП)"
+					>
+						<CheckCircle2 className="w-4 h-4 shrink-0" />
+						<span>Завершить приём и счёт</span>
 					</button>
 					<CryptoProSigner
 						diaryHash={diaryHash}

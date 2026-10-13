@@ -13,7 +13,7 @@ import {
 	XCircle,
 	Zap,
 } from "lucide-react";
-import { TOOTH_804N_PRESETS } from "@dental/shared";
+import { TOOTH_804N_PRESETS, getClinicalDiagnosisByIcd10 } from "@dental/shared";
 import {
 	TOOTH_CLINICAL_PROTOCOLS,
 	type ToothClinicalProtocol,
@@ -115,79 +115,131 @@ export function ToothDiagnosisTab({
 
 			<div className="_ccm-sub-label">Патологии зубного ряда (МКБ-10)</div>
 			<div className="_ccm-items-grid">
-				<button
-					type="button"
-					className={`_ccm-action-item${state === "watch" ? " active" : ""}`}
-					onClick={() => {
-						const cavityNote =
-							selectedSurfaces.length > 0
-								? ` (${selectedSurfaces.join("")})`
-								: "";
-						handleSelectDiagnosis(
-							"watch",
-							`K02.1 Кариес дентина${cavityNote}`,
-							"diagnosis",
-						);
-					}}
-				>
-					<span className="_ccm-btn-dot _ccm-dot-watch" />
-					<span className="_ccm-item-title">
-						K02.1 Кариес дентина
-						{selectedSurfaces.length > 0
-							? ` [${selectedSurfaces.join("")}]`
-							: ""}
-					</span>
-					<AlertTriangle className="w-3.5 h-3.5 text-amber-500 ml-auto shrink-0" />
-				</button>
-				<button
-					type="button"
-					className="_ccm-action-item"
-					onClick={() =>
-						handleSelectDiagnosis(
-							"treatment",
-							"K04.0 Острый пульпит",
-							"diagnosis",
-						)
-					}
-				>
-					<span className="_ccm-btn-dot _ccm-dot-treatment" />
-					<span className="_ccm-item-title">K04.0 Острый пульпит</span>
-					<Flame className="w-3.5 h-3.5 text-red-500 ml-auto shrink-0" />
-				</button>
-				<button
-					type="button"
-					className="_ccm-action-item"
-					onClick={() =>
-						handleSelectDiagnosis(
-							"treatment",
-							"K04.5 Хронический апикальный периодонтит / киста",
-							"diagnosis",
-						)
-					}
-				>
-					<span className="_ccm-btn-dot _ccm-dot-treatment" />
-					<span className="_ccm-item-title">
-						K04.5 Периодонтит / Киста
-					</span>
-					<CircleDot className="w-3.5 h-3.5 text-red-500 ml-auto shrink-0" />
-				</button>
-				<button
-					type="button"
-					className="_ccm-action-item"
-					onClick={() =>
-						handleSelectDiagnosis(
-							"watch",
-							"K03.1 Клиновидный дефект",
-							"diagnosis",
-						)
-					}
-				>
-					<span className="_ccm-btn-dot _ccm-dot-watch" />
-					<span className="_ccm-item-title">
-						K03.1 Клиновидный дефект
-					</span>
-					<Activity className="w-3.5 h-3.5 text-amber-500 ml-auto shrink-0" />
-				</button>
+				{([
+					{
+						icd10: "K02.1",
+						fallbackTitle: "K02.1 Кариес дентина",
+						icon: AlertTriangle,
+						iconColor: "text-amber-500",
+						dotClass: "_ccm-dot-watch",
+						targetState: "watch" as const,
+						hasSurfaces: true,
+					},
+					{
+						icd10: "K02.0",
+						fallbackTitle: "K02.0 Кариес эмали",
+						icon: Sparkles,
+						iconColor: "text-amber-400",
+						dotClass: "_ccm-dot-watch",
+						targetState: "watch" as const,
+						hasSurfaces: true,
+					},
+					{
+						icd10: "K02.2",
+						fallbackTitle: "K02.2 Кариес цемента",
+						icon: AlertTriangle,
+						iconColor: "text-amber-600",
+						dotClass: "_ccm-dot-watch",
+						targetState: "watch" as const,
+						hasSurfaces: true,
+					},
+					{
+						icd10: "K04.0",
+						fallbackTitle: "K04.0 Острый пульпит",
+						icon: Flame,
+						iconColor: "text-red-500",
+						dotClass: "_ccm-dot-treatment",
+						targetState: "treatment" as const,
+						hasSurfaces: false,
+					},
+					{
+						icd10: "K04.5",
+						fallbackTitle: "K04.5 Периодонтит / Киста",
+						icon: CircleDot,
+						iconColor: "text-red-500",
+						dotClass: "_ccm-dot-treatment",
+						targetState: "treatment" as const,
+						hasSurfaces: false,
+					},
+					{
+						icd10: "K05.1",
+						fallbackTitle: "K05.1 Хронический гингивит",
+						icon: Activity,
+						iconColor: "text-orange-500",
+						dotClass: "_ccm-dot-watch",
+						targetState: "watch" as const,
+						hasSurfaces: false,
+					},
+					{
+						icd10: "K05.3",
+						fallbackTitle: "K05.3 Хронический пародонтит",
+						icon: Activity,
+						iconColor: "text-red-400",
+						dotClass: "_ccm-dot-treatment",
+						targetState: "treatment" as const,
+						hasSurfaces: false,
+					},
+					{
+						icd10: "K03.1",
+						fallbackTitle: "K03.1 Клиновидный дефект",
+						icon: Activity,
+						iconColor: "text-amber-500",
+						dotClass: "_ccm-dot-watch",
+						targetState: "watch" as const,
+						hasSurfaces: false,
+					},
+					{
+						icd10: "K01.1",
+						fallbackTitle: "K01.1 Ретинированный зуб",
+						icon: Scissors,
+						iconColor: "text-purple-500",
+						dotClass: "_ccm-dot-treatment",
+						targetState: "treatment" as const,
+						hasSurfaces: false,
+					},
+					{
+						icd10: "Z01.2",
+						fallbackTitle: "Z01.2 Стоматологическое обследование (Здоров)",
+						icon: CheckCircle2,
+						iconColor: "text-emerald-500",
+						dotClass: "_ccm-dot-healthy",
+						targetState: "healthy" as const,
+						hasSurfaces: false,
+					},
+				] as const).map((item) => {
+					const ssotDiag = getClinicalDiagnosisByIcd10(item.icd10);
+					const rawTitle = ssotDiag?.title.split("(")[0]?.trim() || ssotDiag?.title || "";
+					const title = ssotDiag ? `${ssotDiag.icd10} ${rawTitle}` : item.fallbackTitle;
+					const Icon = item.icon;
+					const isWatchActive = item.targetState === "watch" && state === "watch" && item.hasSurfaces;
+					return (
+						<button
+							key={item.icd10}
+							type="button"
+							className={`_ccm-action-item${isWatchActive ? " active" : ""}`}
+							onClick={() => {
+								const cavityNote =
+									item.hasSurfaces && selectedSurfaces.length > 0
+										? ` (${selectedSurfaces.join("")})`
+										: "";
+								handleSelectDiagnosis(
+									item.targetState,
+									`${title}${cavityNote}`,
+									"diagnosis",
+								);
+							}}
+						>
+							<span className={`_ccm-btn-dot ${item.dotClass}`} />
+							<span className="_ccm-item-title">
+								{item.fallbackTitle}
+								{item.hasSurfaces && selectedSurfaces.length > 0
+									? ` [${selectedSurfaces.join("")}]`
+									: ""}
+							</span>
+							<Icon className={`w-3.5 h-3.5 ${item.iconColor} ml-auto shrink-0`} />
+						</button>
+					);
+				})}
 			</div>
 
 			{/* Клинические тесты */}
@@ -274,7 +326,7 @@ export function ToothDiagnosisTab({
 						icon: Sparkles,
 						iconColor: "text-[var(--teal)]",
 						title: "Кариес + Пломба",
-						meta: "A16.07.002.010 · 4 500 ₽",
+						meta: `${TOOTH_804N_PRESETS.cariesFilling.code804n} · ${TOOTH_804N_PRESETS.cariesFilling.priceRub.toLocaleString("ru-RU")} ₽`,
 						action: () => {
 							const cavityNote = selectedSurfaces.length > 0 ? ` [${selectedSurfaces.join("")}]` : "";
 							handleSelectDiagnosis("done", `K02.1 Кариес дентина${cavityNote}: пломба световая`, "diagnosis");
@@ -286,7 +338,7 @@ export function ToothDiagnosisTab({
 						icon: Zap,
 						iconColor: "text-amber-500",
 						title: "Пульпит + Каналы + Пломба",
-						meta: "A16.07.030 + A16.07.002.010 · 8 000 ₽",
+						meta: `${TOOTH_804N_PRESETS.endoCanals.code804n} + ${TOOTH_804N_PRESETS.cariesFilling.code804n} · ${(TOOTH_804N_PRESETS.endoCanals.priceRub + TOOTH_804N_PRESETS.cariesFilling.priceRub).toLocaleString("ru-RU")} ₽`,
 						action: () => {
 							handleSelectDiagnosis("treatment", "K04.0 Острый пульпит: эндодонтия 1-й этап + пломба", "diagnosis");
 							handleAdd804nService(TOOTH_804N_PRESETS.endoCanals);
@@ -298,7 +350,7 @@ export function ToothDiagnosisTab({
 						icon: Crown,
 						iconColor: "text-amber-500",
 						title: "Коронка цирконий / МК",
-						meta: "A16.07.004 · 24 000 ₽",
+						meta: `${TOOTH_804N_PRESETS.crownZirconia.code804n} · ${TOOTH_804N_PRESETS.crownZirconia.priceRub.toLocaleString("ru-RU")} ₽`,
 						action: () => {
 							handleSelectDiagnosis("done", "K08.2 Коронка диоксид циркония / металлокерамика", "diagnosis");
 							handleAdd804nService(TOOTH_804N_PRESETS.crownZirconia);
@@ -309,7 +361,7 @@ export function ToothDiagnosisTab({
 						icon: Scissors,
 						iconColor: "text-red-500",
 						title: "Удаление постоянного зуба",
-						meta: "A16.07.001 · 3 500 ₽",
+						meta: `${TOOTH_804N_PRESETS.extractionPermanent.code804n} · ${TOOTH_804N_PRESETS.extractionPermanent.priceRub.toLocaleString("ru-RU")} ₽`,
 						action: () => {
 							handleSelectDiagnosis("missing", "K08.1 Удаление постоянного зуба", "diagnosis");
 							handleAdd804nService(TOOTH_804N_PRESETS.extractionPermanent);

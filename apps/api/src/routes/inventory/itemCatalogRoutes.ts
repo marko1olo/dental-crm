@@ -61,6 +61,40 @@ export const itemCatalogRoutes: FastifyPluginAsync = async (
 		},
 	);
 
+	// GET /:organizationId/stock — алиас реестра остатков для складского модуля
+	server.get<{ Params: { organizationId: string } }>(
+		"/:organizationId/stock",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"inventory read stock",
+			);
+			if (!resolvedOrgId) return;
+
+			const { organizationId } = request.params;
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
+
+			const items = await inventoryQuery.getInventoryItems(organizationId);
+			return items;
+		},
+	);
+
+	// GET /stock — автоопределение orgId
+	server.get("/stock", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"inventory read stock",
+		);
+		if (!resolvedOrgId) return;
+
+		const items = await inventoryQuery.getInventoryItems(resolvedOrgId);
+		return items;
+	});
+
 	// GET /reorder-suggestions — Предиктивные рекомендации к закупкам (DentalPin Reorder Point)
 	server.get<{ Querystring: { onlyNeedingReorder?: string | boolean } }>(
 		"/reorder-suggestions",

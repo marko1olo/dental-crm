@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
 	X,
 	Check,
 	Calendar,
-	Clock,
 	AlertTriangle,
-	Sparkles,
 	Layers,
-	ShieldCheck,
 	Zap,
 } from "lucide-react";
 import {
@@ -15,7 +13,6 @@ import {
 	type DentalLabOrderStatus,
 	type DentalLabOrderRecord,
 	DENTAL_LAB_CONSTRUCTIONS,
-	DENTAL_LAB_STATUSES,
 	VITA_CLASSICAL_SHADES,
 	VITA_BLEACH_SHADES,
 	ENAMEL_TRANSLUCENCY_OPTIONS,
@@ -69,9 +66,7 @@ export function DentalLabOrderDrawer({
 	const [formTranslucency, setFormTranslucency] = useState("MT");
 	const [formStumpShade, setFormStumpShade] = useState("ND2");
 	const [formSentDate, setFormSentDate] = useState(() => toIsoDate(new Date()));
-	const [formDeadlineDate, setFormDeadlineDate] = useState(() => {
-		return toIsoDate(addWorkingDaysRu(new Date(), 5));
-	});
+	const [formDeadlineDate, setFormDeadlineDate] = useState(() => toIsoDate(addWorkingDaysRu(new Date(), 5)));
 	const [formScheduledVisit, setFormScheduledVisit] = useState("");
 	const [formPatientPriceRub, setFormPatientPriceRub] = useState(24000);
 	const [formZtlCostRub, setFormZtlCostRub] = useState(7500);
@@ -149,11 +144,9 @@ export function DentalLabOrderDrawer({
 		} else {
 			const cat = getLabWorkTypeById(val);
 			if (cat) {
-				const catAny = cat as unknown as Record<string, unknown>;
-				setFormPatientPriceRub(typeof catAny.defaultPatientPriceRub === "number" ? catAny.defaultPatientPriceRub : 0);
-				setFormZtlCostRub(typeof catAny.defaultCostLabRub === "number" ? catAny.defaultCostLabRub : 0);
-				const turnaroundDays = typeof catAny.turnaroundWorkingDays === "number" ? catAny.turnaroundWorkingDays : 5;
-				setFormDeadlineDate(toIsoDate(addWorkingDaysRu(formSentDate, turnaroundDays)));
+				setFormPatientPriceRub(cat.defaultPatientPriceRub);
+				setFormZtlCostRub(cat.defaultCostLabRub);
+				setFormDeadlineDate(toIsoDate(addWorkingDaysRu(formSentDate, cat.turnaroundWorkingDays)));
 			}
 		}
 	};
@@ -163,17 +156,14 @@ export function DentalLabOrderDrawer({
 	};
 
 	const handleAutoBookFitting = () => {
-		const nextWorkDay = toIsoDate(addWorkingDaysRu(formDeadlineDate, 1));
-		setFormScheduledVisit(nextWorkDay);
+		setFormScheduledVisit(toIsoDate(addWorkingDaysRu(formDeadlineDate, 1)));
 	};
 
 	const handleApplyTreatmentPlanDefaults = () => {
 		setFormStageNumber(stageNumber ?? 3);
 		setFormStageTitle(stageTitle || "Ортопедический этап");
 		setFormConstruction("crown_zirconia");
-		if (currentToothNumber) {
-			setFormTeethInput(String(currentToothNumber));
-		}
+		if (currentToothNumber) setFormTeethInput(String(currentToothNumber));
 		setFormPatientPriceRub(24000);
 		setFormZtlCostRub(7500);
 		setFormDeadlineDate(toIsoDate(addWorkingDaysRu(new Date(), 5)));
@@ -307,9 +297,9 @@ export function DentalLabOrderDrawer({
 		}
 	};
 
-	return (
+	const drawerContent = (
 		<div
-			className="fixed inset-0 z-[9999] bg-slate-950/50 backdrop-blur-xs flex justify-end"
+			className="fixed inset-0 z-[99999] bg-slate-950/60 backdrop-blur-xs flex justify-end"
 			onClick={(e) => {
 				if (e.target === e.currentTarget) onClose();
 			}}
@@ -356,7 +346,7 @@ export function DentalLabOrderDrawer({
 					{(treatmentPlanId || stageNumber != null) && (
 						<div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-between gap-2">
 							<div className="min-w-0 text-[11px] text-teal-800 dark:text-teal-200">
-								<span className="font-bold">Ортопедический этап плана:</span> доступно 1-клик предзаполнение параметров
+								<span className="font-bold">Ортопедический этап плана:</span> 1-клик предзаполнение параметров
 							</div>
 							<button
 								type="button"
@@ -371,7 +361,7 @@ export function DentalLabOrderDrawer({
 					)}
 
 					{/* Пациент и Врач */}
-					<div className="grid grid-cols-2 gap-2">
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 						<div>
 							<label className="font-semibold block mb-1">Пациент (ФИО):</label>
 							<input
@@ -397,7 +387,7 @@ export function DentalLabOrderDrawer({
 					</div>
 
 					{/* Лаборатория и Зубной техник */}
-					<div className="grid grid-cols-2 gap-2">
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 						<div>
 							<label className="font-semibold block mb-1">Зуботехническая лаб.:</label>
 							<input
@@ -422,7 +412,7 @@ export function DentalLabOrderDrawer({
 
 					{/* Зубная формула FDI и Вид конструкции */}
 					<div className="space-y-2">
-						<div className="grid grid-cols-2 gap-2">
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 							<div>
 								<div className="flex items-center justify-between mb-1">
 									<label className="font-semibold">Зубы FDI (11–48):</label>
@@ -466,7 +456,7 @@ export function DentalLabOrderDrawer({
 
 						{/* Быстрые чипы зубной формулы */}
 						<div className="flex items-center gap-1.5 flex-wrap">
-							<span className="text-[10px] text-[var(--muted,#64748b)] font-semibold">Пресеты дуги:</span>
+							<span className="text-[10px] text-[var(--muted,#64748b)] font-semibold">Пресеты:</span>
 							<button
 								type="button"
 								onClick={() => setFormTeethInput("16")}
@@ -502,7 +492,7 @@ export function DentalLabOrderDrawer({
 					<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] space-y-2">
 						<div className="font-bold text-xs text-[var(--ink,#0f172a)] flex items-center justify-between">
 							<span className="flex items-center gap-1.5">
-								<span>Расцветка VITA и оптические параметры</span>
+								<span>Расцветка VITA и оптика</span>
 								<span
 									className="inline-block w-3.5 h-3.5 rounded-full border border-black/20 shadow-2xs"
 									style={{ backgroundColor: getVitaShadeHex(formVitaShade) || "#EBD7BB" }}
@@ -520,7 +510,7 @@ export function DentalLabOrderDrawer({
 									className="w-full h-8 px-1.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-mono font-bold"
 									data-testid="form-vita-shade-select"
 								>
-									<optgroup label="VITA Classical (A1–D4)">
+									<optgroup label="VITA Classical">
 										{VITA_CLASSICAL_SHADES.map((s) => (
 											<option key={s} value={s}>{s}</option>
 										))}
@@ -561,7 +551,7 @@ export function DentalLabOrderDrawer({
 
 					{/* Даты: Отправка, Дедлайн ЗТЛ по рабочим дням, Дата визита на примерку */}
 					<div className="space-y-2">
-						<div className="grid grid-cols-3 gap-2">
+						<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
 							<div>
 								<label className="font-semibold block mb-1">Отправка:</label>
 								<input
@@ -569,7 +559,7 @@ export function DentalLabOrderDrawer({
 									required
 									value={formSentDate}
 									onChange={(e) => setFormSentDate(e.target.value)}
-									className="w-full h-8 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs"
+									className="w-full h-9 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs"
 								/>
 							</div>
 							<div>
@@ -581,7 +571,7 @@ export function DentalLabOrderDrawer({
 									required
 									value={formDeadlineDate}
 									onChange={(e) => setFormDeadlineDate(e.target.value)}
-									className="w-full h-8 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-teal-700 dark:text-teal-300"
+									className="w-full h-9 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-teal-700 dark:text-teal-300"
 									data-testid="form-deadline-input"
 								/>
 							</div>
@@ -593,7 +583,7 @@ export function DentalLabOrderDrawer({
 									type="date"
 									value={formScheduledVisit}
 									onChange={(e) => setFormScheduledVisit(e.target.value)}
-									className="w-full h-8 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-amber-700 dark:text-amber-300"
+									className="w-full h-9 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-amber-700 dark:text-amber-300"
 									data-testid="form-scheduled-visit-input"
 								/>
 							</div>
@@ -601,7 +591,7 @@ export function DentalLabOrderDrawer({
 
 						{/* Кнопки быстрых рабочих дней ЗТЛ и авто-визита примерки */}
 						<div className="flex items-center justify-between gap-1 flex-wrap">
-							<div className="flex items-center gap-1">
+							<div className="flex items-center gap-1 flex-wrap">
 								<span className="text-[10px] text-[var(--muted,#64748b)]">Срок:</span>
 								{[
 									{ label: "+3 раб. дн.", days: 3 },
@@ -613,7 +603,7 @@ export function DentalLabOrderDrawer({
 										key={btn.days}
 										type="button"
 										onClick={() => handleSetWorkingDays(btn.days)}
-										className="min-h-[26px] px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f8fafc)] hover:bg-teal-500/10 border border-[var(--line,#cbd5e1)] text-[10px] font-medium transition-colors"
+										className="min-h-[28px] px-2 py-0.5 rounded bg-[var(--paper-soft,#f8fafc)] hover:bg-teal-500/10 border border-[var(--line,#cbd5e1)] text-[11px] font-medium transition-colors"
 										title={`Рассчитать дедлайн с пропуском суббот и воскресений: ${btn.days} раб. дней`}
 									>
 										{btn.label}
@@ -623,11 +613,11 @@ export function DentalLabOrderDrawer({
 							<button
 								type="button"
 								onClick={handleAutoBookFitting}
-								className="min-h-[26px] px-2 py-0.5 rounded bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-[10px] font-bold inline-flex items-center gap-1 transition-colors"
+								className="min-h-[28px] px-2.5 py-0.5 rounded bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-[11px] font-bold inline-flex items-center gap-1 transition-colors"
 								title="Назначить визит на следующий рабочий день после готовности в лаборатории"
 								data-testid="btn-auto-schedule-fitting"
 							>
-								<Calendar size={11} />
+								<Calendar size={12} />
 								<span>Визит (+1 раб. день)</span>
 							</button>
 						</div>
@@ -664,7 +654,7 @@ export function DentalLabOrderDrawer({
 						<select
 							value={formStatus}
 							onChange={(e) => setFormStatus(e.target.value as DentalLabOrderStatus)}
-							className="w-full h-8 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-semibold focus:ring-1 focus:ring-teal-500"
+							className="w-full h-9 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-semibold focus:ring-1 focus:ring-teal-500"
 							data-testid="form-status-select"
 						>
 							<option value="sent_to_lab">1. Отправлен в ЗТЛ (передан курьеру)</option>
@@ -680,7 +670,7 @@ export function DentalLabOrderDrawer({
 							<span>Финансовый расчет наряда ЗТЛ</span>
 							<span className="text-[11px] text-[var(--muted,#64748b)]">Вычет ЗТЛ из вала</span>
 						</div>
-						<div className="grid grid-cols-3 gap-2">
+						<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
 							<div>
 								<label className="text-[11px] block mb-0.5">Пациент (₽/ед):</label>
 								<input
@@ -758,26 +748,34 @@ export function DentalLabOrderDrawer({
 						/>
 					</div>
 
-					{/* Кнопки дравера */}
-					<div className="pt-2 flex items-center justify-end gap-2 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
-						<button
-							type="button"
-							onClick={onClose}
-							className="min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--line,#e2e8f0)] font-medium text-xs transition-colors cursor-pointer"
-						>
-							Отмена
-						</button>
-						<button
-							type="submit"
-							className="min-h-[44px] sm:min-h-[36px] px-4 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
-							data-testid="form-save-order-btn"
-						>
-							<Check className="w-4 h-4" />
-							<span>{editingOrder ? "Сохранить изменения" : "Оформить наряд ЗТЛ"}</span>
-						</button>
-					</div>
+					{/* Отступ снизу для безопасной зоны большого пальца */}
+					<div className="h-4" />
 				</form>
+
+				{/* Floating Bottom Bar (Natural Thumb Zone & Safe Area Insets) */}
+				<div className="p-3 border-t border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)]/95 backdrop-blur-md flex items-center justify-end gap-2.5 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+					<button
+						type="button"
+						onClick={onClose}
+						className="min-h-[44px] px-4 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--line,#e2e8f0)] font-bold text-xs transition-colors cursor-pointer active:scale-95"
+					>
+						Отмена
+					</button>
+					<button
+						type="button"
+						onClick={handleFormSubmit}
+						className="min-h-[44px] px-5 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold text-xs inline-flex items-center gap-2 shadow-sm transition-transform active:scale-95 cursor-pointer"
+						data-testid="form-save-order-btn"
+					>
+						<Check className="w-4 h-4" />
+						<span>{editingOrder ? "Сохранить изменения" : "Оформить наряд ЗТЛ"}</span>
+					</button>
+				</div>
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(drawerContent, document.body)
+		: drawerContent;
 }

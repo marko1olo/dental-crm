@@ -238,10 +238,10 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 						<span
 							className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30"
 							data-testid={`soft-overdraft-badge-${item.id}`}
-							title="Мягкий учет расхода (дефицит): не блокирует приём пациента"
+							title="Мягкий овердрафт склада (дефицит): не блокирует приём пациента"
 						>
 							<ShieldAlert size={10} className="shrink-0" />
-							<span>Дефицит</span>
+							<span>Дефицит / Овердрафт</span>
 						</span>
 					)}
 				</div>

@@ -98,9 +98,6 @@ export const DoctorChairScheduleModal: React.FC<DoctorChairScheduleModalProps> =
 		</div>
 	);
 
-	if (typeof document !== "undefined" && document.body) {
-		return createPortal(modalContent, document.body);
-	}
 	return modalContent;
 };
 

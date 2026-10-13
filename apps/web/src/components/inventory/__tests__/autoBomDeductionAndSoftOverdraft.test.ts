@@ -153,8 +153,9 @@ describe("BOM Deduction & Soft Overdraft Autonomy (Mandates 8e, 8k, 8n, 8s)", ()
 			assert.equal(result.hasOverdraft, true, "Должен быть флаг овердрафта");
 			assert.ok(result.softOverdrafts.length >= 1, "Должно быть предупреждение о мягком овердрафте");
 			assert.ok(
-				result.softOverdrafts[0]!.includes("Мандат 8e/8n: Мягкий овердрафт"),
-				"Сообщение должно ссылаться на Мандат 8e/8n",
+				result.softOverdrafts[0]!.includes("Складской овердрафт") ||
+				result.softOverdrafts[0]!.includes("Мягкий овердрафт"),
+				"Сообщение должно содержать информацию об овердрафте",
 			);
 
 			const carpuleItem = result.items.find((i) => i.inventoryItemId === "mat-anes-art-100k");

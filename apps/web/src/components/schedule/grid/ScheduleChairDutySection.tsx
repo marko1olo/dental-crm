@@ -77,12 +77,11 @@ export function ScheduleChairDutySection({
         <button
           type="button"
           onClick={() => openAssignModal(chair.id)}
-          className="w-full px-2.5 py-1 rounded-lg border border-dashed border-[var(--teal)]/50 hover:border-[var(--teal)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-between gap-1.5 text-xs font-semibold cursor-pointer transition-all shadow-2xs group"
+          className="min-h-[44px] w-full px-2.5 py-1.5 rounded-xl border border-dashed border-[var(--primary)]/50 hover:border-[var(--primary)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-between gap-1.5 text-xs font-semibold cursor-pointer transition-all shadow-2xs group touch-manipulation"
           style={{
-            minHeight: "32px",
-            height: "32px",
-            borderRadius: "8px",
-            border: "1px dashed var(--teal, #0d9488)",
+            minHeight: "44px",
+            borderRadius: "12px",
+            border: "1px dashed var(--primary, #0d9488)",
             background: "var(--paper)",
           }}
           title={`Назначить врача на кресло «${chair.name}»`}
@@ -92,10 +91,11 @@ export function ScheduleChairDutySection({
           <span className="flex items-center gap-1.5 min-w-0 truncate">
             <Plus
               size={13}
-              className="shrink-0 text-[var(--teal)] group-hover:scale-110 transition-transform"
+              className="shrink-0 text-[var(--primary)] group-hover:scale-110 transition-transform"
             />
-            <span className="truncate font-semibold text-xs text-[var(--teal-dark,var(--teal))]">
-              Назначить врача
+            <span className="truncate font-semibold text-xs text-[var(--primary)]">
+              <span className="sr-only">+ Назначить врача</span>
+              <span aria-hidden="true">Назначить врача</span>
             </span>
           </span>
           {/* Индикатор покрытия смен свободного кресла */}

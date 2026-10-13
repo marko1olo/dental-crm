@@ -9,17 +9,14 @@
  */
 
 import { randomInt } from "node:crypto";
-import { visitStockDeductionRequestSchema } from "@dental/shared";
+import { formatInventoryUnitRu, visitStockDeductionRequestSchema } from "@dental/shared";
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { db } from "../../db/client.js";
 import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
 import { FefoStockService } from "../inventory/fefoStockService.js";
-import {
-	InsufficientStockError,
-	TreatmentConsumablesService,
-} from "../treatmentConsumablesService.js";
+import { InsufficientStockError, TreatmentConsumablesService } from "../treatmentConsumablesService.js";
 
 const fefoStockService = new FefoStockService();
 
@@ -147,6 +144,7 @@ export async function executeSoftOverdraftDeduct(
 					...(isUuid ? { id: rawId } : {}),
 					organizationId,
 					name: targetName,
+					unit: formatInventoryUnitRu("pcs"),
 					stockQuantity: "0",
 					currentQty: "0",
 					criticalThreshold: "0",
@@ -493,6 +491,11 @@ export async function handleWarehouseDeductRequest(
 					},
 				],
 				message: `Списание со склада проведено (зафиксирован мягкий овердрафт: дефицит ${req - avail} ед. по «${invItemName}», накладная ещё не внесена). Приём не заблокирован.`,
+				inventoryItemId: invItemId,
+				inventoryItemName: invItemName,
+				availableStock: avail,
+				requiredStock: req,
+				deficitQty: req - avail,
 			});
 		}
 
@@ -595,6 +598,7 @@ export async function handleWarehouseDeductVisitRequest(
 				success: true,
 				isOverdraft: true,
 				is_overdraft: true,
+				hasOverdraft: true,
 				warning: `Мягкий овердрафт склада: зафиксирован дефицит по материалу «${invItemName}» (в наличии ${avail}, требовалось ${req}). Приём проведён без блокировки.`,
 				inventoryItemId: invItemId,
 				inventoryItemName: invItemName,

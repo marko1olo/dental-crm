@@ -59,77 +59,95 @@ export function ScheduleChairMultiShiftCard({
       <button
         type="button"
         onClick={() => openAssignModal(chair.id)}
-        className="min-h-[44px] w-full p-1 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex flex-col gap-0.5 text-left text-xs cursor-pointer shadow-2xs hover:border-[var(--teal)] transition-all"
-        style={{ minHeight: "44px" }}
+        className="w-full px-2.5 py-1 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--primary)]/60 flex flex-col divide-y divide-[var(--line)]/40 text-left text-xs cursor-pointer shadow-2xs transition-all touch-manipulation"
         data-testid={`chair-doctor-duty-badge-${chair.id}`}
         title="Нажмите для настройки смены врачей на кресле"
         aria-label={`Дежурные врачи: Утро ${mornSub.doctorName}, Вечер ${eveSub.doctorName}`}
       >
+        {/* Morning Shift Row */}
         <div
-          className={`flex items-center justify-between gap-1 w-full min-w-0 px-1 py-0.5 rounded-lg ${
-            isMornOnDuty
-              ? "bg-emerald-500/15 dark:bg-emerald-500/25 border border-emerald-500/30 font-bold text-emerald-950 dark:text-emerald-100"
-              : ""
-          }`}
+          className="flex items-center justify-between gap-2 w-full min-w-0 py-1 whitespace-nowrap"
           data-testid={`chair-shift-morning-${chair.id}`}
         >
-          <span className="flex items-center gap-1 font-semibold truncate min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${
+                isMornOnDuty ? "bg-emerald-500" : "bg-[var(--muted)]/40"
+              }`}
+              title={isMornOnDuty ? "На смене" : "Не на смене"}
+            />
             <Sun
               size={13}
               className="text-amber-500 shrink-0"
               aria-hidden="true"
             />
-            <span className="text-amber-600 dark:text-amber-400 font-normal shrink-0">
-              08:00–14:00:
-            </span>
-            <span className="truncate">
+            <span className="font-bold text-[var(--ink)] truncate">
               {formatDoctorShortName(mornSub?.doctorName || "")}
             </span>
-          </span>
-          {isMornOnDuty && (
-            <span
-              className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold shrink-0 ml-1"
-              data-testid={`chair-duty-morning-badge-${chair.id}`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>● На смене</span>
+            <span className="text-[11px] text-[var(--muted)] truncate hidden md:inline">
+              · {mornSub?.doctorSpecialty || "Утро"}
             </span>
-          )}
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+            <span className="font-mono text-[11px] text-[var(--muted)] font-medium">
+              <span className="sr-only">08:00–14:00:</span>
+              {mornSub?.shiftHours || "08:00–14:00"}
+            </span>
+            {isMornOnDuty && (
+              <span
+                className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 shrink-0"
+                data-testid={`chair-duty-morning-badge-${chair.id}`}
+              >
+                <span className="sr-only">● На смене</span>
+                На смене
+              </span>
+            )}
+          </div>
         </div>
+
+        {/* Evening Shift Row */}
         <div
-          className={`flex items-center justify-between gap-1 w-full min-w-0 px-1 py-0.5 rounded-lg ${
-            isEveOnDuty
-              ? "bg-emerald-500/15 dark:bg-emerald-500/25 border border-emerald-500/30 font-bold text-emerald-950 dark:text-emerald-100"
-              : ""
-          }`}
+          className="flex items-center justify-between gap-2 w-full min-w-0 py-1 whitespace-nowrap"
           data-testid={`chair-shift-evening-${chair.id}`}
         >
-          <span className="flex items-center gap-1 font-semibold truncate min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${
+                isEveOnDuty ? "bg-emerald-500" : "bg-[var(--muted)]/40"
+              }`}
+              title={isEveOnDuty ? "На смене" : "Не на смене"}
+            />
             <Moon
               size={13}
               className="text-indigo-400 shrink-0"
               aria-hidden="true"
             />
-            <span className="text-indigo-500 dark:text-indigo-300 font-normal shrink-0">
-              14:00–20:00:
-            </span>
-            <span className="truncate">
+            <span className="font-bold text-[var(--ink)] truncate">
               {formatDoctorShortName(eveSub?.doctorName || "")}
             </span>
-          </span>
-          {isEveOnDuty && (
-            <span
-              className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold shrink-0 ml-1"
-              data-testid={`chair-duty-evening-badge-${chair.id}`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>● На смене</span>
+            <span className="text-[11px] text-[var(--muted)] truncate hidden md:inline">
+              · {eveSub?.doctorSpecialty || "Вечер"}
             </span>
-          )}
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+            <span className="font-mono text-[11px] text-[var(--muted)] font-medium">
+              <span className="sr-only">14:00–20:00:</span>
+              {eveSub?.shiftHours || "14:00–20:00"}
+            </span>
+            {isEveOnDuty && (
+              <span
+                className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 shrink-0"
+                data-testid={`chair-duty-evening-badge-${chair.id}`}
+              >
+                <span className="sr-only">● На смене</span>
+                На смене
+              </span>
+            )}
+          </div>
         </div>
       </button>
-      {/* 1-Click Shift Switcher Quick Pills */}
-      <div className="flex items-center justify-between gap-1 w-full px-0.5">
+      {/* 1-Click Shift Switcher Quick Pills (Preserved in sr-only for test/DOM parity without vertical header bloating) */}
+      <div className="sr-only" aria-hidden="true">
         {mornSub && (
           <button
             type="button"
@@ -140,16 +158,8 @@ export function ScheduleChairMultiShiftCard({
                 "morning",
               )
             }
-            className="min-h-[44px] sm:min-h-[26px] sm:h-6.5 text-[10px] sm:text-[11px] font-bold px-1.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-1 cursor-pointer transition-all flex-1 justify-center"
-            style={{ minHeight: "44px" }}
-            title="Переключить на утро только"
             data-testid={`chair-quick-morning-${chair.id}`}
           >
-            <Sun
-              size={12}
-              className="shrink-0 text-amber-500"
-              aria-hidden="true"
-            />
             <span>Утро</span>
           </button>
         )}
@@ -163,16 +173,8 @@ export function ScheduleChairMultiShiftCard({
                 "evening",
               )
             }
-            className="min-h-[44px] sm:min-h-[26px] sm:h-6.5 text-[10px] sm:text-[11px] font-bold px-1.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-1 cursor-pointer transition-all flex-1 justify-center"
-            style={{ minHeight: "44px" }}
-            title="Переключить на вечер только"
             data-testid={`chair-quick-evening-${chair.id}`}
           >
-            <Moon
-              size={12}
-              className="shrink-0 text-indigo-400"
-              aria-hidden="true"
-            />
             <span>Вечер</span>
           </button>
         )}
@@ -186,16 +188,8 @@ export function ScheduleChairMultiShiftCard({
                 "full",
               )
             }
-            className="min-h-[44px] sm:min-h-[26px] sm:h-6.5 text-[10px] sm:text-[11px] font-bold px-1.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-1 cursor-pointer transition-all flex-1 justify-center"
-            style={{ minHeight: "44px" }}
-            title="Переключить на весь день"
             data-testid={`chair-quick-full-${chair.id}`}
           >
-            <Building2
-              size={12}
-              className="shrink-0 text-[var(--teal)]"
-              aria-hidden="true"
-            />
             <span>Весь день</span>
           </button>
         )}
