@@ -31,16 +31,16 @@ export const PriceValidatorStarTab: React.FC<PriceValidatorStarTabProps> = ({
 	return (
 		<div className="space-y-4">
 			{/* Protocol Filter & Summary Bar */}
-			<div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
+			<div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] text-xs">
 				<div className="flex items-center gap-2">
 					<div className="p-2 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))]">
 						<Award size={16} />
 					</div>
 					<div>
-						<span className="font-bold text-slate-900 dark:text-slate-100">
+						<span className="font-bold text-[var(--ink)]">
 							Индекс соответствия клиническим протоколам СтАР: {starValidation.complianceScorePercent}%
 						</span>
-						<p className="text-[11px] text-slate-500">
+						<p className="text-[11px] text-[var(--muted)]">
 							Проверено {starValidation.totalChecksCount} клинических правил по {starValidation.verifiedProceduresCount} процедурам
 						</p>
 					</div>
@@ -50,10 +50,10 @@ export const PriceValidatorStarTab: React.FC<PriceValidatorStarTabProps> = ({
 					<button
 						type="button"
 						onClick={() => onSeverityFilterChange("all")}
-						className={`px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+						className={`h-8 px-3 rounded-lg text-xs font-semibold cursor-pointer transition-colors inline-flex items-center justify-center ${
 							protocolSeverityFilter === "all"
-								? "bg-[var(--teal,var(--brand-primary))] text-white"
-								: "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+								? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
+								: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)]"
 						}`}
 					>
 						Все ({starValidation.totalChecksCount})
@@ -61,10 +61,10 @@ export const PriceValidatorStarTab: React.FC<PriceValidatorStarTabProps> = ({
 					<button
 						type="button"
 						onClick={() => onSeverityFilterChange("warnings_errors")}
-						className={`px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+						className={`h-8 px-3 rounded-lg text-xs font-semibold cursor-pointer transition-colors inline-flex items-center justify-center ${
 							protocolSeverityFilter === "warnings_errors"
-								? "bg-amber-600 text-white"
-								: "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+								? "bg-amber-600 text-white shadow-xs"
+								: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)]"
 						}`}
 					>
 						Замечания ({starValidation.warningsCount + starValidation.errorsCount})
@@ -72,10 +72,10 @@ export const PriceValidatorStarTab: React.FC<PriceValidatorStarTabProps> = ({
 					<button
 						type="button"
 						onClick={() => onSeverityFilterChange("passed")}
-						className={`px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+						className={`h-8 px-3 rounded-lg text-xs font-semibold cursor-pointer transition-colors inline-flex items-center justify-center ${
 							protocolSeverityFilter === "passed"
-								? "bg-emerald-600 text-white"
-								: "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+								? "bg-emerald-600 text-white shadow-xs"
+								: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)]"
 						}`}
 					>
 						Соответствуют ({starValidation.passedChecksCount})
@@ -105,7 +105,7 @@ export const PriceValidatorStarTab: React.FC<PriceValidatorStarTabProps> = ({
 									{check.protocolTitleRu}
 								</strong>
 								{check.toothNumber && (
-									<span className="px-2 py-0.2 rounded-md bg-white/80 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono font-bold text-[11px]">
+									<span className="px-2 py-0.5 rounded-md bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] font-mono font-bold text-[11px]">
 										Зуб №{check.toothNumber}
 									</span>
 								)}
@@ -124,17 +124,17 @@ export const PriceValidatorStarTab: React.FC<PriceValidatorStarTabProps> = ({
 							</span>
 						</div>
 
-						<p className="text-slate-800 dark:text-slate-200 font-medium">
+						<p className="text-[var(--ink)] font-medium">
 							{check.messageRu}
 						</p>
 
 						{check.recommendationRu && (
-							<div className="p-2 rounded-xl bg-white/70 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
-								<strong>Клиническая рекомендация:</strong> {check.recommendationRu}
+							<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line-subtle)] text-[var(--ink)]">
+								<strong className="text-[var(--teal,var(--brand-primary))]">Клиническая рекомендация:</strong> {check.recommendationRu}
 							</div>
 						)}
 
-						<div className="flex justify-between items-center text-[10px] text-slate-500 dark:text-slate-400 pt-1">
+						<div className="flex justify-between items-center text-[10px] text-[var(--muted)] pt-1">
 							<span>Норматив: {check.normativeRefRu}</span>
 							{check.order804nCodesRelated.length > 0 && (
 								<span className="font-mono">

@@ -104,12 +104,12 @@ export const StagePaymentTerminationTab: React.FC<StagePaymentTerminationTabProp
 									<th className="py-2 px-3 text-right">Сумма</th>
 								</tr>
 							</thead>
-							<tbody className="divide-y divide-[var(--border,#cbd5e1)]">
+							<tbody className="divide-y divide-[var(--line)]">
 								{terminationCalc.itemizedExpenses.map((exp, i) => (
-									<tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/30">
-										<td className="py-2 px-3 font-semibold text-[var(--ink,#0f172a)]">{exp.title}</td>
-										<td className="py-2 px-3 text-[var(--muted,#64748b)]">{exp.category}</td>
-										<td className="py-2 px-3 text-[var(--muted,#64748b)]">{exp.justificationRu}</td>
+									<tr key={i} className="hover:bg-[var(--paper-soft)] transition-colors">
+										<td className="py-2 px-3 font-semibold text-[var(--ink)]">{exp.title}</td>
+										<td className="py-2 px-3 text-[var(--muted)]">{exp.category}</td>
+										<td className="py-2 px-3 text-[var(--muted)]">{exp.justificationRu}</td>
 										<td className="py-2 px-3 text-right font-bold text-rose-600 dark:text-rose-400">
 											{formatKopecksRu(exp.amountKopecks)}
 										</td>
@@ -119,24 +119,24 @@ export const StagePaymentTerminationTab: React.FC<StagePaymentTerminationTabProp
 						</table>
 					</div>
 				) : (
-					<p className="text-xs text-[var(--muted,#64748b)] italic">
+					<p className="text-xs text-[var(--muted)] italic">
 						Прямых расходов по незавершенным этапам не зафиксировано.
 					</p>
 				)}
 
 				{/* Add Custom Expense Input */}
-				<div className="flex flex-wrap items-center gap-3 pt-3 border-t border-[var(--border,#cbd5e1)]">
+				<div className="flex flex-wrap items-center gap-3 pt-3 border-t border-[var(--line)]">
 					<input
 						type="text"
 						value={newExpenseTitle}
 						onChange={(e) => onNewExpenseTitleChange(e.target.value)}
 						placeholder="Добавить подтвержденный расход (напр. фрезеровка каркаса)..."
-						className="flex-1 min-w-[200px] rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-xs text-[var(--ink,#0f172a)] focus:border-[var(--teal,var(--brand-primary))] focus:outline-none"
+						className="flex-1 min-w-[200px] rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-xs text-[var(--ink)] focus:border-[var(--teal,var(--brand-primary))] focus:outline-none"
 					/>
 					<select
 						value={newExpenseCategory}
 						onChange={(e) => onNewExpenseCategoryChange(e.target.value as TerminationExpenseItem["category"])}
-						className="rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-xs text-[var(--ink,#0f172a)] focus:border-[var(--teal,var(--brand-primary))] focus:outline-none"
+						className="rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-xs text-[var(--ink)] focus:border-[var(--teal,var(--brand-primary))] focus:outline-none cursor-pointer"
 					>
 						<option value="lab_cadcam">CAD/CAM Лаборатория</option>
 						<option value="implant_hardware">Имплантаты/Компоненты</option>
@@ -148,12 +148,12 @@ export const StagePaymentTerminationTab: React.FC<StagePaymentTerminationTabProp
 						value={newExpenseRub}
 						onChange={(e) => onNewExpenseRubChange(e.target.value)}
 						placeholder="Сумма ₽"
-						className="w-28 rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-xs text-[var(--ink,#0f172a)] focus:border-[var(--teal,var(--brand-primary))] focus:outline-none"
+						className="w-28 rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-xs text-[var(--ink)] focus:border-[var(--teal,var(--brand-primary))] focus:outline-none"
 					/>
 					<button
 						type="button"
 						onClick={onAddCustomExpense}
-						className="stage-action-btn secondary text-xs"
+						className="stage-action-btn secondary text-xs h-8 px-3"
 					>
 						<Plus className="h-4 w-4" />
 						<span>Добавить</span>
@@ -162,8 +162,8 @@ export const StagePaymentTerminationTab: React.FC<StagePaymentTerminationTabProp
 			</div>
 
 			{/* Legal Rationale Box */}
-			<div className="rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-[var(--border,#cbd5e1)] p-4 text-xs text-[var(--muted,#64748b)] leading-relaxed">
-				<strong className="text-[var(--ink,#0f172a)] block mb-1">
+			<div className="rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] p-4 text-xs text-[var(--muted)] leading-relaxed">
+				<strong className="text-[var(--ink)] block mb-1">
 					Правовое заключение для соглашения о расторжении:
 				</strong>
 				{terminationCalc.legalRationaleRu}

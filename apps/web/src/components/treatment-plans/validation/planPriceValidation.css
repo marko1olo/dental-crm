@@ -210,7 +210,9 @@
 	color: var(--pv-text-main);
 	border: 1px solid var(--pv-border);
 	border-radius: var(--pv-radius-sm);
-	padding: 8px 12px;
+	padding: 0 12px;
+	height: 36px;
+	min-height: 36px;
 	font-size: 0.85rem;
 	font-weight: 600;
 	cursor: pointer;
@@ -234,7 +236,7 @@
 	color: var(--pv-text-main);
 	border: 1px solid var(--pv-border);
 	border-radius: var(--pv-radius-sm);
-	padding: 8px 14px;
+	padding: 0 14px;
 	font-size: 0.85rem;
 	font-weight: 600;
 	display: inline-flex;
@@ -242,7 +244,8 @@
 	gap: 6px;
 	cursor: pointer;
 	transition: all 0.2s;
-	min-height: 38px;
+	min-height: 36px;
+	height: 36px;
 }
 
 .price-validator-btn-secondary:hover {
@@ -255,7 +258,7 @@
 	color: var(--paper-strong);
 	border: 1px solid var(--pv-brand);
 	border-radius: var(--pv-radius-sm);
-	padding: 8px 14px;
+	padding: 0 14px;
 	font-size: 0.85rem;
 	font-weight: 600;
 	display: inline-flex;
@@ -263,7 +266,8 @@
 	gap: 6px;
 	cursor: pointer;
 	transition: all 0.2s;
-	min-height: 38px;
+	min-height: 36px;
+	height: 36px;
 }
 
 .price-validator-btn-brand:hover {

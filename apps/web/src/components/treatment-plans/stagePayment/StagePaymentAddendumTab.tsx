@@ -83,7 +83,7 @@ export const StagePaymentAddendumTab: React.FC<StagePaymentAddendumTabProps> = (
 								<td>{formatKopecksRu(Math.max(0, stg.totalKopecks - stg.advanceRequiredKopecks))}</td>
 							</tr>
 						))}
-						<tr className="font-bold bg-slate-100 dark:bg-slate-800">
+						<tr className="font-bold bg-[var(--paper-soft)] text-[var(--ink)]">
 							<td colSpan={2}>ИТОГО ПО ВСЕМ ЭТАПАМ:</td>
 							<td>{formatKopecksRu(totals.grandTotalKopecks)}</td>
 							<td>-</td>
@@ -105,7 +105,7 @@ export const StagePaymentAddendumTab: React.FC<StagePaymentAddendumTabProps> = (
 				</p>
 
 				{/* Signatures */}
-				<div className="grid grid-cols-2 gap-8 mt-8 pt-4 border-t border-slate-400 text-xs">
+				<div className="grid grid-cols-2 gap-8 mt-8 pt-4 border-t border-[var(--line)] text-xs">
 					<div>
 						<strong>ИСПОЛНИТЕЛЬ:</strong><br />
 						{clinicName}<br />

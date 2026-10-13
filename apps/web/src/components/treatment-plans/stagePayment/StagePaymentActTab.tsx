@@ -96,9 +96,9 @@ export const StagePaymentActTab: React.FC<StagePaymentActTabProps> = ({
 
 				{/* Selected Stage Detail Card */}
 				{selectedStage && (
-					<div className="rounded-xl border border-[var(--border,#cbd5e1)] bg-slate-50 dark:bg-slate-900/40 p-4 text-xs flex flex-col gap-3">
+					<div className="rounded-xl border border-[var(--line-subtle)] bg-[var(--paper-soft)] p-4 text-xs flex flex-col gap-3">
 						<div className="flex justify-between items-center">
-							<span className="font-bold text-sm text-[var(--ink,#0f172a)]">
+							<span className="font-bold text-sm text-[var(--ink)]">
 								{selectedStage.title}
 							</span>
 							<span className="font-extrabold text-sm text-[var(--teal,var(--brand-primary))]">

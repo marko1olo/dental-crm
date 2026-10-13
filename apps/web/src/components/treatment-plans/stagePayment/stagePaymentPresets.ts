@@ -190,8 +190,8 @@ export interface StageStatusUiMeta {
 export const STAGE_STATUS_UI_MAP: Record<StagePaymentStatus, StageStatusUiMeta> = {
 	draft: {
 		labelRu: "Черновик",
-		badgeClass: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-300 dark:border-slate-700",
-		borderClass: "border-slate-300 dark:border-slate-700",
+		badgeClass: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]",
+		borderClass: "border-[var(--line)]",
 		iconName: "FileEdit",
 		descriptionRu: "Смета этапа сформирована, ожидает внесения аванса или начала работ.",
 	},

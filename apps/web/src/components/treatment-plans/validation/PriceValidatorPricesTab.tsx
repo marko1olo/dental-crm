@@ -139,7 +139,7 @@ export const PriceValidatorPricesTab: React.FC<PriceValidatorPricesTabProps> = (
 						marginBottom: "0.75rem",
 					}}
 				>
-					<Clock size={20} className="text-amber-600 dark:text-amber-400 shrink-0" />
+					<Clock size={20} className="text-[var(--warn-fg,var(--warn,#d97706))] shrink-0" />
 					<div>
 						<strong>Мягкое предупреждение: срок составления сметы превысил 30 дней</strong>
 						<div style={{ marginTop: 2, fontSize: "0.85rem" }}>

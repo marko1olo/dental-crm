@@ -16,6 +16,7 @@
  */
 
 import React, { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
 	Calendar,
 	Coins,
@@ -99,6 +100,8 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 	initialDepositKopecks = 0 as Kopecks,
 	initialTab = "schedule",
 }) => {
+	if (!isOpen) return null;
+
 	const [activeTab, setActiveTab] = useState<StagePaymentModalTab>(initialTab);
 
 	// Состояние этапов
@@ -369,7 +372,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 		);
 	}
 
-	return (
+	const modalContent = (
 		<div className="stage-payment-modal-overlay" role="dialog" aria-modal="true">
 			<div className="stage-payment-modal-container">
 				{/* Modal Header */}
@@ -412,7 +415,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[var(--ink,#0f172a)] transition no-print"
+							className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--line)] text-[var(--muted)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink)] transition no-print"
 							aria-label="Закрыть"
 						>
 							<X className="h-5 w-5" />
@@ -446,7 +449,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 					>
 						<Calendar className="h-4 w-4" />
 						<span>График этапов и оплат</span>
-						<span className="ml-1 rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.2 text-xs">
+						<span className="ml-1 rounded-full bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line-subtle)] px-2 py-0.5 text-xs">
 							{stages.length}
 						</span>
 					</button>
@@ -594,6 +597,11 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 			</div>
 		</div>
 	);
+
+	if (typeof document !== "undefined") {
+		return createPortal(modalContent, document.body);
+	}
+	return modalContent;
 };
 
 export default StagePaymentPlanModal;

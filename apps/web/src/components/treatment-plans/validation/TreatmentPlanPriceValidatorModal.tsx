@@ -13,6 +13,7 @@
 
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Award, CheckCircle2 } from "lucide-react";
 import {
 	type CatalogServiceItem,
@@ -83,6 +84,8 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 	onExportWorkOrder,
 	onExportCompletedAct,
 }) => {
+	if (!isOpen) return null;
+
 	const isDemo = isDemoShowcaseMode();
 	const demoFallbackPlan: TreatmentPlanValidationPayload | undefined =
 		isDemo ? SAMPLE_TREATMENT_PLAN_FOR_VALIDATION : undefined;
@@ -363,7 +366,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 		);
 	}
 
-	return (
+	const modalContent = (
 		<div className="price-validator-backdrop" role="dialog" aria-modal="true">
 			<div className="price-validator-modal">
 				{/* Header */}
@@ -378,14 +381,14 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 				<PriceValidatorMetricsGrid report={report} />
 
 				{/* Tab Navigation Bar */}
-				<div className="flex items-center justify-between px-6 py-2 bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
+				<div className="flex items-center justify-between px-6 py-2 bg-[var(--paper-soft)] border-b border-[var(--line)]">
 					<div className="flex items-center gap-1.5">
 						<button
 							type="button"
 							onClick={() => setActiveTab("prices")}
-							className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+							className={`h-8 px-3.5 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
 								activeTab === "prices"
-									? "bg-[var(--paper)] text-[var(--teal-dark,var(--teal))] shadow-xs"
+									? "bg-[var(--paper)] text-[var(--teal-dark,var(--teal))] shadow-xs border border-[var(--line)]"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 						>
@@ -394,24 +397,24 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 						<button
 							type="button"
 							onClick={() => setActiveTab("star_protocols")}
-							className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+							className={`h-8 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer inline-flex items-center justify-center ${
 								activeTab === "star_protocols"
-									? "bg-[var(--paper)] text-[var(--teal-dark,var(--teal))] shadow-xs"
+									? "bg-[var(--paper)] text-[var(--teal-dark,var(--teal))] shadow-xs border border-[var(--line)]"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 						>
 							<Award size={14} />
 							<span>Стандарты и прейскурант</span>
-							<span className="px-1.5 py-0.2 rounded-full bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] text-[10px] font-mono">
+							<span className="px-1.5 py-0.5 rounded-full bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] text-[10px] font-mono">
 								{starValidation.checks.length}
 							</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setActiveTab("summary")}
-							className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+							className={`h-8 px-3.5 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
 								activeTab === "summary"
-									? "bg-[var(--paper)] text-[var(--teal-dark,var(--teal))] shadow-xs"
+									? "bg-[var(--paper)] text-[var(--teal-dark,var(--teal))] shadow-xs border border-[var(--line)]"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 						>
@@ -419,7 +422,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 						</button>
 					</div>
 
-					<div className="text-xs text-slate-500 font-mono">
+					<div className="text-xs text-[var(--muted)] font-mono">
 						Код в прейскуранте
 					</div>
 				</div>
@@ -485,6 +488,11 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 			</div>
 		</div>
 	);
+
+	if (typeof document !== "undefined") {
+		return createPortal(modalContent, document.body);
+	}
+	return modalContent;
 };
 
 export default TreatmentPlanPriceValidatorModal;
