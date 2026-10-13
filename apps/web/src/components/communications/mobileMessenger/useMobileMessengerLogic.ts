@@ -106,7 +106,15 @@ export function useMobileMessengerLogic({
 		const dialogsMap = new Map<string, MobilePatientDialogSummary>();
 
 		events.forEach((ev: any) => {
-			const pId = ev.patientId || "unknown";
+			let pId = ev.patientId || "unknown";
+			if (!patientsMap.has(pId) && ev.patientName) {
+				for (const [k, v] of patientsMap.entries()) {
+					if (v.name === ev.patientName) {
+						pId = k;
+						break;
+					}
+				}
+			}
 			const patientInfo = patientsMap.get(pId) || {
 				name: ev.patientName || "Пациент клиники",
 				phone: ev.patientPhone || "",
@@ -124,7 +132,7 @@ export function useMobileMessengerLogic({
 					lastMessageAt: ev.createdAt,
 					channel: (ev.channel as any) || "whatsapp",
 					direction: ev.direction === "inbound" ? "inbound" : "outbound",
-					unreadCount: ev.status === "unread" ? 1 : 0,
+					unreadCount: ev.status === "unread" || ev.direction === "inbound" ? 1 : 0,
 				});
 			}
 		});
@@ -369,7 +377,7 @@ export function useMobileMessengerLogic({
 
 		try {
 			// Real API call to send message
-			await fetch(`/api/communications/inbox/${encodeURIComponent(selectedPatientId)}/send`, {
+			const res = await fetch(`/api/communications/inbox/${encodeURIComponent(selectedPatientId)}/send`, {
 				method: "POST",
 				headers: {
 					...denteAdminSecretRequestHeaders(),
@@ -379,16 +387,34 @@ export function useMobileMessengerLogic({
 					message: fullText,
 					channel: activeChannel,
 				}),
-			}).catch(() => null);
+			});
 
-			// Mark as delivered
-			setTimeout(() => {
+			if (!res.ok) {
+				const data = await res.json().catch(() => ({}));
+				showToast(data.message || "Ошибка отправки через шлюз", "error");
 				setChatMessages((prev) =>
-					prev.map((m) => (m.id === newMsg.id ? { ...m, status: "delivered" } : m)),
+					prev.map((m) => (m.id === newMsg.id ? { ...m, status: "failed" } : m)),
 				);
-			}, 600);
+				return;
+			}
+
+			const data = await res.json().catch(() => ({}));
+			if (data.warning) {
+				showToast(data.warning, "info");
+			}
+
+			// Статус отправки подтвержден сервером
+			setChatMessages((prev) =>
+				prev.map((m) => (m.id === newMsg.id ? { ...m, status: data.event?.status ?? "sent" } : m)),
+			);
 
 			showToast(`Сообщение отправлено в ${communicationChannelLabels[activeChannel] || activeChannel}`, "success");
+		} catch (err) {
+			console.error("Failed to send mobile message via API:", err);
+			showToast("Сбой сети при отправке сообщения", "error");
+			setChatMessages((prev) =>
+				prev.map((m) => (m.id === newMsg.id ? { ...m, status: "failed" } : m)),
+			);
 		} finally {
 			setIsSendingMessage(false);
 		}

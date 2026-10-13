@@ -170,6 +170,64 @@ export function useMessageDeliveryConsole(props?: MessageDeliveryConsoleProps) {
 			);
 			setUisQuota(quotaData);
 		} catch (error) {
+			if (isDemoShowcaseMode()) {
+				setGateways({
+					channels: {
+						sms: {
+							configured: true,
+							provider: "SMS.RU",
+							sender: "DENTE",
+							balance: { amount: 4850, currency: "₽" },
+							balanceError: null,
+						},
+						whatsapp: { configured: true },
+						telegram: { configured: true },
+						email: {
+							configured: true,
+							host: "smtp.dente-demo.ru",
+							from: "clinic@dente-demo.ru",
+							requireTls: true,
+						},
+						vk: { configured: false, detail: "" },
+						max: { configured: false, detail: "" },
+					},
+					automaticSending: {
+						enabled: true,
+						intervalSeconds: 60,
+						batchSize: 25,
+						detail: "Автоматическая отправка активна",
+						enableWith: "",
+						waiting: 0,
+						oldestWaitingAt: null,
+					},
+					deliverableChannels: ["sms", "whatsapp", "telegram", "email"],
+				});
+				setTemplates([
+					{
+						id: "demo-tpl-confirm",
+						title: "Подтверждение визита за 24 часа",
+						channel: "whatsapp",
+						intent: "appointment_confirmation",
+						body: "Здравствуйте, {patient_name}! Напоминаем о записи на приём {appointment_date} в {appointment_time}. Подтвердите, пожалуйста, визит.",
+						variables: ["patient_name", "appointment_date", "appointment_time"],
+						isActive: true,
+					},
+					{
+						id: "demo-tpl-recall",
+						title: "Плановый профосмотр (раз в 6 мес.)",
+						channel: "telegram",
+						intent: "recall",
+						body: "Здравствуйте, {patient_name}! Прошло полгода с момента последнего осмотра. Приглашаем вас на профилактический осмотр и профгигиену в клинику ДЕНТЕ.",
+						variables: ["patient_name"],
+						isActive: true,
+					},
+				]);
+				setOutbox([]);
+				setSummary({ sent: 14, queued: 0, failed: 0 });
+				setUisQuota({ remaining: 485, smsQuotaLimit: 500 });
+				setLoadError(null);
+				return;
+			}
 			showToast(
 				actionFailureToast(
 					"Ошибка выполнения операции",

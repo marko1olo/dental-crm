@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../../contexts/AppLogicContext";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { showToast } from "../../GlobalToast";
 import {
@@ -74,6 +75,27 @@ export function useCampaignPanel({
 			);
 			setVariables(variablesData.variables ?? []);
 		} catch (error) {
+			if (isDemoShowcaseMode()) {
+				setTemplates([
+					{
+						id: "demo-tpl-recall-6m",
+						title: "Профосмотр раз в 6 месяцев",
+						channel: "whatsapp",
+						intent: "recall_reminder",
+						isActive: true,
+					},
+					{
+						id: "demo-tpl-hygiene-3m",
+						title: "Профгигиена (ортодонтия и имплантаты)",
+						channel: "telegram",
+						intent: "hygiene_recall",
+						isActive: true,
+					},
+				]);
+				setCampaigns([]);
+				setLoadError(null);
+				return;
+			}
 			showToast(
 				actionFailureToast(
 					"Ошибка выполнения операции",

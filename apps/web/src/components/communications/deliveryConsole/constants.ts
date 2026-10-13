@@ -52,26 +52,10 @@ export const statusTone: Record<string, "ok" | "warn" | "bad" | "info" | "muted"
 	suppressed: "warn",
 };
 
-export function minutesToTime(minutes: number): string {
-	const hours = Math.floor(minutes / 60) % 24;
-	const rest = minutes % 60;
-	return `${String(hours).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
-}
+import { minutesToClockTime, parseTimeToMinutes } from "@dental/shared";
 
-export function timeToMinutes(value: string): number | null {
-	const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
-	if (!match) return null;
-	const hours = Number.parseInt(match[1] ?? "", 10);
-	const minutes = Number.parseInt(match[2] ?? "", 10);
-	if (
-		!Number.isFinite(hours) ||
-		!Number.isFinite(minutes) ||
-		hours > 23 ||
-		minutes > 59
-	)
-		return null;
-	return hours * 60 + minutes;
-}
+export const minutesToTime = minutesToClockTime;
+export const timeToMinutes = parseTimeToMinutes;
 
 export async function readJson<T>(response: Response): Promise<T> {
 	const payload = (await response.json().catch((err) => {

@@ -44,14 +44,13 @@ export async function registerMessagingServiceHandlers(
 	app: FastifyInstance,
 ): Promise<void> {
 	app.post("/api/communications/tasks/complete", async (request, reply) => {
-		if (
-			!(await requireClinicalMutationAccess(
-				request,
-				reply,
-				"communication task complete",
-			))
-		)
-			return;
+		const organizationId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"communication task complete",
+		);
+		if (!organizationId) return;
+
 		const parsedInput = completeCommunicationTaskSchema.safeParse(
 			request.body,
 		);
@@ -61,17 +60,6 @@ export async function registerMessagingServiceHandlers(
 				message: communicationTaskValidationMessage,
 			});
 		}
-
-		/*
-		 * АРЕНДАТОР БЕРЁТСЯ ИЗ ПОДПИСАННОГО ТОКЕНА, А НЕ ИЗ ПЕРВОЙ СТРОКИ ТАБЛИЦЫ.
-		 * Был устранен антипаттерн `SELECT * FROM organizations LIMIT 1`.
-		 */
-		const organizationId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"communication task complete",
-		);
-		if (!organizationId) return;
 
 		try {
 			const result = await db.transaction(async (tx) => {
@@ -166,19 +154,15 @@ export async function registerMessagingServiceHandlers(
 	// --- Omnichannel Inbox endpoints ---
 
 	app.get("/api/communications/patients/search", async (request, reply) => {
-		if (
-			!(await requireClinicalReadAccess(
-				request,
-				reply,
-				"communications patients search",
-			))
-		)
-			return;
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"communications patients search",
+		);
+		if (!orgId) return;
 		const { q } = request.query as { q?: string };
 		if (!q || q.length < 2) return reply.send([]);
 
-		const orgId = await requireResolvedOrganizationId(request, reply);
-		if (!orgId) return;
 		const result = await db
 			.select({
 				id: patients.id,
@@ -198,15 +182,11 @@ export async function registerMessagingServiceHandlers(
 	});
 
 	app.get("/api/communications/inbox", async (request, reply) => {
-		if (
-			!(await requireClinicalReadAccess(
-				request,
-				reply,
-				"communications inbox",
-			))
-		)
-			return reply;
-		const orgId = await requireResolvedOrganizationId(request, reply);
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"communications inbox",
+		);
 		if (!orgId) return reply;
 
 		// 152-ФЗ / 323-ФЗ ст. 13: Запрет маркетологам на просмотр переписки пациентов
@@ -228,6 +208,7 @@ export async function registerMessagingServiceHandlers(
 				e.message,
 				e.channel,
 				e.direction,
+				e.status,
 				e.created_at AS "createdAt",
 				p.full_name AS "patientName",
 				p.phone AS "patientPhone"
@@ -243,6 +224,7 @@ export async function registerMessagingServiceHandlers(
 			message: row.message,
 			channel: row.channel,
 			direction: row.direction,
+			status: row.status ?? "delivered",
 			createdAt: row.createdAt,
 			readAt: row.createdAt,
 			patientName: row.patientName,
@@ -258,17 +240,13 @@ export async function registerMessagingServiceHandlers(
 	});
 
 	app.get("/api/communications/inbox/:patientId", async (request, reply) => {
-		if (
-			!(await requireClinicalReadAccess(
-				request,
-				reply,
-				"communications inbox thread",
-			))
-		)
-			return;
-		const { patientId } = request.params as { patientId: string };
-		const orgId = await requireResolvedOrganizationId(request, reply);
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"communications inbox thread",
+		);
 		if (!orgId) return;
+		const { patientId } = request.params as { patientId: string };
 
 		// 152-ФЗ / 323-ФЗ ст. 13: Маркетолог не имеет права читать диалог пациента
 		const identity = getRequestIdentity(request);
@@ -321,6 +299,7 @@ export async function registerMessagingServiceHandlers(
 				message: communicationEvents.message,
 				channel: communicationEvents.channel,
 				direction: communicationEvents.direction,
+				status: communicationEvents.status,
 				createdAt: communicationEvents.createdAt,
 				patientName: patients.fullName,
 			})
@@ -341,6 +320,7 @@ export async function registerMessagingServiceHandlers(
 				message: e.message,
 				channel: e.channel,
 				direction: e.direction,
+				status: e.status ?? "delivered",
 				createdAt: e.createdAt,
 				patientName: e.patientName,
 				readAt: e.createdAt,
@@ -351,17 +331,13 @@ export async function registerMessagingServiceHandlers(
 	app.post(
 		"/api/communications/inbox/:patientId/send",
 		async (request, reply) => {
-			if (
-				!(await requireClinicalMutationAccess(
-					request,
-					reply,
-					"communications send message",
-				))
-			)
-				return;
-			const { patientId } = request.params as { patientId: string };
-			const orgId = await requireResolvedOrganizationId(request, reply);
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"communications send message",
+			);
 			if (!orgId) return;
+			const { patientId } = request.params as { patientId: string };
 
 			const identity = getRequestIdentity(request);
 			if (identity.role === "marketer" || identity.role === "marketing") {
@@ -419,21 +395,40 @@ export async function registerMessagingServiceHandlers(
 				message,
 				channel: resolvedChannel,
 				idempotencyKey,
+				sanitize,
 			} = bodyParsed.data;
 
-			const secrecy =
-				MessageTemplateEngine.detectMedicalSecrecyLeaks(message);
-			if (secrecy.hasLeak) {
-				return reply.code(422).send({
-					error: "MedicalSecrecyViolation",
-					message: `Отправка сведений о здоровье, диагнозов или формулы зубов по открытым каналам связи запрещена (152-ФЗ / 323-ФЗ ст. 13): ${secrecy.reasons.join("; ")}`,
-					detectedTerms: secrecy.detectedTerms,
-				});
+			const secrecy = MessageTemplateEngine.detectMedicalSecrecyLeaks(message);
+			const trimmedMessage = message.trim();
+			let messageToSend = trimmedMessage;
+			let warning: string | undefined;
+
+			if (secrecy.hasCriticalLeak) {
+				if (sanitize) {
+					const sanitized = MessageTemplateEngine.sanitizeMedicalSecrecy(trimmedMessage);
+					messageToSend = sanitized.sanitizedText;
+					warning = `Критические диагнозы автоматически санитизированы: ${secrecy.criticalTerms.join(", ")}`;
+				} else {
+					return reply.code(422).send({
+						error: "MedicalSecrecyViolation",
+						message: `Отправка сведений о тяжелых соматических заболеваниях (ВИЧ, онкология, гепатит) по открытым каналам запрещена 152-ФЗ / 323-ФЗ ст. 13: ${secrecy.reasons.join("; ")}`,
+						detectedTerms: secrecy.criticalTerms,
+						canSanitize: true,
+					});
+				}
+			} else if (secrecy.hasLeak) {
+				if (sanitize) {
+					const sanitized = MessageTemplateEngine.sanitizeMedicalSecrecy(trimmedMessage);
+					messageToSend = sanitized.sanitizedText;
+					warning = `Стоматологические термины санитизированы: ${secrecy.detectedTerms.join(", ")}`;
+				} else {
+					// Мандат 8e (Автономия врача): не блокируем врача 422 кодом для сервисных стоматологических сообщений
+					warning = `Внимание: сообщение содержит клинические термины (${secrecy.detectedTerms.join(", ")}).`;
+				}
 			}
 
 			// 15-second idempotency check to protect against rapid double-clicks
 			const fifteenSecAgo = new Date(Date.now() - 15 * 1000);
-			const trimmedMessage = message.trim();
 			const recentEvents = await db
 				.select({
 					id: communicationEvents.id,
@@ -446,7 +441,7 @@ export async function registerMessagingServiceHandlers(
 						eq(communicationEvents.patientId, patientId),
 						eq(communicationEvents.channel, resolvedChannel),
 						eq(communicationEvents.direction, "outbound"),
-						eq(communicationEvents.message, trimmedMessage),
+						eq(communicationEvents.message, messageToSend),
 						gt(communicationEvents.createdAt, fifteenSecAgo),
 					),
 				)
@@ -459,12 +454,14 @@ export async function registerMessagingServiceHandlers(
 					event: recentEvents[0],
 					message:
 						"Сообщение уже отправлено (защита от повторной отправки)",
+					warning,
+					hasMedicalSecrecyWarning: Boolean(warning),
 				});
 			}
 
 			const messageToStore = idempotencyKey
-				? `${trimmedMessage} [idempotency:${idempotencyKey}]`
-				: trimmedMessage;
+				? `${messageToSend} [idempotency:${idempotencyKey}]`
+				: messageToSend;
 
 			const inserted = await db
 				.insert(communicationEvents)
@@ -478,7 +475,12 @@ export async function registerMessagingServiceHandlers(
 				})
 				.returning();
 
-			return reply.send({ success: true, event: inserted[0] });
+			return reply.send({
+				success: true,
+				event: inserted[0],
+				warning,
+				hasMedicalSecrecyWarning: Boolean(warning),
+			});
 		},
 	);
 
@@ -491,15 +493,6 @@ export async function registerMessagingServiceHandlers(
 	app.post(
 		"/api/communications/chats/:chatId/lock",
 		async (request, reply) => {
-			if (
-				!(await requireClinicalMutationAccess(
-					request,
-					reply,
-					"communications lock chat",
-				))
-			)
-				return;
-
 			const organizationId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -563,15 +556,6 @@ export async function registerMessagingServiceHandlers(
 	app.post(
 		"/api/communications/chats/:chatId/heartbeat",
 		async (request, reply) => {
-			if (
-				!(await requireClinicalMutationAccess(
-					request,
-					reply,
-					"communications heartbeat chat",
-				))
-			)
-				return;
-
 			const organizationId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -635,15 +619,6 @@ export async function registerMessagingServiceHandlers(
 	app.post(
 		"/api/communications/chats/:chatId/unlock",
 		async (request, reply) => {
-			if (
-				!(await requireClinicalMutationAccess(
-					request,
-					reply,
-					"communications unlock chat",
-				))
-			)
-				return;
-
 			const organizationId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -705,15 +680,6 @@ export async function registerMessagingServiceHandlers(
 	app.get(
 		"/api/communications/chats/:chatId/lock-status",
 		async (request, reply) => {
-			if (
-				!(await requireClinicalReadAccess(
-					request,
-					reply,
-					"communications get chat lock status",
-				))
-			)
-				return;
-
 			const organizationId = await requireResolvedOrganizationId(
 				request,
 				reply,

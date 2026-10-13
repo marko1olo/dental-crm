@@ -191,9 +191,11 @@ export function WhatsAppChatPanel({
 					status:
 						m.direction === "inbound"
 							? undefined
-							: m.status === "delivered" || m.status === "read"
-								? m.status
-								: "sent",
+							: m.status === "failed"
+								? "failed"
+								: m.status === "delivered" || m.status === "read"
+									? m.status
+									: "sent",
 				}));
 				setMessages(parsed);
 			} else {
@@ -256,7 +258,7 @@ export function WhatsAppChatPanel({
 
 		try {
 			if (effectivePatientId) {
-				await fetch(
+				const res = await fetch(
 					`/api/communications/inbox/${encodeURIComponent(effectivePatientId)}/send`,
 					{
 						method: "POST",
@@ -269,9 +271,27 @@ export function WhatsAppChatPanel({
 							channel: "whatsapp",
 						}),
 					},
-				).catch(() => null);
+				);
+				if (!res.ok) {
+					const data = await res.json().catch(() => ({}));
+					showToast(data.message || "Ошибка отправки шаблона через шлюз", "error");
+					setMessages((prev) =>
+						prev.map((m) => (m.id === newMsgId ? { ...m, status: "failed" } : m)),
+					);
+					return;
+				}
+				const data = await res.json().catch(() => ({}));
+				if (data.warning) {
+					showToast(data.warning, "info");
+				}
 			}
 			showToast(`Шаблон «${tmpl.label}» отправлен в WhatsApp`, "success");
+		} catch (err) {
+			console.error("Failed to send template via API:", err);
+			showToast("Сбой сети при отправке шаблона", "error");
+			setMessages((prev) =>
+				prev.map((m) => (m.id === newMsgId ? { ...m, status: "failed" } : m)),
+			);
 		} finally {
 			setIsSending(false);
 		}
@@ -333,12 +353,20 @@ export function WhatsAppChatPanel({
 					);
 					return;
 				}
+
+				const data = await res.json().catch(() => ({}));
+				if (data.warning) {
+					showToast(data.warning, "info");
+				}
 			}
 
 			showToast("Сообщение отправлено", "success");
 		} catch (err) {
 			console.error("Failed to send message via API:", err);
-			showToast("Сообщение сохранено локально", "info");
+			showToast("Сбой сети при отправке сообщения", "error");
+			setMessages((prev) =>
+				prev.map((m) => (m.id === newMsgId ? { ...m, status: "failed" } : m)),
+			);
 		} finally {
 			setIsSending(false);
 		}

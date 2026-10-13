@@ -33,7 +33,7 @@ export const MessengerHeaderBar: React.FC<MessengerHeaderBarProps> = ({
 						title="Шлюзы WhatsApp / Telegram / SMS активны"
 					>
 						<span className="mobile-messenger-telemetry-dot" />
-						<span>Online</span>
+						<span>На связи</span>
 					</div>
 				</div>
 
@@ -59,7 +59,7 @@ export const MessengerHeaderBar: React.FC<MessengerHeaderBarProps> = ({
 							title="Расписание"
 							data-testid="btn-mobile-messenger-schedule"
 						>
-							<Calendar size={18} className="text-teal-600" />
+							<Calendar size={18} className="text-[var(--primary)]" />
 						</button>
 					)}
 				</div>

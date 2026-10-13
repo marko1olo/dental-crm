@@ -88,10 +88,10 @@ export interface RenderTemplateResult {
  * 152-ФЗ / 323-ФЗ ст. 13: Паттерны клинических терминов и диагнозов,
  * запрещенных к отправке в открытые каналы коммуникации (SMS/Мессенджеры).
  */
-export const CLINICAL_SECRECY_PATTERNS: readonly { pattern: RegExp; description: string }[] = [
+export const CLINICAL_SECRECY_PATTERNS: readonly { pattern: RegExp; description: string; isCritical?: boolean }[] = [
 	{ pattern: /\b[Kk]0[0-9](\.[0-9]+)?\b/gi, description: "Код МКБ-10 стоматологии (K00-K09)" },
-	{ pattern: /\b[Bb]2[0-4](\.[0-9]+)?\b/gi, description: "Код МКБ-10 ВИЧ-инфекции (B20-B24)" },
-	{ pattern: /\b[Bb]1[5-9](\.[0-9]+)?\b/gi, description: "Код МКБ-10 вирусных гепатитов (B15-B19)" },
+	{ pattern: /\b[Bb]2[0-4](\.[0-9]+)?\b/gi, description: "Код МКБ-10 ВИЧ-инфекции (B20-B24)", isCritical: true },
+	{ pattern: /\b[Bb]1[5-9](\.[0-9]+)?\b/gi, description: "Код МКБ-10 вирусных гепатитов (B15-B19)", isCritical: true },
 	{ pattern: /(?<![а-яёА-ЯЁ])пульпит[а-яёА-ЯЁ]*(?![а-яёА-ЯЁ])/gi, description: "Диагноз: Пульпит" },
 	{ pattern: /(?<![а-яёА-ЯЁ])кариес[а-яёА-ЯЁ]*(?![а-яёА-ЯЁ])/gi, description: "Диагноз: Кариес" },
 	{ pattern: /(?<![а-яёА-ЯЁ])периодонтит[а-яёА-ЯЁ]*(?![а-яёА-ЯЁ])/gi, description: "Диагноз: Периодонтит" },
@@ -126,6 +126,7 @@ export const CLINICAL_SECRECY_PATTERNS: readonly { pattern: RegExp; description:
 	{
 		pattern: /(?<![а-яёА-ЯЁ])(?:ВИЧ|ВИЧ-инфекци[а-яёА-ЯЁ]*|гепатит[а-яёА-ЯЁ]*|туберкул[её]з[а-яёА-ЯЁ]*|сифилис[а-яёА-ЯЁ]*|онкологи[а-яёА-ЯЁ]*|злокачественн[а-яёА-ЯЁ]*|сахарн[а-яёА-ЯЁ]*\s*диабет[а-яёА-ЯЁ]*)(?![а-яёА-ЯЁ])/gi,
 		description: "Соматический диагноз / особый статус здоровья",
+		isCritical: true,
 	},
 ];
 
@@ -172,15 +173,22 @@ export class MessageTemplateEngine {
 	/**
 	 * Проверяет текст на наличие сведений, составляющих врачебную тайну (323-ФЗ ст. 13).
 	 */
-	public static detectMedicalSecrecyLeaks(text: string): {
+	public static detectMedicalSecrecyLeaks(
+		text: string,
+		options?: { criticalOnly?: boolean },
+	): {
 		hasLeak: boolean;
+		hasCriticalLeak: boolean;
+		criticalTerms: string[];
 		detectedTerms: string[];
 		reasons: string[];
 	} {
 		const detectedTerms: string[] = [];
+		const criticalTerms: string[] = [];
 		const reasons: string[] = [];
 
 		for (const rule of CLINICAL_SECRECY_PATTERNS) {
+			if (options?.criticalOnly && !rule.isCritical) continue;
 			const matches = text.match(rule.pattern);
 			if (matches && matches.length > 0) {
 				for (const match of matches) {
@@ -188,12 +196,17 @@ export class MessageTemplateEngine {
 						detectedTerms.push(match);
 						reasons.push(`${rule.description} («${match}»)`);
 					}
+					if (rule.isCritical && !criticalTerms.includes(match)) {
+						criticalTerms.push(match);
+					}
 				}
 			}
 		}
 
 		return {
 			hasLeak: detectedTerms.length > 0,
+			hasCriticalLeak: criticalTerms.length > 0,
+			criticalTerms,
 			detectedTerms,
 			reasons,
 		};

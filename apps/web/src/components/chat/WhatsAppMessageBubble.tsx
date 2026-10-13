@@ -25,8 +25,8 @@ export function WhatsAppMessageBubble({ msg }: WhatsAppMessageBubbleProps) {
 			<div
 				className={`min-w-0 break-words max-w-[85%] sm:max-w-[75%] px-4 py-2.5 rounded-2xl shadow-sm text-xs sm:text-sm font-normal leading-relaxed ${
 					isClinic
-						? "bg-gradient-to-br from-teal-700 to-teal-800 text-white rounded-tr-xs border border-teal-600/40"
-						: "bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] rounded-tl-xs border border-[var(--line,#334155)]"
+						? "bg-gradient-to-br from-teal-700 to-teal-800 text-white rounded-tr-sm border border-teal-600/40"
+						: "bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] rounded-tl-sm border border-[var(--line,#334155)]"
 				}`}
 			>
 				{/* Sender name on incoming message */}

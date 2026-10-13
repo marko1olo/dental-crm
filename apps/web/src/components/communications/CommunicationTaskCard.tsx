@@ -292,7 +292,7 @@ export function CommunicationTaskCard({
 							data-testid="communication-task-complete-btn"
 							onClick={handleCompleteTask}
 							disabled={communicationSaveInProgress}
-							style={{ minHeight: "36px" }}
+							style={{ minHeight: "44px" }}
 						>
 							<CheckCircle2 aria-hidden="true" size={14} />{" "}
 							{isTaskSaving ? "Закрываю" : "Закрыть"}

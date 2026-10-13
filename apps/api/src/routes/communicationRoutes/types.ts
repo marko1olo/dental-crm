@@ -79,6 +79,7 @@ export const sendMessageSchema = z.object({
 		])
 		.default("telegram"),
 	idempotencyKey: z.string().min(1).max(128).optional(),
+	sanitize: z.boolean().optional(),
 });
 export type SendMessageBody = z.infer<typeof sendMessageSchema>;
 

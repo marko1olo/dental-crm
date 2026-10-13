@@ -213,7 +213,7 @@ export class DeepSeekProviderAdapter implements LlmProviderAdapter {
 
 			const routerTools: AgentRouterToolDefinition[] | undefined =
 				formattedTools && formattedTools.length > 0
-					? formattedTools.map((t) => ({
+					? formattedTools.map((t: any) => ({
 							type: "function",
 							function: {
 								name: t.function.name,
@@ -298,13 +298,14 @@ export class DeepSeekProviderAdapter implements LlmProviderAdapter {
 					if (toolCalls && toolCalls.length > 0) {
 						for (let i = 0; i < toolCalls.length; i++) {
 							const tc = toolCalls[i];
-							const parsedArgs = safeParseToolArguments(tc) ?? {};
+							if (!tc) continue;
+							const parsedArgs = safeParseToolArguments(tc as any) ?? {};
 							push({
 								kind: "chunk",
 								chunk: {
 									type: "tool_call_end",
-									id: tc.id,
-									name: tc.function.name,
+									id: (tc as any).id,
+									name: (tc as any).function?.name,
 									arguments: parsedArgs,
 									index: i,
 								},
