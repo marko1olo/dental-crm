@@ -17,7 +17,7 @@
  * - Mandate 8x (Anti-RAM-Hog): No createRoot / setupMockDom / setInterval in tests.
  */
 
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import assert from "node:assert/strict";
 import {
 	SAMPLE_DOCTOR_SHIFT_APPOINTMENTS,

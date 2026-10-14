@@ -36,12 +36,26 @@ export const DoctorShiftTimeline: React.FC<DoctorShiftTimelineProps> = ({
 	return (
 		<>
 			{/* Filter Tabs */}
-			<div className="doctor-pwa-filter-tabs">
+			<div
+				className="doctor-pwa-filter-tabs"
+				style={{
+					display: "flex",
+					flexWrap: "nowrap",
+					overflowX: "auto",
+					overflowY: "hidden",
+					WebkitOverflowScrolling: "touch",
+					gap: "8px",
+					padding: "8px 16px",
+					width: "100%",
+					boxSizing: "border-box",
+				}}
+			>
 				<button
 					type="button"
 					onClick={() => setActiveTab("all")}
 					className={`doctor-pwa-tab-btn ${activeTab === "all" ? "active" : ""}`}
 					data-testid="tab-all"
+					style={{ flexShrink: 0, whiteSpace: "nowrap" }}
 				>
 					Все ({doctorAppointments.length})
 				</button>
@@ -50,6 +64,7 @@ export const DoctorShiftTimeline: React.FC<DoctorShiftTimelineProps> = ({
 					onClick={() => setActiveTab("in_chair")}
 					className={`doctor-pwa-tab-btn ${activeTab === "in_chair" ? "active" : ""}`}
 					data-testid="tab-in-chair"
+					style={{ flexShrink: 0, whiteSpace: "nowrap" }}
 				>
 					В кресле ({earnings.inChairAppointmentsCount})
 				</button>
@@ -58,6 +73,7 @@ export const DoctorShiftTimeline: React.FC<DoctorShiftTimelineProps> = ({
 					onClick={() => setActiveTab("waiting")}
 					className={`doctor-pwa-tab-btn ${activeTab === "waiting" ? "active" : ""}`}
 					data-testid="tab-waiting"
+					style={{ flexShrink: 0, whiteSpace: "nowrap" }}
 				>
 					Ожидают ({earnings.waitingAppointmentsCount})
 				</button>
@@ -66,6 +82,7 @@ export const DoctorShiftTimeline: React.FC<DoctorShiftTimelineProps> = ({
 					onClick={() => setActiveTab("completed")}
 					className={`doctor-pwa-tab-btn ${activeTab === "completed" ? "active" : ""}`}
 					data-testid="tab-completed"
+					style={{ flexShrink: 0, whiteSpace: "nowrap" }}
 				>
 					Завершены ({earnings.completedAppointmentsCount})
 				</button>
@@ -75,6 +92,7 @@ export const DoctorShiftTimeline: React.FC<DoctorShiftTimelineProps> = ({
 						onClick={() => setActiveTab("needs_sign")}
 						className={`doctor-pwa-tab-btn ${activeTab === "needs_sign" ? "active" : ""}`}
 						data-testid="tab-needs-sign"
+						style={{ flexShrink: 0, whiteSpace: "nowrap" }}
 					>
 						Нужна подпись ({unsignedAppointmentIds.length})
 					</button>
@@ -84,6 +102,7 @@ export const DoctorShiftTimeline: React.FC<DoctorShiftTimelineProps> = ({
 					onClick={() => setActiveTab("wallet")}
 					className={`doctor-pwa-tab-btn ${activeTab === "wallet" ? "active" : ""}`}
 					data-testid="tab-wallet"
+					style={{ flexShrink: 0, whiteSpace: "nowrap" }}
 				>
 					💼 Сделка и ЗТЛ
 				</button>

@@ -1,5 +1,5 @@
 import React from "react";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
 import { DoctorShiftControlBar } from "../../shift/DoctorShiftControlBar";
