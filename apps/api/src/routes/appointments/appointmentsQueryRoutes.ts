@@ -413,28 +413,72 @@ export async function handleGetAppointments(
 		}
 	}
 
+	const cardNumSql = sql<string>`coalesce(
+		${patients.administrativeProfile}->>'cardNumber',
+		${patients.administrativeProfile}->>'chartNumber',
+		${patients.administrativeProfile}->>'medicalCardNumber',
+		'К-' || substring(${appointments.id}::text, 1, 8)
+	)`;
+
 	const rows = await db
-		.select()
+		.select({
+			appointment: appointments,
+			patientFullName: patients.fullName,
+			patientPhone: patients.phone,
+			patientBirthDate: patients.birthDate,
+			cardNumber: cardNumSql,
+			chairName: chairs.name,
+			doctorFullName: users.fullName,
+		})
 		.from(appointments)
+		.leftJoin(
+			patients,
+			and(
+				eq(patients.id, appointments.patientId),
+				eq(patients.organizationId, orgId),
+			),
+		)
+		.leftJoin(
+			chairs,
+			and(
+				eq(chairs.id, appointments.chairId),
+				eq(chairs.organizationId, orgId),
+			),
+		)
+		.leftJoin(
+			users,
+			and(
+				eq(users.id, appointments.doctorUserId),
+				eq(users.organizationId, orgId),
+			),
+		)
 		.where(and(...conditions))
 		.orderBy(asc(appointments.startsAt))
 		.limit(1000);
 
-	const formatted = rows.map((apt) => ({
-		id: apt.id,
-		patientId: apt.patientId,
-		doctorId: apt.doctorUserId,
-		doctorUserId: apt.doctorUserId,
-		chairId: apt.chairId,
-		startsAt: apt.startsAt.toISOString(),
-		endsAt: apt.endsAt.toISOString(),
-		status: apt.status,
-		reason: apt.reason,
-		comment: apt.comment,
-		stageIndex: apt.stageIndex,
-		clinicalStage: apt.clinicalStage,
-		toothNumber: apt.toothNumber,
-		diagnosisMkb10: apt.diagnosisMkb10,
+	const formatted = rows.map((r) => ({
+		id: r.appointment.id,
+		patientId: r.appointment.patientId,
+		patientFullName: r.patientFullName ?? undefined,
+		patientName: r.patientFullName ?? undefined,
+		patientPhone: r.patientPhone ?? undefined,
+		patientBirthDate: r.patientBirthDate ?? undefined,
+		cardNumber: r.cardNumber ?? undefined,
+		chairId: r.appointment.chairId,
+		chairName: r.chairName ?? undefined,
+		doctorId: r.appointment.doctorUserId,
+		doctorUserId: r.appointment.doctorUserId,
+		doctorFullName: r.doctorFullName ?? undefined,
+		doctorName: r.doctorFullName ?? undefined,
+		startsAt: r.appointment.startsAt.toISOString(),
+		endsAt: r.appointment.endsAt.toISOString(),
+		status: r.appointment.status,
+		reason: r.appointment.reason,
+		comment: r.appointment.comment,
+		stageIndex: r.appointment.stageIndex,
+		clinicalStage: r.appointment.clinicalStage,
+		toothNumber: r.appointment.toothNumber,
+		diagnosisMkb10: r.appointment.diagnosisMkb10,
 	}));
 
 	return reply.send({

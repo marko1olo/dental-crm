@@ -18,6 +18,7 @@ import type { DoctorShiftEmrSummary } from "../../shift/DoctorShiftCloseModal";
 import type {
 	DoctorMobileShiftModalProps,
 	DoctorShiftTab,
+	ChairStatusType,
 	UseDoctorMobileShiftReturn,
 } from "./types";
 import {
@@ -51,7 +52,7 @@ export function useDoctorMobileShift(
 			return initialAppointments;
 		}
 		if (rawAppointments && rawAppointments.length > 0) {
-			return adaptToDoctorShiftAppointments({
+			const adapted = adaptToDoctorShiftAppointments({
 				appointments: rawAppointments,
 				doctorId: initialDoctorId,
 				doctorName: initialDoctorName,
@@ -60,6 +61,9 @@ export function useDoctorMobileShift(
 				patients,
 				chairs,
 			});
+			if (adapted.length > 0) {
+				return adapted;
+			}
 		}
 		if (isDemoShowcaseMode()) {
 			return getShowcaseShiftAppointments(
@@ -75,6 +79,9 @@ export function useDoctorMobileShift(
 	const [activeTab, setActiveTab] = useState<DoctorShiftTab>("all");
 	const [expandedAptId, setExpandedAptId] = useState<string | null>(null);
 	const [isCloseModalOpen, setIsCloseModalOpen] = useState<boolean>(false);
+	const [chairStatus, setChairStatus] = useState<ChairStatusType>(() => {
+		return appointments.some((a) => a.status === "in_chair") ? "in_chair" : "free";
+	});
 
 	// Batch PEP SMS Signing State
 	const [signingSession, setSigningSession] = useState<EmrBatchSigningSession | null>(null);
@@ -98,8 +105,10 @@ export function useDoctorMobileShift(
 				patients,
 				chairs,
 			});
-			setAppointments(adapted);
-			return;
+			if (adapted.length > 0) {
+				setAppointments(adapted);
+				return;
+			}
 		}
 		if (isDemoShowcaseMode()) {
 			setAppointments(
@@ -264,6 +273,17 @@ export function useDoctorMobileShift(
 			});
 			setAppointments(updated);
 			onAppointmentUpdate?.(updated);
+
+			if (newStatus === "in_chair") {
+				setChairStatus("in_chair");
+			} else if (newStatus === "completed") {
+				const hasOtherInChair = updated.some(
+					(a) => a.id !== appointmentId && a.status === "in_chair",
+				);
+				if (!hasOtherInChair) {
+					setChairStatus("free");
+				}
+			}
 
 			const statusTitle = DOCTOR_APPOINTMENT_STATUS_META[newStatus].labelRu;
 			showToast(`Статус приема изменен: ${statusTitle}`, "info");
@@ -467,6 +487,8 @@ export function useDoctorMobileShift(
 		shiftStats,
 		emrSummary,
 		formattedShiftDate,
+		chairStatus,
+		setChairStatus,
 		handleStatusChange,
 		handleInitiateBatchSigning,
 		handleInitiateSingleSmsSigning,

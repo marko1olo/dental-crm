@@ -16,9 +16,12 @@ export const DoctorShiftHeader: React.FC<DoctorShiftHeaderProps> = ({
 	formattedShiftDate,
 	earnings,
 	unsignedAppointmentIds,
+	chairStatus = "free",
+	onChangeChairStatus,
 	onClose,
 	onSessionPepSigning,
 	onInitiateBatchSigning,
+	onOpenWallet,
 }) => {
 	return (
 		<>
@@ -62,8 +65,146 @@ export const DoctorShiftHeader: React.FC<DoctorShiftHeaderProps> = ({
 					</div>
 				</div>
 
+				{/* Chair Status Indicator / 1-Click Toggle (свободно / пациент в кресле / задержка) */}
+				<div
+					className="doctor-pwa-chair-status-strip"
+					data-testid="chair-status-strip"
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+						gap: "8px",
+						padding: "8px 12px",
+						background: "var(--paper-soft)",
+						border: "1px solid var(--line)",
+						borderRadius: "14px",
+					}}
+				>
+					<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink)]">
+						<span className="text-[var(--muted)] font-medium">Кресло:</span>
+						<span
+							className="inline-block w-2.5 h-2.5 rounded-full"
+							style={{
+								backgroundColor:
+									chairStatus === "in_chair"
+										? "var(--emerald, #10b981)"
+										: chairStatus === "delayed"
+											? "var(--rose, #f43f5e)"
+											: "var(--teal, #14b8a6)",
+								boxShadow:
+									chairStatus === "in_chair"
+										? "0 0 8px rgba(16, 185, 129, 0.6)"
+										: chairStatus === "delayed"
+											? "0 0 8px rgba(244, 63, 94, 0.6)"
+											: "none",
+							}}
+						/>
+						<span data-testid="active-chair-status-label">
+							{chairStatus === "in_chair"
+								? "Пациент в кресле"
+								: chairStatus === "delayed"
+									? "Задержка приёма"
+									: "Свободно"}
+						</span>
+					</div>
+
+					<div
+						className="flex items-center gap-1"
+						role="radiogroup"
+						aria-label="Оперативный статус стоматологического кресла"
+					>
+						<button
+							type="button"
+							role="radio"
+							aria-checked={chairStatus === "free"}
+							onClick={() => onChangeChairStatus?.("free")}
+							className={`chair-toggle-btn ${chairStatus === "free" ? "active-free" : ""}`}
+							data-testid="chair-status-free-btn"
+							title="Кресло свободно, готово к приёму"
+							style={{
+								minHeight: "44px",
+								padding: "0 10px",
+								borderRadius: "10px",
+								fontSize: "11px",
+								fontWeight: 700,
+								cursor: "pointer",
+								border: chairStatus === "free" ? "1px solid var(--teal)" : "1px solid var(--line)",
+								background: chairStatus === "free" ? "rgba(13, 148, 136, 0.15)" : "var(--paper)",
+								color: chairStatus === "free" ? "var(--teal)" : "var(--muted)",
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
+								transition: "all 0.15s ease",
+							}}
+						>
+							Свободно
+						</button>
+
+						<button
+							type="button"
+							role="radio"
+							aria-checked={chairStatus === "in_chair"}
+							onClick={() => onChangeChairStatus?.("in_chair")}
+							className={`chair-toggle-btn ${chairStatus === "in_chair" ? "active-in-chair" : ""}`}
+							data-testid="chair-status-in-chair-btn"
+							title="Пациент в кресле, идёт приём"
+							style={{
+								minHeight: "44px",
+								padding: "0 10px",
+								borderRadius: "10px",
+								fontSize: "11px",
+								fontWeight: 700,
+								cursor: "pointer",
+								border: chairStatus === "in_chair" ? "1px solid var(--emerald, #10b981)" : "1px solid var(--line)",
+								background: chairStatus === "in_chair" ? "rgba(16, 185, 129, 0.18)" : "var(--paper)",
+								color: chairStatus === "in_chair" ? "var(--emerald, #10b981)" : "var(--muted)",
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
+								transition: "all 0.15s ease",
+							}}
+						>
+							В кресле
+						</button>
+
+						<button
+							type="button"
+							role="radio"
+							aria-checked={chairStatus === "delayed"}
+							onClick={() => onChangeChairStatus?.("delayed")}
+							className={`chair-toggle-btn ${chairStatus === "delayed" ? "active-delayed" : ""}`}
+							data-testid="chair-status-delayed-btn"
+							title="Задержка приёма (оповещение регистратуры)"
+							style={{
+								minHeight: "44px",
+								padding: "0 10px",
+								borderRadius: "10px",
+								fontSize: "11px",
+								fontWeight: 700,
+								cursor: "pointer",
+								border: chairStatus === "delayed" ? "1px solid var(--rose, #f43f5e)" : "1px solid var(--line)",
+								background: chairStatus === "delayed" ? "rgba(244, 63, 94, 0.15)" : "var(--paper)",
+								color: chairStatus === "delayed" ? "var(--rose, #f43f5e)" : "var(--muted)",
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
+								transition: "all 0.15s ease",
+							}}
+						>
+							Задержка
+						</button>
+					</div>
+				</div>
+
 				{/* Live Piece-Rate Accrual Card */}
-				<div className="doctor-shift-earnings-card" data-testid="doctor-shift-earnings-card">
+				<div
+					className="doctor-shift-earnings-card cursor-pointer hover:border-[var(--teal,#14b8a6)] transition-all"
+					data-testid="doctor-shift-earnings-card"
+					onClick={onOpenWallet}
+					role="button"
+					tabIndex={0}
+					title="Нажмите для открытия подробного расчета сдельной оплаты и вычетов ЗТЛ"
+				>
 					<div className="doctor-earnings-counter-label">
 						<span>Заработано за смену (сделка %)</span>
 						<span className="doctor-earnings-pill text-[var(--emerald)]">

@@ -8,7 +8,7 @@
 .doctor-mobile-pwa-overlay {
 	position: fixed;
 	inset: 0;
-	z-index: 9999;
+	z-index: 999999;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -17,6 +17,14 @@
 	-webkit-backdrop-filter: blur(8px);
 	padding: 12px;
 	overflow-y: auto;
+}
+
+@media (max-width: 767px) {
+	.doctor-mobile-pwa-overlay {
+		padding: 0;
+		overflow-x: clip;
+		max-width: 100vw;
+	}
 }
 
 .doctor-mobile-pwa-container {
@@ -35,6 +43,17 @@
 	overflow: hidden;
 }
 
+@media (max-width: 767px) {
+	.doctor-mobile-pwa-container {
+		max-width: 100vw;
+		min-height: 100dvh;
+		max-height: 100dvh;
+		border-radius: 0;
+		border: none;
+		overflow-x: clip;
+	}
+}
+
 /* Standalone / Fullscreen PWA Mode */
 .doctor-mobile-pwa-container.standalone {
 	max-width: 480px;
@@ -42,6 +61,15 @@
 	max-height: 100vh;
 	border-radius: 0;
 	border: none;
+}
+
+@media (min-width: 768px) {
+	.doctor-mobile-pwa-container.wallet-expanded-mode {
+		max-width: 1020px;
+		width: 95vw;
+		min-height: auto;
+		max-height: 92vh;
+	}
 }
 
 /* Header & Status Bar */
@@ -100,13 +128,13 @@
 /* Shift Financial Piece-Rate Accrual Card */
 .doctor-shift-earnings-card {
 	padding: 14px 16px;
-	background: linear-gradient(135deg, rgba(20, 184, 166, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%);
+	background: linear-gradient(135deg, rgba(20, 184, 166, 0.12) 0%, var(--paper-soft) 100%);
 	border: 1px solid rgba(20, 184, 166, 0.35);
 	border-radius: 18px;
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .doctor-earnings-counter-label {
@@ -135,7 +163,7 @@
 	flex-wrap: wrap;
 	gap: 6px;
 	padding-top: 6px;
-	border-top: 1px dashed rgba(255, 255, 255, 0.1);
+	border-top: 1px dashed var(--line);
 	font-size: 11px;
 	color: var(--muted, #94a3b8);
 }
@@ -146,7 +174,8 @@
 	gap: 4px;
 	padding: 2px 6px;
 	border-radius: 6px;
-	background: rgba(0, 0, 0, 0.25);
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
 	font-weight: 600;
 }
 
@@ -256,7 +285,7 @@
 }
 
 .doctor-pwa-card.active-chair {
-	background: linear-gradient(180deg, rgba(20, 184, 166, 0.08) 0%, var(--paper-soft, #1e293b) 100%);
+	background: linear-gradient(180deg, rgba(20, 184, 166, 0.08) 0%, var(--paper-soft) 100%);
 	border-color: var(--teal, #14b8a6);
 	box-shadow: 0 0 16px rgba(20, 184, 166, 0.15);
 }

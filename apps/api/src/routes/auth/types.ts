@@ -96,7 +96,7 @@ export const clinicLoginBodySchema = z.object({
  * Bare cast; number pin допускается (как authPinSchema SaaS), object → 400.
  */
 export const staffUnlockBodySchema = z.object({
-	userId: z.string().min(1),
+	userId: z.string().optional(),
 	pinCode: z
 		.union([z.string(), z.number()])
 		.transform((value) => String(value))

@@ -1116,6 +1116,17 @@ export function App() {
 				h.includes("rescue")
 			)
 				setIsEmergencyDirectModalOpen(true);
+			if (
+				s.includes("doctor-portal") ||
+				s.includes("mobile-shift") ||
+				h.includes("doctor-portal") ||
+				h.includes("mobile-shift")
+			) {
+				openDoctorShiftCockpit();
+			}
+			if (s.includes("chairside-auth") || h.includes("chairside-auth")) {
+				setShowStaffPinPad(true);
+			}
 		};
 		handleHashChange();
 		const handleOpenDms = () => setIsDmsDirectModalOpen(true),

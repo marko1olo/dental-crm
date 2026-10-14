@@ -145,73 +145,67 @@ export function DoctorPrivacyShield({
 				const clinicToken = safeLocalStorageGetItem(DENTE_CLINIC_TOKEN_KEY);
 				const targetUserId = doctor?.id;
 
-				if (targetUserId) {
-					const response = await fetch("/api/auth/staff/unlock", {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							"x-dente-clinic-token": clinicToken || "",
-						},
-						body: JSON.stringify({
-							userId: targetUserId,
-							pinCode: completedPin,
-						}),
-					});
+				const response = await fetch("/api/auth/staff/unlock", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"x-dente-clinic-token": clinicToken || "",
+					},
+					body: JSON.stringify({
+						...(targetUserId ? { userId: targetUserId } : {}),
+						pinCode: completedPin,
+					}),
+				});
 
-					const rawBody = await response.text();
-					let payload: {
-						message?: unknown;
-						staffToken?: unknown;
-						user?: unknown;
-					} | null = null;
+				const rawBody = await response.text();
+				let payload: {
+					message?: unknown;
+					staffToken?: unknown;
+					user?: unknown;
+				} | null = null;
 
-					if (rawBody) {
-						try {
-							payload = JSON.parse(rawBody);
-						} catch {
-							logger.error(
-								"[DoctorPrivacyShield] Server response is not JSON",
-								response.status,
-								rawBody.slice(0, 100),
-							);
-						}
+				if (rawBody) {
+					try {
+						payload = JSON.parse(rawBody);
+					} catch {
+						logger.error(
+							"[DoctorPrivacyShield] Server response is not JSON",
+							response.status,
+							rawBody.slice(0, 100),
+						);
 					}
+				}
 
-					if (response.ok) {
-						const staffToken =
-							typeof payload?.staffToken === "string"
-								? payload.staffToken.trim()
-								: "";
-						if (staffToken) {
-							safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, staffToken);
-						}
-						safeLocalStorageRemoveItem(DENTE_PRIVACY_SHIELD_LOCKED_KEY);
-						setPin("");
+				if (response.ok) {
+					const staffToken =
+						typeof payload?.staffToken === "string"
+							? payload.staffToken.trim()
+							: "";
+					if (staffToken) {
+						safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, staffToken);
+					}
+					safeLocalStorageRemoveItem(DENTE_PRIVACY_SHIELD_LOCKED_KEY);
+					setPin("");
+					const returnedUser = (payload?.user || doctor) as DoctorProfile;
+					if (returnedUser && doctor?.id && returnedUser.id !== doctor.id) {
+						showToast(
+							`Смена врача: ${returnedUser.fullName || "Врач-стоматолог"}. Приём открыт.`,
+							"success",
+						);
+					} else {
 						showToast("Приём возобновлен. Все данные на месте.", "success");
-						onUnlock(payload?.user || doctor);
-						return;
 					}
-
-					const rawMessage =
-						typeof payload?.message === "string" ? payload.message.trim() : "";
-					const serverMessage = /[А-Яа-яЁё]/.test(rawMessage)
-						? rawMessage
-						: "Неверный PIN-код сотрудника.";
-					failUnlock(serverMessage);
+					onUnlock(returnedUser);
 					return;
 				}
 
-				// Автономный фоллбэк: если профиль врача передан с локальным pinCode
-				if (doctor?.pinCode && doctor.pinCode !== completedPin) {
-					failUnlock("Неверный PIN-код сотрудника.");
-					return;
-				}
-
-				// Безопасная локальная разблокировка
-				safeLocalStorageRemoveItem(DENTE_PRIVACY_SHIELD_LOCKED_KEY);
-				setPin("");
-				showToast("Приём возобновлен. Все данные на месте.", "success");
-				onUnlock(doctor);
+				const rawMessage =
+					typeof payload?.message === "string" ? payload.message.trim() : "";
+				const serverMessage = /[А-Яа-яЁё]/.test(rawMessage)
+					? rawMessage
+					: "Неверный PIN-код сотрудника.";
+				failUnlock(serverMessage);
+				return;
 			} catch (err) {
 				logger.error("[DoctorPrivacyShield] Unlock request error:", err);
 				failUnlock("Ошибка связи с сервером при проверке PIN.");

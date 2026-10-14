@@ -12,7 +12,8 @@ export type DoctorShiftTab =
 	| "in_chair"
 	| "waiting"
 	| "completed"
-	| "needs_sign";
+	| "needs_sign"
+	| "wallet";
 
 export interface DoctorMobileShiftModalProps {
 	readonly isOpen: boolean;
@@ -29,6 +30,8 @@ export interface DoctorMobileShiftModalProps {
 	readonly onEmergencyVisit?: (() => void) | undefined;
 	readonly onShiftClose?: (() => void) | undefined;
 }
+
+export type ChairStatusType = "free" | "in_chair" | "delayed";
 
 export type DoctorShiftEarnings = ReturnType<typeof calculateDoctorShiftEarnings>;
 
@@ -53,6 +56,8 @@ export interface UseDoctorMobileShiftReturn {
 	readonly shiftStats: DoctorShiftStats;
 	readonly emrSummary: DoctorShiftEmrSummary;
 	readonly formattedShiftDate: string;
+	readonly chairStatus: ChairStatusType;
+	readonly setChairStatus: (status: ChairStatusType) => void;
 	readonly handleStatusChange: (appointmentId: string, newStatus: DoctorAppointmentStatus) => void;
 	readonly handleInitiateBatchSigning: () => void;
 	readonly handleInitiateSingleSmsSigning: (appointmentId: string) => void;
@@ -68,9 +73,12 @@ export interface DoctorShiftHeaderProps {
 	readonly formattedShiftDate: string;
 	readonly earnings: DoctorShiftEarnings;
 	readonly unsignedAppointmentIds: readonly string[];
+	readonly chairStatus?: ChairStatusType | undefined;
+	readonly onChangeChairStatus?: ((status: ChairStatusType) => void) | undefined;
 	readonly onClose: () => void;
 	readonly onSessionPepSigning: (targetIds: readonly string[]) => void;
 	readonly onInitiateBatchSigning: () => void;
+	readonly onOpenWallet?: (() => void) | undefined;
 }
 
 export interface DoctorShiftTimelineProps {
@@ -86,6 +94,7 @@ export interface DoctorShiftTimelineProps {
 	readonly onSessionPepSigning: (targetIds: readonly string[]) => void;
 	readonly onInitiateSingleSmsSigning: (appointmentId: string) => void;
 	readonly onEmergencyVisit: () => void;
+	readonly onPrintInsert?: ((appointment: DoctorShiftAppointment) => void) | undefined;
 }
 
 export interface DoctorShiftActionsProps {
