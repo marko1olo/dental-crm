@@ -71,7 +71,7 @@ export function probingDepthTone(
  * - null / undefined -> 'neutral' (#d1d5db)
  * - <= 3 mm          -> 'success' (зеленый #34d399 / норма зубодесневой борозды)
  * - 4..5 mm          -> 'warning-low' (желтый #fbbf24 / гингивит, начальный пародонтит)
- * - 6..7 mm          -> 'warning-high' (оранжевый #f97316 / умеренный пародонтит)
+ * - 6..7 mm          -> 'warning-high' (оранжевый #f97316 / выраженный пародонтальный карман)
  * - >= 8 mm          -> 'critical' (алый #e11d48 / глубокий костный карман)
  */
 export function probingDepthClinicalTone(

@@ -68,7 +68,7 @@ export const MobilePerioKeypadDial: React.FC<MobilePerioKeypadDialProps> = memo(
 
 	return (
 		<div
-			className="sticky bottom-0 z-20 w-full p-2.5 sm:p-3 rounded-2xl bg-[var(--paper)]/95 backdrop-blur-md border border-teal-500/40 shadow-xl flex flex-col gap-2 select-none"
+			className="sticky bottom-0 z-20 w-full p-2.5 sm:p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] rounded-2xl bg-[var(--paper)]/95 backdrop-blur-md border border-teal-500/40 shadow-xl flex flex-col gap-2 select-none"
 			data-testid="mobile-perio-keypad-dial"
 		>
 			{/* Active Probing Site Banner */}
@@ -91,7 +91,7 @@ export const MobilePerioKeypadDial: React.FC<MobilePerioKeypadDialProps> = memo(
 							triggerHaptic("selection");
 							onPrevSite();
 						}}
-						className="min-h-[44px] min-w-[44px] rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-center text-[var(--ink)] active:scale-95 cursor-pointer shadow-2xs"
+						className="min-h-[48px] min-w-[48px] rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-center text-[var(--ink)] active:scale-95 cursor-pointer shadow-2xs"
 						title="Предыдущая точка зондирования"
 						data-testid="perio-prev-site-btn"
 					>
@@ -103,7 +103,7 @@ export const MobilePerioKeypadDial: React.FC<MobilePerioKeypadDialProps> = memo(
 							triggerHaptic("selection");
 							onNextSite();
 						}}
-						className="min-h-[44px] min-w-[44px] rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-center text-[var(--ink)] active:scale-95 cursor-pointer shadow-2xs"
+						className="min-h-[48px] min-w-[48px] rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-center text-[var(--ink)] active:scale-95 cursor-pointer shadow-2xs"
 						title="Следующая точка зондирования"
 						data-testid="perio-next-site-btn"
 					>
@@ -206,7 +206,7 @@ export const MobilePerioKeypadDial: React.FC<MobilePerioKeypadDialProps> = memo(
 						triggerHaptic("selection");
 						onTogglePlaque();
 					}}
-					className={`min-h-[44px] h-11 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs ${
+					className={`min-h-[48px] h-12 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs ${
 						currentPlq
 							? "bg-amber-500 text-slate-950 font-black border-amber-400 shadow-sm"
 							: "bg-[var(--paper-soft)] text-amber-300 border-amber-500/40 hover:bg-amber-500/15"
@@ -221,7 +221,7 @@ export const MobilePerioKeypadDial: React.FC<MobilePerioKeypadDialProps> = memo(
 				<button
 					type="button"
 					onClick={() => setShowExtendedKeypad((prev) => !prev)}
-					className="min-h-[44px] h-11 rounded-xl font-bold text-xs flex items-center justify-center bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] active:scale-95 cursor-pointer shadow-xs"
+					className="min-h-[48px] h-12 rounded-xl font-bold text-xs flex items-center justify-center bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] active:scale-95 cursor-pointer shadow-xs"
 					title="Показать глубокие карманы (10–12 мм)"
 				>
 					{showExtendedKeypad ? "Скрыть 10–12 мм" : "Глубокие 10–12 мм"}
@@ -237,7 +237,7 @@ export const MobilePerioKeypadDial: React.FC<MobilePerioKeypadDialProps> = memo(
 							type="button"
 							disabled={readOnly}
 							onClick={() => handleDepthTap(numVal)}
-							className="min-h-[44px] rounded-xl font-black text-xs flex items-center justify-center bg-rose-700/30 text-rose-200 border border-rose-600/50 active:scale-95 cursor-pointer shadow-xs"
+							className="min-h-[48px] h-12 rounded-xl font-black text-xs flex items-center justify-center bg-rose-700/30 text-rose-200 border border-rose-600/50 active:scale-95 cursor-pointer shadow-xs"
 							data-testid={`perio-keypad-depth-${numVal}`}
 						>
 							{numVal} мм

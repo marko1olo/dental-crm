@@ -11,7 +11,7 @@ import {
 import { Check } from "lucide-react";
 import React from "react";
 import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols043";
-import { probingDepthTone } from "../perioHeatmap";
+import { probingDepthClinicalTone, probingDepthTone } from "../perioHeatmap";
 
 export interface PerioToothInspectorProps {
 	readonly selectedTooth: PerioToothRecord | null;
@@ -337,13 +337,11 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 										)}
 										<span
 											className={`w-6 text-center font-mono font-bold ${
-												probingDepthTone(pd) === "success"
+												probingDepthClinicalTone(pd) === "success"
 													? "text-emerald-400"
-													: probingDepthTone(pd) === "warning-low"
+													: probingDepthClinicalTone(pd) === "warning-low"
 														? "text-amber-400"
-														: probingDepthTone(pd) === "warning-high"
-															? "text-orange-400"
-															: "text-rose-400"
+														: "text-rose-400"
 											}`}
 										>
 											{pd}

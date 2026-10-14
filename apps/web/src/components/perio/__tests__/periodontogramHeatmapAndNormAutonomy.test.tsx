@@ -29,8 +29,11 @@ import { renderToString } from "react-dom/server";
 
 import {
 	probingDepthTone,
+	probingDepthClinicalTone,
 	probingDepthClasses,
+	probingDepthClinicalClasses,
 	probingDepthHex,
+	probingDepthClinicalHex,
 	TONE_TO_CLASS,
 	TONE_TO_HEX,
 	type HeatmapTone,
@@ -331,6 +334,45 @@ describe("WAVE 108: DentalPin Calm Heatmap & 1-Click Healthy Gingiva Norm Autono
 			assert.strictEqual(probingDepthTone(8), "error");
 			assert.strictEqual(probingDepthTone(10), "error");
 			assert.strictEqual(probingDepthTone(15), "error");
+		});
+	});
+
+	describe("1b. probingDepthClinicalTone Strict 4-Tier Clinical Scale (1-3mm Green, 4-5mm Yellow, >=6mm Red/Rose)", () => {
+		it("returns 'neutral' for null, undefined, or NaN", () => {
+			assert.strictEqual(probingDepthClinicalTone(null), "neutral");
+			assert.strictEqual(probingDepthClinicalTone(undefined), "neutral");
+			assert.strictEqual(probingDepthClinicalTone(Number.NaN), "neutral");
+		});
+
+		it("returns 'success' (зеленый) for depth 1..3 mm (normal gingival sulcus)", () => {
+			assert.strictEqual(probingDepthClinicalTone(1), "success");
+			assert.strictEqual(probingDepthClinicalTone(2), "success");
+			assert.strictEqual(probingDepthClinicalTone(3), "success");
+		});
+
+		it("returns 'warning-low' (желтый) for depth 4..5 mm (mild periodontitis)", () => {
+			assert.strictEqual(probingDepthClinicalTone(4), "warning-low");
+			assert.strictEqual(probingDepthClinicalTone(5), "warning-low");
+		});
+
+		it("returns 'warning-high' (оранжевый) for depth 6..7 mm (pronounced pocket)", () => {
+			assert.strictEqual(probingDepthClinicalTone(6), "warning-high");
+			assert.strictEqual(probingDepthClinicalTone(7), "warning-high");
+		});
+
+		it("returns 'critical' (алый / темно-красный) for depth >= 8 mm (deep bone pocket)", () => {
+			assert.strictEqual(probingDepthClinicalTone(8), "critical");
+			assert.strictEqual(probingDepthClinicalTone(10), "critical");
+			assert.strictEqual(probingDepthClinicalTone(12), "critical");
+		});
+
+		it("maps clinical tones to correct hex colors (green, yellow, orange, crimson)", () => {
+			assert.strictEqual(probingDepthClinicalHex(2), "#34d399"); // green
+			assert.strictEqual(probingDepthClinicalHex(4), "#fbbf24"); // yellow
+			assert.strictEqual(probingDepthClinicalHex(5), "#fbbf24"); // yellow
+			assert.strictEqual(probingDepthClinicalHex(6), "#f97316"); // orange
+			assert.strictEqual(probingDepthClinicalHex(7), "#f97316"); // orange
+			assert.strictEqual(probingDepthClinicalHex(8), "#e11d48"); // crimson / red
 		});
 	});
 
