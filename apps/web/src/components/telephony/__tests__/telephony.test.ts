@@ -50,6 +50,7 @@ const mockPatients: Patient[] = [
 			preferredAppointmentNote: "Утро",
 			dataProcessingBasisNote: "Согласие",
 			orthodonticProgress: null,
+			loyaltyTier: null,
 			curatorId: null, curatorFullName: null, curatorAssignedAt: null, curatorFunnelStage: null, curatorCommissionPercent: null, curatorNextContactDate: null, curatorNotes: null,
 			utmSource: null, utmMedium: null, utmCampaign: null, utmContent: null, utmTerm: null, leadSource: null,
 		},

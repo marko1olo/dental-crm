@@ -38,8 +38,8 @@ export function IncomingCallPopup(props?: { defaultExpanded?: boolean }): React.
 	if (typeof document === "undefined") return null;
 
 	// Doctor sterile zone & chairside chart immunity (Mandates 8e, 8n):
-	// In doctor mode (chairside visit or doctor role), delicately collapse into non-intrusive capsule
-	// rather than opening a blocking popup or silently dropping the call notification.
+	// В режиме врача входящие вызовы не должны прерывать приём врача у кресла (if (isDoctorMode) return null;)
+	// Вместо перекрытия экрана вызов деликатно сворачивается в компактную капсулу
 	const shouldShowCapsule = isDoctorMode || !isPopupExpanded;
 
 	return createPortal(

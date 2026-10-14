@@ -37,6 +37,12 @@ export interface BuildQuickTemplatesParams {
 	financialSummary: {
 		formattedDebt: string;
 	};
+	activeTreatmentPlan?: {
+		title: string;
+		totalRub?: number | string | undefined;
+		stagesCount?: number | undefined;
+	} | null | undefined;
+	sbpPaymentLink?: string | null | undefined;
 }
 
 /**
@@ -51,6 +57,8 @@ export function buildQuickTemplates({
 	effectiveName,
 	upcomingAppointment,
 	financialSummary,
+	activeTreatmentPlan,
+	sbpPaymentLink,
 }: BuildQuickTemplatesParams): QuickTemplateItem[] {
 	return [
 		{
@@ -62,6 +70,26 @@ export function buildQuickTemplates({
 				upcomingAppointment
 					? `Здравствуйте, ${effectiveName}! Напоминаем о вашей записи на приём в стоматологию ${clinicName}: ${upcomingAppointment.formattedDate} в ${upcomingAppointment.formattedTime} к врачу ${upcomingAppointment.doctorName || "специалисту"}. Ждём вас!`
 					: `Здравствуйте, ${effectiveName}! Напоминаем о запланированном визите в стоматологическую клинику ${clinicName}. Пожалуйста, сообщите, если вам потребуется скорректировать время приёма.`,
+		},
+		{
+			id: "treatment_plan",
+			icon: <FileText size={14} className="text-cyan-400" />,
+			label: "План лечения",
+			category: "clinical",
+			buildText: () =>
+				activeTreatmentPlan
+					? `Здравствуйте, ${effectiveName}! Ваш план лечения «${activeTreatmentPlan.title}» в клинике ${clinicName} подготовлен доктором. Предварительная стоимость: ${activeTreatmentPlan.totalRub || "по прайсу"} ₽. Если у вас есть вопросы по этапам или срокам, с радостью ответим!`
+					: `Здравствуйте, ${effectiveName}! Доктор клиники ${clinicName} подготовил ваш индивидуальный план лечения. Готовы подробно обсудить этапы и согласовать комфортный график визитов.`,
+		},
+		{
+			id: "sbp_payment",
+			icon: <CreditCard size={14} className="text-emerald-400" />,
+			label: "Чек / СБП",
+			category: "financial",
+			buildText: () =>
+				financialSummary?.formattedDebt && financialSummary.formattedDebt !== "0 ₽"
+					? `Здравствуйте, ${effectiveName}! Счёт на оплату медицинских услуг в клинике ${clinicName} на сумму ${financialSummary.formattedDebt}. Быстрая оплата через СБП без комиссии: ${sbpPaymentLink || "https://qr.nspk.ru/dente-sbp-pay"}. Электронный кассовый чек будет направлен сразу после оплаты.`
+					: `Здравствуйте, ${effectiveName}! Ссылка для быстрой оплаты услуг через СБП в стоматологии ${clinicName}: ${sbpPaymentLink || "https://qr.nspk.ru/dente-sbp-pay"}. Электронный кассовый чек поступит вам автоматически. Спасибо за доверие!`,
 		},
 		{
 			id: "surgery_memo",

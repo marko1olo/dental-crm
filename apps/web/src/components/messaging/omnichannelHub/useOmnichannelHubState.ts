@@ -33,7 +33,7 @@ export interface UseOmnichannelHubStateParams {
 }
 
 export function useOmnichannelHubState({
-	initialPatientId = "pat-101",
+	initialPatientId = DEFAULT_CONTACTS[0]?.id || "pat-101",
 	clinicName = "DENTE Dental Clinic",
 	clinicAddress = "г. Москва, ул. Арбат, д. 24",
 	onSendMessage,

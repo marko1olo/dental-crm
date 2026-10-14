@@ -139,6 +139,7 @@ export function WhatsAppChatPanel({
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isSending, setIsSending] = useState(false);
+	const [selectedChannel, setSelectedChannel] = useState<"whatsapp" | "telegram" | "sms">("whatsapp");
 
 	const [inputText, setInputText] = useState("");
 	const [searchQuery, setSearchQuery] = useState("");
@@ -147,6 +148,17 @@ export function WhatsAppChatPanel({
 
 	const messagesEndRef = useRef<HTMLDivElement | null>(null);
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+	const activeTreatmentPlan = useMemo(() => {
+		const insight = dashboard?.patientInsights?.find((pi) => pi.patientId === patient?.id);
+		if (insight?.treatmentPlanTitle) {
+			return {
+				title: insight.treatmentPlanTitle,
+				totalRub: insight.treatmentPlanTotalRub || "0",
+			};
+		}
+		return null;
+	}, [dashboard?.patientInsights, patient?.id]);
 
 	const scrollToBottom = useCallback(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -213,8 +225,7 @@ export function WhatsAppChatPanel({
 		void fetchThread();
 	}, [fetchThread]);
 
-	// Quick Clinical & Administrative WhatsApp Templates (Studio Clinical HIG: Vector icons, zero emojis)
-	// Quick Clinical & Administrative WhatsApp Templates (Studio Clinical HIG: Vector icons, zero emojis)
+	// Quick Clinical & Administrative Omnichannel Templates (Studio Clinical HIG: Vector icons, zero emojis)
 	const quickTemplates = useMemo(() => {
 		return buildQuickTemplates({
 			clinicName: dashboard?.clinicSettings?.name || "клинику DENTE",
@@ -224,8 +235,9 @@ export function WhatsAppChatPanel({
 			effectiveName,
 			upcomingAppointment,
 			financialSummary,
+			activeTreatmentPlan,
 		});
-	}, [dashboard?.clinicSettings, upcomingAppointment, effectiveName, financialSummary]);
+	}, [dashboard?.clinicSettings, upcomingAppointment, effectiveName, financialSummary, activeTreatmentPlan]);
 
 	// Apply Quick Template into Input Textarea
 	const handleApplyTemplate = (tmpl?: QuickTemplateItem) => {
@@ -268,7 +280,7 @@ export function WhatsAppChatPanel({
 						},
 						body: JSON.stringify({
 							message: text,
-							channel: "whatsapp",
+							channel: selectedChannel,
 						}),
 					},
 				);
@@ -285,7 +297,7 @@ export function WhatsAppChatPanel({
 					showToast(data.warning, "info");
 				}
 			}
-			showToast(`Шаблон «${tmpl.label}» отправлен в WhatsApp`, "success");
+			showToast(`Шаблон «${tmpl.label}» отправлен (${selectedChannel.toUpperCase()})`, "success");
 		} catch (err) {
 			console.error("Failed to send template via API:", err);
 			showToast("Сбой сети при отправке шаблона", "error");
@@ -340,7 +352,7 @@ export function WhatsAppChatPanel({
 						},
 						body: JSON.stringify({
 							message: text,
-							channel: "whatsapp",
+							channel: selectedChannel,
 						}),
 					},
 				);
@@ -409,9 +421,12 @@ export function WhatsAppChatPanel({
 
 	return (
 		<div
-			className={`flex flex-col h-full w-full bg-[var(--paper,#0f172a)] text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] rounded-2xl shadow-xl overflow-hidden font-sans ${className}`}
+			className={`flex flex-col h-full w-full bg-[var(--paper,#0f172a)] text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] rounded-2xl max-sm:rounded-t-[24px] max-sm:rounded-b-none shadow-xl overflow-hidden overflow-x-clip max-w-full font-sans ${className}`}
 			data-testid="whatsapp-chat-panel"
 		>
+			{/* Apple Mobile HIG Drag Handle for 390px Viewports */}
+			<div className="sm:hidden w-10 h-1.5 rounded-full bg-[var(--line-strong,#475569)] mx-auto mt-2 mb-1 shrink-0" />
+
 			{/* Top Bar: Patient Profile Info & Actions (Single row 36px/44px, Hick's law) */}
 			<div className="flex items-center justify-between px-4 py-3 bg-[var(--paper-soft,rgba(30,41,59,0.7))] border-b border-[var(--line,#334155)] backdrop-blur-md">
 				<div className="flex items-center gap-3 min-w-0">
@@ -456,9 +471,29 @@ export function WhatsAppChatPanel({
 
 						<div className="flex items-center gap-2 text-xs text-[var(--muted,#94a3b8)] font-mono mt-0.5">
 							<span>{formattedPhone}</span>
-							<span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-							<span className="text-[10px] text-emerald-400 font-sans font-semibold">
-								WhatsApp Онлайн
+							<span
+								className={`w-1.5 h-1.5 rounded-full ${
+									selectedChannel === "whatsapp"
+										? "bg-emerald-400"
+										: selectedChannel === "telegram"
+											? "bg-sky-400"
+											: "bg-violet-400"
+								}`}
+							/>
+							<span
+								className={`text-[10px] font-sans font-semibold ${
+									selectedChannel === "whatsapp"
+										? "text-emerald-400"
+										: selectedChannel === "telegram"
+											? "text-sky-400"
+											: "text-violet-400"
+								}`}
+							>
+								{selectedChannel === "whatsapp"
+									? "WhatsApp Онлайн"
+									: selectedChannel === "telegram"
+										? "Telegram Бот"
+										: "SMS Шлюз"}
 							</span>
 						</div>
 					</div>
@@ -575,9 +610,64 @@ export function WhatsAppChatPanel({
 
 			{/* Quick Appointment Reminder & Clinical Preparation Chips (Scrollable touch targets >= 44x44px) */}
 			<div className="p-2.5 bg-[var(--paper,#0f172a)] border-b border-[var(--line,#334155)]">
-				<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#94a3b8)] mb-1.5 px-1 flex items-center gap-1">
-					<Sparkles size={11} className="text-teal-600 dark:text-teal-400" />
-					<span>Быстрые шаблоны с клинической памяткой:</span>
+				<div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+					<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#94a3b8)] px-1 flex items-center gap-1">
+						<Sparkles size={11} className="text-teal-600 dark:text-teal-400" />
+						<span>Быстрые шаблоны с клинической памяткой:</span>
+					</div>
+
+					{/* Omnichannel Channel Selector (Apple HIG Segmented Control) */}
+					<div
+						className="inline-flex items-center p-0.5 rounded-xl bg-[var(--paper-soft,rgba(30,41,59,0.7))] border border-[var(--line,#334155)] shadow-xs"
+						role="radiogroup"
+						aria-label="Канал связи"
+					>
+						<button
+							type="button"
+							onClick={() => setSelectedChannel("whatsapp")}
+							className={`min-h-[36px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1.5 ${
+								selectedChannel === "whatsapp"
+									? "bg-emerald-600 text-white shadow-xs"
+									: "text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
+							}`}
+							role="radio"
+							aria-checked={selectedChannel === "whatsapp"}
+							data-testid="channel-select-whatsapp"
+						>
+							<MessageSquare size={12} />
+							<span>WhatsApp</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setSelectedChannel("telegram")}
+							className={`min-h-[36px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1.5 ${
+								selectedChannel === "telegram"
+									? "bg-sky-600 text-white shadow-xs"
+									: "text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
+							}`}
+							role="radio"
+							aria-checked={selectedChannel === "telegram"}
+							data-testid="channel-select-telegram"
+						>
+							<Send size={12} />
+							<span>Telegram</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setSelectedChannel("sms")}
+							className={`min-h-[36px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1.5 ${
+								selectedChannel === "sms"
+									? "bg-violet-600 text-white shadow-xs"
+									: "text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
+							}`}
+							role="radio"
+							aria-checked={selectedChannel === "sms"}
+							data-testid="channel-select-sms"
+						>
+							<Phone size={12} />
+							<span>SMS</span>
+						</button>
+					</div>
 				</div>
 				<div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
 					{quickTemplates.map((tmpl) => (

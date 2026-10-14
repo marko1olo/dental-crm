@@ -15,7 +15,8 @@ import {
 	OmnichannelTemplatesTab,
 	useOmnichannelHubState,
 } from "./omnichannelHub/index.js";
-import { DEFAULT_TEMPLATES } from "./omnichannelEngine.js";
+import { usePatientStore } from "../../store/patientStore.js";
+import { DEFAULT_CONTACTS, DEFAULT_TEMPLATES } from "./omnichannelEngine.js";
 import type {
 	OmnichannelTab,
 	PatientOmnichannelHubModalProps,
@@ -27,15 +28,18 @@ export type { OmnichannelTab, PatientOmnichannelHubModalProps };
 export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProps> = ({
 	isOpen,
 	onClose,
-	initialPatientId = "pat-101",
+	initialPatientId,
 	clinicName = "DENTE Dental Clinic",
 	clinicAddress = "г. Москва, ул. Арбат, д. 24",
 	onSendMessage,
 	portal = false,
 }) => {
 	const modalTitleId = useId();
+	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
+	const effectivePatientId =
+		initialPatientId || selectedPatientId || DEFAULT_CONTACTS[0]?.id || "pat-101";
 	const hub = useOmnichannelHubState({
-		initialPatientId,
+		initialPatientId: effectivePatientId,
 		clinicName,
 		clinicAddress,
 		onSendMessage,

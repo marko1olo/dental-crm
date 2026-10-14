@@ -221,7 +221,7 @@ export function useIncomingCallQuickActions({
 		}
 
 		setCurrentView("schedule");
-		closeCallDrawer();
+		// Keep call drawer context active so administrator can see caller details while scheduling
 		showToast(
 			`Создан черновик записи (${QUICK_BOOKING_TOAST_LABEL_BY_SLOT[slotType]}). Заполните детали приёма.`,
 			"success",

@@ -534,6 +534,52 @@ describe("Chat & Omnichannel Messaging Autonomy Suite (Mandates 8e, 8d, 8k, 8n, 
 				expect(backButton.className).toContain("min-w-[44px]");
 			}
 		});
+
+		it("renders multichannel channel selector (WhatsApp, Telegram, SMS) and Apple HIG mobile drag handle", async () => {
+			const { doc } = setupMockDom();
+			const container = doc.createElement("div");
+			doc.body.appendChild(container);
+			const root: Root = createRoot(container as unknown as HTMLElement);
+
+			await act(async () => {
+				root.render(
+					<AppLogicProvider value={mockAppLogicContext}>
+						<WhatsAppChatPanel
+							patientId="pat-101"
+							patientName="Смирнов Алексей Викторович"
+							patientPhone="+7 (999) 111-22-33"
+							onClose={() => {}}
+						/>
+					</AppLogicProvider>,
+				);
+			});
+
+			// Check channel selector buttons
+			const waBtn = findNode(container, (n) => n.getAttribute?.("data-testid") === "channel-select-whatsapp");
+			const tgBtn = findNode(container, (n) => n.getAttribute?.("data-testid") === "channel-select-telegram");
+			const smsBtn = findNode(container, (n) => n.getAttribute?.("data-testid") === "channel-select-sms");
+
+			expect(waBtn).not.toBeNull();
+			expect(tgBtn).not.toBeNull();
+			expect(smsBtn).not.toBeNull();
+
+			// Check quick send buttons for 3 core presets
+			const reminderBtn = findNode(container, (n) => n.getAttribute?.("data-testid") === "quick-send-appt_reminder");
+			const treatmentPlanBtn = findNode(container, (n) => n.getAttribute?.("data-testid") === "quick-send-treatment_plan");
+			const sbpBtn = findNode(container, (n) => n.getAttribute?.("data-testid") === "quick-send-sbp_payment");
+
+			expect(reminderBtn).not.toBeNull();
+			expect(treatmentPlanBtn).not.toBeNull();
+			expect(sbpBtn).not.toBeNull();
+
+			// Check Apple HIG mobile classes on panel
+			const panel = findNode(container, (n) => n.getAttribute?.("data-testid") === "whatsapp-chat-panel");
+			expect(panel).not.toBeNull();
+			if (panel) {
+				expect(panel.className).toContain("max-sm:rounded-t-[24px]");
+				expect(panel.className).toContain("overflow-x-clip");
+			}
+		});
 	});
 
 	describe("PatientOmnichannelHubModal Autonomy", () => {
