@@ -13,7 +13,8 @@ export type LeadStatus =
 	| "consult_booked"
 	| "showed_up"
 	| "no_answer"
-	| "trash";
+	| "trash"
+	| "converted";
 
 export const LEAD_STATUS_VALUES: readonly LeadStatus[] = [
 	"new",
@@ -22,6 +23,7 @@ export const LEAD_STATUS_VALUES: readonly LeadStatus[] = [
 	"showed_up",
 	"no_answer",
 	"trash",
+	"converted",
 ] as const;
 
 export interface Lead {
@@ -51,8 +53,8 @@ export interface Lead {
 }
 
 export interface ConvertLeadToAppointmentPayload {
-	appointmentStart: string;
-	appointmentEnd: string;
+	appointmentStart?: string | null | undefined;
+	appointmentEnd?: string | null | undefined;
 	chairId?: string | null | undefined;
 	doctorId?: string | null | undefined;
 	organizationId?: string | undefined;
@@ -63,6 +65,7 @@ export interface ConvertLeadToAppointmentPayload {
 export interface ConvertLeadResult {
 	patient: unknown;
 	appointment: unknown;
+	hasAppointmentDates?: boolean;
 }
 
 interface LeadsState {
@@ -385,9 +388,13 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 				);
 			}
 			const result = (await res.json()) as ConvertLeadResult;
+			const nextStatus: LeadStatus =
+				(result?.hasAppointmentDates ?? Boolean(payload.appointmentStart))
+					? "consult_booked"
+					: "converted";
 			set({
 				leads: get().leads.map((l) =>
-					l.id === id ? { ...l, status: "consult_booked" } : l,
+					l.id === id ? { ...l, status: nextStatus } : l,
 				),
 			});
 			return result;
@@ -431,6 +438,7 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 			const res = await fetch(`${API_URL}/leads/${id}/create-patient`, {
 				method: "POST",
 				headers: authHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify({}),
 			});
 			if (!res.ok) {
 				throw new Error(
@@ -440,7 +448,13 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 					),
 				);
 			}
-			return await res.json();
+			const data = await res.json();
+			set({
+				leads: get().leads.map((l) =>
+					l.id === id ? { ...l, status: "converted" } : l,
+				),
+			});
+			return data;
 		} catch (e: unknown) {
 			logger.error("createPatientFromLead Error:", e);
 			if (e instanceof Error) throw e;

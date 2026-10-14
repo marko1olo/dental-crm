@@ -35,7 +35,7 @@ import {
 
 describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verification", () => {
 	describe("1. SSOT Schema & Types Parity", () => {
-		it("LEAD_STATUS_VALUES matches canonical 6 lead statuses", () => {
+		it("LEAD_STATUS_VALUES matches canonical lead statuses", () => {
 			const expectedStatuses: LeadStatus[] = [
 				"new",
 				"contacted",
@@ -43,14 +43,15 @@ describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verifica
 				"showed_up",
 				"no_answer",
 				"trash",
+				"converted",
 			];
 			assert.deepStrictEqual([...LEAD_STATUS_VALUES], expectedStatuses);
 		});
 
-		it("Kanban COLUMNS IDs exactly match canonical LeadStatus values", () => {
+		it("Kanban COLUMNS IDs exactly match canonical funnel LeadStatus values", () => {
 			const columnIds = COLUMNS.map((c) => c.id);
 			assert.strictEqual(columnIds.length, 6);
-			for (const status of LEAD_STATUS_VALUES) {
+			for (const status of ["new", "contacted", "consult_booked", "showed_up", "no_answer", "trash"] as const) {
 				assert.ok(
 					columnIds.includes(status),
 					`Kanban COLUMNS must include status "${status}"`,

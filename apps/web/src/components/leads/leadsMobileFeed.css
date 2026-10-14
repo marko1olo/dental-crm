@@ -12,7 +12,7 @@
 	max-width: 100vw;
 	overflow-x: clip;
 	box-sizing: border-box;
-	padding: 10px 12px max(24px, env(safe-area-inset-bottom));
+	padding: 10px 12px calc(136px + max(16px, env(safe-area-inset-bottom)));
 	gap: 12px;
 	color: var(--ink);
 	background: var(--paper-strong);
@@ -97,7 +97,7 @@
 	min-height: 44px;
 	padding: 0 12px;
 	border-radius: 12px;
-	background: var(--teal);
+	background: var(--primary);
 	color: #ffffff;
 	border: none;
 	font-size: 13px;
@@ -156,7 +156,7 @@
 	overscroll-behavior-x: contain;
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: none;
-	gap: 4px;
+	gap: 2px;
 	width: 100%;
 	padding: 1px;
 }
@@ -165,21 +165,24 @@
 	display: none;
 }
 
+.leads-mobile-feed .leads-mobile-seg-btn,
 .leads-mobile-seg-btn {
-	min-height: 38px;
-	padding: 6px 12px;
+	min-height: 36px;
+	padding: 4px 5px !important;
 	border-radius: 10px;
 	border: none;
 	background: transparent;
-	color: var(--muted);
-	font-size: 13px;
+	color: var(--ink-muted, var(--muted));
+	font-size: 11.5px !important;
 	font-weight: 500;
 	display: inline-flex;
 	align-items: center;
-	gap: 6px;
+	justify-content: center;
+	gap: 3px !important;
 	cursor: pointer;
 	white-space: nowrap;
-	flex-shrink: 0;
+	flex: 0 0 calc(25% - 1.5px);
+	box-sizing: border-box;
 	transition: all 0.15s ease;
 }
 
@@ -191,17 +194,17 @@
 }
 
 .leads-mobile-seg-count {
-	font-size: 11px;
+	font-size: 10px;
 	font-weight: 700;
-	padding: 1px 6px;
-	border-radius: 10px;
+	padding: 1px 4.5px;
+	border-radius: 8px;
 	background: var(--line);
 	color: var(--ink);
 }
 
 .leads-mobile-seg-btn.is-active .leads-mobile-seg-count {
-	background: var(--teal-soft);
-	color: var(--teal-dark, var(--teal));
+	background: var(--paper-soft);
+	color: var(--primary);
 }
 
 /* ── 4. SLA Alert Banner ──────────────────────────────────────────────────── */
@@ -237,6 +240,43 @@
 	width: 100%;
 }
 
+.leads-mobile-card-swipe-wrap {
+	position: relative;
+	width: 100%;
+	border-radius: 16px;
+	overflow: hidden;
+}
+
+.leads-mobile-card-swipe-background {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 20px;
+	border-radius: 16px;
+	background: var(--paper-soft);
+	pointer-events: none;
+}
+
+.leads-mobile-swipe-action {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 13px;
+	font-weight: 600;
+	transition: opacity 0.15s ease;
+}
+
+.leads-mobile-swipe-action--call {
+	color: var(--teal-dark, var(--teal));
+}
+
+.leads-mobile-swipe-action--schedule {
+	color: var(--primary);
+	margin-left: auto;
+}
+
 .leads-mobile-card {
 	background: var(--paper);
 	border: 1px solid var(--line);
@@ -248,8 +288,9 @@
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 	position: relative;
 	overflow: hidden;
-	transition: all 0.15s ease;
+	transition: background 0.15s ease, box-shadow 0.15s ease;
 	cursor: pointer;
+	z-index: 1;
 }
 
 .leads-mobile-card:active {
@@ -467,3 +508,93 @@
 	color: #25d366;
 	background: rgba(37, 211, 102, 0.18);
 }
+
+/* ── 8. Apple HIG Floating Bottom Bar (Natural Thumb Zone) ────────────────── */
+
+.leads-mobile-floating-bar {
+	position: fixed;
+	bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+	left: 0;
+	right: 0;
+	width: 100%;
+	max-width: 100vw;
+	z-index: 35;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 8px 14px;
+	background: var(--paper-strong);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-top: 1px solid var(--line);
+	box-sizing: border-box;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark) .leads-mobile-floating-bar {
+	background: var(--paper-strong);
+}
+
+.leads-mobile-floating-cta {
+	width: 100%;
+	height: 46px;
+	min-height: 46px;
+	border-radius: 12px;
+	background: var(--primary);
+	color: #ffffff;
+	border: none;
+	font-size: 14px;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	box-shadow: 0 4px 16px rgba(13, 148, 136, 0.24);
+	transition: transform 0.15s ease, opacity 0.15s ease;
+	box-sizing: border-box;
+}
+
+.leads-mobile-floating-cta:active {
+	transform: scale(0.98);
+	opacity: 0.95;
+}
+
+.leads-mobile-menu-dropdown {
+	position: absolute;
+	right: 0;
+	top: calc(100% + 6px);
+	z-index: 60;
+	min-width: 210px;
+	background: var(--paper-strong, var(--paper));
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+	padding: 6px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.leads-mobile-menu-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	height: 40px;
+	min-height: 40px;
+	padding: 0 12px;
+	border-radius: 8px;
+	border: none;
+	background: transparent;
+	color: var(--ink);
+	font-size: 13.5px;
+	font-weight: 500;
+	text-align: left;
+	cursor: pointer;
+	transition: background 0.12s ease;
+}
+
+.leads-mobile-menu-item:active {
+	background: var(--paper-soft);
+}
+

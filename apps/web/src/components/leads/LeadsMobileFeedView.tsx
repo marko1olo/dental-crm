@@ -10,32 +10,21 @@
  * - Native iOS Bottom Sheet details drawer in Natural Thumb Zone
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
 	AlertTriangle,
-	Calendar,
-	ChevronRight,
-	Clock,
-	DollarSign,
-	Filter,
-	MessageSquare,
-	Phone,
+	BarChart3,
+	MoreVertical,
 	Plus,
+	RotateCcw,
 	Search,
 	Sparkles,
-	UserCheck,
 	X,
 } from "lucide-react";
 import type { Lead, LeadStatus } from "../../store/leadsStore";
-import { formatWhatsAppUrl } from "../messaging/omnichannelEngine";
-import {
-	CHANNEL_BADGE_COLORS,
-	CHANNEL_DISPLAY_NAMES,
-} from "../telephony/telephonyAttribution";
 import { LeadMobileBottomSheet } from "./LeadMobileBottomSheet";
-import { normalizeMarketingChannel } from "./leadsFunnelTypes";
+import { LeadMobileFeedCard } from "./LeadMobileFeedCard";
 import {
-	COLUMNS,
 	getLeadSlaStatus,
 	STAGE_DISPLAY_LABELS,
 } from "./leadsKanbanTypes";
@@ -82,6 +71,22 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
 	const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+	const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const handleClickOutside = (e: MouseEvent) => {
+			if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
+				setIsMobileMenuOpen(false);
+			}
+		};
+		if (isMobileMenuOpen) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, [isMobileMenuOpen]);
 
 	// Status counts
 	const counts = useMemo(() => {
@@ -157,16 +162,53 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 						<Search size={18} />
 					</button>
 
-					<button
-						type="button"
-						onClick={onNewLead}
-						className="leads-mobile-new-lead-btn"
-						data-testid="mobile-leads-add-btn"
-						aria-label="Создать новое обращение"
-					>
-						<Plus size={16} />
-						<span>Лид</span>
-					</button>
+					{(onOpenAnalytics || onOpenLeakDetector) && (
+						<div className="relative inline-flex" ref={mobileMenuRef}>
+							<button
+								type="button"
+								onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+								className="leads-mobile-icon-btn"
+								aria-label="Дополнительные функции воронки"
+								data-testid="mobile-leads-more-btn"
+								title="Дополнительные функции"
+							>
+								<MoreVertical size={18} />
+							</button>
+
+							{isMobileMenuOpen && (
+								<div className="leads-mobile-menu-dropdown" role="menu">
+									{onOpenAnalytics && (
+										<button
+											type="button"
+											className="leads-mobile-menu-item"
+											onClick={() => {
+												setIsMobileMenuOpen(false);
+												onOpenAnalytics();
+											}}
+											data-testid="mobile-open-analytics-btn"
+										>
+											<BarChart3 size={16} className="text-[var(--teal)] shrink-0" />
+											<span>Аналитика воронки</span>
+										</button>
+									)}
+									{onOpenLeakDetector && (
+										<button
+											type="button"
+											className="leads-mobile-menu-item"
+											onClick={() => {
+												setIsMobileMenuOpen(false);
+												onOpenLeakDetector();
+											}}
+											data-testid="mobile-open-leak-detector-btn"
+										>
+											<RotateCcw size={16} className="text-[var(--teal)] shrink-0" />
+											<span>Детектор оттока (&gt;210 дней)</span>
+										</button>
+									)}
+								</div>
+							)}
+						</div>
+					)}
 				</div>
 			</div>
 
@@ -209,7 +251,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 						className={`leads-mobile-seg-btn dente-segmented-item ${activeTab === "new" ? "is-active active" : ""}`}
 						data-testid="mobile-tab-new"
 					>
-						<span>Новые</span>
+						<span>Новый</span>
 						<span className="leads-mobile-seg-count">{counts.new || 0}</span>
 					</button>
 
@@ -221,7 +263,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 						className={`leads-mobile-seg-btn dente-segmented-item ${activeTab === "contacted" ? "is-active active" : ""}`}
 						data-testid="mobile-tab-contacted"
 					>
-						<span>В работе</span>
+						<span>Думает</span>
 						<span className="leads-mobile-seg-count">{counts.contacted || 0}</span>
 					</button>
 
@@ -233,7 +275,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 						className={`leads-mobile-seg-btn dente-segmented-item ${activeTab === "consult_booked" ? "is-active active" : ""}`}
 						data-testid="mobile-tab-consult_booked"
 					>
-						<span>Записаны</span>
+						<span>Записан</span>
 						<span className="leads-mobile-seg-count">{counts.consult_booked || 0}</span>
 					</button>
 
@@ -306,199 +348,15 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 			{/* ── 5. Grouped Inset Cards List ───────────────────────────────── */}
 			{visibleLeads.length > 0 ? (
 				<div className="leads-mobile-cards-list">
-					{visibleLeads.map((lead) => {
-						const sla = getLeadSlaStatus(lead);
-						const channelKey = lead.source ? normalizeMarketingChannel(lead.source) : null;
-						const channelBadge =
-							channelKey && CHANNEL_BADGE_COLORS[channelKey]
-								? CHANNEL_BADGE_COLORS[channelKey]
-								: {
-										bg: "var(--teal-soft)",
-										color: "var(--teal-dark, var(--teal))",
-										border: "var(--teal)",
-									};
-						const channelLabel =
-							channelKey && CHANNEL_DISPLAY_NAMES[channelKey]
-								? CHANNEL_DISPLAY_NAMES[channelKey]
-								: (lead.source || "Прямой звонок");
-						const rawPhone = lead.phone ? lead.phone.replace(/[^\d+]/g, "") : "";
-						const col = COLUMNS.find((c) => c.id === lead.status);
-
-						return (
-							<article
-								key={lead.id}
-								onClick={() => setSelectedLeadId(lead.id)}
-								className="leads-mobile-card"
-								data-testid={`mobile-lead-card-${lead.id}`}
-							>
-								{/* Left Accent Stripe */}
-								<div
-									className="leads-mobile-card-stripe"
-									style={{
-										background: sla.isBreached
-											? "var(--rust, #ef4444)"
-											: (col?.color || "var(--teal)"),
-									}}
-								/>
-
-								{/* Top Row: Channel Badge + SLA + Expected Revenue */}
-								<div className="leads-mobile-card-top">
-									<div className="leads-mobile-card-badges">
-										{/* Channel Source Badge */}
-										<span
-											className="leads-mobile-source-badge"
-											style={{
-												background: channelBadge.bg,
-												color: channelBadge.color,
-												border: `1px solid ${channelBadge.border}`,
-											}}
-										>
-											{channelLabel}
-										</span>
-
-										{/* SLA Timer Badge */}
-										<span
-											className={`leads-mobile-sla-badge ${
-												sla.isBreached ? "lead-sla-breached-pulse" : ""
-											}`}
-											style={{
-												background: sla.badgeBg,
-												color: sla.badgeColor,
-												border: `1px solid ${sla.badgeBorder}`,
-											}}
-										>
-											{sla.isBreached ? (
-												<AlertTriangle size={11} className="shrink-0" />
-											) : (
-												<Clock size={11} className="shrink-0" />
-											)}
-											<span>{sla.label}</span>
-										</span>
-									</div>
-
-									{lead.expectedRevenue && (
-										<span className="leads-mobile-revenue-badge">
-											{Number(lead.expectedRevenue).toLocaleString("ru-RU")} ₽
-										</span>
-									)}
-								</div>
-
-								{/* Body: Patient Name + Phone + Tags */}
-								<div className="leads-mobile-card-body">
-									<div className="flex items-center justify-between gap-2">
-										<h3 className="leads-mobile-patient-name">{lead.name}</h3>
-										<ChevronRight size={18} className="text-[var(--muted)] shrink-0" />
-									</div>
-
-									{lead.phone && (
-										<span className="leads-mobile-phone-link">
-											<Phone size={12} className="shrink-0" />
-											<span>{lead.phone}</span>
-										</span>
-									)}
-
-									{/* Clinical Tags Pills */}
-									{Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0 && (
-										<div className="leads-mobile-tags-row">
-											{lead.clinicalTags.map((tag) => (
-												<span key={tag} className="leads-mobile-tag">
-													{tag}
-												</span>
-											))}
-										</div>
-									)}
-
-									{/* Existing Patient Badge */}
-									{lead.existingPatient && (
-										<div className="mt-1">
-											<span className="leads-mobile-existing-patient">
-												<UserCheck size={11} />
-												<span>Постоянный пациент: {lead.existingPatient.fullName}</span>
-											</span>
-										</div>
-									)}
-
-									{/* Notes Snippet */}
-									{lead.notes && (
-										<div className="leads-mobile-notes-snippet">
-											{lead.notes.slice(0, 95)}
-											{lead.notes.length > 95 ? "..." : ""}
-										</div>
-									)}
-								</div>
-
-								{/* 1-Tap Quick Actions Bar (>=44x44px Touch Targets) */}
-								<div className="leads-mobile-actions-bar" onClick={(e) => e.stopPropagation()}>
-									{/* Direct Call Button */}
-									{lead.phone ? (
-										<a
-											href={`tel:${rawPhone}`}
-											className="leads-mobile-action-btn leads-mobile-action-btn--call"
-											title="Прямой звонок пациенту"
-											data-testid={`quick-call-btn-${lead.id}`}
-										>
-											<Phone size={15} />
-											<span>Звонок</span>
-										</a>
-									) : (
-										<button
-											type="button"
-											disabled
-											className="leads-mobile-action-btn opacity-40 cursor-not-allowed"
-										>
-											<Phone size={15} />
-											<span>Звонок</span>
-										</button>
-									)}
-
-									{/* Direct WhatsApp Message Button */}
-									{lead.phone ? (
-										<a
-											href={formatWhatsAppUrl(
-												lead.phone,
-												`Здравствуйте, ${lead.name}! Вас беспокоит стоматология DENTE.`,
-											)}
-											target="_blank"
-											rel="noopener noreferrer"
-											className="leads-mobile-action-btn leads-mobile-action-btn--whatsapp"
-											title="Открыть диалог в WhatsApp"
-											data-testid={`quick-chat-btn-${lead.id}`}
-										>
-											<MessageSquare size={15} />
-											<span>Чат</span>
-										</a>
-									) : (
-										<button
-											type="button"
-											disabled
-											className="leads-mobile-action-btn opacity-40 cursor-not-allowed"
-										>
-											<MessageSquare size={15} />
-											<span>Чат</span>
-										</button>
-									)}
-
-									{/* Quick Schedule Appointment Button */}
-									<button
-										type="button"
-										onClick={() => {
-											if (onQuickSchedule) {
-												onQuickSchedule(lead.id);
-											} else {
-												onSchedule(lead.id);
-											}
-										}}
-										className="leads-mobile-action-btn leads-mobile-action-btn--schedule"
-										title="Записать на прием в расписание"
-										data-testid={`quick-schedule-btn-${lead.id}`}
-									>
-										<Calendar size={15} />
-										<span>Записать</span>
-									</button>
-								</div>
-							</article>
-						);
-					})}
+					{visibleLeads.map((lead) => (
+						<LeadMobileFeedCard
+							key={lead.id}
+							lead={lead}
+							onSelect={(leadId) => setSelectedLeadId(leadId)}
+							onSchedule={onSchedule}
+							{...(onQuickSchedule ? { onQuickSchedule } : {})}
+						/>
+					))}
 				</div>
 			) : (
 				/* ── 6. Empty State ────────────────────────────────────────── */
@@ -540,6 +398,20 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 				onOpenPatientCard={onOpenPatientCard}
 				creatingPatientLeadId={creatingPatientLeadId}
 			/>
+
+			{/* ── 8. Apple HIG Floating Bottom Bar (Natural Thumb Zone) ── */}
+			<div className="leads-mobile-floating-bar" data-testid="mobile-floating-bottom-bar">
+				<button
+					type="button"
+					onClick={onNewLead}
+					className="leads-mobile-floating-cta"
+					data-testid="mobile-leads-add-btn"
+					aria-label="Создать новое обращение"
+				>
+					<Plus size={20} />
+					<span>Новое обращение</span>
+				</button>
+			</div>
 		</div>
 	);
 };

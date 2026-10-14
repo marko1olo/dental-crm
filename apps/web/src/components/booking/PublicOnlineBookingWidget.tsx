@@ -8,5 +8,6 @@
 export * from "./PublicBookingWidget";
 export {
 	PublicBookingWidget as PublicOnlineBookingWidget,
+	PublicBookingWidget as PublicBookingWidgetSSOT,
 	default,
 } from "./PublicBookingWidget";

@@ -365,7 +365,51 @@ export function LeadsKanbanView() {
 		e.preventDefault();
 		if (!convertingLeadId || isBooking) return;
 
-		const startDateTime = new Date(`${appointmentDate}T${appointmentTime}:00`);
+		if (options?.mode === "patient_only") {
+			setIsBooking(true);
+			try {
+				const res = await convertLeadToAppointment(convertingLeadId, {
+					comment: options?.comment,
+				});
+
+				const activeLead = leads.find((l) => l.id === convertingLeadId);
+				const sourceLabel = activeLead?.source
+					? ` (источник: ${activeLead.source})`
+					: "";
+				const consentLabel = options?.consentMarketing
+					? " [рассылки: разрешены]"
+					: " [рассылки: отключены]";
+
+				const successMsg = activeLead?.existingPatient
+					? `Обращение сопоставлено с постоянным пациентом (${activeLead.existingPatient.fullName})${sourceLabel}${consentLabel}`
+					: `Создана амбулаторная карта пациента${sourceLabel}${consentLabel}`;
+
+				showToast(successMsg, "success");
+				setIsConvertOpen(false);
+				setConvertingLeadId(null);
+				fetchLeads();
+
+				const createdPatient = (res?.patient as { id?: string } | undefined);
+				if (createdPatient?.id) {
+					usePatientStore.getState().setSelectedPatientId(createdPatient.id);
+				}
+			} catch (e: unknown) {
+				logger.error(e);
+				const text =
+					e instanceof Error && e.message.trim()
+						? e.message
+						: "Нет связи с сервером: карта пациента не создана";
+				showToast(text, "error");
+			} finally {
+				setIsBooking(false);
+			}
+			return;
+		}
+
+		const targetDate =
+			appointmentDate || dateInputValuePlusDays(1, clinicTimeZone);
+		const targetTime = appointmentTime || "10:00";
+		const startDateTime = new Date(`${targetDate}T${targetTime}:00`);
 		if (Number.isNaN(startDateTime.getTime())) {
 			showToast("Проверьте дату и время приема", "error");
 			return;
@@ -612,6 +656,7 @@ export function LeadsKanbanView() {
 						isOpen={isAnalyticsOpen}
 						onClose={() => setIsAnalyticsOpen(false)}
 						leads={leads}
+						onOpenLeakDetector={() => setIsLeakDetectorOpen(true)}
 					/>
 				</Suspense>
 			)}
@@ -685,11 +730,11 @@ export function LeadsKanbanView() {
 				viewMode={viewMode}
 				setViewMode={setViewMode}
 				secondaryLeadsCount={secondaryLeadsCount}
+				totalLeadsCount={leads.length}
 				onNewLead={() => openEditModal()}
 				onOpenAnalytics={() => setIsAnalyticsOpen(true)}
 				onOpenLeakDetector={() => setIsLeakDetectorOpen(true)}
-				borderColor={borderColor}
-				colBg={colBg}
+				borderColor={borderColor} colBg={colBg}
 			/>
 
 			{loadError ? (

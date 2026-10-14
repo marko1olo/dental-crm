@@ -94,5 +94,6 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = (props) =
 	);
 };
 
+export const PublicBookingWidgetSSOT = PublicBookingWidget;
 export const PublicOnlineBookingWidget = PublicBookingWidget;
 export default PublicBookingWidget;
