@@ -144,12 +144,12 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 			"formatRublesExactRu must format numbers to exact rubles and kopecks",
 		);
 		assert.equal(
-			formatRublesExactRu(null),
+			formatRublesExactRu(null).replace(/\u00a0/g, " "),
 			"0,00 ₽",
 			"formatRublesExactRu must safely handle null without NaN",
 		);
 		assert.equal(
-			formatRublesExactRu(undefined),
+			formatRublesExactRu(undefined).replace(/\u00a0/g, " "),
 			"0,00 ₽",
 			"formatRublesExactRu must safely handle undefined without NaN",
 		);

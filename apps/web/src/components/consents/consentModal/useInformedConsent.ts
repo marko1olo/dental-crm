@@ -52,6 +52,8 @@ export function useInformedConsent({
 	initialTemplateKey = "CONSENT_THERAPY",
 	initialVerificationMethod = "paper_physical",
 	patient,
+	patientId,
+	visitId,
 	doctorName,
 	doctorSpecialty,
 	clinicName = "ООО «Стоматологическая клиника ДЕНТЕ»",
@@ -400,11 +402,11 @@ export function useInformedConsent({
 	};
 
 	// Подписание и подтверждение в 1 клик (Мандаты 8e, 8i, 8k, 8n)
-	const handleConfirmSign = (forcedMethod?: VerificationMethod) => {
+	const handleConfirmSign = async (forcedMethod?: VerificationMethod) => {
 		if (isSubmitting) return;
 		setIsSubmitting(true);
 		try {
-			executeSigning({
+			await executeSigning({
 				effectiveMethod: forcedMethod || verificationMethod,
 				strokes,
 				currentPoints,
@@ -413,6 +415,8 @@ export function useInformedConsent({
 				substitutionContext,
 				effectiveContext,
 				patient,
+				patientId: patientId || patient?.id,
+				visitId,
 				integrityRecord,
 				activeMode,
 				currentPackage,

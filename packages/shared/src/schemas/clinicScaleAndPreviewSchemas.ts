@@ -164,6 +164,7 @@ export const createDocumentSchema = z
 			.nullable()
 			.optional(),
 		payload: documentPayloadSchema.nullable().optional(),
+		signatureSvg: z.string().nullable().optional(),
 	})
 	.superRefine((input, context) => {
 		const disallowedKeys = documentPayloadDisallowedKeys(

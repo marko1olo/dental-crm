@@ -694,6 +694,7 @@ export function MobileDocumentsHub({
 				money={money}
 				formatShortDate={formatShortDate}
 				activePatientName={activePatient?.fullName}
+				activePatientPhone={activePatient?.phone}
 				activeDoctorName={activeDoctor?.fullName}
 			/>
 		</div>

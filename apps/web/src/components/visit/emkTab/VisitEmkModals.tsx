@@ -240,9 +240,12 @@ export function VisitEmkModals({
 			<InformedConsentModal
 				isOpen={isConsentModalOpen}
 				onClose={() => setIsConsentModalOpen(false)}
+				patientId={activePatient?.id}
+				visitId={dashboard?.activeVisit?.id}
 				patient={
 					activePatient
 						? {
+								id: activePatient.id,
 								fullName: activePatient.fullName,
 								birthDate: activePatient.birthDate,
 								passport: activePatient.passport,

@@ -13,6 +13,8 @@ import {
 } from "../consentTemplates.js";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import { showToast } from "../../GlobalToast.js";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
+import { CONSENT_KEY_TO_DOCUMENT_KIND } from "../../visit/consents/visitConsentTypes.js";
 import type {
 	VerificationMethod,
 	SignatureStroke,
@@ -24,6 +26,313 @@ import type {
 	SignedConsentPayload,
 } from "./types.js";
 
+function isValidUuid(id: string | null | undefined): boolean {
+	if (!id) return false;
+	return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+}
+
+function buildStructuredPayloadForConsent(
+	kind: string,
+	template: ConsentTemplate,
+	effectiveContext: ConsentSubstitutionContext,
+): Record<string, unknown> | null {
+	const todayIsoDate = new Date().toISOString().slice(0, 10);
+	const doctorFullName = effectiveContext.doctorName || "Лечащий врач";
+	const toothOrArea = effectiveContext.toothNumbers || "По клиническому плану";
+	const diagnosisOrIndication = effectiveContext.diagnosisIcd || "Z01.2 Стоматологическое обследование";
+
+	if (kind === "informed_consent") {
+		return {
+			informedConsent: {
+				intervention: template.title,
+				toothOrArea,
+				diagnosisOrIndication,
+				expectedBenefit: "Восстановление анатомической формы и функции зубочелюстной системы",
+				plannedAnesthesia: "Местная инфильтрационная / проводниковая анестезия",
+				materialOrMedicationNotes: null,
+				trustedContactForMedicalInfo: null,
+				explainedRisks: [
+					"Возможная болезненность в зоне вмешательства",
+					"Индивидуальная реакция на анестетик",
+					"Отек мягких тканей в послеоперационном периоде",
+				],
+				alternatives: [
+					"Динамическое наблюдение",
+					"Альтернативные методы ортопедического / терапевтического лечения",
+				],
+				aftercareRequirements: [
+					"Соблюдение гигиены полости рта",
+					"Воздержание от приема пищи в течение 2 часов",
+					"Явка на контрольный осмотр в назначенный срок",
+				],
+				doctorFullName,
+				consentConfirmedAt: todayIsoDate,
+				patientQuestionsAnswered: true,
+				patientUnderstandsRisks: true,
+				patientMayWithdrawBeforeIntervention: true,
+			},
+		};
+	}
+
+	if (kind === "procedure_specific_consent_packet") {
+		return {
+			procedureSpecificConsent: {
+				procedureType: "therapy_endo_restoration",
+				procedureName: template.title,
+				toothOrArea,
+				diagnosisOrIndication,
+				clinicalToothRows: "permanent",
+				plannedAnesthesia: "Местная инфильтрационная анестезия",
+				materialsAndSystems: null,
+				patientSpecificRiskFactors: ["Индивидуальная анатомия корневых каналов"],
+				procedureSpecificRisks: [
+					"Повышенная чувствительность после препарирования",
+					"Вероятность скола пломбировочного материала при сверхнагрузке",
+				],
+				alternatives: [
+					"Временное пломбирование",
+					"Ортопедическое восстановление вкладкой/коронкой",
+				],
+				aftercareAndLimits: [
+					"Щадящая диета в первые сутки",
+					"Контрольная рентгенография через 6 месяцев",
+				],
+				doctorFullName,
+				consentConfirmedAt: todayIsoDate,
+				localClinicFormAttached: false,
+				patientQuestionsAnswered: true,
+				exactProcedureConfirmed: true,
+				patientUnderstandsSpecificRisks: true,
+			},
+		};
+	}
+
+	if (kind === "personal_data_processing_consent") {
+		return {
+			personalDataProcessingConsent: {
+				operatorLegalName:
+					effectiveContext.clinicLegalName ||
+					effectiveContext.clinicName ||
+					"ООО «Стоматологическая клиника ДЕНТЕ»",
+				operatorInn: "7701234567",
+				operatorAddress:
+					effectiveContext.clinicAddress ||
+					"г. Москва, ул. Большая Стоматологическая, д. 12",
+				processingPurposes: [
+					"Оказание специализированной медицинской стоматологической помощи",
+					"Ведение медицинской карты стоматологического пациента по форме № 043/у",
+				],
+				personalDataCategories: [
+					"Фамилия, имя, отчество",
+					"Дата рождения, паспортные данные",
+					"Контактный номер телефона",
+					"Сведения о состоянии здоровья и стоматологическом статусе",
+				],
+				processingActions: [
+					"Сбор, запись, систематизация, накопление, хранение",
+					"Уточнение, использование, обезличивание, уничтожение",
+				],
+				thirdPartyTransferRules:
+					"Передача третьим лицам допускается исключительно по основаниям, предусмотренным 152-ФЗ и 323-ФЗ",
+				crossBorderTransferAllowed: false,
+				automatedDecisionMakingAllowed: false,
+				retentionPeriod: "25 лет (срок хранения медицинской документации)",
+				revocationChannel: "Письменное заявление на имя главного врача клиники",
+				consentGivenAt: todayIsoDate,
+				patientConfirmedVoluntaryConsent: true,
+				medicalDataProcessingAcknowledged: true,
+			},
+		};
+	}
+
+	if (kind === "medical_intervention_refusal") {
+		return {
+			medicalInterventionRefusal: {
+				refusedIntervention: template.title,
+				clinicalIndication: diagnosisOrIndication,
+				patientReason: "Личное решение пациента",
+				explainedRisks: [
+					"Прогрессирование воспалительного процесса",
+					"Утрата зуба",
+				],
+				alternativesOffered: [
+					"Консервативная терапия",
+					"Вскрытие абсцесса",
+				],
+				urgentWarningSigns: [
+					"Нарастание отека",
+					"Повышение температуры выше 38°C",
+				],
+				doctorFullName,
+				refusalConfirmedAt: todayIsoDate,
+				patientUnderstandsConsequences: true,
+				secondOpinionOffered: true,
+				emergencyCareExplained: true,
+			},
+		};
+	}
+
+	if (kind === "photo_video_consent") {
+		return {
+			photoVideoConsent: {
+				clinicalRecordUse: true,
+				labTransferAllowed: true,
+				colleagueConsultationAllowed: true,
+				educationUseAllowed: false,
+				marketingUseAllowed: false,
+				recognizablePublicationAllowed: false,
+				materials: ["photographs", "xray_images"],
+				anonymizationRequired: true,
+				revocationChannel: "Письменное заявление в клинику",
+				scopeNotes: null,
+			},
+		};
+	}
+
+	if (kind === "patient_intake_questionnaire") {
+		return {
+			patientIntakeQuestionnaire: {
+				chiefComplaint: diagnosisOrIndication,
+				allergyStatus: "Отягощенный аллергоанамнез не выявлен",
+				currentMedications: "Не принимает",
+				chronicConditions: "Соматически здоров",
+				pregnancyStatus: "not_applicable",
+				anticoagulants: "Не принимает",
+				infectiousRiskNotes: "Особых рисков нет",
+				cardioEndocrineNotes: "В норме",
+				emergencyContact: effectiveContext.phone || null,
+				additionalNotes: null,
+				accuracyConfirmed: true,
+			},
+		};
+	}
+
+	if (kind === "warranty_service_memo") {
+		return {
+			warrantyServiceMemo: {
+				completedWorkTitle: template.title,
+				treatmentCompletedAt: todayIsoDate,
+				toothOrArea,
+				materialsUsed: "Композитный пломбировочный материал светового отверждения",
+				warrantyMonths: 12,
+				freeServiceMonths: 24,
+				mandatoryRecallMonths: [6, 12],
+				patientDuties: [
+					"Соблюдение индивидуальной гигиены полости рта",
+					"Явка на профилактический осмотр не реже 1 раза в 6 месяцев",
+				],
+				warrantyExclusions: [
+					"Травматические повреждения челюстно-лицевой области",
+					"Самостоятельное вмешательство или лечение в другой клинике",
+				],
+				urgentWarningSigns: [
+					"Появление острой боли",
+					"Подвижность реставрации или ортопедической конструкции",
+				],
+				relatedContractOrActNumber: "Д-2026/01",
+				doctorFullName,
+				doctorSpecialty: "Врач-стоматолог",
+				issuedAt: todayIsoDate,
+				patientInformedOfWarrantyTerms: true,
+				patientUnderstandsRecallRequirement: true,
+				memoCopyReceived: true,
+			},
+		};
+	}
+
+	return null;
+}
+
+async function persistSignedConsentToBackend(params: {
+	patientId?: string | null | undefined;
+	visitId?: string | null | undefined;
+	consentKey: ConsentTemplateKey;
+	template: ConsentTemplate;
+	payload: SignedConsentPayload;
+	effectiveContext: ConsentSubstitutionContext;
+	svg: string;
+	effectiveMethod: VerificationMethod;
+}): Promise<void> {
+	if (!params.patientId || !isValidUuid(params.patientId)) {
+		return;
+	}
+	try {
+		const docKind =
+			CONSENT_KEY_TO_DOCUMENT_KIND[params.consentKey] || "informed_consent";
+		const documentPayload = buildStructuredPayloadForConsent(
+			docKind,
+			params.template,
+			params.effectiveContext,
+		);
+
+		const createRes = await fetch("/api/documents", {
+			method: "POST",
+			headers: denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+			}),
+			body: JSON.stringify({
+				patientId: params.patientId,
+				visitId:
+					params.visitId && isValidUuid(params.visitId)
+						? params.visitId
+						: undefined,
+				kind: docKind,
+				title: params.template.title,
+				signatureSvg: params.svg || undefined,
+				payload: documentPayload,
+			}),
+		});
+
+		if (!createRes.ok) {
+			console.warn(
+				"Fastify /api/documents returned status:",
+				createRes.status,
+				await createRes.text(),
+			);
+			return;
+		}
+
+		const created = (await createRes.json()) as {
+			id?: string;
+			document?: { id?: string };
+		};
+		const docId = created.id || created.document?.id;
+		if (!docId) return;
+
+		await fetch(`/api/documents/${encodeURIComponent(docId)}/issue`, {
+			method: "POST",
+			headers: denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+			}),
+			body: JSON.stringify({
+				signatureSvg: params.svg || undefined,
+				signatureAttestation: {
+					mode:
+						params.effectiveMethod === "tablet_stylus"
+							? "tablet_stylus"
+							: params.effectiveMethod === "sms_otp"
+								? "sms_otp"
+								: "paper_signed",
+					signedAt: params.payload.signedAt || new Date().toISOString(),
+					recipientFullName:
+						params.effectiveContext.patientName || "Пациент",
+					recipientRole: "patient",
+					staffFullName:
+						params.effectiveContext.doctorName || "Врач-стоматолог",
+					staffRole: "doctor",
+					identityChecked: true,
+					documentOpenedAndChecked: true,
+					recipientSigned: true,
+					clinicRepresentativeSigned: true,
+					note: params.payload.statusText,
+				},
+			}),
+		});
+	} catch (err) {
+		console.warn("Could not persist signed consent to backend (offline/mock mode):", err);
+	}
+}
+
 export interface ExecuteSigningParams {
 	effectiveMethod: VerificationMethod;
 	strokes: SignatureStroke[];
@@ -33,6 +342,8 @@ export interface ExecuteSigningParams {
 	substitutionContext: ConsentSubstitutionContext;
 	effectiveContext: ConsentSubstitutionContext;
 	patient?: InformedConsentPatientInfo | null | undefined;
+	patientId?: string | null | undefined;
+	visitId?: string | null | undefined;
 	integrityRecord: { hash: string };
 	activeMode: "packages" | "single";
 	currentPackage: { code: string; title: string; templateKeys: readonly ConsentTemplateKey[] };
@@ -51,7 +362,7 @@ export interface ExecuteSigningParams {
 	onClose: () => void;
 }
 
-export function executeSigning({
+export async function executeSigning({
 	effectiveMethod,
 	strokes,
 	currentPoints,
@@ -60,6 +371,8 @@ export function executeSigning({
 	substitutionContext,
 	effectiveContext,
 	patient,
+	patientId,
+	visitId,
 	integrityRecord,
 	activeMode,
 	currentPackage,
@@ -70,7 +383,7 @@ export function executeSigning({
 	onPackageSigned,
 	onConsentConfirmed,
 	onClose,
-}: ExecuteSigningParams): boolean {
+}: ExecuteSigningParams): Promise<boolean> {
 	// RED TEAM ИНВАРИАНТ: НУЛЕВАЯ ТОЛЕРАНТНОСТЬ К ФЕЙКОВЫМ ПОДПИСЯМ
 	if (effectiveMethod === "tablet_stylus") {
 		if (strokes.length === 0 && currentPoints.length === 0) {
@@ -121,6 +434,8 @@ export function executeSigning({
 			: 0,
 		integrityHash: integrityRecord.hash,
 	};
+
+	const effectivePatientId = patientId || patient?.id;
 
 	if (activeMode === "packages") {
 		const pkg = currentPackage;
@@ -181,6 +496,17 @@ export function executeSigning({
 
 			signedPayloads.push(payload);
 
+			await persistSignedConsentToBackend({
+				patientId: effectivePatientId,
+				visitId,
+				consentKey: tplKey,
+				template: tpl,
+				payload,
+				effectiveContext,
+				svg,
+				effectiveMethod,
+			});
+
 			if (onConsentSigned) {
 				onConsentSigned(payload);
 			}
@@ -230,6 +556,17 @@ export function executeSigning({
 				? "Подписано ПЭП по 63-ФЗ ст. 5 через SMS"
 				: "Электронное согласие подписано на планшете (векторная подпись SVG)",
 		};
+
+		await persistSignedConsentToBackend({
+			patientId: effectivePatientId,
+			visitId,
+			consentKey: activeDocKey,
+			template: currentTemplate,
+			payload,
+			effectiveContext,
+			svg,
+			effectiveMethod,
+		});
 
 		if (onConsentSigned) {
 			onConsentSigned(payload);

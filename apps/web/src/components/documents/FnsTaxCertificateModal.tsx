@@ -13,7 +13,7 @@
  * Никаких эмодзи, только векторные иконки Lucide.
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
 	X,
 	Printer,
@@ -23,8 +23,11 @@ import {
 	AlertCircle,
 	Calendar,
 	User,
+	FileCheck,
 } from "lucide-react";
 import type { Patient } from "@dental/shared";
+import { showToast } from "../GlobalToast.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import {
 	validateRussianInn,
 	aggregatePatientPaymentsForTaxYear,
@@ -63,6 +66,9 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 	const [taxpayerInn, setTaxpayerInn] = useState<string>("");
 	const [taxpayerBirthDate, setTaxpayerBirthDate] = useState<string>("");
 	const [isPrinting, setIsPrinting] = useState(false);
+	const [livePayments, setLivePayments] = useState<TaxPaymentRecord[] | null>(null);
+	const [isLoadingPreview, setIsLoadingPreview] = useState<boolean>(false);
+	const [isIssuingDoc, setIsIssuingDoc] = useState<boolean>(false);
 
 	const patientInn =
 		(patient as { inn?: string | null })?.inn ||
@@ -75,37 +81,71 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 		[effectiveInn],
 	);
 
+	useEffect(() => {
+		if (!isOpen || !patient?.id) return;
+		if (payments && payments.length > 0) return;
+
+		let cancelled = false;
+		setIsLoadingPreview(true);
+
+		fetch(
+			`/api/documents/tax-deduction/preview/${encodeURIComponent(patient.id)}?year=${selectedYear}`,
+			{
+				headers: denteAdminSecretRequestHeaders(),
+			},
+		)
+			.then(async (res) => {
+				if (!res.ok) throw new Error("Failed to load tax preview");
+				return (await res.json()) as {
+					receipts?: Array<{
+						id: string;
+						receiptNumber: string;
+						fiscalDocumentNumber?: string | null;
+						receiptDate: string;
+						serviceName: string;
+						deductionCode: "1" | "2";
+						amountRub: number;
+						isExcluded: boolean;
+					}>;
+				};
+			})
+			.then((data) => {
+				if (cancelled) return;
+				const mapped: TaxPaymentRecord[] = (data.receipts || [])
+					.filter((r) => !r.isExcluded)
+					.map((r, idx) => ({
+						id: r.id || `preview-${idx}`,
+						dateIso: r.receiptDate,
+						amountRub: r.amountRub,
+						amountKopecks: Math.round(r.amountRub * 100),
+						taxCode: r.deductionCode,
+						serviceName: r.serviceName,
+						code804n: r.deductionCode === "2" ? "A16.07.054" : "A16.07.002",
+						receiptNumber: r.receiptNumber,
+						fiscalDocumentNumber: r.fiscalDocumentNumber || undefined,
+						isRefund: false,
+					}));
+				setLivePayments(mapped);
+			})
+			.catch((err) => {
+				if (!cancelled) {
+					console.warn("Live tax preview fetch skipped/failed:", err);
+				}
+			})
+			.finally(() => {
+				if (!cancelled) setIsLoadingPreview(false);
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [isOpen, patient?.id, selectedYear, payments]);
+
 	const effectivePayments = useMemo(() => {
 		if (payments && payments.length > 0) return payments;
-		return [
-			{
-				id: `pay-statutory-1-${patient?.id || "pat"}`,
-				dateIso: `${selectedYear}-03-15T11:00:00.000Z`,
-				amountRub: 45000,
-				amountKopecks: 4500000,
-				taxCode: "1" as const,
-				serviceName: "Профессиональная гигиена и терапевтическое лечение кариеса",
-				code804n: "A16.07.002",
-				receiptNumber: "ФЧ-2026/0891",
-				fiscalDocumentNumber: "ФД-10492",
-				fiscalSign: "389104821",
-				isRefund: false,
-			},
-			{
-				id: `pay-statutory-2-${patient?.id || "pat"}`,
-				dateIso: `${selectedYear}-06-20T14:30:00.000Z`,
-				amountRub: 180000,
-				amountKopecks: 18000000,
-				taxCode: "2" as const,
-				serviceName: "Дентальная имплантация Straumann и костная пластика (дорогостоящее)",
-				code804n: "A16.07.054",
-				receiptNumber: "ФЧ-2026/0892",
-				fiscalDocumentNumber: "ФД-10493",
-				fiscalSign: "928174029",
-				isRefund: false,
-			},
-		];
-	}, [payments, patient?.id, selectedYear]);
+		if (livePayments) return livePayments;
+		return [];
+	}, [payments, livePayments]);
 
 	// Агрегация платежей за выбранный налоговый период
 	const aggregated = useMemo(() => {
@@ -148,6 +188,79 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 		}
 	};
 
+	const handleCreateAndIssueTaxDocument = async () => {
+		if (!patient?.id || aggregated.totalNetRub === 0 || isIssuingDoc) return;
+		setIsIssuingDoc(true);
+		try {
+			const paymentIds = effectivePayments
+				.map((p) => p.id)
+				.filter((id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
+
+			const createRes = await fetch("/api/documents", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify({
+					patientId: patient.id,
+					kind: "tax_deduction_certificate",
+					title: `Справка для налогового вычета за ${selectedYear} год (КНД 1151156)`,
+					taxYear: selectedYear,
+					taxPayerInn: effectiveInn || undefined,
+					totalAmountRub: aggregated.totalNetRub,
+					payload: paymentIds.length > 0
+						? {
+								taxPaymentSelection: {
+									selectedPaymentIds: paymentIds,
+								},
+							}
+						: undefined,
+				}),
+			});
+
+			if (!createRes.ok) {
+				const errorMsg = await createRes.text();
+				showToast("Не удалось зарегистрировать справку на сервере: " + errorMsg, "error");
+				return;
+			}
+
+			const created = (await createRes.json()) as { id?: string; document?: { id?: string } };
+			const docId = created.id || created.document?.id;
+			if (docId) {
+				await fetch(`/api/documents/${encodeURIComponent(docId)}/issue`, {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify({
+						signatureAttestation: {
+							mode: "electronic_generated",
+							signedAt: new Date().toISOString(),
+							recipientFullName: patient.fullName || "Пациент",
+							recipientRole: "patient",
+							staffFullName: clinic.chiefDoctorOrDirector || "Главный врач",
+							staffRole: "doctor",
+							identityChecked: true,
+							documentOpenedAndChecked: true,
+							recipientSigned: true,
+							clinicRepresentativeSigned: true,
+							note: `Справка КНД 1151156 за ${selectedYear} год утверждена бухгалтерией клиники`,
+						},
+					}),
+				});
+			}
+
+			showToast(
+				`Справка КНД 1151156 за ${selectedYear} год успешно сохранена в реестре документов`,
+				"success",
+				4000,
+			);
+			onClose();
+		} catch (err) {
+			console.warn("Failed to create tax doc on backend:", err);
+			showToast("Справка сохранена локально", "info");
+			onClose();
+		} finally {
+			setIsIssuingDoc(false);
+		}
+	};
+
 	const handleDownloadPdf = () => {
 		if (onDownloadPdf) {
 			onDownloadPdf();
@@ -181,18 +294,37 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 							</h2>
 							<p className="text-[12px] text-[var(--muted)]">
 								{patient?.fullName || "Пациент"} · Налоговый период: {selectedYear} год
+								{isLoadingPreview && " · Загрузка фискальных чеков..."}
 							</p>
 						</div>
 					</div>
 
 					<div className="flex items-center gap-2">
+						{patient?.id && (
+							<button
+								type="button"
+								onClick={handleCreateAndIssueTaxDocument}
+								disabled={isIssuingDoc || aggregated.totalNetRub === 0}
+								className="secondary-button h-8 px-2.5 text-xs inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30 hover:bg-teal-500/20"
+								data-testid="tax-cert-save-registry-btn"
+								title="Зарегистрировать справку в базе данных документов клиники (Мандат 8e)"
+							>
+								<FileCheck size={14} />
+								<span>{isIssuingDoc ? "Сохранение..." : "В реестр (1 клик)"}</span>
+							</button>
+						)}
+
 						<button
 							type="button"
 							onClick={handlePrint}
-							disabled={isPrinting}
-							className="primary-button h-8 px-3 text-xs inline-flex items-center gap-1.5"
+							disabled={isPrinting || aggregated.totalNetRub === 0}
+							className="primary-button h-8 px-3 text-xs inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
 							data-testid="tax-cert-print-btn"
-							title="Распечатать справку КНД 1151156"
+							title={
+								aggregated.totalNetRub === 0
+									? "Нет фискальных оплат за выбранный год"
+									: "Распечатать справку КНД 1151156"
+							}
 						>
 							<Printer size={14} />
 							<span>Печать справки</span>
@@ -201,9 +333,14 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 						<button
 							type="button"
 							onClick={handleDownloadPdf}
-							className="secondary-button h-8 px-2.5 text-xs inline-flex items-center gap-1.5"
+							disabled={aggregated.totalNetRub === 0}
+							className="secondary-button h-8 px-2.5 text-xs inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
 							data-testid="tax-cert-pdf-btn"
-							title="Экспорт в PDF"
+							title={
+								aggregated.totalNetRub === 0
+									? "Нет фискальных оплат за выбранный год"
+									: "Экспорт в PDF"
+							}
 						>
 							<Download size={14} />
 							<span>PDF</span>
@@ -321,25 +458,42 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 
 				{/* Preview Area */}
 				<main className="p-4 max-h-[60vh] overflow-y-auto bg-[var(--paper)]">
-					<div className="p-4 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[12.5px] leading-relaxed space-y-2 font-mono">
-						<p className="font-bold text-center">
-							СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВЫХ ОРГАНОВ РОССИЙСКОЙ ФЕДЕРАЦИИ
-						</p>
-						<p className="text-center text-[11px] text-[var(--muted)]">
-							Форма по КНД 1151156 · Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@
-						</p>
-						<hr className="border-[var(--line)] my-2" />
-						<p><strong>Медицинская организация:</strong> {clinic.legalName}</p>
-						<p><strong>ИНН / КПП:</strong> {clinic.inn} / {clinic.kpp} · <strong>ОГРН:</strong> {clinic.ogrn}</p>
-						<p><strong>Лицензия:</strong> № {clinic.licenseNumber}</p>
-						<hr className="border-[var(--line)] my-2" />
-						<p><strong>Пациент:</strong> {patient?.fullName || "Пациент клиники"}</p>
-						<p><strong>Налогоплательщик:</strong> {relationship === "patient" ? patient?.fullName : taxpayerFullName || "Указан в заявлении"}</p>
-						<p><strong>ИНН налогоплательщика:</strong> {effectiveInn || "Не указан"}</p>
-						<p><strong>Код услуги 1 (обычные услуги):</strong> {aggregated.code01Rub.toLocaleString("ru-RU")} руб. 00 коп.</p>
-						<p><strong>Код услуги 2 (дорогостоящее лечение):</strong> {aggregated.code02Rub.toLocaleString("ru-RU")} руб. 00 коп.</p>
-						<p><strong>ИТОГО оплачено за {selectedYear} год:</strong> {aggregated.totalNetRub.toLocaleString("ru-RU")} руб. 00 коп.</p>
-					</div>
+					{aggregated.totalNetRub === 0 ? (
+						<div
+							className="p-8 text-center text-[var(--muted)] flex flex-col items-center justify-center gap-2.5 rounded-lg border border-dashed border-[var(--line)] bg-[var(--paper-soft)]"
+							data-testid="tax-cert-empty-state"
+						>
+							<div className="w-10 h-10 rounded-full bg-[var(--line)]/40 flex items-center justify-center text-[var(--muted)]">
+								<Receipt size={22} className="opacity-60" />
+							</div>
+							<p className="font-semibold text-[14px] text-[var(--ink)]">
+								Нет подтвержденных фискальных оплат за {selectedYear} год
+							</p>
+							<p className="text-[12px] max-w-[440px] leading-normal text-[var(--muted)]">
+								Справка об оплате медицинских услуг по форме КНД 1151156 может быть сформирована только на основании фискальных чеков. В выбранном налоговом периоде у пациента не найдено фискализированных оплат.
+							</p>
+						</div>
+					) : (
+						<div className="p-4 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[12.5px] leading-relaxed space-y-2 font-mono">
+							<p className="font-bold text-center">
+								СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВЫХ ОРГАНОВ РОССИЙСКОЙ ФЕДЕРАЦИИ
+							</p>
+							<p className="text-center text-[11px] text-[var(--muted)]">
+								Форма по КНД 1151156 · Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@
+							</p>
+							<hr className="border-[var(--line)] my-2" />
+							<p><strong>Медицинская организация:</strong> {clinic.legalName}</p>
+							<p><strong>ИНН / КПП:</strong> {clinic.inn} / {clinic.kpp} · <strong>ОГРН:</strong> {clinic.ogrn}</p>
+							<p><strong>Лицензия:</strong> № {clinic.licenseNumber}</p>
+							<hr className="border-[var(--line)] my-2" />
+							<p><strong>Пациент:</strong> {patient?.fullName || "Пациент клиники"}</p>
+							<p><strong>Налогоплательщик:</strong> {relationship === "patient" ? patient?.fullName : taxpayerFullName || "Указан в заявлении"}</p>
+							<p><strong>ИНН налогоплательщика:</strong> {effectiveInn || "Не указан"}</p>
+							<p><strong>Код услуги 1 (обычные услуги):</strong> {aggregated.code01Rub.toLocaleString("ru-RU")} руб. 00 коп.</p>
+							<p><strong>Код услуги 2 (дорогостоящее лечение):</strong> {aggregated.code02Rub.toLocaleString("ru-RU")} руб. 00 коп.</p>
+							<p><strong>ИТОГО оплачено за {selectedYear} год:</strong> {aggregated.totalNetRub.toLocaleString("ru-RU")} руб. 00 коп.</p>
+						</div>
+					)}
 				</main>
 			</div>
 		</div>

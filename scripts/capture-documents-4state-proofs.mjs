@@ -71,6 +71,7 @@ for (const cfg of configs) {
 		isMobile: cfg.isMobile,
 		hasTouch: cfg.isMobile,
 		locale: "ru-RU",
+		colorScheme: cfg.theme,
 	});
 
 	await context.addInitScript(({ cTok, sTok, uid, fn, theme }) => {
@@ -84,6 +85,7 @@ for (const cfg of configs) {
 		localStorage.setItem("dente_user_role", "doctor");
 		localStorage.setItem("dente_role", "doctor");
 		localStorage.setItem("dente_perspective", "doctor");
+		localStorage.setItem("dente_theme_mode", theme);
 		localStorage.setItem("dente-theme", theme);
 		localStorage.setItem("dente_theme", theme);
 		localStorage.setItem("theme", theme);
@@ -123,6 +125,9 @@ for (const cfg of configs) {
 		document.documentElement.setAttribute("data-theme", theme);
 		document.documentElement.classList.remove("light", "dark");
 		document.documentElement.classList.add(theme);
+		document.body.setAttribute("data-theme", theme);
+		document.body.classList.remove("light", "dark");
+		document.body.classList.add(theme);
 		window.location.hash = "#documents";
 	}, { theme: cfg.theme });
 

@@ -18,6 +18,7 @@ import type {
 export type VerificationMethod = "tablet_stylus" | "sms_otp" | "paper_physical";
 
 export interface InformedConsentPatientInfo {
+	id?: string | null | undefined;
 	fullName?: string | null | undefined;
 	birthDate?: string | null | undefined;
 	passport?: string | null | undefined;
@@ -35,6 +36,8 @@ export interface InformedConsentModalProps {
 	initialTemplateKey?: ConsentTemplateKey;
 	initialVerificationMethod?: VerificationMethod;
 	patient?: InformedConsentPatientInfo | null | undefined;
+	patientId?: string | null | undefined;
+	visitId?: string | null | undefined;
 	doctorName?: string | null | undefined;
 	doctorSpecialty?: string | null | undefined;
 	clinicName?: string | null | undefined;

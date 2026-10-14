@@ -120,9 +120,16 @@ describe("Outpatient Dental Domain Sovereignty (Mandate 8i & Mandate 8e - Wave 1
 			webSrcDir,
 			"components/schedule/useAppointmentCardState.ts",
 		);
+		const actionsPath = path.join(
+			webSrcDir,
+			"components/schedule/useAppointmentCardActions.ts",
+		);
 		const cardContent = fs.readFileSync(cardPath, "utf-8");
 		const hookContent = fs.readFileSync(hookPath, "utf-8");
-		const combinedContent = cardContent + "\n" + hookContent;
+		const actionsContent = fs.existsSync(actionsPath)
+			? fs.readFileSync(actionsPath, "utf-8")
+			: "";
+		const combinedContent = cardContent + "\n" + hookContent + "\n" + actionsContent;
 
 		// Ошибка "Статус приема заблокирован: по этому приему открыт активный визит" в handleQuickStatusChange устранена
 		assert.ok(

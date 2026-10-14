@@ -10,6 +10,7 @@ import {
 	FileCheck,
 	FileSignature,
 	FileText,
+	MessageCircle,
 	Printer,
 	Receipt,
 	Share2,
@@ -18,6 +19,7 @@ import {
 	X,
 } from "lucide-react";
 import { DentalForm043 } from "../../icons/DentalIcons";
+import { showToast } from "../../GlobalToast";
 
 export interface MobileDocumentPreviewSheetProps {
 	readonly document: GeneratedDocument | null;
@@ -33,6 +35,7 @@ export interface MobileDocumentPreviewSheetProps {
 	readonly money?: ((val: number | null | undefined) => string) | undefined;
 	readonly formatShortDate?: ((date: string | null | undefined) => string) | undefined;
 	readonly activePatientName?: string | undefined;
+	readonly activePatientPhone?: string | null | undefined;
 	readonly activeDoctorName?: string | undefined;
 }
 
@@ -50,6 +53,7 @@ export function MobileDocumentPreviewSheet({
 	money,
 	formatShortDate,
 	activePatientName,
+	activePatientPhone,
 	activeDoctorName,
 }: MobileDocumentPreviewSheetProps): React.JSX.Element | null {
 	// Prevent background scroll when bottom sheet is open
@@ -139,6 +143,18 @@ export function MobileDocumentPreviewSheet({
 			}
 		} catch {
 			onSharePdf(document);
+		}
+	};
+
+	const handleSendWhatsApp = () => {
+		const rawPhone = activePatientPhone || "";
+		const cleanDigits = rawPhone.replace(/[^\d]/g, "");
+		const text = `Здравствуйте! Ваш документ из клиники «ДЕНТЕ»: ${docLabel}.`;
+		if (cleanDigits) {
+			const formattedPhone = cleanDigits.startsWith("8") && cleanDigits.length === 11 ? "7" + cleanDigits.slice(1) : cleanDigits;
+			window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(text)}`, "_blank");
+		} else {
+			showToast("Укажите номер телефона пациента для отправки через WhatsApp", "warning");
 		}
 	};
 
@@ -351,29 +367,41 @@ export function MobileDocumentPreviewSheet({
 						</button>
 					)}
 
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid grid-cols-3 gap-2">
 						{/* Secondary Action: Print */}
 						<button
 							type="button"
 							onClick={() => onPrint(document)}
-							className="mobile-print-secondary-btn"
+							className="mobile-print-secondary-btn min-h-[48px] py-2 px-2.5 rounded-[14px] border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold text-[13px] flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
 							data-testid="mobile-btn-print-doc"
 							aria-label="Печать документа"
 						>
-							<Printer size={18} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+							<Printer size={16} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
 							<span>Печать</span>
+						</button>
+
+						{/* WhatsApp Action */}
+						<button
+							type="button"
+							onClick={handleSendWhatsApp}
+							className="min-h-[48px] py-2 px-2.5 rounded-[14px] bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-[13px] flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] transition-transform"
+							data-testid="mobile-btn-whatsapp-doc"
+							aria-label="Отправить документ в WhatsApp"
+						>
+							<MessageCircle size={16} aria-hidden="true" className="shrink-0" />
+							<span>WhatsApp</span>
 						</button>
 
 						{/* Primary CTA: Share PDF / Send to Patient */}
 						<button
 							type="button"
 							onClick={handleShare}
-							className="mobile-share-pdf-cta-btn"
+							className="mobile-share-pdf-cta-btn min-h-[48px] py-2 px-2.5 rounded-[14px] bg-[var(--teal,#0d9488)] text-white font-bold text-[13px] flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] transition-transform"
 							data-testid="mobile-btn-share-doc"
 							aria-label="Поделиться PDF документом или отправить пациенту"
 						>
-							<Share2 size={18} aria-hidden="true" className="shrink-0" />
-							<span>Поделиться PDF</span>
+							<Share2 size={16} aria-hidden="true" className="shrink-0" />
+							<span>PDF</span>
 						</button>
 					</div>
 				</div>

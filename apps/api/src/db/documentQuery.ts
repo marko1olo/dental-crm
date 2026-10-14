@@ -94,6 +94,7 @@ function mapDocument(
 		issuedByUserId: record.issuedByUserId,
 		voidedAt: record.voidedAt?.toISOString() ?? null,
 		voidedByUserId: record.voidedByUserId,
+		signatureSvg: record.signatureSvg ?? null,
 		cryptoSignaturePkcs7: record.cryptoSignaturePkcs7 ?? null,
 		doctorSignaturePkcs7: record.doctorSignaturePkcs7 ?? null,
 		doctorCertSerial: record.doctorCertSerial ?? null,
@@ -182,8 +183,8 @@ export async function createGeneratedDocumentInDb(
 		totalAmountRub?: number | null | undefined;
 		taxYear?: number | null | undefined;
 		taxPayerInn?: string | null | undefined;
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		payload?: any | null | undefined;
+		signatureSvg?: string | null | undefined;
 	},
 ): Promise<GeneratedDocument> {
 	if (useInMemory()) {
@@ -198,6 +199,7 @@ export async function createGeneratedDocumentInDb(
 			issuedAt: null,
 			totalAmountRub: input.totalAmountRub ?? null,
 			payload: input.payload ?? null,
+			signatureSvg: input.signatureSvg ?? null,
 		};
 		inMemoryDocuments.push(document);
 		await recordAuditEvent({
@@ -257,6 +259,7 @@ export async function createGeneratedDocumentInDb(
 			taxYear: input.taxYear ?? null,
 			taxPayerInn: input.taxPayerInn ?? null,
 			payloadJson: input.payload ? JSON.stringify(input.payload) : null,
+			signatureSvg: input.signatureSvg ?? null,
 		})
 		.returning();
 
@@ -320,6 +323,7 @@ export async function issueGeneratedDocumentInDb(
 		releaseJournalEntry?: DocumentReleaseJournalEntry | null;
 		snapshotHtml?: string;
 		signatureAttestation?: DocumentIssueSignatureAttestation;
+		signatureSvg?: string | null;
 		taxPaymentSnapshot?: TaxPaymentSnapshot | null;
 		taxXmlSourceSnapshot?: TaxXmlSourceSnapshot | null;
 		totalAmountRub?: number | null;
@@ -343,6 +347,7 @@ export async function issueGeneratedDocumentInDb(
 			),
 			releaseJournalEntry: options.releaseJournalEntry || null,
 			signatureAttestation: options.signatureAttestation || null,
+			signatureSvg: options.signatureSvg ?? inMemoryDocument.signatureSvg ?? null,
 			taxPaymentSnapshot: options.taxPaymentSnapshot || null,
 			taxXmlSourceSnapshot: options.taxXmlSourceSnapshot || null,
 			totalAmountRub: options.totalAmountRub ?? inMemoryDocument.totalAmountRub,
@@ -393,6 +398,7 @@ export async function issueGeneratedDocumentInDb(
 			issuedByUserId,
 			releaseJournalEntry: options.releaseJournalEntry || null,
 			signatureAttestation: options.signatureAttestation || null,
+			signatureSvg: options.signatureSvg ?? existing.signatureSvg,
 			taxPaymentSnapshotJson: options.taxPaymentSnapshot
 				? JSON.stringify(options.taxPaymentSnapshot)
 				: existing.taxPaymentSnapshotJson,
@@ -416,6 +422,26 @@ export async function issueGeneratedDocumentInDb(
 		.returning();
 
 	if (!updated) return null;
+
+	if (options.signatureAttestation || options.signatureSvg) {
+		await db.insert(schema.documentSignatures).values({
+			organizationId,
+			documentId: updated.id,
+			patientId: updated.patientId,
+			signerRole: "patient",
+			signerName:
+				options.signatureAttestation?.recipientFullName ||
+				"Пациент (ПЭП 63-ФЗ)",
+			signatureType: options.signatureSvg ? "pep_canvas" : "pep_sms",
+			signatureSvg: options.signatureSvg ?? updated.signatureSvg ?? null,
+			documentSha256:
+				updated.issuedSnapshotSha256 ||
+				createHash("sha256")
+					.update(`${updated.id}:${updated.issuedAt?.toISOString() ?? ""}`)
+					.digest("hex"),
+			signedAt: updated.issuedAt ?? new Date(),
+		});
+	}
 
 	await recordAuditEvent({
 		organizationId,
@@ -566,19 +592,12 @@ export async function getDocumentRenderContextFromDb(
 		const clinicSettings = buildInMemoryClinicSettings();
 		return {
 			clinicProfile: clinicSettings.profile,
-			serviceCatalog: inMemoryServiceCatalog.filter(
-				(item) => item.organizationId === organizationId,
-			),
+			serviceCatalog: inMemoryServiceCatalog.filter((item) => item.organizationId === organizationId),
 			payments: patientId
-				? inMemoryPayments.filter(
-						(payment) =>
-							payment.organizationId === organizationId && payment.patientId === patientId,
-					)
+				? inMemoryPayments.filter((p) => p.organizationId === organizationId && p.patientId === patientId)
 				: [],
 			treatmentPlanItems: patientId
-				? inMemoryTreatmentPlanItems.filter(
-						(item) => item.organizationId === organizationId && item.patientId === patientId,
-					)
+				? inMemoryTreatmentPlanItems.filter((i) => i.organizationId === organizationId && i.patientId === patientId)
 				: [],
 		};
 	}
