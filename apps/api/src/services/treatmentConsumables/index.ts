@@ -34,6 +34,7 @@ import {
 import {
 	quickWriteoffShiftBundle,
 	quickWriteoffVisitBundle,
+	quickWriteoffOrthopedicProtocol,
 } from "./bundleWriteoffService.js";
 import { deductManualItems } from "./manualDeduction.js";
 
@@ -57,6 +58,7 @@ export class TreatmentConsumablesService {
 	static quickWriteoffCarpules = quickWriteoffCarpules;
 	static quickWriteoffShiftBundle = quickWriteoffShiftBundle;
 	static quickWriteoffVisitBundle = quickWriteoffVisitBundle;
+	static quickWriteoffOrthopedicProtocol = quickWriteoffOrthopedicProtocol;
 }
 
 export const treatmentConsumablesService = TreatmentConsumablesService;

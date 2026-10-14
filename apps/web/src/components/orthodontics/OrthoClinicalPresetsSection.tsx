@@ -1,13 +1,17 @@
 import React from "react";
-import { CheckCircle2, Layers, RotateCcw, Zap } from "lucide-react";
+import { CheckCircle2, Layers, RotateCcw, Sparkles, Zap } from "lucide-react";
 import { AlignerTray, BracesBracket, DentalArticulator } from "../icons/DentalIcons";
+import type { OrthoClinicalPresetId } from "./orthoProtocolTypes";
 
 export interface OrthoClinicalPresetsSectionProps {
-	readonly activePreset: "activation" | "wire_change" | "bonding" | "debonding" | null;
+	readonly activePreset: OrthoClinicalPresetId | null;
 	readonly onPresetActivation: () => void;
 	readonly onPresetWireChange: () => void;
 	readonly onPresetBonding: () => void;
 	readonly onPresetDebonding: () => void;
+	readonly onPresetLeveling?: (() => void) | undefined;
+	readonly onPresetSprings?: (() => void) | undefined;
+	readonly onPresetSeparationRings?: (() => void) | undefined;
 	readonly onPresetAlignerLabOrder: () => void;
 	readonly onPresetRetainerLabOrder: () => void;
 	readonly onPresetPlateLabOrder: () => void;
@@ -22,6 +26,9 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 	onPresetWireChange,
 	onPresetBonding,
 	onPresetDebonding,
+	onPresetLeveling = () => {},
+	onPresetSprings = () => {},
+	onPresetSeparationRings = () => {},
 	onPresetAlignerLabOrder,
 	onPresetRetainerLabOrder,
 	onPresetPlateLabOrder,
@@ -182,6 +189,114 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 							}`}
 						>
 							(+ установка несъемного ретейнера)
+						</div>
+					</div>
+				</button>
+
+				<button
+					type="button"
+					onClick={onPresetLeveling}
+					data-testid="ortho-preset-leveling"
+					title="Смена дуг: плановое нивелирование (NiTi .014 ВЧ + CuNiTi .016x.022 НЧ + эластики Class II)"
+					className={`h-[44px] px-3 py-1.5 rounded-lg border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+						activePreset === "leveling"
+							? "bg-[var(--teal,#0d9488)] text-white border-teal-700 shadow-xs font-bold"
+							: "bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-[var(--line,#e2e8f0)] dark:border-slate-800 hover:border-amber-500/50 text-[var(--ink,#0f172a)] dark:text-slate-100 hover:bg-[var(--paper-soft,#f8fafc)]"
+					}`}
+				>
+					<div
+						className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+							activePreset === "leveling"
+								? "bg-white/20 text-white"
+								: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+						}`}
+					>
+						<Sparkles size={13} />
+					</div>
+					<div className="min-w-0 flex-1">
+						<div className="text-[12.5px] font-bold leading-tight">
+							Смена дуг: нивелирование
+						</div>
+						<div
+							className={`text-[11.5px] truncate leading-tight ${
+								activePreset === "leveling"
+									? "text-teal-100"
+									: "text-[var(--muted,#64748b)] dark:text-slate-400"
+							}`}
+						>
+							NiTi .014 + CuNiTi .016x.022 + Class II
+						</div>
+					</div>
+				</button>
+
+				<button
+					type="button"
+					onClick={onPresetSprings}
+					data-testid="ortho-preset-springs"
+					title="Активация пружин (раскрывающие Open-Coil / закрывающие Closed-Coil)"
+					className={`h-[44px] px-3 py-1.5 rounded-lg border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+						activePreset === "springs"
+							? "bg-[var(--teal,#0d9488)] text-white border-teal-700 shadow-xs font-bold"
+							: "bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-[var(--line,#e2e8f0)] dark:border-slate-800 hover:border-amber-500/50 text-[var(--ink,#0f172a)] dark:text-slate-100 hover:bg-[var(--paper-soft,#f8fafc)]"
+					}`}
+				>
+					<div
+						className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+							activePreset === "springs"
+								? "bg-white/20 text-white"
+								: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+						}`}
+					>
+						<Zap size={13} />
+					</div>
+					<div className="min-w-0 flex-1">
+						<div className="text-[12.5px] font-bold leading-tight">
+							Активация пружин
+						</div>
+						<div
+							className={`text-[11.5px] truncate leading-tight ${
+								activePreset === "springs"
+									? "text-teal-100"
+									: "text-[var(--muted,#64748b)] dark:text-slate-400"
+							}`}
+						>
+							Open / Closed Coil на дуге SS
+						</div>
+					</div>
+				</button>
+
+				<button
+					type="button"
+					onClick={onPresetSeparationRings}
+					data-testid="ortho-preset-separation-rings"
+					title="Сепарация под бандажные кольца (межзубные сепараторы 16, 26, 36, 46)"
+					className={`h-[44px] px-3 py-1.5 rounded-lg border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+						activePreset === "separation"
+							? "bg-[var(--teal,#0d9488)] text-white border-teal-700 shadow-xs font-bold"
+							: "bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-[var(--line,#e2e8f0)] dark:border-slate-800 hover:border-amber-500/50 text-[var(--ink,#0f172a)] dark:text-slate-100 hover:bg-[var(--paper-soft,#f8fafc)]"
+					}`}
+				>
+					<div
+						className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+							activePreset === "separation"
+								? "bg-white/20 text-white"
+								: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+						}`}
+					>
+						<Layers size={13} />
+					</div>
+					<div className="min-w-0 flex-1">
+						<div className="text-[12.5px] font-bold leading-tight">
+							Сепарация под кольца
+						</div>
+						<div
+							className={`text-[11.5px] truncate leading-tight ${
+								activePreset === "separation"
+									? "text-teal-100"
+									: "text-[var(--muted,#64748b)] dark:text-slate-400"
+							}`}
+						>
+							Эластические сепараторы моляров
 						</div>
 					</div>
 				</button>

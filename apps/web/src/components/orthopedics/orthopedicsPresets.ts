@@ -14,6 +14,10 @@ export interface StandardZtlPreset {
 	readonly description: string;
 	readonly warrantyMonths: number;
 	readonly warrantyLabelRu: string;
+	readonly pricePatientRub: number;
+	readonly costZtlRub: number;
+	readonly costMaterialsRub: number;
+	readonly turnaroundBusinessDays: number;
 }
 
 export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
@@ -26,6 +30,10 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		description: "Монолитный диоксид циркония многослойной градиентной прозрачности",
 		warrantyMonths: 60,
 		warrantyLabelRu: "5 лет",
+		pricePatientRub: 24000,
+		costZtlRub: 7500,
+		costMaterialsRub: 1200,
+		turnaroundBusinessDays: 5,
 	},
 	{
 		id: "emax",
@@ -36,6 +44,10 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		description: "Прессованная дисиликатная стеклокерамика высокой эстетики",
 		warrantyMonths: 36,
 		warrantyLabelRu: "3 года",
+		pricePatientRub: 26000,
+		costZtlRub: 8500,
+		costMaterialsRub: 1300,
+		turnaroundBusinessDays: 5,
 	},
 	{
 		id: "metal_ceramic",
@@ -46,6 +58,10 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		description: "Классическая металлокерамика на CoCr каркасе",
 		warrantyMonths: 24,
 		warrantyLabelRu: "2 года (ГОСТ Р 51087-97)",
+		pricePatientRub: 15000,
+		costZtlRub: 5000,
+		costMaterialsRub: 1100,
+		turnaroundBusinessDays: 7,
 	},
 	{
 		id: "pmma_temp",
@@ -56,6 +72,10 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		description: "Фрезерованная провизорная коронка на период интеграции и моделирования десны",
 		warrantyMonths: 6,
 		warrantyLabelRu: "6 месяцев (провизорная)",
+		pricePatientRub: 5000,
+		costZtlRub: 1500,
+		costMaterialsRub: 600,
+		turnaroundBusinessDays: 2,
 	},
 	{
 		id: "clasp_denture",
@@ -66,8 +86,30 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		description: "Дуговой съемный протез с опорно-удерживающими кламмерами или замками",
 		warrantyMonths: 24,
 		warrantyLabelRu: "2 года (ГОСТ Р 51087-97)",
+		pricePatientRub: 45000,
+		costZtlRub: 16000,
+		costMaterialsRub: 2500,
+		turnaroundBusinessDays: 10,
 	},
 ] as const;
+
+export interface StumpShadeOption {
+	readonly code: string;
+	readonly labelRu: string;
+	readonly colorHex: string;
+}
+
+export const STUMP_SHADE_PRESETS: readonly StumpShadeOption[] = [
+	{ code: "ND1", labelRu: "ND1 (Светлая культя)", colorHex: "#f7eee3" },
+	{ code: "ND2", labelRu: "ND2 (Естественный дентин)", colorHex: "#eddcc8" },
+	{ code: "ND3", labelRu: "ND3 (Интенсивный дентин)", colorHex: "#e3cbaf" },
+	{ code: "ND4", labelRu: "ND4 (Сероватый дентин)", colorHex: "#d8be9f" },
+	{ code: "ND5", labelRu: "ND5 (Темный дентин)", colorHex: "#c9ac8c" },
+	{ code: "ND6", labelRu: "ND6 (Коричневый оттенок)", colorHex: "#b89772" },
+	{ code: "ND7", labelRu: "ND7 (Выраженный дисколорит)", colorHex: "#a6835d" },
+	{ code: "ND8", labelRu: "ND8 (Тетрациклиновый дисколорит)", colorHex: "#916f4b" },
+	{ code: "ND9", labelRu: "ND9 (Металлическая культя/вкладка)", colorHex: "#7d7f83" },
+];
 
 export interface PreparationMarginPreset {
 	readonly id: string;

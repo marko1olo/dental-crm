@@ -20,10 +20,19 @@ import { useVisitStore } from "../../store/visitStore.js";
 
 export type OrthopedicProtocolCategory =
 	| "prep_crown"
+	| "impression_scan"
+	| "temp_crown"
 	| "try_in"
 	| "permanent_cementation"
 	| "removable_prosthetics"
 	| "consultation_norm";
+
+export interface OrthopedicConsumableItem {
+	readonly nameRu: string;
+	readonly quantity: number;
+	readonly unit: string;
+	readonly defaultCostRub?: number;
+}
 
 export interface Order804nServiceItem {
 	readonly code: string;
@@ -91,6 +100,13 @@ export interface OrthopedicProtocolPreset {
 	readonly treatment: string;
 	readonly recommendations: string;
 	readonly order804nServices: readonly Order804nServiceItem[];
+	readonly warehouseBundleType?:
+		| "orthopedics_prep"
+		| "orthopedics_impression"
+		| "orthopedics_temporary"
+		| "orthopedics_cementation"
+		| undefined;
+	readonly consumables?: readonly OrthopedicConsumableItem[] | undefined;
 }
 
 export const ORTHOPEDIC_CANONICAL_PROTOCOLS: readonly OrthopedicProtocolPreset[] = [
@@ -141,6 +157,139 @@ export const ORTHOPEDIC_CANONICAL_PROTOCOLS: readonly OrthopedicProtocolPreset[]
 				priceRub: 2500,
 			},
 		],
+		warehouseBundleType: "orthopedics_prep",
+		consumables: [
+			{ nameRu: "Нить ретракционная Ultrapak #00", quantity: 1, unit: "уп.", defaultCostRub: 850 },
+			{ nameRu: "А-силикон база + корректор (Express XT)", quantity: 1, unit: "компл.", defaultCostRub: 1600 },
+			{ nameRu: "Канюли смесительные для А-силикона", quantity: 2, unit: "шт.", defaultCostRub: 90 },
+			{ nameRu: "Артикаин 1:100 000 (карпула 1.7 мл)", quantity: 1, unit: "карп.", defaultCostRub: 120 },
+			{ nameRu: "Иглы карпульные 0.3x21 мм", quantity: 1, unit: "шт.", defaultCostRub: 18 },
+			{ nameRu: "Бис-акриловый композит Protemp 4 / Luxatemp", quantity: 1, unit: "доза", defaultCostRub: 450 },
+			{ nameRu: "Цемент временный Temp-Bond NE", quantity: 1, unit: "доза", defaultCostRub: 180 },
+		],
+	},
+	{
+		id: "ortho_impression_scan",
+		titleRu:
+			"Снятие двухслойного слепка (А-силикон) / Оптический цифровой скан (3Shape TRIOS) и регистрация прикуса",
+		shortLabel: "Снятие слепка (А-силикон) / Скан",
+		category: "impression_scan",
+		defaultIcd10: "K08.1",
+		defaultIcd10Label:
+			"Потеря зубов вследствие несчастного случая, удаления или локализованного пародонтита",
+		anamnesis:
+			"Плановое посещение по плану ортопедического лечения (Этап 3: Ортопедия). Жалоб на боли нет. Этап высокоточного получения оттиска / цифрового сканирования препарированных зубов для зуботехнической лаборатории (ЗТЛ).",
+		objective:
+			"Десневой край в области препарированных зубов спокоен, бледно-розовый. Уступ четко визуализируется, кровоточивость отсутствует. Временные коронки сняты без повреждения культей.",
+		treatment:
+			"Антисептическая обработка культей 0.05% хлоргексидином. Механическая ретракция десны техникой двух нитей (Ultrapak 00 + 0 с гемостатиком ViscoStat Clear 25% AlCl3). Высушивание струей воздуха. Снятие высокоточного двухслойного оттиска прецизионным А-силиконом (Express XT / Honigum / Elite HD+) базовым и корригирующим слоями с использованием смесительного пистолета и интраоральных канюль / интраоральное цифровое 3D-сканирование зубного ряда сканером 3Shape TRIOS. Снятие оттиска зубного ряда-антагониста. Регистрация центральной окклюзии прецизионным А-силиконом для регистрации прикуса (Futar D / O-Bite). Контроль качества оттиска: круговой уступ, переходная складка и зубы-антагонисты просняты с микронной точностью, оттяжек и пор нет. Временные коронки повторно зафиксированы на Temp-Bond NE. Заказ-наряд сформирован и отправлен в ЗТЛ.",
+		recommendations:
+			"Щадящий режим жевания на временные коронки. Назначен визит на примерку конструкции.",
+		order804nServices: [
+			{
+				code: "A16.07.031.001",
+				nameRu: "Снятие двухслойного оттиска / Интраоральное цифровое сканирование (3Shape TRIOS)",
+				stageKind: "stage_3_orthopedics",
+				suggestedPriceRub: 3500,
+				priceRub: 3500,
+			},
+			{
+				code: "A02.07.010",
+				nameRu: "Определение и фиксация центрального соотношения челюстей (окклюзионный силикон)",
+				stageKind: "stage_3_orthopedics",
+				suggestedPriceRub: 2000,
+				priceRub: 2000,
+			},
+		],
+		warehouseBundleType: "orthopedics_impression",
+		consumables: [
+			{ nameRu: "А-силикон прецизионный (база + корректор)", quantity: 1, unit: "компл.", defaultCostRub: 1600 },
+			{ nameRu: "Канюли смесительные с интраоральными насадками", quantity: 2, unit: "шт.", defaultCostRub: 90 },
+			{ nameRu: "Окклюзионный силикон для регистрации прикуса (Futar D)", quantity: 1, unit: "доза", defaultCostRub: 350 },
+			{ nameRu: "Ложка слепочная перфорированная", quantity: 1, unit: "шт.", defaultCostRub: 60 },
+		],
+	},
+	{
+		id: "ortho_temp_crown_luxatemp",
+		titleRu:
+			"Изготовление и фиксация временной коронки прямым методом (Luxatemp Star / Protemp 4 на Temp-Bond NE)",
+		shortLabel: "Временная коронка (Luxatemp)",
+		category: "temp_crown",
+		defaultIcd10: "K08.1",
+		defaultIcd10Label:
+			"Потеря зубов вследствие несчастного случая, удаления или локализованного пародонтита",
+		anamnesis:
+			"Плановое посещение на этап изготовления и фиксации временной провизорной конструкции. Жалоб нет. Необходима защита культи препарированного зуба, сохранение объема десны и эстетики на период изготовления работы в ЗТЛ.",
+		objective:
+			"Культя зуба препарирована с уступом, десна не воспалена. Пульпа витальна / зуб депульпирован, культя герметично восстановлена.",
+		treatment:
+			"Изоляция рабочего поля. Внесение бис-акрилового композита (Luxatemp Star / Protemp 4) в силиконовый ключ/матрицу с помощью смесительного наконечника 1:10. Наложение ключа на культю зуба на 2 минуты до первичной полимеризации. Извлечение заготовки, удаление ингибированного кислородом слоя спиртовой салфеткой. Механическая обработка алмазными и твердосплавными борами, формирование анатомической формы, фиссур и контактных пунктов. Финишная полировка дисками Sof-Lex и силиконовыми полирами до сухого блеска. Примерка в полости рта: проверка краевого прилегания, окклюзии копиркой 40 мкм. Фиксация на культю зуба на временный безевгенольный цемент Temp-Bond NE / RelyX Temp NE. Удаление излишков цемента кюретой, флосс-контроль межзубных промежутков.",
+		recommendations:
+			"Не жевать вязкую и сверхтвердую пищу на сторону временной коронки. При расцементировке обратиться в клинику.",
+		order804nServices: [
+			{
+				code: "A16.07.004.001",
+				nameRu: "Изготовление и фиксация временной провизорной коронки прямым методом (Luxatemp / Protemp 4)",
+				stageKind: "stage_3_orthopedics",
+				suggestedPriceRub: 2500,
+				priceRub: 2500,
+			},
+		],
+		warehouseBundleType: "orthopedics_temporary",
+		consumables: [
+			{ nameRu: "Бис-акриловый композит Luxatemp Star / Protemp 4", quantity: 1, unit: "доза", defaultCostRub: 450 },
+			{ nameRu: "Смесительные канюли для композита 1:10", quantity: 1, unit: "шт.", defaultCostRub: 50 },
+			{ nameRu: "Цемент временный Temp-Bond NE", quantity: 1, unit: "доза", defaultCostRub: 180 },
+			{ nameRu: "Диски полировочные Sof-Lex", quantity: 1, unit: "шт.", defaultCostRub: 65 },
+		],
+	},
+	{
+		id: "ortho_permanent_cementation",
+		titleRu:
+			"Постоянная фиксация конструкции (ZrO2 / E.max) на стеклоиономер / композитный цемент (Fuji I / RelyX U200 / Panavia V5, рентген-контроль)",
+		shortLabel: "Постоянная фиксация (RelyX / Fuji I)",
+		category: "permanent_cementation",
+		defaultIcd10: "Z51.8",
+		defaultIcd10Label: "Ортопедическое лечение",
+		anamnesis:
+			"Плановое посещение на этап постоянной фиксации готовой ортопедической конструкции из ЗТЛ. Жалоб нет. Конструкция глазурована и готова к постоянной фиксации.",
+		objective:
+			"Десневой контур сформирован провизорной конструкцией идеально, краевой пародонт интактен, кровоточивости при зондировании нет. Культя зуба чистая, плотная.",
+		treatment:
+			"Снятие временной коронки. Очистка культи зуба ультразвуком и полировочной пастой без фтора, промывание дистиллированной водой, антисептическая обработка 2% хлоргексидином. Изоляция рабочего поля (коффердам / ретракционная нить 00 / ватные валики и слюноотсос). Подготовка внутренней поверхности конструкции: воздушно-абразивная пескоструйная обработка частицами оксида алюминия 50 мкм (Al2O3 / CoJet Prep) под давлением 2.0 бар, очистка Ivoclean 20 сек, промывание, высушивание. Нанесение универсального праймера (Monobond Plus / Clearfil Ceramic Primer Plus), экспозиция 60 сек, высушивание струей теплого воздуха без примесей масла. Нанесение самоадгезивного композитного цемента двойного отверждения (3M RelyX U200 / Panavia V5) или стеклоиономерного цемента (GC Fuji I) на внутреннюю поверхность коронки. Внесение конструкции на культю зуба, позиционирование с равномерным осевым усилием. Предварительная светополимеризация вспышкой 2 сек («tack-cure») для перевода излишков цемента в гелеобразное состояние. Полное прецизионное удаление излишков цемента кюретой и скалером по всему периметру десневой борозды, прочистка межзубных промежутков зубной нитью с узелком. Окончательная полимеризация светом по 20 сек с каждой поверхности под защитным слоем глицеринового геля Oxyguard / Liquid Strip. Контроль окклюзии в статике и динамике (Bausch 40 мкм). Финишная полировка переходов и полировка шва алмазной пастой. Контрольный внутриротовой прицельный радиовизиографический снимок (РВГ): коронка адаптирована точно по уступу, поддесневых наплывов и излишков фиксирующего цемента нет.",
+		recommendations:
+			"Не принимать пищу в течение 2 часов. Исключить чрезмерные точечные механические нагрузки (грызть кости, сухари) в первые сутки. Стандартная индивидуальная гигиена: чистка зубов 2 раза в день, ежедневное использование флосса или ирригатора. Контрольный осмотр через 6 месяцев.",
+		order804nServices: [
+			{
+				code: "A16.07.004",
+				nameRu: "Восстановление зуба коронкой (постоянная ортопедическая конструкция из ЗТЛ)",
+				stageKind: "stage_3_orthopedics",
+				suggestedPriceRub: 22000,
+				priceRub: 22000,
+			},
+			{
+				code: "A16.07.004.002",
+				nameRu: "Постоянная фиксация несъемной ортопедической конструкции (коронки, мостовидного протеза, винира)",
+				stageKind: "stage_3_orthopedics",
+				suggestedPriceRub: 3000,
+				priceRub: 3000,
+			},
+			{
+				code: "A06.07.007",
+				nameRu: "Внутриротовой прицельный радиовизиографический снимок (контроль краевого прилегания и отсутствия поддесневого цемента)",
+				stageKind: "stage_3_orthopedics",
+				suggestedPriceRub: 750,
+				priceRub: 750,
+			},
+		],
+		warehouseBundleType: "orthopedics_cementation",
+		consumables: [
+			{ nameRu: "Композитный цемент RelyX U200 / Panavia V5", quantity: 1, unit: "доза", defaultCostRub: 650 },
+			{ nameRu: "Праймер керамики Monobond Plus", quantity: 1, unit: "доза", defaultCostRub: 250 },
+			{ nameRu: "Оксид алюминия 50 мкм для CoJet", quantity: 1, unit: "порция", defaultCostRub: 120 },
+			{ nameRu: "Нить ретракционная Ultrapak #000", quantity: 1, unit: "уп.", defaultCostRub: 850 },
+			{ nameRu: "Глицериновый гель Liquid Strip / Oxyguard", quantity: 1, unit: "доза", defaultCostRub: 90 },
+		],
 	},
 	{
 		id: "ortho_try_in_framework_crown",
@@ -165,39 +314,6 @@ export const ORTHOPEDIC_CANONICAL_PROTOCOLS: readonly OrthopedicProtocolPreset[]
 				stageKind: "stage_3_orthopedics",
 				suggestedPriceRub: 1500,
 				priceRub: 1500,
-			},
-		],
-	},
-	{
-		id: "ortho_permanent_cementation",
-		titleRu:
-			"Постоянная фиксация конструкции (ZrO2 / E.max) на композитный цемент (пескоструйная обработка CoJet/Al2O3, праймер Monobond Plus, цемент RelyX U200 / Panavia V5, рентген-контроль)",
-		shortLabel: "Постоянная фиксация",
-		category: "permanent_cementation",
-		defaultIcd10: "Z51.8",
-		defaultIcd10Label: "Ортопедическое лечение",
-		anamnesis:
-			"Плановое посещение на этап постоянной фиксации готовой ортопедической конструкции из ЗТЛ. Жалоб нет. Конструкция глазурована и готова к постоянной фиксации.",
-		objective:
-			"Десневой контур сформирован провизорной конструкцией идеально, краевой пародонт интактен, кровоточивости при зондировании нет. Культя зуба чистая, плотная.",
-		treatment:
-			"Снятие временной коронки. Очистка культи зуба ультразвуком и полировочной пастой без фтора, промывание дистиллированной водой, антисептическая обработка 2% хлоргексидином. Изоляция рабочего поля (коффердам / ретракционная нить 00 / ватные валики и слюноотсос). Подготовка внутренней поверхности конструкции: воздушно-абразивная пескоструйная обработка частицами оксида алюминия 50 мкм (Al2O3 / CoJet Prep) под давлением 2.0 бар, очистка Ivoclean 20 сек, промывание, высушивание. Нанесение универсального праймера (Monobond Plus / Clearfil Ceramic Primer Plus), экспозиция 60 сек, высушивание струей теплого воздуха без примесей масла. Нанесение самоадгезивного композитного цемента двойного отверждения (3M RelyX U200 / Panavia V5) на внутреннюю поверхность коронки. Внесение конструкции на культю зуба, позиционирование с равномерным осевым усилием. Предварительная светополимеризация вспышкой 2 сек («tack-cure») для перевода излишков цемента в гелеобразное состояние. Полное прецизионное удаление излишков цемента кюретой и скалером по всему периметру десневой борозды, прочистка межзубных промежутков зубной нитью с узелком. Окончательная полимеризация светом по 20 сек с каждой поверхности под защитным слоем глицеринового геля Oxyguard / Liquid Strip. Контроль окклюзии в статике и динамике (Bausch 40 мкм). Финишная полировка переходов и полировка шва алмазной пастой. Контрольный внутриротовой прицельный радиовизиографический снимок (РВГ): коронка адаптирована точно по уступу, поддесневых наплывов и излишков фиксирующего цемента нет.",
-		recommendations:
-			"Не принимать пищу в течение 2 часов. Исключить чрезмерные точечные механические нагрузки (грызть кости, сухари) в первые сутки. Стандартная индивидуальная гигиена: чистка зубов 2 раза в день, ежедневное использование флосса или ирригатора. Контрольный осмотр через 6 месяцев.",
-		order804nServices: [
-			{
-				code: "A16.07.004.002",
-				nameRu: "Постоянная фиксация несъемной ортопедической конструкции (коронки, мостовидного протеза, винира)",
-				stageKind: "stage_3_orthopedics",
-				suggestedPriceRub: 3000,
-				priceRub: 3000,
-			},
-			{
-				code: "A06.07.007",
-				nameRu: "Внутриротовой прицельный радиовизиографический снимок (контроль краевого прилегания и отсутствия поддесневого цемента)",
-				stageKind: "stage_3_orthopedics",
-				suggestedPriceRub: 750,
-				priceRub: 750,
 			},
 		],
 	},
@@ -282,6 +398,10 @@ export interface FormatOrthopedicProtocolOptions {
 	jawScope?: "upper" | "lower" | "both" | undefined;
 	material?: string | undefined;
 	colorVita?: string | undefined;
+	labOrderId?: string | undefined;
+	labOrderNumber?: string | undefined;
+	technicianName?: string | undefined;
+	warrantyPassport?: string | undefined;
 }
 
 /**
@@ -318,6 +438,9 @@ export function formatOrthopedicProtocolStatement(
 	if (jawLabel) scopeItems.push(`Область: ${jawLabel}`);
 	if (options?.material) scopeItems.push(`Материал: ${options.material}`);
 	if (options?.colorVita) scopeItems.push(`Цвет: ${options.colorVita}`);
+	if (options?.labOrderNumber) scopeItems.push(`Наряд ЗТЛ: ${options.labOrderNumber}`);
+	if (options?.technicianName) scopeItems.push(`Техник: ${options.technicianName}`);
+	if (options?.warrantyPassport) scopeItems.push(`Гарантийный паспорт: ${options.warrantyPassport}`);
 
 	const scopeHeader = scopeItems.length > 0 ? `[${scopeItems.join(" · ")}]\n` : "";
 
@@ -383,6 +506,7 @@ export function applyOrthopedicProtocolToVisit(
 	summary: string;
 	teethNumbers: number[];
 	services: readonly Order804nServiceItem[];
+	formatted: ReturnType<typeof formatOrthopedicProtocolStatement>;
 } {
 	const { protocol, options } = params;
 	const formatted = formatOrthopedicProtocolStatement(protocol, options);
@@ -469,6 +593,11 @@ export function applyOrthopedicProtocolToVisit(
 				suggestedPriceRub: s.suggestedPriceRub ?? s.priceRub ?? 0,
 				toothNumber: primaryTooth,
 				stageKind: s.stageKind,
+				labOrderId: options?.labOrderId,
+				labOrderNumber: options?.labOrderNumber,
+				technicianName: options?.technicianName,
+				materialName: options?.material,
+				warrantyPassport: options?.warrantyPassport,
 			}));
 
 			window.dispatchEvent(
@@ -477,6 +606,11 @@ export function applyOrthopedicProtocolToVisit(
 						toothNumber: primaryTooth,
 						teethNumbers,
 						services: invoiceServices,
+						labOrderId: options?.labOrderId,
+						labOrderNumber: options?.labOrderNumber,
+						technicianName: options?.technicianName,
+						material: options?.material,
+						warrantyPassport: options?.warrantyPassport,
 					},
 				}),
 			);
@@ -529,7 +663,61 @@ export function applyOrthopedicProtocolToVisit(
 		navigator.clipboard.writeText(fullText).catch(() => {});
 	}
 
-	// 9. Оповещение врача
+	// 9. Автоматическое честное списание расходных материалов со склада inventory_items (Мандаты 8e, 8k, 8n)
+	const primaryTooth = teethNumbers.length > 0 ? teethNumbers[0] : undefined;
+	if (protocol.warehouseBundleType) {
+		if (typeof window !== "undefined") {
+			try {
+				window.dispatchEvent(
+					new CustomEvent("dente-inventory-writeoff", {
+						detail: {
+							protocolId: protocol.id,
+							bundleType: protocol.warehouseBundleType,
+							toothNumber: primaryTooth,
+							teethNumbers,
+							consumables: protocol.consumables,
+						},
+					}),
+				);
+			} catch {
+				// ignore
+			}
+		}
+
+		if (typeof fetch === "function") {
+			const orgId =
+				typeof window !== "undefined" && typeof window.localStorage !== "undefined"
+					? window.localStorage.getItem("dente_organization_id") || "00000000-0000-0000-0000-000000000001"
+					: "00000000-0000-0000-0000-000000000001";
+			fetch(`/api/inventory/${orgId}/quick-writeoff-orthopedic`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					protocolId: protocol.id,
+					toothNumber: primaryTooth,
+					notes: `1-клик ортопедический протокол «${protocol.shortLabel}» у кресла`,
+				}),
+			})
+				.then((res) => (res.ok ? res.json() : null))
+				.then((data) => {
+					if (data?.deductedItems?.length) {
+						const overdraftNote = data.isOverdraft ? " (мягкий овердрафт склада)" : "";
+						showToast(
+							`Расходные материалы со склада списаны: ${data.deductedItems.length} поз.${overdraftNote}`,
+							data.isOverdraft ? "warning" : "info",
+							3000,
+						);
+					}
+				})
+				.catch(() => {
+					// Offline fallback
+				});
+		}
+	}
+
+	// 10. Оповещение врача
 	if (params.showNotification !== false) {
 		showToast(
 			`Протокол «${protocol.shortLabel}» внесен в дневник 043/у, смету и Этап 3 (Ортопедия)`,
@@ -550,5 +738,6 @@ export function applyOrthopedicProtocolToVisit(
 		summary: formatted.summaryLine,
 		teethNumbers,
 		services: protocol.order804nServices,
+		formatted,
 	};
 }

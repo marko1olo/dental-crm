@@ -235,11 +235,21 @@ export async function quickWriteoffShiftBundle(
  * Реализует автономию врача и медсестры (Мандат 8e п. 10), исключает созыв комиссий и ручной ввод.
  * Поддерживает мягкий овердрафт при задержке накладных поставщика.
  */
+export type QuickWriteoffVisitBundleType =
+	| "therapy"
+	| "surgery"
+	| "implant"
+	| "sinus_gbr"
+	| "orthopedics_prep"
+	| "orthopedics_impression"
+	| "orthopedics_temporary"
+	| "orthopedics_cementation";
+
 export async function quickWriteoffVisitBundle(
 	tx: DbExecutor,
 	params: {
 		organizationId: string;
-		visitType?: "therapy" | "surgery" | "implant" | "sinus_gbr" | undefined;
+		visitType?: QuickWriteoffVisitBundleType | undefined;
 		userId?: string | null | undefined;
 		visitId?: string | null | undefined;
 		notes?: string | null | undefined;
@@ -260,7 +270,7 @@ export async function quickWriteoffVisitBundle(
 	const { organizationId, visitType = "therapy", userId, visitId, notes } = params;
 
 	const visitDefinitions: Record<
-		"therapy" | "surgery" | "implant" | "sinus_gbr",
+		QuickWriteoffVisitBundleType,
 		Array<{
 			patterns: string[];
 			defaultName: string;
@@ -299,6 +309,34 @@ export async function quickWriteoffVisitBundle(
 			{ patterns: ["шовн", "пга", "vicryl"], defaultName: "Шовный материал ПГА 4-0 с иглой", category: "Шовный материал", unit: "шт.", qty: 1, defaultCost: "220.00" },
 			{ patterns: ["артикаин", "анестетик"], defaultName: "Артикаин 1:100 000 (карпула 1.7 мл)", category: "Анестетики", unit: "карп.", qty: 2, defaultCost: "120.00" },
 		],
+		orthopedics_prep: [
+			{ patterns: ["ретракцион", "нить", "ultrapak"], defaultName: "Нить ретракционная Ultrapak #00", category: "Расходные материалы", unit: "уп.", qty: 1, defaultCost: "850.00" },
+			{ patterns: ["а-силикон", "слепочн", "express", "honigum"], defaultName: "А-силикон база + корректор (Express XT)", category: "Слепочные материалы", unit: "компл.", qty: 1, defaultCost: "1600.00" },
+			{ patterns: ["канюл", "смесительн"], defaultName: "Канюли смесительные для А-силикона", category: "Расходные материалы", unit: "шт.", qty: 2, defaultCost: "45.00" },
+			{ patterns: ["артикаин", "анестетик"], defaultName: "Артикаин 1:100 000 (карпула 1.7 мл)", category: "Анестетики", unit: "карп.", qty: 1, defaultCost: "120.00" },
+			{ patterns: ["игла карпульн", "иглы карпульн"], defaultName: "Иглы карпульные 0.3x21 мм", category: "Расходные материалы", unit: "шт.", qty: 1, defaultCost: "18.00" },
+			{ patterns: ["protemp", "luxatemp", "временн", "композит"], defaultName: "Бис-акриловый композит Protemp 4 / Luxatemp", category: "Ортопедические материалы", unit: "доза", qty: 1, defaultCost: "450.00" },
+			{ patterns: ["temp-bond", "временный цемент"], defaultName: "Цемент временный Temp-Bond NE", category: "Ортопедические материалы", unit: "доза", qty: 1, defaultCost: "180.00" },
+		],
+		orthopedics_impression: [
+			{ patterns: ["а-силикон", "слепочн", "express", "honigum"], defaultName: "А-силикон прецизионный (база + корректор)", category: "Слепочные материалы", unit: "компл.", qty: 1, defaultCost: "1600.00" },
+			{ patterns: ["канюл", "смесительн"], defaultName: "Канюли смесительные с интраоральными насадками", category: "Расходные материалы", unit: "шт.", qty: 2, defaultCost: "45.00" },
+			{ patterns: ["окклюзион", "futar", "регистрац"], defaultName: "Окклюзионный силикон для регистрации прикуса (Futar D)", category: "Слепочные материалы", unit: "доза", qty: 1, defaultCost: "350.00" },
+			{ patterns: ["ложк", "слепочн"], defaultName: "Ложка слепочная перфорированная", category: "Расходные материалы", unit: "шт.", qty: 1, defaultCost: "60.00" },
+		],
+		orthopedics_temporary: [
+			{ patterns: ["luxatemp", "protemp", "временн"], defaultName: "Бис-акриловый композит Luxatemp Star / Protemp 4", category: "Ортопедические материалы", unit: "доза", qty: 1, defaultCost: "450.00" },
+			{ patterns: ["канюл", "смесительн"], defaultName: "Смесительные канюли для композита 1:10", category: "Расходные материалы", unit: "шт.", qty: 1, defaultCost: "50.00" },
+			{ patterns: ["temp-bond", "временный цемент"], defaultName: "Цемент временный Temp-Bond NE", category: "Ортопедические материалы", unit: "доза", qty: 1, defaultCost: "180.00" },
+			{ patterns: ["диск", "полиров", "sof-lex"], defaultName: "Диски полировочные Sof-Lex", category: "Расходные материалы", unit: "шт.", qty: 1, defaultCost: "65.00" },
+		],
+		orthopedics_cementation: [
+			{ patterns: ["relyx", "panavia", "fuji", "цемент"], defaultName: "Композитный цемент RelyX U200 / Panavia V5", category: "Ортопедические материалы", unit: "доза", qty: 1, defaultCost: "650.00" },
+			{ patterns: ["monobond", "праймер", "ceramic primer"], defaultName: "Праймер керамики Monobond Plus", category: "Ортопедические материалы", unit: "доза", qty: 1, defaultCost: "250.00" },
+			{ patterns: ["пескоструй", "cojet", "оксид алюминия"], defaultName: "Оксид алюминия 50 мкм для пескоструйной обработки CoJet", category: "Ортопедические материалы", unit: "порция", qty: 1, defaultCost: "120.00" },
+			{ patterns: ["ретракцион", "нить", "ultrapak"], defaultName: "Нить ретракционная Ultrapak #000", category: "Расходные материалы", unit: "уп.", qty: 1, defaultCost: "850.00" },
+			{ patterns: ["liquid strip", "oxyguard", "глицерин"], defaultName: "Глицериновый гель Liquid Strip / Oxyguard", category: "Ортопедические материалы", unit: "доза", qty: 1, defaultCost: "90.00" },
+		],
 	};
 
 	const activeDefinitions = visitDefinitions[visitType] || visitDefinitions.therapy;
@@ -309,7 +347,15 @@ export async function quickWriteoffVisitBundle(
 				? "Дентальная имплантация"
 				: visitType === "sinus_gbr"
 					? "Синус-лифтинг и НКР"
-					: "Терапевтический прием";
+					: visitType === "orthopedics_prep"
+						? "Препарирование под коронку (Ортопедия)"
+						: visitType === "orthopedics_impression"
+							? "Снятие слепка/скан (Ортопедия)"
+							: visitType === "orthopedics_temporary"
+								? "Временная коронка Luxatemp (Ортопедия)"
+								: visitType === "orthopedics_cementation"
+									? "Постоянная фиксация (Ортопедия)"
+									: "Терапевтический прием";
 
 	const allOrgItems = await tx
 		.select()
@@ -441,3 +487,50 @@ export async function quickWriteoffVisitBundle(
 		message: `Набор «${visitNameRu}» успешно списан (${deductedItems.length} позиций без комиссии).`,
 	};
 }
+
+/**
+ * 1-клик списание расходников ортопедического протокола у кресла врача:
+ * - препарирование под оксид циркония / e.max
+ * - снятие двухслойного слепка А-силиконом
+ * - изготовление временной коронки Luxatemp
+ * - постоянная фиксация (RelyX / Fuji I)
+ * Поддерживает мягкий овердрафт без блокировки врача (Мандаты 8e, 8k, 8n).
+ */
+export async function quickWriteoffOrthopedicProtocol(
+	tx: DbExecutor,
+	params: {
+		organizationId: string;
+		protocolId: string;
+		userId?: string | null | undefined;
+		visitId?: string | null | undefined;
+		toothNumber?: string | number | null | undefined;
+		notes?: string | null | undefined;
+	},
+) {
+	const { protocolId, toothNumber, notes } = params;
+	let visitType: "orthopedics_prep" | "orthopedics_impression" | "orthopedics_temporary" | "orthopedics_cementation" = "orthopedics_prep";
+
+	if (protocolId.includes("impression") || protocolId.includes("scan")) {
+		visitType = "orthopedics_impression";
+	} else if (protocolId.includes("temp") || protocolId.includes("luxatemp") || protocolId.includes("protemp")) {
+		visitType = "orthopedics_temporary";
+	} else if (protocolId.includes("cement") || protocolId.includes("permanent") || protocolId.includes("fixation")) {
+		visitType = "orthopedics_cementation";
+	} else {
+		visitType = "orthopedics_prep";
+	}
+
+	const toothSuffix = toothNumber ? ` (зуб ${toothNumber})` : "";
+	const combinedNotes = notes
+		? `${notes}${toothSuffix}`
+		: `1-клик списание материалов по ортопедическому протоколу [${protocolId}]${toothSuffix}`;
+
+	return quickWriteoffVisitBundle(tx, {
+		organizationId: params.organizationId,
+		visitType,
+		userId: params.userId,
+		visitId: params.visitId,
+		notes: combinedNotes,
+	});
+}
+

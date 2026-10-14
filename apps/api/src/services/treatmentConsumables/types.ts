@@ -26,7 +26,10 @@ export class TreatmentConsumablesServiceError extends Error {
 	}
 }
 
-export function toValidUuid(str: string): string {
+export function toValidUuid(str: string): string;
+export function toValidUuid(str?: string | null): string | null;
+export function toValidUuid(str?: string | null): string | null {
+	if (!str) return null;
 	if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)) {
 		return str;
 	}

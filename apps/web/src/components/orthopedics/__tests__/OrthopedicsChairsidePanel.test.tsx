@@ -23,11 +23,39 @@ describe("OrthopedicsChairsidePanel — EMR & Chairside Autonomy (Mandates 8d, 8
 		);
 
 		assert.ok(html.includes("Ортопедия у кресла (043/у · Этап 3 · ЗТЛ)"), "Must render panel header");
-		assert.ok(html.includes("1-клик протоколы · Приказ 804н · Автономия врача (Мандат 8e)"), "Must state Mandate 8e autonomy");
+		assert.ok(html.includes("Клинические протоколы · Заполнение дневника 043/у"), "Must state 043/u diary protocol header");
 		assert.ok(html.includes('data-testid="orthopedics-chairside-panel"'), "Must contain root testid");
 	});
 
-	it("renders all 5 canonical orthopedic protocols with 1-click action buttons", () => {
+	it("auto-binds initialLabOrder attributes (order #, technician, material, warranty passport, tooth FDI) and renders 1-click fitting confirmation", () => {
+		const html = renderToString(
+			<OrthopedicsChairsidePanel
+				activeToothFdi={46}
+				initialLabOrder={{
+					id: "lab-order-402",
+					orderNumber: "ЗТЛ-402",
+					toothFdi: "46",
+					workType: "Коронка цирконий",
+					material: "ZrO2 Multi-Layer",
+					colorVita: "A2",
+					technicianName: "Смирнов А.В.",
+					warrantyPassport: "ГП-ЗТЛ-402",
+					status: "delivered_to_clinic",
+				}}
+			/>,
+		);
+
+		assert.ok(html.includes('data-testid="ortho-chairside-linked-lab-order-banner"'));
+		assert.ok(html.includes("Работа из ЗТЛ доставлена: Коронка цирконий зуб 46"));
+		assert.ok(html.includes("ЗТЛ-402"));
+		assert.ok(html.includes("Смирнов А.В."));
+		assert.ok(html.includes("ГП-ЗТЛ-402"));
+		assert.ok(html.includes("A16.07.004"));
+		assert.ok(html.includes('data-testid="ortho-chairside-confirm-fitting-btn"'));
+		assert.ok(html.includes("Подтвердить примерку / фиксацию (A16.07.004)"));
+	});
+
+	it("renders all canonical orthopedic protocols with 1-click action buttons", () => {
 		const html = renderToString(
 			<OrthopedicsChairsidePanel
 				activeToothFdi={16}
@@ -35,7 +63,7 @@ describe("OrthopedicsChairsidePanel — EMR & Chairside Autonomy (Mandates 8d, 8
 			/>,
 		);
 
-		assert.strictEqual(ORTHOPEDIC_CANONICAL_PROTOCOLS.length, 5, "Must contain exactly 5 protocols");
+		assert.ok(ORTHOPEDIC_CANONICAL_PROTOCOLS.length >= 5, "Must contain all canonical protocols");
 		for (const proto of ORTHOPEDIC_CANONICAL_PROTOCOLS) {
 			assert.ok(html.includes(proto.shortLabel), `Must render label for ${proto.shortLabel}`);
 			assert.ok(html.includes(proto.defaultIcd10), `Must render ICD-10 for ${proto.defaultIcd10}`);
@@ -209,6 +237,38 @@ describe("OrthopedicsChairsidePanel — EMR & Chairside Autonomy (Mandates 8d, 8
 			html.includes("Гарантийная замена (0 ₽)"),
 			"Must render 0 ₽ label for warranty rework",
 		);
+	});
+
+	it("renders 1-click stump shade selector (Natural Die ND1..ND9) with color swatches", () => {
+		const html = renderToString(
+			<OrthopedicsChairsidePanel
+				activeToothFdi={16}
+				selectedTeeth={[16]}
+			/>,
+		);
+
+		assert.ok(html.includes('data-testid="stump-shade-section"'), "Must render stump shade section");
+		assert.ok(html.includes("Цвет культи зуба (Natural Die ND1–ND9, 1 клик)"), "Must render header for ND1..ND9");
+		for (let i = 1; i <= 9; i++) {
+			assert.ok(html.includes(`data-testid="stump-shade-ND${i}"`), `Must render button for ND${i}`);
+		}
+	});
+
+	it("renders solo doctor economics and margin calculator (Mandate 8n) with calculated due date", () => {
+		const html = renderToString(
+			<OrthopedicsChairsidePanel
+				activeToothFdi={16}
+				selectedTeeth={[16]}
+			/>,
+		);
+
+		assert.ok(html.includes('data-testid="solo-economics-section"'), "Must render solo economics section");
+		assert.ok(html.includes("Экономика наряда и маржинальность (Мандат 8n)"), "Must render economics header");
+		assert.ok(html.includes("Пациент (выручка)"), "Must display gross revenue label");
+		assert.ok(html.includes("Лаборатория (ЗТЛ)"), "Must display lab cost label");
+		assert.ok(html.includes("Расходные материалы"), "Must display consumables cost label");
+		assert.ok(html.includes("Чистая маржа"), "Must display net margin label");
+		assert.ok(html.includes("Готовность ЗТЛ"), "Must display calculated turnaround due date");
 	});
 
 	it("strictly complies with Mandate 8d p. 7 (Zero cartoon emojis in clinical documents/panels)", () => {

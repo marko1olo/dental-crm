@@ -82,6 +82,21 @@ export async function executeQuickPackageWriteOff(
 		});
 	}
 
+	if (
+		packageId === "orthopedics_prep" ||
+		packageId === "orthopedics_impression" ||
+		packageId === "orthopedics_temporary" ||
+		packageId === "orthopedics_cementation"
+	) {
+		return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
+			organizationId,
+			visitType: packageId,
+			userId: effectiveUserId,
+			visitId,
+			notes: notes ?? `Списание ортопедического пакета у кресла (${packageId}) x${multiplier}`,
+		});
+	}
+
 	return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
 		organizationId,
 		visitType: "therapy",

@@ -65,7 +65,7 @@ describe("Wave 41: Doctor Autonomy & Eradication of Locked Disabled States (Mand
 			assert.equal(override.doctorName, "Д-р Ортопедов А. В.");
 			assert.equal(override.doctorOverrideReason, reason);
 			assert.ok(override.timestampIso.length > 10);
-			assert.ok(override.notice.includes("Мандат 8e"));
+			assert.ok(override.notice.includes("Клинический оверрайд врача"));
 		});
 
 		it("Внесение ортопедического протокола при блокировке визита генерирует события Form 043/у, сметы и счета без ошибок", () => {

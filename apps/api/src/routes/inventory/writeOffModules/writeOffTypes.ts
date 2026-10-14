@@ -31,10 +31,27 @@ export interface QuickWriteoffShiftBundleBody {
 }
 
 export interface QuickWriteoffVisitBundleBody {
-	visitType?: "therapy" | "surgery" | "implant" | "sinus_gbr";
+	visitType?:
+		| "therapy"
+		| "surgery"
+		| "implant"
+		| "sinus_gbr"
+		| "orthopedics_prep"
+		| "orthopedics_impression"
+		| "orthopedics_temporary"
+		| "orthopedics_cementation";
 	visitId?: string;
 	notes?: string;
+	toothNumber?: string | number;
 }
+
+export interface QuickWriteoffOrthopedicBody {
+	protocolId?: string;
+	visitId?: string;
+	toothNumber?: string | number;
+	notes?: string;
+}
+
 
 export interface QuickWriteoffPackageBody {
 	packageId?: string;

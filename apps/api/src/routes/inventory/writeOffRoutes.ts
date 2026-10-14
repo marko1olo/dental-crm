@@ -11,6 +11,7 @@ import { getRequestIdentity } from "../../security/identity.js";
 import { TreatmentConsumablesService } from "../../services/treatmentConsumablesService.js";
 import {
 	type QuickWriteoffCarpulesBody,
+	type QuickWriteoffOrthopedicBody,
 	type QuickWriteoffPackageBody,
 	type QuickWriteoffShiftBundleBody,
 	type QuickWriteoffStandardKitBody,
@@ -120,6 +121,33 @@ export const writeOffRoutes: FastifyPluginAsync = async (server: FastifyInstance
 				visitType: body.visitType || "therapy",
 				userId: request.user?.id ?? null,
 				visitId: body.visitId ?? null,
+				notes: body.notes ?? null,
+			});
+		});
+	});
+
+	// 1-клик списание расходников ортопедического протокола (Мандаты 8e, 8k, 8n)
+	server.post<{
+		Params: { organizationId: string };
+		Body?: QuickWriteoffOrthopedicBody;
+	}>("/:organizationId/quick-writeoff-orthopedic", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory quick writeoff orthopedic",
+		);
+		if (!resolvedOrgId) return;
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) return reply.code(403).send({ error: "Forbidden" });
+
+		const body = request.body ?? {};
+		return withTenantCtx(organizationId, async (tx) => {
+			return TreatmentConsumablesService.quickWriteoffOrthopedicProtocol(tx, {
+				organizationId,
+				protocolId: body.protocolId || "ortho_prep_zirconia_emax",
+				userId: request.user?.id ?? null,
+				visitId: body.visitId ?? null,
+				toothNumber: body.toothNumber ?? null,
 				notes: body.notes ?? null,
 			});
 		});

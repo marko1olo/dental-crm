@@ -13,13 +13,15 @@ import {
 } from "../orthopedicProtocols.js";
 
 describe("Orthopedic Protocols & Dental Lab Chairside Engine (Mandate 8e, 8i, 8k, 8n)", () => {
-	test("Содержит 5 канонических ортопедических протоколов включая физиологическую норму СтАР", () => {
-		assert.equal(ORTHOPEDIC_CANONICAL_PROTOCOLS.length, 5);
+	test("Содержит 4 ключевых этапа протезирования и расширенные ортопедические протоколы (Мандаты 8e, 8k, 8n)", () => {
+		assert.ok(ORTHOPEDIC_CANONICAL_PROTOCOLS.length >= 5);
 
 		const ids = ORTHOPEDIC_CANONICAL_PROTOCOLS.map((p) => p.id);
 		assert.ok(ids.includes("ortho_prep_zirconia_emax"));
-		assert.ok(ids.includes("ortho_try_in_framework_crown"));
+		assert.ok(ids.includes("ortho_impression_scan"));
+		assert.ok(ids.includes("ortho_temp_crown_luxatemp"));
 		assert.ok(ids.includes("ortho_permanent_cementation"));
+		assert.ok(ids.includes("ortho_try_in_framework_crown"));
 		assert.ok(ids.includes("ortho_removable_prosthetics"));
 		assert.ok(ids.includes("ortho_norm_occlusion"));
 	});
@@ -73,7 +75,7 @@ describe("Orthopedic Protocols & Dental Lab Chairside Engine (Mandate 8e, 8i, 8k
 		assert.equal(override.doctorName, "Д-р Иванов А.С.");
 		assert.ok(override.doctorOverrideReason.includes("Аванс 30%"));
 		assert.ok(override.timestampIso.length > 10);
-		assert.ok(override.notice.includes("Мандат 8e"));
+		assert.ok(override.notice.includes("Клинический оверрайд врача"));
 	});
 
 	test("applyOrthopedicProtocolToVisit генерирует CustomEvents для Формы 043/у, формулы, сметы и счёта (dente-add-services-to-invoice)", () => {
@@ -106,7 +108,7 @@ describe("Orthopedic Protocols & Dental Lab Chairside Engine (Mandate 8e, 8i, 8k
 			});
 
 			assert.deepEqual(result.teethNumbers, [21]);
-			assert.equal(result.services.length, 2);
+			assert.equal(result.services.length, 3);
 			assert.ok(eventsDispatched.some((e) => e.type === "dente-apply-soap-protocol"));
 			assert.ok(eventsDispatched.some((e) => e.type === "dente-odontogram-update"));
 			assert.ok(eventsDispatched.some((e) => e.type === "dente-estimate-stage-add"));
@@ -135,7 +137,7 @@ describe("Orthopedic Protocols & Dental Lab Chairside Engine (Mandate 8e, 8i, 8k
 			};
 			assert.equal(invoiceDetail.toothNumber, 21);
 			assert.deepEqual(invoiceDetail.teethNumbers, [21]);
-			assert.ok(invoiceDetail.services.length >= 2);
+			assert.ok(invoiceDetail.services.length >= 3);
 
 			for (const s of invoiceDetail.services) {
 				assert.ok(s.code, "Услуга должна содержать code");
@@ -149,7 +151,70 @@ describe("Orthopedic Protocols & Dental Lab Chairside Engine (Mandate 8e, 8i, 8k
 
 			// Проверка прямого вызова коллбека onAddToInvoice
 			assert.ok(Array.isArray(callbackServices), "onAddToInvoice должен быть вызван с массивом услуг");
-			assert.equal((callbackServices as Array<unknown>).length, 2);
+			assert.equal((callbackServices as Array<unknown>).length, 3);
+		} finally {
+			(globalThis as unknown as { window: unknown }).window = originalWindow;
+		}
+	});
+
+	test("Автоматически привязывает атрибуты заказа ЗТЛ (номер наряда, техник, материал, гарантийный паспорт) к зубу и услуге фиксации A16.07.004", () => {
+		const cementProto = ORTHOPEDIC_CANONICAL_PROTOCOLS.find((p) => p.id === "ortho_permanent_cementation")!;
+		const eventsDispatched: Array<{ type: string; detail: unknown }> = [];
+
+		const originalWindow = globalThis.window;
+		try {
+			(globalThis as unknown as { window: unknown }).window = {
+				dispatchEvent: (event: { type: string; detail: unknown }) => {
+					eventsDispatched.push({ type: event.type, detail: event.detail });
+					return true;
+				},
+			};
+
+			const result = applyOrthopedicProtocolToVisit({
+				protocol: cementProto,
+				options: {
+					toothFdi: 46,
+					material: "ZrO2 Multi-Layer",
+					colorVita: "A2",
+					labOrderId: "lab-order-402",
+					labOrderNumber: "ЗТЛ-402",
+					technicianName: "Смирнов А.В.",
+					warrantyPassport: "ГП-ЗТЛ-402",
+				},
+				showNotification: false,
+				copyToClipboard: false,
+			});
+
+			assert.ok(result.formatted.treatment.includes("Наряд ЗТЛ: ЗТЛ-402"));
+			assert.ok(result.formatted.treatment.includes("Техник: Смирнов А.В."));
+			assert.ok(result.formatted.treatment.includes("Гарантийный паспорт: ГП-ЗТЛ-402"));
+
+			const invoiceEvent = eventsDispatched.find((e) => e.type === "dente-add-services-to-invoice")!;
+			const invoiceDetail = invoiceEvent.detail as {
+				labOrderNumber: string;
+				technicianName: string;
+				warrantyPassport: string;
+				services: Array<{
+					code: string;
+					toothNumber: number;
+					labOrderNumber: string;
+					technicianName: string;
+					materialName: string;
+					warrantyPassport: string;
+				}>;
+			};
+
+			assert.equal(invoiceDetail.labOrderNumber, "ЗТЛ-402");
+			assert.equal(invoiceDetail.technicianName, "Смирнов А.В.");
+			assert.equal(invoiceDetail.warrantyPassport, "ГП-ЗТЛ-402");
+
+			const a16Service = invoiceDetail.services.find((s) => s.code === "A16.07.004");
+			assert.ok(a16Service, "Услуга A16.07.004 должна быть в счёте");
+			assert.equal(a16Service.toothNumber, 46);
+			assert.equal(a16Service.labOrderNumber, "ЗТЛ-402");
+			assert.equal(a16Service.technicianName, "Смирнов А.В.");
+			assert.equal(a16Service.materialName, "ZrO2 Multi-Layer");
+			assert.equal(a16Service.warrantyPassport, "ГП-ЗТЛ-402");
 		} finally {
 			(globalThis as unknown as { window: unknown }).window = originalWindow;
 		}
@@ -171,8 +236,9 @@ describe("Orthopedic Protocols & Dental Lab Chairside Engine (Mandate 8e, 8i, 8k
 		const tryInCodes = tryInProto.order804nServices.map((s) => s.code);
 		assert.ok(tryInCodes.includes("A16.07.025"), "Примерка A16.07.025 обязательна");
 
-		// Постоянная фиксация (A16.07.004.002, A06.07.007)
+		// Постоянная фиксация (A16.07.004, A16.07.004.002, A06.07.007)
 		const cementCodes = cementProto.order804nServices.map((s) => s.code);
+		assert.ok(cementCodes.includes("A16.07.004"), "Восстановление зуба коронкой A16.07.004 обязательно");
 		assert.ok(cementCodes.includes("A16.07.004.002"), "Постоянная фиксация A16.07.004.002 обязательна");
 		assert.ok(cementCodes.includes("A06.07.007"), "Рентген-контроль A06.07.007 обязателен");
 
