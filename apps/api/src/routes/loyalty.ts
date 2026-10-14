@@ -12,6 +12,7 @@ import {
 	patientBonusBalances,
 	patientInvoices,
 	patients,
+	payments,
 } from "../db/schema.js";
 
 const redeemPointsBodySchema = z.object({
@@ -28,6 +29,17 @@ const manualAccrueBodySchema = z.object({
 	patientId: z.string().uuid(),
 	amountPoints: z.number().positive(),
 	description: z.string().min(1),
+	expiresInDays: z.number().int().positive().optional().default(180),
+});
+
+const accrueCashbackBodySchema = z.object({
+	patientId: z.string().uuid(),
+	paidAmountRub: z.number().positive(),
+	invoiceId: z.string().uuid().optional().nullable(),
+	paymentId: z.string().uuid().optional().nullable(),
+	cashbackPercent: z.number().nonnegative().optional().default(3.0),
+	pointRateRub: z.number().positive().optional().default(1.0),
+	description: z.string().optional().default("Кэшбэк за оплату стоматологических услуг"),
 	expiresInDays: z.number().int().positive().optional().default(180),
 });
 
@@ -367,6 +379,61 @@ export async function registerLoyaltyRoutes(app: FastifyInstance) {
 							),
 						);
 
+					let paymentId: string | null = null;
+					let invoiceStatusUpdated = false;
+
+					if (invoiceId) {
+						// 1. Create a payment record of method 'other' (bonus)
+						const [payment] = await tx
+							.insert(payments)
+							.values({
+								organizationId: orgId,
+								patientId,
+								documentId: invoiceId,
+								amountRub: pointsToRedeem,
+								method: "other",
+								status: "paid",
+								paidAt: new Date(),
+								note: `Оплата бонусными баллами (${pointsToRedeem} б.)`,
+							})
+							.returning({ id: payments.id });
+
+						paymentId = payment?.id ?? null;
+
+						// 2. Check total paid for this invoice
+						const existingPayments = await tx
+							.select({ amountRub: payments.amountRub })
+							.from(payments)
+							.where(
+								and(
+									eq(payments.organizationId, orgId),
+									eq(payments.documentId, invoiceId),
+									eq(payments.status, "paid"),
+								),
+							);
+
+						const totalPaidRub = existingPayments.reduce(
+							(acc, p) => acc + Number(p.amountRub),
+							0,
+						);
+
+						if (totalPaidRub >= effectiveInvoiceAmountRub) {
+							await tx
+								.update(patientInvoices)
+								.set({
+									status: "paid",
+									paidAt: new Date(),
+								})
+								.where(
+									and(
+										eq(patientInvoices.organizationId, orgId),
+										eq(patientInvoices.id, invoiceId),
+									),
+								);
+							invoiceStatusUpdated = true;
+						}
+					}
+
 					const [txRecord] = await tx
 						.insert(bonusTransactions)
 						.values({
@@ -375,6 +442,7 @@ export async function registerLoyaltyRoutes(app: FastifyInstance) {
 							amountPoints: String(-pointsToRedeem),
 							balanceAfterPoints: String(newActivePoints),
 							type: "redemption_payment",
+							relatedPaymentId: paymentId || null,
 							relatedInvoiceId: invoiceId || null,
 							clientMutationId: clientMutationId || null,
 							description,
@@ -386,9 +454,11 @@ export async function registerLoyaltyRoutes(app: FastifyInstance) {
 						redeemedPoints: pointsToRedeem,
 						discountRub: pointsToRedeem, // 1 point = 1 RUB
 						remainingInvoicePaymentRub: Number(
-							(effectiveInvoiceAmountRub - pointsToRedeem).toFixed(2),
+							Math.max(0, effectiveInvoiceAmountRub - pointsToRedeem).toFixed(2),
 						),
 						newActivePoints,
+						paymentId,
+						invoiceStatusUpdated,
 						transactionId: txRecord?.id || "redemption",
 					};
 				});
@@ -417,6 +487,142 @@ export async function registerLoyaltyRoutes(app: FastifyInstance) {
 				}
 
 				return reply.status(200).send(result);
+			});
+		},
+	);
+
+	/**
+	 * Начисление кэшбэка пациенту после фактической оплаты услуг (Accrue Cashback).
+	 */
+	app.post(
+		"/api/loyalty/accrue-cashback",
+		async (request, reply) => {
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
+
+			const parsed = accrueCashbackBodySchema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.status(400).send({
+					message: "Некорректные параметры начисления кэшбэка",
+					errors: parsed.error.format(),
+				});
+			}
+
+			const {
+				patientId,
+				paidAmountRub,
+				invoiceId,
+				paymentId,
+				cashbackPercent,
+				pointRateRub,
+				description,
+				expiresInDays,
+			} = parsed.data;
+
+			const pointsToAccrue = calculateCashbackPoints(
+				paidAmountRub,
+				cashbackPercent,
+				pointRateRub,
+			);
+
+			if (pointsToAccrue <= 0) {
+				return reply.send({
+					success: true,
+					accruedPoints: 0,
+					message: "Сумма кэшбэка равна 0, начисление пропущено",
+				});
+			}
+
+			return withTenantCtx(orgId, async () => {
+				const expiresAt = new Date();
+				expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+
+				const result = await db.transaction(async (tx) => {
+					const [patient] = await tx
+						.select({ id: patients.id, fullName: patients.fullName })
+						.from(patients)
+						.where(and(eq(patients.organizationId, orgId), eq(patients.id, patientId)))
+						.limit(1)
+						.for("update");
+
+					if (!patient) {
+						return { notFound: true as const };
+					}
+
+					const [existingBalance] = await tx
+						.select()
+						.from(patientBonusBalances)
+						.where(
+							and(
+								eq(patientBonusBalances.organizationId, orgId),
+								eq(patientBonusBalances.patientId, patientId),
+							),
+						)
+						.limit(1)
+						.for("update");
+
+					const currentActive = Number(existingBalance?.activePoints ?? 0);
+					const currentLifetime = Number(existingBalance?.lifetimeEarnedPoints ?? 0);
+					const newActive = Number((currentActive + pointsToAccrue).toFixed(2));
+					const newLifetime = Number((currentLifetime + pointsToAccrue).toFixed(2));
+
+					if (existingBalance) {
+						await tx
+							.update(patientBonusBalances)
+							.set({
+								activePoints: String(newActive),
+								lifetimeEarnedPoints: String(newLifetime),
+								updatedAt: new Date(),
+							})
+							.where(
+								and(
+									eq(patientBonusBalances.organizationId, orgId),
+									eq(patientBonusBalances.patientId, patientId),
+								),
+							);
+					} else {
+						await tx.insert(patientBonusBalances).values({
+							organizationId: orgId,
+							patientId,
+							activePoints: String(newActive),
+							lifetimeEarnedPoints: String(newLifetime),
+						});
+					}
+
+					const [txRecord] = await tx
+						.insert(bonusTransactions)
+						.values({
+							organizationId: orgId,
+							patientId,
+							amountPoints: String(pointsToAccrue),
+							balanceAfterPoints: String(newActive),
+							type: "accrual_cashback",
+							relatedPaymentId: paymentId || null,
+							relatedInvoiceId: invoiceId || null,
+							description: description || "Кэшбэк за оплату стоматологических услуг",
+							expiresAt,
+							unspentPoints: String(pointsToAccrue),
+						})
+						.returning();
+
+					return {
+						success: true as const,
+						accruedPoints: pointsToAccrue,
+						activePoints: newActive,
+						transaction: {
+							id: txRecord?.id || "cashback-accrual",
+							amountPoints: pointsToAccrue,
+							balanceAfterPoints: newActive,
+							description: description || "Кэшбэк за оплату стоматологических услуг",
+						},
+					};
+				});
+
+				if ("notFound" in result) {
+					return reply.status(404).send({ message: "Пациент не найден" });
+				}
+
+				return reply.status(201).send(result);
 			});
 		},
 	);

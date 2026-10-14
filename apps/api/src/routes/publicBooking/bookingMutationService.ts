@@ -22,6 +22,10 @@ export interface BookingMutationParams {
 	patientName: string;
 	patientPhone: string;
 	comment?: string | undefined;
+	source?: string | undefined;
+	utmSource?: string | undefined;
+	utmCampaign?: string | undefined;
+	utmMedium?: string | undefined;
 }
 
 export type BookingMutationResult =
@@ -37,6 +41,7 @@ export type BookingMutationResult =
 			conflict: false;
 			blocked?: false;
 			appointment: typeof appointments.$inferSelect;
+			patientId?: string;
 	  };
 
 /**
@@ -233,6 +238,7 @@ export async function executeBookingTransaction(
 	}
 
 	if (!patientId) {
+		const effectiveSource = params.utmSource || params.source || "online_booking";
 		const [createdPatient] = await tx
 			.insert(patients)
 			.values({
@@ -240,10 +246,41 @@ export async function executeBookingTransaction(
 				fullName: patientName,
 				phone: patientPhone,
 				status: "active",
+				administrativeProfile: {
+					leadSource: effectiveSource,
+					utmSource: params.utmSource || null,
+					utmCampaign: params.utmCampaign || null,
+					utmMedium: params.utmMedium || null,
+				} as any,
 			})
 			.returning({ id: patients.id });
 		if (!createdPatient) throw new Error("patient_insert_failed");
 		patientId = createdPatient.id;
+	} else if (params.utmSource || params.source) {
+		// Update patient's marketing attributes if not already set
+		const [existingPatient] = await tx
+			.select({ administrativeProfile: patients.administrativeProfile })
+			.from(patients)
+			.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
+			.limit(1);
+
+		const adminProf = existingPatient?.administrativeProfile as Record<string, any> | null;
+		if (existingPatient && !adminProf?.utmSource) {
+			const existingProfile = adminProf || {};
+			await tx
+				.update(patients)
+				.set({
+					administrativeProfile: {
+						...existingProfile,
+						leadSource: existingProfile.leadSource || params.utmSource || params.source || "online_booking",
+						utmSource: existingProfile.utmSource || params.utmSource || null,
+						utmCampaign: existingProfile.utmCampaign || params.utmCampaign || null,
+						utmMedium: existingProfile.utmMedium || params.utmMedium || null,
+					} as any,
+					updatedAt: new Date(),
+				})
+				.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)));
+		}
 	}
 
 	// 3. Acquire locks in STRICT CANONICAL ORDER: Chair (Level 1) -> Doctor (Level 2) -> Patient (Level 3)
@@ -335,5 +372,5 @@ export async function executeBookingTransaction(
 		})
 		.returning();
 	if (!created) throw new Error("appointment_insert_failed");
-	return { conflict: false as const, appointment: created };
+	return { conflict: false as const, appointment: created, patientId };
 }
