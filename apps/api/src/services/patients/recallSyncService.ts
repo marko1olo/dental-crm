@@ -1,6 +1,8 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { appointments, patientRecalls } from "../../db/schema.js";
+import { appointments } from "../../db/schema/schedule.js";
+import { patientRecalls } from "../../db/schema/patientsSchema/patientMedicalData.js";
+import { visits } from "../../db/schema/clinical/visitsSchema.js";
 import { wsBroker } from "../websocketBroker.js";
 
 /**
@@ -150,3 +152,98 @@ export async function syncRecallOnAppointmentCompleted(
 		console.error("[recallSyncService] syncRecallOnAppointmentCompleted failed:", err);
 	}
 }
+
+export async function syncRecallOnVisitCompleted(
+	organizationId: string,
+	visitId: string,
+): Promise<void> {
+	try {
+		const [v] = await db
+			.select({
+				id: visits.id,
+				patientId: visits.patientId,
+				appointmentId: visits.appointmentId,
+			})
+			.from(visits)
+			.where(
+				and(
+					eq(visits.id, visitId),
+					eq(visits.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+
+		if (!v || !v.patientId) return;
+
+		let doctorUserId: string | null = null;
+		if (v.appointmentId) {
+			const [appt] = await db
+				.select({ doctorUserId: appointments.doctorUserId })
+				.from(appointments)
+				.where(eq(appointments.id, v.appointmentId))
+				.limit(1);
+			doctorUserId = appt?.doctorUserId ?? null;
+		}
+
+		const now = new Date();
+		const nextDueDate = new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000); // +180 дней (+6 месяцев)
+
+		// 1. Завершаем активный recall (связанный или находящийся в ожидании/запланирован)
+		const [activeRecall] = await db
+			.select({ id: patientRecalls.id })
+			.from(patientRecalls)
+			.where(
+				and(
+					eq(patientRecalls.organizationId, organizationId),
+					eq(patientRecalls.patientId, v.patientId),
+					inArray(patientRecalls.status, ["scheduled", "pending"]),
+				),
+			)
+			.orderBy(desc(patientRecalls.createdAt))
+			.limit(1);
+
+		if (activeRecall) {
+			await db
+				.update(patientRecalls)
+				.set({
+					status: "completed",
+					completedAt: now,
+					appointmentId: v.appointmentId ?? null,
+					updatedAt: now,
+				})
+				.where(eq(patientRecalls.id, activeRecall.id));
+		}
+
+		// 2. Создаем следующий recall на +180 дней (гигиена / терапия)
+		const [newRecall] = await db
+			.insert(patientRecalls)
+			.values({
+				organizationId,
+				patientId: v.patientId,
+				doctorId: doctorUserId,
+				appointmentId: v.appointmentId ?? null,
+				reason: "Плановый профилактический осмотр и гигиена",
+				cohortType: "hygiene_therapy",
+				status: "pending",
+				dueDate: nextDueDate,
+				createdAt: now,
+				updatedAt: now,
+			})
+			.returning({ id: patientRecalls.id });
+
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "PATIENT_RECALL_UPDATED",
+			payload: {
+				completedRecallId: activeRecall?.id ?? null,
+				newRecallId: newRecall?.id ?? null,
+				patientId: v.patientId,
+				status: "pending",
+				dueDate: nextDueDate.toISOString(),
+				updatedAt: now.toISOString(),
+			},
+		});
+	} catch (err) {
+		console.error("[recallSyncService] syncRecallOnVisitCompleted failed:", err);
+	}
+}
+

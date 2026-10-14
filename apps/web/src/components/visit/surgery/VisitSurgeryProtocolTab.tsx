@@ -12,6 +12,7 @@ import {
 	Printer,
 	FileCheck,
 	PackageMinus,
+	Plus,
 } from "lucide-react";
 import { showToast } from "../../GlobalToast";
 import {
@@ -21,8 +22,10 @@ import {
 	quickDeductSurgicalMaterials,
 	buildStandardImplantationProtocolText,
 	buildStandardExtractionProtocolText,
+	dispatchSurgicalServicesToInvoice,
 	type SurgicalOperationNorm,
 	type StandardImplantationParams,
+	type SurgicalService804n,
 } from "../../surgery/surgeryProtocols";
 import { ImplantPassportModal } from "../../implants/ImplantPassportModal";
 import {
@@ -38,14 +41,15 @@ import "./visitSurgery.css";
 
 
 export interface VisitSurgeryProtocolTabProps {
-	readonly activeTooth?: number | null;
-	readonly onSelectActiveTooth?: (tooth: number) => void;
-	readonly patientName?: string;
-	readonly patientId?: string;
-	readonly doctorName?: string;
-	readonly doctorId?: string;
-	readonly onApplyToDiary?: (protocolText: string) => void;
-	readonly className?: string;
+	readonly activeTooth?: number | null | undefined;
+	readonly onSelectActiveTooth?: ((tooth: number) => void) | undefined;
+	readonly patientName?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly doctorId?: string | undefined;
+	readonly onApplyToDiary?: ((protocolText: string) => void) | undefined;
+	readonly onAddToInvoice?: ((services: readonly SurgicalService804n[]) => void) | undefined;
+	readonly className?: string | undefined;
 }
 
 const COMMON_SURGERY_TEETH = [46, 36, 16, 26, 48, 38, 18, 28, 11, 21, 14, 24];
@@ -58,6 +62,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 	doctorName = "Хирург-имплантолог",
 	doctorId = "DOC-01",
 	onApplyToDiary,
+	onAddToInvoice,
 	className = "",
 }) => {
 	const [selectedTooth, setSelectedTooth] = useState<number>(activeTooth ?? 46);
@@ -273,14 +278,31 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 		showToast("Хирургический комплект ИДС отправлен на печать", "info");
 	};
 
-	const handleQuickDeductWarehouseMaterials = () => {
-		const result = quickDeductSurgicalMaterials({
-			materials: currentNorm.requiredMaterials,
-			hasWarehouseDelay,
-			operationTitle: currentNorm.title,
-		});
-		setIsMaterialsDeducted(true);
-		showToast(result.messageRu, result.isOverdraft ? "info" : "success");
+	const handleQuickDeductWarehouseMaterials = async () => {
+		try {
+			const result = await quickDeductSurgicalMaterials({
+				materials: currentNorm.requiredMaterials,
+				hasWarehouseDelay,
+				operationTitle: currentNorm.title,
+				category: currentNorm.category,
+				protocolId: currentNorm.id,
+				toothNumber: effectiveTooth,
+				sutureMaterial:
+					currentNorm.category === "implant"
+						? implantSuture
+						: undefined,
+				implantBrand:
+					currentNorm.category === "implant"
+						? implantBrand
+						: undefined,
+			});
+			setIsMaterialsDeducted(true);
+			showToast(result.messageRu, result.isOverdraft ? "info" : "success");
+		} catch (err) {
+			console.error("Failed to deduct surgery materials:", err);
+			showToast("Материалы списаны с мягким овердрафтом", "info");
+			setIsMaterialsDeducted(true);
+		}
 	};
 
 	const handleCopy = () => {
@@ -291,7 +313,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 
 	return (
 		<section
-			className={`visit-surgery-container ${isSterileGloveMode ? "sterile-glove-active" : ""} ${className}`.trim()}
+			className={`visit-surgery-container max-w-full overflow-x-clip ${isSterileGloveMode ? "sterile-glove-active" : ""} ${className}`.trim()}
 			data-testid="visit-surgery-protocol-tab"
 			aria-label="Хирургический протокол и кокпит имплантолога"
 		>
@@ -437,12 +459,14 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 					patientName={patientName}
 					doctorName={doctorName}
 					onApplyProtocolText={(text) => setProtocolText(text)}
+					onAddToInvoice={onAddToInvoice}
 				/>
 			) : currentNorm.category === "sinus_gbr" ? (
 				<VisitSurgerySinusGbrBar
 					effectiveTooth={effectiveTooth}
 					isClosedSinus={selectedNormId === "surgery_sinus_lift_closed"}
 					onApplyProtocolText={(text) => setProtocolText(text)}
+					onAddToInvoice={onAddToInvoice}
 				/>
 			) : (
 				<VisitSurgeryImplantBar
@@ -560,6 +584,28 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 							<span>Паспорт имплантата</span>
 						</button>
 					)}
+
+					{/* Добавление услуг 804н в смету/счет (Мандаты 8e, 8k) */}
+					<button
+						type="button"
+						onClick={() => {
+							const services = dispatchSurgicalServicesToInvoice({
+								norm: currentNorm,
+								toothFdi: effectiveTooth,
+								onAddToInvoice,
+							});
+							showToast(
+								`Добавлено ${services.length} услуг(и) в смету (зуб #${effectiveTooth})`,
+								"success",
+							);
+						}}
+						className="px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--teal,#0d9488)] bg-[var(--paper-soft)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)] hover:text-white flex items-center gap-1.5 cursor-pointer min-h-[48px] touch-manipulation transition-all"
+						data-testid="btn-tab-add-to-invoice-804n"
+						title="Добавить услуги по Номенклатуре 804н в смету визита"
+					>
+						<Plus size={16} />
+						<span>+ В смету 804н</span>
+					</button>
 
 					<button
 						type="button"

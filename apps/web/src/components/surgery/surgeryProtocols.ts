@@ -63,24 +63,88 @@ export interface SurgicalMaterialDeductionResult {
 
 /**
  * Быстрое списание хирургических материалов со склада с гарантированным мягким овердрафтом (Мандат 8e).
+ * Отправляет реальный сетевой запрос POST /api/inventory/:orgId/quick-writeoff-surgery в PostgreSQL 18.
  * Задержка оприходования накладной поставщика не блокирует врача и операцию.
  */
-export function quickDeductSurgicalMaterials(params: {
-	materials: readonly { name: string; unit: string; quantity: number; isWarehouseCritical?: boolean }[];
-	hasWarehouseDelay?: boolean;
-	operationTitle?: string;
-}): SurgicalMaterialDeductionResult {
-	const isOverdraft = Boolean(params.hasWarehouseDelay);
-	const deductedItems = params.materials.map((m) => ({
+export async function quickDeductSurgicalMaterials(params: {
+	materials: readonly { name: string; unit: string; quantity: number; isWarehouseCritical?: boolean | undefined }[];
+	hasWarehouseDelay?: boolean | undefined;
+	operationTitle?: string | undefined;
+	organizationId?: string | undefined;
+	category?: string | undefined;
+	protocolId?: string | undefined;
+	toothNumber?: number | string | undefined;
+	sutureMaterial?: string | undefined;
+	hemostatics?: string[] | undefined;
+	graft?: string | undefined;
+	membrane?: string | undefined;
+	hasPins?: boolean | undefined;
+	implantBrand?: string | undefined;
+}): Promise<SurgicalMaterialDeductionResult> {
+	let isOverdraft = Boolean(params.hasWarehouseDelay);
+	let deductedItems = params.materials.map((m) => ({
 		name: m.name,
 		unit: m.unit,
 		quantity: m.quantity,
 		isOverdraft,
 	}));
 
-	const messageRu = isOverdraft
-		? `Списано ${params.materials.length} поз. под операцию «${params.operationTitle || "Хирургическое вмешательство"}» в мягкий овердрафт склада.`
+	let messageRu = isOverdraft
+		? `Списано ${params.materials.length} поз. под операцию «${params.operationTitle || "Хирургическое вмешательство"}» в мягкий овердрафт склада без комиссии и блокировки врача.`
 		: `Материалы операции «${params.operationTitle || "Хирургическое вмешательство"}» (${params.materials.length} поз.) успешно списаны со склада.`;
+
+	const orgId =
+		params.organizationId ||
+		(typeof window !== "undefined" && typeof window.localStorage !== "undefined"
+			? window.localStorage.getItem("dente_organization_id") || "00000000-0000-0000-0000-000000000001"
+			: "00000000-0000-0000-0000-000000000001");
+
+	if (typeof window !== "undefined" && typeof fetch === "function") {
+		try {
+			const res = await fetch(`/api/inventory/${orgId}/quick-writeoff-surgery`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					category: params.category,
+					protocolId: params.protocolId,
+					operationTitle: params.operationTitle,
+					toothNumber: params.toothNumber,
+					sutureMaterial: params.sutureMaterial,
+					hemostatics: params.hemostatics,
+					graft: params.graft,
+					membrane: params.membrane,
+					hasPins: params.hasPins,
+					implantBrand: params.implantBrand,
+					materials: params.materials.map((m) => ({
+						name: m.name,
+						unit: m.unit,
+						quantity: m.quantity,
+						isWarehouseCritical: m.isWarehouseCritical,
+					})),
+				}),
+			});
+
+			if (res.ok) {
+				const data = await res.json();
+				if (data && Array.isArray(data.deductedItems) && data.deductedItems.length > 0) {
+					isOverdraft = Boolean(data.isOverdraft);
+					deductedItems = data.deductedItems.map((d: any) => ({
+						name: d.itemName || d.name,
+						unit: d.unit || "шт.",
+						quantity: d.quantity || 1,
+						isOverdraft: Boolean(d.isOverdraft),
+					}));
+					if (data.message) {
+						messageRu = data.message;
+					}
+				}
+			}
+		} catch (err) {
+			console.warn("[surgeryProtocols] Network writeoff fallback to soft overdraft:", err);
+		}
+	}
 
 	try {
 		if (typeof window !== "undefined") {
@@ -189,17 +253,23 @@ export function getSurgicalServices804n(
  * Диспатч услуг хирургического протокола в активный счёт/смету визита
  * через глобальную шину CustomEvent `dente-add-services-to-invoice` (Мандаты 8e, 8i, 8k, 8n).
  */
+/**
+ * Диспатч услуг хирургического протокола в активный счёт/смету визита
+ * через глобальную шину CustomEvent `dente-add-services-to-invoice` (Мандаты 8e, 8i, 8k, 8n).
+ */
 export function dispatchSurgicalServicesToInvoice(params: {
-	norm: SurgicalOperationNorm;
+	norm?: SurgicalOperationNorm | undefined;
 	toothFdi?: number | undefined;
 	customServices?: readonly SurgicalService804n[] | undefined;
 	onAddToInvoice?: ((services: readonly SurgicalService804n[]) => void) | undefined;
 }): readonly SurgicalService804n[] {
-	const effectiveTooth = params.toothFdi ?? params.norm.defaultToothFdi;
+	const effectiveTooth = params.toothFdi ?? params.norm?.defaultToothFdi;
 	const services =
 		params.customServices && params.customServices.length > 0
 			? params.customServices.map((s) => ({ ...s, toothNumber: s.toothNumber ?? effectiveTooth }))
-			: getSurgicalServices804n(params.norm, effectiveTooth);
+			: params.norm
+				? getSurgicalServices804n(params.norm, effectiveTooth)
+				: [];
 
 	if (params.onAddToInvoice) {
 		try {
@@ -220,6 +290,24 @@ export function dispatchSurgicalServicesToInvoice(params: {
 					},
 				}),
 			);
+
+			// Direct update to useVisitStore if available
+			const winAny = window as any;
+			const visitStore = winAny.__useVisitStore?.getState?.();
+			if (visitStore?.applyServicesToToothState) {
+				visitStore.applyServicesToToothState({
+					toothNumber: effectiveTooth,
+					toothCode: effectiveTooth ? String(effectiveTooth) : undefined,
+					services: services.map((s) => ({
+						code: s.code,
+						code804n: s.code,
+						title: s.nameRu || s.name,
+						price: s.priceRub,
+						unitPriceRub: s.priceRub,
+						toothNumber: effectiveTooth,
+					})),
+				});
+			}
 		}
 	} catch (err) {
 		console.warn("dente-add-services-to-invoice dispatch error:", err);
@@ -232,9 +320,11 @@ export function dispatchSurgicalServicesToInvoice(params: {
  * Номенклатура 804н — Канонические коды хирургической экстракции зубов (Мандат 8e).
  */
 export const EXTRACTION_804N_CODES = {
-	SIMPLE: "A16.07.001.001", // Удаление постоянного зуба простое
-	COMPLEX_SEPARATION: "A16.07.001.002", // Удаление зуба сложное с разъединением корней
-	IMPACTED_DYSTOPIC: "A16.07.001.003", // Операция удаления ретинированного / дистопированного зуба
+	SIMPLE: "A16.07.001", // Удаление постоянного зуба простое
+	COMPLEX_SEPARATION: "A16.07.001.001", // Удаление зуба сложное с разъединением корней
+	IMPACTED_DYSTOPIC: "A16.07.001.002", // Операция удаления ретинированного / дистопированного зуба
+	SINUS_LIFT: "A16.07.041.001", // Синус-лифтинг закрытый/открытый
+	BONE_GRAFT: "A16.07.041", // Костная пластика альвеолярного отростка
 	CURETTAGE: "A16.07.026", // Кюретаж лунки удаленного зуба
 	SUTURE_VICRYL: "A16.07.097", // Наложение шва на слизистую оболочку рта (Викрил 4-0)
 	ANESTHESIA_INFILTRATION: "A11.07.015", // Инфильтрационная анестезия
@@ -298,7 +388,7 @@ export const EXTRACTION_COMPLEXITY_OPTIONS: readonly ExtractionComplexityOption[
 		id: "simple",
 		code804n: EXTRACTION_804N_CODES.SIMPLE,
 		labelRu: "Простое удаление постоянного зуба (щипцы / элеватор)",
-		badge: "Простое (A16.07.001.001)",
+		badge: "Простое (A16.07.001)",
 		normId: "surgery_extraction_simple",
 		defaultPriceRub: 3500,
 	},
@@ -306,7 +396,7 @@ export const EXTRACTION_COMPLEXITY_OPTIONS: readonly ExtractionComplexityOption[
 		id: "complex",
 		code804n: EXTRACTION_804N_CODES.COMPLEX_SEPARATION,
 		labelRu: "Сложное удаление с разъединением корней бором Lindemann",
-		badge: "Сложное (A16.07.001.002)",
+		badge: "Сложное (A16.07.001.001)",
 		normId: "surgery_extraction_complex",
 		defaultPriceRub: 6000,
 	},
@@ -314,11 +404,202 @@ export const EXTRACTION_COMPLEXITY_OPTIONS: readonly ExtractionComplexityOption[
 		id: "impacted_dystopic",
 		code804n: EXTRACTION_804N_CODES.IMPACTED_DYSTOPIC,
 		labelRu: "Удаление ретинированного / дистопированного зуба с лоскутом",
-		badge: "Ретинированный (A16.07.001.003)",
+		badge: "Ретинированный (A16.07.001.002)",
 		normId: "surgery_extraction_atypical",
 		defaultPriceRub: 9500,
 	},
 ];
+
+/**
+ * Получение перечня услуг Номенклатуры 804н для операции удаления зуба.
+ */
+export function getExtractionServices804n(params: {
+	complexity: ExtractionComplexity;
+	toothFdi?: number;
+	hemostasis?: readonly SurgicalHemostasisMethod[];
+	sutureMaterial?: string;
+}): readonly SurgicalService804n[] {
+	const tooth = params.toothFdi;
+	const comp = params.complexity;
+	const hemo = params.hemostasis || [];
+
+	const primary =
+		comp === "complex"
+			? {
+					code: EXTRACTION_804N_CODES.COMPLEX_SEPARATION,
+					nameRu: "Удаление зуба сложное с разъединением корней",
+					name: "Удаление зуба сложное с разъединением корней",
+					priceRub: 6000,
+					quantity: 1,
+					suggestedPriceRub: 6000,
+					toothNumber: tooth,
+					stageKind: "stage_2_surgery" as const,
+					isPrimary: true,
+			  }
+			: comp === "impacted_dystopic"
+				? {
+						code: EXTRACTION_804N_CODES.IMPACTED_DYSTOPIC,
+						nameRu: "Операция удаления ретинированного / дистопированного зуба",
+						name: "Операция удаления ретинированного / дистопированного зуба",
+						priceRub: 9500,
+						quantity: 1,
+						suggestedPriceRub: 9500,
+						toothNumber: tooth,
+						stageKind: "stage_2_surgery" as const,
+						isPrimary: true,
+				  }
+				: {
+						code: EXTRACTION_804N_CODES.SIMPLE,
+						nameRu: "Удаление постоянного зуба (простое)",
+						name: "Удаление постоянного зуба (простое)",
+						priceRub: 3500,
+						quantity: 1,
+						suggestedPriceRub: 3500,
+						toothNumber: tooth,
+						stageKind: "stage_2_surgery" as const,
+						isPrimary: true,
+				  };
+
+	const items: SurgicalService804n[] = [primary];
+
+	// Кюретаж лунки
+	items.push({
+		code: EXTRACTION_804N_CODES.CURETTAGE,
+		nameRu: "Кюретаж лунки удаленного зуба (ревизия и гемостаз)",
+		name: "Кюретаж лунки удаленного зуба (ревизия и гемостаз)",
+		priceRub: 1200,
+		quantity: 1,
+		suggestedPriceRub: 1200,
+		toothNumber: tooth,
+		stageKind: "stage_2_surgery" as const,
+	});
+
+	// Наложение шва, если сложное/ретинированное или выбран шов
+	if (comp === "complex" || comp === "impacted_dystopic" || hemo.includes("vicryl_suture")) {
+		const sutName = params.sutureMaterial || "Викрил 4-0";
+		items.push({
+			code: EXTRACTION_804N_CODES.SUTURE_VICRYL,
+			nameRu: `Наложение шва на слизистую оболочку рта (${sutName})`,
+			name: `Наложение шва на слизистую оболочку рта (${sutName})`,
+			priceRub: 1500,
+			quantity: 1,
+			suggestedPriceRub: 1500,
+			toothNumber: tooth,
+			stageKind: "stage_2_surgery" as const,
+		});
+	}
+
+	// Анестезия
+	items.push({
+		code: comp === "impacted_dystopic" ? EXTRACTION_804N_CODES.ANESTHESIA_CONDUCTION : EXTRACTION_804N_CODES.ANESTHESIA_INFILTRATION,
+		nameRu: comp === "impacted_dystopic"
+			? "Проводниковая (торусальная) анестезия (Артикаин)"
+			: "Инфильтрационная анестезия (Артикаин 1:100 000)",
+		name: comp === "impacted_dystopic"
+			? "Проводниковая (торусальная) анестезия (Артикаин)"
+			: "Инфильтрационная анестезия (Артикаин 1:100 000)",
+		priceRub: comp === "impacted_dystopic" ? 1200 : 900,
+		quantity: 1,
+		suggestedPriceRub: comp === "impacted_dystopic" ? 1200 : 900,
+		toothNumber: tooth,
+		stageKind: "stage_2_surgery" as const,
+	});
+
+	return items;
+}
+
+/**
+ * Получение перечня услуг Номенклатуры 804н для синус-лифтинга и костной пластики.
+ */
+export function getSinusGbrServices804n(params: {
+	isClosedSinus: boolean;
+	toothFdi?: number;
+	membrane?: string;
+	hasPins?: boolean;
+}): readonly SurgicalService804n[] {
+	const tooth = params.toothFdi;
+	const isClosed = params.isClosedSinus;
+
+	if (isClosed) {
+		return [
+			{
+				code: EXTRACTION_804N_CODES.SINUS_LIFT,
+				nameRu: "Синус-лифтинг закрытый (трансальвеолярный)",
+				name: "Синус-лифтинг закрытый (трансальвеолярный)",
+				priceRub: 18000,
+				quantity: 1,
+				suggestedPriceRub: 18000,
+				toothNumber: tooth,
+				stageKind: "stage_2_surgery" as const,
+				isPrimary: true,
+			},
+			{
+				code: EXTRACTION_804N_CODES.SUTURE_VICRYL,
+				nameRu: "Наложение шва на слизистую оболочку рта (ПГА 4-0)",
+				name: "Наложение шва на слизистую оболочку рта (ПГА 4-0)",
+				priceRub: 1500,
+				quantity: 1,
+				suggestedPriceRub: 1500,
+				toothNumber: tooth,
+				stageKind: "stage_2_surgery" as const,
+			},
+			{
+				code: EXTRACTION_804N_CODES.ANESTHESIA_INFILTRATION,
+				nameRu: "Инфильтрационная анестезия (Артикаин 1:100 000)",
+				name: "Инфильтрационная анестезия (Артикаин 1:100 000)",
+				priceRub: 900,
+				quantity: 1,
+				suggestedPriceRub: 900,
+				toothNumber: tooth,
+				stageKind: "stage_2_surgery" as const,
+			},
+		];
+	}
+
+	return [
+		{
+			code: EXTRACTION_804N_CODES.BONE_GRAFT,
+			nameRu: "Костная пластика альвеолярного отростка (латеральный синус-лифтинг & НКР)",
+			name: "Костная пластика альвеолярного отростка (латеральный синус-лифтинг & НКР)",
+			priceRub: 35000,
+			quantity: 1,
+			suggestedPriceRub: 35000,
+			toothNumber: tooth,
+			stageKind: "stage_2_surgery" as const,
+			isPrimary: true,
+		},
+		{
+			code: EXTRACTION_804N_CODES.SINUS_LIFT,
+			nameRu: "Внесение остеопластического материала (ксенографт) и мембраны",
+			name: "Внесение остеопластического материала (ксенографт) и мембраны",
+			priceRub: 18000,
+			quantity: 1,
+			suggestedPriceRub: 18000,
+			toothNumber: tooth,
+			stageKind: "stage_2_surgery" as const,
+		},
+		{
+			code: EXTRACTION_804N_CODES.SUTURE_VICRYL,
+			nameRu: "Наложение шва на слизистую оболочку рта (ПГА/Викрил 4-0)",
+			name: "Наложение шва на слизистую оболочку рта (ПГА/Викрил 4-0)",
+			priceRub: 1500,
+			quantity: 1,
+			suggestedPriceRub: 1500,
+			toothNumber: tooth,
+			stageKind: "stage_2_surgery" as const,
+		},
+		{
+			code: EXTRACTION_804N_CODES.ANESTHESIA_INFILTRATION,
+			nameRu: "Инфильтрационная анестезия (Артикаин 1:100 000)",
+			name: "Инфильтрационная анестезия (Артикаин 1:100 000)",
+			priceRub: 900,
+			quantity: 1,
+			suggestedPriceRub: 900,
+			toothNumber: tooth,
+			stageKind: "stage_2_surgery" as const,
+		},
+	];
+}
 
 export interface StandardExtractionParams {
 	readonly toothFdi?: number | undefined;

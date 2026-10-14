@@ -72,6 +72,7 @@ export function calculateRecallMetrics(
 		pediatric_fluoridation: 0,
 		caries_high_risk: 0,
 		prosthetic_check: 0,
+		endodontic_check: 0,
 	};
 
 	for (const candidate of candidates) {

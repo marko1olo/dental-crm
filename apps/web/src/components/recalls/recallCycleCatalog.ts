@@ -9,7 +9,8 @@ export type RecallCycleType =
 	| "orthodontic_retention"
 	| "pediatric_fluoridation"
 	| "caries_high_risk"
-	| "prosthetic_check";
+	| "prosthetic_check"
+	| "endodontic_check";
 
 export type RecallUrgencyStatus =
 	| "upcoming"
@@ -84,7 +85,9 @@ export type ClinicalRecallTriggerType =
 	| "hygiene_6m"
 	| "implant_prosthetic_12m"
 	| "ortho_activation_1m"
-	| "pediatric_3_4m";
+	| "pediatric_3_4m"
+	| "endodontic_1m"
+	| "periodontal_3m";
 
 export interface ClinicalRecallTriggerInfo {
 	readonly triggerType: ClinicalRecallTriggerType;
@@ -343,6 +346,28 @@ export const RECALL_CYCLE_CATALOG: Readonly<Record<RecallCycleType, RecallCycleD
 		preservesWarranty: true,
 		badgeColorToken: "primary",
 		estimatedAverageCheckRub: 6000,
+	},
+
+	endodontic_check: {
+		id: "endodontic_check",
+		title: "Контрольный осмотр и рентгенография после эндодонтии",
+		shortTitle: "Эндодонтия 1 мес.",
+		intervalUnit: "months",
+		defaultIntervalValue: 1,
+		allowedIntervals: [1, 3, 6],
+		defaultIntervalMonths: 1,
+		allowedIntervalsMonths: [1, 3, 6],
+		clinicalRationale:
+			"Прицельный рентген-контроль (визиография) периапикальных тканей через 1 месяц после пломбирования корневых каналов для оценки репарации костной ткани и исключения апикального периодонтита.",
+		targetProcedures: [
+			"Прицельная внутриротовая контактная визиография / рентгенография",
+			"Перкуссия, пальпация проекции верхушки корня и проверка окклюзии",
+			"Оценка краевого прилегания реставрации или временной коронки",
+		],
+		requiresRadiologyCheck: true,
+		preservesWarranty: true,
+		badgeColorToken: "info",
+		estimatedAverageCheckRub: 2500,
 	},
 };
 

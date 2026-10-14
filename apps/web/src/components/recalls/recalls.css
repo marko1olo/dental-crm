@@ -324,6 +324,7 @@
 	gap: 6px;
 	cursor: pointer;
 	white-space: nowrap;
+	flex-shrink: 0;
 	transition: all 0.15s ease;
 	touch-action: manipulation;
 }
@@ -578,6 +579,34 @@
 	.recall-metrics-grid {
 		grid-template-columns: repeat(2, 1fr);
 		padding: 12px;
+	}
+
+	.recall-solo-presets {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		padding-bottom: 4px;
+	}
+
+	.recall-solo-presets::-webkit-scrollbar {
+		display: none;
+	}
+
+	.recall-preset-btn {
+		flex-shrink: 0;
+		white-space: nowrap;
+	}
+
+	.recall-status-chips {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+	}
+
+	.recall-status-chips::-webkit-scrollbar {
+		display: none;
 	}
 
 	.recall-table thead {

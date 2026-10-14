@@ -24,6 +24,8 @@ export const recallCohortSchema = z.enum([
 	"hygiene_therapy",
 	"implant",
 	"orthodontic_retention",
+	"periodontal",
+	"endodontic",
 	"general",
 ]);
 export type RecallCohort = z.infer<typeof recallCohortSchema>;

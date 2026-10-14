@@ -438,17 +438,36 @@ export function resolveServicePriceAgainstCatalog(
 	title: string;
 	fromCatalog: boolean;
 } {
+	const extractValidRub = (row: any, fallbackRub: number): number => {
+		const rawBase = row?.basePriceRub;
+		if (typeof rawBase === "number" && Number.isFinite(rawBase) && rawBase > 0) {
+			return rawBase;
+		}
+		if (typeof rawBase === "string" && rawBase.trim().length > 0) {
+			const parsed = Number(rawBase.replace(",", ".").trim());
+			if (Number.isFinite(parsed) && parsed > 0) return parsed;
+		}
+		const rawPrice = row?.priceRub;
+		if (typeof rawPrice === "number" && Number.isFinite(rawPrice) && rawPrice > 0) {
+			return rawPrice;
+		}
+		if (typeof rawPrice === "string" && rawPrice.trim().length > 0) {
+			const parsed = Number(rawPrice.replace(",", ".").trim());
+			if (Number.isFinite(parsed) && parsed > 0) return parsed;
+		}
+		return fallbackRub;
+	};
+
 	if (Array.isArray(catalog) && catalog.length > 0) {
 		// 1. Точное совпадение по коду услуги 804н
-		const byCode = catalog.find(
-			(c) => (c?.code === service.code804n || c?.code804n === service.code804n) && c?.active !== false,
-		);
+		const targetCode = String(service.code804n || "").trim().toUpperCase();
+		const byCode = catalog.find((c) => {
+			if (c?.active === false) return false;
+			const cCode = String(c?.code || c?.code804n || "").trim().toUpperCase();
+			return cCode.length > 0 && cCode === targetCode;
+		});
 		if (byCode) {
-			const rub = typeof byCode.basePriceRub === "number" && Number.isFinite(byCode.basePriceRub)
-				? byCode.basePriceRub
-				: typeof byCode.priceRub === "number" && Number.isFinite(byCode.priceRub)
-					? byCode.priceRub
-					: service.defaultPriceRub;
+			const rub = extractValidRub(byCode, service.defaultPriceRub);
 			const kopecks = Math.round(rub * 100);
 			return {
 				priceKopecks: kopecks,
@@ -464,14 +483,10 @@ export function resolveServicePriceAgainstCatalog(
 		const byTitle = catalog.find((c) => {
 			if (c?.active === false) return false;
 			const cTitle = (c?.title || "").toLowerCase().replace(/ё/g, "е");
-			return cTitle.includes(normalizedSvcTitle) || normalizedSvcTitle.includes(cTitle);
+			return cTitle.length > 0 && (cTitle.includes(normalizedSvcTitle) || normalizedSvcTitle.includes(cTitle));
 		});
 		if (byTitle) {
-			const rub = typeof byTitle.basePriceRub === "number" && Number.isFinite(byTitle.basePriceRub)
-				? byTitle.basePriceRub
-				: typeof byTitle.priceRub === "number" && Number.isFinite(byTitle.priceRub)
-					? byTitle.priceRub
-					: service.defaultPriceRub;
+			const rub = extractValidRub(byTitle, service.defaultPriceRub);
 			const kopecks = Math.round(rub * 100);
 			return {
 				priceKopecks: kopecks,
@@ -659,13 +674,17 @@ export function exportCustomizedBundleToCashier54Fz(
 export interface ToothClinicalServicePayload {
 	readonly serviceId: string;
 	readonly code804n: string;
+	readonly code?: string | undefined;
 	readonly toothNumber?: number | string | undefined;
 	readonly toothCode?: string | undefined;
 	readonly name: string;
 	readonly priceRub: number;
+	readonly price?: number | undefined;
 	readonly priceKopecks?: number | undefined;
 	readonly quantity: number;
 	readonly category?: string | undefined;
+	readonly labCostRub?: number | undefined;
+	readonly labCostKopecks?: number | undefined;
 }
 
 /**
@@ -707,9 +726,54 @@ export const TOOTH_804N_PRESETS = {
 	extractionPermanent: {
 		serviceId: "extraction_permanent_804n",
 		code804n: "A16.07.001",
-		name: "Удаление постоянного зуба",
+		name: "Удаление постоянного зуба (простое)",
 		priceRub: 3500,
 		priceKopecks: 350000,
+		quantity: 1,
+		category: "Хирургия",
+	},
+	extractionSimple: {
+		serviceId: "extraction_simple_804n",
+		code804n: "A16.07.001",
+		name: "Удаление постоянного зуба (простое)",
+		priceRub: 3500,
+		priceKopecks: 350000,
+		quantity: 1,
+		category: "Хирургия",
+	},
+	extractionComplex: {
+		serviceId: "extraction_complex_804n",
+		code804n: "A16.07.001.001",
+		name: "Удаление зуба сложное с разъединением корней",
+		priceRub: 6000,
+		priceKopecks: 600000,
+		quantity: 1,
+		category: "Хирургия",
+	},
+	extractionImpacted: {
+		serviceId: "extraction_impacted_804n",
+		code804n: "A16.07.001.002",
+		name: "Удаление ретинированного / дистопированного зуба",
+		priceRub: 9500,
+		priceKopecks: 950000,
+		quantity: 1,
+		category: "Хирургия",
+	},
+	sinusLift: {
+		serviceId: "sinus_lift_804n",
+		code804n: "A16.07.041.001",
+		name: "Синус-лифтинг закрытый / открытый",
+		priceRub: 18000,
+		priceKopecks: 1800000,
+		quantity: 1,
+		category: "Хирургия",
+	},
+	boneGraft: {
+		serviceId: "bone_graft_804n",
+		code804n: "A16.07.041",
+		name: "Костная пластика альвеолярного отростка",
+		priceRub: 35000,
+		priceKopecks: 3500000,
 		quantity: 1,
 		category: "Хирургия",
 	},

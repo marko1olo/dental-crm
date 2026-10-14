@@ -86,6 +86,7 @@ function monthsBetween(from: Date, to: Date): number {
 function bandFor(
 	monthsSince: number | null,
 	hadAnyAppointment: boolean,
+	intervalMonths = 6,
 ): RecallBand | null {
 	if (monthsSince === null) {
 		// Ни одного завершённого приёма. Интересен только тот, кто записывался:
@@ -94,8 +95,8 @@ function bandFor(
 		return hadAnyAppointment ? "never_arrived" : null;
 	}
 	if (monthsSince >= 24) return "probably_lost";
-	if (monthsSince >= 12) return "overdue";
-	if (monthsSince >= 6) return "due";
+	if (monthsSince >= Math.max(12, intervalMonths * 2)) return "overdue";
+	if (monthsSince >= intervalMonths) return "due";
 	return null;
 }
 
@@ -114,7 +115,7 @@ export async function findRecallCandidates(
 	organizationId: string,
 	options: RecallOptions = {},
 ): Promise<RecallReport> {
-	const minMonths = Math.max(1, Math.min(60, options.minMonths ?? 6));
+	const minMonths = Math.max(1, Math.min(60, options.minMonths ?? 1));
 	const limit = Math.max(1, Math.min(1000, options.limit ?? 200));
 	const includeNeverArrived = options.includeNeverArrived ?? true;
 	const targetBand = options.band ?? options.filterBand;
@@ -230,15 +231,21 @@ export async function findRecallCandidates(
 		const lastAt = row.lastCompletedAt ? new Date(row.lastCompletedAt) : null;
 		const monthsSince = lastAt ? monthsBetween(lastAt, now) : null;
 
-		const band = bandFor(monthsSince, Number(row.totalAppointments) > 0);
-		if (!band) continue;
-		if (band === "never_arrived" && !includeNeverArrived) continue;
-
-		byBand[band] = (byBand[band] ?? 0) + 1;
-		if (targetBand && band !== targetBand) continue;
-
 		const hasImplants = Number(row.implantCount) > 0;
 		const reasonText = (row.lastReason ?? "").toLowerCase();
+		const isEndo =
+			reasonText.includes("эндо") ||
+			reasonText.includes("пульпит") ||
+			reasonText.includes("периодонтит") ||
+			reasonText.includes("канал") ||
+			reasonText.includes("депульп") ||
+			reasonText.includes("endo");
+		const isPerio =
+			reasonText.includes("пародонт") ||
+			reasonText.includes("гингив") ||
+			reasonText.includes("вектор") ||
+			reasonText.includes("кюретаж") ||
+			reasonText.includes("perio");
 		const isOrtho =
 			reasonText.includes("ортодонт") ||
 			reasonText.includes("брекет") ||
@@ -248,18 +255,41 @@ export async function findRecallCandidates(
 
 		let cohortType: RecallCohort = "hygiene_therapy";
 		let suggestedIntervalMonths = 6;
-		let clinicalReason = BAND_LABELS[band] || "Плановый осмотр";
+		let clinicalReason = "";
 
-		if (band === "never_arrived") {
-			clinicalReason = BAND_LABELS.never_arrived;
+		if (monthsSince === null) {
 			cohortType = "general";
+			suggestedIntervalMonths = 6;
+			clinicalReason = BAND_LABELS.never_arrived;
+		} else if (isEndo) {
+			cohortType = "endodontic";
+			suggestedIntervalMonths = 1;
+			clinicalReason =
+				"Контрольная рентгенография/визиография периапикальных тканей после эндодонтии (1 мес).";
+		} else if (isPerio) {
+			cohortType = "periodontal";
+			suggestedIntervalMonths = 3;
+			clinicalReason =
+				"Диспансерный пародонтологический осмотр и поддерживающая терапия (3 мес).";
 		} else if (hasImplants) {
 			cohortType = "implant";
-			suggestedIntervalMonths = monthsSince !== null && monthsSince <= 5 ? 3 : 6;
-			clinicalReason =
-				suggestedIntervalMonths === 3
-					? "Осмотр остеоинтеграции и состояния периимплантных тканей (3 мес)."
-					: "Контроль остеоинтеграции и профилактика периимплантита (6 мес).";
+			if (monthsSince <= 2) {
+				suggestedIntervalMonths = 1;
+				clinicalReason =
+					"Рентген-контроль и оценка заживления после установки имплантата (1 мес).";
+			} else if (monthsSince <= 5) {
+				suggestedIntervalMonths = 3;
+				clinicalReason =
+					"Осмотр остеоинтеграции и состояния периимплантных тканей перед протезированием (3 мес).";
+			} else if (monthsSince <= 11) {
+				suggestedIntervalMonths = 6;
+				clinicalReason =
+					"Контроль остеоинтеграции и профилактика периимплантита (6 мес).";
+			} else {
+				suggestedIntervalMonths = 12;
+				clinicalReason =
+					"Годовой диспансерный рентген-контроль стабильности костной ткани вокруг имплантата (12 мес).";
+			}
 		} else if (isOrtho) {
 			cohortType = "orthodontic_retention";
 			suggestedIntervalMonths = 3;
@@ -269,9 +299,15 @@ export async function findRecallCandidates(
 			cohortType = "hygiene_therapy";
 			suggestedIntervalMonths = 6;
 			clinicalReason =
-				BAND_LABELS[band] ||
-				"Плановая профессиональная гигиена полости рта и профилактический осмотр.";
+				"Плановая профессиональная гигиена полости рта и профилактический осмотр (6 мес).";
 		}
+
+		const band = bandFor(monthsSince, Number(row.totalAppointments) > 0, suggestedIntervalMonths);
+		if (!band) continue;
+		if (band === "never_arrived" && !includeNeverArrived) continue;
+
+		byBand[band] = (byBand[band] ?? 0) + 1;
+		if (targetBand && band !== targetBand) continue;
 
 		candidates.push({
 			patientId: row.patientId,
@@ -290,9 +326,13 @@ export async function findRecallCandidates(
 				: null,
 			lastProcedureCategory: hasImplants
 				? "implant"
-				: isOrtho
-					? "orthodontics"
-					: "hygiene_therapy",
+				: isEndo
+					? "endodontic"
+					: isPerio
+						? "periodontal"
+						: isOrtho
+							? "orthodontics"
+							: "hygiene_therapy",
 		});
 	}
 

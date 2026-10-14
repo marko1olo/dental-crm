@@ -188,6 +188,7 @@ export const PatientRecallsToolbar: React.FC<PatientRecallsToolbarProps> = ({
 						<option value="pediatric_fluoridation">Детская минерализация (3-6 мес.)</option>
 						<option value="caries_high_risk">Кариес-риск (3 мес.)</option>
 						<option value="prosthetic_check">Ортопедия (6-12 мес.)</option>
+						<option value="endodontic_check">Эндодонтия (1 мес.)</option>
 					</select>
 				</div>
 			</div>
@@ -249,6 +250,34 @@ export const PatientRecallsToolbar: React.FC<PatientRecallsToolbarProps> = ({
 				>
 					<Users size={14} />
 					<span>1-Click: Детский осмотр (3-4 мес.)</span>
+				</button>
+				<button
+					type="button"
+					data-testid="preset-endo-1m"
+					className={`recall-preset-btn ${selectedCycle === "endodontic_check" ? "active" : ""}`}
+					onClick={() =>
+						onSelectedCycleChange(
+							selectedCycle === "endodontic_check" ? "all" : "endodontic_check",
+						)
+					}
+					title="1-Click: Пациенты на контрольный рентген после эндодонтии (1 мес.)"
+				>
+					<Sparkles size={14} />
+					<span>1-Click: Эндодонтия (1 мес.)</span>
+				</button>
+				<button
+					type="button"
+					data-testid="preset-perio-3m"
+					className={`recall-preset-btn ${selectedCycle === "periodontal_maintenance" ? "active" : ""}`}
+					onClick={() =>
+						onSelectedCycleChange(
+							selectedCycle === "periodontal_maintenance" ? "all" : "periodontal_maintenance",
+						)
+					}
+					title="1-Click: Пациенты на поддерживающую пародонтологию (3 мес.)"
+				>
+					<ShieldCheck size={14} />
+					<span>1-Click: Пародонтология (3 мес.)</span>
 				</button>
 			</div>
 

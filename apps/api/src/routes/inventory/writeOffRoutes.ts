@@ -15,6 +15,7 @@ import {
 	type QuickWriteoffPackageBody,
 	type QuickWriteoffShiftBundleBody,
 	type QuickWriteoffStandardKitBody,
+	type QuickWriteoffSurgeryBody,
 	type QuickWriteoffVisitBundleBody,
 	executeQuickPackageWriteOff,
 	handleDeductRequest,
@@ -149,6 +150,52 @@ export const writeOffRoutes: FastifyPluginAsync = async (server: FastifyInstance
 				visitId: body.visitId ?? null,
 				toothNumber: body.toothNumber ?? null,
 				notes: body.notes ?? null,
+			});
+		});
+	});
+
+	// 1-клик списание хирургических материалов с мягким овердрафтом (Мандаты 8e, 8k, 8n)
+	server.post<{
+		Params: { organizationId: string };
+		Body?: QuickWriteoffSurgeryBody;
+	}>("/:organizationId/quick-writeoff-surgery", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory quick writeoff surgery",
+		);
+		if (!resolvedOrgId) return;
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) return reply.code(403).send({ error: "Forbidden" });
+
+		const body = request.body ?? {};
+		return withTenantCtx(organizationId, async (tx) => {
+			return TreatmentConsumablesService.quickWriteoffSurgery(tx, {
+				organizationId,
+				...body,
+				userId: request.user?.id ?? null,
+			});
+		});
+	});
+
+	server.post<{
+		Body?: QuickWriteoffSurgeryBody & { organizationId?: string };
+	}>("/quick-writeoff-surgery", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory quick writeoff surgery fallback",
+		);
+		if (!resolvedOrgId) return;
+		const targetOrgId = request.body?.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+
+		const body = request.body ?? {};
+		return withTenantCtx(targetOrgId, async (tx) => {
+			return TreatmentConsumablesService.quickWriteoffSurgery(tx, {
+				...body,
+				organizationId: targetOrgId,
+				userId: request.user?.id ?? null,
 			});
 		});
 	});

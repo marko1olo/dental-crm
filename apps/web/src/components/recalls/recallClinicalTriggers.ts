@@ -107,6 +107,29 @@ export function calculatePediatricRecallTrigger(
 }
 
 /**
+ * Триггер 5: Эндодонтический контроль — 1 месяц после пломбирования каналов.
+ * Прицельная рентгенография / визиография для оценки репарации периапикальной кости.
+ */
+export function calculateEndodonticRecallTrigger(
+	lastProcedureDate: Date | string,
+	customMonths = 1,
+): ClinicalRecallTriggerInfo {
+	const months = customMonths > 0 ? customMonths : 1;
+	const nextDueDate = addCalendarMonthsSafe(lastProcedureDate, months);
+	return {
+		triggerType: "endodontic_1m",
+		title: "Контрольный осмотр и визиография после эндодонтии (1 мес.)",
+		shortTitle: "Эндодонтия 1 мес.",
+		intervalMonths: months,
+		nextDueDate,
+		formattedDueDate: formatIsoDateOnly(nextDueDate),
+		clinicalRationale:
+			"Прицельный рентген-контроль (визиография) через 1 месяц после пломбирования корневых каналов для оценки репарации костной ткани и исключения апикального периодонтита.",
+		mappedCycleType: "endodontic_check",
+	};
+}
+
+/**
  * Единый автоматический классификатор клинического триггера возврата.
  */
 export function evaluateClinicalRecallTrigger(clinicalData: {
@@ -193,6 +216,26 @@ export function resolveCandidateTriggerType(candidate: PatientRecallRecord): Cli
 		return "implant_prosthetic_12m";
 	}
 
+	if (
+		candidate.cycleType === "endodontic_check" ||
+		combined.includes("эндо") ||
+		combined.includes("пульпит") ||
+		combined.includes("периодонтит") ||
+		combined.includes("канал")
+	) {
+		return "endodontic_1m";
+	}
+
+	if (
+		candidate.cycleType === "periodontal_maintenance" ||
+		combined.includes("пародонт") ||
+		combined.includes("вектор") ||
+		combined.includes("гингив") ||
+		(candidate.periodontalPocketMaxMm !== undefined && candidate.periodontalPocketMaxMm >= 4)
+	) {
+		return "periodontal_3m";
+	}
+
 	return "hygiene_6m";
 }
 
@@ -217,7 +260,7 @@ export function calculatePeriodontalRecallTrigger(
 	const months = customMonths > 0 ? customMonths : 3;
 	const nextDueDate = addCalendarMonthsSafe(lastProcedureDate, months);
 	return {
-		triggerType: "hygiene_6m",
+		triggerType: "periodontal_3m",
 		title: `Поддерживающая пародонтальная терапия (SPT) и контроль карманов (${months} мес.)`,
 		shortTitle: `Пародонтология ${months} мес.`,
 		intervalMonths: months,
@@ -528,5 +571,34 @@ export function shouldResetRecallTimer(
 		);
 	}
 
+	// 5. Эндодонтический контроль: сбрасывается при контрольной визиографии / снимке
+	if (
+		recall.cycleType === "endodontic_check" ||
+		recall.clinicalTriggerType === "endodontic_1m"
+	) {
+		return visitProcedures.some(isEndodonticCheckProcedure);
+	}
+
 	return false;
+}
+
+/**
+ * Проверка принадлежности услуги к контрольной визиографии / снимку после эндодонтии.
+ */
+export function isEndodonticCheckProcedure(proc: ClinicalProcedureIdentifier): boolean {
+	const rawCode = (proc.code804n || proc.code || "").trim().toUpperCase();
+	if (
+		rawCode.startsWith("A06.07.003") ||
+		rawCode.startsWith("A06.07.004") ||
+		rawCode.startsWith("A06.07.012")
+	) {
+		return true;
+	}
+	const rawName = (proc.serviceName || proc.name || "").toLowerCase();
+	return (
+		rawName.includes("контрольный снимок") ||
+		rawName.includes("визиография") ||
+		rawName.includes("рентген") ||
+		rawName.includes("эндо")
+	);
 }

@@ -10,18 +10,16 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	AlertTriangle, BarChart3, Calendar, CheckCircle2, Clock,
-	LayoutGrid, Lightbulb, List, Phone, PhoneCall,
-	RefreshCw, RotateCcw, Search, Send, ShieldCheck,
-	Sparkles, Users, X,
+	LayoutGrid, Lightbulb, List, Phone, PhoneCall, RefreshCw,
+	RotateCcw, Search, Send, ShieldCheck, Sparkles, Users, X,
 } from "lucide-react";
-import type {
-	RecallCandidate,
-	RecallReport,
-	StomxTaskCallType,
-} from "@dental/shared";
-import { useAppStore } from "../../store/appStore";
+import { createPortal } from "react-dom";
+import type { RecallCandidate, RecallReport, StomxTaskCallType } from "@dental/shared";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
+import { QuickBookingDrawer } from "../schedule/QuickBookingDrawer";
+import type { QuickBookingSlotInfo } from "../schedule/QuickBookingDrawerTypes";
+import { buildRecallQuickBookingSlot } from "./recallBookingHelper";
 import { showToast } from "../GlobalToast";
 import {
 	addCalendarMonthsSafe, buildTelegramUrl, buildWhatsAppUrl,
@@ -32,8 +30,7 @@ import {
 	toCanonicalRecallStatus,
 	type CanonicalRecallWorkflowStatus, type ClinicalRecallTriggerType,
 	type PatientRecallRecord, type RecallContactStatus,
-	type RecallCycleType, type RecallPeriodFilter,
-	type RecallUrgencyStatus,
+	type RecallCycleType, type RecallPeriodFilter, type RecallUrgencyStatus,
 } from "./patientRecallEngine";
 import { CLINICAL_CALLING_SCRIPTS } from "./recallTemplates";
 import { PatientRecallsCohortsTab } from "./PatientRecallsCohortsTab";
@@ -78,6 +75,10 @@ export function mapRecallCandidateToRecord(
 		cycleType = "implant_monitoring";
 	} else if (candidate.cohortType === "orthodontic_retention") {
 		cycleType = "orthodontic_retention";
+	} else if (candidate.cohortType === "periodontal") {
+		cycleType = "periodontal_maintenance";
+	} else if (candidate.cohortType === "endodontic") {
+		cycleType = "endodontic_check";
 	} else if (candidate.cohortType === "hygiene_therapy") {
 		cycleType = "standard_prophylaxis";
 	}
@@ -108,15 +109,9 @@ export interface PatientRecallsHubModalProps {
 	readonly clinicName?: string | undefined;
 	readonly initialCandidates?: readonly PatientRecallRecord[] | undefined;
 	readonly onBookAppointment?: ((candidate: PatientRecallRecord) => void) | undefined;
-	readonly onSendWhatsApp?: (
-		(candidate: PatientRecallRecord, message: string) => Promise<void> | void
-	) | undefined;
-	readonly onSendTelegram?: (
-		(candidate: PatientRecallRecord, message: string) => Promise<void> | void
-	) | undefined;
-	readonly onStatusChange?: (
-		(candidateId: string, status: RecallContactStatus) => Promise<void> | void
-	) | undefined;
+	readonly onSendWhatsApp?: ((candidate: PatientRecallRecord, message: string) => Promise<void> | void) | undefined;
+	readonly onSendTelegram?: ((candidate: PatientRecallRecord, message: string) => Promise<void> | void) | undefined;
+	readonly onStatusChange?: ((candidateId: string, status: RecallContactStatus) => Promise<void> | void) | undefined;
 }
 
 export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
@@ -147,7 +142,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 		setIsLoading(true);
 		setFetchError(null);
 		try {
-			const response = await fetch("/api/patients/recall-candidates?minMonths=6&limit=100", {
+			const response = await fetch("/api/patients/recall-candidates?minMonths=1&limit=200", {
 				headers: {
 					...(auth ? auth.denteClinicalReadHeaders() : {}),
 					Accept: "application/json",
@@ -200,6 +195,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 	const [selectedObjectionId, setSelectedObjectionId] = useState<string>("");
 	const [copiedCandidateId, setCopiedCandidateId] = useState<string | null>(null);
 	const [statusNotice, setStatusNotice] = useState<string | null>(null);
+	const [bookingSlot, setBookingSlot] = useState<QuickBookingSlotInfo | null>(null);
 
 	// Метрики плановых профосмотров и LTV
 	const metrics = useMemo(() => {
@@ -396,7 +392,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 		setCopiedCandidateId(candidate.id);
 		handleStatusUpdate(candidate.id, "invited", "sms");
 		if (!candidate.phone || !candidate.phone.trim()) {
-			showToast("152-ФЗ SMS текст скопирован (номер телефона не указан в карте)", "info");
+			showToast("Текст сообщения скопирован (номер телефона не указан в карте)", "info");
 		}
 
 		try {
@@ -419,26 +415,21 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 		}, 3000);
 	};
 
-	// 1-Click Запись в расписание
+	// 1-Click Запись в расписание с автоподстановкой (Order 804n, QuickBookingDrawer)
 	const handleBook = (candidate: PatientRecallRecord) => {
+		const slot = buildRecallQuickBookingSlot(candidate);
+		useScheduleStore.getState().setPendingStageBooking(slot);
+		if (candidate.dueDate) {
+			useScheduleStore.getState().setScheduleDateFilter(candidate.dueDate);
+		}
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(new CustomEvent("dente:book-stage-appointment", { detail: slot }));
+			window.dispatchEvent(new CustomEvent("dente-book-stage-appointment", { detail: slot }));
+		}
 		if (onBookAppointment) {
 			onBookAppointment(candidate);
 		} else {
-			handleStatusUpdate(candidate.id, "scheduled");
-			setStatusNotice(`Пациент «${candidate.fullName}» переведен в статус «Записался».`);
-			try {
-				if (candidate.dueDate) {
-					useScheduleStore.getState().setScheduleDateFilter(candidate.dueDate);
-				}
-				useAppStore.getState().setCurrentView("schedule");
-				if (typeof window !== "undefined") {
-					window.location.hash = "schedule";
-				}
-				onClose?.();
-			} catch {
-				// Standalone/test fallback
-			}
-			setTimeout(() => setStatusNotice(null), 3000);
+			setBookingSlot(slot);
 		}
 	};
 
@@ -471,7 +462,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 
 	if (!isOpen) return null;
 
-	return (
+	const modalContent = (
 		<div
 			className="recall-manager-modal-backdrop"
 			role="dialog"
@@ -769,9 +760,31 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 						onStatusUpdate={handleStatusUpdate}
 					/>
 				)}
+
+				{bookingSlot && (
+					<QuickBookingDrawer
+						isOpen={Boolean(bookingSlot)}
+						initialSlot={bookingSlot}
+						dashboard={appLogic?.dashboard}
+						auth={auth}
+						onClose={() => setBookingSlot(null)}
+						onAppointmentCreated={() => {
+							if (bookingSlot.patientId) {
+								handleStatusUpdate(bookingSlot.patientId, "scheduled");
+								setStatusNotice(`Пациент «${bookingSlot.patientName}» записан на приём.`);
+							}
+							setBookingSlot(null);
+							if (appLogic?.loadDashboard) {
+								void appLogic.loadDashboard();
+							}
+						}}
+					/>
+				)}
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 };
 
 export default PatientRecallsHubModal;

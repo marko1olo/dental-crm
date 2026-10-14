@@ -1,8 +1,4 @@
-import type {
-	Dashboard,
-	Patient,
-	PatientAdministrativeProfile,
-} from "@dental/shared";
+import type { Dashboard, Patient, PatientAdministrativeProfile } from "@dental/shared";
 import React, {
 	lazy,
 	startTransition,
@@ -15,9 +11,7 @@ import React, {
 } from "react";
 import { showToast } from "./components/GlobalToast";
 import { PatientCardSavePill } from "./components/patients/patientCardSavePill";
-import {
-	PatientAdministrativeForm,
-} from "./components/patients/PatientAdministrativeForm";
+import { PatientAdministrativeForm } from "./components/patients/PatientAdministrativeForm";
 import {
 	PatientCoreEditorForm,
 	type PatientCoreDraft,
@@ -198,6 +192,23 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 	const [isPatientCardModalOpen, setIsPatientCardModalOpen] = useState(false);
 	const [isRecallsHubOpen, setIsRecallsHubOpen] = useState(false);
+
+	useEffect(() => {
+		const checkRoute = () => {
+			const hash = typeof window !== "undefined" ? window.location.hash.toLowerCase() : "";
+			if (hash.includes("recall") || hash.includes("prevention")) setIsRecallsHubOpen(true);
+		};
+		checkRoute();
+		window.addEventListener("hashchange", checkRoute);
+		const onOpen = () => setIsRecallsHubOpen(true);
+		window.addEventListener("dente:open-recalls-hub", onOpen);
+		window.addEventListener("dente-open-recalls-hub", onOpen);
+		return () => {
+			window.removeEventListener("hashchange", checkRoute);
+			window.removeEventListener("dente:open-recalls-hub", onOpen);
+			window.removeEventListener("dente-open-recalls-hub", onOpen);
+		};
+	}, []);
 	const [showTactileSearch, setShowTactileSearch] = useState(false);
 	const [tactileFilters, setTactileFilters] =
 		useState<RadiologyTactileFilterState>(DEFAULT_TACTILE_FILTERS);

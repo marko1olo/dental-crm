@@ -21,6 +21,10 @@ export const appViews = [
 
 export type AppView = (typeof appViews)[number];
 
+export function isAppView(view: unknown): view is AppView {
+	return typeof view === "string" && (appViews as readonly string[]).includes(view);
+}
+
 export const viewLabels: Record<AppView, string> = {
 	shift: "Смена",
 	schedule: "Записи",
@@ -74,6 +78,7 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 			"inventory",
 			"lab",
 			"scanner",
+			"settings",
 		];
 	}
 	if (role === "assistant") {
@@ -135,6 +140,7 @@ export const settingsTabs = [
 	{ id: "clinic", title: "Клиника", group: "main" },
 	{ id: "modules", title: "Модули", group: "main" },
 	{ id: "staff", title: "Сотрудники", group: "main" },
+	{ id: "commissions", title: "Комиссии и ЗП", group: "main" },
 	{ id: "access", title: "Доступы", group: "main" },
 	{ id: "telegram", title: "Мессенджеры", group: "main" },
 	{ id: "hardware", title: "Оборудование", group: "main" },
@@ -149,23 +155,33 @@ export const settingsTabs = [
 	{ id: "sources", title: "Источники", group: "system" },
 	{ id: "reporting", title: "Отчёты", group: "system" },
 	{ id: "imports", title: "Импорт", group: "system" },
+	{ id: "backup", title: "Резервная копия", group: "system" },
 	{ id: "audit", title: "Аудит", group: "system" },
+	{ id: "deep-clinical", title: "Автономия и ЭМК", group: "clinical" },
 ] as const;
 
 export type SettingsTab = (typeof settingsTabs)[number]["id"];
 
-export function viewFromHash(): AppView {
-	if (typeof window === "undefined") return "shift";
-	const hash = window.location.hash.replace(/^#\/?/, "");
+export function viewFromHash(customHash?: string): AppView {
+	const raw = customHash !== undefined ? customHash : (typeof window !== "undefined" ? window.location.hash : "");
+	const hash = (raw.replace(/^#\/?/, "").split("?")[0] ?? "");
 	const parts = hash.split("/").filter(Boolean);
 	const view = parts[0]?.toLowerCase() ?? "";
 	if (view === "visits") return "visit";
-	if (view === "sanpin") return "scanner";
+	if (view === "sanpin" || view === "sterilization") return "scanner";
 	if (view === "cmo") return "analytics";
 	if (view === "telephony") return "communications";
 	if (view === "lab-orders" || view === "lab_orders") return "lab";
 	if (view === "invoices") return "finance";
 	if (view === "radiology" || view === "ct" || view === "cbct") return "imaging";
+	if (
+		view === "recalls" ||
+		view === "recall" ||
+		view === "recall-candidates" ||
+		view === "prevention"
+	) {
+		return "patients";
+	}
 	return (appViews as readonly string[]).includes(view)
 		? (view as AppView)
 		: "shift";
@@ -173,13 +189,14 @@ export function viewFromHash(): AppView {
 
 export function settingsTabFromHash(): SettingsTab {
 	if (typeof window === "undefined") return "clinic";
-	const hashParts = window.location.hash
-		.replace("#", "")
+	const cleanHash = window.location.hash.replace("#", "").split("?")[0] ?? "";
+	const hashParts = cleanHash
 		.split("/")
 		.filter(Boolean);
 	const tab = hashParts[1];
 	if (!tab) return "clinic";
 	if (tab === "messengers") return "telegram";
+	if (tab === "cashbox" || tab === "fiscal" || tab === "requisites") return "clinic";
 	const candidate = tab;
 	return settingsTabs.some((item) => item.id === candidate)
 		? (candidate as SettingsTab)

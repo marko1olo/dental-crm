@@ -158,7 +158,8 @@ export function generatePdnProtectedRecallMessage(
 		source: "recall_pdn_152fz",
 	});
 
-	return `${politeName}, подошел срок контрольного осмотра в клинике «${clinicName}». Записаться: ${bookingUrl}`;
+	const visitPart = candidate.lastVisitDate ? ` (прошлый визит был ${candidate.lastVisitDate})` : "";
+	return `${politeName}, подошел срок контрольного осмотра в клинике «${clinicName}»${visitPart}. Записаться: ${bookingUrl}`;
 }
 
 export function buildWhatsAppUrl(phone: string | null | undefined, text: string): string {
@@ -254,6 +255,13 @@ export const WHATSAPP_TEMPLATES: Record<RecallCycleType, string> = {
 		"Здравствуйте, {{PATIENT_FIRST_NAME}}! " +
 		"«{{CLINIC_NAME}}». Подошел срок контрольного осмотра ортопедических конструкций у доктора {{DOCTOR_NAME}} для пролонгации гарантии.\n\n" +
 		"Записаться:\n{{BOOKING_URL}}",
+
+	endodontic_check:
+		"Здравствуйте, {{PATIENT_FIRST_NAME}}! " +
+		"Стоматология «{{CLINIC_NAME}}». Ваш доктор {{DOCTOR_NAME}} напоминает: " +
+		"прошел 1 месяц после эндодонтического лечения (визит {{LAST_VISIT_DATE}}). " +
+		"Необходимо сделать контрольный снимок для оценки регенерации костной ткани.\n\n" +
+		"Записаться на контрольный осмотр:\n{{BOOKING_URL}}",
 };
 
 export const SMS_TEMPLATES: Record<RecallCycleType, string> = {
@@ -275,6 +283,8 @@ export const SMS_TEMPLATES: Record<RecallCycleType, string> = {
 		"{{PATIENT_FIRST_NAME}}, плановый осмотр и ремотерапия эмали в {{CLINIC_NAME}}: {{BOOKING_URL}}",
 	prosthetic_check:
 		"{{PATIENT_FIRST_NAME}}, гарантийный осмотр коронок в {{CLINIC_NAME}}: {{BOOKING_URL}}",
+	endodontic_check:
+		"{{PATIENT_FIRST_NAME}}, контрольный рентген-осмотр после эндодонтии в {{CLINIC_NAME}} (д-р {{DOCTOR_NAME}}): {{BOOKING_URL}}",
 };
 
 export function generateWhatsAppRecallMessage(

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { ChevronDown, FileText, X } from "lucide-react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
+import { useVisitStore } from "../../store/visitStore";
 import { VisitSurgeryProtocolTab } from "./surgery/VisitSurgeryProtocolTab";
 import { VisitTherapyProtocolWidget } from "./therapy/VisitTherapyProtocolWidget";
 import { VisitPediatricProtocolWidget } from "../pediatric/VisitPediatricProtocolWidget";
@@ -31,13 +32,25 @@ export function VisitSpecialtyFocus(props: VisitSpecialtyFocusProps = {}) {
 		setSelectedSpecialty: propSetSelectedSpecialty,
 	} = props;
 
+	const storeSpecialty = useVisitStore((s) => s.selectedSpecialty);
+	const storeSetSpecialty = useVisitStore((s) => s.setSelectedSpecialty);
+
 	const optionalContext = useOptionalAppLogicContext();
 	const context = (optionalContext || {}) as any;
 	const activeDoctor = propActiveDoctor ?? context.activeDoctor;
 	const activeChair = context.activeChair;
 	const activePatient = propActivePatient ?? context.activePatient;
-	const selectedSpecialty = propSelectedSpecialty ?? context.selectedSpecialty;
-	const setSelectedSpecialty = propSetSelectedSpecialty ?? context.setSelectedSpecialty;
+	const selectedSpecialty =
+		propSelectedSpecialty ||
+		(context.selectedSpecialty && context.selectedSpecialty !== ""
+			? context.selectedSpecialty
+			: undefined) ||
+		storeSpecialty ||
+		"therapy";
+	const setSelectedSpecialty =
+		propSetSelectedSpecialty ??
+		context.setSelectedSpecialty ??
+		storeSetSpecialty;
 	const setSelectedProtocolId = context.setSelectedProtocolId;
 	const specialtyLabels = context.specialtyLabels || {};
 	const visibleVisitSpecialtyFocusOptions = context.visibleVisitSpecialtyFocusOptions || [];
@@ -309,6 +322,7 @@ export function VisitSpecialtyFocus(props: VisitSpecialtyFocusProps = {}) {
 					doctorName={activeDoctor?.fullName}
 					doctorId={activeDoctor?.id}
 					onApplyToDiary={handleApplyProtocolText}
+					onAddToInvoice={handleAddToInvoice}
 				/>
 			) : (
 				<VisitTherapyProtocolWidget
