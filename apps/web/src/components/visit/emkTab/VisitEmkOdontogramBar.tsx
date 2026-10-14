@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowUpRight, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowUpRight, ChevronDown, ChevronUp, ShieldCheck } from "lucide-react";
 import { calculateAge } from "@dental/shared";
 import {
 	VisitEmbeddedOdontogram,
@@ -22,12 +22,18 @@ import { logger } from "../../../utils/logger";
 import { showToast } from "../../GlobalToast";
 import {
 	toOdontogramToothState,
+	toVisitToothUiState,
 	infer804nServiceFromStamp,
 } from "../useVisitEmkToothSync";
+import {
+	buildEffectiveToothStateByCode,
+	buildOdontogramFormulaSummary,
+} from "./visitEmkOdontogramBarHelpers";
 import type { VisitEmkOdontogramBarProps } from "./types";
 
 export function VisitEmkOdontogramBar({
 	activePatient,
+	patientHistory,
 	visitNoteForm,
 	updateVisitNoteField,
 	effectiveActiveTooth,
@@ -48,21 +54,24 @@ export function VisitEmkOdontogramBar({
 		return "adult";
 	});
 
+	const effectiveToothStateByCode = React.useMemo(() => {
+		return buildEffectiveToothStateByCode({
+			activePatient: (activePatient as any) ?? null,
+			patientHistory: (patientHistory as any) ?? null,
+			visitToothStateByCode: (visitToothStateByCode as any) ?? null,
+		});
+	}, [
+		activePatient?.id,
+		activePatient?.toothStates,
+		activePatient?.patientHistory,
+		activePatient?.teeth,
+		patientHistory,
+		visitToothStateByCode,
+	]);
+
 	const formulaSummary = React.useMemo(() => {
-		const totalTeeth = dentitionMode === "pediatric" ? 20 : 32;
-		const pathologyEntries = Object.entries(visitToothStateByCode || {}).filter(
-			([_code, state]) =>
-				state &&
-				(state as string) !== "Healthy" &&
-				(state as string) !== "healthy" &&
-				state !== "idle",
-		);
-		if (pathologyEntries.length === 0) {
-			return `${totalTeeth} ${dentitionMode === "pediatric" ? "молочных зубов интактны" : "зуба интактны"}`;
-		}
-		const intactCount = Math.max(0, totalTeeth - pathologyEntries.length);
-		return `${intactCount} интактно, ${pathologyEntries.length} с патологией`;
-	}, [dentitionMode, visitToothStateByCode]);
+		return buildOdontogramFormulaSummary(dentitionMode, effectiveToothStateByCode);
+	}, [dentitionMode, effectiveToothStateByCode]);
 
 	const toothRows = React.useMemo(
 		() => [
@@ -249,6 +258,91 @@ export function VisitEmkOdontogramBar({
 		[activePatient, visitNoteForm, updateVisitNoteField],
 	);
 
+	const handleMarkAllIntact = React.useCallback(() => {
+		const numbers =
+			dentitionMode === "pediatric"
+				? [51, 52, 53, 54, 55, 61, 62, 63, 64, 65, 71, 72, 73, 74, 75, 81, 82, 83, 84, 85]
+				: [
+						18, 17, 16, 15, 14, 13, 12, 11,
+						21, 22, 23, 24, 25, 26, 27, 28,
+						31, 32, 33, 34, 35, 36, 37, 38,
+						48, 47, 46, 45, 44, 43, 42, 41,
+				  ];
+
+		for (const num of numbers) {
+			const code = String(num);
+			useVisitStore.getState().setToothState(code, "idle");
+			useVisitStore.getState().setVisitToothRecord(code, {
+				toothNumber: num,
+				state: "idle",
+				diagnosis: "Зубной ряд интактен / Санирован",
+				diagnosisIcd10: "Z01.2",
+				treatmentPlan: "Профилактический осмотр 1 раз в 6 месяцев",
+			});
+		}
+
+		const patId = activePatient?.id;
+		if (patId) {
+			const nowIso = new Date().toISOString();
+			const intactTeeth = numbers.map((num) => ({
+				toothNumber: num,
+				state: "Healthy" as const,
+				updatedAt: nowIso,
+			}));
+			saveStoredTeethData(patId, intactTeeth as any, true);
+
+			window.dispatchEvent(
+				new CustomEvent("dente-odontogram-update", {
+					detail: { patientId: patId, states: intactTeeth },
+				}),
+			);
+
+			fetch(`/api/patients/${patId}/tooth-states/batch`, {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					toothNumbers: numbers,
+					state: "Healthy",
+				}),
+			}).catch((err) => {
+				logger.warn("[VisitEmkOdontogramBar] Background all-intact batch sync failed:", err);
+			});
+		}
+
+		const normDiag = "K00.0 / Z01.2 Зубной ряд санирован, кариозных полостей и воспаления не выявлено";
+		const normObj = "Слизистая оболочка полости рта бледно-розовая, умеренно увлажнена. Десневые сосочки бледно-розовые, плотно прилежат к шейкам зубов, не кровоточат. Зубные ряды интактны, устойчивы. Прикус ортогнатический. Перкуссия всех зубов безболезненная.";
+		const normPlan = "Рекомендована профессиональная гигиена и контрольный осмотр через 6 месяцев. Обучение гигиене полости рта проведено.";
+		const normComp = "Жалоб нет. Профилактический осмотр / плановая санация.";
+
+		updateVisitNoteField("diagnosis", normDiag);
+		updateVisitNoteField("objectiveStatus", normObj);
+		updateVisitNoteField("treatmentPlan", normPlan);
+		const currentComp = String(visitNoteForm?.complaint || (visitNoteForm as any)?.complaints || "").trim();
+		if (!currentComp || currentComp.includes("активно не предъявляет") || currentComp.includes("Жалоб нет")) {
+			updateVisitNoteField("complaint", normComp);
+		}
+
+		window.dispatchEvent(
+			new CustomEvent("dente-apply-soap-protocol", {
+				detail: {
+					finding: { toothNumber: 0, state: "Healthy" },
+					soap: {
+						diagnosis: normDiag,
+						objectiveStatus: normObj,
+						treatmentPlan: normPlan,
+						complaint: normComp,
+					},
+					mode: "replace",
+					immediate: true,
+				},
+			}),
+		);
+
+		showToast("Все зубы отмечены интактными. Дневник 043/у заполнен протоколом санации", "success", 3000);
+	}, [activePatient?.id, dentitionMode, updateVisitNoteField, visitNoteForm]);
+
 	return (
 		<div
 			className={`visit-emk-embedded-odontogram-wrap bg-[var(--paper)] border border-[var(--line)] rounded-xl transition-all shadow-2xs ${
@@ -274,6 +368,16 @@ export function VisitEmkOdontogramBar({
 					</span>
 				</div>
 				<div className="flex items-center gap-2 shrink-0">
+					<button
+						type="button"
+						onClick={handleMarkAllIntact}
+						data-testid="btn-mark-all-teeth-intact"
+						className="emk-action-button emk-action-button--teal"
+						title="Отметить все зубы интактными и заполнить протокол нормы 043/у"
+					>
+						<ShieldCheck size={13} className="shrink-0 text-teal-600 dark:text-teal-400" />
+						<span>✓ Санирован</span>
+					</button>
 					<button
 						type="button"
 						onClick={() => {
@@ -317,7 +421,7 @@ export function VisitEmkOdontogramBar({
 					setActiveStamp={setActiveStamp}
 					activeStampRef={activeStampRef}
 					toothRows={toothRows}
-					toothStateByCode={visitToothStateByCode as any}
+					toothStateByCode={effectiveToothStateByCode as any}
 					draft={draft?.quality?.detectedToothCodes ? { quality: { detectedToothCodes: draft.quality.detectedToothCodes } } : null}
 					handleToothClick={handleOdontogramToothClick}
 					dentitionMode={dentitionMode}

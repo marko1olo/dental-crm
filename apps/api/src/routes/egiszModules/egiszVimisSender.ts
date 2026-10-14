@@ -20,7 +20,7 @@ export interface SendVimisPackageOptions {
 	visitId: string;
 	doctorId: string;
 	pkg: EgiszRemdPackage;
-	actorUserId?: string;
+	actorUserId?: string | null | undefined;
 	isSync?: boolean;
 }
 
@@ -33,7 +33,7 @@ export interface VimisSendResult {
 	regNumber: string;
 	transactionId: string;
 	canonicalXmlLength: number;
-	flkErrors?: readonly string[];
+	flkErrors?: readonly string[] | undefined;
 	message?: string;
 }
 
@@ -70,8 +70,10 @@ export async function dispatchPackageToVimis(
 ): Promise<VimisSendResult> {
 	// Предварительный форматно-логический контроль на стороне клиники
 	const flkIssues: string[] = [];
-	if (!isValidSnils(options.pkg.metadata.patientSnils)) {
-		flkIssues.push(STATUTORY_FLK_ERROR_DICTIONARY["FLK-001"]);
+	const patientSnils = options.pkg.metadata.patientSnils ?? "";
+	if (!isValidSnils(patientSnils)) {
+		const flk001 = STATUTORY_FLK_ERROR_DICTIONARY["FLK-001"];
+		if (flk001) flkIssues.push(flk001);
 	}
 
 	if (flkIssues.length > 0) {
@@ -98,7 +100,7 @@ export async function dispatchPackageToVimis(
 		doctorId: options.doctorId,
 		documentId: options.pkg.documentId,
 		pkg: options.pkg,
-		actorUserId: options.actorUserId,
+		actorUserId: options.actorUserId || undefined,
 	});
 
 	if (options.isSync) {
@@ -106,21 +108,39 @@ export async function dispatchPackageToVimis(
 		const itemResult = dispatchResult.results.find(
 			(r) => r.outboxId === enqueueRes.outboxId || r.visitId === options.visitId,
 		);
-		const isSuccess = itemResult?.status === "Registered" || itemResult?.status === "Sent";
+		const isSuccess =
+			itemResult?.status === "Registered" ||
+			itemResult?.status === "Sent" ||
+			itemResult?.status === "registered_in_remd";
 
 		const rawErr = itemResult?.error;
 		const decodedErrors = rawErr ? parseFlkErrors(rawErr) : undefined;
+
+		const rawStatus = itemResult?.status;
+		const mappedStatus: EgiszTransmissionStatus =
+			rawStatus === "registered_in_remd" || rawStatus === "Registered"
+				? "Registered"
+				: rawStatus === "rejected_by_remd" || rawStatus === "Rejected"
+					? "Rejected"
+					: rawStatus === "failed" || rawStatus === "Error"
+						? "Error"
+						: isSuccess
+							? "Sent"
+							: itemResult
+								? "Error"
+								: "Pending";
 
 		return {
 			success: isSuccess,
 			queued: false,
 			outboxId: enqueueRes.outboxId,
 			logId: enqueueRes.logId,
-			status: (itemResult?.status as EgiszTransmissionStatus) || "Sent",
+			status: mappedStatus,
 			transactionId: itemResult?.transactionId || enqueueRes.outboxId,
 			regNumber: itemResult?.transactionId || enqueueRes.outboxId,
 			canonicalXmlLength: enqueueRes.canonicalXmlLength,
-			flkErrors: decodedErrors,
+			...(decodedErrors !== undefined ? { flkErrors: decodedErrors } : {}),
+			...(rawErr ? { message: String(rawErr) } : !isSuccess ? { message: "Ошибка при передаче документа в РЭМД" } : {}),
 		};
 	}
 

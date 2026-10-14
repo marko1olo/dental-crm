@@ -44,6 +44,7 @@ export const updateClinicProfileSchema = z.object({
 	defaultVisitMinutes: z.number().int().positive().max(480).optional(),
 	scheduleDefaults: clinicScheduleDefaultsSchema.optional(),
 	egiszEnabled: z.boolean().optional(),
+	egiszAutonomousMode: z.boolean().optional(),
 	logoUrl: z.string().trim().max(2000).nullable().optional(),
 	stampUrl: z.string().trim().max(2000).nullable().optional(),
 });
@@ -229,6 +230,13 @@ export const createPaymentSchema = z
 		toothCode: z.string().nullable().optional(),
 		invoice_items: z.array(z.record(z.string(), z.any())).optional(),
 		invoiceItems: z.array(z.record(z.string(), z.any())).optional(),
+		cashBoxType: z
+			.enum(["main", "cashless", "sbp", "online", "dms", "deposit"])
+			.nullable()
+			.optional(),
+		cashBoxId: z.string().uuid().nullable().optional(),
+		receiptTypeAlias: z.string().trim().max(120).nullable().optional(),
+		cashFlowCategory: z.string().trim().max(120).nullable().optional(),
 	})
 	.superRefine((input, context) => {
 		const fiscalReceiptIssuedAt = input.fiscalReceiptIssuedAt?.trim();

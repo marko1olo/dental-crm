@@ -277,6 +277,8 @@ export function updateClinicProfile(
 		);
 	if (input.egiszEnabled !== undefined)
 		clinicProfile.egiszEnabled = input.egiszEnabled;
+	if (input.egiszAutonomousMode !== undefined)
+		clinicProfile.egiszAutonomousMode = input.egiszAutonomousMode;
 	if (input.logoUrl !== undefined)
 		clinicProfile.logoUrl = nullableTrimmed(input.logoUrl);
 	if (input.stampUrl !== undefined)

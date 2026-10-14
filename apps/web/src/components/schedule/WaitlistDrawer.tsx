@@ -164,15 +164,49 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
 
   // Filtered & scored candidates
   const filteredCandidates = useMemo(() => {
-    return filterWaitlistCandidates(ops.items, {
+    const list = filterWaitlistCandidates(ops.items, {
       searchQuery,
       urgencyFilter: selectedUrgency,
       doctorFilter: selectedDoctorFilter,
       onlySameDoctor: Boolean(onlySameDoctor && targetSlot?.doctorUserId),
       targetSlot: targetSlot ?? null,
     });
+    const serverMap = ops.serverMatchesMap;
+    if (serverMap && serverMap.size > 0) {
+      return list.map((c) => {
+        const serverMatch =
+          serverMap.get(c.item.id) ||
+          serverMap.get(c.item.patientId);
+        if (serverMatch) {
+          const sm = serverMatch as any;
+          const sc = c.scoring as any;
+          return {
+            ...c,
+            scoring: {
+              ...c.scoring,
+              score:
+                typeof sm.score === "number"
+                  ? sm.score
+                  : typeof sc?.score === "number"
+                    ? sc.score
+                    : 50,
+              matchReasons:
+                Array.isArray(sm.matchReasons) &&
+                sm.matchReasons.length > 0
+                  ? (sm.matchReasons as string[])
+                  : Array.isArray(sc?.matchReasons)
+                    ? sc.matchReasons
+                    : [],
+            },
+          };
+        }
+        return c;
+      });
+    }
+    return list;
   }, [
     ops.items,
+    ops.serverMatchesMap,
     searchQuery,
     selectedUrgency,
     selectedDoctorFilter,
@@ -208,7 +242,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
 
   const drawerContent = (
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-black/25 transition-opacity"
+      className="fixed inset-0 z-50 flex justify-end bg-black/25 transition-opacity max-sm:items-end max-sm:justify-center"
       data-testid="waitlist-drawer"
       role="dialog"
       aria-modal="true"
@@ -222,11 +256,15 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
         aria-label="Закрыть шторку листа ожидания"
       />
 
-      {/* Main Drawer Surface: Desktop Ergonomic Panel (max-w-md / 460px) */}
+      {/* Main Drawer Surface: Desktop Ergonomic Panel (max-w-md / 460px), Mobile Native Apple HIG Bottom Sheet */}
       <div
-        className="relative w-full max-w-lg h-full bg-[var(--paper)] border-l border-[var(--line)] shadow-2xl flex flex-col z-10 text-[var(--ink)] animate-slide-in overflow-hidden"
+        className="relative w-full max-w-lg h-full max-sm:h-auto max-sm:max-h-[92vh] max-sm:rounded-t-[24px] bg-[var(--paper)] border-l max-sm:border-l-0 max-sm:border-t border-[var(--line)] shadow-2xl flex flex-col z-10 text-[var(--ink)] animate-slide-in overflow-hidden pb-[env(safe-area-inset-bottom)]"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Apple HIG Drag Handle on mobile */}
+        <div className="hidden max-sm:flex justify-center pt-2.5 pb-1 shrink-0">
+          <div className="w-10 h-1.5 rounded-full bg-[var(--line-strong)] opacity-60" />
+        </div>
         {/* Top Header: 32-36px toolbar elements, Hick's law, Apple HIG */}
         <div className="p-3.5 sm:p-4 border-b border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -463,6 +501,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
                     onToggleMenu={setOpenMenuId}
                     onOneClickBookSlot={ops.handleOneClickBookSlot}
                     onSendWhatsApp={ops.handleSendWhatsApp}
+                    onSendTelegram={ops.handleSendTelegram}
                     onCopySms={ops.handleCopySms}
                     onFulfill={ops.handleFulfill}
                     onDelete={ops.handleDelete}

@@ -162,6 +162,7 @@ export function emptyClinicProfileDraft(): ClinicProfileDraft {
 		workingDays: defaultWorkingDays,
 		appointmentBufferMinutes: "10",
 		egiszEnabled: false,
+		egiszAutonomousMode: true,
 	};
 }
 
@@ -197,6 +198,7 @@ export function clinicProfileDraftFromProfile(
 		workingDays: normalizeWorkingDaysDraft(schedule.workingDays),
 		appointmentBufferMinutes: String(schedule.appointmentBufferMinutes ?? 10),
 		egiszEnabled: profile.egiszEnabled ?? false,
+		egiszAutonomousMode: profile.egiszAutonomousMode ?? !(profile.egiszEnabled ?? false),
 	};
 }
 
@@ -256,6 +258,12 @@ export function patientAdministrativeProfileDraftFromPatient(
 		decree659Compliance: (profile?.decree659Compliance as Record<string, unknown> | null | undefined) ?? null,
 		gender: safeProfileString(profile?.gender),
 		insuranceContractId: safeProfileString(profile?.insuranceContractId),
+		utmSource: safeProfileString(profile?.utmSource),
+		utmMedium: safeProfileString(profile?.utmMedium),
+		utmCampaign: safeProfileString(profile?.utmCampaign),
+		utmContent: safeProfileString(profile?.utmContent),
+		utmTerm: safeProfileString(profile?.utmTerm),
+		leadSource: safeProfileString(profile?.leadSource),
 	};
 }
 
@@ -421,6 +429,7 @@ export function buildClinicProfileUpdatePayload(
 				: 10,
 		},
 		egiszEnabled: draft.egiszEnabled,
+		egiszAutonomousMode: draft.egiszAutonomousMode,
 	};
 }
 
@@ -517,6 +526,7 @@ export type ClinicProfileDraft = {
 	workingDays: number[];
 	appointmentBufferMinutes: string;
 	egiszEnabled: boolean;
+	egiszAutonomousMode?: boolean;
 };
 
 export function normalizeOptionalWorkingDaysDraft(
@@ -534,13 +544,32 @@ export function normalizeOptionalWorkingDaysDraft(
 export type PatientAdministrativeProfileDraft = {
 	[K in Exclude<
 		keyof PatientAdministrativeProfile,
-		"preferredAppointmentWeekdays" | "isAnonymous" | "anonymousCode" | "decree659Compliance"
+		| "preferredAppointmentWeekdays"
+		| "isAnonymous"
+		| "anonymousCode"
+		| "decree659Compliance"
+		| "consentSignatures"
+		| "clinicalSafetyProfile"
+		| "utmSource"
+		| "utmMedium"
+		| "utmCampaign"
+		| "utmContent"
+		| "utmTerm"
+		| "leadSource"
 	>]: string;
 } & {
 	preferredAppointmentWeekdays: number[];
 	isAnonymous?: boolean | null;
 	anonymousCode?: string | null;
 	decree659Compliance?: Record<string, unknown> | null;
+	consentSignatures?: Record<string, unknown> | null;
+	clinicalSafetyProfile?: Record<string, unknown> | null;
+	utmSource?: string | null;
+	utmMedium?: string | null;
+	utmCampaign?: string | null;
+	utmContent?: string | null;
+	utmTerm?: string | null;
+	leadSource?: string | null;
 };
 
 export function nullablePatientDraftValue(

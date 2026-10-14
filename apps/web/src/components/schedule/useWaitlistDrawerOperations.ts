@@ -14,8 +14,11 @@ import {
 	type WaitlistUrgency,
 	URGENCY_CONFIG,
 	generate152FzWaitlistOfferMessage,
+	openTelegramChat,
+	openWhatsAppChat,
 } from "./waitlistCancellationEngine";
 import { DEFAULT_SOLO_CHAIR } from "./ScheduleGrid";
+import { useWebsocket } from "../../hooks/useWebsocket";
 
 const DEMO_SHOWCASE_WAITLIST_CANDIDATES: WaitlistCandidateItem[] = [
 	{
@@ -195,6 +198,84 @@ export function useWaitlistDrawerOperations({
 		}
 	}, [isOpen, fetchWaitlist]);
 
+	// Real-time WebSocket connection to /api/ws/schedule
+	const wsUrl = useMemo(() => {
+		const configured = (
+			import.meta as unknown as { env?: Record<string, string> }
+		).env?.VITE_WS_URL;
+		if (configured) return configured;
+		if (typeof window === "undefined") return "";
+		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+		return `${protocol}//${window.location.host}/api/ws/schedule`;
+	}, []);
+
+	const { lastMessage } = useWebsocket(isOpen ? wsUrl : "");
+
+	useEffect(() => {
+		if (!isOpen || !lastMessage?.type) return;
+		if (
+			lastMessage.type === "WAITLIST_UPDATED" ||
+			lastMessage.type === "WAITLIST_DELETED" ||
+			lastMessage.type === "APPOINTMENT_UPDATED"
+		) {
+			fetchWaitlist();
+		}
+	}, [isOpen, lastMessage, fetchWaitlist]);
+
+	// Backend server matches for targeted freed slot
+	const [serverMatchesMap, setServerMatchesMap] = useState<Map<
+		string,
+		{
+			entryId: string;
+			patientId: string;
+			score?: number;
+			matchReasons?: string[];
+			reason?: string;
+			sameDoctor?: boolean;
+			timeFits?: boolean;
+			alreadyBooked?: boolean;
+			waitingDays?: number;
+		}
+	> | null>(null);
+
+	useEffect(() => {
+		const apptId = targetSlot?.appointmentId;
+		if (!apptId || !isOpen) {
+			setServerMatchesMap(null);
+			return;
+		}
+		let isCancelled = false;
+		async function fetchServerMatches() {
+			try {
+				const res = await fetch(
+					`/api/appointments/${encodeURIComponent(apptId!)}/waitlist-matches`,
+					{
+						headers: auth?.denteClinicalReadHeaders
+							? auth.denteClinicalReadHeaders()
+							: {},
+					},
+				);
+				if (res.ok) {
+					const data = await res.json();
+					if (!isCancelled && data && Array.isArray(data.matches)) {
+						const map = new Map<string, any>();
+						for (const m of data.matches) {
+							if (m.entryId) map.set(m.entryId, m);
+							if (m.patientId) map.set(m.patientId, m);
+						}
+						setServerMatchesMap(map);
+					}
+				}
+			} catch (err) {
+				logger.warn("Could not fetch server waitlist matches for target slot:", err);
+			}
+		}
+		void fetchServerMatches();
+		return () => {
+			isCancelled = true;
+		};
+	}, [targetSlot?.appointmentId, isOpen, auth]);
+
 	// 1-Click WhatsApp Direct
 	const handleSendWhatsApp = (item: WaitlistCandidateItem) => {
 		if (!item.patientPhone) {
@@ -208,16 +289,31 @@ export function useWaitlistDrawerOperations({
 			clinicName,
 		});
 
-		const cleanPhone = item.patientPhone
-			.replace(/[^\d+]/g, "")
-			.replace(/^\+/, "");
-		window.open(
-			`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`,
-			"_blank",
-		);
+		openWhatsAppChat(item.patientPhone, msg);
 		setContactedPatients((prev) => new Set(prev).add(item.id));
 		showToast(
 			`Сообщение WhatsApp подготовлено для ${item.patientName || "пациента"}`,
+			"success",
+		);
+	};
+
+	// 1-Click Telegram Direct
+	const handleSendTelegram = (item: WaitlistCandidateItem) => {
+		if (!item.patientPhone) {
+			showToast("У пациента не указан номер телефона", "error");
+			return;
+		}
+		const msg = generate152FzWaitlistOfferMessage({
+			patientName: item.patientName,
+			doctorName: targetSlot?.doctorName || item.preferredDoctorName,
+			startsAt: targetSlot?.startsAt || new Date().toISOString(),
+			clinicName,
+		});
+
+		openTelegramChat(item.patientPhone, msg);
+		setContactedPatients((prev) => new Set(prev).add(item.id));
+		showToast(
+			`Предложение слота сформировано для Telegram: ${item.patientName || "пациент"}`,
 			"success",
 		);
 	};
@@ -576,11 +672,13 @@ export function useWaitlistDrawerOperations({
 		setIsAddFormOpen,
 		fetchWaitlist,
 		handleSendWhatsApp,
+		handleSendTelegram,
 		handleCopySms,
 		handleOneClickBookSlot,
 		handleFulfill,
 		handleDelete,
 		handleQuickAdd,
 		fallbackFreeSlots,
+		serverMatchesMap,
 	};
 }

@@ -415,6 +415,7 @@ export const clinicProfileSchema = z.object({
 	scheduleDefaults: clinicScheduleDefaultsSchema,
 	networkEnabled: z.boolean(),
 	egiszEnabled: z.boolean(),
+	egiszAutonomousMode: z.boolean().optional(),
 	specializations: z.array(z.string()).optional(),
 	workingHours: z.any().nullable().optional(),
 	currency: z.string().optional(),
