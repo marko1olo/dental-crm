@@ -28,6 +28,7 @@ import {
 	appointmentWaitlists,
 	patients,
 } from "../../db/schema.js";
+import { parseTimeToMinutes } from "@dental/shared";
 import { utcToLocalWallTime } from "../../routes/publicBooking.js";
 
 /** Насколько кандидат подходит под окно и почему. */
@@ -148,20 +149,7 @@ export function parsePreferredWeekday(raw: unknown): number | null {
 export function parsePreferredRanges(
 	raw: unknown,
 ): { fromMinute: number; toMinute: number }[] {
-	const toMinutes = (value: string): number | null => {
-		const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
-		if (!match) return null;
-		const hours = Number(match[1]);
-		const minutes = Number(match[2]);
-		if (
-			!Number.isFinite(hours) ||
-			!Number.isFinite(minutes) ||
-			hours > 23 ||
-			minutes > 59
-		)
-			return null;
-		return hours * 60 + minutes;
-	};
+	const toMinutes = (value: string): number | null => parseTimeToMinutes(value);
 
 	const fromPair = (
 		text: string,

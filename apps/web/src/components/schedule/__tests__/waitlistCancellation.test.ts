@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AppLogicProvider } from "../../../contexts/AppLogicContext";
@@ -7,6 +7,7 @@ import {
   type TargetSlotInfo,
   type WaitlistCandidateItem,
   URGENCY_CONFIG,
+  checkTimeWindowFit,
   detectWaitlistUrgency,
   extractPatientPoliteName,
   filterWaitlistCandidates,
@@ -388,6 +389,39 @@ describe("Waitlist Cancellation Auto-Fill & 152-FZ Engine", () => {
         html.includes('data-testid="waitlist-quick-add-toggle-btn"'),
         "Quick add patient button present",
       );
+    });
+  });
+
+  describe("checkTimeWindowFit Precise Interval & Weekday Logic", () => {
+    it("matches exact time intervals like 11:00-13:00 and rejects times outside interval", () => {
+      const ranges = [{ day: "any", slot: "11:00-13:00" }];
+      assert.strictEqual(checkTimeWindowFit("2026-10-14T11:00:00.000Z", ranges), true);
+      assert.strictEqual(checkTimeWindowFit("2026-10-14T11:45:00.000Z", ranges), true);
+      assert.strictEqual(checkTimeWindowFit("2026-10-14T12:30:00.000Z", ranges), true);
+      assert.strictEqual(checkTimeWindowFit("2026-10-14T10:30:00.000Z", ranges), false);
+      assert.strictEqual(checkTimeWindowFit("2026-10-14T13:30:00.000Z", ranges), false);
+    });
+
+    it("matches weekday constraints (weekdays vs weekend)", () => {
+      // 2026-10-14 is Wednesday (weekday)
+      // 2026-10-18 is Sunday (weekend)
+      const weekdayRanges = [{ day: "weekdays", slot: "any" }];
+      const weekendRanges = [{ day: "weekend", slot: "any" }];
+
+      assert.strictEqual(checkTimeWindowFit("2026-10-14T12:00:00.000Z", weekdayRanges), true);
+      assert.strictEqual(checkTimeWindowFit("2026-10-18T12:00:00.000Z", weekdayRanges), false);
+
+      assert.strictEqual(checkTimeWindowFit("2026-10-14T12:00:00.000Z", weekendRanges), false);
+      assert.strictEqual(checkTimeWindowFit("2026-10-18T12:00:00.000Z", weekendRanges), true);
+    });
+
+    it("matches named days like ср / wednesday and rejects mismatched days", () => {
+      // 2026-10-14 is Wednesday
+      const wedRanges = [{ day: "ср", slot: "10:00-14:00" }];
+      const friRanges = [{ day: "пт", slot: "10:00-14:00" }];
+
+      assert.strictEqual(checkTimeWindowFit("2026-10-14T11:00:00.000Z", wedRanges), true);
+      assert.strictEqual(checkTimeWindowFit("2026-10-14T11:00:00.000Z", friRanges), false);
     });
   });
 });

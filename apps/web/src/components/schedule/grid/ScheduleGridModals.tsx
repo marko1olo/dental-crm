@@ -3,7 +3,7 @@ import type { Dashboard } from "@dental/shared";
 import { DoctorChairScheduleModal } from "../DoctorChairScheduleModal";
 import { QuickAddChairModal, type QuickAddChairData } from "../QuickAddChairModal";
 import { QuickAddDoctorModal, type QuickAddDoctorData } from "../QuickAddDoctorModal";
-import { WaitlistDrawer, type TargetSlotInfo } from "../WaitlistDrawer";
+import type { TargetSlotInfo } from "../WaitlistDrawer";
 import type { ChairDoctorShiftAssignment } from "./gridTypes";
 import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 
@@ -57,26 +57,16 @@ export function ScheduleGridModals({
   waitlistDrawerSlot,
   setWaitlistDrawerSlot,
 }: ScheduleGridModalsProps) {
-  // Координация шторки листа ожидания сетки с uiSurfaceStore (Мандаты 8b, 8e)
+  // Forward waitlistDrawerSlot to central ScheduleModalsLayer (SSOT)
   React.useEffect(() => {
     if (waitlistDrawerSlot) {
-      useUiSurfaceStore.getState().openDrawer("waitlist");
-    } else if (useUiSurfaceStore.getState().activeDrawer === "waitlist") {
-      useUiSurfaceStore.getState().closeDrawer("waitlist");
+      window.dispatchEvent(
+        new CustomEvent("dente:open-waitlist-for-slot", { detail: waitlistDrawerSlot })
+      );
+      setWaitlistDrawerSlot(null);
     }
-  }, [waitlistDrawerSlot]);
-
-  // Подписка на внешние изменения: если открывается модалка или другая шторка, закрываем локальный waitlist
-  React.useEffect(() => {
-    const unsub = useUiSurfaceStore.subscribe((state) => {
-      if (waitlistDrawerSlot) {
-        if (state.hasPrimaryModal || (state.activeDrawer && state.activeDrawer !== "waitlist")) {
-          setWaitlistDrawerSlot(null);
-        }
-      }
-    });
-    return unsub;
   }, [waitlistDrawerSlot, setWaitlistDrawerSlot]);
+
   return (
     <>
       {/* 1-Click Chair-to-Doctor Shift Allocation Modal */}
@@ -199,22 +189,6 @@ export function ScheduleGridModals({
               );
             }
             setIsQuickAddDoctorOpen(false);
-          }}
-        />
-      )}
-
-      {waitlistDrawerSlot && (
-        <WaitlistDrawer
-          isOpen={Boolean(waitlistDrawerSlot)}
-          onClose={() => {
-            setWaitlistDrawerSlot(null);
-            useUiSurfaceStore.getState().closeDrawer("waitlist");
-          }}
-          targetSlot={waitlistDrawerSlot}
-          dashboard={dashboard}
-          onAppointmentCreated={() => {
-            setWaitlistDrawerSlot(null);
-            useUiSurfaceStore.getState().closeDrawer("waitlist");
           }}
         />
       )}

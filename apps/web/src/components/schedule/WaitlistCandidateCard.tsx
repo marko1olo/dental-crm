@@ -6,6 +6,7 @@ import {
 	MessageSquare,
 	MoreVertical,
 	Phone,
+	Send,
 	Trash2,
 	Zap,
 } from "lucide-react";
@@ -37,6 +38,7 @@ export interface WaitlistCandidateCardProps {
 	readonly onToggleMenu: (id: string | null) => void;
 	readonly onOneClickBookSlot: (item: WaitlistCandidateItem) => void;
 	readonly onSendWhatsApp: (item: WaitlistCandidateItem) => void;
+	readonly onSendTelegram?: (item: WaitlistCandidateItem) => void;
 	readonly onCopySms: (item: WaitlistCandidateItem) => void;
 	readonly onFulfill: (item: WaitlistCandidateItem) => void;
 	readonly onDelete: (id: string) => void;
@@ -56,6 +58,7 @@ export const WaitlistCandidateCard: React.FC<WaitlistCandidateCardProps> = ({
 	onToggleMenu,
 	onOneClickBookSlot,
 	onSendWhatsApp,
+	onSendTelegram,
 	onCopySms,
 	onFulfill,
 	onDelete,
@@ -257,7 +260,7 @@ export const WaitlistCandidateCard: React.FC<WaitlistCandidateCardProps> = ({
 									onToggleMenu(null);
 									onCopySms(item);
 								}}
-								className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-2 cursor-pointer"
+								className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-2 cursor-pointer pointer-coarse:py-2.5"
 								role="menuitem"
 								data-testid={`waitlist-copy-sms-${item.id}`}
 							>
@@ -266,10 +269,26 @@ export const WaitlistCandidateCard: React.FC<WaitlistCandidateCardProps> = ({
 							</button>
 
 							{item.patientPhone && (
+								<button
+									type="button"
+									onClick={() => {
+										onToggleMenu(null);
+										onSendTelegram?.(item);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-sky-600 dark:text-sky-400 hover:bg-sky-500/10 transition-colors flex items-center gap-2 cursor-pointer pointer-coarse:py-2.5"
+									role="menuitem"
+									data-testid={`waitlist-telegram-btn-${item.id}`}
+								>
+									<Send className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+									<span>Написать в Telegram</span>
+								</button>
+							)}
+
+							{item.patientPhone && (
 								<a
 									href={`tel:${item.patientPhone.replace(/[^\d+]/g, "")}`}
 									onClick={() => onToggleMenu(null)}
-									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-2 cursor-pointer pointer-coarse:py-2.5"
 									role="menuitem"
 								>
 									<Phone className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />

@@ -22,6 +22,8 @@ import {
 import { registerAppointmentsRoutes } from "../../routes/appointments.js";
 import { registerWaitlistRoutes } from "../../routes/waitlist.js";
 import { registerWaitlistMatchRoutes } from "../../routes/waitlistMatches.js";
+import { authTokenSecret } from "../../security/authSecret.js";
+import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
 	isDatabaseUnavailable,
@@ -81,6 +83,11 @@ const WAIT_OTHER_DOCTOR = fixtureUuid(FIXTURE, 0x42);
 const WAIT_URGENT = fixtureUuid(FIXTURE, 0x43);
 
 const ORG_HEADERS = { "x-organization-id": ORG_ID };
+const clinicToken = signToken({ organizationId: ORG_ID }, authTokenSecret());
+const MUTATION_HEADERS = {
+	"x-organization-id": ORG_ID,
+	"x-dente-clinic-token": clinicToken,
+};
 
 /** Завтра в 10:00 по московскому времени (Europe/Moscow) — окно, которое освободилось. */
 function tomorrowAt(hour: number): Date {
@@ -99,13 +106,17 @@ describe("подбор на освободившееся окно", () => {
 	const originalEnv = process.env;
 
 	before(async () => {
-		process.env = { ...originalEnv, DENTE_DEV_ALLOW_HEADER_ORG: "1" };
+		process.env = {
+			...originalEnv,
+			DENTE_DEV_ALLOW_HEADER_ORG: "1",
+			DENTE_CLINICAL_ALLOW_UNGUARDED_READS: "1",
+			DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS: "1",
+		};
 		app = createTenantTestApp();
 		process.env.NODE_ENV = "test";
-                process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
-                await registerWaitlistRoutes(app);
-                await registerWaitlistMatchRoutes(app);
-                await registerAppointmentsRoutes(app);
+		await registerWaitlistRoutes(app);
+		await registerWaitlistMatchRoutes(app);
+		await registerAppointmentsRoutes(app);
 
 		try {
 			/*
@@ -124,15 +135,18 @@ describe("подбор на освободившееся окно", () => {
 			 * Соседняя клиника заводится своим вызовом и остаётся пустой — её токеном
 			 * проверяется отказ по чужому приёму.
 			 */
+			await purgeFixtureOrganizations([ORG_ID, OTHER_ORG]);
 			await withFixtureTenant(OTHER_ORG, async () => {
 				await db
 					.insert(organizations)
-					.values({ id: OTHER_ORG, name: "Соседняя клиника" });
+					.values({ id: OTHER_ORG, name: "Соседняя клиника" })
+					.onConflictDoNothing();
 			});
 			await withFixtureTenant(ORG_ID, async () => {
 				await db
 					.insert(organizations)
-					.values({ id: ORG_ID, name: "Клиника листа ожидания" });
+					.values({ id: ORG_ID, name: "Клиника листа ожидания" })
+					.onConflictDoNothing();
 				await db.insert(users).values([
 					{
 						id: DOCTOR_A,
@@ -398,7 +412,7 @@ describe("подбор на освободившееся окно", () => {
 		const firstClaim = await app.inject({
 			method: "PATCH",
 			url: `/api/appointments/${CANCELLED_APPOINTMENT}`,
-			headers: ORG_HEADERS,
+			headers: MUTATION_HEADERS,
 			payload: {
 				patientId: BEST_MATCH,
 				status: "planned",
@@ -412,7 +426,7 @@ describe("подбор на освободившееся окно", () => {
 		const secondClaim = await app.inject({
 			method: "PATCH",
 			url: `/api/appointments/${CANCELLED_APPOINTMENT}`,
-			headers: ORG_HEADERS,
+			headers: MUTATION_HEADERS,
 			payload: {
 				patientId: OTHER_DOCTOR_WAITER,
 				status: "planned",

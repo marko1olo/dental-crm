@@ -13,6 +13,8 @@ const SCHEDULE_EVENTS = new Set([
 	"APPOINTMENT_CREATED",
 	"APPOINTMENT_UPDATED",
 	"INTERCOM_PING",
+	"WAITLIST_UPDATED",
+	"WAITLIST_DELETED",
 ]);
 
 /** Схлопывание пачки событий в одно обновление. */

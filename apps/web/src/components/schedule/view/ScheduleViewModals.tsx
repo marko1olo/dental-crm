@@ -64,6 +64,7 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
 
   // Surface coordination: mutual exclusion between drawers and modals
   useScheduleSurfaceCoordination(props);
+  const isWaitlistDrawerActive = useUiSurfaceStore((s) => s.activeDrawer === "waitlist");
 
   return (
     <>
@@ -140,7 +141,7 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
       />
 
       <WaitlistDrawer
-        isOpen={waitlistOpen || waitlistQuickFillSlot !== null}
+        isOpen={waitlistOpen || waitlistQuickFillSlot !== null || isWaitlistDrawerActive}
         onClose={() => {
           setWaitlistOpen(false);
           setWaitlistQuickFillSlot(null);
