@@ -118,7 +118,7 @@ export const PatientInsuranceSection: React.FC<PatientInsuranceSectionProps> = R
 								placeholder="Только при наличии (необязательно)"
 								disabled={disabled}
 								data-testid="input-inn"
-								title="Для пациентов-физлиц ИНН не требуется (Мандат 8e). Заполняется добровольно или для юрлиц/ИП"
+								title="Для пациентов-физлиц ИНН не требуется. Заполняется добровольно или для организаций и ИП"
 							/>
 						</div>
 

@@ -609,30 +609,68 @@ export const PatientSentimentBadge: React.FC<PatientSentimentBadgeProps> = ({
 								</button>
 							</div>
 
-							{/* Metric Stats Grid */}
-							<div className="grid grid-cols-2 gap-2">
-								<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line-subtle,rgba(255,255,255,0.05))]">
-									<div className="text-xs font-semibold text-[var(--muted,var(--ink-muted))] uppercase flex items-center gap-1">
-										<TrendingUp size={13} className="text-emerald-500" />
-										<span>LTV Клиники</span>
-									</div>
-									<div className="text-sm font-black font-mono mt-0.5 text-[var(--ink)]">
-										{formattedLtv}
-									</div>
-								</div>
+							{/* Metric Stats Grid (4 factual clinical metrics) */}
+							{(() => {
+								const balanceRub =
+									typeof patient?.patientBalanceRub === "number"
+										? patient.patientBalanceRub
+										: typeof patient?.balanceRub === "number"
+											? patient.balanceRub
+											: 0;
 
-								<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line-subtle,rgba(255,255,255,0.05))]">
-									<div className="text-xs font-semibold text-[var(--muted,var(--ink-muted))] uppercase flex items-center gap-1">
-										<CheckCircle2 size={13} className={info.type === "strict_ids_required" ? "text-rose-500" : "text-cyan-500"} />
-										<span>Соматический статус</span>
+								const noShows =
+									typeof patient?.recentNoShowsCount === "number"
+										? patient.recentNoShowsCount
+										: typeof patient?.noShowsCount === "number"
+											? patient.noShowsCount
+											: 0;
+
+								return (
+									<div className="grid grid-cols-2 gap-2">
+										<div className="p-2 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line-subtle,rgba(255,255,255,0.05))]">
+											<div className="text-[10px] font-semibold text-[var(--muted,var(--ink-muted))] uppercase flex items-center gap-1">
+												<TrendingUp size={12} className="text-emerald-500" />
+												<span>LTV / Оплаты</span>
+											</div>
+											<div className="text-xs font-black font-mono mt-0.5 text-[var(--ink)]">
+												{formattedLtv}
+											</div>
+										</div>
+
+										<div className="p-2 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line-subtle,rgba(255,255,255,0.05))]">
+											<div className="text-[10px] font-semibold text-[var(--muted,var(--ink-muted))] uppercase flex items-center gap-1">
+												<CheckCircle2 size={12} className={info.type === "strict_ids_required" ? "text-rose-500" : "text-cyan-500"} />
+												<span>Соматика / ИДС</span>
+											</div>
+											<div className="text-xs font-black mt-0.5 text-[var(--ink)] truncate">
+												{info.type === "strict_ids_required"
+													? `Стоп: ${info.riskFactors.length}`
+													: "Норма"}
+											</div>
+										</div>
+
+										<div className="p-2 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line-subtle,rgba(255,255,255,0.05))]">
+											<div className="text-[10px] font-semibold text-[var(--muted,var(--ink-muted))] uppercase flex items-center gap-1">
+												<Clock size={12} className={noShows > 0 ? "text-rose-500" : "text-emerald-500"} />
+												<span>Неявки без звонка</span>
+											</div>
+											<div className={`text-xs font-black font-mono mt-0.5 ${noShows > 0 ? "text-rose-600 dark:text-rose-400" : "text-[var(--ink)]"}`}>
+												{noShows > 0 ? `${noShows} пропуск(а)` : "0 неявок"}
+											</div>
+										</div>
+
+										<div className="p-2 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line-subtle,rgba(255,255,255,0.05))]">
+											<div className="text-[10px] font-semibold text-[var(--muted,var(--ink-muted))] uppercase flex items-center gap-1">
+												<Info size={12} className="text-[var(--teal)]" />
+												<span>Баланс / Аванс</span>
+											</div>
+											<div className={`text-xs font-black font-mono mt-0.5 ${balanceRub < 0 ? "text-rose-600" : balanceRub > 0 ? "text-emerald-600" : "text-[var(--ink)]"}`}>
+												{balanceRub.toLocaleString("ru-RU")} ₽
+											</div>
+										</div>
 									</div>
-									<div className="text-xs font-black mt-0.5 text-[var(--ink)] truncate">
-										{info.type === "strict_ids_required"
-											? `Стоп-факторы: ${info.riskFactors.length}`
-											: "Соматически здоров"}
-									</div>
-								</div>
-							</div>
+								);
+							})()}
 
 							{/* Clinical Directive */}
 							<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line-subtle,rgba(255,255,255,0.05))] space-y-1 text-xs">

@@ -21,7 +21,7 @@ import {
 	calculatePatientMrd,
 	resolveAutopilotAnesthesia,
 } from "../visit/anesthesiaCalculatorEngine";
-import { isNegativeAllergyStatement } from "../../utils/somaticNorm";
+import { CANONICAL_SOMATIC_HEALTHY_NORM_WITH_INFECTIONS_TEXT, isNegativeAllergyStatement } from "../../utils/somaticNorm";
 export { isNegativeAllergyStatement };
 
 export type ClinicalSafetySeverity = "critical" | "high" | "moderate" | "info" | "none";
@@ -144,7 +144,7 @@ export const DEFAULT_SOMATIC_HEALTHY_NORM: PatientClinicalSafetyProfile = {
 	hasLatexAllergy: false,
 	hasNsaidAllergy: false,
 	customAllergyNotes: "",
-	customChronicNotes: "Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает. Физиологическая норма.",
+	customChronicNotes: CANONICAL_SOMATIC_HEALTHY_NORM_WITH_INFECTIONS_TEXT,
 	currentMedicationsList: "",
 };
 

@@ -15,48 +15,19 @@ import type {
 	TransferValidationResult,
 } from "./types.js";
 
+import {
+	formatCurrencyRu,
+	formatDateRu as formatDateRuShared,
+	formatDateTimeRu as formatDateTimeRuShared,
+} from "@dental/shared";
+
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. Formatting & Helpers
+// 1. Formatting & Helpers (SSOT via @dental/shared)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function formatRubCurrency(rub: number): string {
-	return new Intl.NumberFormat("ru-RU", {
-		style: "currency",
-		currency: "RUB",
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
-	}).format(rub);
-}
-
-export function formatDateRu(isoString?: string | null): string {
-	if (!isoString) return "—";
-	try {
-		const d = new Date(isoString);
-		return d.toLocaleDateString("ru-RU", {
-			day: "2-digit",
-			month: "2-digit",
-			year: "numeric",
-		});
-	} catch {
-		return isoString;
-	}
-}
-
-export function formatDateTimeRu(isoString?: string | null): string {
-	if (!isoString) return "—";
-	try {
-		const d = new Date(isoString);
-		return d.toLocaleString("ru-RU", {
-			day: "2-digit",
-			month: "2-digit",
-			year: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
-		});
-	} catch {
-		return isoString;
-	}
-}
+export const formatRubCurrency = formatCurrencyRu;
+export const formatDateRu = formatDateRuShared;
+export const formatDateTimeRu = formatDateTimeRuShared;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. Consent, Snapshot & Draft Validation Rules

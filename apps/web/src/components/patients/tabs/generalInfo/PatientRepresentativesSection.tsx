@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { AlertTriangle, ShieldCheck, Users } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, CheckCircle2, ShieldAlert, ShieldCheck, Users } from "lucide-react";
 import { STOMX_REPRESENTATIVE_CATALOG } from "./constants";
 import { formatPhoneNumber } from "../../../../utils/inputSanitation";
 import type { PatientRepresentativesSectionProps } from "./types";
@@ -11,6 +11,42 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 		disabled = false,
 		mode = "compact",
 	}) {
+		const [familyRelationships, setFamilyRelationships] = useState<any[]>([]);
+
+		useEffect(() => {
+			if (!patient?.id) {
+				setFamilyRelationships([]);
+				return;
+			}
+			let cancelled = false;
+			fetch(`/api/patients/${patient.id}/relationships`)
+				.then((res) => (res.ok ? res.json() : null))
+				.then((data) => {
+					if (!cancelled && Array.isArray(data?.relationships)) {
+						setFamilyRelationships(data.relationships);
+					}
+				})
+				.catch(() => {
+					// silent fallback
+				});
+			return () => {
+				cancelled = true;
+			};
+		}, [patient?.id]);
+
+		const isMinorChild = useMemo(() => {
+			if (!patient?.birthDate) return false;
+			const birth = new Date(patient.birthDate);
+			if (Number.isNaN(birth.getTime())) return false;
+			const today = new Date();
+			let age = today.getFullYear() - birth.getFullYear();
+			const m = today.getMonth() - birth.getMonth();
+			if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+				age--;
+			}
+			return age < 15;
+		}, [patient?.birthDate]);
+
 		const selectedRep = useMemo(() => {
 			if (!patient?.representativeType) return null;
 			return (
@@ -41,6 +77,58 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 							Юридический статус
 						</span>
 					</div>
+
+					{/* 323-ФЗ Предупреждение для несовершеннолетних (<15 лет) */}
+					{isMinorChild && (
+						<div
+							className="p-3 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-950 dark:text-amber-200 text-xs font-semibold flex items-center justify-between gap-3 shadow-2xs"
+							data-testid="minor-323fz-alert"
+						>
+							<div className="flex items-center gap-2">
+								<ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+								<span>
+									<strong>Законный представитель (ст. 20 и 54 323-ФЗ):</strong> Пациент младше 15 лет. Информированное добровольное согласие (ИДС) подписывает законный представитель (родитель / опекун).
+								</span>
+							</div>
+							<span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-600 text-white shrink-0">
+								Обязательно 323-ФЗ
+							</span>
+						</div>
+					)}
+
+					{/* Быстрая привязка из семьи при наличии связей */}
+					{familyRelationships.length > 0 && (
+						<div className="flex flex-col gap-1.5 p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--glass-border)]">
+							<span className="text-[11px] font-bold text-[var(--muted)]">
+								Быстрая привязка из зарегистрированных членов семьи:
+							</span>
+							<div className="flex items-center gap-1.5 flex-wrap">
+								{familyRelationships.map((rel) => (
+									<button
+										key={rel.id}
+										type="button"
+										disabled={disabled}
+										onClick={() => {
+											onUpdatePatient?.("representativeType", rel.relationshipLabelRu || "Законный представитель");
+											onUpdatePatient?.("representativeFullName", rel.relatedPatientName);
+											if (rel.relatedPatientPhone) {
+												onUpdatePatient?.("representativePhone", rel.relatedPatientPhone);
+											}
+											if (rel.documentProofNumber) {
+												onUpdatePatient?.("representativeDoc", rel.documentProofNumber);
+											}
+										}}
+										className="min-h-[44px] sm:min-h-[28px] h-7 px-2.5 text-xs rounded-lg font-semibold border border-[var(--teal)]/40 bg-[var(--teal)]/10 text-[var(--teal)] hover:bg-[var(--teal)] hover:text-white transition-colors cursor-pointer inline-flex items-center gap-1 shrink-0"
+										title={`Привязать: ${rel.relatedPatientName} (${rel.relationshipLabelRu})`}
+										data-testid={`bind-family-rep-${rel.id}`}
+									>
+										<CheckCircle2 size={13} className="shrink-0" />
+										<span>{rel.relatedPatientName} ({rel.relationshipLabelRu})</span>
+									</button>
+								))}
+							</div>
+						</div>
+					)}
 
 					{/* Каталог представителей */}
 					<div className="p-3.5 bg-[var(--paper-soft)] rounded-xl border border-[var(--glass-border)] flex flex-col gap-2.5">
@@ -151,7 +239,7 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 							</div>
 						)}
 
-						{patient?.representativeType && (
+						{(patient?.representativeType || isMinorChild) && (
 							<div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-[var(--glass-border)]">
 								<div className="flex flex-col gap-1">
 									<label className="text-[11px] font-bold text-[var(--muted)]">
@@ -257,6 +345,58 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 					)}
 				</div>
 
+				{/* 323-ФЗ Предупреждение для несовершеннолетних (<15 лет) */}
+				{isMinorChild && (
+					<div
+						className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-950 dark:text-amber-200 text-xs font-semibold flex items-center justify-between gap-2 shadow-2xs"
+						data-testid="minor-323fz-alert"
+					>
+						<div className="flex items-center gap-2">
+							<ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+							<span>
+								<strong>Законный представитель (ст. 20 и 54 323-ФЗ):</strong> Пациент младше 15 лет — обязательно указание законного представителя (родитель/опекун).
+							</span>
+						</div>
+						<span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-600 text-white shrink-0">
+							323-ФЗ
+						</span>
+					</div>
+				)}
+
+				{/* Быстрая привязка из семьи при наличии связей */}
+				{familyRelationships.length > 0 && (
+					<div className="flex flex-col gap-1.5 p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--glass-border)]">
+						<span className="text-[11px] font-bold text-[var(--muted)]">
+							Быстрая привязка из членов семьи:
+						</span>
+						<div className="flex items-center gap-1.5 flex-wrap">
+							{familyRelationships.map((rel) => (
+								<button
+									key={rel.id}
+									type="button"
+									disabled={disabled}
+									onClick={() => {
+										onUpdatePatient?.("representativeType", rel.relationshipLabelRu || "Законный представитель");
+										onUpdatePatient?.("representativeFullName", rel.relatedPatientName);
+										if (rel.relatedPatientPhone) {
+											onUpdatePatient?.("representativePhone", rel.relatedPatientPhone);
+										}
+										if (rel.documentProofNumber) {
+											onUpdatePatient?.("representativeDoc", rel.documentProofNumber);
+										}
+									}}
+									className="min-h-[44px] sm:min-h-[28px] h-7 px-2 text-xs rounded-lg font-semibold border border-[var(--teal)]/40 bg-[var(--teal)]/10 text-[var(--teal)] hover:bg-[var(--teal)] hover:text-white transition-colors cursor-pointer inline-flex items-center gap-1 shrink-0"
+									title={`Привязать: ${rel.relatedPatientName} (${rel.relationshipLabelRu})`}
+									data-testid={`bind-family-rep-${rel.id}`}
+								>
+									<CheckCircle2 size={13} className="shrink-0" />
+									<span>{rel.relatedPatientName} ({rel.relationshipLabelRu})</span>
+								</button>
+							))}
+						</div>
+					</div>
+				)}
+
 				{/* Чипы представителей */}
 				<div className="flex items-center gap-1.5 flex-wrap py-0.5 min-w-0">
 					{STOMX_REPRESENTATIVE_CATALOG.map((rep) => {
@@ -351,7 +491,7 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 					</div>
 				)}
 
-				{patient?.representativeType && (
+				{(patient?.representativeType || isMinorChild) && (
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-2 border-t border-[var(--glass-border)]">
 						<div className="flex flex-col gap-1">
 							<label className="text-[11px] font-bold text-[var(--muted)]">

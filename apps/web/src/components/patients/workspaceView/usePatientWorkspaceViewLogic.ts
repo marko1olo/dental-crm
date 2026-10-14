@@ -219,6 +219,8 @@ export function usePatientWorkspaceViewLogic(props: PatientWorkspaceViewProps) {
 	const [isCbctModalOpen, setIsCbctModalOpen] = useState(false);
 	const [isPhotoProtocolOpen, setIsPhotoProtocolOpen] = useState(false);
 	const [isOrthoPhotoModalOpen, setIsOrthoPhotoModalOpen] = useState(false);
+	const [isDirectRvgOpen, setIsDirectRvgOpen] = useState(false);
+	const [isConsultationSplitOpen, setIsConsultationSplitOpen] = useState(false);
 
 	useEffect(() => {
 		const handleOpenDms = () => setIsDmsLetterOpen(true);
@@ -328,6 +330,10 @@ export function usePatientWorkspaceViewLogic(props: PatientWorkspaceViewProps) {
 		setIsPhotoProtocolOpen,
 		isOrthoPhotoModalOpen,
 		setIsOrthoPhotoModalOpen,
+		isDirectRvgOpen,
+		setIsDirectRvgOpen,
+		isConsultationSplitOpen,
+		setIsConsultationSplitOpen,
 		isLoyaltyModalOpen,
 		setIsLoyaltyModalOpen,
 		isDmsLetterOpen,

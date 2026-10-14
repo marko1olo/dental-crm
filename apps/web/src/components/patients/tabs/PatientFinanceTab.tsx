@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { showToast } from "../../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { VirtualizedTimeline } from "../../common/VirtualizedTimeline";
 import type { PatientGeneralInfo } from "./PatientGeneralInfoTab";
 
 export interface DepositOperationRecord {
@@ -649,12 +650,17 @@ export const PatientFinanceTab: React.FC<PatientFinanceTabProps> = React.memo(
 						</div>
 					</div>
 
-					{/* Список операций */}
-					<div className="flex flex-col gap-2">
-						{operationsLog.map((op) => (
+					{/* Список операций с виртуализацией для слабых ПК */}
+					<VirtualizedTimeline<DepositOperationRecord>
+						items={operationsLog}
+						estimateHeight={64}
+						overscan={2}
+						threshold={8}
+						getItemKey={(op) => op.id}
+						dataTestId="deposit-records-virtualized-scroller"
+						renderItem={(op) => (
 							<div
-								key={op.id}
-								className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--glass-border)] flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap text-xs transition-colors"
+								className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--glass-border)] flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap text-xs transition-colors mb-2"
 								data-testid={`deposit-record-${op.id}`}
 							>
 								<div className="flex items-center gap-3 min-w-0">
@@ -709,8 +715,8 @@ export const PatientFinanceTab: React.FC<PatientFinanceTabProps> = React.memo(
 									</span>
 								</div>
 							</div>
-						))}
-					</div>
+						)}
+					/>
 				</div>
 			</div>
 		);

@@ -12,3 +12,4 @@ export * from "./PatientDetailsModal";
 export * from "./PatientCard";
 export * from "./PatientHistoryTab";
 export * from "./TreatmentPlansList";
+export * from "./PatientWorkspace";

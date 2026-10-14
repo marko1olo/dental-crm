@@ -1,10 +1,23 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { PatientWorkspaceModals } from "../PatientWorkspaceModals";
 import { PatientTreatmentPlanDrawerModal } from "../workspace/PatientTreatmentPlanDrawerModal";
 
 const DicomViewerModal = React.lazy(() =>
 	import("../../imaging/DicomViewerModal").then((m) => ({
 		default: m.DicomViewerModal,
+	})),
+);
+
+const DirectRvgCaptureModal = React.lazy(() =>
+	import("../../radiology/DirectRvgCaptureModal").then((m) => ({
+		default: m.DirectRvgCaptureModal,
+	})),
+);
+
+const RadiologyConsultationSplit = React.lazy(() =>
+	import("../../radiology/RadiologyConsultationSplit").then((m) => ({
+		default: m.RadiologyConsultationSplit,
 	})),
 );
 
@@ -65,6 +78,40 @@ export const PatientWorkspaceModalsWrapper: React.FC<PatientWorkspaceModalsWrapp
 						organizationId={(logic.dashboard as any)?.organizationId}
 						initialPlanId={logic.selectedPlanIdForModal}
 					/>
+				)}
+
+				{logic.isDirectRvgOpen && (
+					<React.Suspense fallback={null}>
+						<DirectRvgCaptureModal
+							isOpen={logic.isDirectRvgOpen}
+							onClose={() => logic.setIsDirectRvgOpen(false)}
+							patientName={patientName || undefined}
+							patientCardNumber={logic.patientCardNumber || undefined}
+							doctorName={logic.dashboard?.activeDoctor?.fullName || undefined}
+							onCaptureComplete={() => {
+								logic.setIsDirectRvgOpen(false);
+							}}
+						/>
+					</React.Suspense>
+				)}
+
+				{logic.isConsultationSplitOpen && (
+					<React.Suspense fallback={null}>
+						{typeof document !== "undefined" &&
+							createPortal(
+								<div className="fixed inset-0 z-50 bg-[#020617] flex flex-col" data-testid="patient-consultation-modal-portal">
+									<RadiologyConsultationSplit
+										patientName={patientName || undefined}
+										patientCardNumber={logic.patientCardNumber || undefined}
+										activeToothFdi={logic.activeToothFdi || logic.selectedTooth || undefined}
+										initialLeftStudy={logic.patientStudies?.[0] || undefined}
+										patientStudiesHistory={logic.patientStudies || []}
+										onClose={() => logic.setIsConsultationSplitOpen(false)}
+									/>
+								</div>,
+								document.body,
+							)}
+					</React.Suspense>
 				)}
 			</>
 		);

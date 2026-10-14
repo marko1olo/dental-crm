@@ -332,7 +332,7 @@ export async function persistPatientCardModalToApi(
 				fullName: patientData.fullName?.trim() || undefined,
 				phone: patientData.phone?.trim() || null,
 				birthDate: patientData.birthDate?.trim() || null,
-				email: patientData.email?.trim() || null,
+				email: ((patientData as any)?.email as string | undefined)?.trim() || null,
 				notes: diaryNotes || null,
 			}),
 		});
@@ -429,7 +429,10 @@ export async function executePatientCardModalSaveAutonomy({
 					fullName: updatedGeneral.fullName?.trim() || selectedPatient.fullName,
 					phone: updatedGeneral.phone?.trim() || null,
 					birthDate: updatedGeneral.birthDate?.trim() || null,
-					email: updatedGeneral.email?.trim() || selectedPatient.email || null,
+					email:
+						((updatedGeneral as any)?.email as string | undefined)?.trim() ||
+						selectedPatient.email ||
+						null,
 					notes:
 						updatedGeneral.doctorClinicalNotes?.trim() ||
 						selectedPatient.notes ||

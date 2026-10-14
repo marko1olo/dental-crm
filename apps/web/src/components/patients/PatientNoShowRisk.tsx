@@ -1,6 +1,7 @@
 import {
 	AlertTriangle,
-	BrainCircuit,
+	CalendarCheck,
+	CalendarClock,
 	CheckCircle,
 	ShieldAlert,
 } from "lucide-react";
@@ -153,16 +154,9 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 			case "low":
 				return <CheckCircle size={16} className="text-emerald-500" />;
 			default:
-				return <BrainCircuit size={16} className="text-slate-400" />;
+				return <CalendarClock size={16} className="text-slate-400" />;
 		}
 	};
-
-	/*
-	 * Здесь лежала своя формула денег: `n.toLocaleString("ru-RU") + " ₽"`. Она
-	 * ничего не форматировала в этом файле — ни одного вызова — и при этом теряла
-	 * копейки и расходилась с общей money() из AppHelpers. Второй владелец
-	 * денежного формата, ждущий первого использования, удалён.
-	 */
 
 	return (
 		<div
@@ -171,28 +165,22 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 		>
 			<h3
 				className="panel-heading compact-heading flex items-center gap-2 mb-4 pb-2 border-b border-[var(--line)]"
-				title="Машинный расчет риска отмены записи пациента"
+				title="Дисциплина визитов и статистика неявок пациента"
 			>
-				<BrainCircuit
+				<CalendarClock
 					size={18}
 					className="text-emerald-600 dark:text-emerald-400"
 				/>
-				{/* БЫЛО: «AI-Прогноз неявки на приём». Латиница в заголовке того,
-				    что читает администратор у стойки. */}
 				<span className="text-sm font-semibold">
-					Придёт ли пациент на приём
+					Дисциплина посещений и статистика неявок
 				</span>
 			</h3>
 
 			{loading ? (
 				<div className="text-xs text-[var(--muted)] py-3">
-					Считаем по истории пациента…
+					Анализируем журнал посещений пациента…
 				</div>
 			) : failure ? (
-				/*
-					Отказ расчёта ВМЕСТО приглашения посчитать: иначе кнопка выглядит
-					неработающей, а экран не сообщает, что расчёт не выполнен.
-				*/
 				<PanelLoadFailure
 					subject={NO_SHOW_SUBJECT}
 					status={failure.status}
@@ -200,6 +188,38 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 				/>
 			) : riskData ? (
 				<div>
+					{/* Фактическая статистика посещений */}
+					{riskData?.history && (
+						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+							<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
+								<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Неявки</div>
+								<div className={`text-base font-black ${riskData.history.noShows > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+									{riskData.history.noShows}
+								</div>
+							</div>
+							<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
+								<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Отмены</div>
+								<div className="text-base font-black text-[var(--ink)]">
+									{riskData.history.cancellations}
+								</div>
+							</div>
+							<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
+								<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Приёмов состоялось</div>
+								<div className="text-base font-black text-emerald-600 dark:text-emerald-400">
+									{riskData.history.attended}
+								</div>
+							</div>
+							<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
+								<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Посещаемость</div>
+								<div className="text-base font-black text-[var(--teal,var(--brand-primary))]">
+									{riskData.history.consideredAppointments > 0
+										? `${Math.round((riskData.history.attended / riskData.history.consideredAppointments) * 100)}%`
+										: "100%"}
+								</div>
+							</div>
+						</div>
+					)}
+
 					<div className="flex justify-between items-center mb-3 p-3 rounded-lg border bg-[var(--paper-soft)] border-[var(--line)]">
 						<div className="flex items-center gap-2">
 							{getRiskIcon(riskData?.riskLevel ?? "")}
@@ -210,7 +230,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 							</span>
 						</div>
 						<div className="px-2 py-1 rounded text-xs font-bold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20">
-							Вероятность неявки:{" "}
+							Вероятность срыва записи:{" "}
 							{Math.round((riskData?.noShowProbability || 0) * 100)}%
 						</div>
 					</div>
@@ -218,7 +238,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 					{(riskData?.factors ?? []).length > 0 && (
 						<div className="mt-3">
 							<span className="text-xs font-bold text-[var(--ink)]">
-								Факторы риска:
+								Факторы надёжности расписания:
 							</span>
 							<ul className="mt-1 space-y-1 text-xs text-[var(--muted)] pl-4 list-disc">
 								{(riskData?.factors ?? []).map((factor: string) => (
@@ -230,7 +250,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 
 					{riskData?.recommendedAction && (
 						<div className="mt-3 p-2.5 rounded bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 text-xs text-emerald-800 dark:text-emerald-200">
-							<strong>Рекомендуемое действие:</strong>{" "}
+							<strong>Рекомендуемое действие администратора:</strong>{" "}
 							{riskData.recommendedAction}
 						</div>
 					)}
@@ -238,15 +258,15 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 			) : (
 				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 py-2">
 					<span className="text-xs text-[var(--muted)]">
-						Прогноз риска отмены на основе истории и поведения пациента
+						Статистика посещаемости и история неявок по журналу приёмов
 					</span>
 					<button
 						type="button"
 						onClick={() => setReloadToken((token) => token + 1)}
 						disabled={loading}
-						className="px-4 py-2 min-h-[44px] sm:min-h-[32px] text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center"
+						className="px-4 py-2 min-h-[44px] sm:min-h-[32px] text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center cursor-pointer"
 					>
-						{loading ? "Считаем…" : "Посчитать риск"}
+						{loading ? "Анализируем…" : "Проверить историю"}
 					</button>
 				</div>
 			)}

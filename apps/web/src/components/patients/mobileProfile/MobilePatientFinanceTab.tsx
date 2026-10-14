@@ -100,7 +100,7 @@ export const MobilePatientFinanceTab: React.FC<MobilePatientFinanceTabProps> = (
 								</div>
 							</div>
 							<div className="text-right">
-								<div className="font-mono font-bold text-[var(--ink)]">{money(inv.amount || 0)}</div>
+								<div className="font-mono font-bold text-[var(--ink)]">{money(Number(inv.totalAmountRub ?? inv.totalRub ?? inv.amount ?? 0))}</div>
 								<span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold">
 									Оплачен
 								</span>

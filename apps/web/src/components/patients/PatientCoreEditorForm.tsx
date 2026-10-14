@@ -135,7 +135,7 @@ export function PatientCoreEditorForm({
 				{/* 3 Semantic Categories of Quick Chips (Safety, Comfort, Finance & Service) */}
 				<div className="quick-chips-group">
 					<div className="quick-chips-group-title flex items-center gap-1.5 text-xs text-[var(--muted)] font-semibold">
-						<span className="w-1.5 h-1.5 rounded-full bg-rose-500/80 inline-block shrink-0" aria-hidden="true" />
+						<span className="w-1.5 h-1.5 rounded-full bg-[var(--teal,#0d9488)]/70 inline-block shrink-0" aria-hidden="true" />
 						<span>Аллергии и соматический статус:</span>
 					</div>
 					<div className="quick-chips-wrap flex flex-wrap gap-1.5 max-w-full">
@@ -171,7 +171,7 @@ export function PatientCoreEditorForm({
 
 				<div className="quick-chips-group">
 					<div className="quick-chips-group-title flex items-center gap-1.5 text-xs text-[var(--muted)] font-semibold">
-						<span className="w-1.5 h-1.5 rounded-full bg-teal-500/80 inline-block shrink-0" aria-hidden="true" />
+						<span className="w-1.5 h-1.5 rounded-full bg-[var(--teal,#0d9488)]/70 inline-block shrink-0" aria-hidden="true" />
 						<span>Особенности приёма и комфорт:</span>
 					</div>
 					<div className="quick-chips-wrap flex flex-wrap gap-1.5 max-w-full">
@@ -205,7 +205,7 @@ export function PatientCoreEditorForm({
 
 				<div className="quick-chips-group">
 					<div className="quick-chips-group-title flex items-center gap-1.5 text-xs text-[var(--muted)] font-semibold">
-						<span className="w-1.5 h-1.5 rounded-full bg-indigo-500/80 inline-block shrink-0" aria-hidden="true" />
+						<span className="w-1.5 h-1.5 rounded-full bg-[var(--teal,#0d9488)]/70 inline-block shrink-0" aria-hidden="true" />
 						<span>Сервис и финансовый статус:</span>
 					</div>
 					<div className="quick-chips-wrap flex flex-wrap gap-1.5 max-w-full">

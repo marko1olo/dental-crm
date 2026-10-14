@@ -54,13 +54,32 @@ import {
 type PatientAdministrativeProfileDraft = {
 	[K in Exclude<
 		keyof PatientAdministrativeProfile,
-		"preferredAppointmentWeekdays" | "isAnonymous" | "anonymousCode" | "decree659Compliance"
+		| "preferredAppointmentWeekdays"
+		| "isAnonymous"
+		| "anonymousCode"
+		| "decree659Compliance"
+		| "consentSignatures"
+		| "clinicalSafetyProfile"
+		| "utmSource"
+		| "utmMedium"
+		| "utmCampaign"
+		| "utmContent"
+		| "utmTerm"
+		| "leadSource"
 	>]: string;
 } & {
 	preferredAppointmentWeekdays: number[];
 	isAnonymous?: boolean | null;
 	anonymousCode?: string | null;
 	decree659Compliance?: Record<string, unknown> | null;
+	consentSignatures?: Record<string, unknown> | null;
+	clinicalSafetyProfile?: Record<string, unknown> | null;
+	utmSource?: string | null;
+	utmMedium?: string | null;
+	utmCampaign?: string | null;
+	utmContent?: string | null;
+	utmTerm?: string | null;
+	leadSource?: string | null;
 };
 
 type WeekdayOption = {

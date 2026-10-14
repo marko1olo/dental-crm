@@ -4,6 +4,7 @@
  * Мандат 8e: Doctor Autonomy (соматический статус "Здоров / норма" в 1 клик).
  */
 
+import { CANONICAL_SOMATIC_HEALTHY_NORM_WITH_INFECTIONS_TEXT } from "@dental/shared";
 import type { PatientClinicalSafetyProfile } from "./safetyMath";
 
 export const DEFAULT_ANAMNESIS_PROFILE: PatientClinicalSafetyProfile = {
@@ -73,8 +74,7 @@ export function applyAnamnesisPreset(
 			return {
 				updatedProfile: {
 					...DEFAULT_ANAMNESIS_PROFILE,
-					customChronicNotes:
-						"Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает. Физиологическая норма.",
+					customChronicNotes: CANONICAL_SOMATIC_HEALTHY_NORM_WITH_INFECTIONS_TEXT,
 				},
 				toastMessage: "Применен шаблон: Соматически здоров / норма (без особенностей)",
 				toastType: "info",

@@ -327,7 +327,7 @@ export function PatientSecondaryActionsMenu({
 									.getState()
 									.setSelectedPatientId(selectedPatient.id);
 							}
-							useAppStore.getState().setCurrentView("radiology");
+							useAppStore.getState().setCurrentView("imaging");
 							showToast(
 								`Рентген и КТ снимки: ${selectedPatient?.fullName || ""}`,
 								"info",

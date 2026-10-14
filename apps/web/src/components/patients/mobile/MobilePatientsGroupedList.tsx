@@ -4,6 +4,7 @@
  */
 import type { Dashboard, Patient } from "@dental/shared";
 import {
+	AlertTriangle,
 	ChevronRight,
 	Filter,
 	MessageCircle,
@@ -12,6 +13,7 @@ import {
 	Search,
 	Users,
 	X,
+	Zap,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { formatPhoneNumber } from "../../../utils/inputSanitation";
@@ -208,9 +210,11 @@ export function MobilePatientsGroupedList({
 						aria-selected={activeFilter === "allergy"}
 						data-testid="mobile-chip-allergy"
 					>
-						<span className="text-rose-500 font-bold" aria-hidden="true">
-							⚠
-						</span>
+						<AlertTriangle
+							size={13}
+							className="text-rose-500 shrink-0"
+							aria-hidden="true"
+						/>
 						<span>С аллергией</span>
 						{countAllergy > 0 && (
 							<span className="mobile-filter-chip-count">{countAllergy}</span>
@@ -228,9 +232,11 @@ export function MobilePatientsGroupedList({
 						aria-selected={activeFilter === "debt"}
 						data-testid="mobile-chip-debt"
 					>
-						<span className="text-amber-500 font-bold" aria-hidden="true">
-							⚡
-						</span>
+						<Zap
+							size={13}
+							className="text-amber-500 shrink-0"
+							aria-hidden="true"
+						/>
 						<span>С долгом</span>
 						{countDebt > 0 && (
 							<span className="mobile-filter-chip-count">{countDebt}</span>
@@ -248,7 +254,7 @@ export function MobilePatientsGroupedList({
 						aria-selected={showLostPatientsOnly}
 						data-testid="mobile-chip-lost"
 					>
-						<span aria-hidden="true">🔍</span>
+						<Search size={13} className="shrink-0" aria-hidden="true" />
 						<span>{isLoadingLost ? "Загрузка..." : "Потерянные"}</span>
 					</button>
 

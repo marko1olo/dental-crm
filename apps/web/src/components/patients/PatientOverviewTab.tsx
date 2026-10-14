@@ -27,7 +27,7 @@ export interface PatientOverviewTabProps {
 	readonly showHeaderCard?: boolean;
 }
 
-export function PatientOverviewTab({ showHeaderCard = false }: PatientOverviewTabProps = {}) {
+export function PatientOverviewTab({ showHeaderCard = true }: PatientOverviewTabProps = {}) {
 	const appLogic = useAppLogicContext();
 	const { selectedPatientId } = usePatientStore();
 	const workspaceFlags = useWorkspaceProfile();

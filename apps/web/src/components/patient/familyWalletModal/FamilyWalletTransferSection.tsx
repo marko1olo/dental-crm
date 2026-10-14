@@ -40,11 +40,11 @@ export const FamilyWalletTransferSection: React.FC<FamilyWalletTransferSectionPr
 	}) {
 		return (
 			<div className="flex flex-col gap-4">
-				{/* Инфо баннер о 0% комиссии */}
-				<div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-950 dark:text-emerald-200 flex items-start gap-2 shadow-2xs">
-					<ShieldCheck className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+				{/* Инфо баннер о едином депозите */}
+				<div className="p-3 rounded-lg bg-teal-500/10 border border-teal-500/20 text-xs text-teal-950 dark:text-teal-200 flex items-start gap-2 shadow-2xs">
+					<ShieldCheck className="w-4 h-4 shrink-0 text-teal-600 dark:text-teal-400 mt-0.5" />
 					<span>
-						<strong>0% комиссия клиники.</strong> Прямой перевод баланса между членами семьи разрешен ст. 64 СК РФ и ст. 20 323-ФЗ без ограничений.
+						<strong>Единый семейный депозит.</strong> Все средства семейного счёта находятся в общем котле семьи и напрямую доступны каждому члену семьи при оплате лечения у кресла (ст. 64 СК РФ).
 					</span>
 				</div>
 

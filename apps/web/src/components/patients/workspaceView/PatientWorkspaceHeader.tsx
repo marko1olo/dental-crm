@@ -1,6 +1,11 @@
 import React from "react";
 import { PatientAllergySafetyBanner } from "../PatientAllergySafetyBanner";
 import { PatientDuplicateAlert } from "../PatientDuplicateAlert";
+import {
+	type PatientClinicalSafetyProfile,
+	formatSafetyProfileToDiaryText,
+} from "../safetyMath";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 
 // Root container anchor: data-testid="patient-workspace-view"
 export interface PatientWorkspaceHeaderProps {
@@ -9,6 +14,7 @@ export interface PatientWorkspaceHeaderProps {
 	currentPatient?: any;
 	patientCardNumber?: string | null | undefined;
 	patientBalanceRub?: number | null | undefined;
+	onUpdateProfile?: ((profile: PatientClinicalSafetyProfile) => void) | undefined;
 }
 
 export const PatientWorkspaceHeader: React.FC<PatientWorkspaceHeaderProps> = React.memo(
@@ -18,19 +24,58 @@ export const PatientWorkspaceHeader: React.FC<PatientWorkspaceHeaderProps> = Rea
 		currentPatient,
 		patientCardNumber,
 		patientBalanceRub,
+		onUpdateProfile,
 	}) => {
+		const handleUpdateProfile = React.useCallback(
+			async (savedProfile: PatientClinicalSafetyProfile) => {
+				if (onUpdateProfile) {
+					onUpdateProfile(savedProfile);
+				}
+				if (patientId) {
+					try {
+						const diaryText = formatSafetyProfileToDiaryText(savedProfile);
+						await fetch(`/api/patients/${encodeURIComponent(patientId)}`, {
+							method: "PUT",
+							headers: {
+								"Content-Type": "application/json",
+								...denteAdminSecretRequestHeaders(),
+							},
+							body: JSON.stringify({
+								notes: diaryText,
+							}),
+						});
+						window.dispatchEvent(
+							new CustomEvent("dente-patient-workspace-refresh"),
+						);
+					} catch (err) {
+						console.error(
+							"[PatientWorkspaceHeader] Failed to persist safety profile:",
+							err,
+						);
+					}
+				}
+			},
+			[onUpdateProfile, patientId],
+		);
+
 		return (
 			<>
 				{/* Clinical Safety & Allergy Red-Flag Emergency Banner (Zero Noise when clean, Mandates 8d, 8p) */}
 				<PatientAllergySafetyBanner
 					patientId={patientId}
 					patientName={patientName}
-					profile={currentPatient?.anamnesis || currentPatient?.notes}
+					profile={
+						currentPatient?.clinicalSafetyProfile ||
+						currentPatient?.administrativeProfile?.clinicalSafetyProfile ||
+						currentPatient?.anamnesis ||
+						currentPatient?.notes
+					}
 					notes={
 						typeof currentPatient?.anamnesis === "string"
 							? currentPatient.anamnesis
 							: currentPatient?.notes
 					}
+					onUpdateProfile={handleUpdateProfile}
 					showModalButton={true}
 					hideWhenClean={true}
 				/>

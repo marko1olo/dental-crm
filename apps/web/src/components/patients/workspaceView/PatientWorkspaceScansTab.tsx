@@ -1,4 +1,4 @@
-import { Activity, Camera, Eye, Scan } from "lucide-react";
+import { Activity, Camera, Eye, Radio, Scan, SplitSquareHorizontal } from "lucide-react";
 import React from "react";
 import { usePatientStore } from "../../../store/patientStore";
 import type { ImagingStudyItem } from "./types";
@@ -15,6 +15,8 @@ export interface PatientWorkspaceScansTabProps {
 		title?: string | null;
 	} | null) => void;
 	setIsDicomModalOpen: (v: boolean) => void;
+	onOpenDirectRvg?: () => void;
+	onOpenConsultationSplit?: () => void;
 }
 
 export const PatientWorkspaceScansTab: React.FC<PatientWorkspaceScansTabProps> = React.memo(
@@ -26,6 +28,8 @@ export const PatientWorkspaceScansTab: React.FC<PatientWorkspaceScansTabProps> =
 		setIsPhotoProtocolOpen,
 		setSelectedScanForDicom,
 		setIsDicomModalOpen,
+		onOpenDirectRvg,
+		onOpenConsultationSplit,
 	}) => {
 		return (
 			<div className="flex flex-col gap-3" data-testid="patient-scans-gallery">
@@ -64,6 +68,26 @@ export const PatientWorkspaceScansTab: React.FC<PatientWorkspaceScansTabProps> =
 						>
 							<Activity size={14} className="text-cyan-500" />
 							<span>3D КЛКТ Студия</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => (onOpenDirectRvg ? onOpenDirectRvg() : setIsDicomModalOpen(true))}
+							className="secondary-button min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+							title="Прямой захват снимка с визиографа (RVG / СЕНСОР)"
+							data-testid="btn-patient-direct-rvg-capture"
+						>
+							<Radio size={14} className="text-emerald-500" />
+							<span>Снимок с датчика (RVG)</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => (onOpenConsultationSplit ? onOpenConsultationSplit() : setIsDicomModalOpen(true))}
+							className="secondary-button min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
+							title="Консультация сплит «До / После»"
+							data-testid="btn-patient-consultation-split"
+						>
+							<SplitSquareHorizontal size={14} className="text-violet-500" />
+							<span>Сплит «До / После»</span>
 						</button>
 						<button
 							type="button"

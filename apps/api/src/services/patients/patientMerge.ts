@@ -714,7 +714,7 @@ export function formatMergeSummary(result: {
 		0,
 	);
 	return (
-		`Карточки пациентов успешно объединены. Перенесено связанных записей: ${movedTotal}` +
+		`Карточки пациентов успешно объединены. Перенесено записей: ${movedTotal}` +
 		(result.filledFields.length > 0
 			? `. Дозаполнено в основной карточке: ${result.filledFields.join(", ")}`
 			: "") +

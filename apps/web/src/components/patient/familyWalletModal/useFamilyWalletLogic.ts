@@ -75,6 +75,9 @@ export function useFamilyWalletLogic(props: FamilyWalletModalProps) {
 			if (res.ok) {
 				const data: FamilyGroupDetails = await res.json();
 				setFamilyData(data);
+				if (data.id) {
+					loadFamilyHistory(data.id);
+				}
 				if (data.members && data.members.length > 0) {
 					const otherMember = data.members.find(
 						(m: FamilyMemberItem) => m.id !== patientId,
@@ -232,6 +235,10 @@ export function useFamilyWalletLogic(props: FamilyWalletModalProps) {
 			setTopupComment("");
 			await loadFamilyDetails();
 			onFamilyDataChanged?.();
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente-family-data-changed"));
+				window.dispatchEvent(new CustomEvent("dente-patient-balance-changed"));
+			}
 			setActiveTab("overview");
 		} catch (err: unknown) {
 			const message =
@@ -314,6 +321,10 @@ export function useFamilyWalletLogic(props: FamilyWalletModalProps) {
 			setSpendNote("");
 			await loadFamilyDetails();
 			onFamilyDataChanged?.();
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente-family-data-changed"));
+				window.dispatchEvent(new CustomEvent("dente-patient-balance-changed"));
+			}
 			setActiveTab("overview");
 		} catch (err: unknown) {
 			const message =
@@ -359,13 +370,20 @@ export function useFamilyWalletLogic(props: FamilyWalletModalProps) {
 			const targetName = targetMember?.fullName || "члену семьи";
 
 			showToast(
-				`Успешный перевод ${money(numAmount)} для ${targetName} без комиссии`,
-				"success",
+				`Единый семейный депозит: средства общего баланса доступны для ${targetName} напрямую при оплате приёма`,
+				"info",
 			);
 			setTransferAmount("");
 			setTransferComment("");
 			await loadFamilyDetails();
+			if (familyData?.id) {
+				loadFamilyHistory(familyData.id);
+			}
 			onFamilyDataChanged?.();
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente-family-data-changed"));
+				window.dispatchEvent(new CustomEvent("dente-patient-balance-changed"));
+			}
 			setActiveTab("overview");
 		} catch (err: unknown) {
 			const message =
