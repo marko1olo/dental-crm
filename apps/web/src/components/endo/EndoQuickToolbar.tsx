@@ -243,16 +243,18 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 				<button
 					type="button"
 					data-testid="btn-endo-anatomical-autofill"
+					id="btn-endo-anatomical-norm"
 					onClick={handleApplyAnatomicalLengths}
-					className="h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-950 dark:text-indigo-200 border border-indigo-500/30 flex items-center gap-1 transition-all cursor-pointer shrink-0 active:scale-98"
-					title="Автозаполнение анатомической рабочей длины по стандарту FDI"
+					className="h-6 sm:h-7 px-2.5 rounded-lg text-xs font-bold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-950 dark:text-indigo-200 border border-indigo-500/30 flex items-center gap-1.5 transition-all cursor-pointer shrink-0 active:scale-98"
+					title="Автозаполнение: Анатомическая норма длины по стандарту FDI"
 				>
-					<ApexLocator
+					<Check
 						size={13}
-						className="text-indigo-600 dark:text-indigo-400 shrink-0"
+						className="text-indigo-600 dark:text-indigo-400 shrink-0 font-bold"
 					/>
-					<span className="hidden sm:inline">Авто-РД (FDI)</span>
-					<span className="sm:hidden">РД</span>
+					<span data-testid="btn-endo-anatomical-norm" className="hidden md:inline">Анатомическая норма длины</span>
+					<span className="hidden sm:inline md:hidden">Норма длины</span>
+					<span className="sm:hidden">Норма</span>
 				</button>
 
 				<button

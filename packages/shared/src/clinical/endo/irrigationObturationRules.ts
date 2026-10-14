@@ -493,6 +493,24 @@ export function generateEndoProtocol043(params: {
 		return `  • Канал ${c.canalName}${refStr}: WL = ${lengthStr} (апекслокатор), MAF = ${mafClean}/${taperClean}, обтурация: ${c.obturationTechnique}${sealerStr}${notesStr}`;
 	});
 
+	const canalNamesRu = canals.map((c) => c.canalName).join(", ");
+	const canalDetailsRu = canals
+		.map((c) => {
+			const lengthStr = c.workingLengthMm ? `${c.workingLengthMm} мм` : "—";
+			const mafMatch = String(c.masterApicalFile).match(/(?:ISO\s*\d+|#\d+|\d+)/i);
+			const mafClean = mafMatch ? mafMatch[0] : c.masterApicalFile;
+			const taperMatch = String(c.taper).match(/\.\d+/);
+			const taperClean = taperMatch ? taperMatch[0] : c.taper;
+			return `${c.canalName} (РД: ${lengthStr} по апекслокатору, MAF: ${mafClean}/${taperClean})`;
+		})
+		.join("; ");
+	const obtTechnique = canals[0]?.obturationTechnique || "латеральная компакция холодной гуттаперчи";
+	const sealerStr = canals[0]?.sealer ? ` с силером ${canals[0].sealer}` : "";
+	const diaryNarrative =
+		`Проведена инструментальная и медикаментозная обработка каналов ${canalNamesRu}: ${canalDetailsRu}. ` +
+		`Корневые каналы обтурированы до физиологического апекса (${obtTechnique}${sealerStr}). ` +
+		`Контрольная визиография: каналы обтурированы плотно и гомогенно до верхушки.`;
+
 	const table = generateEndoCanalsTable043(canals);
 	const irrigation =
 		params.irrigation ||
@@ -508,6 +526,8 @@ export function generateEndoProtocol043(params: {
 
 	return [
 		`ЭНДОДОНТИЧЕСКИЙ ПРОТОКОЛ (${toothDisplay}):`,
+		diaryNarrative,
+		"",
 		"Изоляция операционного поля: коффердам. Препарирование эндодонтического доступа, раскрытие устьев каналов.",
 		`Инструментальная обработка: ${rotary}.`,
 		"Параметры инструментальной и медикаментозной обработки каналов:",

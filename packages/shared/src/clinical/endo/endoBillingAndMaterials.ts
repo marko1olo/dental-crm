@@ -192,6 +192,19 @@ export function calculateEndoBillingAndMaterialsEstimate(
 			notes: `Трехмерная обтурация ${canalCount} ${getCanalPluralRu(canalCount)}`,
 		});
 
+		// Бумажные штифты/пины абсорбирующие для высушивания (4 шт на каждый канал)
+		const paperPointsQty = 4 * canalCount;
+		materials.push({
+			itemId: "mat-paper-points",
+			itemName: "Бумажные штифты/пины абсорбирующие (Paper Points)",
+			category: "paper_points",
+			unit: "шт",
+			quantity: paperPointsQty,
+			costPriceRub: 8 * paperPointsQty,
+			costPriceKopecks: 800 * paperPointsQty,
+			notes: `Высушивание ${canalCount} ${getCanalPluralRu(canalCount)} перед обтурацией`,
+		});
+
 		// Силер (AH Plus или BioRoot RCS)
 		const isBioceramic =
 			sealer.toLowerCase().includes("bioroot") ||

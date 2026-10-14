@@ -569,11 +569,11 @@ describe("EndoCanalLogModal — Mandate 8e Express Protocols & Zero-Friction Aut
 		assert.equal(getAnatomicalWorkingLength(34), 21.0);
 		assert.equal(getAnatomicalWorkingLength(45), 21.0);
 
-		// Верхние моляры (16): P = 22.0 мм, MB1/MB2/DB = 20.0 мм
+		// Верхние моляры (16): P = 22.0 мм, MB1 = 21.0 мм, MB2/DB = 20.0 мм
 		assert.equal(getAnatomicalWorkingLength(16, "P"), 22.0);
 		assert.equal(getAnatomicalWorkingLength(16, "Palatal"), 22.0);
 		assert.equal(getAnatomicalWorkingLength(16, "Нёбный"), 22.0);
-		assert.equal(getAnatomicalWorkingLength(16, "MB1"), 20.0);
+		assert.equal(getAnatomicalWorkingLength(16, "MB1"), 21.0);
 		assert.equal(getAnatomicalWorkingLength(16, "DB"), 20.0);
 
 		// Нижние моляры (46): D = 21.0 мм, MB/ML = 20.0 мм
@@ -622,7 +622,7 @@ describe("EndoCanalLogModal — Mandate 8e Express Protocols & Zero-Friction Aut
 		];
 
 		const autofilled = applyAnatomicalWorkingLengths(canals, 16);
-		assert.equal(autofilled[0]?.workingLengthMm, 20.0);
+		assert.equal(autofilled[0]?.workingLengthMm, 21.0);
 		assert.equal(autofilled[1]?.workingLengthMm, 22.0);
 	});
 
@@ -643,8 +643,8 @@ describe("EndoCanalLogModal — Mandate 8e Express Protocols & Zero-Friction Aut
 		assert.ok(result.canals.length >= 1);
 		const c = result.canals[0];
 		assert.ok(c);
-		// Автозаполняется анатомическая норма 20.0 мм вместо блокировки
-		assert.equal(c.workingLengthMm, 20.0);
+		// Автозаполняется анатомическая норма 21.0 мм вместо блокировки
+		assert.equal(c.workingLengthMm, 21.0);
 		assert.equal(c.masterApicalFile, "ISO 25 (#25 красный)");
 		assert.equal(c.taper, ".06 (Конусность 6%)");
 		assert.equal(c.sealer, "AH Plus");

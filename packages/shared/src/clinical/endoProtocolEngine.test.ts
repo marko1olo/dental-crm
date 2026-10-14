@@ -135,7 +135,7 @@ describe("endoProtocolEngine — Anatomical Canal & Working Length Rules", () =>
 			assert.equal(canals.length, 4);
 			assert.deepEqual(canals.map((c) => c.canalName), ["MB1", "MB2", "DB", "P"]);
 			assert.equal(getAnatomicalWorkingLength(tooth, "P"), 22.0);
-			assert.equal(getAnatomicalWorkingLength(tooth, "MB1"), 20.0);
+			assert.equal(getAnatomicalWorkingLength(tooth, "MB1"), 21.0);
 		}
 	});
 
@@ -171,7 +171,7 @@ describe("endoProtocolEngine — Anatomical Canal & Working Length Rules", () =>
 		const canals = getDefaultCanalsForTooth(16).map((c) => ({ ...c, workingLengthMm: 0 }));
 		const updated = applyAnatomicalWorkingLengths(canals, 16);
 		assert.equal(updated.find((c) => c.canalName === "P")?.workingLengthMm, 22.0);
-		assert.equal(updated.find((c) => c.canalName === "MB1")?.workingLengthMm, 20.0);
+		assert.equal(updated.find((c) => c.canalName === "MB1")?.workingLengthMm, 21.0);
 	});
 });
 

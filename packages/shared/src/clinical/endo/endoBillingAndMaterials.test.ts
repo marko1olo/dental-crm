@@ -42,6 +42,10 @@ describe("endoBillingAndMaterials — 804n Billing & Warehouse Materials SSOT", 
 		assert.ok(gutta);
 		assert.equal(gutta.quantity, 3); // 3 шт на 1 канал
 
+		const paper = result.materials.find((m) => m.itemId === "mat-paper-points");
+		assert.ok(paper);
+		assert.equal(paper.quantity, 4); // 4 шт на 1 канал
+
 		const sealer = result.materials.find((m) => m.itemId === "mat-endo-sealer-ahplus");
 		assert.ok(sealer);
 		assert.equal(sealer.quantity, 1);
@@ -75,6 +79,10 @@ describe("endoBillingAndMaterials — 804n Billing & Warehouse Materials SSOT", 
 		const gutta4 = res4.materials.find((m) => m.itemId === "mat-gutta-percha");
 		assert.ok(gutta4);
 		assert.equal(gutta4.quantity, 12); // 3 шт * 4 канала = 12 шт
+
+		const paper4 = res4.materials.find((m) => m.itemId === "mat-paper-points");
+		assert.ok(paper4);
+		assert.equal(paper4.quantity, 16); // 4 шт * 4 канала = 16 шт
 
 		const hypo4 = res4.materials.find((m) => m.itemId === "mat-hypochlorite-3");
 		assert.ok(hypo4);

@@ -182,6 +182,11 @@ export function registerSurfaceRoutes(app: FastifyInstance) {
 						),
 					);
 
+				const canalSummary = (parsed.data.canals || [])
+					.map((c) => `${c.canalName}: WL ${c.workingLengthMm || "—"} мм (${c.masterApicalFile || "MAF"}/${c.taper || ""}, ${c.obturationTechnique || "обтурация"})`)
+					.join("; ");
+				const endoReason = `Эндодонтия #${toothNumber} [${parsed.data.canals?.length || 0} к.]: ${canalSummary || "обработка каналов"}`;
+
 				await tx.insert(toothStateHistory).values({
 					organizationId,
 					patientId,
@@ -192,7 +197,7 @@ export function registerSurfaceRoutes(app: FastifyInstance) {
 					previousSurfaces: existing?.surfaces ?? null,
 					newSurfaces: targetSurfaces,
 					changedByUserId: actorUserId,
-					reason: "Эндодонтический протокол / обработка каналов",
+					reason: endoReason,
 					changedAt: now,
 				});
 

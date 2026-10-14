@@ -344,6 +344,16 @@ export const TAPER_OPTIONS = [
 /** Быстрые пресеты длин каналов для ввода в 1 клик */
 export const QUICK_LENGTH_PRESETS = [19, 20, 21, 21.5, 22, 22.5, 23, 24] as const;
 
+/** Клинические силеры для постоянной и временной обтурации каналов (Мандаты 8e, 8k) */
+export const ENDO_SEALER_OPTIONS = [
+	"AH Plus (Dentsply, эпоксидный)",
+	"BioRoot RCS (Septodont, биокерамика)",
+	"TotalFill BC Sealer (FKG, биокерамика)",
+	"Adseal (Meta Biomed, эпоксидный)",
+	"Sealapex (Kerr, полимерный)",
+	"Metapex / Calasept (Ca(OH)2 временный)",
+] as const;
+
 // ─── АНАТОМИЧЕСКАЯ РАБОЧАЯ ДЛИНА ПО FDI ──────────────────────────────────────
 
 /**
@@ -387,16 +397,39 @@ export function getAnatomicalWorkingLength(toothNumber: number, canalName?: stri
 		if (isUpper) {
 			if (
 				normCanal === "P" ||
+				normCanal === "Н" ||
 				normCanal.includes("PALAT") ||
 				normCanal.includes("НЕБ") ||
 				normCanal.includes("НЁБ")
 			) {
 				return 22.0;
 			}
+			if (
+				normCanal === "MB" ||
+				normCanal === "МВ" ||
+				normCanal === "MB1" ||
+				normCanal === "МВ1" ||
+				normCanal.includes("МЕДИАЛЬНО-ЩЕЧ")
+			) {
+				return 21.0;
+			}
+			if (normCanal === "MB2" || normCanal === "МВ2") {
+				return 20.0;
+			}
+			if (
+				normCanal === "DB" ||
+				normCanal === "ДБ" ||
+				normCanal.includes("ДИСТАЛЬНО-ЩЕЧ")
+			) {
+				return 20.0;
+			}
 			return 20.0;
 		}
-		if (normCanal === "D" || normCanal === "DL" || normCanal.includes("ДИСТ")) {
+		if (normCanal === "D" || normCanal === "DL" || normCanal === "Д" || normCanal.includes("ДИСТ")) {
 			return 21.0;
+		}
+		if (normCanal === "MB" || normCanal === "ML" || normCanal === "МВ" || normCanal === "МЯ") {
+			return 20.0;
 		}
 		return 20.0;
 	}
@@ -428,14 +461,14 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 	const isUpper = quadrant === 1 || quadrant === 2 || quadrant === 5 || quadrant === 6;
 	const isLower = quadrant === 3 || quadrant === 4 || quadrant === 7 || quadrant === 8;
 
-	// Верхние моляры (16-18, 26-28, 54-55, 64-65) -> MB1, MB2, DB, P
+	// Верхние моляры (16-18, 26-28, 54-55, 64-65) -> MB1 (21.0мм), MB2 (20.0мм), DB (20.0мм), P (22.0мм)
 	if (isUpper && (pos === 6 || pos === 7 || pos === 8 || (isPrimary && (pos === 4 || pos === 5)))) {
 		return [
 			{
 				id: `canal-${toothNumber}-mb1`,
 				canalName: "MB1",
 				referencePoint: "Щечный бугор (MB cusp)",
-				workingLengthMm: 21.5,
+				workingLengthMm: 21.0,
 				masterApicalFile: "ISO 25 (#25 красный)",
 				taper: ".06 (Конусность 6%)",
 				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
@@ -453,7 +486,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				id: `canal-${toothNumber}-db`,
 				canalName: "DB",
 				referencePoint: "Дистально-щечный бугор (DB cusp)",
-				workingLengthMm: 20.5,
+				workingLengthMm: 20.0,
 				masterApicalFile: "ISO 25 (#25 красный)",
 				taper: ".06 (Конусность 6%)",
 				obturationTechnique: "Гуттаперча + Силер (AH Plus)",

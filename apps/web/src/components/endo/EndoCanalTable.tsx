@@ -1,5 +1,5 @@
-import React from "react";
-import { Trash2 } from "lucide-react";
+import React, { useState } from "react";
+import { Check, ChevronDown, Trash2, X, Zap } from "lucide-react";
 import type { EndoCanalData } from "@dental/shared";
 import {
 	CANAL_NAME_OPTIONS,
@@ -9,6 +9,7 @@ import {
 	OBTURATION_TECHNIQUE_OPTIONS,
 	QUICK_LENGTH_PRESETS,
 	CURATED_ISO_MAF_OPTIONS,
+	ENDO_SEALER_OPTIONS,
 	type EndoStageStamp,
 } from "./endoCanalConstants";
 
@@ -39,6 +40,8 @@ export const EndoCanalTable: React.FC<EndoCanalTableProps> = ({
 	handleRemoveCanal,
 	renderIsoColorBadge,
 }) => {
+	const [activeCanalForSealer, setActiveCanalForSealer] = useState<EndoCanalData | null>(null);
+
 	return (
 		<>
 			{/* Datalist for fast canal name autocomplete */}
@@ -64,6 +67,7 @@ export const EndoCanalTable: React.FC<EndoCanalTableProps> = ({
 								<th className="py-2 px-3 truncate min-w-0">MAF (ISO 3630-1)</th>
 								<th className="py-2 px-3 truncate min-w-0">Конусность</th>
 								<th className="py-2 px-3 truncate min-w-0">Метод обтурации</th>
+								<th className="py-2 px-3 truncate min-w-0">Силер</th>
 								<th className="py-2 px-2 text-center w-10" />
 							</tr>
 						</thead>
@@ -281,6 +285,29 @@ export const EndoCanalTable: React.FC<EndoCanalTableProps> = ({
 										</select>
 									</td>
 
+									{/* Sealer */}
+									<td className="py-1.5 px-3">
+										<select
+											aria-label={`Силер для канала ${c.canalName}`}
+											value={
+												c.sealer ||
+												(stageStamp === "TEMP_CAOH2"
+													? "Metapex / Calasept (Ca(OH)2 временный)"
+													: "AH Plus (Dentsply, эпоксидный)")
+											}
+											onChange={(e) =>
+												handleCanalChange(c.id, "sealer", e.target.value)
+											}
+											className="w-full h-8 sm:h-8.5 px-2 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none truncate min-w-0"
+										>
+											{ENDO_SEALER_OPTIONS.map((opt) => (
+												<option key={opt} value={opt}>
+													{opt}
+												</option>
+											))}
+										</select>
+									</td>
+
 									{/* Remove Canal */}
 									<td className="py-1.5 px-2 text-center">
 										<button
@@ -354,6 +381,17 @@ export const EndoCanalTable: React.FC<EndoCanalTableProps> = ({
 							>
 								<Trash2 size={18} />
 							</button>
+						</div>
+
+						{/* Apex Locator Status Badge (Apple HIG Touch Ergonomics) */}
+						<div className="flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300/60 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 shadow-2xs">
+							<div className="flex items-center gap-1.5 text-xs font-bold">
+								<Zap size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+								<span>Апекслокатор: 0.0 (Apex)</span>
+							</div>
+							<span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-300">
+								{c.workingLengthMm ? `WL: ${c.workingLengthMm} мм` : "0.0 (Норма)"}
+							</span>
 						</div>
 
 						{/* Working Length Stepper (44px touch targets) */}
@@ -520,10 +558,101 @@ export const EndoCanalTable: React.FC<EndoCanalTableProps> = ({
 									</select>
 								</div>
 							</div>
+
+							{/* Sealer Selector via Native Bottom Sheet (Apple iOS HIG) */}
+							<div className="pt-0.5">
+								<label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+									Силер (обтурация):
+								</label>
+								<button
+									type="button"
+									aria-label={`Выбрать силер для ${c.canalName}`}
+									onClick={() => setActiveCanalForSealer(c)}
+									className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs font-semibold flex items-center justify-between transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/60 active:scale-98 cursor-pointer"
+								>
+									<span className="truncate pr-1 text-rose-600 dark:text-rose-400 font-bold">
+										{c.sealer || (stageStamp === "TEMP_CAOH2" ? "Metapex / Calasept" : "AH Plus (Dentsply)")}
+									</span>
+									<span className="text-[11px] font-bold text-slate-400 shrink-0 flex items-center gap-0.5">
+										Выбрать <ChevronDown size={12} />
+									</span>
+								</button>
+							</div>
 						</div>
 					</div>
 				))}
 			</div>
+
+			{/* Mobile Sealer Selection Bottom Sheet (Apple iOS HIG) */}
+			{activeCanalForSealer && (
+				<div
+					className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+					onClick={() => setActiveCanalForSealer(null)}
+				>
+					<div
+						className="bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-t-[24px] p-4 shadow-2xl max-h-[85vh] overflow-y-auto space-y-3 animate-in slide-in-from-bottom duration-250 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+						onClick={(e) => e.stopPropagation()}
+					>
+						<div className="w-10 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-2" />
+						<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
+							<div>
+								<h3 className="text-sm font-black text-[var(--ink,#0f172a)] dark:text-white">
+									Выбор силера (обтурация)
+								</h3>
+								<p className="text-xs text-slate-500 dark:text-slate-400">
+									Канал: {activeCanalForSealer.canalName}
+								</p>
+							</div>
+							<button
+								type="button"
+								onClick={() => setActiveCanalForSealer(null)}
+								className="min-h-[44px] min-w-[44px] rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+								aria-label="Закрыть выбор силера"
+							>
+								<X size={18} />
+							</button>
+						</div>
+						<div className="space-y-2 pt-1">
+							{ENDO_SEALER_OPTIONS.map((opt) => {
+								const isSelected =
+									activeCanalForSealer.sealer === opt ||
+									(!activeCanalForSealer.sealer && opt.startsWith("AH Plus"));
+								return (
+									<button
+										key={opt}
+										type="button"
+										onClick={() => {
+											handleCanalChange(activeCanalForSealer.id, "sealer", opt);
+											setActiveCanalForSealer(null);
+										}}
+										className={`w-full min-h-[50px] p-3 rounded-xl border flex items-center justify-between text-left transition-all cursor-pointer ${
+											isSelected
+												? "bg-rose-50/80 dark:bg-rose-950/40 border-rose-500 text-rose-950 dark:text-rose-100 font-bold"
+												: "bg-[var(--surface,#f8fafc)] dark:bg-slate-800/80 border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200"
+										}`}
+									>
+										<div className="min-w-0 pr-2">
+											<div className="text-xs font-bold truncate">{opt}</div>
+											<div className="text-[10px] text-slate-500 dark:text-slate-400">
+												{opt.includes("биокерамик")
+													? "Биокерамический гидрофильный герметик (Septodont/FKG)"
+													: opt.includes("эпоксид")
+														? "Эпоксидно-аминовый золотой стандарт СтАР"
+														: opt.includes("Ca(OH)2")
+															? "Временная лекарственная антисептическая паста"
+															: "Эндодонтический пломбировочный материал"}
+											</div>
+										</div>
+										{isSelected && (
+											<Check size={18} className="text-rose-600 shrink-0 font-bold" />
+										)}
+									</button>
+								);
+							})}
+						</div>
+					</div>
+				</div>
+			)}
 		</>
 	);
 };

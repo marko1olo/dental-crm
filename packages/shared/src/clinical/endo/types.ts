@@ -166,6 +166,7 @@ export interface EndoMaterialConsumableEstimate {
 	readonly itemName: string;
 	readonly category:
 		| "gutta_percha"
+		| "paper_points"
 		| "sealer"
 		| "rotary_file"
 		| "disinfectant"

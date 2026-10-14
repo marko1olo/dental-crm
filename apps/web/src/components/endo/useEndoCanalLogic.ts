@@ -624,11 +624,18 @@ export function useEndoCanalLogic({
 		try {
 			useVisitStore.getState().setVisitNoteForm((prev) => {
 				const existingObj = prev.objectiveStatus?.trim() || "";
+				const existingPlan = prev.treatmentPlan?.trim() || "";
+				const newObjective = existingObj
+					? `${existingObj}\n\n${protocolTextToInsert}`
+					: protocolTextToInsert;
+				const planSummary = `Эндодонтическое лечение зуба #${activeTooth} (${stageStamp === "TEMP_CAOH2" ? "Временная обтурация Ca(OH)2" : "Обтурация корневых каналов до апекса"})`;
+				const newPlan = existingPlan && !existingPlan.includes(planSummary)
+					? `${existingPlan}\n${planSummary}`
+					: (existingPlan || planSummary);
 				return {
 					...prev,
-					objectiveStatus: existingObj
-						? `${existingObj}\n\n${protocolTextToInsert}`
-						: protocolTextToInsert,
+					objectiveStatus: newObjective,
+					treatmentPlan: newPlan,
 				};
 			});
 		} catch {
@@ -669,7 +676,29 @@ export function useEndoCanalLogic({
 			console.warn("Auto-billing endo services skipped or outside active visit store", billErr);
 		}
 
-		// Автоматическое списание расходных материалов со склада клиники (inventory_items)
+		// Автоматическое списание расходных материалов со склада через мягкий овердрафт (Мандаты 8e, 8n)
+		try {
+			for (const mat of billingEstimate.materials) {
+				fetch("/api/warehouse/soft-overdraft-deduct", {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						itemId: mat.itemId,
+						itemName: mat.itemName,
+						quantity: mat.quantity,
+						reason: `Эндодонтический протокол зуба #${activeTooth} (${mat.notes || "Списание расходных материалов"})`,
+					}),
+				}).catch((err) => {
+					console.warn("Soft overdraft deduction failed silently for", mat.itemId, err);
+				});
+			}
+		} catch (matDeductErr) {
+			console.warn("Soft overdraft call error", matDeductErr);
+		}
+
+		// Автоматическое уведомление шины событий склада (inventory_items)
 		try {
 			window.dispatchEvent(
 				new CustomEvent("dente-deduct-inventory-materials", {
