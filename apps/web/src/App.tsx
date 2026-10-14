@@ -53,6 +53,12 @@ const StaffPinPad = lazyWithRetry(() =>
 	})),
 );
 
+const ImplantPassportModal = lazyWithRetry(() =>
+	import("./components/implants/ImplantPassportModal").then((m) => ({
+		default: m.ImplantPassportModal,
+	})),
+);
+
 export function App() {
 	useEffect(() => {
 		const onKeyDown = (e: KeyboardEvent) => {
@@ -782,13 +788,23 @@ export function App() {
 		((window.location.search || "").includes("demo=true") ||
 			(window.location.search || "").includes("demo=1") ||
 			(window.location.hash || "").includes("demo=true") ||
-			(window.location.hash || "").includes("demo=1"));
+			(window.location.hash || "").includes("demo=1") ||
+			(window.location.search || "").includes("implant_passport") ||
+			(window.location.search || "").includes("passport=demo"));
 	const [clinicAuthed, setClinicAuthed] = useState<boolean>(
 		() => isDemoParam || Boolean(readDenteClinicToken()),
 	);
 	const [staffAuthed, setStaffAuthed] = useState<boolean>(
 		() => isDemoParam || Boolean(readDenteStaffToken()),
 	);
+	const [isImplantPassportDirectOpen, setIsImplantPassportDirectOpen] =
+		useState<boolean>(
+			() =>
+				typeof window !== "undefined" &&
+				((window.location.search || "").includes("implant_passport") ||
+					(window.location.hash || "").includes("implant_passport") ||
+					(window.location.search || "").includes("passport=demo")),
+		);
 	const [activeStaffUser, setActiveStaffUser] = useState<any>(null);
 	const [showStaffPinPad, setShowStaffPinPad] = useState<boolean>(false);
 	const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
@@ -1487,6 +1503,19 @@ export function App() {
 							doctorFullName={activeStaffUser?.fullName || "Д-р Соколов А. В."}
 							initialMedicationId={prescriptionInitialMedId}
 						/>
+					)}
+					{isImplantPassportDirectOpen && (
+						<React.Suspense fallback={null}>
+							<ImplantPassportModal
+								isOpen={true}
+								onClose={() => setIsImplantPassportDirectOpen(false)}
+								patientName="Ковалёв Роман Станиславович"
+								patientId="PAT-2026-088"
+								doctorName="Д-р Воронов А. В."
+								doctorId="DOC-01"
+								initialTooth={46}
+							/>
+						</React.Suspense>
 					)}
 				</main>
 			</AuthProvider>

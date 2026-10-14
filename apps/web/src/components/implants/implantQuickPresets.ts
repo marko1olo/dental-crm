@@ -134,10 +134,12 @@ export interface ParsedImplantBarcode {
 	readonly article?: string | undefined;
 	readonly lot?: string | undefined;
 	readonly serial?: string | undefined;
+	readonly expirationDate?: string | undefined;
 }
 
 /**
  * Парсер штрихкода упаковки имплантата (GS1 DataMatrix / 2D / серийный формат).
+ * Распознает: (01) GTIN, (10) LOT, (17) Срок годности YYMMDD, (21) SN, (240) REF.
  */
 export function parseImplantBarcode(barcode: string): ParsedImplantBarcode {
 	const raw = barcode.trim();
@@ -146,17 +148,25 @@ export function parseImplantBarcode(barcode: string): ParsedImplantBarcode {
 	let article: string | undefined;
 	let lot: string | undefined;
 	let serial: string | undefined;
+	let expirationDate: string | undefined;
 
 	const ai01 = raw.match(/\(01\)(\d+)/) || raw.match(/01(\d{14})/);
 	const ai10 = raw.match(/\(10\)([A-Za-z0-9-_]+)/) || raw.match(/10([A-Za-z0-9-_]{4,16})/);
+	const ai17 = raw.match(/\(17\)(\d{6})/) || raw.match(/17(\d{6})/);
 	const ai21 = raw.match(/\(21\)([A-Za-z0-9-_]+)/) || raw.match(/21([A-Za-z0-9-_]{4,16})/);
 	const ai240 = raw.match(/\(240\)([A-Za-z0-9-_]+)/);
 
-	if (ai01 || ai10 || ai21 || ai240) {
+	if (ai01 || ai10 || ai17 || ai21 || ai240) {
 		if (ai240?.[1]) article = ai240[1];
 		else if (ai01?.[1]) article = `REF-${ai01[1].slice(-6)}`;
 		if (ai10?.[1]) lot = ai10[1];
 		if (ai21?.[1]) serial = ai21[1];
+		if (ai17?.[1]) {
+			const yy = ai17[1].slice(0, 2);
+			const mm = ai17[1].slice(2, 4);
+			const dd = ai17[1].slice(4, 6);
+			expirationDate = `20${yy}-${mm}-${dd}`;
+		}
 	} else if (raw.includes("/") || raw.includes(";") || raw.includes("|")) {
 		const parts = raw.split(/[/;|]/).map((p) => p.trim());
 		if (parts.length >= 3) {
@@ -177,6 +187,7 @@ export function parseImplantBarcode(barcode: string): ParsedImplantBarcode {
 		...(article ? { article } : {}),
 		...(lot ? { lot } : {}),
 		...(serial ? { serial } : {}),
+		...(expirationDate ? { expirationDate } : {}),
 	};
 }
 
@@ -185,21 +196,32 @@ export interface FastImplantPassportData {
 	readonly toothFdi: number;
 	readonly brand: string;
 	readonly model: string;
-	readonly catalogArticle?: string;
+	readonly catalogArticle?: string | undefined;
 	readonly diameterMm: number;
 	readonly lengthMm: number;
 	readonly torqueNcm: number;
 	readonly lotNumber: string;
 	readonly serialNumber: string;
 	readonly boneDensity: MischDensity;
-	readonly isqDay0?: number;
-	readonly capType?: ImplantCapType;
-	readonly patientName?: string;
-	readonly patientId?: string;
-	readonly doctorName?: string;
-	readonly doctorId?: string;
+	readonly isqDay0?: number | undefined;
+	readonly capType?: ImplantCapType | undefined;
+	readonly patientName?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly doctorId?: string | undefined;
 	readonly dateIso: string;
-	readonly isWarehouseOverdraft?: boolean;
+	readonly isWarehouseOverdraft?: boolean | undefined;
+	readonly inventoryItemId?: string | undefined;
+	readonly expirationDate?: string | undefined;
+	readonly operationPriceRub?: number | undefined;
+	readonly implantCostRub?: number | undefined;
+	readonly consumablesCostRub?: number | undefined;
+	readonly doctorGrossMarginRub?: number | undefined;
+	readonly netDoctorIncomeRub?: number | undefined;
+	readonly isImmediateLoadingFeasible?: boolean | undefined;
+	readonly boneGraftMaterial?: string | undefined;
+	readonly membraneUsed?: string | undefined;
+	readonly sutureMaterial?: string | undefined;
 }
 
 /**
@@ -218,10 +240,21 @@ export function createDefaultPassportRecord(params: {
 	patientId?: string;
 	doctorName?: string;
 	doctorId?: string;
+	lotNumber?: string;
+	serialNumber?: string;
+	expirationDate?: string;
+	inventoryItemId?: string;
+	operationPriceRub?: number;
+	implantCostRub?: number;
+	consumablesCostRub?: number;
 }): FastImplantPassportData {
 	const preset = FAST_IMPLANT_SYSTEM_PRESETS.find((p) => p.brand === params.brand) ?? FAST_IMPLANT_SYSTEM_PRESETS[0]!;
 	const tooth = params.toothFdi || 46;
 	const timestampSuffix = Date.now().toString().slice(-6);
+
+	const torque = params.torqueNcm ?? 35;
+	const isq = params.isqDay0 ?? 72;
+	const isImmediateLoadingFeasible = torque >= 35 && torque <= 55 && isq >= 70;
 
 	return {
 		passportId: `IMP-PASSPORT-${tooth}-${timestampSuffix}`,
@@ -245,11 +278,15 @@ export function createDefaultPassportRecord(params: {
 									: "TS3S4010S"),
 		diameterMm: params.diameterMm ?? preset.defaultDiameterMm,
 		lengthMm: params.lengthMm ?? preset.defaultLengthMm,
-		torqueNcm: params.torqueNcm ?? 35, // 35 Н·см по умолчанию
-		lotNumber: `LOT-${new Date().getFullYear()}-${preset.brand.slice(0, 3).toUpperCase()}-${timestampSuffix}`,
-		serialNumber: `SN-${timestampSuffix}`,
+		torqueNcm: torque, // 35 Н·см по умолчанию
+		lotNumber:
+			params.lotNumber ??
+			`LOT-${new Date().getFullYear()}-${preset.brand.slice(0, 3).toUpperCase()}-${timestampSuffix}`,
+		serialNumber: params.serialNumber ?? `SN-${timestampSuffix}`,
+		expirationDate: params.expirationDate ?? "2028-11-30",
+		inventoryItemId: params.inventoryItemId,
 		boneDensity: getBoneDensityByToothFdi(tooth),
-		isqDay0: params.isqDay0 ?? 72, // 72 ISQ каноническая первичная фиксация (RFA)
+		isqDay0: isq, // 72 ISQ каноническая первичная фиксация (RFA)
 		capType: params.capType ?? "fdm", // ФДМ по умолчанию
 		patientName: params.patientName ?? "Пациент",
 		patientId: params.patientId ?? "PAT-01",
@@ -257,5 +294,169 @@ export function createDefaultPassportRecord(params: {
 		doctorId: params.doctorId ?? "DOC-01",
 		dateIso: new Date().toISOString(),
 		isWarehouseOverdraft: false,
+		operationPriceRub: params.operationPriceRub ?? 45000,
+		implantCostRub: params.implantCostRub ?? 12500,
+		consumablesCostRub: params.consumablesCostRub ?? 0,
+		doctorGrossMarginRub:
+			(params.operationPriceRub ?? 45000) -
+			((params.implantCostRub ?? 12500) + (params.consumablesCostRub ?? 0)),
+		netDoctorIncomeRub: Math.max(
+			0,
+			(params.operationPriceRub ?? 45000) -
+				((params.implantCostRub ?? 12500) + (params.consumablesCostRub ?? 0)),
+		),
+		isImmediateLoadingFeasible,
 	};
 }
+
+export interface ImplantWarehouseStockItem {
+	readonly id: string;
+	readonly name: string;
+	readonly category: string;
+	readonly unit: string;
+	readonly stockQuantity: string;
+	readonly currentQty: string;
+	readonly unitCostRub: string;
+	readonly pricePerUnit: string;
+	readonly sku?: string | null;
+	readonly barcode?: string | null;
+	readonly lotNumber?: string | null;
+	readonly expirationDate?: string | null;
+	readonly notes?: string | null;
+}
+
+export interface ImplantConsumableItem {
+	readonly id: string;
+	readonly name: string;
+	readonly unitCostRub: string;
+	readonly lotNumber?: string | null;
+	readonly expirationDate?: string | null;
+	readonly stockQuantity?: string | null;
+}
+
+export interface ImplantConsumablesStock {
+	readonly grafts: readonly ImplantConsumableItem[];
+	readonly membranes: readonly ImplantConsumableItem[];
+	readonly sutures: readonly ImplantConsumableItem[];
+}
+
+export const DEFAULT_CANONICAL_IMPLANT_STOCK: readonly ImplantWarehouseStockItem[] = [
+	{
+		id: "inv-oss-4010",
+		name: "Имплантат Osstem TS III SA Ø4.0x10мм",
+		category: "Имплантология",
+		unit: "шт.",
+		stockQuantity: "5.000",
+		currentQty: "5.000",
+		unitCostRub: "12500.00",
+		pricePerUnit: "12500.00",
+		sku: "TS3S4010S",
+		barcode: "01088061400012341024C120821SN-884210",
+		lotNumber: "24C1208",
+		expirationDate: "2028-11-30",
+		notes: "Корейская имплантационная система Osstem TS III SA (конус Морзе 11°)",
+	},
+	{
+		id: "inv-dent-4510",
+		name: "Имплантат Dentium SuperLine SLA Ø4.5x10мм",
+		category: "Имплантология",
+		unit: "шт.",
+		stockQuantity: "6.000",
+		currentQty: "6.000",
+		unitCostRub: "10500.00",
+		pricePerUnit: "10500.00",
+		sku: "FX4010",
+		barcode: "010880918000567810DT-7810221SN-441290",
+		lotNumber: "DT-78102",
+		expirationDate: "2029-01-31",
+		notes: "Дентальный имплантат Dentium SuperLine SLA (двойная резьба)",
+	},
+	{
+		id: "inv-strau-4010",
+		name: "Имплантат Straumann BLX Roxolid SLActive Ø4.0x10мм",
+		category: "Имплантология",
+		unit: "шт.",
+		stockQuantity: "4.000",
+		currentQty: "4.000",
+		unitCostRub: "28000.00",
+		pricePerUnit: "28000.00",
+		sku: "021.2310",
+		barcode: "010761314000991210ST-9021421SN-110934",
+		lotNumber: "ST-90214",
+		expirationDate: "2029-05-31",
+		notes: "Швейцарский премиальный имплантат Straumann BLX Roxolid SLActive",
+	},
+	{
+		id: "inv-nobel-4311",
+		name: "Имплантат Nobel Biocare Parallel CC Ø4.3x11.5мм",
+		category: "Имплантология",
+		unit: "шт.",
+		stockQuantity: "3.000",
+		currentQty: "3.000",
+		unitCostRub: "24500.00",
+		pricePerUnit: "24500.00",
+		sku: "NP-35115",
+		barcode: "010733190000334410NB-4482121SN-772819",
+		lotNumber: "NB-44821",
+		expirationDate: "2028-09-30",
+		notes: "Имплантат Nobel Biocare Conical Connection (TiUnite поверхность)",
+	},
+];
+
+export const DEFAULT_CANONICAL_CONSUMABLES: ImplantConsumablesStock = {
+	grafts: [
+		{
+			id: "inv-bio-oss-05",
+			name: "Костный графт Geistlich Bio-Oss (0.5г)",
+			unitCostRub: "8200.00",
+			lotNumber: "BO-8921",
+			expirationDate: "2028-06-30",
+			stockQuantity: "8.000",
+		},
+		{
+			id: "inv-bio-oss-10",
+			name: "Костный графт Geistlich Bio-Oss (1.0г)",
+			unitCostRub: "14500.00",
+			lotNumber: "BO-9012",
+			expirationDate: "2028-10-31",
+			stockQuantity: "4.000",
+		},
+	],
+	membranes: [
+		{
+			id: "inv-bio-gide-1622",
+			name: "Коллагеновая мембрана Geistlich Bio-Gide (16x22мм)",
+			unitCostRub: "9800.00",
+			lotNumber: "BG-3310",
+			expirationDate: "2028-08-31",
+			stockQuantity: "5.000",
+		},
+		{
+			id: "inv-bio-gide-2530",
+			name: "Коллагеновая мембрана Geistlich Bio-Gide (25x30мм)",
+			unitCostRub: "16200.00",
+			lotNumber: "BG-4420",
+			expirationDate: "2028-12-31",
+			stockQuantity: "3.000",
+		},
+	],
+	sutures: [
+		{
+			id: "inv-vicryl-40",
+			name: "Шовный материал Ethicon Викрил 4-0 (игла 19мм)",
+			unitCostRub: "650.00",
+			lotNumber: "VK-2026",
+			expirationDate: "2027-12-31",
+			stockQuantity: "20.000",
+		},
+		{
+			id: "inv-vicryl-50",
+			name: "Шовный материал Ethicon Викрил 5-0 (игла 16мм)",
+			unitCostRub: "720.00",
+			lotNumber: "VK-2027",
+			expirationDate: "2027-11-30",
+			stockQuantity: "15.000",
+		},
+	],
+};
+

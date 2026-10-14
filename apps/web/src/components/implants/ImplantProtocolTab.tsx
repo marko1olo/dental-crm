@@ -18,6 +18,13 @@ import {
 	FREQUENT_IMPLANT_SITES,
 	PERMANENT_TEETH_OPTIONS,
 } from "./implantConstants";
+import {
+	type ImplantWarehouseStockItem,
+	type ImplantConsumablesStock,
+	DEFAULT_CANONICAL_IMPLANT_STOCK,
+	DEFAULT_CANONICAL_CONSUMABLES,
+} from "./implantQuickPresets";
+import { Package, DollarSign, Sparkles } from "lucide-react";
 
 export interface ImplantProtocolTabProps {
 	readonly toothFdi: number;
@@ -48,6 +55,24 @@ export interface ImplantProtocolTabProps {
 	readonly serialNumber: string;
 	readonly setSerialNumber: (sn: string) => void;
 	readonly isOverdraftActive: boolean;
+	readonly stockItems?: readonly ImplantWarehouseStockItem[];
+	readonly selectedStockItemId?: string;
+	readonly onSelectStockItem?: (item: ImplantWarehouseStockItem) => void;
+	readonly stockConsumables?: ImplantConsumablesStock;
+	readonly selectedGraftId?: string;
+	readonly onSelectGraftId?: (id: string) => void;
+	readonly selectedMembraneId?: string;
+	readonly onSelectMembraneId?: (id: string) => void;
+	readonly selectedSutureId?: string;
+	readonly onSelectSutureId?: (id: string) => void;
+	readonly operationPriceRub?: number;
+	readonly setOperationPriceRub?: (price: number) => void;
+	readonly implantCostRub?: number;
+	readonly consumablesCostRub?: number;
+	readonly doctorGrossMarginRub?: number;
+	readonly expirationDate?: string;
+	readonly setExpirationDate?: (date: string) => void;
+	readonly isqValue?: number;
 }
 
 export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = ({
@@ -79,9 +104,50 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = ({
 	serialNumber,
 	setSerialNumber,
 	isOverdraftActive,
+	stockItems = DEFAULT_CANONICAL_IMPLANT_STOCK,
+	selectedStockItemId,
+	onSelectStockItem,
+	stockConsumables = DEFAULT_CANONICAL_CONSUMABLES,
+	selectedGraftId,
+	onSelectGraftId,
+	selectedMembraneId,
+	onSelectMembraneId,
+	selectedSutureId,
+	onSelectSutureId,
+	operationPriceRub = 45000,
+	setOperationPriceRub,
+	implantCostRub = 12500,
+	consumablesCostRub = 0,
+	doctorGrossMarginRub = 32500,
+	expirationDate = "2028-11-30",
+	setExpirationDate,
+	isqValue = 72,
 }) => {
+	const effectiveIsq = isIsqEnabled ? isqValue : 72;
+	const isImmediateLoadingFeasible =
+		torqueNcm >= 35 && torqueNcm <= 55 && effectiveIsq >= 70;
+
 	return (
 		<div className="space-y-4" data-testid="tab-content-protocol">
+			{/* Немедленная нагрузка (Immediate Loading Banner) */}
+			{isImmediateLoadingFeasible && (
+				<div
+					className="p-3 rounded-xl bg-[var(--teal-surface,rgba(13,148,136,0.1))] border border-[var(--teal,#0d9488)] flex items-center gap-2.5 text-xs text-[var(--ink)]"
+					data-testid="banner-immediate-loading"
+				>
+					<Sparkles size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
+					<div className="flex-1 min-w-0">
+						<strong className="text-[var(--teal,#0d9488)] font-black">
+							Клинический триггер немедленной нагрузки:{" "}
+						</strong>
+						<span>
+							Торк {torqueNcm} Н·см и стабильность {effectiveIsq} ISQ достаточны для изготовления
+							временной провизорной коронки вне окклюзии в день операции.
+						</span>
+					</div>
+				</div>
+			)}
+
 			{/* Выбор зуба FDI и плотность кости (Анатомическая локализация) */}
 			<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2">
 				<div className="flex items-center justify-between flex-wrap gap-2">
@@ -524,16 +590,184 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = ({
 						data-testid="input-sn input-passport-sn"
 					/>
 				</div>
+			</div>
 
-				{/* Статус склада и мягкий овердрафт (Мандат 8e) */}
-				<div className="flex items-center justify-between p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs flex-wrap gap-2">
-					<span className="text-[var(--muted)]">
-						Складской статус: {isOverdraftActive ? "Мягкий овердрафт (задержка накладной)" : "компоненты оприходованы"}
-					</span>
-					<span className={`text-xs font-semibold ${isOverdraftActive ? "text-[var(--amber,#f59e0b)]" : "text-[var(--teal,#0d9488)]"}`}>
-						{isOverdraftActive ? "Овердрафт разрешен (списание до проведения накладной)" : "В наличии"}
+			{/* Выбор физического изделия с реального склада клиники */}
+			<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2">
+				<div className="flex items-center justify-between flex-wrap gap-2">
+					<div className="text-xs font-black uppercase text-[var(--muted)] tracking-wider flex items-center gap-1.5">
+						<Package size={15} className="text-[var(--teal,#0d9488)]" />
+						<span>Партия со склада клиники (реальные LOT и сроки годности):</span>
+					</div>
+					<span className="text-[11px] font-bold text-[var(--teal,#0d9488)]">
+						{stockItems.length} позиций оприходовано
 					</span>
 				</div>
+
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="group" aria-label="Складские запасы имплантатов">
+					{stockItems.map((item) => {
+						const isSelected =
+							selectedStockItemId === item.id ||
+							(lotNumber === item.lotNumber && catalogArticle === item.sku);
+						return (
+							<button
+								key={item.id}
+								type="button"
+								onClick={() => onSelectStockItem?.(item)}
+								className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all flex flex-col justify-between ${
+									isSelected
+										? "bg-[var(--teal-surface,rgba(13,148,136,0.1))] border-[var(--teal,#0d9488)] text-[var(--ink)] shadow-xs"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--line-strong,#94a3b8)]"
+								}`}
+								data-testid={`stock-item-${item.id}`}
+							>
+								<div className="flex items-center justify-between gap-1">
+									<strong className="text-xs truncate font-extrabold">{item.name}</strong>
+									{isSelected && <CheckCircle2 size={15} className="text-[var(--teal,#0d9488)] shrink-0" />}
+								</div>
+								<div className="flex items-center justify-between text-[11px] font-mono text-[var(--muted)] mt-1">
+									<span>LOT: {item.lotNumber ?? "—"}</span>
+									<span>Годен: {item.expirationDate ?? "—"}</span>
+									<span className="font-bold text-[var(--teal,#0d9488)]">
+										{Number(item.currentQty).toFixed(0)} шт.
+									</span>
+								</div>
+							</button>
+						);
+					})}
+				</div>
+			</div>
+
+			{/* Расходные материалы костной пластики (НКР), если выбрана аугментация */}
+			{isGbrPerformed && (
+				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--brand-primary,#0ea5e9)] flex flex-col gap-2.5" data-testid="gbr-consumables-block">
+					<div className="text-xs font-black uppercase text-[var(--brand-primary,#0ea5e9)] tracking-wider flex items-center gap-1.5">
+						<BoneGraft size={16} />
+						<span>Хирургические расходники НКР (автосписание со склада):</span>
+					</div>
+
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+						{/* Костный графт */}
+						<div className="flex flex-col gap-1">
+							<label htmlFor="select-graft-material" className="text-[11px] font-bold text-[var(--ink)]">
+								Костный графт (Geistlich):
+							</label>
+							<select
+								id="select-graft-material"
+								value={selectedGraftId ?? stockConsumables.grafts[0]?.id ?? ""}
+								onChange={(e) => onSelectGraftId?.(e.target.value)}
+								className="min-h-[44px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)]"
+								data-testid="select-graft-material"
+							>
+								{stockConsumables.grafts.map((g) => (
+									<option key={g.id} value={g.id}>
+										{g.name} ({g.unitCostRub} ₽)
+									</option>
+								))}
+							</select>
+						</div>
+
+						{/* Коллагеновая мембрана */}
+						<div className="flex flex-col gap-1">
+							<label htmlFor="select-membrane-material" className="text-[11px] font-bold text-[var(--ink)]">
+								Барьерная мембрана:
+							</label>
+							<select
+								id="select-membrane-material"
+								value={selectedMembraneId ?? stockConsumables.membranes[0]?.id ?? ""}
+								onChange={(e) => onSelectMembraneId?.(e.target.value)}
+								className="min-h-[44px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)]"
+								data-testid="select-membrane-material"
+							>
+								{stockConsumables.membranes.map((m) => (
+									<option key={m.id} value={m.id}>
+										{m.name} ({m.unitCostRub} ₽)
+									</option>
+								))}
+							</select>
+						</div>
+
+						{/* Шовный материал */}
+						<div className="flex flex-col gap-1">
+							<label htmlFor="select-suture-material" className="text-[11px] font-bold text-[var(--ink)]">
+								Шовный материал:
+							</label>
+							<select
+								id="select-suture-material"
+								value={selectedSutureId ?? stockConsumables.sutures[0]?.id ?? ""}
+								onChange={(e) => onSelectSutureId?.(e.target.value)}
+								className="min-h-[44px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)]"
+								data-testid="select-suture-material"
+							>
+								{stockConsumables.sutures.map((s) => (
+									<option key={s.id} value={s.id}>
+										{s.name} ({s.unitCostRub} ₽)
+									</option>
+								))}
+							</select>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Экономика соло-хирурга / ИП (Мандат 8n) */}
+			<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2" data-testid="doctor-economics-block">
+				<div className="flex items-center justify-between flex-wrap gap-2">
+					<div className="text-xs font-black uppercase text-[var(--muted)] tracking-wider flex items-center gap-1.5">
+						<DollarSign size={15} className="text-[var(--teal,#0d9488)]" />
+						<span>Экономика соло-хирурга / ИП (Мандат 8n):</span>
+					</div>
+					<span className="text-[11px] font-bold text-[var(--teal,#0d9488)]">
+						Без сетевых поборов
+					</span>
+				</div>
+
+				<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+					<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col justify-between">
+						<label htmlFor="input-op-price" className="text-[10px] text-[var(--muted)] font-bold">
+							Счет операции:
+						</label>
+						<input
+							id="input-op-price"
+							type="number"
+							value={operationPriceRub}
+							onChange={(e) => setOperationPriceRub?.(Number(e.target.value) || 0)}
+							className="font-mono font-black text-sm text-[var(--ink)] bg-transparent border-none p-0 focus:outline-none"
+							data-testid="input-operation-price"
+						/>
+					</div>
+
+					<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col justify-between">
+						<span className="text-[10px] text-[var(--muted)] font-bold">Себестоимость винта:</span>
+						<strong className="font-mono font-black text-sm text-[var(--warn,#f59e0b)] truncate">
+							{implantCostRub.toLocaleString("ru-RU")} ₽
+						</strong>
+					</div>
+
+					<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col justify-between">
+						<span className="text-[10px] text-[var(--muted)] font-bold">Расходники НКР:</span>
+						<strong className="font-mono font-black text-sm text-[var(--warn,#f59e0b)] truncate">
+							{consumablesCostRub.toLocaleString("ru-RU")} ₽
+						</strong>
+					</div>
+
+					<div className="p-2.5 rounded-xl bg-[var(--teal-surface,rgba(13,148,136,0.1))] border border-[var(--teal,#0d9488)] flex flex-col justify-between">
+						<span className="text-[10px] text-[var(--teal,#0d9488)] font-black">Чистый доход врача:</span>
+						<strong className="font-mono font-black text-sm text-[var(--teal,#0d9488)] truncate" data-testid="doctor-net-margin">
+							{doctorGrossMarginRub.toLocaleString("ru-RU")} ₽
+						</strong>
+					</div>
+				</div>
+			</div>
+
+			{/* Статус склада и мягкий овердрафт (Мандат 8e) */}
+			<div className="flex items-center justify-between p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs flex-wrap gap-2">
+				<span className="text-[var(--muted)]">
+					Складской статус: {isOverdraftActive ? "Мягкий овердрафт (задержка накладной)" : "компоненты оприходованы"}
+				</span>
+				<span className={`text-xs font-semibold ${isOverdraftActive ? "text-[var(--amber,#f59e0b)]" : "text-[var(--teal,#0d9488)]"}`}>
+					{isOverdraftActive ? "Овердрафт разрешен (списание до проведения накладной)" : "В наличии"}
+				</span>
 			</div>
 		</div>
 	);

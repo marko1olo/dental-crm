@@ -188,7 +188,7 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 			</div>
 
 			{/* Технические идентификаторы и протокол ушивания */}
-			<div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs pt-2 border-t border-[var(--line)]">
+			<div className="grid grid-cols-2 sm:grid-cols-6 gap-3 text-xs pt-2 border-t border-[var(--line)]">
 				<div className="min-w-0">
 					<span className="text-[11px] text-[var(--muted)] block">REF / Артикул:</span>
 					<span
@@ -214,6 +214,13 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 				</div>
 
 				<div className="min-w-0">
+					<span className="text-[11px] text-[var(--muted)] block">Стерилен до:</span>
+					<span className="font-mono font-bold text-[var(--teal,#0d9488)] block truncate" title={data.expirationDate || "2028-11-30"}>
+						{data.expirationDate || "2028-11-30"}
+					</span>
+				</div>
+
+				<div className="min-w-0">
 					<span className="text-[11px] text-[var(--muted)] block">Формирователь / Заглушка:</span>
 					<span
 						className="font-bold text-[var(--ink)] block truncate"
@@ -228,6 +235,30 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 					<span className="font-bold text-[var(--ink)] block truncate">{formattedDate}</span>
 				</div>
 			</div>
+
+			{/* Материалы аугментации (НКР), если проводилась */}
+			{(data.boneGraftMaterial || data.membraneUsed || data.sutureMaterial) && (
+				<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs grid grid-cols-1 sm:grid-cols-3 gap-2">
+					<div className="min-w-0">
+						<span className="text-[10px] text-[var(--muted)] block">Костный графт:</span>
+						<strong className="text-[var(--ink)] truncate block">
+							{data.boneGraftMaterial || "—"}
+						</strong>
+					</div>
+					<div className="min-w-0">
+						<span className="text-[10px] text-[var(--muted)] block">Барьерная мембрана:</span>
+						<strong className="text-[var(--ink)] truncate block">
+							{data.membraneUsed || "—"}
+						</strong>
+					</div>
+					<div className="min-w-0">
+						<span className="text-[10px] text-[var(--muted)] block">Шовный материал:</span>
+						<strong className="text-[var(--ink)] truncate block">
+							{data.sutureMaterial || "—"}
+						</strong>
+					</div>
+				</div>
+			)}
 
 			{/* Штрихкод и Зона оригинальной наклейки с упаковки имплантата */}
 			<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">

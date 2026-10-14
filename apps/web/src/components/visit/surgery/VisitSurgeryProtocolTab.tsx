@@ -30,6 +30,7 @@ import {
 	printSurgicalPackage,
 } from "../../documents/surgicalPackagePrintEngine";
 import { useVisitStore } from "../../../store/visitStore";
+import { DentalImplant } from "../../icons/DentalIcons";
 import { VisitSurgeryExtractionBar } from "./VisitSurgeryExtractionBar";
 import { VisitSurgerySinusGbrBar } from "./VisitSurgerySinusGbrBar";
 import { VisitSurgeryImplantBar } from "./VisitSurgeryImplantBar";
@@ -322,7 +323,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
 								: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]"
 						}`}
-						title="Переключить увеличенные тач-таргеты для работы в стерильных перчатках"
+						title="Переключить режим крупных кнопок для работы в стерильных перчатках"
 						data-testid="btn-toggle-visit-sterile-mode"
 					>
 						<Sparkles size={16} />
@@ -545,6 +546,20 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 						<PackageMinus size={16} />
 						<span>{isMaterialsDeducted ? "Материалы списаны" : "Списать со склада"}</span>
 					</button>
+
+					{/* Вызов хирургического паспорта имплантата */}
+					{currentNorm.category === "implant" && (
+						<button
+							type="button"
+							onClick={() => setIsImplantModalOpen(true)}
+							className="px-3.5 py-1.5 rounded-xl text-xs font-bold border border-[var(--teal,#0d9488)] bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)] hover:text-white flex items-center gap-1.5 cursor-pointer min-h-[48px] touch-manipulation"
+							data-testid="btn-open-implant-passport-modal open-implant-passport-modal-btn"
+							title="Открыть хирургический паспорт имплантата"
+						>
+							<DentalImplant size={16} />
+							<span>Паспорт имплантата</span>
+						</button>
+					)}
 
 					<button
 						type="button"
