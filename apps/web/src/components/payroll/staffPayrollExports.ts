@@ -402,9 +402,12 @@ export function generateDoctorPayslipHtml(
 	const effectiveNdflKop = payrollResult.ndflTaxKop ?? payrollResult.ndfl13TaxKop;
 	const ndflRub = (effectiveNdflKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
 	const netToDocRub = (payrollResult.netPayoutToDoctorKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
-	const taxTitle = payrollResult.isProgressiveTaxApplied
-		? "Удержан НДФЛ 13-15% (ст. 224, п. 6 ст. 225 НК РФ):"
-		: "Удержан НДФЛ 13% (п. 6 ст. 225 НК РФ):";
+	const isSelfEmployed = payrollResult.taxRegime === "self_employed" || effectiveNdflKop === 0;
+	const taxTitle = isSelfEmployed
+		? "НДФЛ (ИП / Самозанятый, налог уплачивается врачом самостоятельно):"
+		: payrollResult.isProgressiveTaxApplied
+			? "Удержан НДФЛ 13-15% (ст. 224, п. 6 ст. 225 НК РФ):"
+			: "Удержан НДФЛ 13% (п. 6 ст. 225 НК РФ):";
 
 	const overheadHtml = (payrollResult.overheadConsumablesCoveredKop && payrollResult.overheadConsumablesCoveredKop > 0)
 		? `<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 8px 12px; margin-bottom: 16px; font-size: 9.5pt; color: #1e40af;">

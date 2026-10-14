@@ -99,8 +99,7 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 			<ExecutiveDashboard
 				period={period as any}
 				onPeriodChange={(p) => {
-					if (p === "week") handlePeriodSelect("month");
-					else handlePeriodSelect(p as ExecutivePeriod);
+					handlePeriodSelect(p as ExecutivePeriod);
 				}}
 				onNavigateToSection={onNavigateToSection}
 			/>
@@ -152,14 +151,14 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 
 					<div className="executive-controls">
 						<div className="executive-period-toggle" role="group" aria-label="Период отчета">
-							{(["day", "month", "quarter", "year"] as const).map((p) => (
+							{(["day", "week", "month", "quarter", "year"] as const).map((p) => (
 								<button
 									key={p}
 									type="button"
 									className={`executive-period-btn ${period === p ? "active" : ""}`}
 									onClick={() => handlePeriodSelect(p)}
 								>
-									{p === "day" ? "День" : p === "month" ? "Месяц" : p === "quarter" ? "Квартал" : "Год"}
+									{p === "day" ? "День" : p === "week" ? "Неделя" : p === "month" ? "Месяц" : p === "quarter" ? "Квартал" : "Год"}
 								</button>
 							))}
 						</div>

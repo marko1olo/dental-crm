@@ -35,89 +35,118 @@ import {
 export function getDemoExecutiveAnalytics(
 	period: ExecutivePeriod = "month",
 ): ExecutiveDashboardPayload {
+	const scale =
+		period === "day"
+			? 1 / 26
+			: period === "week"
+				? 7 / 26
+				: period === "quarter"
+					? 3
+					: period === "year"
+						? 12
+						: 1;
+
 	const rawStages = [
-		{ stage: "lead" as ExecutiveFunnelStage, count: 120 },
-		{ stage: "consultation_booking" as ExecutiveFunnelStage, count: 98 },
-		{ stage: "attended" as ExecutiveFunnelStage, count: 88 },
-		{ stage: "ai_examination" as ExecutiveFunnelStage, count: 82, isAiAssisted: true },
-		{ stage: "plan_presentation" as ExecutiveFunnelStage, count: 78, totalVolumeKopecks: 1240000000 },
-		{ stage: "plan_approved" as ExecutiveFunnelStage, count: 56, totalVolumeKopecks: 820000000 },
-		{ stage: "treatment_started" as ExecutiveFunnelStage, count: 48, totalVolumeKopecks: 680000000 },
-		{ stage: "sanitation_completed" as ExecutiveFunnelStage, count: 38 },
+		{ stage: "lead" as ExecutiveFunnelStage, count: Math.max(1, Math.round(120 * scale)) },
+		{ stage: "consultation_booking" as ExecutiveFunnelStage, count: Math.max(1, Math.round(98 * scale)) },
+		{ stage: "attended" as ExecutiveFunnelStage, count: Math.max(1, Math.round(88 * scale)) },
+		{ stage: "ai_examination" as ExecutiveFunnelStage, count: Math.max(1, Math.round(82 * scale)), isAiAssisted: true },
+		{ stage: "plan_presentation" as ExecutiveFunnelStage, count: Math.max(1, Math.round(78 * scale)), totalVolumeKopecks: Math.round(1240000000 * scale) },
+		{ stage: "plan_approved" as ExecutiveFunnelStage, count: Math.max(1, Math.round(56 * scale)), totalVolumeKopecks: Math.round(820000000 * scale) },
+		{ stage: "treatment_started" as ExecutiveFunnelStage, count: Math.max(1, Math.round(48 * scale)), totalVolumeKopecks: Math.round(680000000 * scale) },
+		{ stage: "sanitation_completed" as ExecutiveFunnelStage, count: Math.max(1, Math.round(38 * scale)) },
 	];
 
-	const totalMarketingSpendKopecks = 32000000;
+	const totalMarketingSpendKopecks = Math.round(32000000 * scale);
 	const funnelStages = calculateExecutiveFunnel(rawStages, totalMarketingSpendKopecks);
 
 	const rawDepts = [
 		{
 			departmentKey: "therapy" as const,
-			planRevenueKopecks: 150000000,
-			factRevenueKopecks: 158000000,
-			completedVisitsCount: 142,
-			uniquePatientsCount: 110,
+			planRevenueKopecks: Math.round(150000000 * scale),
+			factRevenueKopecks: Math.round(158000000 * scale),
+			completedVisitsCount: Math.max(1, Math.round(142 * scale)),
+			uniquePatientsCount: Math.max(1, Math.round(110 * scale)),
 		},
 		{
 			departmentKey: "orthopedics" as const,
-			planRevenueKopecks: 160000000,
-			factRevenueKopecks: 152000000,
-			completedVisitsCount: 48,
-			uniquePatientsCount: 36,
+			planRevenueKopecks: Math.round(160000000 * scale),
+			factRevenueKopecks: Math.round(152000000 * scale),
+			completedVisitsCount: Math.max(1, Math.round(48 * scale)),
+			uniquePatientsCount: Math.max(1, Math.round(36 * scale)),
 		},
 		{
 			departmentKey: "surgery_implantation" as const,
-			planRevenueKopecks: 110000000,
-			factRevenueKopecks: 105000000,
-			completedVisitsCount: 38,
-			uniquePatientsCount: 30,
+			planRevenueKopecks: Math.round(110000000 * scale),
+			factRevenueKopecks: Math.round(105000000 * scale),
+			completedVisitsCount: Math.max(1, Math.round(38 * scale)),
+			uniquePatientsCount: Math.max(1, Math.round(30 * scale)),
 		},
 		{
 			departmentKey: "orthodontics" as const,
-			planRevenueKopecks: 55000000,
-			factRevenueKopecks: 51000000,
-			completedVisitsCount: 28,
-			uniquePatientsCount: 24,
+			planRevenueKopecks: Math.round(55000000 * scale),
+			factRevenueKopecks: Math.round(51000000 * scale),
+			completedVisitsCount: Math.max(1, Math.round(28 * scale)),
+			uniquePatientsCount: Math.max(1, Math.round(24 * scale)),
 		},
 		{
 			departmentKey: "pediatric" as const,
-			planRevenueKopecks: 25000000,
-			factRevenueKopecks: 19000000,
-			completedVisitsCount: 22,
-			uniquePatientsCount: 18,
+			planRevenueKopecks: Math.round(25000000 * scale),
+			factRevenueKopecks: Math.round(19000000 * scale),
+			completedVisitsCount: Math.max(1, Math.round(22 * scale)),
+			uniquePatientsCount: Math.max(1, Math.round(18 * scale)),
 		},
 	];
 
 	const departments = calculateDepartmentBreakdown(rawDepts);
 
+	const totalRevenueKopecks = Math.round(485000000 * scale);
+	const totalRevenuePlanKopecks = Math.round(500000000 * scale);
+	const primaryRevenueKopecks = Math.round(145500000 * scale);
+	const repeatRevenueKopecks = Math.round(339500000 * scale);
+
 	const kpis = calculateExecutiveKpisSummary({
 		period,
-		totalRevenueKopecks: 485000000,
-		totalRevenuePlanKopecks: 500000000,
-		primaryRevenueKopecks: 145500000,
-		repeatRevenueKopecks: 339500000,
-		primaryPatientsCount: 48,
-		repeatPatientsCount: 170,
+		totalRevenueKopecks,
+		totalRevenuePlanKopecks,
+		primaryRevenueKopecks,
+		repeatRevenueKopecks,
+		primaryPatientsCount: Math.max(1, Math.round(48 * scale)),
+		repeatPatientsCount: Math.max(1, Math.round(170 * scale)),
 		totalMarketingSpendKopecks,
 		historicalCohortLtvKopecks: 14500000,
-		totalOccupiedMinutes: 27720,
-		totalAvailableMinutes: 36000,
+		totalOccupiedMinutes: Math.round(27720 * scale),
+		totalAvailableMinutes: Math.round(36000 * scale),
 		totalChairsCount: 3,
-		totalLeadsCount: 120,
-		aiExaminedLeadsCount: 82,
-		totalSanitationCount: 38,
-		totalCompletedVisits: 278,
+		totalLeadsCount: Math.max(1, Math.round(120 * scale)),
+		aiExaminedLeadsCount: Math.max(1, Math.round(82 * scale)),
+		totalSanitationCount: Math.max(1, Math.round(38 * scale)),
+		totalCompletedVisits: Math.max(1, Math.round(278 * scale)),
 		activeDoctorsCount: 5,
-		cancelledVisitsCount: 12,
-		noShowVisitsCount: 4,
+		cancelledVisitsCount: Math.max(0, Math.round(12 * scale)),
+		noShowVisitsCount: Math.max(0, Math.round(4 * scale)),
+		cogsKopecks: Math.round(121250000 * scale),
+		opexKopecks: Math.round(218250000 * scale),
 	});
 
 	const now = new Date();
+	const startDate =
+		period === "day"
+			? new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+			: period === "week"
+				? new Date(now.getFullYear(), now.getMonth(), now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1), 0, 0, 0, 0)
+				: period === "quarter"
+					? new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)
+					: period === "year"
+						? new Date(now.getFullYear(), 0, 1)
+						: new Date(now.getFullYear(), now.getMonth(), 1);
+
 	return {
 		kpis,
 		funnelStages,
 		departments,
 		period,
-		dateRangeStartIso: new Date(now.getFullYear(), now.getMonth(), 1).toISOString(),
+		dateRangeStartIso: startDate.toISOString(),
 		dateRangeEndIso: now.toISOString(),
 		updatedAtIso: now.toISOString(),
 		isEmpty: false,

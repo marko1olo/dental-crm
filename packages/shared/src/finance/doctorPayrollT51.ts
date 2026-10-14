@@ -331,6 +331,8 @@ export interface DoctorPayrollCalculationInput {
 	readonly manualAdjustmentNoteRu?: string | undefined;
 	readonly refundDeductions?: readonly DoctorRefundDeductionItem[] | undefined;
 	readonly cumulativeYtdGrossKop?: number | undefined;
+	readonly taxRegime?: "employee" | "self_employed" | undefined;
+	readonly isSoloDoctor?: boolean | undefined;
 }
 
 export interface DoctorPayrollResult {
@@ -338,6 +340,7 @@ export interface DoctorPayrollResult {
 	readonly doctorName: string;
 	readonly specialtyTitleRu: string;
 	readonly periodLabelRu: string;
+	readonly taxRegime?: "employee" | "self_employed";
 	readonly totalGrossRevenueKop: number;
 	readonly totalLabDeductionsKop: number;
 	readonly totalMaterialDeductionsKop: number;
@@ -653,7 +656,16 @@ export function calculateDoctorPeriodPayroll(
 	}
 
 	const grossPayout = Math.max(0, preGuaranteePayout);
-	const ndflCalculation = calculateProgressiveNdflTax(grossPayout, input.cumulativeYtdGrossKop ?? 0);
+	const isSoloOrSelfEmployed =
+		input.taxRegime === "self_employed" ||
+		(input.taxRegime === undefined &&
+			(input.isSoloDoctor === true ||
+				preset.specialtyId === "solo_practitioner" ||
+				preset.specialtyId === "solo-doctor"));
+
+	const ndflCalculation = isSoloOrSelfEmployed
+		? { ndfl13TaxKop: 0, ndfl15TaxKop: 0, ndflTaxKop: 0, isProgressiveApplied: false }
+		: calculateProgressiveNdflTax(grossPayout, input.cumulativeYtdGrossKop ?? 0);
 	const netToDoctor = Math.max(0, grossPayout - ndflCalculation.ndflTaxKop);
 
 	return {
@@ -661,6 +673,7 @@ export function calculateDoctorPeriodPayroll(
 		doctorName: input.doctorName,
 		specialtyTitleRu: preset.titleRu,
 		periodLabelRu: `${input.periodStartIso} — ${input.periodEndIso}`,
+		taxRegime: isSoloOrSelfEmployed ? "self_employed" : "employee",
 		totalGrossRevenueKop: totalGross,
 		totalLabDeductionsKop: totalLab,
 		totalMaterialDeductionsKop: totalMaterial,

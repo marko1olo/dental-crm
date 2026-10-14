@@ -389,4 +389,52 @@ describe("Doctor & Staff Piece-Rate Payroll Engine (Form T-51)", () => {
 		// 25% of 17,350 = 4,337.50 RUB -> 433,750 kop
 		assert.equal(res.earnedBaseCommissionKop, 433750);
 	});
+
+	it("1.10 Zero NDFL deduction for self-employed doctor (ИП / Самозанятый) and solo practitioner (Mandate 8e/8n)", () => {
+		const services: DoctorCompletedServiceItem[] = [
+			{
+				id: "srv-solo-1",
+				dateIso: "2026-08-20",
+				patientName: "Самозанятый Клиент",
+				medicalCardNumber: "043/у-801",
+				serviceNameRu: "Комплексная реставрация зуба",
+				category: "therapy",
+				grossRevenueKop: 10000000, // 100,000 RUB
+				labCostKop: 0,
+				materialCostKop: 1000000, // 10,000 RUB
+			},
+		];
+
+		const resSelfEmployed = calculateDoctorPeriodPayroll({
+			doctorId: "doc-self-employed",
+			doctorName: "Д-р Свободный С. С.",
+			specialtyId: "therapist", // 25%
+			periodStartIso: "2026-08-01",
+			periodEndIso: "2026-08-31",
+			services,
+			taxRegime: "self_employed",
+		});
+
+		// Net base: 90,000 RUB -> 25% = 22,500 RUB (2,250,000 kop)
+		// Minimum guarantee for therapist is 60,000 RUB (6,000,000 kop)
+		assert.equal(resSelfEmployed.grossPayoutBeforeTaxKop, 6000000);
+		assert.equal(resSelfEmployed.ndfl13TaxKop, 0);
+		assert.equal(resSelfEmployed.ndflTaxKop, 0);
+		assert.equal(resSelfEmployed.netPayoutToDoctorKop, 6000000);
+		assert.equal(resSelfEmployed.taxRegime, "self_employed");
+
+		const resSoloDoc = calculateDoctorPeriodPayroll({
+			doctorId: "doc-solo-auto",
+			doctorName: "Д-р Соло И. П.",
+			specialtyId: "solo_practitioner", // 100%
+			periodStartIso: "2026-08-01",
+			periodEndIso: "2026-08-31",
+			services,
+		});
+
+		assert.equal(resSoloDoc.ndfl13TaxKop, 0);
+		assert.equal(resSoloDoc.ndflTaxKop, 0);
+		assert.equal(resSoloDoc.netPayoutToDoctorKop, resSoloDoc.grossPayoutBeforeTaxKop);
+		assert.equal(resSoloDoc.taxRegime, "self_employed");
+	});
 });

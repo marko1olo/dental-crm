@@ -76,6 +76,11 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	const [periodPreset, setPeriodPreset] = useState<"current_month" | "previous_month" | "quarter" | "custom">("current_month");
 	const [customPercent, setCustomPercent] = useState<number | undefined>(initialBasePercentage);
 	const [manualAdjustmentRub, setManualAdjustmentRub] = useState<number>(0);
+	const [taxRegime, setTaxRegime] = useState<"employee" | "self_employed">(() => {
+		return doctorsList.length === 0 || initialDoctorId === "solo-doctor" ? "self_employed" : "employee";
+	});
+	const [apiServices, setApiServices] = useState<DoctorCompletedServiceItem[]>([]);
+	const [isLoadingEarnings, setIsLoadingEarnings] = useState<boolean>(false);
 
 	const handleSelectPeriodPreset = (preset: "current_month" | "previous_month" | "quarter" | "custom") => {
 		setPeriodPreset(preset);
@@ -143,11 +148,74 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 		return found ?? doctorsList[0] ?? null;
 	}, [doctorsList, selectedDoctorId, soloSpecialtyId]);
 
+	// Fetch live doctor earnings when initialServices is not provided
+	React.useEffect(() => {
+		if (!isOpen) return;
+		if (initialServices && initialServices.length > 0) return;
+
+		const docId = activeDoc?.id || selectedDoctorId || "doc-1";
+		let isCancelled = false;
+		setIsLoadingEarnings(true);
+
+		const query = new URLSearchParams({
+			doctorId: docId,
+			from: periodStart,
+			to: periodEnd,
+		});
+
+		fetch(`/api/doctor/my-earnings?${query.toString()}`)
+			.then((res) => {
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
+				return res.json();
+			})
+			.then((data) => {
+				if (isCancelled) return;
+				const mapped: DoctorCompletedServiceItem[] = [];
+				if (data && Array.isArray(data.appointments)) {
+					for (const apt of data.appointments) {
+						const dateIso = apt.startsAtIso ? apt.startsAtIso.slice(0, 10) : periodStart;
+						if (Array.isArray(apt.services) && apt.services.length > 0) {
+							for (const srv of apt.services) {
+								let category: DoctorCompletedServiceItem["category"] = "therapy";
+								if (["therapy", "orthopedics", "surgery", "orthodontics", "hygiene", "retail_hygiene", "pediatric"].includes(srv.category)) {
+									category = srv.category as DoctorCompletedServiceItem["category"];
+								}
+								mapped.push({
+									id: srv.id || `srv-${apt.appointmentId}-${mapped.length}`,
+									dateIso,
+									patientName: apt.patientFullName || "Пациент",
+									medicalCardNumber: apt.cardNumber || "—",
+									serviceNameRu: srv.nameRu || "Стоматологическая процедура",
+									category,
+									grossRevenueKop: srv.priceKop ?? Math.round((srv.priceRub || 0) * 100),
+									labCostKop: srv.labCostKop ?? Math.round((srv.labCostRub || 0) * 100),
+									materialCostKop: srv.materialCostKop ?? Math.round((srv.materialCostRub || 0) * 100),
+									customCommissionPercent: srv.commissionPercent,
+									doctorId: docId,
+									performerId: docId,
+								});
+							}
+						}
+					}
+				}
+				setApiServices(mapped);
+				setIsLoadingEarnings(false);
+			})
+			.catch(() => {
+				if (isCancelled) return;
+				setIsLoadingEarnings(false);
+			});
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [isOpen, initialServices, activeDoc?.id, selectedDoctorId, periodStart, periodEnd]);
+
 	const servicesToUse = useMemo(() => {
-		const raw = initialServices ?? [];
+		const raw = initialServices && initialServices.length > 0 ? initialServices : apiServices;
 		if (!activeDoc) return raw;
 		return filterServicesForDoctor(raw, activeDoc.id);
-	}, [initialServices, activeDoc]);
+	}, [initialServices, apiServices, activeDoc]);
 
 	const payrollResult: DoctorPayrollResult = useMemo(() => {
 		if (!isOpen || !activeDoc) {
@@ -188,9 +256,11 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 			services: servicesToUse,
 			customBasePercentage: customPercent,
 			useClinicalCategoryRates,
+			taxRegime,
+			isSoloDoctor: doctorsList.length === 0 || activeDoc.specialtyId === "solo_practitioner" || activeDoc.specialtyId === "solo-doctor",
 			manualAdjustmentKop: Math.round(manualAdjustmentRub * 100),
 		});
-	}, [isOpen, activeDoc, periodStart, periodEnd, servicesToUse, customPercent, manualAdjustmentRub, useClinicalCategoryRates]);
+	}, [isOpen, activeDoc, periodStart, periodEnd, servicesToUse, customPercent, manualAdjustmentRub, useClinicalCategoryRates, taxRegime, doctorsList.length]);
 
 	if (!isOpen) return null;
 
@@ -232,7 +302,11 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 							<h2 className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)] flex items-center gap-2">
 								Сдельная зарплата и расчетный листок
 								<span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/20">
-									{payrollResult.isProgressiveTaxApplied ? "Расчет зарплаты / Прогрессивный НДФЛ 13-15%" : "Расчет зарплаты / НДФЛ 13%"}
+									{taxRegime === "self_employed"
+										? "ИП / Самозанятый (НДФЛ 0%)"
+										: payrollResult.isProgressiveTaxApplied
+											? "Расчет зарплаты / Прогрессивный НДФЛ 13-15%"
+											: "Расчет зарплаты / НДФЛ 13%"}
 								</span>
 							</h2>
 							<p className="text-xs text-[var(--muted,#64748b)]">
@@ -288,6 +362,28 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 										onClick={() => handleSelectPeriodPreset("custom")}
 									>
 										Произвольный
+									</button>
+								</div>
+							</div>
+
+							<div className="flex items-center gap-2 flex-wrap">
+								<span className="text-xs font-semibold text-[var(--muted,#64748b)]">
+									Режим:
+								</span>
+								<div className="dente-segmented-bar" data-testid="doctor-payroll-tax-regime">
+									<button
+										type="button"
+										className={`dente-segmented-item ${taxRegime === "employee" ? "active" : ""}`}
+										onClick={() => setTaxRegime("employee")}
+									>
+										Наёмный (13-15%)
+									</button>
+									<button
+										type="button"
+										className={`dente-segmented-item ${taxRegime === "self_employed" ? "active" : ""}`}
+										onClick={() => setTaxRegime("self_employed")}
+									>
+										ИП / Самозанятый (0%)
 									</button>
 								</div>
 							</div>
@@ -403,9 +499,11 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 								{(payrollResult.netPayoutToDoctorKop / 100).toLocaleString("ru-RU")} ₽
 							</span>
 							<span className="text-[12px] text-[var(--muted,#64748b)]">
-								{payrollResult.isProgressiveTaxApplied
-									? `НДФЛ 13-15%: ${(((payrollResult.ndflTaxKop ?? payrollResult.ndfl13TaxKop)) / 100).toLocaleString("ru-RU")} ₽`
-									: `НДФЛ 13%: ${(payrollResult.ndfl13TaxKop / 100).toLocaleString("ru-RU")} ₽`}
+								{taxRegime === "self_employed"
+									? "ИП / Самозанятый (НДФЛ 0%)"
+									: payrollResult.isProgressiveTaxApplied
+										? `НДФЛ 13-15%: ${(((payrollResult.ndflTaxKop ?? payrollResult.ndfl13TaxKop)) / 100).toLocaleString("ru-RU")} ₽`
+										: `НДФЛ 13%: ${(payrollResult.ndfl13TaxKop / 100).toLocaleString("ru-RU")} ₽`}
 							</span>
 						</div>
 					</div>
@@ -424,7 +522,17 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 						<h3 className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider">
 							Детализация выполненных нарядов и приемов за период:
 						</h3>
-						{servicesToUse.length === 0 ? (
+						{isLoadingEarnings ? (
+							<div
+								className="p-8 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-center flex flex-col items-center justify-center gap-2"
+								data-testid="doctor-payroll-services-loading"
+							>
+								<div className="w-6 h-6 border-2 border-[var(--teal,#0d9488)] border-t-transparent rounded-full animate-spin" />
+								<p className="text-xs sm:text-sm font-semibold text-[var(--ink,#0f172a)]">
+									Загрузка подтвержденных нарядов и приемов из базы...
+								</p>
+							</div>
+						) : servicesToUse.length === 0 ? (
 							<div
 								className="p-8 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-center flex flex-col items-center justify-center gap-2"
 								data-testid="doctor-payroll-services-empty"

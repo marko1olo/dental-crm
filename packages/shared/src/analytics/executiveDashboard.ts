@@ -243,8 +243,10 @@ export interface ExecutiveDepartmentItem {
 
 // ─── 3. UNIT-ЭКОНОМИКА И ОПЕРАЦИОННЫЕ KPI РУКОВОДИТЕЛЯ ──────────────────────
 
-export const executivePeriodSchema = z.enum(["day", "month", "quarter", "year"]);
+export const executivePeriodSchema = z.enum(["day", "week", "month", "quarter", "year"]);
 export type ExecutivePeriod = z.infer<typeof executivePeriodSchema>;
+
+export type ExecutiveKpisSummary = ExecutiveKpis;
 
 export interface ExecutiveKpis {
 	readonly period: ExecutivePeriod;
@@ -258,6 +260,16 @@ export interface ExecutiveKpis {
 	readonly totalRevenuePlanRub: number;
 	readonly totalRevenuePlanFormatted: string;
 	readonly overallPlanFulfillmentPercent: number; // Общее выполнение плана (%)
+	
+	// Чистая прибыль и маржинальность P&L
+	readonly netProfitKopecks?: number;
+	readonly netProfitRub?: number;
+	readonly netProfitFormatted?: string;
+	readonly netMarginPercent?: number;
+	readonly cogsKopecks?: number;
+	readonly cogsFormatted?: string;
+	readonly opexKopecks?: number;
+	readonly opexFormatted?: string;
 	
 	// Пациенты и чеки
 	readonly totalPatientsCount: number;
@@ -522,6 +534,10 @@ export interface CalculateExecutiveKpisParams {
 	readonly activeDoctorsCount: number;
 	readonly cancelledVisitsCount?: number;
 	readonly noShowVisitsCount?: number;
+	readonly netProfitKopecks?: number;
+	readonly cogsKopecks?: number;
+	readonly opexKopecks?: number;
+	readonly netMarginPercent?: number;
 }
 
 /**
@@ -613,10 +629,24 @@ export function calculateExecutiveKpisSummary(
 
 	const PERIOD_LABELS: Record<ExecutivePeriod, string> = {
 		day: "Сегодня (1 день)",
+		week: "Текущая неделя (7 дней)",
 		month: "Текущий месяц",
 		quarter: "Текущий квартал",
 		year: "Текущий год",
 	};
+
+	// Себестоимость, операционные расходы и чистая прибыль P&L
+	const cogsKop = params.cogsKopecks !== undefined ? Math.max(0, Math.round(params.cogsKopecks)) : 0;
+	const opexKop = params.opexKopecks !== undefined ? Math.max(0, Math.round(params.opexKopecks)) : 0;
+	const netProfitKop = params.netProfitKopecks !== undefined
+		? Math.round(params.netProfitKopecks)
+		: Math.round(revKop - (cogsKop + opexKop));
+	const netProfitRub = Math.round(netProfitKop / 100);
+	const netMarginPercent = params.netMarginPercent !== undefined
+		? params.netMarginPercent
+		: revKop > 0
+			? Number(((netProfitKop / revKop) * 100).toFixed(1))
+			: 0.0;
 
 	return {
 		period: params.period,
@@ -628,6 +658,14 @@ export function calculateExecutiveKpisSummary(
 		totalRevenuePlanRub: Math.round(planKop / 100),
 		totalRevenuePlanFormatted: formatKopecksRu(planKop),
 		overallPlanFulfillmentPercent,
+		netProfitKopecks: netProfitKop,
+		netProfitRub,
+		netProfitFormatted: formatKopecksRu(netProfitKop),
+		netMarginPercent,
+		cogsKopecks: cogsKop,
+		cogsFormatted: formatKopecksRu(cogsKop),
+		opexKopecks: opexKop,
+		opexFormatted: formatKopecksRu(opexKop),
 		totalPatientsCount: totalPatients,
 		primaryPatientsCount: primaryPatients,
 		repeatPatientsCount: repeatPatients,
