@@ -270,7 +270,7 @@ export function GeneralCleaningRegisterTab() {
 
 					<button
 						type="button"
-						onClick={() => setIsModalOpen(true)}
+						onClick={handleQuickRecordNormCleaning}
 						className="sanpin-btn sanpin-btn-primary"
 						style={{ height: "36px", minHeight: "36px", padding: "0 0.85rem", fontSize: "0.825rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 					>

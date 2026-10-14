@@ -370,14 +370,6 @@ export function SanpinChemicalTestsRegisterTab() {
 												>
 													<CheckCircle2 size={16} /> Проба отрицательная (скрытой крови нет)
 												</button>
-												<button
-													type="button"
-													onClick={() => setIsModalOpen(true)}
-													className="sanpin-btn sanpin-btn-secondary touch-manipulation"
-													style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
-												>
-													<Plus size={15} /> Внести пробу вручную
-												</button>
 											</div>
 										</div>
 									</td>

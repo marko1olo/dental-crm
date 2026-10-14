@@ -198,50 +198,6 @@ export function TemperatureHumidityRegisterTab() {
 		}
 	};
 
-	const handleAddEquipment = async (e: React.FormEvent) => {
-		e.preventDefault();
-		try {
-			setSubmitting(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
-
-			const payload: CreateTemperatureHumidityEquipmentDto = {
-				equipmentType: equipType,
-				name: equipName,
-				location: equipLocation,
-				meterDeviceName: meterName,
-				meterSerialNumber: meterSerial || undefined,
-				targetTempMinCelsius: Number(targetMinTemp),
-				targetTempMaxCelsius: Number(targetMaxTemp),
-				targetHumidityMinPercent: targetMinHumidity ? Number(targetMinHumidity) : undefined,
-				targetHumidityMaxPercent: targetMaxHumidity ? Number(targetMaxHumidity) : undefined,
-			};
-
-			const res = await fetch("/api/registers/temperature-humidity/equipments", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
-				body: JSON.stringify(payload),
-			});
-
-			if (res.ok) {
-				showToast("Объект контроля успешно добавлен в журнал", "success");
-				setIsEquipModalOpen(false);
-				fetchAll();
-			} else {
-				const err = await res.json();
-				showToast(err.message || "Ошибка при создании объекта", "error");
-			}
-		} catch (err) {
-			showToast("Сетевая ошибка", "error");
-		} finally {
-			setSubmitting(false);
-		}
-	};
-
 	const filteredLogs = useMemo(() => {
 		if (selectedEquipId === "all") return logs;
 		return logs.filter((l) => l.equipmentId === selectedEquipId);

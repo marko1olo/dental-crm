@@ -6,6 +6,7 @@
  */
 
 import React, { useState } from "react";
+import { showToast } from "../GlobalToast";
 import { SterilizationScanner } from "./SterilizationScanner";
 import { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
 import { SterilizationCycleModal } from "./SterilizationCycleModal";

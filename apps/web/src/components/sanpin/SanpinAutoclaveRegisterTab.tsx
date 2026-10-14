@@ -482,7 +482,7 @@ export function SanpinAutoclaveRegisterTab() {
 			<SterilizerEquipmentModal
 				isOpen={isEquipmentModalOpen}
 				onClose={() => setIsEquipmentModalOpen(false)}
-				onSaved={fetchDevices}
+				onSuccess={fetchDevices}
 			/>
 		</div>
 	);

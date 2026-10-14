@@ -13,6 +13,7 @@ import {
 	Wind,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { BactericidalAddEquipmentModal } from "./BactericidalAddEquipmentModal";
@@ -200,7 +201,6 @@ export function BactericidalRegisterTab() {
 
 			if (res.ok) {
 				showToast("Сеанс работы зафиксирован, часы наработки обновлены", "success");
-				setIsLogModalOpen(false);
 				fetchAll();
 			} else {
 				const err = await res.json();
