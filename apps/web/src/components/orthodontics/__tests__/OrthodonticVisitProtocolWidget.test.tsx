@@ -153,10 +153,27 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 		assert.ok(html.includes("data-testid=\"ortho-preset-debonding-retainer\""));
 		assert.ok(html.includes("Снятие брекет-системы"));
 
-		// 5. Aligner Lab Order
+		// 5. Leveling preset (NiTi .014 + CuNiTi .016x.022 + Class II)
+		assert.ok(html.includes("data-testid=\"ortho-preset-leveling\""));
+		assert.ok(html.includes("Смена дуг: нивелирование"));
+
+		// 6. Springs activation (Open / Closed Coil)
+		assert.ok(html.includes("data-testid=\"ortho-preset-springs\""));
+		assert.ok(html.includes("Активация пружин"));
+
+		// 7. Separation rings
+		assert.ok(html.includes("data-testid=\"ortho-preset-separation-rings\""));
+		assert.ok(html.includes("Сепарация под кольца"));
+
+		// 8. Aligner Lab Order
 		assert.ok(html.includes("data-testid=\"ortho-preset-aligner-lab-order\""));
 		assert.ok(html.includes("Наряд ЗТЛ (Элайнеры / Каппа)"));
 		assert.ok(html.includes("срок 5-7 дней"));
+
+		// Apple Mobile HIG Bottom Sheet Ergonomics
+		assert.ok(html.includes("data-testid=\"ortho-mobile-drag-handle\""));
+		assert.ok(html.includes("data-testid=\"ortho-mobile-segmented-switcher\""));
+		assert.ok(html.includes("data-testid=\"ortho-mobile-sticky-cta-bar\""));
 	});
 
 	it("renders aligner attachments express block with 4 presets, delivery sets, and SOAP append button", () => {
@@ -409,6 +426,39 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 			assert.ok(retainer);
 			assert.equal(retainer?.nameRu, "Фиксация несъемного ретейнера");
 			assert.equal(retainer?.priceRub, 4000);
+		});
+
+		it("maps wire_change_leveling to A16.07.046 (3500 rub) + A16.07.049 (1200 rub)", () => {
+			const services = calculateOrthodonticServices804n({
+				selectedActions: ["wire_change_leveling"],
+			});
+			assert.equal(services.length, 2);
+
+			const wire = services.find((s) => s.code === "A16.07.046");
+			assert.ok(wire);
+			assert.equal(wire?.priceRub, 3500);
+
+			const elastics = services.find((s) => s.code === "A16.07.049");
+			assert.ok(elastics);
+			assert.equal(elastics?.priceRub, 1200);
+		});
+
+		it("maps spring_activation to A16.07.048.003 (1400 rub)", () => {
+			const services = calculateOrthodonticServices804n({
+				selectedActions: ["spring_activation"],
+			});
+			assert.equal(services.length, 1);
+			assert.equal(services[0]?.code, "A16.07.048.003");
+			assert.equal(services[0]?.priceRub, 1400);
+		});
+
+		it("maps separation_rings to A16.07.050 (1200 rub)", () => {
+			const services = calculateOrthodonticServices804n({
+				selectedActions: ["separation_rings"],
+			});
+			assert.equal(services.length, 1);
+			assert.equal(services[0]?.code, "A16.07.050");
+			assert.equal(services[0]?.priceRub, 1200);
 		});
 
 		it("maps aligners / isAttachmentsOnly to A16.07.046 (3000 rub) + A16.07.046.001 (2000 rub)", () => {

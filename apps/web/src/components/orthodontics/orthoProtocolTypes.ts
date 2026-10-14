@@ -37,6 +37,15 @@ export interface OrthodonticService804n {
 	arch?: TargetArch | undefined;
 }
 
+export type OrthoClinicalPresetId =
+	| "activation"
+	| "wire_change"
+	| "bonding"
+	| "debonding"
+	| "leveling"
+	| "springs"
+	| "separation";
+
 export const ORTHO_804N_ACTIONS_MAP: Record<string, Array<Omit<OrthodonticService804n, "stageKind">>> = {
 	wire_change: [
 		{
@@ -50,6 +59,18 @@ export const ORTHO_804N_ACTIONS_MAP: Record<string, Array<Omit<OrthodonticServic
 			priceRub: 1500,
 		},
 	],
+	wire_change_leveling: [
+		{
+			code: "A16.07.046",
+			nameRu: "Смена дуг: плановое нивелирование (NiTi / CuNiTi)",
+			priceRub: 3500,
+		},
+		{
+			code: "A16.07.049",
+			nameRu: "Наложение эластической тяги Class II",
+			priceRub: 1200,
+		},
+	],
 	ligature_change: [
 		{
 			code: "A16.07.048",
@@ -57,10 +78,52 @@ export const ORTHO_804N_ACTIONS_MAP: Record<string, Array<Omit<OrthodonticServic
 			priceRub: 1500,
 		},
 	],
+	activation: [
+		{
+			code: "A16.07.048",
+			nameRu: "Плановая активация элементов брекет-системы",
+			priceRub: 1500,
+		},
+	],
+	power_chain: [
+		{
+			code: "A16.07.048.003",
+			nameRu: "Активация дуги / наложение эластической цепочки (Power Chain)",
+			priceRub: 1200,
+		},
+	],
+	spring_activation: [
+		{
+			code: "A16.07.048.003",
+			nameRu: "Активация пружин (open-coil / closed-coil)",
+			priceRub: 1400,
+		},
+	],
+	separation_rings: [
+		{
+			code: "A16.07.050",
+			nameRu: "Сепарация межзубная / установка эластических колец под бандажи",
+			priceRub: 1200,
+		},
+	],
 	rebracket: [
 		{
 			code: "A16.07.048.001",
 			nameRu: "Фиксация одного брекета / замка",
+			priceRub: 1200,
+		},
+	],
+	bonding: [
+		{
+			code: "A16.07.047",
+			nameRu: "Ортодонтическая коррекция: фиксация брекет-системы",
+			priceRub: 25000,
+		},
+	],
+	elastics: [
+		{
+			code: "A16.07.049",
+			nameRu: "Наложение эластической межчелюстной тяги (эластики)",
 			priceRub: 1200,
 		},
 	],

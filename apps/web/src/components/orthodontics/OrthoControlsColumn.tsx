@@ -2,6 +2,7 @@ import React from "react";
 import {
 	ORTHODONTIC_STAGE_TABS,
 	ANTERIOR_TEETH,
+	type OrthoClinicalPresetId,
 	type OrthodonticStageFilter,
 	type TargetArch,
 } from "./orthoProtocolTypes";
@@ -30,6 +31,7 @@ import type {
 } from "@dental/shared";
 
 export interface OrthoControlsColumnProps {
+	className?: string | undefined;
 	stageFilter: OrthodonticStageFilter;
 	setStageFilter: (filter: OrthodonticStageFilter) => void;
 	setBracketSystem: (system: string) => void;
@@ -57,11 +59,14 @@ export interface OrthoControlsColumnProps {
 	onInsertCephToProtocol: (text: string) => void;
 
 	// Presets
-	activePreset: "activation" | "wire_change" | "bonding" | "debonding" | null;
+	activePreset: OrthoClinicalPresetId | null;
 	onPresetActivation: () => void;
 	onPresetWireChange: () => void;
 	onPresetBonding: () => void;
 	onPresetDebonding: () => void;
+	onPresetLeveling: () => void;
+	onPresetSprings: () => void;
+	onPresetSeparationRings: () => void;
 	onPresetAlignerLabOrder: () => void;
 	onPresetRetainerLabOrder: () => void;
 	onPresetPlateLabOrder: () => void;
@@ -170,6 +175,9 @@ export const OrthoControlsColumn: React.FC<OrthoControlsColumnProps> = ({
 	onPresetWireChange,
 	onPresetBonding,
 	onPresetDebonding,
+	onPresetLeveling,
+	onPresetSprings,
+	onPresetSeparationRings,
 	onPresetAlignerLabOrder,
 	onPresetRetainerLabOrder,
 	onPresetPlateLabOrder,
@@ -237,9 +245,10 @@ export const OrthoControlsColumn: React.FC<OrthoControlsColumnProps> = ({
 	setElasticSize,
 	onElasticSizeInteraction,
 	onToggleAction,
+	className = "",
 }) => {
 	return (
-		<div className="lg:col-span-7 p-4 sm:p-5 flex flex-col gap-4 border-b lg:border-b-0 lg:border-r border-[var(--line,#e2e8f0)] dark:border-slate-800 overflow-y-auto">
+		<div className={`lg:col-span-7 p-4 sm:p-5 flex flex-col gap-4 border-b lg:border-b-0 lg:border-r border-[var(--line,#e2e8f0)] dark:border-slate-800 overflow-y-auto ${className}`}>
 			{/* 0. Stages Filter Bar (DENTE Segmented Bar) */}
 			<div
 				data-testid="ortho-stages-toolbar"
@@ -308,6 +317,9 @@ export const OrthoControlsColumn: React.FC<OrthoControlsColumnProps> = ({
 				onPresetWireChange={onPresetWireChange}
 				onPresetBonding={onPresetBonding}
 				onPresetDebonding={onPresetDebonding}
+				onPresetLeveling={onPresetLeveling}
+				onPresetSprings={onPresetSprings}
+				onPresetSeparationRings={onPresetSeparationRings}
 				onPresetAlignerLabOrder={onPresetAlignerLabOrder}
 				onPresetRetainerLabOrder={onPresetRetainerLabOrder}
 				onPresetPlateLabOrder={onPresetPlateLabOrder}

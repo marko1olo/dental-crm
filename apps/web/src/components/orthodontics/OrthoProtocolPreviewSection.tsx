@@ -11,6 +11,7 @@ export interface OrthoProtocolPreviewSectionProps {
 	readonly onApplyToVisitNote: () => void;
 	readonly onClose: () => void;
 	readonly calculatedServicesCount: number;
+	readonly className?: string | undefined;
 }
 
 export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionProps> = ({
@@ -23,9 +24,10 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 	onApplyToVisitNote,
 	onClose,
 	calculatedServicesCount,
+	className = "",
 }) => {
 	return (
-		<div className="lg:col-span-5 p-4 sm:p-5 flex flex-col gap-3 bg-[var(--surface,#f8fafc)]/60 dark:bg-slate-900/60 overflow-y-auto" data-testid="ortho-protocol-preview-section">
+		<div className={`lg:col-span-5 p-4 sm:p-5 flex flex-col gap-3 bg-[var(--surface,#f8fafc)]/60 dark:bg-slate-900/60 overflow-y-auto ${className}`} data-testid="ortho-protocol-preview-section">
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
 					<FileText size={16} className="text-amber-500" />
@@ -44,7 +46,8 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 						aria-label="Печать протокола"
 					>
 						<Printer size={13} />
-						<span>Печать протокола</span>
+						<span className="hidden sm:inline">Печать протокола</span>
+						<span className="sm:hidden">Печать</span>
 					</button>
 					<button
 						type="button"
@@ -70,27 +73,29 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 						type="button"
 						onClick={onCopyPatientMemo}
 						data-testid="ortho-copy-patient-memo-btn"
-						className="secondary-button min-h-[48px] px-3.5 py-2 rounded-xl w-full justify-center shrink-0"
+						className="secondary-button min-h-[44px] px-3 py-2 rounded-xl w-full justify-center shrink-0"
 						title="Скопировать памятку по эластикам и уходу для отправки пациенту в WhatsApp/Telegram"
 					>
 						<Copy size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span className="hidden sm:inline">Скопировать для пациента</span>
-						<span className="sm:hidden">Памятка</span>
+						<span className="sm:hidden text-xs">Памятка</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={onPrintPatientMemo}
 						data-testid="ortho-print-patient-memo-btn"
-						className="secondary-button w-full justify-center shrink-0"
+						className="secondary-button min-h-[44px] px-3 py-2 rounded-xl w-full justify-center shrink-0"
 						title="Распечатать памятку пациенту (A4)"
 					>
 						<Printer size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span>Печать памятки A4</span>
+						<span className="hidden sm:inline">Печать памятки A4</span>
+						<span className="sm:hidden text-xs">Печать A4</span>
 					</button>
 				</div>
 
-				<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+				{/* Desktop action row; on mobile, handled by floating sticky bottom bar */}
+				<div className="!hidden sm:!flex items-center gap-2">
 					<button
 						type="button"
 						onClick={onPrintOrthodonticCard}

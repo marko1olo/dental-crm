@@ -13,6 +13,7 @@ import type {
 	OrthodonticStageFilter,
 	TargetArch,
 	OrthodonticVisitProtocolWidgetProps,
+	OrthoClinicalPresetId,
 } from "./orthoProtocolTypes";
 
 export function useOrthoProtocolState(props: OrthodonticVisitProtocolWidgetProps) {
@@ -44,9 +45,7 @@ export function useOrthoProtocolState(props: OrthodonticVisitProtocolWidgetProps
 	const [notes, setNotes] = useState<string>("Пациент жалоб не предъявляет. Гигиена удовлетворительная.");
 
 	// Clinical Presets State
-	const [activePreset, setActivePreset] = useState<
-		"activation" | "wire_change" | "bonding" | "debonding" | null
-	>(null);
+	const [activePreset, setActivePreset] = useState<OrthoClinicalPresetId | null>(null);
 
 	// Aligner Express State
 	const [activeAttachmentPreset, setActiveAttachmentPreset] = useState<string | null>(null);

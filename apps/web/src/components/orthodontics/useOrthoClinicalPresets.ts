@@ -1,6 +1,6 @@
 import React from "react";
 import { showToast } from "../GlobalToast";
-import { ANTERIOR_TEETH, type TargetArch } from "./orthoProtocolTypes";
+import { ANTERIOR_TEETH, type OrthoClinicalPresetId, type TargetArch } from "./orthoProtocolTypes";
 import type { BracketSlot } from "./OrthoBracketProtocolSection";
 import type { ArchwireMaterial, ArchwireSection } from "./OrthoArchwireSelector";
 
@@ -15,7 +15,7 @@ export interface UseOrthoClinicalPresetsOptions {
 	alignerStepLower: number;
 	alignerTotalLower: number;
 	targetArch: TargetArch;
-	setActivePreset: (preset: "activation" | "wire_change" | "bonding" | "debonding" | null) => void;
+	setActivePreset: (preset: OrthoClinicalPresetId | null) => void;
 	setTargetArch: (arch: TargetArch) => void;
 	setSelectedTeeth: React.Dispatch<React.SetStateAction<number[]>>;
 	setBracketSlot: (slot: BracketSlot) => void;
@@ -267,11 +267,64 @@ export function useOrthoClinicalPresets({
 		showToast(`Наряд ЗТЛ №${orderNumber} на окклюзионный сплинт (шина ВНЧС) успешно отправлен!`, "success", 4000);
 	};
 
+	const handlePresetLeveling = () => {
+		setActivePreset("leveling");
+		setTargetArch("both");
+		setSelectedTeeth([
+			17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27,
+			47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37,
+		]);
+		setBracketSlot("0.022");
+		setBracketSystem("damon_q2");
+		setArchwireMaterial("CuNiTi");
+		setArchwireSection(".016x.022");
+		setSelectedActions(["wire_change_leveling", "ligature_change", "elastics"]);
+		setElasticScheme("class_ii");
+		setElasticSize("fox_1_4");
+		setElasticWear("22 часа/сутки");
+		setNotes(
+			"Плановое нивелирование зубных рядов. Произведена замена дуг: верхняя челюсть — NiTi .014\", нижняя челюсть — CuNiTi .016x.022\". Наложена эластическая межчелюстная тяга Class II (эластики Лиса 1/4\" 3.5 oz, ношение 22 ч/сут). Замки закрыты со щелчком, концы дуг загнуты. Гигиена удовлетворительная, болевой синдром купирован.",
+		);
+		showToast("Пресет: Плановое нивелирование (NiTi .014 ВЧ + CuNiTi .016x.022 НЧ + тяга Class II) применен", "info");
+	};
+
+	const handlePresetSprings = () => {
+		setActivePreset("springs");
+		setTargetArch("both");
+		setSelectedTeeth([
+			17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27,
+			47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37,
+		]);
+		setBracketSlot("0.022");
+		setBracketSystem("damon_q2");
+		setArchwireMaterial("SS");
+		setArchwireSection(".019x.025");
+		setSelectedActions(["spring_activation", "ligature_change"]);
+		setNotes(
+			"Активация пружин ортодонтической аппаратуры. Установлена раскрывающая нитиноловая пружина Open-Coil Spring (сжатие на 1.5 мм для создания места в зубном ряду) / закрывающая пружина Closed-Coil Spring на жесткой стальной дуге SS .019x.025\". Фиксация лигатурами Кобаяши. Контроль окклюзии.",
+		);
+		showToast("Пресет: Активация пружин (Open/Closed Coil) применен", "info");
+	};
+
+	const handlePresetSeparationRings = () => {
+		setActivePreset("separation");
+		setTargetArch("both");
+		setSelectedTeeth([16, 26, 36, 46]);
+		setSelectedActions(["separation_rings"]);
+		setNotes(
+			"Установка межзубных эластических сепараторов (сепарационные кольца) в области первых и вторых моляров верхней и нижней челюстей (16, 26, 36, 46) для раскрытия контактов под ортодонтические кольца/бандажи. Пациент проинструктирован, выдан ортодонтический воск. Назначен контрольный визит через 5 дней.",
+		);
+		showToast("Пресет: Сепарация под бандажные кольца применен", "info");
+	};
+
 	return {
 		handlePresetActivation,
 		handlePresetWireChange,
 		handlePresetBonding,
 		handlePresetDebonding,
+		handlePresetLeveling,
+		handlePresetSprings,
+		handlePresetSeparationRings,
 		handlePresetAlignerLabOrder,
 		handlePresetRetainerLabOrder,
 		handlePresetPlateLabOrder,

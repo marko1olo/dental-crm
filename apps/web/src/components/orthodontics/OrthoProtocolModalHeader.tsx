@@ -39,19 +39,19 @@ export const OrthoProtocolModalHeader: React.FC<OrthoProtocolModalHeaderProps> =
 				<button
 					type="button"
 					onClick={onPrintOrthodonticCard}
-					className="secondary-button shrink-0"
+					className="secondary-button shrink-0 !hidden sm:!inline-flex"
 					data-testid="top-print-ortho-protocol-btn"
 					title="Распечатать карту"
 					aria-label="Печать протокола"
 				>
 					<Printer size={15} />
-					<span className="hidden sm:inline">Печать протокола</span>
+					<span>Печать протокола</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={onAddServicesToInvoice}
-					className="secondary-button shrink-0"
+					className="secondary-button shrink-0 !hidden sm:!inline-flex"
 					data-testid="add-ortho-services-to-invoice-btn"
 					title="Начислить услуги в чек/смету визита"
 					aria-label="Начислить услуги в чек/смету"
@@ -70,7 +70,7 @@ export const OrthoProtocolModalHeader: React.FC<OrthoProtocolModalHeaderProps> =
 				<button
 					type="button"
 					onClick={onApplyToVisitNote}
-					className="primary-button shrink-0"
+					className="primary-button shrink-0 !hidden sm:!inline-flex"
 					data-testid="apply-to-form-043-btn"
 					title="Вставить протокол в медицинскую карту"
 					aria-label="В медицинскую карту"
@@ -82,11 +82,11 @@ export const OrthoProtocolModalHeader: React.FC<OrthoProtocolModalHeaderProps> =
 				<button
 					type="button"
 					onClick={onClose}
-					className="secondary-button !w-8 !h-8 !p-0 shrink-0"
+					className="secondary-button min-w-[44px] min-h-[44px] sm:min-w-[32px] sm:min-h-[32px] !w-auto !h-auto sm:!w-8 sm:!h-8 !p-0 shrink-0 flex items-center justify-center cursor-pointer rounded-xl"
 					aria-label="Закрыть"
 					data-testid="close-ortho-protocol-btn"
 				>
-					<X size={16} />
+					<X size={18} />
 				</button>
 			</div>
 		</div>

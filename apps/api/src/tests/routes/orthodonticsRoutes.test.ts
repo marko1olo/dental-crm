@@ -206,4 +206,27 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		});
 		assert.equal(postRes.statusCode, 404);
 	});
+
+	it("7. POST /api/orthodontics/:patientId/deduct-materials deducts materials with soft overdraft", async (t) => {
+		if (!databaseAvailable) return t.skip("Database is unavailable");
+
+		const res = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/deduct-materials`,
+			headers: ORG_HEADERS,
+			payload: {
+				action: "spring_activation",
+				quantity: 2,
+				notes: "Тестовое списание пружин Open-Coil",
+			},
+		});
+
+		assert.equal(res.statusCode, 200);
+		const body = JSON.parse(res.body);
+		assert.equal(body.success, true);
+		assert.equal(body.action, "spring_activation");
+		assert.ok(body.deduction);
+		assert.equal(body.deduction.success, true);
+		assert.equal(body.deduction.deductedQty, 2);
+	});
 });

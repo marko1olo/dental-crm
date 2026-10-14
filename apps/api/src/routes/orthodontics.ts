@@ -12,7 +12,10 @@
  */
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { and, eq, ilike, or } from "drizzle-orm";
 import { z } from "zod";
+import { db } from "../db/client.js";
+import { inventoryItems, inventoryTransactions } from "../db/schema.js";
 import {
 	getPatientByIdFromDb,
 	updatePatientAdministrativeProfileInDb,
@@ -49,6 +52,152 @@ const stageAdvanceSchema = z.object({
 	stageTitle: z.string().max(120).optional(),
 	note: z.string().max(300).optional(),
 });
+
+const deductOrthoMaterialsSchema = z.object({
+	action: z.enum([
+		"wire_change",
+		"spring_activation",
+		"separation_rings",
+		"bonding",
+		"power_chain",
+		"elastics",
+		"custom",
+	]),
+	materialName: z.string().optional(),
+	materialCategory: z.string().default("other"),
+	quantity: z.number().positive().default(1),
+	unit: z.string().default("шт."),
+	arch: z.enum(["upper", "lower", "both"]).default("both"),
+	visitId: z.string().optional(),
+	notes: z.string().max(300).optional(),
+});
+
+export interface OrthoMaterialDeductionResult {
+	success: boolean;
+	itemId?: string | undefined;
+	itemName?: string | undefined;
+	deductedQty: number;
+	remainingStock?: number | undefined;
+	isOverdraft: boolean;
+	error?: string | undefined;
+}
+
+export async function deductOrthoMaterialSafely(params: {
+	organizationId: string;
+	patientId: string;
+	itemNamePattern: string;
+	defaultItemName: string;
+	category: string;
+	quantity: number;
+	unit: string;
+	notes: string;
+	unitCostRub?: number | undefined;
+	visitId?: string | null | undefined;
+	userId?: string | null | undefined;
+}): Promise<OrthoMaterialDeductionResult> {
+	const {
+		organizationId,
+		patientId,
+		itemNamePattern,
+		defaultItemName,
+		category,
+		quantity,
+		unit,
+		notes,
+		unitCostRub = 1200,
+		visitId = null,
+		userId = null,
+	} = params;
+
+	try {
+		return await db.transaction(async (tx) => {
+			const found = await tx
+				.select()
+				.from(inventoryItems)
+				.where(
+					and(
+						eq(inventoryItems.organizationId, organizationId),
+						or(
+							ilike(inventoryItems.name, `%${itemNamePattern}%`),
+							ilike(inventoryItems.name, `%${defaultItemName}%`),
+						),
+					),
+				)
+				.limit(1)
+				.for("update");
+
+			let targetItem = found[0];
+
+			if (!targetItem) {
+				const [created] = await tx
+					.insert(inventoryItems)
+					.values({
+						organizationId,
+						name: defaultItemName,
+						category,
+						unit,
+						unitCostRub: String(unitCostRub),
+						stockQuantity: "0",
+						currentQty: "0",
+						criticalThreshold: "5",
+					})
+					.returning();
+				targetItem = created;
+			}
+
+			if (!targetItem) {
+				return { success: false, isOverdraft: false, deductedQty: 0 };
+			}
+
+			const currentStock = Number(targetItem.stockQuantity ?? targetItem.currentQty ?? 0);
+			const baseStock = Number.isFinite(currentStock) ? currentStock : 0;
+			const newStock = Number((baseStock - quantity).toFixed(4));
+			const isOverdraft = newStock < 0;
+
+			await tx
+				.update(inventoryItems)
+				.set({
+					stockQuantity: String(newStock),
+					currentQty: String(newStock),
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(inventoryItems.id, targetItem.id),
+						eq(inventoryItems.organizationId, organizationId),
+					),
+				);
+
+			await tx.insert(inventoryTransactions).values({
+				organizationId,
+				visitId,
+				userId,
+				itemId: targetItem.id,
+				inventoryItemId: targetItem.id,
+				quantityChanged: String(-quantity),
+				qty: String(-quantity),
+				unitCostRub: targetItem.unitCostRub ?? String(unitCostRub),
+				transactionType: isOverdraft ? "emergency_overdraft" : "auto_deduct",
+				isOverdraft,
+				notes: isOverdraft
+					? `Списано под ортодонтический прием (мягкий овердрафт): пациент ${patientId}, остаток ${newStock} ${targetItem.unit}`
+					: `${notes} (пациент ${patientId})`,
+			});
+
+			return {
+				success: true,
+				itemId: targetItem.id,
+				itemName: targetItem.name,
+				deductedQty: quantity,
+				remainingStock: newStock,
+				isOverdraft,
+			};
+		});
+	} catch (err) {
+		console.warn("[Orthodontics] Soft overdraft deduction failed gracefully:", err);
+		return { success: false, isOverdraft: false, deductedQty: 0, error: String(err) };
+	}
+}
 
 export interface OrthodonticProgressRecord {
 	currentAligner: number;
@@ -240,11 +389,26 @@ export async function registerOrthodonticsRoutes(app: FastifyInstance) {
 				orthodonticProgress: serialized,
 			});
 
+			// Soft overdraft deduction of archwire (Mandates 8e, 8n)
+			const archwireQty = body.arch === "both" ? 2 : 1;
+			const deduction = await deductOrthoMaterialSafely({
+				organizationId: orgId,
+				patientId,
+				itemNamePattern: body.material,
+				defaultItemName: `Дуга ортодонтическая ${body.material} ${body.section}"`,
+				category: "ortho_archwire",
+				quantity: archwireQty,
+				unit: "шт.",
+				unitCostRub: 1200,
+				notes: `Смена дуги: ${archwireStr}`,
+			});
+
 			return reply.send({
 				success: true,
 				archwire: archwireStr,
 				actionSummary,
 				progress: updatedProgress,
+				deduction,
 			});
 		},
 	);
@@ -289,10 +453,118 @@ export async function registerOrthodonticsRoutes(app: FastifyInstance) {
 				orthodonticProgress: serialized,
 			});
 
+			// Soft overdraft deduction of ligatures or power chain (Mandates 8e, 8n)
+			const deduction = await deductOrthoMaterialSafely({
+				organizationId: orgId,
+				patientId,
+				itemNamePattern: body.powerChain ? "Power Chain" : "лигатур",
+				defaultItemName: body.powerChain
+					? "Эластическая цепочка Power Chain"
+					: "Эластические лигатуры цветные/прозрачные",
+				category: body.powerChain ? "ortho_archwire" : "other",
+				quantity: body.powerChain ? 1 : 10,
+				unit: body.powerChain ? "см" : "шт.",
+				unitCostRub: body.powerChain ? 80 : 15,
+				notes: actionSummary,
+			});
+
 			return reply.send({
 				success: true,
 				actionSummary,
 				progress: updatedProgress,
+				deduction,
+			});
+		},
+	);
+
+	/**
+	 * POST /api/orthodontics/:patientId/deduct-materials
+	 * 1-клик списание материалов (брекеты Damon, дуги NiTi/CuNiTi/SS/TMA, эластики Zoo, пружины, сепараторы)
+	 * со склада PostgreSQL 18 с мягким овердрафтом (allowOverdraft: true — прием врача никогда не блокируется).
+	 */
+	app.post<{ Params: { patientId: string } }>(
+		"/api/orthodontics/:patientId/deduct-materials",
+		async (request, reply) => {
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
+
+			const { patientId } = patientParamsSchema.parse(request.params);
+			const body = deductOrthoMaterialsSchema.parse(request.body);
+
+			const patient = await getPatientByIdFromDb(orgId, patientId);
+			if (!patient) {
+				return reply.code(404).send({
+					error: "PatientNotFound",
+					message: "Пациент не найден",
+				});
+			}
+
+			let defaultName = body.materialName || "Расходный ортодонтический материал";
+			let pattern = body.materialName || "";
+			let category = body.materialCategory;
+			let unit = body.unit;
+			let unitCostRub = 500;
+
+			switch (body.action) {
+				case "wire_change":
+					pattern = pattern || "дуга";
+					defaultName = defaultName || "Дуга ортодонтическая NiTi / CuNiTi / TMA / SS";
+					category = "ortho_archwire";
+					unitCostRub = 1200;
+					break;
+				case "bonding":
+					pattern = pattern || "Damon";
+					defaultName = defaultName || "Брекет-система металлическая Damon Q2";
+					category = "ortho_bracket";
+					unit = "компл.";
+					unitCostRub = 28000;
+					break;
+				case "spring_activation":
+					pattern = pattern || "пружин";
+					defaultName = defaultName || "Пружина ортодонтическая Open/Closed Coil";
+					category = "ortho_archwire";
+					unitCostRub = 650;
+					break;
+				case "separation_rings":
+					pattern = pattern || "сепарацион";
+					defaultName = defaultName || "Кольца сепарационные эластические";
+					category = "other";
+					unitCostRub = 25;
+					break;
+				case "power_chain":
+					pattern = pattern || "Power Chain";
+					defaultName = defaultName || "Эластическая цепочка Power Chain";
+					category = "ortho_archwire";
+					unit = "см";
+					unitCostRub = 80;
+					break;
+				case "elastics":
+					pattern = pattern || "эластик";
+					defaultName = defaultName || "Межчелюстные эластики (Лиса, Заяц, Медведь, Буйвол, Кенгуру)";
+					category = "other";
+					unit = "упак.";
+					unitCostRub = 450;
+					break;
+			}
+
+			const deduction = await deductOrthoMaterialSafely({
+				organizationId: orgId,
+				patientId,
+				itemNamePattern: pattern,
+				defaultItemName: defaultName,
+				category,
+				quantity: body.quantity,
+				unit,
+				unitCostRub,
+				visitId: body.visitId ?? null,
+				notes: body.notes || `Ортодонтическое списание [${body.action}]`,
+			});
+
+			return reply.send({
+				success: true,
+				action: body.action,
+				deduction,
+				message: `Материал «${deduction.itemName || defaultName}» успешно списан со склада (мягкий овердрафт).`,
 			});
 		},
 	);
