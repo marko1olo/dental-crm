@@ -73,6 +73,44 @@ export function EmergencyDosageCardsGrid({
 								На 10 мл 0.9% NaCl для профилактики 2-й волны шока
 							</div>
 						</div>
+
+						<div className="emergency-drug-card">
+							<div className="emergency-drug-card-header">
+								<div className="emergency-drug-name">
+									<span>Дексаметазон 4 мг/мл</span>
+								</div>
+								<span className="emergency-drug-priority-badge second-line">Альтернатива ГКС</span>
+							</div>
+							<div className="emergency-drug-dose-highlight">
+								<span className="emergency-drug-dose-val">{allDosages.dexamethasone_4mg.calculatedDoseMg} мг</span>
+								<span className="emergency-drug-dose-sub">({allDosages.dexamethasone_4mg.calculatedVolumeMl} мл / {allDosages.dexamethasone_4mg.numberOfAmpoules} амп.)</span>
+							</div>
+							<div className="emergency-drug-route">
+								<span>В/В струйно или В/М</span>
+							</div>
+							<div className="emergency-drug-note">
+								Быстрое мембраностабилизирующее действие
+							</div>
+						</div>
+
+						<div className="emergency-drug-card primary">
+							<div className="emergency-drug-card-header">
+								<div className="emergency-drug-name">
+									<span>Кислород (100% O2)</span>
+								</div>
+								<span className="emergency-drug-priority-badge first-line">Оксигенация</span>
+							</div>
+							<div className="emergency-drug-dose-highlight">
+								<span className="emergency-drug-dose-val">10–15 л/мин</span>
+								<span className="emergency-drug-dose-sub">(маска с резервуаром)</span>
+							</div>
+							<div className="emergency-drug-route">
+								<span>Ингаляция 100% кислорода</span>
+							</div>
+							<div className="emergency-drug-note">
+								Поддержание SpO2 не менее 95%
+							</div>
+						</div>
 					</>
 				)}
 
@@ -115,6 +153,25 @@ export function EmergencyDosageCardsGrid({
 								Готовность к ИВЛ мешком Амбу
 							</div>
 						</div>
+
+						<div className="emergency-drug-card primary">
+							<div className="emergency-drug-card-header">
+								<div className="emergency-drug-name">
+									<span>Кислород (100% O2)</span>
+								</div>
+								<span className="emergency-drug-priority-badge first-line">Оксигенация</span>
+							</div>
+							<div className="emergency-drug-dose-highlight">
+								<span className="emergency-drug-dose-val">10–15 л/мин</span>
+								<span className="emergency-drug-dose-sub">(гипервентиляция)</span>
+							</div>
+							<div className="emergency-drug-route">
+								<span>Маска с мешком / мешок Амбу</span>
+							</div>
+							<div className="emergency-drug-note">
+								Снижает ацидоз и кардиотоксичность анестетика
+							</div>
+						</div>
 					</>
 				)}
 
@@ -155,6 +212,25 @@ export function EmergencyDosageCardsGrid({
 							</div>
 							<div className="emergency-drug-note">
 								Контроль АД и ЧСС каждые 10 минут
+							</div>
+						</div>
+
+						<div className="emergency-drug-card">
+							<div className="emergency-drug-card-header">
+								<div className="emergency-drug-name">
+									<span>Нитроглицерин 0.5 мг</span>
+								</div>
+								<span className="emergency-drug-priority-badge second-line">ОКС / Боль</span>
+							</div>
+							<div className="emergency-drug-dose-highlight">
+								<span className="emergency-drug-dose-val">0.5 мг</span>
+								<span className="emergency-drug-dose-sub">(1 таб / спрей)</span>
+							</div>
+							<div className="emergency-drug-route">
+								<span>Сублингвально строго сидя (при АД сист &gt; 100)</span>
+							</div>
+							<div className="emergency-drug-note">
+								При давящей боли в груди / ишемии миокарда
 							</div>
 						</div>
 					</>
@@ -272,6 +348,25 @@ export function EmergencyDosageCardsGrid({
 						<div className="emergency-drug-card primary">
 							<div className="emergency-drug-card-header">
 								<div className="emergency-drug-name">
+									<span>Положение Тренделенбурга</span>
+								</div>
+								<span className="emergency-drug-priority-badge first-line">1-я линия</span>
+							</div>
+							<div className="emergency-drug-dose-highlight">
+								<span className="emergency-drug-dose-val">Подъем ног 15–30°</span>
+								<span className="emergency-drug-dose-sub">(горизонтально)</span>
+							</div>
+							<div className="emergency-drug-route">
+								<span>Опустить спинку, расстегнуть воротник</span>
+							</div>
+							<div className="emergency-drug-note">
+								Восстановление венозного возврата к головному мозгу
+							</div>
+						</div>
+
+						<div className="emergency-drug-card primary">
+							<div className="emergency-drug-card-header">
+								<div className="emergency-drug-name">
 									<span>Аммиак 10% (Нашатырный спирт)</span>
 								</div>
 								<span className="emergency-drug-priority-badge first-line">Рефлекторно</span>
@@ -281,10 +376,48 @@ export function EmergencyDosageCardsGrid({
 								<span className="emergency-drug-dose-sub">(1–2 сек на 2 см)</span>
 							</div>
 							<div className="emergency-drug-route">
-								<span>Ингаляционно + положение Тренделенбурга</span>
+								<span>Ингаляция паров у ноздрей</span>
 							</div>
 							<div className="emergency-drug-note">
-								При брадикардии/гипотонии: Кордиамин 2 мл п/к или в/м
+								Возбуждение дыхательного и сосудодвигательного центров
+							</div>
+						</div>
+
+						<div className="emergency-drug-card">
+							<div className="emergency-drug-card-header">
+								<div className="emergency-drug-name">
+									<span>Натрия хлорид 0.9% (NaCl)</span>
+								</div>
+								<span className="emergency-drug-priority-badge second-line">Инфузия</span>
+							</div>
+							<div className="emergency-drug-dose-highlight">
+								<span className="emergency-drug-dose-val">500 мл</span>
+								<span className="emergency-drug-dose-sub">(флакон 0.9%)</span>
+							</div>
+							<div className="emergency-drug-route">
+								<span>В/В капельно или струйно</span>
+							</div>
+							<div className="emergency-drug-note">
+								Восполнение ОЦК при стойкой ортостатической гипотонии
+							</div>
+						</div>
+
+						<div className="emergency-drug-card">
+							<div className="emergency-drug-card-header">
+								<div className="emergency-drug-name">
+									<span>Кордиамин 25% (Никетамид)</span>
+								</div>
+								<span className="emergency-drug-priority-badge second-line">Аналептик</span>
+							</div>
+							<div className="emergency-drug-dose-highlight">
+								<span className="emergency-drug-dose-val">2 мл</span>
+								<span className="emergency-drug-dose-sub">(1 ампула)</span>
+							</div>
+							<div className="emergency-drug-route">
+								<span>В/М или П/К медленно</span>
+							</div>
+							<div className="emergency-drug-note">
+								При затяжном коллапсе и артериальной гипотензии
 							</div>
 						</div>
 					</>

@@ -14,6 +14,8 @@ export function AnesthesiaSafetyAllergyHud({
 	takesBetaBlockers,
 	hasSulfiteAllergy,
 	hasBronchialAsthma,
+	hasLidocaineAllergy = false,
+	hasArticaineAllergy = false,
 	selectedDrugId,
 	selectedDrugInfo,
 	safetyWarning,
@@ -31,6 +33,18 @@ export function AnesthesiaSafetyAllergyHud({
 				<div className="anesthesia-quick-bar-title">
 					<DentalSyringe size={16} className="anesthesia-icon-accent shrink-0" />
 					<span className="font-bold text-xs sm:text-sm">{`Анестезия (МДД по массе тела ${patientWeightKg} кг):`}</span>
+					{hasLidocaineAllergy && (
+						<span className="anesthesia-allergy-tag bg-rose-500/20 text-rose-800 dark:text-rose-200 border border-rose-500/40" title="Аллергия на лидокаин: риск анафилаксии! Запрещен лидокаин, рекомендован Скандонест 3%">
+							<ShieldAlert size={12} className="text-rose-600 dark:text-rose-400" />
+							<span>Аллергия: Лидокаин</span>
+						</span>
+					)}
+					{hasArticaineAllergy && (
+						<span className="anesthesia-allergy-tag bg-rose-500/20 text-rose-800 dark:text-rose-200 border border-rose-500/40" title="Аллергия на артикаин: риск анафилаксии! Запрещен артикаин, рекомендован Скандонест 3%">
+							<ShieldAlert size={12} className="text-rose-600 dark:text-rose-400" />
+							<span>Аллергия: Артикаин</span>
+						</span>
+					)}
 					{isCardioRisk && (
 						<span className="anesthesia-cardio-tag" title="Кардиоваскулярный риск: лимит адреналина 0.04 мг">
 							<Heart size={12} className="text-amber-500" />
@@ -78,6 +92,56 @@ export function AnesthesiaSafetyAllergyHud({
 					<span className="text-[11px] text-[var(--muted)]">Выбор дозировки</span>
 				</div>
 			</div>
+
+			{/* ── Dedicated Lidocaine Allergy Guiding Soft-Alert Banner (Mandate 8e, 8z) ── */}
+			{hasLidocaineAllergy && (selectedDrugId === "lidocaine_1_100k" || selectedDrugId === "lidocaine_plain") && (
+				<div
+					className="flex items-start sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-rose-600/15 border border-rose-600/50 text-rose-950 dark:text-rose-100 text-xs font-medium animate-pulse"
+					role="alert"
+					data-testid="anesthesia-lidocaine-allergy-warning-badge"
+				>
+					<div className="flex items-center gap-2">
+						<ShieldAlert size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />
+						<span>
+							<strong>⚠️ Внимание! Аллергия на Лидокаин!</strong> Высокий риск анафилактического шока. Рекомендован безопасный препарат выбора — <strong>Мепивакаин 3% (Скандонест) без адреналина</strong> или Артикаин 1:200 000.
+						</span>
+					</div>
+					<button
+						type="button"
+						onClick={() => onSelectDrug("mepivacaine_plain")}
+						className="px-2.5 py-1 min-h-[44px] rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] shrink-0 transition-colors cursor-pointer"
+						title="Переключиться на Мепивакаин 3% (Скандонест без адреналина)"
+						data-testid="btn-switch-to-scandonest-safe"
+					>
+						Выбрать Скандонест 3%
+					</button>
+				</div>
+			)}
+
+			{/* ── Dedicated Articaine Allergy Guiding Soft-Alert Banner (Mandate 8e, 8z) ── */}
+			{hasArticaineAllergy && (selectedDrugId === "articaine_1_100k" || selectedDrugId === "articaine_1_200k") && (
+				<div
+					className="flex items-start sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-rose-600/15 border border-rose-600/50 text-rose-950 dark:text-rose-100 text-xs font-medium animate-pulse"
+					role="alert"
+					data-testid="anesthesia-articaine-allergy-warning-badge"
+				>
+					<div className="flex items-center gap-2">
+						<ShieldAlert size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />
+						<span>
+							<strong>⚠️ Внимание! Аллергия на Артикаин!</strong> Риск анафилактического шока. Рекомендован <strong>Мепивакаин 3% (Скандонест) без адреналина</strong>.
+						</span>
+					</div>
+					<button
+						type="button"
+						onClick={() => onSelectDrug("mepivacaine_plain")}
+						className="px-2.5 py-1 min-h-[44px] rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] shrink-0 transition-colors cursor-pointer"
+						title="Переключиться на Мепивакаин 3% (Скандонест)"
+						data-testid="btn-switch-to-mepivacaine-articaine-safe"
+					>
+						Выбрать Скандонест 3%
+					</button>
+				</div>
+			)}
 
 			{/* ── Cardio Risk Warning Badge for 1:100 000 Epinephrine ── */}
 			{isCardioRisk && (selectedDrugId === "articaine_1_100k" || selectedDrugId === "lidocaine_1_100k") && (

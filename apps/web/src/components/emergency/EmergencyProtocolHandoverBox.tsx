@@ -43,7 +43,7 @@ export function EmergencyProtocolHandoverBox({
 						className={`emergency-protocol-tab-btn ${activeProtocolTab === "act" ? "active-act" : ""}`}
 						onClick={() => setActiveProtocolTab("act")}
 					>
-						Акт 043/у
+						Акт в медкарту
 					</button>
 					<button
 						type="button"
@@ -77,17 +77,17 @@ export function EmergencyProtocolHandoverBox({
 			<div className="emergency-protocol-actions">
 				{activeProtocolTab === "act" ? (
 					<>
-						{/* Row 1: Primary Clinical Action (043/у or Copy) & Ambulance Print (Mandate 8e, Miller Law <= 2) */}
+						{/* Row 1: Primary Clinical Action (Medical Card or Copy) & Ambulance Print (Mandate 8e, Miller Law <= 2) */}
 						<div className="emergency-protocol-action-row primary-actions">
 							{onApplyToDiary ? (
 								<button
 									type="button"
 									className="emergency-copy-act-btn teal"
 									onClick={onApplyToForm043}
-									title="Вставить протокол оказания экстренной помощи в дневник карты 043/у"
+									title="Вставить протокол оказания экстренной помощи в дневник медкарты"
 								>
 									<FileText size={16} />
-									<span>Вставить в карту 043/у</span>
+									<span>Вставить в медкарту</span>
 								</button>
 							) : (
 								<button

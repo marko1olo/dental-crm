@@ -37,6 +37,8 @@ export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 				takesBetaBlockers={Boolean(props.takesBetaBlockers)}
 				hasSulfiteAllergy={Boolean(props.hasSulfiteAllergy)}
 				hasBronchialAsthma={Boolean(props.hasBronchialAsthma)}
+				hasLidocaineAllergy={Boolean(props.hasLidocaineAllergy)}
+				hasArticaineAllergy={Boolean(props.hasArticaineAllergy)}
 				selectedDrugId={bar.selectedDrugId}
 				selectedDrugInfo={bar.selectedDrugInfo}
 				safetyWarning={bar.safetyWarning}
@@ -61,6 +63,8 @@ export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 				isCardioRisk={bar.isCardioRisk}
 				hasSulfiteAllergy={Boolean(props.hasSulfiteAllergy)}
 				hasBronchialAsthma={Boolean(props.hasBronchialAsthma)}
+				hasLidocaineAllergy={Boolean(props.hasLidocaineAllergy)}
+				hasArticaineAllergy={Boolean(props.hasArticaineAllergy)}
 				disabled={props.disabled}
 			/>
 

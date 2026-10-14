@@ -259,22 +259,39 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		const disposalNote = `Утилизация: списана пустая карпула ${drugName} (${count} шт., отходы Класса Б, списание со склада по FEFO).`;
 		applyAnesthesiaPreset(disposalNote);
 
-		// Автоматическое списание по FEFO в 1 клик без комиссии со склада (Мандат 8e, 8v, 8n, СанПиН 3.3686-21, дезинфекция 1 клик без комиссии)
+		// Автоматическое списание по FEFO в 1 клик со склада (Мандат 8e, 8v, 8n, СанПиН 3.3686-21)
 		// Без необходимости ручного выбора партии врачом у кресла и с мягким овердрафтом
 		try {
-			fetch("/api/inventory/deduct", {
+			const orgId =
+				activePatient?.organizationId ||
+				(clinicSettings as any)?.organizationId ||
+				"00000000-0000-0000-0000-000000000001";
+			fetch(`/api/inventory/${orgId}/quick-writeoff-carpules`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 					...denteAdminSecretRequestHeaders(),
 				},
 				body: JSON.stringify({
+					carpulesCount: count,
+					drugName,
 					visitId,
-					items: [{ name: drugName, quantity: count }],
-					reason: `Списание карпулы анестетика у кресла (отходы Класса Б, визит ${visitId})`,
+					notes: `Списание карпулы анестетика у кресла (отходы Класса Б, визит ${visitId})`,
 				}),
 			}).catch((err) => {
-				console.warn("[VisitDiary] Inventory deduct fallback warning:", err);
+				console.warn("[VisitDiary] Inventory quick-writeoff-carpules fallback warning:", err);
+				fetch("/api/inventory/deduct", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...denteAdminSecretRequestHeaders(),
+					},
+					body: JSON.stringify({
+						visitId,
+						items: [{ name: drugName, quantity: count }],
+						reason: `Списание карпулы анестетика у кресла (отходы Класса Б, визит ${visitId})`,
+					}),
+				}).catch(() => {});
 			});
 		} catch (err) {
 			console.warn("[VisitDiary] Inventory deduct error:", err);
@@ -509,6 +526,8 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				beginRevise={beginRevise}
 				applyAnesthesiaPreset={applyAnesthesiaPreset}
 				onDisposalCarpules={handleDisposalCarpules}
+				patientId={patientId}
+				visitId={visitId}
 			/>
 
 			{/* ── Load States ── */}

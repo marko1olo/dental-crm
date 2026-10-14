@@ -3,6 +3,7 @@ import { Syringe } from "lucide-react";
 import { AnesthesiaQuickBar } from "../../anesthesia/AnesthesiaQuickBar";
 import type { AnestheticDrugId } from "../../anesthesia/anesthesiaCatalog";
 import type { DiaryState } from "../../useVisitDiaryLogic";
+import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 
 export interface VisitDiaryAnesthesiaBarProps {
 	readonly fieldsDisabled: boolean;
@@ -14,6 +15,9 @@ export interface VisitDiaryAnesthesiaBarProps {
 	readonly beginRevise: () => void;
 	readonly applyAnesthesiaPreset: (preset: string) => void;
 	readonly onDisposalCarpules: (count: number, drugId: AnestheticDrugId) => void;
+	readonly onOpenEmergencyProtocol?: () => void;
+	readonly patientId?: string;
+	readonly visitId?: string;
 }
 
 export function VisitDiaryAnesthesiaBar({
@@ -26,6 +30,9 @@ export function VisitDiaryAnesthesiaBar({
 	beginRevise,
 	applyAnesthesiaPreset,
 	onDisposalCarpules,
+	onOpenEmergencyProtocol,
+	patientId,
+	visitId,
 }: VisitDiaryAnesthesiaBarProps) {
 	if (fieldsDisabled) return null;
 
@@ -34,6 +41,28 @@ export function VisitDiaryAnesthesiaBar({
 			beginRevise();
 		}
 	};
+
+	const hasLidocaineAllergy = Boolean(
+		(activePatient as any)?.clinicalSafetyProfile?.hasLidocaineAllergy ||
+		(activePatient as any)?.administrativeProfile?.hasLidocaineAllergy ||
+		(activePatient as any)?.administrativeProfile?.clinicalSafetyProfile?.hasLidocaineAllergy ||
+		(typeof (activePatient as any)?.allergies === "string" && (activePatient as any).allergies.toLowerCase().includes("лидокаин")) ||
+		(Array.isArray((activePatient as any)?.allergies) && (activePatient as any).allergies.some((a: string) => String(a).toLowerCase().includes("лидокаин"))) ||
+		(typeof (activePatient as any)?.notes === "string" && (activePatient as any).notes.toLowerCase().includes("лидокаин")) ||
+		(typeof (activePatient as any)?.anamnesis === "string" && (activePatient as any).anamnesis.toLowerCase().includes("лидокаин")) ||
+		diary.comorbidities?.toLowerCase().includes("лидокаин"),
+	);
+
+	const hasArticaineAllergy = Boolean(
+		(activePatient as any)?.clinicalSafetyProfile?.hasArticaineAllergy ||
+		(activePatient as any)?.administrativeProfile?.hasArticaineAllergy ||
+		(activePatient as any)?.administrativeProfile?.clinicalSafetyProfile?.hasArticaineAllergy ||
+		(typeof (activePatient as any)?.allergies === "string" && (activePatient as any).allergies.toLowerCase().includes("артикаин")) ||
+		(Array.isArray((activePatient as any)?.allergies) && (activePatient as any).allergies.some((a: string) => String(a).toLowerCase().includes("артикаин"))) ||
+		(typeof (activePatient as any)?.notes === "string" && (activePatient as any).notes.toLowerCase().includes("артикаин")) ||
+		(typeof (activePatient as any)?.anamnesis === "string" && (activePatient as any).anamnesis.toLowerCase().includes("артикаин")) ||
+		diary.comorbidities?.toLowerCase().includes("артикаин"),
+	);
 
 	return (
 		<details
@@ -104,7 +133,11 @@ export function VisitDiaryAnesthesiaBar({
 						diary.comorbidities?.toLowerCase().includes("беремен") ||
 						diary.comorbidities?.toLowerCase().includes("лактац")
 					}
+					hasLidocaineAllergy={hasLidocaineAllergy}
+					hasArticaineAllergy={hasArticaineAllergy}
 					disabled={fieldsDisabled}
+					patientId={patientId}
+					visitId={visitId}
 					onApplyAnesthesia={(text) => {
 						ensureRevisingIfLocked();
 						applyAnesthesiaPreset(text);
@@ -112,6 +145,12 @@ export function VisitDiaryAnesthesiaBar({
 					onDisposalCarpules={(count, drugId) => {
 						onDisposalCarpules(count, drugId);
 					}}
+					onOpenEmergencyProtocol={
+						onOpenEmergencyProtocol ||
+						(() => {
+							useUiSurfaceStore.getState().openPrimaryModal("emergency_rescue");
+						})
+					}
 				/>
 			</div>
 		</details>

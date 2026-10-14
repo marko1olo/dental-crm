@@ -11,7 +11,15 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
-import { anesthesiaLogs, patients, users, visits } from "../db/schema.js";
+import {
+	anesthesiaLogs,
+	patients,
+	serviceCatalogItems,
+	treatmentItems,
+	users,
+	visits,
+} from "../db/schema.js";
+import { TreatmentConsumablesService } from "../services/treatmentConsumablesService.js";
 import {
 	getRequestIdentity,
 	requireOrganizationId,
@@ -55,6 +63,8 @@ const createAnesthesiaLogBodySchema = z.object({
 	vitalsPost: vitalSignsMeasurementSchema.optional().nullable(),
 	notes: z.string().optional().nullable(),
 	complications: z.string().optional().nullable(),
+	autoDeductInventory: z.boolean().default(true),
+	addToVisitEstimate: z.boolean().default(true),
 });
 
 export async function registerAnesthesiaRoutes(app: FastifyInstance) {
@@ -318,11 +328,84 @@ export async function registerAnesthesiaRoutes(app: FastifyInstance) {
 					})
 					.returning();
 
+				// Связка со складом inventory_items (СанПиН 3.3686-21, списание по FEFO, мягкий овердрафт)
+				let inventoryDeduction: any = null;
+				if (data.autoDeductInventory && data.carpulesAdministered > 0) {
+					try {
+						inventoryDeduction = await TreatmentConsumablesService.quickWriteoffCarpules(db, {
+							organizationId: orgId,
+							carpulesCount: data.carpulesAdministered,
+							drugName: data.drugBrandName,
+							userId: data.doctorId || null,
+							visitId: data.visitId || null,
+							notes: `Списание карпул анестетика (${data.drugBrandName}) через протокол анестезии`,
+						});
+					} catch (invErr) {
+						request.log.warn({ err: invErr }, "Auto-deduction of carpules encountered warning, non-blocking");
+					}
+				}
+
+				// Связка со сметой приёма: добавление услуги «Анестезия инфильтрационная / проводниковая»
+				let treatmentItemResult: any = null;
+				if (data.visitId && data.addToVisitEstimate) {
+					try {
+						const allOrgServices = await db
+							.select()
+							.from(serviceCatalogItems)
+							.where(
+								and(
+									eq(serviceCatalogItems.organizationId, orgId),
+									eq(serviceCatalogItems.isActive, true),
+								),
+							)
+							.limit(50);
+
+						const anesthesiaService = allOrgServices.find(
+							(s) =>
+								s.order804nCode === "A16.07.030" ||
+								s.code === "A16.07.030" ||
+								s.title.toLowerCase().includes("анестези"),
+						) ?? null;
+
+						const unitPrice = anesthesiaService
+							? Number(anesthesiaService.priceRub || anesthesiaService.basePriceRub)
+							: 950;
+						const techniqueTitle =
+							data.technique === "mandibular_block" || data.technique === "tuberal_block"
+								? "проводниковая"
+								: "инфильтрационная";
+						const itemTitle = `Анестезия ${techniqueTitle} (${data.drugBrandName} 1.7 мл)`;
+
+						const [tItem] = await db
+							.insert(treatmentItems)
+							.values({
+								organizationId: orgId,
+								patientId,
+								visitId: data.visitId,
+								serviceId: anesthesiaService?.id ?? null,
+								toothCode: data.toothNumbers.length > 0 ? data.toothNumbers.join(", ") : null,
+								title: itemTitle,
+								quantity: String(data.carpulesAdministered),
+								unitPriceRub: unitPrice,
+								priceRub: unitPrice * data.carpulesAdministered,
+								discountRub: 0,
+								status: "completed",
+								plannedDoctorUserId: data.doctorId || null,
+							})
+							.returning();
+						treatmentItemResult = tItem ?? null;
+					} catch (tErr) {
+						request.log.warn({ err: tErr }, "Adding anesthesia to visit estimate encountered warning, non-blocking");
+					}
+				}
+
 				return reply.status(201).send({
 					success: true,
 					id: record?.id || "anesthesia-logged",
 					safety,
 					log: record,
+					inventoryDeduction,
+					treatmentItem: treatmentItemResult,
 				});
 			});
 		},

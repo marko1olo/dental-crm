@@ -19,6 +19,8 @@ export {
 };
 
 export interface AnesthesiaQuickBarProps {
+	patientId?: string | undefined;
+	visitId?: string | undefined;
 	patientWeightKg?: number | undefined;
 	patientAgeYears?: number | undefined;
 	hasCardiovascularRisk?: boolean | undefined;
@@ -30,6 +32,8 @@ export interface AnesthesiaQuickBarProps {
 	hasSulfiteAllergy?: boolean | undefined;
 	hasBronchialAsthma?: boolean | undefined;
 	isPregnantOrLactating?: boolean | undefined;
+	hasLidocaineAllergy?: boolean | undefined;
+	hasArticaineAllergy?: boolean | undefined;
 	targetToothNumberFdi?: number | string | undefined;
 	onApplyAnesthesia?: ((diaryText: string, result: AnesthesiaCalculationResult) => void) | undefined;
 	onDisposalCarpules?: ((carpulesCount: number, drugId: AnestheticDrugId) => void) | undefined;
@@ -79,6 +83,15 @@ export const PRIMARY_ANESTHETIC_DRUGS: readonly PrimaryAnestheticDrug[] = [
 		isAdrenalineFree: true,
 		isCardioRecommended: true,
 	},
+	{
+		id: "lidocaine_1_100k",
+		labelRu: "Лидокаин 2% (с адреналином 1:100 000)",
+		subLabelRu: "Лидокаин 2% + Эпинефрин 1:100 000 • МДД 4.4 мг/кг",
+		activeSubstanceRu: "Лидокаин 2% + Эпинефрин 1:100 000",
+		vasoRatio: "1:100 000",
+		isAdrenalineFree: false,
+		isCardioRecommended: false,
+	},
 ];
 
 export interface SafetyWarningState {
@@ -94,6 +107,8 @@ export interface AnestheticDrugSelectorProps {
 	readonly isCardioRisk: boolean;
 	readonly hasSulfiteAllergy: boolean;
 	readonly hasBronchialAsthma: boolean;
+	readonly hasLidocaineAllergy?: boolean | undefined;
+	readonly hasArticaineAllergy?: boolean | undefined;
 	readonly disabled?: boolean | undefined;
 }
 
@@ -110,6 +125,8 @@ export interface AnesthesiaSafetyAllergyHudProps {
 	readonly takesBetaBlockers: boolean;
 	readonly hasSulfiteAllergy: boolean;
 	readonly hasBronchialAsthma: boolean;
+	readonly hasLidocaineAllergy?: boolean | undefined;
+	readonly hasArticaineAllergy?: boolean | undefined;
 	readonly selectedDrugId: AnestheticDrugId;
 	readonly selectedDrugInfo: {
 		readonly isAdrenalineFree: boolean;

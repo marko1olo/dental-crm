@@ -1,153 +1,39 @@
 /**
  * Russian Dental Emergency Rescue & Resuscitation HUD Modal (Минздрав РФ / ФАР / СтАР)
- * Anaphylactic Shock, LAST Lipid Rescue, Syncope, Hypertensive Crisis, Angina/MI,
- * Asthma, Hypoglycemia, Accidental Swallowing protocols with real-time CPR Metronome (30:2),
- * Adrenaline Timer, Weight-Adjusted Dosage, and Statutory Form 043/u Protocol Generation.
+ * Layer 5: Canonical Master Coordinator & Presentation Facade (<= 250 lines)
  */
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import {
-	AlertOctagon,
-	Heart,
-	Activity,
-	PhoneCall,
-	Clock,
-	Check,
-	X,
-	ShieldAlert,
-	RotateCcw,
-	Syringe,
-	User,
-	AlertTriangle,
-} from 'lucide-react';
-import { showToast } from '../GlobalToast';
-import {
-	EmergencyScenarioId,
-	EMERGENCY_SCENARIOS,
-	EmergencyScenario,
-	EmergencyActionStep
-} from './emergencyRescuePresets';
-import {
-	EmergencyDrugId,
-	EmergencyVitals,
-	ExecutedEmergencyStep,
-	EmergencyIncidentInput,
-	STATUTORY_EMERGENCY_KIT_MEMO,
-	calculateAllEmergencyDosages,
-	calculateLipidRescueDoses,
-	formatTimerSeconds,
-	generateEmergencyIncidentAct,
-	generateSmpDispatchCheatSheet
-} from './emergencyRescueEngine';
+import React, { useState, useEffect, useRef } from 'react';
+import { AlertOctagon, PhoneCall, X, ShieldAlert } from 'lucide-react';
+import { EmergencyScenarioId, EMERGENCY_SCENARIOS } from './emergencyRescuePresets';
 import { EmergencyDosageCardsGrid } from './EmergencyDosageCardsGrid';
 import { EmergencyProtocolHandoverBox } from './EmergencyProtocolHandoverBox';
+import {
+	type EmergencyRelativeNoticeParams,
+	formatEmergencyRelativeNotice,
+	type EmergencyRescueModalProps
+} from './emergencyModules/emergencyRescueTypes';
+import { EmergencyProtocolStepList } from './emergencyModules/EmergencyProtocolStepList';
+import { EmergencyResuscitationTools } from './emergencyModules/EmergencyResuscitationTools';
+import { EmergencyVitalsSection } from './emergencyModules/EmergencyVitalsSection';
+import { useEmergencyRescueLogic } from './emergencyModules/useEmergencyRescueLogic';
 import './emergencyRescue.css';
 
 export { EmergencyDosageCardsGrid, EmergencyProtocolHandoverBox };
+export { formatEmergencyRelativeNotice };
+export type { EmergencyRelativeNoticeParams, EmergencyRescueModalProps };
 
-export interface EmergencyRelativeNoticeParams {
-	clinicName: string;
-	clinicAddress: string;
-	clinicPhone: string;
-	cabinetNumber: string;
-	patientName: string;
-	scenarioTitleRu: string;
-	doctorFullName: string;
-}
+export function EmergencyRescueModal(props: EmergencyRescueModalProps): React.ReactElement | null {
+	const { isOpen, onClose, onApplyToDiary } = props;
+	const logic = useEmergencyRescueLogic(props);
 
-/**
- * Format structured emergency notice for relatives via WhatsApp / Telegram / SMS
- * Mandates 8d (pt 7: zero cartoon emojis), 8e (doctor & staff autonomy), 8k (friction-killer)
- */
-export function formatEmergencyRelativeNotice(
-	params: EmergencyRelativeNoticeParams
-): string {
-	return `Экстренное медицинское извещение (клиника «${params.clinicName}»):\n` +
-		`Пациент: ${params.patientName}\n` +
-		`Клиническое состояние: ${params.scenarioTitleRu}\n` +
-		`Оказана неотложная медицинская помощь врачебной бригадой клиники по стандарту Минздрава РФ.\n` +
-		`Вызвана бригада скорой медицинской помощи (СМП 112).\n` +
-		`Адрес нахождения пациента: ${params.clinicAddress}, кабинет ${params.cabinetNumber}.\n` +
-		`Лечащий врач: ${params.doctorFullName}.\n` +
-		`Контактный телефон клиники для связи: ${params.clinicPhone || "не указан"}.`;
-}
-
-export interface EmergencyRescueModalProps {
-	isOpen: boolean;
-	onClose: () => void;
-	onApplyToDiary?: ((actText: string) => void) | undefined;
-	initialPatientName?: string | undefined;
-	initialPatientAgeYears?: number | undefined;
-	initialPatientWeightKg?: number | undefined;
-	initialPatientGender?: 'male' | 'female' | undefined;
-	clinicName?: string | undefined;
-	clinicAddress?: string | undefined;
-	clinicPhone?: string | undefined;
-	cabinetNumber?: string | undefined;
-	doctorFullName?: string | undefined;
-	assistantFullName?: string | undefined;
-	medCardNumber?: string | undefined;
-	defaultScenarioId?: EmergencyScenarioId | undefined;
-}
-
-export function EmergencyRescueModal({
-	isOpen,
-	onClose,
-	onApplyToDiary,
-	initialPatientName = 'Пациент',
-	initialPatientAgeYears = 42,
-	initialPatientWeightKg = 75,
-	initialPatientGender = 'male',
-	clinicName = 'Стоматологическая клиника DENTE',
-	clinicAddress = 'г. Москва, ул. Клиническая, д. 10, стр. 2',
-	clinicPhone = '',
-	cabinetNumber = '1',
-	doctorFullName = 'Лечащий врач-стоматолог',
-	assistantFullName = 'Ассистент / медсестра',
-	medCardNumber = '043/у',
-	defaultScenarioId = 'anaphylactic_shock'
-}: EmergencyRescueModalProps) {
-	// Active scenario selection
-	const [activeScenarioId, setActiveScenarioId] = useState<EmergencyScenarioId>(defaultScenarioId);
-	const activeScenario: EmergencyScenario = useMemo(() => {
-		return EMERGENCY_SCENARIOS[activeScenarioId] || EMERGENCY_SCENARIOS.anaphylactic_shock;
-	}, [activeScenarioId]);
-
-	// Patient demographics & vitals state
-	const [patientWeightKg, setPatientWeightKg] = useState<number>(initialPatientWeightKg);
-	const [patientAgeYears, setPatientAgeYears] = useState<number>(initialPatientAgeYears);
-	const [patientGender, setPatientGender] = useState<'male' | 'female'>(initialPatientGender);
-	const [patientName, setPatientName] = useState<string>(initialPatientName);
-
-	const [vitals, setVitals] = useState<EmergencyVitals>({
-		bpSystolic: 80,
-		bpDiastolic: 50,
-		hr: 115,
-		spo2: 91,
-		rr: 24,
-		consciousnessRu: 'Спутанное / Заторможен',
-		glucoseMmolL: 4.8
-	});
-
-	// Checklist of executed steps with recorded local timestamps
-	const [completedStepIds, setCompletedStepIds] = useState<Record<string, string>>({});
-	const [incidentStartTime] = useState<Date>(() => new Date());
-
-	// Adrenaline countdown timer state (3-5 minutes)
-	const [adrenalineTimerSeconds, setAdrenalineTimerSeconds] = useState<number>(300); // 5 min default
+	const [adrenalineTimerSeconds, setAdrenalineTimerSeconds] = useState<number>(300);
 	const [isAdrenalineTimerRunning, setIsAdrenalineTimerRunning] = useState<boolean>(false);
 	const [isAdrenalineDue, setIsAdrenalineDue] = useState<boolean>(false);
 
-	// Copy feedback state
-	const [isCopiedAct, setIsCopiedAct] = useState<boolean>(false);
-	const [isCopiedCheatSheet, setIsCopiedCheatSheet] = useState<boolean>(false);
-	const [activeProtocolTab, setActiveProtocolTab] = useState<'act' | 'cheatsheet'>('act');
-
-	// Safe timeout references for memory leak prevention
 	const copyActTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const copyCheatSheetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	// Cleanup copy timeouts on unmount
 	useEffect(() => {
 		return () => {
 			if (copyActTimeoutRef.current) clearTimeout(copyActTimeoutRef.current);
@@ -155,7 +41,6 @@ export function EmergencyRescueModal({
 		};
 	}, []);
 
-	// Adrenaline Timer countdown effect (safely pauses/cleans up when modal is closed or unmounted)
 	useEffect(() => {
 		if (!isOpen) {
 			setIsAdrenalineTimerRunning(false);
@@ -179,243 +64,43 @@ export function EmergencyRescueModal({
 		};
 	}, [isOpen, isAdrenalineTimerRunning]);
 
-	// Toggle Step completion
-	const handleToggleStep = (stepId: string) => {
-		setCompletedStepIds((prev) => {
-			const copy = { ...prev };
-			if (copy[stepId]) {
-				delete copy[stepId];
-			} else {
-				const now = new Date();
-				copy[stepId] = now.toLocaleTimeString('ru-RU', {
-					hour: '2-digit',
-					minute: '2-digit',
-					second: '2-digit'
-				});
-			}
-			return copy;
-		});
-	};
-
-	// Start / Reset Adrenaline Timer
-	const handleStartAdrenalineTimer = (seconds: number) => {
-		setAdrenalineTimerSeconds(seconds);
-		setIsAdrenalineTimerRunning(true);
-		setIsAdrenalineDue(false);
-	};
-
-	const handleResetAdrenalineTimer = () => {
-		setIsAdrenalineTimerRunning(false);
-		setIsAdrenalineDue(false);
-		setAdrenalineTimerSeconds(300);
-	};
-
-	// Calculated All Dosages for current weight & age
-	const allDosages = useMemo(() => {
-		return calculateAllEmergencyDosages(patientWeightKg, patientAgeYears);
-	}, [patientWeightKg, patientAgeYears]);
-
-	const lipidRescueData = useMemo(() => {
-		return calculateLipidRescueDoses(patientWeightKg);
-	}, [patientWeightKg]);
-
-	// Completed steps mapped with metadata for Protocol Generator
-	const completedStepsList: ExecutedEmergencyStep[] = useMemo(() => {
-		return activeScenario.actionSteps
-			.filter((s) => completedStepIds[s.id])
-			.map((s) => ({
-				stepId: s.id,
-				stepTitleRu: s.titleRu,
-				timestamp: completedStepIds[s.id] || '',
-				administeredMedicationRu: s.drugId && allDosages[s.drugId as EmergencyDrugId]
-					? allDosages[s.drugId as EmergencyDrugId].drugNameRu
-					: undefined,
-				doseDetailsRu: s.dosageHintRu
-			}));
-	}, [activeScenario, completedStepIds, allDosages]);
-
-	// Emergency Incident Input Object
-	const incidentInput: EmergencyIncidentInput = useMemo(() => {
-		return {
-			clinicName,
-			clinicAddress,
-			cabinetNumber,
-			doctorFullName,
-			assistantFullName,
-			patientFullName: patientName,
-			patientAgeYears,
-			patientWeightKg,
-			patientGender,
-			medCardNumber,
-			scenarioId: activeScenarioId,
-			incidentStartTime,
-			initialVitals: vitals,
-			finalVitals: {
-				...vitals,
-				bpSystolic: Math.min(120, vitals.bpSystolic + 25),
-				bpDiastolic: Math.min(80, vitals.bpDiastolic + 15),
-				hr: Math.max(75, vitals.hr - 15),
-				spo2: Math.max(97, vitals.spo2 + 6),
-				consciousnessRu: 'Ясное, ориентирован во времени и пространстве'
-			},
-			completedSteps: completedStepsList,
-			patientOutcomeRu: 'Гемодинамика стабилизирована, состояние улучшилось. Оформлен вкладыш в карту 043/у.',
-			handoverNotesRu: 'Купировано в условиях стоматологического кабинета. Бригада СМП уведомлена.'
-		};
-	}, [
-		clinicName,
-		clinicAddress,
-		cabinetNumber,
-		doctorFullName,
-		assistantFullName,
-		patientName,
-		patientAgeYears,
-		patientWeightKg,
-		patientGender,
-		medCardNumber,
-		activeScenarioId,
-		incidentStartTime,
-		vitals,
-		completedStepsList
-	]);
-
-	const generatedActText = useMemo(() => {
-		return generateEmergencyIncidentAct(incidentInput);
-	}, [incidentInput]);
-
-	const generatedCheatSheetText = useMemo(() => {
-		return generateSmpDispatchCheatSheet(incidentInput);
-	}, [incidentInput]);
-
-	// Copy to clipboard handlers
-	const handleCopyAct = async () => {
-		try {
-			if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-				await navigator.clipboard.writeText(generatedActText);
-			}
-			setIsCopiedAct(true);
-			showToast("Акт оказания экстренной помощи скопирован в буфер обмена", "success");
-			if (copyActTimeoutRef.current) clearTimeout(copyActTimeoutRef.current);
-			copyActTimeoutRef.current = setTimeout(() => setIsCopiedAct(false), 2500);
-		} catch {
-			// fallback
-		}
-	};
-
-	const handleCopyCheatSheet = async () => {
-		try {
-			if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-				await navigator.clipboard.writeText(generatedCheatSheetText);
-			}
-			setIsCopiedCheatSheet(true);
-			showToast("Шпаргалка для диспетчера СМП 112 скопирована в буфер обмена", "success");
-			if (copyCheatSheetTimeoutRef.current) clearTimeout(copyCheatSheetTimeoutRef.current);
-			copyCheatSheetTimeoutRef.current = setTimeout(() => setIsCopiedCheatSheet(false), 2500);
-		} catch {
-			// fallback
-		}
-	};
-
-	const handleCallSmpCheatSheet = async () => {
-		setActiveProtocolTab('cheatsheet');
-		try {
-			if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-				await navigator.clipboard.writeText(generatedCheatSheetText);
-				setIsCopiedCheatSheet(true);
-				showToast("Шпаргалка для диспетчера СМП 112 скопирована в буфер обмена", "success");
-				if (copyCheatSheetTimeoutRef.current) clearTimeout(copyCheatSheetTimeoutRef.current);
-				copyCheatSheetTimeoutRef.current = setTimeout(() => setIsCopiedCheatSheet(false), 2500);
-			}
-		} catch {
-			// fallback
-		}
-	};
-
-	const handlePrintEmergencyAct = () => {
-		try {
-			if (typeof window !== 'undefined' && typeof window.print === 'function') {
-				window.print();
-			}
-		} catch {
-			// fallback
-		}
-		showToast("Отправлено на печать: Акт передачи пациента бригаде СМП", "info");
-	};
-
-	const handleCopyRelativeNotice = async () => {
-		const noticeText = formatEmergencyRelativeNotice({
-			clinicName,
-			clinicAddress,
-			clinicPhone,
-			cabinetNumber,
-			patientName,
-			scenarioTitleRu: activeScenario.nameRu,
-			doctorFullName
-		});
-		try {
-			if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-				await navigator.clipboard.writeText(noticeText);
-			}
-			showToast("Извещение для родственников скопировано в буфер обмена", "success");
-		} catch {
-			// fallback
-		}
-	};
-
-	const handleApplyToForm043 = () => {
-		if (onApplyToDiary) {
-			onApplyToDiary(generatedActText);
-		}
-		onClose();
-	};
-
 	if (!isOpen) return null;
 
 	return (
 		<div className="emergency-modal-overlay" role="dialog" aria-modal="true">
 			<div className="emergency-modal-container">
-				{/* Top Emergency Header */}
 				<header className="emergency-modal-header">
 					<div className="emergency-header-title-area">
 						<AlertOctagon size={28} className="emergency-header-alert-icon" />
 						<div>
-							<h2 className="emergency-header-title">
-								ЭКСТРЕННЫЙ РЕАНИМАЦИОННЫЙ HUD
-							</h2>
+							<h2 className="emergency-header-title">ЭКСТРЕННЫЙ РЕАНИМАЦИОННЫЙ HUD</h2>
 							<span className="emergency-header-badge">
 								<ShieldAlert size={13} />
 								Приказы МЗ РФ № 786н / 1079н / 1144н / 138н & ФАР
 							</span>
 						</div>
 					</div>
-
 					<div className="emergency-header-actions">
 						<button
 							type="button"
 							className="emergency-call-112-btn"
-							onClick={handleCallSmpCheatSheet}
+							onClick={logic.handleCallSmpCheatSheet}
 							data-testid="emergency-call-112-header-btn"
 							title="Шпаргалка вызова 103 / 112 (быстрое копирование для диспетчера)"
 						>
 							<PhoneCall size={18} />
 							ВЫЗОВ СМП (103 / 112)
 						</button>
-						<button
-							type="button"
-							className="emergency-close-btn"
-							onClick={onClose}
-							aria-label="Закрыть"
-						>
+						<button type="button" className="emergency-close-btn" onClick={onClose} aria-label="Закрыть">
 							<X size={20} />
 						</button>
 					</div>
 				</header>
 
-				{/* Horizontal Scenario Selector Bar (1 Row Hick's Density 32–36px) */}
 				<div className="emergency-scenarios-strip" role="tablist" aria-label="Категории укладок неотложной помощи">
 					{(Object.keys(EMERGENCY_SCENARIOS) as EmergencyScenarioId[]).map((scId) => {
 						const scenario = EMERGENCY_SCENARIOS[scId];
-						const isActive = scenario.id === activeScenarioId;
+						const isActive = scenario.id === logic.activeScenarioId;
 						return (
 							<button
 								key={scenario.id}
@@ -423,11 +108,11 @@ export function EmergencyRescueModal({
 								role="tab"
 								aria-selected={isActive}
 								className={`emergency-scenario-card ${isActive ? 'active' : ''}`}
-								onClick={() => setActiveScenarioId(scenario.id)}
+								onClick={() => logic.setActiveScenarioId(scenario.id)}
 								title={`${scenario.nameRu} (${scenario.icd10Code}) — ${scenario.subtitleRu}`}
 							>
 								<div className="emergency-scenario-name min-w-0">
-									<span className="truncate min-w-0">{scenario.nameRu}</span>
+									<span className="min-w-0">{scenario.nameRu}</span>
 									<span className="emergency-scenario-icd">{scenario.icd10Code}</span>
 								</div>
 								<div className="emergency-scenario-subtitle">{scenario.subtitleRu}</div>
@@ -436,297 +121,53 @@ export function EmergencyRescueModal({
 					})}
 				</div>
 
-				{/* Main HUD Body */}
 				<div className="emergency-modal-body">
-					{/* Left Column: Patient, Dosages & Step-by-Step Algorithm */}
 					<div className="emergency-column-left">
-						{/* Patient Demographics & Vitals Inputs */}
-						<div className="emergency-section-box">
-							<h3 className="emergency-section-title">
-								<User size={18} />
-								Параметры пациента и витальные показатели
-							</h3>
-
-							<div className="emergency-vitals-grid">
-								<div className="emergency-input-group">
-									<label className="emergency-input-label">Вес (кг)</label>
-									<input
-										type="number"
-										className="emergency-input-field"
-										value={patientWeightKg}
-										min={5}
-										max={200}
-										onChange={(e) => setPatientWeightKg(Number(e.target.value) || 70)}
-									/>
-								</div>
-
-								<div className="emergency-input-group">
-									<label className="emergency-input-label">Возраст (лет)</label>
-									<input
-										type="number"
-										className="emergency-input-field"
-										value={patientAgeYears}
-										min={1}
-										max={110}
-										onChange={(e) => setPatientAgeYears(Number(e.target.value) || 35)}
-									/>
-								</div>
-
-								<div className="emergency-input-group">
-									<label className="emergency-input-label">АД (мм рт. ст.)</label>
-									<input
-										type="text"
-										className="emergency-input-field"
-										value={`${vitals.bpSystolic}/${vitals.bpDiastolic}`}
-										onChange={(e) => {
-											const parts = e.target.value.split('/');
-											setVitals((prev) => ({
-												...prev,
-												bpSystolic: Number(parts[0]) || prev.bpSystolic,
-												bpDiastolic: Number(parts[1]) || prev.bpDiastolic
-											}));
-										}}
-									/>
-								</div>
-
-								<div className="emergency-input-group">
-									<label className="emergency-input-label">ЧСС (уд/мин)</label>
-									<input
-										type="number"
-										className="emergency-input-field"
-										value={vitals.hr}
-										onChange={(e) => setVitals((prev) => ({ ...prev, hr: Number(e.target.value) || prev.hr }))}
-									/>
-								</div>
-
-								<div className="emergency-input-group">
-									<label className="emergency-input-label">SpO2 (%)</label>
-									<input
-										type="number"
-										className="emergency-input-field"
-										value={vitals.spo2}
-										min={50}
-										max={100}
-										onChange={(e) => setVitals((prev) => ({ ...prev, spo2: Number(e.target.value) || prev.spo2 }))}
-									/>
-								</div>
-							</div>
-
-							{/* 1-Click Weight Presets for Instant Recalculation (Mandate 8e Autonomy) */}
-							<div className="emergency-quick-weight-presets" role="group" aria-label="Быстрый выбор массы для расчета доз">
-								<button
-									type="button"
-									className={`emergency-weight-chip ${patientWeightKg === 15 ? 'active' : ''}`}
-									onClick={() => { setPatientWeightKg(15); setPatientAgeYears(4); }}
-									data-testid="preset-weight-15"
-									title="Ребенок (15 кг, 4 года)"
-								>
-									15 кг (ребёнок)
-								</button>
-								<button
-									type="button"
-									className={`emergency-weight-chip ${patientWeightKg === 45 ? 'active' : ''}`}
-									onClick={() => { setPatientWeightKg(45); setPatientAgeYears(14); }}
-									data-testid="preset-weight-45"
-									title="Подросток (45 кг, 14 лет)"
-								>
-									45 кг (подросток)
-								</button>
-								<button
-									type="button"
-									className={`emergency-weight-chip ${patientWeightKg === 70 ? 'active' : ''}`}
-									onClick={() => { setPatientWeightKg(70); setPatientAgeYears(35); }}
-									data-testid="preset-weight-70"
-									title="Взрослый стандартный (70 кг)"
-								>
-									70 кг (взрослый)
-								</button>
-								<button
-									type="button"
-									className={`emergency-weight-chip ${patientWeightKg === 90 ? 'active' : ''}`}
-									onClick={() => { setPatientWeightKg(90); setPatientAgeYears(50); }}
-									data-testid="preset-weight-90"
-									title="Взрослый крупный (90 кг)"
-								>
-									90 кг (крупный)
-								</button>
-							</div>
-						</div>
-
-						{/* Real-Time Calculated Dosage Section for Active Scenario */}
 						<EmergencyDosageCardsGrid
-							activeScenarioId={activeScenarioId}
-							patientWeightKg={patientWeightKg}
-							patientAgeYears={patientAgeYears}
-							allDosages={allDosages}
-							lipidRescueData={lipidRescueData}
+							activeScenarioId={logic.activeScenarioId}
+							patientWeightKg={logic.patientWeightKg}
+							patientAgeYears={logic.patientAgeYears}
+							allDosages={logic.allDosages}
+							lipidRescueData={logic.lipidRescueData}
 						/>
-
-						{/* Step-by-Step Resuscitation Checklist */}
-						<div className="emergency-section-box">
-							<h3 className="emergency-section-title">
-								<Activity size={18} />
-								Шаговый чек-лист реанимационных действий (Минздрав РФ)
-							</h3>
-
-							<div className="emergency-checklist">
-								{activeScenario.actionSteps.map((step: EmergencyActionStep) => {
-									const isCompleted = !!completedStepIds[step.id];
-									const timeCompleted = completedStepIds[step.id];
-
-									return (
-										<div
-											key={step.id}
-											className={`emergency-step-item ${step.isCritical ? 'critical' : ''} ${isCompleted ? 'completed' : ''}`}
-											onClick={() => handleToggleStep(step.id)}
-										>
-											<input
-												type="checkbox"
-												className="emergency-step-checkbox"
-												checked={isCompleted}
-												onChange={() => handleToggleStep(step.id)}
-												onClick={(e) => e.stopPropagation()}
-											/>
-
-											<div className="emergency-step-content">
-												<div className="emergency-step-header">
-													<div className="emergency-step-title">
-														{step.order}. {step.titleRu}
-													</div>
-													{isCompleted && (
-														<span className="emergency-step-time-badge">
-															<Check size={11} className="inline mr-0.5" />
-															{timeCompleted}
-														</span>
-													)}
-												</div>
-
-												<div className="emergency-step-description min-w-0">
-													{step.descriptionRu}
-												</div>
-
-												{step.dosageHintRu && (
-													<div className="emergency-step-dosage-hint min-w-0">
-														<Syringe size={13} className="inline mr-1" style={{ color: 'var(--ok-fg)' }} /> {step.dosageHintRu}
-													</div>
-												)}
-											</div>
-										</div>
-									);
-								})}
-							</div>
-						</div>
+						<EmergencyVitalsSection
+							patientWeightKg={logic.patientWeightKg}
+							setPatientWeightKg={logic.setPatientWeightKg}
+							patientAgeYears={logic.patientAgeYears}
+							setPatientAgeYears={logic.setPatientAgeYears}
+							vitals={logic.vitals}
+							setVitals={logic.setVitals}
+						/>
+						<EmergencyProtocolStepList
+							actionSteps={logic.activeScenario.actionSteps}
+							completedStepIds={logic.completedStepIds}
+							onToggleStep={logic.handleToggleStep}
+						/>
 					</div>
 
-					{/* Right Column: Resuscitation Tools (Metronome, Timer, Protocol) */}
 					<div className="emergency-column-right">
-						{/* Adrenaline Countdown Timer */}
-						<div className="emergency-timer-box">
-							<div className="emergency-timer-title min-w-0">
-								<Clock size={20} />
-								<span className="truncate min-w-0">ТАЙМЕР ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА</span>
-							</div>
-
-							<div className={`emergency-timer-display ${isAdrenalineDue ? 'due' : ''}`}>
-								{formatTimerSeconds(adrenalineTimerSeconds)}
-							</div>
-
-							{isAdrenalineDue && (
-								<div className="emergency-timer-alert">
-									<AlertTriangle className="w-4 h-4 shrink-0" />
-									<span>ВРЕМЯ ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА (0.3–0.5 МЛ В/М)!</span>
-								</div>
-							)}
-
-							<div className="emergency-timer-buttons">
-								<button
-									type="button"
-									className={`emergency-timer-btn ${isAdrenalineTimerRunning ? 'active' : ''}`}
-									onClick={() => handleStartAdrenalineTimer(300)}
-									title="Запустить таймер повторного введения адреналина (5 минут по стандарту МЗ РФ № 1079н)"
-								>
-									<Clock size={14} />
-									<span>Старт 5 мин</span>
-								</button>
-								<button
-									type="button"
-									className="emergency-timer-btn"
-									onClick={handleResetAdrenalineTimer}
-									title="Сбросить таймер адреналина"
-								>
-									<RotateCcw size={14} />
-									<span>Сброс</span>
-								</button>
-							</div>
-						</div>
-
-						{/* Statutory Emergency Kit Quick Reference (1-Click Static Memo) */}
-						<div className="emergency-cpr-box">
-							<div className="emergency-cpr-header">
-								<div className="emergency-cpr-title min-w-0">
-									<Syringe size={18} style={{ color: 'var(--teal)' }} />
-									<span className="truncate min-w-0">УКЛАДКА ЭКСТРЕННОЙ ПОМОЩИ (ПРИКАЗ МЗ РФ № 786н / 1144н)</span>
-								</div>
-							</div>
-
-							<div className="emergency-cpr-guidelines-list">
-								{STATUTORY_EMERGENCY_KIT_MEMO.map((kit) => (
-									<div key={kit.drugId} className="emergency-kit-row">
-										<div className="emergency-kit-row-top">
-											<span className="emergency-kit-row-name truncate min-w-0" title={kit.tradeNameRu}>{kit.tradeNameRu}</span>
-											<span className="emergency-cpr-val highlight-ok shrink-0 emergency-kit-row-dose">{kit.dosageStandardRu.split(';')[0]}</span>
-										</div>
-										<span className="truncate min-w-0 emergency-kit-row-route" title={kit.routeRu}>{kit.routeRu}</span>
-									</div>
-								))}
-							</div>
-						</div>
-
-						{/* Statutory Resuscitation Guidelines Card */}
-						<div className="emergency-cpr-box">
-							<div className="emergency-cpr-header">
-								<div className="emergency-cpr-title min-w-0">
-									<Heart size={18} style={{ color: 'var(--bad-fg)' }} />
-									<span className="truncate min-w-0">СТАНДАРТ БАЗОВОЙ СЛР (МИНЗДРАВ РФ & ФАР)</span>
-								</div>
-							</div>
-
-							<div className="emergency-cpr-guidelines-list">
-								<div className="emergency-cpr-guideline-row">
-									<span className="emergency-cpr-label truncate min-w-0">Соотношение:</span>
-									<span className="emergency-cpr-val highlight-bad shrink-0">30 компрессий : 2 вдоха</span>
-								</div>
-								<div className="emergency-cpr-guideline-row">
-									<span className="emergency-cpr-label truncate min-w-0">Частота нажатий:</span>
-									<span className="emergency-cpr-val shrink-0">100–120 в минуту</span>
-								</div>
-								<div className="emergency-cpr-guideline-row">
-									<span className="emergency-cpr-label truncate min-w-0">Глубина компрессий:</span>
-									<span className="emergency-cpr-val shrink-0">5–6 см (1/3 грудной клетки)</span>
-								</div>
-								<div className="emergency-cpr-guideline-row">
-									<span className="emergency-cpr-label truncate min-w-0">Положение:</span>
-									<span className="emergency-cpr-val highlight-ok shrink-0">Твердая горизонтальная поверхность</span>
-								</div>
-							</div>
-						</div>
-
-						{/* Emergency Incident Protocol Preview & Handover Box */}
+						<EmergencyResuscitationTools
+							adrenalineTimerSeconds={adrenalineTimerSeconds}
+							isAdrenalineTimerRunning={isAdrenalineTimerRunning}
+							isAdrenalineDue={isAdrenalineDue}
+							onStartAdrenalineTimer={(sec) => { setAdrenalineTimerSeconds(sec); setIsAdrenalineTimerRunning(true); setIsAdrenalineDue(false); }}
+							onResetAdrenalineTimer={() => { setIsAdrenalineTimerRunning(false); setIsAdrenalineDue(false); setAdrenalineTimerSeconds(300); }}
+						/>
 						<EmergencyProtocolHandoverBox
-							activeProtocolTab={activeProtocolTab}
-							setActiveProtocolTab={setActiveProtocolTab}
-							completedStepsCount={completedStepsList.length}
-							totalStepsCount={activeScenario.actionSteps.length}
-							generatedActText={generatedActText}
-							generatedCheatSheetText={generatedCheatSheetText}
+							activeProtocolTab={logic.activeProtocolTab}
+							setActiveProtocolTab={logic.setActiveProtocolTab}
+							completedStepsCount={logic.completedStepsList.length}
+							totalStepsCount={logic.activeScenario.actionSteps.length}
+							generatedActText={logic.generatedActText}
+							generatedCheatSheetText={logic.generatedCheatSheetText}
 							onApplyToDiary={onApplyToDiary}
-							isCopiedAct={isCopiedAct}
-							isCopiedCheatSheet={isCopiedCheatSheet}
-							onApplyToForm043={handleApplyToForm043}
-							onCopyAct={handleCopyAct}
-							onPrintEmergencyAct={handlePrintEmergencyAct}
-							onCopyRelativeNotice={handleCopyRelativeNotice}
-							onCopyCheatSheet={handleCopyCheatSheet}
+							isCopiedAct={logic.isCopiedAct}
+							isCopiedCheatSheet={logic.isCopiedCheatSheet}
+							onApplyToForm043={logic.handleApplyToForm043}
+							onCopyAct={logic.handleCopyAct}
+							onPrintEmergencyAct={logic.handlePrintEmergencyAct}
+							onCopyRelativeNotice={logic.handleCopyRelativeNotice}
+							onCopyCheatSheet={logic.handleCopyCheatSheet}
 						/>
 					</div>
 				</div>
