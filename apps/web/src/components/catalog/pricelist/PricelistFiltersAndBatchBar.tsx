@@ -98,14 +98,18 @@ export const PricelistFiltersAndBatchBar: React.FC<PricelistFiltersAndBatchBarPr
 					title="Мгновенный выбор популярной услуги"
 				>
 					<option value="">Быстрый выбор услуги...</option>
+					<option value="B01.065.001">Б01.065.001 Прием / Консультация</option>
+					<option value="B01.065">Б01.065 Все осмотры и приемы</option>
 					<option value="A16.07.002">A16.07.002 Кариес</option>
 					<option value="A16.07.008">A16.07.008 Пульпит</option>
 					<option value="A11.07.012">A11.07.012 Анестезия</option>
-					<option value="A06.07.003">A06.07.003 Снимок</option>
+					<option value="A06.07.003">A06.07.003 Снимок / ОПТГ</option>
+					<option value="A06.07">A06.07 Все снимки и КТ</option>
 					<option value="A16.07.054">A16.07.054 Имплантация</option>
 					<option value="A16.07.004">A16.07.004 Коронка</option>
 					<option value="A16.07.001">A16.07.001 Удаление</option>
 					<option value="A16.07.051">A16.07.051 Гигиена</option>
+					<option value="A16.07">A16.07 Все стоматологические услуги</option>
 				</select>
 
 				{/* Price Tier Segmented Control */}

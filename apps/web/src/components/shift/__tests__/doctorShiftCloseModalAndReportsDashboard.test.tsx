@@ -12,7 +12,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import {
@@ -144,6 +144,32 @@ describe("Doctor Shift Closure Reconciliation & Executive Reports Dashboard", ()
 				EMOJI_REGEX.test(html),
 				false,
 				"DoctorShiftCloseModal zero state must contain zero emojis",
+			);
+		});
+
+		it("1.4 Renders 54-FZ cash reconciliation block and 1-click Z-report closure CTA", () => {
+			const html = renderToString(
+				React.createElement(DoctorShiftCloseModal, {
+					isOpen: true,
+					onClose: () => {},
+					onConfirmClose: () => {},
+					shiftStats: sampleShiftStats,
+					cashSummary: sampleCashSummary,
+					emrSummary: sampleEmrSummary,
+				}),
+			);
+
+			const cleanHtml = cleanSsrHtml(html);
+			assert.ok(cleanHtml.includes("Сверка кассы 54-ФЗ и фискальный Z-отчёт"));
+			assert.ok(cleanHtml.includes("Сверено без расхождений (0 ₽)"));
+			assert.ok(cleanHtml.includes("Касса 54-ФЗ сходится (0 ₽)"));
+			assert.ok(cleanHtml.includes("Снять фискальный Z-отчёт с гашением (54-ФЗ)"));
+			assert.ok(cleanHtml.includes("Сформировать сменную ведомость ф. Д-1"));
+			assert.ok(cleanHtml.includes("Закрыть смену и снять Z-отчет (1 клик)"));
+			assert.equal(
+				EMOJI_REGEX.test(html),
+				false,
+				"DoctorShiftCloseModal 54-FZ must contain zero emojis",
 			);
 		});
 	});

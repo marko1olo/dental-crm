@@ -43,6 +43,8 @@ export { PatientCockpitFeatureGrid } from "./PatientCockpitFeatureGrid";
 
 export {
 	useDoctorShiftData,
+	useShiftRealtimeTelemetry,
+	useShiftFinancialSummary,
 	formatClockTime,
 	type UseDoctorShiftDataOptions,
 } from "./useDoctorShiftData";
@@ -60,3 +62,8 @@ export {
 	type MobileShiftConsumableItem,
 	type MobileShiftAppointmentSummary,
 } from "./MobileShiftCockpit";
+
+export {
+	ChairRentalShiftWidget,
+	type ChairRentalShiftWidgetProps,
+} from "./ChairRentalShiftWidget";

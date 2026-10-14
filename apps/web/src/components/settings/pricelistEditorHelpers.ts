@@ -3,9 +3,11 @@ import type { DentalSpecialty, ServiceCategory } from "@dental/shared";
 export const NEW_SERVICE_TEMPLATE = {
 	title: "",
 	code: "",
+	order804nCode: "",
 	category: "therapy" as ServiceCategory,
 	specialty: "therapist" as DentalSpecialty,
 	basePriceRub: 0,
+	materialsCostRub: 0,
 	durationMinutes: 30,
 	taxDeductible: true,
 	vatRate: "vat_exempt" as "vat_exempt" | "vat_0" | "vat_20",
@@ -45,10 +47,11 @@ export const CATEGORY_TABS: Array<{ id: string; label: string }> = [
 ];
 
 export const QUICK_804N_CHIPS: Array<{ code: string; label: string }> = [
+	{ code: "B01.065.001", label: "Б01.065.001 Осмотр/Прием" },
 	{ code: "A16.07.002", label: "A16.07.002 Кариес" },
 	{ code: "A16.07.008", label: "A16.07.008 Пульпит" },
 	{ code: "A11.07.012", label: "A11.07.012 Анестезия" },
-	{ code: "A06.07.003", label: "A06.07.003 Снимок" },
+	{ code: "A06.07.003", label: "A06.07.003 Снимок / ОПТГ" },
 	{ code: "A16.07.054", label: "A16.07.054 Имплантация" },
 	{ code: "A16.07.004", label: "A16.07.004 Коронка" },
 	{ code: "A16.07.001", label: "A16.07.001 Удаление" },

@@ -23,11 +23,13 @@ export const ShiftMetricsHeader: React.FC<ShiftMetricsHeaderProps> = ({
 	elapsedTimeDisplay,
 	topbarOnly,
 	heroOnly,
+	chairRentalTimerDisplay,
+	isChairRentalActive,
 }) => {
 	const renderTopbar = () => (
 		<header className="mobile-shift-topbar">
 			<div className="mobile-shift-topbar-left">
-				<h1 className="mobile-shift-topbar-title">Смена & Касса</h1>
+				<h1 className="mobile-shift-topbar-title">Смена врача</h1>
 				<span
 					className={`mobile-shift-status-pill ${isShiftOpen ? "open" : "closed"}`}
 					data-testid="shift-status-pill"
@@ -39,23 +41,44 @@ export const ShiftMetricsHeader: React.FC<ShiftMetricsHeaderProps> = ({
 						}}
 						aria-hidden="true"
 					/>
-					{isShiftOpen ? "Смена открыта" : "Смена закрыта"}
+					{isShiftOpen ? "Открыта" : "Закрыта"}
 				</span>
 			</div>
-			<div
-				className="mobile-shift-duration-badge"
-				title="Время текущей рабочей смены"
-				data-testid="shift-duration-timer"
-			>
-				<Clock size={13} aria-hidden="true" />
-				<span>{elapsedTimeDisplay}</span>
+			<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+				{chairRentalTimerDisplay && (
+					<div
+						className="mobile-shift-duration-badge"
+						style={{
+							background: "color-mix(in srgb, var(--ok-fg, #15803d) 12%, transparent)",
+							color: "var(--ok-fg, #15803d)",
+							borderColor: "color-mix(in srgb, var(--ok-fg, #15803d) 25%, transparent)",
+						}}
+						title="Таймер аренды кресла"
+						data-testid="chair-rental-timer"
+					>
+						<Clock size={13} aria-hidden="true" />
+						<span>Аренда: {chairRentalTimerDisplay}</span>
+					</div>
+				)}
+				<div
+					className="mobile-shift-duration-badge"
+					title="Время текущей рабочей смены"
+					data-testid="shift-duration-timer"
+				>
+					<Clock size={13} aria-hidden="true" />
+					<span>{elapsedTimeDisplay}</span>
+				</div>
 			</div>
 		</header>
 	);
 
 	const renderHero = () => (
-		<section className="mobile-shift-hero-card" aria-label="Карточка дежурной смены">
-			<div className="mobile-shift-doctor-row">
+		<section
+			className="mobile-shift-hero-card"
+			aria-label="Карточка дежурной смены"
+			style={{ padding: "14px 16px", gap: "12px" }}
+		>
+			<div className="mobile-shift-doctor-row" style={{ marginBottom: 0 }}>
 				<div className="mobile-shift-doctor-info">
 					<div className="mobile-shift-doctor-avatar">
 						{doctorName.split(" ").map((n) => n[0]).slice(0, 2).join("")}
@@ -68,55 +91,42 @@ export const ShiftMetricsHeader: React.FC<ShiftMetricsHeaderProps> = ({
 				<span className="mobile-shift-cabinet-chip">{cabinetName}</span>
 			</div>
 
-			<div className="mobile-shift-revenue-block">
+			{/* Grouped Card Apple HIG: Revenue Dominance & Channels Breakdown */}
+			<div className="mobile-shift-revenue-block" data-testid="mobile-shift-revenue-block">
 				<div className="mobile-shift-revenue-header">
-					<span className="mobile-shift-revenue-label">Выручка за смену</span>
-					<strong
-						className="mobile-shift-revenue-total"
-						data-testid="shift-total-revenue"
-					>
+					<span className="mobile-shift-revenue-label">Выручка за день</span>
+					<span className="mobile-shift-revenue-total" data-testid="mobile-shift-total-revenue">
 						{money(totalRevenueRub)}
-					</strong>
+					</span>
 				</div>
 
 				<div className="mobile-shift-channels-grid">
 					<div className="mobile-shift-channel-item">
-						<span className="mobile-shift-channel-title">
-							<Banknote size={11} className="inline mr-1 text-emerald-600 dark:text-emerald-400" />
-							Наличные
+						<span className="mobile-shift-channel-title" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
+							<Banknote size={11} /> Наличные
 						</span>
-						<strong className="mobile-shift-channel-sum">
-							{money(cashInDrawerRub)}
-						</strong>
+						<span className="mobile-shift-channel-sum">{money(cashInDrawerRub)}</span>
 					</div>
 					<div className="mobile-shift-channel-item">
-						<span className="mobile-shift-channel-title">
-							<CreditCard size={11} className="inline mr-1 text-sky-600 dark:text-sky-400" />
-							Терминал
+						<span className="mobile-shift-channel-title" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
+							<CreditCard size={11} /> POS карты
 						</span>
-						<strong className="mobile-shift-channel-sum">
-							{money(cardSumRub)}
-						</strong>
+						<span className="mobile-shift-channel-sum">{money(cardSumRub)}</span>
 					</div>
 					<div className="mobile-shift-channel-item">
-						<span className="mobile-shift-channel-title">
-							<QrCode size={11} className="inline mr-1 text-teal-600 dark:text-teal-400" />
-							СБП (QR)
+						<span className="mobile-shift-channel-title" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
+							<QrCode size={11} /> СБП QR
 						</span>
-						<strong className="mobile-shift-channel-sum">
-							{money(sbpSumRub)}
-						</strong>
+						<span className="mobile-shift-channel-sum">{money(sbpSumRub)}</span>
 					</div>
 				</div>
 
 				<div className="mobile-shift-payout-strip">
 					<span className="mobile-shift-payout-label">
 						<Zap size={12} />
-						Гонорар врача ({doctorCommissionPct}% сдельно)
+						Начислено врачу ({doctorCommissionPct}%):
 					</span>
-					<strong className="mobile-shift-payout-amount">
-						{money(estimatedDoctorPayoutRub)} на руки
-					</strong>
+					<span className="mobile-shift-payout-amount">{money(estimatedDoctorPayoutRub)}</span>
 				</div>
 			</div>
 		</section>
@@ -131,3 +141,4 @@ export const ShiftMetricsHeader: React.FC<ShiftMetricsHeaderProps> = ({
 		</>
 	);
 };
+

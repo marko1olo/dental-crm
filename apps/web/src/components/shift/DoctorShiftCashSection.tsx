@@ -48,17 +48,16 @@ export const DoctorShiftCashSection: React.FC<DoctorShiftCashSectionProps> = ({
 	onPrintStatement,
 	className = "",
 }) => {
-	// Fallback расчёт долей выручки при отсутствии детализированного среза
-	const cashRub =
-		cashSummary?.cashRub ?? Math.round(totalRevenueRub * 0.3);
-	const cardRub =
-		cashSummary?.cardRub ?? Math.round(totalRevenueRub * 0.45);
-	const sbpRub =
-		cashSummary?.sbpRub ?? Math.round(totalRevenueRub * 0.15);
-	const depositRub =
-		cashSummary?.depositRub ?? Math.round(totalRevenueRub * 0.1);
+	// Честный расчет кассовых остатков: из реальной кассовой сводки
+	const cashRub = cashSummary?.cashRub ?? 0;
+	const cardRub = cashSummary?.cardRub ?? 0;
+	const sbpRub = cashSummary?.sbpRub ?? 0;
+	const depositRub = cashSummary?.depositRub ?? 0;
 	const effectiveTotalRub =
-		cashSummary?.totalRevenueRub ?? (cashRub + cardRub + sbpRub + depositRub);
+		cashSummary?.totalRevenueRub ??
+		((cashRub + cardRub + sbpRub + depositRub) > 0
+			? (cashRub + cardRub + sbpRub + depositRub)
+			: totalRevenueRub);
 
 	const [encashmentAmount, setEncashmentAmount] = useState<number>(cashRub);
 	const [encashmentCompleted, setEncashmentCompleted] = useState<boolean>(false);

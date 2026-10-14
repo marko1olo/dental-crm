@@ -95,7 +95,7 @@ export const ShiftActionsToolbar: React.FC<ShiftActionsToolbarProps> = ({
 					{isShiftOpen ? (
 						<>
 							<CheckCircle2 size={19} />
-							<span>Закрыть и передать смену</span>
+							<span>Сдать смену и кассу</span>
 						</>
 					) : (
 						<>
@@ -134,7 +134,7 @@ export const ShiftActionsToolbar: React.FC<ShiftActionsToolbarProps> = ({
 
 						<div className="mobile-shift-sheet-body">
 							<p style={{ margin: 0, fontSize: "13px", color: "var(--muted)", lineHeight: 1.4 }}>
-								Внесение разменного фонда в денежный ящик кассы перед началом приема по 54-ФЗ.
+								Внесение разменного фонда в денежный ящик кассы перед началом приема.
 							</p>
 
 							<div>
@@ -220,7 +220,7 @@ export const ShiftActionsToolbar: React.FC<ShiftActionsToolbarProps> = ({
 					<div className="mobile-shift-sheet-container">
 						<div className="mobile-shift-sheet-handle" />
 						<div className="mobile-shift-sheet-header">
-							<h3 className="mobile-shift-sheet-title">Инкассация & Z-отчёт 54-ФЗ</h3>
+							<h3 className="mobile-shift-sheet-title">Инкассация и Z-отчёт</h3>
 							<button
 								type="button"
 								className="mobile-shift-sheet-close-btn"
@@ -332,7 +332,7 @@ export const ShiftActionsToolbar: React.FC<ShiftActionsToolbarProps> = ({
 									/>
 									<div style={{ minWidth: 0 }}>
 										<strong style={{ display: "block", fontSize: "13.5px", color: "var(--ink)" }}>
-											Только Z-отчет 54-ФЗ без изъятия наличных
+											Только Z-отчет без изъятия наличных
 										</strong>
 										<span style={{ fontSize: "11.5px", color: "var(--muted)" }}>
 											Гашение смены на ККТ без формирования РКО

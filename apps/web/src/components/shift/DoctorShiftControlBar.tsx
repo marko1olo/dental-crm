@@ -1,51 +1,56 @@
 import React from "react";
 import {
-	Calculator,
-	Calendar,
-	ChevronRight,
-	Moon,
 	Radio,
 	Stethoscope,
-	Zap,
 } from "lucide-react";
-import { money } from "../../AppHelpers";
+import {
+	ShiftTimerDisplay,
+} from "./controlBarModules/ShiftTimerDisplay";
+import {
+	ChairStatusQuickToggle,
+} from "./controlBarModules/ChairStatusQuickToggle";
+import {
+	DoctorShiftActionsMenu,
+} from "./controlBarModules/DoctorShiftActionsMenu";
+import {
+	ShiftKpiMetricStrip,
+} from "./controlBarModules/ShiftKpiMetricStrip";
+import {
+	DoctorShiftFinancialModeToggle,
+} from "./controlBarModules/DoctorShiftFinancialModeToggle";
+import {
+	DoctorShiftPrimaryButtons,
+} from "./controlBarModules/DoctorShiftPrimaryButtons";
+import type {
+	ChairOperationalStatus,
+	DoctorShiftControlBarProps,
+	DoctorShiftFinancialMode,
+	DoctorShiftStats,
+	ShiftOperationalState,
+} from "./controlBarModules/shiftControlBarTypes";
 
-export interface DoctorShiftStats {
-	readonly totalAppointments: number;
-	readonly completedCount: number;
-	readonly inProgressCount: number;
-	readonly totalRevenueRub: number;
-	readonly doctorCommissionPct: number;
-	readonly estimatedDoctorPayoutRub: number;
-	readonly hasActiveOvertime: boolean;
-}
-
-export interface DoctorShiftControlBarProps {
-	readonly isShiftOpen: boolean;
-	readonly onToggleShift: () => void;
-	readonly onOpenPayrollModal: () => void;
-	readonly onOpenT13Timesheet?: (() => void) | undefined;
-	readonly shiftStats: DoctorShiftStats;
-	readonly doctorName?: string | null | undefined;
-	readonly cabinetName?: string | undefined;
-	readonly isOffline?: boolean | undefined;
-	readonly className?: string;
-}
-
-function getGreetingTime(): string {
-	const hour = new Date().getHours();
-	if (hour >= 5 && hour < 12) return "Доброе утро";
-	if (hour >= 12 && hour < 18) return "Добрый день";
-	if (hour >= 18 && hour < 23) return "Добрый вечер";
-	return "Доброй ночи";
-}
+export type {
+	ChairOperationalStatus,
+	DoctorShiftControlBarProps,
+	DoctorShiftFinancialMode,
+	DoctorShiftStats,
+	ShiftOperationalState,
+};
+export {
+	ShiftTimerDisplay,
+	ChairStatusQuickToggle,
+	DoctorShiftActionsMenu,
+	ShiftKpiMetricStrip,
+	DoctorShiftFinancialModeToggle,
+	DoctorShiftPrimaryButtons,
+};
 
 /**
  * DoctorShiftHeaderBar (DoctorShiftControlBar) — Unified compact shift cockpit header.
- * Consolidates greeting, network telemetry, shift admission, key KPIs, and payroll calculation
- * into a single cohesive, high-density toolbar without dev-jargon or visual clutter.
+ * Strictly separates salaried piece-rate mode ('piece_rate') from independent chair rental ('chair_rental').
+ * Optimized for low-spec chairside devices (RAF / 1s interval isolation, zero full-tree rerenders).
  */
-export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
+export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = React.memo(({
 	isShiftOpen,
 	onToggleShift,
 	onOpenPayrollModal,
@@ -54,12 +59,22 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 	doctorName,
 	cabinetName = "Кабинет №1",
 	isOffline = false,
+	financialMode = "piece_rate",
+	onChangeFinancialMode,
+	chairRentalNetIncomeRub = 30200,
+	chairRentalRentExpenseRub = 9000,
+	onOpenChairRentalAct,
+	chairStatus,
+	onChangeChairStatus,
+	onHandoverShift,
+	onPrintPreliminaryReport,
+	onCallAssistant,
 	className = "",
 }) => {
-	const greeting = getGreetingTime();
 	const cleanDocName = (doctorName || "Барабаш С.В.")
 		.replace(/^(доктор|д-р|врач)\s+/i, "")
 		.trim();
+	const isChairRental = financialMode === "chair_rental";
 
 	return (
 		<section
@@ -69,31 +84,31 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 				background: "var(--paper)",
 				border: "1px solid var(--line)",
 				borderRadius: "12px",
-				padding: "14px 16px",
+				padding: "12px 16px",
 				marginBottom: "12px",
 				boxShadow: "var(--shadow-1)",
 				display: "flex",
 				flexDirection: "column",
-				gap: "12px",
+				gap: "10px",
 			}}
 			data-testid="doctor-shift-control-bar"
 		>
-			{/* Top Line: Greeting, Doctor & Cabinet, Telemetry, and Shift Status Actions */}
+			{/* Top Line: Doctor & Cabinet, Status, Telemetry and Mode-Specific Actions */}
 			<div
 				style={{
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "space-between",
-					gap: "10px",
-					flexWrap: "wrap",
+					gap: "8px",
+					flexWrap: "nowrap",
 				}}
 			>
-				{/* Left: Doctor Identification & Status Badge */}
-				<div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+				{/* Left: Doctor Identification, Shift Status & Timer */}
+				<div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
 					<div
 						style={{
-							width: "32px",
-							height: "32px",
+							width: "30px",
+							height: "30px",
 							borderRadius: "8px",
 							background: isShiftOpen
 								? "var(--ok-bg, rgba(21, 128, 61, 0.1))"
@@ -106,31 +121,39 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 						}}
 						aria-hidden="true"
 					>
-						<Stethoscope size={16} />
+						<Stethoscope size={15} />
 					</div>
 
-					<div style={{ minWidth: 0 }}>
-						<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-							<h3
-								style={{
-									margin: 0,
-									fontSize: "13.5px",
-									fontWeight: 700,
-									color: "var(--ink)",
-									lineHeight: 1.25,
-								}}
-							>
-								{greeting}, доктор {cleanDocName} · {cabinetName}
-							</h3>
+					<div style={{ display: "flex", alignItems: "center", gap: "7px", minWidth: 0, flexWrap: "nowrap" }}>
+						<h3
+							style={{
+								margin: 0,
+								fontSize: "13px",
+								fontWeight: 700,
+								color: "var(--ink)",
+								lineHeight: 1.25,
+								whiteSpace: "nowrap",
+							}}
+						>
+							Д-р {cleanDocName} · {cabinetName}
+						</h3>
 
-							<span
-								className={`status-pill ${isShiftOpen ? "status-in_treatment" : "status-pending"}`}
-								style={{ fontSize: "10.5px", fontWeight: 700, padding: "2px 7px" }}
-							>
-								{isShiftOpen ? "Рабочая смена врача открыта" : "Смена не открыта"}
-							</span>
+						<span
+							className={`status-pill ${isShiftOpen ? "status-in_treatment" : "status-pending"}`}
+							style={{ fontSize: "10.5px", fontWeight: 700, padding: "2px 7px", whiteSpace: "nowrap", flexShrink: 0 }}
+						>
+							{isShiftOpen ? "Рабочая смена врача открыта" : "Рабочая смена врача закрыта"}
+						</span>
 
-							{/* Quiet Telemetry */}
+						{isShiftOpen && (
+							<ShiftTimerDisplay
+								isShiftOpen={isShiftOpen}
+								startTimeIso={shiftStats.shiftStartTimeIso}
+								initialSeconds={shiftStats.shiftDurationSeconds}
+							/>
+						)}
+
+						{isOffline && (
 							<span
 								style={{
 									fontSize: "10.5px",
@@ -140,269 +163,65 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 									alignItems: "center",
 									gap: "4px",
 									background: "var(--paper-soft)",
-									padding: "2px 7px",
+									padding: "2px 6px",
 									borderRadius: "6px",
 									border: "1px solid var(--line)",
+									whiteSpace: "nowrap",
+									flexShrink: 0,
 								}}
 							>
-								{isOffline ? (
-									<>
-										<Radio size={11} aria-hidden="true" />
-										<span>Локальная сеть</span>
-									</>
-								) : (
-									<>
-										<span
-											style={{
-												width: "6px",
-												height: "6px",
-												borderRadius: "50%",
-												background: "var(--ok-fg, #16a34a)",
-												display: "inline-block",
-											}}
-											aria-hidden="true"
-										/>
-										<span>В сети</span>
-									</>
-								)}
+								<Radio size={11} aria-hidden="true" />
+								<span>Офлайн</span>
 							</span>
-
-							{shiftStats.hasActiveOvertime && (
-								<span
-									className="status-pill"
-									style={{
-										background: "rgba(99, 102, 241, 0.12)",
-										color: "#6366f1",
-										border: "1px solid rgba(99, 102, 241, 0.3)",
-										fontSize: "10.5px",
-										fontWeight: 700,
-										display: "inline-flex",
-										alignItems: "center",
-										gap: "3px",
-									}}
-								>
-									<Moon size={11} /> Ночной приём
-								</span>
-							)}
-						</div>
+						)}
 					</div>
 				</div>
 
-				{/* Right: Actions */}
-				<div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-					<button
-						type="button"
-						onClick={onToggleShift}
-						style={{
-							height: "32px",
-							borderRadius: "8px",
-							padding: "0 12px",
-							fontSize: "12px",
-							fontWeight: 600,
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "6px",
-							cursor: "pointer",
-							transition: "all 0.15s ease",
-							background: isShiftOpen ? "var(--paper-soft)" : "var(--teal)",
-							border: isShiftOpen ? "1px solid var(--line)" : "1px solid transparent",
-							color: isShiftOpen ? "var(--ink)" : "#ffffff",
-						}}
-						title={isShiftOpen ? "Завершить рабочую смену" : "Открыть смену врача"}
-					>
-						<Zap size={14} />
-						<span>{isShiftOpen ? "Завершить смену" : "Открыть смену"}</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={onOpenPayrollModal}
-						style={{
-							height: "32px",
-							borderRadius: "8px",
-							padding: "0 12px",
-							fontSize: "12px",
-							fontWeight: 600,
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "6px",
-							cursor: "pointer",
-							transition: "all 0.15s ease",
-							background: "var(--paper-soft)",
-							border: "1px solid var(--line)",
-							color: "var(--ink)",
-						}}
-						title="Расчет зарплаты врачей (Зарплатная ведомость): детализированный расчет за смену"
-					>
-						<Calculator size={14} />
-						<span>Расчет зарплаты</span>
-					</button>
-
-					{onOpenT13Timesheet && (
-						<button
-							type="button"
-							onClick={onOpenT13Timesheet}
-							style={{
-								height: "32px",
-								borderRadius: "8px",
-								padding: "0 12px",
-								fontSize: "12px",
-								fontWeight: 600,
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								cursor: "pointer",
-								transition: "all 0.15s ease",
-								background: "var(--paper-soft)",
-								border: "1px solid var(--line)",
-								color: "var(--ink)",
-							}}
-							title="Унифицированный табель учета рабочего времени персонала (Форма Т-13 Госкомстата РФ)"
-							data-testid="btn-shift-open-timesheet-t13"
-						>
-							<Calendar size={14} className="text-[var(--teal)]" />
-							<span>Табель Т-13 (Госкомстат)</span>
-						</button>
+				{/* Right: Chair Status Toggle + Mode Switcher + Actions */}
+				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, flexWrap: "nowrap" }}>
+					{onChangeChairStatus && (
+						<ChairStatusQuickToggle
+							currentStatus={chairStatus}
+							onChangeStatus={onChangeChairStatus}
+						/>
 					)}
+
+					<DoctorShiftFinancialModeToggle
+						financialMode={financialMode}
+						onChangeFinancialMode={onChangeFinancialMode}
+					/>
+
+					<DoctorShiftPrimaryButtons
+						isShiftOpen={isShiftOpen}
+						onToggleShift={onToggleShift}
+						isChairRental={isChairRental}
+						onOpenPayrollModal={onOpenPayrollModal}
+					/>
+
+					<DoctorShiftActionsMenu
+						onHandoverShift={onHandoverShift}
+						onPrintPreliminaryReport={onPrintPreliminaryReport}
+						onCallAssistant={onCallAssistant}
+						onOpenT13Timesheet={onOpenT13Timesheet}
+						onOpenChairRentalAct={onOpenChairRentalAct}
+						isChairRental={isChairRental}
+					/>
 				</div>
 			</div>
 
 			{/* Metric Strip: Compact 1-line KPI tiles */}
-			<div
-				style={{
-					display: "grid",
-					gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))",
-					gap: "8px",
-				}}
-			>
-				{/* KPI 1: Patients Seen */}
-				<div
-					style={{
-						padding: "8px 12px",
-						borderRadius: "8px",
-						background: "var(--paper-soft)",
-						border: "1px solid var(--line)",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "space-between",
-						gap: "8px",
-						minWidth: 0,
-						height: "40px",
-					}}
-				>
-					<span
-						style={{
-							fontSize: "11px",
-							fontWeight: 600,
-							color: "var(--muted)",
-							textTransform: "uppercase",
-							letterSpacing: "0.02em",
-							whiteSpace: "nowrap",
-						}}
-					>
-						Пациенты за смену
-					</span>
-					<div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
-						<strong style={{ fontSize: "14px", fontWeight: 800, color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>
-							{shiftStats.completedCount}
-						</strong>
-						<span style={{ fontSize: "11px", color: "var(--muted)" }}>
-							из {shiftStats.totalAppointments}
-						</span>
-					</div>
-				</div>
-
-				{/* KPI 2: Billed Services Revenue */}
-				<div
-					style={{
-						padding: "8px 12px",
-						borderRadius: "8px",
-						background: "var(--paper-soft)",
-						border: "1px solid var(--line)",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "space-between",
-						gap: "8px",
-						minWidth: 0,
-						height: "40px",
-					}}
-				>
-					<span
-						style={{
-							fontSize: "11px",
-							fontWeight: 600,
-							color: "var(--muted)",
-							textTransform: "uppercase",
-							letterSpacing: "0.02em",
-							whiteSpace: "nowrap",
-						}}
-					>
-						Оказано услуг (касса)
-					</span>
-					<strong style={{ fontSize: "14px", fontWeight: 800, color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>
-						{money(shiftStats.totalRevenueRub)}
-					</strong>
-				</div>
-
-				{/* KPI 3: Doctor Calculated Payout */}
-				<div
-					style={{
-						padding: "8px 12px",
-						borderRadius: "8px",
-						background: "var(--teal-surface, rgba(13, 148, 136, 0.08))",
-						border: "1px solid var(--teal-ring, rgba(13, 148, 136, 0.25))",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "space-between",
-						gap: "8px",
-						minWidth: 0,
-						height: "40px",
-					}}
-				>
-					<span
-						style={{
-							fontSize: "11px",
-							fontWeight: 700,
-							color: "var(--teal-dark, #0f766e)",
-							textTransform: "uppercase",
-							letterSpacing: "0.02em",
-							whiteSpace: "nowrap",
-						}}
-					>
-						Гонорар врача ({shiftStats.doctorCommissionPct}%)
-					</span>
-					<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-						<strong
-							style={{
-								fontSize: "14px",
-								fontWeight: 800,
-								color: "var(--teal-dark, #0f766e)",
-								fontVariantNumeric: "tabular-nums",
-							}}
-						>
-							{money(shiftStats.estimatedDoctorPayoutRub)}
-						</strong>
-						<button
-							type="button"
-							onClick={onOpenPayrollModal}
-							style={{
-								border: "none",
-								background: "transparent",
-								color: "var(--teal-dark, #0f766e)",
-								padding: "0 2px",
-								cursor: "pointer",
-								display: "inline-flex",
-								alignItems: "center",
-							}}
-							title="Открыть зарплатную ведомость"
-						>
-							<ChevronRight size={13} />
-						</button>
-					</div>
-				</div>
-			</div>
+			<ShiftKpiMetricStrip
+				shiftStats={shiftStats}
+				isChairRental={isChairRental}
+				chairRentalNetIncomeRub={chairRentalNetIncomeRub}
+				chairRentalRentExpenseRub={chairRentalRentExpenseRub}
+				onOpenPayrollModal={onOpenPayrollModal}
+				onOpenChairRentalAct={onOpenChairRentalAct}
+			/>
 		</section>
 	);
-};
+});
+
+DoctorShiftControlBar.displayName = "DoctorShiftControlBar";
 
 export const DoctorShiftHeaderBar = DoctorShiftControlBar;

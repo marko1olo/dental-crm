@@ -150,8 +150,8 @@ export function useMobileShiftCockpit(props: MobileShiftCockpitProps) {
 		setIsSubmittingCashIn(true);
 		try {
 			await callCashShiftApi(
-				"/api/cashbox/operations/in",
-				"/api/billing/cash/in",
+				"/api/fiscal/cash-in",
+				"/api/cash/cash-introduction",
 				{
 					amountRub: cashInAmount,
 					reasonText: cashInReason,
@@ -182,8 +182,8 @@ export function useMobileShiftCockpit(props: MobileShiftCockpitProps) {
 
 			if (withdrawAmount > 0) {
 				await callCashShiftApi(
-					"/api/cashbox/operations/out",
-					"/api/billing/cash/out",
+					"/api/fiscal/cash-out",
+					"/api/cash/cash-withdrawal",
 					{
 						amountRub: withdrawAmount,
 						reasonText: "Инкассация выручки за смену в главную кассу",
@@ -195,8 +195,8 @@ export function useMobileShiftCockpit(props: MobileShiftCockpitProps) {
 
 			// Print Fiscal Z-Report
 			await callCashShiftApi(
-				"/api/cashbox/shifts/close",
-				"/api/fiscal/z-report",
+				"/api/fiscal/shift/close",
+				"/api/cash/cash-box-all-closing",
 				{
 					shiftNumber,
 					closeReason: "regular_shift_close",

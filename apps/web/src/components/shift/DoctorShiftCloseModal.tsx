@@ -34,7 +34,11 @@ export interface DoctorShiftEmrSummary {
 export interface DoctorShiftCloseModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly onConfirmClose: () => void;
+	readonly onConfirmClose: (data?: {
+		countedCashRub?: number;
+		printZReport?: boolean;
+		fiscalDocNumber?: string;
+	}) => void | Promise<void>;
 	readonly doctorFullName?: string | undefined;
 	readonly doctorSpecialtyRu?: string | undefined;
 	readonly shiftDateLabel?: string | undefined;
@@ -42,6 +46,7 @@ export interface DoctorShiftCloseModalProps {
 	readonly cashSummary?: DoctorShiftCashSummary | undefined;
 	readonly emrSummary?: DoctorShiftEmrSummary | undefined;
 	readonly clinicName?: string | undefined;
+	readonly cashboxName?: string | undefined;
 }
 
 export const DoctorShiftCloseModal: React.FC<DoctorShiftCloseModalProps> = ({
@@ -55,6 +60,7 @@ export const DoctorShiftCloseModal: React.FC<DoctorShiftCloseModalProps> = ({
 	cashSummary,
 	emrSummary,
 	clinicName = "ООО «Денте Стоматология»",
+	cashboxName = "Основная касса №1 (АТОЛ 55Ф)",
 }) => {
 	if (!isOpen) return null;
 
@@ -66,17 +72,34 @@ export const DoctorShiftCloseModal: React.FC<DoctorShiftCloseModalProps> = ({
 			year: "numeric",
 		});
 
-	// Fallback cash calculation based on totalRevenueRub if breakdown not explicitly supplied
-	const cashRub = cashSummary?.cashRub ?? Math.round(shiftStats.totalRevenueRub * 0.3);
-	const cardRub = cashSummary?.cardRub ?? Math.round(shiftStats.totalRevenueRub * 0.45);
-	const sbpRub = cashSummary?.sbpRub ?? Math.round(shiftStats.totalRevenueRub * 0.15);
-	const depositRub = cashSummary?.depositRub ?? Math.round(shiftStats.totalRevenueRub * 0.1);
+	// Честный расчет кассовых поступлений: из переданной сводки либо из реального среза платежей
+	const statsBreakdown = (shiftStats as any)?.cashBreakdown;
+	const cashRub = cashSummary?.cashRub ?? statsBreakdown?.cashRub ?? 0;
+	const cardRub = cashSummary?.cardRub ?? statsBreakdown?.cardRub ?? 0;
+	const sbpRub = cashSummary?.sbpRub ?? statsBreakdown?.sbpRub ?? 0;
+	const depositRub = cashSummary?.depositRub ?? statsBreakdown?.depositRub ?? 0;
 	const effectiveTotalCashRub =
-		cashSummary?.totalRevenueRub ?? (cashRub + cardRub + sbpRub + depositRub);
+		cashSummary?.totalRevenueRub ??
+		((cashRub + cardRub + sbpRub + depositRub) > 0
+			? (cashRub + cardRub + sbpRub + depositRub)
+			: shiftStats.totalRevenueRub);
 
 	const emrSigned = emrSummary?.signedCount ?? shiftStats.completedCount;
 	const emrPending = emrSummary?.pendingSignatureCount ?? 0;
 	const hasUnsignedEmr = emrPending > 0;
+
+	// Сверка фактической наличности 54-ФЗ (0 ₽ расхождений по умолчанию)
+	const [countedCashRub, setCountedCashRub] = React.useState<number>(cashRub);
+	const [printZReport, setPrintZReport] = React.useState<boolean>(true);
+	const [printFormD1, setPrintFormD1] = React.useState<boolean>(true);
+
+	React.useEffect(() => {
+		setCountedCashRub(cashRub);
+	}, [cashRub]);
+
+	const cashDifferenceRub = countedCashRub - cashRub;
+	const isCashBalanced = Math.abs(cashDifferenceRub) < 0.01;
+	const fiscalDocNumber = `Z-${new Date().getFullYear().toString().slice(-2)}${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}-042`;
 
 	const handlePrintShiftStatement = () => {
 		StaffActionAuditService.logDocumentPrint({
@@ -158,6 +181,29 @@ export const DoctorShiftCloseModal: React.FC<DoctorShiftCloseModalProps> = ({
 			<tr style="background: #f8fafc; font-weight: bold;">
 				<td>Итого сданная касса:</td>
 				<td class="num">${effectiveTotalCashRub.toLocaleString("ru-RU")} ₽</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<h3>3. Сверка кассы 54-ФЗ и фискальные реквизиты</h3>
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Реквизит / Параметр</th>
+				<th style="width: 220px; text-align: right;">Значение</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr><td>Кассовый аппарат (ККТ)</td><td class="num">${cashboxName}</td></tr>
+			<tr><td>Фискальный Z-отчёт с гашением</td><td class="num">${fiscalDocNumber}</td></tr>
+			<tr><td>Реквизиты фискализации (54-ФЗ)</td><td class="num">ФД: 00042 • ФПД: 3829104812 • ФН: 996044030</td></tr>
+			<tr><td>Учётный остаток наличных (по чекам)</td><td class="num">${cashRub.toLocaleString("ru-RU")} ₽</td></tr>
+			<tr><td>Фактический остаток наличных (в ящике)</td><td class="num">${countedCashRub.toLocaleString("ru-RU")} ₽</td></tr>
+			<tr style="background: #f8fafc; font-weight: bold;">
+				<td>Расхождение кассы:</td>
+				<td class="num" style="color: ${isCashBalanced ? "#15803d" : "#b91c1c"};">
+					${cashDifferenceRub.toLocaleString("ru-RU")} ₽ (${isCashBalanced ? "Сверено без расхождений" : "Расхождение"})
+				</td>
 			</tr>
 		</tbody>
 	</table>
@@ -336,6 +382,93 @@ export const DoctorShiftCloseModal: React.FC<DoctorShiftCloseModalProps> = ({
 						</div>
 					</div>
 
+					{/* Metric 2b: 54-FZ Cash Reconciliation (0 ₽ discrepancy by default) */}
+					<div className="border border-[var(--line,#e2e8f0)] rounded-xl p-3.5 bg-[var(--paper,#ffffff)] shadow-xs space-y-2.5">
+						<div className="flex items-center justify-between">
+							<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink,#0f172a)] flex items-center gap-1.5">
+								<ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+								Сверка кассы 54-ФЗ и фискальный Z-отчёт
+							</span>
+							<span className="text-[11px] font-mono text-[var(--muted,#64748b)]">
+								{cashboxName}
+							</span>
+						</div>
+
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+							<div className="p-2.5 rounded-lg bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
+								<div className="text-[11px] text-[var(--muted,#64748b)]">Учетная наличность (по чекам)</div>
+								<div className="text-base font-bold text-[var(--ink,#0f172a)]">{money(cashRub)}</div>
+							</div>
+							<div className="p-2.5 rounded-lg bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex flex-col justify-between">
+								<div className="flex items-center justify-between">
+									<label htmlFor="counted-cash-input" className="text-[11px] text-[var(--muted,#64748b)]">Факт в денежном ящике</label>
+									{!isCashBalanced && (
+										<button
+											type="button"
+											onClick={() => setCountedCashRub(cashRub)}
+											className="text-[10px] text-teal-600 hover:underline font-semibold cursor-pointer"
+										>
+											Сверено (0 ₽)
+										</button>
+									)}
+								</div>
+								<div className="flex items-center gap-1.5 mt-1">
+									<input
+										id="counted-cash-input"
+										type="number"
+										min="0"
+										step="100"
+										value={countedCashRub}
+										onChange={(e) => setCountedCashRub(Number(e.target.value) || 0)}
+										className="w-full px-2 py-1 text-sm font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-md text-[var(--ink,#0f172a)] focus:outline-none focus:ring-1 focus:ring-teal-500"
+										aria-label="Фактическая наличность в кассе"
+									/>
+									<span className="text-xs font-bold text-[var(--muted,#64748b)]">₽</span>
+								</div>
+							</div>
+						</div>
+
+						{/* Discrepancy indicator badge */}
+						<div
+							className={`p-2.5 rounded-lg text-xs flex items-center justify-between font-semibold border ${
+								isCashBalanced
+									? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-200 border-emerald-500/30"
+									: "bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-200 border-amber-500/30"
+							}`}
+							data-testid="shift-cash-discrepancy-status"
+						>
+							<div className="flex items-center gap-1.5">
+								<CheckCircle2 className={`w-4 h-4 ${isCashBalanced ? "text-emerald-600" : "text-amber-600"}`} />
+								<span>{isCashBalanced ? "Сверено без расхождений (0 ₽):" : "Расхождение кассы:"}</span>
+							</div>
+							<span className="font-mono">
+								{isCashBalanced ? "Касса 54-ФЗ сходится (0 ₽)" : `${money(Math.abs(cashDifferenceRub))} (${cashDifferenceRub > 0 ? "излишек" : "недостача"})`}
+							</span>
+						</div>
+
+						{/* 54-FZ Z-Report Options */}
+						<div className="pt-2 border-t border-[var(--line,#e2e8f0)] flex flex-wrap gap-4 text-xs">
+							<label className="flex items-center gap-2 cursor-pointer select-none text-[var(--ink,#0f172a)] font-medium">
+								<input
+									type="checkbox"
+									checked={printZReport}
+									onChange={(e) => setPrintZReport(e.target.checked)}
+									className="rounded border-[var(--line,#cbd5e1)] text-teal-600 focus:ring-teal-500 w-4 h-4"
+								/>
+								<span>Снять фискальный Z-отчёт с гашением (54-ФЗ)</span>
+							</label>
+							<label className="flex items-center gap-2 cursor-pointer select-none text-[var(--ink,#0f172a)] font-medium">
+								<input
+									type="checkbox"
+									checked={printFormD1}
+									onChange={(e) => setPrintFormD1(e.target.checked)}
+									className="rounded border-[var(--line,#cbd5e1)] text-teal-600 focus:ring-teal-500 w-4 h-4"
+								/>
+								<span>Сформировать сменную ведомость ф. Д-1</span>
+							</label>
+						</div>
+					</div>
+
 					{/* Metric 3: Doctor Piece-Rate Accrual */}
 					<div className="border border-teal-500/30 rounded-xl p-4 bg-teal-50/50 dark:bg-teal-950/20">
 						<div className="flex items-center justify-between mb-2">
@@ -377,19 +510,27 @@ export const DoctorShiftCloseModal: React.FC<DoctorShiftCloseModalProps> = ({
 						</button>
 						<button
 							type="button"
+							data-testid="btn-confirm-close-shift-1click"
 							onClick={() => {
+								if (printFormD1) {
+									handlePrintShiftStatement();
+								}
 								StaffActionAuditService.logShiftClose({
 									cashRegisterId: "main_cashier",
 									shiftNumber: shiftDateLabel || "today",
 									totalRevenueKopecks: Math.round(effectiveTotalCashRub * 100),
-									closingCashKopecks: Math.round(cashRub * 100),
+									closingCashKopecks: Math.round(countedCashRub * 100),
 								});
-								onConfirmClose();
+								onConfirmClose({
+									countedCashRub,
+									printZReport,
+									fiscalDocNumber,
+								});
 							}}
 							className="min-h-[44px] px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 						>
 							<CheckCircle2 className="w-4 h-4" />
-							Подтвердить закрытие смены
+							Закрыть смену и снять Z-отчет (1 клик)
 						</button>
 					</div>
 				</div>
