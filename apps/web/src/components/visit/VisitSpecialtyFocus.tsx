@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { ChevronDown, FileText, X } from "lucide-react";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { VisitSurgeryProtocolTab } from "./surgery/VisitSurgeryProtocolTab";
 import { VisitTherapyProtocolWidget } from "./therapy/VisitTherapyProtocolWidget";
 import { VisitPediatricProtocolWidget } from "../pediatric/VisitPediatricProtocolWidget";
@@ -11,30 +11,36 @@ export interface VisitSpecialtyFocusProps {
 	onToggleDrawer?: (open: boolean) => void;
 	renderBarOnly?: boolean;
 	renderDrawerOnly?: boolean;
+	activePatient?: any;
+	activeDoctor?: any;
+	selectedSpecialty?: string;
+	setSelectedSpecialty?: (spec: string) => void;
+	[key: string]: any;
 }
 
-export function VisitSpecialtyFocus({
-	compact = false,
-	isDrawerOpen: propIsDrawerOpen,
-	onToggleDrawer: propOnToggleDrawer,
-	renderBarOnly = false,
-	renderDrawerOnly = false,
-}: VisitSpecialtyFocusProps = {}) {
-	// `|| {}` убран: useAppLogicContext() либо отдаёт контекст, либо бросает
-	// исключение (contexts/AppLogicContext.tsx) — пустой объект он больше не
-	// выдумывает, и вторая ветка была недостижима.
-	const context = useAppLogicContext();
+export function VisitSpecialtyFocus(props: VisitSpecialtyFocusProps = {}) {
 	const {
-		activeDoctor,
-		activeChair,
-		activePatient,
-		selectedSpecialty,
-		setSelectedSpecialty,
-		setSelectedProtocolId,
-		specialtyLabels = {},
-		visibleVisitSpecialtyFocusOptions = [],
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	} = context as any;
+		compact = false,
+		isDrawerOpen: propIsDrawerOpen,
+		onToggleDrawer: propOnToggleDrawer,
+		renderBarOnly = false,
+		renderDrawerOnly = false,
+		activePatient: propActivePatient,
+		activeDoctor: propActiveDoctor,
+		selectedSpecialty: propSelectedSpecialty,
+		setSelectedSpecialty: propSetSelectedSpecialty,
+	} = props;
+
+	const optionalContext = useOptionalAppLogicContext();
+	const context = (optionalContext || {}) as any;
+	const activeDoctor = propActiveDoctor ?? context.activeDoctor;
+	const activeChair = context.activeChair;
+	const activePatient = propActivePatient ?? context.activePatient;
+	const selectedSpecialty = propSelectedSpecialty ?? context.selectedSpecialty;
+	const setSelectedSpecialty = propSetSelectedSpecialty ?? context.setSelectedSpecialty;
+	const setSelectedProtocolId = context.setSelectedProtocolId;
+	const specialtyLabels = context.specialtyLabels || {};
+	const visibleVisitSpecialtyFocusOptions = context.visibleVisitSpecialtyFocusOptions || [];
 
 	const [localIsProtocolDrawerOpen, setLocalIsProtocolDrawerOpen] = useState(false);
 	const isProtocolDrawerOpen =
@@ -48,9 +54,10 @@ export function VisitSpecialtyFocus({
 			setLocalIsProtocolDrawerOpen(next);
 		}
 	};
-	const [activeTooth, setActiveTooth] = useState<number | null>(
-		Number(context?.dashboard?.activeVisit?.diagnosisTooth) || 16,
-	);
+	const [activeTooth, setActiveTooth] = useState<number | null>(() => {
+		const diagTooth = Number(context?.dashboard?.activeVisit?.diagnosisTooth);
+		return diagTooth > 0 ? diagTooth : 16;
+	});
 	const [activeSurfaces, setActiveSurfaces] = useState<string[]>(["O"]);
 	const [franklRating, setFranklRating] = useState<1 | 2 | 3 | 4>(3);
 
@@ -75,6 +82,22 @@ export function VisitSpecialtyFocus({
 		(patientAgeYears !== undefined && patientAgeYears < 18) ||
 		selectedSpecialty === "pediatric" ||
 		selectedSpecialty === "children";
+
+	// Синхронизация активного зуба при переключении на ребенка до 6 лет или смене визита
+	useEffect(() => {
+		const diagTooth = Number(context?.dashboard?.activeVisit?.diagnosisTooth);
+		if (isChildDentition) {
+			if (patientAgeYears !== undefined && patientAgeYears < 6) {
+				if (!activeTooth || activeTooth < 51 || activeTooth > 85) {
+					setActiveTooth(54);
+				}
+			} else if (!activeTooth) {
+				setActiveTooth(diagTooth > 0 ? diagTooth : 54);
+			}
+		} else if (!activeTooth) {
+			setActiveTooth(diagTooth > 0 ? diagTooth : 16);
+		}
+	}, [isChildDentition, patientAgeYears, context?.dashboard?.activeVisit?.diagnosisTooth]);
 	const isSurgery =
 		selectedSpecialty === "surgery" ||
 		selectedSpecialty === "хирургия" ||
@@ -259,14 +282,21 @@ export function VisitSpecialtyFocus({
 			{isChildDentition ? (
 				<VisitPediatricProtocolWidget
 					activeTooth={activeTooth}
+					onSelectActiveTooth={setActiveTooth}
 					activeSurfaces={activeSurfaces}
 					onSelectSurfaces={(s) => setActiveSurfaces([...s])}
 					onApplyProtocolText={handleApplyProtocolText}
 					onAddToInvoice={handleAddToInvoice}
 					initialFranklRating={franklRating}
 					onFranklChange={setFranklRating}
-					patientName={activePatient?.fullName}
+					patientName={activePatient?.fullName || activePatient?.name}
+					patientPhone={activePatient?.phone}
 					patientAgeYears={patientAgeYears}
+					patientWeightKg={activePatient?.weight || activePatient?.weightKg}
+					representativeFullName={activePatient?.representativeFullName || activePatient?.representative?.fullName || activePatient?.parentName}
+					representativePhone={activePatient?.representativePhone || activePatient?.representative?.phone || activePatient?.parentPhone || activePatient?.phone}
+					representativeRole={activePatient?.representativeRole || activePatient?.representative?.role || activePatient?.parentRole}
+					allergies={activePatient?.allergies}
 					doctorName={activeDoctor?.fullName}
 					clinicName={context?.dashboard?.organization?.name}
 				/>

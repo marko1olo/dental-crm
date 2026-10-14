@@ -18,12 +18,41 @@ export const ChairsideTeethQuickSelector: React.FC<ChairsideTeethQuickSelectorPr
   onQuadrantChange,
   toothStateByCode = {},
   setToothState,
+  patientAgeYears,
   testId = "mobile-chairside-workspace",
 }) => {
   const [selectedToothModal, setSelectedToothModal] = useState<string | null>(null);
 
+  const isPrimary = patientAgeYears !== undefined && patientAgeYears < 6;
+  const isMixed = patientAgeYears !== undefined && patientAgeYears >= 6 && patientAgeYears < 12;
+  const isChild = isPrimary || isMixed;
+
   // Quadrant tooth mapping (FDI notation)
   const quadrantTeeth = useMemo(() => {
+    if (isPrimary) {
+      switch (activeQuadrant) {
+        case 1:
+          return ["55", "54", "53", "52", "51"];
+        case 2:
+          return ["61", "62", "63", "64", "65"];
+        case 3:
+          return ["85", "84", "83", "82", "81"];
+        case 4:
+          return ["71", "72", "73", "74", "75"];
+      }
+    }
+    if (isMixed) {
+      switch (activeQuadrant) {
+        case 1:
+          return ["16", "55", "54", "53", "52", "51"];
+        case 2:
+          return ["61", "62", "63", "64", "65", "26"];
+        case 3:
+          return ["46", "85", "84", "83", "82", "81"];
+        case 4:
+          return ["71", "72", "73", "74", "75", "36"];
+      }
+    }
     switch (activeQuadrant) {
       case 1:
         return ["18", "17", "16", "15", "14", "13", "12", "11"];
@@ -34,13 +63,24 @@ export const ChairsideTeethQuickSelector: React.FC<ChairsideTeethQuickSelectorPr
       case 4:
         return ["31", "32", "33", "34", "35", "36", "37", "38"];
     }
-  }, [activeQuadrant]);
+  }, [activeQuadrant, isPrimary, isMixed]);
+
+  const q1Label = isPrimary ? "Q5 (55–51)" : isMixed ? "Q5 (16+55–51)" : "Q1 (18–11)";
+  const q2Label = isPrimary ? "Q6 (61–65)" : isMixed ? "Q6 (61–65+26)" : "Q2 (21–28)";
+  const q3Label = isPrimary ? "Q8 (85–81)" : isMixed ? "Q8 (46+85–81)" : "Q3 (48–41)";
+  const q4Label = isPrimary ? "Q7 (71–75)" : isMixed ? "Q7 (71–75+36)" : "Q4 (31–38)";
+
+  const gridClass = isPrimary
+    ? "grid grid-cols-5 gap-1.5 mt-2"
+    : isMixed
+      ? "grid grid-cols-6 gap-1.5 mt-2"
+      : "mobile-teeth-grid-8 mt-2";
 
   return (
     <>
       <div className="mobile-chairside-grouped-card">
         <div className="mobile-chairside-card-title">
-          Зубная формула по квадрантам (FDI)
+          {isChild ? "Зубная формула детского приёма (FDI 51–85)" : "Зубная формула по квадрантам (FDI)"}
         </div>
         <div className="p-3">
           <div className="mobile-quadrant-tabs">
@@ -52,7 +92,7 @@ export const ChairsideTeethQuickSelector: React.FC<ChairsideTeethQuickSelectorPr
               }}
               className={`mobile-quadrant-tab ${activeQuadrant === 1 ? "is-active" : ""}`}
             >
-              Q1 (18–11)
+              {q1Label}
             </button>
             <button
               type="button"
@@ -62,7 +102,7 @@ export const ChairsideTeethQuickSelector: React.FC<ChairsideTeethQuickSelectorPr
               }}
               className={`mobile-quadrant-tab ${activeQuadrant === 2 ? "is-active" : ""}`}
             >
-              Q2 (21–28)
+              {q2Label}
             </button>
             <button
               type="button"
@@ -72,7 +112,7 @@ export const ChairsideTeethQuickSelector: React.FC<ChairsideTeethQuickSelectorPr
               }}
               className={`mobile-quadrant-tab ${activeQuadrant === 3 ? "is-active" : ""}`}
             >
-              Q3 (48–41)
+              {q3Label}
             </button>
             <button
               type="button"
@@ -82,11 +122,11 @@ export const ChairsideTeethQuickSelector: React.FC<ChairsideTeethQuickSelectorPr
               }}
               className={`mobile-quadrant-tab ${activeQuadrant === 4 ? "is-active" : ""}`}
             >
-              Q4 (31–38)
+              {q4Label}
             </button>
           </div>
 
-          <div className="mobile-teeth-grid-8 mt-2">
+          <div className={gridClass}>
             {quadrantTeeth.map((tooth) => {
               const status = toothStateByCode[tooth] || "Healthy";
               const isHealthy = status === "Healthy" || status === "watch";

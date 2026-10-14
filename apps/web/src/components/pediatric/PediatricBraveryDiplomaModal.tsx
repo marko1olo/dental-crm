@@ -232,7 +232,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 					<div class="diploma-badge">Орден Зубной Феи</div>
 					<div class="diploma-number" style="font-family: monospace; font-size: 11px; font-weight: 700; color: #b45309; letter-spacing: 0.5px; margin-bottom: 8px;">№ ${resolvedRequisites.diplomaNumber}</div>
 					<h1 class="diploma-title">Диплом за храбрость</h1>
-					<div class="diploma-subtitle">Настоящему герою стоматологического кресла</div>
+					<div class="diploma-subtitle">Диплом юного героя • Настоящему герою стоматологического кресла</div>
 
 					<div>
 						<div class="hero-name">${heroDisplay}</div>
@@ -423,7 +423,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 							Диплом за храбрость
 						</h3>
 						<div className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-3">
-							Настоящему герою стоматологического кресла
+							Диплом юного героя • Настоящему герою стоматологического кресла
 						</div>
 
 						<div className="inline-block border-b-2 border-amber-500 px-6 py-1 my-2">

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import type { SomaticRiskProfile } from "../visit/anesthesiaCalculatorEngine";
+import { estimatePediatricWeightKg } from "@dental/shared";
 
 export type PediatricAnestheticDrugId = "articaine_4" | "mepivacaine_3";
 
@@ -107,7 +108,7 @@ export interface PediatricAnesthesiaCalculatorProps {
 }
 
 export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculatorProps> = ({
-	initialWeightKg = 20,
+	initialWeightKg,
 	patientAgeYears = 6,
 	somaticProfile,
 	allergies,
@@ -115,6 +116,13 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 	onApplyToProtocol,
 	className = "",
 }) => {
+	const resolvedInitialWeight = useMemo(() => {
+		if (typeof initialWeightKg === "number" && initialWeightKg > 0) {
+			return initialWeightKg;
+		}
+		return estimatePediatricWeightKg(patientAgeYears);
+	}, [initialWeightKg, patientAgeYears]);
+
 	const articaineContraindicated = useMemo(() => {
 		if (somaticProfile?.hasArticaineAllergy) return true;
 		if (somaticProfile?.hasSulfiteAllergy) return true;
@@ -151,7 +159,12 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 		}
 	}, [articaineContraindicated, mepivacaineContraindicated, selectedDrugId]);
 
-	const [weightKg, setWeightKg] = useState<number>(initialWeightKg > 0 ? initialWeightKg : 20);
+	const [weightKg, setWeightKg] = useState<number>(resolvedInitialWeight);
+
+	useEffect(() => {
+		setWeightKg(resolvedInitialWeight);
+	}, [resolvedInitialWeight]);
+
 	const [carpules, setCarpules] = useState<number>(0.5);
 
 	const drug = PEDIATRIC_ANESTHETIC_SPECS[selectedDrugId];

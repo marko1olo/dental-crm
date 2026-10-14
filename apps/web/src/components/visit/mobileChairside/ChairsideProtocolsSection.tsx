@@ -47,6 +47,21 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
 }) => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"sbp" | "card" | "cash">("sbp");
 
+  const patientAgeYears = React.useMemo(() => {
+    if (activePatient?.birthDate) {
+      const birth = new Date(activePatient.birthDate);
+      if (!Number.isNaN(birth.getTime())) {
+        const now = new Date();
+        let age = now.getFullYear() - birth.getFullYear();
+        const m = now.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+        return age;
+      }
+    }
+    if (typeof activePatient?.age === "number") return activePatient.age;
+    return undefined;
+  }, [activePatient?.birthDate, activePatient?.age]);
+
   return (
     <>
       {/* ═══ STEP 1: ЖАЛОБЫ И АНАМНЕЗ ═══ */}
@@ -104,6 +119,7 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
             onQuadrantChange={onQuadrantChange}
             toothStateByCode={toothStateByCode ?? {}}
             setToothState={setToothState}
+            patientAgeYears={patientAgeYears}
             testId={testId}
           />
 

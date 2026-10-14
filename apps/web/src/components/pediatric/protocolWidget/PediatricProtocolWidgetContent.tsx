@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { estimatePediatricWeightKg } from "@dental/shared";
 import { useVisitStore } from "../../../store/visitStore";
 import { showToast } from "../../GlobalToast";
 import type {
@@ -53,6 +54,7 @@ export const PediatricProtocolWidgetContent: React.FC<
 	VisitPediatricProtocolWidgetProps
 > = ({
 	activeTooth = 54,
+	onSelectActiveTooth,
 	activeSurfaces,
 	onSelectSurfaces,
 	onApplyProtocolText,
@@ -62,7 +64,7 @@ export const PediatricProtocolWidgetContent: React.FC<
 	patientName = "Юный пациент",
 	patientPhone,
 	patientAgeYears = 6,
-	patientWeightKg = 20,
+	patientWeightKg,
 	doctorName = "Детский врач-стоматолог",
 	clinicName = "Детское отделение DENTE",
 	representativeFullName,
@@ -73,11 +75,25 @@ export const PediatricProtocolWidgetContent: React.FC<
 	initialShowDetails = false,
 	className = "",
 }) => {
-	// 1. Санитизация активного зуба (по умолчанию 54) с проверкой квадрантов FDI
+	// 0. Динамический расчет физиологического веса ребенка (кг) при отсутствии точного значения
+	const effectiveWeightKg = useMemo<number>(() => {
+		if (typeof patientWeightKg === "number" && patientWeightKg > 0) {
+			return patientWeightKg;
+		}
+		return estimatePediatricWeightKg(patientAgeYears);
+	}, [patientWeightKg, patientAgeYears]);
+
+	// 1. Санитизация активного зуба (по умолчанию 54) с проверкой квадрантов FDI и возраста
 	const effectiveTooth = useMemo<number>(() => {
-		if (activeTooth && isValidFdiTooth(activeTooth)) return activeTooth;
+		if (activeTooth && isValidFdiTooth(activeTooth)) {
+			// Если ребенку до 6 лет, постоянный зуб 11..48 физиологически невозможен
+			if (patientAgeYears < 6 && (activeTooth < 51 || activeTooth > 85)) {
+				return 54;
+			}
+			return activeTooth;
+		}
 		return 54;
-	}, [activeTooth]);
+	}, [activeTooth, patientAgeYears]);
 
 	const anatomicalToothName = useMemo<string>(() => {
 		return PEDIATRIC_TEETH_NAMES[effectiveTooth] ?? `Зуб ${effectiveTooth}`;
@@ -94,6 +110,10 @@ export const PediatricProtocolWidgetContent: React.FC<
 	const [dentitionMode, setDentitionMode] = useState<PediatricDentitionMode>(
 		patientAgeYears >= 6 ? "mixed" : "primary",
 	);
+
+	useEffect(() => {
+		setDentitionMode(patientAgeYears >= 6 ? "mixed" : "primary");
+	}, [patientAgeYears]);
 
 	// 2.2 Состояния зубов на карте
 	const [toothFindings, setToothFindings] = useState<
@@ -557,7 +577,7 @@ export const PediatricProtocolWidgetContent: React.FC<
 		<section
 			aria-label="Протокол детского стоматологического приёма в медицинской карте"
 			className={`pediatric-protocol-widget rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3.5 sm:p-5 pb-36 md:pb-5 shadow-xs transition ${className}`.trim()}
-			data-testid="pediatric-protocol-widget"
+			data-testid="visit-pediatric-protocol-widget"
 		>
 			{/* ВЕРХНЯЯ ШАПКА: АКТИВНЫЙ ЗУБ + 1-КЛИК НОРМА + 1-КЛИК АДАПТАЦИЯ + ТАКТИКА ФРАНКЛА + КНОПКА ПАРАМЕТРОВ */}
 			<PediatricProtocolTopBar
@@ -584,6 +604,7 @@ export const PediatricProtocolWidgetContent: React.FC<
 				currentTooth={currentTooth}
 				onSelectTooth={(t) => {
 					setCurrentTooth(t);
+					onSelectActiveTooth?.(t);
 					showToast(
 						`Выбран зуб #${t} (${PEDIATRIC_TEETH_NAMES[t] ?? t})`,
 						"info",
@@ -644,7 +665,7 @@ export const PediatricProtocolWidgetContent: React.FC<
 				patientPhone={patientPhone}
 				representativeRole={representativeRole}
 				patientAgeYears={patientAgeYears}
-				patientWeightKg={patientWeightKg}
+				patientWeightKg={effectiveWeightKg}
 				somaticProfile={somaticProfile}
 				allergies={allergies}
 				onSomaticChange={(status, text) => {
@@ -668,6 +689,7 @@ export const PediatricProtocolWidgetContent: React.FC<
 				currentTooth={currentTooth}
 				onSelectTooth={(t) => {
 					setCurrentTooth(t);
+					onSelectActiveTooth?.(t);
 					showToast(
 						`Выбран зуб #${t} (${PEDIATRIC_TEETH_NAMES[t] ?? t})`,
 						"info",

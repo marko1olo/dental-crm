@@ -15,6 +15,7 @@ import {
   ChairsideBottomStickyActions,
   useChairsideVisitWorkspace,
 } from "./mobileChairside";
+import { VisitSpecialtyFocus } from "./VisitSpecialtyFocus";
 import type {
   MobileChairsideStep,
   MobileChairsideBillingItem,
@@ -62,6 +63,14 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
         onPrevStep={ws.handlePrevStep}
         testId={testId}
       />
+
+      {/* SPECIALTY FOCUS BAR & EXPANDABLE PROTOCOL (ДЕТСТВО / ХИРУРГИЯ / ТЕРАПИЯ) */}
+      <div className="px-3 pt-2">
+        <VisitSpecialtyFocus
+          activePatient={activePatient}
+          activeDoctor={props.activeDoctor}
+        />
+      </div>
 
       {/* 2. SEGMENTED STEP PROGRESS BAR (5 STEPS) */}
       <ChairsideStepNav

@@ -110,6 +110,31 @@ export function getDemoShowcasePatients(): Patient[] {
 			createdAt: "2026-04-12T16:00:00.000Z",
 			updatedAt: "2026-09-28T11:00:00.000Z",
 		},
+		{
+			id: "01a00000-0000-0000-0000-000000000005",
+			organizationId: DEMO_SHOWCASE_ORG_ID,
+			fullName: "Смирнов Михаил Александрович",
+			birthDate: "2022-05-14",
+			gender: "male",
+			phone: "+7 916 555-01-23",
+			email: "smirnov.misha@example.com",
+			notes: "Детский приём. Временный прикус (4 года), кариес зуба 54. Аллергий нет.",
+			status: "active",
+			balanceRub: 0,
+			representativeFullName: "Смирнова Анна Сергеевна",
+			representativePhone: "+7 916 234-56-78",
+			representativeRole: "Мать",
+			administrativeProfile: patientAdministrativeProfileSchema.parse({
+				preferredAppointmentWeekdays: [6],
+				preferredAppointmentStart: "10:00",
+				preferredAppointmentEnd: "12:00",
+				preferredAppointmentNote: "Детский прием: Миша (4 года). Временный прикус, кариес зуба 54.",
+				loyaltyTier: "standard",
+				orthodonticProgress: null,
+			}) as any,
+			createdAt: "2026-05-01T10:00:00.000Z",
+			updatedAt: "2026-09-28T12:00:00.000Z",
+		} as any,
 	];
 }
 

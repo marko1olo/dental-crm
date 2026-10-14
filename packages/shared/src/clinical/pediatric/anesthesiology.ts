@@ -137,3 +137,36 @@ export function calculatePediatricAnestheticSafety(params: {
 		safetyWarningsRu: warnings,
 	};
 }
+
+/**
+ * Клиническая интерполяция физиологической нормы веса ребенка (кг) по возрасту (лет)
+ * на основе стандартов ВОЗ и педиатрических центильных таблиц РФ.
+ * Используется как безопасный fallback, если точный вес не указан в амбулаторной карте.
+ */
+export function estimatePediatricWeightKg(ageYears: number | undefined | null): number {
+	if (typeof ageYears !== "number" || Number.isNaN(ageYears) || ageYears <= 0) {
+		return 20;
+	}
+	const rounded = Math.max(1, Math.min(18, Math.round(ageYears)));
+	const weightsByAge: Record<number, number> = {
+		1: 10,
+		2: 12,
+		3: 14,
+		4: 16,
+		5: 18,
+		6: 20,
+		7: 23,
+		8: 26,
+		9: 29,
+		10: 33,
+		11: 37,
+		12: 42,
+		13: 46,
+		14: 50,
+		15: 54,
+		16: 58,
+		17: 62,
+		18: 65,
+	};
+	return weightsByAge[rounded] ?? 20;
+}

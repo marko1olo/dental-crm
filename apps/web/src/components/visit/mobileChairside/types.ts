@@ -71,6 +71,7 @@ export interface ChairsideTeethQuickSelectorProps {
   onQuadrantChange: (quadrant: 1 | 2 | 3 | 4) => void;
   toothStateByCode?: Record<string, string> | undefined;
   setToothState?: ((code: string, state: string) => void) | undefined;
+  patientAgeYears?: number | undefined;
   testId?: string | undefined;
 }
 
@@ -138,6 +139,8 @@ export const TOOTH_STATUS_OPTIONS = [
   { id: "Pulpitis", label: "Пульпит", desc: "Воспаление сосудисто-нервного пучка" },
   { id: "Periodontitis", label: "Периодонтит", desc: "Периапикальный очаг" },
   { id: "Filled", label: "Пломба", desc: "Ранее леченый зуб" },
+  { id: "Crown", label: "Коронка", desc: "Искусственная ортопедическая коронка" },
+  { id: "Implant", label: "Имплантат", desc: "Дентальный имплантат с абатментом" },
   { id: "Missing", label: "Удален (Отсутствует)", desc: "Дефект зубного ряда" },
 ];
 

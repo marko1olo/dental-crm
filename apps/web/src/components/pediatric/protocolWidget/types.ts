@@ -76,6 +76,8 @@ export interface PediatricSedationState {
 export interface VisitPediatricProtocolWidgetProps {
 	/** Активный номер зуба по FDI (по умолчанию 54) */
 	readonly activeTooth?: number | null;
+	/** Обработчик смены активного зуба (синхронизация с родительским экраном) */
+	readonly onSelectActiveTooth?: ((tooth: number) => void) | undefined;
 	/** Выбранные поверхности зуба */
 	readonly activeSurfaces?: readonly string[] | undefined;
 	/** Обработчик смены поверхностей */
