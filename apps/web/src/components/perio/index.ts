@@ -7,3 +7,8 @@ export * from "./perioHeatmap";
 export * from "./perioRafOptimizer";
 export * from "./periodontalQuickScreening";
 export * from "./PeriodontalPocketDepthModal";
+export {
+	PerioChartModal,
+	type PerioChartModalProps,
+} from "./PerioChartModal";
+

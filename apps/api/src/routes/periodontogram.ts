@@ -1,10 +1,5 @@
-import {
-	SEPA_SITE_CODES,
-	type SepaSiteCode,
-} from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import type { z } from "zod";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -13,25 +8,89 @@ import { db } from "../db/client.js";
 import {
 	patients,
 	periodontogramSnapshots,
-	periodontogramTeeth,
 } from "../db/schema.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { computeSnapshotIndices } from "../services/periodontogramIndices.js";
 import {
 	closeSnapshotBodySchema,
 	createDraftWithInitialTeeth,
+	fetchPatientLatestPeriodontogram,
 	fetchSnapshotTeethAndSites,
-	patchSitesPayloadSchema,
-	patchTeethPayloadSchema,
-	patchToothBodySchema,
-	siteItemSchema,
-	upsertSingleSiteRecord,
+	upsertPatientFullPeriodontogram,
 } from "../services/periodontogramService.js";
+import { registerPeriodontogramMutationRoutes } from "./periodontogramMutations.js";
 
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function registerPeriodontogramRoutes(app: FastifyInstance) {
+	// Register tooth and site mutation routes (5, 5b, 6, 6b)
+	registerPeriodontogramMutationRoutes(app);
+
+	/**
+	 * 0a. GET /api/periodontogram/:patientId
+	 * Актуальная пародонтограмма пациента (активный черновик или последний снимок)
+	 */
+	app.get(
+		"/api/periodontogram/:patientId",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const orgId = await requireResolvedOrganizationId(request, reply);
+			if (!orgId) return;
+
+			const { patientId } = request.params as { patientId: string };
+			if (!UUID_REGEX.test(patientId)) {
+				return reply.code(400).send({
+					error: "InvalidPatientId",
+					message: "Некорректный идентификатор пациента",
+				});
+			}
+
+			const data = await fetchPatientLatestPeriodontogram(orgId, patientId);
+			return reply.send({ success: true, data });
+		},
+	);
+
+	/**
+	 * 0b. POST /api/periodontogram/:patientId
+	 * Создание или сохранение среза пародонтограммы пациента (черновик, зубы, точки)
+	 */
+	app.post(
+		"/api/periodontogram/:patientId",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const orgId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"periodontogram patient full upsert",
+			);
+			if (!orgId) return;
+
+			const { patientId } = request.params as { patientId: string };
+			if (!UUID_REGEX.test(patientId)) {
+				return reply.code(400).send({
+					error: "InvalidPatientId",
+					message: "Некорректный идентификатор пациента",
+				});
+			}
+
+			const body = (request.body as Record<string, unknown>) || {};
+			const identity = getRequestIdentity(request);
+			const recordedByUserId = identity.userId ?? null;
+
+			const result = await upsertPatientFullPeriodontogram({
+				orgId,
+				patientId,
+				recordedByUserId,
+				teeth: Array.isArray(body.teeth) ? (body.teeth as any) : undefined,
+				sites: Array.isArray(body.sites) ? (body.sites as any) : undefined,
+				notes: typeof body.notes === "string" ? body.notes : undefined,
+				status: body.status === "closed" ? "closed" : "draft",
+				autoClose: Boolean(body.autoClose),
+			});
+
+			return reply.send({ success: true, data: result });
+		},
+	);
+
 	/**
 	 * 1. GET /api/periodontogram/patients/:patientId/snapshots
 	 * История закрытых осмотров пациента
@@ -262,433 +321,6 @@ export async function registerPeriodontogramRoutes(app: FastifyInstance) {
 					teeth: formattedTeeth,
 				},
 			});
-		},
-	);
-
-	/**
-	 * 5. PATCH /api/periodontogram/snapshots/:id/teeth/:toothNumber
-	 * Сохранение параметров зуба (подвижность, фуркации, статус)
-	 */
-	app.patch(
-		"/api/periodontogram/snapshots/:id/teeth/:toothNumber",
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
-				request,
-				reply,
-				"periodontogram tooth patch",
-			);
-			if (!orgId) return;
-
-			const { id, toothNumber: rawToothNumber } = request.params as {
-				id: string;
-				toothNumber: string;
-			};
-			const toothNumber = Number.parseInt(rawToothNumber, 10);
-			if (!UUID_REGEX.test(id) || Number.isNaN(toothNumber)) {
-				return reply.code(400).send({
-					error: "InvalidParameters",
-					message: "Некорректные параметры запроса",
-				});
-			}
-
-			const [snapshot] = await db
-				.select({
-					id: periodontogramSnapshots.id,
-					status: periodontogramSnapshots.status,
-				})
-				.from(periodontogramSnapshots)
-				.where(
-					and(
-						eq(periodontogramSnapshots.id, id),
-						eq(periodontogramSnapshots.organizationId, orgId),
-					),
-				)
-				.limit(1);
-
-			if (!snapshot) {
-				return reply.code(404).send({
-					error: "SnapshotNotFound",
-					message: "Осмотр не найден",
-				});
-			}
-
-			if (snapshot.status === "closed") {
-				return reply.code(409).send({
-					error: "SnapshotClosed",
-					message: "Snapshot is closed and immutable",
-				});
-			}
-
-			const parsed = patchToothBodySchema.safeParse(request.body);
-			if (!parsed.success) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Некорректные параметры зуба",
-					details: parsed.error.format(),
-				});
-			}
-
-			const data = parsed.data;
-			const isPresent = data.isPresent ?? data.is_present;
-			const isImplant = data.isImplant ?? data.is_implant;
-			const furcationBuccal = data.furcationBuccal ?? data.furcation_buccal;
-			const furcationLingual = data.furcationLingual ?? data.furcation_lingual;
-			const keratinizedGingivaMm =
-				data.keratinizedGingivaMm ?? data.keratinized_gingiva_mm;
-
-			const updateValues: Partial<typeof periodontogramTeeth.$inferInsert> = {
-				updatedAt: new Date(),
-			};
-			if (isPresent !== undefined) updateValues.isPresent = isPresent;
-			if (isImplant !== undefined) updateValues.isImplant = isImplant;
-			if (data.mobility !== undefined) updateValues.mobility = data.mobility;
-			if (data.prognosis !== undefined) updateValues.prognosis = data.prognosis;
-			if (furcationBuccal !== undefined)
-				updateValues.furcationBuccal = furcationBuccal;
-			if (furcationLingual !== undefined)
-				updateValues.furcationLingual = furcationLingual;
-			if (keratinizedGingivaMm !== undefined)
-				updateValues.keratinizedGingivaMm = keratinizedGingivaMm;
-
-			const [updatedTooth] = await db
-				.update(periodontogramTeeth)
-				.set(updateValues)
-				.where(
-					and(
-						eq(periodontogramTeeth.snapshotId, id),
-						eq(periodontogramTeeth.toothNumber, toothNumber),
-					),
-				)
-				.returning();
-
-			if (!updatedTooth) {
-				return reply.code(404).send({
-					error: "ToothNotFound",
-					message: `Зуб ${toothNumber} не найден в данном осмотре`,
-				});
-			}
-
-			return reply.send({ success: true, data: updatedTooth });
-		},
-	);
-
-	/**
-	 * 5b. PATCH /api/periodontogram/snapshots/:id/teeth
-	 * Пакетное сохранение параметров нескольких зубов
-	 */
-	app.patch(
-		"/api/periodontogram/snapshots/:id/teeth",
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
-				request,
-				reply,
-				"periodontogram batch teeth patch",
-			);
-			if (!orgId) return;
-
-			const { id } = request.params as { id: string };
-			if (!UUID_REGEX.test(id)) {
-				return reply.code(400).send({
-					error: "InvalidSnapshotId",
-					message: "Некорректный идентификатор осмотра",
-				});
-			}
-
-			const [snapshot] = await db
-				.select({
-					id: periodontogramSnapshots.id,
-					status: periodontogramSnapshots.status,
-				})
-				.from(periodontogramSnapshots)
-				.where(
-					and(
-						eq(periodontogramSnapshots.id, id),
-						eq(periodontogramSnapshots.organizationId, orgId),
-					),
-				)
-				.limit(1);
-
-			if (!snapshot) {
-				return reply.code(404).send({
-					error: "SnapshotNotFound",
-					message: "Осмотр не найден",
-				});
-			}
-
-			if (snapshot.status === "closed") {
-				return reply.code(409).send({
-					error: "SnapshotClosed",
-					message: "Snapshot is closed and immutable",
-				});
-			}
-
-			const parsed = patchTeethPayloadSchema.safeParse(request.body);
-			if (!parsed.success) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Некорректные параметры зубов",
-					details: parsed.error.format(),
-				});
-			}
-
-			const rawList = Array.isArray(parsed.data)
-				? parsed.data
-				: parsed.data.teeth;
-
-			if (rawList.length === 0) {
-				return reply.send({ success: true, data: [] });
-			}
-
-			const updatedList: unknown[] = [];
-			await db.transaction(async (tx) => {
-				for (const data of rawList) {
-					const toothNumber = data.toothNumber ?? data.tooth_number;
-					if (!toothNumber) continue;
-
-					const isPresent = data.isPresent ?? data.is_present;
-					const isImplant = data.isImplant ?? data.is_implant;
-					const furcationBuccal = data.furcationBuccal ?? data.furcation_buccal;
-					const furcationLingual = data.furcationLingual ?? data.furcation_lingual;
-					const keratinizedGingivaMm =
-						data.keratinizedGingivaMm ?? data.keratinized_gingiva_mm;
-
-					const updateValues: Partial<typeof periodontogramTeeth.$inferInsert> = {
-						updatedAt: new Date(),
-					};
-					if (isPresent !== undefined) updateValues.isPresent = isPresent;
-					if (isImplant !== undefined) updateValues.isImplant = isImplant;
-					if (data.mobility !== undefined) updateValues.mobility = data.mobility;
-					if (data.prognosis !== undefined) updateValues.prognosis = data.prognosis;
-					if (furcationBuccal !== undefined)
-						updateValues.furcationBuccal = furcationBuccal;
-					if (furcationLingual !== undefined)
-						updateValues.furcationLingual = furcationLingual;
-					if (keratinizedGingivaMm !== undefined)
-						updateValues.keratinizedGingivaMm = keratinizedGingivaMm;
-
-					const [upd] = await tx
-						.update(periodontogramTeeth)
-						.set(updateValues)
-						.where(
-							and(
-								eq(periodontogramTeeth.snapshotId, id),
-								eq(periodontogramTeeth.toothNumber, toothNumber),
-							),
-						)
-						.returning();
-
-					if (upd) updatedList.push(upd);
-				}
-			});
-
-			return reply.send({ success: true, data: updatedList });
-		},
-	);
-
-	/**
-	 * 6. PATCH /api/periodontogram/snapshots/:id/sites
-	 * Пакетное или одиночное сохранение сайтов зондирования
-	 */
-	app.patch(
-		"/api/periodontogram/snapshots/:id/sites",
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
-				request,
-				reply,
-				"periodontogram sites patch",
-			);
-			if (!orgId) return;
-
-			const { id } = request.params as { id: string };
-			if (!UUID_REGEX.test(id)) {
-				return reply.code(400).send({
-					error: "InvalidSnapshotId",
-					message: "Некорректный идентификатор осмотра",
-				});
-			}
-
-			const [snapshot] = await db
-				.select({
-					id: periodontogramSnapshots.id,
-					status: periodontogramSnapshots.status,
-				})
-				.from(periodontogramSnapshots)
-				.where(
-					and(
-						eq(periodontogramSnapshots.id, id),
-						eq(periodontogramSnapshots.organizationId, orgId),
-					),
-				)
-				.limit(1);
-
-			if (!snapshot) {
-				return reply.code(404).send({
-					error: "SnapshotNotFound",
-					message: "Осмотр не найден",
-				});
-			}
-
-			if (snapshot.status === "closed") {
-				return reply.code(409).send({
-					error: "SnapshotClosed",
-					message: "Snapshot is closed and immutable",
-				});
-			}
-
-			const parsed = patchSitesPayloadSchema.safeParse(request.body);
-			if (!parsed.success) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Некорректные параметры сайтов зондирования",
-					details: parsed.error.format(),
-				});
-			}
-
-			let rawList: z.infer<typeof siteItemSchema>[] = [];
-			const payload = parsed.data;
-			if (Array.isArray(payload)) {
-				rawList = payload;
-			} else if ("sites" in payload && Array.isArray(payload.sites)) {
-				rawList = payload.sites;
-			} else {
-				rawList = [payload as z.infer<typeof siteItemSchema>];
-			}
-
-			if (rawList.length === 0) {
-				return reply.send({ success: true, data: [] });
-			}
-
-			const teeth = await db
-				.select({
-					id: periodontogramTeeth.id,
-					toothNumber: periodontogramTeeth.toothNumber,
-				})
-				.from(periodontogramTeeth)
-				.where(eq(periodontogramTeeth.snapshotId, id));
-
-			const toothIdMap = new Map<number, string>();
-			for (const t of teeth) {
-				toothIdMap.set(t.toothNumber, t.id);
-			}
-
-			const savedSites: unknown[] = [];
-
-			await db.transaction(async (tx) => {
-				for (const item of rawList) {
-					const tn = item.toothNumber ?? item.tooth_number;
-					const sc = item.siteCode ?? item.site_code;
-					if (!tn || !sc) continue;
-
-					const toothId = toothIdMap.get(tn) ?? null;
-					const saved = await upsertSingleSiteRecord(
-						tx,
-						id,
-						toothId,
-						tn,
-						sc,
-						item,
-					);
-					if (saved) savedSites.push(saved);
-				}
-			});
-
-			return reply.send({ success: true, data: savedSites });
-		},
-	);
-
-	/**
-	 * 6b. PATCH /api/periodontogram/snapshots/:id/teeth/:toothNumber/sites/:siteCode
-	 * Одиночное сохранение сайта зондирования по REST-пути
-	 */
-	app.patch(
-		"/api/periodontogram/snapshots/:id/teeth/:toothNumber/sites/:siteCode",
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
-				request,
-				reply,
-				"periodontogram single site patch",
-			);
-			if (!orgId) return;
-
-			const {
-				id,
-				toothNumber: rawTn,
-				siteCode,
-			} = request.params as {
-				id: string;
-				toothNumber: string;
-				siteCode: string;
-			};
-			const toothNumber = Number.parseInt(rawTn, 10);
-			if (
-				!UUID_REGEX.test(id) ||
-				Number.isNaN(toothNumber) ||
-				!SEPA_SITE_CODES.includes(siteCode as SepaSiteCode)
-			) {
-				return reply.code(400).send({
-					error: "InvalidParameters",
-					message: "Некорректные параметры сайта",
-				});
-			}
-
-			const [snapshot] = await db
-				.select({
-					id: periodontogramSnapshots.id,
-					status: periodontogramSnapshots.status,
-				})
-				.from(periodontogramSnapshots)
-				.where(
-					and(
-						eq(periodontogramSnapshots.id, id),
-						eq(periodontogramSnapshots.organizationId, orgId),
-					),
-				)
-				.limit(1);
-
-			if (!snapshot) {
-				return reply.code(404).send({
-					error: "SnapshotNotFound",
-					message: "Осмотр не найден",
-				});
-			}
-
-			if (snapshot.status === "closed") {
-				return reply.code(409).send({
-					error: "SnapshotClosed",
-					message: "Snapshot is closed and immutable",
-				});
-			}
-
-			const parsed = siteItemSchema.safeParse(request.body);
-			if (!parsed.success) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Некорректные параметры сайта зондирования",
-					details: parsed.error.format(),
-				});
-			}
-
-			const [tooth] = await db
-				.select({ id: periodontogramTeeth.id })
-				.from(periodontogramTeeth)
-				.where(
-					and(
-						eq(periodontogramTeeth.snapshotId, id),
-						eq(periodontogramTeeth.toothNumber, toothNumber),
-					),
-				)
-				.limit(1);
-
-			const saved = await upsertSingleSiteRecord(
-				db,
-				id,
-				tooth?.id ?? null,
-				toothNumber,
-				siteCode,
-				parsed.data,
-			);
-
-			return reply.send({ success: true, data: saved });
 		},
 	);
 

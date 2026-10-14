@@ -1,384 +1,16 @@
-import React, { Suspense } from "react";
+import React from "react";
 import type { AppModalsContainerProps } from "./types";
-import { lazyWithRetry } from "../../lib/lazyWithRetry";
-import { InformedConsentModal } from "../consents/InformedConsentModal";
-import { DoctorPrivacyShield } from "../auth/DoctorPrivacyShield";
 import {
-	DENTE_PRIVACY_SHIELD_LOCKED_KEY,
-	safeLocalStorageRemoveItem,
-} from "../../lib/safeLocalStorage";
-import { AppLoadingState } from "../../AppBootState";
-import { VisiographComparisonModal } from "../visiograph/VisiographComparisonModal";
-import { ImagingExportModal } from "../imaging/ImagingExportModal";
-import { DentalLabCreateOrderModal } from "../lab/DentalLabCreateOrderModal";
+	type StandaloneLaunchersProps,
+	type LabCreateOrderContext,
+} from "./modalsContainerModules/modalsContainerTypes";
+import { renderStandaloneLaunchers } from "./modalsContainerModules/StandaloneLaunchers";
+import { ClinicalModalsSubcontainer } from "./modalsContainerModules/ClinicalModalsSubcontainer";
+import { AdministrativeModalsSubcontainer } from "./modalsContainerModules/AdministrativeModalsSubcontainer";
+import { ImplantPassportModal } from "../implants/ImplantPassportModal";
 
-const CbctTunerPlayground = lazyWithRetry(() =>
-	import("../radiology/tuner/CbctTunerPlayground").then((module) => ({
-		default: module.CbctTunerPlayground,
-	})),
-);
-
-const CbctMprImplantStudioModal = lazyWithRetry(() =>
-	import("../radiology/CbctMprImplantStudioModal").then((module) => ({
-		default: module.CbctMprImplantStudioModal,
-	})),
-);
-
-const CbctStandaloneStudioView = lazyWithRetry(() =>
-	import("../radiology/CbctStandaloneStudioView").then((module) => ({
-		default: module.CbctStandaloneStudioView,
-	})),
-);
-import { parseCbctStudioRoute } from "../../utils/runtimeRouter";
-
-const PatientPresentationStandaloneView = lazyWithRetry(() =>
-	import("../photography/PatientPresentationStandaloneView").then((module) => ({
-		default: module.PatientPresentationStandaloneView,
-	})),
-);
-import { isPatientPresentationRoute } from "../photography/presentationSyncProtocol";
-
-const CephalometricAnalysisModal = lazyWithRetry(() =>
-	import("../orthodontics/CephalometricAnalysisModal").then((module) => ({
-		default: module.CephalometricAnalysisModal,
-	})),
-);
-
-const EgiszRemdHubModal = lazyWithRetry(() =>
-	import("../egisz/EgiszRemdHubModal").then((module) => ({
-		default: module.EgiszRemdHubModal,
-	})),
-);
-
-const SmartSlotRecoveryPopover = lazyWithRetry(() =>
-	import("../schedule/SmartSlotRecoveryPopover").then((module) => ({
-		default: module.SmartSlotRecoveryPopover,
-	})),
-);
-
-const SmartOpgViewerModal = lazyWithRetry(() =>
-	import("../orthodontics/SmartOpgViewerModal").then((module) => ({
-		default: module.SmartOpgViewerModal,
-	})),
-);
-
-const CtSelectorModal = lazyWithRetry(() =>
-	import("../radiology/CtSelectorModal").then((module) => ({
-		default: module.CtSelectorModal,
-	})),
-);
-
-const DmsGuaranteeLetterModal = lazyWithRetry(() =>
-	import("../insurance/DmsGuaranteeLetterModal").then((module) => ({
-		default: module.DmsGuaranteeLetterModal,
-	})),
-);
-
-export interface StandaloneLaunchersProps {
-	isCbctTunerOpen: boolean;
-	setIsCbctTunerOpen: (open: boolean) => void;
-	isCbctDirectModalOpen: boolean;
-	setIsCbctDirectModalOpen: (open: boolean) => void;
-	isConsentDirectModalOpen: boolean;
-	setIsConsentDirectModalOpen: (open: boolean) => void;
-	isCephDirectModalOpen: boolean;
-	setIsCephDirectModalOpen: (open: boolean) => void;
-	isEgiszRemdModalOpen: boolean;
-	setIsEgiszRemdModalOpen: (open: boolean) => void;
-	isSmartSlotRecoveryDemoOpen: boolean;
-	setIsSmartSlotRecoveryDemoOpen: (open: boolean) => void;
-	isSmartOpgDirectModalOpen?: boolean;
-	setIsSmartOpgDirectModalOpen?: (open: boolean) => void;
-	isCtSelectorDirectModalOpen?: boolean;
-	setIsCtSelectorDirectModalOpen?: (open: boolean) => void;
-	isVisiographDirectModalOpen?: boolean;
-	setIsVisiographDirectModalOpen?: (open: boolean) => void;
-	isImagingExportDirectModalOpen?: boolean;
-	setIsImagingExportDirectModalOpen?: (open: boolean) => void;
-	isLabCreateOrderDirectModalOpen?: boolean;
-	setIsLabCreateOrderDirectModalOpen?: (open: boolean) => void;
-	isDmsDirectModalOpen?: boolean;
-	setIsDmsDirectModalOpen?: (open: boolean) => void;
-}
-
-export function renderStandaloneLaunchers({
-	isCbctTunerOpen,
-	setIsCbctTunerOpen,
-	isCbctDirectModalOpen,
-	setIsCbctDirectModalOpen,
-	isConsentDirectModalOpen,
-	setIsConsentDirectModalOpen,
-	isCephDirectModalOpen,
-	setIsCephDirectModalOpen,
-	isEgiszRemdModalOpen,
-	setIsEgiszRemdModalOpen,
-	isSmartSlotRecoveryDemoOpen,
-	setIsSmartSlotRecoveryDemoOpen,
-	isSmartOpgDirectModalOpen,
-	setIsSmartOpgDirectModalOpen,
-	isCtSelectorDirectModalOpen,
-	setIsCtSelectorDirectModalOpen,
-	isVisiographDirectModalOpen,
-	setIsVisiographDirectModalOpen,
-	isImagingExportDirectModalOpen,
-	setIsImagingExportDirectModalOpen,
-	isLabCreateOrderDirectModalOpen,
-	setIsLabCreateOrderDirectModalOpen,
-	isDmsDirectModalOpen,
-	setIsDmsDirectModalOpen,
-}: StandaloneLaunchersProps): React.ReactElement | null {
-	// 3D CBCT CONTRAST & SLICE TUNER PLAYGROUND (?cbct=tuner)
-	// Must be rendered at the ABSOLUTE TOP before ANY auth, unlock, error, or dashboard guards!
-	if (isCbctTunerOpen) {
-		return (
-			<Suspense fallback={<AppLoadingState message="Загрузка интерактивного тюнера КЛКТ..." />}>
-				<CbctTunerPlayground
-					isOpen={true}
-					onClose={() => {
-						setIsCbctTunerOpen(false);
-						const url = new URL(window.location.href);
-						url.searchParams.delete("cbct");
-						window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("cbct") ? url.hash : ""));
-					}}
-				/>
-			</Suspense>
-		);
-	}
-
-	// 3D CBCT STANDALONE STUDIO WINDOW (?view=cbct-studio, /cbct-studio)
-	// Autonomous dark cockpit on secondary display
-	const cbctStudioRoute = typeof window !== "undefined" ? parseCbctStudioRoute() : { isCbctStudio: false };
-	if (cbctStudioRoute.isCbctStudio) {
-		return (
-			<Suspense fallback={<AppLoadingState message="Загрузка автономной 3D КЛКТ Студии..." />}>
-				<CbctStandaloneStudioView
-					studyId={cbctStudioRoute.studyId}
-					patientId={cbctStudioRoute.patientId}
-					patientName={cbctStudioRoute.patientName}
-					initialStudioMode={cbctStudioRoute.mode as any}
-					autoLoadDemo={cbctStudioRoute.isDemo}
-				/>
-			</Suspense>
-		);
-	}
-
-	// CHAIRSIDE PATIENT PRESENTATION SCREEN (?view=patient-presentation, #presentation)
-	// Strictly isolated patient display for secondary monitor or chairside TV (0 prices, 0 notes, 0 CRM nav)
-	if (typeof window !== "undefined" && isPatientPresentationRoute()) {
-		return (
-			<Suspense fallback={<AppLoadingState message="Загрузка экрана презентации для пациента..." />}>
-				<PatientPresentationStandaloneView
-					onClose={() => {
-						const url = new URL(window.location.href);
-						url.searchParams.delete("view");
-						url.searchParams.delete("presentation");
-						window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("presentation") ? url.hash : ""));
-						window.location.reload();
-					}}
-				/>
-			</Suspense>
-		);
-	}
-
-	// 3D CBCT STANDALONE LAUNCHER (?cbct=demo, ?cbct=1, #cbct)
-	// Must be rendered at the ABSOLUTE TOP before ANY auth, unlock, error, or dashboard guards!
-	if (isCbctDirectModalOpen) {
-		return (
-			<Suspense fallback={<AppLoadingState message="Загрузка 3D КЛКТ Захарова (312 срезов)..." />}>
-				<CbctMprImplantStudioModal
-					isOpen={true}
-					onClose={() => {
-						setIsCbctDirectModalOpen(false);
-						const url = new URL(window.location.href);
-						url.searchParams.delete("cbct");
-						window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("cbct") ? url.hash : ""));
-					}}
-					patientName="Захаров Иван Дмитриевич (312 срезов КЛКТ)"
-					patientId="demo_cbct_patient"
-					autoLoadDemo={true}
-				/>
-			</Suspense>
-		);
-	}
-
-	// CLINICAL CT SELECTOR & VIEWER LAUNCHER (?ct-selector=1, ?ct=selector, #ct-selector)
-	if (isCtSelectorDirectModalOpen) {
-		return (
-			<Suspense fallback={<AppLoadingState message="Загрузка клинического КТ-селектора..." />}>
-				<CtSelectorModal
-					isOpen={true}
-					onClose={() => {
-						setIsCtSelectorDirectModalOpen?.(false);
-						const url = new URL(window.location.href);
-						url.searchParams.delete("ct-selector");
-						url.searchParams.delete("ct");
-						window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("ct-selector") ? url.hash : ""));
-					}}
-					patientName="Захаров Иван Дмитриевич"
-					patientId="demo_cbct_patient"
-					cardNumber="CR-8472"
-				/>
-			</Suspense>
-		);
-	}
-
-	// MOBILE CHAIRSIDE INFORMED CONSENT STANDALONE LAUNCHER (?consent=demo, #consent, #ids)
-	// Must be rendered at the absolute top for instant chairside finger signing on smartphone/tablet!
-	if (isConsentDirectModalOpen) {
-		return (
-			<InformedConsentModal
-				isOpen={true}
-				onClose={() => {
-					setIsConsentDirectModalOpen(false);
-					const url = new URL(window.location.href);
-					url.searchParams.delete("consent");
-					window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("consent") ? url.hash : ""));
-				}}
-				initialMode="packages"
-				initialPackageKey="PACKAGE_PRIMARY_VISIT"
-				initialVerificationMethod="tablet_stylus"
-				patient={{
-					fullName: "Ковалёв Роман Станиславович",
-					birthDate: "12.04.1988",
-					passport: "45 10 № 884721",
-					phone: "+7 (999) 888-77-66",
-					address: "г. Москва, ул. Арбат, д. 24, кв. 12",
-				}}
-				doctorName="Д-р Воронов Алексей Владимирович"
-				doctorSpecialty="Стоматолог-терапевт"
-				diagnosisIcd="K02.1 Кариес дентина"
-				toothNumbers="3.6"
-			/>
-		);
-	}
-
-	// ORTHODONTIC CEPHALOMETRIC TRG STANDALONE LAUNCHER (?ceph=demo, ?trg=demo, #ceph, #trg)
-	// Must be rendered at the absolute top for instant orthodontic TRG analysis!
-	if (isCephDirectModalOpen) {
-		return (
-			<Suspense fallback={<AppLoadingState message="Загрузка цефалометрического анализа ТРГ..." />}>
-				<CephalometricAnalysisModal
-					isOpen={true}
-					onClose={() => {
-						setIsCephDirectModalOpen(false);
-						const url = new URL(window.location.href);
-						url.searchParams.delete("ceph");
-						url.searchParams.delete("trg");
-						window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("ceph") && !url.hash.includes("trg") ? url.hash : ""));
-					}}
-					patientName="Смирнова Екатерина Андреевна (ТРГ боковая)"
-					patientId="demo_ceph_patient"
-					initialImageUrl="/radiology/sample_trg_cephalogram.jpg"
-					initialTab={((typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tab") : null) as ("landmarks" | "metrics" | "report") | null) ?? "metrics"}
-				/>
-			</Suspense>
-		);
-	}
-
-	// EGISZ REMD & ORDER 947N CDA R2 XML STANDALONE LAUNCHER (?egisz=demo, ?remd=demo, #egisz, #remd)
-	// Must be rendered at the absolute top for instant clinical EGISZ signing and journal access!
-	if (isEgiszRemdModalOpen) {
-		return (
-			<Suspense fallback={<AppLoadingState message="Загрузка хаба ЕГИСЗ РЭМД..." />}>
-				<EgiszRemdHubModal
-					isOpen={true}
-					onClose={() => {
-						setIsEgiszRemdModalOpen(false);
-						const url = new URL(window.location.href);
-						url.searchParams.delete("egisz");
-						url.searchParams.delete("remd");
-						url.searchParams.delete("semd");
-						window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("egisz") && !url.hash.includes("remd") ? url.hash : ""));
-					}}
-					initialDocType="cda_semd"
-					initialTab={((typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tab") : null) as any) ?? "signature"}
-				/>
-			</Suspense>
-		);
-	}
-
-	// SMART SLOT RECOVERY STANDALONE LAUNCHER (?smart_slot=demo, ?recovery=demo, #recovery, #smart-slot)
-	if (isSmartSlotRecoveryDemoOpen) {
-		const demoDate = new Date();
-		demoDate.setHours(demoDate.getHours() + 2, 0, 0, 0);
-		const demoEndDate = new Date(demoDate);
-		demoEndDate.setMinutes(demoEndDate.getMinutes() + 45);
-
-		return (
-			<Suspense fallback={<AppLoadingState message="Загрузка умного подбора слота..." />}>
-				<div className="w-screen h-screen flex items-center justify-center bg-[var(--paper-soft)] p-4">
-					<SmartSlotRecoveryPopover
-						isOpen={true}
-						onClose={() => {
-							setIsSmartSlotRecoveryDemoOpen(false);
-							const url = new URL(window.location.href);
-							url.searchParams.delete("smart_slot");
-							url.searchParams.delete("recovery");
-							window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
-						}}
-						slot={{
-							appointmentId: "demo-cancelled-slot-1",
-							startsAt: demoDate.toISOString(),
-							endsAt: demoEndDate.toISOString(),
-							doctorId: "doc-1",
-							doctorName: "Д-р Смирнов А.П.",
-							chairId: "chair-1",
-							chairName: "Кресло №1 (Терапия)",
-							freedBecause: "Отмена пациентом за 2 часа (ОРВИ)",
-							patientName: "Алексеев Владимир Сергеевич",
-						}}
-						clinicName="Стоматология DENTE"
-					/>
-				</div>
-			</Suspense>
-		);
-	}
-
-	// SMART OPG PANORAMIC AI STANDALONE LAUNCHER (?opg=demo, ?opg=1, #opg)
-	if (isSmartOpgDirectModalOpen) {
-		return (
-			<Suspense fallback={<AppLoadingState message="Загрузка панорамного анализа ОПТГ AI..." />}>
-				<SmartOpgViewerModal
-					isOpen={true}
-					onClose={() => {
-						if (setIsSmartOpgDirectModalOpen) setIsSmartOpgDirectModalOpen(false);
-						const url = new URL(window.location.href);
-						url.searchParams.delete("opg");
-						window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("opg") ? url.hash : ""));
-					}}
-					patientName="Темур (Консультация ОПТГ)"
-					patientId="demo_opg_patient"
-				/>
-			</Suspense>
-		);
-	}
-
-	// DMS GUARANTEE LETTER STANDALONE LAUNCHER (?dms=letter, ?dms=1, #dms-letter, #dms)
-	if (isDmsDirectModalOpen) {
-		return (
-			<Suspense fallback={<AppLoadingState message="Загрузка гарантийного письма ДМС..." />}>
-				<DmsGuaranteeLetterModal
-					isOpen={true}
-					onClose={() => {
-						if (setIsDmsDirectModalOpen) setIsDmsDirectModalOpen(false);
-						const url = new URL(window.location.href);
-						url.searchParams.delete("dms");
-						window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("dms") ? url.hash : ""));
-					}}
-					patient={{
-						id: "demo_dms_patient",
-						fullName: "Соколова Анна Викторовна",
-						birthDate: "1990-04-15",
-						policyNumber: "СГЗ-2026-998811",
-						insuranceCompany: "АО «СОГАЗ»",
-					}}
-				/>
-			</Suspense>
-		);
-	}
-
-	return null;
-}
+export type { StandaloneLaunchersProps };
+export { renderStandaloneLaunchers };
 
 export function AppModalsContainer({
 	isCbctTunerOpen,
@@ -393,8 +25,8 @@ export function AppModalsContainer({
 	setIsEgiszRemdModalOpen,
 	isSmartSlotRecoveryDemoOpen: _isSmartSlotRecoveryDemoOpen,
 	setIsSmartSlotRecoveryDemoOpen: _setIsSmartSlotRecoveryDemoOpen,
-	isPrivacyShieldActive,
-	setIsPrivacyShieldActive,
+	isPrivacyShieldActive: _isPrivacyShieldActive,
+	setIsPrivacyShieldActive: _setIsPrivacyShieldActive,
 	isSessionLocked,
 	setIsSessionLocked,
 	activeStaffUser,
@@ -403,15 +35,32 @@ export function AppModalsContainer({
 	handleFullStaffLock,
 }: AppModalsContainerProps) {
 	const [isGlobalVisiographOpen, setIsGlobalVisiographOpen] = React.useState(
-		() => typeof window !== "undefined" && ((window.location.search || "").includes("visiograph") || (window.location.hash || "").includes("visiograph")),
+		() =>
+			typeof window !== "undefined" &&
+			((window.location.search || "").includes("visiograph") ||
+				(window.location.hash || "").includes("visiograph")),
 	);
 	const [isGlobalImagingExportOpen, setIsGlobalImagingExportOpen] = React.useState(
-		() => typeof window !== "undefined" && ((window.location.search || "").includes("imaging-export") || (window.location.hash || "").includes("imaging-export")),
+		() =>
+			typeof window !== "undefined" &&
+			((window.location.search || "").includes("imaging-export") ||
+				(window.location.hash || "").includes("imaging-export")),
 	);
 	const [isGlobalLabCreateOrderOpen, setIsGlobalLabCreateOrderOpen] = React.useState(
-		() => typeof window !== "undefined" && ((window.location.search || "").includes("lab-create") || (window.location.hash || "").includes("lab-create")),
+		() =>
+			typeof window !== "undefined" &&
+			((window.location.search || "").includes("lab-create") ||
+				(window.location.hash || "").includes("lab-create")),
 	);
-	const [labCreateOrderContext, setLabCreateOrderContext] = React.useState<any>(null);
+	const [labCreateOrderContext, setLabCreateOrderContext] =
+		React.useState<LabCreateOrderContext | null>(null);
+	const [isImplantPassportOpen, setIsImplantPassportOpen] = React.useState(
+		() =>
+			typeof window !== "undefined" &&
+			((window.location.search || "").includes("implant_passport") ||
+				(window.location.hash || "").includes("implant_passport") ||
+				(window.location.search || "").includes("passport=demo")),
+	);
 
 	React.useEffect(() => {
 		const onOpenVisiograph = () => {
@@ -431,145 +80,62 @@ export function AppModalsContainer({
 			setLabCreateOrderContext(detail || null);
 			setIsGlobalLabCreateOrderOpen(true);
 		};
+		const onOpenImplantPassport = () => {
+			setIsImplantPassportOpen(true);
+		};
 		window.addEventListener("dente-open-visiograph-comparison", onOpenVisiograph);
 		window.addEventListener("dente-open-imaging-export", onOpenImagingExport);
 		window.addEventListener("dente-open-create-lab-order", onOpenLabCreate);
+		window.addEventListener("dente-open-implant-passport", onOpenImplantPassport);
 		return () => {
 			window.removeEventListener("dente-open-visiograph-comparison", onOpenVisiograph);
 			window.removeEventListener("dente-open-imaging-export", onOpenImagingExport);
 			window.removeEventListener("dente-open-create-lab-order", onOpenLabCreate);
+			window.removeEventListener("dente-open-implant-passport", onOpenImplantPassport);
 		};
 	}, []);
 
 	return (
 		<>
-			{isGlobalVisiographOpen && (
-				<VisiographComparisonModal
-					isOpen={isGlobalVisiographOpen}
-					onClose={() => setIsGlobalVisiographOpen(false)}
-					patientName="Чухрова Лариса Павловна"
-					patientCardNumber="20190621_101042"
-					patientAge="58Y"
-					activeToothFdi="36"
-				/>
-			)}
-			{isGlobalImagingExportOpen && (
-				<ImagingExportModal
-					isOpen={isGlobalImagingExportOpen}
-					onClose={() => setIsGlobalImagingExportOpen(false)}
-					study={{
-						id: "study-rvg-36",
-						title: "Прицельный снимок визиографа (зуб 36, эндодонтия)",
-						capturedAt: new Date().toISOString(),
-						date: new Date().toISOString(),
-						kind: "rvg",
-					} as any}
-					patient={{
-						fullName: "Чухрова Лариса Павловна",
-						medicalCardNumber: "20190621_101042",
-					}}
-					doctorName={activeStaffUser?.name || "Д-р Барабаш С. В."}
-					clinicName="Клиника Инновационной Стоматологии ДЕНТЕ"
-				/>
-			)}
-			{isGlobalLabCreateOrderOpen && (
-				<DentalLabCreateOrderModal
-					isOpen={isGlobalLabCreateOrderOpen}
-					onClose={() => setIsGlobalLabCreateOrderOpen(false)}
-					onCreateOrder={() => setIsGlobalLabCreateOrderOpen(false)}
-					currentPatientName={labCreateOrderContext?.patientName || "Смирнова Екатерина Васильевна"}
-					currentPatientId={labCreateOrderContext?.patientId || "pat-101"}
-					currentDoctorName={activeStaffUser?.name || "Д-р Барабаш С. В."}
-					currentToothNumber={labCreateOrderContext?.toothNumber || "21"}
-					treatmentPlanId={labCreateOrderContext?.treatmentPlanId}
-					stageNumber={labCreateOrderContext?.stageNumber ?? 2}
-					stageTitle={labCreateOrderContext?.stageTitle || "Ортопедический этап: безметалловая керамика"}
-					initialTeeth={labCreateOrderContext?.initialTeeth || [21, 22]}
-				/>
-			)}
-			{isCbctTunerOpen && (
-				<Suspense fallback={null}>
-					<CbctTunerPlayground
-						isOpen={true}
-						onClose={() => {
-							setIsCbctTunerOpen(false);
-							const url = new URL(window.location.href);
-							url.searchParams.delete("cbct");
-							window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("cbct") ? url.hash : ""));
-						}}
-					/>
-				</Suspense>
-			)}
-			{isCbctDirectModalOpen && (
-				<Suspense fallback={null}>
-					<CbctMprImplantStudioModal
-						isOpen={true}
-						onClose={() => {
-							setIsCbctDirectModalOpen(false);
-							const url = new URL(window.location.href);
-							url.searchParams.delete("cbct");
-							window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("cbct") ? url.hash : ""));
-						}}
-						patientName="Захаров Иван Дмитриевич (Демо 3D КЛКТ 312 срезов)"
-						patientId="demo_cbct_patient"
-						autoLoadDemo={true}
-					/>
-				</Suspense>
-			)}
-			{isConsentDirectModalOpen && (
-				<InformedConsentModal
-					isOpen={true}
-					onClose={() => {
-						setIsConsentDirectModalOpen(false);
-						const url = new URL(window.location.href);
-						url.searchParams.delete("consent");
-						window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("consent") ? url.hash : ""));
-					}}
-					initialMode="packages"
-					initialPackageKey="PACKAGE_PRIMARY_VISIT"
-					initialVerificationMethod="tablet_stylus"
-					patient={{
-						fullName: "Ковалёв Роман Станиславович",
-						birthDate: "12.04.1988",
-						passport: "45 10 № 884721",
-						phone: "+7 (999) 888-77-66",
-						address: "г. Москва, ул. Арбат, д. 24, кв. 12",
-					}}
-					doctorName="Д-р Воронов Алексей Владимирович"
-					doctorSpecialty="Стоматолог-терапевт"
-					diagnosisIcd="K02.1 Кариес дентина"
-					toothNumbers="3.6"
-				/>
-			)}
-			{isEgiszRemdModalOpen && (
-				<Suspense fallback={null}>
-					<EgiszRemdHubModal
-						isOpen={true}
-						onClose={() => {
-							setIsEgiszRemdModalOpen(false);
-							const url = new URL(window.location.href);
-							url.searchParams.delete("egisz");
-							url.searchParams.delete("remd");
-							url.searchParams.delete("semd");
-							window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("egisz") && !url.hash.includes("remd") ? url.hash : ""));
-						}}
-						initialDocType="cda_semd"
-						initialTab={((typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tab") : null) as any) ?? "signature"}
-					/>
-				</Suspense>
-			)}
-			<DoctorPrivacyShield
-				isOpen={Boolean(isSessionLocked)}
-				doctor={activeStaffUser}
-				onUnlock={(unlockedUser) => {
-					if (unlockedUser) {
-						setActiveStaffUser(unlockedUser);
-					}
-					setIsSessionLocked?.(false);
-					safeLocalStorageRemoveItem("dente_session_locked");
-				}}
-				onClinicLogout={handleClinicLogout}
-				onFullLock={handleFullStaffLock}
+			{renderStandaloneLaunchers({
+				isCbctTunerOpen,
+				setIsCbctTunerOpen,
+				isCbctDirectModalOpen,
+				setIsCbctDirectModalOpen,
+				isConsentDirectModalOpen,
+				setIsConsentDirectModalOpen,
+				isCephDirectModalOpen: _isCephDirectModalOpen,
+				setIsCephDirectModalOpen: _setIsCephDirectModalOpen,
+				isEgiszRemdModalOpen,
+				setIsEgiszRemdModalOpen,
+				isSmartSlotRecoveryDemoOpen: _isSmartSlotRecoveryDemoOpen,
+				setIsSmartSlotRecoveryDemoOpen: _setIsSmartSlotRecoveryDemoOpen,
+			})}
+			<ClinicalModalsSubcontainer
+				isGlobalVisiographOpen={isGlobalVisiographOpen}
+				setIsGlobalVisiographOpen={setIsGlobalVisiographOpen}
+				isGlobalImagingExportOpen={isGlobalImagingExportOpen}
+				setIsGlobalImagingExportOpen={setIsGlobalImagingExportOpen}
+				isCbctTunerOpen={isCbctTunerOpen}
+				setIsCbctTunerOpen={setIsCbctTunerOpen}
+				isCbctDirectModalOpen={isCbctDirectModalOpen}
+				setIsCbctDirectModalOpen={setIsCbctDirectModalOpen}
+				isConsentDirectModalOpen={isConsentDirectModalOpen}
+				setIsConsentDirectModalOpen={setIsConsentDirectModalOpen}
+				isEgiszRemdModalOpen={isEgiszRemdModalOpen}
+				setIsEgiszRemdModalOpen={setIsEgiszRemdModalOpen}
+				activeStaffUser={activeStaffUser}
+			/>
+			<AdministrativeModalsSubcontainer
+				isGlobalLabCreateOrderOpen={isGlobalLabCreateOrderOpen}
+				setIsGlobalLabCreateOrderOpen={setIsGlobalLabCreateOrderOpen}
+				labCreateOrderContext={labCreateOrderContext}
+				isSessionLocked={isSessionLocked}
+				setIsSessionLocked={setIsSessionLocked}
+				activeStaffUser={activeStaffUser}
+				setActiveStaffUser={setActiveStaffUser}
+				handleClinicLogout={handleClinicLogout}
+				handleFullStaffLock={handleFullStaffLock}
 			/>
 		</>
 	);

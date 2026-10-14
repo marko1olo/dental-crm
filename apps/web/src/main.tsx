@@ -63,6 +63,11 @@ const PatientPresentationStandaloneView = React.lazy(() =>
 		default: m.PatientPresentationStandaloneView,
 	})),
 );
+const HygieneIndicesPanel = React.lazy(() =>
+	import("./components/hygiene/HygieneIndicesPanel").then((m) => ({
+		default: m.HygieneIndicesPanel,
+	})),
+);
 import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
 import { isPatientPresentationRoute } from "./components/photography/presentationSyncProtocol";
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
@@ -160,7 +165,17 @@ const publicPortalRoute = publicPortalRouteFromHash(
 			window.location.pathname === "/portal/warranty" ||
 			window.location.pathname.startsWith("/portal/warranty/") ||
 			window.location.pathname === "/warranty" ||
-			window.location.pathname.startsWith("/warranty/"))
+			window.location.pathname.startsWith("/warranty/") ||
+			window.location.pathname === "/booking" ||
+			window.location.pathname.startsWith("/booking/") ||
+			window.location.pathname.startsWith("/booking?") ||
+			window.location.pathname === "/book" ||
+			window.location.pathname.startsWith("/book/") ||
+			window.location.pathname.startsWith("/book?") ||
+			window.location.pathname === "/portal/booking" ||
+			window.location.pathname.startsWith("/portal/booking/") ||
+			window.location.pathname === "/portal/book" ||
+			window.location.pathname.startsWith("/portal/book/"))
 		? window.location.pathname + window.location.search
 		: typeof window !== "undefined"
 			? window.location.hash
@@ -332,6 +347,44 @@ if (publicPortalRoute) {
 			<BootErrorBoundary audience="public">
 				<React.Suspense fallback={null}>
 					<WaitingLoungeSignage />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(new URLSearchParams(window.location.search).has("hygiene") ||
+		window.location.hash.toLowerCase().includes("hygiene"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			(localStorage.getItem("dente_theme") as any) || "auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка протокола гигиены...
+						</div>
+					}
+				>
+					<div
+						className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6 overflow-y-auto"
+						data-testid="hygiene-standalone-workspace"
+					>
+						<HygieneIndicesPanel
+							patientName="Смирнова Анна Сергеевна"
+							doctorName="Д-р Воронов А. В."
+						/>
+					</div>
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>

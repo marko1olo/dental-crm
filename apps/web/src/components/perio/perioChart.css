@@ -1,0 +1,226 @@
+/**
+ * apps/web/src/components/perio/perioChart.css
+ *
+ * Apple Mobile HIG & Anti-Desktop-Squeeze Standard for Perio Charting (390x844).
+ * Strict Vanilla CSS Design Tokens, 0px Horizontal Scroll, 48px Touch Ergonomics.
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. VIEWPORT & CONTAINER SAFETY (0px Horizontal Drift Invariant)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.perio-chart-root,
+.perio-modal-container,
+.perio-touch-cockpit {
+	box-sizing: border-box;
+	max-width: 100vw;
+	overflow-x: clip;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. APPLE HIG NATIVE BOTTOM SHEET DRAWER (<= 768px Mobile & Tablet)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.perio-bottom-sheet {
+	position: fixed;
+	inset-x: 0;
+	bottom: 0;
+	z-index: 1000;
+	display: flex;
+	flex-direction: column;
+	max-height: 92vh;
+	width: 100vw;
+	max-width: 100vw;
+	overflow-x: clip;
+	background: var(--paper, #ffffff);
+	border-top-left-radius: 24px;
+	border-top-right-radius: 24px;
+	border-top: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+	box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.28);
+	animation: perioSheetSlideUp 260ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes perioSheetSlideUp {
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: translateY(0);
+	}
+}
+
+/* Tactile Drag Handle (Apple iOS 36x5px centered handle) */
+.perio-drag-handle {
+	width: 36px;
+	height: 5px;
+	min-height: 5px;
+	border-radius: 9999px;
+	background: var(--line-strong, #94a3b8);
+	margin: 10px auto 6px auto;
+	opacity: 0.85;
+	cursor: grab;
+	touch-action: none;
+	flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. NATURAL THUMB ZONE FLOATING BOTTOM BAR (Primary CTAs)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.perio-floating-bottom-bar {
+	position: sticky;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	z-index: 40;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 10px 14px;
+	padding-bottom: max(12px, env(safe-area-inset-bottom));
+	background: color-mix(in srgb, var(--paper-strong, var(--paper)) 92%, transparent);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-top: 1px solid var(--line, rgba(0, 0, 0, 0.1));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. TOUCH ERGONOMICS (Apple iOS Touch Targets >= 48x48px)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.perio-touch-btn {
+	min-height: 48px;
+	min-width: 48px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 12px;
+	font-weight: 600;
+	touch-action: manipulation;
+	user-select: none;
+	transition: transform 120ms ease, background-color 150ms ease, opacity 150ms ease;
+}
+
+.perio-touch-btn:active {
+	transform: scale(0.97);
+}
+
+/* Keypad Numpad Tiles in Natural Thumb Zone */
+.perio-numpad-tile {
+	min-height: 48px;
+	min-width: 48px;
+	flex: 1 1 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	font-family: var(--font-mono, monospace);
+	font-size: 1.15rem;
+	font-weight: 800;
+	border-radius: 12px;
+	background: var(--paper-soft, #f1f5f9);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+	color: var(--ink, #0f172a);
+	transition: background-color 100ms ease, border-color 100ms ease;
+}
+
+.perio-numpad-tile:active {
+	background: var(--paper-strong, #e2e8f0);
+	border-color: var(--accent, #0d9488);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. QUADRANT SWITCHER & SENSOR GRID (8 Teeth per Quadrant)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.perio-quadrant-bar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px;
+	border-radius: 14px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.perio-quadrant-bar::-webkit-scrollbar {
+	display: none;
+}
+
+.perio-quadrant-chip {
+	min-height: 44px;
+	padding: 6px 12px;
+	border-radius: 10px;
+	font-size: 13px;
+	font-weight: 700;
+	white-space: nowrap;
+	border: 1px solid transparent;
+	color: var(--muted, #64748b);
+	transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.perio-quadrant-chip[data-active="true"] {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border-color: var(--accent, #0d9488);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* 8 Teeth Grid */
+.perio-teeth-grid-8 {
+	display: grid;
+	grid-template-columns: repeat(8, minmax(0, 1fr));
+	gap: 4px;
+	width: 100%;
+}
+
+.perio-tooth-cell {
+	min-height: 48px;
+	border-radius: 10px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.1));
+	background: var(--paper, #ffffff);
+	cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. DARK MODE ADAPTATION (WCAG AAA Contrast Invariants)
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] .perio-bottom-sheet {
+	background: var(--paper, #0b1320);
+	border-top-color: var(--line, rgba(255, 255, 255, 0.15));
+	box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.7);
+}
+
+:root[data-theme="dark"] .perio-drag-handle {
+	background: var(--line-strong, #475569);
+}
+
+:root[data-theme="dark"] .perio-floating-bottom-bar {
+	background: color-mix(in srgb, var(--paper-strong, #0f172a) 92%, transparent);
+	border-top-color: var(--line, rgba(255, 255, 255, 0.12));
+}
+
+:root[data-theme="dark"] .perio-numpad-tile {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, rgba(255, 255, 255, 0.12));
+	color: var(--ink, #f8fafc);
+}
+
+:root[data-theme="dark"] .perio-numpad-tile:active {
+	background: #334155;
+	border-color: var(--accent, #2dd4bf);
+}
+
+:root[data-theme="dark"] .perio-quadrant-bar {
+	background: var(--paper-soft, #0f172a);
+	border-color: var(--line, rgba(255, 255, 255, 0.1));
+}
+
+:root[data-theme="dark"] .perio-quadrant-chip[data-active="true"] {
+	background: var(--paper, #1e293b);
+	color: var(--ink, #f8fafc);
+	border-color: var(--accent, #2dd4bf);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}

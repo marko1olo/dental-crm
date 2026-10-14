@@ -16,6 +16,7 @@ import {
 	visits,
 	xrayScans,
 } from "../db/schema.js";
+import { fetchToothPeriodontalEvents } from "./toothHistoryPerio.js";
 
 /**
  * Checks if a compound tooth string (e.g. "16, 17", "16-18", "1.6", "зуб 16") contains a specific FDI tooth number.
@@ -36,7 +37,7 @@ export function isToothReferenced(
 }
 
 export interface ToothHistoryTimelineEvent {
-	type: "diary" | "diary_revision" | "plan" | "treatment_procedure" | "state_change" | "radiology_scan";
+	type: "diary" | "diary_revision" | "plan" | "treatment_procedure" | "state_change" | "radiology_scan" | "periodontogram";
 	date: Date | string;
 	description: string;
 	authorId: string;
@@ -47,43 +48,19 @@ export interface ToothHistoryTimelineEvent {
 	scanType?: string | null;
 }
 
+const TOOTH_STATE_LABELS: Record<string, string> = {
+	caries: "кариес", pulpitis: "пульпит", periodontitis: "периодонтит",
+	filled: "пломба / пролечен", done: "пломба / пролечен", crown: "коронка",
+	missing: "отсутствует", healthy: "здоров", idle: "здоров",
+	root_canal_treated: "депульпирован / каналы", treatment: "депульпирован / каналы",
+	implant: "имплантат", planned_implant: "план. имплантат", root: "корень",
+	retained: "ретинированный", extracted: "удален",
+};
+
 export function formatToothStateLabel(state: string | null | undefined): string {
 	if (!state) return "";
 	const s = state.trim();
-	const lower = s.toLowerCase();
-	switch (lower) {
-		case "caries":
-			return "кариес";
-		case "pulpitis":
-			return "пульпит";
-		case "periodontitis":
-			return "периодонтит";
-		case "filled":
-		case "done":
-			return "пломба / пролечен";
-		case "crown":
-			return "коронка";
-		case "missing":
-			return "отсутствует";
-		case "healthy":
-		case "idle":
-			return "здоров";
-		case "root_canal_treated":
-		case "treatment":
-			return "депульпирован / каналы";
-		case "implant":
-			return "имплантат";
-		case "planned_implant":
-			return "план. имплантат";
-		case "root":
-			return "корень";
-		case "retained":
-			return "ретинированный";
-		case "extracted":
-			return "удален";
-		default:
-			return s;
-	}
+	return TOOTH_STATE_LABELS[s.toLowerCase()] ?? s;
 }
 
 export function formatToothStateTransition(
@@ -479,6 +456,16 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 				}
 			} catch (err) {
 				console.warn("[toothHistory] Ошибка чтения рентген-снимков:", err);
+			}
+
+			// 6. Periodontogram snapshot measurements (PD, BOP, mobility, furcations)
+			const perioEvents = await fetchToothPeriodontalEvents(
+				orgId,
+				patientId,
+				toothNum,
+			);
+			if (perioEvents.length > 0) {
+				events.push(...perioEvents);
 			}
 
 			// Sort chronologically descending (newest events first)

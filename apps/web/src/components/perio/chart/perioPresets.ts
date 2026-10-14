@@ -10,6 +10,16 @@ import {
 	PERIO_PATHOLOGY_PRESETS,
 	type PerioPathologyPreset,
 } from "../../../lib/clinicalProtocols043";
+import {
+	deductPeriodontalConsumablesSoftOverdraft,
+	PERIODONTAL_CONSUMABLES_CATALOG,
+	type PeriodontalConsumableItem,
+} from "./perioConsumables";
+export {
+	deductPeriodontalConsumablesSoftOverdraft,
+	PERIODONTAL_CONSUMABLES_CATALOG,
+	type PeriodontalConsumableItem,
+};
 import { useVisitStore } from "../../../store/visitStore";
 import { showToast } from "../../GlobalToast";
 import {
@@ -371,12 +381,26 @@ export function dispatchPresetSideEffects(
 		void navigator.clipboard.writeText(protocolText);
 	}
 
+	if (typeof window !== "undefined") {
+		// Soft overdraft warehouse deduction for periodontal therapy (Mandates 8e, 8n)
+		if (result.title.toLowerCase().includes("гигиен")) {
+			void deductPeriodontalConsumablesSoftOverdraft("hygiene");
+		} else if (
+			result.title.toLowerCase().includes("тяжел") ||
+			result.title.toLowerCase().includes("средн") ||
+			result.title.toLowerCase().includes("пародонтит")
+		) {
+			void deductPeriodontalConsumablesSoftOverdraft("curettage");
+		}
+	}
+
 	showToast(
 		`Статус зафиксирован: «${result.title}». Протокол перенесён в дневник приёма.`,
 		"success",
 		4500,
 	);
 }
+
 
 /**
  * Generates comprehensive Form 043/u text

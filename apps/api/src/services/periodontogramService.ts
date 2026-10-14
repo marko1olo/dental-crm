@@ -3,7 +3,7 @@ import {
 	SEPA_SITE_CODES,
 	type SepaSiteCode,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import {
@@ -12,7 +12,11 @@ import {
 	periodontogramTeeth,
 	toothStates,
 } from "../db/schema.js";
-import type { SiteRow, ToothRow } from "./periodontogramIndices.js";
+import {
+	computeSnapshotIndices,
+	type SiteRow,
+	type ToothRow,
+} from "./periodontogramIndices.js";
 
 // ───────────────────────────────────────────────────────────────────────────
 // VALIDATION SCHEMAS
@@ -248,4 +252,224 @@ export async function upsertSingleSiteRecord(
 		.returning();
 
 	return saved;
+}
+
+/**
+ * Fetches the active draft or latest closed periodontogram snapshot for a patient.
+ */
+export async function fetchPatientLatestPeriodontogram(
+	orgId: string,
+	patientId: string,
+) {
+	// 1. Check for active draft first
+	const [draft] = await db
+		.select()
+		.from(periodontogramSnapshots)
+		.where(
+			and(
+				eq(periodontogramSnapshots.organizationId, orgId),
+				eq(periodontogramSnapshots.patientId, patientId),
+				eq(periodontogramSnapshots.status, "draft"),
+			),
+		)
+		.limit(1);
+
+	if (draft) {
+		const { formattedTeeth } = await fetchSnapshotTeethAndSites(draft.id);
+		return {
+			...draft,
+			teeth: formattedTeeth,
+		};
+	}
+
+	// 2. Fall back to latest closed examination
+	const [latestClosed] = await db
+		.select()
+		.from(periodontogramSnapshots)
+		.where(
+			and(
+				eq(periodontogramSnapshots.organizationId, orgId),
+				eq(periodontogramSnapshots.patientId, patientId),
+				eq(periodontogramSnapshots.status, "closed"),
+			),
+		)
+		.orderBy(desc(periodontogramSnapshots.recordedAt))
+		.limit(1);
+
+	if (latestClosed) {
+		const { formattedTeeth } = await fetchSnapshotTeethAndSites(latestClosed.id);
+		return {
+			...latestClosed,
+			teeth: formattedTeeth,
+		};
+	}
+
+	return null;
+}
+
+export interface UpsertPatientFullPeriodontogramParams {
+	orgId: string;
+	patientId: string;
+	recordedByUserId: string | null;
+	teeth?: Array<z.infer<typeof patchToothBodySchema>> | undefined;
+	sites?: Array<SiteItemInput> | undefined;
+	notes?: string | null | undefined;
+	status?: "draft" | "closed" | undefined;
+	autoClose?: boolean | undefined;
+}
+
+/**
+ * Upserts a full periodontogram draft or closed record for a patient (Форма 043/у).
+ * Creates draft if none exists, updates teeth, upserts sites, and calculates indices on close.
+ */
+export async function upsertPatientFullPeriodontogram({
+	orgId,
+	patientId,
+	recordedByUserId,
+	teeth = [],
+	sites = [],
+	notes,
+	status,
+	autoClose = false,
+}: UpsertPatientFullPeriodontogramParams) {
+	// Find existing draft snapshot or create a new one
+	let [activeDraft] = await db
+		.select()
+		.from(periodontogramSnapshots)
+		.where(
+			and(
+				eq(periodontogramSnapshots.organizationId, orgId),
+				eq(periodontogramSnapshots.patientId, patientId),
+				eq(periodontogramSnapshots.status, "draft"),
+			),
+		)
+		.limit(1);
+
+	if (!activeDraft) {
+		activeDraft = await createDraftWithInitialTeeth(
+			orgId,
+			patientId,
+			recordedByUserId,
+		);
+	}
+
+	return await db.transaction(async (tx) => {
+		// 1. Batch update teeth attributes if provided
+		if (teeth && teeth.length > 0) {
+			for (const t of teeth) {
+				const toothNum = t.toothNumber ?? t.tooth_number;
+				if (!toothNum) continue;
+
+				const isPresent = t.isPresent ?? t.is_present;
+				const isImplant = t.isImplant ?? t.is_implant;
+				const furcationBuccal = t.furcationBuccal ?? t.furcation_buccal;
+				const furcationLingual = t.furcationLingual ?? t.furcation_lingual;
+				const keratinizedGingivaMm =
+					t.keratinizedGingivaMm ?? t.keratinized_gingiva_mm;
+
+				const updateValues: Partial<typeof periodontogramTeeth.$inferInsert> = {
+					updatedAt: new Date(),
+				};
+				if (isPresent !== undefined) updateValues.isPresent = isPresent;
+				if (isImplant !== undefined) updateValues.isImplant = isImplant;
+				if (t.mobility !== undefined) updateValues.mobility = t.mobility;
+				if (t.prognosis !== undefined) updateValues.prognosis = t.prognosis;
+				if (furcationBuccal !== undefined)
+					updateValues.furcationBuccal = furcationBuccal;
+				if (furcationLingual !== undefined)
+					updateValues.furcationLingual = furcationLingual;
+				if (keratinizedGingivaMm !== undefined)
+					updateValues.keratinizedGingivaMm = keratinizedGingivaMm;
+
+				await tx
+					.update(periodontogramTeeth)
+					.set(updateValues)
+					.where(
+						and(
+							eq(periodontogramTeeth.snapshotId, activeDraft.id),
+							eq(periodontogramTeeth.toothNumber, toothNum),
+						),
+					);
+			}
+		}
+
+		// 2. Batch upsert probing sites if provided
+		if (sites && sites.length > 0) {
+			const dbTeeth = await tx
+				.select({
+					id: periodontogramTeeth.id,
+					toothNumber: periodontogramTeeth.toothNumber,
+				})
+				.from(periodontogramTeeth)
+				.where(eq(periodontogramTeeth.snapshotId, activeDraft.id));
+
+			const toothIdMap = new Map<number, string>();
+			for (const dt of dbTeeth) {
+				toothIdMap.set(dt.toothNumber, dt.id);
+			}
+
+			for (const s of sites) {
+				const toothNum = s.toothNumber ?? s.tooth_number;
+				const siteCode = s.siteCode ?? s.site_code;
+				if (!toothNum || !siteCode) continue;
+
+				const toothId = toothIdMap.get(toothNum) ?? null;
+				await upsertSingleSiteRecord(
+					tx,
+					activeDraft.id,
+					toothId,
+					toothNum,
+					siteCode,
+					s,
+				);
+			}
+		}
+
+		// 3. Update notes if provided
+		if (notes !== undefined) {
+			await tx
+				.update(periodontogramSnapshots)
+				.set({ notes, updatedAt: new Date() })
+				.where(eq(periodontogramSnapshots.id, activeDraft.id));
+		}
+
+		// 4. Close examination if requested
+		const shouldClose = status === "closed" || autoClose;
+		if (shouldClose) {
+			const { teeth: currentTeeth, sites: currentSites } =
+				await fetchSnapshotTeethAndSites(activeDraft.id);
+			const computedIndices = computeSnapshotIndices(currentTeeth, currentSites);
+
+			const [closedSnap] = await tx
+				.update(periodontogramSnapshots)
+				.set({
+					status: "closed",
+					closedAt: new Date(),
+					closedByUserId: recordedByUserId,
+					indices: computedIndices,
+					...(notes !== undefined ? { notes } : {}),
+					updatedAt: new Date(),
+				})
+				.where(eq(periodontogramSnapshots.id, activeDraft.id))
+				.returning();
+
+			const { formattedTeeth } = await fetchSnapshotTeethAndSites(activeDraft.id);
+			return {
+				...closedSnap,
+				teeth: formattedTeeth,
+			};
+		}
+
+		const [updatedSnap] = await tx
+			.select()
+			.from(periodontogramSnapshots)
+			.where(eq(periodontogramSnapshots.id, activeDraft.id))
+			.limit(1);
+
+		const { formattedTeeth } = await fetchSnapshotTeethAndSites(activeDraft.id);
+		return {
+			...updatedSnap,
+			teeth: formattedTeeth,
+		};
+	});
 }

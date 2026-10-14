@@ -50,6 +50,7 @@ const CtSelectorModal = lazyWithRetry(() =>
 );
 
 import { PeriodontogramChart } from "../../../perio/PeriodontogramChart";
+import { PerioChartModal } from "../../../perio/PerioChartModal";
 import { HygieneIndicesPanel } from "../../../hygiene/HygieneIndicesPanel";
 import { PatientRecallsHubModal } from "../../../recalls/PatientRecallsHubModal";
 
@@ -94,6 +95,27 @@ export function renderSpecializedClinicalLaunchers({
 		(new URLSearchParams(window.location.search).has("perio") ||
 			window.location.hash.toLowerCase().includes("perio"));
 	if (isPerioDirect) {
+		const isModalMode =
+			typeof window !== "undefined" &&
+			new URLSearchParams(window.location.search).get("perio") === "modal";
+
+		if (isModalMode) {
+			return (
+				<PerioChartModal
+					isOpen={true}
+					onClose={() => {
+						const url = new URL(window.location.href);
+						url.searchParams.delete("perio");
+						const cleanHash = url.hash.includes("perio") ? "" : url.hash;
+						window.history.replaceState({}, "", url.pathname + (url.search || "") + cleanHash);
+					}}
+					patientId="demo_perio_patient"
+					patientName="Смирнова Анна Сергеевна (Пародонтограмма)"
+					doctorName="Д-р Соколов А. В."
+				/>
+			);
+		}
+
 		return (
 			<div
 				className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6 overflow-y-auto"

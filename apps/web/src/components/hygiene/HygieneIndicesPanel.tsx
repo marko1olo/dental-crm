@@ -16,6 +16,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	Check,
 	Clipboard,
+	ClipboardList,
 	Printer,
 	RotateCcw,
 	ShieldCheck,
@@ -575,16 +576,16 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 				{!readOnly && (
 					<div className="flex items-center gap-2 flex-wrap shrink-0">
-						{/* Кнопка нативной мобильной шторки Bottom Sheet */}
+						{/* Кнопка нативной мобильной шторки Bottom Sheet (Apple HIG) */}
 						<button
 							type="button"
 							onClick={() => setIsBottomSheetOpen(true)}
-							className="md:hidden h-8 sm:h-9 px-2.5 py-1.5 rounded-lg bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation truncate"
-							title="Открыть в нативном мобильном Bottom Sheet"
+							className="md:hidden min-h-[44px] h-9 px-3 py-1.5 rounded-lg bg-teal-500/15 hover:bg-teal-500/25 text-teal-850 dark:text-teal-200 border border-teal-500/35 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation"
+							title="Открыть осмотр гигиены в нативной шторке (Apple HIG)"
 							data-testid="hygiene-open-bottom-sheet-btn"
 						>
-							<Smartphone size={14} className="shrink-0" />
-							<span className="truncate">Шторка (HIG)</span>
+							<ClipboardList size={15} className="shrink-0 text-teal-600 dark:text-teal-400" />
+							<span>Осмотр гигиены</span>
 						</button>
 
 						{perioTeeth && perioTeeth.length > 0 && (
@@ -603,7 +604,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 						<button
 							type="button"
 							onClick={handleInsertTo043}
-							className="h-8 sm:h-9 px-3.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer touch-manipulation truncate"
+							className="h-8 sm:h-9 px-3.5 py-1.5 rounded-lg !bg-teal-600 hover:!bg-teal-700 active:scale-95 !text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer touch-manipulation truncate"
 							title="Вставить сводку индексов гигиены в дневник приёма"
 							data-testid="hygiene-insert-to-043-btn"
 						>
@@ -656,9 +657,13 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 				/>
 			)}
 
-			{/* ─── Тулбар переключения индексов (Hick's Law: 32–36px) ────────── */}
+			{/* ─── Сегментированный контрол индексов (Apple HIG: 36px) ────────── */}
 			<div className="flex items-center justify-between flex-wrap gap-2 pt-1 border-t border-[var(--line)]">
-				<div className="flex items-center gap-1 p-1 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] h-8 sm:h-9 overflow-x-auto max-w-full">
+				<div
+					role="tablist"
+					aria-label="Индексы гигиены полости рта"
+					className="inline-flex items-center gap-1 p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-strong)] h-10 max-w-full overflow-x-auto shadow-2xs"
+				>
 					{[
 						{ id: "ohi-s", label: "OHI-S (Грин-Вермиллион)", shortLabel: "OHI-S" },
 						{ id: "silness-loe", label: "Silness-Löe (Сиднесс-Лоэ)", shortLabel: "Сиднесс-Лоэ" },
@@ -669,12 +674,14 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 						return (
 							<button
 								key={tab.id}
+								role="tab"
+								aria-selected={isActive}
 								type="button"
 								onClick={() => setActiveTab(tab.id as ActiveHygieneIndexTab)}
-								className={`h-6 sm:h-7 px-2.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer truncate shrink-0 ${
+								className={`h-8 px-3.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer truncate shrink-0 ${
 									isActive
-										? "bg-teal-600 text-white font-bold shadow-2xs"
-										: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)]/40"
+										? "!bg-teal-600 !text-white shadow-xs !border-teal-500/50"
+										: "text-[var(--ink)] hover:text-teal-700 dark:hover:text-teal-300 hover:bg-[var(--paper)]"
 								}`}
 								title={tab.label}
 							>

@@ -221,7 +221,7 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 					<button
 						type="button"
 						onClick={() => onApplyExpressPreset("perio_norm_express")}
-						className="min-h-[44px] px-2 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
+						className="min-h-[48px] px-2 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
 						title="Вся десна здорова (Норма)"
 						data-testid="perio-toolbar-norm-1click-btn"
 					>
@@ -233,7 +233,7 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 					<button
 						type="button"
 						onClick={() => onApplyExpressPreset("pro_hygiene_express")}
-						className="min-h-[44px] px-2 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
+						className="min-h-[48px] px-2 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
 						title="Профессиональная гигиена полости рта"
 						data-testid="perio-toolbar-prophy-1click-btn"
 					>
@@ -245,7 +245,7 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 					<button
 						type="button"
 						onClick={onInsertToProtocol}
-						className="min-h-[44px] px-2 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
+						className="min-h-[48px] px-2 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
 						title="Внести протокол в дневник приёма"
 						data-testid="perio-insert-protocol-btn"
 					>
@@ -329,7 +329,7 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 								key={qKey}
 								type="button"
 								onClick={() => handleSelectQuadrant(qKey)}
-								className={`min-h-[44px] py-1 px-1 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+								className={`min-h-[48px] py-1 px-1 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer ${
 									isCurrent
 										? "bg-[var(--paper)] text-[var(--ink)] shadow-xs border border-teal-500/50 font-bold"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
