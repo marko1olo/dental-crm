@@ -116,7 +116,7 @@ export function OrthopedicsZtlSelectors({
 						Авторасчет сроков и спецификации
 					</span>
 				</div>
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
 					{STANDARD_ZTL_ORDER_PRESETS.map((preset) => {
 						const isSelected = activeZtlPresetId === preset.id;
 						return (
@@ -124,7 +124,7 @@ export function OrthopedicsZtlSelectors({
 								key={preset.id}
 								type="button"
 								onClick={() => onSelectZtlPreset(preset)}
-								className={`min-h-[48px] px-3 py-2 rounded-lg text-xs font-bold text-left transition-all cursor-pointer border flex flex-col justify-between min-w-0 overflow-hidden ${
+								className={`min-h-[58px] p-2.5 rounded-lg text-xs font-bold text-left transition-all cursor-pointer border flex flex-col justify-between min-w-0 ${
 									isSelected
 										? "bg-teal-50 dark:bg-teal-950/50 border-teal-500 text-teal-950 dark:text-teal-100 ring-1 ring-teal-500 shadow-xs"
 										: "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
@@ -132,18 +132,20 @@ export function OrthopedicsZtlSelectors({
 								data-testid={`ztl-preset-${preset.id}`}
 								title={`${preset.description} · Гарантия: ${preset.warrantyLabelRu}`}
 							>
-								<div className="flex items-center justify-between gap-1 min-w-0 w-full">
-									<span className="truncate min-w-0">{preset.name}</span>
-									<span className="text-[10px] font-mono px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
+								<div className="flex items-start justify-between gap-1.5 min-w-0 w-full mb-1">
+									<span className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug">
+										{preset.name}
+									</span>
+									<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0 font-semibold">
 										{preset.badge}
 									</span>
 								</div>
-								<span className="text-[10px] text-slate-500 dark:text-slate-400 truncate min-w-0 w-full mt-0.5">
+								<span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight min-w-0 w-full mb-1.5">
 									{preset.material}
 								</span>
-								<div className="flex items-center gap-1 mt-1 text-[10px] text-emerald-700 dark:text-emerald-400 font-medium min-w-0 w-full">
-									<ShieldCheck size={11} className="shrink-0" />
-									<span className="truncate min-w-0">{preset.warrantyLabelRu}</span>
+								<div className="flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-400 font-medium min-w-0 w-full mt-auto">
+									<ShieldCheck size={12} className="shrink-0" />
+									<span>{preset.warrantyLabelRu}</span>
 								</div>
 							</button>
 						);
@@ -167,7 +169,7 @@ export function OrthopedicsZtlSelectors({
 						Тип уступа для прецизионного прилегания
 					</span>
 				</div>
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
 					{PREPARATION_MARGIN_PRESETS.map((margin) => {
 						const isSelected = preparationMargin === margin.id;
 						return (
@@ -175,7 +177,7 @@ export function OrthopedicsZtlSelectors({
 								key={margin.id}
 								type="button"
 								onClick={() => onSelectPreparationMargin(margin.id, margin.labelRu)}
-								className={`min-h-[48px] px-3 py-2 rounded-lg text-xs font-bold text-left transition-all cursor-pointer border flex flex-col justify-between min-w-0 overflow-hidden ${
+								className={`min-h-[50px] p-2.5 rounded-lg text-xs font-bold text-left transition-all cursor-pointer border flex flex-col justify-between min-w-0 ${
 									isSelected
 										? "bg-teal-50 dark:bg-teal-950/50 border-teal-500 text-teal-950 dark:text-teal-100 ring-1 ring-teal-500 shadow-xs"
 										: "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
@@ -183,10 +185,12 @@ export function OrthopedicsZtlSelectors({
 								data-testid={`prep-margin-${margin.id}`}
 								title={margin.description}
 							>
-								<div className="flex items-center justify-between gap-1 min-w-0 w-full">
-									<span className="truncate min-w-0">{margin.labelRu}</span>
+								<div className="flex items-start justify-between gap-1 min-w-0 w-full mb-0.5">
+									<span className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug">
+										{margin.labelRu}
+									</span>
 								</div>
-								<span className="text-[10px] text-slate-500 dark:text-slate-400 truncate min-w-0 w-full mt-0.5 font-mono">
+								<span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono leading-tight">
 									{margin.shortBadge}
 								</span>
 							</button>
@@ -212,7 +216,7 @@ export function OrthopedicsZtlSelectors({
 					</span>
 				</div>
 
-				<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+				<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-2">
 					{FIXATION_TYPE_PRESETS.map((fix) => {
 						const isSelected = activeFixation === fix.id;
 						return (
@@ -220,7 +224,7 @@ export function OrthopedicsZtlSelectors({
 								key={fix.id}
 								type="button"
 								onClick={() => handleSelectFixation(fix.id)}
-								className={`min-h-[48px] px-3 py-2 rounded-lg text-xs font-bold text-left transition-all cursor-pointer border flex flex-col justify-between min-w-0 overflow-hidden ${
+								className={`min-h-[52px] p-2.5 rounded-lg text-left transition-all cursor-pointer border flex flex-col justify-between min-w-0 ${
 									isSelected
 										? "bg-teal-50 dark:bg-teal-950/50 border-teal-500 text-teal-950 dark:text-teal-100 ring-1 ring-teal-500 shadow-xs"
 										: "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
@@ -228,14 +232,16 @@ export function OrthopedicsZtlSelectors({
 								data-testid={`fixation-type-${fix.id}`}
 								title={fix.description}
 							>
-								<div className="flex items-center justify-between gap-1 min-w-0 w-full">
-									<span className="truncate min-w-0">{fix.labelRu}</span>
-									<span className="text-[10px] font-mono px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
+								<div className="flex items-center justify-between gap-1.5 min-w-0 w-full mb-0.5">
+									<span className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug">
+										{fix.titleRu}
+									</span>
+									<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0 font-semibold">
 										{fix.shortBadge}
 									</span>
 								</div>
-								<span className="text-[10px] text-slate-500 dark:text-slate-400 truncate min-w-0 w-full mt-0.5">
-									{fix.description}
+								<span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+									{fix.sublabelRu}
 								</span>
 							</button>
 						);

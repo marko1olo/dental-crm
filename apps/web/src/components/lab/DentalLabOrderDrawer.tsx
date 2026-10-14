@@ -9,23 +9,12 @@ import {
 	Zap,
 } from "lucide-react";
 import {
-	type DentalLabConstructionType,
-	type DentalLabOrderStatus,
-	type DentalLabOrderRecord,
-	DENTAL_LAB_CONSTRUCTIONS,
-	VITA_CLASSICAL_SHADES,
-	VITA_BLEACH_SHADES,
-	ENAMEL_TRANSLUCENCY_OPTIONS,
-	STUMP_NATURAL_DIE_SHADES,
-	parseFdiTeethString,
-	calculateZtlWageFinancials,
-	createDentalLabOrderRecord,
-	toIsoDate,
-	addWorkingDaysRu,
-	checkFittingAppointmentCollision,
-	CANONICAL_LAB_WORK_TYPES,
-	getVitaShadeHex,
-	getLabWorkTypeById,
+	type DentalLabConstructionType, type DentalLabOrderStatus, type DentalLabOrderRecord,
+	DENTAL_LAB_CONSTRUCTIONS, VITA_CLASSICAL_SHADES, VITA_BLEACH_SHADES,
+	ENAMEL_TRANSLUCENCY_OPTIONS, STUMP_NATURAL_DIE_SHADES, parseFdiTeethString,
+	calculateZtlWageFinancials, createDentalLabOrderRecord, toIsoDate,
+	addWorkingDaysRu, checkFittingAppointmentCollision, CANONICAL_LAB_WORK_TYPES,
+	getVitaShadeHex, getLabWorkTypeById,
 } from "./dentalLabOrderEngine";
 import { money, denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
@@ -80,52 +69,28 @@ export function DentalLabOrderDrawer({
 	const [formStageId, setFormStageId] = useState<string | undefined>(stageId);
 
 	useEffect(() => {
-		if (editingOrder) {
-			setFormPatientName(editingOrder.patientName);
-			setFormDoctorName(editingOrder.doctorName);
-			setFormLabName(editingOrder.labName);
-			setFormTechnicianName(editingOrder.technicianName || "");
-			setFormTeethInput(editingOrder.teethFdi.join(", "));
-			setFormConstruction(editingOrder.constructionType);
-			setFormVitaShade(editingOrder.vitaShade);
-			setFormTranslucency(editingOrder.translucency || "MT");
-			setFormStumpShade(editingOrder.stumpShade || "ND2");
-			setFormSentDate(editingOrder.sentDate);
-			setFormDeadlineDate(editingOrder.deadlineDate);
-			setFormScheduledVisit(editingOrder.scheduledVisitDate || "");
-			setFormPatientPriceRub(editingOrder.patientPriceKopecks / 100);
-			setFormZtlCostRub(editingOrder.ztlCostKopecks / 100);
-			setFormDoctorPercent(editingOrder.doctorSharePercent);
-			setFormClinicalNotes(editingOrder.clinicalNotes || "");
-			setFormStatus(editingOrder.status || "sent_to_lab");
-			setFormTreatmentPlanId(editingOrder.treatmentPlanId ?? treatmentPlanId);
-			setFormStageNumber(editingOrder.stageNumber ?? stageNumber);
-			setFormStageTitle(editingOrder.stageTitle ?? stageTitle);
-			setFormStageId(editingOrder.stageId ?? stageId);
-		} else {
-			setFormPatientName(currentPatientName || "");
-			setFormDoctorName(currentDoctorName || "Д-р Орлов А.В. (Ортопед)");
-			setFormLabName("CAD/CAM Центр Дентал-Мастер");
-			setFormTechnicianName("");
-			setFormTeethInput(currentToothNumber ? String(currentToothNumber) : "16");
-			setFormConstruction("crown_zirconia");
-			setFormVitaShade("A2");
-			setFormTranslucency("MT");
-			setFormStumpShade("ND2");
-			const now = new Date();
-			setFormSentDate(toIsoDate(now));
-			setFormDeadlineDate(toIsoDate(addWorkingDaysRu(now, 5)));
-			setFormScheduledVisit("");
-			setFormPatientPriceRub(24000);
-			setFormZtlCostRub(7500);
-			setFormDoctorPercent(20);
-			setFormClinicalNotes("");
-			setFormStatus("sent_to_lab");
-			setFormTreatmentPlanId(treatmentPlanId);
-			setFormStageNumber(stageNumber);
-			setFormStageTitle(stageTitle);
-			setFormStageId(stageId);
-		}
+		const now = new Date();
+		setFormPatientName(editingOrder?.patientName ?? currentPatientName ?? "");
+		setFormDoctorName(editingOrder?.doctorName ?? currentDoctorName ?? "Д-р Орлов А.В. (Ортопед)");
+		setFormLabName(editingOrder?.labName ?? "CAD/CAM Центр Дентал-Мастер");
+		setFormTechnicianName(editingOrder?.technicianName ?? "");
+		setFormTeethInput(editingOrder ? editingOrder.teethFdi.join(", ") : currentToothNumber ? String(currentToothNumber) : "16");
+		setFormConstruction(editingOrder?.constructionType ?? "crown_zirconia");
+		setFormVitaShade(editingOrder?.vitaShade ?? "A2");
+		setFormTranslucency(editingOrder?.translucency ?? "MT");
+		setFormStumpShade(editingOrder?.stumpShade ?? "ND2");
+		setFormSentDate(editingOrder?.sentDate ?? toIsoDate(now));
+		setFormDeadlineDate(editingOrder?.deadlineDate ?? toIsoDate(addWorkingDaysRu(now, 5)));
+		setFormScheduledVisit(editingOrder?.scheduledVisitDate ?? "");
+		setFormPatientPriceRub(editingOrder ? editingOrder.patientPriceKopecks / 100 : 24000);
+		setFormZtlCostRub(editingOrder ? editingOrder.ztlCostKopecks / 100 : 7500);
+		setFormDoctorPercent(editingOrder?.doctorSharePercent ?? 20);
+		setFormClinicalNotes(editingOrder?.clinicalNotes ?? "");
+		setFormStatus(editingOrder?.status ?? "sent_to_lab");
+		setFormTreatmentPlanId(editingOrder?.treatmentPlanId ?? treatmentPlanId);
+		setFormStageNumber(editingOrder?.stageNumber ?? stageNumber);
+		setFormStageTitle(editingOrder?.stageTitle ?? stageTitle);
+		setFormStageId(editingOrder?.stageId ?? stageId);
 	}, [editingOrder, currentPatientName, currentDoctorName, currentToothNumber, treatmentPlanId, stageNumber, stageTitle, stageId, isOpen]);
 
 	// Детекция коллизии: визит примерки назначен раньше готовности ЗТЛ

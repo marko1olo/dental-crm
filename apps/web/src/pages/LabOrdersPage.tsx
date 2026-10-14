@@ -5,7 +5,7 @@ import {
 	type DentalLabConstructionType,
 	formatLabConstructionTitle,
 } from "../components/lab/dentalLabDefinitions";
-import { DentalLabOrdersView } from "../components/dental-lab/DentalLabOrdersView";
+import { DentalLabOrdersView } from "../components/lab/DentalLabOrdersView";
 import {
 	LabActionPromptModal,
 	type LabPromptDialogState,

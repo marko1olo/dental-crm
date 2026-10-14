@@ -1,50 +1,22 @@
 import React, { useState, useCallback, useId, useEffect, useRef } from "react";
-import {
-	CheckCircle2,
-	ShieldCheck,
-	FileText,
-	ArrowRight,
-	ExternalLink,
-	Check,
-	Send,
-	Camera,
-	RotateCcw,
-	X,
-} from "lucide-react";
+import { CheckCircle2, ShieldCheck, FileText, ArrowRight, ExternalLink, Check, Send, Camera, RotateCcw, X } from "lucide-react";
 import { DentalCrown, DentalVeneer, DentalBridge } from "../icons/DentalIcons.js";
 import {
-	ORTHOPEDIC_CANONICAL_PROTOCOLS,
-	applyOrthopedicProtocolToVisit,
-	createDoctorClinicalOverride,
-	type OrthopedicProtocolPreset,
-	type FormatOrthopedicProtocolOptions,
-	type Order804nServiceItem,
+	ORTHOPEDIC_CANONICAL_PROTOCOLS, applyOrthopedicProtocolToVisit, createDoctorClinicalOverride,
+	type OrthopedicProtocolPreset, type FormatOrthopedicProtocolOptions, type Order804nServiceItem,
 } from "./orthopedicProtocols.js";
 import { showToast } from "../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
-import {
-	CANONICAL_MANUFACTURING_5_STAGES,
-	type CanonicalManufacturing5StageItem,
-} from "../lab/labMath.js";
+import { CANONICAL_MANUFACTURING_5_STAGES, type CanonicalManufacturing5StageItem } from "../lab/labMath.js";
 import { formatLabReadinessIndicator } from "@dental/shared";
-import {
-	DentalLabReadyInClinicModal,
-	type ReadyInClinicLabOrder,
-} from "../lab/DentalLabReadyInClinicModal";
+import { DentalLabReadyInClinicModal, type ReadyInClinicLabOrder } from "../lab/DentalLabReadyInClinicModal";
 
 export {
-	type StandardZtlPreset,
-	STANDARD_ZTL_ORDER_PRESETS,
-	type PreparationMarginPreset,
-	PREPARATION_MARGIN_PRESETS,
+	type StandardZtlPreset, STANDARD_ZTL_ORDER_PRESETS,
+	type PreparationMarginPreset, PREPARATION_MARGIN_PRESETS,
 	VITA_3D_MASTER_SHADE_GROUPS,
 } from "./orthopedicsPresets.js";
-import {
-	type StandardZtlPreset,
-	STANDARD_ZTL_ORDER_PRESETS,
-	PREPARATION_MARGIN_PRESETS,
-	FIXATION_TYPE_PRESETS,
-} from "./orthopedicsPresets.js";
+import { STANDARD_ZTL_ORDER_PRESETS, PREPARATION_MARGIN_PRESETS, FIXATION_TYPE_PRESETS } from "./orthopedicsPresets.js";
 import { OrthopedicsProtocolsGrid } from "./OrthopedicsProtocolsGrid.js";
 import { OrthopedicsVitaShadePicker } from "./OrthopedicsVitaShadePicker.js";
 import { OrthopedicsZtlSelectors } from "./OrthopedicsZtlSelectors.js";
@@ -86,39 +58,19 @@ function calculateDueDateStr(days: number): string {
 }
 
 export function OrthopedicsChairsidePanel({
-	patientId,
-	activeToothFdi,
-	selectedTeeth = [],
-	recentToothXrayUrl,
-	initialLabOrder,
-	onConfirmFitting,
-	onToothSelect,
-	onOpenLabOrder,
-	onAddToInvoice,
-	isLocked = false,
-	className = "",
+	patientId, activeToothFdi, selectedTeeth = [], recentToothXrayUrl,
+	initialLabOrder, onConfirmFitting, onToothSelect, onOpenLabOrder,
+	onAddToInvoice, isLocked = false, className = "",
 }: OrthopedicsChairsidePanelProps) {
 	const selectId = useId();
 	const [activeTeethInput, setActiveTeethInput] = useState<string>(
-		initialLabOrder?.toothFdi
-			? String(initialLabOrder.toothFdi)
-			: selectedTeeth.length > 0
-				? selectedTeeth.join(", ")
-				: activeToothFdi
-					? String(activeToothFdi)
-					: "16",
+		initialLabOrder?.toothFdi ? String(initialLabOrder.toothFdi) : selectedTeeth.length > 0 ? selectedTeeth.join(", ") : activeToothFdi ? String(activeToothFdi) : "16",
 	);
 
 	const [jawScope, setJawScope] = useState<"upper" | "lower" | "both" | "none">("none");
-	const [selectedMaterial, setSelectedMaterial] = useState<string>(
-		initialLabOrder?.material || "ZrO2 Multi-Layer",
-	);
-	const [selectedShade, setSelectedShade] = useState<string>(
-		initialLabOrder?.colorVita || "A2",
-	);
-	const [selectedStumpShade, setSelectedStumpShade] = useState<string>(
-		initialLabOrder?.stumpShade || "ND2",
-	);
+	const [selectedMaterial, setSelectedMaterial] = useState<string>(initialLabOrder?.material || "ZrO2 Multi-Layer");
+	const [selectedShade, setSelectedShade] = useState<string>(initialLabOrder?.colorVita || "A2");
+	const [selectedStumpShade, setSelectedStumpShade] = useState<string>(initialLabOrder?.stumpShade || "ND2");
 	const [appliedProtocolId, setAppliedProtocolId] = useState<string | null>(null);
 	const appliedProtocolTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -325,7 +277,9 @@ export function OrthopedicsChairsidePanel({
 			orderNumber,
 			createdAt: new Date().toISOString(),
 			teeth: teethParts.length > 0 ? teethParts : ["16"],
+			teethFdi: teethParts.length > 0 ? teethParts.join(", ") : "16",
 			jawScope: jawScope !== "none" ? jawScope : "upper",
+			construction: preset.constructionType,
 			constructionType: preset.constructionType,
 			material: selectedMaterial,
 			colorVita: selectedShade,
@@ -348,14 +302,17 @@ export function OrthopedicsChairsidePanel({
 			netMarginRub: isWarranty ? -ztlCostRub - materialsCostRub : netMarginRub,
 			marginPercent: isWarranty ? 0 : marginPercent,
 			dueDate,
-			doctorNotes: isWarranty
+			clinicalNotes: isWarranty
 				? `Гарантийная рекламация [${liabilityLabelRu}]. Для пациента: 0 ₽. Пресет: ${preset.name}. Оттенок: ${selectedShade}. Культя: ${selectedStumpShade}. Уступ: ${marginPreset?.labelRu ?? preparationMargin}. Фиксация: ${fixationPreset?.labelRu ?? fixationType}. Антагонисты: ${hasAntagonists ? "Да" : "Нет"}.`
 				: `Срочный 1-клик наряд ЗТЛ из кресла врача. Пресет: ${preset.name}. Оттенок: ${selectedShade}. Культя: ${selectedStumpShade}. Уступ: ${marginPreset?.labelRu ?? preparationMargin}. Фиксация: ${fixationPreset?.labelRu ?? fixationType}. Антагонисты: ${hasAntagonists ? "Да" : "Нет"}. Гарантия: ${preset.warrantyLabelRu}. Срок: ${dueDate}. Этап: ${effectiveStage?.shortLabelRu ?? "Слепок/Скан"}.`,
+			doctorNotes: "",
 			overrideActive: true,
 			overrideReason: overrideActive
 				? overrideReason
 				: "Исправленному верить: срочный наряд ЗТЛ при закрытом визите",
+			patientId: patientId || undefined,
 		};
+		labOrderPayload.doctorNotes = labOrderPayload.clinicalNotes;
 
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(
@@ -366,34 +323,6 @@ export function OrthopedicsChairsidePanel({
 		}
 
 		try {
-			const teethFdiStr = teethParts.length > 0 ? teethParts.join(", ") : "16";
-			const reqBody = {
-				orderNumber,
-				teethFdi: teethFdiStr,
-				construction: preset.constructionType,
-				material: selectedMaterial,
-				colorVita: selectedShade,
-				stumpShade: selectedStumpShade,
-				fixationType,
-				fixationTypeLabel: fixationPreset?.labelRu ?? fixationType,
-				hasAntagonists,
-				stage: selectedStageId,
-				techStage: labOrderPayload.techStage,
-				preparationMargin,
-				dueDate,
-				attachedImageUrl: activeXrayUrl || undefined,
-				warrantyMonths: preset.warrantyMonths,
-				warrantyLabelRu: preset.warrantyLabelRu,
-				isWarrantyRework: isWarranty,
-				warrantyLiabilityType: isWarranty ? warrantyLiabilityType : undefined,
-				priceRub: isWarranty ? 0 : grossPriceRub,
-				costRub: isWarranty ? 0 : ztlCostRub,
-				clinicalNotes: labOrderPayload.doctorNotes,
-				overrideActive: true,
-				overrideReason: labOrderPayload.overrideReason,
-				patientId: patientId || undefined,
-			};
-
 			const headers = denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
 			});
@@ -401,7 +330,7 @@ export function OrthopedicsChairsidePanel({
 			let res = await fetch("/api/lab/orders", {
 				method: "POST",
 				headers,
-				body: JSON.stringify(reqBody),
+				body: JSON.stringify(labOrderPayload),
 			});
 
 			if (res.status === 404) {

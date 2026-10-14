@@ -102,4 +102,36 @@ export {
 
 // Helper utilities & Math
 export * from "./labMath";
+export { generateBarcodeSvg, generateQrCodeSvg } from "./labMath";
 export * from "./guestLabPortalHelpers";
+
+// Dispatch, Timelines & Matrix
+export {
+	DentalLabOrdersView,
+	type DentalLabOrdersViewProps,
+} from "./DentalLabOrdersView";
+export {
+	DentalLabCourierDispatchBar,
+	type DentalLabCourierDispatchBarProps,
+} from "./DentalLabCourierDispatchBar";
+export {
+	DentalLabPriceMatrixModal,
+	type DentalLabPriceMatrixModalProps,
+	type LabPriceMatrixItem,
+} from "./DentalLabPriceMatrixModal";
+export {
+	DentalLabStageTrackingTimeline,
+	type DentalLabStageTrackingTimelineProps,
+} from "./DentalLabStageTrackingTimeline";
+export {
+	LabAttachScanModal,
+	is3DScanUrl,
+} from "./LabAttachScanModal";
+export {
+	LabActionPromptModal,
+	type LabPromptDialogState,
+} from "./LabActionPromptModal";
+export * from "./dentalLabWorkflowEngine";
+export * from "./dentalLabApiMapper";
+export * from "./ordersView";
+export * from "./mobile/MobileLabOrdersTimeline";

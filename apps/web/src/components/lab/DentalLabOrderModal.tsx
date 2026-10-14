@@ -65,13 +65,15 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 max-sm:p-0 bg-black/75 backdrop-blur-sm overflow-y-auto"
+			className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 max-sm:p-0 max-sm:items-end bg-black/75 backdrop-blur-sm overflow-y-auto max-w-[100vw] overflow-x-clip"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="dental-lab-modal-title"
 			data-testid="dental-lab-work-order-modal"
 		>
-			<div className="relative w-full max-w-5xl bg-[var(--paper)] border border-[var(--line)] rounded-2xl max-sm:rounded-none shadow-2xl overflow-hidden flex flex-col max-h-[92vh] max-sm:h-full max-sm:max-h-full">
+			<div className="relative w-full max-w-5xl bg-[var(--paper)] border border-[var(--line)] rounded-2xl max-sm:rounded-t-[24px] max-sm:rounded-b-none shadow-2xl overflow-hidden flex flex-col max-h-[92vh] max-sm:max-h-[94vh] max-w-[100vw] overflow-x-clip">
+				{/* Apple HIG Drag Handle on Mobile (36x5px) */}
+				<div className="sm:hidden w-9 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mt-2.5 mb-1 shrink-0" aria-hidden="true" />
 				
 				{/* ─── MODAL HEADER ──────────────────────────────────────────────── */}
 				<div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-[var(--line)] bg-[var(--paper-soft)] gap-2">

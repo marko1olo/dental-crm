@@ -162,6 +162,11 @@ export function OrthopedicPassportA4Modal({
 						display: none !important;
 					}
 				}
+				@media (max-width: 640px) {
+					.passport-desktop-action {
+						display: none !important;
+					}
+				}
 			`}</style>
 
 			{/* Modal Container: On Mobile = Native Bottom Sheet (rounded-t-[24px]) */}
@@ -171,13 +176,13 @@ export function OrthopedicPassportA4Modal({
 
 				{/* Header Actions Toolbar */}
 				<div className="flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3.5 border-b border-[var(--line,#e2e8f0)] bg-slate-50 dark:bg-slate-800/60 no-print shrink-0">
-					<div className="flex items-center gap-2 min-w-0">
+					<div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
 						<div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
 							<Award size={18} />
 						</div>
-						<div className="min-w-0">
+						<div className="min-w-0 flex-1">
 							<h3 id="passport-modal-title" className="text-xs sm:text-sm font-bold truncate text-slate-900 dark:text-slate-100">
-								Паспорт ортопедической конструкции и гарантийный талон
+								Паспорт ортопедической конструкции
 							</h3>
 							<p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate">
 								{passportNumber} · Зуб FDI {passport.toothFdi}
@@ -189,17 +194,17 @@ export function OrthopedicPassportA4Modal({
 						<button
 							type="button"
 							onClick={handleCopyText}
-							className="min-h-[44px] sm:min-h-[36px] px-2.5 sm:px-3 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+							className="passport-desktop-action hidden sm:inline-flex min-h-[36px] px-3 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 items-center gap-1.5 transition-colors cursor-pointer"
 							data-testid="passport-copy-btn"
 							title="Скопировать текстовую версию паспорта"
 						>
 							<Copy size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-							<span className="hidden sm:inline">Скопировать</span>
+							<span>Скопировать</span>
 						</button>
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="min-h-[44px] sm:min-h-[36px] px-3 sm:px-3.5 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-700 text-white inline-flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+							className="passport-desktop-action hidden sm:inline-flex min-h-[36px] px-3.5 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-700 text-white items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
 							data-testid="passport-print-btn"
 							title="Распечатать официальный бланк формата А4"
 						>
@@ -227,13 +232,13 @@ export function OrthopedicPassportA4Modal({
 						data-testid="passport-a4-sheet"
 					>
 						{/* Document Header */}
-						<div className="border-b-2 border-teal-600 pb-4 mb-5 flex flex-wrap items-start justify-between gap-4">
+						<div className="border-b-2 border-teal-600 pb-4 mb-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
 							<div className="min-w-0 flex-1">
 								<div className="flex items-center gap-2 text-teal-700 dark:text-teal-400 font-bold text-xs uppercase tracking-wider mb-1">
 									<Building2 size={14} />
 									<span>{clinicName}</span>
 								</div>
-								<h1 className="text-base sm:text-xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
+								<h1 className="text-sm sm:text-xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
 									ПАСПОРТ ОРТОПЕДИЧЕСКОЙ КОНСТРУКЦИИ
 								</h1>
 								<h2 className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 mt-0.5">
@@ -241,7 +246,7 @@ export function OrthopedicPassportA4Modal({
 								</h2>
 							</div>
 
-							<div className="text-right text-xs shrink-0 font-mono text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg p-2 bg-slate-50 dark:bg-slate-800/60">
+							<div className="text-left sm:text-right text-xs shrink-0 font-mono text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg p-2 bg-slate-50 dark:bg-slate-800/60">
 								<div>Дата выдачи: <strong className="text-slate-900 dark:text-slate-100">{issueDate}</strong></div>
 								<div>Статус: <strong className="text-emerald-600 dark:text-emerald-400">ПОСТОЯННАЯ ФИКСАЦИЯ</strong></div>
 							</div>

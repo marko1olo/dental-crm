@@ -53,13 +53,18 @@ export function OrthopedicsChairsideTopBar({
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-2.5 pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
 			<div className="flex items-center gap-2">
-				<DentalCrown size={20} className="text-teal-600 dark:text-teal-400" />
+				<DentalCrown size={20} className="text-teal-600 dark:text-teal-400 shrink-0" />
 				<div className="leading-tight">
-					<h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-						Ортопедия у кресла (043/у · Этап 3 · ЗТЛ)
-					</h3>
-					<p className="text-xs text-slate-600 dark:text-slate-300">
-						Клинические протоколы · Заполнение дневника 043/у
+					<div className="flex items-center gap-2">
+						<h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+							Ортопедический протокол у кресла
+						</h3>
+						<span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300">
+							043/у
+						</span>
+					</div>
+					<p className="text-xs text-slate-600 dark:text-slate-400">
+						Клинические протоколы · Оттенки VITA · Наряды ЗТЛ
 					</p>
 				</div>
 			</div>
@@ -115,42 +120,50 @@ export function OrthopedicsChairsideTopBar({
 					)}
 				</div>
 
-				<div className="flex items-center rounded-lg border border-slate-300 dark:border-slate-700 overflow-hidden text-xs shrink-0">
+				<div
+					className="p-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-slate-300/80 dark:border-slate-700 inline-flex items-center gap-1 shrink-0"
+					data-testid="jaw-scope-selector"
+					role="group"
+					aria-label="Область челюсти"
+				>
 					<button
 						type="button"
 						onClick={() => onChangeJawScope(jawScope === "upper" ? "none" : "upper")}
-						className={`min-h-[48px] min-w-fit px-3 font-bold cursor-pointer transition-colors whitespace-nowrap ${
+						className={`min-h-[44px] sm:min-h-[36px] px-2.5 sm:px-3 text-xs font-semibold rounded-md transition-all cursor-pointer whitespace-nowrap ${
 							jawScope === "upper"
-								? "bg-teal-600 text-white"
-								: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
+								? "bg-teal-600 text-white shadow-xs font-bold"
+								: "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/60"
 						}`}
-						title="Верхняя челюсть"
+						title="Верхняя челюсть (ВЧ)"
+						data-testid="jaw-scope-upper-btn"
 					>
 						ВЧ
 					</button>
 					<button
 						type="button"
 						onClick={() => onChangeJawScope(jawScope === "lower" ? "none" : "lower")}
-						className={`min-h-[48px] min-w-fit px-3 font-bold cursor-pointer transition-colors border-l border-slate-300 dark:border-slate-700 whitespace-nowrap ${
+						className={`min-h-[44px] sm:min-h-[36px] px-2.5 sm:px-3 text-xs font-semibold rounded-md transition-all cursor-pointer whitespace-nowrap ${
 							jawScope === "lower"
-								? "bg-teal-600 text-white"
-								: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
+								? "bg-teal-600 text-white shadow-xs font-bold"
+								: "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/60"
 						}`}
-						title="Нижняя челюсть"
+						title="Нижняя челюсть (НЧ)"
+						data-testid="jaw-scope-lower-btn"
 					>
 						НЧ
 					</button>
 					<button
 						type="button"
 						onClick={() => onChangeJawScope(jawScope === "both" ? "none" : "both")}
-						className={`min-h-[48px] min-w-fit px-3 font-bold cursor-pointer transition-colors border-l border-slate-300 dark:border-slate-700 whitespace-nowrap ${
+						className={`min-h-[44px] sm:min-h-[36px] px-2.5 sm:px-3 text-xs font-semibold rounded-md transition-all cursor-pointer whitespace-nowrap ${
 							jawScope === "both"
-								? "bg-teal-600 text-white"
-								: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
+								? "bg-teal-600 text-white shadow-xs font-bold"
+								: "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/60"
 						}`}
-						title="Вся челюсть (обе челюсти)"
+						title="Обе челюсти"
+						data-testid="jaw-scope-both-btn"
 					>
-						Вся челюсть
+						Обе
 					</button>
 				</div>
 
@@ -256,9 +269,17 @@ export function OrthopedicsChairsideLabOrderBanner({
 				>
 					<Check size={16} />
 					<span>
-						{fittingConfirmed
-							? "Примерка и фиксация подтверждены (A16.07.004)"
-							: "Подтвердить примерку / фиксацию (A16.07.004)"}
+						{fittingConfirmed ? (
+							<>
+								<span className="hidden sm:inline">Примерка и фиксация подтверждены (A16.07.004)</span>
+								<span className="sm:hidden">Фиксация (A16.07.004)</span>
+							</>
+						) : (
+							<>
+								<span className="hidden sm:inline">Подтвердить примерку / фиксацию (A16.07.004)</span>
+								<span className="sm:hidden">Фиксация (A16.07.004)</span>
+							</>
+						)}
 					</span>
 				</button>
 			</div>

@@ -242,6 +242,33 @@ export async function executeSaveLabOrder(params: SaveLabOrderParams): Promise<v
 				window.dispatchEvent(new CustomEvent("dente-open-quick-booking", { detail: appointmentDraft }));
 			} catch { /* quota fallback */ }
 		}
+
+		if (params.includeImpressionBilling && !isExistingOrder) {
+			const orgId = typeof window.localStorage !== "undefined"
+				? window.localStorage.getItem("dente_organization_id") || "00000000-0000-0000-0000-000000000001"
+				: "00000000-0000-0000-0000-000000000001";
+			fetch(`/api/inventory/${orgId}/quick-writeoff-orthopedic`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+				body: JSON.stringify({
+					protocolId: params.impressionType === "digital_scan" ? "ortho_digital_scan_impression" : "ortho_impression_silicone",
+					toothNumber: params.selectedTeeth.length > 0 ? params.selectedTeeth[0] : null,
+					notes: `Автосписание материалов слепка по наряду ЗТЛ ${params.gostOrderNumber}`,
+				}),
+			})
+				.then((r) => (r.ok ? r.json() : null))
+				.then((data) => {
+					if (data?.deductedItems?.length) {
+						const overdraftNote = data.isOverdraft ? " (мягкий овердрафт склада)" : "";
+						showToast(
+							`Склад: списаны материалы слепка (${data.deductedItems.length} поз.)${overdraftNote}`,
+							data.isOverdraft ? "warning" : "info",
+							3000,
+						);
+					}
+				})
+				.catch(() => {});
+		}
 	}
 
 	params.onClose();

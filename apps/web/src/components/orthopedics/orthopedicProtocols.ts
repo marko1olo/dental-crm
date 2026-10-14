@@ -48,39 +48,16 @@ export const VITA_BLEACH_SHADES = ["BL1", "BL2", "BL3", "BL4"] as const;
 export type VitaBleachShade = (typeof VITA_BLEACH_SHADES)[number];
 
 export const VITA_CLASSICAL_SHADES = [
-	"A1", "A2", "A3", "A3.5", "A4",
-	"B1", "B2", "B3", "B4",
-	"C1", "C2", "C3", "C4",
-	"D2", "D3", "D4",
+	"A1", "A2", "A3", "A3.5", "A4", "B1", "B2", "B3", "B4", "C1", "C2", "C3", "C4", "D2", "D3", "D4",
 ] as const;
 export type VitaClassicalShade = (typeof VITA_CLASSICAL_SHADES)[number];
 
 export const VITA_SHADE_GROUPS = [
-	{
-		group: "Bleach",
-		labelRu: "Bleach (Экстра-белые)",
-		shades: ["BL1", "BL2", "BL3", "BL4"] as const,
-	},
-	{
-		group: "A",
-		labelRu: "Группа A (Красновато-коричневые)",
-		shades: ["A1", "A2", "A3", "A3.5", "A4"] as const,
-	},
-	{
-		group: "B",
-		labelRu: "Группа B (Красновато-желтые)",
-		shades: ["B1", "B2", "B3", "B4"] as const,
-	},
-	{
-		group: "C",
-		labelRu: "Группа C (Серые)",
-		shades: ["C1", "C2", "C3", "C4"] as const,
-	},
-	{
-		group: "D",
-		labelRu: "Группа D (Красновато-серые)",
-		shades: ["D2", "D3", "D4"] as const,
-	},
+	{ group: "Bleach", labelRu: "Bleach (Экстра-белые)", shades: ["BL1", "BL2", "BL3", "BL4"] as const },
+	{ group: "A", labelRu: "Группа A (Красновато-коричневые)", shades: ["A1", "A2", "A3", "A3.5", "A4"] as const },
+	{ group: "B", labelRu: "Группа B (Красновато-желтые)", shades: ["B1", "B2", "B3", "B4"] as const },
+	{ group: "C", labelRu: "Группа C (Серые)", shades: ["C1", "C2", "C3", "C4"] as const },
+	{ group: "D", labelRu: "Группа D (Красновато-серые)", shades: ["D2", "D3", "D4"] as const },
 ] as const;
 
 export const ALL_VITA_AND_BLEACH_SHADES = [
@@ -130,55 +107,13 @@ export const ORTHOPEDIC_CANONICAL_PROTOCOLS: readonly OrthopedicProtocolPreset[]
 		recommendations:
 			"Щадящий режим жевания 2 часа. Соблюдение гигиены щеткой и флоссом. Гарантийный талон и паспорт изделия выданы пациенту на руки. Контрольный осмотр через 6 месяцев.",
 		order804nServices: [
-			{
-				code: "A16.07.004",
-				nameRu: "Восстановление зуба коронкой (препарирование зуба под искусственную коронку)",
-				stageKind: "stage_3_orthopedics",
-				suggestedPriceRub: 4000,
-				priceRub: 4000,
-			},
-			{
-				code: "A16.07.031.001",
-				nameRu: "Снятие двухслойного оттиска прецизионным А-силиконом (Silagum / Express XT)",
-				stageKind: "stage_3_orthopedics",
-				suggestedPriceRub: 3500,
-				priceRub: 3500,
-			},
-			{
-				code: "A02.07.010",
-				nameRu: "Определение и фиксация центрального соотношения челюстей (окклюзионный силикон)",
-				stageKind: "stage_3_orthopedics",
-				suggestedPriceRub: 2000,
-				priceRub: 2000,
-			},
-			{
-				code: "A16.07.004.001",
-				nameRu: "Изготовление и фиксация временной коронки PMMA прямым методом у кресла (Protemp 4)",
-				stageKind: "stage_3_orthopedics",
-				suggestedPriceRub: 2500,
-				priceRub: 2500,
-			},
-			{
-				code: "A16.07.025",
-				nameRu: "Примерка ортопедической конструкции (коронки, каркаса, мостовидного протеза)",
-				stageKind: "stage_3_orthopedics",
-				suggestedPriceRub: 1500,
-				priceRub: 1500,
-			},
-			{
-				code: "A16.07.004.002",
-				nameRu: "Постоянная фиксация коронки на стеклоиономерный цемент Fuji Plus / RelyX U200",
-				stageKind: "stage_3_orthopedics",
-				suggestedPriceRub: 3000,
-				priceRub: 3000,
-			},
-			{
-				code: "A06.07.007",
-				nameRu: "Внутриротовой прицельный радиовизиографический снимок (контроль краевого прилегания и цемента)",
-				stageKind: "stage_3_orthopedics",
-				suggestedPriceRub: 750,
-				priceRub: 750,
-			},
+			{ code: "A16.07.004", nameRu: "Восстановление зуба коронкой (препарирование зуба под искусственную коронку)", stageKind: "stage_3_orthopedics", suggestedPriceRub: 4000, priceRub: 4000 },
+			{ code: "A16.07.031.001", nameRu: "Снятие двухслойного оттиска прецизионным А-силиконом (Silagum / Express XT)", stageKind: "stage_3_orthopedics", suggestedPriceRub: 3500, priceRub: 3500 },
+			{ code: "A02.07.010", nameRu: "Определение и фиксация центрального соотношения челюстей (окклюзионный силикон)", stageKind: "stage_3_orthopedics", suggestedPriceRub: 2000, priceRub: 2000 },
+			{ code: "A16.07.004.001", nameRu: "Изготовление и фиксация временной коронки PMMA прямым методом у кресла (Protemp 4)", stageKind: "stage_3_orthopedics", suggestedPriceRub: 2500, priceRub: 2500 },
+			{ code: "A16.07.025", nameRu: "Примерка ортопедической конструкции (коронки, каркаса, мостовидного протеза)", stageKind: "stage_3_orthopedics", suggestedPriceRub: 1500, priceRub: 1500 },
+			{ code: "A16.07.004.002", nameRu: "Постоянная фиксация коронки на стеклоиономерный цемент Fuji Plus / RelyX U200", stageKind: "stage_3_orthopedics", suggestedPriceRub: 3000, priceRub: 3000 },
+			{ code: "A06.07.007", nameRu: "Внутриротовой прицельный радиовизиографический снимок (контроль краевого прилегания и цемента)", stageKind: "stage_3_orthopedics", suggestedPriceRub: 750, priceRub: 750 },
 		],
 		warehouseBundleType: "orthopedics_prep",
 		quickWriteoffInventory: true,

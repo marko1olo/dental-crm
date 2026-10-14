@@ -320,10 +320,12 @@ export async function quickWriteoffVisitBundle(
 			{ patterns: ["temp-bond", "временный цемент"], defaultName: "Цемент временный Temp-Bond NE", category: "Ортопедические материалы", unit: "доза", qty: 1, defaultCost: "180.00" },
 		],
 		orthopedics_impression: [
-			{ patterns: ["а-силикон", "слепочн", "express", "honigum"], defaultName: "А-силикон прецизионный (база + корректор)", category: "Слепочные материалы", unit: "компл.", qty: 1, defaultCost: "1600.00" },
+			{ patterns: ["а-силикон", "elite hd", "elite hd+", "express", "honigum", "слепочн"], defaultName: "А-силикон Elite HD+ / Express XT (база + корректор)", category: "Слепочные материалы", unit: "компл.", qty: 1, defaultCost: "1600.00" },
+			{ patterns: ["альгинат", "hydrogum", "alginate", "phase plus"], defaultName: "Альгинатная слепочная масса Hydrogum / Phase Plus", category: "Слепочные материалы", unit: "порция", qty: 1, defaultCost: "320.00" },
+			{ patterns: ["скан-спрей", "scan spray", "спрей для сканирования"], defaultName: "Интраоральный скан-спрей 3D", category: "Расходные материалы", unit: "доза", qty: 1, defaultCost: "150.00" },
 			{ patterns: ["канюл", "смесительн"], defaultName: "Канюли смесительные с интраоральными насадками", category: "Расходные материалы", unit: "шт.", qty: 2, defaultCost: "45.00" },
 			{ patterns: ["окклюзион", "futar", "регистрац"], defaultName: "Окклюзионный силикон для регистрации прикуса (Futar D)", category: "Слепочные материалы", unit: "доза", qty: 1, defaultCost: "350.00" },
-			{ patterns: ["ложк", "слепочн"], defaultName: "Ложка слепочная перфорированная", category: "Расходные материалы", unit: "шт.", qty: 1, defaultCost: "60.00" },
+			{ patterns: ["ложк", "слепочн", "оттискн"], defaultName: "Ложка слепочная перфорированная / оттискная", category: "Расходные материалы", unit: "шт.", qty: 1, defaultCost: "60.00" },
 		],
 		orthopedics_temporary: [
 			{ patterns: ["luxatemp", "protemp", "временн"], defaultName: "Бис-акриловый композит Luxatemp Star / Protemp 4", category: "Ортопедические материалы", unit: "доза", qty: 1, defaultCost: "450.00" },

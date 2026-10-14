@@ -57,7 +57,7 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 	},
 	{
 		id: "bridge",
-		name: "Мостовидный протез",
+		name: "Мостовидный ZrO2",
 		material: "ZrO2 Bridge Multi-Layer",
 		constructionType: "bridge",
 		badge: "Мост ZrO2",
@@ -140,6 +140,8 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 export interface FixationTypePreset {
 	readonly id: "cement" | "screw" | "clasp";
 	readonly labelRu: string;
+	readonly titleRu: string;
+	readonly sublabelRu: string;
 	readonly shortBadge: string;
 	readonly description: string;
 }
@@ -147,19 +149,25 @@ export interface FixationTypePreset {
 export const FIXATION_TYPE_PRESETS: readonly FixationTypePreset[] = [
 	{
 		id: "cement",
-		labelRu: "Цементная фиксация (Fuji Plus / RelyX U200)",
+		labelRu: "Цементная",
+		titleRu: "Цементная",
+		sublabelRu: "Fuji Plus / RelyX U200",
 		shortBadge: "Цемент",
 		description: "Фиксация на стеклоиономерный цемент Fuji Plus или композитный цемент двойного отверждения RelyX",
 	},
 	{
 		id: "screw",
-		labelRu: "Винтовая фиксация (Multi-Unit 15–35 Н·см)",
+		labelRu: "Винтовая",
+		titleRu: "Винтовая",
+		sublabelRu: "Multi-Unit 15–35 Н·см",
 		shortBadge: "Винтовая",
 		description: "Прямая винтовая фиксация к мультиюнитам или абатментам с контролем динамометрическим ключом",
 	},
 	{
 		id: "clasp",
-		labelRu: "Кламмерная / Замковая фиксация (Bredent / МК-1)",
+		labelRu: "Кламмерная / Замковая",
+		titleRu: "Кламмерная / Замковая",
+		sublabelRu: "Опорно-удерживающие замки / Bredent",
 		shortBadge: "Замки/Кламмеры",
 		description: "Опорно-удерживающие кламмеры или прецизионные микрозамковые крепления",
 	},
