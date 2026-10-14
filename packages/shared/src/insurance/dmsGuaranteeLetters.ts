@@ -170,11 +170,15 @@ export function findDmsInsuranceCompanyByInn(inn: string): DmsInsuranceCompany |
 }
 
 export type DmsGuaranteeLetterStatus =
+	| "draft"
+	| "pending_approval"
+	| "approved"
 	| "active"
+	| "billed"
+	| "paid"
 	| "exhausted"
 	| "expired"
-	| "cancelled"
-	| "pending_approval";
+	| "cancelled";
 
 export interface DmsLetterTransaction {
 	readonly id: string;
@@ -242,7 +246,17 @@ export const dmsGuaranteeLetterSchema = z.object({
 	defaultFranchisePercent: z.number().int().min(0).max(100),
 	allowed804nPrefixes: z.array(z.string()).optional(),
 	excluded804nCodes: z.array(z.string()).optional(),
-	status: z.enum(["active", "exhausted", "expired", "cancelled", "pending_approval"]),
+	status: z.enum([
+		"draft",
+		"pending_approval",
+		"approved",
+		"active",
+		"billed",
+		"paid",
+		"exhausted",
+		"expired",
+		"cancelled",
+	]),
 	notes: z.string().optional(),
 });
 
@@ -341,13 +355,17 @@ export function evaluateGuaranteeLetterCoverage(
 	}
 
 	// 1. Status Check
-	if (letter.status !== "active") {
+	if (letter.status !== "active" && letter.status !== "approved") {
 		const statusLabels: Record<DmsGuaranteeLetterStatus, string> = {
+			draft: "Черновик (гарантия в пути)",
+			pending_approval: "На согласовании в страховой",
+			approved: "Согласовано",
 			active: "Действует",
+			billed: "Счёт выставлен",
+			paid: "Оплачено",
 			exhausted: "Лимит полностью исчерпан",
 			expired: "Срок действия истек",
 			cancelled: "Гарантийное письмо аннулировано",
-			pending_approval: "На согласовании в страховой",
 		};
 		return {
 			letterId: letter.id,

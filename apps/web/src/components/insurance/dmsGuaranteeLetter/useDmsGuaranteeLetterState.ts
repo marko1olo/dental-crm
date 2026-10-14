@@ -182,7 +182,7 @@ export function useDmsGuaranteeLetterState({
 			? Math.min(100, Math.round((usedAmountRub / maxCoverageRub) * 100))
 			: 0;
 
-	const letterForSplit: any = useMemo(
+	const letterForSplit: SplitEngineGuaranteeLetter = useMemo(
 		() => ({
 			id: initialLetter?.id || "preview-letter",
 			patientId: patient?.id || "preview-patient",
@@ -203,7 +203,7 @@ export function useDmsGuaranteeLetterState({
 			approvedServiceCodes804n: approvedServiceCodes,
 			programExclusions: selectedExclusions,
 			notes,
-			status: status as any,
+			status,
 		}),
 		[
 			initialLetter?.id,
@@ -368,11 +368,11 @@ export function useDmsGuaranteeLetterState({
 			approvedServiceCodes,
 			approvedDiagnosisCodes,
 			notes: resolvedNotes,
-			status: status as any,
+			status,
 		};
 	};
 
-	const persistLetterToBackend = (letter: any) => {
+	const persistLetterToBackend = (letter: DmsGuaranteeLetter) => {
 		if (!patient?.id) return;
 		saveGuaranteeLetterToApi({
 			id: initialLetter?.id,
@@ -395,7 +395,7 @@ export function useDmsGuaranteeLetterState({
 			approvedServiceCodes: letter.approvedServiceCodes,
 			approvedDiagnosisCodes: letter.approvedDiagnosisCodes,
 			notes: letter.notes,
-			status: letter.status as any,
+			status: letter.status,
 		}).catch(() => {});
 	};
 
@@ -449,7 +449,7 @@ export function useDmsGuaranteeLetterState({
 
 	const handleSendPreAuthRequest = () => {
 		setStatus("pending_approval");
-		const letter = { ...buildCurrentLetter(), status: "pending_approval" as any };
+		const letter: DmsGuaranteeLetter = { ...buildCurrentLetter(), status: "pending_approval" };
 		persistLetterToBackend(letter);
 
 		if (typeof window !== "undefined") {

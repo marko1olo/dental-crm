@@ -5,6 +5,7 @@
 import { Calculator } from "lucide-react";
 import React, { useId } from "react";
 import { formatRubKopecks } from "./insuranceMath";
+import type { DmsLetterLifecycleStatus } from "./dmsGuaranteeLetter/types";
 
 export interface DmsLimitsAndFranchiseSectionProps {
 	readonly maxCoverageRub: number;
@@ -13,13 +14,13 @@ export interface DmsLimitsAndFranchiseSectionProps {
 	readonly franchiseType: "percent" | "fixed_rub";
 	readonly franchisePct: number;
 	readonly franchiseFixedRub: number;
-	readonly status: "active" | "expired" | "exhausted" | "cancelled";
+	readonly status: DmsLetterLifecycleStatus;
 	readonly onMaxCoverageChange: (val: number) => void;
 	readonly onUsedAmountChange: (val: number) => void;
 	readonly onFranchiseTypeChange: (val: "percent" | "fixed_rub") => void;
 	readonly onFranchisePctChange: (val: number) => void;
 	readonly onFranchiseFixedRubChange: (val: number) => void;
-	readonly onStatusChange: (val: "active" | "expired" | "exhausted" | "cancelled") => void;
+	readonly onStatusChange: (val: DmsLetterLifecycleStatus) => void;
 }
 
 export function DmsLimitsAndFranchiseSection({
@@ -134,12 +135,18 @@ export function DmsLimitsAndFranchiseSection({
 					<select
 						id={statusSelectId}
 						value={status}
-						onChange={(e) => onStatusChange(e.target.value as "active" | "expired" | "exhausted" | "cancelled")}
+						onChange={(e) => onStatusChange(e.target.value as DmsLetterLifecycleStatus)}
 						className="dms-select"
+						data-testid="select-guarantee-letter-status"
 					>
+						<option value="draft">Черновик (подготовка)</option>
+						<option value="pending_approval">На согласовании (запрос куратору)</option>
+						<option value="approved">Согласовано куратором</option>
 						<option value="active">Активно (в работе)</option>
+						<option value="billed">Счёт выставлен в СК</option>
+						<option value="paid">Оплачено страховой компанией</option>
 						<option value="exhausted">Исчерпан лимит</option>
-						<option value="expired">Истек срок действия</option>
+						<option value="expired">Истёк срок действия</option>
 						<option value="cancelled">Отозвано / Аннулировано</option>
 					</select>
 				</div>

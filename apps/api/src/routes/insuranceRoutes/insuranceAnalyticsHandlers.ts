@@ -150,7 +150,7 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 
 		const lettersByPatientId = new Map<string, typeof dmsGuaranteeLetters.$inferSelect>();
 		for (const letter of letters) {
-			if (!lettersByPatientId.has(letter.patientId) || letter.status === "active") {
+			if (!lettersByPatientId.has(letter.patientId) || letter.status === "active" || letter.status === "approved") {
 				lettersByPatientId.set(letter.patientId, letter);
 			}
 		}

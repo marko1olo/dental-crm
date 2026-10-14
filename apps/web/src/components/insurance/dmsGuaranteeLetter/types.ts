@@ -42,7 +42,16 @@ export {
 	mapBackendLetterToPatientGuaranteeLetter,
 };
 
-export type DmsLetterLifecycleStatus = "active" | "expired" | "exhausted" | "cancelled";
+export type DmsLetterLifecycleStatus =
+	| "draft"
+	| "pending_approval"
+	| "approved"
+	| "active"
+	| "billed"
+	| "paid"
+	| "exhausted"
+	| "expired"
+	| "cancelled";
 export type DmsFranchiseKind = "percent" | "fixed_rub";
 
 export interface QuickInsurerChipItem {

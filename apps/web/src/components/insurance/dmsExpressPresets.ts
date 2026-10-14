@@ -31,7 +31,16 @@ export interface PatientGuaranteeLetter {
 	readonly curatorPhone: string;
 	readonly curatorEmail?: string | undefined;
 	readonly notes?: string | undefined;
-	readonly status: "active" | "exhausted" | "expired" | "cancelled";
+	readonly status:
+		| "draft"
+		| "pending_approval"
+		| "approved"
+		| "active"
+		| "billed"
+		| "paid"
+		| "exhausted"
+		| "expired"
+		| "cancelled";
 }
 
 /** Преобразование ответа бэкенда в модель интерфейса гарантийного письма */

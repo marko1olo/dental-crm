@@ -74,7 +74,7 @@ export function calculateDmsGuaranteeSplit(
 	const letterUsedKop = Math.max(0, Math.round(usedAmountRub * 100));
 	let remainingLetterKop = letterMaxKop != null ? Math.max(0, letterMaxKop - letterUsedKop) : null;
 
-	const isLetterActive = letter ? letter.status === "active" : false;
+	const isLetterActive = letter ? (letter.status === "active" || letter.status === "approved") : false;
 	const isExpired = letter && options.visitDate && letter.validUntil
 		? options.visitDate > letter.validUntil
 		: false;

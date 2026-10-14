@@ -24,7 +24,12 @@ export type DmsProgramKey =
 	| "economy_emergency_only";
 
 export type DmsGuaranteeLetterStatus =
+	| "draft"
+	| "pending_approval"
+	| "approved"
 	| "active"
+	| "billed"
+	| "paid"
 	| "exhausted"
 	| "expired"
 	| "cancelled";
@@ -686,7 +691,7 @@ export async function saveGuaranteeLetterToApi(letter: {
 	readonly approvedTeethFdi?: readonly string[] | undefined;
 	readonly approvedDiagnosisCodes?: readonly string[] | undefined;
 	readonly notes?: string | undefined;
-	readonly status?: "active" | "exhausted" | "expired" | "cancelled" | undefined;
+	readonly status?: DmsGuaranteeLetterStatus | undefined;
 }): Promise<{ ok: boolean; letter?: any; error?: string }> {
 	try {
 		const isUuid = typeof letter.id === "string" && /^[0-9a-fA-F-]{36}$/.test(letter.id);

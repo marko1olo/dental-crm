@@ -47,6 +47,8 @@ export const insuranceCreateBodySchema = z.object({
 	coverageOrthoPct: z.number().finite().optional(),
 	coverageHygienePct: z.number().finite().optional(),
 	annualLimitRub: z.number().finite().optional(),
+	patientFranchisePct: z.number().finite().min(0).max(100).optional(),
+	requiresGuaranteeLetter: z.boolean().optional(),
 });
 
 export type InsuranceCreateBody = z.infer<typeof insuranceCreateBodySchema>;
@@ -59,6 +61,8 @@ export const insuranceUpdateBodySchema = z.object({
 	coverageOrthoPct: z.number().finite().optional(),
 	coverageHygienePct: z.number().finite().optional(),
 	annualLimitRub: z.number().finite().nullable().optional(),
+	patientFranchisePct: z.number().finite().min(0).max(100).optional(),
+	requiresGuaranteeLetter: z.boolean().optional(),
 	isActive: z.boolean().optional(),
 });
 
@@ -96,3 +100,42 @@ export const quickAttachBodySchema = z.object({
 });
 
 export type QuickAttachBody = z.infer<typeof quickAttachBodySchema>;
+
+export const transitionStatusBodySchema = z.object({
+	letterId: z.string().uuid("Некорректный ID гарантийного письма"),
+	status: z.enum([
+		"draft",
+		"pending_approval",
+		"approved",
+		"active",
+		"billed",
+		"paid",
+		"exhausted",
+		"expired",
+		"cancelled",
+	]),
+	notes: z.string().optional(),
+	resolutionReason: z.string().optional(),
+});
+
+export type TransitionStatusBody = z.infer<typeof transitionStatusBodySchema>;
+
+export const preAuthRequestBodySchema = z.object({
+	letterId: z.string().uuid().optional(),
+	patientId: z.string().uuid("Некорректный ID пациента"),
+	contractId: z.string().uuid().optional(),
+	insurerKey: z.string().optional(),
+	insurerName: z.string().optional(),
+	policyNumber: z.string().optional(),
+	patientFullName: z.string().optional(),
+	patientBirthDate: z.string().optional(),
+	curatorFullName: z.string().optional(),
+	curatorPhone: z.string().optional(),
+	serviceCodes: z.array(z.string()).optional(),
+	teethFdi: z.array(z.string()).optional(),
+	diagnosisCodes: z.array(z.string()).optional(),
+	estimatedCostRub: z.number().nonnegative().optional(),
+	notes: z.string().optional(),
+});
+
+export type PreAuthRequestBody = z.infer<typeof preAuthRequestBodySchema>;

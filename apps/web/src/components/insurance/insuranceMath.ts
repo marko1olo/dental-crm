@@ -373,7 +373,16 @@ export interface DmsGuaranteeLetter {
 	approvedServiceCodes: string[];
 	approvedDiagnosisCodes: string[];
 	notes: string;
-	status: "active" | "expired" | "exhausted" | "cancelled";
+	status:
+		| "draft"
+		| "pending_approval"
+		| "approved"
+		| "active"
+		| "billed"
+		| "paid"
+		| "exhausted"
+		| "expired"
+		| "cancelled";
 }
 
 /** Строка оказанной услуги для реестра ДМС */

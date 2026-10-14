@@ -4,37 +4,33 @@
  */
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { Plus, Minus, Trash2, Percent, ShieldCheck, Check, CreditCard, Printer, Tag, Zap, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Minus, Trash2, Percent, ShieldCheck, Check, CreditCard, Printer, Tag, Zap, ChevronDown, ChevronUp, Boxes } from "lucide-react";
 import { kopecksToRub, rubToKopecks } from "@dental/shared";
 import { showToast } from "../GlobalToast.js";
-import { PaymentModal } from "../finance/PaymentModal.js";
+import { VisitBillingModals } from "./VisitBillingModals.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../lib/demoMode.js";
 import { printVisitBillingEstimate } from "./visitBillingPrint.js";
 
 import {
-	type VisitBillingServiceItem,
-	type VisitBillingTotals,
-	type VisitServiceBillingWidgetProps,
-	DEFAULT_CHAIRSIDE_SERVICES,
-	DOCTOR_DISCOUNT_PRESETS,
+	type VisitBillingServiceItem, type VisitBillingTotals, type VisitServiceBillingWidgetProps,
+	DEFAULT_CHAIRSIDE_SERVICES, DOCTOR_DISCOUNT_PRESETS, syncBillingItemsToVisitStore,
 } from "./visitBillingTypes.js";
 export {
-	type VisitBillingServiceItem,
-	type VisitBillingTotals,
-	type VisitServiceBillingWidgetProps,
-	DEFAULT_CHAIRSIDE_SERVICES,
-	DOCTOR_DISCOUNT_PRESETS,
+	type VisitBillingServiceItem, type VisitBillingTotals, type VisitServiceBillingWidgetProps,
+	DEFAULT_CHAIRSIDE_SERVICES, DOCTOR_DISCOUNT_PRESETS, syncBillingItemsToVisitStore,
 };
 import { staffTelemetryService } from "../../services/logging/staffTelemetryService.js";
 import { ChairsideBillingItemRow } from "./ChairsideBillingItemRow";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
+import { pushDestructiveActionWithRollback } from "../../services/undo/globalUndoRollbackStack.js";
+import { useVisitStore } from "../../store/visitStore.js";
 
 export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps> = ({
 	visitId, patientId = "pat-walkin", patientName = "Пациент", patientPhone = "",
 	patientDepositRub = 0, patientFamilyBalanceRub = 0, doctorName = "Врач-стоматолог",
 	cashierName, clinicLegalName = "ООО «ДЕНТЕ»", initialServices, onServicesChange,
-	onSave, onOpenPayment, onAddBillingItem,
+	onSave, onOpenPayment, onPaymentSuccess, onAddBillingItem,
 	dmsGuaranteeLetterId, dmsGuaranteeLetterNumber, dmsInsurerName,
 	availableDmsCoverageRub, initialSplitDmsRub,
 	readOnly = false, className = "",
@@ -42,6 +38,20 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
 	const [services, setServices] = useState<VisitBillingServiceItem[]>(() => {
 		if (initialServices && initialServices.length > 0) return [...initialServices];
+		const storeItems = useVisitStore.getState().completedServices || [];
+		if (storeItems.length > 0) {
+			return storeItems.map((s, idx) => ({
+				id: s.serviceId || `store-svc-${idx}`,
+				code804n: s.code804n || "A16.07.002",
+				title: s.name || "Стоматологическая услуга",
+				toothCode: s.toothCode ?? (s.toothNumber ? String(s.toothNumber) : undefined),
+				quantity: s.quantity || 1,
+				unitPriceRub: s.priceRub || 0,
+				discountPercent: 0,
+				discountRub: 0,
+				isWarranty: false,
+			}));
+		}
 		if (isDemoShowcaseMode() || isDemoPatientId(patientId)) return [...DEFAULT_CHAIRSIDE_SERVICES];
 		return [];
 	});
@@ -51,6 +61,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 	const [globalDiscountReason, setGlobalDiscountReason] = useState<string>("");
 	const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
+	const [selectedBomService, setSelectedBomService] = useState<VisitBillingServiceItem | null>(null);
 	const [isDiscountPopoverOpen, setIsDiscountPopoverOpen] = useState<boolean>(false);
 	const discountPopoverRef = useRef<HTMLDivElement>(null);
 
@@ -70,11 +81,37 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 	}, [isDiscountPopoverOpen]);
 
 	const [activeDmsLetter, setActiveDmsLetter] = useState<{
-		id: string;
-		letterNumber: string;
-		insurerName: string;
-		availableCoverageRub: number;
+		id: string; letterNumber: string; insurerName: string; availableCoverageRub: number;
 	} | null>(null);
+	const [isDmsModalOpen, setIsDmsModalOpen] = useState<boolean>(false);
+
+	useEffect(() => {
+		const handleLetterAttached = (e: Event) => {
+			const customEvent = e as CustomEvent<{ letter?: any; patientId?: string }>;
+			const attached = customEvent.detail?.letter;
+			if (
+				attached &&
+				(!patientId ||
+					attached.patientId === patientId ||
+					attached.patientId === "pat-1" ||
+					attached.patientId === "pat-walkin")
+			) {
+				const maxCov = Number(attached.maxCoverageRub || 0);
+				const used = Number(attached.usedAmountRub || 0);
+				const available = Math.max(0, maxCov - used);
+				setActiveDmsLetter({
+					id: attached.id || "dms-letter-live",
+					letterNumber: attached.letterNumber || "ГП",
+					insurerName: attached.insurerName || "ДМС",
+					availableCoverageRub: available,
+				});
+			}
+		};
+		window.addEventListener("dente:dms-letter-attached", handleLetterAttached);
+		return () => {
+			window.removeEventListener("dente:dms-letter-attached", handleLetterAttached);
+		};
+	}, [patientId]);
 
 	useEffect(() => {
 		if (availableDmsCoverageRub !== undefined || !patientId || patientId === "pat-walkin" || isDemo) return;
@@ -87,21 +124,15 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 				if (!isMounted || !Array.isArray(letters) || letters.length === 0) return;
 				const active = letters.find((l: any) => l.status === "active") || letters[0];
 				if (active) {
-					const maxCoverage = Number(active.maxCoverageRub || 0);
-					const used = Number(active.usedAmountRub || 0);
-					const available = Math.max(0, maxCoverage - used);
+					const available = Math.max(0, Number(active.maxCoverageRub || 0) - Number(active.usedAmountRub || 0));
 					setActiveDmsLetter({
-						id: active.id,
-						letterNumber: active.letterNumber,
-						insurerName: active.insurerName,
-						availableCoverageRub: available,
+						id: active.id, letterNumber: active.letterNumber,
+						insurerName: active.insurerName, availableCoverageRub: available,
 					});
 				}
 			})
 			.catch(() => {});
-		return () => {
-			isMounted = false;
-		};
+		return () => { isMounted = false; };
 	}, [patientId, availableDmsCoverageRub, isDemo]);
 
 	const effectiveDmsId = dmsGuaranteeLetterId || activeDmsLetter?.id;
@@ -112,6 +143,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 	const updateServices = useCallback(
 		(newServices: VisitBillingServiceItem[]) => {
 			setServices(newServices);
+			syncBillingItemsToVisitStore(newServices);
 			onServicesChange?.(newServices);
 		},
 		[onServicesChange]
@@ -122,34 +154,17 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 		const handleAddServicesToInvoice = (e: Event) => {
 			const detail = (e as CustomEvent)?.detail;
 			if (!detail) return;
-			const rawList: any[] = Array.isArray(detail)
-				? detail
-				: Array.isArray(detail.services)
-				? detail.services
-				: Array.isArray(detail.items)
-				? detail.items
-				: detail.service
-				? [detail.service]
-				: [];
+			const rawList: any[] = Array.isArray(detail) ? detail : Array.isArray(detail.services) ? detail.services : Array.isArray(detail.items) ? detail.items : detail.service ? [detail.service] : [];
 			if (rawList.length === 0) return;
 
 			const newItems: VisitBillingServiceItem[] = rawList.map((s: any, idx: number) => {
-				const idSuffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-					? crypto.randomUUID().slice(0, 8)
-					: `${Date.now()}-${idx}`;
-				const priceRub = Number(
-					s.unitPriceRub ??
-					s.priceRub ??
-					s.price ??
-					(typeof s.priceKopecks === "number" ? s.priceKopecks / 100 : 0)
-				);
+				const idSuffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID().slice(0, 8) : `${Date.now()}-${idx}`;
+				const priceRub = Number(s.unitPriceRub ?? s.priceRub ?? s.price ?? (typeof s.priceKopecks === "number" ? s.priceKopecks / 100 : 0));
 				let tooth = s.toothCode ?? s.toothNumber ?? detail.toothCode ?? detail.toothNumber;
 				if (!tooth) {
 					const titleCandidate = s.title || s.name || s.nameRu || "";
 					const match = titleCandidate.match(/(?:\(?зуб(?:ы)?\s+([A-Za-z0-9,\s]+)\)?|^зуб(?:ы)?\s+([A-Za-z0-9,\s]+):)/i);
-					if (match) {
-						tooth = (match[1] || match[2] || "").trim();
-					}
+					if (match) tooth = (match[1] || match[2] || "").trim();
 				}
 				return {
 					id: s.id || `inv-svc-${Date.now()}-${idSuffix}`,
@@ -161,6 +176,13 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 					discountPercent: Number(s.discountPercent) || 0,
 					discountRub: Number(s.discountRub) || 0,
 					isWarranty: Boolean(s.isWarranty),
+					labCostRub: Number(s.labCostRub) > 0 ? Number(s.labCostRub) : undefined,
+					labOrderId: s.labOrderId || detail.labOrderId,
+					labOrderNumber: s.labOrderNumber || detail.labOrderNumber,
+					technicianName: s.technicianName || detail.technicianName,
+					materialName: s.materialName || s.material || detail.material,
+					warrantyPassport: s.warrantyPassport || detail.warrantyPassport,
+					fittingConfirmed: Boolean(s.fittingConfirmed),
 				};
 			});
 
@@ -171,6 +193,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 						prev.every((item, idx) => item.id === DEFAULT_CHAIRSIDE_SERVICES[idx]?.id));
 				const shouldReplace = Boolean(detail.replaceExisting) || isPlaceholder;
 				const next = shouldReplace ? newItems : [...prev, ...newItems];
+				syncBillingItemsToVisitStore(next);
 				onServicesChange?.(next);
 				return next;
 			});
@@ -179,10 +202,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 					try {
 						const toothNum = it.toothCode ? Number(it.toothCode) || undefined : undefined;
 						onAddBillingItem({
-							code804n: it.code804n,
-							title: it.title,
-							priceRub: it.unitPriceRub,
-							quantity: it.quantity,
+							code804n: it.code804n, title: it.title, priceRub: it.unitPriceRub, quantity: it.quantity,
 							...(toothNum !== undefined ? { toothNumber: toothNum } : {}),
 						});
 					} catch (cbErr) {
@@ -199,15 +219,12 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 			if (!detail) return;
 			const item = detail.item || detail;
 			const idSuffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-				? crypto.randomUUID().slice(0, 8)
-				: Date.now().toString(36);
+				? crypto.randomUUID().slice(0, 8) : Date.now().toString(36);
 			let tooth = item.toothNumber ? String(item.toothNumber) : item.toothCode;
 			if (!tooth) {
 				const titleCandidate = item.title || item.name || "";
 				const match = titleCandidate.match(/(?:\(?зуб(?:ы)?\s+([A-Za-z0-9,\s]+)\)?|^зуб(?:ы)?\s+([A-Za-z0-9,\s]+):)/i);
-				if (match) {
-					tooth = (match[1] || match[2] || "").trim();
-				}
+				if (match) tooth = (match[1] || match[2] || "").trim();
 			}
 			const newItem: VisitBillingServiceItem = {
 				id: `copilot-serv-${Date.now()}-${idSuffix}`,
@@ -216,9 +233,14 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 				toothCode: tooth ? String(tooth) : undefined,
 				quantity: item.quantity || 1,
 				unitPriceRub: Number(item.priceRub ?? item.unitPriceRub ?? item.basePriceRub ?? 0),
-				discountPercent: 0,
-				discountRub: 0,
-				isWarranty: false,
+				discountPercent: 0, discountRub: 0, isWarranty: false,
+				labCostRub: Number(item.labCostRub) > 0 ? Number(item.labCostRub) : undefined,
+				labOrderId: item.labOrderId,
+				labOrderNumber: item.labOrderNumber,
+				technicianName: item.technicianName,
+				materialName: item.materialName || item.material,
+				warrantyPassport: item.warrantyPassport,
+				fittingConfirmed: Boolean(item.fittingConfirmed),
 			};
 			setServices((prev) => {
 				const isPlaceholder =
@@ -226,6 +248,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 					(prev.length === DEFAULT_CHAIRSIDE_SERVICES.length &&
 						prev.every((pItem, idx) => pItem.id === DEFAULT_CHAIRSIDE_SERVICES[idx]?.id));
 				const next = isPlaceholder ? [newItem] : [...prev, newItem];
+				syncBillingItemsToVisitStore(next);
 				onServicesChange?.(next);
 				return next;
 			});
@@ -243,6 +266,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 						return (t.code804n && s.code804n === t.code804n) || (t.title && s.title === t.title);
 					});
 				});
+				syncBillingItemsToVisitStore(next);
 				onServicesChange?.(next);
 				return next;
 			});
@@ -258,120 +282,68 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 		};
 	}, [onServicesChange, onAddBillingItem]);
 
-	// Inline Price Step (+500 ₽ / -500 ₽)
-	const handleStepPrice = useCallback(
-		(serviceId: string, deltaRub: number) => {
-			if (readOnly) return;
-			const next = services.map((s) => {
-				if (s.id !== serviceId) return s;
-				const newPrice = Math.max(0, s.unitPriceRub + deltaRub);
-				return {
-					...s,
-					unitPriceRub: newPrice,
-				};
-			});
-			updateServices(next);
-		},
-		[readOnly, services, updateServices]
-	);
+	const handleStepPrice = useCallback((serviceId: string, deltaRub: number) => {
+		if (readOnly) return;
+		updateServices(services.map((s) => s.id === serviceId ? { ...s, unitPriceRub: Math.max(0, s.unitPriceRub + deltaRub) } : s));
+	}, [readOnly, services, updateServices]);
 
-	// Direct Inline Price Change
-	const handlePriceChange = useCallback(
-		(serviceId: string, newPriceRub: number) => {
-			if (readOnly) return;
-			const sanitized = Math.max(0, Number.isFinite(newPriceRub) ? newPriceRub : 0);
-			const next = services.map((s) => {
-				if (s.id !== serviceId) return s;
-				return {
-					...s,
-					unitPriceRub: sanitized,
-				};
-			});
-			updateServices(next);
-		},
-		[readOnly, services, updateServices]
-	);
+	const handlePriceChange = useCallback((serviceId: string, newPriceRub: number) => {
+		if (readOnly) return;
+		const sanitized = Math.max(0, Number.isFinite(newPriceRub) ? newPriceRub : 0);
+		updateServices(services.map((s) => s.id === serviceId ? { ...s, unitPriceRub: sanitized } : s));
+	}, [readOnly, services, updateServices]);
 
-	// Quantity Step (+ / -)
-	const handleQuantityChange = useCallback(
-		(serviceId: string, delta: number) => {
-			if (readOnly) return;
-			const next = services.map((s) => {
-				if (s.id !== serviceId) return s;
-				const newQty = Math.max(1, s.quantity + delta);
-				return { ...s, quantity: newQty };
-			});
-			updateServices(next);
-		},
-		[readOnly, services, updateServices]
-	);
+	const handleQuantityChange = useCallback((serviceId: string, delta: number) => {
+		if (readOnly) return;
+		updateServices(services.map((s) => s.id === serviceId ? { ...s, quantity: Math.max(1, s.quantity + delta) } : s));
+	}, [readOnly, services, updateServices]);
 
-	// Per-Service 100% Warranty Toggle (Doctor Autonomy Mandate 8e Item 7)
-	const handleToggleWarranty = useCallback(
-		(serviceId: string) => {
-			if (readOnly) return;
-			const next = services.map((s) => {
-				if (s.id !== serviceId) return s;
-				const isNowWarranty = !s.isWarranty;
-				return {
-					...s,
-					isWarranty: isNowWarranty,
-					discountPercent: isNowWarranty ? 100 : 0,
-					warrantyReason: isNowWarranty ? "Гарантийная переделка" : undefined,
-				};
-			});
-			updateServices(next);
-		},
-		[readOnly, services, updateServices]
-	);
+	const handleToggleWarranty = useCallback((serviceId: string) => {
+		if (readOnly) return;
+		updateServices(services.map((s) => {
+			if (s.id !== serviceId) return s;
+			const isNowWarranty = !s.isWarranty;
+			return { ...s, isWarranty: isNowWarranty, discountPercent: isNowWarranty ? 100 : 0, warrantyReason: isNowWarranty ? "Гарантийная переделка" : undefined };
+		}));
+	}, [readOnly, services, updateServices]);
 
-	// Per-Service Discount Change
-	const handleServiceDiscountChange = useCallback(
-		(serviceId: string, percent: number) => {
-			if (readOnly) return;
-			const clamped = Math.max(0, Math.min(100, percent));
-			const next = services.map((s) => {
-				if (s.id !== serviceId) return s;
-				return {
-					...s,
-					discountPercent: clamped,
-					isWarranty: clamped === 100,
-					warrantyReason: clamped === 100 ? "Гарантийная переделка" : undefined,
-				};
-			});
-			updateServices(next);
-		},
-		[readOnly, services, updateServices]
-	);
+	const handleServiceDiscountChange = useCallback((serviceId: string, percent: number) => {
+		if (readOnly) return;
+		const clamped = Math.max(0, Math.min(100, percent));
+		updateServices(services.map((s) => s.id === serviceId ? { ...s, discountPercent: clamped, isWarranty: clamped === 100, warrantyReason: clamped === 100 ? "Гарантийная переделка" : undefined } : s));
+	}, [readOnly, services, updateServices]);
 
-	// Add Service
 	const handleAddService = useCallback(() => {
 		if (readOnly) return;
 		const newItem: VisitBillingServiceItem = {
-			id: `serv-${Date.now()}`,
-			code804n: "A16.07.002",
-			title: "Стоматологический приём и лечение",
-			quantity: 1,
-			unitPriceRub: 1500,
-			discountPercent: 0,
-			discountRub: 0,
-			isWarranty: false,
+			id: `serv-${Date.now()}`, code804n: "A16.07.002", title: "Стоматологический приём и лечение",
+			quantity: 1, unitPriceRub: 1500, discountPercent: 0, discountRub: 0, isWarranty: false,
 		};
 		updateServices([...services, newItem]);
 		showToast("Услуга добавлена в расчёт визита", "info", 1500);
 	}, [readOnly, services, updateServices]);
 
-	// Remove Service
-	const handleRemoveService = useCallback(
-		(serviceId: string) => {
-			if (readOnly) return;
-			const next = services.filter((s) => s.id !== serviceId);
-			updateServices(next);
-		},
-		[readOnly, services, updateServices]
-	);
+	const handleRemoveService = useCallback((serviceId: string) => {
+		if (readOnly) return;
+		const targetIndex = services.findIndex((s) => s.id === serviceId);
+		const targetItem = services[targetIndex];
+		if (targetIndex === -1 || !targetItem) return;
+		updateServices(services.filter((s) => s.id !== serviceId));
+		pushDestructiveActionWithRollback({
+			entityType: "visit_service", description: `Услуга «${targetItem.title}» удалена из сметы визита`,
+			item: targetItem, index: targetIndex, parentId: visitId || patientId,
+			onRollback: (item, index) => {
+				setServices((prev) => {
+					const restored = [...prev];
+					restored.splice(index, 0, item as VisitBillingServiceItem);
+					syncBillingItemsToVisitStore(restored);
+					onServicesChange?.(restored);
+					return restored;
+				});
+			},
+		});
+	}, [readOnly, services, updateServices, onServicesChange, visitId, patientId]);
 
-	// Global Doctor Autonomy Discount Presets (Mandate 8e Item 7)
 	const applyGlobalDiscount = useCallback((percent: number, reason: string) => {
 		if (readOnly) return;
 		const clamped = Math.max(0, Math.min(100, percent));
@@ -380,13 +352,9 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 		setIsGlobalWarranty100(isWarranty);
 		setGlobalDiscountReason(reason);
 		staffTelemetryService.logDiscountApply(patientId, clamped, reason);
-		if (isWarranty) {
-			showToast("Применена 100% скидка врача: Гарантийная переделка (0 ₽)", "info", 2500);
-		} else if (clamped > 0) {
-			showToast(`Применена скидка врача ${clamped}% (${reason})`, "info", 2000);
-		} else {
-			showToast("Скидка врача сброшена (0%)", "info", 1500);
-		}
+		if (isWarranty) showToast("Применена 100% скидка врача: Гарантийная переделка (0 ₽)", "info", 2500);
+		else if (clamped > 0) showToast(`Применена скидка врача ${clamped}% (${reason})`, "info", 2000);
+		else showToast("Скидка врача сброшена (0%)", "info", 1500);
 	}, [readOnly, patientId]);
 
 	// Kopeck-Exact Totals Calculation (Mandate 8b)
@@ -427,6 +395,11 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 		const effectiveDiscountPercent =
 			totalGrossKop > 0 ? Number(((finalDiscountKop / totalGrossKop) * 100).toFixed(1)) : 0;
 
+		const totalLabCostRub = services.reduce(
+			(acc, s) => acc + (s.labCostRub ? s.labCostRub * s.quantity : 0),
+			0,
+		);
+
 		return {
 			rawTotalRub,
 			discountRub,
@@ -434,6 +407,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 			effectiveDiscountPercent,
 			isWarranty100: isGlobalWarranty100 || effectiveDiscountPercent >= 100,
 			itemsCount: services.length,
+			totalLabCostRub: totalLabCostRub > 0 ? totalLabCostRub : undefined,
 		};
 	}, [services, isGlobalWarranty100, globalDiscountPercent]);
 
@@ -448,21 +422,12 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 	};
 
 	const handleOpenPaymentModal = () => {
-		if (onOpenPayment) {
-			onOpenPayment(totals);
-		} else {
-			setIsPaymentModalOpen(true);
-		}
+		if (onOpenPayment) onOpenPayment(totals);
+		else setIsPaymentModalOpen(true);
 	};
 
 	const handlePrintEstimate = () => {
-		printVisitBillingEstimate({
-			services,
-			totals,
-			clinicLegalName,
-			patientName,
-			doctorName,
-		});
+		printVisitBillingEstimate({ services, totals, clinicLegalName, patientName, doctorName });
 	};
 
 	return (
@@ -500,6 +465,18 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 						>
 							<Plus size={14} />
 							<span>Добавить услугу</span>
+						</button>
+					)}
+					{services.length > 0 && (
+						<button
+							type="button"
+							onClick={() => setSelectedBomService(services[0] || null)}
+							title="Проверить списание расходных материалов по услугам визита (BOM по FEFO)"
+							className="h-8 px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] text-xs font-semibold text-[var(--ink,#0f172a)] cursor-pointer flex items-center gap-1 transition-all"
+							data-testid="btn-open-visit-bom-deduction"
+						>
+							<Boxes size={14} className="text-indigo-600" />
+							<span>Расходники ({services.length})</span>
 						</button>
 					)}
 					<button
@@ -566,6 +543,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 							onStepPrice={handleStepPrice}
 							onPriceChange={handlePriceChange}
 							onRemoveService={handleRemoveService}
+							onOpenMaterialDeduction={(it) => setSelectedBomService(it)}
 						/>
 					))
 				)}
@@ -589,6 +567,14 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 								</strong>
 							</div>
 						)}
+						{totals.totalLabCostRub && totals.totalLabCostRub > 0 ? (
+							<div className="text-amber-800 dark:text-amber-300 font-medium" data-testid="badge-total-lab-cost">
+								Себестоимость ЗТЛ:{" "}
+								<strong className="font-mono">
+									{totals.totalLabCostRub.toLocaleString("ru-RU")} ₽
+								</strong>
+							</div>
+						) : null}
 					</div>
 
 					<div className="flex items-center gap-3 flex-wrap">
@@ -712,13 +698,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 
 						<button
 							type="button"
-							onClick={() => printVisitBillingEstimate({
-								services,
-								totals,
-								clinicLegalName,
-								patientName,
-								doctorName,
-							})}
+							onClick={handlePrintEstimate}
 							title="Распечатать смету оказанных стоматологических услуг"
 							className="h-9 px-4 rounded-xl bg-[var(--paper,#ffffff)] hover:bg-[var(--line,#e2e8f0)] border border-[var(--line,#e2e8f0)] text-xs font-bold text-[var(--ink,#0f172a)] cursor-pointer transition-all flex items-center gap-1.5"
 							data-testid="btn-print-visit-billing-estimate"
@@ -729,12 +709,29 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 					</div>
 
 					<div className="flex items-center gap-2 flex-wrap">
-						{effectiveDmsCoverage > 0 && (
-							<div className="h-9 px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-500/30 text-teal-800 dark:text-teal-300 text-xs font-semibold flex items-center gap-1.5 shadow-2xs" data-testid="badge-visit-dms-coverage" title={`Гарантийное письмо № ${effectiveDmsNumber || ""} (${effectiveDmsInsurer || ""})`}>
+						{effectiveDmsCoverage > 0 ? (
+							<button
+								type="button"
+								onClick={() => setIsDmsModalOpen(true)}
+								className="h-9 px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-500/30 text-teal-800 dark:text-teal-300 text-xs font-semibold flex items-center gap-1.5 shadow-2xs hover:bg-teal-100 dark:hover:bg-teal-900/50 cursor-pointer transition-all"
+								data-testid="badge-visit-dms-coverage"
+								title={`Гарантийное письмо № ${effectiveDmsNumber || ""} (${effectiveDmsInsurer || ""}) — нажмите для просмотра или изменения`}
+							>
 								<ShieldCheck size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
 								<span>ДМС: {effectiveDmsInsurer || "ГП"} ({effectiveDmsCoverage.toLocaleString("ru-RU")} ₽)</span>
-							</div>
-						)}
+							</button>
+						) : !readOnly ? (
+							<button
+								type="button"
+								onClick={() => setIsDmsModalOpen(true)}
+								className="h-9 px-3 rounded-xl bg-[var(--paper,#ffffff)] hover:bg-[var(--line,#e2e8f0)] border border-[var(--line,#e2e8f0)] text-xs font-bold text-[var(--ink,#0f172a)] cursor-pointer transition-all flex items-center gap-1.5"
+								data-testid="btn-attach-visit-dms"
+								title="Прикрепить или согласовать гарантийное письмо ДМС для пациента без перезагрузки визита"
+							>
+								<ShieldCheck size={14} className="text-teal-600" />
+								<span>+ ДМС / Полис</span>
+							</button>
+						) : null}
 						<button
 							type="button"
 							onClick={handleOpenPaymentModal}
@@ -753,29 +750,45 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 				</div>
 			</div>
 
-			{/* Universal Payment Modal 54-FZ (Sber POS, Cash, SBP, Split) */}
-			{isPaymentModalOpen && (
-				<PaymentModal
-					isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)}
-					patientId={patientId} patientName={patientName} patientPhone={patientPhone} visitId={visitId}
-					amountRub={totals.totalDueRub} patientDepositRub={patientDepositRub}
-					patientFamilyBalanceRub={patientFamilyBalanceRub} cashierName={cashierName || doctorName}
-					doctorName={doctorName} clinicLegalName={clinicLegalName}
-					initialDiscountPercent={globalDiscountPercent} initialWarranty100={totals.isWarranty100}
-					initialDiscountReason={globalDiscountReason}
-					dmsGuaranteeLetterId={effectiveDmsId} dmsGuaranteeLetterNumber={effectiveDmsNumber}
-					dmsInsurerName={effectiveDmsInsurer} availableDmsCoverageRub={effectiveDmsCoverage > 0 ? effectiveDmsCoverage : undefined}
-					initialSplitDmsRub={initialSplitDmsRub}
-					items={services.map((s, idx) => ({
-						id: s.id || `bill-${idx}`, name: s.title, code804n: s.code804n || "A16.07.002.001",
-						quantity: s.quantity || 1, priceRub: s.unitPriceRub || 0, discountRub: s.discountRub,
-						amountRub: Math.max(0, (s.unitPriceRub || 0) * (s.quantity || 1) - (s.discountRub || 0)),
-						toothNumber: s.toothCode ? (Number(s.toothCode) || s.toothCode) : undefined,
-					}))}
-					toothNumber={services[0]?.toothCode ? (Number(services[0].toothCode) || services[0].toothCode) : undefined}
-					onSuccess={() => { setIsPaymentModalOpen(false); showToast("Оплата успешно принята в кассу!", "success", 3000); }}
-				/>
-			)}
+			{/* Universal Visit Modals (Payment 54-FZ, FEFO Consumables BOM, DMS Guarantee Letter) */}
+			<VisitBillingModals
+				isPaymentModalOpen={isPaymentModalOpen}
+				onClosePaymentModal={() => setIsPaymentModalOpen(false)}
+				patientId={patientId}
+				patientName={patientName}
+				patientPhone={patientPhone}
+				visitId={visitId}
+				totals={totals}
+				patientDepositRub={patientDepositRub}
+				patientFamilyBalanceRub={patientFamilyBalanceRub}
+				cashierName={cashierName || doctorName}
+				doctorName={doctorName}
+				clinicLegalName={clinicLegalName}
+				globalDiscountPercent={globalDiscountPercent}
+				globalDiscountReason={globalDiscountReason}
+				effectiveDmsId={effectiveDmsId}
+				effectiveDmsNumber={effectiveDmsNumber}
+				effectiveDmsInsurer={effectiveDmsInsurer}
+				effectiveDmsCoverage={effectiveDmsCoverage}
+				initialSplitDmsRub={initialSplitDmsRub}
+				services={services}
+				onPaymentSuccess={onPaymentSuccess}
+				selectedBomService={selectedBomService}
+				onCloseBomModal={() => setSelectedBomService(null)}
+				isDmsModalOpen={isDmsModalOpen}
+				onCloseDmsModal={() => setIsDmsModalOpen(false)}
+				onSaveDmsLetter={(savedLetter) => {
+					const maxCov = Number(savedLetter.maxCoverageRub || 0);
+					const used = Number(savedLetter.usedAmountRub || 0);
+					const available = Math.max(0, maxCov - used);
+					setActiveDmsLetter({
+						id: savedLetter.id || "dms-letter-saved",
+						letterNumber: savedLetter.letterNumber,
+						insurerName: savedLetter.insurerName,
+						availableCoverageRub: available,
+					});
+				}}
+			/>
 		</div>
 	);
 };

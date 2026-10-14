@@ -6,7 +6,13 @@
  * ============================================================================
  */
 
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import {
+	kopecksToRubles,
+	rublesToKopecks,
+	formatCurrencyRu,
+	formatKopecksRu,
+} from "@dental/shared";
+export { kopecksToRubles, rublesToKopecks };
 import {
 	type DmsInsurerDefinition,
 	type DmsPolicy,
@@ -49,7 +55,17 @@ export interface DmsGuaranteeLetter {
 	readonly curatorFullName?: string | undefined;
 	readonly curatorPhone?: string | undefined;
 	readonly notes?: string | undefined;
-	readonly status?: "active" | "expired" | "exhausted" | "cancelled" | undefined;
+	readonly status?:
+		| "draft"
+		| "pending_approval"
+		| "approved"
+		| "active"
+		| "billed"
+		| "paid"
+		| "exhausted"
+		| "expired"
+		| "cancelled"
+		| undefined;
 }
 
 export interface DmsBillableLineItem {
@@ -162,26 +178,19 @@ export interface DmsReconciliationRegistry {
 	readonly totalPatientsCount: number;
 }
 
-export { kopecksToRubles, rublesToKopecks } from "@dental/shared";
-
 /**
  * Форматирование суммы в рублях с копейками (например: "1 250,00 ₽")
+ * Делегировано в канонический SSOT @dental/shared (Мандат 8b).
  */
 export function formatCurrencyRub(rublesOrKopecks: number, isKopecks = false): string {
-	const rub = isKopecks ? kopecksToRubles(rublesOrKopecks) : rublesOrKopecks;
-	return new Intl.NumberFormat("ru-RU", {
-		style: "currency",
-		currency: "RUB",
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
-	}).format(rub);
+	return isKopecks ? formatKopecksRu(Math.round(rublesOrKopecks)) : formatCurrencyRu(rublesOrKopecks);
 }
 
 /**
  * Прямое форматирование копеек в рубли (например: 450000 -> "4 500,00 ₽")
  */
 export function formatCurrencyKopecks(kopecks: number): string {
-	return formatCurrencyRub(kopecks, true);
+	return formatKopecksRu(Math.round(kopecks));
 }
 
 /**

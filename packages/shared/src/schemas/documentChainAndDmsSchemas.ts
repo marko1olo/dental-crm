@@ -449,7 +449,12 @@ export function calculateDmsCoverage(
 }
 
 export const dmsGuaranteeLetterStatusSchema = z.enum([
+	"draft",
+	"pending_approval",
+	"approved",
 	"active",
+	"billed",
+	"paid",
 	"exhausted",
 	"expired",
 	"cancelled",
@@ -501,7 +506,7 @@ export const dmsGuaranteeLetterCreateSchema = dmsGuaranteeLetterSchema.omit({
 export type DmsGuaranteeLetterCreate = z.infer<typeof dmsGuaranteeLetterCreateSchema>;
 
 export const dmsGuaranteeLetterUpdateSchema = dmsGuaranteeLetterSchema.partial().extend({
-	id: z.string().min(1),
+	id: z.string().optional(),
 });
 
 export type DmsGuaranteeLetterUpdate = z.infer<typeof dmsGuaranteeLetterUpdateSchema>;

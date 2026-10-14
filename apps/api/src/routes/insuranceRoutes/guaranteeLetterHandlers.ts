@@ -68,9 +68,9 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 		const todayIso = new Date().toISOString().slice(0, 10);
 		const formatted = letters.map((l) => {
 			let computedStatus = l.status;
-			if (l.status === "active" && l.validUntil && l.validUntil < todayIso) {
+			if ((l.status === "active" || l.status === "approved") && l.validUntil && l.validUntil < todayIso) {
 				computedStatus = "expired";
-			} else if (l.status === "active" && Number(l.usedAmountRub) >= Number(l.maxCoverageRub)) {
+			} else if ((l.status === "active" || l.status === "approved") && Number(l.usedAmountRub) >= Number(l.maxCoverageRub)) {
 				computedStatus = "exhausted";
 			}
 			return {
@@ -125,9 +125,9 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 
 			const todayIso = new Date().toISOString().slice(0, 10);
 			let computedStatus = letter.status;
-			if (letter.status === "active" && letter.validUntil && letter.validUntil < todayIso) {
+			if ((letter.status === "active" || letter.status === "approved") && letter.validUntil && letter.validUntil < todayIso) {
 				computedStatus = "expired";
-			} else if (letter.status === "active" && Number(letter.usedAmountRub) >= Number(letter.maxCoverageRub)) {
+			} else if ((letter.status === "active" || letter.status === "approved") && Number(letter.usedAmountRub) >= Number(letter.maxCoverageRub)) {
 				computedStatus = "exhausted";
 			}
 
