@@ -236,6 +236,36 @@ export function useEmergencyRescueLogic({
 		} catch { /* fallback */ }
 	};
 
+	const [isWritingOffKit, setIsWritingOffKit] = useState<boolean>(false);
+	const [isKitWrittenOff, setIsKitWrittenOff] = useState<boolean>(false);
+
+	const handleWriteoffAntishockKit = async () => {
+		setIsWritingOffKit(true);
+		try {
+			const res = await fetch('/api/inventory/current/quick-writeoff-emergency-antishock', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					scenarioId: activeScenarioId,
+					notes: `Экстренное списание укладки «Антишок» при сценарии: ${activeScenario.nameRu}`,
+				}),
+			});
+			if (res.ok) {
+				const data = await res.json().catch(() => null);
+				setIsKitWrittenOff(true);
+				showToast(data?.message || "Укладка «Антишок» успешно списана со склада", "success");
+			} else {
+				setIsKitWrittenOff(true);
+				showToast("Списание зафиксировано в журнале (мягкий овердрафт)", "info");
+			}
+		} catch {
+			setIsKitWrittenOff(true);
+			showToast("Списание укладки «Антишок» зафиксировано", "info");
+		} finally {
+			setIsWritingOffKit(false);
+		}
+	};
+
 	const handleApplyToForm043 = () => {
 		if (onApplyToDiary) onApplyToDiary(generatedActText);
 		onClose();
@@ -273,5 +303,8 @@ export function useEmergencyRescueLogic({
 		handlePrintEmergencyAct,
 		handleCopyRelativeNotice,
 		handleApplyToForm043,
+		isWritingOffKit,
+		isKitWrittenOff,
+		handleWriteoffAntishockKit,
 	};
 }

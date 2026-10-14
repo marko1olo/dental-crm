@@ -4,6 +4,11 @@
  * Touch-First (>=44-56px), WCAG 2.1 AAA Contrast & Ergonomics for High-Stress Resuscitation Contexts
  */
 
+@import './emergencyAnimations.css';
+@import './emergencyDosages.css';
+@import './emergencyCpr.css';
+@import './emergencyVitals.css';
+
 .emergency-modal-overlay {
 	position: fixed;
 	top: 0;
@@ -35,17 +40,6 @@
 	animation: emergencyPulseBorder 2.5s infinite ease-in-out;
 }
 
-@keyframes emergencyPulseBorder {
-	0%, 100% {
-		border-color: var(--bad-fg);
-		box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
-	}
-	50% {
-		border-color: var(--bad-fg);
-		box-shadow: 0 0 35px rgba(239, 68, 68, 0.5);
-	}
-}
-
 /* Header */
 .emergency-modal-header {
 	display: flex;
@@ -68,17 +62,6 @@
 	color: var(--bad-fg);
 	animation: emergencyPulseIcon 2s infinite ease-in-out;
 	flex-shrink: 0;
-}
-
-@keyframes emergencyPulseIcon {
-	0%, 100% {
-		transform: scale(1);
-		opacity: 1;
-	}
-	50% {
-		transform: scale(1.08);
-		opacity: 0.85;
-	}
 }
 
 .emergency-header-title {
@@ -129,17 +112,6 @@
 	box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 	transition: all 0.2s ease;
 	animation: emergencyPulseBtn 1.8s infinite ease-in-out;
-}
-
-@keyframes emergencyPulseBtn {
-	0%, 100% {
-		transform: scale(1);
-		box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-	}
-	50% {
-		transform: scale(1.03);
-		box-shadow: 0 6px 18px rgba(239, 68, 68, 0.7);
-	}
 }
 
 .emergency-call-112-btn:hover {
@@ -307,192 +279,6 @@
 	border-bottom: 1px solid var(--line);
 }
 
-/* Patient Quick Vitals Inputs */
-.emergency-vitals-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-	gap: 0.75rem;
-}
-
-.emergency-input-group {
-	display: flex;
-	flex-direction: column;
-	gap: 0.25rem;
-}
-
-.emergency-input-label {
-	font-size: 0.75rem;
-	font-weight: 600;
-	color: var(--ink-2, var(--muted));
-}
-
-.emergency-input-field {
-	background: var(--paper-soft);
-	color: var(--ink);
-	border: 1.5px solid var(--line-strong, var(--line));
-	border-radius: 6px;
-	padding: 0.5rem 0.65rem;
-	font-size: 0.9rem;
-	font-weight: 600;
-	min-height: 40px;
-	box-sizing: border-box;
-}
-
-.emergency-input-field:focus {
-	outline: none;
-	border-color: var(--teal);
-	box-shadow: 0 0 0 2px var(--teal-soft);
-}
-
-/* Real-Time Dosage Banner & Cards */
-.emergency-dosage-banner {
-	background: var(--paper);
-	border: 2px solid var(--bad-fg);
-	border-radius: 12px;
-	padding: 1rem;
-	display: flex;
-	flex-direction: column;
-	gap: 0.75rem;
-	box-shadow: var(--shadow-2);
-}
-
-.emergency-dosage-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 0.5rem;
-	padding-bottom: 0.5rem;
-	border-bottom: 1px solid var(--line);
-	flex-wrap: wrap;
-}
-
-.emergency-dosage-title {
-	font-size: 0.875rem;
-	font-weight: 800;
-	color: var(--bad-fg);
-	display: flex;
-	align-items: center;
-	gap: 0.4rem;
-	letter-spacing: 0.02em;
-	text-transform: uppercase;
-}
-
-.emergency-dosage-patient-tag {
-	font-size: 0.75rem;
-	font-weight: 700;
-	padding: 0.2rem 0.55rem;
-	border-radius: 9999px;
-	background: var(--paper-soft);
-	color: var(--ink);
-	border: 1px solid var(--line-strong);
-}
-
-.emergency-dosage-cards-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-	gap: 0.75rem;
-}
-
-.emergency-drug-card {
-	background: var(--paper-soft);
-	border: 1.5px solid var(--line-strong, var(--line));
-	border-radius: 10px;
-	padding: 0.75rem 0.875rem;
-	display: flex;
-	flex-direction: column;
-	gap: 0.4rem;
-	transition: all 0.15s ease;
-}
-
-.emergency-drug-card.primary {
-	border: 2px solid var(--bad-fg);
-	background: var(--bad-bg);
-}
-
-.emergency-drug-card-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 0.5rem;
-}
-
-.emergency-drug-name {
-	font-size: 0.875rem;
-	font-weight: 800;
-	color: var(--ink);
-	display: flex;
-	align-items: center;
-	gap: 0.35rem;
-}
-
-.emergency-drug-card.primary .emergency-drug-name {
-	color: var(--bad-fg);
-}
-
-.emergency-drug-priority-badge {
-	font-size: 0.6875rem;
-	font-weight: 800;
-	padding: 0.15rem 0.4rem;
-	border-radius: 4px;
-	text-transform: uppercase;
-}
-
-.emergency-drug-priority-badge.first-line {
-	background: var(--bad-fg);
-	color: var(--on-teal);
-}
-
-.emergency-drug-priority-badge.second-line {
-	background: var(--paper);
-	color: var(--ink);
-	border: 1px solid var(--line-strong);
-}
-
-.emergency-drug-dose-highlight {
-	display: flex;
-	align-items: baseline;
-	gap: 0.5rem;
-	padding: 0.35rem 0.55rem;
-	background: var(--paper);
-	border-radius: 6px;
-	border: 1px solid var(--line);
-	flex-wrap: wrap;
-}
-
-.emergency-drug-dose-val {
-	font-size: 1.15rem;
-	font-weight: 900;
-	color: var(--ink);
-	font-family: monospace, sans-serif;
-	white-space: nowrap;
-}
-
-.emergency-drug-card.primary .emergency-drug-dose-val {
-	color: var(--bad-fg);
-}
-
-.emergency-drug-dose-sub {
-	font-size: 0.75rem;
-	font-weight: 700;
-	color: var(--ink-2, var(--muted));
-}
-
-.emergency-drug-route {
-	font-size: 0.75rem;
-	font-weight: 600;
-	color: var(--ink);
-	line-height: 1.35;
-	display: flex;
-	align-items: center;
-	gap: 0.3rem;
-}
-
-.emergency-drug-note {
-	font-size: 0.7rem;
-	color: var(--muted);
-	line-height: 1.3;
-}
-
 /* Action Checklist */
 .emergency-checklist {
 	display: flex;
@@ -636,17 +422,6 @@
 	animation: emergencyFlashAlert 1s infinite alternate;
 }
 
-@keyframes emergencyFlashAlert {
-	0% {
-		background: var(--bad-bg);
-		transform: scale(1);
-	}
-	100% {
-		background: var(--bad-bg);
-		transform: scale(1.05);
-	}
-}
-
 .emergency-timer-alert {
 	color: var(--bad-fg);
 	font-weight: 800;
@@ -689,73 +464,6 @@
 	background: var(--bad-fg);
 	border-color: var(--bad-fg);
 	color: var(--on-teal);
-	font-weight: 800;
-}
-
-/* CPR Metronome Box & Guidelines */
-.emergency-cpr-box {
-	background: var(--paper);
-	border: 1.5px solid var(--line-strong, var(--line));
-	border-radius: 12px;
-	padding: 1rem;
-	display: flex;
-	flex-direction: column;
-	gap: 0.75rem;
-}
-
-.emergency-cpr-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding-bottom: 0.5rem;
-	border-bottom: 1px solid var(--line);
-}
-
-.emergency-cpr-title {
-	font-size: 0.875rem;
-	font-weight: 800;
-	color: var(--ink);
-	display: flex;
-	align-items: center;
-	gap: 0.4rem;
-	text-transform: uppercase;
-	letter-spacing: 0.02em;
-}
-
-.emergency-cpr-guidelines-list {
-	display: flex;
-	flex-direction: column;
-	gap: 0.45rem;
-}
-
-.emergency-cpr-guideline-row {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 0.45rem 0.65rem;
-	background: var(--paper-soft);
-	border-radius: 8px;
-	border: 1px solid var(--line);
-	font-size: 0.8125rem;
-}
-
-.emergency-cpr-label {
-	color: var(--ink-2, var(--muted));
-	font-weight: 600;
-}
-
-.emergency-cpr-val {
-	font-weight: 800;
-	color: var(--ink);
-}
-
-.emergency-cpr-val.highlight-bad {
-	color: var(--bad-fg);
-	font-weight: 900;
-}
-
-.emergency-cpr-val.highlight-ok {
-	color: var(--ok-fg);
 	font-weight: 800;
 }
 
@@ -977,11 +685,12 @@
 
 	.emergency-modal-container {
 		width: 100%;
-		max-width: 100%;
+		max-width: 100vw;
 		max-height: 92vh;
 		border-radius: 20px 20px 0 0;
 		border-bottom: none;
 		overflow-x: clip;
+		box-sizing: border-box;
 		padding-bottom: max(10px, env(safe-area-inset-bottom));
 	}
 
@@ -1036,23 +745,33 @@
 		min-height: 36px;
 	}
 
-	.emergency-dosage-banner {
-		padding: 0.75rem;
-	}
-
-	.emergency-dosage-cards-grid {
-		grid-template-columns: 1fr;
-		gap: 0.5rem;
-	}
-
 	.emergency-modal-body {
 		padding: 0.75rem;
 		overflow-x: clip;
 		gap: 0.75rem;
+		box-sizing: border-box;
+		width: 100%;
+	}
+
+	.emergency-column-left,
+	.emergency-column-right {
+		width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
+	}
+
+	.emergency-section-box {
+		padding: 0.75rem;
+		box-sizing: border-box;
+		width: 100%;
+	}
+
+	.emergency-section-title {
+		font-size: 0.85rem;
+		flex-wrap: wrap;
 	}
 
 	.emergency-protocol-action-row {
 		grid-template-columns: 1fr;
 	}
 }
-

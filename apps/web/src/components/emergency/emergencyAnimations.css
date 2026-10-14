@@ -1,0 +1,47 @@
+/**
+ * Russian Dental Emergency Rescue HUD — Animations & Keyframes
+ */
+
+@keyframes emergencyPulseBorder {
+	0%, 100% {
+		border-color: var(--bad-fg);
+		box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+	}
+	50% {
+		border-color: var(--bad-fg);
+		box-shadow: 0 0 35px rgba(239, 68, 68, 0.5);
+	}
+}
+
+@keyframes emergencyPulseIcon {
+	0%, 100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+	50% {
+		transform: scale(1.08);
+		opacity: 0.85;
+	}
+}
+
+@keyframes emergencyPulseBtn {
+	0%, 100% {
+		transform: scale(1);
+		box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+	}
+	50% {
+		transform: scale(1.03);
+		box-shadow: 0 6px 18px rgba(239, 68, 68, 0.7);
+	}
+}
+
+@keyframes emergencyFlashAlert {
+	0% {
+		background: var(--bad-bg);
+		transform: scale(1);
+	}
+	100% {
+		background: var(--bad-bg);
+		transform: scale(1.05);
+	}
+}

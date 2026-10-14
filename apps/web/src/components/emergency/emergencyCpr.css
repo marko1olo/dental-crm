@@ -1,0 +1,100 @@
+/**
+ * Russian Dental Emergency Rescue HUD — CPR & Resuscitation Guidelines
+ * 100% Token Compliant, Multi-Theme, Touch-First (>=44-48px), WCAG 2.1 AAA Contrast
+ */
+
+/* CPR Metronome Box & Guidelines */
+.emergency-cpr-box {
+	background: var(--paper);
+	border: 1.5px solid var(--line-strong, var(--line));
+	border-radius: 12px;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.emergency-cpr-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-bottom: 0.5rem;
+	border-bottom: 1px solid var(--line);
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.emergency-cpr-title {
+	font-size: 0.875rem;
+	font-weight: 800;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.emergency-cpr-guidelines-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.45rem;
+}
+
+.emergency-cpr-guideline-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.45rem 0.65rem;
+	background: var(--paper-soft);
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	font-size: 0.8125rem;
+}
+
+.emergency-cpr-label {
+	color: var(--ink-2, var(--muted));
+	font-weight: 600;
+}
+
+.emergency-cpr-val {
+	font-weight: 800;
+	color: var(--ink);
+}
+
+.emergency-cpr-val.highlight-bad {
+	color: var(--bad-fg);
+	font-weight: 900;
+}
+
+.emergency-cpr-val.highlight-ok {
+	color: var(--ok-fg);
+	font-weight: 800;
+}
+
+/* 1-Click Warehouse Write-off Button (Order 786n / Mandate 8e) */
+.emergency-writeoff-kit-btn {
+	background: var(--teal);
+	color: var(--on-teal);
+	border: none;
+	border-radius: 6px;
+	padding: 0.4rem 0.75rem;
+	font-size: 0.75rem;
+	font-weight: 700;
+	cursor: pointer;
+	min-height: 44px;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.emergency-writeoff-kit-btn:hover {
+	filter: brightness(1.1);
+}
+
+.emergency-writeoff-kit-btn.written-off {
+	background: var(--ok-fg);
+	color: var(--on-teal);
+}

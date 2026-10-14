@@ -5,6 +5,7 @@ import {
 	calculateAllEmergencyDosages,
 	calculateLipidRescueDoses,
 } from "./emergencyRescueEngine";
+import "./emergencyDosages.css";
 
 export interface EmergencyDosageCardsGridProps {
 	activeScenarioId: EmergencyScenarioId;

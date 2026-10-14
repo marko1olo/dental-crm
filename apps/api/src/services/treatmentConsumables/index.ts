@@ -11,6 +11,7 @@ export * from "./stockDeduction.js";
 export * from "./quickWriteoffService.js";
 export * from "./bundleWriteoffService.js";
 export * from "./surgeryWriteoffService.js";
+export * from "./emergencyAntishockWriteoffService.js";
 export * from "./manualDeduction.js";
 
 import {
@@ -38,6 +39,7 @@ import {
 	quickWriteoffOrthopedicProtocol,
 } from "./bundleWriteoffService.js";
 import { quickWriteoffSurgery } from "./surgeryWriteoffService.js";
+import { quickWriteoffEmergencyAntishock } from "./emergencyAntishockWriteoffService.js";
 import { deductManualItems } from "./manualDeduction.js";
 
 export class TreatmentConsumablesService {
@@ -62,6 +64,7 @@ export class TreatmentConsumablesService {
 	static quickWriteoffVisitBundle = quickWriteoffVisitBundle;
 	static quickWriteoffOrthopedicProtocol = quickWriteoffOrthopedicProtocol;
 	static quickWriteoffSurgery = quickWriteoffSurgery;
+	static quickWriteoffEmergencyAntishock = quickWriteoffEmergencyAntishock;
 }
 
 export const treatmentConsumablesService = TreatmentConsumablesService;

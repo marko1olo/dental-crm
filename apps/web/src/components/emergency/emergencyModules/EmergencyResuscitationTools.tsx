@@ -4,9 +4,10 @@
  */
 
 import React from 'react';
-import { Clock, RotateCcw, Syringe, Heart, AlertTriangle } from 'lucide-react';
+import { Clock, RotateCcw, Syringe, Heart, AlertTriangle, Check, PackageCheck } from 'lucide-react';
 import { STATUTORY_EMERGENCY_KIT_MEMO, formatTimerSeconds } from '../emergencyRescueEngine';
 import type { EmergencyResuscitationToolsProps } from './emergencyRescueTypes';
+import '../emergencyCpr.css';
 
 export function EmergencyResuscitationTools({
 	adrenalineTimerSeconds,
@@ -14,6 +15,9 @@ export function EmergencyResuscitationTools({
 	isAdrenalineDue,
 	onStartAdrenalineTimer,
 	onResetAdrenalineTimer,
+	onWriteoffAntishockKit,
+	isWritingOffKit,
+	isKitWrittenOff,
 }: EmergencyResuscitationToolsProps): React.ReactElement {
 	return (
 		<>
@@ -57,13 +61,25 @@ export function EmergencyResuscitationTools({
 				</div>
 			</div>
 
-			{/* Statutory Emergency Kit Quick Reference (1-Click Static Memo) */}
+			{/* Statutory Emergency Kit Quick Reference (1-Click Static Memo & Warehouse Write-off) */}
 			<div className="emergency-cpr-box">
 				<div className="emergency-cpr-header">
 					<div className="emergency-cpr-title min-w-0">
 						<Syringe size={18} style={{ color: 'var(--teal)' }} />
 						<span className="truncate min-w-0" data-statutory="786н / 1144н">Укладка неотложной помощи</span>
 					</div>
+					{onWriteoffAntishockKit && (
+						<button
+							type="button"
+							className={`emergency-writeoff-kit-btn ${isKitWrittenOff ? 'written-off' : ''}`}
+							onClick={onWriteoffAntishockKit}
+							data-testid="emergency-writeoff-kit-btn"
+							title="1-клик списание укладки «Антишок» со склада (Приказ Минздрава РФ № 786н, мягкий овердрафт)"
+						>
+							{isKitWrittenOff ? <Check size={14} /> : <PackageCheck size={14} />}
+							<span>{isWritingOffKit ? "Списание..." : isKitWrittenOff ? "Списано" : "Списать укладку"}</span>
+						</button>
+					)}
 				</div>
 
 				<div className="emergency-cpr-guidelines-list">

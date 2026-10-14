@@ -66,6 +66,9 @@ export interface EmergencyResuscitationToolsProps {
 	isAdrenalineDue: boolean;
 	onStartAdrenalineTimer: (seconds: number) => void;
 	onResetAdrenalineTimer: () => void;
+	onWriteoffAntishockKit?: (() => void) | undefined;
+	isWritingOffKit?: boolean | undefined;
+	isKitWrittenOff?: boolean | undefined;
 }
 
 export interface EmergencyVitalsSectionProps {

@@ -171,6 +171,9 @@ export function EmergencyRescueModal(props: EmergencyRescueModalProps): React.Re
 							isAdrenalineDue={isAdrenalineDue}
 							onStartAdrenalineTimer={(sec) => { setAdrenalineTimerSeconds(sec); setIsAdrenalineTimerRunning(true); setIsAdrenalineDue(false); }}
 							onResetAdrenalineTimer={() => { setIsAdrenalineTimerRunning(false); setIsAdrenalineDue(false); setAdrenalineTimerSeconds(300); }}
+							onWriteoffAntishockKit={logic.handleWriteoffAntishockKit}
+							isWritingOffKit={logic.isWritingOffKit}
+							isKitWrittenOff={logic.isKitWrittenOff}
 						/>
 						<EmergencyProtocolHandoverBox
 							activeProtocolTab={logic.activeProtocolTab}
@@ -187,6 +190,9 @@ export function EmergencyRescueModal(props: EmergencyRescueModalProps): React.Re
 							onPrintEmergencyAct={logic.handlePrintEmergencyAct}
 							onCopyRelativeNotice={logic.handleCopyRelativeNotice}
 							onCopyCheatSheet={logic.handleCopyCheatSheet}
+							onWriteoffAntishockKit={logic.handleWriteoffAntishockKit}
+							isWritingOffKit={logic.isWritingOffKit}
+							isKitWrittenOff={logic.isKitWrittenOff}
 						/>
 					</div>
 				</div>

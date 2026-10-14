@@ -1,5 +1,5 @@
 import React from "react";
-import { Check, Copy, FileText, Printer } from "lucide-react";
+import { Check, Copy, FileText, Printer, PackageCheck } from "lucide-react";
 
 export interface EmergencyProtocolHandoverBoxProps {
 	activeProtocolTab: "act" | "cheatsheet";
@@ -16,6 +16,9 @@ export interface EmergencyProtocolHandoverBoxProps {
 	onPrintEmergencyAct: () => void;
 	onCopyRelativeNotice: () => void;
 	onCopyCheatSheet: () => void;
+	onWriteoffAntishockKit?: (() => void) | undefined;
+	isWritingOffKit?: boolean | undefined;
+	isKitWrittenOff?: boolean | undefined;
 }
 
 export function EmergencyProtocolHandoverBox({
@@ -33,6 +36,9 @@ export function EmergencyProtocolHandoverBox({
 	onPrintEmergencyAct,
 	onCopyRelativeNotice,
 	onCopyCheatSheet,
+	onWriteoffAntishockKit,
+	isWritingOffKit,
+	isKitWrittenOff,
 }: EmergencyProtocolHandoverBoxProps) {
 	return (
 		<div className="emergency-protocol-box">
@@ -135,6 +141,22 @@ export function EmergencyProtocolHandoverBox({
 								<span>Извещение родственникам</span>
 							</button>
 						</div>
+
+						{/* Row 3: Statutory Warehouse Antishock Kit Write-off (Order 786n / Mandate 8e) */}
+						{onWriteoffAntishockKit && (
+							<div className="emergency-protocol-action-row tertiary-actions" style={{ gridTemplateColumns: "1fr" }}>
+								<button
+									type="button"
+									className={`emergency-copy-act-btn ${isKitWrittenOff ? "teal" : "surface"}`}
+									onClick={onWriteoffAntishockKit}
+									data-testid="emergency-handover-writeoff-btn"
+									title="1-клик списание укладки «Антишок» со склада (Приказ Минздрава РФ № 786н, мягкий овердрафт)"
+								>
+									{isKitWrittenOff ? <Check size={16} /> : <PackageCheck size={16} />}
+									<span>{isWritingOffKit ? "Списание со склада..." : isKitWrittenOff ? "Укладка «Антишок» списана со склада" : "Списать укладку «Антишок» (Склад)"}</span>
+								</button>
+							</div>
+						)}
 					</>
 				) : (
 					<button

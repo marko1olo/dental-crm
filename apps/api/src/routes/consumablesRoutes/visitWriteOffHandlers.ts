@@ -436,4 +436,40 @@ export async function registerVisitWriteOffHandlers(
 
 		return result;
 	});
+
+	// POST /:organizationId/quick-writeoff-emergency-antishock — 1-клик списание укладки «Антишок» (Приказ 786н)
+	server.post<{
+		Params: { organizationId: string };
+		Body?: {
+			visitId?: string | null;
+			userId?: string | null;
+			scenarioId?: string | null;
+			notes?: string | null;
+		};
+	}>("/:organizationId/quick-writeoff-emergency-antishock", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"treatment consumables quick writeoff emergency antishock",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		const body = request.body ?? {};
+		const result = await db.transaction(async (tx) => {
+			return TreatmentConsumablesService.quickWriteoffEmergencyAntishock(tx, {
+				organizationId,
+				visitId: body.visitId ?? null,
+				userId: body.userId ?? (request.user as any)?.id ?? null,
+				scenarioId: body.scenarioId ?? null,
+				notes: body.notes ?? null,
+			});
+		});
+
+		return result;
+	});
 }

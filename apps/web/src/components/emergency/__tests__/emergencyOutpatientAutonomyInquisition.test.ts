@@ -166,6 +166,12 @@ describe('Red Team Inquisition: Outpatient Clinical Autonomy & Emergency Protoco
 			assert.ok(cheatSheet.includes('ул. Стоматологическая 5'), 'Cheat sheet must include clinic address');
 			assert.ok(cheatSheet.includes('Анафилактический шок'), 'Cheat sheet must include scenario name');
 		});
+
+		it('Provides 1-click Antishock kit warehouse write-off buttons (Order 786n / Mandate 8e soft overdraft)', () => {
+			const html = renderToString(React.createElement(EmergencyRescueModal, { isOpen: true, onClose: () => {} }));
+			assert.ok(html.includes('data-testid="emergency-writeoff-kit-btn"'), 'Must have emergency-writeoff-kit-btn in resuscitation tools');
+			assert.ok(html.includes('data-testid="emergency-handover-writeoff-btn"'), 'Must have emergency-handover-writeoff-btn in handover box');
+		});
 	});
 
 	describe('3. Cartoon Emoji Invariance (Mandate 8d pt 7)', () => {

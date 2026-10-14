@@ -230,6 +230,65 @@ export const writeOffRoutes: FastifyPluginAsync = async (server: FastifyInstance
 		});
 	});
 
+	// 1-клик списание укладки «Антишок» / Неотложной помощи (Приказ Минздрава РФ № 786н, Мандат 8e)
+	server.post<{
+		Params: { organizationId: string };
+		Body?: {
+			visitId?: string | null;
+			scenarioId?: string | null;
+			notes?: string | null;
+		};
+	}>("/:organizationId/quick-writeoff-emergency-antishock", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory quick writeoff emergency antishock",
+		);
+		if (!resolvedOrgId) return;
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) return reply.code(403).send({ error: "Forbidden" });
+
+		const body = request.body ?? {};
+		return withTenantCtx(organizationId, async (tx) => {
+			return TreatmentConsumablesService.quickWriteoffEmergencyAntishock(tx, {
+				organizationId,
+				userId: request.user?.id ?? null,
+				visitId: body.visitId ?? null,
+				scenarioId: body.scenarioId ?? null,
+				notes: body.notes ?? null,
+			});
+		});
+	});
+
+	server.post<{
+		Body?: {
+			organizationId?: string;
+			visitId?: string | null;
+			scenarioId?: string | null;
+			notes?: string | null;
+		};
+	}>("/quick-writeoff-emergency-antishock", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory quick writeoff emergency antishock fallback",
+		);
+		if (!resolvedOrgId) return;
+		const targetOrgId = request.body?.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+
+		const body = request.body ?? {};
+		return withTenantCtx(targetOrgId, async (tx) => {
+			return TreatmentConsumablesService.quickWriteoffEmergencyAntishock(tx, {
+				organizationId: targetOrgId,
+				userId: request.user?.id ?? null,
+				visitId: body.visitId ?? null,
+				scenarioId: body.scenarioId ?? null,
+				notes: body.notes ?? null,
+			});
+		});
+	});
+
 	// LIVE STOCK DEDUCTION & FEFO CONSUMPTION: DUAL-ROUTE PARITY (Мандаты 8e, 8k, 8s)
 	const registerDeductRoute = (path: string) => {
 		server.post<{ Params?: { organizationId?: string } }>(path, async (request, reply) => {
