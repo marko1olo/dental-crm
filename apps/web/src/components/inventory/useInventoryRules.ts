@@ -16,12 +16,14 @@ export interface UseInventoryRulesParams {
 	) => void;
 }
 
+export type InventorySubTab = "inventory" | "waybills" | "audit" | "rules";
+
 export function useInventoryRules({
 	organizationId,
 	getHeaders,
 	setConfirmDialog,
 }: UseInventoryRulesParams) {
-	const [activeSubTab, setActiveSubTab] = useState<"inventory" | "rules">(
+	const [activeSubTab, setActiveSubTab] = useState<InventorySubTab>(
 		"inventory",
 	);
 	const [selectedServiceId, setSelectedServiceId] = useState<string>("");

@@ -238,7 +238,16 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 					>
 						{stock}&nbsp;{formatInventoryUnitRu(item.unit || "шт.")}
 					</span>
-					{isOverdraft && (
+					{stock < 0 ? (
+						<span
+							className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-700 dark:text-rose-300 bg-rose-500/15 px-1.5 py-0.5 rounded border border-rose-500/30"
+							data-testid={`soft-overdraft-badge-${item.id}`}
+							title="Мягкий овердрафт склада (дефицит): требуется оприходование партии"
+						>
+							<ShieldAlert size={10} className="shrink-0" />
+							<span>Требуется оприходование (отрицательный остаток {stock} {formatInventoryUnitRu(item.unit || "шт.")})</span>
+						</span>
+					) : isOverdraft ? (
 						<span
 							className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30"
 							data-testid={`soft-overdraft-badge-${item.id}`}
@@ -247,7 +256,7 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 							<ShieldAlert size={10} className="shrink-0" />
 							<span>Дефицит / Овердрафт</span>
 						</span>
-					)}
+					) : null}
 				</div>
 			</td>
 

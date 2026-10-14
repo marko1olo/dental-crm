@@ -130,17 +130,17 @@ export const InventoryServiceUsagePanel: React.FC<InventoryServiceUsagePanelProp
 					`Расходники по услуге «${selectedService.name}» успешно списаны со склада (мягкий овердрафт разрешен)`,
 					"success",
 				);
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(new CustomEvent("dente-inventory-reload"));
+				}
 				if (onRulesUpdated) onRulesUpdated();
 			} else {
-				// Если эндпоинт вернул ошибку, информируем
-				showToast(
-					"Тестовое списание выполнено локально (сверка с остатками завершена)",
-					"info",
-				);
+				const err = await res.json().catch(() => ({}));
+				showToast(err.message || "Ошибка при списании расходников", "error");
 			}
 		} catch (e) {
-			console.error("Ошибка при тестовом списании:", e);
-			showToast("Тестовый расчет списания завершен успешно", "info");
+			console.error("Ошибка при списании:", e);
+			showToast("Сетевой сбой при списании со склада", "error");
 		} finally {
 			setIsDeducting(false);
 		}
@@ -149,40 +149,90 @@ export const InventoryServiceUsagePanel: React.FC<InventoryServiceUsagePanelProp
 	return (
 		<div className="flex flex-col h-full w-full overflow-hidden bg-[var(--paper)] text-[var(--ink)]">
 			{/* Верхний компактный переключатель разделов */}
-			<div className="px-3 py-1.5 bg-[var(--paper-soft)] border-b border-[var(--line)] flex items-center justify-between gap-2 shrink-0">
-				<div className="flex items-center gap-1.5">
-					<Layers size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-					<span className="text-xs font-bold text-[var(--ink)]">
-						Расход материалов по услугам
+			<div
+				className="px-3 py-1.5 bg-[var(--paper-soft)] border-b border-[var(--line)] flex items-center justify-between gap-2 shrink-0"
+				style={{
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "space-between",
+					padding: "8px 20px",
+					background: "var(--paper-soft)",
+					borderBottom: "1px solid var(--line)",
+				}}
+			>
+				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+					<Layers size={15} style={{ color: "var(--teal, #0d9488)", flexShrink: 0 }} />
+					<span style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>
+						Расход материалов по услугам (Номенклатура 804н)
 					</span>
 				</div>
 
-				<div className="flex items-center gap-1 bg-[var(--paper)] p-0.5 rounded-lg border border-[var(--line)]">
+				<div
+					style={{
+						display: "inline-flex",
+						alignItems: "center",
+						gap: "4px",
+						background: "var(--paper)",
+						padding: "3px",
+						borderRadius: "8px",
+						border: "1px solid var(--line)",
+					}}
+				>
 					<button
 						type="button"
 						onClick={() => setActiveSubView("boms")}
-						className={`h-7 px-2.5 rounded-md text-xs font-semibold cursor-pointer transition-colors inline-flex items-center gap-1 ${
-							activeSubView === "boms"
-								? "bg-[var(--teal-soft,#ccfbf1)] text-[var(--teal-dark,#0f766e)] shadow-xs"
-								: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
+						style={{
+							height: "28px",
+							padding: "0 12px",
+							borderRadius: "6px",
+							fontSize: "12px",
+							fontWeight: 600,
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "6px",
+							border: "none",
+							background:
+								activeSubView === "boms"
+									? "var(--teal-soft, rgba(20, 184, 166, 0.14))"
+									: "transparent",
+							color:
+								activeSubView === "boms"
+									? "var(--teal-dark, #0f766e)"
+									: "var(--muted)",
+						}}
 						data-testid="subtab-bom-editor"
 					>
-						<FileText size={12} />
+						<FileText size={13} />
 						<span>Справочник техкарт</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveSubView("quick_test")}
-						className={`h-7 px-2.5 rounded-md text-xs font-semibold cursor-pointer transition-colors inline-flex items-center gap-1 ${
-							activeSubView === "quick_test"
-								? "bg-[var(--teal-soft,#ccfbf1)] text-[var(--teal-dark,#0f766e)] shadow-xs"
-								: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
+						style={{
+							height: "28px",
+							padding: "0 12px",
+							borderRadius: "6px",
+							fontSize: "12px",
+							fontWeight: 600,
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "6px",
+							border: "none",
+							background:
+								activeSubView === "quick_test"
+									? "var(--teal-soft, rgba(20, 184, 166, 0.14))"
+									: "transparent",
+							color:
+								activeSubView === "quick_test"
+									? "var(--teal-dark, #0f766e)"
+									: "var(--muted)",
+						}}
 						data-testid="subtab-bom-simulator"
 					>
-						<Zap size={12} />
+						<Zap size={13} />
 						<span>Симулятор списания визита</span>
 					</button>
 				</div>

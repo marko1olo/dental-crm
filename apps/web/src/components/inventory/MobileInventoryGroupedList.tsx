@@ -528,8 +528,12 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 				>
 					{displayItems.map((item) => {
 						const catType = getItemCategoryType(item);
-						const isLowStock = item.stockQuantity <= (item.criticalThreshold || 0);
-						const isZeroStock = item.stockQuantity <= 0;
+						const isNegativeStock = item.stockQuantity < 0;
+						const isZeroStock = item.stockQuantity === 0;
+						const isLowStock =
+							!isZeroStock &&
+							!isNegativeStock &&
+							item.stockQuantity <= (item.criticalThreshold || 0);
 						const trafficLight = getExpiryTrafficLight(item.expirationDate);
 						const isDeducting = Boolean(deductingItemIds[item.id]);
 
@@ -581,7 +585,15 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 
 									{/* Badges: Critical stock & FEFO expiration */}
 									<div className="mobile-inventory-badges-row">
-										{isZeroStock ? (
+										{isNegativeStock ? (
+											<span
+												className="mobile-inventory-badge critical-deficit"
+												data-testid="badge-negative-deficit"
+											>
+												<AlertTriangle size={11} aria-hidden="true" />
+												<span>Требуется оприходование (отрицательный остаток {item.stockQuantity} {item.unit || "шт."})</span>
+											</span>
+										) : isZeroStock ? (
 											<span
 												className="mobile-inventory-badge critical-deficit"
 												data-testid="badge-critical-deficit"

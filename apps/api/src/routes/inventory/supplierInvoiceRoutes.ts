@@ -1,5 +1,5 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
-import type { FastifyInstance, FastifyPluginAsync } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import type { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
@@ -310,37 +310,38 @@ export const supplierInvoiceRoutes: FastifyPluginAsync = async (
 	};
 
 	// POST /:organizationId/acceptance-waybill & POST /:organizationId/waybills (Dual-Route Parity)
-	const registerPostWaybill = (path: string) => {
-		server.post<{
+	const handlePostWaybill = async (
+		request: FastifyRequest<{
 			Params?: { organizationId?: string };
 			Body: z.infer<typeof acceptanceWaybillBodySchema> & { organizationId?: string };
-		}>(path, async (request, reply) => {
-			const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-				request,
-				reply,
-				"inventory acceptance waybill",
-			);
-			if (!resolvedOrgId) return;
+		}>,
+		reply: FastifyReply,
+	) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory acceptance waybill",
+		);
+		if (!resolvedOrgId) return;
 
-			const body = (request.body as { organizationId?: string } | undefined) ?? {};
-			const targetOrgId = request.params?.organizationId || body.organizationId || resolvedOrgId;
-			if (targetOrgId !== resolvedOrgId) {
-				return reply.code(403).send({ error: "Forbidden" });
-			}
+		const body = (request.body as { organizationId?: string } | undefined) ?? {};
+		const targetOrgId = request.params?.organizationId || body.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
 
-			return handleAcceptanceWaybillRequest(
-				targetOrgId,
-				request.body,
-				request,
-				reply,
-			);
-		});
+		return handleAcceptanceWaybillRequest(
+			targetOrgId,
+			request.body,
+			request,
+			reply,
+		);
 	};
 
-	registerPostWaybill("/:organizationId/acceptance-waybill");
-	registerPostWaybill("/acceptance-waybill");
-	registerPostWaybill("/:organizationId/waybills");
-	registerPostWaybill("/waybills");
+	server.post("/:organizationId/acceptance-waybill", handlePostWaybill);
+	server.post("/acceptance-waybill", handlePostWaybill);
+	server.post("/:organizationId/waybills", handlePostWaybill);
+	server.post("/waybills", handlePostWaybill);
 
 	// GET /:organizationId/waybills & GET /waybills
 	const registerGetWaybills = (path: string) => {

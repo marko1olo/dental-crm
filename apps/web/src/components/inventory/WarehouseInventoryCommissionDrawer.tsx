@@ -1,5 +1,5 @@
-import { Layers, Trash2, User } from "lucide-react";
-import type React from "react";
+import { ChevronDown, ChevronUp, Layers, Trash2, User, UserCheck } from "lucide-react";
+import React, { useState } from "react";
 import type { WarehouseInventoryCommissionMember } from "./warehouseInventoryEngine.js";
 
 export interface WarehouseInventoryCommissionDrawerProps {
@@ -29,6 +29,11 @@ export interface WarehouseInventoryCommissionDrawerProps {
 	readonly onRemoveCommissionMember: (idx: number) => void;
 }
 
+/**
+ * Экспресс-панель параметров инвентаризации (Мандаты 8e, 8n: Соло-врач и небольшая клиника).
+ * Устранена бюрократия: по умолчанию единоличный учет врачом/МОЛ без принудительного созыва комиссии из 3-4 человек.
+ * Реквизиты приказов и расширенный состав комиссии убраны в опциональный аккордеон.
+ */
 export const WarehouseInventoryCommissionDrawer: React.FC<
 	WarehouseInventoryCommissionDrawerProps
 > = ({
@@ -53,213 +58,189 @@ export const WarehouseInventoryCommissionDrawer: React.FC<
 	onCommissionMemberChange,
 	onRemoveCommissionMember,
 }) => {
+	const [showAdvanced, setShowAdvanced] = useState(commission.length > 1);
+
 	if (!showMetaDrawer) return null;
 
 	return (
-		<div className="warehouse-meta-drawer">
-			<div className="warehouse-meta-field">
-				<label className="warehouse-meta-label">Номер и дата описи</label>
-				<div style={{ display: "flex", gap: 6 }}>
+		<div className="warehouse-meta-drawer p-3 bg-[var(--paper-soft)] border-b border-[var(--line)]">
+			{/* Экспресс-строка: Ответственный, Склад, Опись */}
+			<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+				{/* 1. Ответственное лицо (МОЛ / Врач) */}
+				<div className="warehouse-meta-field flex flex-col gap-1">
+					<label className="warehouse-meta-label text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
+						<UserCheck size={14} className="text-[var(--primary)] shrink-0" />
+						<span>Ответственный (МОЛ / Врач)</span>
+					</label>
+					<div className="flex gap-2">
+						<input
+							className="warehouse-meta-input flex-1 h-8 px-2 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
+							value={molFullName}
+							onChange={(e) => onMolFullNameChange(e.target.value)}
+							placeholder="ФИО врача или медсестры"
+						/>
+						<input
+							className="warehouse-meta-input w-36 h-8 px-2 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
+							value={molPosition}
+							onChange={(e) => onMolPositionChange(e.target.value)}
+							placeholder="Должность"
+						/>
+					</div>
+				</div>
+
+				{/* 2. Склад / Кабинет */}
+				<div className="warehouse-meta-field flex flex-col gap-1">
+					<label className="warehouse-meta-label text-xs font-semibold text-[var(--ink)]">
+						Склад / Кабинет
+					</label>
 					<input
-						className="warehouse-meta-input"
-						value={docNumber}
-						onChange={(e) => setDocNumber(e.target.value)}
-						placeholder="Номер описи"
-						style={{ width: "60%" }}
+						className="warehouse-meta-input w-full h-8 px-2 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
+						value={warehouseNameRu}
+						onChange={(e) => setWarehouseNameRu(e.target.value)}
+						placeholder="Главный склад / Кабинет №1"
 					/>
-					<input
-						className="warehouse-meta-input"
-						type="date"
-						value={auditDate}
-						onChange={(e) => setAuditDate(e.target.value)}
-						style={{ width: "40%" }}
-					/>
+				</div>
+
+				{/* 3. Номер и дата описи */}
+				<div className="warehouse-meta-field flex flex-col gap-1">
+					<label className="warehouse-meta-label text-xs font-semibold text-[var(--ink)]">
+						Номер и дата описи
+					</label>
+					<div className="flex gap-2">
+						<input
+							className="warehouse-meta-input flex-1 h-8 px-2 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-mono"
+							value={docNumber}
+							onChange={(e) => setDocNumber(e.target.value)}
+							placeholder="Номер описи"
+						/>
+						<input
+							className="warehouse-meta-input w-32 h-8 px-2 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
+							type="date"
+							value={auditDate}
+							onChange={(e) => setAuditDate(e.target.value)}
+						/>
+					</div>
 				</div>
 			</div>
 
-			<div className="warehouse-meta-field">
-				<label className="warehouse-meta-label">Приказ о проведении инвентаризации</label>
-				<div style={{ display: "flex", gap: 6 }}>
-					<input
-						className="warehouse-meta-input"
-						value={orderNumber}
-						onChange={(e) => setOrderNumber(e.target.value)}
-						placeholder="Приказ №"
-						style={{ width: "60%" }}
-					/>
-					<input
-						className="warehouse-meta-input"
-						type="date"
-						value={orderDate}
-						onChange={(e) => setOrderDate(e.target.value)}
-						style={{ width: "40%" }}
-					/>
-				</div>
-			</div>
-
-			<div className="warehouse-meta-field">
-				<label className="warehouse-meta-label">Материально ответственное лицо (МОЛ)</label>
-				<input
-					className="warehouse-meta-input"
-					value={molFullName}
-					onChange={(e) => onMolFullNameChange(e.target.value)}
-					placeholder="ФИО МОЛ"
-				/>
-			</div>
-
-			<div className="warehouse-meta-field">
-				<label className="warehouse-meta-label">Должность МОЛ</label>
-				<input
-					className="warehouse-meta-input"
-					value={molPosition}
-					onChange={(e) => onMolPositionChange(e.target.value)}
-					placeholder="Должность МОЛ"
-				/>
-			</div>
-
-			<div className="warehouse-meta-field">
-				<label className="warehouse-meta-label">Склад / Подразделение</label>
-				<input
-					className="warehouse-meta-input"
-					value={warehouseNameRu}
-					onChange={(e) => setWarehouseNameRu(e.target.value)}
-					placeholder="Склад"
-				/>
-			</div>
-
-			{/* Блок комиссии (Мандат 8e / 8n: Соло-врач и небольшая клиника) */}
-			<div
-				style={{
-					gridColumn: "1 / -1",
-					marginTop: 6,
-					paddingTop: 12,
-					borderTop: "1px solid var(--border, #e2e8f0)",
-					display: "flex",
-					flexDirection: "column",
-					gap: 10,
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "space-between",
-						flexWrap: "wrap",
-						gap: 8,
-					}}
+			{/* Переключатель расширенных параметров (приказ, члены комиссии) */}
+			<div className="mt-2.5 pt-2 border-t border-[var(--line-subtle)] flex items-center justify-between">
+				<button
+					type="button"
+					onClick={() => setShowAdvanced((prev) => !prev)}
+					className="inline-flex items-center gap-1.5 text-xs text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
 				>
-					<div>
-						<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-							<label className="warehouse-meta-label" style={{ fontSize: "0.8125rem", margin: 0 }}>
-								Состав инвентаризационной комиссии
+					{showAdvanced ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+					<span>
+						{showAdvanced
+							? "Скрыть реквизиты приказа и состав комиссии"
+							: "Реквизиты приказа и расширенная комиссия (опционально)"}
+					</span>
+					{commission.length > 1 && (
+						<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400">
+							{commission.length} чел.
+						</span>
+					)}
+				</button>
+
+				<span className="text-[11px] text-[var(--muted)]">
+					{commission.length === 1 ? "Единоличный учет (без бюрократии)" : `Комиссия: ${commission.length} чел.`}
+				</span>
+			</div>
+
+			{/* Свернутый по умолчанию блок расширенных реквизитов */}
+			{showAdvanced && (
+				<div className="mt-3 p-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] flex flex-col gap-3">
+					{/* Реквизиты приказа */}
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+						<div className="flex flex-col gap-1">
+							<label className="text-[11px] font-semibold text-[var(--muted)]">
+								Приказ о проведении инвентаризации
 							</label>
-							<span
-								style={{
-									fontSize: "0.75rem",
-									fontWeight: 700,
-									padding: "2px 8px",
-									borderRadius: 4,
-									background: commission.length === 1 ? "var(--ok-bg, #ecfdf5)" : "var(--info-bg, #eff6ff)",
-									color: commission.length === 1 ? "var(--ok-fg, #047857)" : "var(--info-fg, #1d4ed8)",
-									border: `1px solid ${commission.length === 1 ? "var(--ok-border, #a7f3d0)" : "var(--info-border, #bfdbfe)"}`,
-								}}
-							>
-								{commission.length === 1 ? "Единолично (1 чел.)" : `Комиссия (${commission.length} чел.)`}
-							</span>
+							<div className="flex gap-2">
+								<input
+									className="flex-1 h-8 px-2 text-xs rounded border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] font-mono"
+									value={orderNumber}
+									onChange={(e) => setOrderNumber(e.target.value)}
+									placeholder="Приказ №"
+								/>
+								<input
+									className="w-32 h-8 px-2 text-xs rounded border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
+									type="date"
+									value={orderDate}
+									onChange={(e) => setOrderDate(e.target.value)}
+								/>
+							</div>
 						</div>
-						<p style={{ fontSize: "0.75rem", color: "var(--muted)", margin: "2px 0 0 0" }}>
-							{commission.length === 1
-								? "Единоличный учет: подпись описи формируется одним ответственным сотрудником без созыва расширенной комиссии."
-								: "Стандартный многоместный состав комиссии для стоматологической клиники."}
-						</p>
-					</div>
 
-					<div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-						<button
-							type="button"
-							className={`warehouse-btn ${commission.length === 1 ? "warehouse-btn-primary" : "warehouse-btn-secondary"}`}
-							onClick={onSetSoloCommission}
-							title="Единоличная инвентаризация ответственным сотрудником (1 член комиссии)"
-						>
-							<User size={14} />
-							<span>Единоличная инвентаризация (Ответственный сотрудник)</span>
-						</button>
-
-						{commission.length === 1 && (
-							<button
-								type="button"
-								className="warehouse-btn warehouse-btn-secondary"
-								onClick={onSetStandardCommission}
-								title="Восстановить комиссию из 4 человек (Главный врач, МОЛ, Главная медсестра, Бухгалтер)"
-							>
-								<Layers size={14} />
-								<span>Комиссия из 4 человек (Стандарт)</span>
-							</button>
-						)}
-					</div>
-				</div>
-
-				{/* Список членов комиссии */}
-				<div
-					style={{
-						display: "flex",
-						flexDirection: "column",
-						gap: 6,
-						background: "var(--paper, #ffffff)",
-						padding: 10,
-						borderRadius: 6,
-						border: "1px solid var(--border, #e2e8f0)",
-					}}
-				>
-					{commission.map((member, idx) => (
-						<div
-							key={idx}
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: 8,
-								flexWrap: "wrap",
-							}}
-						>
-							<span
-								style={{
-									fontSize: "0.75rem",
-									fontWeight: 600,
-									minWidth: 160,
-									color: "var(--muted, #64748b)",
-								}}
-							>
-								{member.roleRu || (member.role === "chairman" ? "Председатель" : member.role === "mol" ? "МОЛ" : member.role === "accountant" ? "Бухгалтер" : "Член комиссии")}:
-							</span>
-							<input
-								className="warehouse-meta-input"
-								value={member.fullName}
-								onChange={(e) => onCommissionMemberChange(idx, "fullName", e.target.value)}
-								placeholder="ФИО сотрудника"
-								style={{ flex: 1, minWidth: 180 }}
-							/>
-							<input
-								className="warehouse-meta-input"
-								value={member.position}
-								onChange={(e) => onCommissionMemberChange(idx, "position", e.target.value)}
-								placeholder="Должность"
-								style={{ width: 200 }}
-							/>
-							{commission.length > 1 && (
+						{/* Кнопки переключения режима комиссии */}
+						<div className="flex flex-col gap-1 justify-end">
+							<div className="flex items-center gap-2">
 								<button
 									type="button"
-									className="warehouse-btn warehouse-btn-ghost"
-									onClick={() => onRemoveCommissionMember(idx)}
-									title="Удалить члена комиссии"
-									style={{ padding: "0 6px", height: 28 }}
+									className={`h-8 px-3 rounded text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+										commission.length === 1
+											? "bg-[var(--primary)] text-white shadow-xs"
+											: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--line)]"
+									}`}
+									onClick={onSetSoloCommission}
 								>
-									<Trash2 size={13} />
+									<User size={13} />
+									<span>Единолично (1 чел.)</span>
 								</button>
-							)}
+								<button
+									type="button"
+									className={`h-8 px-3 rounded text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+										commission.length > 1
+											? "bg-[var(--primary)] text-white shadow-xs"
+											: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--line)]"
+									}`}
+									onClick={onSetStandardCommission}
+								>
+									<Layers size={13} />
+									<span>Комиссия клиники (4 чел.)</span>
+								</button>
+							</div>
 						</div>
-					))}
+					</div>
+
+					{/* Список членов комиссии */}
+					<div className="flex flex-col gap-2 pt-2 border-t border-[var(--line-subtle)]">
+						<div className="text-[11px] font-semibold text-[var(--muted)]">
+							Члены инвентаризационной комиссии:
+						</div>
+						{commission.map((member, idx) => (
+							<div key={idx} className="flex items-center gap-2 flex-wrap">
+								<span className="text-xs font-medium text-[var(--muted)] min-w-[140px]">
+									{member.roleRu || (member.role === "chairman" ? "Председатель" : member.role === "mol" ? "МОЛ" : member.role === "accountant" ? "Бухгалтер" : "Член комиссии")}:
+								</span>
+								<input
+									className="flex-1 min-w-[160px] h-8 px-2 text-xs rounded border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
+									value={member.fullName}
+									onChange={(e) => onCommissionMemberChange(idx, "fullName", e.target.value)}
+									placeholder="ФИО сотрудника"
+								/>
+								<input
+									className="w-48 h-8 px-2 text-xs rounded border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
+									value={member.position}
+									onChange={(e) => onCommissionMemberChange(idx, "position", e.target.value)}
+									placeholder="Должность"
+								/>
+								{commission.length > 1 && (
+									<button
+										type="button"
+										className="h-8 w-8 rounded flex items-center justify-center text-[var(--muted)] hover:text-rose-500 hover:bg-rose-500/10 cursor-pointer transition-colors"
+										onClick={() => onRemoveCommissionMember(idx)}
+										title="Удалить члена комиссии"
+									>
+										<Trash2 size={13} />
+									</button>
+								)}
+							</div>
+						))}
+					</div>
 				</div>
-			</div>
+			)}
 		</div>
 	);
 };

@@ -12,7 +12,8 @@ import {
 	Target,
 	Zap,
 } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
+import { showToast } from "./GlobalToast.js";
 import { money } from "../AppHelpers.js";
 import { sliceDomList } from "../utils/domVirtualizationHelper.js";
 import { isDemoShowcaseMode } from "../utils/demoModeEngine.js";
@@ -65,6 +66,9 @@ import {
 	type MobileInventoryCategoryType,
 } from "./inventory/MobileInventoryGroupedList.js";
 
+import { WarehouseWaybillsTab } from "./warehouse/WarehouseWaybillsTab.js";
+import { WarehouseInventoryTab } from "./inventory/WarehouseInventoryTab.js";
+
 // 100% прозрачные реэкспорты декомпозированных модулей склада (Мандат 8b)
 export * from "./InventoryStockTable.js";
 export * from "./inventory/MobileInventoryGroupedList.js";
@@ -76,6 +80,8 @@ export * from "./inventory/InventoryItemFormModal.js";
 export * from "./inventory/InventoryStockAdjustModal.js";
 export * from "./inventory/InventoryExternalModals.js";
 export * from "./inventory/InventoryTopToolbar.js";
+export * from "./warehouse/WarehouseWaybillsTab.js";
+export * from "./inventory/WarehouseInventoryTab.js";
 
 /**
  * Презентационный координатор складского модуля DENTE (Мандаты 8b, 8c, 8d, 8e, 8n).
@@ -311,6 +317,53 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 		};
 	}, [items, organizationId]);
 
+	const handleApplyInventoryAudit = useCallback(
+		async (doc: WarehouseInventoryAuditDocument) => {
+			try {
+				const discrepancyItems = doc.items.filter(
+					(it) => it.discrepancyQuantity !== 0,
+				);
+				if (discrepancyItems.length > 0) {
+					const headers = getHeaders({
+						"Content-Type": "application/json",
+					});
+					for (const it of discrepancyItems) {
+						await fetch(
+							`/api/inventory/${organizationId}/${it.itemId}/stock`,
+							{
+								method: "PATCH",
+								headers,
+								body: JSON.stringify({
+									adjustment: it.discrepancyQuantity,
+									reason: `Инвентаризация ${doc.documentNumber} (${it.discrepancyQuantity > 0 ? "излишек" : "недостача"})`,
+									allowOverdraft: true,
+								}),
+							},
+						);
+					}
+					showToast(
+						`Инвентаризация утверждена: скорректировано ${discrepancyItems.length} позиций на складе`,
+						"info",
+					);
+				} else {
+					showToast(
+						"Инвентаризация утверждена: расхождений по остаткам не выявлено",
+						"info",
+					);
+				}
+			} catch (err) {
+				const message =
+					err instanceof Error
+						? err.message
+						: "Не удалось провести списание/оприходование по инвентаризации";
+				showToast(message, "error");
+			} finally {
+				fetchItems();
+			}
+		},
+		[organizationId, getHeaders, fetchItems],
+	);
+
 	const paperSoftBg = "var(--paper-soft)";
 	const borderColor = "var(--line)";
 
@@ -544,6 +597,19 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 						rulesList={rulesList}
 						onRulesUpdated={() => fetchItems()}
 						getHeaders={getHeaders}
+					/>
+				) : activeSubTab === "waybills" ? (
+					<WarehouseWaybillsTab
+						organizationId={organizationId}
+						inventoryItems={items}
+						onRefreshStock={fetchItems}
+					/>
+				) : activeSubTab === "audit" ? (
+					<WarehouseInventoryTab
+						organizationId={organizationId}
+						items={items}
+						onRefresh={fetchItems}
+						onApplyAudit={handleApplyInventoryAudit}
 					/>
 				) : stockViewMode === "fefo" ? (
 					<InventoryBatchFefoPanel

@@ -1,19 +1,22 @@
 import {
+	ClipboardCheck,
 	Clock,
 	FileText,
 	Package,
 	Plus,
 	Search,
 	Syringe,
+	Truck,
 	X,
 	Zap,
 } from "lucide-react";
 import React from "react";
 import { InventoryOperationsMenu } from "./InventoryOperationsMenu.js";
+import type { InventorySubTab } from "./useInventoryRules.js";
 
 export interface InventoryTopToolbarProps {
-	activeSubTab: "inventory" | "rules";
-	setActiveSubTab: (tab: "inventory" | "rules") => void;
+	activeSubTab: InventorySubTab;
+	setActiveSubTab: (tab: InventorySubTab) => void;
 	stockViewMode: "standard" | "fefo";
 	setStockViewMode: (mode: "standard" | "fefo") => void;
 	itemsCount: number;
@@ -169,7 +172,50 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 							}`}
 						/>
 						<span>Партии FEFO</span>
-						<span className="text-[11px] opacity-70 font-mono">({itemsCount})</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setActiveSubTab("waybills")}
+						className={`h-8 min-h-[32px] px-2.5 sm:px-2.5 xl:px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1 sm:gap-1.5 transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
+							activeSubTab === "waybills"
+								? "bg-[var(--paper)] text-[var(--ink)] shadow-xs border border-[var(--line-subtle)]"
+								: "text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-transparent"
+						}`}
+						role="tab"
+						aria-selected={activeSubTab === "waybills"}
+						data-testid="tab-inventory-waybills"
+					>
+						<Truck
+							className={`w-3.5 h-3.5 shrink-0 ${
+								activeSubTab === "waybills"
+									? "text-[var(--primary)]"
+									: "text-[var(--ink-muted)]"
+							}`}
+						/>
+						<span>Поступление</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setActiveSubTab("audit")}
+						className={`h-8 min-h-[32px] px-2.5 sm:px-2.5 xl:px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1 sm:gap-1.5 transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
+							activeSubTab === "audit"
+								? "bg-[var(--paper)] text-[var(--ink)] shadow-xs border border-[var(--line-subtle)]"
+								: "text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-transparent"
+						}`}
+						role="tab"
+						aria-selected={activeSubTab === "audit"}
+						data-testid="tab-inventory-audit"
+					>
+						<ClipboardCheck
+							className={`w-3.5 h-3.5 shrink-0 ${
+								activeSubTab === "audit"
+									? "text-[var(--primary)]"
+									: "text-[var(--ink-muted)]"
+							}`}
+						/>
+						<span>Инвентаризация</span>
 					</button>
 
 					<button
@@ -191,7 +237,7 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 									: "text-[var(--ink-muted)]"
 							}`}
 						/>
-						<span>Нормы списания</span>
+						<span>Авто-списание</span>
 						<span className="text-[11px] opacity-70 font-mono">({rulesCount})</span>
 					</button>
 				</div>
