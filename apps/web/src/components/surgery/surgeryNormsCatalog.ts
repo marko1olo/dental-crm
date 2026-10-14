@@ -136,7 +136,7 @@ export function buildStandardImplantationProtocolText(
 export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 	{
 		id: "surgery_implant_standard",
-		title: "Дентальная имплантация (✓ Физиологическая норма)",
+		title: "Дентальная имплантация (Физиологическая норма)",
 		shortBadge: "Имплантация 35 Н·см",
 		category: "implant",
 		icd10: "K08.1",
@@ -196,7 +196,7 @@ export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 	},
 	{
 		id: "surgery_extraction_simple",
-		title: "Простое удаление зуба (✓ Физиологическая норма)",
+		title: "Простое удаление зуба (Физиологическая норма)",
 		shortBadge: "Удаление простое",
 		category: "extraction",
 		icd10: "K08.8",
@@ -252,8 +252,8 @@ export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 		category: "extraction",
 		icd10: "K01.1",
 		icd10Label: "Ретинированные зубы",
-		code804n: "A16.07.024",
-		code804nSubcode: "A16.07.001.003",
+		code804n: "A16.07.001.002",
+		code804nSubcode: "A16.07.024",
 		service804nTitle: "Операция удаления ретинированного, дистопированного или сверхкомплектного зуба",
 		defaultToothFdi: 48,
 		standardProtocolTextRu: ATYPICAL_EXTRACTION_NORM_TEXT,
@@ -262,7 +262,7 @@ export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 			"Холод на щеку локально. Щадящая диета. Антибиотикотерапия (Амоксиклав 625 мг 2 р/сут 5 дней). Швы снять через 7-10 суток.",
 		order804nServices: [
 			{
-				code: "A16.07.024",
+				code: "A16.07.001.002",
 				nameRu: "Операция удаления ретинированного, дистопированного зуба (сложное)",
 				name: "Операция удаления ретинированного, дистопированного зуба (сложное)",
 				priceRub: 9500,
@@ -372,8 +372,8 @@ export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 		category: "sinus_gbr",
 		icd10: "K08.2",
 		icd10Label: "Атрофия беззубого альвеолярного края",
-		code804n: "A16.07.041",
-		code804nSubcode: "A16.07.041.002",
+		code804n: "A16.07.041.001",
+		code804nSubcode: "A16.07.041",
 		service804nTitle: "Костная пластика челюстно-лицевой области (синус-лифтинг трансальвеолярный)",
 		defaultToothFdi: 16,
 		standardProtocolTextRu: CLOSED_SINUS_LIFT_NORM_TEXT,
@@ -382,7 +382,7 @@ export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 			"Сосудосуживающие капли в нос 5 дней. Не чихать с закрытым ртом, не летать самолетом 10 дней. Прием НПВП и антибиотикотерапия по назначению. Осмотр через 7 дней.",
 		order804nServices: [
 			{
-				code: "A16.07.041",
+				code: "A16.07.041.001",
 				nameRu: "Костная пластика челюстно-лицевой области (трансальвеолярный синус-лифтинг)",
 				name: "Костная пластика челюстно-лицевой области (трансальвеолярный синус-лифтинг)",
 				priceRub: 18000,
@@ -471,8 +471,8 @@ export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 		category: "extraction",
 		icd10: "K04.7",
 		icd10Label: "Периапикальный абсцесс без свища / Дистопия",
-		code804n: "A16.07.002",
-		code804nSubcode: "A16.07.001.002",
+		code804n: "A16.07.001.001",
+		code804nSubcode: "A16.07.001.001",
 		service804nTitle: "Удаление зуба сложное с разъединением корней",
 		defaultToothFdi: 47,
 		standardProtocolTextRu: COMPLEX_EXTRACTION_NORM_TEXT,
@@ -481,7 +481,7 @@ export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 			"Холод на щеку локально 15 мин 3-4 раза в первые сутки. Не полоскать, не греть, не пить через трубочку. Прием НПВП (Нимесил) при боли. Осмотр через 3 дня, снятие швов через 7-10 дней.",
 		order804nServices: [
 			{
-				code: "A16.07.002",
+				code: "A16.07.001.001",
 				nameRu: "Удаление зуба сложное с разъединением корней и фрагментацией",
 				name: "Удаление зуба сложное с разъединением корней и фрагментацией",
 				priceRub: 6000,

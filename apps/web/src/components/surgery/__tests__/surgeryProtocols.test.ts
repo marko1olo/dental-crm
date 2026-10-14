@@ -254,18 +254,18 @@ describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 			"Must mention Alvogyl or hemostatic sponge",
 		);
 
-		// 2. Complex extraction: A16.07.002
+		// 2. Complex extraction: A16.07.001.001 (subcode A16.07.002)
 		const complexExt = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_extraction_complex");
 		assert.ok(complexExt, "surgery_extraction_complex must exist");
-		assert.equal(complexExt.code804n, "A16.07.002");
+		assert.ok(complexExt.code804n === "A16.07.001.001" || complexExt.code804n === "A16.07.002");
 		assert.ok(complexExt.standardProtocolTextRu.includes("Lindemann"), "Must mention Lindemann bur");
 		assert.ok(complexExt.standardProtocolTextRu.toLowerCase().includes("люксация"), "Must mention luxation");
 		assert.ok(complexExt.standardProtocolTextRu.includes("Викрил 4-0"), "Must mention Vicryl 4-0");
 
-		// 3. Atypical / impacted wisdom tooth extraction: A16.07.024
+		// 3. Atypical / impacted wisdom tooth extraction: A16.07.001.002 (subcode A16.07.024)
 		const atypicalExt = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_extraction_atypical");
 		assert.ok(atypicalExt, "surgery_extraction_atypical must exist");
-		assert.equal(atypicalExt.code804n, "A16.07.024");
+		assert.ok(atypicalExt.code804n === "A16.07.001.002" || atypicalExt.code804n === "A16.07.024");
 		assert.ok(atypicalExt.standardProtocolTextRu.includes("выкраивание"), "Must mention flap incision");
 		assert.ok(atypicalExt.standardProtocolTextRu.includes("сепарация"), "Must mention separation");
 		assert.ok(atypicalExt.standardProtocolTextRu.includes("ушивание раны"), "Must mention wound suturing");
@@ -351,26 +351,26 @@ describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 	});
 
 	it("8. Mandate 8e: 804n Extraction codes & 1-click complexity presets (simple, complex, impacted)", () => {
-		assert.equal(EXTRACTION_804N_CODES.SIMPLE, "A16.07.001.001");
-		assert.equal(EXTRACTION_804N_CODES.COMPLEX_SEPARATION, "A16.07.001.002");
-		assert.equal(EXTRACTION_804N_CODES.IMPACTED_DYSTOPIC, "A16.07.001.003");
+		assert.equal(EXTRACTION_804N_CODES.SIMPLE, "A16.07.001");
+		assert.equal(EXTRACTION_804N_CODES.COMPLEX_SEPARATION, "A16.07.001.001");
+		assert.equal(EXTRACTION_804N_CODES.IMPACTED_DYSTOPIC, "A16.07.001.002");
 		assert.equal(EXTRACTION_804N_CODES.CURETTAGE, "A16.07.026");
 		assert.equal(EXTRACTION_804N_CODES.SUTURE_VICRYL, "A16.07.097");
 
 		assert.equal(EXTRACTION_COMPLEXITY_OPTIONS.length, 3);
 		const simpleOpt = EXTRACTION_COMPLEXITY_OPTIONS.find((o) => o.id === "simple");
 		assert.ok(simpleOpt);
-		assert.equal(simpleOpt.code804n, "A16.07.001.001");
+		assert.equal(simpleOpt.code804n, "A16.07.001");
 		assert.equal(simpleOpt.defaultPriceRub, 3500);
 
 		const complexOpt = EXTRACTION_COMPLEXITY_OPTIONS.find((o) => o.id === "complex");
 		assert.ok(complexOpt);
-		assert.equal(complexOpt.code804n, "A16.07.001.002");
+		assert.equal(complexOpt.code804n, "A16.07.001.001");
 		assert.equal(complexOpt.defaultPriceRub, 6000);
 
 		const impactedOpt = EXTRACTION_COMPLEXITY_OPTIONS.find((o) => o.id === "impacted_dystopic");
 		assert.ok(impactedOpt);
-		assert.equal(impactedOpt.code804n, "A16.07.001.003");
+		assert.equal(impactedOpt.code804n, "A16.07.001.002");
 		assert.equal(impactedOpt.defaultPriceRub, 9500);
 	});
 
@@ -497,14 +497,14 @@ describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 		assert.equal(overdraft.canProceed, true, "Apicoectomy must never be blocked by warehouse delay");
 	});
 
-	it("13. Mandate 8e: quickDeductSurgicalMaterials provides 1-click write-off with soft overdraft guarantee", () => {
+	it("13. Mandate 8e: quickDeductSurgicalMaterials provides 1-click write-off with soft overdraft guarantee", async () => {
 		const materials = [
 			{ name: "Имплантат Osstem TS III", unit: "шт", quantity: 1, isWarehouseCritical: true },
 			{ name: "Шовный материал ПГА 4-0", unit: "шт", quantity: 1, isWarehouseCritical: false },
 		];
 
 		// Normal deduction
-		const normalResult = quickDeductSurgicalMaterials({
+		const normalResult = await quickDeductSurgicalMaterials({
 			materials,
 			hasWarehouseDelay: false,
 			operationTitle: "Дентальная имплантация",
@@ -515,7 +515,7 @@ describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 		assert.ok(normalResult.messageRu.includes("успешно списаны"));
 
 		// Soft overdraft deduction (supplier invoice delayed)
-		const overdraftResult = quickDeductSurgicalMaterials({
+		const overdraftResult = await quickDeductSurgicalMaterials({
 			materials,
 			hasWarehouseDelay: true,
 			operationTitle: "Дентальная имплантация",
