@@ -35,6 +35,8 @@ export interface EndoToothClinicalData {
 	updatedAt?: string;
 }
 
+export type EndoStageStamp = "COMPLETED" | "TEMP_CAOH2" | "DRAFT";
+
 export type EndoProtocolPresetId =
 	| "primary_endo"
 	| "retreatment_endo"
@@ -155,4 +157,53 @@ export interface EndoCaseEvaluationResult {
 	readonly hasUnderfill: boolean;
 	readonly summaryRu: string;
 	readonly clinicalRecommendationsRu: readonly string[];
+}
+
+// ─── СМЕТА 804н И СПИСАНИЕ МАТЕРИАЛОВ (МАНДАТЫ 8b, 8e, 8n) ───────────────────
+
+export interface EndoMaterialConsumableEstimate {
+	readonly itemId: string;
+	readonly itemName: string;
+	readonly category:
+		| "gutta_percha"
+		| "sealer"
+		| "rotary_file"
+		| "disinfectant"
+		| "calcium"
+		| "bandage"
+		| "other";
+	readonly unit: string;
+	readonly quantity: number;
+	readonly costPriceKopecks: number;
+	readonly costPriceRub: number;
+	readonly notes?: string | undefined;
+}
+
+export interface Endo804nServiceEstimate {
+	readonly code804n: string;
+	readonly title: string;
+	readonly category: string;
+	readonly priceRub: number;
+	readonly priceKopecks: number;
+	readonly quantity: number;
+	readonly totalPriceRub: number;
+	readonly totalPriceKopecks: number;
+	readonly toothNumber: number;
+	readonly canalCount: number;
+	readonly isMandatory: boolean;
+}
+
+export interface EndoTreatmentBillingEstimateResult {
+	readonly toothNumber: number;
+	readonly canalCount: number;
+	readonly stage: EndoStageStamp;
+	readonly obturationTechnique: string;
+	readonly sealer: string;
+	readonly isRetreatment: boolean;
+	readonly services804n: readonly Endo804nServiceEstimate[];
+	readonly materials: readonly EndoMaterialConsumableEstimate[];
+	readonly totalServicesPriceRub: number;
+	readonly totalServicesPriceKopecks: number;
+	readonly totalMaterialsCostRub: number;
+	readonly totalMaterialsCostKopecks: number;
 }

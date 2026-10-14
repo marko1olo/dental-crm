@@ -1,5 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import type { EndoCanalData, EndoToothClinicalData } from "@dental/shared";
+import type {
+	EndoCanalData,
+	EndoToothClinicalData,
+	ToothClinicalServicePayload,
+	EndoTreatmentBillingEstimateResult,
+} from "@dental/shared";
 import {
 	type EndoStageStamp,
 	applyAnatomicalWorkingLengths,
@@ -19,6 +24,8 @@ import {
 	PRIMARY_ENDO_PRESET,
 	REFERENCE_POINT_OPTIONS,
 	TAPER_OPTIONS,
+	calculateEndoBillingAndMaterialsEstimate,
+	safeCanalWorkingLengthRatio,
 } from "./endoCanalConstants";
 import { sanitizeCanalsForSubmission, renderIsoColorBadge } from "./endoCanalHelpers";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
@@ -503,6 +510,17 @@ export function useEndoCanalLogic({
 		stageStamp,
 	]);
 
+	// Автоматический расчет сметы 804н и списания материалов со склада клиники (Мандаты 8b, 8e, 8n)
+	const billingEstimate = useMemo<EndoTreatmentBillingEstimateResult>(() => {
+		return calculateEndoBillingAndMaterialsEstimate({
+			toothNumber: activeTooth,
+			canals,
+			stageStamp,
+			obturationTechnique: canals[0]?.obturationTechnique,
+			sealer: canals[0]?.sealer,
+		});
+	}, [activeTooth, canals, stageStamp]);
+
 	const persistCanalsToBackend = async (
 		clinicalData: EndoToothClinicalData,
 	): Promise<boolean> => {
@@ -615,6 +633,56 @@ export function useEndoCanalLogic({
 			});
 		} catch {
 			// fallback
+		}
+
+		// Автоматическое добавление услуг 804н в счет визита (Мандаты 8b, 8e, 8n)
+		try {
+			const visitStore = useVisitStore.getState();
+			for (const srv of billingEstimate.services804n) {
+				const itemPayload: ToothClinicalServicePayload = {
+					serviceId: `endo_${srv.code804n}_${activeTooth}`,
+					code804n: srv.code804n,
+					toothNumber: activeTooth,
+					toothCode: String(activeTooth),
+					name: srv.title,
+					priceRub: srv.priceRub,
+					priceKopecks: srv.priceKopecks,
+					quantity: srv.quantity,
+					category: srv.category,
+				};
+				visitStore.addCompletedService(itemPayload);
+			}
+
+			visitStore.applyServicesToToothState({
+				toothNumber: activeTooth,
+				toothCode: String(activeTooth),
+				services: billingEstimate.services804n.map((s) => ({
+					code804n: s.code804n,
+					title: s.title,
+					price: s.priceRub,
+					unitPriceRub: s.priceRub,
+					toothNumber: activeTooth,
+					toothCode: String(activeTooth),
+				})),
+			});
+		} catch (billErr) {
+			console.warn("Auto-billing endo services skipped or outside active visit store", billErr);
+		}
+
+		// Автоматическое списание расходных материалов со склада клиники (inventory_items)
+		try {
+			window.dispatchEvent(
+				new CustomEvent("dente-deduct-inventory-materials", {
+					detail: {
+						toothNumber: activeTooth,
+						patientId,
+						stage: stageStamp,
+						materials: billingEstimate.materials,
+					},
+				}),
+			);
+		} catch (matErr) {
+			console.warn("Materials deduction event dispatch skipped", matErr);
 		}
 
 		if (onInsertToProtocol) {
@@ -744,5 +812,6 @@ export function useEndoCanalLogic({
 		handleCopyPatientMemo,
 		handlePrintWorksheet,
 		renderIsoColorBadge,
+		billingEstimate,
 	};
 }

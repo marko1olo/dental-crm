@@ -45,6 +45,12 @@ import {
 	RETREATMENT_ENDO_PRESET,
 	STANDARD_ENDO_PRESET,
 	TAPER_OPTIONS,
+	calculateEndoBillingAndMaterialsEstimate,
+	safeCanalWorkingLengthRatio,
+	isRvgBlockingEndoStage,
+	type EndoTreatmentBillingEstimateResult,
+	type Endo804nServiceEstimate,
+	type EndoMaterialConsumableEstimate,
 } from "@dental/shared";
 
 /**
@@ -132,4 +138,10 @@ export {
 	RETREATMENT_ENDO_PRESET,
 	STANDARD_ENDO_PRESET,
 	TAPER_OPTIONS,
+	calculateEndoBillingAndMaterialsEstimate,
+	safeCanalWorkingLengthRatio,
+	isRvgBlockingEndoStage,
+	type EndoTreatmentBillingEstimateResult,
+	type Endo804nServiceEstimate,
+	type EndoMaterialConsumableEstimate,
 };

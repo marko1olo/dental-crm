@@ -84,9 +84,9 @@ export const EndoClinicalParams: React.FC<EndoClinicalParamsProps> = ({
 			{/* Live Structured Protocol Preview for Form 043/y (Zero Emojis) */}
 			<div className="p-3 bg-[var(--surface,#f8fafc)] dark:bg-slate-950/60 border border-[var(--line,#cbd5e1)] dark:border-slate-800 rounded-2xl">
 				<div className="flex items-center justify-between mb-1.5">
-					<div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-rose-700 dark:text-rose-300">
+					<div className="flex items-center gap-1.5 text-xs font-bold text-rose-700 dark:text-rose-300">
 						<DentalForm043 size={15} />
-						<span className="truncate">Форма 043/у · Предпросмотр протокола лечения:</span>
+						<span className="truncate">Предпросмотр протокола лечения:</span>
 					</div>
 
 					<button
