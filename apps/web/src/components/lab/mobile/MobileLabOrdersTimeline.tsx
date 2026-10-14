@@ -230,7 +230,7 @@ export const MobileLabOrdersTimeline: React.FC<MobileLabOrdersTimelineProps> = R
 				<header className="mobile-lab-top-bar">
 					<div className="mobile-lab-brand">
 						<div className="mobile-lab-brand-icon">
-							<FlaskConical size={18} />
+							<FlaskConical size={18} className="text-[var(--primary)]" />
 						</div>
 						<div className="mobile-lab-brand-title">Наряды ЗТЛ</div>
 					</div>
@@ -243,7 +243,7 @@ export const MobileLabOrdersTimeline: React.FC<MobileLabOrdersTimelineProps> = R
 							aria-label="Обновить наряды"
 							title="Обновить наряды"
 						>
-							<RefreshCw size={18} className={isLoading ? "animate-spin text-teal-600" : ""} />
+							<RefreshCw size={18} className={isLoading ? "animate-spin text-[var(--primary)]" : "text-[var(--ink-muted)]"} />
 						</button>
 						<button
 							type="button"
@@ -253,7 +253,7 @@ export const MobileLabOrdersTimeline: React.FC<MobileLabOrdersTimelineProps> = R
 							title="Трекер этапов ЗТЛ"
 							data-testid="mobile-lab-open-tracker-btn"
 						>
-							<Layers size={18} className="text-teal-600 dark:text-teal-400" />
+							<Layers size={18} className="text-[var(--ink-muted)]" />
 						</button>
 					</div>
 				</header>

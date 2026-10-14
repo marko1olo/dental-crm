@@ -305,7 +305,7 @@ export function DentalLabCourierDispatchBar({
 								type="text"
 								value={courierPhone}
 								onChange={(e) => setCourierPhone(e.target.value)}
-								className="w-full min-h-[44px] sm:min-h-[32px] h-8 pl-8 pr-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] font-mono focus:outline-none focus:ring-1 focus:ring-teal-500"
+								className="w-full min-h-[44px] sm:min-h-[32px] h-8 pl-9 pr-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] font-mono focus:outline-none focus:ring-1 focus:ring-teal-500"
 								placeholder="+7 (___) ___-__-__"
 							/>
 						</div>

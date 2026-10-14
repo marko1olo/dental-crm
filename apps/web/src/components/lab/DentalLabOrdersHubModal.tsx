@@ -18,9 +18,19 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import {
-	FlaskConical, Plus, Download, X, Search, AlertTriangle, Printer, CheckCircle2, RefreshCw,
+	FlaskConical,
+	Plus,
+	Download,
+	X,
+	Search,
+	AlertTriangle,
+	Printer,
+	CheckCircle2,
+	RefreshCw,
 } from "lucide-react";
-import "./dentalLabWorkflow.css";
+if (typeof document !== "undefined") {
+	void import("./dentalLabWorkflow.css");
+}
 import {
 	ORTHOPEDIC_WORK_TYPES, type LabWorkflowStatus, LAB_WORKFLOW_STATUSES,
 	type DentalLabWorkflowOrder, advanceLabOrderStage, advanceLabOrderTechStage,

@@ -8,7 +8,9 @@
  */
 
 import React from "react";
-import "../../styles/components.css";
+if (typeof document !== "undefined") {
+	void import("../../styles/components.css");
+}
 import { Camera, Check, CheckCircle2, Trash2, Upload } from "lucide-react";
 import { ToothShadeGuide } from "../icons/DentalIcons";
 import {

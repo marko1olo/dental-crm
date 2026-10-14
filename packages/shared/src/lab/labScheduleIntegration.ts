@@ -22,6 +22,7 @@ export interface AppointmentLabStatusInfo {
 	readonly state: AppointmentLabBadgeState;
 	readonly labelRu: string;
 	readonly shortLabelRu: string;
+	readonly readinessText?: string;
 	readonly badgeClass: string;
 	readonly borderClass: string;
 	readonly textClass: string;
@@ -50,6 +51,21 @@ export interface MinimalLabOrderForSchedule {
 	readonly expectedDate?: string | Date | null;
 	readonly receivedDate?: string | Date | null;
 	readonly workType?: string | null;
+}
+
+/**
+ * Формирует явный индикатор клинической готовности работы из ЗТЛ.
+ * Например: «Работа из ЗТЛ доставлена: Коронка цирконий зуб 46»
+ */
+export function formatLabReadinessIndicator(order: {
+	readonly workType?: string | null | undefined;
+	readonly workTypeRu?: string | null | undefined;
+	readonly material?: string | null | undefined;
+	readonly toothFdi?: string | null | undefined;
+}): string {
+	const workType = order.workTypeRu || order.workType || order.material || "Конструкция";
+	const tooth = order.toothFdi ? ` зуб ${order.toothFdi}` : "";
+	return `Работа из ЗТЛ доставлена: ${workType}${tooth}`;
 }
 
 /**
@@ -92,18 +108,27 @@ export function evaluateAppointmentLabStatus(
 	const isReadyInClinic =
 		rawStatus === "ready" ||
 		rawStatus === "ready_in_clinic" ||
+		rawStatus === "delivered_to_clinic" ||
 		rawStatus === "received" ||
 		rawStatus === "delivered" ||
 		rawStatus === "shipped" ||
 		rawStage === "ready_in_clinic" ||
 		rawStage === "ready_fixation" ||
+		rawStage === "delivered_to_clinic" ||
 		Boolean(order.receivedDate);
 
 	if (isReadyInClinic) {
+		const readinessText = formatLabReadinessIndicator({
+			workType: order.workType,
+			workTypeRu: (order as any).workTypeRu,
+			material: order.material,
+			toothFdi: order.toothFdi,
+		});
 		return {
 			state: "ready_in_clinic",
 			labelRu: "Поступил в клинику",
 			shortLabelRu: "В клинике",
+			readinessText,
 			badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/40",
 			borderClass: "border-emerald-500",
 			textClass: "text-emerald-700 dark:text-emerald-300",

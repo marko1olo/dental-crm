@@ -146,9 +146,9 @@ export function checkDentalLabFinancialGate(
 
 	const detailedReasonRu =
 		gateStatus === "BLOCKED_REQUIRES_ADVANCE"
-			? `По этапу внесено ${paidPercent}% (${formatKopecksRu(totalCovered)}) из требуемых ${minAdvancePercent}% (${formattedRequiredAdvance}). Врач вправе отправить наряд в ЗТЛ («Отправить наряд в ЗТЛ — клиническое решение лечащего врача»).`
+			? `По этапу внесено ${paidPercent}% (${formatKopecksRu(totalCovered)}) из требуемых ${minAdvancePercent}% (${formattedRequiredAdvance}). Врач вправе отправить наряд в ЗТЛ («Отправить в работу без аванса (Автономия врача)»).`
 			: gateStatus === "DOCTOR_OVERRIDE"
-				? `Клиническое решение лечащего врача: ${activeOverride?.doctorName} в ${activeOverride?.timestampIso?.slice(0, 16) || "сегодня"}. Основание: ${activeOverride?.reason || "Клиническая необходимость"}.`
+				? `Клиническое решение лечащего врача: ${activeOverride?.doctorName} в ${activeOverride?.timestampIso?.slice(0, 16) || "сегодня"}. Основание: ${activeOverride?.reason || "Отправить в работу без аванса (Автономия врача)"}.`
 				: gateStatus === "CHIEF_DOCTOR_OVERRIDE"
 				? `Авторизован оверрайд главного врача: ${activeOverride?.doctorName} в ${activeOverride?.timestampIso?.slice(0, 16) || "сегодня"}. Недостающий аванс: ${formattedMissingAdvance}.`
 				: `Внесено ${paidPercent}% (${formatKopecksRu(totalCovered)}), что полностью покрывает лабораторный депозит этапа (${formattedRequiredAdvance}).`;
@@ -186,7 +186,7 @@ export function checkDentalLabFinancialGate(
  */
 export function createDoctorClinicalOverride(
 	doctorName: string,
-	reason = "Отправить наряд в ЗТЛ — клиническое решение лечащего врача",
+	reason = "Отправить в работу без аванса (Автономия врача)",
 ): {
 	readonly authorized: boolean;
 	readonly doctorName: string;

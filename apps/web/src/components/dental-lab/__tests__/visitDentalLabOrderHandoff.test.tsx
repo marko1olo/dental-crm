@@ -15,6 +15,14 @@ const __dirname = path.dirname(__filename);
 const dentalLabDir = path.resolve(__dirname, "..");
 const webSrcDir = path.resolve(__dirname, "../../../");
 const visitViewModalsPath = path.resolve(dentalLabDir, "../visit/view/VisitViewModals.tsx");
+const dentalLabOrderModalSectionPath = path.resolve(dentalLabDir, "../visit/view/viewModalsModules/DentalLabOrderModalSection.tsx");
+function readVisitViewModalsCombined(): string {
+	const main = fs.readFileSync(visitViewModalsPath, "utf-8");
+	const section = fs.existsSync(dentalLabOrderModalSectionPath)
+		? fs.readFileSync(dentalLabOrderModalSectionPath, "utf-8")
+		: "";
+	return `${main}\n${section}`;
+}
 
 describe("CHAIRSIDE VISIT TO DENTAL LAB ORDER HANDOFF: INTEGRATION TEST SUITE", () => {
 	// ─── 1. Экстракция и связывание этапов плана лечения ─────────────────────
@@ -123,7 +131,7 @@ describe("CHAIRSIDE VISIT TO DENTAL LAB ORDER HANDOFF: INTEGRATION TEST SUITE", 
 		});
 
 		it("VisitViewModals.tsx уведомляет врача понятным человеческим текстом", () => {
-			const content = fs.readFileSync(visitViewModalsPath, "utf-8");
+			const content = readVisitViewModalsCombined();
 
 			assert.match(content, /Снятие слепка \(2 500 ₽\) включено в счёт визита/);
 			assert.match(content, /Наряд ЗТЛ сохранен/);
@@ -208,13 +216,13 @@ describe("CHAIRSIDE VISIT TO DENTAL LAB ORDER HANDOFF: INTEGRATION TEST SUITE", 
 
 			assert.match(
 				content,
-				/loadedTreatmentPlan=\{loadedTreatmentPlan\s*\|\|\s*activePlan\}/,
+				/loadedTreatmentPlan=\{(?:s\.)?loadedTreatmentPlan\s*\|\|\s*(?:s\.)?activePlan\}/,
 				"VisitView должен передавать loadedTreatmentPlan || activePlan в VisitViewModals",
 			);
 		});
 
 		it("VisitViewModals.tsx передает stageNumber, stageTitle, treatmentPlanId в DentalLabOrderModal", () => {
-			const content = fs.readFileSync(visitViewModalsPath, "utf-8");
+			const content = readVisitViewModalsCombined();
 
 			assert.match(content, /treatmentPlanId=\{effectiveTreatmentPlanId\}/);
 			assert.match(content, /stageNumber=\{effectiveStageNumber\}/);
@@ -233,6 +241,33 @@ describe("CHAIRSIDE VISIT TO DENTAL LAB ORDER HANDOFF: INTEGRATION TEST SUITE", 
 				/treatmentPlanId=\{selectedOrderForEdit\?\.treatmentPlanId/,
 				"Модалка наряда должна получать treatmentPlanId из выбранного заказа",
 			);
+		});
+	});
+
+	// ─── 6. Себестоимость лабораторных расходов в финансовой карточке визита ─
+	describe("6. Автоматическое добавление себестоимости лабораторных расходов в финансовую карточку визита", () => {
+		it("DentalLabOrderModalSection.tsx передает labCostRub в позицию услуги визита и событие биллинга", () => {
+			const content = fs.readFileSync(dentalLabOrderModalSectionPath, "utf-8");
+
+			assert.match(content, /rawLabCost\s*=/, "Должен рассчитываться rawLabCost");
+			assert.match(content, /unitLabCost\s*=/, "Должен рассчитываться unitLabCost на единицу зуба");
+			assert.match(content, /labCostRub:\s*unitLabCost/, "labCostRub должен передаваться в addCompletedService и dente-add-billing-item");
+		});
+
+		it("VisitServiceBillingWidget.tsx агрегирует общую себестоимость ЗТЛ в смету приёма", () => {
+			const widgetPath = path.resolve(dentalLabDir, "../visit/VisitServiceBillingWidget.tsx");
+			const content = fs.readFileSync(widgetPath, "utf-8");
+
+			assert.match(content, /totalLabCostRub/, "Виджет биллинга должен вычислять общую себестоимость ЗТЛ");
+			assert.match(content, /badge-total-lab-cost/, "Виджет биллинга должен иметь бейдж общей себестоимости ЗТЛ");
+		});
+
+		it("ChairsideBillingItemRow.tsx отображает персональный бейдж ЗТЛ у ортопедической услуги", () => {
+			const rowPath = path.resolve(dentalLabDir, "../visit/ChairsideBillingItemRow.tsx");
+			const content = fs.readFileSync(rowPath, "utf-8");
+
+			assert.match(content, /lab-cost-chip-/, "Строка услуги должна отображать чип себестоимости ЗТЛ");
+			assert.match(content, /Себестоимость изготовления в зуботехнической лаборатории/);
 		});
 	});
 });

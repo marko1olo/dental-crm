@@ -92,10 +92,10 @@ export function LabOrderCard({
 							{formatLabOrderTeethOrJaw(order)}
 						</span>
 						<div className="min-w-0 flex-1">
-							<h3 className="text-xs sm:text-sm font-bold text-[var(--ink)] m-0 truncate">
+							<h3 className="text-xs sm:text-sm font-bold text-[var(--ink)] m-0 break-words leading-snug">
 								{order.patientName || "Пациент"}
 							</h3>
-							<span className="text-xs text-[var(--muted)] block truncate">
+							<span className="text-xs text-[var(--muted)] block break-words leading-snug">
 								Врач: {order.doctorName || "Не указан"}
 							</span>
 						</div>
@@ -231,7 +231,7 @@ export function LabOrderCard({
 							title="Сменить этап или статус изготовления"
 							data-testid={`lab-order-stage-status-btn-${order.id}`}
 						>
-							<Layers className="w-3.5 h-3.5 text-indigo-500" />
+							<Layers className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
 							<span>Этап/статус</span>
 						</button>
 					)}

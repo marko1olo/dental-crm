@@ -27,7 +27,8 @@ import {
 	getVitaShadeHex,
 	getLabWorkTypeById,
 } from "./dentalLabOrderEngine";
-import { money } from "../../AppHelpers";
+import { money, denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { showToast } from "../GlobalToast";
 
 export interface DentalLabOrderDrawerProps {
 	readonly isOpen: boolean;
@@ -187,6 +188,24 @@ export function DentalLabOrderDrawer({
 
 		const nowIso = new Date().toISOString();
 
+		const payloadForApi = {
+			orderNumber: editingOrder ? editingOrder.orderNumber : undefined,
+			doctorName: formDoctorName || "Врач-ортопед",
+			toothFdi: teethFinal.join(", "),
+			teethFdi: teethFinal.join(", "),
+			material: def?.defaultMaterialRu || "Диоксид циркония Katana ML",
+			materialName: def?.nameRu || "Диоксид циркония",
+			construction: formConstruction,
+			colorVita: formVitaShade,
+			shadeCode: formVitaShade,
+			dueDate: formDeadlineDate,
+			expectedLabDate: formDeadlineDate,
+			priceRub: formPatientPriceRub,
+			clinicalNotes: formClinicalNotes || undefined,
+			status: formStatus === "delivered_to_patient" ? "completed" : formStatus === "ready_in_clinic" ? "received" : "sent",
+			stage: formStatus,
+		};
+
 		if (editingOrder) {
 			const updated: DentalLabOrderRecord = {
 				...editingOrder,
@@ -219,6 +238,19 @@ export function DentalLabOrderDrawer({
 			};
 			onSaveOrder(updated, true);
 
+			if (editingOrder.id && /^[0-9a-fA-F-]{36}$/.test(editingOrder.id)) {
+				fetch(`/api/clinical/lab-orders/${editingOrder.id}`, {
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+						...denteAdminSecretRequestHeaders(),
+					},
+					body: JSON.stringify(payloadForApi),
+				}).catch(() => {});
+			}
+
+			showToast("Наряд ЗТЛ успешно обновлен", "success");
+
 			if (typeof window !== "undefined") {
 				if (formTreatmentPlanId) {
 					window.dispatchEvent(
@@ -243,6 +275,7 @@ export function DentalLabOrderDrawer({
 					}),
 				);
 			}
+			onClose();
 		} else {
 			const created = createDentalLabOrderRecord({
 				patientName: formPatientName || "Пациент",
@@ -273,6 +306,18 @@ export function DentalLabOrderDrawer({
 			});
 			onSaveOrder(created, false);
 
+			fetch("/api/clinical/lab-orders", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": `lab-order-drawer-${Date.now()}`,
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify(payloadForApi),
+			}).catch(() => {});
+
+			showToast("Наряд-заказ в ЗТЛ успешно оформлен", "success");
+
 			if (typeof window !== "undefined") {
 				if (formTreatmentPlanId) {
 					window.dispatchEvent(
@@ -297,6 +342,7 @@ export function DentalLabOrderDrawer({
 					}),
 				);
 			}
+			onClose();
 		}
 	};
 

@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
-import "../../styles/components.css";
+if (typeof document !== "undefined") {
+	void import("../../styles/components.css");
+}
 import {
 	FlaskConical,
 	Search,

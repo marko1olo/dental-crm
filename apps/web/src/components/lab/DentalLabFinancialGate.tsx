@@ -73,7 +73,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 	const handleOverrideSubmit = () => {
 		const override = createDoctorClinicalOverride(
 			effectiveDoctorName,
-			"Отправить наряд в ЗТЛ — клиническое решение лечащего врача",
+			"Отправить в работу без аванса (Автономия врача)",
 		);
 		if (onConfirmOverride) {
 			onConfirmOverride(override);
@@ -143,10 +143,10 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 							onClick={handleOverrideSubmit}
 							className="px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-xs transition cursor-pointer flex items-center gap-1.5"
 							data-testid="btn-lab-override-financial-gate"
-							title="Отправить наряд в ЗТЛ — клиническое решение лечащего врача"
+							title="Отправить в работу без аванса (Автономия врача)"
 						>
 							<ShieldCheck size={14} />
-							<span>Отправить наряд в ЗТЛ — клиническое решение лечащего врача</span>
+							<span>Отправить в работу без аванса (Автономия врача)</span>
 						</button>
 					)}
 					{onOpenInstallmentModal && (
@@ -231,10 +231,10 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 							onClick={handleOverrideSubmit}
 							className="min-h-[44px] w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-xs transition cursor-pointer"
 							data-testid="btn-lab-override-financial-gate"
-							title="Отправить наряд в ЗТЛ — клиническое решение лечащего врача"
+							title="Отправить в работу без аванса (Автономия врача)"
 						>
 							<ShieldCheck size={15} />
-							<span>Отправить наряд в ЗТЛ — клиническое решение лечащего врача</span>
+							<span>Отправить в работу без аванса (Автономия врача)</span>
 						</button>
 					</div>
 				)}
@@ -367,10 +367,10 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 							onClick={handleOverrideSubmit}
 							className="min-h-[44px] w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-teal-600 hover:bg-teal-500 active:scale-95 text-white shadow-sm transition cursor-pointer"
 							data-testid="btn-lab-override-financial-gate"
-							title="Отправить наряд в ЗТЛ — клиническое решение лечащего врача"
+							title="Отправить в работу без аванса (Автономия врача)"
 						>
 							<ShieldCheck size={16} />
-							<span>Отправить наряд в ЗТЛ — клиническое решение лечащего врача</span>
+							<span>Отправить в работу без аванса (Автономия врача)</span>
 						</button>
 					</div>
 				</div>
@@ -395,9 +395,10 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 						onClick={handleOverrideSubmit}
 						className="min-h-[44px] flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-extrabold text-white bg-[var(--teal-fill,var(--teal,#0d9488))] hover:bg-[var(--teal-dark,#0f766e)] shadow-md transition cursor-pointer active:scale-95"
 						data-testid="lab-gate-direct-send-btn"
+						title="Отправить в работу без аванса (Автономия врача)"
 					>
 						<Send size={15} />
-						<span>Отправить наряд в ЗТЛ — клиническое решение лечащего врача</span>
+						<span>Отправить в работу без аванса (Автономия врача)</span>
 					</button>
 				</div>
 			</div>

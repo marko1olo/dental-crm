@@ -53,6 +53,18 @@ describe("Shared Dental Lab — Lab Schedule Integration (Appointment Badges)", 
 		assert.equal(status.isOverdue, false);
 		assert.equal(status.daysOverdue, 0);
 
+		// Also when delivered_to_clinic status is set
+		const orderDeliveredToClinic: MinimalLabOrderForSchedule = {
+			id: "ord_101b",
+			status: "delivered_to_clinic",
+			workType: "Коронка цирконий",
+			toothFdi: "46",
+		};
+		const statusDelivered = evaluateAppointmentLabStatus(orderDeliveredToClinic);
+		assert.ok(statusDelivered);
+		assert.equal(statusDelivered.state, "ready_in_clinic");
+		assert.equal(statusDelivered.readinessText, "Работа из ЗТЛ доставлена: Коронка цирконий зуб 46");
+
 		// Also when receivedDate is set
 		const orderWithReceived: MinimalLabOrderForSchedule = {
 			id: "ord_101",

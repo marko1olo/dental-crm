@@ -30,10 +30,10 @@ export function LabOrdersSegmentedNav({
 						>
 							<span>{f.label}</span>
 							<span
-								className={`inline-flex items-center justify-center px-1.5 py-0.2 text-[10px] font-bold rounded-full transition-colors ${
+								className={`inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full transition-colors ${
 									isActive
-										? "bg-[var(--teal-soft)] text-[var(--teal)] dark:bg-[var(--line)] dark:text-[var(--ink)]"
-										: "bg-[var(--line)] text-[var(--muted)]"
+										? "bg-[var(--primary)]/15 text-[var(--primary)] dark:bg-[var(--line)] dark:text-[var(--ink)]"
+										: "bg-[var(--line)] text-[var(--ink-muted)]"
 								}`}
 							>
 								{count}

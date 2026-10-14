@@ -336,7 +336,7 @@ export function DentalLabRestorationTab({
 								key={mat.id}
 								type="button"
 								onClick={() => setImpressionType?.(mat.id)}
-								className={`p-2.5 rounded-xl border text-left text-xs transition-all ${
+								className={`px-3.5 py-2.5 rounded-xl border text-left text-xs transition-all ${
 									isSelected
 										? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)] font-bold shadow-xs ring-1 ring-[var(--teal)]"
 										: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300"
