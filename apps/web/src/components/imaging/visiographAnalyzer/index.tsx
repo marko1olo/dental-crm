@@ -91,6 +91,8 @@ export function VisiographAnalyzer(props: VisiographAnalyzerProps = {}) {
 		calibration,
 		workingLengthMm,
 		handleMeasureWorkingLength,
+		boundToothCode,
+		handleBindTooth,
 	} = useVisiographAnalyzer(props);
 
 	return (
@@ -194,6 +196,8 @@ export function VisiographAnalyzer(props: VisiographAnalyzerProps = {}) {
 									onRunAiAnalysis={handleRunAiAnalysis}
 									hasAiReport={Boolean(currentScan.aiReport)}
 									onOpenSensorViewer={() => setIsSensorViewerOpen(true)}
+									boundToothCode={boundToothCode}
+									onBindTooth={handleBindTooth}
 								/>
 
 								<VisiographCanvasViewport

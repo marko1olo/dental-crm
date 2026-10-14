@@ -215,18 +215,64 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 		const targetId = effectiveTargetPatientId ?? visitPatientId;
 		if (!targetId || isDemoPatientId(targetId) || isDemoShowcaseMode()) return;
 		let cancelled = false;
-		fetch(`/api/imaging/studies?patientId=${encodeURIComponent(targetId)}`)
-			.then((res) => (res.ok ? res.json() : []))
-			.then((data) => {
-				if (!cancelled && Array.isArray(data)) {
-					setLiveStudies(data);
+
+		const loadAllPatientScans = () => {
+			Promise.all([
+				fetch(`/api/imaging/studies?patientId=${encodeURIComponent(targetId)}`)
+					.then((res) => (res.ok ? res.json() : []))
+					.catch(() => []),
+				fetch(`/api/xray/scans?patientId=${encodeURIComponent(targetId)}`)
+					.then((res) => (res.ok ? res.json() : []))
+					.then((scans) =>
+						Array.isArray(scans)
+							? scans.map((s: any) => ({
+									id: s.id,
+									patientId: s.patientId,
+									visitId: s.visitId,
+									title:
+										s.originalFilename ||
+										(s.toothCode
+											? `RVG · Зуб #${s.toothCode}`
+											: "Прицельный снимок RVG"),
+									kind: s.kind || "periapical",
+									modality: "RVG",
+									toothCode: s.toothCode,
+									capturedAt: s.capturedAt || s.createdAt,
+									previewUrl:
+										s.imageDataUri ||
+										s.fileUrl ||
+										`/api/xray/scans/${s.id}/file`,
+									fileUrl: s.fileUrl || `/api/xray/scans/${s.id}/file`,
+									aiSummary: s.aiSummary,
+									status: s.status,
+								}))
+							: [],
+					)
+					.catch(() => []),
+			]).then(([imagingList, xrayList]) => {
+				if (cancelled) return;
+				const seen = new Set<string>();
+				const merged: any[] = [];
+				for (const item of [...imagingList, ...xrayList]) {
+					if (item?.id && !seen.has(item.id)) {
+						seen.add(item.id);
+						merged.push(item);
+					}
 				}
-			})
-			.catch(() => {
-				// non-blocking fallback
+				setLiveStudies(merged);
 			});
+		};
+
+		loadAllPatientScans();
+
+		const handleScanBound = () => {
+			loadAllPatientScans();
+		};
+		window.addEventListener("dente-tooth-scan-bound", handleScanBound);
+
 		return () => {
 			cancelled = true;
+			window.removeEventListener("dente-tooth-scan-bound", handleScanBound);
 		};
 	}, [effectiveTargetPatientId, visitPatientId]);
 

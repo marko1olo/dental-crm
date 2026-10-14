@@ -24,7 +24,18 @@ describe("Window #5: EzDent-i Report Studio & Silent Dose Sheet Inquisitor Gate"
 	const readSrcFile = (relPath: string) => {
 		const fullPath = path.join(webSrcRoot, relPath);
 		assert.ok(fs.existsSync(fullPath), `Target file must exist: ${relPath}`);
-		return fs.readFileSync(fullPath, "utf-8");
+		let content = fs.readFileSync(fullPath, "utf-8");
+		if (relPath.includes("RadiologyReportStudioModal")) {
+			const reportDir = path.join(webSrcRoot, "components/radiology/reportStudio");
+			if (fs.existsSync(reportDir)) {
+				for (const f of fs.readdirSync(reportDir)) {
+					if (f.endsWith(".tsx") || f.endsWith(".ts")) {
+						content += `\n${fs.readFileSync(path.join(reportDir, f), "utf-8")}`;
+					}
+				}
+			}
+		}
+		return content;
 	};
 
 	it("1. RadiologyReportStudioModal: Virtual Sheet (A4 & 14x17 Film) with 8 resize handles", () => {

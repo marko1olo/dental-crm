@@ -3,6 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import {
+	imagingStudies,
 	patients,
 	toothStateHistory,
 	toothStates,
@@ -13,6 +14,7 @@ import {
 	visitDiaries,
 	visitDiaryRevisions,
 	visits,
+	xrayScans,
 } from "../db/schema.js";
 
 /**
@@ -34,12 +36,15 @@ export function isToothReferenced(
 }
 
 export interface ToothHistoryTimelineEvent {
-	type: "diary" | "diary_revision" | "plan" | "treatment_procedure" | "state_change";
+	type: "diary" | "diary_revision" | "plan" | "treatment_procedure" | "state_change" | "radiology_scan";
 	date: Date | string;
 	description: string;
 	authorId: string;
 	visitId?: string | null;
 	isVoided?: boolean;
+	studyId?: string | null;
+	previewUrl?: string | null;
+	scanType?: string | null;
 }
 
 export function formatToothStateLabel(state: string | null | undefined): string {
@@ -395,6 +400,85 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 						authorId: "Не указан",
 					});
 				}
+			}
+
+			// 6. Fetch Linked Radiology Studies & X-Ray Scans (Mandate 8e: 1-click RVG/DICOM to FDI)
+			try {
+				const studies = await db
+					.select({
+						id: imagingStudies.id,
+						title: imagingStudies.title,
+						kind: imagingStudies.kind,
+						modality: imagingStudies.modality,
+						toothCode: imagingStudies.toothCode,
+						capturedAt: imagingStudies.capturedAt,
+						createdAt: imagingStudies.createdAt,
+						visitId: imagingStudies.visitId,
+						sourceName: imagingStudies.sourceName,
+						aiSummary: imagingStudies.aiSummary,
+					})
+					.from(imagingStudies)
+					.where(
+						and(
+							eq(imagingStudies.organizationId, orgId),
+							eq(imagingStudies.patientId, patientId),
+						),
+					);
+
+				for (const s of studies) {
+					if (isToothReferenced(s.toothCode, toothNum)) {
+						const modalityBadge = s.modality || s.kind || "RVG";
+						const summaryPart = s.aiSummary ? ` (${s.aiSummary})` : "";
+						events.push({
+							type: "radiology_scan",
+							date: s.capturedAt || s.createdAt,
+							description: `Рентген-снимок [${modalityBadge}]: ${s.title}${summaryPart}`,
+							authorId: s.sourceName || "Рентген-кабинет",
+							visitId: s.visitId,
+							studyId: s.id,
+							previewUrl: `/api/imaging/studies/${s.id}/file`,
+							scanType: s.kind,
+						});
+					}
+				}
+
+				const scans = await db
+					.select({
+						id: xrayScans.id,
+						toothCode: xrayScans.toothCode,
+						capturedAt: xrayScans.capturedAt,
+						createdAt: xrayScans.createdAt,
+						visitId: xrayScans.visitId,
+						originalFilename: xrayScans.originalFilename,
+						aiSummary: xrayScans.aiSummary,
+						kind: xrayScans.kind,
+						fileUrl: xrayScans.fileUrl,
+					})
+					.from(xrayScans)
+					.where(
+						and(
+							eq(xrayScans.organizationId, orgId),
+							eq(xrayScans.patientId, patientId),
+						),
+					);
+
+				for (const scan of scans) {
+					if (isToothReferenced(scan.toothCode, toothNum)) {
+						const summaryPart = scan.aiSummary ? ` (${scan.aiSummary})` : "";
+						events.push({
+							type: "radiology_scan",
+							date: scan.capturedAt || scan.createdAt,
+							description: `Визиограф RVG: ${scan.originalFilename || `Прицельный снимок зуба ${toothNum}`}${summaryPart}`,
+							authorId: "Визиограф RVG",
+							visitId: scan.visitId,
+							studyId: scan.id,
+							previewUrl: scan.fileUrl || `/api/xray/scans/${scan.id}/file`,
+							scanType: scan.kind,
+						});
+					}
+				}
+			} catch (err) {
+				console.warn("[toothHistory] Ошибка чтения рентген-снимков:", err);
 			}
 
 			// Sort chronologically descending (newest events first)

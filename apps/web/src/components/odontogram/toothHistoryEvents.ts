@@ -30,7 +30,8 @@ export type ToothHistoryEventKind =
 	| "plan"
 	| "state_change"
 	| "treatment_procedure"
-	| "diary_revision";
+	| "diary_revision"
+	| "radiology_scan";
 
 export interface ToothHistoryEvent {
 	/**
@@ -49,6 +50,8 @@ export interface ToothHistoryEvent {
 	readonly author: string | null;
 	/** Идентификатор визита (если привязан) */
 	readonly visitId?: string | null | undefined;
+	readonly studyId?: string | null | undefined;
+	readonly previewUrl?: string | null | undefined;
 }
 
 const KNOWN_KINDS: readonly string[] = [
@@ -57,6 +60,7 @@ const KNOWN_KINDS: readonly string[] = [
 	"state_change",
 	"treatment_procedure",
 	"diary_revision",
+	"radiology_scan",
 ];
 
 /** Непустая строка или null. Пробелы значением не считаются. */
@@ -105,6 +109,8 @@ export function toothHistoryEventFromServer(
 		description,
 		author: trimmedOrNull(row.authorId),
 		visitId: trimmedOrNull(row.visitId),
+		studyId: trimmedOrNull(row.studyId),
+		previewUrl: trimmedOrNull(row.previewUrl),
 	};
 }
 

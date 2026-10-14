@@ -62,6 +62,8 @@ export interface VisiographToolbarControlsProps {
 	readonly onRunAiAnalysis: () => void;
 	readonly hasAiReport: boolean;
 	readonly onOpenSensorViewer: () => void;
+	readonly boundToothCode?: string | null | undefined;
+	readonly onBindTooth?: ((tooth: string) => void) | undefined;
 }
 
 export interface VisiographCanvasViewportProps {

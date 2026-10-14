@@ -21,6 +21,7 @@ import { useVisiographArchive } from "../useVisiographArchive.js";
 import type { VisiographPresetType } from "../VisiographCockpitPresets.js";
 import type { RadiologyFilmstripItem } from "../../radiology/RadiologyFilmstripDock.js";
 import { useAppStore } from "../../../store/appStore.js";
+import { useVisitStore } from "../../../store/visitStore.js";
 import type {
 	VisiographAnalyzerProps,
 	VisiographScaleCalibration,
@@ -638,6 +639,90 @@ export function useVisiographAnalyzer({
 		[processFile],
 	);
 
+	const handleBindTooth = useCallback(
+		async (newToothCode: string) => {
+			const formatted = newToothCode.trim();
+			// 1. Update current scan in state
+			setCurrentScan((prev) => (prev ? { ...prev, toothCode: formatted } : prev));
+			if (currentScanRef.current) {
+				currentScanRef.current.toothCode = formatted;
+			}
+
+			// 2. Persist to backend if scan is saved
+			if (
+				currentScan?.id &&
+				!currentScan.id.startsWith("local-") &&
+				!currentScan.id.startsWith("demo-")
+			) {
+				try {
+					updateVisiographScanMeta(
+						currentScan.id,
+						{ toothCode: formatted },
+						denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+					);
+				} catch (err) {
+					logger.warn(
+						"[VisiographAnalyzer] failed to update toothCode on xray scan:",
+						err,
+					);
+				}
+			}
+
+			// 3. If selectedStudy has an id, update imaging study as well
+			if (
+				selectedStudy?.id &&
+				!selectedStudy.id.startsWith("local-") &&
+				!selectedStudy.id.startsWith("demo-")
+			) {
+				try {
+					await fetch(`/api/imaging/studies/${selectedStudy.id}`, {
+						method: "PATCH",
+						headers: denteClinicalMutationHeaders({
+							"Content-Type": "application/json",
+						}),
+						body: JSON.stringify({ toothCode: formatted }),
+					});
+				} catch (err) {
+					logger.warn(
+						"[VisiographAnalyzer] failed to patch imaging study toothCode:",
+						err,
+					);
+				}
+			}
+
+			// 4. Update visitStore active tooth number
+			const toothNum = Number(formatted);
+			if (!Number.isNaN(toothNum)) {
+				try {
+					useVisitStore.getState().setActiveToothNumber(toothNum);
+				} catch {
+					// Outside visit context
+				}
+			}
+
+			// 5. Dispatch custom event so ToothHistoryChronicle and formula immediately refresh
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-tooth-scan-bound", {
+						detail: {
+							patientId: effectivePatientId,
+							toothCode: formatted,
+							scanId: currentScan?.id,
+						},
+					}),
+				);
+			}
+
+			showToast(`✓ Снимок привязан к зубу #${formatted}`, "success");
+		},
+		[
+			currentScan?.id,
+			selectedStudy?.id,
+			effectivePatientId,
+			denteClinicalMutationHeaders,
+		],
+	);
+
 	const handleClear = () => {
 		setCurrentScan(null);
 		setCurrentImageUrl(null);
@@ -716,6 +801,8 @@ export function useVisiographAnalyzer({
 		handleInsertReportToProtocol,
 		handleDrop,
 		handleClear,
+		handleBindTooth,
+		boundToothCode: currentScan?.toothCode || toothCode || null,
 		resetAnalysisState,
 		toothStatesArray,
 		criticalCount,

@@ -13,6 +13,7 @@ const DicomViewerModal = React.lazy(() =>
 	})),
 );
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import {
 	actionFailureToast,
 	type PanelSubject,
@@ -86,14 +87,99 @@ export function ToothHistoryChronicle({
 		setToothMedia([]);
 		setLoad({ phase: "loading" });
 
-		// 1. Загрузка локальных медиа-снимков зуба (200x200 WebP) из Offline Media Vault
-		listPatientMedia(patientId, toothNumber)
-			.then((mediaItems) => {
-				if (active) setToothMedia(mediaItems);
-			})
-			.catch((err) => {
+		// 1. Загрузка медиа-снимков зуба: локальные из Offline Media Vault + серверные из PostgreSQL 18
+		const clinicToken = readDenteClinicToken();
+		const staffToken = readDenteStaffToken();
+		const headers: Record<string, string> = {
+			...denteAdminSecretRequestHeaders(),
+			...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
+			...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
+		};
+
+		Promise.all([
+			listPatientMedia(patientId, toothNumber).catch((err) => {
 				logger.error("[tooth history] Ошибка чтения снимков из offlineMediaVault", err);
-			});
+				return [] as StoredMediaItem[];
+			}),
+			fetch(`/api/imaging/studies?patientId=${encodeURIComponent(patientId)}`, { headers })
+				.then(async (res) => {
+					if (!res.ok) return [];
+					const studies = await res.json();
+					if (!Array.isArray(studies)) return [];
+					const toothStr = String(toothNumber).trim();
+					return studies
+						.filter((s: any) => String(s.toothCode ?? "").trim() === toothStr)
+						.map((s: any): StoredMediaItem => ({
+							mediaId: s.id,
+							patientId: s.patientId,
+							visitId: s.visitId,
+							toothNumber: toothNumber,
+							photoType:
+								s.kind === "rvg" || s.kind === "periapical"
+									? "periapical_xray"
+									: s.kind === "cbct"
+										? "computed_tomography_slice"
+										: s.kind === "panoramic" || s.kind === "opg"
+											? "panoramic_xray"
+											: "generic_clinical_media",
+							capturedAt: s.capturedAt || new Date().toISOString(),
+							capturedAtMs: s.capturedAt ? new Date(s.capturedAt).getTime() : Date.now(),
+							mimeType: "image/jpeg",
+							fileName: s.title || `Снимок зуба #${toothNumber}`,
+							sizeBytes: s.fileSizeBytes || 0,
+							thumbnailWebpDataUrl: s.previewUrl || `/api/imaging/studies/${s.id}/file`,
+							originalBlobKey: s.id,
+							syncStatus: "synced",
+							syncRetries: 0,
+							remoteUrl: `/api/imaging/studies/${s.id}/file`,
+						}));
+				})
+				.catch((err) => {
+					logger.warn("[tooth history] Ошибка чтения снимков из imaging/studies", err);
+					return [] as StoredMediaItem[];
+				}),
+			fetch(`/api/xray/scans?patientId=${encodeURIComponent(patientId)}`, { headers })
+				.then(async (res) => {
+					if (!res.ok) return [];
+					const scans = await res.json();
+					if (!Array.isArray(scans)) return [];
+					const toothStr = String(toothNumber).trim();
+					return scans
+						.filter((s: any) => String(s.toothCode ?? "").trim() === toothStr)
+						.map((s: any): StoredMediaItem => ({
+							mediaId: s.id,
+							patientId: s.patientId,
+							visitId: s.visitId,
+							toothNumber: toothNumber,
+							photoType: "periapical_xray",
+							capturedAt: s.capturedAt || s.createdAt || new Date().toISOString(),
+							capturedAtMs: s.capturedAt ? new Date(s.capturedAt).getTime() : Date.now(),
+							mimeType: s.mimeType || "image/jpeg",
+							fileName: s.originalFilename || `Визиограф RVG (Зуб #${toothNumber})`,
+							sizeBytes: s.fileSizeBytes || 0,
+							thumbnailWebpDataUrl: s.imageDataUri || s.fileUrl || `/api/xray/scans/${s.id}/file`,
+							originalBlobKey: s.id,
+							syncStatus: "synced",
+							syncRetries: 0,
+							remoteUrl: s.fileUrl || `/api/xray/scans/${s.id}/file`,
+						}));
+				})
+				.catch((err) => {
+					logger.warn("[tooth history] Ошибка чтения снимков из xray/scans", err);
+					return [] as StoredMediaItem[];
+				}),
+		]).then(([vaultItems, dbItems, xrayItems]) => {
+			if (!active) return;
+			const seen = new Set<string>();
+			const merged: StoredMediaItem[] = [];
+			for (const item of [...vaultItems, ...dbItems, ...xrayItems]) {
+				if (!seen.has(item.mediaId)) {
+					seen.add(item.mediaId);
+					merged.push(item);
+				}
+			}
+			setToothMedia(merged);
+		});
 
 		// 2. Загрузка хроники клинических событий
 		const fetchHistory = async () => {
@@ -143,8 +229,19 @@ export function ToothHistoryChronicle({
 			}
 		};
 		void fetchHistory();
+
+		const handleScanBound = (e: Event) => {
+			const custom = e as CustomEvent<{ patientId?: string; toothCode?: string }>;
+			if (!custom.detail?.toothCode) return;
+			if (String(custom.detail.toothCode).trim() === String(toothNumber).trim()) {
+				setReloadToken((t) => t + 1);
+			}
+		};
+		window.addEventListener("dente-tooth-scan-bound", handleScanBound);
+
 		return () => {
 			active = false;
+			window.removeEventListener("dente-tooth-scan-bound", handleScanBound);
 		};
 	}, [patientId, toothNumber, reloadToken]);
 
@@ -285,6 +382,8 @@ export function ToothHistoryChronicle({
 											<CheckCircle2 className="w-4 h-4 text-emerald-500" />
 										) : evt.kind === "diary_revision" ? (
 											<FileEdit className="w-4 h-4 text-indigo-500" />
+										) : evt.kind === "radiology_scan" ? (
+											<Camera className="w-4 h-4 text-teal-500" />
 										) : (
 											/* Вид события неизвестен. Значок смены статуса здесь стоял
 										   как «иначе», то есть незнакомое событие выдавалось за

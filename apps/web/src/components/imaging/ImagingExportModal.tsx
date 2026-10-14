@@ -3,6 +3,24 @@ import { createPortal } from "react-dom";
 import { Archive, Download, FileText, Printer, Send, ShieldCheck, X } from "lucide-react";
 import type { ImagingExportOptions, ImagingStudy } from "./types";
 import { showToast } from "../GlobalToast";
+import {
+	buildLegalExportCanvas,
+	DEFAULT_CLINIC_CREDENTIALS,
+	DEFAULT_DOCTOR_SIGNATURE,
+} from "../visiograph/VisiographLegalWatermark";
+import {
+	createDicomSecondaryCaptureFile,
+	exportCanvasToJpeg,
+	exportCanvasToPng,
+	triggerBinaryDownload,
+} from "../visiograph/VisiographDicomExporter";
+import { exportSnapshotToClinicalRecord } from "../visiograph/VisiographExportService";
+import type {
+	AngleMeasurement,
+	CalibrationReference,
+	PeriapicalLesion,
+	RulerMeasurement,
+} from "../visiograph/VisiographMeasurementMath";
 
 export interface ImagingExportModalProps {
 	isOpen: boolean;
@@ -20,6 +38,28 @@ export interface ImagingExportModalProps {
 	clinicName?: string | undefined;
 	previewUrl?: string | null | undefined;
 	reportSummary?: string | null | undefined;
+
+	// Enhanced Visiograph / Canvas SSOT Integration:
+	canvasRef?: React.RefObject<HTMLCanvasElement | null> | undefined;
+	patientId?: string | null | undefined;
+	patientFullName?: string | undefined;
+	studyId?: string | undefined;
+	toothCode?: string | null | undefined;
+	rulers?: RulerMeasurement[] | undefined;
+	angles?: AngleMeasurement[] | undefined;
+	lesions?: PeriapicalLesion[] | undefined;
+	calibration?: CalibrationReference | undefined;
+	isCalibrated?: boolean | undefined;
+	onSaveToRecord?: ((
+		imageDataUri: string,
+		exportMeta: {
+			rulers: RulerMeasurement[];
+			angles: AngleMeasurement[];
+			lesions: PeriapicalLesion[];
+			scaleMmPerPx: number;
+		},
+	) => Promise<void> | void) | undefined;
+	onPrintProtocol?: (() => void) | undefined;
 }
 
 export function ImagingExportModal({
@@ -31,6 +71,18 @@ export function ImagingExportModal({
 	clinicName = "ООО «ДЕНТЕ»",
 	previewUrl,
 	reportSummary,
+	canvasRef,
+	patientId,
+	patientFullName,
+	studyId,
+	toothCode,
+	rulers = [],
+	angles = [],
+	lesions = [],
+	calibration,
+	isCalibrated = false,
+	onSaveToRecord,
+	onPrintProtocol,
 }: ImagingExportModalProps) {
 	const [options, setOptions] = useState<ImagingExportOptions>({
 		format: "jpg",
@@ -40,6 +92,7 @@ export function ImagingExportModal({
 		quality: 0.92,
 	});
 	const [isAnonymized, setIsAnonymized] = useState(true); // 152-ФЗ РФ Обезличивание
+	const [isSaving, setIsSaving] = useState(false);
 
 	// Global Escape key
 	useEffect(() => {
@@ -58,19 +111,112 @@ export function ImagingExportModal({
 	if (typeof document === "undefined") return null;
 
 	const effectiveStudy = study || {
-		id: "study-active",
-		title: "Прицельный снимок визиографа (RVG)",
+		id: studyId || "study-active",
+		title: toothCode ? `Снимок зуба ${toothCode}` : "Прицельный снимок визиографа (RVG)",
 		capturedAt: new Date().toISOString(),
 		date: new Date().toISOString(),
 		kind: "rvg",
 	};
 
-	const rawPatientName = patient?.fullName || patient?.name || "Пациент";
+	const rawPatientName = patientFullName || patient?.fullName || patient?.name || "Пациент";
 	const rawCardNum = patient?.medicalCardNumber || patient?.cardNumber || "—";
-	const patientName = isAnonymized ? `Пациент_${(patient?.medicalCardNumber || "0000").slice(-4)}` : rawPatientName;
+	const patientName = isAnonymized
+		? `Пациент_${(patient?.medicalCardNumber || "0000").slice(-4)}`
+		: rawPatientName;
 	const cardNum = isAnonymized ? "ЗАЩИЩЕНО (152-ФЗ)" : rawCardNum;
 
-	const handleDownload = (isArchive = false) => {
+	const handleDownload = async (isArchive = false) => {
+		if (isSaving) return;
+
+		// 1. If we have live canvas (Visiograph / RVG Studio)
+		if (canvasRef?.current) {
+			const canvas = canvasRef.current;
+			setIsSaving(true);
+			try {
+				let outputCanvas = canvas;
+				if (options.withAnnotations || options.withMeasurements) {
+					outputCanvas = buildLegalExportCanvas(canvas, {
+						patient: {
+							id: patientId || (patient as any)?.id || "pat_001",
+							fullName: isAnonymized ? `Пациент_${(patient?.medicalCardNumber || "0000").slice(-4)}` : rawPatientName,
+						},
+						clinic: {
+							...DEFAULT_CLINIC_CREDENTIALS,
+							clinicName: clinicName || DEFAULT_CLINIC_CREDENTIALS.clinicName,
+						},
+						doctor: {
+							...DEFAULT_DOCTOR_SIGNATURE,
+							doctorFullName: doctorName || DEFAULT_DOCTOR_SIGNATURE.doctorFullName,
+						},
+						study: {
+							id: studyId || effectiveStudy.id,
+							toothCode: toothCode || undefined,
+							capturedAt: effectiveStudy.capturedAt || new Date().toISOString(),
+						},
+						calibration: isCalibrated && calibration ? calibration : undefined,
+						rulers: options.withMeasurements ? rulers : [],
+						angles: options.withMeasurements ? angles : [],
+						lesions: options.withAnnotations ? lesions : [],
+					});
+				}
+
+				const filenameBase = `dente_scan_${toothCode ? `tooth_${toothCode}_` : ""}${Date.now()}`;
+
+				if (options.format === "dicom") {
+					const dicomBytes = createDicomSecondaryCaptureFile(outputCanvas, {
+						patientId: isAnonymized ? "PATIENT-152FZ" : (patientId || "PATIENT-001"),
+						patientFullName: isAnonymized ? "ANONYMIZED" : rawPatientName,
+						toothCode: toothCode || undefined,
+						clinicName: clinicName || DEFAULT_CLINIC_CREDENTIALS.clinicName,
+						doctorFullName: doctorName,
+						scaleMmPerPixel: calibration?.scaleMmPerPixel,
+					});
+					triggerBinaryDownload(dicomBytes, `${filenameBase}.dcm`, "application/dicom");
+				} else if (options.format === "png") {
+					const dataUri = exportCanvasToPng(outputCanvas);
+					const blob = await (await fetch(dataUri)).blob();
+					triggerBinaryDownload(blob, `${filenameBase}.png`, "image/png");
+				} else {
+					const dataUri = exportCanvasToJpeg(outputCanvas, options.quality ?? 0.95);
+					const blob = await (await fetch(dataUri)).blob();
+					triggerBinaryDownload(blob, `${filenameBase}.jpg`, "image/jpeg");
+				}
+
+				if (onSaveToRecord) {
+					const finalDataUri = exportCanvasToJpeg(outputCanvas, 0.92);
+					await onSaveToRecord(finalDataUri, {
+						rulers,
+						angles,
+						lesions,
+						scaleMmPerPx: calibration?.scaleMmPerPixel ?? 0.05,
+					});
+				} else if (patientId && patientId !== "pat_unknown") {
+					const finalDataUri = exportCanvasToJpeg(outputCanvas, 0.92);
+					await exportSnapshotToClinicalRecord({
+						patientId,
+						imageDataUri: finalDataUri,
+						toothCode: toothCode || undefined,
+						clinicalNote: `Экспорт визиографа (зуб ${toothCode || "н/д"})`,
+						viewKind: "periapical_2d",
+					}).catch((err) => {
+						console.warn("[ImagingExportModal] Auto-export to clinical record failed:", err);
+					});
+				}
+
+				showToast(
+					isArchive
+						? "Архив исследования сохранен на накопитель"
+						: `Снимок успешно экспортирован (${isAnonymized ? "152-ФЗ обезличен" : "с данными"})`,
+					"success",
+				);
+				onClose();
+			} finally {
+				setIsSaving(false);
+			}
+			return;
+		}
+
+		// 2. Standard Study export from previewUrl
 		if (!previewUrl) {
 			showToast("Файл снимка подготавливается к экспорту", "info");
 			return;
@@ -101,7 +247,12 @@ export function ImagingExportModal({
 	};
 
 	const handlePrint = () => {
-		window.print();
+		if (onPrintProtocol) {
+			onClose();
+			onPrintProtocol();
+		} else {
+			window.print();
+		}
 	};
 
 	const modalContent = (
@@ -133,7 +284,7 @@ export function ImagingExportModal({
 								Экспорт и передача снимков (152-ФЗ)
 							</h3>
 							<p className="text-[11px] text-[var(--muted,#94a3b8)] m-0 leading-tight">
-								Выгрузка на флешку, в архив, печать бланка или отправка в Telegram
+								Юридическая фиксация, экспорт на накопитель, в архив, печать или Telegram
 							</p>
 						</div>
 					</div>
@@ -190,6 +341,12 @@ export function ImagingExportModal({
 						<span className="text-[var(--muted,#94a3b8)]">Исследование:</span>
 						<strong className="font-semibold truncate max-w-[240px]">{effectiveStudy.title}</strong>
 					</div>
+					{toothCode && (
+						<div className="flex items-center justify-between">
+							<span className="text-[var(--muted,#94a3b8)]">Зуб (FDI):</span>
+							<strong className="font-semibold text-[var(--teal,#0d9488)]">№ {toothCode}</strong>
+						</div>
+					)}
 					<div className="flex items-center justify-between">
 						<span className="text-[var(--muted,#94a3b8)]">Пациент:</span>
 						<strong className="font-semibold">{patientName}</strong>
@@ -198,6 +355,18 @@ export function ImagingExportModal({
 						<span className="text-[var(--muted,#94a3b8)]">Амб. карта:</span>
 						<span className="font-mono text-[11px]">{cardNum}</span>
 					</div>
+					<div className="flex items-center justify-between">
+						<span className="text-[var(--muted,#94a3b8)]">Врач:</span>
+						<span>{doctorName} (ЭЦП ГОСТ Р 34.10)</span>
+					</div>
+					{rulers && (rulers.length > 0 || angles.length > 0 || lesions.length > 0) && (
+						<div className="flex items-center justify-between border-t border-[var(--line,#334155)] pt-1 mt-0.5">
+							<span className="text-[var(--muted,#94a3b8)]">Замеры на снимке:</span>
+							<span className="font-medium text-emerald-400">
+								{rulers.length} линеек, {angles.length} углов, {lesions.length} очагов
+							</span>
+						</div>
+					)}
 					<div className="flex items-center justify-between">
 						<span className="text-[var(--muted,#94a3b8)]">Дата съёмки:</span>
 						<span>{new Date(effectiveStudy.capturedAt || Date.now()).toLocaleDateString("ru-RU")}</span>
@@ -234,7 +403,7 @@ export function ImagingExportModal({
 										: "border-[var(--line,#334155)] bg-[var(--paper-soft,#1e293b)] text-[var(--muted,#94a3b8)] hover:border-[var(--line-strong,#475569)]"
 								}`}
 							>
-								{fmt}
+								{fmt === "dicom" ? "DICOM (.dcm)" : fmt}
 							</button>
 						))}
 					</div>
@@ -252,7 +421,7 @@ export function ImagingExportModal({
 							data-testid="checkbox-export-measurements"
 							className="w-4 h-4 rounded accent-[var(--teal,#0d9488)] cursor-pointer"
 						/>
-						<span>Включить калиброванные замеры расстояний</span>
+						<span>Включить калиброванные замеры расстояний и углов</span>
 					</label>
 					<label className="flex items-center gap-2 cursor-pointer min-h-[36px] select-none">
 						<input
@@ -264,7 +433,7 @@ export function ImagingExportModal({
 							data-testid="checkbox-export-annotations"
 							className="w-4 h-4 rounded accent-[var(--teal,#0d9488)] cursor-pointer"
 						/>
-						<span>Включить клиническое заключение врача</span>
+						<span>Включить юридический штамп и патологии</span>
 					</label>
 				</div>
 
@@ -286,7 +455,7 @@ export function ImagingExportModal({
 							onClick={handleSendTelegram}
 							className="secondary-button min-h-[44px] text-xs py-2 px-3 inline-flex items-center gap-1.5 font-semibold cursor-pointer rounded-lg border border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300 hover:bg-sky-500/20 transition-colors"
 							data-testid="btn-export-telegram"
-							title="Отправить обезличенный снимок пациенту в Telegram"
+							title="Отправить снимок пациенту в Telegram"
 						>
 							<Send size={15} />
 							<span>В Telegram</span>
@@ -299,19 +468,20 @@ export function ImagingExportModal({
 							onClick={() => handleDownload(true)}
 							className="secondary-button min-h-[44px] text-xs py-2 px-3 inline-flex items-center gap-1.5 font-semibold cursor-pointer rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] transition-colors"
 							data-testid="btn-export-zip-archive"
-							title="Скачать полный ZIP архив на флешку пациента"
+							title="Скачать полный архив исследования"
 						>
 							<Archive size={15} />
-							<span>В ZIP архив</span>
+							<span>В архив</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => handleDownload(false)}
+							disabled={isSaving}
 							className="primary-button min-h-[44px] text-xs py-2 px-4 inline-flex items-center gap-1.5 font-bold cursor-pointer rounded-lg bg-[var(--teal,#0d9488)] hover:bg-teal-700 text-white shadow-xs transition-colors"
 							data-testid="btn-download-imaging-file"
 						>
 							<Download size={15} />
-							<span>Сохранить файл</span>
+							<span>{isSaving ? "Экспорт..." : "Сохранить файл"}</span>
 						</button>
 					</div>
 				</div>
@@ -321,4 +491,3 @@ export function ImagingExportModal({
 
 	return createPortal(modalContent, document.body);
 }
-

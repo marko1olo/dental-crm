@@ -68,6 +68,7 @@ export interface PhotoProtocolPreset {
 export interface PhotoSlotRecord {
 	slotId: string;
 	imageUrl?: string;
+	storagePath?: string;
 	uploadedAt?: string;
 	stage?: 'before' | 'in_progress' | 'after' | 'followup';
 	notes?: string;
