@@ -16,4 +16,13 @@ export * from "./kraftPackageProtocolLink.js";
 export * from "./sanpinShiftAutopilot.js";
 export * from "./sanpinSchemas.js";
 export * from "./sterilizationPouchEngine.js";
+export * from "./sanpinPackagingSsot.js";
+
+// Explicit re-exports to resolve TS2308 collision between kraftPackageGenerator and sanpinPackagingSsot
+export type { ChemicalIndicatorDefinition } from "./kraftPackageGenerator.js";
+export type { ChemicalIndicatorClass } from "./sterilizationPouchEngine.js";
+export type {
+	ChemicalIndicatorDefinition as SanpinChemicalIndicatorDefinition,
+	ChemicalIndicatorClass as SanpinChemicalIndicatorClass,
+} from "./sanpinPackagingSsot.js";
 

@@ -1,19 +1,9 @@
 import type { SterilizationLogRecord } from "@dental/shared";
-import {
-	Award,
-	CheckCircle2,
-	MoreHorizontal,
-	Plus,
-	Printer,
-	QrCode,
-	ShieldCheck,
-	Sparkles,
-	Tag,
-} from "lucide-react";
+import { Plus, QrCode, ShieldCheck, Sparkles } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
-import type { ClinicAutoclaveDevice } from "../AutoclaveEquipmentModal";
+import type { ClinicAutoclaveDevice } from "./autoclaveDeviceTypes";
 import type { AutoclaveLogsSlice } from "./types";
-import { getPackagingLabel } from "./types";
+import { AutoclaveCycleRowItem } from "./AutoclaveCycleRowItem";
 
 export interface AutoclaveRegisterRowsProps {
 	readonly logsSlice: AutoclaveLogsSlice;
@@ -75,50 +65,35 @@ export function AutoclaveRegisterRows({
 			>
 				<thead>
 					<tr>
-						<th
-							style={{ fontSize: "0.75rem", width: "11%", whiteSpace: "nowrap" }}
-							className="whitespace-nowrap shrink-0"
-						>
+						<th style={{ fontSize: "0.74rem", width: "10%", whiteSpace: "nowrap" }}>
 							Дата / № Цикла
 						</th>
-						<th style={{ fontSize: "0.75rem", width: "12%" }} className="min-w-0">
+						<th style={{ fontSize: "0.74rem", width: "13%" }}>
 							Марка аппарата
 						</th>
-						<th style={{ fontSize: "0.75rem", width: "15%" }} className="min-w-0">
+						<th style={{ fontSize: "0.74rem", width: "19%" }}>
 							Стерилизуемые изделия
 						</th>
-						<th style={{ fontSize: "0.75rem", width: "11%" }} className="min-w-0">
+						<th style={{ fontSize: "0.74rem", width: "11%" }}>
 							Вид упаковки
 						</th>
-						<th
-							style={{ fontSize: "0.75rem", width: "11%", whiteSpace: "nowrap" }}
-							className="whitespace-nowrap shrink-0"
-						>
+						<th style={{ fontSize: "0.74rem", width: "10%", whiteSpace: "nowrap" }}>
 							Режим (T°, P, t)
 						</th>
-						<th
-							style={{ fontSize: "0.75rem", width: "8%", whiteSpace: "nowrap" }}
-							className="whitespace-nowrap shrink-0"
-						>
+						<th style={{ fontSize: "0.74rem", width: "7%", whiteSpace: "nowrap" }}>
 							Индикатор
 						</th>
-						<th
-							style={{ fontSize: "0.75rem", width: "8%", whiteSpace: "nowrap" }}
-							className="whitespace-nowrap shrink-0"
-						>
+						<th style={{ fontSize: "0.74rem", width: "7%", whiteSpace: "nowrap" }}>
 							Годен до
 						</th>
-						<th
-							style={{ fontSize: "0.75rem", width: "12%", whiteSpace: "nowrap" }}
-							className="whitespace-nowrap shrink-0"
-						>
-							Штрихкод / Статус
+						<th style={{ fontSize: "0.74rem", width: "10%", minWidth: "110px", whiteSpace: "nowrap" }}>
+							Штрихкод
 						</th>
 						<th
-							style={{ fontSize: "0.75rem", width: "12%", whiteSpace: "nowrap", paddingRight: "0.85rem" }}
-							className="whitespace-nowrap shrink-0"
+							style={{ fontSize: "0.74rem", width: "13%", minWidth: "120px", whiteSpace: "nowrap", paddingRight: "0.5rem" }}
+							title="Заверка / Оператор"
 						>
-							Заверка / Оператор
+							Оператор / ЭЦП
 						</th>
 					</tr>
 				</thead>
@@ -143,22 +118,10 @@ export function AutoclaveRegisterRows({
 									}}
 								>
 									<ShieldCheck size={42} color="var(--teal, #0d9488)" />
-									<div
-										style={{
-											fontWeight: 700,
-											fontSize: "1.1rem",
-											color: "var(--ink, #0f172a)",
-										}}
-									>
+									<div style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--ink, #0f172a)" }}>
 										В клинике не зарегистрировано автоклавов
 									</div>
-									<div
-										style={{
-											fontSize: "0.875rem",
-											color: "var(--muted, #64748b)",
-											lineHeight: 1.45,
-										}}
-									>
+									<div style={{ fontSize: "0.875rem", color: "var(--muted, #64748b)", lineHeight: 1.45 }}>
 										Зарегистрируйте автоклав или сухожаровой шкаф клиники для ведения журнала
 										стерилизации и генерации крафт-пакетов.
 									</div>
@@ -197,33 +160,14 @@ export function AutoclaveRegisterRows({
 									}}
 								>
 									<Sparkles size={36} color="var(--teal, #0d9488)" />
-									<div
-										style={{
-											fontWeight: 700,
-											fontSize: "1rem",
-											color: "var(--ink, #0f172a)",
-										}}
-									>
+									<div style={{ fontWeight: 700, fontSize: "1rem", color: "var(--ink, #0f172a)" }}>
 										Журнал стерилизации пуст
 									</div>
-									<div
-										style={{
-											fontSize: "0.825rem",
-											color: "var(--muted, #64748b)",
-											lineHeight: 1.45,
-										}}
-									>
+									<div style={{ fontSize: "0.825rem", color: "var(--muted, #64748b)", lineHeight: 1.45 }}>
 										В выбранном периоде нет записей циклов стерилизации. Запустите новый цикл
 										или сформируйте партию крафт-пакетов.
 									</div>
-									<div
-										style={{
-											display: "flex",
-											gap: "0.5rem",
-											flexWrap: "wrap",
-											justifyContent: "center",
-										}}
-									>
+									<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "center" }}>
 										<button
 											type="button"
 											onClick={onOpenNewCycleModal || onOpenJournal257Modal}
@@ -262,408 +206,29 @@ export function AutoclaveRegisterRows({
 							</td>
 						</tr>
 					) : (
-						logsSlice.visibleItems.map((log) => {
-							const isStamped =
-								stampedRows[log.id] || Boolean(log.notes?.includes("ЭЦП"));
-							const rawDate =
-								log.timestamp || (log as any).date || (log as any).createdAt;
-							const safeDate =
-								rawDate && !isNaN(new Date(rawDate).getTime())
-									? new Date(rawDate)
-									: new Date();
-							const deviceName =
-								log.deviceName ||
-								(log as any).sterilizerName ||
-								"Автоклав Melag Vacuklav 43B+";
-
-							return (
-								<tr
-									key={log.id}
-									className="sanpin-log-row"
-									style={{
-										minHeight: "44px",
-										contentVisibility: "auto",
-										containIntrinsicSize: "1px 44px",
-										contain: "content",
-									}}
-								>
-									<td
-										style={{ width: "11%" }}
-										className="whitespace-nowrap shrink-0"
-									>
-										<div
-											style={{
-												display: "flex",
-												alignItems: "center",
-												gap: "0.3rem",
-												whiteSpace: "nowrap",
-											}}
-										>
-											<span
-												style={{
-													fontWeight: 700,
-													fontSize: "0.78rem",
-													color: "var(--ink)",
-												}}
-											>
-												№{log.cycleNumber}
-											</span>
-											<span style={{ fontSize: "0.72rem", color: "var(--muted)" }}>
-												{safeDate.toLocaleDateString("ru-RU", {
-													day: "2-digit",
-													month: "2-digit",
-												})}{" "}
-												{safeDate.toLocaleTimeString("ru-RU", {
-													hour: "2-digit",
-													minute: "2-digit",
-												})}
-											</span>
-										</div>
-									</td>
-
-									<td style={{ width: "12%" }} className="min-w-0">
-										<div
-											style={{
-												fontWeight: 600,
-												fontSize: "0.78rem",
-												lineHeight: 1.25,
-												wordBreak: "break-word",
-												display: "-webkit-box",
-												WebkitLineClamp: 2,
-												WebkitBoxOrient: "vertical",
-												overflow: "hidden",
-											}}
-											title={`${deviceName}${log.serialNumber ? ` (Зав. №${log.serialNumber})` : ""}`}
-										>
-											{deviceName}
-										</div>
-									</td>
-
-									<td style={{ width: "15%" }} className="min-w-0">
-										<div
-											style={{
-												fontSize: "0.78rem",
-												fontWeight: 500,
-												lineHeight: 1.25,
-												wordBreak: "break-word",
-												display: "-webkit-box",
-												WebkitLineClamp: 2,
-												WebkitBoxOrient: "vertical",
-												overflow: "hidden",
-											}}
-											title={log.itemsDescription || "Стоматологический набор"}
-										>
-											{log.itemsDescription || "Стоматологический набор"}
-										</div>
-									</td>
-
-									<td style={{ width: "11%" }} className="min-w-0">
-										<div
-											style={{
-												fontSize: "0.75rem",
-												color: "var(--ink)",
-												lineHeight: 1.25,
-												wordBreak: "break-word",
-												display: "-webkit-box",
-												WebkitLineClamp: 2,
-												WebkitBoxOrient: "vertical",
-												overflow: "hidden",
-											}}
-											title={getPackagingLabel(log.packagingType)}
-										>
-											{getPackagingLabel(log.packagingType)}
-										</div>
-									</td>
-
-									<td
-										style={{ width: "11%", whiteSpace: "nowrap" }}
-										className="whitespace-nowrap shrink-0"
-									>
-										<div style={{ fontSize: "0.76rem", whiteSpace: "nowrap" }}>
-											<span style={{ fontWeight: 700, color: "var(--ink)" }}>
-												{log.temperatureCelsius || (log as any).temperature || 134} °C
-											</span>
-											<span style={{ color: "var(--muted)", fontSize: "0.7rem" }}>
-												{" "}
-												· {log.pressureBar || 2.1} б ·{" "}
-												{log.durationMin || (log as any).durationMinutes || 5} м
-											</span>
-										</div>
-									</td>
-
-									<td
-										style={{ width: "8%" }}
-										className="whitespace-nowrap shrink-0"
-									>
-										<span
-											className="sanpin-tag sanpin-tag-success shrink-0 whitespace-nowrap"
-											style={{
-												fontSize: "0.7rem",
-												padding: "0.1rem 0.35rem",
-												whiteSpace: "nowrap",
-												flexShrink: 0,
-											}}
-										>
-											<CheckCircle2 size={11} className="shrink-0" />{" "}
-											{log.indicatorType === "class6_emulating" ? "Кл. 6" : "Кл. 5"}
-										</span>
-									</td>
-
-									<td
-										style={{
-											width: "8%",
-											fontSize: "0.75rem",
-											whiteSpace: "nowrap",
-										}}
-										className="whitespace-nowrap shrink-0"
-									>
-										{log.expiresAt && !isNaN(new Date(log.expiresAt).getTime()) ? (
-											<span style={{ fontWeight: 600, color: "#059669" }}>
-												{new Date(log.expiresAt).toLocaleDateString("ru-RU")}
-											</span>
-										) : (
-											<span style={{ color: "var(--muted)" }}>Сразу</span>
-										)}
-									</td>
-
-									<td
-										style={{ width: "13%" }}
-										className="whitespace-nowrap shrink-0"
-									>
-										<div
-											style={{
-												display: "flex",
-												alignItems: "center",
-												gap: "0.25rem",
-												whiteSpace: "nowrap",
-												overflow: "hidden",
-											}}
-										>
-											<span
-												className="sanpin-tag sanpin-tag-success shrink-0 whitespace-nowrap"
-												style={{
-													fontSize: "0.7rem",
-													padding: "0.1rem 0.35rem",
-													whiteSpace: "nowrap",
-													flexShrink: 0,
-												}}
-												title="Стерилизация завершена успешно, контроль пройден (100% норма)"
-											>
-												<CheckCircle2 size={11} className="shrink-0" /> Норма
-											</span>
-											{log.barcode ? (
-												<span
-													style={{
-														fontSize: "0.7rem",
-														fontFamily: "monospace",
-														color: "var(--brand-primary, #2563eb)",
-														fontWeight: 700,
-														background: "rgba(37, 99, 235, 0.08)",
-														padding: "0.1rem 0.35rem",
-														borderRadius: "4px",
-														whiteSpace: "nowrap",
-														flexShrink: 0,
-														letterSpacing: "0.01em",
-													}}
-													title={`Штрихкод крафт-пакета: ${log.barcode}`}
-												>
-													{log.barcode}
-												</span>
-											) : (
-												<span style={{ fontSize: "0.72rem", color: "var(--muted)" }}>
-													—
-												</span>
-											)}
-										</div>
-									</td>
-
-									<td
-										style={{ width: "11%" }}
-										className="whitespace-nowrap shrink-0"
-									>
-										<div
-											style={{
-												display: "flex",
-												alignItems: "center",
-												gap: "0.25rem",
-												whiteSpace: "nowrap",
-											}}
-										>
-											<span
-												style={{
-													fontSize: "0.775rem",
-													fontWeight: 600,
-													maxWidth: "70px",
-													overflow: "hidden",
-													textOverflow: "ellipsis",
-													whiteSpace: "nowrap",
-												}}
-												title={log.operatorName || "Сотрудник"}
-											>
-												{log.operatorName ? log.operatorName.split(" ")[0] : "Сотрудник"}
-											</span>
-
-											{isStamped ? (
-												<span
-													className="sanpin-badge-gov"
-													style={{
-														minHeight: "22px",
-														fontSize: "0.7rem",
-														padding: "0.1rem 0.35rem",
-														flexShrink: 0,
-													}}
-												>
-													<CheckCircle2 size={11} /> ЭЦП
-												</span>
-											) : (
-												<button
-													type="button"
-													onClick={() => onStampVerification(log.id)}
-													className="sanpin-btn sanpin-btn-secondary"
-													style={{
-														minHeight: "24px",
-														height: "24px",
-														padding: "0.1rem 0.35rem",
-														fontSize: "0.7rem",
-														cursor: "pointer",
-														flexShrink: 0,
-													}}
-													title="Поставить штамп заверки ответственного"
-												>
-													<Award size={11} color="var(--brand-primary)" /> ЭЦП
-												</button>
-											)}
-
-											<div style={{ position: "relative" }}>
-												<button
-													type="button"
-													onClick={() =>
-														setOpenDesktopRowMenuId(
-															openDesktopRowMenuId === log.id ? null : log.id
-														)
-													}
-													className="sanpin-btn sanpin-btn-secondary"
-													style={{
-														minHeight: "24px",
-														height: "24px",
-														width: "24px",
-														padding: "0",
-														cursor: "pointer",
-														display: "inline-flex",
-														alignItems: "center",
-														justifyContent: "center",
-														flexShrink: 0,
-													}}
-													title="Дополнительные действия печати и этикеток"
-													aria-label="Опции этикеток"
-												>
-													<MoreHorizontal size={13} />
-												</button>
-
-												{openDesktopRowMenuId === log.id && (
-													<div
-														ref={desktopRowMenuRef}
-														style={{
-															position: "absolute",
-															right: 0,
-															top: "100%",
-															marginTop: "4px",
-															zIndex: 40,
-															width: "230px",
-															background: "var(--paper, #ffffff)",
-															border: "1px solid var(--line, #e2e8f0)",
-															borderRadius: "8px",
-															boxShadow: "0 4px 16px rgba(0, 0, 0, 0.12)",
-															padding: "0.3rem",
-															display: "flex",
-															flexDirection: "column",
-															gap: "0.2rem",
-														}}
-													>
-														<button
-															type="button"
-															onClick={() => {
-																setOpenDesktopRowMenuId(null);
-																onOpenKraftForLog(log);
-															}}
-															style={{
-																display: "flex",
-																alignItems: "center",
-																gap: "0.5rem",
-																padding: "0.4rem 0.6rem",
-																fontSize: "0.75rem",
-																textAlign: "left",
-																background: "none",
-																border: "none",
-																borderRadius: "4px",
-																cursor: "pointer",
-																color: "var(--ink)",
-															}}
-															className="hover:bg-[var(--paper-soft,#f1f5f9)]"
-														>
-															<QrCode size={13} color="var(--brand-primary)" />
-															<span>Партия в студии термоэтикеток</span>
-														</button>
-														<button
-															type="button"
-															onClick={() => {
-																setOpenDesktopRowMenuId(null);
-																onPrintSinglePouch(log);
-															}}
-															style={{
-																display: "flex",
-																alignItems: "center",
-																gap: "0.5rem",
-																padding: "0.4rem 0.6rem",
-																fontSize: "0.75rem",
-																textAlign: "left",
-																background: "none",
-																border: "none",
-																borderRadius: "4px",
-																cursor: "pointer",
-																color: "var(--ink)",
-															}}
-															className="hover:bg-[var(--paper-soft,#f1f5f9)]"
-														>
-															<Tag size={13} />
-															<span>Печать 1 этикетки (58x40 мм)</span>
-														</button>
-														<button
-															type="button"
-															onClick={() => {
-																setOpenDesktopRowMenuId(null);
-																onPrintBatchPouches(log, 10);
-															}}
-															style={{
-																display: "flex",
-																alignItems: "center",
-																gap: "0.5rem",
-																padding: "0.4rem 0.6rem",
-																fontSize: "0.75rem",
-																textAlign: "left",
-																background: "none",
-																border: "none",
-																borderRadius: "4px",
-																cursor: "pointer",
-																color: "var(--teal, #0d9488)",
-																fontWeight: 600,
-															}}
-															className="hover:bg-[var(--paper-soft,#f1f5f9)]"
-														>
-															<Printer size={13} />
-															<span>Печать пачки 10 шт (30 дней)</span>
-														</button>
-													</div>
-												)}
-											</div>
-										</div>
-									</td>
-								</tr>
-							);
-						})
+						logsSlice.visibleItems.map((log) => (
+							<AutoclaveCycleRowItem
+								key={log.id}
+								log={log}
+								isStamped={stampedRows[log.id] || Boolean(log.notes?.includes("ЭЦП"))}
+								onStampVerification={onStampVerification}
+								onPrintBatchPouches={onPrintBatchPouches}
+								onPrintSinglePouch={onPrintSinglePouch}
+								onOpenKraftForLog={onOpenKraftForLog}
+								isMenuOpen={openDesktopRowMenuId === log.id}
+								onToggleMenu={() =>
+									setOpenDesktopRowMenuId(
+										openDesktopRowMenuId === log.id ? null : log.id,
+									)
+								}
+								menuRef={openDesktopRowMenuId === log.id ? desktopRowMenuRef : undefined}
+							/>
+						))
 					)}
 				</tbody>
 			</table>
 		</div>
 	);
 }
+
+export default AutoclaveRegisterRows;

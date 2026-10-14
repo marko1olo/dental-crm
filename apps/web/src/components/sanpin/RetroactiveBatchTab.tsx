@@ -29,7 +29,7 @@ import {
 } from "./retroactiveSanpinEngine.js";
 import { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
 import { POPULAR_STERILIZER_BRAND_PRESETS, type SterilizerEquipment } from "@dental/shared";
-import { loadSavedClinicAutoclaves } from "./AutoclaveEquipmentModal";
+import { loadSavedClinicAutoclaves } from "./autoclave/autoclaveDeviceTypes";
 import { RetroactiveBatchHeroBanner } from "./RetroactiveBatchHeroBanner";
 import { RetroactiveBatchTable } from "./RetroactiveBatchTable";
 import { useSanpinScheduleSyncLogic } from "../../hooks/domains/useSanpinScheduleSyncLogic";

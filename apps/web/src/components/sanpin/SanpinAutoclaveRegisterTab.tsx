@@ -24,13 +24,13 @@ import {
 import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
 import { MedicalWasteJournalModal } from "./waste/MedicalWasteJournalModal";
+import { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
 import {
-	AutoclaveEquipmentModal,
 	type ClinicAutoclaveDevice,
 	DEFAULT_CLINIC_DEVICES,
 	loadSavedClinicAutoclaves,
 	saveClinicAutoclaves,
-} from "./AutoclaveEquipmentModal";
+} from "./autoclave/autoclaveDeviceTypes";
 import {
 	handleGenerateMonthlyForm257,
 	handlePrintBatchPouches,
@@ -479,10 +479,10 @@ export function SanpinAutoclaveRegisterTab() {
 			/>
 
 			{/* Equipment Fleet Modal */}
-			<AutoclaveEquipmentModal
+			<SterilizerEquipmentModal
 				isOpen={isEquipmentModalOpen}
 				onClose={() => setIsEquipmentModalOpen(false)}
-				onDevicesUpdated={(devices) => setClinicDevices(devices)}
+				onSaved={fetchDevices}
 			/>
 		</div>
 	);

@@ -6,9 +6,8 @@
  */
 
 import React, { useState } from "react";
-import { showToast } from "../GlobalToast";
 import { SterilizationScanner } from "./SterilizationScanner";
-import { AutoclaveEquipmentModal } from "./AutoclaveEquipmentModal";
+import { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
 import { SterilizationCycleModal } from "./SterilizationCycleModal";
 import {
 	useSanPinJournalLogic,
@@ -93,7 +92,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 				</div>
 			)}
 
-			<AutoclaveEquipmentModal isOpen={internalEquipmentModalOpen} onClose={() => setInternalEquipmentModalOpen(false)} />
+			<SterilizerEquipmentModal isOpen={internalEquipmentModalOpen} onClose={() => setInternalEquipmentModalOpen(false)} />
 			<SterilizationCycleModal isOpen={internalNewCycleModalOpen} onClose={() => setInternalNewCycleModalOpen(false)} onCycleCreated={fetchCyclesFromDb} />
 		</div>
 	);

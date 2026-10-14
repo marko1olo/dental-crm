@@ -33,7 +33,6 @@ export interface SanpinRegistersHeaderProps {
 	readonly onRefreshSummary: () => void;
 	readonly onAutofillShift: () => void;
 	readonly onOpenRetroactiveBatchModal: () => void;
-	readonly onOpenNurseSignModal: () => void;
 	readonly onOpenKraftModal: () => void;
 	readonly onOpenJournal257Modal: () => void;
 }
@@ -52,7 +51,6 @@ export function SanpinRegistersHeader({
 	onRefreshSummary,
 	onAutofillShift,
 	onOpenRetroactiveBatchModal,
-	onOpenNurseSignModal,
 	onOpenKraftModal,
 	onOpenJournal257Modal,
 }: SanpinRegistersHeaderProps) {
@@ -111,15 +109,15 @@ export function SanpinRegistersHeader({
 			<div className="sanpin-header-actions">
 				<button
 					type="button"
-					onClick={() => onAutofillByPeriod("month")}
+					onClick={onAutofillShift}
 					aria-busy={autoFilling}
-					className="sanpin-btn-primary-cta h-9 min-h-[36px] rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs px-3.5 text-[13px] font-semibold inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer touch-manipulation"
-					data-testid="sanpin-autofill-month-primary-btn"
-					data-action="autofill-month"
-					title="Сформировать все регламентные журналы за месяц по СанПиН 3.3686-21 (Автоклав Ф-257, ПСО Ф-366, Дезар, Т° Pozis, отходы Б — 100% норма)"
+					className="sanpin-btn-primary-cta h-9 min-h-[36px] rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs px-3.5 text-[13px] font-semibold inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer touch-manipulation"
+					data-testid="sanpin-shift-close-primary-btn"
+					data-action="shift-close"
+					title="Сдать смену по СанПиН 3.3686-21 (Все нормы соблюдены: автоклавы 134°C, азопирам отрицательный, воздух и дезинфекция в норме)"
 				>
-					<Sparkles size={14} className="shrink-0" />
-					<span>{autoFilling ? "Заполнение..." : "Заполнить журналы за месяц"}</span>
+					<CheckCircle2 size={15} className="shrink-0 text-white" />
+					<span>{autoFilling ? "Сохранение смены..." : "Сдать смену по СанПиН (Все нормы соблюдены)"}</span>
 				</button>
 
 				<button
@@ -283,9 +281,10 @@ export function SanpinRegistersHeader({
 								role="menuitem"
 								onClick={() => {
 									setIsExportMenuOpen(false);
-									onOpenNurseSignModal();
+									onAutofillShift();
 								}}
 								className="sanpin-dropdown-item"
+								data-testid="sanpin-quick-sign-btn"
 							>
 								<Award size={15} color="var(--teal)" className="shrink-0" />
 								<span>ЭЦП ответственного (заверка смены)</span>

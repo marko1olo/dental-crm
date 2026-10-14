@@ -11,7 +11,8 @@ import {
 	Sparkles,
 } from "lucide-react";
 import React from "react";
-import type { ClinicAutoclaveDevice } from "../AutoclaveEquipmentModal";
+import { createPortal } from "react-dom";
+import type { ClinicAutoclaveDevice } from "./autoclaveDeviceTypes";
 import type { AutoclaveLogsSlice } from "./types";
 import { getPackagingLabel } from "./types";
 
@@ -221,35 +222,35 @@ export function AutoclaveMobileCards({
 								<button
 									type="button"
 									onClick={() => onPrintSinglePouch(log)}
-									className="sanpin-touch-btn flex-1 inline-flex items-center justify-center gap-2 px-3 rounded-xl bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-strong,#1e293b)] text-[var(--teal,#0d9488)] dark:text-[#2dd4bf] border border-[var(--teal,#0d9488)] font-bold text-xs touch-manipulation cursor-pointer"
-									style={{ minHeight: "44px", height: "44px" }}
+									className="sanpin-mobile-card-btn sanpin-mobile-card-btn--teal touch-manipulation"
+									style={{ fontSize: "0.7rem", padding: "0 0.45rem", gap: "0.25rem" }}
 									title="Печать 1 термоэтикетки со штрихкодом (58x40 мм)"
 									data-testid={`mobile-print-label-btn-${log.id}`}
 								>
-									<Printer size={16} />
+									<Printer size={14} className="shrink-0" />
 									<span>Печать наклейки</span>
 								</button>
 
 								{/* 2. Nurse ECP Stamp Button (Touch target >= 44x44px) */}
 								{isStamped ? (
 									<span
-										className="sanpin-touch-btn flex-1 inline-flex items-center justify-center gap-1.5 px-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 font-bold text-xs"
-										style={{ minHeight: "44px", height: "44px" }}
+										className="sanpin-mobile-card-btn sanpin-mobile-card-btn--stamped"
+										style={{ fontSize: "0.7rem", padding: "0 0.45rem", gap: "0.25rem" }}
 										title="Смена и цикл заверены цифровым штампом ЭЦП"
 									>
-										<CheckCircle2 size={16} />
+										<CheckCircle2 size={14} className="shrink-0" />
 										<span>Заверено ЭЦП</span>
 									</span>
 								) : (
 									<button
 										type="button"
 										onClick={() => onStampVerification(log.id)}
-										className="sanpin-touch-btn flex-1 inline-flex items-center justify-center gap-2 px-3 rounded-xl bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-strong,#1e293b)] text-[var(--brand-primary,#2563eb)] border border-[var(--brand-primary,#2563eb)] font-bold text-xs touch-manipulation cursor-pointer"
-										style={{ minHeight: "44px", height: "44px" }}
+										className="sanpin-mobile-card-btn sanpin-mobile-card-btn--teal touch-manipulation"
+										style={{ fontSize: "0.7rem", padding: "0 0.45rem", gap: "0.25rem" }}
 										title="Поставить цифровую заверку/штамп медсестры"
 										data-testid={`mobile-stamp-ecp-btn-${log.id}`}
 									>
-										<Award size={16} />
+										<Award size={14} className="shrink-0" />
 										<span>Заверить (ЭЦП)</span>
 									</button>
 								)}
@@ -258,13 +259,7 @@ export function AutoclaveMobileCards({
 								<button
 									type="button"
 									onClick={() => onSelectLogForSheet(log)}
-									className="sanpin-touch-btn inline-flex items-center justify-center rounded-xl bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-strong,#1e293b)] text-ink border border-[var(--line,#cbd5e1)] dark:border-[#334155] touch-manipulation cursor-pointer shrink-0"
-									style={{
-										minHeight: "44px",
-										minWidth: "44px",
-										height: "44px",
-										width: "44px",
-									}}
+									className="sanpin-mobile-card-btn--more touch-manipulation"
 									aria-label="Все опции цикла"
 									data-testid={`mobile-cycle-more-btn-${log.id}`}
 								>
@@ -274,6 +269,38 @@ export function AutoclaveMobileCards({
 						</div>
 					);
 				})
+			)}
+
+			{/* Apple HIG Floating Bottom Bar (Thumb Zone Primary CTA, 52px) */}
+			{typeof document !== "undefined" ? (
+				createPortal(
+					<div className="sanpin-mobile-floating-bar" data-testid="sanpin-mobile-floating-bottom-bar">
+						<button
+							type="button"
+							onClick={onQuickShiftBatch}
+							aria-busy={isLoggingBatch}
+							className="sanpin-mobile-floating-cta touch-manipulation"
+							data-testid="sanpin-mobile-start-autoclave-cycle-btn"
+						>
+							<Plus size={18} className="shrink-0" />
+							<span>{isLoggingBatch ? "Фиксация цикла..." : "Запустить цикл автоклава"}</span>
+						</button>
+					</div>,
+					document.body,
+				)
+			) : (
+				<div className="sanpin-mobile-floating-bar" data-testid="sanpin-mobile-floating-bottom-bar">
+					<button
+						type="button"
+						onClick={onQuickShiftBatch}
+						aria-busy={isLoggingBatch}
+						className="sanpin-mobile-floating-cta touch-manipulation"
+						data-testid="sanpin-mobile-start-autoclave-cycle-btn"
+					>
+						<Plus size={18} className="shrink-0" />
+						<span>{isLoggingBatch ? "Фиксация цикла..." : "Запустить цикл автоклава"}</span>
+					</button>
+				</div>
 			)}
 		</div>
 	);

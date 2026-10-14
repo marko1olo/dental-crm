@@ -7,6 +7,8 @@ export * from "./autoclaveEngine";
 export * from "./types";
 export * from "./AutoclaveRegisterToolbar";
 export * from "./AutoclaveRegisterRows";
+export * from "./AutoclaveCycleRowItem";
+export * from "./AutoclaveIndicatorBadge";
 export * from "./AutoclaveMobileCards";
 export * from "./AutoclavePagination";
 export * from "./AutoclaveMobileActionSheet";

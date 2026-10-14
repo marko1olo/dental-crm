@@ -1,30 +1,12 @@
-import {
-	type PsoCleaningLog,
-} from "@dental/shared";
-import {
-	Award,
-	CheckCircle2,
-	FlaskConical,
-	Plus,
-	Search,
-	Sparkles,
-	X,
-	XCircle,
-} from "lucide-react";
+import { calculatePsoSamplingRequirement, type PsoCleaningLog } from "@dental/shared";
+import { Award, CheckCircle2, FlaskConical, Plus, Search, Sparkles, X, XCircle } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
-import {
-	DEFAULT_DOM_CHUNK_STEP,
-	DEFAULT_DOM_PAGE_SIZE,
-	sliceDomList,
-} from "../../utils/domVirtualizationHelper";
-import {
-	STATUTORY_PSO_REAGENTS,
-	generateStatutoryPsoForm366PrintHtml,
-} from "./sanpinAzopyramEngine";
-import { PsoAddSampleModal } from "./PsoAddSampleModal";
+import { DEFAULT_DOM_CHUNK_STEP, DEFAULT_DOM_PAGE_SIZE, sliceDomList } from "../../utils/domVirtualizationHelper";
+import { STATUTORY_PSO_REAGENTS, generateStatutoryPsoForm366PrintHtml } from "./sanpinAzopyramEngine";
+import { PsoMobileCards } from "./PsoMobileCards";
 
 export function SanpinChemicalTestsRegisterTab() {
 	const appLogic = useOptionalAppLogicContext();
@@ -32,7 +14,6 @@ export function SanpinChemicalTestsRegisterTab() {
 	const [loading, setLoading] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [testFilter, setTestFilter] = useState<string>("all");
-	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [stampedRows, setStampedRows] = useState<Record<string, boolean>>({});
 	const [submitting, setSubmitting] = useState(false);
 
@@ -80,12 +61,15 @@ export function SanpinChemicalTestsRegisterTab() {
 			const clinicToken = readDenteClinicToken();
 			const staffToken = readDenteStaffToken();
 
+			const batchCount = 100;
+			const sampling = calculatePsoSamplingRequirement(batchCount, false, 1);
+
 			const payload = {
 				instrumentName: "Стоматологические боры, наконечники, терапевтические и хирургические наборы (зеркала, зонды, гладилки)",
-				batchItemCount: 100,
-				testedSampleCount: 3,
+				batchItemCount: batchCount,
+				testedSampleCount: sampling.minSampleRequired,
 				detergentBrand: "Биолот 0.5% + Аламинол 1%",
-				notes: `Азопирамовая проба — норма (реакция отрицательная, скрытой крови и остатков моющих средств нет). Партия допущена к стерилизации. [ЭЦП: ${nurseName}]`,
+				notes: `Азопирамовая проба — норма (реакция отрицательная, скрытой крови и остатков моющих средств нет). ${sampling.formulaExplanationRu}. Партия допущена к стерилизации. [ЭЦП: ${nurseName}]`,
 			};
 
 			const res = await fetch("/api/registers/pso/quick-norm", {
@@ -113,8 +97,8 @@ export function SanpinChemicalTestsRegisterTab() {
 					body: JSON.stringify({
 						instrumentName: payload.instrumentName,
 						testType: "both",
-						batchItemCount: 100,
-						testedSampleCount: 3,
+						batchItemCount: batchCount,
+						testedSampleCount: sampling.minSampleRequired,
 						isAzopyramNegative: true,
 						isPhenolphthaleinNegative: true,
 						detergentBrand: payload.detergentBrand,
@@ -326,32 +310,22 @@ export function SanpinChemicalTestsRegisterTab() {
 							<CheckCircle2 size={15} className="shrink-0" />
 							<span className="shrink-0 whitespace-nowrap">Проба отрицательная (скрытой крови нет)</span>
 						</button>
-
-						<button
-							type="button"
-							onClick={() => setIsModalOpen(true)}
-							className="sanpin-btn sanpin-btn-secondary touch-manipulation shrink-0 whitespace-nowrap"
-							style={{
-								minHeight: "36px",
-								height: "36px",
-								padding: "0.35rem 0.75rem",
-								fontSize: "0.825rem",
-								fontWeight: 600,
-								cursor: "pointer",
-								whiteSpace: "nowrap",
-								flexShrink: 0,
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "0.35rem",
-								borderRadius: "8px",
-							}}
-						>
-							<Plus size={14} className="shrink-0" /> <span className="shrink-0 whitespace-nowrap">Внести пробу</span>
-						</button>
 					</div>
 				</div>
 
-				<div className="w-full overflow-x-auto min-w-0" style={{ width: "100%", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+				{/* Apple HIG Mobile Responsive Grouped Cards */}
+				<PsoMobileCards
+					logs={logsSlice.visibleItems}
+					loading={loading}
+					nurseName={nurseName}
+					stampedRows={stampedRows}
+					onStampVerification={handleStampVerification}
+					onQuickMarkNorm={handleQuickMarkBatchNorm}
+					isSubmitting={submitting}
+				/>
+
+				{/* Desktop Table View (hidden on Mobile) */}
+				<div className="hidden md:block w-full overflow-x-auto min-w-0" style={{ width: "100%", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
 					<table className="sanpin-table w-full min-w-0" style={{ width: "100%", minWidth: "1040px", tableLayout: "auto" }}>
 						<thead>
 							<tr>
@@ -556,13 +530,6 @@ export function SanpinChemicalTestsRegisterTab() {
 					</div>
 				)}
 			</div>
-
-			<PsoAddSampleModal
-				isOpen={isModalOpen}
-				onClose={() => setIsModalOpen(false)}
-				onSuccess={fetchLogs}
-				defaultNurseName={nurseName}
-			/>
 		</div>
 	);
 }

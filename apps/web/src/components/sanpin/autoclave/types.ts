@@ -1,5 +1,5 @@
-import type { SterilizationLogRecord } from "@dental/shared";
-import type { ClinicAutoclaveDevice } from "../AutoclaveEquipmentModal";
+export * from "./autoclaveDeviceTypes";
+import type { ClinicAutoclaveDevice } from "./autoclaveDeviceTypes";
 
 /**
  * SanPiN 3.3686-21 Autoclave Cycle & Table Types

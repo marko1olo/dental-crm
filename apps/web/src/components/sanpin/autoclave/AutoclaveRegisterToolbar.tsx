@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { showToast } from "../../GlobalToast";
-import type { ClinicAutoclaveDevice } from "../AutoclaveEquipmentModal";
+import type { ClinicAutoclaveDevice } from "./autoclaveDeviceTypes";
 
 export interface AutoclaveRegisterToolbarProps {
 	readonly searchQuery: string;
@@ -73,7 +73,7 @@ export function AutoclaveRegisterToolbar({
 				<Search size={14} className="dente-search-icon" />
 				<input
 					type="text"
-					placeholder="Поиск по аппарату, штрихкоду..."
+					placeholder="Поиск цикла"
 					value={searchQuery}
 					onChange={(e) => setSearchQuery(e.target.value)}
 					className="dente-search-input !h-8"

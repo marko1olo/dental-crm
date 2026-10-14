@@ -208,7 +208,11 @@ export function generateKraftBatchRecords(options: KraftBatchOptions): KraftPack
 	const now = new Date();
 	const packDateStr = options.customPackDate || now.toISOString();
 
-	const expResult = calculatePackageExpiration(packDateStr, options.packageType, now);
+	const expResult = calculatePackageExpiration(
+		packDateStr,
+		options.packageType,
+		options.customPackDate ? new Date(options.customPackDate) : now,
+	);
 	const toolSet = getDentalToolSetDefinition(options.toolSetId);
 	const material = getKraftMaterialDefinition(options.packageType);
 	const sizeDef = getKraftSizeDefinition(options.packageSize);

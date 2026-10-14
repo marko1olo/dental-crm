@@ -47,16 +47,15 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
 	app.post("/api/registers/sterilization/shift-batch", handleSterilizationShiftBatch);
 
 	// Парк стерилизаторов и автоклавов (оборудование ЦСО) - канонический путь и алиас
-	const equipmentEndpoints = [
-		"/api/registers/sterilizers/equipments",
-		"/api/registers/sterilizer/equipments",
-	];
-	for (const endpoint of equipmentEndpoints) {
-		app.get(endpoint, handleGetSterilizerEquipments);
-		app.post(endpoint, handleCreateSterilizerEquipment);
-		app.put(`${endpoint}/:id`, handleUpdateSterilizerEquipment);
-		app.delete(`${endpoint}/:id`, handleDeleteSterilizerEquipment);
-	}
+	app.get("/api/registers/sterilizers/equipments", handleGetSterilizerEquipments);
+	app.post("/api/registers/sterilizers/equipments", handleCreateSterilizerEquipment);
+	app.put("/api/registers/sterilizers/equipments/:id", handleUpdateSterilizerEquipment);
+	app.delete("/api/registers/sterilizers/equipments/:id", handleDeleteSterilizerEquipment);
+
+	app.get("/api/registers/sterilizer/equipments", handleGetSterilizerEquipments);
+	app.post("/api/registers/sterilizer/equipments", handleCreateSterilizerEquipment);
+	app.put("/api/registers/sterilizer/equipments/:id", handleUpdateSterilizerEquipment);
+	app.delete("/api/registers/sterilizer/equipments/:id", handleDeleteSterilizerEquipment);
 
 	// Сканирование, ежедневные тесты автоклавов и ПСО
 	registerSterilizationLogRoutes(app);

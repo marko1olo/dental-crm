@@ -385,6 +385,8 @@ export function AutoclaveLog257Modal({
 		</div>
 	);
 
-	if (typeof document === "undefined") return null;
+	if (typeof document === "undefined") {
+		return modalContent;
+	}
 	return createPortal(modalContent, document.body);
 }

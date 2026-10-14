@@ -17,7 +17,6 @@ import { SterilizerFleetManager } from "./SterilizerFleetManager";
 import { SanpinDisinfectantsRegisterTab } from "./SanpinDisinfectantsRegisterTab";
 import { SanpinBacLabRegisterTab } from "./SanpinBacLabRegisterTab";
 import { SanpinNeedleDisposalRegisterTab } from "./SanpinNeedleDisposalRegisterTab";
-import { SanpinNurseSignModal } from "./SanpinNurseSignModal";
 import {
 	SANPIN_CATEGORIES,
 	SANPIN_TABS,
@@ -42,7 +41,6 @@ function SanpinRegistersInner() {
 	const [isKraftModalOpen, setIsKraftModalOpen] = useState(false);
 	const [isJournal257ModalOpen, setIsJournal257ModalOpen] = useState(false);
 	const [isRetroactiveBatchModalOpen, setIsRetroactiveBatchModalOpen] = useState(false);
-	const [isNurseSignModalOpen, setIsNurseSignModalOpen] = useState(false);
 	const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 	const [autoFilling, setAutoFilling] = useState(false);
 	const [autofillPeriod, setAutofillPeriod] = useState<"day" | "week" | "month">("month");
@@ -178,7 +176,7 @@ function SanpinRegistersInner() {
 				});
 				if (res.ok) {
 					isApiSuccess = true;
-					showToast(`Смена заполнена: ${effectiveVisits} приемов, автоклавы ${shiftAutoResult.totalAutoclaveCycles} цикла, ПСО ${shiftAutoResult.totalPsoSamplesTested} проб, Pozis +4.2°C, ВИТ-2 21°C/55%`, "success");
+					showToast(`Смена заполнена: ${effectiveVisits} приемов, автоклавы ${shiftAutoResult.totalAutoclaveCycles} цикла, ПСО ${shiftAutoResult.totalPsoSamplesTested} проб, Pozis +4.2°C, ВИТ-2 21°C/55%. Журналы стерилизации в норме.`, "success");
 					fetchSummary();
 					return;
 				}
@@ -196,7 +194,7 @@ function SanpinRegistersInner() {
 					temperature: { totalChecksToday: 4, deviationsToday: 0 },
 				}));
 
-				showToast(`Смена заполнена: ${effectiveVisits} приемов, автоклавы ${shiftAutoResult.totalAutoclaveCycles} цикла, ПСО ${shiftAutoResult.totalPsoSamplesTested} проб, Pozis +4.2°C, ВИТ-2 21°C/55%`, "success");
+				showToast(`Смена заполнена: ${effectiveVisits} приемов, автоклавы ${shiftAutoResult.totalAutoclaveCycles} цикла, ПСО ${shiftAutoResult.totalPsoSamplesTested} проб, Pozis +4.2°C, ВИТ-2 21°C/55%. Журналы стерилизации в норме.`, "success");
 			}
 		} catch (err) {
 			showToast("Ошибка при авто-заполнении смены", "error");
@@ -234,7 +232,7 @@ function SanpinRegistersInner() {
 						body: JSON.stringify({ date: dateStr }),
 					}).catch(() => null);
 				}
-				showToast("Журналы за рабочую неделю заполнены и зафиксированы в БД (100% норма)", "success");
+				showToast("Журналы за неделю заполнены и зафиксированы в БД (100% норма)", "success");
 			} else {
 				const operatorName = (appLogic as any)?.activeDoctor?.fullName || "Иванова А. С. (Медсестра ЦСО)";
 				const headNurseName = (appLogic as any)?.clinic?.legalEntityName || "Ответственный по СанПиН";
@@ -309,7 +307,6 @@ function SanpinRegistersInner() {
 				onRefreshSummary={fetchSummary}
 				onAutofillShift={handleAutofillShift}
 				onOpenRetroactiveBatchModal={() => setIsRetroactiveBatchModalOpen(true)}
-				onOpenNurseSignModal={() => setIsNurseSignModalOpen(true)}
 				onOpenKraftModal={() => setIsKraftModalOpen(true)}
 				onOpenJournal257Modal={() => setIsJournal257ModalOpen(true)}
 			/>
@@ -451,13 +448,6 @@ function SanpinRegistersInner() {
 			{activeTab === "disinfectants" && <SanpinDisinfectantsRegisterTab />}
 			{activeTab === "bac_lab" && <SanpinBacLabRegisterTab />}
 			{activeTab === "needle_disposal" && <SanpinNeedleDisposalRegisterTab />}
-
-			{/* Electronic Nurse Signature Shift Stamp Modal */}
-			<SanpinNurseSignModal
-				isOpen={isNurseSignModalOpen}
-				onClose={() => setIsNurseSignModalOpen(false)}
-				onSuccess={fetchSummary}
-			/>
 
 			{/* Kraft Package Barcode Studio Modal */}
 			<KraftPackageBarcodeModal

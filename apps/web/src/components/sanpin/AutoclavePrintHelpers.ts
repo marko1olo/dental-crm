@@ -14,7 +14,7 @@ import {
 import {
 	type ClinicAutoclaveDevice,
 	loadSavedClinicAutoclaves,
-} from "./AutoclaveEquipmentModal";
+} from "./autoclave/autoclaveDeviceTypes";
 import {
 	createDefault5ChamberPoints,
 	createForm257Record,

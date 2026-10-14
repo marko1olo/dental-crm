@@ -6,149 +6,25 @@
  * ============================================================================
  */
 
-export type KraftPackageMaterialId =
-	| "paper_self_seal_single"
-	| "paper_self_seal_double"
-	| "paper_plastic_pouch"
-	| "crepe_paper_wrap"
-	| "bix_with_filter";
+import {
+	type KraftPackageMaterialId,
+	type KraftPackageMaterialDefinition,
+	KRAFT_PACKAGE_MATERIALS,
+	type KraftPackageSizeId,
+	type KraftPackageSizeDefinition,
+	KRAFT_PACKAGE_SIZES,
+} from "@dental/shared";
 
-export interface KraftPackageMaterialDefinition {
-	readonly id: KraftPackageMaterialId;
-	readonly nameRu: string;
-	readonly shortLabelRu: string;
-	readonly statutoryShelfLifeDays: number;
-	readonly sealingMethodRu: string;
-	readonly sanpinClauseRu: string;
-	readonly gostStandardRu: string;
-	readonly descriptionRu: string;
-	readonly recommendedSterilizationMethod: "steam_autoclave_134" | "steam_autoclave_121" | "dry_heat";
-	readonly isHeatSealed: boolean;
-	readonly isTransparentFilm: boolean;
-}
-
-export const KRAFT_PACKAGE_MATERIALS: readonly KraftPackageMaterialDefinition[] = [
-	{
-		id: "paper_self_seal_single",
-		nameRu: "Крафт-пакет бумажный самоклеящийся одинарный",
-		shortLabelRu: "Крафт-пакет одинарный (50 сут.)",
-		statutoryShelfLifeDays: 50,
-		sealingMethodRu: "Встроенная самоклеящаяся лента с защитным лайнером",
-		sanpinClauseRu: "СанПиН 3.3686-21 п. 3632 (Таблица 3.14)",
-		gostStandardRu: "ГОСТ Р ИСО 11607-1-2018 / ГОСТ 10354",
-		descriptionRu: "Однослойный бумажный крафт-пакет с термовлагостойким клеевым слоем. Для базового терапевтического и смотрового инструментария.",
-		recommendedSterilizationMethod: "steam_autoclave_134",
-		isHeatSealed: false,
-		isTransparentFilm: false,
-	},
-	{
-		id: "paper_self_seal_double",
-		nameRu: "Крафт-пакет бумажный двойной (двойная упаковка)",
-		shortLabelRu: "Крафт-пакет двойной (60 сут.)",
-		statutoryShelfLifeDays: 60,
-		sealingMethodRu: "Последовательная закладка в два независимых самоклеящихся пакета",
-		sanpinClauseRu: "СанПиН 3.3686-21 п. 3634",
-		gostStandardRu: "ГОСТ Р ИСО 11607-1-2018",
-		descriptionRu: "Двойной барьер из крафт-бумаги. Повышенная надежность стерильности при межкабинетной транспортировке и длительном хранении.",
-		recommendedSterilizationMethod: "steam_autoclave_134",
-		isHeatSealed: false,
-		isTransparentFilm: false,
-	},
-	{
-		id: "paper_plastic_pouch",
-		nameRu: "Комбинированный пакет бумага + прозрачная пленка термосварочный",
-		shortLabelRu: "Комби-пакет бумага+пленка (180 сут. / 6 мес.)",
-		statutoryShelfLifeDays: 180,
-		sealingMethodRu: "Термосварочный аппарат (ширина герметичного шва >= 8 мм)",
-		sanpinClauseRu: "СанПиН 3.3686-21 п. 3632 (Таблица 3.14)",
-		gostStandardRu: "ГОСТ Р ИСО 11607-1-2018 / EN 868-5",
-		descriptionRu: "Многослойный ламинат (PET/PP) с медицинской бумагой. Максимальный барьерный срок 6 месяцев при температуре 180–200°C запайки.",
-		recommendedSterilizationMethod: "steam_autoclave_134",
-		isHeatSealed: true,
-		isTransparentFilm: true,
-	},
-	{
-		id: "crepe_paper_wrap",
-		nameRu: "Крепированная бумага стерилизационная (2 слоя)",
-		shortLabelRu: "Креп-бумага 2 слоя (60 сут.)",
-		statutoryShelfLifeDays: 60,
-		sealingMethodRu: "Конвертное двухслойное обертывание с фиксацией индикаторным скотчем",
-		sanpinClauseRu: "СанПиН 3.3686-21 п. 3633",
-		gostStandardRu: "ГОСТ Р ИСО 11607-1-2018 / EN 868-2",
-		descriptionRu: "Мягкая воздухопроницаемая крепированная бумага высокой плотности (60 г/м²). Идеальна для тяжелых хирургических лотков и кассет.",
-		recommendedSterilizationMethod: "steam_autoclave_134",
-		isHeatSealed: false,
-		isTransparentFilm: false,
-	},
-	{
-		id: "bix_with_filter",
-		nameRu: "Стерилизационная коробка (Бикс КСПФ с антибактериальным фильтром)",
-		shortLabelRu: "Бикс КСПФ с фильтром (20 сут.)",
-		statutoryShelfLifeDays: 20,
-		sealingMethodRu: "Механические замки крышки с хлопчатобумажным фильтром",
-		sanpinClauseRu: "СанПиН 3.3686-21 п. 3631",
-		gostStandardRu: "ГОСТ Р 51574 / ТУ 9451-002",
-		descriptionRu: "Многоразовый металлический бикс с фильтрами в крышке и дне. Срок сохранения стерильности без вскрытия — 20 суток (после вскрытия — 24 ч).",
-		recommendedSterilizationMethod: "steam_autoclave_134",
-		isHeatSealed: false,
-		isTransparentFilm: false,
-	},
-];
-
-export type KraftPackageSizeId =
-	| "size_75x150"
-	| "size_100x200"
-	| "size_150x250"
-	| "size_200x300";
-
-export interface KraftPackageSizeDefinition {
-	readonly id: KraftPackageSizeId;
-	readonly dimensionsMmRu: string;
-	readonly widthMm: number;
-	readonly heightMm: number;
-	readonly titleRu: string;
-	readonly recommendedUsageRu: string;
-	readonly typicalCapacityItemsCount: number;
-}
-
-export const KRAFT_PACKAGE_SIZES: readonly KraftPackageSizeDefinition[] = [
-	{
-		id: "size_75x150",
-		dimensionsMmRu: "75 × 150 мм",
-		widthMm: 75,
-		heightMm: 150,
-		titleRu: "Компактный (для боров, файлов и мелкого инструмента)",
-		recommendedUsageRu: "Эндодонтические файлы, алмазные и твердосплавные боры, ультразвуковые насадки, полиры",
-		typicalCapacityItemsCount: 6,
-	},
-	{
-		id: "size_100x200",
-		dimensionsMmRu: "100 × 200 мм",
-		widthMm: 100,
-		heightMm: 200,
-		titleRu: "Стандартный (для смотрового набора и щипцов)",
-		recommendedUsageRu: "Базовый смотровой терапевтический лоток, экстракционные щипцы, элеваторы, пинцеты",
-		typicalCapacityItemsCount: 5,
-	},
-	{
-		id: "size_150x250",
-		dimensionsMmRu: "150 × 250 мм",
-		widthMm: 150,
-		heightMm: 250,
-		titleRu: "Средний хирургический / пародонтологический",
-		recommendedUsageRu: "Набор кюрет Грейси, хирургические ложки, распаторы, наконечники KaVo/NSK",
-		typicalCapacityItemsCount: 8,
-	},
-	{
-		id: "size_200x300",
-		dimensionsMmRu: "200 × 300 мм",
-		widthMm: 200,
-		heightMm: 300,
-		titleRu: "Крупный лоточный / кассетный",
-		recommendedUsageRu: "Сетчатые кассеты имплантологии, полные ортопедические наборы, роторасширители, кламмеры",
-		typicalCapacityItemsCount: 15,
-	},
-];
+export type {
+	KraftPackageMaterialId,
+	KraftPackageMaterialDefinition,
+	KraftPackageSizeId,
+	KraftPackageSizeDefinition,
+};
+export {
+	KRAFT_PACKAGE_MATERIALS,
+	KRAFT_PACKAGE_SIZES,
+};
 
 export type ChemicalIndicatorClass = "class_4_multivariable" | "class_5_integrator";
 

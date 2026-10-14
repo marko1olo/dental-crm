@@ -106,7 +106,7 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 							background: "var(--paper, #fff)",
 							fontSize: "0.8125rem",
 							color: "var(--ink, #1e293b)",
-							width: 200,
+							width: 160,
 						}}
 					/>
 				</div>
@@ -134,7 +134,7 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 							background: "var(--paper, #fff)",
 							fontSize: "0.8125rem",
 							color: "var(--ink, #1e293b)",
-							width: 190,
+							width: 160,
 						}}
 						title="Сканирование крафт-пакета или штрихкода набора у кресла в 1 секунду без всплывающих окон (нажмите Enter)"
 					/>
@@ -159,6 +159,7 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 						color: "#ffffff",
 						fontSize: "0.8125rem",
 						fontWeight: 600,
+						whiteSpace: "nowrap",
 						cursor: isAutofilling ? "wait" : "pointer",
 						boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
 					}}
@@ -185,6 +186,7 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 						color: "var(--ink, #1e293b)",
 						fontSize: "0.8125rem",
 						fontWeight: 600,
+						whiteSpace: "nowrap",
 						cursor: "pointer",
 					}}
 				>
@@ -208,6 +210,7 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 							color: "#ffffff",
 							fontSize: "0.8125rem",
 							fontWeight: 600,
+							whiteSpace: "nowrap",
 							cursor: "pointer",
 						}}
 						data-testid="start-cycle-btn"
@@ -233,6 +236,7 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 							color: "var(--ink, #1e293b)",
 							fontSize: "0.8125rem",
 							fontWeight: 600,
+							whiteSpace: "nowrap",
 							cursor: "pointer",
 						}}
 						data-testid="equipment-modal-btn"
@@ -258,6 +262,7 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 						color: "var(--ink, #1e293b)",
 						fontSize: "0.8125rem",
 						fontWeight: 600,
+						whiteSpace: "nowrap",
 						cursor: "pointer",
 					}}
 					data-testid="print-form-257-btn"
@@ -281,6 +286,7 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 						background: "var(--paper, #fff)",
 						color: "var(--muted, #64748b)",
 						fontSize: "0.8125rem",
+						whiteSpace: "nowrap",
 						cursor: "pointer",
 					}}
 					title="Экспорт в CSV"

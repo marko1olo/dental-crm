@@ -17,7 +17,6 @@ import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { showToast } from "../GlobalToast";
 import { GeneralCleaningModal } from "./disinfection/GeneralCleaningModal";
-import { GeneralCleaningAddLogModal } from "./GeneralCleaningAddLogModal";
 import { GeneralCleaningLogTable } from "./GeneralCleaningLogTable";
 import {
 	exportGeneralCleaningLogsCsv,
@@ -31,7 +30,6 @@ export function GeneralCleaningRegisterTab() {
 	const [loading, setLoading] = useState(true);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [typeFilter, setTypeFilter] = useState<string>("all");
-	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isDisinfectionModalOpen, setIsDisinfectionModalOpen] = useState(false);
 	const [viewMode, setViewMode] = useState<"table" | "schedule">("table");
 	const [isAutopilotLoading, setIsAutopilotLoading] = useState(false);
@@ -435,12 +433,6 @@ export function GeneralCleaningRegisterTab() {
 				/>
 			)}
 
-			<GeneralCleaningAddLogModal
-				isOpen={isModalOpen}
-				onClose={() => setIsModalOpen(false)}
-				onSuccess={fetchLogs}
-			/>
-
 			<GeneralCleaningModal
 				isOpen={isDisinfectionModalOpen}
 				onClose={() => setIsDisinfectionModalOpen(false)}
@@ -450,6 +442,5 @@ export function GeneralCleaningRegisterTab() {
 	);
 }
 
-export * from "./GeneralCleaningAddLogModal";
 export * from "./GeneralCleaningLogTable";
 export * from "./generalCleaningPrintHelpers";

@@ -296,7 +296,7 @@ export function SanpinKraftPacketsTab() {
 							placeholder="Поиск по набору, штрихкоду, автоклаву..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="w-full h-8 pl-8 pr-7 text-xs rounded-md border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+							className="w-full h-8 pl-9 pr-8 text-xs rounded-md border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
 						/>
 						{searchQuery && (
 							<button

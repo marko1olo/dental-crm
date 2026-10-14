@@ -26,7 +26,7 @@ export function registerSanpinPsoRoutes(app: FastifyInstance) {
 			.select({
 				id: preSterilizationCleaningLogs.id,
 				organizationId: preSterilizationCleaningLogs.organizationId,
-				instrumentName: sql<string>`coalesce(nullif(pre_sterilization_cleaning_logs.notes, ''), 'Стоматологический инструментарий')`,
+				instrumentName: sql<string>`coalesce(nullif(split_part(pre_sterilization_cleaning_logs.notes, ' | ', 1), ''), 'Стоматологический инструментарий')`,
 				testType: preSterilizationCleaningLogs.testType,
 				batchItemCount: preSterilizationCleaningLogs.batchItemCount,
 				testedSampleCount: preSterilizationCleaningLogs.testedSampleCount,
@@ -36,8 +36,8 @@ export function registerSanpinPsoRoutes(app: FastifyInstance) {
 				detergentBrand: preSterilizationCleaningLogs.detergentBrand,
 				rejectionReason: preSterilizationCleaningLogs.rejectionReason,
 				operatorId: preSterilizationCleaningLogs.operatorId,
-				operatorName: users.fullName,
-				notes: preSterilizationCleaningLogs.notes,
+				operatorName: sql<string>`coalesce(${users.fullName}, 'Медсестра ЦСО')`,
+				notes: sql<string>`case when position(' | ' in coalesce(pre_sterilization_cleaning_logs.notes, '')) > 0 then substring(pre_sterilization_cleaning_logs.notes from position(' | ' in pre_sterilization_cleaning_logs.notes) + 3) else '' end`,
 				timestamp: preSterilizationCleaningLogs.timestamp,
 				createdAt: preSterilizationCleaningLogs.createdAt,
 			})
@@ -57,7 +57,15 @@ export function registerSanpinPsoRoutes(app: FastifyInstance) {
 		);
 		if (!organizationId) return;
 
-		const parsed = createPsoCleaningLogDtoSchema.safeParse(req.body);
+		const rawBody = { ...((req.body as Record<string, unknown>) || {}) };
+		if (typeof rawBody.operatorId === "string") {
+			const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+			if (!uuidRe.test(rawBody.operatorId)) {
+				delete rawBody.operatorId;
+			}
+		}
+
+		const parsed = createPsoCleaningLogDtoSchema.safeParse(rawBody);
 		if (!parsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
@@ -86,7 +94,7 @@ export function registerSanpinPsoRoutes(app: FastifyInstance) {
 				isBatchApproved: evaluation.isBatchApproved,
 				detergentBrand: data.detergentBrand ?? null,
 				rejectionReason: evaluation.rejectionReason,
-				operatorId: data.operatorId ?? null,
+				operatorId: data.operatorId ?? (req as any).user?.id ?? null,
 				notes: data.notes
 					? `${data.instrumentName} | ${data.notes}`
 					: data.instrumentName,
@@ -147,7 +155,7 @@ export function registerSanpinPsoRoutes(app: FastifyInstance) {
 				isBatchApproved: true,
 				detergentBrand,
 				rejectionReason: null,
-				operatorId: body.operatorId ?? null,
+				operatorId: body.operatorId ?? (req as any).user?.id ?? null,
 				notes: `${instrumentName} | ${notesText}`,
 				timestamp: new Date(),
 			})

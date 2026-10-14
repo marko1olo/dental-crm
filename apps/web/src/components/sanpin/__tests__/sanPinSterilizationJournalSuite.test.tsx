@@ -110,5 +110,33 @@ describe("SANPIN STERILIZATION & KRAFT POUCH INQUISITOR SUITE (СанПиН 3.36
 				assert.ok(!content.includes("овербукинг") && !content.includes("overbooking"), `Файл ${f} не должен содержать «овербукинг»`);
 			}
 		});
+
+		it("проверяет архитектурные лимиты декомпозиции (/decomposer mandate)", async () => {
+			const fs = await import("node:fs");
+			const path = await import("node:path");
+
+			const facadePath = path.join(process.cwd(), "apps/web/src/components/sanpin/SanPinSterilizationJournal.tsx");
+			const facadeLines = fs.readFileSync(facadePath, "utf-8").split("\n").length;
+			assert.ok(facadeLines <= 120, `Фасад SanPinSterilizationJournal.tsx должен быть <= 120 строк (факт: ${facadeLines})`);
+
+			const modulesDir = path.join(process.cwd(), "apps/web/src/components/sanpin/journalModules");
+			const moduleFiles = fs.readdirSync(modulesDir);
+			assert.ok(moduleFiles.length >= 4, "Должно быть не менее 4 подмодулей в journalModules");
+
+			for (const mf of moduleFiles) {
+				const fullModPath = path.join(modulesDir, mf);
+				const content = fs.readFileSync(fullModPath, "utf-8");
+				const lines = content.split("\n").length;
+				assert.ok(lines <= 500, `Модуль ${mf} должен быть <= 500 строк (факт: ${lines})`);
+
+				// 0 эмодзи в подмодулях
+				const emojiMatch = content.match(/[\uD83C-\uDBFF\uDC00-\uDFFF]/);
+				assert.equal(emojiMatch, null, `Модуль ${mf} не должен содержать эмодзи`);
+
+				// 0 дев-жаргона в подмодулях
+				assert.ok(!content.includes("1-клик") && !content.includes("1-Click"), `Модуль ${mf} не должен содержать «1-клик»`);
+				assert.ok(!content.includes("овербукинг") && !content.includes("overbooking"), `Модуль ${mf} не должен содержать «овербукинг»`);
+			}
+		});
 	});
 });

@@ -13,7 +13,7 @@ import {
 import React from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../../GlobalToast";
-import type { ClinicAutoclaveDevice } from "../AutoclaveEquipmentModal";
+import type { ClinicAutoclaveDevice } from "./autoclaveDeviceTypes";
 
 export interface AutoclaveMobileActionSheetProps {
 	readonly isToolbarSheetOpen: boolean;

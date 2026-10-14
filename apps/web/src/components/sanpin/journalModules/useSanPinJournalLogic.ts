@@ -13,7 +13,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { showToast } from "../../GlobalToast";
 import { normalizePouchBarcode } from "../SterilizationScanner";
 import { handleGenerateMonthlyForm257 } from "../AutoclavePrintHelpers";
-import { loadSavedClinicAutoclaves } from "../AutoclaveEquipmentModal";
+import { loadSavedClinicAutoclaves } from "../autoclave/autoclaveDeviceTypes";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { parseAndValidateKraftBarcode } from "@dental/shared";

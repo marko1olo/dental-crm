@@ -401,6 +401,84 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
 			font-weight: bold;
 			margin-top: 15px;
 		}
+
+		/* Screen dark mode support for previewing without white spots */
+		:root[data-theme="dark"] body, body.dark {
+			background: #0f172a;
+			color: #f8fafc;
+		}
+		:root[data-theme="dark"] .cover-page, body.dark .cover-page {
+			border-color: #334155;
+		}
+		:root[data-theme="dark"] .cover-gov, body.dark .cover-gov {
+			border-color: #334155;
+			color: #94a3b8;
+		}
+		:root[data-theme="dark"] .cover-legal, body.dark .cover-legal {
+			color: #94a3b8;
+		}
+		:root[data-theme="dark"] .cover-license-badge, body.dark .cover-license-badge {
+			background: #1e293b;
+			color: #f8fafc;
+			border-color: #475569;
+		}
+		:root[data-theme="dark"] .cover-volume, body.dark .cover-volume {
+			color: #38bdf8;
+		}
+		:root[data-theme="dark"] .cover-subrules, body.dark .cover-subrules {
+			color: #94a3b8;
+		}
+		:root[data-theme="dark"] .section-header, body.dark .section-header {
+			border-color: #334155;
+		}
+		:root[data-theme="dark"] .section-number, body.dark .section-number {
+			color: #94a3b8;
+		}
+		:root[data-theme="dark"] .section-legal-ref, body.dark .section-legal-ref {
+			color: #94a3b8;
+		}
+		:root[data-theme="dark"] table, body.dark table {
+			border-color: #334155;
+		}
+		:root[data-theme="dark"] th, body.dark th {
+			background: #1e293b;
+			color: #f8fafc;
+			border-color: #334155;
+		}
+		:root[data-theme="dark"] td, body.dark td {
+			border-color: #334155;
+			color: #f8fafc;
+		}
+		:root[data-theme="dark"] .cert-sheet-box, body.dark .cert-sheet-box {
+			background: #1e293b;
+			border-color: #334155;
+			box-shadow: inset 0 0 0 1px #334155;
+		}
+		:root[data-theme="dark"] .cert-title, body.dark .cert-title {
+			border-color: #334155;
+		}
+
+		/* Physical printing is strictly white paper with black ink */
+		@media print {
+			body, body.dark, :root[data-theme="dark"] body {
+				background: #fff !important;
+				color: #000 !important;
+			}
+			.cover-license-badge, :root[data-theme="dark"] .cover-license-badge {
+				background: #fbfbfb !important;
+				color: #000 !important;
+				border-color: #000 !important;
+			}
+			th, :root[data-theme="dark"] th {
+				background: #f2f2f2 !important;
+				color: #000 !important;
+				border-color: #000 !important;
+			}
+			td, :root[data-theme="dark"] td {
+				color: #000 !important;
+				border-color: #000 !important;
+			}
+		}
 	</style>
 </head>
 <body>

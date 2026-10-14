@@ -15,8 +15,6 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
-import { TemperatureAddEquipmentModal } from "./TemperatureAddEquipmentModal";
-import { TemperatureAddLogModal } from "./TemperatureAddLogModal";
 import { TemperatureMeasurementTable } from "./TemperatureMeasurementTable";
 
 export const CANONICAL_TEMPERATURE_EQUIPMENT_PRESETS: CreateTemperatureHumidityEquipmentDto[] = [
@@ -79,32 +77,8 @@ export function TemperatureHumidityRegisterTab() {
 	const [logs, setLogs] = useState<any[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [selectedEquipId, setSelectedEquipId] = useState<string>("all");
-
-	// Modals
-	const [isEquipModalOpen, setIsEquipModalOpen] = useState(false);
-	const [isLogModalOpen, setIsLogModalOpen] = useState(false);
-
-	// New Equipment Form
-	const [equipType, setEquipType] = useState<TemperatureEquipmentType>("refrigerator_cold");
-	const [equipName, setEquipName] = useState("Фармацевтический холодильник Pozis ХФ-250 (№1)");
-	const [equipLocation, setEquipLocation] = useState("Процедурный кабинет / Стерилизационная");
-	const [meterName, setMeterName] = useState("Электронный термометр-гигрометр ТМЦ-1");
-	const [meterSerial, setMeterSerial] = useState("SN-TM-2024-918");
-	const [targetMinTemp, setTargetMinTemp] = useState<number>(2.0);
-	const [targetMaxTemp, setTargetMaxTemp] = useState<number>(8.0);
-	const [targetMinHumidity, setTargetMinHumidity] = useState<number | undefined>(undefined);
-	const [targetMaxHumidity, setTargetMaxHumidity] = useState<number | undefined>(undefined);
-
-	// New Measurement Log Form
-	const [logEquipId, setLogEquipId] = useState<string>("");
-	const [logDate, setLogDate] = useState(new Date().toISOString().slice(0, 10));
-	const [logPeriod, setLogPeriod] = useState<TemperatureMeasurementPeriod>("morning");
-	const [logTemp, setLogTemp] = useState<number>(4.2);
-	const [logHumidity, setLogHumidity] = useState<number | undefined>(undefined);
-	const [logDeviationReason, setLogDeviationReason] = useState("");
-	const [logCorrectiveAction, setLogCorrectiveAction] = useState("");
-	const [logNotes, setLogNotes] = useState("");
 	const [submitting, setSubmitting] = useState(false);
+	const [isLoggingShift, setIsLoggingShift] = useState(false);
 
 	const fetchAll = async () => {
 		try {
@@ -124,9 +98,6 @@ export function TemperatureHumidityRegisterTab() {
 			if (eqRes.ok) {
 				const eqData = await eqRes.json();
 				setEquipments(eqData);
-				if (eqData.length > 0 && !logEquipId) {
-					setLogEquipId(eqData[0].id);
-				}
 			}
 			if (lRes.ok) {
 				const lData = await lRes.json();
@@ -143,26 +114,6 @@ export function TemperatureHumidityRegisterTab() {
 		fetchAll();
 	}, []);
 
-	// Active selected equipment object for live validation in modal
-	const activeEquipObj = useMemo(() => {
-		return equipments.find((e) => e.id === logEquipId);
-	}, [equipments, logEquipId]);
-
-	const liveEval = useMemo(() => {
-		if (!activeEquipObj) return { isWithinNorm: true, deviationMessage: null };
-		return SanPiNRegulatoryEngine.evaluateTemperatureHumidity({
-			equipmentType: activeEquipObj.equipmentType,
-			targetTempMin: activeEquipObj.targetTempMinCelsius,
-			targetTempMax: activeEquipObj.targetTempMaxCelsius,
-			actualTemp: Number(logTemp),
-			targetHumidityMin: activeEquipObj.targetHumidityMinPercent,
-			targetHumidityMax: activeEquipObj.targetHumidityMaxPercent,
-			actualHumidity: logHumidity ? Number(logHumidity) : null,
-		});
-	}, [activeEquipObj, logTemp, logHumidity]);
-
-	const [isLoggingShift, setIsLoggingShift] = useState(false);
-
 	const handleProvisionCanonicalEquipment = async (showSuccessToast = true): Promise<any[]> => {
 		try {
 			setSubmitting(true);
@@ -172,7 +123,6 @@ export function TemperatureHumidityRegisterTab() {
 					showToast("Типовое оснащение (Холодильник Pozis + Кабинет ВИТ-2) успешно подключено!", "success");
 				}
 				await fetchAll();
-				setLogEquipId(createdList[0].id);
 				return createdList;
 			} else {
 				showToast("Ошибка при подключении типового оснащения", "error");
@@ -185,16 +135,6 @@ export function TemperatureHumidityRegisterTab() {
 		} finally {
 			setSubmitting(false);
 		}
-	};
-
-	const handleOpenLogModal = async () => {
-		if (equipments.length === 0) {
-			const provisioned = await handleProvisionCanonicalEquipment(false);
-			if (provisioned && provisioned.length > 0) {
-				setLogEquipId(provisioned[0].id);
-			}
-		}
-		setIsLogModalOpen(true);
 	};
 
 	const handleShiftAutopilot = async (period: "morning" | "evening" = "morning") => {
@@ -225,7 +165,7 @@ export function TemperatureHumidityRegisterTab() {
 			if (res.ok) {
 				const data = await res.json();
 				showToast(
-					`Норма температуры и влажности (${period === "morning" ? "утро" : "вечер"}) зафиксирована для всех ${data.count ?? (currentEquips.length || 2)} объектов!`,
+					`Норма температуры и влажности (${period === "morning" ? "утро: Pozis +4.2°C / ВИТ-2 21°C 55%" : "вечер: Pozis +4.4°C / ВИТ-2 21.5°C 55%"}) зафиксирована для всех ${data.count ?? (currentEquips.length || 2)} объектов!`,
 					"success",
 				);
 				await fetchAll();
@@ -240,14 +180,14 @@ export function TemperatureHumidityRegisterTab() {
 							equipmentId: eq.id,
 							measurementDate: new Date().toISOString().slice(0, 10),
 							measurementPeriod: period,
-							temperatureCelsius: isFridge ? 4.2 : 21.5,
-							relativeHumidityPercent: isFridge ? undefined : 48,
+							temperatureCelsius: isFridge ? (period === "morning" ? 4.2 : 4.4) : 21.0,
+							relativeHumidityPercent: isFridge ? undefined : 55,
 							notes: `Норма смены (${period}): Санитарный регламент`,
 						}),
 					});
 					if (fRes.ok) logged++;
 				}
-				showToast(`Норма зафиксирована для ${logged} объектов`, "success");
+				showToast(`Норма зафиксирована для ${logged} объектов (Pozis +4.2°C, ВИТ-2 21°C/55%)`, "success");
 				await fetchAll();
 			}
 		} catch (e) {
@@ -302,49 +242,6 @@ export function TemperatureHumidityRegisterTab() {
 		}
 	};
 
-	const handleAddLog = async (e: React.FormEvent) => {
-		e.preventDefault();
-		try {
-			setSubmitting(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
-
-			const payload: CreateTemperatureHumidityLogDto = {
-				equipmentId: logEquipId,
-				measurementDate: logDate,
-				measurementPeriod: logPeriod,
-				temperatureCelsius: Number(logTemp),
-				relativeHumidityPercent: logHumidity ? Number(logHumidity) : undefined,
-				deviationReason: logDeviationReason || undefined,
-				correctiveAction: logCorrectiveAction || undefined,
-				notes: logNotes || undefined,
-			};
-
-			const res = await fetch("/api/registers/temperature-humidity/logs", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
-				body: JSON.stringify(payload),
-			});
-
-			if (res.ok) {
-				showToast("Замер температуры зафиксирован в журнале (Приказ 706н)", "success");
-				setIsLogModalOpen(false);
-				fetchAll();
-			} else {
-				const err = await res.json();
-				showToast(err.message || "Ошибка при сохранении замера", "error");
-			}
-		} catch (err) {
-			showToast("Сетевая ошибка", "error");
-		} finally {
-			setSubmitting(false);
-		}
-	};
-
 	const filteredLogs = useMemo(() => {
 		if (selectedEquipId === "all") return logs;
 		return logs.filter((l) => l.equipmentId === selectedEquipId);
@@ -381,28 +278,33 @@ export function TemperatureHumidityRegisterTab() {
 							gap: "0.4rem",
 							boxShadow: "0 2px 6px rgba(13, 148, 136, 0.25)",
 						}}
-						title="Фиксация нормативных показателей температуры и влажности смены для всех объектов (холодильники +4.2°C, кабинеты +21.5°C / 48%)"
+						title="Фиксация нормативных показателей температуры и влажности смены для всех объектов (холодильники +4.2°C, кабинеты +21°C / 55%)"
 						data-testid="temp-shift-autopilot-btn"
 					>
 						<Sparkles size={16} />
-						<span>{isLoggingShift ? "Фиксация..." : "Зафиксировать норму смены"}</span>
+						<span>{isLoggingShift ? "Фиксация..." : "Зафиксировать норму смены (Pozis +4.2°C, ВИТ-2 21°C/55%)"}</span>
 					</button>
 					<button
 						type="button"
-						onClick={() => setIsEquipModalOpen(true)}
-						className="sanpin-btn sanpin-btn-secondary"
+						onClick={() => handleShiftAutopilot("evening")}
+						aria-busy={isLoggingShift}
+						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 						style={{ minHeight: "44px" }}
+						title="Зафиксировать вечерний замер (Pozis +4.4°C, ВИТ-2 21.5°C/55%)"
+						data-testid="temp-shift-evening-btn"
 					>
-						<Plus size={15} /> Добавить холодильник / комнату
+						<ThermometerSun size={15} /> <span>Вечерний замер (норма)</span>
 					</button>
 					<button
 						type="button"
-						onClick={handleOpenLogModal}
-						className="sanpin-btn sanpin-btn-secondary"
+						onClick={() => handleProvisionCanonicalEquipment(true)}
+						aria-busy={submitting}
+						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 						style={{ minHeight: "44px" }}
-						data-testid="temp-manual-log-btn"
+						title="Подключить типовое оснащение (Холодильник Pozis + Кабинет ВИТ-2)"
+						data-testid="temp-provision-btn"
 					>
-						<ThermometerSun size={15} /> Внести замер вручную
+						<Plus size={15} /> <span>Типовое оснащение (Pozis + ВИТ-2)</span>
 					</button>
 				</div>
 			</div>
@@ -569,55 +471,8 @@ export function TemperatureHumidityRegisterTab() {
 				filteredLogs={filteredLogs}
 			/>
 
-			{/* Modal: Add Equipment */}
-			<TemperatureAddEquipmentModal
-				isOpen={isEquipModalOpen}
-				onClose={() => setIsEquipModalOpen(false)}
-				equipType={equipType}
-				setEquipType={setEquipType}
-				equipName={equipName}
-				setEquipName={setEquipName}
-				equipLocation={equipLocation}
-				setEquipLocation={setEquipLocation}
-				meterName={meterName}
-				setMeterName={setMeterName}
-				meterSerial={meterSerial}
-				setMeterSerial={setMeterSerial}
-				targetMinTemp={targetMinTemp}
-				setTargetMinTemp={setTargetMinTemp}
-				targetMaxTemp={targetMaxTemp}
-				setTargetMaxTemp={setTargetMaxTemp}
-				setTargetMinHumidity={setTargetMinHumidity}
-				setTargetMaxHumidity={setTargetMaxHumidity}
-				onSubmit={handleAddEquipment}
-				submitting={submitting}
-			/>
-
-			{/* Modal: Add Log Measurement */}
-			<TemperatureAddLogModal
-				isOpen={isLogModalOpen}
-				onClose={() => setIsLogModalOpen(false)}
-				equipments={equipments}
-				logEquipId={logEquipId}
-				setLogEquipId={setLogEquipId}
-				logDate={logDate}
-				setLogDate={setLogDate}
-				logPeriod={logPeriod}
-				setLogPeriod={setLogPeriod}
-				logTemp={logTemp}
-				setLogTemp={setLogTemp}
-				logHumidity={logHumidity}
-				setLogHumidity={setLogHumidity}
-				liveEval={liveEval}
-				logCorrectiveAction={logCorrectiveAction}
-				setLogCorrectiveAction={setLogCorrectiveAction}
-				onSubmit={handleAddLog}
-				submitting={submitting}
-			/>
 		</div>
 	);
 }
 
-export * from "./TemperatureAddEquipmentModal";
-export * from "./TemperatureAddLogModal";
 export * from "./TemperatureMeasurementTable";

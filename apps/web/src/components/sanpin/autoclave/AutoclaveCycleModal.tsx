@@ -9,7 +9,7 @@ import {
 	ShieldCheck,
 	Sparkles,
 } from "lucide-react";
-import type { ClinicAutoclaveDevice } from "../AutoclaveEquipmentModal";
+import type { ClinicAutoclaveDevice } from "./autoclaveDeviceTypes";
 import { AutoclaveIndicatorControl, type IndicatorClassType } from "./AutoclaveIndicatorControl";
 import { getPackagingLabel } from "./types";
 

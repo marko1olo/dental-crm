@@ -15,9 +15,7 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
-import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { BactericidalAddEquipmentModal } from "./BactericidalAddEquipmentModal";
-import { BactericidalAddSessionModal } from "./BactericidalAddSessionModal";
 import { BactericidalFleetGrid } from "./BactericidalFleetGrid";
 import { BactericidalLogTable } from "./BactericidalLogTable";
 import {
@@ -74,7 +72,6 @@ export function BactericidalRegisterTab() {
 
 	// Modals
 	const [isEquipModalOpen, setIsEquipModalOpen] = useState(false);
-	const [isLogModalOpen, setIsLogModalOpen] = useState(false);
 
 	// New equipment form
 	const [newRoomName, setNewRoomName] = useState("Кабинет терапевтической стоматологии №1");
@@ -303,13 +300,7 @@ export function BactericidalRegisterTab() {
 	};
 
 	const handleOpenLogModal = async () => {
-		if (equipments.length === 0) {
-			const created = await handleProvisionCanonicalEquipment(false);
-			if (created && created.length > 0) {
-				setLogEquipId(created[0].id);
-			}
-		}
-		setIsLogModalOpen(true);
+		await handlePreShift30Min();
 	};
 
 	const handlePreShift30Min = async (equipmentId?: string) => {
@@ -716,37 +707,11 @@ export function BactericidalRegisterTab() {
 				submitting={submitting}
 			/>
 
-			<BactericidalAddSessionModal
-				isOpen={isLogModalOpen}
-				onClose={() => setIsLogModalOpen(false)}
-				equipments={equipments}
-				logEquipId={logEquipId}
-				setLogEquipId={setLogEquipId}
-				logDate={logDate}
-				setLogDate={setLogDate}
-				logStartTime={logStartTime}
-				setLogStartTime={setLogStartTime}
-				logEndTime={logEndTime}
-				setLogEndTime={setLogEndTime}
-				logDurationMin={logDurationMin}
-				setLogDurationMin={setLogDurationMin}
-				logMode={logMode}
-				setLogMode={setLogMode}
-				logNotes={logNotes}
-				setLogNotes={setLogNotes}
-				onStartTimeChange={handleStartTimeChange}
-				onEndTimeChange={handleEndTimeChange}
-				onSetPresetDuration={setPresetDuration}
-				hoursPreview={hoursPreview}
-				onSubmit={handleAddSession}
-				submitting={submitting}
-			/>
 		</div>
 	);
 }
 
 export * from "./BactericidalAddEquipmentModal";
-export * from "./BactericidalAddSessionModal";
 export * from "./BactericidalFleetGrid";
 export * from "./BactericidalLogTable";
 export * from "./bactericidalShiftHelpers";

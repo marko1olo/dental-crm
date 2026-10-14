@@ -7,6 +7,11 @@
  * ============================================================================
  */
 
+import {
+	SANPIN_PSO_CONSTANTS,
+	calculatePsoSamplingRequirement,
+} from "@dental/shared";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. STATUTORY REGULATORY CONSTANTS & NORMS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -23,22 +28,22 @@ export const SANPIN_AZOPYRAM_NORMS = {
 	 * По СанПиН и инструкции производителя: строго не более 2 часов (120 минут).
 	 * По истечении 2 часов раствор спонтанно окисляется и дает ложные результаты.
 	 */
-	workingSolutionLifespanMinutes: 120,
+	workingSolutionLifespanMinutes: SANPIN_PSO_CONSTANTS.workingSolutionLifespanMinutes,
 
 	/**
 	 * Время наблюдения реакции азопирамовой пробы: не более 1 минуты (60 секунд).
 	 * Окрашивание, наступившее позже 1 минуты, во внимание не принимается.
 	 */
-	reactionObservationSeconds: 60,
+	reactionObservationSeconds: SANPIN_PSO_CONSTANTS.azopyramReactionMaxSeconds,
 
 	/**
 	 * Норма отбора изделий на контроль ПСО:
 	 * 1% от одновременно обработанной партии каждого наименования,
 	 * но не менее 3–5 штук каждого наименования изделий.
 	 */
-	statutorySamplingPercent: 1.0,
-	minimumSampleFloorStandard: 3,
-	minimumSampleFloorSurgical: 5,
+	statutorySamplingPercent: SANPIN_PSO_CONSTANTS.statutorySamplingPercent,
+	minimumSampleFloorStandard: SANPIN_PSO_CONSTANTS.minimumSampleFloorGeneral,
+	minimumSampleFloorSurgical: SANPIN_PSO_CONSTANTS.minimumSampleFloorSurgical,
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -257,22 +262,12 @@ export function calculateStatutorySampling(
 	readonly floorPerType: number;
 	readonly explanationRu: string;
 } {
-	const count = Math.max(1, Math.floor(Number(batchCount) || 1));
-	const typesCount = Math.max(1, Math.floor(Number(itemsTypesCount) || 1));
-	const floorPerType = isSurgicalOrCritical
-		? SANPIN_AZOPYRAM_NORMS.minimumSampleFloorSurgical
-		: SANPIN_AZOPYRAM_NORMS.minimumSampleFloorStandard;
-
-	const percentCount = Math.ceil((count * SANPIN_AZOPYRAM_NORMS.statutorySamplingPercent) / 100);
-	const minSampleRequired = Math.max(floorPerType * typesCount, percentCount);
-
-	const explanationRu = `СанПиН 3.3686-21: выборка 1% от ${count} шт. (округление ${percentCount} шт.), но не менее ${floorPerType} шт./наим. × ${typesCount} наим. = ${minSampleRequired} шт.`;
-
+	const req = calculatePsoSamplingRequirement(batchCount, isSurgicalOrCritical, itemsTypesCount);
 	return {
-		minSampleRequired,
-		statutoryPercent: SANPIN_AZOPYRAM_NORMS.statutorySamplingPercent,
-		floorPerType,
-		explanationRu,
+		minSampleRequired: req.minSampleRequired,
+		statutoryPercent: SANPIN_PSO_CONSTANTS.statutorySamplingPercent,
+		floorPerType: req.floorPerItem,
+		explanationRu: req.formulaExplanationRu,
 	};
 }
 
