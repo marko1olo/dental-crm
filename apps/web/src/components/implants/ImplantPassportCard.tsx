@@ -1,5 +1,5 @@
 import React from "react";
-import { Copy, Printer, AlertTriangle, QrCode, Award } from "lucide-react";
+import { Copy, Printer, AlertTriangle, QrCode, Award, Share2, Send } from "lucide-react";
 import { DentalImplant } from "../icons/DentalIcons";
 import { showToast } from "../GlobalToast";
 import type { FastImplantPassportData } from "./implantQuickPresets";
@@ -11,6 +11,239 @@ export interface ImplantPassportCardProps {
 	readonly onCopySummary?: () => void;
 	readonly onPrint?: () => void;
 }
+
+const UPPER_JAW_TEETH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28] as const;
+const LOWER_JAW_TEETH = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38] as const;
+
+/**
+ * Анатомическая зубная дуга FDI (SVG векторная схема челюстей).
+ * Отображает 32 постоянных зуба с контрастным выделением оперированного зуба с установленным имплантатом.
+ */
+export const AnatomicalJawArchSchema: React.FC<{
+	readonly selectedFdi: number;
+	readonly brand?: string;
+	readonly diameterMm?: number;
+	readonly lengthMm?: number;
+}> = ({ selectedFdi, brand = "Имплантат", diameterMm, lengthMm }) => {
+	const getToothCoords = (index: number, isUpper: boolean) => {
+		const isRightQuadrant = index < 8;
+		const x = isRightQuadrant ? 24 + index * 27 : 260 + (index - 8) * 27;
+		const dist = Math.abs(x - 242) / 220;
+		const curveOffset = Math.pow(dist, 1.8) * 16;
+		const y = isUpper ? 38 - curveOffset : 72 + curveOffset;
+		return { x, y };
+	};
+
+	return (
+		<div
+			className="anatomical-jaw-arch-container p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-1.5"
+			data-testid="anatomical-jaw-arch"
+		>
+			<div className="flex items-center justify-between text-xs flex-wrap gap-1">
+				<span className="font-black uppercase tracking-wider text-[var(--muted)] text-[10px]">
+					Анатомическая зубная дуга FDI (Локализация имплантата):
+				</span>
+				<div className="flex items-center gap-2 text-[11px] font-mono">
+					<span className="inline-flex items-center gap-1.5 text-[var(--teal,#0d9488)] font-bold">
+						<span className="w-2.5 h-2.5 rounded-xs bg-[var(--teal,#0d9488)] inline-block" />
+						{`Имплантат #${selectedFdi || "—"} (${brand}${diameterMm && lengthMm ? ` Ø${Number(diameterMm).toFixed(1)}×${lengthMm}мм` : ""})`}
+					</span>
+				</div>
+			</div>
+
+			<div className="w-full overflow-x-auto py-1">
+				<svg
+					viewBox="0 0 490 114"
+					className="w-full h-auto max-h-[140px] text-[var(--ink)] select-none"
+					role="img"
+					aria-label={`Схема зубного ряда с выделенным имплантатом #${selectedFdi}`}
+				>
+					{/* Осевые направляющие дуги */}
+					<path
+						d="M 24 22 Q 242 46 460 22"
+						fill="none"
+						stroke="var(--line)"
+						strokeDasharray="3 3"
+						opacity="0.5"
+					/>
+					<path
+						d="M 24 88 Q 242 64 460 88"
+						fill="none"
+						stroke="var(--line)"
+						strokeDasharray="3 3"
+						opacity="0.5"
+					/>
+					<line
+						x1="242"
+						y1="14"
+						x2="242"
+						y2="98"
+						stroke="var(--line-strong, #94a3b8)"
+						strokeDasharray="2 2"
+						opacity="0.4"
+					/>
+
+					{/* Подписи дуг и сторон */}
+					<text
+						x="242"
+						y="11"
+						textAnchor="middle"
+						fill="var(--muted)"
+						fontSize="8"
+						fontWeight="800"
+						letterSpacing="0.06em"
+					>
+						ВЕРХНЯЯ ЧЕЛЮСТЬ (MAXILLA)
+					</text>
+					<text
+						x="242"
+						y="108"
+						textAnchor="middle"
+						fill="var(--muted)"
+						fontSize="8"
+						fontWeight="800"
+						letterSpacing="0.06em"
+					>
+						НИЖНЯЯ ЧЕЛЮСТЬ (MANDIBULA)
+					</text>
+					<text x="18" y="11" fill="var(--muted)" fontSize="7.5" fontWeight="700">
+						ПРАВО (R)
+					</text>
+					<text
+						x="466"
+						y="11"
+						textAnchor="end"
+						fill="var(--muted)"
+						fontSize="7.5"
+						fontWeight="700"
+					>
+						ЛЕВО (L)
+					</text>
+
+					{/* Зубы верхней челюсти */}
+					{UPPER_JAW_TEETH.map((tooth, idx) => {
+						const { x, y } = getToothCoords(idx, true);
+						const isTarget = tooth === selectedFdi;
+						return (
+							<g key={tooth} className="tooth-node">
+								{isTarget ? (
+									<>
+										<rect
+											x={x - 12}
+											y={y - 11}
+											width="24"
+											height="22"
+											rx="5"
+											fill="var(--teal, #0d9488)"
+											stroke="#0f766e"
+											strokeWidth="1.5"
+										/>
+										<circle cx={x} cy={y - 13} r="2.5" fill="#f59e0b" />
+										<text
+											x={x}
+											y={y + 3.5}
+											textAnchor="middle"
+											fill="#ffffff"
+											fontSize="10"
+											fontWeight="900"
+											fontFamily="monospace"
+										>
+											{tooth}
+										</text>
+									</>
+								) : (
+									<>
+										<rect
+											x={x - 11}
+											y={y - 10}
+											width="22"
+											height="20"
+											rx="4"
+											fill="var(--paper)"
+											stroke="var(--line)"
+											strokeWidth="1"
+										/>
+										<text
+											x={x}
+											y={y + 3.5}
+											textAnchor="middle"
+											fill="var(--muted)"
+											fontSize="9"
+											fontWeight="700"
+											fontFamily="monospace"
+										>
+											{tooth}
+										</text>
+									</>
+								)}
+							</g>
+						);
+					})}
+
+					{/* Зубы нижней челюсти */}
+					{LOWER_JAW_TEETH.map((tooth, idx) => {
+						const { x, y } = getToothCoords(idx, false);
+						const isTarget = tooth === selectedFdi;
+						return (
+							<g key={tooth} className="tooth-node">
+								{isTarget ? (
+									<>
+										<rect
+											x={x - 12}
+											y={y - 11}
+											width="24"
+											height="22"
+											rx="5"
+											fill="var(--teal, #0d9488)"
+											stroke="#0f766e"
+											strokeWidth="1.5"
+										/>
+										<circle cx={x} cy={y + 13} r="2.5" fill="#f59e0b" />
+										<text
+											x={x}
+											y={y + 3.5}
+											textAnchor="middle"
+											fill="#ffffff"
+											fontSize="10"
+											fontWeight="900"
+											fontFamily="monospace"
+										>
+											{tooth}
+										</text>
+									</>
+								) : (
+									<>
+										<rect
+											x={x - 11}
+											y={y - 10}
+											width="22"
+											height="20"
+											rx="4"
+											fill="var(--paper)"
+											stroke="var(--line)"
+											strokeWidth="1"
+										/>
+										<text
+											x={x}
+											y={y + 3.5}
+											textAnchor="middle"
+											fill="var(--muted)"
+											fontSize="9"
+											fontWeight="700"
+											fontFamily="monospace"
+										>
+											{tooth}
+										</text>
+									</>
+								)}
+							</g>
+						);
+					})}
+				</svg>
+			</div>
+		</div>
+	);
+};
 
 function getToothAnatomicalDescription(toothFdi: number): string {
 	if (!toothFdi || toothFdi < 11 || toothFdi > 48) return "Область дентальной имплантации";
@@ -75,6 +308,38 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 		showToast(`Паспорт имплантата #${data.toothFdi || ""} скопирован`, "success");
 	};
 
+	const handleShareWhatsApp = () => {
+		const text = encodeURIComponent(
+			`Паспорт имплантата DENTE (Зуб FDI #${data.toothFdi || "___"})\n` +
+			`Пациент: ${displayPatientName}\n` +
+			`Имплантат: ${data.brand} ${data.model} Ø${data.diameterMm}x${data.lengthMm}мм\n` +
+			`LOT: ${displayLot} | Торк: ${data.torqueNcm} Н·см | ISQ: ${data.isqDay0 ?? 72}\n` +
+			`Гарантийный сертификат: https://dente.clinic/passport/${data.passportId}`
+		);
+		try {
+			window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank", "noopener,noreferrer");
+		} catch {
+			// fallback
+		}
+		showToast(`Паспорт #${data.toothFdi || ""} отправлен в WhatsApp`, "success");
+	};
+
+	const handleShareTelegram = () => {
+		const text = encodeURIComponent(
+			`Паспорт имплантата DENTE (Зуб FDI #${data.toothFdi || "___"})\n` +
+			`Пациент: ${displayPatientName}\n` +
+			`Имплантат: ${data.brand} ${data.model} Ø${data.diameterMm}x${data.lengthMm}мм\n` +
+			`LOT: ${displayLot} | Торк: ${data.torqueNcm} Н·см | ISQ: ${data.isqDay0 ?? 72}`
+		);
+		const url = encodeURIComponent(`https://dente.clinic/passport/${data.passportId}`);
+		try {
+			window.open(`https://t.me/share/url?url=${url}&text=${text}`, "_blank", "noopener,noreferrer");
+		} catch {
+			// fallback
+		}
+		showToast(`Паспорт #${data.toothFdi || ""} отправлен в Telegram`, "success");
+	};
+
 	const handlePrint = () => {
 		if (onPrint) {
 			onPrint();
@@ -115,6 +380,24 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 					</span>
 					<button
 						type="button"
+						onClick={handleShareWhatsApp}
+						className="min-h-[48px] min-w-[48px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--teal,#0d9488)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center justify-center touch-manipulation transition-all"
+						title="Поделиться в WhatsApp"
+						data-testid="btn-share-whatsapp"
+					>
+						<Share2 size={16} />
+					</button>
+					<button
+						type="button"
+						onClick={handleShareTelegram}
+						className="min-h-[48px] min-w-[48px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--brand-primary,#0ea5e9)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center justify-center touch-manipulation transition-all"
+						title="Поделиться в Telegram"
+						data-testid="btn-share-telegram"
+					>
+						<Send size={16} />
+					</button>
+					<button
+						type="button"
 						onClick={handleCopy}
 						className="min-h-[48px] min-w-[48px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center justify-center touch-manipulation transition-all"
 						title="Скопировать данные паспорта"
@@ -148,6 +431,14 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 					Постоянный прикус
 				</span>
 			</div>
+
+			{/* Анатомическая схема зубного ряда с выделенным имплантатом */}
+			<AnatomicalJawArchSchema
+				selectedFdi={data.toothFdi}
+				brand={data.brand}
+				diameterMm={data.diameterMm}
+				lengthMm={data.lengthMm}
+			/>
 
 			{/* Основные клинические данные */}
 			<div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">

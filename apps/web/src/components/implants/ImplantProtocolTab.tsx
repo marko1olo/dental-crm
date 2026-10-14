@@ -11,6 +11,8 @@ import {
 	STANDARD_LENGTHS,
 	QUICK_TORQUE_OPTIONS,
 	MISCH_DENSITY_NOTES,
+	getBoneDensityByToothFdi,
+	parseStockDimensions,
 	type MischDensity,
 	type ImplantCapType,
 } from "./implantQuickPresets";
@@ -73,6 +75,7 @@ export interface ImplantProtocolTabProps {
 	readonly expirationDate?: string;
 	readonly setExpirationDate?: (date: string) => void;
 	readonly isqValue?: number;
+	readonly onApplyStandardProtocol?: () => void;
 }
 
 export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = ({
@@ -122,13 +125,67 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = ({
 	expirationDate = "2028-11-30",
 	setExpirationDate,
 	isqValue = 72,
+	onApplyStandardProtocol,
 }) => {
 	const effectiveIsq = isIsqEnabled ? isqValue : 72;
 	const isImmediateLoadingFeasible =
 		torqueNcm >= 35 && torqueNcm <= 55 && effectiveIsq >= 70;
 
+	const handleStandardProtocol = () => {
+		if (onApplyStandardProtocol) {
+			onApplyStandardProtocol();
+			return;
+		}
+		const computedDensity = getBoneDensityByToothFdi(toothFdi);
+		setBoneDensity(computedDensity);
+		setTorqueNcm(computedDensity === "D1" ? 40 : 35);
+		setCapType("fdm");
+		setIsGbrPerformed(false);
+		setIsIsqEnabled(true);
+		const matching =
+			stockItems.find((s) => s.name.toLowerCase().includes(selectedBrand.toLowerCase())) ??
+			stockItems[0];
+		if (matching && onSelectStockItem) {
+			onSelectStockItem(matching);
+		}
+	};
+
 	return (
 		<div className="space-y-4" data-testid="tab-content-protocol">
+			{/* 1-Click Стандартный хирургический протокол (Мандаты 8e, 8n, 8k) */}
+			<div
+				className="p-3.5 rounded-2xl bg-gradient-to-r from-[var(--teal-surface,rgba(13,148,136,0.12))] to-[var(--paper-soft)] border-2 border-[var(--teal,#0d9488)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-xs"
+				data-testid="banner-standard-protocol-preset"
+			>
+				<div className="flex items-center gap-3 min-w-0">
+					<div className="w-10 h-10 rounded-xl bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center justify-center shrink-0 shadow-xs">
+						<CheckCircle2 size={22} />
+					</div>
+					<div className="min-w-0 flex-1">
+						<div className="text-xs sm:text-sm font-black text-[var(--ink)] flex items-center gap-2 flex-wrap">
+							<span>Стандартный хирургический протокол</span>
+							<span className="text-[10px] px-2 py-0.5 rounded-md font-mono font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] uppercase">
+								1 клик
+							</span>
+						</div>
+						<p className="text-[11px] text-[var(--muted)] leading-tight mt-0.5">
+							Торк 35 Н·см · ISQ 72 · ФДМ · Орошение стерильным физраствором NaCl 0.9% (800 об/мин) · Шов Викрил 4-0
+						</p>
+					</div>
+				</div>
+
+				<button
+					type="button"
+					onClick={handleStandardProtocol}
+					className="min-h-[48px] px-4 py-2.5 rounded-xl font-black text-xs bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] hover:filter hover:brightness-105 cursor-pointer flex items-center justify-center gap-2 shrink-0 touch-manipulation shadow-xs transition-all active:scale-98"
+					data-testid="btn-apply-standard-protocol"
+					title="Применить оптимальные параметры: торк 35 Н·см, ISQ 72, ФДМ, автопривязка со склада"
+				>
+					<CheckCircle2 size={16} />
+					<span>Применить протокол (1 клик)</span>
+				</button>
+			</div>
+
 			{/* Немедленная нагрузка (Immediate Loading Banner) */}
 			{isImmediateLoadingFeasible && (
 				<div
@@ -543,6 +600,24 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = ({
 						data-testid="torque-slider"
 						aria-label="Ползунок торка первичной стабилизации"
 					/>
+					<div className="flex items-center gap-1 mt-1.5 flex-wrap" role="group" aria-label="Быстрый выбор торка">
+						{[15, 25, 35, 45, 50].map((t) => (
+							<button
+								key={t}
+								type="button"
+								onClick={() => setTorqueNcm(t)}
+								className={`min-h-[44px] min-w-[44px] px-2 py-1 rounded-lg text-xs font-mono font-black border cursor-pointer transition-all ${
+									torqueNcm === t
+										? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal,#0d9488)] shadow-xs"
+										: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+								}`}
+								data-testid={`btn-quick-torque-${t}`}
+								title={`${t} Н·см`}
+							>
+								{t}
+							</button>
+						))}
+					</div>
 				</div>
 
 				<div className="flex flex-col gap-1">

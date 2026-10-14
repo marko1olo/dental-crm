@@ -6,10 +6,12 @@ import {
 	FAST_IMPLANT_SYSTEM_PRESETS,
 	createDefaultPassportRecord,
 	parseImplantBarcode,
+	parseStockDimensions,
 	getBoneDensityByToothFdi,
+	DEFAULT_CANONICAL_IMPLANT_STOCK,
 } from "../implantQuickPresets";
 import { IMPLANT_TORQUE_SPECS } from "../implantTorqueCatalog";
-import { ImplantPassportCard } from "../ImplantPassportCard";
+import { ImplantPassportCard, AnatomicalJawArchSchema } from "../ImplantPassportCard";
 import { ImplantPassportModal } from "../ImplantPassportModal";
 
 describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
@@ -325,5 +327,107 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		assert.ok(html.includes("Подпись пациента"), "Must render patient signature block");
 		assert.ok(html.includes("М.П."), "Must render clinic official stamp placeholder");
 		assert.ok(html.includes("36 — Первый моляр нижней челюсти слева"), "Must render anatomical tooth description");
+	});
+
+	it("19. parseStockDimensions extracts diameter, length, and brand from warehouse nomenclature", () => {
+		const osstem = parseStockDimensions("Имплантат Osstem TS III SA Ø4.0x10мм");
+		assert.equal(osstem.brand, "Osstem");
+		assert.equal(osstem.diameterMm, 4.0);
+		assert.equal(osstem.lengthMm, 10.0);
+
+		const nobel = parseStockDimensions("Имплантат Nobel Biocare Parallel CC Ø4.3x11.5мм");
+		assert.equal(nobel.brand, "Nobel Biocare");
+		assert.equal(nobel.diameterMm, 4.3);
+		assert.equal(nobel.lengthMm, 11.5);
+
+		const straumann = parseStockDimensions("Имплантат Straumann BLX Roxolid SLActive Ø3.5x10мм");
+		assert.equal(straumann.brand, "Straumann");
+		assert.equal(straumann.diameterMm, 3.5);
+		assert.equal(straumann.lengthMm, 10.0);
+
+		const dentium = parseStockDimensions("Имплантат Dentium SuperLine SLA Ø4.5x10мм");
+		assert.equal(dentium.brand, "Dentium");
+		assert.equal(dentium.diameterMm, 4.5);
+		assert.equal(dentium.lengthMm, 10.0);
+
+		const empty = parseStockDimensions("");
+		assert.deepEqual(empty, {});
+	});
+
+	it("20. DEFAULT_CANONICAL_IMPLANT_STOCK contains standard sizes across major implant brands", () => {
+		assert.ok(DEFAULT_CANONICAL_IMPLANT_STOCK.length >= 8, "Stock must have at least 8 items");
+
+		const brands = DEFAULT_CANONICAL_IMPLANT_STOCK.map((item) => parseStockDimensions(item.name).brand);
+		assert.ok(brands.includes("Osstem"), "Must have Osstem stock");
+		assert.ok(brands.includes("Dentium"), "Must have Dentium stock");
+		assert.ok(brands.includes("Straumann"), "Must have Straumann stock");
+		assert.ok(brands.includes("Nobel Biocare"), "Must have Nobel Biocare stock");
+
+		// All items must have LOT, expiration date, SKU, and unitCostRub
+		for (const item of DEFAULT_CANONICAL_IMPLANT_STOCK) {
+			assert.ok(item.lotNumber, `Item ${item.name} must have LOT`);
+			assert.ok(item.expirationDate, `Item ${item.name} must have expirationDate`);
+			assert.ok(item.sku, `Item ${item.name} must have SKU`);
+			assert.ok(Number(item.unitCostRub) > 0, `Item ${item.name} must have positive cost`);
+		}
+	});
+
+	it("21. ImplantProtocolTab renders 1-click standard surgical protocol preset banner", () => {
+		const html = renderToString(
+			<ImplantPassportModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+			/>,
+		);
+
+		assert.ok(html.includes("banner-standard-protocol-preset"), "Must render standard protocol preset banner");
+		assert.ok(html.includes("btn-apply-standard-protocol"), "Must render 1-click standard protocol button");
+		assert.ok(html.includes("Стандартный хирургический протокол"), "Must show protocol name");
+		assert.ok(html.includes("1 клик"), "Must highlight 1-click speed");
+		assert.ok(html.includes("NaCl 0.9%"), "Must specify saline cooling");
+		assert.ok(html.includes("Викрил 4-0"), "Must specify suture material");
+	});
+
+	it("22. ImplantProtocolTab renders tactile quick torque buttons for gloved operation", () => {
+		const html = renderToString(
+			<ImplantPassportModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+			/>,
+		);
+
+		assert.ok(html.includes("btn-quick-torque-15"), "Must have 15 N*cm button");
+		assert.ok(html.includes("btn-quick-torque-25"), "Must have 25 N*cm button");
+		assert.ok(html.includes("btn-quick-torque-35"), "Must have 35 N*cm button");
+		assert.ok(html.includes("btn-quick-torque-45"), "Must have 45 N*cm button");
+		assert.ok(html.includes("btn-quick-torque-50"), "Must have 50 N*cm button");
+	});
+
+	it("23. AnatomicalJawArchSchema renders full 32 teeth dental formula with highlighted implant site", () => {
+		const html = renderToString(<AnatomicalJawArchSchema selectedFdi={46} brand="Osstem" diameterMm={4.0} lengthMm={10.0} />);
+
+		assert.ok(html.includes("anatomical-jaw-arch"), "Must render container");
+		assert.ok(html.includes("ВЕРХНЯЯ ЧЕЛЮСТЬ (MAXILLA)"), "Must show maxilla label");
+		assert.ok(html.includes("НИЖНЯЯ ЧЕЛЮСТЬ (MANDIBULA)"), "Must show mandibula label");
+		assert.ok(html.includes("ПРАВО (R)"), "Must show right side marker");
+		assert.ok(html.includes("ЛЕВО (L)"), "Must show left side marker");
+		assert.ok(html.includes("Имплантат #46"), "Must show highlighted tooth badge");
+		assert.ok(html.includes("Ø4.0×10мм") || html.includes("4.0"), "Must show dimensions in schema");
+	});
+
+	it("24. ImplantPassportCard renders messenger sharing buttons for WhatsApp and Telegram", () => {
+		const record = createDefaultPassportRecord({
+			toothFdi: 46,
+			brand: "Osstem",
+			patientName: "Алексеев Д. М.",
+		});
+
+		const html = renderToString(<ImplantPassportCard data={record} />);
+
+		assert.ok(html.includes("btn-share-whatsapp"), "Must have WhatsApp share button");
+		assert.ok(html.includes("btn-share-telegram"), "Must have Telegram share button");
+		assert.ok(html.includes("anatomical-jaw-arch"), "Card must include anatomical jaw arch");
 	});
 });

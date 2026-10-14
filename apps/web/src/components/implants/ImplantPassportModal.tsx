@@ -16,6 +16,7 @@ import {
 	MISCH_DENSITY_NOTES,
 	getBoneDensityByToothFdi,
 	parseImplantBarcode,
+	parseStockDimensions,
 	type FastImplantPassportData,
 	type MischDensity,
 	type ImplantCapType,
@@ -226,12 +227,43 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 		if (item.expirationDate) setExpirationDate(item.expirationDate);
 		if (item.unitCostRub) setImplantCostRub(Number(item.unitCostRub));
 
-		const brandFound = FAST_IMPLANT_SYSTEM_PRESETS.find((p) =>
-			item.name.toLowerCase().includes(p.brand.toLowerCase()),
-		);
-		if (brandFound) {
-			setSelectedBrand(brandFound.brand);
+		const parsedDims = parseStockDimensions(item.name);
+		if (parsedDims.brand) {
+			setSelectedBrand(parsedDims.brand);
+		} else {
+			const brandFound = FAST_IMPLANT_SYSTEM_PRESETS.find((p) =>
+				item.name.toLowerCase().includes(p.brand.toLowerCase()),
+			);
+			if (brandFound) {
+				setSelectedBrand(brandFound.brand);
+			}
 		}
+		if (parsedDims.diameterMm) setDiameterMm(parsedDims.diameterMm);
+		if (parsedDims.lengthMm) setLengthMm(parsedDims.lengthMm);
+	};
+
+	const handleApplyStandardProtocol = () => {
+		const computedDensity = getBoneDensityByToothFdi(toothFdi);
+		setBoneDensity(computedDensity);
+		const optimalTorque = computedDensity === "D1" ? 40 : 35;
+		setTorqueNcm(optimalTorque);
+		setIsqValue(72);
+		setIsIsqEnabled(true);
+		setCapType("fdm");
+		setIsGbrPerformed(false);
+
+		// Автоподбор изделия со склада клиники для выбранной системы
+		const matchingStock =
+			stockItems.find((s) => s.name.toLowerCase().includes(selectedBrand.toLowerCase())) ??
+			stockItems[0];
+		if (matchingStock) {
+			handleSelectStockItem(matchingStock);
+		}
+
+		showToast(
+			`Применен стандартный протокол: торк ${optimalTorque} Н·см, ISQ 72, ФДМ, складской артикул привязан`,
+			"success",
+		);
 	};
 
 	const handleApplyBarcode = (customBarcode?: string) => {
@@ -401,7 +433,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 		>
 			<div
 				className={`implant-passport-card-container implant-surgical-passport-modal ${className}`.trim()}
-				data-testid="implant-passport-modal implant-surgical-passport-modal"
+				data-testid="implant-passport-modal"
 			>
 				{/* Apple iOS HIG Drag Handle для мобильных экранов */}
 				<div className="implant-sheet-drag-handle" aria-hidden="true" />
@@ -602,6 +634,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 							expirationDate={expirationDate}
 							setExpirationDate={setExpirationDate}
 							isqValue={isqValue}
+							onApplyStandardProtocol={handleApplyStandardProtocol}
 						/>
 					)}
 				</div>

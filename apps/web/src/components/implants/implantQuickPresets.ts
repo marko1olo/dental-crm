@@ -191,6 +191,48 @@ export function parseImplantBarcode(barcode: string): ParsedImplantBarcode {
 	};
 }
 
+export interface ParsedStockDimensions {
+	readonly brand?: string;
+	readonly diameterMm?: number;
+	readonly lengthMm?: number;
+}
+
+/**
+ * Парсер параметров имплантата из наименования складской номенклатуры (Мандаты 8e, 8n).
+ * Автоматически извлекает бренд, диаметр (Ø) и длину (L) без ручного набора на клавиатуре.
+ * Примеры:
+ *  - "Имплантат Osstem TS III SA Ø4.0x10мм" -> { brand: "Osstem", diameterMm: 4.0, lengthMm: 10.0 }
+ *  - "Имплантат Nobel Biocare Parallel CC Ø4.3x11.5мм" -> { brand: "Nobel Biocare", diameterMm: 4.3, lengthMm: 11.5 }
+ */
+export function parseStockDimensions(name: string): ParsedStockDimensions {
+	if (!name) return {};
+	const lower = name.toLowerCase();
+	let brand: string | undefined;
+	for (const preset of FAST_IMPLANT_SYSTEM_PRESETS) {
+		if (lower.includes(preset.brand.toLowerCase())) {
+			brand = preset.brand;
+			break;
+		}
+	}
+
+	// Распознавание диаметра и длины: Ø4.0x10мм, Ø4.3x11.5, D3.5*10, 4.0 x 10 мм
+	const dimMatch = name.match(/[ØøD]?\s*(\d+(?:[.,]\d+)?)\s*[xXхХ*×]\s*(\d+(?:[.,]\d+)?)\s*мм?/i);
+	let diameterMm: number | undefined;
+	let lengthMm: number | undefined;
+	if (dimMatch?.[1] && dimMatch?.[2]) {
+		const dia = parseFloat(dimMatch[1].replace(",", "."));
+		const len = parseFloat(dimMatch[2].replace(",", "."));
+		if (!isNaN(dia) && dia > 0) diameterMm = dia;
+		if (!isNaN(len) && len > 0) lengthMm = len;
+	}
+
+	return {
+		...(brand ? { brand } : {}),
+		...(diameterMm !== undefined ? { diameterMm } : {}),
+		...(lengthMm !== undefined ? { lengthMm } : {}),
+	};
+}
+
 export interface FastImplantPassportData {
 	readonly passportId: string;
 	readonly toothFdi: number;
@@ -342,6 +384,21 @@ export interface ImplantConsumablesStock {
 
 export const DEFAULT_CANONICAL_IMPLANT_STOCK: readonly ImplantWarehouseStockItem[] = [
 	{
+		id: "inv-oss-3510",
+		name: "Имплантат Osstem TS III SA Ø3.5x10мм",
+		category: "Имплантология",
+		unit: "шт.",
+		stockQuantity: "4.000",
+		currentQty: "4.000",
+		unitCostRub: "12500.00",
+		pricePerUnit: "12500.00",
+		sku: "TS3S3510S",
+		barcode: "01088061400012341024C110221SN-883102",
+		lotNumber: "24C1102",
+		expirationDate: "2028-10-31",
+		notes: "Корейская имплантационная система Osstem TS III SA (узкая платформа)",
+	},
+	{
 		id: "inv-oss-4010",
 		name: "Имплантат Osstem TS III SA Ø4.0x10мм",
 		category: "Имплантология",
@@ -357,6 +414,36 @@ export const DEFAULT_CANONICAL_IMPLANT_STOCK: readonly ImplantWarehouseStockItem
 		notes: "Корейская имплантационная система Osstem TS III SA (конус Морзе 11°)",
 	},
 	{
+		id: "inv-oss-4510",
+		name: "Имплантат Osstem TS III SA Ø4.5x10мм",
+		category: "Имплантология",
+		unit: "шт.",
+		stockQuantity: "3.000",
+		currentQty: "3.000",
+		unitCostRub: "12500.00",
+		pricePerUnit: "12500.00",
+		sku: "TS3S4510S",
+		barcode: "01088061400012341024C131521SN-885419",
+		lotNumber: "24C1315",
+		expirationDate: "2028-12-31",
+		notes: "Корейская имплантационная система Osstem TS III SA (широкая платформа)",
+	},
+	{
+		id: "inv-dent-4010",
+		name: "Имплантат Dentium SuperLine SLA Ø4.0x10мм",
+		category: "Имплантология",
+		unit: "шт.",
+		stockQuantity: "4.000",
+		currentQty: "4.000",
+		unitCostRub: "10500.00",
+		pricePerUnit: "10500.00",
+		sku: "FX4010",
+		barcode: "010880918000567810DT-7790121SN-440112",
+		lotNumber: "DT-77901",
+		expirationDate: "2029-01-31",
+		notes: "Дентальный имплантат Dentium SuperLine SLA (регулярная платформа)",
+	},
+	{
 		id: "inv-dent-4510",
 		name: "Имплантат Dentium SuperLine SLA Ø4.5x10мм",
 		category: "Имплантология",
@@ -365,11 +452,26 @@ export const DEFAULT_CANONICAL_IMPLANT_STOCK: readonly ImplantWarehouseStockItem
 		currentQty: "6.000",
 		unitCostRub: "10500.00",
 		pricePerUnit: "10500.00",
-		sku: "FX4010",
+		sku: "FX4510",
 		barcode: "010880918000567810DT-7810221SN-441290",
 		lotNumber: "DT-78102",
 		expirationDate: "2029-01-31",
 		notes: "Дентальный имплантат Dentium SuperLine SLA (двойная резьба)",
+	},
+	{
+		id: "inv-strau-3510",
+		name: "Имплантат Straumann BLX Roxolid SLActive Ø3.5x10мм",
+		category: "Имплантология",
+		unit: "шт.",
+		stockQuantity: "3.000",
+		currentQty: "3.000",
+		unitCostRub: "28000.00",
+		pricePerUnit: "28000.00",
+		sku: "021.2210",
+		barcode: "010761314000991210ST-9011221SN-110820",
+		lotNumber: "ST-90112",
+		expirationDate: "2029-04-30",
+		notes: "Швейцарский премиальный имплантат Straumann BLX Roxolid SLActive (RB)",
 	},
 	{
 		id: "inv-strau-4010",
@@ -385,6 +487,21 @@ export const DEFAULT_CANONICAL_IMPLANT_STOCK: readonly ImplantWarehouseStockItem
 		lotNumber: "ST-90214",
 		expirationDate: "2029-05-31",
 		notes: "Швейцарский премиальный имплантат Straumann BLX Roxolid SLActive",
+	},
+	{
+		id: "inv-nobel-3510",
+		name: "Имплантат Nobel Biocare Parallel CC Ø3.5x10мм",
+		category: "Имплантология",
+		unit: "шт.",
+		stockQuantity: "3.000",
+		currentQty: "3.000",
+		unitCostRub: "24500.00",
+		pricePerUnit: "24500.00",
+		sku: "NP-35100",
+		barcode: "010733190000334410NB-4471921SN-771109",
+		lotNumber: "NB-44719",
+		expirationDate: "2028-08-31",
+		notes: "Имплантат Nobel Biocare Conical Connection NP",
 	},
 	{
 		id: "inv-nobel-4311",

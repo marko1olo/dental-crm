@@ -23,6 +23,11 @@ const PublicBudgetSignPage = React.lazy(() =>
 		default: m.PublicBudgetSignPage,
 	})),
 );
+const PublicWarrantyVerificationPage = React.lazy(() =>
+	import("./pages/PublicWarrantyVerificationPage").then((m) => ({
+		default: m.PublicWarrantyVerificationPage,
+	})),
+);
 const PatientBudgetSignView = React.lazy(() =>
 	import("./components/portal/PatientBudgetSignView").then((m) => ({
 		default: m.PatientBudgetSignView,
@@ -72,6 +77,7 @@ import "./styles/premium.css";
 import "./styles/dente-redesign.css";
 import "./styles/modules/header.css";
 import "./styles/modules/documents.css";
+import "./components/documents/fastClinicalPrint.css";
 import "./styles.css";
 // Псевдонимы необъявленных переменных и поверхности, зависящие от темы.
 import "./styles/token-aliases.css";
@@ -150,7 +156,11 @@ const publicPortalRoute = publicPortalRouteFromHash(
 			window.location.pathname === "/tgapp" ||
 			window.location.pathname.startsWith("/tgapp/") ||
 			window.location.pathname === "/portal/tgapp" ||
-			window.location.pathname.startsWith("/portal/tgapp/"))
+			window.location.pathname.startsWith("/portal/tgapp/") ||
+			window.location.pathname === "/portal/warranty" ||
+			window.location.pathname.startsWith("/portal/warranty/") ||
+			window.location.pathname === "/warranty" ||
+			window.location.pathname.startsWith("/warranty/"))
 		? window.location.pathname + window.location.search
 		: typeof window !== "undefined"
 			? window.location.hash
@@ -229,9 +239,13 @@ if (publicPortalRoute) {
 						/>
 					) : publicPortalRoute.kind === "budget" ? (
 						<PublicBudgetSignPage token={publicPortalRoute.token} />
-					) : (
+					) : publicPortalRoute.kind === "warranty" ? (
+						<PublicWarrantyVerificationPage
+							certificateNumber={publicPortalRoute.certificateNumber}
+						/>
+					) : publicPortalRoute.kind === "lab-order" ? (
 						<GuestLabPortal token={publicPortalRoute.token} />
-					)}
+					) : null}
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>
