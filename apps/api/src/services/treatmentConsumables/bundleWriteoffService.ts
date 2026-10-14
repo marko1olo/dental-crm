@@ -243,7 +243,8 @@ export type QuickWriteoffVisitBundleType =
 	| "orthopedics_prep"
 	| "orthopedics_impression"
 	| "orthopedics_temporary"
-	| "orthopedics_cementation";
+	| "orthopedics_cementation"
+	| "hygiene";
 
 export async function quickWriteoffVisitBundle(
 	tx: DbExecutor,
@@ -337,6 +338,14 @@ export async function quickWriteoffVisitBundle(
 			{ patterns: ["ретракцион", "нить", "ultrapak"], defaultName: "Нить ретракционная Ultrapak #000", category: "Расходные материалы", unit: "уп.", qty: 1, defaultCost: "850.00" },
 			{ patterns: ["liquid strip", "oxyguard", "глицерин"], defaultName: "Глицериновый гель Liquid Strip / Oxyguard", category: "Ортопедические материалы", unit: "доза", qty: 1, defaultCost: "90.00" },
 		],
+		hygiene: [
+			{ patterns: ["порошок", "air-flow", "airflow", "prophyflex", "глицин", "ems"], defaultName: "Порошок для Air-Flow KaVo PROPHYflex / EMS (глицин)", category: "Профгигиена", unit: "г", qty: 25, defaultCost: "18.00" },
+			{ patterns: ["cleanic", "паста полировочн", "detartrine"], defaultName: "Паста полировочная Cleanic / Detartrine", category: "Профгигиена", unit: "г", qty: 3, defaultCost: "40.00" },
+			{ patterns: ["щетка полировочн", "щетка циркулярн", "нейлонов"], defaultName: "Щетка полировочная циркулярная нейлоновая", category: "Профгигиена", unit: "шт.", qty: 1, defaultCost: "65.00" },
+			{ patterns: ["фторлак", "фтор-лак", "fluor protector", "bifluorid", "clinpro"], defaultName: "Фтор-лак защитный Fluor Protector / Bifluorid 12", category: "Профгигиена", unit: "мл", qty: 0.5, defaultCost: "640.00" },
+			{ patterns: ["optragate", "оптрагейт", "ретрактор"], defaultName: "Ретрактор мягкий OptraGate", category: "Расходные материалы", unit: "шт.", qty: 1, defaultCost: "210.00" },
+			{ patterns: ["слюноотсос", "saliva"], defaultName: "Слюноотсосы одноразовые", category: "Расходные материалы", unit: "шт.", qty: 1, defaultCost: "7.00" },
+		],
 	};
 
 	const activeDefinitions = visitDefinitions[visitType] || visitDefinitions.therapy;
@@ -355,7 +364,9 @@ export async function quickWriteoffVisitBundle(
 								? "Временная коронка Luxatemp (Ортопедия)"
 								: visitType === "orthopedics_cementation"
 									? "Постоянная фиксация (Ортопедия)"
-									: "Терапевтический прием";
+									: visitType === "hygiene"
+										? "Профессиональная гигиена полости рта (Air-Flow + УЗ)"
+										: "Терапевтический прием";
 
 	const allOrgItems = await tx
 		.select()

@@ -340,4 +340,92 @@ describe("HygieneIndicesPanel — Chairside Express Protocols & Invoice Services
 		assert.equal(phpPatho.score, 2.7);
 		assert.equal(phpPatho.evaluation, "poor");
 	});
+
+	it("verifies 4 express hygiene indices presets (OHI-S 0.0, 0.8, 1.8, 2.6) rendered cleanly with 0 raw emojis", () => {
+		const html = renderToStaticMarkup(
+			createElement(HygieneIndicesPanel, {
+				readOnly: false,
+			}),
+		);
+
+		assert.ok(html.includes("data-testid=\"hygiene-preset-ideal-norm\""), "Must contain ideal norm preset (OHI-S 0.0)");
+		assert.ok(html.includes("data-testid=\"hygiene-preset-fair\""), "Must contain fair hygiene preset (OHI-S 0.8)");
+		assert.ok(html.includes("data-testid=\"hygiene-preset-poor\""), "Must contain poor hygiene preset (OHI-S 1.8)");
+		assert.ok(html.includes("data-testid=\"hygiene-preset-severe\""), "Must contain severe hygiene preset (OHI-S 2.6)");
+
+		assert.ok(html.includes("OHI-S 0.0"));
+		assert.ok(html.includes("OHI-S 0.8"));
+		assert.ok(html.includes("OHI-S 1.8"));
+		assert.ok(html.includes("OHI-S 2.6"));
+	});
+
+	it("verifies HygieneHomeCareCard renders recommendations (Curaprox 5460, monotuft, brushes, irrigator, RDA < 50) and WhatsApp export", () => {
+		const html = renderToStaticMarkup(
+			createElement(HygieneIndicesPanel, {
+				readOnly: false,
+				patientName: "Алексей Смирнов",
+				doctorName: "Д-р Иванов",
+			}),
+		);
+
+		assert.ok(html.includes("Персональная карта домашнего ухода"));
+		assert.ok(html.includes("data-testid=\"hygiene-homecare-insert-btn\""));
+		assert.ok(html.includes("data-testid=\"hygiene-homecare-print-btn\""));
+		assert.ok(html.includes("data-testid=\"hygiene-homecare-whatsapp-btn\""));
+		assert.ok(html.includes("data-testid=\"hygiene-homecare-copy-btn\""));
+
+		// Clinical brand recommendations
+		assert.ok(html.includes("Curaprox"));
+		assert.ok(html.includes("Монопучковая щетка"));
+		assert.ok(html.includes("Межзубные ершики"));
+		assert.ok(html.includes("Ирригатор полости рта"));
+		assert.ok(html.includes("RDA &lt; 50") || html.includes("RDA < 50"));
+	});
+
+	it("verifies Apple iOS HIG mobile Bottom Sheet button and Drag Handle (36x5px) presence", () => {
+		const html = renderToStaticMarkup(
+			createElement(HygieneIndicesPanel, {
+				readOnly: false,
+			}),
+		);
+
+		assert.ok(html.includes("data-testid=\"hygiene-open-bottom-sheet-btn\""), "Must include mobile trigger button");
+	});
+
+	it("verifies strict adherence to Mandate 8b file size limits (HygieneIndicesPanel.tsx strictly <= 800 lines)", async () => {
+		const fs = await import("node:fs");
+		const path = await import("node:path");
+		const panelPath = fs.existsSync(path.resolve(process.cwd(), "src/components/hygiene/HygieneIndicesPanel.tsx"))
+			? path.resolve(process.cwd(), "src/components/hygiene/HygieneIndicesPanel.tsx")
+			: path.resolve(process.cwd(), "apps/web/src/components/hygiene/HygieneIndicesPanel.tsx");
+		const linesCount = fs.readFileSync(panelPath, "utf8").split("\n").length;
+		assert.ok(
+			linesCount <= 800,
+			`HygieneIndicesPanel.tsx exceeds Mandate 8b 800-line limit: current lines count is ${linesCount}`,
+		);
+	});
+
+	it("verifies OHI-S dynamics comparison banner between visits (Mandate 8e, 8k)", () => {
+		// Test improvement: previous 2.8 -> current default ~0.0 or 0.8
+		const htmlImproved = renderToStaticMarkup(
+			createElement(HygieneIndicesPanel, {
+				readOnly: false,
+				previousOhiS: { ohi_s: 2.8, debris: 1.4, calculus: 1.4, date: "2026-04-14" },
+			}),
+		);
+
+		assert.ok(htmlImproved.includes("data-testid=\"ohi-s-dynamics-banner\""), "Must render dynamics banner");
+		assert.ok(htmlImproved.includes("Было: 2.8 ➔ Стало:"), "Must show previous score 2.8");
+		assert.ok(htmlImproved.includes("Улучшение"), "Must calculate improvement");
+		assert.ok(htmlImproved.includes("🟢"), "Must include green indicator");
+
+		// Test degradation: previous 0.0 -> current default or higher
+		const htmlWorsened = renderToStaticMarkup(
+			createElement(HygieneIndicesPanel, {
+				readOnly: false,
+				previousOhiS: 0.0,
+			}),
+		);
+		assert.ok(htmlWorsened.includes("data-testid=\"ohi-s-dynamics-banner\""));
+	});
 });

@@ -32,6 +32,7 @@ export interface OhiSilnessCalculatorProps {
 	) => void;
 	readonly readOnly?: boolean | undefined;
 	readonly compactMode?: boolean | undefined;
+	readonly comparisonText?: string | null | undefined;
 }
 
 export const OhiSilnessCalculator: React.FC<OhiSilnessCalculatorProps> = memo(({
@@ -42,6 +43,7 @@ export const OhiSilnessCalculator: React.FC<OhiSilnessCalculatorProps> = memo(({
 	onUpdateToothScore,
 	readOnly = false,
 	compactMode = false,
+	comparisonText,
 }) => {
 	const { ohiS } = report;
 
@@ -97,6 +99,20 @@ export const OhiSilnessCalculator: React.FC<OhiSilnessCalculatorProps> = memo(({
 							<strong>{ohiS.calculusScore}</strong>
 						</span>
 					</div>
+					{comparisonText && (
+						<div
+							data-testid="ohi-s-comparison-badge"
+							className={`text-[11px] font-bold px-2 py-0.5 rounded-md mt-0.5 flex items-center gap-1 w-fit border ${
+								comparisonText.includes("🟢")
+									? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+									: comparisonText.includes("🔴")
+										? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30"
+										: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30"
+							}`}
+						>
+							<span>{comparisonText}</span>
+						</div>
+					)}
 					<span className="text-[11px] text-[var(--muted)] truncate">
 						Норма: ≤ 0.6 (отл.) / ≤ 1.6 (хор.)
 					</span>

@@ -50,6 +50,8 @@ const CtSelectorModal = lazyWithRetry(() =>
 );
 
 import { PeriodontogramChart } from "../../../perio/PeriodontogramChart";
+import { HygieneIndicesPanel } from "../../../hygiene/HygieneIndicesPanel";
+import { PatientRecallsHubModal } from "../../../recalls/PatientRecallsHubModal";
 
 export function renderSpecializedClinicalLaunchers({
 	isCbctTunerOpen,
@@ -67,6 +69,25 @@ export function renderSpecializedClinicalLaunchers({
 	isEmergencyDirectModalOpen,
 	setIsEmergencyDirectModalOpen,
 }: StandaloneLaunchersProps): React.ReactElement | null {
+	// HYGIENE & INDICES COCKPIT (?hygiene=1, ?hygiene=demo, #hygiene)
+	const isHygieneDirect =
+		typeof window !== "undefined" &&
+		(new URLSearchParams(window.location.search).has("hygiene") ||
+			window.location.hash.toLowerCase().includes("hygiene"));
+	if (isHygieneDirect) {
+		return (
+			<div
+				className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6 overflow-y-auto"
+				data-testid="hygiene-standalone-workspace"
+			>
+				<HygieneIndicesPanel
+					patientName="Смирнова Анна Сергеевна"
+					doctorName="Д-р Воронов А. В."
+				/>
+			</div>
+		);
+	}
+
 	// PERIODONTAL CHARTING & FLORIDA PROBE COCKPIT (?perio=1, ?perio=demo, #perio)
 	const isPerioDirect =
 		typeof window !== "undefined" &&
@@ -82,6 +103,83 @@ export function renderSpecializedClinicalLaunchers({
 					patientId="demo_perio_patient"
 					patientName="Смирнова Анна Сергеевна (Пародонтограмма)"
 					doctorName="Д-р Соколов А. В."
+				/>
+			</div>
+		);
+	}
+
+	// PATIENT RECALLS & RETENTION KANBAN (?recalls=1, ?recalls=demo, #recalls)
+	const isRecallsDirect =
+		typeof window !== "undefined" &&
+		(new URLSearchParams(window.location.search).has("recalls") ||
+			window.location.hash.toLowerCase().includes("recalls"));
+	if (isRecallsDirect) {
+		return (
+			<div
+				className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6 overflow-y-auto"
+				data-testid="recalls-standalone-workspace"
+			>
+				<PatientRecallsHubModal
+					isOpen={true}
+					onClose={() => {}}
+					initialCandidates={[
+						{
+							id: "rec-1",
+							patientId: "pat-1",
+							fullName: "Иванов Иван Иванович",
+							phone: "+7 (916) 123-45-67",
+							cycleType: "standard_prophylaxis",
+							attendingDoctorId: "doc-1",
+							attendingDoctorName: "Д-р Воронов А. В.",
+							lastVisitDate: "2026-04-10",
+							dueDate: "2026-10-10",
+							daysOverdue: 4,
+							urgencyStatus: "due_now",
+							status: "due_now",
+						},
+						{
+							id: "rec-2",
+							patientId: "pat-2",
+							fullName: "Смирнова Анна Сергеевна",
+							phone: "+7 (925) 987-65-43",
+							cycleType: "implant_monitoring",
+							attendingDoctorId: "doc-2",
+							attendingDoctorName: "Д-р Соколов А. В.",
+							lastVisitDate: "2025-10-14",
+							dueDate: "2026-10-14",
+							daysOverdue: 0,
+							urgencyStatus: "due_now",
+							status: "invited",
+						},
+						{
+							id: "rec-3",
+							patientId: "pat-3",
+							fullName: "Кузнецов Дмитрий Павлович",
+							phone: "+7 (903) 555-44-33",
+							cycleType: "orthodontic_retention",
+							attendingDoctorId: "doc-1",
+							attendingDoctorName: "Д-р Воронов А. В.",
+							lastVisitDate: "2026-07-01",
+							dueDate: "2026-09-01",
+							daysOverdue: 43,
+							urgencyStatus: "overdue_30",
+							status: "due_now",
+						},
+						{
+							id: "rec-4",
+							patientId: "pat-4",
+							fullName: "Федорова Елена Николаевна",
+							phone: "+7 (985) 111-22-33",
+							cycleType: "periodontal_maintenance",
+							attendingDoctorId: "doc-2",
+							attendingDoctorName: "Д-р Соколов А. В.",
+							lastVisitDate: "2026-06-15",
+							dueDate: "2026-09-15",
+							daysOverdue: 29,
+							urgencyStatus: "due_now",
+							status: "scheduled",
+						},
+					]}
 				/>
 			</div>
 		);

@@ -33,6 +33,54 @@ export {
 	HYGIENE_EXPRESS_SERVICES,
 };
 
+/**
+ * 1. Идеальная гигиена / Норма (OHI-S = 0.0, SBI = 0, BOP = 0%)
+ */
+export const EXPRESS_HYGIENE_NORM_ASSESSMENTS: Record<number, ExtendedToothAssessment> = {
+	16: { toothNumber: 16, debrisScore: 0, calculusScore: 0, pmaScore: 0, kpiScore: 0, silnessScore: 0, fedorovScore: 1, phpScore: 0 },
+	11: { toothNumber: 11, debrisScore: 0, calculusScore: 0, pmaScore: 0, kpiScore: 0, silnessScore: 0, fedorovScore: 1, phpScore: 0 },
+	26: { toothNumber: 26, debrisScore: 0, calculusScore: 0, pmaScore: 0, kpiScore: 0, silnessScore: 0, fedorovScore: 1, phpScore: 0 },
+	46: { toothNumber: 46, debrisScore: 0, calculusScore: 0, pmaScore: 0, kpiScore: 0, silnessScore: 0, fedorovScore: 1, phpScore: 0 },
+	31: { toothNumber: 31, debrisScore: 0, calculusScore: 0, pmaScore: 0, kpiScore: 0, silnessScore: 0, fedorovScore: 1, phpScore: 0 },
+	36: { toothNumber: 36, debrisScore: 0, calculusScore: 0, pmaScore: 0, kpiScore: 0, silnessScore: 0, fedorovScore: 1, phpScore: 0 },
+};
+
+/**
+ * 2. Удовлетворительная гигиена (OHI-S = 0.8: мягкий налет до 1/3 коронки)
+ */
+export const EXPRESS_HYGIENE_FAIR_ASSESSMENTS: Record<number, ExtendedToothAssessment> = {
+	16: { toothNumber: 16, debrisScore: 1, calculusScore: 0, pmaScore: 0, kpiScore: 0, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
+	11: { toothNumber: 11, debrisScore: 1, calculusScore: 0, pmaScore: 0, kpiScore: 0, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
+	26: { toothNumber: 26, debrisScore: 1, calculusScore: 0, pmaScore: 0, kpiScore: 0, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
+	46: { toothNumber: 46, debrisScore: 0, calculusScore: 0, pmaScore: 0, kpiScore: 0, silnessScore: 0, fedorovScore: 1, phpScore: 0 },
+	31: { toothNumber: 31, debrisScore: 1, calculusScore: 0, pmaScore: 0, kpiScore: 0, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
+	36: { toothNumber: 36, debrisScore: 1, calculusScore: 0, pmaScore: 0, kpiScore: 0, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
+};
+
+/**
+ * 3. Неудовлетворительная гигиена (OHI-S = 1.8: наддесневой зубной камень и плотный налет)
+ */
+export const EXPRESS_HYGIENE_POOR_ASSESSMENTS: Record<number, ExtendedToothAssessment> = {
+	16: { toothNumber: 16, debrisScore: 1, calculusScore: 1, pmaScore: 1, kpiScore: 2, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
+	11: { toothNumber: 11, debrisScore: 1, calculusScore: 1, pmaScore: 1, kpiScore: 2, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
+	26: { toothNumber: 26, debrisScore: 1, calculusScore: 1, pmaScore: 1, kpiScore: 2, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
+	46: { toothNumber: 46, debrisScore: 1, calculusScore: 0, pmaScore: 1, kpiScore: 1, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
+	31: { toothNumber: 31, debrisScore: 1, calculusScore: 1, pmaScore: 1, kpiScore: 2, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
+	36: { toothNumber: 36, debrisScore: 1, calculusScore: 1, pmaScore: 1, kpiScore: 2, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
+};
+
+/**
+ * 4. Тяжелая гигиена (OHI-S = 2.6: генерализованный поддесневой камень + кровоточивость)
+ */
+export const EXPRESS_HYGIENE_SEVERE_ASSESSMENTS: Record<number, ExtendedToothAssessment> = {
+	16: { toothNumber: 16, debrisScore: 2, calculusScore: 2, pmaScore: 2, kpiScore: 3, silnessScore: 2, fedorovScore: 3, phpScore: 3 },
+	11: { toothNumber: 11, debrisScore: 1, calculusScore: 1, pmaScore: 2, kpiScore: 2, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
+	26: { toothNumber: 26, debrisScore: 2, calculusScore: 2, pmaScore: 2, kpiScore: 3, silnessScore: 2, fedorovScore: 3, phpScore: 3 },
+	46: { toothNumber: 46, debrisScore: 1, calculusScore: 1, pmaScore: 2, kpiScore: 2, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
+	31: { toothNumber: 31, debrisScore: 1, calculusScore: 1, pmaScore: 2, kpiScore: 2, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
+	36: { toothNumber: 36, debrisScore: 1, calculusScore: 1, pmaScore: 2, kpiScore: 2, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
+};
+
 export const CATARRHAL_GINGIVITIS_ASSESSMENTS: Record<number, ExtendedToothAssessment> = {
 	16: { toothNumber: 16, debrisScore: 1, calculusScore: 1, pmaScore: 2, kpiScore: 2, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
 	11: { toothNumber: 11, debrisScore: 2, calculusScore: 1, pmaScore: 2, kpiScore: 2, silnessScore: 2, fedorovScore: 3, phpScore: 3 },
@@ -41,6 +89,33 @@ export const CATARRHAL_GINGIVITIS_ASSESSMENTS: Record<number, ExtendedToothAsses
 	31: { toothNumber: 31, debrisScore: 2, calculusScore: 1, pmaScore: 2, kpiScore: 2, silnessScore: 2, fedorovScore: 3, phpScore: 3 },
 	36: { toothNumber: 36, debrisScore: 1, calculusScore: 1, pmaScore: 2, kpiScore: 2, silnessScore: 1, fedorovScore: 2, phpScore: 2 },
 };
+
+export function createExpressHygieneFairProtocolText(rep: CombinedHygieneReport): string {
+	return (
+		"• Экспресс-оценка гигиены полости рта: Удовлетворительный уровень гигиены.\n" +
+		"• Status localis: Мягкий зубной налет покрывает до 1/3 коронковой части индексных зубов. Зубной камень визуально не определяется. Десна бледно-розовая, плотная, зубодесневое прикрепление сохранено.\n" +
+		`• Клинические индексы: ${rep.ohiS.ratingText}, ${rep.pma.ratingText}, ${rep.kpi.ratingText}.\n` +
+		"• Назначено: Контролируемая гигиена полости рта, полировка зубов пастой Cleanic, коррекция техники чистки зубов и подбор ершиков."
+	);
+}
+
+export function createExpressHygienePoorProtocolText(rep: CombinedHygieneReport): string {
+	return (
+		"• Экспресс-оценка гигиены полости рта: Неудовлетворительный уровень гигиены.\n" +
+		"• Status localis: Визуализируются обильные наддесневые зубные отложения в пришеечной области (преимущественно язычная поверхность фронтальных зубов н/ч и щечная верхних моляров). Умеренная гиперемия маргинальной десны.\n" +
+		`• Клинические индексы: ${rep.ohiS.ratingText}, ${rep.pma.ratingText}, ${rep.kpi.ratingText}.\n` +
+		"• Назначено: Комплексная профессиональная гигиена полости рта (УЗ скейлинг + Air-Flow + полировка), глубокое фторирование."
+	);
+}
+
+export function createExpressHygieneSevereProtocolText(rep: CombinedHygieneReport): string {
+	return (
+		"• Экспресс-оценка гигиены полости рта: Тяжелый уровень гигиенических нарушений (генерализованные зубные отложения).\n" +
+		"• Status localis: Обильный над- и поддесневой зубной камень, плотный пигментированный налет курильщика/чайный налет. Маргинальная десна цианотична, отечна, кровоточивость при легком зондировании десневой борозды (BOP > 30%).\n" +
+		`• Клинические индексы: ${rep.ohiS.ratingText}, ${rep.pma.ratingText}, ${rep.kpi.ratingText}.\n` +
+		"• Назначено: Комплексная профессиональная гигиена (УЗ пьезо-скейлинг + субгингивальная обработка Air-Flow Perio порошком глицина), антисептическая обработка десны, выдача карты домашнего ухода."
+	);
+}
 
 export const MILD_PERIODONTITIS_ASSESSMENTS: Record<number, ExtendedToothAssessment> = {
 	16: { toothNumber: 16, debrisScore: 1, calculusScore: 2, pmaScore: 2, kpiScore: 3, silnessScore: 1, fedorovScore: 2, phpScore: 2 },

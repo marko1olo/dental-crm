@@ -319,15 +319,6 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 			/>
 
 			{/* ═══════════════════════════════════════════════════════════════════
-			    HYGIENE INDICES PANEL (OHI-S, PMA, KPI LEUS)
-			    ═══════════════════════════════════════════════════════════════════ */}
-			{isHygieneExpanded && (
-				<div className="animate-in fade-in duration-150">
-					<HygieneIndicesPanel readOnly={readOnly} />
-				</div>
-			)}
-
-			{/* ═══════════════════════════════════════════════════════════════════
 			    TIER 3: DETAILED PERIODONTAL CHARTING (6 POINTS PER TOOTH) KEYPAD
 			    ═══════════════════════════════════════════════════════════════════ */}
 			{isTier3ProbingExpanded && (
@@ -422,6 +413,15 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 				dynamics={dynamics}
 			/>
 			</div>
+			{/* ═══════════════════════════════════════════════════════════════════
+			    HYGIENE INDICES PANEL (OHI-S, PMA, KPI LEUS)
+			    Visible on both Desktop Cockpit & Mobile Touch (Apple HIG Bottom Sheet)
+			    ═══════════════════════════════════════════════════════════════════ */}
+			{isHygieneExpanded && (
+				<div className="w-full animate-in fade-in duration-150">
+					<HygieneIndicesPanel readOnly={readOnly} />
+				</div>
+			)}
 		</div>
 	);
 });

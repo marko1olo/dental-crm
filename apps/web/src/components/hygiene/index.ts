@@ -35,3 +35,22 @@ export {
 	type HygieneExpressPresetsStripProps,
 } from "./HygieneExpressPresetsStrip";
 
+export {
+	HygieneHomeCareCard,
+	type HygieneHomeCareCardProps,
+	type HygieneHomeCareRecommendations,
+	DEFAULT_STANDARD_HOME_CARE,
+	CROWDING_ORTHO_HOME_CARE,
+	PERIODONTITIS_HOME_CARE,
+} from "./HygieneHomeCareCard";
+
+export {
+	HygieneBottomSheetDrawer,
+	type HygieneBottomSheetDrawerProps,
+} from "./HygieneBottomSheetDrawer";
+
+export {
+	PmaKpiSextantsGrid,
+	type PmaKpiSextantsGridProps,
+} from "./PmaKpiSextantsGrid";
+

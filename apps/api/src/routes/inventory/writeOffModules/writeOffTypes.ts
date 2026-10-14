@@ -39,7 +39,8 @@ export interface QuickWriteoffVisitBundleBody {
 		| "orthopedics_prep"
 		| "orthopedics_impression"
 		| "orthopedics_temporary"
-		| "orthopedics_cementation";
+		| "orthopedics_cementation"
+		| "hygiene";
 	visitId?: string;
 	notes?: string;
 	toothNumber?: string | number;
@@ -50,6 +51,27 @@ export interface QuickWriteoffOrthopedicBody {
 	visitId?: string;
 	toothNumber?: string | number;
 	notes?: string;
+}
+
+export interface QuickWriteoffSurgeryBody {
+	protocolId?: string;
+	category?: "extraction" | "implant" | "sinus_gbr" | "perio_surgery" | string;
+	operationTitle?: string;
+	toothNumber?: string | number;
+	visitId?: string;
+	notes?: string;
+	sutureMaterial?: string;
+	hemostatics?: string[];
+	graft?: string;
+	membrane?: string;
+	hasPins?: boolean;
+	implantBrand?: string;
+	materials?: Array<{
+		name: string;
+		unit?: string;
+		quantity?: number;
+		isWarehouseCritical?: boolean;
+	}>;
 }
 
 

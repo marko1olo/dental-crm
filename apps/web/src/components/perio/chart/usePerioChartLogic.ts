@@ -103,7 +103,13 @@ export function usePerioChartLogic({
 	// Diagnostic breakdown accordion
 	const [isDiagnosticsExpanded, setIsDiagnosticsExpanded] =
 		useState<boolean>(false);
-	const [isHygieneExpanded, setIsHygieneExpanded] = useState<boolean>(false);
+	const [isHygieneExpanded, setIsHygieneExpanded] = useState<boolean>(() => {
+		if (typeof window !== "undefined") {
+			const sp = new URLSearchParams(window.location.search);
+			return sp.has("hygiene") || window.location.hash.toLowerCase().includes("hygiene");
+		}
+		return false;
+	});
 	const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
 	const [copyStatus, setCopyStatus] = useState<boolean>(false);
 	const [insertStatus, setInsertStatus] = useState<boolean>(false);
