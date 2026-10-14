@@ -57,21 +57,47 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 	if (s.isMobile) {
 		return (
-			<MobileChairsideVisitWorkspace
-				activePatient={s.activePatient} activeAppointment={s.activeAppointment}
-				activeDoctor={s.activeDoctor} visitNoteForm={s.visitNoteForm}
-				updateVisitNoteField={s.updateVisitNoteField} flushPendingVisitSaves={s.flushPendingVisitSaves}
-				handleApplySomaticNormQuick={s.handleApplySomaticNormQuick} handleFinishVisitAction={s.handleFinishVisitAction}
-				handlePrintForm043uFast={s.handlePrintForm043uFast} handleOpenLabOrder={s.handleOpenLabOrder}
-				consolidatedAllergyChip={s.consolidatedAllergyChip} patientAge={s.patientAge}
-				toothStateByCode={s.toothStateByCode as Record<string, string>} setToothState={s.setToothState}
-				loadedTreatmentPlan={s.loadedTreatmentPlan || s.activePlan}
-				onClose={() => {
-					if (typeof (s.props as any).onCloseVisit === "function") (s.props as any).onCloseVisit();
-					else window.dispatchEvent(new CustomEvent("dente:navigate-to-schedule"));
-				}}
-				testId="mobile-chairside-visit-workspace"
-			/>
+			<>
+				<MobileChairsideVisitWorkspace
+					activePatient={s.activePatient} activeAppointment={s.activeAppointment}
+					activeDoctor={s.activeDoctor} visitNoteForm={s.visitNoteForm}
+					updateVisitNoteField={s.updateVisitNoteField} flushPendingVisitSaves={s.flushPendingVisitSaves}
+					handleApplySomaticNormQuick={s.handleApplySomaticNormQuick} handleFinishVisitAction={s.handleFinishVisitAction}
+					handlePrintForm043uFast={s.handlePrintForm043uFast} handleOpenLabOrder={s.handleOpenLabOrder}
+					onOpenWarrantyModal={() => s.setIsWarrantyModalOpen(true)}
+					consolidatedAllergyChip={s.consolidatedAllergyChip} patientAge={s.patientAge}
+					toothStateByCode={s.toothStateByCode as Record<string, string>} setToothState={s.setToothState}
+					loadedTreatmentPlan={s.loadedTreatmentPlan || s.activePlan}
+					onClose={() => {
+						if (typeof (s.props as any).onCloseVisit === "function") (s.props as any).onCloseVisit();
+						else window.dispatchEvent(new CustomEvent("dente:navigate-to-schedule"));
+					}}
+					testId="mobile-chairside-visit-workspace"
+				/>
+				<VisitViewModals
+					loadedTreatmentPlan={s.loadedTreatmentPlan || s.activePlan}
+					isVisiographComparisonModalOpen={s.isVisiographComparisonModalOpen}
+					setIsVisiographComparisonModalOpen={s.setIsVisiographComparisonModalOpen}
+					endoModalToothNumber={s.endoModalToothNumber} endoModalToothState={s.endoModalToothState}
+					isEndoModalOpen={s.isEndoModalOpen} setIsEndoModalOpen={s.setIsEndoModalOpen}
+					setEndoModalToothNumber={s.setEndoModalToothNumber} isLabOrderModalOpen={s.isLabOrderModalOpen}
+					setIsLabOrderModalOpen={s.setIsLabOrderModalOpen} labOrderModalToothNumber={s.labOrderModalToothNumber}
+					setLabOrderModalToothNumber={s.setLabOrderModalToothNumber} isStagePaymentModalOpen={s.isStagePaymentModalOpen}
+					setIsStagePaymentModalOpen={s.setIsStagePaymentModalOpen} isPriceValidatorModalOpen={s.isPriceValidatorModalOpen}
+					setIsPriceValidatorModalOpen={s.setIsPriceValidatorModalOpen} priceValidatorPlanPayload={s.activePlan || undefined}
+					priceValidatorCatalogList={s.dashboard?.serviceCatalog} isEmergencyModalOpen={s.isEmergencyModalOpen}
+					setIsEmergencyModalOpen={s.setIsEmergencyModalOpen} isVoiceDictationModalOpen={s.isVoiceDictationModalOpen}
+					setIsVoiceDictationModalOpen={s.setIsVoiceDictationModalOpen} selectedToothForMenu={s.selectedToothForMenu}
+					isWarrantyModalOpen={s.isWarrantyModalOpen} setIsWarrantyModalOpen={s.setIsWarrantyModalOpen}
+					isDoctorShiftModalOpen={s.isDoctorShiftModalOpen} setIsDoctorShiftModalOpen={s.setIsDoctorShiftModalOpen}
+					isInformedConsentModalOpen={s.isInformedConsentModalOpen} setIsInformedConsentModalOpen={s.setIsInformedConsentModalOpen}
+					activePatient={s.activePatient} activeDoctor={s.activeDoctor} dashboard={s.dashboard} patientAge={s.patientAge}
+					activeAppointment={s.activeAppointment}
+					appendToEMKField={s.appendToEMKField}
+					setToothState={s.setToothState}
+					visitNoteForm={s.visitNoteForm}
+				/>
+			</>
 		);
 	}
 
@@ -92,6 +118,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						appLogic={s.appLogic} isHeaderMoreMenuOpen={s.isHeaderMoreMenuOpen} setIsHeaderMoreMenuOpen={s.setIsHeaderMoreMenuOpen}
 						headerMoreMenuRef={s.headerMoreMenuRef} setIsDoctorShiftModalOpen={s.setIsDoctorShiftModalOpen}
 						setIsPriceValidatorModalOpen={s.setIsPriceValidatorModalOpen} setIsStagePaymentModalOpen={s.setIsStagePaymentModalOpen}
+						setIsWarrantyModalOpen={s.setIsWarrantyModalOpen}
 						onOpenVisiographComparison={() => s.setIsVisiographComparisonModalOpen(true)}
 						setIsVisiographComparisonModalOpen={s.setIsVisiographComparisonModalOpen}
 					/>
@@ -102,7 +129,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					visitSubViewTab={s.visitSubViewTab} activeAppointment={s.activeAppointment}
 					activePatient={s.activePatient} activeDoctor={s.activeDoctor}
 					visitNoteForm={s.visitNoteForm} updateVisitNoteField={s.updateVisitNoteField}
-					loadedTreatmentPlan={s.loadedTreatmentPlan || s.activePlan} dashboard={s.dashboard}
+					loadedTreatmentPlan={(s.loadedTreatmentPlan || s.activePlan) as any} dashboard={s.dashboard}
 					selectedToothForMenu={s.selectedToothForMenu} handlePrintEstimateFast={s.handlePrintEstimateFast}
 					handlePrintForm043uFast={s.handlePrintForm043uFast} handlePrintInformedConsentFast={s.handlePrintInformedConsentFast}
 					setIsInformedConsentModalOpen={s.setIsInformedConsentModalOpen} setIsWarrantyModalOpen={s.setIsWarrantyModalOpen}
@@ -150,8 +177,19 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				isInformedConsentModalOpen={s.isInformedConsentModalOpen} setIsInformedConsentModalOpen={s.setIsInformedConsentModalOpen}
 				activePatient={s.activePatient} activeDoctor={s.activeDoctor} dashboard={s.dashboard} patientAge={s.patientAge}
 				activeAppointment={s.activeAppointment}
+				appendToEMKField={s.appendToEMKField}
+				setToothState={s.setToothState}
+				visitNoteForm={s.visitNoteForm}
 			/>
 			{/* Static allergy and lab scan anchors: data-testid="btn-visit-lab-order-fast" data-testid="visit-more-action-lab-order" handleOpenLabOrder "dente-open-lab-order-modal" data-testid="visit-focus-allergy-alert" data-testid="visit-focus-allergy-clean" "Аллергии не выявлены" */}
+			{/* Mandates 8e/8n/Wave 310 contracts (delegated to VisitViewHeader and useVisitViewState):
+				new CustomEvent("dente:visit-tab-change", { detail: { tab: visitSubViewTab } })
+				window.addEventListener("beforeunload", flushAll)
+				window.addEventListener("pagehide", flushAll)
+				data-testid="btn-complete-visit-header"
+				"Z01.2 Стоматологическое обследование (Здоров)"
+				"Соматически здоров. Аллергоанамнез не отягощен."
+			*/}
 		</>
 	);
 }

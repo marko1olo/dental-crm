@@ -79,6 +79,7 @@ export interface VisitViewHeaderProps {
 	setIsDoctorShiftModalOpen: (open: boolean) => void;
 	setIsPriceValidatorModalOpen: (open: boolean) => void;
 	setIsStagePaymentModalOpen: (open: boolean) => void;
+	setIsWarrantyModalOpen?: ((open: boolean) => void) | undefined;
 	onOpenVisiographComparison?: (() => void) | undefined;
 	setIsVisiographComparisonModalOpen?: ((open: boolean) => void) | undefined;
 }

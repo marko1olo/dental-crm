@@ -23,6 +23,7 @@ export const ChairsidePatientQuickBar: React.FC<ChairsidePatientQuickBarProps> =
   consolidatedAllergyChip,
   handlePrintForm043uFast,
   handleOpenLabOrder,
+  onOpenWarrantyModal,
   onClose,
   onPrevStep,
   testId = "mobile-chairside-workspace",
@@ -88,6 +89,19 @@ export const ChairsidePatientQuickBar: React.FC<ChairsidePatientQuickBarProps> =
               data-testid={`${testId}-lab-btn`}
             >
               <FlaskConical size={18} />
+            </button>
+          )}
+
+          {onOpenWarrantyModal && (
+            <button
+              type="button"
+              onClick={onOpenWarrantyModal}
+              className="mobile-chairside-icon-btn text-indigo-600 dark:text-indigo-400"
+              aria-label="Гарантийный паспорт"
+              title="Гарантийный паспорт"
+              data-testid={`${testId}-warranty-btn`}
+            >
+              <ShieldCheck size={18} />
             </button>
           )}
 

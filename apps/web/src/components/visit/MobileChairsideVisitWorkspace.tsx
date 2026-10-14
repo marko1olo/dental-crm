@@ -38,6 +38,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
     updateVisitNoteField,
     handlePrintForm043uFast,
     handleOpenLabOrder,
+    onOpenWarrantyModal,
     consolidatedAllergyChip,
     patientAge,
     toothStateByCode = {},
@@ -59,6 +60,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
         consolidatedAllergyChip={consolidatedAllergyChip ?? null}
         handlePrintForm043uFast={handlePrintForm043uFast}
         handleOpenLabOrder={handleOpenLabOrder}
+        onOpenWarrantyModal={onOpenWarrantyModal}
         onClose={onClose}
         onPrevStep={ws.handlePrevStep}
         testId={testId}

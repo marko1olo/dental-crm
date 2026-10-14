@@ -11,16 +11,20 @@
  * - Информированное добровольное согласие (ИДС)
  */
 
-import React from "react";
+import React, { useMemo } from "react";
 import { EmergencyRescueModal } from "../../../emergency/EmergencyRescueModal";
 import {
 	VoiceDictationAssistantModal,
 	type DictationCommand,
 } from "../../../voice/VoiceDictationAssistantModal";
-import { WarrantyPassportModal } from "../../../warranty/WarrantyPassportModal";
+import {
+	WarrantyPassportModal,
+	type CompletedTreatmentStage,
+} from "../../../warranty/WarrantyPassportModal";
 import { DoctorMobileShiftModal } from "../../../doctor-portal/DoctorMobileShiftModal";
 import { InformedConsentModal } from "../../../consents/InformedConsentModal";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
+import { useVisitStore } from "../../../../store/visit";
 import { showToast } from "../../../GlobalToast";
 
 export interface ClinicalSupportModalsProps {
@@ -157,46 +161,102 @@ export const ClinicalSupportModals: React.FC<ClinicalSupportModalsProps> = ({
 				/>
 			)}
 
-			{/* Warranty Passport Modal */}
-			{effectiveActiveModal === "warranty_passport" && (
-				<WarrantyPassportModal
-					isOpen={isWarrantyModalOpen}
-					onClose={() => {
-						setIsWarrantyModalOpen(false);
-						useUiSurfaceStore.getState().closePrimaryModal("warranty_passport");
-					}}
-					patient={
-						activePatient
-							? {
-									id: activePatient.id,
-									fullName: activePatient.fullName,
-									birthDate: activePatient.birthDate,
-									phone: activePatient.phone,
-								}
-							: null
-					}
-					doctorName={activeDoctor?.fullName}
-					clinicName={
-						(
-							dashboard as {
-								clinicSettings?: { profile?: { brandName?: string } };
-							} | null
-						)?.clinicSettings?.profile?.brandName ||
-						dashboard?.organization?.name ||
-						"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
-					}
-					initialDiagnosis={
-						visitNoteForm?.diagnosis || "Z01.2 Стоматологическое обследование"
-					}
-					onCertificateIssued={(passport: any) => {
-						appendToEMKField(
-							"recommendations",
-							`Оформлен гарантийный паспорт № ${passport.passportNumber || passport.certificateId} (гарантия ${passport.warrantyMonths} мес. до ${passport.warrantyUntilDate}).`,
-						);
-						showToast("Гарантийный паспорт оформлен", "success");
-					}}
-				/>
-			)}
+			{/* Warranty Passport Modal (Мандаты 8e, 8k — Авто-заполнение из выполненных услуг визита и 0 ₽ переделка) */}
+			{(effectiveActiveModal === "warranty_passport" || isWarrantyModalOpen) && (() => {
+				const fromStore = useVisitStore.getState().completedServices || [];
+				const fromAppt =
+					(activeAppointment as any)?.completedServices ||
+					(activeAppointment as any)?.services ||
+					(dashboard as any)?.activeVisit?.completedServices ||
+					[];
+				const sourceList = fromStore.length > 0 ? fromStore : fromAppt;
+				const completedStagesForWarranty: CompletedTreatmentStage[] = Array.isArray(sourceList)
+					? sourceList.map((s: any, idx: number) => {
+							const title =
+								s.name || s.title || s.serviceTitle || s.serviceName || "Стоматологическая услуга";
+							const tooth = s.tooth || s.toothNumber || s.toothCode;
+							const code = s.code || s.code804n || s.serviceCode;
+							return {
+								stageNumber: idx + 1,
+								stageTitle: title,
+								serviceTitle: title,
+								toothNumber: tooth ? String(tooth) : undefined,
+								serviceCode804n: code ? String(code) : undefined,
+								performedAt: s.date || new Date().toISOString().slice(0, 10),
+							};
+						})
+					: [];
+
+				const initialTeethForWarranty = Array.from(
+					new Set(
+						completedStagesForWarranty
+							.map((st) => st.toothNumber)
+							.filter((t): t is string => Boolean(t)),
+					),
+				);
+
+				return (
+					<WarrantyPassportModal
+						isOpen={isWarrantyModalOpen || effectiveActiveModal === "warranty_passport"}
+						onClose={() => {
+							setIsWarrantyModalOpen(false);
+							useUiSurfaceStore.getState().closePrimaryModal("warranty_passport");
+						}}
+						patient={
+							activePatient
+								? {
+										id: activePatient.id,
+										fullName: activePatient.fullName,
+										birthDate: activePatient.birthDate,
+										phone: activePatient.phone,
+									}
+								: null
+						}
+						doctorName={activeDoctor?.fullName}
+						doctorId={activeDoctor?.id}
+						clinicName={
+							(
+								dashboard as {
+									clinicSettings?: { profile?: { brandName?: string } };
+								} | null
+							)?.clinicSettings?.profile?.brandName ||
+							dashboard?.organization?.name ||
+							"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
+						}
+						initialDiagnosis={
+							visitNoteForm?.diagnosis || "Z01.2 Стоматологическое обследование"
+						}
+						completedStages={completedStagesForWarranty}
+						initialTeeth={initialTeethForWarranty}
+						onRemediationCreated={(order) => {
+							// 1-клик начисление гарантийной переделки со скидкой 100% (0 ₽) в текущий приём (Мандат 8e)
+							try {
+								useVisitStore.getState().addCompletedService({
+									id: order.id,
+									code: "A16.07.002",
+									name: `Гарантийный случай: ${order.defectTitle} (0 ₽)`,
+									price: 0,
+									rub: 0,
+									tooth: order.toothNumber,
+									quantity: 1,
+									isWarranty: true,
+									notes: `Гарантийный акт № ${order.orderNumber} (скидка 100%). Списание со склада по факту.`,
+								} as any);
+							} catch (addErr) {
+								console.warn("Non-blocking: could not add warranty service to visit store", addErr);
+							}
+							showToast(`Гарантийный случай ${order.orderNumber} (0 ₽) добавлен в визит`, "success");
+						}}
+						onCertificateIssued={(passport: any) => {
+							appendToEMKField(
+								"recommendations",
+								`Оформлен гарантийный паспорт № ${passport.passportNumber || passport.certificateId} (гарантия ${passport.warrantyMonths} мес. до ${passport.warrantyUntilDate || ""}).`,
+							);
+							showToast("Гарантийный паспорт оформлен и внесен в карту", "success");
+						}}
+					/>
+				);
+			})()}
 
 			{/* Doctor Mobile Shift Modal */}
 			{effectiveActiveModal === "doctor_mobile_shift" && (

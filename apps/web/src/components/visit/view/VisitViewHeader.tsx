@@ -50,6 +50,7 @@ export function VisitViewHeader({
 	setIsDoctorShiftModalOpen,
 	setIsPriceValidatorModalOpen,
 	setIsStagePaymentModalOpen,
+	setIsWarrantyModalOpen,
 	onOpenVisiographComparison,
 	setIsVisiographComparisonModalOpen,
 }: VisitViewHeaderProps) {
@@ -444,6 +445,24 @@ export function VisitViewHeader({
 								<ShieldCheck className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" aria-hidden="true" />
 								<span className="font-semibold">Печать согласия</span>
 							</button>
+							{setIsWarrantyModalOpen && (
+								<button
+									type="button"
+									onClick={() => {
+										setIsHeaderMoreMenuOpen(false);
+										setIsWarrantyModalOpen(true);
+									}}
+									data-testid="visit-more-action-warranty-passport"
+									className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
+									role="menuitem"
+								>
+									<ShieldCheck className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" aria-hidden="true" />
+									<div className="flex flex-col">
+										<span className="font-semibold">Гарантийный паспорт</span>
+										<span className="text-[10px] text-[var(--muted)]">Оформить гарантию на лечение</span>
+									</div>
+								</button>
+							)}
 							<button
 								type="button"
 								onClick={() => {

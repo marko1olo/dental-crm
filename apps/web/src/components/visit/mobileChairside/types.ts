@@ -30,6 +30,7 @@ export interface MobileChairsideVisitWorkspaceProps {
   handleFinishVisitAction?: (() => Promise<void> | void) | undefined;
   handlePrintForm043uFast?: (() => void) | undefined;
   handleOpenLabOrder?: (() => void) | undefined;
+  onOpenWarrantyModal?: (() => void) | undefined;
   consolidatedAllergyChip?: string | null | undefined;
   patientAge?: string | null | undefined;
   toothStateByCode?: Record<string, string> | undefined;
@@ -53,6 +54,7 @@ export interface ChairsidePatientQuickBarProps {
   consolidatedAllergyChip?: string | null | undefined;
   handlePrintForm043uFast?: (() => void) | undefined;
   handleOpenLabOrder?: (() => void) | undefined;
+  onOpenWarrantyModal?: (() => void) | undefined;
   onClose?: (() => void) | undefined;
   onPrevStep: () => void;
   testId?: string | undefined;
