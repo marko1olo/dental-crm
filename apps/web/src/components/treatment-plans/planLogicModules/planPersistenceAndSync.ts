@@ -259,9 +259,9 @@ export function createPlanPersistenceAndSyncHandlers(
 		if (!completedActData) return;
 		setIsExecutingWriteOff(true);
 		try {
-			const itemsToWriteOff = (completedActData.consumables || []).map((c: any) => ({
-				itemId: c.itemId || c.id,
-				quantity: c.quantity || 1,
+			const itemsToWriteOff = (completedActData.writtenOffMaterials || []).map((c) => ({
+				itemId: c.inventoryItemId || c.id,
+				quantity: c.quantityRequired || 1,
 				notes: `Списание по плану лечения: этап «${completedActData.stageTitle}»`,
 			}));
 
