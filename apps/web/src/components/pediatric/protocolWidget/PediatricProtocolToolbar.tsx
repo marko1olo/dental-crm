@@ -35,6 +35,20 @@ export const PediatricProtocolTopBar: React.FC<PediatricProtocolTopBarProps> = (
 	onCycleFrankl,
 	onToggleDetailsAccordion,
 }) => {
+	const compactAnatomicalName = React.useMemo(() => {
+		return anatomicalToothName
+			.replace("Верхний правый ", "В/П ")
+			.replace("Верхний левый ", "В/Л ")
+			.replace("Нижний левый ", "Н/Л ")
+			.replace("Нижний правый ", "Н/П ")
+			.replace("первый постоянный моляр", "1-й моляр")
+			.replace("второй постоянный моляр", "2-й моляр")
+			.replace("первый моляр", "1-й моляр")
+			.replace("второй моляр", "2-й моляр")
+			.replace("центральный резец", "центр. резец")
+			.replace("боковой резец", "бок. резец");
+	}, [anatomicalToothName]);
+
 	return (
 		<div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line,#e2e8f0)] pb-2.5 min-h-[36px]">
 			<div className="flex items-center gap-2 min-w-0">
@@ -49,12 +63,13 @@ export const PediatricProtocolTopBar: React.FC<PediatricProtocolTopBarProps> = (
 						Зуб {currentTooth}
 					</span>
 					<h2 className="text-xs sm:text-base font-extrabold text-[var(--ink,#0f172a)] truncate">
-						{anatomicalToothName}
+						<span className="sm:hidden">{compactAnatomicalName}</span>
+						<span className="hidden sm:inline">{anatomicalToothName}</span>
 					</h2>
 				</div>
 			</div>
 
-			<div className="flex items-center gap-1.5 shrink-0">
+			<div className="flex items-center gap-1.5 shrink-0 overflow-x-auto no-scrollbar max-w-full py-0.5">
 				{/* 1-Клик физиологическая норма временного прикуса (Мандат 8e) */}
 				<button
 					type="button"

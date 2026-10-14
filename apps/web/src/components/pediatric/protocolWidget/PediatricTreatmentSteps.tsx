@@ -137,20 +137,6 @@ export const PediatricTreatmentSteps: React.FC<
 			</div>
 
 			{/* ═════════════════════════════════════════════════════════════════════ */}
-			{/* СОМАТИЧЕСКАЯ НОРМА И ЗАКОННЫЙ ПРЕДСТАВИТЕЛЬ (1-КЛИК, БЕЗ ПРИНУЖДЕНИЯ) */}
-			{/* ═════════════════════════════════════════════════════════════════════ */}
-			<div>
-				<PediatricSomaticAndLegalRep
-					defaultRepresentativeFullName={representativeFullName}
-					defaultRepresentativePhone={representativePhone || patientPhone}
-					defaultRepresentativeRole={representativeRole}
-					patientAge={patientAgeYears}
-					onSomaticChange={onSomaticChange}
-					onRepresentativeChange={onRepresentativeChange}
-				/>
-			</div>
-
-			{/* ═════════════════════════════════════════════════════════════════════ */}
 			{/* КАЛЬКУЛЯТОР АНЕСТЕЗИИ ПО ВЕСУ (КГ) С БЛОКИРОВКОЙ ТОКСИЧЕСКОЙ ДОЗЫ   */}
 			{/* ═════════════════════════════════════════════════════════════════════ */}
 			<div>
@@ -161,6 +147,20 @@ export const PediatricTreatmentSteps: React.FC<
 					allergies={allergies}
 					onCalculationChange={onAnesthesiaCalculationChange}
 					onApplyToProtocol={onApplyAnesthesiaText}
+				/>
+			</div>
+
+			{/* ═════════════════════════════════════════════════════════════════════ */}
+			{/* СОМАТИЧЕСКАЯ НОРМА И ЗАКОННЫЙ ПРЕДСТАВИТЕЛЬ (1-КЛИК, БЕЗ ПРИНУЖДЕНИЯ) */}
+			{/* ═════════════════════════════════════════════════════════════════════ */}
+			<div>
+				<PediatricSomaticAndLegalRep
+					defaultRepresentativeFullName={representativeFullName}
+					defaultRepresentativePhone={representativePhone || patientPhone}
+					defaultRepresentativeRole={representativeRole}
+					patientAge={patientAgeYears}
+					onSomaticChange={onSomaticChange}
+					onRepresentativeChange={onRepresentativeChange}
 				/>
 			</div>
 

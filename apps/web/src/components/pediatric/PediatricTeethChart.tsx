@@ -298,22 +298,24 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 			{/* ═════════════════════════════════════════════════════════════════ */}
 			{/* ШАПКА: 1-КЛИК ПЕРЕКЛЮЧАТЕЛЬ ПРИКУСА (МОЛОЧНЫЙ / СМЕННЫЙ) */}
 			{/* ═════════════════════════════════════════════════════════════════ */}
-			<div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line,#e2e8f0)] pb-2.5">
-				<div className="flex items-center gap-2 min-w-0">
+			<div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-[var(--line,#e2e8f0)] pb-2.5">
+				<div className="flex items-center justify-between gap-2 min-w-0 w-full sm:w-auto">
 					<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)]">
-						Детская карта зубов (FDI):
+						<span className="hidden sm:inline">Детская карта зубов (FDI):</span>
+						<span className="sm:hidden">Зубная формула:</span>
 					</span>
 					<span className="rounded-md bg-teal-500/10 px-2 py-0.5 text-xs font-bold font-mono text-teal-700 dark:text-teal-300">
-						{isMixed ? "Сменный прикус (24 зуба)" : "Временный молочный прикус (20 зубов)"}
+						<span className="hidden sm:inline">{isMixed ? "Сменный прикус (24 зуба)" : "Временный молочный прикус (20 зубов)"}</span>
+						<span className="sm:hidden">{isMixed ? "Сменный (24)" : "Молочный (20)"}</span>
 					</span>
 				</div>
 
-				<div className="flex items-center gap-1.5 shrink-0">
+				<div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto no-scrollbar py-0.5">
 					{/* 1-Клик переключатель прикуса (12-Hour Shift Invariant) */}
 					<div
 						role="group"
 						aria-label="Режим детского прикуса"
-						className="inline-flex rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-0.5 gap-1"
+						className="inline-flex rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-0.5 gap-1 shrink-0"
 						data-testid="pediatric-dentition-mode-toggle"
 					>
 						<button
@@ -331,7 +333,8 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 							data-testid="mode-primary-btn"
 							title="Только 20 молочных зубов (51–55, 61–65, 71–75, 81–85)"
 						>
-							Молочный (51–85)
+							<span className="hidden sm:inline">Молочный (51–85)</span>
+							<span className="sm:hidden">Молочный</span>
 						</button>
 						<button
 							type="button"
@@ -348,7 +351,8 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 							data-testid="mode-mixed-btn"
 							title="Сменный прикус: молочные + постоянные первые моляры 16, 26, 36, 46"
 						>
-							Сменный (+ 16, 26, 36, 46)
+							<span className="hidden sm:inline">Сменный (+ 16, 26, 36, 46)</span>
+							<span className="sm:hidden">Сменный (+4)</span>
 						</button>
 					</div>
 
@@ -416,12 +420,12 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 								}}
 								data-testid={`pediatric-quadrant-btn-${q.key}`}
 							>
-								<span className="whitespace-nowrap">{q.labelRu}</span>
+								<span className="font-extrabold truncate">{q.shortLabelRu}</span>
 								<span
-									className="text-[10px] font-mono shrink-0 ml-1"
-									style={{ color: isQActive ? "rgba(255, 255, 255, 0.9)" : "var(--muted, #64748b)" }}
+									className="text-[10px] font-mono shrink-0 ml-1 opacity-90"
+									style={{ color: isQActive ? "rgba(255, 255, 255, 0.95)" : "var(--muted, #64748b)" }}
 								>
-									({q.teeth.length} з.)
+									{q.teeth.length} з.
 								</span>
 							</button>
 						);

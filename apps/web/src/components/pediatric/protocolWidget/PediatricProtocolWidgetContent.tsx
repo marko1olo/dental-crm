@@ -576,7 +576,7 @@ export const PediatricProtocolWidgetContent: React.FC<
 	return (
 		<section
 			aria-label="Протокол детского стоматологического приёма в медицинской карте"
-			className={`pediatric-protocol-widget rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3.5 sm:p-5 pb-36 md:pb-5 shadow-xs transition ${className}`.trim()}
+			className={`pediatric-protocol-widget max-w-full overflow-x-clip rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3.5 sm:p-5 pb-44 md:pb-5 shadow-xs transition ${className}`.trim()}
 			data-testid="visit-pediatric-protocol-widget"
 		>
 			{/* ВЕРХНЯЯ ШАПКА: АКТИВНЫЙ ЗУБ + 1-КЛИК НОРМА + 1-КЛИК АДАПТАЦИЯ + ТАКТИКА ФРАНКЛА + КНОПКА ПАРАМЕТРОВ */}

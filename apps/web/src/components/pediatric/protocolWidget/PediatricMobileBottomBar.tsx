@@ -27,7 +27,7 @@ export const PediatricMobileBottomBar: React.FC<
 }) => {
 	return (
 		<div
-			className="md:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-xl bg-[var(--paper-strong,#ffffff)]/95 dark:bg-zinc-900/95 border-t border-[var(--line,#e2e8f0)] p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] shadow-[0_-4px_24px_rgba(0,0,0,0.22)] flex flex-col gap-2"
+			className="md:hidden fixed bottom-[calc(56px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-[60] max-w-[100vw] overflow-x-clip backdrop-blur-xl bg-[var(--paper-strong,#ffffff)]/95 dark:bg-zinc-900/95 border-t border-[var(--line,#e2e8f0)] p-2.5 pb-2 shadow-[0_-4px_24px_rgba(0,0,0,0.22)] flex flex-col gap-1.5"
 			data-testid="pediatric-mobile-bottom-bar"
 		>
 			{/* Верхняя строка мобильного бара: сводка диагноза + зуба */}
