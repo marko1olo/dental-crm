@@ -63,6 +63,12 @@ export const appointments = pgTable(
 		endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
 		reason: text("reason"),
 		comment: text("comment"),
+		parentAppointmentId: uuid("parent_appointment_id"),
+		stageIndex: integer("stage_index").default(1),
+		clinicalStage: text("clinical_stage"),
+		toothNumber: integer("tooth_number"),
+		diagnosisMkb10: text("diagnosis_mkb10"),
+		isOverbooking: boolean("is_overbooking").notNull().default(false),
 	},
 	(table) => {
 		return {
@@ -462,6 +468,36 @@ export const uisMassAppointmentConfirmations = pgTable(
 		organizationIdIdx: index(
 			"uis_mass_appointment_confirmations_organizationId_idx",
 		).on(t.organizationId),
+	}),
+);
+
+export const doctorShiftRosters = pgTable(
+	"doctor_shift_rosters",
+	{
+		id: text("id").primaryKey(),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id, { onDelete: "cascade" }),
+		doctorId: text("doctor_id").notNull(),
+		doctorName: text("doctor_name").notNull(),
+		cabinetId: text("cabinet_id"),
+		chairId: text("chair_id"),
+		dateIso: text("date_iso").notNull(),
+		startTime: text("start_time").notNull(),
+		endTime: text("end_time").notNull(),
+		role: text("role"),
+		specialty: text("specialty"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("idx_doctor_shift_rosters_org").on(t.organizationId),
+		orgDateIdx: index("idx_doctor_shift_rosters_org_date").on(t.organizationId, t.dateIso),
+		orgDoctorIdx: index("idx_doctor_shift_rosters_org_doc").on(t.organizationId, t.doctorId),
 	}),
 );
 

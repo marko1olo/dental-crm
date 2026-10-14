@@ -28,6 +28,10 @@ export interface PatientForCriticalBadges {
 	readonly allergies?: string | readonly string[] | null | undefined;
 	readonly somaticNotes?: string | null | undefined;
 	readonly concomitantDiseases?: string | null | undefined;
+	readonly administrativeProfile?: any;
+	readonly clinicalSafetyProfile?: any;
+	readonly notes?: string | null | undefined;
+	readonly anamnesis?: string | null | undefined;
 }
 
 export function calculateActivePatientCriticalBadges(
@@ -37,28 +41,62 @@ export function calculateActivePatientCriticalBadges(
 	if (!patient) return [];
 	const badges: VisitCriticalBadge[] = [];
 
-	const rawAllergies = patient.allergies || "";
-	const allergyText = Array.isArray(rawAllergies) ? rawAllergies.join(", ") : String(rawAllergies);
+	const rawAllergies = patient.allergies || (patient.administrativeProfile as any)?.allergies || "";
+	let allergyText = Array.isArray(rawAllergies) ? rawAllergies.join(", ") : String(rawAllergies || "");
+
+	// Extract structured clinical safety profile if present
+	const csp = (patient.clinicalSafetyProfile || (patient.administrativeProfile as any)?.clinicalSafetyProfile) as any;
+	if (csp) {
+		const cspAllergies: string[] = [];
+		if (csp.hasLidocaineAllergy) cspAllergies.push("Лидокаин");
+		if (csp.hasArticaineAllergy) cspAllergies.push("Артикаин");
+		if (csp.hasMepivacaineAllergy) cspAllergies.push("Мепивакаин");
+		if (csp.hasPenicillinAllergy) cspAllergies.push("Пенициллины");
+		if (csp.hasLatexAllergy) cspAllergies.push("Латекс");
+		if (csp.hasSulfiteAllergy || csp.hasSulfitesAllergy) cspAllergies.push("Сульфиты");
+		if (csp.hasIodineAllergy) cspAllergies.push("Йод");
+		if (csp.hasNsaidAllergy) cspAllergies.push("НПВП");
+		if (csp.customAllergyNotes) cspAllergies.push(csp.customAllergyNotes);
+
+		if (cspAllergies.length > 0 && !allergyText.trim()) {
+			allergyText = cspAllergies.join(", ");
+		} else if (cspAllergies.length > 0) {
+			for (const a of cspAllergies) {
+				if (!allergyText.toLowerCase().includes(a.toLowerCase())) {
+					allergyText += `, ${a}`;
+				}
+			}
+		}
+	}
+
 	const hasNegativeAllergy = isNegativeAllergyStatement(allergyText);
 
-	if (allergyText && !hasNegativeAllergy) {
+	if (allergyText.trim() && !hasNegativeAllergy) {
+		const cleanBadgeText = allergyText
+			.replace(/\s*\([^)]*\)/g, "")
+			.replace(/^аллерги[яи][: \t-]*/i, "")
+			.trim();
 		badges.push({
 			id: "allergy",
 			testId: "visit-focus-allergy-alert",
 			title: `Аллергоанамнез: ${allergyText}`,
 			shortLabel: "АЛЛЕРГИЯ",
-			fullLabel: `Аллергия: ${allergyText}`,
+			fullLabel: `Аллергия: ${cleanBadgeText || allergyText}`,
 		});
 	}
 
-	const combinedMedicalText = `${allergyText} ${patient.somaticNotes || ""} ${patient.concomitantDiseases || ""} ${anamnesisText || ""}`.trim();
+	const adminNotes = typeof patient.administrativeProfile === "object" && patient.administrativeProfile !== null
+		? `${(patient.administrativeProfile as any).preferredAppointmentNote || ""} ${(patient.administrativeProfile as any).dataProcessingBasisNote || ""}`
+		: "";
+
+	const combinedMedicalText = `${allergyText} ${patient.somaticNotes || ""} ${patient.concomitantDiseases || ""} ${patient.notes || ""} ${patient.anamnesis || ""} ${adminNotes} ${anamnesisText || ""}`.trim();
 	const safety = parseSafetyProfileFromText(combinedMedicalText);
 	const combinedLower = combinedMedicalText.toLowerCase();
 
 	// 1. Аллергия на местные анестетики (Лидокаин, Артикаин, Убистезин, Септанест, Новокаин) — ВИТАЛЬНАЯ УГРОЗА В КРЕСЛЕ
-	const hasLidocaine = safety.hasLidocaineAllergy || combinedLower.includes("лидокаин") || combinedLower.includes("ксилокаин");
-	const hasArticaine = safety.hasArticaineAllergy || combinedLower.includes("артикаин") || combinedLower.includes("ультракаин") || combinedLower.includes("септанест") || combinedLower.includes("убистезин");
-	const hasOtherAnesthetic = safety.hasMepivacaineAllergy || safety.hasEsterAnestheticsAllergy || (!hasNegativeAllergy && (combinedLower.includes("анестетик") || combinedLower.includes("анестези")));
+	const hasLidocaine = Boolean(csp?.hasLidocaineAllergy) || safety.hasLidocaineAllergy || combinedLower.includes("лидокаин") || combinedLower.includes("ксилокаин");
+	const hasArticaine = Boolean(csp?.hasArticaineAllergy) || safety.hasArticaineAllergy || combinedLower.includes("артикаин") || combinedLower.includes("ультракаин") || combinedLower.includes("септанест") || combinedLower.includes("убистезин");
+	const hasOtherAnesthetic = Boolean(csp?.hasMepivacaineAllergy) || Boolean(csp?.hasEsterAnestheticsAllergy) || safety.hasMepivacaineAllergy || safety.hasEsterAnestheticsAllergy || (!hasNegativeAllergy && (combinedLower.includes("анестетик") || combinedLower.includes("анестези")));
 
 	if (hasLidocaine || (!hasArticaine && hasOtherAnesthetic)) {
 		badges.push({
@@ -66,7 +104,7 @@ export function calculateActivePatientCriticalBadges(
 			testId: "visit-focus-lidocaine-alert",
 			title: "АЛЛЕРГИЯ НА МЕСТНЫЕ АНЕСТЕТИКИ (Лидокаин): РИСК АНАФИЛАКТИЧЕСКОГО ШОКА! Рекомендован Мепивакаин 3% plain или Артикаин без парабенов",
 			shortLabel: "ЛИДОКАИН",
-			fullLabel: "ЛИДОКАИН: аллергия! Рекомендован Мепивакаин 3% без вазоконстриктора",
+			fullLabel: "Аллергия: Лидокаин (рекомендован Скандонест 3%)",
 		});
 	}
 
@@ -81,7 +119,7 @@ export function calculateActivePatientCriticalBadges(
 	}
 
 	// 2. Аллергия на пенициллины (Амоксиклав, Аугментин) — ВИТАЛЬНЫЙ РИСК ПРИ АНТИБИОТИКОТЕРАПИИ
-	if (safety.hasPenicillinAllergy) {
+	if (Boolean(csp?.hasPenicillinAllergy) || safety.hasPenicillinAllergy) {
 		badges.push({
 			id: "penicillin",
 			testId: "visit-focus-penicillin-alert",
@@ -92,7 +130,7 @@ export function calculateActivePatientCriticalBadges(
 	}
 
 	// 3. Бронхиальная астма — ЗАПРЕТ СУЛЬФИТОВ / МЕТАБИСУЛЬФИТА (E223) В КАРПУЛАХ С АДРЕНАЛИНОМ
-	if (safety.hasBronchialAsthma || safety.hasSulfiteAllergy) {
+	if (Boolean(csp?.hasBronchialAsthma) || Boolean(csp?.hasSulfiteAllergy) || Boolean(csp?.hasSulfitesAllergy) || safety.hasBronchialAsthma || safety.hasSulfiteAllergy) {
 		badges.push({
 			id: "asthma",
 			testId: "visit-focus-asthma-alert",
@@ -104,6 +142,10 @@ export function calculateActivePatientCriticalBadges(
 
 	// 4. Гипертоническая болезнь / Сердечно-сосудистые риски (запрет на адреналин 1:100 000, рекомендован 1:200 000 или скандонест)
 	if (
+		Boolean(csp?.hasHypertension) ||
+		Boolean(csp?.hasCardiovascularDisease) ||
+		Boolean(csp?.hasIhd) ||
+		Boolean(csp?.hasArrhythmia) ||
 		safety.hasHypertension ||
 		safety.hasCardiovascularDisease ||
 		safety.hasIhd ||
@@ -124,7 +166,7 @@ export function calculateActivePatientCriticalBadges(
 	}
 
 	// 5. ЭКС (кардиостимулятор) — ЗАПРЕТ УЗ-скейлера и коагулятора
-	if (safety.hasPacemakerExs || combinedLower.includes("экс") || combinedLower.includes("кардиостимулятор")) {
+	if (Boolean(csp?.hasPacemakerExs) || safety.hasPacemakerExs || combinedLower.includes("экс") || combinedLower.includes("кардиостимулятор")) {
 		badges.push({
 			id: "pacemaker",
 			testId: "visit-focus-pacemaker-alert",
@@ -136,6 +178,8 @@ export function calculateActivePatientCriticalBadges(
 
 	// 6. Антикоагулянтная терапия — риск кровотечения при хирургии
 	if (
+		Boolean(csp?.takesAnticoagulants) ||
+		Boolean(csp?.hasAnticoagulantTherapy) ||
 		safety.takesAnticoagulants ||
 		safety.hasAnticoagulantTherapy ||
 		combinedLower.includes("антикоагулянт") ||
@@ -154,7 +198,7 @@ export function calculateActivePatientCriticalBadges(
 	}
 
 	// 7. Сахарный диабет — риск замедленной остеоинтеграции
-	if (safety.hasDiabetesMellitus || combinedLower.includes("диабет")) {
+	if (Boolean(csp?.hasDiabetesMellitus) || safety.hasDiabetesMellitus || combinedLower.includes("диабет")) {
 		badges.push({
 			id: "diabetes",
 			testId: "visit-focus-diabetes-alert",
@@ -165,7 +209,13 @@ export function calculateActivePatientCriticalBadges(
 	}
 
 	// 8. Беременность и период лактации
-	if ((safety.pregnancyTrimester && safety.pregnancyTrimester !== "none") || combinedLower.includes("беременн") || combinedLower.includes("лактац") || combinedLower.includes("триместр")) {
+	if (
+		(csp?.pregnancyTrimester && csp.pregnancyTrimester !== "none") ||
+		(safety.pregnancyTrimester && safety.pregnancyTrimester !== "none") ||
+		combinedLower.includes("беременн") ||
+		combinedLower.includes("лактац") ||
+		combinedLower.includes("триместр")
+	) {
 		badges.push({
 			id: "pregnancy",
 			testId: "visit-focus-pregnancy-alert",
@@ -176,7 +226,14 @@ export function calculateActivePatientCriticalBadges(
 	}
 
 	// 9. Бисфосфонаты — риск остеонекроза челюсти (БОНЧ)
-	if (safety.takesBisphosphonates || safety.hasBisphosphonateTherapy || combinedLower.includes("бисфосфон") || combinedLower.includes("остеопороз")) {
+	if (
+		Boolean(csp?.takesBisphosphonates) ||
+		Boolean(csp?.hasBisphosphonateTherapy) ||
+		safety.takesBisphosphonates ||
+		safety.hasBisphosphonateTherapy ||
+		combinedLower.includes("бисфосфон") ||
+		combinedLower.includes("остеопороз")
+	) {
 		badges.push({
 			id: "bisphosphonates",
 			testId: "visit-focus-bisphosphonates-alert",

@@ -421,6 +421,8 @@ export async function createAppointmentInDb(
 			}
 		}
 
+		const isOverbookingRecord = Boolean(input.allowOverbooking || isEmergencyOverrideOverall);
+
 		const [created] = await executor
 			.insert(schema.appointments)
 			.values({
@@ -434,6 +436,12 @@ export async function createAppointmentInDb(
 				endsAt: candidateEnds,
 				reason: input.reason || null,
 				comment: input.comment || null,
+				parentAppointmentId: input.parentAppointmentId ?? null,
+				stageIndex: input.stageIndex ?? 1,
+				clinicalStage: input.clinicalStage ?? null,
+				toothNumber: input.toothNumber ?? null,
+				diagnosisMkb10: input.diagnosisMkb10 ?? null,
+				isOverbooking: isOverbookingRecord,
 			})
 			.returning();
 
@@ -452,6 +460,11 @@ export async function createAppointmentInDb(
 			endsAt: created.endsAt.toISOString(),
 			reason: created.reason,
 			comment: created.comment,
+			parentAppointmentId: created.parentAppointmentId,
+			stageIndex: created.stageIndex,
+			clinicalStage: created.clinicalStage,
+			toothNumber: created.toothNumber,
+			diagnosisMkb10: created.diagnosisMkb10,
 		} as unknown as Appointment;
 	};
 
@@ -647,6 +660,12 @@ export async function updateAppointmentInDb(
 		if (input.endsAt !== undefined) updateData.endsAt = new Date(endsAtMs);
 		if (input.reason !== undefined) updateData.reason = input.reason;
 		if (input.comment !== undefined) updateData.comment = input.comment;
+		if (input.parentAppointmentId !== undefined) updateData.parentAppointmentId = input.parentAppointmentId;
+		if (input.stageIndex !== undefined) updateData.stageIndex = input.stageIndex;
+		if (input.clinicalStage !== undefined) updateData.clinicalStage = input.clinicalStage;
+		if (input.toothNumber !== undefined) updateData.toothNumber = input.toothNumber;
+		if (input.diagnosisMkb10 !== undefined) updateData.diagnosisMkb10 = input.diagnosisMkb10;
+		if (input.allowOverbooking || isEmergencyOverrideOverall) updateData.isOverbooking = true;
 
 		if (Object.keys(updateData).length === 0) {
 			return existing;
@@ -680,6 +699,11 @@ export async function updateAppointmentInDb(
 		endsAt: updated.endsAt.toISOString(),
 		reason: updated.reason,
 		comment: updated.comment,
+		parentAppointmentId: updated.parentAppointmentId,
+		stageIndex: updated.stageIndex,
+		clinicalStage: updated.clinicalStage,
+		toothNumber: updated.toothNumber,
+		diagnosisMkb10: updated.diagnosisMkb10,
 	} as unknown as Appointment;
 }
 

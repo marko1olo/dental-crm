@@ -259,6 +259,27 @@ export function createPlanPersistenceAndSyncHandlers(
 		if (!completedActData) return;
 		setIsExecutingWriteOff(true);
 		try {
+			const itemsToWriteOff = (completedActData.consumables || []).map((c: any) => ({
+				itemId: c.itemId || c.id,
+				quantity: c.quantity || 1,
+				notes: `Списание по плану лечения: этап «${completedActData.stageTitle}»`,
+			}));
+
+			if (itemsToWriteOff.length > 0) {
+				try {
+					await fetch("/api/inventory/deduct", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							items: itemsToWriteOff,
+							reason: `Списание материалов этапа: ${completedActData.stageTitle}`,
+						}),
+					});
+				} catch (networkErr) {
+					logger.warn("[useTreatmentPlanLogic] Failed to sync write-off with backend inventory", networkErr);
+				}
+			}
+
 			showToast(
 				`Материалы по этапу «${completedActData.stageTitle}» на сумму ${(completedActData.totalMaterialCostRub || 0).toLocaleString("ru-RU")} ₽ успешно списаны со склада!`,
 				"success",
