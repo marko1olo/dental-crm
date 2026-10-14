@@ -239,7 +239,8 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 				{tiers.map((tier) => {
 					const isCurrent = activeTierId === tier.tierId;
 					const shortLabel = getTierShortLabel(tier);
-					const isRecommended = Boolean(tier.isRecommended || tier.tierId === "standard");
+					const hasExplicitRecommendation = tiers.some((t) => t.isRecommended);
+					const isRecommended = hasExplicitRecommendation ? Boolean(tier.isRecommended) : tier.tierId === "standard";
 					return (
 						<button
 							key={tier.tierId}

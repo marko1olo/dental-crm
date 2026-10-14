@@ -37,7 +37,14 @@ export interface TreatmentPlanPresenterToolsStripProps {
 	readonly setCopilotFeedback: (feedback: string | null) => void;
 	readonly doctorDiscountPercent: number;
 	readonly setDoctorDiscountPercent: (val: number) => void;
-	readonly onApplyDoctorDiscount: (pct: number) => void;
+	readonly onApplyDoctorDiscount: (pct: number, stageNum?: number) => void;
+	readonly doctorDiscountRub?: number | undefined;
+	readonly setDoctorDiscountRub?: ((val: number) => void) | undefined;
+	readonly doctorDiscountMode?: ("percent" | "fixed") | undefined;
+	readonly setDoctorDiscountMode?: ((mode: "percent" | "fixed") => void) | undefined;
+	readonly doctorDiscountTargetStage?: number | undefined;
+	readonly setDoctorDiscountTargetStage?: ((stageNum: number) => void) | undefined;
+	readonly onApplyDoctorFixedDiscount?: ((rub: number, stageNum?: number) => void) | undefined;
 	readonly showMicroConsumables: boolean;
 	readonly setShowMicroConsumables: (val: boolean) => void;
 	readonly selectedTier: TreatmentPlanTier;
@@ -63,6 +70,13 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 	doctorDiscountPercent,
 	setDoctorDiscountPercent,
 	onApplyDoctorDiscount,
+	doctorDiscountRub = 0,
+	setDoctorDiscountRub,
+	doctorDiscountMode = "percent",
+	setDoctorDiscountMode,
+	doctorDiscountTargetStage = 0,
+	setDoctorDiscountTargetStage,
+	onApplyDoctorFixedDiscount,
 	showMicroConsumables,
 	setShowMicroConsumables,
 	selectedTier,
@@ -77,6 +91,15 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 	onApproveAndSign,
 }) => {
 	const [customPrompt, setCustomPrompt] = useState("");
+	const [customRubInput, setCustomRubInput] = useState<string>(doctorDiscountRub > 0 ? String(doctorDiscountRub) : "");
+
+	const isDiscountActive = (doctorDiscountMode === "fixed" && doctorDiscountRub > 0) || doctorDiscountPercent > 0;
+	const discountLabel =
+		doctorDiscountMode === "fixed" && doctorDiscountRub > 0
+			? `Скидка: ${doctorDiscountRub.toLocaleString("ru-RU")} ₽`
+			: doctorDiscountPercent > 0
+				? `Скидка: ${doctorDiscountPercent}%`
+				: "Скидка врача";
 
 	return (
 		<>
@@ -123,15 +146,15 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 							type="button"
 							onClick={() => setActiveToolsPanel((prev) => (prev === "doctorDiscount" ? null : "doctorDiscount"))}
 							className={`min-h-[36px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-[13px] font-medium inline-flex items-center gap-1.5 border transition-colors cursor-pointer touch-manipulation ${
-								activeToolsPanel === "doctorDiscount" || doctorDiscountPercent > 0
+								activeToolsPanel === "doctorDiscount" || isDiscountActive
 									? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
 									: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] border-[var(--tp-border)]"
 							}`}
 							data-testid="toggle-discount-panel-btn"
-							title="Скидка врача (0-100% на гарантийные переделки и персонал)"
+							title="Скидка врача (% или ₽ на этапы, гарантийные переделки и персонал)"
 						>
 							<Percent size={13} />
-							<span>{doctorDiscountPercent > 0 ? `Скидка: ${doctorDiscountPercent}%` : "Скидка врача"}</span>
+							<span>{discountLabel}</span>
 							<ChevronDown size={12} className={`transition-transform duration-150 ${activeToolsPanel === "doctorDiscount" ? "rotate-180" : ""}`} />
 						</button>
 					</div>
@@ -253,61 +276,158 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 					/>
 				</div>
 
-				{/* Collapsible Panel 3: Doctor Discount Freedom Quick Bar (Mandate 8e / Section VII.2) */}
-				<div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-6 py-2 bg-[var(--tp-surface-soft)] border-b border-[var(--tp-border)] no-print text-xs ${activeToolsPanel === "doctorDiscount" ? "" : "hidden"}`}>
-					<div className="flex items-center gap-2 flex-wrap">
-						<div className="inline-flex items-center gap-1 font-bold text-[var(--tp-primary)]">
-							<Percent size={13} className="text-emerald-600 dark:text-emerald-400" />
-							<span>Скидка врача:</span>
+				{/* Collapsible Panel 3: Doctor Discount Freedom Quick Bar (Mandate 8e / Doctor Autonomy) */}
+				<div className={`flex flex-col gap-2.5 px-4 sm:px-6 py-2.5 bg-[var(--tp-surface-soft)] border-b border-[var(--tp-border)] no-print text-xs ${activeToolsPanel === "doctorDiscount" ? "" : "hidden"}`}>
+					<div className="flex items-center justify-between gap-2 flex-wrap">
+						{/* Mode Switcher & Target Stage */}
+						<div className="flex items-center gap-2 flex-wrap">
+							<div className="inline-flex items-center gap-1 font-bold text-[var(--tp-primary)] mr-1">
+								<Percent size={13} className="text-emerald-600 dark:text-emerald-400" />
+								<span>Скидка врача:</span>
+							</div>
+
+							{/* % or ₽ mode */}
+							<div className="inline-flex rounded-lg border border-[var(--tp-border)] bg-[var(--tp-bg)] p-0.5">
+								<button
+									type="button"
+									onClick={() => setDoctorDiscountMode?.("percent")}
+									className={`px-2.5 py-1 text-[12px] font-bold rounded-md transition-colors cursor-pointer ${
+										doctorDiscountMode === "percent"
+											? "bg-[var(--tp-primary)] text-white shadow-2xs"
+											: "text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)]"
+									}`}
+									data-testid="discount-mode-percent-btn"
+								>
+									% Процент
+								</button>
+								<button
+									type="button"
+									onClick={() => setDoctorDiscountMode?.("fixed")}
+									className={`px-2.5 py-1 text-[12px] font-bold rounded-md transition-colors cursor-pointer ${
+										doctorDiscountMode === "fixed"
+											? "bg-emerald-600 text-white shadow-2xs"
+											: "text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)]"
+									}`}
+									data-testid="discount-mode-fixed-btn"
+								>
+									₽ Рубли
+								</button>
+							</div>
+
+							{/* Stage Selector */}
+							<div className="flex items-center gap-1 ml-1">
+								<span className="text-[11px] text-[var(--tp-text-muted)] font-medium">Область:</span>
+								<select
+									value={doctorDiscountTargetStage}
+									onChange={(e) => setDoctorDiscountTargetStage?.(Number(e.target.value))}
+									className="px-2 py-1 text-[12px] font-medium rounded-lg border border-[var(--tp-border)] bg-[var(--tp-bg)] text-[var(--tp-text-main)] outline-none"
+									data-testid="discount-target-stage-select"
+								>
+									<option value={0}>Весь план лечения</option>
+									{selectedTier.stages.map((st) => (
+										<option key={st.stageNumber} value={st.stageNumber}>
+											Этап {st.stageNumber}: {st.title.slice(0, 24)}...
+										</option>
+									))}
+								</select>
+							</div>
 						</div>
-						{[0, 5, 10, 15, 20, 50, 100].map((pct) => (
-							<button
-								key={pct}
-								type="button"
-								onClick={() => onApplyDoctorDiscount(pct)}
-								title={
-									pct === 100
-										? "100% скидка: гарантийные переделки и персонал без мастер-паролей администратора"
-										: `Применить скидку ${pct}%`
-								}
-								className={`min-h-[36px] sm:min-h-[28px] sm:h-7 px-2.5 rounded-lg font-mono font-medium text-[12.5px] cursor-pointer transition-all ${
-									doctorDiscountPercent === pct
-										? pct === 100
-											? "bg-emerald-600 text-white shadow-xs"
-											: "bg-[var(--tp-primary)] text-white shadow-xs"
-										: pct === 100
-											? "bg-[var(--tp-surface)] text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 border border-emerald-500/30"
-											: "bg-[var(--tp-surface)] text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)] border border-[var(--tp-border)]"
-								}`}
-								data-testid={`presenter-discount-btn-${pct}`}
-							>
-								{pct === 100 ? "100% (Гарантия)" : `${pct}%`}
-							</button>
-						))}
-						{doctorDiscountPercent === 100 && (
-							<span className="text-[12px] font-semibold text-emerald-600 dark:text-emerald-400 ml-1">
-								0 ₽ (Гарантийная переделка / Персонал)
-							</span>
-						)}
-						<div className="inline-flex items-center gap-1 ml-1" title="Свободная скидка врача (0-100%)">
-							<input
-								type="number"
-								min="0"
-								max="100"
-								value={doctorDiscountPercent}
-								onChange={(e) => {
-									const val = Math.max(0, Math.min(100, Number(e.target.value) || 0));
-									onApplyDoctorDiscount(val);
-								}}
-								className="w-14 min-h-[32px] sm:min-h-[28px] sm:h-7 px-1.5 text-[12.5px] font-mono font-bold rounded-lg border border-[var(--tp-border)] bg-[var(--tp-surface)] text-[var(--tp-text-main)] text-center focus:outline-none focus:ring-1 focus:ring-[var(--tp-primary)]"
-								placeholder="%"
-								data-testid="presenter-custom-discount-input"
-							/>
-							<span className="text-[12.5px] text-[var(--tp-text-muted)] font-bold">%</span>
+
+						<div className="text-[11px] text-[var(--tp-text-muted)] hidden lg:block">
+							Мандат 8e: Свобода скидок врача до 100% без пароля администратора
 						</div>
 					</div>
-					<div className="text-[11px] text-[var(--tp-text-muted)] hidden lg:block">
-						Скидки лечащего врача и гарантийные переделки
+
+					{/* Presets and Custom Inputs */}
+					<div className="flex items-center gap-1.5 flex-wrap">
+						{doctorDiscountMode === "percent" ? (
+							<>
+								{[0, 5, 10, 15, 20, 50, 100].map((pct) => (
+									<button
+										key={pct}
+										type="button"
+										onClick={() => onApplyDoctorDiscount(pct, doctorDiscountTargetStage)}
+										title={
+											pct === 100
+												? "100% скидка: гарантийные переделки и персонал без мастер-паролей администратора"
+												: `Применить скидку ${pct}%`
+										}
+										className={`min-h-[32px] sm:min-h-[28px] sm:h-7 px-2.5 rounded-lg font-mono font-medium text-[12px] cursor-pointer transition-all ${
+											doctorDiscountPercent === pct
+												? pct === 100
+													? "bg-emerald-600 text-white shadow-xs"
+													: "bg-[var(--tp-primary)] text-white shadow-xs"
+												: pct === 100
+													? "bg-[var(--tp-surface)] text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 border border-emerald-500/30"
+													: "bg-[var(--tp-surface)] text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)] border border-[var(--tp-border)]"
+										}`}
+										data-testid={`presenter-discount-btn-${pct}`}
+									>
+										{pct === 100 ? "100% (Гарантия)" : `${pct}%`}
+									</button>
+								))}
+								{doctorDiscountPercent === 100 && (
+									<span className="text-[12px] font-semibold text-emerald-600 dark:text-emerald-400 ml-1">
+										0 ₽ (Гарантийная переделка / Персонал)
+									</span>
+								)}
+								<div className="inline-flex items-center gap-1 ml-1" title="Свободная скидка врача (0-100%)">
+									<input
+										type="number"
+										min="0"
+										max="100"
+										value={doctorDiscountPercent}
+										onChange={(e) => {
+											const val = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+											onApplyDoctorDiscount(val, doctorDiscountTargetStage);
+										}}
+										className="w-14 min-h-[32px] sm:min-h-[28px] sm:h-7 px-1.5 text-[12px] font-mono font-bold rounded-lg border border-[var(--tp-border)] bg-[var(--tp-surface)] text-[var(--tp-text-main)] text-center focus:outline-none focus:ring-1 focus:ring-[var(--tp-primary)]"
+										placeholder="%"
+										data-testid="presenter-custom-discount-input"
+									/>
+									<span className="text-[12px] text-[var(--tp-text-muted)] font-bold">%</span>
+								</div>
+							</>
+						) : (
+							<>
+								{[0, 5000, 10000, 15000, 25000, 50000].map((rub) => (
+									<button
+										key={rub}
+										type="button"
+										onClick={() => {
+											setCustomRubInput(rub > 0 ? String(rub) : "");
+											onApplyDoctorFixedDiscount?.(rub, doctorDiscountTargetStage);
+										}}
+										title={rub === 0 ? "Сбросить скидку" : `Применить фиксированную скидку ${rub.toLocaleString("ru-RU")} ₽`}
+										className={`min-h-[32px] sm:min-h-[28px] sm:h-7 px-2.5 rounded-lg font-mono font-medium text-[12px] cursor-pointer transition-all ${
+											doctorDiscountRub === rub
+												? "bg-emerald-600 text-white shadow-xs"
+												: "bg-[var(--tp-surface)] text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)] border border-[var(--tp-border)]"
+										}`}
+										data-testid={`presenter-discount-rub-btn-${rub}`}
+									>
+										{rub === 0 ? "0 ₽" : `${rub.toLocaleString("ru-RU")} ₽`}
+									</button>
+								))}
+								<div className="inline-flex items-center gap-1 ml-1" title="Фиксированная скидка в рублях">
+									<input
+										type="number"
+										min="0"
+										value={customRubInput}
+										onChange={(e) => {
+											const valStr = e.target.value;
+											setCustomRubInput(valStr);
+											const val = Math.max(0, Number(valStr) || 0);
+											onApplyDoctorFixedDiscount?.(val, doctorDiscountTargetStage);
+										}}
+										className="w-24 min-h-[32px] sm:min-h-[28px] sm:h-7 px-2 text-[12px] font-mono font-bold rounded-lg border border-[var(--tp-border)] bg-[var(--tp-surface)] text-[var(--tp-text-main)] text-center focus:outline-none focus:ring-1 focus:ring-[var(--tp-primary)]"
+										placeholder="Сумма ₽"
+										data-testid="presenter-custom-discount-rub-input"
+									/>
+									<span className="text-[12px] text-[var(--tp-text-muted)] font-bold">₽</span>
+								</div>
+							</>
+						)}
 					</div>
 				</div>
 

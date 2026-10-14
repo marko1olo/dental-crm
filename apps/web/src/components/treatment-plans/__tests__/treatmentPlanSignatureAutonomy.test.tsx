@@ -19,6 +19,7 @@ import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
 import { AppLogicProvider } from "../../../contexts/AppLogicContext";
 import { TreatmentEstimator } from "../../odontogram/TreatmentEstimator";
+import { TreatmentPlanActSignatures } from "../TreatmentPlanActSignatures";
 import { TreatmentPlanSignatureModal } from "../TreatmentPlanSignatureModal";
 import type {
 	DigitalSignatureAgreementData,
@@ -640,6 +641,59 @@ describe("Treatment Plan Signature & Estimator Paper-First Autonomy (Mandates 8e
 			await act(async () => {
 				root?.unmount();
 			});
+		});
+	});
+
+	describe("3. TreatmentPlanActSignatures — Dual-Mode Paper & Electronic Clarity Without Bureaucratic Jargon", () => {
+		const samplePalette = {
+			primaryDark: "#0f172a",
+			accentBorder: "#cbd5e1",
+			softBg: "#f8fafc",
+		} as any;
+
+		it("renders clean human Russian verification labels and paper signature fallback lines with М.П.", () => {
+			const htmlDraft = renderToString(
+				<TreatmentPlanActSignatures
+					actData={{
+						actNumber: "АКТ-2026-01",
+						actDate: "13.10.2026",
+						patientName: "Иванова Анна Сергеевна",
+						doctorFullName: "Д-р Воронова М.А.",
+						status: "draft",
+					} as any}
+					palette={samplePalette}
+					legalName='ООО "Стоматология ДЕНТЕ"'
+					showDoctorStampFrame={true}
+					showQrVerification={true}
+					verificationHash="sha256:1234567890abcdef"
+				/>,
+			);
+
+			expect(htmlDraft).toContain("М.П.");
+			expect(htmlDraft).toContain("Готов к подписанию на бумаге или электронно");
+			expect(htmlDraft).not.toContain("Ожидает подписания (на бумаге или УКЭП)");
+
+			const htmlPep = renderToString(
+				<TreatmentPlanActSignatures
+					actData={{
+						actNumber: "АКТ-2026-02",
+						actDate: "13.10.2026",
+						patientName: "Иванова Анна Сергеевна",
+						doctorFullName: "Д-р Воронова М.А.",
+						status: "signed",
+						signingMethod: "pep_sms",
+					} as any}
+					palette={samplePalette}
+					legalName='ООО "Стоматология ДЕНТЕ"'
+					showDoctorStampFrame={true}
+					showQrVerification={true}
+					verificationHash="sha256:abcdef1234567890"
+				/>,
+			);
+
+			expect(htmlPep).toContain(
+				"Подписано простой электронной подписью пациента (код подтверждения)",
+			);
 		});
 	});
 });

@@ -3,7 +3,7 @@
  * и понятная смета для пациента.
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { Clock, FileCheck2, FileText, Printer, ShieldCheck } from "lucide-react";
 import {
 	formatWarrantyYearsText,
@@ -11,6 +11,7 @@ import {
 	type TreatmentPlanTierId,
 } from "./types";
 import { isMicroConsumable } from "./treatmentPlanConsumables";
+import { FastClinicalPrintEngine } from "../documents/FastClinicalPrintEngine";
 
 export interface TreatmentPlanPresenterPrintViewProps {
 	readonly printDocFormat: "patient_friendly" | "official_appendix";
@@ -67,6 +68,7 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 	const stampColor = "#0d9488";
 	const activeSelectedTierStages = selectedTier.stages;
 	let globalAppendixItemIndex = 1;
+	const [isFastPrintOpen, setIsFastPrintOpen] = useState(false);
 
 	return (
 						<div className="treatment-appendix-print-doc" data-testid="appendix-print-document">
@@ -86,11 +88,7 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 										<button
 											type="button"
 											onClick={() => setPrintDocFormat("patient_friendly")}
-											className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-												printDocFormat === "patient_friendly"
-													? "bg-[var(--paper-strong)] text-teal-800 dark:text-teal-200 shadow-xs"
-													: "text-[var(--muted)] hover:text-[var(--ink)]"
-											}`}
+											className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${printDocFormat === "patient_friendly" ? "bg-[var(--paper-strong)] text-teal-800 dark:text-teal-200 shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
 											data-testid="print-format-patient-btn"
 										>
 											<FileText size={13} className="shrink-0" />
@@ -99,11 +97,7 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 										<button
 											type="button"
 											onClick={() => setPrintDocFormat("official_appendix")}
-											className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-												printDocFormat === "official_appendix"
-													? "bg-[var(--paper-strong)] text-teal-800 dark:text-teal-200 shadow-xs"
-													: "text-[var(--muted)] hover:text-[var(--ink)]"
-											}`}
+											className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${printDocFormat === "official_appendix" ? "bg-[var(--paper-strong)] text-teal-800 dark:text-teal-200 shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
 											data-testid="print-format-official-btn"
 										>
 											<FileCheck2 size={13} className="shrink-0" />
@@ -122,6 +116,16 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 										</button>
 									)}
 
+									<button
+										type="button"
+										onClick={() => setIsFastPrintOpen(true)}
+										className="btn-treatment-action cursor-pointer bg-teal-600 hover:bg-teal-700 text-white"
+										data-testid="btn-fast-vector-print-estimate"
+										title="Быстрая векторная печать сметы (0 мс, без зависаний Celeron)"
+									>
+										<Printer size={16} />
+										<span>Векторная печать (0 мс)</span>
+									</button>
 									<button
 										type="button"
 										onClick={() => window.print()}
@@ -326,46 +330,28 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 									<div className="patient-finance-grid">
 										<div className="patient-finance-card highlight">
 											<div className="patient-finance-card-label">ИТОГО К ОПЛАТЕ ПО СМЕТЕ</div>
-											<div className="patient-finance-card-value">
-												{selectedTier.totalRub.toLocaleString("ru-RU")} ₽
-											</div>
-											<div className="patient-finance-card-desc">
-												Полная фиксированная стоимость всех этапов и материалов «под ключ»
-											</div>
+											<div className="patient-finance-card-value">{selectedTier.totalRub.toLocaleString("ru-RU")} ₽</div>
+											<div className="patient-finance-card-desc">Полная фиксированная стоимость всех этапов и материалов «под ключ»</div>
 										</div>
 
 										<div className="patient-finance-card">
 											<div className="patient-finance-card-label">ВОЗВРАТ 13% НДФЛ</div>
-											<div className="patient-finance-card-value text-emerald-700">
-												+{(selectedTier.ndflRefundRub ?? Math.round((selectedTier.totalRub ?? 0) * 0.13)).toLocaleString("ru-RU")} ₽
-											</div>
-											<div className="patient-finance-card-desc">
-												Фактическая стоимость: <strong>{(selectedTier.priceWithNdflRefundRub ?? Math.max(0, (selectedTier.totalRub ?? 0) - (selectedTier.ndflRefundRub ?? Math.round((selectedTier.totalRub ?? 0) * 0.13)))).toLocaleString("ru-RU")} ₽</strong>. Справку для ФНС клиника выдает бесплатно.
-											</div>
+											<div className="patient-finance-card-value text-emerald-700">+{(selectedTier.ndflRefundRub ?? Math.round((selectedTier.totalRub ?? 0) * 0.13)).toLocaleString("ru-RU")} ₽</div>
+											<div className="patient-finance-card-desc">Фактическая стоимость: <strong>{(selectedTier.priceWithNdflRefundRub ?? Math.max(0, (selectedTier.totalRub ?? 0) - (selectedTier.ndflRefundRub ?? Math.round((selectedTier.totalRub ?? 0) * 0.13)))).toLocaleString("ru-RU")} ₽</strong>. Справку для ФНС клиника выдает бесплатно.</div>
 										</div>
 
 										<div className="patient-finance-card">
 											<div className="patient-finance-card-label">РАССРОЧКА 0% БЕЗ ПЕРЕПЛАТ</div>
-											<div className="patient-finance-card-value text-indigo-700">
-												от {(selectedTier.installments?.[12]?.monthlyPaymentRub ?? Math.round((selectedTier.totalRub ?? 0) / 12)).toLocaleString("ru-RU")} ₽/мес.
-											</div>
-											<div className="patient-finance-card-desc">
-												На 12 месяцев равными частями без процентов и скрытых комиссий
-											</div>
+											<div className="patient-finance-card-value text-indigo-700">от {(selectedTier.installments?.[12]?.monthlyPaymentRub ?? Math.round((selectedTier.totalRub ?? 0) / 12)).toLocaleString("ru-RU")} ₽/мес.</div>
+											<div className="patient-finance-card-desc">На 12 месяцев равными частями без процентов и скрытых комиссий</div>
 										</div>
 									</div>
 
 									{/* Notes & Clinical Guarantees */}
 									<div className="text-xs text-slate-600 space-y-1 mb-6">
-										<p>
-											• План составлен в соответствии с Клиническими рекомендациями Стоматологической Ассоциации России (СтАР).
-										</p>
-										<p>
-											• Гарантия на выполненные работы и материалы составляет <strong>{formatWarrantyYearsText(selectedTier.warrantyYears)}</strong> при соблюдении рекомендаций врача и прохождении плановой гигиены каждые 6 месяцев.
-										</p>
-										<p>
-											• Информированное согласие (ст. 20 323-ФЗ): Пациент подтверждает ознакомление с планом, этапами, альтернативными сценариями лечения и порядком оплаты.
-										</p>
+										<p>• План составлен в соответствии с Клиническими рекомендациями Стоматологической Ассоциации России (СтАР).</p>
+										<p>• Гарантия на выполненные работы и материалы составляет <strong>{formatWarrantyYearsText(selectedTier.warrantyYears)}</strong> при соблюдении рекомендаций врача и прохождении плановой гигиены каждые 6 месяцев.</p>
+										<p>• Информированное согласие (ст. 20 323-ФЗ): Пациент подтверждает ознакомление с планом, этапами, альтернативными сценариями лечения и порядком оплаты.</p>
 									</div>
 
 									{/* Signatures */}
@@ -381,9 +367,7 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 											<div className="font-bold text-xs">Пациент:</div>
 											<div className="treatment-sig-box">
 												<div>_____________________ / {patientName} /</div>
-												<div className="text-[8pt] text-slate-500 mt-1">
-													С этапами, сроками и сметой ознакомлен и согласен. Вариант утвержден.
-												</div>
+												<div className="text-[8pt] text-slate-500 mt-1">С этапами, сроками и сметой ознакомлен и согласен. Вариант утвержден.</div>
 											</div>
 										</div>
 									</div>
@@ -563,18 +547,10 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 
 									{/* Notes & Guarantees */}
 									<div style={{ fontSize: "8.5pt", lineHeight: "1.4", marginBottom: "16px" }}>
-										<p style={{ margin: "4px 0" }}>
-											1. Услуги оказываются в соответствии с клиническими рекомендациями Стоматологической ассоциации России (СтАР) и стандартами медицинской помощи.
-										</p>
-										<p style={{ margin: "4px 0" }}>
-											2. Гарантийный срок на ортопедические конструкции и пломбировочные материалы составляет <strong>{formatWarrantyYearsText(selectedTier.warrantyYears)}</strong> при условии соблюдения пациентом правил гигиены и прохождения контрольных осмотров каждые 6 месяцев.
-										</p>
-										<p style={{ margin: "4px 0" }}>
-											3. Дифференцированные гарантии клиники: Базовый / Эконом — 1 год; Оптимальный — 2 года; Премиум — 5 лет (пожизненная международная гарантия производителя на имплантаты Straumann/Astra Tech).
-										</p>
-										<p style={{ margin: "4px 0" }}>
-											4. Заказчик уведомлен о праве на получение социального налогового вычета по НДФЛ в размере 13% от стоимости лечения (Код {selectedTier.ndflDetails.code}).
-										</p>
+										<p style={{ margin: "4px 0" }}>1. Услуги оказываются в соответствии с клиническими рекомендациями Стоматологической ассоциации России (СтАР) и стандартами медицинской помощи.</p>
+										<p style={{ margin: "4px 0" }}>2. Гарантийный срок на ортопедические конструкции и пломбировочные материалы составляет <strong>{formatWarrantyYearsText(selectedTier.warrantyYears)}</strong> при условии соблюдения пациентом правил гигиены и прохождения контрольных осмотров каждые 6 месяцев.</p>
+										<p style={{ margin: "4px 0" }}>3. Дифференцированные гарантии клиники: Базовый / Эконом — 1 год; Оптимальный — 2 года; Премиум — 5 лет (пожизненная международная гарантия производителя на имплантаты Straumann/Astra Tech).</p>
+										<p style={{ margin: "4px 0" }}>4. Заказчик уведомлен о праве на получение социального налогового вычета по НДФЛ в размере 13% от стоимости лечения (Код {selectedTier.ndflDetails.code}).</p>
 									</div>
 
 									{/* Signatures */}
@@ -590,13 +566,31 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 											<div className="font-bold">Заказчик (Пациент):</div>
 											<div className="treatment-sig-box">
 												<div>_____________________ / {patientName} /</div>
-												<div className="text-[8pt] text-slate-500 mt-1">
-													С планом лечения, этапами, сроками и сметой ознакомлен и согласен
-												</div>
+												<div className="text-[8pt] text-slate-500 mt-1">С планом лечения, этапами, сроками и сметой ознакомлен и согласен</div>
 											</div>
 										</div>
 									</div>
 								</div>
+							)}
+							{isFastPrintOpen && (
+								<FastClinicalPrintEngine
+									isOpen={isFastPrintOpen}
+									initialDocType="treatment_estimate"
+									patient={{ fullName: patientName, birthDate: patientBirthDate, phone: patientPhone }}
+									clinic={{ name: clinicName, legalName: clinicLegalName, inn: clinicInn, ogrn: clinicOgrn, address: clinicAddress, phone: clinicPhone, licenseNumber: clinicLicense }}
+									doctor={{ fullName: doctorFullName, specialty: doctorSpecialty }}
+									planStages={activeSelectedTierStages.map((stage) => ({
+										title: stage.title,
+										services: stage.items.map((it) => ({
+											name: it.name,
+											tooth: it.toothNumber ? String(it.toothNumber) : undefined,
+											price: it.priceRub,
+										})),
+										total: stage.totalRub,
+										dueDate: stage.estimatedWeeks ? `${stage.estimatedWeeks} нед.` : undefined,
+									}))}
+									onClose={() => setIsFastPrintOpen(false)}
+								/>
 							)}
 						</div>
 	);

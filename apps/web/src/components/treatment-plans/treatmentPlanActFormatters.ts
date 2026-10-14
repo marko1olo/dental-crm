@@ -17,17 +17,7 @@ export function formatMoneyExact(rub: number, kopecks?: Kopecks): string {
 	return formatKopecksRu(safeKopecks as Kopecks);
 }
 
-/**
- * Склонение числительных в русском языке.
- */
-export function pluralizeRu(count: number, formOne: string, formTwo: string, formFive: string): string {
-	const absCount = Math.abs(count) % 100;
-	const remainder = absCount % 10;
-	if (absCount > 10 && absCount < 20) return formFive;
-	if (remainder > 1 && remainder < 5) return formTwo;
-	if (remainder === 1) return formOne;
-	return formFive;
-}
+export { pluralizeRu } from "../../lib/russianPlural";
 
 /**
  * Преобразует сумму в рублях в строку прописью (стандарт бухгалтерских актов РФ).

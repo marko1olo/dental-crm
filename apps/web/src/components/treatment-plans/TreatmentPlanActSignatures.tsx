@@ -149,14 +149,14 @@ export const TreatmentPlanActSignatures: React.FC<TreatmentPlanActSignaturesProp
 									<span className="text-emerald-700 font-bold flex items-center gap-1 mt-0.5">
 										<ShieldCheck className="w-3 h-3 inline shrink-0" />
 										<span>
-											Подписано УКЭП медицинской организации • Сертификат действителен
+											Подписано электронной подписью медицинской организации • Сертификат действителен
 											{actData.ukepCertSerial ? ` (${actData.ukepCertSerial})` : ""}
 										</span>
 									</span>
 								) : actData.signingMethod === "pep_sms" ? (
 									<span className="text-emerald-700 font-bold flex items-center gap-1 mt-0.5">
 										<ShieldCheck className="w-3 h-3 inline shrink-0" />
-										<span>Подписано ПЭП (СМС-код) • Юридическая сила подтверждена</span>
+										<span>Подписано простой электронной подписью пациента (код подтверждения)</span>
 									</span>
 								) : actData.signingMethod === "stylus" ? (
 									<span className="text-emerald-700 font-bold flex items-center gap-1 mt-0.5">
@@ -171,7 +171,7 @@ export const TreatmentPlanActSignatures: React.FC<TreatmentPlanActSignaturesProp
 								) : (
 									<span className="text-amber-800 font-medium flex items-center gap-1 mt-0.5">
 										<ShieldCheck className="w-3 h-3 inline shrink-0 text-amber-600" />
-										<span>Документ сформирован в ИС • Ожидает подписания (на бумаге или УКЭП)</span>
+										<span>Документ сформирован • Готов к подписанию на бумаге или электронно</span>
 									</span>
 								)}
 							</div>

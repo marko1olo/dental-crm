@@ -21,7 +21,7 @@ import {
 	getEndoObturationProcedure,
 	isMolarOrPremolar,
 } from "../treatmentPlanNomenclature804n";
-import { createPlanItem } from "../treatmentPlanItemFactory";
+import { createPlanItem, makeEmptyStage } from "../treatmentPlanItemFactory";
 import { getDefaultClinicalPresetStages } from "./clinicalPresets";
 import { normalizeToothState, hasToothDefect } from "./toothStateHelpers";
 

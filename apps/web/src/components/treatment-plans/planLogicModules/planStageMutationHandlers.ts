@@ -10,8 +10,9 @@ import {
 	type CopilotCommandType,
 } from "../../../services/ai/treatmentPlanCopilot";
 import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
-import { logger } from "../../../utils/logger";
 import { showRollbackToast, showToast } from "../../GlobalToast";
+import { pushDestructiveActionWithRollback } from "../../../services/undo/globalUndoRollbackStack.js";
+import { logger } from "../../../utils/logger";
 import {
 	extractCbctFindingsFromOdontogramAndStorage,
 	generateCbctAutoPlanScenarios,
@@ -124,10 +125,24 @@ export function createPlanStageMutationHandlers(
 	};
 
 	const handleRemoveItem = (itemId: string) => {
-		const targetItem = stages
-			.flatMap((s) => s.items)
-			.find((it) => it.id === itemId);
-		const prevStages = stages;
+		let targetItem: TreatmentPlanItem | undefined;
+		let targetStageIndex = -1;
+		let targetItemIndex = -1;
+
+		for (let sIdx = 0; sIdx < stages.length; sIdx++) {
+			const stg = stages[sIdx];
+			if (!stg) continue;
+			const itIdx = stg.items.findIndex((it) => it.id === itemId);
+			if (itIdx !== -1) {
+				targetItem = stg.items[itIdx];
+				targetStageIndex = sIdx;
+				targetItemIndex = itIdx;
+				break;
+			}
+		}
+
+		if (!targetItem || targetStageIndex === -1) return;
+
 		setCustomStages(removeItemFromStages(stages, itemId));
 		if (targetItem) {
 			StaffActionAuditService.logServiceRemove({
@@ -138,14 +153,25 @@ export function createPlanStageMutationHandlers(
 				amountKopecks: Math.round((targetItem.priceRub || 0) * 100),
 			});
 		}
-		const itemName = targetItem ? `«${targetItem.name}»` : "Процедура";
-		showRollbackToast(
-			`${itemName} удалена из плана лечения`,
-			() => {
-				setCustomStages([...prevStages]);
+		const itemName = `«${targetItem.name}»`;
+		pushDestructiveActionWithRollback({
+			entityType: "treatment_plan_item",
+			description: `${itemName} удалена из плана лечения`,
+			item: targetItem,
+			index: targetItemIndex,
+			parentId: String(stages[targetStageIndex]?.stageNumber ?? targetStageIndex),
+			onRollback: (item, index) => {
+				setCustomStages((prev) => {
+					if (!prev) return [];
+					return prev.map((stg, sIdx) => {
+						if (sIdx !== targetStageIndex) return stg;
+						const nextItems = [...stg.items];
+						nextItems.splice(index, 0, item as TreatmentPlanItem);
+						return { ...stg, items: nextItems };
+					});
+				});
 			},
-			5000,
-		);
+		});
 	};
 
 	const handleAssignDoctorToStage = (
@@ -385,11 +411,30 @@ export function createPlanStageMutationHandlers(
 	};
 
 	const handleDeleteStage = (stageToDelete: TreatmentPlanStage) => {
+		const targetIndex = stages.findIndex(
+			(s) => s.stageNumber === stageToDelete.stageNumber,
+		);
+		if (targetIndex === -1) return;
+
 		const updated = stages.filter(
 			(s) => s.stageNumber !== stageToDelete.stageNumber,
 		);
 		setCustomStages(updated);
-		showToast(`Этап №${stageToDelete.stageNumber} удален из плана`, "info");
+
+		pushDestructiveActionWithRollback({
+			entityType: "treatment_plan_stage",
+			description: `Этап №${stageToDelete.stageNumber} («${stageToDelete.title}») удален`,
+			item: stageToDelete,
+			index: targetIndex,
+			parentId: currentPlanId || "default_plan",
+			onRollback: (item, index) => {
+				setCustomStages((prev) => {
+					const next = prev ? [...prev] : [];
+					next.splice(index, 0, item as TreatmentPlanStage);
+					return next;
+				});
+			},
+		});
 	};
 
 	const handleStartStage = (stageToStart: TreatmentPlanStage) => {

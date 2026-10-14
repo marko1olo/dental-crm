@@ -631,51 +631,10 @@ export function calculatePlanStagesTotals(stages: readonly TreatmentPlanStage[])
 	};
 }
 
-/**
- * Применяет свободную скидку врача (0-100%) к процедурам этапа (Мандат 8e).
- * При 100% скидке цена становится 0 ₽ (гарантия клиники).
- */
-export function applyDoctorDiscountToStages(
-	stages: readonly TreatmentPlanStage[],
-	discountPercent: number,
-): readonly TreatmentPlanStage[] {
-	const validPct = Math.max(0, Math.min(100, discountPercent));
-
-	return stages.map((stage) => {
-		const updatedItems = stage.items.map((it) => {
-			const baseUnitPriceRub =
-				typeof it.unitPriceRub === "number" && it.unitPriceRub > 0
-					? it.unitPriceRub
-					: it.priceRub && it.quantity
-						? Math.round(it.priceRub / it.quantity)
-						: 0;
-
-			const baseUnitPriceKop = safeKopecks(baseUnitPriceRub, { allowEmptyAsZero: true }) ?? (0 as Kopecks);
-			const discountKopPerUnit =
-				validPct > 0 ? percentageOfKopecks(baseUnitPriceKop, validPct * 100) : (0 as Kopecks);
-			const finalUnitPriceKop = Math.max(0, baseUnitPriceKop - discountKopPerUnit) as Kopecks;
-
-			const qty = Math.max(1, it.quantity || 1);
-			const lineTotalKop = multiplyKopecks(finalUnitPriceKop, qty);
-			const lineDiscountKop = multiplyKopecks(discountKopPerUnit, qty);
-
-			return {
-				...it,
-				unitPriceRub: Math.round(baseUnitPriceKop / 100),
-				priceRub: Math.round(lineTotalKop / 100),
-				discountRub: Math.round(lineDiscountKop / 100),
-			};
-		});
-
-		const stageTotals = calculateStageTotals(updatedItems);
-		return {
-			...stage,
-			items: updatedItems,
-			totalRub: stageTotals.totalRub,
-			totalKopecks: stageTotals.totalKopecks,
-		};
-	});
-}
+export {
+	applyDoctorDiscountToStages,
+	applyDoctorFixedDiscountToStages,
+} from "./treatmentPlanDoctorDiscounts";
 
 /**
  * Полный пересчёт варианта плана лечения (Tier) после любых изменений в этапах.

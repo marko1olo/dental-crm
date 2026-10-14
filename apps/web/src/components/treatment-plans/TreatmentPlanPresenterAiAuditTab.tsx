@@ -2,7 +2,7 @@
  * TreatmentPlanPresenterAiAuditTab.tsx — вкладка клинического ИИ-аудита и студии кресельного ассистента.
  */
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
 	AlertCircle,
 	Bot,
@@ -18,7 +18,9 @@ import {
 import type { TreatmentPlanValidateAndCommentResponse } from "@dental/shared";
 import type { TreatmentPlanTier } from "./types";
 import {
+	buildChairsidePatientCasePresentation,
 	COPILOT_PRESET_ACTIONS,
+	humanizeDentalText,
 	type CopilotCommandType,
 } from "../../services/ai/treatmentPlanCopilot";
 
@@ -42,6 +44,14 @@ export const TreatmentPlanPresenterAiAuditTab: React.FC<TreatmentPlanPresenterAi
 	const [activePromptTone, setActivePromptTone] = useState<"chairside" | "formal" | "concise">("chairside");
 	const [customAiQuery, setCustomAiQuery] = useState("");
 	const [copiedField, setCopiedField] = useState<string | null>(null);
+
+	const casePresentation = useMemo(
+		() =>
+			buildChairsidePatientCasePresentation(selectedTier.stages, {
+				selectedTierTitle: selectedTier.title,
+			}),
+		[selectedTier],
+	);
 
 	const handleCopyText = (text: string | undefined, fieldKey: string) => {
 		if (!text) return;
@@ -118,6 +128,87 @@ export const TreatmentPlanPresenterAiAuditTab: React.FC<TreatmentPlanPresenterAi
 					<div>{aiAuditError}</div>
 				</div>
 			)}
+
+			{/* 3-Slide Visual Case Presentation (patientCasePresenterEngine) */}
+			<div
+				className="grid grid-cols-1 md:grid-cols-3 gap-4"
+				data-testid="patient-case-presenter-slides"
+			>
+				{/* Slide 1: Diagnosis */}
+				<div className="p-4 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] flex flex-col gap-2.5">
+					<div className="text-[11px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400">
+						Слайд 1 · {casePresentation.slides.diagnosis.title}
+					</div>
+					<div className="text-xs font-bold text-[var(--tp-text-main)]">
+						{casePresentation.slides.diagnosis.headlineRu}
+					</div>
+					<p className="text-xs text-[var(--tp-text-muted)] m-0 leading-relaxed">
+						{casePresentation.slides.diagnosis.summaryRu}
+					</p>
+					<ul className="m-0 pl-4 space-y-1 text-xs text-[var(--tp-text-main)]">
+						{casePresentation.slides.diagnosis.bulletPointsRu.map((bp, idx) => (
+							<li key={idx}>{bp}</li>
+						))}
+					</ul>
+				</div>
+
+				{/* Slide 2: Risks of Inaction */}
+				<div className="p-4 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] flex flex-col gap-2.5">
+					<div className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+						Слайд 2 · {casePresentation.slides.risks.title}
+					</div>
+					<div className="text-xs font-bold text-[var(--tp-text-main)]">
+						{casePresentation.slides.risks.costOfInactionHeadlineRu}
+					</div>
+					<div className="space-y-1.5 text-xs">
+						{casePresentation.slides.risks.timelineProgression.map((step, idx) => (
+							<div
+								key={idx}
+								className="p-2 rounded-lg bg-[var(--tp-bg)] border border-[var(--tp-border)]"
+							>
+								<div className="font-bold text-[var(--tp-text-main)]">{step.timeframeRu}</div>
+								<div className="text-[var(--tp-text-muted)]">{step.clinicalConsequenceRu}</div>
+							</div>
+						))}
+					</div>
+				</div>
+
+				{/* Slide 3: Staged Roadmap & Humanized Terms */}
+				<div className="p-4 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] flex flex-col gap-2.5">
+					<div className="text-[11px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400">
+						Слайд 3 · {casePresentation.slides.roadmap.title}
+					</div>
+					<div className="text-xs font-bold text-[var(--tp-text-main)]">
+						{casePresentation.slides.roadmap.headlineRu}
+					</div>
+					<p className="text-xs text-[var(--tp-text-muted)] m-0">
+						{casePresentation.slides.roadmap.installmentOfferRu}
+					</p>
+					<div className="space-y-1.5 text-xs">
+						{selectedTier.stages.slice(0, 3).map((st) => {
+							const cleanTitle = (st.title || "").replace(/^Этап\s*\d+\s*:\s*/i, "");
+							return (
+								<div
+									key={st.stageNumber}
+									className="p-2 rounded-lg bg-[var(--tp-bg)] border border-[var(--tp-border)]"
+								>
+									<div className="font-bold text-[var(--tp-text-main)] flex items-center justify-between gap-2">
+										<span className="truncate">Этап {st.stageNumber}: {cleanTitle}</span>
+										<span className="font-mono whitespace-nowrap min-w-[95px] text-right tabular-nums shrink-0">
+											{st.totalRub.toLocaleString("ru-RU")} ₽
+										</span>
+									</div>
+									{st.items[0] && (
+										<div className="text-[11px] text-[var(--tp-text-muted)] mt-0.5 truncate">
+											{humanizeDentalText(st.items[0].name)}
+										</div>
+									)}
+								</div>
+							);
+						})}
+					</div>
+				</div>
+			</div>
 
 			{!aiAuditResult && !isAiAuditing && (
 				<div className="p-8 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] text-center flex flex-col items-center justify-center gap-3">

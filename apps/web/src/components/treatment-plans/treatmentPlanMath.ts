@@ -17,6 +17,7 @@ export {
 	calculateChairsideInstallments,
 	calculateChairsideTaxDeduction,
 	applyDoctorDiscountToStages,
+	applyDoctorFixedDiscountToStages,
 	recalculateTierTotals,
 	validatePlanFinancialIntegrity,
 } from "./treatmentPlanPricingEngine";
