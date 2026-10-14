@@ -44,24 +44,36 @@ export const WaybillEditorModal: React.FC<WaybillEditorModalProps> = ({
 			<div className="p-3 border-b border-[var(--line,#e2e8f0)] grid grid-cols-1 sm:grid-cols-3 gap-2 shrink-0 text-xs">
 				<div>
 					<label className="block text-[11px] font-semibold text-[var(--muted,#64748b)] mb-1">
-						Поставщик:
+						Поставщик и ИНН:
 					</label>
-					<select
-						className="w-full h-8 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs"
-						value={draftWaybill.supplier.id}
-						onChange={(e) => {
-							const s = CANONICAL_DENTAL_SUPPLIERS.find(
-								(sup) => sup.id === e.target.value,
-							);
-							if (s) onChangeSupplier(s);
-						}}
-					>
-						{CANONICAL_DENTAL_SUPPLIERS.map((s) => (
-							<option key={s.id} value={s.id}>
-								{s.name}
-							</option>
-						))}
-					</select>
+					<div className="flex gap-1.5">
+						<input
+							type="text"
+							placeholder="Название поставщика (напр. ООО «Дентал АВ»)"
+							className="flex-1 h-8 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink)]"
+							value={draftWaybill.supplier.name}
+							onChange={(e) => {
+								onChangeSupplier({
+									...draftWaybill.supplier,
+									id: `custom_${Date.now()}`,
+									name: e.target.value,
+								});
+							}}
+						/>
+						<input
+							type="text"
+							placeholder="ИНН (10-12 цифр)"
+							maxLength={12}
+							className="w-32 h-8 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink)]"
+							value={draftWaybill.supplier.inn || ""}
+							onChange={(e) => {
+								onChangeSupplier({
+									...draftWaybill.supplier,
+									inn: e.target.value.replace(/\D/g, ""),
+								});
+							}}
+						/>
+					</div>
 				</div>
 
 				<div>

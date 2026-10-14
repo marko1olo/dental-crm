@@ -50,7 +50,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		try {
-			const { range } = request.query as { range?: string };
+			const { range, branchId } = request.query as { range?: string; branchId?: string };
 			let startDate: Date | undefined;
 
 			const now = new Date();
@@ -168,7 +168,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 
 			// 3. Chair Utilization (% времени в кресле от доступного рабочего времени смены)
 			const { chairUtilizationJson, chairOccupancyRate } =
-				await calculateChairUtilization(orgId, startDate, now);
+				await calculateChairUtilization(orgId, startDate, now, branchId);
 
 			// 4. Cohort LTV — payments grouped by patient creation month (строгий учет таймзоны клиники)
 			const { cohortLtvJson, cohortZone } = await calculateCohortLtv(

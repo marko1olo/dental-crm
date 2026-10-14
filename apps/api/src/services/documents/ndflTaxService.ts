@@ -39,6 +39,8 @@ import {
 } from "@dental/shared";
 import { Decimal } from "decimal.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
+import { getDocumentsByPatientId } from "../../db/documentQuery.js";
+import { alreadyRefundedKopecksForPayment } from "../../documents/documentGuards/index.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 export class Decree659TaxDeductionForbiddenError extends Error {
 	readonly statusCode = 422;
@@ -156,11 +158,11 @@ export class NdflTaxService {
 				"Формирование справки для налогового вычета по форме КНД 1151156 для анонимных карт (UUID_ANON / isAnonymous) категорически запрещено по ст. 219 НК РФ, Приказу ФНС от 08.11.2023 № ЕА-7-11/824@ и ПП РФ №659 (отсутствуют обязательные паспортные данные и ИНН налогоплательщика).";
 		}
 
-		// 2. Получение оплат пациента
-		const allPayments = await getPaymentsByPatientIdInDb(
-			organizationId,
-			patientId,
-		);
+		// 2. Получение оплат и выданных документов пациента (для учета частичных возвратов по ст. 219 НК РФ)
+		const [allPayments, patientDocuments] = await Promise.all([
+			getPaymentsByPatientIdInDb(organizationId, patientId),
+			getDocumentsByPatientId(organizationId, patientId),
+		]);
 
 		const periodPayments = allPayments.filter((p) => {
 			if (p.status !== "paid" || !p.paidAt) return false;
@@ -184,7 +186,6 @@ export class NdflTaxService {
 				code804n?: string;
 			};
 
-			const amountKop = parseKopecks(pay.amountRub);
 			const serviceName =
 				payAny.serviceName || "Стоматологические медицинские услуги";
 			const note = pay.note || "";
@@ -196,6 +197,29 @@ export class NdflTaxService {
 				(pay as Record<string, any>).fiscalReceipt?.fd ||
 				(pay as Record<string, any>).fiscalReceiptNumber ||
 				null;
+
+			const rawAmountKop = parseKopecks(pay.amountRub);
+			const alreadyRefundedKop = alreadyRefundedKopecksForPayment(
+				pay.id,
+				patientDocuments as any,
+			);
+			const amountKop = Math.max(0, rawAmountKop - alreadyRefundedKop);
+
+			// Если чек был полностью возвращен пациенту — исключаем его из справки НДФЛ
+			if (amountKop <= 0) {
+				receipts.push({
+					id: pay.id,
+					receiptNumber: pay.fiscalReceiptNumber || pay.id.slice(0, 8),
+					fiscalDocumentNumber: fiscalDocNum,
+					receiptDate,
+					serviceName,
+					deductionCode: "1",
+					amountRub: pay.amountRub,
+					isExcluded: true,
+					exclusionReason: "Сумма по чеку полностью возвращена пациенту (заявление на возврат)",
+				});
+				continue;
+			}
 
 			// Проверка на ДМС
 			if (isDmsInsurancePayment(method, note)) {

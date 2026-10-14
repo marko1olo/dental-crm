@@ -66,7 +66,8 @@ export function useAnalyticsDashboardData(dateRange: string, branchFilter: strin
 				const headers = authContext
 					? authContext.denteClinicalReadHeaders()
 					: getReadHeaders();
-				const res = await fetch(`/api/analytics/dashboard?range=${dateRange}`, {
+				const branchParam = branchFilter && branchFilter !== "all" ? `&branchId=${encodeURIComponent(branchFilter)}` : "";
+				const res = await fetch(`/api/analytics/dashboard?range=${dateRange}${branchParam}`, {
 					headers,
 					signal: controller.signal,
 				});
@@ -139,6 +140,7 @@ export function useAnalyticsDashboardData(dateRange: string, branchFilter: strin
 		};
 	}, [
 		dateRange,
+		branchFilter,
 		getReadHeaders,
 		authContext?.denteClinicalReadHeaders,
 		authContext,

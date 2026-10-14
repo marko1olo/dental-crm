@@ -461,6 +461,9 @@ export const fullForm043uPayloadSchema = z.object({
 	historyOfPresentIllness: z.string().trim().min(1).max(2000),
 	// Зубная формула и индексы
 	odontogramTeeth: z.array(fdiToothRecordSchema).default([]),
+	// Дуальная зубная формула (СтАР / Приказ № 1030): до лечения и после санации
+	initialOdontogramTeeth: z.array(fdiToothRecordSchema).optional().default([]),
+	sanitizedOdontogramTeeth: z.array(fdiToothRecordSchema).optional().default([]),
 	dmftIndex: dmftIndexSchema.default({
 		decayed: 0,
 		filled: 0,

@@ -82,7 +82,12 @@ export const MedicalCardSheet: React.FC<MedicalCardSheetProps> = ({
 								<div style={{ fontSize: "9pt", margin: "4px 0" }}><strong>Объективный осмотр (Status localis):</strong> {medicalCardData.statusLocalis}</div>
 
 								<h2 className="a4-section-heading">3. Зубная формула (FDI World Dental Federation)</h2>
-								<table className="a4-table" style={{ fontSize: "7.5pt", textAlign: "center", margin: "4px 0" }}>
+
+								{/* 3.1. Формула при первичном обращении */}
+								<div style={{ fontSize: "8pt", fontWeight: "bold", margin: "4px 0 2px" }}>
+									3.1. Состояние зубных рядов при первичном обследовании (до лечения):
+								</div>
+								<table className="a4-table" style={{ fontSize: "7.5pt", textAlign: "center", margin: "2px 0 6px" }}>
 									<tbody>
 										<tr>
 											<td colSpan={8} style={{ background: "#eeeeee", fontWeight: "bold" }}>Верхняя челюсть справа</td>
@@ -96,17 +101,17 @@ export const MedicalCardSheet: React.FC<MedicalCardSheetProps> = ({
 										<tr>
 											{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
 												<td key={t} style={{ width: "22px" }}>
-													{medicalCardData.teethFormulaMap?.[t]?.state || "—"}
+													{(medicalCardData as any).initialTeethFormulaMap?.[t]?.state || medicalCardData.teethFormulaMap?.[t]?.state || "—"}
 												</td>
 											))}
 										</tr>
 										<tr>
-											<td colSpan={16} style={{ height: "4px", padding: 0, background: "#000000" }} />
+											<td colSpan={16} style={{ height: "2px", padding: 0, background: "#000000" }} />
 										</tr>
 										<tr>
 											{[48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
 												<td key={t} style={{ width: "22px" }}>
-													{medicalCardData.teethFormulaMap?.[t]?.state || "—"}
+													{(medicalCardData as any).initialTeethFormulaMap?.[t]?.state || medicalCardData.teethFormulaMap?.[t]?.state || "—"}
 												</td>
 											))}
 										</tr>
@@ -118,6 +123,50 @@ export const MedicalCardSheet: React.FC<MedicalCardSheetProps> = ({
 										<tr>
 											<td colSpan={8} style={{ background: "#eeeeee", fontWeight: "bold" }}>Нижняя челюсть справа</td>
 											<td colSpan={8} style={{ background: "#eeeeee", fontWeight: "bold" }}>Нижняя челюсть слева</td>
+										</tr>
+									</tbody>
+								</table>
+
+								{/* 3.2. Формула после санации / текущий статус */}
+								<div style={{ fontSize: "8pt", fontWeight: "bold", margin: "6px 0 2px" }}>
+									3.2. Состояние зубных рядов после проведенного лечения (санации):
+								</div>
+								<table className="a4-table" style={{ fontSize: "7.5pt", textAlign: "center", margin: "2px 0 4px" }}>
+									<tbody>
+										<tr>
+											<td colSpan={8} style={{ background: "#e6f4ea", fontWeight: "bold" }}>Верхняя челюсть справа</td>
+											<td colSpan={8} style={{ background: "#e6f4ea", fontWeight: "bold" }}>Верхняя челюсть слева</td>
+										</tr>
+										<tr style={{ background: "#f7f7f7", fontWeight: "bold" }}>
+											{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
+												<td key={t} style={{ width: "22px" }}>{t}</td>
+											))}
+										</tr>
+										<tr>
+											{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
+												<td key={t} style={{ width: "22px" }}>
+													{(medicalCardData as any).sanitizedTeethFormulaMap?.[t]?.state || medicalCardData.teethFormulaMap?.[t]?.state || "Norm"}
+												</td>
+											))}
+										</tr>
+										<tr>
+											<td colSpan={16} style={{ height: "2px", padding: 0, background: "#000000" }} />
+										</tr>
+										<tr>
+											{[48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
+												<td key={t} style={{ width: "22px" }}>
+													{(medicalCardData as any).sanitizedTeethFormulaMap?.[t]?.state || medicalCardData.teethFormulaMap?.[t]?.state || "Norm"}
+												</td>
+											))}
+										</tr>
+										<tr style={{ background: "#f7f7f7", fontWeight: "bold" }}>
+											{[48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
+												<td key={t} style={{ width: "22px" }}>{t}</td>
+											))}
+										</tr>
+										<tr>
+											<td colSpan={8} style={{ background: "#e6f4ea", fontWeight: "bold" }}>Нижняя челюсть справа</td>
+											<td colSpan={8} style={{ background: "#e6f4ea", fontWeight: "bold" }}>Нижняя челюсть слева</td>
 										</tr>
 									</tbody>
 								</table>

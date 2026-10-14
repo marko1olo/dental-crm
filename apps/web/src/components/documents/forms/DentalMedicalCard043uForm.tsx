@@ -357,6 +357,8 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 				xrayFindingsDescription,
 				generalTreatmentPlan,
 				soapDiaries: initialPayload?.soapDiaries || [],
+				initialOdontogramTeeth: initialPayload?.initialOdontogramTeeth || initialPayload?.odontogramTeeth || [],
+				sanitizedOdontogramTeeth: initialPayload?.sanitizedOdontogramTeeth || initialPayload?.odontogramTeeth || [],
 				...(revisionCount > 0 || isRevising
 					? {
 							revisionCount: revisionCount + (isRevising ? 1 : 0),

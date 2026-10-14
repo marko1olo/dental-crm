@@ -75,6 +75,7 @@ export async function calculateChairUtilization(
 	orgId: string,
 	startDate?: Date,
 	now: Date = new Date(),
+	branchId?: string,
 ): Promise<{
 	chairUtilizationJson: ChairUtilizationItem[];
 	chairOccupancyRate: number;
@@ -96,6 +97,25 @@ export async function calculateChairUtilization(
 		: 30;
 	const availableMinutesPerChair = daysInPeriod * 12 * 60; // 12-часовая рабочая смена
 
+	const chairConditions: any[] = [eq(chairs.organizationId, orgId)];
+	if (branchId && branchId !== "all") {
+		chairConditions.push(eq(chairs.clinicId, branchId));
+	}
+
+	const allChairs = await db
+		.select({ id: chairs.id, name: chairs.name, isActive: chairs.isActive })
+		.from(chairs)
+		.where(and(...chairConditions));
+	const activeChairs = allChairs.filter((c) => c.isActive !== false);
+	const totalActiveChairsCount = Math.max(1, activeChairs.length);
+
+	const apptConditions: any[] = [
+		withDateFilter(orgId, appointments.organizationId, appointments.startsAt, startDate),
+	];
+	if (branchId && branchId !== "all" && allChairs.length > 0) {
+		apptConditions.push(inArray(appointments.chairId, allChairs.map((c) => c.id)));
+	}
+
 	const chairUtilRes = await db
 		.select({
 			chairId: appointments.chairId,
@@ -103,14 +123,12 @@ export async function calculateChairUtilization(
 			occupiedMinutes: sql<number>`coalesce(sum(case when ${appointments.status} not in ('cancelled', 'no_show') then extract(epoch from (${appointments.endsAt} - ${appointments.startsAt})) / 60 else 0 end), 0)::int`,
 		})
 		.from(appointments)
-		.where(withDateFilter(orgId, appointments.organizationId, appointments.startsAt, startDate))
+		.where(and(...apptConditions))
 		.groupBy(appointments.chairId);
 
-	const allChairs = await db
-		.select({ id: chairs.id, name: chairs.name })
-		.from(chairs)
-		.where(eq(chairs.organizationId, orgId));
-	const chairMap = new Map(allChairs.map((c) => [c.id, c.name]));
+	const utilMap = new Map(
+		chairUtilRes.map((r) => [r.chairId ?? "unknown", { count: Number(r.count || 0), occupiedMinutes: Number(r.occupiedMinutes || 0) }]),
+	);
 
 	const colors = [
 		"#8b5cf6",
@@ -121,38 +139,38 @@ export async function calculateChairUtilization(
 		"#06b6d4",
 		"#a855f7",
 	];
-	const chairUtilizationJson: ChairUtilizationItem[] = chairUtilRes
-		.map((r, i) => {
-			const count = Number(r.count || 0);
-			const occupiedMinutes = Number(r.occupiedMinutes || 0);
-			const utilizationPercent =
-				availableMinutesPerChair > 0
-					? Math.min(
-							100,
-							Math.round(
-								(occupiedMinutes / availableMinutesPerChair) * 1000,
-							) / 10,
-						)
-					: 0;
-			return {
-				chairId: r.chairId ?? null,
-				name: r.chairId
-					? chairMap.get(r.chairId) || "Кресло"
-					: "Основное кресло",
-				value: count,
-				occupiedMinutes,
-				availableMinutes: availableMinutesPerChair,
-				utilizationPercent,
-				fill: colors[i % colors.length]!,
-			};
-		})
-		.filter((x) => x.value > 0);
+
+	let colorIdx = 0;
+	const chairUtilizationJson: ChairUtilizationItem[] = [];
+
+	for (const chair of activeChairs) {
+		const metrics = utilMap.get(chair.id) || { count: 0, occupiedMinutes: 0 };
+		const occupiedMinutes = metrics.occupiedMinutes;
+		const utilizationPercent =
+			availableMinutesPerChair > 0
+				? Math.min(
+						100,
+						Math.round((occupiedMinutes / availableMinutesPerChair) * 1000) / 10,
+					)
+				: 0;
+
+		chairUtilizationJson.push({
+			chairId: chair.id,
+			name: chair.name || "Кресло",
+			value: metrics.count,
+			occupiedMinutes,
+			availableMinutes: availableMinutesPerChair,
+			utilizationPercent,
+			fill: colors[colorIdx % colors.length]!,
+		});
+		colorIdx++;
+	}
 
 	const totalOccupiedMins = chairUtilRes.reduce(
 		(sum, r) => sum + Number(r.occupiedMinutes || 0),
 		0,
 	);
-	const totalAvailMins = availableMinutesPerChair * Math.max(1, chairUtilRes.length);
+	const totalAvailMins = availableMinutesPerChair * totalActiveChairsCount;
 	const chairOccupancyRate =
 		totalAvailMins > 0
 			? Math.min(100, Math.round((totalOccupiedMins / totalAvailMins) * 1000) / 10)

@@ -125,6 +125,10 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 		});
 	}, []);
 
+	const handleChangeQuantity = useCallback((itemId: string, val: number) => {
+		setPendingQuantities((prev) => ({ ...prev, [itemId]: Math.max(1, val) }));
+	}, []);
+
 	const filteredItems = useMemo(() => {
 		if (!effectiveSearch || !effectiveSearch.trim()) return items;
 		const query = effectiveSearch.toLowerCase().trim();
@@ -358,7 +362,7 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								textAlign: "right",
-								width: 215,
+								width: 285,
 								whiteSpace: "nowrap",
 							}}
 						>
@@ -458,6 +462,8 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 								key={item.id}
 								item={item}
 								writeQty={pendingQuantities[item.id] || 1}
+								onStepQuantity={(delta) => handleStepQuantity(item.id, delta)}
+								onChangeQuantity={(val) => handleChangeQuantity(item.id, val)}
 								isMenuOpen={activeMenuRowId === item.id}
 								menuRef={rowMenuRef}
 								onToggleMenu={() =>
