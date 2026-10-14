@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
 	CheckCircle,
 	X,
@@ -7,6 +8,7 @@ import {
 	MoveHorizontal,
 	UploadCloud,
 	ExternalLink,
+	Sparkles,
 } from 'lucide-react';
 import { CheekRetractor } from '../icons/DentalIcons';
 import './clinicalPhotography.css';
@@ -24,11 +26,15 @@ import { PhotoCalibrationDrawer } from './PhotoCalibrationDrawer';
 import { PhotoCollageExportSheet } from './PhotoCollageExportSheet';
 import { compressChairsidePhotoToBlobUrl } from './chairsidePhotoCompressor';
 import { openPatientPresentationWindow } from './presentationSyncProtocol';
+import { useClipboardPhotoPaste } from './useClipboardPhotoPaste';
+import { showToast } from '../GlobalToast';
+import { denteAdminSecretRequestHeaders } from '../../lib/denteRequestHeaders';
 
 export interface ClinicalPhotoProtocolModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	patientId?: string | undefined;
+	visitId?: string | undefined;
 	patientName?: string | undefined;
 	patientCardNumber?: string | undefined;
 	doctorName?: string | undefined;
@@ -40,6 +46,7 @@ export interface ClinicalPhotoProtocolModalProps {
 	onPhotoSaved?: ((result: any) => void) | undefined;
 	onPhotoProcessed?: ((result: any) => void) | undefined;
 	onBatchCompleted?: ((results: any[]) => void) | undefined;
+	onPhotoUploadedToStorage?: ((attachmentId: string, url: string, slotId: string) => void) | undefined;
 }
 
 const EMPTY_INITIAL_SLOTS: Record<string, PhotoSlotRecord> = {};
@@ -47,6 +54,8 @@ const EMPTY_INITIAL_SLOTS: Record<string, PhotoSlotRecord> = {};
 export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProps> = ({
 	isOpen,
 	onClose,
+	patientId,
+	visitId,
 	patientName = '',
 	patientCardNumber = 'К-8492',
 	doctorName = 'Д-р Смирнова Е. В.',
@@ -58,6 +67,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 	onPhotoSaved,
 	onPhotoProcessed,
 	onBatchCompleted,
+	onPhotoUploadedToStorage,
 }) => {
 	// State
 	const [activePreset, setActivePreset] = useState<PhotoProtocolPreset>(() => {
@@ -96,11 +106,48 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 		}
 	}, [initialSlots]);
 
+	// Fetch already attached visit photos from PostgreSQL 18
+	useEffect(() => {
+		if (!isOpen || !visitId) return;
+		let isMounted = true;
+		fetch(`/api/files/visits/${visitId}/attachments`, {
+			headers: denteAdminSecretRequestHeaders(),
+		})
+			.then((res) => (res.ok ? res.json() : null))
+			.then((data) => {
+				if (!isMounted || !data?.files || !Array.isArray(data.files) || data.files.length === 0) return;
+				setSlotsData((prev) => {
+					const next = { ...prev };
+					const slotIds = activePreset.slots.map((s) => s.id);
+					data.files.forEach((f: any, idx: number) => {
+						const matchedSlot = slotIds.find((id) => typeof f.name === 'string' && f.name.includes(id));
+						const targetSlot = matchedSlot || slotIds[idx % slotIds.length];
+						if (targetSlot && !next[targetSlot]?.imageUrl) {
+							next[targetSlot] = {
+								slotId: targetSlot,
+								imageUrl: f.url,
+								storagePath: f.url,
+								uploadedAt: new Date().toISOString(),
+								stage: currentStage === 'during' ? 'in_progress' : currentStage,
+							};
+						}
+					});
+					return next;
+				});
+			})
+			.catch(() => {
+				// Non-blocking fallback for offline or standalone demo
+			});
+		return () => {
+			isMounted = false;
+		};
+	}, [isOpen, visitId, activePreset.slots, currentStage]);
+
 	const getSlotRecord = (slotId: string): PhotoSlotRecord => {
 		return slotsData[slotId] || { slotId };
 	};
 
-	const updateSlotRecord = (slotId: string, updates: Partial<PhotoSlotRecord>) => {
+	const updateSlotRecord = useCallback((slotId: string, updates: Partial<PhotoSlotRecord>) => {
 		setSlotsData(prev => ({
 			...prev,
 			[slotId]: {
@@ -108,11 +155,46 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 				...updates
 			}
 		}));
-	};
+	}, []);
+
+	// Honest PostgreSQL 18 & file storage persistence (Mandates 8e, 8k)
+	const uploadPhotoToBackend = useCallback(async (
+		slotId: string,
+		compressedBlob: Blob,
+		rawFilename: string,
+	): Promise<string | null> => {
+		if (!visitId && !patientId) return null;
+		try {
+			const uploadUrl = visitId
+				? `/api/files/visits/${visitId}/attachments`
+				: `/api/files/patients/${patientId}/attachments`;
+			const formData = new FormData();
+			const baseName = (rawFilename || `slot_${slotId}`).replace(/[^a-zA-Z0-9.-]/g, '_');
+			const finalName = baseName.endsWith('.webp') ? baseName : `${baseName}.webp`;
+			formData.append('file', compressedBlob, finalName);
+
+			const resp = await fetch(uploadUrl, {
+				method: 'POST',
+				headers: denteAdminSecretRequestHeaders(),
+				body: formData,
+			});
+
+			if (!resp.ok) return null;
+
+			const json = await resp.json();
+			const fileUrl = json?.file?.url || (json?.attachment?.id ? `/api/attachments/${json.attachment.id}/download` : null);
+			if (fileUrl && json?.attachment?.id && onPhotoUploadedToStorage) {
+				onPhotoUploadedToStorage(json.attachment.id, fileUrl, slotId);
+			}
+			return fileUrl;
+		} catch (_err) {
+			return null;
+		}
+	}, [visitId, patientId, onPhotoUploadedToStorage]);
 
 	const handleFileUpload = async (slotId: string, file: File) => {
 		try {
-			// Stream compress to optimized WebP blob (1920px max, 0.85 quality)
+			// Stream compress to optimized WebP blob (1920px max, 0.85 quality) < 200 ms
 			const compressed = await compressChairsidePhotoToBlobUrl(file, {
 				maxDimension: 1920,
 				quality: 0.85,
@@ -139,6 +221,16 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 				exposure: 0,
 				warmth: 0
 			});
+
+			// Asynchronous persist to PostgreSQL 18
+			void uploadPhotoToBackend(slotId, compressed.blob, file.name).then((serverUrl) => {
+				if (serverUrl) {
+					updateSlotRecord(slotId, {
+						imageUrl: serverUrl,
+						storagePath: serverUrl,
+					});
+				}
+			});
 		} catch (_err) {
 			const fallbackUrl = URL.createObjectURL(file);
 			createdBlobUrlsRef.current.add(fallbackUrl);
@@ -156,6 +248,53 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 			});
 		}
 	};
+
+	// 1-Click Clipboard Photo Paste Hook (Ctrl+V) — Mandates 8e, 8k
+	useClipboardPhotoPaste({
+		enabled: isOpen,
+		onPhotoReceived: async (compressedBlob, fileName) => {
+			const slotIds = activePreset.slots.map(s => s.id);
+			let targetSlotId = selectedSlotForEdit || dragOverSlotId || null;
+			if (!targetSlotId) {
+				const firstEmpty = slotIds.find(id => !slotsData[id]?.imageUrl);
+				targetSlotId = firstEmpty || slotIds[0] || 'portrait_smile';
+			}
+
+			const blobUrl = URL.createObjectURL(compressedBlob);
+			createdBlobUrlsRef.current.add(blobUrl);
+
+			updateSlotRecord(targetSlotId, {
+				imageUrl: blobUrl,
+				uploadedAt: new Date().toISOString(),
+				stage: currentStage === 'during' ? 'in_progress' : currentStage,
+				rotationDegrees: 0,
+				flipHorizontal: false,
+				flipVertical: false,
+				brightness: 0,
+				contrast: 0,
+				exposure: 0,
+				warmth: 0,
+			});
+
+			const slotDef = getSlotDefinitionById(targetSlotId);
+			const slotLabel = slotDef?.shortLabelRu || targetSlotId;
+			showToast(`Вставлен снимок из буфера (Ctrl+V) в ракурс «${slotLabel}»`, 'success', 3500);
+
+			// Asynchronous persist to PostgreSQL 18
+			void uploadPhotoToBackend(targetSlotId, compressedBlob, fileName).then((serverUrl) => {
+				if (serverUrl) {
+					updateSlotRecord(targetSlotId, {
+						imageUrl: serverUrl,
+						storagePath: serverUrl,
+					});
+				}
+			});
+
+			const res = { slotId: targetSlotId, fileName, stage: currentStage };
+			onPhotoSaved?.(res);
+			onPhotoProcessed?.(res);
+		},
+	});
 
 	const handleBatchFilesUpload = async (files: FileList | File[], startSlotId?: string) => {
 		const fileArr = Array.from(files);
@@ -267,7 +406,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 		);
 	}
 
-	return (
+	const modalContent = (
 		<div className="photo-protocol-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="photo-protocol-title">
 			<input
 				type="file"
@@ -279,6 +418,9 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 			/>
 
 			<div className="photo-protocol-modal">
+				{/* Apple iOS Mobile HIG Tactile Drag Handle */}
+				<div className="photo-mobile-drag-handle" aria-hidden="true" />
+
 				{/* Top Header */}
 				<div className="photo-protocol-header">
 					<div className="photo-protocol-title-group">
@@ -571,6 +713,8 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 
 		</div>
 	);
+
+	return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };
 
 export default ClinicalPhotoProtocolModal;

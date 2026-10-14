@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { ArrowRight, Check, Search, X, Layers, Sparkles } from 'lucide-react';
+import { ArrowRight, Check, Search, X, Layers, Sparkles, Send } from 'lucide-react';
 import { ToothShadeGuide } from '../icons/DentalIcons';
+import { showToast } from '../GlobalToast';
 import {
 	VitaSystemType,
 	VITA_CLASSICAL_SHADES,
@@ -133,6 +134,31 @@ export const VitaShadeSelector: React.FC<VitaShadeSelectorProps> = ({
 			body: preset.body,
 			incisal: preset.incisal,
 		});
+	};
+
+	const handleTransferToLabOrder = () => {
+		const targetShade = activeStrat.body || afterShadeCode || 'A2';
+		const targetStump = activeStrat.stump || undefined;
+		const stratNote = `Колориметрия VITA: Тело ${targetShade}, Шейка ${activeStrat.cervical}, Эмаль ${activeStrat.incisal}${targetStump ? `, Культя ${targetStump}` : ''}`;
+		const payload = {
+			shadeCode: targetShade,
+			stumpShadeCode: targetStump,
+			cervical: activeStrat.cervical,
+			body: activeStrat.body,
+			incisal: activeStrat.incisal,
+			notes: stratNote,
+		};
+		try {
+			localStorage.setItem('dente_active_lab_shade_preset', JSON.stringify(payload));
+		} catch {
+			// ignore storage quota error
+		}
+		window.dispatchEvent(new CustomEvent('dente-apply-lab-shade', { detail: payload }));
+		showToast(
+			`Цвет ${targetShade}${targetStump ? ` и культя ${targetStump}` : ''} переданы в наряд-заказ ЗТЛ`,
+			'success',
+			3500,
+		);
 	};
 
 	return (
@@ -669,6 +695,36 @@ export const VitaShadeSelector: React.FC<VitaShadeSelectorProps> = ({
 					</div>
 				</div>
 			)}
+
+			{/* 1-Click Bridge to Dental Lab Work Order (Mandates 8e, 8k) */}
+			<div style={{
+				display: 'flex',
+				justifyContent: 'flex-end',
+				alignItems: 'center',
+				gap: '8px',
+				paddingTop: '8px',
+				borderTop: '1px solid var(--line, #e2e8f0)',
+				marginTop: '4px',
+			}}>
+				<button
+					type="button"
+					className="photo-touch-btn primary"
+					onClick={handleTransferToLabOrder}
+					data-testid="btn-transfer-vita-to-lab"
+					style={{
+						display: 'inline-flex',
+						alignItems: 'center',
+						gap: '6px',
+						minHeight: '38px',
+						padding: '6px 14px',
+						fontSize: '13px',
+						fontWeight: 600,
+					}}
+				>
+					<Send size={14} />
+					<span>Передать в наряд ЗТЛ ({activeStrat.body || afterShadeCode}{activeStrat.stump ? ` + ${activeStrat.stump}` : ''})</span>
+				</button>
+			</div>
 		</div>
 	);
 };

@@ -677,6 +677,105 @@
 	color: var(--ink);
 }
 
+/* Tactile Drag Handle for Apple iOS HIG Bottom Sheet */
+.photo-mobile-drag-handle {
+	display: none;
+}
+
+/* Mobile Apple iOS HIG & Anti-Desktop-Squeeze Responsive Rules */
+@media (max-width: 768px) {
+	.photo-mobile-drag-handle {
+		display: block;
+		width: 36px;
+		height: 5px;
+		border-radius: 3px;
+		background: var(--muted, #94a3b8);
+		margin: 8px auto 4px auto;
+		flex-shrink: 0;
+		opacity: 0.6;
+	}
+
+	.photo-protocol-modal-backdrop {
+		padding: 0;
+		align-items: flex-end;
+		justify-content: center;
+	}
+
+	.photo-protocol-modal {
+		border-radius: 24px 24px 0 0;
+		max-height: 92vh;
+		height: 92vh;
+		width: 100%;
+		max-width: 100vw;
+		overflow-x: clip;
+		margin: 0;
+		border-bottom: none;
+		box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
+		padding-bottom: env(safe-area-inset-bottom, 16px);
+	}
+
+	.photo-protocol-header {
+		padding: 8px 14px 10px 14px;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	.photo-protocol-title-group {
+		width: 100%;
+		justify-content: space-between;
+	}
+
+	.photo-protocol-tabs {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		flex-wrap: nowrap;
+		width: 100%;
+		padding: 4px;
+	}
+
+	.photo-protocol-tab-btn {
+		white-space: nowrap;
+		flex-shrink: 0;
+		padding: 8px 12px;
+		font-size: 13px;
+	}
+
+	.photo-protocol-body {
+		padding: 12px;
+		gap: 14px;
+	}
+
+	.photo-slots-grid {
+		grid-template-columns: 1fr;
+		gap: 12px;
+	}
+
+	.photo-slot-card {
+		min-height: 250px;
+	}
+
+	.ba-slider-container {
+		min-height: 320px;
+		max-height: 60vh;
+	}
+
+	.photo-touch-btn {
+		min-height: 44px;
+		min-width: 44px;
+	}
+
+	.photo-collage-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 8px;
+	}
+
+	.photo-collage-sheet {
+		padding: 16px;
+	}
+}
+
 /* Print Rules */
 @media print {
 	.photo-protocol-modal-backdrop {

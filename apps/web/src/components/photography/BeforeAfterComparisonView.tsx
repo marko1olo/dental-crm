@@ -5,7 +5,6 @@ import {
 	Camera,
 	Sliders,
 	Download,
-	Link as LinkIcon,
 	ExternalLink,
 } from 'lucide-react';
 import { ToothShadeGuide } from '../icons/DentalIcons';
@@ -24,6 +23,8 @@ import { BeforeAfterExportModal } from './BeforeAfterExportModal';
 import { BeforeAfterFineTunePanel } from './BeforeAfterFineTunePanel';
 import { BeforeAfterSideBySideView } from './BeforeAfterSideBySideView';
 import { BeforeAfterBlendView } from './BeforeAfterBlendView';
+import { BeforeAfterProjectionToolbar } from './BeforeAfterProjectionToolbar';
+import { BeforeAfterFloatingZoomBar } from './BeforeAfterFloatingZoomBar';
 import { openPatientPresentationWindow } from './presentationSyncProtocol';
 import { usePresentationSync } from './usePresentationSync';
 
@@ -293,88 +294,18 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 	return (
 		<div className="ba-comparison-view" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', alignItems: 'center' }}>
 			{/* 0. 1-Click Projection Selector & DentalPin Pairing Bar */}
-			<div style={{
-				display: 'flex',
-				alignItems: 'center',
-				gap: '8px',
-				flexWrap: 'wrap',
-				width: '100%',
-				maxWidth: '1100px',
-				background: 'var(--paper, #ffffff)',
-				padding: '8px 14px',
-				borderRadius: '12px',
-				border: '1px solid var(--line, #e2e8f0)',
-			}}>
-				<span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted, #64748b)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-					Проекция:
-				</span>
-				<div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', flex: 1 }}>
-					{COMPARISON_PROJECTIONS.map((p) => {
-						const isSelected = beforeSlotId === p.id && afterSlotId === p.id;
-						return (
-							<button
-								key={p.id}
-								type="button"
-								className={`photo-touch-btn ${isSelected ? 'primary' : ''}`}
-								onClick={() => {
-									onBeforeSlotChange?.(p.id);
-									onAfterSlotChange?.(p.id);
-								}}
-								style={{
-									minHeight: '34px',
-									padding: '4px 10px',
-									fontSize: '12px',
-									borderRadius: '6px',
-									fontWeight: isSelected ? 700 : 500,
-								}}
-							>
-								{p.labelRu}
-							</button>
-						);
-					})}
-				</div>
-
-				<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-					{isCurrentPairLinked ? (
-						<div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-							<span
-								style={{
-									display: 'inline-flex',
-									alignItems: 'center',
-									gap: '4px',
-									fontSize: '11px',
-									fontWeight: 700,
-									padding: '4px 8px',
-									borderRadius: '6px',
-									background: 'rgba(34, 197, 94, 0.15)',
-									color: 'var(--green, #16a34a)',
-								}}
-							>
-								<LinkIcon size={12} /> Спарено (DentalPin)
-							</span>
-							<button
-								type="button"
-								className="photo-touch-btn danger"
-								onClick={handleUnpairCurrent}
-								style={{ minHeight: '32px', padding: '3px 8px', fontSize: '11px' }}
-								title="Разорвать связь пары До/После"
-							>
-								Отвязать
-							</button>
-						</div>
-					) : (
-						<button
-							type="button"
-							className="photo-touch-btn"
-							onClick={handlePairCurrent}
-							style={{ minHeight: '32px', padding: '4px 10px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-							title="Связать выбранные кадры До и После как эталонную пару (paired_document_id)"
-						>
-							<LinkIcon size={12} /> Спарить До/После
-						</button>
-					)}
-				</div>
-			</div>
+			<BeforeAfterProjectionToolbar
+				projections={COMPARISON_PROJECTIONS}
+				beforeSlotId={beforeSlotId}
+				afterSlotId={afterSlotId}
+				isCurrentPairLinked={isCurrentPairLinked}
+				onSelectProjection={(id) => {
+					onBeforeSlotChange?.(id);
+					onAfterSlotChange?.(id);
+				}}
+				onPairCurrent={handlePairCurrent}
+				onUnpairCurrent={handleUnpairCurrent}
+			/>
 
 			{/* 1. Main Controls Toolbar */}
 			<div style={{
@@ -748,6 +679,13 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 					>
 						ПОСЛЕ: {getSlotDefinitionById(afterSlotId)?.shortLabelRu} (VITA {afterShade}) • {splitPercent}%
 					</div>
+
+					{/* Quick Floating Zoom Controls (Mandates 8e, 8k) */}
+					<BeforeAfterFloatingZoomBar
+						zoomScale={zoomScale}
+						setZoomScale={setZoomScale}
+						setPanOffset={setPanOffset}
+					/>
 				</div>
 			)}
 

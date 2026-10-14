@@ -169,6 +169,7 @@ export function DiagnosticsModalsHost({
 					isOpen={isPhotoProtocolModalOpen}
 					onClose={() => setIsPhotoProtocolModalOpen(false)}
 					patientId={visitPatientId ?? activePatient?.id}
+					visitId={dashboard?.activeVisit?.id || ctx?.dashboard?.activeVisit?.id || undefined}
 					patientName={visitPatientName ?? activePatient?.fullName}
 					doctorName={ctx?.auth?.currentUser?.name || "Лечащий врач стоматолог"}
 					clinicName={dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ"}

@@ -49,6 +49,7 @@ import {
 	DENTAL_PHOTO_SLOTS,
 	SILHOUETTE_PATHS,
 } from './photoGridPresets';
+import { loadImageSafe } from './photoProtocolGridExport';
 
 // Re-export mathematical and format primitives for seamless consumer usage
 export {
@@ -760,13 +761,8 @@ export async function exportCollageAsPng(payload: BeforeAfterCollagePayload): Pr
 	return dataUrl;
 }
 
-function loadImageSafe(url?: string): Promise<HTMLImageElement | null> {
-	if (!url || typeof Image === 'undefined') return Promise.resolve(null);
-	return new Promise((resolve) => {
-		const img = new Image();
-		img.crossOrigin = 'anonymous';
-		img.onload = () => resolve(img);
-		img.onerror = () => resolve(null);
-		img.src = url;
-	});
-}
+export {
+	loadImageSafe,
+	exportProtocolGridAsPng,
+	type ProtocolGridExportPayload,
+} from './photoProtocolGridExport';

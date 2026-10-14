@@ -1,6 +1,8 @@
-import React from 'react';
-import { Printer } from 'lucide-react';
+import React, { useState } from 'react';
+import { Printer, Download } from 'lucide-react';
 import { PhotoProtocolPreset, PhotoSlotRecord } from './photoGridPresets';
+import { exportProtocolGridAsPng } from './photoProtocolEngine';
+import { showToast } from '../GlobalToast';
 
 export interface PhotoCollageExportSheetProps {
 	preset: PhotoProtocolPreset;
@@ -19,16 +21,64 @@ export const PhotoCollageExportSheet: React.FC<PhotoCollageExportSheetProps> = (
 	patientCardNumber,
 	doctorName,
 }) => {
+	const [isExportingPng, setIsExportingPng] = useState(false);
+
+	const handleExportPng = async () => {
+		if (isExportingPng) return;
+		try {
+			setIsExportingPng(true);
+			await exportProtocolGridAsPng({
+				clinicName,
+				patientName,
+				patientCardNumber,
+				doctorName,
+				presetTitle: preset.nameRu,
+				slots: preset.slots.map((s) => {
+					const img = slotsData[s.id]?.imageUrl;
+					return {
+						title: s.titleRu,
+						label: s.shortLabelRu,
+						...(img ? { imageUrl: img } : {}),
+					};
+				}),
+			});
+			showToast('Коллаж фотопротокола сохранён в PNG', 'success', 3000);
+		} catch {
+			showToast('Не удалось сформировать коллаж', 'error', 3000);
+		} finally {
+			setIsExportingPng(false);
+		}
+	};
+
 	return (
 		<div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
 			{/* Action Toolbar */}
-			<div style={{ display: 'flex', gap: '12px' }} className="no-print">
+			<div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }} className="no-print">
 				<button
+					type="button"
 					className="photo-touch-btn primary"
 					onClick={() => window.print()}
+					data-testid="btn-print-protocol-pdf"
 				>
 					<Printer size={16} />
 					Печать протокола (PDF)
+				</button>
+				<button
+					type="button"
+					className="photo-touch-btn"
+					onClick={handleExportPng}
+					aria-busy={isExportingPng}
+					data-testid="btn-export-collage-png"
+					style={{
+						background: 'var(--surface, #f1f5f9)',
+						border: '1px solid var(--line, #cbd5e1)',
+						color: 'var(--ink, #0f172a)',
+						fontWeight: 600,
+						opacity: isExportingPng ? 0.7 : 1,
+					}}
+				>
+					<Download size={16} />
+					{isExportingPng ? 'Формирование PNG...' : 'Экспорт коллажа (PNG)'}
 				</button>
 			</div>
 
