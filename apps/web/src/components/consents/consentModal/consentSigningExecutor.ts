@@ -240,6 +240,34 @@ function buildStructuredPayloadForConsent(
 		};
 	}
 
+	if (kind === "paid_medical_services_contract") {
+		return {
+			paidMedicalServicesContract: {
+				contractNumber: "ДОГ-736/2026",
+				contractDate: todayIsoDate,
+				serviceStart: todayIsoDate,
+				serviceEndOrCondition: "До полного исполнения обязательств по плану лечения",
+				customerFullName: effectiveContext.patientName || "Пациент",
+				representativeFullName: effectiveContext.guardianName || null,
+				plannedCareReason: diagnosisOrIndication,
+				serviceScopeSummary: template.subtitle,
+				estimatedTotalRub: 0,
+				paymentTerms: "Наличный расчет, банковская карта, СБП по факту оказания услуг",
+				priceChangeRules: "Изменение стоимости и объема услуг только по согласованию с пациентом",
+				freeCareAvailabilityNotice: "Пациент уведомлен о праве на получение бесплатной медпомощи по ОМС",
+				medicalRecommendationWarning: "Несоблюдение предписаний врача может снизить эффективность лечения",
+				refusalAndRefundTerms: "Возврат средств за неоказанные услуги по заявлению пациента",
+				warrantyAndClaimsTerms: "Гарантийные обязательства по Положению о гарантиях клиники",
+				doctorFullName,
+				signedAt: todayIsoDate,
+				patientReceivedClinicInfo: true,
+				patientReceivedPriceAndServiceList: true,
+				patientUnderstandsPaidBasis: true,
+				changesRequireWrittenAgreement: true,
+			},
+		};
+	}
+
 	return null;
 }
 

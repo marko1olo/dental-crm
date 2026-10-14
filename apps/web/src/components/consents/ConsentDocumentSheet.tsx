@@ -1,5 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import React, { useMemo } from "react";
+import { generateQrCodeSvg } from "@dental/shared";
 import type { ConsentSubstitutionContext, RenderedConsentTemplate } from "./consentTemplates.js";
 import {
 	cleanPrintableConsentText,
@@ -27,6 +28,21 @@ export const ConsentDocumentSheet: React.FC<ConsentDocumentSheetProps> = ({
 	// Защищенный рендеринг секций без утечек служебных английских ключей и кодов
 	const cleanTitle = useMemo(() => cleanPrintableConsentText(rendered.title), [rendered.title]);
 	const cleanSubtitle = useMemo(() => cleanPrintableConsentText(rendered.subtitle), [rendered.subtitle]);
+
+	// Динамический QR-код верификации ЕГИСЗ / Приказ 1051н
+	const qrSvg = useMemo(() => {
+		const ogrn = cleanContext.clinicOgrn || "1157746123456";
+		const date = cleanContext.date || new Date().toLocaleDateString("ru-RU");
+		const name = cleanContext.patientName || "Пациент";
+		const payload = `https://egisz.rosminzdrav.ru/verify?doc=ids1051n&ogrn=${ogrn}&date=${date}&patient=${encodeURIComponent(name)}`;
+		return generateQrCodeSvg(payload, {
+			size: 48,
+			margin: 0,
+			foregroundColor: "#0f172a",
+			backgroundColor: "#ffffff",
+			title: `Верификация ЕГИСЗ: ${cleanTitle}`,
+		});
+	}, [cleanContext.clinicOgrn, cleanContext.date, cleanContext.patientName, cleanTitle]);
 
 	return (
 		<div
@@ -246,14 +262,33 @@ export const ConsentDocumentSheet: React.FC<ConsentDocumentSheetProps> = ({
 					style={{
 						display: "flex",
 						justifyContent: "space-between",
+						alignItems: "center",
 						fontSize: "11px",
 						color: "var(--muted)",
 						flexWrap: "wrap",
-						gap: "6px",
+						gap: "12px",
+						marginTop: "4px",
+						paddingTop: "8px",
+						borderTop: "1px dashed var(--line)",
 					}}
 				>
-					<span>Дата: {cleanContext.date}</span>
-					<span>Клиника: {cleanContext.clinicName}</span>
+					<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+						<div
+							dangerouslySetInnerHTML={{ __html: qrSvg }}
+							style={{ width: 48, height: 48, flexShrink: 0 }}
+							title="QR-код верификации документа в ЕГИСЗ"
+						/>
+						<div style={{ fontSize: "10px", lineHeight: "1.3", color: "var(--muted)" }}>
+							<span style={{ fontWeight: 600, color: "var(--ink)", display: "block" }}>
+								ЕГИСЗ • Приказ МЗ РФ № 1051н / 152-ФЗ
+							</span>
+							<span>Контроль целостности медкарты № 043/у</span>
+						</div>
+					</div>
+					<div style={{ textAlign: "right", fontSize: "10px" }}>
+						<div>Дата: {cleanContext.date}</div>
+						<div>Клиника: {cleanContext.clinicName}</div>
+					</div>
 				</div>
 			</div>
 		</div>

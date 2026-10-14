@@ -458,13 +458,13 @@ export function useVisitConsentsLogic({
 			onFastPrintInformedConsent();
 			return;
 		}
-		const isItemSigned = Boolean(consentRecords[key]?.isSigned) || isVisitClosed;
+		const isItemSigned = Boolean(consentRecords[key]?.isSigned);
 		printFilledConsentTemplate(key, substitutionContext, {
 			isSigned: isItemSigned,
-			watermarkText: isItemSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК — ДЛЯ ОЗНАКОМЛЕНИЯ",
+			watermarkText: isItemSigned ? "ПОДПИСАНО НА БУМАГЕ" : "ДЛЯ ОЗНАКОМЛЕНИЯ И ПОДПИСИ",
 		});
 		showToast("Бланк согласия на лечение отправлен на печать", "success");
-	}, [consentRecords, isVisitClosed, onFastPrintInformedConsent, substitutionContext]);
+	}, [consentRecords, onFastPrintInformedConsent, substitutionContext]);
 
 	// Печать чистого бланка одного согласия со строками «________»
 	const handlePrintSingleBlank = useCallback((key: ConsentTemplateKey) => {
@@ -481,12 +481,13 @@ export function useVisitConsentsLogic({
 			pkgKey = "PACKAGE_ORTHOPEDICS";
 		}
 
+		const allRequiredSigned = unsignedRequiredItems.length === 0 && signedConsentKeys.length > 0;
 		printFilledConsentPackage(pkgKey, substitutionContext, {
-			isSigned: isVisitClosed,
-			watermarkText: isVisitClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК — ДЛЯ ПОДПИСИ ПАЦИЕНТОМ",
+			isSigned: allRequiredSigned,
+			watermarkText: allRequiredSigned ? "ПОДПИСАНО НА БУМАГЕ" : "ДЛЯ ПОДПИСИ ПАЦИЕНТОМ",
 		});
 		showToast("Пакет согласий на сегодня сформирован и отправлен на печать", "success");
-	}, [requiredFlags, substitutionContext, isVisitClosed]);
+	}, [requiredFlags, substitutionContext, unsignedRequiredItems.length, signedConsentKeys.length]);
 
 	// Сформировать доп. согласие на новые процедуры (печать + фиксация)
 	const handleFormAddendumConsent = useCallback(() => {
@@ -506,7 +507,7 @@ export function useVisitConsentsLogic({
 				signedAt: nowStr,
 				method: "paper",
 				doctorName: substitutionContext.doctorName || "Врач-стоматолог",
-				notes: "Дополнительное информированное согласие на добавленные инвазивные процедуры (Приказ Минздрава 1051н)",
+				notes: "Дополнительное информированное согласие на добавленные процедуры подписано на бумаге",
 				integrityHash: generateSha256(`ADDENDUM_${tplKey}_${patientId}_${nowStr}`),
 			};
 			next[tplKey] = rec;

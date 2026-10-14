@@ -38,13 +38,15 @@ describe("Informed Consent Packages & Batch Signing Suite (Mandates 8e, 8i, 8k, 
 	};
 
 	describe("1. Statutory Packages & Template Registry (Mandates 8e, 8i)", () => {
-		it("registers all 3 canonical clinical packages with valid keys", () => {
+		it("registers canonical clinical packages with valid keys", () => {
 			const packages = getAllConsentPackages();
-			assert.equal(packages.length, 3);
+			assert.equal(packages.length, 5);
 
 			const expectedKeys: ConsentPackageKey[] = [
 				"PACKAGE_PRIMARY_VISIT",
 				"PACKAGE_SURGERY",
+				"PACKAGE_IMPLANTOLOGY",
+				"PACKAGE_ORTHODONTICS",
 				"PACKAGE_ORTHOPEDICS",
 			];
 
@@ -54,34 +56,41 @@ describe("Informed Consent Packages & Batch Signing Suite (Mandates 8e, 8i, 8k, 
 			}
 		});
 
-		it("PACKAGE_PRIMARY_VISIT contains 152-ФЗ, 1051н, Анестезия, Терапия (4 documents)", () => {
+		it("PACKAGE_PRIMARY_VISIT contains Договор ПП РФ № 736, 152-ФЗ, 1051н (3 documents)", () => {
 			const pkg = getConsentPackage("PACKAGE_PRIMARY_VISIT");
-			assert.equal(pkg.templateKeys.length, 4);
+			assert.equal(pkg.templateKeys.length, 3);
 			assert.deepEqual(pkg.templateKeys, [
+				"CONSENT_PAID_CONTRACT",
 				"CONSENT_PERSONAL_DATA",
 				"CONSENT_INSPECTION_1051N",
-				"CONSENT_ANESTHESIA",
-				"CONSENT_THERAPY",
 			]);
 		});
 
-		it("PACKAGE_SURGERY contains 152-ФЗ, Анестезия, Хирургия (3 documents)", () => {
+		it("PACKAGE_SURGERY contains Удаление зуба + Местная анестезия (2 documents)", () => {
 			const pkg = getConsentPackage("PACKAGE_SURGERY");
-			assert.equal(pkg.templateKeys.length, 3);
+			assert.equal(pkg.templateKeys.length, 2);
 			assert.deepEqual(pkg.templateKeys, [
-				"CONSENT_PERSONAL_DATA",
+				"CONSENT_SURGERY_EXTRACTION",
 				"CONSENT_ANESTHESIA",
-				"CONSENT_SURGERY_IMPLANT",
 			]);
 		});
 
-		it("PACKAGE_ORTHOPEDICS contains 152-ФЗ, Анестезия, Ортопедия (3 documents)", () => {
-			const pkg = getConsentPackage("PACKAGE_ORTHOPEDICS");
+		it("PACKAGE_IMPLANTOLOGY contains Имплантация + Синус-лифтинг + Риски остеоинтеграции (3 documents)", () => {
+			const pkg = getConsentPackage("PACKAGE_IMPLANTOLOGY");
 			assert.equal(pkg.templateKeys.length, 3);
 			assert.deepEqual(pkg.templateKeys, [
-				"CONSENT_PERSONAL_DATA",
-				"CONSENT_ANESTHESIA",
-				"CONSENT_ORTHOPEDICS",
+				"CONSENT_IMPLANTOLOGY",
+				"CONSENT_SINUS_LIFT",
+				"CONSENT_OSTEOINTEGRATION_RISKS",
+			]);
+		});
+
+		it("PACKAGE_ORTHODONTICS contains Брекеты/элайнеры + Регламент гигиены и диеты (2 documents)", () => {
+			const pkg = getConsentPackage("PACKAGE_ORTHODONTICS");
+			assert.equal(pkg.templateKeys.length, 2);
+			assert.deepEqual(pkg.templateKeys, [
+				"CONSENT_ORTHODONTICS",
+				"CONSENT_ORTHO_HYGIENE",
 			]);
 		});
 
@@ -135,10 +144,9 @@ describe("Informed Consent Packages & Batch Signing Suite (Mandates 8e, 8i, 8k, 
 
 			assert.ok(html.includes("<!DOCTYPE html>"));
 			assert.ok(html.includes("page-break-after: always;"));
+			assert.ok(html.includes("ДОГ-736-ПМУ"));
 			assert.ok(html.includes("СОГЛ-152-ПДН"));
 			assert.ok(html.includes("ИДС-1051н"));
-			assert.ok(html.includes("ИДС-06-АНЕСТ")); // Анестезия
-			assert.ok(html.includes("ИДС-01-ТЕР")); // Терапия
 			assert.ok(html.includes("________________________________________"));
 		});
 
@@ -150,9 +158,25 @@ describe("Informed Consent Packages & Batch Signing Suite (Mandates 8e, 8i, 8k, 
 
 			assert.ok(html.includes("Иванов Иван Иванович"));
 			assert.ok(html.includes("Петрова Анна Сергеевна"));
-			assert.ok(html.includes("СОГЛ-152-ПДН"));
+			assert.ok(html.includes("ИДС-02-УДАЛ"));
 			assert.ok(html.includes("ИДС-06-АНЕСТ"));
-			assert.ok(html.includes("ИДС-02-ХИР-ИМПЛ")); // Хирургия
+		});
+
+		it("generateConsentPackagePrintHtml supports PACKAGE_IMPLANTOLOGY and PACKAGE_ORTHODONTICS", () => {
+			const implantHtml = generateConsentPackagePrintHtml("PACKAGE_IMPLANTOLOGY", {
+				mode: "filled",
+				context: mockContext,
+			});
+			assert.ok(implantHtml.includes("ИДС-02-ИМПЛ"));
+			assert.ok(implantHtml.includes("ИДС-02-СИНУС"));
+			assert.ok(implantHtml.includes("СОГЛ-02-РИСКИ-ОСТЕО"));
+
+			const orthoHtml = generateConsentPackagePrintHtml("PACKAGE_ORTHODONTICS", {
+				mode: "filled",
+				context: mockContext,
+			});
+			assert.ok(orthoHtml.includes("ИДС-03-ОРТОДОНТ"));
+			assert.ok(orthoHtml.includes("СОГЛ-03-ОРТО-ГИГИЕНА"));
 		});
 	});
 

@@ -25,6 +25,12 @@ export const CONSENT_KEY_TO_DOCUMENT_KIND: Partial<Record<ConsentTemplateKey, st
 	CONSENT_SEDATION: "anesthesia_consent_log",
 	CONSENT_PHOTOPROTOCOL: "photo_video_consent",
 	CONSENT_HEALTH_QUESTIONNAIRE: "patient_intake_questionnaire",
+	CONSENT_PAID_CONTRACT: "paid_medical_services_contract",
+	CONSENT_SURGERY_EXTRACTION: "procedure_specific_consent_packet",
+	CONSENT_IMPLANTOLOGY: "procedure_specific_consent_packet",
+	CONSENT_SINUS_LIFT: "procedure_specific_consent_packet",
+	CONSENT_OSTEOINTEGRATION_RISKS: "procedure_specific_consent_packet",
+	CONSENT_ORTHO_HYGIENE: "procedure_specific_consent_packet",
 };
 
 export const DOCUMENT_KIND_TO_CONSENT_KEY: Record<string, ConsentTemplateKey> = {
@@ -35,6 +41,7 @@ export const DOCUMENT_KIND_TO_CONSENT_KEY: Record<string, ConsentTemplateKey> = 
 	warranty_service_memo: "CONSENT_WARRANTY_PASSPORT",
 	photo_video_consent: "CONSENT_PHOTOPROTOCOL",
 	patient_intake_questionnaire: "CONSENT_HEALTH_QUESTIONNAIRE",
+	paid_medical_services_contract: "CONSENT_PAID_CONTRACT",
 };
 
 export const PROCEDURE_TYPE_TO_CONSENT_KEY: Record<string, ConsentTemplateKey> = {
@@ -47,9 +54,11 @@ export const PROCEDURE_TYPE_TO_CONSENT_KEY: Record<string, ConsentTemplateKey> =
 
 	// Surgery & Implantology
 	surgery_extraction: "CONSENT_SURGERY_IMPLANT",
-	implantation_bone_graft: "CONSENT_SURGERY_IMPLANT",
-	implantation: "CONSENT_SURGERY_IMPLANT",
-	sinus_lifting: "CONSENT_SURGERY_IMPLANT",
+	surgical_extraction: "CONSENT_SURGERY_EXTRACTION",
+	tooth_extraction: "CONSENT_SURGERY_EXTRACTION",
+	implantation_bone_graft: "CONSENT_IMPLANTOLOGY",
+	implantation: "CONSENT_IMPLANTOLOGY",
+	sinus_lifting: "CONSENT_SINUS_LIFT",
 
 	// Orthopedics & Prosthetics
 	prosthetics: "CONSENT_ORTHOPEDICS",
@@ -59,6 +68,7 @@ export const PROCEDURE_TYPE_TO_CONSENT_KEY: Record<string, ConsentTemplateKey> =
 
 	// Orthodontics
 	orthodontics: "CONSENT_ORTHODONTICS",
+	ortho_hygiene: "CONSENT_ORTHO_HYGIENE",
 
 	// Hygiene & Bleaching
 	hygiene_whitening: "CONSENT_HYGIENE_BLEACHING",
@@ -75,6 +85,8 @@ export const PROCEDURE_TYPE_TO_CONSENT_KEY: Record<string, ConsentTemplateKey> =
 	warranty_policy: "CONSENT_WARRANTY_POLICY",
 	warranty_passport: "CONSENT_WARRANTY_PASSPORT",
 	somatic_health_questionnaire: "CONSENT_HEALTH_QUESTIONNAIRE",
+	paid_contract: "CONSENT_PAID_CONTRACT",
+	osteo_risks: "CONSENT_OSTEOINTEGRATION_RISKS",
 };
 
 export const ALL_CONSENT_TEMPLATE_KEYS = new Set<ConsentTemplateKey>([
@@ -94,6 +106,12 @@ export const ALL_CONSENT_TEMPLATE_KEYS = new Set<ConsentTemplateKey>([
 	"CONSENT_SEDATION",
 	"CONSENT_PHOTOPROTOCOL",
 	"CONSENT_HEALTH_QUESTIONNAIRE",
+	"CONSENT_PAID_CONTRACT",
+	"CONSENT_SURGERY_EXTRACTION",
+	"CONSENT_IMPLANTOLOGY",
+	"CONSENT_SINUS_LIFT",
+	"CONSENT_OSTEOINTEGRATION_RISKS",
+	"CONSENT_ORTHO_HYGIENE",
 ]);
 
 export function isConsentTemplateKey(val: unknown): val is ConsentTemplateKey {

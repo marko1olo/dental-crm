@@ -226,7 +226,7 @@ describe("Red Team Inquisition: Informed Voluntary Consents (1051n & 323-FZ)", (
 
 			assert.ok(html.includes("Пакет информированных добровольных согласий"));
 			assert.ok(html.includes('data-testid="pkg-tab-PACKAGE_PRIMARY_VISIT"'));
-			assert.ok(html.includes("Подтвердить пакет (4 док.) в 1 клик"));
+			assert.ok(html.includes("Подтвердить пакет (3 док.) в 1 клик"));
 		});
 
 		it("renders 1-click blank print button ('________') without patient data requirements", () => {

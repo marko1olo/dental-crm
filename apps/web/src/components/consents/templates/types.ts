@@ -18,7 +18,13 @@ export type ConsentTemplateKey =
 	| "CONSENT_WARRANTY_POLICY"
 	| "CONSENT_SEDATION"
 	| "CONSENT_PHOTOPROTOCOL"
-	| "CONSENT_HEALTH_QUESTIONNAIRE";
+	| "CONSENT_HEALTH_QUESTIONNAIRE"
+	| "CONSENT_PAID_CONTRACT"
+	| "CONSENT_SURGERY_EXTRACTION"
+	| "CONSENT_IMPLANTOLOGY"
+	| "CONSENT_SINUS_LIFT"
+	| "CONSENT_OSTEOINTEGRATION_RISKS"
+	| "CONSENT_ORTHO_HYGIENE";
 
 export interface ConsentSection {
 	id: string;
@@ -66,6 +72,8 @@ export interface ConsentSubstitutionContext {
 export type ConsentPackageKey =
 	| "PACKAGE_PRIMARY_VISIT"
 	| "PACKAGE_SURGERY"
+	| "PACKAGE_IMPLANTOLOGY"
+	| "PACKAGE_ORTHODONTICS"
 	| "PACKAGE_ORTHOPEDICS";
 
 export interface ConsentPackageDefinition {
