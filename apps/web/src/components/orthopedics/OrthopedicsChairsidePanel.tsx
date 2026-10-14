@@ -67,7 +67,12 @@ export function OrthopedicsChairsidePanel({
 		initialLabOrder?.toothFdi ? String(initialLabOrder.toothFdi) : selectedTeeth.length > 0 ? selectedTeeth.join(", ") : activeToothFdi ? String(activeToothFdi) : "16",
 	);
 
-	const [jawScope, setJawScope] = useState<"upper" | "lower" | "both" | "none">("none");
+	const [jawScope, setJawScope] = useState<"upper" | "lower" | "both" | "none">(() => {
+		const t = Number(String(initialLabOrder?.toothFdi || activeToothFdi || "16").replace(/\D/g, "").slice(0, 2));
+		if ((t >= 11 && t <= 28) || (t >= 51 && t <= 65)) return "upper";
+		if ((t >= 31 && t <= 48) || (t >= 71 && t <= 85)) return "lower";
+		return "upper";
+	});
 	const [selectedMaterial, setSelectedMaterial] = useState<string>(initialLabOrder?.material || "ZrO2 Multi-Layer");
 	const [selectedShade, setSelectedShade] = useState<string>(initialLabOrder?.colorVita || "A2");
 	const [selectedStumpShade, setSelectedStumpShade] = useState<string>(initialLabOrder?.stumpShade || "ND2");

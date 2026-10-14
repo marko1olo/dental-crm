@@ -121,7 +121,7 @@ export function OrthopedicsChairsideTopBar({
 				</div>
 
 				<div
-					className="p-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-slate-300/80 dark:border-slate-700 inline-flex items-center gap-1 shrink-0"
+					className="p-1 !bg-slate-200/80 dark:!bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700 inline-flex items-center gap-1 shrink-0"
 					data-testid="jaw-scope-selector"
 					role="group"
 					aria-label="Область челюсти"
@@ -129,10 +129,10 @@ export function OrthopedicsChairsideTopBar({
 					<button
 						type="button"
 						onClick={() => onChangeJawScope(jawScope === "upper" ? "none" : "upper")}
-						className={`min-h-[44px] sm:min-h-[36px] px-2.5 sm:px-3 text-xs font-semibold rounded-md transition-all cursor-pointer whitespace-nowrap ${
+						className={`min-h-[44px] sm:min-h-[36px] px-3 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap ${
 							jawScope === "upper"
-								? "bg-teal-600 text-white shadow-xs font-bold"
-								: "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/60"
+								? "!bg-teal-600 !text-white shadow-xs !border-teal-500/50"
+								: "!bg-white dark:!bg-slate-900 border border-slate-200/80 dark:border-slate-700 !text-slate-700 dark:!text-slate-200 hover:!bg-slate-50 dark:hover:!bg-slate-800"
 						}`}
 						title="Верхняя челюсть (ВЧ)"
 						data-testid="jaw-scope-upper-btn"
@@ -142,10 +142,10 @@ export function OrthopedicsChairsideTopBar({
 					<button
 						type="button"
 						onClick={() => onChangeJawScope(jawScope === "lower" ? "none" : "lower")}
-						className={`min-h-[44px] sm:min-h-[36px] px-2.5 sm:px-3 text-xs font-semibold rounded-md transition-all cursor-pointer whitespace-nowrap ${
+						className={`min-h-[44px] sm:min-h-[36px] px-3 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap ${
 							jawScope === "lower"
-								? "bg-teal-600 text-white shadow-xs font-bold"
-								: "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/60"
+								? "!bg-teal-600 !text-white shadow-xs !border-teal-500/50"
+								: "!bg-white dark:!bg-slate-900 border border-slate-200/80 dark:border-slate-700 !text-slate-700 dark:text-slate-200 hover:!bg-slate-50 dark:hover:!bg-slate-800"
 						}`}
 						title="Нижняя челюсть (НЧ)"
 						data-testid="jaw-scope-lower-btn"
@@ -155,10 +155,10 @@ export function OrthopedicsChairsideTopBar({
 					<button
 						type="button"
 						onClick={() => onChangeJawScope(jawScope === "both" ? "none" : "both")}
-						className={`min-h-[44px] sm:min-h-[36px] px-2.5 sm:px-3 text-xs font-semibold rounded-md transition-all cursor-pointer whitespace-nowrap ${
+						className={`min-h-[44px] sm:min-h-[36px] px-3 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap ${
 							jawScope === "both"
-								? "bg-teal-600 text-white shadow-xs font-bold"
-								: "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/60"
+								? "!bg-teal-600 !text-white shadow-xs !border-teal-500/50"
+								: "!bg-white dark:!bg-slate-900 border border-slate-200/80 dark:border-slate-700 !text-slate-700 dark:text-slate-200 hover:!bg-slate-50 dark:hover:!bg-slate-800"
 						}`}
 						title="Обе челюсти"
 						data-testid="jaw-scope-both-btn"

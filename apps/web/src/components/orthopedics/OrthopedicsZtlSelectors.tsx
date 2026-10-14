@@ -132,7 +132,7 @@ export function OrthopedicsZtlSelectors({
 								data-testid={`ztl-preset-${preset.id}`}
 								title={`${preset.description} · Гарантия: ${preset.warrantyLabelRu}`}
 							>
-								<div className="flex items-start justify-between gap-1.5 min-w-0 w-full mb-1">
+								<div className="flex flex-wrap sm:flex-nowrap items-start justify-between gap-1 min-w-0 w-full mb-1">
 									<span className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug">
 										{preset.name}
 									</span>
