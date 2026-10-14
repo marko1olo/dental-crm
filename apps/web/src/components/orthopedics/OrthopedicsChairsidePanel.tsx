@@ -43,6 +43,7 @@ import {
 	type StandardZtlPreset,
 	STANDARD_ZTL_ORDER_PRESETS,
 	PREPARATION_MARGIN_PRESETS,
+	FIXATION_TYPE_PRESETS,
 } from "./orthopedicsPresets.js";
 import { OrthopedicsProtocolsGrid } from "./OrthopedicsProtocolsGrid.js";
 import { OrthopedicsVitaShadePicker } from "./OrthopedicsVitaShadePicker.js";
@@ -53,6 +54,10 @@ import {
 	OrthopedicsChairsideFooterBar,
 	type LinkedChairsideLabOrderInfo,
 } from "./OrthopedicsChairsideLabOrderBanner.js";
+import {
+	OrthopedicPassportA4Modal,
+	type OrthopedicPassportData,
+} from "./OrthopedicPassportA4Modal.js";
 
 export type { LinkedChairsideLabOrderInfo };
 
@@ -152,6 +157,9 @@ export function OrthopedicsChairsidePanel({
 	const marginPercent = grossPriceRub > 0 ? Math.round((netMarginRub / grossPriceRub) * 100) : 0;
 
 	const [preparationMargin, setPreparationMargin] = useState<string>("chamfer");
+	const [fixationType, setFixationType] = useState<"cement" | "screw" | "clasp">(() => activePreset?.fixationType ?? "cement");
+	const [hasAntagonists, setHasAntagonists] = useState<boolean>(true);
+	const [isPassportModalOpen, setIsPassportModalOpen] = useState<boolean>(false);
 	const [activeXrayUrl, setActiveXrayUrl] = useState<string | null>(recentToothXrayUrl ?? null);
 	const [isWarrantyRework, setIsWarrantyRework] = useState<boolean>(false);
 	const [warrantyLiabilityType, setWarrantyLiabilityType] = useState<"clinic_warranty" | "lab_defect">("clinic_warranty");
@@ -218,6 +226,12 @@ export function OrthopedicsChairsidePanel({
 	const handleSelectZtlPreset = useCallback((preset: StandardZtlPreset) => {
 		setActiveZtlPresetId(preset.id);
 		setSelectedMaterial(preset.material);
+		if (preset.fixationType) {
+			setFixationType(preset.fixationType);
+		}
+		if (preset.hasAntagonists !== undefined) {
+			setHasAntagonists(preset.hasAntagonists);
+		}
 		setDueDate(calculateDueDateStr(preset.turnaroundBusinessDays ?? 5));
 		showToast(`Выбран стандарт ЗТЛ: ${preset.name} (${preset.badge})`, "info", 2000);
 	}, []);
@@ -301,6 +315,7 @@ export function OrthopedicsChairsidePanel({
 		setIsLabOrderSending(true);
 		const effectiveStage = CANONICAL_MANUFACTURING_5_STAGES.find((s) => s.id === selectedStageId);
 		const marginPreset = PREPARATION_MARGIN_PRESETS.find((m) => m.id === preparationMargin);
+		const fixationPreset = FIXATION_TYPE_PRESETS.find((f) => f.id === fixationType);
 		const isWarranty = Boolean(isWarrantyRework);
 		const liabilityLabelRu = warrantyLiabilityType === "lab_defect"
 			? "Брак ЗТЛ (переделка за счет лаборатории 0 ₽)"
@@ -315,6 +330,9 @@ export function OrthopedicsChairsidePanel({
 			material: selectedMaterial,
 			colorVita: selectedShade,
 			stumpShade: selectedStumpShade,
+			fixationType,
+			fixationTypeLabel: fixationPreset?.labelRu ?? fixationType,
+			hasAntagonists,
 			stage: selectedStageId,
 			techStage: effectiveStage?.shortLabelRu ?? "Слепок/Скан",
 			preparationMargin,
@@ -331,8 +349,8 @@ export function OrthopedicsChairsidePanel({
 			marginPercent: isWarranty ? 0 : marginPercent,
 			dueDate,
 			doctorNotes: isWarranty
-				? `Гарантийная рекламация [${liabilityLabelRu}]. Для пациента: 0 ₽. Пресет: ${preset.name}. Оттенок: ${selectedShade}. Культя: ${selectedStumpShade}. Уступ: ${marginPreset?.labelRu ?? preparationMargin}.`
-				: `Срочный 1-клик наряд ЗТЛ из кресла врача. Пресет: ${preset.name}. Оттенок: ${selectedShade}. Культя: ${selectedStumpShade}. Уступ: ${marginPreset?.labelRu ?? preparationMargin}. Гарантия: ${preset.warrantyLabelRu}. Срок: ${dueDate}. Этап: ${effectiveStage?.shortLabelRu ?? "Слепок/Скан"}.`,
+				? `Гарантийная рекламация [${liabilityLabelRu}]. Для пациента: 0 ₽. Пресет: ${preset.name}. Оттенок: ${selectedShade}. Культя: ${selectedStumpShade}. Уступ: ${marginPreset?.labelRu ?? preparationMargin}. Фиксация: ${fixationPreset?.labelRu ?? fixationType}. Антагонисты: ${hasAntagonists ? "Да" : "Нет"}.`
+				: `Срочный 1-клик наряд ЗТЛ из кресла врача. Пресет: ${preset.name}. Оттенок: ${selectedShade}. Культя: ${selectedStumpShade}. Уступ: ${marginPreset?.labelRu ?? preparationMargin}. Фиксация: ${fixationPreset?.labelRu ?? fixationType}. Антагонисты: ${hasAntagonists ? "Да" : "Нет"}. Гарантия: ${preset.warrantyLabelRu}. Срок: ${dueDate}. Этап: ${effectiveStage?.shortLabelRu ?? "Слепок/Скан"}.`,
 			overrideActive: true,
 			overrideReason: overrideActive
 				? overrideReason
@@ -356,6 +374,9 @@ export function OrthopedicsChairsidePanel({
 				material: selectedMaterial,
 				colorVita: selectedShade,
 				stumpShade: selectedStumpShade,
+				fixationType,
+				fixationTypeLabel: fixationPreset?.labelRu ?? fixationType,
+				hasAntagonists,
 				stage: selectedStageId,
 				techStage: labOrderPayload.techStage,
 				preparationMargin,
@@ -628,6 +649,7 @@ export function OrthopedicsChairsidePanel({
 	const handleOpenLabOrder = useCallback(() => {
 		const teethParts = activeTeethInput.split(/[\s,;-]+/).map((p) => p.trim()).filter(Boolean);
 		const marginPreset = PREPARATION_MARGIN_PRESETS.find((m) => m.id === preparationMargin);
+		const fixationPreset = FIXATION_TYPE_PRESETS.find((f) => f.id === fixationType);
 		const draft = {
 			toothFdi: teethParts.length > 0 ? teethParts.join(", ") : "16",
 			teeth: teethParts.length > 0 ? teethParts : ["16"],
@@ -635,6 +657,9 @@ export function OrthopedicsChairsidePanel({
 			material: selectedMaterial,
 			colorVita: selectedShade,
 			stumpShade: selectedStumpShade,
+			fixationType,
+			fixationTypeLabel: fixationPreset?.labelRu ?? fixationType,
+			hasAntagonists,
 			preparationMargin,
 			preparationMarginLabel: marginPreset?.labelRu ?? preparationMargin,
 			priceRub: isWarrantyRework ? 0 : grossPriceRub,
@@ -655,7 +680,7 @@ export function OrthopedicsChairsidePanel({
 					JSON.stringify({
 						shadeCode: selectedShade,
 						stumpShadeCode: selectedStumpShade,
-						notes: `Материал: ${selectedMaterial}. Культя: ${selectedStumpShade}. Уступ: ${draft.preparationMarginLabel}. Срок: ${dueDate}.`,
+						notes: `Материал: ${selectedMaterial}. Культя: ${selectedStumpShade}. Уступ: ${draft.preparationMarginLabel}. Фиксация: ${draft.fixationTypeLabel}. Антагонисты: ${hasAntagonists ? "Да" : "Нет"}. Срок: ${dueDate}.`,
 					}),
 				);
 				window.dispatchEvent(
@@ -671,7 +696,9 @@ export function OrthopedicsChairsidePanel({
 		activeTeethInput,
 		activeXrayUrl,
 		dueDate,
+		fixationType,
 		grossPriceRub,
+		hasAntagonists,
 		isWarrantyRework,
 		jawScope,
 		marginPercent,
@@ -685,9 +712,28 @@ export function OrthopedicsChairsidePanel({
 		ztlCostRub,
 	]);
 
+	const fixationPreset = FIXATION_TYPE_PRESETS.find((f) => f.id === fixationType);
+	const passportData: OrthopedicPassportData = {
+		orderNumber: initialLabOrder?.orderNumber || labOrderSentNumber || undefined,
+		passportNumber: initialLabOrder?.warrantyPassport || (labOrderSentNumber ? `ГП-${labOrderSentNumber}` : undefined),
+		patientName: "Пациент",
+		patientChartNumber: patientId ? patientId.slice(-6) : undefined,
+		doctorName: "Д-р Смирнов А.В.",
+		technicianName: initialLabOrder?.technicianName || "Смирнов А.В. (ЗТЛ)",
+		toothFdi: activeTeethInput,
+		constructionName: activePreset?.name || "Ортопедическая конструкция",
+		material: selectedMaterial,
+		colorVita: selectedShade,
+		stumpShade: selectedStumpShade,
+		preparationMarginLabel: PREPARATION_MARGIN_PRESETS.find((m) => m.id === preparationMargin)?.labelRu ?? preparationMargin,
+		fixationTypeLabel: fixationPreset?.labelRu ?? (fixationType === "screw" ? "Винтовая Multi-Unit" : "Постоянная цементная (Fuji Plus / RelyX)"),
+		warrantyMonths: activePreset?.warrantyMonths ?? 60,
+		warrantyLabelRu: activePreset?.warrantyLabelRu ?? "60 месяцев (5 лет)",
+	};
+
 	return (
 		<div
-			className={`orthopedics-chairside-panel p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs ${className}`}
+			className={`orthopedics-chairside-panel p-2.5 sm:p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs max-w-full overflow-x-clip ${className}`}
 			data-testid="orthopedics-chairside-panel"
 		>
 			{hasLinkedChairsideLabOrder && (
@@ -700,6 +746,7 @@ export function OrthopedicsChairsidePanel({
 					warrantyPassport={effectiveWarrantyPassport}
 					fittingConfirmed={fittingConfirmed}
 					onConfirmFitting={handleConfirmChairsideFitting}
+					onOpenPassportA4={() => setIsPassportModalOpen(true)}
 				/>
 			)}
 
@@ -729,6 +776,17 @@ export function OrthopedicsChairsidePanel({
 				onSelectStumpShade={(shade) => {
 					setSelectedStumpShade(shade);
 					showToast(`Цвет культи: ${shade}`, "info", 1500);
+				}}
+				fixationType={fixationType}
+				onSelectFixationType={(type) => {
+					setFixationType(type);
+					const f = FIXATION_TYPE_PRESETS.find((p) => p.id === type);
+					showToast(`Фиксация: ${f?.labelRu ?? type}`, "info", 1500);
+				}}
+				hasAntagonists={hasAntagonists}
+				onToggleAntagonists={(val) => {
+					setHasAntagonists(val);
+					showToast(val ? "Антагонисты включены в наряд" : "Без антагонистов", "info", 1500);
 				}}
 				grossPriceRub={grossPriceRub}
 				ztlCostRub={ztlCostRub}
@@ -776,6 +834,7 @@ export function OrthopedicsChairsidePanel({
 				isLabOrderSending={isLabOrderSending}
 				onImmediateSendToLab={handleImmediateSendToLab}
 				onOpenLabOrder={handleOpenLabOrder}
+				onOpenPassportA4={() => setIsPassportModalOpen(true)}
 			/>
 
 			{/* Модалка 1-клик записи на фиксацию и шаблонов SMS / WhatsApp при поступлении работы в клинику */}
@@ -783,6 +842,13 @@ export function OrthopedicsChairsidePanel({
 				isOpen={isReadyInClinicModalOpen}
 				onClose={() => setIsReadyInClinicModalOpen(false)}
 				order={readyInClinicOrder}
+			/>
+
+			{/* Модалка Паспорта ортопедической конструкции и Гарантийного талона (А4) */}
+			<OrthopedicPassportA4Modal
+				isOpen={isPassportModalOpen}
+				onClose={() => setIsPassportModalOpen(false)}
+				passport={passportData}
 			/>
 		</div>
 	);

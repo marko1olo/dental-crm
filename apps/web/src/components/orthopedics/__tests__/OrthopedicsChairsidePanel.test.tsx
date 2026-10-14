@@ -79,7 +79,7 @@ describe("OrthopedicsChairsidePanel — EMR & Chairside Autonomy (Mandates 8d, 8
 			/>,
 		);
 
-		assert.strictEqual(STANDARD_ZTL_ORDER_PRESETS.length, 5, "Must export 5 ZTL presets (ZrO2, e.max, Noritake, PMMA, Clasp)");
+		assert.ok(STANDARD_ZTL_ORDER_PRESETS.length >= 5, "Must export at least 5 ZTL presets (ZrO2, e.max, Noritake, PMMA, Clasp)");
 		for (const preset of STANDARD_ZTL_ORDER_PRESETS) {
 			assert.ok(html.includes(preset.name), `Must render preset name ${preset.name}`);
 			assert.ok(html.includes(preset.badge), `Must render preset badge ${preset.badge}`);
@@ -263,12 +263,86 @@ describe("OrthopedicsChairsidePanel — EMR & Chairside Autonomy (Mandates 8d, 8
 		);
 
 		assert.ok(html.includes('data-testid="solo-economics-section"'), "Must render solo economics section");
-		assert.ok(html.includes("Экономика наряда и маржинальность (Мандат 8n)"), "Must render economics header");
+		assert.ok(html.includes("Экономика наряда и маржинальность:"), "Must render economics header");
 		assert.ok(html.includes("Пациент (выручка)"), "Must display gross revenue label");
 		assert.ok(html.includes("Лаборатория (ЗТЛ)"), "Must display lab cost label");
 		assert.ok(html.includes("Расходные материалы"), "Must display consumables cost label");
 		assert.ok(html.includes("Чистая маржа"), "Must display net margin label");
 		assert.ok(html.includes("Готовность ЗТЛ"), "Must display calculated turnaround due date");
+	});
+
+	it("renders compact occlusion section with articulator chips and facebow checkbox", () => {
+		const html = renderToString(
+			<OrthopedicsChairsidePanel
+				activeToothFdi={16}
+				selectedTeeth={[16]}
+			/>,
+		);
+
+		assert.ok(html.includes('data-testid="occlusion-section"'), "Must render occlusion section");
+		assert.ok(html.includes("Окклюзия и артикулятор (1 клик):"), "Must render occlusion header");
+		assert.ok(html.includes('data-testid="articulator-chip-bio_art"'), "Must render Bio-Art chip");
+		assert.ok(html.includes('data-testid="articulator-chip-kavo_protar"'), "Must render KaVo Protar chip");
+		assert.ok(html.includes('data-testid="articulator-chip-average_anatomical"'), "Must render average anatomical chip");
+		assert.ok(html.includes('data-testid="facebow-checkbox"'), "Must render facebow checkbox");
+		assert.ok(html.includes("Лицевая дуга (суставной путь 33° / Беннетт 15°)"), "Must render facebow angles label");
+	});
+
+	it("renders 5 core indirect construction presets including Bridge and All-on-4 (Paragraph 1)", () => {
+		const html = renderToString(
+			<OrthopedicsChairsidePanel
+				activeToothFdi={16}
+				selectedTeeth={[16]}
+			/>,
+		);
+
+		assert.ok(html.includes('data-testid="ztl-preset-bridge"'), "Must render bridge preset button");
+		assert.ok(html.includes('data-testid="ztl-preset-all_on_4"'), "Must render all-on-4 preset button");
+		assert.ok(html.includes("Мостовидный протез"), "Must display bridge label");
+		assert.ok(html.includes("All-on-4"), "Must display All-on-4 label");
+		assert.ok(html.includes("10 лет"), "All-on-4 must specify 10-year warranty");
+	});
+
+	it("renders Fixation Type selector (cement vs. screw vs. clasp) and Antagonists toggle (Paragraph 1)", () => {
+		const html = renderToString(
+			<OrthopedicsChairsidePanel
+				activeToothFdi={16}
+				selectedTeeth={[16]}
+			/>,
+		);
+
+		assert.ok(html.includes('data-testid="fixation-type-section"'), "Must render fixation type section");
+		assert.ok(html.includes('data-testid="fixation-type-cement"'), "Must render cement fixation button");
+		assert.ok(html.includes('data-testid="fixation-type-screw"'), "Must render screw fixation button");
+		assert.ok(html.includes('data-testid="fixation-type-clasp"'), "Must render clasp fixation button");
+		assert.ok(html.includes('data-testid="antagonists-checkbox"'), "Must render antagonists checkbox");
+		assert.ok(html.includes("Слепок/скан антагонистов"), "Must label antagonists toggle");
+	});
+
+	it("highlights master complete protocol «✓ Стандартное протезирование коронкой» across full width", () => {
+		const html = renderToString(
+			<OrthopedicsChairsidePanel
+				activeToothFdi={16}
+				selectedTeeth={[16]}
+			/>,
+		);
+
+		assert.ok(html.includes('data-testid="ortho-protocol-card-ortho_standard_crown_complete"'), "Must render card for master preset");
+		assert.ok(html.includes("1-клик Полный цикл"), "Must render badge 1-клик Полный цикл");
+		assert.ok(html.includes("Автосписание БОМ"), "Must indicate warehouse soft overdraft write-off");
+		assert.ok(html.includes('data-testid="apply-ortho-protocol-ortho_standard_crown_complete"'), "Must render button for master preset");
+	});
+
+	it("renders 1-click button for Orthopedic Construction Passport and Warranty Certificate (A4) (Paragraph 2)", () => {
+		const html = renderToString(
+			<OrthopedicsChairsidePanel
+				activeToothFdi={16}
+				selectedTeeth={[16]}
+			/>,
+		);
+
+		assert.ok(html.includes('data-testid="open-orthopedic-passport-btn"'), "Must render passport button in footer");
+		assert.ok(html.includes("Паспорт (А4)"), "Must contain label Паспорт (А4)");
 	});
 
 	it("strictly complies with Mandate 8d p. 7 (Zero cartoon emojis in clinical documents/panels)", () => {

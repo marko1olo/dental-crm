@@ -38,6 +38,7 @@ export interface WarrantyPassportModalProps {
 		snils?: string | null | undefined;
 	} | null | undefined;
 	doctorName?: string | null | undefined;
+	doctorId?: string | null | undefined;
 	doctorSpecialty?: string | null | undefined;
 	clinicName?: string | null | undefined;
 	clinicLegalName?: string | null | undefined;

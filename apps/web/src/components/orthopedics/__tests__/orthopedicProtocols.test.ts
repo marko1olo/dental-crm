@@ -284,4 +284,26 @@ describe("Orthopedic Protocols & Dental Lab Chairside Engine (Mandate 8e, 8i, 8k
 		const groupNames = VITA_SHADE_GROUPS.map((g) => g.group);
 		assert.deepEqual(groupNames, ["Bleach", "A", "B", "C", "D"]);
 	});
+
+	test("Мастер-пресет «✓ Стандартное протезирование коронкой» содержит полный цикл и автосписание БОМ (Мандаты 8e, 8n)", () => {
+		const masterProto = ORTHOPEDIC_CANONICAL_PROTOCOLS.find((p) => p.id === "ortho_standard_crown_complete");
+		assert.ok(masterProto, "ortho_standard_crown_complete должен присутствовать в реестре протоколов");
+		assert.ok(masterProto.shortLabel.includes("Стандартное протезирование"), "Название должно содержать Стандартное протезирование");
+		assert.equal(masterProto.quickWriteoffInventory, true, "Должен быть включен флаг быстрого автосписания БОМ");
+		assert.ok(masterProto.consumables && masterProto.consumables.length >= 4, "Должен содержать расходные материалы");
+
+		const consumableNames = masterProto.consumables!.map((c) => c.item);
+		assert.ok(consumableNames.some((n) => Boolean(n) && (n!.includes("Silagum") || n!.includes("Express"))), "Слепочная масса А-силикон");
+		assert.ok(consumableNames.some((n) => Boolean(n) && (n!.includes("Protemp") || n!.includes("Luxatemp"))), "Временная пластмасса PMMA");
+		assert.ok(consumableNames.some((n) => Boolean(n) && (n!.includes("Fuji") || n!.includes("RelyX"))), "Постоянный цемент");
+
+		const serviceCodes = masterProto.order804nServices.map((s) => s.code);
+		assert.ok(serviceCodes.includes("A16.07.004"), "A16.07.004 (коронка)");
+		assert.ok(serviceCodes.includes("A16.07.031.001"), "A16.07.031.001 (слепок А-силикон)");
+		assert.ok(serviceCodes.includes("A02.07.010"), "A02.07.010 (регистрация прикуса)");
+		assert.ok(serviceCodes.includes("A16.07.004.001"), "A16.07.004.001 (временная коронка)");
+		assert.ok(serviceCodes.includes("A16.07.025"), "A16.07.025 (примерка каркаса)");
+		assert.ok(serviceCodes.includes("A16.07.004.002"), "A16.07.004.002 (постоянная цементировка)");
+		assert.ok(serviceCodes.includes("A06.07.007"), "A06.07.007 (рентген-контроль)");
+	});
 });

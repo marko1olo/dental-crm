@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { createPortal } from "react-dom";
-import { AuthArtBackground } from "../auth/AuthArtBackground";
 import "./warrantyPassport.css";
 import type { CompletedTreatmentStage, WarrantyPassportModalProps } from "./warrantyPassport";
 import {
@@ -43,8 +42,10 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 
 	const modalContent = (
 		<div className="warranty-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-			<AuthArtBackground settings={{ pack: "dental-epic", dynamicByTimeOfDay: true }} overlayAlpha={0.3} />
 			<div className="warranty-modal-window" onClick={(e) => e.stopPropagation()}>
+				{/* Apple HIG Mobile Drag Handle */}
+				<div className="warranty-mobile-drag-handle" aria-hidden="true" />
+
 				{/* Header */}
 				<div className="warranty-modal-header">
 					<div className="warranty-header-left">

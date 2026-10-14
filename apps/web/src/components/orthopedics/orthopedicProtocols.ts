@@ -29,6 +29,7 @@ export type OrthopedicProtocolCategory =
 
 export interface OrthopedicConsumableItem {
 	readonly nameRu: string;
+	readonly item?: string | undefined;
 	readonly quantity: number;
 	readonly unit: string;
 	readonly defaultCostRub?: number;
@@ -107,9 +108,91 @@ export interface OrthopedicProtocolPreset {
 		| "orthopedics_cementation"
 		| undefined;
 	readonly consumables?: readonly OrthopedicConsumableItem[] | undefined;
+	readonly quickWriteoffInventory?: boolean | undefined;
 }
 
 export const ORTHOPEDIC_CANONICAL_PROTOCOLS: readonly OrthopedicProtocolPreset[] = [
+	{
+		id: "ortho_standard_crown_complete",
+		titleRu:
+			"Стандартное протезирование коронкой (А-силикон Silagum/Express, временная PMMA у кресла, примерка, фиксация Fuji Plus / RelyX U200)",
+		shortLabel: "Стандартное протезирование",
+		category: "prep_crown",
+		defaultIcd10: "K08.1",
+		defaultIcd10Label:
+			"Потеря зубов вследствие несчастного случая, удаления или локализованного пародонтита",
+		anamnesis:
+			"Плановое ортопедическое лечение дефекта коронковой части зуба цельноанатомической коронкой. Комплексный клинический протокол: препарирование с формированием уступа chamfer 0.8 мм, снятие двухслойного слепка А-силиконом (Silagum / Express XT), изготовление временной коронки PMMA у кресла на Temp-Bond NE, примерка каркаса и фиксация на стеклоиономерный цемент Fuji Plus или композитный цемент двойного отверждения RelyX U200.",
+		objective:
+			"Зуб препарирован с круговым уступом 0.8–1.0 мм chamfer. Десневой край интактен, ретракция нитью 00/0 с ViscoStat Clear. Культя плотная, герметичная, биологическая ширина сохранена.",
+		treatment:
+			"Инфильтрационная анестезия (Артикаин 4% с эпинефрином 1:100 000 — 1.7 мл). Препарирование твердых тканей зуба с формированием кругового уступа chamfer 0.8 мм с водно-воздушным охлаждением. Рентгенологический контроль культи. Двухслойный прецизионный оттиск А-силиконом (Silagum / Express XT) и регистрация прикуса окклюзионным силиконом. Изготовление и полировка временной коронки PMMA (Protemp 4 / Luxatemp) прямым методом у кресла, временная фиксация на безевгенольный цемент Temp-Bond NE. Клиническая примерка каркаса / коронки: контроль краевого прилегания, контактных пунктов, окклюзии копиркой Bausch 40 мкм. Постоянная фиксация на стеклоиономерный цемент GC Fuji Plus / композитный цемент двойного отверждения RelyX U200 с удалением излишков и рентген-контролем RVG. Врачом оформлены Паспорт ортопедической конструкции и Гарантийный талон А4.",
+		recommendations:
+			"Щадящий режим жевания 2 часа. Соблюдение гигиены щеткой и флоссом. Гарантийный талон и паспорт изделия выданы пациенту на руки. Контрольный осмотр через 6 месяцев.",
+		order804nServices: [
+			{
+				code: "A16.07.004",
+				nameRu: "Восстановление зуба коронкой (препарирование зуба под искусственную коронку)",
+				stageKind: "stage_3_orthopedics",
+				suggestedPriceRub: 4000,
+				priceRub: 4000,
+			},
+			{
+				code: "A16.07.031.001",
+				nameRu: "Снятие двухслойного оттиска прецизионным А-силиконом (Silagum / Express XT)",
+				stageKind: "stage_3_orthopedics",
+				suggestedPriceRub: 3500,
+				priceRub: 3500,
+			},
+			{
+				code: "A02.07.010",
+				nameRu: "Определение и фиксация центрального соотношения челюстей (окклюзионный силикон)",
+				stageKind: "stage_3_orthopedics",
+				suggestedPriceRub: 2000,
+				priceRub: 2000,
+			},
+			{
+				code: "A16.07.004.001",
+				nameRu: "Изготовление и фиксация временной коронки PMMA прямым методом у кресла (Protemp 4)",
+				stageKind: "stage_3_orthopedics",
+				suggestedPriceRub: 2500,
+				priceRub: 2500,
+			},
+			{
+				code: "A16.07.025",
+				nameRu: "Примерка ортопедической конструкции (коронки, каркаса, мостовидного протеза)",
+				stageKind: "stage_3_orthopedics",
+				suggestedPriceRub: 1500,
+				priceRub: 1500,
+			},
+			{
+				code: "A16.07.004.002",
+				nameRu: "Постоянная фиксация коронки на стеклоиономерный цемент Fuji Plus / RelyX U200",
+				stageKind: "stage_3_orthopedics",
+				suggestedPriceRub: 3000,
+				priceRub: 3000,
+			},
+			{
+				code: "A06.07.007",
+				nameRu: "Внутриротовой прицельный радиовизиографический снимок (контроль краевого прилегания и цемента)",
+				stageKind: "stage_3_orthopedics",
+				suggestedPriceRub: 750,
+				priceRub: 750,
+			},
+		],
+		warehouseBundleType: "orthopedics_prep",
+		quickWriteoffInventory: true,
+		consumables: [
+			{ nameRu: "А-силикон база + корректор (Silagum / Express XT)", item: "А-силикон база + корректор (Silagum / Express XT)", quantity: 1, unit: "компл.", defaultCostRub: 1600 },
+			{ nameRu: "Канюли смесительные для А-силикона", item: "Канюли смесительные для А-силикона", quantity: 2, unit: "шт.", defaultCostRub: 90 },
+			{ nameRu: "Нить ретракционная Ultrapak #00", item: "Нить ретракционная Ultrapak #00", quantity: 1, unit: "уп.", defaultCostRub: 850 },
+			{ nameRu: "Артикаин 1:100 000 (карпула 1.7 мл)", item: "Артикаин 1:100 000 (карпула 1.7 мл)", quantity: 1, unit: "карп.", defaultCostRub: 120 },
+			{ nameRu: "Бис-акриловый композит Protemp 4 / Luxatemp", item: "Бис-акриловый композит Protemp 4 / Luxatemp", quantity: 1, unit: "доза", defaultCostRub: 450 },
+			{ nameRu: "Цемент временный Temp-Bond NE", item: "Цемент временный Temp-Bond NE", quantity: 1, unit: "доза", defaultCostRub: 180 },
+			{ nameRu: "Стеклоиономерный цемент GC Fuji Plus / RelyX U200", item: "Стеклоиономерный цемент GC Fuji Plus / RelyX U200", quantity: 1, unit: "доза", defaultCostRub: 650 },
+			{ nameRu: "Праймер керамики Monobond Plus", item: "Праймер керамики Monobond Plus", quantity: 1, unit: "доза", defaultCostRub: 250 },
+		],
+	},
 	{
 		id: "ortho_prep_zirconia_emax",
 		titleRu:

@@ -133,10 +133,15 @@ async function run() {
       hasTouch: t.isMobile,
     });
     const page = await context.newPage();
+    page.on('console', msg => console.log(`[${t.id}] LOG:`, msg.text()));
+    page.on('pageerror', err => console.log(`[${t.id}] PAGE ERROR:`, err.message));
+
     await setupPage(page, t.theme, t.viewport);
 
-    await page.goto('http://127.0.0.1:5174/?dms=letter', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    const baseUrl = 'http://127.0.0.1:5173/?dms=letter';
+    await page.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForTimeout(1500);
+    console.log(`[${t.id}] Current URL after goto:`, page.url());
 
     // Apply theme strictly
     await page.evaluate((theme) => {
@@ -151,6 +156,18 @@ async function run() {
     // Wait for the DMS modal window to be visible
     const modal = page.locator('.dms-modal-window');
     await modal.waitFor({ state: 'visible', timeout: 10000 });
+
+    // Scroll modal body so that split calculator and banner are centered in viewport
+    await page.evaluate(() => {
+      const splitSec = document.querySelector('[data-testid="dms-split-summary-banner"]');
+      if (splitSec) {
+        splitSec.scrollIntoView({ behavior: 'instant', block: 'center' });
+      } else {
+        const body = document.querySelector('.dms-modal-body');
+        if (body) body.scrollTop = 350;
+      }
+    });
+    await page.waitForTimeout(500);
 
     const screenshotPath = path.join(OUT_DIR, t.id);
     await page.screenshot({ path: screenshotPath, fullPage: false });

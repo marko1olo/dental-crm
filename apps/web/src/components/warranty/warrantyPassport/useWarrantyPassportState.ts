@@ -33,11 +33,13 @@ import {
 } from "../warrantyPresets.js";
 import { mapCompletedStagesToWarrantyItems } from "./constants";
 import type { WarrantyPassportModalProps, WarrantyTab } from "./types";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 
 export function useWarrantyPassportState({
 	isOpen,
 	patient,
 	doctorName = "Лечащий врач",
+	doctorId,
 	doctorSpecialty = "Врач-стоматолог",
 	clinicName = "ООО «Стоматологическая клиника»",
 	clinicLegalName = "ООО «Стоматологическая клиника»",
@@ -343,8 +345,8 @@ export function useWarrantyPassportState({
 		setRemediationSuccessNotice(null);
 	};
 
-	// 1-клик оформление гарантийной переделки (0 ₽)
-	const handleCreateRemediation = () => {
+	// 1-клик оформление гарантийной переделки (0 ₽) — ст. 29 Закона РФ № 2300-1 и Мандат 8e
+	const handleCreateRemediation = async () => {
 		const tooth = selectedRemediationTooth || (items[0]?.toothNumber ?? "1.6");
 		const pName = patient?.fullName || "Пациент стоматологической клиники";
 		const pCard = patient?.cardNumber || "МК-2026";
@@ -369,9 +371,49 @@ export function useWarrantyPassportState({
 		});
 
 		setRemediations((prev) => [order, ...prev]);
+
+		// Автоматическое определение дефекта ортопедии / зуботехнической лаборатории
+		const isLabDefect =
+			selectedDefectType === "ceramic_chip" ||
+			selectedDefectType === "crown_decementation" ||
+			selectedDefectType === "denture_fracture" ||
+			selectedDefectType === "screw_loosening" ||
+			matchedItem?.category === "ceramic_crown_veneer" ||
+			matchedItem?.category === "removable_prosthesis";
+
+		const ztlNote = isLabDefect
+			? ` • [ЗТЛ: направлена рекламация на бесплатную переделку каркаса/керамики. Наряд: ${matchedItem?.labOrderNumber || "б/н"}]`
+			: "";
+
 		setRemediationSuccessNotice(
-			`Акт гарантийного устранения дефекта ${order.orderNumber} (0 ₽) успешно сформирован! Материалы списаны со склада по факту.`,
+			`Акт гарантийного устранения дефекта ${order.orderNumber} (0 ₽) успешно сформирован!${isLabDefect ? " Рекламация в ЗТЛ сформирована." : ""} Материалы списаны со склада по факту.`,
 		);
+
+		// Сквозная фиксация рекламации в базе данных PostgreSQL (таблица patient_reclamations)
+		if (patient?.id) {
+			try {
+				const effectiveDoctorId =
+					doctorId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(doctorId)
+						? doctorId
+						: undefined;
+
+				if (effectiveDoctorId) {
+					await fetch(`/api/patients/${patient.id}/reclamations`, {
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({
+							"Content-Type": "application/json",
+						}),
+						body: JSON.stringify({
+							complicationDetails: `Гарантийный случай: ${order.defectTitle} (Зуб ${tooth}). ${customRemediationFinding || ""}${ztlNote}`,
+							proposedAction: `Гарантийная переделка (0 ₽): ${customRemediationAction || ""}`,
+							doctorId: effectiveDoctorId,
+						}),
+					});
+				}
+			} catch (reclamationErr) {
+				console.error("Non-blocking: Failed to persist warranty reclamation to backend:", reclamationErr);
+			}
+		}
 
 		if (onRemediationCreated) {
 			onRemediationCreated(order);
@@ -411,7 +453,7 @@ export function useWarrantyPassportState({
 	}, [certificateHtml]);
 
 	// Прикрепление к карте 043/у
-	const handleAttachTo043u = () => {
+	const handleAttachTo043u = async () => {
 		setAttachedStatus(true);
 		if (onAttachToForm043u) {
 			onAttachToForm043u({
@@ -425,6 +467,47 @@ export function useWarrantyPassportState({
 		}
 		if (onCertificateIssued) {
 			onCertificateIssued(certificateData);
+		}
+
+		// Синхронизация с честной таблицей PostgreSQL warranty_certificates и авто-создание реколла (#recalls)
+		if (patient?.id) {
+			try {
+				const status =
+					certificateData.calculation.warrantyStatus === "void_risk"
+						? "voided"
+						: certificateData.calculation.warrantyStatus === "conditional" ||
+							  certificateData.calculation.warrantyStatus === "reduced"
+							? "conditional"
+							: "active";
+
+				await fetch("/api/warranty/certificates", {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						patientId: patient.id,
+						certificateNumber: certificateData.certificateId,
+						status,
+						items: certificateData.items,
+						warrantyMonths: certificateData.calculation.adjustedWarrantyMonths,
+						serviceLifeMonths: certificateData.calculation.adjustedServiceLifeMonths,
+						issuedAt: certificateData.issueDate
+							? new Date(certificateData.issueDate).toISOString()
+							: new Date().toISOString(),
+						expiresAt: certificateData.calculation.warrantyExpirationDate
+							? new Date(certificateData.calculation.warrantyExpirationDate).toISOString()
+							: null,
+						nextRecallDate: certificateData.calculation.nextCheckupDueDate
+							? new Date(certificateData.calculation.nextCheckupDueDate).toISOString()
+							: null,
+						integritySha256: certificateData.integrityHash,
+						notes: `Оформлен гарантийный паспорт. Врач: ${doctorName || "Лечащий врач"}.`,
+					}),
+				});
+			} catch (err) {
+				console.error("Failed to persist warranty certificate to backend:", err);
+			}
 		}
 	};
 

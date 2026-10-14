@@ -29,9 +29,11 @@
 }
 
 .warranty-modal-window {
-	background: var(--paper-strong, var(--paper));
-	color: var(--ink);
-	border: 1px solid var(--line-strong, var(--line));
+	position: relative;
+	z-index: 10;
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
 	border-radius: 12px;
 	box-shadow: var(--shadow-2, 0 20px 25px -5px rgba(0, 0, 0, 0.3));
 	width: 100%;
@@ -41,6 +43,13 @@
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
+}
+
+.dark .warranty-modal-window,
+[data-theme="dark"] .warranty-modal-window {
+	background: var(--paper-strong, var(--paper, #0f172a));
+	color: var(--ink, #f8fafc);
+	border-color: var(--line-strong, var(--line, #334155));
 }
 
 /* Header */
@@ -1235,4 +1244,243 @@
 	display: flex;
 	justify-content: flex-end;
 }
+
+/* ============================================================================
+   APPLE MOBILE HIG (iOS/iPadOS) & ANTI-DESKTOP-SQUEEZE DEDICATED MOBILE LAYER
+   Strict compliance with C:\Clinic_MVP\dental-crm\.agents\MOBILE_DESIGN_APPLE_HIG.md
+   - Bottom Sheet Drawer with 24px border radius
+   - Centered Drag Handle (36x5px)
+   - Touch Target Minimum >= 44x44px for gloved chairside dentist
+   - Safe Area Inset Protection (Dynamic Island & Home Indicator)
+   - Zero horizontal scroll bleed (overflow-x: clip; max-width: 100vw;)
+   ============================================================================ */
+
+.warranty-mobile-drag-handle {
+	display: none;
+}
+
+@keyframes warrantySheetSlideUp {
+	from {
+		transform: translateY(100%);
+		opacity: 0.8;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+@media (max-width: 768px) {
+	.warranty-modal-overlay {
+		align-items: flex-end;
+		padding: 0;
+		overflow-x: clip;
+		max-width: 100vw;
+		background: rgba(0, 0, 0, 0.72);
+		backdrop-filter: blur(8px);
+	}
+
+	.warranty-modal-window {
+		width: 100vw;
+		max-width: 100vw;
+		height: 92vh;
+		max-height: 92vh;
+		border-radius: 24px 24px 0 0;
+		border-left: none;
+		border-right: none;
+		border-bottom: none;
+		margin: 0;
+		overflow-x: clip;
+		box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.45);
+		animation: warrantySheetSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.warranty-mobile-drag-handle {
+		display: block;
+		width: 36px;
+		height: 5px;
+		border-radius: 3px;
+		background: var(--line-strong, rgba(148, 163, 184, 0.4));
+		margin: 8px auto 6px auto;
+		flex-shrink: 0;
+	}
+
+	.warranty-modal-header {
+		padding: 10px 14px;
+		gap: 8px;
+	}
+
+	.warranty-header-icon {
+		width: 34px;
+		height: 34px;
+	}
+
+	.warranty-header-title h3 {
+		font-size: 14px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: calc(100vw - 120px);
+	}
+
+	.warranty-header-title p {
+		font-size: 11px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: calc(100vw - 120px);
+	}
+
+	.warranty-header-actions .warranty-btn-icon {
+		min-width: 44px;
+		min-height: 44px;
+		width: 44px;
+		height: 44px;
+		border-radius: 10px;
+	}
+
+	/* Tabs: Horizontal scrollable segmented bar with 44px touch targets */
+	.warranty-tabs-bar {
+		padding: 6px 12px;
+		min-height: 50px;
+		height: auto;
+		gap: 6px;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+	}
+
+	.warranty-tabs-bar::-webkit-scrollbar {
+		display: none;
+	}
+
+	.warranty-tab-btn {
+		min-height: 44px;
+		height: 44px;
+		padding: 0 14px;
+		font-size: 13px;
+		border-radius: 10px;
+		flex-shrink: 0;
+	}
+
+	/* Body & Content */
+	.warranty-modal-body {
+		padding: 12px 14px;
+		overflow-x: clip;
+	}
+
+	.warranty-studio-grid {
+		grid-template-columns: 1fr;
+		gap: 14px;
+	}
+
+	/* Tooth chips: touch target minimum >= 44x44px for chairside doctor in gloves */
+	.warranty-arch-row {
+		gap: 3px;
+	}
+
+	.warranty-tooth-chip {
+		min-width: 44px;
+		min-height: 44px;
+		height: 44px;
+		font-size: 13px;
+		border-radius: 8px;
+	}
+
+	.warranty-arch-divider {
+		width: 6px;
+	}
+
+	/* Presets & Grids */
+	.warranty-star-presets-grid {
+		grid-template-columns: 1fr;
+		gap: 8px;
+	}
+
+	.warranty-star-chip {
+		min-height: 48px;
+		padding: 10px 12px;
+	}
+
+	.warranty-presets-grid {
+		grid-template-columns: 1fr;
+		gap: 8px;
+	}
+
+	.warranty-preset-card {
+		min-height: 52px;
+		padding: 12px;
+	}
+
+	.warranty-form-row {
+		grid-template-columns: 1fr;
+		gap: 10px;
+	}
+
+	.warranty-input,
+	.warranty-select {
+		height: 44px;
+		min-height: 44px;
+		font-size: 14px;
+	}
+
+	.warranty-defect-templates-grid {
+		grid-template-columns: 1fr;
+		gap: 8px;
+	}
+
+	.warranty-defect-btn {
+		min-height: 48px;
+		padding: 10px 12px;
+	}
+
+	/* Remediation action bar */
+	.warranty-remediation-action-bar {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 12px;
+	}
+
+	.warranty-btn-remediation-submit {
+		width: 100%;
+		height: 48px;
+		min-height: 48px;
+		justify-content: center;
+		font-size: 14px;
+		border-radius: 10px;
+	}
+
+	/* Footer: Natural Thumb Zone (Bottom third of screen) */
+	.warranty-modal-footer {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
+		padding: 10px 14px max(14px, env(safe-area-inset-bottom)) 14px;
+		background: var(--paper-soft, var(--paper));
+		border-top: 1px solid var(--line);
+		flex-shrink: 0;
+	}
+
+	.warranty-footer-left {
+		justify-content: center;
+		font-size: 11px;
+		gap: 6px;
+	}
+
+	.warranty-footer-right {
+		flex-direction: column;
+		width: 100%;
+		gap: 8px;
+	}
+
+	.warranty-btn-secondary,
+	.warranty-btn-primary {
+		width: 100%;
+		height: 44px;
+		min-height: 44px;
+		justify-content: center;
+		font-size: 14px;
+		border-radius: 10px;
+	}
+}
+
 

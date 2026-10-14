@@ -41,32 +41,50 @@ export function OrthopedicsProtocolsGrid({
 		<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-3">
 			{ORTHOPEDIC_CANONICAL_PROTOCOLS.map((proto) => {
 				const isApplied = appliedProtocolId === proto.id;
+				const isMasterPreset = proto.id === "ortho_standard_crown_complete";
 
 				return (
 					<div
 						key={proto.id}
-						className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-800 transition-colors flex flex-col justify-between gap-2"
+						className={`p-3 rounded-lg border transition-colors flex flex-col justify-between gap-2 ${
+							isMasterPreset
+								? "md:col-span-2 border-teal-500/60 bg-teal-50/70 dark:bg-teal-950/30 ring-1 ring-teal-500/30 shadow-xs"
+								: "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-800"
+						}`}
+						data-testid={`ortho-protocol-card-${proto.id}`}
 					>
 						<div className="flex items-start gap-2">
 							{getProtocolIcon(proto.category)}
 							<div className="min-w-0 flex-1">
-								<div className="flex items-center justify-between gap-1">
-									<h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
-										{proto.shortLabel}
-									</h4>
-									<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+								<div className="flex items-center justify-between gap-1 flex-wrap">
+									<div className="flex items-center gap-1.5 min-w-0">
+										<h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+											{proto.shortLabel}
+										</h4>
+										{isMasterPreset && (
+											<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-teal-600 text-white shadow-2xs shrink-0">
+												1-клик Полный цикл
+											</span>
+										)}
+									</div>
+									<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
 										{proto.defaultIcd10}
 									</span>
 								</div>
 								<p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 mt-0.5 leading-relaxed">
 									{proto.treatment}
 								</p>
+								{isMasterPreset && (
+									<div className="mt-1 text-[11px] text-teal-800 dark:text-teal-300 font-medium">
+										Автосписание БОМ (мягкий овердрафт): А-силикон (Silagum), PMMA (Protemp 4), цемент (GC Fuji Plus / RelyX U200).
+									</div>
+								)}
 							</div>
 						</div>
 
-						<div className="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60">
+						<div className="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60 flex-wrap">
 							<div className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
-								Номенклатура: {proto.order804nServices.map((s) => s.code).join(", ")}
+								Номенклатура: <span className="font-mono">{proto.order804nServices.map((s) => s.code).join(", ")}</span>
 							</div>
 
 							<button
@@ -75,6 +93,8 @@ export function OrthopedicsProtocolsGrid({
 								className={`min-h-[48px] px-3.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${
 									isApplied
 										? "bg-emerald-600 text-white"
+										: isMasterPreset
+										? "bg-teal-700 hover:bg-teal-800 text-white font-extrabold ring-1 ring-teal-600"
 										: "bg-teal-600 hover:bg-teal-700 text-white"
 								}`}
 								data-testid={`apply-ortho-protocol-${proto.id}`}
@@ -88,7 +108,7 @@ export function OrthopedicsProtocolsGrid({
 								) : (
 									<>
 										<FileText size={16} />
-										<span>Внести в 043/у и смету</span>
+										<span>{isMasterPreset ? "Внести полный протокол и смету" : "Внести в 043/у и смету"}</span>
 										<ArrowRight size={14} />
 									</>
 								)}

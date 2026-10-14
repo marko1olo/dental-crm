@@ -534,8 +534,316 @@
 	color: var(--ink, #f8fafc);
 }
 
-/* Touch-адаптация для мобильных устройств и сенсорных экранов (pointer: coarse / max-width: 640px) */
-@media (pointer: coarse), (max-width: 640px) {
+/* ─── Apple iOS HIG & Anti-Desktop-Squeeze Responsive Layer ────────────────── */
+
+/* Bottom Sheet Drag Handle */
+.dms-bottom-sheet-handle {
+	display: none;
+}
+
+/* Split Summary Banner */
+.dms-split-summary-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	border-radius: 12px;
+	background: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(217, 119, 6, 0.08) 100%);
+	border: 1px solid var(--teal, #0d9488);
+	margin-bottom: 14px;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.dms-banner-content {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.dms-banner-text {
+	font-size: 0.9375rem;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+}
+
+.dms-banner-divider {
+	color: var(--line, #cbd5e1);
+	margin: 0 4px;
+}
+
+.dms-banner-sub {
+	font-size: 0.8125rem;
+	color: var(--muted, #64748b);
+	font-weight: 600;
+}
+
+/* 28px Bold Font Mono for remaining limit */
+.dms-stat-value-large {
+	font-size: 28px !important;
+	font-weight: 700 !important;
+	line-height: 1.15 !important;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+}
+
+/* Desktop switcher */
+.dms-split-switcher-group {
+	display: inline-flex;
+	background: var(--paper-soft, #f1f5f9);
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 8px;
+	padding: 2px;
+	gap: 2px;
+}
+
+.dms-switcher-btn {
+	border: none;
+	background: transparent;
+	padding: 3px 8px;
+	border-radius: 6px;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	min-height: 26px;
+}
+
+.dms-switcher-btn:hover {
+	color: var(--ink, #0f172a);
+}
+
+.dms-switcher-btn.active {
+	background: var(--paper, #ffffff);
+	color: var(--teal, #0d9488);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	font-weight: 700;
+}
+
+/* Mobile & Desktop visibility switches */
+.dms-desktop-table-container {
+	display: block;
+}
+
+.dms-mobile-grouped-list {
+	display: none;
+}
+
+/* Touch-адаптация и мобильный Bottom Sheet (Apple iOS HIG <= 768px) */
+@media (max-width: 768px) {
+	.dms-bottom-sheet-handle {
+		display: block;
+		width: 36px;
+		height: 5px;
+		background: var(--muted, #94a3b8);
+		opacity: 0.45;
+		border-radius: 9999px;
+		margin: 8px auto 4px auto;
+		flex-shrink: 0;
+	}
+
+	.dms-modal-backdrop {
+		align-items: flex-end;
+		padding: 0;
+		overflow-x: clip;
+		max-width: 100vw;
+	}
+
+	.dms-modal-window {
+		max-height: 92vh;
+		width: 100%;
+		border-radius: 24px 24px 0 0;
+		border-bottom: none;
+		border-left: none;
+		border-right: none;
+	}
+
+	.dms-modal-header {
+		padding: 12px 16px;
+	}
+
+	.dms-modal-body {
+		padding: 14px 16px;
+		gap: 14px;
+	}
+
+	.dms-modal-footer {
+		padding: 12px 16px;
+		padding-bottom: max(16px, env(safe-area-inset-bottom));
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	.dms-modal-footer > div {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.dms-modal-footer .dms-btn {
+		width: 100%;
+		min-height: 44px;
+	}
+
+	.dms-grid-2,
+	.dms-grid-3,
+	.dms-grid-4 {
+		grid-template-columns: 1fr !important;
+	}
+
+	.dms-stats-row {
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+	}
+
+	.dms-stat-card {
+		padding: 10px;
+	}
+
+	.dms-stat-value-large {
+		font-size: 24px !important;
+	}
+
+	/* Таблица скрывается, включаются нативные Grouped Cards */
+	.dms-desktop-table-container {
+		display: none !important;
+	}
+
+	.dms-mobile-grouped-list {
+		display: flex !important;
+		flex-direction: column;
+		gap: 12px;
+		width: 100%;
+		overflow-x: clip;
+		max-width: 100vw;
+	}
+
+	.dms-mobile-grouped-card {
+		background: var(--paper, #ffffff);
+		border: 1px solid var(--line, #e2e8f0);
+		border-radius: 16px;
+		padding: 14px;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+	}
+
+	.dms-mobile-card-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+	}
+
+	.dms-mobile-code-badge {
+		background: var(--paper-soft, #f1f5f9);
+		color: var(--primary, #0284c7);
+		padding: 2px 6px;
+		border-radius: 6px;
+		font-size: 0.75rem;
+		font-weight: 700;
+	}
+
+	.dms-mobile-tooth-badge {
+		background: var(--surface, #f8fafc);
+		border: 1px solid var(--line, #cbd5e1);
+		color: var(--muted, #64748b);
+		padding: 2px 6px;
+		border-radius: 6px;
+		font-size: 0.75rem;
+	}
+
+	.dms-mobile-card-price {
+		font-size: 0.9375rem;
+		color: var(--ink, #0f172a);
+	}
+
+	.dms-mobile-card-name {
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--ink, #0f172a);
+		line-height: 1.3;
+	}
+
+	/* Сегментированный переключатель с сенсорной областью >= 44x44px */
+	.dms-mobile-segmented-control {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		background: var(--surface, #f1f5f9);
+		border: 1px solid var(--line, #e2e8f0);
+		border-radius: 12px;
+		padding: 3px;
+		gap: 3px;
+	}
+
+	.dms-mobile-segment-btn {
+		min-height: 42px;
+		height: 42px;
+		border: none;
+		background: transparent;
+		border-radius: 9px;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--muted, #64748b);
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.15s ease;
+		padding: 0 4px;
+		text-align: center;
+	}
+
+	.dms-mobile-segment-btn:active {
+		transform: scale(0.97);
+	}
+
+	.dms-mobile-segment-btn.active {
+		background: var(--paper, #ffffff);
+		color: var(--teal, #0d9488);
+		font-weight: 700;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+	}
+
+	.dms-mobile-card-breakdown {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding: 8px 12px;
+		background: var(--surface, #f8fafc);
+		border-radius: 10px;
+		font-size: 0.8125rem;
+	}
+
+	.dms-mobile-breakdown-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.dms-checkout-action-wrap {
+		position: sticky;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		padding: 12px 0 env(safe-area-inset-bottom);
+		background: var(--paper, #ffffff);
+		border-top: 1px solid var(--line, #e2e8f0);
+		z-index: 10;
+		margin-top: 12px !important;
+	}
+
+	.dms-cta-apply-checkout {
+		width: 100% !important;
+		min-height: 48px !important;
+		height: 48px !important;
+		font-size: 0.9375rem !important;
+		border-radius: 14px !important;
+	}
+
 	.dms-btn {
 		min-height: 44px;
 		height: 44px;
@@ -569,6 +877,72 @@
 		border-radius: 12px;
 		font-size: 0.875rem;
 	}
+}
+
+/* ─── Тёмная тема для новых элементов ДМС ──────────────────────────────────── */
+[data-theme="dark"] .dms-split-summary-banner,
+.dark .dms-split-summary-banner {
+	background: linear-gradient(135deg, rgba(13, 148, 136, 0.15) 0%, rgba(217, 119, 6, 0.15) 100%);
+	border-color: rgba(13, 148, 136, 0.6);
+}
+
+[data-theme="dark"] .dms-banner-text,
+.dark .dms-banner-text {
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .dms-split-switcher-group,
+.dark .dms-split-switcher-group {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-switcher-btn.active,
+.dark .dms-switcher-btn.active {
+	background: var(--surface, #1e293b);
+	color: #2dd4bf;
+}
+
+[data-theme="dark"] .dms-mobile-grouped-card,
+.dark .dms-mobile-grouped-card {
+	background: var(--surface, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-mobile-code-badge,
+.dark .dms-mobile-code-badge {
+	background: var(--paper, #0f172a);
+	color: #38bdf8;
+}
+
+[data-theme="dark"] .dms-mobile-card-price,
+[data-theme="dark"] .dms-mobile-card-name,
+.dark .dms-mobile-card-price,
+.dark .dms-mobile-card-name {
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .dms-mobile-segmented-control,
+.dark .dms-mobile-segmented-control {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-mobile-segment-btn.active,
+.dark .dms-mobile-segment-btn.active {
+	background: var(--surface, #1e293b);
+	color: #2dd4bf;
+}
+
+[data-theme="dark"] .dms-mobile-card-breakdown,
+.dark .dms-mobile-card-breakdown {
+	background: var(--paper, #0f172a);
+}
+
+[data-theme="dark"] .dms-checkout-action-wrap,
+.dark .dms-checkout-action-wrap {
+	background: var(--surface, #1e293b);
+	border-color: var(--line, #334155);
 }
 
 /* Стили печати для документов */

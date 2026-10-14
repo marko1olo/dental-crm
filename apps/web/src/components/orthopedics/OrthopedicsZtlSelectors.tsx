@@ -5,14 +5,16 @@
  * Mandate 8e: Практичный выбор врача без блокирующих диалогов, тач-таргеты min-h-[48px].
  */
 
-import React from "react";
-import { Zap, Clock, ShieldCheck, DollarSign, Calendar, Palette } from "lucide-react";
+import React, { useState } from "react";
+import { Zap, Clock, ShieldCheck, DollarSign, Calendar, Palette, Sliders } from "lucide-react";
 import { DentalCrown } from "../icons/DentalIcons.js";
 import {
 	type StandardZtlPreset,
 	STANDARD_ZTL_ORDER_PRESETS,
 	PREPARATION_MARGIN_PRESETS,
 	STUMP_SHADE_PRESETS,
+	FIXATION_TYPE_PRESETS,
+	type FixationTypePreset,
 } from "./orthopedicsPresets.js";
 import {
 	CANONICAL_MANUFACTURING_5_STAGES,
@@ -28,6 +30,10 @@ export interface OrthopedicsZtlSelectorsProps {
 	readonly onSelectStage: (stage: CanonicalManufacturing5StageItem) => void;
 	readonly stumpShade?: string | undefined;
 	readonly onSelectStumpShade?: ((shade: string) => void) | undefined;
+	readonly fixationType?: "cement" | "screw" | "clasp" | undefined;
+	readonly onSelectFixationType?: ((type: "cement" | "screw" | "clasp") => void) | undefined;
+	readonly hasAntagonists?: boolean | undefined;
+	readonly onToggleAntagonists?: ((hasAntagonists: boolean) => void) | undefined;
 	readonly grossPriceRub?: number | undefined;
 	readonly ztlCostRub?: number | undefined;
 	readonly materialsCostRub?: number | undefined;
@@ -35,6 +41,10 @@ export interface OrthopedicsZtlSelectorsProps {
 	readonly marginPercent?: number | undefined;
 	readonly dueDate?: string | undefined;
 	readonly onChangeDueDate?: ((date: string) => void) | undefined;
+	readonly articulatorType?: "bio_art" | "kavo_protar" | "average_anatomical" | undefined;
+	readonly onSelectArticulatorType?: ((type: "bio_art" | "kavo_protar" | "average_anatomical") => void) | undefined;
+	readonly hasFacebow?: boolean | undefined;
+	readonly onToggleFacebow?: ((hasFacebow: boolean) => void) | undefined;
 }
 
 export function OrthopedicsZtlSelectors({
@@ -46,6 +56,10 @@ export function OrthopedicsZtlSelectors({
 	onSelectStage,
 	stumpShade = "ND2",
 	onSelectStumpShade,
+	fixationType = "cement",
+	onSelectFixationType,
+	hasAntagonists = true,
+	onToggleAntagonists,
 	grossPriceRub = 24000,
 	ztlCostRub = 7500,
 	materialsCostRub = 1200,
@@ -53,7 +67,40 @@ export function OrthopedicsZtlSelectors({
 	marginPercent = 64,
 	dueDate,
 	onChangeDueDate,
+	articulatorType,
+	onSelectArticulatorType,
+	hasFacebow,
+	onToggleFacebow,
 }: OrthopedicsZtlSelectorsProps) {
+	const [internalFixation, setInternalFixation] = useState<"cement" | "screw" | "clasp">(fixationType);
+	const [internalAntagonists, setInternalAntagonists] = useState<boolean>(hasAntagonists);
+	const [internalArticulator, setInternalArticulator] = useState<"bio_art" | "kavo_protar" | "average_anatomical">("bio_art");
+	const [internalFacebow, setInternalFacebow] = useState<boolean>(false);
+
+	const activeFixation = fixationType ?? internalFixation;
+	const activeAntagonists = hasAntagonists ?? internalAntagonists;
+	const activeArticulator = articulatorType ?? internalArticulator;
+	const activeFacebow = hasFacebow ?? internalFacebow;
+
+	const handleSelectFixation = (type: "cement" | "screw" | "clasp") => {
+		setInternalFixation(type);
+		onSelectFixationType?.(type);
+	};
+
+	const handleToggleAntagonists = (checked: boolean) => {
+		setInternalAntagonists(checked);
+		onToggleAntagonists?.(checked);
+	};
+
+	const handleSelectArticulator = (type: "bio_art" | "kavo_protar" | "average_anatomical") => {
+		setInternalArticulator(type);
+		onSelectArticulatorType?.(type);
+	};
+
+	const handleToggleFacebowChange = (checked: boolean) => {
+		setInternalFacebow(checked);
+		onToggleFacebow?.(checked);
+	};
 	return (
 		<>
 			{/* 1-КЛИК ПРЕСЕТЫ СТАНДАРТНЫХ НАРАДОВ ЗТЛ */}
@@ -145,6 +192,74 @@ export function OrthopedicsZtlSelectors({
 							</button>
 						);
 					})}
+				</div>
+			</div>
+
+			{/* 1-КЛИК ВИД ФИКСАЦИИ И АНТАГОНИСТЫ */}
+			<div
+				className="mb-3 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 min-w-0 overflow-hidden"
+				data-testid="fixation-type-section"
+			>
+				<div className="flex flex-wrap items-center justify-between gap-1.5 mb-2">
+					<div className="flex items-center gap-1.5 min-w-0">
+						<Sliders size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+							Вид фиксации и окклюзионные антагонисты (1 клик):
+						</span>
+					</div>
+					<span className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+						Протокол посадки и соотношение зубных рядов
+					</span>
+				</div>
+
+				<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+					{FIXATION_TYPE_PRESETS.map((fix) => {
+						const isSelected = activeFixation === fix.id;
+						return (
+							<button
+								key={fix.id}
+								type="button"
+								onClick={() => handleSelectFixation(fix.id)}
+								className={`min-h-[48px] px-3 py-2 rounded-lg text-xs font-bold text-left transition-all cursor-pointer border flex flex-col justify-between min-w-0 overflow-hidden ${
+									isSelected
+										? "bg-teal-50 dark:bg-teal-950/50 border-teal-500 text-teal-950 dark:text-teal-100 ring-1 ring-teal-500 shadow-xs"
+										: "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+								}`}
+								data-testid={`fixation-type-${fix.id}`}
+								title={fix.description}
+							>
+								<div className="flex items-center justify-between gap-1 min-w-0 w-full">
+									<span className="truncate min-w-0">{fix.labelRu}</span>
+									<span className="text-[10px] font-mono px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
+										{fix.shortBadge}
+									</span>
+								</div>
+								<span className="text-[10px] text-slate-500 dark:text-slate-400 truncate min-w-0 w-full mt-0.5">
+									{fix.description}
+								</span>
+							</button>
+						);
+					})}
+				</div>
+
+				<div className="pt-1.5 border-t border-slate-200/70 dark:border-slate-700/70 flex flex-wrap items-center justify-between gap-2">
+					<label
+						className="flex items-center gap-2 px-3 py-1.5 min-h-[36px] rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-slate-200 cursor-pointer select-none"
+						data-testid="antagonists-checkbox-label"
+					>
+						<input
+							type="checkbox"
+							checked={activeAntagonists}
+							onChange={(e) => handleToggleAntagonists(e.target.checked)}
+							className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer"
+							data-testid="antagonists-checkbox"
+						/>
+						<span>Слепок/скан антагонистов (окклюзионный регистрат в прикусе)</span>
+					</label>
+
+					<span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+						{activeAntagonists ? "Антагонисты переданы в ЗТЛ" : "Без антагонистов (одиночная вкладка)"}
+					</span>
 				</div>
 			</div>
 
@@ -243,7 +358,71 @@ export function OrthopedicsZtlSelectors({
 				</div>
 			</div>
 
-			{/* ЭКОНОМИКА СОЛО-ВРАЧА И СРОКИ ГОТОВНОСТИ (МАНДАТ 8n) */}
+			{/* ОККЛЮЗИЯ И АРТИКУЛЯТОР В НАРЯДЕ ЗТЛ */}
+			<div
+				className="mb-3 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 min-w-0 overflow-hidden"
+				data-testid="occlusion-section"
+			>
+				<div className="flex flex-wrap items-center justify-between gap-1.5 mb-2">
+					<div className="flex items-center gap-1.5 min-w-0">
+						<Sliders size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+							Окклюзия и артикулятор (1 клик):
+						</span>
+					</div>
+					<span className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+						Соотношение челюстей и биомеханика в ЗТЛ
+					</span>
+				</div>
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					{/* Articulator Chips */}
+					<div className="flex flex-wrap items-center gap-1.5">
+						{[
+							{ id: "bio_art", label: "Bio-Art" },
+							{ id: "kavo_protar", label: "KaVo Protar" },
+							{ id: "average_anatomical", label: "Среднеанатомический" },
+						].map((art) => {
+							const isSelected = activeArticulator === art.id;
+							return (
+								<button
+									key={art.id}
+									type="button"
+									onClick={() =>
+										handleSelectArticulator(
+											art.id as "bio_art" | "kavo_protar" | "average_anatomical",
+										)
+									}
+									className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer border transition-all ${
+										isSelected
+											? "bg-teal-50 dark:bg-teal-950/60 border-teal-500 text-teal-950 dark:text-teal-100 ring-1 ring-teal-500 shadow-2xs font-bold"
+											: "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+									}`}
+									data-testid={`articulator-chip-${art.id}`}
+								>
+									{art.label}
+								</button>
+							);
+						})}
+					</div>
+
+					{/* Facebow Checkbox */}
+					<label
+						className="flex items-center gap-2 px-3 py-1.5 min-h-[36px] rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-slate-200 cursor-pointer select-none"
+						data-testid="facebow-checkbox-label"
+					>
+						<input
+							type="checkbox"
+							checked={activeFacebow}
+							onChange={(e) => handleToggleFacebowChange(e.target.checked)}
+							className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer"
+							data-testid="facebow-checkbox"
+						/>
+						<span>Лицевая дуга (суставной путь 33° / Беннетт 15°)</span>
+					</label>
+				</div>
+			</div>
+
+			{/* ЭКОНОМИКА СОЛО-ВРАЧА И СРОКИ ГОТОВНОСТИ */}
 			<div
 				className="mb-3 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 min-w-0 overflow-hidden"
 				data-testid="solo-economics-section"
@@ -252,7 +431,7 @@ export function OrthopedicsZtlSelectors({
 					<div className="flex items-center gap-1.5 min-w-0">
 						<DollarSign size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-							Экономика наряда и маржинальность (Мандат 8n):
+							Экономика наряда и маржинальность:
 						</span>
 					</div>
 					{dueDate && (

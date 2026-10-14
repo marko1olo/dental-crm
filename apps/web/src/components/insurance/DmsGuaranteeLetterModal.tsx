@@ -28,6 +28,8 @@ export function DmsGuaranteeLetterModal(props: DmsGuaranteeLetterModalProps) {
 	const modalContent = (
 		<div className="dms-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
 			<div className="dms-modal-window" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "1020px" }}>
+				{/* Apple iOS HIG Drag Handle for Mobile Bottom Sheet */}
+				<div className="dms-bottom-sheet-handle" />
 				<div className="dms-modal-header">
 					<h2 className="dms-modal-title">
 						<FileCheck size={22} style={{ color: "var(--teal, #0d9488)" }} />

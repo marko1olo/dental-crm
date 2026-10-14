@@ -269,7 +269,7 @@ export const WarrantyItemsStep: React.FC<WarrantyItemsStepProps> = ({
 								<span className="warranty-preset-title">{preset.shortTitle}</span>
 								<div className="warranty-preset-meta">
 									<span>Гарантия: {preset.baseWarrantyMonths} мес.</span>
-									<span>Срок сл.: {Math.round(preset.baseServiceLifeMonths / 12)} г.</span>
+									<span>{preset.baseServiceLifeMonths < 12 ? "Срок службы: до 6 мес. (временная)" : `Срок сл.: ${Math.round(preset.baseServiceLifeMonths / 12)} г.`}</span>
 								</div>
 							</button>
 						))}

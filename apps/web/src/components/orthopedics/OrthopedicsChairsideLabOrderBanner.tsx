@@ -8,6 +8,7 @@ import {
 	ExternalLink,
 	Camera,
 	X,
+	FileText,
 } from "lucide-react";
 import { DentalCrown } from "../icons/DentalIcons.js";
 
@@ -114,11 +115,11 @@ export function OrthopedicsChairsideTopBar({
 					)}
 				</div>
 
-				<div className="flex items-center rounded-lg border border-slate-300 dark:border-slate-700 overflow-hidden text-xs">
+				<div className="flex items-center rounded-lg border border-slate-300 dark:border-slate-700 overflow-hidden text-xs shrink-0">
 					<button
 						type="button"
 						onClick={() => onChangeJawScope(jawScope === "upper" ? "none" : "upper")}
-						className={`min-h-[48px] px-3 font-bold cursor-pointer transition-colors ${
+						className={`min-h-[48px] min-w-fit px-3 font-bold cursor-pointer transition-colors whitespace-nowrap ${
 							jawScope === "upper"
 								? "bg-teal-600 text-white"
 								: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
@@ -130,7 +131,7 @@ export function OrthopedicsChairsideTopBar({
 					<button
 						type="button"
 						onClick={() => onChangeJawScope(jawScope === "lower" ? "none" : "lower")}
-						className={`min-h-[48px] px-3 font-bold cursor-pointer transition-colors border-l border-slate-300 dark:border-slate-700 ${
+						className={`min-h-[48px] min-w-fit px-3 font-bold cursor-pointer transition-colors border-l border-slate-300 dark:border-slate-700 whitespace-nowrap ${
 							jawScope === "lower"
 								? "bg-teal-600 text-white"
 								: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
@@ -142,14 +143,14 @@ export function OrthopedicsChairsideTopBar({
 					<button
 						type="button"
 						onClick={() => onChangeJawScope(jawScope === "both" ? "none" : "both")}
-						className={`min-h-[48px] px-3 font-bold cursor-pointer transition-colors border-l border-slate-300 dark:border-slate-700 ${
+						className={`min-h-[48px] min-w-fit px-3 font-bold cursor-pointer transition-colors border-l border-slate-300 dark:border-slate-700 whitespace-nowrap ${
 							jawScope === "both"
 								? "bg-teal-600 text-white"
 								: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
 						}`}
-						title="Обе челюсти"
+						title="Вся челюсть (обе челюсти)"
 					>
-						Обе
+						Вся челюсть
 					</button>
 				</div>
 
@@ -180,6 +181,7 @@ export interface OrthopedicsChairsideLabOrderBannerProps {
 	readonly warrantyPassport: string;
 	readonly fittingConfirmed: boolean;
 	readonly onConfirmFitting: () => void;
+	readonly onOpenPassportA4?: (() => void) | undefined;
 }
 
 export function OrthopedicsChairsideLabOrderBanner({
@@ -191,6 +193,7 @@ export function OrthopedicsChairsideLabOrderBanner({
 	warrantyPassport,
 	fittingConfirmed,
 	onConfirmFitting,
+	onOpenPassportA4,
 }: OrthopedicsChairsideLabOrderBannerProps) {
 	return (
 		<div
@@ -228,23 +231,37 @@ export function OrthopedicsChairsideLabOrderBanner({
 					</span>
 				</div>
 			</div>
-			<button
-				type="button"
-				data-testid="ortho-chairside-confirm-fitting-btn"
-				onClick={onConfirmFitting}
-				className={`min-h-[48px] px-4 py-2 rounded-lg text-xs font-bold inline-flex items-center gap-2 transition-colors cursor-pointer shrink-0 ${
-					fittingConfirmed
-						? "bg-emerald-600 text-white"
-						: "bg-teal-600 hover:bg-teal-700 text-white shadow-xs"
-				}`}
-			>
-				<Check size={16} />
-				<span>
-					{fittingConfirmed
-						? "Примерка и фиксация подтверждены (A16.07.004)"
-						: "Подтвердить примерку / фиксацию (A16.07.004)"}
-				</span>
-			</button>
+			<div className="flex items-center gap-2 shrink-0 flex-wrap">
+				{onOpenPassportA4 && (
+					<button
+						type="button"
+						data-testid="banner-orthopedic-passport-btn"
+						onClick={onOpenPassportA4}
+						className="min-h-[48px] px-3.5 py-2 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shrink-0 shadow-2xs"
+						title="Сформировать Паспорт ортопедической конструкции и Гарантийный талон (А4)"
+					>
+						<FileText size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<span>Паспорт (А4)</span>
+					</button>
+				)}
+				<button
+					type="button"
+					data-testid="ortho-chairside-confirm-fitting-btn"
+					onClick={onConfirmFitting}
+					className={`min-h-[48px] px-4 py-2 rounded-lg text-xs font-bold inline-flex items-center gap-2 transition-colors cursor-pointer shrink-0 ${
+						fittingConfirmed
+							? "bg-emerald-600 text-white"
+							: "bg-teal-600 hover:bg-teal-700 text-white shadow-xs"
+					}`}
+				>
+					<Check size={16} />
+					<span>
+						{fittingConfirmed
+							? "Примерка и фиксация подтверждены (A16.07.004)"
+							: "Подтвердить примерку / фиксацию (A16.07.004)"}
+					</span>
+				</button>
+			</div>
 		</div>
 	);
 }
@@ -262,6 +279,7 @@ export interface OrthopedicsChairsideFooterBarProps {
 	readonly isLabOrderSending: boolean;
 	readonly onImmediateSendToLab: () => void;
 	readonly onOpenLabOrder?: (() => void) | undefined;
+	readonly onOpenPassportA4?: (() => void) | undefined;
 }
 
 export function OrthopedicsChairsideFooterBar({
@@ -277,6 +295,7 @@ export function OrthopedicsChairsideFooterBar({
 	isLabOrderSending,
 	onImmediateSendToLab,
 	onOpenLabOrder,
+	onOpenPassportA4,
 }: OrthopedicsChairsideFooterBarProps) {
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -366,6 +385,19 @@ export function OrthopedicsChairsideFooterBar({
 						<CheckCircle2 size={12} className="shrink-0" />
 						<span>Отправлен {labOrderSentNumber}</span>
 					</span>
+				)}
+
+				{onOpenPassportA4 && (
+					<button
+						type="button"
+						onClick={onOpenPassportA4}
+						className="min-h-[48px] px-3.5 py-2 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+						data-testid="open-orthopedic-passport-btn"
+						title="Сформировать Паспорт ортопедической конструкции и Гарантийный талон (А4)"
+					>
+						<FileText size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<span>Паспорт (А4)</span>
+					</button>
 				)}
 
 				<button

@@ -18,6 +18,8 @@ export interface StandardZtlPreset {
 	readonly costZtlRub: number;
 	readonly costMaterialsRub: number;
 	readonly turnaroundBusinessDays: number;
+	readonly fixationType?: "cement" | "screw" | "clasp" | undefined;
+	readonly hasAntagonists?: boolean | undefined;
 }
 
 export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
@@ -34,6 +36,8 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		costZtlRub: 7500,
 		costMaterialsRub: 1200,
 		turnaroundBusinessDays: 5,
+		fixationType: "cement",
+		hasAntagonists: true,
 	},
 	{
 		id: "emax",
@@ -48,6 +52,24 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		costZtlRub: 8500,
 		costMaterialsRub: 1300,
 		turnaroundBusinessDays: 5,
+		fixationType: "cement",
+		hasAntagonists: true,
+	},
+	{
+		id: "bridge",
+		name: "Мостовидный протез",
+		material: "ZrO2 Bridge Multi-Layer",
+		constructionType: "bridge",
+		badge: "Мост ZrO2",
+		description: "Мостовидный протез из диоксида циркония с промежуточной частью и промывным пространством",
+		warrantyMonths: 60,
+		warrantyLabelRu: "5 лет",
+		pricePatientRub: 48000,
+		costZtlRub: 15000,
+		costMaterialsRub: 2200,
+		turnaroundBusinessDays: 7,
+		fixationType: "cement",
+		hasAntagonists: true,
 	},
 	{
 		id: "metal_ceramic",
@@ -57,15 +79,17 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		badge: "МК Noritake",
 		description: "Классическая металлокерамика на CoCr каркасе",
 		warrantyMonths: 24,
-		warrantyLabelRu: "2 года (ГОСТ Р 51087-97)",
+		warrantyLabelRu: "Гарантия 2 года",
 		pricePatientRub: 15000,
 		costZtlRub: 5000,
 		costMaterialsRub: 1100,
 		turnaroundBusinessDays: 7,
+		fixationType: "cement",
+		hasAntagonists: true,
 	},
 	{
 		id: "pmma_temp",
-		name: "Временная коронка PMMA",
+		name: "Временная PMMA",
 		material: "PMMA CAD/CAM",
 		constructionType: "temporary_crown",
 		badge: "PMMA фрез.",
@@ -76,6 +100,8 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		costZtlRub: 1500,
 		costMaterialsRub: 600,
 		turnaroundBusinessDays: 2,
+		fixationType: "cement",
+		hasAntagonists: true,
 	},
 	{
 		id: "clasp_denture",
@@ -85,11 +111,57 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		badge: "Бюгель CoCr",
 		description: "Дуговой съемный протез с опорно-удерживающими кламмерами или замками",
 		warrantyMonths: 24,
-		warrantyLabelRu: "2 года (ГОСТ Р 51087-97)",
+		warrantyLabelRu: "Гарантия 2 года",
 		pricePatientRub: 45000,
 		costZtlRub: 16000,
 		costMaterialsRub: 2500,
 		turnaroundBusinessDays: 10,
+		fixationType: "clasp",
+		hasAntagonists: true,
+	},
+	{
+		id: "all_on_4",
+		name: "All-on-4 (Винтовая)",
+		material: "Балочный титан + диоксид циркония / композит",
+		constructionType: "all_on_4",
+		badge: "All-on-4",
+		description: "Несъемная конструкция на 4 имплантатах с винтовой фиксацией на мультиюнитах",
+		warrantyMonths: 120,
+		warrantyLabelRu: "Гарантия 10 лет",
+		pricePatientRub: 180000,
+		costZtlRub: 55000,
+		costMaterialsRub: 8500,
+		turnaroundBusinessDays: 14,
+		fixationType: "screw",
+		hasAntagonists: true,
+	},
+] as const;
+
+export interface FixationTypePreset {
+	readonly id: "cement" | "screw" | "clasp";
+	readonly labelRu: string;
+	readonly shortBadge: string;
+	readonly description: string;
+}
+
+export const FIXATION_TYPE_PRESETS: readonly FixationTypePreset[] = [
+	{
+		id: "cement",
+		labelRu: "Цементная фиксация (Fuji Plus / RelyX U200)",
+		shortBadge: "Цемент",
+		description: "Фиксация на стеклоиономерный цемент Fuji Plus или композитный цемент двойного отверждения RelyX",
+	},
+	{
+		id: "screw",
+		labelRu: "Винтовая фиксация (Multi-Unit 15–35 Н·см)",
+		shortBadge: "Винтовая",
+		description: "Прямая винтовая фиксация к мультиюнитам или абатментам с контролем динамометрическим ключом",
+	},
+	{
+		id: "clasp",
+		labelRu: "Кламмерная / Замковая фиксация (Bredent / МК-1)",
+		shortBadge: "Замки/Кламмеры",
+		description: "Опорно-удерживающие кламмеры или прецизионные микрозамковые крепления",
 	},
 ] as const;
 

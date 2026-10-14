@@ -80,7 +80,7 @@ export function DmsLimitsAndFranchiseSection({
 
 				<div className="dms-field-group">
 					<span className="dms-label">Остаток лимита</span>
-					<div className="dms-input font-mono font-bold flex items-center bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+					<div className="dms-stat-value-large font-mono font-bold flex items-center bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 text-[28px] leading-tight min-h-[46px]">
 						{formatRubKopecks(remainingLimitRub)}
 					</div>
 				</div>
@@ -149,6 +149,33 @@ export function DmsLimitsAndFranchiseSection({
 						<option value="expired">Истёк срок действия</option>
 						<option value="cancelled">Отозвано / Аннулировано</option>
 					</select>
+				</div>
+			</div>
+
+			{/* Быстрые 1-клик пресеты корпоративной франшизы ДМС */}
+			<div className="mt-3.5 flex items-center gap-2 flex-wrap pt-2 border-t border-[var(--line,#e2e8f0)]">
+				<span className="text-xs font-semibold text-[var(--muted,#64748b)] shrink-0">
+					1-Клик франшиза:
+				</span>
+				<div className="dente-filter-chips flex-wrap">
+					{[0, 10, 20, 30, 50, 80].map((pct) => {
+						const isSelected = franchiseType === "percent" && franchisePct === pct;
+						return (
+							<button
+								key={pct}
+								type="button"
+								className={`dente-filter-chip ${isSelected ? "active" : ""}`}
+								data-active={isSelected}
+								onClick={() => {
+									onFranchiseTypeChange("percent");
+									onFranchisePctChange(pct);
+								}}
+								title={`Установить корпоративную франшизу ${pct}%`}
+							>
+								{pct === 0 ? "0% (100% ДМС)" : `${pct}%`}
+							</button>
+						);
+					})}
 				</div>
 			</div>
 		</div>

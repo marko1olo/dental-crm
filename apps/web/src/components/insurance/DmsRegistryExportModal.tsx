@@ -6,6 +6,7 @@
 import {
 	CheckCircle2,
 	Download,
+	FileCheck,
 	FileCode,
 	FileSpreadsheet,
 	FileText,
@@ -25,6 +26,7 @@ import {
 	exportRegistryToCsv,
 	formatRubKopecks,
 	generateBilateralAcceptanceActHtml,
+	generateMeeActHtml,
 	RUSSIAN_DMS_INSURERS,
 	type DmsRegistryServiceRecord,
 	type DmsRegistrySummary,
@@ -328,6 +330,43 @@ export function DmsRegistryExportModal({
 			showToast("Разрешите всплывающие окна для печати акта", "warning");
 		}
 	};
+
+	// Печать официального Акта медико-экономической экспертизы (МЭЭ) реестра счетов ДМС
+	const handlePrintMeeAct = () => {
+		if (filteredRecords.length === 0) {
+			showToast("Нет записей для формирования Акта МЭЭ", "warning");
+			return;
+		}
+
+		const meeHtml = generateMeeActHtml({
+			records: filteredRecords,
+			summary,
+			clinicInfo: activeClinic,
+			insurerInfo: {
+				name: selectedInsurer === "all" ? "Страховая компания ДМС" : selectedInsurer,
+				contractNumber,
+				contractDate,
+				representative,
+			},
+			actNumber: `МЭЭ-${actNumber.replace("АКТ-", "")}`,
+			actDate,
+			expertDoctorName: representative || "Врач-эксперт страховой компании",
+		});
+
+		const printWindow = window.open("", "_blank");
+		if (printWindow) {
+			printWindow.document.open();
+			printWindow.document.write(meeHtml);
+			printWindow.document.close();
+			printWindow.focus();
+			setTimeout(() => {
+				printWindow.print();
+			}, 350);
+		} else {
+			showToast("Разрешите всплывающие окна для печати акта МЭЭ", "warning");
+		}
+	};
+
 	const modalContent = (
 		<div className="dms-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
 			<div
@@ -335,6 +374,8 @@ export function DmsRegistryExportModal({
 				onClick={(e) => e.stopPropagation()}
 				style={{ maxWidth: "1140px" }}
 			>
+				{/* Apple iOS HIG Drag Handle for Mobile Bottom Sheet */}
+				<div className="dms-bottom-sheet-handle" />
 				{/* Header */}
 				<div className="dms-modal-header">
 					<h2 className="dms-modal-title">
@@ -705,6 +746,16 @@ export function DmsRegistryExportModal({
 						>
 							<FileCode size={18} />
 							Экспорт XML
+						</button>
+
+						<button
+							type="button"
+							className="dms-btn dms-btn-secondary"
+							onClick={handlePrintMeeAct}
+							title="Сформировать официальный Акт медико-экономической экспертизы (МЭЭ) с обоснованием по СтАР"
+						>
+							<FileCheck size={18} />
+							Печать Акта МЭЭ
 						</button>
 
 						<button
