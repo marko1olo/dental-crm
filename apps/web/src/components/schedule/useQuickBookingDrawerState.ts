@@ -22,15 +22,23 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
     isOpen,
     onClose,
     initialSlot,
+    editingAppointment: propEditingAppointment,
     dashboard,
     auth,
     onAppointmentCreated,
+    onAppointmentUpdated,
     loadDashboard,
     setDashboard,
     toDateTimeLocalValue,
     fromDateTimeLocalValue,
     chairDoctorAssignments,
   } = props;
+
+  const editingAppt =
+    propEditingAppointment || initialSlot?.editingAppointment || null;
+  const editingAppointmentId =
+    editingAppt?.id || initialSlot?.appointmentId || null;
+  const isEditing = Boolean(editingAppointmentId);
 
   const timezone = dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow";
 
@@ -85,8 +93,9 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
     });
 
   const initialMatchedPatient = useMemo(() => {
-    if (initialSlot?.patientId && dashboard?.patients) {
-      return dashboard.patients.find((p) => p.id === initialSlot.patientId) || null;
+    const targetPatientId = editingAppt?.patientId || initialSlot?.patientId;
+    if (targetPatientId && dashboard?.patients) {
+      return dashboard.patients.find((p) => p.id === targetPatientId) || null;
     }
     if (initialSlot?.patientName && dashboard?.patients) {
       const candidate = initialSlot.patientName.trim().toLowerCase();
@@ -97,7 +106,7 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
       );
     }
     return null;
-  }, [initialSlot?.patientId, initialSlot?.patientName, dashboard?.patients]);
+  }, [editingAppt?.patientId, initialSlot?.patientId, initialSlot?.patientName, dashboard?.patients]);
 
   const patientSearch = useQuickBookingPatientSearch({
     dashboard,
@@ -221,28 +230,43 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
       initDoctor = doctors[0]?.id || "";
     }
 
+    if (editingAppt) {
+      if (editingAppt.doctorUserId) initDoctor = editingAppt.doctorUserId;
+      if (editingAppt.chairId) initChair = editingAppt.chairId;
+      if (editingAppt.startsAt) initStartsAtLocal = toLocal(editingAppt.startsAt);
+      const apptDuration = Math.round(
+        (new Date(editingAppt.endsAt).getTime() - new Date(editingAppt.startsAt).getTime()) / 60000,
+      );
+      if (apptDuration > 0) setDurationMinutes(apptDuration);
+      setReason(editingAppt.reason || "");
+      setComment(editingAppt.comment || "");
+      setStatus(editingAppt.status || "planned");
+    } else {
+      const initialDuration =
+        initialSlot?.durationMinutes ||
+        initialSlot?.estimatedDurationMinutes ||
+        (initialSlot?.services?.length ? Math.min(120, Math.max(30, initialSlot.services.length * 30)) : 30);
+      setDurationMinutes(initialDuration);
+
+      const initialReason =
+        initialSlot?.reason ||
+        initialSlot?.stageTitle ||
+        (initialSlot?.isCitoEmergency ? "Срочно! Острая боль" : "");
+      setReason(initialReason);
+      setComment(initialSlot?.comment || "");
+      setStatus((initialSlot?.status as any) || (initialSlot?.isCitoEmergency ? "confirmed" : "planned"));
+    }
+
     setDoctorUserId(initDoctor);
     setChairId(initChair);
     setStartsAtLocal(initStartsAtLocal);
-    const initialDuration =
-      initialSlot?.durationMinutes ||
-      initialSlot?.estimatedDurationMinutes ||
-      (initialSlot?.services?.length ? Math.min(120, Math.max(30, initialSlot.services.length * 30)) : 30);
-    setDurationMinutes(initialDuration);
-
-    const initialReason =
-      initialSlot?.reason ||
-      initialSlot?.stageTitle ||
-      (initialSlot?.isCitoEmergency ? "Срочно! Острая боль" : "");
-    setReason(initialReason);
-    setComment("");
-    setStatus(initialSlot?.isCitoEmergency ? "confirmed" : "planned");
 
     setSubmitError(null);
     setSlotConflict(null);
   }, [
     isOpen,
     initialSlot,
+    editingAppt,
     doctors,
     chairs,
     chairDoctorAssignments,
@@ -275,6 +299,7 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
       },
       dashboard?.appointments,
       {
+        excludeAppointmentId: editingAppointmentId,
         staff: dashboard?.clinicSettings?.staff,
         chairs: dashboard?.clinicSettings?.chairs,
         patients: dashboard?.patients,
@@ -291,6 +316,7 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
     assistantUserId,
     patientSearch.patientId,
     appointmentType,
+    editingAppointmentId,
     reason,
     fromLocal,
     toLocal,
@@ -549,15 +575,30 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
         completedServices: stageServices,
       };
 
-      const res = await fetchWithHandling("/api/appointments", {
-        method: "POST",
+      const url = isEditing
+        ? `/api/appointments/${encodeURIComponent(editingAppointmentId!)}`
+        : "/api/appointments";
+      const method = isEditing ? "PATCH" : "POST";
+
+      const res = await fetchWithHandling(url, {
+        method,
         headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
-        showToast(actionFailureToast("Ошибка создания записи на сервере", res.status), "warning");
-        setSubmitError(`Ошибка при создании записи (${res.status})`);
+        showToast(
+          actionFailureToast(
+            isEditing
+              ? "Ошибка обновления записи на сервере"
+              : "Ошибка создания записи на сервере",
+            res.status,
+          ),
+          "warning",
+        );
+        setSubmitError(
+          `Ошибка при ${isEditing ? "обновлении" : "создании"} записи (${res.status})`,
+        );
         return;
       }
 
@@ -577,32 +618,40 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
         (patientSearch.newPatientPhone.trim() ? `Пациент (${patientSearch.newPatientPhone.trim()})` : "") ||
         patientSearch.searchQuery.trim() ||
         "Пациент";
-      showToast(`Запись для «${patientName}» создана на ${startsAtLocal.slice(11, 16)}!`, "success", 5000);
 
-      let createdAppt: Appointment | undefined;
-      if (nextDashboard?.appointments) {
-        createdAppt = nextDashboard.appointments.find(
-          (a) => (a.patientId === activePatientId || a.patientId === patientSearch.patientId) && a.startsAt === startsAtIso,
-        );
-        if (createdAppt) {
-          (createdAppt as any).treatmentPlanId = planId;
-          (createdAppt as any).stageId = stageId;
-          if (typeof onAppointmentCreated === "function") onAppointmentCreated(createdAppt);
+      if (isEditing) {
+        showToast(`Запись для «${patientName}» обновлена!`, "success", 4000);
+        if (result?.appointment && typeof onAppointmentUpdated === "function") {
+          onAppointmentUpdated(result.appointment);
         }
-      }
+      } else {
+        showToast(`Запись для «${patientName}» создана на ${startsAtLocal.slice(11, 16)}!`, "success", 5000);
 
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(
-          new CustomEvent("dente-stage-appointment-booked", {
-            detail: {
-              appointmentId: result?.appointment?.id || createdAppt?.id || null,
-              patientId: activePatientId,
-              treatmentPlanId: planId,
-              stageId,
-              startsAt: startsAtIso,
-            },
-          }),
-        );
+        let createdAppt: Appointment | undefined;
+        if (nextDashboard?.appointments) {
+          createdAppt = nextDashboard.appointments.find(
+            (a) => (a.patientId === activePatientId || a.patientId === patientSearch.patientId) && a.startsAt === startsAtIso,
+          );
+          if (createdAppt) {
+            (createdAppt as any).treatmentPlanId = planId;
+            (createdAppt as any).stageId = stageId;
+            if (typeof onAppointmentCreated === "function") onAppointmentCreated(createdAppt);
+          }
+        }
+
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("dente-stage-appointment-booked", {
+              detail: {
+                appointmentId: result?.appointment?.id || createdAppt?.id || null,
+                patientId: activePatientId,
+                treatmentPlanId: planId,
+                stageId,
+                startsAt: startsAtIso,
+              },
+            }),
+          );
+        }
       }
 
       safeLocalStorageRemoveItem("dente_quick_booking_draft");
@@ -744,6 +793,8 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
     dutyDoc,
     collision,
     isDirty,
+    isEditing,
+    editingAppointment: editingAppt,
     handleSaveDraftAndClose,
     handleDiscardDraftAndClose,
     handleRequestClose,

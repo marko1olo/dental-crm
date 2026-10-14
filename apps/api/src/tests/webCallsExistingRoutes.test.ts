@@ -259,6 +259,8 @@ const REGISTERED_PREFIXES = [
 	"/api/portal",
 	"/api/public/booking",
 	"/api/telephony",
+	"/api/warehouse",
+	"/api/treatment-consumables",
 ];
 
 function collectFiles(
@@ -477,7 +479,14 @@ function stripComments(source: string): string {
  * Fastify, переданный модулю маршрутов, остальные три — имена того же экземпляра
  * в разных файлах.
  */
-const ROUTE_RECEIVERS = new Set(["app", "fastify", "server", "instance"]);
+const ROUTE_RECEIVERS = new Set([
+	"app",
+	"fastify",
+	"server",
+	"instance",
+	"scope",
+	"webhookScope",
+]);
 
 /** Глаголы, которыми Fastify регистрирует маршрут. */
 const ROUTE_METHODS = new Set(["get", "post", "put", "patch", "delete"]);

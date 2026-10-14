@@ -40,16 +40,22 @@ export interface QuickBookingSlotInfo {
   items?: QuickBookingStageService[] | undefined;
   procedures?: QuickBookingStageService[] | undefined;
   estimatedDurationMinutes?: number | undefined;
+  appointmentId?: string | null | undefined;
+  editingAppointment?: Appointment | null | undefined;
+  comment?: string | undefined;
+  status?: string | undefined;
 }
 
 export interface QuickBookingDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   initialSlot?: QuickBookingSlotInfo | null | undefined;
+  editingAppointment?: Appointment | null | undefined;
   dashboard?: Dashboard | undefined;
   // biome-ignore lint/suspicious/noExplicitAny: automated suppression
   auth?: any;
   onAppointmentCreated?: ((appointment: Appointment) => void) | undefined;
+  onAppointmentUpdated?: ((appointment: Appointment) => void) | undefined;
   loadDashboard?: (() => Promise<void>) | undefined;
   setDashboard?: ((dashboard: Dashboard) => void) | undefined;
   toDateTimeLocalValue?:

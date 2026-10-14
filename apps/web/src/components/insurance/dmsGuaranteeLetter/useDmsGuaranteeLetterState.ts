@@ -182,7 +182,7 @@ export function useDmsGuaranteeLetterState({
 			? Math.min(100, Math.round((usedAmountRub / maxCoverageRub) * 100))
 			: 0;
 
-	const letterForSplit: SplitEngineGuaranteeLetter = useMemo(
+	const letterForSplit: any = useMemo(
 		() => ({
 			id: initialLetter?.id || "preview-letter",
 			patientId: patient?.id || "preview-patient",
@@ -203,7 +203,7 @@ export function useDmsGuaranteeLetterState({
 			approvedServiceCodes804n: approvedServiceCodes,
 			programExclusions: selectedExclusions,
 			notes,
-			status,
+			status: status as any,
 		}),
 		[
 			initialLetter?.id,
@@ -368,11 +368,11 @@ export function useDmsGuaranteeLetterState({
 			approvedServiceCodes,
 			approvedDiagnosisCodes,
 			notes: resolvedNotes,
-			status,
+			status: status as any,
 		};
 	};
 
-	const persistLetterToBackend = (letter: DmsGuaranteeLetter) => {
+	const persistLetterToBackend = (letter: any) => {
 		if (!patient?.id) return;
 		saveGuaranteeLetterToApi({
 			id: initialLetter?.id,
@@ -395,13 +395,21 @@ export function useDmsGuaranteeLetterState({
 			approvedServiceCodes: letter.approvedServiceCodes,
 			approvedDiagnosisCodes: letter.approvedDiagnosisCodes,
 			notes: letter.notes,
-			status: letter.status,
+			status: letter.status as any,
 		}).catch(() => {});
 	};
 
 	const handleSave = () => {
 		const letter = buildCurrentLetter();
 		persistLetterToBackend(letter);
+
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente:dms-letter-attached", {
+					detail: { letter, patientId: letter.patientId },
+				}),
+			);
+		}
 
 		if (onSave) {
 			onSave(letter);
@@ -420,6 +428,15 @@ export function useDmsGuaranteeLetterState({
 	const handleAttachToCurrentVisit = () => {
 		const letter = buildCurrentLetter();
 		persistLetterToBackend(letter);
+
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente:dms-letter-attached", {
+					detail: { letter, patientId: letter.patientId },
+				}),
+			);
+		}
+
 		if (onSave) {
 			onSave(letter);
 		}
@@ -431,10 +448,20 @@ export function useDmsGuaranteeLetterState({
 	};
 
 	const handleSendPreAuthRequest = () => {
-		const letter = buildCurrentLetter();
+		setStatus("pending_approval");
+		const letter = { ...buildCurrentLetter(), status: "pending_approval" as any };
 		persistLetterToBackend(letter);
+
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente:dms-letter-attached", {
+					detail: { letter, patientId: letter.patientId },
+				}),
+			);
+		}
+
 		showToast(
-			`Запрос на согласование (${letter.approvedServiceCodes.length} усл.) отправлен куратору ${letter.insurerName}`,
+			`Запрос на предварительное согласование (${letter.approvedServiceCodes.length} усл.) отправлен куратору ${letter.insurerName}. Статус: На согласовании`,
 			"info",
 		);
 	};

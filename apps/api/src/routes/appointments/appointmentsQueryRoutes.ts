@@ -1,5 +1,7 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { requireResolvedOrganizationId } from "../../accessGuard.js";
+import { getAppointmentByIdInDb } from "../../db/appointmentsQuery.js";
 import { db } from "../../db/client.js";
 import { getDashboardFromDb } from "../../db/dashboardQuery.js";
 import {
@@ -361,3 +363,122 @@ export async function fetchDashboardAfterNextStage(
 	}
 	return dashboard;
 }
+
+export async function handleGetAppointments(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	const orgId = await requireResolvedOrganizationId(
+		request,
+		reply,
+		"get appointments",
+	);
+	if (reply.sent) return reply;
+	if (!orgId) return reply;
+
+	const query = request.query as Record<string, string | undefined> | undefined;
+	const period = query?.period;
+	const doctorId = query?.doctorId;
+	const date = query?.date;
+	const patientId = query?.patientId;
+
+	const conditions = [eq(appointments.organizationId, orgId)];
+	if (doctorId) {
+		conditions.push(eq(appointments.doctorUserId, doctorId));
+	}
+	if (patientId) {
+		conditions.push(eq(appointments.patientId, patientId));
+	}
+	if (date) {
+		const dayStart = new Date(`${date}T00:00:00.000Z`);
+		const dayEnd = new Date(`${date}T23:59:59.999Z`);
+		conditions.push(sql`${appointments.startsAt} >= ${dayStart} AND ${appointments.startsAt} <= ${dayEnd}`);
+	} else if (period) {
+		const now = new Date();
+		let dateThreshold: Date | undefined;
+		if (period === "day") {
+			dateThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+		} else if (period === "week") {
+			dateThreshold = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+		} else if (period === "month") {
+			dateThreshold = new Date(now.getFullYear(), now.getMonth(), 1);
+		} else if (period === "quarter") {
+			const currentQuarterMonth = Math.floor(now.getMonth() / 3) * 3;
+			dateThreshold = new Date(now.getFullYear(), currentQuarterMonth, 1);
+		} else if (period === "year") {
+			dateThreshold = new Date(now.getFullYear(), 0, 1);
+		}
+		if (dateThreshold) {
+			conditions.push(sql`${appointments.startsAt} >= ${dateThreshold}`);
+		}
+	}
+
+	const rows = await db
+		.select()
+		.from(appointments)
+		.where(and(...conditions))
+		.orderBy(asc(appointments.startsAt))
+		.limit(1000);
+
+	const formatted = rows.map((apt) => ({
+		id: apt.id,
+		patientId: apt.patientId,
+		doctorId: apt.doctorUserId,
+		doctorUserId: apt.doctorUserId,
+		chairId: apt.chairId,
+		startsAt: apt.startsAt.toISOString(),
+		endsAt: apt.endsAt.toISOString(),
+		status: apt.status,
+		reason: apt.reason,
+		comment: apt.comment,
+		stageIndex: apt.stageIndex,
+		clinicalStage: apt.clinicalStage,
+		toothNumber: apt.toothNumber,
+		diagnosisMkb10: apt.diagnosisMkb10,
+	}));
+
+	return reply.send({
+		success: true,
+		data: formatted,
+		appointments: formatted,
+	});
+}
+
+export async function handleGetAppointmentById(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	const orgId = await requireResolvedOrganizationId(
+		request,
+		reply,
+		"get appointment by id",
+	);
+	if (reply.sent) return reply;
+	if (!orgId) return reply;
+
+	const { appointmentId } = request.params as { appointmentId?: string };
+	if (!appointmentId) {
+		return reply.code(400).send({
+			code: "AppointmentValidationError",
+			message: "Не указан ID приёма",
+		});
+	}
+
+	const appt = await getAppointmentByIdInDb(orgId, appointmentId);
+	if (!appt) {
+		return reply.code(404).send({
+			code: "AppointmentNotFound",
+			message: "Приём не найден",
+		});
+	}
+
+	return reply.send({
+		success: true,
+		appointment: {
+			...appt,
+			startsAt: appt.startsAt instanceof Date ? appt.startsAt.toISOString() : new Date(appt.startsAt).toISOString(),
+			endsAt: appt.endsAt instanceof Date ? appt.endsAt.toISOString() : new Date(appt.endsAt).toISOString(),
+		},
+	});
+}
+

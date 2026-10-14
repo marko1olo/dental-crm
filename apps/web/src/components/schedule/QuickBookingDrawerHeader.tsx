@@ -3,6 +3,7 @@ import React from "react";
 
 export interface QuickBookingDrawerHeaderProps {
   isEmergencyMode: boolean;
+  isEditing?: boolean;
   startsAtLocal: string;
   durationMinutes: number;
   onClose: () => void;
@@ -10,6 +11,7 @@ export interface QuickBookingDrawerHeaderProps {
 
 export function QuickBookingDrawerHeader({
   isEmergencyMode,
+  isEditing,
   startsAtLocal,
   durationMinutes,
   onClose,
@@ -41,7 +43,9 @@ export function QuickBookingDrawerHeader({
             <h3 className="text-base font-bold tracking-tight text-[var(--ink)] m-0">
               {isEmergencyMode
                 ? "Срочная запись: острая боль"
-                : "Быстрая запись на прием"}
+                : isEditing
+                  ? "Редактирование приёма"
+                  : "Быстрая запись на прием"}
             </h3>
             {isEmergencyMode && (
               <span

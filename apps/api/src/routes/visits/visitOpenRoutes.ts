@@ -1,8 +1,11 @@
 import type { FastifyInstance } from "fastify";
 import { and, eq } from "drizzle-orm";
-import { requireClinicalMutationContext } from "../../accessGuard.js";
+import {
+	requireClinicalMutationContext,
+	requireClinicalReadContext,
+} from "../../accessGuard.js";
 import { db as database } from "../../db/client.js";
-import { appointments } from "../../db/schema.js";
+import { appointments, visits } from "../../db/schema.js";
 import { openVisitForAppointmentInDb } from "../../db/visitsQuery.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { sendVisitOpenError } from "./visitErrors.js";
@@ -24,6 +27,52 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 				}
 			},
 		);
+
+		scope.get("/api/appointments/:appointmentId/visit", async (request, reply) => {
+			const context = await requireClinicalReadContext(
+				request,
+				reply,
+				"visit check",
+			);
+			if (!context) return;
+			const orgId = context.organizationId;
+
+			const { appointmentId } = request.params as { appointmentId?: string };
+			if (!appointmentId) {
+				reply.code(400);
+				return {
+					error: "VisitValidationError",
+					message: "Не передан идентификатор записи на приём.",
+				};
+			}
+
+			const [existing] = await database
+				.select()
+				.from(visits)
+				.where(
+					and(
+						eq(visits.appointmentId, appointmentId),
+						eq(visits.organizationId, orgId),
+					),
+				)
+				.orderBy(visits.createdAt)
+				.limit(1);
+
+			return {
+				success: true,
+				visit: existing
+					? {
+							id: existing.id,
+							organizationId: existing.organizationId,
+							patientId: existing.patientId,
+							appointmentId: existing.appointmentId,
+							status: existing.status,
+							createdAt: existing.createdAt.toISOString(),
+							updatedAt: existing.updatedAt.toISOString(),
+						}
+					: null,
+			};
+		});
 
 		scope.post("/api/appointments/:appointmentId/visit", async (request, reply) => {
 			const context = await requireClinicalMutationContext(

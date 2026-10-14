@@ -20,6 +20,8 @@ import {
 import {
 	buildDashboardResponseAfterUpdate,
 	fetchDashboardAfterNextStage,
+	handleGetAppointments,
+	handleGetAppointmentById,
 	prepareCreateAppointmentRawBody,
 	prepareUpdateAppointmentRawBody,
 	sendDashboardResponseAfterCreate,
@@ -359,6 +361,9 @@ export const createNextStageAppointmentHandler = async (
 };
 
 export async function registerAppointmentsRoutes(app: FastifyInstance) {
+	app.get("/api/appointments", handleGetAppointments);
+	app.get("/api/schedule", handleGetAppointments);
+	app.get("/api/appointments/:appointmentId", handleGetAppointmentById);
 	app.post("/api/appointments", createAppointmentHandler);
 	app.post(
 		"/api/appointments/:appointmentId/next-stage",

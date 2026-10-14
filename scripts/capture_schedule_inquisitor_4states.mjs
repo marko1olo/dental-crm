@@ -3,11 +3,11 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 
-const CONV_ID = "462e1e8d-2fdc-4662-804a-ba5db4d6c890";
+const CURRENT_CONV_ID = "c0eda5dc-8e58-4d90-b336-06b984ff5807";
 const PARENT_CONV_ID = "c44dee1f-e8b2-4479-94c5-7299ac52d786";
 
 const DIRS = [
-	`C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`,
+	`C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}`,
 	`C:/Users/Admin/.gemini/antigravity/brain/${PARENT_CONV_ID}`,
 	"C:/Clinic_MVP/dental-crm/docs/proofs/schedule",
 ];
@@ -26,12 +26,20 @@ async function saveProofFile(name, buffer) {
 		throw new Error(`[BYTE-GUARD FAILED] ${name} is ${kb} KB (< 20 KB floor). Suspicion of blank screen!`);
 	}
 
-	for (const dir of DIRS) {
-		const targetPath = path.join(dir, name);
-		fs.writeFileSync(targetPath, buffer);
+	const namesToSave = [name];
+	const simplified = name.replace("_1440x900", "").replace("_390x844", "");
+	if (simplified !== name) {
+		namesToSave.push(simplified);
 	}
 
-	console.log(`[PROOF VERIFIED & SAVED] ${name} (${kb} KB) | MD5: ${md5}`);
+	for (const n of namesToSave) {
+		for (const dir of DIRS) {
+			const targetPath = path.join(dir, n);
+			fs.writeFileSync(targetPath, buffer);
+		}
+	}
+
+	console.log(`[PROOF VERIFIED & SAVED] ${namesToSave.join(", ")} (${kb} KB) | MD5: ${md5}`);
 	return { filename: name, sizeKb: Number(kb), md5 };
 }
 

@@ -75,6 +75,7 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
           useUiSurfaceStore.getState().closeDrawer("quick_booking");
         }}
         initialSlot={quickBookingSlot}
+        editingAppointment={quickBookingSlot?.editingAppointment || null}
         dashboard={dashboard as any}
         auth={auth}
         loadDashboard={
