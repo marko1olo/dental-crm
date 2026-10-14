@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
 	Calculator,
 	X,
@@ -6,12 +7,19 @@ import {
 	Download,
 	Calendar,
 	User,
+	Send,
+	Check,
+	CreditCard,
+	Percent,
+	Building2,
+	Share2,
 } from "lucide-react";
 import {
 	calculateDoctorPeriodPayroll,
 	filterServicesForDoctor,
 	generatePayrollT51Csv,
 	generateDoctorPayslipHtml,
+	generateDoctorPayslipMessengerText,
 	type DoctorCompletedServiceItem,
 	type DoctorPayrollResult,
 	type DoctorPayrollStornoLineItem,
@@ -74,6 +82,13 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	const [periodStart, setPeriodStart] = useState(effectivePeriodStart);
 	const [periodEnd, setPeriodEnd] = useState(effectivePeriodEnd);
 	const [periodPreset, setPeriodPreset] = useState<"current_month" | "previous_month" | "quarter" | "custom">("current_month");
+	const [payoutModel, setPayoutModel] = useState<"percentage" | "chair_rental">(() => {
+		return doctorsList.length === 0 || initialDoctorId === "solo-doctor" ? "chair_rental" : "percentage";
+	});
+	const [chairRentalRub, setChairRentalRub] = useState<number>(40000);
+	const [advanceRub, setAdvanceRub] = useState<number>(0);
+	const [isNpdReceiptDone, setIsNpdReceiptDone] = useState<boolean>(false);
+	const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 	const [customPercent, setCustomPercent] = useState<number | undefined>(initialBasePercentage);
 	const [manualAdjustmentRub, setManualAdjustmentRub] = useState<number>(0);
 	const [taxRegime, setTaxRegime] = useState<"employee" | "self_employed">(() => {
@@ -161,6 +176,10 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 			doctorId: docId,
 			from: periodStart,
 			to: periodEnd,
+			payoutModel,
+			chairRentalRub: String(chairRentalRub),
+			advanceRub: String(advanceRub),
+			taxRegime,
 		});
 
 		fetch(`/api/doctor/my-earnings?${query.toString()}`)
@@ -209,7 +228,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 		return () => {
 			isCancelled = true;
 		};
-	}, [isOpen, initialServices, activeDoc?.id, selectedDoctorId, periodStart, periodEnd]);
+	}, [isOpen, initialServices, activeDoc?.id, selectedDoctorId, periodStart, periodEnd, payoutModel, chairRentalRub, advanceRub, taxRegime]);
 
 	const servicesToUse = useMemo(() => {
 		const raw = initialServices && initialServices.length > 0 ? initialServices : apiServices;
@@ -256,13 +275,32 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 			services: servicesToUse,
 			customBasePercentage: customPercent,
 			useClinicalCategoryRates,
-			taxRegime,
-			isSoloDoctor: doctorsList.length === 0 || activeDoc.specialtyId === "solo_practitioner" || activeDoc.specialtyId === "solo-doctor",
+			taxRegime: payoutModel === "chair_rental" ? "self_employed" : taxRegime,
+			isSoloDoctor: doctorsList.length === 0 || activeDoc.specialtyId === "solo_practitioner" || activeDoc.specialtyId === "solo-doctor" || payoutModel === "chair_rental",
 			manualAdjustmentKop: Math.round(manualAdjustmentRub * 100),
+			payoutModel,
+			chairRentalKop: payoutModel === "chair_rental" ? Math.round(chairRentalRub * 100) : 0,
+			advancePayoutKop: Math.round(advanceRub * 100),
 		});
-	}, [isOpen, activeDoc, periodStart, periodEnd, servicesToUse, customPercent, manualAdjustmentRub, useClinicalCategoryRates, taxRegime, doctorsList.length]);
+	}, [isOpen, activeDoc, periodStart, periodEnd, servicesToUse, customPercent, manualAdjustmentRub, useClinicalCategoryRates, taxRegime, doctorsList.length, payoutModel, chairRentalRub, advanceRub]);
 
 	if (!isOpen) return null;
+
+	const handleSendToMessenger = (platform: "clipboard" | "whatsapp" | "telegram" = "clipboard") => {
+		const text = generateDoctorPayslipMessengerText(payrollResult, clinicName);
+		if (typeof navigator !== "undefined" && navigator.clipboard) {
+			navigator.clipboard.writeText(text);
+			setCopyFeedback("Текст листка скопирован!");
+			setTimeout(() => setCopyFeedback(null), 3000);
+		}
+		if (typeof window !== "undefined") {
+			if (platform === "whatsapp") {
+				window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+			} else if (platform === "telegram") {
+				window.open(`https://t.me/share/url?url=${encodeURIComponent(text)}`, "_blank");
+			}
+		}
+	};
 
 	const handleDownloadCsv = () => {
 		const csv = generatePayrollT51Csv([payrollResult]);
@@ -289,7 +327,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 		printWindow.document.close();
 	};
 
-	return (
+	const modalContent = (
 		<div className="payroll-modal-overlay" data-testid="doctor-payroll-modal">
 			<div className="payroll-modal-container">
 				{/* Header */}
@@ -328,9 +366,9 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 				<div className="p-4 sm:p-5 overflow-y-auto flex flex-col gap-5 flex-1">
 					{/* Filter Controls with Segmented Bar */}
 					<div className="flex flex-col gap-3 p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
-						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+						<div className="flex flex-wrap items-center justify-between gap-3">
 							<div className="flex items-center gap-2 flex-wrap">
-								<span className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
+								<span className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5 shrink-0">
 									<Calendar className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
 									Период расчета:
 								</span>
@@ -366,26 +404,116 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 								</div>
 							</div>
 
-							<div className="flex items-center gap-2 flex-wrap">
-								<span className="text-xs font-semibold text-[var(--muted,#64748b)]">
-									Режим:
-								</span>
-								<div className="dente-segmented-bar" data-testid="doctor-payroll-tax-regime">
-									<button
-										type="button"
-										className={`dente-segmented-item ${taxRegime === "employee" ? "active" : ""}`}
-										onClick={() => setTaxRegime("employee")}
-									>
-										Наёмный (13-15%)
-									</button>
-									<button
-										type="button"
-										className={`dente-segmented-item ${taxRegime === "self_employed" ? "active" : ""}`}
-										onClick={() => setTaxRegime("self_employed")}
-									>
-										ИП / Самозанятый (0%)
-									</button>
+							<div className="flex items-center gap-3 flex-wrap">
+								<div className="flex items-center gap-1.5">
+									<span className="text-xs font-semibold text-[var(--muted,#64748b)] shrink-0">
+										Режим:
+									</span>
+									<div className="dente-segmented-bar" data-testid="doctor-payroll-tax-regime">
+										<button
+											type="button"
+											className={`dente-segmented-item ${taxRegime === "employee" ? "active" : ""}`}
+											onClick={() => setTaxRegime("employee")}
+										>
+											Наёмный (13-15%)
+										</button>
+										<button
+											type="button"
+											className={`dente-segmented-item ${taxRegime === "self_employed" ? "active" : ""}`}
+											onClick={() => setTaxRegime("self_employed")}
+										>
+											ИП / Самозанятый (0%)
+										</button>
+									</div>
 								</div>
+
+								<div className="flex items-center gap-1.5">
+									<span className="text-xs font-semibold text-[var(--muted,#64748b)] shrink-0">
+										Модель:
+									</span>
+									<div className="dente-segmented-bar" data-testid="doctor-payroll-model-toggle">
+										<button
+											type="button"
+											className={`dente-segmented-item ${payoutModel === "percentage" ? "active" : ""}`}
+											onClick={() => setPayoutModel("percentage")}
+										>
+											Процент от кассы
+										</button>
+										<button
+											type="button"
+											className={`dente-segmented-item ${payoutModel === "chair_rental" ? "active" : ""}`}
+											onClick={() => {
+												setPayoutModel("chair_rental");
+												setTaxRegime("self_employed");
+											}}
+										>
+											Аренда кресла (Соло)
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						{/* Chair Rental & Payment Split Toolbar (Mandates 8e, 8n) */}
+						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2.5 border-t border-[var(--line,#e2e8f0)]/80 text-xs">
+							{payoutModel === "chair_rental" ? (
+								<div className="flex items-center gap-2 flex-wrap" data-testid="doctor-payroll-chair-rental-panel">
+									<Building2 className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+									<label className="font-semibold text-[var(--ink,#0f172a)] whitespace-nowrap">
+										Аренда кресла:
+									</label>
+									<input
+										type="number"
+										value={chairRentalRub}
+										onChange={(e) => setChairRentalRub(Math.max(0, Number(e.target.value) || 0))}
+										className="w-24 sm:w-28 h-8 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-right font-bold text-xs"
+										data-testid="doctor-payroll-chair-rental-input"
+									/>
+									<span className="text-[var(--muted,#64748b)]">₽/мес</span>
+									<span className="text-[11px] text-[var(--teal,#0d9488)] font-medium">
+										(Выручка − Аренда − ЗТЛ − Мат = 100% чистый доход)
+									</span>
+								</div>
+							) : (
+								<div className="flex items-center gap-2">
+									<Percent className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+									<span className="text-[var(--muted,#64748b)]">
+										Ставка комиссии врача по пресету: <strong>{payrollResult.baseCommissionPercent}%</strong>
+									</span>
+								</div>
+							)}
+
+							<div className="flex items-center gap-3 flex-wrap">
+								<div className="flex items-center gap-1.5">
+									<label className="font-semibold text-[var(--muted,#64748b)] whitespace-nowrap">Аванс:</label>
+									<input
+										type="number"
+										value={advanceRub}
+										onChange={(e) => setAdvanceRub(Math.max(0, Number(e.target.value) || 0))}
+										className="w-20 sm:w-24 h-8 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-right font-bold text-xs"
+										data-testid="doctor-payroll-advance-input"
+										placeholder="0"
+									/>
+									<span className="text-[var(--muted,#64748b)]">₽</span>
+								</div>
+
+								{(taxRegime === "self_employed" || payoutModel === "chair_rental") && (
+									<div className="flex items-center gap-2">
+										<span className="px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300 font-bold border border-sky-200 dark:border-sky-800 text-[11px]">
+											НПД 6%: {(((payrollResult.npd6TaxKop ?? Math.round(payrollResult.netPayoutToDoctorKop * 0.06))) / 100).toLocaleString("ru-RU")} ₽
+										</span>
+										<label className="flex items-center gap-1.5 cursor-pointer font-medium text-[var(--ink,#0f172a)] select-none text-xs">
+											<input
+												type="checkbox"
+												checked={isNpdReceiptDone}
+												onChange={(e) => setIsNpdReceiptDone(e.target.checked)}
+												className="rounded border-[var(--line,#cbd5e1)] text-[var(--teal,#0d9488)]"
+												data-testid="doctor-payroll-npd-checkbox"
+											/>
+											<span>Чек «Мой налог»</span>
+										</label>
+									</div>
+								)}
 							</div>
 						</div>
 
@@ -472,9 +600,11 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 						</div>
 
 						<div className="payroll-stat-card">
-							<span className="text-[12px] font-medium text-[var(--muted,#64748b)]">Вычеты (Мат/Лаб)</span>
+							<span className="text-[12px] font-medium text-[var(--muted,#64748b)]">
+								{payoutModel === "chair_rental" ? "Вычеты (Аренда/Мат/ЗТЛ)" : "Вычеты (Мат/Лаб)"}
+							</span>
 							<span className="text-base sm:text-lg font-black text-rose-600 dark:text-rose-400">
-								-{( (payrollResult.totalLabDeductionsKop + payrollResult.totalMaterialDeductionsKop) / 100).toLocaleString("ru-RU")} ₽
+								-{(( (payrollResult.chairRentalKop ?? 0) + payrollResult.totalLabDeductionsKop + payrollResult.totalMaterialDeductionsKop) / 100).toLocaleString("ru-RU")} ₽
 							</span>
 							<span className="text-[12px] text-[var(--muted,#64748b)]">
 								{payrollResult.totalRefundClawbackKop > 0
@@ -484,12 +614,16 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 						</div>
 
 						<div className="payroll-stat-card">
-							<span className="text-[12px] font-medium text-[var(--muted,#64748b)]">Ставка + KPI</span>
+							<span className="text-[12px] font-medium text-[var(--muted,#64748b)]">
+								{payoutModel === "chair_rental" ? "Модель дохода" : "Ставка + KPI"}
+							</span>
 							<span className="text-base sm:text-lg font-black text-[var(--teal,#0d9488)]">
-								{payrollResult.baseCommissionPercent}% {payrollResult.kpiBonusPercent > 0 ? `+ ${payrollResult.kpiBonusPercent}%` : ""}
+								{payoutModel === "chair_rental"
+									? "100% маржа"
+									: `${payrollResult.baseCommissionPercent}% ${payrollResult.kpiBonusPercent > 0 ? `+ ${payrollResult.kpiBonusPercent}%` : ""}`}
 							</span>
 							<span className="text-[12px] text-[var(--teal,#0d9488)] truncate" title={payrollResult.kpiTierBadgeRu}>
-								{payrollResult.kpiTierBadgeRu}
+								{payoutModel === "chair_rental" ? "Аренда кресла (Соло)" : payrollResult.kpiTierBadgeRu}
 							</span>
 						</div>
 
@@ -499,11 +633,17 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 								{(payrollResult.netPayoutToDoctorKop / 100).toLocaleString("ru-RU")} ₽
 							</span>
 							<span className="text-[12px] text-[var(--muted,#64748b)]">
-								{taxRegime === "self_employed"
-									? "ИП / Самозанятый (НДФЛ 0%)"
-									: payrollResult.isProgressiveTaxApplied
-										? `НДФЛ 13-15%: ${(((payrollResult.ndflTaxKop ?? payrollResult.ndfl13TaxKop)) / 100).toLocaleString("ru-RU")} ₽`
-										: `НДФЛ 13%: ${(payrollResult.ndfl13TaxKop / 100).toLocaleString("ru-RU")} ₽`}
+								{(payrollResult.advancePayoutKop ?? 0) > 0 ? (
+									<span>
+										Аванс: -{((payrollResult.advancePayoutKop ?? 0) / 100).toLocaleString("ru-RU")} ₽ • Ост: {((payrollResult.mainPayoutKop ?? 0) / 100).toLocaleString("ru-RU")} ₽
+									</span>
+								) : taxRegime === "self_employed" || payoutModel === "chair_rental" ? (
+									"ИП / Самозанятый (НДФЛ 0%)"
+								) : payrollResult.isProgressiveTaxApplied ? (
+									`НДФЛ 13-15%: ${(((payrollResult.ndflTaxKop ?? payrollResult.ndfl13TaxKop)) / 100).toLocaleString("ru-RU")} ₽`
+								) : (
+									`НДФЛ 13%: ${(payrollResult.ndfl13TaxKop / 100).toLocaleString("ru-RU")} ₽`
+								)}
 							</span>
 						</div>
 					</div>
@@ -546,99 +686,186 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 								</p>
 							</div>
 						) : (
-							<div className="border border-[var(--line,#e2e8f0)] rounded-xl overflow-hidden">
-								<div className="overflow-x-auto">
-									<table className="w-full text-left text-xs">
-										<thead className="bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]">
-											<tr>
-												<th className="p-2.5 font-semibold">Дата</th>
-												<th className="p-2.5 font-semibold">Пациент</th>
-												<th className="p-2.5 font-semibold">Услуга / Код / Зуб</th>
-												<th className="p-2.5 font-semibold text-right">Выручка</th>
-												<th className="p-2.5 font-semibold text-right">Материалы</th>
-												<th className="p-2.5 font-semibold text-right">ЗТЛ</th>
-												<th className="p-2.5 font-semibold text-right">Начислено</th>
-											</tr>
-										</thead>
-										<tbody className="divide-y divide-[var(--line,#e2e8f0)]">
-											{servicesToUse.map((srv) => {
-												const isWarranty = srv.isWarrantyRework;
-												const isFullyRefunded = srv.isRefunded === true || (srv.refundedAmountKop !== undefined && srv.refundedAmountKop >= srv.grossRevenueKop);
-												const hasPartialRefund = !isFullyRefunded && (srv.refundedAmountKop ?? 0) > 0;
-												const effectiveGrossKop = Math.max(0, srv.grossRevenueKop - (srv.refundedAmountKop ?? 0));
-												const net = isWarranty ? 0 : Math.max(0, effectiveGrossKop - srv.labCostKop - srv.materialCostKop);
-												let earned = 0;
-												if (isWarranty) {
-													if (srv.warrantyType === "clinic_warranty" || srv.warrantyType === "lab_warranty") {
-														earned = srv.warrantyFixedCompensationKop ?? 0;
+							<>
+								{/* Desktop Table View */}
+								<div className="hidden sm:block border border-[var(--line,#e2e8f0)] rounded-xl overflow-hidden">
+									<div className="overflow-x-auto">
+										<table className="w-full text-left text-xs">
+											<thead className="bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]">
+												<tr>
+													<th className="p-2.5 font-semibold">Дата</th>
+													<th className="p-2.5 font-semibold">Пациент</th>
+													<th className="p-2.5 font-semibold">Услуга / Код / Зуб</th>
+													<th className="p-2.5 font-semibold text-right">Выручка</th>
+													<th className="p-2.5 font-semibold text-right">Материалы</th>
+													<th className="p-2.5 font-semibold text-right">ЗТЛ</th>
+													<th className="p-2.5 font-semibold text-right">Начислено</th>
+												</tr>
+											</thead>
+											<tbody className="divide-y divide-[var(--line,#e2e8f0)]">
+												{servicesToUse.map((srv) => {
+													const isWarranty = srv.isWarrantyRework;
+													const isFullyRefunded = srv.isRefunded === true || (srv.refundedAmountKop !== undefined && srv.refundedAmountKop >= srv.grossRevenueKop);
+													const hasPartialRefund = !isFullyRefunded && (srv.refundedAmountKop ?? 0) > 0;
+													const effectiveGrossKop = Math.max(0, srv.grossRevenueKop - (srv.refundedAmountKop ?? 0));
+													const net = isWarranty ? 0 : Math.max(0, effectiveGrossKop - srv.labCostKop - srv.materialCostKop);
+													let earned = 0;
+													if (isWarranty) {
+														if (srv.warrantyType === "clinic_warranty" || srv.warrantyType === "lab_warranty") {
+															earned = srv.warrantyFixedCompensationKop ?? 0;
+														}
+													} else if (!isFullyRefunded) {
+														earned = Math.round((net * (srv.customCommissionPercent ?? payrollResult.baseCommissionPercent)) / 100);
 													}
-												} else if (!isFullyRefunded) {
-													earned = Math.round((net * (srv.customCommissionPercent ?? payrollResult.baseCommissionPercent)) / 100);
-												}
 
-												return (
-													<tr key={srv.id} className="hover:bg-[var(--paper-soft,#f8fafc)] transition-colors">
-														<td className="p-2.5 font-medium whitespace-nowrap">{srv.dateIso}</td>
-														<td className="p-2.5 font-medium">
-															<div>{srv.patientName}</div>
-															<div className="text-[10px] text-[var(--muted,#64748b)]">Карта: {srv.medicalCardNumber}</div>
-														</td>
-														<td className="p-2.5 text-[var(--ink,#0f172a)]">
-															<div className="font-medium">{srv.serviceNameRu}</div>
-															<div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-																{srv.order804nCode && (
-																	<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]">
-																		Код: {srv.order804nCode}
-																	</span>
-																)}
-																{srv.toothCode && (
-																	<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--teal-soft,#f0fdfa)] border border-[var(--teal,#0d9488)]/20 text-[var(--teal,#0d9488)]">
-																		Зуб {srv.toothCode}
-																	</span>
-																)}
-																{srv.paymentSource === "family_deposit" && (
-																	<span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/30">
-																		Семейный депозит
-																	</span>
-																)}
-																{isWarranty && (
-																	<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-																		Гарантия {srv.warrantyType === "doctor_fault" ? "(вина врача: 0 ₽)" : "(клиника / ЗТЛ)"}
-																	</span>
-																)}
-																{isFullyRefunded && (
-																	<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/30">
-																		Возврат / Сторно
-																	</span>
-																)}
-																{hasPartialRefund && (
-																	<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-																		Частичный возврат
-																	</span>
-																)}
-															</div>
-														</td>
-														<td className="p-2.5 font-bold text-right whitespace-nowrap">
-															{isWarranty ? "0 ₽" : `${(srv.grossRevenueKop / 100).toLocaleString("ru-RU")} ₽`}
-														</td>
-														<td className="p-2.5 text-rose-600 dark:text-rose-400 text-right whitespace-nowrap">
-															{srv.materialCostKop > 0 ? `- ${(srv.materialCostKop / 100).toLocaleString("ru-RU")} ₽` : "—"}
-														</td>
-														<td className="p-2.5 text-amber-600 dark:text-amber-400 text-right whitespace-nowrap font-medium">
-															{srv.labCostKop > 0 ? `- ${(srv.labCostKop / 100).toLocaleString("ru-RU")} ₽` : "—"}
-														</td>
-														<td className="p-2.5 font-bold text-[var(--teal,#0d9488)] text-right whitespace-nowrap">
-															{isFullyRefunded
-																? "0 ₽ (сторно)"
-																: `${(earned / 100).toLocaleString("ru-RU")} ₽`}
-														</td>
-													</tr>
-												);
-											})}
-										</tbody>
-									</table>
+													return (
+														<tr key={srv.id} className="hover:bg-[var(--paper-soft,#f8fafc)] transition-colors">
+															<td className="p-2.5 font-medium whitespace-nowrap">{srv.dateIso}</td>
+															<td className="p-2.5 font-medium">
+																<div>{srv.patientName}</div>
+																<div className="text-[10px] text-[var(--muted,#64748b)]">Карта: {srv.medicalCardNumber}</div>
+															</td>
+															<td className="p-2.5 text-[var(--ink,#0f172a)]">
+																<div className="font-medium">{srv.serviceNameRu}</div>
+																<div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+																	{srv.order804nCode && (
+																		<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]">
+																			Код: {srv.order804nCode}
+																		</span>
+																	)}
+																	{srv.toothCode && (
+																		<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--teal-soft,#f0fdfa)] border border-[var(--teal,#0d9488)]/20 text-[var(--teal,#0d9488)]">
+																			Зуб {srv.toothCode}
+																		</span>
+																	)}
+																	{srv.paymentSource === "family_deposit" && (
+																		<span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/30">
+																			Семейный депозит
+																		</span>
+																	)}
+																	{isWarranty && (
+																		<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+																			Гарантия {srv.warrantyType === "doctor_fault" ? "(вина врача: 0 ₽)" : "(клиника / ЗТЛ)"}
+																		</span>
+																	)}
+																	{isFullyRefunded && (
+																		<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/30">
+																			Возврат / Сторно
+																		</span>
+																	)}
+																	{hasPartialRefund && (
+																		<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+																			Частичный возврат
+																		</span>
+																	)}
+																</div>
+															</td>
+															<td className="p-2.5 font-bold text-right whitespace-nowrap">
+																{isWarranty ? "0 ₽" : `${(srv.grossRevenueKop / 100).toLocaleString("ru-RU")} ₽`}
+															</td>
+															<td className="p-2.5 text-rose-600 dark:text-rose-400 text-right whitespace-nowrap">
+																{srv.materialCostKop > 0 ? `- ${(srv.materialCostKop / 100).toLocaleString("ru-RU")} ₽` : "—"}
+															</td>
+															<td className="p-2.5 text-amber-600 dark:text-amber-400 text-right whitespace-nowrap font-medium">
+																{srv.labCostKop > 0 ? `- ${(srv.labCostKop / 100).toLocaleString("ru-RU")} ₽` : "—"}
+															</td>
+															<td className="p-2.5 font-bold text-[var(--teal,#0d9488)] text-right whitespace-nowrap">
+																{isFullyRefunded
+																	? "0 ₽ (сторно)"
+																	: `${(earned / 100).toLocaleString("ru-RU")} ₽`}
+															</td>
+														</tr>
+													);
+												})}
+											</tbody>
+										</table>
+									</div>
 								</div>
-							</div>
+
+								{/* Mobile Grouped List Cards (Apple iOS HIG & Touch Ergonomics >= 52px) */}
+								<div className="block sm:hidden flex flex-col gap-2.5" data-testid="doctor-payroll-mobile-services">
+									{servicesToUse.map((srv) => {
+										const isWarranty = srv.isWarrantyRework;
+										const isFullyRefunded = srv.isRefunded === true || (srv.refundedAmountKop !== undefined && srv.refundedAmountKop >= srv.grossRevenueKop);
+										const hasPartialRefund = !isFullyRefunded && (srv.refundedAmountKop ?? 0) > 0;
+										const effectiveGrossKop = Math.max(0, srv.grossRevenueKop - (srv.refundedAmountKop ?? 0));
+										const net = isWarranty ? 0 : Math.max(0, effectiveGrossKop - srv.labCostKop - srv.materialCostKop);
+										let earned = 0;
+										if (isWarranty) {
+											if (srv.warrantyType === "clinic_warranty" || srv.warrantyType === "lab_warranty") {
+												earned = srv.warrantyFixedCompensationKop ?? 0;
+											}
+										} else if (!isFullyRefunded) {
+											earned = Math.round((net * (srv.customCommissionPercent ?? payrollResult.baseCommissionPercent)) / 100);
+										}
+
+										return (
+											<div key={srv.id} className="payroll-mobile-card">
+												<div className="payroll-mobile-card-header">
+													<div className="flex-1 min-w-0 pr-2">
+														<div className="font-semibold text-xs text-[var(--ink,#0f172a)] leading-snug">
+															{srv.serviceNameRu}
+														</div>
+														<div className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">
+															{srv.dateIso} • {srv.patientName} (карта: {srv.medicalCardNumber})
+														</div>
+													</div>
+													<div className="text-right flex-shrink-0">
+														<div className="font-bold text-[var(--teal,#0d9488)] text-sm">
+															{isFullyRefunded ? "0 ₽" : `${(earned / 100).toLocaleString("ru-RU")} ₽`}
+														</div>
+														<div className="text-[10px] text-[var(--muted,#64748b)]">
+															{isWarranty ? "Гарантия" : `Чек: ${(srv.grossRevenueKop / 100).toLocaleString("ru-RU")} ₽`}
+														</div>
+													</div>
+												</div>
+												<div className="flex items-center gap-1.5 flex-wrap pt-1.5 border-t border-[var(--line,#e2e8f0)]/60 text-[11px]">
+													{srv.order804nCode && (
+														<span className="font-mono px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] text-[10px]">
+															Код: {srv.order804nCode}
+														</span>
+													)}
+													{srv.toothCode && (
+														<span className="font-bold px-1.5 py-0.5 rounded bg-[var(--teal-soft,#f0fdfa)] border border-[var(--teal,#0d9488)]/20 text-[var(--teal,#0d9488)] text-[10px]">
+															Зуб {srv.toothCode}
+														</span>
+													)}
+													{srv.paymentSource === "family_deposit" && (
+														<span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/30">
+															Семейный депозит
+														</span>
+													)}
+													{srv.materialCostKop > 0 && (
+														<span className="text-rose-600 dark:text-rose-400 font-medium">
+															Мат: -{(srv.materialCostKop / 100).toLocaleString("ru-RU")} ₽
+														</span>
+													)}
+													{srv.labCostKop > 0 && (
+														<span className="text-amber-600 dark:text-amber-400 font-medium">
+															ЗТЛ: -{(srv.labCostKop / 100).toLocaleString("ru-RU")} ₽
+														</span>
+													)}
+													{isWarranty && (
+														<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+															Гарантия
+														</span>
+													)}
+													{isFullyRefunded && (
+														<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/30">
+															Возврат / Сторно
+														</span>
+													)}
+													{hasPartialRefund && (
+														<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+															Частичный возврат
+														</span>
+													)}
+												</div>
+											</div>
+										);
+									})}
+								</div>
+							</>
 						)}
 					</div>
 
@@ -651,7 +878,8 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 									(Автоматическое сторнирование начислений при возврате денег пациенту)
 								</span>
 							</h4>
-							<div className="border border-rose-200 dark:border-rose-900/60 rounded-xl overflow-hidden bg-rose-50/30 dark:bg-rose-950/20">
+							{/* Desktop Storno Table */}
+							<div className="hidden sm:block border border-rose-200 dark:border-rose-900/60 rounded-xl overflow-hidden bg-rose-50/30 dark:bg-rose-950/20">
 								<div className="overflow-x-auto">
 									<table className="w-full text-left text-xs">
 										<thead className="bg-rose-100/50 dark:bg-rose-900/40 border-b border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200">
@@ -685,23 +913,51 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 									</table>
 								</div>
 							</div>
+
+							{/* Mobile Storno Cards */}
+							<div className="block sm:hidden flex flex-col gap-2">
+								{payrollResult.stornoItems.map((storno) => (
+									<div key={storno.id} className="p-3 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 text-xs">
+										<div className="flex items-center justify-between gap-2">
+											<span className="font-mono font-bold text-rose-700 dark:text-rose-300">№ {storno.receiptNumber}</span>
+											<span className="text-[11px] text-[var(--muted,#64748b)]">{storno.dateIso}</span>
+										</div>
+										<div className="font-semibold text-[var(--ink,#0f172a)] mt-1">{storno.serviceNameRu}</div>
+										<div className="text-[11px] text-rose-600 dark:text-rose-400 mt-0.5">{storno.reasonRu}</div>
+										<div className="flex items-center justify-between pt-1.5 mt-1.5 border-t border-rose-200/50">
+											<span className="text-rose-600 dark:text-rose-400">Возврат: -{(storno.refundedGrossKop / 100).toLocaleString("ru-RU")} ₽</span>
+											<span className="font-bold text-rose-700 dark:text-rose-300">Сторно: -{(storno.stornoCommissionKop / 100).toLocaleString("ru-RU")} ₽</span>
+										</div>
+									</div>
+								))}
+							</div>
 						</div>
 					)}
 				</div>
 
-				{/* Footer Actions */}
-				<div className="p-4 sm:p-5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between flex-wrap gap-3">
+				{/* Footer Actions (Desktop & Tablet) */}
+				<div className="hidden sm:flex p-4 sm:p-5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] items-center justify-between flex-wrap gap-3">
 					<div className="text-xs text-[var(--muted,#64748b)]">
 						Специальность: <span className="font-bold text-[var(--ink,#0f172a)]">{payrollResult.specialtyTitleRu}</span>
 					</div>
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
+							onClick={() => handleSendToMessenger("clipboard")}
+							className="dente-btn-secondary"
+							data-testid="doctor-payroll-send-messenger"
+							title="Скопировать структурированный текст расчетного листка для WhatsApp или Telegram"
+						>
+							<Share2 className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+							<span>{copyFeedback ?? "В мессенджер"}</span>
+						</button>
+						<button
+							type="button"
 							onClick={handleDownloadCsv}
 							className="dente-btn-secondary"
 						>
 							<Download className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
-							<span>Экспорт зарплаты (CSV)</span>
+							<span>Экспорт (CSV)</span>
 						</button>
 						<button
 							type="button"
@@ -709,13 +965,47 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 							className="dente-btn-primary"
 						>
 							<FileText className="w-3.5 h-3.5" />
-							<span>Печать расчетного листка</span>
+							<span>Печать листка</span>
+						</button>
+					</div>
+				</div>
+
+				{/* Mobile Sticky Thumb Bar (Apple HIG Natural Thumb Zone, touch targets >= 44x44px) */}
+				<div className="payroll-mobile-thumb-bar" data-testid="doctor-payroll-mobile-thumb-bar">
+					<div className="flex items-center justify-between gap-2 w-full">
+						<button
+							type="button"
+							onClick={() => handleSendToMessenger("clipboard")}
+							className="payroll-mobile-touch-btn dente-btn-secondary flex-1 justify-center"
+							data-testid="doctor-payroll-mobile-messenger-btn"
+						>
+							<Share2 className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+							<span>{copyFeedback ?? "Мессенджер"}</span>
+						</button>
+						<button
+							type="button"
+							onClick={handlePrintPayslip}
+							className="payroll-mobile-touch-btn dente-btn-primary flex-1 justify-center"
+							data-testid="doctor-payroll-mobile-print-btn"
+						>
+							<FileText className="w-4 h-4" />
+							<span>Печать</span>
+						</button>
+						<button
+							type="button"
+							onClick={onClose}
+							className="payroll-mobile-touch-btn dente-btn-secondary px-3"
+							aria-label="Закрыть окно"
+						>
+							<X className="w-4 h-4" />
 						</button>
 					</div>
 				</div>
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 };
 
 export default DoctorPayrollModal;

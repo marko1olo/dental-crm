@@ -87,6 +87,11 @@ const TreatmentPipeline = lazyWithRetry(() =>
 		default: module.TreatmentPipeline,
 	})),
 );
+const DoctorPayrollModal = lazyWithRetry(() =>
+	import("../payroll/DoctorPayrollModal").then((module) => ({
+		default: module.DoctorPayrollModal,
+	})),
+);
 
 export function AppViewRouter({
 	currentView,
@@ -107,6 +112,17 @@ export function AppViewRouter({
 }: AppViewRouterProps) {
 	const storePerspective = usePerspectiveStore((s) => s.perspective);
 	const activePerspective = perspective ?? storePerspective;
+
+	const [globalDoctorPayroll, setGlobalDoctorPayroll] = React.useState<any>(null);
+
+	React.useEffect(() => {
+		const handleGlobalPayroll = (e: Event) => {
+			const customEvent = e as CustomEvent;
+			setGlobalDoctorPayroll(customEvent.detail || {});
+		};
+		window.addEventListener("dente:open-doctor-payroll", handleGlobalPayroll);
+		return () => window.removeEventListener("dente:open-doctor-payroll", handleGlobalPayroll);
+	}, []);
 	return (
 		<section
 			className={`workspace view-${currentView}`}
@@ -465,7 +481,12 @@ export function AppViewRouter({
 						}
 					>
 						<SettingsView
-							activeStaffUser={activeStaffUser}
+							activeStaffUser={
+								activeStaffUser ??
+								dashboard?.clinicSettings?.staff?.find((s: any) => s.role === "owner" || s.role === "doctor") ??
+								dashboard?.clinicSettings?.staff?.[0] ??
+								null
+							}
 							activePatient={activePatient}
 							{...(appLogicValue as any)}
 						/>
@@ -580,6 +601,39 @@ export function AppViewRouter({
 						<TreatmentPipeline />
 					</Suspense>
 				</WorkspaceRouteErrorBoundary>
+			) : null}
+			{globalDoctorPayroll ? (
+				<Suspense fallback={null}>
+					<DoctorPayrollModal
+						isOpen={Boolean(globalDoctorPayroll)}
+						onClose={() => setGlobalDoctorPayroll(null)}
+						clinicName={dashboard?.clinicSettings?.name || "ООО «Денте Стоматология»"}
+						initialDoctorId={globalDoctorPayroll.doctor?.doctorUserId || globalDoctorPayroll.doctorId}
+						initialServices={globalDoctorPayroll.doctor?.visits ? globalDoctorPayroll.doctor.visits.map((v: any, idx: number) => ({
+							id: v.visitId || `srv-${idx}`,
+							dateIso: v.closedAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+							patientName: v.patientName || "Пациент",
+							medicalCardNumber: v.patientCardNumber || "043/у",
+							serviceNameRu: v.serviceName || "Стоматологическая услуга",
+							category: v.serviceCategory || "therapy",
+							grossRevenueKop: Math.round((v.patientPaidRub || 0) * 100),
+							labCostKop: Math.round((v.withheldLabRub || 0) * 100),
+							materialCostKop: Math.round((v.withheldMaterialRub || 0) * 100),
+							toothCode: v.toothFormula,
+							order804nCode: v.serviceCode,
+						})) : globalDoctorPayroll.services}
+						initialBasePercentage={globalDoctorPayroll.doctor?.commissionPct ?? globalDoctorPayroll.basePercentage}
+						doctorsList={
+							globalDoctorPayroll.doctor
+								? [{
+									id: globalDoctorPayroll.doctor.doctorUserId,
+									name: globalDoctorPayroll.doctor.doctorName,
+									specialtyId: globalDoctorPayroll.doctor.specialtyId || (globalDoctorPayroll.doctor.role === "doctor" ? "solo-doctor" : globalDoctorPayroll.doctor.role),
+								}]
+								: undefined
+						}
+					/>
+				</Suspense>
 			) : null}
 			{toastPortal}
 		</section>

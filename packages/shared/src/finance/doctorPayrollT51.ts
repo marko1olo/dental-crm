@@ -333,6 +333,9 @@ export interface DoctorPayrollCalculationInput {
 	readonly cumulativeYtdGrossKop?: number | undefined;
 	readonly taxRegime?: "employee" | "self_employed" | undefined;
 	readonly isSoloDoctor?: boolean | undefined;
+	readonly payoutModel?: "percentage" | "chair_rental" | undefined;
+	readonly chairRentalKop?: number | undefined;
+	readonly advancePayoutKop?: number | undefined;
 }
 
 export interface DoctorPayrollResult {
@@ -341,6 +344,11 @@ export interface DoctorPayrollResult {
 	readonly specialtyTitleRu: string;
 	readonly periodLabelRu: string;
 	readonly taxRegime?: "employee" | "self_employed";
+	readonly payoutModel?: "percentage" | "chair_rental";
+	readonly chairRentalKop?: number;
+	readonly advancePayoutKop?: number;
+	readonly mainPayoutKop?: number;
+	readonly npd6TaxKop?: number;
 	readonly totalGrossRevenueKop: number;
 	readonly totalLabDeductionsKop: number;
 	readonly totalMaterialDeductionsKop: number;
@@ -627,22 +635,33 @@ export function calculateDoctorPeriodPayroll(
 		}
 	}
 
-	const totalRefundDeductionsKop = totalItemRefundsKop + explicitRefundKop;
-	const totalRefundClawbackKop = explicitRefundClawbackKop;
-	const totalNetBase = Math.max(0, totalGross - totalLab - totalMaterial);
+	const isChairRental = input.payoutModel === "chair_rental";
+	const chairRentalKop = isChairRental ? Math.max(0, input.chairRentalKop ?? 0) : 0;
+
+	let totalRefundDeductionsKop = totalItemRefundsKop + explicitRefundKop;
+	let totalRefundClawbackKop = explicitRefundClawbackKop;
+	let totalNetBase = isChairRental
+		? Math.max(0, totalGross - totalLab - totalMaterial - chairRentalKop)
+		: Math.max(0, totalGross - totalLab - totalMaterial);
 
 	let kpiPercent = 0;
-	let kpiBadge = "Базовая ставка";
-	for (const tier of KPI_BONUS_TIERS) {
-		if (totalGross >= tier.minRevenueKop) {
-			kpiPercent = tier.bonusPercentage;
-			kpiBadge = tier.badgeLabelRu;
-			break;
+	let kpiBadge = isChairRental ? "Аренда кресла (Соло-врач)" : "Базовая ставка";
+	if (!isChairRental) {
+		for (const tier of KPI_BONUS_TIERS) {
+			if (totalGross >= tier.minRevenueKop) {
+				kpiPercent = tier.bonusPercentage;
+				kpiBadge = tier.badgeLabelRu;
+				break;
+			}
 		}
 	}
 
-	const kpiBonusEarned = Math.round((totalNetBase * kpiPercent) / 100);
+	const kpiBonusEarned = isChairRental ? 0 : Math.round((totalNetBase * kpiPercent) / 100);
 	const manualAdj = input.manualAdjustmentKop ?? 0;
+
+	if (isChairRental) {
+		earnedBase = totalNetBase;
+	}
 
 	let preGuaranteePayout = earnedBase + earnedRetail + kpiBonusEarned + manualAdj - totalRefundClawbackKop;
 	if (!Number.isFinite(preGuaranteePayout)) {
@@ -650,13 +669,14 @@ export function calculateDoctorPeriodPayroll(
 	}
 
 	let guaranteeApplied = false;
-	if (preGuaranteePayout < preset.minGuaranteeMonthlyKop && doctorServices.length > 0) {
+	if (!isChairRental && preGuaranteePayout < preset.minGuaranteeMonthlyKop && doctorServices.length > 0) {
 		preGuaranteePayout = preset.minGuaranteeMonthlyKop;
 		guaranteeApplied = true;
 	}
 
 	const grossPayout = Math.max(0, preGuaranteePayout);
 	const isSoloOrSelfEmployed =
+		isChairRental ||
 		input.taxRegime === "self_employed" ||
 		(input.taxRegime === undefined &&
 			(input.isSoloDoctor === true ||
@@ -668,12 +688,21 @@ export function calculateDoctorPeriodPayroll(
 		: calculateProgressiveNdflTax(grossPayout, input.cumulativeYtdGrossKop ?? 0);
 	const netToDoctor = Math.max(0, grossPayout - ndflCalculation.ndflTaxKop);
 
+	const advancePayoutKop = Math.max(0, input.advancePayoutKop ?? 0);
+	const mainPayoutKop = Math.max(0, netToDoctor - advancePayoutKop);
+	const npd6TaxKop = isSoloOrSelfEmployed ? Math.round((grossPayout * 6) / 100) : 0;
+
 	return {
 		doctorId: input.doctorId,
 		doctorName: input.doctorName,
-		specialtyTitleRu: preset.titleRu,
+		specialtyTitleRu: isChairRental ? "Врач-стоматолог (Аренда кресла / Соло)" : preset.titleRu,
 		periodLabelRu: `${input.periodStartIso} — ${input.periodEndIso}`,
 		taxRegime: isSoloOrSelfEmployed ? "self_employed" : "employee",
+		payoutModel: isChairRental ? "chair_rental" : "percentage",
+		chairRentalKop,
+		advancePayoutKop,
+		mainPayoutKop,
+		npd6TaxKop,
 		totalGrossRevenueKop: totalGross,
 		totalLabDeductionsKop: totalLab,
 		totalMaterialDeductionsKop: totalMaterial,
@@ -683,7 +712,7 @@ export function calculateDoctorPeriodPayroll(
 		refundedServicesCount,
 		stornoItems,
 		warrantyServicesCount,
-		baseCommissionPercent: basePercent,
+		baseCommissionPercent: isChairRental ? 100 : basePercent,
 		earnedBaseCommissionKop: earnedBase,
 		kpiBonusPercent: kpiPercent,
 		kpiBonusEarnedKop: kpiBonusEarned,

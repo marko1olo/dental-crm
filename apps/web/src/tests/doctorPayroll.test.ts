@@ -4,6 +4,7 @@ import {
 	calculateDoctorPeriodPayroll,
 	calculateAssistantPeriodPayroll,
 	generatePayrollT51Csv,
+	generateDoctorPayslipMessengerText,
 	type DoctorCompletedServiceItem,
 } from "../components/finance/payroll/payrollEngine";
 import { DOCTOR_SPECIALTY_PAYROLL_PRESETS } from "../components/finance/payroll/payrollPresets";
@@ -341,5 +342,62 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 		assert.equal(res.totalMaterialDeductionsKop, 100000);
 		// Net base: 7,000 ₽ -> 25% = 1,750 ₽ (175,000 kop)
 		assert.equal(res.earnedBaseCommissionKop, 175000);
+	});
+
+	it("should calculate chair rental mode (Mandates 8e, 8n): Revenue - Chair Rental - ZTL - Materials = 100% Net Income with Advance Split and NPD 6%", () => {
+		const services: DoctorCompletedServiceItem[] = [
+			{
+				id: "srv-ortho-1",
+				dateIso: "2026-08-10",
+				patientName: "Васильев В.В.",
+				medicalCardNumber: "043/у-50",
+				serviceNameRu: "Циркониевая коронка",
+				category: "orthopedics",
+				grossRevenueKop: 5000000, // 50,000 ₽
+				labCostKop: 1200000, // 12,000 ₽
+				materialCostKop: 300000, // 3,000 ₽
+			},
+		];
+
+		const res = calculateDoctorPeriodPayroll({
+			doctorId: "doc-solo-1",
+			doctorName: "Д-р Кузнецов (Аренда кресла)",
+			specialtyId: "solo-doctor",
+			periodStartIso: "2026-08-01",
+			periodEndIso: "2026-08-31",
+			services,
+			payoutModel: "chair_rental",
+			chairRentalKop: 1500000, // 15,000 ₽ rent
+			advancePayoutKop: 1000000, // 10,000 ₽ advance
+			taxRegime: "self_employed",
+		});
+
+		// Total Gross: 50,000 ₽
+		assert.equal(res.totalGrossRevenueKop, 5000000);
+		assert.equal(res.totalLabDeductionsKop, 1200000);
+		assert.equal(res.totalMaterialDeductionsKop, 300000);
+		assert.equal(res.chairRentalKop, 1500000);
+		// Net before advance: 50,000 - 15,000 - 12,000 - 3,000 = 20,000 ₽ (2,000,000 kop)
+		assert.equal(res.netPayoutToDoctorKop, 2000000);
+		// Advance split: advance = 10,000 ₽, remaining main = 10,000 ₽
+		assert.equal(res.advancePayoutKop, 1000000);
+		assert.equal(res.mainPayoutKop, 1000000);
+		// NPD 6%: 20,000 * 0.06 = 1,200 ₽ (120,000 kop)
+		assert.equal(res.npd6TaxKop, 120000);
+
+		// Verify messenger text generation
+		const text = generateDoctorPayslipMessengerText(res, "ООО «Денте»");
+		assert.ok(text.includes("РАСЧЕТНЫЙ ЛИСТОК ВРАЧА"));
+		assert.ok(text.includes("Д-р Кузнецов (Аренда кресла)"));
+		assert.ok(text.includes("Аренда стоматологического кресла:"));
+		assert.ok(/Аренда стоматологического кресла: -15[\s\u00A0]000/.test(text));
+		assert.ok(/Выплаченный аванс: -10[\s\u00A0]000/.test(text));
+		assert.ok(/ОСТАТОК К ПЕРЕЧИСЛЕНИЮ: 10[\s\u00A0]000/.test(text));
+		assert.ok(/Налог НПД \(6%\): 1[\s\u00A0]200/.test(text));
+		// Zero cartoon emojis check (Mandate 8d)
+		assert.ok(!text.includes("💰"));
+		assert.ok(!text.includes("🦷"));
+		assert.ok(!text.includes("🚀"));
+		assert.ok(!text.includes("🎉"));
 	});
 });

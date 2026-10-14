@@ -437,4 +437,49 @@ describe("Doctor & Staff Piece-Rate Payroll Engine (Form T-51)", () => {
 		assert.equal(resSoloDoc.netPayoutToDoctorKop, resSoloDoc.grossPayoutBeforeTaxKop);
 		assert.equal(resSoloDoc.taxRegime, "self_employed");
 	});
+
+	it("1.11 Chair rental mode (Mandates 8e, 8n): Revenue - Chair Rental - ZTL - Materials = Net Income + Advance & NPD 6%", () => {
+		const services: DoctorCompletedServiceItem[] = [
+			{
+				id: "srv-chair-1",
+				dateIso: "2026-08-05",
+				patientName: "Пациент Аренды",
+				medicalCardNumber: "043/у-901",
+				serviceNameRu: "Протезирование на диоксиде циркония",
+				category: "orthopedics",
+				grossRevenueKop: 25000000, // 250,000.00 RUB
+				labCostKop: 5000000, // 50,000.00 RUB
+				materialCostKop: 1000000, // 10,000.00 RUB
+			},
+		];
+
+		const res = calculateDoctorPeriodPayroll({
+			doctorId: "doc-chair-solo",
+			doctorName: "Д-р Арендатор К. С.",
+			specialtyId: "general_dentist",
+			periodStartIso: "2026-08-01",
+			periodEndIso: "2026-08-31",
+			services,
+			payoutModel: "chair_rental",
+			chairRentalKop: 4000000, // 40,000.00 RUB chair rental
+			advancePayoutKop: 5000000, // 50,000.00 RUB advance paid earlier
+		});
+
+		// Revenue (250,000) - Lab (50,000) - Materials (10,000) - Rental (40,000) = 150,000.00 RUB net (15,000,000 kop)
+		assert.equal(res.payoutModel, "chair_rental");
+		assert.equal(res.chairRentalKop, 4000000);
+		assert.equal(res.totalGrossRevenueKop, 25000000);
+		assert.equal(res.totalLabDeductionsKop, 5000000);
+		assert.equal(res.totalMaterialDeductionsKop, 1000000);
+		assert.equal(res.totalNetBaseKop, 15000000);
+		assert.equal(res.grossPayoutBeforeTaxKop, 15000000);
+		assert.equal(res.netPayoutToDoctorKop, 15000000);
+		assert.equal(res.ndfl13TaxKop, 0); // Self-employed / solo doctor: no NDFL withheld
+		assert.equal(res.taxRegime, "self_employed");
+		// Advance split: advance 50,000 RUB, main payout remainder: 100,000 RUB
+		assert.equal(res.advancePayoutKop, 5000000);
+		assert.equal(res.mainPayoutKop, 10000000);
+		// Self-employed NPD 6%: 6% of 150,000 = 9,000.00 RUB (900,000 kop)
+		assert.equal(res.npd6TaxKop, 900000);
+	});
 });

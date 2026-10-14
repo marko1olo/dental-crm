@@ -415,6 +415,29 @@ export function generateDoctorPayslipHtml(
 		</div>`
 		: "";
 
+	const isChairRental = payrollResult.payoutModel === "chair_rental";
+	const chairRentalRow = (isChairRental && (payrollResult.chairRentalKop ?? 0) > 0)
+		? `<tr><td>Аренда стоматологического кресла (соло-врач)</td><td class="num" style="color: #b91c1c;">-${((payrollResult.chairRentalKop ?? 0) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td></tr>`
+		: "";
+
+	const advanceRows = (payrollResult.advancePayoutKop && payrollResult.advancePayoutKop > 0)
+		? `<div class="summary-row" style="color: #64748b;">
+			<span>Выплаченный ранее аванс:</span>
+			<span>-${((payrollResult.advancePayoutKop) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
+		</div>
+		<div class="summary-row total" style="color: #0d9488; font-size: 14pt;">
+			<span>ОСТАТОК К ПЕРЕЧИСЛЕНИЮ:</span>
+			<span>${((payrollResult.mainPayoutKop ?? (payrollResult.netPayoutToDoctorKop - payrollResult.advancePayoutKop)) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
+		</div>`
+		: "";
+
+	const npdRow = (isSelfEmployed && (payrollResult.npd6TaxKop || payrollResult.netPayoutToDoctorKop > 0))
+		? `<div class="summary-row" style="color: #0284c7; font-size: 9.5pt;">
+			<span>Налог на профессиональный доход (НПД 6%):</span>
+			<span>${((payrollResult.npd6TaxKop ?? Math.round((payrollResult.netPayoutToDoctorKop * 6) / 100)) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ (чек «Мой налог»)</span>
+		</div>`
+		: "";
+
 	return `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -448,7 +471,7 @@ export function generateDoctorPayslipHtml(
 		<div><strong>Сотрудник:</strong> ${escapeXml(payrollResult.doctorName)}</div>
 		<div><strong>Период:</strong> ${escapeXml(payrollResult.periodLabelRu)}</div>
 		<div><strong>Специальность:</strong> ${escapeXml(payrollResult.specialtyTitleRu)}</div>
-		<div><strong>Ставка сдельная:</strong> ${payrollResult.baseCommissionPercent}%</div>
+		<div><strong>Модель:</strong> ${isChairRental ? "Аренда кресла (Соло)" : `Сдельная ставка ${payrollResult.baseCommissionPercent}%`}</div>
 	</div>
 
 	${overheadHtml}
@@ -462,12 +485,13 @@ export function generateDoctorPayslipHtml(
 		</thead>
 		<tbody>
 			<tr><td>Выручка от оказанных услуг (Gross)</td><td class="num">${grossRub} ₽</td></tr>
+			${chairRentalRow}
 			<tr><td>Удержание: Зуботехническая лаборатория (ЗТЛ)</td><td class="num" style="color: #b91c1c;">-${labRub} ₽</td></tr>
 			<tr><td>Удержание: Дорогостоящие расходные материалы</td><td class="num" style="color: #b91c1c;">-${matRub} ₽</td></tr>
-			<tr style="background: #f8fafc; font-weight: 600;"><td>Чистая сдельная база (Net Base)</td><td class="num">${netBaseRub} ₽</td></tr>
-			<tr><td>Начислено: Сдельная оплата (${payrollResult.baseCommissionPercent}%)</td><td class="num">${baseCommRub} ₽</td></tr>
+			<tr style="background: #f8fafc; font-weight: 600;"><td>${isChairRental ? "Чистый доход соло-врача" : "Чистая сдельная база (Net Base)"}</td><td class="num">${netBaseRub} ₽</td></tr>
+			${!isChairRental ? `<tr><td>Начислено: Сдельная оплата (${payrollResult.baseCommissionPercent}%)</td><td class="num">${baseCommRub} ₽</td></tr>` : ""}
 			<tr><td>Начислено: Продажа средств гигиены (Retail)</td><td class="num">${retailRub} ₽</td></tr>
-			<tr><td>Премия: Выполнение нормативов KPI (${escapeXml(payrollResult.kpiTierBadgeRu)})</td><td class="num">${kpiRub} ₽</td></tr>
+			${!isChairRental ? `<tr><td>Премия: Выполнение нормативов KPI (${escapeXml(payrollResult.kpiTierBadgeRu)})</td><td class="num">${kpiRub} ₽</td></tr>` : ""}
 			${payrollResult.manualAdjustmentKop !== 0 ? `<tr><td>Корректировка / Аванс</td><td class="num">${(payrollResult.manualAdjustmentKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td></tr>` : ""}
 		</tbody>
 	</table>
@@ -481,10 +505,12 @@ export function generateDoctorPayslipHtml(
 			<span>${taxTitle}</span>
 			<span>-${ndflRub} ₽</span>
 		</div>
+		${npdRow}
 		<div class="summary-row total">
-			<span>К ВЫПЛАТЕ («НА РУКИ»):</span>
+			<span>ИТОГО К ВЫПЛАТЕ («НА РУКИ»):</span>
 			<span>${netToDocRub} ₽</span>
 		</div>
+		${advanceRows}
 	</div>
 
 	<div class="signatures">
@@ -505,5 +531,81 @@ export function generateDoctorPayslipHtml(
 	</script>
 </body>
 </html>`;
+}
+
+/**
+ * Generates clean formatted text for instant messenger dispatch (WhatsApp / Telegram).
+ * Adheres strictly to Mandate 8d (Zero cartoon emojis, clean typography with bullets and dividers).
+ */
+export function generateDoctorPayslipMessengerText(
+	payrollResult: DoctorPayrollResult,
+	clinicName: string = "ООО «Денте Стоматология»"
+): string {
+	const isChairRental = payrollResult.payoutModel === "chair_rental";
+	const grossRub = (payrollResult.totalGrossRevenueKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const labRub = (payrollResult.totalLabDeductionsKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const matRub = (payrollResult.totalMaterialDeductionsKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const netBaseRub = (payrollResult.totalNetBaseKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const netToDocRub = (payrollResult.netPayoutToDoctorKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+	const isSelfEmployed = payrollResult.taxRegime === "self_employed";
+
+	const lines: string[] = [
+		`РАСЧЕТНЫЙ ЛИСТОК ВРАЧА`,
+		`Клиника: ${clinicName}`,
+		`Сотрудник: ${payrollResult.doctorName}`,
+		`Специальность: ${payrollResult.specialtyTitleRu}`,
+		`Период: ${payrollResult.periodLabelRu}`,
+		`─────────────────────────────────`,
+		`• Выручка от приёмов: ${grossRub} ₽ (${payrollResult.serviceCount} услуг)`,
+	];
+
+	if (isChairRental && (payrollResult.chairRentalKop ?? 0) > 0) {
+		const rentalRub = ((payrollResult.chairRentalKop ?? 0) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		lines.push(`• Аренда стоматологического кресла: -${rentalRub} ₽`);
+	}
+
+	if (payrollResult.totalLabDeductionsKop > 0) {
+		lines.push(`• Удержание ЗТЛ (лаборатория): -${labRub} ₽`);
+	}
+	if (payrollResult.totalMaterialDeductionsKop > 0) {
+		lines.push(`• Удержание за материалы: -${matRub} ₽`);
+	}
+	if (payrollResult.totalRefundClawbackKop > 0) {
+		const clawbackRub = (payrollResult.totalRefundClawbackKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		lines.push(`• Сторно возвратов пациентам: -${clawbackRub} ₽`);
+	}
+
+	lines.push(`─────────────────────────────────`);
+
+	if (isChairRental) {
+		lines.push(`• Чистый доход врача (100%): ${netBaseRub} ₽`);
+	} else {
+		const commRub = (payrollResult.earnedBaseCommissionKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		lines.push(`• Начислено по ставке (${payrollResult.baseCommissionPercent}%): ${commRub} ₽`);
+		if (payrollResult.kpiBonusEarnedKop > 0) {
+			const kpiRub = (payrollResult.kpiBonusEarnedKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+			lines.push(`• KPI Премия (+${payrollResult.kpiBonusPercent}%): ${kpiRub} ₽`);
+		}
+	}
+
+	if (isSelfEmployed) {
+		const npdRub = ((payrollResult.npd6TaxKop ?? Math.round((payrollResult.netPayoutToDoctorKop * 6) / 100)) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		lines.push(`• Налог НПД (6%): ${npdRub} ₽ (чек «Мой налог»)`);
+	} else {
+		const effectiveNdfl = (payrollResult.ndflTaxKop ?? payrollResult.ndfl13TaxKop) / 100;
+		lines.push(`• Удержан НДФЛ: -${effectiveNdfl.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽`);
+	}
+
+	lines.push(`─────────────────────────────────`);
+	lines.push(`ИТОГО К ВЫПЛАТЕ: ${netToDocRub} ₽`);
+
+	if ((payrollResult.advancePayoutKop ?? 0) > 0) {
+		const advanceRub = ((payrollResult.advancePayoutKop ?? 0) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const mainRub = ((payrollResult.mainPayoutKop ?? (payrollResult.netPayoutToDoctorKop - (payrollResult.advancePayoutKop ?? 0))) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		lines.push(`• Выплаченный аванс: -${advanceRub} ₽`);
+		lines.push(`• ОСТАТОК К ПЕРЕЧИСЛЕНИЮ: ${mainRub} ₽`);
+	}
+
+	return lines.join("\n");
 }
 

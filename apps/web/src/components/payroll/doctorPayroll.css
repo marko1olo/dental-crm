@@ -186,4 +186,97 @@
 	border-color: var(--line-strong, var(--line));
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   APPLE iOS HIG & ANTI-DESKTOP-SQUEEZE MOBILE CARDS & NATURAL THUMB ZONE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.payroll-mobile-card {
+	background-color: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 0.875rem;
+	padding: 0.875rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	min-height: 52px;
+	transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.payroll-mobile-card:active {
+	background-color: var(--paper-soft);
+}
+
+.payroll-mobile-card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 0.5rem;
+}
+
+.payroll-mobile-card-badge {
+	font-size: 0.6875rem;
+	padding: 0.125rem 0.375rem;
+	border-radius: 0.375rem;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.payroll-mobile-thumb-bar {
+	display: none;
+}
+
+@media (max-width: 640px) {
+	.payroll-mobile-thumb-bar {
+		position: sticky;
+		bottom: 0;
+		background-color: var(--paper);
+		border-top: 1px solid var(--line);
+		padding: 0.625rem 1rem;
+		padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		z-index: 20;
+		box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+	}
+}
+
+.payroll-mobile-touch-btn {
+	min-height: 44px;
+	height: 44px;
+	border-radius: 10px;
+	font-size: 13px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 0 14px;
+	cursor: pointer;
+	touch-action: manipulation;
+	user-select: none;
+	transition: all 0.15s ease;
+}
+
+.payroll-mobile-touch-btn:active {
+	transform: scale(0.98);
+}
+
+@media (max-width: 640px) {
+	.payroll-modal-overlay {
+		padding: 0;
+		align-items: flex-end;
+	}
+
+	.payroll-modal-container {
+		max-height: 95vh;
+		height: 95vh;
+		border-bottom-left-radius: 0;
+		border-bottom-right-radius: 0;
+		border-left: none;
+		border-right: none;
+		border-bottom: none;
+	}
+}
+
 
