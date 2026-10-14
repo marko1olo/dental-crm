@@ -45,6 +45,9 @@ export interface EmergencyRescueModalProps {
 	clinicAddress?: string | undefined;
 	clinicPhone?: string | undefined;
 	cabinetNumber?: string | undefined;
+	floorNumber?: string | number | null | undefined;
+	entranceNumber?: string | number | null | undefined;
+	intercomCode?: string | null | undefined;
 	doctorFullName?: string | undefined;
 	assistantFullName?: string | undefined;
 	medCardNumber?: string | undefined;

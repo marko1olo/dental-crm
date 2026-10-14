@@ -373,7 +373,7 @@ export const FAVORITE_MEDICATION_OPTIONS: readonly FavoriteMedicationOption[] = 
 		categoryLabel: "Антисептические ванночки",
 		dosage: "0.05% 100 мл",
 		signa: "Ротовые ванночки по 1 минуте 3 раза в день после еды, 7 дней (не полоскать активно!).",
-		rpLatin: "Rp.: Sol. Chlorhexidini bigluconatis 0.05% - 100 ml\nD.S. Для ротовых ванночек 3 раза в день.",
+		rpLatin: "Rp.: Sol. Chlorhexidini bigluconatis 0.05% 100 ml\nD.S. Для ротовых ванночек 3 раза в день.",
 		maxDailyDose: "3–4 ванночки по 10-15 мл",
 		maxDurationDays: 10,
 		overdoseWarning: "Не полоскать активно после удаления зуба! При курсе >10 дней возможно обратимое потемнение эмали.",

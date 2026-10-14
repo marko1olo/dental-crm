@@ -10,7 +10,7 @@ import {
 	AppViewRouter,
 	renderStandaloneLaunchers,
 } from "./components/appLayout";
-import { PrescriptionForm107Modal } from "./components/documents/PrescriptionForm107Modal";
+import { PrescriptionPrintModal } from "./components/prescriptions/PrescriptionPrintModal";
 import { TelephonyDrawer } from "./components/telephony/TelephonyDrawer";
 import { TelephonyFloatingWidget } from "./components/telephony/TelephonyFloatingWidget";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
@@ -76,10 +76,14 @@ export function App() {
 	const [prescriptionInitialMedId, setPrescriptionInitialMedId] = useState<
 		string | null
 	>(null);
+	const [prescriptionInitialMedIds, setPrescriptionInitialMedIds] = useState<
+		string[] | null
+	>(null);
 	useEffect(() => {
 		const onOpenRx = (e: Event) => {
-			const custom = e as CustomEvent<{ medicationId?: string }>;
+			const custom = e as CustomEvent<{ medicationId?: string; medicationIds?: string[] }>;
 			setPrescriptionInitialMedId(custom.detail?.medicationId ?? null);
+			setPrescriptionInitialMedIds(custom.detail?.medicationIds ?? null);
 			setIsPrescriptionForm107Open(true);
 		};
 		window.addEventListener("dente:open-prescriptions", onOpenRx);
@@ -1496,12 +1500,18 @@ export function App() {
 					<TelephonyFloatingWidget />
 					<TelephonyDrawer />
 					{isPrescriptionForm107Open && (
-						<PrescriptionForm107Modal
+						<PrescriptionPrintModal
 							isOpen={true}
 							onClose={() => setIsPrescriptionForm107Open(false)}
 							patient={activePatient || activeVisitPatient}
-							doctorFullName={activeStaffUser?.fullName || "Д-р Соколов А. В."}
-							initialMedicationId={prescriptionInitialMedId}
+							doctorName={activeStaffUser?.fullName || "Д-р Соколов А. В."}
+							initialSelectedDrugIds={
+								prescriptionInitialMedIds
+									? prescriptionInitialMedIds
+									: prescriptionInitialMedId
+										? [prescriptionInitialMedId]
+										: undefined
+							}
 						/>
 					)}
 					{isImplantPassportDirectOpen && (

@@ -188,3 +188,18 @@ export const form148_1u04lPayloadSchema = z.object({
 });
 export type Form148_1u04lPayload = z.infer<typeof form148_1u04lPayloadSchema>;
 
+/**
+ * Canonical Latin Rp formatter:
+ * Enforces pure Latin units (mg, ml, g instead of Cyrillic мг, мл, г)
+ * and eliminates improper dashes before dosages per pharmacopeia rules.
+ */
+export function formatCanonicalRpLatin(rawRp: string): string {
+	if (!rawRp) return "";
+	return rawRp
+		.replace(/(\d+)\s*мг/gi, "$1 mg")
+		.replace(/(\d+)\s*мл/gi, "$1 ml")
+		.replace(/(\d+)\s*г\b/gi, "$1 g")
+		.replace(/\s*[-—]\s*(?=\d+\s*(?:ml|mg|g))/gi, " ")
+		.trim();
+}
+

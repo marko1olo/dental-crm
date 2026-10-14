@@ -18,6 +18,7 @@ import {
 	validateCertificateStatus,
 	validateGostCmsPkcs7Signature,
 	extractGostCmsMetadata,
+	checkDrugDrugInteractions,
 } from "@dental/shared";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -31,6 +32,7 @@ import {
 	electronicPrescriptionItems,
 	electronicPrescriptions,
 	organizations,
+	patientDrugAllergies,
 	patients,
 	users,
 } from "../db/schema.js";
@@ -375,16 +377,30 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const [doctor] = await db
-			.select()
-			.from(users)
-			.where(
-				and(
-					eq(users.id, input.prescribingDoctorId),
-					eq(users.organizationId, orgId),
-				),
-			)
-			.limit(1);
+		const targetDoctorId = input.prescribingDoctorId || identity.userId;
+		let [doctor] = targetDoctorId
+			? await db
+					.select()
+					.from(users)
+					.where(
+						and(
+							eq(users.id, targetDoctorId),
+							eq(users.organizationId, orgId),
+						),
+					)
+					.limit(1)
+			: [undefined];
+
+		if (!doctor) {
+			const [firstOrgUser] = await db
+				.select()
+				.from(users)
+				.where(eq(users.organizationId, orgId))
+				.limit(1);
+			if (firstOrgUser) {
+				doctor = firstOrgUser;
+			}
+		}
 
 		if (!doctor) {
 			return reply.code(404).send({
@@ -423,6 +439,67 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 		}
 		const prescriptionNumber = `${numPrefix}-${year}-${crypto.randomInt(100000, 999999)}`;
 
+		// Statutory clinical Drug-Drug Interaction (DDI) & allergy audit per Mandate 8e
+		const proposedDrugNames = input.items.flatMap((item) =>
+			[item.tradeName, item.innLatin].filter(
+				(n): n is string => typeof n === "string" && n.trim().length > 0,
+			),
+		);
+
+		const allergies = await db
+			.select()
+			.from(patientDrugAllergies)
+			.where(
+				and(
+					eq(patientDrugAllergies.organizationId, orgId),
+					eq(patientDrugAllergies.patientId, input.patientId),
+				),
+			);
+
+		const recentPrescriptions = await db
+			.select({
+				innLatin: electronicPrescriptionItems.innLatin,
+			})
+			.from(electronicPrescriptionItems)
+			.innerJoin(
+				electronicPrescriptions,
+				eq(electronicPrescriptionItems.prescriptionId, electronicPrescriptions.id),
+			)
+			.where(
+				and(
+					eq(electronicPrescriptions.organizationId, orgId),
+					eq(electronicPrescriptions.patientId, input.patientId),
+					eq(electronicPrescriptions.status, "issued"),
+				),
+			)
+			.limit(20);
+
+		const existingMedicationsList = Array.from(
+			new Set([
+				...recentPrescriptions.map((p) => p.innLatin),
+				...allergies.map((a) => a.drugInnLatin || a.allergenGroup).filter(Boolean),
+			]),
+		);
+
+		const ddiAudit = checkDrugDrugInteractions(
+			proposedDrugNames,
+			existingMedicationsList,
+		);
+
+		const safetyAuditSnapshotJson = {
+			evaluatedAt: now.toISOString(),
+			drugInteractions: Array.from(ddiAudit.drugInteractions),
+			blockedPrescriptions: Array.from(ddiAudit.blockedPrescriptions),
+			safeAlternativeRecommendations: Array.from(
+				ddiAudit.safeAlternativeRecommendations,
+			),
+			patientAllergies: allergies.map((a) => ({
+				allergenGroup: a.allergenGroup,
+				drugInnLatin: a.drugInnLatin,
+				reactionSeverity: a.reactionSeverity,
+			})),
+		};
+
 		const created = await db.transaction(async (tx) => {
 			const [presc] = await tx
 				.insert(electronicPrescriptions)
@@ -430,7 +507,7 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 					organizationId: orgId,
 					patientId: input.patientId,
 					visitId: input.visitId || null,
-					prescribingDoctorId: input.prescribingDoctorId,
+					prescribingDoctorId: doctor.id,
 					prescriptionSeries: prefix,
 					prescriptionNumber,
 					formType: input.formType,
@@ -448,7 +525,8 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 					clinicalDiagnosisMkb10: input.clinicalDiagnosisMkb10 || null,
 					clinicalDiagnosisDescription:
 						input.clinicalDiagnosisDescription || null,
-					safetyAuditPassed: true,
+					safetyAuditPassed: ddiAudit.drugInteractions.length === 0,
+					safetyAuditSnapshotJson,
 					cryptoSignaturePkcs7:
 						input.ukepSignature?.cryptoSignaturePkcs7 || null,
 					issuedAt: now,

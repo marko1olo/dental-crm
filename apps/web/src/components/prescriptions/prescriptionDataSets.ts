@@ -1,5 +1,6 @@
 import {
 	DENTAL_PRESCRIPTION_DRUG_CATALOG,
+	DENTAL_CANONICAL_SSOT_MEDICATIONS,
 	type DentalPrescriptionDrugPreset,
 } from "@dental/shared";
 import { DENTAL_MEDICATIONS_CATALOG } from "./generator";
@@ -12,6 +13,30 @@ export interface DentalFastPrescriptionSet {
 }
 
 export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[] = [
+	{
+		id: "post_surgery_periodontitis",
+		label: "«После хирургии / периодонтита»",
+		desc: "Амоксиклав 875/125 мг 2 р/д 5 дней + Нимесил 100 мг при болях + Хлоргексидин 0.05% ротовые ванночки",
+		drugIds: ["amoxiclav_875_125", "nimesulide_100", "chlorhexidine_005"],
+	},
+	{
+		id: "penicillin_allergy",
+		label: "«При аллергии на пенициллины»",
+		desc: "Ципрофлоксацин 500 мг 2 р/д (или Линкомицин) + Ибупрофен 400 мг при болях",
+		drugIds: ["ciprofloxacin_500", "ibuprofen_400"],
+	},
+	{
+		id: "anti_inflammatory_course",
+		label: "«Противовоспалительный курс»",
+		desc: "Нимесулид 100 мг 2 р/д 3-5 дней + Супрастин 25 мг на ночь (купирование отека)",
+		drugIds: ["nimesulide_100", "suprastin_25"],
+	},
+	{
+		id: "pediatric_dental",
+		label: "«Детский стоматологический»",
+		desc: "Ибупрофен суспензия 100 мг/5 мл с авторасчетом дозы по весу ребенка (10 мг/кг)",
+		drugIds: ["ibuprofen_suspension_100_5ml"],
+	},
 	{
 		id: "post_op_implant_surgery",
 		label: "«После сложного удаления / имплантации»",
@@ -223,6 +248,25 @@ export function buildMergedPrescriptionCatalog(): DentalPrescriptionDrugPreset[]
 	for (const extra of DENTAL_OUTPATIENT_EXTENDED_DRUGS) {
 		if (!combined.some((d) => d.id === extra.id)) {
 			combined.push(extra);
+		}
+	}
+	for (const ssot of DENTAL_CANONICAL_SSOT_MEDICATIONS) {
+		if (!combined.some((d) => d.id === ssot.id)) {
+			combined.push({
+				id: ssot.id,
+				tradeNameRu: ssot.tradeNameRu,
+				activeSubstanceRu: ssot.activeSubstanceRu,
+				category: ssot.category as any,
+				categoryLabel: ssot.categoryLabelRu,
+				categoryLabelRu: ssot.categoryLabelRu,
+				latinRp: ssot.latinRp,
+				formRu: ssot.formRu,
+				dosageRu: ssot.dosageRu,
+				quantityLabel: ssot.quantityDefault,
+				dispenseLatin: ssot.dispenseLatin,
+				signaRu: ssot.signaRu,
+				validityDays: ssot.validityDays as any,
+			} as any);
 		}
 	}
 	for (const med of DENTAL_MEDICATIONS_CATALOG) {

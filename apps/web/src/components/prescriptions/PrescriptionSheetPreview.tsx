@@ -1,4 +1,4 @@
-import type { PrescriptionDoctorUkep } from "@dental/shared";
+import { formatCanonicalRpLatin, type PrescriptionDoctorUkep } from "@dental/shared";
 import React from "react";
 import {
 	AlertTriangle,
@@ -12,7 +12,15 @@ export interface PrescriptionSheetPreviewProps {
 	readonly penicillinConflict: boolean;
 	readonly nsaidConflict: boolean;
 	readonly anestheticConflict?: boolean;
-	readonly ddiSafetyAudit?: { readonly drugInteractions: readonly any[] } | null | undefined;
+	readonly ddiSafetyAudit?: {
+		readonly drugInteractions: readonly {
+			readonly primaryDrug?: string;
+			readonly interactingDrug?: string;
+			readonly severity?: string;
+			readonly effectDescriptionRu?: string;
+			readonly clinicalRecommendationRu?: string;
+		}[];
+	} | null | undefined;
 	readonly withStampAndSignature: boolean;
 	readonly clinic: string;
 	readonly address: string;
@@ -40,7 +48,11 @@ export interface PrescriptionSheetPreviewProps {
 	readonly isChronicSpecialCare: boolean;
 	readonly chronicPeriodicity: string;
 	readonly isUkepSigned: boolean;
-	readonly ukepSignature?: PrescriptionDoctorUkep | null | undefined;
+	readonly ukepSignature?: (PrescriptionDoctorUkep & {
+		readonly validFrom?: string | null | undefined;
+		readonly validTo?: string | null | undefined;
+	}) | null | undefined;
+	readonly className?: string | undefined;
 }
 
 function formatStampDateRu(isoString?: string | null): string {
@@ -52,6 +64,15 @@ function formatStampDateRu(isoString?: string | null): string {
 	} catch {
 		return isoString;
 	}
+}
+
+function formatDoctorHandwrittenInitials(fullName: string): string {
+	const cleaned = fullName.replace(/^(Д-р|Доктор|Врач)\s+/i, "").trim();
+	if (!cleaned) return "";
+	const parts = cleaned.split(/\s+/);
+	const surname = parts[0] ?? "";
+	const firstInitial = parts[1]?.[0] ? `${parts[1][0]}.` : "";
+	return [surname, firstInitial].filter(Boolean).join(" ");
 }
 
 export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> = ({
@@ -82,9 +103,13 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 	chronicPeriodicity,
 	isUkepSigned,
 	ukepSignature,
+	className,
 }) => {
+	const certValidFrom = ukepSignature?.certificateValidFrom || ukepSignature?.validFrom;
+	const certValidTo = ukepSignature?.certificateValidTo || ukepSignature?.validTo;
+
 	return (
-		<div className="w-full lg:w-1/2 p-4 sm:p-6 bg-[var(--paper-soft)] overflow-y-auto flex flex-col gap-3">
+		<div className={`w-full lg:w-1/2 p-4 sm:p-6 bg-[var(--paper-soft)] overflow-y-auto flex flex-col gap-3 ${className || ""}`}>
 			<div className="flex items-center justify-between">
 				<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
 					<FileText className="w-3.5 h-3.5 text-[var(--teal)]" />
@@ -105,7 +130,7 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 						</span>
 					</div>
 					<span className="text-xs font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0 ml-auto">
-						Автономия врача (Печать доступна)
+						Печать рецепта доступна
 					</span>
 				</div>
 			)}
@@ -118,7 +143,7 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 						</span>
 					</div>
 					<span className="text-xs font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0 ml-auto">
-						Автономия врача (Печать доступна)
+						Печать рецепта доступна
 					</span>
 				</div>
 			)}
@@ -131,24 +156,38 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 						</span>
 					</div>
 					<span className="text-xs font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0 ml-auto">
-						Автономия врача (Печать доступна)
+						Печать рецепта доступна
 					</span>
 				</div>
 			)}
 
-			{/* DDI Warning Preview Strip (Soft Amber) */}
+			{/* Drug Interaction Warning Preview Strip (Soft Amber) */}
 			{ddiSafetyAudit && ddiSafetyAudit.drugInteractions.length > 0 && (
-				<div className="p-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-100 text-xs flex flex-wrap items-center justify-between gap-2">
-					<div className="flex items-center gap-2 min-w-0">
-						<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-						<span className="font-bold leading-snug">
-							Предостережение: обнаружено {ddiSafetyAudit.drugInteractions.length}{" "}
-							{ddiSafetyAudit.drugInteractions.length === 1 ? "взаимодействие" : "взаимодействия"} (DDI)
+				<div data-testid="prescription-preview-ddi-alert" className="p-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-100 text-xs flex flex-col gap-1.5">
+					<div className="flex flex-wrap items-center justify-between gap-2">
+						<div className="flex items-center gap-2 min-w-0">
+							<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+							<span className="font-bold leading-snug">
+								Предостережение: обнаружено {ddiSafetyAudit.drugInteractions.length}{" "}
+								{ddiSafetyAudit.drugInteractions.length === 1
+									? "межлекарственное взаимодействие"
+									: "межлекарственных взаимодействия"}
+							</span>
+						</div>
+						<span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-600 text-white shrink-0 ml-auto">
+							Печать разрешена (Мандат 8e)
 						</span>
 					</div>
-					<span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-600 text-white shrink-0 ml-auto">
-						Печать разрешена
-					</span>
+					<div className="flex flex-col gap-1 pl-6">
+						{ddiSafetyAudit.drugInteractions.map((inter, i) => (
+							<div key={i} className="text-[11px] leading-snug">
+								<span className="font-bold text-amber-900 dark:text-amber-200">
+									{inter.primaryDrug} + {inter.interactingDrug}:
+								</span>{" "}
+								<span>{inter.effectDescriptionRu || inter.clinicalRecommendationRu || "Возможен конфликт препаратов."}</span>
+							</div>
+						))}
+					</div>
 				</div>
 			)}
 
@@ -182,7 +221,9 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 								? "Форма бланка № 107-1/у"
 								: "Форма бланка № 148-1/у-88"}
 						</div>
-						<div className="text-[var(--muted)]">Приказ МЗ РФ № 1094н</div>
+						<div className="text-[9px] text-[var(--muted)]" data-statutory="Приказ МЗ РФ № 1094н">
+							Медицинская документация
+						</div>
 					</div>
 				</div>
 
@@ -231,7 +272,7 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 						activeItems.map((item, idx) => (
 							<div key={item.id} className="font-serif text-[var(--ink)]">
 								<div className="font-bold text-[11.5px] italic text-[var(--ink)]">
-									{idx + 1}. {item.latinName}
+									{idx + 1}. {formatCanonicalRpLatin(item.latinName)}
 								</div>
 								<div className="ml-5 italic text-[11px] text-[var(--ink)] opacity-90">
 									{item.dispenseLatin}
@@ -271,23 +312,27 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 								По специальному назначению ({chronicPeriodicity})
 							</div>
 						)}
-						<div className="mt-1 relative text-[var(--ink)]">
-							{withStampAndSignature && (
-								<div
-									className="absolute -top-3 left-24 text-blue-700 dark:text-blue-400 font-serif italic text-base select-none pointer-events-none"
-									style={{ fontFamily: "'Brush Script MT', 'Segoe Script', cursive, serif", transform: "rotate(-3deg)" }}
-								>
-									{docName.replace(/^(Д-р|Врач)\s+/i, "")}
-								</div>
-							)}
-							Подпись врача: ____________________ / {docName}
+						<div className="mt-1 relative text-[var(--ink)] flex flex-wrap items-baseline gap-x-1">
+							<span>Подпись врача:</span>
+							<span className="relative inline-block min-w-[96px] text-center">
+								{withStampAndSignature && (
+									<span
+										className="absolute -top-3 left-2 text-blue-700 dark:text-blue-400 font-serif italic text-sm select-none pointer-events-none whitespace-nowrap"
+										style={{ fontFamily: "'Brush Script MT', 'Segoe Script', cursive, serif", transform: "rotate(-3deg)" }}
+									>
+										{formatDoctorHandwrittenInitials(docName)}
+									</span>
+								)}
+								____________________
+							</span>
+							<span>/ {docName}</span>
 						</div>
 						{activeForm === "148-1u-88" && (
 							<div className="text-[var(--ink)]">Подпись зав. отделением: ____________________</div>
 						)}
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 shrink-0">
 						<div
 							className={`w-11 h-11 rounded-full flex flex-col items-center justify-center font-bold text-[7px] text-center leading-tight transition-all ${
 								withStampAndSignature
@@ -316,30 +361,30 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 					</div>
 				</div>
 
-				{/* Official GOST R 7.0.97-2016 Visual Digital Signature Stamp (УКЭП по ГОСТ Р 34.10-2012) */}
+				{/* Official GOST R 7.0.97-2016 Visual Digital Signature Stamp */}
 				{isUkepSigned && ukepSignature && (
 					<div
-						className="gost-prescription-stamp border-2 border-[#003399] rounded p-2 text-[8px] leading-tight text-[#003399] bg-[#f4f8ff] mt-2 page-break-inside-avoid"
+						className="gost-prescription-stamp border-2 border-blue-800 dark:border-blue-400 rounded p-2 text-[8px] leading-tight text-blue-900 dark:text-blue-200 bg-blue-500/10 mt-2 page-break-inside-avoid"
 						style={{
 							fontFamily: "'PT Astra Sans', Arial, Helvetica, sans-serif",
 							boxShadow: "0 1px 3px rgba(0, 51, 153, 0.08)",
 						}}
 					>
-						<div className="flex items-center justify-between border-b border-[#003399] pb-1 mb-1">
+						<div className="flex items-center justify-between border-b border-blue-800/40 dark:border-blue-400/40 pb-1 mb-1">
 							<div className="flex items-center gap-1.5">
-								<ShieldCheck className="w-4 h-4 text-[#003399] shrink-0 inline" />
+								<ShieldCheck className="w-4 h-4 text-blue-800 dark:text-blue-300 shrink-0 inline" />
 								<div>
 									<div className="font-extrabold uppercase tracking-wide text-[8.5px]">
 										ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ
 									</div>
-									<div className="text-[6.5px] font-semibold tracking-wider text-[#003399]/80 uppercase">
-										СВЕДЕНИЯ О СЕРТИФИКАТЕ ЭП &bull; ГОСТ Р 34.10-2012
+									<div className="text-[6.5px] font-semibold tracking-wider opacity-85 uppercase">
+										СВЕДЕНИЯ О СЕРТИФИКАТЕ ЭЛЕКТРОННОЙ ПОДПИСИ
 									</div>
 								</div>
 							</div>
-							<QrCode className="w-8 h-8 text-[#003399] shrink-0 ml-2" />
+							<QrCode className="w-8 h-8 text-blue-800 dark:text-blue-300 shrink-0 ml-2" />
 						</div>
-						<div className="flex flex-col gap-0.5 text-[7.5px] text-[#003399]">
+						<div className="flex flex-col gap-0.5 text-[7.5px]">
 							<div>
 								<span className="font-bold">Сертификат:</span>{" "}
 								<span className="font-mono">{ukepSignature.certificateSerialNumber}</span>
@@ -348,12 +393,11 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 								<span className="font-bold">Владелец:</span>{" "}
 								<span>{ukepSignature.doctorFullName}</span>
 							</div>
-							{(ukepSignature.certificateValidFrom || (ukepSignature as any).validFrom) &&
-							(ukepSignature.certificateValidTo || (ukepSignature as any).validTo) ? (
+							{certValidFrom && certValidTo ? (
 								<div>
 									<span className="font-bold">Действителен:</span> с{" "}
-									{formatStampDateRu(ukepSignature.certificateValidFrom || (ukepSignature as any).validFrom)} по{" "}
-									{formatStampDateRu(ukepSignature.certificateValidTo || (ukepSignature as any).validTo)}
+									{formatStampDateRu(certValidFrom)} по{" "}
+									{formatStampDateRu(certValidTo)}
 								</div>
 							) : null}
 							{ukepSignature.signedAt ? (
@@ -362,8 +406,8 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 									{formatStampDateRu(ukepSignature.signedAt)}
 								</div>
 							) : null}
-							<div className="text-[6.5px] text-[#003399]/70 truncate mt-0.5">
-								УЦ: {ukepSignature.certificateIssuer || "Головной УЦ Минцифры России (Квалифицированный)"}
+							<div className="text-[6.5px] opacity-80 break-words mt-0.5">
+								Удостоверяющий центр: {ukepSignature.certificateIssuer || "Головной удостоверяющий центр Минцифры России"}
 							</div>
 						</div>
 					</div>

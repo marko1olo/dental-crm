@@ -131,6 +131,9 @@ export interface EmergencyIncidentInput {
 	clinicName: string;
 	clinicAddress: string;
 	cabinetNumber: string;
+	floorNumber?: string | number | null | undefined;
+	entranceNumber?: string | number | null | undefined;
+	intercomCode?: string | null | undefined;
 	doctorFullName: string;
 	assistantFullName?: string | undefined;
 	patientFullName: string;
@@ -591,6 +594,13 @@ export function generateEmergencyIncidentAct(input: EmergencyIncidentInput): str
 	actText += `1. ОБЩИЕ СВЕДЕНИЯ:\n`;
 	actText += `   - Медицинская организация: ${input.clinicName || 'Стоматологическая клиника'}\n`;
 	actText += `   - Адрес клиники: ${input.clinicAddress || 'г. Москва, ул. Клиническая, д. 10'}\n`;
+	if (input.entranceNumber || input.floorNumber || input.intercomCode) {
+		const accessParts: string[] = [];
+		if (input.entranceNumber) accessParts.push(`подъезд/вход ${input.entranceNumber}`);
+		if (input.floorNumber) accessParts.push(`этаж ${input.floorNumber}`);
+		if (input.intercomCode) accessParts.push(`домофон/код: ${input.intercomCode}`);
+		actText += `   - Ориентиры для СМП: ${accessParts.join(', ')}\n`;
+	}
 	actText += `   - Стоматологический кабинет №: ${input.cabinetNumber || '1'}\n`;
 	actText += `   - Дата и точное время происшествия: ${formattedDate} в ${formattedTime}\n`;
 	actText += `   - Врач-стоматолог: ${input.doctorFullName || 'Врач-стоматолог'}\n`;
@@ -664,9 +674,17 @@ export function generateEmergencyIncidentAct(input: EmergencyIncidentInput): str
 
 export function generateSmpDispatchCheatSheet(input: EmergencyIncidentInput): string {
 	const scenario = EMERGENCY_SCENARIOS[input.scenarioId];
+	const accessDetails = [
+		input.entranceNumber ? `подъезд/вход ${input.entranceNumber}` : '',
+		input.floorNumber ? `этаж ${input.floorNumber}` : '',
+		input.intercomCode ? `домофон/код ${input.intercomCode}` : '',
+	].filter(Boolean).join(', ');
+
+	const addressLine = `${input.clinicAddress}, Кабинет № ${input.cabinetNumber || '1'}${accessDetails ? ` (${accessDetails})` : ''}.`;
+
 	return (
 		`[ЭКСТРЕННО] ТЕКСТ ДЛЯ ДИСПЕТЧЕРА СКОРОЙ ПОМОЩИ (103 / 112):\n\n` +
-		`1. АДРЕС: ${input.clinicAddress}, Кабинет № ${input.cabinetNumber || '1'}.\n` +
+		`1. АДРЕС: ${addressLine}\n` +
 		`2. КТО ВЫЗЫВАЕТ: Врач-стоматолог ${input.doctorFullName}, клиника «${input.clinicName}».\n` +
 		`3. ПАЦИЕНТ: ${input.patientFullName}, ${input.patientAgeYears} лет (${input.patientGender === 'male' ? 'мужчина' : 'женщина'}), вес ${input.patientWeightKg} кг.\n` +
 		`4. ЧТО СЛУЧИЛОСЬ: ${scenario.nameRu} (${scenario.icd10Code}).\n` +

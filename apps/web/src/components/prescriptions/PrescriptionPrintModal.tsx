@@ -8,7 +8,10 @@ import { createPortal } from "react-dom";
 import {
 	DENTAL_PRESCRIPTION_DRUG_CATALOG,
 	calculatePrescriptionExpiration,
+	checkDrugDrugInteractions,
+	formatCanonicalRpLatin,
 	type DentalPrescriptionDrugPreset,
+	type DrugDrugInteractionCheckResult,
 	type PrescriptionDoctorUkep,
 } from "@dental/shared";
 import {
@@ -32,11 +35,14 @@ import {
 	DENTAL_MEDICATIONS_CATALOG,
 	type DentalMedicationPreset,
 	formatPatientPrescriptionMemo,
+	calculatePediatricIbuprofenDose,
 } from "./generator";
 import {
 	AllergyConflictDrugItem,
 	PrescriptionAllergyConflict,
+	PrescriptionSomaticWarning,
 	detectPrescriptionAllergyConflicts,
+	detectPrescriptionSomaticWarnings,
 } from "./prescriptionAllergyChecker";
 import {
 	DentalFastPrescriptionSet,
@@ -61,10 +67,16 @@ export type PrescriptionFormType = "107-1u" | "148-1u-88";
 
 export {
 	detectPrescriptionAllergyConflicts,
+	detectPrescriptionSomaticWarnings,
 	DENTAL_FAST_PRESCRIPTION_SETS,
 	DENTAL_OUTPATIENT_EXTENDED_DRUGS,
 };
-export type { AllergyConflictDrugItem, PrescriptionAllergyConflict, DentalFastPrescriptionSet };
+export type {
+	AllergyConflictDrugItem,
+	PrescriptionAllergyConflict,
+	PrescriptionSomaticWarning,
+	DentalFastPrescriptionSet,
+};
 
 export interface PrescriptionDrugItem {
 	readonly id: string;
@@ -169,6 +181,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	const [customSigna, setCustomSigna] = useState<string>("");
 	const [customDrugsList, setCustomDrugsList] = useState<PrescriptionDrugItem[]>([]);
 	const [isMemoCopied, setIsMemoCopied] = useState<boolean>(false);
+	const [mobileTab, setMobileTab] = useState<"catalog" | "preview">("catalog");
 
 	const prevIsOpenRef = useRef(false);
 	const onCloseRef = useRef(onClose);
@@ -308,6 +321,10 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 			}
 			const found = fullCatalog.find((d) => d.id === id);
 			if (found) {
+				let signa = found.signaRu;
+				if (found.id === "ibuprofen_suspension_100_5ml" && patientWeightKg && patientWeightKg > 0) {
+					signa = calculatePediatricIbuprofenDose(patientWeightKg).signaRu;
+				}
 				items.push({
 					id: found.id,
 					latinName: found.latinRp,
@@ -316,13 +333,13 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 					dosage: found.dosageRu,
 					quantity: found.quantityLabel,
 					dispenseLatin: found.dispenseLatin,
-					signaRussian: found.signaRu,
+					signaRussian: signa,
 					category: found.category,
 				});
 			}
 		}
 		return items;
-	}, [selectedDrugIds, customDrugsList, fullCatalog]);
+	}, [selectedDrugIds, customDrugsList, fullCatalog, patientWeightKg]);
 
 	const resolvedPatientAllergies = allergies ?? patient?.allergies ?? "";
 	const allergyConflicts = useMemo(() => {
@@ -332,6 +349,69 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	const penicillinConflict = allergyConflicts.some((c) => c.type === "penicillin");
 	const nsaidConflict = allergyConflicts.some((c) => c.type === "nsaid");
 	const anestheticConflict = allergyConflicts.some((c) => c.type === "anesthetic");
+
+	const resolvedPatientAnamnesis = useMemo(() => {
+		const parts: string[] = [];
+		if (resolvedPatientAllergies) {
+			parts.push(Array.isArray(resolvedPatientAllergies) ? resolvedPatientAllergies.join(" ") : String(resolvedPatientAllergies));
+		}
+		if (diary && typeof (diary as any).anamnesis === "string") {
+			parts.push((diary as any).anamnesis);
+		}
+		if (patient && typeof (patient as any).somaticAnamnesis === "string") {
+			parts.push((patient as any).somaticAnamnesis);
+		}
+		if (patient && typeof (patient as any).chronicDiseases === "string") {
+			parts.push((patient as any).chronicDiseases);
+		}
+		return parts.join(" ");
+	}, [resolvedPatientAllergies, diary, patient]);
+
+	const somaticWarnings = useMemo(() => {
+		return detectPrescriptionSomaticWarnings(resolvedPatientAnamnesis, activeItems);
+	}, [resolvedPatientAnamnesis, activeItems]);
+
+	const handleAddOmeprazoleGastroprotection = useCallback(() => {
+		if (selectedDrugIds.includes("omeprazole_20")) {
+			showToast("Омепразол 20 мг уже добавлен в назначения", "info", 2500);
+			return;
+		}
+		if (selectedDrugIds.length >= 3 && activeForm === "107-1u") {
+			showToast("На одном рецептурном бланке допускается не более 3 препаратов. Замените один из препаратов.", "warning", 4000);
+			return;
+		}
+		setSelectedDrugIds((prev) => [...prev, "omeprazole_20"]);
+		showToast("Омепразол 20 мг добавлен для гастропротекции ЖКТ", "success", 3000);
+	}, [selectedDrugIds, activeForm]);
+
+	const proposedDrugNames = useMemo(() => {
+		return activeItems.map((item) => item.tradeName || item.latinName);
+	}, [activeItems]);
+
+	const existingMedicationsList = useMemo(() => {
+		const meds: string[] = [];
+		const rawMeds = (patient as any)?.currentMedications || (patient as any)?.takingMedications;
+		if (typeof rawMeds === "string") {
+			meds.push(...rawMeds.split(/[,;\n]+/).map((s: string) => s.trim()).filter(Boolean));
+		} else if (Array.isArray(rawMeds)) {
+			meds.push(...rawMeds.map((s: string) => String(s).trim()).filter(Boolean));
+		}
+		if (diary && typeof (diary as any).anamnesis === "string") {
+			const anamnesis = (diary as any).anamnesis.toLowerCase();
+			const knownKeys = ["варфарин", "ксарелто", "эликвис", "прадакса", "клопидогрел", "аспирин", "пропранолол"];
+			for (const key of knownKeys) {
+				if (anamnesis.includes(key)) {
+					meds.push(key);
+				}
+			}
+		}
+		return meds;
+	}, [patient, diary]);
+
+	const ddiSafetyAudit: DrugDrugInteractionCheckResult | null = useMemo(() => {
+		if (proposedDrugNames.length === 0) return null;
+		return checkDrugDrugInteractions(proposedDrugNames, existingMedicationsList);
+	}, [proposedDrugNames, existingMedicationsList]);
 
 	const validityAudit = useMemo(() => {
 		const daysNum = Number.parseInt(validityDays, 10) || 60;
@@ -343,8 +423,10 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 			customSeriesNumber, clinic, address, phone, ogrn, inn, licNum,
 			activeForm, prescriptionDate, patientName, patientBirth, patientCard,
 			patientAddress, docName, docSpecialty, activeItems, validityDays,
+			isChronicSpecialCare, chronicPeriodicity, withStampAndSignature,
+			ukepSignature,
 		});
-	}, [customSeriesNumber, clinic, address, phone, ogrn, inn, licNum, activeForm, prescriptionDate, patientName, patientBirth, patientCard, patientAddress, docName, docSpecialty, activeItems, validityDays]);
+	}, [customSeriesNumber, clinic, address, phone, ogrn, inn, licNum, activeForm, prescriptionDate, patientName, patientBirth, patientCard, patientAddress, docName, docSpecialty, activeItems, validityDays, isChronicSpecialCare, chronicPeriodicity, withStampAndSignature, ukepSignature]);
 
 	const handlePrintPatientMemo = useCallback(() => {
 		if (activeItems.length === 0) {
@@ -558,13 +640,19 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/65 backdrop-blur-md animate-in fade-in duration-200"
+			className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-black/65 backdrop-blur-md animate-in fade-in duration-200 prescription-form-107-modal"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Печать рецептурного бланка"
 			data-testid="prescription-print-modal"
+			id="prescription-form-107-modal"
 		>
-			<div className="flex flex-col w-full max-w-6xl max-h-[94vh] rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl overflow-hidden">
+			<div className="flex flex-col w-full max-w-6xl h-[94vh] sm:h-auto sm:max-h-[94vh] rounded-t-[24px] sm:rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl overflow-hidden">
+				{/* Apple HIG Tactile Drag Handle for Mobile Bottom Sheet */}
+				<div className="sm:hidden w-full flex justify-center pt-2.5 pb-1 bg-[var(--paper-soft)] shrink-0">
+					<div className="w-10 h-1 rounded-full bg-[var(--line-strong)] opacity-60" />
+				</div>
+
 				{/* Modal Header */}
 				<div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-3 min-w-0">
@@ -574,10 +662,10 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						<div className="min-w-0">
 							<div className="flex items-center gap-2 flex-wrap">
 								<h2 className="text-base sm:text-lg font-bold text-[var(--ink)]">
-									Рецептурный модуль Минздрава РФ
+									Рецептурный модуль
 								</h2>
-								<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-subtle,var(--line))]">
-									Приказ № 1094н
+								<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-subtle,var(--line))]" data-statutory="Приказ № 1094н">
+									Форма № 107-1/у
 								</span>
 								{isUkepSigned && (
 									<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
@@ -635,6 +723,28 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 					</div>
 				</div>
 
+				{/* Mobile Tab Switcher (Catalog vs Sheet Preview) */}
+				<div className="flex lg:hidden px-4 py-2 bg-[var(--paper-soft)] border-b border-[var(--line)] shrink-0">
+					<div className="dente-segmented-bar w-full">
+						<button
+							type="button"
+							onClick={() => setMobileTab("catalog")}
+							className={`dente-segmented-item ${mobileTab === "catalog" ? "active" : ""}`}
+							data-active={mobileTab === "catalog"}
+						>
+							Каталог и наборы
+						</button>
+						<button
+							type="button"
+							onClick={() => setMobileTab("preview")}
+							className={`dente-segmented-item ${mobileTab === "preview" ? "active" : ""}`}
+							data-active={mobileTab === "preview"}
+						>
+							Предпросмотр бланка
+						</button>
+					</div>
+				</div>
+
 				{/* Prominent Allergy Conflict Banner (Doctor Autonomy Preserved) */}
 				{allergyConflicts.length > 0 && (
 					<div
@@ -653,10 +763,76 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 					</div>
 				)}
 
+				{/* Somatic Anamnesis Soft Warning Banner (Peptic Ulcer / Gastritis with NSAIDs) */}
+				{somaticWarnings.length > 0 && (
+					<div
+						data-testid="prescription-somatic-warning-banner"
+						className="mx-4 sm:mx-6 mt-3 p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-100 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shrink-0"
+					>
+						<div className="flex items-start gap-2 min-w-0">
+							<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+							<div className="flex flex-col gap-0.5 min-w-0">
+								<span className="font-bold">
+									{somaticWarnings[0]?.messageRu}
+								</span>
+								<span className="text-[11.5px] text-amber-800 dark:text-amber-200">
+									{somaticWarnings[0]?.recommendationRu}
+								</span>
+							</div>
+						</div>
+						<div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+							<button
+								type="button"
+								onClick={handleAddOmeprazoleGastroprotection}
+								className="h-7 px-2.5 text-xs font-semibold rounded-lg bg-amber-600 hover:bg-amber-700 text-white shadow-xs transition-colors cursor-pointer"
+							>
+								+ Омепразол 20 мг
+							</button>
+							<span className="text-[11px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/40">
+								Автономия врача
+							</span>
+						</div>
+					</div>
+				)}
+
+				{/* Prominent Drug Interaction Conflict Banner (Soft Amber / Doctor Autonomy Preserved) */}
+				{ddiSafetyAudit && ddiSafetyAudit.drugInteractions.length > 0 && (
+					<div
+						data-testid="prescription-ddi-modal-banner"
+						className="mx-4 sm:mx-6 mt-3 p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-100 text-xs flex flex-col gap-1.5 shrink-0"
+					>
+						<div className="flex items-center justify-between gap-2">
+							<div className="flex items-center gap-2 min-w-0">
+								<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+								<span className="font-bold truncate">
+									Предостережение DDI: обнаружено взаимодействие препаратов ({ddiSafetyAudit.drugInteractions.length})
+								</span>
+							</div>
+							<span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-600 text-white shrink-0">
+								Автономия врача (Печать доступна)
+							</span>
+						</div>
+						<div className="flex flex-col gap-1 pl-6">
+							{ddiSafetyAudit.drugInteractions.map((inter, i) => (
+								<div key={i} className="text-[11.5px] leading-relaxed">
+									<strong className="text-amber-900 dark:text-amber-200">{inter.primaryDrug} + {inter.interactingDrug}:</strong>{" "}
+									{inter.effectDescriptionRu}
+									{inter.clinicalRecommendationRu && (
+										<span className="block text-[11px] text-amber-800 dark:text-amber-300 font-medium mt-0.5">
+											Рекомендация: {inter.clinicalRecommendationRu}
+										</span>
+									)}
+								</div>
+							))}
+						</div>
+					</div>
+				)}
+
 				{/* Modal Body */}
 				<div className="flex flex-col lg:flex-row flex-1 overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-[var(--line)]">
 					{/* Left Column: Fast Presets & Drug Search */}
 					<PrescriptionDrugCatalogSelector
+						className={mobileTab === "catalog" ? "flex" : "hidden lg:flex"}
 						fastPresets={DENTAL_FAST_PRESCRIPTION_SETS}
 						onApplyAndInsertToDiary={handleApplyAndInsertToDiary}
 						onApplyAndPrint={handleApplyAndPrint}
@@ -691,13 +867,16 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						onPatientAddressChange={setPatientAddress}
 						activeForm={activeForm}
 						patientAllergies={resolvedPatientAllergies}
+						patientWeightKg={patientWeightKg}
+						onPatientWeightKgChange={setPatientWeightKg}
 					/>
 
 					{/* Right Column: Sheet Preview */}
 					<PrescriptionSheetPreview
+						className={mobileTab === "preview" ? "flex" : "hidden lg:flex"}
 						customSeriesNumber={customSeriesNumber}
 						penicillinConflict={penicillinConflict}
-						nsaidConflict={nsaidConflict} anestheticConflict={anestheticConflict} ddiSafetyAudit={null}
+						nsaidConflict={nsaidConflict} anestheticConflict={anestheticConflict} ddiSafetyAudit={ddiSafetyAudit}
 						withStampAndSignature={withStampAndSignature} clinic={clinic} address={address} phone={phone}
 						ogrn={ogrn} inn={inn} licNum={licNum} activeForm={activeForm} prescriptionDate={prescriptionDate}
 						patientName={patientName} patientBirth={patientBirth} patientCard={patientCard} patientAddress={patientAddress}
@@ -761,7 +940,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							className="primary-button h-8 min-h-[44px] md:min-h-[32px] px-4 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 shadow-sm cursor-pointer"
 						>
 							<Printer className="w-4 h-4 shrink-0" />
-							<span>Печать бланка (А5)</span>
+							<span>Печать рецепта (А5)</span>
 						</button>
 					</div>
 				</div>

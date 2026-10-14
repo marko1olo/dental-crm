@@ -15,6 +15,7 @@ import { describe, it } from 'node:test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import '../../../../testCssStub.mjs';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import {

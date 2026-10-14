@@ -219,6 +219,20 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		validityDays: 60,
 	},
 	{
+		id: "ibuprofen_suspension_100_5ml",
+		tradeNameRu: "Ибупрофен (Нурофен для детей) 100 мг/5 мл",
+		activeSubstanceRu: "Ибупрофен",
+		category: "nsaid",
+		categoryLabelRu: "НПВП / Детский анальгетик",
+		latinRp: "Rp.: Suspensionis Ibuprofeni 100 mg/5 ml - 100 ml",
+		formRu: "суспензия для приема внутрь",
+		dosageRu: "100 мг/5 мл (фл. 100 мл)",
+		quantityLabel: "N. 1 (флакон)",
+		dispenseLatin: "D.t.d. N 1 in flac.",
+		signaRu: "S. Внутрь мерным шприцем из расчета 10 мг/кг (до 3 раз в сутки при боли или температуре с интервалом не менее 6 часов).",
+		validityDays: 60,
+	},
+	{
 		id: "miramistin_001",
 		tradeNameRu: "Мирамистин 0.01%",
 		activeSubstanceRu: "Бензилдиметил-миристоиламино-пропиламмоний",
@@ -528,4 +542,26 @@ export const DENTAL_FAST_PRESCRIPTION_PACKAGES: readonly DentalFastPrescriptionP
 		descriptionRu: p.desc,
 		medicationIds: p.drugIds,
 	}));
+
+/**
+ * Рассчитывает разовую и суточную дозу суспензии ибупрофена (100 мг / 5 мл) для детей:
+ * 10 мг/кг разово (0.5 мл на 1 кг массы тела), до 3 раз в сутки.
+ */
+export function calculatePediatricIbuprofenDose(weightKg: number): {
+	readonly singleDoseMg: number;
+	readonly singleDoseMl: number;
+	readonly maxDailyDoseMg: number;
+	readonly signaRu: string;
+} {
+	const validWeight = Math.max(5, Math.min(60, Number(weightKg) || 10));
+	const singleDoseMg = Math.round(validWeight * 10);
+	const singleDoseMl = Number((validWeight / 2).toFixed(1));
+	const maxDailyDoseMg = singleDoseMg * 3;
+	return {
+		singleDoseMg,
+		singleDoseMl,
+		maxDailyDoseMg,
+		signaRu: `S. Внутрь с помощью мерного шприца по ${singleDoseMl} мл (${singleDoseMg} мг) до 3 раз в сутки при боли или температуре с интервалом не менее 6 часов (расчет на вес ребенка ${validWeight} кг).`,
+	};
+}
 

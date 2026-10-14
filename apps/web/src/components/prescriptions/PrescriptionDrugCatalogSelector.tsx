@@ -63,6 +63,9 @@ export interface PrescriptionDrugCatalogSelectorProps {
 	readonly onPatientAddressChange: (val: string) => void;
 	readonly activeForm: PrescriptionFormType;
 	readonly patientAllergies?: string | readonly string[] | null | undefined;
+	readonly className?: string | undefined;
+	readonly patientWeightKg?: number | undefined;
+	readonly onPatientWeightKgChange?: ((val: number | undefined) => void) | undefined;
 }
 
 export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSelectorProps> = ({
@@ -97,9 +100,55 @@ export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSe
 	onPatientAddressChange,
 	activeForm,
 	patientAllergies,
+	className,
+	patientWeightKg,
+	onPatientWeightKgChange,
 }) => {
+	const isPediatricActive =
+		selectedDrugIds.includes("ibuprofen_suspension_100_5ml") ||
+		(patientWeightKg !== undefined && patientWeightKg > 0);
+
 	return (
-		<div className="w-full lg:w-1/2 p-4 sm:p-6 overflow-y-auto flex flex-col gap-4">
+		<div className={`w-full lg:w-1/2 p-4 sm:p-6 overflow-y-auto flex flex-col gap-4 ${className || ""}`}>
+			{/* Pediatric Weight & Dose Calculator Card */}
+			{isPediatricActive && (
+				<div
+					data-testid="pediatric-dose-calculator-card"
+					className="p-3 rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-950 dark:text-sky-100 flex flex-col gap-2 shrink-0"
+				>
+					<div className="flex items-center justify-between gap-2">
+						<span className="text-xs font-bold flex items-center gap-1.5 text-sky-800 dark:text-sky-200">
+							<Sparkles className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+							Детская дозировка (Ибупрофен 100 мг / 5 мл):
+						</span>
+						<span className="text-[11px] font-bold px-2 py-0.5 rounded bg-sky-600 text-white shrink-0">
+							10 мг/кг
+						</span>
+					</div>
+					<div className="flex items-center gap-3 flex-wrap text-xs">
+						<div className="flex items-center gap-1.5">
+							<label className="text-xs text-[var(--muted)] font-medium">Вес ребенка:</label>
+							<input
+								type="number"
+								min="5"
+								max="60"
+								step="1"
+								value={patientWeightKg ?? 15}
+								onChange={(e) => {
+									const val = parseFloat(e.target.value);
+									onPatientWeightKgChange?.(Number.isNaN(val) ? undefined : val);
+								}}
+								className="w-20 px-2 py-1 text-xs rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-bold text-center"
+							/>
+							<span className="font-semibold text-[var(--ink)]">кг</span>
+						</div>
+						<div className="text-xs text-sky-800 dark:text-sky-200">
+							Разово: <strong>{(((patientWeightKg ?? 15) / 2)).toFixed(1)} мл</strong> ({Math.round((patientWeightKg ?? 15) * 10)} мг) до 3 р/д
+						</div>
+					</div>
+				</div>
+			)}
+
 			{/* 1-Click Fast Presets Bar */}
 			<div className="flex flex-col gap-2">
 				<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
@@ -107,7 +156,7 @@ export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSe
 					Стоматологические пакеты назначений:
 				</span>
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-					{fastPresets.slice(0, 6).map((preset) => {
+					{fastPresets.map((preset) => {
 						const hasPresetConflict = Boolean(
 							patientAllergies &&
 							preset.drugIds?.some((drugId) => {

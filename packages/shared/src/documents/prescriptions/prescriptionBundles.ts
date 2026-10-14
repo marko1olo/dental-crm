@@ -74,7 +74,7 @@ export const DENTAL_PRESCRIPTION_EXPRESS_BUNDLES: readonly DentalPrescriptionExp
 			{
 				drugId: "chlorhexidine_005",
 				tradeName: "Хлоргексидин 0.05%",
-				latinName: "Rp.: Sol. Chlorhexidini bigluconatis 0.05% - 100 ml",
+				latinName: "Rp.: Sol. Chlorhexidini bigluconatis 0.05% 100 ml",
 				form: "раствор для местного применения 0.05%",
 				dosage: "0.05%",
 				quantity: "1 флакон (100 мл)",
@@ -174,7 +174,7 @@ export const DENTAL_PRESCRIPTION_EXPRESS_BUNDLES: readonly DentalPrescriptionExp
 			{
 				drugId: "chlorhexidine_012",
 				tradeName: "Хлоргексидин 0.12%",
-				latinName: "Rp.: Sol. Chlorhexidini bigluconatis 0.12% - 300 ml",
+				latinName: "Rp.: Sol. Chlorhexidini bigluconatis 0.12% 300 ml",
 				form: "раствор для полоскания полости рта 0.12%",
 				dosage: "0.12%",
 				quantity: "1 флакон (300 мл)",

@@ -62,7 +62,7 @@ export function EmergencyResuscitationTools({
 				<div className="emergency-cpr-header">
 					<div className="emergency-cpr-title min-w-0">
 						<Syringe size={18} style={{ color: 'var(--teal)' }} />
-						<span className="truncate min-w-0">УКЛАДКА ЭКСТРЕННОЙ ПОМОЩИ (ПРИКАЗ МЗ РФ № 786н / 1144н)</span>
+						<span className="truncate min-w-0" data-statutory="786н / 1144н">Укладка неотложной помощи</span>
 					</div>
 				</div>
 

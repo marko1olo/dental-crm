@@ -21,7 +21,23 @@ import './emergencyRescue.css';
 
 export { EmergencyDosageCardsGrid, EmergencyProtocolHandoverBox };
 export { formatEmergencyRelativeNotice };
+export { calculateAllEmergencyDosages } from './emergencyRescueEngine';
 export type { EmergencyRelativeNoticeParams, EmergencyRescueModalProps };
+
+/**
+ * ТАЙМЕР ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА
+ * УКЛАДКА ЭКСТРЕННОЙ ПОМОЩИ (ПРИКАЗ МЗ РФ № 786н / 1144н)
+ */
+const SCENARIO_SHORT_NAMES: Record<EmergencyScenarioId, string> = {
+	anaphylactic_shock: 'Анафилаксия',
+	local_anesthetic_toxicity: 'Токсичность анестетиков',
+	syncope_collapse: 'Обморок / Коллапс',
+	hypertensive_crisis: 'Гипертонический криз',
+	angina_myocardial_infarction: 'Стенокардия',
+	bronchospasm_asthma: 'Бронхоспазм',
+	hypoglycemia_diabetic: 'Гипогликемия',
+	accidental_swallowing: 'Аспирация',
+};
 
 export function EmergencyRescueModal(props: EmergencyRescueModalProps): React.ReactElement | null {
 	const { isOpen, onClose, onApplyToDiary } = props;
@@ -73,10 +89,12 @@ export function EmergencyRescueModal(props: EmergencyRescueModalProps): React.Re
 					<div className="emergency-header-title-area">
 						<AlertOctagon size={28} className="emergency-header-alert-icon" />
 						<div>
-							<h2 className="emergency-header-title">ЭКСТРЕННЫЙ РЕАНИМАЦИОННЫЙ HUD</h2>
-							<span className="emergency-header-badge">
+							<h2 className="emergency-header-title" aria-label="ЭКСТРЕННЫЙ РЕАНИМАЦИОННЫЙ HUD">
+								Экстренная помощь у кресла
+							</h2>
+							<span className="emergency-header-badge" data-statutory="786н">
 								<ShieldAlert size={13} />
-								Приказы МЗ РФ № 786н / 1079н / 1144н / 138н & ФАР
+								Протоколы реанимации
 							</span>
 						</div>
 					</div>
@@ -101,6 +119,7 @@ export function EmergencyRescueModal(props: EmergencyRescueModalProps): React.Re
 					{(Object.keys(EMERGENCY_SCENARIOS) as EmergencyScenarioId[]).map((scId) => {
 						const scenario = EMERGENCY_SCENARIOS[scId];
 						const isActive = scenario.id === logic.activeScenarioId;
+						const shortName = SCENARIO_SHORT_NAMES[scenario.id] || scenario.nameRu;
 						return (
 							<button
 								key={scenario.id}
@@ -112,7 +131,7 @@ export function EmergencyRescueModal(props: EmergencyRescueModalProps): React.Re
 								title={`${scenario.nameRu} (${scenario.icd10Code}) — ${scenario.subtitleRu}`}
 							>
 								<div className="emergency-scenario-name min-w-0">
-									<span className="min-w-0">{scenario.nameRu}</span>
+									<span className="min-w-0">{shortName}</span>
 									<span className="emergency-scenario-icd">{scenario.icd10Code}</span>
 								</div>
 								<div className="emergency-scenario-subtitle">{scenario.subtitleRu}</div>
