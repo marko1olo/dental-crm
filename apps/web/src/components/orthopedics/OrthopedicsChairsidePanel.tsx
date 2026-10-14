@@ -16,7 +16,7 @@ export {
 	type PreparationMarginPreset, PREPARATION_MARGIN_PRESETS,
 	VITA_3D_MASTER_SHADE_GROUPS,
 } from "./orthopedicsPresets.js";
-import { STANDARD_ZTL_ORDER_PRESETS, PREPARATION_MARGIN_PRESETS, FIXATION_TYPE_PRESETS } from "./orthopedicsPresets.js";
+import { type StandardZtlPreset, STANDARD_ZTL_ORDER_PRESETS, PREPARATION_MARGIN_PRESETS, FIXATION_TYPE_PRESETS } from "./orthopedicsPresets.js";
 import { OrthopedicsProtocolsGrid } from "./OrthopedicsProtocolsGrid.js";
 import { OrthopedicsVitaShadePicker } from "./OrthopedicsVitaShadePicker.js";
 import { OrthopedicsZtlSelectors } from "./OrthopedicsZtlSelectors.js";
@@ -337,7 +337,7 @@ export function OrthopedicsChairsidePanel({
 				res = await fetch("/api/clinical/lab-orders", {
 					method: "POST",
 					headers,
-					body: JSON.stringify(reqBody),
+					body: JSON.stringify(labOrderPayload),
 				});
 			}
 
