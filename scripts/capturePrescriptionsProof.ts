@@ -162,6 +162,14 @@ async function run() {
 		await page.goto(`${APP_BASE}/#schedule`, { waitUntil: "domcontentloaded" });
 		await page.waitForTimeout(3000);
 
+		// Wait until app shell or navigation is loaded
+		try {
+			await page.waitForSelector(".app-shell, .nav-item, nav", { timeout: 10000 });
+		} catch {
+			// fallback wait
+		}
+		await page.waitForTimeout(1000);
+
 		// Apply theme class
 		await page.evaluate((isDark) => {
 			document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
@@ -170,22 +178,31 @@ async function run() {
 			document.body.className = isDark ? "dark" : "light";
 		}, target.isDark);
 
-		// Dispatch open-prescriptions event with express medication ID
-		await page.evaluate(() => {
-			window.dispatchEvent(
-				new CustomEvent("dente:open-prescriptions", {
-					detail: { medicationId: "amoxiclav_875_125" },
-				})
-			);
-		});
+		// Dispatch open-prescriptions event with retry loop until modal is present
+		let modalVisible = false;
+		for (let attempt = 0; attempt < 8; attempt++) {
+			await page.evaluate(() => {
+				window.dispatchEvent(
+					new CustomEvent("dente:open-prescriptions", {
+						detail: { medicationId: "amoxiclav_875_125" },
+					})
+				);
+			});
+			modalVisible = await page
+				.locator('[data-testid="prescription-print-modal"]')
+				.isVisible()
+				.catch(() => false);
+			if (modalVisible) break;
+			await page.waitForTimeout(600);
+		}
 
-		// Wait for prescription modal dialog to open
-		await page.waitForSelector('[role="dialog"]', { timeout: 10000 });
+		// Wait specifically for prescription modal
+		await page.waitForSelector('[data-testid="prescription-print-modal"]', { timeout: 10000 });
 		await page.waitForTimeout(1000);
 
 		// Click on first express preset button: "После хирургии / периодонтита"
 		const expressBtn = page.locator('button:has-text("После хирургии / периодонтита")');
-		if ((await expressBtn.count()) > 0) {
+		if ((await expressBtn.count()) > 0 && (await expressBtn.first().isVisible())) {
 			await expressBtn.first().click();
 			await page.waitForTimeout(800);
 		}
@@ -195,11 +212,11 @@ async function run() {
 			const previewTab = page.locator('button:has-text("Предпросмотр бланка")');
 			if ((await previewTab.count()) > 0) {
 				await previewTab.first().click();
-				await page.waitForTimeout(1000);
+				await page.waitForTimeout(1500);
 			}
 		}
 
-		// Allow QR code SVG and fonts to render
+		// Allow QR code SVG, stamps and fonts to render
 		await page.waitForTimeout(1500);
 
 		const outPath = path.join(TARGET_DIR, target.filename);

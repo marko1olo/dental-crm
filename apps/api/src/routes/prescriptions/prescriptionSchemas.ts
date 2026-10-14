@@ -30,7 +30,7 @@ export const createPrescriptionBodySchema = z
 	.object({
 		patientId: z.string().uuid(),
 		visitId: z.string().uuid().optional().nullable(),
-		prescribingDoctorId: z.string().uuid(),
+		prescribingDoctorId: z.string().uuid().optional().nullable(),
 		formType: z
 			.enum(["form_107_1_u", "form_148_1_u_88", "form_148_1_u_04_l"])
 			.default("form_107_1_u"),

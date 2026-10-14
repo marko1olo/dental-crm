@@ -75,13 +75,13 @@ export interface PublicOnlineBookingWidgetProps {
 	/** Organization ID for real API integration */
 	readonly organizationId?: string | null;
 	/** Optional title override */
-	readonly title?: string;
+	readonly title?: string | undefined;
 	/** Optional subtitle override */
-	readonly subtitle?: string;
+	readonly subtitle?: string | undefined;
 	/** Theme mode: light, dark, night, calm_teal, auto */
-	readonly theme?: "light" | "dark" | "night" | "calm_teal" | "contrast" | "auto";
+	readonly theme?: "light" | "dark" | "night" | "calm_teal" | "contrast" | "auto" | undefined;
 	/** Embed mode: standalone, iframe, modal, or telegram */
-	readonly embedMode?: "standalone" | "iframe" | "modal" | "telegram";
+	readonly embedMode?: "standalone" | "iframe" | "modal" | "telegram" | undefined;
 	/** Custom branches override */
 	readonly customBranches?: ClinicBranch[] | undefined;
 	/** Custom categories override */
