@@ -139,20 +139,20 @@ export const COLUMNS: readonly [
 		icon: React.createElement(Plus, { size: 15 }),
 	},
 	{
+		id: "contacted",
+		label: "2. Звонок / Квалификация",
+		color: "var(--amber-soft)",
+		icon: React.createElement(Phone, { size: 15 }),
+	},
+	{
 		id: "consult_booked",
-		label: "2. Записан на консультацию",
+		label: "3. Записан на приём",
 		color: "var(--teal-soft)",
 		icon: React.createElement(CalendarClock, { size: 15 }),
 	},
 	{
-		id: "showed_up",
-		label: "3. Дошел на приём",
-		color: "var(--teal-soft)",
-		icon: React.createElement(UserCheck, { size: 15 }),
-	},
-	{
 		id: "trash",
-		label: "4. Архив / Отказ",
+		label: "4. Архив / Нецелевой",
 		color: "var(--paper)",
 		icon: React.createElement(Trash2, { size: 15 }),
 	},
@@ -161,22 +161,27 @@ export const COLUMNS: readonly [
 /**
  * Проверяет принадлежность статуса лида к одной из 4 канонических колонок канбана.
  * Обратная совместимость для существующих статусов в БД:
- * - contacted -> new ("1. Новое обращение")
- * - converted -> showed_up ("3. Дошел на приём")
- * - no_answer -> trash ("4. Архив / Отказ")
+ * - new -> new ("1. Новое обращение")
+ * - contacted -> contacted ("2. Звонок / Квалификация")
+ * - consult_booked, showed_up, converted -> consult_booked ("3. Записан на приём")
+ * - trash, no_answer -> trash ("4. Архив / Нецелевой")
  */
 export function isLeadInKanbanColumn(
 	leadStatus: LeadStatus | string | null | undefined,
 	columnId: LeadStatus,
 ): boolean {
-	if (!leadStatus || leadStatus === "new" || leadStatus === "contacted") {
+	if (!leadStatus || leadStatus === "new") {
 		return columnId === "new";
 	}
-	if (leadStatus === "consult_booked") {
-		return columnId === "consult_booked";
+	if (leadStatus === "contacted") {
+		return columnId === "contacted";
 	}
-	if (leadStatus === "showed_up" || leadStatus === "converted") {
-		return columnId === "showed_up";
+	if (
+		leadStatus === "consult_booked" ||
+		leadStatus === "showed_up" ||
+		leadStatus === "converted"
+	) {
+		return columnId === "consult_booked";
 	}
 	if (leadStatus === "trash" || leadStatus === "no_answer") {
 		return columnId === "trash";
@@ -190,13 +195,17 @@ export function isLeadInKanbanColumn(
 export function getKanbanColumnForLeadStatus(
 	status?: LeadStatus | string | null,
 ): ColumnConfig {
-	if (!status || status === "new" || status === "contacted") {
+	if (!status || status === "new") {
 		return COLUMNS[0];
 	}
-	if (status === "consult_booked") {
+	if (status === "contacted") {
 		return COLUMNS[1];
 	}
-	if (status === "showed_up" || status === "converted") {
+	if (
+		status === "consult_booked" ||
+		status === "showed_up" ||
+		status === "converted"
+	) {
 		return COLUMNS[2];
 	}
 	return COLUMNS[3];
@@ -204,12 +213,12 @@ export function getKanbanColumnForLeadStatus(
 
 export const STAGE_DISPLAY_LABELS: Record<LeadStatus, string> = {
 	new: "«1. Новое обращение»",
-	contacted: "«1. Новое обращение»",
-	consult_booked: "«2. Записан на консультацию»",
-	showed_up: "«3. Дошел на приём»",
-	converted: "«3. Дошел на приём»",
-	no_answer: "«4. Архив / Отказ»",
-	trash: "«4. Архив / Отказ»",
+	contacted: "«2. Звонок / Квалификация»",
+	consult_booked: "«3. Записан на приём»",
+	showed_up: "«3. Записан на приём»",
+	converted: "«3. Записан на приём»",
+	no_answer: "«4. Архив / Нецелевой»",
+	trash: "«4. Архив / Нецелевой»",
 };
 
 /** The 4 canonical active funnel stages for the primary clinic patient flow */
@@ -221,10 +230,11 @@ export const CORE_FUNNEL_COLUMNS = COLUMNS;
 export const NEXT_STAGE_MAP: Partial<
 	Record<LeadStatus, { status: LeadStatus; label: string }>
 > = {
-	new: { status: "consult_booked", label: "Записать на приём →" },
+	new: { status: "contacted", label: "Звонок / Квалификация →" },
 	contacted: { status: "consult_booked", label: "Записать на приём →" },
-	consult_booked: { status: "showed_up", label: "Пациент дошёл →" },
-	converted: { status: "showed_up", label: "Пациент дошёл →" },
+	consult_booked: { status: "trash", label: "В архив →" },
+	showed_up: { status: "trash", label: "В архив →" },
+	converted: { status: "trash", label: "В архив →" },
 	no_answer: { status: "new", label: "Восстановить обращение →" },
 	trash: { status: "new", label: "Восстановить обращение →" },
 };

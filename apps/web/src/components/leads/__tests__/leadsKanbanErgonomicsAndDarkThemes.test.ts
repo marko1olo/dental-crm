@@ -23,11 +23,11 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 			assert.equal(CORE_FUNNEL_COLUMNS.length, 4);
 			assert.deepEqual(
 				CORE_FUNNEL_COLUMNS.map((c) => c.id),
-				["new", "consult_booked", "showed_up", "trash"],
+				["new", "contacted", "consult_booked", "trash"],
 			);
 			assert.deepEqual(
 				CORE_FUNNEL_COLUMNS.map((c) => c.label),
-				["1. Новое обращение", "2. Записан на консультацию", "3. Дошел на приём", "4. Архив / Отказ"],
+				["1. Новое обращение", "2. Звонок / Квалификация", "3. Записан на приём", "4. Архив / Нецелевой"],
 			);
 		});
 
@@ -35,8 +35,8 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 			assert.equal(COLUMNS.length, 4);
 			const columnIds = COLUMNS.map((c) => c.id);
 			assert.ok(columnIds.includes("new"));
+			assert.ok(columnIds.includes("contacted"));
 			assert.ok(columnIds.includes("consult_booked"));
-			assert.ok(columnIds.includes("showed_up"));
 			assert.ok(columnIds.includes("trash"));
 		});
 

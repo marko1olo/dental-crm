@@ -6,7 +6,7 @@
  * conversion/edit modals, funnel analytics, and 210-day leak detector.
  */
 
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { dateInputValuePlusDays } from "../../../AppHelpers";
 import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 import { useIsMobile } from "../../../hooks/useIsMobile";
@@ -19,11 +19,7 @@ import { useScheduleStore } from "../../../store/scheduleStore";
 import { logger } from "../../../utils/logger";
 import { showToast } from "../../GlobalToast";
 import { ExpandedColumnFocusModal } from "../ExpandedColumnFocusModal";
-import {
-	LeadConvertModal,
-	type LeadConvertSubmitOptions,
-} from "../LeadConvertModal";
-import { LeadFormModal } from "../LeadFormModal";
+import type { LeadConvertSubmitOptions } from "../LeadConvertModal";
 import { LeadsMobileFeedView } from "../LeadsMobileFeedView";
 import {
 	type BookableChair,
@@ -39,6 +35,7 @@ import {
 } from "../leadsKanbanTypes";
 import { LeadKanbanColumn } from "./LeadKanbanColumn";
 import { LeadsKanbanHeaderToolbar } from "./LeadsKanbanHeaderToolbar";
+import { LeadsKanbanSharedModals } from "./LeadsKanbanSharedModals";
 import "../leadsKanban.css";
 
 export * from "../leadsKanbanTypes";
@@ -46,17 +43,6 @@ export * from "./LeadKanbanCard";
 export * from "./LeadKanbanColumn";
 export * from "./LeadsKanbanHeaderToolbar";
 export * from "./types";
-
-const LeadsFunnelAnalyticsModal = lazy(() =>
-	import("../LeadsFunnelAnalyticsModal").then((module) => ({
-		default: module.LeadsFunnelAnalyticsModal,
-	})),
-);
-const CrmLeakDetectorModal = lazy(() =>
-	import("../../crm/CrmLeakDetectorModal").then((module) => ({
-		default: module.CrmLeakDetectorModal,
-	})),
-);
 
 export function LeadsKanbanView() {
 	const {
@@ -83,8 +69,26 @@ export function LeadsKanbanView() {
 	const handleOpenPatientCard = (patientId: string) => {
 		usePatientStore.getState().setSelectedPatientId(patientId);
 		useAppStore.getState().setCurrentView("patients");
-		if (typeof window !== "undefined") {
-			window.location.hash = "patients";
+		if (typeof window !== "undefined") window.location.hash = "patients";
+	};
+
+	const navigateToScheduleWithBooking = (booking: {
+		patientId?: string | null | undefined;
+		patientName?: string | null | undefined;
+		patientPhone?: string | null | undefined;
+		dateKey?: string | undefined;
+		reason?: string | undefined;
+		doctorUserId?: string | null | undefined;
+		chairId?: string | null | undefined;
+	}) => {
+		try {
+			if (booking.patientId) usePatientStore.getState().setSelectedPatientId(booking.patientId);
+			if (booking.dateKey) useScheduleStore.getState().setScheduleDateFilter(booking.dateKey);
+			useScheduleStore.getState().setPendingStageBooking?.(booking);
+			useAppStore.getState().setCurrentView("schedule");
+			if (typeof window !== "undefined") window.location.hash = "schedule";
+		} catch {
+			// fallback
 		}
 	};
 
@@ -235,7 +239,8 @@ export function LeadsKanbanView() {
 		if (
 			lastMessage?.type === "LEAD_CREATED" ||
 			lastMessage?.type === "LEAD_UPDATED" ||
-			lastMessage?.type === "LEAD_DELETED"
+			lastMessage?.type === "LEAD_DELETED" ||
+			lastMessage?.type === "TELEPHONY_MISSED_CALL"
 		) {
 			fetchLeads();
 		}
@@ -337,7 +342,7 @@ export function LeadsKanbanView() {
 					: "Первичная консультация";
 
 		try {
-			await convertLeadToAppointment(leadId, {
+			const res = await convertLeadToAppointment(leadId, {
 				appointmentStart: startDateTime.toISOString(),
 				appointmentEnd: endDateTime.toISOString(),
 				chairId: chairIdToBook,
@@ -350,6 +355,17 @@ export function LeadsKanbanView() {
 				: "Создан первичный приём в расписании и карта пациента";
 			showToast(successMsg, "success");
 			fetchLeads();
+
+			const createdPatient = res?.patient as { id?: string; fullName?: string; phone?: string } | undefined;
+			navigateToScheduleWithBooking({
+				patientId: createdPatient?.id || targetLead?.existingPatient?.id || null,
+				patientName: createdPatient?.fullName || targetLead?.existingPatient?.fullName || targetLead?.name || null,
+				patientPhone: createdPatient?.phone || targetLead?.phone || null,
+				dateKey: targetDate,
+				reason: quickReason,
+				doctorUserId: doctorIdToBook || null,
+				chairId: chairIdToBook || null,
+			});
 		} catch (err: unknown) {
 			const text =
 				err instanceof Error && err.message.trim()
@@ -429,7 +445,7 @@ export function LeadsKanbanView() {
 
 		setIsBooking(true);
 		try {
-			await convertLeadToAppointment(convertingLeadId, {
+			const res = await convertLeadToAppointment(convertingLeadId, {
 				appointmentStart: startDateTime.toISOString(),
 				appointmentEnd: endDateTime.toISOString(),
 				chairId: chairIdToBook,
@@ -455,17 +471,16 @@ export function LeadsKanbanView() {
 			setConvertingLeadId(null);
 			fetchLeads();
 
-			try {
-				if (appointmentDate) {
-					useScheduleStore.getState().setScheduleDateFilter(appointmentDate);
-				}
-				useAppStore.getState().setCurrentView("schedule");
-				if (typeof window !== "undefined") {
-					window.location.hash = "schedule";
-				}
-			} catch {
-				// Store fallback
-			}
+			const createdPatient = res?.patient as { id?: string; fullName?: string; phone?: string } | undefined;
+			navigateToScheduleWithBooking({
+				patientId: createdPatient?.id || activeLead?.existingPatient?.id || null,
+				patientName: createdPatient?.fullName || activeLead?.existingPatient?.fullName || activeLead?.name || null,
+				patientPhone: createdPatient?.phone || activeLead?.phone || null,
+				dateKey: targetDate,
+				reason: options?.reason || "Первичная консультация",
+				doctorUserId: doctorIdToBook || null,
+				chairId: chairIdToBook || null,
+			});
 		} catch (e: unknown) {
 			logger.error(e);
 			const text =
@@ -479,29 +494,16 @@ export function LeadsKanbanView() {
 	};
 
 	const openEditModal = (lead?: Lead) => {
-		if (lead) {
-			setEditingLeadId(lead.id);
-			setEditForm({
-				name: lead.name,
-				phone: lead.phone || "",
-				source: lead.source || "",
-				expectedRevenue: lead.expectedRevenue || "",
-				status: lead.status || "new",
-				notes: lead.notes || "",
-				dropReason: lead.dropReason || "",
-			});
-		} else {
-			setEditingLeadId("new");
-			setEditForm({
-				name: "",
-				phone: "",
-				source: "",
-				expectedRevenue: "",
-				status: "new",
-				notes: "",
-				dropReason: "",
-			});
-		}
+		setEditingLeadId(lead ? lead.id : "new");
+		setEditForm({
+			name: lead?.name || "",
+			phone: lead?.phone || "",
+			source: lead?.source || "",
+			expectedRevenue: lead?.expectedRevenue || "",
+			status: lead?.status || "new",
+			notes: lead?.notes || "",
+			dropReason: lead?.dropReason || "",
+		});
 		setIsEditOpen(true);
 	};
 
@@ -605,71 +607,24 @@ export function LeadsKanbanView() {
 	const borderColor = "var(--line)";
 
 	const sharedModals = (
-		<>
-			{/* CONVERT MODAL */}
-			<LeadConvertModal
-				isOpen={isConvertOpen}
-				onClose={() => setIsConvertOpen(false)}
-				onSubmit={handleConvertSubmit}
-				staff={staff}
-				chairs={chairs}
-				effectiveStaff={resolveLeadBookingStaff(staff)}
-				effectiveChairs={resolveLeadBookingChairs(chairs)}
-				selectedDoctorId={selectedDoctorId}
-				setSelectedDoctorId={setSelectedDoctorId}
-				selectedChairId={selectedChairId}
-				setSelectedChairId={setSelectedChairId}
-				appointmentDate={appointmentDate}
-				setAppointmentDate={setAppointmentDate}
-				appointmentTime={appointmentTime}
-				setAppointmentTime={setAppointmentTime}
-				isBooking={isBooking}
-				lead={leads.find((l) => l.id === convertingLeadId) || null}
-				cardBg={cardBg}
-				colBg={colBg}
-				borderColor={borderColor}
-			/>
-
-			{/* EDIT / ADD MODAL */}
-			<LeadFormModal
-				isOpen={isEditOpen}
-				onClose={() => setIsEditOpen(false)}
-				editingLeadId={editingLeadId}
-				editForm={editForm}
-				setEditForm={setEditForm}
-				onSubmit={handleEditSubmit}
-				isDeleting={isDeleting}
-				onDelete={() => void handleDeleteLead()}
-				creatingPatientLeadId={creatingPatientLeadId}
-				onCreatePatient={(lead) => void handleCreatePatientFromLead(lead)}
-				leads={leads}
-				cardBg={cardBg}
-				colBg={colBg}
-				borderColor={borderColor}
-			/>
-
-			{/* ANALYTICS FUNNEL MODAL */}
-			{isAnalyticsOpen && (
-				<Suspense fallback={null}>
-					<LeadsFunnelAnalyticsModal
-						isOpen={isAnalyticsOpen}
-						onClose={() => setIsAnalyticsOpen(false)}
-						leads={leads}
-						onOpenLeakDetector={() => setIsLeakDetectorOpen(true)}
-					/>
-				</Suspense>
-			)}
-
-			{/* CRM LEAK DETECTOR MODAL (210 DAYS) */}
-			{isLeakDetectorOpen && (
-				<Suspense fallback={null}>
-					<CrmLeakDetectorModal
-						isOpen={isLeakDetectorOpen}
-						onClose={() => setIsLeakDetectorOpen(false)}
-					/>
-				</Suspense>
-			)}
-		</>
+		<LeadsKanbanSharedModals
+			isConvertOpen={isConvertOpen} onCloseConvert={() => setIsConvertOpen(false)}
+			onConvertSubmit={handleConvertSubmit} staff={staff} chairs={chairs}
+			selectedDoctorId={selectedDoctorId} setSelectedDoctorId={setSelectedDoctorId}
+			selectedChairId={selectedChairId} setSelectedChairId={setSelectedChairId}
+			appointmentDate={appointmentDate} setAppointmentDate={setAppointmentDate}
+			appointmentTime={appointmentTime} setAppointmentTime={setAppointmentTime}
+			isBooking={isBooking} convertingLead={leads.find((l) => l.id === convertingLeadId) || null}
+			isEditOpen={isEditOpen} onCloseEdit={() => setIsEditOpen(false)}
+			editingLeadId={editingLeadId} editForm={editForm} setEditForm={setEditForm}
+			onEditSubmit={handleEditSubmit} isDeleting={isDeleting} onDeleteLead={() => void handleDeleteLead()}
+			creatingPatientLeadId={creatingPatientLeadId} onCreatePatient={(lead) => void handleCreatePatientFromLead(lead)}
+			leads={leads}
+			isAnalyticsOpen={isAnalyticsOpen} onCloseAnalytics={() => setIsAnalyticsOpen(false)}
+			isLeakDetectorOpen={isLeakDetectorOpen} onCloseLeakDetector={() => setIsLeakDetectorOpen(false)}
+			onOpenLeakDetector={() => setIsLeakDetectorOpen(true)}
+			cardBg={cardBg} colBg={colBg} borderColor={borderColor}
+		/>
 	);
 
 	if (isMobile) {

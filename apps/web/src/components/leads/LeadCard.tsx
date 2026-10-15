@@ -22,6 +22,7 @@ import {
 	Globe,
 	MessageSquare,
 	Phone,
+	PhoneCall,
 	Tag,
 	UserCheck,
 	UserPlus,
@@ -35,19 +36,23 @@ import {
 	CHANNEL_DISPLAY_NAMES,
 } from "../telephony/telephonyAttribution";
 import { normalizeMarketingChannel } from "./leadsFunnelTypes";
-import { getLeadSlaStatus } from "./leadsKanbanTypes";
+import { getLeadSlaStatus, NEXT_STAGE_MAP } from "./leadsKanbanTypes";
 import { LeadAudioPlayerWidget } from "./LeadAudioPlayerWidget";
-import { LeadInstantPreview } from "./LeadInstantPreview";
 
-const NEXT_STAGE_MAP: Partial<
-	Record<Lead["status"], { status: Lead["status"]; label: string }>
-> = {
-	new: { status: "contacted", label: "Квалифицировать →" },
-	contacted: { status: "consult_booked", label: "На консультацию →" },
-	consult_booked: { status: "showed_up", label: "Пациент дошёл →" },
-	no_answer: { status: "new", label: "Повторить (в Новые) →" },
-	trash: { status: "new", label: "Восстановить обращение →" },
-};
+function formatLeadTimestamp(val?: string | Date | null): string {
+	if (!val) return "";
+	try {
+		const d = typeof val === "string" ? new Date(val) : val;
+		if (Number.isNaN(d.getTime())) return "";
+		const now = new Date();
+		const isToday = d.toDateString() === now.toDateString();
+		const timeStr = d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+		if (isToday) return `Сегодня, ${timeStr}`;
+		return `${d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}, ${timeStr}`;
+	} catch {
+		return "";
+	}
+}
 
 export interface LeadCardProps {
 	lead: Lead;
@@ -83,7 +88,6 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 	onQuickSchedule,
 	onOpenPatientCard,
 }) => {
-	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 	const sla = getLeadSlaStatus(lead);
 	const dropReasonMatch =
 		lead.dropReason ||
@@ -120,6 +124,8 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 			: lead.source;
 	return (
 		<motion.div
+			className="lead-kanban-card"
+			data-testid={`lead-card-${lead.id}`}
 			layout
 			initial={{ opacity: 0, y: 10 }}
 			animate={{ opacity: 1, y: 0 }}
@@ -183,29 +189,6 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							setIsPreviewOpen((prev) => !prev);
-						}}
-						style={{
-							background: isPreviewOpen ? "var(--teal-soft)" : "none",
-							border: "none",
-							cursor: "pointer",
-							padding: 3,
-							borderRadius: 4,
-							color: isPreviewOpen ? "var(--teal-dark, var(--teal))" : "var(--muted)",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-						}}
-						title={isPreviewOpen ? "Скрыть быстрый просмотр" : "Быстрый просмотр обращения"}
-						aria-label="Быстрый просмотр обращения"
-						data-testid={`preview-lead-btn-${lead.id}`}
-					>
-						<Eye size={14} />
-					</button>
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
 							onEdit(lead);
 						}}
 						style={{
@@ -227,28 +210,39 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 				</div>
 			</div>
 
-			{/* Speed-to-Lead SLA Urgency Indicator */}
-			<div
-				className={`lead-card-sla-badge ${sla.isBreached ? "lead-sla-breached-pulse" : ""}`}
-				style={{
-					background: sla.badgeBg,
-					color: sla.badgeColor,
-					border: `1px solid ${sla.badgeBorder}`,
-					fontSize: 10.5,
-					fontWeight: 600,
-					padding: "1px 6px",
-					borderRadius: 5,
-					display: "inline-flex",
-					alignItems: "center",
-					gap: 3.5,
-					marginBottom: 6,
-					width: "fit-content",
-				}}
-				title={`Speed-to-Lead SLA: ${sla.formattedDuration}`}
-				data-testid={`lead-sla-badge-${lead.id}`}
-			>
-				<Clock size={10} className="shrink-0" />
-				<span>{sla.label}</span>
+			{/* Speed-to-Lead SLA Urgency Indicator & Timestamp */}
+			<div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+				<div
+					className={`lead-card-sla-badge ${sla.isBreached ? "lead-sla-breached-pulse" : ""}`}
+					style={{
+						background: sla.badgeBg,
+						color: sla.badgeColor,
+						border: `1px solid ${sla.badgeBorder}`,
+						fontSize: 10.5,
+						fontWeight: 600,
+						padding: "1px 6px",
+						borderRadius: 5,
+						display: "inline-flex",
+						alignItems: "center",
+						gap: 3.5,
+						width: "fit-content",
+					}}
+					title={`Speed-to-Lead SLA: ${sla.formattedDuration}`}
+					data-testid={`lead-sla-badge-${lead.id}`}
+				>
+					<Clock size={10} className="shrink-0" />
+					<span>{sla.label}</span>
+				</div>
+
+				{lead.createdAt && (
+					<span
+						className="text-[10.5px] text-[var(--muted)] font-mono flex items-center gap-1 shrink-0"
+						title={`Время обращения: ${new Date(lead.createdAt).toLocaleString("ru-RU")}`}
+						data-testid={`lead-timestamp-${lead.id}`}
+					>
+						<span>{formatLeadTimestamp(lead.createdAt)}</span>
+					</span>
+				)}
 			</div>
 
 			{/* Бейдж постоянного пациента клиники (Mandates 8l, 8n) */}
@@ -304,42 +298,27 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 			)}
 
 			{/* Телефонный номер (прямой клик для звонка) и компактный аудиоплеер */}
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					marginBottom: 6,
-					gap: 6,
-					minWidth: 0,
-				}}
-			>
+			<div className="flex items-center justify-between mb-1.5 gap-1.5 min-w-0">
 				{lead.phone ? (
-					<div
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: 6,
-							fontSize: 13,
-							color: "var(--muted)",
-							minWidth: 0,
-						}}
-					>
+					<div className="flex items-center gap-1.5 text-xs text-[var(--muted)] min-w-0">
 						<Phone size={12} className="shrink-0" />
 						<a
 							href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}
 							onClick={(e) => e.stopPropagation()}
-							style={{
-								color: "inherit",
-								textDecoration: "none",
-								overflow: "hidden",
-								textOverflow: "ellipsis",
-								whiteSpace: "nowrap",
-								minWidth: 0,
-							}}
+							className="truncate text-inherit no-underline hover:text-[var(--teal)] transition-colors"
 							title="Позвонить контакту"
 						>
 							{lead.phone}
+						</a>
+						<a
+							href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}
+							onClick={(e) => e.stopPropagation()}
+							className="icon-button min-h-[22px] min-w-[22px] p-0.5 rounded text-[var(--teal)] hover:bg-[var(--teal-soft)] transition-colors inline-flex items-center justify-center shrink-0"
+							title="1-клик перезвон"
+							aria-label="1-клик перезвон"
+							data-testid={`lead-callback-btn-${lead.id}`}
+						>
+							<PhoneCall size={11} />
 						</a>
 						<a
 							href={formatWhatsAppUrl(
@@ -349,20 +328,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 							target="_blank"
 							rel="noopener noreferrer"
 							onClick={(e) => e.stopPropagation()}
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								justifyContent: "center",
-								color: "var(--teal-dark, var(--teal))",
-								background: "var(--teal-soft)",
-								border: "1px solid var(--teal)",
-								borderRadius: 4,
-								padding: "1px 4px",
-								textDecoration: "none",
-								fontSize: 10,
-								flexShrink: 0,
-								marginLeft: 2,
-							}}
+							className="icon-button min-h-[22px] min-w-[22px] p-0.5 rounded text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft)] border border-[var(--teal)] text-[10px] inline-flex items-center justify-center shrink-0 ml-0.5"
 							title="Написать пациенту в WhatsApp"
 							aria-label="Написать пациенту в WhatsApp"
 							data-testid={`lead-whatsapp-btn-${lead.id}`}
@@ -446,18 +412,6 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 				</div>
 			)}
 
-			{/* Интерактивный быстрый просмотр (Instant Preview Panel: instant-preview-patient-link-) */}
-			{isPreviewOpen && (
-				<LeadInstantPreview
-					lead={lead}
-					borderColor={borderColor}
-					channelBadge={channelBadge}
-					channelLabel={channelLabel}
-					onOpenPatient={handleOpenPatient}
-					onQuickSchedule={onQuickSchedule}
-				/>
-			)}
-
 			{/* Источник и ожидаемая выручка */}
 			<div
 				style={{
@@ -525,7 +479,17 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 				onClick={(e) => e.stopPropagation()}
 			>
 				<select
-					value={lead.status}
+					value={
+						lead.status === "new"
+							? "new"
+							: lead.status === "contacted"
+								? "contacted"
+								: lead.status === "consult_booked" ||
+										lead.status === "showed_up" ||
+										lead.status === "converted"
+									? "consult_booked"
+									: "trash"
+					}
 					onClick={(e) => e.stopPropagation()}
 					onChange={(e) => {
 						const nextVal = e.target.value as Lead["status"];
@@ -541,12 +505,10 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 					title="Сменить статус обращения"
 					aria-label="Выбрать статус обращения"
 				>
-					<option value="new">1. Новые</option>
-					<option value="contacted">2. Квалифицированные</option>
-					<option value="consult_booked">3. Консультация</option>
-					<option value="showed_up">4. Дошли</option>
-					<option value="no_answer">Недозвон</option>
-					<option value="trash">Отказ</option>
+					<option value="new">1. Новое обращение</option>
+					<option value="contacted">2. Звонок / Квалификация</option>
+					<option value="consult_booked">3. Записан на приём</option>
+					<option value="trash">4. Архив / Нецелевой</option>
 				</select>
 				{NEXT_STAGE_MAP[lead.status] ? (
 					<button

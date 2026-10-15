@@ -311,7 +311,7 @@ export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
 									? "Создать карту пациента в базе клиники"
 									: lead?.existingPatient
 										? "Записать на приём"
-										: "Конвертировать в пациента и записать"
+										: "Подтвердить запись и создать карту"
 						}
 						style={{
 							marginTop: 8,
@@ -325,7 +325,7 @@ export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
 								? "Создать карту пациента"
 								: lead?.existingPatient
 									? "Подтвердить запись на приём"
-									: "Конвертировать в пациента и записать"}
+									: "Подтвердить запись и создать карту"}
 					</button>
 				</form>
 			</motion.div>

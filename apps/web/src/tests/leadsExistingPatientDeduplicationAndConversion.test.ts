@@ -27,16 +27,40 @@ describe("Leads Existing Patient Deduplication & UI Invariants", () => {
 		"utf8",
 	);
 
-	const convertModalSource = readFileSync(
-		join(
-			dirname(fileURLToPath(import.meta.url)),
-			"..",
-			"components",
-			"leads",
-			"LeadConvertModal.tsx",
+	const convertModalSource = [
+		readFileSync(
+			join(
+				dirname(fileURLToPath(import.meta.url)),
+				"..",
+				"components",
+				"leads",
+				"LeadConvertModal.tsx",
+			),
+			"utf8",
 		),
-		"utf8",
-	);
+		readFileSync(
+			join(
+				dirname(fileURLToPath(import.meta.url)),
+				"..",
+				"components",
+				"leads",
+				"leadConvertModules",
+				"LeadConvertPatientFields.tsx",
+			),
+			"utf8",
+		),
+		readFileSync(
+			join(
+				dirname(fileURLToPath(import.meta.url)),
+				"..",
+				"components",
+				"leads",
+				"leadConvertModules",
+				"LeadConvertAppointmentFields.tsx",
+			),
+			"utf8",
+		),
+	].join("\n");
 
 	const expandedModalSource = readFileSync(
 		join(
@@ -110,10 +134,11 @@ describe("Leads Existing Patient Deduplication & UI Invariants", () => {
 		);
 	});
 
-	it("LeadCard Instant Preview includes direct 1-click link to existing patient profile", () => {
+	it("LeadCard includes direct 1-click link to existing patient profile", () => {
 		assert.ok(
-			leadCardSource.includes("instant-preview-patient-link-"),
-			"LeadCard instant preview must provide instant-preview-patient-link-",
+			leadCardSource.includes("lead-existing-patient-badge-") ||
+				leadCardSource.includes("handleOpenPatient"),
+			"LeadCard must provide lead-existing-patient-badge- or handleOpenPatient",
 		);
 	});
 

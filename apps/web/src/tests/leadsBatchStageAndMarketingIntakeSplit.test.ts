@@ -93,28 +93,45 @@ describe("Marketing Dashboard Intake Split (Zero Mocks & Real Computation)", () 
 		),
 		"utf8",
 	);
+	const chartSource = readFileSync(
+		join(
+			dirname(fileURLToPath(import.meta.url)),
+			"..",
+			"pages",
+			"marketingDashboardModules",
+			"MarketingFunnelStagesChart.tsx",
+		),
+		"utf8",
+	);
 
-	it("Purged hardcoded 42% and 58% simulation mocks from MarketingDashboardView", () => {
+	it("Purged hardcoded 42% and 58% simulation mocks from MarketingDashboardView and modules", () => {
 		// Must not contain hardcoded 42% or 58% strong tags
 		assert.ok(
-			!dashboardSource.includes("<strong>42%</strong>"),
-			"Found hardcoded mock '42%' in MarketingDashboardView!",
+			!dashboardSource.includes("<strong>42%</strong>") &&
+				!chartSource.includes("<strong>42%</strong>"),
+			"Found hardcoded mock '42%' in MarketingDashboardView or chart!",
 		);
 		assert.ok(
-			!dashboardSource.includes("<strong>58%</strong>"),
-			"Found hardcoded mock '58%' in MarketingDashboardView!",
+			!dashboardSource.includes("<strong>58%</strong>") &&
+				!chartSource.includes("<strong>58%</strong>"),
+			"Found hardcoded mock '58%' in MarketingDashboardView or chart!",
 		);
 
-		// Must render dynamic intakeSplit values
+		// Must pass and render dynamic intakeSplit values in chart component
 		assert.match(
 			dashboardSource,
-			/\{intakeSplit\.onlinePercent\}%/,
-			"MarketingDashboardView must render dynamic onlinePercent",
+			/\bintakeSplit=\{intakeSplit\}/,
+			"MarketingDashboardView must pass intakeSplit to MarketingFunnelStagesChart",
 		);
 		assert.match(
-			dashboardSource,
+			chartSource,
+			/\{intakeSplit\.onlinePercent\}%/,
+			"MarketingFunnelStagesChart must render dynamic onlinePercent",
+		);
+		assert.match(
+			chartSource,
 			/\{intakeSplit\.adminPercent\}%/,
-			"MarketingDashboardView must render dynamic adminPercent",
+			"MarketingFunnelStagesChart must render dynamic adminPercent",
 		);
 	});
 
