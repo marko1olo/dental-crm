@@ -25,33 +25,17 @@ export function LabOrdersFilterBar({
 			{/* Left: Brand + Inline Counters */}
 			<div className="flex items-center gap-2 shrink-0">
 				<FlaskConical className="w-4 h-4 text-[var(--primary)] shrink-0" />
-				<span className="font-bold text-xs sm:text-sm text-[var(--ink)] whitespace-nowrap">
-					Лаборатория
-				</span>
+				<span className="font-bold text-xs sm:text-sm text-[var(--ink)] whitespace-nowrap">Лаборатория</span>
 				<div className="hidden 2xl:flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-[var(--paper-soft)] text-[11px] text-[var(--ink-muted)] border border-[var(--line)] font-mono">
-					<span>
-						Всего: <strong className="text-[var(--ink)]">{metrics.total}</strong>
-					</span>
+					<span>Всего: <strong className="text-[var(--ink)]">{metrics.total}</strong></span>
 					<span>•</span>
-					<span>
-						В работе:{" "}
-						<strong className="text-blue-600 dark:text-blue-400">
-							{metrics.inProgress}
-						</strong>
-					</span>
+					<span>В работе: <strong className="text-blue-600 dark:text-blue-400">{metrics.inProgress}</strong></span>
 					<span>•</span>
-					<span>
-						Готовы:{" "}
-						<strong className="text-emerald-600 dark:text-emerald-400">
-							{metrics.ready}
-						</strong>
-					</span>
+					<span>Готовы: <strong className="text-emerald-600 dark:text-emerald-400">{metrics.ready}</strong></span>
 					{metrics.overdue > 0 && (
 						<>
 							<span>•</span>
-							<span className="text-rose-600 dark:text-rose-400 font-bold">
-								Просрочено: {metrics.overdue}
-							</span>
+							<span className="text-rose-600 dark:text-rose-400 font-bold">Просрочено: {metrics.overdue}</span>
 						</>
 					)}
 				</div>
@@ -77,9 +61,7 @@ export function LabOrdersFilterBar({
 				>
 					<option value="all">Все врачи</option>
 					{doctorsList.map((doc: string) => (
-						<option key={doc} value={doc}>
-							{doc}
-						</option>
+						<option key={doc} value={doc}>{doc}</option>
 					))}
 				</select>
 			</div>
@@ -87,32 +69,22 @@ export function LabOrdersFilterBar({
 			{/* Right: Actions (Прейскурант, Обновить, + Наряд) */}
 			<div className="flex items-center gap-1.5 shrink-0">
 				<button
-					type="button"
-					onClick={onOpenPriceMatrix}
-					className="secondary-button"
-					data-testid="btn-open-price-matrix"
-					title="Прейскурант и себестоимость лаборатории"
+					type="button" onClick={onOpenPriceMatrix} className="secondary-button"
+					data-testid="btn-open-price-matrix" title="Прейскурант и себестоимость лаборатории"
 				>
 					<DollarSign className="w-3.5 h-3.5 text-[var(--ink-muted)] shrink-0" />
 					<span className="hidden sm:inline">Прейскурант</span>
 				</button>
 
 				<button
-					type="button"
-					onClick={onRefresh}
-					className="icon-button"
-					title="Обновить список"
-					data-testid="lab-orders-refresh-btn"
+					type="button" onClick={onRefresh} className="icon-button"
+					title="Обновить список" data-testid="lab-orders-refresh-btn"
 				>
-					<RefreshCw
-						className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-[var(--teal)]" : "text-[var(--ink-muted)]"}`}
-					/>
+					<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-[var(--teal)]" : "text-[var(--ink-muted)]"}`} />
 				</button>
 
 				<button
-					type="button"
-					onClick={onOpenNewOrder}
-					className="primary-button"
+					type="button" onClick={onOpenNewOrder} className="primary-button"
 					data-testid="lab-orders-new-order-btn"
 				>
 					<Plus className="w-3.5 h-3.5" />

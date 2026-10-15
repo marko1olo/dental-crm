@@ -44,3 +44,4 @@ export {
 export * from "./vitaPalette.js";
 export * from "./labScheduleIntegration.js";
 export * from "./autonomousLabTrackerEngine.js";
+export * from "./labUnifiedWorkTypes.js";

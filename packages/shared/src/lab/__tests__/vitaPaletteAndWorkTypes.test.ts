@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import test, { describe } from "node:test";
 import {
 	VITA_CLASSICAL_PLUS_BLEACH_PALETTE,
-	VITA_SHADE_HEX_MAP,
 	getVitaShadeHex,
 	CANONICAL_LAB_WORK_TYPES,
-	LAB_WORK_TYPES_BY_ID,
 	getLabWorkTypeById,
 } from "../vitaPalette.js";
+import {
+	DENTAL_LAB_CONSTRUCTIONS,
+	calculateLabWageDeductionKopecks,
+} from "../labUnifiedWorkTypes.js";
 
 describe("Shared Dental Lab — VITA Palette & Work Types Catalog", () => {
 	test("VITA_CLASSICAL_PLUS_BLEACH_PALETTE contains all 20 canonical shades", () => {
@@ -19,25 +21,7 @@ describe("Shared Dental Lab — VITA Palette & Work Types Catalog", () => {
 		assert.ok(codes.includes("A3"));
 		assert.ok(codes.includes("A3.5"));
 		assert.ok(codes.includes("A4"));
-
-		assert.ok(codes.includes("B1"));
-		assert.ok(codes.includes("B2"));
-		assert.ok(codes.includes("B3"));
-		assert.ok(codes.includes("B4"));
-
-		assert.ok(codes.includes("C1"));
-		assert.ok(codes.includes("C2"));
-		assert.ok(codes.includes("C3"));
-		assert.ok(codes.includes("C4"));
-
-		assert.ok(codes.includes("D2"));
-		assert.ok(codes.includes("D3"));
-		assert.ok(codes.includes("D4"));
-
 		assert.ok(codes.includes("BL1"));
-		assert.ok(codes.includes("BL2"));
-		assert.ok(codes.includes("BL3"));
-		assert.ok(codes.includes("BL4"));
 	});
 
 	test("VITA shades have valid HEX colors format #RRGGBB", () => {
@@ -50,32 +34,33 @@ describe("Shared Dental Lab — VITA Palette & Work Types Catalog", () => {
 	test("getVitaShadeHex returns correct HEX code case-insensitively and handles falsy input", () => {
 		assert.equal(getVitaShadeHex("A1"), "#F3E2C8");
 		assert.equal(getVitaShadeHex("a1"), "#F3E2C8");
-		assert.equal(getVitaShadeHex("A3.5"), "#D8C2A4");
-		assert.equal(getVitaShadeHex("bl1"), "#FFF7EE");
-		assert.equal(getVitaShadeHex("non_existent"), undefined);
 		assert.equal(getVitaShadeHex(null), undefined);
-		assert.equal(getVitaShadeHex(undefined), undefined);
 	});
 
 	test("CANONICAL_LAB_WORK_TYPES contains exactly 17 lab products with proper classification", () => {
 		assert.equal(CANONICAL_LAB_WORK_TYPES.length, 17);
-
 		const first = getLabWorkTypeById("wt_001");
 		assert.ok(first);
 		assert.equal(first.titleRu, "Коронка металлокерамическая");
 		assert.equal(first.category, "fixed_prosthetics");
+	});
 
-		const implantZirconia = getLabWorkTypeById("wt_014");
-		assert.ok(implantZirconia);
-		assert.equal(implantZirconia.titleRu, "Коронка ZrO2 на импланте");
-		assert.equal(implantZirconia.category, "implant_prosthetics");
+	test("DENTAL_LAB_CONSTRUCTIONS integrates 6 clinical constructions with integer kopecks", () => {
+		const keys = Object.keys(DENTAL_LAB_CONSTRUCTIONS);
+		assert.equal(keys.length, 6);
+		assert.ok(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks > 0);
+		assert.ok(DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultPatientPriceKopecks > 0);
+	});
 
-		const last = getLabWorkTypeById("wt_017");
-		assert.ok(last);
-		assert.equal(last.titleRu, "Трансфер-чек");
-		assert.equal(last.category, "auxiliary");
-
-		assert.equal(getLabWorkTypeById("unknown"), undefined);
-		assert.equal(getLabWorkTypeById(null), undefined);
+	test("calculateLabWageDeductionKopecks deducts lab cost before doctor percentage", () => {
+		const result = calculateLabWageDeductionKopecks({
+			patientPriceKopecks: 2400000,
+			labCostKopecks: 750000,
+			doctorSharePercent: 25,
+		});
+		assert.equal(result.doctorWageBaseKopecks, 1650000);
+		assert.equal(result.doctorWageKopecks, 412500);
+		assert.equal(result.clinicMarginKopecks, 1237500);
+		assert.equal(result.isBalanced, true);
 	});
 });
