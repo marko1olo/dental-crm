@@ -1,5 +1,6 @@
 /* ============================================================
-   Telephony & Incoming Call Dynamic Island & Multi-Theme Styles
+   Telephony & Incoming Call Ambient Capsule, Drawer & Theme Styles
+   Clean Clinical Token Architecture (Mandates 8b, 8c, 8e, 8n)
    ============================================================ */
 
 /* Top Dynamic Island / Call Banner Container (Centered Dynamic Island / Non-occluding) */
@@ -22,7 +23,7 @@
 	max-width: 100%;
 }
 
-/* Modal coexistence: when a modal is open, ensure telephony is centered and accessible without occluding modal close buttons */
+/* Modal coexistence: centered and accessible without occluding dialogs */
 body:has([role="dialog"]) .dnt-telephony-island-container,
 body:has([role="dialog"]) .telephony-floating-widget,
 body:has([role="dialog"]) .dnt-incoming-call-badge-container,
@@ -43,16 +44,16 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 	pointer-events: auto;
 }
 
-/* Compact Incoming Call Capsule (Top-Right Non-Blocking Pill, Fitts's Law) */
+/* Compact Incoming Call Capsule (Top Ambient Capsule Bar, Tier 1) */
 .dnt-incoming-call-capsule {
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
 	padding: 6px 14px;
 	border-radius: 9999px;
-	background: var(--paper-strong);
-	color: var(--ink);
-	border: 1px solid var(--line);
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
 	box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.25), 0 0 16px 2px var(--teal-soft, rgba(13, 148, 136, 0.2));
 	backdrop-filter: blur(20px);
 	-webkit-backdrop-filter: blur(20px);
@@ -62,16 +63,16 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Compact Incoming Call Badge (Top-Right Non-Blocking) */
+/* Compact Incoming Call Badge (Expanded State) */
 .dnt-incoming-call-badge {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 	padding: 12px 14px;
 	border-radius: 16px;
-	background: var(--paper-strong);
-	color: var(--ink);
-	border: 1px solid var(--line);
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
 	box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.25), 0 0 20px 2px var(--teal-soft, rgba(13, 148, 136, 0.18));
 	backdrop-filter: blur(20px);
 	-webkit-backdrop-filter: blur(20px);
@@ -81,44 +82,35 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 }
 
 @keyframes dnt-badge-drop {
-	0% {
-		opacity: 0;
-		transform: translateY(-16px) scale(0.96);
-	}
-	100% {
-		opacity: 1;
-		transform: translateY(0) scale(1);
-	}
+	0% { opacity: 0; transform: translateY(-16px) scale(0.96); }
+	100% { opacity: 1; transform: translateY(0) scale(1); }
 }
+.animate-badge-drop { animation: dnt-badge-drop 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
 
-.animate-badge-drop {
-	animation: dnt-badge-drop 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Patient Side Drawer (Slide-Over without resetting active 043/u diary) */
+/* Patient Side Drawer (Tier 2 Context Drawer: width strictly 420px, Mandate 8b & 8e) */
 .dnt-telephony-patient-drawer {
 	position: fixed;
 	top: 0;
 	right: 0;
 	bottom: 0;
-	width: 480px;
+	width: 420px;
 	max-width: 100%;
 	z-index: 9995;
-	background: var(--paper-strong);
-	color: var(--ink);
-	border-left: 1px solid var(--line);
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border-left: 1px solid var(--line-strong, var(--line, #e2e8f0));
 	box-shadow: -12px 0 36px -4px rgba(0, 0, 0, 0.3), 0 0 24px 2px var(--teal-soft, rgba(13, 148, 136, 0.15));
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
 	backdrop-filter: blur(24px);
 	-webkit-backdrop-filter: blur(24px);
-	animation: dnt-slide-in-right 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	animation: dnt-slide-in-right 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 	box-sizing: border-box;
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Prevent telephony patient drawer from occluding or stacking when schedule modal or drawer is active */
+/* Prevent telephony patient drawer collision with modals */
 body:has([data-testid="appointment-modal"]) .dnt-telephony-patient-drawer,
 body:has([data-testid="quick-booking-drawer"]) .dnt-telephony-patient-drawer,
 body:has([data-testid="waitlist-drawer"]) .dnt-telephony-patient-drawer,
@@ -129,17 +121,10 @@ body:has([data-testid="preventive-inspection-modal"]) .dnt-telephony-patient-dra
 }
 
 @keyframes dnt-slide-in-right {
-	0% {
-		transform: translateX(100%);
-	}
-	100% {
-		transform: translateX(0);
-	}
+	0% { transform: translateX(100%); }
+	100% { transform: translateX(0); }
 }
-
-.animate-slide-in-right {
-	animation: dnt-slide-in-right 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-}
+.animate-slide-in-right { animation: dnt-slide-in-right 0.28s cubic-bezier(0.16, 1, 0.3, 1); }
 
 /* Fallback floating positioning for desktop toast avoidance */
 .dnt-telephony-floating-widget,
@@ -156,103 +141,10 @@ body:has([data-testid="preventive-inspection-modal"]) .dnt-telephony-patient-dra
 		bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
 		right: 12px;
 	}
-
-	.dnt-telephony-island-expanded {
+	.dnt-telephony-patient-drawer {
 		width: 100%;
-		max-width: 100%;
-		border-radius: 16px;
+		border-left: none;
 	}
-}
-
-/* Compact Dynamic Island Pill */
-.dnt-telephony-island-pill {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 6px 12px;
-	border-radius: 9999px;
-	background: var(--paper-strong);
-	color: var(--ink);
-	border: 1px solid var(--line);
-	box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.25), 0 0 20px 2px var(--teal-soft, rgba(13, 148, 136, 0.2));
-	backdrop-filter: blur(20px);
-	-webkit-backdrop-filter: blur(20px);
-	animation: dnt-island-drop 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-	user-select: none;
-	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes dnt-island-drop {
-	0% {
-		opacity: 0;
-		transform: translateY(-24px) scale(0.92);
-	}
-	100% {
-		opacity: 1;
-		transform: translateY(0) scale(1);
-	}
-}
-
-/* Expanded Dynamic Island Panel */
-.dnt-telephony-island-expanded {
-	width: 520px;
-	max-width: 100%;
-	max-height: calc(100dvh - 32px);
-	background: var(--paper-strong);
-	color: var(--ink);
-	border-radius: 24px;
-	border: 1px solid var(--line);
-	box-shadow: 0 28px 56px -12px rgba(0, 0, 0, 0.4), 0 0 30px 4px var(--teal-soft, rgba(13, 148, 136, 0.22));
-	display: flex;
-	flex-direction: column;
-	overflow: hidden;
-	backdrop-filter: blur(24px);
-	-webkit-backdrop-filter: blur(24px);
-	animation: dnt-island-expand 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-	box-sizing: border-box;
-	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes dnt-island-expand {
-	0% {
-		opacity: 0;
-		transform: scale(0.94);
-	}
-	100% {
-		opacity: 1;
-		transform: scale(1);
-	}
-}
-
-/* Legacy Floating Fallback Support */
-.dnt-telephony-floating {
-	position: fixed;
-	top: 12px;
-	left: 50%;
-	transform: translateX(-50%);
-	z-index: 9990;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 8px;
-	font-family: inherit;
-	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-	pointer-events: none !important;
-}
-
-.dnt-telephony-floating > *,
-.dnt-telephony-floating .dnt-telephony-launcher,
-.dnt-telephony-floating .dnt-telephony-card,
-.dnt-telephony-floating .dnt-telephony-island-pill,
-.dnt-telephony-floating .dnt-telephony-island-expanded {
-	pointer-events: auto !important;
-}
-
-.dnt-telephony-floating--hidden {
-	display: none !important;
-	opacity: 0 !important;
-	pointer-events: none !important;
-	visibility: hidden !important;
 }
 
 /* Desktop Clinical Density (32-36px, Anti-Mobile Bloat per Mandates 8c, 8d, 8e) */
@@ -275,28 +167,13 @@ body:has([data-testid="preventive-inspection-modal"]) .dnt-telephony-patient-dra
 	}
 }
 
-.min-touch-btn {
-	min-height: 36px;
-	min-width: 36px;
-}
-
+.min-touch-btn { min-height: 36px; min-width: 36px; }
 @media (pointer: coarse) {
-	.min-touch-btn {
-		min-height: 44px;
-		min-width: 44px;
-	}
+	.min-touch-btn { min-height: 44px; min-width: 44px; }
 }
-
-.large-touch-btn {
-	min-height: 44px;
-	min-width: 44px;
-}
-
+.large-touch-btn { min-height: 44px; min-width: 44px; }
 @media (pointer: coarse) {
-	.large-touch-btn {
-		min-height: 48px;
-		min-width: 48px;
-	}
+	.large-touch-btn { min-height: 48px; min-width: 48px; }
 }
 
 /* Expanded Softphone Card */
@@ -304,11 +181,11 @@ body:has([data-testid="preventive-inspection-modal"]) .dnt-telephony-patient-dra
 	width: 100%;
 	max-width: 460px;
 	max-height: calc(100vh - 40px);
-	background: var(--paper-strong);
-	color: var(--ink);
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
 	border-radius: 20px;
-	border: 1px solid var(--line);
-	box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.4), 0 0 24px 2px rgba(13, 148, 136, 0.2);
+	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
+	box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.4), 0 0 24px 2px var(--teal-soft, rgba(13, 148, 136, 0.2));
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
@@ -319,326 +196,12 @@ body:has([data-testid="preventive-inspection-modal"]) .dnt-telephony-patient-dra
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Animations */
 @keyframes dnt-slide-in-up {
-	0% {
-		opacity: 0;
-		transform: translateY(20px) scale(0.96);
-	}
-	100% {
-		opacity: 1;
-		transform: translateY(0) scale(1);
-	}
+	0% { opacity: 0; transform: translateY(20px) scale(0.96); }
+	100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@keyframes dnt-pulse-ring {
-	0% {
-		transform: scale(0.96);
-		box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.7);
-	}
-	70% {
-		transform: scale(1.03);
-		box-shadow: 0 0 0 12px rgba(20, 184, 166, 0);
-	}
-	100% {
-		transform: scale(0.96);
-		box-shadow: 0 0 0 0 rgba(20, 184, 166, 0);
-	}
-}
-
-/* Responsive constraints for Mobile & Tablet (Zero-Occlusion) */
-@media (max-width: 640px) {
-	.dnt-telephony-island-container,
-	.telephony-floating-widget,
-	.dnt-telephony-floating {
-		top: 8px;
-		right: 8px;
-		max-width: 100%;
-	}
-
-	.dnt-incoming-call-badge-container {
-		top: 8px !important;
-		left: 12px !important;
-		right: 12px !important;
-		transform: none !important;
-		max-width: calc(100% - 24px) !important;
-		width: auto !important;
-		margin: 0 auto !important;
-	}
-
-	.dnt-incoming-call-badge {
-		width: 100%;
-		max-width: 100%;
-	}
-
-	.dnt-telephony-patient-drawer {
-		width: 100%;
-		max-width: 100%;
-	}
-
-	.dnt-telephony-island-pill {
-		padding: 4px 10px;
-		max-width: 100%;
-	}
-
-	.dnt-telephony-island-expanded {
-		width: 100%;
-		max-width: 100%;
-	}
-}
-
-/* ============================================================
-   Theme-Specific Overrides for all 10 CRM Themes
-   ============================================================ */
-
-/* 1. Dark Theme (Slate) */
-[data-theme="dark"] .dnt-telephony-island-pill,
-[data-theme="dark"] .dnt-telephony-island-expanded,
-[data-theme="dark"] .dnt-telephony-card,
-[data-theme="dark"] .dnt-incoming-call-popup,
-[data-theme="dark"] .dnt-incoming-call-badge,
-[data-theme="dark"] .dnt-incoming-call-capsule,
-[data-theme="dark"] .dnt-telephony-patient-drawer {
-	background: var(--paper-strong, #0f172a);
-	border-color: var(--line-strong, #1e293b);
-	color: var(--ink, #f8fafc);
-	box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.7), 0 0 20px 2px rgba(45, 212, 191, 0.15);
-}
-
-/* 2. Night Theme (OLED Warm Dark) */
-[data-theme="night"] .dnt-telephony-island-pill,
-[data-theme="night"] .dnt-telephony-island-expanded,
-[data-theme="night"] .dnt-telephony-card,
-[data-theme="night"] .dnt-incoming-call-popup,
-[data-theme="night"] .dnt-incoming-call-badge,
-[data-theme="night"] .dnt-incoming-call-capsule,
-[data-theme="night"] .dnt-telephony-patient-drawer {
-	background: var(--paper-strong, #181512);
-	border-color: var(--line-strong, #2d261e);
-	color: var(--ink, #f5efe6);
-	box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.75), 0 0 20px 2px rgba(217, 119, 6, 0.15);
-}
-
-/* 3. Ocean Theme (Deep Sapphire) */
-[data-theme="ocean"] .dnt-telephony-island-pill,
-[data-theme="ocean"] .dnt-telephony-island-expanded,
-[data-theme="ocean"] .dnt-telephony-card,
-[data-theme="ocean"] .dnt-incoming-call-popup,
-[data-theme="ocean"] .dnt-incoming-call-badge,
-[data-theme="ocean"] .dnt-incoming-call-capsule,
-[data-theme="ocean"] .dnt-telephony-patient-drawer {
-	background: var(--paper-strong, #0a192f);
-	border-color: var(--line-strong, #172a45);
-	color: var(--ink, #e6f1ff);
-	box-shadow: 0 24px 48px -12px rgba(2, 12, 27, 0.8), 0 0 20px 2px rgba(56, 189, 248, 0.2);
-}
-
-/* 4. Emerald Theme (Forest Green) */
-[data-theme="emerald"] .dnt-telephony-island-pill,
-[data-theme="emerald"] .dnt-telephony-island-expanded,
-[data-theme="emerald"] .dnt-telephony-card,
-[data-theme="emerald"] .dnt-incoming-call-popup,
-[data-theme="emerald"] .dnt-incoming-call-badge,
-[data-theme="emerald"] .dnt-incoming-call-capsule,
-[data-theme="emerald"] .dnt-telephony-patient-drawer {
-	background: var(--paper-strong, #062016);
-	border-color: var(--line-strong, #0f3d2c);
-	color: var(--ink, #ecfdf5);
-	box-shadow: 0 24px 48px -12px rgba(2, 20, 14, 0.8), 0 0 20px 2px rgba(52, 211, 153, 0.2);
-}
-
-/* 5. Cyber X-Ray Theme (CT Visio Neon) */
-[data-theme="cyber_xray"] .dnt-telephony-island-pill,
-[data-theme="cyber_xray"] .dnt-telephony-island-expanded,
-[data-theme="cyber_xray"] .dnt-telephony-card,
-[data-theme="cyber_xray"] .dnt-incoming-call-popup,
-[data-theme="cyber_xray"] .dnt-incoming-call-badge,
-[data-theme="cyber_xray"] .dnt-incoming-call-capsule,
-[data-theme="cyber_xray"] .dnt-telephony-patient-drawer {
-	background: var(--paper-strong, #030712);
-	border-color: var(--teal-dark, #0891b2);
-	color: var(--ink, #06b6d4);
-	box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.9), 0 0 24px 3px rgba(6, 182, 212, 0.3);
-}
-
-/* 6. High Contrast Theme (WCAG AAA) */
-[data-theme="contrast"] .dnt-telephony-island-pill,
-[data-theme="contrast"] .dnt-telephony-island-expanded,
-[data-theme="contrast"] .dnt-telephony-card,
-[data-theme="contrast"] .dnt-incoming-call-popup,
-[data-theme="contrast"] .dnt-incoming-call-badge,
-[data-theme="contrast"] .dnt-incoming-call-capsule,
-[data-theme="contrast"] .dnt-telephony-patient-drawer {
-	background: #000000;
-	border: 2px solid #ffffff;
-	color: #ffffff;
-	box-shadow: 0 0 0 2px #000000, 0 0 30px 4px rgba(255, 255, 255, 0.35);
-}
-
-/* 7. Calm Teal Theme (Mint / Maritime) */
-[data-theme="calm_teal"] .dnt-telephony-island-pill,
-[data-theme="calm_teal"] .dnt-telephony-island-expanded,
-[data-theme="calm_teal"] .dnt-telephony-card,
-[data-theme="calm_teal"] .dnt-incoming-call-popup,
-[data-theme="calm_teal"] .dnt-incoming-call-badge,
-[data-theme="calm_teal"] .dnt-incoming-call-capsule,
-[data-theme="calm_teal"] .dnt-telephony-patient-drawer {
-	background: var(--paper-strong, #f0fdfa);
-	border-color: var(--line, #99f6e4);
-	color: var(--ink, #134e4a);
-	box-shadow: 0 20px 40px -15px rgba(15, 118, 110, 0.2);
-}
-
-/* 8. Sakura Theme (Pediatric / Aesthetics) */
-[data-theme="sakura"] .dnt-telephony-island-pill,
-[data-theme="sakura"] .dnt-telephony-island-expanded,
-[data-theme="sakura"] .dnt-telephony-card,
-[data-theme="sakura"] .dnt-incoming-call-popup,
-[data-theme="sakura"] .dnt-incoming-call-badge,
-[data-theme="sakura"] .dnt-incoming-call-capsule,
-[data-theme="sakura"] .dnt-telephony-patient-drawer {
-	background: var(--paper-strong, #fdf2f8);
-	border-color: var(--line, #fbcfe8);
-	color: var(--ink, #831843);
-	box-shadow: 0 20px 40px -15px rgba(219, 39, 119, 0.2);
-}
-
-/* 9. Warm Sand Theme (Ceramic Warm) */
-[data-theme="warm_sand"] .dnt-telephony-island-pill,
-[data-theme="warm_sand"] .dnt-telephony-island-expanded,
-[data-theme="warm_sand"] .dnt-telephony-card,
-[data-theme="warm_sand"] .dnt-incoming-call-popup,
-[data-theme="warm_sand"] .dnt-incoming-call-badge,
-[data-theme="warm_sand"] .dnt-incoming-call-capsule,
-[data-theme="warm_sand"] .dnt-telephony-patient-drawer {
-	background: var(--paper-strong, #fefce8);
-	border-color: var(--line, #fef08a);
-	color: var(--ink, #713f12);
-	box-shadow: 0 20px 40px -15px rgba(202, 138, 4, 0.2);
-}
-
-/* 10. Light Theme (Default Clinical Light) */
-[data-theme="light"] .dnt-telephony-island-pill,
-[data-theme="light"] .dnt-telephony-island-expanded,
-[data-theme="light"] .dnt-telephony-card,
-[data-theme="light"] .dnt-incoming-call-popup,
-[data-theme="light"] .dnt-incoming-call-badge,
-[data-theme="light"] .dnt-incoming-call-capsule,
-[data-theme="light"] .dnt-telephony-patient-drawer {
-	background: var(--paper-strong);
-	border-color: var(--line);
-	color: var(--ink);
-	box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15), 0 0 20px 2px rgba(15, 118, 110, 0.12);
-}
-
-/* Bulletproof primary button styling for telephony actions (WCAG AAA 7:1) */
-.dnt-telephony-primary-btn {
-	background: #0d9488 !important;
-	background-color: #0d9488 !important;
-	color: #ffffff !important;
-	border: 1px solid #14b8a6 !important;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
-}
-
-.dnt-telephony-primary-btn:hover {
-	background: #0f766e !important;
-	background-color: #0f766e !important;
-	color: #ffffff !important;
-	opacity: 0.95;
-}
-
-.dnt-telephony-primary-btn:active {
-	transform: scale(0.98);
-}
-
-[data-theme="dark"] .dnt-telephony-primary-btn,
-html.dark .dnt-telephony-primary-btn {
-	background: #0d9488 !important;
-	background-color: #0d9488 !important;
-	color: #ffffff !important;
-	border-color: #2dd4bf !important;
-	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
-}
-
-[data-theme="dark"] .dnt-telephony-primary-btn:hover,
-html.dark .dnt-telephony-primary-btn:hover {
-	background: #14b8a6 !important;
-	background-color: #14b8a6 !important;
-	color: #ffffff !important;
-}
-
-/* Bulletproof High-Contrast Play Button for CallAudioPlayer (WCAG AAA) */
-.dnt-player-play-btn {
-	background: #0d9488 !important;
-	background-color: #0d9488 !important;
-	color: #ffffff !important;
-	border: 1px solid #14b8a6 !important;
-	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25) !important;
-}
-
-.dnt-player-play-btn svg {
-	color: #ffffff !important;
-	fill: #ffffff !important;
-}
-
-[data-theme="dark"] .dnt-player-play-btn,
-html.dark .dnt-player-play-btn {
-	background: #0d9488 !important;
-	background-color: #0d9488 !important;
-	color: #ffffff !important;
-	border: 1.5px solid #2dd4bf !important;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 12px 2px rgba(45, 212, 191, 0.45) !important;
-}
-
-[data-theme="dark"] .dnt-player-play-btn svg,
-html.dark .dnt-player-play-btn svg {
-	color: #ffffff !important;
-	fill: #ffffff !important;
-}
-
-/* ============================================================
-   Mandate 8x Unlayered Semantic Styling for Telephony Components
-   ============================================================ */
-
-/* Suppress WorkspaceTopBar duplicate capsule when TelephonyFloatingWidget is active, but preserve expanded popup */
-body:has([data-testid="telephony-floating-widget"]) .dnt-incoming-call-badge-container:not(:has(.dnt-incoming-call-badge)) {
-	display: none !important;
-}
-
-/* Neutralize generic [data-testid*="-widget"] background/border leakage from main.css */
-.dnt-telephony-island-container[data-testid="telephony-floating-widget"],
-.dnt-telephony-island-container {
-	background: transparent !important;
-	border: none !important;
-	border-radius: 0 !important;
-	padding: 0 !important;
-	box-shadow: none !important;
-	margin: 0 !important;
-}
-
-/* Bottom-Right Placement (Zero-Occlusion of Schedule Toolbar & Fold Line) */
-.dnt-telephony-island-container,
-body:has([role="dialog"]) .dnt-telephony-island-container,
-body:has([aria-modal="true"]) .dnt-telephony-island-container {
-	position: fixed !important;
-	bottom: 24px !important;
-	right: 24px !important;
-	top: auto !important;
-	left: auto !important;
-	transform: none !important;
-	z-index: 9990 !important;
-	display: flex !important;
-	flex-direction: column !important;
-	align-items: flex-end !important;
-	pointer-events: none !important;
-	font-family: inherit;
-	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-	width: auto !important;
-	height: auto !important;
-	max-width: calc(100vw - 48px) !important;
-	max-height: calc(100vh - 48px) !important;
-}
-
+/* Compact Dynamic Island Pill */
 .dnt-telephony-island-pill {
 	display: inline-flex;
 	align-items: center;
@@ -667,373 +230,9 @@ body:has([aria-modal="true"]) .dnt-telephony-island-container {
 	background: var(--teal-surface, rgba(13, 148, 136, 0.12));
 	color: var(--teal, #0d9488);
 }
+.dnt-pill-icon--active { background: #10b981; color: #ffffff; }
 
-.dnt-pill-icon--active {
-	background: #10b981;
-	color: #ffffff;
-}
-
-.dnt-telephony-island-expanded {
-	width: 476px !important;
-	max-width: 100% !important;
-	height: auto !important;
-	max-height: calc(100vh - 48px) !important;
-	background: var(--paper-strong, #ffffff) !important;
-	color: var(--ink, #0f172a) !important;
-	border-radius: 16px !important;
-	border: 1px solid var(--line, #e2e8f0) !important;
-	box-shadow: 0 20px 48px -10px rgba(0, 0, 0, 0.3), 0 0 24px 2px var(--teal-soft, rgba(13, 148, 136, 0.15)) !important;
-	display: flex !important;
-	flex-direction: column !important;
-	overflow: hidden !important;
-	box-sizing: border-box !important;
-	pointer-events: auto !important;
-	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Header Styles */
-.dnt-widget-header-wrap {
-	display: flex;
-	flex-direction: column;
-	border-bottom: 1px solid var(--line, #e2e8f0);
-	background: var(--paper-strong, #ffffff);
-}
-
-.dnt-widget-topbar {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 10px 12px;
-	gap: 8px;
-	min-height: 48px;
-	box-sizing: border-box;
-}
-
-.dnt-widget-brand-icon {
-	width: 28px;
-	height: 28px;
-	border-radius: 50%;
-	background: var(--teal-surface, rgba(13, 148, 136, 0.12));
-	color: var(--teal, #0d9488);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	flex-shrink: 0;
-}
-
-.dnt-widget-title {
-	font-size: 13px;
-	font-weight: 700;
-	color: var(--ink, #0f172a);
-	margin: 0;
-	line-height: 1.2;
-	white-space: nowrap;
-}
-
-.dnt-widget-timer-pill {
-	display: inline-flex;
-	align-items: center;
-	flex-shrink: 0;
-	white-space: nowrap;
-	padding: 1px 6px;
-	border-radius: 9999px;
-	background: var(--teal-surface, rgba(13, 148, 136, 0.12));
-	color: var(--teal, #0d9488);
-	font-family: ui-monospace, monospace;
-	font-size: 11px;
-	font-weight: 700;
-}
-
-.dnt-widget-tabs-bar {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 6px 14px 10px 14px;
-	gap: 10px;
-	background: var(--paper-subtle, var(--paper-soft, #f8fafc));
-	border-top: 1px solid var(--line-subtle, rgba(0, 0, 0, 0.05));
-}
-
-.dnt-tabs-group {
-	display: flex;
-	align-items: center;
-	gap: 4px;
-	background: var(--paper-muted, rgba(0, 0, 0, 0.05));
-	padding: 3px;
-	border-radius: 8px;
-}
-
-.dnt-tab-btn {
-	display: inline-flex;
-	align-items: center;
-	gap: 5px;
-	padding: 4px 10px;
-	border-radius: 6px;
-	font-size: 12px;
-	font-weight: 600;
-	color: var(--muted, #64748b);
-	background: transparent;
-	border: none;
-	cursor: pointer;
-	transition: all 0.15s ease;
-	min-height: 28px;
-}
-
-.dnt-tab-btn:hover {
-	color: var(--ink, #0f172a);
-}
-
-.dnt-tab-btn--active {
-	background: var(--paper-strong, #ffffff) !important;
-	color: var(--ink, #0f172a) !important;
-	font-weight: 700;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.dnt-segmented-group {
-	display: flex;
-	align-items: center;
-	gap: 2px;
-	background: var(--paper-muted, rgba(0, 0, 0, 0.05));
-	padding: 2px;
-	border-radius: 8px;
-}
-
-.dnt-status-chip,
-.dnt-line-chip {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	padding: 3px 6px;
-	border-radius: 6px;
-	font-size: 11px;
-	font-weight: 600;
-	color: var(--muted, #64748b);
-	background: transparent;
-	border: none;
-	cursor: pointer;
-	transition: all 0.15s ease;
-	min-height: 26px;
-}
-
-.dnt-status-chip:hover,
-.dnt-line-chip:hover {
-	color: var(--ink, #0f172a);
-}
-
-.dnt-status-chip--active,
-.dnt-line-chip--active {
-	background: var(--paper-strong, #ffffff) !important;
-	color: var(--ink, #0f172a) !important;
-	font-weight: 700;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.dnt-line-dot {
-	width: 6px;
-	height: 6px;
-	border-radius: 50%;
-	background: var(--muted, #94a3b8);
-}
-
-.dnt-line-dot--busy {
-	background: #10b981;
-}
-
-.dnt-btn-icon {
-	width: 32px;
-	height: 32px;
-	min-height: 32px;
-	min-width: 32px;
-	border-radius: 8px;
-	color: var(--muted, #64748b);
-	background: transparent;
-	border: 1px solid transparent;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	cursor: pointer;
-	transition: all 0.15s ease;
-	padding: 0;
-}
-
-.dnt-btn-icon:hover {
-	background: var(--paper-muted, rgba(0, 0, 0, 0.05));
-	color: var(--ink, #0f172a);
-	border-color: var(--line, #e2e8f0);
-}
-
-.dnt-btn-answer {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	padding: 0 12px;
-	min-height: 32px;
-	border-radius: 8px;
-	background: #059669;
-	color: #ffffff;
-	font-size: 12px;
-	font-weight: 700;
-	border: 1px solid #10b981;
-	cursor: pointer;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-}
-
-.dnt-btn-answer:hover {
-	background: #047857;
-}
-
-.dnt-btn-hangup {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	padding: 0 10px;
-	min-height: 32px;
-	border-radius: 8px;
-	background: #e11d48;
-	color: #ffffff;
-	font-size: 12px;
-	font-weight: 700;
-	border: 1px solid #f43f5e;
-	cursor: pointer;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-}
-
-.dnt-btn-hangup:hover {
-	background: #be123c;
-}
-
-/* Body & Cards */
-.dnt-widget-body {
-	padding: 14px;
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	max-height: calc(100vh - 140px);
-	overflow-y: auto;
-}
-
-/* HUD controls */
-.dnt-hud-card {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-}
-
-.dnt-hud-controls-grid {
-	display: grid;
-	grid-template-columns: repeat(4, 1fr);
-	gap: 6px;
-}
-
-.dnt-hud-btn {
-	min-height: 34px;
-	padding: 4px 6px;
-	border-radius: 8px;
-	background: var(--paper-muted, rgba(0, 0, 0, 0.04));
-	border: 1px solid var(--line, #e2e8f0);
-	color: var(--ink, #0f172a);
-	font-size: 11px;
-	font-weight: 600;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 5px;
-	cursor: pointer;
-	transition: all 0.15s ease;
-}
-
-.dnt-hud-btn:hover {
-	background: var(--paper-subtle, rgba(0, 0, 0, 0.08));
-}
-
-.dnt-hud-btn--active-amber {
-	background: #fef3c7 !important;
-	border-color: #fde68a !important;
-	color: #92400e !important;
-}
-
-.dnt-hud-btn--active-rose {
-	background: #ffe4e6 !important;
-	border-color: #fecdd3 !important;
-	color: #be123c !important;
-}
-
-.dnt-hud-btn--active-teal {
-	background: var(--teal-surface, rgba(13, 148, 136, 0.15)) !important;
-	border-color: var(--teal, #0d9488) !important;
-	color: var(--teal, #0d9488) !important;
-}
-
-.dnt-hud-btn--danger {
-	background: #fff1f2 !important;
-	border-color: #fecdd3 !important;
-	color: #e11d48 !important;
-}
-
-.dnt-hud-btn--danger:hover {
-	background: #ffe4e6 !important;
-}
-
-/* Caller Card */
-.dnt-caller-card {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	padding-top: 2px;
-}
-
-.dnt-caller-avatar {
-	width: 38px;
-	height: 38px;
-	border-radius: 10px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-weight: 700;
-	font-size: 13px;
-	border: 1px solid var(--line, #e2e8f0);
-	flex-shrink: 0;
-}
-
-.dnt-badge-patient {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	padding: 2px 7px;
-	border-radius: 6px;
-	background: #ecfdf5;
-	color: #065f46;
-	border: 1px solid #a7f3d0;
-	font-size: 10px;
-	font-weight: 700;
-}
-
-.dnt-badge-lead {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	padding: 2px 7px;
-	border-radius: 6px;
-	background: #fffbeb;
-	color: #92400e;
-	border: 1px solid #fde68a;
-	font-size: 10px;
-	font-weight: 700;
-}
-
-.dnt-badge-source {
-	display: inline-flex;
-	align-items: center;
-	padding: 1px 6px;
-	border-radius: 4px;
-	background: var(--paper-muted, rgba(0, 0, 0, 0.05));
-	color: var(--muted, #64748b);
-	font-size: 10px;
-	font-weight: 600;
-}
-
-/* Metrics Row */
+/* Softphone Metrics & Patient Data Rows */
 .dnt-patient-metrics-row {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
@@ -1044,17 +243,8 @@ body:has([aria-modal="true"]) .dnt-telephony-island-container {
 	border: 1px solid var(--line, #e2e8f0);
 }
 
-.dnt-metric-box {
-	display: flex;
-	flex-direction: column;
-	gap: 3px;
-}
-
-.dnt-metric-box + .dnt-metric-box {
-	border-left: 1px solid var(--line, #e2e8f0);
-	padding-left: 12px;
-}
-
+.dnt-metric-box { display: flex; flex-direction: column; gap: 3px; }
+.dnt-metric-box + .dnt-metric-box { border-left: 1px solid var(--line, #e2e8f0); padding-left: 12px; }
 .dnt-metric-label {
 	display: flex;
 	align-items: center;
@@ -1065,16 +255,8 @@ body:has([aria-modal="true"]) .dnt-telephony-island-container {
 	text-transform: uppercase;
 	letter-spacing: 0.03em;
 }
-
-.dnt-metric-value {
-	font-size: 12px;
-	font-weight: 700;
-	color: var(--ink, #0f172a);
-}
-
-.dnt-metric-value--debt {
-	color: #e11d48;
-}
+.dnt-metric-value { font-size: 12px; font-weight: 700; color: var(--ink, #0f172a); }
+.dnt-metric-value--debt { color: #e11d48; }
 
 /* Somatic Alert Pills */
 .dnt-alert-pill {
@@ -1086,18 +268,8 @@ body:has([aria-modal="true"]) .dnt-telephony-island-container {
 	font-size: 11px;
 	font-weight: 700;
 }
-
-.dnt-alert-pill--allergy {
-	background: #fff1f2;
-	color: #be123c;
-	border: 1px solid #fecdd3;
-}
-
-.dnt-alert-pill--pain {
-	background: #fef2f2;
-	color: #b91c1c;
-	border: 1px solid #fca5a5;
-}
+.dnt-alert-pill--allergy { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+.dnt-alert-pill--pain { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
 
 /* Upcoming Box */
 .dnt-upcoming-box {
@@ -1126,18 +298,10 @@ body:has([aria-modal="true"]) .dnt-telephony-island-container {
 	transition: background 0.15s ease;
 	flex-shrink: 0;
 }
-
-.dnt-whatsapp-btn:hover {
-	background: #047857;
-}
+.dnt-whatsapp-btn:hover { background: #047857; }
 
 /* Footer Actions */
-.dnt-actions-footer {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding-top: 4px;
-}
+.dnt-actions-footer { display: flex; align-items: center; gap: 8px; padding-top: 4px; }
 
 .dnt-cta-primary {
 	min-height: 38px;
@@ -1156,11 +320,7 @@ body:has([aria-modal="true"]) .dnt-telephony-island-container {
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 	transition: all 0.15s ease;
 }
-
-.dnt-cta-primary:hover {
-	background: #0f766e;
-	border-color: #0f766e;
-}
+.dnt-cta-primary:hover { background: #0f766e; border-color: #0f766e; }
 
 .dnt-cta-secondary {
 	min-height: 38px;
@@ -1178,11 +338,7 @@ body:has([aria-modal="true"]) .dnt-telephony-island-container {
 	cursor: pointer;
 	transition: all 0.15s ease;
 }
-
-.dnt-cta-secondary:hover {
-	background: var(--paper-subtle, rgba(0, 0, 0, 0.08));
-	border-color: var(--line-strong, #cbd5e1);
-}
+.dnt-cta-secondary:hover { background: var(--paper-subtle, rgba(0, 0, 0, 0.08)); border-color: var(--line-strong, #cbd5e1); }
 
 .dnt-btn-more {
 	min-height: 38px;
@@ -1197,10 +353,7 @@ body:has([aria-modal="true"]) .dnt-telephony-island-container {
 	cursor: pointer;
 	padding: 0;
 }
-
-.dnt-btn-more:hover {
-	background: var(--paper-subtle, rgba(0, 0, 0, 0.08));
-}
+.dnt-btn-more:hover { background: var(--paper-subtle, rgba(0, 0, 0, 0.08)); }
 
 /* Dialpad */
 .dnt-dialpad-input-box {
@@ -1250,132 +403,75 @@ body:has([aria-modal="true"]) .dnt-telephony-island-container {
 	cursor: pointer;
 	transition: all 0.15s ease;
 }
+.dnt-dialpad-key:hover { background: var(--paper-muted, rgba(0, 0, 0, 0.06)); border-color: var(--line-strong, #cbd5e1); }
+.dnt-dialpad-key:active { transform: scale(0.97); }
+.dnt-dialpad-key-digit { font-size: 16px; font-weight: 700; line-height: 1; }
+.dnt-dialpad-key-sub { font-size: 9px; font-weight: 600; color: var(--muted, #64748b); line-height: 1; letter-spacing: 0.05em; }
+.dnt-dialpad-call-btn { min-height: 48px; font-size: 14px; border-radius: 10px; }
 
-.dnt-dialpad-key:hover {
-	background: var(--paper-muted, rgba(0, 0, 0, 0.06));
-	border-color: var(--line-strong, #cbd5e1);
+/* Bulletproof primary button styling for telephony actions (WCAG AAA 7:1) */
+.dnt-telephony-primary-btn {
+	background: #0d9488 !important;
+	background-color: #0d9488 !important;
+	color: #ffffff !important;
+	border: 1px solid #14b8a6 !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+}
+.dnt-telephony-primary-btn:hover {
+	background: #0f766e !important;
+	background-color: #0f766e !important;
+	color: #ffffff !important;
+	opacity: 0.95;
 }
 
-.dnt-dialpad-key:active {
-	transform: scale(0.97);
+/* Bulletproof High-Contrast Play Button for CallAudioPlayer (WCAG AAA) */
+.dnt-player-play-btn {
+	background: #0d9488 !important;
+	background-color: #0d9488 !important;
+	color: #ffffff !important;
+	border: 1px solid #14b8a6 !important;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25) !important;
+}
+.dnt-player-play-btn svg { color: #ffffff !important; fill: #ffffff !important; }
+
+/* Semantic Theme Support (Mandates 8b, 8c, 8e) */
+[data-theme="dark"],
+html.dark {
+	--paper-strong: #0f172a;
+	--paper-subtle: #1e293b;
+	--line: #334155;
+	--line-strong: #475569;
+	--ink: #f8fafc;
+	--muted: #94a3b8;
 }
 
-.dnt-dialpad-key-digit {
-	font-size: 16px;
-	font-weight: 700;
-	line-height: 1;
+[data-theme="dark"] .dnt-telephony-patient-drawer, html.dark .dnt-telephony-patient-drawer,
+[data-theme="dark"] .dnt-incoming-call-capsule, html.dark .dnt-incoming-call-capsule,
+[data-theme="dark"] .dnt-incoming-call-badge, html.dark .dnt-incoming-call-badge,
+[data-theme="dark"] .dnt-telephony-card, html.dark .dnt-telephony-card {
+	background: var(--paper-strong, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
 }
 
-.dnt-dialpad-key-sub {
-	font-size: 9px;
-	font-weight: 600;
-	color: var(--muted, #64748b);
-	line-height: 1;
-	letter-spacing: 0.05em;
-}
-
-.dnt-dialpad-call-btn {
-	min-height: 48px;
-	font-size: 14px;
-	border-radius: 10px;
-}
-
-/* Dark mode overrides for new dnt-* classes */
-[data-theme="dark"] .dnt-widget-header-wrap,
-html.dark .dnt-widget-header-wrap,
-[data-theme="dark"] .dnt-telephony-island-expanded,
-html.dark .dnt-telephony-island-expanded {
-	background: #0f172a;
-	border-color: #1e293b;
-	color: #f8fafc;
-}
-
-[data-theme="dark"] .dnt-widget-tabs-bar,
-html.dark .dnt-widget-tabs-bar {
-	background: #090d16;
-	border-top-color: #1e293b;
-}
-
-[data-theme="dark"] .dnt-tab-btn--active,
-html.dark .dnt-tab-btn--active,
-[data-theme="dark"] .dnt-status-chip--active,
-html.dark .dnt-status-chip--active,
-[data-theme="dark"] .dnt-line-chip--active,
-html.dark .dnt-line-chip--active {
-	background: #1e293b !important;
-	color: #f8fafc !important;
-}
-
-[data-theme="dark"] .dnt-hud-btn,
-html.dark .dnt-hud-btn,
-[data-theme="dark"] .dnt-cta-secondary,
-html.dark .dnt-cta-secondary,
-[data-theme="dark"] .dnt-btn-more,
-html.dark .dnt-btn-more,
-[data-theme="dark"] .dnt-dialpad-key,
-html.dark .dnt-dialpad-key,
-[data-theme="dark"] .dnt-dialpad-input-box,
-html.dark .dnt-dialpad-input-box,
-[data-theme="dark"] .dnt-patient-metrics-row,
-html.dark .dnt-patient-metrics-row {
+[data-theme="dark"] .dnt-dialpad-key, html.dark .dnt-dialpad-key,
+[data-theme="dark"] .dnt-dialpad-input-box, html.dark .dnt-dialpad-input-box,
+[data-theme="dark"] .dnt-patient-metrics-row, html.dark .dnt-patient-metrics-row,
+[data-theme="dark"] .dnt-cta-secondary, html.dark .dnt-cta-secondary,
+[data-theme="dark"] .dnt-btn-more, html.dark .dnt-btn-more {
 	background: #1e293b;
 	border-color: #334155;
 	color: #f8fafc;
 }
 
-[data-theme="dark"] .dnt-hud-btn:hover,
-html.dark .dnt-hud-btn:hover,
-[data-theme="dark"] .dnt-dialpad-key:hover,
-html.dark .dnt-dialpad-key:hover {
-	background: #334155;
-}
-
-[data-theme="dark"] .dnt-badge-patient,
-html.dark .dnt-badge-patient {
-	background: rgba(16, 185, 129, 0.15);
-	color: #34d399;
-	border-color: rgba(16, 185, 129, 0.3);
-}
-
-[data-theme="dark"] .dnt-badge-lead,
-html.dark .dnt-badge-lead {
-	background: rgba(245, 158, 11, 0.15);
-	color: #fbbf24;
-	border-color: rgba(245, 158, 11, 0.3);
-}
-
-[data-theme="dark"] .dnt-alert-pill--allergy,
-html.dark .dnt-alert-pill--allergy {
+[data-theme="dark"] .dnt-dialpad-key:hover, html.dark .dnt-dialpad-key:hover { background: #334155; }
+[data-theme="dark"] .dnt-alert-pill--allergy, html.dark .dnt-alert-pill--allergy {
 	background: rgba(244, 63, 94, 0.15);
 	color: #fb7185;
 	border-color: rgba(244, 63, 94, 0.3);
 }
-
-[data-theme="dark"] .dnt-alert-pill--pain,
-html.dark .dnt-alert-pill--pain {
+[data-theme="dark"] .dnt-alert-pill--pain, html.dark .dnt-alert-pill--pain {
 	background: rgba(239, 68, 68, 0.15);
 	color: #f87171;
 	border-color: rgba(239, 68, 68, 0.3);
 }
-
-[data-theme="dark"] .dnt-hud-btn--danger,
-html.dark .dnt-hud-btn--danger {
-	background: rgba(244, 63, 94, 0.15) !important;
-	border-color: rgba(244, 63, 94, 0.3) !important;
-	color: #fb7185 !important;
-}
-
-[data-theme="dark"] .dnt-hud-btn--active-amber,
-html.dark .dnt-hud-btn--active-amber {
-	background: rgba(245, 158, 11, 0.15) !important;
-	border-color: rgba(245, 158, 11, 0.3) !important;
-	color: #fbbf24 !important;
-}
-
-[data-theme="dark"] .dnt-hud-btn--active-teal,
-html.dark .dnt-hud-btn--active-teal {
-	background: rgba(13, 148, 136, 0.2) !important;
-	border-color: rgba(45, 212, 191, 0.4) !important;
-	color: #2dd4bf !important;
-}
-

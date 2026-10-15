@@ -204,17 +204,17 @@ export const PayrollTotalsBar: React.FC<PayrollTotalsBarProps> = ({
 						className="dente-btn-secondary"
 					>
 						<Download className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
-						<span>Экспорт (CSV)</span>
+						<span>Экспорт зарплаты (CSV)</span>
 					</button>
 					<button
 						type="button"
 						onClick={onPrintPayslip}
 						className="dente-btn-primary"
 						data-testid="doctor-payroll-print-payslip"
-						title="Сформировать печатную ведомость с подписями врача и бухгалтера"
+						title="Сформировать печатный расчетный листок с подписями врача и бухгалтера"
 					>
 						<FileText className="w-3.5 h-3.5" />
-						<span>Печать ведомости</span>
+						<span>Печать расчетного листка</span>
 					</button>
 				</div>
 			</div>
@@ -238,7 +238,7 @@ export const PayrollTotalsBar: React.FC<PayrollTotalsBarProps> = ({
 						data-testid="doctor-payroll-mobile-print-btn"
 					>
 						<FileText className="w-4 h-4" />
-						<span>Печать ведомости</span>
+						<span>Печать расчетного листка</span>
 					</button>
 					<button
 						type="button"

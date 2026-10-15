@@ -17,7 +17,9 @@ import {
 	PayrollRentalSection,
 	PayrollTotalsBar,
 	PayrollServicesTable,
+	PayrollTimesheetTab,
 } from "./payrollModules";
+import { useTimesheetT13State } from "./timesheetT13";
 import "./doctorPayroll.css";
 
 export { DEFAULT_SOLO_DOCTOR, SOLO_DOCTOR_SPECIALTY_PRESETS, type SoloDoctorSpecialtyPreset };
@@ -74,13 +76,16 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	const [periodEnd, setPeriodEnd] = useState(effectivePeriodEnd);
 	const [periodPreset, setPeriodPreset] = useState<"current_month" | "previous_month" | "quarter" | "custom">("current_month");
 	const [payoutModel, setPayoutModel] = useState<"percentage" | "chair_rental">(() => {
-		return doctorsList.length === 0 || initialDoctorId === "solo-doctor" ? "chair_rental" : "percentage";
+		return "percentage";
 	});
 
 	// Chair rental calculation: Количество смен × Ставка смены (Mandate 8n)
 	const [shiftsCount, setShiftsCount] = useState<number>(10);
 	const [shiftRateRub, setShiftRateRub] = useState<number>(4000);
 	const [chairRentalRub, setChairRentalRub] = useState<number>(40000);
+
+	const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<"payroll" | "timesheet">("payroll");
+	const timesheetState = useTimesheetT13State({ isOpen, clinicName });
 
 	const [advanceRub, setAdvanceRub] = useState<number>(0);
 	const [isNpdReceiptDone, setIsNpdReceiptDone] = useState<boolean>(false);
@@ -95,27 +100,19 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 
 	const handleSelectPeriodPreset = (preset: "current_month" | "previous_month" | "quarter" | "custom") => {
 		setPeriodPreset(preset);
-		const now = new Date();
-		const year = now.getFullYear();
+		const now = new Date(), y = now.getFullYear(), m = now.getMonth();
 		if (preset === "current_month") {
-			const m = String(now.getMonth() + 1).padStart(2, "0");
-			const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
-			setPeriodStart(`${year}-${m}-01`);
-			setPeriodEnd(`${year}-${m}-${String(lastDay).padStart(2, "0")}`);
+			const em = String(m + 1).padStart(2, "0");
+			setPeriodStart(`${y}-${em}-01`);
+			setPeriodEnd(`${y}-${em}-${String(new Date(y, m + 1, 0).getDate()).padStart(2, "0")}`);
 		} else if (preset === "previous_month") {
-			const prev = new Date(year, now.getMonth() - 1, 1);
-			const pYear = prev.getFullYear();
-			const pMonth = String(prev.getMonth() + 1).padStart(2, "0");
-			const lastDay = new Date(pYear, prev.getMonth() + 1, 0).getDate();
-			setPeriodStart(`${pYear}-${pMonth}-01`);
-			setPeriodEnd(`${pYear}-${pMonth}-${String(lastDay).padStart(2, "0")}`);
+			const prev = new Date(y, m - 1, 1), py = prev.getFullYear(), pm = String(prev.getMonth() + 1).padStart(2, "0");
+			setPeriodStart(`${py}-${pm}-01`);
+			setPeriodEnd(`${py}-${pm}-${String(new Date(py, prev.getMonth() + 1, 0).getDate()).padStart(2, "0")}`);
 		} else if (preset === "quarter") {
-			const q = Math.floor(now.getMonth() / 3);
-			const startM = String(q * 3 + 1).padStart(2, "0");
-			const endM = q * 3 + 3;
-			const lastDay = new Date(year, endM, 0).getDate();
-			setPeriodStart(`${year}-${startM}-01`);
-			setPeriodEnd(`${year}-${String(endM).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`);
+			const q = Math.floor(m / 3), sm = String(q * 3 + 1).padStart(2, "0"), em = q * 3 + 3;
+			setPeriodStart(`${y}-${sm}-01`);
+			setPeriodEnd(`${y}-${String(em).padStart(2, "0")}-${String(new Date(y, em, 0).getDate()).padStart(2, "0")}`);
 		}
 	};
 
@@ -233,31 +230,13 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	const payrollResult: DoctorPayrollResult = useMemo(() => {
 		if (!isOpen || !activeDoc) {
 			return {
-				doctorId: activeDoc?.id ?? "",
-				doctorName: activeDoc?.name ?? "Сотрудник не выбран",
-				specialtyTitleRu: "—",
-				periodLabelRu: `${periodStart} — ${periodEnd}`,
-				totalGrossRevenueKop: 0,
-				totalLabDeductionsKop: 0,
-				totalMaterialDeductionsKop: 0,
-				totalNetBaseKop: 0,
-				baseCommissionPercent: customPercent ?? 0,
-				earnedBaseCommissionKop: 0,
-				kpiBonusPercent: 0,
-				kpiBonusEarnedKop: 0,
-				kpiTierBadgeRu: "—",
-				earnedRetailCommissionKop: 0,
-				grossPayoutBeforeTaxKop: 0,
-				ndfl13TaxKop: 0,
-				netPayoutToDoctorKop: 0,
-				minimumGuaranteeApplied: false,
-				manualAdjustmentKop: 0,
-				totalRefundDeductionsKop: 0,
-				totalRefundClawbackKop: 0,
-				refundedServicesCount: 0,
-				stornoItems: [],
-				warrantyServicesCount: 0,
-				serviceCount: 0,
+				doctorId: activeDoc?.id ?? "", doctorName: activeDoc?.name ?? "Сотрудник не выбран", specialtyTitleRu: "—",
+				periodLabelRu: `${periodStart} — ${periodEnd}`, totalGrossRevenueKop: 0, totalLabDeductionsKop: 0,
+				totalMaterialDeductionsKop: 0, totalNetBaseKop: 0, baseCommissionPercent: customPercent ?? 0,
+				earnedBaseCommissionKop: 0, kpiBonusPercent: 0, kpiBonusEarnedKop: 0, kpiTierBadgeRu: "—",
+				earnedRetailCommissionKop: 0, grossPayoutBeforeTaxKop: 0, ndfl13TaxKop: 0, netPayoutToDoctorKop: 0,
+				minimumGuaranteeApplied: false, manualAdjustmentKop: 0, totalRefundDeductionsKop: 0, totalRefundClawbackKop: 0,
+				refundedServicesCount: 0, stornoItems: [], warrantyServicesCount: 0, serviceCount: 0,
 			};
 		}
 		return calculateDoctorPeriodPayroll({
@@ -302,14 +281,14 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");
 		a.href = url;
-		a.download = `payroll_${payrollResult.doctorId || "report"}_${periodStart}.csv`;
+		a.download = `расчетная_ведомость_${payrollResult.doctorId || "report"}_${periodStart}.csv`;
 		a.click();
 		URL.revokeObjectURL(url);
 	};
 
 	const handlePrintPayslip = () => {
 		const printWindow = window.open("", "_blank", "width=800,height=900");
-		const html = generateDoctorPayslipHtml(payrollResult, clinicName);
+		const html = generateDoctorPayslipHtml(payrollResult, clinicName, servicesToUse);
 
 		if (!printWindow) {
 			window.print();
@@ -336,6 +315,8 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 					doctorsList={doctorsList}
 					selectedDoctorId={selectedDoctorId}
 					soloSpecialtyId={soloSpecialtyId}
+					activeWorkspaceTab={activeWorkspaceTab}
+					onSelectWorkspaceTab={setActiveWorkspaceTab}
 					onClose={onClose}
 					onSelectPeriodPreset={handleSelectPeriodPreset}
 					onSetTaxRegime={setTaxRegime}
@@ -354,40 +335,46 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 
 				{/* 2. Scrollable Body: Rental/Split Section, Services Table, Totals */}
 				<div className="p-4 sm:p-5 overflow-y-auto flex flex-col gap-5 flex-1">
-					<PayrollRentalSection
-						payoutModel={payoutModel}
-						baseCommissionPercent={payrollResult.baseCommissionPercent}
-						chairRentalRub={chairRentalRub}
-						shiftsCount={shiftsCount}
-						shiftRateRub={shiftRateRub}
-						advanceRub={advanceRub}
-						taxRegime={taxRegime}
-						npd6TaxKop={payrollResult.npd6TaxKop}
-						netPayoutToDoctorKop={payrollResult.netPayoutToDoctorKop}
-						isNpdReceiptDone={isNpdReceiptDone}
-						onSetChairRentalRub={setChairRentalRub}
-						onSetShiftsCount={setShiftsCount}
-						onSetShiftRateRub={setShiftRateRub}
-						onSetAdvanceRub={setAdvanceRub}
-						onSetIsNpdReceiptDone={setIsNpdReceiptDone}
-					/>
+					{activeWorkspaceTab === "payroll" ? (
+						<>
+							<PayrollRentalSection
+								payoutModel={payoutModel}
+								baseCommissionPercent={payrollResult.baseCommissionPercent}
+								chairRentalRub={chairRentalRub}
+								shiftsCount={shiftsCount}
+								shiftRateRub={shiftRateRub}
+								advanceRub={advanceRub}
+								taxRegime={taxRegime}
+								npd6TaxKop={payrollResult.npd6TaxKop}
+								netPayoutToDoctorKop={payrollResult.netPayoutToDoctorKop}
+								isNpdReceiptDone={isNpdReceiptDone}
+								onSetChairRentalRub={setChairRentalRub}
+								onSetShiftsCount={setShiftsCount}
+								onSetShiftRateRub={setShiftRateRub}
+								onSetAdvanceRub={setAdvanceRub}
+								onSetIsNpdReceiptDone={setIsNpdReceiptDone}
+							/>
 
-					<PayrollTotalsBar
-						payrollResult={payrollResult}
-						payoutModel={payoutModel}
-						taxRegime={taxRegime}
-						copyFeedback={copyFeedback}
-						onSendToMessenger={handleSendToMessenger}
-						onDownloadCsv={handleDownloadCsv}
-						onPrintPayslip={handlePrintPayslip}
-						onClose={onClose}
-					/>
+							<PayrollTotalsBar
+								payrollResult={payrollResult}
+								payoutModel={payoutModel}
+								taxRegime={taxRegime}
+								copyFeedback={copyFeedback}
+								onSendToMessenger={handleSendToMessenger}
+								onDownloadCsv={handleDownloadCsv}
+								onPrintPayslip={handlePrintPayslip}
+								onClose={onClose}
+							/>
 
-					<PayrollServicesTable
-						services={servicesToUse}
-						isLoading={isLoadingEarnings}
-						baseCommissionPercent={payrollResult.baseCommissionPercent}
-					/>
+							<PayrollServicesTable
+								services={servicesToUse}
+								isLoading={isLoadingEarnings}
+								baseCommissionPercent={payrollResult.baseCommissionPercent}
+							/>
+						</>
+					) : (
+						<PayrollTimesheetTab timesheetState={timesheetState} />
+					)}
 				</div>
 			</div>
 		</div>

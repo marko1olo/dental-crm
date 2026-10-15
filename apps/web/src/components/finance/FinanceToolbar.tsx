@@ -263,7 +263,7 @@ export function FinanceToolbar({
 										size={14}
 										className="shrink-0 text-cyan-600 dark:text-cyan-400"
 									/>
-									<span>Табель Т-13 (Госкомстат)</span>
+									<span>Учёт рабочих часов</span>
 								</button>
 							)}
 							<button

@@ -78,6 +78,7 @@ export function useIncomingCallQuickActions({
 	const endCall = useTelephonyStore((s) => s.endCall);
 	const dismissCall = useTelephonyStore((s) => s.dismissCall);
 	const setAgentState = useTelephonyStore((s) => s.setAgentState);
+	const openCallDrawer = useTelephonyStore((s) => s.openCallDrawer);
 	const closeCallDrawer = useTelephonyStore((s) => s.closeCallDrawer);
 	const toggleCallDrawer = useTelephonyStore((s) => s.toggleCallDrawer);
 	const recordCallOutcome = useTelephonyStore((s) => s.recordCallOutcome);
@@ -372,6 +373,7 @@ export function useIncomingCallQuickActions({
 
 	const handleAnswerCall = () => {
 		answerCall();
+		openCallDrawer();
 		showToast(`Вызов принят (${formattedPhone})`, "success");
 	};
 

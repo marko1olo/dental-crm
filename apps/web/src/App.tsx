@@ -12,7 +12,6 @@ import {
 } from "./components/appLayout";
 import { PrescriptionPrintModal } from "./components/prescriptions/PrescriptionPrintModal";
 import { TelephonyDrawer } from "./components/telephony/TelephonyDrawer";
-import { TelephonyFloatingWidget } from "./components/telephony/TelephonyFloatingWidget";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useChairsideErgonomics } from "./hooks/useChairsideErgonomics";
@@ -1127,6 +1126,61 @@ export function App() {
 			if (s.includes("chairside-auth") || h.includes("chairside-auth")) {
 				setShowStaffPinPad(true);
 			}
+			if (s.includes("payroll") || h.includes("payroll")) {
+				window.dispatchEvent(
+					new CustomEvent("dente:open-doctor-payroll", {
+						detail: {
+							doctorId: "doc-1",
+							doctor: {
+								doctorUserId: "doc-1",
+								name: "Смирнова Анна Сергеевна",
+								commissionPct: 25,
+								visits: [
+									{
+										visitId: "v-1",
+										closedAt: new Date().toISOString(),
+										patientName: "Кузнецов Михаил Игоревич",
+										patientCardNumber: "К-412",
+										serviceName: "Лечение глубокого кариеса (композит Estelite)",
+										serviceCategory: "therapy",
+										patientPaidRub: 6500,
+										withheldLabRub: 0,
+										withheldMaterialRub: 800,
+										toothFormula: "1.6",
+										serviceCode: "A16.07.002.001",
+									},
+									{
+										visitId: "v-2",
+										closedAt: new Date().toISOString(),
+										patientName: "Волкова Елена Дмитриевна",
+										patientCardNumber: "К-389",
+										serviceName: "Установка циркониевой коронки Prettau",
+										serviceCategory: "orthopedics",
+										patientPaidRub: 28000,
+										withheldLabRub: 7500,
+										withheldMaterialRub: 1200,
+										toothFormula: "2.4",
+										serviceCode: "A16.07.004.002",
+									},
+									{
+										visitId: "v-3",
+										closedAt: new Date().toISOString(),
+										patientName: "Морозов Артем Павлович",
+										patientCardNumber: "К-503",
+										serviceName: "Комплексная профессиональная гигиена AirFlow",
+										serviceCategory: "hygiene",
+										patientPaidRub: 5500,
+										withheldLabRub: 0,
+										withheldMaterialRub: 400,
+										toothFormula: "Все",
+										serviceCode: "A16.07.051",
+									},
+								],
+							},
+						},
+					}),
+				);
+			}
 		};
 		handleHashChange();
 		const handleOpenDms = () => setIsDmsDirectModalOpen(true),
@@ -1508,7 +1562,6 @@ export function App() {
 						handleClinicLogout={handleClinicLogout}
 						handleFullStaffLock={handleFullStaffLock}
 					/>
-					<TelephonyFloatingWidget />
 					<TelephonyDrawer />
 					{isPrescriptionForm107Open && (
 						<PrescriptionPrintModal

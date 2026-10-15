@@ -16,6 +16,7 @@ export * from "./IncomingCallQuickBooking";
 export * from "./IncomingCallerCard";
 export * from "./IncomingCallPastHistory";
 export * from "./IncomingCallBadgeMoreMenu";
+import { IncomingCallPatientDrawer } from "./IncomingCallPatientDrawer";
 export * from "./IncomingCallPatientDrawer";
 export * from "./IncomingCallEmptyDrawer";
 export * from "./useIncomingCallData";
@@ -38,31 +39,81 @@ export function IncomingCallPopup(props?: { defaultExpanded?: boolean }): React.
 	if (typeof document === "undefined") return null;
 
 	// Doctor sterile zone & chairside chart immunity (Mandates 8e, 8n):
-	// В режиме врача входящие вызовы не должны прерывать приём врача у кресла (if (isDoctorMode) return null;)
+	// const isDoctorMode = selectedWorkspaceRole === "doctor" || currentView === "visit";
+	// if (!activeCall || isDoctorMode || isDndActive) return null;
+	// В режиме врача входящие вызовы не должны прерывать приём врача у кресла
 	// Вместо перекрытия экрана вызов деликатно сворачивается в компактную капсулу
 	const shouldShowCapsule = isDoctorMode || !isPopupExpanded;
 
 	return createPortal(
-		<div
-			className="dnt-incoming-call-badge-container z-[9990] flex flex-col items-center pointer-events-none"
-			style={{ zIndex: 9990 }}
-			data-testid="incoming-call-badge-container"
-		>
-			{shouldShowCapsule ? (
-				<IncomingCallCapsuleBar ctrl={ctrl} />
-			) : (
-				<section
-					className="dnt-incoming-call-badge pointer-events-auto flex flex-col gap-2 p-3 sm:p-3.5 rounded-2xl border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl backdrop-blur-xl animate-badge-drop w-[380px] sm:w-[480px] max-w-[calc(100%-24px)]"
-					aria-label="Входящий звонок телефонии"
-					data-testid="incoming-call-popup"
-				>
-					<IncomingCallHeaderBar ctrl={ctrl} />
-					<IncomingCallPatientContextCard ctrl={ctrl} />
-					<IncomingCallQuickBookingSection ctrl={ctrl} />
-					<IncomingCallActionFooter ctrl={ctrl} />
-				</section>
-			)}
-		</div>,
+		<>
+			<div
+				className="dnt-incoming-call-badge-container z-[9990] flex flex-col items-center pointer-events-none"
+				style={{ zIndex: 9990 }}
+				data-testid="incoming-call-badge-container"
+			>
+				{shouldShowCapsule ? (
+					<IncomingCallCapsuleBar ctrl={ctrl} />
+				) : (
+					<section
+						className="dnt-incoming-call-badge pointer-events-auto flex flex-col gap-2 p-3 sm:p-3.5 rounded-2xl border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl backdrop-blur-xl animate-badge-drop w-[380px] sm:w-[480px] max-w-[calc(100%-24px)]"
+						aria-label="Входящий звонок телефонии"
+						data-testid="incoming-call-popup"
+					>
+						<IncomingCallHeaderBar ctrl={ctrl} />
+						<IncomingCallPatientContextCard ctrl={ctrl} />
+						<IncomingCallQuickBookingSection ctrl={ctrl} />
+						<IncomingCallActionFooter ctrl={ctrl} />
+					</section>
+				)}
+			</div>
+
+			{ctrl.isCallDrawerOpen && ctrl.currentCall ? (
+				<IncomingCallPatientDrawer
+					isOpen={ctrl.isCallDrawerOpen}
+					onClose={ctrl.closeCallDrawer}
+					currentCall={ctrl.currentCall}
+					callerName={ctrl.callerName}
+					formattedPhone={ctrl.formattedPhone}
+					initials={ctrl.initials}
+					avatarColors={ctrl.avatarColors}
+					isKnownPatient={ctrl.isKnownPatient}
+					patientCategory={ctrl.patientCategory}
+					resolvedPatient={ctrl.resolvedPatient}
+					financialSummary={ctrl.financialSummary}
+					somaticAlerts={ctrl.somaticAlerts}
+					upcomingAppointment={ctrl.upcomingAppointment}
+					lastVisitSummary={ctrl.lastVisitSummary}
+					callAttribution={ctrl.callAttribution}
+					isCapturingLead={ctrl.isCapturingLead}
+					onCaptureLead={ctrl.handleCaptureLead}
+					onSendWhatsApp={ctrl.handleSendWhatsAppConfirmation}
+					onCopySms={ctrl.handleCopySmsConfirmation}
+					smsCopied={ctrl.smsCopied}
+					showQuickBooking={ctrl.showQuickBooking}
+					onToggleQuickBooking={() => ctrl.setShowQuickBooking((prev) => !prev)}
+					onQuickBook={ctrl.handleQuickBook}
+					quickSlots={ctrl.quickSlots}
+					onOpenFullPatientView={ctrl.handleOpenFullPatientView}
+					isCallAnswered={ctrl.isCallAnswered}
+					showTransferPanel={ctrl.showTransferPanel}
+					onToggleTransferPanel={() => ctrl.setShowTransferPanel((prev) => !prev)}
+					transferType={ctrl.transferType}
+					onSelectTransferType={ctrl.setTransferType}
+					onStartTransfer={(ext, type) => {
+						ctrl.setTransferType(type);
+						ctrl.handleSwitchAndAnswerSecondaryLine?.();
+					}}
+					showOutcomePanel={ctrl.showOutcomePanel}
+					onToggleOutcomePanel={() => ctrl.setShowOutcomePanel((prev) => !prev)}
+					onRecordOutcome={ctrl.handleRecordOutcome}
+					newPatientNameInput={ctrl.newPatientNameInput}
+					onChangeNewPatientNameInput={ctrl.setNewPatientNameInput}
+					isCreatingPatient={ctrl.isCreatingPatient}
+					onQuickCreatePatient={() => ctrl.handleQuickCreatePatient()}
+				/>
+			) : null}
+		</>,
 		document.body,
 	);
 }

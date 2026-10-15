@@ -337,7 +337,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 							data-testid="btn-staff-open-timesheet-t13"
 						>
 							<Calendar className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-							<span>Табель Т-13 (Госкомстат)</span>
+							<span>Учёт рабочих часов</span>
 						</button>
 					</div>
 					{/* min(280px,100%): иначе колонка шире узкого контейнера и

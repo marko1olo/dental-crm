@@ -22,6 +22,11 @@ export function IncomingCallCapsuleBar({ ctrl }: IncomingCallHeaderBarProps): Re
 		setIsExpanded,
 	} = ctrl;
 
+	const hasAcutePain =
+		Boolean(ctrl.acutePainAlerts && ctrl.acutePainAlerts.length > 0) ||
+		Boolean(ctrl.currentCall?.notes && /острая боль|пульпит|периодонтит|отек/i.test(ctrl.currentCall.notes)) ||
+		Boolean(ctrl.resolvedPatient?.notes && /острая боль|пульпит|периодонтит|отек/i.test(ctrl.resolvedPatient.notes));
+
 	return (
 		<section
 			className="dnt-incoming-call-capsule pointer-events-auto flex items-center gap-2 h-9 max-h-[36px] px-3 py-1 rounded-full border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-xl backdrop-blur-xl animate-badge-drop max-w-[calc(100%-24px)]"
@@ -40,6 +45,14 @@ export function IncomingCallCapsuleBar({ ctrl }: IncomingCallHeaderBarProps): Re
 				</span>
 				{!isCallAnswered && (
 					<span className="text-[11px] font-mono text-[var(--muted,#64748b)] hidden md:inline shrink-0 whitespace-nowrap">{formattedPhone}</span>
+				)}
+				{hasAcutePain && (
+					<span
+						className="inline-flex items-center gap-1 text-[11px] font-black text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 px-2 py-0.5 rounded-full shrink-0"
+						data-testid="capsule-acute-pain-chip"
+					>
+						<span>• ⚡ Острая боль</span>
+					</span>
 				)}
 			</div>
 			{!isCallAnswered && (

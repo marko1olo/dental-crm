@@ -63,7 +63,7 @@ export function DoctorPayoutHistoryList({
 			<section aria-labelledby="wallet-shifts-heading">
 				<div className="doctor-wallet-section-header">
 					<h4 id="wallet-shifts-heading" className="doctor-wallet-section-title">
-						История смен и табель Т-13
+						История смен и приёмов
 					</h4>
 					<span className="doctor-wallet-section-count">
 						{countLabel(shifts.length, "смена", "смены", "смен")}

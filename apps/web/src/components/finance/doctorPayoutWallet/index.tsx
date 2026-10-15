@@ -165,7 +165,7 @@ export function DoctorPayoutMobileWallet({
 					aria-label="Открыть расчётную ведомость Т-51"
 				>
 					<FileSpreadsheet size={18} />
-					<span>Ведомость Т-51</span>
+					<span>Расчётная ведомость</span>
 				</button>
 
 				<button

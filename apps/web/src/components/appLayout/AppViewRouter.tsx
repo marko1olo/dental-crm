@@ -613,7 +613,7 @@ export function AppViewRouter({
 							id: v.visitId || `srv-${idx}`,
 							dateIso: v.closedAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
 							patientName: v.patientName || "Пациент",
-							medicalCardNumber: v.patientCardNumber || "043/у",
+							medicalCardNumber: v.patientCardNumber || "Карта пациента",
 							serviceNameRu: v.serviceName || "Стоматологическая услуга",
 							category: v.serviceCategory || "therapy",
 							grossRevenueKop: Math.round((v.patientPaidRub || 0) * 100),
