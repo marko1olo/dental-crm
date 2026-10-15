@@ -6,6 +6,7 @@ export * from "./EmkObjectiveStatusSection";
 export * from "./EmkDiaryProtocolSection";
 export * from "./EmkAnesthesiaSection";
 export * from "./EmkEndoSection";
+export * from "./EmkPerioSection";
 export * from "./EmkServicesSection";
 export * from "./EmkPrintableForm043";
 export * from "./EmkToolbar";

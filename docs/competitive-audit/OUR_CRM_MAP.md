@@ -7429,6 +7429,30 @@
   - [`packages/shared/src/tests/crmComponentRegistry.test.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/tests/crmComponentRegistry.test.ts)
   - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 327)
 
-
-
-
+### 2.10.424. Волна 328: Революция Пародонтологии и Профгигиены: Экспресс-скрининг у кресла (EmkPerioSection), 1-Клик Норма (Мандат 8e), Индексы OHI-S в 3 клика, Авто-план лечения и кюретажа (A16.07.011 + A16.07.051) и Полная ликвидация «Формы 043/у» в UI
+- **Функционал**:
+  1. *Категорическая ликвидация карго-культа 192 точек зондирования*: врач не обязан механически протыкать 192 точки ради закрытия приёма. По умолчанию состояние пародонта — «✓ Пародонт в норме / Интактен» (Бороздка <= 2 мм, BOP 0%, подвижность 0 ст., Z01.2);
+  2. *Экспресс-скрининг патологии (только пораженные зубы)*: быстрый выбор зубов (#16, #11, #26, #36, #31, #46), переключатель карманов (4–5 мм средний / >= 6 мм тяжелый), кровоточивость BOP+, подвижность I–III ст.;
+  3. *Экспресс-индекс гигиены полости рта (OHI-S)* в 3 клика (Хорошая 0.0–0.6 / Удовлетворительная 0.7–1.6 / Неудовлетворительная >= 1.7) с авто-заполнением статуса;
+  4. *Авто-обоснование плана лечения и сметы (`buildPeriodontalTreatmentPlanJustification`)*: 1-клик назначение закрытого кюретажа (A16.07.011) для каждого пораженного зуба и комплексной профгигиены (A16.07.051, 5500 ₽) с мягким овердрафтом расходников склада;
+  5. *Чистый человеческий клинический язык (Мандат 8x)*: полное искоренение сырого канцелярита «Форма 043/у» в UI, замена на «Медицинская карта приёма» и «Пародонтологический скрининг»;
+  6. *Сквозная интеграция в контур приёма*: `EmkPerioSection` встроен в `VisitEmkInteractiveStage` (все режимы: общий, осмотр, пародонтология), кнопка вызова в `VisitEmkOdontogramBar`, модальная шторка `PerioChartModal` в `VisitEmkModals` и автономный стенд в `SpecializedClinicalLaunchers`;
+  7. *4-State Red Team Visual Proof*: эталонные скриншоты в `docs/proofs/perio/` (PC Light/Dark 1440x900, Mobile Light/Dark 390x844 > 110 КБ, сенсорный минимум >= 44x44px).
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/visit/emk/EmkPerioSection.tsx`
+  - `apps/web/src/components/visit/emk/index.ts`
+  - `apps/web/src/components/perio/PeriodontogramChart.tsx`
+  - `apps/web/src/components/visit/emkTab/canvasModules/VisitEmkInteractiveStage.tsx`
+  - `apps/web/src/components/visit/emkTab/VisitEmkModals.tsx`
+  - `apps/web/src/components/visit/emkTab/VisitEmkOdontogramBar.tsx`
+  - `apps/web/src/components/appLayout/modalsContainerModules/standalone/SpecializedClinicalLaunchers.tsx`
+  - `apps/web/src/components/visit/emk/__tests__/emkPerioSection.test.tsx`
+  - `apps/web/perio_preview.html`
+  - `apps/web/src/perio_preview_main.tsx`
+  - `scripts/capture_perio_proof_screenshots.mjs`
+  - `docs/proofs/perio/perio_emk_section_pc_light_1440x900.png`
+  - `docs/proofs/perio/perio_emk_section_pc_dark_1440x900.png`
+  - `docs/proofs/perio/perio_emk_section_mobile_light_390x844.png`
+  - `docs/proofs/perio/perio_emk_section_mobile_dark_390x844.png`
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 328)

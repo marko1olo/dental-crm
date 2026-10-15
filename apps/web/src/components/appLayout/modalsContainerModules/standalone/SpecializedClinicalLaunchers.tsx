@@ -55,11 +55,45 @@ const CtSelectorModal = lazyWithRetry(() =>
 	})),
 );
 
+const FastCheckoutModal = lazyWithRetry(() =>
+	import("../../../finance/FastCheckoutModal").then((module) => ({
+		default: module.FastCheckoutModal,
+	})),
+);
+
 import { PeriodontogramChart } from "../../../perio/PeriodontogramChart";
 import { PerioChartModal } from "../../../perio/PerioChartModal";
+import { EmkPerioSection } from "../../../visit/emk/EmkPerioSection";
 import { HygieneIndicesPanel } from "../../../hygiene/HygieneIndicesPanel";
 import { PatientRecallsHubModal } from "../../../recalls/PatientRecallsHubModal";
 import { AnesthesiaStandaloneWorkspace } from "../../../anesthesia/AnesthesiaStandaloneWorkspace";
+
+function PerioStandaloneWorkspaceContent() {
+	const [diaryForm, setDiaryForm] = React.useState<Record<string, string>>({
+		objectiveStatus: "",
+		diagnosis: "",
+		treatmentPlan: "",
+	});
+
+	return (
+		<div className="w-full max-w-7xl mx-auto space-y-4">
+			<EmkPerioSection
+				visitNoteForm={diaryForm as any}
+				updateVisitNoteField={(field, value) =>
+					setDiaryForm((prev) => ({ ...prev, [field]: value }))
+				}
+				patientId="demo_perio_patient"
+				patientName="Смирнова Анна Сергеевна (Пародонтограмма)"
+				activeTooth={16}
+			/>
+			<PeriodontogramChart
+				patientId="demo_perio_patient"
+				patientName="Смирнова Анна Сергеевна (Пародонтограмма)"
+				doctorName="Д-р Соколов А. В."
+			/>
+		</div>
+	);
+}
 
 export function renderSpecializedClinicalLaunchers({
 	isCbctTunerOpen,
@@ -137,11 +171,7 @@ export function renderSpecializedClinicalLaunchers({
 				className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6 overflow-y-auto"
 				data-testid="perio-standalone-workspace"
 			>
-				<PeriodontogramChart
-					patientId="demo_perio_patient"
-					patientName="Смирнова Анна Сергеевна (Пародонтограмма)"
-					doctorName="Д-р Соколов А. В."
-				/>
+				<PerioStandaloneWorkspaceContent />
 			</div>
 		);
 	}
@@ -421,6 +451,41 @@ export function renderSpecializedClinicalLaunchers({
 					patientName="Ковалев Дмитрий Сергеевич"
 					patientCardNumber="К-8492"
 					doctorName="Д-р Смирнова Е. В."
+				/>
+			</Suspense>
+		);
+	}
+
+	// FAST CHECKOUT & 54-FZ FISCAL CASHIER STANDALONE LAUNCHER (?fast_checkout=1, ?checkout=1, #checkout)
+	const isFastCheckoutDirect =
+		typeof window !== "undefined" &&
+		(new URLSearchParams(window.location.search).has("fast_checkout") ||
+			new URLSearchParams(window.location.search).has("checkout") ||
+			window.location.hash.toLowerCase().includes("fast_checkout") ||
+			window.location.hash.toLowerCase().includes("checkout"));
+
+	if (isFastCheckoutDirect) {
+		return (
+			<Suspense fallback={<AppLoadingState message="Загрузка кассы 54-ФЗ..." />}>
+				<FastCheckoutModal
+					isOpen={true}
+					onClose={() => {
+						const url = new URL(window.location.href);
+						url.searchParams.delete("fast_checkout");
+						url.searchParams.delete("checkout");
+						const cleanHash = url.hash.includes("checkout") ? "" : url.hash;
+						window.history.replaceState({}, "", url.pathname + (url.search || "") + cleanHash);
+					}}
+					totalBillRub={14500}
+					patientName="Иванова Мария Сергеевна"
+					patientPhone="+7 (999) 123-45-67"
+					patientDepositRub={5000}
+					patientFamilyBalanceRub={12000}
+					familyPayerName="Иванов Сергей Петрович"
+					orderId="ORD-2026-88"
+					cashierFullName="Кассир-администратор Смирнова А.В."
+					initialPaymentMethod="sbp_qr"
+					initialSimpleCashierMode={false}
 				/>
 			</Suspense>
 		);

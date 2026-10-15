@@ -8,6 +8,7 @@ import { Form043PrintModal } from "../../emr/Form043PrintModal";
 import { EmrProtocolGeneratorModal } from "../../emr/protocolGenerator/EmrProtocolGeneratorModal";
 import { EmkPrintableForm043 } from "../emk/EmkPrintableForm043";
 import { ClinicalProtocolsCatalogModal } from "../clinicalCatalog/ClinicalProtocolsCatalogModal";
+import { PerioChartModal } from "../../perio/PerioChartModal";
 import type { VisitEmkModalsProps } from "./types";
 
 export function VisitEmkModals({
@@ -32,6 +33,16 @@ export function VisitEmkModals({
 	const totalNetRub = completionResult?.totalNetRub ?? 0;
 	const receiptNumber = completionResult?.receiptNumber ?? "00001";
 	const patientName = activePatient?.fullName ?? "Пациент";
+
+	const [isLocalPerioModalOpen, setIsLocalPerioModalOpen] = React.useState(false);
+
+	React.useEffect(() => {
+		const handleOpenPerio = () => setIsLocalPerioModalOpen(true);
+		window.addEventListener("dente:open-perio-modal", handleOpenPerio);
+		return () => {
+			window.removeEventListener("dente:open-perio-modal", handleOpenPerio);
+		};
+	}, []);
 
 	const sbpPayloadUrl =
 		completionResult?.sbpQrPayload ||
@@ -175,7 +186,7 @@ export function VisitEmkModals({
 						);
 					}
 					setIsStarProtocolsOpen(false);
-					showToast("Клинический протокол СтАР применён к приёму", "success", 3000);
+					showToast("Клинический протокол применён к приёму", "success", 3000);
 				}}
 				onApplyBatchDiaries={(diaries) => {
 					if (!diaries || diaries.length === 0) return;
@@ -300,6 +311,17 @@ export function VisitEmkModals({
 				visitNoteForm={visitNoteForm}
 				isSignedVisit={isSignedVisit}
 			/>
+
+			{/* Модальное окно полной пародонтограммы (Florida Probe / 192 точки) */}
+			{isLocalPerioModalOpen && (
+				<PerioChartModal
+					isOpen={isLocalPerioModalOpen}
+					onClose={() => setIsLocalPerioModalOpen(false)}
+					patientId={activePatient?.id}
+					patientName={patientName}
+					doctorName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
+				/>
+			)}
 		</>
 	);
 }
