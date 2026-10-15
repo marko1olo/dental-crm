@@ -171,7 +171,7 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 									: "text-[var(--ink-muted)]"
 							}`}
 						/>
-						<span>Партии FEFO</span>
+						<span>Складские остатки и сроки</span>
 					</button>
 
 					<button
@@ -193,7 +193,7 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 									: "text-[var(--ink-muted)]"
 							}`}
 						/>
-						<span>Поступление</span>
+						<span>Оприходование накладной</span>
 					</button>
 
 					<button
@@ -237,7 +237,7 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 									: "text-[var(--ink-muted)]"
 							}`}
 						/>
-						<span>Авто-списание</span>
+						<span>Списание расходников по приёму</span>
 						<span className="text-[11px] opacity-70 font-mono">({rulesCount})</span>
 					</button>
 				</div>
@@ -292,14 +292,14 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 				{/* Hidden compatibility triggers for legacy tests */}
 				<button type="button" className="hidden" data-testid="btn-toggle-quick-packages" onClick={() => setIsQuickPackagesOpen((prev) => !prev)} aria-hidden="true" />
 				<button type="button" className="hidden" data-testid="nurse-quick-carpules-btn" onClick={() => handleQuickWriteoffCarpules()} aria-hidden="true" />
-				<button type="button" className="hidden" data-testid="btn-acceptance-waybills" onClick={() => setIsInboundInvoiceModalOpen(true)} aria-hidden="true" />
+				<button type="button" className="hidden" data-testid="btn-acceptance-waybills" onClick={() => setIsAcceptanceWaybillsOpen(true)} aria-hidden="true" />
 
 				{/* Operations Dropdown Menu (Secondary Action) */}
 				<InventoryOperationsMenu
 					isOpen={isOpsMenuOpen}
 					onToggle={() => setIsOpsMenuOpen((prev) => !prev)}
 					onClose={() => setIsOpsMenuOpen(false)}
-					onOpenAcceptanceWaybills={() => setIsInboundInvoiceModalOpen(true)}
+					onOpenAcceptanceWaybills={() => setIsAcceptanceWaybillsOpen(true)}
 					onOpenWarehouseManager={() => setIsWarehouseManagerOpen(true)}
 					onOpenMdlpScanning={() => setIsMdlpScanningOpen(true)}
 					onOpenClinicalWriteoff={() => setIsClinicalWriteoffOpen(true)}

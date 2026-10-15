@@ -106,7 +106,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						title="Приходная накладная от поставщика (Стомторг, KaVo, ВладМиВа): партии по срокам годности и оприходование"
 					>
 						<FileText size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Приходная накладная (партии по срокам)</span>
+						<span>Оприходование накладной</span>
 					</button>
 
 					<button
@@ -166,7 +166,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						title="Списание расходных материалов по технологическим картам процедур и нормам расхода"
 					>
 						<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Нормы расхода на услуги (BOM)</span>
+						<span>Списание расходников по приёму</span>
 					</button>
 
 					<button
