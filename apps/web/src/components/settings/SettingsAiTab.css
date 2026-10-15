@@ -97,7 +97,7 @@
 }
 
 .ai-gateway-status-pill.warning strong {
-	color: rgb(245, 158, 11);
+	color: var(--warning, #f59e0b);
 }
 
 /* Provider Grid */
@@ -212,7 +212,7 @@
 	color: var(--teal);
 }
 .speech-runtime-missing {
-	color: rgb(239, 68, 68);
+	color: var(--danger, #ef4444);
 }
 
 /* Target Selection Row */
@@ -333,15 +333,20 @@
 	flex-direction: column;
 	gap: 4px;
 	padding: 12px;
-	background: rgba(245, 158, 11, 0.1);
+	background: var(--amber-soft, rgba(245, 158, 11, 0.1));
 	border-radius: 8px;
-	border: 1px solid rgba(245, 158, 11, 0.2);
+	border: 1px solid var(--amber-line, rgba(245, 158, 11, 0.25));
 }
 
 .ai-result-warning-item {
 	font-size: 13px;
-	color: rgb(180, 83, 9);
+	color: var(--amber-dark, #b45309);
 	display: flex;
 	align-items: center;
 	gap: 6px;
+}
+
+[data-theme="dark"] .ai-result-warning-item,
+.dark .ai-result-warning-item {
+	color: var(--warning, #f59e0b);
 }

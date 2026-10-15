@@ -8,16 +8,6 @@ export interface IncisalAlignmentGuideOverlayProps {
 	incisalCantingDegrees?: number;
 }
 
-/**
- * Clinical Orthopedic Photographic Alignment Guides
- * 
- * Under Mandates 8i & 8k, procedural golden ratio curves and speculative DSD gimmicks
- * are purged in favor of real clinical orthopedic reference lines:
- * - Bipupillary line (горизонт зрачков)
- * - Facial midline (срединно-лицевая линия)
- * - Incisal edge horizontal & canting (резцовый край)
- * - Rule of thirds (композиционная сетка третей)
- */
 export const IncisalAlignmentGuideOverlay: React.FC<IncisalAlignmentGuideOverlayProps> = ({
 	activeGuides,
 	bipupillaryTiltDegrees = 0,
@@ -27,18 +17,7 @@ export const IncisalAlignmentGuideOverlay: React.FC<IncisalAlignmentGuideOverlay
 	if (!hasAnyGuide) return null;
 
 	return (
-		<svg
-			viewBox="0 0 1000 1000"
-			preserveAspectRatio="none"
-			style={{
-				position: 'absolute',
-				inset: 0,
-				width: '100%',
-				height: '100%',
-				pointerEvents: 'none',
-				zIndex: 20,
-			}}
-		>
+		<svg viewBox="0 0 1000 1000" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 20 }}>
 			{/* 1. Rule of Thirds Grid */}
 			{activeGuides.thirds && (
 				<g opacity="0.45">
@@ -49,102 +28,40 @@ export const IncisalAlignmentGuideOverlay: React.FC<IncisalAlignmentGuideOverlay
 				</g>
 			)}
 
-			{/* 2. Facial Midline (Срединно-лицевая линия) */}
+			{/* 2. Facial Midline */}
 			{activeGuides.midline && (
 				<g>
-					<line
-						x1="500"
-						y1="0"
-						x2="500"
-						y2="1000"
-						stroke="var(--teal-light, #38bdf8)"
-						strokeWidth="2.5"
-						strokeDasharray="8 6"
-					/>
-					{/* Millimeter ticks along midline */}
-					{[200, 300, 400, 500, 600, 700, 800].map((y) => (
-						<line key={y} x1="490" y1={y} x2="510" y2={y} stroke="var(--teal-light, #38bdf8)" strokeWidth="1.5" />
-					))}
+					<line x1="500" y1="0" x2="500" y2="1000" stroke="var(--teal-light, #38bdf8)" strokeWidth="2.5" strokeDasharray="8 6" />
 					<rect x="420" y="20" width="160" height="24" rx="4" fill="rgba(15, 23, 42, 0.75)" />
-					<text
-						x="500"
-						y="36"
-						textAnchor="middle"
-						fill="var(--teal-light, #38bdf8)"
-						fontSize="12"
-						fontWeight="700"
-						fontFamily="sans-serif"
-					>
-						Срединная линия
-					</text>
+					<text x="500" y="36" textAnchor="middle" fill="var(--teal-light, #38bdf8)" fontSize="12" fontWeight="700">Срединная линия</text>
 				</g>
 			)}
 
-			{/* 3. Bipupillary Guide Line (Межзрачковая линия) */}
+			{/* 3. Bipupillary Guide Line */}
 			{activeGuides.bipupillary && (
 				<g transform={`rotate(${bipupillaryTiltDegrees}, 500, 380)`}>
-					<line
-						x1="50"
-						y1="380"
-						x2="950"
-						y2="380"
-						stroke="var(--teal, #06b6d4)"
-						strokeWidth="3"
-					/>
-					{/* Eye pupil crosshairs */}
+					<line x1="50" y1="380" x2="950" y2="380" stroke="var(--teal, #06b6d4)" strokeWidth="3" />
 					<circle cx="320" cy="380" r="16" stroke="var(--teal, #06b6d4)" strokeWidth="2" fill="none" />
-					<circle cx="320" cy="380" r="3" fill="var(--teal, #06b6d4)" />
 					<circle cx="680" cy="380" r="16" stroke="var(--teal, #06b6d4)" strokeWidth="2" fill="none" />
-					<circle cx="680" cy="380" r="3" fill="var(--teal, #06b6d4)" />
-
 					<rect x="360" y="340" width="280" height="24" rx="4" fill="rgba(15, 23, 42, 0.85)" />
-					<text
-						x="500"
-						y="356"
-						textAnchor="middle"
-						fill="var(--teal, #06b6d4)"
-						fontSize="12"
-						fontWeight="700"
-						fontFamily="sans-serif"
-					>
-						Межзрачковая линия ({bipupillaryTiltDegrees !== 0 ? `${bipupillaryTiltDegrees > 0 ? '+' : ''}${bipupillaryTiltDegrees.toFixed(1)}°` : '0.0° Норма'})
+					<text x="500" y="356" textAnchor="middle" fill="var(--teal, #06b6d4)" fontSize="12" fontWeight="700">
+						Межзрачковая линия ({bipupillaryTiltDegrees !== 0 ? `${bipupillaryTiltDegrees > 0 ? '+' : ''}${bipupillaryTiltDegrees.toFixed(1)}°` : '0.0°'})
 					</text>
 				</g>
 			)}
 
-			{/* 4. Incisal Edge Guide (Резцовая линия и край) */}
+			{/* 4. Incisal Edge Guide */}
 			{activeGuides.incisal && (
 				<g transform={`rotate(${incisalCantingDegrees}, 500, 640)`}>
-					<line
-						x1="100"
-						y1="640"
-						x2="900"
-						y2="640"
-						stroke="var(--green, #10b981)"
-						strokeWidth="3"
-					/>
-					{/* Central incisors contact point marker */}
-					<polygon points="500,626 492,640 508,640" fill="var(--green, #10b981)" />
-					<polygon points="500,654 492,640 508,640" fill="var(--green, #10b981)" />
-
-					{/* Lateral canting indicators */}
-					<line x1="250" y1="625" x2="250" y2="655" stroke="var(--green, #10b981)" strokeWidth="2" />
-					<line x1="750" y1="625" x2="750" y2="655" stroke="var(--green, #10b981)" strokeWidth="2" />
-
+					<line x1="100" y1="640" x2="900" y2="640" stroke="var(--green, #10b981)" strokeWidth="3" />
 					<rect x="350" y="660" width="300" height="24" rx="4" fill="rgba(15, 23, 42, 0.85)" />
-					<text
-						x="500"
-						y="676"
-						textAnchor="middle"
-						fill="var(--green, #10b981)"
-						fontSize="12"
-						fontWeight="700"
-						fontFamily="sans-serif"
-					>
-						Резцовый край ({incisalCantingDegrees !== 0 ? `Крен: ${incisalCantingDegrees > 0 ? '+' : ''}${incisalCantingDegrees.toFixed(1)}°` : '0.0° Горизонт'})
+					<text x="500" y="676" textAnchor="middle" fill="var(--green, #10b981)" fontSize="12" fontWeight="700">
+						Резцовый край ({incisalCantingDegrees !== 0 ? `${incisalCantingDegrees > 0 ? '+' : ''}${incisalCantingDegrees.toFixed(1)}°` : '0.0°'})
 					</text>
 				</g>
 			)}
 		</svg>
 	);
 };
+
+export default IncisalAlignmentGuideOverlay;

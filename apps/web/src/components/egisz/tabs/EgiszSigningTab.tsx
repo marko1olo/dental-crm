@@ -40,6 +40,7 @@ export interface EgiszSigningTabProps {
 	readonly moSig: GostSignatureInfo | null;
 	readonly onSignDocument: () => void;
 	readonly onSignMoDocument: () => void;
+	readonly onSignBothInOneClick?: () => void;
 	readonly onSendToRegistry: () => void;
 	readonly onQueueDeferred: () => void;
 	readonly onUploadDetachedSig: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -67,6 +68,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 	moSig,
 	onSignDocument,
 	onSignMoDocument,
+	onSignBothInOneClick,
 	onSendToRegistry,
 	onQueueDeferred,
 	onUploadDetachedSig,
@@ -80,6 +82,15 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 	generatedXml,
 	form043uHtml,
 }) => {
+	const handleSignBoth = () => {
+		if (onSignBothInOneClick) {
+			onSignBothInOneClick();
+		} else {
+			onSignDocument();
+			onSignMoDocument();
+		}
+	};
+
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
 			<div style={{ border: "1px solid var(--line)", borderRadius: "8px", padding: "1rem", background: "var(--paper)" }}>
@@ -92,7 +103,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 					</span>
 				</div>
 				<div style={{ fontSize: "0.8125rem", color: "var(--muted)", marginBottom: "1rem" }}>
-					Подписание усиленной квалифицированной электронной подписью (УКЭП ГОСТ Р 34.10-2012 / 63-ФЗ)
+					Усиленная квалифицированная электронная подпись (УКЭП ГОСТ Р 34.10-2012)
 				</div>
 
 				{/* View Submodes */}
@@ -131,18 +142,52 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 					</button>
 				</div>
 
+				{/* Certificate selection (when certificates available) */}
+				{availableCerts.length > 0 && (
+					<div style={{ marginBottom: "1rem" }}>
+						<label style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--muted)", display: "block", marginBottom: "0.35rem" }}>
+							Сертификат УКЭП для подписания:
+						</label>
+						<select
+							value={selectedCert?.thumbprint || ""}
+							onChange={(e) => {
+								const found = availableCerts.find((c) => c.thumbprint === e.target.value);
+								onSelectCert(found || null);
+							}}
+							style={{
+								width: "100%",
+								maxWidth: "540px",
+								padding: "0.55rem 0.75rem",
+								borderRadius: "6px",
+								border: "1px solid var(--line)",
+								fontSize: "0.8125rem",
+								background: "var(--paper)",
+								color: "var(--ink)",
+							}}
+						>
+							{availableCerts.map((c) => (
+								<option key={c.thumbprint} value={c.thumbprint}>
+									{c.name} (действителен до {c.validTo.slice(0, 10)})
+								</option>
+							))}
+						</select>
+					</div>
+				)}
+
 				{/* 1-Click Action Buttons: Primary + Autonomy + Auxiliary */}
 				<div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", marginBottom: "1rem" }}>
 					<div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
 						<button
 							type="button"
-							onClick={onSignDocument}
+							onClick={handleSignBoth}
+							data-testid="egisz-sign-both-one-click-btn"
 							className="egisz-btn"
 							style={{
 								display: "flex",
 								alignItems: "center",
-								gap: "0.4rem",
-								padding: "0.5rem 0.9rem",
+								gap: "0.45rem",
+								padding: "0.6rem 1.1rem",
+								minHeight: "44px",
 								fontSize: "0.8125rem",
 								fontWeight: 700,
 								borderRadius: "6px",
@@ -153,17 +198,65 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 							}}
 						>
 							<Key size={16} />
+							{isSigning ? "Выполняется подписание..." : "Подписать пакет (Врач + Клиника в 1 клик)"}
+						</button>
+						<button
+							type="button"
+							onClick={onSignDocument}
+							data-testid="egisz-sign-doctor-btn"
+							className="egisz-btn"
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "0.4rem",
+								padding: "0.5rem 0.9rem",
+								minHeight: "44px",
+								fontSize: "0.8125rem",
+								fontWeight: 600,
+								borderRadius: "6px",
+								background: "var(--paper)",
+								color: "var(--ink)",
+								border: "1px solid var(--line)",
+								cursor: isSigning ? "wait" : "pointer",
+							}}
+						>
+							<Key size={16} />
 							Подписать УКЭП врача
 						</button>
 						<button
 							type="button"
+							onClick={onSignMoDocument}
+							data-testid="egisz-sign-mo-btn"
+							className="egisz-btn"
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "0.4rem",
+								padding: "0.5rem 0.9rem",
+								minHeight: "44px",
+								fontSize: "0.8125rem",
+								fontWeight: 600,
+								borderRadius: "6px",
+								background: "var(--paper)",
+								color: "var(--ink)",
+								border: "1px solid var(--line)",
+								cursor: isSigning ? "wait" : "pointer",
+							}}
+						>
+							<Building2 size={16} />
+							Подписать УКЭП организации
+						</button>
+						<button
+							type="button"
 							onClick={onSendToRegistry}
+							data-testid="egisz-send-remd-btn"
 							className="egisz-btn egisz-btn-primary"
 							style={{
 								display: "flex",
 								alignItems: "center",
 								gap: "0.4rem",
 								padding: "0.5rem 0.9rem",
+								minHeight: "44px",
 								fontSize: "0.8125rem",
 								fontWeight: 700,
 								borderRadius: "6px",
@@ -185,6 +278,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 								alignItems: "center",
 								gap: "0.4rem",
 								padding: "0.4rem 0.75rem",
+								minHeight: "44px",
 								fontSize: "0.8125rem",
 								fontWeight: 600,
 								borderRadius: "6px",
@@ -201,27 +295,6 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 
 					{/* Auxiliary Document Actions (Compact row) */}
 					<div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
-						<button
-							type="button"
-							onClick={onSignMoDocument}
-							className="egisz-btn sm"
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: "0.35rem",
-								padding: "0.35rem 0.75rem",
-								fontSize: "0.75rem",
-								fontWeight: 600,
-								borderRadius: "6px",
-								background: "var(--paper)",
-								color: "var(--ink)",
-								border: "1px solid var(--line)",
-								cursor: "pointer",
-							}}
-						>
-							<Building2 size={14} />
-							Подписать УКЭП организации
-						</button>
 						<button
 							type="button"
 							onClick={onPrint}
@@ -285,10 +358,58 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 							<CheckCircle2 size={14} />
 							Проверка XML
 						</button>
+						<label
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "0.35rem",
+								padding: "0.35rem 0.75rem",
+								fontSize: "0.75rem",
+								fontWeight: 600,
+								borderRadius: "6px",
+								border: "1px solid var(--line)",
+								background: "var(--paper)",
+								color: "var(--ink)",
+								cursor: "pointer",
+							}}
+						>
+							<FileCode2 size={14} />
+							Загрузить .sig / .p7s (врач)
+							<input
+								type="file"
+								accept=".sig,.p7s,.sgn,.bin"
+								style={{ display: "none" }}
+								onChange={onUploadDetachedSig}
+							/>
+						</label>
+						<label
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "0.35rem",
+								padding: "0.35rem 0.75rem",
+								fontSize: "0.75rem",
+								fontWeight: 600,
+								borderRadius: "6px",
+								border: "1px solid var(--line)",
+								background: "var(--paper)",
+								color: "var(--ink)",
+								cursor: "pointer",
+							}}
+						>
+							<Building2 size={14} />
+							Загрузить .sig (клиника)
+							<input
+								type="file"
+								accept=".sig,.p7s,.sgn,.bin"
+								style={{ display: "none" }}
+								onChange={onUploadDetachedMoSig}
+							/>
+						</label>
 					</div>
 				</div>
 
-				{availableCerts.length === 0 ? (
+				{availableCerts.length === 0 && (
 					<div style={{ padding: "1rem", borderRadius: "8px", background: "rgba(245, 158, 11, 0.08)", border: "1px solid rgba(245, 158, 11, 0.3)", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
 						<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, color: "var(--warning)", fontSize: "0.875rem" }}>
 							<AlertTriangle size={18} />
@@ -306,6 +427,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 									alignItems: "center",
 									gap: "0.4rem",
 									padding: "0.5rem 1rem",
+									minHeight: "44px",
 									fontSize: "0.8125rem",
 									fontWeight: 600,
 									borderRadius: "6px",
@@ -326,6 +448,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 									alignItems: "center",
 									gap: "0.4rem",
 									padding: "0.5rem 1rem",
+									minHeight: "44px",
 									fontSize: "0.8125rem",
 									fontWeight: 600,
 									borderRadius: "6px",
@@ -344,6 +467,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 									alignItems: "center",
 									gap: "0.4rem",
 									padding: "0.5rem 1rem",
+									minHeight: "44px",
 									fontSize: "0.8125rem",
 									fontWeight: 600,
 									borderRadius: "6px",
@@ -359,150 +483,6 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 									accept=".sig,.p7s,.sgn,.bin"
 									style={{ display: "none" }}
 									onChange={onUploadDetachedSig}
-								/>
-							</label>
-						</div>
-					</div>
-				) : (
-					<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-						<div>
-							<label style={{ fontSize: "0.75rem", color: "var(--muted)", display: "block", marginBottom: "0.25rem" }}>
-								Выберите сертификат электронной подписи:
-							</label>
-							<select
-								value={selectedCert?.thumbprint || ""}
-								onChange={(e) => {
-									const found = availableCerts.find((c) => c.thumbprint === e.target.value);
-									onSelectCert(found || null);
-								}}
-								style={{
-									width: "100%",
-									maxWidth: "500px",
-									padding: "0.5rem",
-									borderRadius: "6px",
-									border: "1px solid var(--line)",
-									fontSize: "0.8125rem",
-									background: "var(--paper)",
-									color: "var(--ink)",
-								}}
-							>
-								{availableCerts.map((c) => (
-									<option key={c.thumbprint} value={c.thumbprint}>
-										{c.name} (до {c.validTo.slice(0, 10)})
-									</option>
-								))}
-							</select>
-						</div>
-						<div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
-							<button
-								type="button"
-								onClick={onSignDocument}
-								className="egisz-btn"
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: "0.5rem",
-									padding: "0.6rem 1.25rem",
-									fontSize: "0.875rem",
-									fontWeight: 700,
-									borderRadius: "6px",
-									background: "var(--teal)",
-									color: "var(--ink-inverse)",
-									border: "none",
-									cursor: isSigning ? "wait" : "pointer",
-								}}
-							>
-								<Key size={18} />
-								{isSigning ? "Выполняется подписание..." : "Подписать УКЭП врача"}
-							</button>
-							<button
-								type="button"
-								onClick={onQueueDeferred}
-								className="egisz-btn sm"
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: "0.4rem",
-									padding: "0.55rem 0.9rem",
-									fontSize: "0.8125rem",
-									fontWeight: 600,
-									borderRadius: "6px",
-									border: "1px solid var(--line)",
-									background: "var(--paper)",
-									color: "var(--ink)",
-									cursor: "pointer",
-								}}
-							>
-								<Clock size={14} />
-								Отложить отправку (не блокировать приём)
-							</button>
-							<label
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: "0.4rem",
-									padding: "0.55rem 0.9rem",
-									fontSize: "0.8125rem",
-									fontWeight: 600,
-									borderRadius: "6px",
-									border: "1px solid var(--line)",
-									background: "var(--paper)",
-									color: "var(--ink)",
-									cursor: "pointer",
-								}}
-							>
-								<FileCode2 size={14} />
-								Загрузить .sig / .p7s (врач)
-								<input
-									type="file"
-									accept=".sig,.p7s,.sgn,.bin"
-									style={{ display: "none" }}
-									onChange={onUploadDetachedSig}
-								/>
-							</label>
-							<button
-								type="button"
-								onClick={onSignMoDocument}
-								className="egisz-btn sm"
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: "0.4rem",
-									padding: "0.55rem 0.9rem",
-									fontSize: "0.8125rem",
-									fontWeight: 600,
-									borderRadius: "6px",
-									border: "1px solid var(--line)",
-									background: "var(--paper)",
-									color: "var(--ink)",
-									cursor: isSigning ? "wait" : "pointer",
-								}}
-							>
-								<Building2 size={14} />
-								{isSigning ? "Подписание..." : "Подписать УКЭП организации"}
-							</button>
-							<label
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: "0.4rem",
-									padding: "0.55rem 0.9rem",
-									fontSize: "0.8125rem",
-									fontWeight: 600,
-									borderRadius: "6px",
-									border: "1px solid var(--line)",
-									background: "var(--paper)",
-									color: "var(--ink)",
-									cursor: "pointer",
-								}}
-							>
-								<Building2 size={14} />
-								Загрузить .sig (клиника)
-								<input
-									type="file"
-									accept=".sig,.p7s,.sgn,.bin"
-									style={{ display: "none" }}
-									onChange={onUploadDetachedMoSig}
 								/>
 							</label>
 						</div>

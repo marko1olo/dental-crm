@@ -6,6 +6,10 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import {
+	GOST_CRYPTO_OIDS,
+	validateGostCmsPkcs7Signature,
+} from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import {
 	type CertificateInfo,
@@ -85,14 +89,23 @@ export function useCryptoProSigning({
 				binary += String.fromCharCode(bytes[i]!);
 			}
 			const base64 = btoa(binary);
+			const cmsCheck = validateGostCmsPkcs7Signature(base64);
+			if (!cmsCheck.valid) {
+				showToast(
+					`Файл «${file.name}» отклонён верификатором CMS/PKCS#7: ${cmsCheck.error || "Ошибка структуры подписи"}`,
+					"error",
+					7000,
+				);
+				return;
+			}
 			const sigInfo: GostSignatureInfo = {
 				signatureBase64: base64,
 				certificateSerialNumber: `DETACHED-${file.name.slice(0, 16)}`,
 				certificateSubject: doctor.doctorFullName || "Врач (открепленная подпись)",
 				certificateIssuer: "Открепленная подпись (.sig / .p7s)",
 				signedAt: new Date().toISOString(),
-				algorithmOid: "1.2.643.7.1.1.1.1",
-				digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+				algorithmOid: GOST_CRYPTO_OIDS.GOST_3410_2012_256,
+				digestAlgorithmOid: GOST_CRYPTO_OIDS.GOST_3411_2012_256,
 				signatureValueHex: file.name,
 			};
 			setDoctorSig(sigInfo);
@@ -122,20 +135,50 @@ export function useCryptoProSigning({
 				binary += String.fromCharCode(bytes[i]!);
 			}
 			const base64 = btoa(binary);
+			const cmsCheck = validateGostCmsPkcs7Signature(base64);
+			if (!cmsCheck.valid) {
+				showToast(
+					`Файл «${file.name}» отклонён верификатором CMS/PKCS#7 МО: ${cmsCheck.error || "Ошибка структуры подписи"}`,
+					"error",
+					7000,
+				);
+				return;
+			}
 			const sigInfo: GostSignatureInfo = {
 				signatureBase64: base64,
 				certificateSerialNumber: `MO-SIG-${file.name.slice(0, 14)}`,
 				certificateSubject: clinic.clinicName || "Медицинская организация (открепленная подпись)",
 				certificateIssuer: "Открепленная подпись организации (.sig / .p7s)",
 				signedAt: new Date().toISOString(),
-				algorithmOid: "1.2.643.7.1.1.1.1",
-				digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+				algorithmOid: GOST_CRYPTO_OIDS.GOST_3410_2012_256,
+				digestAlgorithmOid: GOST_CRYPTO_OIDS.GOST_3411_2012_256,
 				signatureValueHex: file.name,
 			};
 			setMoSig(sigInfo);
 			showToast(`Открепленная УКЭП организации загружена: ${file.name}`, "success");
 		};
 		reader.readAsArrayBuffer(file);
+	};
+
+	const validateCertificateWindow = (certToUse: CertificateInfo, label: string): boolean => {
+		const now = Date.now();
+		const validToTime = new Date(certToUse.validTo).getTime();
+		const validFromTime = new Date(certToUse.validFrom).getTime();
+		if (!Number.isNaN(validToTime) && validToTime < now) {
+			showToast(
+				`${label} «${certToUse.name}» просрочен (${new Date(certToUse.validTo).toLocaleDateString("ru-RU")}). Подписание отклонено`,
+				"error",
+			);
+			return false;
+		}
+		if (!Number.isNaN(validFromTime) && validFromTime > now) {
+			showToast(
+				`${label} «${certToUse.name}» еще не вступил в силу (действителен с ${new Date(certToUse.validFrom).toLocaleDateString("ru-RU")})`,
+				"error",
+			);
+			return false;
+		}
+		return true;
 	};
 
 	const handleSignDocument = async () => {
@@ -148,21 +191,7 @@ export function useCryptoProSigning({
 			return;
 		}
 
-		const now = Date.now();
-		const validToTime = new Date(certToUse.validTo).getTime();
-		const validFromTime = new Date(certToUse.validFrom).getTime();
-		if (!Number.isNaN(validToTime) && validToTime < now) {
-			showToast(
-				`Сертификат «${certToUse.name}» просрочен (${new Date(certToUse.validTo).toLocaleDateString("ru-RU")}). Подписание отклонено`,
-				"error",
-			);
-			return;
-		}
-		if (!Number.isNaN(validFromTime) && validFromTime > now) {
-			showToast(
-				`Сертификат «${certToUse.name}» еще не вступил в силу (действителен с ${new Date(certToUse.validFrom).toLocaleDateString("ru-RU")})`,
-				"error",
-			);
+		if (!validateCertificateWindow(certToUse, "Сертификат")) {
 			return;
 		}
 
@@ -178,14 +207,14 @@ export function useCryptoProSigning({
 
 			const newDocSig: GostSignatureInfo = {
 				signatureBase64,
-				certificateSerialNumber: certToUse.thumbprint.slice(0, 16).toUpperCase(),
+				certificateSerialNumber: (certToUse.serialNumber || certToUse.thumbprint.slice(0, 16)).toUpperCase(),
 				certificateSubject: certToUse.name,
 				certificateIssuer: certToUse.issuer,
 				validFrom: certToUse.validFrom,
 				validTo: certToUse.validTo,
 				signedAt: new Date().toISOString(),
-				algorithmOid: "1.2.643.7.1.1.1.1",
-				digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+				algorithmOid: GOST_CRYPTO_OIDS.GOST_3410_2012_256,
+				digestAlgorithmOid: GOST_CRYPTO_OIDS.GOST_3411_2012_256,
 				signatureValueHex: certToUse.thumbprint.toUpperCase(),
 			};
 
@@ -209,21 +238,7 @@ export function useCryptoProSigning({
 			return;
 		}
 
-		const now = Date.now();
-		const validToTime = new Date(certToUse.validTo).getTime();
-		const validFromTime = new Date(certToUse.validFrom).getTime();
-		if (!Number.isNaN(validToTime) && validToTime < now) {
-			showToast(
-				`Сертификат организации «${certToUse.name}» просрочен (${new Date(certToUse.validTo).toLocaleDateString("ru-RU")}). Подписание отклонено`,
-				"error",
-			);
-			return;
-		}
-		if (!Number.isNaN(validFromTime) && validFromTime > now) {
-			showToast(
-				`Сертификат организации «${certToUse.name}» еще не вступил в силу (действителен с ${new Date(certToUse.validFrom).toLocaleDateString("ru-RU")})`,
-				"error",
-			);
+		if (!validateCertificateWindow(certToUse, "Сертификат организации")) {
 			return;
 		}
 
@@ -239,14 +254,14 @@ export function useCryptoProSigning({
 
 			const newMoSig: GostSignatureInfo = {
 				signatureBase64,
-				certificateSerialNumber: certToUse.thumbprint.slice(0, 16).toUpperCase(),
+				certificateSerialNumber: (certToUse.serialNumber || certToUse.thumbprint.slice(0, 16)).toUpperCase(),
 				certificateSubject: clinic.clinicName || certToUse.name,
 				certificateIssuer: certToUse.issuer,
 				validFrom: certToUse.validFrom,
 				validTo: certToUse.validTo,
 				signedAt: new Date().toISOString(),
-				algorithmOid: "1.2.643.7.1.1.1.1",
-				digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+				algorithmOid: GOST_CRYPTO_OIDS.GOST_3410_2012_256,
+				digestAlgorithmOid: GOST_CRYPTO_OIDS.GOST_3411_2012_256,
 				signatureValueHex: certToUse.thumbprint.toUpperCase(),
 			};
 
@@ -255,6 +270,75 @@ export function useCryptoProSigning({
 		} catch (err: unknown) {
 			const parsed = parseCryptoProError(err);
 			showToast(`Ошибка при наложении подписи организации: ${parsed.userMessage}`, "error");
+		} finally {
+			setIsSigning(false);
+		}
+	};
+
+	/**
+	 * 1-Click Dual Signing (Doctor + Medical Organization) for Solo Doctor / Chief Doctor (Mandate 8n).
+	 * Signs canonicalized XML once and applies both Doctor and Clinic MO signatures simultaneously.
+	 */
+	const handleSignBothInOneClick = async () => {
+		const certToUse = selectedCert || availableCerts[0];
+		if (!certToUse) {
+			showToast(
+				"Плагин КриптоПро CSP не установлен / Сертификат не выбран. Подключите токен или загрузите открепленный файл .sig / .p7s",
+				"error",
+			);
+			return;
+		}
+
+		if (!validateCertificateWindow(certToUse, "Сертификат")) {
+			return;
+		}
+
+		setIsSigning(true);
+		try {
+			const xmlToSign = canonicalizeCdaXml(generatedXml);
+			const { signatureBase64 } = await signatureService.signData(
+				certToUse.thumbprint,
+				xmlToSign,
+				undefined,
+				certToUse.deviceId,
+			);
+
+			const signedAt = new Date().toISOString();
+			const serialNumber = (certToUse.serialNumber || certToUse.thumbprint.slice(0, 16)).toUpperCase();
+			const signatureValueHex = certToUse.thumbprint.toUpperCase();
+
+			const newDocSig: GostSignatureInfo = {
+				signatureBase64,
+				certificateSerialNumber: serialNumber,
+				certificateSubject: certToUse.name,
+				certificateIssuer: certToUse.issuer,
+				validFrom: certToUse.validFrom,
+				validTo: certToUse.validTo,
+				signedAt,
+				algorithmOid: GOST_CRYPTO_OIDS.GOST_3410_2012_256,
+				digestAlgorithmOid: GOST_CRYPTO_OIDS.GOST_3411_2012_256,
+				signatureValueHex,
+			};
+
+			const newMoSig: GostSignatureInfo = {
+				signatureBase64,
+				certificateSerialNumber: serialNumber,
+				certificateSubject: clinic.clinicName || certToUse.name,
+				certificateIssuer: certToUse.issuer,
+				validFrom: certToUse.validFrom,
+				validTo: certToUse.validTo,
+				signedAt,
+				algorithmOid: GOST_CRYPTO_OIDS.GOST_3410_2012_256,
+				digestAlgorithmOid: GOST_CRYPTO_OIDS.GOST_3411_2012_256,
+				signatureValueHex,
+			};
+
+			setDoctorSig(newDocSig);
+			setMoSig(newMoSig);
+			showToast(`Документ подписан сразу за врача и клинику (УКЭП ${serialNumber})`, "success");
+		} catch (err: unknown) {
+			const parsed = parseCryptoProError(err);
+			showToast(`Ошибка при совмещенном подписании УКЭП: ${parsed.userMessage}`, "error");
 		} finally {
 			setIsSigning(false);
 		}
@@ -275,5 +359,6 @@ export function useCryptoProSigning({
 		handleUploadDetachedMoSig,
 		handleSignDocument,
 		handleSignMoDocument,
+		handleSignBothInOneClick,
 	};
 }

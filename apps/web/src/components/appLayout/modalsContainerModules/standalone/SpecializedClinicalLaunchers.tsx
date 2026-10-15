@@ -31,6 +31,12 @@ const PatientPresentationStandaloneView = lazyWithRetry(() =>
 	})),
 );
 
+const ClinicalPhotoProtocolModal = lazyWithRetry(() =>
+	import("../../../photography/ClinicalPhotoProtocolModal").then((module) => ({
+		default: module.ClinicalPhotoProtocolModal,
+	})),
+);
+
 const CephalometricAnalysisModal = lazyWithRetry(() =>
 	import("../../../orthodontics/CephalometricAnalysisModal").then((module) => ({
 		default: module.CephalometricAnalysisModal,
@@ -191,62 +197,10 @@ export function renderSpecializedClinicalLaunchers({
 					isOpen={true}
 					onClose={() => {}}
 					initialCandidates={[
-						{
-							id: "rec-1",
-							patientId: "pat-1",
-							fullName: "Иванов Иван Иванович",
-							phone: "+7 (916) 123-45-67",
-							cycleType: "standard_prophylaxis",
-							attendingDoctorId: "doc-1",
-							attendingDoctorName: "Д-р Воронов А. В.",
-							lastVisitDate: "2026-04-10",
-							dueDate: "2026-10-10",
-							daysOverdue: 4,
-							urgencyStatus: "due_now",
-							status: "due_now",
-						},
-						{
-							id: "rec-2",
-							patientId: "pat-2",
-							fullName: "Смирнова Анна Сергеевна",
-							phone: "+7 (925) 987-65-43",
-							cycleType: "implant_monitoring",
-							attendingDoctorId: "doc-2",
-							attendingDoctorName: "Д-р Соколов А. В.",
-							lastVisitDate: "2025-10-14",
-							dueDate: "2026-10-14",
-							daysOverdue: 0,
-							urgencyStatus: "due_now",
-							status: "invited",
-						},
-						{
-							id: "rec-3",
-							patientId: "pat-3",
-							fullName: "Кузнецов Дмитрий Павлович",
-							phone: "+7 (903) 555-44-33",
-							cycleType: "orthodontic_retention",
-							attendingDoctorId: "doc-1",
-							attendingDoctorName: "Д-р Воронов А. В.",
-							lastVisitDate: "2026-07-01",
-							dueDate: "2026-09-01",
-							daysOverdue: 43,
-							urgencyStatus: "overdue_30",
-							status: "due_now",
-						},
-						{
-							id: "rec-4",
-							patientId: "pat-4",
-							fullName: "Федорова Елена Николаевна",
-							phone: "+7 (985) 111-22-33",
-							cycleType: "periodontal_maintenance",
-							attendingDoctorId: "doc-2",
-							attendingDoctorName: "Д-р Соколов А. В.",
-							lastVisitDate: "2026-06-15",
-							dueDate: "2026-09-15",
-							daysOverdue: 29,
-							urgencyStatus: "due_now",
-							status: "scheduled",
-						},
+						{ id: "rec-1", patientId: "pat-1", fullName: "Иванов Иван Иванович", phone: "+7 (916) 123-45-67", cycleType: "standard_prophylaxis", attendingDoctorId: "doc-1", attendingDoctorName: "Д-р Воронов А. В.", lastVisitDate: "2026-04-10", dueDate: "2026-10-10", daysOverdue: 4, urgencyStatus: "due_now", status: "due_now" },
+						{ id: "rec-2", patientId: "pat-2", fullName: "Смирнова Анна Сергеевна", phone: "+7 (925) 987-65-43", cycleType: "implant_monitoring", attendingDoctorId: "doc-2", attendingDoctorName: "Д-р Соколов А. В.", lastVisitDate: "2025-10-14", dueDate: "2026-10-14", daysOverdue: 0, urgencyStatus: "due_now", status: "invited" },
+						{ id: "rec-3", patientId: "pat-3", fullName: "Кузнецов Дмитрий Павлович", phone: "+7 (903) 555-44-33", cycleType: "orthodontic_retention", attendingDoctorId: "doc-1", attendingDoctorName: "Д-р Воронов А. В.", lastVisitDate: "2026-07-01", dueDate: "2026-09-01", daysOverdue: 43, urgencyStatus: "overdue_30", status: "due_now" },
+						{ id: "rec-4", patientId: "pat-4", fullName: "Федорова Елена Николаевна", phone: "+7 (985) 111-22-33", cycleType: "periodontal_maintenance", attendingDoctorId: "doc-2", attendingDoctorName: "Д-р Соколов А. В.", lastVisitDate: "2026-06-15", dueDate: "2026-09-15", daysOverdue: 29, urgencyStatus: "due_now", status: "scheduled" },
 					]}
 				/>
 			</div>
@@ -477,6 +431,34 @@ export function renderSpecializedClinicalLaunchers({
 				doctorFullName="Д-р Воронов Алексей Владимирович"
 				medCardNumber="2026-EMERGENCY-01"
 			/>
+		);
+	}
+
+	// CLINICAL PHOTO PROTOCOL & BEFORE/AFTER STANDALONE LAUNCHER (?photo-protocol=demo, #photo-protocol, #photo)
+	const isPhotoProtocolDirect =
+		typeof window !== "undefined" &&
+		(new URLSearchParams(window.location.search).has("photo-protocol") ||
+			new URLSearchParams(window.location.search).has("photo") ||
+			window.location.hash.toLowerCase().includes("photo-protocol") ||
+			window.location.hash.toLowerCase().includes("photo"));
+
+	if (isPhotoProtocolDirect) {
+		return (
+			<Suspense fallback={<AppLoadingState message="Загрузка фотопротокола..." />}>
+				<ClinicalPhotoProtocolModal
+					isOpen={true}
+					onClose={() => {
+						const url = new URL(window.location.href);
+						url.searchParams.delete("photo-protocol");
+						url.searchParams.delete("photo");
+						const cleanHash = url.hash.includes("photo") ? "" : url.hash;
+						window.history.replaceState({}, "", url.pathname + (url.search || "") + cleanHash);
+					}}
+					patientName="Ковалев Дмитрий Сергеевич"
+					patientCardNumber="К-8492"
+					doctorName="Д-р Смирнова Е. В."
+				/>
+			</Suspense>
 		);
 	}
 

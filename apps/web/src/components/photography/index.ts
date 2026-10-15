@@ -6,8 +6,13 @@ export * from './photoGridPresets';
 export * from './photoProtocolMath';
 
 export * from './PhotoSlotCard';
+export * from './PhotoGridSixSlots';
+export * from './BeforeAfterSplitSlider';
+export * from './LabPhotoExportDrawer';
 export * from './IncisalAlignmentGuideOverlay';
 export * from './VitaShadeSelector';
+export * from './VitaStratificationPanel';
+export * from './VitaShadeSwatches';
 export * from './BeforeAfterComparisonView';
 export * from './PhotoCalibrationDrawer';
 export * from './PhotoCollageExportSheet';

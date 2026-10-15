@@ -25,7 +25,7 @@ export const PhotoSlotCard: React.FC<PhotoSlotCardProps> = ({
 	onDragLeave,
 	onDrop,
 }) => {
-	const hasImage = !!record.imageUrl;
+	const hasImage = Boolean(record.imageUrl);
 
 	return (
 		<div
@@ -34,7 +34,6 @@ export const PhotoSlotCard: React.FC<PhotoSlotCardProps> = ({
 			onDragLeave={onDragLeave}
 			onDrop={onDrop}
 		>
-			{/* Slot Card Header */}
 			<div className="photo-slot-header">
 				<span style={{ fontWeight: 700 }}>{slotDef.shortLabelRu}</span>
 				<span className={`photo-category-pill ${slotDef.category}`}>
@@ -42,11 +41,7 @@ export const PhotoSlotCard: React.FC<PhotoSlotCardProps> = ({
 				</span>
 			</div>
 
-			{/* Viewport / Dropzone */}
-			<div
-				className="photo-slot-viewport"
-				onClick={() => !hasImage && onUploadClick()}
-			>
+			<div className="photo-slot-viewport" onClick={() => !hasImage && onUploadClick()}>
 				{hasImage ? (
 					<div className="photo-image-container">
 						<img
@@ -60,86 +55,41 @@ export const PhotoSlotCard: React.FC<PhotoSlotCardProps> = ({
 								filter: `brightness(${100 + (record.brightness || 0)}%) contrast(${100 + (record.contrast || 0)}%)`
 							}}
 						/>
-
-						{/* Mini Badges Overlay */}
 						<div className="photo-slot-badges">
-							{record.flipHorizontal && (
-								<span className="photo-mini-badge">
-									<FlipHorizontal size={10} /> Зеркало (H)
-								</span>
-							)}
-							{(record.rotationDegrees || 0) !== 0 && (
-								<span className="photo-mini-badge">
-									<RotateCw size={10} /> {record.rotationDegrees}°
-								</span>
-							)}
-							{record.detectedVitaShade && (
-								<span className="photo-mini-badge shade-badge">
-									VITA {record.detectedVitaShade}
-								</span>
-							)}
-							{(record.paired_document_id || record.paired_photo_id) && (
-								<span className="photo-mini-badge paired-badge" title="Снимок спарен для сравнения До/После">
-									<LinkIcon size={10} /> До/После
-								</span>
-							)}
+							{record.flipHorizontal && <span className="photo-mini-badge"><FlipHorizontal size={10} /> Зеркало (H)</span>}
+							{(record.rotationDegrees || 0) !== 0 && <span className="photo-mini-badge"><RotateCw size={10} /> {record.rotationDegrees}°</span>}
+							{record.detectedVitaShade && <span className="photo-mini-badge shade-badge">VITA {record.detectedVitaShade}</span>}
+							{(record.paired_document_id || record.paired_photo_id) && <span className="photo-mini-badge paired-badge" title="Снимок спарен для сравнения До/После"><LinkIcon size={10} /> До/После</span>}
 						</div>
 					</div>
 				) : (
 					<div className="photo-silhouette-guide">
-						<svg viewBox="0 0 200 200" className="photo-silhouette-svg">
-							<path d={slotDef.silhouetteSvgPath} />
-						</svg>
-						<div className="photo-silhouette-label">
-							Нажмите или перетащите фото
-						</div>
-						<div style={{ fontSize: '11px', color: 'var(--muted, #94a3b8)' }}>
-							{slotDef.magnification} • {slotDef.recommendedAspectRatio}
-						</div>
+						<svg viewBox="0 0 200 200" className="photo-silhouette-svg"><path d={slotDef.silhouetteSvgPath} /></svg>
+						<div className="photo-silhouette-label">Нажмите или перетащите фото</div>
+						<div style={{ fontSize: '11px', color: 'var(--muted, #94a3b8)' }}>{slotDef.magnification} • {slotDef.recommendedAspectRatio}</div>
 					</div>
 				)}
 			</div>
 
-			{/* Slot Card Action Footer */}
 			<div className="photo-slot-actions">
 				{hasImage ? (
 					<>
-						<button
-							className="photo-touch-btn"
-							onClick={onEditClick}
-							title="Настроить / Кадрировать / VITA оттенок"
-						>
-							<Sliders size={15} />
-							Настроить
+						<button className="photo-touch-btn" onClick={onEditClick} title="Настроить / VITA оттенок">
+							<Sliders size={15} /> Настроить
 						</button>
 						<div style={{ display: 'flex', gap: '4px' }}>
-							<button
-								className="photo-touch-btn"
-								onClick={onUploadClick}
-								title="Заменить снимок"
-							>
-								<Upload size={14} />
-							</button>
-							<button
-								className="photo-touch-btn danger"
-								onClick={onDeleteClick}
-								title="Удалить"
-							>
-								<Trash2 size={14} />
-							</button>
+							<button className="photo-touch-btn" onClick={onUploadClick} title="Заменить снимок"><Upload size={14} /></button>
+							<button className="photo-touch-btn danger" onClick={onDeleteClick} title="Удалить"><Trash2 size={14} /></button>
 						</div>
 					</>
 				) : (
-					<button
-						className="photo-touch-btn primary"
-						style={{ width: '100%' }}
-						onClick={onUploadClick}
-					>
-						<Camera size={15} />
-						Загрузить кадр
+					<button className="photo-touch-btn primary" style={{ width: '100%' }} onClick={onUploadClick}>
+						<Camera size={15} /> Загрузить кадр
 					</button>
 				)}
 			</div>
 		</div>
 	);
 };
+
+export default PhotoSlotCard;

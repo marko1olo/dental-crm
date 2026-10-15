@@ -10,6 +10,13 @@ import { ClinicalModalsSubcontainer } from "./modalsContainerModules/ClinicalMod
 import { AdministrativeModalsSubcontainer } from "./modalsContainerModules/AdministrativeModalsSubcontainer";
 import { ImplantPassportModal } from "../implants/ImplantPassportModal";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
+import { lazyWithRetry } from "../../lib/lazyWithRetry";
+
+const EgiszCertificatesHubModal = lazyWithRetry(() =>
+	import("../egisz/EgiszCertificatesHubModal").then((module) => ({
+		default: module.EgiszCertificatesHubModal,
+	})),
+);
 
 export type { StandaloneLaunchersProps };
 export { renderStandaloneLaunchers };
@@ -72,6 +79,22 @@ export function AppModalsContainer({
 	const [loyaltyModalContext, setLoyaltyModalContext] =
 		React.useState<LoyaltyModalContext | null>(null);
 
+	const [isEgiszCertificatesOpen, setIsEgiszCertificatesOpen] = React.useState(
+		() =>
+			typeof window !== "undefined" &&
+			((window.location.search || "").includes("certificates") ||
+				(window.location.hash || "").includes("certificates") ||
+				(window.location.search || "").includes("egisz-certificates")),
+	);
+	const [egiszCertificatesSection, setEgiszCertificatesSection] = React.useState<"queue" | "tax_deduction" | "extracts">(() => {
+		if (typeof window === "undefined") return "queue";
+		const s = window.location.search || "";
+		const h = window.location.hash || "";
+		if (s.includes("tax_deduction") || h.includes("tax_deduction")) return "tax_deduction";
+		if (s.includes("extracts") || h.includes("extracts")) return "extracts";
+		return "queue";
+	});
+
 	const primaryModal = useUiSurfaceStore((s) => s.primaryModal);
 	const isLoyaltyFromStore = primaryModal?.id === "loyalty";
 	const isEffectiveLoyaltyOpen = Boolean(isGlobalLoyaltyOpen || isLoyaltyFromStore);
@@ -105,11 +128,20 @@ export function AppModalsContainer({
 			setLoyaltyModalContext(detail || null);
 			setIsGlobalLoyaltyOpen(true);
 		};
+		const onOpenEgiszCertificates = (e: Event) => {
+			const detail = (e as CustomEvent)?.detail;
+			if (detail?.section) {
+				setEgiszCertificatesSection(detail.section);
+			}
+			setIsEgiszCertificatesOpen(true);
+		};
 		window.addEventListener("dente-open-visiograph-comparison", onOpenVisiograph);
 		window.addEventListener("dente-open-imaging-export", onOpenImagingExport);
 		window.addEventListener("dente-open-create-lab-order", onOpenLabCreate);
 		window.addEventListener("dente-open-implant-passport", onOpenImplantPassport);
 		window.addEventListener("dente-open-loyalty", onOpenLoyalty);
+		window.addEventListener("dente-open-egisz-certificates", onOpenEgiszCertificates);
+		window.addEventListener("dente:open-egisz-certificates", onOpenEgiszCertificates);
 
 		return () => {
 			window.removeEventListener("dente-open-visiograph-comparison", onOpenVisiograph);
@@ -117,6 +149,8 @@ export function AppModalsContainer({
 			window.removeEventListener("dente-open-create-lab-order", onOpenLabCreate);
 			window.removeEventListener("dente-open-implant-passport", onOpenImplantPassport);
 			window.removeEventListener("dente-open-loyalty", onOpenLoyalty);
+			window.removeEventListener("dente-open-egisz-certificates", onOpenEgiszCertificates);
+			window.removeEventListener("dente:open-egisz-certificates", onOpenEgiszCertificates);
 		};
 	}, []);
 
@@ -170,6 +204,27 @@ export function AppModalsContainer({
 				handleClinicLogout={handleClinicLogout}
 				handleFullStaffLock={handleFullStaffLock}
 			/>
+			{isEgiszCertificatesOpen && (
+				<React.Suspense fallback={null}>
+					<EgiszCertificatesHubModal
+						isOpen={true}
+						initialSection={egiszCertificatesSection}
+						onClose={() => {
+							setIsEgiszCertificatesOpen(false);
+							const url = new URL(window.location.href);
+							url.searchParams.delete("certificates");
+							url.searchParams.delete("egisz-certificates");
+							window.history.replaceState(
+								{},
+								"",
+								url.pathname +
+									(url.search ? url.search : "") +
+									(url.hash && !url.hash.includes("certificates") ? url.hash : ""),
+							);
+						}}
+					/>
+				</React.Suspense>
+			)}
 		</>
 	);
 }

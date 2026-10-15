@@ -5,6 +5,7 @@
 
 @import "./recallsPreview.css";
 @import "./recallsKanban.css";
+@import "./recallsCards.css";
 
 .recall-manager-modal-backdrop {
 	position: fixed;
@@ -641,4 +642,5 @@
 		justify-content: flex-end;
 	}
 }
+
 

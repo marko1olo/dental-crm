@@ -1,29 +1,13 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import {
-	CheckCircle,
-	X,
-	Grid,
-	FileText,
-	MoveHorizontal,
-	UploadCloud,
-	ExternalLink,
-	Sparkles,
-} from 'lucide-react';
+import { CheckCircle, X, Grid, FileText, MoveHorizontal, ExternalLink } from 'lucide-react';
 import { CheekRetractor } from '../icons/DentalIcons';
 import './clinicalPhotography.css';
-import {
-	PhotoProtocolPreset,
-	PhotoSlotRecord,
-	STANDARD_12_SLOT_PROTOCOL,
-	CLINICAL_PROTOCOLS_REGISTRY,
-	getPresetById,
-	getSlotDefinitionById
-} from './photoGridPresets';
-import { PhotoSlotCard } from './PhotoSlotCard';
+import { PhotoProtocolPreset, PhotoSlotRecord, STANDARD_12_SLOT_PROTOCOL, getSlotDefinitionById } from './photoGridPresets';
+import { PhotoGridSixSlots } from './PhotoGridSixSlots';
 import { BeforeAfterComparisonView } from './BeforeAfterComparisonView';
+import { LabPhotoExportDrawer } from './LabPhotoExportDrawer';
 import { PhotoCalibrationDrawer } from './PhotoCalibrationDrawer';
-import { PhotoCollageExportSheet } from './PhotoCollageExportSheet';
 import { compressChairsidePhotoToBlobUrl } from './chairsidePhotoCompressor';
 import { openPatientPresentationWindow } from './presentationSyncProtocol';
 import { useClipboardPhotoPaste } from './useClipboardPhotoPaste';
@@ -33,688 +17,112 @@ import { denteAdminSecretRequestHeaders } from '../../lib/denteRequestHeaders';
 export interface ClinicalPhotoProtocolModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	patientId?: string | undefined;
-	visitId?: string | undefined;
-	patientName?: string | undefined;
-	patientCardNumber?: string | undefined;
-	doctorName?: string | undefined;
-	clinicName?: string | undefined;
+	patientId?: string;
+	visitId?: string;
+	patientName?: string;
+	patientCardNumber?: string;
+	doctorName?: string;
+	clinicName?: string;
 	initialSlots?: Record<string, PhotoSlotRecord>;
 	initialPresetId?: string;
 	initialStage?: 'before' | 'during' | 'after' | 'followup';
 	onSaveProtocol?: (slots: Record<string, PhotoSlotRecord>, presetId: string) => void;
-	onPhotoSaved?: ((result: any) => void) | undefined;
-	onPhotoProcessed?: ((result: any) => void) | undefined;
-	onBatchCompleted?: ((results: any[]) => void) | undefined;
-	onPhotoUploadedToStorage?: ((attachmentId: string, url: string, slotId: string) => void) | undefined;
+	onPhotoSaved?: (res: unknown) => void;
+	onPhotoProcessed?: (res: unknown) => void;
 }
 
-const EMPTY_INITIAL_SLOTS: Record<string, PhotoSlotRecord> = {};
-
 export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProps> = ({
-	isOpen,
-	onClose,
-	patientId,
-	visitId,
-	patientName = '',
-	patientCardNumber = 'К-8492',
-	doctorName = 'Д-р Смирнова Е. В.',
-	clinicName = 'DENTE CLINIC',
-	initialSlots = EMPTY_INITIAL_SLOTS,
-	initialPresetId,
-	initialStage = 'before',
-	onSaveProtocol,
-	onPhotoSaved,
-	onPhotoProcessed,
-	onBatchCompleted,
-	onPhotoUploadedToStorage,
+	isOpen, onClose, patientId, visitId, patientName = '', patientCardNumber = 'К-8492',
+	doctorName = 'Д-р Смирнова Е. В.', clinicName = 'DENTE CLINIC', initialSlots = {}, onSaveProtocol, onPhotoSaved, onPhotoProcessed,
 }) => {
-	// State
-	const [activePreset, setActivePreset] = useState<PhotoProtocolPreset>(() => {
-		if (initialPresetId) return getPresetById(initialPresetId);
-		return STANDARD_12_SLOT_PROTOCOL;
-	});
-	const [currentStage, setCurrentStage] = useState<'before' | 'during' | 'after' | 'followup'>(initialStage);
-	const [slotsData, setSlotsData] = useState<Record<string, PhotoSlotRecord>>(() => initialSlots || EMPTY_INITIAL_SLOTS);
+	const [activePreset, setActivePreset] = useState<PhotoProtocolPreset>(STANDARD_12_SLOT_PROTOCOL);
+	const [slotsData, setSlotsData] = useState<Record<string, PhotoSlotRecord>>(initialSlots);
 	const [activeViewMode, setActiveViewMode] = useState<'grid' | 'comparison' | 'export'>('grid');
-	const [activeProjectionFilter, setActiveProjectionFilter] = useState<'all' | 'extraoral' | 'intraoral' | 'paired'>('all');
+	const [activeFilter, setActiveFilter] = useState<'all' | 'extraoral' | 'intraoral'>('all');
 	const [selectedSlotForEdit, setSelectedSlotForEdit] = useState<string | null>(null);
 	const [dragOverSlotId, setDragOverSlotId] = useState<string | null>(null);
-
-	// Before/After comparison selection
-	const [beforeSlotId, setBeforeSlotId] = useState<string>('portrait_smile');
-	const [afterSlotId, setAfterSlotId] = useState<string>('intraoral_frontal_occlusion');
-
-	// File input ref & Blob URLs memory leak prevention
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
-	const currentUploadingSlotRef = useRef<string | null>(null);
+	const currentSlotRef = useRef<string | null>(null);
 	const createdBlobUrlsRef = useRef<Set<string>>(new Set());
 
-	useEffect(() => {
-		return () => {
-			// Revoke all created blob URLs to prevent memory leaks in V8 heap
-			for (const url of createdBlobUrlsRef.current) {
-				URL.revokeObjectURL(url);
-			}
-			createdBlobUrlsRef.current.clear();
-		};
-	}, []);
-
-	useEffect(() => {
-		if (initialSlots && Object.keys(initialSlots).length > 0) {
-			setSlotsData(initialSlots);
-		}
-	}, [initialSlots]);
-
-	// Fetch already attached visit photos from PostgreSQL 18
-	useEffect(() => {
-		if (!isOpen || !visitId) return;
-		let isMounted = true;
-		fetch(`/api/files/visits/${visitId}/attachments`, {
-			headers: denteAdminSecretRequestHeaders(),
-		})
-			.then((res) => (res.ok ? res.json() : null))
-			.then((data) => {
-				if (!isMounted || !data?.files || !Array.isArray(data.files) || data.files.length === 0) return;
-				setSlotsData((prev) => {
-					const next = { ...prev };
-					const slotIds = activePreset.slots.map((s) => s.id);
-					data.files.forEach((f: any, idx: number) => {
-						const matchedSlot = slotIds.find((id) => typeof f.name === 'string' && f.name.includes(id));
-						const targetSlot = matchedSlot || slotIds[idx % slotIds.length];
-						if (targetSlot && !next[targetSlot]?.imageUrl) {
-							next[targetSlot] = {
-								slotId: targetSlot,
-								imageUrl: f.url,
-								storagePath: f.url,
-								uploadedAt: new Date().toISOString(),
-								stage: currentStage === 'during' ? 'in_progress' : currentStage,
-							};
-						}
-					});
-					return next;
-				});
-			})
-			.catch(() => {
-				// Non-blocking fallback for offline or standalone demo
-			});
-		return () => {
-			isMounted = false;
-		};
-	}, [isOpen, visitId, activePreset.slots, currentStage]);
-
-	const getSlotRecord = (slotId: string): PhotoSlotRecord => {
-		return slotsData[slotId] || { slotId };
-	};
+	useEffect(() => () => { createdBlobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u)); createdBlobUrlsRef.current.clear(); }, []);
 
 	const updateSlotRecord = useCallback((slotId: string, updates: Partial<PhotoSlotRecord>) => {
-		setSlotsData(prev => ({
-			...prev,
-			[slotId]: {
-				...(prev[slotId] || { slotId }),
-				...updates
-			}
-		}));
+		setSlotsData((prev) => ({ ...prev, [slotId]: { ...(prev[slotId] || { slotId }), ...updates } }));
 	}, []);
 
-	// Honest PostgreSQL 18 & file storage persistence (Mandates 8e, 8k)
-	const uploadPhotoToBackend = useCallback(async (
-		slotId: string,
-		compressedBlob: Blob,
-		rawFilename: string,
-	): Promise<string | null> => {
+	const uploadPhotoToBackend = useCallback(async (slotId: string, blob: Blob, rawFilename: string) => {
 		if (!visitId && !patientId) return null;
 		try {
-			const uploadUrl = visitId
-				? `/api/files/visits/${visitId}/attachments`
-				: `/api/files/patients/${patientId}/attachments`;
-			const formData = new FormData();
-			const baseName = (rawFilename || `slot_${slotId}`).replace(/[^a-zA-Z0-9.-]/g, '_');
-			const finalName = baseName.endsWith('.webp') ? baseName : `${baseName}.webp`;
-			formData.append('file', compressedBlob, finalName);
+			const url = visitId ? `/api/files/visits/${visitId}/attachments` : `/api/files/patients/${patientId}/attachments`;
+			const fd = new FormData();
+			fd.append('file', blob, rawFilename.endsWith('.webp') ? rawFilename : `${rawFilename}.webp`);
+			const res = await fetch(url, { method: 'POST', headers: denteAdminSecretRequestHeaders(), body: fd });
+			return res.ok ? ((await res.json())?.file?.url || null) : null;
+		} catch { return null; }
+	}, [visitId, patientId]);
 
-			const resp = await fetch(uploadUrl, {
-				method: 'POST',
-				headers: denteAdminSecretRequestHeaders(),
-				body: formData,
-			});
-
-			if (!resp.ok) return null;
-
-			const json = await resp.json();
-			const fileUrl = json?.file?.url || (json?.attachment?.id ? `/api/attachments/${json.attachment.id}/download` : null);
-			if (fileUrl && json?.attachment?.id && onPhotoUploadedToStorage) {
-				onPhotoUploadedToStorage(json.attachment.id, fileUrl, slotId);
-			}
-			return fileUrl;
-		} catch (_err) {
-			return null;
-		}
-	}, [visitId, patientId, onPhotoUploadedToStorage]);
-
-	const handleFileUpload = async (slotId: string, file: File) => {
-		try {
-			// Stream compress to optimized WebP blob (1920px max, 0.85 quality) < 200 ms
-			const compressed = await compressChairsidePhotoToBlobUrl(file, {
-				maxDimension: 1920,
-				quality: 0.85,
-			});
-
-			// Revoke previous blob URL to prevent V8 heap bloat
-			const prevUrl = slotsData[slotId]?.imageUrl;
-			if (prevUrl && prevUrl.startsWith('blob:')) {
-				URL.revokeObjectURL(prevUrl);
-				createdBlobUrlsRef.current.delete(prevUrl);
-			}
-
-			createdBlobUrlsRef.current.add(compressed.blobUrl);
-
-			updateSlotRecord(slotId, {
-				imageUrl: compressed.blobUrl,
-				uploadedAt: new Date().toISOString(),
-				stage: currentStage === 'during' ? 'in_progress' : currentStage,
-				rotationDegrees: 0,
-				flipHorizontal: false,
-				flipVertical: false,
-				brightness: 0,
-				contrast: 0,
-				exposure: 0,
-				warmth: 0
-			});
-
-			// Asynchronous persist to PostgreSQL 18
-			void uploadPhotoToBackend(slotId, compressed.blob, file.name).then((serverUrl) => {
-				if (serverUrl) {
-					updateSlotRecord(slotId, {
-						imageUrl: serverUrl,
-						storagePath: serverUrl,
-					});
-				}
-			});
-		} catch (_err) {
-			const fallbackUrl = URL.createObjectURL(file);
-			createdBlobUrlsRef.current.add(fallbackUrl);
-			updateSlotRecord(slotId, {
-				imageUrl: fallbackUrl,
-				uploadedAt: new Date().toISOString(),
-				stage: currentStage === 'during' ? 'in_progress' : currentStage,
-				rotationDegrees: 0,
-				flipHorizontal: false,
-				flipVertical: false,
-				brightness: 0,
-				contrast: 0,
-				exposure: 0,
-				warmth: 0
-			});
-		}
+	const handleUpload = async (slotId: string, file: File) => {
+		const comp = await compressChairsidePhotoToBlobUrl(file, { maxDimension: 1920, quality: 0.85 }).catch(() => null);
+		const blobUrl = comp ? comp.blobUrl : URL.createObjectURL(file);
+		createdBlobUrlsRef.current.add(blobUrl);
+		updateSlotRecord(slotId, { imageUrl: blobUrl, uploadedAt: new Date().toISOString() });
+		if (comp) void uploadPhotoToBackend(slotId, comp.blob, file.name).then((u) => u && updateSlotRecord(slotId, { imageUrl: u }));
 	};
 
-	// 1-Click Clipboard Photo Paste Hook (Ctrl+V) — Mandates 8e, 8k
 	useClipboardPhotoPaste({
 		enabled: isOpen,
 		onPhotoReceived: async (compressedBlob, fileName) => {
-			const slotIds = activePreset.slots.map(s => s.id);
-			let targetSlotId = selectedSlotForEdit || dragOverSlotId || null;
-			if (!targetSlotId) {
-				const firstEmpty = slotIds.find(id => !slotsData[id]?.imageUrl);
-				targetSlotId = firstEmpty || slotIds[0] || 'portrait_smile';
-			}
-
+			const targetId = selectedSlotForEdit || activePreset.slots.find((s) => !slotsData[s.id]?.imageUrl)?.id || activePreset.slots[0]?.id || 'portrait_smile';
 			const blobUrl = URL.createObjectURL(compressedBlob);
 			createdBlobUrlsRef.current.add(blobUrl);
-
-			updateSlotRecord(targetSlotId, {
-				imageUrl: blobUrl,
-				uploadedAt: new Date().toISOString(),
-				stage: currentStage === 'during' ? 'in_progress' : currentStage,
-				rotationDegrees: 0,
-				flipHorizontal: false,
-				flipVertical: false,
-				brightness: 0,
-				contrast: 0,
-				exposure: 0,
-				warmth: 0,
-			});
-
-			const slotDef = getSlotDefinitionById(targetSlotId);
-			const slotLabel = slotDef?.shortLabelRu || targetSlotId;
-			showToast(`Вставлен снимок из буфера (Ctrl+V) в ракурс «${slotLabel}»`, 'success', 3500);
-
-			// Asynchronous persist to PostgreSQL 18
-			void uploadPhotoToBackend(targetSlotId, compressedBlob, fileName).then((serverUrl) => {
-				if (serverUrl) {
-					updateSlotRecord(targetSlotId, {
-						imageUrl: serverUrl,
-						storagePath: serverUrl,
-					});
-				}
-			});
-
-			const res = { slotId: targetSlotId, fileName, stage: currentStage };
-			onPhotoSaved?.(res);
-			onPhotoProcessed?.(res);
+			updateSlotRecord(targetId, { imageUrl: blobUrl, uploadedAt: new Date().toISOString() });
+			showToast(`Вставлен снимок из буфера (Ctrl+V) в ракурс «${getSlotDefinitionById(targetId)?.shortLabelRu || targetId}»`, 'success', 3500);
+			void uploadPhotoToBackend(targetId, compressedBlob, fileName).then((u) => u && updateSlotRecord(targetId, { imageUrl: u }));
+			onPhotoSaved?.({ slotId: targetId, fileName }); onPhotoProcessed?.({ slotId: targetId, fileName });
 		},
 	});
 
-	const handleBatchFilesUpload = async (files: FileList | File[], startSlotId?: string) => {
-		const fileArr = Array.from(files);
-		if (fileArr.length === 0) return;
-
-		const slotIds = activePreset.slots.map(s => s.id);
-		let targetIndex = startSlotId ? slotIds.indexOf(startSlotId as any) : 0;
-		if (targetIndex < 0) targetIndex = 0;
-
-		const completedResults: any[] = [];
-		for (let i = 0; i < fileArr.length; i++) {
-			const file = fileArr[i];
-			if (!file) continue;
-			let slotToFill = slotIds[(targetIndex + i) % slotIds.length];
-			if (!slotToFill) continue;
-			// If target slot is already filled and there's an empty slot, pick the empty slot
-			if (slotsData[slotToFill]?.imageUrl) {
-				const emptySlot = slotIds.find(id => id && !slotsData[id]?.imageUrl);
-				if (emptySlot) slotToFill = emptySlot;
-			}
-			await handleFileUpload(slotToFill, file);
-			const res = { slotId: slotToFill, fileName: file.name, stage: currentStage };
-			completedResults.push(res);
-			onPhotoSaved?.(res);
-			onPhotoProcessed?.(res);
-		}
-		if (completedResults.length > 0) {
-			onBatchCompleted?.(completedResults);
-		}
-	};
-
-	const triggerUploadForSlot = (slotId: string) => {
-		currentUploadingSlotRef.current = slotId;
-		fileInputRef.current?.click();
-	};
-
-	const triggerBatchUpload = () => {
-		currentUploadingSlotRef.current = null;
-		fileInputRef.current?.click();
-	};
-
-	const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const files = e.target.files;
-		if (files && files.length > 0) {
-			const firstFile = files[0];
-			if (currentUploadingSlotRef.current && files.length === 1 && firstFile) {
-				handleFileUpload(currentUploadingSlotRef.current, firstFile);
-			} else {
-				handleBatchFilesUpload(files, currentUploadingSlotRef.current || undefined);
-			}
-		}
-		if (fileInputRef.current) fileInputRef.current.value = '';
-		currentUploadingSlotRef.current = null;
-	};
-
-	const handleDeleteImage = (slotId: string, e?: React.MouseEvent) => {
-		e?.stopPropagation();
-		const prevUrl = slotsData[slotId]?.imageUrl;
-		if (prevUrl && prevUrl.startsWith('blob:')) {
-			URL.revokeObjectURL(prevUrl);
-			createdBlobUrlsRef.current.delete(prevUrl);
-		}
-		setSlotsData(prev => {
-			const next = { ...prev };
-			delete next[slotId];
-			return next;
-		});
-		if (selectedSlotForEdit === slotId) {
-			setSelectedSlotForEdit(null);
-		}
-	};
-
-	const totalUploadedCount = useMemo(() => {
-		return Object.values(slotsData).filter(s => !!s.imageUrl).length;
-	}, [slotsData]);
-
-	const pairedSlotsCount = useMemo(() => {
-		return Object.values(slotsData).filter(s => !!(s.paired_document_id || s.paired_photo_id)).length;
-	}, [slotsData]);
-
-	const visibleSlots = useMemo(() => {
-		if (activeProjectionFilter === 'all') return activePreset.slots;
-		if (activeProjectionFilter === 'extraoral') return activePreset.slots.filter(s => s.category === 'extraoral');
-		if (activeProjectionFilter === 'intraoral') return activePreset.slots.filter(s => s.category === 'intraoral');
-		if (activeProjectionFilter === 'paired') {
-			return activePreset.slots.filter(s => {
-				const rec = slotsData[s.id];
-				return Boolean(rec && (rec.paired_document_id || rec.paired_photo_id));
-			});
-		}
-		return activePreset.slots;
-	}, [activePreset.slots, activeProjectionFilter, slotsData]);
-
-	const selectedSlotDef = selectedSlotForEdit ? getSlotDefinitionById(selectedSlotForEdit) : undefined;
-	const selectedSlotRec = selectedSlotForEdit ? getSlotRecord(selectedSlotForEdit) : undefined;
-
 	if (!isOpen) return null;
-
-	// Anti-Matryoshka Law (Mandate 8d, Sin 6): Modal depth strictly 1.
-	// Render calibration drawer sequentially rather than nesting inside parent modal overlay.
-	if (selectedSlotForEdit && selectedSlotDef && selectedSlotRec) {
-		return (
-			<PhotoCalibrationDrawer
-				slotDef={selectedSlotDef}
-				record={selectedSlotRec}
-				onClose={() => setSelectedSlotForEdit(null)}
-				onUpdateRecord={(updates) => updateSlotRecord(selectedSlotForEdit, updates)}
-			/>
-		);
+	const selectedSlotDef = selectedSlotForEdit ? getSlotDefinitionById(selectedSlotForEdit) : undefined;
+	if (selectedSlotForEdit && selectedSlotDef) {
+		return <PhotoCalibrationDrawer slotDef={selectedSlotDef} record={slotsData[selectedSlotForEdit] || { slotId: selectedSlotForEdit }} onClose={() => setSelectedSlotForEdit(null)} onUpdateRecord={(up) => updateSlotRecord(selectedSlotForEdit, up)} />;
 	}
 
-	const modalContent = (
-		<div className="photo-protocol-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="photo-protocol-title">
-			<input
-				type="file"
-				ref={fileInputRef}
-				style={{ display: 'none' }}
-				multiple
-				accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,.jpg,.jpeg,.png,.webp"
-				onChange={handleFileInputChange}
-			/>
-
+	return createPortal(
+		<div className="photo-protocol-modal-backdrop" role="dialog" aria-modal="true">
+			<input type="file" ref={fileInputRef} style={{ display: 'none' }} multiple accept="image/*" onChange={(e) => {
+				const files = Array.from(e.target.files || []);
+				files.forEach((f, i) => handleUpload(currentSlotRef.current || activePreset.slots[i % activePreset.slots.length]?.id || 'slot', f));
+				if (fileInputRef.current) fileInputRef.current.value = '';
+			}} />
 			<div className="photo-protocol-modal">
-				{/* Apple iOS Mobile HIG Tactile Drag Handle */}
 				<div className="photo-mobile-drag-handle" aria-hidden="true" />
-
-				{/* Top Header */}
 				<div className="photo-protocol-header">
 					<div className="photo-protocol-title-group">
-						<div className="photo-protocol-badge-icon">
-							<CheekRetractor size={22} />
-						</div>
-						<div>
-							<h2 id="photo-protocol-title" style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>
-								Клинический фотопротокол & Фотосетка
-							</h2>
-							<div style={{ fontSize: '13px', color: 'var(--muted, #64748b)', marginTop: '2px' }}>
-								Пациент: <strong style={{ color: 'var(--ink, #0f172a)' }}>{patientName}</strong> ({patientCardNumber}) • Врач: {doctorName}
-							</div>
-						</div>
+						<div className="photo-protocol-badge-icon"><CheekRetractor size={22} /></div>
+						<div><h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Клинический фотопротокол</h2><div style={{ fontSize: '13px', color: 'var(--muted, #64748b)' }}>Пациент: <strong>{patientName}</strong> ({patientCardNumber}) • Врач: {doctorName}</div></div>
 					</div>
-
-					{/* Navigation Tabs */}
 					<div className="photo-protocol-tabs">
-						<button
-							className={`photo-protocol-tab-btn ${activeViewMode === 'grid' ? 'active' : ''}`}
-							onClick={() => setActiveViewMode('grid')}
-						>
-							<Grid size={16} />
-							Сетка протокола ({totalUploadedCount}/{activePreset.totalSlots})
-						</button>
-						<button
-							className={`photo-protocol-tab-btn ${activeViewMode === 'comparison' ? 'active' : ''}`}
-							onClick={() => setActiveViewMode('comparison')}
-						>
-							<MoveHorizontal size={16} />
-							Сравнение До / После
-						</button>
-						<button
-							className={`photo-protocol-tab-btn ${activeViewMode === 'export' ? 'active' : ''}`}
-							onClick={() => setActiveViewMode('export')}
-						>
-							<FileText size={16} />
-							Презентация & Коллаж
-						</button>
+						<button type="button" className={`photo-protocol-tab-btn ${activeViewMode === 'grid' ? 'active' : ''}`} onClick={() => setActiveViewMode('grid')}><Grid size={16} /> Сетка</button>
+						<button type="button" className={`photo-protocol-tab-btn ${activeViewMode === 'comparison' ? 'active' : ''}`} onClick={() => setActiveViewMode('comparison')}><MoveHorizontal size={16} /> Сравнение</button>
+						<button type="button" className={`photo-protocol-tab-btn ${activeViewMode === 'export' ? 'active' : ''}`} onClick={() => setActiveViewMode('export')}><FileText size={16} /> В ЗТЛ</button>
 					</div>
-
-					{/* Actions */}
 					<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-						<button
-							type="button"
-							className="photo-touch-btn"
-							data-testid="btn-patient-presentation-popout"
-							onClick={() => {
-								openPatientPresentationWindow({
-									beforeImageUrl: slotsData[beforeSlotId]?.imageUrl,
-									afterImageUrl: slotsData[afterSlotId]?.imageUrl,
-									beforeLabel: getSlotDefinitionById(beforeSlotId)?.shortLabelRu || 'До',
-									afterLabel: getSlotDefinitionById(afterSlotId)?.shortLabelRu || 'После',
-									beforeShade: slotsData[beforeSlotId]?.detectedVitaShade,
-									afterShade: slotsData[afterSlotId]?.detectedVitaShade,
-									clinicName,
-									patientName,
-									mode: 'split',
-								});
-							}}
-							title="Показать на экране пациента перед креслом (2-й монитор / ТВ)"
-							style={{ minHeight: '34px', fontSize: '12px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-						>
-							<ExternalLink size={16} />
-							Экран пациента
-						</button>
-						{onSaveProtocol && (
-							<button
-								className="photo-touch-btn primary"
-								onClick={() => onSaveProtocol(slotsData, activePreset.id)}
-							>
-								<CheckCircle size={16} />
-								Сохранить протокол
-							</button>
-						)}
-						<button
-							className="photo-touch-btn"
-							onClick={onClose}
-							title="Закрыть (Esc)"
-							aria-label="Закрыть"
-						>
-							<X size={18} />
-						</button>
+						<button type="button" className="photo-touch-btn" data-testid="btn-patient-presentation-popout" onClick={() => openPatientPresentationWindow({ clinicName, patientName, mode: 'split' })} title="Экран пациента"><ExternalLink size={16} /> Экран</button>
+						{onSaveProtocol && <button type="button" className="photo-touch-btn primary" onClick={() => onSaveProtocol(slotsData, activePreset.id)}><CheckCircle size={16} /> Сохранить</button>}
+						<button type="button" className="photo-touch-btn" onClick={onClose} title="Закрыть"><X size={18} /></button>
 					</div>
 				</div>
-
-				{/* Body Content */}
 				<div className="photo-protocol-body">
-					{/* 1. GRID VIEW MODE */}
-					{activeViewMode === 'grid' && (
-						<>
-							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-								<div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-									<span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--muted, #64748b)' }}>
-										Протокол:
-									</span>
-									{/* 1-Click Clinical Presets (Mandate 8e: Doctor Autonomy) */}
-									<div style={{ display: 'flex', gap: '4px', background: 'var(--surface, #f1f5f9)', padding: '3px', borderRadius: '8px' }}>
-										{CLINICAL_PROTOCOLS_REGISTRY.map((p) => {
-											const isSelected = activePreset.id === p.id;
-											return (
-												<button
-													key={p.id}
-													type="button"
-													className={`photo-touch-btn ${isSelected ? 'primary' : ''}`}
-													onClick={() => setActivePreset(p)}
-													style={{
-														minHeight: '34px',
-														padding: '4px 10px',
-														fontSize: '12px',
-														fontWeight: isSelected ? 700 : 500,
-														borderRadius: '6px',
-													}}
-													title={p.descriptionRu}
-												>
-													{p.shortNameRu}
-												</button>
-											);
-										})}
-									</div>
-
-									<select
-										value={activePreset.id}
-										onChange={(e) => setActivePreset(getPresetById(e.target.value))}
-										aria-label="Выбор клинического фотопротокола"
-										style={{
-											minHeight: '34px',
-											padding: '4px 10px',
-											borderRadius: '8px',
-											border: '1px solid var(--line, #cbd5e1)',
-											background: 'var(--paper, #ffffff)',
-											color: 'var(--ink, #0f172a)',
-											fontSize: '12px',
-											fontWeight: 600,
-											cursor: 'pointer'
-										}}
-									>
-										{CLINICAL_PROTOCOLS_REGISTRY.map(p => (
-											<option key={p.id} value={p.id}>{p.nameRu}</option>
-										))}
-									</select>
-
-									<button
-										type="button"
-										className="photo-touch-btn"
-										onClick={triggerBatchUpload}
-										title="Загрузить несколько снимков сразу (авто-раскладка по слотам)"
-										style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', minHeight: '34px', fontSize: '12px', fontWeight: 600 }}
-									>
-										<UploadCloud size={16} />
-										Пакетная загрузка снимков
-									</button>
-								</div>
-
-								<div style={{ display: 'flex', gap: '8px', fontSize: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-									<span className="photo-category-pill extraoral">
-										Внеротовые: {activePreset.categoryCount.extraoral}
-									</span>
-									<span className="photo-category-pill intraoral">
-										Внутриротовые: {activePreset.categoryCount.intraoral}
-									</span>
-								</div>
-							</div>
-
-							{/* 1-Click Projection Filter Rail */}
-							<div style={{
-								display: 'flex',
-								alignItems: 'center',
-								gap: '8px',
-								flexWrap: 'wrap',
-								padding: '8px 12px',
-								borderRadius: '10px',
-								background: 'var(--surface, #f8fafc)',
-								border: '1px solid var(--line, #e2e8f0)',
-							}}>
-								<span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted, #64748b)' }}>
-									Фильтр проекций:
-								</span>
-								<button
-									type="button"
-									className={`photo-touch-btn ${activeProjectionFilter === 'all' ? 'primary' : ''}`}
-									onClick={() => setActiveProjectionFilter('all')}
-									style={{ minHeight: '34px', padding: '4px 10px', fontSize: '12px', borderRadius: '6px' }}
-								>
-									Все ({activePreset.totalSlots})
-								</button>
-								<button
-									type="button"
-									className={`photo-touch-btn ${activeProjectionFilter === 'extraoral' ? 'primary' : ''}`}
-									onClick={() => setActiveProjectionFilter('extraoral')}
-									style={{ minHeight: '34px', padding: '4px 10px', fontSize: '12px', borderRadius: '6px' }}
-								>
-									Внеротовые / Лицо ({activePreset.categoryCount.extraoral})
-								</button>
-								<button
-									type="button"
-									className={`photo-touch-btn ${activeProjectionFilter === 'intraoral' ? 'primary' : ''}`}
-									onClick={() => setActiveProjectionFilter('intraoral')}
-									style={{ minHeight: '34px', padding: '4px 10px', fontSize: '12px', borderRadius: '6px' }}
-								>
-									Внутриротовые / Окклюзия ({activePreset.categoryCount.intraoral})
-								</button>
-								<button
-									type="button"
-									className={`photo-touch-btn ${activeProjectionFilter === 'paired' ? 'primary' : ''}`}
-									onClick={() => setActiveProjectionFilter('paired')}
-									style={{ minHeight: '34px', padding: '4px 10px', fontSize: '12px', borderRadius: '6px' }}
-								>
-									Спаренные До/После ({pairedSlotsCount})
-								</button>
-							</div>
-
-							<div
-								className={`photo-slots-grid ${activePreset.totalSlots === 12 ? 'photo-slots-grid-12' : ''}`}
-								onDragOver={(e) => {
-									e.preventDefault();
-								}}
-								onDrop={(e) => {
-									e.preventDefault();
-									if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-										handleBatchFilesUpload(e.dataTransfer.files);
-									}
-								}}
-							>
-								{visibleSlots.length === 0 ? (
-									<div style={{ gridColumn: '1 / -1', padding: '32px', textAlign: 'center', color: 'var(--muted, #64748b)', fontSize: '13px' }}>
-										Снимков по выбранному фильтру пока нет. Выберите проекцию или выполните загрузку снимка.
-									</div>
-								) : (
-									visibleSlots.map((slotDef) => {
-										const record = getSlotRecord(slotDef.id);
-										return (
-											<PhotoSlotCard
-												key={slotDef.id}
-												slotDef={slotDef}
-												record={record}
-												isDragActive={dragOverSlotId === slotDef.id}
-												onUploadClick={() => triggerUploadForSlot(slotDef.id)}
-												onEditClick={() => setSelectedSlotForEdit(slotDef.id)}
-												onDeleteClick={(e) => handleDeleteImage(slotDef.id, e)}
-												onDragOver={(e) => {
-													e.preventDefault();
-													setDragOverSlotId(slotDef.id);
-												}}
-												onDragLeave={() => setDragOverSlotId(null)}
-												onDrop={(e) => {
-													e.preventDefault();
-													setDragOverSlotId(null);
-													const f = e.dataTransfer.files?.[0];
-													if (f) handleFileUpload(slotDef.id, f);
-												}}
-											/>
-										);
-									})
-								)}
-							</div>
-						</>
-					)}
-
-					{/* 2. BEFORE / AFTER COMPARISON */}
-					{activeViewMode === 'comparison' && (
-						<BeforeAfterComparisonView
-							preset={activePreset}
-							slotsData={slotsData}
-							beforeSlotId={beforeSlotId}
-							afterSlotId={afterSlotId}
-							clinicName={clinicName}
-							patientName={patientName}
-							patientCardNumber={patientCardNumber}
-							doctorName={doctorName}
-							onBeforeSlotChange={setBeforeSlotId}
-							onAfterSlotChange={setAfterSlotId}
-							onUpdateSlotRecord={updateSlotRecord}
-						/>
-					)}
-
-					{/* 3. EXPORT & CLINICAL PRESENTATION */}
-					{activeViewMode === 'export' && (
-						<PhotoCollageExportSheet
-							preset={activePreset}
-							slotsData={slotsData}
-							clinicName={clinicName}
-							patientName={patientName}
-							patientCardNumber={patientCardNumber}
-							doctorName={doctorName}
-						/>
-					)}
+					{activeViewMode === 'grid' && <PhotoGridSixSlots preset={activePreset} slotsData={slotsData} activeFilter={activeFilter} dragOverSlotId={dragOverSlotId} onSelectPreset={setActivePreset} onFilterChange={setActiveFilter} onBatchUploadClick={() => { currentSlotRef.current = null; fileInputRef.current?.click(); }} onTriggerUploadSlot={(id) => { currentSlotRef.current = id; fileInputRef.current?.click(); }} onEditSlot={setSelectedSlotForEdit} onDeleteSlot={(id, e) => { e.stopPropagation(); setSlotsData((prev) => { const n = { ...prev }; delete n[id]; return n; }); }} onSlotDragOver={(e, id) => { e.preventDefault(); setDragOverSlotId(id); }} onSlotDragLeave={() => setDragOverSlotId(null)} onSlotDrop={(e, id) => { e.preventDefault(); setDragOverSlotId(null); if (e.dataTransfer.files[0]) handleUpload(id, e.dataTransfer.files[0]); }} />}
+					{activeViewMode === 'comparison' && <BeforeAfterComparisonView preset={activePreset} slotsData={slotsData} beforeSlotId={activePreset.slots[0]?.id || 'slot_1'} afterSlotId={activePreset.slots[1]?.id || 'slot_2'} clinicName={clinicName} patientName={patientName} />}
+					{activeViewMode === 'export' && <LabPhotoExportDrawer preset={activePreset} slotsData={slotsData} clinicName={clinicName} patientName={patientName} patientCardNumber={patientCardNumber} doctorName={doctorName} />}
 				</div>
 			</div>
-
-		</div>
+		</div>,
+		document.body
 	);
-
-	return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };
 
 export default ClinicalPhotoProtocolModal;
