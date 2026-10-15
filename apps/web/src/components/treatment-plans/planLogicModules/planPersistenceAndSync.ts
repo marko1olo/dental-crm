@@ -211,16 +211,21 @@ export function createPlanPersistenceAndSyncHandlers(
 		});
 	};
 
-	const handleExportCashier = () => {
-		exportPlanToCashier({
+	const handleExportCashier = async () => {
+		await exportPlanToCashier({
 			patientId,
 			patientName,
 			patientPhone,
 			doctorName: auth?.currentUser?.name || "Лечащий врач-стоматолог",
+			currentPlanId,
 			stages,
 			currentTier,
 			loyaltyDeduction,
 			onExportToCashier,
+			onPlanSaved: (newId: string) => {
+				setCurrentPlanId(newId);
+				onPlanSaved?.(newId);
+			},
 		});
 	};
 

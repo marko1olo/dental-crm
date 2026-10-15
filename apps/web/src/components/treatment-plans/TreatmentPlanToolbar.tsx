@@ -51,9 +51,9 @@ export interface TreatmentPlanToolbarProps {
 	readonly onOpenCuratorModal: () => void;
 	readonly curatorFullName?: string;
 	readonly onOpenPresenterModal: () => void;
-	readonly onOpenComparatorModal: () => void;
-	readonly onOpenStagePaymentModal: () => void;
-	readonly onOpenPriceValidatorModal: () => void;
+	readonly onOpenComparatorModal?: (() => void) | undefined;
+	readonly onOpenStagePaymentModal?: (() => void) | undefined;
+	readonly onOpenPriceValidatorModal?: (() => void) | undefined;
 	readonly onOpenContractPrint: () => void;
 	readonly onOpenLabOrder: () => void;
 	readonly onOneClickLabOrder: () => void;
@@ -69,7 +69,7 @@ export interface TreatmentPlanToolbarProps {
 	readonly copilotFeedback: string | null;
 	readonly setCopilotFeedback: (feedback: string | null) => void;
 	readonly isCopilotExecuting: boolean;
-	readonly onExecuteCopilot: (actionId: CopilotCommandType) => void;
+	readonly onExecuteCopilot: (actionId: CopilotCommandType | string) => void;
 	readonly onResetPlan: () => void;
 	readonly onOpenChairsideBundlesModal: () => void;
 	readonly onApplyClinicalBundle: (bundleId: ClinicalBundleId) => void;
@@ -247,6 +247,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveViewTab("3tier")}
+							data-testid="tp-tab-3tier"
 							className={`h-7 px-3 rounded-[7px] text-[12.5px] font-medium transition-all cursor-pointer touch-manipulation whitespace-nowrap shrink-0 ${
 								activeViewTab === "3tier"
 									? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-2xs"
@@ -258,6 +259,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveViewTab("stages")}
+							data-testid="tp-tab-stages"
 							className={`h-7 px-3 rounded-[7px] text-[12.5px] font-medium transition-all cursor-pointer touch-manipulation whitespace-nowrap shrink-0 ${
 								activeViewTab === "stages"
 									? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-2xs"
@@ -511,42 +513,6 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 								<Bot size={14} className="text-amber-500 shrink-0" />
 								<span>Презентация пациенту (2-й экран & ИИ)</span>
 							</button>
-							<button
-								type="button"
-								onClick={() => {
-									onOpenComparatorModal();
-									setIsOptionsMenuOpen(false);
-								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
-								role="menuitem"
-							>
-								<Sparkles size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-								<span>Студия 3-Tier сравнения</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									onOpenStagePaymentModal();
-									setIsOptionsMenuOpen(false);
-								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-900 dark:text-amber-200 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
-								role="menuitem"
-							>
-								<Coins size={14} className="text-amber-500" />
-								<span>Эскроу & Поэтапная оплата</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									onOpenPriceValidatorModal();
-									setIsOptionsMenuOpen(false);
-								}}
-								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[38px]"
-								role="menuitem"
-							>
-								<FileCheck size={14} className="text-emerald-600" />
-								<span>Клинический валидатор СтАР</span>
-							</button>
 
 							<div className="px-2.5 py-1 text-[12px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1.5">
 								Документы и производство
@@ -617,6 +583,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 				hasCustomModifications={Boolean(customStages || cbctAutoPlanTiers)}
 				copilotFeedback={copilotFeedback}
 				setCopilotFeedback={setCopilotFeedback}
+				stages={customStages as any}
 			/>
 		</>
 	);

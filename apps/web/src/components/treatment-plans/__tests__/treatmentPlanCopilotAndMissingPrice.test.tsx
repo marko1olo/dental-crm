@@ -5,6 +5,7 @@ import { renderToString } from "react-dom/server";
 import { MissingPriceAlert } from "../MissingPriceAlert";
 import { TreatmentPlanStageCard } from "../TreatmentPlanStageCard";
 import { TreatmentPlanPresenterModal } from "../TreatmentPlanPresenterModal";
+import { TreatmentPlanCopilotModal } from "../TreatmentPlanCopilotModal";
 import {
 	optimizePlanForBudget,
 	replaceImplantationWithBridge,
@@ -15,7 +16,12 @@ import {
 	applyCopilotCommandToPlan,
 	getAdjacentFdiTeeth,
 	COPILOT_PRESET_ACTIONS,
+	COPILOT_SCENARIO_ACTIONS,
 	requestTreatmentPlanAiValidationAndComment,
+	applyEconomyScenarioToPlan,
+	applyOptimumScenarioToPlan,
+	applyPremiumScenarioToPlan,
+	buildChairsidePatientCasePresentation,
 } from "../../../services/ai/treatmentPlanCopilot";
 import {
 	generateTreatmentPlanStages,
@@ -344,6 +350,189 @@ describe("MissingPriceAlert & AI Treatment Plan Copilot Suite", () => {
 
 			assert.ok(html.includes("ИИ-Аудит &amp; Комментарий"), "Must include AI Audit tab button in presenter modal");
 			assert.ok(html.includes("tab-ai-audit-btn"), "Must have tab-ai-audit-btn data-testid");
+		});
+
+		it("10. applyEconomyScenarioToPlan applies base functional rehabilitation with integer rubles", () => {
+			const res = applyEconomyScenarioToPlan(initialStages);
+			assert.ok(res.success, "Economy scenario must succeed");
+			assert.equal(res.commandType, "tier_economy");
+			assert.ok(res.newTotalRub > 0, "New total must be positive integer");
+			assert.equal(Number.isInteger(res.newTotalRub), true, "Total must be integer rubles without float drift");
+			const stage3 = res.stages.find((s) => s.stageNumber === 3);
+			if (stage3 && stage3.items.length > 0) {
+				const hasEconomyCrown = stage3.items.some((it) => it.code804n === "A16.07.004.002" || it.priceRub === 16000);
+				assert.ok(hasEconomyCrown, "Stage 3 must contain standard metal-ceramic crown");
+			}
+		});
+
+		it("11. applyOptimumScenarioToPlan applies gold standard evidence-based dentistry", () => {
+			const res = applyOptimumScenarioToPlan(initialStages);
+			assert.ok(res.success, "Optimum scenario must succeed");
+			assert.equal(res.commandType, "tier_optimum");
+			assert.equal(Number.isInteger(res.newTotalRub), true, "Total must be integer rubles");
+			const stage3 = res.stages.find((s) => s.stageNumber === 3);
+			if (stage3 && stage3.items.length > 0) {
+				const hasZirconia = stage3.items.some((it) => it.code804n === "A16.07.004.003" && it.priceRub === 26000);
+				assert.ok(hasZirconia, "Stage 3 must contain Katana STML zirconia crown at 26 000 ₽");
+			}
+		});
+
+		it("12. applyPremiumScenarioToPlan applies uncompromising aesthetics & digital navigation", () => {
+			const res = applyPremiumScenarioToPlan(initialStages);
+			assert.ok(res.success, "Premium scenario must succeed");
+			assert.equal(res.commandType, "tier_premium");
+			assert.equal(Number.isInteger(res.newTotalRub), true, "Total must be integer rubles");
+			const stage3 = res.stages.find((s) => s.stageNumber === 3);
+			if (stage3 && stage3.items.length > 0) {
+				const hasEmaxPress = stage3.items.some((it) => it.code804n === "A16.07.004.004" && it.priceRub === 45000);
+				assert.ok(hasEmaxPress, "Stage 3 must contain E.max Press crown/veneer at 45 000 ₽");
+			}
+		});
+
+		it("13. applyCopilotCommandToPlan dispatches 3 clinical scenario commands and natural language", () => {
+			const econByAction = applyCopilotCommandToPlan(initialStages, "tier_economy");
+			assert.equal(econByAction.commandType, "tier_economy");
+
+			const optByNlp = applyCopilotCommandToPlan(initialStages, "Перейти на сценарий Оптимум");
+			assert.equal(optByNlp.commandType, "tier_optimum");
+
+			const premByNlp = applyCopilotCommandToPlan(initialStages, "Включить премиум");
+			assert.equal(premByNlp.commandType, "tier_premium");
+		});
+
+		it("14. buildChairsidePatientCasePresentation filters micro-consumables from patient presentation while preserving BOM", () => {
+			const stageWithConsumables: TreatmentPlanStage = {
+				stageNumber: 1,
+				stageKind: "stage_1_therapy",
+				title: "Этап 1: Терапия",
+				subtitle: "Санация",
+				clinicalGoal: "Лечение кариеса",
+				items: [
+					sampleItemPriced,
+					{
+						id: "consumable-saliva-01",
+						code804n: "B01.003.004",
+						name: "Слюноотсос одноразовый стоматологический",
+						category: "Расходные материалы",
+						priceRub: 50,
+						unitPriceRub: 50,
+						discountRub: 0,
+						quantity: 2,
+						phase: 1,
+						stageKind: "stage_1_therapy",
+					},
+					{
+						id: "consumable-rolls-02",
+						code804n: "B01.003.005",
+						name: "Валики хлопковые стоматологические",
+						category: "Расходные материалы",
+						priceRub: 30,
+						unitPriceRub: 30,
+						discountRub: 0,
+						quantity: 4,
+						phase: 1,
+						stageKind: "stage_1_therapy",
+					},
+				],
+				totalRub: 4500 + 100 + 120,
+				totalKopecks: 472000 as any,
+				estimatedVisits: 1,
+				estimatedWeeks: 1,
+				order804nCodes: ["A16.07.002.001"],
+			};
+
+			const presentation = buildChairsidePatientCasePresentation([stageWithConsumables]);
+			const slide2Summary = presentation.slides.roadmap.stages[0]?.itemsSummaryRu || [];
+
+			// Consumables must NOT be listed in the patient presentation slide
+			assert.ok(
+				slide2Summary.some((txt) => txt.includes("Лечение кариеса эмали")),
+				"Patient slide must include clinical procedure",
+			);
+			assert.equal(
+				slide2Summary.some((txt) => /слюноотсос|валик/i.test(txt)),
+				false,
+				"Patient slide must NOT contain micro-consumables (saliva ejector, cotton rolls)",
+			);
+
+			// But stage items themselves are strictly preserved in stage for warehouse write-off (BOM)
+			assert.equal(stageWithConsumables.items.length, 3, "Warehouse BOM retains all 3 items");
+		});
+	});
+
+	describe("TreatmentPlanCopilotModal Component with 3 Scenarios and Missing Price Alert", () => {
+		const sampleStageWithMissingPrice: TreatmentPlanStage = {
+			stageNumber: 1,
+			stageKind: "stage_1_therapy",
+			title: "Этап 1: Санация",
+			subtitle: "Санация полости рта",
+			clinicalGoal: "Ликвидация очагов инфекции",
+			items: [sampleItemMissingPrice, sampleItemPriced],
+			totalRub: 4500,
+			totalKopecks: 450000 as any,
+			estimatedVisits: 1,
+			estimatedWeeks: 1,
+			order804nCodes: ["A16.07.002.099", "A16.07.002.001"],
+		};
+
+		it("renders 3 clinical scenario selector buttons (economy, optimum, premium)", () => {
+			const html = renderToString(
+				<TreatmentPlanCopilotModal
+					isOpen={true}
+					onClose={() => {}}
+					isCopilotExecuting={false}
+					copilotFeedback={null}
+					setCopilotFeedback={() => {}}
+					onExecuteCopilot={() => {}}
+					onResetPlan={() => {}}
+					onOpenPresenterModal={() => {}}
+					hasCustomModifications={false}
+					stages={[sampleStageWithMissingPrice]}
+				/>,
+			);
+
+			assert.ok(html.includes("copilot-scenario-btn-economy"), "Must render economy scenario button");
+			assert.ok(html.includes("copilot-scenario-btn-optimum"), "Must render optimum scenario button");
+			assert.ok(html.includes("copilot-scenario-btn-premium"), "Must render premium scenario button");
+		});
+
+		it("renders custom NLP command input and submit button", () => {
+			const html = renderToString(
+				<TreatmentPlanCopilotModal
+					isOpen={true}
+					onClose={() => {}}
+					isCopilotExecuting={false}
+					copilotFeedback={null}
+					setCopilotFeedback={() => {}}
+					onExecuteCopilot={() => {}}
+					onResetPlan={() => {}}
+					onOpenPresenterModal={() => {}}
+					hasCustomModifications={false}
+				/>,
+			);
+
+			assert.ok(html.includes("copilot-custom-input"), "Must render custom NLP input");
+			assert.ok(html.includes("copilot-custom-submit"), "Must render custom NLP submit button");
+		});
+
+		it("renders missing price alert banner inside copilot modal when unpriced items exist", () => {
+			const html = renderToString(
+				<TreatmentPlanCopilotModal
+					isOpen={true}
+					onClose={() => {}}
+					isCopilotExecuting={false}
+					copilotFeedback={null}
+					setCopilotFeedback={() => {}}
+					onExecuteCopilot={() => {}}
+					onResetPlan={() => {}}
+					onOpenPresenterModal={() => {}}
+					hasCustomModifications={false}
+					stages={[sampleStageWithMissingPrice]}
+				/>,
+			);
+
+			assert.ok(html.includes("copilot-missing-price-alert"), "Must render missing price alert in modal");
+			assert.ok(html.includes("без цены в каталоге клиники"), "Must describe missing price warning");
 		});
 	});
 });

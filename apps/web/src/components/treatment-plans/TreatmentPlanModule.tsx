@@ -3,7 +3,7 @@
  * Полностью декомпозирован строго по Мандату 8b (лимит строк <= 800).
  */
 
-import React from "react";
+import React, { Suspense } from "react";
 import { Layers, Plus, Sparkles } from "lucide-react";
 import type {
 	CashierInvoiceExportData,
@@ -15,16 +15,60 @@ import type { InventoryItemLookup } from "./treatmentPlanMaterialEngine";
 import { TreatmentPlanStageCard } from "./TreatmentPlanStageCard";
 import { TreatmentPlanToolbar } from "./TreatmentPlanToolbar";
 import { TreatmentPlanScenarioSelector } from "./TreatmentPlanScenarioSelector";
-import { TreatmentPlanSpecializedModalsHost } from "./TreatmentPlanSpecializedModalsHost";
 import { TreatmentPlanAddServiceModal } from "./TreatmentPlanAddServiceModal";
 import { TreatmentPlanCreateStageModal } from "./TreatmentPlanCreateStageModal";
 import { useTreatmentPlanLogic } from "./useTreatmentPlanLogic";
+
+const TreatmentPlanPresenterModal = React.lazy(() =>
+	import("./TreatmentPlanPresenterModal").then((m) => ({
+		default: m.TreatmentPlanPresenterModal,
+	})),
+);
+const TreatmentPlanSignatureModal = React.lazy(() =>
+	import("./TreatmentPlanSignatureModal").then((m) => ({
+		default: m.TreatmentPlanSignatureModal,
+	})),
+);
+const TreatmentPlanContractPrint = React.lazy(() =>
+	import("./TreatmentPlanContractPrint").then((m) => ({
+		default: m.TreatmentPlanContractPrint,
+	})),
+);
+const TreatmentPlanCompletedActPrint = React.lazy(() =>
+	import("./TreatmentPlanCompletedActPrint").then((m) => ({
+		default: m.TreatmentPlanCompletedActPrint,
+	})),
+);
+const FiscalReceipt54FzModal = React.lazy(() =>
+	import("../finance/FiscalReceipt54FzModal").then((m) => ({
+		default: m.FiscalReceipt54FzModal,
+	})),
+);
+const LabWorkOrderModal = React.lazy(() =>
+	import("../lab/orders/LabWorkOrderModal").then((m) => ({
+		default: m.LabWorkOrderModal,
+	})),
+);
+const InvoiceGenerationModal = React.lazy(() =>
+	import("../finance/InvoiceGenerationModal").then((m) => ({
+		default: m.InvoiceGenerationModal,
+	})),
+);
+const ClinicalServiceBundlesModal = React.lazy(() =>
+	import("./ClinicalServiceBundlesModal").then((m) => ({
+		default: m.ClinicalServiceBundlesModal,
+	})),
+);
+const CuratorPlanAssignmentModal = React.lazy(() =>
+	import("./CuratorPlanAssignmentModal").then((m) => ({
+		default: m.CuratorPlanAssignmentModal,
+	})),
+);
 
 // Прозрачный реэкспорт подкомпонентов и хука (Мандат 8b: обратная совместимость)
 export * from "./useTreatmentPlanLogic";
 export * from "./TreatmentPlanToolbar";
 export * from "./TreatmentPlanScenarioSelector";
-export * from "./TreatmentPlanSpecializedModalsHost";
 export * from "./TreatmentPlanAddServiceModal";
 export * from "./TreatmentPlanCreateStageModal";
 
@@ -402,90 +446,238 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				</div>
 			</TreatmentPlanScenarioSelector>
 
-			{/* 13 Specialized Studio Modals Host */}
-			<TreatmentPlanSpecializedModalsHost
-				isComparatorModalOpen={logic.isComparatorModalOpen}
-				onCloseComparator={() => logic.setIsComparatorModalOpen(false)}
-				isStagePaymentModalOpen={logic.isStagePaymentModalOpen}
-				onCloseStagePayment={() => logic.setIsStagePaymentModalOpen(false)}
-				isPriceValidatorModalOpen={logic.isPriceValidatorModalOpen}
-				onClosePriceValidator={() => logic.setIsPriceValidatorModalOpen(false)}
-				isSignModalOpen={logic.isSignModalOpen}
-				onOpenSignModal={() => logic.setIsSignModalOpen(true)}
-				onCloseSignModal={() => logic.setIsSignModalOpen(false)}
-				isContractPrintOpen={logic.isContractPrintOpen}
-				onOpenContractPrint={() => logic.setIsContractPrintOpen(true)}
-				onCloseContractPrint={() => logic.setIsContractPrintOpen(false)}
-				isActPrintOpen={logic.isActPrintOpen}
-				onCloseActPrint={() => logic.setIsActPrintOpen(false)}
-				isFiscalModalOpen={logic.isFiscalModalOpen}
-				onCloseFiscal={() => logic.setIsFiscalModalOpen(false)}
-				isLabOrderModalOpen={logic.isLabOrderModalOpen}
-				onCloseLabOrder={() => logic.setIsLabOrderModalOpen(false)}
-				isInvoiceModalOpen={logic.isInvoiceModalOpen}
-				onCloseInvoice={() => logic.setIsInvoiceModalOpen(false)}
-				isInstallmentModalOpen={logic.isInstallmentModalOpen}
-				onCloseInstallment={() => logic.setIsInstallmentModalOpen(false)}
-				onOpenInstallmentModal={() => logic.setIsInstallmentModalOpen(true)}
-				isPresenterModalOpen={logic.isPresenterModalOpen}
-				onClosePresenter={() => logic.setIsPresenterModalOpen(false)}
-				isCuratorModalOpen={logic.isCuratorModalOpen}
-				onCloseCurator={() => logic.setIsCuratorModalOpen(false)}
-				isChairsideBundlesModalOpen={logic.isChairsideBundlesModalOpen}
-				onCloseChairsideBundles={() => logic.setIsChairsideBundlesModalOpen(false)}
-				patientId={logic.patientId}
-				patientName={logic.patientName}
-				patientPhone={logic.patientPhone}
-				patientBirthDate={logic.patientBirthDate}
-				patientDepositRub={Math.round((logic.dashboard?.activePatient?.balanceKopecks || 0) / 100)}
-				patientBalanceRub={logic.patientBalanceRub}
-				patientChartNumber={logic.patient?.chartNumber || logic.patient?.cardNumber}
-				patientAdministrativeProfile={logic.patient?.administrativeProfile}
-				doctorFullName={logic.auth?.currentUser?.name || "Лечащий врач"}
-				doctorId={logic.auth?.currentUser?.id || "doc-01"}
-				clinicName={logic.dashboard?.clinicSettings?.profile?.brandName || "Стоматологическая клиника DENTE"}
-				clinicInn={logic.dashboard?.clinicSettings?.requisites?.inn}
-				planAgeDays={logic.planAgeDays}
-				planCreatedAtIso={planCreatedAtIso}
-				contractNumber={logic.contractNumber}
-				teethData={teethData}
-				orthopedicTeeth={logic.orthopedicTeeth}
-				selectedLabTeeth={logic.selectedLabTeeth}
-				treatmentPlanId={logic.currentPlanId || undefined}
-				labOrderPrefill={logic.labOrderPrefill}
-				catalog={logic.catalog}
-				currentTier={logic.currentTier}
-				effectiveSignTier={logic.effectiveSignTier}
-				planTiers={logic.planTiers}
-				selectedTierId={logic.selectedTierId}
-				onSelectTierId={logic.setSelectedTierId}
-				onSetPlanStatus={logic.setPlanStatus}
-				stages={logic.stages}
-				signedAgreement={logic.signedAgreement}
-				onSignedSuccess={(agreement) => {
-					logic.setSignedAgreement(agreement);
-					logic.setIsSignModalOpen(false);
-					showToast(
-						`План «${logic.effectiveSignTier.title}» успешно подписан пациентом ${logic.patientName}!`,
-						"success",
-						5000,
-					);
-				}}
-				discountPercent={logic.discountPercent}
-				loyaltyDeduction={logic.loyaltyDeduction}
-				completedActData={logic.completedActData}
-				selectedActStage={logic.selectedActStage}
-				onSelectActStage={logic.setSelectedActStage}
-				onConfirmExecuteWriteOff={logic.handleConfirmExecuteWriteOff}
-				isExecutingWriteOff={logic.isExecutingWriteOff}
-				validationPayload={logic.validationPayload}
-				selectedInstallmentStage={logic.selectedInstallmentStage}
-				onSelectInstallmentStage={logic.setSelectedInstallmentStage}
-				grandTotalRub={logic.grandTotalRub}
-				onExportToCashier={onExportToCashier}
-				onApplyChairsideBundlePlan={logic.handleApplyChairsideBundlePlan}
-				onApplyChairsideBundleInvoice={logic.handleApplyChairsideBundleInvoice}
-			/>
+			{/* Canonical Treatment Plan Modals (Mandates 8b, 8e: Single Canonical Workspace, Zero Artificial Hosts) */}
+			{logic.isPresenterModalOpen && (
+				<Suspense fallback={null}>
+					<TreatmentPlanPresenterModal
+						isOpen={logic.isPresenterModalOpen}
+						onClose={() => logic.setIsPresenterModalOpen(false)}
+						patientId={logic.patientId}
+						patientName={logic.patientName}
+						patientPhone={logic.patientPhone}
+						doctorFullName={logic.auth?.currentUser?.name || "Лечащий врач"}
+						teeth={teethData}
+						tiers={logic.planTiers}
+						initialSelectedTierId={logic.selectedTierId}
+						contractNumber={logic.contractNumber}
+						onSelectPlan={(plan) => {
+							logic.setSelectedTierId(plan.tierId);
+							showToast(`Выбран план: ${plan.title} (${plan.totalRub.toLocaleString("ru-RU")} ₽)`, "success");
+						}}
+						onConfirmSelection={(plan) => {
+							logic.setSelectedTierId(plan.tierId);
+							logic.setPlanStatus("agreed");
+							showToast(`Пациент подтвердил выбор: ${plan.title}`, "success");
+						}}
+						onApproveAndSign={(plan) => {
+							logic.setSelectedTierId(plan.tierId);
+							logic.setIsPresenterModalOpen(false);
+							logic.setIsSignModalOpen(true);
+						}}
+						onPrintContract={(plan) => {
+							logic.setSelectedTierId(plan.tierId);
+							logic.setIsPresenterModalOpen(false);
+							logic.setIsContractPrintOpen(true);
+						}}
+					/>
+				</Suspense>
+			)}
+
+			{logic.isSignModalOpen && (
+				<Suspense fallback={null}>
+					<TreatmentPlanSignatureModal
+						isOpen={logic.isSignModalOpen}
+						tier={logic.effectiveSignTier}
+						patientName={logic.patientName}
+						patientId={logic.patientId}
+						doctorFullName={logic.auth?.currentUser?.name || "Лечащий врач"}
+						clinicName={logic.dashboard?.clinicSettings?.profile?.brandName || "Стоматологическая клиника DENTE"}
+						onClose={() => logic.setIsSignModalOpen(false)}
+						onSignedSuccess={(agreement) => {
+							logic.setSignedAgreement(agreement);
+							logic.setIsSignModalOpen(false);
+							showToast(
+								`План «${logic.effectiveSignTier.title}» успешно подписан пациентом ${logic.patientName}!`,
+								"success",
+								5000,
+							);
+						}}
+					/>
+				</Suspense>
+			)}
+
+			{logic.isContractPrintOpen && (
+				<Suspense fallback={null}>
+					<TreatmentPlanContractPrint
+						isOpen={logic.isContractPrintOpen}
+						tier={logic.effectiveSignTier}
+						stages={logic.stages}
+						patientName={logic.patientName}
+						patientId={logic.patientId}
+						patientPhone={logic.patientPhone}
+						patientBirthDate={logic.patientBirthDate}
+						doctorFullName={logic.auth?.currentUser?.name || "Лечащий врач"}
+						clinicName={logic.dashboard?.clinicSettings?.profile?.brandName || "Стоматологическая клиника DENTE"}
+						signedAgreement={logic.signedAgreement}
+						discountPercent={logic.discountPercent}
+						bonusPointsDeductedRub={logic.loyaltyDeduction.appliedBonusRub}
+						planAgeDays={logic.planAgeDays}
+						onClose={() => logic.setIsContractPrintOpen(false)}
+					/>
+				</Suspense>
+			)}
+
+			{logic.isActPrintOpen && logic.completedActData && (
+				<Suspense fallback={null}>
+					<TreatmentPlanCompletedActPrint
+						isOpen={logic.isActPrintOpen}
+						actData={logic.completedActData}
+						onClose={() => {
+							logic.setIsActPrintOpen(false);
+							logic.setSelectedActStage(null);
+						}}
+						onConfirmExecuteWriteOff={logic.handleConfirmExecuteWriteOff}
+						isExecuting={logic.isExecutingWriteOff}
+					/>
+				</Suspense>
+			)}
+
+			{logic.isFiscalModalOpen && (
+				<Suspense fallback={null}>
+					<FiscalReceipt54FzModal
+						isOpen={logic.isFiscalModalOpen}
+						items={logic.effectiveSignTier.stages.flatMap((s) => s.items)}
+						patientId={logic.patientId}
+						patientName={logic.patientName}
+						patientPhone={logic.patientPhone}
+						patientDepositRub={Math.round((logic.dashboard?.activePatient?.balanceKopecks || 0) / 100)}
+						cashierFullName={logic.auth?.currentUser?.name || "Лечащий врач"}
+						clinicName={logic.dashboard?.clinicSettings?.profile?.brandName || "Стоматологическая клиника DENTE"}
+						onClose={() => logic.setIsFiscalModalOpen(false)}
+						onReceiptFiscalized={(receiptNum) => {
+							showToast(`Чек №${receiptNum} сохранен в истории оплат`, "success");
+						}}
+					/>
+				</Suspense>
+			)}
+
+			{logic.isLabOrderModalOpen && (
+				<Suspense fallback={null}>
+					<LabWorkOrderModal
+						isOpen={logic.isLabOrderModalOpen}
+						onClose={() => logic.setIsLabOrderModalOpen(false)}
+						patientId={logic.patientId}
+						patientName={logic.patientName}
+						patientChartNumber={logic.patient?.chartNumber || logic.patient?.cardNumber || `К-${logic.patientId.slice(0, 5)}`}
+						doctorId={logic.labOrderPrefill?.doctorId || logic.auth?.currentUser?.id || "doc-01"}
+						doctorName={logic.labOrderPrefill?.doctorName || logic.auth?.currentUser?.name || "Лечащий врач"}
+						initialTeeth={
+							logic.labOrderPrefill?.selectedTeeth && logic.labOrderPrefill.selectedTeeth.length > 0
+								? logic.labOrderPrefill.selectedTeeth
+								: logic.selectedLabTeeth && logic.selectedLabTeeth.length > 0
+								? logic.selectedLabTeeth
+								: logic.orthopedicTeeth
+						}
+						treatmentPlanId={logic.currentPlanId || logic.validationPayload?.planId}
+						stageId={logic.labOrderPrefill?.stageId || logic.selectedActStage?.id}
+						stageNumber={logic.labOrderPrefill?.stageNumber ?? logic.selectedActStage?.stageNumber}
+						stageTitle={logic.labOrderPrefill?.stageTitle || logic.selectedActStage?.title}
+						stageTotalRub={logic.labOrderPrefill?.priceRub ?? logic.selectedActStage?.totalRub}
+						onSaveOrder={(order) => {
+							const amount = order.priceRub ?? (order as any).financials?.patientPriceTotalRub ?? 0;
+							showToast(
+								`Наряд-заказ №${order.orderNumber || ""} в ЗТЛ на сумму ${amount.toLocaleString("ru-RU")} ₽ успешно сохранен!`,
+								"success",
+								5000,
+							);
+						}}
+					/>
+				</Suspense>
+			)}
+
+			{logic.isInvoiceModalOpen && (
+				<Suspense fallback={null}>
+					<InvoiceGenerationModal
+						isOpen={logic.isInvoiceModalOpen}
+						onClose={() => logic.setIsInvoiceModalOpen(false)}
+						patientId={logic.patientId}
+						patientName={logic.patientName}
+						patientPhone={logic.patientPhone}
+						patientBalanceRub={logic.patientBalanceRub}
+						planId={`PLAN-${logic.patientId.slice(0, 6).toUpperCase()}`}
+						planNumber={`ПЛАН-№${logic.patientId.slice(0, 4)}`}
+						planTitle={logic.currentTier.title}
+						planCreatedAtIso={new Date().toISOString()}
+						approvedAtIso={logic.signedAgreement ? new Date().toISOString() : undefined}
+						isSignedWithPatient={Boolean(logic.signedAgreement)}
+						doctorFullName={logic.auth?.currentUser?.name || "Лечащий врач"}
+						doctorUserId={logic.auth?.currentUser?.id || "doc-01"}
+						planItems={logic.stages.flatMap((s) => s.items)}
+						onInvoiceCreated={(inv) => {
+							const allItems = logic.stages.flatMap((s) => s.items);
+							const grossTotalRub = allItems.reduce(
+								(acc, it) => acc + it.unitPriceRub * it.quantity,
+								0,
+							);
+							const discountRub = allItems.reduce((acc, it) => acc + it.discountRub, 0);
+							const netTotalRub = inv.totalNetRub ?? logic.loyaltyDeduction.netPayableRub;
+
+							const exportData: CashierInvoiceExportData = {
+								patientId: logic.patientId,
+								patientName: logic.patientName,
+								invoiceId: inv.invoiceId,
+								invoiceNumber: inv.invoiceNumber,
+								items: allItems,
+								grossTotalRub,
+								discountRub,
+								netTotalRub,
+								netTotalKopecks: Math.round(netTotalRub * 100) as any,
+								notes: `Выписан счет №${inv.invoiceNumber || ""} по плану «${logic.currentTier.title}»`,
+								createdAtIso: new Date().toISOString(),
+							};
+
+							if (onExportToCashier) {
+								onExportToCashier(exportData);
+							}
+
+							showToast(`Документ ${inv.invoiceNumber} успешно сформирован и передан в кассу!`, "success", 4000);
+						}}
+					/>
+				</Suspense>
+			)}
+
+			{logic.isChairsideBundlesModalOpen && (
+				<Suspense fallback={null}>
+					<ClinicalServiceBundlesModal
+						isOpen={logic.isChairsideBundlesModalOpen}
+						onClose={() => logic.setIsChairsideBundlesModalOpen(false)}
+						initialToothNumber={logic.orthopedicTeeth[0] || 16}
+						patientId={logic.patientId}
+						patientName={logic.patientName}
+						onApplyToPlan={logic.handleApplyChairsideBundlePlan}
+						onApplyToInvoice={logic.handleApplyChairsideBundleInvoice}
+						targetMode="both"
+					/>
+				</Suspense>
+			)}
+
+			{logic.isCuratorModalOpen && (
+				<Suspense fallback={null}>
+					<CuratorPlanAssignmentModal
+						isOpen={logic.isCuratorModalOpen}
+						onClose={() => logic.setIsCuratorModalOpen(false)}
+						patientId={logic.patientId}
+						patientName={logic.patientName}
+						treatmentPlanId={`PLAN-${logic.patientId.slice(0, 6).toUpperCase()}`}
+						treatmentPlanTitle={`${logic.currentTier.title} (${logic.grandTotalRub.toLocaleString("ru-RU")} ₽)`}
+						currentCuratorId={logic.patient?.administrativeProfile?.curatorId}
+						currentStage={(logic.patient?.administrativeProfile?.curatorFunnelStage as any) || "consultation"}
+						onAssigned={(assigned) => {
+							showToast(`Куратор ${assigned.curatorFullName} успешно закреплен!`, "success");
+						}}
+					/>
+				</Suspense>
+			)}
 
 			{/* Manual Service Addition from Catalog Modal (Mandates 8e, 8k) */}
 			<TreatmentPlanAddServiceModal

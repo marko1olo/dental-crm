@@ -204,7 +204,7 @@ export interface PlanPersistenceAndSyncHandlers {
 		maybeContext?: LabOrderPrefillContext,
 	) => void;
 	readonly handleOneClickLabOrder: (teeth?: number[]) => Promise<void>;
-	readonly handleExportCashier: () => void;
+	readonly handleExportCashier: () => Promise<void> | void;
 	readonly handleSavePlanToDatabase: () => Promise<void>;
 	readonly handleExecuteWriteOffStage: (stage: TreatmentPlanStage) => void;
 	readonly handleConfirmExecuteWriteOff: () => Promise<void>;

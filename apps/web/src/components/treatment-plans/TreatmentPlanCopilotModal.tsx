@@ -1,14 +1,18 @@
 /**
  * TreatmentPlanCopilotModal.tsx — модальное окно AI Copilot (Ассистент врача & Клинический аудит).
  * Вынесено из тулбара для соблюдения лимита высоты экрана (y <= 140px для 3-Tier карточек).
+ *
+ * Mandate 8e (Doctor Autonomy): Zero mock pricing, non-blocking doctor actions, 3 clinical scenarios.
  */
 
-import React from "react";
-import { Bot, Sparkles, X, RotateCcw } from "lucide-react";
+import React, { useState } from "react";
+import { AlertTriangle, Bot, Sparkles, X, RotateCcw } from "lucide-react";
 import {
 	COPILOT_PRESET_ACTIONS,
+	COPILOT_SCENARIO_ACTIONS,
 	type CopilotCommandType,
 } from "../../services/ai/treatmentPlanCopilot";
+import type { TreatmentPlanStage } from "./types";
 
 export interface TreatmentPlanCopilotModalProps {
 	readonly isOpen: boolean;
@@ -16,10 +20,11 @@ export interface TreatmentPlanCopilotModalProps {
 	readonly isCopilotExecuting: boolean;
 	readonly copilotFeedback: string | null;
 	readonly setCopilotFeedback: (feedback: string | null) => void;
-	readonly onExecuteCopilot: (actionId: CopilotCommandType) => void;
+	readonly onExecuteCopilot: (actionId: CopilotCommandType | string) => void;
 	readonly onResetPlan: () => void;
 	readonly onOpenPresenterModal: () => void;
 	readonly hasCustomModifications: boolean;
+	readonly stages?: readonly TreatmentPlanStage[] | undefined;
 }
 
 export const TreatmentPlanCopilotModal: React.FC<TreatmentPlanCopilotModalProps> = ({
@@ -32,18 +37,33 @@ export const TreatmentPlanCopilotModal: React.FC<TreatmentPlanCopilotModalProps>
 	onResetPlan,
 	onOpenPresenterModal,
 	hasCustomModifications,
+	stages,
 }) => {
+	const [customPrompt, setCustomPrompt] = useState("");
+
 	if (!isOpen) return null;
+
+	const unpricedItemsCount = (stages || [])
+		.flatMap((s) => s.items)
+		.filter((it) => it.requiresManualPricing === true || it.priceRub <= 0).length;
+
+	const handleCustomSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (customPrompt.trim()) {
+			onExecuteCopilot(customPrompt.trim());
+			setCustomPrompt("");
+		}
+	};
 
 	return (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="tp-copilot-title"
 			data-testid="treatment-plan-copilot-modal"
 		>
-			<div className="relative w-full max-w-xl p-5 rounded-3xl bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] shadow-2xl space-y-4">
+			<div className="relative w-full max-w-xl p-5 rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] shadow-2xl space-y-4">
 				{/* Header */}
 				<div className="flex items-center justify-between pb-3 border-b border-[var(--line,var(--border,#cbd5e1))]">
 					<div className="flex items-center gap-2">
@@ -67,6 +87,33 @@ export const TreatmentPlanCopilotModal: React.FC<TreatmentPlanCopilotModalProps>
 					>
 						<X size={18} />
 					</button>
+				</div>
+
+				{/* 3 Clinical Scenarios */}
+				<div className="space-y-1.5">
+					<label className="text-xs font-bold text-[var(--muted,#64748b)] block">
+						3 клинических сценария реабилитации:
+					</label>
+					<div className="grid grid-cols-3 gap-2">
+						{COPILOT_SCENARIO_ACTIONS.map((scenario) => (
+							<button
+								key={scenario.id}
+								type="button"
+								disabled={isCopilotExecuting}
+								onClick={() => onExecuteCopilot(scenario.id)}
+								className="p-2.5 text-left rounded-xl bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--teal-soft,var(--paper-soft))] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] transition-all disabled:opacity-50 cursor-pointer shadow-2xs space-y-0.5"
+								data-testid={`copilot-scenario-btn-${scenario.id.replace("tier_", "")}`}
+							>
+								<div className="font-bold text-xs flex items-center justify-between">
+									<span>{scenario.title}</span>
+									<Sparkles size={11} className="text-amber-500" />
+								</div>
+								<p className="text-[10px] text-[var(--muted,#64748b)] m-0 leading-tight truncate">
+									{scenario.badge}
+								</p>
+							</button>
+						))}
+					</div>
 				</div>
 
 				{/* Preset Actions Grid */}
@@ -97,6 +144,42 @@ export const TreatmentPlanCopilotModal: React.FC<TreatmentPlanCopilotModalProps>
 						))}
 					</div>
 				</div>
+
+				{/* Custom NLP Command Input */}
+				<form onSubmit={handleCustomSubmit} className="flex items-center gap-2 pt-1">
+					<input
+						type="text"
+						value={customPrompt}
+						onChange={(e) => setCustomPrompt(e.target.value)}
+						placeholder="Например: «бюджет 120к», «All-on-4», «мост 36»..."
+						className="flex-1 px-3 py-2 rounded-xl text-xs bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+						data-testid="copilot-custom-input"
+						disabled={isCopilotExecuting}
+					/>
+					<button
+						type="submit"
+						disabled={isCopilotExecuting || !customPrompt.trim()}
+						className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-white hover:bg-[var(--teal-dark,var(--teal))] disabled:opacity-50 cursor-pointer shadow-2xs shrink-0"
+						data-testid="copilot-custom-submit"
+					>
+						Выполнить
+					</button>
+				</form>
+
+				{/* Missing Price Alert Banner (Mandate 8e) */}
+				{unpricedItemsCount > 0 && (
+					<div
+						className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs flex items-center justify-between gap-2"
+						data-testid="copilot-missing-price-alert"
+					>
+						<div className="flex items-center gap-2">
+							<AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+							<span>
+								В плане {unpricedItemsCount} поз. без цены в каталоге клиники. Укажите актуальную стоимость из прайс-листа вручную (Мандат 8e: без вымышленных цен).
+							</span>
+						</div>
+					</div>
+				)}
 
 				{/* Audit & Presentation Trigger */}
 				<div className="pt-2 border-t border-[var(--line,var(--border,#cbd5e1))] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -153,7 +236,7 @@ export const TreatmentPlanCopilotModal: React.FC<TreatmentPlanCopilotModalProps>
 					<button
 						type="button"
 						onClick={onClose}
-						className="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-white hover:bg-[var(--teal-dark,var(--teal))] cursor-pointer shadow-xs"
+						className="px-4 py-2 rounded-xl text-xs font-semibold border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] cursor-pointer shadow-2xs transition-colors"
 					>
 						Закрыть
 					</button>

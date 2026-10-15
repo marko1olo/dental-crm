@@ -174,20 +174,36 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 		return false;
 	});
 
+	const [isCashboxOpen, setIsCashboxOpen] = useState(() => {
+		if (typeof window !== "undefined") {
+			const h = window.location.hash.toLowerCase();
+			return h.includes("cashbox") || h.includes("cashdesk");
+		}
+		return false;
+	});
+
 	useEffect(() => {
 		const handleHash = () => {
 			if (typeof window !== "undefined") {
-				setIsInvoicesOpen(window.location.hash.toLowerCase().includes("invoices"));
+				const h = window.location.hash.toLowerCase();
+				setIsInvoicesOpen(h.includes("invoices"));
+				if (h.includes("cashbox") || h.includes("cashdesk")) {
+					setIsCashboxOpen(true);
+				}
 			}
 		};
+		const handleOpenCashboxEvent = () => setIsCashboxOpen(true);
 		handleHash();
 		window.addEventListener("hashchange", handleHash);
-		return () => window.removeEventListener("hashchange", handleHash);
+		window.addEventListener("dente:open-cashbox", handleOpenCashboxEvent);
+		return () => {
+			window.removeEventListener("hashchange", handleHash);
+			window.removeEventListener("dente:open-cashbox", handleOpenCashboxEvent);
+		};
 	}, []);
 
 	const [isFinanceOptionsOpen, setIsFinanceOptionsOpen] = useState(false);
 	const [isCashShiftOpen, setIsCashShiftOpen] = useState(false);
-	const [isCashboxOpen, setIsCashboxOpen] = useState(false);
 	const [isBillingActOpen, setIsBillingActOpen] = useState(false);
 	const [isQuickExpenseOpen, setIsQuickExpenseOpen] = useState(false);
 	const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);

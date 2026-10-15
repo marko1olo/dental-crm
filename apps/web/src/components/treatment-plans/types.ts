@@ -243,6 +243,8 @@ export interface CashierInvoiceExportData {
 	readonly bonusPointsUsedRub?: number;
 	readonly bonusPointsUsedKopecks?: Kopecks;
 	readonly netTotalRub: number;
+	readonly totalAmountRub?: number | undefined;
+	readonly status?: string | undefined;
 	readonly netTotalKopecks: Kopecks;
 	readonly notes?: string;
 	readonly createdAtIso: string;

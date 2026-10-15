@@ -83,12 +83,15 @@ export const generateInvoiceFromPlanSchema = z.object({
 		.min(1),
 	adminOverridePin: z.string().optional(),
 	adminOverrideReason: z.string().optional(),
-	allowUnplannedServices: z.boolean().optional().default(false),
+	allowUnplannedServices: z.boolean().optional().default(true),
 	notes: z.string().optional(),
+	clientMutationId: z.string().optional(),
 });
 
 export const invoiceListQuerySchema = z.object({
 	patientId: z.string().uuid().optional(),
+	status: z.string().optional(),
+	limit: z.coerce.number().int().min(1).max(500).optional().default(100),
 });
 
 export type ValidatePlanBody = z.infer<typeof validatePlanBodySchema>;

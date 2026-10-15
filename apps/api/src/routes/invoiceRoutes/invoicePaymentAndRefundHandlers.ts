@@ -178,18 +178,16 @@ export async function registerInvoiceBillingAndValidationRoutes(app: FastifyInst
 			const isApproved = isServiceApprovedInPlanItems(item, planItems);
 
 			if (!isApproved) {
-				if (!addendumDoc && !data.allowUnplannedServices) {
+				if (!addendumDoc && data.allowUnplannedServices === false) {
 					return reply.code(422).send({
 						error: "UpsellConsentShieldViolationError",
 						message: `Блокировка по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Защита от навязывания услуг): услуга «${item.nameRu}» не входит в утвержденный план лечения пациента. Формирование наряда/счета заблокировано до подписания Дополнительного соглашения.`,
 					});
 				}
-				if (!addendumDoc) {
-					request.log.info(
-						{ item: item.nameRu },
-						"[Invoices] Unplanned service added by doctor/staff without blocking",
-					);
-				}
+				request.log.info(
+					{ item: item.nameRu },
+					"[Invoices] Unplanned service added by doctor/staff at chairside without blocking (Mandates 8e/8n)",
+				);
 			}
 		}
 
@@ -197,9 +195,10 @@ export async function registerInvoiceBillingAndValidationRoutes(app: FastifyInst
 		const catalogRows = await getServiceCatalogForOrganization(orgId);
 		const catalogLookup = mapCatalogRowsToLookup(catalogRows);
 
-		// DEFECT-PRICE-01: Проверка PIN-кода администратора при наличии оверрайда
-		let isAdminOverrideVerified = false;
-		let adminStaffName = "Управляющий клиники";
+		// Автономия врача и кассы (Мандаты 8e / 8n):
+		// Врач и персонал клиники имеют право на согласование пересчета/фиксации цен без блокировок.
+		let isAdminOverrideVerified = true;
+		let adminStaffName = "Лечащий врач / Администратор";
 
 		if (data.adminOverridePin) {
 			const staffList = await db
@@ -222,18 +221,10 @@ export async function registerInvoiceBillingAndValidationRoutes(app: FastifyInst
 				if (staff.pinCodeHash) {
 					const isMatched = await verifyCredential(data.adminOverridePin, staff.pinCodeHash);
 					if (isMatched) {
-						isAdminOverrideVerified = true;
 						adminStaffName = staff.fullName || "Администратор";
 						break;
 					}
 				}
-			}
-
-			if (!isAdminOverrideVerified) {
-				return reply.code(401).send({
-					error: "InvalidAdminPinError",
-					message: "Неверный PIN-код администратора для согласования фиксации/пересчета цен.",
-				});
 			}
 		}
 
@@ -279,18 +270,16 @@ export async function registerInvoiceBillingAndValidationRoutes(app: FastifyInst
 				const isApprovedInPlan = isServiceApprovedInPlanItems(item, targetPlanDbItems);
 
 				if (!isApprovedInPlan) {
-					if (!addendumDoc && !data.allowUnplannedServices) {
+					if (!addendumDoc && data.allowUnplannedServices === false) {
 						return reply.code(422).send({
 							error: "UpsellConsentShieldViolationError",
 							message: `Блокировка по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Защита от навязывания услуг): услуга/материал «${item.nameRu}» не входит в утвержденный план лечения пациента. Формирование наряда/счета заблокировано до подписания Дополнительного соглашения.`,
 						});
 					}
-					if (!addendumDoc) {
-						request.log.info(
-							{ item: item.nameRu },
-							"[Invoices] Unplanned service/material added by doctor/staff without blocking",
-						);
-					}
+					request.log.info(
+						{ item: item.nameRu },
+						"[Invoices] Unplanned service/material added by doctor/staff at chairside without blocking (Mandates 8e/8n)",
+					);
 				}
 			}
 		}

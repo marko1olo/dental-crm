@@ -12,11 +12,7 @@ import type {
 	TreatmentPlanStatus,
 	TreatmentPlanTier,
 } from "./types";
-import {
-	type BillingInvoice,
-	loadStoredInvoices,
-	saveStoredInvoices,
-} from "../billing/InvoicesView";
+import type { BillingInvoice } from "../billing/invoiceTypes";
 import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { logger } from "../../utils/logger";
@@ -89,6 +85,7 @@ export interface ExportCashierParams {
 	patientName: string;
 	patientPhone?: string | undefined;
 	doctorName?: string | undefined;
+	currentPlanId?: string | null | undefined;
 	stages: readonly TreatmentPlanStage[];
 	currentTier: TreatmentPlanTier;
 	loyaltyDeduction: {
@@ -98,22 +95,25 @@ export interface ExportCashierParams {
 		netPayableKopecks: Kopecks;
 	};
 	onExportToCashier?: ((data: CashierInvoiceExportData) => void) | undefined;
+	onPlanSaved?: ((planId: string) => void) | undefined;
 }
 
-export function exportPlanToCashier({
+export async function exportPlanToCashier({
 	patientId,
 	patientName,
 	patientPhone,
 	doctorName,
+	currentPlanId,
 	stages,
 	currentTier,
 	loyaltyDeduction,
 	onExportToCashier,
-}: ExportCashierParams): void {
+	onPlanSaved,
+}: ExportCashierParams): Promise<CashierInvoiceExportData | null> {
 	const allItems = stages.flatMap((s) => s.items);
 	if (allItems.length === 0) {
 		showToast("Нет позиций для формирования счета", "warning", 3000);
-		return;
+		return null;
 	}
 
 	const grossTotalRub =
@@ -125,9 +125,117 @@ export function exportPlanToCashier({
 		allItems.reduce((acc, it) => acc + Math.round((it.discountRub || 0) * 100), 0) / 100;
 	const netTotalRub = loyaltyDeduction.netPayableRub;
 
+	// 1. Честное определение/сохранение плана лечения в PostgreSQL 18 для получения реального uuid
+	let resolvedPlanId: string | undefined = undefined;
+	const isUuid =
+		typeof currentPlanId === "string" &&
+		/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(currentPlanId);
+
+	if (isUuid) {
+		resolvedPlanId = currentPlanId;
+	} else if (patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
+		try {
+			const itemsForApi = allItems.map((it) => ({
+				toothNumber: it.toothNumber ?? null,
+				priceId: it.priceId || it.code804n,
+				name: it.name,
+				quantity: it.quantity || 1,
+				price: it.unitPriceRub || 0,
+				discount: it.discountRub || 0,
+				phase: it.phase,
+				isAuto: it.isAuto ?? true,
+				doctorId: it.doctorId ?? null,
+			}));
+
+			const planRes = await fetch(
+				`/api/patients/${encodeURIComponent(patientId)}/treatment-plans`,
+				{
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						name: `${currentTier.title} (${new Date().toLocaleDateString("ru-RU")})`,
+						status: "Approved",
+						items: itemsForApi,
+					}),
+				},
+			);
+
+			if (planRes.ok) {
+				const planData = await planRes.json();
+				if (planData?.planId) {
+					resolvedPlanId = planData.planId;
+					onPlanSaved?.(planData.planId);
+				}
+			}
+		} catch (saveErr) {
+			logger.warn("[treatmentPlanNetworkSync] Авто-сохранение плана перед отправкой в кассу", saveErr);
+		}
+	}
+
+	// 2. Атомарное формирование счёта в PostgreSQL 18 через POST /api/invoices/generate-from-plan
 	const cleanPat = (patientId || "pat").replace(/\D/g, "").slice(0, 4) || "0001";
-	const invoiceId = `inv-plan-${Date.now()}-${cleanPat}`;
-	const invoiceNumber = `СЧ-${new Date().getFullYear()}-${cleanPat.padStart(4, "0")}`;
+	let invoiceId = `inv-plan-${Date.now()}-${cleanPat}`;
+	let invoiceNumber = `СЧ-${new Date().getFullYear()}-${cleanPat.padStart(4, "0")}`;
+	let finalNetTotalRub = netTotalRub;
+
+	const notes = `Счет на оплату по комплексному плану «${currentTier.title}»${
+		loyaltyDeduction.appliedBonusRub > 0
+			? ` (Списано бонусов: ${loyaltyDeduction.appliedBonusRub} ₽)`
+			: ""
+	}`;
+
+	try {
+		const res = await fetch("/api/invoices/generate-from-plan", {
+			method: "POST",
+			headers: {
+				...denteAdminSecretRequestHeaders(),
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				patientId,
+				planId: resolvedPlanId,
+				planNumber: resolvedPlanId ? `ПЛАН-№${resolvedPlanId.slice(0, 8).toUpperCase()}` : undefined,
+				planTitle: currentTier.title,
+				documentType: "invoice",
+				items: allItems.map((it, idx) => ({
+					itemId: it.id || `item-${idx}`,
+					toothNumber: it.toothNumber ?? null,
+					nameRu: it.name,
+					quantity: it.quantity || 1,
+					unitPriceRub: it.unitPriceRub || 0,
+					discountRub: it.discountRub || 0,
+					code804n: it.code804n || undefined,
+					doctorId: it.doctorId ?? null,
+				})),
+				allowUnplannedServices: true,
+				notes,
+			}),
+		});
+
+		if (!res.ok) {
+			const errJson = await res.json().catch(() => ({}));
+			const errorMsg = errJson.message || `Ошибка сервера (HTTP ${res.status})`;
+			showToast(`Ошибка отправки счета в кассу: ${errorMsg}`, "error", 5000);
+			return null;
+		}
+
+		const createdData = await res.json();
+		if (createdData?.invoiceId) {
+			invoiceId = createdData.invoiceId;
+		}
+		if (createdData?.invoiceNumber) {
+			invoiceNumber = createdData.invoiceNumber;
+		}
+		if (typeof createdData?.totalNetRub === "number") {
+			finalNetTotalRub = createdData.totalNetRub;
+		}
+	} catch (networkErr: any) {
+		logger.error("[treatmentPlanNetworkSync] Ошибка сети при генерации счёта", networkErr);
+		showToast(`Сетевая ошибка при отправке счета в кассу: ${networkErr?.message || networkErr}`, "error", 5000);
+		return null;
+	}
 
 	const exportData: CashierInvoiceExportData = {
 		patientId,
@@ -139,100 +247,46 @@ export function exportPlanToCashier({
 		discountRub,
 		bonusPointsUsedRub: loyaltyDeduction.appliedBonusRub,
 		bonusPointsUsedKopecks: loyaltyDeduction.appliedBonusKopecks,
-		netTotalRub,
+		netTotalRub: finalNetTotalRub,
+		totalAmountRub: finalNetTotalRub,
+		status: finalNetTotalRub === 0 ? "warranty_100" : "issued",
 		netTotalKopecks: loyaltyDeduction.netPayableKopecks,
-		notes: `Счет на оплату по комплексному плану «${currentTier.title}»${
-			loyaltyDeduction.appliedBonusRub > 0
-				? ` (Списано бонусов: ${loyaltyDeduction.appliedBonusRub} ₽)`
-				: ""
-		}`,
+		notes,
 		createdAtIso: new Date().toISOString(),
 	};
 
-	const newBillingInvoice: BillingInvoice = {
-		id: invoiceId,
-		number: invoiceNumber,
-		patientId,
-		patientName,
-		patientPhone,
-		doctorName: doctorName || "Лечащий врач-стоматолог",
-		date: new Date().toLocaleDateString("ru-RU"),
-		totalAmountRub: netTotalRub,
-		paidAmountRub: 0,
-		status: (netTotalRub === 0 ? "warranty_100" : "issued") as BillingInvoice["status"],
-		items: allItems.map((it, idx) => {
-			const qty = it.quantity || 1;
-			const netUnitPriceRub =
-				typeof it.priceRub === "number" && qty > 0
-					? Number((it.priceRub / qty).toFixed(2))
-					: (it.unitPriceRub || 0);
-			return {
-				id: it.id || `item-${idx}`,
-				code: it.code804n || "A16.07.002",
-				name: `${it.name}${it.toothNumber ? ` (зуб ${it.toothNumber})` : ""}`,
-				quantity: qty,
-				priceRub: netUnitPriceRub,
-			};
-		}),
-		createdAt: new Date().toISOString(),
-		notes: exportData.notes,
-	};
-
-	const existingInvoices = loadStoredInvoices();
-	const updatedInvoices = [
-		newBillingInvoice,
-		...existingInvoices.filter(
-			(inv) => inv.id !== newBillingInvoice.id && inv.number !== newBillingInvoice.number,
-		),
-	];
-	saveStoredInvoices(updatedInvoices);
-
+	// 3. Реактивное оповещение кассы и вкладок без записи в localStorage!
 	if (typeof window !== "undefined") {
 		window.dispatchEvent(
 			new CustomEvent("dente-invoices-updated", {
-				detail: newBillingInvoice,
+				detail: {
+					id: invoiceId,
+					number: invoiceNumber,
+					patientId,
+					patientName,
+					patientPhone,
+					doctorName: doctorName || "Лечащий врач-стоматолог",
+					totalAmountRub: finalNetTotalRub,
+					paidAmountRub: 0,
+					status: finalNetTotalRub === 0 ? "warranty_100" : "issued",
+					notes,
+				},
 			}),
 		);
+		window.dispatchEvent(new CustomEvent("dente-cashbox-refresh"));
 	}
 
 	if (onExportToCashier) {
 		onExportToCashier(exportData);
 	}
 
-	void fetch("/api/invoices/generate-from-plan", {
-		method: "POST",
-		headers: {
-			...denteAdminSecretRequestHeaders(),
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({
-			patientId,
-			planId: `PLAN-${patientId.slice(0, 6).toUpperCase()}`,
-			planNumber: `ПЛАН-№${patientId.slice(0, 4)}`,
-			planTitle: currentTier.title,
-			documentType: "invoice",
-			items: allItems.map((it, idx) => ({
-				itemId: it.id || `item-${idx}`,
-				toothNumber: it.toothNumber ?? null,
-				nameRu: it.name,
-				quantity: it.quantity || 1,
-				unitPriceRub: it.unitPriceRub || 0,
-				discountRub: it.discountRub || 0,
-				code804n: it.code804n || undefined,
-				doctorId: it.doctorId ?? null,
-			})),
-			allowUnplannedServices: true,
-			notes: exportData.notes,
-		}),
-	}).catch((err) => {
-		logger.warn("[treatmentPlanNetworkSync] Background server invoice export fallback", err);
-	});
-
 	showToast(
-		`Счет №${invoiceNumber} на сумму ${(netTotalRub || 0).toLocaleString("ru-RU")} ₽ успешно отправлен в кассу!`,
+		`Счет №${invoiceNumber} на сумму ${(finalNetTotalRub || 0).toLocaleString("ru-RU")} ₽ успешно отправлен в кассу!`,
 		"success",
 		5000,
 	);
+
+	return exportData;
 }
 
 export interface SavePlanParams {

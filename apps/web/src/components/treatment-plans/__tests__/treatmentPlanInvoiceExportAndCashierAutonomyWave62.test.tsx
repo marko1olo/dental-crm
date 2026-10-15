@@ -367,12 +367,14 @@ describe("Wave 62 / Feature 251: Treatment Plan Cashier Export & InvoicesView Sy
 	});
 
 	describe("4. Inquisitor Financial Parity: exportPlanToCashier Line Price Mapping", () => {
-		beforeEach(() => {
-			mockStorage.clear();
-			saveStoredInvoices([]);
-		});
+		it("maps discounted line items to net unit prices preserving exact invoice total parity", async () => {
+			const dispatchedEvents: string[] = [];
+			const originalDispatch = (globalThis as any).window?.dispatchEvent;
+			(globalThis as any).window.dispatchEvent = (ev: any) => {
+				if (ev?.type) dispatchedEvents.push(ev.type);
+				return true;
+			};
 
-		it("maps discounted line items to net unit prices preserving exact invoice total parity", () => {
 			const stages: TreatmentPlanStage[] = [
 				{
 					stageNumber: 1,
@@ -436,28 +438,49 @@ describe("Wave 62 / Feature 251: Treatment Plan Cashier Export & InvoicesView Sy
 				netPayableRub: 8000,
 			};
 
-			exportPlanToCashier({
-				patientId: "PAT-WAVE62",
-				patientName: "Волков Дмитрий Андреевич",
-				stages,
-				currentTier: dummyTier,
-				loyaltyDeduction,
-			});
+			const originalFetch = (globalThis as any).fetch;
+			(globalThis as any).fetch = async (url: string) => {
+				if (url.includes("/api/invoices/generate-from-plan")) {
+					return {
+						ok: true,
+						json: async () => ({
+							success: true,
+							invoice: {
+								id: "11111111-2222-3333-4444-555555555555",
+								totalAmountRub: 8000,
+								status: "issued",
+							},
+						}),
+					};
+				}
+				return { ok: true, json: async () => ({}) };
+			};
 
-			const invoices = loadStoredInvoices();
-			assert.equal(invoices.length, 1);
-			const inv = invoices[0]!;
-			assert.equal(inv.totalAmountRub, 8000);
-			assert.equal(inv.status, "issued");
-			assert.equal(inv.items.length, 1);
+			try {
+				const exported = await exportPlanToCashier({
+					patientId: "00000000-0000-0000-0000-000000000001",
+					patientName: "Волков Дмитрий Андреевич",
+					stages,
+					currentTier: dummyTier,
+					loyaltyDeduction,
+				});
 
-			// CRITICAL INQUISITOR CHECK: Line price must be net unit price (8000 ₽), NOT gross (10000 ₽)!
-			assert.equal(inv.items[0]!.priceRub, 8000, "Line item must reflect net unit price after discount");
-			const lineSum = inv.items.reduce((sum, item) => sum + item.quantity * item.priceRub, 0);
-			assert.equal(lineSum, inv.totalAmountRub, "Sum of line items must strictly equal invoice total amount");
+				assert.ok(exported, "exportPlanToCashier must return exported invoice data");
+				assert.equal(exported.totalAmountRub, 8000);
+				assert.equal(exported.status, "issued");
+				assert.equal(exported.items.length, 1);
+				assert.equal(exported.items[0]!.priceRub, 8000, "Line item must reflect net unit price after discount");
+				const lineSum = exported.items.reduce((sum, item) => sum + item.quantity * item.priceRub, 0);
+				assert.equal(lineSum, exported.totalAmountRub, "Sum of line items must strictly equal invoice total amount");
+				assert.ok(dispatchedEvents.includes("dente-cashbox-refresh"), "Must trigger cashbox refresh event");
+				assert.ok(dispatchedEvents.includes("dente-invoices-updated"), "Must trigger invoices updated event");
+			} finally {
+				(globalThis as any).fetch = originalFetch;
+				(globalThis as any).window.dispatchEvent = originalDispatch;
+			}
 		});
 
-		it("exports 100% clinical warranty plan with status 'warranty_100' and 0 ₽ prices", () => {
+		it("exports 100% clinical warranty plan with status 'warranty_100' and 0 ₽ prices", async () => {
 			const stages: TreatmentPlanStage[] = [
 				{
 					stageNumber: 1,
@@ -522,20 +545,41 @@ describe("Wave 62 / Feature 251: Treatment Plan Cashier Export & InvoicesView Sy
 				netPayableRub: 0,
 			};
 
-			exportPlanToCashier({
-				patientId: "PAT-WAVE62",
-				patientName: "Волков Дмитрий Андреевич",
-				stages,
-				currentTier: dummyTier,
-				loyaltyDeduction,
-			});
+			const originalFetch = (globalThis as any).fetch;
+			(globalThis as any).fetch = async (url: string) => {
+				if (url.includes("/api/invoices/generate-from-plan")) {
+					return {
+						ok: true,
+						json: async () => ({
+							success: true,
+							invoice: {
+								id: "22222222-3333-4444-5555-666666666666",
+								totalAmountRub: 0,
+								status: "warranty_100",
+							},
+						}),
+					};
+				}
+				return { ok: true, json: async () => ({}) };
+			};
 
-			const invoices = loadStoredInvoices();
-			assert.equal(invoices.length, 1);
-			const inv = invoices[0]!;
-			assert.equal(inv.totalAmountRub, 0);
-			assert.equal(inv.status, "warranty_100");
-			assert.equal(inv.items[0]!.priceRub, 0);
+			try {
+				const exported = await exportPlanToCashier({
+					patientId: "00000000-0000-0000-0000-000000000001",
+					patientName: "Волков Дмитрий Андреевич",
+					stages,
+					currentTier: dummyTier,
+					loyaltyDeduction,
+				});
+
+				assert.ok(exported, "exportPlanToCashier must return exported warranty invoice data");
+				assert.equal(exported.totalAmountRub, 0);
+				assert.equal(exported.status, "warranty_100");
+				assert.equal(exported.items[0]!.priceRub, 0);
+			} finally {
+				(globalThis as any).fetch = originalFetch;
+			}
 		});
 	});
 });
+
