@@ -591,7 +591,7 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 												data-testid="badge-negative-deficit"
 											>
 												<AlertTriangle size={11} aria-hidden="true" />
-												<span>Требуется оприходование (отрицательный остаток {item.stockQuantity} {item.unit || "шт."})</span>
+												<span>Пора заказать (дефицит {item.stockQuantity} {item.unit || "шт."})</span>
 											</span>
 										) : isZeroStock ? (
 											<span
@@ -599,7 +599,7 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 												data-testid="badge-critical-deficit"
 											>
 												<AlertTriangle size={11} aria-hidden="true" />
-												<span>Закончился: 0 {item.unit || "шт."} (списание с дефицитом)</span>
+												<span>Закончился: 0 {item.unit || "шт."} (Овердрафт) • Пора заказать</span>
 											</span>
 										) : isLowStock ? (
 											<span
@@ -609,7 +609,15 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 												<AlertTriangle size={11} aria-hidden="true" />
 												<span>Заканчивается: осталось {item.stockQuantity} {item.unit || "шт."}</span>
 											</span>
-										) : null}
+										) : (
+											<span
+												className="mobile-inventory-badge fefo-ok"
+												data-testid="badge-in-stock"
+											>
+												<CheckCircle2 size={11} aria-hidden="true" />
+												<span>В наличии: {item.stockQuantity} {item.unit || "шт."}</span>
+											</span>
+										)}
 
 										{/* FEFO Expiry Status */}
 										{trafficLight.status === "expired" ? (
@@ -676,10 +684,10 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 					className="mobile-inventory-primary-fab"
 					onClick={() => handleOpenInboundDrawer()}
 					data-testid="mobile-btn-inbound-batch"
-					aria-label="Оприходовать партию материалов"
+					aria-label="Оприходовать партию материалов (+ Приход)"
 				>
 					<Plus size={20} aria-hidden="true" />
-					<span>Оприходовать партию</span>
+					<span>+ Приход (Оприходовать партию)</span>
 				</button>
 
 				{onOpenInboundInvoice && (

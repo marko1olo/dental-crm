@@ -26,6 +26,8 @@ import {
 	quickCarpuleDisposalSchema,
 	softOverdraftDeductSchema,
 } from "../services/warehouse/warehouseOperations.js";
+import { withTenantCtx } from "../db/rls.js";
+import { TreatmentConsumablesService } from "../services/treatmentConsumablesService.js";
 
 export const warehouseRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
@@ -397,6 +399,37 @@ export const warehouseRoutes: FastifyPluginAsync = async (
 			return reply.send(batches);
 		},
 	);
+
+	// GET /api/warehouse/:organizationId/shift-summary and /shift-summary
+	const handleShiftSummary = async (request: FastifyRequest<{ Params?: { organizationId?: string }; Querystring?: { date?: string; organizationId?: string } }>, reply: FastifyReply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "warehouse shift summary");
+		if (!resolvedOrgId) return;
+		const targetOrgId = request.params?.organizationId || request.query?.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+		return withTenantCtx(targetOrgId, async (tx) => TreatmentConsumablesService.getShiftConsumablesSummary(tx, targetOrgId, request.query?.date));
+	};
+	server.get<{ Params: { organizationId?: string }; Querystring: { date?: string; organizationId?: string } }>("/:organizationId/shift-summary", handleShiftSummary);
+	server.get<{ Querystring: { date?: string; organizationId?: string } }>("/shift-summary", handleShiftSummary);
+
+	// POST /api/warehouse/:organizationId/shift-deduct and /shift-deduct — 1-клик пакетное списание расходников за смену
+	const handleShiftDeduct = async (request: FastifyRequest<{ Params?: { organizationId?: string }; Body?: { date?: string; organizationId?: string; items?: Array<{ itemId: string; qty: number; name?: string }>; notes?: string } }>, reply: FastifyReply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "warehouse shift batch deduct");
+		if (!resolvedOrgId) return;
+		const targetOrgId = request.params?.organizationId || request.body?.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+		const body = request.body ?? {};
+		return withTenantCtx(targetOrgId, async (tx) => {
+			return TreatmentConsumablesService.executeShiftBatchDeduction(tx, {
+				organizationId: targetOrgId,
+				date: body.date,
+				userId: (request.user as { id?: string } | undefined)?.id ?? null,
+				items: body.items,
+				notes: body.notes,
+			});
+		});
+	};
+	server.post<{ Params: { organizationId?: string }; Body?: { date?: string; organizationId?: string; items?: Array<{ itemId: string; qty: number; name?: string }>; notes?: string } }>("/:organizationId/shift-deduct", handleShiftDeduct);
+	server.post<{ Body?: { date?: string; organizationId?: string; items?: Array<{ itemId: string; qty: number; name?: string }>; notes?: string } }>("/shift-deduct", handleShiftDeduct);
 };
 
 export default warehouseRoutes;

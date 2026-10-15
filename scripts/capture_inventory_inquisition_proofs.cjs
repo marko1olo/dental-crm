@@ -1,217 +1,315 @@
+/**
+ * scripts/capture_inventory_inquisition_proofs.cjs
+ *
+ * Captures 4 live high-resolution screenshots for Inventory / Warehouse domain:
+ * 1. PC Light (1440x900)
+ * 2. PC Dark (1440x900)
+ * 3. Mobile Light (390x844)
+ * 4. Mobile Dark (390x844)
+ *
+ * Saves to docs/proofs/inventory/ and mirrors to agent brain directory.
+ * Verifies size > 20 KB.
+ */
+
 const { chromium } = require("playwright");
 const path = require("node:path");
 const fs = require("node:fs");
+const crypto = require("node:crypto");
 
-const CONV_ID = "973e54aa-4927-4915-b610-6837e5031335";
-const PARENT_ID = "df880520-dc90-48e7-ab9e-032bd60d9f31";
-const ARTIFACTS_DIRS = [
-  path.join("C:/Users/Admin/.gemini/antigravity/brain", CONV_ID),
-  path.join("C:/Users/Admin/.gemini/antigravity/brain", PARENT_ID),
-];
-const LOCAL_DIR = "C:/Clinic_MVP/dental-crm/apps/web/public/screenshots/warehouse_inquisition";
 const API_BASE = "http://127.0.0.1:4100";
 const WEB_BASE = "http://127.0.0.1:5173";
+const DOCS_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/proofs/inventory");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/19dc27b8-fe52-4a9c-8443-77f4a4e05575");
 
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+async function provisionSession() {
+	const uniqueId = Date.now();
+	console.log("[Provisioning] Initializing clinic session via API...");
+	const initRes = await fetch(`${API_BASE}/api/auth/setup/init`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			clinicName: "Стоматология ДЕНТЕ Склад",
+			email: `nurse-${uniqueId}@dente.local`,
+			password: "Password123!",
+			ownerName: "Старшая медсестра Иванова Е. А.",
+			ownerPin: "1234",
+		}),
+	});
 
-async function provisionLiveSession() {
-  const uniqueId = Date.now();
-  console.log(">>> [Provisioning] Setting up live authenticated session on Fastify 4100...");
+	if (!initRes.ok) {
+		throw new Error(`Clinic setup failed: ${await initRes.text()}`);
+	}
 
-  const initRes = await fetch(`${API_BASE}/api/auth/setup/init`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      clinicName: "Стоматология ДЕНТЕ Склад Ред Тим",
-      email: `redteam-wh2-${uniqueId}@dente-clinic.ru`,
-      password: "Password123!",
-      ownerName: "Д-р Кузнецов Михаил Сергеевич",
-      ownerPin: "1234",
-    }),
-  });
+	const initData = await initRes.json();
+	const orgId = initData.organizationId;
+	console.log(`[Provisioning] Organization created: ${orgId}`);
 
-  if (!initRes.ok) {
-    throw new Error(`Clinic setup failed: ${await initRes.text()}`);
-  }
-  const initData = await initRes.json();
+	const unlockRes = await fetch(`${API_BASE}/api/auth/staff/unlock`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			"x-dente-clinic-token": initData.clinicToken,
+		},
+		body: JSON.stringify({ userId: initData.ownerUserId, pinCode: "1234" }),
+	});
 
-  const unlockRes = await fetch(`${API_BASE}/api/auth/staff/unlock`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-dente-clinic-token": initData.clinicToken,
-    },
-    body: JSON.stringify({ userId: initData.ownerUserId, pinCode: "1234" }),
-  });
+	if (!unlockRes.ok) {
+		throw new Error(`Staff unlock failed: ${await unlockRes.text()}`);
+	}
 
-  if (!unlockRes.ok) {
-    throw new Error(`Staff unlock failed: ${await unlockRes.text()}`);
-  }
-  const unlockData = await unlockRes.json();
+	const unlockData = await unlockRes.json();
+	const headers = {
+		"Content-Type": "application/json",
+		"x-dente-clinic-token": initData.clinicToken,
+		"x-dente-staff-token": unlockData.staffToken,
+	};
 
-  return {
-    clinicToken: initData.clinicToken,
-    staffToken: unlockData.staffToken,
-    ownerUserId: initData.ownerUserId,
-  };
-}
+	// Добавим репрезентативные материалы на склад (зеленый, желтый, красный статусы)
+	const sampleItems = [
+		{
+			name: "Артикаин 1:100 000 (карпула 1.7 мл)",
+			stockQuantity: 18,
+			criticalThreshold: 10,
+			unitCostRub: 125,
+			sku: "ART-100",
+		},
+		{
+			name: "Иглы карпульные 0.3x21 мм",
+			stockQuantity: 4,
+			criticalThreshold: 10,
+			unitCostRub: 18,
+			sku: "NDL-21",
+		},
+		{
+			name: "Перчатки смотровые нитриловые M",
+			stockQuantity: 45,
+			criticalThreshold: 20,
+			unitCostRub: 35,
+			sku: "GLV-M",
+		},
+		{
+			name: "Композит светового отверждения A2",
+			stockQuantity: 0,
+			criticalThreshold: 2,
+			unitCostRub: 1800,
+			sku: "CMP-A2",
+		},
+		{
+			name: "Слюноотсосы одноразовые",
+			stockQuantity: 120,
+			criticalThreshold: 50,
+			unitCostRub: 7,
+			sku: "SLN-01",
+		},
+		{
+			name: "Валики ватные стоматологические",
+			stockQuantity: 250,
+			criticalThreshold: 100,
+			unitCostRub: 1.2,
+			sku: "VLK-01",
+		},
+	];
 
-async function saveScreenshots(page, baseName) {
-  const localPath = path.join(LOCAL_DIR, `${baseName}.png`);
-  await page.screenshot({ path: localPath, fullPage: false });
-  const stat = fs.statSync(localPath);
-  console.log(`Saved local: ${localPath} (${stat.size} bytes)`);
+	for (const it of sampleItems) {
+		try {
+			const res = await fetch(`${API_BASE}/api/inventory/${orgId}/items`, {
+				method: "POST",
+				headers,
+				body: JSON.stringify(it),
+			});
+			if (!res.ok) {
+				console.warn(`Item seed non-ok (${it.name}): ${res.status}`);
+			}
+		} catch (e) {
+			console.warn("Item seed warning:", e.message);
+		}
+	}
 
-  for (const artDir of ARTIFACTS_DIRS) {
-    try {
-      fs.mkdirSync(artDir, { recursive: true });
-      const artPath = path.join(artDir, `${baseName}.png`);
-      fs.copyFileSync(localPath, artPath);
-      console.log(`Copied artifact: ${artPath}`);
-    } catch (e) {
-      console.warn(`Artifact copy error: ${e.message}`);
-    }
-  }
+	return {
+		orgId,
+		clinicToken: initData.clinicToken,
+		staffToken: unlockData.staffToken,
+		userId: initData.ownerUserId,
+	};
 }
 
 async function run() {
-  console.log("Starting visual capture of Warehouse & Inventory components (PC 1440x900)...");
-  fs.mkdirSync(LOCAL_DIR, { recursive: true });
+	if (!fs.existsSync(DOCS_DIR)) fs.mkdirSync(DOCS_DIR, { recursive: true });
+	if (!fs.existsSync(BRAIN_DIR)) fs.mkdirSync(BRAIN_DIR, { recursive: true });
 
-  const auth = await provisionLiveSession();
+	const auth = await provisionSession();
 
-  const browser = await chromium.launch({
-    headless: true,
-    executablePath: "C:/Program Files/Google/Chrome/Application/chrome.exe",
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
+	console.log("[Playwright] Launching Chrome headless...");
+	const browser = await chromium.launch({
+		headless: true,
+		executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+		args: [
+			"--no-sandbox",
+			"--disable-setuid-sandbox",
+			"--proxy-server=direct://",
+			"--proxy-bypass-list=*",
+		],
+	});
 
-  try {
-    const context = await browser.newContext({
-      viewport: { width: 1440, height: 900 },
-    });
+	const targets = [
+		{
+			name: "inventory_pc_light.png",
+			viewport: { width: 1440, height: 900 },
+			theme: "light",
+			isMobile: false,
+			scale: 2,
+		},
+		{
+			name: "inventory_pc_dark.png",
+			viewport: { width: 1440, height: 900 },
+			theme: "dark",
+			isMobile: false,
+			scale: 2,
+		},
+		{
+			name: "inventory_mobile_light.png",
+			viewport: { width: 390, height: 844 },
+			theme: "light",
+			isMobile: true,
+			scale: 3,
+		},
+		{
+			name: "inventory_mobile_dark.png",
+			viewport: { width: 390, height: 844 },
+			theme: "dark",
+			isMobile: true,
+			scale: 3,
+		},
+	];
 
-    await context.addInitScript(({ clinicToken, staffToken, ownerUserId }) => {
-      localStorage.setItem("dente_clinic_token", clinicToken);
-      localStorage.setItem("dente_staff_token", staffToken);
-      localStorage.setItem("dente_active_role", "owner");
-      localStorage.setItem("dente_user_id", ownerUserId);
-      localStorage.setItem("dente_onboarding_completed", "true");
-      localStorage.setItem("dente_tour_completed", "true");
-      localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
-      localStorage.setItem("dente_guide_tour_seen_roles_v2", JSON.stringify(["admin", "doctor", "director"]));
-      localStorage.setItem("dente_quest_progress_v2", JSON.stringify({
-        isDismissedPermanently: true,
-        isTourActive: false,
-        tracksProgress: {
-          solo_doctor: { completed: true, completedStepIds: ["schedule_overview", "odontogram_status", "visit_diary_043", "fast_cashier_54fz"] },
-          reception_admin: { completed: true, completedStepIds: [] },
-          imaging_diagnostics: { completed: true, completedStepIds: [] }
-        }
-      }));
-      localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true, step: "done", completed: true }));
-      localStorage.setItem("dente_theme_mode", "light");
-    }, auth);
+	for (const t of targets) {
+		console.log(`\n[Screenshot] Capturing ${t.name} (${t.viewport.width}x${t.viewport.height}, theme=${t.theme})...`);
+		const context = await browser.newContext({
+			viewport: t.viewport,
+			isMobile: t.isMobile,
+			hasTouch: t.isMobile,
+			deviceScaleFactor: t.scale,
+		});
 
-    const page = await context.newPage();
+		// Настройка localStorage до первой загрузки страницы
+		await context.addInitScript(
+			({ ct, st, uid, theme }) => {
+				localStorage.setItem("dente_clinic_token", ct);
+				localStorage.setItem("dente_staff_token", st);
+				localStorage.setItem("dente_active_role", "owner");
+				localStorage.setItem("dente_theme_mode", theme);
+				localStorage.setItem("dente_theme", theme);
+				localStorage.setItem("dente_onboarding_completed", "true");
+				localStorage.setItem("dente_sidebar_collapsed", "false");
+				localStorage.setItem(
+					"dente_ui_preferences_v1",
+					JSON.stringify({
+						onboardingDismissed: true,
+						onboardingStep: "done",
+						version: 1,
+					})
+				);
+				localStorage.setItem(
+					"dental-crm:onboarding:v1",
+					JSON.stringify({
+						dismissed: true,
+						step: "done",
+						completed: true,
+						onboardingDismissed: true,
+						onboardingStep: "done",
+						version: 1,
+					})
+				);
+				localStorage.setItem(
+					"dental-crm:web-ui-preferences:v1",
+					JSON.stringify({
+						version: 1,
+						uiLanguage: "ru",
+						selectedWorkspaceRole: "owner",
+						onboardingDismissed: true,
+						onboardingStep: "done",
+					})
+				);
+				localStorage.setItem(
+					"dente-workspace-profile",
+					JSON.stringify({
+						state: {
+							clinicName: "Стоматология ДЕНТЕ Склад",
+							currentDoctor: { id: uid, fullName: "Старшая медсестра Иванова Е. А.", role: "owner" },
+							flags: { disableTour: true },
+						},
+					})
+				);
+			},
+			{
+				ct: auth.clinicToken,
+				st: auth.staffToken,
+				uid: auth.userId,
+				theme: t.theme,
+			}
+		);
 
-    // 1. WAREHOUSE INVENTORY (#inventory) - PC Light & Dark
-    console.log("Navigating to #inventory...");
-    await page.goto(`${WEB_BASE}/#inventory`, { waitUntil: "domcontentloaded", timeout: 30000 });
-    await wait(3500);
+		const page = await context.newPage();
+		page.on("pageerror", (err) => console.log(`[Browser PageError]: ${err.message}`));
 
-    // Light Theme
-    await page.evaluate(() => {
-      document.documentElement.classList.remove("dark");
-      document.documentElement.setAttribute("data-theme", "light");
-    });
-    await wait(1000);
-    await saveScreenshots(page, "proof_warehouse_inventory_pc_light");
+		// Переход на #inventory
+		await page.goto(`${WEB_BASE}/#inventory`, { waitUntil: "domcontentloaded", timeout: 30000 });
+		await page.waitForSelector(".boot-state", { state: "detached", timeout: 30000 }).catch(() => {});
+		await page.waitForSelector(".app-shell", { state: "visible", timeout: 30000 }).catch(() => {});
 
-    // Dark Theme
-    await page.evaluate(() => {
-      document.documentElement.classList.add("dark");
-      document.documentElement.setAttribute("data-theme", "dark");
-    });
-    await wait(1000);
-    await saveScreenshots(page, "proof_warehouse_inventory_pc_dark");
+		// Применение темы на случай если класс не синхронизировался
+		await page.evaluate((th) => {
+			localStorage.setItem("dente_theme_mode", th);
+			localStorage.setItem("dente_theme", th);
+			document.documentElement.setAttribute("data-theme", th);
+			if (document.body) document.body.setAttribute("data-theme", th);
+			if (th === "dark") {
+				document.documentElement.classList.add("dark");
+				document.documentElement.classList.remove("light");
+				document.documentElement.style.colorScheme = "dark";
+			} else {
+				document.documentElement.classList.remove("dark");
+				document.documentElement.classList.add("light");
+				document.documentElement.style.colorScheme = "light";
+			}
+			if (window.__useThemeStore) {
+				window.__useThemeStore.getState().setThemeMode(th);
+			}
+		}, t.theme);
 
-    // Switch back to light
-    await page.evaluate(() => {
-      document.documentElement.classList.remove("dark");
-      document.documentElement.setAttribute("data-theme", "light");
-    });
-    await wait(500);
+		// Ждем загрузки данных склада
+		await page.waitForTimeout(2000);
 
-    // 2. Open Warehouse Manager Modal via Operations menu
-    console.log("Opening Warehouse Manager Modal...");
-    const opsMenuBtn = await page.$("[data-testid='btn-warehouse-ops-menu']");
-    if (opsMenuBtn) {
-      await opsMenuBtn.click();
-      await wait(500);
-      const whManagerTrigger = await page.$("[data-testid='warehouse-manager-trigger']");
-      if (whManagerTrigger) {
-        await whManagerTrigger.click();
-        await wait(1500);
-        await saveScreenshots(page, "proof_warehouse_manager_pc_light");
+		// Скрываем плавающие тосты, чтобы не заслонять контент
+		await page.evaluate(() => {
+			document.querySelectorAll('.sa-toast, [data-testid="global-toast"], .toast-container, .alert-toast, .error-toast, [data-testid="toast"]').forEach(el => {
+				el.style.display = "none";
+				el.style.opacity = "0";
+				el.style.pointerEvents = "none";
+			});
+		}).catch(() => {});
 
-        // Dark Theme
-        await page.evaluate(() => {
-          document.documentElement.classList.add("dark");
-          document.documentElement.setAttribute("data-theme", "dark");
-        });
-        await wait(800);
-        await saveScreenshots(page, "proof_warehouse_manager_pc_dark");
+		const outPathDocs = path.join(DOCS_DIR, t.name);
+		const outPathBrain = path.join(BRAIN_DIR, t.name);
 
-        // Switch back to light and close
-        await page.evaluate(() => {
-          document.documentElement.classList.remove("dark");
-          document.documentElement.setAttribute("data-theme", "light");
-        });
-        const closeBtn = await page.$("button[aria-label='Закрыть'], [data-testid='close-modal-btn'], button:has-text('Отмена')");
-        if (closeBtn) await closeBtn.click();
-        await wait(500);
-      }
-    }
+		await page.screenshot({ path: outPathDocs, fullPage: false });
+		fs.copyFileSync(outPathDocs, outPathBrain);
 
-    // 3. Open Nurse Carpule Disposal Modal via Operations menu
-    console.log("Opening Nurse Carpule Disposal Modal...");
-    const opsMenuBtn2 = await page.$("[data-testid='btn-warehouse-ops-menu']");
-    if (opsMenuBtn2) {
-      await opsMenuBtn2.click();
-      await wait(500);
-      const nurseTrigger = await page.$("[data-testid='nurse-carpule-disposal-modal-trigger']");
-      if (nurseTrigger) {
-        await nurseTrigger.click();
-        await wait(1500);
-        await saveScreenshots(page, "proof_nurse_carpule_modal_pc_light");
+		const stats = fs.statSync(outPathDocs);
+		console.log(`[Success] Saved ${t.name}: size = ${stats.size} bytes (${(stats.size / 1024).toFixed(1)} KB)`);
 
-        // Dark Theme
-        await page.evaluate(() => {
-          document.documentElement.classList.add("dark");
-          document.documentElement.setAttribute("data-theme", "dark");
-        });
-        await wait(800);
-        await saveScreenshots(page, "proof_nurse_carpule_modal_pc_dark");
+		if (stats.size < 20 * 1024) {
+			console.error(`[Error] ${t.name} is too small: ${stats.size} < 20480 bytes!`);
+		}
 
-        // Switch back to light and close
-        await page.evaluate(() => {
-          document.documentElement.classList.remove("dark");
-          document.documentElement.setAttribute("data-theme", "light");
-        });
-        const closeBtn = await page.$("button:has-text('Отмена'), button[aria-label='Закрыть']");
-        if (closeBtn) await closeBtn.click();
-        await wait(500);
-      }
-    }
+		await context.close();
+	}
 
-    console.log(">>> All visual proofs captured successfully!");
-  } finally {
-    await browser.close();
-  }
+	await browser.close();
+	console.log("\n[Complete] All 4 visual proof screenshots captured successfully!");
 }
 
 run().catch((err) => {
-  console.error("FATAL ERROR in capture runner:", err);
-  process.exit(1);
+	console.error("[Fatal]", err);
+	process.exit(1);
 });

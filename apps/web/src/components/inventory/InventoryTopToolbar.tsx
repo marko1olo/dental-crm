@@ -54,6 +54,7 @@ export interface InventoryTopToolbarProps {
 	setIsInventoryAuditOpen: (open: boolean) => void;
 	setIsMdlpDisposalOpen: (open: boolean) => void;
 	setIsNurseCarpuleModalOpen?: (open: boolean) => void;
+	onOpenShiftDeductionModal?: () => void;
 	handleQuickWriteoffStandardKit: () => void;
 	handleQuickWriteoffAnestheticCarpule: () => void;
 	handleQuickWriteoffSterilizationKit: () => void;
@@ -96,6 +97,7 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 	setIsInventoryAuditOpen,
 	setIsMdlpDisposalOpen,
 	setIsNurseCarpuleModalOpen,
+	onOpenShiftDeductionModal,
 	handleQuickWriteoffStandardKit,
 	handleQuickWriteoffAnestheticCarpule,
 	handleQuickWriteoffSterilizationKit,
@@ -308,6 +310,7 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 					onOpenInventoryAudit={() => setIsInventoryAuditOpen(true)}
 					onOpenMdlpDisposal={() => setIsMdlpDisposalOpen(true)}
 					onOpenNurseCarpuleModal={setIsNurseCarpuleModalOpen ? () => setIsNurseCarpuleModalOpen(true) : undefined}
+					onOpenShiftDeductionModal={onOpenShiftDeductionModal}
 					onQuickWriteoffStandardKit={handleQuickWriteoffStandardKit}
 					onQuickWriteoffAnestheticCarpule={handleQuickWriteoffAnestheticCarpule}
 					onQuickWriteoffSterilizationKit={handleQuickWriteoffSterilizationKit}
@@ -315,6 +318,20 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 					onQuickWriteoffVisitBundle={handleQuickWriteoffVisitBundle}
 					onQuickWriteoffShiftBundle={handleQuickWriteoffShiftBundle}
 				/>
+
+				{/* 1-Click Shift Batch Consumables Deduction Button (Senior Nurse / Admin) */}
+				{onOpenShiftDeductionModal && (
+					<button
+						type="button"
+						className="h-9 min-h-[36px] shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 rounded-xl font-semibold text-xs sm:text-sm cursor-pointer transition border border-[var(--primary)]/30 bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] shadow-2xs"
+						onClick={onOpenShiftDeductionModal}
+						title="Пакетное списание расходников за смену (1 клик по техкартам оказанных услуг)"
+						data-testid="btn-open-shift-batch-deduction"
+					>
+						<Package className="w-4 h-4 shrink-0 text-[var(--primary)]" />
+						<span>Списать за смену</span>
+					</button>
+				)}
 
 				{/* Add Inventory Item Button (The Single Primary CTA) */}
 				<button

@@ -336,5 +336,101 @@ export const writeOffRoutes: FastifyPluginAsync = async (server: FastifyInstance
 	registerVisitDeductRoute("/auto-bom-deduct");
 	registerVisitDeductRoute("/:organizationId/deduct/visit");
 	registerVisitDeductRoute("/deduct/visit");
+
+	// GET /:organizationId/shift-summary — Сводка услуг и расчет расходников за смену (Мандаты 8e, 8n)
+	server.get<{
+		Params: { organizationId?: string };
+		Querystring: { date?: string; organizationId?: string };
+	}>("/:organizationId/shift-summary", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory shift summary",
+		);
+		if (!resolvedOrgId) return;
+		const targetOrgId = request.params.organizationId || request.query.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+
+		return withTenantCtx(targetOrgId, async (tx) => {
+			return TreatmentConsumablesService.getShiftConsumablesSummary(tx, targetOrgId, request.query.date);
+		});
+	});
+
+	server.get<{
+		Querystring: { date?: string; organizationId?: string };
+	}>("/shift-summary", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory shift summary fallback",
+		);
+		if (!resolvedOrgId) return;
+		const targetOrgId = request.query.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+
+		return withTenantCtx(targetOrgId, async (tx) => {
+			return TreatmentConsumablesService.getShiftConsumablesSummary(tx, targetOrgId, request.query.date);
+		});
+	});
+
+	// POST /:organizationId/shift-deduct — 1-клик пакетное списание расходников за смену с Soft Negative Stock
+	server.post<{
+		Params: { organizationId?: string };
+		Body?: {
+			date?: string;
+			organizationId?: string;
+			items?: Array<{ itemId: string; qty: number; name?: string }>;
+			notes?: string;
+		};
+	}>("/:organizationId/shift-deduct", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory shift batch deduct",
+		);
+		if (!resolvedOrgId) return;
+		const targetOrgId = request.params.organizationId || request.body?.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+
+		const body = request.body ?? {};
+		return withTenantCtx(targetOrgId, async (tx) => {
+			return TreatmentConsumablesService.executeShiftBatchDeduction(tx, {
+				organizationId: targetOrgId,
+				date: body.date,
+				userId: request.user?.id ?? null,
+				items: body.items,
+				notes: body.notes,
+			});
+		});
+	});
+
+	server.post<{
+		Body?: {
+			date?: string;
+			organizationId?: string;
+			items?: Array<{ itemId: string; qty: number; name?: string }>;
+			notes?: string;
+		};
+	}>("/shift-deduct", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory shift batch deduct fallback",
+		);
+		if (!resolvedOrgId) return;
+		const targetOrgId = request.body?.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+
+		const body = request.body ?? {};
+		return withTenantCtx(targetOrgId, async (tx) => {
+			return TreatmentConsumablesService.executeShiftBatchDeduction(tx, {
+				organizationId: targetOrgId,
+				date: body.date,
+				userId: request.user?.id ?? null,
+				items: body.items,
+				notes: body.notes,
+			});
+		});
+	});
 };
 

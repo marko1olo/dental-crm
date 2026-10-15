@@ -5,7 +5,7 @@
  */
 
 import { formatInventoryUnitRu } from "@dental/shared";
-import { AlertTriangle, ShieldAlert, ShoppingCart } from "lucide-react";
+import { AlertTriangle, ShieldAlert } from "lucide-react";
 import React from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../GlobalToast.js";
@@ -24,7 +24,6 @@ import {
 } from "./procedureDeductionModules/index.js";
 import { ProcedureMaterialAddCustomBar } from "./ProcedureMaterialAddCustomBar.js";
 import { ProcedureMaterialPackagesBar } from "./ProcedureMaterialPackagesBar.js";
-import { ProcedureMaterialPoModal } from "./ProcedureMaterialPoModal.js";
 import type { InventoryItem } from "./useInventoryLogic.js";
 import "./inventoryDeduction.css";
 
@@ -99,18 +98,6 @@ export function ProcedureMaterialDeductionModal(props: ProcedureMaterialDeductio
 
 	if (!isOpen) return null;
 
-	if (showPoModal && generatedPurchaseOrder) {
-		return (
-			<ProcedureMaterialPoModal
-				generatedPurchaseOrder={generatedPurchaseOrder}
-				onClose={() => setShowPoModal(false)}
-				onCopy={handleCopyPurchaseOrder}
-				onPrint={handlePrintPurchaseOrder}
-				copiedPo={copiedPo}
-			/>
-		);
-	}
-
 	const modalContent = (
 		<div
 			className="inventory-deduction-backdrop"
@@ -143,7 +130,7 @@ export function ProcedureMaterialDeductionModal(props: ProcedureMaterialDeductio
 					onToggleTechMap={handleToggleTechMap}
 				/>
 
-				{/* 3. АЛЕРТ ДЕФИЦИТА И ЗАКАЗ ПОСТАВЩИКУ */}
+				{/* 3. АЛЕРТ МЯГКОГО ОВЕРДРАФТА (Мандат 8n: Doctor Autonomy) */}
 				{(summary.hasDeficit || summary.warningCount > 0) && (
 					<div
 						className={`inventory-alert-summary-bar flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 p-2 sm:p-1.5 ${summary.hasDeficit ? "has-deficit" : "has-warning"}`}
@@ -156,19 +143,14 @@ export function ProcedureMaterialDeductionModal(props: ProcedureMaterialDeductio
 							)}
 							<span className="text-xs font-bold leading-tight">
 								{summary.hasDeficit
-									? `Внимание: остаток отрицательный, требуется оприходование накладной (дефицит: ${summary.criticalCount} поз.). Задержка оприходования накладной не блокирует операцию!`
+									? `Мягкий овердрафт активен (дефицит: ${summary.criticalCount} поз.). Прием не блокируется, фоновая заявка поставщику сформирована в бэкофисе.`
 									: `Внимание: ${summary.warningCount} поз. достигли критического неснижаемого остатка.`}
 							</span>
 						</div>
 
-						<button
-							type="button"
-							className="inventory-purchase-order-btn shrink-0 inline-flex items-center gap-1.5 h-[26px] px-2.5 text-[11px] font-bold cursor-pointer"
-							onClick={() => setShowPoModal(true)}
-						>
-							<ShoppingCart size={13} />
-							<span>Сформировать заказ поставщику</span>
-						</button>
+						<span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--ink-muted)] bg-[var(--paper-soft)] px-2 py-0.5 rounded-md border border-[var(--line-subtle)]">
+							Мандат 8n: Soft Negative Stock
+						</span>
 					</div>
 				)}
 

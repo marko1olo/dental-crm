@@ -1,5 +1,6 @@
 export * from "./InventoryConfirmDialog.js";
 export * from "./ConsumablesDeductionModal.js";
+export * from "./ShiftBatchDeductionModal.js";
 export * from "./WarehouseInventoryTab.js";
 export * from "./ProcedureMaterialDeductionModal.js";
 export * from "./ProcedureMaterialPoModal.js";

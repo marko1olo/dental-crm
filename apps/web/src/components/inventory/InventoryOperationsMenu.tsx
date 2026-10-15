@@ -25,6 +25,7 @@ export interface InventoryOperationsMenuProps {
 	readonly onOpenInventoryAudit: () => void;
 	readonly onOpenMdlpDisposal: () => void;
 	readonly onOpenNurseCarpuleModal?: (() => void) | undefined;
+	readonly onOpenShiftDeductionModal?: (() => void) | undefined;
 	readonly onQuickWriteoffStandardKit: () => void;
 	readonly onQuickWriteoffAnestheticCarpule: () => void;
 	readonly onQuickWriteoffSterilizationKit: () => void;
@@ -51,6 +52,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 	onOpenInventoryAudit,
 	onOpenMdlpDisposal,
 	onOpenNurseCarpuleModal,
+	onOpenShiftDeductionModal,
 	onQuickWriteoffStandardKit,
 	onQuickWriteoffAnestheticCarpule,
 	onQuickWriteoffSterilizationKit,
@@ -215,6 +217,24 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 					</button>
 
 					<div className="my-1 border-t border-[var(--line)]" />
+
+					{/* 1-Клик списание расходников смены по техкартам (BOM) */}
+					{onOpenShiftDeductionModal && (
+						<button
+							type="button"
+							className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--primary)]/10 text-xs font-bold text-[var(--primary)] cursor-pointer transition-colors"
+							data-testid="nurse-menu-shift-batch-deduction-btn"
+							onClick={() => {
+								onOpenShiftDeductionModal();
+								onClose();
+							}}
+							role="menuitem"
+							title="Сводка и списание всех расходников смены в 1 клик по техкартам (BOM)"
+						>
+							<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
+							<span>Списать расходники за смену</span>
+						</button>
+					)}
 
 					{/* Быстрые списания расходников (СанПиН / Сестра / Врач) */}
 					<button

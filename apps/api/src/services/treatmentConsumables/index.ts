@@ -13,6 +13,7 @@ export * from "./bundleWriteoffService.js";
 export * from "./surgeryWriteoffService.js";
 export * from "./emergencyAntishockWriteoffService.js";
 export * from "./manualDeduction.js";
+export * from "./shiftBatchWriteoffService.js";
 
 import {
 	createLink,
@@ -42,6 +43,10 @@ import { quickWriteoffSurgery } from "./surgeryWriteoffService.js";
 import { quickWriteoffEmergencyAntishock } from "./emergencyAntishockWriteoffService.js";
 import { deductManualItems } from "./manualDeduction.js";
 import { executeAutoBomWriteoff } from "./autoBomWriteoffService.js";
+import {
+	getShiftConsumablesSummary,
+	executeShiftBatchDeduction,
+} from "./shiftBatchWriteoffService.js";
 
 export * from "./autoBomWriteoffService.js";
 
@@ -69,6 +74,9 @@ export class TreatmentConsumablesService {
 	static quickWriteoffOrthopedicProtocol = quickWriteoffOrthopedicProtocol;
 	static quickWriteoffSurgery = quickWriteoffSurgery;
 	static quickWriteoffEmergencyAntishock = quickWriteoffEmergencyAntishock;
+
+	static getShiftConsumablesSummary = getShiftConsumablesSummary;
+	static executeShiftBatchDeduction = executeShiftBatchDeduction;
 }
 
 export const treatmentConsumablesService = TreatmentConsumablesService;
