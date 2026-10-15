@@ -41,6 +41,9 @@ import {
 import { quickWriteoffSurgery } from "./surgeryWriteoffService.js";
 import { quickWriteoffEmergencyAntishock } from "./emergencyAntishockWriteoffService.js";
 import { deductManualItems } from "./manualDeduction.js";
+import { executeAutoBomWriteoff } from "./autoBomWriteoffService.js";
+
+export * from "./autoBomWriteoffService.js";
 
 export class TreatmentConsumablesService {
 	static listLinks = listLinks;
@@ -54,6 +57,7 @@ export class TreatmentConsumablesService {
 	static deductForVisit = deductForVisit;
 	static deductForToothTreatment = deductForToothTreatment;
 	static deductManualItems = deductManualItems;
+	static executeAutoBomWriteoff = executeAutoBomWriteoff;
 
 	static checkStockSufficiency = checkStockSufficiency;
 	static getInventoryAlerts = getInventoryAlerts;
@@ -68,3 +72,4 @@ export class TreatmentConsumablesService {
 }
 
 export const treatmentConsumablesService = TreatmentConsumablesService;
+

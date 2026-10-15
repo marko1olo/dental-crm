@@ -1,5 +1,6 @@
+import { calculateChairHourlyCost } from "@dental/shared";
 import { and, eq, gte, inArray, sql } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
@@ -471,7 +472,7 @@ export async function calculateNoShowHeatmap(
 }
 
 export async function registerUtilizationRoutes(app: FastifyInstance) {
-	app.get("/api/analytics/utilization", async (request, reply) => {
+	const getUtilization = async (request: FastifyRequest, reply: FastifyReply) => {
 		const readAllowed = await requireClinicalReadAccess(
 			request,
 			reply,
@@ -508,12 +509,28 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 			const chairData = await calculateChairUtilization(orgId, startDate, now);
 			const doctorProfitability = await calculateDoctorProfitability(orgId, startDate);
 
+			const hourlyEconomics = calculateChairHourlyCost({
+				activeChairsCount: Math.max(1, chairData.chairUtilizationJson.length),
+				workingDaysPerMonth: 30,
+				workingHoursPerDay: 12,
+				chairUtilizationRate: Math.max(0.1, (chairData.chairOccupancyRate || 10) / 100),
+				monthlyRentRub: 350_000,
+				monthlyUtilitiesRub: 45_000,
+				monthlyAdministrativePayrollRub: 280_000,
+				monthlyEquipmentDepreciationRub: 120_000,
+				monthlySanpinSterilizationRub: 60_000,
+				monthlyMarketingAndOtherRub: 150_000,
+			});
+
 			return {
 				success: true,
 				data: {
 					chairUtilizationJson: chairData.chairUtilizationJson,
 					chairOccupancyRatePercent: chairData.chairOccupancyRate,
 					doctorProfitabilityJson: doctorProfitability,
+					chairHourlyCostRub: hourlyEconomics.hourlyCostRealOccupiedRub,
+					chairHourlyNominalCostRub: hourlyEconomics.hourlyCostNominalRub,
+					chairHourlyCostKopecks: hourlyEconomics.hourlyCostRealOccupiedKopecks,
 				},
 			};
 		} catch (e) {
@@ -524,5 +541,8 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 				message: "Не удалось рассчитать загрузку кресел. Повторите позже.",
 			});
 		}
-	});
+	};
+
+	app.get("/api/analytics/chairs-utilization", getUtilization);
+	app.get("/api/analytics/utilization", getUtilization);
 }

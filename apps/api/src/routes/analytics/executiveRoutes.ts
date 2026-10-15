@@ -92,7 +92,7 @@ async function requireExecutiveAccess(
  * ====================================================================
  */
 export async function registerExecutiveRoutes(app: FastifyInstance) {
-	app.get("/api/analytics/executive", async (request, reply) => {
+	const getExecutiveSummary = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireExecutiveAccess(request, reply);
 		if (!orgId) return;
 
@@ -100,7 +100,7 @@ export async function registerExecutiveRoutes(app: FastifyInstance) {
 			const { period = "month" } = request.query as { period?: string };
 			const range = resolveExecutiveDateRange(period);
 
-			const { departments, activeDoctorsCount } =
+			const { departments, activeDoctorsCount, topDoctors, topProcedures } =
 				await queryExecutiveDepartmentsAndDoctors(orgId, range.startDate);
 
 			const {
@@ -115,6 +115,8 @@ export async function registerExecutiveRoutes(app: FastifyInstance) {
 				kpis,
 				funnelStages,
 				departments,
+				topDoctors,
+				topProcedures,
 				period: range.execPeriod,
 				dateRangeStartIso: range.startDate.toISOString(),
 				dateRangeEndIso: range.endDate.toISOString(),
@@ -141,5 +143,8 @@ export async function registerExecutiveRoutes(app: FastifyInstance) {
 					"Не удалось сформировать дашборд генерального директора. Повторите позже.",
 			});
 		}
-	});
+	};
+
+	app.get("/api/analytics/executive-summary", getExecutiveSummary);
+	app.get("/api/analytics/executive", getExecutiveSummary);
 }

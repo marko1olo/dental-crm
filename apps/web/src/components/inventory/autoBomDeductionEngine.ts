@@ -185,8 +185,8 @@ export async function performAutoVisitBomDeduction(
 		try {
 			const hasSpecificOrg = options.organizationId && options.organizationId !== "org-default";
 			const deductEndpoint = hasSpecificOrg
-				? `/api/inventory/${options.organizationId}/deduct/visit`
-				: `/api/inventory/deduct/visit`;
+				? `/api/inventory/${options.organizationId}/auto-bom-deduct`
+				: `/api/inventory/auto-bom-deduct`;
 
 			options
 				.fetchFn(deductEndpoint, {

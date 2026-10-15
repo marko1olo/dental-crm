@@ -53,7 +53,7 @@ export interface InventoryTopToolbarProps {
 	setIsWarehouseTransferOpen: (open: boolean) => void;
 	setIsInventoryAuditOpen: (open: boolean) => void;
 	setIsMdlpDisposalOpen: (open: boolean) => void;
-	setIsNurseCarpuleModalOpen: (open: boolean) => void;
+	setIsNurseCarpuleModalOpen?: (open: boolean) => void;
 	handleQuickWriteoffStandardKit: () => void;
 	handleQuickWriteoffAnestheticCarpule: () => void;
 	handleQuickWriteoffSterilizationKit: () => void;
@@ -307,7 +307,7 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 					onOpenWarehouseTransfer={() => setIsWarehouseTransferOpen(true)}
 					onOpenInventoryAudit={() => setIsInventoryAuditOpen(true)}
 					onOpenMdlpDisposal={() => setIsMdlpDisposalOpen(true)}
-					onOpenNurseCarpuleModal={() => setIsNurseCarpuleModalOpen(true)}
+					onOpenNurseCarpuleModal={setIsNurseCarpuleModalOpen ? () => setIsNurseCarpuleModalOpen(true) : undefined}
 					onQuickWriteoffStandardKit={handleQuickWriteoffStandardKit}
 					onQuickWriteoffAnestheticCarpule={handleQuickWriteoffAnestheticCarpule}
 					onQuickWriteoffSterilizationKit={handleQuickWriteoffSterilizationKit}

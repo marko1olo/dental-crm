@@ -24,7 +24,7 @@ export interface InventoryOperationsMenuProps {
 	readonly onOpenWarehouseTransfer: () => void;
 	readonly onOpenInventoryAudit: () => void;
 	readonly onOpenMdlpDisposal: () => void;
-	readonly onOpenNurseCarpuleModal: () => void;
+	readonly onOpenNurseCarpuleModal?: (() => void) | undefined;
 	readonly onQuickWriteoffStandardKit: () => void;
 	readonly onQuickWriteoffAnestheticCarpule: () => void;
 	readonly onQuickWriteoffSterilizationKit: () => void;
@@ -245,21 +245,6 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 					>
 						<Syringe size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Списать карпулу анестетика</span>
-					</button>
-
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-						data-testid="nurse-carpule-disposal-modal-trigger"
-						onClick={() => {
-							onOpenNurseCarpuleModal();
-							onClose();
-						}}
-						role="menuitem"
-						title="Учет и акт утилизации пустых карпул анестетиков без лишних комиссий"
-					>
-						<Syringe size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Акт утилизации карпул</span>
 					</button>
 
 					<button

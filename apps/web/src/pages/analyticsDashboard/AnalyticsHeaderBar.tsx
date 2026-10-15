@@ -103,7 +103,7 @@ export function AnalyticsHeaderBar({
 						type="button"
 						role="tab"
 						aria-selected={analyticsSection === "curators"}
-						className={`analytics-tab-btn ${analyticsSection === "curators" ? "analytics-tab-btn--active" : ""}`}
+						className={`analytics-tab-btn analytics-tab-btn--desktop-only ${analyticsSection === "curators" ? "analytics-tab-btn--active" : ""}`}
 						onClick={() => {
 							setAnalyticsSection("curators");
 							setIsSectionMoreOpen(false);
@@ -118,6 +118,7 @@ export function AnalyticsHeaderBar({
 							type="button"
 							role="tab"
 							aria-selected={
+								analyticsSection === "curators" ||
 								analyticsSection === "lost_patients" ||
 								analyticsSection === "freed_slots" ||
 								analyticsSection === "marketing" ||
@@ -125,6 +126,7 @@ export function AnalyticsHeaderBar({
 							}
 							aria-expanded={isSectionMoreOpen}
 							className={`analytics-tab-btn ${
+								analyticsSection === "curators" ||
 								analyticsSection === "lost_patients" ||
 								analyticsSection === "freed_slots" ||
 								analyticsSection === "marketing" ||
@@ -136,15 +138,17 @@ export function AnalyticsHeaderBar({
 							title="Дополнительные разделы аналитики (Возврат, Освободившиеся окна, Маркетинг, Сводный пульт)"
 						>
 							<span>
-								{analyticsSection === "lost_patients"
-									? "Возврат"
-									: analyticsSection === "freed_slots"
-										? "Окна"
-										: analyticsSection === "marketing"
-											? "Маркетинг"
-											: analyticsSection === "clinic"
-												? "Пульт"
-												: "Ещё разделы"}
+								{analyticsSection === "curators"
+									? "Кураторы"
+									: analyticsSection === "lost_patients"
+										? "Возврат"
+										: analyticsSection === "freed_slots"
+											? "Окна"
+											: analyticsSection === "marketing"
+												? "Маркетинг"
+												: analyticsSection === "clinic"
+													? "Пульт"
+													: "Ещё"}
 							</span>
 							<ChevronDown
 								size={13}
@@ -157,6 +161,25 @@ export function AnalyticsHeaderBar({
 								className="analytics-dropdown-menu absolute left-0 top-full mt-1 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-2xl min-w-[220px] text-xs animate-in fade-in zoom-in-95 duration-100"
 								role="menu"
 							>
+								<button
+									type="button"
+									className={`w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between cursor-pointer sm:hidden ${
+										analyticsSection === "curators"
+											? "bg-[var(--teal-surface,#ccfbf1)] text-[var(--teal-dark,#0f766e)] font-semibold"
+											: "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+									}`}
+									role="menuitem"
+									onClick={() => {
+										setAnalyticsSection("curators");
+										setIsSectionMoreOpen(false);
+									}}
+								>
+									<span>Кураторы лечения</span>
+									{analyticsSection === "curators" && (
+										<Check size={14} className="text-[var(--teal)]" />
+									)}
+								</button>
+
 								<button
 									type="button"
 									className={`w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between cursor-pointer ${
@@ -270,7 +293,11 @@ export function AnalyticsHeaderBar({
 				</div>
 			</div>
 
-			<div className="analytics-toolbar" role="toolbar" aria-label="Фильтры аналитики">
+			<div
+				className={`analytics-toolbar ${analyticsSection === "executive" ? "analytics-toolbar--executive-mobile-hidden" : ""}`}
+				role="toolbar"
+				aria-label="Фильтры аналитики"
+			>
 				{/* Филиал (Compact 32px SegmentedControl) */}
 				<div className="analytics-segmented" role="radiogroup" aria-label="Выбор филиала">
 					{BRANCH_OPTIONS.map((b) => (

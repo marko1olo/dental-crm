@@ -254,7 +254,7 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 							title="Мягкий овердрафт склада (дефицит): не блокирует приём пациента"
 						>
 							<ShieldAlert size={10} className="shrink-0" />
-							<span>Дефицит / Овердрафт</span>
+							<span>Дефицит / Овердрафт (0-блокировка)</span>
 						</span>
 					) : null}
 				</div>

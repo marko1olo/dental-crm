@@ -39,11 +39,6 @@ const MdlpScanningModal = lazy(() =>
 		default: module.MdlpScanningModal,
 	})),
 );
-const NurseCarpuleDisposalModal = lazy(() =>
-	import("./NurseCarpuleDisposalModal.js").then((module) => ({
-		default: module.NurseCarpuleDisposalModal,
-	})),
-);
 const AcceptanceWaybillsModal = lazy(() =>
 	import("./AcceptanceWaybillsModal.js").then((module) => ({
 		default: module.AcceptanceWaybillsModal,
@@ -69,8 +64,8 @@ export interface InventoryExternalModalsProps {
 	readonly onCloseWarehouseManager: () => void;
 	readonly isMdlpScanningOpen: boolean;
 	readonly onCloseMdlpScanning: () => void;
-	readonly isNurseCarpuleModalOpen: boolean;
-	readonly onCloseNurseCarpuleModal: () => void;
+	readonly isNurseCarpuleModalOpen?: boolean;
+	readonly onCloseNurseCarpuleModal?: () => void;
 	readonly isAcceptanceWaybillsOpen: boolean;
 	readonly onCloseAcceptanceWaybills: () => void;
 	readonly isInboundInvoiceModalOpen: boolean;
@@ -425,34 +420,6 @@ export const InventoryExternalModals: React.FC<InventoryExternalModalsProps> = (
 						isOpen={isMdlpScanningOpen}
 						onClose={onCloseMdlpScanning}
 						initialMode="disposal_531"
-					/>
-				</Suspense>
-			)}
-
-			{isNurseCarpuleModalOpen && (
-				<Suspense fallback={null}>
-					<NurseCarpuleDisposalModal
-						isOpen={isNurseCarpuleModalOpen}
-						onClose={onCloseNurseCarpuleModal}
-						currentStockAvailable={
-							items.find((i) => /артикаин|убистезин|септонест|анесте/i.test(i.name))?.stockQuantity ?? 0
-						}
-						stockMap={
-							items.reduce<Record<string, number>>((acc, it) => {
-								if (it.id) acc[it.id] = Number(it.stockQuantity) || 0;
-								if (it.name) acc[it.name.toLowerCase()] = Number(it.stockQuantity) || 0;
-								if (it.sku) acc[it.sku.toLowerCase()] = Number(it.stockQuantity) || 0;
-								return acc;
-							}, {})
-						}
-						onDisposalConfirmed={async (details) => {
-							await onQuickWriteoffCarpules({
-								carpulesCount: details.carpulesCount,
-								drugName: details.drugName,
-							});
-							onCloseNurseCarpuleModal();
-							fetchItems();
-						}}
 					/>
 				</Suspense>
 			)}

@@ -19,6 +19,7 @@ export interface ExecutivePnlWidgetProps {
 	readonly totalRevenueFormatted: string;
 	readonly totalPlanFormatted: string;
 	readonly overallFulfillmentPercent: number;
+	readonly onOpenPnl?: () => void;
 }
 
 export const ExecutivePnlWidget: React.FC<ExecutivePnlWidgetProps> = ({
@@ -26,6 +27,7 @@ export const ExecutivePnlWidget: React.FC<ExecutivePnlWidgetProps> = ({
 	totalRevenueFormatted,
 	totalPlanFormatted,
 	overallFulfillmentPercent,
+	onOpenPnl,
 }) => {
 	const getStatusPill = (status: DepartmentPerformanceStatus, label: string) => {
 		if (label === "План не задан") {
@@ -175,6 +177,19 @@ export const ExecutivePnlWidget: React.FC<ExecutivePnlWidgetProps> = ({
 					</div>
 				);
 			})}
+
+			{onOpenPnl && (
+				<div style={{ padding: "0.75rem 0.5rem", display: "flex", justifyContent: "flex-end", borderTop: "1px solid var(--line, #cbd5e1)" }}>
+					<button
+						type="button"
+						className="executive-refresh-btn"
+						onClick={onOpenPnl}
+						style={{ fontSize: "12px", height: "30px" }}
+					>
+						Открыть детальный P&amp;L отчет
+					</button>
+				</div>
+			)}
 		</div>
 	);
 };

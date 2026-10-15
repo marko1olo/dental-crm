@@ -32,7 +32,7 @@ export function AnalyticsSubDashboards({
 }: AnalyticsSubDashboardsProps) {
 	return (
 		<>
-			{analyticsSection === "executive" && (
+			{(analyticsSection === "executive" || analyticsSection === "clinic") && (
 				<DirectorExecutiveDashboard
 					hideHeaderToolbar={true}
 					period={
@@ -83,10 +83,6 @@ export function AnalyticsSubDashboards({
 
 			{analyticsSection === "freed_slots" && (
 				<FreedSlotsPanel />
-			)}
-
-			{analyticsSection === "clinic" && (
-				<ClinicAnalyticsDashboard />
 			)}
 
 			{isMarketingRoiOpen && (

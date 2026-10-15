@@ -639,7 +639,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 								name.includes("карпул");
 
 							if (isCarpuleOrAnesthetic) {
-								setIsNurseCarpuleModalOpen(true);
+								handleQuickWriteoffCarpules();
 							} else {
 								setIsClinicalWriteoffOpen(true);
 							}

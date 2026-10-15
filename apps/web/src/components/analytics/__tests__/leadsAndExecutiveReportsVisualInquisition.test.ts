@@ -86,7 +86,13 @@ describe("Leads & Executive Reports Visual Overhaul — Constitutional Inquisiti
 		test("FinancialAnalyticsModal implements 3 collapsible panels (Depts, Cashboxes, Expenses)", () => {
 			const filePath = path.join(analyticsDir, "FinancialAnalyticsModal.tsx");
 			assert.ok(fs.existsSync(filePath), "FinancialAnalyticsModal.tsx must exist");
-			const content = fs.readFileSync(filePath, "utf8");
+			const finModulesDir = path.join(analyticsDir, "financialModalModules");
+			const pnlBreakdownPath = path.join(finModulesDir, "FinancialPnlBreakdownSection.tsx");
+			const cashflowPath = path.join(finModulesDir, "FinancialCashflowTimeline.tsx");
+			const content =
+				fs.readFileSync(filePath, "utf8") +
+				(fs.existsSync(pnlBreakdownPath) ? fs.readFileSync(pnlBreakdownPath, "utf8") : "") +
+				(fs.existsSync(cashflowPath) ? fs.readFileSync(cashflowPath, "utf8") : "");
 
 			// Panel 1: Departments
 			assert.ok(

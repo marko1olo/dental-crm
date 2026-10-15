@@ -332,6 +332,9 @@ export const writeOffRoutes: FastifyPluginAsync = async (server: FastifyInstance
 		});
 	};
 
+	registerVisitDeductRoute("/:organizationId/auto-bom-deduct");
+	registerVisitDeductRoute("/auto-bom-deduct");
 	registerVisitDeductRoute("/:organizationId/deduct/visit");
 	registerVisitDeductRoute("/deduct/visit");
 };
+

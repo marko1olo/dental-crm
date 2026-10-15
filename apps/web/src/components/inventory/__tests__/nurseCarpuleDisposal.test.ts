@@ -1,111 +1,98 @@
 /**
- * nurseCarpuleDisposal.test.ts — Тесты 1-кликового списания карпул анестетиков
- * медсестрой единолично (СанПиН 3.3686-21) и мягкого овердрафта склада.
+ * nurseCarpuleDisposal.test.ts — Тесты авто-БОМ списания анестетиков и ликвидации поштучной карпульной микро-дрочи.
  *
- * Инварианты:
- * 1. Списание пустых карпул анестетиков и шприцев в 1 клик без комиссии из 3 человек.
- * 2. Мягкий овердрафт склада (Soft Inventory Overdraft): задержка накладной не блокирует операцию.
- * 3. Расчет объема (1.7 мл * N карпул) и фиксация класса отходов (Класс Б).
+ * Мандаты 8e (Автономия врача), 8k (CRM != симулятор реальности), 8n (Суверенитет масштаба):
+ * 1. Никаких поштучных актов на пустые карпулы и колпачки у кресла.
+ * 2. Автоматический БОМ (Bill of Materials) по услугам анестезии (A11.07.012).
+ * 3. Мягкий овердрафт склада (Soft Negative Stock, isOverdraft: true).
+ * 4. Пакетное списание смены/приёма без комиссий из 3 человек.
  */
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
-	COMMON_ANESTHETICS,
-	type AnestheticDrugOption,
-} from "../carpuleDisposalConstants.js";
+	calculateAutoVisitConsumables,
+	executeAutoVisitBomDeduction,
+} from "@dental/shared";
+import { CLINICAL_WRITEOFF_PACKAGES, handleOneClickPackageWriteOff } from "../warehousePackageWriteOffEngine.js";
 
-describe("NurseCarpuleDisposal — 1-Click Anesthetic Disposal & Soft Overdraft", () => {
-	it("содержит обязательные анестетики по стандартам стоматологии РФ", () => {
-		assert.ok(COMMON_ANESTHETICS.length >= 4);
+describe("Anti-Carpule-Droch & Auto-BOM Anesthesia Deductions (Mandates 8e, 8k, 8n)", () => {
+	it("1. Пакет «Стандартная анестезия» содержит карпулу артикаина 1.7 мл и иглу 30G без поштучного актования", () => {
+		const anesPkg = CLINICAL_WRITEOFF_PACKAGES.find((p) => p.id === "anesthesia");
+		assert.ok(anesPkg, "Пакет «Стандартная анестезия» обязан существовать в каталоге списания");
 
-		const articaine100k = COMMON_ANESTHETICS.find((d) => d.id === "articaine_100k");
-		assert.ok(articaine100k, "Артикаин 1:100 000 должен присутствовать");
-		assert.equal(articaine100k.defaultVolumeMl, 1.7);
-		assert.ok(articaine100k.nameRu.includes("Артикаин 4%"));
+		const carpuleItem = anesPkg.items.find((i) => i.id.includes("carpule") || i.nameRu.includes("Артикаин"));
+		assert.ok(carpuleItem, "Карпула артикаина 1:100 000 должна быть в пакете");
+		assert.equal(carpuleItem.standardQuantity, 1);
 
-		const mepivacaine = COMMON_ANESTHETICS.find((d) => d.id === "mepivacaine_3");
-		assert.ok(mepivacaine, "Мепивакаин 3% без вазоконстриктора должен присутствовать");
-		assert.equal(mepivacaine.defaultVolumeMl, 1.7);
+		const needleItem = anesPkg.items.find((i) => i.id.includes("needle") || i.nameRu.includes("Игла"));
+		assert.ok(needleItem, "Игла 30G должна быть в пакете");
+		assert.equal(needleItem.standardQuantity, 1);
 	});
 
-	it("корректно рассчитывает общий объем введенного анестетика в мл", () => {
-		const drug = COMMON_ANESTHETICS[0]!;
-		
-		// 1 карпула = 1.7 мл
-		const vol1 = Number((1 * drug.defaultVolumeMl).toFixed(2));
-		assert.equal(vol1, 1.7);
+	it("2. Авто-БОМ по услуге анестезии A11.07.012 в фоне списывает карпулу и иглу", () => {
+		const planned = calculateAutoVisitConsumables(
+			[
+				{
+					serviceCode: "A11.07.012",
+					serviceTitle: "Проводниковая анестезия",
+					quantity: 1,
+				},
+			],
+			{ includeStandardPpe: false },
+		);
 
-		// 2 карпулы = 3.4 мл
-		const vol2 = Number((2 * drug.defaultVolumeMl).toFixed(2));
-		assert.equal(vol2, 3.4);
-
-		// 15 карпул (смена) = 25.5 мл
-		const vol15 = Number((15 * drug.defaultVolumeMl).toFixed(2));
-		assert.equal(vol15, 25.5);
+		const carpule = planned.find((p) => p.category === "anesthetic" || p.itemName.toLowerCase().includes("артикаин"));
+		assert.ok(carpule, "Карпула анестетика должна автоматически присутствовать в расчете БОМ");
+		assert.equal(carpule.requiredQuantity, 1);
 	});
 
-	it("определяет мягкий овердрафт (дефицит партии без блокировки списания)", () => {
-		// Склад пуст (0 шт.), но врач/медсестра списывают 2 карпулы
-		const currentStock = 0;
-		const requestedCount = 2;
-		const isOverdraft = currentStock < requestedCount;
-		const deficit = isOverdraft ? requestedCount - currentStock : 0;
-
-		assert.equal(isOverdraft, true);
-		assert.equal(deficit, 2);
-
-		// Склад содержит 5 шт., списывается 2 -> овердрафта нет
-		const normalStock = 5;
-		const isOverdraftNormal = normalStock < requestedCount;
-		assert.equal(isOverdraftNormal, false);
-	});
-
-	it("формирует регламентный номер акта утилизации карпул", () => {
-		const now = new Date("2026-09-04T12:00:00.000Z");
-		const actNumber = `АКТ-КП-${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}-${String(now.getUTCDate()).padStart(2, "0")}-01`;
-		assert.equal(actNumber, "АКТ-КП-202609-04-01");
-	});
-
-	it("поддерживает единоличное списание медсестрой без комиссии из 3 человек", () => {
-		const disposalPayload = {
-			drugId: "articaine_100k",
-			drugName: "Артикаин 4% с адреналином 1:100 000 (Ультракаин Д-С Форте)",
-			carpulesCount: 2,
-			volumeTotalMl: 3.4,
-			nurseName: "Смирнова А. В. (медсестра)",
-			doctorName: "Д-р Волкова Е. С.",
-			actNumber: "АКТ-КП-202609-04-01",
-			actDate: "2026-09-04",
-			isOverdraft: true,
-			wasteClass: "Класс Б",
-			decontaminationMethod: "Аламинол 3% (60 мин)",
-			singleSigner: true,
+	it("3. Мягкий овердрафт: дефицит анестетиков на складе НЕ блокирует приём врача (isOverdraft: true)", () => {
+		const currentStockMap: Record<string, number> = {
+			"mat-anes-art-100k": 0, // Склад пуст
+			"mat-anes-needle-30g": 10,
 		};
 
-		assert.equal(disposalPayload.singleSigner, true);
-		assert.equal(disposalPayload.carpulesCount, 2);
-		assert.equal(disposalPayload.isOverdraft, true);
-		assert.equal(disposalPayload.wasteClass, "Класс Б");
+		const result = executeAutoVisitBomDeduction({
+			patientId: "patient-test-1",
+			doctorId: "doctor-test-1",
+			visitId: "visit-test-overdraft-anes",
+			renderedServices: [
+				{
+					serviceCode: "A11.07.012",
+					serviceTitle: "Анестезия инфильтрационная",
+					quantity: 2,
+				},
+			],
+			currentStockMap,
+			allowOverdraft: true,
+			includeStandardPpe: false,
+		});
+
+		assert.equal(result.hasOverdraft, true, "Должен быть флаг овердрафта");
+		const carpuleItem = result.items.find((i) => i.inventoryItemId === "mat-anes-art-100k");
+		assert.ok(carpuleItem);
+		assert.equal(carpuleItem.isOverdraft, true, "Карпула должна уйти в мягкий овердрафт");
+		assert.equal(carpuleItem.remainingQty, -2, "Остаток склада должен уйти в -2");
 	});
 
-	it("поддерживает списание врачом или администратором без участия старшей медсестры (Мандаты 8e, 8n)", () => {
-		const soloDoctorDisposal = {
-			drugId: "articaine_100k",
-			drugName: "Артикаин 4% с адреналином 1:100 000 (Ультракаин Д-С Форте)",
-			carpulesCount: 1,
-			volumeTotalMl: 1.7,
-			doctorName: "Д-р Кузнецов М.С.",
-			approverRole: "doctor",
-			actNumber: "АКТ-КП-202609-04-02",
-			actDate: "2026-09-04",
-			wasteClass: "Класс Б",
-			singleSigner: true,
-			seniorNurseRequired: false,
+	it("4. Пакетное списание смены анестетиков списывает N карпул за 1 клик без комиссий", async () => {
+		const availableStock: Record<string, number> = {
+			art_100k_carpule: 20,
+			dental_needle_30g: 20,
+			cotton_rolls_sterile: 50,
+			antiseptic_alcohol_wipe: 20,
 		};
 
-		assert.equal(soloDoctorDisposal.singleSigner, true);
-		assert.equal(soloDoctorDisposal.seniorNurseRequired, false);
-		assert.equal(soloDoctorDisposal.approverRole, "doctor");
+		const result = await handleOneClickPackageWriteOff({
+			packageId: "anesthesia",
+			quantityMultiplier: 5, // 5 пациентов за смену
+			currentStockMap: availableStock,
+			allowSoftOverdraft: true,
+		});
+
+		assert.ok(result.success, "Пакетное списание 5 анестезий должно пройти успешно");
+		assert.equal(result.isOverdraft, false);
+		assert.ok(result.deductedItems.length >= 2);
 	});
 });

@@ -27,7 +27,7 @@ import {
 	getFefoTrafficLight,
 	getWarehouseFefoTrafficLight,
 	type ExpiryTrafficLight,
-} from "../components/inventory/NurseCarpuleDisposalModal";
+} from "../components/inventory/fefoTrafficLight";
 
 import {
 	handleOneClickPackageWriteOff,

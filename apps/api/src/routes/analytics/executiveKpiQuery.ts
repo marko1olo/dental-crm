@@ -189,22 +189,25 @@ export async function queryExecutiveKpiAndFunnel(
 		}
 	}
 
-	// 5. Выручка и платежи (только paid)
+	// 5. Выручка и платежи по 54-ФЗ (честный приход paid минус возвраты refunded)
 	const [paymentsSummary] = await db
 		.select({
-			totalRevenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
-			payingPatientsCount: sql<number>`count(distinct ${payments.patientId})::int`,
+			paidRevenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} else 0 end), 0)`,
+			refundedRevenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'refunded' then ${payments.amountRub} else 0 end), 0)`,
+			payingPatientsCount: sql<number>`count(distinct case when ${payments.status} = 'paid' then ${payments.patientId} end)::int`,
 		})
 		.from(payments)
 		.where(
 			and(
 				eq(payments.organizationId, orgId),
 				gte(payments.createdAt, startDate),
-				eq(payments.status, "paid"),
+				inArray(payments.status, ["paid", "refunded"]),
 			),
 		);
 
-	const totalRevenueKopecks = Math.round(Number(paymentsSummary?.totalRevenueRub || 0) * 100);
+	const paidKopecks = Math.round(Number(paymentsSummary?.paidRevenueRub || 0) * 100);
+	const refundedKopecks = Math.round(Number(paymentsSummary?.refundedRevenueRub || 0) * 100);
+	const totalRevenueKopecks = Math.max(0, paidKopecks - refundedKopecks);
 	const payingPatients = Number(paymentsSummary?.payingPatientsCount || 0);
 
 	// 6. Расходы клиники и управленческий P&L (COGS, OPEX, Чистая прибыль)
@@ -332,8 +335,8 @@ export async function queryExecutiveKpiAndFunnel(
 
 	const [primaryRevenueRow] = await db
 		.select({
-			totalRevenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
-			patientsCount: sql<number>`count(distinct ${payments.patientId})::int`,
+			totalRevenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`,
+			patientsCount: sql<number>`count(distinct case when ${payments.status} = 'paid' then ${payments.patientId} end)::int`,
 		})
 		.from(payments)
 		.innerJoin(patients, eq(payments.patientId, patients.id))
@@ -342,14 +345,14 @@ export async function queryExecutiveKpiAndFunnel(
 				eq(payments.organizationId, orgId),
 				gte(payments.createdAt, startDate),
 				gte(patients.createdAt, startDate),
-				eq(payments.status, "paid"),
+				inArray(payments.status, ["paid", "refunded"]),
 			),
 		);
 
 	const [repeatRevenueRow] = await db
 		.select({
-			totalRevenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
-			patientsCount: sql<number>`count(distinct ${payments.patientId})::int`,
+			totalRevenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`,
+			patientsCount: sql<number>`count(distinct case when ${payments.status} = 'paid' then ${payments.patientId} end)::int`,
 		})
 		.from(payments)
 		.innerJoin(patients, eq(payments.patientId, patients.id))
@@ -358,7 +361,7 @@ export async function queryExecutiveKpiAndFunnel(
 				eq(payments.organizationId, orgId),
 				gte(payments.createdAt, startDate),
 				lt(patients.createdAt, startDate),
-				eq(payments.status, "paid"),
+				inArray(payments.status, ["paid", "refunded"]),
 			),
 		);
 
