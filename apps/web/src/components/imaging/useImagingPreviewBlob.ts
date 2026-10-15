@@ -71,6 +71,21 @@ export function useImagingPreviewBlob({
 			}
 		}
 
+		// Fast-path: Static local assets, public models/radiology photos bypass async fetch/blob churn (<5ms chairside switch)
+		const isStaticAsset =
+			!previewEndpoint.startsWith("/api/") ||
+			previewEndpoint.startsWith("/radiology/") ||
+			previewEndpoint.startsWith("/models/") ||
+			previewEndpoint.startsWith("/photos/") ||
+			/\.(jpg|jpeg|png|svg|webp)(\?.*)?$/i.test(previewEndpoint);
+
+		if (isStaticAsset) {
+			setAuthedPreviewBlobUrl(previewEndpoint);
+			setIsPreviewLoading(false);
+			setPreviewLoadError(false);
+			return;
+		}
+
 		const headers: Record<string, string> =
 			auth && typeof auth.denteClinicalReadHeaders === "function"
 				? auth.denteClinicalReadHeaders()

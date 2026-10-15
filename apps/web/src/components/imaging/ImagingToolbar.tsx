@@ -254,7 +254,7 @@ export function ImagingToolbar({
 						<button
 							className={`viewer-tool-button h-8 px-3 rounded-lg text-xs font-semibold gap-1.5 transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${enhancementOn ? "bg-[var(--primary)] text-white shadow-2xs font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
 							type="button"
-							title="Включить/выключить улучшение снимка (CLAHE симуляция)"
+							title="Улучшение контраста костных структур и периапикальной зоны (CLAHE)"
 							aria-label="Переключить CLAHE улучшение снимка"
 							aria-pressed={enhancementOn}
 							onClick={() => setEnhancementOn(!enhancementOn)}

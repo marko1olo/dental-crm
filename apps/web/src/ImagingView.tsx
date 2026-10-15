@@ -270,6 +270,12 @@ export function ImagingView(props: ImagingViewProps) {
 
 	const handleAttachTooth = useCallback(async (toothCode: string) => {
 		if (!selectedImagingStudy?.id) return;
+		if ((props as any).onStudyUpdated) {
+			(props as any).onStudyUpdated({
+				...selectedImagingStudy,
+				toothCode: toothCode || null,
+			});
+		}
 		try {
 			const res = await fetch(`/api/imaging/studies/${selectedImagingStudy.id}`, {
 				method: "PATCH",
@@ -287,7 +293,7 @@ export function ImagingView(props: ImagingViewProps) {
 		} catch (e) {
 			showToast("Не удалось обновить привязку к зубу", "error");
 		}
-	}, [selectedImagingStudy?.id, auth, props, appLogic]);
+	}, [selectedImagingStudy, auth, props, appLogic]);
 
 	const handleAttachVisit = useCallback(async (visitId: string) => {
 		if (!selectedImagingStudy?.id) return;

@@ -83,6 +83,16 @@ export function classifyLocalImagingSource(
 			sourceKind: "selected_root",
 			sourceLabel: "Выбранная локальная папка",
 		};
+	if (
+		/vatech|ezdent|gendex|sirona|sidexis|romexis|planmeca|carestream|dexis|trophy|kavo|durr|morita|ray|twain|visio|rvg/.test(
+			text,
+		)
+	) {
+		return {
+			sourceKind: "visigraph_hot_folder",
+			sourceLabel: "Папка визиографа / КЛКТ оборудования",
+		};
+	}
 	if (/downloads|загруз/.test(text))
 		return { sourceKind: "downloads", sourceLabel: "Загрузки" };
 	if (/desktop|рабоч/.test(text))
@@ -119,6 +129,12 @@ export function folderHintScore(folderPath: string) {
 		)
 	)
 		score += 0.16;
+	if (
+		/vatech|ezdent|gendex|sirona|sidexis|romexis|planmeca|carestream|dexis|trophy|kavo|durr|morita|ray|twain|visio/.test(
+			normalized,
+		)
+	)
+		score += 0.25;
 	if (/downloads|загруз/.test(normalized)) score += 0.03;
 	return score;
 }

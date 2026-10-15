@@ -154,7 +154,7 @@ export function ImagingAuxiliaryModals({
 					onClick={() => setIsRadiologyModuleOpen(false)}
 				>
 					<div
-						className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] p-4 shadow-2xl"
+						className="w-full max-w-7xl h-[92vh] overflow-hidden rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl flex flex-col"
 						onClick={(e) => e.stopPropagation()}
 					>
 						<RadiologyModule
