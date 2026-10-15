@@ -69,6 +69,16 @@ export function CabinetFilterBar({
 				.schedule-filter-chips::-webkit-scrollbar {
 					display: none;
 				}
+				@media (max-width: 1599px) {
+					.schedule-filter-chips .schedule-overflow-chip-2xl {
+						display: none !important;
+					}
+				}
+				@media (min-width: 1600px) {
+					.schedule-filter-chips .schedule-compact-select-below-2xl {
+						display: none !important;
+					}
+				}
 			`}</style>
 			<div
 				className="schedule-filter-chips dente-filter-chips hidden sm:flex flex-1 items-center gap-1.5 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-none py-0.5 min-w-0 px-2"
@@ -155,7 +165,7 @@ export function CabinetFilterBar({
 								key={chair.id}
 								type="button"
 								data-testid={`chair-view-badge-${chair.id}`}
-								className={`quick-chip dente-filter-chip h-8 min-h-[32px] max-h-8 rounded-lg px-2.5 text-[12.5px] ${scheduleChairFilterId === chair.id ? "active font-semibold" : ""} shrink-0 flex-shrink-0 cursor-pointer inline-flex items-center gap-1 select-none whitespace-nowrap`}
+								className={`quick-chip dente-filter-chip schedule-overflow-chip-2xl h-8 min-h-[32px] max-h-8 rounded-lg px-2.5 text-[12.5px] ${scheduleChairFilterId === chair.id ? "active font-semibold" : ""} shrink-0 flex-shrink-0 cursor-pointer inline-flex items-center gap-1 select-none whitespace-nowrap`}
 								style={{ whiteSpace: "nowrap", flexShrink: 0 }}
 								onClick={() =>
 									setScheduleChairFilterId?.(
@@ -177,7 +187,7 @@ export function CabinetFilterBar({
 					<button
 						type="button"
 						onClick={handleOpenAddChair}
-						className="schedule-add-chair-chip-btn dente-filter-chip h-8 min-h-[44px] sm:min-h-[32px] max-h-8 min-w-[44px] rounded-lg shrink-0 flex-shrink-0 px-2.5 mr-1 border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-[var(--paper)] text-[var(--teal-dark)] dark:text-[var(--teal)] text-[12px] font-semibold inline-flex items-center justify-center gap-1 cursor-pointer transition-all select-none whitespace-nowrap"
+						className="schedule-add-chair-chip-btn dente-filter-chip schedule-overflow-chip-2xl h-8 min-h-[44px] sm:min-h-[32px] max-h-8 min-w-[44px] rounded-lg shrink-0 flex-shrink-0 px-2.5 mr-1 border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-[var(--paper)] text-[var(--teal-dark)] dark:text-[var(--teal)] text-[12px] font-semibold inline-flex items-center justify-center gap-1 cursor-pointer transition-all select-none whitespace-nowrap"
 						style={{ whiteSpace: "nowrap", flexShrink: 0, minHeight: "44px", minWidth: "44px" }}
 						title="Быстрое добавление кресла или кабинета в расписание"
 						aria-label="Добавить кресло в расписание"

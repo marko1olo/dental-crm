@@ -60,6 +60,8 @@ export interface ScheduleViewToolbarProps {
   openScheduleWarning: (w: any) => void;
   onOpenDoctorShiftDrawer?: () => void;
   onOpenChairDateRangeModal?: () => void;
+  pendingOnlineBookingsCount?: number;
+  onOpenPendingOnlineBookings?: () => void;
 }
 
 export function ScheduleViewToolbar(props: ScheduleViewToolbarProps) {
@@ -115,6 +117,8 @@ export function ScheduleViewToolbar(props: ScheduleViewToolbarProps) {
     openScheduleWarning,
     onOpenDoctorShiftDrawer,
     onOpenChairDateRangeModal,
+    pendingOnlineBookingsCount,
+    onOpenPendingOnlineBookings,
   } = props;
 
   return (
@@ -185,6 +189,8 @@ export function ScheduleViewToolbar(props: ScheduleViewToolbarProps) {
         onAddChair={handleAddChairFromSchedule}
         onOpenDoctorShiftDrawer={onOpenDoctorShiftDrawer}
         onOpenChairDateRangeModal={onOpenChairDateRangeModal}
+        pendingOnlineBookingsCount={pendingOnlineBookingsCount}
+        onOpenPendingOnlineBookings={onOpenPendingOnlineBookings}
         onQuickBooking={() => {
           setQuickBookingSlot({
             dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),

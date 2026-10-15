@@ -87,6 +87,7 @@ describe("Schedule Quantum Time Engine & O(1) Collision Index", () => {
       endsAt: `${testDate}T10:00:00.000Z`,
       status: "confirmed",
       reason: "Лечение кариеса",
+      comment: null,
     };
 
     const apptChair2: Appointment = {
@@ -99,6 +100,7 @@ describe("Schedule Quantum Time Engine & O(1) Collision Index", () => {
       endsAt: `${testDate}T11:15:00.000Z`,
       status: "confirmed",
       reason: "Чистка AirFlow",
+      comment: null,
     };
 
     const maintenanceBlock: ChairMaintenanceBlock = {
@@ -217,6 +219,7 @@ describe("Schedule Quantum Time Engine & O(1) Collision Index", () => {
       endsAt: `${testDate}T16:00:00.000Z`,
       status: "confirmed",
       reason: "Плановый осмотр",
+      comment: null,
     };
 
     const index = new ScheduleQuantumCollisionIndex({
@@ -249,9 +252,12 @@ describe("Schedule Quantum Time Engine & O(1) Collision Index", () => {
       organizationId: "org-1",
       patientId: "p-1",
       chairId: "chair-1",
+      doctorUserId: "doc-1",
       startsAt: `${testDate}T08:00:00.000Z`,
       endsAt: `${testDate}T09:00:00.000Z`,
       status: "confirmed",
+      reason: null,
+      comment: null,
     };
 
     const appt2: Appointment = {
@@ -259,9 +265,12 @@ describe("Schedule Quantum Time Engine & O(1) Collision Index", () => {
       organizationId: "org-1",
       patientId: "p-2",
       chairId: "chair-1",
+      doctorUserId: "doc-1",
       startsAt: `${testDate}T09:00:00.000Z`,
       endsAt: `${testDate}T09:30:00.000Z`,
       status: "confirmed",
+      reason: null,
+      comment: null,
     };
 
     const index = new ScheduleQuantumCollisionIndex({

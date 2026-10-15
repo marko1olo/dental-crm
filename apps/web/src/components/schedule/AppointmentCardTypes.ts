@@ -58,4 +58,5 @@ export type AppointmentCardProps = {
 	activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
 	onOpenVisit?: () => void;
 	onOpenWaitlistForSlot?: ((slot: any) => void) | undefined;
+	onFreeSlotToWaitlist?: ((appointment: Appointment) => void) | undefined;
 };

@@ -3,10 +3,27 @@ import React from "react";
 
 export interface QuickBookingDrawerHeaderProps {
   isEmergencyMode: boolean;
-  isEditing?: boolean;
+  isEditing?: boolean | undefined;
   startsAtLocal: string;
   durationMinutes: number;
+  chairName?: string | null | undefined;
   onClose: () => void;
+}
+
+function formatSlotRange(startsAtLocal: string, durationMinutes: number) {
+  if (!startsAtLocal) return "Быстрая запись";
+  const [datePart, timePart] = startsAtLocal.split("T");
+  if (!timePart) return startsAtLocal;
+  const timeSub = timePart.slice(0, 5);
+  const colonIdx = timeSub.indexOf(":");
+  const hh = colonIdx > -1 ? Number(timeSub.slice(0, colonIdx)) : 0;
+  const mm = colonIdx > -1 ? Number(timeSub.slice(colonIdx + 1)) : 0;
+  const startTotal = (Number.isFinite(hh) ? hh : 0) * 60 + (Number.isFinite(mm) ? mm : 0);
+  const endTotal = startTotal + (durationMinutes || 30);
+  const endH = Math.floor(endTotal / 60) % 24;
+  const endM = endTotal % 60;
+  const endTimeStr = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+  return `${datePart ?? ""} · ${timeSub} – ${endTimeStr} (${durationMinutes} мин)`;
 }
 
 export function QuickBookingDrawerHeader({
@@ -14,6 +31,7 @@ export function QuickBookingDrawerHeader({
   isEditing,
   startsAtLocal,
   durationMinutes,
+  chairName,
   onClose,
 }: QuickBookingDrawerHeaderProps) {
   return (
@@ -56,11 +74,9 @@ export function QuickBookingDrawerHeader({
               </span>
             )}
           </div>
-          <p className="text-xs text-[var(--muted)] m-0 mt-0.5">
-            {startsAtLocal
-              ? `${startsAtLocal.slice(0, 10)} в ${startsAtLocal.slice(11, 16)}`
-              : "Быстрая запись"}{" "}
-            · {durationMinutes} мин
+          <p className="text-xs text-[var(--muted)] m-0 mt-0.5" data-testid="quick-booking-time-range">
+            {formatSlotRange(startsAtLocal, durationMinutes)}
+            {chairName ? ` · ${chairName}` : ""}
           </p>
         </div>
       </div>

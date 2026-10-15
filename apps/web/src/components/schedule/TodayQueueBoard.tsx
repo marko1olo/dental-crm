@@ -289,15 +289,15 @@ export const TodayQueueBoard: React.FC<TodayQueueBoardProps> = ({
 					{/* Search input */}
 					<div className="relative flex items-center">
 						<Search
-							size={13}
-							className="pointer-events-none absolute left-2 text-[var(--muted)]"
+							size={14}
+							className="pointer-events-none absolute left-2.5 text-[var(--muted)]"
 						/>
 						<input
 							type="text"
 							placeholder="Поиск по очереди..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="h-8 w-36 rounded-md border border-[var(--line)] bg-[var(--paper)] pl-6 pr-2 text-xs text-[var(--ink)] placeholder-[var(--muted)] focus:border-[var(--teal,var(--brand-primary))] focus:outline-hidden sm:w-44"
+							className="h-8 w-40 rounded-md border border-[var(--line)] bg-[var(--paper)] pl-8 pr-2 text-xs text-[var(--ink)] placeholder-[var(--muted)] focus:border-[var(--teal,var(--brand-primary))] focus:outline-hidden sm:w-48"
 						/>
 					</div>
 

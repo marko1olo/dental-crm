@@ -11,6 +11,7 @@ import {
 import React from "react";
 import { useAppStore } from "../../store/appStore";
 import { showToast } from "../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	extractTeethList,
 	resolveAppointmentLabStatus,
@@ -104,6 +105,36 @@ export function AppointmentModalLabSection({
 		);
 	};
 
+	const handleConfirmFitting = (item: NormalizedLabItem) => {
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-lab-order-fitting-confirmed", {
+					detail: {
+						orderId: item.id,
+						orderNumber: item.orderNumber,
+						toothFdi: item.toothFdi,
+						construction: item.construction,
+						timestamp: new Date().toISOString(),
+					},
+				}),
+			);
+		}
+		if (item.id && !item.id.startsWith("appt-lab-")) {
+			fetch(`/api/lab/orders/${item.id}`, {
+				method: "PATCH",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					stage: "fitting",
+					notes: "Примерка успешно подтверждена у кресла в 1 клик",
+				}),
+			}).catch(() => {});
+		}
+		showToast(`Примерка наряда ${item.orderNumber} успешно подтверждена!`, "success", 3000);
+	};
+
 	// Если нарядов ЗТЛ нет — отображаем компактную тихую плашку с кнопкой оформления (Friction-Killer Law)
 	if (items.length === 0) {
 		return (
@@ -149,7 +180,32 @@ export function AppointmentModalLabSection({
 					startsAtLocal &&
 					new Date(startsAtLocal).getTime() < dueDateObj.getTime();
 
+				const dueDayMonthRu = dueDateObj
+					? `${String(dueDateObj.getDate()).padStart(2, "0")}.${String(dueDateObj.getMonth() + 1).padStart(2, "0")}`
+					: "";
+
 				const hexColor = item.colorVita ? getVitaShadeHex(item.colorVita) : null;
+
+				const handleSyncDate = () => {
+					if (dueDateObj && setStartsAtLocal && setEndsAtLocal) {
+						const year = dueDateObj.getFullYear();
+						const month = String(dueDateObj.getMonth() + 1).padStart(2, "0");
+						const day = String(dueDateObj.getDate()).padStart(2, "0");
+						const timePart = startsAtLocal ? startsAtLocal.slice(11, 16) : "10:00";
+						const newStart = `${year}-${month}-${day}T${timePart}`;
+						setStartsAtLocal(newStart);
+
+						const [hh, mm] = timePart.split(":").map(Number);
+						const endHh = String(Math.min(23, (hh || 10) + 1)).padStart(2, "0");
+						setEndsAtLocal(
+							`${year}-${month}-${day}T${endHh}:${String(mm || 0).padStart(2, "0")}`,
+						);
+						showToast(
+							`Приём синхронизирован с готовностью ЗТЛ: ${dueDateObj.toLocaleDateString("ru-RU")}`,
+							"success",
+						);
+					}
+				};
 
 				return (
 					<div
@@ -187,6 +243,31 @@ export function AppointmentModalLabSection({
 							</span>
 						</div>
 
+						{/* Индикатор готовности и кнопка 1-клик подтверждения примерки при статусе "Поступил в клинику" */}
+						{item.statusInfo.state === "ready_in_clinic" && (
+							<div
+								className="w-full p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-900 dark:text-emerald-100 font-bold flex items-center justify-between gap-2 flex-wrap"
+								data-testid="appointment-modal-lab-readiness-indicator"
+							>
+								<div className="flex items-center gap-1.5 min-w-0">
+									<CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+									<span className="truncate">
+										{item.statusInfo.readinessText || `Работа из ЗТЛ доставлена: ${item.construction}${item.toothFdi ? ` зуб ${item.toothFdi}` : ""}`}
+									</span>
+								</div>
+								<button
+									type="button"
+									onClick={() => handleConfirmFitting(item)}
+									className="h-6 px-2.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs transition-all active:scale-95"
+									data-testid="appointment-confirm-fitting-btn"
+									title="Подтвердить успешную примерку конструкции в 1 клик"
+								>
+									<CheckCircle2 size={11} />
+									<span>Подтвердить примерку</span>
+								</button>
+							</div>
+						)}
+
 						{/* Средняя строка: Конструкция + Зуб FDI + Цвет VITA */}
 						<div className="flex items-center justify-between gap-2 flex-wrap text-xs">
 							<div
@@ -215,6 +296,33 @@ export function AppointmentModalLabSection({
 								</div>
 							)}
 						</div>
+
+						{/* Collision Guard Banner: Внимание: плановая готовность работы ЗТЛ DD.MM, выбранная дата раньше */}
+						{isBeforeLab && (
+							<div
+								className="w-full p-2.5 rounded-lg border border-amber-500/40 bg-amber-500/15 text-amber-900 dark:text-amber-200 flex items-center justify-between gap-2 text-xs flex-wrap"
+								data-testid="appointment-modal-lab-collision-alert"
+							>
+								<div className="flex items-center gap-2 min-w-0">
+									<AlertTriangle size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+									<span className="font-semibold" data-testid="appointment-lab-collision-warning-text">
+										{`Внимание: плановая готовность работы ЗТЛ ${dueDayMonthRu}, выбранная дата раньше`}
+									</span>
+								</div>
+								{setStartsAtLocal && setEndsAtLocal && (
+									<button
+										type="button"
+										onClick={handleSyncDate}
+										className="h-6 px-2 rounded-md bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs transition-all active:scale-95"
+										data-testid="appointment-modal-sync-lab-date-banner-btn"
+										title="Синхронизировать дату приёма с готовностью ЗТЛ в 1 клик"
+									>
+										<Calendar size={11} />
+										<span>Синхронизировать дату</span>
+									</button>
+								)}
+							</div>
+						)}
 
 						{/* Нижняя строка: Срок готовности из ЗТЛ + Кнопки действий */}
 						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-[var(--line)]/50 text-[11px]">
@@ -245,28 +353,7 @@ export function AppointmentModalLabSection({
 								{hasDue && setStartsAtLocal && setEndsAtLocal && (
 									<button
 										type="button"
-										onClick={() => {
-											if (dueDateObj) {
-												const year = dueDateObj.getFullYear();
-												const month = String(dueDateObj.getMonth() + 1).padStart(2, "0");
-												const day = String(dueDateObj.getDate()).padStart(2, "0");
-												const timePart = startsAtLocal
-													? startsAtLocal.slice(11, 16)
-													: "10:00";
-												const newStart = `${year}-${month}-${day}T${timePart}`;
-												setStartsAtLocal(newStart);
-
-												const [hh, mm] = timePart.split(":").map(Number);
-												const endHh = String(Math.min(23, (hh || 10) + 1)).padStart(2, "0");
-												setEndsAtLocal(
-													`${year}-${month}-${day}T${endHh}:${String(mm || 0).padStart(2, "0")}`,
-												);
-												showToast(
-													`Приём синхронизирован с готовностью ЗТЛ: ${dueDateObj.toLocaleDateString("ru-RU")}`,
-													"success",
-												);
-											}
-										}}
+										onClick={handleSyncDate}
 										className="h-7 px-2 rounded-md bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] font-semibold text-[11px] inline-flex items-center gap-1 cursor-pointer transition-colors"
 										title="Перенести приём на дату готовности наряда ЗТЛ"
 										data-testid="appointment-modal-sync-lab-date-btn"

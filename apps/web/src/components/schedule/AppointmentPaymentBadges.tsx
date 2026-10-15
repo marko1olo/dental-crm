@@ -1,7 +1,7 @@
 import type { Appointment } from "@dental/shared";
 import { STOMX_REFUSE_REASONS_CATALOG } from "@dental/shared";
 import React from "react";
-import { AlertTriangle, Check, CreditCard, Zap } from "lucide-react";
+import { AlertTriangle, Check, CheckCircle2, CreditCard, Zap } from "lucide-react";
 
 export interface AppointmentStatusBadgeSelectorProps {
 	appointmentId: string;
@@ -168,10 +168,12 @@ export function AppointmentMedicalBadges({
 	cardTeeth,
 	allergyAlert,
 	somaticAlert,
+	labReadinessAlert,
 }: {
 	cardTeeth: string[];
 	allergyAlert: string | null;
 	somaticAlert: string | null;
+	labReadinessAlert?: string | null;
 }) {
 	return (
 		<>
@@ -182,6 +184,16 @@ export function AppointmentMedicalBadges({
 					data-testid="appointment-teeth-badge"
 				>
 					Зуб {cardTeeth.join(", ")}
+				</span>
+			)}
+			{labReadinessAlert && (
+				<span
+					className="px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1 shrink-0"
+					title={labReadinessAlert}
+					data-testid="appointment-lab-readiness-badge"
+				>
+					<CheckCircle2 size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0 stroke-[2.5]" />
+					<span>{labReadinessAlert}</span>
 				</span>
 			)}
 			{allergyAlert && (

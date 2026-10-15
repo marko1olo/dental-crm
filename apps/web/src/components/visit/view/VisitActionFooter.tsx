@@ -9,6 +9,7 @@ import {
 	createSmartSequentialAppointment,
 	detectRecommendedProtocol,
 	SMART_CLINICAL_PROTOCOLS,
+	REPEAT_INTERVAL_PRESETS,
 	type SmartClinicalProtocolKey,
 } from "../../schedule/smartSequentialVisitsEngine";
 import {
@@ -102,6 +103,33 @@ export function VisitActionFooter({
 					</div>
 
 					<div className="flex items-center gap-2 flex-wrap" style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+						{REPEAT_INTERVAL_PRESETS.map((preset) => {
+							const isPrimary = preset.days === 7;
+							return (
+								<button
+									key={preset.id}
+									type="button"
+									className={
+										isPrimary
+											? "border border-[var(--teal)] bg-[var(--teal)] text-white font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:bg-[var(--teal)]/90 transition-all cursor-pointer inline-flex items-center gap-1.5 text-xs whitespace-nowrap"
+											: "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 text-xs whitespace-nowrap"
+									}
+									data-testid={`visit-repeat-btn-${preset.id}`}
+									onClick={() => {
+										createSmartSequentialAppointment({
+											parentAppointment: activeAppointment,
+											protocolKey: preset.protocolKey,
+											customIntervalDays: preset.days,
+										});
+									}}
+									title={`Запланировать повторный визит через ${preset.days} дн в 1 клик`}
+								>
+									<CalendarPlus size={14} />
+									<span>{preset.buttonLabel}</span>
+								</button>
+							);
+						})}
+
 						<button
 							type="button"
 							data-testid="visit-smart-next-stage-primary-btn"
@@ -111,24 +139,10 @@ export function VisitActionFooter({
 									protocolKey: recommendedKey,
 								});
 							}}
-							style={{
-								minHeight: "34px",
-								padding: "6px 12px",
-								borderRadius: "8px",
-								background: "var(--teal, #0d9488)",
-								color: "#ffffff",
-								border: "1px solid transparent",
-								fontWeight: 600,
-								fontSize: "12px",
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								cursor: "pointer",
-								whiteSpace: "nowrap",
-							}}
+							className="border border-[var(--teal)]/50 bg-[var(--teal-soft,#0d948815)] hover:bg-[var(--teal-soft,#0d948825)] text-[var(--teal,#0d9488)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 text-xs whitespace-nowrap"
 							title={`Запланировать «${recommendedProtocol.title}» через ${recommendedProtocol.defaultIntervalDays} дней в 1 клик`}
 						>
-							<CalendarPlus size={14} />
+							<FastForward size={14} />
 							<span>
 								+{" "}
 								{recommendedProtocol.shortLabel.includes("(")
@@ -136,54 +150,6 @@ export function VisitActionFooter({
 									: `${recommendedProtocol.shortLabel} (${recommendedProtocol.defaultIntervalDays} дн)`}
 							</span>
 						</button>
-
-						{(
-							[
-								"endo_stage_2",
-								"suture_removal",
-								"ortho_activation",
-								"implant_prosthetics",
-								"general_control",
-							] as SmartClinicalProtocolKey[]
-						)
-							.filter((k) => k !== recommendedKey)
-							.map((key) => {
-								const proto = SMART_CLINICAL_PROTOCOLS[key];
-								const chipText = proto.shortLabel.includes("(")
-									? proto.shortLabel
-									: `${proto.shortLabel} (${proto.defaultIntervalDays} дн)`;
-								return (
-									<button
-										key={key}
-										type="button"
-										data-testid={`btn-smart-stage-${key}`}
-										onClick={() => {
-											createSmartSequentialAppointment({
-												parentAppointment: activeAppointment,
-												protocolKey: key,
-											});
-										}}
-										style={{
-											minHeight: "34px",
-											padding: "6px 10px",
-											borderRadius: "8px",
-											background: "var(--paper)",
-											color: "var(--ink)",
-											border: "1px solid var(--line)",
-											fontWeight: 500,
-											fontSize: "12px",
-											display: "inline-flex",
-											alignItems: "center",
-											gap: "4px",
-											cursor: "pointer",
-											whiteSpace: "nowrap",
-										}}
-										title={`Запланировать «${proto.title}» через ${proto.defaultIntervalDays} дней`}
-									>
-										+ {chipText}
-									</button>
-								);
-							})}
 					</div>
 				</div>
 			)}

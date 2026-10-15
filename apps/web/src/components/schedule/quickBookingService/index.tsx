@@ -172,7 +172,7 @@ export function QuickBookingServiceSection({
                   }
                 }
               }}
-              className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+              className="w-full px-3 py-2 h-11 min-h-[44px] leading-normal rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] cursor-pointer"
               data-testid="select-booking-chair"
             >
               {chairs.length === 0 ? (
@@ -209,7 +209,7 @@ export function QuickBookingServiceSection({
             <select
               value={doctorUserId}
               onChange={(e) => setDoctorUserId(e.target.value)}
-              className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+              className="w-full px-3 py-2 h-11 min-h-[44px] leading-normal rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] cursor-pointer"
               data-testid="select-booking-doctor"
             >
               <option value="">-- Выберите врача --</option>
@@ -273,7 +273,7 @@ export function QuickBookingServiceSection({
               <select
                 value={assistantUserId || ""}
                 onChange={(e) => setAssistantUserId(e.target.value || null)}
-                className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
+                className="w-full px-3 py-2 h-11 min-h-[44px] leading-normal rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] cursor-pointer"
                 data-testid="select-booking-assistant"
               >
                 <option value="">-- Без ассистента (соло-приём) --</option>

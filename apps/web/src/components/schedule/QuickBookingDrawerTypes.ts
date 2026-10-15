@@ -25,6 +25,7 @@ export interface QuickBookingSlotInfo {
   doctorUserId?: string | null | undefined;
   doctorName?: string | null | undefined;
   chairId?: string | null | undefined;
+  chairName?: string | null | undefined;
   durationMinutes?: number | undefined;
   reason?: string | undefined;
   isCitoEmergency?: boolean | undefined;
@@ -79,3 +80,36 @@ export const COMMON_REASONS = [
   "Имплантация",
   "Срочно! Острая боль",
 ];
+
+export interface UseQuickBookingSubmitParams {
+  patientSearch: any;
+  appointmentType: any;
+  doctorUserId: string;
+  dutyDoctorId: string | null;
+  doctors: any[];
+  dutyDoc: any;
+  chairId: string;
+  chairs: any[];
+  currentChair: any;
+  assistantUserId: string | null;
+  startsAtLocal: string;
+  durationMinutes: number;
+  reason: string;
+  comment: string;
+  status: Appointment["status"];
+  isSoloClinic: boolean;
+  collision: any;
+  setSlotConflict: (conflict: any) => void;
+  setSubmitError: (err: string | null) => void;
+  initialSlot: QuickBookingSlotInfo | null | undefined;
+  isEditing: boolean;
+  editingAppointmentId: string | null;
+  dashboard?: Dashboard | null | undefined;
+  setDashboard?: ((dash: Dashboard) => void) | undefined;
+  loadDashboard?: (() => Promise<any> | void) | undefined;
+  onAppointmentCreated?: ((appt: Appointment) => void) | undefined;
+  onAppointmentUpdated?: ((appt: Appointment) => void) | undefined;
+  onClose: () => void;
+  fromLocal: (local: string) => string;
+}
+

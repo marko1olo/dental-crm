@@ -89,4 +89,6 @@ export interface ScheduleFilterStripProps {
 	scheduleStatusFilter?: string | null | undefined;
 	setScheduleStatusFilter?: ((status: string | null) => void) | undefined;
 	queueCounts?: ShiftQueueCounts | undefined;
+	pendingOnlineBookingsCount?: number | undefined;
+	onOpenPendingOnlineBookings?: (() => void) | undefined;
 }

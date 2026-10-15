@@ -140,10 +140,15 @@ export function useScheduleGridData({
       }
     }
 
+    const validChairIds = new Set(effectiveChairs.map((c) => c.id));
+    const fallbackChairId = effectiveChairs[0]?.id;
+
     // Single pass over parsedDayAppointments (Zero .filter() GC pressure)
     for (const p of parsedDayAppointments) {
       const a = p.appointment;
       const docId = a.doctorUserId || "unassigned";
+      const resolvedChairId =
+        p.chairId && validChairIds.has(p.chairId) ? p.chairId : fallbackChairId;
 
       for (const hour of timeSlots) {
         const [sH, sM] = hour.split(":").map(Number);
@@ -154,7 +159,7 @@ export function useScheduleGridData({
           // Starts in this slot
           for (const chair of effectiveChairs) {
             const isSolo = chair.id === DEFAULT_SOLO_CHAIR.id;
-            if (isSolo || p.chairId === chair.id) {
+            if (isSolo || resolvedChairId === chair.id) {
               const cell = chairMap.get(`${chair.id}_${slotStartMin}`);
               if (cell) cell.cellAppointments.push(a);
             }
@@ -171,7 +176,7 @@ export function useScheduleGridData({
           // Continues through this slot
           for (const chair of effectiveChairs) {
             const isSolo = chair.id === DEFAULT_SOLO_CHAIR.id;
-            if (isSolo || p.chairId === chair.id) {
+            if (isSolo || resolvedChairId === chair.id) {
               const cell = chairMap.get(`${chair.id}_${slotStartMin}`);
               if (cell) cell.continuingAppointments.push(a);
             }

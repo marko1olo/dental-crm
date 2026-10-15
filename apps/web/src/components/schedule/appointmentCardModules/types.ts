@@ -10,6 +10,7 @@ export interface AppointmentCardVisualBodyProps {
 	onOpenVisit?: (() => void) | undefined;
 	openAppointmentEditor: (appointment: Appointment) => void;
 	setIsMobileSheetOpen: (open: boolean) => void;
+	onFreeSlotToWaitlist?: ((appointment: Appointment) => void) | undefined;
 }
 
 export interface AppointmentCardPopupsProps {

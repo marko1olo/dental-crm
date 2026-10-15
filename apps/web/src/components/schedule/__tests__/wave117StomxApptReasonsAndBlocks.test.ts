@@ -214,7 +214,14 @@ describe("Wave 117: StomX Catalogs Export & Appointment Blocking Intervals", () 
 		it("2.4 AppointmentModal.tsx source code contains 1-click chip buttons and touch target >= 44px", () => {
 			const modalPath = path.resolve(__dirname, "../AppointmentModal.tsx");
 			assert.ok(fs.existsSync(modalPath), "AppointmentModal.tsx must exist");
-			const content = fs.readFileSync(modalPath, "utf-8");
+			const detailsPath = path.resolve(__dirname, "../appointmentModalModules/AppointmentDetailsSection.tsx");
+			const patientPath = path.resolve(__dirname, "../appointmentModalModules/AppointmentPatientSection.tsx");
+			const reasonsPath = path.resolve(__dirname, "../AppointmentModalQuickReasons.tsx");
+			const statePath = path.resolve(__dirname, "../useAppointmentModalState.ts");
+			const content = [modalPath, detailsPath, patientPath, reasonsPath, statePath]
+				.filter((p) => fs.existsSync(p))
+				.map((p) => fs.readFileSync(p, "utf-8"))
+				.join("\n");
 
 			// Testids
 			assert.ok(
@@ -250,9 +257,11 @@ describe("Wave 117: StomX Catalogs Export & Appointment Blocking Intervals", () 
 				"Patient label must adapt during technical break",
 			);
 			assert.ok(
-				content.includes("if (!effectivePatientId && !isTechnicalBreak)"),
+				content.includes("if (!effectivePatientId && !isTechnicalBreak)") ||
+					content.includes("if (!effectivePatientId && !isTechBreak)"),
 				"Save logic must allow null patientId for technical breaks",
 			);
+
 		});
 	});
 

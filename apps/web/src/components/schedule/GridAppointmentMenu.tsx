@@ -32,6 +32,10 @@ import {
 	formatDoctorShortName,
 	isAppointmentInChair,
 } from "./appointmentCardHelpers";
+import {
+	createSmartSequentialAppointment,
+	detectRecommendedProtocol,
+} from "./smartSequentialVisitsEngine";
 
 export interface GridAppointmentMenuProps {
 	appointment: Appointment;
@@ -74,7 +78,18 @@ export function GridAppointmentMenu(props: GridAppointmentMenuProps) {
 
 	return (
 		<div
-			className={`${isMenuOpen ? "block" : "hidden"} absolute right-0 bottom-full mb-1 z-50 p-1.5 rounded-2xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl min-w-[210px] max-w-[260px] space-y-1 text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100`}
+			className={`${isMenuOpen ? "block" : "hidden"} absolute right-0 top-full mt-1 z-50 p-1.5 rounded-2xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl min-w-[220px] max-w-[270px] space-y-1 text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100`}
+			style={{
+				top: "100%",
+				right: 0,
+				marginTop: "6px",
+				zIndex: 100,
+				background: "var(--paper)",
+				border: "1.5px solid var(--teal, #0d9488)",
+				borderRadius: "14px",
+				boxShadow: "0 12px 32px rgba(0, 0, 0, 0.18)",
+				padding: "8px",
+			}}
 			onClick={(e) => e.stopPropagation()}
 		>
 			{/* Clinical Actions Section */}
@@ -90,13 +105,16 @@ export function GridAppointmentMenu(props: GridAppointmentMenuProps) {
 							usePatientStore.getState().setSelectedPatientId(patObj.id);
 						}
 						useAppStore.getState().setCurrentView("visit");
+						if (typeof window !== "undefined") {
+							window.location.hash = "#visit";
+						}
 						showToast(`Медицинская карта: ${pName}`, "info");
 					}}
-					className="w-full text-left min-h-[36px] px-2.5 py-1 rounded-lg flex items-center gap-2 hover:bg-[var(--paper-soft)] text-cyan-700 dark:text-cyan-300 font-bold transition-colors cursor-pointer"
+					className="w-full text-left min-h-[36px] px-2.5 py-1 rounded-lg flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold transition-colors cursor-pointer"
 					title="Открыть медицинскую карту пациента"
 					data-testid={`menu-emr-btn-${a.id}`}
 				>
-					<FileText size={14} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
+					<FileText size={14} className="text-[var(--teal)] shrink-0" />
 					<span>Медицинская карта</span>
 				</button>
 				<button
@@ -112,11 +130,11 @@ export function GridAppointmentMenu(props: GridAppointmentMenuProps) {
 						}
 						showToast(`Анкета здоровья: ${pName}`, "info");
 					}}
-					className="w-full text-left min-h-[36px] px-2.5 py-1 rounded-lg flex items-center gap-2 hover:bg-[var(--paper-soft)] text-rose-700 dark:text-rose-300 font-medium transition-colors cursor-pointer"
+					className="w-full text-left min-h-[36px] px-2.5 py-1 rounded-lg flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium transition-colors cursor-pointer"
 					title="Заполнить анкету здоровья / соматический анамнез"
 					data-testid={`menu-anamnesis-btn-${a.id}`}
 				>
-					<HeartPulse size={14} className="text-rose-500 shrink-0" />
+					<HeartPulse size={14} className="text-[var(--muted)] shrink-0" />
 					<span>Анкета здоровья</span>
 				</button>
 				<button
@@ -132,12 +150,56 @@ export function GridAppointmentMenu(props: GridAppointmentMenuProps) {
 						}
 						showToast(`Планы лечения: ${pName}`, "info");
 					}}
-					className="w-full text-left min-h-[36px] px-2.5 py-1 rounded-lg flex items-center gap-2 hover:bg-[var(--paper-soft)] text-indigo-700 dark:text-indigo-300 font-medium transition-colors cursor-pointer"
+					className="w-full text-left min-h-[36px] px-2.5 py-1 rounded-lg flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium transition-colors cursor-pointer"
 					title="Открыть планы лечения"
 					data-testid={`menu-plans-btn-${a.id}`}
 				>
-					<ClipboardList size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+					<ClipboardList size={14} className="text-[var(--muted)] shrink-0" />
 					<span>Планы лечения</span>
+				</button>
+				<button
+					type="button"
+					onClick={() => {
+						onCloseMenu();
+						const recKey = detectRecommendedProtocol({
+							diagnosisMkb10: a.diagnosisMkb10 ?? null,
+							reason: a.reason ?? null,
+							clinicalStage: a.clinicalStage ?? null,
+							toothNumber: a.toothNumber ?? null,
+						});
+						const allAppts = dashboard?.appointments || [];
+						createSmartSequentialAppointment({
+							parentAppointment: a as any,
+							protocolKey: recKey,
+							existingAppointments: allAppts,
+						});
+					}}
+					className="w-full text-left min-h-[36px] px-2.5 py-1 rounded-lg flex items-center justify-between gap-2 hover:bg-[var(--paper-soft)] text-[var(--teal)] font-bold transition-colors cursor-pointer"
+					style={{
+						background: "rgba(13, 148, 136, 0.08)",
+						border: "1px solid rgba(13, 148, 136, 0.28)",
+						borderRadius: "8px",
+						marginTop: "2px",
+					}}
+					title="Запланировать следующий этап лечения в 1 клик (с авто-подбором даты и Rollback Toast)"
+					data-testid={`menu-next-stage-btn-${a.id}`}
+				>
+					<div className="flex items-center gap-2">
+						<FastForward size={14} className="text-[var(--teal)] shrink-0" />
+						<span>+ След. этап лечения</span>
+					</div>
+					<span
+						className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
+						style={{
+							background: "var(--teal, #0d9488)",
+							color: "#ffffff",
+							borderRadius: "6px",
+							padding: "1px 6px",
+							fontSize: "10px",
+						}}
+					>
+						1 клик
+					</span>
 				</button>
 			</div>
 
@@ -209,86 +271,32 @@ export function GridAppointmentMenu(props: GridAppointmentMenuProps) {
 			</div>
 			{onQuickStatusChange && (
 				<div className="space-y-0.5">
-					<button
-						type="button"
-						title="Подтвержден"
-						onClick={() => {
-							onQuickStatusChange(a.id, "confirmed");
-							onCloseMenu();
-						}}
-						className={`w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
-							a.status === "confirmed"
-								? "bg-violet-500 text-white font-bold"
-								: "hover:bg-[var(--paper-soft)] text-violet-700 dark:text-violet-300"
-						}`}
-					>
-						<PhoneCall size={14} />
-						<span>Подтвержден</span>
-					</button>
-					<button
-						type="button"
-						title="Пришел"
-						onClick={() => {
-							onQuickStatusChange(a.id, "arrived");
-							onCloseMenu();
-						}}
-						className={`w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
-							a.status === "arrived"
-								? "bg-emerald-500 text-white font-bold"
-								: "hover:bg-[var(--paper-soft)] text-emerald-700 dark:text-emerald-300"
-						}`}
-					>
-						<UserCheck size={14} />
-						<span>Пришел</span>
-					</button>
-					<button
-						type="button"
-						title="В кресле"
-						onClick={() => {
-							onQuickStatusChange(a.id, "in_treatment");
-							onCloseMenu();
-						}}
-						className={`w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
-							isAppointmentInChair(a.status)
-								? "bg-[var(--teal,var(--brand-primary))] text-white font-bold"
-								: "hover:bg-[var(--paper-soft)] text-[var(--teal-dark,var(--teal))]"
-						}`}
-					>
-						<CalendarCheck size={14} />
-						<span>В кресле</span>
-					</button>
-					<button
-						type="button"
-						title="Завершен"
-						onClick={() => {
-							onQuickStatusChange(a.id, "completed");
-							onCloseMenu();
-						}}
-						className={`w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
-							a.status === "completed"
-								? "bg-slate-600 text-white font-bold"
-								: "hover:bg-[var(--paper-soft)] text-slate-700 dark:text-slate-300"
-						}`}
-					>
-						<CheckCircle2 size={14} />
-						<span>Завершен</span>
-					</button>
-					<button
-						type="button"
-						title="Не явился"
-						onClick={() => {
-							onQuickStatusChange(a.id, "no_show");
-							onCloseMenu();
-						}}
-						className={`w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
-							a.status === "no_show"
-								? "bg-rose-500 text-white font-bold"
-								: "hover:bg-[var(--paper-soft)] text-rose-700 dark:text-rose-300"
-						}`}
-					>
-						<UserX size={14} />
-						<span>Не явился</span>
-					</button>
+					{[
+						{ status: "confirmed", title: "Подтвержден", icon: PhoneCall, activeClass: "bg-violet-500 text-white font-bold", inactiveClass: "hover:bg-[var(--paper-soft)] text-violet-700 dark:text-violet-300", active: a.status === "confirmed" },
+						{ status: "arrived", title: "Пришел", icon: UserCheck, activeClass: "bg-emerald-500 text-white font-bold", inactiveClass: "hover:bg-[var(--paper-soft)] text-emerald-700 dark:text-emerald-300", active: a.status === "arrived" },
+						{ status: "in_treatment", title: "В кресле", icon: CalendarCheck, activeClass: "bg-[var(--teal,var(--brand-primary))] text-white font-bold", inactiveClass: "hover:bg-[var(--paper-soft)] text-[var(--teal-dark,var(--teal))]", active: isAppointmentInChair(a.status) },
+						{ status: "completed", title: "Завершен", icon: CheckCircle2, activeClass: "bg-slate-600 text-white font-bold", inactiveClass: "hover:bg-[var(--paper-soft)] text-slate-700 dark:text-slate-300", active: a.status === "completed" },
+						{ status: "no_show", title: "Не явился", icon: UserX, activeClass: "bg-rose-500 text-white font-bold", inactiveClass: "hover:bg-[var(--paper-soft)] text-rose-700 dark:text-rose-300", active: a.status === "no_show" },
+					].map((item) => {
+						const Icon = item.icon;
+						return (
+							<button
+								key={item.status}
+								type="button"
+								title={item.title}
+								onClick={() => {
+									onQuickStatusChange(a.id, item.status);
+									onCloseMenu();
+								}}
+								className={`w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
+									item.active ? item.activeClass : item.inactiveClass
+								}`}
+							>
+								<Icon size={14} />
+								<span>{item.title}</span>
+							</button>
+						);
+					})}
 				</div>
 			)}
 

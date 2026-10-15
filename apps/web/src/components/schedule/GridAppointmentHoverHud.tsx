@@ -100,10 +100,10 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 			onMouseLeave={onMouseLeave}
 		>
 			{/* 1. Крупное ФИО пациента + Статус 54-ФЗ (Баланс / Долг / Аванс) */}
-			<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2.5">
-				<span className="text-[17px] font-black text-[var(--ink)] flex items-center gap-1.5 truncate">
-					<User className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
-					{pName || "Пациент"}
+			<div className="flex items-start justify-between gap-2 border-b border-[var(--line)] pb-2.5">
+				<span className="text-[15px] leading-snug font-black text-[var(--ink)] flex items-start gap-1.5 min-w-0 break-words">
+					<User className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0 mt-0.5" />
+					<span className="min-w-0 break-words">{pName || "Пациент"}</span>
 				</span>
 				{pBalance !== null ? (
 					<button

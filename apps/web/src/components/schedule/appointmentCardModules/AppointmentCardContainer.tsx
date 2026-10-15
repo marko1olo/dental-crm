@@ -225,6 +225,27 @@ export function AppointmentCardContainer(props: AppointmentCardProps) {
 						onOpenVisit={onOpenVisit}
 						openAppointmentEditor={openAppointmentEditor}
 						setIsMobileSheetOpen={setIsMobileSheetOpen}
+						onFreeSlotToWaitlist={(appt) => {
+							if (props.onFreeSlotToWaitlist) {
+								props.onFreeSlotToWaitlist(appt);
+							}
+							if (props.onOpenWaitlistForSlot) {
+								props.onOpenWaitlistForSlot({
+									appointmentId: appt.id,
+									startsAt: appt.startsAt,
+									endsAt: appt.endsAt,
+									doctorUserId: appt.doctorUserId,
+									doctorName: appointmentDoctor?.fullName || null,
+									chairId: appt.chairId,
+									chairName: appointmentChair?.name || null,
+									patientId: appt.patientId,
+									patientName: appointmentPatientName,
+									freedBecause: "Освобождено под лист ожидания",
+									reason: appt.reason,
+								});
+							}
+							setIsSmartRecoveryOpen(true);
+						}}
 					/>
 
 					{appointmentHasOpenVisit ? (

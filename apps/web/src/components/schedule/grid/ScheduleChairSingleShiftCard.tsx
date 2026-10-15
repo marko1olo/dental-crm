@@ -46,26 +46,20 @@ export function ScheduleChairSingleShiftCard({
       <button
         type="button"
         onClick={() => openAssignModal(chair.id)}
-        className="w-full px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center justify-between gap-2 text-left text-xs cursor-pointer shadow-2xs hover:border-[var(--teal)] transition-all"
-        style={{
-          minHeight: "32px",
-          height: "32px",
-          borderRadius: "8px",
-          border: "1px solid var(--line)",
-          background: "var(--paper)",
-        }}
+        className="w-full px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--primary)]/60 flex items-center justify-between gap-2 text-left text-xs cursor-pointer shadow-2xs transition-all touch-manipulation"
         data-testid={`chair-doctor-duty-badge-${chair.id}`}
         title="Нажмите для смены дежурного врача"
         aria-label={`Дежурный врач: ${assignment.doctorName}, ${assignment.shiftHours || "08:00–20:00"}`}
       >
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
-          {isOnDuty && (
-            <span
-              className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"
-              data-testid={`chair-duty-now-badge-${chair.id}`}
-              title="На смене"
-            />
-          )}
+          <span
+            className={`w-2 h-2 rounded-full shrink-0 ${
+              isOnDuty ? "bg-emerald-500" : "bg-[var(--muted)]/40"
+            }`}
+            data-testid={`chair-duty-now-badge-${chair.id}`}
+            title={isOnDuty ? "На смене" : "Не на смене"}
+          />
+          <Clock size={13} className="text-[var(--primary)] shrink-0" aria-hidden="true" />
           <span className="font-bold text-[var(--ink)] truncate">
             {formatDoctorShortName(assignment.doctorName)}
           </span>
@@ -73,9 +67,16 @@ export function ScheduleChairSingleShiftCard({
             · {assignment.doctorSpecialty || "Врач"}
           </span>
         </div>
-        <span className="font-mono text-[11px] text-[var(--muted)] shrink-0 font-semibold">
-          {assignment.shiftHours || "08:00–20:00"}
-        </span>
+        <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+          <span className="font-mono text-[11px] text-[var(--muted)] font-medium">
+            {assignment.shiftHours || "08:00–20:00"}
+          </span>
+          {isOnDuty && (
+            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 shrink-0">
+              На смене
+            </span>
+          )}
+        </div>
       </button>
       {/* Индикатор покрытия смен кресла (sr-only для сохранения тестовых якорей без 3-го этажа в шапке) */}
       {assignment.shiftPreset !== "two_shifts" && (

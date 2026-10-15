@@ -259,7 +259,7 @@ export function ScheduleOptionsToolsSection({
 					role="menuitem"
 				>
 					<Users size={14} className="text-[var(--teal,var(--brand-primary))]" />
-					<span>Табель смен (ТК РФ)</span>
+					<span>Табель учёта смен</span>
 				</button>
 			)}
 

@@ -1,12 +1,6 @@
-import type { Appointment, Dashboard } from "@dental/shared";
-import {
-  AlertTriangle,
-  Check,
-  Clock,
-  UserCheck,
-  Zap,
-} from "lucide-react";
 import React from "react";
+import type { Appointment, Dashboard } from "@dental/shared";
+import { AlertTriangle, Check, Clock, UserCheck, Zap } from "lucide-react";
 import { safeLocalStorageGetJson } from "../../lib/safeLocalStorage";
 import { showToast } from "../GlobalToast";
 import type { ResourceCollisionResult } from "../../utils/scheduleCollisionUtils";
@@ -47,32 +41,11 @@ export interface AppointmentModalDoctorChairSectionProps {
 }
 
 export function AppointmentModalDoctorChairSection({
-  appointment,
-  dashboard,
-  startsAtLocal,
-  setStartsAtLocal,
-  endsAtLocal,
-  setEndsAtLocal,
-  currentDurationMinutes,
-  applyDuration,
-  doctorUserId,
-  setDoctorUserId,
-  assistantUserId,
-  setAssistantUserId,
-  chairId,
-  setChairId,
-  isSoloDoctor,
-  doctors,
-  assistants,
-  chairs,
-  dutyDoctorId,
-  dutyDoc,
-  dutyDocHours,
-  chairDoctorAssignments,
-  collision,
-  safeToDateTimeLocalValue,
-  timezone,
-  hideAssistant = false,
+  appointment, dashboard, startsAtLocal, setStartsAtLocal, endsAtLocal, setEndsAtLocal,
+  currentDurationMinutes, applyDuration, doctorUserId, setDoctorUserId,
+  assistantUserId, setAssistantUserId, chairId, setChairId, isSoloDoctor,
+  doctors, assistants, chairs, dutyDoctorId, dutyDoc, dutyDocHours,
+  chairDoctorAssignments, collision, safeToDateTimeLocalValue, timezone, hideAssistant = false,
 }: AppointmentModalDoctorChairSectionProps) {
   const isDoctorOnShift = (dId: string) => {
     if (dId === dutyDoctorId || (dutyDoc && dutyDoc.id === dId)) return true;
@@ -287,7 +260,7 @@ export function AppointmentModalDoctorChairSection({
         <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
           <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
             <Zap size={13} className="text-[var(--teal)]" />
-            <span>Длительность приёма:</span>
+            <span>Длительность приёма (Быстрый выбор длительности):</span>
           </label>
           <div className="flex items-center gap-2">
             {currentDurationMinutes > 0 && (
@@ -331,6 +304,7 @@ export function AppointmentModalDoctorChairSection({
         >
           {[15, 30, 45, 60, 90, 120].map((mins) => {
             const isSelected = currentDurationMinutes === mins;
+            const label = mins === 60 ? "1 час (60 мин)" : `${mins} мин`;
             return (
               <button
                 key={mins}
@@ -343,7 +317,7 @@ export function AppointmentModalDoctorChairSection({
                     : "bg-[var(--paper-soft)] border-[var(--line-strong)] text-[var(--ink)] hover:bg-[var(--paper-subtle)]"
                 }`}
               >
-                {mins} мин
+                {label}
               </button>
             );
           })}

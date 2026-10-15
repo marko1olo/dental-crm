@@ -13,6 +13,7 @@ import {
 	type StaffMember,
 	type T13TimeCode,
 } from "./doctorShiftRosterPresets";
+import { clockTimeToMinutes, minutesToClockTime } from "@dental/shared";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 
 export * from "./rosterLaborComplianceT13";
@@ -87,25 +88,17 @@ export interface ChairUtilizationMetric {
 }
 
 /**
- * Parse HH:MM to minutes from midnight
+ * Parse HH:MM to minutes from midnight via @dental/shared SSOT
  */
 export function timeStringToMinutes(time: string): number {
 	if (!time || !time.includes(":")) return 0;
-	const parts = time.split(":");
-	const h = Number.parseInt(parts[0] || "0", 10) || 0;
-	const m = Number.parseInt(parts[1] || "0", 10) || 0;
-	return h * 60 + m;
+	return clockTimeToMinutes(time);
 }
 
 /**
- * Convert minutes from midnight to HH:MM
+ * Convert minutes from midnight to HH:MM via @dental/shared SSOT
  */
-export function minutesToTimeString(minutes: number): string {
-	const normalized = ((minutes % 1440) + 1440) % 1440;
-	const h = Math.floor(normalized / 60);
-	const m = Math.floor(normalized % 60);
-	return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
+export const minutesToTimeString = minutesToClockTime;
 
 /**
  * Check if two time intervals overlap on the same calendar date

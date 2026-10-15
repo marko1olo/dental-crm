@@ -36,6 +36,7 @@ export interface AppointmentCardContextMenuProps {
 	repeatAppointment: (appointment: Appointment) => void;
 	copyAppointmentToBuffer?: ((appointment: Appointment) => void) | undefined;
 	openAppointmentEditor: (appointment: Appointment) => void;
+	onFreeSlotToWaitlist?: ((appointment: Appointment) => void) | undefined;
 }
 
 export function AppointmentCardContextMenu({
@@ -52,6 +53,7 @@ export function AppointmentCardContextMenu({
 	repeatAppointment,
 	copyAppointmentToBuffer,
 	openAppointmentEditor,
+	onFreeSlotToWaitlist,
 }: AppointmentCardContextMenuProps) {
 	const [isCardMenuOpen, setIsCardMenuOpen] = useState(false);
 	const [isRefusalReasonsOpen, setIsRefusalReasonsOpen] = useState(false);
@@ -394,6 +396,9 @@ export function AppointmentCardContextMenu({
 						onClick={() => {
 							setIsCardMenuOpen(false);
 							void handleQuickStatusChange("cancelled", "Освобождено под лист ожидания");
+							if (onFreeSlotToWaitlist) {
+								onFreeSlotToWaitlist(appointment);
+							}
 						}}
 						title="Отменить приём и подобрать пациента из листа ожидания"
 					>

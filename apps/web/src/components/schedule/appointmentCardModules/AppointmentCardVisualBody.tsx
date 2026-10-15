@@ -24,6 +24,7 @@ export function AppointmentCardVisualBody({
 	onOpenVisit,
 	openAppointmentEditor,
 	setIsMobileSheetOpen,
+	onFreeSlotToWaitlist,
 }: AppointmentCardVisualBodyProps) {
 	const {
 		appointment,
@@ -35,9 +36,12 @@ export function AppointmentCardVisualBody({
 		appointmentLabels,
 		appointmentEditing,
 	} = props;
+	const effectiveOnFreeSlotToWaitlist =
+		onFreeSlotToWaitlist ?? props.onFreeSlotToWaitlist;
 
 	const {
 		appointmentDoctor,
+		appointmentAssistant: _appointmentAssistant,
 		appointmentPatient,
 		appointmentPatientName,
 		patientBalance,
@@ -52,6 +56,7 @@ export function AppointmentCardVisualBody({
 		cardTeeth,
 		allergyAlert,
 		somaticAlert,
+		labReadinessAlert,
 		appointmentChair,
 	} = state;
 
@@ -215,6 +220,7 @@ export function AppointmentCardVisualBody({
 						repeatAppointment={repeatAppointment}
 						copyAppointmentToBuffer={copyAppointmentToBuffer}
 						openAppointmentEditor={openAppointmentEditor}
+						onFreeSlotToWaitlist={effectiveOnFreeSlotToWaitlist}
 					/>
 				</div>
 			</div>
@@ -316,6 +322,7 @@ export function AppointmentCardVisualBody({
 							repeatAppointment={repeatAppointment}
 							copyAppointmentToBuffer={copyAppointmentToBuffer}
 							openAppointmentEditor={openAppointmentEditor}
+							onFreeSlotToWaitlist={effectiveOnFreeSlotToWaitlist}
 						/>
 					</div>
 				</div>
@@ -333,6 +340,7 @@ export function AppointmentCardVisualBody({
 							cardTeeth={cardTeeth}
 							allergyAlert={allergyAlert}
 							somaticAlert={somaticAlert}
+							labReadinessAlert={labReadinessAlert}
 						/>
 					</div>
 
@@ -406,6 +414,7 @@ export function AppointmentCardVisualBody({
 						repeatAppointment={repeatAppointment}
 						copyAppointmentToBuffer={copyAppointmentToBuffer}
 						openAppointmentEditor={openAppointmentEditor}
+						onFreeSlotToWaitlist={effectiveOnFreeSlotToWaitlist}
 					/>
 				</div>
 			</div>
@@ -453,6 +462,7 @@ export function AppointmentCardVisualBody({
 						cardTeeth={cardTeeth}
 						allergyAlert={allergyAlert}
 						somaticAlert={somaticAlert}
+						labReadinessAlert={labReadinessAlert}
 					/>
 				</div>
 			</div>

@@ -188,7 +188,7 @@ export function QuickAppointmentTypeSelector({
                 <span>{preset.label}</span>
               </div>
               <span
-                className={`text-[10px] truncate block mt-0.5 ${
+                className={`text-[10px] block mt-0.5 leading-tight ${
                   isSelected
                     ? isEm
                       ? "text-rose-100 font-medium"
@@ -196,7 +196,11 @@ export function QuickAppointmentTypeSelector({
                     : "text-[var(--muted)]"
                 }`}
               >
-                {preset.description}
+                {preset.type === "emergency"
+                  ? "CITO / Срочно"
+                  : preset.type === "primary"
+                    ? "Консультация"
+                    : "По плану"}
               </span>
             </button>
           );

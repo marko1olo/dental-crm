@@ -18,7 +18,7 @@ export * from "./chairScheduleToolbar/index";
 export function ChairScheduleToolbar(props: ChairScheduleToolbarProps) {
   return (
     <div
-      className="flex items-center justify-between px-3 h-9 min-h-[36px] max-h-[36px] border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0 gap-2 select-none flex-nowrap"
+      className="flex items-center justify-between px-3 h-12 min-h-[48px] max-h-[52px] border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0 gap-2 select-none flex-nowrap"
       data-testid="chair-schedule-palette-strip"
       role="toolbar"
       aria-label="Панель стоматологических установок и смен врачей"

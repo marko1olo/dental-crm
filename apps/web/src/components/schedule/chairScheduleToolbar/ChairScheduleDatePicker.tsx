@@ -54,7 +54,7 @@ export function ChairScheduleDatePicker({
 
   return (
     <div
-      className="inline-flex items-center gap-1 shrink-0 select-none"
+      className="inline-flex items-center gap-1.5 shrink-0 select-none"
       data-testid="chair-schedule-date-stepper"
       role="group"
       aria-label="Навигация по датам расписания"
@@ -62,38 +62,38 @@ export function ChairScheduleDatePicker({
       <button
         type="button"
         onClick={handlePrevDay}
-        className="h-7 w-7 inline-flex items-center justify-center rounded-md border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors cursor-pointer"
+        className="h-9 w-9 min-h-[36px] max-h-[36px] inline-flex items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--primary)] text-[var(--ink)] transition-all cursor-pointer shadow-2xs shrink-0 touch-manipulation"
         title="Предыдущий день"
         data-testid="btn-chair-date-prev"
         aria-label="Предыдущий день"
       >
-        <ChevronLeft size={14} />
+        <ChevronLeft size={16} />
       </button>
 
       <button
         type="button"
         onClick={handleToday}
-        className={`h-7 px-2 inline-flex items-center gap-1.5 rounded-md border text-xs font-semibold transition-colors cursor-pointer ${
+        className={`h-9 min-h-[36px] max-h-[36px] px-3 inline-flex items-center gap-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer shadow-2xs shrink-0 touch-manipulation ${
           isToday
-            ? "border-[var(--teal)] bg-[var(--teal-soft)] text-[var(--teal-dark)]"
-            : "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)]"
+            ? "border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--primary-dark)]"
+            : "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] text-[var(--ink)]"
         }`}
         title="Перейти к сегодняшней дате"
         data-testid="btn-chair-date-today"
       >
-        <Calendar size={13} className={isToday ? "text-[var(--teal)]" : "text-[var(--muted)]"} />
+        <Calendar size={14} className={isToday ? "text-[var(--primary)]" : "text-[var(--muted)]"} />
         <span className="capitalize">{formatDateDisplay(dateKey)}</span>
       </button>
 
       <button
         type="button"
         onClick={handleNextDay}
-        className="h-7 w-7 inline-flex items-center justify-center rounded-md border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors cursor-pointer"
+        className="h-9 w-9 min-h-[36px] max-h-[36px] inline-flex items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--primary)] text-[var(--ink)] transition-all cursor-pointer shadow-2xs shrink-0 touch-manipulation"
         title="Следующий день"
         data-testid="btn-chair-date-next"
         aria-label="Следующий день"
       >
-        <ChevronRight size={14} />
+        <ChevronRight size={16} />
       </button>
     </div>
   );

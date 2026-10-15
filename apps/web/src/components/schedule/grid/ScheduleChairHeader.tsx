@@ -89,7 +89,7 @@ export function ScheduleChairHeader({
   return (
     <div
       key={chair.id}
-      className="px-2 py-1 text-xs border-r border-[var(--line)] last:border-r-0 flex flex-col justify-between gap-1 relative overflow-hidden bg-[var(--paper-soft)] min-h-[58px] select-none"
+      className="px-2.5 py-1.5 text-xs border-r border-[var(--line)] last:border-r-0 flex flex-col justify-start gap-1.5 relative overflow-hidden bg-[var(--paper-soft)] select-none"
       data-testid={`chair-header-${chair.id}`}
       data-chair-palette={chairPalette.nameRu}
     >

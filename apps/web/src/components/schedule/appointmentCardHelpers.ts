@@ -102,11 +102,15 @@ export function getNormalizedAppointmentStatusLabel(
 ): string {
 	if (!status) return "";
 	const s = String(status).toLowerCase();
+	if (s === "completed") {
+		return labels?.[s] && labels[s] !== "Готово" ? labels[s] : "Ожидает оплаты";
+	}
 	if (s === "in_treatment" || s === "in_chair" || s === "in_progress") return "На приёме";
 	if (s === "arrived" || s === "in_clinic" || s === "waiting") return "В холле";
-	if (s === "completed") return "К оплате";
 	if (s === "confirmed") return "Подтверждён";
-	if (s === "planned") return "Ожидает";
+	if (s === "planned") return "Запланирован";
+	if (s === "cancelled") return "Отменён";
+	if (s === "no_show") return "Не явился";
 	if (labels) {
 		if (labels[s]) return labels[s];
 		if (labels[status]) return labels[status];

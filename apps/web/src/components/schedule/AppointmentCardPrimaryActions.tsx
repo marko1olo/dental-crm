@@ -11,6 +11,7 @@ import {
 	UserCheck,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { playIntercomChime } from "../../lib/intercomSound";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
@@ -44,6 +45,51 @@ export function AppointmentCardPrimaryActions({
 }: AppointmentCardPrimaryActionsProps) {
 	if (appointmentEditing) return null;
 
+	const openVisitWithBackendSync = async () => {
+		const pid = appointmentPatient?.id || appointment.patientId;
+		if (pid) {
+			usePatientStore.getState().setSelectedPatientId(pid);
+		}
+		if (appointment.id) {
+			try {
+				const res = await fetch(
+					`/api/appointments/${encodeURIComponent(appointment.id)}/visit`,
+					{
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders(),
+					},
+				);
+				if (res.ok) {
+					const data = await res.json();
+					if (data?.visit) {
+						useAppStore.setState((state) => ({
+							dashboard: state.dashboard
+								? { ...state.dashboard, activeVisit: data.visit }
+								: state.dashboard,
+						}));
+					}
+				}
+			} catch (err) {
+				console.warn("[openVisitWithBackendSync] network fallback:", err);
+			}
+		}
+		if (typeof window !== "undefined") {
+			window.location.hash = "#visit";
+		}
+		if (onOpenVisit) {
+			onOpenVisit();
+		} else {
+			useAppStore.getState().setCurrentView("visit");
+		}
+	};
+
+	const handleStartTreatmentAndOpenVisit = async () => {
+		playIntercomChime("normal");
+		void handleQuickStatusChange("in_treatment");
+		await openVisitWithBackendSync();
+		showToast("Пациент в кресле: открыта медицинская карта", "success");
+	};
+
 	if (displayStatus === "planned" || displayStatus === "confirmed") {
 		return (
 			<div className="flex items-center gap-1.5 shrink-0" data-testid="card-primary-actions">
@@ -67,21 +113,7 @@ export function AppointmentCardPrimaryActions({
 					disabled={isQuickStatusUpdating}
 					onClick={(e) => {
 						e.stopPropagation();
-						playIntercomChime("normal");
-						void handleQuickStatusChange("in_treatment");
-						const pid = appointmentPatient?.id || appointment.patientId;
-						if (pid) {
-							usePatientStore.getState().setSelectedPatientId(pid);
-						}
-						if (typeof window !== "undefined") {
-							window.location.hash = "#visit";
-						}
-						if (onOpenVisit) {
-							onOpenVisit();
-						} else {
-							useAppStore.getState().setCurrentView("visit");
-						}
-						showToast("Пациент в кресле: открыта медицинская карта", "success");
+						void handleStartTreatmentAndOpenVisit();
 					}}
 					className="h-8 px-2.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
 					title="Начать приём в кресле (Клавиша 2)"
@@ -102,21 +134,7 @@ export function AppointmentCardPrimaryActions({
 					disabled={isQuickStatusUpdating}
 					onClick={(e) => {
 						e.stopPropagation();
-						playIntercomChime("normal");
-						void handleQuickStatusChange("in_treatment");
-						const pid = appointmentPatient?.id || appointment.patientId;
-						if (pid) {
-							usePatientStore.getState().setSelectedPatientId(pid);
-						}
-						if (typeof window !== "undefined") {
-							window.location.hash = "#visit";
-						}
-						if (onOpenVisit) {
-							onOpenVisit();
-						} else {
-							useAppStore.getState().setCurrentView("visit");
-						}
-						showToast("Пациент в кресле: открыта медицинская карта", "success");
+						void handleStartTreatmentAndOpenVisit();
 					}}
 					className="h-8 px-2.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
 					title="Пациент в кресле (Клавиша 2)"

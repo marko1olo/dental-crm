@@ -757,8 +757,8 @@ describe("Wave 59 (Feature 248) — Chair SubShifts Two-Shift Binding, Server Sy
 		const toolbar = findNodeByTestId(container, "chair-schedule-palette-strip");
 		assert.ok(toolbar, "Palette strip must exist");
 		assert.ok(
-			toolbar.className?.includes("h-9") && toolbar.className?.includes("min-h-[36px]"),
-			"Toolbar must be locked to 32-36px compact single row",
+			toolbar.className?.includes("h-12") && toolbar.className?.includes("min-h-[48px]"),
+			"Toolbar must be unified to standard 48-52px single row",
 		);
 
 		// 2. Primary direct toolbar buttons
@@ -773,7 +773,8 @@ describe("Wave 59 (Feature 248) — Chair SubShifts Two-Shift Binding, Server Sy
 
 		// 4. Click dropdown trigger -> opens menu
 		await clickNode(dropdownTrigger);
-		assert.equal(dropdownTrigger.getAttribute("aria-expanded"), "true");
+		const activeTrigger = findNodeByTestId(container, "btn-chair-shifts-menu-trigger") || dropdownTrigger;
+		assert.equal(activeTrigger.getAttribute("aria-expanded"), "true");
 
 		const dropdownMenu = findNodeByTestId(container, "chair-shifts-dropdown-menu");
 		assert.ok(dropdownMenu, "Dropdown menu container chair-shifts-dropdown-menu must exist");

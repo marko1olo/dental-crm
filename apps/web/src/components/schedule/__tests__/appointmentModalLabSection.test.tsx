@@ -59,11 +59,15 @@ describe("AppointmentModalLabSection — Лабораторные наряды (
 		assert.ok(html.includes("Циркониевая коронка Prettau"), "Тип конструкции должен отображаться");
 		assert.ok(html.includes("Зуб 16"), "Зуб по FDI должен отображаться");
 		assert.ok(html.includes("VITA A2"), "Расцветка VITA должна отображаться");
+		assert.ok(html.includes('data-testid="appointment-modal-lab-readiness-indicator"'), "Индикатор готовности должен отображаться");
+		assert.ok(html.includes("Работа из ЗТЛ доставлена: Циркониевая коронка Prettau зуб 16"), "Текст готовности работы из ЗТЛ");
+		assert.ok(html.includes('data-testid="appointment-confirm-fitting-btn"'), "1-клик кнопка 'Подтвердить примерку' должна присутствовать");
+		assert.ok(html.includes("Подтвердить примерку"), "Текст кнопки подтверждения примерки");
 		assert.ok(html.includes('data-testid="appointment-modal-open-lab-order-btn"'), "Кнопка перехода в ЗТЛ должна присутствовать");
 		assert.ok(html.includes("Открыть в ЗТЛ"), "Текст кнопки открытия ЗТЛ");
 	});
 
-	it("2. Отображает статус 'Просрочен на X дн!' и предупреждение о несогласованности дат", () => {
+	it("2. Отображает статус 'Просрочен на X дн!' и предупреждение о несогласованности дат с 1-клик синхронизацией", () => {
 		const labOrders = [
 			{
 				id: "lo-2",
@@ -86,6 +90,9 @@ describe("AppointmentModalLabSection — Лабораторные наряды (
 			/>,
 		);
 
+		assert.ok(html.includes('data-testid="appointment-modal-lab-collision-alert"'), "Баннер коллизии ЗТЛ должен отображаться");
+		assert.ok(html.includes("Внимание: плановая готовность работы ЗТЛ 25.10, выбранная дата раньше"), "Точный текст предупреждения коллизии");
+		assert.ok(html.includes('data-testid="appointment-modal-sync-lab-date-banner-btn"'), "Кнопка 'Синхронизировать дату' в баннере коллизии");
 		assert.ok(html.includes("прием раньше готовности ЗТЛ"), "Должно отображаться предупреждение о раннем приеме");
 		assert.ok(html.includes('data-testid="appointment-modal-sync-lab-date-btn"'), "Кнопка 'На дату ЗТЛ' должна присутствовать");
 		assert.ok(html.includes("На дату ЗТЛ"), "Текст кнопки синхронизации");
