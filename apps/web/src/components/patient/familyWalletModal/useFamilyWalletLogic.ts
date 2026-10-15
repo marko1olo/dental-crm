@@ -301,6 +301,7 @@ export function useFamilyWalletLogic(props: FamilyWalletModalProps) {
 				body: JSON.stringify({
 					familyGroupId: familyData.id,
 					patientId: spendPatientId || patientId,
+					payerPatientId: familyData.headPatientId || patientId,
 					amountRub: numAmount,
 					clientMutationId,
 				}),

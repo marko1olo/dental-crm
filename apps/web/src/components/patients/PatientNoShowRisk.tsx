@@ -132,20 +132,26 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 	 * английское слово в скобках рядом с русским. Оно ничего не добавляет тому,
 	 * кто сидит за стойкой, и превращает подпись в надпись для разработчика.
 	 */
-	const getRiskLabel = (level: string) => {
+	const getRiskLabel = (level: string, noShows = 0) => {
+		if (noShows === 0) {
+			return "Надёжный пациент: визиты без пропусков";
+		}
 		switch (level) {
 			case "high":
-				return "Высокий риск";
+				return "Повышенное внимание: были неявки в истории";
 			case "medium":
-				return "Средний риск";
+				return "Умеренная дисциплина: единичные пропуски";
 			case "low":
-				return "Низкий риск";
+				return "Надёжный пациент: регулярная явка";
 			default:
-				return "Риск не определён";
+				return "История визитов формируется";
 		}
 	};
 
-	const getRiskIcon = (level: string) => {
+	const getRiskIcon = (level: string, noShows = 0) => {
+		if (noShows === 0) {
+			return <CheckCircle size={16} className="text-emerald-500" />;
+		}
 		switch (level) {
 			case "high":
 				return <ShieldAlert size={16} className="text-red-500" />;
@@ -222,16 +228,17 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 
 					<div className="flex justify-between items-center mb-3 p-3 rounded-lg border bg-[var(--paper-soft)] border-[var(--line)]">
 						<div className="flex items-center gap-2">
-							{getRiskIcon(riskData?.riskLevel ?? "")}
+							{getRiskIcon(riskData?.riskLevel ?? "", riskData?.history?.noShows ?? 0)}
 							<span
 								className={`text-sm font-semibold ${getRiskClass(riskData?.riskLevel ?? "")}`}
 							>
-								{getRiskLabel(riskData?.riskLevel ?? "")}
+								{getRiskLabel(riskData?.riskLevel ?? "", riskData?.history?.noShows ?? 0)}
 							</span>
 						</div>
-						<div className="px-2 py-1 rounded text-xs font-bold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20">
-							Вероятность срыва записи:{" "}
-							{Math.round((riskData?.noShowProbability || 0) * 100)}%
+						<div className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)]">
+							{riskData?.history?.noShows && riskData.history.noShows > 0
+								? `Зафиксировано неявок: ${riskData.history.noShows}`
+								: "Без зафиксированных неявок"}
 						</div>
 					</div>
 

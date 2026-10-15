@@ -1,4 +1,4 @@
-import { Calendar, Camera, Clock, FileText } from "lucide-react";
+import { Calendar, Camera, Clock, FileText, Wallet } from "lucide-react";
 import React from "react";
 import type { WorkspaceTabKey } from "./types";
 
@@ -28,9 +28,23 @@ export const PatientWorkspaceTabsNav: React.FC<PatientWorkspaceTabsNavProps> = R
 							: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
 					}`}
 					onClick={() => setActiveTab("timeline")}
+					data-testid="patient-tab-overview"
 				>
 					<Clock className="w-3 h-3 inline mr-1" />
-					Лента
+					Обзор и Анамнез
+				</button>
+				<button
+					type="button"
+					className={`min-h-[36px] sm:min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
+						activeTab === "visits"
+							? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-xs"
+							: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
+					}`}
+					onClick={() => setActiveTab("visits")}
+					data-testid="patient-tab-visits"
+				>
+					<Calendar className="w-3 h-3 inline mr-1" />
+					Визиты и ЭМК ({visitsCount})
 				</button>
 				<button
 					type="button"
@@ -43,19 +57,20 @@ export const PatientWorkspaceTabsNav: React.FC<PatientWorkspaceTabsNavProps> = R
 					data-testid="tab-patient-plans"
 				>
 					<FileText className="w-3 h-3 inline mr-1" />
-					Планы лечения ({plansCount})
+					Планы лечения и Сметы ({plansCount})
 				</button>
 				<button
 					type="button"
 					className={`min-h-[36px] sm:min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
-						activeTab === "visits"
+						activeTab === "finance"
 							? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-xs"
 							: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
 					}`}
-					onClick={() => setActiveTab("visits")}
+					onClick={() => setActiveTab("finance")}
+					data-testid="patient-tab-finance"
 				>
-					<Calendar className="w-3 h-3 inline mr-1" />
-					Визиты ({visitsCount})
+					<Wallet className="w-3 h-3 inline mr-1" />
+					Финансы и Семья
 				</button>
 				<button
 					type="button"

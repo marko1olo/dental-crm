@@ -1,5 +1,7 @@
 import React from "react";
 import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
+import { PatientAllergySafetyBanner } from "./PatientAllergySafetyBanner";
+import { PatientFinanceTab } from "./tabs/PatientFinanceTab";
 import {
 	DEFAULT_WORKSPACE_PAGE_SIZE,
 	PatientWorkspaceHeader,
@@ -63,10 +65,21 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> = React.m
 				</div>
 
 				{logic.activeTab === "timeline" && (
-					<PatientJourneyTimeline
-						patientId={patientId}
-						dashboard={logic.dashboard}
-					/>
+					<div className="flex flex-col gap-3">
+						{logic.currentPatient && (
+							<PatientAllergySafetyBanner
+								patientId={patientId}
+								patientName={patientName ?? logic.currentPatient.fullName}
+								profile={(logic.currentPatient as any)?.clinicalSafetyProfile ?? (logic.currentPatient as any)?.safetyProfile ?? null}
+								notes={logic.currentPatient.notes}
+								hideWhenClean={false}
+							/>
+						)}
+						<PatientJourneyTimeline
+							patientId={patientId}
+							dashboard={logic.dashboard}
+						/>
+					</div>
 				)}
 
 				{logic.activeTab === "plans" && (
@@ -90,6 +103,20 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> = React.m
 						onShowMore={() => logic.setVisibleVisitsLimit((p) => p + DEFAULT_WORKSPACE_PAGE_SIZE)}
 						handleOpenVisitCallback={logic.handleOpenVisitCallback}
 					/>
+				)}
+
+				{logic.activeTab === "finance" && (
+					<div className="p-1 sm:p-2" data-testid="patient-workspace-finance-tab">
+						<PatientFinanceTab
+							patient={logic.currentPatient as any}
+							onUpdateBalance={(_newBal) => {
+								if (typeof window !== "undefined") {
+									window.dispatchEvent(new CustomEvent("dente-patient-balance-changed"));
+								}
+							}}
+							onNewAppointment={logic.handleCreateNewPlanCallback}
+						/>
+					</div>
 				)}
 
 				{logic.activeTab === "scans" && (
