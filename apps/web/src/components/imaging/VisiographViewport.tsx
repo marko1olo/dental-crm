@@ -1,6 +1,5 @@
-import React from "react";
 import { VisiographStudioCanvas } from "../visiograph/VisiographStudioCanvas";
-import { ShadowAnalystImageSlider } from "./ShadowAnalystImageSlider";
+import { ClinicalImageViewer } from "./ClinicalImageViewer";
 import { RadiologyCalibratedScaleRuler } from "../radiology/RadiologyCalibratedScaleRuler";
 import type { XrayScan } from "./VisiographScanHelpers";
 import type { VisiographPresetType } from "./VisiographCockpitPresets";
@@ -97,13 +96,15 @@ export function VisiographViewport({
 				</span>
 			</div>
 
-			<ShadowAnalystImageSlider
+			<ClinicalImageViewer
 				imageUrl={currentImageUrl}
 				enhanced={true}
 				viewerStyle={{
 					filter: filterStyle,
 					transition: "filter 0.15s ease",
 				}}
+				studyTitle={currentScan?.originalFilename}
+				toothCode={currentScan?.toothCode}
 			/>
 
 			{/* EzDent-i Calibrated Vertical 5 mm Scale Ruler (Screenshots 22, 24) */}

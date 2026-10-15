@@ -378,7 +378,7 @@ export function ImagingStudyList({
 						{Boolean(study.aiSummary) && (
 							<span
 								className="sa-ai-badge"
-								title="Есть AI-заключение ShadowAnalyst"
+								title="Есть описание рентгенолога"
 							>
 								<Bot size={9} /> AI
 							</span>

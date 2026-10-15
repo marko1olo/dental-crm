@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { ToothState } from "../../store/visitStore";
-import type { ViewerRulerMeasurement } from "./ShadowAnalystImageSlider";
+import type { ViewerRulerMeasurement } from "./ClinicalImageViewer";
 import type { MprWindowPreset } from "../../imagingUiLabels";
 
 export type { ViewerRulerMeasurement, MprWindowPreset };

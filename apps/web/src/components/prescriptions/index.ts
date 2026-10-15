@@ -1,9 +1,15 @@
 /**
  * apps/web/src/components/prescriptions/index.ts
  *
- * Facade export for Statutory Medical Prescription Module (Order 1094n & 148-1/u-88).
+ * Facade export for Statutory Medical Prescription Module (Order 1094n).
  */
 
+export * from "./PrescriptionCockpitModal";
+export * from "./PrescriptionExpressPills";
+export * from "./PrescriptionAllergyBanner";
+export * from "./PrescriptionPrintSheet";
+export * from "./PrescriptionModalFooter";
+export * from "./usePrescriptionCockpit";
 export * from "./PrescriptionPrintModal";
 export * from "./PrescriptionDrugCatalogSelector";
 export * from "./PrescriptionSheetPreview";

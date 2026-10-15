@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import type { DentalFastPrescriptionSet } from "./prescriptionDataSets";
 import type { PrescriptionFormType } from "./PrescriptionPrintModal";
+import { PrescriptionExpressPills } from "./PrescriptionExpressPills";
 import {
 	getDrugAllergyConflictType,
 	isDrugConflictingWithAllergies,
@@ -149,80 +150,15 @@ export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSe
 				</div>
 			)}
 
-			{/* 1-Click Fast Presets Bar */}
-			<div className="flex flex-col gap-2">
-				<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-					<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" />
-					Стоматологические пакеты назначений:
-				</span>
-				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-					{fastPresets.map((preset) => {
-						const hasPresetConflict = Boolean(
-							patientAllergies &&
-							preset.drugIds?.some((drugId) => {
-								const matchedDrug = filteredCatalog.find((d) => d.id === drugId);
-								return matchedDrug
-									? isDrugConflictingWithAllergies(
-											{ id: matchedDrug.id, tradeName: matchedDrug.tradeNameRu, latinName: matchedDrug.latinRp, category: matchedDrug.category },
-											patientAllergies,
-										)
-									: isDrugConflictingWithAllergies(
-											{ id: drugId, tradeName: drugId, latinName: drugId },
-											patientAllergies,
-										);
-							}),
-						);
-						return (
-							<div
-								key={preset.id}
-								className={`p-2.5 rounded-xl border transition-all flex flex-col justify-between gap-1.5 ${
-									hasPresetConflict
-										? "border-rose-500/40 bg-rose-500/5 hover:border-rose-500/60"
-										: "border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal)]"
-								}`}
-							>
-								<div>
-									<div className="flex items-center justify-between gap-1">
-										<div className="text-xs font-bold text-[var(--ink)] leading-snug">
-											{preset.label}
-										</div>
-										{hasPresetConflict && (
-											<span
-												data-testid={`preset-allergy-badge-${preset.id}`}
-												className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 flex items-center gap-1 shrink-0"
-											>
-												<AlertTriangle className="w-2.5 h-2.5 text-rose-600 shrink-0" />
-												Аллерген в пакете
-											</span>
-										)}
-									</div>
-									<div className="text-xs text-[var(--muted)] line-clamp-2 mt-0.5">
-										{preset.desc}
-									</div>
-								</div>
-								<div className="flex items-center gap-1.5 pt-1.5 border-t border-[var(--line)]">
-									<button
-										type="button"
-										onClick={() => onApplyAndInsertToDiary(preset)}
-										className="h-8 px-2.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 inline-flex items-center gap-1.5 transition-colors cursor-pointer select-none"
-									>
-										<PenTool className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" />
-										<span>В дневник</span>
-									</button>
-									<button
-										type="button"
-										onClick={() => onApplyAndPrint(preset)}
-										className="h-8 px-3 text-xs font-semibold rounded-lg bg-[var(--teal,#0d9488)] text-white hover:brightness-110 active:brightness-95 inline-flex items-center gap-1.5 ml-auto shadow-xs transition-all cursor-pointer select-none"
-									>
-										<Printer className="w-3.5 h-3.5 shrink-0" />
-										<span>Печать</span>
-									</button>
-								</div>
-							</div>
-						);
-					})}
-				</div>
-			</div>
+			{/* 1-Click Fast Presets Bar via PrescriptionExpressPills */}
+			<PrescriptionExpressPills
+				presets={fastPresets}
+				onSelectPreset={(p) => onApplyAndInsertToDiary(p)}
+				onApplyAndPrint={onApplyAndPrint}
+				onApplyAndInsertToDiary={onApplyAndInsertToDiary}
+				patientAllergies={patientAllergies}
+				catalogDrugs={filteredCatalog}
+			/>
 
 			{/* Search and Drug List */}
 			<div className="flex flex-col gap-2">

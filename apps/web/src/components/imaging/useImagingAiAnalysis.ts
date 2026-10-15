@@ -70,7 +70,7 @@ export function useImagingAiAnalysis({
 			}));
 
 			setEnhancementOn(true);
-			showToast("Разбор снимка ShadowAnalyst завершён", "success");
+			showToast("Анализ рентген-снимка завершён", "success");
 		} catch (error) {
 			logger.error("[imaging analyze] error", error);
 			showToast("Сервер не ответил на разбор снимка. Проверьте связь.", "error");

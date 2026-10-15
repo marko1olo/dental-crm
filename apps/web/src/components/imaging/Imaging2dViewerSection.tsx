@@ -1,7 +1,7 @@
 import React, { Suspense } from "react";
 import { ImagingViewport } from "./ImagingViewport";
 import { ImagingToolbar } from "./ImagingToolbar";
-import { ShadowAnalystReport } from "./ShadowAnalystReport";
+import { ClinicalXrayProtocolPanel } from "./ClinicalXrayProtocolPanel";
 import { DicomArchiveUploader } from "./DicomArchiveUploader";
 import type { ViewerRulerMeasurement, AiProposal } from "./types";
 
@@ -208,8 +208,8 @@ export function Imaging2dViewerSection(props: Imaging2dViewerSectionProps) {
 			/>
 
 			{selectedStudySummary && (
-				<div className="sa-report-column">
-					<ShadowAnalystReport
+				<div className="sa-report-column clinical-xray-report-column">
+					<ClinicalXrayProtocolPanel
 						summary={selectedStudySummary}
 						toothUpdates={selectedStudyToothUpdates as any}
 						studyTitle={selectedImagingStudy?.title}

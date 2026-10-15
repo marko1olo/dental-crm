@@ -8,8 +8,7 @@ import {
 	UploadCloud,
 	X,
 } from "lucide-react";
-import { countLabel } from "../../AppHelpers";
-import { ShadowAnalystImageSlider } from "./ShadowAnalystImageSlider";
+import { ClinicalImageViewer } from "./ClinicalImageViewer";
 import { DicomArchiveUploader } from "./DicomArchiveUploader";
 import {
 	imagingStudyHasFile,
@@ -291,7 +290,7 @@ export function ImagingViewport({
 					</div>
 				</div>
 			) : effectivePreviewUrl && !previewLoadError ? (
-				<ShadowAnalystImageSlider
+				<ClinicalImageViewer
 					imageUrl={effectivePreviewUrl}
 					enhanced={enhancementOn}
 					viewerStyle={computedViewerImageStyle}
@@ -307,6 +306,8 @@ export function ImagingViewport({
 							pan,
 						}))
 					}
+					studyTitle={selectedImagingStudy?.title}
+					toothCode={selectedImagingStudy?.toothCode}
 				/>
 			) : (
 				<RvgSensorVectorVisualizer
@@ -319,11 +320,11 @@ export function ImagingViewport({
 				/>
 			)}
 
-			{/* AI analysis overlay loader */}
+			{/* Clinical analysis overlay loader */}
 			{isAnalyzingAI && (
 				<div className="sa-analyze-overlay" aria-live="polite">
 					<div className="sa-analyze-spinner" />
-					<span>ShadowAnalyst анализирует снимок...</span>
+					<span>Анализ рентгеновского снимка...</span>
 				</div>
 			)}
 		</div>

@@ -260,8 +260,12 @@ export function detectPrescriptionAllergyConflicts(
 }
 
 export const ULCER_GASTRITIS_KEYWORDS = [
+	"язвенная болезнь",
+	"язва желудка",
 	"язва",
 	"язвенн",
+	"хронический гастрит",
+	"острый гастрит",
 	"гастрит",
 	"эрозивн",
 	"эрозия жкт",
