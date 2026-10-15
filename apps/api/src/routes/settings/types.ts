@@ -53,15 +53,24 @@ export const updateStaffCredentialsSchema = z.object({
  */
 export const updateDoctorCommissionSchema = z.object({
 	commissionPct: z.number().min(0).max(100),
+	materialCostDeductionPct: z.number().min(0).max(100).optional(),
+	labCostDeductionPct: z.number().min(0).max(100).optional(),
 });
 
 /**
- * Правка кресла: PUT /api/settings/chairs/:chairId. В таблице chairs из
- * карточки кресла хранятся только название и признак активности.
+ * Правка кресла: PUT /api/settings/chairs/:chairId.
  */
 export const updateChairProfileSchema = z.object({
 	name: z.string().trim().min(1).max(120).optional(),
+	room: z.string().trim().max(120).nullable().optional(),
+	color: z.string().trim().max(50).nullable().optional(),
+	specialization: dentalSpecialtySchema.nullable().optional(),
 	active: z.boolean().optional(),
+	hasXraySensor: z.boolean().optional(),
+	hasMicroscope: z.boolean().optional(),
+	hasSurgeryKit: z.boolean().optional(),
+	notes: z.string().trim().max(500).nullable().optional(),
+	defaultDoctorId: z.string().uuid().nullable().optional(),
 });
 
 /**
@@ -104,6 +113,8 @@ export const serviceCatalogItemFields = {
 	durationMinutes: z.number().int().positive().max(1440),
 	taxDeductible: z.boolean(),
 	active: z.boolean(),
+	order804nCode: z.string().trim().max(60).optional().nullable(),
+	materialsCostRub: nonNegativeMoneyRubSchema.optional().nullable(),
 };
 
 /**
@@ -116,6 +127,8 @@ export const createServiceCatalogItemSchema = z.object({
 	code: serviceCatalogItemFields.code.default(""),
 	taxDeductible: serviceCatalogItemFields.taxDeductible.default(true),
 	active: serviceCatalogItemFields.active.default(true),
+	order804nCode: serviceCatalogItemFields.order804nCode.default(null),
+	materialsCostRub: serviceCatalogItemFields.materialsCostRub.default(0),
 });
 
 /** Правка услуги: интерфейс шлёт частичный набор полей. */
@@ -128,6 +141,8 @@ export const updateServiceCatalogItemSchema = z.object({
 	durationMinutes: serviceCatalogItemFields.durationMinutes.optional(),
 	taxDeductible: serviceCatalogItemFields.taxDeductible.optional(),
 	active: serviceCatalogItemFields.active.optional(),
+	order804nCode: serviceCatalogItemFields.order804nCode.optional(),
+	materialsCostRub: serviceCatalogItemFields.materialsCostRub.optional(),
 });
 
 /*

@@ -335,6 +335,8 @@ export type DocumentIssueSignatureAttestation = z.infer<
 export const issueDocumentSchema = z
 	.object({
 		signatureAttestation: documentIssueSignatureAttestationSchema,
+		signatureSvg: z.string().nullable().optional(),
+		pepCode: z.string().nullable().optional(),
 	})
 	.strict();
 
@@ -511,6 +513,7 @@ export const generatedDocumentSchema = z.object({
 	issuedByUserId: z.string().uuid().nullable().optional(),
 	voidedAt: z.string().nullable().optional(),
 	voidedByUserId: z.string().uuid().nullable().optional(),
+	signatureSvg: z.string().nullable().optional(),
 	cryptoSignaturePkcs7: z.string().nullable().optional(),
 	doctorSignaturePkcs7: z.string().nullable().optional(),
 	doctorCertSerial: z.string().nullable().optional(),

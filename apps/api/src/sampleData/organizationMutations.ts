@@ -358,6 +358,14 @@ export function updateChairProfile(
 	}
 	if (input.name !== undefined) chair.name = input.name.trim();
 	if (input.active !== undefined) chair.active = input.active;
+	if (input.room !== undefined) chair.room = input.room ? input.room.trim() : null;
+	if (input.color !== undefined) chair.color = input.color ? input.color.trim() : null;
+	if (input.specialization !== undefined) chair.specialization = (input.specialization as any) ?? null;
+	if (input.hasXraySensor !== undefined) chair.hasXraySensor = input.hasXraySensor;
+	if (input.hasMicroscope !== undefined) chair.hasMicroscope = input.hasMicroscope;
+	if (input.hasSurgeryKit !== undefined) chair.hasSurgeryKit = input.hasSurgeryKit;
+	if (input.notes !== undefined) chair.notes = input.notes ? input.notes.trim() : null;
+	if (input.defaultDoctorId !== undefined) chair.defaultDoctorId = input.defaultDoctorId ?? null;
 	recordAuditEvent({
 		entityType: "chair",
 		entityId: chair.id,

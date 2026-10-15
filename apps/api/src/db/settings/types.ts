@@ -44,5 +44,6 @@ export interface DoctorCommissionRate {
 	userId: string;
 	commissionPct: string;
 	materialCostDeductionPct: string;
+	labCostDeductionPct?: string;
 	effectiveFrom: string;
 }

@@ -87,6 +87,16 @@ export function updateAppointment(
 		appointment.reason = nullableTrimmed(input.reason);
 	if (input.comment !== undefined)
 		appointment.comment = nullableTrimmed(input.comment);
+	if (input.parentAppointmentId !== undefined)
+		appointment.parentAppointmentId = input.parentAppointmentId;
+	if (input.stageIndex !== undefined)
+		appointment.stageIndex = input.stageIndex;
+	if (input.clinicalStage !== undefined)
+		appointment.clinicalStage = input.clinicalStage;
+	if (input.toothNumber !== undefined)
+		appointment.toothNumber = input.toothNumber;
+	if (input.diagnosisMkb10 !== undefined)
+		appointment.diagnosisMkb10 = input.diagnosisMkb10;
 	appointment.startsAt = startsAt;
 	appointment.endsAt = endsAt;
 
@@ -123,6 +133,11 @@ export function createAppointment(input: CreateAppointmentInput): Appointment {
 		endsAt: input.endsAt,
 		reason: nullableTrimmed(input.reason),
 		comment: nullableTrimmed(input.comment),
+		parentAppointmentId: input.parentAppointmentId ?? null,
+		stageIndex: input.stageIndex ?? 1,
+		clinicalStage: input.clinicalStage ?? null,
+		toothNumber: input.toothNumber ?? null,
+		diagnosisMkb10: input.diagnosisMkb10 ?? null,
 	};
 	assertAppointmentCanBeScheduled(appointment);
 	appointments.push(appointment);

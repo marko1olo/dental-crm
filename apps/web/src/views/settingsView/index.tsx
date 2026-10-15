@@ -46,16 +46,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 	const { activeSettingsTabButtonRef, reopenOnboarding, setSettingsTab, settingsTab, settingsTabs: rawSettingsTabs } = logic;
 
 	const settingsProps = buildSettingsProps(logic, settingsStore, derivations, activeStaffUser);
-	const initialRoleMode = useMemo<SettingsRoleMode>(() => {
-		if (!settingsTab || settingsTab === "clinic") return "owner";
-		if (OWNER_TABS.has(settingsTab)) return "owner";
-		if (ADMIN_TABS.has(settingsTab)) return "admin";
-		if (DOCTOR_TABS.has(settingsTab)) return "doctor";
-		const role = activeStaffUser?.role;
-		return role === "doctor" ? "doctor" : (role === "admin" || role === "receptionist" || role === "administrator" || role === "manager") ? "admin" : "owner";
-	}, [activeStaffUser?.role, settingsTab]);
-
-	const [roleMode, setRoleMode] = useState<SettingsRoleMode>(initialRoleMode);
+	const [roleMode, setRoleMode] = useState<SettingsRoleMode>("all");
 
 	useEffect(() => {
 		if (roleMode === "all") return;
@@ -147,7 +138,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				{roleMode === "admin" && <AdminSettingsSection props={settingsProps} initialTab={ADMIN_TABS.has(settingsTab) ? (settingsTab as AdminSubTab) : "clinic"} onSelectTab={selectSettingsTab} />}
 				{roleMode === "owner" && <OwnerSettingsSection props={settingsProps} initialTab={OWNER_TABS.has(settingsTab) ? (settingsTab as OwnerSubTab) : "clinic"} onSelectTab={selectSettingsTab} appLogic={appLogic} />}
 				{roleMode === "all" && (
-					<div className="grid grid-cols-1 md:grid-cols-[240px_minmax(0,1fr)] gap-6 items-start">
+					<div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-6 items-start">
 						<SettingsNavigationSidebar typedSettingsTabs={typedSettingsTabs} settingsTab={settingsTab} selectSettingsTab={selectSettingsTab} handleSettingsTabKeyDown={handleSettingsTabKeyDown} activeSettingsTabButtonRef={activeSettingsTabButtonRef} settingsTabButtonId={settingsTabButtonId} settingsTabPanelId={settingsTabPanelId} />
 						<div className="settings-tab-panel" id={settingsTabPanelId(settingsTab)} role="tabpanel" aria-labelledby={settingsTabButtonId(settingsTab)} style={{ paddingBottom: "120px" }}>
 							<SettingsTabRenderer settingsTab={settingsTab} settingsProps={settingsProps} activeStaffUser={activeStaffUser} logic={logic} flags={flags} telegramAdminSecretSession={logic.telegramAdminSecretSession} setTelegramAdminSecretDraft={logic.setTelegramAdminSecretDraft} unlockTelegramAdminSession={logic.unlockTelegramAdminSession} lockTelegramAdminSession={logic.lockTelegramAdminSession} pricelistAnalysis={logic.pricelistAnalysis} pricelistImageNote={logic.pricelistImageNote} pricelistWarningsText={logic.pricelistWarningsText} pricelistItemMaterialText={logic.pricelistItemMaterialText} pricelistMaterialSummaryText={logic.pricelistMaterialSummaryText} />

@@ -59,6 +59,47 @@ export const SETTINGS_ROLE_LABELS: Record<SettingsRoleMode, string> = {
 	all: "Полный каталог",
 };
 
+export type CanonicalSettingsTabId =
+	| "clinic"
+	| "prices"
+	| "staff"
+	| "hardware"
+	| "imports";
+
+export interface CanonicalSettingsTabDefinition {
+	id: CanonicalSettingsTabId;
+	title: string;
+	description: string;
+}
+
+export const CANONICAL_SETTINGS_TABS: CanonicalSettingsTabDefinition[] = [
+	{
+		id: "clinic",
+		title: "Клиника и кресла",
+		description: "Профиль клиники, реквизиты, масштаб и мастер кресел",
+	},
+	{
+		id: "prices",
+		title: "Прайс-лист процедур",
+		description: "Каталог услуг, пресеты 804н, себестоимость и тарифы",
+	},
+	{
+		id: "staff",
+		title: "Сотрудники и доступ",
+		description: "Персонал, права доступа, роли и ставки врачей",
+	},
+	{
+		id: "hardware",
+		title: "Оборудование и касса",
+		description: "Касса 54-ФЗ, ККТ, визиографы, датчики и оповещения",
+	},
+	{
+		id: "imports",
+		title: "Импорт данных",
+		description: "Экспресс-перенос из IDENT, DentalPRO, Инфодент, 1С и Excel",
+	},
+];
+
 export interface SettingsViewProps {
 	// biome-ignore lint/suspicious/noExplicitAny: universal props
 	activeStaffUser?: any;

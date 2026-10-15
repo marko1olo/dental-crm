@@ -13,6 +13,8 @@
 import React, { useState } from "react";
 import type { Chair } from "@dental/shared";
 import { Plus } from "lucide-react";
+import { useAppLogicContext } from "../../../contexts/AppLogicContext";
+import { staffMutationHeaders } from "../staffMutationRequest";
 import { ClinicChairCard } from "./chairsModules/ClinicChairCard";
 import { ClinicChairEditModal } from "./chairsModules/ClinicChairEditModal";
 import type {
@@ -50,11 +52,42 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 	applyChairHoursToAll,
 	showToast,
 }) => {
+	const appLogic = useAppLogicContext();
 	const [editingChair, setEditingChair] = useState<Chair | null>(null);
 
 	const handleSaveChairDetails = async (chairId: string, patch: Partial<Chair>) => {
 		updateChairScheduleDraft(chairId, patch);
+		try {
+			const accessHeaders = appLogic?.accessHeaders;
+			const headers: Record<string, string> = {
+				"Content-Type": "application/json",
+				...(accessHeaders ? staffMutationHeaders(accessHeaders) : {}),
+			};
+			if (patch.name || (patch as any).isActive !== undefined || (patch as any).room !== undefined || (patch as any).color !== undefined) {
+				await fetch(`/api/settings/chairs/${chairId}`, {
+					method: "PUT",
+					headers,
+					body: JSON.stringify({
+						name: patch.name,
+						active: (patch as any).isActive,
+						room: (patch as any).room,
+						color: (patch as any).color,
+						specialization: (patch as any).specialization,
+						hasXraySensor: (patch as any).hasXraySensor,
+						hasMicroscope: (patch as any).hasMicroscope,
+						hasSurgeryKit: (patch as any).hasSurgeryKit,
+						notes: (patch as any).notes,
+						defaultDoctorId: (patch as any).defaultDoctorId,
+					}),
+				});
+			}
+		} catch (err) {
+			console.warn("Failed to persist chair profile:", err);
+		}
 		await saveChairSchedule(chairId);
+		if (typeof appLogic?.loadDashboard === "function") {
+			await appLogic.loadDashboard();
+		}
 		showToast("Параметры кресла успешно обновлены", "success");
 	};
 
@@ -68,7 +101,7 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 				<div>
 					<h3 className="font-bold text-base text-[var(--ink)] m-0">Кресла и стоматологические установки</h3>
 					<p className="text-xs text-[var(--ink-muted)] m-0 mt-0.5">
-						Оснащение установок (RVG, микроскоп, хирургия) и индивидуальные графики смен
+						Оснащение установок (RVG, микроскоп, хирургия), маркеры StomX и индивидуальные графики смен
 					</p>
 				</div>
 				<span className="status-pill status-confirmed px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--teal-surface)] text-[var(--primary)] border border-[var(--line)]">
@@ -100,20 +133,19 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 			{/* Chair Templates */}
 			<div className="flex items-center gap-1.5 flex-wrap">
 				<span className="text-[11px] text-[var(--ink-muted)] font-semibold">
-					Шаблоны кабинетов:
+					1-клик добавление:
 				</span>
 				<button
 					type="button"
-					className="compact-button secondary-button h-9 min-h-[36px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer inline-flex items-center"
+					className="compact-button secondary-button h-9 min-h-[36px] px-3.5 rounded-xl border border-[var(--primary)] bg-[var(--teal-surface)] text-xs font-bold text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all cursor-pointer inline-flex items-center gap-1.5"
 					onClick={() => {
-						setNewChairName?.(`Кабинет №${typedChairs.length + 1} (Терапия)`);
-						setNewChairHasXraySensor(true);
-						setNewChairHasMicroscope(false);
-						setNewChairHasSurgeryKit(false);
+						setNewChairName?.(`Кресло / Кабинет ${typedChairs.length + 1}`);
+						handleAddChair();
 					}}
-					title="Кабинет общей терапии с RVG визиографом"
+					title="Мгновенно добавить кресло / кабинет"
 				>
-					+ Терапия (с RVG)
+					<Plus size={14} />
+					<span>+ Кресло / Кабинет {typedChairs.length + 1}</span>
 				</button>
 				<button
 					type="button"

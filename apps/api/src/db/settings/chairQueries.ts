@@ -16,15 +16,34 @@ export async function createChairInDb(
 	input: CreateChairInput,
 ) {
 	if (useInMemory()) return createChairInMemory(input);
-	const [clinic] = await db
+	let [clinic] = await db
 		.select()
 		.from(schema.clinics)
 		.where(eq(schema.clinics.organizationId, organizationId))
 		.limit(1);
-	if (!clinic) throw new Error("Клиника не найдена в базе данных.");
+
+	if (!clinic) {
+		const [org] = await db
+			.select({ name: schema.organizations.name })
+			.from(schema.organizations)
+			.where(eq(schema.organizations.id, organizationId))
+			.limit(1);
+		const [createdClinic] = await db
+			.insert(schema.clinics)
+			.values({
+				organizationId,
+				name: org?.name || "Основное отделение",
+			})
+			.returning();
+		clinic = createdClinic;
+	}
+
+	if (!clinic) throw new Error("Не удалось инициализировать отделение клиники для добавления кресла.");
 
 	const equipmentParts: string[] = [];
 	if (input.room) equipmentParts.push(`Кабинет: ${input.room}`);
+	if (input.color) equipmentParts.push(`Цвет: ${input.color}`);
+	if (input.defaultDoctorId) equipmentParts.push(`Врач: ${input.defaultDoctorId}`);
 	if (input.hasXraySensor) equipmentParts.push("рентген");
 	if (input.hasMicroscope) equipmentParts.push("микроскоп");
 	if (input.hasSurgeryKit) equipmentParts.push("хирургия");
@@ -70,9 +89,7 @@ export async function updateChairWorkingHoursInDb(
 }
 
 /**
- * Правка кресла. В таблице chairs из карточки кресла хранятся только название
- * и признак активности, а кабинет, специализация и оснащение читаются как
- * пустые значения — принимать их означало бы молча терять ввод оператора.
+ * Правка кресла в базе данных с сохранением названия, активности, кабинета, цвета и оснащения.
  */
 export async function updateChairProfileInDb(
 	organizationId: string,
@@ -83,9 +100,65 @@ export async function updateChairProfileInDb(
 		updateChairProfileInMemory(chairId, input);
 		return;
 	}
-	const updateData: { name?: string; isActive?: boolean } = {};
+	const updateData: {
+		name?: string;
+		isActive?: boolean;
+		specializations?: string | null;
+		equipment?: string | null;
+	} = {};
 	if (input.name !== undefined) updateData.name = input.name;
 	if (input.active !== undefined) updateData.isActive = input.active;
+	if (input.specialization !== undefined) updateData.specializations = input.specialization ?? null;
+
+	const hasEquipmentField =
+		input.room !== undefined ||
+		input.color !== undefined ||
+		input.defaultDoctorId !== undefined ||
+		input.hasXraySensor !== undefined ||
+		input.hasMicroscope !== undefined ||
+		input.hasSurgeryKit !== undefined ||
+		input.notes !== undefined;
+
+	if (hasEquipmentField) {
+		const [existing] = await db
+			.select()
+			.from(schema.chairs)
+			.where(
+				and(
+					eq(schema.chairs.id, chairId),
+					eq(schema.chairs.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+
+		const eqStr = existing?.equipment || "";
+		const currentRoom = eqStr.match(/Кабинет:\s*([^,]+)/)?.[1]?.trim() ?? null;
+		const currentColor = eqStr.match(/Цвет:\s*([^,]+)/)?.[1]?.trim() ?? null;
+		const currentDoctor = eqStr.match(/Врач:\s*([^,]+)/)?.[1]?.trim() ?? null;
+		const currentHasXray = eqStr.toLowerCase().includes("рентген") || eqStr.toLowerCase().includes("xray");
+		const currentHasMicroscope = eqStr.toLowerCase().includes("микроскоп") || eqStr.toLowerCase().includes("microscope");
+		const currentHasSurgery = eqStr.toLowerCase().includes("хирург") || eqStr.toLowerCase().includes("surgery");
+
+		const room = input.room !== undefined ? input.room : currentRoom;
+		const color = input.color !== undefined ? input.color : currentColor;
+		const defaultDoctorId = input.defaultDoctorId !== undefined ? input.defaultDoctorId : currentDoctor;
+		const hasXray = input.hasXraySensor !== undefined ? input.hasXraySensor : currentHasXray;
+		const hasMicroscope = input.hasMicroscope !== undefined ? input.hasMicroscope : currentHasMicroscope;
+		const hasSurgery = input.hasSurgeryKit !== undefined ? input.hasSurgeryKit : currentHasSurgery;
+		const notes = input.notes !== undefined ? input.notes : null;
+
+		const equipmentParts: string[] = [];
+		if (room) equipmentParts.push(`Кабинет: ${room}`);
+		if (color) equipmentParts.push(`Цвет: ${color}`);
+		if (defaultDoctorId) equipmentParts.push(`Врач: ${defaultDoctorId}`);
+		if (hasXray) equipmentParts.push("рентген");
+		if (hasMicroscope) equipmentParts.push("микроскоп");
+		if (hasSurgery) equipmentParts.push("хирургия");
+		if (notes) equipmentParts.push(notes);
+
+		updateData.equipment = equipmentParts.length > 0 ? equipmentParts.join(", ") : null;
+	}
+
 	if (Object.keys(updateData).length === 0) return;
 	await db
 		.update(schema.chairs)

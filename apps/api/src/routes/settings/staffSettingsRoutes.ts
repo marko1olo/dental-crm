@@ -332,6 +332,10 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 				orgId,
 				params.staffId,
 				input.commissionPct,
+				{
+					materialCostDeductionPct: input.materialCostDeductionPct,
+					labCostDeductionPct: input.labCostDeductionPct,
+				},
 			);
 			return saved;
 		} catch (error) {

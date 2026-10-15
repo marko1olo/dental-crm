@@ -222,6 +222,15 @@ export const visitCloseChecklistSchema = z.object({
 
 export type VisitCloseChecklist = z.infer<typeof visitCloseChecklistSchema>;
 
+export const hygieneIndicesSchema = z.object({
+	ohi_s: z.number(),
+	debris: z.number().optional(),
+	calculus: z.number().optional(),
+	date: z.string().optional(),
+}).passthrough();
+
+export type HygieneIndices = z.infer<typeof hygieneIndicesSchema>;
+
 export const visitSchema = z.object({
 	id: z.string().uuid(),
 	organizationId: z.string().uuid(),
@@ -235,6 +244,7 @@ export const visitSchema = z.object({
 	diagnosis: z.string().nullable(),
 	treatmentPlan: z.string().nullable(),
 	doctorSummary: z.string().nullable(),
+	hygieneIndices: hygieneIndicesSchema.nullable().optional(),
 	createdAt: z.string(),
 	updatedAt: z.string(),
 });

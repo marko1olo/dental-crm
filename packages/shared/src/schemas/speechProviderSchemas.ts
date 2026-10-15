@@ -457,12 +457,14 @@ export const chairSchema = z.object({
 	organizationId: z.string().uuid(),
 	name: z.string(),
 	room: z.string().nullable(),
+	color: z.string().nullable().optional(),
 	specialization: dentalSpecialtySchema.nullable(),
 	active: z.boolean(),
 	hasXraySensor: z.boolean(),
 	hasMicroscope: z.boolean(),
 	hasSurgeryKit: z.boolean(),
 	notes: z.string().nullable(),
+	defaultDoctorId: z.string().uuid().nullable().optional(),
 	workingHours: staffWorkingHoursSchema.nullable().optional(),
 });
 

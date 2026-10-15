@@ -136,6 +136,7 @@ export const visitDraftAutosaveSchema = z.object({
 	clientSavedAt: z.string().nullable(),
 	serverSavedAt: z.string(),
 	transcriptHash: z.string(),
+	hygieneIndices: z.record(z.unknown()).nullable().optional(),
 });
 
 export type VisitDraftAutosave = z.infer<typeof visitDraftAutosaveSchema>;
@@ -150,6 +151,7 @@ export const visitDraftAutosaveRequestSchema = z
 		baseRevision: z.number().int().nonnegative().nullable().optional(),
 		clientDraftId: z.string().min(1).max(120).nullable().optional(),
 		clientSavedAt: z.string().nullable().optional(),
+		hygieneIndices: z.record(z.unknown()).nullable().optional(),
 	})
 	.refine(
 		(input) =>

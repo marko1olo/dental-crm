@@ -104,13 +104,24 @@ export function SettingsNavigationSidebar({
 		);
 	};
 
-	const coreTabs = (typedSettingsTabs ?? []).filter(
-		(t) => t && !ENTERPRISE_ADVANCED_TABS.has(t.id),
+	const CANONICAL_TAB_IDS = new Set([
+		"clinic",
+		"prices",
+		"staff",
+		"hardware",
+		"imports",
+	]);
+	const canonicalTabs = [
+		{ id: "clinic" as const, title: "Клиника и кресла", group: "main" as const },
+		{ id: "prices" as const, title: "Прайс-лист процедур", group: "clinical" as const },
+		{ id: "staff" as const, title: "Сотрудники и доступ", group: "main" as const },
+		{ id: "hardware" as const, title: "Оборудование и касса", group: "main" as const },
+		{ id: "imports" as const, title: "Импорт данных", group: "system" as const },
+	];
+	const otherTabs = (typedSettingsTabs ?? []).filter(
+		(t) => t && !CANONICAL_TAB_IDS.has(t.id),
 	);
-	const advancedTabs = (typedSettingsTabs ?? []).filter(
-		(t) => t && ENTERPRISE_ADVANCED_TABS.has(t.id),
-	);
-	const isAdvancedActive = ENTERPRISE_ADVANCED_TABS.has(String(settingsTab));
+	const isOtherActive = otherTabs.some((t) => t.id === settingsTab);
 
 	return (
 		<div
@@ -118,33 +129,24 @@ export function SettingsNavigationSidebar({
 			role="tablist"
 			aria-label="Раздел настроек"
 		>
-			{(settingsTabGroups ?? []).map((group) => {
-				const tabsInGroup = coreTabs.filter((t) => t?.group === group?.id);
-				if (tabsInGroup.length === 0) return null;
-				return (
-					<div
-						className="settings-catalogue-group settings-tabs-group"
-						key={group.id}
-					>
-						<span className="settings-catalogue-group-header settings-tabs-group-header">
-							{group.title}
-						</span>
-						{tabsInGroup.map(renderTabButton)}
-					</div>
-				);
-			})}
+			<div className="settings-catalogue-group settings-tabs-group">
+				<span className="settings-catalogue-group-header settings-tabs-group-header">
+					Настройки клиники
+				</span>
+				{canonicalTabs.map(renderTabButton)}
+			</div>
 
-			{advancedTabs.length > 0 && (
+			{otherTabs.length > 0 && (
 				<details
 					className="settings-catalogue-group settings-tabs-group pt-2 border-t border-[var(--line)]"
-					open={isAdvancedActive}
+					open={isOtherActive}
 				>
 					<summary className="settings-catalogue-group-header settings-tabs-group-header flex items-center justify-between cursor-pointer list-none rounded-xl px-3 py-1.5 hover:bg-[var(--paper-soft)]">
-						<span>Сеть и аналитика ({advancedTabs.length})</span>
+						<span>Дополнительные параметры ({otherTabs.length})</span>
 						<ChevronDown size={14} className="text-[var(--ink-muted)] shrink-0" />
 					</summary>
 					<div className="flex flex-col gap-1 mt-1">
-						{advancedTabs.map(renderTabButton)}
+						{otherTabs.map(renderTabButton)}
 					</div>
 				</details>
 			)}

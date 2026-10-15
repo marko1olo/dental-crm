@@ -33,6 +33,13 @@ import {
 } from "./types.js";
 
 export function registerChairsRoutes(app: FastifyInstance): void {
+	app.get("/api/settings/chairs", async (request, reply) => {
+		const orgId = await requireSettingsAccess(request, reply);
+		if (!orgId) return;
+		const settings = await getClinicSettingsFromDb(orgId);
+		return settings.chairs.map((c) => chairSchema.parse(c));
+	});
+
 	app.post("/api/settings/chairs", async (request, reply) => {
 		const orgId = await requireSettingsAccess(request, reply);
 		if (!orgId) return;

@@ -415,20 +415,16 @@ export async function requireSettingsAccess(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ): Promise<string | null> {
-	const adminSecret = configuredSettingsAdminSecret();
-	let _hasAccess = false;
+	// Авторизация сотрудника / кабинета клиники по подписанному токену сессии
+	const identity = getRequestIdentity(request);
+	if (identity.organizationId && identity.verified) {
+		return identity.organizationId;
+	}
 
-	if (!adminSecret) {
-		if (settingsUnguardedMutationsAllowed()) _hasAccess = true;
-		else {
-			reply.code(503).send({
-				error: "SettingsAdminSecretMissing",
-				message:
-					"На сервере не задан секрет администратора клиники для изменения настроек клиники.",
-			});
-			return null;
-		}
-	} else {
+	const adminSecret = configuredSettingsAdminSecret();
+	let hasAdminSecretAccess = false;
+
+	if (adminSecret) {
 		const providedSecret = request.headers[denteAdminSecretHeader];
 		const normalizedProvidedSecret = Array.isArray(providedSecret)
 			? providedSecret[0]
@@ -441,7 +437,20 @@ export async function requireSettingsAccess(
 				adminSecret,
 			)
 		) {
-			_hasAccess = true;
+			hasAdminSecretAccess = true;
+		}
+	}
+
+	if (!hasAdminSecretAccess) {
+		if (settingsUnguardedMutationsAllowed()) {
+			hasAdminSecretAccess = true;
+		} else if (!adminSecret) {
+			reply.code(503).send({
+				error: "SettingsAdminSecretMissing",
+				message:
+					"На сервере не задан секрет администратора клиники для изменения настроек клиники.",
+			});
+			return null;
 		} else {
 			reply.code(403).send({
 				error: "SettingsAdminSecretRequired",
@@ -452,10 +461,8 @@ export async function requireSettingsAccess(
 		}
 	}
 
-	// Организация запроса: сначала подписанный токен. Раньше здесь всегда бралась
-	// ПЕРВАЯ строка таблицы organizations — при нескольких клиниках в одной базе
-	// это означало, что настройки одной клиники правились от имени другой.
-	const tokenOrganizationId = getRequestIdentity(request).organizationId;
+	// Организация запроса: если токен был передан (включая dev-заголовок при admin bypass)
+	const tokenOrganizationId = identity.organizationId;
 	if (tokenOrganizationId) return tokenOrganizationId;
 
 	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {

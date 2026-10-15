@@ -5,6 +5,11 @@ import { nonNegativeMoneyRubSchema, positiveMoneyRubSchema } from "../money.js";
 import { isDateLikeString } from "../datetime/index.js";
 import { legacyTaxDeductionCertificateMinYear, taxDeductionCertificateMinYear } from "../documents/index.js";
 import { CLINICAL_TOOTH_STATE_VALUES } from "../clinical/stomtDefectsCatalog.js";
+import {
+	CANONICAL_TOOTH_STATES,
+	LEGACY_CLINICAL_TOOTH_STATUSES,
+	toCanonicalToothState,
+} from "../clinical/dentalFormulaStates.js";
 
 export const installmentPaymentSchedulePayloadSchema = z.object({
 	scheduleNumber: z.string().trim().min(1).max(120),
@@ -285,22 +290,19 @@ export const clinicalToothSurfaceSchema = z.enum([
 
 export type ClinicalToothSurface = z.infer<typeof clinicalToothSurfaceSchema>;
 
+export const canonicalToothStateSchema = z.enum(CANONICAL_TOOTH_STATES);
+
 export const clinicalToothStatusSchema = z.enum([
-	"sound",
-	"watch",
-	"caries",
-	"pulpitis_periodontitis",
-	"periodontal",
-	"missing",
-	"implant",
-	"prosthetic",
-	"orthodontic",
-	"planned",
-	"completed",
-	"other",
+	...CANONICAL_TOOTH_STATES,
+	...LEGACY_CLINICAL_TOOTH_STATUSES,
 ]);
 
 export type ClinicalToothStatus = z.infer<typeof clinicalToothStatusSchema>;
+
+export const canonicalClinicalToothStatusSchema =
+	clinicalToothStatusSchema.transform((status) =>
+		toCanonicalToothState(status),
+	);
 
 export const clinicalToothStateSchema = z.enum(CLINICAL_TOOTH_STATE_VALUES);
 

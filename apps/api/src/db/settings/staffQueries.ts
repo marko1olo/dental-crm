@@ -250,6 +250,7 @@ export async function listDoctorCommissionRatesInDb(
 			commissionPct: schema.doctorCommissions.commissionPct,
 			materialCostDeductionPct:
 				schema.doctorCommissions.materialCostDeductionPct,
+			labCostDeductionPct: schema.doctorCommissions.labCostDeductionPct,
 			effectiveFrom: schema.doctorCommissions.effectiveFrom,
 		})
 		.from(schema.doctorCommissions)
@@ -273,6 +274,7 @@ export async function listDoctorCommissionRatesInDb(
 			userId: row.userId,
 			commissionPct: row.commissionPct,
 			materialCostDeductionPct: row.materialCostDeductionPct,
+			labCostDeductionPct: row.labCostDeductionPct ?? "0",
 			effectiveFrom: row.effectiveFrom.toISOString(),
 		});
 	}
@@ -300,13 +302,17 @@ export async function listDoctorCommissionRatesInDb(
  *    действовала тогда, — новая начинает действовать с момента назначения.
  *
  * Доля себестоимости материалов (material_cost_deduction_pct) переносится из
- * прежней действующей строки: это ВТОРАЯ, независимая договорённость с врачом,
- * и правка процента от кассы не имеет права её обнулять.
+ * прежней действующей строки, если не передана явно: это независимая
+ * договорённость с врачом, и правка процента от кассы не имеет права её обнулять.
  */
 export async function setDoctorCommissionRateInDb(
 	organizationId: string,
 	staffId: string,
 	commissionPct: number,
+	options?: {
+		materialCostDeductionPct?: number | undefined;
+		labCostDeductionPct?: number | undefined;
+	},
 ): Promise<DoctorCommissionRate> {
 	if (useInMemory()) throw new Error(COMMISSION_STORAGE_UNAVAILABLE);
 
@@ -358,37 +364,26 @@ export async function setDoctorCommissionRateInDb(
 			);
 
 		const effectiveFrom = new Date();
+		const nextMaterialDeductionPct =
+			options?.materialCostDeductionPct !== undefined
+				? options.materialCostDeductionPct.toFixed(2)
+				: (previous?.materialCostDeductionPct ?? "0");
+		const nextLabDeductionPct =
+			options?.labCostDeductionPct !== undefined
+				? options.labCostDeductionPct.toFixed(2)
+				: (previous?.labCostDeductionPct ?? "0");
+
 		const [inserted] = await tx
 			.insert(schema.doctorCommissions)
 			.values({
 				organizationId,
 				userId: staffId,
-				/*
-				 * specialty и service_category передаются ЯВНО, и это не избыточность.
-				 * Модель Drizzle описывает их как text со значением по умолчанию, а в
-				 * живой таблице это перечисления (dental_specialty, service_category)
-				 * NOT NULL и БЕЗ значения по умолчанию — замерено на базе. Вставка,
-				 * доверившаяся модели, отправляла в обе колонки DEFAULT, получала NULL и
-				 * падала на NOT NULL: ставка не сохранялась, а владелец видел «проверьте
-				 * выбранного сотрудника и процент», где ни сотрудник, ни процент не были
-				 * виноваты. Ровно поэтому их явно передаёт и routes/diary.ts.
-				 *
-				 * Значения выбраны как наименее лживые: расчёт выплат
-				 * (services/finance/doctorPayouts.ts) не фильтрует ставку ни по
-				 * специальности, ни по категории услуги — он берёт любую действующую
-				 * строку врача. Поставить здесь «therapy» значило бы заявить, что процент
-				 * действует только на терапию, чего клиника не говорила.
-				 *
-				 * ДОЛГ: раздельные ставки по категориям услуг в продукте отсутствуют, а
-				 * колонки под них в таблице есть. Это продуктовое решение, и выдумывать
-				 * его здесь нельзя.
-				 */
 				specialty: "universal",
 				serviceCategory: "other",
 				commissionPct: normalizedPct,
 				commissionPercent: normalizedPct,
-				materialCostDeductionPct: previous?.materialCostDeductionPct ?? "0",
-				labCostDeductionPct: previous?.labCostDeductionPct ?? "0",
+				materialCostDeductionPct: nextMaterialDeductionPct,
+				labCostDeductionPct: nextLabDeductionPct,
 				isActive: true,
 				effectiveFrom,
 			})
@@ -409,6 +404,7 @@ export async function setDoctorCommissionRateInDb(
 			userId: staffId,
 			commissionPct: inserted.commissionPct,
 			materialCostDeductionPct: inserted.materialCostDeductionPct,
+			labCostDeductionPct: inserted.labCostDeductionPct ?? "0",
 			effectiveFrom: inserted.effectiveFrom.toISOString(),
 		};
 	});

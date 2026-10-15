@@ -116,6 +116,8 @@ export const serviceCatalogItemSchema = z.object({
 	durationMinutes: z.number().int().positive(),
 	taxDeductible: z.boolean(),
 	active: z.boolean(),
+	order804nCode: z.string().optional().nullable(),
+	materialsCostRub: z.number().optional().nullable(),
 });
 
 export type ServiceCatalogItem = z.infer<typeof serviceCatalogItemSchema>;

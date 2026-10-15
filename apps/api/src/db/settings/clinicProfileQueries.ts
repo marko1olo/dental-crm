@@ -312,11 +312,15 @@ export async function getClinicSettingsFromDb(
 		chairs: chairs.map((c) => {
 			const eq = c.equipment || "";
 			const roomMatch = eq.match(/Кабинет:\s*([^,]+)/);
+			const colorMatch = eq.match(/Цвет:\s*([^,]+)/);
+			const defaultDoctorMatch = eq.match(/Врач:\s*([^,]+)/);
 			return {
 				id: c.id,
 				organizationId: c.organizationId,
 				name: c.name,
 				room: roomMatch ? roomMatch[1]!.trim() : null,
+				color: colorMatch ? colorMatch[1]!.trim() : null,
+				defaultDoctorId: defaultDoctorMatch ? defaultDoctorMatch[1]!.trim() : null,
 				specialization: narrowChairSpecialization(c.specializations),
 				active: c.isActive,
 				hasXraySensor: eq.toLowerCase().includes("рентген") || eq.toLowerCase().includes("xray"),

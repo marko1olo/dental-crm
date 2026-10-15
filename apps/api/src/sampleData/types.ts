@@ -31,7 +31,15 @@ export type UpdateStaffMemberProfileInput = {
  */
 export type UpdateChairProfileInput = {
 	name?: string | undefined;
+	room?: string | null | undefined;
+	color?: string | null | undefined;
+	specialization?: string | null | undefined;
 	active?: boolean | undefined;
+	hasXraySensor?: boolean | undefined;
+	hasMicroscope?: boolean | undefined;
+	hasSurgeryKit?: boolean | undefined;
+	notes?: string | null | undefined;
+	defaultDoctorId?: string | null | undefined;
 };
 
 

@@ -49,8 +49,8 @@ export interface ScalePresetOption {
 export const SCALE_PRESETS: ScalePresetOption[] = [
 	{
 		id: "solo_therapist",
-		title: "Одиночный врач",
-		subtitle: "1 кресло / Субаренда кабинета",
+		title: "Соло-врач (1 кресло)",
+		subtitle: "Аренда кресла / Частный кабинет",
 		badge: "Быстрый старт",
 		icon: User,
 		color: "hsl(210 85% 55%)",
@@ -90,7 +90,7 @@ export const SCALE_PRESETS: ScalePresetOption[] = [
 	},
 	{
 		id: "family_clinic",
-		title: "Малая клиника",
+		title: "Небольшая клиника (2–3 кресла)",
 		subtitle: "2–3 установки + 1 администратор",
 		badge: "Оптимум для клиники",
 		icon: Building2,
@@ -129,9 +129,9 @@ export const SCALE_PRESETS: ScalePresetOption[] = [
 	},
 	{
 		id: "enterprise",
-		title: "Сетевая клиника",
+		title: "Стоматологический центр",
 		subtitle: "Филиалы, колл-центр, КТ / PACS",
-		badge: "Максимальный масштаб",
+		badge: "Полный масштаб",
 		icon: Network,
 		color: "hsl(265 80% 62%)",
 		targetAudience: "Крупные медцентры, сеть отделений, холдинги",

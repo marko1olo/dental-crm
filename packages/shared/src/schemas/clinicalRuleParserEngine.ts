@@ -3,7 +3,7 @@ import { allSectionPrefixes, anamnesisSectionPrefixes, cleanRuleParserLine, comp
 import { aiJobKindSchema, aiJobStatusSchema, aiRecognitionTargetSchema, type DentalSpecialty } from "./aiAndEgiszSchemas.js";
 import { commonAnamnesisTokens, commonComplaintTokens, commonDiagnosisTokens, commonObjectiveTokens, commonPlanTokens, ruleParserSpecialtyLabels, type VisitNoteDraft, type VisitNoteDraftQuality, visitNoteDraftSchema } from "./localBridgeAndSpeechTokensSchemas.js";
 import { visitDraftParserProfiles } from "./visitDraftParserProfileSchemas.js";
-import { visitCloseChecklistSchema, visitSchema } from "./telegramAndReceiptSchemas.js";
+import { hygieneIndicesSchema, visitCloseChecklistSchema, visitSchema } from "./telegramAndReceiptSchemas.js";
 
 export function lineStartsWithSection(
 	value: string,
@@ -382,6 +382,7 @@ export const acceptVisitDraftSchema = z.object({
 	clientMutationId: z.string().min(1).max(120).nullable().optional(),
 	baseRevision: z.number().int().nonnegative().nullable().optional(),
 	clientSavedAt: z.string().nullable().optional(),
+	hygieneIndices: hygieneIndicesSchema.nullable().optional(),
 });
 
 export type AcceptVisitDraftInput = z.infer<typeof acceptVisitDraftSchema>;

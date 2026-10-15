@@ -137,26 +137,29 @@ export const uiPreferencesStorageKey = "dental-crm:web-ui-preferences:v1";
 export type SettingsTab = (typeof settingsTabs)[number]["id"];
 
 export const settingsTabs = [
+	{ id: "clinic", title: "Клиника и кресла", group: "main" },
+	{ id: "prices", title: "Прайс-лист процедур", group: "clinical" },
+	{ id: "staff", title: "Сотрудники и доступ", group: "main" },
+	{ id: "hardware", title: "Оборудование и касса", group: "main" },
+	{ id: "imports", title: "Импорт данных", group: "system" },
 	{ id: "profile", title: "Мой профиль", group: "account" },
 	{ id: "preferences", title: "Клинические пресеты", group: "clinical" },
-	{ id: "clinic", title: "Клиника", group: "main" },
 	{ id: "modules", title: "Модули", group: "main" },
-	{ id: "staff", title: "Сотрудники", group: "main" },
+	{ id: "commissions", title: "Комиссии и ЗП", group: "main" },
 	{ id: "access", title: "Доступы", group: "main" },
 	{ id: "telegram", title: "Мессенджеры", group: "main" },
-	{ id: "hardware", title: "Оборудование", group: "main" },
 	{ id: "protocols", title: "Протоколы", group: "clinical" },
 	{ id: "rules", title: "Правила", group: "clinical" },
 	{ id: "procedure-boms", title: "Технологические карты", group: "clinical" },
-	{ id: "prices", title: "Прайс", group: "clinical" },
 	{ id: "ai", title: "ИИ", group: "clinical" },
 	{ id: "insurance", title: "Страховые", group: "stock" },
 	{ id: "marketing", title: "Отзывы и NPS", group: "marketing" },
 	{ id: "bpmn", title: "Сценарии", group: "marketing" },
 	{ id: "sources", title: "Источники", group: "system" },
 	{ id: "reporting", title: "Отчёты", group: "system" },
-	{ id: "imports", title: "Импорт", group: "system" },
+	{ id: "backup", title: "Резервная копия", group: "system" },
 	{ id: "audit", title: "Аудит", group: "system" },
+	{ id: "deep-clinical", title: "Автономия и ЭМК", group: "clinical" },
 ] as const;
 
 export const uiPreferencesServerPath = "/api/settings/preferences";
