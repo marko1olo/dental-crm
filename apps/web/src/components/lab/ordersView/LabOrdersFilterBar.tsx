@@ -1,15 +1,10 @@
 import React from "react";
 import {
-	ChevronDown,
-	Columns3,
 	DollarSign,
 	FlaskConical,
-	Layers,
-	MoreHorizontal,
 	Plus,
 	RefreshCw,
 	Search,
-	Truck,
 } from "lucide-react";
 import type { LabOrdersFilterBarProps } from "./types";
 
@@ -20,45 +15,11 @@ export function LabOrdersFilterBar({
 	doctorFilter,
 	onDoctorFilterChange,
 	doctorsList,
-	isCourierBarOpen,
-	onToggleCourierBar,
 	onOpenPriceMatrix,
-	onOpenTrackerModal,
-	onOpenHubModal,
 	onRefresh,
 	isLoading,
 	onOpenNewOrder,
 }: LabOrdersFilterBarProps): React.JSX.Element {
-	const [isActionsMenuOpen, setIsActionsMenuOpen] = React.useState(false);
-	const menuRef = React.useRef<HTMLDivElement>(null);
-	const triggerBtnRef = React.useRef<HTMLButtonElement>(null);
-
-	React.useEffect(() => {
-		if (!isActionsMenuOpen) return;
-		const handleClickOutside = (event: MouseEvent) => {
-			const target = event.target as Node;
-			if (
-				menuRef.current &&
-				!menuRef.current.contains(target) &&
-				triggerBtnRef.current &&
-				!triggerBtnRef.current.contains(target)
-			) {
-				setIsActionsMenuOpen(false);
-			}
-		};
-		const handleKeyDown = (event: KeyboardEvent) => {
-			if (event.key === "Escape") {
-				setIsActionsMenuOpen(false);
-			}
-		};
-		document.addEventListener("mousedown", handleClickOutside);
-		document.addEventListener("keydown", handleKeyDown);
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-			document.removeEventListener("keydown", handleKeyDown);
-		};
-	}, [isActionsMenuOpen]);
-
 	return (
 		<header className="h-9 min-h-[36px] flex items-center justify-between gap-2 px-2.5 bg-[var(--paper)] rounded-xl border border-[var(--line)] shadow-2xs text-xs w-full max-w-full relative z-20">
 			{/* Left: Brand + Inline Counters */}
@@ -123,100 +84,19 @@ export function LabOrdersFilterBar({
 				</select>
 			</div>
 
-			{/* Right: Actions */}
+			{/* Right: Actions (Прейскурант, Обновить, + Наряд) */}
 			<div className="flex items-center gap-1.5 shrink-0">
-				{/* 1. Кнопка «Курьер» (активный toggle) */}
 				<button
 					type="button"
-					onClick={onToggleCourierBar}
-					className={`h-9 min-h-[36px] px-3 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
-						isCourierBarOpen
-							? "border-[var(--primary)]/40 bg-[var(--primary)]/15 text-[var(--primary)]"
-							: "border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-2xs"
-					}`}
-					data-testid="btn-toggle-courier-bar"
-					title="Панель курьерской логистики ЗТЛ"
+					onClick={onOpenPriceMatrix}
+					className="h-9 min-h-[36px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium inline-flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
+					data-testid="btn-open-price-matrix"
+					title="Прейскурант и себестоимость ЗТЛ"
 				>
-					<Truck
-						className={`w-3.5 h-3.5 ${
-							isCourierBarOpen ? "text-[var(--primary)]" : "text-[var(--ink-muted)]"
-						}`}
-					/>
-					<span>Курьер</span>
+					<DollarSign className="w-3.5 h-3.5 text-[var(--ink-muted)] shrink-0" />
+					<span className="hidden sm:inline">Прейскурант</span>
 				</button>
 
-				{/* 2. Выпадающее меню вторичных аналитических действий («Прейскурант», «Трекер», «Канбан-хаб») */}
-				<div className="relative shrink-0">
-					<button
-						ref={triggerBtnRef}
-						type="button"
-						onClick={() => setIsActionsMenuOpen((prev) => !prev)}
-						className="h-9 min-h-[36px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium inline-flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-						title="Дополнительные модули ЗТЛ"
-						data-testid="lab-orders-more-actions-btn"
-						aria-expanded={isActionsMenuOpen}
-						aria-haspopup="menu"
-					>
-						<MoreHorizontal className="w-4 h-4 text-[var(--ink-muted)] shrink-0" />
-						<span className="hidden xl:inline text-[var(--ink-muted)]">Ещё</span>
-						<ChevronDown className="w-3 h-3 text-[var(--ink-muted)] hidden xl:inline" />
-					</button>
-
-					{isActionsMenuOpen && (
-						<div
-							ref={menuRef}
-							className="absolute right-0 top-full mt-1.5 w-48 py-1 px-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg z-50 flex flex-col gap-0.5 text-left"
-							role="menu"
-						>
-							<button
-								type="button"
-								onClick={() => {
-									setIsActionsMenuOpen(false);
-									onOpenPriceMatrix();
-								}}
-								className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
-								role="menuitem"
-								data-testid="btn-open-price-matrix"
-								title="Прейскурант и себестоимость ЗТЛ"
-							>
-								<DollarSign className="w-4 h-4 text-[var(--ink-muted)] shrink-0" />
-								<span>Прейскурант</span>
-							</button>
-
-							<button
-								type="button"
-								onClick={() => {
-									setIsActionsMenuOpen(false);
-									onOpenTrackerModal();
-								}}
-								className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
-								role="menuitem"
-								data-testid="lab-orders-open-tracker-btn"
-								title="Десктопный трекер нарядов ЗТЛ"
-							>
-								<Layers className="w-4 h-4 text-[var(--ink-muted)] shrink-0" />
-								<span>Трекер нарядов</span>
-							</button>
-
-							<button
-								type="button"
-								onClick={() => {
-									setIsActionsMenuOpen(false);
-									onOpenHubModal();
-								}}
-								className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
-								role="menuitem"
-								data-testid="lab-orders-open-hub-btn"
-								title="Полноэкранный канбан-хаб ЗТЛ"
-							>
-								<Columns3 className="w-4 h-4 text-[var(--ink-muted)] shrink-0" />
-								<span>Канбан-хаб</span>
-							</button>
-						</div>
-					)}
-				</div>
-
-				{/* 3. Кнопка «Обновить» */}
 				<button
 					type="button"
 					onClick={onRefresh}
@@ -229,7 +109,6 @@ export function LabOrdersFilterBar({
 					/>
 				</button>
 
-				{/* 4. Primary CTA («+ Наряд») */}
 				<button
 					type="button"
 					onClick={onOpenNewOrder}

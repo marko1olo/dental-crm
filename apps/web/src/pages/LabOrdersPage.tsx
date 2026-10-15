@@ -4,33 +4,22 @@ import {
 	CANONICAL_LAB_WORK_TYPES,
 	type DentalLabConstructionType,
 	formatLabConstructionTitle,
+	is3DScanUrl,
+	type LabPromptDialogState,
+	type ReadyInClinicLabOrder,
 } from "../components/lab/dentalLabDefinitions";
 import { DentalLabOrdersView } from "../components/lab/DentalLabOrdersView";
-import {
-	LabActionPromptModal,
-	type LabPromptDialogState,
-} from "../components/lab/LabActionPromptModal";
-import {
-	LabAttachScanModal,
-	type LabAttachScanModalProps,
-	is3DScanUrl,
-} from "../components/lab/LabAttachScanModal";
 import { LabOrderCard } from "../components/lab/LabOrderCard";
-import {
-	DentalLabReadyInClinicModal,
-	type ReadyInClinicLabOrder,
-} from "../components/lab/DentalLabReadyInClinicModal";
 
 export {
 	formatLabConstructionTitle,
-	LabActionPromptModal,
-	type LabPromptDialogState,
-	LabAttachScanModal,
-	type LabAttachScanModalProps,
 	is3DScanUrl,
-	LabOrderCard,
-	DentalLabReadyInClinicModal,
+	type LabPromptDialogState,
 	type ReadyInClinicLabOrder,
+	LabOrderCard,
+	DENTAL_LAB_CONSTRUCTIONS,
+	CANONICAL_LAB_WORK_TYPES,
+	type DentalLabConstructionType,
 };
 
 /**

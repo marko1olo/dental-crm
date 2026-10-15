@@ -1,7 +1,6 @@
 import React, { lazy, Suspense } from "react";
 import { AlertCircle, FlaskConical, Loader2, Plus, X } from "lucide-react";
 import type { DentalLabOrderData } from "../DentalLabOrderModal";
-import { DentalLabCourierDispatchBar } from "../DentalLabCourierDispatchBar";
 import { DentalLabStageTrackingTimeline } from "../DentalLabStageTrackingTimeline";
 import { LabOrdersFilterBar } from "./LabOrdersFilterBar";
 import { LabOrdersSegmentedNav } from "./LabOrdersSegmentedNav";
@@ -111,24 +110,11 @@ export function DentalLabOrdersMainContent({
 				doctorFilter={doctorFilter}
 				onDoctorFilterChange={setDoctorFilter}
 				doctorsList={doctorsList}
-				isCourierBarOpen={isCourierBarOpen}
-				onToggleCourierBar={() => setIsCourierBarOpen((prev) => !prev)}
 				onOpenPriceMatrix={() => setIsPriceMatrixModalOpen(true)}
-				onOpenTrackerModal={() => setIsTrackerModalOpen(true)}
-				onOpenHubModal={() => setIsHubModalOpen(true)}
 				onRefresh={() => void fetchOrders()}
 				isLoading={isLoading}
 				onOpenNewOrder={handleOpenNewOrder}
 			/>
-
-			{/* ─── КУРЬЕРСКАЯ ПАНЕЛЬ ЛОГИСТИКИ ЗТЛ ─── */}
-			{isCourierBarOpen && (
-				<DentalLabCourierDispatchBar
-					orders={orders}
-					onDispatchUpdated={() => void fetchOrders()}
-					onSelectOrderForPrint={handleOpenPrintOrder}
-				/>
-			)}
 
 			{/* ─── ТАЙМЛАЙН ВЫБРАННОГО НАРЯДА (ЕСЛИ ВЫБРАН) ─── */}
 			{selectedTimelineOrder && (
@@ -247,6 +233,9 @@ export function DentalLabOrdersMainContent({
 							onRequestWarrantyRework={(wfOrder) => {
 								const orig = orders.find((o) => o.id === wfOrder.id);
 								if (orig) handleReclamation(orig);
+							}}
+							onMoveOrderToColumn={async (orderId, targetColumnId) => {
+								await handleStatusChange(orderId, targetColumnId);
 							}}
 						/>
 					</Suspense>

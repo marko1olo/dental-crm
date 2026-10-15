@@ -1,32 +1,8 @@
 import React, { lazy, Suspense } from "react";
-import type { DentalLabOrderData } from "../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../dentalLabDefinitions";
 import type { LabPriceMatrixItem } from "../DentalLabPriceMatrixModal";
-import type { ReadyInClinicLabOrder } from "../DentalLabReadyInClinicModal";
-import type { LabPromptDialogState } from "../LabActionPromptModal";
-import { DentalLabWorkOrderModal } from "../DentalLabOrderModal";
 import { DentalLabPriceMatrixModal } from "../DentalLabPriceMatrixModal";
-import { LabActionPromptModal } from "../LabActionPromptModal";
-import { LabAttachScanModal } from "../LabAttachScanModal";
-import { DentalLabReadyInClinicModal } from "../DentalLabReadyInClinicModal";
 import { IntraoralScan3DViewerModal } from "../../radiology/IntraoralScan3DViewerModal";
-
-const DentalLabOrdersTrackerModal = lazy(() =>
-	import("../DentalLabOrdersTrackerModal").then((module) => ({
-		default: module.DentalLabOrdersTrackerModal,
-	})),
-);
-
-const LabTrackingDrawer = lazy(() =>
-	import("../LabTrackingDrawer").then((module) => ({
-		default: module.LabTrackingDrawer,
-	})),
-);
-
-const DentalLabOrdersHubModal = lazy(() =>
-	import("../DentalLabOrdersHubModal").then((module) => ({
-		default: module.DentalLabOrdersHubModal,
-	})),
-);
 
 const DentalLabOrderDrawer = lazy(() =>
 	import("../DentalLabOrderDrawer").then((module) => ({
@@ -35,42 +11,42 @@ const DentalLabOrderDrawer = lazy(() =>
 );
 
 export interface LabOrderDetailsDrawerProps {
-	readonly isWorkOrderModalOpen: boolean;
-	readonly onCloseWorkOrderModal: () => void;
+	readonly isWorkOrderModalOpen?: boolean;
+	readonly onCloseWorkOrderModal?: () => void;
 	readonly selectedOrderForEdit: DentalLabOrderData | null;
-	readonly modalInitialTab: "main" | "shades" | "stages" | "print";
+	readonly modalInitialTab?: "main" | "shades" | "stages" | "print";
 	readonly onOrderSaved: () => void;
 
 	readonly isPriceMatrixModalOpen: boolean;
 	readonly onClosePriceMatrixModal: () => void;
 	readonly onSelectWorkType: (item: LabPriceMatrixItem) => void;
 
-	readonly isTrackingDrawerOpen: boolean;
-	readonly onCloseTrackingDrawer: () => void;
-	readonly selectedOrderForTracking: DentalLabOrderData | null;
-	readonly onStageUpdate: (orderId: string, newStage: string) => Promise<void>;
+	readonly isTrackingDrawerOpen?: boolean;
+	readonly onCloseTrackingDrawer?: () => void;
+	readonly selectedOrderForTracking?: DentalLabOrderData | null;
+	readonly onStageUpdate?: (orderId: string, newStage: string) => Promise<void>;
 
-	readonly promptState: LabPromptDialogState | null;
-	readonly onClosePromptState: () => void;
+	readonly promptState?: any;
+	readonly onClosePromptState?: () => void;
 
-	readonly isScanModalOpen: boolean;
-	readonly onCloseScanModal: () => void;
-	readonly scanAttachOrder: DentalLabOrderData | null;
-	readonly scanAttachType: "stl" | "ply" | "photo";
-	readonly onSaveAttachedFile: (url: string) => Promise<void>;
+	readonly isScanModalOpen?: boolean;
+	readonly onCloseScanModal?: () => void;
+	readonly scanAttachOrder?: DentalLabOrderData | null;
+	readonly scanAttachType?: "stl" | "ply" | "photo";
+	readonly onSaveAttachedFile?: (url: string) => Promise<void>;
 
-	readonly isTrackerModalOpen: boolean;
-	readonly onCloseTrackerModal: () => void;
+	readonly isTrackerModalOpen?: boolean;
+	readonly onCloseTrackerModal?: () => void;
 
-	readonly isReadyInClinicModalOpen: boolean;
-	readonly onCloseReadyInClinicModal: () => void;
-	readonly readyInClinicOrder: ReadyInClinicLabOrder | null;
+	readonly isReadyInClinicModalOpen?: boolean;
+	readonly onCloseReadyInClinicModal?: () => void;
+	readonly readyInClinicOrder?: any;
 
 	readonly view3DScanOrder: DentalLabOrderData | null;
 	readonly onClose3DScanViewer: () => void;
 
-	readonly isHubModalOpen: boolean;
-	readonly onCloseHubModal: () => void;
+	readonly isHubModalOpen?: boolean;
+	readonly onCloseHubModal?: () => void;
 
 	readonly isOrderDrawerOpen?: boolean;
 	readonly onCloseOrderDrawer?: () => void;
@@ -85,96 +61,39 @@ export function LabOrderDetailsDrawer({
 	isPriceMatrixModalOpen,
 	onClosePriceMatrixModal,
 	onSelectWorkType,
-	isTrackingDrawerOpen,
 	isOrderDrawerOpen,
 	onCloseOrderDrawer,
-	onCloseTrackingDrawer,
-	selectedOrderForTracking,
-	onStageUpdate,
-	promptState,
-	onClosePromptState,
-	isScanModalOpen,
-	onCloseScanModal,
-	scanAttachOrder,
-	scanAttachType,
-	onSaveAttachedFile,
-	isTrackerModalOpen,
-	onCloseTrackerModal,
-	isReadyInClinicModalOpen,
-	onCloseReadyInClinicModal,
-	readyInClinicOrder,
 	view3DScanOrder,
 	onClose3DScanViewer,
-	isHubModalOpen,
-	onCloseHubModal,
 }: LabOrderDetailsDrawerProps): React.JSX.Element {
+	const isDrawerVisible = Boolean(isOrderDrawerOpen || isWorkOrderModalOpen);
+	const handleCloseDrawer = onCloseOrderDrawer || onCloseWorkOrderModal || (() => {});
+
 	return (
 		<>
-			{/* Модалка наряд-заказа DentalLabWorkOrderModal */}
-			{isWorkOrderModalOpen && (
-				<DentalLabWorkOrderModal
-					isOpen={isWorkOrderModalOpen}
-					onClose={onCloseWorkOrderModal}
-					initialOrder={selectedOrderForEdit}
-					initialTab={modalInitialTab}
-					treatmentPlanId={selectedOrderForEdit?.treatmentPlanId ?? undefined}
-					stageNumber={selectedOrderForEdit?.stageNumber ?? undefined}
-					stageTitle={selectedOrderForEdit?.stageTitle ?? undefined}
-					stageId={selectedOrderForEdit?.stageId ?? undefined}
-					onOrderSaved={onOrderSaved}
-				/>
-			)}
-
-			{/* Модалка прайс-матрицы DentalLabPriceMatrixModal */}
-			<DentalLabPriceMatrixModal
-				isOpen={isPriceMatrixModalOpen}
-				onClose={onClosePriceMatrixModal}
-				onSelectWorkType={onSelectWorkType}
-			/>
-
-			{/* Tracking Drawer Instance */}
-			{isTrackingDrawerOpen && (
+			{/* Единый канонический SSOT-дравер наряда ЗТЛ */}
+			{isDrawerVisible && (
 				<Suspense fallback={null}>
-					<LabTrackingDrawer
-						isOpen={isTrackingDrawerOpen}
-						onClose={onCloseTrackingDrawer}
-						order={selectedOrderForTracking}
-						onStageUpdate={onStageUpdate}
-					/>
-				</Suspense>
-			)}
-
-			{/* Non-blocking Action Prompt Modal (Mandates 8e, 8n) */}
-			<LabActionPromptModal
-				state={promptState}
-				onClose={onClosePromptState}
-			/>
-
-			{/* Dedicated 3D Scan & Photo Attachment Modal (Mandates 8e, 8n) */}
-			<LabAttachScanModal
-				isOpen={isScanModalOpen}
-				onClose={onCloseScanModal}
-				order={scanAttachOrder}
-				initialType={scanAttachType}
-				onSave={onSaveAttachedFile}
-			/>
-
-			{/* Dedicated Desktop ZTL Orders Tracker Modal */}
-			{isTrackerModalOpen && (
-				<Suspense fallback={null}>
-					<DentalLabOrdersTrackerModal
-						isOpen={isTrackerModalOpen}
-						onClose={onCloseTrackerModal}
+					<DentalLabOrderDrawer
+						isOpen={isDrawerVisible}
+						onClose={handleCloseDrawer}
+						editingOrder={selectedOrderForEdit}
+						initialTab={modalInitialTab}
+						treatmentPlanId={selectedOrderForEdit?.treatmentPlanId ?? undefined}
+						stageNumber={selectedOrderForEdit?.stageNumber ?? undefined}
+						stageTitle={selectedOrderForEdit?.stageTitle ?? undefined}
+						stageId={selectedOrderForEdit?.stageId ?? undefined}
+						onSaveOrder={() => onOrderSaved()}
 						onOrderSaved={onOrderSaved}
 					/>
 				</Suspense>
 			)}
 
-			{/* Ready in clinic 1-click booking modal */}
-			<DentalLabReadyInClinicModal
-				isOpen={isReadyInClinicModalOpen}
-				onClose={onCloseReadyInClinicModal}
-				order={readyInClinicOrder}
+			{/* Модалка прейскуранта DentalLabPriceMatrixModal */}
+			<DentalLabPriceMatrixModal
+				isOpen={isPriceMatrixModalOpen}
+				onClose={onClosePriceMatrixModal}
+				onSelectWorkType={onSelectWorkType}
 			/>
 
 			{/* Просмотрщик интраорального 3D-скана (STL/PLY/OBJ) */}
@@ -191,37 +110,10 @@ export function LabOrderDetailsDrawer({
 								: "stl"
 					}
 					patientName={view3DScanOrder.patientName}
-					scanTitle={`3D-скан челюсти: Наряд №${view3DScanOrder.id ? view3DScanOrder.id.slice(0, 8) : ""} (${view3DScanOrder.toothFdi ? `зуб ${view3DScanOrder.toothFdi}` : "челюсть"})`}
+					scanTitle={`3D-скан челюсти: Наряд #${view3DScanOrder.id ? view3DScanOrder.id.slice(0, 8) : ""} (${view3DScanOrder.toothFdi ? `зуб ${view3DScanOrder.toothFdi}` : "челюсть"})`}
 					toothCode={view3DScanOrder.toothFdi ?? undefined}
 					orderId={view3DScanOrder.id}
 				/>
-			)}
-
-			{/* Полноэкранный Канбан-хаб ЗТЛ */}
-			{isHubModalOpen && (
-				<Suspense fallback={null}>
-					<DentalLabOrdersHubModal
-						isOpen={isHubModalOpen}
-						onClose={onCloseHubModal}
-						onSaveOrder={onOrderSaved}
-					/>
-				</Suspense>
-			)}
-
-			{/* Канонический эргономичный SSOT-дравер наряда ЗТЛ */}
-			{isOrderDrawerOpen && (
-				<Suspense fallback={null}>
-					<DentalLabOrderDrawer
-						isOpen={isOrderDrawerOpen}
-						onClose={onCloseOrderDrawer || (() => {})}
-						editingOrder={null}
-						treatmentPlanId={selectedOrderForEdit?.treatmentPlanId ?? undefined}
-						stageNumber={selectedOrderForEdit?.stageNumber ?? undefined}
-						stageTitle={selectedOrderForEdit?.stageTitle ?? undefined}
-						stageId={selectedOrderForEdit?.stageId ?? undefined}
-						onSaveOrder={() => onOrderSaved()}
-					/>
-				</Suspense>
 			)}
 		</>
 	);

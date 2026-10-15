@@ -402,3 +402,36 @@ export function formatLabConstructionTitle(type?: string | null, material?: stri
 	};
 	return map[raw] || raw;
 }
+
+/**
+ * Валидатор URL или имени файла 3D-скана интраорального сканера или фото прикуса
+ */
+export function is3DScanUrl(url?: string | null): boolean {
+	if (!url) return false;
+	return /\.(stl|ply|obj|3mf)($|[?#])/i.test(url) || /scan/i.test(url);
+}
+
+export interface ReadyInClinicLabOrder {
+	readonly id: string;
+	readonly orderNumber?: string;
+	readonly patientId?: string;
+	readonly patientName?: string;
+	readonly patientPhone?: string;
+	readonly doctorName?: string;
+	readonly doctorId?: string;
+	readonly toothFdi?: string;
+	readonly material?: string;
+	readonly colorVita?: string;
+	readonly constructionType?: string;
+	readonly clinicName?: string;
+}
+
+export interface LabPromptDialogState {
+	readonly orderId: string;
+	readonly orderNumber: string;
+	readonly currentStage: string;
+	readonly nextStage: string;
+	readonly patientName?: string;
+	readonly note?: string;
+}
+

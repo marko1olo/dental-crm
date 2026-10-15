@@ -232,7 +232,7 @@ export const MobileLabOrdersTimeline: React.FC<MobileLabOrdersTimelineProps> = R
 						<div className="mobile-lab-brand-icon">
 							<FlaskConical size={18} className="text-[var(--primary)]" />
 						</div>
-						<div className="mobile-lab-brand-title">Наряды ЗТЛ</div>
+						<div className="mobile-lab-brand-title">Наряды в лабораторию</div>
 					</div>
 
 					<div className="mobile-lab-top-actions">
@@ -250,7 +250,7 @@ export const MobileLabOrdersTimeline: React.FC<MobileLabOrdersTimelineProps> = R
 							onClick={onOpenTrackerModal}
 							className="mobile-lab-icon-btn"
 							aria-label="Трекер этапов"
-							title="Трекер этапов ЗТЛ"
+							title="Трекер этапов лаборатории"
 							data-testid="mobile-lab-open-tracker-btn"
 						>
 							<Layers size={18} className="text-[var(--ink-muted)]" />
@@ -264,7 +264,7 @@ export const MobileLabOrdersTimeline: React.FC<MobileLabOrdersTimelineProps> = R
 						<Search size={16} className="mobile-lab-search-icon" />
 						<input
 							type="text"
-							placeholder="Поиск по пациенту, зубу, ЗТЛ..."
+							placeholder="Поиск по пациенту, зубу, лаборатории..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							className="mobile-lab-search-input"
@@ -287,7 +287,7 @@ export const MobileLabOrdersTimeline: React.FC<MobileLabOrdersTimelineProps> = R
 				<div
 					className="mobile-lab-chips-scroller"
 					role="tablist"
-					aria-label="Фильтры статусов ЗТЛ"
+					aria-label="Фильтры статусов лаборатории"
 				>
 					{FILTER_TABS.map((tab) => {
 						const isActive = statusFilter === tab.id;
@@ -328,7 +328,7 @@ export const MobileLabOrdersTimeline: React.FC<MobileLabOrdersTimelineProps> = R
 					) : (
 						filteredOrders.map((order) => {
 							const orderNumDisplay =
-								(order as any).orderNumber || (order.id ? `#${order.id.slice(0, 8)}` : "ЗТЛ");
+								(order as any).orderNumber || (order.id ? `#${order.id.slice(0, 8)}` : "Наряд");
 							const toothDisplay = order.toothFdi
 								? `Зуб ${order.toothFdi}`
 								: order.selectedTeeth?.length
@@ -341,7 +341,7 @@ export const MobileLabOrdersTimeline: React.FC<MobileLabOrdersTimelineProps> = R
 							const swatchBg =
 								SHADE_SWATCH_MAP[order.colorVita?.toUpperCase() ?? ""]?.bg || "#f4eedb";
 							const labNameDisplay =
-								(order as any).labName || "Центральная CAD/CAM ЗТЛ";
+								(order as any).labName || "Центральная CAD/CAM лаборатория";
 							const techNameDisplay =
 								(order as any).technicianName || "Дежурный техник";
 							const labPhoneDisplay =
@@ -494,7 +494,7 @@ export const MobileLabOrdersTimeline: React.FC<MobileLabOrdersTimelineProps> = R
 						data-testid="mobile-lab-add-order-btn"
 					>
 						<Plus size={19} />
-						<span>Новый наряд в ЗТЛ</span>
+						<span>Новый наряд в лабораторию</span>
 					</button>
 				</div>
 

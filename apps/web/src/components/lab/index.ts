@@ -2,53 +2,41 @@
  * apps/web/src/components/lab/index.ts
  *
  * Canonical SSOT for Dental Laboratory (ЗТЛ) components, models, and engines.
- * Consolidates all laboratory modals, tracking drawers, and financial gate modules.
+ * Consolidated into strictly 2 Single Sources of Truth:
+ * 1. DentalLabOrderDrawer — Right-side drawer for order creation/editing, FDI, VITA shades, 3D scans.
+ * 2. DentalLabOrdersKanbanBoard — 4-column clinical Kanban board for order lifecycle.
  */
 
-// Core Modals & Work Order Components
-export {
-	DentalLabOrderModal,
-	DentalLabWorkOrderModal,
-	type DentalLabOrderModalProps,
-	type DentalLabOrderData,
-	formatJawScopeLabel,
-	formatLabOrderTeethOrJaw,
-} from "./DentalLabOrderModal";
-
-export {
-	DentalLabCreateOrderModal,
-	type DentalLabCreateOrderModalProps,
-} from "./DentalLabCreateOrderModal";
-
-export {
-	DentalLabOrdersHubModal,
-	type DentalLabOrdersHubModalProps,
-} from "./DentalLabOrdersHubModal";
-
-export {
-	DentalLabOrdersKanbanBoard,
-	type DentalLabOrdersKanbanBoardProps,
-} from "./DentalLabOrdersKanbanBoard";
-
-export {
-	DentalLabOrdersTrackerModal,
-	type DentalLabOrdersTrackerModalProps,
-} from "./DentalLabOrdersTrackerModal";
-
-export {
-	DentalLabReadyInClinicModal,
-	type DentalLabReadyInClinicModalProps,
-} from "./DentalLabReadyInClinicModal";
-
-// Drawers & Cards
+// SSOT 1: Order Creation, Editing & Specification Drawer
 export {
 	DentalLabOrderDrawer,
 	type DentalLabOrderDrawerProps,
 } from "./DentalLabOrderDrawer";
 
+// SSOT 2: Clinical Kanban Board (4 Lifecycle Stages) & Cards
 export {
-	LabTrackingDrawer,
-} from "./LabTrackingDrawer";
+	DentalLabOrdersKanbanBoard,
+	type DentalLabOrdersKanbanBoardProps,
+	CANONICAL_4_KANBAN_COLUMNS,
+	type CanonicalKanbanColumnDef,
+} from "./DentalLabOrdersKanbanBoard";
+
+export {
+	DentalLabKanbanCard,
+	type DentalLabKanbanCardProps,
+	type CanonicalKanbanStageId,
+} from "./DentalLabKanbanCard";
+
+export {
+	DentalLabKanbanCardMenu,
+	type DentalLabKanbanCardMenuProps,
+} from "./DentalLabKanbanCardMenu";
+
+// Registry View & Cards
+export {
+	DentalLabOrdersView,
+	type DentalLabOrdersViewProps,
+} from "./DentalLabOrdersView";
 
 export {
 	LabOrderCard,
@@ -59,12 +47,18 @@ export {
 	DentalLabTrackerCard,
 } from "./DentalLabTrackerCard";
 
-// Financial Gate & Doctor Autonomy
 export {
-	DentalLabFinancialGate,
-	type DentalLabFinancialGateProps,
-} from "./DentalLabFinancialGate";
+	DentalLabPriceMatrixModal,
+	type DentalLabPriceMatrixModalProps,
+	type LabPriceMatrixItem,
+} from "./DentalLabPriceMatrixModal";
 
+export {
+	DentalLabStageTrackingTimeline,
+	type DentalLabStageTrackingTimelineProps,
+} from "./DentalLabStageTrackingTimeline";
+
+// Financial Gate & Doctor Autonomy (Mandates 8e, 8n)
 export {
 	checkDentalLabFinancialGate,
 	createDoctorClinicalOverride,
@@ -74,11 +68,7 @@ export {
 	type DentalLabFinancialGateResult,
 } from "./dentalLabFinancialGateEngine";
 
-// Configurator, Shading, Odontogram
-export {
-	DentalLabExpressConfigurator,
-} from "./DentalLabExpressConfigurator";
-
+// Shading, Odontogram & Print Blanks
 export {
 	DentalLabShadeSelector,
 	type DentalLabShadeSelectorProps,
@@ -100,37 +90,16 @@ export {
 	DentalLabPrintBlank,
 } from "./DentalLabPrintBlank";
 
-// Helper utilities & Math
+// Helper utilities & Domain Types
+export {
+	STUMP_NATURAL_DIE_SHADES,
+	VITA_BLEACH_SHADES,
+	VITA_CLASSICAL_SHADES,
+} from "./dentalLabDefinitions";
+export * from "./dentalLabDefinitions";
 export * from "./labMath";
 export { generateBarcodeSvg, generateQrCodeSvg } from "./labMath";
 export * from "./guestLabPortalHelpers";
-
-// Dispatch, Timelines & Matrix
-export {
-	DentalLabOrdersView,
-	type DentalLabOrdersViewProps,
-} from "./DentalLabOrdersView";
-export {
-	DentalLabCourierDispatchBar,
-	type DentalLabCourierDispatchBarProps,
-} from "./DentalLabCourierDispatchBar";
-export {
-	DentalLabPriceMatrixModal,
-	type DentalLabPriceMatrixModalProps,
-	type LabPriceMatrixItem,
-} from "./DentalLabPriceMatrixModal";
-export {
-	DentalLabStageTrackingTimeline,
-	type DentalLabStageTrackingTimelineProps,
-} from "./DentalLabStageTrackingTimeline";
-export {
-	LabAttachScanModal,
-	is3DScanUrl,
-} from "./LabAttachScanModal";
-export {
-	LabActionPromptModal,
-	type LabPromptDialogState,
-} from "./LabActionPromptModal";
 export * from "./dentalLabWorkflowEngine";
 export * from "./dentalLabApiMapper";
 export * from "./ordersView";

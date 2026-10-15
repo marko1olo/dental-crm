@@ -151,7 +151,7 @@ export function useDentalLabOrders({
 			if (draft) {
 				setSelectedOrderForEdit(draft);
 				setModalInitialTab("main");
-				setIsWorkOrderModalOpen(true);
+				setIsOrderDrawerOpen(true);
 			}
 		};
 		window.addEventListener("dente-open-lab-order", handleOpenFromEvent);
@@ -376,13 +376,13 @@ export function useDentalLabOrders({
 	const handleOpenNewOrder = () => {
 		setSelectedOrderForEdit(null);
 		setModalInitialTab("main");
-		setIsWorkOrderModalOpen(true);
+		setIsOrderDrawerOpen(true);
 	};
 
 	const handleOpenEditOrder = (order: DentalLabOrderData) => {
 		setSelectedOrderForEdit(order);
 		setModalInitialTab("main");
-		setIsWorkOrderModalOpen(true);
+		setIsOrderDrawerOpen(true);
 	};
 
 	const handleOpenPrintOrder = (order: DentalLabOrderData) => {
@@ -651,7 +651,7 @@ export function useDentalLabOrders({
 			clinicalNotes: item.specialInstructions || "",
 		});
 		setModalInitialTab("main");
-		setIsWorkOrderModalOpen(true);
+		setIsOrderDrawerOpen(true);
 	};
 
 	const selectedTimelineOrder = useMemo(() => {

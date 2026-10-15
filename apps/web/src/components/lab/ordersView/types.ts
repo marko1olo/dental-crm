@@ -40,11 +40,11 @@ export interface LabOrdersFilterBarProps {
 	readonly doctorFilter: string;
 	readonly onDoctorFilterChange: (doctor: string) => void;
 	readonly doctorsList: readonly string[];
-	readonly isCourierBarOpen: boolean;
-	readonly onToggleCourierBar: () => void;
+	readonly isCourierBarOpen?: boolean;
+	readonly onToggleCourierBar?: () => void;
 	readonly onOpenPriceMatrix: () => void;
-	readonly onOpenTrackerModal: () => void;
-	readonly onOpenHubModal: () => void;
+	readonly onOpenTrackerModal?: () => void;
+	readonly onOpenHubModal?: () => void;
 	readonly onRefresh: () => void;
 	readonly isLoading: boolean;
 	readonly onOpenNewOrder: () => void;

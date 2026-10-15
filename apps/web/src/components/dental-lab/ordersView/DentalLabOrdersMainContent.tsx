@@ -248,6 +248,9 @@ export function DentalLabOrdersMainContent({
 								const orig = orders.find((o) => o.id === wfOrder.id);
 								if (orig) handleReclamation(orig);
 							}}
+							onMoveOrderToColumn={async (orderId, targetColumnId) => {
+								await handleStatusChange(orderId, targetColumnId);
+							}}
 						/>
 					</Suspense>
 				</div>
