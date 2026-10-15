@@ -1674,6 +1674,27 @@
 		border-color: var(--line, #334155) !important;
 	}
 
+	.sanpin-desktop-table-container {
+		display: none !important;
+	}
+
+	.pso-banner-responsive {
+		flex-direction: column !important;
+		align-items: stretch !important;
+		gap: 0.75rem !important;
+	}
+
+	.pso-banner-responsive > div:last-child {
+		width: 100% !important;
+		display: flex !important;
+		gap: 0.5rem !important;
+	}
+
+	.pso-banner-responsive > div:last-child button {
+		flex: 1 1 auto !important;
+		justify-content: center !important;
+	}
+
 	.sanpin-sterilization-journal tbody td {
 		display: block !important;
 		padding: 0 !important;

@@ -1,22 +1,21 @@
 /**
  * ============================================================================
  * SANPIN & STERILIZATION PRODUCTION CONTROL REGISTERS
- * Canonical 12-Register Studio and Statutory Compliance System (СанПиН 3.3686-21)
+ * Canonical 3-Tab Studio and Statutory Compliance System (СанПиН 3.3686-21)
  * ============================================================================
  */
 
 export * from "./SanpinRegisters";
+export * from "./SanpinAutoclaveRegisterTab";
+export * from "./PsoRegisterTab";
+export * from "./SanpinUvAndCleaningRegisterTab";
+export * from "./AutoclaveRegisterTab";
+export * from "./BactericidalRegisterTab";
+export * from "./GeneralCleaningRegisterTab";
+export * from "./CabinetReadinessTab";
 export * from "./RetroactiveBatchTab";
 export * from "./RetroactiveSanpinBatchModal";
 export * from "./retroactiveSanpinEngine";
-export * from "./AutoclaveRegisterTab";
-export * from "./BactericidalRegisterTab";
-export * from "./CabinetReadinessTab";
-export * from "./EmergencyBiohazardRegisterTab";
-export * from "./GeneralCleaningRegisterTab";
-export * from "./MedicalWasteRegisterTab";
-export * from "./PsoRegisterTab";
-export * from "./TemperatureHumidityRegisterTab";
 export { validateSterilizationCycle } from "./sterilizationSanpinEngine";
 export * from "./SterilizerEquipmentModal";
 export * from "./SterilizerFleetManager";
@@ -25,20 +24,9 @@ export * from "./kraft/kraftPackagePresets";
 export * from "./kraft/kraftPackageEngine";
 export * from "./kraft/chemicalIntegratorsCatalog";
 export * from "./kraft/KraftPackageBarcodeModal";
-export * from "./SanpinAutoclaveRegisterTab";
-export * from "./SanpinChemicalTestsRegisterTab";
-export { SanpinChemicalTestsRegisterTab as SanpinAzopyramTestTab } from "./SanpinChemicalTestsRegisterTab";
 export * from "./kraft/SanpinKraftPacketsTab";
-export * from "./SanpinUvAndCleaningRegisterTab";
-export * from "./SanpinDisinfectantsRegisterTab";
-export { SanpinDisinfectantsRegisterTab as SanpinDisinfectionTab } from "./SanpinDisinfectantsRegisterTab";
-export { GeneralCleaningRegisterTab as SanpinGeneralCleaningTab } from "./GeneralCleaningRegisterTab";
-export * from "./SanpinBacLabRegisterTab";
-export * from "./SanpinNeedleDisposalRegisterTab";
 export * from "./sanpinConsolidatedExportHelpers";
 export * from "./autoclave/index";
-export * from "./waste/index";
 export * from "./disinfection/index";
-export * from "./SterilizationScanner";
 export * from "./SanPinSterilizationJournal";
 export { SanpinRegisters as default } from "./SanpinRegisters";

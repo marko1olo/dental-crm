@@ -299,13 +299,13 @@ describe("Auto-SanPiN & 1-Click Batch Shift Journal Automation (Mandates 8e, 8k,
 			const sanpinDir = path.resolve(process.cwd(), "apps/web/src/components/sanpin");
 			const targetFiles = [
 				"SanpinRegisters.tsx",
-				"TemperatureHumidityRegisterTab.tsx",
-				"MedicalWasteRegisterTab.tsx",
+				"SanpinAutoclaveRegisterTab.tsx",
+				"PsoRegisterTab.tsx",
 				"RetroactiveBatchTab.tsx",
 				"SterilizerEquipmentModal.tsx",
 				"SterilizerFleetManager.tsx",
 				"GeneralCleaningSchedule.tsx",
-				"EmergencyBiohazardRegisterTab.tsx",
+				"SanpinUvAndCleaningRegisterTab.tsx",
 				"waste/MedicalWasteJournalModal.tsx",
 				"autoclaveLog/AutoclaveNewCycleTab.tsx",
 			];

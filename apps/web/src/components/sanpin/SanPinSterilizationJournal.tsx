@@ -7,7 +7,6 @@
 
 import React, { useState } from "react";
 import { showToast } from "../GlobalToast";
-import { SterilizationScanner } from "./SterilizationScanner";
 import { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
 import { SterilizationCycleModal } from "./SterilizationCycleModal";
 import {
@@ -92,17 +91,33 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 					onClick={() => setShowScannerModal(false)}
 				>
 					<div
-						style={{ background: "var(--paper, #fff)", borderRadius: 12, width: "100%", maxWidth: 680, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)", position: "relative" }}
+						style={{ background: "var(--paper, #fff)", borderRadius: 12, width: "100%", maxWidth: 440, padding: 20, boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)", position: "relative" }}
 						onClick={(e) => e.stopPropagation()}
 					>
-						<SterilizationScanner
-							onAttachToVisit={(code, snippet) => {
-								if (onAttachPouchToVisit) onAttachPouchToVisit(code, snippet);
-								showToast(`Крафт-пакет №${code} прикреплен`, "success");
-								setShowScannerModal(false);
-							}}
-							onClose={() => setShowScannerModal(false)}
-						/>
+						<h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: 8, color: "var(--ink)" }}>Быстрое прикрепление крафт-пакета</h3>
+						<p style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: 16 }}>Пакетная фиксация лотка стерилизации к приёму врача</p>
+						<div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+							<button
+								type="button"
+								className="sanpin-btn sanpin-btn-secondary"
+								onClick={() => setShowScannerModal(false)}
+							>
+								Отмена
+							</button>
+							<button
+								type="button"
+								className="sanpin-btn sanpin-btn-primary"
+								onClick={() => {
+									if (onAttachPouchToVisit) {
+										onAttachPouchToVisit("BATCH-AUTO-134", "Стерильный лоток (134°C, 5 мин, 5 класс)");
+									}
+									showToast("Стерильный лоток успешно прикреплен к приёму", "success");
+									setShowScannerModal(false);
+								}}
+							>
+								Прикрепить лоток
+							</button>
+						</div>
 					</div>
 				</div>
 			)}

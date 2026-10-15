@@ -32,7 +32,7 @@ describe("SanPiN Registers — Synthetic Names Elimination & Regulatory Roles Ve
 			"SanpinRegisters.tsx",
 			"AutoclaveRegisterTab.tsx",
 			"GeneralCleaningRegisterTab.tsx",
-			"EmergencyBiohazardRegisterTab.tsx",
+			"SanpinAutoclaveRegisterTab.tsx",
 			"BactericidalRegisterTab.tsx",
 			"PsoRegisterTab.tsx",
 			"RetroactiveBatchTab.tsx",

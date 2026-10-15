@@ -280,7 +280,7 @@ export const SanPinMobileCyclesCards: React.FC<SanPinMobileCyclesCardsProps> = (
 							}}
 						>
 							<ShieldCheck size={16} />
-							<span>✓ ПСО Норма</span>
+							<span>ПСО Норма</span>
 						</button>
 					)}
 				</div>
