@@ -11,7 +11,7 @@ export function useIsMobile(breakpoint = 768): boolean {
   });
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
 
     const query = window.matchMedia(`(max-width: ${breakpoint}px)`);
     const handler = (e: MediaQueryListEvent | MediaQueryList) => {

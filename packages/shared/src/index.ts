@@ -4,8 +4,14 @@
  * Decomposed under Mandate 8b: Schemas modularized into packages/shared/src/schemas/.
  */
 
+import type { DentalMedicalCard043uPayload } from "./schemas/index.js";
+
 // --- Core Domain Schemas & DTOs ---
 export * from "./schemas/index.js";
+// ФОРМА 025/у ЛИКВИДИРОВАНА (МАНДАТЫ 8i, 8s)
+export type OutpatientMedicalCard025uPayload = DentalMedicalCard043uPayload;
+export type PatientRecord = import("./patients/patientSchemas.js").Patient;
+export type DashboardResponse = import("./schemas/documentChainAndDmsSchemas.js").Dashboard;
 // Explicit re-exports to resolve wildcard collision between schemas and domain modules (TS2308)
 export {
 	SanPiNSterilizationEngine,
@@ -33,11 +39,19 @@ export {
 // --- Package Module Re-exports ---
 export * from "./datetime/index.js";
 export * from "./demo/index.js";
-export { kopecksToRubles } from "./money.js";
+export { kopecksToRubles, formatRubles } from "./money.js";
 export * from "./money.js";
 export * from "./moneyWordsRu.js";
 export * from "./fiscal/index.js";
 export * from "./billing/index.js";
+export { normalizeInvoiceStatus } from "./billing/invoiceContract.js";
+export {
+	autoAlignSplitRemainder,
+	calculate5050Split,
+	isSplitBalanced,
+	type AutoAlignRemainderInput,
+	type AutoAlignRemainderResult,
+} from "./billing/splitPayment.js";
 export { parseGs1DataMatrix, GS1_FNC1, GS1_GROUP_SEPARATOR } from "./mdlp/index.js";
 export * from "./mdlp/index.js";
 export * from "./utils/index.js";
@@ -120,6 +134,37 @@ export {
 	type PatientShiftQueueResult, type PatientShiftQueueOptions,
 } from "./schedule/index.js";
 export * from "./types/schedule.js";
+export {
+	type CanonicalTenderType,
+	canonicalTenderTypeSchema,
+	type ExtendedTenderType,
+	extendedTenderTypeSchema,
+	CANONICAL_TENDER_LABELS_RU,
+	CANONICAL_TENDER_FFD12_TAGS,
+	normalizeTenderType,
+	VAT_RATE_LABELS_RU,
+	normalizeVatRate,
+	calculateVatKopecksFromTotal,
+	normalizeCalculationMethod,
+	normalizeCalculationSubject,
+	calculateCanonicalSplit,
+	type CanonicalSplitCalculationInput,
+	type CanonicalSplitCalculationResult,
+	type CanonicalActiveTenderEntry,
+	calculateDenominationsTotalKopecks,
+	calculateDenominationsTotalRub,
+	type CashDenominationsInput,
+	validateTenderParity,
+	type ValidateTenderParityInput,
+	type ValidateTenderParityResult,
+	canonicalTenderItemSchema,
+	type CanonicalTenderItem,
+	canonicalCashierCheckoutPayloadSchema,
+	type CanonicalCashierCheckoutPayload,
+	type SplitBalancesResult,
+	calculateSplitBalances,
+	calculateSplitPaymentBalances,
+} from "./types/finance.js";
 export * from "./recalls/index.js";
 export { type RecallCandidate } from "./recalls/index.js";
 export * from "./patients/index.js";
@@ -170,4 +215,6 @@ export * from "./inventory/consumables.js";
 export * from "./lab/index.js";
 export * from "./knowledge/index.js";
 export * from "./demo/demoConstants.js";
+export * from "./ai/index.js";
+export * from "./ai/tokenCompactor.js";
 

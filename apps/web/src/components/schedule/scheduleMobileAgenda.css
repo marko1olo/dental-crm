@@ -349,14 +349,10 @@
   font-weight: 700;
   color: var(--ink, #0f172a);
   line-height: 1.25;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
   overflow: hidden;
-  overflow-wrap: break-word;
-  word-break: normal;
-  flex: 1;
-  min-width: 0;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .schedule-mobile-status-badge {
@@ -574,3 +570,35 @@
   background: color-mix(in srgb, var(--paper-strong, #0f172a) 90%, transparent);
   border-top-color: var(--line, #1e293b);
 }
+
+/* QuickBookingDrawer Animations (Desktop Slide-in & Mobile Bottom-Sheet Slide-up) */
+@keyframes quick-drawer-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0.9;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes quick-drawer-slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0.9;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: quick-drawer-slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-up {
+  animation: quick-drawer-slide-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

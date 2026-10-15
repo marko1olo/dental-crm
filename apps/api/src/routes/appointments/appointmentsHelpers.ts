@@ -33,6 +33,27 @@ export function normalizeAppointmentFieldAliases(
 		rawBody.doctorUserId = rawBody.doctorId;
 	}
 	if (
+		!rawBody.assistantUserId &&
+		rawBody.assistantId &&
+		typeof rawBody.assistantId === "string"
+	) {
+		rawBody.assistantUserId = rawBody.assistantId;
+	}
+	if (
+		!rawBody.chairId &&
+		rawBody.clinicRoomId &&
+		typeof rawBody.clinicRoomId === "string"
+	) {
+		rawBody.chairId = rawBody.clinicRoomId;
+	}
+	if (
+		!rawBody.chairId &&
+		rawBody.roomId &&
+		typeof rawBody.roomId === "string"
+	) {
+		rawBody.chairId = rawBody.roomId;
+	}
+	if (
 		!rawBody.startsAt &&
 		rawBody.startTime &&
 		typeof rawBody.startTime === "string"
