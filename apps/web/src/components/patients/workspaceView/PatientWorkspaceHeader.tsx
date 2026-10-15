@@ -1,4 +1,5 @@
 import React from "react";
+import { Users } from "lucide-react";
 import { PatientAllergySafetyBanner } from "../PatientAllergySafetyBanner";
 import { PatientDuplicateAlert } from "../PatientDuplicateAlert";
 import {
@@ -6,6 +7,12 @@ import {
 	formatSafetyProfileToDiaryText,
 } from "../safetyMath";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+
+interface FamilySummary {
+	id: string;
+	name: string;
+	balance: number;
+}
 
 // Root container anchor: data-testid="patient-workspace-view"
 export interface PatientWorkspaceHeaderProps {
@@ -26,6 +33,64 @@ export const PatientWorkspaceHeader: React.FC<PatientWorkspaceHeaderProps> = Rea
 		patientBalanceRub,
 		onUpdateProfile,
 	}) => {
+		const [familySummary, setFamilySummary] = React.useState<FamilySummary | null>(null);
+
+		const loadFamilySummary = React.useCallback(async (pid: string) => {
+			if (!pid) {
+				setFamilySummary(null);
+				return;
+			}
+			try {
+				const res = await fetch(`/api/finance/family/patient/${encodeURIComponent(pid)}`, {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (res.ok) {
+					const data = await res.json();
+					if (data && data.id) {
+						const numBalance =
+							typeof data.balance === "number"
+								? data.balance
+								: Number(data.balance) || 0;
+						setFamilySummary({
+							id: data.id,
+							name: data.name || "Семья",
+							balance: numBalance,
+						});
+						return;
+					}
+				}
+				setFamilySummary(null);
+			} catch {
+				setFamilySummary(null);
+			}
+		}, []);
+
+		React.useEffect(() => {
+			loadFamilySummary(patientId);
+
+			const handleRefresh = () => {
+				if (patientId) {
+					loadFamilySummary(patientId);
+				}
+			};
+
+			window.addEventListener("dente-family-data-changed", handleRefresh);
+			window.addEventListener("dente-patient-workspace-refresh", handleRefresh);
+
+			return () => {
+				window.removeEventListener("dente-family-data-changed", handleRefresh);
+				window.removeEventListener("dente-patient-workspace-refresh", handleRefresh);
+			};
+		}, [patientId, loadFamilySummary]);
+
+		const handleOpenFamilyWallet = React.useCallback(() => {
+			window.dispatchEvent(
+				new CustomEvent("dente-open-family-wallet", {
+					detail: { patientId },
+				}),
+			);
+		}, [patientId]);
+
 		const handleUpdateProfile = React.useCallback(
 			async (savedProfile: PatientClinicalSafetyProfile) => {
 				if (onUpdateProfile) {
@@ -104,6 +169,37 @@ export const PatientWorkspaceHeader: React.FC<PatientWorkspaceHeaderProps> = Rea
 						>
 							Баланс: {patientBalanceRub > 0 ? "+" : ""}{patientBalanceRub.toLocaleString("ru-RU")} ₽
 						</span>
+					)}
+
+					{/* Семейный баланс и кошелек (Мандат 8n, прозрачный бейдж) */}
+					{familySummary ? (
+						<button
+							type="button"
+							onClick={handleOpenFamilyWallet}
+							className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md border shrink-0 inline-flex items-center gap-1.5 cursor-pointer transition-opacity hover:opacity-90 ${
+								familySummary.balance < 0
+									? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+									: familySummary.balance > 0
+										? "bg-teal-50 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800"
+										: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]"
+							}`}
+							title={`Семейный кошелек (${familySummary.name}): ${familySummary.balance.toLocaleString("ru-RU")} ₽. Клик — открыть семейный кошелек`}
+							data-testid="patient-workspace-family-balance-badge"
+						>
+							<Users size={12} className="shrink-0" />
+							<span>Семья: {familySummary.balance > 0 ? "+" : ""}{familySummary.balance.toLocaleString("ru-RU")} ₽</span>
+						</button>
+					) : (
+						<button
+							type="button"
+							onClick={handleOpenFamilyWallet}
+							className="text-xs font-medium px-2 py-0.5 rounded-md border border-dashed border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--teal)] hover:border-[var(--teal)] transition-colors inline-flex items-center gap-1 shrink-0 cursor-pointer"
+							title="Создать или привязать семейный счет (общий кошелек)"
+							data-testid="patient-workspace-open-family-btn"
+						>
+							<Users size={12} className="text-[var(--teal)] shrink-0" />
+							<span>+ Семейный счет</span>
+						</button>
 					)}
 				</div>
 			</>

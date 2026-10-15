@@ -249,7 +249,7 @@ export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.mem
 										title="Распечатать вкладыш в амбулаторную медицинскую карту"
 									>
 										<Printer size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
-										<span className="truncate">Вкладыш в карту 043/у</span>
+										<span className="truncate">Вкладыш в амбулаторную карту</span>
 									</button>
 
 									<button
