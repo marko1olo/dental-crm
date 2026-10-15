@@ -6,6 +6,7 @@
 export type AnestheticDrugId =
 	| 'articaine_1_100k'
 	| 'articaine_1_200k'
+	| 'septanest_1_100k'
 	| 'mepivacaine_plain'
 	| 'lidocaine_1_100k'
 	| 'lidocaine_plain'
@@ -129,6 +130,36 @@ export const DENTAL_ANESTHETICS: Record<AnestheticDrugId, AnestheticDrugInfo> = 
 		contraindicationsRu: [
 			'Аллергия на сульфиты и артикаин',
 			'Тяжелая сердечно-сосудистая недостаточность'
+		]
+	},
+
+	septanest_1_100k: {
+		id: 'septanest_1_100k',
+		tradeNamesRu: ['Септанест 1:100 000', 'Septanest 1:100 000', 'Септонест'],
+		activeSubstanceRu: 'Артикаина гидрохлорид 4% + Эпинефрин 1:100 000',
+		activeConcentrationPercent: 4.0,
+		mgPerMlActive: 40.0,
+		vasoconstrictorNameRu: 'Эпинефрин (Адреналин) 1:100 000',
+		vasoconstrictorRatio: '1:100000',
+		epinephrineMgPerMl: 0.01,
+		carpuleVolumeMl: 1.7,
+		mgActivePerCarpule: 68.0,
+		mgEpiPerCarpule: 0.017,
+		maxDoseMgPerKgAdult: 7.0,
+		absoluteMaxDoseMgAdult: 500.0,
+		maxCarpules70kgAdult: 7,
+		containsSulfites: true,
+		isAdrenalineFree: false,
+		onsetMinutes: 2,
+		pulpalDurationMinutes: 60,
+		softTissueDurationMinutes: 240,
+		clinicalIndicationsRu: 'Инфильтрационная и проводниковая анестезия в амбулаторной стоматологии при травматичных манипуляциях.',
+		contraindicationsRu: [
+			'Аллергия на артикаин и амидные анестетики',
+			'Бронхиальная астма с гиперчувствительностью к сульфитам',
+			'Неконтролируемая артериальная гипертензия (АД > 180/110)',
+			'Закрытоугольная глаукома, феохромоцитома, декомпенсированный тиреотоксикоз',
+			'Сердечно-сосудистые патологии (ИБС, гипертония II-III ст, аритмии, инфаркт в анамнезе), прием бета-блокаторов'
 		]
 	},
 

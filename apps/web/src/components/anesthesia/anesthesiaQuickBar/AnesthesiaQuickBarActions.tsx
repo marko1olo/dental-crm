@@ -127,7 +127,7 @@ export function AnesthesiaQuickBarActions({
 					<span>✓ Скандонест 3% (без адреналина)</span>
 				</button>
 
-				{/* Preset 4: Экстренная укладка «Антишок» (Приказ 786н) */}
+				{/* Preset 4: Экстренная укладка «Антишок» */}
 				<button
 					type="button"
 					disabled={disabled}
@@ -136,7 +136,7 @@ export function AnesthesiaQuickBarActions({
 						onOpenEmergencyProtocol?.();
 					}}
 					className="inline-flex items-center gap-1 px-2.5 py-1 min-h-[44px] sm:min-h-[34px] sm:h-8.5 rounded-lg bg-rose-600/15 hover:bg-rose-600/25 border border-rose-500/60 text-xs sm:text-xs font-extrabold text-rose-700 dark:text-rose-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
-					title="Экстренная укладка «Антишок» (Приказ 786н): мгновенное списание Адреналин/Преднизолон/Супрастин (мягкий овердрафт) и открытие протокола реанимации"
+					title="Экстренная помощь: списание набора первой помощи и открытие шпаргалки 112"
 					data-testid="anesthesia-btn-antishock-emergency"
 				>
 					<span className="text-xs">🚨</span>
@@ -166,7 +166,7 @@ export function AnesthesiaQuickBarActions({
 						title="Ввести 0.5 карпулы (0.85 мл)"
 						data-testid="anesthesia-dose-halfcarp"
 					>
-						½ карп.
+						0.5 карпулы
 					</button>
 					<button
 						type="button"
@@ -176,7 +176,7 @@ export function AnesthesiaQuickBarActions({
 						title="Ввести 1 карпулу (1.7 мл)"
 						data-testid="anesthesia-dose-1carp"
 					>
-						1 карп.
+						1 карпула (1.7 мл)
 					</button>
 					<button
 						type="button"
@@ -186,7 +186,7 @@ export function AnesthesiaQuickBarActions({
 						title="Ввести 2 карпулы (3.4 мл)"
 						data-testid="anesthesia-dose-2carp"
 					>
-						2 карп.
+						2 карпулы
 					</button>
 				</div>
 

@@ -23,7 +23,6 @@ export function AnesthesiaSafetyAllergyHud({
 	onDismissWarning,
 	onConfirmWarningOverride,
 	onOpenEmergencyProtocol,
-	onOpenAspirationJournal,
 	disabled = false,
 }: AnesthesiaSafetyAllergyHudProps) {
 	return (
@@ -78,17 +77,6 @@ export function AnesthesiaSafetyAllergyHud({
 							<span>Шок / LAST 112</span>
 						</button>
 					)}
-					{onOpenAspirationJournal && (
-						<button
-							type="button"
-							onClick={onOpenAspirationJournal}
-							className="px-3 py-2 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-bold text-[var(--ink)] inline-flex items-center gap-1 transition-colors cursor-pointer"
-							title="Открыть подробный журнал проводниковой анестезии и аспирационной пробы"
-							data-testid="btn-anesthesia-quick-journal"
-						>
-							<span>Журнал пробы</span>
-						</button>
-					)}
 					<span className="text-[11px] text-[var(--muted)]">Выбор дозировки</span>
 				</div>
 			</div>
@@ -119,7 +107,7 @@ export function AnesthesiaSafetyAllergyHud({
 			)}
 
 			{/* ── Dedicated Articaine Allergy Guiding Soft-Alert Banner (Mandate 8e, 8z) ── */}
-			{hasArticaineAllergy && (selectedDrugId === "articaine_1_100k" || selectedDrugId === "articaine_1_200k") && (
+			{hasArticaineAllergy && (selectedDrugId === "articaine_1_100k" || selectedDrugId === "articaine_1_200k" || selectedDrugId === "septanest_1_100k") && (
 				<div
 					className="flex items-start sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-rose-600/15 border border-rose-600/50 text-rose-950 dark:text-rose-100 text-xs font-medium animate-pulse"
 					role="alert"
@@ -143,24 +131,24 @@ export function AnesthesiaSafetyAllergyHud({
 				</div>
 			)}
 
-			{/* ── Cardio Risk Warning Badge for 1:100 000 Epinephrine ── */}
-			{isCardioRisk && (selectedDrugId === "articaine_1_100k" || selectedDrugId === "lidocaine_1_100k") && (
+			{/* ── Cardio Risk Warning Badge for 1:100 000 Epinephrine (Mandate 8e Doctor Autonomy: yellow non-blocking badge) ── */}
+			{(isCardioRisk || takesBetaBlockers) && (selectedDrugId === "articaine_1_100k" || selectedDrugId === "septanest_1_100k" || selectedDrugId === "lidocaine_1_100k") && (
 				<div
-					className="flex items-start sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-800 dark:text-red-200 text-xs font-medium"
+					className="flex items-start sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-amber-500/15 border border-amber-500/40 text-amber-900 dark:text-amber-200 text-xs font-medium"
 					role="alert"
 					data-testid="anesthesia-cardio-100k-warning-badge"
 				>
 					<div className="flex items-center gap-2">
-						<AlertTriangle size={16} className="text-red-600 dark:text-red-400 shrink-0" />
+						<AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
 						<span>
-							<strong>Внимание, кардио-риск!</strong> Высокая концентрация адреналина 1:100 000 не рекомендуется при ССЗ (ИБС, гипертония II-III ст, аритмии, инфаркт, бета-блокаторы). Лимит адреналина: строго <strong>0.04 мг</strong> (макс. 2 карпулы). Препарат выбора — <strong>Мепивакаин 3% (Скандонест) без адреналина</strong>.
+							<strong>Внимание, кардио-риск!</strong> Высокая концентрация адреналина 1:100 000 (бета-блокаторы / ИБС / инфаркт / гипертония). Рекомендован Скандонест (Мепивакаин 3% без адреналина). Решение принимает лечащий врач.
 						</span>
 					</div>
 					<button
 						type="button"
 						onClick={() => onSelectDrug("mepivacaine_plain")}
 						className="px-2.5 py-1 min-h-[44px] rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] shrink-0 transition-colors cursor-pointer"
-						title="Переключиться на Мепивакаин 3% (Скандонест)"
+						title="Переключиться на Мепивакаин 3% (Скандонест без адреналина)"
 						data-testid="btn-switch-to-mepivacaine"
 					>
 						Выбрать Скандонест 3%

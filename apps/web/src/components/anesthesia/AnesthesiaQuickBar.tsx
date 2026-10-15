@@ -47,7 +47,6 @@ export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 				onDismissWarning={bar.handleDismissWarning}
 				onConfirmWarningOverride={bar.handleConfirmWarningOverride}
 				onOpenEmergencyProtocol={props.onOpenEmergencyProtocol}
-				onOpenAspirationJournal={props.onOpenAspirationJournal}
 				disabled={props.disabled}
 			/>
 

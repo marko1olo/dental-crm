@@ -38,7 +38,6 @@ export interface AnesthesiaQuickBarProps {
 	onApplyAnesthesia?: ((diaryText: string, result: AnesthesiaCalculationResult) => void) | undefined;
 	onDisposalCarpules?: ((carpulesCount: number, drugId: AnestheticDrugId) => void) | undefined;
 	onOpenEmergencyProtocol?: (() => void) | undefined;
-	onOpenAspirationJournal?: (() => void) | undefined;
 	disabled?: boolean | undefined;
 }
 
@@ -58,7 +57,7 @@ export interface PrimaryAnestheticDrug {
 export const PRIMARY_ANESTHETIC_DRUGS: readonly PrimaryAnestheticDrug[] = [
 	{
 		id: "articaine_1_200k",
-		labelRu: "Артикаин 1:200 000 (Ультракаин Д-С)",
+		labelRu: "Ультракаин Д-С 1:200 000",
 		subLabelRu: "Артикаин 4% • Щадящий адреналин • МДД 7 мг/кг",
 		activeSubstanceRu: "Артикаин 4% + Эпинефрин 1:200 000",
 		vasoRatio: "1:200 000",
@@ -67,7 +66,7 @@ export const PRIMARY_ANESTHETIC_DRUGS: readonly PrimaryAnestheticDrug[] = [
 	},
 	{
 		id: "articaine_1_100k",
-		labelRu: "Артикаин 1:100 000 (Ультракаин Форте / Септанест)",
+		labelRu: "Ультракаин Д-С форте 1:100 000",
 		subLabelRu: "Артикаин 4% • Глубокая анестезия • МДД 7 мг/кг",
 		activeSubstanceRu: "Артикаин 4% + Эпинефрин 1:100 000",
 		vasoRatio: "1:100 000",
@@ -76,7 +75,7 @@ export const PRIMARY_ANESTHETIC_DRUGS: readonly PrimaryAnestheticDrug[] = [
 	},
 	{
 		id: "mepivacaine_plain",
-		labelRu: "Мепивакаин 3% (Скандонест 3% без адреналина)",
+		labelRu: "Скандонест 3% (без адреналина)",
 		subLabelRu: "Мепивакаин 3% • Кардио-защита • Без сульфитов • МДД 4.4 мг/кг",
 		activeSubstanceRu: "Мепивакаин 3% (чистый)",
 		vasoRatio: "Без адреналина",
@@ -84,10 +83,10 @@ export const PRIMARY_ANESTHETIC_DRUGS: readonly PrimaryAnestheticDrug[] = [
 		isCardioRecommended: true,
 	},
 	{
-		id: "lidocaine_1_100k",
-		labelRu: "Лидокаин 2% (с адреналином 1:100 000)",
-		subLabelRu: "Лидокаин 2% + Эпинефрин 1:100 000 • МДД 4.4 мг/кг",
-		activeSubstanceRu: "Лидокаин 2% + Эпинефрин 1:100 000",
+		id: "septanest_1_100k",
+		labelRu: "Септанест 1:100 000",
+		subLabelRu: "Артикаин 4% + Эпинефрин 1:100 000 • Septodont • МДД 7 мг/кг",
+		activeSubstanceRu: "Артикаин 4% + Эпинефрин 1:100 000",
 		vasoRatio: "1:100 000",
 		isAdrenalineFree: false,
 		isCardioRecommended: false,
@@ -137,7 +136,6 @@ export interface AnesthesiaSafetyAllergyHudProps {
 	readonly onDismissWarning: () => void;
 	readonly onConfirmWarningOverride: (carpulesCount: number) => void;
 	readonly onOpenEmergencyProtocol?: (() => void) | undefined;
-	readonly onOpenAspirationJournal?: (() => void) | undefined;
 	readonly disabled?: boolean | undefined;
 }
 

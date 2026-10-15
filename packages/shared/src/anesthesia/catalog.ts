@@ -243,6 +243,7 @@ export const ANESTHESIA_KEY_TO_CLINICAL_ID: Record<AnesthesiaDrugKey, Anesthetic
 export const CHAIRSIDE_KEY_TO_CLINICAL_ID: Record<ChairsideAnestheticDrugId, AnestheticDrugId> = {
 	articaine_1_100k: "articaine_4_epi_100k",
 	articaine_1_200k: "articaine_4_epi_200k",
+	septanest_1_100k: "articaine_4_epi_100k",
 	mepivacaine_plain: "mepivacaine_3_plain",
 	mepivacaine_plain_3: "mepivacaine_3_plain",
 	lidocaine_1_100k: "lidocaine_2_epi_100k",

@@ -45,6 +45,11 @@ function persistAnesthesiaLog(params: {
 		vasoEnum = "1:200000";
 		concentrationPct = 4.0;
 		brandName = "Ультракаин Д-С";
+	} else if (params.drugId === "septanest_1_100k") {
+		drugEnum = "articaine";
+		vasoEnum = "1:100000";
+		concentrationPct = 4.0;
+		brandName = "Септанест 1:100 000";
 	} else if (params.drugId === "mepivacaine_plain") {
 		drugEnum = "mepivacaine";
 		vasoEnum = "none";
@@ -446,7 +451,7 @@ export function useAnesthesiaQuickBar({
 
 	const handleApplySeptanestInfiltration = () => {
 		if (disabled) return;
-		setSelectedDrugId("articaine_1_100k");
+		setSelectedDrugId("septanest_1_100k");
 		setTechniqueId("infiltration");
 		const effectiveWeight = resolveClinicalDefaultWeightKg(
 			patientWeightKg,
@@ -454,7 +459,7 @@ export function useAnesthesiaQuickBar({
 			patientAgeYears < 18,
 		);
 		const result = calculateAnesthesiaSafety({
-			drugId: "articaine_1_100k",
+			drugId: "septanest_1_100k",
 			carpulesCount: 1.0,
 			patientWeightKg: effectiveWeight,
 			patientAgeYears,
@@ -474,7 +479,7 @@ export function useAnesthesiaQuickBar({
 		persistAnesthesiaLog({
 			patientId,
 			visitId,
-			drugId: "articaine_1_100k",
+			drugId: "septanest_1_100k",
 			techniqueId: "infiltration",
 			carpulesCount: 1.0,
 			patientWeightKg,
@@ -494,7 +499,7 @@ export function useAnesthesiaQuickBar({
 			4000,
 		);
 		if (onDisposalCarpules) {
-			onDisposalCarpules(1.0, "articaine_1_100k");
+			onDisposalCarpules(1.0, "septanest_1_100k");
 		}
 	};
 

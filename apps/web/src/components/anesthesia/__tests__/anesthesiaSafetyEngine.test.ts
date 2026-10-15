@@ -307,33 +307,36 @@ describe('anesthesiaSafetyEngine — 5. Cardiac Risk, Beta-Blockers & Doctor Aut
 		assert.ok(res.warnings.some(w => w.includes('КАРДИОЛИМИТ АДРЕНАЛИНА')));
 	});
 
-	it('blocks 1:100 000 Epinephrine for Beta-Blockers in screening and recommends Mepivacaine 3%', () => {
+	it('warns without blocking for Beta-Blockers in screening and recommends Mepivacaine 3% (Doctor Autonomy)', () => {
 		const screening = screenPatientContraindications(
 			{ patientWeightKg: 70, takesBetaBlockers: true },
 			'articaine_4_epi_100k'
 		);
 
-		assert.equal(screening.isBlocked, true);
+		assert.equal(screening.isBlocked, false);
 		assert.equal(screening.recommendedAlternativeId, 'mepivacaine_3_plain');
-		assert.ok(screening.blockingContraindications.some(b => b.includes('бета-блокаторы')));
+		assert.ok(screening.warnings.some(w => w.includes('Бета-блокаторы') && w.includes('Рекомендован Скандонест')));
+		assert.equal(screening.blockingContraindications.length, 0);
 	});
 
-	it('blocks 1:100 000 Epinephrine for Ischemic Heart Disease (IHD) and prior Myocardial Infarction', () => {
+	it('warns without blocking for Ischemic Heart Disease (IHD) and prior Myocardial Infarction (Doctor Autonomy)', () => {
 		const screeningIhd = screenPatientContraindications(
 			{ patientWeightKg: 75, hasIschemicHeartDisease: true },
 			'articaine_4_epi_100k'
 		);
-		assert.equal(screeningIhd.isBlocked, true);
+		assert.equal(screeningIhd.isBlocked, false);
 		assert.equal(screeningIhd.recommendedAlternativeId, 'mepivacaine_3_plain');
-		assert.ok(screeningIhd.blockingContraindications.some(b => b.includes('ИБС')));
+		assert.ok(screeningIhd.warnings.some(w => w.includes('ИБС') && w.includes('Рекомендован Скандонест')));
+		assert.equal(screeningIhd.blockingContraindications.length, 0);
 
 		const screeningMi = screenPatientContraindications(
 			{ patientWeightKg: 75, hasMyocardialInfarctionHistory: true },
 			'articaine_4_epi_100k'
 		);
-		assert.equal(screeningMi.isBlocked, true);
+		assert.equal(screeningMi.isBlocked, false);
 		assert.equal(screeningMi.recommendedAlternativeId, 'mepivacaine_3_plain');
-		assert.ok(screeningMi.blockingContraindications.some(b => b.includes('инфаркт миокарда')));
+		assert.ok(screeningMi.warnings.some(w => w.includes('инфаркт миокарда') && w.includes('Рекомендован Скандонест')));
+		assert.equal(screeningMi.blockingContraindications.length, 0);
 	});
 
 	it('formats human-readable safe remaining dose without cryptic acronyms', () => {

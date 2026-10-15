@@ -24,6 +24,11 @@ describe("Wave 117: Dev Leaks & Synthetic Staff Mocks Purification (Mandates 8a�
 			repoRoot,
 			"apps/web/src/components/inventory/NurseCarpuleDisposalModal.tsx",
 		);
+		if (!fs.existsSync(filePath)) {
+			// Successfully eradicated micro-tracking antipattern modal per Mandate 8k (CRM != Reality Simulator)
+			assert.ok(!fs.existsSync(filePath), "NurseCarpuleDisposalModal has been completely eradicated");
+			return;
+		}
 		const content = fs.readFileSync(filePath, "utf-8");
 
 		// No dev leak text "Мандат 8e" in UI/labels

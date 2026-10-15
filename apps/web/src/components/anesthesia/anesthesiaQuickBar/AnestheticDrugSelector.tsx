@@ -21,7 +21,7 @@ export function AnestheticDrugSelector({
 				const isCardioSuggested = isCardioRisk && drug.isAdrenalineFree;
 				const isSulfiteRisky = (hasSulfiteAllergy || hasBronchialAsthma) && !drug.isAdrenalineFree;
 				const isLidocaineAllergic = hasLidocaineAllergy && drug.id.startsWith("lidocaine");
-				const isArticaineAllergic = hasArticaineAllergy && drug.id.startsWith("articaine");
+				const isArticaineAllergic = hasArticaineAllergy && (drug.id.startsWith("articaine") || drug.id.startsWith("septanest"));
 				const isAllergyRisky = isLidocaineAllergic || isArticaineAllergic;
 
 				return (

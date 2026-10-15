@@ -54,23 +54,24 @@ export function screenPatientContraindications(
 	const warnings = [...base.warnings];
 	let recommendedAlternativeId = base.recommendedAlternativeId;
 
-	// Cardiovascular risk & Beta-blockers guard
+	// Cardiovascular risk & Beta-blockers guidance (Mandate 8e: Doctor Autonomy — non-blocking warning, never block!)
 	if (profile.takesBetaBlockers) {
 		if (drug.vasoconstrictorRatio === "1:100000") {
-			blockingContraindications.push(
-				"БЛОКИРУЮЩЕЕ ПРЕДУПРЕЖДЕНИЕ: Пациент принимает бета-блокаторы! Взаимодействие с высокой концентрацией адреналина 1:100 000 несет критический риск гипертонического криза и рефлекторной остановки сердца. Препарат первого выбора — Мепивакаин 3% (Скандонест) без вазоконстриктора.",
+			warnings.push(
+				"ВНИМАНИЕ (Бета-блокаторы): Прием бета-блокаторов при высокой концентрации адреналина 1:100 000 повышает риск прессорной реакции. Рекомендован Скандонест (Мепивакаин 3% без адреналина). Решение принимает лечащий врач.",
 			);
 			recommendedAlternativeId = "mepivacaine_3_plain";
 		} else if (!drug.isAdrenalineFree) {
 			warnings.push(
-				"КАРДИОРИСК (Бета-блокаторы): Лимит адреналина строго ограничен 0.04 мг (максимум 4 карпулы 1:200 000). Необходим контроль АД и ЧСС.",
+				"КАРДИОРИСК (Бета-блокаторы): Лимит адреналина строго ограничен 0.04 мг (максимум 4 карпулы 1:200 000). Необходим контроль АД и ЧСС. Рекомендован Скандонест (Мепивакаин 3% без адреналина).",
 			);
+			recommendedAlternativeId = "mepivacaine_3_plain";
 		}
 	}
 
 	if ((profile.hasIschemicHeartDisease || profile.hasMyocardialInfarctionHistory) && drug.vasoconstrictorRatio === "1:100000") {
-		blockingContraindications.push(
-			"БЛОКИРУЮЩЕЕ ПРЕДУПРЕЖДЕНИЕ: Ишемическая болезнь сердца (ИБС) / перенесенный инфаркт миокарда. Высокая концентрация адреналина 1:100 000 противопоказана из-за риска коронароспазма и повторного инфаркта! Препарат первого выбора — Мепивакаин 3% (Скандонест) без адреналина.",
+		warnings.push(
+			"КАРДИОРИСК: Ишемическая болезнь сердца (ИБС) / перенесенный инфаркт миокарда. Рекомендован Скандонест (Мепивакаин 3% без адреналина). Решение принимает лечащий врач.",
 		);
 		recommendedAlternativeId = "mepivacaine_3_plain";
 	}

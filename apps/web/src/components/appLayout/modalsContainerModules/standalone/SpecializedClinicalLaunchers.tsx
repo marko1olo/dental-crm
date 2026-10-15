@@ -77,6 +77,11 @@ export function renderSpecializedClinicalLaunchers({
 		(new URLSearchParams(window.location.search).has("anesthesia") ||
 			window.location.hash.toLowerCase().includes("anesthesia"));
 	if (isAnesthesiaDirect) {
+		const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+		const hasCardio = Boolean(searchParams?.has("cardio"));
+		const takesBeta = Boolean(searchParams?.has("beta"));
+		const hasIhd = Boolean(searchParams?.has("ihd"));
+
 		return (
 			<div
 				className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6 overflow-y-auto"
@@ -86,17 +91,19 @@ export function renderSpecializedClinicalLaunchers({
 					<div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
 						<div>
 							<h1 className="text-lg sm:text-xl font-black text-[var(--ink)]">
-								Калькулятор анестезии и кресельный кокпит (МРД / Антишок 786н)
+								Обезболивание и анестезия у кресла
 							</h1>
 							<p className="text-xs text-[var(--muted)]">
-								Единый SSOT расчёт дозировок, 1-клик пресеты и экстренное списание укладки
+								Быстрый выбор препарата, 1-клик дозировки и экстренная помощь
 							</p>
 						</div>
 					</div>
 					<AnesthesiaQuickBar
 						patientWeightKg={70}
 						targetToothNumberFdi={16}
-						hasCardiovascularRisk={false}
+						hasCardiovascularRisk={hasCardio}
+						takesBetaBlockers={takesBeta}
+						hasIschemicHeartDisease={hasIhd}
 						onApplyAnesthesia={() => {}}
 						onOpenEmergencyProtocol={() => {
 							const url = new URL(window.location.href);
@@ -445,7 +452,15 @@ export function renderSpecializedClinicalLaunchers({
 	}
 
 	// EMERGENCY RESCUE PROTOCOLS & RESUSCITATION HUD (?emergency=1, ?rescue=1, #emergency, #rescue)
-	if (isEmergencyDirectModalOpen) {
+	const isEmergencyDirect =
+		Boolean(isEmergencyDirectModalOpen) ||
+		(typeof window !== "undefined" &&
+			(new URLSearchParams(window.location.search).has("emergency") ||
+				new URLSearchParams(window.location.search).has("rescue") ||
+				window.location.hash.toLowerCase().includes("emergency") ||
+				window.location.hash.toLowerCase().includes("rescue")));
+
+	if (isEmergencyDirect) {
 		return (
 			<EmergencyRescueModal
 				isOpen={true}

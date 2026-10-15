@@ -25,6 +25,7 @@ export type AnesthesiaDrugKey =
 export type ChairsideAnestheticDrugId =
 	| "articaine_1_100k"
 	| "articaine_1_200k"
+	| "septanest_1_100k"
 	| "mepivacaine_plain"
 	| "mepivacaine_plain_3"
 	| "lidocaine_1_100k"
