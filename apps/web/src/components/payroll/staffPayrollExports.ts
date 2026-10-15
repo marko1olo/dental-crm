@@ -515,6 +515,10 @@ export function generateDoctorPayslipHtml(
 
 	<div class="signatures">
 		<div>
+			<div>Главный бухгалтер:</div>
+			<div class="signature-line"></div>
+		</div>
+		<div>
 			<div>Руководитель клиники / Главврач:</div>
 			<div class="signature-line"></div>
 		</div>

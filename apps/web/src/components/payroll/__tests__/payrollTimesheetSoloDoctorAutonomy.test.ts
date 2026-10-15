@@ -16,7 +16,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import {
 	calculateEmployeeTimesheetT13,
 	generateTimesheetT13Csv,
@@ -432,5 +432,174 @@ describe("Red Team: Clinical Category Commission Invariants & ZTL Pre-Commission
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
 		assert.equal(emojiRegex.test(html), false, "Payslip HTML must contain zero cartoon emojis");
 	});
+
+	describe("5. Red Team: Net Revenue 54-FZ, Chair Rental Shift Economics & Decomposition", () => {
+		it("5.1 Commission accrued strictly from 54-FZ paid cash; zero commission on unpaid patient debts", () => {
+			const res = calculateDoctorPeriodPayroll({
+				doctorId: "doc-net-rev",
+				doctorName: "Д-р Иванов С.И.",
+				specialtyId: "orthopedist",
+				periodStartIso: "2026-10-01",
+				periodEndIso: "2026-10-31",
+				services: [
+					{
+						id: "srv-paid",
+						dateIso: "2026-10-05",
+						patientName: "Оплаченный Пациент",
+						medicalCardNumber: "101",
+						serviceNameRu: "Керамическая коронка E.max",
+						category: "orthopedics",
+						grossRevenueKop: 4000000, // 40,000 RUB
+						labCostKop: 1000000, // 10,000 RUB ЗТЛ
+						materialCostKop: 0,
+						isPaid: true,
+						paidAmountKop: 4000000,
+					},
+					{
+						id: "srv-debt",
+						dateIso: "2026-10-10",
+						patientName: "Должник с долгом",
+						medicalCardNumber: "102",
+						serviceNameRu: "Циркониевый мостовидный протез",
+						category: "orthopedics",
+						grossRevenueKop: 9000000, // 90,000 RUB
+						labCostKop: 2500000, // 25,000 RUB ЗТЛ
+						materialCostKop: 0,
+						isPaid: false, // НЕ ОПЛАЧЕНО — ДОЛГ!
+						paidAmountKop: 0,
+					},
+				],
+			});
+
+			// Only the 40,000 RUB paid service enters Net Revenue!
+			// Unpaid 90,000 RUB service does NOT generate commission!
+			assert.equal(res.totalGrossRevenueKop, 4000000, "Gross revenue must reflect only 54-FZ paid cash");
+			// Net base = 40,000 - 10,000 (lab for paid item) = 30,000 RUB = 3,000,000 kop
+			assert.equal(res.totalNetBaseKop, 3000000, "Net base must deduct ZTL strictly from collected cash");
+			// Orthopedist 25% of 30,000 RUB = 7,500 RUB = 750,000 kop
+			assert.equal(res.earnedBaseCommissionKop, 750000, "Doctor must receive commission strictly from paid cash");
+		});
+
+		it("5.2 Partially paid services generate commission strictly from the paid portion minus lab costs", () => {
+			const res = calculateDoctorPeriodPayroll({
+				doctorId: "doc-partial",
+				doctorName: "Д-р Сидоров А.П.",
+				specialtyId: "orthopedist",
+				periodStartIso: "2026-10-01",
+				periodEndIso: "2026-10-31",
+				services: [
+					{
+						id: "srv-partial",
+						dateIso: "2026-10-12",
+						patientName: "Пациент с рассрочкой",
+						medicalCardNumber: "103",
+						serviceNameRu: "Протезирование all-on-4",
+						category: "orthopedics",
+						grossRevenueKop: 20000000, // 200,000 RUB billed
+						labCostKop: 4000000, // 40,000 RUB ЗТЛ
+						materialCostKop: 0,
+						paidAmountKop: 10000000, // Only 100,000 RUB actually paid in cashbox!
+					},
+				],
+			});
+
+			// Cash collected = 100,000 RUB (10,000,000 kop)
+			assert.equal(res.totalGrossRevenueKop, 10000000, "Gross must be capped at cash collected");
+			// Net base = 100,000 - 40,000 = 60,000 RUB (6,000,000 kop)
+			assert.equal(res.totalNetBaseKop, 6000000, "Net base must deduct ZTL from collected cash");
+			// 25% of 60,000 RUB = 15,000 RUB (1,500,000 kop)
+			assert.equal(res.earnedBaseCommissionKop, 1500000);
+		});
+
+		it("5.3 Chair rental shift economics: shiftsCount * shiftRateRub correctly computes rent and net profit", () => {
+			const shiftsCount = 15;
+			const shiftRateRub = 3500;
+			const chairRentalRub = shiftsCount * shiftRateRub; // 52,500 RUB
+
+			const res = calculateDoctorPeriodPayroll({
+				doctorId: "solo-doc-rent",
+				doctorName: "Д-р Кузнецов М.М.",
+				specialtyId: "solo_practitioner",
+				periodStartIso: "2026-10-01",
+				periodEndIso: "2026-10-31",
+				payoutModel: "chair_rental",
+				chairRentalKop: chairRentalRub * 100,
+				services: [
+					{
+						id: "srv-rent-1",
+						dateIso: "2026-10-15",
+						patientName: "Пациент Соло",
+						medicalCardNumber: "201",
+						serviceNameRu: "Комплексная реабилитация",
+						category: "therapy",
+						grossRevenueKop: 30000000, // 300,000 RUB
+						labCostKop: 3000000, // 30,000 RUB ЗТЛ
+						materialCostKop: 2000000, // 20,000 RUB материалы
+						isPaid: true,
+					},
+				],
+			});
+
+			assert.equal(chairRentalRub, 52500, "15 shifts * 3500 RUB = 52,500 RUB");
+			assert.equal(res.chairRentalKop, 5250000);
+			// Net Profit = 300,000 - 52,500 (rent) - 30,000 (lab) - 20,000 (materials) = 197,500 RUB = 19,750,000 kop
+			assert.equal(res.totalNetBaseKop, 19750000, "Solo net profit must equal Gross - Rent - Lab - Materials");
+			assert.equal(res.earnedBaseCommissionKop, 19750000, "Solo doctor receives 100% of net margin");
+			assert.equal(res.baseCommissionPercent, 100);
+		});
+
+		it("5.4 Printable payslip includes Accountant, Head of Clinic, and Doctor signature blocks", () => {
+			const res = calculateDoctorPeriodPayroll({
+				doctorId: "doc-sig",
+				doctorName: "Д-р Соколова А.Н.",
+				specialtyId: "therapist",
+				periodStartIso: "2026-10-01",
+				periodEndIso: "2026-10-31",
+				services: [
+					{
+						id: "srv-sig",
+						dateIso: "2026-10-10",
+						patientName: "Пациент С",
+						medicalCardNumber: "301",
+						serviceNameRu: "Лечение кариеса",
+						category: "therapy",
+						grossRevenueKop: 10000000, // 100,000 RUB
+						labCostKop: 0,
+						materialCostKop: 1000000,
+						isPaid: true,
+					},
+				],
+			});
+
+			const html = generateDoctorPayslipHtml(res, "ООО «Денте Стоматология»");
+			assert.ok(html.includes("Главный бухгалтер:"), "Payslip must include Accountant signature line");
+			assert.ok(html.includes("Руководитель клиники / Главврач:"), "Payslip must include Head of Clinic signature line");
+			assert.ok(html.includes("Врач-специалист (подпись):"), "Payslip must include Doctor signature line");
+		});
+
+		it("5.5 DoctorPayrollModal and all decomposed submodules strictly adhere to <= 400 lines limit", () => {
+			const payrollDir = path.resolve(__dirname, "..");
+			const modulesDir = path.join(payrollDir, "payrollModules");
+
+			const filesToCheck = [
+				path.join(payrollDir, "DoctorPayrollModal.tsx"),
+				path.join(modulesDir, "PayrollHeader.tsx"),
+				path.join(modulesDir, "PayrollRentalSection.tsx"),
+				path.join(modulesDir, "PayrollServicesTable.tsx"),
+				path.join(modulesDir, "PayrollTotalsBar.tsx"),
+			];
+
+			for (const file of filesToCheck) {
+				assert.ok(fs.existsSync(file), `File ${file} must exist`);
+				const content = fs.readFileSync(file, "utf8");
+				const lines = content.split("\n").length;
+				assert.ok(
+					lines <= 400,
+					`File ${path.basename(file)} has ${lines} lines, exceeding the 400 lines limit!`,
+				);
+			}
+		});
+	});
 });
+
 

@@ -290,6 +290,12 @@ export interface DoctorCompletedServiceItem {
 	readonly materialItems?: readonly { readonly name: string; readonly costKop: number }[] | undefined;
 	readonly paymentSource?: "cash" | "card" | "sbp" | "deposit" | "family_deposit" | "split" | undefined;
 	readonly isDepositAdvanceOnly?: boolean | undefined;
+	readonly isPaid?: boolean | undefined;
+	readonly isDebt?: boolean | undefined;
+	readonly invoiceStatus?: "paid" | "unpaid" | "partially_paid" | string | undefined;
+	readonly paidAmountKop?: number | undefined;
+	readonly actuallyPaidGrossKop?: number | undefined;
+	readonly fiscalReceiptNumber?: string | undefined;
 }
 
 export interface DoctorPayrollStornoLineItem {
@@ -483,8 +489,24 @@ export function calculateDoctorPeriodPayroll(
 			continue;
 		}
 
-		const isFullyRefunded = item.isRefunded === true || (item.refundedAmountKop !== undefined && item.refundedAmountKop >= item.grossRevenueKop);
-		const refundKop = Math.min(item.grossRevenueKop, item.refundedAmountKop ?? (item.isRefunded ? item.grossRevenueKop : 0));
+		// MANDATE: Virtual debt must NOT accrue to doctor payroll.
+		// Only ACTUALLY CLOSED / PAID checks accrue commission.
+		if (item.isPaid === false || item.isDebt === true || item.invoiceStatus === "unpaid") {
+			continue;
+		}
+
+		const actualPaidKop = item.actuallyPaidGrossKop !== undefined
+			? Math.max(0, item.actuallyPaidGrossKop)
+			: (item.paidAmountKop !== undefined
+				? Math.max(0, Math.min(item.grossRevenueKop, item.paidAmountKop))
+				: item.grossRevenueKop);
+
+		if (actualPaidKop <= 0 && item.grossRevenueKop > 0) {
+			continue;
+		}
+
+		const isFullyRefunded = item.isRefunded === true || (item.refundedAmountKop !== undefined && item.refundedAmountKop >= actualPaidKop);
+		const refundKop = Math.min(actualPaidKop, item.refundedAmountKop ?? (item.isRefunded ? actualPaidKop : 0));
 
 		// CLINICAL INVARIANT: Orthopedic & Orthodontic services ALWAYS deduct ZTL lab costs
 		const shouldDeductLab =
@@ -538,11 +560,11 @@ export function calculateDoctorPeriodPayroll(
 
 		if (isFullyRefunded) {
 			refundedServicesCount += 1;
-			totalItemRefundsKop += item.grossRevenueKop;
+			totalItemRefundsKop += actualPaidKop;
 
 			const receiptNum = item.refundReceiptNumber ?? item.receiptNumber ?? item.id;
 			const reason = item.refundReasonRu ?? "Полный возврат пациенту";
-			const netBaseIfPaid = Math.max(0, item.grossRevenueKop - itemLabCost - itemMaterialCost);
+			const netBaseIfPaid = Math.max(0, actualPaidKop - itemLabCost - itemMaterialCost);
 			const stornoComm = Math.round((netBaseIfPaid * itemCommissionPercent) / 100);
 			const stornoRub = (stornoComm / 100).toLocaleString("ru-RU");
 
@@ -553,14 +575,14 @@ export function calculateDoctorPeriodPayroll(
 				serviceNameRu: item.serviceNameRu,
 				receiptNumber: receiptNum,
 				reasonRu: reason,
-				refundedGrossKop: item.grossRevenueKop,
+				refundedGrossKop: actualPaidKop,
 				stornoCommissionKop: stornoComm,
 				labelRu: `Сторно комиссии: Возврат по чеку №${receiptNum} (-${stornoRub} ₽)`,
 			});
 			continue;
 		}
 
-		const effectiveGrossKop = Math.max(0, item.grossRevenueKop - refundKop);
+		const effectiveGrossKop = Math.max(0, actualPaidKop - refundKop);
 		if (refundKop > 0) {
 			refundedServicesCount += 1;
 			totalItemRefundsKop += refundKop;

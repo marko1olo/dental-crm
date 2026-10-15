@@ -46,7 +46,7 @@ export type DoctorSpecialtyId =
 
 export type AssistantCategoryId = "none" | "second" | "first" | "highest";
 
-import {
+export {
 	DOCTOR_SPECIALTY_PAYROLL_PRESETS,
 	type DoctorSpecialtyCommissionRule,
 	type AssistantShiftRateRule,
@@ -68,27 +68,14 @@ import {
 	resolveDoctorPreset,
 } from "@dental/shared/payroll";
 
-export {
+import {
 	DOCTOR_SPECIALTY_PAYROLL_PRESETS,
 	type DoctorSpecialtyCommissionRule,
-	type AssistantShiftRateRule,
-	ASSISTANT_SHIFT_RULE,
-	type KpiBonusTier,
-	KPI_BONUS_TIERS,
-	CLINICAL_CATEGORY_COMMISSION_PERCENT,
 	DEFAULT_CATEGORY_COMMISSION_PERCENT,
+	CLINICAL_CATEGORY_COMMISSION_PERCENT,
 	type DoctorCompletedServiceItem,
-	type DoctorPayrollStornoLineItem,
-	type DoctorRefundDeductionItem,
-	type DoctorPayrollCalculationInput,
-	type DoctorPayrollResult,
-	type AssistantPayrollResult,
-	calculateDoctorPeriodPayroll,
-	calculateAssistantPeriodPayroll,
-	splitVisitServicesByDoctor,
-	filterServicesForDoctor,
 	resolveDoctorPreset,
-};
+} from "@dental/shared/payroll";
 
 export type DoctorSpecialtyConfig = DoctorSpecialtyCommissionRule;
 
@@ -420,7 +407,24 @@ export function calculateDoctorStaffPayroll(
 	let earnedRetail = 0;
 
 	for (const item of input.services) {
-		const itemGrossKop = Math.round(Number(item.grossRevenueKop) || 0);
+		if (item.isDepositAdvanceOnly) {
+			continue;
+		}
+		if (item.isPaid === false || item.isDebt === true || item.invoiceStatus === "unpaid") {
+			continue;
+		}
+		const rawGrossKop = Math.round(Number(item.grossRevenueKop) || 0);
+		const actualPaidKop = item.actuallyPaidGrossKop !== undefined
+			? Math.max(0, Math.round(Number(item.actuallyPaidGrossKop) || 0))
+			: (item.paidAmountKop !== undefined
+				? Math.max(0, Math.min(rawGrossKop, Math.round(Number(item.paidAmountKop) || 0)))
+				: rawGrossKop);
+
+		if (actualPaidKop <= 0 && rawGrossKop > 0) {
+			continue;
+		}
+
+		const itemGrossKop = actualPaidKop;
 		const itemLabKop = Math.round(Number(item.labCostKop) || 0);
 		const itemMatKop = Math.round(Number(item.materialCostKop) || 0);
 
@@ -764,27 +768,16 @@ export function validateStaffPayrollInput(input: unknown): { valid: boolean; err
 	return { valid: errors.length === 0, errors };
 }
 
-// Re-export statutory Form T-51, Doctor Payslip and 1C:ZUP 3.1 exporters
 import {
-	escapeXml,
-	generateStaffPayrollT51Csv,
-	generatePayrollT51Csv,
-	generateDoctorPayslipHtml,
-	generateDoctorPayslipMessengerText,
-	generate1CZup31Xml,
-	generate1CZup31Csv,
-	generateFormT51Html,
+	escapeXml, generateStaffPayrollT51Csv, generatePayrollT51Csv,
+	generateDoctorPayslipHtml, generateDoctorPayslipMessengerText,
+	generate1CZup31Xml, generate1CZup31Csv, generateFormT51Html,
 } from "./staffPayrollExports";
 
 export {
-	escapeXml,
-	generateStaffPayrollT51Csv,
-	generatePayrollT51Csv,
-	generateDoctorPayslipHtml,
-	generateDoctorPayslipMessengerText,
-	generate1CZup31Xml,
-	generate1CZup31Csv,
-	generateFormT51Html,
+	escapeXml, generateStaffPayrollT51Csv, generatePayrollT51Csv,
+	generateDoctorPayslipHtml, generateDoctorPayslipMessengerText,
+	generate1CZup31Xml, generate1CZup31Csv, generateFormT51Html,
 };
 
 // Canonical Aliases & Interop
