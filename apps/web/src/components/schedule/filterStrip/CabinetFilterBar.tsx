@@ -126,7 +126,7 @@ export function CabinetFilterBar({
 						>
 							<Armchair size={13} className="shrink-0 text-current" aria-hidden="true" />
 							<span className="whitespace-nowrap shrink-0 flex-shrink-0">
-								Моё кресло
+								Моё кресло ({cleanChairName})
 							</span>
 						</button>
 					);

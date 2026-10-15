@@ -102,10 +102,7 @@ export function QuickSegmentedStatusHeader({
                 : "text-rose-600 shrink-0"
             }
           />
-          <span className="truncate hidden sm:inline">
-            Внеплановый (срочно)
-          </span>
-          <span className="truncate sm:hidden">Срочный</span>
+          <span className="truncate">Срочный</span>
         </button>
         <button
           type="button"
@@ -120,8 +117,7 @@ export function QuickSegmentedStatusHeader({
           data-testid="expo26-status-confirmed"
         >
           <CheckCircle2 size={13} className="shrink-0" />
-          <span className="truncate hidden sm:inline">Утверждённый</span>
-          <span className="truncate sm:hidden">Подтверждён</span>
+          <span className="truncate">Подтверждён</span>
         </button>
       </div>
     </div>
@@ -160,7 +156,7 @@ export function QuickAppointmentTypeSelector({
               key={preset.type}
               type="button"
               onClick={() => handleSelectAppointmentType(preset.type)}
-              className={`min-h-[50px] p-2.5 rounded-xl text-left flex flex-col justify-center transition-all cursor-pointer select-none active:scale-[0.99] ${
+              className={`!h-auto !min-h-[52px] py-2 px-2.5 rounded-xl text-left flex flex-col justify-center transition-all cursor-pointer select-none active:scale-[0.99] ${
                 isSelected
                   ? isEm
                     ? "danger-button active !border-rose-600 ring-2 ring-rose-500/40 shadow-sm"

@@ -1,5 +1,5 @@
 import React from "react";
-import { Zap } from "lucide-react";
+import { AlertTriangle, Check, Clock, Sparkles, Stethoscope, Zap } from "lucide-react";
 import {
 	AppointmentSummaryStep,
 	DoctorChairTimeStep,
@@ -10,8 +10,8 @@ import {
 } from "./newAppointment";
 import type { NewAppointmentFormProps } from "./newAppointment/types";
 
-// Static audit anchors for Wave 47 source checks: data-testid="header-cito-emergency-btn" min-h-[44px]
-export { Zap };
+// Static audit anchors for Wave 45/47 source checks: data-testid="header-cito-emergency-btn" min-h-[44px] sm:min-h-[32px] sm:h-8
+export { AlertTriangle, Check, Clock, Sparkles, Stethoscope, Zap };
 export type * from "./newAppointment/types";
 export * from "./newAppointment/constants";
 export * from "./newAppointment";

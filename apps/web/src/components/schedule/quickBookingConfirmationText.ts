@@ -76,10 +76,28 @@ export async function executeCopyConfirmationFlow(params: {
   startsAtLocal: string;
   durationMinutes: number;
   dashboard: any;
+  initialSlot?: any;
 }) {
-  const { patientSearch, appointmentType, doctors, doctorUserId, dutyDoc, chairs, chairId, currentChair, startsAtLocal, durationMinutes, dashboard } = params;
-  const candidateName = patientSearch.newPatientFullName?.trim() || patientSearch.searchQuery?.trim() || (appointmentType === "emergency" ? "Пациент с острой болью (срочно)" : "");
-  const patientName = patientSearch.selectedPatient?.fullName || candidateName || "Пациент";
+  const { patientSearch, appointmentType, doctors, doctorUserId, dutyDoc, chairs, chairId, currentChair, startsAtLocal, durationMinutes, dashboard, initialSlot } = params;
+  const fullName = patientSearch.newPatientFullName?.trim() || patientSearch.selectedPatient?.fullName?.trim() || "";
+  const phoneFallback = patientSearch.newPatientPhone?.trim() || initialSlot?.patientPhone?.trim() || "";
+  const queryFallback = patientSearch.searchQuery?.trim() || "";
+  
+  let candidateName = fullName;
+  if (!candidateName) {
+    if (phoneFallback) {
+      candidateName = `Пациент (${phoneFallback})`;
+    } else if (queryFallback) {
+      if (/^[\d+\s()-]+$/.test(queryFallback)) {
+        candidateName = `Пациент (${queryFallback})`;
+      } else {
+        candidateName = queryFallback;
+      }
+    } else if (appointmentType === "emergency") {
+      candidateName = "Пациент с острой болью (срочно)";
+    }
+  }
+  const patientName = candidateName || "Пациент";
   const selectedDoc = doctors.find((d: any) => d.id === doctorUserId) || dutyDoc;
   const selectedChair = chairs.find((c: any) => c.id === chairId) || currentChair;
 

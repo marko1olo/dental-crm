@@ -109,7 +109,7 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
   const handleCopyBookingConfirmation = () =>
     executeCopyConfirmationFlow({
       patientSearch, appointmentType, doctors, doctorUserId, dutyDoc,
-      chairs, chairId, currentChair, startsAtLocal, durationMinutes, dashboard,
+      chairs, chairId, currentChair, startsAtLocal, durationMinutes, dashboard, initialSlot,
     });
 
   return { isSubmitting, handleSubmitBooking, handleCopyBookingConfirmation };

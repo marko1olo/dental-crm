@@ -38,8 +38,8 @@
 
 @media (max-width: 840px) {
 	.sa-toast {
-		top: auto !important;
-		bottom: 5rem !important;
+		top: max(12px, env(safe-area-inset-top, 12px)) !important;
+		bottom: auto !important;
 		left: 12px !important;
 		right: 12px !important;
 		max-width: calc(100% - 24px) !important;
@@ -48,8 +48,8 @@
 
 @media (max-width: 640px) {
 	.sa-toast {
-		top: auto !important;
-		bottom: 5.5rem !important;
+		top: max(10px, env(safe-area-inset-top, 10px)) !important;
+		bottom: auto !important;
 		left: 1rem !important;
 		right: 1rem !important;
 		max-width: calc(100% - 2rem) !important;
@@ -76,15 +76,33 @@ body:has(.cbct-viewport-container-axial) .sa-toast {
 	z-index: 99999 !important;
 }
 
-/* Position toast safely when modals or dialogs are active to avoid header occlusion on mobile */
-body:has([role="dialog"]) .sa-toast,
-body:has([aria-modal="true"]) .sa-toast,
-body:has(.payment-modal-backdrop) .sa-toast,
-body:has(.payment-modal) .sa-toast,
-.sa-toast--modal-active {
-	top: auto !important;
-	bottom: 5rem !important;
-	z-index: 99999 !important;
+/* Position toast safely when modals or dialogs are active to avoid header occlusion on desktop */
+@media (min-width: 769px) {
+	body:has([role="dialog"]) .sa-toast,
+	body:has([aria-modal="true"]) .sa-toast,
+	body:has(.payment-modal-backdrop) .sa-toast,
+	body:has(.payment-modal) .sa-toast,
+	.sa-toast--modal-active {
+		top: auto !important;
+		bottom: 5rem !important;
+		z-index: 99999 !important;
+	}
+}
+
+@media (max-width: 768px) {
+	.sa-toast,
+	.sa-toast--modal-active,
+	body:has([role="dialog"]) .sa-toast,
+	body:has([aria-modal="true"]) .sa-toast,
+	body:has(.payment-modal-backdrop) .sa-toast,
+	body:has(.payment-modal) .sa-toast {
+		top: max(12px, env(safe-area-inset-top, 12px)) !important;
+		bottom: auto !important;
+		left: 12px !important;
+		right: 12px !important;
+		max-width: calc(100% - 24px) !important;
+		z-index: 99999 !important;
+	}
 }
 
 @keyframes sa-slide-up {
@@ -492,9 +510,9 @@ body:has(.payment-modal) .sa-toast,
 .sa-image-container {
 	position: relative;
 	width: 100%;
-	height: 540px;
-	min-height: 520px;
-	max-height: 580px;
+	height: 100%;
+	min-height: 280px;
+	max-height: 100%;
 	flex: 1;
 	overflow: hidden;
 	user-select: none;
