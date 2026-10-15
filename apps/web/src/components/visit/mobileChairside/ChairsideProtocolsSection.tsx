@@ -8,14 +8,18 @@ import {
   ArrowRight,
   CheckCircle2,
   CreditCard,
+  ShieldCheck,
   Stethoscope,
   Trash2,
   Zap,
 } from "lucide-react";
+import { showToast } from "../../GlobalToast";
 import { triggerHaptic } from "../../../native/mobileBridge";
 import { MobileBottomSheet } from "../../mobile/MobileBottomSheet";
 import { VisitPlanStageHandoffBanner } from "../VisitPlanStageHandoffBanner";
+import { VisitDiaryAnesthesiaBar } from "../diary/VisitDiaryAnesthesiaBar";
 import { ChairsideTeethQuickSelector } from "./ChairsideTeethQuickSelector";
+import { EmkEndoSection } from "../emk/EmkEndoSection";
 import {
   COMMON_DENTAL_DIAGNOSES,
   PAYMENT_METHOD_OPTIONS,
@@ -77,6 +81,34 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
               data-testid={`${testId}-complaint-input`}
             />
             <div
+              className="mobile-chairside-row-item cursor-pointer bg-emerald-500/10 border-b border-[var(--line)]"
+              onClick={() => {
+                triggerHaptic("success");
+                updateVisitNoteField(
+                  "complaint",
+                  "Жалоб на момент осмотра не предъявляет. Плановый профилактический осмотр.",
+                );
+                updateVisitNoteField(
+                  "anamnesis",
+                  "Соматически здоров. Аллергологический и эпидемиологический анамнез спокойный. Хронические заболевания отрицает.",
+                );
+                showToast("✓ Соматически здоров (Норма в 1 клик)", "success");
+              }}
+              data-testid={`${testId}-btn-somatic-norm`}
+            >
+              <div className="flex items-center gap-3">
+                <ShieldCheck size={18} className="text-emerald-600 shrink-0" />
+                <div>
+                  <div className="text-[14px] font-bold text-emerald-800 dark:text-emerald-300">
+                    ✓ Соматически здоров / Интактная норма
+                  </div>
+                  <div className="text-[12px] text-[var(--muted)]">Заполнить статус физиологической нормы в 1 клик</div>
+                </div>
+              </div>
+              <ArrowRight size={16} className="text-[var(--muted)]" />
+            </div>
+
+            <div
               className="mobile-chairside-row-item"
               onClick={() =>
                 updateVisitNoteField(
@@ -121,6 +153,23 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
             setToothState={setToothState}
             patientAgeYears={patientAgeYears}
             testId={testId}
+          />
+
+          <VisitDiaryAnesthesiaBar
+            fieldsDisabled={false}
+            activePatient={activePatient}
+            diary={visitNoteForm as any}
+            doctorName="Лечащий врач"
+            isLocked={false}
+            isRevising={false}
+            beginRevise={() => {}}
+            applyAnesthesiaPreset={(preset) => {
+              const curr = visitNoteForm?.treatmentPlan || "";
+              updateVisitNoteField("treatmentPlan", curr ? `${curr}\n\n${preset}` : preset);
+            }}
+            onDisposalCarpules={() => {}}
+            patientId={activePatient?.id}
+            visitId={activeAppointment?.id}
           />
 
           <div className="mobile-chairside-grouped-card">
@@ -182,12 +231,19 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
 
       {/* ═══ STEP 4: ЛЕЧЕНИЕ И ПРОТОКОЛ ═══ */}
       {currentStep === "treatment" && (
-        <div className="space-y-3" data-testid={`${testId}-step4-content`}>
+        <div className="space-y-3 pb-28" data-testid={`${testId}-step4-content`}>
           <VisitPlanStageHandoffBanner
             loadedTreatmentPlan={loadedTreatmentPlan}
             activeAppointment={activeAppointment}
             activePatient={activePatient}
             onTakeStage={onTakeStage}
+          />
+
+          <EmkEndoSection
+            visitNoteForm={visitNoteForm}
+            updateVisitNoteField={updateVisitNoteField}
+            isLocked={false}
+            activeTooth={16}
           />
 
           <div className="mobile-chairside-grouped-card">

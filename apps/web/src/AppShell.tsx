@@ -2,14 +2,13 @@ import { Stethoscope } from "lucide-react";
 import { lazy, Suspense, useEffect } from "react";
 import { BootErrorBoundary } from "./bootErrorBoundary";
 import { GlobalToast } from "./components/GlobalToast";
+import { DirectMedicalInsertLauncher } from "./components/documents/DirectMedicalInsertLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
 import "./theme.css";
 
-const DentalWorkspace = lazy(() =>
-	import("./App").then((module) => ({ default: module.App })),
-);
+import { App as DentalWorkspace } from "./App";
 
 const DiagnosticDrawer = lazy(() =>
 	import("./components/diagnostics/DiagnosticDrawer").then((module) => ({
@@ -20,6 +19,12 @@ const DiagnosticDrawer = lazy(() =>
 const CopilotGlobalHost = lazy(() =>
 	import("./components/copilot/CopilotGlobalHost").then((module) => ({
 		default: module.CopilotGlobalHost,
+	})),
+);
+
+const DentalAgentCockpit = lazy(() =>
+	import("./components/ai/DentalAgentCockpit").then((module) => ({
+		default: module.DentalAgentCockpit,
 	})),
 );
 
@@ -68,10 +73,12 @@ export function AppShell() {
 			>
 				<DentalWorkspace />
 			</Suspense>
+			<DirectMedicalInsertLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />
 				<CopilotGlobalHost />
+				<DentalAgentCockpit />
 			</Suspense>
 		</BootErrorBoundary>
 	);

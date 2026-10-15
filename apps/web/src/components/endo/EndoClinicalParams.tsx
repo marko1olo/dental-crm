@@ -1,6 +1,5 @@
 import React from "react";
-import { Check, Clipboard } from "lucide-react";
-import { DentalForm043 } from "../icons/DentalIcons";
+import { Check, Clipboard, FileText } from "lucide-react";
 
 export interface EndoClinicalParamsProps {
 	readonly rotarySystem: string;
@@ -81,12 +80,12 @@ export const EndoClinicalParams: React.FC<EndoClinicalParamsProps> = ({
 				</div>
 			</div>
 
-			{/* Live Structured Protocol Preview for Form 043/y (Zero Emojis) */}
+			{/* Предпросмотр протокола эндодонтии в дневник визита */}
 			<div className="p-3 bg-[var(--surface,#f8fafc)] dark:bg-slate-950/60 border border-[var(--line,#cbd5e1)] dark:border-slate-800 rounded-2xl">
 				<div className="flex items-center justify-between mb-1.5">
 					<div className="flex items-center gap-1.5 text-xs font-bold text-rose-700 dark:text-rose-300">
-						<DentalForm043 size={15} />
-						<span className="truncate">Предпросмотр протокола лечения:</span>
+						<FileText size={15} />
+						<span className="truncate">Предпросмотр протокола эндодонтии:</span>
 					</div>
 
 					<button

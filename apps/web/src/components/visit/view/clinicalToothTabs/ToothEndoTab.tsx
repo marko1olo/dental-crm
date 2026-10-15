@@ -13,6 +13,7 @@ import {
 	TOOTH_CLINICAL_PROTOCOLS,
 	type ToothClinicalProtocol,
 } from "./types";
+import { ChairsideEndoQuickBar } from "../../../endo/ChairsideEndoQuickBar";
 
 export interface ToothEndoTabProps {
 	code: string;
@@ -39,8 +40,23 @@ export function ToothEndoTab({
 	setIsEndoModalOpen,
 }: ToothEndoTabProps) {
 	return (
-		<div className="_ccm-pane-section">
+		<div className="_ccm-pane-section space-y-3">
 			<div className="_ccm-sub-label">Эндодонтический протокол</div>
+
+			{/* Chairside Endo QuickBar (First Principles для клиники 1-3 кресла) */}
+			<ChairsideEndoQuickBar
+				activeTooth={Number(code) || 16}
+				toothState={state === "treatment" ? "Пульпит / Периодонтит" : state}
+				onInsertToDiary={(soapText) => appendToEMKField("treatmentPlan", soapText)}
+				onOpenFullModal={() => {
+					setEndoModalToothNumber(Number(code));
+					setEndoModalToothState(
+						state === "treatment" ? "Пульпит / Периодонтит" : state,
+					);
+					setIsEndoModalOpen(true);
+				}}
+			/>
+
 			<div className="_ccm-items-grid">
 				<button
 					type="button"
