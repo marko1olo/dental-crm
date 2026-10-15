@@ -68,6 +68,11 @@ const HygieneIndicesPanel = React.lazy(() =>
 		default: m.HygieneIndicesPanel,
 	})),
 );
+const AnesthesiaStandaloneWorkspace = React.lazy(() =>
+	import("./components/anesthesia/AnesthesiaStandaloneWorkspace").then((m) => ({
+		default: m.AnesthesiaStandaloneWorkspace,
+	})),
+);
 import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
 import { isPatientPresentationRoute } from "./components/photography/presentationSyncProtocol";
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
@@ -388,6 +393,36 @@ if (publicPortalRoute) {
 							doctorName="Д-р Воронов А. В."
 						/>
 					</div>
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(new URLSearchParams(window.location.search).has("anesthesia") ||
+		window.location.hash.toLowerCase().includes("anesthesia"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			(localStorage.getItem("dente_theme") as any) || "auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка протокола анестезии...
+						</div>
+					}
+				>
+					<AnesthesiaStandaloneWorkspace />
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>

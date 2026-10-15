@@ -1411,8 +1411,14 @@
 /* QuickBar Robust Ergonomic Classes (Zero Tailwind dependency) */
 .anesthesia-quick-drugs-grid {
 	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
+	grid-template-columns: repeat(4, minmax(0, 1fr));
 	gap: 0.5rem;
+}
+
+@media (max-width: 1024px) {
+	.anesthesia-quick-drugs-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
 }
 
 @media (max-width: 768px) {
@@ -1460,13 +1466,14 @@
 	padding: 0.5rem 0.75rem;
 	min-height: 44px;
 	border-radius: 8px;
-	border: 1.5px solid var(--line);
+	border: 1px solid var(--line);
 	background: var(--paper);
 	color: var(--ink);
 	text-align: left;
 	cursor: pointer;
 	transition: all 0.15s ease;
 	box-sizing: border-box;
+	box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .anesthesia-quick-drug-chip:hover {
@@ -1478,7 +1485,7 @@
 	background: var(--teal-surface, rgba(13, 148, 136, 0.1));
 	border-color: var(--teal);
 	font-weight: 700;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+	box-shadow: 0 0 0 1px var(--teal);
 }
 
 .anesthesia-quick-stepper {

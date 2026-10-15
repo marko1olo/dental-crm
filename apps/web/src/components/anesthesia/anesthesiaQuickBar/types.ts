@@ -1,18 +1,17 @@
-import type {
-	AnestheticDrugId,
-	InjectionTechniqueId,
-} from "../anesthesiaCatalog";
+import type { AnestheticDrugId, AnestheticDrugInfo, InjectionTechniqueId } from '../anesthesiaCatalog';
 import {
 	formatAnesthesiaPatientMemo,
 	type AnesthesiaPatientMemoParams,
 	type AnesthesiaCalculationResult,
 	type AsaPhysicalStatus,
-} from "../anesthesiaEngine";
+} from '../anesthesiaEngine';
 
+export * from './primaryAnestheticDrugsData';
 export {
 	formatAnesthesiaPatientMemo,
 	type AnesthesiaPatientMemoParams,
 	type AnestheticDrugId,
+	type AnestheticDrugInfo,
 	type InjectionTechniqueId,
 	type AnesthesiaCalculationResult,
 	type AsaPhysicalStatus,
@@ -36,62 +35,10 @@ export interface AnesthesiaQuickBarProps {
 	hasArticaineAllergy?: boolean | undefined;
 	targetToothNumberFdi?: number | string | undefined;
 	onApplyAnesthesia?: ((diaryText: string, result: AnesthesiaCalculationResult) => void) | undefined;
-	onDisposalCarpules?: ((carpulesCount: number, drugId: AnestheticDrugId) => void) | undefined;
+	onDisposalCarpules?: ((carpulesCount: number, drugId?: AnestheticDrugId | undefined) => void) | undefined;
 	onOpenEmergencyProtocol?: (() => void) | undefined;
 	disabled?: boolean | undefined;
 }
-
-export const WEIGHT_QUICK_PRESETS: readonly number[] = [15, 30, 50, 70, 85, 100];
-export const WEIGHT_PRESETS: readonly number[] = WEIGHT_QUICK_PRESETS;
-
-export interface PrimaryAnestheticDrug {
-	readonly id: AnestheticDrugId;
-	readonly labelRu: string;
-	readonly subLabelRu: string;
-	readonly activeSubstanceRu: string;
-	readonly vasoRatio: string;
-	readonly isAdrenalineFree: boolean;
-	readonly isCardioRecommended: boolean;
-}
-
-export const PRIMARY_ANESTHETIC_DRUGS: readonly PrimaryAnestheticDrug[] = [
-	{
-		id: "articaine_1_200k",
-		labelRu: "Ультракаин Д-С 1:200 000",
-		subLabelRu: "Артикаин 4% • Щадящий адреналин • МДД 7 мг/кг",
-		activeSubstanceRu: "Артикаин 4% + Эпинефрин 1:200 000",
-		vasoRatio: "1:200 000",
-		isAdrenalineFree: false,
-		isCardioRecommended: false,
-	},
-	{
-		id: "articaine_1_100k",
-		labelRu: "Ультракаин Д-С форте 1:100 000",
-		subLabelRu: "Артикаин 4% • Глубокая анестезия • МДД 7 мг/кг",
-		activeSubstanceRu: "Артикаин 4% + Эпинефрин 1:100 000",
-		vasoRatio: "1:100 000",
-		isAdrenalineFree: false,
-		isCardioRecommended: false,
-	},
-	{
-		id: "mepivacaine_plain",
-		labelRu: "Скандонест 3% (без адреналина)",
-		subLabelRu: "Мепивакаин 3% • Кардио-защита • Без сульфитов • МДД 4.4 мг/кг",
-		activeSubstanceRu: "Мепивакаин 3% (чистый)",
-		vasoRatio: "Без адреналина",
-		isAdrenalineFree: true,
-		isCardioRecommended: true,
-	},
-	{
-		id: "septanest_1_100k",
-		labelRu: "Септанест 1:100 000",
-		subLabelRu: "Артикаин 4% + Эпинефрин 1:100 000 • Septodont • МДД 7 мг/кг",
-		activeSubstanceRu: "Артикаин 4% + Эпинефрин 1:100 000",
-		vasoRatio: "1:100 000",
-		isAdrenalineFree: false,
-		isCardioRecommended: false,
-	},
-];
 
 export interface SafetyWarningState {
 	readonly title: string;
@@ -127,10 +74,7 @@ export interface AnesthesiaSafetyAllergyHudProps {
 	readonly hasLidocaineAllergy?: boolean | undefined;
 	readonly hasArticaineAllergy?: boolean | undefined;
 	readonly selectedDrugId: AnestheticDrugId;
-	readonly selectedDrugInfo: {
-		readonly isAdrenalineFree: boolean;
-		readonly tradeNamesRu: readonly string[];
-	};
+	readonly selectedDrugInfo: AnestheticDrugInfo;
 	readonly safetyWarning: SafetyWarningState | null;
 	readonly onSelectDrug: (drugId: AnestheticDrugId) => void;
 	readonly onDismissWarning: () => void;
@@ -142,19 +86,13 @@ export interface AnesthesiaSafetyAllergyHudProps {
 export interface AnesthesiaQuickBarActionsProps {
 	readonly patientWeightKg: number;
 	readonly selectedDrugId: AnestheticDrugId;
-	readonly selectedDrugInfo: {
-		readonly tradeNamesRu: readonly string[];
-	};
+	readonly selectedDrugInfo: { readonly tradeNamesRu: readonly string[] };
 	readonly singleCarpuleResult: AnesthesiaCalculationResult;
 	readonly maxSafeCarpules: number;
 	readonly sessionInjectedCarpules: number;
 	readonly selectedCarpulesCount: number;
 	readonly onChangeSelectedCarpulesCount: (count: number) => void;
-	readonly onApplyCarpules: (
-		carpulesCount: number,
-		bypassCheck?: boolean,
-		overrideDrugId?: AnestheticDrugId,
-	) => void;
+	readonly onApplyCarpules: (count: number, bypassCheck?: boolean | undefined, overrideDrugId?: AnestheticDrugId | undefined) => void;
 	readonly onApplyStandardNormPreset: () => void;
 	readonly onApplyUltracainForteCombined: () => void;
 	readonly onApplySeptanestInfiltration: () => void;
@@ -163,7 +101,7 @@ export interface AnesthesiaQuickBarActionsProps {
 	readonly onApplyScandonestCardio?: (() => void) | undefined;
 	readonly onWriteoffAntishockKit?: (() => void) | undefined;
 	readonly onOpenEmergencyProtocol?: (() => void) | undefined;
-	readonly onNurseQuickDisposal: (carpulesCount?: number) => void;
+	readonly onNurseQuickDisposal: (carpulesCount: number) => void;
 	readonly onNursePacketDisposal: () => void;
 	readonly onNurseSeptanestDisposal: () => void;
 	readonly onSelectDrug: (drugId: AnestheticDrugId) => void;

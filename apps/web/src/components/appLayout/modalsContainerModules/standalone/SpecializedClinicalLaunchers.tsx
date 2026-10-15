@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import React, { Suspense, useState } from "react";
 import { lazyWithRetry } from "../../../../lib/lazyWithRetry";
 import { AppLoadingState } from "../../../../AppBootState";
 import { InformedConsentModal } from "../../../consents/InformedConsentModal";
@@ -59,7 +59,7 @@ import { PeriodontogramChart } from "../../../perio/PeriodontogramChart";
 import { PerioChartModal } from "../../../perio/PerioChartModal";
 import { HygieneIndicesPanel } from "../../../hygiene/HygieneIndicesPanel";
 import { PatientRecallsHubModal } from "../../../recalls/PatientRecallsHubModal";
-import { AnesthesiaQuickBar } from "../../../anesthesia/AnesthesiaQuickBar";
+import { AnesthesiaStandaloneWorkspace } from "../../../anesthesia/AnesthesiaStandaloneWorkspace";
 
 export function renderSpecializedClinicalLaunchers({
 	isCbctTunerOpen,
@@ -83,43 +83,7 @@ export function renderSpecializedClinicalLaunchers({
 		(new URLSearchParams(window.location.search).has("anesthesia") ||
 			window.location.hash.toLowerCase().includes("anesthesia"));
 	if (isAnesthesiaDirect) {
-		const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-		const hasCardio = Boolean(searchParams?.has("cardio"));
-		const takesBeta = Boolean(searchParams?.has("beta"));
-		const hasIhd = Boolean(searchParams?.has("ihd"));
-
-		return (
-			<div
-				className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6 overflow-y-auto"
-				data-testid="anesthesia-standalone-workspace"
-			>
-				<div className="max-w-7xl mx-auto space-y-4">
-					<div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
-						<div>
-							<h1 className="text-lg sm:text-xl font-black text-[var(--ink)]">
-								Обезболивание и анестезия у кресла
-							</h1>
-							<p className="text-xs text-[var(--muted)]">
-								Быстрый выбор препарата, 1-клик дозировки и экстренная помощь
-							</p>
-						</div>
-					</div>
-					<AnesthesiaQuickBar
-						patientWeightKg={70}
-						targetToothNumberFdi={16}
-						hasCardiovascularRisk={hasCardio}
-						takesBetaBlockers={takesBeta}
-						hasIschemicHeartDisease={hasIhd}
-						onApplyAnesthesia={() => {}}
-						onOpenEmergencyProtocol={() => {
-							const url = new URL(window.location.href);
-							url.searchParams.set("emergency", "1");
-							window.location.href = url.toString();
-						}}
-					/>
-				</div>
-			</div>
-		);
+		return <AnesthesiaStandaloneWorkspace />;
 	}
 
 	// HYGIENE & INDICES COCKPIT (?hygiene=1, ?hygiene=demo, #hygiene)
@@ -464,3 +428,4 @@ export function renderSpecializedClinicalLaunchers({
 
 	return null;
 }
+
