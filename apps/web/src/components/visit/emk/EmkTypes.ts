@@ -13,14 +13,19 @@ export interface EmkSectionProps {
 	patientGender?: string | null | undefined;
 }
 
+import type { ClinicalFormFieldTarget } from "@dental/shared";
+
 export interface DebouncedEmkTextareaProps {
 	fieldKey: string;
 	label: string;
 	value: string;
 	onCommit: (fieldKey: string, value: string) => void;
-	textareaRef?: (el: HTMLTextAreaElement | null) => void;
+	textareaRef?: ((el: HTMLTextAreaElement | null) => void) | React.RefObject<HTMLTextAreaElement | null>;
 	className?: string;
 	placeholder?: string;
+	enableStenographer?: boolean;
+	showStenographerChips?: boolean;
+	stenographerFieldTarget?: ClinicalFormFieldTarget;
 }
 
 /**

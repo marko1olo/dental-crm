@@ -1,49 +1,17 @@
 import React from "react";
-import { createPortal } from "react-dom";
-import {
-	BookOpen,
-	Calendar,
-	Check,
-	ChevronDown,
-	Clock,
-	Printer,
-	Redo2,
-	ShieldCheck,
-	Sparkles,
-	Undo2,
-} from "lucide-react";
-import type { ClinicalSoapPreset } from "../clinicalSoapPresets";
 import { useVisitStore } from "../../../store/visitStore";
 import { showToast } from "../../GlobalToast";
+import type { EmkToolbarProps } from "./emkToolbarModules/emkToolbarTypes";
+import { EmkQuickActionButtons } from "./emkToolbarModules/EmkQuickActionButtons";
+import { EmkStepperControls } from "./emkToolbarModules/EmkStepperControls";
 
-export interface EmkToolbarProps {
-	activeEmkTab?: string | undefined;
-	setActiveEmkTab?: ((tabId: string) => void) | undefined;
-	onApplyPhysiologicalNorm?: (() => void) | undefined;
-	onApplyNorm?: (() => void) | undefined;
-	onApplyOrthoNorm?: (() => void) | undefined;
-	onApplySurgeryNorm?: (() => void) | undefined;
-	onApplySoapPreset?: ((preset: ClinicalSoapPreset) => void) | undefined;
-	onToggleStarProtocols?: (() => void) | undefined;
-	isStarProtocolsOpen?: boolean | undefined;
-	onOpenProtocolsCatalog?: (() => void) | undefined;
-	onToggleCopilot?: (() => void) | undefined;
-	isCopilotOpen?: boolean | undefined;
-	onScheduleNextVisit?: ((days: number) => void) | undefined;
-	onScheduleNext?: (() => void) | undefined;
-	onOpenConsent?: (() => void) | undefined;
-	onPrint043?: (() => void) | undefined;
-	hasUnsavedChanges?: boolean | undefined;
-	voicePilotNode?: React.ReactNode | undefined;
-	specialtyFocusNode?: React.ReactNode | undefined;
-	noteForm?: Record<string, any> | undefined;
-	onUndo?: (() => boolean) | undefined;
-	onRedo?: (() => boolean) | undefined;
-}
+export type { EmkToolbarProps } from "./emkToolbarModules/emkToolbarTypes";
+export * from "./emkToolbarModules/emkToolbarTypes";
 
 export function EmkToolbar({
 	activeEmkTab: propActiveEmkTab,
 	setActiveEmkTab: propSetActiveEmkTab,
+	onTabChange,
 	onApplyPhysiologicalNorm,
 	onApplyNorm,
 	onApplyOrthoNorm,
@@ -77,20 +45,6 @@ export function EmkToolbar({
 	const activeEmkTab = propActiveEmkTab ?? localActiveTab;
 	const setActiveEmkTab = propSetActiveEmkTab ?? setLocalActiveTab;
 	const handleSchedule = onScheduleNext || (() => onScheduleNextVisit(5));
-	const [isExtraMenuOpen, setIsExtraMenuOpen] = React.useState<boolean>(false);
-	const [dropdownPos, setDropdownPos] = React.useState<{ top: number; left: number } | null>(null);
-	const buttonRef = React.useRef<HTMLButtonElement | null>(null);
-	const menuRef = React.useRef<HTMLDivElement | null>(null);
-
-	React.useEffect(() => {
-		if (isExtraMenuOpen && buttonRef.current) {
-			const rect = buttonRef.current.getBoundingClientRect();
-			setDropdownPos({
-				top: rect.bottom + 6,
-				left: Math.max(8, Math.min(rect.left, window.innerWidth - 290)),
-			});
-		}
-	}, [isExtraMenuOpen]);
 
 	React.useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -133,399 +87,39 @@ export function EmkToolbar({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [canUndo, canRedo, handleUndo, handleRedo]);
 
-	React.useEffect(() => {
-		if (!isExtraMenuOpen) return;
-		const handleClickOutside = (e: MouseEvent) => {
-			const target = e.target as Node;
-			if (
-				buttonRef.current && !buttonRef.current.contains(target) &&
-				menuRef.current && !menuRef.current.contains(target)
-			) {
-				setIsExtraMenuOpen(false);
-			}
-		};
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [isExtraMenuOpen]);
-
-	const tabs = [
-		{ id: "all", label: "Все разделы", shortLabel: "Все" },
-		{ id: "complaints", label: "Жалобы & Анамнез", shortLabel: "Жалобы" },
-		{ id: "objectiveStatus", label: "Осмотр & Формула", shortLabel: "Осмотр" },
-		{ id: "diary", label: "Диагноз & Лечение", shortLabel: "Лечение" },
-		{ id: "recommendations", label: "Рекомендации", shortLabel: "Советы" },
-	];
-
-	const mobileSteps = [
-		{ id: "complaints", label: "1. Жалобы" },
-		{ id: "objectiveStatus", label: "2. Осмотр" },
-		{ id: "diagnosis", label: "3. Диагноз" },
-		{ id: "treatmentPlan", label: "4. Лечение" },
-	];
-
-	const isTabFilled = (tabId: string) => {
-		if (tabId === "all") return false;
-		if (tabId === "complaints") {
-			return Boolean(
-				String(noteForm.complaint ?? "").trim() ||
-				String(noteForm.anamnesis ?? "").trim() ||
-				String(noteForm.complaints ?? "").trim()
-			);
-		}
-		if (tabId === "objectiveStatus") {
-			return Boolean(
-				String(noteForm.objectiveStatus ?? "").trim() ||
-				String(noteForm.examination ?? "").trim() ||
-				String(noteForm.statusLocalis ?? "").trim()
-			);
-		}
-		if (tabId === "diary" || tabId === "treatmentPlan") {
-			return Boolean(
-				String(noteForm.treatmentPlan ?? "").trim() ||
-				String(noteForm.treatmentDescription ?? "").trim()
-			);
-		}
-		if (tabId === "diagnosis") {
-			return Boolean(
-				String(noteForm.diagnosis ?? "").trim() ||
-				String(noteForm.icd10 ?? "").trim()
-			);
-		}
-		if (tabId === "recommendations") {
-			return Boolean(String(noteForm.recommendations ?? "").trim());
-		}
-		return Boolean(String(noteForm[tabId] ?? "").trim().length > 0);
-	};
-
-	const isTabActive = (tabId: string) => {
-		if (activeEmkTab === tabId) return true;
-		if (tabId === "complaints" && (activeEmkTab === "complaint" || activeEmkTab === "anamnesis")) return true;
-		if (tabId === "objectiveStatus" && (activeEmkTab === "status" || activeEmkTab === "objective")) return true;
-		if (tabId === "diary" && (activeEmkTab === "diagnosis" || activeEmkTab === "treatmentPlan" || activeEmkTab === "protocol")) return true;
-		if (tabId === "diagnosis" && (activeEmkTab === "diagnosis" || (activeEmkTab === "diary" && !noteForm.treatmentPlan))) return true;
-		if (tabId === "treatmentPlan" && (activeEmkTab === "treatmentPlan" || activeEmkTab === "protocol")) return true;
-		return false;
-	};
-
 	return (
 		<div
 			className="emk-unified-toolbar flex flex-col w-full min-w-0 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] shadow-xs mb-1.5 overflow-hidden"
 			data-testid="emk-unified-toolbar"
 		>
 			{/* СТРОКА 1: Клинические инструменты приёма (Action Toolbar) */}
-			<div
-				className="emk-tier1-quick-soap-bar flex items-center justify-between gap-1.5 sm:gap-2 px-2.5 w-full min-w-0 h-[38px] min-h-[38px] max-h-[38px] box-border"
-				data-testid="emk-tier1-quick-soap-bar"
-			>
-				{/* ЛЕВАЯ ГРУППА: Каталог протоколов 1 142+, Диктовка, AI Ассистент */}
-				<div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
-					{/* 1-Тап кнопка физиологической нормы у кресла (Мандат 8e) */}
-					{Boolean(onApplyNorm || onApplyPhysiologicalNorm) && (
-						<button
-							type="button"
-							data-testid="btn-chairside-physiological-norm"
-							onClick={() => {
-								if (onApplyNorm) onApplyNorm();
-								else if (onApplyPhysiologicalNorm) onApplyPhysiologicalNorm();
-							}}
-							className="emk-norm-button shrink-0"
-							title="Заполнить физиологическую норму осмотра и анамнеза"
-						>
-							<ShieldCheck size={14} className="shrink-0" />
-							<span className="hidden sm:inline">✓ Соматически здоров / Норма</span>
-							<span className="sm:hidden">✓ Норма</span>
-						</button>
-					)}
+			<EmkQuickActionButtons
+				onApplyPhysiologicalNorm={onApplyPhysiologicalNorm}
+				onApplyNorm={onApplyNorm}
+				onApplyOrthoNorm={onApplyOrthoNorm}
+				onApplySurgeryNorm={onApplySurgeryNorm}
+				onOpenProtocolsCatalog={onOpenProtocolsCatalog}
+				onToggleStarProtocols={onToggleStarProtocols}
+				onOpenConsent={onOpenConsent}
+				onPrint043={onPrint043}
+				onToggleCopilot={onToggleCopilot}
+				isCopilotOpen={isCopilotOpen}
+				handleSchedule={handleSchedule}
+				hasUnsavedChanges={hasUnsavedChanges}
+				voicePilotNode={voicePilotNode}
+				specialtyFocusNode={specialtyFocusNode}
+				canUndo={canUndo}
+				canRedo={canRedo}
+				handleUndo={handleUndo}
+				handleRedo={handleRedo}
+			/>
 
-					{/* Кнопка вызова Каталога 1 142 протоколов + меню быстрых норм */}
-					{onOpenProtocolsCatalog && (
-						<div className="emk-toolbar-split-group">
-							<button
-								type="button"
-								data-testid="btn-open-protocols-catalog-1142"
-								onClick={onOpenProtocolsCatalog}
-								className="emk-split-main"
-								title="Открыть полный каталог клинических протоколов"
-							>
-								<BookOpen className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-								<span className="hidden sm:inline">Каталог протоколов</span>
-								<span className="sm:hidden">Протоколы</span>
-								<span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] font-bold">
-									1 142
-								</span>
-							</button>
-
-							<button
-								type="button"
-								ref={buttonRef}
-								data-testid="btn-toggle-extra-soap-menu"
-								onClick={() => setIsExtraMenuOpen((prev) => !prev)}
-								className={`emk-split-arrow ${
-									isExtraMenuOpen ? "bg-[var(--paper-soft)] text-[var(--ink)]" : ""
-								}`}
-								title="Быстрые клинические нормы и бланки"
-								aria-haspopup="menu"
-								aria-expanded={isExtraMenuOpen}
-								aria-label="Быстрые нормы и согласие"
-							>
-								<ChevronDown size={12} className={`transition-transform duration-150 ${isExtraMenuOpen ? "rotate-180" : ""}`} />
-							</button>
-						</div>
-					)}
-
-					{/* Выпадающее меню быстрых норм и бланков */}
-					{isExtraMenuOpen && dropdownPos && typeof document !== "undefined" && createPortal(
-						<div
-							ref={menuRef}
-							className="fixed z-[9999] flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong)] border border-[var(--glass-border)] rounded-xl shadow-2xl min-w-[260px] text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100 backdrop-blur-md"
-							style={{ top: `${dropdownPos.top}px`, left: `${dropdownPos.left}px` }}
-							role="menu"
-							aria-hidden={!isExtraMenuOpen}
-						>
-							<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
-								Клинические нормы
-							</div>
-
-							{Boolean(onApplyNorm || onApplyPhysiologicalNorm) && (
-								<button
-									type="button"
-									data-testid="btn-quick-soap-norm"
-									onClick={() => {
-										if (onApplyNorm) onApplyNorm();
-										else if (onApplyPhysiologicalNorm) onApplyPhysiologicalNorm();
-										setIsExtraMenuOpen(false);
-									}}
-									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
-									title="Первичный или профилактический осмотр, норма"
-								>
-									<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-									<span>Терапевтический осмотр (Норма)</span>
-								</button>
-							)}
-
-							{Boolean(onApplyOrthoNorm) && (
-								<button
-									type="button"
-									data-testid="btn-quick-soap-ortho-norm"
-									onClick={() => {
-										if (onApplyOrthoNorm) onApplyOrthoNorm();
-										setIsExtraMenuOpen(false);
-									}}
-									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
-									title="Контрольный осмотр ортопеда (окклюзия стабильна)"
-								>
-									<ShieldCheck className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
-									<span>Контроль ортопеда</span>
-								</button>
-							)}
-
-							{Boolean(onApplySurgeryNorm) && (
-								<button
-									type="button"
-									data-testid="btn-quick-soap-surgery-norm"
-									onClick={() => {
-										if (onApplySurgeryNorm) onApplySurgeryNorm();
-										setIsExtraMenuOpen(false);
-									}}
-									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
-									title="Послеоперационный контрольный осмотр хирурга"
-								>
-									<ShieldCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
-									<span>Контроль хирурга</span>
-								</button>
-							)}
-
-							<div className="h-px bg-[var(--line)] my-1" />
-
-							<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
-								Справочники и согласие
-							</div>
-
-							<button
-								type="button"
-								data-testid="btn-toggle-star-protocols-toolbar"
-								onClick={() => {
-									onToggleStarProtocols();
-									setIsExtraMenuOpen(false);
-								}}
-								className="w-full text-left px-2.5 py-1.5 rounded-lg font-semibold text-[var(--teal-ink,var(--teal))] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
-							>
-								<Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-500" />
-								<span>Клинические протоколы (СтАР)</span>
-							</button>
-
-							{onOpenConsent && (
-								<button
-									type="button"
-									data-testid="btn-open-consent-toolbar"
-									onClick={() => {
-										onOpenConsent();
-										setIsExtraMenuOpen(false);
-									}}
-									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
-								>
-									<ShieldCheck className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-									<span>Согласие пациента (ИДС)</span>
-								</button>
-							)}
-
-							{onPrint043 && (
-								<button
-									type="button"
-									data-testid="btn-print-043u-toolbar"
-									onClick={() => {
-										onPrint043();
-										setIsExtraMenuOpen(false);
-									}}
-									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
-								>
-									<Printer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-									<span>Печать медицинской карты</span>
-								</button>
-							)}
-
-							<div className="h-px bg-[var(--line)] my-1" />
-
-							<button
-								type="button"
-								onClick={() => {
-									handleUndo();
-									setIsExtraMenuOpen(false);
-								}}
-								disabled={!canUndo}
-								className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center justify-between cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-							>
-								<span className="flex items-center gap-2">
-									<Undo2 size={13} className="shrink-0" />
-									<span>Отменить ввод</span>
-								</span>
-								<kbd className="text-[10px] font-mono text-[var(--muted)]">Ctrl+Z</kbd>
-							</button>
-
-							<button
-								type="button"
-								onClick={() => {
-									handleRedo();
-									setIsExtraMenuOpen(false);
-								}}
-								disabled={!canRedo}
-								className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center justify-between cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-							>
-								<span className="flex items-center gap-2">
-									<Redo2 size={13} className="shrink-0" />
-									<span>Вернуть ввод</span>
-								</span>
-								<kbd className="text-[10px] font-mono text-[var(--muted)]">Ctrl+Y</kbd>
-							</button>
-						</div>,
-						document.body
-					)}
-
-					{/* Голосовой пилот / Диктовка */}
-					{voicePilotNode && (
-						<div className="flex items-center shrink-0">
-							{voicePilotNode}
-						</div>
-					)}
-
-					{/* Интеллектуальный ассистент приема (DENTA Copilot) */}
-					<button
-						type="button"
-						data-testid="btn-toggle-chairside-hud"
-						onClick={onToggleCopilot}
-						className={`emk-toolbar-btn ${isCopilotOpen ? "active" : ""}`}
-						title="Интеллектуальный клинический ассистент приёма DENTA Copilot"
-						aria-expanded={isCopilotOpen}
-					>
-						<Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-500" />
-						<span className="hidden sm:inline">Ассистент</span>
-					</button>
-				</div>
-
-				{/* ПРАВАЯ ГРУППА: Специализированный бланк, След. визит, Статус автосохранения (<= 7 элементов в ряду) */}
-				<div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
-					{/* Интегрированный чип Фокуса специальности / Бланка */}
-					{specialtyFocusNode && (
-						<div className="flex items-center shrink-0" data-testid="emk-specialty-focus-chip">
-							{specialtyFocusNode}
-						</div>
-					)}
-
-					{/* Запись на следующий этап */}
-					<button
-						type="button"
-						onClick={() => handleSchedule()}
-						className="emk-toolbar-btn"
-						data-testid="btn-schedule-next-stage"
-						title="Записать пациента на следующий этап через 5 дней"
-					>
-						<Calendar size={13} className="shrink-0 text-blue-500" />
-						<span className="hidden sm:inline">След. визит</span>
-						<span className="sm:hidden">+5д</span>
-					</button>
-
-					{/* Статус сохранения (Тихая телеметрия без цветных прыщей) */}
-					<span
-						data-testid="emk-autosave-status-badge"
-						className="emk-autosave-clean-badge"
-						title={hasUnsavedChanges ? "В черновике есть изменения (автосохранение активно)" : "Все изменения сохранены"}
-					>
-						{hasUnsavedChanges ? (
-							<>
-								<Clock size={12} className="text-[var(--muted)] shrink-0 opacity-70" />
-								<span>Автосохранение</span>
-							</>
-						) : (
-							<>
-								<Check size={13} className="text-emerald-500 shrink-0" />
-								<span>Сохранено</span>
-							</>
-						)}
-					</span>
-				</div>
-			</div>
-
-			{/* СТРОКА 2: Навигационный сегментированный таб-бар ЭМК (SOAP Segmented Control) — строго для мобильных устройств (Apple HIG, 44px touch targets) */}
-			<div
-				className="emk-tabs-container sm:!hidden w-full min-w-0 bg-[var(--paper-soft)] border-t border-[var(--line)] box-border"
-				role="tablist"
-				aria-label="Вкладки разделов приема"
-				data-testid="emk-tabs-container"
-			>
-				{/* Мобильный вариант (Apple HIG Segmented Control, 44px touch targets) */}
-				<div className="flex sm:hidden items-center p-1 gap-1 w-full min-w-0">
-					{mobileSteps.map((step) => {
-						const isFilled = isTabFilled(step.id);
-						const isActive = isTabActive(step.id);
-						return (
-							<button
-								key={step.id}
-								type="button"
-								role="tab"
-								aria-selected={isActive}
-								className={`mobile-segmented-btn flex-1 min-h-[40px] px-1 text-[12.5px] rounded-lg transition-all cursor-pointer inline-flex items-center justify-center gap-1 touch-manipulation select-none border ${
-									isActive
-										? "active bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] shadow-xs font-semibold"
-										: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] border-transparent font-medium"
-								}`}
-								onClick={() => setActiveEmkTab(step.id)}
-							>
-								<span>{step.label}</span>
-								{isFilled && (
-									<span
-										className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-											isActive
-												? "bg-[var(--teal,#0d9488)] ring-1 ring-[var(--teal)]/40"
-												: "bg-emerald-500/80"
-										}`}
-										title="Раздел заполнен"
-									/>
-								)}
-							</button>
-						);
-					})}
-				</div>
-			</div>
+			{/* СТРОКА 2: Навигационный сегментированный таб-бар ЭМК — мобильный Apple HIG */}
+			<EmkStepperControls
+				activeEmkTab={activeEmkTab}
+				setActiveEmkTab={setActiveEmkTab}
+				noteForm={noteForm}
+			/>
 		</div>
 	);
 }

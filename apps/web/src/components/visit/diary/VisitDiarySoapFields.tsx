@@ -18,6 +18,8 @@ import {
 	appendRecommendationToSoap,
 	PATIENT_RECOMMENDATIONS,
 } from "../../../lib/clinicalProtocols043";
+import { useClinicalStenographer } from "../emk/useClinicalStenographer";
+import { ClinicalStenographerBar } from "../emk/ClinicalStenographerBar";
 
 export interface VisitDiarySoapFieldsProps {
 	readonly diary: DiaryState;
@@ -82,6 +84,51 @@ export function VisitDiarySoapFields({
 	isLocked,
 	handlePrintPhotosChange,
 }: VisitDiarySoapFieldsProps) {
+	const handleToothDetected = React.useCallback(
+		(tooth: number) => {
+			setDiary((p) =>
+				p.diagnosisTooth ? p : { ...p, diagnosisTooth: String(tooth) },
+			);
+		},
+		[setDiary],
+	);
+
+	const anamnesisSteno = useClinicalStenographer({
+		value: diary.anamnesis,
+		onChange: (next) => {
+			ensureRevisingIfLocked();
+			setDiary((p) => ({ ...p, anamnesis: next }));
+			scheduleDebouncedSave();
+		},
+		targetField: "anamnesis",
+		enableStenographer: !fieldsDisabled,
+		onToothDetected: handleToothDetected,
+	});
+
+	const treatmentSteno = useClinicalStenographer({
+		value: diary.treatmentDescription,
+		onChange: (next) => {
+			ensureRevisingIfLocked();
+			setDiary((p) => ({ ...p, treatmentDescription: next }));
+			scheduleDebouncedSave();
+		},
+		targetField: "treatment",
+		enableStenographer: !fieldsDisabled,
+		onToothDetected: handleToothDetected,
+	});
+
+	const statusLocalisSteno = useClinicalStenographer({
+		value: diary.statusLocalis,
+		onChange: (next) => {
+			ensureRevisingIfLocked();
+			setDiary((p) => ({ ...p, statusLocalis: next }));
+			scheduleDebouncedSave();
+		},
+		targetField: "objective",
+		enableStenographer: !fieldsDisabled,
+		onToothDetected: handleToothDetected,
+	});
+
 	return (
 		<div className="vde-043__grid">
 			{/* I — Жалобы и анамнез */}
@@ -128,8 +175,23 @@ export function VisitDiarySoapFields({
 						handleAutoResize(e);
 						ensureRevisingIfLocked();
 					}}
-					placeholder="Жалобы пациента, история заболевания, соматический статус и анамнез..."
+					onKeyDown={anamnesisSteno.handleKeyDown}
+					placeholder="Жалобы пациента, история заболевания, соматический статус и анамнез (Стенограф: Tab / Пробел)..."
 				/>
+				{!fieldsDisabled && (
+					<ClinicalStenographerBar
+						snippets={anamnesisSteno.fieldSnippets}
+						onSelectSnippet={anamnesisSteno.insertSnippet}
+						isListening={anamnesisSteno.isListening}
+						isProcessing={anamnesisSteno.isProcessing}
+						interimSpeechText={anamnesisSteno.interimSpeechText}
+						onToggleVoice={anamnesisSteno.toggleVoiceDictation}
+						onApplyInterim={anamnesisSteno.applyInterim}
+						onCancelVoice={anamnesisSteno.stopVoiceDictation}
+						targetField="anamnesis"
+						className="mt-1"
+					/>
+				)}
 				{COMPLAINT_QUICK_CHIPS.length > 0 && (
 					<div
 						className="mt-1.5 dente-filter-chips overflow-x-auto no-scrollbar py-0.5 max-w-full flex-nowrap touch-pan-x"
@@ -225,8 +287,23 @@ export function VisitDiarySoapFields({
 						handleAutoResize(e);
 						ensureRevisingIfLocked();
 					}}
-					placeholder="Внешний осмотр, перкуссия, пальпация, ЭОД, рентген..."
+					onKeyDown={statusLocalisSteno.handleKeyDown}
+					placeholder="Внешний осмотр, перкуссия, пальпация, ЭОД, рентген (Стенограф: Tab / Пробел)..."
 				/>
+				{!fieldsDisabled && (
+					<ClinicalStenographerBar
+						snippets={statusLocalisSteno.fieldSnippets}
+						onSelectSnippet={statusLocalisSteno.insertSnippet}
+						isListening={statusLocalisSteno.isListening}
+						isProcessing={statusLocalisSteno.isProcessing}
+						interimSpeechText={statusLocalisSteno.interimSpeechText}
+						onToggleVoice={statusLocalisSteno.toggleVoiceDictation}
+						onApplyInterim={statusLocalisSteno.applyInterim}
+						onCancelVoice={statusLocalisSteno.stopVoiceDictation}
+						targetField="objective"
+						className="mt-1"
+					/>
+				)}
 				{fieldInterimMap.statusLocalis && (
 					<div
 						className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-xs font-semibold text-blue-600 dark:text-blue-400 italic animate-pulse flex items-center gap-1.5 select-none"
@@ -434,8 +511,23 @@ export function VisitDiarySoapFields({
 						handleAutoResize(e);
 						ensureRevisingIfLocked();
 					}}
-					placeholder="Протокол вмешательства: препарирование, медикаментозная обработка, пломбирование, материалы..."
+					onKeyDown={treatmentSteno.handleKeyDown}
+					placeholder="Протокол вмешательства: препарирование, медикаментозная обработка, пломбирование, материалы (Стенограф: Tab / Пробел)..."
 				/>
+				{!fieldsDisabled && (
+					<ClinicalStenographerBar
+						snippets={treatmentSteno.fieldSnippets}
+						onSelectSnippet={treatmentSteno.insertSnippet}
+						isListening={treatmentSteno.isListening}
+						isProcessing={treatmentSteno.isProcessing}
+						interimSpeechText={treatmentSteno.interimSpeechText}
+						onToggleVoice={treatmentSteno.toggleVoiceDictation}
+						onApplyInterim={treatmentSteno.applyInterim}
+						onCancelVoice={treatmentSteno.stopVoiceDictation}
+						targetField="treatment"
+						className="mt-1"
+					/>
+				)}
 				{fieldInterimMap.treatmentDescription && (
 					<div
 						className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-xs font-semibold text-blue-600 dark:text-blue-400 italic animate-pulse flex items-center gap-1.5 select-none"

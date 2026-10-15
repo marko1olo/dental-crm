@@ -1,6 +1,18 @@
 import React from "react";
+import type { ClinicalFormFieldTarget } from "@dental/shared";
+import { ClinicalStenographerBar } from "./ClinicalStenographerBar";
+import { useClinicalStenographer } from "./useClinicalStenographer";
 import type { DebouncedEmkTextareaProps } from "./EmkTypes";
 export type { DebouncedEmkTextareaProps };
+
+function inferTargetFieldFromKey(key: string): ClinicalFormFieldTarget {
+	if (key === "complaint" || key === "complaints") return "complaints";
+	if (key === "anamnesis") return "anamnesis";
+	if (key === "objectiveStatus" || key === "statusLocalis") return "objective";
+	if (key === "treatmentPlan" || key === "treatmentDescription") return "treatment";
+	if (key === "recommendations") return "recommendations";
+	return "all";
+}
 
 export function DebouncedEmkTextarea({
 	fieldKey,
@@ -10,6 +22,9 @@ export function DebouncedEmkTextarea({
 	textareaRef,
 	className,
 	placeholder,
+	enableStenographer = true,
+	showStenographerChips = true,
+	stenographerFieldTarget,
 }: DebouncedEmkTextareaProps) {
 	const [localValue, setLocalValue] = React.useState(value);
 	const debounceTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
@@ -20,6 +35,20 @@ export function DebouncedEmkTextarea({
 	localValueRef.current = localValue;
 	const onCommitRef = React.useRef(onCommit);
 	onCommitRef.current = onCommit;
+
+	const internalTextareaRef = React.useRef<HTMLTextAreaElement | null>(null);
+
+	const setCombinedRef = React.useCallback(
+		(el: HTMLTextAreaElement | null) => {
+			internalTextareaRef.current = el;
+			if (typeof textareaRef === "function") {
+				textareaRef(el);
+			} else if (textareaRef && typeof textareaRef === "object") {
+				(textareaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
+			}
+		},
+		[textareaRef],
+	);
 
 	const flushCommit = React.useCallback(() => {
 		if (debounceTimerRef.current) {
@@ -60,6 +89,33 @@ export function DebouncedEmkTextarea({
 		flushCommit();
 	};
 
+	// Clinical Stenographer hook integration
+	const targetField = stenographerFieldTarget ?? inferTargetFieldFromKey(fieldKey);
+	const {
+		fieldSnippets,
+		handleKeyDown,
+		insertSnippet,
+		isListening,
+		isProcessing,
+		interimSpeechText,
+		toggleVoiceDictation,
+		applyInterim,
+		stopVoiceDictation,
+	} = useClinicalStenographer({
+		value: localValue,
+		onChange: (nextVal) => {
+			setLocalValue(nextVal);
+			localValueRef.current = nextVal;
+		},
+		onCommit: (nextVal) => {
+			lastCommittedValueRef.current = nextVal;
+			onCommitRef.current(fieldKey, nextVal);
+		},
+		textareaRef: internalTextareaRef,
+		targetField,
+		enableStenographer,
+	});
+
 	// Mandate 8e: flush uncommitted textarea content on window blur, tab switch, pagehide, or incoming call
 	React.useEffect(() => {
 		const handleVisibilityChange = () => {
@@ -93,14 +149,31 @@ export function DebouncedEmkTextarea({
 	}, [flushCommit]);
 
 	return (
-		<textarea
-			ref={textareaRef}
-			aria-label={label}
-			value={localValue}
-			placeholder={placeholder}
-			onChange={handleChange}
-			onBlur={handleBlur}
-			className={className}
-		/>
+		<div className="w-full flex flex-col gap-1.5" data-testid={`emk-textarea-wrap-${fieldKey}`}>
+			<textarea
+				ref={setCombinedRef}
+				aria-label={label}
+				value={localValue}
+				placeholder={placeholder}
+				onChange={handleChange}
+				onBlur={handleBlur}
+				onKeyDown={handleKeyDown}
+				className={className}
+				data-testid={`textarea-${fieldKey}`}
+			/>
+			{enableStenographer && showStenographerChips && (fieldSnippets.length > 0 || isListening) && (
+				<ClinicalStenographerBar
+					snippets={fieldSnippets}
+					onSelectSnippet={insertSnippet}
+					isListening={isListening}
+					isProcessing={isProcessing}
+					interimSpeechText={interimSpeechText}
+					onToggleVoice={toggleVoiceDictation}
+					onApplyInterim={applyInterim}
+					onCancelVoice={stopVoiceDictation}
+					targetField={targetField}
+				/>
+			)}
+		</div>
 	);
 }

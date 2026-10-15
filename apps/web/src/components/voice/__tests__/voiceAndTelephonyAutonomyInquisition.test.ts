@@ -110,7 +110,8 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 
 		it("TelephonyFloatingWidget explicitly pauses and resets audio element on unmount", () => {
 			const widgetPath = path.join(telephonyDir, "TelephonyFloatingWidget.tsx");
-			const code = fs.readFileSync(widgetPath, "utf-8");
+			const timerAudioHookPath = path.join(telephonyDir, "telephonyFloatingWidget", "useFloatingCallTimerAndAudio.ts");
+			const code = (fs.existsSync(timerAudioHookPath) ? fs.readFileSync(timerAudioHookPath, "utf-8") : "") + fs.readFileSync(widgetPath, "utf-8");
 
 			// Audio unmount cleanup
 			assert.ok(
@@ -133,7 +134,11 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 
 		it("IncomingCallPopup CallAudioPlayer explicitly cleans up audio and eliminates fake 45s default", () => {
 			const popupPath = path.join(telephonyDir, "IncomingCallPopup.tsx");
-			const code = fs.readFileSync(popupPath, "utf-8");
+			const playerPath = path.join(telephonyDir, "CallAudioPlayer.tsx");
+			const drawerPath = path.join(telephonyDir, "IncomingCallPatientDrawer.tsx");
+			const code = (fs.existsSync(playerPath) ? fs.readFileSync(playerPath, "utf-8") : "") +
+				(fs.existsSync(drawerPath) ? fs.readFileSync(drawerPath, "utf-8") : "") +
+				fs.readFileSync(popupPath, "utf-8");
 
 			// CallAudioPlayer default duration must be 0
 			assert.ok(
@@ -203,7 +208,8 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 			const widgetCode = fs.readFileSync(widgetPath, "utf-8");
 
 			const popupPath = path.join(telephonyDir, "IncomingCallPopup.tsx");
-			const popupCode = fs.readFileSync(popupPath, "utf-8");
+			const headerBarPath = path.join(telephonyDir, "incomingCallPopupModules", "IncomingCallHeaderBar.tsx");
+			const popupCode = (fs.existsSync(headerBarPath) ? fs.readFileSync(headerBarPath, "utf-8") : "") + fs.readFileSync(popupPath, "utf-8");
 
 			assert.ok(
 				widgetCode.includes("min-h-[32px] sm:min-h-[34px] px-3 rounded-full bg-emerald-600"),

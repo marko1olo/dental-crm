@@ -17,7 +17,7 @@ import {
 } from "../../../utils/clinicalTextSanitizer";
 
 export interface EmkDiaryProtocolSectionProps extends EmkSectionProps {
-	onOpenTemplatesModal?: () => void;
+	onOpenTemplatesModal?: (() => void) | undefined;
 	focusedField?: "diagnosis" | "treatmentPlan" | "recommendations" | undefined;
 }
 

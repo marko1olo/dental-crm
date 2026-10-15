@@ -1,10 +1,12 @@
 import React from "react";
 import { Boxes, ChevronDown, Search, Tag, Zap } from "lucide-react";
+import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import {
 	CLINICAL_SERVICE_BUNDLES,
 	type ClinicalServiceBundle,
 	CompletedServicesChecklist,
 } from "../CompletedServicesChecklist";
+import { resolveClinicalServiceBundlesAgainstCatalog } from "../clinicalServiceBundles";
 import { VisitServiceBillingWidget } from "../VisitServiceBillingWidget";
 import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
 import { showToast } from "../../GlobalToast";
@@ -22,6 +24,15 @@ export interface EmkServicesSectionProps extends EmkSectionProps {
 	clinicLegalName?: string;
 }
 
+const BASE_QUICK_PRICE_SERVICES = [
+	{ id: "srv-cons", title: "Консультация врача-стоматолога", shortLabel: "Консультация", basePriceRub: 1500, code804n: "B01.065.001" },
+	{ id: "srv-caries", title: "Лечение кариеса с постановкой световой пломбы", shortLabel: "Кариес (пломба)", basePriceRub: 4500, code804n: "A16.07.002" },
+	{ id: "srv-anes", title: "Анестезия инфильтрационная / проводниковая", shortLabel: "Анестезия", basePriceRub: 800, code804n: "B01.003.004.004" },
+	{ id: "srv-hygiene", title: "Комплексная профессиональная гигиена AirFlow + ультразвук", shortLabel: "Профгигиена", basePriceRub: 5500, code804n: "A16.07.051" },
+	{ id: "srv-xray", title: "Внутриротовая прицельная радиовизиография", shortLabel: "Снимок (визиограф)", basePriceRub: 600, code804n: "A06.07.003" },
+	{ id: "srv-optg", title: "Панорамная томография (ОПТГ)", shortLabel: "ОПТГ", basePriceRub: 1800, code804n: "A06.07.004" },
+] as const;
+
 export function EmkServicesSection({
 	visitId,
 	visitNoteForm,
@@ -33,14 +44,53 @@ export function EmkServicesSection({
 	activeDoctorName,
 	clinicLegalName,
 }: EmkServicesSectionProps) {
-	const defaultPriceServices = [
-		{ id: "srv-cons", title: "Консультация врача-стоматолога", shortLabel: "Консультация", basePriceRub: 1500, code804n: "B01.065.001" },
-		{ id: "srv-caries", title: "Лечение кариеса с постановкой световой пломбы", shortLabel: "Кариес (пломба)", basePriceRub: 4500, code804n: "A16.07.002" },
-		{ id: "srv-anes", title: "Анестезия инфильтрационная / проводниковая", shortLabel: "Анестезия", basePriceRub: 800, code804n: "B01.003.004.004" },
-		{ id: "srv-hygiene", title: "Комплексная профессиональная гигиена AirFlow + ультразвук", shortLabel: "Профгигиена", basePriceRub: 5500, code804n: "A16.07.051" },
-		{ id: "srv-xray", title: "Внутриротовая прицельная радиовизиография", shortLabel: "Снимок (визиограф)", basePriceRub: 600, code804n: "A06.07.003" },
-		{ id: "srv-optg", title: "Панорамная томография (ОПТГ)", shortLabel: "ОПТГ", basePriceRub: 1800, code804n: "A06.07.004" },
-	];
+	// biome-ignore lint/suspicious/noExplicitAny: dynamic context access
+	const appLogic = useOptionalAppLogicContext() as any;
+	const liveCatalog = React.useMemo(
+		() =>
+			Array.isArray(appLogic?.dashboard?.serviceCatalog)
+				? appLogic.dashboard.serviceCatalog
+				: [],
+		[appLogic?.dashboard?.serviceCatalog],
+	);
+
+	const defaultPriceServices = React.useMemo(() => {
+		return BASE_QUICK_PRICE_SERVICES.map((srv) => {
+			if (liveCatalog.length === 0) return { ...srv };
+			const codeUpper = srv.code804n.toUpperCase();
+			// biome-ignore lint/suspicious/noExplicitAny: dynamic catalog row
+			const match = liveCatalog.find((c: any) => {
+				if (c?.active === false) return false;
+				const cCode = String(c?.code || c?.code804n || "").trim().toUpperCase();
+				if (cCode === codeUpper) return true;
+				if (srv.id === "srv-caries" && (cCode === "A16.07.002.010" || cCode === "A16.07.002.001")) {
+					return true;
+				}
+				return false;
+			});
+			if (match) {
+				const liveRub = Number(match.basePriceRub ?? match.priceRub);
+				if (Number.isFinite(liveRub) && liveRub > 0) {
+					return {
+						...srv,
+						id: String(match.id || srv.id),
+						title: String(match.title || srv.title),
+						basePriceRub: liveRub,
+						code804n: String(match.code || match.code804n || srv.code804n),
+					};
+				}
+			}
+			return { ...srv };
+		});
+	}, [liveCatalog]);
+
+	const resolvedClinicalBundles = React.useMemo(
+		() =>
+			liveCatalog.length > 0
+				? resolveClinicalServiceBundlesAgainstCatalog(liveCatalog)
+				: CLINICAL_SERVICE_BUNDLES,
+		[liveCatalog],
+	);
 
 	const handleAddServiceToPlan = (srv: typeof defaultPriceServices[0]) => {
 		const curr = visitNoteForm?.treatmentPlan || "";
@@ -156,7 +206,7 @@ export function EmkServicesSection({
 							<span className="text-[10px] text-[var(--muted)]">Каталог услуг</span>
 						</div>
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-							{CLINICAL_SERVICE_BUNDLES.map((bundle) => (
+							{resolvedClinicalBundles.map((bundle) => (
 								<button
 									key={bundle.id}
 									type="button"

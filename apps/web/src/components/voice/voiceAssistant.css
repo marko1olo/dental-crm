@@ -99,8 +99,10 @@
 }
 
 .dnt-voice-modal-close-btn {
-	min-width: 44px;
-	min-height: 44px;
+	min-width: 36px;
+	min-height: 36px;
+	width: 36px;
+	height: 36px;
 	border-radius: 8px;
 	background: transparent;
 	border: 1px solid transparent;
@@ -110,12 +112,54 @@
 	justify-content: center;
 	cursor: pointer;
 	transition: all 0.2s ease;
+	box-sizing: border-box;
+}
+
+@media (pointer: coarse) {
+	.dnt-voice-modal-close-btn {
+		min-width: 44px;
+		min-height: 44px;
+		width: 44px;
+		height: 44px;
+	}
 }
 
 .dnt-voice-modal-close-btn:hover {
 	background: var(--paper-soft);
 	color: var(--ink);
 	border-color: var(--line);
+}
+
+.dnt-voice-modal-calibrate-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 0 12px;
+	min-height: 36px;
+	height: 36px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-sizing: border-box;
+}
+
+@media (pointer: coarse) {
+	.dnt-voice-modal-calibrate-btn {
+		min-height: 44px;
+		height: 44px;
+		padding: 0 14px;
+	}
+}
+
+.dnt-voice-modal-calibrate-btn:hover {
+	background: var(--paper);
+	border-color: var(--teal);
+	color: var(--teal-dark, var(--teal));
 }
 
 /* Body */
