@@ -68,5 +68,14 @@ export function useTelephonyRealtime() {
 		}
 	}, [lastMessage, triggerIncomingCall, isDoctorMode, fetchCallHistory]);
 
+	useEffect(() => {
+		const handleMock = (e: Event) => {
+			const custom = e as CustomEvent<any>;
+			if (custom.detail) triggerIncomingCall(custom.detail);
+		};
+		window.addEventListener("dente:telephony-mock-incoming", handleMock);
+		return () => window.removeEventListener("dente:telephony-mock-incoming", handleMock);
+	}, [triggerIncomingCall]);
+
 	return { isConnected };
 }

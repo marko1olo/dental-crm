@@ -12,6 +12,7 @@ import {
 } from "./components/appLayout";
 import { PrescriptionPrintModal } from "./components/prescriptions/PrescriptionPrintModal";
 import { TelephonyDrawer } from "./components/telephony/TelephonyDrawer";
+import { TelephonyFloatingWidget } from "./components/telephony/TelephonyFloatingWidget";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useChairsideErgonomics } from "./hooks/useChairsideErgonomics";
@@ -1563,6 +1564,7 @@ export function App() {
 						handleFullStaffLock={handleFullStaffLock}
 					/>
 					<TelephonyDrawer />
+					<TelephonyFloatingWidget defaultExpanded={false} />
 					{isPrescriptionForm107Open && (
 						<PrescriptionPrintModal
 							isOpen={true}

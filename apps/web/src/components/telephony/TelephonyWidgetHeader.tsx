@@ -36,6 +36,7 @@ export interface TelephonyWidgetHeaderProps {
 	activeTab: "call" | "dialer" | "history";
 	onSelectTab: (tab: "call" | "dialer" | "history") => void;
 	callHistoryCount: number;
+	isWsConnected?: boolean;
 }
 
 export function TelephonyWidgetHeader({
@@ -53,6 +54,7 @@ export function TelephonyWidgetHeader({
 	activeTab,
 	onSelectTab,
 	callHistoryCount,
+	isWsConnected,
 }: TelephonyWidgetHeaderProps) {
 	return (
 		<div className="dnt-widget-header-wrap">
@@ -74,6 +76,16 @@ export function TelephonyWidgetHeader({
 							{activeCall && (
 								<span className="dnt-widget-timer-pill">
 									{formatDurationTimer(elapsedSeconds)}
+								</span>
+							)}
+							{isWsConnected === false && (
+								<span
+									className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1 animate-pulse"
+									title="Связь с сервером телефонии восстанавливается..."
+									data-testid="telephony-reconnecting-badge"
+								>
+									<span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+									<span>Переподключение...</span>
 								</span>
 							)}
 						</div>

@@ -8,6 +8,7 @@ import {
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
 import { useScheduleStore } from "../../../store/scheduleStore";
+import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 import {
 	type CallOutcome,
 	type DashboardResponse,
@@ -221,7 +222,7 @@ export function useIncomingCallQuickActions({
 			}
 		}
 
-		setCurrentView("schedule");
+		useUiSurfaceStore.getState().openDrawer("quick_booking");
 		// Keep call drawer context active so administrator can see caller details while scheduling
 		showToast(
 			`Создан черновик записи (${QUICK_BOOKING_TOAST_LABEL_BY_SLOT[slotType]}). Заполните детали приёма.`,

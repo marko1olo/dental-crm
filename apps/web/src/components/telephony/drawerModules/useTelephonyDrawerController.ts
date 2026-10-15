@@ -262,10 +262,7 @@ export function useTelephonyDrawerController(
 		if (activeCall && activeCall.status === "ringing") {
 			answerCall();
 		}
-		if (currentView !== "visit") {
-			setCurrentView("schedule");
-			handleClose();
-		}
+		useUiSurfaceStore.getState().openDrawer("quick_booking");
 		showToast(
 			`Создана запись: ${callData.isKnownPatient ? callData.resolvedPatient?.fullName : callData.formattedPhone} (${reason})`,
 			"info",

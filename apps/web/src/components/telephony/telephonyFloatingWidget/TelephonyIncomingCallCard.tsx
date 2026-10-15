@@ -68,8 +68,18 @@ export function TelephonyIncomingCallCard({
 					<Phone size={20} />
 				</div>
 				<div>
-					<h4 className="text-sm font-bold text-[var(--ink,#0f172a)]">
-						Линия свободна
+					<h4 className="text-sm font-bold text-[var(--ink,#0f172a)] flex items-center justify-center gap-2">
+						<span>Линия свободна</span>
+						{!isWsConnected && (
+							<span
+								className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1 animate-pulse font-normal"
+								title="Связь с сервером телефонии восстанавливается..."
+								data-testid="telephony-reconnecting-badge"
+							>
+								<span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+								<span>Переподключение...</span>
+							</span>
+						)}
 					</h4>
 					<p className="text-xs text-[var(--muted,#64748b)] mt-1">
 						При поступлении звонка карточка пациента и быстрая запись откроются автоматически.
@@ -114,6 +124,15 @@ export function TelephonyIncomingCallCard({
 							</h3>
 							<div className="flex items-center gap-1.5 text-xs font-mono text-[var(--muted,#64748b)] mt-0.5">
 								<span>{formattedPhone}</span>
+								{!isWsConnected && (
+									<span
+										className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 font-sans flex items-center gap-1 animate-pulse ml-1"
+										title="Связь с сервером телефонии восстанавливается..."
+										data-testid="telephony-card-reconnecting"
+									>
+										<span>• Переподключение...</span>
+									</span>
+								)}
 							</div>
 						</div>
 					</div>

@@ -144,11 +144,31 @@ export class MissedCallService {
 
 			let patientId: string;
 			let patientDisplayName: string;
+			let createdLeadRecord: typeof crmLeads.$inferSelect | null = null;
 
 			if (matchedPatient) {
 				patientId = matchedPatient.id;
 				patientDisplayName =
 					matchedPatient.fullName.trim() || `Пациент (${callerPhoneE164})`;
+
+				// Also record in crmLeads for marketing funnel so missed calls from existing patients are tracked
+				try {
+					const [createdLead] = await tx
+						.insert(crmLeads)
+						.values({
+							organizationId,
+							name: `Пропущенный звонок: ${patientDisplayName}`,
+							patientName: patientDisplayName,
+							phone: callerPhoneE164,
+							source: "telephony_missed",
+							status: "new",
+							notes: `Пропущенный звонок от постоянного пациента ${patientDisplayName} (${callerPhoneE164}). Норматив перезвона 60 секунд.`,
+						})
+						.returning();
+					createdLeadRecord = createdLead || null;
+				} catch (err) {
+					console.warn("[MissedCallService] Existing patient lead mirror notice:", err);
+				}
 			} else {
 				// Create a patient entry for the missed call
 				const newFullName = `Пропущенный вызов ${callerPhoneE164}`;
@@ -175,15 +195,19 @@ export class MissedCallService {
 
 				// Also record in crmLeads for marketing funnel
 				try {
-					await tx.insert(crmLeads).values({
-						organizationId,
-						name: `Пропущенный звонок ${callerPhoneE164}`,
-						patientName: newFullName,
-						phone: callerPhoneE164,
-						source: "telephony_missed",
-						status: "new",
-						notes: `Пропущенный звонок от ${callerPhoneE164}. Норматив перезвона 60 секунд.`,
-					});
+					const [createdLead] = await tx
+						.insert(crmLeads)
+						.values({
+							organizationId,
+							name: `Пропущенный звонок ${callerPhoneE164}`,
+							patientName: newFullName,
+							phone: callerPhoneE164,
+							source: "telephony_missed",
+							status: "new",
+							notes: `Пропущенный звонок от ${callerPhoneE164}. Норматив перезвона 60 секунд.`,
+						})
+						.returning();
+					createdLeadRecord = createdLead || null;
 				} catch (err) {
 					console.warn("[MissedCallService] Lead mirror notice:", err);
 				}
@@ -266,6 +290,15 @@ export class MissedCallService {
 					taskTitle: "🚨 Пропущенный вызов. Перезвонить за 60 секунд",
 				},
 			});
+
+			if (createdLeadRecord) {
+				wsBroker.broadcastToOrganization(organizationId, {
+					type: "LEAD_CREATED",
+					payload: {
+						lead: createdLeadRecord,
+					},
+				});
+			}
 
 			// 7. Copilot SSE Proactive Alert Broadcast
 			const alertCardId = `alert_missed_${Date.now()}_${randomUUID().slice(0, 8)}`;

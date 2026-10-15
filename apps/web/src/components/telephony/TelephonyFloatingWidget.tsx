@@ -1,5 +1,5 @@
 import { ChevronDown, Headphones, PhoneCall, PhoneIncoming, PhoneOff, X } from "lucide-react";
-import React from "react";
+import React, { useRef } from "react";
 import { formatDurationTimer } from "../../store/telephonyStore";
 import { showToast } from "../GlobalToast";
 import { TelephonyWidgetHeader } from "./TelephonyWidgetHeader";
@@ -20,8 +20,10 @@ export * from "./TelephonyWidgetHeader";
 export type { TelephonyFloatingWidgetProps };
 
 export function TelephonyFloatingWidget(props: TelephonyFloatingWidgetProps) {
+	const dialInputRef = useRef<HTMLInputElement | null>(null);
 	const s = useTelephonyFloatingState(props);
-	const dialInputRef = s.dialInputRef;
+	// Non-blocking call ergonomics (Mandate 8e): dialInputRef.current?.focus();
+	// showToast("Введите номер телефона для набора", "warning");
 	const isDoctorChairsideMode = s.isDoctorChairsideMode;
 	if (isDoctorChairsideMode) {
 		return null;
@@ -64,7 +66,7 @@ export function TelephonyFloatingWidget(props: TelephonyFloatingWidgetProps) {
 			)}
 			{s.isExpanded && (
 				<div className="dnt-telephony-island-expanded" role="dialog" aria-label="Детализированный центр вызова (Dynamic Island Studio)">
-					<TelephonyWidgetHeader activeCall={s.activeCall} isCallAnswered={s.isCallAnswered} elapsedSeconds={s.elapsedSeconds} agentState={s.agentState} onSetAgentState={s.setAgentState} activeLineId={s.activeLineId} onSwitchLine={s.switchLine} line1={s.line1} line2={s.line2} isHeld={s.isHeld} onToggleHold={s.toggleHold} isMuted={s.isMuted} onToggleMute={s.toggleMute} onAnswerCall={() => { s.answerCall(); showToast("Вызов принят", "success"); }} onRejectCall={() => { s.rejectCall(); showToast("Вызов завершен", "info"); }} onCollapse={() => { if (!s.activeCall) s.setIsOpen(false); s.setIsExpanded(false); }} onClose={() => { if (s.activeCall) s.dismissCall(); s.setIsOpen(false); s.setIsExpanded(false); }} activeTab={s.activeTab} onSelectTab={s.setActiveTab} callHistoryCount={s.callHistory.length} />
+					<TelephonyWidgetHeader activeCall={s.activeCall} isCallAnswered={s.isCallAnswered} elapsedSeconds={s.elapsedSeconds} agentState={s.agentState} onSetAgentState={s.setAgentState} activeLineId={s.activeLineId} onSwitchLine={s.switchLine} line1={s.line1} line2={s.line2} isHeld={s.isHeld} onToggleHold={s.toggleHold} isMuted={s.isMuted} onToggleMute={s.toggleMute} onAnswerCall={() => { s.answerCall(); showToast("Вызов принят", "success"); }} onRejectCall={() => { s.rejectCall(); showToast("Вызов завершен", "info"); }} onCollapse={() => { if (!s.activeCall) s.setIsOpen(false); s.setIsExpanded(false); }} onClose={() => { if (s.activeCall) s.dismissCall(); s.setIsOpen(false); s.setIsExpanded(false); }} activeTab={s.activeTab} onSelectTab={s.setActiveTab} callHistoryCount={s.callHistory.length} isWsConnected={s.isWsConnected} />
 					<div className="dnt-widget-body">
 						{s.activeTab === "call" && (
 							<>

@@ -7,6 +7,7 @@ import {
 } from "../../../lib/safeLocalStorage";
 import { useAppStore } from "../../../store/appStore";
 import { useScheduleStore } from "../../../store/scheduleStore";
+import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 import {
 	type DashboardResponse,
 	type IncomingCallPayload,
@@ -234,11 +235,9 @@ export function useFloatingCallQuickActions({
 		}
 
 		acceptCall();
-		if (useAppStore.getState().currentView !== "visit") {
-			useAppStore.getState().setCurrentView("schedule");
-		}
+		useUiSurfaceStore.getState().openDrawer("quick_booking");
 		showToast(
-			`Создан черновик записи: ${reason} (сохранён в расписании)`,
+			`Создан черновик записи: ${reason} (открыта быстрая запись)`,
 			"info",
 		);
 	};
