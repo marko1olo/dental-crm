@@ -65,7 +65,7 @@ export function LabOrdersFilterBar({
 			<div className="flex items-center gap-2 shrink-0">
 				<FlaskConical className="w-4 h-4 text-[var(--primary)] shrink-0" />
 				<span className="font-bold text-xs sm:text-sm text-[var(--ink)] whitespace-nowrap">
-					ЗТЛ
+					Лаборатория
 				</span>
 				<div className="hidden 2xl:flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-[var(--paper-soft)] text-[11px] text-[var(--ink-muted)] border border-[var(--line)] font-mono">
 					<span>

@@ -14,7 +14,7 @@ export function LabOrdersSegmentedNav({
 		<div className="flex items-center justify-between gap-2 overflow-x-auto py-0.5 w-full max-w-full">
 			<nav
 				className="dente-segmented-bar shrink-0 select-none"
-				aria-label="Фильтры этапов нарядов ЗТЛ"
+				aria-label="Фильтры этапов нарядов лаборатории"
 			>
 				{canonicalFilters.map((f) => {
 					const isActive = statusFilter === f.id;

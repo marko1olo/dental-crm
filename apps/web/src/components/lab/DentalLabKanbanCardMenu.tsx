@@ -54,7 +54,7 @@ export const DentalLabKanbanCardMenu: React.FC<DentalLabKanbanCardMenuProps> = (
 				patientName: order.patientName,
 				orderNumber: order.orderNumber,
 				dueDate: order.expectedLabDateIso,
-				reason: "Перенос приема из-за задержки ЗТЛ",
+				reason: "Перенос приема из-за задержки лаборатории",
 			};
 			try {
 				window.localStorage.setItem(
@@ -265,7 +265,7 @@ export const DentalLabKanbanCardMenu: React.FC<DentalLabKanbanCardMenuProps> = (
 				data-testid={`ztl-card-reschedule-${order.id}`}
 			>
 				<Calendar size={14} className="shrink-0 text-amber-600" />
-				<span>Перенести запись (ЗТЛ задержка)</span>
+				<span>Перенести запись (задержка лаборатории)</span>
 			</button>
 
 			{order.selectedTeeth.length > 1 && (

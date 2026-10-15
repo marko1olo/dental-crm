@@ -626,13 +626,13 @@
 
 .ztl-btn-advance {
 	background: var(--teal);
-	color: var(--paper-strong);
+	color: var(--on-teal, #ffffff);
 	border-color: var(--teal);
 }
 
 .ztl-btn-advance:hover {
 	background: var(--teal-dark);
-	color: var(--paper-strong);
+	color: var(--on-teal, #ffffff);
 }
 
 /* ─── МОДАЛКА СОЗДАНИЯ / ПРОСМОТРА НАКАЗА ─────────────────────────────────── */

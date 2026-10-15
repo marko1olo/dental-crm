@@ -26,7 +26,7 @@ export function LabOrdersFilterBar({
 			<div className="flex items-center gap-2 shrink-0">
 				<FlaskConical className="w-4 h-4 text-[var(--primary)] shrink-0" />
 				<span className="font-bold text-xs sm:text-sm text-[var(--ink)] whitespace-nowrap">
-					ЗТЛ
+					Лаборатория
 				</span>
 				<div className="hidden 2xl:flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-[var(--paper-soft)] text-[11px] text-[var(--ink-muted)] border border-[var(--line)] font-mono">
 					<span>
@@ -89,9 +89,9 @@ export function LabOrdersFilterBar({
 				<button
 					type="button"
 					onClick={onOpenPriceMatrix}
-					className="h-9 min-h-[36px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium inline-flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
+					className="secondary-button"
 					data-testid="btn-open-price-matrix"
-					title="Прейскурант и себестоимость ЗТЛ"
+					title="Прейскурант и себестоимость лаборатории"
 				>
 					<DollarSign className="w-3.5 h-3.5 text-[var(--ink-muted)] shrink-0" />
 					<span className="hidden sm:inline">Прейскурант</span>
@@ -100,22 +100,22 @@ export function LabOrdersFilterBar({
 				<button
 					type="button"
 					onClick={onRefresh}
-					className="h-9 w-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors shadow-2xs flex items-center justify-center cursor-pointer shrink-0"
+					className="icon-button"
 					title="Обновить список"
 					data-testid="lab-orders-refresh-btn"
 				>
 					<RefreshCw
-						className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-[var(--primary)]" : "text-[var(--ink-muted)]"}`}
+						className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-[var(--teal)]" : "text-[var(--ink-muted)]"}`}
 					/>
 				</button>
 
 				<button
 					type="button"
 					onClick={onOpenNewOrder}
-					className="h-9 min-h-[36px] px-3.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer transition shrink-0"
+					className="primary-button"
 					data-testid="lab-orders-new-order-btn"
 				>
-					<Plus className="w-3.5 h-3.5 text-white" />
+					<Plus className="w-3.5 h-3.5" />
 					<span>Наряд</span>
 				</button>
 			</div>

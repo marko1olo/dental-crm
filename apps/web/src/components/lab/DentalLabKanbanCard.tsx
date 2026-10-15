@@ -85,7 +85,7 @@ export const DentalLabKanbanCard: React.FC<DentalLabKanbanCardProps> = ({
 	let AdvanceIcon = ChevronRight;
 
 	if (columnId === "draft") {
-		advanceLabel = "В работу технику";
+		advanceLabel = "В работу";
 		advanceTitle = "Передать наряд в работу технику в лабораторию";
 		AdvanceIcon = Send;
 	} else if (columnId === "sent_to_lab") {
@@ -93,7 +93,7 @@ export const DentalLabKanbanCard: React.FC<DentalLabKanbanCardProps> = ({
 		advanceTitle = "Конструкция готова и доставлена в клинику";
 		AdvanceIcon = CheckCircle2;
 	} else if (columnId === "fitting_scheduled") {
-		advanceLabel = "Зафиксировать";
+		advanceLabel = "Сдать";
 		advanceTitle = "Зафиксировать и сдать работу пациенту";
 		AdvanceIcon = Sparkles;
 	} else if (columnId === "installed_completed") {

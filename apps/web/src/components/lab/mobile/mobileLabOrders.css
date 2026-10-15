@@ -304,17 +304,15 @@
 	font-size: 12px;
 	font-weight: 700;
 	color: var(--ink);
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+	word-break: break-word;
+	line-height: 1.25;
 }
 
 .mobile-lab-tech-text {
 	font-size: 11px;
 	color: var(--muted);
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+	word-break: break-word;
+	line-height: 1.25;
 }
 
 .mobile-lab-call-btn {

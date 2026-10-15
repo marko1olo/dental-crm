@@ -170,7 +170,7 @@ export function DentalLabOrdersMainContent({
 				<div className="p-6 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/50 rounded-2xl text-rose-700 dark:text-rose-300 flex items-center gap-3">
 					<AlertCircle className="w-5 h-5 shrink-0" />
 					<div>
-						<div className="font-bold">Не удалось загрузить наряды ЗТЛ</div>
+						<div className="font-bold">Не удалось загрузить наряды лаборатории</div>
 						<div className="text-xs">{error}</div>
 					</div>
 				</div>
@@ -205,7 +205,7 @@ export function DentalLabOrdersMainContent({
 					<Suspense
 						fallback={
 							<div className="p-8 text-center text-xs text-[var(--muted)]">
-								Загрузка канбан-доски ЗТЛ...
+								Загрузка канбан-доски лаборатории...
 							</div>
 						}
 					>
