@@ -53,6 +53,7 @@ import { PeriodontogramChart } from "../../../perio/PeriodontogramChart";
 import { PerioChartModal } from "../../../perio/PerioChartModal";
 import { HygieneIndicesPanel } from "../../../hygiene/HygieneIndicesPanel";
 import { PatientRecallsHubModal } from "../../../recalls/PatientRecallsHubModal";
+import { AnesthesiaQuickBar } from "../../../anesthesia/AnesthesiaQuickBar";
 
 export function renderSpecializedClinicalLaunchers({
 	isCbctTunerOpen,
@@ -70,6 +71,44 @@ export function renderSpecializedClinicalLaunchers({
 	isEmergencyDirectModalOpen,
 	setIsEmergencyDirectModalOpen,
 }: StandaloneLaunchersProps): React.ReactElement | null {
+	// CHAIRSIDE ANESTHESIA COCKPIT & MRD CALIPER (?anesthesia=1, ?anesthesia=demo, #anesthesia)
+	const isAnesthesiaDirect =
+		typeof window !== "undefined" &&
+		(new URLSearchParams(window.location.search).has("anesthesia") ||
+			window.location.hash.toLowerCase().includes("anesthesia"));
+	if (isAnesthesiaDirect) {
+		return (
+			<div
+				className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6 overflow-y-auto"
+				data-testid="anesthesia-standalone-workspace"
+			>
+				<div className="max-w-7xl mx-auto space-y-4">
+					<div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
+						<div>
+							<h1 className="text-lg sm:text-xl font-black text-[var(--ink)]">
+								Калькулятор анестезии и кресельный кокпит (МРД / Антишок 786н)
+							</h1>
+							<p className="text-xs text-[var(--muted)]">
+								Единый SSOT расчёт дозировок, 1-клик пресеты и экстренное списание укладки
+							</p>
+						</div>
+					</div>
+					<AnesthesiaQuickBar
+						patientWeightKg={70}
+						targetToothNumberFdi={16}
+						hasCardiovascularRisk={false}
+						onApplyAnesthesia={() => {}}
+						onOpenEmergencyProtocol={() => {
+							const url = new URL(window.location.href);
+							url.searchParams.set("emergency", "1");
+							window.location.href = url.toString();
+						}}
+					/>
+				</div>
+			</div>
+		);
+	}
+
 	// HYGIENE & INDICES COCKPIT (?hygiene=1, ?hygiene=demo, #hygiene)
 	const isHygieneDirect =
 		typeof window !== "undefined" &&

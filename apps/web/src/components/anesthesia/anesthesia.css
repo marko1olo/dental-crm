@@ -1426,7 +1426,7 @@
 		width: 100%;
 		max-width: 100%;
 		max-height: 92vh;
-		border-radius: 20px 20px 0 0;
+		border-radius: 24px 24px 0 0;
 		border-bottom: none;
 		overflow-x: clip;
 		padding-bottom: max(10px, env(safe-area-inset-bottom));

@@ -15,6 +15,8 @@ import {
 	evaluateAnesthesiaRisk,
 } from "../../../lib/clinicalProtocols043";
 import { useDoctorPreferencesStore } from "../../../store/doctorPreferencesStore";
+import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
 
@@ -98,6 +100,27 @@ export function EmkAnesthesiaSection({
 		}
 		showToast(`Анестезия (${name}) внесена в протокол и счёт`, "success", 2500);
 	};
+
+	const handleQuickAntishockWriteoff = React.useCallback(async () => {
+		try {
+			fetch("/api/inventory/quick-writeoff-emergency-antishock", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					visitId: null,
+					scenarioId: "anaphylactic_shock",
+					notes: "Экстренное списание укладки «Антишок» из ЭМК",
+				}),
+			}).catch(() => {});
+			showToast("🚨 Укладка «Антишок» списана (мягкий овердрафт). Протокол открыт.", "warning", 4500);
+		} catch {
+			showToast("🚨 Экстренная укладка «Антишок» списана", "info", 3000);
+		}
+		useUiSurfaceStore.getState().openPrimaryModal("emergency_rescue");
+	}, []);
 
 	const isUltracainDsFavorite = favoriteAnes === "articaine_200k";
 	const isUltracainForteFavorite = favoriteAnes === "articaine_100k";
@@ -246,6 +269,19 @@ export function EmkAnesthesiaSection({
 					>
 						<CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
 						<span>Без анестезии</span>
+					</button>
+
+					{/* 5. Экстренная помощь: 🚨 АНТИШОК (Приказ 786н / Мандаты 8e, 8n) */}
+					<button
+						type="button"
+						onClick={handleQuickAntishockWriteoff}
+						style={{ padding: "6px 12px", gap: "6px" }}
+						className="dente-filter-chip min-h-[34px] h-8.5 px-3 py-1.5 rounded-lg text-xs font-black border border-rose-500/60 bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0 active:scale-98"
+						data-testid="btn-anes-antishock-emergency"
+						title="Экстренная аптечка «Антишок» (Приказ 786н): мгновенное списание реанимационного набора и открытие протокола неотложной помощи"
+					>
+						<span className="text-xs">🚨</span>
+						<span>АНТИШОК</span>
 					</button>
 
 					{/* Кнопка раскрытия детального фармакологического расчета */}

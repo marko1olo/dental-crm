@@ -6,6 +6,8 @@ export {
 	resolveClinicalDefaultWeightKg,
 	formatAnesthesiaPatientMemo,
 	type AnesthesiaPatientMemoParams,
+	type AnesthesiaCalculationResult,
+	calculateAnesthesiaSafety,
 } from './anesthesiaEngine';
 export {
 	calculateAnesthesiaSafety as calculateAnesthesiaComprehensiveSafety,

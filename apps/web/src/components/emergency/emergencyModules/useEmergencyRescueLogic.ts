@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { showToast } from '../../GlobalToast';
+import { denteAdminSecretRequestHeaders } from '../../../lib/denteRequestHeaders';
 import {
 	EmergencyScenarioId,
 	EMERGENCY_SCENARIOS,
@@ -242,9 +243,12 @@ export function useEmergencyRescueLogic({
 	const handleWriteoffAntishockKit = async () => {
 		setIsWritingOffKit(true);
 		try {
-			const res = await fetch('/api/inventory/current/quick-writeoff-emergency-antishock', {
+			const res = await fetch('/api/inventory/quick-writeoff-emergency-antishock', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: {
+					'Content-Type': 'application/json',
+					...denteAdminSecretRequestHeaders(),
+				},
 				body: JSON.stringify({
 					scenarioId: activeScenarioId,
 					notes: `Экстренное списание укладки «Антишок» при сценарии: ${activeScenario.nameRu}`,
@@ -253,7 +257,7 @@ export function useEmergencyRescueLogic({
 			if (res.ok) {
 				const data = await res.json().catch(() => null);
 				setIsKitWrittenOff(true);
-				showToast(data?.message || "Укладка «Антишок» успешно списана со склада", "success");
+				showToast(data?.message || "Укладка «Антишок» успешно списана (мягкий овердрафт)", "success");
 			} else {
 				setIsKitWrittenOff(true);
 				showToast("Списание зафиксировано в журнале (мягкий овердрафт)", "info");

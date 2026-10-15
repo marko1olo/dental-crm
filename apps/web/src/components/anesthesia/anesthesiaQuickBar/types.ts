@@ -160,6 +160,11 @@ export interface AnesthesiaQuickBarActionsProps {
 	readonly onApplyStandardNormPreset: () => void;
 	readonly onApplyUltracainForteCombined: () => void;
 	readonly onApplySeptanestInfiltration: () => void;
+	readonly onApplyInfiltrationArticaine200k?: (() => void) | undefined;
+	readonly onApplyMandibularArticaine100k?: (() => void) | undefined;
+	readonly onApplyScandonestCardio?: (() => void) | undefined;
+	readonly onWriteoffAntishockKit?: (() => void) | undefined;
+	readonly onOpenEmergencyProtocol?: (() => void) | undefined;
 	readonly onNurseQuickDisposal: (carpulesCount?: number) => void;
 	readonly onNursePacketDisposal: () => void;
 	readonly onNurseSeptanestDisposal: () => void;

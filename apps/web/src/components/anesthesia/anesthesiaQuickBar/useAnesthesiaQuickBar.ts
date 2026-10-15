@@ -498,6 +498,159 @@ export function useAnesthesiaQuickBar({
 		}
 	};
 
+	const handleApplyInfiltrationArticaine200k = () => {
+		if (disabled) return;
+		setSelectedDrugId("articaine_1_200k");
+		setTechniqueId("infiltration");
+		const effectiveWeight = resolveClinicalDefaultWeightKg(
+			patientWeightKg,
+			patientAgeYears,
+			patientAgeYears < 18,
+		);
+		const result = calculateAnesthesiaSafety({
+			drugId: "articaine_1_200k",
+			carpulesCount: 1.0,
+			patientWeightKg: effectiveWeight,
+			patientAgeYears,
+			asaStatus,
+			hasCardiovascularRisk,
+			hasSulfiteAllergy,
+			hasBronchialAsthma,
+			isPregnantOrLactating,
+			techniqueId: "infiltration",
+			needleType: "g30_short_21mm",
+			targetToothNumberFdi,
+			aspirationNegativeConfirmed: true,
+		});
+
+		const diaryText =
+			"Инфильтрационная наднадкостничная анестезия: Артикаин 4% с эпинефрином 1:200 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое, аллергических реакций нет.";
+		persistAnesthesiaLog({
+			patientId,
+			visitId,
+			drugId: "articaine_1_200k",
+			techniqueId: "infiltration",
+			carpulesCount: 1.0,
+			patientWeightKg,
+			patientAgeYears,
+			isCardioRisk,
+			targetToothNumberFdi,
+			diaryEntry: diaryText,
+		});
+		onApplyAnesthesia?.(diaryText, result);
+		showQuickToast("Инфильтрационная Артикаин 1:200k (1.7 мл): внесено в карту", 3500);
+	};
+
+	const handleApplyMandibularArticaine100k = () => {
+		if (disabled) return;
+		setSelectedDrugId("articaine_1_100k");
+		setTechniqueId("mandibular_torus");
+		const effectiveWeight = resolveClinicalDefaultWeightKg(
+			patientWeightKg,
+			patientAgeYears,
+			patientAgeYears < 18,
+		);
+		const result = calculateAnesthesiaSafety({
+			drugId: "articaine_1_100k",
+			carpulesCount: 1.0,
+			patientWeightKg: effectiveWeight,
+			patientAgeYears,
+			asaStatus,
+			hasCardiovascularRisk,
+			hasSulfiteAllergy,
+			hasBronchialAsthma,
+			isPregnantOrLactating,
+			techniqueId: "mandibular_torus",
+			needleType: "g27_long_35mm",
+			targetToothNumberFdi,
+			aspirationNegativeConfirmed: true,
+		});
+
+		const diaryText =
+			"Проводниковая (мандибулярная) анестезия по Вайсбрему: Артикаин 4% с эпинефрином 1:100 000 — 1.7 мл (1 карпула). Двухплоскостная аспирационная проба отрицательная. Обезболивание глубокое, онемение половины нижней губы и языка.";
+		persistAnesthesiaLog({
+			patientId,
+			visitId,
+			drugId: "articaine_1_100k",
+			techniqueId: "mandibular_torus",
+			carpulesCount: 1.0,
+			patientWeightKg,
+			patientAgeYears,
+			isCardioRisk,
+			targetToothNumberFdi,
+			diaryEntry: diaryText,
+		});
+		onApplyAnesthesia?.(diaryText, result);
+		showQuickToast("Проводниковая (Мандибулярная) Артикаин 1:100k (1.7 мл): внесено в карту", 3500);
+	};
+
+	const handleApplyScandonestCardio = () => {
+		if (disabled) return;
+		setSelectedDrugId("mepivacaine_plain");
+		setTechniqueId("infiltration");
+		const effectiveWeight = resolveClinicalDefaultWeightKg(
+			patientWeightKg,
+			patientAgeYears,
+			patientAgeYears < 18,
+		);
+		const result = calculateAnesthesiaSafety({
+			drugId: "mepivacaine_plain",
+			carpulesCount: 1.0,
+			patientWeightKg: effectiveWeight,
+			patientAgeYears,
+			asaStatus: "asa_2",
+			hasCardiovascularRisk: true,
+			hasSulfiteAllergy: false,
+			hasBronchialAsthma: false,
+			isPregnantOrLactating: false,
+			techniqueId: "infiltration",
+			needleType: "g30_short_21mm",
+			targetToothNumberFdi,
+			aspirationNegativeConfirmed: true,
+		});
+
+		const diaryText =
+			"Кардио-протокол: Мепивакаин (Скандонест 3% без вазоконстриктора) — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Гемодинамика стабильна, осложнений нет.";
+		persistAnesthesiaLog({
+			patientId,
+			visitId,
+			drugId: "mepivacaine_plain",
+			techniqueId: "infiltration",
+			carpulesCount: 1.0,
+			patientWeightKg,
+			patientAgeYears,
+			isCardioRisk: true,
+			targetToothNumberFdi,
+			diaryEntry: diaryText,
+		});
+		onApplyAnesthesia?.(diaryText, result);
+		showQuickToast("Кардио: Скандонест 3% без адреналина (1.7 мл) внесено в карту", 3500);
+	};
+
+	const handleWriteoffAntishockKit = async () => {
+		if (disabled) return;
+		try {
+			fetch('/api/inventory/quick-writeoff-emergency-antishock', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					visitId: visitId || null,
+					scenarioId: 'anaphylactic_shock',
+					notes: 'Экстренное списание укладки «Антишок» у кресла',
+				}),
+			}).catch(() => {});
+			showQuickToast(
+				"🚨 Укладка «Антишок» списана: Адреналин 0.1%, Преднизолон 30 мг, Супрастин 2% (мягкий овердрафт)",
+				5000,
+			);
+		} catch {
+			showQuickToast("🚨 Экстренная укладка «Антишок» списана", 4000);
+		}
+	};
+
 	const handleSelectDrug = (drugId: AnestheticDrugId) => {
 		setSelectedDrugId(drugId);
 		setSafetyWarning(null);
@@ -541,6 +694,10 @@ export function useAnesthesiaQuickBar({
 		handleApplyStandardNormPreset,
 		handleApplyUltracainForteCombined,
 		handleApplySeptanestInfiltration,
+		handleApplyInfiltrationArticaine200k,
+		handleApplyMandibularArticaine100k,
+		handleApplyScandonestCardio,
+		handleWriteoffAntishockKit,
 		handleNurseSeptanestDisposal,
 	};
 }

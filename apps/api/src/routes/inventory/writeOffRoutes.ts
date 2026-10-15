@@ -246,12 +246,14 @@ export const writeOffRoutes: FastifyPluginAsync = async (server: FastifyInstance
 		);
 		if (!resolvedOrgId) return;
 		const { organizationId } = request.params;
-		if (resolvedOrgId !== organizationId) return reply.code(403).send({ error: "Forbidden" });
+		const effectiveOrgId =
+			organizationId === "current" || !organizationId ? resolvedOrgId : organizationId;
+		if (resolvedOrgId !== effectiveOrgId) return reply.code(403).send({ error: "Forbidden" });
 
 		const body = request.body ?? {};
-		return withTenantCtx(organizationId, async (tx) => {
+		return withTenantCtx(effectiveOrgId, async (tx) => {
 			return TreatmentConsumablesService.quickWriteoffEmergencyAntishock(tx, {
-				organizationId,
+				organizationId: effectiveOrgId,
 				userId: request.user?.id ?? null,
 				visitId: body.visitId ?? null,
 				scenarioId: body.scenarioId ?? null,

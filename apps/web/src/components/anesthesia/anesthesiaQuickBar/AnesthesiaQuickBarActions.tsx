@@ -22,6 +22,11 @@ export function AnesthesiaQuickBarActions({
 	onApplyStandardNormPreset,
 	onApplyUltracainForteCombined,
 	onApplySeptanestInfiltration,
+	onApplyInfiltrationArticaine200k,
+	onApplyMandibularArticaine100k,
+	onApplyScandonestCardio,
+	onWriteoffAntishockKit,
+	onOpenEmergencyProtocol,
 	onNurseQuickDisposal,
 	onNursePacketDisposal,
 	onNurseSeptanestDisposal,
@@ -32,11 +37,11 @@ export function AnesthesiaQuickBarActions({
 
 	return (
 		<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1 border-t border-[var(--line)]/50">
-			{/* 1-Click Action Buttons */}
-			<div className="flex items-center gap-2 flex-wrap">
+			{/* 1-Click Action Buttons & Chairside Presets */}
+			<div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
 				<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1 shrink-0">
 					<Plus size={13} className="text-[var(--teal)]" />
-					Ввести дозу:
+					Доза:
 				</span>
 
 				{/* Stepper [-] 1.0 карп. [+] */}
@@ -45,7 +50,7 @@ export function AnesthesiaQuickBarActions({
 						type="button"
 						disabled={disabled || selectedCarpulesCount <= 0.5}
 						onClick={() => onChangeSelectedCarpulesCount(Math.max(0.5, Math.round((selectedCarpulesCount - 0.5) * 10) / 10))}
-						className="anesthesia-stepper-btn min-h-[44px] min-w-[44px]"
+						className="anesthesia-stepper-btn min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 sm:w-8"
 						title="Уменьшить дозу на 0.5 карпулы"
 						data-testid="btn-decrease-carpules"
 					>
@@ -62,7 +67,7 @@ export function AnesthesiaQuickBarActions({
 						type="button"
 						disabled={disabled || selectedCarpulesCount >= 6.0}
 						onClick={() => onChangeSelectedCarpulesCount(Math.min(6.0, Math.round((selectedCarpulesCount + 0.5) * 10) / 10))}
-						className="anesthesia-stepper-btn min-h-[44px] min-w-[44px]"
+						className="anesthesia-stepper-btn min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 sm:w-8"
 						title="Увеличить дозу на 0.5 карпулы"
 						data-testid="btn-increase-carpules"
 					>
@@ -75,38 +80,80 @@ export function AnesthesiaQuickBarActions({
 					type="button"
 					disabled={disabled}
 					onClick={() => onApplyCarpules(selectedCarpulesCount)}
-					className="anesthesia-primary-cta-btn min-h-[44px]"
+					className="anesthesia-primary-cta-btn min-h-[44px] sm:min-h-[34px] sm:h-8.5 shrink-0"
 					title={`Ввести ${selectedCarpulesCount} карп. в карту (043/у)`}
 					data-testid="btn-apply-anesthesia-to-card"
 				>
-					<DentalSyringe size={15} className="shrink-0" />
+					<DentalSyringe size={14} className="shrink-0" />
 					<span>В карту</span>
 				</button>
 
-				{/* Primary 1: Норма 1.7 мл */}
+				{/* Preset 1: Инфильтрационная Артикаин 1:200 000 (1 карпула 1.7 мл) */}
+				<button
+					type="button"
+					disabled={disabled}
+					onClick={onApplyInfiltrationArticaine200k || onApplyStandardNormPreset}
+					className="inline-flex items-center gap-1 px-2.5 py-1 min-h-[44px] sm:min-h-[34px] sm:h-8.5 rounded-lg bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/50 text-xs sm:text-xs font-bold text-emerald-800 dark:text-emerald-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
+					title="Инфильтрационная: Артикаин 4% 1:200 000 (1 карпула 1.7 мл), щадящий адреналин"
+					data-testid="anesthesia-preset-infiltration-articaine-200k"
+				>
+					<CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+					<span>✓ Инфильтрация 1:200k (1.7 мл)</span>
+				</button>
+
+				{/* Preset 2: Проводниковая (Мандибулярная) Артикаин 1:100 000 (1 карпула) */}
+				<button
+					type="button"
+					disabled={disabled}
+					onClick={onApplyMandibularArticaine100k || onApplyUltracainForteCombined}
+					className="inline-flex items-center gap-1 px-2.5 py-1 min-h-[44px] sm:min-h-[34px] sm:h-8.5 rounded-lg bg-teal-600/15 hover:bg-teal-600/25 border border-teal-500/50 text-xs sm:text-xs font-bold text-teal-800 dark:text-teal-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
+					title="Проводниковая (Мандибулярная): Артикаин 4% 1:100 000 (1 карпула 1.7 мл), глубокая анестезия"
+					data-testid="anesthesia-preset-mandibular-articaine-100k"
+				>
+					<CheckCircle2 size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
+					<span>✓ Мандибулярная 1:100k (1.7 мл)</span>
+				</button>
+
+				{/* Preset 3: Скандонест 3% (без адреналина) */}
+				<button
+					type="button"
+					disabled={disabled}
+					onClick={onApplyScandonestCardio}
+					className="inline-flex items-center gap-1 px-2.5 py-1 min-h-[44px] sm:min-h-[34px] sm:h-8.5 rounded-lg bg-amber-600/15 hover:bg-amber-600/25 border border-amber-500/50 text-xs sm:text-xs font-bold text-amber-800 dark:text-amber-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
+					title="Кардио-защита: Мепивакаин 3% (Скандонест 3% без адреналина, 1.7 мл) при гипертонии/ССЗ"
+					data-testid="anesthesia-preset-scandonest-cardio"
+				>
+					<CheckCircle2 size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
+					<span>✓ Скандонест 3% (без адреналина)</span>
+				</button>
+
+				{/* Preset 4: Экстренная укладка «Антишок» (Приказ 786н) */}
+				<button
+					type="button"
+					disabled={disabled}
+					onClick={() => {
+						onWriteoffAntishockKit?.();
+						onOpenEmergencyProtocol?.();
+					}}
+					className="inline-flex items-center gap-1 px-2.5 py-1 min-h-[44px] sm:min-h-[34px] sm:h-8.5 rounded-lg bg-rose-600/15 hover:bg-rose-600/25 border border-rose-500/60 text-xs sm:text-xs font-extrabold text-rose-700 dark:text-rose-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
+					title="Экстренная укладка «Антишок» (Приказ 786н): мгновенное списание Адреналин/Преднизолон/Супрастин (мягкий овердрафт) и открытие протокола реанимации"
+					data-testid="anesthesia-btn-antishock-emergency"
+				>
+					<span className="text-xs">🚨</span>
+					<span>АНТИШОК</span>
+				</button>
+
+				{/* Backward Compatibility Preset: Норма Артикаин 1:100k */}
 				<button
 					type="button"
 					disabled={disabled}
 					onClick={onApplyStandardNormPreset}
-					className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/50 text-xs sm:text-sm font-black text-blue-700 dark:text-blue-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
+					className="inline-flex items-center gap-1 px-2 py-1 min-h-[44px] sm:min-h-[34px] sm:h-8.5 rounded-lg bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/40 text-xs sm:text-xs font-semibold text-blue-700 dark:text-blue-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
 					title="Норма: Артикаин 4% 1:100 000 (1.7 мл), аспирация (-), аллергий нет"
 					data-testid="anesthesia-dose-norm-preset"
 				>
-					<DentalSyringe size={14} className="text-amber-500 dark:text-amber-300 shrink-0" />
-					<span>Норма: Артикаин 1:100k (1.7 мл)</span>
-				</button>
-
-				{/* Primary 2: Мандибулярная 1.7 мл */}
-				<button
-					type="button"
-					disabled={disabled}
-					onClick={onApplyUltracainForteCombined}
-					className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-teal-600/15 hover:bg-teal-600/25 border border-teal-500/50 text-xs sm:text-sm font-black text-teal-700 dark:text-teal-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
-					title="Мандибулярная + инфильтрационная 1.7 мл Ультракаин Д-С Форте (2-пл. аспирация отр.)"
-					data-testid="anesthesia-preset-mandibular-infiltration-ultracaine-forte"
-				>
-					<DentalSyringe size={14} className="text-teal-500 shrink-0" />
-					<span>Мандибулярная + инфильтр. 1.7 мл</span>
+					<DentalSyringe size={13} className="text-blue-500 dark:text-blue-300 shrink-0" />
+					<span>Норма: Артикаин 1:100k</span>
 				</button>
 
 				{/* Segmented Dose Switch */}
@@ -115,44 +162,44 @@ export function AnesthesiaQuickBarActions({
 						type="button"
 						disabled={disabled}
 						onClick={() => onApplyCarpules(0.5)}
-						className="anesthesia-segmented-btn min-h-[44px]"
+						className="anesthesia-segmented-btn min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-2"
 						title="Ввести 0.5 карпулы (0.85 мл)"
 						data-testid="anesthesia-dose-halfcarp"
 					>
-						½ карп. (0.85 мл)
+						½ карп.
 					</button>
 					<button
 						type="button"
 						disabled={disabled}
 						onClick={() => onApplyCarpules(1.0)}
-						className="anesthesia-segmented-btn divider min-h-[44px]"
+						className="anesthesia-segmented-btn divider min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-2"
 						title="Ввести 1 карпулу (1.7 мл)"
 						data-testid="anesthesia-dose-1carp"
 					>
-						1 карпула (1.7 мл)
+						1 карп.
 					</button>
 					<button
 						type="button"
 						disabled={disabled}
 						onClick={() => onApplyCarpules(2.0)}
-						className="anesthesia-segmented-btn min-h-[44px]"
+						className="anesthesia-segmented-btn min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-2"
 						title="Ввести 2 карпулы (3.4 мл)"
 						data-testid="anesthesia-dose-2carp"
 					>
-						2 карпулы (3.4 мл)
+						2 карп.
 					</button>
 				</div>
 
-				{/* Primary 3: Списать карпулу */}
+				{/* Nurse Quick Disposal */}
 				<button
 					type="button"
 					disabled={disabled}
 					onClick={() => onNurseQuickDisposal(1.0)}
-					className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-emerald-500/10 border border-emerald-500/40 hover:border-emerald-500 text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
+					className="inline-flex items-center gap-1.5 px-2.5 py-1 min-h-[44px] sm:min-h-[34px] sm:h-8.5 rounded-lg bg-[var(--paper)] hover:bg-emerald-500/10 border border-emerald-500/40 hover:border-emerald-500 text-xs sm:text-xs font-bold text-emerald-700 dark:text-emerald-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98 shrink-0"
 					title="Списать пустые карпулы анестетика по FEFO (расход сверх остатка)"
 					data-testid="nurse-quick-carpule-disposal"
 				>
-					<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+					<Trash2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 					<span>Списать карпулу (FEFO)</span>
 				</button>
 
