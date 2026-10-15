@@ -50,6 +50,7 @@ export interface UsePaymentSbpAndTerminalParams {
 	readonly isCheckingSbp: boolean;
 	readonly setIsCheckingSbp: (v: boolean) => void;
 	readonly setSbpCheckMessage: (msg: string | null) => void;
+	readonly sbpQrData?: any | null | undefined;
 	readonly items?: readonly import("../../../billing/ReceiptPreview.js").ReceiptItem[] | undefined;
 	readonly toothNumber?: number | string | undefined;
 	readonly isOpen: boolean;

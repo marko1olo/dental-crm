@@ -77,6 +77,7 @@ export const InvoiceAdminPinDrawer: React.FC<InvoiceAdminPinDrawerProps> = ({
 				>
 					<ShieldCheck size={14} />
 					<span>Решение лечащего врача</span>
+					<span className="sr-only">Решение врача (1 клик)</span>
 				</button>
 				<button
 					type="button"

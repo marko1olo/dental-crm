@@ -549,7 +549,7 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 									title="Подтвердить зачисление средств по выписке/СМС банка"
 								>
 									<Check size={13} />
-									<span>Подтвердить вручную</span>
+									<span>Деньги поступили на счет клиники (ручное подтверждение)</span>
 								</button>
 							</div>
 						</>

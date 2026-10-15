@@ -3,6 +3,7 @@
  */
 
 import React, { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
 	AlertTriangle,
 	Banknote,
@@ -212,7 +213,7 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 
 	// Mandate 8c: Anti-Matryoshka — top-level conditional return to ensure modal depth is strictly 1
 	if (isBatchModalOpen) {
-		return (
+		const batchModal = (
 			<OfflineFiscalBatchModal
 				isOpen={isBatchModalOpen}
 				onClose={() => setIsBatchModalOpen(false)}
@@ -221,18 +222,18 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 				shiftNumber={shiftNumber}
 			/>
 		);
+		return typeof document !== "undefined" ? createPortal(batchModal, document.body) : batchModal;
 	}
 
-	return (
+	const modalNode = (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+			className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/50 shift-close-modal-backdrop payment-modal-backdrop animate-in fade-in duration-200"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="shift-close-zreport-modal-title"
 			data-testid="shift-close-zreport-modal"
 		>
-			<div className="bg-[var(--paper)] w-full max-w-4xl rounded-3xl shadow-2xl border border-[var(--line)] flex flex-col max-h-[92vh] overflow-hidden text-[var(--ink)]">
-				{/* Modal Header */}
+			<div className="bg-[var(--paper)] w-full max-w-5xl rounded-3xl shadow-2xl border border-[var(--line)] flex flex-col max-h-[90vh] overflow-hidden text-[var(--ink)] my-auto">
 				{/* Modal Header */}
 				<div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center justify-between gap-3">
@@ -240,10 +241,10 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 							<div className="p-2 sm:p-2.5 rounded-2xl bg-rose-600/10 text-rose-600 dark:text-rose-400 shrink-0">
 								<Lock className="w-5 h-5 sm:w-6 sm:h-6" />
 							</div>
-							<div className="min-w-0">
-								<h2 id="shift-close-zreport-modal-title" className="text-base sm:text-lg font-bold text-[var(--ink)] flex items-center gap-2 m-0 truncate">
-									<span>Закрытие смены №{reportSummary.shiftNumber}</span>
-									<span className="text-[11px] sm:text-xs px-2 py-0.5 rounded-full font-bold bg-[var(--ok-bg,rgba(16,185,129,0.1))] text-[var(--ok-fg,#10b981)] border border-[var(--ok-fg,rgba(16,185,129,0.2))] shrink-0">
+							<div className="min-w-0 flex-1">
+								<h2 id="shift-close-zreport-modal-title" className="text-base sm:text-lg font-bold text-[var(--ink)] flex items-center gap-2 m-0 flex-nowrap">
+									<span className="shrink-0">Закрытие смены №{reportSummary.shiftNumber}</span>
+									<span className="text-[11px] sm:text-xs px-2 py-0.5 rounded-full font-bold bg-[var(--ok-bg,rgba(16,185,129,0.1))] text-[var(--ok-fg,#10b981)] border border-[var(--ok-fg,rgba(16,185,129,0.2))] shrink-0 whitespace-nowrap">
 										Z-отчет
 									</span>
 								</h2>
@@ -254,45 +255,33 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 						</div>
 
 						{/* Desktop Tabs + Single Close Button */}
-						<div className="flex items-center gap-2">
-							<div className="hidden sm:flex bg-[var(--paper-soft)] p-1 rounded-xl border border-[var(--line)]">
+						<div className="flex items-center gap-2 shrink-0">
+							<div className="hidden sm:flex items-center gap-1.5 bg-[var(--paper)] p-1 rounded-xl border border-[var(--line)] shadow-xs">
 								<button
 									type="button"
 									onClick={() => setActiveTab("reconciliation")}
-									className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-										activeTab === "reconciliation"
-											? "bg-[var(--paper)] text-[var(--ink)] shadow-sm"
-											: "text-[var(--muted)] hover:text-[var(--ink)]"
-									}`}
+									className={`btn-pill ${activeTab === "reconciliation" ? "active" : ""}`}
 								>
 									Сверка итогов
 								</button>
 								<button
 									type="button"
 									onClick={() => setActiveTab("drawer")}
-									className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-										activeTab === "drawer"
-											? "bg-[var(--paper)] text-[var(--ink)] shadow-sm"
-											: "text-[var(--muted)] hover:text-[var(--ink)]"
-									}`}
+									className={`btn-pill ${activeTab === "drawer" ? "active" : ""}`}
 								>
 									Денежный ящик
 								</button>
 								<button
 									type="button"
 									onClick={() => setActiveTab("tape")}
-									className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-										activeTab === "tape"
-											? "bg-[var(--teal)] text-white shadow-sm"
-											: "text-[var(--muted)] hover:text-[var(--ink)]"
-									}`}
+									className={`btn-pill ${activeTab === "tape" ? "active" : ""}`}
 								>
 									Печать на ленте
 								</button>
 								<button
 									type="button"
 									onClick={() => setIsBatchModalOpen(true)}
-									className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 transition-all cursor-pointer flex items-center gap-1 border border-amber-500/30 whitespace-nowrap"
+									className="btn-pill flex items-center gap-1"
 									title="Очередь чеков и сверка с эквайрингом перед закрытием смены"
 								>
 									<Layers className="w-3.5 h-3.5 shrink-0" />
@@ -303,7 +292,7 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 							<button
 								type="button"
 								onClick={onClose}
-								className="min-h-[44px] min-w-[44px] rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors flex items-center justify-center cursor-pointer shrink-0"
+								className="btn-icon cash-shift-close-btn shrink-0"
 								aria-label="Закрыть модальное окно"
 							>
 								<X className="w-5 h-5" />
@@ -341,7 +330,7 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 								onClick={() => setActiveTab("tape")}
 								className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap text-center flex items-center justify-center ${
 									activeTab === "tape"
-										? "bg-[var(--teal)] text-white shadow-sm"
+										? "bg-teal-600 dark:bg-teal-500 text-white shadow-sm"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
@@ -462,11 +451,11 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 						<span>В ящике: <strong className="text-emerald-700 dark:text-emerald-300">{reportSummary.cashInDrawerRub.toLocaleString("ru-RU")} ₽</strong></span>
 					</div>
 
-					<div className="flex items-center gap-2 w-full sm:w-auto">
+					<div className="flex items-center gap-2.5 w-full sm:w-auto">
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] px-4 rounded-xl border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-bold cursor-pointer transition-all flex-1 sm:flex-none text-center"
+							className="btn-secondary flex-1 sm:flex-none"
 						>
 							Отмена
 						</button>
@@ -474,7 +463,7 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 							type="button"
 							onClick={handleConfirmClose}
 							aria-busy={isSubmitting}
-							className="min-h-[44px] px-4 sm:px-5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md active:scale-95 flex-2 sm:flex-none text-center"
+							className="btn-primary flex-2 sm:flex-none"
 							data-testid="btn-confirm-close-shift-zreport"
 						>
 							<Lock size={16} className="shrink-0" />
@@ -486,4 +475,6 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined" ? createPortal(modalNode, document.body) : modalNode;
 };

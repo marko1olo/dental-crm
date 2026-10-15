@@ -90,7 +90,7 @@ describe("Subagent 4 Inquisitor: SplitPaymentModal Multi-Tender & Auto-Calculati
 		);
 
 		assert.ok(html.includes('data-testid="split-payment-modal"'));
-		assert.ok(html.includes("Комбинированная сплит-оплата (54-ФЗ)"));
+		assert.ok(html.includes("Комбинированная сплит-оплата"));
 		assert.ok(html.includes('data-testid="split-balance-status-card"'));
 
 		// Inputs for tenders

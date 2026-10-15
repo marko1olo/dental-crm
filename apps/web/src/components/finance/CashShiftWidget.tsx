@@ -558,9 +558,8 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					</button>
 
 					<div
-						className={`absolute left-0 sm:left-auto sm:right-0 bottom-full mb-2 z-30 min-w-[230px] bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl p-1.5 flex flex-col gap-1 ${
-							isBottomActionsMenuOpen ? "block" : "hidden"
-						}`}
+						className={`absolute left-0 sm:left-auto sm:right-0 bottom-full mb-2 z-30 min-w-[230px] bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl p-1.5 gap-1 ${isBottomActionsMenuOpen ? "flex flex-col" : "hidden"}`}
+						style={{ display: isBottomActionsMenuOpen ? "flex" : "none" }}
 					>
 						<button
 							type="button"

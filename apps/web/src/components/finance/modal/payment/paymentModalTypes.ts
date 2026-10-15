@@ -47,6 +47,11 @@ export interface PaymentModalProps {
 	readonly initialSplitDmsRub?: number | undefined;
 	readonly items?: readonly import("../../../billing/ReceiptPreview.js").ReceiptItem[] | undefined;
 	readonly toothNumber?: number | string | undefined;
+	readonly patientEmail?: string | undefined;
+	readonly containerTestId?: string | undefined;
+	readonly title?: string | undefined;
+	readonly onOpenSplitPayment?: (() => void) | undefined;
+	readonly onOpenDepositTopup?: (() => void) | undefined;
 	readonly onPrintInvoice?: (() => void) | undefined;
 	readonly onPrintAct?: (() => void) | undefined;
 	readonly onClose: () => void;

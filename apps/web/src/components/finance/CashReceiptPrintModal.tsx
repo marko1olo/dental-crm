@@ -243,7 +243,7 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 
 					<div className="flex items-center gap-2">
 						{/* Format selector: 80mm vs A4 */}
-						<div className="flex bg-[var(--paper)] p-0.5 rounded-lg border border-[var(--line)] text-xs font-semibold">
+						<div className="flex items-center gap-1 bg-[var(--paper)] p-1 rounded-lg border border-[var(--line)] text-xs font-semibold">
 							<button
 								type="button"
 								onClick={() => setFormat("80mm")}

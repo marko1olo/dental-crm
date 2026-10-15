@@ -66,6 +66,8 @@ export const SbpDynamicQrCard: React.FC<SbpDynamicQrCardProps> = ({
 	const [secondsLeft, setSecondsLeft] = useState<number>(ttlSeconds);
 	const [isCopied, setIsCopied] = useState<boolean>(false);
 	const [qrIteration, setQrIteration] = useState<number>(0);
+	const [isCheckingSbp, setIsCheckingSbp] = useState<boolean>(false);
+	const [sbpCheckMessage, setSbpCheckMessage] = useState<string | null>(null);
 
 	// Generate QR payload and vector SVG
 	const qrData: SbpDynamicQrPayloadData = useMemo(() => {
@@ -94,7 +96,72 @@ export const SbpDynamicQrCard: React.FC<SbpDynamicQrCardProps> = ({
 		});
 	}, [status, sumRub, qrData.paymentId, onPaymentSuccess]);
 
-	// 30s countdown timer
+	// Poll SBP bank gateway for real incoming transaction (/api/fiscal/sbp-status)
+	const pollSbpStatus = useCallback(
+		async (manual = false) => {
+			if (status === "paid") return;
+			try {
+				if (manual) setIsCheckingSbp(true);
+				const effectiveId = qrData.paymentId || orderId || invoiceId || "";
+				const sumKop = Math.round(sumRub * 100);
+				const url = `/api/fiscal/sbp-status?orderId=${encodeURIComponent(effectiveId)}&qrId=${encodeURIComponent(qrData.paymentId)}&sumKop=${sumKop}`;
+				const res = await fetch(url, { credentials: "same-origin" });
+				if (res.ok) {
+					const json = await res.json();
+					if (json.isPaid || json.status === "paid") {
+						handleConfirmPayment();
+						return;
+					}
+					if (manual) {
+						setSbpCheckMessage("Ожидание зачисления от банка-эмитента...");
+						setTimeout(() => setSbpCheckMessage(null), 3500);
+					}
+				}
+			} catch {
+				// graceful offline or test environment catch
+			} finally {
+				if (manual) setIsCheckingSbp(false);
+			}
+		},
+		[status, qrData.paymentId, orderId, invoiceId, sumRub, handleConfirmPayment],
+	);
+
+	// Active polling every 2.5s while awaiting payment
+	useEffect(() => {
+		if (status !== "awaiting") return;
+		const pollInterval = setInterval(() => {
+			pollSbpStatus(false);
+		}, 2500);
+		return () => clearInterval(pollInterval);
+	}, [status, pollSbpStatus]);
+
+	// Explicit manual confirmation by cashier: «Деньги поступили на счет клиники (ручное подтверждение)»
+	const handleManualConfirmation = useCallback(async () => {
+		try {
+			setIsCheckingSbp(true);
+			const effectiveId = qrData.paymentId || orderId || invoiceId || "";
+			const sumKop = Math.round(sumRub * 100);
+			await fetch("/api/fiscal/sbp-status", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				credentials: "same-origin",
+				body: JSON.stringify({
+					orderId: effectiveId,
+					qrId: qrData.paymentId,
+					invoiceId: invoiceId || undefined,
+					action: "confirm_manual",
+					sumKop,
+				}),
+			});
+		} catch {
+			// Continue to confirm locally even if network/offline
+		} finally {
+			setIsCheckingSbp(false);
+			handleConfirmPayment();
+		}
+	}, [qrData.paymentId, orderId, invoiceId, sumRub, handleConfirmPayment]);
+
+	// 30s countdown timer (counts down TTL without fake auto-pay transitions)
 	useEffect(() => {
 		if (status !== "awaiting") return;
 
@@ -113,20 +180,20 @@ export const SbpDynamicQrCard: React.FC<SbpDynamicQrCardProps> = ({
 		return () => clearInterval(interval);
 	}, [status, ttlSeconds, qrIteration]);
 
-	// Global Enter hotkey for frictionless cashier instant confirmation
+	// Global Enter hotkey for frictionless cashier manual confirmation
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && status === "awaiting") {
 				const activeTag = document.activeElement?.tagName.toLowerCase();
 				if (activeTag === "input" || activeTag === "textarea") return;
 				e.preventDefault();
-				handleConfirmPayment();
+				handleManualConfirmation();
 			}
 		};
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [status, handleConfirmPayment]);
+	}, [status, handleManualConfirmation]);
 
 	// Copy URL
 	const handleCopyLink = async () => {
@@ -277,20 +344,39 @@ export const SbpDynamicQrCard: React.FC<SbpDynamicQrCardProps> = ({
 						</div>
 
 						{/* Quick Action Buttons */}
+						{sbpCheckMessage && (
+							<div className="text-[11px] text-teal-700 dark:text-teal-300 font-medium">
+								{sbpCheckMessage}
+							</div>
+						)}
 						<div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
-							{/* Confirm Button (Enter) */}
+							{/* Manual Confirmation Button (Enter) */}
 							<button
 								type="button"
-								onClick={handleConfirmPayment}
-								className="w-full sm:flex-1 h-9 px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all"
+								onClick={handleManualConfirmation}
+								disabled={isCheckingSbp}
+								className="w-full sm:flex-1 h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all disabled:opacity-50"
 								data-testid="btn-confirm-sbp-payment"
-								title="Подтвердить оплату (Хоткей: Enter)"
+								title="Подтвердить зачисление средств на расчетный счет клиники (Хоткей: Enter)"
 							>
 								<Check size={15} className="stroke-[2.5]" />
-								<span>Оплачено в банке</span>
-								<kbd className="hidden md:inline-block ml-1 px-1 py-0.2 text-[9px] font-mono bg-teal-800/60 rounded border border-teal-500/30">
+								<span className="truncate">Деньги поступили на счет клиники (ручное подтверждение)</span>
+								<kbd className="hidden md:inline-block ml-1 px-1 py-0.2 text-[9px] font-mono bg-emerald-800/60 rounded border border-emerald-500/30">
 									Enter
 								</kbd>
+							</button>
+
+							{/* Poll Button */}
+							<button
+								type="button"
+								onClick={() => pollSbpStatus(true)}
+								disabled={isCheckingSbp}
+								className="w-full sm:w-auto h-9 px-3 rounded-lg border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-300 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50"
+								data-testid="btn-check-sbp-status"
+								title="Опросить банковский шлюз СБП"
+							>
+								<RefreshCw size={13} className={isCheckingSbp ? "animate-spin" : ""} />
+								<span>Проверить</span>
 							</button>
 
 							{/* Copy SBP Link */}

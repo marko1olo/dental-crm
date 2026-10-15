@@ -8,6 +8,10 @@
  */
 
 import { useState, useEffect } from "react";
+import {
+	normalizeInvoiceStatus,
+	resolveInvoiceTotalAmountRub,
+} from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import type { useMemoryLeakGuard } from "../../hooks/useMemoryLeakGuard.js";
 import type { BillingInvoice, InvoiceLineItem } from "./invoiceTypes.js";
@@ -61,8 +65,18 @@ export function useInvoicesData({
 				if (rawList.length === 0) return;
 
 				const mapped: BillingInvoice[] = rawList.map((raw, idx) => {
+					const resolvedTotal = resolveInvoiceTotalAmountRub({
+						totalAmountRub: raw.totalAmountRub as number | string | null | undefined,
+						totalRub: (raw.totalRub ?? raw.priceRub) as number | string | null | undefined,
+						subtotalRub: raw.subtotalRub as number | string | null | undefined,
+						discountRub: raw.discountRub as number | string | null | undefined,
+					});
+
 					if (raw.number && raw.status && Array.isArray(raw.items)) {
-						return raw as unknown as BillingInvoice;
+						return {
+							...(raw as unknown as BillingInvoice),
+							totalAmountRub: resolvedTotal,
+						};
 					}
 
 					const numMatch =
@@ -73,20 +87,37 @@ export function useInvoicesData({
 							: null;
 					const invoiceNumber = String(
 						raw.number ||
+							raw.invoiceNumber ||
 							(numMatch
 								? numMatch[1]
 								: `СЧ-${(raw.id || idx).toString().slice(-6)}`),
 					);
-					const total =
-						typeof raw.totalAmountRub === "number"
-							? raw.totalAmountRub
-							: typeof raw.priceRub === "number"
-								? raw.priceRub
+					const total = resolvedTotal;
+					const paid =
+						typeof raw.paidAmountRub === "number" || typeof raw.paidAmountRub === "string"
+							? Number(raw.paidAmountRub) || 0
+							: raw.status === "paid"
+								? total
 								: 0;
+					const normalizedStatus: BillingInvoice["status"] =
+						raw.status === "warranty_100"
+							? "warranty_100"
+							: normalizeInvoiceStatus(
+									typeof raw.status === "string" ? raw.status : undefined,
+									total,
+									paid,
+								);
 
 					return {
 						id: String(raw.id || `inv-${Date.now()}-${idx}`),
+						organizationId:
+							typeof raw.organizationId === "string"
+								? raw.organizationId
+								: undefined,
+						visitId:
+							typeof raw.visitId === "string" ? raw.visitId : null,
 						number: invoiceNumber,
+						invoiceNumber,
 						patientId: String(raw.patientId || patientId || ""),
 						patientName: String(raw.patientName || patientName || "Пациент"),
 						patientPhone:
@@ -101,13 +132,8 @@ export function useInvoicesData({
 									? new Date(raw.createdAt).toLocaleDateString("ru-RU")
 									: new Date().toLocaleDateString("ru-RU"),
 						totalAmountRub: total,
-						paidAmountRub:
-							typeof raw.paidAmountRub === "number"
-								? raw.paidAmountRub
-								: raw.status === "paid"
-									? total
-									: 0,
-						status: (raw.status as BillingInvoice["status"]) || "issued",
+						paidAmountRub: paid,
+						status: normalizedStatus,
 						items:
 							Array.isArray(raw.items) && raw.items.length > 0
 								? (raw.items as InvoiceLineItem[])
@@ -120,6 +146,7 @@ export function useInvoicesData({
 											),
 											quantity: Number(raw.quantity) || 1,
 											priceRub: total,
+											totalAmountRub: total,
 										},
 									],
 						createdAt:

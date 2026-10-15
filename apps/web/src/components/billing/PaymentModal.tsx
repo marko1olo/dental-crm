@@ -54,22 +54,22 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[100] flex flex-col justify-end md:items-center md:justify-center bg-black/65 backdrop-blur-xs p-0 md:p-4 payment-modal-backdrop animate-in fade-in duration-150"
+			className="fixed inset-0 z-[100] flex flex-col justify-end md:items-center md:justify-center bg-black/50 p-0 md:p-3 payment-modal-backdrop animate-in fade-in duration-150"
 			style={{ zIndex: 100 }}
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="payment-modal-title"
-			data-testid="payment-modal-studio"
+			data-testid={props.containerTestId || "payment-modal-studio"}
 		>
-			<div className="payment-modal w-full max-w-full md:max-w-4xl lg:max-w-5xl rounded-t-[24px] md:rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] border-t md:border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] md:max-h-[92vh] min-h-0">
+			<div className="payment-modal w-full max-w-full md:max-w-4xl lg:max-w-5xl rounded-t-[24px] md:rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] border-t md:border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] md:max-h-[94vh] min-h-0">
 				<PaymentHeader
-					patientName={patientName} patientPhone={patientPhone} effectiveCashier={effectiveCashier}
+					title={props.title} patientName={patientName} patientPhone={patientPhone} effectiveCashier={effectiveCashier}
 					rawTotalDueRub={rawTotalDueRub} discountsHook={discountsHook}
 					showReceiptSidePanel={showReceiptSidePanel} setShowReceiptSidePanel={setShowReceiptSidePanel}
 					mobileTab={mobileTab} setMobileTab={setMobileTab} onClose={onClose}
 				/>
 				<div className="flex-1 min-h-0 overflow-y-auto flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-[var(--line,#cbd5e1)]">
-					<div className={`flex-1 min-h-0 p-3 sm:p-4 space-y-4 overflow-y-auto ${mobileTab === "receipt" ? "hidden md:block" : "block"}`}>
+					<div className={`flex-1 min-h-0 p-2.5 sm:p-3 space-y-2.5 overflow-y-auto ${mobileTab === "receipt" ? "hidden md:block" : "block"}`}>
 						<PaymentBanners
 							totalDueRub={discountsHook.totalDueRub} rawTotalDueRub={rawTotalDueRub}
 							patientDebtRub={patientDebtRub} patientDepositRub={patientDepositRub}
@@ -78,6 +78,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 						<PaymentMethodSelector
 							activeMethod={tendersHook.activeMethod} setActiveMethod={tendersHook.setActiveMethod}
 							patientDepositRub={patientDepositRub} patientFamilyBalanceRub={patientFamilyBalanceRub}
+							onOpenSplitPayment={props.onOpenSplitPayment}
 						/>
 						<PaymentActiveMethodCockpit
 							props={props} patientId={patientId} patientName={patientName}
@@ -90,7 +91,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 					</div>
 					<PaymentFiscalPreview
 						clinicLegalName={clinicLegalName} totalDueRub={discountsHook.totalDueRub}
-						patientName={patientName} patientPhone={patientPhone} effectiveCashier={effectiveCashier}
+						patientName={patientName} patientPhone={patientPhone} patientEmail={props.patientEmail} effectiveCashier={effectiveCashier}
 						isWarranty100={discountsHook.isWarranty100} tendersHook={tendersHook} discountsHook={discountsHook}
 						showReceiptSidePanel={showReceiptSidePanel} mobileTab={mobileTab}
 						items={props.items} toothNumber={props.toothNumber}

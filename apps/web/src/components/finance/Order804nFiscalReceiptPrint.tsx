@@ -3,7 +3,8 @@
  * включая чеки возврата прихода и чеки коррекции.
  */
 
-import React from "react";
+import React, { useMemo } from "react";
+import { generateQrCodeSvg } from "@dental/shared";
 import type { FiscalReceipt54FzResult } from "./order804nFiscalEngine";
 
 export interface Order804nFiscalReceiptPrintProps {
@@ -24,6 +25,21 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 			: receipt.operationType === "income_return"
 				? "КАССОВЫЙ ЧЕК / ВОЗВРАТ ПРИХОДА"
 				: "КАССОВЫЙ ЧЕК / ПРИХОД";
+
+	const fnsQrSvg = useMemo(() => {
+		if (receipt.isWarrantyZeroAct || !receipt.ofdUrl) return null;
+		try {
+			return generateQrCodeSvg(receipt.ofdUrl, {
+				size: 130,
+				margin: 1,
+				foregroundColor: "#0f172a",
+				backgroundColor: "#ffffff",
+				title: `ФНС Чек №${receipt.receiptNumber}`,
+			});
+		} catch {
+			return null;
+		}
+	}, [receipt.isWarrantyZeroAct, receipt.ofdUrl, receipt.receiptNumber]);
 
 	return (
 		<div
@@ -296,10 +312,17 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 						</span>
 					</div>
 				) : (
-					<div className="flex items-center justify-center p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)]">
+					<div className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] gap-2.5">
+						{fnsQrSvg && (
+							<div
+								className="w-[130px] h-[130px] p-1.5 bg-white rounded-lg border border-[var(--border,#cbd5e1)] shadow-2xs flex items-center justify-center shrink-0"
+								data-testid="fns-fiscal-qr-svg"
+								dangerouslySetInnerHTML={{ __html: fnsQrSvg }}
+							/>
+						)}
 						<div className="space-y-1">
 							<div className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
-								Проверка кассового чека:
+								Проверка кассового чека ФНС / ОФД:
 							</div>
 							<a
 								href={receipt.ofdUrl}

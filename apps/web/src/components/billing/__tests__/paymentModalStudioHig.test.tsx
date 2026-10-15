@@ -10,7 +10,7 @@
  * - Mandate 8n: Solo Doctor & Small Clinic Sovereignty.
  */
 
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";

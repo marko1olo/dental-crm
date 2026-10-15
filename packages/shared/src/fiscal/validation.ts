@@ -1,9 +1,8 @@
 /**
- * Zod Schemas & Statutory Validation for 54-FZ FFD 1.2 Fiscal Receipts & Operations.
- * Compliant with Order of FTS Russia No. ED-7-20/662@ and Order of Minzdrav 804n.
+ * packages/shared/src/fiscal/validation.ts
  *
- * Canonical Thin Facade (Mandate 8b):
- * Re-exports 100% of fiscal validation API from decomposed ./fiscalValidation submodules.
+ * @deprecated Legacy facade pointer. Use `./fiscalValidation.js` or import directly from `@dental/shared/fiscal`.
  */
 
-export * from "./fiscalValidation/index.js";
+export * from "./fiscalValidation.js";
+

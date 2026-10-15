@@ -173,9 +173,10 @@ export const CashShiftCompactBar: React.FC<CashShiftCompactBarProps> = ({
 					</button>
 
 					<div
-						className={`absolute right-0 top-full mt-1 z-30 min-w-[170px] bg-[var(--paper)] border border-[var(--line)] rounded-lg shadow-lg p-1 flex flex-col gap-0.5 ${
-							isReportsMenuOpen ? "block" : "hidden"
+						className={`absolute right-0 top-full mt-1 z-30 min-w-[210px] bg-[var(--paper)] border border-[var(--line)] rounded-lg shadow-lg p-1 gap-0.5 ${
+							isReportsMenuOpen ? "flex flex-col" : "hidden"
 						}`}
+						style={{ display: isReportsMenuOpen ? "flex" : "none" }}
 					>
 						<button
 							type="button"
@@ -189,7 +190,7 @@ export const CashShiftCompactBar: React.FC<CashShiftCompactBarProps> = ({
 							title="Печать X-отчета (без гашения)"
 						>
 							<Printer size={13} className="shrink-0 text-[var(--muted)]" />
-							<span>X-отчет (промежуточный)</span>
+							<span>Печать X-отчета (без гашения)</span>
 						</button>
 
 						<button

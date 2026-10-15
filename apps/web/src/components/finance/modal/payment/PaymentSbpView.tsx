@@ -112,7 +112,7 @@ export const PaymentSbpView: React.FC<PaymentSbpViewProps> = ({
 								title="Подтвердить зачисление средств по выписке/СМС банка"
 							>
 								<Check size={13} />
-								<span>Подтвердить вручную</span>
+								<span>Деньги поступили на счет клиники (ручное подтверждение)</span>
 							</button>
 						</div>
 					</>

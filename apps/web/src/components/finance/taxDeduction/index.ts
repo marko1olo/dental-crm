@@ -1,0 +1,16 @@
+export type * from "./types";
+export { useTaxDeductionCertificate } from "./useTaxDeductionCertificate";
+export { TaxDeductionHeader } from "./TaxDeductionHeader";
+export { TaxDeductionPayerForm } from "./TaxDeductionPayerForm";
+export { TaxDeductionPaymentsTable } from "./TaxDeductionPaymentsTable";
+export { TaxDeductionFooterActions } from "./TaxDeductionFooterActions";
+export { TaxDeductionModalFooter } from "./TaxDeductionModalFooter";
+export type { TaxDeductionModalFooterProps } from "./TaxDeductionModalFooter";
+export { TaxDeductionRequisitesForm } from "./TaxDeductionRequisitesForm";
+export type { TaxDeductionRequisitesFormProps } from "./TaxDeductionRequisitesForm";
+export { TaxDeductionChecksTab } from "./TaxDeductionChecksTab";
+export type { TaxDeductionChecksTabProps } from "./TaxDeductionChecksTab";
+export { TaxDeductionFamilyTab } from "./TaxDeductionFamilyTab";
+export type { TaxDeductionFamilyTabProps } from "./TaxDeductionFamilyTab";
+export { TaxDeductionXmlTab } from "./TaxDeductionXmlTab";
+export type { TaxDeductionXmlTabProps } from "./TaxDeductionXmlTab";

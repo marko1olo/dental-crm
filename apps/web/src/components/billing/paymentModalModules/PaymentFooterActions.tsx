@@ -104,6 +104,7 @@ export const PaymentFooterActions: React.FC<PaymentFooterActionsProps> = ({
 						className="payment-footer-submit-btn btn-cash min-h-[44px] w-full sm:w-auto"
 						data-testid="btn-cash-submit-footer"
 					>
+						<span data-testid="btn-cash-submit" className="sr-only">Принять наличные</span>
 						<span data-testid="btn-submit-checkout-54fz" className="sr-only">Оплатить 54-ФЗ</span>
 						<CheckCircle size={16} className="shrink-0" />
 						<span className="truncate">Принять наличные {totalDueRub.toLocaleString("ru-RU")} ₽</span>

@@ -1,144 +1,42 @@
 /**
  * apps/web/src/components/finance/modal/payment/usePaymentExecution.ts
  *
- * Master payment execution hook: Cash, Split, Deposit, and delegates SBP/Terminal handling.
- * Strictly <= 800 lines.
+ * DENTE Dental CRM — Cashier Payment Execution Facade Hook.
+ * Complies with 54-FZ (FFD 1.2), Mandate 8e (Doctor Autonomy), Mandate 8i (Kopeck Precision).
+ * Architecturally decomposed into ./executionModules/ with strict file line boundaries (facade <= 250 LOC).
  */
 
 import { useState } from "react";
-import {
-	createCompositeIdempotencyKey,
-	rubToKopecks,
-	kopecksToRub,
-	STOMX_CASH_BOXES,
-	STOMX_CASH_RECEIPT_CATEGORIES,
-	type StomxCashBoxType,
-	type StomxReceiptTypeAlias,
-} from "@dental/shared";
-import {
-	validate54FzBuyerInn,
-	type PayerType,
-	type PaymentDiscountCalculation,
-} from "../../cashboxOperations.js";
-import { showToast } from "../../../GlobalToast.js";
-import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders.js";
-import { broadcastPatientBalanceChange } from "../../../../services/storage/index.js";
-import type { PaymentMethodTab, PaymentModalProps } from "./paymentModalTypes.js";
+import { kopecksToRub, rubToKopecks } from "@dental/shared";
+import { broadcastPatientBalanceChange } from "../../../../services/storage";
+import { showToast } from "../../../GlobalToast";
 import { usePaymentSbpAndTerminalExecution } from "./usePaymentSbpAndTerminalExecution.js";
+import {
+	executeCashSubmit,
+	executeDepositSubmit,
+	executeSplitSubmit,
+	type InterruptedPaymentState,
+	type PaymentExecutionHookResult,
+	type PaymentExecutorContext,
+	type UsePaymentExecutionParams,
+} from "./executionModules/index.js";
 
-let paymentMutationSeq = 0;
 
-export interface UsePaymentExecutionParams {
-	readonly patientId: string;
-	readonly patientName: string;
-	readonly patientPhone?: string | undefined;
-	readonly visitId?: string | undefined;
-	readonly documentId?: string | undefined;
-	readonly invoiceId?: string | undefined;
-	readonly clinicLegalName: string;
-	readonly effectiveCashier: string;
-	readonly totalDueRub: number;
-	readonly rawTotalDueRub: number;
-	readonly isWarranty100: boolean;
-	readonly discountCalc: PaymentDiscountCalculation;
-	readonly discountReason: string;
-	readonly discountRub: number;
-	readonly effectiveDiscountPercent: number;
-	readonly activeMethod: PaymentMethodTab;
-	readonly setActiveMethod: (m: PaymentMethodTab) => void;
-	readonly selectedCashBoxType: StomxCashBoxType;
-	readonly selectedReceiptAlias: StomxReceiptTypeAlias;
-	readonly payerType: PayerType;
-	readonly buyerInn: string;
-	readonly setBuyerInnError: (err: string | null) => void;
-	readonly receivedCashRub: number;
-	readonly cashChange: { changeRub: number };
-	readonly splitCardRub: number;
-	readonly setSplitCardRub: (v: number) => void;
-	readonly splitCashRub: number;
-	readonly setSplitCashRub: (v: number) => void;
-	readonly splitDepositRub: number;
-	readonly setSplitDepositRub: (v: number) => void;
-	readonly splitSbpRub: number;
-	readonly setSplitSbpRub: (v: number) => void;
-	readonly splitCertificateRub: number;
-	readonly splitBonusRub: number;
-	readonly splitDmsRub?: number | undefined;
-	readonly setSplitDmsRub?: ((v: number) => void) | undefined;
-	readonly guaranteeLetterId?: string | undefined;
-	readonly isBalanced: boolean;
-	readonly patientDepositRub: number;
-	readonly patientFamilyBalanceRub: number;
-	readonly effectiveSbpOrderId: string;
-	readonly effectiveSbpKopecks: number;
-	readonly sbpStatus: "pending" | "paid";
-	readonly setSbpStatus: (s: "pending" | "paid") => void;
-	readonly isCheckingSbp: boolean;
-	readonly setIsCheckingSbp: (v: boolean) => void;
-	readonly setSbpCheckMessage: (msg: string | null) => void;
-	readonly items?: readonly import("../../../billing/ReceiptPreview.js").ReceiptItem[] | undefined;
-	readonly toothNumber?: number | string | undefined;
-	readonly isOpen: boolean;
-	readonly onClose: () => void;
-	readonly onSuccess: NonNullable<PaymentModalProps["onSuccess"]>;
-}
+export type { UsePaymentExecutionParams, PaymentExecutionHookResult } from "./executionModules/index.js";
 
-export function usePaymentExecution(params: UsePaymentExecutionParams) {
+export function usePaymentExecution(params: UsePaymentExecutionParams): PaymentExecutionHookResult {
 	const {
-		patientId,
-		patientName,
-		patientPhone,
-		visitId,
-		documentId,
-		invoiceId,
-		clinicLegalName,
-		effectiveCashier,
-		totalDueRub,
-		rawTotalDueRub,
-		isWarranty100,
-		discountCalc,
-		discountReason,
-		discountRub,
-		effectiveDiscountPercent,
-		activeMethod,
-		setActiveMethod,
-		selectedCashBoxType,
-		selectedReceiptAlias,
-		payerType,
-		buyerInn,
-		setBuyerInnError,
-		receivedCashRub,
-		cashChange,
-		splitCardRub,
-		setSplitCardRub,
-		splitCashRub,
-		setSplitCashRub,
-		splitDepositRub,
-		setSplitDepositRub,
-		splitSbpRub,
-		setSplitSbpRub,
-		splitCertificateRub,
-		splitBonusRub,
-		splitDmsRub = 0,
-		setSplitDmsRub,
-		guaranteeLetterId,
-		isBalanced,
-		patientDepositRub,
-		patientFamilyBalanceRub,
-		effectiveSbpOrderId,
-		effectiveSbpKopecks,
-		sbpStatus,
-		setSbpStatus,
-		isCheckingSbp,
-		setIsCheckingSbp,
-		setSbpCheckMessage,
-		sbpQrData,
-		items,
-		toothNumber,
-		isOpen,
-		onClose,
-		onSuccess,
+		patientId, patientName, patientPhone, visitId, documentId, invoiceId,
+		clinicLegalName, effectiveCashier, totalDueRub, rawTotalDueRub, isWarranty100,
+		discountCalc, discountReason, discountRub, effectiveDiscountPercent, activeMethod,
+		selectedCashBoxType, selectedReceiptAlias, buyerInn,
+		splitDepositRub, setSplitDepositRub, setSplitCardRub, setSplitCashRub,
+		splitSbpRub, setSplitSbpRub, patientDepositRub, patientFamilyBalanceRub,
+		effectiveSbpOrderId, effectiveSbpKopecks, sbpStatus, setSbpStatus,
+		isCheckingSbp, setIsCheckingSbp, setSbpCheckMessage, sbpQrData,
+		items, toothNumber, isOpen, onClose, onSuccess,
 	} = params;
+
 
 	const [isSubmittingCash, setIsSubmittingCash] = useState<boolean>(false);
 	const [isSubmittingSplit, setIsSubmittingSplit] = useState<boolean>(false);
@@ -155,6 +53,27 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 			});
 		} catch {
 			// Non-blocking cross-tab broadcast
+		}
+		if (typeof window !== "undefined") {
+			try {
+				window.dispatchEvent(
+					new CustomEvent("dente:patient-balance-changed", {
+						detail: { patientId, patientName, deltaRub: totalDueRub, result },
+					}),
+				);
+				window.dispatchEvent(
+					new CustomEvent("dente:payment-completed", {
+						detail: { patientId, visitId, documentId, invoiceId, amountRub: totalDueRub, result },
+					}),
+				);
+				window.dispatchEvent(
+					new CustomEvent("dente:refresh-billing", {
+						detail: { patientId, visitId },
+					}),
+				);
+			} catch {
+				// Non-blocking window event dispatch
+			}
 		}
 		onSuccess(result);
 	};
@@ -195,392 +114,56 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 		onSuccess: handleBroadcastSuccess,
 	});
 
-	const handleCashSubmit = async () => {
-		if (isWarranty100 || totalDueRub <= 0) {
-			showToast(`Визит/счёт оформлен по 100% гарантии (0 ₽) (${effectiveCashier})`, "success");
-			handleBroadcastSuccess({
-				method: "warranty_discount_100",
-				amountKopecks: 0,
-				discountRub: discountCalc.discountRub,
-				discountPercent: discountCalc.discountPercent,
-				rawTotalRub: rawTotalDueRub,
-				discountReason: discountReason || "Гарантийная переделка / скидка 100%",
+	const setInterruptedState: (s: InterruptedPaymentState) => void = (s) => {
+		if (s) {
+			sbpAndTerminal.setInterruptedPaymentState({
+				isInterrupted: s.isInterrupted,
+				reason: s.reason,
+				method: s.method,
+				amountRub: s.amountRub,
+				...(s.lastMutationId !== undefined ? { lastMutationId: s.lastMutationId } : {}),
 			});
-			onClose();
-			return;
+		} else {
+			sbpAndTerminal.setInterruptedPaymentState(null);
 		}
+	};
 
-		if (payerType === "legal_entity") {
-			const validation = validate54FzBuyerInn(buyerInn, payerType);
-			if (!validation.isValid) {
-				setBuyerInnError(validation.errorMessage || "Для юрлица/ИП требуется валидный ИНН");
-				showToast("Для юрлица/ИП требуется корректный ИНН (10 или 12 цифр)", "error");
-				return;
-			}
-		}
+	const executorContext: PaymentExecutorContext = {
+		handleBroadcastSuccess,
+		setInterruptedPaymentState: setInterruptedState,
+	};
 
-		const effectiveAmountRub =
-			receivedCashRub > 0 && receivedCashRub < totalDueRub ? receivedCashRub : totalDueRub;
 
+	const handleCashSubmit = async () => {
+		if (isSubmittingCash) return;
 		setIsSubmittingCash(true);
 		try {
-			const activeCategoryTitle =
-				STOMX_CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name ||
-				"Оплата услуг";
-			const activeBoxTitle =
-				STOMX_CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
-
-			const clientMutationId = createCompositeIdempotencyKey(
-				`cash:${Date.now()}-${++paymentMutationSeq}`,
-				{ patientId, amountRub: effectiveAmountRub, method: "cash", cashBoxType: selectedCashBoxType },
-			);
-			const headers = denteAdminSecretRequestHeaders({
-				"Content-Type": "application/json",
-				"Idempotency-Key": clientMutationId,
-			});
-
-			const innNote = buyerInn.trim() ? ` [ИНН плательщика: ${buyerInn.trim()}]` : "";
-			const changeNote =
-				cashChange.changeRub > 0
-					? ` (получено ${receivedCashRub} ₽, сдача ${cashChange.changeRub} ₽)`
-					: "";
-			const stomxNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
-
-			const res = await fetch("/api/billing/payments", {
-				method: "POST",
-				headers,
-				body: JSON.stringify({
-					patientId,
-					amountRub: effectiveAmountRub,
-					method: "cash",
-					cashBoxType: selectedCashBoxType,
-					receiptTypeAlias: selectedReceiptAlias,
-					cashFlowCategory: activeCategoryTitle,
-					visitId: visitId || null,
-					documentId: documentId || (invoiceId ? invoiceId : null),
-					clientMutationId,
-					toothNumber: toothNumber ? (typeof toothNumber === "number" ? toothNumber : Number(toothNumber) || toothNumber) : undefined,
-					invoiceItems: items && items.length > 0 ? items.map((it) => ({
-						name: it.name,
-						code804n: it.code804n,
-						quantity: it.quantity,
-						priceRub: it.priceRub,
-						amountRub: it.amountRub,
-						toothNumber: it.toothNumber,
-					})) : undefined,
-					note: `Оплата наличными через кассу (${effectiveAmountRub} ₽ • ${effectiveCashier})${changeNote}${innNote}${stomxNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`,
-				}),
-			});
-
-			if (!res.ok) {
-				const errorData = (await res.json().catch(() => null)) as Record<string, unknown> | null;
-				const errorMsg =
-					(errorData && typeof errorData.message === "string" && errorData.message) ||
-					(errorData && typeof errorData.error === "string" && errorData.error) ||
-					`Ошибка приёма наличных: HTTP ${res.status}`;
-				showToast(errorMsg, "error");
-				return;
-			}
-
-			const paymentData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-			showToast(
-				`Оплата ${effectiveAmountRub} ₽ наличными принята в кассу (${effectiveCashier})`,
-				"success",
-			);
-			handleBroadcastSuccess({
-				method: "cash",
-				amountKopecks: isWarranty100 ? 0 : rubToKopecks(effectiveAmountRub),
-				discountRub,
-				discountPercent: effectiveDiscountPercent,
-				rawTotalRub: rawTotalDueRub,
-				discountReason: discountReason || undefined,
-				...paymentData,
-			});
-			onClose();
-		} catch (err: unknown) {
-			const errorMsg =
-				err instanceof Error ? err.message : "Сбой соединения при приёме оплаты наличными";
-			showToast(errorMsg, "error");
-			sbpAndTerminal.setInterruptedPaymentState({
-				isInterrupted: true,
-				reason: errorMsg,
-				method: "cash",
-				amountRub: effectiveAmountRub,
-			});
+			await executeCashSubmit(params, executorContext);
 		} finally {
 			setIsSubmittingCash(false);
 		}
 	};
 
 	const handleSplitSubmit = async () => {
-		if (isWarranty100 || totalDueRub <= 0) {
-			showToast(`Визит/счёт оформлен по 100% гарантии (0 ₽) (${effectiveCashier})`, "success");
-			handleBroadcastSuccess({
-				method: "warranty_discount_100",
-				amountKopecks: 0,
-				discountRub: discountCalc.discountRub,
-				discountPercent: discountCalc.discountPercent,
-				rawTotalRub: rawTotalDueRub,
-				discountReason: discountReason || "Гарантийная переделка / скидка 100%",
-			});
-			onClose();
-			return;
-		}
-
-		if (payerType === "legal_entity") {
-			const validation = validate54FzBuyerInn(buyerInn, payerType);
-			if (!validation.isValid) {
-				setBuyerInnError(validation.errorMessage || "Для юрлица/ИП требуется валидный ИНН");
-				showToast("Для юрлица/ИП требуется корректный ИНН (10 или 12 цифр)", "error");
-				return;
-			}
-		}
-
-		let effectiveCardRub = splitCardRub;
-		let effectiveCashRub = splitCashRub;
-		const effectiveDepositRub = splitDepositRub;
-		const effectiveSbpRub = splitSbpRub;
-		const effectiveCertificateRub = splitCertificateRub;
-		const effectiveBonusRub = splitBonusRub;
-		const effectiveDmsRub = splitDmsRub || 0;
-
-		if (!isBalanced) {
-			const totalDueKop = rubToKopecks(totalDueRub);
-			const otherKop =
-				rubToKopecks(effectiveDepositRub) +
-				rubToKopecks(effectiveSbpRub) +
-				rubToKopecks(effectiveCertificateRub) +
-				rubToKopecks(effectiveBonusRub) +
-				rubToKopecks(effectiveDmsRub);
-			const remainderKop = Math.max(0, totalDueKop - otherKop);
-			if (effectiveCashRub > 0 && effectiveCardRub === 0) {
-				effectiveCashRub = kopecksToRub(remainderKop);
-			} else {
-				const effectiveCashKop = rubToKopecks(effectiveCashRub);
-				effectiveCardRub = kopecksToRub(Math.max(0, remainderKop - effectiveCashKop));
-			}
-			setSplitCardRub(effectiveCardRub);
-			setSplitCashRub(effectiveCashRub);
-		}
-
+		if (isSubmittingSplit) return;
 		setIsSubmittingSplit(true);
 		try {
-			const activeCategoryTitle =
-				STOMX_CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name ||
-				"Оплата услуг";
-			const activeBoxTitle =
-				STOMX_CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
-
-			const clientMutationId = createCompositeIdempotencyKey(
-				`split:${Date.now()}-${++paymentMutationSeq}`,
-				{ patientId, amountRub: totalDueRub, method: "split", cashBoxType: selectedCashBoxType },
-			);
-			const headers = denteAdminSecretRequestHeaders({
-				"Content-Type": "application/json",
-				"Idempotency-Key": clientMutationId,
-			});
-
-			const parts: string[] = [];
-			if (effectiveCardRub > 0) parts.push(`карта ${effectiveCardRub} ₽`);
-			if (effectiveCashRub > 0) parts.push(`нал ${effectiveCashRub} ₽`);
-			if (effectiveDepositRub > 0) parts.push(`аванс ${effectiveDepositRub} ₽`);
-			if (effectiveSbpRub > 0) parts.push(`СБП ${effectiveSbpRub} ₽`);
-			if (effectiveCertificateRub > 0) parts.push(`сертификат ${effectiveCertificateRub} ₽`);
-			if (effectiveBonusRub > 0) parts.push(`бонусы ${effectiveBonusRub} ₽`);
-			if (effectiveDmsRub > 0) parts.push(`ДМС ${effectiveDmsRub} ₽`);
-
-			const cashKop = rubToKopecks(effectiveCashRub);
-			const electronicKop = rubToKopecks(effectiveCardRub) + rubToKopecks(effectiveSbpRub);
-			const depositKop = rubToKopecks(effectiveDepositRub);
-			const dmsKop = rubToKopecks(effectiveDmsRub);
-			const isSplitPayment =
-				(cashKop > 0 && electronicKop > 0) ||
-				(depositKop > 0 && (cashKop > 0 || electronicKop > 0 || dmsKop > 0)) ||
-				(dmsKop > 0 && (cashKop > 0 || electronicKop > 0 || depositKop > 0));
-			const primaryMethod = isSplitPayment
-				? "split"
-				: dmsKop > 0
-					? "insurance"
-					: effectiveCashRub > 0 && effectiveCardRub === 0 && effectiveSbpRub === 0
-						? "cash"
-						: effectiveDepositRub > 0 && effectiveCashRub === 0 && effectiveCardRub === 0 && effectiveSbpRub === 0
-							? "family_wallet"
-							: effectiveSbpRub > 0 && effectiveCashRub === 0 && effectiveCardRub === 0
-								? "online"
-								: "card";
-			const innNote = buyerInn.trim() ? ` [ИНН плательщика: ${buyerInn.trim()}]` : "";
-			const stomxNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
-			const res = await fetch("/api/billing/payments", {
-				method: "POST",
-				headers,
-				body: JSON.stringify({
-					patientId,
-					amountRub: totalDueRub,
-					method: isSplitPayment ? "split" : primaryMethod,
-					cashAmountKopecks: cashKop > 0 ? cashKop : undefined,
-					electronicAmountKopecks: electronicKop > 0 ? electronicKop : undefined,
-					dmsAmountKopecks: dmsKop > 0 ? dmsKop : undefined,
-					depositAmountKopecks: depositKop > 0 ? depositKop : undefined,
-					cashAmountRub: effectiveCashRub > 0 ? effectiveCashRub : undefined,
-					electronicAmountRub:
-						effectiveCardRub + effectiveSbpRub > 0
-							? Number((effectiveCardRub + effectiveSbpRub).toFixed(2))
-							: undefined,
-					dmsAmountRub: effectiveDmsRub > 0 ? effectiveDmsRub : undefined,
-					depositAmountRub: effectiveDepositRub > 0 ? effectiveDepositRub : undefined,
-					guaranteeLetterId: guaranteeLetterId || undefined,
-					cashBoxType: selectedCashBoxType,
-					receiptTypeAlias: selectedReceiptAlias,
-					cashFlowCategory: activeCategoryTitle,
-					visitId: visitId || null,
-					documentId: documentId || (invoiceId ? invoiceId : null),
-					clientMutationId,
-					toothNumber: toothNumber ? (typeof toothNumber === "number" ? toothNumber : Number(toothNumber) || toothNumber) : undefined,
-					invoiceItems: items && items.length > 0 ? items.map((it) => ({
-						name: it.name,
-						code804n: it.code804n,
-						quantity: it.quantity,
-						priceRub: it.priceRub,
-						amountRub: it.amountRub,
-						toothNumber: it.toothNumber,
-					})) : undefined,
-					note: `Комбинированная оплата (${effectiveCashier}): ${parts.join(" + ")}${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${innNote}${stomxNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`,
-				}),
-			});
-
-			if (!res.ok) {
-				const errorData = (await res.json().catch(() => null)) as Record<string, unknown> | null;
-				const errorMsg =
-					(errorData && typeof errorData.message === "string" && errorData.message) ||
-					`Ошибка записи комбинированной оплаты: HTTP ${res.status}`;
-				showToast(errorMsg, "error");
-				return;
-			}
-
-			const paymentData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-			showToast(
-				`Комбинированная оплата ${totalDueRub} ₽ успешно принята (${effectiveCashier})`,
-				"success",
-			);
-			handleBroadcastSuccess({
-				method: "split",
-				amountKopecks: isWarranty100 ? 0 : discountCalc.totalDueKopecks,
-				discountRub,
-				discountPercent: effectiveDiscountPercent,
-				rawTotalRub: rawTotalDueRub,
-				discountReason: discountReason || undefined,
-				...paymentData,
-			});
-			onClose();
-		} catch (err: unknown) {
-			const errorMsg =
-				err instanceof Error ? err.message : "Сбой соединения при приёме комбинированной оплаты";
-			showToast(errorMsg, "error");
-			sbpAndTerminal.setInterruptedPaymentState({
-				isInterrupted: true,
-				reason: errorMsg,
-				method: "split",
-				amountRub: totalDueRub,
-			});
+			await executeSplitSubmit(params, executorContext);
 		} finally {
 			setIsSubmittingSplit(false);
 		}
 	};
 
 	const handleDepositSubmit = async (source: "deposit" | "family") => {
+		if (isSubmittingDeposit) return;
 		setIsSubmittingDeposit(true);
 		try {
-			const activeCategoryTitle =
-				STOMX_CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name ||
-				"Оплата услуг";
-			const activeBoxTitle =
-				STOMX_CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
-
-			const amountRubNumber = totalDueRub;
-			const clientMutationId = createCompositeIdempotencyKey(
-				`${source}:${Date.now()}-${++paymentMutationSeq}`,
-				{ patientId, amountRub: amountRubNumber, method: "family_wallet", cashBoxType: selectedCashBoxType },
-			);
-			const headers = denteAdminSecretRequestHeaders({
-				"Content-Type": "application/json",
-				"Idempotency-Key": clientMutationId,
-			});
-
-			const stomxNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
-			const res = await fetch("/api/billing/payments", {
-				method: "POST",
-				headers,
-				body: JSON.stringify({
-					patientId,
-					amountRub: amountRubNumber,
-					method: "family_wallet",
-					cashBoxType: selectedCashBoxType,
-					receiptTypeAlias: selectedReceiptAlias,
-					cashFlowCategory: activeCategoryTitle,
-					visitId: visitId || null,
-					documentId: documentId || (invoiceId ? invoiceId : null),
-					clientMutationId,
-					toothNumber: toothNumber ? (typeof toothNumber === "number" ? toothNumber : Number(toothNumber) || toothNumber) : undefined,
-					invoiceItems: items && items.length > 0 ? items.map((it) => ({
-						name: it.name,
-						code804n: it.code804n,
-						quantity: it.quantity,
-						priceRub: it.priceRub,
-						amountRub: it.amountRub,
-						toothNumber: it.toothNumber,
-					})) : undefined,
-					note:
-						source === "family"
-							? `Оплата с семейного баланса (${totalDueRub} ₽)${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${stomxNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`
-							: `Оплата с лицевого счета / аванса (${totalDueRub} ₽)${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${stomxNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`,
-				}),
-			});
-
-			if (!res.ok) {
-				const errorData = (await res.json().catch(() => null)) as Record<string, unknown> | null;
-				const errorMsg =
-					(errorData && typeof errorData.message === "string" && errorData.message) ||
-					`Ошибка списания со счета: HTTP ${res.status}`;
-				showToast(errorMsg, "error");
-				sbpAndTerminal.setInterruptedPaymentState({
-					isInterrupted: true,
-					reason: errorMsg,
-					method: source,
-					amountRub: totalDueRub,
-				});
-				return;
-			}
-
-			const paymentData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-			showToast(
-				source === "family"
-					? `Оплата ${totalDueRub} ₽ с семейного баланса успешно списана`
-					: `Оплата ${totalDueRub} ₽ с аванса/депозита успешно списана`,
-				"success",
-			);
-			handleBroadcastSuccess({
-				method: source,
-				amountKopecks: isWarranty100 ? 0 : discountCalc.totalDueKopecks,
-				discountRub,
-				discountPercent: effectiveDiscountPercent,
-				rawTotalRub: rawTotalDueRub,
-				discountReason: discountReason || undefined,
-				...paymentData,
-			});
-			onClose();
-		} catch (err: unknown) {
-			const errorMsg = err instanceof Error ? err.message : "Сбой соединения при списании со счета";
-			showToast(errorMsg, "error");
-			sbpAndTerminal.setInterruptedPaymentState({
-				isInterrupted: true,
-				reason: errorMsg,
-				method: source,
-				amountRub: totalDueRub,
-			});
+			await executeDepositSubmit(params, source, executorContext);
 		} finally {
 			setIsSubmittingDeposit(false);
 		}
 	};
+
 
 	const handleDepositOrPartialCombo = (source: "deposit" | "family") => {
 		const availableBalance = source === "deposit" ? patientDepositRub : patientFamilyBalanceRub;
@@ -604,7 +187,7 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 			setSplitCardRub(kopecksToRub(remKop));
 			setSplitCashRub(0);
 			setSplitSbpRub(0);
-			setActiveMethod("split");
+			params.setActiveMethod("split");
 			showToast(
 				`Зачтено ${kopecksToRub(balKop)} ₽ ${source === "family" ? "из семьи" : "с аванса"}. Остаток ${kopecksToRub(remKop)} ₽ перенесён на карту.`,
 				"info",
@@ -620,8 +203,9 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 		isMoreMenuOpen,
 		setIsMoreMenuOpen,
 		interruptedPaymentState: sbpAndTerminal.interruptedPaymentState,
-		setInterruptedPaymentState: sbpAndTerminal.setInterruptedPaymentState,
+		setInterruptedPaymentState: setInterruptedState,
 		isSubmittingManualCard: sbpAndTerminal.isSubmittingManualCard,
+
 		fiscalizationRetryPending: sbpAndTerminal.fiscalizationRetryPending,
 		setFiscalizationRetryPending: sbpAndTerminal.setFiscalizationRetryPending,
 		isRetryingFiscalization: sbpAndTerminal.isRetryingFiscalization,

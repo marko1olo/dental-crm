@@ -1,21 +1,9 @@
 import React, { useRef } from "react";
 import { createPortal } from "react-dom";
-import {
-	QrCode,
-	X,
-	ShieldCheck,
-	ArrowRight,
-	Layers,
-	Sparkles,
-	Building2,
-	User,
-	FileText,
-} from "lucide-react";
-import { type CheckoutPaymentMethodType } from "../payments/checkout/fastCheckoutPresets";
-import {
-	type Ffd12FiscalPayload,
-	type TreatmentPlanStageOption,
-} from "../payments/checkout/fastCheckoutEngine";
+import { QrCode, X, ShieldCheck, ArrowRight, Layers, Sparkles, Building2, User, FileText } from "lucide-react";
+import { type CanonicalTenderType } from "@dental/shared";
+import { type CheckoutPaymentMethodType, toCanonicalCheckoutTender } from "../payments/checkout/fastCheckoutPresets";
+import { type Ffd12FiscalPayload, type TreatmentPlanStageOption } from "../payments/checkout/fastCheckoutEngine";
 import { useModalA11y } from "../../hooks/useModalA11y";
 
 import { FastCheckoutPaymentSplit } from "./FastCheckoutPaymentSplit";
@@ -24,6 +12,7 @@ import { FastCheckoutReceiptPreview } from "./FastCheckoutReceiptPreview";
 import { FastCheckoutPresetsAndDiscounts } from "./FastCheckoutPresetsAndDiscounts";
 import { useFastCheckoutLogic } from "./useFastCheckoutLogic";
 
+export { type CanonicalTenderType, toCanonicalCheckoutTender };
 export * from "./FastCheckoutPaymentSplit";
 export * from "./FastCheckoutFamilyBalance";
 export * from "./FastCheckoutReceiptPreview";

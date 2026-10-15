@@ -92,7 +92,8 @@ export const PaymentBanners: React.FC<PaymentBannersProps> = ({
 			{/* 1-Click Patient Deposit Debit Chip (Mandates 8c, 8e) — hidden when deposit tab is already active to prevent duplicate card (Mandate 8p) */}
 			{patientDepositRub > 0 &&
 				totalDueRub > 0 &&
-				tendersHook?.activeMethod !== "family_deposit" && (
+				tendersHook?.activeMethod !== "family_deposit" &&
+				(tendersHook?.activeMethod as string) !== "deposit" && (
 					<div
 						className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 flex items-center justify-between gap-2.5 flex-wrap animate-in fade-in"
 						data-testid="banner-quick-deposit-debit"

@@ -12,6 +12,8 @@ import {
 	kopecksToRubles,
 	isRetailCommodityItem,
 	resolveTaxDeductionCategoryShared,
+	calculateCanonicalSplit,
+	calculateDenominationsTotalRub as calculateDenominationsTotalRubShared,
 } from "@dental/shared";
 import type { TreatmentPlanItem } from "../../treatment-plans/types";
 import {
@@ -243,84 +245,24 @@ export function formatFiscalItemName(
 
 /**
  * Точный расчет распределения раздельной оплаты (Наличные, Карта, СБП, Депозит, Семейный баланс, Сертификат) с контролем копеечного баланса и сдачи.
+ * SSOT: Делегирует в канонический calculateCanonicalSplit (@dental/shared/fiscal/tenderTypes.ts), Мандаты 8e, 8i, 8s.
  */
 export function calculateSplitPaymentAllocation(
 	totalKopecks: Kopecks,
 	input: SplitPaymentInput,
 ): SplitPaymentAllocation {
-	const cashKopecks = parseKopecks(Math.max(0, input.cashRub || 0));
-	const cardKopecks = parseKopecks(Math.max(0, input.cardRub || 0));
-	const sbpKopecks = parseKopecks(Math.max(0, input.sbpRub || 0));
-	const depositKopecks = parseKopecks(Math.max(0, input.depositRub || 0));
-	const familyWalletKopecks = parseKopecks(Math.max(0, input.familyWalletRub || 0));
-	const certificateKopecks = parseKopecks(Math.max(0, input.certificateRub || 0));
-	const insuranceKopecks = parseKopecks(Math.max(0, input.insuranceRub || 0));
+	const res = calculateCanonicalSplit(totalKopecks, {
+		cashRub: input.cashRub,
+		cardRub: input.cardRub,
+		sbpRub: input.sbpRub,
+		depositRub: input.depositRub,
+		familyWalletRub: input.familyWalletRub,
+		certificateRub: input.certificateRub,
+		insuranceRub: input.insuranceRub,
+		receivedCashRub: input.receivedCashRub,
+	});
 
-	const receivedCashRub = input.receivedCashRub !== undefined ? Math.max(0, input.receivedCashRub) : kopecksToRubles(cashKopecks);
-	const receivedCashKopecks = parseKopecks(receivedCashRub);
-
-	let changeKopecks = 0 as Kopecks;
-	let isCashShortage = false;
-	let cashShortageKopecks = 0 as Kopecks;
-
-	if (cashKopecks > 0) {
-		if (receivedCashKopecks >= cashKopecks) {
-			changeKopecks = (receivedCashKopecks - cashKopecks) as Kopecks;
-		} else if (input.receivedCashRub !== undefined) {
-			isCashShortage = true;
-			cashShortageKopecks = (cashKopecks - receivedCashKopecks) as Kopecks;
-		}
-	}
-
-	// Сумма, которую фактически оплачивает пациент (все методы кроме страховой компании)
-	const patientPaidKopecks = (cashKopecks +
-		cardKopecks +
-		sbpKopecks +
-		depositKopecks +
-		familyWalletKopecks +
-		certificateKopecks) as Kopecks;
-
-	const allocatedKopecks = (patientPaidKopecks + insuranceKopecks) as Kopecks;
-	const remainingKopecks = (totalKopecks - allocatedKopecks) as Kopecks;
-	const patientCoPayKopecks = Math.max(0, totalKopecks - insuranceKopecks) as Kopecks;
-
-	// В 54-ФЗ (ФФД 1.2): Списание с депозита/аванса фискализируется в Тег 1215 (Зачет аванса).
-	// Подарочные сертификаты и семейный баланс также являются зачетом аванса (Тег 1215), внесенного при их покупке/пополнении.
-	const advanceOffsetKopecks = (depositKopecks + familyWalletKopecks + certificateKopecks) as Kopecks;
-	const advanceOffsetRub = kopecksToRubles(advanceOffsetKopecks);
-
-	return {
-		cashRub: kopecksToRubles(cashKopecks),
-		cashKopecks,
-		receivedCashRub,
-		receivedCashKopecks,
-		changeRub: kopecksToRubles(changeKopecks),
-		changeKopecks,
-		isCashShortage,
-		cashShortageRub: kopecksToRubles(cashShortageKopecks),
-		cardRub: kopecksToRubles(cardKopecks),
-		cardKopecks,
-		sbpRub: kopecksToRubles(sbpKopecks),
-		sbpKopecks,
-		depositRub: kopecksToRubles(depositKopecks),
-		depositKopecks,
-		advanceOffsetRub,
-		advanceOffsetKopecks,
-		familyWalletRub: kopecksToRubles(familyWalletKopecks),
-		familyWalletKopecks,
-		certificateRub: kopecksToRubles(certificateKopecks),
-		certificateKopecks,
-		insuranceRub: kopecksToRubles(insuranceKopecks),
-		insuranceKopecks,
-		patientCoPayRub: kopecksToRubles(patientCoPayKopecks),
-		patientCoPayKopecks,
-		totalRub: kopecksToRubles(totalKopecks),
-		totalKopecks,
-		allocatedKopecks,
-		remainingKopecks,
-		isFullyAllocated: allocatedKopecks === totalKopecks,
-		isOverallocated: allocatedKopecks > totalKopecks,
-	};
+	return res as unknown as SplitPaymentAllocation;
 }
 
 /**
@@ -344,20 +286,8 @@ export function generateSbpPaymentQr(params: {
 
 /**
  * Точный расчет суммы наличных в кассовом ящике по купюрному раскладу в копейках.
+ * SSOT: Делегирует в канонический calculateDenominationsTotalRub (@dental/shared/fiscal/tenderTypes.ts).
  */
 export function calculateDenominationsTotalRub(b: DenominationsBreakdown): number {
-	const totalKop =
-		(b.b5000 || 0) * 500000 +
-		(b.b2000 || 0) * 200000 +
-		(b.b1000 || 0) * 100000 +
-		(b.b500 || 0) * 50000 +
-		(b.b200 || 0) * 20000 +
-		(b.b100 || 0) * 10000 +
-		(b.b50 || 0) * 5000 +
-		(b.c10 || 0) * 1000 +
-		(b.c5 || 0) * 500 +
-		(b.c2 || 0) * 200 +
-		(b.c1 || 0) * 100 +
-		Math.round(Math.max(0, b.coinsFractionalRub || 0) * 100);
-	return Math.round(totalKop) / 100;
+	return calculateDenominationsTotalRubShared(b);
 }

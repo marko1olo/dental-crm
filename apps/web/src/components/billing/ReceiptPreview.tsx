@@ -228,7 +228,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 	};
 
 	return (
-		<div className={`receipt-preview-root flex flex-col items-center gap-3 w-full ${className}`.trim()} data-testid="receipt-54fz-preview-container">
+		<div className={`receipt-preview-root flex flex-col items-center gap-1.5 w-full ${className}`.trim()} data-testid="receipt-54fz-preview-container">
 			{/* Action Toolbar */}
 			{showActionsBar && (
 				<div className="flex items-center justify-between gap-2 w-full max-w-[360px] px-1 select-none">
@@ -255,7 +255,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 						<button
 							type="button"
 							onClick={handleCopyText}
-							className="receipt-action-btn-copy min-h-[36px]"
+							className="receipt-action-btn-copy min-h-[32px]"
 							title="Скопировать текстовую копию чека"
 							data-testid="btn-copy-receipt-text"
 						>
@@ -266,7 +266,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 							<button
 								type="button"
 								onClick={() => showToast(`SMS с электронной версией чека 54-ФЗ отправлена на ${patientPhone}`, "success")}
-								className="receipt-action-btn-copy min-h-[36px] text-teal-700 dark:text-teal-400"
+								className="receipt-action-btn-copy min-h-[32px] text-teal-700 dark:text-teal-400"
 								title="Отправить электронный чек по SMS (54-ФЗ)"
 								data-testid="btn-send-sms-receipt"
 							>
@@ -277,7 +277,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="receipt-action-btn-print min-h-[36px]"
+							className="receipt-action-btn-print min-h-[32px]"
 							title="Распечатать чек на кассовом принтере"
 							data-testid="btn-print-receipt-tape"
 						>
@@ -295,11 +295,11 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 						<div className="receipt-tape-tear-top" />
 
 						{/* Header */}
-						<div className="text-center space-y-1 pb-2">
-							<h3 className="font-extrabold text-[13px] uppercase tracking-wide text-slate-950 m-0">
+						<div className="text-center space-y-0.5 pb-1">
+							<h3 className="font-extrabold text-[12.5px] uppercase tracking-wide text-slate-950 m-0">
 								{clinicLegalName}
 							</h3>
-							<p className="text-[11px] text-slate-600 m-0">
+							<p className="text-[10.5px] text-slate-600 m-0">
 								ИНН: {clinicInn} · КПП: {clinicKpp}
 							</p>
 							<p className="text-[10px] text-slate-500 m-0 leading-tight">
@@ -313,7 +313,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 						<div className="receipt-divider-dashed" />
 
 						{/* Document Requisites (54-FZ) */}
-						<div className="space-y-1 text-[11px] text-slate-800">
+						<div className="space-y-0.5 text-[11px] text-slate-800">
 							<div className="flex justify-between items-center font-bold text-slate-950">
 								<span>
 									{isWarranty100
@@ -325,7 +325,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 								<span className="font-mono">№ {receiptNumber}</span>
 							</div>
 							{isPrecheck && !isWarranty100 && (
-								<div className="p-1 rounded bg-amber-500/10 border border-amber-500/25 text-[10px] font-bold text-amber-800 dark:text-amber-300 text-center uppercase tracking-wide" data-testid="badge-precheck-not-fiscal">
+								<div className="p-0.5 rounded bg-amber-500/10 border border-amber-500/25 text-[9.5px] font-bold text-amber-800 dark:text-amber-300 text-center uppercase tracking-wide" data-testid="badge-precheck-not-fiscal">
 									ПРЕДВАРИТЕЛЬНЫЙ ЧЕК (ПРЕДЧЕК) — НЕ ЯВЛЯЕТСЯ ФИСКАЛЬНЫМ ДОКУМЕНТОМ
 								</div>
 							)}
@@ -356,12 +356,12 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 						<div className="receipt-divider-dashed" />
 
 						{/* Line Items */}
-						<div className="space-y-2 py-1">
-							<div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+						<div className="space-y-1 py-0.5">
+							<div className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">
 								Предмет расчета:
 							</div>
 							{effectiveItems.map((item, idx) => (
-								<div key={item.id || idx} className="space-y-0.5 pb-1.5 border-b border-dotted border-slate-200 last:border-0 last:pb-0">
+								<div key={item.id || idx} className="space-y-0.5 pb-1 border-b border-dotted border-slate-200 last:border-0 last:pb-0">
 									<div className="font-bold text-slate-900 leading-snug break-words">
 										{idx + 1}. {item.name}
 										{item.toothNumber ? (
@@ -399,7 +399,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 						<div className="receipt-divider-double" />
 
 						{/* Total */}
-						<div className="space-y-1.5 py-1">
+						<div className="space-y-1 py-0.5">
 							<div className="flex justify-between items-baseline font-black text-sm text-slate-950">
 								<span>ИТОГО К ОПЛАТЕ:</span>
 								<span className="text-base font-mono font-black text-emerald-700" data-testid="receipt-total-amount">
@@ -408,7 +408,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 							</div>
 
 							{/* Tender details */}
-							<div className="space-y-1 pt-1 text-[11px] text-slate-700">
+							<div className="space-y-0.5 pt-0.5 text-[11px] text-slate-700">
 								{(payments.cardRub ?? 0) > 0 && (
 									<div className="flex justify-between">
 										<span>БЕЗНАЛИЧНЫМИ (КАРТА):</span>
@@ -469,7 +469,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 						<div className="receipt-divider-dashed" />
 
 						{/* Fiscal Requisites (54-FZ) */}
-						<div className="space-y-1 text-[10px] text-slate-600 font-mono">
+						<div className="space-y-0.5 text-[10px] text-slate-600 font-mono">
 							<div className="flex justify-between">
 								<span>Заводской номер кассы: 089201948</span>
 								<span>Рег. номер кассы: {kktRegNumber}</span>
