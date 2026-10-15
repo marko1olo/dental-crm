@@ -43,6 +43,7 @@ export interface ChairScheduleViewProps {
   onAddDoctor?: (doctorData: QuickAddDoctorData) => Promise<void> | void;
   onOpenRosterModal?: () => void;
   onSelectChair?: ((chairId: string | null) => void) | undefined;
+  onSelectDoctor?: ((doctorId: string | null) => void) | undefined;
   hideToolbar?: boolean;
   gridStepMinutes?: 15 | 30 | 60 | undefined;
   onGridStepChange?: ((step: 15 | 30 | 60) => void) | undefined;

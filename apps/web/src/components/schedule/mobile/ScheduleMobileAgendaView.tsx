@@ -49,6 +49,26 @@ const RUSSIAN_MONTHS = [
 
 const RUSSIAN_DAY_NAMES = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
 
+export const extractToothBadge = (appt: Appointment): string | null => {
+  if (appt.toothNumber) {
+    return `Зуб ${appt.toothNumber}`;
+  }
+  const labTooth = (appt as any).labOrder?.toothFdi;
+  if (labTooth) {
+    return `Зуб ${labTooth}`;
+  }
+  const text = `${appt.reason || ""} ${(appt as any).serviceTitle || ""}`;
+  const fdiMatch = text.match(/(?:зуб[аеы]?|fdi|#)\s*([1-4][1-8]|[5-8][1-5])/i);
+  if (fdiMatch && fdiMatch[1]) {
+    return `Зуб ${fdiMatch[1]}`;
+  }
+  const dottedMatch = text.match(/\b([1-4]\.[1-8]|[5-8]\.[1-5])\b/);
+  if (dottedMatch && dottedMatch[1]) {
+    return `Зуб ${dottedMatch[1]}`;
+  }
+  return null;
+};
+
 export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> = React.memo(
   function ScheduleMobileAgendaView({
     dashboard,
@@ -231,7 +251,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
           return {
             stripe: "bg-[var(--teal,#0d9488)]",
             badgeBg: "bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/40",
-            label: appointmentLabels[status] || "В кресле",
+            label: "В кресле",
           };
         case "confirmed":
           return {
@@ -243,13 +263,13 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
           return {
             stripe: "bg-amber-500",
             badgeBg: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/40",
-            label: "В холле",
+            label: "Ожидает",
           };
         case "completed":
           return {
             stripe: "bg-slate-400 dark:bg-slate-600",
             badgeBg: "bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-500/30",
-            label: appointmentLabels[status] || "Завершен",
+            label: "Завершен",
           };
         case "cancelled":
         case "no_show":
@@ -364,7 +384,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
                 onDateChange(day.dateIso);
               }}
             >
-              <span className="schedule-mobile-day-label">{day.dayLabel}</span>
+              <span className="schedule-mobile-day-label">{day.isToday ? `★ ${day.dayLabel}` : day.dayLabel}</span>
               <span className="schedule-mobile-day-num">{day.dayNumber}</span>
               {day.hasAppointments ? (
                 <span
@@ -513,6 +533,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
               const doc = dashboard?.clinicSettings?.staff?.find((s: any) => s.id === appt.doctorUserId);
               const chair = dashboard?.clinicSettings?.chairs?.find((c: any) => c.id === appt.chairId);
               const statusTheme = getStatusTheme(appt.status);
+              const toothBadge = extractToothBadge(appt);
 
               const rawBal = pat?.balanceRub ?? (pat as any)?.balance;
               const balance =
@@ -561,7 +582,12 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 
                     <div className="schedule-mobile-card-content">
                       <div className="schedule-mobile-card-header">
-                        <span className="schedule-mobile-patient-name" title={fullPatientName}>{pName}</span>
+                        <div className="schedule-mobile-patient-group">
+                          <span className="schedule-mobile-patient-name" title={fullPatientName}>{pName}</span>
+                          {toothBadge && (
+                            <span className="schedule-mobile-tooth-badge">{toothBadge}</span>
+                          )}
+                        </div>
                         <span className={`schedule-mobile-status-badge ${statusTheme.badgeBg}`}>
                           {statusTheme.label}
                         </span>
@@ -643,7 +669,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
               }}
             >
               <Plus size={18} />
-              <span>Новая запись</span>
+              <span>Запись</span>
             </button>
           </div>
         )}

@@ -171,3 +171,14 @@
 	outline-offset: -2px;
 }
 
+/* Hard defense: Strictly ban multi-column desktop grid & toolbar on mobile viewports <= 768px */
+@media (max-width: 768px) {
+	.chair-schedule-toolbar {
+		display: none !important;
+	}
+	.chair-schedule-grid {
+		display: none !important;
+	}
+}
+
+

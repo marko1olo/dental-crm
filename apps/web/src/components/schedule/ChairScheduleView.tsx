@@ -14,6 +14,8 @@ import { DoctorFreeSlotsModal } from "./DoctorFreeSlotsModal";
 import { PreventiveInspectionModal } from "./PreventiveInspectionModal";
 import { findPreventiveInspectionCandidates } from "./doctorFreeSlotsEngine";
 import { useIsMobile } from "../../hooks/useIsMobile";
+import { ScheduleMobileAgendaView } from "./mobile/ScheduleMobileAgendaView";
+import { useScheduleStore } from "../../store/scheduleStore";
 
 // Transparent re-exports per Mandates 8b, 8e
 export * from "./ChairScheduleTypes";
@@ -61,6 +63,53 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = (props) => {
   }, [dashboard?.patients, dashboard?.appointments, appointments, dateKey]);
 
   const isMobile = useIsMobile(768);
+
+  if (isMobile && dashboard) {
+    const todayDateKey = dateKey || new Date().toISOString().slice(0, 10);
+    return (
+      <ScheduleMobileAgendaView
+        dashboard={dashboard}
+        dateKey={todayDateKey}
+        appointments={appointments ?? dashboard?.appointments ?? []}
+        onDateChange={(newDateKey) => {
+          useScheduleStore.getState().setScheduleDateFilter(newDateKey);
+        }}
+        onSlotClick={state.handleSlotClick}
+        onAppointmentClick={onAppointmentClick}
+        onQuickStatusChange={onQuickStatusChange}
+        onAppointmentMove={onAppointmentMove}
+        patientName={state.resolvedPatientName}
+        formatTime={state.resolvedFormatTime}
+        toDateTimeLocalValue={state.resolvedToDateTimeLocalValue}
+        appointmentLabels={state.resolvedAppointmentLabels}
+        selectedChairId={state.effectiveSelectedChairId}
+        onSelectChair={(id) => {
+          if (id) {
+            state.handleToggleChairFilter(id);
+          } else {
+            useScheduleStore.getState().setScheduleChairFilterId(null);
+            if (props.onSelectChair) props.onSelectChair(null);
+          }
+        }}
+        selectedDoctorId={selectedDoctorId}
+        onSelectDoctor={(id) => {
+          useScheduleStore.getState().setScheduleDoctorFilterId(id);
+          if (props.onSelectDoctor) props.onSelectDoctor(id);
+        }}
+        onQuickBooking={() => {
+          if (state.handleSlotClick) {
+            state.handleSlotClick({
+              dateKey: todayDateKey,
+              chairId: state.effectiveSelectedChairId || null,
+              doctorUserId: selectedDoctorId || null,
+              durationMinutes: 30,
+            });
+          }
+        }}
+        timezone={(dashboard?.clinicSettings as any)?.timezone || "Europe/Moscow"}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col h-full w-full bg-[var(--paper)]">
