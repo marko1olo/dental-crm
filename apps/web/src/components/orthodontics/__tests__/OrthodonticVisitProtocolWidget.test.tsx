@@ -270,16 +270,20 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 		assert.ok(html.includes("data-testid=\"ortho-workhorse-wires-strip\""));
 		assert.ok(html.includes("Рабочие дуги ортодонта"));
 
-		// 4 Standard Archwires
+		// Workhorse Archwires
 		assert.ok(html.includes("data-testid=\"quick-wire-niti_014-btn\""));
 		assert.ok(html.includes("data-testid=\"quick-wire-niti_016-btn\""));
+		assert.ok(html.includes("data-testid=\"quick-wire-niti_016x022-btn\""));
 		assert.ok(html.includes("data-testid=\"quick-wire-niti_018-btn\""));
 		assert.ok(html.includes("data-testid=\"quick-wire-ss_019x025-btn\""));
+		assert.ok(html.includes("data-testid=\"quick-wire-tma_017x025-btn\""));
 
 		assert.ok(html.includes("NiTi .014"));
 		assert.ok(html.includes("NiTi .016"));
+		assert.ok(html.includes("NiTi .016x.022"));
 		assert.ok(html.includes("NiTi .018"));
 		assert.ok(html.includes("SS .019x.025"));
+		assert.ok(html.includes("TMA .017x.025"));
 	});
 
 	it("exports canonical ANGLE_CLASS_OPTIONS and WORKHORSE_ARCHWIRES", () => {
@@ -289,11 +293,13 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 		assert.ok(ANGLE_CLASS_OPTIONS.some((a) => a.id === "class_2_div_2"));
 		assert.ok(ANGLE_CLASS_OPTIONS.some((a) => a.id === "class_3"));
 
-		assert.equal(WORKHORSE_ARCHWIRES.length, 4);
+		assert.equal(WORKHORSE_ARCHWIRES.length, 6);
 		assert.ok(WORKHORSE_ARCHWIRES.some((w) => w.id === "niti_014" && w.material === "NiTi" && w.section === ".014"));
 		assert.ok(WORKHORSE_ARCHWIRES.some((w) => w.id === "niti_016" && w.material === "NiTi" && w.section === ".016"));
+		assert.ok(WORKHORSE_ARCHWIRES.some((w) => w.id === "niti_016x022" && w.material === "NiTi" && w.section === ".016x.022"));
 		assert.ok(WORKHORSE_ARCHWIRES.some((w) => w.id === "niti_018" && w.material === "NiTi" && w.section === ".018"));
 		assert.ok(WORKHORSE_ARCHWIRES.some((w) => w.id === "ss_019x025" && w.material === "SS" && w.section === ".019x.025"));
+		assert.ok(WORKHORSE_ARCHWIRES.some((w) => w.id === "tma_017x025" && w.material === "TMA" && w.section === ".017x.025"));
 
 		assert.ok(BRACKET_SYSTEMS.some((b) => b.id === "removable_plate"));
 		assert.ok(CLINICAL_ACTIONS.some((a) => a.id === "expansion_screw_activation"));

@@ -6,7 +6,7 @@ import { OrthopedicsChairsidePanel } from "../orthopedics/OrthopedicsChairsidePa
 import { OrthodonticPhotoProtocolModal } from "../diagnostics/OrthodonticPhotoProtocolModal";
 import { OrthodonticMaterialsQuickSelector } from "./OrthodonticMaterialsQuickSelector";
 import { OrthodonticVisitProtocolWidget } from "./OrthodonticVisitProtocolWidget";
-import { CephalometricAnalysisModal } from "../radiology/CephalometricAnalysisModal";
+import { CephalometricAnalysisModal } from "./CephalometricAnalysisModal";
 
 /**
  * OrthodonticPerspectiveView — чистый фасад ортодонтического режима.

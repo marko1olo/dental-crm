@@ -73,7 +73,7 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 						type="button"
 						onClick={onCopyPatientMemo}
 						data-testid="ortho-copy-patient-memo-btn"
-						className="secondary-button min-h-[44px] px-3 py-2 rounded-xl w-full justify-center shrink-0"
+						className="secondary-button min-h-[48px] px-3.5 py-2 rounded-xl w-full justify-center shrink-0"
 						title="Скопировать памятку по эластикам и уходу для отправки пациенту в WhatsApp/Telegram"
 					>
 						<Copy size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
@@ -85,7 +85,7 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 						type="button"
 						onClick={onPrintPatientMemo}
 						data-testid="ortho-print-patient-memo-btn"
-						className="secondary-button min-h-[44px] px-3 py-2 rounded-xl w-full justify-center shrink-0"
+						className="secondary-button min-h-[48px] px-3 py-2 rounded-xl w-full justify-center shrink-0"
 						title="Распечатать памятку пациенту (A4)"
 					>
 						<Printer size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />

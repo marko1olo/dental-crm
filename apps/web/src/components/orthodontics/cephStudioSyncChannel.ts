@@ -73,6 +73,11 @@ export interface CachedCephStudy {
 	landmarks?: LandmarkMap | undefined;
 	scaleMmPerPixel?: number | undefined;
 	analysis?: CephalometricAnalysisResult | undefined;
+	filterMode?: string | undefined;
+	brightness?: number | undefined;
+	contrast?: number | undefined;
+	activeTab?: string | undefined;
+	timestamp?: number | undefined;
 }
 
 // In-memory cache for high-res cephalogram raster & landmarks between opener and popout window

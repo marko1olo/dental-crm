@@ -162,9 +162,10 @@ export const ArchwireSelector: React.FC<ArchwireSelectorProps> = ({
 							</span>
 						</div>
 
-						<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+						<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5">
 							{WORKHORSE_ARCHWIRES.map((wire) => {
 								const isSelected = archwireMaterial === wire.material && archwireSection === wire.section;
+								const wireSubtitle = wire.material === "SS" ? "Рабочая сталь" : wire.material === "TMA" ? "Юстировка" : wire.section === ".016x.022" ? "Контроль торка" : "Нивелирование";
 								return (
 									<button
 										key={wire.id}
@@ -180,7 +181,7 @@ export const ArchwireSelector: React.FC<ArchwireSelectorProps> = ({
 									>
 										<span className="text-[12.5px] font-bold leading-tight truncate w-full">{wire.label}</span>
 										<span className={`text-[11.5px] truncate w-full ${isSelected ? "text-teal-100" : "text-[var(--muted,#64748b)] dark:text-slate-400"}`}>
-											{wire.material === "SS" ? "Рабочая сталь" : "Нивелирование"}
+											{wireSubtitle}
 										</span>
 									</button>
 								);

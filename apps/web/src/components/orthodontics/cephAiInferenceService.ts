@@ -580,8 +580,7 @@ export class CephAiInferenceService {
 		let fallbackReason: string | undefined = undefined;
 
 		if (!ortExecutionSuccess) {
-			const allowFallback = options.allowFallback ?? isDemoShowcaseMode();
-			if (!allowFallback && !isDemoShowcaseMode()) {
+			if (options.allowFallback === false) {
 				throw new Error(
 					"Локальная нейросеть ONNX недоступна (сессия инференса не инициализирована или не поддерживается). Для предотвращения клинических ошибок синтетические координаты отключены.",
 				);

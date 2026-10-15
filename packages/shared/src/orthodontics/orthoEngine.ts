@@ -103,6 +103,13 @@ export const WORKHORSE_ARCHWIRES: WorkhorseArchwireOption[] = [
 		desc: "Нивелирование зубных рядов и первичный контроль формы зубной дуги",
 	},
 	{
+		id: "niti_016x022",
+		label: "NiTi .016x.022\"",
+		material: "NiTi",
+		section: ".016x.022",
+		desc: "Переходная прямоугольная термоактивная дуга: выравнивание и начало контроля торка",
+	},
+	{
 		id: "niti_018",
 		label: "NiTi .018\"",
 		material: "NiTi",
@@ -115,6 +122,13 @@ export const WORKHORSE_ARCHWIRES: WorkhorseArchwireOption[] = [
 		material: "SS",
 		section: ".019x.025",
 		desc: "Рабочая стальная прямоугольная дуга: закрытие промежутков и юстировка торка",
+	},
+	{
+		id: "tma_017x025",
+		label: "TMA .017x.025\"",
+		material: "TMA",
+		section: ".017x.025",
+		desc: "Юстировочная дуга: индивидуальные изгибы I, II, III порядка и детализация окклюзии",
 	},
 ];
 
