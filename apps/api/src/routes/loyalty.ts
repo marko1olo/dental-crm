@@ -14,6 +14,7 @@ import {
 	patients,
 	payments,
 } from "../db/schema.js";
+import { registerLoyaltyCertificateRoutes } from "./loyaltyCertificates.js";
 
 const redeemPointsBodySchema = z.object({
 	patientId: z.string().uuid(),
@@ -626,4 +627,6 @@ export async function registerLoyaltyRoutes(app: FastifyInstance) {
 			});
 		},
 	);
+
+	await registerLoyaltyCertificateRoutes(app);
 }

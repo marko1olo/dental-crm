@@ -3,11 +3,13 @@ import type { AppModalsContainerProps } from "./types";
 import {
 	type StandaloneLaunchersProps,
 	type LabCreateOrderContext,
+	type LoyaltyModalContext,
 } from "./modalsContainerModules/modalsContainerTypes";
 import { renderStandaloneLaunchers } from "./modalsContainerModules/StandaloneLaunchers";
 import { ClinicalModalsSubcontainer } from "./modalsContainerModules/ClinicalModalsSubcontainer";
 import { AdministrativeModalsSubcontainer } from "./modalsContainerModules/AdministrativeModalsSubcontainer";
 import { ImplantPassportModal } from "../implants/ImplantPassportModal";
+import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 
 export type { StandaloneLaunchersProps };
 export { renderStandaloneLaunchers };
@@ -61,6 +63,21 @@ export function AppModalsContainer({
 				(window.location.hash || "").includes("implant_passport") ||
 				(window.location.search || "").includes("passport=demo")),
 	);
+	const [isGlobalLoyaltyOpen, setIsGlobalLoyaltyOpen] = React.useState(
+		() =>
+			typeof window !== "undefined" &&
+			((window.location.search || "").includes("loyalty") ||
+				(window.location.hash || "").includes("loyalty")),
+	);
+	const [loyaltyModalContext, setLoyaltyModalContext] =
+		React.useState<LoyaltyModalContext | null>(null);
+
+	const primaryModal = useUiSurfaceStore((s) => s.primaryModal);
+	const isLoyaltyFromStore = primaryModal?.id === "loyalty";
+	const isEffectiveLoyaltyOpen = Boolean(isGlobalLoyaltyOpen || isLoyaltyFromStore);
+	const effectiveLoyaltyContext =
+		(isLoyaltyFromStore ? (primaryModal?.payload as LoyaltyModalContext) : null) ||
+		loyaltyModalContext;
 
 	React.useEffect(() => {
 		const onOpenVisiograph = () => {
@@ -83,15 +100,23 @@ export function AppModalsContainer({
 		const onOpenImplantPassport = () => {
 			setIsImplantPassportOpen(true);
 		};
+		const onOpenLoyalty = (e: Event) => {
+			const detail = (e as CustomEvent)?.detail;
+			setLoyaltyModalContext(detail || null);
+			setIsGlobalLoyaltyOpen(true);
+		};
 		window.addEventListener("dente-open-visiograph-comparison", onOpenVisiograph);
 		window.addEventListener("dente-open-imaging-export", onOpenImagingExport);
 		window.addEventListener("dente-open-create-lab-order", onOpenLabCreate);
 		window.addEventListener("dente-open-implant-passport", onOpenImplantPassport);
+		window.addEventListener("dente-open-loyalty", onOpenLoyalty);
+
 		return () => {
 			window.removeEventListener("dente-open-visiograph-comparison", onOpenVisiograph);
 			window.removeEventListener("dente-open-imaging-export", onOpenImagingExport);
 			window.removeEventListener("dente-open-create-lab-order", onOpenLabCreate);
 			window.removeEventListener("dente-open-implant-passport", onOpenImplantPassport);
+			window.removeEventListener("dente-open-loyalty", onOpenLoyalty);
 		};
 	}, []);
 
@@ -130,6 +155,14 @@ export function AppModalsContainer({
 				isGlobalLabCreateOrderOpen={isGlobalLabCreateOrderOpen}
 				setIsGlobalLabCreateOrderOpen={setIsGlobalLabCreateOrderOpen}
 				labCreateOrderContext={labCreateOrderContext}
+				isGlobalLoyaltyOpen={isEffectiveLoyaltyOpen}
+				setIsGlobalLoyaltyOpen={(open) => {
+					setIsGlobalLoyaltyOpen(open);
+					if (!open) {
+						useUiSurfaceStore.getState().closePrimaryModal("loyalty");
+					}
+				}}
+				loyaltyModalContext={effectiveLoyaltyContext}
 				isSessionLocked={isSessionLocked}
 				setIsSessionLocked={setIsSessionLocked}
 				activeStaffUser={activeStaffUser}

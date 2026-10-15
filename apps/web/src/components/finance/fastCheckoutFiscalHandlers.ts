@@ -271,6 +271,47 @@ export async function executeFiscalPayment(
 
 				if (response && response.ok) {
 					const data = (await response.json().catch(() => null)) as { fiscalReceiptNumber?: string } | null;
+
+					// Real ACID bonus redemption in PostgreSQL 18 (Mandates 8e, 8b, 8n)
+					if (patientId && effectiveLoyaltyRub > 0) {
+						try {
+							await fetch("/api/loyalty/redeem", {
+								method: "POST",
+								headers,
+								body: JSON.stringify({
+									patientId,
+									invoiceAmountRub: targetBillRub,
+									pointsToRedeem: effectiveLoyaltyRub,
+									allowFullCoverage: true,
+									clientMutationId: `${compositeIdempotencyKey}-loyalty`,
+									description: `Списание бонусов в кассе при оплате счета: ${effectiveLoyaltyRub} б. (тег 1215)`,
+								}),
+							}).catch((loyaltyErr) => {
+								console.warn("[FastCheckoutModal] /api/loyalty/redeem sync error:", loyaltyErr);
+							});
+						} catch (loyaltyErr) {
+							console.warn("[FastCheckoutModal] /api/loyalty/redeem error:", loyaltyErr);
+						}
+					}
+
+					// Automatic cashback accrual on actual cash/cashless payment
+					const paidRub = Number((effectiveCardRub + effectiveCashRub + effectiveSbpRub).toFixed(2));
+					if (patientId && paidRub > 0) {
+						try {
+							await fetch("/api/loyalty/accrue-cashback", {
+								method: "POST",
+								headers,
+								body: JSON.stringify({
+									patientId,
+									paidAmountRub: paidRub,
+									description: `Кэшбэк за оплату в кассе на сумму ${paidRub} ₽`,
+								}),
+							}).catch(() => null);
+						} catch {
+							// ignore
+						}
+					}
+
 					return data;
 				}
 			}

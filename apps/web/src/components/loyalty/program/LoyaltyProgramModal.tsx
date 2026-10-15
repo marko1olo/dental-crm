@@ -111,6 +111,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 	});
 
 	const certState = useLoyaltyCertificates({
+		patientId,
 		patientName,
 		invoiceAmountRub,
 	});
@@ -513,6 +514,9 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 				role="dialog"
 				aria-labelledby="loyalty-modal-title"
 			>
+				{/* Apple iOS HIG Drag Handle for Mobile Bottom Sheet */}
+				<div className="loyalty-modal-drag-handle" aria-hidden="true" />
+
 				{/* Modal Header */}
 				<header className="loyalty-modal-header">
 					<div className="loyalty-modal-title-wrap">
@@ -524,7 +528,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 								Студия лояльности и бонусов • {clinicName}
 							</h2>
 							<p className="loyalty-modal-subtitle">
-								Пациент: <strong>{patientName}</strong> (карта № {medicalCardNumber || "—"}) •
+								Пациент: <strong>{patientName}</strong> (карта {medicalCardNumber?.startsWith("№") ? medicalCardNumber : `№ ${medicalCardNumber || "—"}`}) •
 								Программа лояльности без пирамид и криптотокенов
 							</p>
 						</div>

@@ -214,13 +214,15 @@ describe("Marketing, Public Booking & Loyalty First-Principles Integration", () 
 		assert.equal(accrueBody.activePoints, 2000);
 
 		// 2. Создаем инвойс на 2 000 руб в базе
-		await db.insert(patientInvoices).values({
-			id: INVOICE_ID,
-			organizationId: ORG_ID,
-			patientId: PATIENT_ID,
-			totalAmountRub: 2000,
-			totalRub: "2000",
-			status: "issued",
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx.insert(patientInvoices).values({
+				id: INVOICE_ID,
+				organizationId: ORG_ID,
+				patientId: PATIENT_ID,
+				totalAmountRub: 2000,
+				totalRub: "2000",
+				status: "issued",
+			});
 		});
 
 		// 3. Списываем 2 000 баллов в счет 100% покрытия счета (1 балл = 1 руб)
@@ -246,33 +248,35 @@ describe("Marketing, Public Booking & Loyalty First-Principles Integration", () 
 		assert.equal(redeemBody.invoiceStatusUpdated, true, "Инвойс должен быть закрыт");
 
 		// 4. Проверяем таблицу payments: создан платеж со способом 'other' (бонусы)
-		const createdPayments = await db
-			.select()
-			.from(payments)
-			.where(
-				and(
-					eq(payments.organizationId, ORG_ID),
-					eq(payments.documentId, INVOICE_ID),
-				),
-			);
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			const createdPayments = await tx
+				.select()
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, ORG_ID),
+						eq(payments.documentId, INVOICE_ID),
+					),
+				);
 
-		assert.equal(createdPayments.length, 1);
-		const createdPayment = createdPayments[0];
-		assert.ok(createdPayment);
-		assert.equal(Number(createdPayment.amountRub), 2000);
-		assert.equal(createdPayment.status, "paid");
+			assert.equal(createdPayments.length, 1);
+			const createdPayment = createdPayments[0];
+			assert.ok(createdPayment);
+			assert.equal(Number(createdPayment.amountRub), 2000);
+			assert.equal(createdPayment.status, "paid");
 
-		// 5. Проверяем таблицу patientInvoices: статус стал 'paid'
-		const updatedInvoices = await db
-			.select()
-			.from(patientInvoices)
-			.where(and(eq(patientInvoices.organizationId, ORG_ID), eq(patientInvoices.id, INVOICE_ID)));
+			// 5. Проверяем таблицу patientInvoices: статус стал 'paid'
+			const updatedInvoices = await tx
+				.select()
+				.from(patientInvoices)
+				.where(and(eq(patientInvoices.organizationId, ORG_ID), eq(patientInvoices.id, INVOICE_ID)));
 
-		assert.equal(updatedInvoices.length, 1);
-		const updatedInvoice = updatedInvoices[0];
-		assert.ok(updatedInvoice);
-		assert.equal(updatedInvoice.status, "paid");
-		assert.ok(updatedInvoice.paidAt);
+			assert.equal(updatedInvoices.length, 1);
+			const updatedInvoice = updatedInvoices[0];
+			assert.ok(updatedInvoice);
+			assert.equal(updatedInvoice.status, "paid");
+			assert.ok(updatedInvoice.paidAt);
+		});
 
 		// 6. Начисление кэшбэка через /api/loyalty/accrue-cashback
 		const cashbackRes = await app.inject({

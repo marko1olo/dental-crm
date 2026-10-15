@@ -431,3 +431,62 @@ export const patientRelationships = pgTable(
 		),
 	}),
 );
+
+export const giftCertificates = pgTable(
+	"gift_certificates",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id, { onDelete: "cascade" }),
+		serialNumber: text("serial_number").notNull(),
+		nominalRub: numeric("nominal_rub", { precision: 12, scale: 2 }).notNull(),
+		initialBalanceRub: numeric("initial_balance_rub", {
+			precision: 12,
+			scale: 2,
+		}).notNull(),
+		currentBalanceRub: numeric("current_balance_rub", {
+			precision: 12,
+			scale: 2,
+		}).notNull(),
+		purchaserPatientId: uuid("purchaser_patient_id").references(() => patients.id, {
+			onDelete: "set null",
+		}),
+		purchaserName: text("purchaser_name"),
+		recipientPatientId: uuid("recipient_patient_id").references(() => patients.id, {
+			onDelete: "set null",
+		}),
+		recipientName: text("recipient_name"),
+		recipientPhone: text("recipient_phone"),
+		status: text("status").notNull().default("active"),
+		issuedAt: timestamp("issued_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+		notes: text("notes"),
+		relatedPaymentId: uuid("related_payment_id").references(() => payments.id, {
+			onDelete: "set null",
+		}),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgSerialUniqIdx: uniqueIndex("idx_gift_certificates_org_serial").on(
+			t.organizationId,
+			t.serialNumber,
+		),
+		purchaserIdx: index("idx_gift_certificates_org_purchaser").on(
+			t.organizationId,
+			t.purchaserPatientId,
+		),
+		recipientIdx: index("idx_gift_certificates_org_recipient").on(
+			t.organizationId,
+			t.recipientPatientId,
+		),
+	}),
+);
+

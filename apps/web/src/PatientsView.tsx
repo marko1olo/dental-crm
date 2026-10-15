@@ -774,7 +774,13 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 			{isLoyaltyModalOpen && (
 				<Suspense fallback={null}>
-					<LoyaltyProgramModal isOpen={isLoyaltyModalOpen} onClose={() => setIsLoyaltyModalOpen(false)} />
+					<LoyaltyProgramModal
+						isOpen={isLoyaltyModalOpen}
+						onClose={() => setIsLoyaltyModalOpen(false)}
+						patientId={selectedPatient?.id}
+						patientName={selectedPatient?.fullName}
+						medicalCardNumber={selectedPatient?.id ? `№ ${String(selectedPatient.id).slice(0, 8)}` : "—"}
+					/>
 				</Suspense>
 			)}
 

@@ -214,7 +214,27 @@ export function runDeterministicClinicalValidation(
 		}
 	}
 
-	// 3. Overall compliance calculation
+	// 3. Price catalog verification (Zero Mocks & Mandate 8e Doctor Autonomy)
+	const unpricedItems = allItems.filter(
+		(i) => i.requiresManualPricing === true || (i.priceRub || 0) <= 0,
+	);
+	if (unpricedItems.length > 0) {
+		anatomicalChecks.push({
+			rule: "PRICE_CATALOG_VERIFICATION",
+			status: "warning",
+			message: `В плане обнаружено ${unpricedItems.length} позиций без цены в каталоге клиники (${unpricedItems.map((u) => u.name).slice(0, 3).join(", ")}${unpricedItems.length > 3 ? "..." : ""}).`,
+			recommendation:
+				"Укажите актуальную стоимость из прайс-листа клиники вручную. Система не подставляет вымышленные цены (Мандат 8e).",
+			code804nRelated: unpricedItems
+				.map((u) => u.code804n)
+				.filter(Boolean) as string[],
+		});
+		clinicalRecommendations.push(
+			`Требуется уточнение стоимости ${unpricedItems.length} позиций в прайс-листе клиники.`,
+		);
+	}
+
+	// 4. Overall compliance calculation
 	const errorsCount = anatomicalChecks.filter((c) => c.status === "error").length;
 	const warningsCount = anatomicalChecks.filter((c) => c.status === "warning").length;
 	const passedChecksCount = anatomicalChecks.filter((c) => c.status === "pass").length;
@@ -543,6 +563,24 @@ export async function validateAndCommentTreatmentPlan(
 					title: "Оформление справки для налогового вычета 13%",
 					description: `Возврат ${deterministicFinance.ndflDeduction.totalRefundRub.toLocaleString("ru-RU")} ₽ от государства по итогам года.`,
 					estimatedDeltaRub: -deterministicFinance.ndflDeduction.totalRefundRub,
+				},
+				{
+					type: "scenario_economy",
+					title: "Сценарий «Эконом»: базовая санация",
+					description: "Замена премиальных конструкций на проверенную металлокерамику и базовые имплантаты Osstem с сохранением 100% санации.",
+					estimatedDeltaRub: -Math.round(deterministicFinance.totalRub * 0.3),
+				},
+				{
+					type: "scenario_optimum",
+					title: "Сценарий «Оптимум»: золотой стандарт",
+					description: "Цельный диоксид циркония Katana STML CAD/CAM, эндодонтия под микроскопом, гидрофильные имплантаты SLA.",
+					estimatedDeltaRub: 0,
+				},
+				{
+					type: "scenario_premium",
+					title: "Сценарий «Премиум»: VIP & цифровая навигация",
+					description: "Виниры E.max Press с индивидуальным нанесением, абатменты из циркония, 3D шаблоны и микроскоп Leica.",
+					estimatedDeltaRub: Math.round(deterministicFinance.totalRub * 0.5),
 				},
 			],
 		},
