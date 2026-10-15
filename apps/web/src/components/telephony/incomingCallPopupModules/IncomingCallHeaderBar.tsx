@@ -24,7 +24,7 @@ export function IncomingCallCapsuleBar({ ctrl }: IncomingCallHeaderBarProps): Re
 
 	const hasAcutePain =
 		Boolean(ctrl.acutePainAlerts && ctrl.acutePainAlerts.length > 0) ||
-		Boolean(ctrl.currentCall?.notes && /острая боль|пульпит|периодонтит|отек/i.test(ctrl.currentCall.notes)) ||
+		Boolean((ctrl.currentCall as any)?.notes && /острая боль|пульпит|периодонтит|отек/i.test((ctrl.currentCall as any).notes)) ||
 		Boolean(ctrl.resolvedPatient?.notes && /острая боль|пульпит|периодонтит|отек/i.test(ctrl.resolvedPatient.notes));
 
 	return (
