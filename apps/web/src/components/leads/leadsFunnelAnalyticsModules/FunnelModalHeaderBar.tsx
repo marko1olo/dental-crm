@@ -22,7 +22,7 @@ export interface FunnelModalHeaderBarProps {
 	readonly onCopySummary: () => void;
 	readonly onExportCsv: () => void;
 	readonly onClose: () => void;
-	readonly onOpenLeakDetector?: () => void;
+	readonly onOpenLeakDetector?: (() => void) | undefined;
 }
 
 export function FunnelModalHeaderBar({

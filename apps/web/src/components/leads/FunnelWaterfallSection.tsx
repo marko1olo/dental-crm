@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { ArrowRight, BarChart3, ChevronDown, ChevronUp } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { FunnelStageMetric } from "./leadsFunnelTypes";
 
 export interface FunnelWaterfallSectionProps {

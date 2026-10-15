@@ -222,6 +222,7 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 				}),
 				12500,
 			);
+			// expectedRevenue alone is not paid revenue (Mandate 8e/8n zero potemkin)
 			assert.equal(
 				extractLeadRevenueRub({
 					id: "4",
@@ -229,7 +230,7 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 					status: "consult_booked",
 					expectedRevenue: "18500",
 				}),
-				18500,
+				0,
 			);
 			assert.equal(
 				extractLeadRevenueRub({

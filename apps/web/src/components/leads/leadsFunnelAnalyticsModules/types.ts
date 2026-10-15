@@ -1,26 +1,30 @@
 import type React from "react";
 import type {
 	CanonicalMarketingChannelKey,
-	ChannelFunnelMetrics,
+	ChannelFunnelMetric,
 	ChannelSpendMap,
 	FunnelAnalysisResult,
 	FunnelLead,
-	FunnelStageMetrics,
-	FunnelSummaryMetrics,
+	FunnelStageMetric,
+	MarketingMetricsSummary,
 	FunnelTimePeriod,
 	LeadFunnelStageKey,
 } from "../leadsFunnelEngine";
 import { FUNNEL_PERIOD_OPTIONS } from "../leadsFunnelEngine";
 
+export type ChannelFunnelMetrics = ChannelFunnelMetric;
+export type FunnelStageMetrics = FunnelStageMetric;
+export type FunnelSummaryMetrics = MarketingMetricsSummary;
+
 export {
 	type CanonicalMarketingChannelKey,
-	type ChannelFunnelMetrics,
+	type ChannelFunnelMetric,
 	type ChannelSpendMap,
 	FUNNEL_PERIOD_OPTIONS,
 	type FunnelAnalysisResult,
 	type FunnelLead,
-	type FunnelStageMetrics,
-	type FunnelSummaryMetrics,
+	type FunnelStageMetric,
+	type MarketingMetricsSummary,
 	type FunnelTimePeriod,
 	type LeadFunnelStageKey,
 };

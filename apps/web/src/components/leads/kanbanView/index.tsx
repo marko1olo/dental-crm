@@ -31,6 +31,7 @@ import {
 	COLUMNS,
 	FALLBACK_DEFAULT_CHAIR,
 	FALLBACK_SOLO_DOCTOR,
+	isLeadInKanbanColumn,
 	resolveLeadBookingChairs,
 	resolveLeadBookingStaff,
 	resolveLeadVisitMinutes,
@@ -581,9 +582,7 @@ export function LeadsKanbanView() {
 		).length;
 	}, [leads]);
 
-	const activeColumns = useMemo(() => {
-		return viewMode === "funnel" ? COLUMNS.slice(0, 4) : COLUMNS;
-	}, [viewMode]);
+	const activeColumns = COLUMNS;
 
 	if (isLoading && leads.length === 0) {
 		return (
@@ -756,11 +755,13 @@ export function LeadsKanbanView() {
 
 			{/* KANBAN BOARD */}
 			<div
-				className={`leads-kanban-board ${viewMode === "funnel" ? "leads-kanban-board--funnel" : "leads-kanban-board--all"}`}
+				className="leads-kanban-board leads-kanban-board--funnel"
 				data-testid="leads-kanban-board"
 			>
 				{activeColumns.map((col) => {
-					const columnLeads = filteredLeads.filter((l) => l.status === col.id);
+					const columnLeads = filteredLeads.filter((l) =>
+						isLeadInKanbanColumn(l.status, col.id),
+					);
 
 					return (
 						<LeadKanbanColumn

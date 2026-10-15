@@ -9,9 +9,12 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { COLUMNS, CORE_FUNNEL_COLUMNS, FALLBACK_DEFAULT_CHAIR, FALLBACK_SOLO_DOCTOR } from "../leadsKanbanTypes";
 import { normalizeMarketingChannel } from "../leadsFunnelTypes";
 import { CHANNEL_BADGE_COLORS, CHANNEL_DISPLAY_NAMES } from "../../telephony/telephonyAttribution";
+import { LeadsKanbanHeaderToolbar } from "../kanbanView/LeadsKanbanHeaderToolbar";
 import type { Lead } from "../../../store/leadsStore";
 
 describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification", () => {
@@ -20,22 +23,24 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 			assert.equal(CORE_FUNNEL_COLUMNS.length, 4);
 			assert.deepEqual(
 				CORE_FUNNEL_COLUMNS.map((c) => c.id),
-				["new", "contacted", "consult_booked", "showed_up"],
+				["new", "consult_booked", "showed_up", "trash"],
 			);
 			assert.deepEqual(
 				CORE_FUNNEL_COLUMNS.map((c) => c.label),
-				["1. Новые", "2. Квалифицированные", "3. Консультация", "4. Дошли"],
+				["1. Новое обращение", "2. Записан на консультацию", "3. Дошел на приём", "4. Архив / Отказ"],
 			);
 		});
 
-		it("All 6 canonical columns exist including terminal/recovery columns", () => {
-			assert.equal(COLUMNS.length, 6);
+		it("All 4 canonical columns exist including terminal/recovery columns", () => {
+			assert.equal(COLUMNS.length, 4);
 			const columnIds = COLUMNS.map((c) => c.id);
-			assert.ok(columnIds.includes("no_answer"));
+			assert.ok(columnIds.includes("new"));
+			assert.ok(columnIds.includes("consult_booked"));
+			assert.ok(columnIds.includes("showed_up"));
 			assert.ok(columnIds.includes("trash"));
 		});
 
-		it("Simulates sequential 1-click status transitions through all 4 funnel stages", () => {
+		it("Simulates sequential 1-click status transitions through all canonical funnel stages", () => {
 			const mockLead: Lead = {
 				id: "lead-seq-1",
 				name: "Анна Смирнова",
@@ -44,19 +49,14 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 				status: "new",
 			};
 
-			// Step 1: new -> contacted
-			const step1Status = "contacted";
+			// Step 1: new -> consult_booked (1-click conversion to appointment)
+			const step1Status = "consult_booked";
 			mockLead.status = step1Status;
-			assert.equal(mockLead.status, "contacted");
-
-			// Step 2: contacted -> consult_booked
-			const step2Status = "consult_booked";
-			mockLead.status = step2Status;
 			assert.equal(mockLead.status, "consult_booked");
 
-			// Step 3: consult_booked -> showed_up
-			const step3Status = "showed_up";
-			mockLead.status = step3Status;
+			// Step 2: consult_booked -> showed_up (patient arrived)
+			const step2Status = "showed_up";
+			mockLead.status = step2Status;
 			assert.equal(mockLead.status, "showed_up");
 		});
 
@@ -195,6 +195,33 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 			const formattedNumber = `№ ${rawUuid.slice(0, 6)}`;
 			assert.equal(formattedNumber, "№ e7b1a2");
 			assert.ok(!formattedNumber.startsWith("ID:"));
+		});
+	});
+
+	describe("5. Mandate 8am — Unified Design-System & Anti-Cowboy-Buttons Geometry", () => {
+		it("Renders LeadsKanbanHeaderToolbar with 36px/rounded-xl controls, 32px/rounded-lg segmented toggle, !pl-[38px] search input, and zero inline styles", () => {
+			const html = renderToStaticMarkup(
+				createElement(LeadsKanbanHeaderToolbar, {
+					searchQuery: "",
+					setSearchQuery: () => {},
+					sourceFilter: "",
+					setSourceFilter: () => {},
+					uniqueSources: ["Яндекс.Директ", "2ГИС"],
+					viewMode: "funnel",
+					setViewMode: () => {},
+					secondaryLeadsCount: 2,
+					totalLeadsCount: 14,
+					onNewLead: () => {},
+					onOpenAnalytics: () => {},
+					onOpenLeakDetector: () => {},
+				}),
+			);
+
+			assert.ok(!html.includes("style="), "Toolbar HTML must contain zero inline style attributes");
+			assert.ok(html.includes("!pl-[38px]"), "Search input must enforce !pl-[38px] icon clearance");
+			assert.ok(html.includes("h-9 min-h-[36px] rounded-xl"), "Toolbar controls must use 36px (h-9) and rounded-xl (12px)");
+			assert.ok(html.includes("h-8 rounded-lg"), "Segmented toggle must use 32px (h-8) and rounded-lg (8px)");
+			assert.ok(html.includes("bg-[var(--primary)]"), "Primary CTA must use canonical var(--primary) token");
 		});
 	});
 });

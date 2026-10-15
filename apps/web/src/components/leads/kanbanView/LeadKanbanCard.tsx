@@ -34,20 +34,10 @@ import {
 	CHANNEL_DISPLAY_NAMES,
 } from "../../telephony/telephonyAttribution";
 import { normalizeMarketingChannel } from "../leadsFunnelTypes";
-import { getLeadSlaStatus } from "../leadsKanbanTypes";
+import { getLeadSlaStatus, NEXT_STAGE_MAP } from "../leadsKanbanTypes";
 import { LeadAudioPlayerWidget } from "../LeadAudioPlayerWidget";
 import { LeadInstantPreview } from "../LeadInstantPreview";
 import type { LeadKanbanCardProps } from "./types";
-
-const NEXT_STAGE_MAP: Partial<
-	Record<Lead["status"], { status: Lead["status"]; label: string }>
-> = {
-	new: { status: "contacted", label: "Квалифицировать →" },
-	contacted: { status: "consult_booked", label: "На консультацию →" },
-	consult_booked: { status: "showed_up", label: "Пациент дошёл →" },
-	no_answer: { status: "new", label: "Повторить (в Новые) →" },
-	trash: { status: "new", label: "Восстановить обращение →" },
-};
 
 export const LeadKanbanCard: React.FC<LeadKanbanCardProps> = ({
 	lead,
@@ -493,31 +483,7 @@ export const LeadKanbanCard: React.FC<LeadKanbanCardProps> = ({
 				) : null}
 			</div>
 
-			{/* Перевод на следующий этап воронки */}
-			{NEXT_STAGE_MAP[lead.status] ? (
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						onStatusChange(e, lead.id, NEXT_STAGE_MAP[lead.status]!.status);
-					}}
-					className="w-full h-7 px-2.5 rounded-lg text-[12px] font-semibold bg-[var(--teal-soft)] text-[var(--teal-dark,var(--teal))] border border-[var(--teal)] flex items-center justify-center gap-1.5 cursor-pointer transition-all hover:bg-[var(--teal)] hover:text-white mb-1.5"
-					title={`Перевести на этап ${NEXT_STAGE_MAP[lead.status]!.label}`}
-					data-testid={`advance-stage-btn-${lead.id}`}
-				>
-					<span>{NEXT_STAGE_MAP[lead.status]!.label}</span>
-					<ArrowRight size={12} className="shrink-0" />
-				</button>
-			) : lead.status === "showed_up" ? (
-				<div
-					className="w-full h-7 px-2.5 rounded-lg text-[11.5px] font-semibold bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--line)] flex items-center justify-center gap-1.5 mb-1.5"
-				>
-					<Check size={12} className="shrink-0" />
-					<span>Пациент в клинике</span>
-				</div>
-			) : null}
-
-			{/* Селектор статуса */}
+			{/* Селектор статуса и быстрый переход */}
 			<div
 				style={{
 					display: "flex",
@@ -530,17 +496,16 @@ export const LeadKanbanCard: React.FC<LeadKanbanCardProps> = ({
 				}}
 				onClick={(e) => e.stopPropagation()}
 			>
-				<span
-					style={{
-						fontSize: 11,
-						color: "var(--muted)",
-						fontWeight: 500,
-					}}
-				>
-					Статус:
-				</span>
 				<select
-					value={lead.status}
+					value={
+						lead.status === "contacted"
+							? "new"
+							: lead.status === "no_answer"
+								? "trash"
+								: lead.status === "converted"
+									? "showed_up"
+									: lead.status
+					}
 					onClick={(e) => e.stopPropagation()}
 					onChange={(e) => {
 						const nextVal = e.target.value as Lead["status"];
@@ -552,17 +517,38 @@ export const LeadKanbanCard: React.FC<LeadKanbanCardProps> = ({
 							onStatusChange(e, lead.id, nextVal);
 						}
 					}}
-					className="h-7 text-[11.5px] font-medium px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer outline-none max-w-[155px] hover:border-[var(--line-strong,var(--line))]"
+					className="h-7 text-[11px] font-medium !pl-1.5 !pr-5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer outline-none flex-1 min-w-0 hover:border-[var(--line-strong,var(--line))]"
 					title="Сменить статус обращения"
 					aria-label="Выбрать статус обращения"
 				>
-					<option value="new">1. Новые</option>
-					<option value="contacted">2. Квалифицированные</option>
-					<option value="consult_booked">3. Консультация</option>
-					<option value="showed_up">4. Дошли</option>
-					<option value="no_answer">Недозвон</option>
-					<option value="trash">Отказ</option>
+					<option value="new">1. Новое обращение</option>
+					<option value="consult_booked">2. Записан на консультацию</option>
+					<option value="showed_up">3. Дошел на приём</option>
+					<option value="trash">4. Архив / Отказ</option>
 				</select>
+				{NEXT_STAGE_MAP[lead.status] ? (
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							onStatusChange(e, lead.id, NEXT_STAGE_MAP[lead.status]!.status);
+						}}
+						className="h-7 px-1.5 rounded-lg text-[10.5px] font-semibold bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)] inline-flex items-center justify-center gap-0.5 cursor-pointer transition-all hover:border-[var(--primary)] shrink-0"
+						title={`Перевести на этап: ${NEXT_STAGE_MAP[lead.status]!.label}`}
+						data-testid={`advance-stage-btn-${lead.id}`}
+					>
+						<span>Далее</span>
+						<ArrowRight size={11} className="shrink-0" />
+					</button>
+				) : lead.status === "showed_up" ? (
+					<span
+						className="h-7 px-2 rounded-lg text-[11px] font-semibold bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--line)] inline-flex items-center justify-center gap-1 shrink-0"
+						title="Пациент пришёл в клинику"
+					>
+						<Check size={11} className="shrink-0" />
+						<span>В клинике</span>
+					</span>
+				) : null}
 			</div>
 
 			{/* Ровно 2 первичных действия карточки согласно Мандату 8n (Anti-Landfill) */}
@@ -578,7 +564,7 @@ export const LeadKanbanCard: React.FC<LeadKanbanCardProps> = ({
 							e.stopPropagation();
 							onSchedule(lead.id);
 						}}
-						className="primary-button w-full h-8 min-h-[32px] text-[12.5px] font-semibold px-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98] inline-flex items-center justify-center gap-1.5"
+						className="primary-button w-full h-8 min-h-[32px] text-[12.5px] font-semibold px-2.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] transition-all active:scale-[0.98] inline-flex items-center justify-center gap-1.5"
 						data-testid={`schedule-lead-btn-${lead.id}`}
 						title="Записать в сетку расписания"
 					>
@@ -598,7 +584,7 @@ export const LeadKanbanCard: React.FC<LeadKanbanCardProps> = ({
 						data-testid={`open-patient-btn-${lead.id}`}
 						title={`Открыть амбулаторную карту пациента ${lead.existingPatient.fullName}`}
 					>
-						<UserCheck size={13} className="shrink-0 text-[var(--teal)]" />
+						<UserCheck size={13} className="shrink-0 text-[var(--primary)]" />
 						<span className="truncate">
 							Карточка пациента
 						</span>
@@ -615,7 +601,7 @@ export const LeadKanbanCard: React.FC<LeadKanbanCardProps> = ({
 						data-testid={`create-patient-btn-${lead.id}`}
 						title="Создать карту пациента из обращения"
 					>
-						<UserPlus size={13} className="shrink-0 text-[var(--teal)]" />
+						<UserPlus size={13} className="shrink-0 text-[var(--primary)]" />
 						<span className="truncate">
 							{creatingPatientLeadId === lead.id
 								? "Создаём карту…"

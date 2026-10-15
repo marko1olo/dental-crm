@@ -4,7 +4,7 @@ import type { FunnelSummaryMetrics } from "./types";
 
 export interface FunnelConversionInsightsPanelProps {
 	readonly summary: FunnelSummaryMetrics;
-	readonly onOpenLeakDetector?: () => void;
+	readonly onOpenLeakDetector?: (() => void) | undefined;
 }
 
 export function FunnelConversionInsightsPanel({

@@ -34,7 +34,9 @@ import { LeadAudioPlayerWidget } from "./LeadAudioPlayerWidget";
 import { normalizeMarketingChannel } from "./leadsFunnelTypes";
 import {
 	COLUMNS,
+	getKanbanColumnForLeadStatus,
 	getLeadSlaStatus,
+	isLeadInKanbanColumn,
 	STAGE_DISPLAY_LABELS,
 } from "./leadsKanbanTypes";
 
@@ -106,7 +108,9 @@ export const LeadMobileBottomSheet = ({
 			: (lead.source || "Прямое обращение");
 
 	const rawPhone = lead.phone ? lead.phone.replace(/[^\d+]/g, "") : "";
-	const currentColumn = COLUMNS.find((c) => c.id === lead.status);
+	const currentColumn =
+		COLUMNS.find((c) => c.id === lead.status) ||
+		getKanbanColumnForLeadStatus(lead.status);
 
 	const handleSaveNotes = async () => {
 		if (!onUpdateNotes || notesText === (lead.notes || "")) return;
@@ -353,7 +357,7 @@ export const LeadMobileBottomSheet = ({
 
 						<div className="grid grid-cols-2 gap-2">
 							{COLUMNS.map((col) => {
-								const isCurrent = col.id === lead.status;
+								const isCurrent = isLeadInKanbanColumn(lead.status, col.id);
 								return (
 									<button
 										key={col.id}

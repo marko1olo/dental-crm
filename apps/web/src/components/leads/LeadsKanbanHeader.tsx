@@ -48,7 +48,7 @@ export const LeadsKanbanHeader: React.FC<LeadsKanbanHeaderProps> = ({
 
 					{/* Segmented Funnel / All stages selector */}
 					<div
-						className="leads-viewmode-segmented dente-segmented-bar shrink-0"
+						className="leads-viewmode-segmented dente-segmented-bar h-8 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] p-0.5 inline-flex items-center gap-0.5 shrink-0"
 						role="tablist"
 						aria-label="Выбор отображения этапов воронки"
 					>
@@ -56,7 +56,7 @@ export const LeadsKanbanHeader: React.FC<LeadsKanbanHeaderProps> = ({
 							type="button"
 							role="tab"
 							aria-selected={viewMode === "funnel"}
-							className={`leads-viewmode-segmented-btn dente-segmented-item ${viewMode === "funnel" ? "is-active active" : ""}`}
+							className={`leads-viewmode-segmented-btn dente-segmented-item h-[26px] px-2.5 rounded-md text-xs font-medium transition-all ${viewMode === "funnel" ? "is-active active bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-2xs" : "text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}
 							onClick={() => setViewMode("funnel")}
 							data-testid="leads-viewmode-funnel-btn"
 							title="Показать 4 ключевых этапа воронки пациентов"
@@ -67,7 +67,7 @@ export const LeadsKanbanHeader: React.FC<LeadsKanbanHeaderProps> = ({
 							type="button"
 							role="tab"
 							aria-selected={viewMode === "all"}
-							className={`leads-viewmode-segmented-btn dente-segmented-item ${viewMode === "all" ? "is-active active" : ""}`}
+							className={`leads-viewmode-segmented-btn dente-segmented-item h-[26px] px-2.5 rounded-md text-xs font-medium transition-all ${viewMode === "all" ? "is-active active bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-2xs" : "text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}
 							onClick={() => setViewMode("all")}
 							data-testid="leads-viewmode-all-btn"
 							title="Показать все 6 колонок включая недозвоны и отказы"
@@ -82,7 +82,7 @@ export const LeadsKanbanHeader: React.FC<LeadsKanbanHeaderProps> = ({
 					</div>
 
 					<button
-						className="primary-button h-8 min-h-[32px] text-[12.5px] font-semibold px-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
+						className="primary-button h-9 min-h-[36px] rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white font-medium text-xs sm:text-sm shadow-xs px-3.5 focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] transition-all active:scale-[0.98] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
 						onClick={onNewLead}
 						type="button"
 						aria-label="Создать новое обращение"
@@ -90,25 +90,25 @@ export const LeadsKanbanHeader: React.FC<LeadsKanbanHeaderProps> = ({
 						<Plus size={14} /> Новый лид
 					</button>
 					<button
-						className="secondary-button h-8 min-h-[32px] text-[12.5px] font-medium px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
+						className="secondary-button h-9 min-h-[36px] text-xs sm:text-sm font-medium px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] transition-all active:scale-[0.98] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
 						onClick={onOpenAnalytics}
 						type="button"
 						aria-label="Открыть сквозную аналитику воронки"
 					>
-						<BarChart3 size={14} className="text-[var(--teal)]" /> Аналитика
+						<BarChart3 size={14} className="text-[var(--primary)]" /> Аналитика
 					</button>
 					<button
-						className="secondary-button h-8 min-h-[32px] text-[12.5px] font-medium px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
+						className="secondary-button h-9 min-h-[36px] text-xs sm:text-sm font-medium px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] transition-all active:scale-[0.98] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
 						onClick={onOpenLeakDetector}
 						type="button"
 						aria-label="Открыть детектор оттока пациентов (210 дней)"
 					>
-						<RotateCcw size={14} className="text-[var(--teal)]" /> Отток
+						<RotateCcw size={14} className="text-[var(--primary)]" /> Отток
 					</button>
 				</div>
 
 				<div className="flex items-center gap-2 shrink-0">
-					<div className="dente-search-wrap w-48 xl:w-56">
+					<div className="dente-search-wrap w-48 xl:w-56 h-9 min-h-[36px] rounded-xl">
 						<Search
 							size={14}
 							className="dente-search-icon"
@@ -118,7 +118,7 @@ export const LeadsKanbanHeader: React.FC<LeadsKanbanHeaderProps> = ({
 							placeholder="Имя или телефон..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="dente-search-input"
+							className="dente-search-input h-9 min-h-[36px] !pl-[38px] rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs sm:text-sm text-[var(--ink)]"
 							aria-label="Поиск по имени или телефону"
 						/>
 						{searchQuery && (
@@ -132,19 +132,15 @@ export const LeadsKanbanHeader: React.FC<LeadsKanbanHeaderProps> = ({
 							</button>
 						)}
 					</div>
-					<div style={{ position: "relative" }}>
+					<div className="relative inline-flex items-center shrink-0">
 						<Filter
 							size={13}
-							color="var(--muted)"
-							style={{ position: "absolute", left: 9, top: 9 }}
+							className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--ink-muted)]"
 						/>
 						<select
 							value={sourceFilter}
 							onChange={(e) => setSourceFilter(e.target.value)}
-							className="h-8 text-[12px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] pl-7 pr-2.5 outline-none cursor-pointer hover:border-[var(--line-strong,var(--line))]"
-							style={{
-								minWidth: 130,
-							}}
+							className="h-9 min-h-[36px] min-w-[136px] text-xs sm:text-sm font-medium rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] pl-8 pr-3 outline-none cursor-pointer hover:border-[var(--line-strong,var(--line))] transition-colors"
 							aria-label="Фильтр по каналу обращения"
 						>
 							<option value="">Все каналы</option>

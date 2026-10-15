@@ -28,6 +28,7 @@ import {
 import { normalizeMarketingChannel } from "./leadsFunnelTypes";
 import {
 	COLUMNS,
+	getKanbanColumnForLeadStatus,
 	getLeadSlaStatus,
 } from "./leadsKanbanTypes";
 
@@ -62,7 +63,9 @@ export const LeadMobileFeedCard: React.FC<LeadMobileFeedCardProps> = ({
 			? CHANNEL_DISPLAY_NAMES[channelKey]
 			: (lead.source || "Прямой звонок");
 	const rawPhone = lead.phone ? lead.phone.replace(/[^\d+]/g, "") : "";
-	const col = COLUMNS.find((c) => c.id === lead.status);
+	const col =
+		COLUMNS.find((c) => c.id === lead.status) ||
+		getKanbanColumnForLeadStatus(lead.status);
 
 	const handleDragEnd = async (_: unknown, info: PanInfo) => {
 		if (info.offset.x > 75) {

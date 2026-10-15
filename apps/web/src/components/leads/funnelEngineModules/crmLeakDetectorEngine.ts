@@ -30,8 +30,24 @@ import {
 // 1. ДЕТЕКТОР УТЕЧЕК ВОРОНКИ И ЗАВИСШИХ ЛИДОВ (CRM LEAK DETECTOR)
 // ---------------------------------------------------------------------------
 
-/** По умолчанию средний клинический чек для оценки упущенной выручки (руб.) */
-const DEFAULT_ESTIMATED_TICKET_RUB = 15000;
+/**
+ * Извлечение потенциальной выручки лида без фальшивых симуляторов и выдуманных чеков.
+ * Учитывает строго реальную ожидаемую выручку (expectedRevenue) или фактическую выручку (actualRevenueRub).
+ */
+export function extractPotentialLeadRevenueRub(
+	lead: FunnelLead,
+	fallbackTicketRub = 0,
+): number {
+	const expected = Number(lead.expectedRevenue);
+	if (!Number.isNaN(expected) && expected > 0) {
+		return Math.round(expected);
+	}
+	const base = extractLeadRevenueRub(lead);
+	if (base > 0) {
+		return base;
+	}
+	return fallbackTicketRub > 0 ? fallbackTicketRub : 0;
+}
 
 /**
  * Выявляет "зависшие" обращения и потенциальные утечки выручки на этапах воронки
@@ -41,12 +57,14 @@ export function detectCrmFunnelLeaks(
 	options: {
 		maxIdleHoursNew?: number;
 		maxIdleHoursContacted?: number;
+		defaultEstimatedTicketRub?: number;
 		now?: Date;
 	} = {},
 ): CrmFunnelLeakReport {
 	const {
 		maxIdleHoursNew = 2,
 		maxIdleHoursContacted = 24,
+		defaultEstimatedTicketRub = 0,
 		now = new Date(),
 	} = options;
 
@@ -81,9 +99,10 @@ export function detectCrmFunnelLeaks(
 
 		const hoursStalled = Math.max(0, Math.floor((nowMs - leadTime) / (3600 * 1000)));
 		const channelKey = normalizeMarketingChannel(lead.source);
-		const baseRevenue = extractLeadRevenueRub(lead);
-		const potentialRevenueRub =
-			baseRevenue > 0 ? baseRevenue : DEFAULT_ESTIMATED_TICKET_RUB;
+		const potentialRevenueRub = extractPotentialLeadRevenueRub(
+			lead,
+			defaultEstimatedTicketRub,
+		);
 
 		let isLeak = false;
 		let severity: "critical" | "warning" = "warning";

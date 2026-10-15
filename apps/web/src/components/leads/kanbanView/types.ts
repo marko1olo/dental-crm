@@ -33,6 +33,7 @@ export interface LeadsKanbanHeaderToolbarProps {
 	viewMode: LeadsKanbanViewMode;
 	setViewMode: (val: LeadsKanbanViewMode) => void;
 	secondaryLeadsCount?: number;
+	totalLeadsCount?: number;
 	onNewLead: () => void;
 	onOpenAnalytics: () => void;
 	onOpenLeakDetector: () => void;

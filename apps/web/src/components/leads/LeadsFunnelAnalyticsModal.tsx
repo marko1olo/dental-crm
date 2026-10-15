@@ -45,7 +45,7 @@ export function LeadsFunnelAnalyticsModal(props: LeadsFunnelAnalyticsModalProps)
 				animate={{ opacity: 1, scale: 1, y: 0 }}
 				exit={{ opacity: 0, scale: 0.96, y: 15 }}
 				transition={{ duration: 0.2 }}
-				style={FUNNEL_MODAL_CONTAINER_STYLE}
+				style={FUNNEL_MODAL_CONTAINER_STYLE as any}
 			>
 				<FunnelModalHeaderBar
 					period={ctrl.period}

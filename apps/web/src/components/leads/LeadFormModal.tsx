@@ -8,6 +8,7 @@
  */
 
 import type React from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { Edit2, Trash2, UserCheck, UserPlus, X } from "lucide-react";
 import type { Lead } from "../../store/leadsStore";
@@ -68,7 +69,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 		}
 	};
 
-	return (
+	const modalContent = (
 		<div
 			style={{
 				position: "fixed",
@@ -153,6 +154,31 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 					>
 						<UserCheck size={13} className="shrink-0" />
 						<span>Постоянный пациент клиники: {currentLead.existingPatient.fullName}</span>
+					</div>
+				)}
+
+				{(currentLead as any)?.patientId && !currentLead?.existingPatient && (
+					<div
+						style={{
+							display: "inline-flex",
+							alignItems: "center",
+							gap: 6,
+							background: "var(--teal-soft)",
+							color: "var(--teal-dark, var(--teal))",
+							border: "1px solid var(--teal)",
+							borderRadius: 6,
+							padding: "4px 8px",
+							fontSize: 12,
+							fontWeight: 600,
+							marginBottom: 14,
+							cursor: "pointer",
+						}}
+						onClick={() => handleOpenPatient((currentLead as any).patientId!)}
+						title="Перейти в карточку пациента в рабочей области"
+						data-testid="modal-patient-id-badge"
+					>
+						<UserCheck size={13} className="shrink-0" />
+						<span>Открыть в рабочей области пациента</span>
 					</div>
 				)}
 
@@ -508,4 +534,8 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 			</motion.div>
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 };

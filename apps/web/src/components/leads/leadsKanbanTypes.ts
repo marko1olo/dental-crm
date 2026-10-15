@@ -126,68 +126,106 @@ export type ColumnConfig = {
 	icon: React.ReactNode;
 };
 
-export const COLUMNS: ColumnConfig[] = [
+export const COLUMNS: readonly [
+	ColumnConfig,
+	ColumnConfig,
+	ColumnConfig,
+	ColumnConfig,
+] = [
 	{
 		id: "new",
-		label: "1. Новые",
+		label: "1. Новое обращение",
 		color: "var(--teal-soft)",
 		icon: React.createElement(Plus, { size: 15 }),
 	},
 	{
-		id: "contacted",
-		label: "2. Квалифицированные",
-		color: "var(--teal-soft)",
-		icon: React.createElement(Phone, { size: 15 }),
-	},
-	{
 		id: "consult_booked",
-		label: "3. Консультация",
+		label: "2. Записан на консультацию",
 		color: "var(--teal-soft)",
 		icon: React.createElement(CalendarClock, { size: 15 }),
 	},
 	{
 		id: "showed_up",
-		label: "4. Дошли",
+		label: "3. Дошел на приём",
 		color: "var(--teal-soft)",
 		icon: React.createElement(UserCheck, { size: 15 }),
 	},
 	{
-		id: "no_answer",
-		label: "Недозвон",
-		color: "var(--paper)",
-		icon: React.createElement(Handshake, { size: 15 }),
-	},
-	{
 		id: "trash",
-		label: "Отказ",
+		label: "4. Архив / Отказ",
 		color: "var(--paper)",
 		icon: React.createElement(Trash2, { size: 15 }),
 	},
 ];
 
+/**
+ * Проверяет принадлежность статуса лида к одной из 4 канонических колонок канбана.
+ * Обратная совместимость для существующих статусов в БД:
+ * - contacted -> new ("1. Новое обращение")
+ * - converted -> showed_up ("3. Дошел на приём")
+ * - no_answer -> trash ("4. Архив / Отказ")
+ */
+export function isLeadInKanbanColumn(
+	leadStatus: LeadStatus | string | null | undefined,
+	columnId: LeadStatus,
+): boolean {
+	if (!leadStatus || leadStatus === "new" || leadStatus === "contacted") {
+		return columnId === "new";
+	}
+	if (leadStatus === "consult_booked") {
+		return columnId === "consult_booked";
+	}
+	if (leadStatus === "showed_up" || leadStatus === "converted") {
+		return columnId === "showed_up";
+	}
+	if (leadStatus === "trash" || leadStatus === "no_answer") {
+		return columnId === "trash";
+	}
+	return leadStatus === columnId;
+}
+
+/**
+ * Возвращает конфигурацию канонической колонки для любого статуса лида
+ */
+export function getKanbanColumnForLeadStatus(
+	status?: LeadStatus | string | null,
+): ColumnConfig {
+	if (!status || status === "new" || status === "contacted") {
+		return COLUMNS[0];
+	}
+	if (status === "consult_booked") {
+		return COLUMNS[1];
+	}
+	if (status === "showed_up" || status === "converted") {
+		return COLUMNS[2];
+	}
+	return COLUMNS[3];
+}
+
 export const STAGE_DISPLAY_LABELS: Record<LeadStatus, string> = {
-	new: "«1. Новые»",
-	contacted: "«2. Квалифицированные»",
-	consult_booked: "«3. Консультация»",
-	showed_up: "«4. Дошли»",
-	converted: "«Сконвертирован»",
-	no_answer: "«Недозвон»",
-	trash: "«Отказ»",
+	new: "«1. Новое обращение»",
+	contacted: "«1. Новое обращение»",
+	consult_booked: "«2. Записан на консультацию»",
+	showed_up: "«3. Дошел на приём»",
+	converted: "«3. Дошел на приём»",
+	no_answer: "«4. Архив / Отказ»",
+	trash: "«4. Архив / Отказ»",
 };
 
 /** The 4 canonical active funnel stages for the primary clinic patient flow */
-export const CORE_FUNNEL_COLUMNS = COLUMNS.slice(0, 4);
+export const CORE_FUNNEL_COLUMNS = COLUMNS;
 
 /**
- * 1-клик перевод на следующий этап воронки (SSOT)
+ * 1-клик перевод на следующий этап канонической воронки (SSOT)
  */
 export const NEXT_STAGE_MAP: Partial<
 	Record<LeadStatus, { status: LeadStatus; label: string }>
 > = {
-	new: { status: "contacted", label: "Квалифицировать →" },
-	contacted: { status: "consult_booked", label: "На консультацию →" },
+	new: { status: "consult_booked", label: "Записать на приём →" },
+	contacted: { status: "consult_booked", label: "Записать на приём →" },
 	consult_booked: { status: "showed_up", label: "Пациент дошёл →" },
-	no_answer: { status: "new", label: "Повторить (в Новые) →" },
+	converted: { status: "showed_up", label: "Пациент дошёл →" },
+	no_answer: { status: "new", label: "Восстановить обращение →" },
 	trash: { status: "new", label: "Восстановить обращение →" },
 };
 

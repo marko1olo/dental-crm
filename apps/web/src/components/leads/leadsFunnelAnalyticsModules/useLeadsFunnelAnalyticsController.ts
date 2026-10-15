@@ -53,7 +53,7 @@ export function useLeadsFunnelAnalyticsController({
 			try {
 				const headers = getRequestHeaders ? getRequestHeaders() : undefined;
 				const res = await fetch(attributionEndpoint, {
-					headers,
+					...(headers ? { headers } : {}),
 				});
 				if (!res.ok) return;
 				const data = (await res.json()) as LiveMarketingAttributionPayload;
