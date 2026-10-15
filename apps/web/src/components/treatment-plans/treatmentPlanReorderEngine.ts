@@ -10,16 +10,13 @@
 
 import { type Kopecks } from "@dental/shared";
 import type { TreatmentPlanItem, TreatmentPlanStage } from "./types";
+import { calculateStageTotals } from "./treatmentPlanPricingEngine";
 
 /**
  * Пересчет сумм этапа в копейках и рублях на основе его процедур.
  */
 export function recalculateStageTotals(stage: TreatmentPlanStage): TreatmentPlanStage {
-	const totalKopecks = stage.items.reduce(
-		(acc, item) => acc + Math.round((item.priceRub || 0) * 100),
-		0,
-	) as Kopecks;
-	const totalRub = Math.round(totalKopecks / 100);
+	const { totalKopecks, totalRub } = calculateStageTotals(stage.items);
 
 	const codes = Array.from(
 		new Set(

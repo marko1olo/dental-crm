@@ -85,7 +85,7 @@ describe("TreatmentPlanPresenterModal (Wave 19: Chairside Presentation & RF Decr
 
 		assert.ok(html.includes("confirm-patient-choice-btn"), "Must contain patient choice fixation button");
 		assert.ok(html.includes("Пациент выбрал Вариант Б: Оптимум"), "Must have dynamic label with selected variant B");
-		assert.ok(html.includes("Печать Приложения №1 (ПП РФ № 736)"), "Must contain 1-click official print button");
+		assert.ok(html.includes("Печать сметы плана"), "Must contain 1-click official print button");
 	});
 
 	it("renders touch-first Segmented Control, 1-click NDFL calculation, and instant tariff apply buttons", () => {

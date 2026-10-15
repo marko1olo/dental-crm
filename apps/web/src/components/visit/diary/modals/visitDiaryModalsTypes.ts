@@ -1,0 +1,48 @@
+import type React from "react";
+import type { DiaryState } from "../../useVisitDiaryLogic";
+
+export interface VisitDiaryModalsProps {
+	readonly showSummaryModal: boolean;
+	readonly setShowSummaryModal: (val: boolean) => void;
+	readonly showPrescriptionModal: boolean;
+	readonly setShowPrescriptionModal: (val: boolean) => void;
+	readonly showRadiologyReferralModal: boolean;
+	readonly setShowRadiologyReferralModal: (val: boolean) => void;
+	readonly showEgiszModal: boolean;
+	readonly setShowEgiszModal: (val: boolean) => void;
+	readonly showTemplatesModal: boolean;
+	readonly setShowTemplatesModal: (val: boolean) => void;
+	readonly showBrandingCustomizer: boolean;
+	readonly setShowBrandingCustomizer: (val: boolean) => void;
+	readonly showPreview: boolean;
+	readonly setShowPreview: (val: boolean) => void;
+	readonly diary: DiaryState;
+	readonly setDiary: React.Dispatch<React.SetStateAction<DiaryState>>;
+	readonly isLocked: boolean;
+	readonly isRevising: boolean;
+	readonly beginRevise: () => void;
+	readonly scheduleDebouncedSave: () => void;
+	readonly setIcdSearch: (val: string) => void;
+	readonly doSave: (showSuccessToast?: boolean) => Promise<any>;
+	readonly doctorName: string;
+	readonly doctorSpecialty: string;
+	readonly patientFullName: string;
+	readonly patientBirthDate?: string | null;
+	readonly patientCardNumber?: string | null;
+	readonly patientPassport?: string | null;
+	readonly patientOms?: string | null;
+	readonly patientSnils?: string | null;
+	readonly patientPhone?: string | null;
+	readonly patientAddress?: string | null;
+	readonly clinicName?: string | null;
+	readonly activePatient?: any;
+	readonly printPatient?: any;
+	readonly lockedAt?: string | null;
+	readonly diaryHash?: string | null;
+	readonly hasCryptoSignature?: boolean;
+	readonly activeTeeth?: readonly any[];
+	readonly radiologySnapshots?: readonly any[];
+	readonly lastSavedAt?: Date | null;
+	readonly icdEntry?: any;
+	readonly revisionCount?: number;
+}

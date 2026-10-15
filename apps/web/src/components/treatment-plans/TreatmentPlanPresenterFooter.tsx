@@ -46,18 +46,18 @@ export const TreatmentPlanPresenterFooter: React.FC<TreatmentPlanPresenterFooter
 				<button
 					type="button"
 					onClick={onPrintAppendix}
-					className="btn-treatment-action btn-treatment-print cursor-pointer"
+					className="btn-treatment-action btn-treatment-print secondary-button cursor-pointer"
 					data-testid="print-contract-btn"
 				>
 					<Printer size={16} />
-					<span>Печать Приложения №1 (ПП РФ № 736)</span>
+					<span>Печать сметы плана</span>
 				</button>
 
 				{/* Fixate Patient Choice Action */}
 				<button
 					type="button"
 					onClick={() => onConfirmPatientChoice(selectedTier)}
-					className="btn-treatment-action btn-patient-choice cursor-pointer"
+					className="btn-treatment-action btn-patient-choice primary-button cursor-pointer"
 					data-testid="confirm-patient-choice-btn"
 				>
 					{isChoiceConfirmed ? (
@@ -78,7 +78,7 @@ export const TreatmentPlanPresenterFooter: React.FC<TreatmentPlanPresenterFooter
 					<button
 						type="button"
 						onClick={() => onApproveAndSign(selectedTier)}
-						className="btn-treatment-action btn-treatment-sign cursor-pointer"
+						className="btn-treatment-action btn-treatment-sign secondary-button cursor-pointer"
 						data-testid="approve-and-sign-btn"
 					>
 						<FileSignature size={18} />

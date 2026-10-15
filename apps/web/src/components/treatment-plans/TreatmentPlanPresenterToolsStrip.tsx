@@ -111,10 +111,10 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 						<button
 							type="button"
 							onClick={() => setActiveToolsPanel((prev) => (prev === "copilot" ? null : "copilot"))}
-							className={`min-h-[36px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-[13px] font-medium inline-flex items-center gap-1.5 border transition-colors cursor-pointer touch-manipulation ${
+							className={`min-h-[40px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-[13px] font-bold inline-flex items-center gap-1.5 border transition-all cursor-pointer touch-manipulation shadow-2xs ${
 								activeToolsPanel === "copilot"
-									? "bg-[var(--tp-primary)] text-white border-[var(--tp-primary)] shadow-2xs"
-									: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] border-[var(--tp-border)]"
+									? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]"
+									: "bg-[var(--paper,var(--paper-strong,#ffffff))] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] border-[var(--line,var(--border,#cbd5e1))]"
 							}`}
 							data-testid="toggle-copilot-panel-btn"
 							title="AI Copilot у кресла: готовые сценарии и оптимизация бюджета"
@@ -128,10 +128,10 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 						<button
 							type="button"
 							onClick={() => setActiveToolsPanel((prev) => (prev === "bundles" ? null : "bundles"))}
-							className={`min-h-[36px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-[13px] font-medium inline-flex items-center gap-1.5 border transition-colors cursor-pointer touch-manipulation ${
+							className={`min-h-[40px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-[13px] font-bold inline-flex items-center gap-1.5 border transition-all cursor-pointer touch-manipulation shadow-2xs ${
 								activeToolsPanel === "bundles"
-									? "bg-[var(--tp-primary)] text-white border-[var(--tp-primary)] shadow-2xs"
-									: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] border-[var(--tp-border)]"
+									? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]"
+									: "bg-[var(--paper,var(--paper-strong,#ffffff))] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] border-[var(--line,var(--border,#cbd5e1))]"
 							}`}
 							data-testid="toggle-bundles-panel-btn"
 							title="Готовые клинические пакеты услуг"
@@ -145,10 +145,10 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 						<button
 							type="button"
 							onClick={() => setActiveToolsPanel((prev) => (prev === "doctorDiscount" ? null : "doctorDiscount"))}
-							className={`min-h-[36px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-[13px] font-medium inline-flex items-center gap-1.5 border transition-colors cursor-pointer touch-manipulation ${
+							className={`min-h-[40px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-[13px] font-bold inline-flex items-center gap-1.5 border transition-all cursor-pointer touch-manipulation shadow-2xs ${
 								activeToolsPanel === "doctorDiscount" || isDiscountActive
-									? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
-									: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] border-[var(--tp-border)]"
+									? "bg-emerald-600 text-white border-emerald-600"
+									: "bg-[var(--paper,var(--paper-strong,#ffffff))] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] border-[var(--line,var(--border,#cbd5e1))]"
 							}`}
 							data-testid="toggle-discount-panel-btn"
 							title="Скидка врача (% или ₽ на этапы, гарантийные переделки и персонал)"

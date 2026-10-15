@@ -97,7 +97,7 @@ export const PhasedStageCardList: React.FC<PhasedStageCardListProps> = ({
 						В плане пока нет назначенных клинических позиций
 					</div>
 					<p className="mt-1 text-xs text-[var(--ink-muted)] max-w-md mx-auto">
-						Отметьте патологии на зубной формуле или выберите готовый клинический протокол, чтобы автоматически сформировать 4-этапный план лечения с расчетом по кодам 804н.
+						Отметьте патологии на зубной формуле или выберите готовый клинический протокол, чтобы автоматически сформировать 4-этапный план лечения с расчетом по каталогу стоматологических услуг.
 					</p>
 					<div className="mt-3 flex justify-center gap-2">
 						<button
@@ -260,7 +260,7 @@ export const PhasedStageCardList: React.FC<PhasedStageCardListProps> = ({
 																	</span>
 																)}
 																<span className="font-mono text-[10px] text-[var(--ink-muted)] bg-[var(--paper-soft)] px-1.5 py-0.5 rounded border border-[var(--line)]">
-																	804н: {item.code804n}
+																	Код: {item.code804n}
 																</span>
 															</div>
 															{item.clinicalJustification && (
@@ -321,7 +321,7 @@ export const PhasedStageCardList: React.FC<PhasedStageCardListProps> = ({
 												</strong>
 											</span>
 											<span className="text-[11px] text-[var(--ink-muted)]">
-												Позиций: {stageData.items.length} | Коды 804н:{" "}
+												Позиций: {stageData.items.length} | Коды услуг:{" "}
 												{hasItems
 													? Array.from(new Set(stageData.items.map((i) => i.code804n))).join(", ")
 													: "—"}

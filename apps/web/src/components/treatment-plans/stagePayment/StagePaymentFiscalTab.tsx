@@ -62,7 +62,7 @@ export const StagePaymentFiscalTab: React.FC<StagePaymentFiscalTabProps> = ({
 
 				<div>
 					<label className="text-xs font-semibold text-[var(--muted,#64748b)] block mb-1.5">
-						Признак способа расчета:
+						Формат расчета:
 					</label>
 					<div className="grid grid-cols-3 gap-2">
 						<button
@@ -108,7 +108,7 @@ export const StagePaymentFiscalTab: React.FC<StagePaymentFiscalTabProps> = ({
 				<div className="rounded-xl bg-[var(--paper-soft)] p-3 text-xs text-[var(--muted)] border border-[var(--line-subtle)]">
 					<div>• Система налогообложения: <strong>УСН Доходы</strong></div>
 					<div>• Налоговая ставка: <strong>Без НДС (ст. 149 НК РФ пп. 2 п. 2)</strong></div>
-					<div>• Тег 1212 (Предмет расчета): <strong>10 (Платеж/Аванс) / 4 (Услуга)</strong></div>
+					<div>• Предмет расчета: <strong>Стоматологические услуги</strong></div>
 				</div>
 
 				<button
@@ -145,7 +145,7 @@ export const StagePaymentFiscalTab: React.FC<StagePaymentFiscalTabProps> = ({
 							<div key={idx} className="flex flex-col gap-1 mb-2 text-xs">
 								<div className="font-semibold">{item.name}</div>
 								<div className="flex justify-between text-[11px] text-[var(--muted)]">
-									<span>Признак: {activeFiscalReceipt.calculationSign} (Т1214:{item.fiscalTag1214})</span>
+									<span>Формат: {activeFiscalReceipt.calculationSign}</span>
 									<span>{item.quantity} x {formatKopecksRu(item.priceKopecks)}</span>
 								</div>
 								<div className="flex justify-between font-bold">

@@ -144,14 +144,14 @@
 }
 
 .treatment-presenter-close-btn {
-	min-width: 44px;
-	min-height: 44px;
-	width: 44px;
-	height: 44px;
-	border-radius: var(--tp-radius-md);
-	border: 1px solid var(--tp-border);
-	background: var(--tp-bg);
-	color: var(--tp-text-muted);
+	min-width: 32px;
+	min-height: 32px;
+	width: 32px;
+	height: 32px;
+	border-radius: var(--tp-radius-md, 8px);
+	border: 1px solid var(--tp-border, var(--line));
+	background: var(--tp-bg, var(--paper));
+	color: var(--tp-text-muted, var(--muted));
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -162,8 +162,18 @@
 }
 
 .treatment-presenter-close-btn:hover {
-	background: var(--tp-surface-soft);
-	color: var(--tp-text-main);
+	background: var(--tp-surface-soft, var(--paper-soft));
+	color: var(--tp-text-main, var(--ink));
+	border-color: var(--tp-primary, var(--teal));
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+	.treatment-presenter-close-btn {
+		min-width: 44px;
+		min-height: 44px;
+		width: 44px;
+		height: 44px;
+	}
 }
 
 /* Nav Tabs Strip (Canonical DENTE Segmented Control) */
@@ -926,65 +936,82 @@
 }
 
 .btn-treatment-action {
-	min-height: 44px;
-	height: 44px;
-	padding: 0 16px;
-	border-radius: var(--tp-radius-md);
+	min-height: 32px;
+	height: 32px;
+	padding: 0 14px;
+	border-radius: var(--tp-radius-md, 8px);
 	font-size: 13px;
-	font-weight: 800;
+	font-weight: 600;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
 	cursor: pointer;
-	transition: all 0.2s ease;
-	border: 1px solid var(--tp-border);
-	background: var(--tp-bg);
-	color: var(--tp-text-main);
+	transition: all 0.15s ease;
+	border: 1px solid var(--tp-border, var(--line));
+	background: var(--tp-bg, var(--paper));
+	color: var(--tp-text-main, var(--ink));
 }
 
 .btn-treatment-action:hover {
-	background: var(--tp-surface-soft);
+	background: var(--tp-surface-soft, var(--paper-soft));
 }
 
 .btn-patient-choice {
 	background: var(--teal);
-	color: var(--paper-strong);
+	color: var(--paper-strong, #ffffff);
 	border: none;
-	padding: 0 20px;
-	font-size: 14px;
-	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+	padding: 0 18px;
+	font-size: 13px;
+	font-weight: 700;
+	box-shadow: 0 2px 8px -2px var(--teal-ring, rgba(13, 148, 136, 0.4));
 }
 
 .btn-patient-choice:hover {
 	background: var(--teal-dark);
 	transform: translateY(-1px);
-	box-shadow: 0 6px 18px rgba(13, 148, 136, 0.45);
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.45);
 }
 
 .btn-treatment-print {
-	background: var(--tp-surface-soft);
-	color: var(--tp-text-main);
-	border: 1px solid var(--tp-border);
+	background: var(--tp-surface-soft, var(--paper-soft));
+	color: var(--tp-text-main, var(--ink));
+	border: 1px solid var(--tp-border, var(--line));
 }
 
 .btn-treatment-print:hover {
-	background: var(--tp-border);
+	background: var(--tp-surface, var(--paper));
+	border-color: var(--tp-primary, var(--teal));
 }
 
 .btn-treatment-sign {
-	background: var(--teal-dark);
-	color: var(--paper-strong);
-	border: 1px solid var(--teal);
-	padding: 0 18px;
+	background: var(--tp-surface-soft, var(--paper-soft));
+	color: var(--tp-text-main, var(--ink));
+	border: 1px solid var(--tp-border, var(--line));
+	padding: 0 16px;
 	font-size: 13px;
-	box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .btn-treatment-sign:hover {
-	background: var(--teal);
+	background: var(--tp-surface, var(--paper));
+	border-color: var(--tp-primary, var(--teal));
 	transform: translateY(-1px);
-	box-shadow: 0 6px 16px rgba(15, 118, 110, 0.4);
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+	.btn-treatment-action {
+		width: 100%;
+		min-height: 44px;
+		height: 44px;
+		font-size: 14px;
+	}
+	.btn-patient-choice,
+	.btn-treatment-print,
+	.btn-treatment-sign {
+		min-height: 44px;
+		height: 44px;
+	}
 }
 
 /* ==========================================================================

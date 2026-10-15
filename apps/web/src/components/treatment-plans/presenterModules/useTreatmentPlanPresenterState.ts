@@ -388,6 +388,27 @@ export function useTreatmentPlanPresenterState(props: TreatmentPlanPresenterModa
 			});
 		}
 
+		// Передача Этапа 1 выбранного плана в текущий визит приёма (Mandates 8e, 8n)
+		const stage1 = effectiveTier.stages.find((s) => s.stageNumber === 1) || effectiveTier.stages[0];
+		if (stage1 && stage1.items && stage1.items.length > 0) {
+			const stagePayload = {
+				title: `Этап 1: ${stage1.title || "Терапия и санация"}`,
+				stageNumber: stage1.stageNumber || 1,
+				items: stage1.items,
+			};
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-take-stage-to-visit", {
+						detail: {
+							stage: stagePayload,
+							items: stage1.items,
+							patientId,
+						},
+					}),
+				);
+			}
+		}
+
 		if (onConfirmSelection) onConfirmSelection(effectiveTier);
 		if (onSelectPlan) onSelectPlan(effectiveTier);
 	}, [selectedTier, onConfirmSelection, onSelectPlan, patientId, planId]);

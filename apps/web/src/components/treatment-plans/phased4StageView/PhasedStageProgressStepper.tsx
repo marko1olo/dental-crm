@@ -97,7 +97,7 @@ export const PhasedStageProgressStepper: React.FC<PhasedStageProgressStepperProp
 						</span>
 					</div>
 					<h3 className="mt-1 text-base font-bold text-[var(--ink)]">
-						{planTierTitle} — Разбивка по медицинским фазам (приказ Минздрава № 804н)
+						{planTierTitle} — Разбивка по этапам лечения (Каталог стоматологических услуг)
 					</h3>
 					<p className="text-xs text-[var(--ink-muted)] mt-0.5">
 						Оплата и запись производятся поэтапно по мере приживления и завершения предыдущей клинической фазы.
