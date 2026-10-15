@@ -1,11 +1,11 @@
 import React from "react";
-import { ArrowUpRight, ChevronDown, ChevronUp, ShieldCheck } from "lucide-react";
+import { Activity, ArrowUpRight, ChevronDown, ChevronUp, ShieldCheck } from "lucide-react";
 import { calculateAge } from "@dental/shared";
 import {
-	VisitEmbeddedOdontogram,
 	type DentitionMode,
 	PATHOLOGY_STAMPS,
 } from "../view/VisitEmbeddedOdontogram";
+import { OdontogramModule } from "../../odontogram/OdontogramModule";
 import { useVisitStore, type VisitToothUiState } from "../../../store/visitStore";
 import {
 	loadStoredTeethData,
@@ -340,7 +340,7 @@ export function VisitEmkOdontogramBar({
 			}),
 		);
 
-		showToast("Все зубы отмечены интактными. Дневник 043/у заполнен протоколом санации", "success", 3000);
+		showToast("Все зубы отмечены интактными. Дневник приёма заполнен протоколом санации", "success", 3000);
 	}, [activePatient?.id, dentitionMode, updateVisitNoteField, visitNoteForm]);
 
 	return (
@@ -367,16 +367,16 @@ export function VisitEmkOdontogramBar({
 						Активный зуб: {effectiveActiveTooth}
 					</span>
 				</div>
-				<div className="flex items-center gap-2 shrink-0">
+				<div className="flex items-center gap-1.5 shrink-0">
 					<button
 						type="button"
 						onClick={handleMarkAllIntact}
 						data-testid="btn-mark-all-teeth-intact"
-						className="emk-action-button emk-action-button--teal"
-						title="Отметить все зубы интактными и заполнить протокол нормы 043/у"
+						className="border border-teal-500/40 bg-teal-500/10 text-teal-700 dark:text-teal-300 font-bold rounded-lg px-2.5 py-1 text-xs shadow-2xs hover:bg-teal-500/20 hover:border-teal-500 transition-colors inline-flex items-center gap-1 cursor-pointer"
+						title="Отметить все зубы интактными и заполнить протокол нормы (Дневник визита)"
 					>
 						<ShieldCheck size={13} className="shrink-0 text-teal-600 dark:text-teal-400" />
-						<span>✓ Санирован</span>
+						<span>Санирован</span>
 					</button>
 					<button
 						type="button"
@@ -386,7 +386,7 @@ export function VisitEmkOdontogramBar({
 							);
 						}}
 						data-testid="btn-open-odontogram-tab"
-						className="emk-action-button emk-action-button--teal"
+						className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1 text-xs shadow-2xs hover:border-[var(--teal)] transition-colors inline-flex items-center gap-1 cursor-pointer"
 						title="Перейти во вкладку полной зубной формулы"
 					>
 						<span>Зубная формула</span>
@@ -394,9 +394,21 @@ export function VisitEmkOdontogramBar({
 					</button>
 					<button
 						type="button"
+						onClick={() => {
+							window.dispatchEvent(new CustomEvent("dente:open-perio-modal"));
+						}}
+						data-testid="btn-open-perio-modal"
+						className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1 text-xs shadow-2xs hover:border-[var(--teal)] transition-colors inline-flex items-center gap-1 cursor-pointer"
+						title="Открыть подробную пародонтограмму и скрининг карманов (Мандат 8e)"
+					>
+						<Activity size={13} className="shrink-0 text-teal-600 dark:text-teal-400" />
+						<span className="hidden sm:inline">Пародонтограмма</span>
+					</button>
+					<button
+						type="button"
 						onClick={() => setIsOdontogramCollapsed((v) => !v)}
 						data-testid="btn-toggle-odontogram-collapse"
-						className="emk-action-button"
+						className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1 text-xs shadow-2xs hover:border-[var(--teal)] transition-colors inline-flex items-center gap-1 cursor-pointer"
 						title={isOdontogramCollapsed ? "Развернуть одонтограмму" : "Свернуть одонтограмму"}
 					>
 						{isOdontogramCollapsed ? (
@@ -414,19 +426,19 @@ export function VisitEmkOdontogramBar({
 				</div>
 			</div>
 			{!isOdontogramCollapsed && (
-				<VisitEmbeddedOdontogram
-					activeQuadrant={activeQuadrant}
-					setActiveQuadrant={setActiveQuadrant}
-					activeStamp={activeStamp}
-					setActiveStamp={setActiveStamp}
-					activeStampRef={activeStampRef}
-					toothRows={toothRows}
-					toothStateByCode={effectiveToothStateByCode as any}
-					draft={draft?.quality?.detectedToothCodes ? { quality: { detectedToothCodes: draft.quality.detectedToothCodes } } : null}
-					handleToothClick={handleOdontogramToothClick}
-					dentitionMode={dentitionMode}
-					onDentitionModeChange={setDentitionMode}
-				/>
+				<div className="mt-2.5 pt-2 border-t border-[var(--line)]" data-testid="visit-emk-odontogram-canonical-container">
+					{activePatient?.id ? (
+						<OdontogramModule
+							patientId={activePatient.id}
+							pediatricMode={dentitionMode !== "adult"}
+							dentitionMode={dentitionMode}
+						/>
+					) : (
+						<div className="py-6 text-center text-xs text-[var(--muted)]">
+							Пациент не выбран. Выберите пациента для работы с зубной формулой.
+						</div>
+					)}
+				</div>
 			)}
 		</div>
 	);
