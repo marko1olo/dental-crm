@@ -17,7 +17,7 @@ import { loadSavedClinicAutoclaves } from "../autoclave/autoclaveDeviceTypes";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { parseAndValidateKraftBarcode } from "@dental/shared";
-import { DEFAULT_CYCLES, type SanPinCycleEntry } from "./sanpinJournalTypes";
+import { DEFAULT_CYCLES, type SanPinCycleEntry, type SanPinJournalPeriod } from "./sanpinJournalTypes";
 
 export interface UseSanPinJournalLogicParams {
 	readonly onAttachPouchToVisit?: ((pouchCode: string, snippet: string) => void) | undefined;
@@ -30,6 +30,7 @@ export function useSanPinJournalLogic({
 }: UseSanPinJournalLogicParams = {}) {
 	const isTestOrSsr = typeof window === "undefined" || (typeof process !== "undefined" && process.env?.NODE_ENV === "test");
 	const [cycles, setCycles] = useState<SanPinCycleEntry[]>(() => ((isTestOrSsr || isDemoShowcaseMode()) ? DEFAULT_CYCLES : []));
+	const [period, setPeriod] = useState<SanPinJournalPeriod>("day");
 	const [selectedAutoclave, setSelectedAutoclave] = useState<string>(initialFilterAutoclave);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [directScanCode, setDirectScanCode] = useState("");
@@ -45,13 +46,20 @@ export function useSanPinJournalLogic({
 		}
 	}, []);
 
-	const fetchCyclesFromDb = useCallback(async () => {
+	const fetchCyclesFromDb = useCallback(async (targetPeriod: SanPinJournalPeriod = period) => {
 		try {
 			setIsLoading(true);
-			const res = await fetch("/api/registers/sterilization", {
+			let res = await fetch(`/api/sanpin/sterilization?period=${targetPeriod}`, {
 				headers: getDenteAuthHeaders(),
-			});
-			if (res.ok) {
+			}).catch(() => null);
+
+			if (!res || !res.ok) {
+				res = await fetch("/api/registers/sterilization", {
+					headers: getDenteAuthHeaders(),
+				}).catch(() => null);
+			}
+
+			if (res && res.ok) {
 				const data = await res.json();
 				if (Array.isArray(data) && data.length > 0) {
 					const mapped: SanPinCycleEntry[] = data.map((d: any, idx: number) => {
@@ -61,6 +69,7 @@ export function useSanPinJournalLogic({
 						const isNorm = d.status === "passed" || d.passedIndicator !== false;
 						const isMelag = d.deviceName?.includes("Melag") || d.autoclaveId === "АК-01" || idx % 2 === 0;
 						const primaryBarcode = d.barcode || (idx === 0 ? "KP-84920" : `STER-${dateStr.replace(/-/g, "")}-${String(idx + 1).padStart(3, "0")}`);
+						const calculatedBatchSize = Number(d.batchSize) || Number(d.kraftPouchesCount) || (idx === 0 ? 25 : idx === 1 ? 15 : 30);
 						return {
 							id: d.id || `cyc-${idx}`,
 							date: dateStr,
@@ -82,6 +91,10 @@ export function useSanPinJournalLogic({
 							itemsSummary: d.itemsDescription || "Стоматологический инструментарий смены (наконечники, лотки, боры)",
 							operatorName: d.operatorName || "Иванова А. С. (ЦСО)",
 							status: isNorm ? "passed" : "failed",
+							batchSize: calculatedBatchSize,
+							batchBarcode: d.batchBarcode || `BAT-134-${dateStr.replace(/-/g, "")}-${String(idx + 1).padStart(2, "0")}`,
+							psoStatus: (d.psoStatus as any) || "norm",
+							kraftPouchesCount: calculatedBatchSize,
 						};
 					});
 					setCycles(mapped);
@@ -94,16 +107,16 @@ export function useSanPinJournalLogic({
 			// Safe fallback for demo mode or empty database
 			setCycles(isDemoShowcaseMode() ? DEFAULT_CYCLES : []);
 		} catch (err) {
-			console.warn("Fastify API /api/registers/sterilization unavailable", err);
+			console.warn("Fastify API /api/sanpin/sterilization unavailable", err);
 			setCycles(isDemoShowcaseMode() ? DEFAULT_CYCLES : []);
 		} finally {
 			setIsLoading(false);
 		}
-	}, []);
+	}, [period]);
 
 	useEffect(() => {
-		fetchCyclesFromDb();
-	}, [fetchCyclesFromDb]);
+		fetchCyclesFromDb(period);
+	}, [fetchCyclesFromDb, period]);
 
 	const filteredCycles = useMemo(() => {
 		return cycles.filter((cyc) => {
@@ -222,9 +235,84 @@ export function useSanPinJournalLogic({
 		showToast("Журнал стерилизации экспортирован в CSV", "success");
 	};
 
+	const handleQuickBatchNorm = async (batchSize = 25, regime: "134" | "121" = "134") => {
+		try {
+			setIsAutofilling(true);
+			const tempC = regime === "134" ? 134.4 : 121.0;
+			const pressBar = regime === "134" ? 2.15 : 1.1;
+			const durMin = regime === "134" ? 5 : 20;
+			const payload = {
+				batchSize,
+				temperatureC: tempC,
+				durationMin: durMin,
+				pressureBar: pressBar,
+				deviceName: selectedAutoclave === "АК-02" ? "W&H Lina 17" : "Melag Vacuklav 23B+",
+				kraftPouchesCount: batchSize,
+				operatorName: "Иванова А. С. (ЦСО)",
+			};
+
+			const res = await fetch("/api/sanpin/sterilization/quick-norm-cycle", {
+				method: "POST",
+				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify(payload),
+			}).catch(() => null);
+
+			if (res && res.ok) {
+				showToast(`Партия (${batchSize} лотков) зафиксирована: ${regime}°C / ${pressBar} бар, расходники списаны`, "success");
+				await fetchCyclesFromDb(period);
+				return;
+			}
+
+			if (isDemoShowcaseMode()) {
+				showToast(`Партия (${batchSize} лотков) зафиксирована: ${regime}°C (демо)`, "success");
+				await fetchCyclesFromDb(period);
+			} else {
+				showToast("Ошибка при фиксации партии стерилизации", "error");
+			}
+		} catch (err) {
+			showToast("Ошибка сети при фиксации партии", "error");
+		} finally {
+			setIsAutofilling(false);
+		}
+	};
+
+	const handleQuickPsoNorm = async () => {
+		try {
+			setIsAutofilling(true);
+			const res = await fetch("/api/sanpin/sterilization/pso-quick-norm", {
+				method: "POST",
+				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify({
+					sampleCount: 5,
+					azopiramResult: "negative",
+					phenolphthaleinResult: "negative",
+					operatorName: "Иванова А. С. (ЦСО)",
+				}),
+			}).catch(() => null);
+
+			if (res && res.ok) {
+				showToast("Контроль ПСО (Форма 366/у): азопирам и фенолфталеин отрицательно (100% норма)", "success");
+				await fetchCyclesFromDb(period);
+				return;
+			}
+
+			if (isDemoShowcaseMode()) {
+				showToast("Контроль ПСО (Форма 366/у): 100% норма (демо)", "success");
+			} else {
+				showToast("Ошибка при фиксации контроля ПСО", "error");
+			}
+		} catch (err) {
+			showToast("Ошибка сети при контроле ПСО", "error");
+		} finally {
+			setIsAutofilling(false);
+		}
+	};
+
 	return {
 		cycles,
 		setCycles,
+		period,
+		setPeriod,
 		selectedAutoclave,
 		setSelectedAutoclave,
 		searchQuery,
@@ -239,8 +327,11 @@ export function useSanPinJournalLogic({
 		fetchCyclesFromDb,
 		filteredCycles,
 		handleAutofillNorms,
+		handleQuickBatchNorm,
+		handleQuickPsoNorm,
 		handleQuickChairsideScan,
 		handlePrint257,
 		handleExportCsv,
 	};
 }
+

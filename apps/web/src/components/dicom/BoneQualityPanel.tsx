@@ -10,6 +10,7 @@ import {
 	classifyMischBoneDensity,
 	type BoneDensityRecommendation,
 } from "./panoramicMprMath";
+import { getImplantRecommendationForMisch } from "./PanoramicSafetyEngine";
 
 interface Props {
 	huSamples?: number[] | undefined; // HU values sampled along the implant axis
@@ -249,6 +250,34 @@ export function BoneQualityPanel({
 							)}
 						</div>
 					</div>
+
+					{/* Auto-recommended implant design & catalog lines based on Misch */}
+					{(() => {
+						const impRec = getImplantRecommendationForMisch(meanHU);
+						return (
+							<div
+								className="p-2.5 rounded-lg text-xs border space-y-1"
+								style={{
+									background: "var(--paper-soft)",
+									borderColor: "var(--line)",
+								}}
+							>
+								<div className="font-semibold flex items-center justify-between text-[11px]" style={{ color: "var(--teal)" }}>
+									<span>Рекомендуемый тип имплантата:</span>
+									<span className="font-bold">{impRec.bodyDesignRu}</span>
+								</div>
+								<div className="text-[11px] text-neutral-400">
+									Резьба: <span className="text-neutral-200">{impRec.threadTypeRu}</span>
+								</div>
+								<div className="text-[10px] text-neutral-400">
+									Системы из каталога:{" "}
+									<span className="font-semibold text-neutral-300">
+										{impRec.recommendedSystems.map((s) => `${s.brand} ${s.line}`).join(" • ")}
+									</span>
+								</div>
+							</div>
+						);
+					})()}
 
 					{/* HU Zones */}
 					<div className="grid grid-cols-3 gap-2">

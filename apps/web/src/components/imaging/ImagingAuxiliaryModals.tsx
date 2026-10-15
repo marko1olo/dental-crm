@@ -28,6 +28,90 @@ export interface ImagingAuxiliaryModalsProps {
 	selectedStudySummary?: string | null | undefined;
 }
 
+function createDemoPanoramicVolume(): any {
+	const width = 128;
+	const height = 128;
+	const depth = 64;
+	const scalarData = new Float32Array(width * height * depth);
+	scalarData.fill(-1000);
+
+	const cx = Math.floor(width / 2);
+	const cy = Math.floor(height / 2);
+	const rx = Math.floor(width * 0.35);
+	const ry = Math.floor(height * 0.28);
+
+	for (let z = 0; z < depth; z++) {
+		const zSlice = z * width * height;
+		const zFactor = 1 - Math.abs(z - depth / 2) / (depth / 2);
+
+		for (let x = 10; x < width - 10; x++) {
+			const normX = (x - cx) / rx;
+			if (Math.abs(normX) > 1) continue;
+			const archY = Math.round(cy - ry * (1 - normX * normX * 0.8));
+
+			for (let y = Math.max(0, archY - 6); y <= Math.min(height - 1, archY + 6); y++) {
+				const idx = zSlice + y * width + x;
+				const distFromArch = Math.abs(y - archY);
+				if (distFromArch <= 2) {
+					scalarData[idx] = z > depth * 0.6 ? 2200 : 750 + Math.round(zFactor * 200);
+				} else if (distFromArch <= 5) {
+					scalarData[idx] = 1400;
+				} else {
+					scalarData[idx] = 400;
+				}
+			}
+		}
+	}
+
+	const identityDirection = new Float32Array([
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1,
+	]);
+
+	return {
+		scalarData,
+		dimensions: [width, height, depth],
+		origin: [0, 0, 0],
+		direction: identityDirection,
+		spacing: [0.3, 0.3, 0.3],
+	};
+}
+
+function getActivePanoramicVolume(): any {
+	if (typeof window !== "undefined") {
+		const win = window as unknown as {
+			__cbctActiveVolume?: any;
+			__cbctDemoVolume?: any;
+			__panoramicVolume?: any;
+		};
+		if (win.__panoramicVolume) return win.__panoramicVolume;
+		const activeVol = win.__cbctActiveVolume || win.__cbctDemoVolume;
+		if (activeVol && activeVol.data) {
+			const { width, height, depth } = activeVol.dimensions;
+			const scalarData = new Float32Array(activeVol.data.length);
+			for (let i = 0; i < activeVol.data.length; i++) {
+				scalarData[i] = activeVol.data[i];
+			}
+			const identityDirection = new Float32Array([
+				1, 0, 0, 0,
+				0, 1, 0, 0,
+				0, 0, 1, 0,
+				0, 0, 0, 1,
+			]);
+			return {
+				scalarData,
+				dimensions: [width, height, depth],
+				origin: [activeVol.originMm?.x ?? 0, activeVol.originMm?.y ?? 0, activeVol.originMm?.z ?? 0],
+				direction: identityDirection,
+				spacing: [activeVol.spacingMm?.x ?? 0.25, activeVol.spacingMm?.y ?? 0.25, activeVol.spacingMm?.z ?? 0.25],
+			};
+		}
+	}
+	return createDemoPanoramicVolume();
+}
+
 export function ImagingAuxiliaryModals({
 	isPanoramicWindowOpen,
 	setIsPanoramicWindowOpen,
@@ -48,29 +132,20 @@ export function ImagingAuxiliaryModals({
 	return (
 		<>
 			{isPanoramicWindowOpen && (
-				<div
-					className="panoramic-recon-window-modal fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-					onClick={() => setIsPanoramicWindowOpen(false)}
-				>
-					<div
-						className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-6 max-w-md w-full shadow-2xl text-center space-y-4"
-						onClick={(e) => e.stopPropagation()}
-					>
-						<h3 className="text-base font-semibold text-[var(--ink)]">Панорамная реконструкция (ОПТГ)</h3>
-						<p className="text-xs text-[var(--muted)] leading-relaxed">
-							Для построения панорамной кривой зубной дуги и кросс-секций выберите или загрузите исследование КЛКТ 3D в кабинете снимков.
-						</p>
-						<div className="flex justify-center pt-2">
-							<button
-								type="button"
-								className="px-4 py-2 text-xs font-semibold rounded-lg bg-[var(--teal,#0d9488)] text-white hover:opacity-90 transition-opacity cursor-pointer"
-								onClick={() => setIsPanoramicWindowOpen(false)}
-							>
-								Закрыть
-							</button>
+				<Suspense
+					fallback={
+						<div className="panoramic-recon-window-modal fixed inset-0 z-[100060] flex items-center justify-center bg-black/80">
+							<div className="w-8 h-8 border-4 border-[var(--teal)] border-t-transparent rounded-full animate-spin" />
 						</div>
-					</div>
-				</div>
+					}
+				>
+					<PanoramicRendererWindow
+						splinePoints={[]}
+						volume={getActivePanoramicVolume()}
+						patientId={activePatient?.id}
+						onClose={() => setIsPanoramicWindowOpen(false)}
+					/>
+				</Suspense>
 			)}
 
 			{isRadiologyModuleOpen && (

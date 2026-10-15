@@ -31,6 +31,8 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 	const [internalNewCycleModalOpen, setInternalNewCycleModalOpen] = useState(false);
 
 	const {
+		period,
+		setPeriod,
 		selectedAutoclave,
 		setSelectedAutoclave,
 		searchQuery,
@@ -43,6 +45,8 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 		filteredCycles,
 		fetchCyclesFromDb,
 		handleAutofillNorms,
+		handleQuickBatchNorm,
+		handleQuickPsoNorm,
 		handleQuickChairsideScan,
 		handlePrint257,
 		handleExportCsv,
@@ -54,6 +58,10 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 	return (
 		<div className={`sanpin-sterilization-journal ${className}`} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
 			<SanPinJournalToolbar
+				period={period}
+				onPeriodChange={setPeriod}
+				onQuickBatchNorm={handleQuickBatchNorm}
+				onQuickPsoNorm={handleQuickPsoNorm}
 				selectedAutoclave={selectedAutoclave}
 				onSelectAutoclave={setSelectedAutoclave}
 				searchQuery={searchQuery}
@@ -70,7 +78,13 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 				onOpenNewCycleModal={handleOpenNewCycle}
 			/>
 
-			<SanPinCyclesTable cycles={filteredCycles} onAutofillShift={() => handleAutofillNorms("shift")} isAutofilling={isAutofilling} />
+			<SanPinCyclesTable
+				cycles={filteredCycles}
+				onAutofillShift={() => handleAutofillNorms("shift")}
+				isAutofilling={isAutofilling}
+				onQuickBatchNorm={handleQuickBatchNorm}
+				onQuickPsoNorm={handleQuickPsoNorm}
+			/>
 
 			{showScannerModal && (
 				<div

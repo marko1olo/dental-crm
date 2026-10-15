@@ -26,7 +26,13 @@ export interface SanPinCycleEntry {
 	itemsSummary: string;
 	operatorName: string;
 	status: "passed" | "warning" | "failed";
+	batchSize?: number;
+	batchBarcode?: string;
+	psoStatus?: "norm" | "defect" | "none";
+	kraftPouchesCount?: number;
 }
+
+export type SanPinJournalPeriod = "day" | "week" | "month";
 
 export const DEFAULT_CYCLES: SanPinCycleEntry[] = [
 	{
@@ -50,6 +56,10 @@ export const DEFAULT_CYCLES: SanPinCycleEntry[] = [
 		itemsSummary: "Наконечники турбинные NSK Ti-Max, лотки терапевтические, боры",
 		operatorName: "Иванова А. С. (ЦСО)",
 		status: "passed",
+		batchSize: 25,
+		batchBarcode: "BAT-134-20261008-01",
+		psoStatus: "norm",
+		kraftPouchesCount: 25,
 	},
 	{
 		id: "cyc-2026-10-08-02",
@@ -72,6 +82,10 @@ export const DEFAULT_CYCLES: SanPinCycleEntry[] = [
 		itemsSummary: "Хирургические элеваторы, пинцеты, шприцы карпульные стерильные",
 		operatorName: "Иванова А. С. (ЦСО)",
 		status: "passed",
+		batchSize: 15,
+		batchBarcode: "BAT-134-20261008-02",
+		psoStatus: "norm",
+		kraftPouchesCount: 15,
 	},
 	{
 		id: "cyc-2026-10-07-04",
@@ -94,6 +108,10 @@ export const DEFAULT_CYCLES: SanPinCycleEntry[] = [
 		itemsSummary: "Ортодонтические щипцы, зеркала для фотопротокола, лотки",
 		operatorName: "Петрова Е. В. (ЦСО)",
 		status: "passed",
+		batchSize: 30,
+		batchBarcode: "BAT-134-20261007-04",
+		psoStatus: "norm",
+		kraftPouchesCount: 30,
 	},
 ];
 

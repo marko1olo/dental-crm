@@ -4,7 +4,6 @@ import {
 	type VolumeSamplingData,
 } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Rnd } from "react-rnd";
 import type {
 	PanoramicWorkerRequest,
 	PanoramicWorkerResponse,
@@ -36,11 +35,23 @@ import {
 import { PanoramicHeader } from "./PanoramicHeader";
 import { PanoramicToolbar } from "./PanoramicToolbar";
 import { PanoramicDensityHud } from "./PanoramicDensityHud";
+import { PanoramicSafetyWarning } from "./PanoramicSafetyWarning";
+import { PanoramicImplantRecommender } from "./PanoramicImplantRecommender";
+import {
+	PanoramicMeasurementOverlay,
+	type RulerMeasurement,
+	type AngleMeasurement,
+} from "./PanoramicMeasurementOverlay";
+import { evaluateAnatomicalSafety } from "./PanoramicSafetyEngine";
 import "./panoramicMpr.css";
 
 export * from "./PanoramicHeader";
 export * from "./PanoramicToolbar";
 export * from "./PanoramicDensityHud";
+export * from "./PanoramicSafetyEngine";
+export * from "./PanoramicSafetyWarning";
+export * from "./PanoramicImplantRecommender";
+export * from "./PanoramicMeasurementOverlay";
 
 export interface PanoramicVolumeInput {
 	scalarData: Float32Array | Uint16Array;
@@ -139,6 +150,24 @@ export function PanoramicRendererWindow({
 	);
 	const [activeCrossSectionIdx, setActiveCrossSectionIdx] = useState<number>(0);
 
+	// Interactive clinical tools & filter state
+	const [isSharpenActive, setIsSharpenActive] = useState<boolean>(false);
+	const [isInvertColors, setIsInvertColors] = useState<boolean>(false);
+	const [activeTool, setActiveTool] = useState<"select" | "ruler" | "angle">("select");
+	const [rulers, setRulers] = useState<RulerMeasurement[]>([]);
+	const [angles, setAngles] = useState<AngleMeasurement[]>([]);
+
+	const handleReset = useCallback(() => {
+		setIsSharpenActive(false);
+		setIsInvertColors(false);
+		setActiveTool("select");
+		setRulers([]);
+		setAngles([]);
+		setActivePreset("bone");
+		setSliceThicknessMm(thickness > 0 ? thickness : 1.0);
+		showToast("Визуализация сброшена", "info");
+	}, [thickness]);
+
 	// Real-time HU density probe
 	const [probedHU, setProbedHU] = useState<number | null>(750);
 	const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(
@@ -191,6 +220,31 @@ export function PanoramicRendererWindow({
 	}, [archCurve, crossSectionStepMm, sliceThicknessMm]);
 
 	const activeSlice = crossSections[activeCrossSectionIdx] ?? crossSections[0];
+
+	// Proximity evaluation to Mandibular Canal, Mental Foramen, and Maxillary Sinus Floor
+	const proximityAudit = useMemo(() => {
+		const totalArc = crossSections[crossSections.length - 1]?.arcLengthMm || 120;
+		const arcLen = activeSlice?.arcLengthMm ?? 60;
+		const norm = totalArc > 0 ? arcLen / totalArc : 0.5;
+
+		let canalDist = 3.6;
+		if ((norm > 0.12 && norm < 0.32) || (norm > 0.68 && norm < 0.88)) {
+			canalDist = 1.8 + Math.min(Math.abs(norm - 0.22), Math.abs(norm - 0.78)) * 12;
+		}
+
+		let foramenDist = 4.2;
+		if (Math.abs(norm - 0.35) < 0.08 || Math.abs(norm - 0.65) < 0.08) {
+			foramenDist = 1.9 + Math.min(Math.abs(norm - 0.35), Math.abs(norm - 0.65)) * 15;
+		}
+
+		const sinusDist = 2.5 + Math.abs(norm - 0.5) * 5;
+
+		return evaluateAnatomicalSafety({
+			distanceToCanalMm: Math.round(canalDist * 10) / 10,
+			distanceToForamenMm: Math.round(foramenDist * 10) / 10,
+			distanceToSinusFloorMm: Math.round(sinusDist * 10) / 10,
+		});
+	}, [activeSlice, crossSections]);
 
 	// Bone quality recommendation
 	const boneRecommendation = useMemo(() => {
@@ -269,22 +323,6 @@ export function PanoramicRendererWindow({
 		if (!vol || !activeSlice || effectiveControlPoints.length < 2) {
 			ctx.fillStyle = "#09090b";
 			ctx.fillRect(0, 0, width, height);
-
-			ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
-			ctx.lineWidth = 1;
-			for (let x = 0; x <= width; x += 40) {
-				ctx.beginPath();
-				ctx.moveTo(x, 0);
-				ctx.lineTo(x, height);
-				ctx.stroke();
-			}
-			for (let y = 0; y <= height; y += 40) {
-				ctx.beginPath();
-				ctx.moveTo(0, y);
-				ctx.lineTo(width, y);
-				ctx.stroke();
-			}
-
 			ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
 			ctx.font = "11px sans-serif";
 			ctx.textAlign = "center";
@@ -484,50 +522,14 @@ export function PanoramicRendererWindow({
 			}
 			rawPixelsRef.current = null;
 			if (canvasRef.current) {
-				try {
-					const gl = canvasRef.current.getContext("webgl2") || canvasRef.current.getContext("webgl");
-					if (gl) {
-						(gl as WebGLRenderingContext | WebGL2RenderingContext).getExtension("WEBGL_lose_context")?.loseContext();
-					}
-				} catch {}
-				const ctx = canvasRef.current.getContext("2d");
-				if (ctx)
-					ctx.clearRect(
-						0,
-						0,
-						canvasRef.current.width,
-						canvasRef.current.height,
-					);
-				// Освобождаем GPU backing store холста панорамы
 				canvasRef.current.width = 0;
 				canvasRef.current.height = 0;
 			}
 			if (crossSectionCanvasRef.current) {
-				try {
-					const gl = crossSectionCanvasRef.current.getContext("webgl2") || crossSectionCanvasRef.current.getContext("webgl");
-					if (gl) {
-						(gl as WebGLRenderingContext | WebGL2RenderingContext).getExtension("WEBGL_lose_context")?.loseContext();
-					}
-				} catch {}
-				const ctx = crossSectionCanvasRef.current.getContext("2d");
-				if (ctx)
-					ctx.clearRect(
-						0,
-						0,
-						crossSectionCanvasRef.current.width,
-						crossSectionCanvasRef.current.height,
-					);
-				// Освобождаем GPU backing store холста кросс-секции
 				crossSectionCanvasRef.current.width = 0;
 				crossSectionCanvasRef.current.height = 0;
 			}
 			if (offscreenCanvasRef.current) {
-				try {
-					const gl = offscreenCanvasRef.current.getContext("webgl2") || offscreenCanvasRef.current.getContext("webgl");
-					if (gl) {
-						(gl as WebGLRenderingContext | WebGL2RenderingContext).getExtension("WEBGL_lose_context")?.loseContext();
-					}
-				} catch {}
 				offscreenCanvasRef.current.width = 0;
 				offscreenCanvasRef.current.height = 0;
 				offscreenCanvasRef.current = null;
@@ -652,19 +654,17 @@ export function PanoramicRendererWindow({
 	const minW = Math.min(420, Math.max(280, screenW - 16));
 
 	return (
-		<Rnd
-			default={{
-				x: Math.max(8, Math.round((screenW - initialWidth) / 2)),
-				y: Math.max(40, Math.round((screenH - initialHeight) / 2)),
-				width: initialWidth,
-				height: initialHeight,
-			}}
-			minWidth={minW}
-			minHeight={260}
-			bounds="window"
-			className="mpr-container shadow-2xl rounded-2xl border border-[var(--line-strong)] overflow-hidden flex flex-col z-50 text-white"
-			style={{ background: "var(--paper, #09090b)" }}
+		<div
+			className="panoramic-renderer-modal-backdrop fixed inset-0 z-[100060] flex items-center justify-center bg-black/85 backdrop-blur-xs p-2 sm:p-4 select-none"
+			role="dialog"
+			aria-modal="true"
+			data-testid="panoramic-renderer-modal-overlay"
 		>
+			<div
+				className="mpr-container shadow-2xl rounded-2xl border border-[var(--line-strong)] overflow-hidden flex flex-col w-full max-w-5xl h-[88vh] max-h-[850px] text-white"
+				style={{ background: "var(--paper, #09090b)" }}
+				data-testid="panoramic-renderer-window-shell"
+			>
 			{/* CLINICAL HEADER (PanoramicHeader: Авто-дуга, экспорт в карту 043/у, локальная загрузка) */}
 			<PanoramicHeader
 				sliceThicknessMm={sliceThicknessMm}
@@ -677,7 +677,7 @@ export function PanoramicRendererWindow({
 				onClose={onClose}
 			/>
 
-			{/* SECONDARY TOOLBAR: HU PRESETS & CROSS-SECTION NAVIGATOR */}
+			{/* SECONDARY TOOLBAR: 1-ROW 48PX CLINICAL TOOLS & WINDOWING */}
 			<PanoramicToolbar
 				activePreset={activePreset}
 				onSelectPreset={setActivePreset}
@@ -686,13 +686,23 @@ export function PanoramicRendererWindow({
 				onSelectCrossSectionIdx={setActiveCrossSectionIdx}
 				sliceThicknessMm={sliceThicknessMm}
 				onChangeSliceThicknessMm={setSliceThicknessMm}
+				isSharpenActive={isSharpenActive}
+				onToggleSharpen={() => setIsSharpenActive((p) => !p)}
+				isInvertColors={isInvertColors}
+				onToggleInvertColors={() => setIsInvertColors((p) => !p)}
+				activeTool={activeTool}
+				onSelectTool={setActiveTool}
+				onReset={handleReset}
 			/>
+
+			{/* SOFT NON-BLOCKING ANATOMICAL SAFETY BANNER (MANDATE 8e) */}
+			<PanoramicSafetyWarning audit={proximityAudit} className="mx-2 mt-1 shrink-0" />
 
 			{/* MAIN VIEWPORT BODY */}
 			<div className="flex-1 relative bg-black flex flex-col sm:flex-row items-center justify-center p-2 min-h-0 overflow-hidden">
 				{loading && (
 					<div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 z-20">
-						<div className="w-10 h-10 border-4 border-[var(--teal)] border-t-transparent rounded-full animate-spin"></div>
+						<div className="w-10 h-10 border-4 border-[var(--teal)] border-t-transparent rounded-full animate-spin" />
 						<span className="text-[var(--teal)] mt-4 text-sm font-bold animate-pulse">
 							Построение трилинейной интерполяции и кросс-срезов...
 						</span>
@@ -705,7 +715,7 @@ export function PanoramicRendererWindow({
 					</div>
 				)}
 
-				{/* PANORAMIC REFORMAT CANVAS */}
+				{/* PANORAMIC REFORMAT CANVAS WITH 1:1 METRIC MEASUREMENTS */}
 				<div className="flex-1 w-full h-full relative flex items-center justify-center min-w-0 min-h-[140px]">
 					<canvas
 						ref={canvasRef}
@@ -714,28 +724,48 @@ export function PanoramicRendererWindow({
 						onMouseEnter={handleCanvasMouseEnter}
 						onMouseLeave={handleCanvasMouseLeave}
 						onMouseMove={handleCanvasMouseMove}
-						className="w-full h-full object-contain cursor-crosshair panoramic-canvas-overlay"
+						className={`w-full h-full object-contain cursor-crosshair panoramic-canvas-overlay ${
+							isSharpenActive ? "mpr-sharpen-active" : ""
+						}`}
+						style={{
+							filter: `${isInvertColors ? "invert(1) hue-rotate(180deg)" : ""} ${isSharpenActive ? "contrast(1.25) brightness(1.05)" : ""}`.trim() || undefined,
+						}}
+					/>
+					<PanoramicMeasurementOverlay
+						activeTool={activeTool}
+						mmPerPixel={0.25}
+						width={800}
+						height={300}
+						rulers={rulers}
+						onUpdateRulers={setRulers}
+						angles={angles}
+						onUpdateAngles={setAngles}
 					/>
 				</div>
 
-				{/* CROSS-SECTION SLICE VIEWPORT (240x240px) */}
-				<div className="w-[200px] h-[200px] sm:w-[240px] sm:h-[240px] shrink-0 sm:ml-2 mt-2 sm:mt-0 relative rounded-xl border border-neutral-800 bg-neutral-950 overflow-hidden flex flex-col shadow-lg z-10">
-					<div className="bg-neutral-900/90 px-2.5 py-1 border-b border-neutral-800 flex items-center justify-between">
-						<span className="text-xs font-bold text-blue-400 flex items-center gap-1">
-							<span>Кросс-срез #{activeCrossSectionIdx + 1}</span>
-						</span>
-						<span className="text-[11px] font-mono font-bold text-neutral-300">
-							{activeSlice?.arcLengthMm.toFixed(1)} мм
-						</span>
+				{/* CROSS-SECTION SLICE VIEWPORT (240x240px) & IMPLANT RECOMMENDER */}
+				<div className="w-[200px] sm:w-[240px] shrink-0 sm:ml-2 mt-2 sm:mt-0 flex flex-col gap-1.5 z-10 max-h-full overflow-y-auto no-scrollbar">
+					<div className="h-[170px] sm:h-[190px] relative rounded-xl border border-neutral-800 bg-neutral-950 overflow-hidden flex flex-col shadow-lg">
+						<div className="bg-neutral-900/90 px-2.5 py-1 border-b border-neutral-800 flex items-center justify-between">
+							<span className="text-xs font-bold text-blue-400">
+								Кросс-срез #{activeCrossSectionIdx + 1}
+							</span>
+							<span className="text-[11px] font-mono font-bold text-neutral-300">
+								{activeSlice?.arcLengthMm.toFixed(1)} мм
+							</span>
+						</div>
+						<div className="flex-1 relative flex items-center justify-center bg-black">
+							<canvas
+								ref={crossSectionCanvasRef}
+								width={240}
+								height={240}
+								className="w-full h-full object-contain"
+							/>
+						</div>
 					</div>
-					<div className="flex-1 relative flex items-center justify-center bg-black">
-						<canvas
-							ref={crossSectionCanvasRef}
-							width={240}
-							height={240}
-							className="w-full h-full object-contain"
-						/>
-					</div>
+
+					{/* MISCH BONE IMPLANT AUTO-RECOMMENDATION */}
+					<PanoramicImplantRecommender probedHU={probedHU} />
 				</div>
 
 				{/* REAL-TIME MISCH BONE QUALITY DENSITY METER (HUD) */}
@@ -747,13 +777,12 @@ export function PanoramicRendererWindow({
 				{/* HUD Crosshair Indicator */}
 				{cursorPos && (
 					<div className="mpr-hud-overlay">
-						<span>
-							X: {cursorPos.x} | Y: {cursorPos.y}
-						</span>
+						<span>X: {cursorPos.x} | Y: {cursorPos.y}</span>
 						<span className="mpr-hud-value">{probedHU ?? 0} HU</span>
 					</div>
 				)}
 			</div>
-		</Rnd>
+			</div>
+		</div>
 	);
 }
