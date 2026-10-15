@@ -51,7 +51,7 @@ const DEMO_SHOWCASE_DOCUMENTS: GeneratedDocument[] = [
 		patientId: "00000000-0000-4000-8000-000000000010",
 		visitId: null,
 		kind: "informed_consent",
-		title: "ИДС на проведение терапевтического лечения (Приказ 1051н)",
+		title: "Информированное согласие на терапевтическое лечение",
 		issuedAt: null,
 		status: "draft",
 		totalAmountRub: null,
@@ -74,7 +74,7 @@ const DEMO_SHOWCASE_DOCUMENTS: GeneratedDocument[] = [
 		patientId: "00000000-0000-4000-8000-000000000010",
 		visitId: null,
 		kind: "tax_deduction_certificate",
-		title: "Справка об оплате медицинских услуг для ФНС России",
+		title: "Справка для налогового вычета 13%",
 		issuedAt: "2026-03-20T14:10:00.000Z",
 		status: "issued",
 		doctorSignedAt: "2026-03-20T14:15:00.000Z",
@@ -87,7 +87,7 @@ const DEMO_SHOWCASE_DOCUMENTS: GeneratedDocument[] = [
 		patientId: "00000000-0000-4000-8000-000000000010",
 		visitId: null,
 		kind: "dental_medical_card_043u",
-		title: "Медицинская карта стоматологического пациента № 043/у-1082",
+		title: "Медицинская карта стоматологического пациента № МК-1082",
 		issuedAt: "2026-03-01T09:00:00.000Z",
 		status: "issued",
 		doctorSignedAt: "2026-03-01T09:30:00.000Z",
@@ -174,7 +174,7 @@ export function MobileDocumentsHub({
 		},
 		{
 			id: "consents",
-			label: "Согласия (ИДС 1051н)",
+			label: "Согласия",
 			icon: <ShieldCheck size={14} className="shrink-0 text-teal-500" aria-hidden="true" />,
 			kinds: [
 				"informed_consent",
@@ -192,7 +192,7 @@ export function MobileDocumentsHub({
 		},
 		{
 			id: "fns",
-			label: "Справки для ФНС",
+			label: "Вычет 13%",
 			icon: <Receipt size={14} className="shrink-0 text-amber-500" aria-hidden="true" />,
 			kinds: [
 				"tax_deduction_certificate",
@@ -217,7 +217,7 @@ export function MobileDocumentsHub({
 		},
 		{
 			id: "sanpin",
-			label: "Справки и СанПиН",
+			label: "Справки",
 			icon: <Shield size={14} className="shrink-0 text-teal-500" aria-hidden="true" />,
 			kinds: [
 				"visit_attendance_certificate",

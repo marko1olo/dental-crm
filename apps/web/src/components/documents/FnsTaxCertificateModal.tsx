@@ -73,7 +73,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 	const patientInn =
 		(patient as { inn?: string | null })?.inn ||
 		((patient as any)?.administrativeProfile?.inn as string | undefined) ||
-		"772812341040";
+		"";
 	const effectiveInn =
 		relationship === "patient" ? taxpayerInn || patientInn : taxpayerInn;
 	const isInnValid = useMemo(
@@ -279,7 +279,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 			data-testid="fns-tax-certificate-modal"
 			role="dialog"
 			aria-modal="true"
-			aria-label="Справка об оплате медицинских услуг для ФНС"
+			aria-label="Справка для налогового вычета 13%"
 		>
 			<div className="relative w-full max-w-[880px] bg-[var(--paper)] text-[var(--ink)] rounded-none sm:rounded-xl shadow-2xl border border-[var(--line)] flex flex-col my-auto overflow-hidden">
 				{/* Header */}
@@ -290,7 +290,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 						</div>
 						<div>
 							<h2 className="text-[14px] font-bold text-[var(--ink)] leading-tight">
-								Справка для налогового вычета (ФНС)
+								Справка для налогового вычета 13%
 							</h2>
 							<p className="text-[12px] text-[var(--muted)]">
 								{patient?.fullName || "Пациент"} · Налоговый период: {selectedYear} год
@@ -307,10 +307,10 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 								disabled={isIssuingDoc || aggregated.totalNetRub === 0}
 								className="secondary-button h-8 px-2.5 text-xs inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30 hover:bg-teal-500/20"
 								data-testid="tax-cert-save-registry-btn"
-								title="Зарегистрировать справку в базе данных документов клиники (Мандат 8e)"
+								title="Зарегистрировать справку в реестре документов клиники"
 							>
 								<FileCheck size={14} />
-								<span>{isIssuingDoc ? "Сохранение..." : "В реестр (1 клик)"}</span>
+								<span>{isIssuingDoc ? "Сохранение..." : "В реестр"}</span>
 							</button>
 						)}
 
@@ -323,7 +323,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 							title={
 								aggregated.totalNetRub === 0
 									? "Нет фискальных оплат за выбранный год"
-									: "Распечатать справку КНД 1151156"
+									: "Распечатать справку для налогового вычета"
 							}
 						>
 							<Printer size={14} />
@@ -397,13 +397,13 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 
 					<div>
 						<label className="text-[12px] font-semibold text-[var(--muted)] block mb-1">
-							ИНН плательщика:
+							ИНН плательщика (опционально):
 						</label>
 						<input
 							type="text"
 							value={effectiveInn}
 							onChange={(e) => setTaxpayerInn(e.target.value)}
-							placeholder="12 цифр ИНН физлица"
+							placeholder="12 цифр (необязательно при наличии паспорта)"
 							className={`w-full h-8 px-2 text-xs rounded-lg border bg-[var(--paper-soft)] text-[var(--ink)] ${
 								isInnValid ? "border-[var(--line)]" : "border-rose-500"
 							}`}
@@ -488,7 +488,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 							<hr className="border-[var(--line)] my-2" />
 							<p><strong>Пациент:</strong> {patient?.fullName || "Пациент клиники"}</p>
 							<p><strong>Налогоплательщик:</strong> {relationship === "patient" ? patient?.fullName : taxpayerFullName || "Указан в заявлении"}</p>
-							<p><strong>ИНН налогоплательщика:</strong> {effectiveInn || "Не указан"}</p>
+							<p><strong>ИНН налогоплательщика:</strong> {effectiveInn || "Не указан (паспортные данные в заявлении)"}</p>
 							<p><strong>Код услуги 1 (обычные услуги):</strong> {aggregated.code01Rub.toLocaleString("ru-RU")} руб. 00 коп.</p>
 							<p><strong>Код услуги 2 (дорогостоящее лечение):</strong> {aggregated.code02Rub.toLocaleString("ru-RU")} руб. 00 коп.</p>
 							<p><strong>ИТОГО оплачено за {selectedYear} год:</strong> {aggregated.totalNetRub.toLocaleString("ru-RU")} руб. 00 коп.</p>

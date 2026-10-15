@@ -168,7 +168,7 @@ export const OutpatientCardPrintModal: React.FC<OutpatientCardPrintModalProps> =
 			data-testid="outpatient-card-print-modal"
 			role="dialog"
 			aria-modal="true"
-			aria-label="Печать амбулаторной карты 043/у"
+			aria-label="Печать медицинской карты пациента"
 		>
 			<div className="relative w-full max-w-[1020px] bg-[var(--paper)] text-[var(--ink)] rounded-none sm:rounded-xl shadow-2xl border border-[var(--line)] flex flex-col my-auto overflow-hidden">
 				{/* Header */}
@@ -179,7 +179,7 @@ export const OutpatientCardPrintModal: React.FC<OutpatientCardPrintModalProps> =
 						</div>
 						<div>
 							<h2 className="text-[14px] font-bold text-[var(--ink)] leading-tight flex items-center gap-2">
-								<span>Медицинская карта пациента (Форма 043/у)</span>
+								<span>Медицинская карта пациента</span>
 								<span
 									className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
 										isClosedOrSigned
@@ -203,7 +203,7 @@ export const OutpatientCardPrintModal: React.FC<OutpatientCardPrintModalProps> =
 							disabled={isPrinting}
 							className="primary-button h-8 px-3 text-xs inline-flex items-center gap-1.5"
 							data-testid="outpatient-card-print-btn"
-							title="Распечатать карту 043/у"
+							title="Распечатать медицинскую карту"
 						>
 							<Printer size={15} />
 							<span>Печать карты</span>

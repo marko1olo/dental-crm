@@ -8,8 +8,7 @@ import type { ClinicProfileDraft } from "../../../AppHelpers";
 import { PrimaryIntakePackageModal } from "../PrimaryIntakePackageModal";
 import { SurgicalPackageModal } from "../SurgicalPackageModal";
 import { ClinicalVisitPackageModal } from "../ClinicalVisitPackageModal";
-import { TaxAccountingPackageModal } from "../TaxAccountingPackageModal";
-import { SanpinRegistryPackageModal } from "../SanpinRegistryPackageModal";
+import { FnsTaxCertificateModal } from "../FnsTaxCertificateModal";
 import { AutoclaveLog257Modal } from "../../sanpin/autoclaveLog/AutoclaveLog257Modal";
 import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
 import { EgiszRemdHubModal } from "../../egisz/EgiszRemdHubModal";
@@ -151,42 +150,22 @@ export const DocumentModalsContainer: React.FC<DocumentModalsContainerProps> = R
 				)}
 
 				{isTaxAccountingOpen && (
-					<TaxAccountingPackageModal
+					<FnsTaxCertificateModal
 						isOpen={isTaxAccountingOpen}
 						onClose={() => setIsTaxAccountingOpen(false)}
 						patient={activePatient ?? null}
-						taxYear={taxDocumentYear}
-						setTaxYear={setTaxDocumentYear}
-						payerOptions={typedTaxDocumentPayerOptions}
-						selectedPayerKey={selectedTaxDocumentPayerKey ?? ""}
-						onSelectPayerKey={(key) => setTaxDocumentPayerInn(key)}
-						existingDocuments={typedActiveDocuments ?? []}
-						onCreateDocument={(kind) => void createDocument(kind)}
-						onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
-						onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
-						onOpenFnsXmlModal={() => setIsFnsNdflXmlOpen(true)}
-						onRequestIssueDocument={requestDocumentIssue as any}
+						clinicProfileDraft={clinicProfileDraft}
+						initialYear={taxDocumentYear}
 					/>
 				)}
 
-				{isSanpinRegistryOpen && (
-					<SanpinRegistryPackageModal
-						isOpen={isSanpinRegistryOpen}
-						onClose={() => setIsSanpinRegistryOpen(false)}
-						patient={activePatient ?? null}
-						existingDocuments={typedActiveDocuments ?? []}
-						onOpenSickLeaveEln={() => setIsSickLeaveElnOpen(true)}
-						onOpenAutoclaveLog257={() => setIsAutoclaveLogOpen(true)}
-						onOpenEgiszRemd={() => setIsEgiszRemdOpen(true)}
-						onCreateDocument={(kind) => void createDocument(kind)}
-						onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
-					/>
-				)}
-
-				{isAutoclaveLogOpen && (
+				{(isAutoclaveLogOpen || isSanpinRegistryOpen) && (
 					<AutoclaveLog257Modal
-						isOpen={isAutoclaveLogOpen}
-						onClose={() => setIsAutoclaveLogOpen(false)}
+						isOpen={isAutoclaveLogOpen || isSanpinRegistryOpen}
+						onClose={() => {
+							setIsAutoclaveLogOpen(false);
+							setIsSanpinRegistryOpen(false);
+						}}
 					/>
 				)}
 

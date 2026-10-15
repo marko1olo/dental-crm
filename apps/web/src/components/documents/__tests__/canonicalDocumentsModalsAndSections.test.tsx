@@ -58,7 +58,7 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 		);
 
 		assert.ok(html.includes("outpatient-card-print-modal"), "Must render modal container");
-		assert.ok(html.includes("Форма 043/у"), "Must reference Form 043/u in title");
+		assert.ok(html.includes("Медицинская карта пациента"), "Must reference medical card in title");
 		assert.ok(html.includes("ЧЕРНОВИК"), "Must show draft badge when not signed");
 		assert.ok(html.includes("Печать карты"), "Must render print button");
 		assert.ok(html.includes("Экспорт PDF"), "Must render PDF button");

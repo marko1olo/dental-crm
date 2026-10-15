@@ -45,13 +45,13 @@ export function DocumentQuickRoleScenarios({
 				className="document-scenario-card"
 				onClick={onOpenTaxAccounting}
 				data-testid="scenario-tax-accounting-btn"
-				title="Справка об оплате медицинских услуг для налогового вычета (13% НДФЛ) + XML"
+				title="Справка для налогового вычета 13% (НДФЛ)"
 			>
 				<div className="document-scenario-left">
 					<Building size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
 					<span className="document-scenario-title">Справка для налоговой (13%)</span>
 				</div>
-				<span className="document-scenario-badge">Для налогового вычета</span>
+				<span className="document-scenario-badge">Вычет 13%</span>
 			</button>
 
 			{/* 2. АКТ ВЫПОЛНЕННЫХ РАБОТ */}
@@ -132,13 +132,13 @@ export function DocumentQuickRoleScenarios({
 				className="document-scenario-card"
 				onClick={onOpenSanpinRegistry}
 				data-testid="scenario-sanpin-registry-btn"
-				title="Журнал контроля работы стерилизаторов (автоклавов) и предстерилизационной очистки (ПСО)"
+				title="Журнал контроля работы стерилизаторов (автоклавов) и предстерилизационной очистки"
 			>
 				<div className="document-scenario-left">
 					<Autoclave size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-					<span className="document-scenario-title">Журнал стерилизации (ПСО)</span>
+					<span className="document-scenario-title">Журнал автоклавирования</span>
 				</div>
-				<span className="document-scenario-badge">Журнал стерилизации</span>
+				<span className="document-scenario-badge">Стерилизация</span>
 			</button>
 
 			{/* Скрытый резервный хэндлер первичного приема для обратной совместимости тестов */}
