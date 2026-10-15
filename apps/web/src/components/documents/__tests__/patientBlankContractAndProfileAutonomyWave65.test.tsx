@@ -37,7 +37,10 @@ const __dirname = path.dirname(__filename);
 
 describe("Wave 65 (Feature 254): Blank Contract 1-Click Print & Non-blocking Patient Autonomy", () => {
 	const appHelpersPath = path.resolve(__dirname, "../../../AppHelpers.tsx");
-	const appHelpersSource = fs.readFileSync(appHelpersPath, "utf8");
+	const clinicProfileHelpersPath = path.resolve(__dirname, "../../../appHelpers/clinicProfileHelpers.ts");
+	const appHelpersSource = fs.existsSync(clinicProfileHelpersPath)
+		? fs.readFileSync(clinicProfileHelpersPath, "utf8")
+		: fs.readFileSync(appHelpersPath, "utf8");
 
 	const visitDraftHelpersPath = path.resolve(
 		__dirname,

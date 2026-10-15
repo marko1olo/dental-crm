@@ -51,7 +51,7 @@ export const TaxDeductionHeader: React.FC<TaxDeductionHeaderProps> = ({
 									border: "1px solid rgba(13, 148, 136, 0.28)",
 								}}
 							>
-								Форма КНД 1151156 • Вычет 13%
+								Справка для налоговой (ФНС) • Вычет 13%
 							</span>
 							<span
 								data-testid="tax-certificate-stamp-badge"

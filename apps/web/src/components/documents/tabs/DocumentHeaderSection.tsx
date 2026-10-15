@@ -2,7 +2,6 @@ import React from "react";
 import type { Patient, StaffMember, GeneratedDocument, DocumentKind } from "@dental/shared";
 import type { ClinicProfileDraft } from "../../../AppHelpers";
 import { CheckCircle2, Clock, FileText, Printer, Zap } from "lucide-react";
-import { Autoclave } from "../../icons/DentalIcons";
 import { formatShortDate } from "../../../AppHelpers";
 import { printBlankMedicalContract } from "../../patients/blankContractPrint";
 import { DocumentQuickRoleScenarios } from "../DocumentQuickRoleScenarios";
@@ -17,7 +16,7 @@ export interface DocumentHeaderSectionProps {
 	activeUsableDocuments?: GeneratedDocument[];
 	latestDocumentOpenGuidanceId: string;
 	handleOpenLatestDocument: () => void;
-	setIsAutoclaveLogOpen: (open: boolean) => void;
+	setIsAutoclaveLogOpen?: (open: boolean) => void;
 	handleDirectPrintPrimaryIntake: () => void;
 	setIsPrimaryIntakeOpen: (open: boolean) => void;
 	setIsSurgicalPackageOpen: (open: boolean) => void;
@@ -40,7 +39,6 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 			activeUsableDocuments,
 			latestDocumentOpenGuidanceId,
 			handleOpenLatestDocument,
-			setIsAutoclaveLogOpen,
 			handleDirectPrintPrimaryIntake,
 			setIsPrimaryIntakeOpen,
 			setIsSurgicalPackageOpen,
@@ -70,9 +68,9 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 				`}</style>
 				<div className="panel-heading">
 					<h2>Документы и Реестр</h2>
-					<div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+					<div className="flex items-center gap-2 flex-wrap">
 						<button
-							className="text-button min-h-[44px] sm:min-h-[36px]"
+							className="secondary-button text-xs py-1.5 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 cursor-pointer transition-colors"
 							type="button"
 							data-testid="btn-open-latest-document"
 							aria-describedby={
@@ -88,15 +86,6 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 							onClick={handleOpenLatestDocument}
 						>
 							Открыть последний
-						</button>
-						<button
-							className="secondary-button text-xs py-1 px-2.5 flex items-center gap-1.5 documents-open-autoclave-log-257-btn"
-							type="button"
-							onClick={() => setIsAutoclaveLogOpen(true)}
-							title="Открыть журнал контроля стерилизации и автоклавирования"
-						>
-							<Autoclave size={14} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
-							Журнал стерилизации
 						</button>
 					</div>
 				</div>
@@ -120,7 +109,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 					</div>
 					<div className="document-patient-stats">
 						<span className="document-stat-pill" title="Выданные и подписанные документы">
-							<CheckCircle2 size={13} className="inline mr-1 text-[var(--teal,#0d9488)]" aria-hidden="true" />
+							<CheckCircle2 size={13} className="inline mr-1 text-[var(--primary,#0d9488)]" aria-hidden="true" />
 							Выдано: {patientIssuedDocsCount}
 						</span>
 						<span className="document-stat-pill" title="Черновики в работе">
@@ -133,14 +122,14 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 					</div>
 				</div>
 
-				{/* 1.1 АКЦЕНТНЫЙ БЛОК: ПЕРВИЧНЫЙ ПРИЁМ */}
+				{/* 1.1 АКЦЕНТНЫЙ БЛОК: ПЕРВИЧНЫЙ ПРИЁМ (Mandate 8am Single Primary CTA) */}
 				<div className="document-primary-intake-banner" data-testid="document-primary-intake-banner">
 					<div className="document-primary-intake-heading">
 						<div className="document-primary-intake-badge-title">
 							<span className="document-primary-intake-pill">
 								Первичный приём (Договор + ИДС + Персданные)
 							</span>
-							<span className="document-primary-intake-hint">
+							<span className="document-primary-intake-hint hidden sm:inline">
 								Комплект бланков для оформления нового пациента на стойке регистрации
 							</span>
 						</div>
@@ -149,18 +138,18 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 					<div className="document-primary-intake-btn-group document-intake-quick-action-bar" data-testid="document-intake-quick-action-bar">
 						<button
 							type="button"
-							className="primary-button document-intake-quick-print-btn"
+							className="primary-button document-intake-quick-print-btn h-9 min-h-[36px] rounded-xl bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-dark,#0f766e)] text-white shadow-xs px-3.5 font-semibold text-[13px] flex items-center gap-1.5 cursor-pointer transition-all"
 							data-tour="print-contract-btn"
 							onClick={handleDirectPrintPrimaryIntake}
 							data-testid="btn-quick-print-primary-intake-package"
 							title="Сформировать и напечатать полный пакет первичного приёма (Договор + Согласие ИДС + Персональные данные + Анкета здоровья)"
 						>
 							<Printer size={15} aria-hidden="true" />
-							<span className="font-bold">Печать первичного пакета</span>
+							<span>Печать первичного пакета</span>
 						</button>
 						<button
 							type="button"
-							className="secondary-button document-intake-blank-contract-btn"
+							className="secondary-button document-intake-blank-contract-btn h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] px-3 text-[12.5px] font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
 							data-tour="print-blank-contract-btn"
 							onClick={() => {
 								void printBlankMedicalContract(
@@ -186,11 +175,11 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 							title="Распечатать чистый бланк договора для ручного заполнения пациентом до приёма"
 						>
 							<FileText size={15} aria-hidden="true" />
-							<span>Пустой бланк договора</span>
+							<span>Пустой бланк</span>
 						</button>
 						<button
 							type="button"
-							className="secondary-button document-intake-open-modal-btn"
+							className="secondary-button document-intake-open-modal-btn h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] px-3 text-[12.5px] font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
 							onClick={() => setIsPrimaryIntakeOpen(true)}
 							data-testid="scenario-primary-intake-btn"
 							title="Открыть модальное окно пакетного формирования и предварительного просмотра"
@@ -200,13 +189,13 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 						{setIsA4PrintPreviewOpen && (
 							<button
 								type="button"
-								className="secondary-button document-intake-a4-preview-btn flex items-center gap-1.5"
+								className="secondary-button document-intake-a4-preview-btn h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] px-3 text-[12.5px] font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
 								onClick={() => setIsA4PrintPreviewOpen(true)}
 								data-testid="btn-open-pro-a4-modal"
 								title="Открыть официальный печатный бланк А4 (Договор, Акт выполненных работ, План лечения, Медкарта)"
 							>
-								<Printer size={14} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
-								<span className="font-semibold">Бланки А4 (Договор / Акт / Карта)</span>
+								<Printer size={14} className="text-[var(--primary,#0d9488)]" aria-hidden="true" />
+								<span>Бланки А4 (Договор / Акт / Карта)</span>
 							</button>
 						)}
 					</div>
@@ -216,7 +205,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 				<details className="document-scenarios-accordion group" data-testid="document-scenarios-accordion">
 					<summary className="document-scenarios-summary">
 						<div className="flex items-center gap-2">
-							<Zap size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+							<Zap size={14} className="text-[var(--primary,#0d9488)] shrink-0" aria-hidden="true" />
 							<span className="font-bold text-xs text-[var(--ink)]">
 								Быстрые сценарии оформления документов
 							</span>

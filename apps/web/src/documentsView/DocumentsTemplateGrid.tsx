@@ -30,6 +30,18 @@ import { normalizedDocumentKind } from "../AppHelpers";
 const CANONICAL_TEMPLATES: DocumentTemplateItem[] = [
 	// ─── ИНТЕЙК / ДОГОВОРЫ И СОГЛАСИЯ ───
 	{
+		id: "primary_intake_package_quick",
+		kind: "primary_intake_package",
+		titleRu: "Пакет первичного приёма в 1 клик",
+		category: "intake",
+		badgeRu: "Пакет 4 в 1",
+		descriptionRu: "Комплект первичного пациента: Договор № 736 + ИДС 1051н + Согласие 152-ФЗ + Анкета соматического здоровья.",
+		regulationRu: "ПП РФ 736 / 1051н / 152-ФЗ",
+		printSupported: true,
+		isPrimary: true,
+		isStatutory: true,
+	},
+	{
 		id: "paid_medical_services_contract",
 		kind: "paid_medical_services_contract",
 		titleRu: "Договор оказания платных медицинских услуг",
@@ -46,7 +58,7 @@ const CANONICAL_TEMPLATES: DocumentTemplateItem[] = [
 		kind: "informed_consent",
 		titleRu: "Информированное добровольное согласие (ИДС)",
 		category: "intake",
-		badgeRu: "ИДС 1051н",
+		badgeRu: "ИДС",
 		descriptionRu: "Базовое согласие на первичный осмотр, сбор анамнеза, фотопротокол и инструментальное обследование.",
 		regulationRu: "Приказ МЗ РФ 1051н",
 		printSupported: true,
@@ -70,7 +82,7 @@ const CANONICAL_TEMPLATES: DocumentTemplateItem[] = [
 		kind: "personal_data_processing_consent",
 		titleRu: "Согласие на обработку персональных данных",
 		category: "intake",
-		badgeRu: "152-ФЗ",
+		badgeRu: "Персданные",
 		descriptionRu: "Согласие на обработку персональных данных и сохранение врачебной тайны.",
 		regulationRu: "152-ФЗ ст. 9",
 		printSupported: true,
@@ -145,9 +157,9 @@ const CANONICAL_TEMPLATES: DocumentTemplateItem[] = [
 	{
 		id: "dental_medical_card_043u",
 		kind: "dental_medical_card_043u",
-		titleRu: "Медицинская карта стоматологического больного (043/у)",
+		titleRu: "Медицинская карта приёма",
 		category: "clinical",
-		badgeRu: "Форма 043/у",
+		badgeRu: "Медкарта",
 		descriptionRu: "Официальный амбулаторный бланк стоматолога с зубной формулой, жалобами, анамнезом и дневником.",
 		regulationRu: "Приказ МЗ РФ 834н",
 		printSupported: true,
@@ -157,9 +169,9 @@ const CANONICAL_TEMPLATES: DocumentTemplateItem[] = [
 	{
 		id: "orthodontic_medical_card_043_1u",
 		kind: "orthodontic_medical_card_043_1u",
-		titleRu: "Медицинская карта ортодонтического пациента (043-1/у)",
+		titleRu: "Медицинская карта ортодонтического приёма",
 		category: "clinical",
-		badgeRu: "Форма 043-1/у",
+		badgeRu: "Ортодонтия",
 		descriptionRu: "Амбулаторная карта ортодонтического лечения, антропометрия, расчёт ТРГ и план биомеханики.",
 		regulationRu: "Приказ МЗ РФ 834н",
 		printSupported: true,
@@ -250,7 +262,7 @@ const CANONICAL_TEMPLATES: DocumentTemplateItem[] = [
 	{
 		id: "prescription_medication_order",
 		kind: "prescription_medication_order",
-		titleRu: "Рецептурный бланк (форма 107-1/у)",
+		titleRu: "Рецептурный бланк",
 		category: "clinical",
 		badgeRu: "Рецепт",
 		descriptionRu: "Официальный рецептурный бланк на антибиотики, НПВП, анальгетики и антисептики.",
@@ -261,7 +273,7 @@ const CANONICAL_TEMPLATES: DocumentTemplateItem[] = [
 	{
 		id: "prescription_107_1u",
 		kind: "prescription_107_1u",
-		titleRu: "Рецептурный бланк 107-1/у (назначения)",
+		titleRu: "Рецептурный бланк назначений",
 		category: "clinical",
 		badgeRu: "Рецепт",
 		descriptionRu: "Назначение антибактериальной, обезболивающей и противовоспалительной терапии на курс лечения.",
@@ -271,9 +283,9 @@ const CANONICAL_TEMPLATES: DocumentTemplateItem[] = [
 	{
 		id: "daily_dentist_diary_037u",
 		kind: "daily_dentist_diary_037u",
-		titleRu: "Листок ежедневного учета работы врача (037/у-88)",
+		titleRu: "Дневник учета работы врача",
 		category: "clinical",
-		badgeRu: "Форма 037/у",
+		badgeRu: "Дневник врача",
 		descriptionRu: "Учет рабочего времени врача, фактически принятых пациентов и объема выполненных УЕТ.",
 		regulationRu: "Приказ МЗ СССР 50",
 		printSupported: true,
@@ -282,9 +294,9 @@ const CANONICAL_TEMPLATES: DocumentTemplateItem[] = [
 	{
 		id: "summary_dentist_statement_039u",
 		kind: "summary_dentist_statement_039u",
-		titleRu: "Сводная ведомость работы стоматолога (039/у-88)",
+		titleRu: "Сводный отчет приёма",
 		category: "clinical",
-		badgeRu: "Форма 039/у",
+		badgeRu: "Сводный отчет",
 		descriptionRu: "Сводная ведомость посещений, объёмов лечебно-профилактической работы и затраченных УЕТ.",
 		regulationRu: "Приказ МЗ СССР 50",
 		printSupported: true,
@@ -326,9 +338,9 @@ const CANONICAL_TEMPLATES: DocumentTemplateItem[] = [
 	{
 		id: "tax_deduction_certificate",
 		kind: "tax_deduction_certificate",
-		titleRu: "Справка об оплате услуг для ФНС (КНД 1151156)",
+		titleRu: "Справка для налогового вычета (ФНС)",
 		category: "finance_tax",
-		badgeRu: "КНД 1151156",
+		badgeRu: "Справка ФНС",
 		descriptionRu: "Унифицированная форма справки для социального налогового вычета 3-НДФЛ за расходы с 2024 года.",
 		regulationRu: "Приказ ФНС ЕА-7-11/824@",
 		printSupported: true,
@@ -502,6 +514,8 @@ export const DocumentsTemplateGrid: React.FC<DocumentsTemplateGridProps> = ({
 	sanitizedDocumentFactoryGroups,
 	documentLabels,
 	className = "",
+	onOpenPrimaryIntakePackage,
+	onDirectPrintPrimaryIntake,
 }) => {
 	const filteredTemplates = useMemo(() => {
 		let list = CANONICAL_TEMPLATES;
@@ -569,6 +583,43 @@ export const DocumentsTemplateGrid: React.FC<DocumentsTemplateGridProps> = ({
 				</button>
 			</section>
 
+			{/* Баннер быстрого запуска пакета первичного приёма (1 клик) */}
+			{(activeCategoryTab === "all" || activeCategoryTab === "intake") && !searchQuery.trim() && (
+				<div
+					className="mb-4 p-3.5 sm:p-4 rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--paper-soft,#f8fafc)] flex flex-wrap items-center justify-between gap-3 shadow-2xs"
+					data-testid="primary-intake-package-banner"
+				>
+					<div className="flex items-center gap-3">
+						<div className="w-10 h-10 rounded-xl bg-[var(--teal,#0d9488)] text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+							<Printer size={20} />
+						</div>
+						<div>
+							<div className="flex items-center gap-2">
+								<h3 className="text-sm font-bold text-[var(--ink,#0f172a)] leading-tight">
+									Пакет первичного приёма в 1 клик
+								</h3>
+								<span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)]">
+									4 документа в 1 комплекте
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted,#64748b)] mt-0.5">
+								Договор оказания услуг + ИДС + Персональные данные (152-ФЗ) + Анкета здоровья с автозаполнением
+							</p>
+						</div>
+					</div>
+					<button
+						type="button"
+						onClick={onOpenPrimaryIntakePackage}
+						data-testid="btn-print-primary-intake-package"
+						className="h-8 sm:h-9 px-3.5 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
+						title="Распечатать пакет первичного приёма (Договор + ИДС + Персданные + Анкета)"
+					>
+						<Printer size={15} />
+						<span>Распечатать пакет первичного приёма</span>
+					</button>
+				</div>
+			)}
+
 			{/* Видимая сетка адаптивных карточек */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
 				{filteredTemplates.map((template) => {
@@ -617,7 +668,13 @@ export const DocumentsTemplateGrid: React.FC<DocumentsTemplateGridProps> = ({
 							<div className="flex items-center justify-between gap-1.5 pt-2.5 border-t border-[var(--line-subtle,#f1f5f9)]">
 								<button
 									type="button"
-									onClick={() => onOpenFocusEditor(template.kind as DocumentKind)}
+									onClick={() => {
+										if (template.id === "primary_intake_package_quick" && onOpenPrimaryIntakePackage) {
+											onOpenPrimaryIntakePackage();
+											return;
+										}
+										onOpenFocusEditor(template.kind as DocumentKind);
+									}}
 									className="h-7 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper,#ffffff)] text-xs font-medium text-[var(--ink,#0f172a)] flex items-center gap-1.5 cursor-pointer transition-colors"
 									title="Открыть в редакторе"
 								>
@@ -629,14 +686,32 @@ export const DocumentsTemplateGrid: React.FC<DocumentsTemplateGridProps> = ({
 									type="button"
 									disabled={Boolean(documentCreateSavingKind)}
 									onClick={() => {
+										if (template.id === "primary_intake_package_quick" && onOpenPrimaryIntakePackage) {
+											onOpenPrimaryIntakePackage();
+											return;
+										}
 										onSelectDocumentKind(template.kind as DocumentKind);
 										void onCreateDocument(template.kind as DocumentKind);
 									}}
 									className="h-7 px-2.5 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50"
-									title="Сформировать и сохранить документ"
+									title={
+										template.id === "primary_intake_package_quick"
+											? "Распечатать комплект первичных документов"
+											: "Сформировать и сохранить документ"
+									}
 								>
-									<FilePlus size={13} />
-									<span>{isCurrentlySaving ? "Создаю..." : "Создать"}</span>
+									{template.id === "primary_intake_package_quick" ? (
+										<Printer size={13} />
+									) : (
+										<FilePlus size={13} />
+									)}
+									<span>
+										{template.id === "primary_intake_package_quick"
+											? "Распечатать"
+											: isCurrentlySaving
+												? "Создаю..."
+												: "Создать"}
+									</span>
 								</button>
 							</div>
 						</article>

@@ -26,15 +26,14 @@ export function calculateDaysBetween(from: string, to: string): number {
 	return days;
 }
 
+import { formatDateRu as formatDateRuShared } from "@dental/shared";
+
 /**
- * Formats YYYY-MM-DD to Russian DD.MM.YYYY
+ * Formats YYYY-MM-DD to Russian DD.MM.YYYY via canonical @dental/shared SSOT
  */
-export function formatDateRu(dateStr: string): string {
-	if (!dateStr) return '';
-	const parts = dateStr.split('-');
-	if (parts.length !== 3) return dateStr;
-	const [year, month, day] = parts;
-	return `${day}.${month}.${year}`;
+export function formatDateRu(dateStr: string | null | undefined): string {
+	if (!dateStr) return "";
+	return formatDateRuShared(dateStr);
 }
 
 /**

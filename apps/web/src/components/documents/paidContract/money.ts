@@ -7,14 +7,8 @@
 
 import type { PaidContractServiceItem } from "./types";
 
-export function pluralizeRu(num: number, one: string, two: string, five: string): string {
-	const n = Math.abs(num) % 100;
-	const n1 = n % 10;
-	if (n > 10 && n < 20) return five;
-	if (n1 > 1 && n1 < 5) return two;
-	if (n1 === 1) return one;
-	return five;
-}
+import { pluralizeRu } from "../../../lib/russianPlural";
+export { pluralizeRu };
 
 /**
  * Преобразует числовое значение денег в копейках в русские слова с копейками.

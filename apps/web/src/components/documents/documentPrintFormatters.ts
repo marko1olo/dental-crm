@@ -6,33 +6,27 @@
  */
 
 import {
-	kopecksToWordsRu,
-	legalMoneyInWordsRu,
-	legalMoneyInWordsFromKopecksRu,
-	moneyToWordsRu,
-	rublesToWordsRu,
+	escapeHtml,
 	formatKopecksRu,
+	formatRublesExactRu,
+	kopecksToWordsRu,
+	legalMoneyInWordsFromKopecksRu,
+	legalMoneyInWordsRu,
+	moneyToWordsRu,
 	parseKopecks,
+	rublesToWordsRu,
 } from "@dental/shared";
 
-export function escapeHtml(str: unknown): string {
-	if (str === null || str === undefined) return "";
-	return String(str)
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
-}
-
 export {
-	kopecksToWordsRu,
-	legalMoneyInWordsRu,
-	legalMoneyInWordsFromKopecksRu,
-	moneyToWordsRu,
-	rublesToWordsRu,
+	escapeHtml,
 	formatKopecksRu,
+	formatRublesExactRu,
+	kopecksToWordsRu,
+	legalMoneyInWordsFromKopecksRu,
+	legalMoneyInWordsRu,
+	moneyToWordsRu,
 	parseKopecks,
+	rublesToWordsRu,
 };
 
 export function formatDateRu(dateStr: string | null | undefined): string {
@@ -52,14 +46,4 @@ export function formatDateRu(dateStr: string | null | undefined): string {
 	}
 }
 
-/**
- * Безопасное форматирование рублей в строку формата "12 345,00 ₽"
- * Исключает утечки `NaN ₽`, `undefined ₽` или дробных искажений.
- */
-export function formatRublesExactRu(rubles: number | string | null | undefined): string {
-	if (rubles === null || rubles === undefined || rubles === "") return "0,00 ₽";
-	const num = typeof rubles === "string" ? Number(rubles.replace(/\s/g, "").replace(",", ".")) : rubles;
-	if (!Number.isFinite(num)) return "0,00 ₽";
-	return formatKopecksRu(parseKopecks(num));
-}
 

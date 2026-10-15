@@ -11,6 +11,7 @@ import {
 	PlusCircle,
 	Building,
 	FileCode2,
+	FileSignature,
 	Zap,
 } from "lucide-react";
 import { money } from "../../AppHelpers";
@@ -37,6 +38,7 @@ export interface TaxAccountingPackageModalProps {
 	readonly onOpenDocument: (documentId: string) => void;
 	readonly onSelectDocumentKind: (kind: DocumentKind) => void;
 	readonly onOpenFnsXmlModal: () => void;
+	readonly onRequestIssueDocument?: (doc: GeneratedDocument) => void;
 }
 
 interface TaxItem {
@@ -81,6 +83,7 @@ export function TaxAccountingPackageModal({
 	onOpenDocument,
 	onSelectDocumentKind,
 	onOpenFnsXmlModal,
+	onRequestIssueDocument,
 }: TaxAccountingPackageModalProps): React.JSX.Element | null {
 	if (!isOpen) return null;
 
@@ -214,6 +217,21 @@ export function TaxAccountingPackageModal({
 												>
 													Открыть
 												</button>
+												{isDraft && onRequestIssueDocument && (
+													<button
+														type="button"
+														className="primary-button"
+														onClick={() => {
+															onClose();
+															onRequestIssueDocument(latestDoc);
+														}}
+														data-testid={`btn-issue-tax-doc-${latestDoc.id}`}
+														title="Выдать документ (открыть подтверждение выдачи)"
+													>
+														<FileSignature size={14} aria-hidden="true" />
+														<span>Выдать</span>
+													</button>
+												)}
 												<button
 													type="button"
 													className="text-button"

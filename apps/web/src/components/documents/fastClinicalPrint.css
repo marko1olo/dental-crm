@@ -1,0 +1,1123 @@
+/**
+ * fastClinicalPrint.css
+ *
+ * Легковесные печатные стили и стили модального предпросмотра
+ * Fast Vector Print Engine (Celeron & Low-Spec Optimization).
+ * 0 МБ лишней памяти, нативный вызов window.print() за 0 мс.
+ */
+
+/* ── Модальный экран предпросмотра (полупрозрачный бэкдроп поверх живого интерфейса) ── */
+.fast-print-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	background: rgba(15, 23, 42, 0.42);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 12px;
+	box-sizing: border-box;
+}
+
+.fast-print-modal-container {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	width: 100%;
+	max-width: 960px;
+	max-height: 94vh;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.12);
+	overflow: hidden;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container {
+	background: #0f172a;
+	color: #f8fafc;
+	border-color: #334155;
+}
+
+/* ── Мобильный хэндл шторки (скрыт на ПК) ── */
+.fast-print-mobile-handle-wrap {
+	display: none;
+}
+
+.fast-print-mobile-handle {
+	width: 36px;
+	height: 5px;
+	border-radius: 999px;
+	background: #94a3b8;
+	opacity: 0.6;
+}
+
+/* ── Главная шапка тулбара ── */
+.fast-print-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 14px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	gap: 10px;
+	flex-shrink: 0;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-header {
+	background: #1e293b;
+	border-bottom-color: #334155;
+}
+
+.fast-print-brand-group {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+}
+
+.fast-print-brand-icon {
+	color: var(--teal, #0d9488);
+	flex-shrink: 0;
+}
+
+.fast-print-title {
+	font-size: 13.5px;
+	font-weight: 700;
+	white-space: nowrap;
+	color: var(--ink, #0f172a);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-title {
+	color: #f8fafc;
+}
+
+/* ── Сегментированные табы документов ── */
+.fast-print-tabs-strip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px;
+	border-radius: 8px;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-tabs-strip {
+	background: #0f172a;
+	border-color: #334155;
+}
+
+.fast-print-tab-btn {
+	height: 28px;
+	padding: 0 10px;
+	border-radius: 6px;
+	border: none;
+	background: transparent;
+	color: var(--muted, #64748b);
+	font-size: 12px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	white-space: nowrap;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.fast-print-tab-btn:hover {
+	color: var(--ink, #0f172a);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-tab-btn {
+	color: #94a3b8;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-tab-btn:hover {
+	color: #f8fafc;
+}
+
+.fast-print-tab-btn.active {
+	background: var(--teal, #0d9488);
+	color: #ffffff !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+/* ── Группа действий в шапке ── */
+.fast-print-actions-group {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.fast-print-primary-btn {
+	height: 32px;
+	padding: 0 14px;
+	border-radius: 8px;
+	border: none;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	font-size: 12.5px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.fast-print-primary-btn:hover {
+	opacity: 0.92;
+}
+
+.fast-print-close-btn {
+	height: 32px;
+	width: 32px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--muted, #64748b);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-close-btn {
+	background: #0f172a;
+	border-color: #334155;
+	color: #cbd5e1;
+}
+
+/* ── Вторичная полоса формата и реквизитов арендодателя ── */
+.fast-print-subbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 6px 14px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	gap: 10px;
+	flex-shrink: 0;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-subbar {
+	background: #0f172a;
+	border-bottom-color: #334155;
+}
+
+.fast-print-format-group {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.fast-print-subbar-label {
+	font-size: 11.5px;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+}
+
+.fast-print-format-pills {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px;
+	border-radius: 6px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-format-pills {
+	background: #1e293b;
+	border-color: #334155;
+}
+
+.fast-print-pill-btn {
+	height: 24px;
+	padding: 0 8px;
+	border-radius: 4px;
+	border: none;
+	background: transparent;
+	color: var(--muted, #64748b);
+	font-size: 11.5px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-pill-btn {
+	color: #94a3b8;
+}
+
+.fast-print-pill-btn.active {
+	background: var(--teal, #0d9488);
+	color: #ffffff !important;
+}
+
+.fast-print-landlord-btn {
+	height: 28px;
+	padding: 0 10px;
+	border-radius: 6px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
+	font-size: 11.5px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-landlord-btn {
+	background: #1e293b;
+	border-color: #334155;
+	color: #f8fafc;
+}
+
+/* ── Выдвижная шторка реквизитов клиники-арендодателя ── */
+.fast-print-landlord-drawer {
+	padding: 10px 14px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	flex-shrink: 0;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-landlord-drawer {
+	background: #1e293b;
+	border-bottom-color: #334155;
+}
+
+.fast-print-landlord-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 10px;
+}
+
+.fast-print-field {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.fast-print-field-label {
+	font-size: 10.5px;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+}
+
+.fast-print-input {
+	height: 28px;
+	padding: 0 8px;
+	border-radius: 6px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 12px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-input {
+	background: #0f172a;
+	border-color: #334155;
+	color: #f8fafc;
+}
+
+/* ── Векторный холст предпросмотра (прокрутка) ── */
+.fast-print-preview-scroll {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 12px 16px;
+	background: var(--slate-100, #f1f5f9);
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-preview-scroll {
+	background: #020617;
+}
+
+/* ── Лист документа на экране (Light: бумага #fff; Dark: благородный сланец #0f172a без слепящих пятен) ── */
+.fast-print-a4-sheet {
+	width: 100%;
+	max-width: 794px;
+	background: #ffffff;
+	color: #0f172a;
+	padding: 14px 18px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	box-sizing: border-box;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PT Astra Serif", "Times New Roman", serif;
+	font-size: 11px;
+	line-height: 1.3;
+}
+
+/* Базовые элементы полных форм 043/у, Акта и Сметы */
+.fast-print-doc-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	border-bottom: 2px solid currentColor;
+	padding-bottom: 8px;
+	margin-bottom: 10px;
+}
+
+.fast-print-clinic-title {
+	font-size: 12.5px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.4px;
+}
+
+.fast-print-doc-title {
+	text-align: center;
+	font-size: 14px;
+	font-weight: 800;
+	margin: 8px 0 6px 0;
+	text-transform: uppercase;
+}
+
+.fast-print-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 6px 0;
+	font-size: 10.5px;
+}
+
+.fast-print-a4-sheet .fast-print-table,
+.fast-print-a4-sheet .fast-print-table tr,
+.fast-print-a4-sheet .fast-print-table td {
+	border: 1px solid #334155;
+	padding: 4px 6px;
+	text-align: left;
+	vertical-align: top;
+}
+
+.fast-print-a4-sheet .fast-print-table th {
+	border: 1px solid #334155;
+	padding: 4px 6px;
+	background: #f1f5f9;
+	font-weight: 700;
+	text-align: center;
+}
+
+.fast-print-sign-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 24px;
+	margin-top: 14px;
+	page-break-inside: avoid;
+	break-inside: avoid;
+}
+
+.fast-print-sign-line {
+	border-bottom: 1px solid currentColor;
+	height: 20px;
+	margin-bottom: 3px;
+}
+
+/* ── Партизанский вкладыш 043/у (Приказ 834н) ── */
+.partisan-insert-container {
+	position: relative;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.partisan-insert-sheet {
+	display: flex;
+	border: 1px solid #1e293b;
+	background: #ffffff;
+	color: #0f172a;
+	border-radius: 4px;
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+.partisan-glue-margin {
+	width: 20px;
+	background: #f1f5f9;
+	border-right: 1px dashed #64748b;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 4px 2px;
+	user-select: none;
+	flex-shrink: 0;
+}
+
+.partisan-glue-label {
+	writing-mode: vertical-rl;
+	transform: rotate(180deg);
+	font-size: 8px;
+	text-transform: uppercase;
+	letter-spacing: 0.4px;
+	color: #475569;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.partisan-insert-content {
+	flex: 1;
+	min-width: 0;
+	padding: 10px 14px;
+	background: #ffffff;
+	color: #0f172a;
+	font-size: 10.5px;
+	line-height: 1.25;
+	box-sizing: border-box;
+}
+
+.partisan-header-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 8px;
+	border-bottom: 1.5px solid #0f172a;
+	padding-bottom: 4px;
+	margin-bottom: 5px;
+}
+
+.partisan-clinic-requisites {
+	flex: 1;
+	min-width: 0;
+}
+
+.partisan-clinic-name {
+	font-size: 11.5px;
+	font-weight: 800;
+	text-transform: uppercase;
+}
+
+.partisan-clinic-sub {
+	font-size: 9px;
+	color: #475569;
+	line-height: 1.2;
+}
+
+.partisan-legal-badge {
+	text-align: right;
+	flex-shrink: 0;
+}
+
+.partisan-badge-minzdrav {
+	font-size: 9px;
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.partisan-badge-form {
+	font-size: 11px;
+	font-weight: 800;
+}
+
+.partisan-badge-order {
+	font-size: 8.5px;
+	color: #475569;
+}
+
+.partisan-document-title {
+	text-align: center;
+	font-size: 11.5px;
+	font-weight: 800;
+	margin: 4px 0;
+	text-transform: uppercase;
+	letter-spacing: 0.2px;
+}
+
+.partisan-section-bar {
+	background: #e2e8f0;
+	border: 1px solid #1e293b;
+	padding: 2px 6px;
+	font-size: 9.5px;
+	font-weight: 800;
+	text-transform: uppercase;
+	margin-top: 5px;
+	margin-bottom: 2px;
+	color: #0f172a;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.partisan-meta-table {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+	margin: 2px 0 4px 0;
+	font-size: 10px;
+}
+
+.partisan-meta-table td {
+	border: 1px solid #334155;
+	padding: 3px 5px;
+	vertical-align: top;
+	background: #ffffff;
+	color: #0f172a;
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+}
+
+.partisan-cell-label {
+	width: 22%;
+	font-weight: 700;
+	background: #f8fafc;
+}
+
+.partisan-cell-val {
+	width: 28%;
+}
+
+.partisan-fdi-badge {
+	display: inline-block;
+	background: #f1f5f9;
+	padding: 1px 5px;
+	border-radius: 3px;
+	border: 1px solid #0f172a;
+	font-weight: 800;
+	font-size: 10px;
+}
+
+.partisan-diagnosis-box {
+	background: #f8fafc;
+	padding: 1px 4px;
+	border-left: 2.5px solid #0d9488;
+}
+
+.partisan-warranty-row {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.partisan-signature-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+	margin-top: 6px;
+	page-break-inside: avoid;
+}
+
+.partisan-sign-block {
+	display: flex;
+	flex-direction: column;
+}
+
+.partisan-sign-role {
+	font-size: 9.5px;
+	line-height: 1.2;
+}
+
+.partisan-sign-line {
+	border-bottom: 1px solid #334155;
+	height: 14px;
+	margin-bottom: 2px;
+}
+
+.partisan-sign-caption {
+	font-size: 8.5px;
+	text-align: center;
+	color: #475569;
+}
+
+/* Линия отреза ножницами */
+.fast-print-cut-line {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	margin-top: 8px;
+	padding: 4px 0;
+	border-top: 1.5px dashed #475569;
+	color: #334155;
+	font-family: monospace;
+	font-size: 10.5px;
+	font-weight: 700;
+	user-select: none;
+}
+
+.fast-print-cut-line .cut-icon {
+	color: #0f172a;
+	flex-shrink: 0;
+}
+
+.fast-print-cut-line .cut-text {
+	text-align: center;
+	letter-spacing: 0.3px;
+	overflow: hidden;
+	text-overflow: clip;
+	white-space: nowrap;
+}
+
+.layout-a5-direct {
+	max-width: 560px;
+	margin: 0 auto;
+}
+
+/* ── ТЁМНАЯ ТЕМА ЭКРАННОГО ПРЕДПРОСМОТРА (0 СЛЕПЯЩИХ БЕЛЫХ ПЯТЕН В DARK MODE) ── */
+@media screen {
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .fast-print-a4-sheet {
+		background: #0f172a !important;
+		background-color: #0f172a !important;
+		color: #f1f5f9 !important;
+		border-color: #334155 !important;
+		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-insert-sheet {
+		background: #0f172a !important;
+		background-color: #0f172a !important;
+		color: #f1f5f9 !important;
+		border-color: #475569 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-insert-content {
+		background: #0f172a !important;
+		background-color: #0f172a !important;
+		color: #f1f5f9 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-glue-margin {
+		background: #1e293b !important;
+		background-color: #1e293b !important;
+		border-right-color: #475569 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-glue-label {
+		color: #94a3b8 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-header-row {
+		border-bottom-color: #475569 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-clinic-name,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-badge-minzdrav,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-badge-form,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-document-title,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-sign-role,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-sign-role strong,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-meta-table strong {
+		color: #f8fafc !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-clinic-sub,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-badge-order,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-sign-caption {
+		color: #94a3b8 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-section-bar {
+		background: #1e293b !important;
+		background-color: #1e293b !important;
+		border-color: #475569 !important;
+		color: #2dd4bf !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-meta-table,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-meta-table tbody,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-meta-table tr,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-meta-table td {
+		background: #0f172a !important;
+		background-color: #0f172a !important;
+		color: #f1f5f9 !important;
+		border-color: #334155 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-meta-table td.partisan-cell-label {
+		background: #1e293b !important;
+		background-color: #1e293b !important;
+		color: #cbd5e1 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-fdi-badge {
+		background: #1e293b !important;
+		background-color: #1e293b !important;
+		border-color: #2dd4bf !important;
+		color: #2dd4bf !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-diagnosis-box {
+		background: #1e293b !important;
+		background-color: #1e293b !important;
+		border-left-color: #2dd4bf !important;
+		color: #f8fafc !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-sign-line {
+		border-bottom-color: #64748b !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .fast-print-cut-line {
+		border-top-color: #475569 !important;
+		color: #94a3b8 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .fast-print-cut-line .cut-icon {
+		color: #cbd5e1 !important;
+	}
+}
+
+/* ── Нижняя панель действия для смартфона (скрыта на ПК) ── */
+.fast-print-mobile-bottom-bar {
+	display: none;
+}
+
+/* ── Мобильный адаптив (Apple HIG Bottom Sheet + СТРОГО 2 КОМПАКТНЫЕ СТРОКИ В ШАПКЕ) ── */
+@media (max-width: 768px) {
+	.fast-print-modal-backdrop {
+		align-items: flex-end;
+		padding: 0;
+	}
+
+	.fast-print-modal-container {
+		border-radius: 20px 20px 0 0;
+		max-width: 100vw;
+		width: 100vw;
+		max-height: 97vh;
+		border-bottom: none;
+	}
+
+	.fast-print-mobile-handle-wrap {
+		display: flex;
+		justify-content: center;
+		padding: 5px 0 1px 0;
+		background: var(--paper-soft, #f8fafc);
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-mobile-handle-wrap {
+		background: #1e293b;
+	}
+
+	/* СТРОКА 1 ШАПКИ НА МОБИЛЬНОМ: Табы документов + кнопка закрытия [×] в 1 компактный ряд */
+	.fast-print-header {
+		flex-wrap: nowrap;
+		padding: 4px 8px 5px 8px;
+		gap: 6px;
+	}
+
+	.fast-print-brand-group {
+		display: none !important;
+	}
+
+	.fast-print-desktop-only {
+		display: none !important;
+	}
+
+	.fast-print-modal-container .fast-print-tabs-strip {
+		flex: 1;
+		min-width: 0;
+		overflow-x: hidden;
+		display: flex;
+		justify-content: space-between;
+		gap: 2px;
+		padding: 3px;
+	}
+
+	.fast-print-modal-container .fast-print-tab-btn {
+		flex: 1 1 auto;
+		justify-content: center;
+		padding: 0 4px !important;
+		font-size: 10px !important;
+		height: 30px !important;
+		min-height: 30px !important;
+		gap: 2.5px !important;
+	}
+
+	.fast-print-modal-container .fast-print-tab-btn svg {
+		flex-shrink: 0;
+		width: 11px;
+		height: 11px;
+	}
+
+	.fast-print-modal-container .fast-print-close-btn {
+		width: 36px !important;
+		height: 36px !important;
+		min-height: 36px !important;
+		flex-shrink: 0;
+	}
+
+	/* СТРОКА 2 ШАПКИ НА МОБИЛЬНОМ: Формат [А4 с отрезом | А5] + [Клиника-арендодатель] */
+	.fast-print-modal-container .fast-print-subbar {
+		padding: 4px 8px;
+		gap: 6px;
+		flex-wrap: nowrap;
+	}
+
+	.fast-print-modal-container .fast-print-subbar-label {
+		display: none;
+	}
+
+	.fast-print-modal-container .fast-print-pill-btn {
+		height: 30px !important;
+		min-height: 30px !important;
+		padding: 0 7px !important;
+		font-size: 10.5px !important;
+		gap: 3.5px !important;
+	}
+
+	.fast-print-modal-container .fast-print-landlord-btn {
+		height: 32px !important;
+		min-height: 32px !important;
+		padding: 0 8px !important;
+		font-size: 10.5px !important;
+		gap: 4px !important;
+	}
+
+	.fast-print-landlord-grid {
+		grid-template-columns: 1fr;
+		gap: 6px;
+	}
+
+	.fast-print-preview-scroll {
+		padding: 5px;
+	}
+
+	.fast-print-a4-sheet {
+		padding: 4px;
+	}
+
+	.partisan-glue-margin {
+		width: 12px;
+		padding: 2px 1px;
+	}
+
+	.partisan-glue-label {
+		font-size: 6.5px;
+	}
+
+	.partisan-insert-content {
+		padding: 4px 6px;
+		font-size: 8px;
+		line-height: 1.13;
+	}
+
+	.partisan-header-row {
+		padding-bottom: 2px;
+		margin-bottom: 3px;
+	}
+
+	.partisan-clinic-name {
+		font-size: 9px;
+	}
+
+	.partisan-clinic-sub {
+		font-size: 7.5px;
+		line-height: 1.1;
+	}
+
+	.partisan-badge-minzdrav {
+		font-size: 7.5px;
+	}
+
+	.partisan-badge-form {
+		font-size: 9px;
+	}
+
+	.partisan-badge-order {
+		font-size: 7px;
+	}
+
+	.partisan-document-title {
+		font-size: 8.5px;
+		margin: 2px 0;
+	}
+
+	.partisan-section-bar {
+		font-size: 7.5px;
+		padding: 1px 4px;
+		margin-top: 3px;
+		margin-bottom: 1px;
+	}
+
+	.partisan-meta-table {
+		font-size: 7.7px;
+		margin: 1px 0 2px 0;
+	}
+
+	.partisan-meta-table td {
+		padding: 1.5px 3px;
+		line-height: 1.13;
+	}
+
+	.partisan-fdi-badge {
+		font-size: 8px;
+		padding: 0 4px;
+	}
+
+	.partisan-cell-label {
+		width: 24%;
+	}
+
+	.partisan-cell-val {
+		width: 26%;
+	}
+
+	.partisan-signature-row {
+		gap: 8px;
+		margin-top: 3px;
+	}
+
+	.partisan-sign-role {
+		font-size: 7.5px;
+		line-height: 1.1;
+	}
+
+	.partisan-sign-line {
+		height: 8px;
+		margin-bottom: 1px;
+	}
+
+	.partisan-sign-caption {
+		font-size: 6.8px;
+	}
+
+	.fast-print-cut-line {
+		font-size: 7.5px;
+		margin-top: 3px;
+		padding: 2px 0;
+		gap: 4px;
+	}
+
+	.fast-print-mobile-bottom-bar {
+		display: flex;
+		padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)) 12px;
+		background: var(--paper-soft, #f8fafc);
+		border-top: 1px solid var(--line, #e2e8f0);
+		flex-shrink: 0;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-mobile-bottom-bar {
+		background: #1e293b;
+		border-top-color: #334155;
+	}
+
+	.fast-print-mobile-cta-btn {
+		width: 100%;
+		min-height: 44px;
+		border-radius: 12px;
+		border: none;
+		background: var(--teal, #0d9488);
+		color: #ffffff;
+		font-size: 13.5px;
+		font-weight: 700;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		cursor: pointer;
+		box-shadow: 0 4px 10px rgba(13, 148, 136, 0.25);
+	}
+}
+
+/* ── Нативная печать на физическом принтере (@media print — всегда #ffffff бумага и #000000 чернила) ── */
+@media print {
+	@page {
+		size: A4 portrait;
+		margin: 10mm 10mm 10mm 15mm;
+	}
+
+	html,
+	body {
+		background: #ffffff !important;
+		color: #000000 !important;
+		height: auto !important;
+		overflow: visible !important;
+		margin: 0 !important;
+		padding: 0 !important;
+	}
+
+	body > *:not(.fast-print-portal) {
+		display: none !important;
+	}
+
+	.fast-print-modal-backdrop {
+		position: static !important;
+		background: transparent !important;
+		backdrop-filter: none !important;
+		padding: 0 !important;
+		display: block !important;
+	}
+
+	.fast-print-modal-container {
+		border: none !important;
+		box-shadow: none !important;
+		max-width: 100% !important;
+		max-height: none !important;
+		border-radius: 0 !important;
+		background: transparent !important;
+		overflow: visible !important;
+	}
+
+	.fast-print-header,
+	.fast-print-subbar,
+	.fast-print-landlord-drawer,
+	.fast-print-mobile-handle-wrap,
+	.fast-print-mobile-bottom-bar,
+	.fast-print-no-print {
+		display: none !important;
+	}
+
+	.fast-print-preview-scroll {
+		background: transparent !important;
+		padding: 0 !important;
+		overflow: visible !important;
+		display: block !important;
+	}
+
+	.fast-print-a4-sheet,
+	.partisan-insert-sheet,
+	.partisan-insert-content,
+	.partisan-meta-table td {
+		width: 100% !important;
+		max-width: none !important;
+		min-height: auto !important;
+		box-shadow: none !important;
+		background: #ffffff !important;
+		color: #000000 !important;
+		border-color: #000000 !important;
+	}
+
+	.partisan-glue-margin,
+	.partisan-section-bar,
+	.partisan-cell-label,
+	.partisan-fdi-badge,
+	.partisan-diagnosis-box {
+		background: #f3f4f6 !important;
+		color: #000000 !important;
+		border-color: #000000 !important;
+	}
+
+	.fast-print-cut-line {
+		border-top: 1.5px dashed #000000 !important;
+		color: #000000 !important;
+	}
+
+	.fast-print-table th,
+	.fast-print-table td,
+	.fast-print-sign-grid,
+	.fast-print-avoid-break {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+
+	.fast-print-page-break {
+		page-break-after: always !important;
+		break-after: page !important;
+	}
+
+	* {
+		-webkit-print-color-adjust: exact !important;
+		print-color-adjust: exact !important;
+	}
+}

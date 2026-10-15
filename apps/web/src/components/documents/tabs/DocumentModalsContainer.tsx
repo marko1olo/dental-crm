@@ -62,6 +62,7 @@ export interface DocumentModalsContainerProps {
 	selectedTaxDocumentPayerKey?: string;
 	setTaxDocumentPayerInn: (inn: string) => void;
 	egiszInitialPayload?: Egisz043uPayload;
+	requestDocumentIssue?: (doc: GeneratedDocument) => void;
 }
 
 export const DocumentModalsContainer: React.FC<DocumentModalsContainerProps> = React.memo(
@@ -101,6 +102,7 @@ export const DocumentModalsContainer: React.FC<DocumentModalsContainerProps> = R
 			selectedTaxDocumentPayerKey,
 			setTaxDocumentPayerInn,
 			egiszInitialPayload,
+			requestDocumentIssue,
 		} = props;
 
 		return (
@@ -163,6 +165,7 @@ export const DocumentModalsContainer: React.FC<DocumentModalsContainerProps> = R
 						onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
 						onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
 						onOpenFnsXmlModal={() => setIsFnsNdflXmlOpen(true)}
+						onRequestIssueDocument={requestDocumentIssue as any}
 					/>
 				)}
 

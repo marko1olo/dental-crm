@@ -202,7 +202,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 				body: JSON.stringify({
 					patientId: patient.id,
 					kind: "tax_deduction_certificate",
-					title: `Справка для налогового вычета за ${selectedYear} год (КНД 1151156)`,
+					title: `Справка для налогового вычета за ${selectedYear} год (ФНС)`,
 					taxYear: selectedYear,
 					taxPayerInn: effectiveInn || undefined,
 					totalAmountRub: aggregated.totalNetRub,
@@ -240,14 +240,14 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 							documentOpenedAndChecked: true,
 							recipientSigned: true,
 							clinicRepresentativeSigned: true,
-							note: `Справка КНД 1151156 за ${selectedYear} год утверждена бухгалтерией клиники`,
+							note: `Справка для налогового вычета (ФНС) за ${selectedYear} год утверждена бухгалтерией клиники`,
 						},
 					}),
 				});
 			}
 
 			showToast(
-				`Справка КНД 1151156 за ${selectedYear} год успешно сохранена в реестре документов`,
+				`Справка для налогового вычета (ФНС) за ${selectedYear} год успешно сохранена в реестре документов`,
 				"success",
 				4000,
 			);
@@ -290,7 +290,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 						</div>
 						<div>
 							<h2 className="text-[14px] font-bold text-[var(--ink)] leading-tight">
-								Справка для налогового вычета (ФНС КНД 1151156)
+								Справка для налогового вычета (ФНС)
 							</h2>
 							<p className="text-[12px] text-[var(--muted)]">
 								{patient?.fullName || "Пациент"} · Налоговый период: {selectedYear} год
