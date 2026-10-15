@@ -29,8 +29,8 @@ export function WorkspaceTopBarStatusAndSearch({
 			</div>
 
 			{/* Название клиники и дата */}
-			<div className="topbar-clinic flex-1 sm:flex-initial shrink-0 min-w-0 sm:max-w-[260px] max-w-[200px] flex flex-col justify-center leading-tight">
-				<p className="eyebrow truncate leading-none text-[10px] m-0 mb-0.5 text-[var(--muted)] block">
+			<div className="topbar-clinic flex-1 sm:flex-initial shrink-0 min-w-0 sm:max-w-[260px] max-w-[150px] flex flex-col justify-center leading-tight">
+				<p className="eyebrow truncate leading-none text-[10px] m-0 mb-0.5 text-[var(--muted)] hidden sm:block">
 					{formattedDate.replace(" г.", "").replace(",", " ·")}
 				</p>
 				<h1
@@ -42,7 +42,7 @@ export function WorkspaceTopBarStatusAndSearch({
 			</div>
 
 			{/* Тихий индикатор кабинета для клиники 1-3 кресел */}
-			<div className="topbar-chair-badge inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)] shrink-0">
+			<div className="topbar-chair-badge hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)] shrink-0">
 				<Armchair size={12} className="text-[var(--teal)] opacity-80" aria-hidden="true" />
 				<span>Кабинет 1</span>
 			</div>

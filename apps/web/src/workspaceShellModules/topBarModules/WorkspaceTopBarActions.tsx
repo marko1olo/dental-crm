@@ -78,9 +78,9 @@ export function WorkspaceTopBarActions({
 
 	return (
 		<div className="top-actions">
-			{/* 1. Единственный Primary CTA всей клиники — «+ Запись» */}
+			{/* 1. Единственный Primary CTA всей клиники — «+ Запись» (на мобилках иконка 44x44px) */}
 			<button
-				className="primary-button"
+				className="primary-button min-h-[44px] min-w-[44px] px-2.5 sm:px-3 flex items-center justify-center gap-1.5"
 				type="button"
 				id="topbar-booking-action-btn"
 				data-tour="schedule-booking"
@@ -92,13 +92,14 @@ export function WorkspaceTopBarActions({
 				onTouchStart={() => onViewIntent?.("schedule", "hover")}
 				onClick={onGoToSchedule}
 			>
-				<Plus aria-hidden="true" /> {workspaceTopbarLabels.book.label}
+				<Plus className="w-4 h-4 shrink-0" aria-hidden="true" />
+				<span className="hidden sm:inline">{workspaceTopbarLabels.book.label}</span>
 			</button>
 
-			{/* 2. Быстрый переход в дневник приёма для врача у кресла */}
+			{/* 2. Быстрый переход в дневник приёма для врача у кресла (на мобилке есть в таб-баре) */}
 			{showDoctorVisitShortcut ? (
 				<button
-					className="secondary-button compact-top-button inline-flex"
+					className="secondary-button compact-top-button hidden md:inline-flex min-h-[44px] items-center gap-1.5"
 					type="button"
 					id="topbar-doctor-visit-btn"
 					data-tour="visit-diary"
@@ -111,32 +112,32 @@ export function WorkspaceTopBarActions({
 					onClick={onGoToDictation}
 				>
 					<ClipboardCheck aria-hidden="true" />{" "}
-					{workspaceTopbarLabels.visit.label}
+					<span>{workspaceTopbarLabels.visit.label}</span>
 				</button>
 			) : null}
 
 			{/* 2.5. Вызов клинического ассистента у кресла */}
 			<button
-				className="secondary-button compact-top-button inline-flex items-center gap-1.5"
+				className="secondary-button compact-top-button hidden sm:inline-flex min-h-[44px] items-center gap-1.5"
 				type="button"
 				id="topbar-ai-agent-btn"
 				data-testid="topbar-ai-agent-btn"
-				title="Клинический ассистент"
+				title={workspaceTopbarLabels.copilot.title}
 				onClick={() => {
 					window.dispatchEvent(new CustomEvent("dente:open-agent-cockpit"));
 				}}
 			>
 				<Sparkles className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" aria-hidden="true" />
-				<span>Ассистент</span>
+				<span className="hidden md:inline">{workspaceTopbarLabels.copilot.label}</span>
 			</button>
 
 			{/* 3. Тихий статус уведомлений */}
 			<NotificationBell />
 
-			{/* 4. Меню Профиля (User Profile Pill): консолидирует редкие и системные действия */}
+			{/* 4. Меню Профиля (User Profile Pill): на мобилке сенсорная иконка 44x44px */}
 			<div className="relative inline-block" ref={profileRef}>
 				<button
-					className="secondary-button compact-top-button flex items-center gap-1.5"
+					className="secondary-button compact-top-button min-h-[44px] min-w-[44px] px-2.5 sm:px-3 flex items-center justify-center gap-1.5"
 					type="button"
 					id="topbar-profile-btn"
 					data-testid="topbar-profile-btn"
@@ -144,9 +145,9 @@ export function WorkspaceTopBarActions({
 					onClick={() => setIsProfileOpen((v) => !v)}
 					aria-expanded={isProfileOpen}
 				>
-					<User className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" aria-hidden="true" />
-					{workspaceTopbarLabels.profile.label}
-					<ChevronDown className="w-3 h-3 opacity-60" aria-hidden="true" />
+					<User className="w-4 h-4 text-[var(--teal)] shrink-0" aria-hidden="true" />
+					<span className="hidden md:inline">{workspaceTopbarLabels.profile.label}</span>
+					<ChevronDown className="w-3 h-3 opacity-60 hidden md:inline" aria-hidden="true" />
 				</button>
 
 				{isProfileOpen && (

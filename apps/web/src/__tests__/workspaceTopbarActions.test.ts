@@ -32,7 +32,7 @@ import { parse } from "@babel/parser";
  */
 
 const shellPath = fileURLToPath(
-	new URL("../workspaceShellModules/WorkspaceTopBar.tsx", import.meta.url),
+	new URL("../workspaceShellModules/topBarModules/WorkspaceTopBarActions.tsx", import.meta.url),
 );
 const labelsPath = fileURLToPath(
 	new URL("../workspaceUiLabels.ts", import.meta.url),
@@ -115,6 +115,10 @@ function visibleLabelSource(element: AstNode): string | null {
 				Number(expression.end),
 			);
 			if (text.includes("Labels.")) return text;
+		}
+		if (child.type === "JSXElement") {
+			const nested = visibleLabelSource(child);
+			if (nested) return nested;
 		}
 	}
 	return null;

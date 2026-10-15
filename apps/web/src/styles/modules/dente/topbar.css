@@ -1,0 +1,323 @@
+/* ---------- 6. ТОПБАР ---------- */
+.topbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 0 16px;
+	margin: 0;
+	background: var(--paper);
+	border-bottom: 1px solid var(--line);
+	flex-shrink: 0;
+	min-height: 52px;
+	height: 52px;
+	max-height: 52px;
+	box-sizing: border-box;
+	position: sticky;
+	top: 0;
+	z-index: 25;
+}
+
+@media (max-height: 768px) {
+	.topbar {
+		min-height: 44px;
+		height: 44px;
+		max-height: 44px;
+		padding: 0 12px;
+		gap: 8px;
+	}
+	.topbar h1 {
+		font-size: 13px;
+	}
+	.workspace,
+	.dnt-content {
+		padding: 10px 14px 20px;
+		gap: 10px;
+	}
+}
+
+@media (max-height: 650px) {
+	.topbar {
+		min-height: 38px !important;
+		height: 38px !important;
+		max-height: 38px !important;
+		padding: 0 10px !important;
+		gap: 6px !important;
+	}
+	.topbar h1 {
+		font-size: 12px !important;
+	}
+	.workspace,
+	.dnt-content {
+		padding: 6px 10px 16px !important;
+		gap: 6px !important;
+	}
+}
+.topbar-context {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: nowrap;
+	min-width: fit-content !important;
+	flex-shrink: 0 !important;
+	overflow: visible;
+}
+.topbar-clinic {
+	display: flex;
+	flex-direction: column;
+	min-width: 140px !important;
+	max-width: 320px;
+	flex-shrink: 0 !important;
+}
+.topbar h1 {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--ink);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	line-height: 1.25;
+}
+.topbar .eyebrow {
+	margin: 0 0 2px;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	color: var(--muted, #64748b);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+[data-theme="dark"] .topbar .eyebrow,
+html.dark .topbar .eyebrow,
+.dark .topbar .eyebrow {
+	color: var(--ink-muted, #94a3b8) !important;
+}
+
+[data-theme="night"] .topbar .eyebrow {
+	color: var(--ink-muted, #a1a1aa) !important;
+}
+.topbar-selectors {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+	min-width: max-content;
+}
+@media (max-width: 1480px) {
+	.workspace-perspective-switcher {
+		display: none !important;
+	}
+}
+.top-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px !important;
+	margin-left: auto;
+	flex-shrink: 0 !important;
+	position: relative;
+	z-index: 5;
+}
+
+/* ---------- 6.1 РАБОЧЕЕ ПРОСТРАНСТВО & ГРИДЫ ---------- */
+.workspace,
+.dnt-content {
+	flex: 1;
+	overflow-y: auto;
+	padding: 20px 24px 32px;
+	max-width: 1560px;
+	margin: 0 auto;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.shift-hero,
+.dnt-hero {
+	display: grid;
+	grid-template-columns: 1.05fr 0.95fr;
+	gap: 16px;
+}
+
+.shift-queues,
+.dnt-queues {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
+}
+
+.shift-cockpit,
+.dnt-cockpit {
+	display: grid;
+	grid-template-columns: 360px 1fr;
+	gap: 16px;
+	margin-top: 16px;
+}
+
+.visit-emk-grid,
+.dnt-emk {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+	margin-top: 16px;
+}
+
+@container dnt (max-width: 1140px) {
+	.shift-hero,
+	.dnt-hero,
+	.visit-emk-grid,
+	.dnt-emk {
+		grid-template-columns: 1fr;
+	}
+	.shift-queues,
+	.dnt-queues {
+		grid-template-columns: 1fr 1fr;
+	}
+	.shift-cockpit,
+	.dnt-cockpit {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 1140px) {
+	.shift-hero,
+	.dnt-hero,
+	.visit-emk-grid,
+	.dnt-emk {
+		grid-template-columns: 1fr;
+	}
+	.shift-queues,
+	.dnt-queues {
+		grid-template-columns: 1fr 1fr;
+	}
+	.shift-cockpit,
+	.dnt-cockpit {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 840px) {
+	.topbar {
+		padding: 0 10px !important;
+		gap: 6px !important;
+		min-height: 52px !important;
+		height: 52px !important;
+		max-height: 52px !important;
+	}
+	.topbar-context {
+		gap: 6px !important;
+	}
+	.topbar-clinic {
+		min-width: 0 !important;
+		max-width: 130px !important;
+	}
+	.topbar-command-hub {
+		max-width: 150px !important;
+		margin: 0 !important;
+	}
+	.top-actions {
+		gap: 4px !important;
+	}
+	.top-actions button,
+	.top-actions .secondary-button,
+	.top-actions .primary-button {
+		min-height: 44px !important;
+		min-width: 44px !important;
+		padding: 6px 8px !important;
+	}
+	.shift-hero,
+	.dnt-hero,
+	.shift-queues,
+	.dnt-queues,
+	.shift-cockpit,
+	.dnt-cockpit,
+	.visit-emk-grid,
+	.dnt-emk {
+		grid-template-columns: 1fr;
+	}
+	.workspace,
+	.dnt-content {
+		padding: 14px 14px 100px;
+	}
+}
+.workspace-role-switcher {
+	position: relative;
+	display: inline-block;
+}
+.workspace-role-switcher summary {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	min-height: 36px;
+	height: 36px;
+	box-sizing: border-box;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--paper-soft);
+	color: var(--ink-2);
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+	list-style: none;
+	white-space: nowrap;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	user-select: none;
+}
+.workspace-role-switcher summary:hover {
+	border-color: var(--teal-ring);
+	color: var(--ink);
+	background: var(--paper);
+}
+.workspace-role-switcher summary::-webkit-details-marker {
+	display: none;
+}
+.workspace-role-switcher summary strong {
+	color: var(--ink);
+	font-weight: 600;
+}
+.workspace-role-switcher .switcher-chevron {
+	transition: transform 0.15s ease;
+	flex-shrink: 0;
+}
+.workspace-role-switcher[open] .switcher-chevron {
+	transform: rotate(180deg);
+}
+.role-switcher-options {
+	position: absolute;
+	z-index: 40;
+	margin-top: 6px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	background: var(--elev);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 6px;
+	box-shadow: var(--shadow-2);
+	min-width: 180px;
+	animation: dntUp 0.18s ease;
+}
+.role-switcher-options button {
+	text-align: left;
+	padding: 8px 12px;
+	border: none;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--ink-2);
+	font-size: 13px;
+	font-weight: 500;
+}
+.role-switcher-options button:hover {
+	background: var(--teal-surface);
+	color: var(--ink);
+}
+.role-switcher-options button.active {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	font-weight: 600;
+}
+

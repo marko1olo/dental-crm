@@ -239,10 +239,10 @@
 	display: inline-flex !important;
 	align-items: center !important;
 	justify-content: center !important;
-	width: 32px !important;
-	height: 32px !important;
-	min-width: 32px !important;
-	min-height: 32px !important;
+	width: 44px !important;
+	height: 44px !important;
+	min-width: 44px !important;
+	min-height: 44px !important;
 	border-radius: 999px !important;
 	background: var(--paper-soft, rgba(148, 163, 184, 0.15)) !important;
 	border: 1px solid var(--line) !important;
