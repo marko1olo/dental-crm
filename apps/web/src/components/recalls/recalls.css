@@ -3,7 +3,6 @@
    Touch-First, Responsive, Multi-Theme (Light, Dark, Night, Calm Teal)
    ========================================================================== */
 
-@import "./recallsPreview.css";
 @import "./recallsKanban.css";
 @import "./recallsCards.css";
 
@@ -548,8 +547,6 @@
 	opacity: 0.4;
 	cursor: not-allowed;
 }
-/* Preview Drawer, Script Drawer, & Presets in recallsPreview.css */
-
 
 /* Empty & Loading States */
 .recall-empty-state {

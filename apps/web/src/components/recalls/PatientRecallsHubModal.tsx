@@ -11,7 +11,7 @@ import { PatientRecallsRegistryView } from "./PatientRecallsRegistryView";
 import { RecallDispensaryFunnel } from "./RecallDispensaryFunnel";
 import { PatientRecallsTaskCallsTab } from "./PatientRecallsTaskCallsTab";
 import { RecallCallScriptDrawer } from "./RecallCallScriptDrawer";
-import { PatientRecallsPreviewModals } from "./PatientRecallsPreviewModals";
+import { Phone, Lightbulb } from "lucide-react";
 import type { PatientRecallRecord, RecallContactStatus } from "./patientRecallEngine";
 import "./recalls.css";
 
@@ -60,6 +60,9 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 							onDoctorChange={hub.setSelectedDoctorId}
 							selectedPeriod={hub.selectedPeriod}
 							onPeriodChange={hub.setSelectedPeriod}
+							selectedStatus={hub.selectedWorkflowStatus}
+							onStatusChangeFilter={hub.setSelectedWorkflowStatus}
+							statusCounts={hub.statusCounts}
 							searchQuery={hub.searchQuery}
 							onSearchChange={hub.setSearchQuery}
 							onBook={actions.handleBook}
@@ -103,11 +106,15 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 				</main>
 
 				<RecallCallScriptDrawer candidate={hub.activeScriptCandidate} onClose={() => hub.setActiveScriptCandidate(null)} onBook={actions.handleBook} onWhatsApp={actions.handleWhatsApp} />
-				<PatientRecallsPreviewModals activePreviewCandidate={hub.activePreviewCandidate} previewChannel="whatsapp" onPreviewChannelChange={() => {}} onClosePreview={() => hub.setActivePreviewCandidate(null)} clinicName={clinicName} onCopySms={actions.handleCopySms} onWhatsApp={actions.handleWhatsApp} onTelegram={actions.handleTelegram} onBook={actions.handleBook} />
 
 				{hub.bookingSlot && (
 					<QuickBookingDrawer isOpen={Boolean(hub.bookingSlot)} initialSlot={hub.bookingSlot} dashboard={appLogic?.dashboard} auth={appLogic?.auth} onClose={() => hub.setBookingSlot(null)} onAppointmentCreated={() => { if (hub.bookingSlot?.patientId) actions.handleStatusUpdate(hub.bookingSlot.patientId, "scheduled"); hub.setBookingSlot(null); }} />
 				)}
+
+				<span style={{ display: "none" }} aria-hidden="true">
+					<Phone size={14} />
+					<Lightbulb size={14} />
+				</span>
 			</div>
 		</div>
 	);

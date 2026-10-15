@@ -54,6 +54,30 @@
 	line-height: 1.3;
 }
 
+.recall-patient-card__details {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	font-size: 0.875rem;
+	line-height: 1.4;
+}
+
+.recall-patient-card__procedure {
+	font-weight: 600;
+	color: var(--teal);
+}
+
+.recall-patient-card__divider {
+	color: var(--muted);
+	font-size: 0.75rem;
+}
+
+.recall-patient-card__last-visit {
+	color: var(--rm-text-main);
+	font-size: 0.8125rem;
+}
+
 .recall-patient-card__meta {
 	display: flex;
 	align-items: center;
@@ -178,8 +202,220 @@
 	gap: 10px;
 }
 
+/* Solo Doctor 1-Click Cycle Presets (Mandates 8e, 8s) */
+.recall-solo-presets {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	padding: 12px 24px 4px;
+	border-bottom: 1px solid var(--rm-border);
+}
+
+.recall-preset-btn {
+	min-height: 38px;
+	padding: 6px 14px;
+	border-radius: var(--rm-radius-sm);
+	border: 1px solid var(--rm-border);
+	background: var(--rm-surface);
+	color: var(--rm-text-main);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.recall-preset-btn:hover {
+	background: var(--rm-surface-hover);
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+.recall-preset-btn.active {
+	background: var(--rm-primary-light);
+	color: var(--teal);
+	border-color: var(--teal);
+	box-shadow: var(--shadow-1);
+}
+
+/* Objection Script Helper Modal / Drawer */
+.recall-script-drawer {
+	margin: 16px 24px;
+	border: 1.5px solid var(--teal);
+	border-radius: var(--rm-radius-md);
+	background: var(--rm-surface);
+	padding: 16px;
+	box-shadow: var(--shadow-2);
+}
+
+.recall-script-drawer__header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	margin-bottom: 14px;
+	gap: 12px;
+}
+
+.recall-script-drawer__badge {
+	display: inline-block;
+	font-size: 0.6875rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--teal);
+	background: var(--rm-primary-light);
+	padding: 2px 8px;
+	border-radius: 4px;
+	margin-bottom: 4px;
+}
+
+.recall-script-drawer__name {
+	font-size: 1.0625rem;
+	font-weight: 700;
+	color: var(--rm-text-main);
+	margin: 0;
+}
+
+.recall-script-drawer__sub {
+	font-size: 0.8125rem;
+	color: var(--rm-text-muted);
+	margin: 2px 0 0;
+}
+
+.recall-script-box {
+	background: var(--rm-bg);
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-sm);
+	padding: 14px;
+	margin-bottom: 12px;
+}
+
+.recall-script-box__title {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	color: var(--teal);
+	margin-bottom: 6px;
+}
+
+.recall-script-box__text {
+	font-size: 0.9375rem;
+	font-weight: 500;
+	line-height: 1.5;
+	color: var(--rm-text-main);
+	margin: 0 0 6px;
+}
+
+.recall-script-box__goal {
+	font-size: 0.75rem;
+	color: var(--rm-text-muted);
+	margin: 0;
+	font-style: italic;
+}
+
+.recall-objections-section {
+	margin-top: 12px;
+}
+
+.recall-objections-label {
+	display: block;
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--rm-text-muted);
+	text-transform: uppercase;
+	margin-bottom: 6px;
+}
+
+.recall-objections-chips {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	margin-bottom: 10px;
+}
+
+.recall-objection-chip {
+	padding: 6px 12px;
+	border-radius: 20px;
+	border: 1px solid var(--rm-border);
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.recall-objection-chip.active {
+	background: var(--teal);
+	border-color: var(--teal);
+	color: var(--paper-strong);
+}
+
+.recall-objection-response {
+	background: var(--rm-primary-light);
+	border-left: 3px solid var(--teal);
+	padding: 10px 14px;
+	border-radius: 4px;
+}
+
+.recall-objection-counter {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+	font-size: 0.875rem;
+	line-height: 1.5;
+	color: var(--rm-text-main);
+	margin: 0;
+}
+
+.recall-script-drawer__footer {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 14px;
+	padding-top: 10px;
+	border-top: 1px solid var(--rm-border);
+}
+
+/* Contact dropdown menu */
+.recall-contact-dropdown-menu {
+	background: var(--rm-surface);
+	border: 1px solid var(--rm-border);
+	border-radius: 8px;
+	box-shadow: var(--shadow-3);
+}
+
+.recall-registry-section .recall-status-chips {
+	margin-bottom: 12px;
+	padding: 2px 4px;
+}
+
 /* Mobile Touch & Anti-Desktop-Squeeze Overrides */
 @media (max-width: 768px) {
+	.recall-status-chips {
+		padding: 4px 12px 8px 12px;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		flex-wrap: nowrap !important;
+	}
+
+	.recall-status-chips::-webkit-scrollbar {
+		display: none;
+	}
+
+	.recall-chip {
+		flex-shrink: 0;
+		white-space: nowrap;
+	}
+
 	.recall-manager-modal-backdrop {
 		padding: 0 !important;
 		justify-content: flex-start !important;

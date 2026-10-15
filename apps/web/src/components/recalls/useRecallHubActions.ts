@@ -59,8 +59,7 @@ export function useRecallHubActions({
 	const handleWhatsApp = async (candidate: PatientRecallRecord) => {
 		const message = generatePdnProtectedRecallMessage(candidate, { clinicName });
 		if (!candidate.phone?.trim()) {
-			showToast("У пациента не указан номер телефона. Открыт предпросмотр.", "warning");
-			setActivePreviewCandidate(candidate);
+			showToast("У пациента не указан номер телефона. Заполните номер в карте или скопируйте текст.", "warning");
 			return;
 		}
 		if (onSendWhatsApp) {
@@ -84,8 +83,7 @@ export function useRecallHubActions({
 	const handleTelegram = async (candidate: PatientRecallRecord) => {
 		const message = generatePdnProtectedRecallMessage(candidate, { clinicName });
 		if (!candidate.phone?.trim()) {
-			showToast("У пациента не указан номер телефона. Открыт предпросмотр.", "warning");
-			setActivePreviewCandidate(candidate);
+			showToast("У пациента не указан номер телефона. Заполните номер в карте или скопируйте текст.", "warning");
 			return;
 		}
 		if (onSendTelegram) {
@@ -100,7 +98,7 @@ export function useRecallHubActions({
 		const smsText = generatePdnProtectedRecallMessage(candidate, { clinicName });
 		navigator.clipboard.writeText(smsText).catch(() => {});
 		handleStatusUpdate(candidate.id, "invited", "sms");
-		showToast("Текст сообщения 152-ФЗ скопирован", "info");
+		showToast("Текст приглашения скопирован", "info");
 	};
 
 	const handleBook = (candidate: PatientRecallRecord) => {

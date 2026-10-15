@@ -1,5 +1,5 @@
 import type React from "react";
-import { CheckCircle2, Search, X } from "lucide-react";
+import { Calendar, CheckCircle2, Clock, Search, Send, X } from "lucide-react";
 import type { PatientRecallRecord, RecallContactStatus, RecallPeriodFilter } from "./patientRecallEngine";
 import { RecallPatientRowCard } from "./RecallPatientRowCard";
 
@@ -11,6 +11,15 @@ export interface PatientRecallsRegistryViewProps {
 	readonly onDoctorChange: (id: string | "all") => void;
 	readonly selectedPeriod: RecallPeriodFilter;
 	readonly onPeriodChange: (p: RecallPeriodFilter) => void;
+	readonly selectedStatus?: RecallContactStatus | "all" | undefined;
+	readonly onStatusChangeFilter?: ((status: RecallContactStatus | "all") => void) | undefined;
+	readonly statusCounts?: {
+		readonly all: number;
+		readonly due_now: number;
+		readonly invited: number;
+		readonly scheduled: number;
+		readonly completed: number;
+	} | undefined;
 	readonly searchQuery: string;
 	readonly onSearchChange: (q: string) => void;
 	readonly onBook: (candidate: PatientRecallRecord) => void;
@@ -24,11 +33,83 @@ export interface PatientRecallsRegistryViewProps {
 
 export const PatientRecallsRegistryView: React.FC<PatientRecallsRegistryViewProps> = ({
 	filteredCandidates, activeScriptCandidateId, uniqueDoctors, selectedDoctorId,
-	onDoctorChange, selectedPeriod, onPeriodChange, searchQuery, onSearchChange,
-	onBook, onToggleScript, onTogglePreview, onWhatsApp, onTelegram, onCopySms, onStatusUpdate,
+	onDoctorChange, selectedPeriod, onPeriodChange, selectedStatus = "all", onStatusChangeFilter,
+	statusCounts, searchQuery, onSearchChange, onBook, onToggleScript, onTogglePreview,
+	onWhatsApp, onTelegram, onCopySms, onStatusUpdate,
 }) => {
 	return (
 		<div className="recall-registry-section">
+			{/* Fast segmented status filter: [ Все ] -> [ Пора пригласить ] -> [ Приглашение отправлено ] -> [ Записан на приём ] -> [ Пришёл на осмотр ] */}
+			<div
+				className="recall-status-chips"
+				role="radiogroup"
+				aria-label="Фильтр по статусу вызова"
+			>
+				<button
+					type="button"
+					className={`recall-chip ${selectedStatus === "all" ? "active" : ""}`}
+					onClick={() => onStatusChangeFilter?.("all")}
+					data-testid="status-filter-all"
+				>
+					<span>Все</span>
+					{typeof statusCounts?.all === "number" && (
+						<span className="recall-chip-badge">{statusCounts.all}</span>
+					)}
+				</button>
+
+				<button
+					type="button"
+					className={`recall-chip ${selectedStatus === "due_now" ? "active" : ""}`}
+					onClick={() => onStatusChangeFilter?.("due_now")}
+					data-testid="status-filter-due-now"
+				>
+					<Clock size={14} />
+					<span>Пора пригласить</span>
+					{typeof statusCounts?.due_now === "number" && (
+						<span className="recall-chip-badge">{statusCounts.due_now}</span>
+					)}
+				</button>
+
+				<button
+					type="button"
+					className={`recall-chip ${selectedStatus === "invited" ? "active" : ""}`}
+					onClick={() => onStatusChangeFilter?.("invited")}
+					data-testid="status-filter-invited"
+				>
+					<Send size={14} />
+					<span>Приглашение отправлено</span>
+					{typeof statusCounts?.invited === "number" && (
+						<span className="recall-chip-badge">{statusCounts.invited}</span>
+					)}
+				</button>
+
+				<button
+					type="button"
+					className={`recall-chip ${selectedStatus === "scheduled" ? "active" : ""}`}
+					onClick={() => onStatusChangeFilter?.("scheduled")}
+					data-testid="status-filter-scheduled"
+				>
+					<Calendar size={14} />
+					<span>Записан на приём</span>
+					{typeof statusCounts?.scheduled === "number" && (
+						<span className="recall-chip-badge">{statusCounts.scheduled}</span>
+					)}
+				</button>
+
+				<button
+					type="button"
+					className={`recall-chip ${selectedStatus === "completed" ? "active" : ""}`}
+					onClick={() => onStatusChangeFilter?.("completed")}
+					data-testid="status-filter-completed"
+				>
+					<CheckCircle2 size={14} />
+					<span>Пришёл на осмотр</span>
+					{typeof statusCounts?.completed === "number" && (
+						<span className="recall-chip-badge">{statusCounts.completed}</span>
+					)}
+				</button>
+			</div>
+
 			<div className="recall-filters-row">
 				<div className="recall-search-input-wrap dente-search-wrap">
 					<Search size={15} className="recall-search-icon" aria-hidden="true" />

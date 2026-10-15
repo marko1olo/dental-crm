@@ -90,7 +90,6 @@ export {
 
 export * from "./PatientRecallsCohortsTab";
 export * from "./PatientRecallsTaskCallsTab";
-export * from "./PatientRecallsPreviewModals";
 export * from "./PatientRecallsTableView";
 export * from "./PatientRecallsKanbanView";
 export * from "./PatientRecallsToolbar";

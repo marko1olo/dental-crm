@@ -22,7 +22,7 @@ export const RecallHubHeader: React.FC<RecallHubHeaderProps> = ({
 				</div>
 				<div>
 					<h2 id="recalls-hub-title" className="recall-header-title">
-						Профосмотры, диспансеризация и ретеншн (Recalls Hub)
+						Профосмотры и гигиена
 					</h2>
 					<p className="recall-header-subtitle">
 						<Phone
@@ -35,7 +35,7 @@ export const RecallHubHeader: React.FC<RecallHubHeaderProps> = ({
 							style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }}
 							aria-hidden="true"
 						/>
-						Клинические циклы возврата (6 мес гигиена, 12 мес импланты), 1-клик WhatsApp и сценарии звонков
+						Плановые осмотры, профессиональная гигиена и контроль лечения
 					</p>
 				</div>
 			</div>
