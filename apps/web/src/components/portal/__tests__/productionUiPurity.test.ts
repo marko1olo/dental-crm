@@ -68,7 +68,10 @@ describe("Production UI Purity & Dev Leaks Purge (Wave 106 - Mandate 8p/8d)", ()
 	});
 
 	it("4. MdlpScanningModal contains no 'Тест связи' button or 'Тестовые образцы' strip", () => {
-		const content = fs.readFileSync(TARGET_FILES.mdlpScanning, "utf8");
+		const modalContent = fs.readFileSync(TARGET_FILES.mdlpScanning, "utf8");
+		const scannerInputFile = path.join(SRC_DIR, "components/mdlp/mdlpModal/MdlpScannerInput.tsx");
+		const inputContent = fs.existsSync(scannerInputFile) ? fs.readFileSync(scannerInputFile, "utf8") : "";
+		const content = modalContent + "\n" + inputContent;
 
 		assert.ok(!content.includes("Тест связи"), "Must not contain 'Тест связи' button");
 		assert.ok(!content.includes("Тестовые образцы"), "Must not contain 'Тестовые образцы' strip");

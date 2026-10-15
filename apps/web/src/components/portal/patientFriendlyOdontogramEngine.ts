@@ -9,11 +9,68 @@
  * - Strict <= 800 lines ceiling.
  */
 
-export type PatientToothStatus = "healthy" | "in_treatment" | "needs_treatment" | "missing_or_implant";
+import {
+	toCanonicalToothState,
+	type CanonicalToothState,
+	type ToothStatus,
+} from "@dental/shared";
+
+export type { CanonicalToothState, ToothStatus };
+
+export type PatientToothStatus =
+	| "healthy"
+	| "in_treatment"
+	| "needs_treatment"
+	| "missing_or_implant";
+
+export function fromCanonicalToothStateToPatientStatus(
+	state: CanonicalToothState | string | null | undefined,
+): PatientToothStatus {
+	const canonical = toCanonicalToothState(state);
+	switch (canonical) {
+		case "Healthy":
+		case "Filled":
+		case "Crown":
+			return "healthy";
+		case "Pulpitis":
+		case "Periodontitis":
+		case "Planned_Implant":
+		case "Planned_Crown":
+			return "in_treatment";
+		case "Caries":
+		case "Retained":
+		case "Root":
+			return "needs_treatment";
+		case "Missing":
+		case "Implant":
+			return "missing_or_implant";
+		default:
+			return "healthy";
+	}
+	return "healthy";
+}
+
+export function toCanonicalToothStateFromPatientStatus(
+	status: PatientToothStatus,
+): CanonicalToothState {
+	switch (status) {
+		case "healthy":
+			return "Healthy";
+		case "in_treatment":
+			return "Pulpitis";
+		case "needs_treatment":
+			return "Caries";
+		case "missing_or_implant":
+			return "Missing";
+		default:
+			return "Healthy";
+	}
+}
 
 export interface PatientToothInfo {
 	readonly fdiCode: string;
 	readonly status: PatientToothStatus;
+	readonly canonicalState?: CanonicalToothState | undefined;
 	readonly humanNameRu: string;
 	readonly clinicalStateRu: string;
 	readonly procedureDescriptionRu?: string | undefined;
@@ -146,6 +203,7 @@ export function computePatientTeethFromStages(
 				return {
 					fdiCode,
 					status: "in_treatment",
+					canonicalState: "Pulpitis",
 					humanNameRu,
 					clinicalStateRu: `В процессе лечения: ${inProgress.titleRu}`,
 					plannedStageTitleRu: inProgress.titleRu,
@@ -157,6 +215,7 @@ export function computePatientTeethFromStages(
 				return {
 					fdiCode,
 					status: "needs_treatment",
+					canonicalState: "Caries",
 					humanNameRu,
 					clinicalStateRu: `Требует лечения: ${planned.titleRu}`,
 					plannedStageTitleRu: planned.titleRu,
@@ -176,6 +235,7 @@ export function computePatientTeethFromStages(
 				return {
 					fdiCode,
 					status: "missing_or_implant",
+					canonicalState: "Implant",
 					humanNameRu,
 					clinicalStateRu: `Установлен имплантат: ${completed?.titleRu || "Имплантация"}`,
 					warrantyActive: true,
@@ -185,6 +245,7 @@ export function computePatientTeethFromStages(
 				return {
 					fdiCode,
 					status: "missing_or_implant",
+					canonicalState: "Missing",
 					humanNameRu,
 					clinicalStateRu: `Удален: ${completed?.titleRu || "Удаление"}`,
 				};
@@ -192,6 +253,7 @@ export function computePatientTeethFromStages(
 			return {
 				fdiCode,
 				status: "healthy",
+				canonicalState: "Filled",
 				humanNameRu,
 				clinicalStateRu: `Вылечен: ${completed?.titleRu || "Лечение завершено"}`,
 				warrantyActive: true,
@@ -207,6 +269,7 @@ export function computePatientTeethFromStages(
 			return {
 				fdiCode,
 				status: "healthy",
+				canonicalState: "Filled",
 				humanNameRu,
 				clinicalStateRu: `Вылечен: ${item?.workTitleRu || "Комплексная реставрация"}`,
 				warrantyActive: true,
@@ -217,6 +280,7 @@ export function computePatientTeethFromStages(
 		return {
 			fdiCode,
 			status: "healthy",
+			canonicalState: "Healthy",
 			humanNameRu,
 			clinicalStateRu: "Здоров, патологий не выявлено",
 		};
@@ -224,42 +288,42 @@ export function computePatientTeethFromStages(
 }
 
 export const DEFAULT_PATIENT_TEETH: readonly PatientToothInfo[] = [
-	{ fdiCode: "18", status: "healthy", humanNameRu: "Верхний правый зуб мудрости", clinicalStateRu: "Здоров, прорезался правильно" },
-	{ fdiCode: "17", status: "healthy", humanNameRu: "Верхний правый 2-й жевательный зуб", clinicalStateRu: "Здоров, пломб нет" },
-	{ fdiCode: "16", status: "healthy", humanNameRu: "Верхний правый 1-й жевательный зуб (шестерка)", clinicalStateRu: "Вылечен: установлена коронка из диоксида циркония", warrantyActive: true },
-	{ fdiCode: "15", status: "healthy", humanNameRu: "Верхний правый 2-й малый жевательный зуб", clinicalStateRu: "Световая пломба Estelite, краевое прилегание идеальное" },
-	{ fdiCode: "14", status: "healthy", humanNameRu: "Верхний правый 1-й малый жевательный зуб", clinicalStateRu: "Здоров" },
-	{ fdiCode: "13", status: "healthy", humanNameRu: "Верхний правый клык", clinicalStateRu: "Здоров" },
-	{ fdiCode: "12", status: "healthy", humanNameRu: "Верхний правый боковой резец", clinicalStateRu: "Здоров" },
-	{ fdiCode: "11", status: "healthy", humanNameRu: "Верхний правый передний центральный резец", clinicalStateRu: "Здоров" },
+	{ fdiCode: "18", status: "healthy", canonicalState: "Healthy", humanNameRu: "Верхний правый зуб мудрости", clinicalStateRu: "Здоров, прорезался правильно" },
+	{ fdiCode: "17", status: "healthy", canonicalState: "Healthy", humanNameRu: "Верхний правый 2-й жевательный зуб", clinicalStateRu: "Здоров, пломб нет" },
+	{ fdiCode: "16", status: "healthy", canonicalState: "Crown", humanNameRu: "Верхний правый 1-й жевательный зуб (шестерка)", clinicalStateRu: "Вылечен: установлена коронка из диоксида циркония", warrantyActive: true },
+	{ fdiCode: "15", status: "healthy", canonicalState: "Filled", humanNameRu: "Верхний правый 2-й малый жевательный зуб", clinicalStateRu: "Световая пломба Estelite, краевое прилегание идеальное" },
+	{ fdiCode: "14", status: "healthy", canonicalState: "Healthy", humanNameRu: "Верхний правый 1-й малый жевательный зуб", clinicalStateRu: "Здоров" },
+	{ fdiCode: "13", status: "healthy", canonicalState: "Healthy", humanNameRu: "Верхний правый клык", clinicalStateRu: "Здоров" },
+	{ fdiCode: "12", status: "healthy", canonicalState: "Healthy", humanNameRu: "Верхний правый боковой резец", clinicalStateRu: "Здоров" },
+	{ fdiCode: "11", status: "healthy", canonicalState: "Healthy", humanNameRu: "Верхний правый передний центральный резец", clinicalStateRu: "Здоров" },
 
-	{ fdiCode: "21", status: "healthy", humanNameRu: "Верхний левый передний центральный резец", clinicalStateRu: "Здоров" },
-	{ fdiCode: "22", status: "healthy", humanNameRu: "Верхний левый боковой резец", clinicalStateRu: "Здоров" },
-	{ fdiCode: "23", status: "healthy", humanNameRu: "Верхний левый клык", clinicalStateRu: "Здоров" },
-	{ fdiCode: "24", status: "healthy", humanNameRu: "Верхний левый 1-й малый жевательный зуб", clinicalStateRu: "Здоров" },
-	{ fdiCode: "25", status: "in_treatment", humanNameRu: "Верхний левый 2-й малый жевательный зуб", clinicalStateRu: "В процессе: временная пломба, обработка каналов", plannedStageTitleRu: "Терапевтический этап (пломбирование каналов)" },
-	{ fdiCode: "26", status: "needs_treatment", humanNameRu: "Верхний левый 1-й жевательный зуб", clinicalStateRu: "Требует внимания: апроксимальный кариес", plannedStageTitleRu: "Этап 2: Лечение кариеса" },
-	{ fdiCode: "27", status: "healthy", humanNameRu: "Верхний левый 2-й жевательный зуб", clinicalStateRu: "Здоров" },
-	{ fdiCode: "28", status: "missing_or_implant", humanNameRu: "Верхний левый зуб мудрости", clinicalStateRu: "Удален ранее по ортодонтическим показаниям" },
+	{ fdiCode: "21", status: "healthy", canonicalState: "Healthy", humanNameRu: "Верхний левый передний центральный резец", clinicalStateRu: "Здоров" },
+	{ fdiCode: "22", status: "healthy", canonicalState: "Healthy", humanNameRu: "Верхний левый боковой резец", clinicalStateRu: "Здоров" },
+	{ fdiCode: "23", status: "healthy", canonicalState: "Healthy", humanNameRu: "Верхний левый клык", clinicalStateRu: "Здоров" },
+	{ fdiCode: "24", status: "healthy", canonicalState: "Healthy", humanNameRu: "Верхний левый 1-й малый жевательный зуб", clinicalStateRu: "Здоров" },
+	{ fdiCode: "25", status: "in_treatment", canonicalState: "Pulpitis", humanNameRu: "Верхний левый 2-й малый жевательный зуб", clinicalStateRu: "В процессе: временная пломба, обработка каналов", plannedStageTitleRu: "Терапевтический этап (пломбирование каналов)" },
+	{ fdiCode: "26", status: "needs_treatment", canonicalState: "Caries", humanNameRu: "Верхний левый 1-й жевательный зуб", clinicalStateRu: "Требует внимания: апроксимальный кариес", plannedStageTitleRu: "Этап 2: Лечение кариеса" },
+	{ fdiCode: "27", status: "healthy", canonicalState: "Healthy", humanNameRu: "Верхний левый 2-й жевательный зуб", clinicalStateRu: "Здоров" },
+	{ fdiCode: "28", status: "missing_or_implant", canonicalState: "Missing", humanNameRu: "Верхний левый зуб мудрости", clinicalStateRu: "Удален ранее по ортодонтическим показаниям" },
 
 	// Lower Arch
-	{ fdiCode: "48", status: "missing_or_implant", humanNameRu: "Нижний правый зуб мудрости", clinicalStateRu: "Удален" },
-	{ fdiCode: "47", status: "healthy", humanNameRu: "Нижний правый 2-й жевательный зуб", clinicalStateRu: "Здоров" },
-	{ fdiCode: "46", status: "missing_or_implant", humanNameRu: "Нижний правый 1-й жевательный зуб", clinicalStateRu: "Установлен имплантат Dentium SuperLine с циркониевой коронкой", warrantyActive: true },
-	{ fdiCode: "45", status: "healthy", humanNameRu: "Нижний правый 2-й малый жевательный зуб", clinicalStateRu: "Здоров" },
-	{ fdiCode: "44", status: "healthy", humanNameRu: "Нижний правый 1-й малый жевательный зуб", clinicalStateRu: "Здоров" },
-	{ fdiCode: "43", status: "healthy", humanNameRu: "Нижний правый клык", clinicalStateRu: "Здоров" },
-	{ fdiCode: "42", status: "healthy", humanNameRu: "Нижний правый боковой резец", clinicalStateRu: "Здоров" },
-	{ fdiCode: "41", status: "healthy", humanNameRu: "Нижний правый передний центральный резец", clinicalStateRu: "Здоров" },
+	{ fdiCode: "48", status: "missing_or_implant", canonicalState: "Missing", humanNameRu: "Нижний правый зуб мудрости", clinicalStateRu: "Удален" },
+	{ fdiCode: "47", status: "healthy", canonicalState: "Healthy", humanNameRu: "Нижний правый 2-й жевательный зуб", clinicalStateRu: "Здоров" },
+	{ fdiCode: "46", status: "missing_or_implant", canonicalState: "Implant", humanNameRu: "Нижний правый 1-й жевательный зуб", clinicalStateRu: "Установлен имплантат Dentium SuperLine с циркониевой коронкой", warrantyActive: true },
+	{ fdiCode: "45", status: "healthy", canonicalState: "Healthy", humanNameRu: "Нижний правый 2-й малый жевательный зуб", clinicalStateRu: "Здоров" },
+	{ fdiCode: "44", status: "healthy", canonicalState: "Healthy", humanNameRu: "Нижний правый 1-й малый жевательный зуб", clinicalStateRu: "Здоров" },
+	{ fdiCode: "43", status: "healthy", canonicalState: "Healthy", humanNameRu: "Нижний правый клык", clinicalStateRu: "Здоров" },
+	{ fdiCode: "42", status: "healthy", canonicalState: "Healthy", humanNameRu: "Нижний правый боковой резец", clinicalStateRu: "Здоров" },
+	{ fdiCode: "41", status: "healthy", canonicalState: "Healthy", humanNameRu: "Нижний правый передний центральный резец", clinicalStateRu: "Здоров" },
 
-	{ fdiCode: "31", status: "healthy", humanNameRu: "Нижний левый передний центральный резец", clinicalStateRu: "Здоров" },
-	{ fdiCode: "32", status: "healthy", humanNameRu: "Нижний левый боковой резец", clinicalStateRu: "Здоров" },
-	{ fdiCode: "33", status: "healthy", humanNameRu: "Нижний левый клык", clinicalStateRu: "Здоров" },
-	{ fdiCode: "34", status: "healthy", humanNameRu: "Нижний левый 1-й малый жевательный зуб", clinicalStateRu: "Здоров" },
-	{ fdiCode: "35", status: "healthy", humanNameRu: "Нижний левый 2-й малый жевательный зуб", clinicalStateRu: "Здоров" },
-	{ fdiCode: "36", status: "in_treatment", humanNameRu: "Нижний левый 1-й жевательный зуб", clinicalStateRu: "Подготовка под коронку: культевая вкладка", plannedStageTitleRu: "Ортопедический этап" },
-	{ fdiCode: "37", status: "needs_treatment", humanNameRu: "Нижний левый 2-й жевательный зуб", clinicalStateRu: "Кариес фиссур", plannedStageTitleRu: "Этап 1: Гигиена и лечение кариеса" },
-	{ fdiCode: "38", status: "healthy", humanNameRu: "Нижний левый зуб мудрости", clinicalStateRu: "Здоров" },
+	{ fdiCode: "31", status: "healthy", canonicalState: "Healthy", humanNameRu: "Нижний левый передний центральный резец", clinicalStateRu: "Здоров" },
+	{ fdiCode: "32", status: "healthy", canonicalState: "Healthy", humanNameRu: "Нижний левый боковой резец", clinicalStateRu: "Здоров" },
+	{ fdiCode: "33", status: "healthy", canonicalState: "Healthy", humanNameRu: "Нижний левый клык", clinicalStateRu: "Здоров" },
+	{ fdiCode: "34", status: "healthy", canonicalState: "Healthy", humanNameRu: "Нижний левый 1-й малый жевательный зуб", clinicalStateRu: "Здоров" },
+	{ fdiCode: "35", status: "healthy", canonicalState: "Healthy", humanNameRu: "Нижний левый 2-й малый жевательный зуб", clinicalStateRu: "Здоров" },
+	{ fdiCode: "36", status: "in_treatment", canonicalState: "Crown", humanNameRu: "Нижний левый 1-й жевательный зуб", clinicalStateRu: "Подготовка под коронку: культевая вкладка", plannedStageTitleRu: "Ортопедический этап" },
+	{ fdiCode: "37", status: "needs_treatment", canonicalState: "Caries", humanNameRu: "Нижний левый 2-й жевательный зуб", clinicalStateRu: "Кариес фиссур", plannedStageTitleRu: "Этап 1: Гигиена и лечение кариеса" },
+	{ fdiCode: "38", status: "healthy", canonicalState: "Healthy", humanNameRu: "Нижний левый зуб мудрости", clinicalStateRu: "Здоров" },
 ];
 
 /**
@@ -270,6 +334,7 @@ export function createDefaultHealthyAdultTeeth(): PatientToothInfo[] {
 	return ALL_ADULT_FDI_TEETH.map((fdiCode) => ({
 		fdiCode,
 		status: "healthy",
+		canonicalState: "Healthy",
 		humanNameRu: HUMAN_TOOTH_NAMES[fdiCode] || `Зуб №${fdiCode}`,
 		clinicalStateRu: "Здоров",
 	}));

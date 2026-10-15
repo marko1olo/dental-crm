@@ -20,23 +20,7 @@ export * from "../booking/BookingConfirmationView";
 export * from "./PatientFriendlyOdontogram.js";
 export * from "./patientFriendlyOdontogramEngine.js";
 export * from "./PatientToothDetailBox.js";
-export {
-	PatientPlanView,
-	type PatientPlanViewProps,
-	type PatientBeforeAfterCase,
-	type PlanScanViewerModalProps,
-	type PlanBeforeAfterGalleryProps,
-	type PlanStagesAccordionProps,
-	type PlanThreeTierSelectorProps,
-	type PlanDiagnosticScansSectionProps,
-	CLINIC_GUARANTEE_ITEMS,
-	POST_TREATMENT_TRIAGE_FAQ,
-	PATIENT_COMFORT_STANDARDS,
-	DEFAULT_THREE_TIER_PLAN_MODEL,
-	DEFAULT_PATIENT_SCANS,
-	PlanScanViewerModal,
-	PlanBeforeAfterGallery,
-} from "./PatientPlanView.js";
+export * from "./PatientPlanView.js";
 export * from "./PatientPortalTreatmentStageCard.js";
 export * from "./patientWebappEngine.js";
 export { default } from "./patientCabinet";

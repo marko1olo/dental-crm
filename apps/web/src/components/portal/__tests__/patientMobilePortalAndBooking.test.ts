@@ -172,7 +172,7 @@ describe("Patient Mobile Portal & Online Booking Engine (Wave 18)", () => {
 
 	describe("9. FNS Tax Certificate (КНД 1151156)", () => {
 		it("calculates 13% tax refund for paid dental treatment", () => {
-			const cert = generateFnsTaxCertificateData(SAMPLE_PORTAL_PROFILE, SAMPLE_PORTAL_INVOICES, 2026);
+			const cert = generateFnsTaxCertificateData(SAMPLE_PORTAL_PROFILE, SAMPLE_PORTAL_INVOICES, 2026, { inn: "7701234567" });
 			assert.strictEqual(cert.taxYear, 2026);
 			assert.strictEqual(cert.totalPaidEligibleRub, 21300);
 			assert.strictEqual(cert.maxDeductionRefundRub, 2769); // 21300 * 0.13 = 2769

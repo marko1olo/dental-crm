@@ -15,6 +15,8 @@
 }
 
 .selfcheckin-modal-window {
+	position: relative;
+	z-index: 10;
 	width: 100%;
 	max-width: 620px;
 	background: var(--paper-strong, #ffffff);
@@ -24,7 +26,7 @@
 	border: 1px solid var(--glass-border);
 	display: flex;
 	flex-direction: column;
-	max-height: 90vh;
+	max-height: 96vh;
 	overflow: hidden;
 	animation: selfcheckinFadeIn 0.25s ease-out;
 	touch-action: manipulation;
@@ -142,7 +144,7 @@
 
 /* Content */
 .selfcheckin-content {
-	padding: 1.5rem;
+	padding: 1rem 1.25rem;
 	overflow-y: auto;
 	flex: 1;
 }

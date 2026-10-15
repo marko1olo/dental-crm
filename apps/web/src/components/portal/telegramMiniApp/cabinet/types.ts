@@ -3,6 +3,7 @@ import type { ToothComplaint } from "../TelegramInteractiveToothPicker";
 export type TelegramCabinetTab =
 	| "teeth"
 	| "appointments"
+	| "booking"
 	| "imaging"
 	| "tax"
 	| "finance";
@@ -52,9 +53,9 @@ export interface FamilyMember {
 }
 
 export const DEMO_FAMILY_MEMBERS: FamilyMember[] = [
-	{ id: "self", name: "Александр (Я)", relation: "self" },
-	{ id: "child-1", name: "Артём (Сын, 8 лет)", relation: "child" },
-	{ id: "child-2", name: "София (Дочь, 12 лет)", relation: "child" },
+	{ id: "self", name: "Александр", relation: "self" },
+	{ id: "child-1", name: "Артём (сын)", relation: "child" },
+	{ id: "child-2", name: "София (дочь)", relation: "child" },
 ];
 
 export const DEMO_APPOINTMENTS: PatientAppointment[] = [

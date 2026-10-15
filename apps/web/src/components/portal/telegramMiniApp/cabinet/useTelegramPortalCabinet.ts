@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import type { ToothComplaint } from "../TelegramInteractiveToothPicker";
 import {
@@ -21,6 +21,7 @@ export interface UseTelegramPortalCabinetOptions {
 
 export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOptions = {}) {
 	const {
+		organizationId: propOrganizationId,
 		patientId: propPatientId,
 		initialTab = "appointments",
 		initialTaxSheetOpen = false,
@@ -31,7 +32,7 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 
 	// Семейный профиль
 	const [activeFamilyMemberId, setActiveFamilyMemberId] = useState<string>("self");
-	const [familyMembers] = useState<FamilyMember[]>(() =>
+	const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(() =>
 		isDemo ? DEMO_FAMILY_MEMBERS : [{ id: "self", name: "Пациент", relation: "self" }],
 	);
 
@@ -92,13 +93,157 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 		}
 	}, []);
 
+	// Гидратация живых данных из базы данных через API WebApp (/api/telegram/webapp/session)
+	useEffect(() => {
+		let isMounted = true;
+		const initData = window.Telegram?.WebApp?.initData;
+		const effectiveOrgId = propOrganizationId || (isDemo ? "demo-clinic-org" : "");
+		const effectivePatientId = propPatientId || (isDemo ? "demo-patient-id" : "");
+
+		// Если нет параметров организации/пациента и нет initData в Telegram WebApp — ничего не запрашиваем
+		if (!initData && !effectiveOrgId) return;
+
+		const fetchSession = async () => {
+			try {
+				const res = await fetch("/api/telegram/webapp/session", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						initData: initData || undefined,
+						organizationId: effectiveOrgId || "demo-clinic-org",
+						patientId: effectivePatientId || undefined,
+					}),
+				});
+
+				if (!res.ok) return;
+				const data = await res.json();
+				if (!isMounted || !data) return;
+
+				if (data.patient?.bonusBalanceRub !== undefined) {
+					setBonusBalance(data.patient.bonusBalanceRub);
+				}
+				if (data.patient?.fullName) {
+					setPayerFullName((prev) => prev || data.patient.fullName);
+				}
+
+				const combinedAppointments: PatientAppointment[] = [];
+
+				if (Array.isArray(data.upcomingAppointments)) {
+					for (const app of data.upcomingAppointments) {
+						const dt = app.startTime ? new Date(app.startTime) : null;
+						const dateStr =
+							dt && !Number.isNaN(dt.getTime())
+								? dt.toLocaleDateString("ru-RU", {
+										weekday: "long",
+										day: "numeric",
+										month: "long",
+										year: "numeric",
+									})
+								: app.startTime
+									? String(app.startTime).split("T")[0] || ""
+									: "";
+						const timeStr =
+							dt && !Number.isNaN(dt.getTime())
+								? dt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+								: app.startTime
+									? String(app.startTime).split("T")[1]?.slice(0, 5) || "10:00"
+									: "10:00";
+
+						combinedAppointments.push({
+							id: String(app.id),
+							dateStr,
+							timeStr,
+							doctorName: app.doctorName || "Врач-стоматолог",
+							doctorRole: app.doctorSpecialty || "Стоматолог-терапевт",
+							cabinet: "Кабинет 1",
+							procedureTitle: app.notes || "Консультация и осмотр полости рта",
+							durationMinutes: 60,
+							isConfirmed: app.status === "confirmed",
+							isPast: false,
+						});
+					}
+				}
+
+				if (Array.isArray(data.pastVisits)) {
+					for (const visit of data.pastVisits) {
+						const dt = visit.startTime ? new Date(visit.startTime) : null;
+						const dateStr =
+							dt && !Number.isNaN(dt.getTime())
+								? dt.toLocaleDateString("ru-RU", {
+										day: "numeric",
+										month: "long",
+										year: "numeric",
+									})
+								: visit.startTime
+									? String(visit.startTime).split("T")[0] || ""
+									: "";
+						const timeStr =
+							dt && !Number.isNaN(dt.getTime())
+								? dt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+								: "12:00";
+
+						combinedAppointments.push({
+							id: String(visit.id),
+							dateStr,
+							timeStr,
+							doctorName: visit.doctorName || "Лечащий врач",
+							doctorRole: visit.doctorSpecialty || "Врач-стоматолог",
+							cabinet: "Кабинет 1",
+							procedureTitle: visit.diagnosis || "Стоматологический приём",
+							durationMinutes: 60,
+							isConfirmed: true,
+							isPast: true,
+						});
+					}
+				}
+
+				if (combinedAppointments.length > 0) {
+					setAppointments(combinedAppointments);
+				}
+
+				if (data.family?.members && Array.isArray(data.family.members) && data.family.members.length > 0) {
+					const mappedFamily: FamilyMember[] = data.family.members.map((m: any) => ({
+						id: String(m.patientId || m.id || "self"),
+						name: String(m.fullName || "Член семьи"),
+						relation: String(m.relation || "self"),
+					}));
+					setFamilyMembers(mappedFamily);
+				}
+			} catch {
+				// В оффлайне или при ошибке сети сохраняются клинические дефолты (Zero Dead-Ends)
+			}
+		};
+
+		fetchSession();
+		return () => {
+			isMounted = false;
+		};
+	}, [propOrganizationId, propPatientId, isDemo]);
+
 	// Подтверждение визита в 1 тап
-	const handleConfirmAppointment = useCallback((id: string) => {
+	const handleConfirmAppointment = useCallback(async (id: string) => {
 		triggerHaptic("medium");
 		setAppointments((prev) =>
 			prev.map((app) => (app.id === id ? { ...app, isConfirmed: true } : app)),
 		);
-	}, [triggerHaptic]);
+
+		try {
+			const effectiveOrgId = propOrganizationId || (isDemo ? "demo-clinic-org" : "");
+			if (effectiveOrgId) {
+				await fetch("/api/telegram/webapp/family/confirm", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						organizationId: effectiveOrgId,
+						parentPatientId: propPatientId || id,
+						appointmentId: id,
+					}),
+				}).catch(() => {});
+			}
+		} catch {
+			// Оптимистичное обновление UI уже произошло
+		}
+	}, [propOrganizationId, propPatientId, isDemo, triggerHaptic]);
 
 	// Расчет налогового вычета (13% от общей суммы)
 	const calculatedDeduction = useMemo(() => Math.round(totalYearExpense * 0.13), [totalYearExpense]);
@@ -129,6 +274,11 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 		}
 	}, [propPatientId, triggerHaptic]);
 
+	const handleAddBookedAppointment = useCallback((newAppt: PatientAppointment) => {
+		setAppointments((prev) => [newAppt, ...prev]);
+		setAppointmentFilter("upcoming");
+	}, []);
+
 	const handleDownloadTaxCert = useCallback(() => {
 		triggerHaptic("medium");
 		setTaxCopiedNotice(true);
@@ -137,6 +287,8 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 
 	return {
 		isDemo,
+		organizationId: propOrganizationId,
+		patientId: propPatientId,
 		activeTab,
 		setActiveTab,
 		activeFamilyMemberId,
@@ -151,6 +303,7 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 		appointmentFilter,
 		setAppointmentFilter,
 		handleConfirmAppointment,
+		handleAddBookedAppointment,
 		imagingList,
 		selectedScanId,
 		setSelectedScanId,

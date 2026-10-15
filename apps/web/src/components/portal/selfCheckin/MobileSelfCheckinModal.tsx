@@ -296,11 +296,13 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		signed: StatutoryConsentItem[];
 		somatic: SomaticQuestionnaireData;
 		evaluatedRisks: ReturnType<typeof evaluateSomaticRisks>;
+		isEmergency?: boolean;
 	}) => {
 		setIsSubmitting(true);
 		setAuthError(null);
 		try {
-			const res = await fetch("/api/portal/self-checkin", {
+			const endpoint = payload.isEmergency ? "/api/portal/kiosk/emergency-checkin" : "/api/portal/self-checkin";
+			const res = await fetch(endpoint, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -309,6 +311,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 					patientId,
 					signedConsents: payload.signed.filter((c) => c.isSigned).map((c) => c.id),
 					somaticProfile: payload.evaluatedRisks,
+					isEmergency: Boolean(payload.isEmergency),
 				}),
 			});
 			if (res.ok) {
@@ -325,7 +328,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 					signedConsents: payload.signed.filter((c) => c.isSigned).map((c) => c.id),
 					somaticProfile: payload.evaluatedRisks,
 					queueTicket: json?.queueTicket || displayQueueTicket,
-					visitStatus: json?.visitStatus || "В холле / Ожидает приёма",
+					visitStatus: json?.visitStatus || (payload.isEmergency ? "⚡ В холле / Ожидает экстренного врача" : "В холле / Ожидает приёма"),
 				});
 				return;
 			}
@@ -344,8 +347,19 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 			patientId: patientId || "",
 			signedConsents: payload.signed.filter((c) => c.isSigned).map((c) => c.id),
 			somaticProfile: payload.evaluatedRisks,
-			queueTicket: displayQueueTicket,
-			visitStatus: "В холле / Ожидает приёма",
+			queueTicket: payload.isEmergency ? "Талон № Э-01" : displayQueueTicket,
+			visitStatus: payload.isEmergency ? "⚡ В холле / Ожидает экстренного врача" : "В холле / Ожидает приёма",
+		});
+	};
+
+	const handleEmergencyCheckin = () => {
+		const normData = createPhysiologicalNormSomaticQuestionnaire();
+		const evaluatedNorm = evaluateSomaticRisks(normData);
+		void submitCheckinToBackend({
+			signed: consents,
+			somatic: normData,
+			evaluatedRisks: evaluatedNorm,
+			isEmergency: true,
 		});
 	};
 
@@ -480,6 +494,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 							isSubmitting={isSubmitting}
 							onApplyPhysiologicalNorm={handleApplyPhysiologicalNorm}
 							onOneTouchCheckin={handleOneTouchCheckin}
+							onEmergencyCheckin={handleEmergencyCheckin}
 							onGoToConsents={() => setStep("consents")}
 							onGoToSomatic={() => setStep("somatic")}
 						/>

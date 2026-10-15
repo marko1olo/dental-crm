@@ -70,30 +70,12 @@ test("Portal Domain SSOT Consolidation & Zero-Bloat Inquisition (Mandates 8s, 8d
 	);
 
 	await t.test(
-		"3. Legacy patient-portal/ directory files are ultra-thin delegation facades (<25 lines each)",
+		"3. Legacy patient-portal/ directory is completely removed and physically forbidden (Mandates 8s, 8ag)",
 		() => {
-			const facadeFiles = [
-				"index.ts",
-				"PatientFriendlyOdontogram.tsx",
-				"PatientPlanView.tsx",
-				"PatientPortalTreatmentStageCard.tsx",
-				"patientWebappEngine.ts",
-			];
-
-			for (const file of facadeFiles) {
-				const fullPath = path.join(patientPortalDir, file);
-				assert.ok(fs.existsSync(fullPath), `Facade file ${file} must exist`);
-				const source = fs.readFileSync(fullPath, "utf-8");
-				const lines = source.split("\n");
-				assert.ok(
-					lines.length <= 25,
-					`Facade ${file} must be <= 25 lines, got ${lines.length}`,
-				);
-				assert.ok(
-					source.includes("../portal/"),
-					`Facade ${file} must delegate to ../portal/`,
-				);
-			}
+			assert.ok(
+				!fs.existsSync(patientPortalDir),
+				"Legacy components/patient-portal/ directory must NOT exist. It was unified into SSOT components/portal/",
+			);
 		},
 	);
 

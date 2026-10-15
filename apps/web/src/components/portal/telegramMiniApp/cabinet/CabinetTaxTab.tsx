@@ -20,7 +20,7 @@ export const CabinetTaxTab: React.FC<CabinetTaxTabProps> = memo(({
 				<div>
 					<h2 className="tg-section-title">Налоговый вычет 13% (НДФЛ)</h2>
 					<p className="tg-section-desc">
-						Верните до 19 500 ₽ за стоматологическое лечение по форме ФНС КНД 1151156
+						Верните до 19 500 ₽ за стоматологическое лечение через налоговый вычет
 					</p>
 				</div>
 			</div>
@@ -29,7 +29,7 @@ export const CabinetTaxTab: React.FC<CabinetTaxTabProps> = memo(({
 			<div className="tg-tax-hero-card">
 				<div className="flex items-center justify-between mb-3">
 					<span className="tg-tax-period-tag">Налоговый период: {taxYear} год</span>
-					<span className="tg-fns-law-pill">Приказ ФНС № ЕА-7-11/824@</span>
+					<span className="tg-fns-law-pill">Официальная справка</span>
 				</div>
 
 				<div className="text-xs text-slate-400">Оплачено за лечение за {taxYear} год:</div>
@@ -43,7 +43,7 @@ export const CabinetTaxTab: React.FC<CabinetTaxTabProps> = memo(({
 						+{calculatedDeduction.toLocaleString("ru-RU")} ₽
 					</div>
 					<div className="text-[11px] text-slate-400 mt-1">
-						По ст. 219 НК РФ выплата поступает напрямую на ваш расчетный счет в банке
+						Выплата поступает напрямую на ваш расчетный счет в банке
 					</div>
 				</div>
 
@@ -53,7 +53,7 @@ export const CabinetTaxTab: React.FC<CabinetTaxTabProps> = memo(({
 					onClick={onOpenTaxSheet}
 				>
 					<FileCheck2 size={18} />
-					<span>Оформить справку КНД 1151156 в 1 тап</span>
+					<span>Оформить справку для налоговой</span>
 				</button>
 			</div>
 

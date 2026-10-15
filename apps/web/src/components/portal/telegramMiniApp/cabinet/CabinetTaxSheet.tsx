@@ -80,10 +80,10 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 					<div>
 						<div className="tg-sheet-title">
 							<FileCheck2 size={18} className="text-teal-400" />
-							<span>Справка для налоговой (КНД 1151156)</span>
+							<span>Справка для налогового вычета</span>
 						</div>
 						<div className="tg-sheet-subtitle">
-							Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@
+							Для оформления социального вычета на лечение (13%)
 						</div>
 					</div>
 					<button

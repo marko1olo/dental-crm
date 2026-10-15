@@ -1,13 +1,8 @@
 /**
- * DENTE POCKET CLINIC — Полноценный карманный кабинет пациента в Telegram WebApp
- * (DOMAIN: TELEGRAM MINI APPS & PATIENT RETENTION HUB)
- *
- * Канонический тонкий фасад (Thin Master Facade <= 150 строк).
+ * DENTE POCKET CLINIC — Кабинет пациента в Telegram WebApp (Фасад <= 135 строк).
  */
-
 import React, { memo } from "react";
 import "./telegramMiniApp.css";
-
 import {
 	CabinetAppointmentsTab,
 	CabinetBottomNav,
@@ -23,6 +18,7 @@ import {
 	type TelegramPatientPortalCabinetProps,
 	useTelegramPortalCabinet,
 } from "./cabinet";
+import { TelegramMiniAppBooking } from "./TelegramMiniAppBooking";
 
 export type {
 	PatientAppointment,
@@ -37,17 +33,10 @@ export const TelegramPatientPortalCabinet: React.FC<TelegramPatientPortalCabinet
 	return (
 		<div className="tg-app-container tg-cabinet-root">
 			<CabinetHeader
-				bonusBalance={c.bonusBalance}
-				familyMembers={c.familyMembers}
+				bonusBalance={c.bonusBalance} familyMembers={c.familyMembers}
 				activeFamilyMemberId={c.activeFamilyMemberId}
-				onSelectFamilyMember={(id) => {
-					c.setActiveFamilyMemberId(id);
-					c.triggerHaptic("light");
-				}}
-				onOpenFinance={() => {
-					c.setActiveTab("finance");
-					c.triggerHaptic("light");
-				}}
+				onSelectFamilyMember={(id) => { c.setActiveFamilyMemberId(id); c.triggerHaptic("light"); }}
+				onOpenFinance={() => { c.setActiveTab("finance"); c.triggerHaptic("light"); }}
 			/>
 
 			{c.activeTab === "teeth" && (
@@ -55,22 +44,34 @@ export const TelegramPatientPortalCabinet: React.FC<TelegramPatientPortalCabinet
 					toothComplaints={c.toothComplaints}
 					onSaveToothComplaint={c.handleSaveToothComplaint}
 					onRemoveToothComplaint={c.handleRemoveToothComplaint}
-					onProceedToBooking={() => c.setActiveTab("appointments")}
+					onProceedToBooking={() => c.setActiveTab("booking")}
 				/>
 			)}
 
 			{c.activeTab === "appointments" && (
 				<CabinetAppointmentsTab
-					appointments={c.appointments}
-					appointmentFilter={c.appointmentFilter}
+					appointments={c.appointments} appointmentFilter={c.appointmentFilter}
 					onChangeAppointmentFilter={c.setAppointmentFilter}
 					onConfirmAppointment={c.handleConfirmAppointment}
-					onBookNew={() => {
-						c.setActiveTab("teeth");
-						c.triggerHaptic("medium");
-					}}
+					onBookNew={() => { c.setActiveTab("booking"); c.triggerHaptic("medium"); }}
 					onTriggerHaptic={c.triggerHaptic}
 				/>
+			)}
+
+			{c.activeTab === "booking" && (
+				<main className="tg-tab-content">
+					<TelegramMiniAppBooking
+						organizationId={c.organizationId}
+						patientId={c.patientId}
+						attachedComplaints={c.toothComplaints}
+						onBackToTeeth={() => c.setActiveTab("teeth")}
+						onBookingComplete={(_id, appt) => {
+							if (appt) c.handleAddBookedAppointment(appt);
+							c.setActiveTab("appointments");
+							c.triggerHaptic("medium");
+						}}
+					/>
+				</main>
 			)}
 
 			{c.activeTab === "imaging" && (
@@ -111,27 +112,18 @@ export const TelegramPatientPortalCabinet: React.FC<TelegramPatientPortalCabinet
 			)}
 
 			<CabinetTaxSheet
-				isOpen={c.isTaxSheetOpen}
-				onClose={() => c.setIsTaxSheetOpen(false)}
-				taxYear={c.taxYear}
-				onChangeTaxYear={c.setTaxYear}
-				payerType={c.payerType}
-				onChangePayerType={c.setPayerType}
-				payerFullName={c.payerFullName}
-				onChangePayerFullName={c.setPayerFullName}
-				payerInn={c.payerInn}
-				onChangePayerInn={c.setPayerInn}
-				payerPassport={c.payerPassport}
-				onChangePayerPassport={c.setPayerPassport}
-				serviceCode={c.serviceCode}
-				onChangeServiceCode={c.setServiceCode}
+				isOpen={c.isTaxSheetOpen} onClose={() => c.setIsTaxSheetOpen(false)}
+				taxYear={c.taxYear} onChangeTaxYear={c.setTaxYear}
+				payerType={c.payerType} onChangePayerType={c.setPayerType}
+				payerFullName={c.payerFullName} onChangePayerFullName={c.setPayerFullName}
+				payerInn={c.payerInn} onChangePayerInn={c.setPayerInn}
+				payerPassport={c.payerPassport} onChangePayerPassport={c.setPayerPassport}
+				serviceCode={c.serviceCode} onChangeServiceCode={c.setServiceCode}
 				isTaxCertGenerated={c.isTaxCertGenerated}
 				onGenerateCert={() => c.setIsTaxCertGenerated(true)}
 				onResetCert={() => c.setIsTaxCertGenerated(false)}
-				calculatedDeduction={c.calculatedDeduction}
-				totalYearExpense={c.totalYearExpense}
-				taxCopiedNotice={c.taxCopiedNotice}
-				onDownloadTaxCert={c.handleDownloadTaxCert}
+				calculatedDeduction={c.calculatedDeduction} totalYearExpense={c.totalYearExpense}
+				taxCopiedNotice={c.taxCopiedNotice} onDownloadTaxCert={c.handleDownloadTaxCert}
 				onTriggerHaptic={c.triggerHaptic}
 			/>
 

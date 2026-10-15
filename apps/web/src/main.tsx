@@ -16,7 +16,7 @@ import { initHardwareCapabilities } from "./lib/hardwareCapabilities";
 import { logger } from "./utils/logger";
 
 const PublicBookingWidget = React.lazy(() =>
-	import("./pages/PublicBookingWidget").then((m) => ({ default: m.PublicBookingWidget })),
+	import("./pages/PublicBookingPage").then((m) => ({ default: m.PublicBookingPage })),
 );
 const PublicBudgetSignPage = React.lazy(() =>
 	import("./pages/public/PublicBudgetSignPage").then((m) => ({
@@ -237,7 +237,10 @@ if (publicPortalRoute) {
 							defaultMode="cabinet"
 						/>
 					) : publicPortalRoute.kind === "kiosk" ? (
-						<div className="w-screen h-screen overflow-auto bg-slate-900 flex items-center justify-center p-2 sm:p-4">
+						<div
+							className="w-screen h-screen overflow-auto flex items-center justify-center p-2 sm:p-4"
+							style={{ backgroundColor: "var(--paper-soft, var(--paper))" }}
+						>
 							<MobileSelfCheckinModal
 								isOpen={true}
 								onClose={() => {

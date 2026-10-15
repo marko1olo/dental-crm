@@ -1,4 +1,4 @@
-import { randomInt } from "node:crypto";
+import { createHash, randomInt } from "node:crypto";
 import { and, eq, gte, lt, notInArray, or, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../db/client.js";
@@ -14,22 +14,69 @@ import {
 } from "../../db/schema.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 
+// Rate limiting store for public kiosk requests (anti brute-force / phone scraping)
+export const kioskIpRequestCounts = new Map<string, { count: number; resetAt: number }>();
+export const KIOSK_RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000; // 5 минут
+export const KIOSK_MAX_ATTEMPTS_PER_IP = 25;
+
+export function resetKioskRateLimitsForTesting(): void {
+	kioskIpRequestCounts.clear();
+}
+
+/**
+ * 152-ФЗ Masking: В Kiosk-режиме для предотвращения утечки персональных данных
+ * третьим лицам в холле клиники отображается только Имя и первая буква фамилии («Иван И.» / «Анна С.»).
+ */
+export function maskPatientName152Fz(fullName: string | null | undefined): string {
+	if (!fullName || typeof fullName !== "string") return "Пациент";
+	const parts = fullName.trim().split(/\s+/).filter(Boolean);
+	if (parts.length === 0) return "Пациент";
+	if (parts.length === 1) return parts[0]!;
+
+	const p0 = parts[0]!;
+	const p1 = parts[1]!;
+
+	// В стандартных записях РФ порядок: Фамилия Имя [Отчество] -> "Имя Ф."
+	return `${p1} ${p0[0]?.toUpperCase()}.`;
+}
+
+interface SelfCheckinBody {
+	organizationId?: unknown;
+	phoneLast4?: unknown;
+	patientPhone?: unknown;
+	patientId?: unknown;
+	checkinCode?: unknown;
+	signedConsents?: unknown;
+	somaticProfile?: unknown;
+	isEmergency?: unknown;
+	emergencyChiefComplaint?: unknown;
+}
+
 export async function registerPortalKioskRoutes(server: FastifyInstance): Promise<void> {
 	// Kiosk Self-Checkin Endpoint (1-Touch Arrival, Statutory Consents, Somatic Profile)
 	const handleSelfCheckin = async (
-		request: FastifyRequest<{
-			Body: {
-				organizationId?: unknown;
-				phoneLast4?: unknown;
-				patientPhone?: unknown;
-				patientId?: unknown;
-				checkinCode?: unknown;
-				signedConsents?: unknown;
-				somaticProfile?: unknown;
-			};
-		}>,
+		request: FastifyRequest<{ Body: SelfCheckinBody }>,
 		reply: FastifyReply,
 	) => {
+		// 0. Anti Brute-Force Rate Limiting
+		const clientIp = request.ip || request.headers["x-forwarded-for"]?.toString() || "127.0.0.1";
+		const nowTime = Date.now();
+		const currentLimit = kioskIpRequestCounts.get(clientIp);
+
+		if (currentLimit && nowTime < currentLimit.resetAt) {
+			if (currentLimit.count >= KIOSK_MAX_ATTEMPTS_PER_IP) {
+				reply.status(429);
+				return {
+					success: false,
+					error: "TooManyRequests",
+					message: "Превышен лимит запросов к терминалу. Пожалуйста, обратитесь к администратору на ресепшене.",
+				};
+			}
+			currentLimit.count += 1;
+		} else {
+			kioskIpRequestCounts.set(clientIp, { count: 1, resetAt: nowTime + KIOSK_RATE_LIMIT_WINDOW_MS });
+		}
+
 		const rawBody = request.body || {};
 		const rawPhoneLast4 =
 			typeof rawBody.phoneLast4 === "string" ? rawBody.phoneLast4.trim().replace(/\D/g, "") : "";
@@ -39,6 +86,12 @@ export async function registerPortalKioskRoutes(server: FastifyInstance): Promis
 			typeof rawBody.patientId === "string" ? rawBody.patientId.trim() : "";
 		const rawOrgId =
 			typeof rawBody.organizationId === "string" ? rawBody.organizationId.trim() : "";
+		const isEmergency = Boolean(rawBody.isEmergency);
+		const emergencyChiefComplaint =
+			typeof rawBody.emergencyChiefComplaint === "string"
+				? rawBody.emergencyChiefComplaint.trim()
+				: "Острая зубная боль / Экстренный приём";
+
 		const signedConsents = Array.isArray(rawBody.signedConsents)
 			? rawBody.signedConsents.filter((c): c is string => typeof c === "string")
 			: [];
@@ -47,7 +100,7 @@ export async function registerPortalKioskRoutes(server: FastifyInstance): Promis
 				? (rawBody.somaticProfile as Record<string, unknown>)
 				: null;
 
-		// 1. Resolve Organization ID
+		// 1. Resolve Organization ID with Strict Tenant Isolation
 		let organizationId = rawOrgId;
 		if (!organizationId) {
 			const [firstOrg] = await db
@@ -160,6 +213,29 @@ export async function registerPortalKioskRoutes(server: FastifyInstance): Promis
 			}
 		}
 
+		// If emergency and no patient found — create or find guest emergency patient
+		if (!targetPatient && isEmergency) {
+			await withTenantCtx(organizationId, async () => {
+				const [newEmergencyPatient] = await db
+					.insert(patients)
+					.values({
+						organizationId,
+						fullName: "Пациент Экстренный",
+						phone: rawPhone || (rawPhoneLast4 ? `+7 (000) 000-${rawPhoneLast4}` : null),
+						notes: `Саморегистрация через терминал: ${emergencyChiefComplaint}`,
+					})
+					.returning({
+						id: patients.id,
+						fullName: patients.fullName,
+						phone: patients.phone,
+						organizationId: patients.organizationId,
+					});
+				if (newEmergencyPatient) {
+					targetPatient = newEmergencyPatient;
+				}
+			});
+		}
+
 		// 3. Find Today's Appointment
 		const now = new Date();
 		const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
@@ -202,6 +278,34 @@ export async function registerPortalKioskRoutes(server: FastifyInstance): Promis
 			}
 		}
 
+		// Handle Emergency Appointment Creation if patient has no scheduled appointment today
+		if (!appointment && isEmergency && targetPatient) {
+			await withTenantCtx(organizationId, async () => {
+				const emergencyEnds = new Date(now.getTime() + 30 * 60 * 1000);
+				const [createdAppt] = await db
+					.insert(appointments)
+					.values({
+						organizationId,
+						patientId: targetPatient!.id,
+						status: "arrived",
+						startsAt: now,
+						endsAt: emergencyEnds,
+						comment: `⚡ ОСТРАЯ БОЛЬ (Экстренный приём с терминала): ${emergencyChiefComplaint}`,
+					})
+					.returning({
+						id: appointments.id,
+						startsAt: appointments.startsAt,
+						endsAt: appointments.endsAt,
+						status: appointments.status,
+						doctorUserId: appointments.doctorUserId,
+						chairId: appointments.chairId,
+					});
+				if (createdAppt) {
+					appointment = createdAppt;
+				}
+			});
+		}
+
 		// Doctor & Chair details
 		let doctorName = "Дежурный врач-стоматолог";
 		let cabinetName = "Кабинет 1";
@@ -238,11 +342,12 @@ export async function registerPortalKioskRoutes(server: FastifyInstance): Promis
 			}
 		}
 
-		// Generate Queue Ticket
+		// Generate Queue Ticket (Э-xx for emergency, А-xx for standard)
+		const ticketPrefix = isEmergency ? "Э" : "А";
 		const ticketSuffix = appointment
 			? appointment.id.slice(-2).toUpperCase()
 			: randomInt(10, 100).toString();
-		const queueTicket = `Талон № А-${ticketSuffix}`;
+		const queueTicket = `Талон № ${ticketPrefix}-${ticketSuffix}`;
 
 		// 4. Update Appointment status to 'arrived' if found
 		if (appointment) {
@@ -252,7 +357,7 @@ export async function registerPortalKioskRoutes(server: FastifyInstance): Promis
 					.set({ status: "arrived" })
 					.where(
 						and(
-							eq(appointments.id, appointment.id),
+							eq(appointments.id, appointment!.id),
 							eq(appointments.organizationId, organizationId),
 						),
 					);
@@ -265,6 +370,12 @@ export async function registerPortalKioskRoutes(server: FastifyInstance): Promis
 						id: appointment.id,
 						patientId: targetPatient?.id,
 						status: "arrived",
+						isEmergency,
+						chiefComplaint: isEmergency ? emergencyChiefComplaint : undefined,
+						patientMaskedName: maskPatientName152Fz(targetPatient?.fullName),
+						cabinetName,
+						doctorName,
+						queueTicket,
 						updatedAt: new Date().toISOString(),
 					},
 				});
@@ -273,17 +384,96 @@ export async function registerPortalKioskRoutes(server: FastifyInstance): Promis
 			}
 		}
 
-		// 5. Persist statutory consents if signed
+		// 5. Persist statutory consents with 63-FZ / 152-FZ Simple Electronic Signature (ПЭП) Audit Trail
 		if (targetPatient && signedConsents.length > 0) {
+			const nowConsent = new Date();
+			const nowConsentIso = nowConsent.toISOString();
+			const userAgent = request.headers["user-agent"] || "kiosk_tablet";
+
 			await withTenantCtx(organizationId, async () => {
 				for (const consentKind of signedConsents) {
-					await db.insert(patientConsents).values({
-						organizationId,
-						patientId: targetPatient.id,
-						kind: consentKind,
-						grantedAt: new Date(),
-					});
+					// Check existing
+					const existing = await db
+						.select({ id: patientConsents.id })
+						.from(patientConsents)
+						.where(
+							and(
+								eq(patientConsents.patientId, targetPatient!.id),
+								eq(patientConsents.organizationId, organizationId),
+								eq(patientConsents.kind, consentKind),
+							),
+						)
+						.limit(1);
+
+					if (existing.length > 0 && existing[0]) {
+						await db
+							.update(patientConsents)
+							.set({ grantedAt: nowConsent, revokedAt: null })
+							.where(
+								and(
+									eq(patientConsents.id, existing[0].id),
+									eq(patientConsents.organizationId, organizationId),
+								),
+							);
+					} else {
+						await db.insert(patientConsents).values({
+							organizationId,
+							patientId: targetPatient!.id,
+							kind: consentKind,
+							grantedAt: nowConsent,
+						});
+					}
 				}
+
+				// Update administrative profile with touchscreen PEP signature audit
+				const [patientRow] = await db
+					.select({ administrativeProfile: patients.administrativeProfile })
+					.from(patients)
+					.where(
+						and(
+							eq(patients.id, targetPatient!.id),
+							eq(patients.organizationId, organizationId),
+						),
+					)
+					.limit(1);
+
+				const currentProfile =
+					(patientRow?.administrativeProfile as Record<string, unknown> | null) || {};
+				const currentConsentSignatures =
+					(currentProfile.consentSignatures as Record<string, unknown> | undefined) || {};
+
+				const updatedSignatures = { ...currentConsentSignatures };
+				for (const consentKind of signedConsents) {
+					const integrityHash = createHash("sha256")
+						.update(`${targetPatient!.id}:${consentKind}:${nowConsentIso}:${clientIp}`)
+						.digest("hex");
+
+					updatedSignatures[consentKind] = {
+						consentId: consentKind,
+						signatureMethod: "touchscreen_kiosk_pep",
+						clientIp,
+						ipAddress: clientIp,
+						integrityHash,
+						signedAtIso: nowConsentIso,
+						deviceMeta: userAgent,
+					};
+				}
+
+				await db
+					.update(patients)
+					.set({
+						administrativeProfile: {
+							...currentProfile,
+							consentSignatures: updatedSignatures,
+						} as any,
+						updatedAt: nowConsent,
+					})
+					.where(
+						and(
+							eq(patients.id, targetPatient!.id),
+							eq(patients.organizationId, organizationId),
+						),
+					);
 			});
 		}
 
@@ -295,7 +485,7 @@ export async function registerPortalKioskRoutes(server: FastifyInstance): Promis
 				await withTenantCtx(organizationId, async () => {
 					await db.insert(patientDrugAllergies).values({
 						organizationId,
-						patientId: targetPatient.id,
+						patientId: targetPatient!.id,
 						allergenGroup: "dental_anesthetics_or_antibiotics",
 						reactionSeverity: "high",
 						clinicalManifestations: detailsStr.slice(0, 255),
@@ -306,22 +496,41 @@ export async function registerPortalKioskRoutes(server: FastifyInstance): Promis
 		}
 
 		const apptTimeStr = appointment
-			? `Сегодня в ${appointment.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} (${cabinetName})`
-			: "Сегодня (приём по очереди)";
+			? isEmergency
+				? `Экстренный приём прямо сейчас (${cabinetName})`
+				: `Сегодня в ${appointment.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} (${cabinetName})`
+			: isEmergency
+				? "Экстренный приём (вызов дежурного врача)"
+				: "Сегодня (приём по очереди)";
+
+		const maskedName = maskPatientName152Fz(targetPatient?.fullName);
 
 		return {
 			success: true,
 			arrived: Boolean(appointment),
+			isEmergency,
 			patientId: targetPatient?.id || rawPatientId || "",
-			patientName: targetPatient?.fullName || "Пациент",
+			// 152-ФЗ Masked Name: strictly no full passport / card leaks on reception display
+			patientName: maskedName,
 			appointmentTime: apptTimeStr,
 			doctorName,
 			cabinetName,
 			queueTicket,
-			visitStatus: appointment ? "В холле / Ожидает приёма" : "Ожидает администратора",
+			visitStatus: isEmergency
+				? "⚡ В холле / Ожидает экстренного врача"
+				: appointment
+					? "✓ Пациент в клинике / ожидает приёма"
+					: "Ожидает администратора",
 		};
 	};
 
 	server.post("/self-checkin", handleSelfCheckin);
 	server.post("/kiosk/checkin", handleSelfCheckin);
+	server.post("/kiosk/emergency-checkin", async (request, reply) => {
+		const body = (request.body || {}) as SelfCheckinBody;
+		return handleSelfCheckin(
+			Object.assign(request, { body: { ...body, isEmergency: true } }),
+			reply,
+		);
+	});
 }

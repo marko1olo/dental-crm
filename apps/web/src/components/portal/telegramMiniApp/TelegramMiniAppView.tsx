@@ -138,9 +138,9 @@ export const TelegramMiniAppView: React.FC<TelegramMiniAppViewProps> = memo(({
 	const [patientName, setPatientName] = useState<string>("Александр");
 	const [bonusPoints, setBonusPoints] = useState<number>(1500);
 	const [familyMembers] = useState<Array<{ id: string; name: string; relation: string; age?: number }>>([
-		{ id: "self", name: "Александр (Я)", relation: "self" },
-		{ id: "child-1", name: "Артём (Сын, 8 лет)", relation: "child", age: 8 },
-		{ id: "child-2", name: "София (Дочь, 12 лет)", relation: "child", age: 12 },
+		{ id: "self", name: "Александр", relation: "self" },
+		{ id: "child-1", name: "Артём (сын)", relation: "child", age: 8 },
+		{ id: "child-2", name: "София (дочь)", relation: "child", age: 12 },
 	]);
 	const [activeFamilyMemberId, setActiveFamilyMemberId] = useState<string>("self");
 

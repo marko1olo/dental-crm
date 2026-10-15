@@ -68,7 +68,7 @@ export function mapServerPortalMeToCabinetData(
 			doseMicroSv: Number(s.doseMicroSv || 2.0),
 			previewUrl:
 				(s.previewUrl as string) ||
-				(s.storagePath ? `/api/imaging/file/${s.id}` : "/radiology/sample_rvg_tooth16.jpg"),
+				(s.storagePath ? `/api/imaging/studies/${s.id}/file` : "/radiology/sample_rvg_tooth16.jpg"),
 			conclusionRu:
 				(s.conclusionRu as string) ||
 				(s.aiSummary as string) ||

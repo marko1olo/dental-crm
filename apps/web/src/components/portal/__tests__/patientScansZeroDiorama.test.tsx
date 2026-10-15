@@ -50,7 +50,7 @@ describe("Radiology & Patient Portal Zero-Diorama Law (Mandate 11 & Core Route R
 	});
 
 	it("PatientPlanView: Renders real clinical radiology images with no synthetic SVG markup", () => {
-		const html = renderToString(<PatientPlanView />);
+		const html = renderToString(<PatientPlanView scans={DEFAULT_PATIENT_SCANS} />);
 
 		// Real clinical scans rendered as <img>
 		assert.ok(html.includes('src="/radiology/sample_rvg_tooth16.jpg"'));

@@ -42,7 +42,7 @@ export const CabinetBottomNav: React.FC<CabinetBottomNavProps> = memo(({
 			{/* ТАБ 2: 📅 Записи */}
 			<button
 				type="button"
-				className={`tg-nav-btn ${activeTab === "appointments" ? "active" : ""}`}
+				className={`tg-nav-btn ${activeTab === "appointments" || activeTab === "booking" ? "active" : ""}`}
 				onClick={() => {
 					onSelectTab("appointments");
 					onTriggerHaptic?.("light");

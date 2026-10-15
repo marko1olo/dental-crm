@@ -146,12 +146,12 @@ html.dark .tg-bonus-chip {
 
 /* Селектор семейного профиля */
 .tg-family-strip {
-	padding: 8px 16px;
+	padding: 8px 12px;
 	background-color: var(--tg-card-inner);
 	border-bottom: 1px solid var(--tg-border);
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 	overflow-x: auto;
 	scrollbar-width: none;
 }
@@ -162,8 +162,8 @@ html.dark .tg-bonus-chip {
 .tg-family-pill {
 	display: inline-flex;
 	align-items: center;
-	gap: 6px;
-	padding: 6px 14px;
+	gap: 5px;
+	padding: 6px 10px;
 	font-size: 12px;
 	font-weight: 600;
 	border-radius: 20px;
@@ -172,7 +172,7 @@ html.dark .tg-bonus-chip {
 	border: 1px solid var(--tg-border);
 	cursor: pointer;
 	white-space: nowrap;
-	min-height: 38px;
+	min-height: 36px;
 	flex-shrink: 0;
 	transition: all 0.2s ease;
 }
@@ -551,6 +551,56 @@ html.dark .tg-bonus-chip {
 	padding: 12px;
 }
 
+.tg-teeth-badge-icon {
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+	background: rgba(13, 148, 136, 0.2);
+	color: var(--tg-accent);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.tg-edit-teeth-btn {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--tg-accent);
+	background: var(--tg-card-bg);
+	border: 1px solid var(--tg-border);
+	border-radius: 10px;
+	padding: 6px 12px;
+	cursor: pointer;
+	flex-shrink: 0;
+	white-space: nowrap;
+	transition: opacity 0.15s ease;
+}
+
+.tg-day-btn {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 8px 6px;
+	border-radius: 12px;
+	min-width: 64px;
+	min-height: 54px;
+	border: 1px solid var(--tg-border);
+	background: var(--tg-card-bg);
+	color: var(--tg-text);
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+}
+
+.tg-day-btn.selected {
+	background: var(--tg-accent);
+	border-color: var(--tg-accent);
+	color: #ffffff;
+	box-shadow: 0 4px 10px rgba(13, 148, 136, 0.3);
+}
+
 .tg-specialist-chip {
 	padding: 10px 12px;
 	background: var(--tg-card-bg);
@@ -602,20 +652,26 @@ html.dark .tg-bonus-chip {
 	border: 1px solid var(--tg-border);
 }
 
-/* Сетка временных окон */
+.tg-booking-container {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding-bottom: calc(68px + 76px + env(safe-area-inset-bottom, 0px));
+}
+
 .tg-slots-grid {
 	display: grid;
-	grid-template-columns: repeat(3, 1fr);
-	gap: 8px;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 6px;
 }
 
 .tg-slot-btn {
-	padding: 10px;
+	padding: 8px 4px;
 	border-radius: 10px;
 	border: 1px solid var(--tg-border);
 	background: var(--tg-card-bg);
 	color: var(--tg-text);
-	font-size: 13px;
+	font-size: 12px;
 	font-weight: 700;
 	cursor: pointer;
 	text-align: center;
@@ -633,23 +689,20 @@ html.dark .tg-bonus-chip {
 	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
 }
 
-/* Закрепленная нижняя плашка действия (Apple HIG Floating Bottom Bar) */
+/* Закрепленная нижняя плашка действия (Apple HIG Floating Bottom Bar над таббаром) */
 .tg-floating-bottom-bar {
-	position: sticky;
-	bottom: 0;
+	position: fixed;
+	bottom: calc(68px + env(safe-area-inset-bottom, 0px));
 	left: 0;
 	right: 0;
-	z-index: 45;
+	max-width: 480px;
+	margin: 0 auto;
+	z-index: 46;
 	padding: 10px 16px;
-	padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
 	background: var(--tg-card-bg);
 	backdrop-filter: blur(20px);
 	-webkit-backdrop-filter: blur(20px);
 	border-top: 1px solid var(--tg-border);
-	margin-left: -16px;
-	margin-right: -16px;
-	margin-bottom: -14px;
-	margin-top: 12px;
 	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
 }
 
