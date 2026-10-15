@@ -240,19 +240,17 @@ describe('Red Team Inquisition: Outpatient Clinical Autonomy & Emergency Protoco
 	});
 
 	describe('4. Timer & Memory Leak Safety', () => {
-		it('EmergencyRescueModal handles interval cleanup and pauses timer when closed', () => {
+		it('EmergencyRescueModal purges ticking simulation timers and cleans up clipboard timeout refs', () => {
 			const modalPath = path.join(emergencyDir, 'EmergencyRescueModal.tsx');
 			const content = fs.readFileSync(modalPath, 'utf8');
 
-			// Check for clearInterval in useEffect cleanup
-			assert.ok(content.includes('clearInterval(intervalId)'), 'Must call clearInterval in cleanup');
-
-			// Check that isOpen guards the timer effect
-			assert.ok(content.includes('if (!isOpen)'), 'Must guard timer with !isOpen to stop when closed');
+			// Verify 300-second ticking simulation timer has been eradicated
+			assert.ok(!content.includes('setInterval'), 'Must not run ticking countdown setInterval in modal');
 
 			// Check for timeout ref cleanup
 			assert.ok(content.includes('clearTimeout(copyActTimeoutRef.current)'), 'Must clear copyAct timeout');
 			assert.ok(content.includes('clearTimeout(copyCheatSheetTimeoutRef.current)'), 'Must clear copyCheatSheet timeout');
+			assert.ok(content.includes('clearTimeout(copyRelativeTimeoutRef.current)'), 'Must clear copyRelative timeout');
 		});
 
 		it('formatTimerSeconds correctly formats minutes and seconds', () => {
