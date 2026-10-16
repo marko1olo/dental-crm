@@ -17,7 +17,7 @@ import {
 	DENTAL_OUTPATIENT_EXTENDED_DRUGS,
 	type DentalFastPrescriptionSet,
 } from "./prescriptionDataSets";
-import { PrescriptionCockpitModal } from "./PrescriptionCockpitModal";
+import { PrescriptionModal } from "./PrescriptionModal";
 
 export type PrescriptionFormType = "107-1u" | "148-1u-88";
 
@@ -87,6 +87,7 @@ export interface PrescriptionPrintModalProps {
 	readonly onInsertToDiary?: ((diaryText: string) => void) | undefined;
 }
 
-export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = (props) => {
-	return <PrescriptionCockpitModal {...props} />;
+export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({ patient, patientName: patientNameProp, ...rest }) => {
+	const patientName = patient?.fullName || patientNameProp || "";
+	return <PrescriptionModal {...rest} patient={patient} patientName={patientName} />;
 };

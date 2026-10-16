@@ -4,6 +4,7 @@
  * Facade export for Statutory Medical Prescription Module (Order 1094n).
  */
 
+export * from "./PrescriptionModal";
 export * from "./PrescriptionCockpitModal";
 export * from "./PrescriptionExpressPills";
 export * from "./PrescriptionAllergyBanner";

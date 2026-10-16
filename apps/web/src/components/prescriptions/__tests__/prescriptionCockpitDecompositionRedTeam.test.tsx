@@ -22,9 +22,12 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 import {
 	PrescriptionCockpitModal,

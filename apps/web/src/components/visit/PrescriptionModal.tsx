@@ -1,9 +1,9 @@
 /**
  * DENTE Dental CRM — Mandate 8s Canonical Facade
- * PrescriptionModal delegates directly to SSOT PrescriptionPrintModal.
+ * Visit PrescriptionModal delegates directly to canonical PrescriptionModal SSOT.
  */
 export {
-	PrescriptionPrintModal as PrescriptionModal,
-	type PrescriptionPrintModalProps as PrescriptionModalProps,
+	PrescriptionModal,
+	type PrescriptionModalProps,
 	type PrescriptionFormType,
-} from "../prescriptions/PrescriptionPrintModal";
+} from "../prescriptions/PrescriptionModal";

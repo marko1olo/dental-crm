@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import {
 	DENTAL_1CLICK_RX_SETS,
 	DENTAL_CANONICAL_SSOT_MEDICATIONS,

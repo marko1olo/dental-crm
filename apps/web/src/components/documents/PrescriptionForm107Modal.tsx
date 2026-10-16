@@ -19,8 +19,8 @@ import {
 	type DentalSsotMedicationItem,
 } from "@dental/shared";
 import {
-	PrescriptionPrintModal,
-} from "../prescriptions/PrescriptionPrintModal";
+	PrescriptionModal,
+} from "../prescriptions/PrescriptionModal";
 import type {
 	PrescriptionPrescribedDrug,
 	PrescriptionClinicInfo,
@@ -92,7 +92,7 @@ export const PrescriptionForm107Modal: React.FC<PrescriptionForm107ModalProps> =
 	const draft = clinicProfileDraft || {};
 
 	return (
-		<PrescriptionPrintModal
+		<PrescriptionModal
 			isOpen={isOpen}
 			onClose={onClose}
 			patient={patient}

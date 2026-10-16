@@ -165,128 +165,53 @@ export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[]
 	},
 ];
 
-export const DENTAL_OUTPATIENT_EXTENDED_DRUGS: readonly DentalPrescriptionDrugPreset[] = [
-	{
-		id: "cyfran_st",
-		tradeNameRu: "Цифран СТ",
-		activeSubstanceRu: "Ципрофлоксацин + Тинидазол",
-		category: "antibiotic",
-		categoryLabel: "Антибактериальные",
-		categoryLabelRu: "Антибактериальные",
+import { DENTAL_DRUG_ID_ALIASES } from "@dental/shared";
 
-		latinRp: "Rp.: Tab. 'Cifran ST' (Ciprofloxacini 500 mg + Tinidazoli 600 mg)",
-		formRu: "таблетки покрытые пленочной оболочкой",
-		dosageRu: "500 мг + 600 мг",
-		quantityLabel: "N. 10",
-		dispenseLatin: "D.t.d. N 10 in tab.",
-		signaRu: "S. Внутрь по 1 таблетке 2 раза в день (каждые 12 часов) после еды, запивая достаточным количеством воды. Курс 5 дней.",
-		recommendedForIcd10: ["K05.2", "K05.3", "K04.7"],
-		adultDosageStandard: "1 таб 2 раза в день (каждые 12 часов) 5 дней",
-		pediatricDosageStandard: "Противопоказан детям и подросткам до 18 лет",
-		validityDays: 60,
-		specialInstructions: "Не разжевывать, запивать водой. Алкоголь категорически запрещен (тинидазол дает дисульфирамоподобную реакцию).",
-	},
-	{
-		id: "cholisal_gel",
-		tradeNameRu: "Холисал стоматологический гель",
-		activeSubstanceRu: "Холина салицилат + Цеталкония хлорид",
-		category: "antiseptic",
-		categoryLabel: "Антисептики и регенерация",
-		latinRp: "Rp.: Gel 'Cholisal' 10.0",
-		formRu: "гель стоматологический для местного применения",
-		dosageRu: "10 г",
-		quantityLabel: "N. 1",
-		dispenseLatin: "D.t.d. N 1 in tub.",
-		signaRu: "S. Местно, полоску геля длиной 1 см наносить на болезненный участок десны чистым пальцем и слегка втирать 2-3 раза в день до еды или после чистки зубов.",
-		recommendedForIcd10: ["K05.0", "K05.1", "K06.0", "K12.0"],
-		adultDosageStandard: "Полоска 1 см 2-3 раза в день",
-		pediatricDosageStandard: "Детям: полоска 0.5 см 2-3 раза в день (с 1 года)",
-		validityDays: 60,
-		specialInstructions: "Обезболивающий эффект наступает через 2-3 минуты и сохраняется от 2 до 8 часов.",
-	},
-	{
-		id: "suprastin_25",
-		tradeNameRu: "Супрастин",
-		activeSubstanceRu: "Хлоропирамин",
-		category: "antihistamine",
-		categoryLabel: "Антигистаминные",
-		latinRp: "Rp.: Chloropyramini 25 mg",
-		formRu: "таблетки",
-		dosageRu: "25 мг",
-		quantityLabel: "N. 20",
-		dispenseLatin: "D.t.d. N 20 in tab.",
-		signaRu: "S. Внутрь по 1 таблетке 1 раз в день на ночь во время еды в течение 3 дней для уменьшения реактивного послеоперационного отека.",
-		recommendedForIcd10: ["K04.7", "K10.2"],
-		adultDosageStandard: "1 таб (25 мг) на ночь 3 дня",
-		pediatricDosageStandard: "Детям 3-6 лет: по 1/2 таб 2 раза в день",
-		validityDays: 60,
-		specialInstructions: "Может вызывать седативный эффект и сонливость. Избегать управления автотранспортом.",
-	},
-	{
-		id: "omeprazole_20",
-		tradeNameRu: "Омепразол",
-		activeSubstanceRu: "Омепразол",
-		category: "gastroprotective",
-		categoryLabel: "Гастропротекторы",
-		latinRp: "Rp.: Omeprazoli 20 mg",
-		formRu: "капсулы кишечнорастворимые",
-		dosageRu: "20 мг",
-		quantityLabel: "N. 20",
-		dispenseLatin: "D.t.d. N 20 in caps.",
-		signaRu: "S. Внутрь по 1 капсуле утром за 30 минут до завтрака 1 раз в сутки на весь период терапии НПВП (гастропротекция).",
-		recommendedForIcd10: ["K04.0", "K04.4", "K05.2"],
-		adultDosageStandard: "1 капс (20 мг) утром за 30 мин до еды",
-		pediatricDosageStandard: "Детям старше 2 лет с массой тела более 20 кг: 20 мг 1 раз в сутки",
-		validityDays: 60,
-		specialInstructions: "Проглатывать целиком, не разжевывать и не измельчать.",
-	},
-];
+export const DENTAL_OUTPATIENT_EXTENDED_DRUGS: readonly DentalPrescriptionDrugPreset[] = [];
 
+/**
+ * Canonical SSOT Prescription Catalog builder.
+ * Aggregates all outpatient dental drugs from @dental/shared SSOT with zero frontend hardcoded arrays.
+ */
 export function buildMergedPrescriptionCatalog(): DentalPrescriptionDrugPreset[] {
-	const base = DENTAL_PRESCRIPTION_DRUG_CATALOG;
-	const combined = [...base];
-	for (const extra of DENTAL_OUTPATIENT_EXTENDED_DRUGS) {
-		if (!combined.some((d) => d.id === extra.id)) {
-			combined.push(extra);
-		}
-	}
+	const map = new Map<string, DentalPrescriptionDrugPreset>();
+
+	// 1. Primary: Canonical SSOT Outpatient Medications from @dental/shared
 	for (const ssot of DENTAL_CANONICAL_SSOT_MEDICATIONS) {
-		if (!combined.some((d) => d.id === ssot.id)) {
-			combined.push({
-				id: ssot.id,
-				tradeNameRu: ssot.tradeNameRu,
-				activeSubstanceRu: ssot.activeSubstanceRu,
-				category: ssot.category as any,
-				categoryLabel: ssot.categoryLabelRu,
-				categoryLabelRu: ssot.categoryLabelRu,
-				latinRp: ssot.latinRp,
-				formRu: ssot.formRu,
-				dosageRu: ssot.dosageRu,
-				quantityLabel: ssot.quantityDefault,
-				dispenseLatin: ssot.dispenseLatin,
-				signaRu: ssot.signaRu,
-				validityDays: ssot.validityDays as any,
-			} as any);
+		const preset: DentalPrescriptionDrugPreset = {
+			id: ssot.id,
+			tradeNameRu: ssot.tradeNameRu,
+			activeSubstanceRu: ssot.activeSubstanceRu,
+			category: ssot.category as any,
+			categoryLabel: ssot.categoryLabelRu,
+			categoryLabelRu: ssot.categoryLabelRu,
+			latinRp: ssot.latinRp,
+			formRu: ssot.formRu,
+			dosageRu: ssot.dosageRu,
+			quantityLabel: ssot.quantityDefault,
+			dispenseLatin: ssot.dispenseLatin,
+			signaRu: ssot.signaRu,
+			validityDays: (ssot.validityDays as any) || 60,
+			recommendedForIcd10: ["K02", "K04", "K05", "K10", "T81"],
+		};
+		map.set(ssot.id, preset);
+	}
+
+	// 2. Secondary: DENTAL_PRESCRIPTION_DRUG_CATALOG from @dental/shared
+	for (const drug of DENTAL_PRESCRIPTION_DRUG_CATALOG) {
+		if (!map.has(drug.id)) {
+			map.set(drug.id, drug);
 		}
 	}
-	for (const med of DENTAL_MEDICATIONS_CATALOG) {
-		if (!combined.some((d) => d.id === med.id)) {
-			combined.push({
-				id: med.id,
-				tradeNameRu: med.tradeNameRu,
-				activeSubstanceRu: med.activeSubstanceRu,
-				category: med.category as any,
-				categoryLabel: med.categoryLabelRu,
-				categoryLabelRu: med.categoryLabelRu,
-				latinRp: med.latinRp,
-				formRu: med.formRu,
-				dosageRu: med.dosageRu,
-				quantityLabel: med.quantityLabel,
-				dispenseLatin: med.dispenseLatin,
-				signaRu: med.signaRu,
-				validityDays: med.validityDays,
-			} as any);
+
+	// 3. Register aliases from DENTAL_DRUG_ID_ALIASES so legacy IDs resolve seamlessly
+	for (const [alias, canonicalId] of Object.entries(DENTAL_DRUG_ID_ALIASES)) {
+		const target = map.get(canonicalId);
+		if (target && !map.has(alias)) {
+			map.set(alias, { ...target, id: alias });
 		}
 	}
-	return combined;
+
+	return Array.from(map.values());
 }
+

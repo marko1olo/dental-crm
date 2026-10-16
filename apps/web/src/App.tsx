@@ -10,7 +10,7 @@ import {
 	AppViewRouter,
 	renderStandaloneLaunchers,
 } from "./components/appLayout";
-import { PrescriptionPrintModal } from "./components/prescriptions/PrescriptionPrintModal";
+import { PrescriptionModal } from "./components/prescriptions/PrescriptionModal";
 import { TelephonyDrawer } from "./components/telephony/TelephonyDrawer";
 import { TelephonyFloatingWidget } from "./components/telephony/TelephonyFloatingWidget";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
@@ -1566,7 +1566,7 @@ export function App() {
 					<TelephonyDrawer />
 					<TelephonyFloatingWidget defaultExpanded={false} />
 					{isPrescriptionForm107Open && (
-						<PrescriptionPrintModal
+						<PrescriptionModal
 							isOpen={true}
 							onClose={() => setIsPrescriptionForm107Open(false)}
 							patient={activePatient || activeVisitPatient}
