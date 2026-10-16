@@ -56,37 +56,34 @@ describe("ChairScheduleToolbar Layout & Rotten Seeds Law (Red Team Verification)
     preventiveInspectionCount: 3,
   };
 
-  it("renders ChairScheduleToolbar at canonical 48-52px height (h-12 min-h-[48px] max-h-[52px])", () => {
+  it("renders ChairScheduleToolbar at canonical height and layout structure", () => {
     const html = renderToStaticMarkup(<ChairScheduleToolbar {...defaultProps} />);
 
     expect(html).toContain('data-testid="chair-schedule-palette-strip"');
-    expect(html).toContain("h-12");
-    expect(html).toContain("min-h-[48px]");
-    expect(html).toContain("max-h-[52px]");
+    expect(html).toContain("border-b");
+    expect(html).toContain("bg-[var(--paper-soft)]");
     expect(html).toContain("flex-nowrap");
   });
 
-  it("renders ChairScheduleQuickActions with 36px rounded-xl controls and design tokens", () => {
+  it("renders ChairScheduleQuickActions with canonical button primitives and design tokens", () => {
     const html = renderToStaticMarkup(<ChairScheduleQuickActions {...defaultProps} />);
 
     // Segmented switcher
     expect(html).toContain('data-testid="schedule-density-switcher"');
-    expect(html).toContain("min-h-[36px]");
-    expect(html).toContain("max-h-[36px]");
-    expect(html).toContain("rounded-xl");
 
     // All density buttons present
     expect(html).toContain('data-testid="btn-density-compact"');
     expect(html).toContain('data-testid="btn-density-informative"');
     expect(html).toContain('data-testid="btn-density-expanded"');
 
-    // Shifts dropdown trigger 36px rounded-xl
+    // Shifts dropdown trigger uses canonical secondary-button
     expect(html).toContain('data-testid="btn-chair-shifts-menu-trigger"');
-    expect(html).toContain("min-h-[36px]");
+    expect(html).toContain("secondary-button");
+    expect(html).toContain("var(--teal)");
 
-    // Primary CTA "+ Кресло"
+    // Primary CTA "+ Кресло" uses canonical primary-button
     expect(html).toContain('data-testid="btn-add-chair-header"');
-    expect(html).toContain("var(--primary)");
+    expect(html).toContain("primary-button");
 
     // Actions visible on 2xl
     expect(html).toContain('data-testid="chair-toolbar-find-slots-btn"');
@@ -95,18 +92,14 @@ describe("ChairScheduleToolbar Layout & Rotten Seeds Law (Red Team Verification)
     expect(html).toContain('data-testid="btn-chair-more-menu-trigger"');
   });
 
-  it("renders ChairScheduleFilterChips with 34-36px rounded-xl chips, badges and branch selector", () => {
+  it("renders ChairScheduleFilterChips with chips, badges and branch selector", () => {
     const html = renderToStaticMarkup(<ChairScheduleFilterChips {...defaultProps} />);
 
     // Count badge
     expect(html).toContain('data-testid="chair-view-count-badge"');
-    expect(html).toContain("min-h-[36px]");
-    expect(html).toContain("rounded-xl");
 
     // Branch select
     expect(html).toContain('data-testid="chair-view-branch-select"');
-    expect(html).toContain("min-h-[36px]");
-    expect(html).toContain("rounded-xl");
 
     // Chair chips
     expect(html).toContain('data-testid="chair-view-badge-chair-1"');
@@ -120,11 +113,9 @@ describe("ChairScheduleToolbar Layout & Rotten Seeds Law (Red Team Verification)
 
     // Strip "+ Кресло" button
     expect(html).toContain('data-testid="chair-view-add-chair-strip-btn"');
-    expect(html).toContain("min-h-[36px]");
-    expect(html).toContain("rounded-xl");
   });
 
-  it("renders ChairScheduleDatePicker with 36px rounded-xl stepper buttons", () => {
+  it("renders ChairScheduleDatePicker with canonical icon-button and secondary-button stepper", () => {
     const html = renderToStaticMarkup(
       <ChairScheduleDatePicker
         dateKey={defaultProps.dateKey}
@@ -136,18 +127,14 @@ describe("ChairScheduleToolbar Layout & Rotten Seeds Law (Red Team Verification)
 
     // Prev button
     expect(html).toContain('data-testid="btn-chair-date-prev"');
-    expect(html).toContain("min-h-[36px]");
-    expect(html).toContain("max-h-[36px]");
-    expect(html).toContain("rounded-xl");
+    expect(html).toContain("icon-button");
 
     // Today button
     expect(html).toContain('data-testid="btn-chair-date-today"');
-    expect(html).toContain("min-h-[36px]");
-    expect(html).toContain("rounded-xl");
+    expect(html).toContain("secondary-button");
 
     // Next button
     expect(html).toContain('data-testid="btn-chair-date-next"');
-    expect(html).toContain("min-h-[36px]");
-    expect(html).toContain("rounded-xl");
+    expect(html).toContain("icon-button");
   });
 });

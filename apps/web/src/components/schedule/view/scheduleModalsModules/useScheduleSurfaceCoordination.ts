@@ -1,11 +1,13 @@
 import React from "react";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
+import { useScheduleStore } from "../../../../store/scheduleStore";
 import type { ScheduleViewModalsProps } from "./scheduleModalsTypes";
 
 export function useScheduleSurfaceCoordination({
   modalAppointment,
   quickBookingOpen,
   setQuickBookingOpen,
+  setQuickBookingSlot,
   waitlistOpen,
   setWaitlistOpen,
   waitlistQuickFillSlot,
@@ -22,6 +24,7 @@ export function useScheduleSurfaceCoordination({
   | "modalAppointment"
   | "quickBookingOpen"
   | "setQuickBookingOpen"
+  | "setQuickBookingSlot"
   | "waitlistOpen"
   | "setWaitlistOpen"
   | "waitlistQuickFillSlot"
@@ -232,7 +235,13 @@ export function useScheduleSurfaceCoordination({
         if (waitlistOpen) setWaitlistOpen(false);
         if (waitlistQuickFillSlot !== null) setWaitlistQuickFillSlot(null);
       } else if (state.activeDrawer) {
-        if (state.activeDrawer !== "quick_booking" && quickBookingOpen) {
+        if (state.activeDrawer === "quick_booking" && !quickBookingOpen) {
+          setQuickBookingOpen(true);
+          const pending = useScheduleStore.getState().pendingStageBooking;
+          if (pending && setQuickBookingSlot) {
+            setQuickBookingSlot(pending);
+          }
+        } else if (state.activeDrawer !== "quick_booking" && quickBookingOpen) {
           setQuickBookingOpen(false);
         }
         if (
@@ -248,6 +257,7 @@ export function useScheduleSurfaceCoordination({
   }, [
     quickBookingOpen,
     setQuickBookingOpen,
+    setQuickBookingSlot,
     waitlistOpen,
     setWaitlistOpen,
     waitlistQuickFillSlot,

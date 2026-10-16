@@ -62,7 +62,7 @@ export function ChairScheduleDatePicker({
       <button
         type="button"
         onClick={handlePrevDay}
-        className="h-9 w-9 min-h-[36px] max-h-[36px] inline-flex items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--primary)] text-[var(--ink)] transition-all cursor-pointer shadow-2xs shrink-0 touch-manipulation"
+        className="icon-button"
         title="Предыдущий день"
         data-testid="btn-chair-date-prev"
         aria-label="Предыдущий день"
@@ -73,22 +73,20 @@ export function ChairScheduleDatePicker({
       <button
         type="button"
         onClick={handleToday}
-        className={`h-9 min-h-[36px] max-h-[36px] px-3 inline-flex items-center gap-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer shadow-2xs shrink-0 touch-manipulation ${
-          isToday
-            ? "border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--primary-dark)]"
-            : "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] text-[var(--ink)]"
+        className={`secondary-button inline-flex items-center gap-1.5 ${
+          isToday ? "active" : ""
         }`}
         title="Перейти к сегодняшней дате"
         data-testid="btn-chair-date-today"
       >
-        <Calendar size={14} className={isToday ? "text-[var(--primary)]" : "text-[var(--muted)]"} />
+        <Calendar size={14} className={isToday ? "text-[var(--teal)]" : "text-[var(--muted)]"} />
         <span className="capitalize">{formatDateDisplay(dateKey)}</span>
       </button>
 
       <button
         type="button"
         onClick={handleNextDay}
-        className="h-9 w-9 min-h-[36px] max-h-[36px] inline-flex items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--primary)] text-[var(--ink)] transition-all cursor-pointer shadow-2xs shrink-0 touch-manipulation"
+        className="icon-button"
         title="Следующий день"
         data-testid="btn-chair-date-next"
         aria-label="Следующий день"

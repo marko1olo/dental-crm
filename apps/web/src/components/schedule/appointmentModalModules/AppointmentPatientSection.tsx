@@ -19,6 +19,7 @@ import {
   isTechnicalBreakAppointment,
   type AppointmentPatientSectionProps,
 } from "./appointmentModalTypes";
+import { initiateOutboundCall } from "../../telephony/initiateOutboundCall";
 
 export type { AppointmentPatientSectionProps };
 
@@ -231,10 +232,23 @@ export function AppointmentPatientSection({
                 </div>
                 <div className="flex items-center gap-3 mt-0.5 text-xs text-[var(--muted)]">
                   {selectedPatient.phone ? (
-                    <span className="flex items-center gap-1 font-mono font-medium text-[var(--ink)]">
-                      <Phone size={11} className="text-[var(--teal)]" />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        initiateOutboundCall({
+                          phone: selectedPatient.phone!,
+                          patientId: selectedPatient.id,
+                          patientName: selectedPatient.fullName,
+                        })
+                      }
+                      className="flex items-center gap-1 font-mono font-medium text-[var(--ink)] hover:text-[var(--teal)] hover:underline cursor-pointer group"
+                      title="Позвонить пациенту (IP-телефония АТС)"
+                      aria-label={`Позвонить пациенту ${selectedPatient.phone}`}
+                      data-testid="appointment-patient-phone-call-btn"
+                    >
+                      <Phone size={11} className="text-[var(--teal)] shrink-0 transition-transform group-hover:scale-110" />
                       <span>{selectedPatient.phone}</span>
-                    </span>
+                    </button>
                   ) : (
                     <span className="text-[var(--muted)]">Телефон не указан</span>
                   )}

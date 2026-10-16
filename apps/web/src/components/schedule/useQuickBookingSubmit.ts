@@ -72,8 +72,51 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
       });
 
       if (!res.ok) {
-        showToast(actionFailureToast(isEditing ? "Ошибка обновления записи на сервере" : "Ошибка создания записи на сервере", res.status), "warning");
-        setSubmitError(`Ошибка при ${isEditing ? "обновлении" : "создании"} записи (${res.status})`);
+        let errData: any = null;
+        try {
+          errData = await res.json();
+        } catch {
+          // Ignore JSON parse failure
+        }
+
+        const conflictMessage = errData?.message || errData?.error;
+        if (
+          res.status === 409 ||
+          errData?.code === "AppointmentCreateRejected" ||
+          errData?.reason === "resource_overlap" ||
+          errData?.code === "resource_overlap" ||
+          errData?.code === "overlap"
+        ) {
+          const userFacingMsg =
+            conflictMessage ||
+            "Слот уже занят другим приёмом. Выберите другое время или кресло.";
+          if (typeof setSlotConflict === "function") {
+            setSlotConflict({
+              message: userFacingMsg,
+              suggestedSlots: Array.isArray(errData?.suggestedSlots)
+                ? errData.suggestedSlots
+                : [],
+            });
+          }
+          setSubmitError(userFacingMsg);
+          showToast(userFacingMsg, "warning", 6000);
+          return;
+        }
+
+        showToast(
+          actionFailureToast(
+            conflictMessage ||
+              (isEditing
+                ? "Ошибка обновления записи на сервере"
+                : "Ошибка создания записи на сервере"),
+            res.status,
+          ),
+          "warning",
+        );
+        setSubmitError(
+          conflictMessage ||
+            `Ошибка при ${isEditing ? "обновлении" : "создании"} записи (${res.status})`,
+        );
         return;
       }
 

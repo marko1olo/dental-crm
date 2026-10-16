@@ -146,6 +146,10 @@ export function useScheduleGridData({
     // Single pass over parsedDayAppointments (Zero .filter() GC pressure)
     for (const p of parsedDayAppointments) {
       const a = p.appointment;
+      // Blind-spot radar: Cancelled appointments liberate their slot immediately on the grid
+      if (a.status === "cancelled") {
+        continue;
+      }
       const docId = a.doctorUserId || "unassigned";
       const resolvedChairId =
         p.chairId && validChairIds.has(p.chairId) ? p.chairId : fallbackChairId;

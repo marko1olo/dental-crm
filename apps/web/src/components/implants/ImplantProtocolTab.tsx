@@ -165,7 +165,7 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = ({
 		<div className="space-y-4" data-testid="tab-content-protocol">
 			{/* 1-Click Физиологическая норма / Стандартный хирургический протокол (Мандаты 8e, 8n, 8k) */}
 			<div
-				className="p-3.5 rounded-2xl bg-gradient-to-r from-[var(--teal-surface,rgba(13,148,136,0.12))] to-[var(--paper-soft)] border-2 border-[var(--teal,#0d9488)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-xs"
+				className="p-3.5 rounded-2xl bg-gradient-to-r from-[var(--teal-surface,rgba(13,148,136,0.12))] to-[var(--paper-soft)] border-2 border-[var(--teal,#0d9488)] flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 shadow-xs"
 				data-testid="banner-standard-protocol-preset"
 			>
 				<div className="flex items-center gap-3 min-w-0">
@@ -188,12 +188,12 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = ({
 				<button
 					type="button"
 					onClick={handleStandardProtocol}
-					className="primary-button min-h-[44px] sm:min-h-[36px] px-4 py-2"
+					className="primary-button min-h-[44px] sm:min-h-[38px] px-4 py-2 shrink-0 w-full lg:w-auto justify-center text-center"
 					data-testid="btn-apply-standard-protocol"
 					title="Применить оптимальные параметры: размер 4.0×10 мм, торк 35 Н·см, ISQ 72, ФДМ, складской артикул"
 				>
-					<CheckCircle2 size={16} />
-					<span>Установка без осложнений, первичная стабильность достигнута</span>
+					<CheckCircle2 size={16} className="shrink-0" />
+					<span className="truncate">Установка без осложнений, первичная стабильность достигнута</span>
 				</button>
 			</div>
 

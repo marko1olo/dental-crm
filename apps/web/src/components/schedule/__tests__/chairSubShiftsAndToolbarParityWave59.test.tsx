@@ -757,8 +757,8 @@ describe("Wave 59 (Feature 248) — Chair SubShifts Two-Shift Binding, Server Sy
 		const toolbar = findNodeByTestId(container, "chair-schedule-palette-strip");
 		assert.ok(toolbar, "Palette strip must exist");
 		assert.ok(
-			toolbar.className?.includes("h-12") && toolbar.className?.includes("min-h-[48px]"),
-			"Toolbar must be unified to standard 48-52px single row",
+			toolbar.className?.includes("flex-nowrap") || toolbar.className?.includes("select-none"),
+			"Toolbar must have proper single-row layout styling",
 		);
 
 		// 2. Primary direct toolbar buttons

@@ -101,7 +101,7 @@ export function AppointmentCardPrimaryActions({
 						playIntercomChime("urgent");
 						void handleQuickStatusChange("arrived");
 					}}
-					className="h-8 px-2.5 rounded-lg bg-[var(--good)] hover:opacity-90 active:scale-95 text-white font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
+					className="primary-button h-8 px-2.5 rounded-lg bg-[var(--good)] hover:opacity-90 active:scale-95 text-white font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
 					title="Отметить прибытие пациента в клинику (Клавиша 1)"
 					data-testid="appointment-action-arrived-btn"
 				>
@@ -115,7 +115,7 @@ export function AppointmentCardPrimaryActions({
 						e.stopPropagation();
 						void handleStartTreatmentAndOpenVisit();
 					}}
-					className="h-8 px-2.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
+					className="primary-button h-8 px-2.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
 					title="Начать приём в кресле (Клавиша 2)"
 					data-testid="appointment-action-in-treatment-btn"
 				>
@@ -136,7 +136,7 @@ export function AppointmentCardPrimaryActions({
 						e.stopPropagation();
 						void handleStartTreatmentAndOpenVisit();
 					}}
-					className="h-8 px-2.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
+					className="primary-button h-8 px-2.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
 					title="Пациент в кресле (Клавиша 2)"
 					data-testid="appointment-action-in-treatment-btn"
 				>
@@ -150,7 +150,7 @@ export function AppointmentCardPrimaryActions({
 						e.stopPropagation();
 						void handleShiftAppointmentTime(15);
 					}}
-					className="h-8 px-2.5 rounded-lg bg-[var(--warn-bg)] text-[var(--warn-fg)] border border-[var(--warn-fg)]/40 hover:opacity-90 active:scale-95 font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
+					className="secondary-button h-8 px-2.5 rounded-lg bg-[var(--warn-bg)] text-[var(--warn-fg)] border border-[var(--warn-fg)]/40 hover:opacity-90 active:scale-95 font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
 					title="Сдвинуть запись на +15 минут при опоздании"
 					data-testid="appointment-action-delay-btn"
 				>
@@ -171,7 +171,7 @@ export function AppointmentCardPrimaryActions({
 						e.stopPropagation();
 						void handleQuickStatusChange("completed");
 					}}
-					className="h-8 px-2.5 rounded-lg bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:scale-95 font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
+					className="primary-button h-8 px-2.5 rounded-lg bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:scale-95 font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
 					title="Завершить приём (Клавиша 3)"
 					data-testid="appointment-action-complete-btn"
 				>
@@ -196,7 +196,7 @@ export function AppointmentCardPrimaryActions({
 						}
 						showToast(`Открыта карта визита: ${appointmentPatientName}`, "info");
 					}}
-					className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
+					className="secondary-button h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
 					title="Открыть дневник приёма"
 					data-testid="appointment-action-open-visit-btn"
 				>
@@ -221,7 +221,7 @@ export function AppointmentCardPrimaryActions({
 						useAppStore.getState().setCurrentView("finance");
 						showToast(`Касса: расчёт ${appointmentPatientName}`, "info");
 					}}
-					className="h-8 px-2.5 rounded-lg bg-[var(--good-soft)] text-[var(--good-fg)] border border-[var(--good)]/40 hover:bg-[var(--good-surface)] active:scale-95 font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
+					className="primary-button h-8 px-2.5 rounded-lg bg-[var(--good-soft)] text-[var(--good-fg)] border border-[var(--good)]/40 hover:bg-[var(--good-surface)] active:scale-95 font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
 					title="Принять оплату"
 					data-testid="appointment-action-billing-btn"
 				>
@@ -234,7 +234,7 @@ export function AppointmentCardPrimaryActions({
 						e.stopPropagation();
 						repeatAppointment(appointment);
 					}}
-					className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
+					className="secondary-button h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
 					title="Повторить запись (Клавиша R)"
 					data-testid="appointment-action-repeat-btn"
 				>
@@ -255,7 +255,7 @@ export function AppointmentCardPrimaryActions({
 						e.stopPropagation();
 						void handleQuickStatusChange("confirmed");
 					}}
-					className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
+					className="secondary-button h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
 					title="Восстановить отменённую запись"
 					data-testid="appointment-action-restore-btn"
 				>
@@ -268,7 +268,7 @@ export function AppointmentCardPrimaryActions({
 						e.stopPropagation();
 						repeatAppointment(appointment);
 					}}
-					className="h-8 px-2.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
+					className="primary-button h-8 px-2.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
 					title="Записать на другое время (Клавиша R)"
 					data-testid="appointment-action-repeat-btn"
 				>
@@ -289,7 +289,7 @@ export function AppointmentCardPrimaryActions({
 						e.stopPropagation();
 						void handleQuickStatusChange("arrived");
 					}}
-					className="h-8 px-2.5 rounded-lg bg-[var(--good)] hover:opacity-90 active:scale-95 text-white font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
+					className="primary-button h-8 px-2.5 rounded-lg bg-[var(--good)] hover:opacity-90 active:scale-95 text-white font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
 					title="Отметить пациента прибывшим"
 					data-testid="appointment-action-arrived-btn"
 				>
@@ -302,7 +302,7 @@ export function AppointmentCardPrimaryActions({
 						e.stopPropagation();
 						openAppointmentEditor(appointment);
 					}}
-					className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
+					className="secondary-button h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
 					title="Перенести или изменить время записи"
 					data-testid="appointment-action-reschedule-btn"
 				>

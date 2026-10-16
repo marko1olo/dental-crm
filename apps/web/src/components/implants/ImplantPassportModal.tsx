@@ -646,7 +646,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 							data-testid="btn-print-implant-passport-footer implant-print-passport-btn"
 							title="Распечатать паспорт имплантата / гарантийный сертификат"
 						>
-							<Printer size={15} className="text-[var(--teal,#0d9488)]" />
+							<Printer size={15} className="text-[var(--teal,#0d9488)] shrink-0" />
 							<span>Печать паспорта</span>
 						</button>
 
@@ -657,7 +657,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 							data-testid="btn-save-implant-passport btn-passport-insert-diary implant-save-passport-btn implant-insert-diary-btn"
 							title="Сохранить паспорт имплантата и внести протокол в дневник приёма"
 						>
-							<CheckCircle2 size={16} />
+							<CheckCircle2 size={16} className="shrink-0" />
 							<span>Сохранить паспорт имплантата · В дневник приёма</span>
 						</button>
 					</div>

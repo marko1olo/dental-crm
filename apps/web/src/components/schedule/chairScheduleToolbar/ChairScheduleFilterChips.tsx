@@ -185,7 +185,7 @@ export function ChairScheduleFilterChips({
                   data-testid={`chair-view-doc-${chair.id}`}
                 >
                   {hasTwoSubShifts && morningSub && eveningSub
-                    ? `(${morningSub.doctorName.split(" ")[0]} / ${eveningSub.doctorName.split(" ")[0]})`
+                    ? `(У: ${formatDoctorShortName(morningSub.doctorName)} / В: ${formatDoctorShortName(eveningSub.doctorName)})`
                     : `(${formatDoctorShortName(assignedDocName)})`}
                 </span>
               )}

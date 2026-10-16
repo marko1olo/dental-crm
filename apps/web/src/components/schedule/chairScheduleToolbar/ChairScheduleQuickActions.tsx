@@ -67,7 +67,7 @@ export function ChairScheduleQuickActions({
     <div className="flex items-center gap-2 shrink-0 select-none flex-nowrap">
       {/* 3-State Schedule Density Mode Switcher (Hick's Law / Clinical HIG) */}
       <div
-        className="dente-segmented-bar h-9 min-h-[36px] max-h-[36px] p-0.5 rounded-xl shrink-0 select-none inline-flex items-center gap-0.5 bg-[var(--paper-card)] border border-[var(--line)] shadow-2xs touch-manipulation"
+        className="dente-segmented-bar h-8 min-h-[32px] max-h-[32px] p-0.5 rounded-lg shrink-0 select-none inline-flex items-center gap-0.5 bg-[var(--paper-card)] border border-[var(--line)] shadow-2xs touch-manipulation"
         data-testid="schedule-density-switcher"
         role="group"
         aria-label="Режим отображения карточек расписания"
@@ -75,7 +75,7 @@ export function ChairScheduleQuickActions({
         <button
           type="button"
           onClick={() => setDensity("compact")}
-          className={`dente-segmented-item h-8 px-2.5 rounded-lg text-xs inline-flex items-center gap-1.5 transition-all touch-manipulation cursor-pointer ${
+          className={`dente-segmented-item h-7 px-2.5 rounded-md text-xs inline-flex items-center gap-1.5 transition-all touch-manipulation cursor-pointer ${
             currentDensity === "compact" ? "active font-semibold text-[var(--ink)] bg-[var(--paper)] shadow-2xs" : "text-[var(--muted)] hover:text-[var(--ink)]"
           }`}
           title="Компактный режим: 1-строчный минимализм"
@@ -88,7 +88,7 @@ export function ChairScheduleQuickActions({
         <button
           type="button"
           onClick={() => setDensity("informative")}
-          className={`dente-segmented-item h-8 px-2.5 rounded-lg text-xs inline-flex items-center gap-1.5 transition-all touch-manipulation cursor-pointer ${
+          className={`dente-segmented-item h-7 px-2.5 rounded-md text-xs inline-flex items-center gap-1.5 transition-all touch-manipulation cursor-pointer ${
             currentDensity === "informative" ? "active font-semibold text-[var(--ink)] bg-[var(--paper)] shadow-2xs" : "text-[var(--muted)] hover:text-[var(--ink)]"
           }`}
           title="Информативный режим (по умолчанию): 2-3 строки с процедурой и зубом"
@@ -101,7 +101,7 @@ export function ChairScheduleQuickActions({
         <button
           type="button"
           onClick={() => setDensity("expanded")}
-          className={`dente-segmented-item h-8 px-2.5 rounded-lg text-xs inline-flex items-center gap-1.5 transition-all touch-manipulation cursor-pointer ${
+          className={`dente-segmented-item h-7 px-2.5 rounded-md text-xs inline-flex items-center gap-1.5 transition-all touch-manipulation cursor-pointer ${
             currentDensity === "expanded" ? "active font-semibold text-[var(--ink)] bg-[var(--paper)] shadow-2xs" : "text-[var(--muted)] hover:text-[var(--ink)]"
           }`}
           title="Развернутый режим: полный блок с контактами и кнопкой «В приём»"
@@ -121,13 +121,13 @@ export function ChairScheduleQuickActions({
             setIsShiftsMenuOpen((prev) => !prev);
             setIsMoreMenuOpen(false);
           }}
-          className="secondary-button inline-flex items-center gap-1.5 px-3 py-0 text-xs font-semibold h-9 min-h-[36px] max-h-[36px] shrink-0 select-none rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--primary)] text-[var(--ink)] transition-all cursor-pointer shadow-2xs touch-manipulation"
+          className="secondary-button"
           title="Пакетные действия со сменами (копирование, ротация, закрепления, очистка)"
           data-testid="btn-chair-shifts-menu-trigger"
           aria-expanded={isShiftsMenuOpen}
           aria-haspopup="true"
         >
-          <SlidersHorizontal size={14} className="text-[var(--primary)] shrink-0" />
+          <SlidersHorizontal size={14} className="text-[var(--teal)] shrink-0" />
           <span>Смены...</span>
         </button>
 
@@ -135,7 +135,7 @@ export function ChairScheduleQuickActions({
         <div
           ref={shiftsMenuRef}
           data-testid="chair-shifts-dropdown-menu"
-          className={`absolute right-0 top-full mt-1.5 z-50 w-64 p-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl flex-col gap-1 select-none animate-in fade-in zoom-in-95 duration-100 ${
+          className={`absolute right-0 top-full mt-1.5 z-50 w-64 p-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl flex-col gap-0.5 select-none animate-in fade-in zoom-in-95 duration-100 ${
             isShiftsMenuOpen ? "flex" : "hidden"
           }`}
           role="menu"
@@ -151,12 +151,12 @@ export function ChairScheduleQuickActions({
               handleCopyTodayShiftsToCurrentWeek(false);
               setIsShiftsMenuOpen(false);
             }}
-            className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+            className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px]"
             title="Скопировать график смен кресел на текущую неделю (Пн–Вс, 7 дней)"
             data-testid="btn-copy-chair-week-current"
             role="menuitem"
           >
-            <Calendar size={14} className="text-[var(--primary)] shrink-0" />
+            <Calendar size={14} className="text-[var(--teal)] shrink-0" />
             <span>На неделю (Пн–Вс)</span>
           </button>
 
@@ -166,12 +166,12 @@ export function ChairScheduleQuickActions({
               handleCopyTodayShiftsToCurrentWeek(true);
               setIsShiftsMenuOpen(false);
             }}
-            className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+            className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px]"
             title="Скопировать график смен кресел на будни (Пн–Пт, 5 дней)"
             data-testid="btn-copy-chair-week-workdays"
             role="menuitem"
           >
-            <Calendar size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <Calendar size={14} className="text-[var(--teal)] shrink-0" />
             <span>На будни (Пн–Пт)</span>
           </button>
 
@@ -181,12 +181,12 @@ export function ChairScheduleQuickActions({
               handleCopyTodayShiftsToMonth();
               setIsShiftsMenuOpen(false);
             }}
-            className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+            className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px]"
             title="Скопировать график смен кресел на весь текущий месяц"
             data-testid="btn-copy-chair-month"
             role="menuitem"
           >
-            <CalendarRange size={14} className="text-[var(--primary)] shrink-0" />
+            <CalendarRange size={14} className="text-[var(--teal)] shrink-0" />
             <span>На месяц</span>
           </button>
 
@@ -196,12 +196,12 @@ export function ChairScheduleQuickActions({
               handleRotateChairShifts();
               setIsShiftsMenuOpen(false);
             }}
-            className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+            className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px]"
             title="Циклическая ротация смен между креслами"
             data-testid="btn-rotate-chair-shifts"
             role="menuitem"
           >
-            <Layers size={14} className="text-[var(--primary)] shrink-0" />
+            <Layers size={14} className="text-[var(--teal)] shrink-0" />
             <span>Ротация кресел</span>
           </button>
 
@@ -211,12 +211,12 @@ export function ChairScheduleQuickActions({
               handleApplyDoctorPreferredChairs();
               setIsShiftsMenuOpen(false);
             }}
-            className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+            className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px]"
             title="Назначить закреплённых врачей на все кресла дня"
             data-testid="btn-apply-preferred-chairs"
             role="menuitem"
           >
-            <Pin size={14} className="text-[var(--primary)] shrink-0" />
+            <Pin size={14} className="text-[var(--teal)] shrink-0" />
             <span>Применить закрепления</span>
           </button>
 
@@ -226,12 +226,12 @@ export function ChairScheduleQuickActions({
               handleCopyWeekShiftsToNextWeek();
               setIsShiftsMenuOpen(false);
             }}
-            className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+            className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px]"
             title="Скопировать график смен кресел на следующую неделю (+7 дней)"
             data-testid="btn-copy-chair-week-next"
             role="menuitem"
           >
-            <Copy size={14} className="text-[var(--primary)] shrink-0" />
+            <Copy size={14} className="text-[var(--teal)] shrink-0" />
             <span>На след. неделю</span>
           </button>
 
@@ -241,12 +241,12 @@ export function ChairScheduleQuickActions({
               setIsDateRangeModalOpen(true);
               setIsShiftsMenuOpen(false);
             }}
-            className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+            className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px]"
             title="Назначить смену на диапазон дат"
             data-testid="btn-assign-date-range"
             role="menuitem"
           >
-            <CalendarRange size={14} className="text-[var(--primary)] shrink-0" />
+            <CalendarRange size={14} className="text-[var(--teal)] shrink-0" />
             <span>На диапазон дат...</span>
           </button>
 
@@ -257,12 +257,12 @@ export function ChairScheduleQuickActions({
                 onOpenDoctorFreeSlots();
                 setIsShiftsMenuOpen(false);
               }}
-              className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+              className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px]"
               title="Умный подбор свободного времени и окон"
               data-testid="btn-chair-menu-find-slots"
               role="menuitem"
             >
-              <Search size={14} className="text-[var(--primary)] shrink-0" />
+              <Search size={14} className="text-[var(--teal)] shrink-0" />
               <span>Умный подбор времени...</span>
             </button>
           )}
@@ -274,7 +274,7 @@ export function ChairScheduleQuickActions({
                 onOpenPreventiveInspection();
                 setIsShiftsMenuOpen(false);
               }}
-              className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+              className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px]"
               title="Сервисный контроль: осмотры по гарантии (имплантация/протезирование) и профгигиена раз в 6 месяцев"
               data-testid="btn-chair-preventive-inspection"
               role="menuitem"
@@ -297,7 +297,7 @@ export function ChairScheduleQuickActions({
               handleClearAllDayShifts();
               setIsShiftsMenuOpen(false);
             }}
-            className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer text-left min-h-[44px]"
+            className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer text-left h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px]"
             title="Очистить все смены кресел на текущий день"
             data-testid="btn-clear-day-shifts"
             role="menuitem"
@@ -313,11 +313,11 @@ export function ChairScheduleQuickActions({
         <button
           type="button"
           onClick={onOpenDoctorFreeSlots}
-          className="hidden 2xl:inline-flex items-center gap-1.5 px-3 py-0 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--primary-soft)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--ink)] transition-all cursor-pointer h-9 min-h-[36px] max-h-[36px] shadow-2xs shrink-0 select-none touch-manipulation"
+          className="secondary-button hidden 2xl:inline-flex"
           title="Интеллектуальный подбор свободных окон у врачей клиники"
           data-testid="chair-toolbar-find-slots-btn"
         >
-          <Search size={14} className="text-[var(--primary)] shrink-0" />
+          <Search size={14} className="text-[var(--teal)] shrink-0" />
           <span>Подобрать окно</span>
         </button>
       )}
@@ -327,11 +327,11 @@ export function ChairScheduleQuickActions({
         <button
           type="button"
           onClick={onOpenRosterModal}
-          className="hidden 2xl:inline-flex items-center gap-1.5 px-3 py-0 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] text-xs font-semibold text-[var(--ink)] transition-all cursor-pointer h-9 min-h-[36px] max-h-[36px] shadow-2xs shrink-0 select-none touch-manipulation"
+          className="secondary-button hidden 2xl:inline-flex"
           title="График работы врачей по сменам и креслам"
           data-testid="btn-open-chair-roster"
         >
-          <Users size={14} className="text-[var(--primary)]" />
+          <Users size={14} className="text-[var(--teal)]" />
           <span>График смен</span>
         </button>
       )}
@@ -340,11 +340,11 @@ export function ChairScheduleQuickActions({
       <button
         type="button"
         onClick={() => setIsAddDoctorOpen(true)}
-        className="hidden 2xl:inline-flex items-center gap-1.5 px-3 py-0 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--primary-soft)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--ink)] transition-all cursor-pointer h-9 min-h-[36px] max-h-[36px] shadow-2xs shrink-0 select-none touch-manipulation"
+        className="secondary-button hidden 2xl:inline-flex"
         title="Быстро добавить врача в расписание (+ Врач)"
         data-testid="btn-chair-view-add-doctor"
       >
-        <UserPlus size={14} className="text-[var(--primary)]" />
+        <UserPlus size={14} className="text-[var(--teal)]" />
         <span>Врач</span>
       </button>
 
@@ -356,7 +356,7 @@ export function ChairScheduleQuickActions({
             setIsMoreMenuOpen((prev) => !prev);
             setIsShiftsMenuOpen(false);
           }}
-          className="inline-flex items-center gap-1.5 px-2.5 py-0 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--primary)] text-xs font-semibold text-[var(--ink)] transition-all cursor-pointer h-9 min-h-[36px] max-h-[36px] shadow-2xs shrink-0 select-none touch-manipulation"
+          className="secondary-button"
           title="Дополнительные действия (подбор окон, график смен, добавить врача)"
           data-testid="btn-chair-more-menu-trigger"
           aria-expanded={isMoreMenuOpen}
@@ -368,7 +368,7 @@ export function ChairScheduleQuickActions({
 
         {isMoreMenuOpen && (
           <div
-            className="absolute right-0 top-full mt-1.5 z-50 w-56 p-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl flex flex-col gap-1 select-none animate-in fade-in zoom-in-95 duration-100"
+            className="absolute right-0 top-full mt-1.5 z-50 w-56 p-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl flex flex-col gap-0.5 select-none animate-in fade-in zoom-in-95 duration-100"
             data-testid="chair-more-dropdown-menu"
             role="menu"
             aria-label="Дополнительные действия тулбара"
@@ -384,11 +384,11 @@ export function ChairScheduleQuickActions({
                   onOpenDoctorFreeSlots();
                   setIsMoreMenuOpen(false);
                 }}
-                className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-dark)] transition-colors cursor-pointer text-left min-h-[36px]"
+                className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px]"
                 data-testid="btn-more-find-slots"
                 role="menuitem"
               >
-                <Search size={14} className="text-[var(--primary)] shrink-0" />
+                <Search size={14} className="text-[var(--teal)] shrink-0" />
                 <span>Подобрать окно</span>
               </button>
             )}
@@ -400,11 +400,11 @@ export function ChairScheduleQuickActions({
                   onOpenRosterModal();
                   setIsMoreMenuOpen(false);
                 }}
-                className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-dark)] transition-colors cursor-pointer text-left min-h-[36px]"
+                className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px]"
                 data-testid="btn-more-open-roster"
                 role="menuitem"
               >
-                <Users size={14} className="text-[var(--primary)] shrink-0" />
+                <Users size={14} className="text-[var(--teal)] shrink-0" />
                 <span>График смен</span>
               </button>
             )}
@@ -415,11 +415,11 @@ export function ChairScheduleQuickActions({
                 setIsAddDoctorOpen(true);
                 setIsMoreMenuOpen(false);
               }}
-              className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-dark)] transition-colors cursor-pointer text-left min-h-[36px]"
+              className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px]"
               data-testid="btn-more-add-doctor"
               role="menuitem"
             >
-              <UserPlus size={14} className="text-[var(--primary)] shrink-0" />
+              <UserPlus size={14} className="text-[var(--teal)] shrink-0" />
               <span>Добавить врача</span>
             </button>
 
@@ -430,7 +430,7 @@ export function ChairScheduleQuickActions({
                   onOpenPreventiveInspection();
                   setIsMoreMenuOpen(false);
                 }}
-                className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-dark)] transition-colors cursor-pointer text-left min-h-[36px]"
+                className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px]"
                 data-testid="btn-more-preventive"
                 role="menuitem"
               >
@@ -442,15 +442,15 @@ export function ChairScheduleQuickActions({
         )}
       </div>
 
-      {/* Primary CTA: Always visible in toolbar (36px rounded-xl prominent action button) */}
+      {/* Primary CTA: Always visible in toolbar */}
       <button
         type="button"
         onClick={handleOpenAddChair}
-        className="inline-flex items-center gap-1.5 px-3.5 py-0 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-dark)] active:scale-[0.98] text-white text-xs font-semibold shadow-xs hover:shadow-sm transition-all cursor-pointer h-9 min-h-[36px] max-h-[36px] shrink-0 select-none touch-manipulation"
+        className="primary-button"
         title="Добавить стоматологическую установку"
         data-testid="btn-add-chair-header"
       >
-        <Plus size={15} className="shrink-0 stroke-[2.5]" />
+        <Plus size={14} className="shrink-0 stroke-[2.5]" />
         <span className="hidden sm:inline">Кресло</span>
       </button>
     </div>

@@ -160,7 +160,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
         />
 
         {/* Body Content */}
-        <div className="flex-1 overflow-y-auto p-5 pb-44 space-y-4" data-testid="quick-booking-scroll-body">
+        <div className="flex-1 overflow-y-auto p-5 pb-8 space-y-4" data-testid="quick-booking-scroll-body">
           {/* Patient Selection & Typeahead */}
           <QuickBookingPatientSection
             dashboard={dashboard}
