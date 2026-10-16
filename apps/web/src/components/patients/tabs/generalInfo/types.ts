@@ -56,6 +56,9 @@ export interface PatientGeneralInfo {
 	dmsInsuranceCompany?: string | null | undefined;
 	dmsPolicyNumber?: string | null | undefined;
 	dmsProgramName?: string | null | undefined;
+	dmsGuaranteeLetterNumber?: string | null | undefined;
+	dmsCoverageLimitRub?: number | string | null | undefined;
+	dmsCoverageLimitKopecks?: number | null | undefined;
 
 	// 3. Заметки и особенности обслуживания
 	registryNotes?: string | null | undefined;

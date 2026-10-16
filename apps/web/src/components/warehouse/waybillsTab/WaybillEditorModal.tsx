@@ -144,14 +144,14 @@ export const WaybillEditorModal: React.FC<WaybillEditorModalProps> = ({
 					<button
 						type="button"
 						onClick={onCancel}
-						className="h-8 px-3 rounded-lg border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] cursor-pointer"
+						className="secondary-button h-8 px-3 text-xs"
 					>
 						Отмена
 					</button>
 					<button
 						type="button"
 						onClick={() => onSubmit(draftWaybill)}
-						className="h-8 px-4 rounded-lg bg-teal-600 text-white font-semibold hover:bg-teal-700 active:scale-98 shadow-xs cursor-pointer"
+						className="primary-button h-8 px-4 text-xs font-semibold shadow-xs"
 						data-testid="btn-confirm-post-waybill"
 					>
 						Провести накладную
@@ -382,17 +382,7 @@ export const ExpressWaybillModal: React.FC<ExpressWaybillModalProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						style={{
-							height: 36,
-							padding: "0 16px",
-							borderRadius: 8,
-							border: "1px solid var(--line, #cbd5e1)",
-							background: "var(--paper, #fff)",
-							fontSize: "0.8125rem",
-							fontWeight: 600,
-							color: "var(--ink, #0f172a)",
-							cursor: "pointer",
-						}}
+						className="secondary-button h-9 px-4 text-xs font-semibold"
 					>
 						Отмена
 					</button>
@@ -400,20 +390,7 @@ export const ExpressWaybillModal: React.FC<ExpressWaybillModalProps> = ({
 					<button
 						type="button"
 						onClick={onSubmit}
-						style={{
-							height: 36,
-							padding: "0 18px",
-							borderRadius: 8,
-							border: "none",
-							background: "var(--teal-600, #0d9488)",
-							color: "#ffffff",
-							fontSize: "0.8125rem",
-							fontWeight: 700,
-							cursor: "pointer",
-							display: "flex",
-							alignItems: "center",
-							gap: 6,
-						}}
+						className="primary-button h-9 px-4 text-xs font-bold gap-1.5"
 						data-testid="btn-submit-express-wb"
 					>
 						<Truck size={14} />

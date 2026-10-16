@@ -246,6 +246,8 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 						onOpenAnamnesis={onOpenAnamnesis}
 						onEditPatient={onEditPatient}
 						onOpenFamilyWallet={() => setIsFamilyWalletOpen(true)}
+						isActiveVisit={isActiveVisit}
+						nextAppointment={nextAppointment}
 					/>
 				</div>
 			</div>

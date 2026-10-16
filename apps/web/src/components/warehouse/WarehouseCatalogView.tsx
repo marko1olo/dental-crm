@@ -23,11 +23,14 @@ import { getFefoTrafficLight } from "../inventory/fefoTrafficLight.js";
 
 export type WarehouseCatalogCategory =
 	| "all"
-	| "therapy"
-	| "surgery"
-	| "orthopedics"
+	| "anesthetics"
+	| "filling"
+	| "impression"
 	| "disposables"
-	| "disinfection";
+	| "disinfection"
+	| "surgery"
+	| "therapy"
+	| "orthopedics";
 
 export interface WarehouseCatalogCategoryTab {
 	readonly id: WarehouseCatalogCategory;
@@ -36,12 +39,47 @@ export interface WarehouseCatalogCategoryTab {
 
 export const WAREHOUSE_CATALOG_CATEGORIES: readonly WarehouseCatalogCategoryTab[] = [
 	{ id: "all", label: "Все" },
-	{ id: "therapy", label: "Терапия" },
-	{ id: "surgery", label: "Хирургия" },
-	{ id: "orthopedics", label: "Ортопедия" },
-	{ id: "disposables", label: "Расходники" },
+	{ id: "anesthetics", label: "Анестетики" },
+	{ id: "filling", label: "Пломбировочные" },
+	{ id: "impression", label: "Слепочные" },
+	{ id: "disposables", label: "Расходные средства" },
 	{ id: "disinfection", label: "Дезинфекция" },
+	{ id: "surgery", label: "Хирургия" },
 ];
+
+export function formatCategoryRu(category?: string | null): string {
+	if (!category) return "Расходные материалы";
+	const lower = category.toLowerCase().trim();
+	switch (lower) {
+		case "therapy":
+			return "Терапия";
+		case "disinfection":
+			return "Дезинфекция";
+		case "orthopedics":
+		case "orthodontics":
+			return "Ортопедия";
+		case "surgery":
+			return "Хирургия";
+		case "anesthesia":
+		case "anesthetics":
+			return "Анестетики";
+		case "composite":
+		case "composites":
+		case "filling":
+			return "Пломбировочные";
+		case "impression":
+		case "impressions":
+			return "Слепочные";
+		case "disposables":
+		case "consumables":
+			return "Расходные средства";
+		case "endo":
+		case "endodontics":
+			return "Эндодонтия";
+		default:
+			return category;
+	}
+}
 
 export interface WarehouseCatalogViewProps {
 	readonly organizationId: string;
@@ -61,8 +99,8 @@ export interface WarehouseCatalogViewProps {
  *
  * Мандаты 8e (Врачебная автономия), 8n (Масштаб), 8s (Анти-блоат), СанПиН 3.3686-21.
  * - Тулбар склада: СТРОГО в 1 строку (32–36px) — поиск, segmented bar категорий и действия.
- * - Живой клинический язык: «Остаток в кабинете», «Списание по протоколу лечения», «Поступление партии».
- * - Автоматический баннер списания расходников к услуге (BOM) в 1 клик.
+ * - Понятные клинические категории: Анестетики, Пломбировочные, Слепочные, Расходные средства, Дезинфекция, Хирургия.
+ * - Автоматический баннер списания расходников к услуге в 1 клик.
  * - Мягкий овердрафт: не блокирует работу врача у кресла.
  * - Тач-таргеты >= 44x44px на таче, плотная сетка 32px на ПК.
  */
@@ -134,7 +172,23 @@ export const WarehouseCatalogView: React.FC<WarehouseCatalogViewProps> = ({
 			const cat = (item.category || "").toLowerCase();
 			const name = (item.name || "").toLowerCase();
 
-			if (selectedCategory === "therapy") {
+			if (selectedCategory === "anesthetics") {
+				return (
+					cat.includes("анестез") ||
+					cat.includes("anesthesia") ||
+					name.includes("анестез") ||
+					name.includes("артикаин") ||
+					name.includes("ультракаин") ||
+					name.includes("септанест") ||
+					name.includes("скандонест") ||
+					name.includes("убистезин") ||
+					name.includes("лидокаин") ||
+					name.includes("мепивакаин") ||
+					name.includes("карпул")
+				);
+			}
+
+			if (selectedCategory === "filling" || selectedCategory === "therapy") {
 				return (
 					cat.includes("терапи") ||
 					cat.includes("композит") ||
@@ -142,32 +196,32 @@ export const WarehouseCatalogView: React.FC<WarehouseCatalogViewProps> = ({
 					cat.includes("адгезив") ||
 					name.includes("пломб") ||
 					name.includes("бонд") ||
+					name.includes("адгезив") ||
 					name.includes("filtek") ||
 					name.includes("estelite") ||
+					name.includes("gradia") ||
+					name.includes("спектрум") ||
+					name.includes("харизма") ||
+					name.includes("прокладк") ||
 					name.includes("файл") ||
-					name.includes("силлер")
+					name.includes("силлер") ||
+					name.includes("паста") ||
+					name.includes("трави")
 				);
 			}
 
-			if (selectedCategory === "surgery") {
-				return (
-					cat.includes("хирург") ||
-					cat.includes("имплант") ||
-					name.includes("скальпель") ||
-					name.includes("шовн") ||
-					name.includes("имплант") ||
-					name.includes("губка")
-				);
-			}
-
-			if (selectedCategory === "orthopedics") {
+			if (selectedCategory === "impression" || selectedCategory === "orthopedics") {
 				return (
 					cat.includes("ортопед") ||
 					cat.includes("слепоч") ||
 					cat.includes("цемент") ||
+					name.includes("слепоч") ||
 					name.includes("силикон") ||
+					name.includes("альгинат") ||
 					name.includes("корон") ||
-					name.includes("цемент")
+					name.includes("цемент") ||
+					name.includes("ложка") ||
+					name.includes("абатмент")
 				);
 			}
 
@@ -177,8 +231,13 @@ export const WarehouseCatalogView: React.FC<WarehouseCatalogViewProps> = ({
 					cat.includes("сиз") ||
 					name.includes("перчатк") ||
 					name.includes("маск") ||
+					name.includes("нагрудник") ||
 					name.includes("слюноотсос") ||
-					name.includes("валик")
+					name.includes("валик") ||
+					name.includes("шприц") ||
+					name.includes("браш") ||
+					name.includes("салфет") ||
+					name.includes("простын")
 				);
 			}
 
@@ -189,7 +248,23 @@ export const WarehouseCatalogView: React.FC<WarehouseCatalogViewProps> = ({
 					cat.includes("санпин") ||
 					name.includes("крафт") ||
 					name.includes("аламинол") ||
-					name.includes("спирт")
+					name.includes("азопирам") ||
+					name.includes("спирт") ||
+					name.includes("индикатор") ||
+					name.includes("антисептик")
+				);
+			}
+
+			if (selectedCategory === "surgery") {
+				return (
+					cat.includes("хирург") ||
+					cat.includes("имплант") ||
+					name.includes("скальпель") ||
+					name.includes("шовн") ||
+					name.includes("имплант") ||
+					name.includes("губка") ||
+					name.includes("элеватор") ||
+					name.includes("мембран")
 				);
 			}
 
@@ -265,7 +340,7 @@ export const WarehouseCatalogView: React.FC<WarehouseCatalogViewProps> = ({
 			{/* 3. ТУЛБАР СКЛАДА — СТРОГО 1 СТРОКА (32–36PX) ПО ЗАКОНУ ХИКА И APPLE HIG */}
 			<div className="min-h-[36px] py-1 px-2.5 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-lg flex flex-wrap items-center justify-between gap-2 shrink-0">
 				{/* Канонический поисковый контейнер */}
-				<div className="dente-search-wrap relative min-w-[180px] max-w-xs flex-1">
+				<div className="dente-search-wrap relative w-full sm:w-auto min-w-0 sm:min-w-[180px] sm:max-w-xs flex-1">
 					<Search size={14} className="dente-search-icon" />
 					<input
 						type="text"
@@ -312,19 +387,11 @@ export const WarehouseCatalogView: React.FC<WarehouseCatalogViewProps> = ({
 								role="tab"
 								aria-selected={isActive}
 								onClick={() => setSelectedCategory(tab.id)}
-								style={{
-									height: 26,
-									padding: "0 10px",
-									borderRadius: 6,
-									fontSize: "0.75rem",
-									fontWeight: isActive ? 700 : 500,
-									border: isActive ? "1px solid var(--line, #cbd5e1)" : "1px solid transparent",
-									background: isActive ? "var(--paper, #ffffff)" : "transparent",
-									color: isActive ? "var(--brand, #0f766e)" : "var(--muted, #64748b)",
-									cursor: "pointer",
-									transition: "all 0.15s ease",
-									whiteSpace: "nowrap",
-								}}
+								className={`h-7 px-2.5 rounded-lg text-xs font-medium cursor-pointer transition-all whitespace-nowrap flex items-center justify-center ${
+									isActive
+										? "bg-[var(--paper)] text-teal-700 dark:text-teal-300 font-bold border border-[var(--line)] shadow-xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-transparent"
+								}`}
 								data-testid={`catalog-category-${tab.id}`}
 							>
 								{tab.label}
@@ -334,11 +401,11 @@ export const WarehouseCatalogView: React.FC<WarehouseCatalogViewProps> = ({
 				</div>
 
 				{/* Кнопки быстрых клинических действий */}
-				<div className="flex items-center gap-1.5 flex-wrap shrink-0">
+				<div className="flex items-center gap-1.5 w-full sm:w-auto shrink-0">
 					<button
 						type="button"
 						onClick={() => setIsDeductionModalOpen(true)}
-						className="h-8 min-h-[32px] px-2.5 rounded-lg text-xs font-semibold border border-teal-500/40 text-teal-800 dark:text-teal-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+						className="secondary-button text-xs font-semibold cursor-pointer w-full sm:w-auto"
 						data-testid="btn-open-protocol-deduction"
 						title="Списание расходных материалов по клиническому протоколу процедуры"
 					>
@@ -350,7 +417,7 @@ export const WarehouseCatalogView: React.FC<WarehouseCatalogViewProps> = ({
 						<button
 							type="button"
 							onClick={onOpenReceiptModal}
-							className="h-8 min-h-[32px] px-3 rounded-lg text-xs font-semibold bg-teal-600 text-white hover:bg-teal-700 active:scale-98 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+							className="primary-button text-xs font-semibold cursor-pointer w-full sm:w-auto"
 							data-testid="btn-add-incoming-batch"
 							title="Оприходование поступившей партии материалов"
 						>
@@ -367,13 +434,16 @@ export const WarehouseCatalogView: React.FC<WarehouseCatalogViewProps> = ({
 					<table className="w-full text-left text-xs border-collapse" data-testid="warehouse-catalog-table">
 						<thead className="bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] border-b border-[var(--line,#e2e8f0)] sticky top-0 z-10 font-semibold">
 							<tr>
-								<th className="py-2.5 px-3">Материал</th>
-								<th className="py-2.5 px-3 hidden sm:table-cell">Категория</th>
-								<th className="py-2.5 px-3">Остаток в кабинете</th>
-								<th className="py-2.5 px-3 hidden md:table-cell">Минимум</th>
-								<th className="py-2.5 px-3 hidden lg:table-cell">Себестоимость</th>
-								<th className="py-2.5 px-3">Статус наличия</th>
-								<th className="py-2.5 px-3 text-right">Действия</th>
+								<th className="py-2.5 px-3 whitespace-nowrap">Материал</th>
+								<th className="py-2.5 px-3 hidden sm:table-cell whitespace-nowrap">Категория</th>
+								<th className="py-2.5 px-3 whitespace-nowrap">
+									<span>Остаток</span>
+									<span className="hidden sm:inline"> в кабинете</span>
+								</th>
+								<th className="py-2.5 px-3 hidden md:table-cell whitespace-nowrap">Минимум</th>
+								<th className="py-2.5 px-3 hidden lg:table-cell whitespace-nowrap">Себестоимость</th>
+								<th className="py-2.5 px-3 whitespace-nowrap">Статус</th>
+								<th className="py-2.5 px-3 text-right whitespace-nowrap">Действия</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-[var(--line,#e2e8f0)]">
@@ -448,7 +518,7 @@ export const WarehouseCatalogView: React.FC<WarehouseCatalogViewProps> = ({
 
 											{/* 2. Категория */}
 											<td className="py-2 px-3 text-[var(--muted,#64748b)] hidden sm:table-cell truncate max-w-[120px]">
-												{item.category || "Расходные"}
+												{formatCategoryRu(item.category)}
 											</td>
 
 											{/* 3. Остаток в кабинете */}
@@ -478,21 +548,13 @@ export const WarehouseCatalogView: React.FC<WarehouseCatalogViewProps> = ({
 
 											{/* 6. Статус наличия */}
 											<td className="py-2 px-3">
-												{isOverdraft ? (
+												{isOverdraft || isZero ? (
 													<span
-														className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
+														className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30"
 														title="Расход зафиксирован с дефицитом, прием не блокируется (мягкий овердрафт)"
 													>
-														<ShieldAlert size={12} className="text-rose-600" />
-														<span>Овердрафт ({qty})</span>
-													</span>
-												) : isZero ? (
-													<span
-														className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
-														title="Остаток 0, требуется пополнение накладной"
-													>
-														<AlertTriangle size={12} className="text-rose-600" />
-														<span>Требуется заказ (0)</span>
+														<ShieldAlert size={12} className="text-amber-600 dark:text-amber-400" />
+														<span>Ожидается поставка (мягкий овердрафт)</span>
 													</span>
 												) : isLow ? (
 													<span
@@ -519,7 +581,7 @@ export const WarehouseCatalogView: React.FC<WarehouseCatalogViewProps> = ({
 													<button
 														type="button"
 														onClick={() => onDeductItem?.(item, 1)}
-														className="h-7 px-2 rounded-md border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-300 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+														className="secondary-button h-7 px-2 text-xs font-semibold hover:border-rose-300 hover:text-rose-600 cursor-pointer"
 														data-testid={`btn-catalog-deduct-${item.id}`}
 														title="Списать 1 ед. (мягкий овердрафт разрешен при остатке <= 0)"
 													>
@@ -530,7 +592,7 @@ export const WarehouseCatalogView: React.FC<WarehouseCatalogViewProps> = ({
 													<button
 														type="button"
 														onClick={() => onReceiveItem?.(item, 1)}
-														className="h-7 px-2 rounded-md border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:border-emerald-300 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+														className="secondary-button h-7 px-2 text-xs font-semibold hover:border-emerald-300 hover:text-emerald-600 cursor-pointer"
 														data-testid={`btn-catalog-receive-${item.id}`}
 														title="Оприходовать (+1 ед.)"
 													>
@@ -541,7 +603,7 @@ export const WarehouseCatalogView: React.FC<WarehouseCatalogViewProps> = ({
 													<button
 														type="button"
 														onClick={() => onOpenBatches?.(item)}
-														className="h-7 w-7 rounded-md border border-[var(--line,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-teal-600 hover:border-teal-400 flex items-center justify-center transition-colors cursor-pointer"
+														className="icon-button w-7 h-7 min-w-[28px] rounded-lg cursor-pointer text-[var(--muted,#64748b)] hover:text-teal-600 hover:border-teal-400"
 														data-testid={`btn-catalog-batches-${item.id}`}
 														title="Партии и серии (FEFO)"
 													>

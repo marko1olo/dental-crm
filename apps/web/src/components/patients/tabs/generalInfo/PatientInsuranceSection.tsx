@@ -73,7 +73,7 @@ export const PatientInsuranceSection: React.FC<PatientInsuranceSectionProps> = R
 							: "hidden"
 					}
 				>
-					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
 						<div className="flex flex-col gap-1">
 							<label className="text-[11px] font-bold text-[var(--muted)] flex items-center justify-between">
 								<span>СНИЛС (по желанию)</span>
@@ -134,65 +134,74 @@ export const PatientInsuranceSection: React.FC<PatientInsuranceSectionProps> = R
 								data-testid="input-oms-policy"
 							/>
 						</div>
-
-						<div className="flex flex-col gap-1">
-							<div className="flex items-center justify-between">
-								<label className="text-[11px] font-bold text-[var(--muted)]">Полис ДМС (Номер)</label>
-								<button
-									type="button"
-									onClick={() => {
-										if (onOpenDmsLetters) {
-											onOpenDmsLetters();
-										} else {
-											window.dispatchEvent(
-												new CustomEvent("dente:open-dms-letters", {
-													detail: {
-														patientId: patient?.id,
-														patientFullName: patient?.fullName,
-													},
-												}),
-											);
-										}
-									}}
-									className="min-h-[44px] sm:min-h-[24px] h-6 px-2 rounded text-[11px] font-bold bg-teal-50 dark:bg-teal-950/40 border border-teal-500/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/60 cursor-pointer flex items-center gap-1 transition-colors"
-									title="Открыть гарантийные письма и согласованные услуги по ДМС"
-									data-testid="btn-open-dms-letters-tab"
-								>
-									<Shield className="w-3 h-3 text-teal-600 dark:text-teal-400 shrink-0" />
-									<span>Гарантийные письма</span>
-								</button>
-							</div>
-							<input
-								type="text"
-								className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 py-1 text-xs rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--teal)] transition-colors"
-								value={patient?.dmsPolicyNumber ?? ""}
-								onChange={(e) => onUpdatePatient?.("dmsPolicyNumber", e.target.value)}
-								placeholder="Номер договора ДМС"
-								disabled={disabled}
-								data-testid="input-dms-policy"
-							/>
-						</div>
 					</div>
 
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 border-t border-[var(--glass-border)]">
-						<div className="flex flex-col gap-1">
-							<label className="text-[11px] font-bold text-[var(--muted)]">Страховая компания ДМС</label>
-							<div className="flex items-center gap-1.5">
+					{/* Выделенный блок: Страховой полис ДМС */}
+					<div className="rounded-xl p-3 sm:p-3.5 bg-[var(--paper-soft)] border border-[var(--teal)]/25 flex flex-col gap-3 shadow-2xs">
+						<div className="flex items-center justify-between gap-2 flex-wrap">
+							<div className="flex items-center gap-2">
+								<div className="w-6 h-6 rounded-md bg-[var(--teal)]/15 text-[var(--teal)] flex items-center justify-center shrink-0">
+									<Shield className="w-3.5 h-3.5" />
+								</div>
+								<span className="text-xs sm:text-sm font-bold text-[var(--ink)]">
+									Страховой полис ДМС
+								</span>
+								{patient?.dmsInsuranceCompany && (
+									<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-[var(--teal)] border border-teal-500/20">
+										{patient.dmsInsuranceCompany}
+									</span>
+								)}
+							</div>
+							<button
+								type="button"
+								onClick={() => {
+									if (onOpenDmsLetters) {
+										onOpenDmsLetters();
+									} else {
+										window.dispatchEvent(
+											new CustomEvent("dente:open-dms-letters", {
+												detail: {
+													patientId: patient?.id,
+													patientFullName: patient?.fullName,
+												},
+											}),
+										);
+									}
+								}}
+								className="min-h-[44px] sm:min-h-[28px] h-7 px-2.5 rounded-lg text-xs font-bold bg-teal-50 dark:bg-teal-950/40 border border-teal-500/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/60 cursor-pointer flex items-center gap-1.5 transition-colors"
+								title="Открыть гарантийные письма и согласованные услуги по ДМС"
+								data-testid="btn-open-dms-letters-tab"
+							>
+								<Shield className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+								<span>Гарантийные письма</span>
+							</button>
+						</div>
+
+						{/* Страховая компания и быстрые чипы */}
+						<div className="flex flex-col gap-1.5">
+							<label className="text-[11px] font-bold text-[var(--muted)]">
+								Страховая компания ДМС
+							</label>
+							<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
 								<input
 									type="text"
 									className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 py-1 text-xs rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] text-[var(--ink)] flex-1 focus:outline-hidden focus:ring-2 focus:ring-[var(--teal)] transition-colors"
 									value={patient?.dmsInsuranceCompany ?? ""}
 									onChange={(e) => onUpdatePatient?.("dmsInsuranceCompany", e.target.value)}
-									placeholder="СОГАЗ, Ингосстрах..."
+									placeholder="СОГАЗ, Ингосстрах, АльфаСтрахование..."
 									disabled={disabled}
 									data-testid="input-dms-company"
 								/>
-								<div className="hidden sm:flex items-center gap-1 overflow-x-auto scrollbar-none">
-									{POPULAR_DMS_COMPANIES.slice(0, 3).map((comp) => (
+								<div className="flex items-center gap-1 flex-wrap">
+									{POPULAR_DMS_COMPANIES.slice(0, 6).map((comp) => (
 										<button
 											key={comp}
 											type="button"
-											className="min-h-[44px] sm:min-h-[28px] text-[10px] px-2 py-1 rounded-lg bg-[var(--paper-strong)] hover:bg-[var(--glass-hover,var(--paper-soft))] hover:border-[var(--teal)] font-semibold border border-[var(--glass-border)] text-[var(--ink)] shrink-0 cursor-pointer transition-colors shadow-2xs"
+											className={`min-h-[44px] sm:min-h-[28px] text-[10px] px-2 py-1 rounded-lg font-semibold border transition-colors cursor-pointer ${
+												patient?.dmsInsuranceCompany === comp
+													? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs"
+													: "bg-[var(--paper-strong)] hover:bg-[var(--glass-hover,var(--paper-soft))] hover:border-[var(--teal)] border-[var(--glass-border)] text-[var(--ink)] shadow-2xs"
+											}`}
 											onClick={() => onUpdatePatient?.("dmsInsuranceCompany", comp)}
 										>
 											{comp}
@@ -202,17 +211,71 @@ export const PatientInsuranceSection: React.FC<PatientInsuranceSectionProps> = R
 							</div>
 						</div>
 
-						<div className="flex flex-col gap-1">
-							<label className="text-[11px] font-bold text-[var(--muted)]">Программа и лимит ДМС</label>
-							<input
-								type="text"
-								className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 py-1 text-xs rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--teal)] transition-colors"
-								value={patient?.dmsProgramName ?? ""}
-								onChange={(e) => onUpdatePatient?.("dmsProgramName", e.target.value)}
-								placeholder="Стоматология Бизнес (лимит 50 000 ₽)"
-								disabled={disabled}
-								data-testid="input-dms-program"
-							/>
+						{/* Номер полиса, Номер гарантийного письма, Лимит покрытия, Программа */}
+						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+							<div className="flex flex-col gap-1">
+								<label className="text-[11px] font-bold text-[var(--muted)]">
+									Номер полиса ДМС
+								</label>
+								<input
+									type="text"
+									className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 py-1 text-xs rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] text-[var(--ink)] font-mono focus:outline-hidden focus:ring-2 focus:ring-[var(--teal)] transition-colors"
+									value={patient?.dmsPolicyNumber ?? ""}
+									onChange={(e) => onUpdatePatient?.("dmsPolicyNumber", e.target.value)}
+									placeholder="ДМС-2026/00123"
+									disabled={disabled}
+									data-testid="input-dms-policy"
+								/>
+							</div>
+
+							<div className="flex flex-col gap-1">
+								<label className="text-[11px] font-bold text-[var(--muted)]">
+									Номер гарантийного письма
+								</label>
+								<input
+									type="text"
+									className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 py-1 text-xs rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] text-[var(--ink)] font-mono focus:outline-hidden focus:ring-2 focus:ring-[var(--teal)] transition-colors"
+									value={patient?.dmsGuaranteeLetterNumber ?? ""}
+									onChange={(e) => onUpdatePatient?.("dmsGuaranteeLetterNumber", e.target.value)}
+									placeholder="ГП-8841/26"
+									disabled={disabled}
+									data-testid="input-dms-letter-number"
+								/>
+							</div>
+
+							<div className="flex flex-col gap-1">
+								<label className="text-[11px] font-bold text-[var(--muted)]">
+									Лимит покрытия (₽)
+								</label>
+								<input
+									type="number"
+									className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 py-1 text-xs rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] text-[var(--ink)] font-mono focus:outline-hidden focus:ring-2 focus:ring-[var(--teal)] transition-colors"
+									value={patient?.dmsCoverageLimitRub ?? ""}
+									onChange={(e) => {
+										const val = e.target.value ? parseFloat(e.target.value) : undefined;
+										onUpdatePatient?.("dmsCoverageLimitRub", val);
+										onUpdatePatient?.("dmsCoverageLimitKopecks", val ? Math.round(val * 100) : undefined);
+									}}
+									placeholder="50000"
+									disabled={disabled}
+									data-testid="input-dms-coverage-limit"
+								/>
+							</div>
+
+							<div className="flex flex-col gap-1">
+								<label className="text-[11px] font-bold text-[var(--muted)]">
+									Программа ДМС
+								</label>
+								<input
+									type="text"
+									className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 py-1 text-xs rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--teal)] transition-colors"
+									value={patient?.dmsProgramName ?? ""}
+									onChange={(e) => onUpdatePatient?.("dmsProgramName", e.target.value)}
+									placeholder="Стоматология Стандарт"
+									disabled={disabled}
+									data-testid="input-dms-program"
+								/>
+							</div>
 						</div>
 					</div>
 				</div>

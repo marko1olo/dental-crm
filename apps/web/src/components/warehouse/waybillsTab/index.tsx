@@ -108,7 +108,7 @@ export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = (props)
 					<button
 						type="button"
 						onClick={() => setIsExpressModalOpen(true)}
-						className="h-8 min-h-[32px] px-2.5 rounded-lg text-xs font-semibold border border-teal-600/40 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-all flex items-center gap-1.5 cursor-pointer"
+						className="secondary-button h-8 min-h-[32px] px-2.5 text-xs font-semibold gap-1.5 shrink-0"
 						data-testid="btn-express-waybill"
 						title="Быстрое оприходование накладной по 4 параметрам: Поставщик, Номер, Дата, Сумма"
 					>
@@ -119,7 +119,7 @@ export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = (props)
 					<button
 						type="button"
 						onClick={handleStartCreateNew}
-						className="h-8 min-h-[32px] px-3 rounded-lg text-xs font-semibold bg-teal-600 text-white hover:bg-teal-700 active:scale-98 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+						className="primary-button h-8 min-h-[32px] px-3 text-xs font-semibold gap-1.5 shrink-0 shadow-xs"
 						data-testid="btn-create-waybill"
 					>
 						<Plus size={14} />
@@ -186,7 +186,7 @@ export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = (props)
 									<button
 										type="button"
 										onClick={() => handlePrintTorg12(selectedWaybill)}
-										className="h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-semibold flex items-center gap-1 cursor-pointer"
+										className="secondary-button h-8 px-2.5 text-xs font-semibold gap-1.5"
 										title="Печать накладной поступления"
 										data-testid="btn-print-torg12"
 									>
@@ -197,7 +197,7 @@ export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = (props)
 									<button
 										type="button"
 										onClick={() => handleExportCsv(selectedWaybill)}
-										className="h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-semibold flex items-center gap-1 cursor-pointer"
+										className="secondary-button h-8 px-2.5 text-xs font-semibold gap-1.5"
 										title="Экспорт накладной в CSV"
 										data-testid="btn-export-waybill-csv"
 									>
@@ -248,7 +248,7 @@ export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = (props)
 								<button
 									type="button"
 									onClick={handleStartCreateNew}
-									className="mt-2 h-8 px-4 rounded-lg bg-teal-600 text-white font-semibold text-xs hover:bg-teal-700 active:scale-98 transition-all cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+									className="primary-button mt-2 h-8 px-4 text-xs font-semibold gap-1.5"
 									data-testid="btn-details-empty-create-wb"
 								>
 									<Plus size={13} />

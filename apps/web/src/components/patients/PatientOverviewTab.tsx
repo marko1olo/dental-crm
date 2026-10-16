@@ -15,8 +15,6 @@ import { PatientCommunicationTimelineWidget } from "./PatientCommunicationTimeli
 import { PatientFamilyCard } from "./PatientFamilyCard";
 import { PatientNoShowRisk } from "./PatientNoShowRisk";
 import { PatientHeaderCard } from "./PatientHeaderCard";
-import { PatientReclamationsWidget } from "./PatientReclamationsWidget";
-import { PatientTaskTicketsWidget } from "./PatientTaskTicketsWidget";
 import { PatientWhatsappSendPanel } from "./PatientWhatsappSendPanel";
 
 import { actionFailureToast } from "../../lib/panelStateText";
@@ -204,25 +202,19 @@ export function PatientOverviewTab({ showHeaderCard = true }: PatientOverviewTab
 						</details>
 					)}
 
-					{/* 1-Click Accordion: Tasks, Reclamations & Consents */}
+					{/* 1-Click Accordion: Consents & Attachments */}
 					{selectedPatientId && (
 						<details className="patient-secondary-accordion">
 							<summary>
 								<span className="flex items-center gap-2">
 									<ClipboardList size={16} className="text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
-									<span>Задачи, файлы, рекламации и согласия</span>
+									<span>Файлы и согласия пациента</span>
 								</span>
 								<span className="text-xs text-[var(--muted)] font-normal">
 									Развернуть &darr;
 								</span>
 							</summary>
 							<div className="patient-secondary-accordion__body">
-								{workspaceFlags.hasReclamations && (
-									<PatientReclamationsWidget patientId={selectedPatientId} />
-								)}
-								{workspaceFlags.hasTasks && (
-									<PatientTaskTicketsWidget patientId={selectedPatientId} />
-								)}
 								<PatientCommunicationConsentsPanel
 									patientId={selectedPatientId}
 								/>

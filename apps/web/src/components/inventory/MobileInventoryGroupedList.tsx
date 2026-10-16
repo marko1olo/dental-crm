@@ -599,7 +599,7 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 												data-testid="badge-critical-deficit"
 											>
 												<AlertTriangle size={11} aria-hidden="true" />
-												<span>Закончился: 0 {item.unit || "шт."} (Овердрафт) • Пора заказать</span>
+												<span>Ожидается поставка (мягкий овердрафт)</span>
 											</span>
 										) : isLowStock ? (
 											<span

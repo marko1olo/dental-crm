@@ -16,4 +16,5 @@ export const PatientCardView: React.FC<PatientCardViewProps> = React.memo(
 	},
 );
 
+export { PatientCardFloatingSaveBar, PatientFloatingSaveBar } from "./patientCardSavePill";
 export default PatientCardView;

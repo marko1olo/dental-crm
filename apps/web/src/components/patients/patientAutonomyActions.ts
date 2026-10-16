@@ -236,6 +236,11 @@ export function mapPatientToGeneralInfo(raw: any): PatientGeneralInfo {
 		snils: raw.snils ?? admin.snils ?? "",
 		inn: raw.inn ?? admin.taxpayerInn ?? "",
 		omsPolicyNumber: raw.omsPolicyNumber ?? admin.insurancePolicyNumber ?? "",
+		dmsInsuranceCompany: raw.dmsInsuranceCompany ?? admin.dmsInsuranceCompany ?? "",
+		dmsPolicyNumber: raw.dmsPolicyNumber ?? admin.dmsPolicyNumber ?? "",
+		dmsGuaranteeLetterNumber: raw.dmsGuaranteeLetterNumber ?? admin.dmsGuaranteeLetterNumber ?? "",
+		dmsCoverageLimitRub: raw.dmsCoverageLimitRub ?? admin.dmsCoverageLimitRub ?? (admin.dmsCoverageLimitKopecks ? admin.dmsCoverageLimitKopecks / 100 : undefined),
+		dmsCoverageLimitKopecks: raw.dmsCoverageLimitKopecks ?? admin.dmsCoverageLimitKopecks ?? undefined,
 		registrationAddress:
 			raw.registrationAddress ?? admin.registrationAddress ?? "",
 		residentialAddress:
@@ -321,6 +326,17 @@ export async function persistPatientCardModalToApi(
 	const diaryNotes =
 		patientData.doctorClinicalNotes?.trim() ||
 		formatSafetyProfileToDiaryText(safetyProfile);
+	const coverageLimitRub =
+		typeof patientData.dmsCoverageLimitRub === "number"
+			? patientData.dmsCoverageLimitRub
+			: patientData.dmsCoverageLimitRub
+				? Number(patientData.dmsCoverageLimitRub)
+				: null;
+	const coverageLimitKopecks =
+		patientData.dmsCoverageLimitKopecks ??
+		(coverageLimitRub !== null && !isNaN(coverageLimitRub)
+			? Math.round(coverageLimitRub * 100)
+			: null);
 	try {
 		await fetch(`/api/patients/${patientData.id}`, {
 			method: "PUT",
@@ -349,6 +365,11 @@ export async function persistPatientCardModalToApi(
 						? patientData.inn.trim()
 						: null,
 				insurancePolicyNumber: patientData.omsPolicyNumber?.trim() || null,
+				dmsInsuranceCompany: patientData.dmsInsuranceCompany?.trim() || null,
+				dmsPolicyNumber: patientData.dmsPolicyNumber?.trim() || null,
+				dmsGuaranteeLetterNumber: patientData.dmsGuaranteeLetterNumber?.trim() || null,
+				dmsCoverageLimitRub: coverageLimitRub,
+				dmsCoverageLimitKopecks: coverageLimitKopecks,
 				registrationAddress: patientData.registrationAddress?.trim() || null,
 				residentialAddress: patientData.residentialAddress?.trim() || null,
 				clinicalSafetyProfile: safetyProfile,
@@ -419,6 +440,24 @@ export async function executePatientCardModalSaveAutonomy({
 			updatedGeneral.residentialAddress ?? "",
 		);
 	}
+	if (updatedGeneral.dmsInsuranceCompany !== undefined) {
+		updatePatientAdministrativeProfileDraft(
+			"dmsInsuranceCompany",
+			updatedGeneral.dmsInsuranceCompany ?? "",
+		);
+	}
+	if (updatedGeneral.dmsPolicyNumber !== undefined) {
+		updatePatientAdministrativeProfileDraft(
+			"dmsPolicyNumber",
+			updatedGeneral.dmsPolicyNumber ?? "",
+		);
+	}
+	if (updatedGeneral.dmsGuaranteeLetterNumber !== undefined) {
+		updatePatientAdministrativeProfileDraft(
+			"dmsGuaranteeLetterNumber",
+			updatedGeneral.dmsGuaranteeLetterNumber ?? "",
+		);
+	}
 	try {
 		const resCore = await fetchWithHandling(
 			`/api/patients/${selectedPatient.id}`,
@@ -440,6 +479,17 @@ export async function executePatientCardModalSaveAutonomy({
 				}),
 			},
 		);
+		const coverageLimitRub =
+			typeof updatedGeneral.dmsCoverageLimitRub === "number"
+				? updatedGeneral.dmsCoverageLimitRub
+				: updatedGeneral.dmsCoverageLimitRub
+					? Number(updatedGeneral.dmsCoverageLimitRub)
+					: null;
+		const coverageLimitKopecks =
+			updatedGeneral.dmsCoverageLimitKopecks ??
+			(coverageLimitRub !== null && !isNaN(coverageLimitRub)
+				? Math.round(coverageLimitRub * 100)
+				: null);
 		const resAdmin = await fetchWithHandling(
 			`/api/patients/${selectedPatient.id}/administrative-profile`,
 			{
@@ -453,6 +503,11 @@ export async function executePatientCardModalSaveAutonomy({
 							? updatedGeneral.inn.trim()
 							: null,
 					insurancePolicyNumber: updatedGeneral.omsPolicyNumber?.trim() || null,
+					dmsInsuranceCompany: updatedGeneral.dmsInsuranceCompany?.trim() || null,
+					dmsPolicyNumber: updatedGeneral.dmsPolicyNumber?.trim() || null,
+					dmsGuaranteeLetterNumber: updatedGeneral.dmsGuaranteeLetterNumber?.trim() || null,
+					dmsCoverageLimitRub: coverageLimitRub,
+					dmsCoverageLimitKopecks: coverageLimitKopecks,
 					registrationAddress:
 						updatedGeneral.registrationAddress?.trim() || null,
 					residentialAddress: updatedGeneral.residentialAddress?.trim() || null,

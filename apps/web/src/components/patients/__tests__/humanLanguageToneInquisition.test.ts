@@ -161,7 +161,15 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 
 	it("8. SickLeaveElnModal.tsx: commissions and toasts free of Order 1089n and raw 043/у", () => {
 		const filePath = path.join(webSrcRoot, "components/documents/sickLeave/SickLeaveElnModal.tsx");
-		const content = fs.readFileSync(filePath, "utf-8");
+		let content = fs.readFileSync(filePath, "utf-8");
+		const vkPath = path.join(webSrcRoot, "components/documents/sickLeave/elnModal/ElnVkProtocolSection.tsx");
+		if (fs.existsSync(vkPath)) {
+			content += "\n" + fs.readFileSync(vkPath, "utf-8");
+		}
+		const logicPath = path.join(webSrcRoot, "components/documents/sickLeave/elnModal/useSickLeaveElnLogic.ts");
+		if (fs.existsSync(logicPath)) {
+			content += "\n" + fs.readFileSync(logicPath, "utf-8");
+		}
 
 		assert.ok(
 			!content.includes("по Приказу Минздрава РФ № 1089н"),
@@ -181,7 +189,11 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 
 	it("9. VisitDiarySoapFields.tsx: Section II uses human Russian without Status Localis", () => {
 		const filePath = path.join(webSrcRoot, "components/visit/diary/VisitDiarySoapFields.tsx");
-		const content = fs.readFileSync(filePath, "utf-8");
+		let content = fs.readFileSync(filePath, "utf-8");
+		const objectivePath = path.join(webSrcRoot, "components/visit/diary/fields/VisitDiaryObjectiveField.tsx");
+		if (fs.existsSync(objectivePath)) {
+			content += "\n" + fs.readFileSync(objectivePath, "utf-8");
+		}
 
 		assert.ok(
 			!content.includes("Объективно (Status Localis)"),
@@ -272,7 +284,11 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 
 	it("14. VisitDiarySection.tsx & VisitSummaryModal.tsx: protocols and synthesis buttons humanized", () => {
 		const diaryPath = path.join(webSrcRoot, "components/visit/VisitDiarySection.tsx");
-		const diaryContent = fs.readFileSync(diaryPath, "utf-8");
+		let diaryContent = fs.readFileSync(diaryPath, "utf-8");
+		const presetsPath = path.join(webSrcRoot, "components/visit/diary/section/VisitDiaryPresetsAccordion.tsx");
+		if (fs.existsSync(presetsPath)) {
+			diaryContent += "\n" + fs.readFileSync(presetsPath, "utf-8");
+		}
 		assert.ok(!diaryContent.includes("1-Click Протоколы 043/у"), "Must not use '1-Click Протоколы 043/у'");
 		assert.ok(!diaryContent.includes("Подставить шаблон СтАР в дневник?"), "Must not use 'шаблон СтАР'");
 		assert.ok(diaryContent.includes("Клинические протоколы"));

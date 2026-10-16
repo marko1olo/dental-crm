@@ -42,6 +42,7 @@ export const INVENTORY_CATEGORIES: Array<{
 ];
 import { InventoryConfirmDialog } from "./inventory/InventoryConfirmDialog.js";
 import { useInventoryLogic } from "./inventory/useInventoryLogic.js";
+import { ShiftBatchDeductionModal } from "./inventory/ShiftBatchDeductionModal.js";
 import { WarehousePackageWriteOffBar } from "./inventory/WarehousePackageWriteOffBar.js";
 import { InventoryStockTable } from "./InventoryStockTable.js";
 import {
@@ -68,9 +69,11 @@ import {
 
 import { WarehouseWaybillsTab } from "./warehouse/WarehouseWaybillsTab.js";
 import { WarehouseInventoryTab } from "./inventory/WarehouseInventoryTab.js";
+import { ConsumablesDeductionModal } from "./inventory/ConsumablesDeductionModal.js";
 
 // 100% прозрачные реэкспорты декомпозированных модулей склада (Мандат 8b)
 export * from "./InventoryStockTable.js";
+export * from "./inventory/ShiftBatchDeductionModal.js";
 export * from "./inventory/MobileInventoryGroupedList.js";
 export * from "./InventoryBatchFefoPanel.js";
 export * from "./InventoryInboundInvoiceModal.js";
@@ -149,7 +152,17 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 	const [isInboundInvoiceModalOpen, setIsInboundInvoiceModalOpen] = useState(false);
 	const [isOpsMenuOpen, setIsOpsMenuOpen] = useState(false);
 	const [isQuickPackagesOpen, setIsQuickPackagesOpen] = useState(false);
+	const [isShiftDeductionOpen, setIsShiftDeductionOpen] = useState(false);
+	const [isConsumablesDeductionOpen, setIsConsumablesDeductionOpen] = useState(false);
 	const [stockViewMode, setStockViewMode] = useState<"standard" | "fefo">("standard");
+
+	const stockMap = useMemo(() => {
+		const map: Record<string, number> = {};
+		for (const it of items) {
+			map[it.id] = Number(it.stockQuantity) || 0;
+		}
+		return map;
+	}, [items]);
 
 	const [selectedCategory, setSelectedCategory] =
 		useState<InventoryCategoryFilter>("all");
@@ -533,6 +546,8 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 				setIsInventoryAuditOpen={setIsInventoryAuditOpen}
 				setIsMdlpDisposalOpen={setIsMdlpDisposalOpen}
 				setIsNurseCarpuleModalOpen={setIsNurseCarpuleModalOpen}
+				onOpenShiftDeductionModal={() => setIsShiftDeductionOpen(true)}
+				onOpenProtocolDeduction={() => setIsConsumablesDeductionOpen(true)}
 				handleQuickWriteoffStandardKit={handleQuickWriteoffStandardKit}
 				handleQuickWriteoffAnestheticCarpule={handleQuickWriteoffAnestheticCarpule}
 				handleQuickWriteoffSterilizationKit={handleQuickWriteoffSterilizationKit}
@@ -561,7 +576,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 								key={cat.id}
 								type="button"
 								onClick={() => setSelectedCategory(cat.id)}
-								className={`dente-filter-chip ${isActive ? "active" : ""}`}
+								className={`dente-filter-chip secondary-button ${isActive ? "active" : ""}`}
 								aria-pressed={isActive}
 								data-testid={`inventory-category-chip-${cat.id}`}
 							>
@@ -742,6 +757,27 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 				fetchItems={fetchItems}
 				getHeaders={getHeaders}
 				onQuickWriteoffCarpules={handleQuickWriteoffCarpules}
+			/>
+
+			{/* 1-КЛИК ПАКЕТНОЕ СПИСАНИЕ ЗА СМЕНУ (Мандаты 8e, 8n) */}
+			<ShiftBatchDeductionModal
+				isOpen={isShiftDeductionOpen}
+				onClose={() => setIsShiftDeductionOpen(false)}
+				organizationId={organizationId}
+				onDeductionComplete={() => fetchItems()}
+			/>
+
+			{/* ТЕХНОЛОГИЧЕСКАЯ КАРТА СПИСАНИЯ МАТЕРИАЛОВ (BOM) */}
+			<ConsumablesDeductionModal
+				isOpen={isConsumablesDeductionOpen}
+				onClose={() => setIsConsumablesDeductionOpen(false)}
+				procedureTitle="Препарирование и пломба светового отверждения (Filtek / Estelite)"
+				serviceCode="A16.07.002.011"
+				service804nCode="A16.07.002.011"
+				currentStockMap={stockMap}
+				onConfirmDeduction={() => {
+					fetchItems();
+				}}
 			/>
 		</div>
 	);

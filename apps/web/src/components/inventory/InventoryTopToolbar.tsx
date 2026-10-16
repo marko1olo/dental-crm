@@ -55,6 +55,7 @@ export interface InventoryTopToolbarProps {
 	setIsMdlpDisposalOpen: (open: boolean) => void;
 	setIsNurseCarpuleModalOpen?: (open: boolean) => void;
 	onOpenShiftDeductionModal?: () => void;
+	onOpenProtocolDeduction?: () => void;
 	handleQuickWriteoffStandardKit: () => void;
 	handleQuickWriteoffAnestheticCarpule: () => void;
 	handleQuickWriteoffSterilizationKit: () => void;
@@ -98,6 +99,7 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 	setIsMdlpDisposalOpen,
 	setIsNurseCarpuleModalOpen,
 	onOpenShiftDeductionModal,
+	onOpenProtocolDeduction,
 	handleQuickWriteoffStandardKit,
 	handleQuickWriteoffAnestheticCarpule,
 	handleQuickWriteoffSterilizationKit,
@@ -323,20 +325,34 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 				{onOpenShiftDeductionModal && (
 					<button
 						type="button"
-						className="h-9 min-h-[36px] shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 rounded-xl font-semibold text-xs sm:text-sm cursor-pointer transition border border-[var(--primary)]/30 bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] shadow-2xs"
+						className="secondary-button h-9 min-h-[36px] px-3 font-semibold text-xs sm:text-sm gap-1.5 shrink-0 whitespace-nowrap"
 						onClick={onOpenShiftDeductionModal}
 						title="Пакетное списание расходников за смену (1 клик по техкартам оказанных услуг)"
 						data-testid="btn-open-shift-batch-deduction"
 					>
-						<Package className="w-4 h-4 shrink-0 text-[var(--primary)]" />
+						<Package className="w-4 h-4 shrink-0 text-[var(--teal)]" />
 						<span>Списать за смену</span>
+					</button>
+				)}
+
+				{/* Protocol Materials Deduction Button (BOM Chairside / Mandate 8e) */}
+				{onOpenProtocolDeduction && (
+					<button
+						type="button"
+						className="secondary-button h-9 min-h-[36px] px-3 font-semibold text-xs sm:text-sm gap-1.5 shrink-0 whitespace-nowrap"
+						onClick={onOpenProtocolDeduction}
+						title="Технологическая карта списания материалов по протоколу процедуры"
+						data-testid="btn-open-protocol-deduction"
+					>
+						<Zap className="w-4 h-4 shrink-0 text-[var(--teal)]" />
+						<span>Техкарта списания</span>
 					</button>
 				)}
 
 				{/* Add Inventory Item Button (The Single Primary CTA) */}
 				<button
 					type="button"
-					className="h-9 min-h-[36px] shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer transition bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs"
+					className="primary-button h-9 min-h-[36px] px-3.5 font-semibold text-xs sm:text-sm gap-1.5 shrink-0 whitespace-nowrap shadow-xs"
 					onClick={openAddModal}
 					data-testid="btn-add-inventory-item"
 				>

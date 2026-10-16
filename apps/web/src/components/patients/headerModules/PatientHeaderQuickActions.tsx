@@ -15,6 +15,7 @@ import {
 	MessageSquare,
 	MoreHorizontal,
 	Printer,
+	Sparkles,
 	Stethoscope,
 	UserCheck,
 } from "lucide-react";
@@ -37,6 +38,13 @@ export interface PatientHeaderQuickActionsProps {
 	onOpenAnamnesis?: (() => void) | undefined;
 	onEditPatient?: (() => void) | undefined;
 	onOpenFamilyWallet: () => void;
+	isActiveVisit?: boolean | undefined;
+	nextAppointment?: {
+		id: string;
+		startsAt?: string;
+		status?: string;
+		reason?: string;
+	} | null | undefined;
 }
 
 export const PatientHeaderQuickActions: React.FC<PatientHeaderQuickActionsProps> = ({
@@ -47,6 +55,8 @@ export const PatientHeaderQuickActions: React.FC<PatientHeaderQuickActionsProps>
 	onOpenAnamnesis,
 	onEditPatient,
 	onOpenFamilyWallet,
+	isActiveVisit,
+	nextAppointment,
 }) => {
 	const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
 	const actionsMenuRef = useRef<HTMLDivElement>(null);
@@ -101,39 +111,75 @@ export const PatientHeaderQuickActions: React.FC<PatientHeaderQuickActionsProps>
 		);
 	};
 
+	const isPatientAwaiting = Boolean(
+		isActiveVisit ||
+		(nextAppointment?.startsAt && (nextAppointment.status === "arrived" || nextAppointment.status === "in_treatment" || nextAppointment.status === "confirmed")),
+	);
+
 	return (
 		<div className="flex items-center gap-1.5 shrink-0">
-			{/* Primary 1: Начать приём */}
-			<button
-				type="button"
-				onClick={handleOpenVisit}
-				className="h-8 px-3 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all text-[13px] whitespace-nowrap"
-				title="Открыть амбулаторный приём без лишних подтверждений"
-				data-testid="header-open-visit-btn"
-			>
-				<Stethoscope size={14} />
-				<span>Начать приём</span>
-			</button>
+			{/* Canonical Actions: Exactly ONE emerald .primary-button + ONE .secondary-button */}
+			{isPatientAwaiting ? (
+				<>
+					{/* Primary CTA (Awaiting in clinic): Начать приём */}
+					<button
+						type="button"
+						onClick={handleOpenVisit}
+						className="primary-button h-8 px-3.5 rounded-lg bg-[var(--teal,var(--brand-primary))] hover:opacity-95 active:scale-95 text-white font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-xs transition-all text-[13px] whitespace-nowrap"
+						title="Открыть амбулаторный приём (пациент ожидает)"
+						data-testid="header-open-visit-btn"
+					>
+						<Stethoscope size={14} className="shrink-0" />
+						<span>Начать приём</span>
+					</button>
 
-			{/* Primary 2: Записать */}
-			<button
-				type="button"
-				onClick={handleBookAppointment}
-				className="h-8 px-3 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors text-[13px] whitespace-nowrap"
-				title="Записать пациента в расписание приёма"
-				data-testid="header-book-appointment-btn"
-			>
-				<Calendar size={14} className="text-[var(--teal)]" />
-				<span>Записать</span>
-			</button>
+					{/* Secondary Action: Записать */}
+					<button
+						type="button"
+						onClick={handleBookAppointment}
+						className="secondary-button h-8 px-3 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors text-[13px] whitespace-nowrap"
+						title="Записать пациента в расписание приёма"
+						data-testid="header-book-appointment-btn"
+					>
+						<Calendar size={14} className="text-[var(--teal)] shrink-0" />
+						<span>Записать</span>
+					</button>
+				</>
+			) : (
+				<>
+					{/* Primary CTA (No active visit): Записать на приём */}
+					<button
+						type="button"
+						onClick={handleBookAppointment}
+						className="primary-button h-8 px-3.5 rounded-lg bg-[var(--teal,var(--brand-primary))] hover:opacity-95 active:scale-95 text-white font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-xs transition-all text-[13px] whitespace-nowrap"
+						title="Записать пациента на приём в расписание"
+						data-testid="header-book-appointment-btn"
+					>
+						<Calendar size={14} className="shrink-0" />
+						<span>Записать на приём</span>
+					</button>
 
-			{/* Secondary Popover Menu: ... button */}
+					{/* Secondary Action: Начать приём */}
+					<button
+						type="button"
+						onClick={handleOpenVisit}
+						className="secondary-button h-8 px-3 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors text-[13px] whitespace-nowrap"
+						title="Открыть амбулаторный приём без лишних подтверждений"
+						data-testid="header-open-visit-btn"
+					>
+						<Stethoscope size={14} className="text-[var(--teal)] shrink-0" />
+						<span>Начать приём</span>
+					</button>
+				</>
+			)}
+
+			{/* Secondary Popover Menu: 32x32px .icon-button trigger */}
 			<div className="relative" ref={actionsMenuRef}>
 				<button
 					type="button"
 					onClick={() => setIsActionsMenuOpen((prev) => !prev)}
-					className="h-8 w-8 rounded-lg bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--paper-hover,#e2e8f0)] text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] inline-flex items-center justify-center cursor-pointer transition-colors"
-					title="Дополнительные действия (печать карты, касса, архив)"
+					className="icon-button h-8 w-8 min-w-[32px] min-h-[32px] rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] inline-flex items-center justify-center cursor-pointer transition-colors shadow-2xs"
+					title="Дополнительные действия (печать карты, план лечения, касса, архив)"
 					aria-label="Дополнительные действия"
 					aria-expanded={isActionsMenuOpen}
 					aria-haspopup="true"
@@ -147,6 +193,29 @@ export const PatientHeaderQuickActions: React.FC<PatientHeaderQuickActionsProps>
 						className="absolute right-0 top-full mt-1 w-64 p-1 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] shadow-xl z-50 flex flex-col gap-0.5 text-xs animate-in fade-in zoom-in-95 duration-100"
 						data-testid="header-actions-menu-popover"
 					>
+						{/* 0. План лечения */}
+						<button
+							type="button"
+							onClick={() => {
+								setIsActionsMenuOpen(false);
+								if (typeof window !== "undefined") {
+									window.dispatchEvent(
+										new CustomEvent("dente:open-treatment-plan", {
+											bubbles: true,
+											detail: { patientId: resolvedPatient.id },
+										}),
+									);
+								}
+								showToast(`План лечения: ${fullName}`, "info");
+							}}
+							className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+							title="Открыть планы лечения пациента"
+							data-testid="header-treatment-plan-btn"
+						>
+							<Sparkles size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
+							<span className="truncate">План лечения</span>
+						</button>
+
 						{/* 1. Печать и экспорт карты */}
 						<button
 							type="button"

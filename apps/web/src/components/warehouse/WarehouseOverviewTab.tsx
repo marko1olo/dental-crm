@@ -22,15 +22,19 @@ import { WarehouseStockAlertsBar } from "./WarehouseStockAlertsBar.js";
 import { WarehousePackageWriteOffBar } from "../inventory/WarehousePackageWriteOffBar.js";
 import { ConsumablesDeductionModal } from "./ConsumablesDeductionModal.js";
 import { getFefoTrafficLight } from "../inventory/fefoTrafficLight.js";
+import { formatCategoryRu } from "./WarehouseCatalogView.js";
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 
 export type WarehouseCategoryKey =
 	| "all"
-	| "therapy"
-	| "surgery"
-	| "orthopedics"
+	| "anesthetics"
+	| "filling"
+	| "impression"
 	| "disposables"
-	| "disinfection";
+	| "disinfection"
+	| "surgery"
+	| "therapy"
+	| "orthopedics";
 
 export interface WarehouseCategoryTabDef {
 	id: WarehouseCategoryKey;
@@ -39,11 +43,12 @@ export interface WarehouseCategoryTabDef {
 
 export const WAREHOUSE_CATEGORY_TABS: WarehouseCategoryTabDef[] = [
 	{ id: "all", label: "Все" },
-	{ id: "therapy", label: "Терапия" },
-	{ id: "surgery", label: "Хирургия" },
-	{ id: "orthopedics", label: "Ортопедия" },
-	{ id: "disposables", label: "Расходники" },
+	{ id: "anesthetics", label: "Анестетики" },
+	{ id: "filling", label: "Пломбировочные" },
+	{ id: "impression", label: "Слепочные" },
+	{ id: "disposables", label: "Расходные средства" },
 	{ id: "disinfection", label: "Дезинфекция" },
+	{ id: "surgery", label: "Хирургия" },
 ];
 
 export interface WarehouseOverviewTabProps {
@@ -64,9 +69,9 @@ export interface WarehouseOverviewTabProps {
 
 /**
  * Главная обзорная вкладка склада материалов DENTE (СанПиН 3.3686-21, Мандаты 8e, 8n, 8s).
- * - Сжатый 32px Segmented Bar: [ Все | Терапия | Хирургия | Ортопедия | Расходники | Дезинфекция ].
+ * - Сжатый 32px Segmented Bar: [ Все | Анестетики | Пломбировочные | Слепочные | Расходные средства | Дезинфекция | Хирургия ].
  * - Сохранение линии сгиба (Fold Line) без раздутых баннеров.
- * - Цветовые маркеры статусов: "В норме" (зеленый), "Заканчивается" (янтарный), "Требуется заказ / Овердрафт" (красный).
+ * - Цветовые маркеры статусов: "В норме" (зеленый), "Заканчивается" (янтарный), "Требуется пополнение / овердрафт" (розовый).
  * - Мягкий овердрафт разрешен, автономия врача защищена.
  */
 export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
@@ -145,7 +150,23 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 			const cat = (item.category || "").toLowerCase();
 			const name = (item.name || "").toLowerCase();
 
-			if (selectedCategory === "therapy") {
+			if (selectedCategory === "anesthetics") {
+				return (
+					cat.includes("анестез") ||
+					cat.includes("anesthesia") ||
+					name.includes("анестез") ||
+					name.includes("артикаин") ||
+					name.includes("ультракаин") ||
+					name.includes("септанест") ||
+					name.includes("скандонест") ||
+					name.includes("убистезин") ||
+					name.includes("лидокаин") ||
+					name.includes("мепивакаин") ||
+					name.includes("карпул")
+				);
+			}
+
+			if (selectedCategory === "filling" || selectedCategory === "therapy") {
 				return (
 					cat.includes("терапи") ||
 					cat.includes("композит") ||
@@ -159,28 +180,20 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 					name.includes("estelite") ||
 					name.includes("gradia") ||
 					name.includes("спектрум") ||
+					name.includes("харизма") ||
+					name.includes("прокладк") ||
 					name.includes("файл") ||
 					name.includes("силлер") ||
 					name.includes("гуттаперч")
 				);
 			}
 
-			if (selectedCategory === "surgery") {
-				return (
-					cat.includes("хирург") ||
-					name.includes("скальпель") ||
-					name.includes("шовн") ||
-					name.includes("имплант") ||
-					name.includes("губка") ||
-					name.includes("элеватор") ||
-					name.includes("щипц")
-				);
-			}
-
-			if (selectedCategory === "orthopedics") {
+			if (selectedCategory === "impression" || selectedCategory === "orthopedics") {
 				return (
 					cat.includes("ортопед") ||
 					cat.includes("протез") ||
+					cat.includes("слепоч") ||
+					cat.includes("цемент") ||
 					name.includes("слепоч") ||
 					name.includes("силикон") ||
 					name.includes("альгинат") ||
@@ -222,6 +235,19 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 					name.includes("антисептик") ||
 					name.includes("спирт") ||
 					name.includes("дез")
+				);
+			}
+
+			if (selectedCategory === "surgery") {
+				return (
+					cat.includes("хирург") ||
+					name.includes("скальпель") ||
+					name.includes("шовн") ||
+					name.includes("имплант") ||
+					name.includes("губка") ||
+					name.includes("элеватор") ||
+					name.includes("щипц") ||
+					name.includes("мембран")
 				);
 			}
 
@@ -350,9 +376,9 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 								setIsDeductionModalOpen(true);
 							}
 						}}
-						className="h-8 min-h-[32px] px-2.5 rounded-lg text-xs font-semibold border border-teal-500/40 text-teal-800 dark:text-teal-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+						className="secondary-button text-xs font-semibold cursor-pointer"
 						data-testid="btn-overview-protocol-deduction"
-						title="Списание комплекта расходных материалов по клиническому протоколу услуги (BOM 804н)"
+						title="Списание комплекта расходных материалов по клиническому протоколу услуги"
 					>
 						<Zap size={14} className="text-teal-600 dark:text-teal-400" />
 						<span>Списание по протоколу</span>
@@ -361,11 +387,7 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 					<button
 						type="button"
 						onClick={() => setIsExpressBarOpen((prev) => !prev)}
-						className={`h-8 min-h-[32px] px-2.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer ${
-							isExpressBarOpen
-								? "bg-teal-600 text-white border-teal-600 shadow-xs"
-								: "border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-						}`}
+						className={isExpressBarOpen ? "primary-button text-xs font-semibold cursor-pointer" : "secondary-button text-xs font-semibold cursor-pointer"}
 						data-testid="toggle-express-writeoff-btn"
 						title="Открыть экспресс-панель списания клинических наборов"
 					>
@@ -377,7 +399,7 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 						<button
 							type="button"
 							onClick={onQuickWriteoffCarpules}
-							className="h-8 min-h-[32px] px-2.5 rounded-lg text-xs font-semibold border border-teal-500/30 text-teal-800 dark:text-teal-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-all flex items-center gap-1.5 cursor-pointer"
+							className="secondary-button text-xs font-semibold cursor-pointer"
 							data-testid="btn-quick-carpule-overview"
 							title="Списание пустых карпул анестетиков без созыва комиссии"
 						>
@@ -390,7 +412,7 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 						<button
 							type="button"
 							onClick={onOpenAddModal}
-							className="h-8 min-h-[32px] px-3 rounded-lg text-xs font-semibold bg-teal-600 text-white hover:bg-teal-700 active:scale-98 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+							className="primary-button text-xs font-semibold cursor-pointer"
 							data-testid="btn-add-inventory-item"
 						>
 							<Plus size={14} />
@@ -418,13 +440,13 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 					<table className="w-full text-left text-xs border-collapse" data-testid="warehouse-overview-table">
 						<thead className="bg-[var(--paper-soft)] text-[var(--muted)] border-b border-[var(--line)] sticky top-0 z-10 font-semibold">
 							<tr>
-								<th className="py-2.5 px-3">Материал</th>
-								<th className="py-2.5 px-3 hidden sm:table-cell">Категория</th>
-								<th className="py-2.5 px-3">Текущий остаток</th>
-								<th className="py-2.5 px-3 hidden md:table-cell">Критический порог</th>
-								<th className="py-2.5 px-3 hidden lg:table-cell">Себестоимость</th>
-								<th className="py-2.5 px-3">Статус остатка</th>
-								<th className="py-2.5 px-3 text-right">Действия</th>
+								<th className="py-2.5 px-3 whitespace-nowrap">Материал</th>
+								<th className="py-2.5 px-3 hidden sm:table-cell whitespace-nowrap">Категория</th>
+								<th className="py-2.5 px-3 whitespace-nowrap">Текущий остаток</th>
+								<th className="py-2.5 px-3 hidden md:table-cell whitespace-nowrap">Критический порог</th>
+								<th className="py-2.5 px-3 hidden lg:table-cell whitespace-nowrap">Себестоимость</th>
+								<th className="py-2.5 px-3 whitespace-nowrap">Статус остатка</th>
+								<th className="py-2.5 px-3 text-right whitespace-nowrap">Действия</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-[var(--line)]">
@@ -523,7 +545,7 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 
 											{/* 2. Категория */}
 											<td className="py-2 px-3 text-[var(--muted,#64748b)] hidden sm:table-cell truncate max-w-[120px]">
-												{item.category || "Расходные"}
+												{formatCategoryRu(item.category)}
 											</td>
 
 											{/* 3. Текущий остаток и ед. изм. */}
@@ -559,7 +581,7 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 														title="Расход зафиксирован с дефицитом, прием не блокируется (мягкий овердрафт)"
 													>
 														<ShieldAlert size={12} className="text-rose-600" />
-														<span>Овердрафт ({qty})</span>
+														<span>Требуется пополнение ({qty})</span>
 													</span>
 												) : isZero ? (
 													<span

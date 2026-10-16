@@ -2,24 +2,16 @@ import {
 	AlertTriangle,
 	CheckCircle2,
 	Clock,
-	FileText,
-	Layers,
-	Package,
-	Plus,
 	ShieldAlert,
-	Truck,
 } from "lucide-react";
 import React, { useMemo } from "react";
-import type { InventoryItem } from "../inventory/useInventoryLogic.js";
-import { getFefoTrafficLight } from "../inventory/fefoTrafficLight.js";
+import {
+	calculateWarehouseStockAlertMetrics,
+	type WarehouseStockAlertsBarProps,
+} from "./warehouseStockAlertsEngine.js";
+import { WarehouseStockAlertsActions } from "./WarehouseStockAlertsActions.js";
 
-export interface WarehouseStockAlertsBarProps {
-	readonly items: readonly InventoryItem[];
-	readonly onOpenWaybills?: (() => void) | undefined;
-	readonly onOpenBatchTracking?: (() => void) | undefined;
-	readonly onOpenInventoryAudit?: (() => void) | undefined;
-	readonly className?: string | undefined;
-}
+export { type WarehouseStockAlertsBarProps } from "./warehouseStockAlertsEngine.js";
 
 /**
  * Панель оперативных складских уведомлений (Мандаты 8e, 8n, 8z).
@@ -34,45 +26,12 @@ export const WarehouseStockAlertsBar: React.FC<WarehouseStockAlertsBarProps> = (
 	onOpenBatchTracking,
 	onOpenInventoryAudit,
 	className = "",
+	referenceDate,
 }) => {
-	const metrics = useMemo(() => {
-		let lowStockCount = 0;
-		let overdraftCount = 0;
-		let expiredCount = 0;
-		let expiringSoonCount = 0;
-
-		for (const item of items) {
-			const qty = Number(item.stockQuantity) || 0;
-			const threshold = Number(item.criticalThreshold) || 5;
-
-			if (qty < 0) {
-				overdraftCount++;
-			} else if (qty <= threshold) {
-				lowStockCount++;
-			}
-
-			if (item.expirationDate) {
-				const fefo = getFefoTrafficLight(item.expirationDate);
-				if (fefo.status === "red") {
-					expiredCount++;
-				} else if (fefo.status === "yellow") {
-					expiringSoonCount++;
-				}
-			}
-		}
-
-		return {
-			lowStockCount,
-			overdraftCount,
-			expiredCount,
-			expiringSoonCount,
-			hasAlerts:
-				lowStockCount > 0 ||
-				overdraftCount > 0 ||
-				expiredCount > 0 ||
-				expiringSoonCount > 0,
-		};
-	}, [items]);
+	const metrics = useMemo(
+		() => calculateWarehouseStockAlertMetrics(items, referenceDate),
+		[items, referenceDate],
+	);
 
 	if (!metrics.hasAlerts) {
 		return (
@@ -100,7 +59,6 @@ export const WarehouseStockAlertsBar: React.FC<WarehouseStockAlertsBarProps> = (
 			role="region"
 			aria-label="Оперативные складские предупреждения"
 		>
-			{/* Левая часть: Информационные индикаторы */}
 			<div className="flex items-center gap-2 flex-wrap min-w-0">
 				{metrics.overdraftCount > 0 && (
 					<div
@@ -109,10 +67,9 @@ export const WarehouseStockAlertsBar: React.FC<WarehouseStockAlertsBarProps> = (
 						data-testid="alert-overdraft-badge"
 					>
 						<ShieldAlert size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
-						<span>Расход сверх остатка: {metrics.overdraftCount} поз.</span>
+						<span>Ожидается поставка (мягкий овердрафт: {metrics.overdraftCount} поз.)</span>
 					</div>
 				)}
-
 				{metrics.lowStockCount > 0 && (
 					<div
 						className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-orange-500/15 border border-orange-500/30 text-orange-900 dark:text-orange-200 shrink-0"
@@ -123,7 +80,6 @@ export const WarehouseStockAlertsBar: React.FC<WarehouseStockAlertsBarProps> = (
 						<span>Заканчивается: {metrics.lowStockCount} поз.</span>
 					</div>
 				)}
-
 				{(metrics.expiredCount > 0 || metrics.expiringSoonCount > 0) && (
 					<div
 						className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border shrink-0 ${
@@ -131,7 +87,7 @@ export const WarehouseStockAlertsBar: React.FC<WarehouseStockAlertsBarProps> = (
 								? "bg-rose-500/15 border-rose-500/30 text-rose-900 dark:text-rose-200"
 								: "bg-amber-500/15 border-amber-500/30 text-amber-900 dark:text-amber-200"
 						}`}
-						title="Контроль сроков годности по регламенту СанПиН 3.3686-21 и FEFO"
+						title="Контроль сроков годности FEFO"
 						data-testid="alert-fefo-expiry-badge"
 					>
 						<Clock size={15} className={metrics.expiredCount > 0 ? "text-rose-600 dark:text-rose-400 shrink-0" : "text-amber-600 dark:text-amber-400 shrink-0"} />
@@ -143,48 +99,11 @@ export const WarehouseStockAlertsBar: React.FC<WarehouseStockAlertsBarProps> = (
 					</div>
 				)}
 			</div>
-
-			{/* Правая часть: Быстрые неблокирующие переходы */}
-			<div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap shrink-0">
-				{onOpenWaybills && (
-					<button
-						type="button"
-						onClick={onOpenWaybills}
-						className="h-8 min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-semibold bg-teal-600 text-white hover:bg-teal-700 active:scale-98 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-						data-testid="alert-action-open-waybills"
-						title="Оприходовать накладную поставщика и закрыть дефицит"
-					>
-						<Truck size={14} className="shrink-0" />
-						<span className="whitespace-nowrap">Приход накладной</span>
-					</button>
-				)}
-
-				{onOpenBatchTracking && (
-					<button
-						type="button"
-						onClick={onOpenBatchTracking}
-						className="h-8 min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition-all flex items-center gap-1.5 cursor-pointer"
-						data-testid="alert-action-open-batches"
-						title="Партионный учёт и контроль сроков годности FEFO"
-					>
-						<Layers size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span className="whitespace-nowrap">Партии FEFO</span>
-					</button>
-				)}
-
-				{onOpenInventoryAudit && (
-					<button
-						type="button"
-						onClick={onOpenInventoryAudit}
-						className="h-8 min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition-all flex items-center gap-1.5 cursor-pointer"
-						data-testid="alert-action-open-audit"
-						title="Провести инвентаризацию и сверку остатков"
-					>
-						<FileText size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span className="whitespace-nowrap">Инвентаризация</span>
-					</button>
-				)}
-			</div>
+			<WarehouseStockAlertsActions
+				onOpenWaybills={onOpenWaybills}
+				onOpenBatchTracking={onOpenBatchTracking}
+				onOpenInventoryAudit={onOpenInventoryAudit}
+			/>
 		</div>
 	);
 };

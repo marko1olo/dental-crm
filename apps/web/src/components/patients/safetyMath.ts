@@ -1,16 +1,6 @@
 /**
- * safetyMath.ts — Клинический двигатель безопасности пациента, аллергостатуса и критических стоп-факторов.
- *
- * Соответствует клиническим рекомендациям Стоматологической Ассоциации России (СтАР),
- * Приказам Минздрава РФ № 804н, № 203н и СанПиН 3.3686-21.
- *
- * Охватывает критические клинические стоп-факторы:
- * 1. Острая аллергия на анестетики (Лидокаин, Артикаин, Мепивакаин, метабисульфиты, анафилаксия).
- * 2. Имплантированный кардиостимулятор / ЭКС (Абсолютный запрет УЗ-скейлинга и монополярной электрокоагуляции).
- * 3. Прием антикоагулянтов / дезагрегантов (Варфарин, Ксарелто, Эликвис, Прадакса, Плавикс) — риск кровотечения.
- * 4. Бисфосфонатная и антирезорбтивная терапия (Золедронат, Акласта, Бонвива, Пролиа) — риск остеонекроза челюсти (MRONJ/БОНЧ).
- * 5. Беременность по триместрам (1-й триместр: органогенез, запрет адреналина и КТ; 2-й триместр: безопасное окно; 3-й: синдром НПВ) и лактация.
- * 6. Хронические соматические заболевания (Сахарный диабет, Гипертония, Астма, Эпилепсия, Гепатит B/C, ВИЧ, аллергия на латекс и пенициллины).
+ * safetyMath.ts — Клинический двигатель безопасности пациента, аллергостатуса и критических стоп-факторов DENTE.
+ * Мандаты 8e, 8k, 8n: Ноль фармакологической паранойи, автономия врача, физиологическая норма в 1 клик.
  */
 
 import {
@@ -51,9 +41,7 @@ export interface ClinicalSafetyItemDefinition {
 	readonly keywords: readonly string[];
 }
 
-/** Профиль безопасности пациента, сохраняемый в базе и анкете здоровья */
 export interface PatientClinicalSafetyProfile {
-	// 1. Аллергии на анестетики и консерванты
 	readonly hasLidocaineAllergy?: boolean | undefined;
 	readonly hasArticaineAllergy?: boolean | undefined;
 	readonly hasMepivacaineAllergy?: boolean | undefined;
@@ -63,8 +51,6 @@ export interface PatientClinicalSafetyProfile {
 	readonly hasAnestheticAllergy?: boolean | undefined;
 	readonly hasIodineAllergy?: boolean | undefined;
 	readonly hasAnaphylaxisHistory?: boolean | undefined;
-
-	// 2. ЭКС / Кардиостимулятор & Кардиология
 	readonly hasPacemakerExs?: boolean | undefined;
 	readonly hasCardiovascularDisease?: boolean | undefined;
 	readonly hasHypertension?: boolean | undefined;
@@ -73,23 +59,15 @@ export interface PatientClinicalSafetyProfile {
 	readonly hasArrhythmia?: boolean | undefined;
 	readonly takesBetaBlockers?: boolean | undefined;
 	readonly hasPheochromocytoma?: boolean | undefined;
-
-	// 3. Гематология & Антикоагулянты
 	readonly takesAnticoagulants?: boolean | undefined;
 	readonly hasAnticoagulantTherapy?: boolean | undefined;
-	readonly anticoagulantName?: string | undefined; // Варфарин, Ксарелто, Эликвис, Тромбо АСС и т.д.
-	readonly lastInrValue?: number | undefined; // Значение МНО (INR)
-
-	// 4. Бисфосфонаты & Остеонекроз (MRONJ)
+	readonly anticoagulantName?: string | undefined;
+	readonly lastInrValue?: number | undefined;
 	readonly takesBisphosphonates?: boolean | undefined;
 	readonly hasBisphosphonateTherapy?: boolean | undefined;
-	readonly bisphosphonateName?: string | undefined; // Акласта, Зомета, Фосамакс, Пролиа
-
-	// 5. Беременность и лактация
+	readonly bisphosphonateName?: string | undefined;
 	readonly pregnancyTrimester: PregnancyTrimester;
 	readonly gestationalWeeks?: number | undefined;
-
-	// 6. Хронические заболевания (Соматический статус)
 	readonly hasDiabetesMellitus?: boolean | undefined;
 	readonly diabetesType?: "1" | "2" | "unknown" | undefined;
 	readonly hasBronchialAsthma?: boolean | undefined;
@@ -100,9 +78,7 @@ export interface PatientClinicalSafetyProfile {
 	readonly hasThyrotoxicosis?: boolean | undefined;
 	readonly hasPenicillinAllergy?: boolean | undefined;
 	readonly hasLatexAllergy?: boolean | undefined;
-	readonly hasNsaidAllergy?: boolean | undefined; // Аллергия на НПВП / Аспириновая триада
-
-	// Свободные примечания
+	readonly hasNsaidAllergy?: boolean | undefined;
 	readonly customAllergyNotes?: string | undefined;
 	readonly customAllergiesNotes?: string | undefined;
 	readonly customChronicNotes?: string | undefined;
@@ -110,10 +86,6 @@ export interface PatientClinicalSafetyProfile {
 	readonly lastUpdated?: string | undefined;
 }
 
-/**
- * Канонический профиль физиологической нормы соматического здоровья (Мандат 8e п. 3, Мандат 8k, Мандат 8n).
- * Аллергий нет, соматических противопоказаний нет, гемостаз в норме.
- */
 export const DEFAULT_SOMATIC_HEALTHY_NORM: PatientClinicalSafetyProfile = {
 	hasLidocaineAllergy: false,
 	hasArticaineAllergy: false,
@@ -148,19 +120,11 @@ export const DEFAULT_SOMATIC_HEALTHY_NORM: PatientClinicalSafetyProfile = {
 	currentMedicationsList: "",
 };
 
-/**
- * Создание чистого профиля физиологической нормы в 1 клик.
- */
 export function createHealthySomaticNormProfile(): PatientClinicalSafetyProfile {
 	return { ...DEFAULT_SOMATIC_HEALTHY_NORM };
 }
 
-/**
- * Проверка, является ли профиль пациента физиологической нормой (без отягощений).
- */
-export function isSomaticProfilePhysiologicalNorm(
-	profile?: Partial<PatientClinicalSafetyProfile> | null,
-): boolean {
+export function isSomaticProfilePhysiologicalNorm(profile?: Partial<PatientClinicalSafetyProfile> | null): boolean {
 	if (!profile) return true;
 	return (
 		!profile.hasLidocaineAllergy &&
@@ -192,7 +156,6 @@ export function isSomaticProfilePhysiologicalNorm(
 }
 
 export { CLINICAL_SAFETY_CATALOG } from "./clinicalSafetyCatalogData";
-
 export {
 	evaluatePatientSafetyFlags,
 	checkProcedureSafety,
@@ -203,280 +166,37 @@ export type {
 	ClinicalSafetyFlag,
 } from "./patientSafetyEvaluation";
 
-/**
- * Парсит произвольный текст анамнеза, заметок или сопутствующих патологий
- * и извлекает структурированный профиль безопасности.
- */
 export function parseSafetyProfileFromText(text?: string | null | undefined): PatientClinicalSafetyProfile {
 	const raw = (text ?? "").toLowerCase();
-	if (!raw.trim()) {
-		return { pregnancyTrimester: "none" };
+	if (!raw.trim() || isNegativeAllergyStatement(raw)) {
+		return { ...DEFAULT_SOMATIC_HEALTHY_NORM, pregnancyTrimester: "none" };
 	}
 
-	const isCleanAllergyText = isNegativeAllergyStatement(raw);
-
-	const hasArticaine =
-		!isCleanAllergyText &&
-		(raw.includes("артикаин") ||
-			raw.includes("ультракаин") ||
-			raw.includes("септанест") ||
-			raw.includes("убистезин"));
-
-	const hasLidocaine =
-		!isCleanAllergyText &&
-		(raw.includes("лидокаин") || raw.includes("ксилокаин"));
-
-	const hasEsterAnesthetics =
-		!isCleanAllergyText &&
-		(raw.includes("дикаин") ||
-			raw.includes("тетракаин") ||
-			raw.includes("новокаин") ||
-			raw.includes("прокаин") ||
-			raw.includes("анестезин") ||
-			raw.includes("бензокаин"));
-
-	const hasMepivacaine =
-		!isCleanAllergyText &&
-		(raw.includes("мепивакаин") ||
-			raw.includes("скандонест") ||
-			raw.includes("мепивастезин"));
-
-	const hasSulfites =
-		!isCleanAllergyText &&
-		(raw.includes("сульфит") ||
-			raw.includes("дисульфит") ||
-			raw.includes("метабисульфит") ||
-			raw.includes("пиросульфит") ||
-			raw.includes("е223") ||
-			raw.includes("e223") ||
-			raw.includes("консервант"));
-
-	const hasPacemaker =
-		raw.includes("кардиостимулятор") ||
-		/(^|[^а-яёa-z0-9])экс([^а-яёa-z0-9]|$)/i.test(raw) ||
-		/(^|[^а-яёa-z0-9])икд([^а-яёa-z0-9]|$)/i.test(raw) ||
-		raw.includes("пейсмейкер") ||
-		raw.includes("водитель ритма") ||
-		raw.includes("z95.0");
-
-	const hasBisphosphonates =
-		raw.includes("бисфосфонат") ||
-		raw.includes("акласта") ||
-		raw.includes("зомета") ||
-		raw.includes("золедронат") ||
-		raw.includes("фосамакс") ||
-		raw.includes("алендронат") ||
-		raw.includes("бонвива") ||
-		raw.includes("пролиа") ||
-		raw.includes("деносумаб") ||
-		raw.includes("остеонекроз") ||
-		raw.includes("бонч") ||
-		raw.includes("m87.1");
-
-	const hasAnticoagulants =
-		raw.includes("варфарин") ||
-		raw.includes("ксарелто") ||
-		raw.includes("ривароксабан") ||
-		raw.includes("эликвис") ||
-		raw.includes("апиксабан") ||
-		raw.includes("прадакса") ||
-		raw.includes("дабигатран") ||
-		raw.includes("плавикс") ||
-		raw.includes("клопидогрел") ||
-		raw.includes("тромбо асс") ||
-		raw.includes("антикоагулянт") ||
-		raw.includes("дезагрегант") ||
-		raw.includes("z92.1");
-
-	// Беременность по триместрам
 	let pregnancyTrimester: PregnancyTrimester = "none";
-	if (raw.includes("беременн") || raw.includes("лактац") || raw.includes("триместр") || raw.includes("кормлен") || raw.includes("гв") || raw.includes("z33")) {
-		if (raw.includes("1 триместр") || raw.includes("1-й триместр") || raw.includes("первый триместр") || raw.includes("ранние сроки")) {
-			pregnancyTrimester = "trimester_1";
-		} else if (raw.includes("2 триместр") || raw.includes("2-й триместр") || raw.includes("второй триместр")) {
-			pregnancyTrimester = "trimester_2";
-		} else if (raw.includes("3 триместр") || raw.includes("3-й триместр") || raw.includes("третий триместр")) {
-			pregnancyTrimester = "trimester_3";
-		} else if (raw.includes("лактац") || raw.includes("гв") || raw.includes("кормлен")) {
-			pregnancyTrimester = "lactation";
-		} else {
-			pregnancyTrimester = "trimester_2"; // Безопасное среднее предположение
-		}
+	if (raw.includes("беременн") || raw.includes("лактац") || raw.includes("триместр") || raw.includes("гв")) {
+		if (raw.includes("1 триместр") || raw.includes("1-й триместр")) pregnancyTrimester = "trimester_1";
+		else if (raw.includes("3 триместр") || raw.includes("3-й триместр")) pregnancyTrimester = "trimester_3";
+		else if (raw.includes("лактац") || raw.includes("гв")) pregnancyTrimester = "lactation";
+		else pregnancyTrimester = "trimester_2";
 	}
 
-	const hasHypertension =
-		raw.includes("гипертон") ||
-		raw.includes("гипертенз") ||
-		raw.includes("давлен") ||
-		raw.includes("аг ") ||
-		raw.includes("аг,") ||
-		raw.includes("криз") ||
-		raw.includes("i10") ||
-		raw.includes("i11") ||
-		raw.includes("i12") ||
-		raw.includes("i13") ||
-		raw.includes("i14") ||
-		raw.includes("i15");
-
-	const hasIhd =
-		raw.includes("ибс") ||
-		raw.includes("стенокард") ||
-		raw.includes("инфаркт") ||
-		raw.includes("постинфаркт") ||
-		raw.includes("стентирован") ||
-		raw.includes("шунтирован") ||
-		raw.includes("i20") ||
-		raw.includes("i21") ||
-		raw.includes("i22") ||
-		raw.includes("i23") ||
-		raw.includes("i24") ||
-		raw.includes("i25");
-
-	const hasArrhythmia =
-		raw.includes("аритми") ||
-		raw.includes("мерцательн") ||
-		raw.includes("экстрасистол") ||
-		raw.includes("тахикарди") ||
-		raw.includes("фибрилляц") ||
-		raw.includes("пароксизм") ||
-		raw.includes("блокад") ||
-		raw.includes("i44") ||
-		raw.includes("i45") ||
-		raw.includes("i47") ||
-		raw.includes("i48") ||
-		raw.includes("i49");
-
-	const hasSevereHypertension =
-		raw.includes("аг 3") ||
-		raw.includes("аг iii") ||
-		raw.includes("3 стад") ||
-		raw.includes("iii стад") ||
-		raw.includes("криз") ||
-		raw.includes("тяжелая гипертенз") ||
-		raw.includes("тяжелой гипертенз") ||
-		raw.includes("давление 180") ||
-		raw.includes("давление > 180") ||
-		raw.includes("180/");
-
-	const hasThyrotoxicosis =
-		raw.includes("тиреотоксикоз") ||
-		raw.includes("гипертиреоз") ||
-		raw.includes("базедов") ||
-		raw.includes("e05") ||
-		raw.includes("е05") ||
-		raw.includes("токсический зоб");
-
-	const takesBetaBlockers =
-		raw.includes("бета-блокатор") ||
-		raw.includes("бетаблокатор") ||
-		raw.includes("бисопролол") ||
-		raw.includes("конкор") ||
-		raw.includes("анаприлин") ||
-		raw.includes("пропранолол") ||
-		raw.includes("метопролол") ||
-		raw.includes("эгилок") ||
-		raw.includes("соталол") ||
-		raw.includes("атенолол") ||
-		raw.includes("небиволол") ||
-		raw.includes("беталок") ||
-		raw.includes("карведилол");
-
-	const hasCardio =
-		hasHypertension ||
-		hasSevereHypertension ||
-		hasIhd ||
-		hasArrhythmia ||
-		hasThyrotoxicosis ||
-		takesBetaBlockers ||
-		raw.includes("сердеч") ||
-		raw.includes("кардио") ||
-		raw.includes("пороком сердца") ||
-		raw.includes("хсн");
-
-	const hasDiabetes =
-		raw.includes("диабет") ||
-		raw.includes("инсулин") ||
-		raw.includes("глюкоз") ||
-		raw.includes("e10") ||
-		raw.includes("e11");
-
-	const hasAsthma =
-		raw.includes("астма") ||
-		raw.includes("астм") ||
-		raw.includes("бронхиальн") ||
-		raw.includes("сальбутамол") ||
-		raw.includes("беродуал") ||
-		raw.includes("j45") ||
-		raw.includes("j46");
-
-	const hasEpilepsy =
-		raw.includes("эпилепс") ||
-		raw.includes("судорог") ||
-		raw.includes("припад") ||
-		raw.includes("g40");
-
-	const hasHepatitis =
-		raw.includes("гепатит") ||
-		raw.includes("b18");
-
-	const hasHiv =
-		raw.includes("вич") ||
-		raw.includes("спид") ||
-		raw.includes("b20");
-
-	const hasPenicillin =
-		!isCleanAllergyText &&
-		(raw.includes("пенициллин") ||
-			raw.includes("амоксициллин") ||
-			raw.includes("амоксиклав") ||
-			raw.includes("аугментин") ||
-			raw.includes("флемоксин") ||
-			raw.includes("z88.0"));
-
-	const hasLatex = !isCleanAllergyText && raw.includes("латекс");
-
-	const hasNsaid =
-		!isCleanAllergyText &&
-		(raw.includes("нпвп") ||
-			raw.includes("нпвс") ||
-			raw.includes("аспирин") ||
-			raw.includes("кеторол") ||
-			raw.includes("кеторолак") ||
-			raw.includes("ибупрофен") ||
-			raw.includes("нурофен") ||
-			raw.includes("диклофенак") ||
-			raw.includes("нимесулид") ||
-			raw.includes("кетонал") ||
-			raw.includes("аспириновая астма") ||
-			raw.includes("z88.6"));
-
-	const hasIodine =
-		!isCleanAllergyText &&
-		(raw.includes("йод") ||
-			raw.includes("йодоформ") ||
-			raw.includes("повидон-йод") ||
-			raw.includes("бетадин") ||
-			raw.includes("метапекс") ||
-			raw.includes("йодинол") ||
-			raw.includes("альвожил") ||
-			raw.includes("alveogyl") ||
-			raw.includes("люголь"));
-
-	const hasPheochromocytoma =
-		raw.includes("феохромоцитом") ||
-		raw.includes("надпочечник") ||
-		raw.includes("c74.1") ||
-		raw.includes("d35.0");
+	const hasSevereHypertension = raw.includes("аг 3") || raw.includes("гб 3") || raw.includes("3 стад") || raw.includes("криз") || raw.includes("180/") || raw.includes("190/");
+	const hasHypertension = hasSevereHypertension || raw.includes("гипертон") || raw.includes("гипертенз") || raw.includes("давлен") || raw.includes(" гб") || raw.includes(" аг");
+	const hasThyrotoxicosis = raw.includes("тиреотоксикоз") || raw.includes("гипертиреоз") || raw.includes("токсический зоб");
+	const takesBetaBlockers = raw.includes("бета-блокатор") || raw.includes("бисопролол") || raw.includes("конкор") || raw.includes("анаприлин") || raw.includes("метопролол");
+	const hasIhd = raw.includes("ибс") || raw.includes("стенокард") || raw.includes("инфаркт");
+	const hasArrhythmia = raw.includes("аритми") || raw.includes("тахикарди");
+	const hasCardio = hasHypertension || hasSevereHypertension || hasThyrotoxicosis || takesBetaBlockers || hasIhd || hasArrhythmia;
 
 	return {
-		hasArticaineAllergy: hasArticaine,
-		hasLidocaineAllergy: hasLidocaine,
-		hasMepivacaineAllergy: hasMepivacaine,
-		hasEsterAnestheticsAllergy: hasEsterAnesthetics,
-		hasSulfiteAllergy: hasSulfites,
-		hasPacemakerExs: hasPacemaker,
-		takesBisphosphonates: hasBisphosphonates,
-		takesAnticoagulants: hasAnticoagulants,
+		hasArticaineAllergy: raw.includes("артикаин") || raw.includes("ультракаин") || raw.includes("септанест"),
+		hasLidocaineAllergy: raw.includes("лидокаин") || raw.includes("ксилокаин"),
+		hasMepivacaineAllergy: raw.includes("мепивакаин") || raw.includes("скандонест"),
+		hasEsterAnestheticsAllergy: raw.includes("новокаин") || raw.includes("прокаин") || raw.includes("анестезин"),
+		hasSulfiteAllergy: raw.includes("сульфит") || raw.includes("метабисульфит"),
+		hasPacemakerExs: raw.includes("кардиостимулятор") || /(^|[^а-яёa-z0-9])экс([^а-яёa-z0-9]|$)/i.test(raw) || raw.includes("пейсмейкер"),
+		takesBisphosphonates: raw.includes("бисфосфонат") || raw.includes("акласта") || raw.includes("зомета") || raw.includes("бонвива") || raw.includes("пролиа") || raw.includes("mronj") || raw.includes("бонч"),
+		takesAnticoagulants: raw.includes("варфарин") || raw.includes("ксарелто") || raw.includes("эликвис") || raw.includes("прадакса") || raw.includes("плавикс") || raw.includes("тромбо асс") || raw.includes("антикоагулянт"),
 		pregnancyTrimester,
 		hasCardiovascularDisease: hasCardio,
 		hasHypertension,
@@ -485,43 +205,27 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 		takesBetaBlockers,
 		hasIhd,
 		hasArrhythmia,
-		hasPheochromocytoma,
-		hasDiabetesMellitus: hasDiabetes,
-		hasBronchialAsthma: hasAsthma,
-		hasEpilepsy: hasEpilepsy,
-		hasHepatitis: hasHepatitis,
-		hasHiv: hasHiv,
-		hasPenicillinAllergy: hasPenicillin,
-		hasLatexAllergy: hasLatex,
-		hasNsaidAllergy: hasNsaid,
-		hasIodineAllergy: hasIodine,
+		hasDiabetesMellitus: raw.includes("диабет") || raw.includes("инсулин"),
+		hasBronchialAsthma: raw.includes("астма") || raw.includes("бронхиальн"),
+		hasEpilepsy: raw.includes("эпилепс") || raw.includes("судорог"),
+		hasHepatitis: raw.includes("гепатит"),
+		hasHiv: raw.includes("вич") || raw.includes("спид"),
+		hasPenicillinAllergy: raw.includes("пенициллин") || raw.includes("амоксициллин") || raw.includes("амоксиклав") || raw.includes("аугментин"),
+		hasLatexAllergy: raw.includes("латекс"),
+		hasNsaidAllergy: raw.includes("нпвп") || raw.includes("нпвс") || raw.includes("аспирин") || raw.includes("кеторол") || raw.includes("ибупрофен") || raw.includes("диклофенак") || raw.includes("аспириновая астма"),
+		hasIodineAllergy: raw.includes("йод") || raw.includes("йодоформ") || raw.includes("бетадин"),
 		customChronicNotes: text ? text : undefined,
 	};
 }
 
-/**
- * Преобразует профиль безопасности пациента в соматический профиль риска для анестезиологического калькулятора.
- */
 export function patientProfileToSomaticRiskProfile(
 	profile?: Partial<PatientClinicalSafetyProfile> | string | null | undefined,
 ): SomaticRiskProfile {
 	if (!profile) return {};
-	if (typeof profile === "string") {
-		const parsed = parseSafetyProfileFromText(profile);
-		return patientProfileToSomaticRiskProfile(parsed);
-	}
+	if (typeof profile === "string") return patientProfileToSomaticRiskProfile(parseSafetyProfileFromText(profile));
 
-	const hasCardio = Boolean(
-		profile.hasCardiovascularDisease ||
-		profile.hasHypertension ||
-		profile.hasSevereHypertensionStage3 ||
-		profile.hasIhd ||
-		profile.hasArrhythmia ||
-		profile.hasPacemakerExs,
-	);
-	const isPregnant = Boolean(
-		profile.pregnancyTrimester && profile.pregnancyTrimester !== "none",
-	);
+	const hasCardio = Boolean(profile.hasCardiovascularDisease || profile.hasHypertension || profile.hasSevereHypertensionStage3 || profile.hasIhd || profile.hasArrhythmia || profile.hasPacemakerExs);
+	const isPregnant = Boolean(profile.pregnancyTrimester && profile.pregnancyTrimester !== "none");
 
 	return {
 		hasCardiovascularRisk: hasCardio,
@@ -542,9 +246,6 @@ export function patientProfileToSomaticRiskProfile(
 	};
 }
 
-/**
- * Автоматически рассчитывает безопасный анестетик и дозировки на основе профиля пациента (Автопилот безопасности).
- */
 export function getAnesthesiaAutopilotForPatient(
 	profile?: Partial<PatientClinicalSafetyProfile> | string | null | undefined,
 	weightKg?: number | undefined,
@@ -552,17 +253,9 @@ export function getAnesthesiaAutopilotForPatient(
 	isPediatric?: boolean | undefined,
 ): AutopilotResolutionResult {
 	const somatic = patientProfileToSomaticRiskProfile(profile);
-	return resolveAutopilotAnesthesia({
-		somaticProfile: somatic,
-		patientWeightKg: weightKg,
-		patientAgeYears: ageYears,
-		isPediatric,
-	});
+	return resolveAutopilotAnesthesia({ somaticProfile: somatic, patientWeightKg: weightKg, patientAgeYears: ageYears, isPediatric });
 }
 
-/**
- * Рассчитывает МРД (максимальную разовую дозу) анестетика с учетом кардио-ограничений профиля пациента.
- */
 export function calculatePatientMrdForProfile(params: {
 	profile?: Partial<PatientClinicalSafetyProfile> | string | null | undefined;
 	drugKey: AnesthesiaDrugKey;
@@ -571,13 +264,7 @@ export function calculatePatientMrdForProfile(params: {
 	isPediatric?: boolean | undefined;
 }): PatientMrdCalculation {
 	const somatic = patientProfileToSomaticRiskProfile(params.profile);
-	const hasCardio = Boolean(
-		somatic.hasCardiovascularRisk ||
-		somatic.hasHypertension ||
-		somatic.hasIhd ||
-		somatic.hasArrhythmia,
-	);
-
+	const hasCardio = Boolean(somatic.hasCardiovascularRisk || somatic.hasHypertension || somatic.hasIhd || somatic.hasArrhythmia);
 	return calculatePatientMrd({
 		drugKey: params.drugKey,
 		patientWeightKg: params.patientWeightKg,
@@ -586,4 +273,3 @@ export function calculatePatientMrdForProfile(params: {
 		isCardioRestricted: hasCardio,
 	});
 }
-

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { VisitProtocolView } from "../VisitProtocolView";
 import {
 	DEFAULT_SOMATIC_HEALTHY_NORM,
@@ -84,11 +84,17 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 			passport: boolean;
 			insurance: boolean;
 			notes: boolean;
-		}>({
+		}>(() => ({
 			passport: false,
-			insurance: false,
+			insurance: Boolean(patient?.dmsInsuranceCompany || patient?.dmsPolicyNumber || patient?.snils),
 			notes: false,
-		});
+		}));
+
+		useEffect(() => {
+			if (patient?.dmsInsuranceCompany || patient?.dmsPolicyNumber || patient?.snils) {
+				setAccordionsOpen((prev) => (prev.insurance ? prev : { ...prev, insurance: true }));
+			}
+		}, [patient?.dmsInsuranceCompany, patient?.dmsPolicyNumber, patient?.snils]);
 
 		const [viewingProtocolVisit, setViewingProtocolVisit] = useState<PatientVisitHistoryItem | null>(null);
 

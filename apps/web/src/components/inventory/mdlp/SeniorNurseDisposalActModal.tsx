@@ -583,7 +583,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 							</div>
 							<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-50 dark:bg-teal-950/30 border border-teal-300 dark:border-teal-800 text-teal-800 dark:text-teal-200 text-xs font-bold">
 								<CheckCircle2 size={13} className="text-teal-600" />
-								<span>Оперативное утверждение акта</span>
+								<span>Единоличное утверждение (без комиссии из 3 человек)</span>
 							</span>
 						</div>
 

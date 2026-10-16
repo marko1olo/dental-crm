@@ -158,7 +158,8 @@ describe("FEFO Smart Anesthesia & Expiry Traffic Light (Mandates 8e, 8n, 8v)", (
 			);
 			assert.ok(
 				html.includes("Мягкий учет расхода (дефицит)") ||
-					html.includes("Овердрафт (0-блокировка)"),
+					html.includes("Овердрафт (0-блокировка)") ||
+					html.includes("Ожидается поставка (мягкий овердрафт)"),
 				"Must display non-blocking deficit label",
 			);
 			assert.ok(

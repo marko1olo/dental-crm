@@ -1,56 +1,17 @@
-import {
-	Link as LinkIcon,
-	Search,
-	Unlink,
-	UserPlus,
-	Users,
-	Wallet,
-} from "lucide-react";
-import type React from "react";
-import { useEffect, useState } from "react";
-import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
-import {
-	actionFailureToast,
-	type PanelSubject,
-	panelStateText,
-} from "../../lib/panelStateText";
-import { logger } from "../../utils/logger";
-import { showToast } from "../GlobalToast";
-import { PanelLoadFailure } from "../PanelLoadFailure";
+import React from "react";
 import { FamilyWalletModal } from "../patient/FamilyWalletModal";
-import { usePatientStore } from "../../store/patientStore";
+import { useFamilyCardLogic } from "./patientFamilyModules/useFamilyCardLogic";
+import { FamilyCardHeader } from "./patientFamilyModules/FamilyCardHeader";
+import { FamilyMembersView } from "./patientFamilyModules/FamilyMembersView";
+import { FamilyEmptyActions } from "./patientFamilyModules/FamilyEmptyActions";
 
 export type PatientFamilyCardProps = {
 	patientId: string | null;
 	patientName: string | null;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	familyData: any | null;
-	/**
-	 * Отказ ЧТЕНИЯ семьи, а не её отсутствие. null — читали успешно (в том числе
-	 * получили честный 404 «пациент не в семье»); объект — ответ не прочитан, и
-	 * состав семьи с балансом неизвестен. Разделять обязательно: без этого признака
-	 * карточка на любой сбой писала «Пациент не состоит в семейной группе» и
-	 * предлагала создать вторую семью тому, у кого она уже есть.
-	 */
-	loadFailure?: { status: number | null } | null;
-	/** Перечитать семью после отказа. */
-	onRetryLoad?: () => void;
+	loadFailure?: { status: number | null } | null | undefined;
+	onRetryLoad?: (() => void) | undefined;
 	onFamilyDataChanged: () => void;
-};
-
-/**
- * Тексты состояний семейного счёта. Отказ чтения здесь стоит денег: и «нет
- * семьи», и «семья не прочитана» выглядят как пустая карточка, но во втором
- * случае у пациента может быть общий кошелёк с родственниками.
- */
-const FAMILY_SUBJECT: PanelSubject = {
-	notLoadedTitle: "Семейный счет не прочитан",
-	accusative: "семейный счет пациента",
-	emptyTitle: "Пациент не состоит в семейной группе",
-	emptyHint:
-		"Семья нужна, когда за лечение платят из общего кошелька: родители за детей, супруги друг за друга.",
-	failureConsequence:
-		"Не создавайте семью по этому экрану: возможно, пациент уже в ней состоит, и появится второй общий счет. Сначала обновите.",
 };
 
 export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
@@ -61,628 +22,49 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 	onRetryLoad,
 	onFamilyDataChanged,
 }) => {
-	const [isCreating, setIsCreating] = useState(false);
-	const [isLinking, setIsLinking] = useState(false);
-	const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
-
-	useEffect(() => {
-		const handleOpenWallet = () => setIsWalletModalOpen(true);
-		window.addEventListener("dente-open-family-wallet", handleOpenWallet);
-		return () => window.removeEventListener("dente-open-family-wallet", handleOpenWallet);
-	}, []);
-
-	const [newFamilyName, setNewFamilyName] = useState("");
-	const [searchQuery, setSearchQuery] = useState("");
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const [searchResults, setSearchResults] = useState<any[]>([]);
-
-	const [loading, setLoading] = useState(false);
-	const [searchLoading, setSearchLoading] = useState(false);
-	/*
-	 * БЫЛО: отказ поиска нигде не хранился. Ветка `if (res.ok)` без `else` и
-	 * `catch` с одним logger.error оставляли searchResults пустым, а разметка
-	 * печатала «Семьи не найдены» — то есть упавший запрос выдавался за
-	 * достоверный ответ «такой семьи нет». Администратор по этому экрану создавал
-	 * ВТОРУЮ семью с тем же названием, и общий счёт родственников расходился на
-	 * два.
-	 */
-	const [searchFailed, setSearchFailed] = useState(false);
-
-	useEffect(() => {
-		let active = true;
-		if (isLinking && searchQuery.length >= 2) {
-			const delayFn = setTimeout(async () => {
-				if (!active) return;
-				setSearchLoading(true);
-				try {
-					const res = await fetch(
-						`/api/finance/family?search=${encodeURIComponent(searchQuery)}`,
-						{
-							headers: denteAdminSecretRequestHeaders(),
-						},
-					);
-					if (!active) return;
-					if (res.ok) {
-						const data = await res.json();
-						// Не массив — тоже не ответ: .map по такому значению уронил бы
-						// карточку целиком.
-						setSearchResults(Array.isArray(data) ? data : []);
-						setSearchFailed(!Array.isArray(data));
-					} else {
-						setSearchResults([]);
-						setSearchFailed(true);
-					}
-				} catch (e) {
-					if (!active) return;
-					logger.error("Family search failed", e);
-					setSearchResults([]);
-					setSearchFailed(true);
-				} finally {
-					if (active) {
-						setSearchLoading(false);
-					}
-				}
-			}, 300);
-			return () => {
-				active = false;
-				clearTimeout(delayFn);
-			};
-		} else if (isLinking && searchQuery.length < 2) {
-			setSearchResults([]);
-			setSearchFailed(false);
-		}
-		return () => {
-			active = false;
-		};
-	}, [searchQuery, isLinking]);
-
-	/*
-	 * БЫЛО: ни одно поле этой карточки не сбрасывалось при переключении пациента.
-	 * Виджет получает patientId пропсом и не размонтируется (PatientOverviewTab
-	 * рендерит его без key), поэтому оставались открытыми и заряженными и форма
-	 * создания семьи, и поиск с найденными семьями.
-	 *
-	 * Цена ошибки здесь выше, чем в заметке: семья — это ОБЩИЙ ДЕНЕЖНЫЙ СЧЁТ.
-	 * Администратор набирал «Семья Ивановых» на карточке Иванова, отвлекался,
-	 * открывал карточку Петровой и нажимал «Создать» — создавалась семья с
-	 * названием «Семья Ивановых», где ГЛАВОЙ становилась Петрова
-	 * (headPatientId: patientId берётся текущий), и она же к ней привязывалась.
-	 * Тот же путь у «Привязать»: список найденных семей от прошлого пациента
-	 * оставался на экране, и клик по строке привязывал к чужой семье уже другого
-	 * человека — деньги и скидки двух посторонних людей сходились на один счёт.
-	 *
-	 * Сброс в фазе рендера, а не в useEffect: эффект срабатывает после отрисовки,
-	 * и чужое название семьи успело бы мигнуть на новой карточке.
-	 */
-	const [prevPatientId, setPrevPatientId] = useState(patientId);
-	if (patientId !== prevPatientId) {
-		setPrevPatientId(patientId);
-		setIsCreating(false);
-		setIsLinking(false);
-		setNewFamilyName("");
-		setSearchQuery("");
-		setSearchResults([]);
-		setSearchFailed(false);
-	}
-
+	const logic = useFamilyCardLogic(patientId, patientName, onFamilyDataChanged);
 	if (!patientId) return null;
-
-	/*
-	 * К какой семье пациент привязан ПО МНЕНИЮ СЕРВЕРА.
-	 *
-	 * Раньше PUT /patients/:id с familyGroupId молча игнорировал поле (Zod
-	 * вырезал ключ; updatePatientInDb колонку не писал) — ответ 200 врал.
-	 * Сейчас контракт и DB-слой пишут family_group_id, а POST /finance/family
-	 * с headPatientId привязывает главу атомарно. Проверка familyIdOfPatient
-	 * оставлена как страховка: если привязка всё же не сохранилась, UI не
-	 * покажет ложный «успех» и не подтолкнёт создать вторую пустую семью.
-	 */
-
-	const familyIdOfPatient = async (
-		checkedPatientId: string,
-	): Promise<string | null> => {
-		try {
-			const res = await fetch(
-				`/api/finance/family/patient/${checkedPatientId}`,
-				{ headers: denteAdminSecretRequestHeaders() },
-			);
-			if (!res.ok) return null;
-			const data = await res.json().catch((err) => {
-				logger.error("[Dente]", err);
-				showToast(
-					actionFailureToast(
-						"Семья пациента не прочитана",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				return null;
-			});
-			return data && typeof data.id === "string" ? data.id : null;
-		} catch {
-			return null;
-		}
-	};
-
-	const handleCreateFamily = async () => {
-		const effectiveFamilyName =
-			newFamilyName.trim() ||
-			(patientName ? `Семья ${patientName}` : "");
-		if (!effectiveFamilyName) {
-			showToast("Введите название семьи", "error");
-			return;
-		}
-		setLoading(true);
-		try {
-			/*
-			 * POST /api/finance/family атомарно создаёт группу и привязывает
-			 * headPatientId → patients.family_group_id. Второй PUT — страховка
-			 * для старого API и идемпотентное подтверждение привязки.
-			 */
-			const res = await fetch("/api/finance/family", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
-				body: JSON.stringify({
-					name: effectiveFamilyName,
-					headPatientId: patientId,
-				}),
-			});
-			if (!res.ok) {
-				const body = await res.json().catch((err) => {
-					logger.error("[Dente]", err);
-					showToast(
-						actionFailureToast(
-							"Ответ сервера не прочитан",
-							(err as { status?: number })?.status ?? null,
-						),
-						"error",
-					);
-					return {} as { message?: string };
-				});
-				if (res.status === 409) {
-					throw new Error(
-						body.message ||
-							"Пациент уже состоит в другой семейной группе. Не создавайте вторую — сначала откройте существующую.",
-					);
-				}
-				throw new Error(body.message || "Ошибка при создании семьи");
-			}
-
-			const family = await res.json();
-
-			const linkRes = await fetch(`/api/patients/${patientId}`, {
-				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
-				body: JSON.stringify({
-					familyGroupId: family.id,
-				}),
-			});
-			if (!linkRes.ok) throw new Error("Семья создана, но пациент не привязан");
-
-			/*
-			 * БЫЛО: здесь сразу шло зелёное «Семья успешно создана». Ответ 200 на
-			 * привязку это не подтверждает (см. familyIdOfPatient выше), и на самом
-			 * деле пациент в семью не попадал: карточка после перечитывания снова
-			 * писала «Пациент не состоит в семейной группе». Администратор нажимал
-			 * «Создать» второй и третий раз — и каждый раз в базе появлялась ещё одна
-			 * пустая семья, ни к кому не привязанная.
-			 */
-			const attachedFamilyId = await familyIdOfPatient(patientId);
-			if (!attachedFamilyId || attachedFamilyId !== family.id) {
-				showToast(
-					"Семья создана, но пациент к ней не привязан: привязка не сохранилась. Не нажимайте «Создать» повторно — появится ещё одна пустая семья. Сообщите администратору, сама собой привязка не появится.",
-					"error",
-				);
-				setIsCreating(false);
-				onFamilyDataChanged();
-				return;
-			}
-
-			showToast("Семья успешно создана", "success");
-			setNewFamilyName("");
-			setIsCreating(false);
-			onFamilyDataChanged();
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (e: any) {
-			showToast(e.message || "Ошибка", "error");
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	const handleLinkFamily = async (familyId: string) => {
-		setLoading(true);
-		try {
-			const linkRes = await fetch(`/api/patients/${patientId}`, {
-				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
-				body: JSON.stringify({
-					familyGroupId: familyId,
-				}),
-			});
-			if (!linkRes.ok) {
-				const body = await linkRes.json().catch((err) => {
-					logger.error("[Dente]", err);
-					showToast(
-						actionFailureToast(
-							"Ответ сервера не прочитан",
-							(err as { status?: number })?.status ?? null,
-						),
-						"error",
-					);
-					return {} as { message?: string };
-				});
-				throw new Error(body.message || "Ошибка при привязке пациента к семье");
-			}
-
-			/*
-			 * БЫЛО: «Успешно привязан к семье» по одному коду 200. Привязка не
-			 * сохраняется вовсе (см. familyIdOfPatient выше), то есть это сообщение
-			 * было неправдой всегда: администратор считал, что теперь платит общий
-			 * семейный счёт, а пациент оставался сам по себе.
-			 */
-			const attachedFamilyId = await familyIdOfPatient(patientId);
-			if (attachedFamilyId !== familyId) {
-				showToast(
-					"Пациент к семье не привязан: привязка не сохранилась. Оплату по семейному счёту за него провести не получится — сообщите администратору.",
-					"error",
-				);
-				setIsLinking(false);
-				setSearchQuery("");
-				onFamilyDataChanged();
-				return;
-			}
-
-			showToast("Успешно привязан к семье", "success");
-			setIsLinking(false);
-			setSearchQuery("");
-			onFamilyDataChanged();
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (e: any) {
-			showToast(e.message || "Ошибка", "error");
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	/*
-	 * Отвязка от семьи. БЫЛО: UI умел только создать/привязать — выйти из
-	 * группы было нельзя. Пациент, ошибочно попавший в чужую семью, оставался
-	 * в members навсегда; «перепрыгнуть» в правильную группу updatePatientInDb
-	 * теперь запрещает (409/400). Без unlink-кнопки ошибка неисправима из UI.
-	 * СТАЛО: PUT familyGroupId: null + проверка familyIdOfPatient === null.
-	 */
-	const handleUnlinkFamily = async () => {
-		setLoading(true);
-		try {
-			const res = await fetch(`/api/patients/${patientId}`, {
-				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
-				body: JSON.stringify({ familyGroupId: null }),
-			});
-			if (!res.ok) {
-				const body = await res.json().catch((err) => {
-					logger.error("[Dente]", err);
-					showToast(
-						actionFailureToast(
-							"Ответ сервера не прочитан",
-							(err as { status?: number })?.status ?? null,
-						),
-						"error",
-					);
-					return {} as { message?: string };
-				});
-				throw new Error(body.message || "Не удалось отвязать от семьи");
-			}
-			const stillIn = await familyIdOfPatient(patientId);
-			if (stillIn) {
-				showToast(
-					"Отвязка не сохранилась: пациент всё ещё в семье. Обновите карточку и повторите.",
-					"error",
-				);
-				onFamilyDataChanged();
-				return;
-			}
-			showToast("Пациент отвязан от семейной группы", "success");
-			onFamilyDataChanged();
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (e: any) {
-			showToast(e.message || "Ошибка отвязки", "error");
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	/*
-	 * БЫЛО: `{parseFloat(familyData.balance).toLocaleString("ru-RU")} ₽`. Три
-	 * дефекта в одной строке денег:
-	 *   1. Нет поля balance (или оно null) — parseFloat даёт NaN, и на экране
-	 *      семейного счёта стояло «NaN ₽».
-	 *   2. Голый toLocaleString печатает не больше трёх знаков дроби и без
-	 *      обязательных двух: 1500,5 выводилось «1 500,5 ₽», а полтинник в такой
-	 *      записи читается как пять копеек.
-	 *   3. Правило одно на всю программу: деньги идут через money() из
-	 *      AppHelpers, иначе форматов столько же, сколько экранов.
-	 * Ноль вместо непрочитанного баланса тоже не годится: «0 ₽» на семейном счёте
-	 * — это утверждение, что денег нет, и по нему возьмут оплату наличными вместо
-	 * списания с общего счёта. Поэтому неизвестное значение так и называется.
-	 */
-	const familyBalanceRaw = familyData?.balance;
-	const familyBalanceNumber =
-		typeof familyBalanceRaw === "string"
-			? Number(familyBalanceRaw)
-			: familyBalanceRaw;
-	const familyBalanceKnown =
-		familyBalanceRaw !== null &&
-		familyBalanceRaw !== undefined &&
-		familyBalanceRaw !== "" &&
-		Number.isFinite(Number(familyBalanceNumber));
 
 	return (
 		<div
 			data-testid="patient-family-card"
 			className="panel mb-5 p-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
 		>
-			<div className="flex items-center justify-between gap-2 mb-4">
-				<h3 className="flex items-center gap-2 m-0 p-0 border-none">
-					<Users size={16} className="text-[var(--teal)]" />
-					<span className="text-sm font-semibold text-[var(--ink)]">
-						{familyData ? familyData.name || "Семья пациента" : "Семейный счет"}
-					</span>
-				</h3>
-				<button
-					type="button"
-					data-testid="btn-open-family-wallet-modal"
-					onClick={() => setIsWalletModalOpen(true)}
-					className="min-h-[44px] sm:min-h-[32px] h-8 px-3 rounded-lg bg-[var(--teal)] text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:opacity-95 transition-opacity shadow-xs shrink-0"
-				>
-					<Wallet size={14} className="shrink-0" />
-					<span>Семейный кошелек</span>
-				</button>
-			</div>
+			<FamilyCardHeader familyName={familyData?.name} onOpenWallet={() => logic.setIsWalletModalOpen(true)} />
 
 			{familyData ? (
-				<>
-					<div className="flex justify-between items-center bg-[var(--paper-soft)] p-3 rounded-lg border border-[var(--line)] mb-4">
-						<span className="text-xs font-medium text-[var(--muted)]">
-							Баланс семьи:
-						</span>
-						{familyBalanceKnown ? (
-							<span className="text-base font-bold text-[var(--teal)]">
-								{money(Number(familyBalanceNumber))}
-							</span>
-						) : (
-							<span
-								className="text-xs font-semibold text-amber-700 dark:text-amber-400 text-right"
-								title="Сервер не прислал сумму по этой семье"
-							>
-								Баланс не прочитан. Откройте раздел «Деньги», чтобы увидеть
-								сумму.
-							</span>
-						)}
-					</div>
-					<div className="flex flex-col gap-2">
-						<div className="flex items-center justify-between">
-							<span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
-								Члены семьи (выбор карты):
-							</span>
-							<span className="text-[11px] text-[var(--muted)] font-mono">
-								{familyData?.members?.length || 0} чел.
-							</span>
-						</div>
-						<div
-							className="dente-filter-chips"
-							role="tablist"
-							aria-label="Выбор члена семьи"
-							data-testid="family-members-chips"
-						>
-							{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-							{(familyData?.members ?? []).map((m: any) => {
-								const isCurrent = m.id === patientId;
-								const isHead = m.id === familyData.headPatientId;
-								return (
-									<button
-										key={m.id}
-										type="button"
-										role="tab"
-										aria-selected={isCurrent}
-										data-active={isCurrent}
-										onClick={() => {
-											usePatientStore.getState().setSelectedPatientId(m.id);
-										}}
-										className={`dente-filter-chip ${isCurrent ? "active" : ""}`}
-										data-testid={`family-member-chip-${m.id}`}
-										title={`Переключить на пациента: ${m.fullName}${isHead ? " (Глава семьи)" : ""}`}
-									>
-										<span>{m.fullName}</span>
-										{isHead && (
-											<span className="text-[10px] opacity-75 font-semibold">
-												(Глава)
-											</span>
-										)}
-									</button>
-								);
-							})}
-						</div>
-					</div>
-					<button
-						type="button"
-						className="mt-4 w-full flex items-center justify-center gap-1.5 p-2.5 min-h-[44px] sm:min-h-[32px] text-xs bg-[var(--paper-soft)] hover:bg-[var(--bad-bg)] text-[var(--ink)] hover:text-[var(--bad-fg)] rounded-xl font-semibold cursor-pointer border border-[var(--line)] hover:border-[var(--bad-border,rgba(239,68,68,0.3))] transition-colors"
-						onClick={handleUnlinkFamily}
-						disabled={loading}
-						data-testid="patient-family-unlink"
-					>
-						<Unlink size={16} />
-						{loading ? "Отвязка..." : "Отвязать от семьи"}
-					</button>
-				</>
-			) : loadFailure ? (
-				/*
-				 * Отказ чтения ВМЕСТО пустоты и без кнопок «Создать семью» и
-				 * «Привязать»: пока неизвестно, есть ли у пациента семья, любое из
-				 * этих действий может завести ему второй общий счёт.
-				 */
-				<div className="mt-3">
-					<PanelLoadFailure
-						subject={FAMILY_SUBJECT}
-						status={loadFailure.status}
-						onRetry={onRetryLoad ?? onFamilyDataChanged}
-					/>
-				</div>
+				<FamilyMembersView
+					patientId={patientId}
+					familyData={familyData}
+					loading={logic.loading}
+					onUnlink={logic.handleUnlinkFamily}
+				/>
 			) : (
-				<div className="mt-3">
-					<p className="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
-						{panelStateText(FAMILY_SUBJECT, { phase: "empty" }).title}.{" "}
-						{panelStateText(FAMILY_SUBJECT, { phase: "empty" }).hint} Создайте
-						новую семью или привяжите пациента к существующей.
-					</p>
-
-					{isCreating ? (
-						<div className="flex flex-col gap-3">
-							<input
-								type="text"
-								className="w-full p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] outline-none text-xs"
-								placeholder="Название семьи (напр. Семья Ивановых)"
-								value={newFamilyName}
-								onChange={(e) => setNewFamilyName(e.target.value)}
-							/>
-							<div className="flex gap-2">
-								<button
-									type="button"
-									className="flex-1 bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white p-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-xl font-semibold cursor-pointer border-0 inline-flex items-center justify-center transition-all"
-									onClick={handleCreateFamily}
-									disabled={loading}
-								>
-									{loading ? "Создание..." : "Создать"}
-								</button>
-								<button
-									type="button"
-									className="flex-1 bg-[var(--paper-soft)] text-[var(--ink)] p-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-xl font-semibold cursor-pointer border border-[var(--line)] inline-flex items-center justify-center"
-									onClick={() => setIsCreating(false)}
-									disabled={loading}
-								>
-									Отмена
-								</button>
-							</div>
-						</div>
-					) : isLinking ? (
-						<div className="flex flex-col gap-3">
-							<div className="dente-search-wrap">
-								<Search
-									size={14}
-									className="dente-search-icon"
-									aria-hidden="true"
-								/>
-								<input
-									type="text"
-									className="dente-search-input"
-									placeholder="Поиск семьи по названию..."
-									value={searchQuery}
-									onChange={(e) => setSearchQuery(e.target.value)}
-								/>
-							</div>
-
-							<div className="max-h-[150px] overflow-y-auto flex flex-col gap-1">
-								{searchLoading && (
-									<div className="text-xs text-slate-400 text-center py-2">
-										Поиск...
-									</div>
-								)}
-								{/* Отказ поиска и честное «не найдено» — разные утверждения, и
-								    раньше оба печатались одной строкой «Семьи не найдены». */}
-								{!searchLoading && searchFailed && (
-									<div className="text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-lg p-2.5 leading-relaxed">
-										Поиск семей не выполнен: не получилось связаться с сервером.
-										Не считайте, что такой семьи нет — повторите поиск через
-										минуту, иначе появится вторая семья с тем же названием.
-									</div>
-								)}
-								{!searchLoading &&
-									!searchFailed &&
-									searchQuery.length >= 2 &&
-									(searchResults ?? []).length === 0 && (
-										<div className="text-xs text-slate-400 text-center py-2">
-											Семьи с таким названием не найдены. Проверьте написание
-											или создайте новую семью.
-										</div>
-									)}
-								{(searchResults ?? []).map((f) => (
-									<button
-										type="button"
-										key={f.id}
-										className="w-full text-left flex justify-between items-center p-2 min-h-[44px] sm:min-h-[32px] bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl cursor-pointer hover:bg-[var(--paper-hover,var(--paper-soft))] text-[var(--ink)] transition-colors"
-										onClick={() => handleLinkFamily(f.id)}
-									>
-										<div>
-											<div className="text-xs font-semibold text-[var(--ink)]">
-												{f.name}
-											</div>
-										</div>
-										<span className="px-2.5 py-1 text-xs bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] rounded-lg font-semibold">
-											Выбрать
-										</span>
-									</button>
-								))}
-							</div>
-
-							<div className="flex gap-2 mt-1">
-								<button
-									type="button"
-									className="w-full p-2 min-h-[44px] sm:min-h-[32px] text-xs bg-[var(--paper-soft)] text-[var(--ink)] rounded-xl font-semibold cursor-pointer border border-[var(--line)] inline-flex items-center justify-center"
-									onClick={() => {
-										setIsLinking(false);
-										setSearchQuery("");
-										setSearchResults([]);
-									}}
-									disabled={loading}
-								>
-									Отмена
-								</button>
-							</div>
-						</div>
-					) : (
-						<div className="dente-segmented-bar w-full" role="group" aria-label="Действия с семьей">
-							<button
-								type="button"
-								className="dente-segmented-item flex-1"
-								onClick={() => {
-									const namePart =
-										typeof patientName === "string"
-											? patientName.trim().split(" ")[0]
-											: "";
-									setNewFamilyName(`Семья ${namePart}`.trim());
-									setIsCreating(true);
-								}}
-							>
-								<UserPlus size={14} /> <span>Создать семью</span>
-							</button>
-							<button
-								type="button"
-								className="dente-segmented-item flex-1"
-								onClick={() => setIsLinking(true)}
-							>
-								<LinkIcon size={14} /> <span>Привязать</span>
-							</button>
-						</div>
-					)}
-				</div>
+				<FamilyEmptyActions
+					loadFailure={loadFailure}
+					onRetryLoad={onRetryLoad}
+					onFamilyDataChanged={onFamilyDataChanged}
+					isCreating={logic.isCreating}
+					setIsCreating={logic.setIsCreating}
+					isLinking={logic.isLinking}
+					setIsLinking={logic.setIsLinking}
+					newFamilyName={logic.newFamilyName}
+					setNewFamilyName={logic.setNewFamilyName}
+					searchQuery={logic.searchQuery}
+					setSearchQuery={logic.setSearchQuery}
+					searchResults={logic.searchResults}
+					searchLoading={logic.searchLoading}
+					searchFailed={logic.searchFailed}
+					loading={logic.loading}
+					patientName={patientName}
+					handleCreateFamily={logic.handleCreateFamily}
+					handleLinkFamily={logic.handleLinkFamily}
+				/>
 			)}
 
 			<FamilyWalletModal
-				isOpen={isWalletModalOpen}
-				onClose={() => setIsWalletModalOpen(false)}
+				isOpen={logic.isWalletModalOpen}
+				onClose={() => logic.setIsWalletModalOpen(false)}
 				patientId={patientId}
 				patientName={patientName}
 				familyData={familyData}
@@ -691,3 +73,5 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 		</div>
 	);
 };
+
+export default PatientFamilyCard;

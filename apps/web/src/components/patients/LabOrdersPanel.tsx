@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
-import { LabOrdersPage, LabActionPromptModal } from "../../pages/LabOrdersPage";
+import { LabOrdersPage } from "../../pages/LabOrdersPage";
 import { EXPRESS_LAB_PRESETS } from "../lab/labMath";
 import { useLabOrdersPanelLogic } from "./useLabOrdersPanelLogic";
 import { LabOrdersQuickForm } from "./LabOrdersQuickForm";
@@ -20,17 +20,8 @@ import { LabOrderCardItem } from "./LabOrderCardItem";
 import "./LabOrdersPanel.css";
 
 // Lazy-loaded secondary modals for low-spec hardware (4GB RAM, 5400 RPM HDD)
-const DentalLabOrderModal = lazy(() =>
-	import("../lab/DentalLabOrderModal").then((m) => ({ default: m.DentalLabOrderModal }))
-);
-const DentalLabOrdersHubModal = lazy(() =>
-	import("../lab/DentalLabOrdersHubModal").then((m) => ({ default: m.DentalLabOrdersHubModal }))
-);
-const DentalLabOrdersTrackerModal = lazy(() =>
-	import("../lab/DentalLabOrdersTrackerModal").then((m) => ({ default: m.DentalLabOrdersTrackerModal }))
-);
-const LabTrackingDrawer = lazy(() =>
-	import("../lab/LabTrackingDrawer").then((m) => ({ default: m.LabTrackingDrawer }))
+const DentalLabOrderDrawer = lazy(() =>
+	import("../lab/DentalLabOrderDrawer").then((m) => ({ default: m.DentalLabOrderDrawer }))
 );
 const IntraoralScan3DViewerModal = lazy(() =>
 	import("../radiology/IntraoralScan3DViewerModal").then((m) => ({ default: m.IntraoralScan3DViewerModal }))
@@ -350,89 +341,33 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 				</div>
 			)}
 
-			{/* Full CAD/CAM Order Modal */}
-			{logic.isOrderModalOpen && (
+			{/* Full CAD/CAM Order Drawer (SSOT) */}
+			{(logic.isOrderModalOpen || logic.isTrackingDrawerOpen || logic.isLabHubOpen || logic.isTrackerModalOpen) && (
 				<Suspense fallback={null}>
-					<DentalLabOrderModal
-						isOpen={logic.isOrderModalOpen}
-						onClose={() => logic.setIsOrderModalOpen(false)}
-						initialOrder={logic.selectedOrderForEdit}
+					<DentalLabOrderDrawer
+						isOpen={Boolean(logic.isOrderModalOpen || logic.isTrackingDrawerOpen || logic.isLabHubOpen || logic.isTrackerModalOpen)}
+						onClose={() => {
+							logic.setIsOrderModalOpen(false);
+							logic.setIsTrackingDrawerOpen(false);
+							logic.setIsLabHubOpen(false);
+							logic.setIsTrackerModalOpen(false);
+							logic.setSelectedOrderForEdit(null);
+						}}
+						editingOrder={logic.selectedOrderForEdit}
 						initialTab={logic.modalInitialTab}
 						patientId={patientId}
-						onOrderSaved={() => logic.fetchOrders()}
-					/>
-				</Suspense>
-			)}
-
-			{/* 7-Stage Tracking Drawer */}
-			{logic.isTrackingDrawerOpen && (
-				<Suspense fallback={null}>
-					<LabTrackingDrawer
-						isOpen={logic.isTrackingDrawerOpen}
-						onClose={() => logic.setIsTrackingDrawerOpen(false)}
-						order={logic.selectedOrderForTracking}
-						onStageUpdate={async (orderId, newStage, note) => {
-							try {
-								const res = await fetch(`/api/lab/orders/${orderId}`, {
-									method: "PATCH",
-									headers: {
-										"Content-Type": "application/json",
-										...denteAdminSecretRequestHeaders(),
-									},
-									body: JSON.stringify({
-										stage: newStage,
-										notes: note,
-									}),
-								});
-								if (!res.ok) {
-									const errData = await res.json().catch(() => null);
-									throw new Error(errData?.message || `Ошибка смены этапа (${res.status})`);
-								}
-								showToast("Этап наряда ЗТЛ успешно сохранен в базе данных", "success");
-								await logic.fetchOrders();
-							} catch (err: any) {
-								showToast(err.message || "Не удалось обновить этап наряда в БД", "error");
-							}
-						}}
-					/>
-				</Suspense>
-			)}
-
-			{logic.isLabHubOpen && (
-				<Suspense fallback={null}>
-					<DentalLabOrdersHubModal
-						isOpen={logic.isLabHubOpen}
-						onClose={() => logic.setIsLabHubOpen(false)}
-						currentPatientId={patientId}
-						currentPatientName={logic.orders[0]?.patientName}
-						currentDoctorName={logic.appLogic?.activeDoctor?.fullName || logic.appLogic?.activeDoctor?.name}
+						patientName={logic.orders[0]?.patientName}
+						doctorId={logic.appLogic?.activeDoctor?.id}
+						doctorName={logic.appLogic?.activeDoctor?.fullName || logic.appLogic?.activeDoctor?.name}
 						onSaveOrder={() => {
 							void logic.fetchOrders();
 						}}
-					/>
-				</Suspense>
-			)}
-
-			{logic.isTrackerModalOpen && (
-				<Suspense fallback={null}>
-					<DentalLabOrdersTrackerModal
-						isOpen={logic.isTrackerModalOpen}
-						onClose={() => logic.setIsTrackerModalOpen(false)}
-						currentPatientId={patientId}
-						currentPatientName={logic.orders[0]?.patientName}
-						currentDoctorName={logic.appLogic?.activeDoctor?.fullName || logic.appLogic?.activeDoctor?.name}
 						onOrderSaved={() => {
 							void logic.fetchOrders();
 						}}
 					/>
 				</Suspense>
 			)}
-
-			{/* Non-blocking Action Prompt Modal (Mandates 8e, 8n) */}
-			<LabActionPromptModal
-				state={logic.promptState}
-				onClose={() => logic.setPromptState(null)}
-			/>
 
 			{/* 3D Intraoral Scan Viewer Modal */}
 			{view3DScanOrder && (

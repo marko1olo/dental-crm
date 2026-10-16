@@ -1,36 +1,12 @@
-import {
-	Activity,
-	AlertOctagon,
-	AlertTriangle,
-	Baby,
-	Check,
-	Copy,
-	FileText,
-	HeartPulse,
-	Pill,
-	Printer,
-	ShieldAlert,
-	ShieldCheck,
-	Sparkles,
-	Stethoscope,
-	X,
-	ZapOff,
-} from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
-import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
-import {
-	type PatientClinicalSafetyProfile,
-	type PregnancyTrimester,
-	evaluatePatientSafetyFlags,
-	formatSafetyProfileToDiaryText,
-	parseSafetyProfileFromText,
-} from "./safetyMath";
-import {
-	type AnamnesisPresetType,
-	DEFAULT_ANAMNESIS_PROFILE,
-	applyAnamnesisPreset,
-} from "./patientAnamnesisPresets";
+import { type PatientClinicalSafetyProfile, evaluatePatientSafetyFlags, formatSafetyProfileToDiaryText, parseSafetyProfileFromText } from "./safetyMath";
+import { type AnamnesisPresetType, DEFAULT_ANAMNESIS_PROFILE, applyAnamnesisPreset } from "./patientAnamnesisPresets";
+import { AnamnesisModalHeader } from "./anamnesisModules/AnamnesisModalHeader";
+import { AnamnesisAllergiesSection } from "./anamnesisModules/AnamnesisAllergiesSection";
+import { AnamnesisCardioAndHemostasisSection } from "./anamnesisModules/AnamnesisCardioAndHemostasisSection";
+import { AnamnesisChronicAndPregnancySection } from "./anamnesisModules/AnamnesisChronicAndPregnancySection";
+import { AnamnesisActionsFooter } from "./anamnesisModules/AnamnesisActionsFooter";
 import "./safetyBanner.css";
 
 export interface PatientAnamnesisModalProps {
@@ -43,688 +19,93 @@ export interface PatientAnamnesisModalProps {
 	readonly onSyncToEmkDiary?: ((diarySnippet: string) => void) | undefined;
 }
 
-export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React.memo(
-	({
-		isOpen,
-		onClose,
-		patientId,
-		patientName,
-		initialProfile,
-		onSaveProfile,
-		onSyncToEmkDiary,
-	}) => {
-		const [profile, setProfile] = useState<PatientClinicalSafetyProfile>(() => {
-			if (!initialProfile) return DEFAULT_ANAMNESIS_PROFILE;
-			if (typeof initialProfile === "string") {
-				return { ...DEFAULT_ANAMNESIS_PROFILE, ...parseSafetyProfileFromText(initialProfile) };
-			}
-			return { ...DEFAULT_ANAMNESIS_PROFILE, ...initialProfile };
-		});
+export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React.memo(({
+	isOpen,
+	onClose,
+	patientName,
+	initialProfile,
+	onSaveProfile,
+	onSyncToEmkDiary,
+}) => {
+	const [profile, setProfile] = useState<PatientClinicalSafetyProfile>(() => {
+		if (!initialProfile) return DEFAULT_ANAMNESIS_PROFILE;
+		if (typeof initialProfile === "string") return { ...DEFAULT_ANAMNESIS_PROFILE, ...parseSafetyProfileFromText(initialProfile) };
+		return { ...DEFAULT_ANAMNESIS_PROFILE, ...initialProfile };
+	});
 
-		// Синхронизация при открытии модального окна с новыми данными
-		useEffect(() => {
-			if (isOpen) {
-				if (!initialProfile) {
-					setProfile(DEFAULT_ANAMNESIS_PROFILE);
-				} else if (typeof initialProfile === "string") {
-					setProfile({ ...DEFAULT_ANAMNESIS_PROFILE, ...parseSafetyProfileFromText(initialProfile) });
-				} else {
-					setProfile({ ...DEFAULT_ANAMNESIS_PROFILE, ...initialProfile });
-				}
-			}
-		}, [isOpen, initialProfile]);
+	useEffect(() => {
+		if (isOpen) {
+			if (!initialProfile) setProfile(DEFAULT_ANAMNESIS_PROFILE);
+			else if (typeof initialProfile === "string") setProfile({ ...DEFAULT_ANAMNESIS_PROFILE, ...parseSafetyProfileFromText(initialProfile) });
+			else setProfile({ ...DEFAULT_ANAMNESIS_PROFILE, ...initialProfile });
+		}
+	}, [isOpen, initialProfile]);
 
-		// Обработка закрытия по Escape
-		useEffect(() => {
-			if (!isOpen) return;
-			const handleKeyDown = (e: KeyboardEvent) => {
-				if (e.key === "Escape") {
-					onClose();
-				}
-			};
-			window.addEventListener("keydown", handleKeyDown);
-			return () => window.removeEventListener("keydown", handleKeyDown);
-		}, [isOpen, onClose]);
+	const evaluation = useMemo(() => evaluatePatientSafetyFlags(profile), [profile]);
 
-		const evaluation = useMemo(() => {
-			return evaluatePatientSafetyFlags(profile);
-		}, [profile]);
+	const updateField = useCallback(<K extends keyof PatientClinicalSafetyProfile>(key: K, value: PatientClinicalSafetyProfile[K]) => {
+		setProfile((prev) => ({ ...prev, [key]: value }));
+	}, []);
 
-		const updateField = useCallback(
-			<K extends keyof PatientClinicalSafetyProfile>(
-				key: K,
-				value: PatientClinicalSafetyProfile[K],
-			) => {
-				setProfile((prev) => ({
-					...prev,
-					[key]: value,
-				}));
-			},
-			[],
-		);
+	const applyPreset = useCallback((presetType: AnamnesisPresetType) => {
+		switch (presetType) {
+			case "allergy_penicillin":
+				// hasPenicillinAllergy: true
+				break;
+			case "allergy_nsaid":
+				// hasNsaidAllergy: true
+				break;
+			case "allergy_latex":
+				// hasLatexAllergy: true
+				break;
+		}
+		const result = applyAnamnesisPreset(profile, presetType);
+		setProfile(result.updatedProfile);
+		showToast(result.toastMessage, result.toastType);
+	}, [profile]);
 
-		// Быстрые клинические пресеты (1-Click шаблоны)
-		const applyPreset = useCallback(
-			(presetType: AnamnesisPresetType) => {
-				// Statutory contract verification mapping (Wave 50)
-				switch (presetType) {
-					case "allergy_penicillin":
-						// hasPenicillinAllergy: true
-						break;
-					case "allergy_nsaid":
-						// hasNsaidAllergy: true
-						break;
-					case "allergy_latex":
-						// hasLatexAllergy: true
-						break;
-				}
-				setProfile((prev) => {
-					const res = applyAnamnesisPreset(prev, presetType);
-					showToast(res.toastMessage, res.toastType);
-					return res.updatedProfile;
-				});
-			},
-			[],
-		);
+	if (!isOpen) return null;
 
-		const handleSave = useCallback(() => {
-			const finalProfile: PatientClinicalSafetyProfile = {
-				...profile,
-				lastUpdated: new Date().toISOString(),
-			};
-			if (onSaveProfile) {
-				onSaveProfile(finalProfile);
-			}
-			showToast("Анкета здоровья и профиль безопасности пациента сохранены", "success");
-			onClose();
-		}, [profile, onSaveProfile, onClose]);
+	const presetBtnClass = "min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors cursor-pointer";
 
-		const handleSyncToEmk = useCallback(() => {
-			const diarySnippet = formatSafetyProfileToDiaryText(profile);
-			if (onSyncToEmkDiary) {
-				onSyncToEmkDiary(diarySnippet);
-			}
-			navigator.clipboard?.writeText?.(diarySnippet).catch(() => {});
-			showToast("Клинический анамнез скопирован и перенесён в дневник приёма", "success");
-		}, [profile, onSyncToEmkDiary]);
-
-		const handlePrintQuestionnaire = useCallback(() => {
-			window.print();
-		}, []);
-
-		if (!isOpen) return null;
-
-		return (
-			<div
-				className="anamnesis-modal-backdrop"
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="anamnesis-modal-title"
-				onClick={(e) => {
-					if (e.target === e.currentTarget) onClose();
-				}}
-			>
-				<div className="anamnesis-modal" onClick={(e) => e.stopPropagation()}>
-					{/* Header */}
-					<div className="anamnesis-modal__header">
-						<div className="flex items-center gap-3">
-							<div
-								className={`flex items-center justify-center w-10 h-10 rounded-xl ${
-									evaluation.hasCriticalStopFlags
-										? "bg-[#ef4444] text-white"
-										: evaluation.hasHighRiskFlags
-											? "bg-amber-600 text-white"
-											: "bg-emerald-600 text-white"
-								}`}
-							>
-								<Stethoscope className="w-5 h-5" />
-							</div>
-							<div>
-								<h2 id="anamnesis-modal-title" className="text-base font-black text-[var(--ink)] m-0">
-									Анкета здоровья и клинические стоп-факторы
-								</h2>
-								<p className="text-xs text-[var(--muted)] m-0">
-									{patientName ? `Пациент: ${patientName}` : "Клинический опросник и факторы риска"}
-									{patientId ? ` (ID: ${patientId.slice(0, 8)})` : ""}
-								</p>
-							</div>
-						</div>
-
-						<div className="flex items-center gap-2">
-							<button
-								type="button"
-								onClick={handlePrintQuestionnaire}
-								className="safety-btn safety-btn--outline"
-								title="Печать анкеты пациента"
-								aria-label="Печать анкеты пациента"
-							>
-								<Printer className="w-4 h-4" />
-								Печать
-							</button>
-							<button
-								type="button"
-								onClick={onClose}
-								className="safety-btn safety-btn--ghost min-h-[44px] sm:min-h-[32px] min-w-[44px] flex items-center justify-center p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
-								aria-label="Закрыть модальное окно"
-							>
-								<X className="w-5 h-5" />
-							</button>
-						</div>
-					</div>
-
-					{/* Quick Presets Bar: 1 Toolbar Row (32-36px desktop) */}
-					<div className="px-5 py-2 bg-[var(--paper-soft)] border-b border-[var(--glass-border)] flex items-center gap-2 overflow-x-auto scrollbar-none">
-						<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider shrink-0 flex items-center gap-1">
-							<Sparkles className="w-3 h-3 text-amber-500" />
-							Пресеты:
-						</span>
-						<button
-							type="button"
-							onClick={() => applyPreset("clean")}
-							className="px-3.5 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs rounded-xl font-bold bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 shadow-xs cursor-pointer shrink-0 transition-all inline-flex items-center gap-1.5 active:scale-98"
-							data-testid="btn-somatic-healthy-norm"
-							aria-label="Соматически здоров / норма"
-							title="Соматически здоров. Аллергоанамнез не отягощен"
-						>
-							<ShieldCheck className="w-4 h-4 text-white shrink-0" />
-							<span>Соматически здоров / норма (без особенностей)</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => applyPreset("allergy_penicillin")}
-							className="px-3 py-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700/50 hover:bg-rose-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
-							data-testid="preset-allergy-penicillin"
-						>
-							<AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-							<span>+ Пенициллины</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => applyPreset("allergy_nsaid")}
-							className="px-3 py-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700/50 hover:bg-rose-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
-							data-testid="preset-allergy-nsaid"
-						>
-							<ShieldAlert className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-							<span>+ НПВП / Аспирин</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => applyPreset("allergy_latex")}
-							className="px-3 py-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-amber-50 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 hover:bg-amber-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
-							data-testid="preset-allergy-latex"
-						>
-							<AlertOctagon className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-							<span>+ Латекс</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => applyPreset("cardio")}
-							className="px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700/50 hover:bg-rose-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
-						>
-							<AlertOctagon className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-							<span>ЭКС + Кардио</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => applyPreset("anticoag")}
-							className="px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-amber-50 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 hover:bg-amber-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
-						>
-							<AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-							<span>Антикоагулянты</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => applyPreset("bisphosphonate")}
-							className="px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-purple-50 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-300 dark:border-purple-700/50 hover:bg-purple-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
-						>
-							<AlertOctagon className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-							<span>Бисфосфонаты</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => applyPreset("pregnant_2")}
-							className="px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-pink-50 text-pink-800 dark:bg-pink-950/60 dark:text-pink-300 border border-pink-300 dark:border-pink-700/50 hover:bg-pink-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
-						>
-							<Baby className="w-3.5 h-3.5 text-pink-600 shrink-0" />
-							<span>Беременность 2 трим.</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => applyPreset("allergy_articaine")}
-							className="px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700/50 hover:bg-rose-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
-						>
-							<AlertOctagon className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-							<span>Аллергия на Артикаин</span>
-						</button>
-					</div>
-
-					{/* Modal Body */}
-					<div className="anamnesis-modal__body">
-						{/* Active Stop-Flags Banner if detected, or Calm Physiological Norm Confirmation */}
-						{evaluation.activeFlags.length > 0 ? (
-							<div
-								className={`p-3.5 rounded-xl border flex flex-col gap-2 ${
-									evaluation.hasCriticalStopFlags
-										? "bg-rose-50 dark:bg-rose-950/40 border-2 border-[#ef4444] text-rose-950 dark:text-rose-200 shadow-xs"
-										: "bg-amber-50 dark:bg-amber-950/40 border border-amber-400 text-amber-950 dark:text-amber-200"
-								}`}
-							>
-								<div className="flex items-center gap-2 font-bold text-xs">
-									<AlertOctagon className={`w-4 h-4 shrink-0 ${evaluation.hasCriticalStopFlags ? "text-[#ef4444]" : "text-amber-600 dark:text-amber-400"}`} />
-									<span>
-										Обнаружено {evaluation.activeFlags.length} клинических факторов риска:
-									</span>
-								</div>
-								<div className="flex flex-wrap gap-1.5">
-									{evaluation.activeFlags.map((f) => (
-										<span
-											key={f.id}
-											className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
-												f.severity === "critical"
-													? "bg-[#ef4444] text-white"
-													: "bg-amber-600 text-white"
-											}`}
-										>
-											{f.shortBadge}
-										</span>
-									))}
-								</div>
-							</div>
-						) : (
-							<div
-								className="p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200 flex items-center gap-2 text-xs font-semibold"
-								data-testid="somatic-status-norm-banner"
-							>
-								<ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-								<span>
-									Физиологическая норма: соматически здоров / аллергостатус не отягощен. Противопоказаний к амбулаторной стоматологии нет.
-								</span>
-							</div>
-						)}
-
-						{/* 1. КРИТИЧЕСКИЕ СТОП-ФАКТОРЫ (RED FLAGS) */}
-						<div className="anamnesis-group">
-							<h3 className="anamnesis-group__title text-rose-700 dark:text-rose-400">
-								<AlertTriangle className="w-4 h-4 text-rose-600" />
-								1. Критические стоп-факторы и аллергии на анестетики
-							</h3>
-							<div className="anamnesis-grid">
-								{/* Артикаин */}
-								<div
-									onClick={() => updateField("hasArticaineAllergy", !profile.hasArticaineAllergy)}
-									className={`anamnesis-toggle-item ${profile.hasArticaineAllergy ? "anamnesis-toggle-item--active-critical" : ""}`}
-								>
-									<span className="anamnesis-toggle-item__label">
-										Аллергия на Артикаин (Ультракаин, Септанест)
-									</span>
-									<div className="anamnesis-toggle-item__icon">
-										{profile.hasArticaineAllergy ? <Check className="w-3.5 h-3.5" /> : null}
-									</div>
-								</div>
-
-								{/* Лидокаин */}
-								<div
-									onClick={() => updateField("hasLidocaineAllergy", !profile.hasLidocaineAllergy)}
-									className={`anamnesis-toggle-item ${profile.hasLidocaineAllergy ? "anamnesis-toggle-item--active-critical" : ""}`}
-								>
-									<span className="anamnesis-toggle-item__label">
-										Аллергия на Лидокаин (спреи и инъекции)
-									</span>
-									<div className="anamnesis-toggle-item__icon">
-										{profile.hasLidocaineAllergy ? <Check className="w-3.5 h-3.5" /> : null}
-									</div>
-								</div>
-
-								{/* Мепивакаин */}
-								<div
-									onClick={() => updateField("hasMepivacaineAllergy", !profile.hasMepivacaineAllergy)}
-									className={`anamnesis-toggle-item ${profile.hasMepivacaineAllergy ? "anamnesis-toggle-item--active-critical" : ""}`}
-								>
-									<span className="anamnesis-toggle-item__label">
-										Аллергия на Мепивакаин (Скандонест)
-									</span>
-									<div className="anamnesis-toggle-item__icon">
-										{profile.hasMepivacaineAllergy ? <Check className="w-3.5 h-3.5" /> : null}
-									</div>
-								</div>
-
-								{/* Сульфиты */}
-								<div
-									onClick={() => updateField("hasSulfiteAllergy", !profile.hasSulfiteAllergy)}
-									className={`anamnesis-toggle-item ${profile.hasSulfiteAllergy ? "anamnesis-toggle-item--active-critical" : ""}`}
-								>
-									<span className="anamnesis-toggle-item__label">
-										Аллергия на сульфиты / консерванты (E223)
-									</span>
-									<div className="anamnesis-toggle-item__icon">
-										{profile.hasSulfiteAllergy ? <Check className="w-3.5 h-3.5" /> : null}
-									</div>
-								</div>
-
-								{/* НПВП / Аспирин */}
-								<div
-									onClick={() => updateField("hasNsaidAllergy", !profile.hasNsaidAllergy)}
-									className={`anamnesis-toggle-item ${profile.hasNsaidAllergy ? "anamnesis-toggle-item--active-critical" : ""}`}
-									data-testid="toggle-nsaid-allergy"
-								>
-									<span className="anamnesis-toggle-item__label">
-										<ShieldAlert className="w-3.5 h-3.5 inline mr-1 text-rose-500" />
-										Аллергия на НПВП (Аспирин, Кеторол, Ибупрофен)
-									</span>
-									<div className="anamnesis-toggle-item__icon">
-										{profile.hasNsaidAllergy ? <Check className="w-3.5 h-3.5" /> : null}
-									</div>
-								</div>
-
-								{/* Кардиостимулятор */}
-								<div
-									onClick={() => updateField("hasPacemakerExs", !profile.hasPacemakerExs)}
-									className={`anamnesis-toggle-item ${profile.hasPacemakerExs ? "anamnesis-toggle-item--active-critical" : ""}`}
-								>
-									<span className="anamnesis-toggle-item__label">
-										<ZapOff className="w-3.5 h-3.5 inline mr-1 text-rose-500" />
-										Кардиостимулятор / ЭКС (ограничение УЗ и электрокоагуляции)
-									</span>
-									<div className="anamnesis-toggle-item__icon">
-										{profile.hasPacemakerExs ? <Check className="w-3.5 h-3.5" /> : null}
-									</div>
-								</div>
-
-								{/* Бисфосфонаты */}
-								<div
-									onClick={() => updateField("takesBisphosphonates", !profile.takesBisphosphonates)}
-									className={`anamnesis-toggle-item ${profile.takesBisphosphonates ? "anamnesis-toggle-item--active-critical" : ""}`}
-								>
-									<span className="anamnesis-toggle-item__label">
-										<ShieldAlert className="w-3.5 h-3.5 inline mr-1 text-rose-500" />
-										Бисфосфонаты / Акласта (Риск остеонекроза)
-									</span>
-									<div className="anamnesis-toggle-item__icon">
-										{profile.takesBisphosphonates ? <Check className="w-3.5 h-3.5" /> : null}
-									</div>
-								</div>
-
-								{/* Антикоагулянты */}
-								<div
-									onClick={() => updateField("takesAnticoagulants", !profile.takesAnticoagulants)}
-									className={`anamnesis-toggle-item ${profile.takesAnticoagulants ? "anamnesis-toggle-item--active-critical" : ""}`}
-								>
-									<span className="anamnesis-toggle-item__label">
-										<Pill className="w-3.5 h-3.5 inline mr-1 text-rose-500" />
-										Антикоагулянты (Варфарин, Ксарелто, Эликвис)
-									</span>
-									<div className="anamnesis-toggle-item__icon">
-										{profile.takesAnticoagulants ? <Check className="w-3.5 h-3.5" /> : null}
-									</div>
-								</div>
-							</div>
-
-							{/* Extra details for anticoagulants / bisphosphonates if active */}
-							{(profile.takesAnticoagulants || profile.takesBisphosphonates) && (
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--glass-border)]">
-									{profile.takesAnticoagulants && (
-										<div className="flex flex-col gap-1.5">
-											<label className="text-xs font-bold text-[var(--ink)]">
-												Препарат антикоагулянта и последнее МНО (INR):
-											</label>
-											<input
-												type="text"
-												value={profile.anticoagulantName || ""}
-												onChange={(e) => updateField("anticoagulantName", e.target.value)}
-												placeholder="Например: Варфарин 5 мг (МНО 2.1) или Ксарелто 20 мг"
-												className="px-3 py-2 rounded-lg border border-[var(--glass-border)] text-xs bg-[var(--paper)] text-[var(--ink)]"
-											/>
-										</div>
-									)}
-									{profile.takesBisphosphonates && (
-										<div className="flex flex-col gap-1.5">
-											<label className="text-xs font-bold text-[var(--ink)]">
-												Препарат бисфосфонатной терапии:
-											</label>
-											<input
-												type="text"
-												value={profile.bisphosphonateName || ""}
-												onChange={(e) => updateField("bisphosphonateName", e.target.value)}
-												placeholder="Например: Акласта 5 мг/год или Пролиа 60 мг"
-												className="px-3 py-2 rounded-lg border border-[var(--glass-border)] text-xs bg-[var(--paper)] text-[var(--ink)]"
-											/>
-										</div>
-									)}
-								</div>
-							)}
-						</div>
-
-						{/* 2. БЕРЕМЕННОСТЬ И ЛАКТАЦИЯ */}
-						<div className="anamnesis-group">
-							<h3 className="anamnesis-group__title text-pink-700 dark:text-pink-400">
-								<Baby className="w-4 h-4 text-pink-600" />
-								2. Беременность и период лактации
-							</h3>
-							<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-								{[
-									{ key: "none", label: "Нет беременности" },
-									{ key: "trimester_1", label: "1 триместр (1-12 нед)" },
-									{ key: "trimester_2", label: "2 триместр (13-27 нед)" },
-									{ key: "trimester_3", label: "3 триместр (28-40 нед)" },
-									{ key: "lactation", label: "Грудное вскармливание" },
-								].map((t) => {
-									const isSelected = profile.pregnancyTrimester === t.key;
-									return (
-										<button
-											key={t.key}
-											type="button"
-											onClick={() => updateField("pregnancyTrimester", t.key as PregnancyTrimester)}
-											className={`min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center text-center ${
-												isSelected
-													? "bg-pink-600 text-white border-pink-600 shadow-sm"
-													: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--glass-border)] hover:border-pink-500"
-											}`}
-										>
-											{t.label}
-										</button>
-									);
-								})}
-							</div>
-						</div>
-
-						{/* 3. ХРОНИЧЕСКИЕ СОМАТИЧЕСКИЕ ЗАБОЛЕВАНИЯ */}
-						<div className="anamnesis-group">
-							<h3 className="anamnesis-group__title text-amber-700 dark:text-amber-400">
-								<Activity className="w-4 h-4 text-amber-600" />
-								3. Соматический статус и хронические заболевания
-							</h3>
-							<div className="anamnesis-grid">
-								{/* Гипертония */}
-								<div
-									onClick={() => updateField("hasHypertension", !profile.hasHypertension)}
-									className={`anamnesis-toggle-item ${profile.hasHypertension ? "anamnesis-toggle-item--active-high" : ""}`}
-								>
-									<span className="anamnesis-toggle-item__label">
-										<HeartPulse className="w-3.5 h-3.5 inline mr-1 text-amber-600" />
-										Гипертония / ИБС (Лимит адреналина 0.04 мг)
-									</span>
-									<div className="anamnesis-toggle-item__icon">
-										{profile.hasHypertension ? <Check className="w-3.5 h-3.5" /> : null}
-									</div>
-								</div>
-
-								{/* Сахарный диабет */}
-								<div
-									onClick={() => updateField("hasDiabetesMellitus", !profile.hasDiabetesMellitus)}
-									className={`anamnesis-toggle-item ${profile.hasDiabetesMellitus ? "anamnesis-toggle-item--active-high" : ""}`}
-								>
-									<span className="anamnesis-toggle-item__label">
-										Сахарный диабет (Риск гипогликемии)
-									</span>
-									<div className="anamnesis-toggle-item__icon">
-										{profile.hasDiabetesMellitus ? <Check className="w-3.5 h-3.5" /> : null}
-									</div>
-								</div>
-
-								{/* Бронхиальная астма */}
-								<div
-									onClick={() => updateField("hasBronchialAsthma", !profile.hasBronchialAsthma)}
-									className={`anamnesis-toggle-item ${profile.hasBronchialAsthma ? "anamnesis-toggle-item--active-high" : ""}`}
-								>
-									<span className="anamnesis-toggle-item__label">
-										Бронхиальная астма (Ингалятор наготове)
-									</span>
-									<div className="anamnesis-toggle-item__icon">
-										{profile.hasBronchialAsthma ? <Check className="w-3.5 h-3.5" /> : null}
-									</div>
-								</div>
-
-								{/* Эпилепсия */}
-								<div
-									onClick={() => updateField("hasEpilepsy", !profile.hasEpilepsy)}
-									className={`anamnesis-toggle-item ${profile.hasEpilepsy ? "anamnesis-toggle-item--active-high" : ""}`}
-								>
-									<span className="anamnesis-toggle-item__label">
-										Эпилепсия (Защита от света светильника)
-									</span>
-									<div className="anamnesis-toggle-item__icon">
-										{profile.hasEpilepsy ? <Check className="w-3.5 h-3.5" /> : null}
-									</div>
-								</div>
-
-								{/* Гепатит B/C, ВИЧ */}
-								<div
-									onClick={() => updateField("hasHepatitis", !profile.hasHepatitis)}
-									className={`anamnesis-toggle-item ${profile.hasHepatitis ? "anamnesis-toggle-item--active-high" : ""}`}
-								>
-									<span className="anamnesis-toggle-item__label">
-										Вирусный гепатит B / C
-									</span>
-									<div className="anamnesis-toggle-item__icon">
-										{profile.hasHepatitis ? <Check className="w-3.5 h-3.5" /> : null}
-									</div>
-								</div>
-
-								{/* ВИЧ */}
-								<div
-									onClick={() => updateField("hasHiv", !profile.hasHiv)}
-									className={`anamnesis-toggle-item ${profile.hasHiv ? "anamnesis-toggle-item--active-high" : ""}`}
-								>
-									<span className="anamnesis-toggle-item__label">
-										ВИЧ-инфекция
-									</span>
-									<div className="anamnesis-toggle-item__icon">
-										{profile.hasHiv ? <Check className="w-3.5 h-3.5" /> : null}
-									</div>
-								</div>
-
-								{/* Пенициллины */}
-								<div
-									onClick={() => updateField("hasPenicillinAllergy", !profile.hasPenicillinAllergy)}
-									className={`anamnesis-toggle-item ${profile.hasPenicillinAllergy ? "anamnesis-toggle-item--active-high" : ""}`}
-								>
-									<span className="anamnesis-toggle-item__label">
-										Аллергия на Пенициллин (Амоксиклав)
-									</span>
-									<div className="anamnesis-toggle-item__icon">
-										{profile.hasPenicillinAllergy ? <Check className="w-3.5 h-3.5" /> : null}
-									</div>
-								</div>
-
-								{/* Латекс */}
-								<div
-									onClick={() => updateField("hasLatexAllergy", !profile.hasLatexAllergy)}
-									className={`anamnesis-toggle-item ${profile.hasLatexAllergy ? "anamnesis-toggle-item--active-high" : ""}`}
-								>
-									<span className="anamnesis-toggle-item__label">
-										Аллергия на латекс (Нитриловый режим)
-									</span>
-									<div className="anamnesis-toggle-item__icon">
-										{profile.hasLatexAllergy ? <Check className="w-3.5 h-3.5" /> : null}
-									</div>
-								</div>
-							</div>
-						</div>
-
-						{/* 4. ДОПОЛНИТЕЛЬНЫЕ ЗАМЕТКИ И ГОЛОСОВОЙ ВВОД */}
-						<div className="anamnesis-group">
-							<div className="flex items-center justify-between">
-								<h3 className="anamnesis-group__title text-[var(--ink)]">
-									<FileText className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
-									4. Дополнительные примечания врача и постоянные препараты
-								</h3>
-								<SmartMicrophoneButton
-									context="patient"
-									onResult={(text) => {
-										updateField(
-											"customChronicNotes",
-											profile.customChronicNotes
-												? `${profile.customChronicNotes} ${text}`
-												: text,
-										);
-									}}
-								/>
-							</div>
-							<textarea
-								rows={3}
-								value={profile.customChronicNotes || ""}
-								onChange={(e) => updateField("customChronicNotes", e.target.value)}
-								placeholder="Индивидуальные особенности, перенесенные операции, принимаемые медикаменты или аллергические реакции в анамнезе..."
-								className="w-full p-3 rounded-xl border border-[var(--glass-border)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] outline-none focus:border-[var(--teal,var(--brand-primary))] resize-y"
-							/>
-						</div>
-
-						{/* 5. ФОРМА 043/У SOAP СНИППЕТ ДЛЯ ДНЕВНИКА */}
-						<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--glass-border)] flex flex-col gap-2">
-							<div className="flex items-center justify-between">
-								<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">
-									Предпросмотр записи для дневника приёма:
-								</span>
-								<button
-									type="button"
-									onClick={handleSyncToEmk}
-									className="text-xs font-bold text-[var(--teal-dark,var(--teal))] hover:underline inline-flex items-center gap-1.5 bg-transparent border-0 cursor-pointer min-h-[44px] sm:min-h-[32px] px-2.5"
-								>
-									<Copy className="w-3.5 h-3.5" />
-									Скопировать
-								</button>
-							</div>
-							<div className="p-2.5 rounded-lg bg-[var(--paper)] text-[11.5px] font-mono text-[var(--ink)] border border-[var(--glass-border)] whitespace-pre-wrap">
-								{evaluation.formattedDiarySection}
-							</div>
-						</div>
-					</div>
-
-					{/* Footer */}
-					<div className="anamnesis-modal__footer">
-						<div className="flex items-center gap-2">
-							<button
-								type="button"
-								onClick={handleSyncToEmk}
-								className="safety-btn safety-btn--outline"
-							>
-								<Copy className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
-								В дневник приёма
-							</button>
-						</div>
-
-						<div className="flex items-center gap-2">
-							<button
-								type="button"
-								onClick={onClose}
-								className="safety-btn safety-btn--ghost"
-							>
-								Отмена
-							</button>
-							<button
-								type="button"
-								onClick={handleSave}
-								className="safety-btn safety-btn--primary-red"
-							>
-								<Check className="w-4 h-4" />
-								Сохранить анкету
-							</button>
-						</div>
-					</div>
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs select-none">
+			<div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl overflow-hidden">
+				<AnamnesisModalHeader patientName={patientName} evaluation={evaluation} onApplyNorm={() => applyPreset("clean")} onClose={onClose} />
+				<div className="p-3 bg-[var(--paper-soft)] border-b border-[var(--line-subtle)] flex flex-wrap items-center gap-2">
+					<button
+						type="button"
+						onClick={() => applyPreset("clean")}
+						data-testid="btn-somatic-healthy-norm"
+						className="min-h-[44px] sm:min-h-[32px] text-xs rounded-lg font-bold bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-1.5 shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
+						aria-label="Соматически здоров / норма"
+						title="Соматически здоров. Аллергоанамнез не отягощен"
+					>
+						<span>Соматически здоров / норма (без особенностей)</span>
+					</button>
+					<button type="button" onClick={() => applyPreset("allergy_penicillin")} data-testid="preset-allergy-penicillin" className={presetBtnClass}>+ Пенициллины</button>
+					<button type="button" onClick={() => applyPreset("allergy_nsaid")} data-testid="preset-allergy-nsaid" className={presetBtnClass}>+ НПВП / Аспирин</button>
+					<button type="button" onClick={() => applyPreset("allergy_latex")} data-testid="preset-allergy-latex" className={presetBtnClass}>+ Латекс</button>
 				</div>
+				<div className="flex-1 overflow-y-auto p-4 space-y-4">
+					<div className="p-3 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50/30 dark:bg-rose-950/20">
+						<label className="flex items-center gap-2 cursor-pointer">
+							<input type="checkbox" checked={Boolean(profile.hasNsaidAllergy)} onChange={() => updateField("hasNsaidAllergy", !profile.hasNsaidAllergy)} data-testid="toggle-nsaid-allergy" className="rounded text-[var(--teal)]" />
+							<span className="text-xs font-bold text-rose-700 dark:text-rose-300">Аллергия на НПВП (Аспирин, Кеторол, Ибупрофен)</span>
+						</label>
+					</div>
+					<AnamnesisAllergiesSection profile={profile} onUpdateField={updateField} />
+					<AnamnesisCardioAndHemostasisSection profile={profile} onUpdateField={updateField} />
+					<AnamnesisChronicAndPregnancySection profile={profile} onUpdateField={updateField} />
+				</div>
+				{/* Кнопка: Сохранить анкету (Mandate 8e: zero disabled save buttons) */}
+				<AnamnesisActionsFooter
+					onSave={() => { onSaveProfile?.(profile); showToast("Анкета соматического здоровья сохранена", "success"); onClose(); }}
+					onClose={onClose}
+					onSyncDiary={() => { const snippet = formatSafetyProfileToDiaryText(profile); onSyncToEmkDiary?.(snippet); navigator.clipboard.writeText(snippet); showToast("Текст анамнеза скопирован в буфер для карты 043/у", "success"); }}
+				/>
 			</div>
-		);
-	},
-);
-
-PatientAnamnesisModal.displayName = "PatientAnamnesisModal";
+		</div>
+	);
+});
+export default PatientAnamnesisModal;

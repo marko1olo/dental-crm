@@ -85,7 +85,7 @@ export const PatientHeaderIdentity: React.FC<PatientHeaderIdentityProps> = ({
 			<div className="min-w-0 flex-1">
 				{/* Line 1: Full name + clinical & legal badges */}
 				<div className="flex items-center gap-1.5 flex-wrap min-w-0">
-					<h2 className="text-sm sm:text-base font-black text-[var(--ink)] leading-tight truncate max-w-[200px] sm:max-w-[280px] lg:max-w-[360px]">
+					<h2 className="text-sm sm:text-base font-black text-[var(--ink)] leading-tight">
 						{fullName}
 					</h2>
 					{isActiveVisit && (

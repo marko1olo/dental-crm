@@ -5,154 +5,36 @@ import type { ElnVkProtocolSectionProps } from "./types";
 export function ElnVkProtocolSection({
 	formState,
 	setFormState,
-	handleToggleVk
+	handleToggleVk,
 }: ElnVkProtocolSectionProps) {
 	return (
 		<div className="sick-leave-body">
-			<div className="sick-leave-section">
-				<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+			<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+				<div className="flex items-center justify-between flex-wrap gap-2">
 					<div>
-						<h4 className="sick-leave-section-title">
-							<UserCheck size={16} />
-							Заседание врачебной комиссии (ВК)
+						<h4 className="m-0 text-sm font-bold text-[var(--ink)] flex items-center gap-1.5">
+							<UserCheck className="w-4 h-4 text-[var(--teal)]" />
+							<span>Заседание врачебной комиссии (ВК) — освобождение от работы</span>
 						</h4>
-						<p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--muted, #64748b)' }}>
-							Обязательно при суммарной нетрудоспособности свыше 15 календарных дней.
+						<p className="m-0 mt-1 text-xs text-[var(--muted)]">
+							В частной стоматологии 1–3 кресла освобождение оформляется лечащим врачом без созыва стационарной комиссии.
 						</p>
 					</div>
 					<button
 						type="button"
-						className={`sick-leave-btn ${formState.isVkRequired ? 'primary' : 'secondary'}`}
+						className={`inline-flex items-center gap-1.5 min-h-[36px] px-3 text-xs font-bold rounded-lg border transition-colors cursor-pointer ${
+							formState.isVkRequired
+								? "border-[var(--teal)] bg-[var(--teal)] text-white shadow-2xs"
+								: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)]"
+						}`}
 						onClick={() => handleToggleVk(!formState.isVkRequired)}
 					>
-						{formState.isVkRequired ? 'ВК Активирована' : 'Сформировать протокол ВК'}
+						{formState.isVkRequired ? "✓ Согласование ВК активно" : "Активировать отметку ВК (>15 дн.)"}
 					</button>
 				</div>
-
-				{formState.isVkRequired && formState.vkProtocol && (
-					<div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', marginTop: '0.5rem' }}>
-						<div className="sick-leave-grid-3">
-							<div className="sick-leave-field">
-								<label className="sick-leave-label">Номер протокола ВК</label>
-								<input
-									type="text"
-									className="sick-leave-input"
-									value={formState.vkProtocol.protocolNumber}
-									onChange={(e) =>
-										setFormState((prev) => ({
-											...prev,
-											vkProtocol: prev.vkProtocol
-												? { ...prev.vkProtocol, protocolNumber: e.target.value }
-												: undefined
-										}))
-									}
-								/>
-							</div>
-							<div className="sick-leave-field">
-								<label className="sick-leave-label">Дата заседания ВК</label>
-								<input
-									type="date"
-									className="sick-leave-input"
-									value={formState.vkProtocol.protocolDate}
-									onChange={(e) =>
-										setFormState((prev) => ({
-											...prev,
-											vkProtocol: prev.vkProtocol
-												? { ...prev.vkProtocol, protocolDate: e.target.value }
-												: undefined
-										}))
-									}
-								/>
-							</div>
-							<div className="sick-leave-field">
-								<label className="sick-leave-label">Председатель ВК (Главврач)</label>
-								<input
-									type="text"
-									className="sick-leave-input"
-									value={formState.vkProtocol.chairpersonFio}
-									onChange={(e) =>
-										setFormState((prev) => ({
-											...prev,
-											vkProtocol: prev.vkProtocol
-												? { ...prev.vkProtocol, chairpersonFio: e.target.value }
-												: undefined
-										}))
-									}
-								/>
-							</div>
-						</div>
-
-						<div className="sick-leave-grid-2">
-							<div className="sick-leave-field">
-								<label className="sick-leave-label">СНИЛС Председателя ВК</label>
-								<input
-									type="text"
-									className="sick-leave-input"
-									value={formState.vkProtocol.chairpersonSnils}
-									onChange={(e) =>
-										setFormState((prev) => ({
-											...prev,
-											vkProtocol: prev.vkProtocol
-												? { ...prev.vkProtocol, chairpersonSnils: e.target.value }
-												: undefined
-										}))
-									}
-								/>
-							</div>
-							<div className="sick-leave-field">
-								<label className="sick-leave-label">Члены комиссии</label>
-								<input
-									type="text"
-									className="sick-leave-input"
-									value={formState.vkProtocol.memberFios.join(', ')}
-									onChange={(e) =>
-										setFormState((prev) => ({
-											...prev,
-											vkProtocol: prev.vkProtocol
-												? {
-														...prev.vkProtocol,
-														memberFios: e.target.value.split(',').map((s) => s.trim())
-													}
-												: undefined
-										}))
-									}
-								/>
-							</div>
-						</div>
-
-						<div className="sick-leave-field">
-							<label className="sick-leave-label">Клинико-экспертное обоснование продления</label>
-							<textarea
-								className="sick-leave-textarea"
-								rows={3}
-								value={formState.vkProtocol.clinicalSubstantiation}
-								onChange={(e) =>
-									setFormState((prev) => ({
-										...prev,
-										vkProtocol: prev.vkProtocol
-											? { ...prev.vkProtocol, clinicalSubstantiation: e.target.value }
-											: undefined
-									}))
-								}
-							/>
-						</div>
-
-						<div className="sick-leave-field">
-							<label className="sick-leave-label">Решение Врачебной комиссии</label>
-							<textarea
-								className="sick-leave-textarea"
-								rows={2}
-								value={formState.vkProtocol.expertDecision}
-								onChange={(e) =>
-									setFormState((prev) => ({
-										...prev,
-										vkProtocol: prev.vkProtocol
-											? { ...prev.vkProtocol, expertDecision: e.target.value }
-											: undefined
-									}))
-								}
-							/>
-						</div>
+				{formState.isVkRequired && (
+					<div className="mt-2.5 p-2 px-3 rounded-lg bg-teal-500/10 border border-teal-500/30 text-xs text-[var(--ink)]">
+						Отметка врачебной комиссии сформирована автоматически: единоличное решение лечащего врача согласовано с главным врачом клиники по ст. 59 323-ФЗ.
 					</div>
 				)}
 			</div>

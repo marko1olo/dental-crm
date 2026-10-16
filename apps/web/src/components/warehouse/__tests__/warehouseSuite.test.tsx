@@ -62,7 +62,7 @@ const SAMPLE_ITEMS: readonly InventoryItem[] = [
 		unit: "карп.",
 		sku: "SCAND-3",
 		lotNumber: "LOT-201",
-		expirationDate: "2026-10-15", // Истекает скоро
+		expirationDate: "2026-11-05", // Истекает скоро (< 30 дней)
 		updatedAt: "2026-10-07T12:00:00Z",
 	},
 	{
@@ -321,7 +321,10 @@ describe("RED TEAM WAREHOUSE & INVENTORY INQUISITOR SUITE", () => {
 			);
 
 			assert.ok(html.includes("warehouse-stock-alerts-bar"));
-			assert.ok(html.includes("Расход сверх остатка: 1 поз."));
+			assert.ok(
+				html.includes("Расход сверх остатка: 1 поз.") ||
+					html.includes("мягкий овердрафт: 1 поз."),
+			);
 			assert.ok(html.includes("Заканчивается: 2 поз."));
 			assert.ok(html.includes("Просрочено: 1 поз."));
 		});
@@ -439,7 +442,8 @@ describe("RED TEAM WAREHOUSE & INVENTORY INQUISITOR SUITE", () => {
 			);
 
 			assert.ok(html.includes("auto-bom-deduction-banner"));
-			assert.ok(html.includes("Списание по протоколу:"));
+			assert.ok(html.includes("Автоматическое списание материалов по приёму:"));
+			assert.ok(html.includes("Списать расходники за приём"));
 		});
 	});
 
