@@ -5,6 +5,8 @@
  * Domain: Statutory Electronic Sick Leave (ЭЛН) & Medical Commission (ВК)
  */
 
+import { formatDateRu as formatDateRuShared } from "@dental/shared";
+
 export const SINGLE_DOCTOR_MAX_DAYS = 15;
 export const FELDSHER_MAX_DAYS = 10;
 export const DEFAULT_CLINIC_OGRN = '1187746123456';
@@ -25,8 +27,6 @@ export function calculateDaysBetween(from: string, to: string): number {
 	const days = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
 	return days;
 }
-
-import { formatDateRu as formatDateRuShared } from "@dental/shared";
 
 /**
  * Formats YYYY-MM-DD to Russian DD.MM.YYYY via canonical @dental/shared SSOT

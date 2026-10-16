@@ -70,17 +70,6 @@ const configs = [
 
 for (const cfg of configs) {
 	const targetPath = path.join(PROOFS_DIR, `${cfg.name}.png`);
-	if (existsSync(targetPath) && statSync(targetPath).size >= 40 * 1024) {
-		console.log(`[SKIP] ${cfg.name} already captured (${Math.round(statSync(targetPath).size / 1024)} KB)`);
-		if (cfg.alias) {
-			const aliasPath = path.join(PROOFS_DIR, `${cfg.alias}.png`);
-			if (!existsSync(aliasPath) || statSync(aliasPath).size < 40 * 1024) {
-				fs.copyFileSync(targetPath, aliasPath);
-			}
-		}
-		continue;
-	}
-
 	console.log(`[CAPTURE] Capturing ${cfg.name}...`);
 	const storageState = {
 		cookies: [
@@ -180,11 +169,12 @@ for (const cfg of configs) {
 				await errorBtn.click().catch(() => {});
 				await page.waitForTimeout(2000);
 			}
-			await page.waitForSelector('.boot-state, :has-text("Загрузка CRM")', { state: "detached", timeout: 20000 }).catch(() => {});
+			console.log(`[WAIT] Waiting for .boot-state detachment for ${cfg.name}...`);
+			await page.waitForSelector('.boot-state', { state: "detached", timeout: 25000 }).catch(() => {});
 			if (cfg.isMobile) {
-				await page.waitForSelector('.mobile-documents-hub-wrapper, [data-testid="mobile-documents-hub"], .mobile-shell-layout', { state: "visible", timeout: 20000 });
+				await page.waitForSelector('.mobile-documents-hub-wrapper, [data-testid="mobile-documents-hub"], .mobile-shell-layout', { state: "visible", timeout: 25000 });
 			} else {
-				await page.waitForSelector('.app-shell, .documents-panel, .desktop-documents-experience', { state: "visible", timeout: 20000 });
+				await page.waitForSelector('.app-shell, .documents-panel, .desktop-documents-experience', { state: "visible", timeout: 25000 });
 			}
 			ready = true;
 		} catch (e) {

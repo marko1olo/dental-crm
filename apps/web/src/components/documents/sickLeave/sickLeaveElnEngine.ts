@@ -6,4 +6,4 @@
  * Clinical fallbacks: Председатель ВК / Лечащий врач (decomposed into ./elnEngineModules/)
  */
 
-export * from './elnEngineModules/index.js';
+export * from './elnEngineModules/index';
