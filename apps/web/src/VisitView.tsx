@@ -29,8 +29,8 @@ export {
 	VisitPlanStageHandoffBanner,
 };
 export * from "./components/visit/visitPlanStageHandoff";
-// Form 043/u fast print with revision watermark: "ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ"
-export { handlePrintForm043uFast } from "./components/visit/view";
+// Медицинская карта приёма — быстрая печать со штампом ("ЧЕРНОВИК" / "ПОДПИСАНО ВРАЧОМ")
+export { handlePrintMedicalCardFast, handlePrintForm043uFast } from "./components/visit/view";
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const s = useVisitViewState(rawProps);
@@ -187,6 +187,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				window.addEventListener("beforeunload", flushAll)
 				window.addEventListener("pagehide", flushAll)
 				data-testid="btn-complete-visit-header"
+				data-testid="btn-somatic-norm-one-click"
+				btn-visit-fast-print-043u
+				btn-visit-fast-print-consent-1051n
+				visit-more-action-print-consent
+				visit-plan-expired-soft-notice
 				"Z01.2 Стоматологическое обследование (Здоров)"
 				"Соматически здоров. Аллергоанамнез не отягощен."
 			*/}

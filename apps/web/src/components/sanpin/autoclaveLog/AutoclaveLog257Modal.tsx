@@ -308,7 +308,7 @@ export function AutoclaveLog257Modal({
 	};
 
 	const modalContent = (
-		<div className="autoclave-log-modal-overlay" role="dialog" aria-modal="true" aria-label="Журнал работы стерилизаторов (ф. 257/у)" onClick={onClose}>
+		<div className="autoclave-log-modal-overlay" role="dialog" aria-modal="true" aria-label="Журнал автоклавирования" onClick={onClose}>
 			<div className="autoclave-log-modal-container" onClick={(e) => e.stopPropagation()}>
 				{/* Header */}
 				<div className="autoclave-log-header">

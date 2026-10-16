@@ -183,11 +183,11 @@ export function AutoclaveRegisterToolbar({
 						cursor: "pointer",
 					}}
 					data-testid="sanpin-autoclave-new-cycle-btn"
-					title="Цикл стерилизации завершён: зафиксировать параметры 134°C / 2.1 бар в журнале"
+					title="Провести цикл автоклавирования на смену: 134°C, 2.15 бар, 5 мин, азопирам/фенолфталеин норма, списание расходников"
 				>
 					<Sparkles size={13} className="shrink-0" />
 					<span className="shrink-0 whitespace-nowrap">
-						{isLoggingBatch ? "Фиксация..." : "Цикл завершён (134°C)"}
+						{isLoggingBatch ? "Фиксация..." : "Провести цикл на смену (134°C)"}
 					</span>
 				</button>
 

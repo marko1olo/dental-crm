@@ -81,8 +81,11 @@ export const FiscalOneCTab: React.FC<FiscalOneCTabProps> = ({
 					<span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
 						ОКЕИ 796 (Шт.)
 					</span>
-					<span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
-						КНД 1151156 / Номенклатура
+					<span
+						className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20"
+						title="Справка об оплате медицинских услуг для налогового вычета (13% НДФЛ)"
+					>
+						Справка для вычета (13% НДФЛ) <span className="sr-only">(КНД 1151156)</span>
 					</span>
 				</div>
 			</div>
@@ -185,7 +188,7 @@ export const FiscalOneCTab: React.FC<FiscalOneCTabProps> = ({
 						<div className="grid grid-cols-2 gap-2">
 							<div>
 								<label className="block text-[11px] font-medium text-[var(--muted,#64748b)] mb-0.5">
-									ИНН Пациента (опционально, только для юрлиц/ИП по 54-ФЗ):
+									ИНН Пациента (опционально, только для организаций / ИП):
 								</label>
 								<input
 									type="text"

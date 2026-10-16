@@ -71,8 +71,8 @@ export const ChairsidePatientQuickBar: React.FC<ChairsidePatientQuickBarProps> =
               type="button"
               onClick={handlePrintForm043uFast}
               className="mobile-chairside-icon-btn"
-              aria-label="Печать дневника приёма"
-              title="Печать дневника"
+              aria-label="Печать медицинской карты приёма"
+              title="Медицинская карта приёма (печать со штампом)"
               data-testid={`${testId}-print-btn`}
             >
               <Printer size={18} />

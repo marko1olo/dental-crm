@@ -1,19 +1,23 @@
 /**
  * VisiographTopToolbar.tsx
  *
- * Strict 1-Row Top Toolbar for Visiograph Studio (Mandates 8d, 8e):
- * - Primary tools: Pointer, Ruler, Apex WL, Invert, Rotate 90°
- * - Secondary tools dropdown: Calibrate, Angle, Lesion, Rotate 180°
- * - 1-Click Sensor Presets & Clinical Filters selectors
- * - Zoom controls, Reset, Print protocol, Export
+ * Strict 1-Row Compact 36px Toolbar for Visiograph & PACS Studio (Mandates 8d, 8e, 8n):
+ * 1. Filter Presets: .secondary-button — «Канал», «Кость», «Эмаль», «Инверсия»
+ * 2. Primary Tools: .icon-button (32x32px) — «Линейка», «Угол», «Лупа», «Поворот»
+ * 3. Dominant Emerald CTA: .primary-button — «Прикрепить к визиту»
+ * 4. Tooth FDI formula binder: «Привязать к зубу на формуле» (Зуб 16)
+ * 5. 0px parasitic horizontal scroll, design tokens var(--teal), var(--paper), var(--ink), var(--line).
  */
 
 import {
 	Activity,
 	AlertTriangle,
+	Check,
+	ChevronDown,
 	Compass,
 	Contrast,
 	FileDown,
+	Layers,
 	MousePointer,
 	Printer,
 	RotateCcw,
@@ -21,12 +25,14 @@ import {
 	Ruler,
 	Scale,
 	Sliders,
+	Sparkles,
 	X,
 	ZoomIn,
 	ZoomOut,
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
+import "./VisiographTopToolbar.css";
 import {
 	CLINICAL_VISIOGRAPH_FILTERS,
 	type ClinicalVisiographFilterPreset,
@@ -56,6 +62,10 @@ export interface VisiographTopToolbarProps {
 	onPrintProtocol: () => void;
 	onOpenExportModal: () => void;
 	onClose?: (() => void) | undefined;
+	toothCode?: string | null | undefined;
+	onToothChange?: ((tooth: string) => void) | undefined;
+	onAttachToVisit?: (() => void) | undefined;
+	isAttachedToVisit?: boolean | undefined;
 }
 
 export function VisiographTopToolbar({
@@ -77,574 +87,396 @@ export function VisiographTopToolbar({
 	onPrintProtocol,
 	onOpenExportModal,
 	onClose,
+	toothCode = "16",
+	onToothChange,
+	onAttachToVisit,
+	isAttachedToVisit = false,
 }: VisiographTopToolbarProps) {
 	const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
+	const [isToothMenuOpen, setIsToothMenuOpen] = useState(false);
+	const [isSensorMenuOpen, setIsSensorMenuOpen] = useState(false);
+	const [isAttachedLocal, setIsAttachedLocal] = useState(false);
+
+	const effectiveTooth = toothCode || "16";
+	const isAttached = isAttachedToVisit || isAttachedLocal;
+
+	// Quick 1-click filter preset helper
+	const handleSelectFilterPreset = (presetId: "endodontics" | "bone_periodont" | "caries_enamel") => {
+		const preset = CLINICAL_VISIOGRAPH_FILTERS.find((f) => f.id === presetId);
+		if (preset) {
+			onApplyClinicalFilter(preset);
+		}
+	};
+
+	const handleToggleInvert = () => {
+		setParams((prev) => ({ ...prev, invert: !prev.invert }));
+	};
+
+	const handleAttachClick = () => {
+		if (onAttachToVisit) {
+			onAttachToVisit();
+		} else {
+			onPrintProtocol();
+		}
+		setIsAttachedLocal(true);
+	};
 
 	return (
-		<div
-			className="visiograph-top-toolbar"
-			style={{
-				display: "flex",
-				flexWrap: "nowrap",
-				alignItems: "center",
-				justifyContent: "space-between",
-				padding: "2px 8px",
-				height: "36px",
-				minHeight: "36px",
-				maxHeight: "36px",
-				background: "var(--paper-soft, #161b22)",
-				borderBottom: "1px solid var(--line, #30363d)",
-				gap: "6px",
-				overflowX: "auto",
-				whiteSpace: "nowrap",
-			}}
-		>
-			{/* Primary Tools: Pointer, Ruler, Apex + Invert + Rotate + Secondary Tools Dropdown */}
-			<div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+		<div className="visiograph-top-toolbar" role="toolbar" aria-label="Панель инструментов визиографа">
+			{/* CLUSTER 1: 1-Click Clinical Filter Presets (.secondary-button) */}
+			<div className="visiograph-toolbar-cluster">
 				<button
 					type="button"
+					className={`secondary-button ${activeClinicalFilter === "endodontics" ? "is-active" : ""}`}
+					data-testid="btn-filter-canal"
+					onClick={() => handleSelectFilterPreset("endodontics")}
+					title="Фильтр корневого канала и апекса (высокая резкость)"
+					aria-pressed={activeClinicalFilter === "endodontics"}
+				>
+					<Activity size={13} aria-hidden="true" />
+					<span>Канал</span>
+				</button>
+
+				<button
+					type="button"
+					className={`secondary-button ${activeClinicalFilter === "bone_periodont" ? "is-active" : ""}`}
+					data-testid="btn-filter-bone"
+					onClick={() => handleSelectFilterPreset("bone_periodont")}
+					title="Фильтр кортикальной кости, балок и периодонта"
+					aria-pressed={activeClinicalFilter === "bone_periodont"}
+				>
+					<Layers size={13} aria-hidden="true" />
+					<span>Кость</span>
+				</button>
+
+				<button
+					type="button"
+					className={`secondary-button ${activeClinicalFilter === "caries_enamel" ? "is-active" : ""}`}
+					data-testid="btn-filter-enamel"
+					onClick={() => handleSelectFilterPreset("caries_enamel")}
+					title="Контрастирование эмали и пришеечной зоны"
+					aria-pressed={activeClinicalFilter === "caries_enamel"}
+				>
+					<Sparkles size={13} aria-hidden="true" />
+					<span>Эмаль</span>
+				</button>
+
+				<button
+					type="button"
+					className={`secondary-button ${params.invert ? "is-active" : ""}`}
+					data-testid="btn-tool-invert"
+					onClick={handleToggleInvert}
+					title="Инверсия (Негатив / Позитив) для выявления микротрещин"
+					aria-pressed={Boolean(params.invert)}
+				>
+					<Contrast size={13} aria-hidden="true" />
+					<span>Инверсия</span>
+				</button>
+			</div>
+
+			<div className="visiograph-toolbar-divider" />
+
+			{/* CLUSTER 2: Chairside Tools (.icon-button, 30x30px) */}
+			<div className="visiograph-toolbar-cluster">
+				<button
+					type="button"
+					className={`icon-button ${activeTool === "pointer" ? "is-active" : ""}`}
 					data-testid="btn-tool-pointer"
 					onClick={() => {
 						setActiveTool("pointer");
 						onClearDrawing();
 					}}
-					style={{
-						height: "30px",
-						background: activeTool === "pointer" ? "var(--primary, #1f6feb)" : "var(--paper-strong, #0d1117)",
-						color: activeTool === "pointer" ? "#ffffff" : "var(--ink, #c9d1d9)",
-						border: "1px solid var(--line, #30363d)",
-						borderRadius: "5px",
-						padding: "2px 8px",
-						cursor: "pointer",
-						display: "inline-flex",
-						alignItems: "center",
-						justifyContent: "center",
-						gap: "4px",
-						fontSize: "0.78rem",
-						fontWeight: 500,
-					}}
-					title="Указатель (Просмотр)"
+					title="Указатель (Просмотр и навигация)"
+					aria-pressed={activeTool === "pointer"}
+					aria-label="Указатель"
 				>
-					<MousePointer size={14} /> <span>Указатель</span>
+					<MousePointer size={14} />
 				</button>
 
 				<button
 					type="button"
+					className={`icon-button ${activeTool === "ruler" ? "is-active" : ""}`}
 					data-testid="btn-tool-ruler"
 					onClick={() => {
 						setActiveTool("ruler");
 						onClearDrawing();
 					}}
-					style={{
-						height: "30px",
-						background: activeTool === "ruler" ? "var(--primary, #1f6feb)" : "var(--paper-strong, #0d1117)",
-						color: activeTool === "ruler" ? "#ffffff" : "var(--primary, #58a6ff)",
-						border: "1px solid var(--line, #30363d)",
-						borderRadius: "5px",
-						padding: "2px 8px",
-						cursor: "pointer",
-						display: "inline-flex",
-						alignItems: "center",
-						justifyContent: "center",
-						gap: "4px",
-						fontSize: "0.78rem",
-						fontWeight: 600,
-					}}
-					title="Измерить расстояние между двумя точками (мм)"
+					title="Линейка: замер длины канала и расстояний в мм"
+					aria-pressed={activeTool === "ruler"}
+					aria-label="Линейка в миллиметрах"
 				>
-					<Ruler size={14} /> <span>Линейка</span>
+					<Ruler size={14} />
 				</button>
 
 				<button
 					type="button"
-					data-testid="btn-tool-apex"
+					className={`icon-button ${activeTool === "angle" ? "is-active" : ""}`}
+					data-testid="btn-tool-angle"
 					onClick={() => {
-						setActiveTool("root_canal");
+						setActiveTool("angle");
 						onClearDrawing();
 					}}
-					style={{
-						height: "30px",
-						background: activeTool === "root_canal" ? "var(--success, #238636)" : "var(--paper-strong, #0d1117)",
-						color: activeTool === "root_canal" ? "#ffffff" : "var(--success, #3fb950)",
-						border: `1px solid ${activeTool === "root_canal" ? "var(--success, #238636)" : "var(--line, #30363d)"}`,
-						borderRadius: "5px",
-						padding: "2px 8px",
-						cursor: "pointer",
-						display: "inline-flex",
-						alignItems: "center",
-						justifyContent: "center",
-						gap: "4px",
-						fontSize: "0.78rem",
-						fontWeight: 700,
-					}}
-					title="Эндо-линейка (Apex Locator / WL): измерение рабочей длины канала в мм"
+					title="Угломер: угол наклона оси корня или имплантата (°)"
+					aria-pressed={activeTool === "angle"}
+					aria-label="Угломер"
 				>
-					<Activity size={14} /> <span>Апекс WL</span>
+					<Compass size={14} />
 				</button>
 
-				{/* Direct 1-Click Invert (Negative/Positive) — Hick's Law */}
 				<button
 					type="button"
-					data-testid="btn-tool-invert"
-					onClick={() => setParams((prev) => ({ ...prev, invert: !prev.invert }))}
-					style={{
-						height: "30px",
-						background: params.invert ? "var(--teal, #0d9488)" : "var(--paper-strong, #0d1117)",
-						color: params.invert ? "#ffffff" : "var(--ink, #c9d1d9)",
-						border: `1px solid ${params.invert ? "var(--teal, #0d9488)" : "var(--line, #30363d)"}`,
-						borderRadius: "5px",
-						padding: "2px 8px",
-						cursor: "pointer",
-						display: "inline-flex",
-						alignItems: "center",
-						justifyContent: "center",
-						gap: "4px",
-						fontSize: "0.78rem",
-						fontWeight: 600,
+					className={`icon-button ${canvasZoom !== 1.0 ? "is-active" : ""}`}
+					data-testid="btn-tool-zoom"
+					onClick={() => {
+						setCanvasZoom((z) => (z >= 2.0 ? 1.0 : Number((z + 0.5).toFixed(1))));
 					}}
-					title="Инверсия (Негатив / Позитив) для оценки микротрещин"
+					title={`Масштаб: ${Math.round(canvasZoom * 100)}% (клик для переключения)`}
+					aria-label="Лупа / Масштаб"
 				>
-					<Contrast size={14} /> <span>Негатив</span>
+					<ZoomIn size={14} />
 				</button>
 
-				{/* Direct 1-Click Rotate 90° */}
 				<button
 					type="button"
+					className="icon-button"
 					data-testid="btn-tool-rotate"
 					onClick={() => setCanvasRotationDeg((r) => (r + 90) % 360)}
-					style={{
-						height: "30px",
-						background: "var(--paper-strong, #0d1117)",
-						color: "var(--ink, #c9d1d9)",
-						border: "1px solid var(--line, #30363d)",
-						borderRadius: "5px",
-						padding: "2px 8px",
-						cursor: "pointer",
-						display: "inline-flex",
-						alignItems: "center",
-						justifyContent: "center",
-						gap: "4px",
-						fontSize: "0.78rem",
-					}}
-					title="Повернуть снимок на 90°"
+					title="Повернуть снимок на 90° по часовой стрелке"
+					aria-label="Повернуть снимок на 90 градусов"
 				>
-					<RotateCw size={14} /> <span>90°</span>
+					<RotateCw size={14} />
+				</button>
+			</div>
+
+			<div className="visiograph-toolbar-divider" />
+
+			{/* CLUSTER 3: Tooth FDI Formula Binding & Dropdown */}
+			<div className="visiograph-toolbar-cluster" style={{ position: "relative" }}>
+				<button
+					type="button"
+					className="visiograph-tooth-badge"
+					data-testid="btn-bind-tooth-formula"
+					onClick={() => setIsToothMenuOpen((prev) => !prev)}
+					title="Привязать снимок к зубу на зубной формуле (FDI 11..48)"
+					aria-label="Привязать к зубу на формуле"
+				>
+					<span>Зуб #{effectiveTooth}</span>
+					<ChevronDown size={11} />
 				</button>
 
-				{/* Secondary Tools Dropdown: Calibrate, Angle, Lesion, Rotate 180 */}
-				<div style={{ position: "relative", display: "inline-block" }}>
+				{isToothMenuOpen && (
+					<div
+						className="visiograph-popout-menu"
+						style={{ left: 0, width: "220px", padding: "6px" }}
+						role="dialog"
+						aria-label="Выбор зуба FDI"
+					>
+						<div style={{ fontSize: "10px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", marginBottom: "4px" }}>
+							Зубная формула (FDI)
+						</div>
+						{/* Upper Jaw */}
+						<div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: "2px", marginBottom: "3px" }}>
+							{["18", "17", "16", "15", "14", "13", "12", "11"].map((t) => (
+								<button
+									key={t}
+									type="button"
+									onClick={() => {
+										onToothChange?.(t);
+										setIsToothMenuOpen(false);
+									}}
+									className={`visiograph-popout-item ${effectiveTooth === t ? "is-active" : ""}`}
+									style={{ height: "24px", justifyContent: "center", padding: "0", fontSize: "11px", fontWeight: 700 }}
+								>
+									{t}
+								</button>
+							))}
+						</div>
+						<div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: "2px", marginBottom: "6px" }}>
+							{["21", "22", "23", "24", "25", "26", "27", "28"].map((t) => (
+								<button
+									key={t}
+									type="button"
+									onClick={() => {
+										onToothChange?.(t);
+										setIsToothMenuOpen(false);
+									}}
+									className={`visiograph-popout-item ${effectiveTooth === t ? "is-active" : ""}`}
+									style={{ height: "24px", justifyContent: "center", padding: "0", fontSize: "11px", fontWeight: 700 }}
+								>
+									{t}
+								</button>
+							))}
+						</div>
+						{/* Lower Jaw */}
+						<div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: "2px", marginBottom: "3px" }}>
+							{["48", "47", "46", "45", "44", "43", "42", "41"].map((t) => (
+								<button
+									key={t}
+									type="button"
+									onClick={() => {
+										onToothChange?.(t);
+										setIsToothMenuOpen(false);
+									}}
+									className={`visiograph-popout-item ${effectiveTooth === t ? "is-active" : ""}`}
+									style={{ height: "24px", justifyContent: "center", padding: "0", fontSize: "11px", fontWeight: 700 }}
+								>
+									{t}
+								</button>
+							))}
+						</div>
+						<div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: "2px" }}>
+							{["31", "32", "33", "34", "35", "36", "37", "38"].map((t) => (
+								<button
+									key={t}
+									type="button"
+									onClick={() => {
+										onToothChange?.(t);
+										setIsToothMenuOpen(false);
+									}}
+									className={`visiograph-popout-item ${effectiveTooth === t ? "is-active" : ""}`}
+									style={{ height: "24px", justifyContent: "center", padding: "0", fontSize: "11px", fontWeight: 700 }}
+								>
+									{t}
+								</button>
+							))}
+						</div>
+					</div>
+				)}
+			</div>
+
+			{/* CLUSTER 4: Secondary Tools Dropdown & Dominant Emerald CTA */}
+			<div className="visiograph-toolbar-cluster">
+				{/* Secondary tools dropdown */}
+				<div style={{ position: "relative" }}>
 					<button
 						type="button"
+						className="secondary-button"
 						data-testid="btn-tools-dropdown"
 						onClick={() => setIsToolsMenuOpen((prev) => !prev)}
-						style={{
-							height: "30px",
-							background: ["calibrate", "angle", "lesion"].includes(activeTool) ? "var(--primary, #1f6feb)" : "var(--paper-strong, #0d1117)",
-							color: ["calibrate", "angle", "lesion"].includes(activeTool) ? "#ffffff" : "var(--ink, #c9d1d9)",
-							border: "1px solid var(--line, #30363d)",
-							borderRadius: "5px",
-							padding: "2px 8px",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "4px",
-							fontSize: "0.78rem",
-							fontWeight: 500,
-						}}
-						title="Дополнительные инструменты: калибровка, угломер, очаг деструкции"
+						title="Дополнительные инструменты анализа"
 					>
 						<Sliders size={13} />
-						<span>
-							{activeTool === "calibrate"
-								? "Калибр."
-								: activeTool === "angle"
-									? "Угломер"
-									: activeTool === "lesion"
-										? "Очаг"
-										: "Ещё ▾"}
-						</span>
+						<span>Ещё ▾</span>
 					</button>
+
 					{isToolsMenuOpen && (
 						<div
-							style={{
-								position: "absolute",
-								top: "calc(100% + 4px)",
-								left: 0,
-								background: "var(--paper-strong, #0d1117)",
-								border: "1px solid var(--line, #30363d)",
-								borderRadius: "8px",
-								boxShadow: "0 8px 24px rgba(0, 0, 0, 0.5)",
-								zIndex: 60,
-								minWidth: "210px",
-								display: "flex",
-								flexDirection: "column",
-								padding: "4px",
-								gap: "2px",
-							}}
+							className="visiograph-popout-menu"
+							style={{ right: 0, minWidth: "220px" }}
+							role="menu"
 						>
 							<button
 								type="button"
+								className="visiograph-popout-item"
+								data-testid="btn-tool-apex"
 								onClick={() => {
-									setActiveTool("calibrate");
+									setActiveTool("root_canal");
 									onClearDrawing();
 									setIsToolsMenuOpen(false);
 								}}
-								style={{
-									height: "32px",
-									background: activeTool === "calibrate" ? "var(--primary, #1f6feb)" : "transparent",
-									color: activeTool === "calibrate" ? "#ffffff" : "var(--ink, #c9d1d9)",
-									border: "none",
-									borderRadius: "5px",
-									padding: "4px 10px",
-									cursor: "pointer",
-									display: "flex",
-									alignItems: "center",
-									gap: "8px",
-									fontSize: "0.8rem",
-									textAlign: "left",
-								}}
 							>
-								<Scale size={14} />
-								<span>Калибровка по эталону</span>
+								<Activity size={14} className="text-emerald-500" />
+								<span>Эндо-линейка (Апекс WL)</span>
 							</button>
+
 							<button
 								type="button"
-								onClick={() => {
-									setActiveTool("angle");
-									onClearDrawing();
-									setIsToolsMenuOpen(false);
-								}}
-								style={{
-									height: "32px",
-									background: activeTool === "angle" ? "var(--primary, #1f6feb)" : "transparent",
-									color: activeTool === "angle" ? "#ffffff" : "var(--ink, #c9d1d9)",
-									border: "none",
-									borderRadius: "5px",
-									padding: "4px 10px",
-									cursor: "pointer",
-									display: "flex",
-									alignItems: "center",
-									gap: "8px",
-									fontSize: "0.8rem",
-									textAlign: "left",
-								}}
-							>
-								<Compass size={14} />
-								<span>Угломер оси зуба</span>
-							</button>
-							<button
-								type="button"
+								className="visiograph-popout-item"
+								data-testid="btn-tool-lesion"
 								onClick={() => {
 									setActiveTool("lesion");
 									onClearDrawing();
 									setIsToolsMenuOpen(false);
 								}}
-								style={{
-									height: "32px",
-									background: activeTool === "lesion" ? "var(--primary, #1f6feb)" : "transparent",
-									color: activeTool === "lesion" ? "#ffffff" : "var(--ink, #c9d1d9)",
-									border: "none",
-									borderRadius: "5px",
-									padding: "4px 10px",
-									cursor: "pointer",
-									display: "flex",
-									alignItems: "center",
-									gap: "8px",
-									fontSize: "0.8rem",
-									textAlign: "left",
-								}}
 							>
-								<AlertTriangle size={14} />
+								<AlertTriangle size={14} className="text-amber-500" />
 								<span>Очаг деструкции (мм²)</span>
 							</button>
-							<div style={{ height: "1px", background: "var(--line, #30363d)", margin: "2px 0" }} />
+
 							<button
 								type="button"
+								className="visiograph-popout-item"
+								data-testid="btn-tool-calibrate"
 								onClick={() => {
-									setCanvasRotationDeg((r) => (r + 180) % 360);
+									setActiveTool("calibrate");
+									onClearDrawing();
 									setIsToolsMenuOpen(false);
 								}}
-								style={{
-									height: "32px",
-									background: "transparent",
-									color: "var(--ink, #c9d1d9)",
-									border: "none",
-									borderRadius: "5px",
-									padding: "4px 10px",
-									cursor: "pointer",
-									display: "flex",
-									alignItems: "center",
-									gap: "8px",
-									fontSize: "0.8rem",
-									textAlign: "left",
+							>
+								<Scale size={14} className="text-teal-500" />
+								<span>Калибровка по эталону</span>
+							</button>
+
+							<button
+								type="button"
+								className="visiograph-popout-item"
+								data-testid="btn-visiograph-print-protocol"
+								onClick={() => {
+									onPrintProtocol();
+									setIsToolsMenuOpen(false);
 								}}
 							>
-								<RotateCw size={14} />
-								<span>Повернуть на 180°</span>
+								<Printer size={14} />
+								<span>Печать протокола (A4)</span>
+							</button>
+
+							<button
+								type="button"
+								className="visiograph-popout-item"
+								data-testid="btn-visiograph-export-modal"
+								title="Экспорт снимка (JPEG, PNG, DICOM)"
+								onClick={() => {
+									onOpenExportModal();
+									setIsToolsMenuOpen(false);
+								}}
+							>
+								<FileDown size={14} />
+								<span>Экспорт снимка (JPEG, PNG, DICOM)</span>
+							</button>
+
+							<div style={{ height: "1px", background: "var(--line)", margin: "2px 0" }} />
+
+							<button
+								type="button"
+								className="visiograph-popout-item text-rose-400"
+								onClick={() => {
+									onResetAll();
+									setIsToolsMenuOpen(false);
+								}}
+							>
+								<RotateCcw size={14} />
+								<span>Сбросить настройки</span>
 							</button>
 						</div>
 					)}
 				</div>
-			</div>
 
-			{/* Center/Right: Sensor preset + Clinical filter select + Zoom + Reset + Print + Export */}
-			<div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-				{/* 1-Click Sensor Calibration Presets */}
-				<div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
-					<span style={{ fontSize: "0.75rem", color: "var(--muted, #8b949e)", whiteSpace: "nowrap" }}>
-						Датчик:
-					</span>
-					<select
-						value={activeSensorPresetId ?? (isCalibrated ? "manual" : "")}
-						onChange={(e) => {
-							const val = e.target.value;
-							if (val === "manual") {
-								setActiveTool("calibrate");
-								onClearDrawing();
-							} else {
-								const preset = sensorPresets.find((p) => p.id === val);
-								if (preset) {
-									onApplySensorPreset(preset);
-								}
-							}
-						}}
-						style={{
-							height: "30px",
-							background: "var(--paper-strong, #0d1117)",
-							color: "var(--ink, #c9d1d9)",
-							border: "1px solid var(--line, #30363d)",
-							borderRadius: "5px",
-							padding: "2px 6px",
-							fontSize: "0.78rem",
-							cursor: "pointer",
-						}}
-						title="Калибровка по стандартным датчикам RVG / ОПТГ"
-					>
-						<option value="">Калибровка датчика...</option>
-						{sensorPresets.map((p) => (
-							<option key={p.id} value={p.id}>
-								{p.label}
-							</option>
-						))}
-						<option value="manual">Ручная калибровка (шарик 5 мм)</option>
-					</select>
-				</div>
-
-				{/* 1-Click Clinical Filters Selector */}
-				<div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
-					<span style={{ fontSize: "0.75rem", color: "var(--muted, #8b949e)", whiteSpace: "nowrap" }}>
-						Фильтр:
-					</span>
-					<select
-						value={activeClinicalFilter ?? ""}
-						onChange={(e) => {
-							const val = e.target.value;
-							if (!val) {
-								setParams((prev) => ({
-									...prev,
-									brightness: 0,
-									contrast: 0,
-									gamma: 1.0,
-									sharpness: 0,
-								}));
-							} else {
-								const f = CLINICAL_VISIOGRAPH_FILTERS.find((item) => item.id === val);
-								if (f) {
-									onApplyClinicalFilter(f);
-								}
-							}
-						}}
-						style={{
-							height: "30px",
-							background: "var(--paper-strong, #0d1117)",
-							color: "var(--ink, #c9d1d9)",
-							border: "1px solid var(--line, #30363d)",
-							borderRadius: "5px",
-							padding: "2px 6px",
-							fontSize: "0.78rem",
-							cursor: "pointer",
-						}}
-						title="Клинические фильтры радиовизиографа (Контраст, Резкость, Эндо, Кость)"
-					>
-						<option value="">Без фильтра (Стандарт)</option>
-						{CLINICAL_VISIOGRAPH_FILTERS.map((f) => (
-							<option key={f.id} value={f.id}>
-								{f.label} ({f.badge})
-							</option>
-						))}
-					</select>
-				</div>
-
-				{/* Zoom Controls */}
-				<div style={{ display: "flex", alignItems: "center", gap: "1px" }}>
-					<button
-						type="button"
-						onClick={() => setCanvasZoom((z) => Math.max(0.4, Number((z - 0.2).toFixed(2))))}
-						style={{
-							height: "30px",
-							minWidth: "30px",
-							background: "var(--paper-strong, #0d1117)",
-							color: "var(--ink, #c9d1d9)",
-							border: "1px solid var(--line, #30363d)",
-							borderRadius: "5px 0 0 5px",
-							padding: "2px 6px",
-							fontSize: "0.78rem",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-						}}
-						title="Уменьшить масштаб"
-					>
-						<ZoomOut size={13} />
-					</button>
-					<button
-						type="button"
-						onClick={() => {
-							setCanvasZoom(1.0);
-							setCanvasRotationDeg(0);
-						}}
-						style={{
-							height: "30px",
-							minWidth: "40px",
-							background: "var(--paper-strong, #0d1117)",
-							color: "var(--primary, #58a6ff)",
-							borderTop: "1px solid var(--line, #30363d)",
-							borderBottom: "1px solid var(--line, #30363d)",
-							borderLeft: "none",
-							borderRight: "none",
-							padding: "2px 6px",
-							fontSize: "0.76rem",
-							cursor: "pointer",
-							fontFamily: "monospace",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-						}}
-						title="Сброс масштаба и поворота к 100%"
-					>
-						{Math.round(canvasZoom * 100)}%
-					</button>
-					<button
-						type="button"
-						onClick={() => setCanvasZoom((z) => Math.min(3.5, Number((z + 0.2).toFixed(2))))}
-						style={{
-							height: "30px",
-							minWidth: "30px",
-							background: "var(--paper-strong, #0d1117)",
-							color: "var(--ink, #c9d1d9)",
-							border: "1px solid var(--line, #30363d)",
-							borderRadius: "0 5px 5px 0",
-							padding: "2px 6px",
-							fontSize: "0.78rem",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-						}}
-						title="Увеличить масштаб"
-					>
-						<ZoomIn size={13} />
-					</button>
-				</div>
-
-				{/* 1-Click Reset — Hick's Law */}
+				{/* DOMINANT EMERALD CTA: «Прикрепить к визиту» (.primary-button) */}
 				<button
 					type="button"
-					onClick={onResetAll}
-					style={{
-						height: "30px",
-						background: "var(--paper-strong, #0d1117)",
-						color: "var(--muted, #8b949e)",
-						border: "1px solid var(--line, #30363d)",
-						borderRadius: "5px",
-						padding: "2px 8px",
-						fontSize: "0.78rem",
-						cursor: "pointer",
-						display: "inline-flex",
-						alignItems: "center",
-						justifyContent: "center",
-						gap: "4px",
-					}}
-					title="Сбросить все фильтры, масштаб и поворот"
+					className={`primary-button ${isAttached ? "is-attached" : ""}`}
+					data-testid="btn-attach-to-visit"
+					onClick={handleAttachClick}
+					title="Прикрепить снимок с измерениями к дневному протоколу визита"
 				>
-					<RotateCcw size={13} /> <span>Сброс</span>
-				</button>
-
-				{/* 1-Click Legal Protocol Printout — Doctor Autonomy (Mandate 8e) */}
-				<button
-					type="button"
-					data-testid="btn-visiograph-print-protocol"
-					onClick={onPrintProtocol}
-					style={{
-						height: "30px",
-						background: "var(--teal, #0d9488)",
-						color: "var(--paper, #ffffff)",
-						border: "none",
-						borderRadius: "5px",
-						padding: "2px 10px",
-						fontSize: "0.78rem",
-						fontWeight: 600,
-						cursor: "pointer",
-						display: "inline-flex",
-						alignItems: "center",
-						justifyContent: "center",
-						gap: "5px",
-					}}
-					title="Быстрая печать протокола РВГ с юридическим штампом и таблицей измерений"
-				>
-					<Printer size={13} /> <span>Печать</span>
-				</button>
-
-				{/* Export & Legal Watermark */}
-				<button
-					type="button"
-					data-testid="btn-visiograph-export-modal"
-					onClick={onOpenExportModal}
-					style={{
-						height: "30px",
-						background: "var(--success, #238636)",
-						color: "var(--paper, #ffffff)",
-						border: "none",
-						borderRadius: "5px",
-						padding: "2px 10px",
-						fontSize: "0.78rem",
-						fontWeight: 600,
-						cursor: "pointer",
-						display: "inline-flex",
-						alignItems: "center",
-						justifyContent: "center",
-						gap: "5px",
-					}}
-					title="Экспорт снимка (JPEG, PNG, DICOM)"
-				>
-					<FileDown size={13} /> <span>Экспорт</span>
+					<Check size={14} strokeWidth={2.5} />
+					<span>{isAttached ? "В приёме" : "Прикрепить к визиту"}</span>
 				</button>
 
 				{onClose && (
 					<button
 						type="button"
+						className="icon-button"
 						onClick={onClose}
-						style={{
-							height: "30px",
-							width: "30px",
-							background: "transparent",
-							color: "var(--muted, #8b949e)",
-							border: "none",
-							cursor: "pointer",
-							padding: "4px",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							borderRadius: "5px",
-						}}
 						title="Закрыть студию"
+						aria-label="Закрыть"
 					>
-						<X size={16} />
+						<X size={15} />
 					</button>
 				)}
 			</div>
 		</div>
 	);
 }
+
+export default VisiographTopToolbar;

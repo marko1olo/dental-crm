@@ -149,7 +149,7 @@ export const SanPinMobileCyclesCards: React.FC<SanPinMobileCyclesCardsProps> = (
 									}}
 								>
 									<ShieldCheck size={11} />
-									<span>ПСО: Норма</span>
+									<span>Очистка: Норма</span>
 								</span>
 							</div>
 						</div>
@@ -236,8 +236,10 @@ export const SanPinMobileCyclesCards: React.FC<SanPinMobileCyclesCardsProps> = (
 					{onQuickBatchNorm && (
 						<button
 							type="button"
+							className="primary-button sanpin-btn sanpin-btn-primary"
 							onClick={() => onQuickBatchNorm(25, "134")}
 							disabled={isAutofilling}
+							data-testid="mobile-quick-batch-134-btn"
 							style={{
 								flex: 1,
 								height: 48,
@@ -255,14 +257,16 @@ export const SanPinMobileCyclesCards: React.FC<SanPinMobileCyclesCardsProps> = (
 							}}
 						>
 							<Layers size={16} />
-							<span>+ Партия 134°C (25 лотков)</span>
+							<span>Цикл 134°C (25 лотков)</span>
 						</button>
 					)}
 					{onQuickPsoNorm && (
 						<button
 							type="button"
+							className="secondary-button sanpin-btn sanpin-btn-secondary"
 							onClick={onQuickPsoNorm}
 							disabled={isAutofilling}
+							data-testid="mobile-quick-pso-norm-btn"
 							style={{
 								height: 48,
 								padding: "0 14px",
@@ -280,7 +284,7 @@ export const SanPinMobileCyclesCards: React.FC<SanPinMobileCyclesCardsProps> = (
 							}}
 						>
 							<ShieldCheck size={16} />
-							<span>ПСО Норма</span>
+							<span>Очистка: Норма</span>
 						</button>
 					)}
 				</div>

@@ -1528,8 +1528,7 @@
 	border-color: var(--line, #334155) !important;
 }
 
-.sanpin-sterilization-journal > div:first-child > div:first-child > span:first-child,
-.sanpin-sterilization-journal [data-testid="print-form-257-btn"] {
+.sanpin-sterilization-journal > div:first-child > div:first-child > span:first-child {
 	display: none !important;
 }
 
@@ -1711,6 +1710,120 @@
 		min-height: 44px !important;
 	}
 }
+
+/* Button design standards for SanPiN domain (Mandate 8ze, Apple HIG) */
+.sanpin-container .primary-button,
+.sanpin-sterilization-journal .primary-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 34px;
+	padding: 0 14px;
+	border-radius: 8px;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border: 1px solid var(--teal, #0d9488);
+	cursor: pointer;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	transition: all 0.15s ease;
+}
+
+.sanpin-container .primary-button:hover,
+.sanpin-sterilization-journal .primary-button:hover {
+	background: var(--teal-hover, #0f766e);
+	border-color: var(--teal-hover, #0f766e);
+	box-shadow: 0 2px 4px rgba(13, 148, 136, 0.2);
+}
+
+.sanpin-container .primary-button:active,
+.sanpin-sterilization-journal .primary-button:active {
+	transform: translateY(1px);
+}
+
+.sanpin-container .secondary-button,
+.sanpin-sterilization-journal .secondary-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 34px;
+	padding: 0 12px;
+	border-radius: 8px;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #1e293b);
+	border: 1px solid var(--line, #cbd5e1);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.sanpin-container .secondary-button:hover,
+.sanpin-sterilization-journal .secondary-button:hover {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--line-strong, #94a3b8);
+	color: var(--ink, #0f172a);
+}
+
+.sanpin-container .secondary-button:active,
+.sanpin-sterilization-journal .secondary-button:active {
+	transform: translateY(1px);
+}
+
+[data-theme="dark"] .sanpin-container .secondary-button,
+.dark .sanpin-container .secondary-button,
+[data-theme="dark"] .sanpin-sterilization-journal .secondary-button,
+.dark .sanpin-sterilization-journal .secondary-button {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #e2e8f0);
+}
+
+[data-theme="dark"] .sanpin-container .secondary-button:hover,
+.dark .sanpin-container .secondary-button:hover,
+[data-theme="dark"] .sanpin-sterilization-journal .secondary-button:hover,
+.dark .sanpin-sterilization-journal .secondary-button:hover {
+	background: var(--paper, #334155);
+	border-color: var(--line-strong, #475569);
+	color: #ffffff;
+}
+
+.sanpin-container .icon-button,
+.sanpin-sterilization-journal .icon-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	min-width: 34px;
+	min-height: 34px;
+	border-radius: 8px;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #475569);
+	border: 1px solid var(--line, #cbd5e1);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.sanpin-container .icon-button:hover,
+.sanpin-sterilization-journal .icon-button:hover {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--line-strong, #94a3b8);
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .sanpin-container .icon-button,
+.dark .sanpin-container .icon-button,
+[data-theme="dark"] .sanpin-sterilization-journal .icon-button,
+.dark .sanpin-sterilization-journal .icon-button {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #e2e8f0);
+}
+
 
 
 

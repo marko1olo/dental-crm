@@ -38,10 +38,10 @@ export function SterilizerModalFooterActions({
 						aria-busy={submitting}
 						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 						style={{ minHeight: "36px", padding: "0.35rem 0.75rem", fontSize: "0.78rem", fontWeight: 600 }}
-						title="Внести запись в журнал стерилизации (Форма 257/у)"
+						title="Внести запись в журнал автоклавирования"
 					>
 						<Plus size={14} color="#0d9488" />
-						<span>Внести запись в журнал (ф. 257/у)</span>
+						<span>Внести запись в журнал автоклавирования</span>
 					</button>
 				)}
 
@@ -52,7 +52,7 @@ export function SterilizerModalFooterActions({
 						aria-busy={submitting}
 						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 						style={{ minHeight: "36px", padding: "0.35rem 0.75rem", fontSize: "0.78rem" }}
-						title="Сформировать печатный журнал стерилизации (Форма 257/у)"
+						title="Сформировать печатный журнал автоклавирования"
 					>
 						<FileText size={14} />
 						<span>Журнал СанПиН</span>

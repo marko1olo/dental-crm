@@ -335,8 +335,8 @@ export function FinanceToolbar({
 								/>
 								<span>
 									{isCashShiftOpen
-										? "Скрыть смену ККТ"
-										: "Кассовая смена ККТ"}
+										? "Скрыть кассовую смену"
+										: "Кассовая смена"}
 								</span>
 							</button>
 						</div>

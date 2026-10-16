@@ -25,7 +25,7 @@ export function PsoMobileCards({
 	if (loading) {
 		return (
 			<div className="md:hidden flex flex-col gap-3 p-1.5 text-center text-sm text-[var(--muted)]">
-				<div className="sanpin-mobile-card p-6">Загрузка журнала контроля ПСО...</div>
+				<div className="sanpin-mobile-card p-6">Загрузка журнала контроля очистки...</div>
 			</div>
 		);
 	}
@@ -37,7 +37,7 @@ export function PsoMobileCards({
 					<FlaskConical size={34} className="text-[var(--brand-primary,#0284c7)]" />
 					<div className="font-bold text-base text-[var(--ink)]">Журнал проверок чистоты пуст</div>
 					<p className="text-xs text-[var(--muted)] leading-relaxed">
-						Нет записей азопирамовых и фенолфталеиновых проб за выбранный период (СанПиН 3.3686-21, Форма 366/у).
+						Нет записей азопирамовых и фенолфталеиновых проб за выбранный период (СанПиН 3.3686-21, контроль предстерилизационной очистки).
 					</p>
 					<button
 						type="button"
@@ -97,7 +97,7 @@ export function PsoMobileCards({
 								className={`sanpin-tag shrink-0 text-xs font-bold py-1 px-2.5 rounded-lg inline-flex items-center gap-1.5 ${
 									isApproved ? "sanpin-tag-success" : "sanpin-tag-error"
 								}`}
-								title={isApproved ? "Партия допущена (проба отрицательная)" : "Брак ПСО (повторная очистка)"}
+								title={isApproved ? "Партия допущена (проба отрицательная)" : "Брак очистки (повторная очистка)"}
 							>
 								{isApproved ? (
 									<>
@@ -107,7 +107,7 @@ export function PsoMobileCards({
 								) : (
 									<>
 										<XCircle size={13} className="shrink-0 text-rose-600" />
-										<span>БРАК ПСО</span>
+										<span>БРАК ОЧИСТКИ</span>
 									</>
 								)}
 							</span>

@@ -77,10 +77,12 @@ export function toOdontogramToothState(visitState: string): string {
 }
 
 export {
+	inferProcedureServiceFromStamp,
+	type ClinicalProcedureService,
 	infer804nServiceFromStamp,
 	type Inferred804nService,
-} from "./infer804nService";
-import { infer804nServiceFromStamp } from "./infer804nService";
+} from "./clinicalProcedureCatalogService";
+import { inferProcedureServiceFromStamp } from "./clinicalProcedureCatalogService";
 
 export interface UseVisitEmkToothSyncParams {
 	readonly patientId: string | null | undefined;
@@ -103,7 +105,12 @@ export function useVisitEmkToothSync({
 	// 1. Initial hydration from patient's stored odontogram teeth (always syncs visitToothStateByCode)
 	useEffect(() => {
 		if (!patientId || lastHydratedPatientRef.current === patientId) return;
+		const previousPatientId = lastHydratedPatientRef.current;
 		lastHydratedPatientRef.current = patientId;
+		if (previousPatientId !== null && previousPatientId !== patientId) {
+			useVisitStore.getState().resetVisitToothState();
+			useVisitStore.getState().setCompletedServices([]);
+		}
 
 		const syncStateMap = (teeth: readonly ToothData[]) => {
 			const stateMap: Record<string, VisitToothUiState> = {};
@@ -113,12 +120,14 @@ export function useVisitEmkToothSync({
 					stateMap[String(t.toothNumber)] = uiState;
 				}
 			}
-			if (Object.keys(stateMap).length > 0) {
-				useVisitStore.getState().setVisitToothStateByCode((prev) => ({
-					...prev,
-					...stateMap,
-				}));
-			}
+			useVisitStore.getState().setVisitToothStateByCode((prev) =>
+				previousPatientId !== null && previousPatientId !== patientId
+					? stateMap
+					: {
+							...prev,
+							...stateMap,
+					  },
+			);
 
 			const diseasedTeeth = teeth.filter((t) => {
 				const s = String(t.state || "").toLowerCase();
@@ -307,7 +316,7 @@ export function useVisitEmkToothSync({
 					treatmentPlan: soap.treatmentDescription,
 				});
 
-				const matchingService = infer804nServiceFromStamp(detail.state, num);
+				const matchingService = inferProcedureServiceFromStamp(detail.state, num);
 				if (matchingService) {
 					window.dispatchEvent(
 						new CustomEvent("dente-add-services-to-invoice", {

@@ -151,7 +151,7 @@ export function AutoclaveCycleModal({
 			onClick={onClose}
 			role="dialog"
 			aria-modal="true"
-			aria-label="Фиксация цикла в журнале стерилизации (ф. 257/у)"
+			aria-label="Фиксация цикла в журнале автоклавирования"
 		>
 			<div
 				className="w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-2xl bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[#334155] shadow-2xl p-4 sm:p-6 flex flex-col gap-4 text-ink"
@@ -165,10 +165,10 @@ export function AutoclaveCycleModal({
 						</div>
 						<div>
 							<h2 className="text-base sm:text-lg font-bold m-0 leading-tight">
-								Фиксация цикла в журнале (ф. 257/у)
+								Фиксация цикла в журнале автоклавирования
 							</h2>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0">
-								СанПиН 3.3686-21 • Контроль ПСО (ф. 366/у) и стерилизации
+								СанПиН 3.3686-21 • Предстерилизационная очистка и стерилизация
 							</p>
 						</div>
 					</div>
@@ -313,11 +313,11 @@ export function AutoclaveCycleModal({
 						</div>
 					</div>
 
-					{/* 4. Pre-Sterilization Cleaning Control (ПСО, ф. 366/у) */}
+					{/* 4. Pre-Sterilization Cleaning Control */}
 					<div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#1e293b)] border border-[var(--line,#e2e8f0)] dark:border-[#334155] flex flex-col gap-2">
 						<div className="flex items-center justify-between">
 							<span className="text-xs font-bold text-ink">
-								Контроль ПСО (Форма № 366/у, СанПиН 3.3686-21)
+								Контроль предстерилизационной очистки (СанПиН 3.3686-21)
 							</span>
 							<span className="text-[10px] text-[var(--muted,#64748b)]">
 								Серия: АЗО-2026/08-114
@@ -500,7 +500,7 @@ export function AutoclaveCycleModal({
 						className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal,#0d9488)] text-white hover:bg-teal-700 min-h-[44px] shadow-sm touch-manipulation cursor-pointer inline-flex items-center gap-1.5"
 					>
 						<CheckCircle2 size={16} />
-						<span>Внести запись в журнал (ф. 257/у)</span>
+						<span>Внести запись в журнал автоклавирования</span>
 					</button>
 				</div>
 			</div>

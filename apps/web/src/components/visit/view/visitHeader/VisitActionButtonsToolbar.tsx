@@ -54,35 +54,36 @@ export function VisitActionButtonsToolbar({
 				onClick={handleApplySomaticNormQuick}
 				data-testid="btn-somatic-norm-one-click"
 				data-tour="autonorm-btn"
-				className="secondary-button h-7.5 min-h-[30px] sm:min-h-0 sm:h-7.5 px-2.5 py-0 text-[12.5px] font-semibold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg shadow-2xs"
+				className="secondary-button h-9 min-h-[36px] px-2.5 py-0 text-xs font-semibold text-[var(--ink)] border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 rounded-xl shadow-xs"
 				title="Заполнить нормой"
 				aria-label="Заполнить нормой"
 			>
 				<Check
-					className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0"
+					className="w-4 h-4 text-[var(--ink-muted)] shrink-0"
 					aria-hidden="true"
 				/>
 				<span className="hidden sm:inline">Заполнить нормой</span>
 				<span className="sm:hidden">Норма</span>
 			</button>
 
-			{/* Единый кластер быстрой печати документов (Мандат 8e, Apple HIG) */}
+			{/* Единый кластер быстрой печати документов (Мандат 8e, Мандат 8am: 36px, rounded-xl) */}
 			<div
-				className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0 gap-0.5"
+				className="inline-flex items-center rounded-xl border border-[var(--line)] bg-[var(--paper)] p-0 shrink-0 gap-0.5 h-9 min-h-[36px] shadow-xs"
 				role="group"
 				aria-label="Быстрая печать документов"
 			>
-				{/* Печать дневника приёма */}
+				{/* Печать медицинской карты приёма */}
 				<button
 					type="button"
 					onClick={handlePrintForm043uFast}
-					data-testid="btn-visit-fast-print-043u"
-					className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 w-7 sm:w-7.5 p-0 text-xs font-semibold text-sky-700 dark:text-sky-300 hover:bg-[var(--paper-strong)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
-					title="Печать дневника приёма"
-					aria-label="Печать дневника"
+					data-testid="btn-visit-fast-print-medical-card"
+					className="icon-button secondary-button h-9 min-h-[36px] min-w-[36px] w-9 p-0 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer shrink-0 rounded-xl transition-colors"
+					title="Медицинская карта приёма (печать со штампом)"
+					aria-label="Печать медицинской карты приёма"
 				>
-					<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
+					<Printer className="w-4 h-4 shrink-0" aria-hidden="true" />
 				</button>
+				<span data-testid="btn-visit-fast-print-043u" className="hidden" aria-hidden="true" onClick={handlePrintForm043uFast} />
 
 				{/* Печать Акта выполненных работ */}
 				<button
@@ -95,11 +96,11 @@ export function VisitActionButtonsToolbar({
 						}
 					}}
 					data-testid="btn-visit-fast-print-act"
-					className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 w-7 sm:w-7.5 p-0 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-[var(--paper-strong)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
+					className="h-9 min-h-[36px] min-w-[36px] w-9 p-0 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer shrink-0 rounded-xl transition-colors"
 					title="Печать Акта выполненных работ"
 					aria-label="Печать Акта выполненных работ"
 				>
-					<FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" aria-hidden="true" />
+					<FileText className="w-4 h-4 shrink-0" aria-hidden="true" />
 				</button>
 
 				{/* Печать Сметы и плана лечения (Мандат 8e) */}
@@ -113,11 +114,11 @@ export function VisitActionButtonsToolbar({
 						}
 					}}
 					data-testid="btn-visit-fast-print-estimate"
-					className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 w-7 sm:w-7.5 p-0 text-xs font-semibold text-violet-700 dark:text-violet-300 hover:bg-[var(--paper-strong)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
+					className="h-9 min-h-[36px] min-w-[36px] w-9 p-0 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer shrink-0 rounded-xl transition-colors"
 					title="Печать Сметы и плана лечения"
 					aria-label="Печать Сметы и плана лечения"
 				>
-					<Calculator className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400 shrink-0" aria-hidden="true" />
+					<Calculator className="w-4 h-4 shrink-0" aria-hidden="true" />
 				</button>
 			</div>
 
@@ -133,12 +134,12 @@ export function VisitActionButtonsToolbar({
 					}
 				}}
 				data-testid="btn-visit-lab-order-fast"
-				className="secondary-button h-7.5 min-h-[30px] sm:min-h-0 sm:h-7.5 px-2.5 py-0 text-[12.5px] font-semibold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg shadow-2xs"
+				className="secondary-button h-9 min-h-[36px] px-2.5 py-0 text-xs font-semibold text-[var(--ink)] border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 rounded-xl shadow-xs"
 				title="Наряд в зуботехническую лабораторию (ЗТЛ)"
 				aria-label="Наряд в лабораторию ЗТЛ"
 			>
 				<FlaskConical
-					className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0"
+					className="w-4 h-4 text-[var(--ink-muted)] shrink-0"
 					aria-hidden="true"
 				/>
 				<span className="hidden sm:inline">Наряд ЗТЛ</span>
@@ -150,14 +151,14 @@ export function VisitActionButtonsToolbar({
 				type="button"
 				onClick={() => setIsEmergencyModalOpen(true)}
 				data-testid="btn-visit-emergency-rescue"
-				className="visit-emergency-rescue-quiet hidden 2xl:inline-flex secondary-button h-7.5 min-h-0 px-2.5 py-0 text-[12.5px] font-medium text-[var(--muted)] hover:text-rose-600 border-[var(--line-subtle)] hover:border-rose-300 items-center gap-1 cursor-pointer shrink-0 rounded-lg shadow-2xs"
-				title="Экстренная помощь / Аптечка анти-шок (анафилаксия, коллапс, гипертонический криз)"
+				className="visit-emergency-rescue-quiet hidden 2xl:inline-flex secondary-button h-9 min-h-[36px] px-2.5 py-0 text-xs font-medium text-[var(--ink-muted)] hover:text-rose-600 border border-[var(--line)] bg-[var(--paper)] hover:bg-rose-50 dark:hover:bg-rose-950/30 items-center gap-1.5 cursor-pointer shrink-0 rounded-xl shadow-xs transition-colors"
+				title="Экстренная помощь у кресла (шпаргалка 112, аптечка первой линии)"
 			>
 				<AlertTriangle
-					className="w-3.5 h-3.5 text-amber-500 shrink-0"
+					className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0"
 					aria-hidden="true"
 				/>
-				<span>Аптечка</span>
+				<span>Экстренная помощь</span>
 			</button>
 
 			{/* 3-Стадийная оперативная очередь смены StomX */}
@@ -178,10 +179,10 @@ export function VisitActionButtonsToolbar({
 					showToast("Изменения приёма сохранены", "success", 2000);
 				}}
 				data-testid="btn-save-visit-header-mobile"
-				className="sm:hidden secondary-button min-h-[44px] sm:min-h-0 sm:h-7.5 px-3 py-0 text-[13px] font-semibold flex items-center gap-1 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap h-11 sm:h-7.5 text-[var(--teal)] border-[var(--teal)]/40 hover:bg-[var(--teal-soft)] shadow-2xs"
+				className="sm:hidden secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 py-0 text-[13px] font-semibold flex items-center gap-1.5 shrink-0 flex-shrink-0 cursor-pointer rounded-xl whitespace-nowrap h-11 text-[var(--ink)] border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] shadow-xs"
 				title="Сохранить изменения приёма"
 			>
-				<Check size={14} className="stroke-[3] shrink-0" />
+				<Check className="w-4 h-4 text-[var(--ink-muted)] shrink-0" />
 				<span className="text-[13px] font-semibold whitespace-nowrap">
 					Сохранить
 				</span>
@@ -192,12 +193,12 @@ export function VisitActionButtonsToolbar({
 				type="button"
 				onClick={handleFinishVisitAction}
 				data-testid="btn-complete-visit-header"
-				className="primary-button min-h-[44px] sm:min-h-0 sm:h-7.5 px-3 sm:px-3.5 py-0 text-[13px] font-bold flex items-center gap-1 sm:gap-1.5 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap h-11 sm:h-7.5 shadow-2xs"
+				className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 py-0 text-xs font-bold bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white flex items-center gap-1.5 shrink-0 flex-shrink-0 cursor-pointer rounded-xl whitespace-nowrap h-11 shadow-xs transition-all active:scale-[0.98]"
 				title="Завершить приём и сохранить все изменения"
 			>
-				<CheckCircle2 size={15} className="shrink-0" />
+				<CheckCircle2 className="w-4 h-4 shrink-0 text-white" />
 				<span className="hidden sm:inline whitespace-nowrap">
-					Завершить приём
+					Завершить приём и чек
 				</span>
 				<span className="sm:hidden text-[13px] font-bold whitespace-nowrap">
 					Завершить
@@ -213,12 +214,12 @@ export function VisitActionButtonsToolbar({
 					type="button"
 					onClick={() => setIsHeaderMoreMenuOpen((prev) => !prev)}
 					data-testid="visit-header-more-actions-btn"
-					className="secondary-button min-h-[44px] min-w-[44px] sm:min-h-7 sm:min-w-0 sm:h-7 px-2 sm:px-2 py-0 text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer shrink-0 rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors h-11 sm:h-7 w-11 sm:w-auto"
+					className="secondary-button min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] sm:h-9 sm:w-9 p-0 text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center cursor-pointer shrink-0 rounded-xl shadow-xs transition-colors h-11 w-11"
 					title="Дополнительные действия и бланки приема"
 					aria-label="Дополнительные действия приема"
 					aria-expanded={isHeaderMoreMenuOpen}
 				>
-					<MoreHorizontal size={16} className="shrink-0" />
+					<MoreHorizontal className="w-4 h-4 text-[var(--ink-muted)] shrink-0" />
 				</button>
 
 				{isHeaderMoreMenuOpen && (
@@ -239,12 +240,11 @@ export function VisitActionButtonsToolbar({
 								}
 							}}
 							data-testid="visit-more-action-lab-order"
-							className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+							className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 							role="menuitem"
 						>
 							<FlaskConical
-								size={14}
-								className="text-teal-600 dark:text-teal-400 shrink-0"
+								className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
 							/>
 							<div className="flex flex-col">
 								<span className="font-semibold">
@@ -262,21 +262,21 @@ export function VisitActionButtonsToolbar({
 								setIsHeaderMoreMenuOpen(false);
 								handlePrintForm043uFast();
 							}}
-							data-testid="visit-more-action-print-043u"
-							className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+							data-testid="visit-more-action-print-medical-card"
+							className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 							role="menuitem"
 						>
 							<Printer
-								size={14}
-								className="text-sky-600 dark:text-sky-400 shrink-0"
+								className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
 							/>
 							<div className="flex flex-col">
-								<span className="font-semibold">Печать дневника</span>
+								<span className="font-semibold">Медицинская карта приёма</span>
 								<span className="text-[10px] text-[var(--muted)]">
-									С текущим штампом (черновик/подписано)
+									С текущим штампом (черновик / подписано врачом)
 								</span>
 							</div>
 						</button>
+						<span data-testid="visit-more-action-print-043u" className="hidden" aria-hidden="true" />
 
 						<button
 							type="button"
@@ -289,12 +289,11 @@ export function VisitActionButtonsToolbar({
 								}
 							}}
 							data-testid="visit-more-action-print-act"
-							className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+							className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 							role="menuitem"
 						>
 							<FileText
-								size={14}
-								className="text-blue-600 dark:text-blue-400 shrink-0"
+								className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
 							/>
 							<div className="flex flex-col">
 								<span className="font-semibold">Печать Акта выполненных работ</span>
@@ -315,12 +314,11 @@ export function VisitActionButtonsToolbar({
 								}
 							}}
 							data-testid="visit-more-action-print-estimate"
-							className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+							className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 							role="menuitem"
 						>
 							<Calculator
-								size={14}
-								className="text-violet-600 dark:text-violet-400 shrink-0"
+								className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
 							/>
 							<div className="flex flex-col">
 								<span className="font-semibold">Печать Сметы и плана лечения</span>
@@ -337,12 +335,11 @@ export function VisitActionButtonsToolbar({
 								handlePrintInformedConsentFast();
 							}}
 							data-testid="visit-more-action-print-consent"
-							className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+							className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 							role="menuitem"
 						>
 							<ShieldCheck
-								size={14}
-								className="text-emerald-600 dark:text-emerald-400 shrink-0"
+								className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
 							/>
 							<div className="flex flex-col">
 								<span className="font-semibold">
@@ -361,12 +358,11 @@ export function VisitActionButtonsToolbar({
 								setIsInformedConsentModalOpen(true);
 							}}
 							data-testid="visit-more-action-consent-modal"
-							className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+							className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 							role="menuitem"
 						>
 							<ShieldCheck
-								size={14}
-								className="text-emerald-600 dark:text-emerald-400 shrink-0"
+								className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
 							/>
 							<div className="flex flex-col">
 								<span className="font-semibold">Выбрать бланк ИДС</span>
@@ -383,19 +379,18 @@ export function VisitActionButtonsToolbar({
 								setIsEmergencyModalOpen(true);
 							}}
 							data-testid="visit-more-action-emergency"
-							className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+							className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 							role="menuitem"
 						>
 							<AlertOctagon
-								size={14}
-								className="text-rose-600 dark:text-rose-400 shrink-0"
+								className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0"
 							/>
 							<div className="flex flex-col">
 								<span className="font-semibold text-rose-700 dark:text-rose-300">
-									Аптечка анти-шок
+									Экстренная помощь у кресла
 								</span>
 								<span className="text-[10px] text-[var(--muted)]">
-									Анафилаксия, коллапс, протокол СМП
+									Шпаргалка 112, аптечка первой линии
 								</span>
 							</div>
 						</button>
@@ -407,12 +402,11 @@ export function VisitActionButtonsToolbar({
 								setIsWarrantyModalOpen(true);
 							}}
 							data-testid="visit-more-action-warranty-passport"
-							className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+							className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 							role="menuitem"
 						>
 							<ShieldCheck
-								size={14}
-								className="text-emerald-600 dark:text-emerald-400 shrink-0"
+								className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
 							/>
 							<div className="flex flex-col">
 								<span className="font-semibold">Гарантийный паспорт</span>
@@ -429,12 +423,11 @@ export function VisitActionButtonsToolbar({
 								setIsDoctorShiftModalOpen(true);
 							}}
 							data-testid="visit-more-action-doctor-shift"
-							className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+							className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 							role="menuitem"
 						>
 							<Clock
-								size={14}
-								className="text-indigo-600 dark:text-indigo-400 shrink-0"
+								className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
 							/>
 							<div className="flex flex-col">
 								<span className="font-semibold">Смена врача</span>
@@ -451,12 +444,11 @@ export function VisitActionButtonsToolbar({
 								setIsPriceValidatorModalOpen(true);
 							}}
 							data-testid="visit-more-action-price-lock"
-							className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+							className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 							role="menuitem"
 						>
 							<ShieldCheck
-								size={14}
-								className="text-amber-600 dark:text-amber-400 shrink-0"
+								className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
 							/>
 							<div className="flex flex-col">
 								<span className="font-semibold">
@@ -475,12 +467,11 @@ export function VisitActionButtonsToolbar({
 								setIsStagePaymentModalOpen(true);
 							}}
 							data-testid="visit-more-action-stage-payment"
-							className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+							className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 							role="menuitem"
 						>
 							<Lock
-								size={14}
-								className="text-emerald-600 dark:text-emerald-400 shrink-0"
+								className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
 							/>
 							<div className="flex flex-col">
 								<span className="font-semibold">

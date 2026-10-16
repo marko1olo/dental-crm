@@ -37,7 +37,7 @@ export function SterilizerEquipmentModal({
 								{form.isEditing ? `Редактирование стерилизатора: ${editingEquipment?.name}` : "Постановка на учет стерилизатора / автоклава"}
 							</h3>
 							<p style={{ margin: 0, fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
-								Паспорт оборудования, метрологическая поверка и журнал СанПиН 257/у
+								Паспорт оборудования, метрологическая поверка и журнал автоклавирования
 							</p>
 						</div>
 					</div>
@@ -51,7 +51,7 @@ export function SterilizerEquipmentModal({
 					{(
 						[
 							{ id: "passport", label: "Паспорт аппарата", icon: Flame },
-							{ id: "cycles", label: "Журнал циклов (257/у)", icon: Clock },
+							{ id: "cycles", label: "Журнал циклов", icon: Clock },
 							{ id: "maintenance", label: "ТО и поверка", icon: Wrench },
 						] as const
 					).map((t) => {

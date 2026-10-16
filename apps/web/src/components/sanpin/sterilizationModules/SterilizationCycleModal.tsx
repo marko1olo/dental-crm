@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Flame, X } from "lucide-react";
+import { Check, Flame, X } from "lucide-react";
 import { showToast } from "../../GlobalToast";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import type {
@@ -145,7 +145,7 @@ export function SterilizationCycleModal({
 			}).catch(() => null);
 
 			if (res && res.ok) {
-				showToast(`Цикл №${cycleNumber} зафиксирован в журнале стерилизации (ф. 257/у)`, "success");
+				showToast(`Цикл №${cycleNumber} зафиксирован в журнале автоклавирования`, "success");
 			} else {
 				const errData = res ? await res.json().catch(() => ({})) : {};
 				showToast(errData.message || "Ошибка сохранения цикла стерилизации", "error");
@@ -164,20 +164,20 @@ export function SterilizationCycleModal({
 	if (!isOpen) return null;
 
 	const modalContent = (
-		<div className="sanpin-modal-overlay" role="dialog" aria-modal="true" aria-label="Фиксация цикла стерилизации" onClick={onClose}>
+		<div className="sanpin-modal-overlay" role="dialog" aria-modal="true" aria-label="Фиксация цикла автоклавирования" onClick={onClose}>
 			<div className="sanpin-modal" style={{ maxWidth: "680px", width: "95%" }} onClick={(e) => e.stopPropagation()}>
 				<div className="sanpin-modal-header" style={{ padding: "1.2rem 1.5rem" }}>
 					<div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
 						<Flame size={22} color="#0284c7" />
 						<div>
-							<h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700 }}>Фиксация цикла в журнале (ф. 257/у)</h3>
+							<h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700 }}>Зафиксировать цикл автоклава</h3>
 							<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
-								СанПиН 3.3686-21 • Контроль ПСО (ф. 366/у) и стерилизации (ф. 257/у)
+								Пакетный цикл смены • Индикаторы 5 класса • Списание со склада
 							</div>
 						</div>
 					</div>
 					<button
-						type="button" onClick={onClose} className="sanpin-btn-icon"
+						type="button" onClick={onClose} className="icon-button"
 						style={{ minWidth: "44px", minHeight: "44px", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
 						aria-label="Закрыть"
 					>
@@ -221,18 +221,19 @@ export function SterilizationCycleModal({
 						/>
 					</div>
 
-					<div className="sanpin-modal-footer" style={{ padding: "1rem 1.5rem", gap: "0.75rem" }}>
+					<div className="sanpin-modal-footer" style={{ padding: "1rem 1.5rem", gap: "0.75rem", display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
 						<button
-							type="button" onClick={onClose} className="sanpin-btn sanpin-btn-secondary"
-							style={{ minHeight: "44px", padding: "0.4rem 1rem", fontSize: "0.85rem" }}
+							type="button" onClick={onClose} className="secondary-button"
+							style={{ minHeight: "36px", padding: "0 1rem", fontSize: "0.85rem" }}
 						>
 							Отмена
 						</button>
 						<button
-							type="submit" aria-busy={submitting} className="sanpin-btn sanpin-btn-primary"
-							style={{ minHeight: "44px", padding: "0.4rem 1.25rem", fontSize: "0.85rem", fontWeight: 700 }}
+							type="submit" aria-busy={submitting} className="primary-button"
+							style={{ minHeight: "36px", padding: "0 1.25rem", fontSize: "0.85rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "6px" }}
 						>
-							{submitting ? "Сохранение..." : "Внести запись в журнал (ф. 257/у)"}
+							<Check size={16} />
+							<span>{submitting ? "Сохранение..." : "Утвердить цикл стерилизации"}</span>
 						</button>
 					</div>
 				</form>

@@ -214,7 +214,7 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 				<button type="button" data-testid="btn-toggle-odontogram-collapse" />
 				<button type="button" data-testid="btn-fill-norm-quick" onClick={handleApplyPhysiologicalNorm} title="Отметка выполнения">Заполнить нормой</button>
 				<button type="button" data-testid="btn-save-visit-note" disabled={isDraftAccepting} />
-				<button type="button" data-testid="btn-complete-visit-emk" disabled={isCompletingVisit} />
+				<button type="button" data-testid="btn-complete-visit-emk" disabled={isCompletingVisit}>Завершить приём и сформировать чек</button>
 				<button type="button" data-testid="btn-anes-ultracain-ds" />
 				<button type="button" data-testid="btn-anes-ultracain-ds-forte" />
 				<button type="button" data-testid="btn-anes-scandonest-3" />

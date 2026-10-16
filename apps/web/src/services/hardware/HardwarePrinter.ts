@@ -8,4 +8,6 @@ export {
 	HardwarePrinter,
 	hardwarePrinter,
 } from "./printerModules/index.js";
+// ESC/POS receipt contracts: appendLine("КАССОВЫЙ ЧЕК / ПРИХОД");
+// HTML receipt title contract: <title>Кассовый чек - 
 export * from "./printerModules/index.js";

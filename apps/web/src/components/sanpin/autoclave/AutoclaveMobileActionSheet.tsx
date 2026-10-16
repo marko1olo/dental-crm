@@ -110,8 +110,8 @@ export function AutoclaveMobileActionSheet({
 							>
 								<Sparkles size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
 								<div className="flex flex-col text-left">
-									<span className="font-bold text-sm">Зафиксировать цикл смены</span>
-									<span className="text-xs text-[var(--muted)]">134°C, 2.1 бар, 5 мин • 100% норма</span>
+									<span className="font-bold text-sm">Провести цикл автоклавирования на смену</span>
+									<span className="text-xs text-[var(--muted)]">134°C, 2.1 бар, 5 мин • азопирам/фенолфталеин норма • списание со склада</span>
 								</div>
 							</button>
 

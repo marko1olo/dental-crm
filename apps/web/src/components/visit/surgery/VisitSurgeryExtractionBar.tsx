@@ -172,7 +172,7 @@ export const VisitSurgeryExtractionBar: React.FC<VisitSurgeryExtractionBarProps>
 			{/* Сложность удаления */}
 			<div className="space-y-1.5">
 				<div className="flex items-center justify-between">
-					<span className="text-[11px] font-bold text-[var(--muted)]">Сложность экстракции (Услуга 804н):</span>
+					<span className="text-[11px] font-bold text-[var(--muted)]">Сложность экстракции (Услуга):</span>
 					<button
 						type="button"
 						onClick={handleAddServicesToInvoice}

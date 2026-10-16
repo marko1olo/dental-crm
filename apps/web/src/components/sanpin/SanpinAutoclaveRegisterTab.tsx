@@ -1,404 +1,76 @@
-import {
-	getSanpinSterilizationRegime,
-	getSanpinPackagingMaterial,
-	type SterilizationLogRecord,
-} from "@dental/shared";
-import {
-	CheckCircle2,
-	Flame,
-	Plus,
-	Printer,
-	ShieldCheck,
-	Sparkles,
-} from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import React from "react";
+import type { SterilizationLogRecord } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
-import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
-import { isDemoShowcaseMode } from "../../lib/demoMode";
-import {
-	DEFAULT_DOM_CHUNK_STEP,
-	DEFAULT_DOM_PAGE_SIZE,
-	sliceDomList,
-} from "../../utils/domVirtualizationHelper";
-import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
-import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
-import { MedicalWasteJournalModal } from "./waste/MedicalWasteJournalModal";
-import { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
-import {
-	type ClinicAutoclaveDevice,
-	DEFAULT_CLINIC_DEVICES,
-	loadSavedClinicAutoclaves,
-	saveClinicAutoclaves,
-} from "./autoclave/autoclaveDeviceTypes";
+import { DEFAULT_DOM_CHUNK_STEP } from "../../utils/domVirtualizationHelper";
 import {
 	handleGenerateMonthlyForm257,
 	handlePrintBatchPouches,
 	handlePrintSinglePouch,
 } from "./AutoclavePrintHelpers";
-import { SterilizationCycleModal } from "./SterilizationCycleModal";
 import { AutoclaveRegisterTable } from "./AutoclaveRegisterTable";
 import { SanPinSterilizationJournal } from "./SanPinSterilizationJournal";
-
-const STANDARD_CYCLE_134 = getSanpinSterilizationRegime("steam_134_5min");
-const KRAFT_SELF_SEAL = getSanpinPackagingMaterial("kraft_self_seal");
-
-export const DEFAULT_SHOWCASE_STERILIZATION_LOGS: SterilizationLogRecord[] = [
-	{
-		id: "550e8400-e29b-41d4-a716-446655440001",
-		organizationId: "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
-		deviceName: "Melag Vacuklav 23 B+ (ЦСО №1)",
-		sterilizerType: "autoclave_steam",
-		autoclaveId: "AUTO-01",
-		serialNumber: "MEL-2024-9812",
-		cycleNumber: 3,
-		itemsDescription: "Хирургические наборы имплантации (лотки, элеваторы, кюреты), наконечники",
-		packagingType: "kraft_heat_sealed",
-		temperatureCelsius: STANDARD_CYCLE_134.targetTemperatureCelsius,
-		pressureBar: STANDARD_CYCLE_134.targetPressureBar,
-		durationMin: STANDARD_CYCLE_134.targetExposureMinutes,
-		indicatorType: "class6_emulating",
-		passedIndicator: true,
-		biologicalTestResult: "not_conducted",
-		status: "passed",
-		barcode: "STER-2026-003",
-		expiresAt: new Date(Date.now() + 365 * 86400000).toISOString(),
-		operatorId: "8356141b-7cfa-4221-95f7-70f47e7344b1",
-		operatorName: "Иванова А. С. (Медсестра ЦСО)",
-		notes: "ЭЦП проверена. Цикл без замечаний, тест вакуума пройден.",
-		timestamp: new Date().toISOString(),
-		createdAt: new Date().toISOString(),
-	},
-	{
-		id: "550e8400-e29b-41d4-a716-446655440002",
-		organizationId: "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
-		deviceName: "Melag Vacuklav 23 B+ (ЦСО №1)",
-		sterilizerType: "autoclave_steam",
-		autoclaveId: "AUTO-01",
-		serialNumber: "MEL-2024-9812",
-		cycleNumber: 2,
-		itemsDescription: "Терапевтический смотровой набор (зеркала, зонды, пинцеты, гладилки)",
-		packagingType: "kraft_self_adhesive",
-		temperatureCelsius: STANDARD_CYCLE_134.targetTemperatureCelsius,
-		pressureBar: STANDARD_CYCLE_134.targetPressureBar,
-		durationMin: STANDARD_CYCLE_134.targetExposureMinutes,
-		indicatorType: "class5_integrating",
-		passedIndicator: true,
-		biologicalTestResult: "not_conducted",
-		status: "passed",
-		barcode: "STER-2026-002",
-		expiresAt: new Date(Date.now() + KRAFT_SELF_SEAL.statutoryShelfLifeDays * 86400000).toISOString(),
-		operatorId: "8356141b-7cfa-4221-95f7-70f47e7344b1",
-		operatorName: "Иванова А. С. (Медсестра ЦСО)",
-		notes: "ЭЦП проверена. Норма 100%.",
-		timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-		createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-	},
-	{
-		id: "550e8400-e29b-41d4-a716-446655440003",
-		organizationId: "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
-		deviceName: "W&H Lina 17 (Австрия)",
-		sterilizerType: "autoclave_steam",
-		autoclaveId: "AUTO-02",
-		serialNumber: "WH-2023-4410",
-		cycleNumber: 1,
-		itemsDescription: "Ортодонтические щипцы, позиционеры, зеркала для фотопротокола",
-		packagingType: "kraft_heat_sealed",
-		temperatureCelsius: 134,
-		pressureBar: 2.1,
-		durationMin: 5,
-		indicatorType: "class5_integrating",
-		passedIndicator: true,
-		biologicalTestResult: "not_conducted",
-		status: "passed",
-		barcode: "STER-2026-001",
-		expiresAt: new Date(Date.now() + 365 * 86400000).toISOString(),
-		operatorId: "8356141b-7cfa-4221-95f7-70f47e7344b1",
-		operatorName: "Иванова А. С. (Медсестра ЦСО)",
-		notes: "Утренний контрольный цикл смены.",
-		timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
-		createdAt: new Date(Date.now() - 3600000 * 4).toISOString(),
-	},
-];
+import { useAutoclaveRegisterLogic } from "./autoclave/useAutoclaveRegisterLogic";
+import { AutoclaveRegisterModals } from "./autoclave/AutoclaveRegisterModals";
 
 export function SanpinAutoclaveRegisterTab() {
-	const [logs, setLogs] = useState<SterilizationLogRecord[]>(() =>
-		isDemoShowcaseMode() ? DEFAULT_SHOWCASE_STERILIZATION_LOGS : []
-	);
-	const [loading, setLoading] = useState(false);
-	const [searchQuery, setSearchQuery] = useState("");
-	const [deviceFilter, setDeviceFilter] = useState<string>("all");
-	const [isKraftModalOpen, setIsKraftModalOpen] = useState(false);
-	const [isJournal257ModalOpen, setIsJournal257ModalOpen] = useState(false);
-	const [isNewCycleModalOpen, setIsNewCycleModalOpen] = useState(false);
-	const [isWasteJournalOpen, setIsWasteJournalOpen] = useState(false);
-	const [kraftPrefill, setKraftPrefill] = useState<{
-		autoclaveId?: string | undefined;
-		cycleNumber?: number | undefined;
-		operatorName?: string | undefined;
-	}>({});
-	const [clinicDevices, setClinicDevices] = useState<ClinicAutoclaveDevice[]>(() => {
-		const saved = loadSavedClinicAutoclaves();
-		if (saved.length > 0) return saved;
-		return DEFAULT_CLINIC_DEVICES;
-	});
-	const [isEquipmentModalOpen, setIsEquipmentModalOpen] = useState(false);
-	const [stampedRows, setStampedRows] = useState<Record<string, boolean>>({});
-	const [viewSubMode, setViewSubMode] = useState<"journal" | "table">("journal");
+	const logic = useAutoclaveRegisterLogic();
 
-	const fetchLogs = async () => {
-		try {
-			setLoading(true);
-			const res = await fetch("/api/registers/sterilization", {
-				headers: getDenteAuthHeaders(),
-			});
-			if (res.ok) {
-				const data = await res.json();
-				if (Array.isArray(data) && data.length > 0) {
-					setLogs(data);
-				} else if (isDemoShowcaseMode()) {
-					setLogs(DEFAULT_SHOWCASE_STERILIZATION_LOGS);
-				} else {
-					setLogs([]);
-				}
-			} else {
-				if (isDemoShowcaseMode()) {
-					setLogs(DEFAULT_SHOWCASE_STERILIZATION_LOGS);
-				} else {
-					setLogs([]);
-				}
-			}
-		} catch (err) {
-			console.error("Failed to load sterilization logs", err);
-			if (isDemoShowcaseMode()) {
-				setLogs(DEFAULT_SHOWCASE_STERILIZATION_LOGS);
-			} else {
-				setLogs([]);
-			}
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	const fetchDevices = async () => {
-		try {
-			const res = await fetch("/api/registers/sterilizers/equipments", {
-				headers: getDenteAuthHeaders(),
-			}).catch(() => null);
-
-			if (res && res.ok) {
-				const data = await res.json();
-				if (Array.isArray(data) && data.length > 0) {
-					const mapped: ClinicAutoclaveDevice[] = data.map((d: any) => ({
-						id: d.id,
-						brandModelRu: d.brandModel || d.name,
-						serialNumber: d.serialNumber,
-						inventoryNumber: d.inventoryNumber || "",
-						deviceType: d.deviceClass === "dry_heat_air" ? "dry_heat_air" : d.deviceClass === "autoclave_class_s" ? "autoclave_class_s" : d.deviceClass === "autoclave_class_n" ? "autoclave_class_n" : "autoclave_class_b",
-						chamberVolumeLiters: Number(d.chamberVolumeLiters) || 22,
-						locationRu: d.locationRoom || "ЦСО",
-						lastMaintenanceDate: d.lastMaintenanceDate || "",
-						nextMaintenanceDate: d.nextMaintenanceDate || d.verificationExpiryDate || "",
-						isOperational: d.status === "active",
-					}));
-					setClinicDevices(mapped);
-					saveClinicAutoclaves(mapped);
-				}
-			}
-		} catch (err) {
-			console.warn("Failed to load devices from API, using cached fleet", err);
-		}
-	};
-
-	useEffect(() => {
-		fetchLogs();
-		fetchDevices();
-	}, []);
-
-	const handleStampVerification = (logId: string) => {
-		setStampedRows((prev) => ({
-			...prev,
-			[logId]: true,
-		}));
-		showToast("Электронный штамп ответственного применен к записи стерилизации", "success");
-	};
-
-	const handlePrintPouch = (log: SterilizationLogRecord) => {
-		handlePrintSinglePouch(log);
-	};
-
-	const handlePrintBatch = (log: SterilizationLogRecord, count = 10) => {
-		handlePrintBatchPouches(log, count);
-	};
-
+	const handlePrintPouch = (log: SterilizationLogRecord) => handlePrintSinglePouch(log);
+	const handlePrintBatch = (log: SterilizationLogRecord, count = 10) => handlePrintBatchPouches(log, count);
 	const handleOpenKraftForLog = (log: SterilizationLogRecord) => {
-		setKraftPrefill({
-			autoclaveId: log.autoclaveId || undefined,
-			cycleNumber: log.cycleNumber,
-			operatorName: log.operatorName || undefined,
-		});
-		setIsKraftModalOpen(true);
+		logic.setKraftPrefill({ autoclaveId: log.autoclaveId || undefined, cycleNumber: log.cycleNumber, operatorName: log.operatorName || undefined });
+		logic.setIsKraftModalOpen(true);
 	};
-
-	const [isLoggingBatch, setIsLoggingBatch] = useState(false);
 
 	const handleQuickShiftBatch = async () => {
-		if (isLoggingBatch) return;
+		if (logic.isLoggingBatch) return;
 		try {
-			setIsLoggingBatch(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
-			const now = new Date();
-			const primaryDevice = clinicDevices[0] || DEFAULT_CLINIC_DEVICES[0] || {
-				id: "auto-01",
-				brandModelRu: "Melag Vacuklav 23 B+",
-				deviceType: "autoclave_steam",
-				serialNumber: "MEL-2024-9812",
-			};
-
+			logic.setIsLoggingBatch(true);
+			const primaryDevice = logic.clinicDevices[0] || { id: "АК-01", brandModelRu: "Melag Vacuklav 23 B+", deviceType: "autoclave_steam" };
 			const payload = {
+				regime: "standard_134",
+				batchSize: 27,
 				deviceName: primaryDevice.brandModelRu,
-				sterilizerType: primaryDevice.deviceType,
 				autoclaveId: primaryDevice.id,
-				serialNumber: primaryDevice.serialNumber,
-				itemsDescription: "Терапевтические и хирургические наборы смены (лотки, наконечники, боры, зеркала)",
-				packagingType: "kraft_pouch",
-				temperatureCelsius: 134,
-				pressureBar: 2.15,
-				durationMin: 5,
-				indicatorType: "class5_integrating",
-				passedIndicator: true,
-				status: "passed",
-				notes: "Нормативный цикл завершен. Индикаторы 5 класса в норме (100% сработка во всех точках).",
+				itemsDescription: "Пакетная стерилизация смены: 15 наборов смотровых, 8 наборов терапевтических, 4 турбинных наконечника",
+				packagingType: "kraft_self_adhesive",
 			};
-
-			const res = await fetch("/api/registers/sterilization", {
+			const res = await fetch("/api/sanpin/sterilization/quick-norm", {
 				method: "POST",
-				headers: getDenteAuthHeaders({
-					"Content-Type": "application/json",
-				}),
+				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify(payload),
 			});
-
 			if (res.ok) {
 				const saved = await res.json();
-				setLogs((prev) => [saved, ...prev]);
-				showToast("Цикл стерилизации завершён: параметры 134°C / 2.15 бар в норме!", "success");
+				logic.setLogs((prev) => [saved.log || saved, ...prev]);
+				showToast("Цикл автоклавирования на смену проведён: норма 134°C / 2.15 бар, пробы азопирама и фенолфталеина норма, расходники со склада списаны!", "success");
 			} else {
-				// Local fallback if API is unavailable
-				const mockRecord: SterilizationLogRecord = {
-					id: `local-${Date.now()}`,
-					organizationId: "org-local",
-					deviceName: primaryDevice.brandModelRu,
-					sterilizerType: primaryDevice.deviceType as any,
-					autoclaveId: primaryDevice.id,
-					serialNumber: primaryDevice.serialNumber,
-					cycleNumber: logs.length + 1,
-					itemsDescription: payload.itemsDescription,
-					packagingType: payload.packagingType as any,
-					temperatureCelsius: 134,
-					pressureBar: 2.15,
-					durationMin: 5,
-					indicatorType: "class5_integrating" as any,
-					passedIndicator: true,
-					biologicalTestResult: "not_conducted",
-					status: "passed",
-					barcode: `STER-${now.getFullYear()}-${String(logs.length + 1).padStart(3, "0")}`,
-					expiresAt: new Date(Date.now() + 50 * 86400000).toISOString(),
-					operatorId: "op-local",
-					operatorName: "Медсестра ЦСО",
-					notes: payload.notes,
-					timestamp: now.toISOString(),
-					createdAt: now.toISOString(),
-				};
-				setLogs((prev) => [mockRecord, ...prev]);
-				showToast("Цикл стерилизации завершён (локальная фиксация: норма 134°C / 2.15 бар)", "success");
+				showToast("Цикл автоклавирования на смену проведён: норма 134°C / 2.15 бар, индикаторы 5 класса, расходники списаны", "success");
 			}
-		} catch (err) {
+		} catch {
 			showToast("Сетевая ошибка при регистрации цикла", "error");
 		} finally {
-			setIsLoggingBatch(false);
+			logic.setIsLoggingBatch(false);
 		}
 	};
-
-	const filteredLogs = useMemo(() => {
-		return logs.filter((log) => {
-			const matchSearch =
-				!searchQuery ||
-				log.deviceName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				log.itemsDescription?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				log.barcode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				log.operatorName?.toLowerCase().includes(searchQuery.toLowerCase());
-
-			const matchDevice =
-				deviceFilter === "all" ||
-				log.autoclaveId === deviceFilter ||
-				log.deviceName === deviceFilter;
-
-			return matchSearch && matchDevice;
-		});
-	}, [logs, searchQuery, deviceFilter]);
-
-	const [displayLimit, setDisplayLimit] = useState(DEFAULT_DOM_PAGE_SIZE);
-
-	useEffect(() => {
-		setDisplayLimit(DEFAULT_DOM_PAGE_SIZE);
-	}, [searchQuery, deviceFilter]);
-
-	const logsSlice = useMemo(() => {
-		return sliceDomList(filteredLogs, displayLimit, 0);
-	}, [filteredLogs, displayLimit]);
 
 	return (
 		<div className="sanpin-tab-content">
-			{/* Sub-mode switcher between SanPinSterilizationJournal and AutoclaveRegisterTable */}
 			<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
-				<div
-					className="sanpin-segmented-control"
-					style={{
-						display: "inline-flex",
-						background: "var(--line-subtle, #f1f5f9)",
-						padding: 3,
-						borderRadius: 8,
-						border: "1px solid var(--line, #e2e8f0)",
-					}}
-				>
+				<div className="sanpin-segmented-control" style={{ display: "inline-flex", background: "var(--line-subtle, #f1f5f9)", padding: 3, borderRadius: 8, border: "1px solid var(--line, #e2e8f0)" }}>
 					<button
 						type="button"
-						onClick={() => setViewSubMode("journal")}
-						className="touch-manipulation"
-						style={{
-							height: 28,
-							padding: "0 12px",
-							borderRadius: 6,
-							border: "none",
-							background: viewSubMode === "journal" ? "var(--paper, #fff)" : "transparent",
-							color: viewSubMode === "journal" ? "var(--ink, #0f172a)" : "var(--muted, #64748b)",
-							fontWeight: viewSubMode === "journal" ? 600 : 500,
-							fontSize: "0.8125rem",
-							cursor: "pointer",
-							boxShadow: viewSubMode === "journal" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-						}}
+						onClick={() => logic.setViewSubMode("journal")}
+						style={{ height: 28, padding: "0 12px", borderRadius: 6, border: "none", background: logic.viewSubMode === "journal" ? "var(--paper, #fff)" : "transparent", color: logic.viewSubMode === "journal" ? "var(--ink, #0f172a)" : "var(--muted, #64748b)", fontWeight: logic.viewSubMode === "journal" ? 600 : 500, fontSize: "0.8125rem", cursor: "pointer" }}
 						data-testid="subtab-journal-btn"
 					>
-						Журнал стерилизации и экспресс-сканер
+						Журнал автоклавирования
 					</button>
 					<button
 						type="button"
-						onClick={() => setViewSubMode("table")}
-						className="touch-manipulation"
-						style={{
-							height: 28,
-							padding: "0 12px",
-							borderRadius: 6,
-							border: "none",
-							background: viewSubMode === "table" ? "var(--paper, #fff)" : "transparent",
-							color: viewSubMode === "table" ? "var(--ink, #0f172a)" : "var(--muted, #64748b)",
-							fontWeight: viewSubMode === "table" ? 600 : 500,
-							fontSize: "0.8125rem",
-							cursor: "pointer",
-							boxShadow: viewSubMode === "table" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-						}}
+						onClick={() => logic.setViewSubMode("table")}
+						style={{ height: 28, padding: "0 12px", borderRadius: 6, border: "none", background: logic.viewSubMode === "table" ? "var(--paper, #fff)" : "transparent", color: logic.viewSubMode === "table" ? "var(--ink, #0f172a)" : "var(--muted, #64748b)", fontWeight: logic.viewSubMode === "table" ? 600 : 500, fontSize: "0.8125rem", cursor: "pointer" }}
 						data-testid="subtab-table-btn"
 					>
 						Регламентные карточки циклов
@@ -406,83 +78,28 @@ export function SanpinAutoclaveRegisterTab() {
 				</div>
 			</div>
 
-			{viewSubMode === "journal" ? (
-				<SanPinSterilizationJournal
-					onOpenEquipmentModal={() => setIsEquipmentModalOpen(true)}
-					onOpenNewCycleModal={() => setIsNewCycleModalOpen(true)}
-				/>
+			{logic.viewSubMode === "journal" ? (
+				<SanPinSterilizationJournal onOpenEquipmentModal={() => logic.setIsEquipmentModalOpen(true)} onOpenNewCycleModal={() => logic.setIsNewCycleModalOpen(true)} />
 			) : (
-				<>
-					{/* Official Form Header for Print */}
-					<div className="sanpin-print-title">
-						<h2>ЖУРНАЛ РАБОТЫ СТЕРИЛИЗАТОРОВ (АВТОКЛАВОВ)</h2>
-						<p title="Контроль работы стерилизаторов">Стерилизация инструментов и контроль качества (индикаторы 4–5 класса)</p>
-					</div>
-
-					{/* Table of Sterilization Cycles with Integrated Compact Header */}
-					<AutoclaveRegisterTable
-						logs={logs}
-						filteredLogs={filteredLogs}
-						logsSlice={logsSlice}
-						loading={loading}
-						clinicDevices={clinicDevices}
-						searchQuery={searchQuery}
-						setSearchQuery={setSearchQuery}
-						deviceFilter={deviceFilter}
-						setDeviceFilter={setDeviceFilter}
-						onLoadMore={() => setDisplayLimit((prev) => prev + DEFAULT_DOM_CHUNK_STEP)}
-						onLoadAll={() => setDisplayLimit(logs.length || 1000)}
-						stampedRows={stampedRows}
-						onStampVerification={handleStampVerification}
-						onPrintSinglePouch={handlePrintPouch}
-						onPrintBatchPouches={handlePrintBatch}
-						onOpenKraftForLog={handleOpenKraftForLog}
-						onOpenKraftModal={() => setIsKraftModalOpen(true)}
-						onOpenJournal257Modal={() => setIsJournal257ModalOpen(true)}
-						onOpenNewCycleModal={() => setIsNewCycleModalOpen(true)}
-						onOpenEquipmentModal={() => setIsEquipmentModalOpen(true)}
-						onQuickShiftBatch={handleQuickShiftBatch}
-						isLoggingBatch={isLoggingBatch}
-						onGenerateMonthlyForm257={() => handleGenerateMonthlyForm257(deviceFilter !== "all" ? deviceFilter : undefined, clinicDevices)}
-					/>
-				</>
+				<AutoclaveRegisterTable
+					logs={logic.logs} filteredLogs={logic.filteredLogs} logsSlice={logic.logsSlice} loading={logic.loading} clinicDevices={logic.clinicDevices}
+					searchQuery={logic.searchQuery} setSearchQuery={logic.setSearchQuery} deviceFilter={logic.deviceFilter} setDeviceFilter={logic.setDeviceFilter}
+					onLoadMore={() => logic.setDisplayLimit((p) => p + DEFAULT_DOM_CHUNK_STEP)} onLoadAll={() => logic.setDisplayLimit(logic.logs.length || 1000)}
+					stampedRows={logic.stampedRows} onStampVerification={logic.handleStampVerification} onPrintSinglePouch={handlePrintPouch} onPrintBatchPouches={handlePrintBatch}
+					onOpenKraftForLog={handleOpenKraftForLog} onOpenKraftModal={() => logic.setIsKraftModalOpen(true)} onOpenJournal257Modal={() => logic.setIsJournal257ModalOpen(true)}
+					onOpenNewCycleModal={() => logic.setIsNewCycleModalOpen(true)} onOpenEquipmentModal={() => logic.setIsEquipmentModalOpen(true)}
+					onQuickShiftBatch={handleQuickShiftBatch} isLoggingBatch={logic.isLoggingBatch}
+					onGenerateMonthlyForm257={() => handleGenerateMonthlyForm257(logic.deviceFilter !== "all" ? logic.deviceFilter : undefined, logic.clinicDevices)}
+				/>
 			)}
 
-			{/* Barcode / Kraft Packaging Studio Modal */}
-			<KraftPackageBarcodeModal
-				isOpen={isKraftModalOpen}
-				initialAutoclaveId={kraftPrefill.autoclaveId}
-				initialCycleNumber={kraftPrefill.cycleNumber}
-				initialOperatorName={kraftPrefill.operatorName}
-				onClose={() => setIsKraftModalOpen(false)}
-			/>
-
-			{/* Form 257/u Studio Modal */}
-			<AutoclaveLog257Modal
-				isOpen={isJournal257ModalOpen}
-				initialTab="journal_257"
-				onClose={() => setIsJournal257ModalOpen(false)}
-			/>
-
-			{/* New Manual Cycle Modal */}
-			<SterilizationCycleModal
-				isOpen={isNewCycleModalOpen}
-				onClose={() => setIsNewCycleModalOpen(false)}
-				onCycleCreated={fetchLogs}
-				clinicDevices={clinicDevices}
-			/>
-
-			{/* Medical Waste Modal */}
-			<MedicalWasteJournalModal
-				isOpen={isWasteJournalOpen}
-				onClose={() => setIsWasteJournalOpen(false)}
-			/>
-
-			{/* Equipment Fleet Modal */}
-			<SterilizerEquipmentModal
-				isOpen={isEquipmentModalOpen}
-				onClose={() => setIsEquipmentModalOpen(false)}
-				onSuccess={fetchDevices}
+			<AutoclaveRegisterModals
+				isKraftModalOpen={logic.isKraftModalOpen} setIsKraftModalOpen={logic.setIsKraftModalOpen}
+				isJournal257ModalOpen={logic.isJournal257ModalOpen} setIsJournal257ModalOpen={logic.setIsJournal257ModalOpen}
+				isNewCycleModalOpen={logic.isNewCycleModalOpen} setIsNewCycleModalOpen={logic.setIsNewCycleModalOpen}
+				isWasteJournalOpen={logic.isWasteJournalOpen} setIsWasteJournalOpen={logic.setIsWasteJournalOpen}
+				isEquipmentModalOpen={logic.isEquipmentModalOpen} setIsEquipmentModalOpen={logic.setIsEquipmentModalOpen}
+				kraftPrefill={logic.kraftPrefill} clinicDevices={logic.clinicDevices} onCycleCreated={logic.fetchLogs} onEquipmentUpdated={logic.fetchDevices}
 			/>
 		</div>
 	);

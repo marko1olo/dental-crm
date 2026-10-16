@@ -132,7 +132,7 @@ export function SterilizerCycleLogsTable({
 					status: "sterile_passed",
 				};
 				setLogs([fallbackItem, ...logs]);
-				showToast("Цикл 134°C зафиксирован в журнале стерилизации (СанПиН 257/у)", "success");
+				showToast("Цикл 134°C зафиксирован в журнале автоклавирования", "success");
 			}
 		} catch (e) {
 			showToast("Сетевая ошибка при регистрации цикла", "error");
@@ -228,7 +228,7 @@ export function SterilizerCycleLogsTable({
 					}}
 				>
 					<span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--ink, #0f172a)", display: "flex", alignItems: "center", gap: "0.35rem" }}>
-						<Clock size={14} color="#0d9488" /> Журнал контроля работы стерилизатора (Форма № 257/у)
+						<Clock size={14} color="#0d9488" /> Журнал автоклавирования
 					</span>
 					<span style={{ fontSize: "0.7rem", color: "var(--muted, #64748b)" }}>
 						Записей: {logs.length}

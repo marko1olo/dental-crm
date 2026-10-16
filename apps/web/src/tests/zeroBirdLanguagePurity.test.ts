@@ -13,7 +13,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -160,7 +160,7 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		const sanpinCode =
 			readComponent("components/sanpin/SanpinRegisters.tsx") +
 			"\n" +
-			readComponent("components/sanpin/SanpinNurseSignModal.tsx");
+			readComponent("components/sanpin/SanpinRegistersHeader.tsx");
 		assert.ok(sanpinCode.includes("Журналы стерилизации в норме"), "Sanpin toast must be clean Russian");
 		assert.ok(!sanpinCode.includes("Журналы СанПиН в норме"), "Sanpin toast must not shout СанПиН");
 		assert.ok(sanpinCode.includes("Журналы за неделю заполнены"), "Week toast must be clean");

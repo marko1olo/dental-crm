@@ -74,7 +74,7 @@ export function PayrollTabHeader({
 				<button
 					type="button"
 					onClick={onExportCsv}
-					className="h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs inline-flex items-center gap-1.5 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors cursor-pointer"
+					className="secondary-button min-h-[44px] sm:min-h-0 sm:h-9 h-11 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs inline-flex items-center gap-1.5 hover:bg-[var(--paper-soft,#f8fafc)] active:scale-95 transition-all cursor-pointer shadow-xs"
 					title="Выгрузить расчетную ведомость в формате CSV (1C:Предприятие)"
 				>
 					<Download className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
@@ -84,7 +84,7 @@ export function PayrollTabHeader({
 				<button
 					type="button"
 					onClick={onPrintPayslip}
-					className="h-9 px-3 rounded-lg bg-[var(--teal,#0d9488)] text-white font-semibold text-xs inline-flex items-center gap-1.5 hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+					className="primary-button min-h-[44px] sm:min-h-0 sm:h-9 h-11 px-4 rounded-lg bg-[var(--teal,#0d9488)] text-white font-semibold text-xs inline-flex items-center gap-1.5 hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
 					title="Печать официального расчетного листка (A4)"
 				>
 					<Printer className="w-3.5 h-3.5" />

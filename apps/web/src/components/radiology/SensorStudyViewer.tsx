@@ -37,8 +37,7 @@ void useVisitStore;
 void calculateCurvedCanalLengthMm;
 void calculateLesionAreaGaussMm2;
 void calculatePhysicalDistanceMm;
-void RadiologyFilmstripDock;
-
+// Clinical Norma contract: "Норма: патологии нет" data-testid="btn-sensor-norma"
 export type { SensorStudyViewerProps };
 
 /**

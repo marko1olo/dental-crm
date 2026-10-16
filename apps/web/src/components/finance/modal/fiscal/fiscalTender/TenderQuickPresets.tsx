@@ -137,6 +137,21 @@ export const TenderQuickPresets: React.FC<TenderQuickPresetsProps> = ({
 			</button>
 			<button
 				type="button"
+				onClick={() => {
+					applyCombinedPaymentPreset("split_dms");
+					setPaymentMode("split");
+				}}
+				className={`dente-filter-chip flex items-center gap-1 ${
+					insuranceAmount > 0 && insuranceAmount < totalSumRub ? "active" : ""
+				}`}
+				data-testid="preset-split-dms"
+				title="Сплит ДМС: страховая компания покрывает основную часть (акт для СК), пациент доплачивает франшизу (кассовый чек)"
+			>
+				<Layers size={13} className="text-teal-600 shrink-0" />
+				<span>Сплит ДМС</span>
+			</button>
+			<button
+				type="button"
 				onClick={handleManualCardTerminalConfirm}
 				disabled={isSubmittingManualCard}
 				title={

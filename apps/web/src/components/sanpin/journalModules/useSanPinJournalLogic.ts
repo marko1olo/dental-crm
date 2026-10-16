@@ -49,9 +49,15 @@ export function useSanPinJournalLogic({
 	const fetchCyclesFromDb = useCallback(async (targetPeriod: SanPinJournalPeriod = period) => {
 		try {
 			setIsLoading(true);
-			let res = await fetch(`/api/sanpin/sterilization?period=${targetPeriod}`, {
+			let res = await fetch(`/api/sanpin/sterilization-cycles?period=${targetPeriod}`, {
 				headers: getDenteAuthHeaders(),
 			}).catch(() => null);
+
+			if (!res || !res.ok) {
+				res = await fetch(`/api/sanpin/sterilization?period=${targetPeriod}`, {
+					headers: getDenteAuthHeaders(),
+				}).catch(() => null);
+			}
 
 			if (!res || !res.ok) {
 				res = await fetch("/api/registers/sterilization", {
@@ -209,13 +215,13 @@ export function useSanPinJournalLogic({
 		setDirectScanCode("");
 	};
 
-	// 3) Кнопка «Печать журнала стерилизации Форма 257/у» — юридически чистая форма для Роспотребнадзора без эмодзи
+	// 3) Кнопка «Печать журнала автоклавирования» — юридически чистая печатная форма
 	const handlePrint257 = () => {
 		try {
 			handleGenerateMonthlyForm257(selectedAutoclave, devices);
-			showToast("Официальная Форма 257/у сформирована для печати (А4)", "success");
+			showToast("Печатный журнал автоклавирования сформирован (А4)", "success");
 		} catch (err) {
-			showToast("Ошибка при формировании Формы 257/у", "error");
+			showToast("Ошибка при формировании журнала автоклавирования", "error");
 		}
 	};
 
@@ -228,44 +234,98 @@ export function useSanPinJournalLogic({
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement("a");
 		link.href = url;
-		link.setAttribute("download", `SanPiN_Form257u_${new Date().toISOString().slice(0, 10)}.csv`);
+		link.setAttribute("download", `SanPiN_Sterilization_Journal_${new Date().toISOString().slice(0, 10)}.csv`);
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);
 		showToast("Журнал стерилизации экспортирован в CSV", "success");
 	};
 
-	const handleQuickBatchNorm = async (batchSize = 25, regime: "134" | "121" = "134") => {
+	const handleQuickBatchNorm = async (batchSize = 27, regime: "134" | "121" = "134") => {
 		try {
 			setIsAutofilling(true);
-			const tempC = regime === "134" ? 134.4 : 121.0;
-			const pressBar = regime === "134" ? 2.15 : 1.1;
-			const durMin = regime === "134" ? 5 : 20;
+			const isDelicate = regime === "121";
+			const tempC = isDelicate ? 121.0 : 134.4;
+			const pressBar = isDelicate ? 1.15 : 2.15;
+			const durMin = isDelicate ? 20 : 5;
+			const targetBatch = isDelicate ? 15 : 27;
+			const matchedDevice = devices.find((d) => d.id === selectedAutoclave || d.brandModelRu?.includes(selectedAutoclave));
+			const autoId = selectedAutoclave !== "all" ? selectedAutoclave : (devices[0]?.id || "АК-01");
+			const devName = matchedDevice ? matchedDevice.brandModelRu : (autoId === "АК-02" ? "W&H Lina 17 (ЦСО)" : "Melag Vacuklav 23 B+ (ЦСО №1)");
+			const itemsDesc = isDelicate
+				? "Пакетная стерилизация щадящая: 15 наборов (оптика, полимеры, наконечники)"
+				: "Пакетная стерилизация смены: 15 наборов смотровых, 8 наборов терапевтических, 4 турбинных наконечника";
+
 			const payload = {
-				batchSize,
-				temperatureC: tempC,
+				regime: isDelicate ? "delicate_121" : "standard_134",
+				batchSize: targetBatch,
+				temperatureCelsius: tempC,
 				durationMin: durMin,
 				pressureBar: pressBar,
-				deviceName: selectedAutoclave === "АК-02" ? "W&H Lina 17" : "Melag Vacuklav 23B+",
-				kraftPouchesCount: batchSize,
-				operatorName: "Иванова А. С. (ЦСО)",
+				deviceName: devName,
+				autoclaveId: autoId,
+				itemsDescription: itemsDesc,
+				packagingType: isDelicate ? "kraft_heat_sealed" : "kraft_self_adhesive",
 			};
 
-			const res = await fetch("/api/sanpin/sterilization/quick-norm-cycle", {
+			let res = await fetch("/api/sanpin/sterilization-cycles/quick-norm", {
 				method: "POST",
 				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify(payload),
 			}).catch(() => null);
 
+			if (!res || !res.ok) {
+				res = await fetch("/api/sanpin/sterilization/quick-norm", {
+					method: "POST",
+					headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify(payload),
+				}).catch(() => null);
+			}
+
+			if (!res || !res.ok) {
+				res = await fetch("/api/sterilization/quick-norm", {
+					method: "POST",
+					headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify(payload),
+				}).catch(() => null);
+			}
+
 			if (res && res.ok) {
-				showToast(`Партия (${batchSize} лотков) зафиксирована: ${regime}°C / ${pressBar} бар, расходники списаны`, "success");
+				showToast(`Цикл автоклавирования на смену проведён (${autoId}): ${tempC}°C / ${pressBar} бар, пробы азопирама и фенолфталеина норма, расходники списаны`, "success");
 				await fetchCyclesFromDb(period);
 				return;
 			}
 
 			if (isDemoShowcaseMode()) {
-				showToast(`Партия (${batchSize} лотков) зафиксирована: ${regime}°C (демо)`, "success");
-				await fetchCyclesFromDb(period);
+				const now = new Date();
+				const newEntry: SanPinCycleEntry = {
+					id: `cyc-local-${Date.now()}`,
+					date: now.toISOString().slice(0, 10),
+					time: now.toTimeString().slice(0, 5),
+					cycleNumber: cycles.length + 1,
+					autoclaveCode: autoId,
+					autoclaveModel: devName,
+					temperatureC: tempC,
+					pressureBar: pressBar,
+					durationMin: durMin,
+					regimeName: isDelicate ? "Режим B (Деликатный 121°C / 20 мин)" : "Режим B (Универсальный 134°C / 5 мин)",
+					indicatorClass: "5",
+					colorBefore: "Бежевый",
+					colorBeforeHex: "#d4b896",
+					colorAfter: "Темно-коричневый",
+					colorAfterHex: "#3e2723",
+					isIndicatorNorm: true,
+					pouchCodes: [`KP-${Math.floor(10000 + Math.random() * 90000)}`],
+					itemsSummary: itemsDesc,
+					operatorName: "Иванова А. С. (ЦСО)",
+					status: "passed",
+					batchSize: targetBatch,
+					batchBarcode: `BAT-C${cycles.length + 1}-${now.toISOString().slice(0, 10).replace(/-/g, "")}`,
+					psoStatus: "norm",
+					kraftPouchesCount: targetBatch,
+				};
+				setCycles((prev) => [newEntry, ...prev]);
+				showToast(`Цикл автоклавирования на смену проведён (${autoId}): ${tempC}°C (пробы азопирама и фенолфталеина норма, расходники списаны)`, "success");
 			} else {
 				showToast("Ошибка при фиксации партии стерилизации", "error");
 			}
@@ -279,30 +339,43 @@ export function useSanPinJournalLogic({
 	const handleQuickPsoNorm = async () => {
 		try {
 			setIsAutofilling(true);
-			const res = await fetch("/api/sanpin/sterilization/pso-quick-norm", {
+			let res = await fetch("/api/sanpin/sterilization/pso/quick-norm", {
 				method: "POST",
 				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
-					sampleCount: 5,
-					azopiramResult: "negative",
-					phenolphthaleinResult: "negative",
+					batchItemCount: 50,
+					testedSampleCount: 5,
+					isAzopyramNegative: true,
+					isPhenolphthaleinNegative: true,
+					detergentBrand: "Биолот 0.5% + Аламинол 1%",
 					operatorName: "Иванова А. С. (ЦСО)",
 				}),
 			}).catch(() => null);
 
+			if (!res || !res.ok) {
+				res = await fetch("/api/sterilization/pso/quick-norm", {
+					method: "POST",
+					headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify({
+						batchItemCount: 50,
+						testedSampleCount: 5,
+					}),
+				}).catch(() => null);
+			}
+
 			if (res && res.ok) {
-				showToast("Контроль ПСО (Форма 366/у): азопирам и фенолфталеин отрицательно (100% норма)", "success");
+				showToast("Предстерилизационная очистка: азопирам и фенолфталеин отрицательно (100% норма)", "success");
 				await fetchCyclesFromDb(period);
 				return;
 			}
 
 			if (isDemoShowcaseMode()) {
-				showToast("Контроль ПСО (Форма 366/у): 100% норма (демо)", "success");
+				showToast("Предстерилизационная очистка: 100% норма (скрытой крови нет)", "success");
 			} else {
-				showToast("Ошибка при фиксации контроля ПСО", "error");
+				showToast("Ошибка при фиксации контроля очистки", "error");
 			}
 		} catch (err) {
-			showToast("Ошибка сети при контроле ПСО", "error");
+			showToast("Ошибка сети при контроле очистки", "error");
 		} finally {
 			setIsAutofilling(false);
 		}

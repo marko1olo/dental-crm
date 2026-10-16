@@ -1,18 +1,18 @@
 /**
  * apps/web/src/components/sanpin/SanPinSterilizationJournal.tsx
  *
- * Layer 5: Master Facade for SanPin Sterilization Journal (СанПиН 3.3686-21, Форма 257/у).
- * Modularized according to /decomposer DAG architecture (<= 120 lines mandate).
+ * Мастер-фасад журнала автоклавирования и стерилизации.
+ * Модульная декомпозиция (строго <= 120 строк).
  */
 
 import React, { useState } from "react";
-import { showToast } from "../GlobalToast";
 import { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
 import { SterilizationCycleModal } from "./SterilizationCycleModal";
 import {
 	useSanPinJournalLogic,
 	SanPinJournalToolbar,
 	SanPinCyclesTable,
+	SanPinScannerModal,
 	type SanPinSterilizationJournalProps,
 } from "./journalModules";
 
@@ -85,45 +85,16 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 				onQuickPsoNorm={handleQuickPsoNorm}
 			/>
 
-			{showScannerModal && (
-				<div
-					style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 16 }}
-					onClick={() => setShowScannerModal(false)}
-				>
-					<div
-						style={{ background: "var(--paper, #fff)", borderRadius: 12, width: "100%", maxWidth: 440, padding: 20, boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)", position: "relative" }}
-						onClick={(e) => e.stopPropagation()}
-					>
-						<h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: 8, color: "var(--ink)" }}>Быстрое прикрепление крафт-пакета</h3>
-						<p style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: 16 }}>Пакетная фиксация лотка стерилизации к приёму врача</p>
-						<div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-							<button
-								type="button"
-								className="sanpin-btn sanpin-btn-secondary"
-								onClick={() => setShowScannerModal(false)}
-							>
-								Отмена
-							</button>
-							<button
-								type="button"
-								className="sanpin-btn sanpin-btn-primary"
-								onClick={() => {
-									if (onAttachPouchToVisit) {
-										onAttachPouchToVisit("BATCH-AUTO-134", "Стерильный лоток (134°C, 5 мин, 5 класс)");
-									}
-									showToast("Стерильный лоток успешно прикреплен к приёму", "success");
-									setShowScannerModal(false);
-								}}
-							>
-								Прикрепить лоток
-							</button>
-						</div>
-					</div>
-				</div>
-			)}
+			<SanPinScannerModal
+				isOpen={showScannerModal}
+				onClose={() => setShowScannerModal(false)}
+				onAttachPouchToVisit={onAttachPouchToVisit}
+			/>
 
 			<SterilizerEquipmentModal isOpen={internalEquipmentModalOpen} onClose={() => setInternalEquipmentModalOpen(false)} />
 			<SterilizationCycleModal isOpen={internalNewCycleModalOpen} onClose={() => setInternalNewCycleModalOpen(false)} onCycleCreated={fetchCyclesFromDb} />
 		</div>
 	);
 };
+
+export default SanPinSterilizationJournal;

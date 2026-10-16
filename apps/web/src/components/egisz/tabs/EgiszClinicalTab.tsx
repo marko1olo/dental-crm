@@ -17,7 +17,7 @@ import {
 	type EgiszProcedureItem,
 	FDI_ADULT_TEETH,
 } from "../egiszRemdEngine";
-import { EgiszMultipleDiagnosesWidget } from "../../visit/EgiszMultipleDiagnosesWidget";
+import { IcdDiagnosesWidget } from "../../visit/IcdDiagnosesWidget";
 
 export interface EgiszClinicalTabProps {
 	readonly semdDocCode: EgiszDentalSemdCode;
@@ -335,7 +335,7 @@ export const EgiszClinicalTab: React.FC<EgiszClinicalTabProps> = ({
 					))}
 
 					<div style={{ marginTop: diagnoses.length > 0 ? "0.75rem" : "0.25rem" }}>
-						<EgiszMultipleDiagnosesWidget patientId={patient?.patientId} />
+						<IcdDiagnosesWidget patientId={patient?.patientId} />
 					</div>
 				</div>
 

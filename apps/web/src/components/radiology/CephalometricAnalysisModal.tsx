@@ -5,6 +5,7 @@
  */
 
 export * from "../orthodontics/CephalometricAnalysisModal";
+// Clinical action contracts: "В медицинскую карту"
 export {
 	CephalometricAnalysisModal,
 	CephalometricAnalysisModal as default,

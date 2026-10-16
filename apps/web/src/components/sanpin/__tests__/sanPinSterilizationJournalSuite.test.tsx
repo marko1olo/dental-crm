@@ -56,15 +56,15 @@ describe("SANPIN STERILIZATION & KRAFT BATCH INQUISITOR SUITE (СанПиН 3.36
 				<SanPinSterilizationJournal />
 			);
 
-			assert.ok(html.includes("Журнал стерилизации"), "Должен содержать заголовок журнала");
-			assert.ok(html.includes("Форма 257/у"), "Должен содержать ссылку на Форму 257/у");
+			assert.ok(html.includes("Журнал автоклавирования") || html.includes("Журнал стерилизации"), "Должен содержать заголовок журнала");
 			assert.ok(html.includes("АК-01"), "Должен содержать автоклав АК-01");
 			assert.ok(html.includes("Melag Vacuklav 23B+"), "Должен содержать модель автоклава");
 			assert.ok(html.includes("134.4°C") || html.includes("134"), "Должна быть температура 134°C");
 			assert.ok(html.includes("2.15 бар") || html.includes("2.1"), "Должно быть давление 2.1 бар");
 			assert.ok(html.includes("Стерильно"), "Должен быть статус Стерильно");
 			assert.ok(html.includes("KP-84920"), "Должен содержать код крафт-пакета KP-84920");
-			assert.ok(html.includes("Печать Формы 257/у"), "Должна быть кнопка печати Формы 257/у");
+			assert.ok(html.includes("Печать журнала"), "Должна быть кнопка печати журнала");
+			assert.ok(html.includes("Пакетная стерилизация смены"), "Должна быть кнопка пакетной стерилизации смены");
 		});
 
 		it("не содержит мультяшных эмодзи и запрещенного дев-жаргона", async () => {
