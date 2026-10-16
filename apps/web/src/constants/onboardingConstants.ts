@@ -70,7 +70,23 @@ export type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
 export type PatientAdministrativeProfileDraft = {
 	[K in Exclude<
 		keyof PatientAdministrativeProfile,
-		"preferredAppointmentWeekdays" | "isAnonymous" | "anonymousCode" | "decree659Compliance" | "consentSignatures" | "clinicalSafetyProfile"
+		| "preferredAppointmentWeekdays"
+		| "isAnonymous"
+		| "anonymousCode"
+		| "decree659Compliance"
+		| "consentSignatures"
+		| "clinicalSafetyProfile"
+		| "utmSource"
+		| "utmMedium"
+		| "utmCampaign"
+		| "utmContent"
+		| "utmTerm"
+		| "leadSource"
+		| "dmsPolicyNumber"
+		| "dmsInsuranceCompany"
+		| "dmsGuaranteeLetterNumber"
+		| "dmsCoverageLimitKopecks"
+		| "dmsCoverageLimitRub"
 	>]: string;
 } & {
 	preferredAppointmentWeekdays: number[];
@@ -79,6 +95,17 @@ export type PatientAdministrativeProfileDraft = {
 	decree659Compliance?: Record<string, unknown> | null;
 	consentSignatures?: Record<string, unknown> | null;
 	clinicalSafetyProfile?: Record<string, unknown> | null;
+	dmsPolicyNumber?: string | null;
+	dmsInsuranceCompany?: string | null;
+	dmsGuaranteeLetterNumber?: string | null;
+	dmsCoverageLimitKopecks?: number | null;
+	dmsCoverageLimitRub?: number | null;
+	utmSource?: string | null;
+	utmMedium?: string | null;
+	utmCampaign?: string | null;
+	utmContent?: string | null;
+	utmTerm?: string | null;
+	leadSource?: string | null;
 };
 
 export type PatientAdministrativeProfileSaveState =

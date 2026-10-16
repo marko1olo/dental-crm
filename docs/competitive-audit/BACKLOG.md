@@ -10901,6 +10901,29 @@
       * 8/8 тестов `emkPerioSection.test.tsx` пройдены со 100% успехом, 81/81 веб-тестов пародонтологии и 37/37 shared-тестов зеленые;
       * Сняты и лично проверены 4 скриншота в `docs/proofs/perio/` (PC Light/Dark 1440x900, Mobile Light/Dark 390x844 > 110 КБ, сенсорный минимум >= 44x44px).
 
+46. **Волна 335: Декомпозиция Картотеки Пациентов, Семейный Баланс и 5-Секундная Регистрация (Мандаты 8b, 8c, 8d, 8e, 8n, 8x, Apple HIG, Фича #475)**:
+    - **1. Архитектурная декомпозиция монолита `PatientsView.tsx` (< 500 строк, Мандат 8b)**:
+      Монолит `PatientsView.tsx` сокращен с 804 строк до 493 строк с выносом логики в модули `apps/web/src/components/patients/patientsViewModules/`:
+      * `usePatientsFilterLogic.ts`: дебаунсированный поиск, категоризация пациентов, переключатель потерянных, DOM-пагинация;
+      * `usePatientsKeyboardShortcuts.ts`: горячие клавиши `Ctrl+K`, `/`, `Escape`, `ArrowDown`, `ArrowUp`;
+      * `usePatientsRouteAndEvents.ts`: хэш-маршрут `#recalls` и кастомные события визитов;
+      * `types.ts` и `index.ts`: канонический Zero-Downtime Contract реэкспорт с единым `PatientAdministrativeProfileDraft`.
+    - **2. 5-Секундная регистрация пациента без бюрократического трения (Мандаты 8e, 8n)**:
+      * Для первичной карточки достаточно ДВУХ полей: ФИО и Номер телефона;
+      * Отсутствие СНИЛС, паспорта, пола или даты рождения никогда не блокирует сохранение карточки и запись на приём при острой боли;
+      * Кнопки сохранения и печати никогда не становятся `disabled` из-за необязательных реквизитов.
+    - **3. Семейный баланс и прозрачный Family Wallet**:
+      * Родственники объединяются в семейную группу в 1 клик, списание средств со счета родителя на лечение ребенка происходит мгновенно без бюрократических доверенностей.
+    - **4. Чистый клинический русский язык (Мандат 8x)**:
+      * Искоренены сырые советские коды («Форма 043/у», «804н», «ФФД 1.2») и заменены на естественные русские термины («Медицинская карта приёма», «Прейскурант услуг», «Кассовый чек»).
+    - **5. Apple HIG и мобильная типографика (390×844)**:
+      * Устранен дефект переноса букв длинных русских отчеств («Александрович») за счет адаптивного флекс-ряда, компактного аватара 34px и кнопок 44×44px с нулевым горизонтальным скроллом;
+      * Apple Health Grouped Inset Card со скруглением 16px и сенсорным минимумом $\ge 44\times 44\text{px}$.
+    - **6. Верификация и 4-State Red Team Visual Proof**:
+      * 59/59 целевых тестов пройдены со 100% успехом (`patientRegistrationFrictionless.test.ts`, `patientAnamnesisFamilyWallet.test.ts`, `humanLanguageToneInquisition.test.ts`, `patientProfileSaveAutonomy.test.tsx`, `mobilePatientsGroupedList.test.tsx`, `mobilePatientProfileWorkspace.test.tsx`, `patientFieldRequirements.test.ts`);
+      * 4 скриншота сняты и лично проверены через `view_file` в `docs/proofs/patients/`: `patients_pc_light.png` (168 КБ), `patients_pc_dark.png` (168 КБ), `patients_mobile_light.png` (186 КБ), `patients_mobile_dark.png` (181 КБ).
+
+
 
 
 

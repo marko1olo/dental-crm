@@ -1,24 +1,11 @@
-import type { Dashboard, Patient, PatientAdministrativeProfile } from "@dental/shared";
 import React, {
 	lazy,
-	startTransition,
 	Suspense,
-	useCallback,
-	useEffect,
 	useMemo,
 	useRef,
 	useState,
 } from "react";
 import { showToast } from "./components/GlobalToast";
-import { PatientCardSavePill } from "./components/patients/patientCardSavePill";
-import { PatientAdministrativeForm } from "./components/patients/PatientAdministrativeForm";
-import {
-	PatientCoreEditorForm,
-	type PatientCoreDraft,
-	type TextFieldChangeEvent,
-} from "./components/patients/PatientCoreEditorForm";
-import { PatientDetailsPanel } from "./components/patients/PatientDetailsPanel";
-import { PatientFamilyAndInsuranceWidget } from "./components/patients/PatientFamilyAndInsuranceWidget";
 import {
 	executeBookPatientAppointmentAutonomy,
 	executeOpenPatientVisitAutonomy,
@@ -30,6 +17,7 @@ import {
 import { patientListFeatureSalience } from "./components/patients/patientListFeatureSalience";
 import { PatientsFilterToolbar } from "./components/patients/PatientsFilterToolbar";
 import { PatientsMasterList } from "./components/patients/PatientsMasterList";
+import { PatientDetailsPanel } from "./components/patients/PatientDetailsPanel";
 import { MobilePatientProfileWorkspace } from "./components/patients/MobilePatientProfileWorkspace";
 import { MobilePatientsGroupedList } from "./components/patients/MobilePatientsGroupedList";
 import {
@@ -38,10 +26,20 @@ import {
 	type RadiologyTactileFilterState,
 } from "./components/radiology/RadiologyPatientSearchModal";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
-import { useDomListPagination } from "./hooks/useMemoryLeakGuard";
-import { actionFailureToast } from "./lib/panelStateText";
 import { usePatientStore } from "./store/patientStore";
-import { getOptimizedTiming } from "./utils/lowSpecHddOptimizer";
+import {
+	usePatientsFilterLogic,
+	usePatientsKeyboardShortcuts,
+	usePatientsRouteAndEvents,
+	type PatientAdministrativeProfileDraft,
+	type PatientAdministrativeProfileSaveState,
+	type PatientCoreDraft,
+	type PatientCoreSaveState,
+	type PatientInsight,
+	type PatientsViewProps,
+	type TextFieldChangeEvent,
+	type WeekdayOption,
+} from "./components/patients/patientsViewModules";
 
 const LoyaltyProgramModal = lazy(() =>
 	import("./components/loyalty/program/LoyaltyProgramModal").then((module) => ({
@@ -65,82 +63,15 @@ const PatientRecallsHubModal = lazy(() =>
 	})),
 );
 
-type PatientInsight = Dashboard["patientInsights"][number];
-export type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
-export type PatientAdministrativeProfileSaveState =
-	| "idle"
-	| "saving"
-	| "saved"
-	| "error";
-
-export type { PatientCoreDraft, TextFieldChangeEvent };
-
-export type PatientAdministrativeProfileDraft = {
-	[K in Exclude<
-		keyof PatientAdministrativeProfile,
-		| "preferredAppointmentWeekdays"
-		| "isAnonymous"
-		| "anonymousCode"
-		| "decree659Compliance"
-		| "consentSignatures"
-		| "clinicalSafetyProfile"
-		| "utmSource"
-		| "utmMedium"
-		| "utmCampaign"
-		| "utmContent"
-		| "utmTerm"
-		| "leadSource"
-	>]: string;
-} & {
-	preferredAppointmentWeekdays: number[];
-	isAnonymous?: boolean | null;
-	anonymousCode?: string | null;
-	decree659Compliance?: Record<string, unknown> | null;
-	consentSignatures?: Record<string, unknown> | null;
-	clinicalSafetyProfile?: Record<string, unknown> | null;
-	utmSource?: string | null;
-	utmMedium?: string | null;
-	utmCampaign?: string | null;
-	utmContent?: string | null;
-	utmTerm?: string | null;
-	leadSource?: string | null;
-};
-
-export type WeekdayOption = {
-	label: string;
-	value: number;
-};
-
-export type PatientsViewProps = {
-	createPatient: () => void | Promise<void>;
-	filteredPatients: Patient[];
-	money: (amountRub: number) => string;
-	normalizeOptionalWorkingDaysDraft: (days: number[]) => number[];
-	patientAdministrativeProfileValidationMessage: string | null;
-	patientInsightById: Map<string, PatientInsight>;
-	patientInsightRiskLabels: Record<PatientInsight["riskLevel"], string>;
-	query: string;
-	savePatientAdministrativeProfile: () =>
-		| undefined
-		| Promise<undefined | boolean>;
-	savePatientCore: () => undefined | Promise<undefined | boolean>;
-	selectedPatient: Patient | null | undefined;
-	setQuery: (value: string) => void;
-	updatePatientAdministrativeProfileDraft: (
-		field: keyof PatientAdministrativeProfileDraft,
-		value: string | number[],
-	) => void;
-	updatePatientCoreDraft: (
-		field: keyof PatientCoreDraft,
-		value: string,
-	) => void;
-	weekdayOptions: WeekdayOption[];
-	dashboard?: Dashboard | null;
-	showToast?: (
-		text: string,
-		type?: "success" | "error" | "info" | "warning",
-		duration?: number,
-	) => void;
+export type {
+	PatientInsight,
+	PatientCoreSaveState,
+	PatientAdministrativeProfileSaveState,
+	PatientAdministrativeProfileDraft,
+	WeekdayOption,
+	PatientsViewProps,
+	PatientCoreDraft,
+	TextFieldChangeEvent,
 };
 
 export {
@@ -159,7 +90,7 @@ export {
  *   [patient-row-chart-btn], [patient-row-book-btn], [patient-row-more-btn], [patient-row-menu-dropdown],
  *   data-patient-id={patient.id}, el?.scrollIntoView({ block: "nearest", behavior: "smooth" }).
  * - PatientDetailsPanel: детальная панель с формой реквизитов <PatientAdministrativeForm />
- *   и кнопками автономии врача:
+ *   и кнопками автономии врача (Мандат 8e, 8n):
  *   disabled={patientCoreSaveState === "saving"}, data-testid="patient-core-save-btn",
  *   disabled={patientAdministrativeProfileSaveState === "saving"}, data-testid="patient-admin-save-btn",
  *   style={{ minHeight: "36px" }}, data-testid="patient-card-open-visit-btn",
@@ -192,23 +123,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 	const [isPatientCardModalOpen, setIsPatientCardModalOpen] = useState(false);
 	const [isRecallsHubOpen, setIsRecallsHubOpen] = useState(false);
-
-	useEffect(() => {
-		const checkRoute = () => {
-			const hash = typeof window !== "undefined" ? window.location.hash.toLowerCase() : "";
-			if (hash.includes("recall") || hash.includes("prevention")) setIsRecallsHubOpen(true);
-		};
-		checkRoute();
-		window.addEventListener("hashchange", checkRoute);
-		const onOpen = () => setIsRecallsHubOpen(true);
-		window.addEventListener("dente:open-recalls-hub", onOpen);
-		window.addEventListener("dente-open-recalls-hub", onOpen);
-		return () => {
-			window.removeEventListener("hashchange", checkRoute);
-			window.removeEventListener("dente:open-recalls-hub", onOpen);
-			window.removeEventListener("dente-open-recalls-hub", onOpen);
-		};
-	}, []);
 	const [showTactileSearch, setShowTactileSearch] = useState(false);
 	const [tactileFilters, setTactileFilters] =
 		useState<RadiologyTactileFilterState>(DEFAULT_TACTILE_FILTERS);
@@ -246,300 +160,55 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 	const triggerToast = showToastProp ?? showToast;
 
-	const [localQuery, setLocalQuery] = useState(query);
-	const searchDebounceTimerRef = useRef<number | null>(null);
-
-	useEffect(() => {
-		setLocalQuery(query);
-	}, [query]);
-
-	const handleSearchChange = useCallback(
-		(val: string) => {
-			setLocalQuery(val);
-			setMobileActiveView("list");
-			if (searchDebounceTimerRef.current !== null) {
-				window.clearTimeout(searchDebounceTimerRef.current);
-			}
-			const debounceMs = getOptimizedTiming().searchDebounceMs;
-			searchDebounceTimerRef.current = window.setTimeout(() => {
-				searchDebounceTimerRef.current = null;
-				startTransition(() => {
-					setQuery(val);
-				});
-			}, debounceMs);
-		},
-		[setQuery],
-	);
-
-	const handleClearSearch = useCallback(() => {
-		if (searchDebounceTimerRef.current !== null) {
-			window.clearTimeout(searchDebounceTimerRef.current);
-			searchDebounceTimerRef.current = null;
-		}
-		setLocalQuery("");
-		setMobileActiveView("list");
-		startTransition(() => {
-			setQuery("");
-		});
-	}, [setQuery]);
-
-	const [showLostPatientsOnly, setShowLostPatientsOnly] = useState(false);
-	const [lostPatientIds, setLostPatientIds] = useState<Set<string> | null>(
-		null,
-	);
-	const [isLoadingLost, setIsLoadingLost] = useState(false);
-
-	const toggleLostPatients = () => {
-		if (showLostPatientsOnly) {
-			setShowLostPatientsOnly(false);
-			return;
-		}
-		setIsLoadingLost(true);
-		fetch("/api/analytics/lost-patients-filters")
-			.then((res) => {
-				if (!res.ok) throw new Error(`HTTP ${res.status}`);
-				return res.json();
-			})
-			.then((data: Array<{ id: string }>) => {
-				const ids = new Set((data || []).map((item) => item.id));
-				setLostPatientIds(ids);
-				setShowLostPatientsOnly(true);
-			})
-			.catch((err) => {
-				showToast(
-					actionFailureToast(
-						"Не удалось загрузить фильтры потерянных пациентов",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				setLostPatientIds(new Set());
-				setShowLostPatientsOnly(true);
-			})
-			.finally(() => {
-				setIsLoadingLost(false);
-			});
-	};
-
-	const [patientCategoryFilter, setPatientCategoryFilter] = useState<
-		"all" | "primary" | "debt" | "archive"
-	>("all");
-
-	const patientApptCountMap = useMemo(() => {
-		const map = new Map<string, number>();
-		for (const a of props?.dashboard?.appointments || []) {
-			if (a.patientId) {
-				map.set(a.patientId, (map.get(a.patientId) || 0) + 1);
-			}
-		}
-		return map;
-	}, [props?.dashboard?.appointments]);
-
-	const { countAll, countPrimary, countDebt, countArchive } = useMemo(() => {
-		let all = 0;
-		let primary = 0;
-		let debt = 0;
-		let archive = 0;
-		for (const p of filteredPatients ?? []) {
-			if (p.status === "archived") {
-				archive += 1;
-			} else {
-				all += 1;
-				const appts = patientApptCountMap.get(p.id) || 0;
-				if (appts <= 1) {
-					primary += 1;
-				}
-				const insight = patientInsightById?.get(p.id);
-				const hasDebt =
-					(insight?.balanceDueRub ?? 0) > 0 ||
-					(p.balanceRub !== undefined && p.balanceRub < 0);
-				if (hasDebt) {
-					debt += 1;
-				}
-			}
-		}
-		return {
-			countAll: all,
-			countPrimary: primary,
-			countDebt: debt,
-			countArchive: archive,
-		};
-	}, [filteredPatients, patientApptCountMap, patientInsightById]);
-
-	const displayPatients = useMemo(() => {
-		let list = filteredPatients ?? [];
-		if (showLostPatientsOnly && lostPatientIds) {
-			list = list.filter((p) => lostPatientIds.has(p.id));
-		}
-		if (patientCategoryFilter === "primary") {
-			list = list.filter((p) => {
-				if (p.status === "archived") return false;
-				const appts = patientApptCountMap.get(p.id) || 0;
-				return appts <= 1;
-			});
-		} else if (patientCategoryFilter === "debt") {
-			list = list.filter((p) => {
-				const insight = patientInsightById?.get(p.id);
-				const hasDebt =
-					(insight?.balanceDueRub ?? 0) > 0 ||
-					(p.balanceRub !== undefined && p.balanceRub < 0);
-				return hasDebt;
-			});
-		} else if (patientCategoryFilter === "archive") {
-			list = list.filter((p) => p.status === "archived");
-		} else if (patientCategoryFilter === "all") {
-			if (!localQuery.trim() && !query.trim()) {
-				list = list.filter((p) => p.status !== "archived");
-			}
-		}
-		return list;
-	}, [
-		filteredPatients,
-		showLostPatientsOnly,
-		lostPatientIds,
-		patientCategoryFilter,
-		patientApptCountMap,
-		patientInsightById,
+	const {
 		localQuery,
+		handleSearchChange,
+		handleClearSearch,
+		showLostPatientsOnly,
+		isLoadingLost,
+		toggleLostPatients,
+		patientCategoryFilter,
+		setPatientCategoryFilter,
+		countAll,
+		countPrimary,
+		countDebt,
+		countArchive,
+		displayPatients,
+		patientPagination,
+	} = usePatientsFilterLogic({
+		filteredPatients,
 		query,
-	]);
-
-	const patientPagination = useDomListPagination(displayPatients, {
-		initialLimit: 40,
-		step: 40,
+		setQuery,
+		appointments: props?.dashboard?.appointments,
+		patientInsightById,
+		selectedPatientId,
+		setSelectedPatientId,
+		setMobileActiveView,
+		showToastFn: triggerToast,
 	});
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: reset limit on filter change
-	useEffect(() => {
-		patientPagination.resetLimit();
-	}, [query, showLostPatientsOnly, patientCategoryFilter]);
-
-	useEffect(() => {
-		const firstPatient = (displayPatients ?? [])[0];
-		if (!selectedPatientId && firstPatient?.id) {
-			setSelectedPatientId(firstPatient.id);
-		}
-	}, [selectedPatientId, displayPatients, setSelectedPatientId]);
-
-	// Global shortcut: Ctrl+K / ⌘K or / focuses search box, Arrow keys navigate
-	useEffect(() => {
-		const handleGlobalKeyDown = (e: KeyboardEvent) => {
-			if (
-				((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") ||
-				(e.key === "/" &&
-					document.activeElement?.tagName !== "INPUT" &&
-					document.activeElement?.tagName !== "TEXTAREA")
-			) {
-				e.preventDefault();
-				searchInputRef.current?.focus();
-				return;
-			}
-			if (e.key === "Escape") {
-				if (isPatientCardModalOpen) {
-					setIsPatientCardModalOpen(false);
-					return;
-				}
-				if (isCreateModalOpen) {
-					setIsCreateModalOpen(false);
-					return;
-				}
-				if (isLoyaltyModalOpen) {
-					setIsLoyaltyModalOpen(false);
-					return;
-				}
-				if (document.activeElement === searchInputRef.current) {
-					if (localQuery || query) {
-						handleClearSearch();
-					} else {
-						searchInputRef.current?.blur();
-					}
-					return;
-				}
-			}
-			const targetTag = (document.activeElement?.tagName || "").toLowerCase();
-			const isOtherInput =
-				(targetTag === "input" &&
-					document.activeElement !== searchInputRef.current) ||
-				targetTag === "textarea" ||
-				targetTag === "select";
-			if (!isOtherInput && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
-				if (!displayPatients || displayPatients.length === 0) return;
-				e.preventDefault();
-				const currentIndex = displayPatients.findIndex(
-					(p) => p.id === selectedPatientId,
-				);
-				let nextIndex = 0;
-				if (e.key === "ArrowDown") {
-					nextIndex =
-						currentIndex < 0
-							? 0
-							: Math.min(currentIndex + 1, displayPatients.length - 1);
-				} else {
-					nextIndex = currentIndex <= 0 ? 0 : currentIndex - 1;
-				}
-				const nextPatient = displayPatients[nextIndex];
-				if (nextPatient) {
-					if (nextIndex >= patientPagination.limit) {
-						patientPagination.loadMore(
-							Math.max(50, nextIndex - patientPagination.limit + 10),
-						);
-					}
-					handleSelectPatient(nextPatient.id);
-					const el = document.querySelector(
-						`[data-patient-id="${nextPatient.id}"]`,
-					);
-					el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-				}
-			}
-		};
-		window.addEventListener("keydown", handleGlobalKeyDown);
-		return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-	}, [
+	usePatientsKeyboardShortcuts({
+		searchInputRef,
 		isPatientCardModalOpen,
+		setIsPatientCardModalOpen,
 		isCreateModalOpen,
+		setIsCreateModalOpen,
 		isLoyaltyModalOpen,
-		query,
+		setIsLoyaltyModalOpen,
 		localQuery,
+		query,
 		handleClearSearch,
 		displayPatients,
 		selectedPatientId,
-		patientPagination.limit,
-		patientPagination.loadMore,
-	]);
+		patientPagination,
+		handleSelectPatient,
+	});
 
-	useEffect(() => {
-		const handleOpenCard = (e: Event) => {
-			const detail = (e as CustomEvent).detail;
-			if (detail?.patientId) {
-				handleSelectPatient(detail.patientId);
-			}
-			setIsPatientCardModalOpen(true);
-		};
-		const handleBackofficeModal = (e: Event) => {
-			const detail = (e as CustomEvent).detail;
-			if (detail?.modalId === "patient_card") {
-				if (detail?.patientId) {
-					handleSelectPatient(detail.patientId);
-				}
-				setIsPatientCardModalOpen(true);
-			}
-		};
-		window.addEventListener("dente-open-patient-card-modal", handleOpenCard);
-		window.addEventListener(
-			"dente-open-backoffice-modal",
-			handleBackofficeModal,
-		);
-		return () => {
-			window.removeEventListener(
-				"dente-open-patient-card-modal",
-				handleOpenCard,
-			);
-			window.removeEventListener(
-				"dente-open-backoffice-modal",
-				handleBackofficeModal,
-			);
-		};
-	}, []);
+	usePatientsRouteAndEvents({
+		setIsRecallsHubOpen,
+		setIsPatientCardModalOpen,
+		handleSelectPatient,
+	});
 
 	const featureSalience = useMemo(
 		() =>
@@ -741,7 +410,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			{/* Global / Sub-Modals (Lazily Loaded) */}
 			{isCreateModalOpen && (
 				<Suspense fallback={null}>
-					<CreatePatientModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} createPatient={createPatient} />
+					<CreatePatientModal
+						isOpen={isCreateModalOpen}
+						onClose={() => setIsCreateModalOpen(false)}
+						createPatient={createPatient}
+					/>
 				</Suspense>
 			)}
 
@@ -752,11 +425,19 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						isOpen={isPatientCardModalOpen}
 						onClose={() => setIsPatientCardModalOpen(false)}
 						onApplySomaticNorm={() =>
-							executePatientSomaticNormAutonomy({ selectedPatient, currentNotes: patientCoreDraft.notes, updatePatientCoreDraft, showToastFn: triggerToast })
+							executePatientSomaticNormAutonomy({
+								selectedPatient,
+								currentNotes: patientCoreDraft.notes,
+								updatePatientCoreDraft,
+								showToastFn: triggerToast,
+							})
 						}
 						onNavigateToVisit={() => {
 							setIsPatientCardModalOpen(false);
-							executeOpenPatientVisitAutonomy({ selectedPatient, showToastFn: triggerToast });
+							executeOpenPatientVisitAutonomy({
+								selectedPatient,
+								showToastFn: triggerToast,
+							});
 						}}
 						onSavePatient={(updatedGeneral, updatedSafety) =>
 							executePatientCardModalSaveAutonomy({
@@ -779,14 +460,21 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						onClose={() => setIsLoyaltyModalOpen(false)}
 						patientId={selectedPatient?.id}
 						patientName={selectedPatient?.fullName}
-						medicalCardNumber={selectedPatient?.id ? `№ ${String(selectedPatient.id).slice(0, 8)}` : "—"}
+						medicalCardNumber={
+							selectedPatient?.id
+								? `№ ${String(selectedPatient.id).slice(0, 8)}`
+								: "—"
+						}
 					/>
 				</Suspense>
 			)}
 
 			{isRecallsHubOpen && (
 				<Suspense fallback={null}>
-					<PatientRecallsHubModal isOpen={isRecallsHubOpen} onClose={() => setIsRecallsHubOpen(false)} />
+					<PatientRecallsHubModal
+						isOpen={isRecallsHubOpen}
+						onClose={() => setIsRecallsHubOpen(false)}
+					/>
 				</Suspense>
 			)}
 
@@ -801,3 +489,5 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		</div>
 	);
 }
+
+export default PatientsView;

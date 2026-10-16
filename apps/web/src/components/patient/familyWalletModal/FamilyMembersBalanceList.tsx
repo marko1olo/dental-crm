@@ -170,7 +170,7 @@ export const FamilyMembersBalanceList: React.FC<FamilyMembersBalanceListProps> =
 															: "text-amber-600 dark:text-amber-400"
 													}`}
 												>
-													{canSpend ? "✓ 100% покрытие" : "Требуется согласие главы"}
+													{canSpend ? "✓ 100% покрытие" : "Списание ограничено"}
 												</span>
 											</div>
 

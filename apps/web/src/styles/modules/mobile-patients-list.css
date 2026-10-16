@@ -155,7 +155,7 @@
 
 /* Grouped Inset Card Container */
 .mobile-grouped-inset-card {
-	margin: 12px;
+	margin: 10px 8px;
 	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 16px;
@@ -168,8 +168,8 @@
 .mobile-patient-item {
 	display: flex;
 	align-items: center;
-	gap: 12px;
-	padding: 12px 14px;
+	gap: 10px;
+	padding: 10px 10px;
 	min-height: 56px;
 	background: var(--paper);
 	cursor: pointer;
@@ -198,16 +198,23 @@
 .mobile-patient-info {
 	flex: 1 1 auto;
 	min-width: 0;
+	overflow: hidden;
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
 }
 
 .mobile-patient-name {
-	font-size: 15px;
+	font-size: 14.5px;
 	font-weight: 600;
 	line-height: 1.25;
 	color: var(--ink);
+	white-space: normal;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	overflow: hidden;
 	word-break: break-word;
 }
 
@@ -222,14 +229,21 @@
 }
 
 .mobile-patient-age {
+	font-size: 11.5px;
 	font-weight: 500;
 	color: var(--ink);
+	white-space: nowrap;
+	flex-shrink: 0;
 }
 
 .mobile-patient-phone {
-	font-family: monospace;
-	font-size: 12px;
-	letter-spacing: -0.2px;
+	font-family: inherit;
+	font-variant-numeric: tabular-nums;
+	font-size: 11.5px;
+	letter-spacing: -0.1px;
+	color: var(--muted);
+	white-space: nowrap;
+	flex-shrink: 0;
 }
 
 .mobile-patient-badges-row {
@@ -303,7 +317,9 @@
 	align-items: center;
 	gap: 6px;
 	flex-shrink: 0;
-	margin-left: 4px;
+	margin-left: 6px;
+	padding-left: 8px;
+	border-left: 1px solid var(--line);
 }
 
 .mobile-patient-call-btn {
@@ -355,10 +371,7 @@
 }
 
 .mobile-patient-chevron {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	color: var(--muted);
+	display: none;
 }
 
 /* Natural Thumb Zone FAB */

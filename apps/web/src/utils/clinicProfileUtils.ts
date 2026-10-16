@@ -8,6 +8,7 @@ import type {
 	UpdateClinicProfileInput,
 	UpdatePatientAdministrativeProfileInput,
 } from "@dental/shared";
+import type { PatientAdministrativeProfileDraft } from "../constants/onboardingConstants";
 import { specialtyLabels, staffRoleLabels } from "../workspaceUiLabels";
 import {
 	fromDateTimeLocalValue,
@@ -261,8 +262,17 @@ export function patientAdministrativeProfileDraftFromPatient(
 		utmSource: safeProfileString(profile?.utmSource),
 		utmMedium: safeProfileString(profile?.utmMedium),
 		utmCampaign: safeProfileString(profile?.utmCampaign),
-		utmContent: safeProfileString(profile?.utmContent),
-		utmTerm: safeProfileString(profile?.utmTerm),
+		dmsInsuranceCompany: safeProfileString(profile?.dmsInsuranceCompany),
+		dmsPolicyNumber: safeProfileString(profile?.dmsPolicyNumber),
+		dmsGuaranteeLetterNumber: safeProfileString(profile?.dmsGuaranteeLetterNumber),
+		dmsCoverageLimitKopecks:
+			typeof profile?.dmsCoverageLimitKopecks === "number"
+				? profile.dmsCoverageLimitKopecks
+				: null,
+		dmsCoverageLimitRub:
+			typeof profile?.dmsCoverageLimitRub === "number"
+				? profile.dmsCoverageLimitRub
+				: null,
 		leadSource: safeProfileString(profile?.leadSource),
 	};
 }
@@ -398,15 +408,28 @@ export function buildClinicProfileUpdatePayload(
 		draft.appointmentBufferMinutes,
 		10,
 	);
+	const rawInn = nullableClinicDraftValue(draft.inn);
+	const inn = rawInn && /^\d{10}$|^\d{12}$/.test(rawInn) ? rawInn : null;
+
+	const rawKpp = nullableClinicDraftValue(draft.kpp);
+	const kpp = rawKpp && /^\d{9}$/.test(rawKpp) ? rawKpp : null;
+
+	const rawOgrn = nullableClinicDraftValue(draft.ogrn);
+	const ogrn = rawOgrn && /^\d{13}$|^\d{15}$/.test(rawOgrn) ? rawOgrn : null;
+
+	const rawEmail = nullableClinicDraftValue(draft.email);
+	const email =
+		rawEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail) ? rawEmail : null;
+
 	return {
 		clinicName: draft.clinicName.trim(),
 		legalName: nullableClinicDraftValue(draft.legalName),
-		inn: nullableClinicDraftValue(draft.inn),
-		kpp: nullableClinicDraftValue(draft.kpp),
-		ogrn: nullableClinicDraftValue(draft.ogrn),
+		inn,
+		kpp,
+		ogrn,
 		address: nullableClinicDraftValue(draft.address),
 		phone: nullableClinicDraftValue(draft.phone),
-		email: nullableClinicDraftValue(draft.email),
+		email,
 		website: nullableClinicDraftValue(draft.website),
 		medicalLicenseNumber: nullableClinicDraftValue(draft.medicalLicenseNumber),
 		medicalLicenseIssuedAt: nullableClinicDraftValue(
@@ -541,36 +564,7 @@ export function normalizeOptionalWorkingDaysDraft(
 	).sort((left, right) => left - right);
 }
 
-export type PatientAdministrativeProfileDraft = {
-	[K in Exclude<
-		keyof PatientAdministrativeProfile,
-		| "preferredAppointmentWeekdays"
-		| "isAnonymous"
-		| "anonymousCode"
-		| "decree659Compliance"
-		| "consentSignatures"
-		| "clinicalSafetyProfile"
-		| "utmSource"
-		| "utmMedium"
-		| "utmCampaign"
-		| "utmContent"
-		| "utmTerm"
-		| "leadSource"
-	>]: string;
-} & {
-	preferredAppointmentWeekdays: number[];
-	isAnonymous?: boolean | null;
-	anonymousCode?: string | null;
-	decree659Compliance?: Record<string, unknown> | null;
-	consentSignatures?: Record<string, unknown> | null;
-	clinicalSafetyProfile?: Record<string, unknown> | null;
-	utmSource?: string | null;
-	utmMedium?: string | null;
-	utmCampaign?: string | null;
-	utmContent?: string | null;
-	utmTerm?: string | null;
-	leadSource?: string | null;
-};
+export type { PatientAdministrativeProfileDraft } from "../constants/onboardingConstants";
 
 export function nullablePatientDraftValue(
 	value: string | undefined | null,

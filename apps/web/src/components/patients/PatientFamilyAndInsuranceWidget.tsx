@@ -172,7 +172,7 @@ export function PatientFamilyAndInsuranceWidget({
 						type="button"
 						data-testid="widget-open-family-wallet-btn"
 						onClick={() => setIsFamilyWalletModalOpen(true)}
-						className="mt-1 min-h-[44px] sm:min-h-[32px] h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+						className="secondary-button mt-1 min-h-[44px] sm:min-h-[32px] h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
 					>
 						<Wallet size={13} className="text-[var(--teal)] shrink-0" />
 						<span>Управление семейным кошельком</span>

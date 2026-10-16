@@ -314,7 +314,7 @@ export function MobilePatientsGroupedList({
 								{/* Left: Avatar Monogram */}
 								<PatientAvatar
 									fullName={patient.fullName}
-									size={38}
+									size={34}
 									mode="auto"
 									className="shrink-0"
 								/>
@@ -385,7 +385,7 @@ export function MobilePatientsGroupedList({
 									)}
 								</div>
 
-								{/* Right: 1-Tap Quick Call + 1-Tap Quick Chat + Chevron */}
+								{/* Right: 1-Tap Quick Call + 1-Tap Quick Chat */}
 								<div className="mobile-patient-actions">
 									{patient.phone ? (
 										<>
@@ -400,7 +400,7 @@ export function MobilePatientsGroupedList({
 												title={`Позвонить ${patient.phone}`}
 												data-testid={`mobile-call-btn-${patient.id}`}
 											>
-												<Phone size={18} aria-hidden="true" />
+												<Phone size={16} aria-hidden="true" />
 											</a>
 											{(() => {
 												const digits = patient.phone.replace(/\D/g, "");
@@ -422,7 +422,7 @@ export function MobilePatientsGroupedList({
 														title={`Написать в WhatsApp: ${patient.phone}`}
 														data-testid={`mobile-chat-btn-${patient.id}`}
 													>
-														<MessageCircle size={18} aria-hidden="true" />
+														<MessageCircle size={16} aria-hidden="true" />
 													</a>
 												);
 											})()}

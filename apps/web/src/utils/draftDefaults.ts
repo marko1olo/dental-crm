@@ -59,6 +59,17 @@ export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeP
 		decree659Compliance: null,
 		gender: "",
 		insuranceContractId: "",
+		dmsInsuranceCompany: "",
+		dmsPolicyNumber: "",
+		dmsGuaranteeLetterNumber: "",
+		dmsCoverageLimitKopecks: null,
+		dmsCoverageLimitRub: null,
+		utmSource: "",
+		utmMedium: "",
+		utmCampaign: "",
+		utmContent: "",
+		utmTerm: "",
+		leadSource: "",
 	};
 }
 

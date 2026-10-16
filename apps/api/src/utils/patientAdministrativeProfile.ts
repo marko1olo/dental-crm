@@ -78,6 +78,17 @@ export function normalizePatientAdministrativeProfile(
 		registrationAddress: nullableTrimmed(input?.registrationAddress),
 		residentialAddress: nullableTrimmed(input?.residentialAddress),
 		insurancePolicyNumber: nullableTrimmed(input?.insurancePolicyNumber),
+		dmsInsuranceCompany: nullableTrimmed(input?.dmsInsuranceCompany),
+		dmsPolicyNumber: nullableTrimmed(input?.dmsPolicyNumber),
+		dmsGuaranteeLetterNumber: nullableTrimmed(input?.dmsGuaranteeLetterNumber),
+		dmsCoverageLimitKopecks:
+			typeof input?.dmsCoverageLimitKopecks === "number"
+				? input.dmsCoverageLimitKopecks
+				: null,
+		dmsCoverageLimitRub:
+			typeof input?.dmsCoverageLimitRub === "number"
+				? input.dmsCoverageLimitRub
+				: null,
 		snils: nullableTrimmed(input?.snils),
 		legalRepresentativeFullName: nullableTrimmed(
 			input?.legalRepresentativeFullName,
@@ -118,6 +129,12 @@ export function normalizePatientAdministrativeProfile(
 			null,
 		gender: input?.gender ?? null,
 		insuranceContractId: nullableTrimmed(input?.insuranceContractId),
+		utmSource: nullableTrimmed(input?.utmSource),
+		utmMedium: nullableTrimmed(input?.utmMedium),
+		utmCampaign: nullableTrimmed(input?.utmCampaign),
+		utmContent: nullableTrimmed(input?.utmContent),
+		utmTerm: nullableTrimmed(input?.utmTerm),
+		leadSource: nullableTrimmed(input?.leadSource),
 	};
 
 	const hasValue = Object.values(profile).some((value) =>
