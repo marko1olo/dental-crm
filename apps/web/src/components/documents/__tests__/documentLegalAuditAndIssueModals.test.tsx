@@ -324,8 +324,17 @@ describe("Document Legal Audit and Issue Modals (Red Team Inquisition)", () => {
 		"../../patients/PatientCard.tsx",
 	);
 
-	const auditModalSource = fs.readFileSync(auditModalPath, "utf8");
-	const issueModalSource = fs.readFileSync(issueModalPath, "utf8");
+	const auditFactsDir = path.resolve(__dirname, "../tabs/auditFacts");
+	const auditFactsExtra = fs.existsSync(auditFactsDir)
+		? fs.readdirSync(auditFactsDir).map((f) => fs.readFileSync(path.join(auditFactsDir, f), "utf8")).join("\n")
+		: "";
+	const auditModalSource = fs.readFileSync(auditModalPath, "utf8") + "\n" + auditFactsExtra;
+
+	const issueDir = path.resolve(__dirname, "../tabs/issueConfirmation");
+	const issueExtra = fs.existsSync(issueDir)
+		? fs.readdirSync(issueDir).map((f) => fs.readFileSync(path.join(issueDir, f), "utf8")).join("\n")
+		: "";
+	const issueModalSource = fs.readFileSync(issueModalPath, "utf8") + "\n" + issueExtra;
 	const patientDocsTabSource = fs.readFileSync(patientDocsTabPath, "utf8");
 	const patientCardSource = fs.readFileSync(patientCardPath, "utf8");
 

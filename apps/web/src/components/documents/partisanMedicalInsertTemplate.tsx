@@ -76,7 +76,7 @@ export function RenderPartisanInsert043u({
 			<div className="partisan-insert-sheet">
 				{/* Левое поле подшивки / вклейки 15 мм */}
 				<div className="partisan-glue-margin" title="Поле для вклейки в амбулаторную карту">
-					<span className="partisan-glue-label">Зона вклейки в карту 043/у (15 мм)</span>
+					<span className="partisan-glue-label">Зона вклейки в медицинскую карту (15 мм)</span>
 				</div>
 
 				<div className="partisan-insert-content">
@@ -93,8 +93,8 @@ export function RenderPartisanInsert043u({
 						</div>
 						<div className="partisan-legal-badge">
 							<div className="partisan-badge-minzdrav">Минздрав РФ</div>
-							<div className="partisan-badge-form">Форма № 043/у</div>
-							<div className="partisan-badge-order">Приказ МЗ РФ № 834н</div>
+							<div className="partisan-badge-form">Медицинская карта приёма</div>
+							<div className="partisan-badge-order">Стандарты СтАР</div>
 						</div>
 					</div>
 
@@ -232,7 +232,7 @@ export function RenderPartisanInsert043u({
 				<div className="fast-print-cut-line" data-testid="cut-line-indicator">
 					<Scissors size={13} className="cut-icon" />
 					<span className="cut-text">
-						---------------- Резать здесь для вклейки в карту 043/у ----------------
+						---------------- Линия отреза для вклейки в медицинскую карту ----------------
 					</span>
 					<Scissors size={13} className="cut-icon" />
 				</div>

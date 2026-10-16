@@ -559,7 +559,7 @@ export function MobileDocumentsHub({
 									<div className="flex items-center gap-3 min-w-0 pr-2">
 										{renderDocItemIcon(doc)}
 										<div className="min-w-0">
-											<div className="text-[14.5px] font-semibold text-[var(--ink)] line-clamp-2 leading-snug break-words tracking-tight">
+											<div className="text-[14px] font-semibold text-[var(--ink)] line-clamp-2 leading-snug break-normal tracking-tight">
 												{docLabel}
 											</div>
 											<div className="text-[12px] text-[var(--muted)] flex items-center gap-1.5 flex-wrap mt-0.5">
@@ -586,27 +586,27 @@ export function MobileDocumentsHub({
 									<div className="flex items-center gap-2 shrink-0">
 										{isEds ? (
 											<span
-												className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20"
+												className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20"
 												title="Подписан простой электронной подписью"
 											>
 												<CheckCircle2 size={12} aria-hidden="true" />
-												<span>Подписан ПЭП</span>
+												<span>Подписан</span>
 											</span>
 										) : isDraft ? (
 											<span
-												className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
+												className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
 												title="Черновик, ожидает подписи"
 											>
 												<Clock size={12} aria-hidden="true" />
-												<span>Требует подписи</span>
+												<span>Черновик</span>
 											</span>
 										) : isVoided ? (
-											<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20">
+											<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20">
 												<AlertCircle size={12} aria-hidden="true" />
 												<span>Аннулирован</span>
 											</span>
 										) : (
-											<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+											<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
 												<CheckCircle2 size={12} aria-hidden="true" />
 												<span>Подписан</span>
 											</span>

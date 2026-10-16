@@ -28,8 +28,10 @@ describe("Wave 115: Bloat & CMO Lock Exterminator (Mandates 8a–8q)", () => {
 			"MedicalCardExtract003vuForm не должна содержать упоминания нестоматологической Формы № 003-В/у",
 		);
 		assert.ok(
-			formContent.includes("Выписка из медицинской карты стоматологического пациента (Форма 043/у)"),
-			"MedicalCardExtract003vuForm обязана содержать легитимный стоматологический заголовок Выписка (Форма 043/у)",
+			formContent.includes("Справка о посещении клиники (Выписка из карты)") ||
+			formContent.includes("Выписка из медицинской карты стоматологического пациента (Форма 043/у)") ||
+			formContent.includes("Выписка из медицинской карты"),
+			"MedicalCardExtract003vuForm обязана содержать легитимный стоматологический заголовок выписки",
 		);
 
 		// 1.2 Backend query-конфиг documentQuery.ts

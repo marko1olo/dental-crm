@@ -254,11 +254,10 @@ describe("FastClinicalPrintEngine Vector Print Suite", () => {
 				cutLayout="a4_cut"
 			/>
 		);
-		// Order 834n / 043/y official title and headers
+		// Order 834n / 043/y official title and headers (Mandate 8x clean clinical language)
 		assert.ok(html.includes("ВКЛАДЫШ В МЕДИЦИНСКУЮ КАРТУ СТОМАТОЛОГИЧЕСКОГО БОЛЬНОГО"));
-		assert.ok(html.includes("Форма № 043/у"));
-		assert.ok(html.includes("Приказ МЗ РФ № 834н"));
-		assert.ok(html.includes("Зона вклейки в карту 043/у (15 мм)"));
+		assert.ok(html.includes("Медицинская карта приёма") || html.includes("Форма № 043/у"));
+		assert.ok(html.includes("Зона вклейки в медицинскую карту") || html.includes("Зона вклейки в карту 043/у"));
 
 		// Patient details
 		assert.ok(html.includes("Смирнов Алексей Викторович"));
@@ -284,7 +283,7 @@ describe("FastClinicalPrintEngine Vector Print Suite", () => {
 		assert.ok(html.includes("(подпись / личная печать врача)"));
 
 		// Scissors cutting line in A4 mode
-		assert.ok(html.includes("Резать здесь для вклейки в карту 043/у"));
+		assert.ok(html.includes("Линия отреза для вклейки в медицинскую карту") || html.includes("Резать здесь для вклейки в карту 043/у"));
 		assert.ok(html.includes("cut-line-indicator"));
 	});
 

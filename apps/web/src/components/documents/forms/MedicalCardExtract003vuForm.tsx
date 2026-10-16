@@ -73,7 +73,7 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 		return (
 			<div className="document-form-container form-003vu-wrapper">
 				<DocumentPayloadCard
-					title="Выписка из медицинской карты стоматологического пациента (Форма 043/у)"
+					title="Справка о посещении клиники (Выписка из карты)"
 					description="Официальная выписка с хроникой этапов лечения, диагностическими данными и рекомендациями"
 				>
 					<div className="form-group" style={{ marginBottom: "12px" }}>
@@ -102,7 +102,7 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 						<h4 style={{ margin: 0 }}>Хронологические этапы проведенного лечения ({stages.length})</h4>
 						<button
 							type="button"
-							className="btn btn-sm btn-primary"
+							className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors inline-flex items-center gap-1.5 text-xs"
 							onClick={addStageRow}
 							disabled={disabled}
 						>

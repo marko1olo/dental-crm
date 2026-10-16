@@ -346,6 +346,7 @@ export function useDocumentsViewController(rawProps?: Partial<DocumentsViewProps
 				if (regEl) regEl.scrollIntoView({ behavior: "smooth" });
 			},
 			onOpenPrimaryIntakePackage: () => setIsPrimaryIntakeOpen(true),
+			onOpenAutoclaveLog: () => setIsAutoclaveLogOpen(true),
 			className: "my-3",
 		},
 		recentListProps: {
