@@ -5,6 +5,7 @@ import {
 	PERIO_SITE_KEYS,
 	type PerioChartSummary,
 	type PerioToothRecord,
+	type ToothClinicalServicePayload,
 } from "@dental/shared";
 import {
 	PERIO_PATHOLOGY_PRESETS,
@@ -416,4 +417,49 @@ export function generatePerioProtocolText(
 		patientAgeYears: 45,
 		customNotes: customNotes ?? undefined,
 	});
+}
+
+/**
+ * Builds automated periodontal treatment plan justification and billing items (Mandate 8e, 8n)
+ * When pathological pockets >= 4mm are detected.
+ */
+export function buildPeriodontalTreatmentPlanJustification(affectedTeeth: PerioToothRecord[]): {
+	planText: string;
+	prophyService: ToothClinicalServicePayload;
+	curettageServices: ToothClinicalServicePayload[];
+} {
+	const teethLabels = affectedTeeth.map((t) => `#${t.toothNumber}`).join(", ");
+	const planText =
+		`• План пародонтологического лечения:\n` +
+		`1. Комплексная профессиональная гигиена полости рта (A16.07.051): ультразвуковое удаление зубных отложений, воздушно-абразивная обработка Air-Flow, полировка абразивной пастой, глубокое фторирование эмали.\n` +
+		`2. Закрытый кюретаж пародонтальных карманов (A16.07.011) в области зубов: ${teethLabels}.\n` +
+		`3. Обучение индивидуальной гигиене полости рта, подбор ершиков, контрольное зондирование через 4-6 недель.`;
+
+	const prophyService: ToothClinicalServicePayload = {
+		serviceId: "hygiene_prophy_804n",
+		code804n: "A16.07.051",
+		code: "A16.07.051",
+		name: "Профессиональная гигиена полости рта и зубов",
+		priceRub: 5500,
+		price: 5500,
+		priceKopecks: 550000,
+		quantity: 1,
+		category: "hygiene",
+	};
+
+	const curettageServices: ToothClinicalServicePayload[] = affectedTeeth.map((tooth) => ({
+		serviceId: `curettage_tooth_${tooth.toothNumber}`,
+		code804n: "A16.07.011",
+		code: "A16.07.011",
+		toothNumber: tooth.toothNumber,
+		toothCode: String(tooth.toothNumber),
+		name: `Закрытый кюретаж пародонтального кармана (зуб #${tooth.toothNumber})`,
+		priceRub: 1800,
+		price: 1800,
+		priceKopecks: 180000,
+		quantity: 1,
+		category: "parodontology",
+	}));
+
+	return { planText, prophyService, curettageServices };
 }

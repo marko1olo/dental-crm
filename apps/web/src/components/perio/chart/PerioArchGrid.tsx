@@ -108,42 +108,30 @@ export const PerioArchGrid: React.FC<PerioArchGridProps> = React.memo(({
 		<div className="flex flex-col gap-4 overflow-x-auto pb-2">
 			{/* Compact Jaw & Sextant Switcher (Mandates 8d, 8e, Hick's Law: Strictly 1 Row 32-36px) */}
 			<div className="flex items-center justify-between gap-2 overflow-x-auto h-9 min-h-[36px] max-h-9 py-0.5 px-1 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-semibold shrink-0 select-none">
-				<div className="flex items-center gap-1 shrink-0">
+				<div className="flex items-center gap-1.5 shrink-0">
 					<button
 						type="button"
 						onClick={() => onSetArchFilter("all")}
-						className={`px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer h-7 flex items-center ${
-							archFilter === "all"
-								? "bg-teal-500/20 text-teal-300 font-bold shadow-2xs border border-teal-500/30"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
+						className={`secondary-button shrink-0 ${archFilter === "all" ? "active" : ""}`}
 						data-testid="perio-arch-filter-all"
 					>
-						Обе челюсти (18–48)
+						<span>Обе челюсти (18–48)</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => onSetArchFilter("upper")}
-						className={`px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer h-7 flex items-center ${
-							archFilter === "upper"
-								? "bg-teal-500/20 text-teal-300 font-bold shadow-2xs border border-teal-500/30"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
+						className={`secondary-button shrink-0 ${archFilter === "upper" ? "active" : ""}`}
 						data-testid="perio-arch-filter-upper"
 					>
-						Верхняя (18–28)
+						<span>Верхняя челюсть (18–28)</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => onSetArchFilter("lower")}
-						className={`px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer h-7 flex items-center ${
-							archFilter === "lower"
-								? "bg-teal-500/20 text-teal-300 font-bold shadow-2xs border border-teal-500/30"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
+						className={`secondary-button shrink-0 ${archFilter === "lower" ? "active" : ""}`}
 						data-testid="perio-arch-filter-lower"
 					>
-						Нижняя (48–38)
+						<span>Нижняя челюсть (48–38)</span>
 					</button>
 				</div>
 

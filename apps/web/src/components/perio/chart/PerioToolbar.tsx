@@ -75,7 +75,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 				<div className="min-w-0">
 					<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap min-w-0">
 						<h3 className="text-base font-bold text-[var(--ink)] truncate">
-							Пародонтологический осмотр (Скрининг PSR / CPITN)
+							Пародонтологическая карта пациента
 						</h3>
 						<span
 							className={`px-2.5 py-0.5 rounded-full text-xs font-bold border truncate max-w-xs shrink-0 ${
@@ -133,19 +133,19 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 				</div>
 			</div>
 
-			{/* Клинические протоколы пародонтологии (1 Row 32px Toolbar, Mandates 8d, 8e, 8k, HIG) */}
+			{/* Клинические протоколы пародонтологии (1 Row 32-36px Toolbar, Mandates 8d, 8e, 8k, HIG) */}
 			{!readOnly && (
-				<div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto py-0.5 shrink-0 h-8 min-h-[32px]">
+				<div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto py-0.5 shrink-0 min-h-[36px]">
 					{/* Протокол «Норма»: Instant PSR 0, Healthy Tissues & Form 043/u Protocol */}
 					<button
 						type="button"
 						onClick={() => onApplyExpressPreset("perio_norm_express")}
-						className="secondary-button shrink-0"
-						title="Вся десна здорова (Норма) (PSR 0, глубина <= 2 мм, BOP 0, протокол в дневник)"
+						className="primary-button shrink-0"
+						title="Вся десна здорова (Норма) • 1-клик: Здоровый пародонт (Норма) (PSR 0, глубина <= 2 мм, BOP 0, протокол в дневник)"
 						data-testid="perio-toolbar-norm-1click-btn"
 					>
-						<ShieldCheck size={15} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-						<span>Десна здорова (Норма)</span>
+						<Check size={15} className="shrink-0 text-white" />
+						<span>Пародонт интактен / Физиологическая норма</span>
 					</button>
 
 					{/* Протокол «Профгигиена»: Ultrasonic, Air-Flow Glycine & Service A16.07.051 */}
@@ -223,38 +223,51 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 						)}
 					</button>
 
+					{/* Canonical DENTE Primary Save Button (Mandate 8e & Paragraph 3) */}
 					{onSaveDraft && (
 						<button
 							type="button"
 							onClick={onSaveDraft}
 							disabled={syncStatus === "saving"}
-							className="secondary-button shrink-0"
-							title="Сохранить черновик перио-карты в ЭМК (PostgreSQL 18)"
+							className="primary-button button-lg shrink-0"
+							title="Сохранить карту пародонта в ЭМК (PostgreSQL 18)"
 							data-testid="perio-save-draft-btn"
 						>
-							<Save size={14} className={syncStatus === "saving" ? "animate-spin text-teal-400" : "text-[var(--muted)]"} />
-							<span>Сохранить</span>
+							<Save size={15} className={syncStatus === "saving" ? "animate-spin text-white" : "text-white"} />
+							<span>Сохранить карту пародонта</span>
 						</button>
 					)}
 
-					{/* 1-Click Insert into 043/u: SINGLE PRIMARY CTA */}
+					{/* 1-Click Insert into EMR: Secondary CTA */}
 					<button
 						type="button"
 						onClick={onInsertToProtocol}
-						className="primary-button shrink-0"
+						className="secondary-button shrink-0"
 						title="Сформировать и вставить протокол пародонтограммы в дневник приёма"
 						data-testid="perio-insert-protocol-btn"
 					>
-						{insertStatus ? <Check size={14} /> : <DentalForm043 size={14} />}
+						{insertStatus ? <Check size={14} className="text-emerald-500" /> : <DentalForm043 size={14} />}
 						<span>
-							{insertStatus ? "Внесено в медкарту!" : "Внести в дневник"}
+							{insertStatus ? "Внесено в дневник!" : "Внести в дневник"}
 						</span>
+					</button>
+
+					{/* Reset to Norm Icon Button */}
+					<button
+						type="button"
+						onClick={onSetAllIntact}
+						className="icon-button shrink-0"
+						title="Сбросить карту к физиологической норме"
+						aria-label="Сбросить карту к норме"
+						data-testid="perio-reset-icon-btn"
+					>
+						<RotateCcw size={15} />
 					</button>
 
 					<button
 						type="button"
 						onClick={onCopyProtocol}
-						className="secondary-button !px-2 !w-8 shrink-0"
+						className="icon-button shrink-0"
 						title="Копировать текст протокола в буфер"
 						aria-label="Копировать текст протокола"
 					>
@@ -268,7 +281,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 					<button
 						type="button"
 						onClick={onToggleHelp}
-						className="secondary-button !px-2 !w-8 shrink-0"
+						className="icon-button shrink-0"
 						title="Справка по горячим клавишам пародонтограммы"
 						aria-label="Справка по горячим клавишам"
 					>

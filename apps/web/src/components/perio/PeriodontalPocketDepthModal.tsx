@@ -187,7 +187,7 @@ const SITE_NAMES_RU: Record<PerioSiteKey, string> = {
 					<button
 						type="button"
 						onClick={onClose}
-						className="secondary-button !w-8 !h-8 !p-0 shrink-0"
+						className="icon-button shrink-0"
 						aria-label="Закрыть модальное окно"
 					>
 						<X size={16} />
@@ -196,44 +196,52 @@ const SITE_NAMES_RU: Record<PerioSiteKey, string> = {
 
 				{/* Quick 1-Click Tooth Presets (Mandates 8e, 8k) */}
 				<div className="px-4 sm:px-5 pt-3 pb-0 flex items-center gap-1.5 flex-wrap">
-					<span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 shrink-0">
-						Экспресс-пресеты зуба:
+					<span className="text-[11px] font-bold text-[var(--muted)] shrink-0">
+						Пресеты глубины карманов:
 					</span>
 					<button
 						type="button"
 						disabled={readOnly}
-						onClick={() => handleApplyToothPreset(2, false, false, "Здоровый пародонт (2 мм)")}
-						className="min-h-[32px] h-8 px-2.5 rounded-lg text-xs font-semibold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all cursor-pointer inline-flex items-center gap-1"
+						onClick={() => handleApplyToothPreset(2, false, false, "Здоровый пародонт (1–2 мм)")}
+						className="secondary-button shrink-0 text-emerald-700 dark:text-emerald-300 border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20"
 						data-testid="btn-perio-preset-norm"
+						title="1–2 мм норма (нет карманов, десна здорова)"
 					>
-						<span>Норма (2 мм)</span>
+						<span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+						<span>1–2 мм (Норма)</span>
 					</button>
 					<button
 						type="button"
 						disabled={readOnly}
-						onClick={() => handleApplyToothPreset(3, true, false, "Гингивит (3 мм + BOP)")}
-						className="min-h-[32px] h-8 px-2.5 rounded-lg text-xs font-semibold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-all cursor-pointer inline-flex items-center gap-1"
+						onClick={() => handleApplyToothPreset(3, true, false, "Гингивит / лёгкий пародонтит (3–4 мм)")}
+						className="secondary-button shrink-0 text-amber-700 dark:text-amber-300 border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20"
 						data-testid="btn-perio-preset-gingivitis"
+						title="3–4 мм гингивит / лёгкий пародонтит + BOP"
 					>
-						<span>Гингивит (3 мм + BOP)</span>
+						<span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+						<span>3–4 мм (Гингивит / лёгкий)</span>
 					</button>
 					<button
 						type="button"
 						disabled={readOnly}
-						onClick={() => handleApplyToothPreset(4, true, true, "Пародонтит ср. ст. (4 мм)")}
-						className="min-h-[32px] h-8 px-2.5 rounded-lg text-xs font-semibold bg-orange-500/15 text-orange-800 dark:text-orange-300 border border-orange-500/30 hover:bg-orange-500/25 transition-all cursor-pointer inline-flex items-center gap-1"
+						onClick={() => handleApplyToothPreset(4, true, true, "Пародонтит средней степени (4 мм)")}
+						className="secondary-button shrink-0 text-orange-700 dark:text-orange-300 border-orange-500/40 bg-orange-500/10 hover:bg-orange-500/20"
 						data-testid="btn-perio-preset-pocket-4"
+						title="4 мм пародонтит средней степени + BOP + зубной камень"
 					>
+						<span className="w-2 h-2 rounded-full bg-orange-500 shrink-0" />
 						<span>Карман 4 мм</span>
 					</button>
 					<button
 						type="button"
 						disabled={readOnly}
-						onClick={() => handleApplyToothPreset(5, true, true, "Пародонтит тяж. ст. (5+ мм)")}
-						className="min-h-[32px] h-8 px-2.5 rounded-lg text-xs font-semibold bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 transition-all cursor-pointer inline-flex items-center gap-1"
+						onClick={() => handleApplyToothPreset(5, true, true, "Тяжелый пародонтит (5+ мм)")}
+						className="secondary-button shrink-0 text-rose-700 dark:text-rose-300 border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20"
 						data-testid="btn-perio-preset-pocket-5"
+						title="5+ мм тяжелый пародонтит + глубокие карманы"
 					>
-						<span>Карман 5+ мм</span>
+						<span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+						<span>5+ мм (Тяжелый)</span>
 					</button>
 				</div>
 

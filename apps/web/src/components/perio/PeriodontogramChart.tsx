@@ -193,8 +193,8 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 					)}
 					<span className="text-[12px] text-[var(--muted)] hidden md:inline px-1 truncate">
 						{viewModeOverride === "touch"
-							? "Florida Probe Touch (1–7+ мм, 6 датчиков на зуб)"
-							: "Медицинская карта приёма (32 зуба, 192 точки зондирования)"}
+							? "Сенсорный режим (1–7+ мм, 6 точек на зуб)"
+							: "Пародонтологическая карта пациента (32 зуба, 192 точки зондирования)"}
 					</span>
 				</div>
 			</div>

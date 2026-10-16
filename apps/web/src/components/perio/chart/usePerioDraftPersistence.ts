@@ -66,8 +66,6 @@ export function usePerioDraftPersistence({
 				}
 				const defaults = createDefaultPerioTeeth(2);
 				setTeeth(defaults.map((def) => map.get(def.toothNumber) ?? def));
-			} else if (isDemoShowcaseMode() || isDemoPatientId(patientId)) {
-				setTeeth(applyPeriodontitisModeratePreset(createDefaultPerioTeeth(2)));
 			} else {
 				setTeeth(createDefaultPerioTeeth(2));
 			}

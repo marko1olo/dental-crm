@@ -61,8 +61,16 @@ const FastCheckoutModal = lazyWithRetry(() =>
 	})),
 );
 
+const ImplantPassportModal = lazyWithRetry(() =>
+	import("../../../implants/ImplantPassportModal").then((module) => ({
+		default: module.ImplantPassportModal,
+	})),
+);
+
+
 import { PeriodontogramChart } from "../../../perio/PeriodontogramChart";
 import { PerioChartModal } from "../../../perio/PerioChartModal";
+import { PeriodontalPocketDepthModal } from "../../../perio/PeriodontalPocketDepthModal";
 import { EmkPerioSection } from "../../../visit/emk/EmkPerioSection";
 import { HygieneIndicesPanel } from "../../../hygiene/HygieneIndicesPanel";
 import { PatientRecallsHubModal } from "../../../recalls/PatientRecallsHubModal";
@@ -145,11 +153,12 @@ export function renderSpecializedClinicalLaunchers({
 		(new URLSearchParams(window.location.search).has("perio") ||
 			window.location.hash.toLowerCase().includes("perio"));
 	if (isPerioDirect) {
-		const isModalMode =
-			typeof window !== "undefined" &&
-			new URLSearchParams(window.location.search).get("perio") === "modal";
+		const perioMode =
+			typeof window !== "undefined"
+				? new URLSearchParams(window.location.search).get("perio")
+				: null;
 
-		if (isModalMode) {
+		if (perioMode === "modal") {
 			return (
 				<PerioChartModal
 					isOpen={true}
@@ -162,6 +171,21 @@ export function renderSpecializedClinicalLaunchers({
 					patientId="demo_perio_patient"
 					patientName="Смирнова Анна Сергеевна (Пародонтограмма)"
 					doctorName="Д-р Соколов А. В."
+				/>
+			);
+		}
+
+		if (perioMode === "pocket") {
+			return (
+				<PeriodontalPocketDepthModal
+					isOpen={true}
+					onClose={() => {
+						const url = new URL(window.location.href);
+						url.searchParams.delete("perio");
+						const cleanHash = url.hash.includes("perio") ? "" : url.hash;
+						window.history.replaceState({}, "", url.pathname + (url.search || "") + cleanHash);
+					}}
+					toothNumber={16}
 				/>
 			);
 		}
@@ -491,6 +515,37 @@ export function renderSpecializedClinicalLaunchers({
 		);
 	}
 
+	// IMPLANT SURGICAL PROTOCOL & PASSPORT STANDALONE LAUNCHER (?implant_passport=1, ?passport=demo, #implant_passport)
+	const isImplantPassportDirect =
+		typeof window !== "undefined" &&
+		(new URLSearchParams(window.location.search).has("implant_passport") ||
+			new URLSearchParams(window.location.search).has("passport") ||
+			window.location.hash.toLowerCase().includes("implant_passport") ||
+			window.location.hash.toLowerCase().includes("passport"));
+
+	if (isImplantPassportDirect) {
+		return (
+			<Suspense fallback={<AppLoadingState message="Загрузка хирургического протокола..." />}>
+				<ImplantPassportModal
+					isOpen={true}
+					onClose={() => {
+						const url = new URL(window.location.href);
+						url.searchParams.delete("implant_passport");
+						url.searchParams.delete("passport");
+						const cleanHash = url.hash.includes("passport") ? "" : url.hash;
+						window.history.replaceState({}, "", url.pathname + (url.search || "") + cleanHash);
+					}}
+					patientName="Ковалёв Роман Станиславович"
+					patientId="PAT-2026-088"
+					doctorName="Д-р Воронов А. В."
+					doctorId="DOC-01"
+					initialTooth={46}
+				/>
+			</Suspense>
+		);
+	}
+
 	return null;
 }
+
 

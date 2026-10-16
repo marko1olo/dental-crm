@@ -99,7 +99,7 @@ export const PerioChartModal: React.FC<PerioChartModalProps> = React.memo(({
 								id="perio-modal-heading"
 								className="text-sm md:text-base font-bold text-[var(--ink)] truncate"
 							>
-								Пародонтограмма (Форма 043/у)
+								Пародонтологическая карта пациента
 							</h2>
 							{patientName && (
 								<p className="text-xs text-[var(--muted)] truncate">
@@ -113,7 +113,7 @@ export const PerioChartModal: React.FC<PerioChartModalProps> = React.memo(({
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-strong)] transition-colors flex items-center justify-center cursor-pointer"
+						className="icon-button min-h-[44px] min-w-[44px] shrink-0"
 						data-testid="perio-modal-close-btn"
 						aria-label="Закрыть пародонтограмму"
 					>
@@ -139,18 +139,18 @@ export const PerioChartModal: React.FC<PerioChartModalProps> = React.memo(({
 				{/* Floating Bottom Bar (Natural Thumb Zone) */}
 				<footer className="perio-floating-bottom-bar flex items-center justify-between">
 					<span className="text-xs text-[var(--muted)] hidden sm:inline">
-						6-точечное зондирование • Florida Probe SSOT • Мягкий овердрафт расходников
+						Клинический скрининг пародонта • Индексы PSR/CPITN • Экспресс-статусы
 					</span>
 
 					<div className="flex items-center gap-2 w-full sm:w-auto justify-end">
 						<button
 							type="button"
 							onClick={onClose}
-							className="perio-touch-btn flex-1 sm:flex-initial px-5 py-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
+							className="primary-button button-lg min-h-[44px] px-6"
 							data-testid="perio-modal-done-bottom-btn"
 						>
-							<Check size={16} className="mr-1.5 text-teal-500 inline" />
-							Готово
+							<Check size={16} className="text-white" />
+							<span>Готово</span>
 						</button>
 					</div>
 				</footer>
