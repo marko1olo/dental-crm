@@ -54,9 +54,9 @@ export function AnesthesiaMethodSelector({
 						type="button"
 						disabled={disabled}
 						onClick={() => onSelectTechnique(tech.id)}
-						className={`px-2.5 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-8.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer touch-manipulation active:scale-98 shadow-2xs ${
+						className={`secondary-button px-2.5 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-8.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer touch-manipulation active:scale-98 shadow-2xs ${
 							isSelected
-								? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)] font-bold shadow-xs ring-1 ring-[var(--teal)]"
+								? "is-selected bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)] font-bold shadow-xs ring-1 ring-[var(--teal)]"
 								: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] border-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)]"
 						}`}
 						title={tech.titleRu}

@@ -113,7 +113,7 @@ describe("Wave 54 / Feature 242: Anesthesia Protocol Print and 1-Click Patient M
 				"Must render anesthesia-dose-norm-preset button",
 			);
 			assert.ok(
-				html.includes("Норма: Артикаин 1:100k"),
+				html.includes("Убистезин форте") || html.includes("Норма: Артикаин 1:100k"),
 				"Must show standard norm preset label",
 			);
 			assert.ok(

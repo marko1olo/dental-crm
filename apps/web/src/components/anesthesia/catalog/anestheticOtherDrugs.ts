@@ -1,4 +1,4 @@
-import type { AnestheticDrugId, AnestheticDrugInfo } from './anesthesiaCatalogTypes';
+import type { AnestheticDrugId, AnestheticDrugInfo } from './anesthesiaCatalogTypes.js';
 
 export const OTHER_ANESTHETIC_DRUGS: Record<
 	Extract<AnestheticDrugId, 'mepivacaine_plain' | 'lidocaine_1_100k' | 'lidocaine_plain' | 'bupivacaine_05'>,

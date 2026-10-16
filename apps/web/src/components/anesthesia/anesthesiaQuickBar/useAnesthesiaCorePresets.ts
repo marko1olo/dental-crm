@@ -5,7 +5,7 @@ import {
 	type AnesthesiaCalculationResult,
 	type AsaPhysicalStatus,
 } from '../anesthesiaEngine';
-import { STANDARD_ANESTHESIA_NORM_PRESET_RU } from '../../../lib/clinicalProtocols043';
+import { STANDARD_ANESTHESIA_NORM_PRESET_RU } from '../../../lib/clinicalProtocolsReception';
 import { dispatchAnesthesiaPreset } from './anesthesiaPresetDispatcher';
 
 export interface UseAnesthesiaCorePresetsProps {

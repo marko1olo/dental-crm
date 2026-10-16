@@ -4,7 +4,7 @@ import {
 	type AnestheticDrugInfo,
 	type InjectionTechniqueId,
 	type NeedleGaugeType,
-} from '../anesthesiaCatalog';
+} from '../anesthesiaCatalog.js';
 
 export interface AnesthesiaDiaryParams {
 	drug: AnestheticDrugInfo;

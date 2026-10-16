@@ -4,8 +4,8 @@
  * Modular facade compliant with submodules <= 120 lines invariant.
  */
 
-export * from './catalog/anesthesiaCatalogTypes';
-export * from './catalog/anestheticDrugsData';
-export * from './catalog/dentalNeedlesData';
-export * from './catalog/injectionTechniquesData';
-export * from './catalog/anesthesiaPresetsData';
+export * from './catalog/anesthesiaCatalogTypes.js';
+export * from './catalog/anestheticDrugsData.js';
+export * from './catalog/dentalNeedlesData.js';
+export * from './catalog/injectionTechniquesData.js';
+export * from './catalog/anesthesiaPresetsData.js';

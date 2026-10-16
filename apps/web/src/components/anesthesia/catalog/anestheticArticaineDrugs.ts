@@ -1,4 +1,4 @@
-import type { AnestheticDrugId, AnestheticDrugInfo } from './anesthesiaCatalogTypes';
+import type { AnestheticDrugId, AnestheticDrugInfo } from './anesthesiaCatalogTypes.js';
 
 export const ARTICAINE_DRUGS: Record<
 	Extract<AnestheticDrugId, 'articaine_1_100k' | 'articaine_1_200k' | 'septanest_1_100k'>,

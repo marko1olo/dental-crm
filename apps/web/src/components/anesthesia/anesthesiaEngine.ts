@@ -4,8 +4,8 @@
  * Modular facade compliant with submodules <= 120 lines invariant.
  */
 
-export * from './engine/anesthesiaEngineTypes';
-export * from './engine/anesthesiaAgeClassification';
-export * from './engine/anesthesiaDiaryFormatter';
-export * from './engine/anesthesiaSafetyAdvisor';
-export * from './engine/anesthesiaDoseCalculator';
+export * from './engine/anesthesiaEngineTypes.js';
+export * from './engine/anesthesiaAgeClassification.js';
+export * from './engine/anesthesiaDiaryFormatter.js';
+export * from './engine/anesthesiaSafetyAdvisor.js';
+export * from './engine/anesthesiaDoseCalculator.js';

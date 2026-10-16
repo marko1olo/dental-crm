@@ -1,4 +1,4 @@
-import type { InjectionTechniqueId, InjectionTechniqueInfo } from './anesthesiaCatalogTypes';
+import type { InjectionTechniqueId, InjectionTechniqueInfo } from './anesthesiaCatalogTypes.js';
 
 export const INJECTION_TECHNIQUES: Record<InjectionTechniqueId, InjectionTechniqueInfo> = {
 	infiltration: {

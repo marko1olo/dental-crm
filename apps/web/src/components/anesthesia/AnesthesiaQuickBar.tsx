@@ -1,6 +1,6 @@
 import React from "react";
 import { CheckCircle2 } from "lucide-react";
-import { STANDARD_ANESTHESIA_NORM_PRESET_RU } from "../../lib/clinicalProtocols043";
+import { STANDARD_ANESTHESIA_NORM_PRESET_RU } from "../../lib/clinicalProtocolsReception";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import {
 	formatAnesthesiaPatientMemo,
@@ -78,6 +78,8 @@ export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 				selectedCarpulesCount={bar.selectedCarpulesCount}
 				onChangeSelectedCarpulesCount={bar.setSelectedCarpulesCount}
 				onApplyCarpules={bar.handleApplyCarpules}
+				onApplyUbistesinForte={bar.handleApplyUbistesinForte}
+				onApplyUbistesin={bar.handleApplyUbistesin}
 				onApplyStandardNormPreset={bar.handleApplyStandardNormPreset}
 				onApplyUltracainForteCombined={bar.handleApplyUltracainForteCombined}
 				onApplySeptanestInfiltration={bar.handleApplySeptanestInfiltration}
@@ -95,9 +97,6 @@ export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 				onOpenEmergencyProtocol={props.onOpenEmergencyProtocol || (() => {
 					useUiSurfaceStore.getState().openPrimaryModal("emergency_rescue");
 				})}
-				onNurseQuickDisposal={bar.handleNurseQuickDisposal}
-				onNursePacketDisposal={bar.handleNursePacketDisposal}
-				onNurseSeptanestDisposal={bar.handleNurseSeptanestDisposal}
 				onSelectDrug={bar.handleSelectDrug}
 				disabled={props.disabled}
 			/>

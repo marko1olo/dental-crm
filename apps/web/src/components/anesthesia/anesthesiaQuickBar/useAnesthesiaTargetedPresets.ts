@@ -88,6 +88,24 @@ export function useAnesthesiaTargetedPresets(props: UseAnesthesiaTargetedPresets
 		});
 	};
 
+	const handleApplyUbistesin = () => {
+		if (props.disabled) return;
+		props.setSelectedDrugId('articaine_1_200k');
+		props.setTechniqueId('infiltration');
+		dispatchAnesthesiaPreset({
+			...props,
+			effectiveWeight,
+			drugId: 'articaine_1_200k',
+			techniqueId: 'infiltration',
+			needleType: 'g30_short_21mm',
+			asaStatus: 'asa_1',
+			isCardioRisk: false,
+			diaryText:
+				'Анестезия инфильтрационная: Артикаин 1:200 000, 1.7 мл. Осложнений нет.',
+			toastText: 'Убистезин 1:200 000 (1.7 мл): внесено в карту',
+		});
+	};
+
 	const handleApplySeptanest200k = () => {
 		if (props.disabled) return;
 		props.setSelectedDrugId('articaine_1_200k');
@@ -110,6 +128,7 @@ export function useAnesthesiaTargetedPresets(props: UseAnesthesiaTargetedPresets
 		handleApplyScandonestCardio,
 		handleApplySeptanestInfiltration,
 		handleApplyUbistesinForte,
+		handleApplyUbistesin,
 		handleApplySeptanest200k,
 	};
 }

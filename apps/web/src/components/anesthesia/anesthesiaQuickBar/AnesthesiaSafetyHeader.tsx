@@ -33,20 +33,22 @@ export function AnesthesiaSafetyHeader({
 				</span>
 				{hasLidocaineAllergy && (
 					<span
-						className="anesthesia-allergy-tag bg-rose-500/20 text-rose-800 dark:text-rose-200 border border-rose-500/40"
-						title="Аллергия на лидокаин: риск анафилаксии! Запрещен лидокаин, рекомендован Скандонест 3%"
+						className="anesthesia-allergy-tag bg-rose-500/15 text-rose-800 dark:text-rose-200 border border-rose-500/40 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1"
+						title="Аллергия на лидокаин / амидные анестетики. Рекомендован Скандонест 3%. Решение принимает врач."
+						data-testid="allergy-passive-badge"
 					>
-						<ShieldAlert size={12} className="text-rose-600 dark:text-rose-400" />
-						<span>Аллергия: Лидокаин</span>
+						<ShieldAlert size={12} className="text-rose-600 dark:text-rose-400 shrink-0" />
+						<span>⚠️ Аллергия: Лидокаин / амидные анестетики</span>
 					</span>
 				)}
 				{hasArticaineAllergy && (
 					<span
-						className="anesthesia-allergy-tag bg-rose-500/20 text-rose-800 dark:text-rose-200 border border-rose-500/40"
-						title="Аллергия на артикаин: риск анафилаксии! Запрещен артикаин, рекомендован Скандонест 3%"
+						className="anesthesia-allergy-tag bg-rose-500/15 text-rose-800 dark:text-rose-200 border border-rose-500/40 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1"
+						title="Аллергия на артикаин / амидные анестетики. Рекомендован Скандонест 3%. Решение принимает врач."
+						data-testid="allergy-passive-badge-articaine"
 					>
-						<ShieldAlert size={12} className="text-rose-600 dark:text-rose-400" />
-						<span>Аллергия: Артикаин</span>
+						<ShieldAlert size={12} className="text-rose-600 dark:text-rose-400 shrink-0" />
+						<span>⚠️ Аллергия: Артикаин / амидные анестетики</span>
 					</span>
 				)}
 				{isCardioRisk && (

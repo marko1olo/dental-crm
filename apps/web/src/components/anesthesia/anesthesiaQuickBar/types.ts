@@ -93,6 +93,8 @@ export interface AnesthesiaQuickBarActionsProps {
 	readonly selectedCarpulesCount: number;
 	readonly onChangeSelectedCarpulesCount: (count: number) => void;
 	readonly onApplyCarpules: (count: number, bypassCheck?: boolean | undefined, overrideDrugId?: AnestheticDrugId | undefined) => void;
+	readonly onApplyUbistesinForte?: (() => void) | undefined;
+	readonly onApplyUbistesin?: (() => void) | undefined;
 	readonly onApplyStandardNormPreset: () => void;
 	readonly onApplyUltracainForteCombined: () => void;
 	readonly onApplySeptanestInfiltration: () => void;
@@ -101,9 +103,9 @@ export interface AnesthesiaQuickBarActionsProps {
 	readonly onApplyScandonestCardio?: (() => void) | undefined;
 	readonly onWriteoffAntishockKit?: (() => void) | undefined;
 	readonly onOpenEmergencyProtocol?: (() => void) | undefined;
-	readonly onNurseQuickDisposal: (carpulesCount: number) => void;
-	readonly onNursePacketDisposal: () => void;
-	readonly onNurseSeptanestDisposal: () => void;
+	readonly onNurseQuickDisposal?: ((carpulesCount: number) => void) | undefined;
+	readonly onNursePacketDisposal?: (() => void) | undefined;
+	readonly onNurseSeptanestDisposal?: (() => void) | undefined;
 	readonly onSelectDrug: (drugId: AnestheticDrugId) => void;
 	readonly disabled?: boolean | undefined;
 }

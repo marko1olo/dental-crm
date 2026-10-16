@@ -15,6 +15,8 @@ export function AnesthesiaQuickBarActions({
 	selectedCarpulesCount,
 	onChangeSelectedCarpulesCount,
 	onApplyCarpules,
+	onApplyUbistesinForte,
+	onApplyUbistesin,
 	onApplyStandardNormPreset,
 	onApplyUltracainForteCombined,
 	onApplySeptanestInfiltration,
@@ -23,9 +25,6 @@ export function AnesthesiaQuickBarActions({
 	onApplyScandonestCardio,
 	onWriteoffAntishockKit,
 	onOpenEmergencyProtocol,
-	onNurseQuickDisposal,
-	onNursePacketDisposal,
-	onNurseSeptanestDisposal,
 	onSelectDrug,
 	disabled = false,
 }: AnesthesiaQuickBarActionsProps) {
@@ -44,14 +43,16 @@ export function AnesthesiaQuickBarActions({
 					disabled={disabled}
 					selectedCarpulesCount={selectedCarpulesCount}
 					onApplyCarpules={onApplyCarpules}
+					onApplyUbistesinForte={onApplyUbistesinForte}
+					onApplyUbistesin={onApplyUbistesin}
 					onApplyInfiltrationArticaine200k={onApplyInfiltrationArticaine200k}
 					onApplyMandibularArticaine100k={onApplyMandibularArticaine100k}
 					onApplyStandardNormPreset={onApplyStandardNormPreset}
 					onApplyUltracainForteCombined={onApplyUltracainForteCombined}
 					onApplyScandonestCardio={onApplyScandonestCardio}
+					onApplySeptanestInfiltration={onApplySeptanestInfiltration}
 					onWriteoffAntishockKit={onWriteoffAntishockKit}
 					onOpenEmergencyProtocol={onOpenEmergencyProtocol}
-					onNurseQuickDisposal={onNurseQuickDisposal}
 				/>
 
 				<AnesthesiaMoreActionsMenu
@@ -59,8 +60,6 @@ export function AnesthesiaQuickBarActions({
 					onSelectDrug={onSelectDrug}
 					onApplyCarpules={onApplyCarpules}
 					onApplySeptanestInfiltration={onApplySeptanestInfiltration}
-					onNurseSeptanestDisposal={onNurseSeptanestDisposal}
-					onNursePacketDisposal={onNursePacketDisposal}
 				/>
 			</div>
 

@@ -1,17 +1,17 @@
-import { DENTAL_ANESTHETICS } from '../anesthesiaCatalog';
+import { DENTAL_ANESTHETICS } from '../anesthesiaCatalog.js';
 import {
 	calculateAgeReductionFactor,
 	determineAgeCategory,
 	resolveClinicalDefaultWeightKg,
-} from './anesthesiaAgeClassification';
-import { generateAnesthesiaDiaryEntry } from './anesthesiaDiaryFormatter';
+} from './anesthesiaAgeClassification.js';
+import { generateAnesthesiaDiaryEntry } from './anesthesiaDiaryFormatter.js';
 import {
 	EPINEPHRINE_CEILINGS_MG,
 	type AnesthesiaCalculationInput,
 	type AnesthesiaCalculationResult,
 	type AnesthesiaSafetyZone,
-} from './anesthesiaEngineTypes';
-import { evaluateSafetyAdvisories } from './anesthesiaSafetyAdvisor';
+} from './anesthesiaEngineTypes.js';
+import { evaluateSafetyAdvisories } from './anesthesiaSafetyAdvisor.js';
 
 export function calculateAnesthesiaSafety(input: AnesthesiaCalculationInput): AnesthesiaCalculationResult {
 	const drug = DENTAL_ANESTHETICS[input.drugId] || DENTAL_ANESTHETICS.articaine_1_100k;

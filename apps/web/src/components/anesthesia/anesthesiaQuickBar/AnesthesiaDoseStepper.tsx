@@ -30,7 +30,7 @@ export function AnesthesiaDoseStepper({
 					onClick={() =>
 						onChangeSelectedCarpulesCount(Math.max(0.5, Math.round((selectedCarpulesCount - 0.5) * 10) / 10))
 					}
-					className="anesthesia-stepper-btn inline-flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:min-w-[30px] sm:h-7.5 sm:w-7.5 rounded-md text-xs font-black text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal)] cursor-pointer disabled:opacity-40"
+					className="anesthesia-stepper-btn inline-flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] sm:h-9 sm:w-9 rounded-md text-xs font-black text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal)] cursor-pointer disabled:opacity-40"
 					title="Уменьшить дозу на 0.5 карпулы"
 					data-testid="btn-decrease-carpules"
 				>
@@ -49,7 +49,7 @@ export function AnesthesiaDoseStepper({
 					onClick={() =>
 						onChangeSelectedCarpulesCount(Math.min(6.0, Math.round((selectedCarpulesCount + 0.5) * 10) / 10))
 					}
-					className="anesthesia-stepper-btn inline-flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:min-w-[30px] sm:h-7.5 sm:w-7.5 rounded-md text-xs font-black text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal)] cursor-pointer disabled:opacity-40"
+					className="anesthesia-stepper-btn inline-flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] sm:h-9 sm:w-9 rounded-md text-xs font-black text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal)] cursor-pointer disabled:opacity-40"
 					title="Увеличить дозу на 0.5 карпулы"
 					data-testid="btn-increase-carpules"
 				>
@@ -57,17 +57,17 @@ export function AnesthesiaDoseStepper({
 				</button>
 			</div>
 
-			{/* Primary CTA: В карту */}
+			{/* Primary CTA: Доминирующая изумрудная кнопка .primary-button: «Применить анестезию» */}
 			<button
 				type="button"
 				disabled={disabled}
 				onClick={() => onApplyCarpules(selectedCarpulesCount)}
-				className="anesthesia-primary-cta-btn inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-8.5 rounded-lg border border-teal-600 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-2xs transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
-				title={`Ввести ${selectedCarpulesCount} карп. в медицинскую карту`}
+				className="primary-button anesthesia-primary-cta-btn inline-flex items-center gap-2 px-3.5 py-1.5 min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-lg border border-teal-600 bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-bold shadow-sm transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
+				title={`Применить анестезию (${selectedCarpulesCount} карп. в карту)`}
 				data-testid="btn-apply-anesthesia-to-card"
 			>
-				<DentalSyringe size={14} className="shrink-0" />
-				<span>В карту</span>
+				<DentalSyringe size={15} className="shrink-0" />
+				<span>Применить анестезию</span>
 			</button>
 		</>
 	);

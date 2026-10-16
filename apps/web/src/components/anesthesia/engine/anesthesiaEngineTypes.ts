@@ -3,7 +3,7 @@ import type {
 	AnestheticDrugInfo,
 	InjectionTechniqueId,
 	NeedleGaugeType,
-} from '../anesthesiaCatalog';
+} from '../anesthesiaCatalog.js';
 
 export type AsaPhysicalStatus = 'asa_1' | 'asa_2' | 'asa_3' | 'asa_4';
 

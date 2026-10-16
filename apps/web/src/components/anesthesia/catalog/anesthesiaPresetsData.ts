@@ -1,4 +1,4 @@
-import type { StandardAnesthesiaPreset } from './anesthesiaCatalogTypes';
+import type { StandardAnesthesiaPreset } from './anesthesiaCatalogTypes.js';
 
 export const STANDARD_ANESTHESIA_PRESETS: Record<string, StandardAnesthesiaPreset> = {
 	ultracain_ds_forte: {

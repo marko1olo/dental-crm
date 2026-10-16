@@ -1,4 +1,4 @@
-import type { DentalNeedleInfo, NeedleGaugeType } from './anesthesiaCatalogTypes';
+import type { DentalNeedleInfo, NeedleGaugeType } from './anesthesiaCatalogTypes.js';
 
 export const DENTAL_NEEDLES: Record<NeedleGaugeType, DentalNeedleInfo> = {
 	g27_long_35mm: {

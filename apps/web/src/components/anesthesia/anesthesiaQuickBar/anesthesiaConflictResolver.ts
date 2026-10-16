@@ -76,7 +76,7 @@ export function resolveAnesthesiaApplicationConflicts(
 			? `${result.diaryEntryRu} (Введено по клиническому решению врача согласно ст. 70 Федерального закона № 323-ФЗ)`
 			: result.diaryEntryRu;
 
-	let toastMessage = `Зафиксировано: ${drugInfo.tradeNamesRu[0]} ${(carpulesCount * 1.7).toFixed(1)} мл (${carpulesCount} карп.) в протокол 043/у`;
+	let toastMessage = `Зафиксировано: ${drugInfo.tradeNamesRu[0]} ${(carpulesCount * 1.7).toFixed(1)} мл (${carpulesCount} карп.) в медицинскую карту`;
 	let toastDurationMs = 3500;
 
 	if (isLidocaineAllergyConflict) {

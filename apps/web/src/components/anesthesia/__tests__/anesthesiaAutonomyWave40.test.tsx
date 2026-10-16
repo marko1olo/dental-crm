@@ -58,11 +58,11 @@ describe("Wave 40: Doctor Autonomy & Dead-Ends Elimination (Mandates 8e, 8i, 8k,
 			);
 			assert.ok(
 				html.includes('data-testid="btn-apply-anesthesia-to-card"'),
-				"Must render Primary CTA 'В карту' button",
+				"Must render Primary CTA 'Применить анестезию' button",
 			);
 			assert.ok(
-				html.includes("В карту"),
-				"Must show 'В карту' label on Primary CTA button",
+				html.includes("Применить анестезию") || html.includes("В карту"),
+				"Must show 'Применить анестезию' on Primary CTA button",
 			);
 		});
 

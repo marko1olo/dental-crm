@@ -1,8 +1,8 @@
 import {
 	INJECTION_TECHNIQUES,
 	type AnestheticDrugInfo,
-} from '../anesthesiaCatalog';
-import type { AnesthesiaCalculationInput } from './anesthesiaEngineTypes';
+} from '../anesthesiaCatalog.js';
+import type { AnesthesiaCalculationInput } from './anesthesiaEngineTypes.js';
 
 export interface EvaluatedSafetyAdvisory {
 	cardioRiskReasons: string[];

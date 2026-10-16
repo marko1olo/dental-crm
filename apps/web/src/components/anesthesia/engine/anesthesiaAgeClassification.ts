@@ -1,5 +1,5 @@
 import { resolveClinicalDefaultWeightKg } from '@dental/shared';
-import type { PatientAgeCategory } from './anesthesiaEngineTypes';
+import type { PatientAgeCategory } from './anesthesiaEngineTypes.js';
 
 export { resolveClinicalDefaultWeightKg };
 
