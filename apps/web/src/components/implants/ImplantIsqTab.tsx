@@ -109,7 +109,7 @@ export const ImplantIsqTab: React.FC<ImplantIsqTabProps> = ({
 							setIsqValue(55);
 							setIsIsqEnabled(true);
 						}}
-						className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] cursor-pointer touch-manipulation"
+						className={`secondary-button text-xs ${isqValue === 55 && isIsqEnabled ? "active" : ""}`}
 						data-testid="btn-isq-preset-55"
 					>
 						ISQ 55 (&lt; 60: Низкая)
@@ -120,7 +120,7 @@ export const ImplantIsqTab: React.FC<ImplantIsqTabProps> = ({
 							setIsqValue(68);
 							setIsIsqEnabled(true);
 						}}
-						className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] cursor-pointer touch-manipulation"
+						className={`secondary-button text-xs ${isqValue === 68 && isIsqEnabled ? "active" : ""}`}
 						data-testid="btn-isq-preset-68"
 					>
 						ISQ 68 (60–70: Стандарт)
@@ -131,7 +131,7 @@ export const ImplantIsqTab: React.FC<ImplantIsqTabProps> = ({
 							setIsqValue(75);
 							setIsIsqEnabled(true);
 						}}
-						className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] cursor-pointer touch-manipulation"
+						className={`secondary-button text-xs ${isqValue === 75 && isIsqEnabled ? "active" : ""}`}
 						data-testid="btn-isq-preset-75"
 					>
 						ISQ 75 (&gt; 70: Высокая)
@@ -172,7 +172,7 @@ export const ImplantIsqTab: React.FC<ImplantIsqTabProps> = ({
 				<strong className="text-[var(--ink)] block mb-1">
 					Клинический регламент и протокол (Автономия врача):
 				</strong>
-				CRM не симулирует микро-замеры 16 точек анизотропии в перчатках у кресла. Зафиксирован надежный первичный торк {torqueNcm} Н·см, ISQ {isqValue} и плотность кости {boneDensity}. Данные автоматически экспортируются в карту 043/у.
+				CRM не симулирует микро-замеры 16 точек анизотропии в перчатках у кресла. Зафиксирован надежный первичный торк {torqueNcm} Н·см, ISQ {isqValue} и плотность кости {boneDensity}. Данные автоматически экспортируются в медицинскую карту приёма.
 			</div>
 		</div>
 	);

@@ -381,7 +381,7 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 					<button
 						type="button"
 						onClick={handleShareWhatsApp}
-						className="min-h-[48px] min-w-[48px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--teal,#0d9488)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center justify-center touch-manipulation transition-all"
+						className="icon-button min-h-[48px] min-w-[48px] text-[var(--teal,#0d9488)]"
 						title="Поделиться в WhatsApp"
 						data-testid="btn-share-whatsapp"
 					>
@@ -390,7 +390,7 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 					<button
 						type="button"
 						onClick={handleShareTelegram}
-						className="min-h-[48px] min-w-[48px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--brand-primary,#0ea5e9)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center justify-center touch-manipulation transition-all"
+						className="icon-button min-h-[48px] min-w-[48px] text-[var(--brand-primary,#0ea5e9)]"
 						title="Поделиться в Telegram"
 						data-testid="btn-share-telegram"
 					>
@@ -399,7 +399,7 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 					<button
 						type="button"
 						onClick={handleCopy}
-						className="min-h-[48px] min-w-[48px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center justify-center touch-manipulation transition-all"
+						className="icon-button min-h-[48px] min-w-[48px] text-[var(--ink)]"
 						title="Скопировать данные паспорта"
 						data-testid="btn-copy-passport-card"
 					>
@@ -408,7 +408,7 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 					<button
 						type="button"
 						onClick={handlePrint}
-						className="min-h-[48px] px-3.5 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1.5 cursor-pointer font-bold text-xs touch-manipulation transition-all"
+						className="secondary-button min-h-[48px] px-3.5 py-2 text-xs flex items-center gap-1.5"
 						title="Распечатать паспорт / гарантийный сертификат"
 						data-testid="btn-print-passport-card"
 					>

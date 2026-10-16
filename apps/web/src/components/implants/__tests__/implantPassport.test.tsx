@@ -9,10 +9,14 @@ import {
 	parseStockDimensions,
 	getBoneDensityByToothFdi,
 	DEFAULT_CANONICAL_IMPLANT_STOCK,
+	DEFAULT_CANONICAL_CONSUMABLES,
 } from "../implantQuickPresets";
 import { IMPLANT_TORQUE_SPECS } from "../implantTorqueCatalog";
 import { ImplantPassportCard, AnatomicalJawArchSchema } from "../ImplantPassportCard";
 import { ImplantPassportModal } from "../ImplantPassportModal";
+import { ImplantEconomicsSection } from "../ImplantEconomicsSection";
+import { ImplantConsumablesSelector } from "../ImplantConsumablesSelector";
+import { ImplantWarehouseSelector } from "../ImplantWarehouseSelector";
 
 describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 	it("1. Preset catalog contains standard systems with 35 N/cm default torque", () => {
@@ -429,5 +433,84 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		assert.ok(html.includes("btn-share-whatsapp"), "Must have WhatsApp share button");
 		assert.ok(html.includes("btn-share-telegram"), "Must have Telegram share button");
 		assert.ok(html.includes("anatomical-jaw-arch"), "Card must include anatomical jaw arch");
+	});
+
+	it("25. ImplantEconomicsSection renders transparent financial breakdown for solo surgeon", () => {
+		const html = renderToString(
+			<ImplantEconomicsSection
+				operationPriceRub={45000}
+				implantCostRub={12500}
+				consumablesCostRub={4500}
+				doctorGrossMarginRub={28000}
+			/>,
+		);
+
+		assert.ok(html.includes("doctor-economics-block"), "Must render economics container");
+		assert.ok(html.includes("input-operation-price"), "Must render operation price input");
+		assert.ok(html.includes("45000"), "Must show operation price");
+		assert.ok(/12[\s\u00a0\u202f]?500/.test(html), "Must show fixture cost");
+		assert.ok(/4[\s\u00a0\u202f]?500/.test(html), "Must show consumables cost");
+		assert.ok(html.includes("doctor-net-margin"), "Must render doctor net margin element");
+		assert.ok(/28[\s\u00a0\u202f]?000/.test(html), "Must show doctor net income");
+		assert.ok(html.includes("Без сетевых поборов"), "Must emphasize solo doctor autonomy (Mandate 8n)");
+	});
+
+	it("26. ImplantConsumablesSelector renders bone graft, membrane and suture selection when GBR is performed and hides when not performed", () => {
+		const hiddenHtml = renderToString(
+			<ImplantConsumablesSelector
+				isGbrPerformed={false}
+				stockConsumables={DEFAULT_CANONICAL_CONSUMABLES}
+			/>,
+		);
+		assert.equal(hiddenHtml, "", "Must return empty string when GBR is not performed");
+
+		const activeHtml = renderToString(
+			<ImplantConsumablesSelector
+				isGbrPerformed={true}
+				stockConsumables={DEFAULT_CANONICAL_CONSUMABLES}
+				selectedGraftId="inv-bio-oss-05"
+				selectedMembraneId="inv-bio-gide-1622"
+				selectedSutureId="inv-vicryl-40"
+			/>,
+		);
+		assert.ok(activeHtml.includes("gbr-consumables-block"), "Must render GBR consumables container");
+		assert.ok(activeHtml.includes("select-graft-material"), "Must have graft material selector");
+		assert.ok(activeHtml.includes("select-membrane-material"), "Must have membrane selector");
+		assert.ok(activeHtml.includes("select-suture-material"), "Must have suture selector");
+		assert.ok(activeHtml.includes("Geistlich Bio-Oss"), "Must list Bio-Oss bone graft");
+		assert.ok(activeHtml.includes("Geistlich Bio-Gide"), "Must list Bio-Gide membrane");
+		assert.ok(activeHtml.includes("Викрил 4-0"), "Must list Vicryl suture");
+	});
+
+	it("27. ImplantWarehouseSelector renders available inventory batches with stock counts and LOT numbers", () => {
+		const html = renderToString(
+			<ImplantWarehouseSelector
+				stockItems={DEFAULT_CANONICAL_IMPLANT_STOCK}
+				selectedStockItemId="inv-oss-4010"
+				lotNumber="24C1208"
+				catalogArticle="TS3S4010S"
+			/>,
+		);
+
+		assert.ok(html.includes("Партия со склада клиники"), "Must show warehouse stock title");
+		assert.ok(html.includes("stock-item-inv-oss-4010"), "Must render Osstem stock button");
+		assert.ok(html.includes("stock-item-inv-strau-3510"), "Must render Straumann stock button");
+		assert.ok(html.includes("stock-item-inv-nobel-4311"), "Must render Nobel stock button");
+		assert.ok(html.includes("LOT: 24C1208"), "Must show LOT number");
+		assert.ok(html.includes("шт."), "Must show stock quantity units");
+	});
+
+	it("28. 1-click express surgical protocol defaults to 4.0x10 mm size, Misch bone density, and 35 N*cm torque", () => {
+		const record = createDefaultPassportRecord({
+			toothFdi: 46,
+			brand: "Osstem",
+		});
+
+		assert.equal(record.diameterMm, 4.0, "Express standard diameter must be 4.0 mm");
+		assert.equal(record.lengthMm, 10.0, "Express standard length must be 10.0 mm");
+		assert.equal(record.torqueNcm, 35, "Express standard torque must be 35 N*cm");
+		assert.equal(record.boneDensity, "D2", "Tooth 46 must default to D2 density");
+		assert.equal(record.capType, "fdm", "Default cap type must be FDM");
+		assert.equal(record.isqDay0, 72, "Default ISQ stability must be 72");
 	});
 });

@@ -21,7 +21,7 @@ export const ImplantDiaryTab: React.FC<ImplantDiaryTabProps> = ({ diaryText }) =
 						navigator.clipboard?.writeText(diaryText);
 						showToast("Протокол скопирован в буфер обмена", "success");
 					}}
-					className="implant-touch-btn bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] text-xs flex items-center gap-1.5"
+					className="secondary-button text-xs flex items-center gap-1.5"
 					data-testid="btn-copy-protocol"
 				>
 					<Copy size={14} />

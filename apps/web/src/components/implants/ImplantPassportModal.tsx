@@ -192,7 +192,11 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 
 	const handleToothSelect = (tooth: number) => {
 		setToothFdi(tooth);
-		setBoneDensity(getBoneDensityByToothFdi(tooth));
+		const computedDensity = getBoneDensityByToothFdi(tooth);
+		setBoneDensity(computedDensity);
+		setDiameterMm(4.0);
+		setLengthMm(10.0);
+		setTorqueNcm(computedDensity === "D1" ? 40 : 35);
 	};
 
 	const handleBrandSelect = (brand: string) => {
@@ -245,6 +249,8 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 	const handleApplyStandardProtocol = () => {
 		const computedDensity = getBoneDensityByToothFdi(toothFdi);
 		setBoneDensity(computedDensity);
+		setDiameterMm(4.0);
+		setLengthMm(10.0);
 		const optimalTorque = computedDensity === "D1" ? 40 : 35;
 		setTorqueNcm(optimalTorque);
 		setIsqValue(72);
@@ -461,7 +467,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 						<button
 							type="button"
 							onClick={handlePrintPassport}
-							className="implant-touch-btn bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] text-xs flex items-center justify-center gap-1.5"
+							className="secondary-button"
 							data-testid="btn-print-implant-passport"
 							title="Распечатать паспорт имплантата / гарантийный сертификат"
 						>
@@ -472,7 +478,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveTab(activeTab === "passport" ? "protocol" : "passport")}
-							className="implant-touch-btn implant-desktop-only bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] text-xs hidden md:flex items-center gap-1.5"
+							className="secondary-button implant-desktop-only"
 							data-testid="btn-toggle-passport-view"
 						>
 							<Sliders size={15} className="shrink-0" />
@@ -482,7 +488,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="implant-touch-btn bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] flex items-center justify-center rounded-xl"
+							className="icon-button"
 							aria-label="Закрыть окно паспорта"
 							data-testid="btn-close-implant-passport implant-passport-close-btn"
 						>
@@ -491,18 +497,14 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 					</div>
 				</header>
 
-				{/* Nav Tabs (Touch-First >= 48px, Compact 1-Row) */}
-				<nav className="flex items-center gap-2 px-5 py-2 bg-[var(--paper-soft)] border-b border-[var(--line)] overflow-x-auto text-xs font-bold shrink-0 no-scrollbar" role="tablist">
+				{/* Nav Tabs (Touch-First >= 44px, Canonical DENTE Secondary Buttons) */}
+				<nav className="implant-tabs-nav" role="tablist">
 					<button
 						type="button"
 						role="tab"
 						aria-selected={activeTab === "protocol"}
 						onClick={() => setActiveTab("protocol")}
-						className={`min-h-[48px] px-3.5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center touch-manipulation shrink-0 whitespace-nowrap ${
-							activeTab === "protocol"
-								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)]"
-						}`}
+						className={`secondary-button ${activeTab === "protocol" ? "active" : ""}`}
 						data-testid="implant-tab-protocol"
 					>
 						1. Протокол & Кость
@@ -512,11 +514,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 						role="tab"
 						aria-selected={activeTab === "isq"}
 						onClick={() => setActiveTab("isq")}
-						className={`min-h-[48px] px-3.5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center touch-manipulation shrink-0 whitespace-nowrap ${
-							activeTab === "isq"
-								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)]"
-						}`}
+						className={`secondary-button ${activeTab === "isq" ? "active" : ""}`}
 						data-testid="implant-tab-isq"
 					>
 						2. Стабильность ({torqueNcm} Н·см{isIsqEnabled ? ` · ${isqValue} ISQ` : " · Ключ"})
@@ -526,11 +524,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 						role="tab"
 						aria-selected={activeTab === "diary"}
 						onClick={() => setActiveTab("diary")}
-						className={`min-h-[48px] px-3.5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center touch-manipulation shrink-0 whitespace-nowrap ${
-							activeTab === "diary"
-								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)]"
-						}`}
+						className={`secondary-button ${activeTab === "diary" ? "active" : ""}`}
 						data-testid="implant-tab-diary"
 					>
 						3. В дневник приёма
@@ -540,11 +534,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 						role="tab"
 						aria-selected={activeTab === "passport"}
 						onClick={() => setActiveTab("passport")}
-						className={`min-h-[48px] px-3.5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center touch-manipulation shrink-0 whitespace-nowrap ${
-							activeTab === "passport"
-								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)]"
-						}`}
+						className={`secondary-button ${activeTab === "passport" ? "active" : ""}`}
 						data-testid="implant-tab-passport"
 					>
 						4. Гарантийный паспорт
@@ -652,7 +642,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 						<button
 							type="button"
 							onClick={handlePrintPassport}
-							className="implant-touch-btn bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1.5"
+							className="secondary-button"
 							data-testid="btn-print-implant-passport-footer implant-print-passport-btn"
 							title="Распечатать паспорт имплантата / гарантийный сертификат"
 						>
@@ -663,12 +653,12 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 						<button
 							type="button"
 							onClick={handleSaveAndInsertDiary}
-							className="implant-touch-btn bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs flex items-center gap-1.5"
+							className="primary-button"
 							data-testid="btn-save-implant-passport btn-passport-insert-diary implant-save-passport-btn implant-insert-diary-btn"
-							title="Сохранить паспорт и внести протокол в дневник приёма"
+							title="Сохранить паспорт имплантата и внести протокол в дневник приёма"
 						>
 							<CheckCircle2 size={16} />
-							<span>В дневник приёма</span>
+							<span>Сохранить паспорт имплантата · В дневник приёма</span>
 						</button>
 					</div>
 				</footer>
