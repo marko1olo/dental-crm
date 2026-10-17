@@ -79,16 +79,16 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 					<span>Протоколы:</span>
 				</div>
 
-				{/* Preset 1: Каналы пройдены и обтурированы */}
+				{/* Preset 1: Каналы пройдены и обтурированы до апекса */}
 				<button
 					type="button"
 					data-testid="btn-express-apical-endo-protocol"
 					onClick={handleApplyExpressApicalPreset}
-					className="h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-[var(--teal,#0d9488)] hover:brightness-110 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
-					title="Обтурация канала (гуттаперча + силер): Каналы обработаны и обтурированы до апекса (Apex 0.0 + RVG + AH Plus)"
+					className="primary-button h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-[var(--teal,#0d9488)] hover:brightness-110 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
+					title="✓ Постоянная обтурация гуттаперчей + AH Plus до апекса (Apex 0.0 + RVG + AH Plus)"
 				>
 					<Check size={13} className="shrink-0" />
-					<span className="truncate">Пройдены и обтурированы</span>
+					<span className="truncate">✓ Постоянная обтурация (AH Plus)</span>
 				</button>
 
 				{/* Preset 2: Временная пломбировка Ca(OH)2 */}
@@ -96,11 +96,11 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 					type="button"
 					data-testid="btn-caoh2-endo-protocol"
 					onClick={handleApplyCaOh2Protocol}
-					className="h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
-					title="Протокол эндодонтического лечения: Временная повязка Ca(OH)2 (Каласепт / Metapex) на 7–14 дней"
+					className="secondary-button h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
+					title="✓ Механическая и медикаментозная обработка NaOCl 3% + временная паста Ca(OH)2 (Каласепт)"
 				>
 					<ShieldCheck size={13} className="shrink-0" />
-					<span className="truncate">Временная Ca(OH)2</span>
+					<span className="truncate">✓ NaOCl 3% + Ca(OH)2</span>
 				</button>
 
 				{/* Preset 3: Эндодонтия пульпита в 1 визит */}
@@ -108,11 +108,11 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 					type="button"
 					data-testid="btn-endo-preset-pulpitis-complete"
 					onClick={handleApplyPulpitisPreset}
-					className="h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
-					title="Протокол эндодонтического лечения: Пульпит в 1 визит (ProTaper F2 + AH Plus)"
+					className="secondary-button h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
+					title="Эндодонтия пульпита в 1 визит (ProTaper F2 + AH Plus)"
 				>
 					<ToothPulpitis size={13} className="shrink-0" />
-					<span className="truncate">Пульпит в 1 визит</span>
+					<span className="truncate">Пульпит 1 визит</span>
 				</button>
 
 				{/* Secondary Presets Popover Menu */}
@@ -120,7 +120,7 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 					<button
 						type="button"
 						onClick={() => setIsPresetsMenuOpen((v) => !v)}
-						className="h-6 sm:h-7 px-1.5 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-600 border border-[var(--line,#cbd5e1)] dark:border-slate-600 flex items-center gap-1 transition-all cursor-pointer shrink-0"
+						className="secondary-button h-6 sm:h-7 px-1.5 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-600 border border-[var(--line,#cbd5e1)] dark:border-slate-600 flex items-center gap-1 transition-all cursor-pointer shrink-0"
 						title="Другие протоколы эндодонтии (Первичное, Повторное D-RaCe, Периодонтит деструктивный...)"
 					>
 						<span className="text-[11px]">Другие</span>
@@ -245,7 +245,7 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 					data-testid="btn-endo-anatomical-autofill"
 					id="btn-endo-anatomical-norm"
 					onClick={handleApplyAnatomicalLengths}
-					className="h-6 sm:h-7 px-2.5 rounded-lg text-xs font-bold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-950 dark:text-indigo-200 border border-indigo-500/30 flex items-center gap-1.5 transition-all cursor-pointer shrink-0 active:scale-98"
+					className="secondary-button h-6 sm:h-7 px-2.5 rounded-lg text-xs font-bold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-950 dark:text-indigo-200 border border-indigo-500/30 flex items-center gap-1.5 transition-all cursor-pointer shrink-0 active:scale-98"
 					title="Автозаполнение: Анатомическая норма длины по стандарту FDI"
 				>
 					<Check
@@ -260,7 +260,7 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 				<button
 					type="button"
 					onClick={handleAddCanal}
-					className="h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
+					className="secondary-button h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
 					title="Добавить дополнительный корневой канал"
 				>
 					<Plus size={13} className="shrink-0" />

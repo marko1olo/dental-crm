@@ -18,6 +18,7 @@ export interface EndoCanalData {
 	taper: string;
 	obturationTechnique: string;
 	sealer?: string | undefined;
+	isObliterated?: boolean | undefined;
 	notes?: string | undefined;
 }
 

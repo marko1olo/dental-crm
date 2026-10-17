@@ -36,6 +36,7 @@ export interface QuickCanalState {
 	taper: string;
 	obturationType: "gutta_sealer" | "temp_caoh2";
 	sealer: string;
+	isObliterated?: boolean;
 }
 
 const QUICK_LENGTH_CHIPS = [19, 20, 21, 21.5, 22] as const;
@@ -195,13 +196,28 @@ export function ChairsideEndoQuickBar({
 		[],
 	);
 
-	// Корректировка длины шагом 0.5 мм
+	// Корректировка длины шагом 0.5 мм (в диапазоне 0..40 мм)
 	const handleAdjustLength = useCallback((id: string, delta: number) => {
 		setCanals((prev) =>
 			prev.map((c) => {
 				if (c.id !== id) return c;
-				const next = Math.max(10, Math.min(35, Math.round((c.workingLengthMm + delta) * 2) / 2));
-				return { ...c, workingLengthMm: next };
+				const next = Math.max(0, Math.min(40, Math.round((c.workingLengthMm + delta) * 2) / 2));
+				return { ...c, workingLengthMm: next, isObliterated: false };
+			}),
+		);
+	}, []);
+
+	// Переключение облитерации (Мандат 8e: Doctor Autonomy)
+	const handleToggleObliterated = useCallback((id: string) => {
+		setCanals((prev) =>
+			prev.map((c) => {
+				if (c.id !== id) return c;
+				const nextObliterated = !c.isObliterated;
+				return {
+					...c,
+					isObliterated: nextObliterated,
+					workingLengthMm: nextObliterated ? 0 : (c.workingLengthMm || 21.0),
+				};
 			}),
 		);
 	}, []);
@@ -273,6 +289,9 @@ export function ChairsideEndoQuickBar({
 		const isTemp = canals.every((c) => c.obturationType === "temp_caoh2");
 		const canalsReport = canals
 			.map((c) => {
+				if (c.isObliterated) {
+					return `• Канал ${c.name}: ОБЛИТЕРИРОВАН / не найден (устье склерозировано)`;
+				}
 				const obt =
 					c.obturationType === "temp_caoh2"
 						? `временная паста ${c.sealer || "Ca(OH)2"}`
@@ -346,9 +365,10 @@ export function ChairsideEndoQuickBar({
 			id: c.id,
 			canalName: c.name,
 			referencePoint: "Бугор",
-			workingLengthMm: c.workingLengthMm,
+			workingLengthMm: c.isObliterated ? 0 : c.workingLengthMm,
 			masterApicalFile: c.masterApicalFile,
 			taper: c.taper,
+			isObliterated: Boolean(c.isObliterated),
 			obturationTechnique:
 				c.obturationType === "temp_caoh2"
 					? "Временная обтурация Ca(OH)2"
@@ -404,7 +424,7 @@ export function ChairsideEndoQuickBar({
 						type="button"
 						onClick={handleApplyPulpitis1VisitPreset}
 						data-testid="btn-quick-pulpitis-1visit"
-						className="min-h-[32px] h-8 px-2.5 text-xs font-bold rounded-lg bg-[var(--teal,#0d9488)] hover:brightness-110 text-white flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-98"
+						className="primary-button min-h-[32px] h-8 px-2.5 text-xs font-bold rounded-lg bg-[var(--teal,#0d9488)] hover:brightness-110 text-white flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-98"
 						title="Пульпит в 1 визит (21.5 мм · 25/.04 · AH Plus)"
 					>
 						<Check size={13} />
@@ -416,7 +436,7 @@ export function ChairsideEndoQuickBar({
 						type="button"
 						onClick={handleApplyCaOh2Preset}
 						data-testid="btn-quick-caoh2"
-						className="min-h-[32px] h-8 px-2 text-xs font-bold rounded-lg bg-amber-600 hover:bg-amber-500 text-white flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-98"
+						className="secondary-button min-h-[32px] h-8 px-2 text-xs font-bold rounded-lg bg-amber-600 hover:bg-amber-500 text-white flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-98"
 						title="Временная повязка гидроксида кальция Ca(OH)2"
 					>
 						<ShieldCheck size={13} />
@@ -428,7 +448,7 @@ export function ChairsideEndoQuickBar({
 						type="button"
 						onClick={handleApplyAnatomicalNorm}
 						data-testid="btn-quick-norm"
-						className="min-h-[32px] h-8 px-2 text-xs font-bold rounded-lg bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1 transition-all cursor-pointer"
+						className="secondary-button min-h-[32px] h-8 px-2 text-xs font-bold rounded-lg bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1 transition-all cursor-pointer"
 						title="Сброс каналов к анатомической норме"
 					>
 						<RotateCcw size={12} />
@@ -440,7 +460,7 @@ export function ChairsideEndoQuickBar({
 							type="button"
 							onClick={onOpenFullModal}
 							data-testid="btn-open-full-endo-modal"
-							className="min-h-[32px] h-8 px-2 text-xs font-bold rounded-lg bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-white border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-1 transition-all cursor-pointer"
+							className="secondary-button min-h-[32px] h-8 px-2 text-xs font-bold rounded-lg bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-white border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-1 transition-all cursor-pointer"
 							title="Открыть полный журнал каналов с визиографией и печатью карты"
 						>
 							<Maximize2 size={12} />
@@ -466,12 +486,28 @@ export function ChairsideEndoQuickBar({
 								{c.name}
 							</span>
 							<div className="flex flex-col">
-								<span className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-white leading-tight">
-									Канал {c.name}
-								</span>
-								<span className="text-[10px] font-mono text-[var(--teal,#0d9488)] font-bold flex items-center gap-0.5">
+								<div className="flex items-center gap-1.5">
+									<span className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-white leading-tight">
+										Канал {c.name}
+									</span>
+									{/* 1-Click Облитерация канала у кресла */}
+									<button
+										type="button"
+										onClick={() => handleToggleObliterated(c.id)}
+										data-testid={`chip-obliterated-${c.name}`}
+										className={`secondary-button px-1.5 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+											c.isObliterated
+												? "bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/50"
+												: "text-[var(--muted,#64748b)] hover:text-amber-700 dark:hover:text-amber-300 border border-transparent"
+										}`}
+										title="Отметить канал как облитерированный / склерозированный"
+									>
+										{c.isObliterated ? "⚠️ Облитерирован" : "Облитерация?"}
+									</button>
+								</div>
+								<span className={`text-[10px] font-mono font-bold flex items-center gap-0.5 ${c.isObliterated ? "text-amber-600 dark:text-amber-400" : "text-[var(--teal,#0d9488)]"}`}>
 									<CheckCheck size={11} />
-									Apex 0.0 ({c.workingLengthMm.toFixed(1)} мм)
+									{c.isObliterated ? "Облитерирован (0 мм)" : `Apex 0.0 (${c.workingLengthMm.toFixed(1)} мм)`}
 								</span>
 							</div>
 						</div>
@@ -481,50 +517,67 @@ export function ChairsideEndoQuickBar({
 							<span className="text-[11px] font-bold text-[var(--muted,#64748b)] hidden lg:inline">
 								Длина:
 							</span>
-							<div className="flex items-center gap-1 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 p-0.5 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700">
-								<button
-									type="button"
-									onClick={() => handleAdjustLength(c.id, -0.5)}
-									className="w-6 h-6 rounded text-xs font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-white hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors flex items-center justify-center cursor-pointer"
-									title="-0.5 мм"
-								>
-									-
-								</button>
-								<span className="px-1.5 text-xs font-mono font-black text-rose-600 dark:text-rose-400 min-w-[38px] text-center">
-									{c.workingLengthMm.toFixed(1)}
-								</span>
-								<button
-									type="button"
-									onClick={() => handleAdjustLength(c.id, 0.5)}
-									className="w-6 h-6 rounded text-xs font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-white hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors flex items-center justify-center cursor-pointer"
-									title="+0.5 мм"
-								>
-									+
-								</button>
-							</div>
-
-							{/* Чипы быстрого выбора длины: 19, 20, 21, 21.5, 22 мм */}
-							<div className="flex items-center gap-1">
-								{QUICK_LENGTH_CHIPS.map((len) => {
-									const isSel = c.workingLengthMm === len;
-									return (
+							{c.isObliterated ? (
+								<div className="flex items-center gap-1.5 py-0.5">
+									<span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-500/40">
+										0 мм (Склероз)
+									</span>
+									<button
+										type="button"
+										onClick={() => handleToggleObliterated(c.id)}
+										className="secondary-button text-[10px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 underline cursor-pointer"
+									>
+										Снять
+									</button>
+								</div>
+							) : (
+								<>
+									<div className="flex items-center gap-1 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 p-0.5 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700">
 										<button
-											key={len}
 											type="button"
-											onClick={() => handleUpdateCanal(c.id, { workingLengthMm: len })}
-											data-testid={`chip-length-${c.name}-${len}`}
-											className={`min-h-[28px] h-7 px-2 text-xs font-mono font-bold rounded-lg border transition-all cursor-pointer active:scale-95 ${
-												isSel
-													? "bg-rose-600 text-white border-rose-600 shadow-2xs"
-													: "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-2xs"
-											}`}
-											title={`Установить длину ${len} мм`}
+											onClick={() => handleAdjustLength(c.id, -0.5)}
+											className="secondary-button icon-button w-6 h-6 rounded text-xs font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-white hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors flex items-center justify-center cursor-pointer"
+											title="-0.5 мм"
 										>
-											{len}
+											-
 										</button>
-									);
-								})}
-							</div>
+										<span className="px-1.5 text-xs font-mono font-black text-rose-600 dark:text-rose-400 min-w-[38px] text-center">
+											{c.workingLengthMm.toFixed(1)}
+										</span>
+										<button
+											type="button"
+											onClick={() => handleAdjustLength(c.id, 0.5)}
+											className="secondary-button icon-button w-6 h-6 rounded text-xs font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-white hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors flex items-center justify-center cursor-pointer"
+											title="+0.5 мм"
+										>
+											+
+										</button>
+									</div>
+
+									{/* Чипы быстрого выбора длины: 19, 20, 21, 21.5, 22 мм */}
+									<div className="flex items-center gap-1">
+										{QUICK_LENGTH_CHIPS.map((len) => {
+											const isSel = c.workingLengthMm === len;
+											return (
+												<button
+													key={len}
+													type="button"
+													onClick={() => handleUpdateCanal(c.id, { workingLengthMm: len, isObliterated: false })}
+													data-testid={`chip-length-${c.name}-${len}`}
+													className={`secondary-button min-h-[28px] h-7 px-2 text-xs font-mono font-bold rounded-lg border transition-all cursor-pointer active:scale-95 ${
+														isSel
+															? "bg-rose-600 text-white border-rose-600 shadow-2xs"
+															: "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-2xs"
+													}`}
+													title={`Установить длину ${len} мм`}
+												>
+													{len}
+												</button>
+											);
+										})}
+									</div>
+								</>
+							)}
 						</div>
 
 						{/* Параметр 2: Мастер-файл (MAF: 25/.04, 30/.04, 25/.06, 20/.04) */}
@@ -547,7 +600,7 @@ export function ChairsideEndoQuickBar({
 												})
 											}
 											data-testid={`chip-maf-${c.name}-${opt.label.replace(/[^a-z0-9]/gi, "")}`}
-											className={`min-h-[28px] h-7 px-2 text-xs font-mono font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 active:scale-95 ${
+											className={`secondary-button min-h-[28px] h-7 px-2 text-xs font-mono font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 active:scale-95 ${
 												isSel
 													? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-2xs"
 													: "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-2xs"
@@ -574,7 +627,7 @@ export function ChairsideEndoQuickBar({
 										})
 									}
 									data-testid={`chip-obturation-gutta-${c.name}`}
-									className={`min-h-[26px] h-6 px-2 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+									className={`secondary-button min-h-[26px] h-6 px-2 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
 										c.obturationType === "gutta_sealer"
 											? "bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs border border-emerald-500/40"
 											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -592,7 +645,7 @@ export function ChairsideEndoQuickBar({
 										})
 									}
 									data-testid={`chip-obturation-caoh2-${c.name}`}
-									className={`min-h-[26px] h-6 px-2 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+									className={`secondary-button min-h-[26px] h-6 px-2 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
 										c.obturationType === "temp_caoh2"
 											? "bg-white dark:bg-slate-700 text-amber-700 dark:text-amber-300 shadow-xs border border-amber-500/40"
 											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -606,7 +659,7 @@ export function ChairsideEndoQuickBar({
 								<button
 									type="button"
 									onClick={() => handleRemoveCanal(c.id)}
-									className="w-7 h-7 rounded-lg text-[var(--muted,#64748b)] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+									className="icon-button secondary-button w-7 h-7 rounded-lg text-[var(--muted,#64748b)] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition-colors cursor-pointer shrink-0"
 									title="Удалить канал"
 								>
 									<Trash2 size={13} />
@@ -624,7 +677,7 @@ export function ChairsideEndoQuickBar({
 						type="button"
 						onClick={handleAddCanal}
 						data-testid="btn-add-quick-canal"
-						className="min-h-[36px] sm:min-h-[38px] h-9 px-3 text-xs font-bold rounded-xl bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+						className="secondary-button min-h-[36px] sm:min-h-[38px] h-9 px-3 text-xs font-bold rounded-xl bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
 					>
 						<Plus size={14} className="text-rose-600 dark:text-rose-400" />
 						<span>Добавить канал</span>
@@ -640,7 +693,7 @@ export function ChairsideEndoQuickBar({
 					type="button"
 					onClick={handleTransferToDiary}
 					data-testid="btn-endo-transfer-to-diary"
-					className="min-h-[44px] h-10 px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-black bg-rose-600 hover:bg-rose-500 active:scale-98 text-white flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer touch-manipulation"
+					className="primary-button min-h-[44px] h-10 px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-black bg-rose-600 hover:bg-rose-500 active:scale-98 text-white flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer touch-manipulation"
 					title="Перенести протокол эндодонтии в дневник визита"
 				>
 					<Check size={16} />

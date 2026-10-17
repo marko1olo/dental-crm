@@ -298,7 +298,8 @@ export function applyEndoProtocolPreset(
 		const defLength = getAnatomicalWorkingLength(toothNumber, c.canalName) || def?.workingLengthMm || 21.0;
 		return {
 			...c,
-			workingLengthMm: c.workingLengthMm || defLength,
+			isObliterated: Boolean(c.isObliterated),
+			workingLengthMm: c.isObliterated ? 0 : (c.workingLengthMm || defLength),
 			masterApicalFile: preset.masterApicalFile || c.masterApicalFile || "ISO 25 (#25 красный)",
 			taper: preset.taper || c.taper || ".06 (Конусность 6%)",
 			referencePoint: c.referencePoint || def?.referencePoint || "Реперный ориентир",
@@ -419,7 +420,11 @@ export function generateEndoCanalsTable043(canals: readonly EndoCanalData[]): st
 		const taperMatch = String(c.taper).match(/\.\d+/);
 		const taperClean = taperMatch ? taperMatch[0] : c.taper;
 		const mafFormatted = `${mafClean || "—"}/${taperClean || ""}`.trim();
-		const lengthStr = c.workingLengthMm ? `${c.workingLengthMm} мм` : "—";
+		const lengthStr = c.isObliterated
+			? "Облитерирован"
+			: c.workingLengthMm
+				? `${c.workingLengthMm} мм`
+				: "—";
 		const obt = c.obturationTechnique
 			? `${c.obturationTechnique}${c.sealer ? ` + ${c.sealer}` : ""}`
 			: "—";

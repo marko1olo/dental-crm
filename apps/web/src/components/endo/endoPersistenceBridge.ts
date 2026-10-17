@@ -37,6 +37,7 @@ export async function persistCanalsToBackend({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
+					toothNumber: activeTooth,
 					canals: clinicalData.canals,
 					irrigation: clinicalData.irrigation,
 					rotarySystem: clinicalData.rotarySystem,
@@ -132,7 +133,7 @@ export function applyEndoBillingAndInventoryDeductions(
 	// 2. Автоматическое списание расходных материалов со склада через мягкий овердрафт (Мандаты 8e, 8n)
 	try {
 		for (const mat of billingEstimate.materials) {
-			fetch("/api/warehouse/soft-overdraft-deduct", {
+			fetch("/api/inventory/soft-overdraft-deduct", {
 				method: "POST",
 				headers: denteAdminSecretRequestHeaders({
 					"Content-Type": "application/json",

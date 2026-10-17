@@ -27,6 +27,7 @@ export interface EndoCanalTableProps {
 	readonly handleSetCanalLength: (id: string, val: number) => void;
 	readonly handleRemoveCanal: (id: string) => void;
 	readonly renderIsoColorBadge: (mafOption: string) => React.ReactNode;
+	readonly handleToggleCanalObliteration?: (id: string) => void;
 }
 
 export const EndoCanalTable: React.FC<EndoCanalTableProps> = ({
@@ -39,6 +40,7 @@ export const EndoCanalTable: React.FC<EndoCanalTableProps> = ({
 	handleSetCanalLength,
 	handleRemoveCanal,
 	renderIsoColorBadge,
+	handleToggleCanalObliteration,
 }) => {
 	const [activeCanalForSealer, setActiveCanalForSealer] = useState<EndoCanalData | null>(null);
 
@@ -90,27 +92,39 @@ export const EndoCanalTable: React.FC<EndoCanalTableProps> = ({
 											className="w-full h-8 sm:h-8.5 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white font-bold text-xs focus:ring-2 focus:ring-rose-500 outline-none truncate min-w-0"
 										/>
 										{/* Suggested anatomical canal quick-pick chips */}
-										{suggestedCanalNames.length > 0 && (
-											<div className="flex items-center gap-1 mt-1 flex-wrap">
-												{suggestedCanalNames.map((sName) => (
-													<button
-														key={sName}
-														type="button"
-														onClick={() =>
-															handleCanalChange(c.id, "canalName", sName)
-														}
-														className={`h-4 px-1 rounded text-[9px] font-mono font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
-															c.canalName === sName
-																? "bg-rose-600 text-white shadow-xs"
-																: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--muted,#64748b)] hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#e2e8f0)] dark:border-slate-700"
-														}`}
-														title={`Выбрать анатомический канал ${sName}`}
-													>
-														{sName}
-													</button>
-												))}
-											</div>
-										)}
+										<div className="flex items-center gap-1 mt-1 flex-wrap">
+											{suggestedCanalNames.map((sName) => (
+												<button
+													key={sName}
+													type="button"
+													onClick={() =>
+														handleCanalChange(c.id, "canalName", sName)
+													}
+													className={`secondary-button h-4 px-1 rounded text-[9px] font-mono font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
+														c.canalName === sName
+															? "bg-rose-600 text-white shadow-xs"
+															: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--muted,#64748b)] hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#e2e8f0)] dark:border-slate-700"
+													}`}
+													title={`Выбрать анатомический канал ${sName}`}
+												>
+													{sName}
+												</button>
+											))}
+											{/* 1-Click Облитерация канала (MB2 и др. - Мандат 8e) */}
+											<button
+												type="button"
+												onClick={() => handleToggleCanalObliteration?.(c.id)}
+												className={`secondary-button h-4 px-1 rounded text-[9px] font-bold transition-all cursor-pointer inline-flex items-center gap-0.5 ${
+													c.isObliterated
+														? "bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/50"
+														: "bg-transparent text-[var(--muted,#64748b)] hover:text-amber-700 dark:hover:text-amber-300 border border-dashed border-[var(--line,#cbd5e1)] dark:border-slate-700"
+												}`}
+												title="Отметить канал как облитерированный / склерозированный (Мандат 8e)"
+												data-testid={`btn-toggle-obliterated-${c.canalName}`}
+											>
+												{c.isObliterated ? "⚠️ Облитерирован" : "Облитерация?"}
+											</button>
+										</div>
 									</td>
 
 									{/* Reference Point */}
@@ -137,73 +151,89 @@ export const EndoCanalTable: React.FC<EndoCanalTableProps> = ({
 
 									{/* Working Length in mm (степперы 0.5 мм и быстрые пресеты) */}
 									<td className="py-1.5 px-3 min-w-[200px]">
-										<div className="space-y-1">
-											<div className="relative flex items-center gap-1">
+										{c.isObliterated ? (
+											<div className="flex items-center gap-1.5 py-1">
+												<span className="px-2 py-1 rounded-lg text-[11px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-500/40">
+													⚠️ Облитерирован (0 мм)
+												</span>
 												<button
 													type="button"
-													onClick={() =>
-														handleAdjustCanalLength(c.id, -0.5)
-													}
-													className="h-7 w-7 rounded-lg bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-white font-bold text-xs flex items-center justify-center transition-colors cursor-pointer shrink-0"
-													title="-0.5 мм"
+													onClick={() => handleToggleCanalObliteration?.(c.id)}
+													className="secondary-button text-[10px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 underline cursor-pointer"
+													title="Снять отметку облитерации"
 												>
-													-0.5
-												</button>
-												<div className="relative flex-1 flex items-center">
-													<input
-														type="number"
-														step="0.5"
-														min="10"
-														max="35"
-														aria-label={`Рабочая длина в мм для канала ${c.canalName}`}
-														value={
-															c.workingLengthMm === 0
-																? ""
-																: c.workingLengthMm
-														}
-														placeholder="—"
-														onChange={(e) =>
-															handleCanalLengthInputChange(
-																c.id,
-																e.target.value,
-															)
-														}
-														className="w-full h-7 pl-1.5 pr-6 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white font-mono font-bold text-xs focus:ring-2 focus:ring-rose-500 outline-none text-center"
-													/>
-													<span className="absolute right-1.5 text-[10px] text-rose-700 dark:text-rose-300 font-bold pointer-events-none">
-														мм
-													</span>
-												</div>
-												<button
-													type="button"
-													onClick={() => handleAdjustCanalLength(c.id, 0.5)}
-													className="h-7 w-7 rounded-lg bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-white font-bold text-xs flex items-center justify-center transition-colors cursor-pointer shrink-0"
-													title="+0.5 мм"
-												>
-													+0.5
+													Снять
 												</button>
 											</div>
-											{/* Quick Length Chips */}
-											<div className="flex items-center gap-1 flex-wrap">
-												{QUICK_LENGTH_PRESETS.map((presetLen) => (
+										) : (
+											<div className="space-y-1">
+												<div className="relative flex items-center gap-1">
 													<button
-														key={presetLen}
 														type="button"
 														onClick={() =>
-															handleSetCanalLength(c.id, presetLen)
+															handleAdjustCanalLength(c.id, -0.5)
 														}
-														className={`h-5 px-1.5 rounded text-[10px] font-mono font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
-															Number(c.workingLengthMm) === presetLen
-																? "bg-rose-600 text-white shadow-xs"
-																: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#e2e8f0)] dark:border-slate-700"
-														}`}
-														title={`Установить длину ${presetLen} мм`}
+														className="secondary-button icon-button h-7 w-7 rounded-lg bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-white font-bold text-xs flex items-center justify-center transition-colors cursor-pointer shrink-0"
+														title="-0.5 мм"
 													>
-														{presetLen}
+														-0.5
 													</button>
-												))}
+													<div className="relative flex-1 flex items-center">
+														<input
+															type="number"
+															step="0.5"
+															min="0"
+															max="40"
+															aria-label={`Рабочая длина в мм для канала ${c.canalName}`}
+															value={
+																c.workingLengthMm === 0
+																	? ""
+																	: c.workingLengthMm
+															}
+															placeholder="—"
+															onChange={(e) =>
+																handleCanalLengthInputChange(
+																	c.id,
+																	e.target.value,
+																)
+															}
+															className="w-full h-7 pl-1.5 pr-6 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white font-mono font-bold text-xs focus:ring-2 focus:ring-rose-500 outline-none text-center"
+														/>
+														<span className="absolute right-1.5 text-[10px] text-rose-700 dark:text-rose-300 font-bold pointer-events-none">
+															мм
+														</span>
+													</div>
+													<button
+														type="button"
+														onClick={() => handleAdjustCanalLength(c.id, 0.5)}
+														className="secondary-button icon-button h-7 w-7 rounded-lg bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-white font-bold text-xs flex items-center justify-center transition-colors cursor-pointer shrink-0"
+														title="+0.5 мм"
+													>
+														+0.5
+													</button>
+												</div>
+												{/* Quick Length Chips */}
+												<div className="flex items-center gap-1 flex-wrap">
+													{QUICK_LENGTH_PRESETS.map((presetLen) => (
+														<button
+															key={presetLen}
+															type="button"
+															onClick={() =>
+																handleSetCanalLength(c.id, presetLen)
+															}
+															className={`secondary-button h-5 px-1.5 rounded text-[10px] font-mono font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
+																Number(c.workingLengthMm) === presetLen
+																	? "bg-rose-600 text-white shadow-xs"
+																	: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#e2e8f0)] dark:border-slate-700"
+															}`}
+															title={`Установить длину ${presetLen} мм`}
+														>
+															{presetLen}
+														</button>
+													))}
+												</div>
 											</div>
-										</div>
+										)}
 									</td>
 
 									{/* Master Apical File (MAF ISO 3630-1) */}
@@ -313,7 +343,7 @@ export const EndoCanalTable: React.FC<EndoCanalTableProps> = ({
 										<button
 											type="button"
 											onClick={() => handleRemoveCanal(c.id)}
-											className="h-8 w-8 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center transition-colors cursor-pointer"
+											className="icon-button secondary-button h-8 w-8 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center transition-colors cursor-pointer"
 											title={`Удалить канал ${c.canalName}`}
 										>
 											<Trash2 size={16} />
@@ -334,9 +364,9 @@ export const EndoCanalTable: React.FC<EndoCanalTableProps> = ({
 						className="p-3.5 rounded-2xl bg-[var(--surface,#f8fafc)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 shadow-sm space-y-3"
 					>
 						{/* Card Header: Canal Name + Delete Button */}
-						<div className="flex items-center justify-between gap-2">
+						<div className="flex items-center justify-between gap-2 flex-wrap">
 							<div className="flex-1 min-w-0">
-								<div className="flex items-center gap-2">
+								<div className="flex items-center gap-2 flex-wrap">
 									<span className="text-[11px] font-black text-rose-600 dark:text-rose-400 shrink-0">
 										Канал #{index + 1}:
 									</span>
@@ -350,6 +380,20 @@ export const EndoCanalTable: React.FC<EndoCanalTableProps> = ({
 										}
 										className="h-9 px-2.5 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white font-black text-sm focus:ring-2 focus:ring-rose-500 outline-none w-28 text-center"
 									/>
+									{/* 1-Click Облитерация канала на смартфоне */}
+									<button
+										type="button"
+										onClick={() => handleToggleCanalObliteration?.(c.id)}
+										className={`secondary-button min-h-[36px] px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+											c.isObliterated
+												? "bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/50"
+												: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--muted,#64748b)] border border-[var(--line,#cbd5e1)] dark:border-slate-700"
+										}`}
+										title="Облитерирован / не найден (Мандат 8e)"
+										data-testid={`btn-toggle-obliterated-mob-${c.canalName}`}
+									>
+										{c.isObliterated ? "⚠️ Облитерирован" : "Облитерация?"}
+									</button>
 								</div>
 								{suggestedCanalNames.length > 0 && (
 									<div className="flex items-center gap-1.5 mt-2 flex-wrap">
@@ -360,7 +404,7 @@ export const EndoCanalTable: React.FC<EndoCanalTableProps> = ({
 												onClick={() =>
 													handleCanalChange(c.id, "canalName", sName)
 												}
-												className={`min-h-[32px] px-2 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
+												className={`secondary-button min-h-[32px] px-2 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
 													c.canalName === sName
 														? "bg-rose-600 text-white shadow-xs"
 														: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--muted,#64748b)] hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#e2e8f0)] dark:border-slate-700"
@@ -375,7 +419,7 @@ export const EndoCanalTable: React.FC<EndoCanalTableProps> = ({
 							<button
 								type="button"
 								onClick={() => handleRemoveCanal(c.id)}
-								className="min-h-[44px] min-w-[44px] rounded-xl text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+								className="icon-button secondary-button min-h-[44px] min-w-[44px] rounded-xl text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center transition-colors cursor-pointer shrink-0"
 								title={`Удалить канал ${c.canalName}`}
 								aria-label={`Удалить канал ${c.canalName}`}
 							>
@@ -390,69 +434,86 @@ export const EndoCanalTable: React.FC<EndoCanalTableProps> = ({
 								<span>Апекслокатор: 0.0 (Apex)</span>
 							</div>
 							<span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-300">
-								{c.workingLengthMm ? `WL: ${c.workingLengthMm} мм` : "0.0 (Норма)"}
+								{c.isObliterated ? "Облитерирован (0 мм)" : c.workingLengthMm ? `WL: ${c.workingLengthMm} мм` : "0.0 (Норма)"}
 							</span>
 						</div>
 
 						{/* Working Length Stepper (44px touch targets) */}
-						<div className="space-y-1.5 pt-1 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
-							<label className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-								Рабочая длина (WL, мм):
-							</label>
-							<div className="flex items-center gap-2">
-								<button
-									type="button"
-									onClick={() => handleAdjustCanalLength(c.id, -0.5)}
-									className="min-h-[44px] min-w-[44px] px-3 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-white font-black text-sm flex items-center justify-center border border-[var(--line,#cbd5e1)] dark:border-slate-700 transition-colors cursor-pointer shrink-0"
-									title="-0.5 мм"
-								>
-									-0.5
-								</button>
-								<div className="relative flex-1 flex items-center">
-									<input
-										type="number"
-										step="0.5"
-										min="10"
-										max="35"
-										aria-label={`Рабочая длина в мм моб для ${c.canalName}`}
-										value={c.workingLengthMm === 0 ? "" : c.workingLengthMm}
-										placeholder="—"
-										onChange={(e) =>
-											handleCanalLengthInputChange(c.id, e.target.value)
-										}
-										className="w-full h-11 pl-2 pr-8 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white font-mono font-black text-base focus:ring-2 focus:ring-rose-500 outline-none text-center"
-									/>
-									<span className="absolute right-3 text-xs text-rose-700 dark:text-rose-300 font-bold pointer-events-none">
-										мм
-									</span>
-								</div>
-								<button
-									type="button"
-									onClick={() => handleAdjustCanalLength(c.id, 0.5)}
-									className="min-h-[44px] min-w-[44px] px-3 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-white font-black text-sm flex items-center justify-center border border-[var(--line,#cbd5e1)] dark:border-slate-700 transition-colors cursor-pointer shrink-0"
-									title="+0.5 мм"
-								>
-									+0.5
-								</button>
-							</div>
-							{/* Quick Length Chips */}
-							<div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-								{QUICK_LENGTH_PRESETS.map((presetLen) => (
+						{c.isObliterated ? (
+							<div className="pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
+								<div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 flex items-center justify-between gap-2">
+									<div className="text-xs font-bold text-amber-900 dark:text-amber-200">
+										⚠️ Канал облитерирован (0 мм). Сохранение разрешено в 1 клик.
+									</div>
 									<button
-										key={presetLen}
 										type="button"
-										onClick={() => handleSetCanalLength(c.id, presetLen)}
-										className={`min-h-[32px] px-2.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
-											Number(c.workingLengthMm) === presetLen
-												? "bg-rose-600 text-white shadow-xs"
-												: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#e2e8f0)] dark:border-slate-700"
-										}`}
+										onClick={() => handleToggleCanalObliteration?.(c.id)}
+										className="secondary-button text-xs font-bold text-amber-800 dark:text-amber-300 underline cursor-pointer shrink-0"
 									>
-										{presetLen}
+										Снять
 									</button>
-								))}
+								</div>
 							</div>
-						</div>
+						) : (
+							<div className="space-y-1.5 pt-1 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
+								<label className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+									Рабочая длина (WL, мм):
+								</label>
+								<div className="flex items-center gap-2">
+									<button
+										type="button"
+										onClick={() => handleAdjustCanalLength(c.id, -0.5)}
+										className="secondary-button icon-button min-h-[44px] min-w-[44px] px-3 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-white font-black text-sm flex items-center justify-center border border-[var(--line,#cbd5e1)] dark:border-slate-700 transition-colors cursor-pointer shrink-0"
+										title="-0.5 мм"
+									>
+										-0.5
+									</button>
+									<div className="relative flex-1 flex items-center">
+										<input
+											type="number"
+											step="0.5"
+											min="0"
+											max="40"
+											aria-label={`Рабочая длина в мм моб для ${c.canalName}`}
+											value={c.workingLengthMm === 0 ? "" : c.workingLengthMm}
+											placeholder="—"
+											onChange={(e) =>
+												handleCanalLengthInputChange(c.id, e.target.value)
+											}
+											className="w-full h-11 pl-2 pr-8 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white font-mono font-black text-base focus:ring-2 focus:ring-rose-500 outline-none text-center"
+										/>
+										<span className="absolute right-3 text-xs text-rose-700 dark:text-rose-300 font-bold pointer-events-none">
+											мм
+										</span>
+									</div>
+									<button
+										type="button"
+										onClick={() => handleAdjustCanalLength(c.id, 0.5)}
+										className="secondary-button icon-button min-h-[44px] min-w-[44px] px-3 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-white font-black text-sm flex items-center justify-center border border-[var(--line,#cbd5e1)] dark:border-slate-700 transition-colors cursor-pointer shrink-0"
+										title="+0.5 мм"
+									>
+										+0.5
+									</button>
+								</div>
+								{/* Quick Length Chips */}
+								<div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+									{QUICK_LENGTH_PRESETS.map((presetLen) => (
+										<button
+											key={presetLen}
+											type="button"
+											onClick={() => handleSetCanalLength(c.id, presetLen)}
+											className={`secondary-button min-h-[32px] px-2.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
+												Number(c.workingLengthMm) === presetLen
+													? "bg-rose-600 text-white shadow-xs"
+													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#e2e8f0)] dark:border-slate-700"
+											}`}
+										>
+											{presetLen}
+										</button>
+									))}
+								</div>
+							</div>
+						)}
 
 						{/* Reference Point + MAF ISO */}
 						<div className="grid grid-cols-1 gap-2 pt-1 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">

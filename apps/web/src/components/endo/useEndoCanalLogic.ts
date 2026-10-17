@@ -319,7 +319,7 @@ export function useEndoCanalLogic({
 		}
 		const num = Number.parseFloat(trimmed);
 		if (Number.isNaN(num) || !Number.isFinite(num)) return;
-		const clamped = Math.max(0, Math.min(35, Math.round(num * 2) / 2));
+		const clamped = Math.max(0, Math.min(40, Math.round(num * 2) / 2));
 		setCanals((prev) =>
 			prev.map((c) => (c.id === id ? { ...c, workingLengthMm: clamped } : c)),
 		);
@@ -333,15 +333,30 @@ export function useEndoCanalLogic({
 					typeof c.workingLengthMm === "number" && !Number.isNaN(c.workingLengthMm)
 						? c.workingLengthMm
 						: Number.parseFloat(String(c.workingLengthMm)) || 21.0;
-				const next = Math.max(10, Math.min(35, Math.round((curr + delta) * 2) / 2));
+				const next = Math.max(0, Math.min(40, Math.round((curr + delta) * 2) / 2));
 				return { ...c, workingLengthMm: next };
 			}),
 		);
 	};
 
-	const handleSetCanalLength = (id: string, length: number) => {
+	const handleToggleCanalObliteration = (id: string) => {
 		setCanals((prev) =>
-			prev.map((c) => (c.id === id ? { ...c, workingLengthMm: length } : c)),
+			prev.map((c) => {
+				if (c.id !== id) return c;
+				const nextObliterated = !c.isObliterated;
+				return {
+					...c,
+					isObliterated: nextObliterated,
+					workingLengthMm: nextObliterated ? 0 : (c.workingLengthMm || 21.0),
+				};
+			}),
+		);
+	};
+
+	const handleSetCanalLength = (id: string, length: number) => {
+		const clamped = Math.max(0, Math.min(40, Math.round(length * 2) / 2));
+		setCanals((prev) =>
+			prev.map((c) => (c.id === id ? { ...c, workingLengthMm: clamped } : c)),
 		);
 	};
 
@@ -706,6 +721,7 @@ export function useEndoCanalLogic({
 		handleCanalChange,
 		handleCanalLengthInputChange,
 		handleAdjustCanalLength,
+		handleToggleCanalObliteration,
 		handleSetCanalLength,
 		handleAddCanal,
 		handleRemoveCanal,

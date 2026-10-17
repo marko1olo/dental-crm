@@ -1,6 +1,9 @@
 import {
+	CLINICAL_TOOTH_STATE_VALUES,
+	type ClinicalToothState,
 	fdiToothNumberSchema,
 	nonNegativeMoneyRubSchema,
+	normalizeToothState,
 } from "@dental/shared";
 import { z } from "zod";
 import type {
@@ -8,54 +11,31 @@ import type {
 	treatmentPlans,
 } from "../../db/schema.js";
 
-export const CLINICAL_TOOTH_STATE_VALUES = [
-	"Healthy",
-	"Caries",
-	"Pulpitis",
-	"Periodontitis",
-	"Root_Canal_Treated",
-	"Filled",
-	"Crown",
-	"Bridge",
-	"Bridge_Abutment",
-	"Implant",
-	"Planned_Implant",
-	"Missing",
-	"Extracted",
-	"Impacted",
-	"Retained",
-	"Root",
-	"Mobility_I",
-	"Mobility_II",
-	"Mobility_III",
-	"Mobility_IV",
-	"Furcation_I",
-	"Furcation_II",
-	"Furcation_III",
-] as const;
-
-export type ClinicalToothState = (typeof CLINICAL_TOOTH_STATE_VALUES)[number];
+export { CLINICAL_TOOTH_STATE_VALUES, type ClinicalToothState };
 
 export function normalizeClinicalToothState(val: string): ClinicalToothState {
 	const trimmed = val.trim();
 	const lower = trimmed.toLowerCase();
-	if (lower === "done" || lower === "filled") return "Filled";
-	if (lower === "caries") return "Caries";
-	if (lower === "pulpitis") return "Pulpitis";
-	if (lower === "periodontitis") return "Periodontitis";
-	if (lower === "crown") return "Crown";
-	if (lower === "missing") return "Missing";
-	if (lower === "healthy" || lower === "idle") return "Healthy";
 	if (lower === "treatment" || lower === "root_canal_treated") return "Root_Canal_Treated";
-	if (lower === "implant") return "Implant";
-	if (lower === "planned_implant") return "Planned_Implant";
-	if (lower === "root") return "Root";
-	if (lower === "retained") return "Retained";
 	if (lower === "extracted") return "Extracted";
 	if (lower === "impacted") return "Impacted";
+	if (lower === "bridge") return "Bridge";
+	if (lower === "bridge_abutment") return "Bridge_Abutment";
+
+	// Periodontal mobility (Arabic & Roman numeral parity)
+	if (lower === "mobility_1" || lower === "mobility_i" || lower === "mobility_1_degree") return "Mobility_I";
+	if (lower === "mobility_2" || lower === "mobility_ii" || lower === "mobility_2_degree") return "Mobility_II";
+	if (lower === "mobility_3" || lower === "mobility_iii" || lower === "mobility_3_degree") return "Mobility_III";
+	if (lower === "mobility_4" || lower === "mobility_iv" || lower === "mobility_4_degree") return "Mobility_IV";
+
+	// Furcation involvement (Arabic & Roman numeral parity)
+	if (lower === "furcation_1" || lower === "furcation_i" || lower === "furcation_grade_1") return "Furcation_I";
+	if (lower === "furcation_2" || lower === "furcation_ii" || lower === "furcation_grade_2") return "Furcation_II";
+	if (lower === "furcation_3" || lower === "furcation_iii" || lower === "furcation_grade_3") return "Furcation_III";
+
 	const found = CLINICAL_TOOTH_STATE_VALUES.find((s) => s.toLowerCase() === lower);
 	if (found) return found;
-	return "Healthy";
+	return normalizeToothState(trimmed);
 }
 
 export const clinicalToothStateSchema = z.preprocess(
@@ -72,14 +52,19 @@ export const endoCanalMeasurementSchema = z.object({
 	taper: z.string().trim().max(50).optional().default(""),
 	obturationTechnique: z.string().trim().max(200).optional().default(""),
 	sealer: z.string().trim().max(200).optional().default(""),
+	isObliterated: z.boolean().optional().default(false),
 	notes: z.string().trim().max(500).optional().default(""),
 });
 
 export const endoToothClinicalDataSchema = z
 	.object({
+		toothNumber: z.number().optional(),
 		canals: z.array(endoCanalMeasurementSchema).default([]),
 		irrigation: z.string().trim().max(1000).optional(),
+		rotarySystem: z.string().trim().max(1000).optional(),
 		radiologyControl: z.string().trim().max(1000).optional(),
+		apexLocator: z.string().trim().max(1000).optional(),
+		stageStamp: z.string().trim().max(50).optional(),
 		notes: z.string().trim().max(2000).optional(),
 		updatedAt: z.string().optional(),
 	})
@@ -152,6 +137,10 @@ export const treatmentPlanItemSchema = z.object({
 export const treatmentPlanUpsertSchema = z.object({
 	id: z.string().uuid().optional().nullable(),
 	name: z.string().trim().min(1).max(300).default("Комплексный план лечения"),
+	status: z
+		.enum(["Draft", "Active", "Approved", "Completed", "Rejected"])
+		.optional(),
+	allowRevision: z.boolean().optional().default(false),
 	patientSignature: z.string().max(2_000_000).optional().nullable(),
 	items: z.array(treatmentPlanItemSchema).max(500).default([]),
 	planGroupId: z.string().uuid().optional().nullable(),

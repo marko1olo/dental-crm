@@ -17,7 +17,9 @@ export function sanitizeCanalsForSubmission(
 ): EndoCanalData[] {
 	return inputCanals.map((c) => {
 		let safeWl: number | string = c.workingLengthMm;
-		if (typeof safeWl === "number") {
+		if (c.isObliterated) {
+			safeWl = 0;
+		} else if (typeof safeWl === "number") {
 			if (Number.isNaN(safeWl) || !Number.isFinite(safeWl) || safeWl <= 0) {
 				safeWl = getAnatomicalWorkingLength(activeTooth, c.canalName);
 			} else {
@@ -36,6 +38,7 @@ export function sanitizeCanalsForSubmission(
 
 		return {
 			...c,
+			isObliterated: Boolean(c.isObliterated),
 			workingLengthMm: safeWl,
 			masterApicalFile: c.masterApicalFile || "ISO 25 (#25 красный)",
 			taper: c.taper || ".06 (Конусность 6%)",
