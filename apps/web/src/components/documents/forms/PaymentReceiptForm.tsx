@@ -144,10 +144,10 @@ export const PaymentReceiptForm: React.FC<PaymentReceiptFormProps> = React.memo(
 										{money(selectedPaymentReceiptTotalRub)}
 									</span>
 								</div>
-								<div>
+								<div className="flex items-center gap-1.5">
 									<button
 										type="button"
-										className="text-button"
+										className="secondary-button button-sm text-xs h-7 px-2.5 rounded-lg"
 										onClick={() =>
 											setSelectedPaymentReceiptIds(
 												typedEligiblePaymentReceiptPayments.map(
@@ -160,7 +160,7 @@ export const PaymentReceiptForm: React.FC<PaymentReceiptFormProps> = React.memo(
 									</button>
 									<button
 										type="button"
-										className="text-button"
+										className="secondary-button button-sm text-xs h-7 px-2.5 rounded-lg"
 										onClick={() => setSelectedPaymentReceiptIds([])}
 									>
 										Снять

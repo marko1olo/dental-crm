@@ -134,7 +134,7 @@ export function CommunicationsConversationsList({
 							description="Когда появятся подтверждения, запросы документов или инструкции после приема, они отобразятся здесь."
 							action={
 								<button
-									className="text-button"
+									className="primary-button"
 									type="button"
 									onClick={onGoToSchedule}
 								>

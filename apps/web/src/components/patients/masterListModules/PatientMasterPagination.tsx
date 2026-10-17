@@ -29,7 +29,7 @@ export const PatientMasterPagination: React.FC<PatientMasterPaginationProps> = (
 				</button>
 				<button
 					type="button"
-					className="text-button min-h-[32px] px-2 text-xs text-[var(--teal)] font-medium hover:underline"
+					className="secondary-button min-h-[32px] px-2.5 text-xs font-semibold rounded-lg"
 					onClick={onLoadAll}
 				>
 					Все ({totalCount})

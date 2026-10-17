@@ -196,7 +196,7 @@ export function FinancePlanningOverview({
 						</div>
 						<button
 							type="button"
-							className="text-button"
+							className="secondary-button button-sm"
 							style={{ display: "flex", alignItems: "center", gap: "4px" }}
 							onClick={() => setShowScenarios(!showScenarios)}
 						>
@@ -295,7 +295,7 @@ export function ServiceCatalogStrip({
 						Каталог услуг пуст. Заполните прайс в настройках, чтобы план лечения
 						и оплаты не требовали ручных сумм.
 					</p>
-					<button className="text-button" type="button" onClick={onGoToPrices}>
+					<button className="primary-button" type="button" onClick={onGoToPrices}>
 						Открыть прайс
 					</button>
 				</article>

@@ -97,7 +97,7 @@ export function DocumentRegistryFilterBar({
 				{hasActiveFilters && (
 					<button
 						type="button"
-						className="text-button document-reset-filters-btn"
+						className="secondary-button button-sm document-reset-filters-btn"
 						onClick={onResetFilters}
 					>
 						Сбросить фильтры

@@ -169,7 +169,7 @@ export function FinanceLedger({
 							или прайса, чтобы сумма, документы и оплата считались без ручного
 							пересчета.
 						</p>
-						<button className="text-button" type="button" onClick={onGoToVisit}>
+						<button className="secondary-button" type="button" onClick={onGoToVisit}>
 							Открыть прием
 						</button>
 					</article>
@@ -260,7 +260,7 @@ export function FinanceLedger({
 							появится здесь с чеком, кодом вычета и примечанием.
 						</p>
 						<button
-							className="text-button"
+							className="primary-button"
 							type="button"
 							onClick={onFocusPaymentCapture}
 						>

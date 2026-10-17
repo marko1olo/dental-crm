@@ -61,7 +61,7 @@ export const PatientMasterEmptyState: React.FC<PatientMasterEmptyStateProps> = (
 							<Plus size={16} aria-hidden="true" />
 							<span>Создать карту</span>
 						</button>
-						<button type="button" className="text-button min-h-[44px] px-3.5" onClick={onClearSearch}>
+						<button type="button" className="secondary-button min-h-[44px] px-3.5 font-semibold" onClick={onClearSearch}>
 							Сбросить поиск
 						</button>
 					</div>

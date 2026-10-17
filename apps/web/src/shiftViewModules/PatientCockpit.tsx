@@ -40,7 +40,7 @@ export const PatientCockpit: React.FC<PatientCockpitProps> = ({
 						<a className="secondary-button min-h-[44px] px-3 py-2 flex items-center justify-center" href="#patients">
 							Выбрать пациента
 						</a>
-						<a className="text-button min-h-[44px] px-3 py-2 flex items-center justify-center" href="#schedule">
+						<a className="secondary-button min-h-[44px] px-3 py-2 flex items-center justify-center" href="#schedule">
 							Открыть записи
 						</a>
 					</div>

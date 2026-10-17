@@ -1,7 +1,7 @@
 # Главный Реестр Фич Конкурентов (IDENT, DentalPRO, iStom & StomX)
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
-> ⚠️ **СТАТУС (2026-10-17 / WAVES 301–343 / ВОЛНА 343 ELECTRONIC PRESCRIPTIONS CANONICAL SSOT, 1-CLICK DENTAL COURSES, ORDER 1094N STATUTORY COMPLIANCE, DOCTOR AUTONOMY & NON-BLOCKING A5 PRINT — 483 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 420 АДДЕНДУМ, ВСЕ 483 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
+> ⚠️ **СТАТУС (2026-10-17 / WAVES 301–346 / ВОЛНА 346 CANONICAL DENTE BUTTON DESIGN SYSTEM, ELIMINATION OF UNLAYERED BUTTON RESET, ERADICATION OF NAKED TEXT BUTTONS, APPLE HIG TOUCH TARGETS & 4-STATE VISUAL PROOF — 486 ФИЧ: 64 КАНОНИЧЕСКИЕ + 422 АДДЕНДУМ, ВСЕ 486 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
 
 
 | # | feature_key | Фича | Конкурент | Модуль | Что делает | Статус у нас | Ценность (1-5) | Внедрять? | Сложность | Приоритет | Доказательство (строки источника) |
@@ -988,17 +988,16 @@
 
 ---
 
-### ВОЛНА 345: ДЕТСКАЯ СТОМАТОЛОГИЯ, МОЛОЧНЫЙ ПРИКУС (51–85), 1-КЛИК ПРЕСЕТЫ И ДИПЛОМ ЗА ХРАБРОСТЬ (Фича #451, Мандаты 8b, 8c, 8d, 8e, 8k, 8n, 8x, 8ze, 8al)
+### ВОЛНА 346: КАНОНИЧЕСКАЯ ДИЗАЙН-СИСТЕМА КНОПОК DENTE, ЛИКВИДАЦИЯ UNLAYERED РЕСЕТА И ГОЛОГО ТЕКСТА (Фича #486, Мандаты 8b, 8c, 8e, 8n, 8x, 8ze, 8al)
 - **Статус**: **`[ЕСТЬ] / [ЗАКРЫТО]`**.
-- **Суть**: 
-  1. Молочный ряд FDI 51–85 и сменный прикус с авто-переключением по возрасту ребенка и 100% автономией врача переключить формулу вручную (Мандат 8e).
-  2. 1-клик пресеты визита у кресла: «✓ Адаптационный приём (знакомство)», «Герметизация фиссур», «Кариес молочного зуба», «Пульпотомия молочного зуба».
-  3. «Грамота за храбрость» (Certificate of Bravery): памятная наградная форма А4 юному герою от Зубной Феи с автоподстановкой имени и даты, печать без диалогов ошибки.
-  4. Ликвидация бюрократического канцелярита и советских шифров в UI.
-  5. 83 unit-теста со 100% успехом (6 test suites).
-  6. 6 эталонных скриншотов в `docs/proofs/pediatric/` (PC Light 275.5 KB, PC Dark 275.2 KB, Mobile Light 87.4 KB, Mobile Dark 68.5 KB, Diploma Light 205.7 KB, Diploma Dark 205.7 KB), лично проверенных через `view_file`.
+- **Суть**:
+  1. Ликвидация unlayered сброса `button { background: transparent; padding: 0; border: 0; }` в `apps/web/src/styles/base.css`, обнулявшего более 3700 кнопок. Внедрен канонический силуэт `:where(button:not([class]))`.
+  2. Каноническая таксономия: `.primary-button`, `.secondary-button`, `.ghost-button`, `.subtle-button`, `.danger-button`, `.icon-button`, `.dente-segmented-bar`, `.dente-filter-chip` с поддержкой 6 тёмных тем (`dark`, `night`, `oled`, `ocean`, `emerald`, `cyber_xray`).
+  3. Искоренение «голого текста» вместо кнопок (`.text-button` / `hover:underline` без фона и границ) по всей кодовой базе в компонентах картотеки, расписания, финансов, приёма и настроек.
+  4. Apple HIG тач-таргеты $\ge 44\times 44$px, Floating Bottom Bar, Natural Thumb Zone, 0px паразитного горизонтального скролла.
+  5. Полная доказательная база: 4 эталонных скриншота в `docs/proofs/buttons/` (01_pc_light_buttons.png 179 KB, 02_pc_dark_buttons.png 169.8 KB, 03_mobile_light_buttons.png 79.8 KB, 04_mobile_dark_buttons.png 83.3 KB), лично проинспектированных через `view_file`.
 
-**ИТОГОВЫЙ ВЕРДИКТ RED TEAM: [ПРОВЕРЕНО: ЧИСТО]** (485 фич в реестре: 64 канонические + 421 аддендум, ВСЕ ЗАКРЫТЫ СО СТАТУСОМ [ЕСТЬ] / [ЗАКРЫТО], 100% паритет с ведущими стоматологическими CRM РФ: IDENT, DentalPRO, StomX).
+**ИТОГОВЫЙ ВЕРДИКТ RED TEAM: [ПРОВЕРЕНО: ЧИСТО]** (486 фич в реестре: 64 канонические + 422 аддендум, ВСЕ ЗАКРЫТЫ СО СТАТУСОМ [ЕСТЬ] / [ЗАКРЫТО], 100% паритет с ведущими стоматологическими CRM РФ: IDENT, DentalPRO, StomX).
 
 
 

@@ -98,7 +98,7 @@ export function useScheduleFilterSummary(props: ScheduleFilterSummaryProps) {
               Отбор: {activeScheduleFilterLabels.join(", ")}
             </span>
             <button
-              className="text-button shrink-0 h-7 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-xs font-medium inline-flex items-center cursor-pointer transition-all"
+              className="subtle-button shrink-0 h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-xs font-medium inline-flex items-center cursor-pointer transition-all"
               type="button"
               onClick={resetScheduleFilters}
             >
@@ -113,7 +113,7 @@ export function useScheduleFilterSummary(props: ScheduleFilterSummaryProps) {
               Показаны все дни: {visibleDayGroups?.length}
             </span>
             <button
-              className="text-button shrink-0 h-7 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-xs font-medium inline-flex items-center cursor-pointer transition-all"
+              className="subtle-button shrink-0 h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-xs font-medium inline-flex items-center cursor-pointer transition-all"
               type="button"
               onClick={() => setScheduleDateFilter("")}
             >

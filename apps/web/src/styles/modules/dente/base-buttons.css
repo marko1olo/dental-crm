@@ -1,0 +1,185 @@
+/* ---------- 2. КЛЮЧЕВЫЕ КЕЙФРЕЙМЫ ---------- */
+@keyframes dntUp {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+@keyframes dntWave {
+	0%,
+	100% {
+		transform: scaleY(0.4);
+	}
+	50% {
+		transform: scaleY(1);
+	}
+}
+
+/* ---------- 3. БАЗА ---------- */
+body {
+	background: var(--bg);
+	color: var(--ink);
+}
+a {
+	color: var(--teal-dark);
+	text-decoration: none;
+}
+a:hover {
+	color: var(--teal);
+}
+* {
+	scrollbar-width: thin;
+	scrollbar-color: var(--line-strong) transparent;
+}
+*::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+	background: var(--line-strong);
+	border-radius: 8px;
+}
+*::-webkit-scrollbar-track {
+	background: transparent;
+}
+textarea,
+input,
+select {
+	font-family: inherit;
+}
+textarea:focus,
+input:focus,
+select:focus {
+	outline: none;
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px var(--focus-ring);
+}
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+	outline: 2px solid var(--teal);
+	outline-offset: 2px;
+	box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.eyebrow {
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.09em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
+/* ---------- 4. КНОПКИ ---------- */
+.primary-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	min-height: 36px;
+	padding: 0 16px;
+	border: none;
+	border-radius: 10px;
+	/* --teal-fill вместо --teal: в светлой теме белый текст на #0d9488
+     даёт 3.74:1, ниже нормы WCAG 4.5:1. Токен подставляет #0f766e
+     (5.5:1) в светлой теме и оставляет --teal в тёмной. */
+	background: linear-gradient(180deg, var(--teal-fill), var(--teal-dark));
+	color: var(--on-teal);
+	font-size: 13px;
+	font-weight: 700;
+	box-shadow: 0 6px 16px -6px var(--teal-ring);
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.primary-button:hover:not(:disabled) {
+	transform: translateY(-1px);
+	box-shadow: 0 10px 22px -6px var(--teal-ring);
+}
+.primary-button:active:not(:disabled) {
+	transform: scale(0.97);
+}
+.primary-button svg {
+	width: 15px;
+	height: 15px;
+}
+
+.secondary-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	min-height: 36px;
+	padding: 0 14px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 600;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.secondary-button:hover:not(:disabled) {
+	border-color: var(--teal-ring);
+	color: var(--teal-dark);
+	transform: translateY(-1px);
+}
+.secondary-button.active {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	border-color: var(--teal-ring);
+}
+.secondary-button svg {
+	width: 15px;
+	height: 15px;
+}
+
+.icon-button {
+	width: 36px;
+	height: 36px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: var(--paper);
+	color: var(--ink-2);
+	transition: all 0.15s;
+}
+.icon-button:hover {
+	border-color: var(--teal-ring);
+	color: var(--teal);
+	transform: translateY(-1px);
+}
+.icon-button svg {
+	width: 16px;
+	height: 16px;
+}
+.top-lock-button {
+	color: var(--bad-fg);
+}
+.top-lock-button:hover {
+	border-color: var(--bad-fg);
+}
+
+.text-button {
+	border: 1px solid var(--line-subtle, var(--line));
+	border-radius: 8px;
+	background: var(--paper-soft);
+	color: var(--teal-dark);
+	font-size: 12.5px;
+	font-weight: 600;
+	padding: 0 12px;
+	min-height: 32px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+	transition: all 0.15s ease;
+}
+.text-button:hover {
+	background: var(--teal-soft);
+	border-color: var(--teal);
+	color: var(--teal-dark);
+	transform: translateY(-0.5px);
+	box-shadow: 0 2px 6px var(--teal-glow, rgba(13, 148, 136, 0.18));
+}
+

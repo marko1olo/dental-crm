@@ -229,7 +229,7 @@ export function PatientFamilyAndInsuranceWidget({
 							<button
 								type="button"
 								onClick={() => setIsEditingPolicy(true)}
-								className="text-button text-[11px] text-[var(--teal)] font-medium hover:underline p-0"
+								className="secondary-button button-sm text-xs h-7 px-2.5 rounded-lg"
 							>
 								{localPolicy ? "Изменить" : "+ Добавить"}
 							</button>

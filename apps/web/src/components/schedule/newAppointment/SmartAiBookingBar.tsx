@@ -106,7 +106,7 @@ export function SmartAiBookingBar(props: SmartAiBookingBarProps) {
 							setIsSmartAiOpen(false);
 							setShowCreateForm(false);
 						}}
-						className="text-button text-xs py-0.5 px-2 opacity-70 hover:opacity-100 cursor-pointer"
+						className="secondary-button button-sm text-xs h-7 px-2.5 rounded-lg cursor-pointer"
 						title="Скрыть форму"
 					>
 						<span className="inline-flex items-center gap-1">

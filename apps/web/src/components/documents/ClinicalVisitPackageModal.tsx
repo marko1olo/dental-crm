@@ -250,7 +250,7 @@ export function ClinicalVisitPackageModal({
 												</button>
 												<button
 													type="button"
-													className="text-button"
+													className="secondary-button"
 													onClick={() => {
 														onSelectDocumentKind(item.kind);
 														onClose();

@@ -181,24 +181,24 @@
 
 .dnt-cc-btn--primary {
 	background: var(--teal, #0d9488);
-	color: #ffffff;
-	box-shadow: 0 2px 8px -1px rgba(13, 148, 136, 0.4);
+	color: var(--on-teal, #ffffff);
+	box-shadow: 0 2px 8px -1px var(--teal-glow, rgba(13, 148, 136, 0.4));
 }
 
 .dnt-cc-btn--primary:hover {
-	opacity: 0.92;
+	background: var(--teal-dark, #0f766e);
 	transform: translateY(-1px);
 }
 
 .dnt-cc-btn--secondary {
 	background: var(--paper-strong, var(--paper, #ffffff));
-	color: var(--ink, #0f172a);
-	border-color: var(--line, #e2e8f0);
+	color: var(--ink);
+	border-color: var(--line);
 }
 
 .dnt-cc-btn--secondary:hover {
-	background: var(--paper-soft, #f1f5f9);
-	border-color: var(--line-strong, #cbd5e1);
+	background: var(--paper-soft);
+	border-color: var(--line-strong, var(--line));
 }
 
 /* Responsive constraints */

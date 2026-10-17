@@ -391,7 +391,7 @@ const TimelineDayGroup = React.memo(function TimelineDayGroup({
 						</button>
 						<button
 							type="button"
-							className="text-button min-h-[32px] px-2 text-xs text-[var(--teal)] font-medium hover:underline cursor-pointer"
+							className="secondary-button min-h-[32px] px-2.5 text-xs font-semibold rounded-lg cursor-pointer"
 							onClick={onRowLimitShowAll}
 						>
 							Все ({allRows.length})
@@ -618,7 +618,7 @@ function ScheduleTimelineInner(props: ScheduleTimelineProps) {
 							</button>
 						) : null}
 						{activeScheduleFilterCount > 0 && typeof resetScheduleFilters === "function" ? (
-							<button className="text-button min-h-[36px] px-3 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors" type="button" onClick={resetScheduleFilters}>
+							<button className="secondary-button min-h-[36px] px-3 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors" type="button" onClick={resetScheduleFilters}>
 								Снять фильтры
 							</button>
 						) : null}

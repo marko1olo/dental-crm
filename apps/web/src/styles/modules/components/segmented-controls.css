@@ -1,0 +1,266 @@
+/* ==========================================================================
+   10. CANONICAL DENTE SEGMENTED CONTROLS & FILTER CHIPS SYSTEM
+   Authority: FRONTEND RULES Section 13 & DESIGNER BIBLE Section 8
+   Guarantees: Zero "naked text row" antipattern, noble Apple-style segmentation!
+   Creator Directive: Anti-truncation invariant — NO artificial ellipsis or word-cutting!
+   ========================================================================== */
+
+/* A. Apple-style Segmented Control Bar */
+.dente-segmented-bar,
+.segmented-control-bar {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 3px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line-subtle, var(--line));
+	border-radius: 10px;
+	box-sizing: border-box;
+	user-select: none;
+	max-width: 100%;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.dente-segmented-bar::-webkit-scrollbar {
+	display: none;
+}
+
+.dente-segmented-item,
+.segmented-control-item {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 28px !important;
+	min-height: 28px !important;
+	max-height: 28px !important;
+	padding: 0 12px !important;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 7px !important;
+	color: var(--muted);
+	font-family: inherit;
+	font-size: 12.5px !important;
+	font-weight: 500;
+	line-height: 1 !important;
+	white-space: nowrap !important;
+	width: auto !important;
+	min-width: max-content !important;
+	text-overflow: clip !important;
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	outline: none;
+	box-sizing: border-box;
+}
+
+.dente-segmented-item:hover:not(.active):not([data-active="true"]) {
+	color: var(--ink);
+	background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .dente-segmented-item:hover:not(.active):not([data-active="true"]),
+.dark .dente-segmented-item:hover:not(.active):not([data-active="true"]) {
+	background: rgba(255, 255, 255, 0.06);
+}
+
+.dente-segmented-item.active,
+.dente-segmented-item[data-active="true"] {
+	background: var(--paper) !important;
+	border: 1px solid var(--teal, #0d9488) !important;
+	color: var(--teal, #0d9488) !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="dark"] .dente-segmented-item.active,
+[data-theme="dark"] .dente-segmented-item[data-active="true"],
+.dark .dente-segmented-item.active {
+	background: rgba(13, 148, 136, 0.18) !important;
+	border: 1px solid var(--teal, #0d9488) !important;
+	color: #2dd4bf !important;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Ensure button borders are never wiped by unlayered resets */
+button:is([class*="border"]):not([class*="border-none"]):not([class*="border-transparent"]) {
+	border-style: solid;
+}
+
+/* B. Modern Filter Chips / Pills (For Categories, Statuses, Channels, Tags) */
+.dente-filter-chips,
+.filter-chips-strip {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	box-sizing: border-box;
+}
+
+.dente-filter-chip,
+.filter-chip-pill {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 28px !important;
+	min-height: 28px !important;
+	max-height: 28px !important;
+	padding: 0 12px !important;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 20px !important; /* Noble Pill shape */
+	color: var(--muted);
+	font-family: inherit;
+	font-size: 12.5px !important;
+	font-weight: 500;
+	line-height: 1 !important;
+	white-space: nowrap !important;
+	width: auto !important;
+	min-width: max-content !important;
+	text-overflow: clip !important;
+	cursor: pointer;
+	user-select: none;
+	outline: none;
+	box-sizing: border-box;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	flex-shrink: 0;
+}
+
+.dente-filter-chip:hover {
+	background: var(--paper);
+	border-color: var(--line-strong, var(--line));
+	color: var(--ink);
+	transform: translateY(-0.5px);
+}
+
+.dente-filter-chip.active,
+.dente-filter-chip[data-active="true"] {
+	background: var(--teal-soft) !important;
+	border-color: var(--teal) !important;
+	color: var(--teal-dark, var(--teal)) !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 3px var(--teal-glow, rgba(13, 148, 136, 0.18)) !important;
+}
+
+[data-theme="dark"] .dente-filter-chip.active,
+[data-theme="dark"] .dente-filter-chip[data-active="true"],
+.dark .dente-filter-chip.active {
+	background: var(--teal-soft) !important;
+	border-color: var(--teal) !important;
+	color: #ffffff !important;
+	box-shadow: 0 1px 4px rgba(13, 148, 136, 0.4) !important;
+}
+
+/* Schedule Toolbar Button Harmonization: Unified 32px height, 8px outer radius */
+.schedule-filter-strip .dente-filter-chip,
+.schedule-filter-strip .quick-chip {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	border-radius: 8px !important;
+	padding: 0 10px !important;
+	font-size: 12.5px !important;
+	line-height: 1 !important;
+}
+
+.schedule-filter-strip .schedule-add-chair-chip-btn {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	border-radius: 8px !important;
+}
+
+.schedule-filter-strip .dente-segmented-bar {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	padding: 2px !important;
+	border-radius: 8px !important;
+	box-sizing: border-box;
+}
+
+.schedule-filter-strip .dente-segmented-item {
+	height: 26px !important;
+	min-height: 26px !important;
+	max-height: 26px !important;
+	border-radius: 6px !important;
+	padding: 0 8px !important;
+	font-size: 12px !important;
+	line-height: 1 !important;
+}
+
+/* ==========================================================================
+   11. ANTI-NAKED-TEXT-ROW PROTECTION & BUTTON GROUP SYSTEM
+   Guarantees: Zero raw, unstyled consecutive text buttons side-by-side!
+   All button clusters must be explicitly framed as segmented controls,
+   filter chips, or structured secondary button groups.
+   ========================================================================== */
+
+.dente-button-group {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	box-sizing: border-box;
+}
+
+/* Fallback protection for buttons that lack styling classes */
+.dente-button-group > button:not([class*="-button"]):not([class*="dente-"]):not([class*="tab"]) {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 12px;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1;
+	border-radius: 8px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+	box-sizing: border-box;
+}
+
+.dente-button-group > button:not([class*="-button"]):not([class*="dente-"]):not([class*="tab"]):hover {
+	background: var(--paper-soft);
+	border-color: var(--line-strong, var(--line));
+}
+
+/* Refinement for text-button to guarantee interactive boundaries */
+.text-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 10px;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1;
+	border-radius: 8px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line-subtle, var(--line));
+	color: var(--teal-dark, var(--teal));
+	cursor: pointer;
+	white-space: nowrap;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+	transition: all 0.15s ease;
+	text-decoration: none;
+}
+
+.text-button:hover {
+	background: var(--teal-soft) !important;
+	border-color: var(--teal) !important;
+	color: var(--teal-dark, var(--teal)) !important;
+	transform: translateY(-0.5px);
+	box-shadow: 0 2px 6px var(--teal-glow, rgba(13, 148, 136, 0.18)) !important;
+}
+

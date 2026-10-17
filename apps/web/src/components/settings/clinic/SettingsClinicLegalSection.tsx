@@ -32,14 +32,6 @@ export const SettingsClinicLegalSection: React.FC<SettingsClinicLegalSectionProp
 					<p className="eyebrow">Юридический профиль</p>
 					<h3>Реквизиты клиники для договоров и кассовых чеков</h3>
 				</div>
-				<div className="legal-readiness-badge">
-					<strong>{legalReadinessPercent}%</strong>
-					<span>
-						{(legalMissingFields || []).length
-							? `Не заполнено: ${(legalMissingFields || []).join(", ")}`
-							: "Минимум заполнен"}
-					</span>
-				</div>
 			</div>
 
 			{/* Поиск реквизитов через DaData / ЕГРЮЛ */}
@@ -216,7 +208,7 @@ export const SettingsClinicLegalSection: React.FC<SettingsClinicLegalSectionProp
 											.join(" · ")}
 									</p>
 									<button
-										className="text-button"
+										className="secondary-button button-sm text-xs h-7 px-2.5 rounded-lg"
 										type="button"
 										onClick={() => applyClinicLookupSuggestion(suggestion.fields)}
 									>

@@ -75,7 +75,7 @@ const INTAKE_STATUTORY_ITEMS: readonly StatutoryIntakeItem[] = [
 ];
 
 const CONSENT_1051N_INTERVENTION_TYPES = [
-	{ id: "comprehensive_1051n", label: "Осмотр и диагностика (1051н)" },
+	{ id: "comprehensive_1051n", label: "Осмотр и диагностика" },
 	{ id: "therapy_endo", label: "Терапия и эндодонтия" },
 	{ id: "anesthesia", label: "Местная анестезия" },
 	{ id: "surgery", label: "Хирургия и удаление" },
@@ -290,7 +290,7 @@ export function PrimaryIntakePackageModal({
 			<DigitalSignatureTabletModal
 				isOpen={isSignatureTabletOpen}
 				onClose={() => setIsSignatureTabletOpen(false)}
-				documentsPackageTitle={`Экспресс-пакет первичного визита (Договор 736, ИДС 1051н: ${activeInterventionLabels})`}
+				documentsPackageTitle={`Экспресс-пакет первичного визита (Договор и Согласие: ${activeInterventionLabels})`}
 				patient={patient}
 				doctorFullName={doctorFullName ?? null}
 				clinicName={clinicProfileDraft?.clinicName || "Стоматологическая клиника"}
@@ -315,7 +315,7 @@ export function PrimaryIntakePackageModal({
 				<div className="document-package-modal-header">
 					<h3 className="document-package-modal-title" id="intake-package-modal-title">
 						<DentalMirrorProbe size={18} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
-						<span>Экспресс-пакет первичного пациента (Договор 736 + ИДС 1051н)</span>
+						<span>Экспресс-пакет первичного пациента (Договор + Согласие на лечение)</span>
 					</h3>
 					<button
 						type="button"
@@ -382,7 +382,7 @@ export function PrimaryIntakePackageModal({
 						data-testid="consent-1051n-intervention-selector"
 					>
 						<div style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted, #64748b)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.03em" }}>
-							Объем вмешательств по ИДС (Приказ Минздрава № 1051н) — выбор в 1 клик:
+							Объем медицинских вмешательств по согласию:
 						</div>
 						<div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
 							{CONSENT_1051N_INTERVENTION_TYPES.map((typeItem) => {
@@ -529,7 +529,7 @@ export function PrimaryIntakePackageModal({
 												</button>
 												<button
 													type="button"
-													className="text-button"
+													className="secondary-button"
 													onClick={() => {
 														onSelectDocumentKind(item.kind);
 														onClose();

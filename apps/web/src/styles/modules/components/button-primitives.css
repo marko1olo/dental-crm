@@ -1,0 +1,659 @@
+/* ==========================================================================
+   DENTE DENTAL CRM — CANONICAL BUTTON PRIMITIVES & DESIGN SYSTEM
+   ==========================================================================
+   Authority: THE_HAMMER_MASTER_PROMPT.md & rules/frontend.md
+   Invariants:
+   1. TOTAL BAN ON NAKED TEXT BUTTONS: Every interactive action has explicit
+      silhouette, padding, border, elevation, and tactile state feedback.
+   2. Clinical Density Spectrum: 32px standard desktop / 28px sm / 40px lg.
+   3. Apple HIG Touch Targets: >= 44x44px for coarse pointers & mobile.
+   4. The Noble Teal CTA: Exactly one dominant accent per action view.
+   5. Dark Mode Hygiene: Pure semantic tokens (var(--paper), var(--line), var(--ink)),
+      zero blinding spots, WCAG AAA text contrast.
+   ========================================================================== */
+
+/* ==========================================================================
+   1. BASE BUTTON FOUNDATION
+   ========================================================================== */
+
+.primary-button,
+.secondary-button,
+.ghost-button,
+.subtle-button,
+.text-button,
+.danger-button,
+.btn-primary,
+.btn-primary-cta,
+.btn-secondary,
+.btn-secondary-action,
+.btn-ghost,
+.btn-ghost-action,
+.btn-subtle,
+.btn-danger,
+button.primary-button,
+button.secondary-button,
+button.ghost-button,
+button.subtle-button,
+button.text-button,
+button.danger-button,
+button.btn-primary,
+button.btn-secondary,
+button.btn-ghost,
+button.btn-subtle,
+button.btn-danger,
+a.primary-button,
+a.secondary-button,
+a.ghost-button,
+a.subtle-button,
+a.text-button,
+a.danger-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	box-sizing: border-box;
+	height: 32px;
+	min-height: 32px;
+	padding: 0 12px;
+	font-family: inherit;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1;
+	border-radius: 8px;
+	cursor: pointer;
+	white-space: nowrap;
+	text-decoration: none;
+	user-select: none;
+	outline: none;
+	position: relative;
+	transition: all var(--transition-fast, 0.15s cubic-bezier(0.4, 0, 0.2, 1));
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* SVG icon alignment inside buttons */
+.primary-button svg,
+.secondary-button svg,
+.ghost-button svg,
+.subtle-button svg,
+.text-button svg,
+.danger-button svg,
+.btn-primary svg,
+.btn-secondary svg,
+.btn-ghost svg,
+.btn-subtle svg,
+.btn-danger svg {
+	width: 15px;
+	height: 15px;
+	flex-shrink: 0;
+	transition: transform var(--transition-fast, 0.15s ease);
+}
+
+/* Accessible focus visible ring */
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+.ghost-button:focus-visible,
+.subtle-button:focus-visible,
+.text-button:focus-visible,
+.danger-button:focus-visible,
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.btn-ghost:focus-visible,
+.btn-subtle:focus-visible,
+.btn-danger:focus-visible,
+.icon-button:focus-visible,
+.btn-icon:focus-visible {
+	outline: 2px solid var(--teal, #0d9488);
+	outline-offset: 2px;
+}
+
+/* Disabled state */
+.primary-button:disabled,
+.primary-button[disabled],
+.primary-button.disabled,
+.secondary-button:disabled,
+.secondary-button[disabled],
+.secondary-button.disabled,
+.ghost-button:disabled,
+.ghost-button[disabled],
+.ghost-button.disabled,
+.subtle-button:disabled,
+.subtle-button[disabled],
+.text-button:disabled,
+.text-button[disabled],
+.danger-button:disabled,
+.danger-button[disabled],
+.danger-button.disabled,
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-ghost:disabled,
+.btn-subtle:disabled,
+.btn-danger:disabled,
+.icon-button:disabled,
+.btn-icon:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+	pointer-events: none;
+	box-shadow: none;
+	transform: none;
+}
+
+/* ==========================================================================
+   2. PRIMARY BUTTON (The Single Noble Teal Focus Action)
+   ========================================================================== */
+
+.primary-button,
+.btn-primary,
+.btn-primary-cta,
+button.primary-button,
+button.btn-primary,
+button.btn-primary-cta,
+a.primary-button {
+	background: var(--teal, #0d9488);
+	border: 1px solid var(--teal, #0d9488);
+	color: var(--on-teal, #ffffff) !important;
+	font-weight: 600;
+	box-shadow: 0 1px 3px var(--teal-glow, rgba(13, 148, 136, 0.28)), 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.primary-button:hover:not(:disabled),
+.btn-primary:hover:not(:disabled),
+.btn-primary-cta:hover:not(:disabled),
+button.primary-button:hover:not(:disabled),
+button.btn-primary:hover:not(:disabled),
+a.primary-button:hover:not(:disabled) {
+	background: var(--teal-dark, #0f766e);
+	border-color: var(--teal-dark, #0f766e);
+	color: var(--on-teal, #ffffff) !important;
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px var(--teal-glow, rgba(13, 148, 136, 0.35));
+}
+
+.primary-button:active:not(:disabled),
+.btn-primary:active:not(:disabled),
+.btn-primary-cta:active:not(:disabled),
+button.primary-button:active:not(:disabled),
+button.btn-primary:active:not(:disabled),
+a.primary-button:active:not(:disabled) {
+	background: var(--teal-dark, #0f766e);
+	border-color: var(--teal-dark, #0f766e);
+	transform: scale(0.98);
+	box-shadow: 0 1px 2px var(--teal-glow, rgba(13, 148, 136, 0.2));
+}
+
+/* ==========================================================================
+   3. SECONDARY BUTTON (Clean Noble Paper / Paper-Soft Surface)
+   ========================================================================== */
+
+.secondary-button,
+.btn-secondary,
+.btn-secondary-action,
+button.secondary-button,
+button.btn-secondary,
+button.btn-secondary-action,
+a.secondary-button {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #111827);
+	font-weight: 500;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.secondary-button:hover:not(:disabled),
+.btn-secondary:hover:not(:disabled),
+.btn-secondary-action:hover:not(:disabled),
+button.secondary-button:hover:not(:disabled),
+button.btn-secondary:hover:not(:disabled),
+a.secondary-button:hover:not(:disabled) {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--line-strong, var(--line));
+	color: var(--ink, #111827);
+	transform: translateY(-1px);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.secondary-button:active:not(:disabled),
+.btn-secondary:active:not(:disabled),
+.btn-secondary-action:active:not(:disabled),
+button.secondary-button:active:not(:disabled),
+button.btn-secondary:active:not(:disabled),
+a.secondary-button:active:not(:disabled) {
+	background: var(--paper-soft);
+	border-color: var(--line-strong, var(--line));
+	transform: scale(0.98);
+	box-shadow: none;
+}
+
+/* Active / Selected secondary button state */
+.secondary-button.active,
+.secondary-button[data-active="true"],
+.btn-secondary.active,
+button.secondary-button.active,
+button.btn-secondary.active,
+a.secondary-button.active {
+	background: var(--teal-soft) !important;
+	border-color: var(--teal) !important;
+	color: var(--teal-dark, var(--teal)) !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 3px var(--teal-glow, rgba(13, 148, 136, 0.2)) !important;
+}
+
+/* ==========================================================================
+   4. GHOST / SUBTLE / TEXT BUTTON (Quiet Subordinate / Non-Naked Action)
+   ==========================================================================
+   CREATOR LAW: NO NAKED TEXT! Every text-button or ghost-button MUST have
+   an identifiable tactile surface, safe padding, and clean hover elevation.
+   ========================================================================== */
+
+.ghost-button,
+.subtle-button,
+.text-button,
+.btn-ghost,
+.btn-ghost-action,
+.btn-subtle,
+button.ghost-button,
+button.subtle-button,
+button.text-button,
+button.btn-ghost,
+button.btn-subtle,
+a.ghost-button,
+a.subtle-button,
+a.text-button {
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line-subtle, var(--line));
+	color: var(--teal-dark, var(--teal));
+	font-weight: 500;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.ghost-button,
+.btn-ghost,
+button.ghost-button,
+button.btn-ghost {
+	color: var(--ink, #111827);
+}
+
+.ghost-button:hover:not(:disabled),
+.subtle-button:hover:not(:disabled),
+.text-button:hover:not(:disabled),
+.btn-ghost:hover:not(:disabled),
+.btn-subtle:hover:not(:disabled),
+button.ghost-button:hover:not(:disabled),
+button.subtle-button:hover:not(:disabled),
+button.text-button:hover:not(:disabled),
+button.btn-ghost:hover:not(:disabled),
+a.ghost-button:hover:not(:disabled),
+a.subtle-button:hover:not(:disabled),
+a.text-button:hover:not(:disabled) {
+	background: var(--teal-soft) !important;
+	border-color: var(--teal) !important;
+	color: var(--teal-dark, var(--teal)) !important;
+	transform: translateY(-0.5px);
+	box-shadow: 0 2px 6px var(--teal-glow, rgba(13, 148, 136, 0.18)) !important;
+}
+
+.ghost-button:active:not(:disabled),
+.subtle-button:active:not(:disabled),
+.text-button:active:not(:disabled),
+.btn-ghost:active:not(:disabled),
+.btn-subtle:active:not(:disabled),
+button.ghost-button:active:not(:disabled),
+button.subtle-button:active:not(:disabled),
+button.text-button:active:not(:disabled) {
+	transform: scale(0.98);
+	box-shadow: none;
+}
+
+/* ==========================================================================
+   5. DANGER BUTTON (Careful Destructive Action)
+   ========================================================================== */
+
+.danger-button,
+.btn-danger,
+.btn-danger-action,
+button.danger-button,
+button.btn-danger,
+a.danger-button {
+	background: var(--rust-soft, rgba(239, 68, 68, 0.1));
+	border: 1px solid rgba(239, 68, 68, 0.35);
+	color: var(--rust, #b91c1c);
+	font-weight: 600;
+	box-shadow: 0 1px 2px rgba(239, 68, 68, 0.05);
+}
+
+.danger-button:hover:not(:disabled),
+.btn-danger:hover:not(:disabled),
+button.danger-button:hover:not(:disabled),
+button.btn-danger:hover:not(:disabled),
+a.danger-button:hover:not(:disabled) {
+	background: var(--rust-soft, rgba(239, 68, 68, 0.18));
+	border-color: var(--rust, #b91c1c);
+	color: var(--rust, #b91c1c);
+	transform: translateY(-1px);
+	box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+}
+
+.danger-button:active:not(:disabled),
+.btn-danger:active:not(:disabled),
+button.danger-button:active:not(:disabled),
+button.btn-danger:active:not(:disabled) {
+	transform: scale(0.98);
+	box-shadow: none;
+}
+
+/* ==========================================================================
+   6. ICON BUTTON (Square 32x32px or 36x36px Control)
+   ========================================================================== */
+
+.icon-button,
+.btn-icon,
+.btn-icon-square,
+.icon-only-btn,
+button.icon-button,
+button.btn-icon,
+button.icon-only-btn,
+a.icon-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	width: 32px;
+	min-width: 32px;
+	max-width: 32px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 8px;
+	color: var(--ink, #111827);
+	cursor: pointer;
+	outline: none;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+	transition: all var(--transition-fast, 0.15s cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.icon-button svg,
+.btn-icon svg,
+.icon-only-btn svg {
+	width: 15px;
+	height: 15px;
+	flex-shrink: 0;
+}
+
+.icon-button:hover:not(:disabled),
+.btn-icon:hover:not(:disabled),
+.icon-only-btn:hover:not(:disabled),
+button.icon-button:hover:not(:disabled),
+button.btn-icon:hover:not(:disabled) {
+	background: var(--paper-soft);
+	border-color: var(--line-strong, var(--line));
+	color: var(--teal, #0d9488);
+	transform: translateY(-1px);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.icon-button:active:not(:disabled),
+.btn-icon:active:not(:disabled),
+.icon-only-btn:active:not(:disabled),
+button.icon-button:active:not(:disabled),
+button.btn-icon:active:not(:disabled) {
+	transform: scale(0.96);
+}
+
+/* ==========================================================================
+   7. BUTTON SIZES (Clinical Density Spectrum)
+   ========================================================================== */
+
+/* Small 28px button for dense table cells and micro-actions */
+.button-sm,
+.btn-sm,
+button.button-sm,
+button.btn-sm,
+a.button-sm {
+	height: 28px;
+	min-height: 28px;
+	max-height: 28px;
+	padding: 0 9px;
+	font-size: 12px;
+	border-radius: 7px;
+}
+
+.button-sm svg,
+.btn-sm svg {
+	width: 13px;
+	height: 13px;
+}
+
+/* Large 38-40px button for primary modal dialogue submission & POS */
+.button-lg,
+.btn-lg,
+button.button-lg,
+button.btn-lg,
+a.button-lg {
+	height: 38px;
+	min-height: 38px;
+	max-height: 38px;
+	padding: 0 16px;
+	font-size: 14px;
+	border-radius: 10px;
+}
+
+.button-lg svg,
+.btn-lg svg {
+	width: 17px;
+	height: 17px;
+}
+
+/* ==========================================================================
+   8. DARK THEME SPECIFICATION ([data-theme="dark"], night, oled, cyber_xray)
+   ========================================================================== */
+
+[data-theme="dark"] .secondary-button,
+[data-theme="night"] .secondary-button,
+[data-theme="oled"] .secondary-button,
+[data-theme="ocean"] .secondary-button,
+[data-theme="emerald"] .secondary-button,
+[data-theme="cyber_xray"] .secondary-button,
+.dark .secondary-button,
+[data-theme="dark"] .btn-secondary,
+[data-theme="night"] .btn-secondary,
+[data-theme="oled"] .btn-secondary,
+.dark .btn-secondary {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line);
+	color: var(--ink);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .secondary-button:hover:not(:disabled),
+[data-theme="night"] .secondary-button:hover:not(:disabled),
+[data-theme="oled"] .secondary-button:hover:not(:disabled),
+[data-theme="ocean"] .secondary-button:hover:not(:disabled),
+[data-theme="emerald"] .secondary-button:hover:not(:disabled),
+[data-theme="cyber_xray"] .secondary-button:hover:not(:disabled),
+.dark .secondary-button:hover:not(:disabled),
+[data-theme="dark"] .btn-secondary:hover:not(:disabled),
+.dark .btn-secondary:hover:not(:disabled) {
+	background: var(--paper);
+	border-color: var(--line-strong, var(--line));
+	color: var(--ink);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .secondary-button.active,
+[data-theme="night"] .secondary-button.active,
+[data-theme="oled"] .secondary-button.active,
+[data-theme="ocean"] .secondary-button.active,
+[data-theme="emerald"] .secondary-button.active,
+[data-theme="cyber_xray"] .secondary-button.active,
+.dark .secondary-button.active,
+[data-theme="dark"] .btn-secondary.active,
+.dark .btn-secondary.active {
+	background: var(--teal-soft) !important;
+	border-color: var(--teal) !important;
+	color: #2dd4bf !important;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .ghost-button,
+[data-theme="night"] .ghost-button,
+[data-theme="oled"] .ghost-button,
+[data-theme="ocean"] .ghost-button,
+[data-theme="emerald"] .ghost-button,
+[data-theme="cyber_xray"] .ghost-button,
+.dark .ghost-button,
+[data-theme="dark"] .subtle-button,
+[data-theme="dark"] .text-button,
+[data-theme="dark"] .btn-ghost,
+[data-theme="dark"] .btn-subtle,
+.dark .subtle-button,
+.dark .text-button,
+.dark .btn-ghost,
+.dark .btn-subtle {
+	background: rgba(30, 41, 59, 0.5);
+	border-color: var(--line);
+	color: var(--teal, #2dd4bf);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .ghost-button,
+[data-theme="dark"] .btn-ghost,
+.dark .ghost-button,
+.dark .btn-ghost {
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .ghost-button:hover:not(:disabled),
+[data-theme="night"] .ghost-button:hover:not(:disabled),
+[data-theme="oled"] .ghost-button:hover:not(:disabled),
+[data-theme="ocean"] .ghost-button:hover:not(:disabled),
+[data-theme="emerald"] .ghost-button:hover:not(:disabled),
+[data-theme="cyber_xray"] .ghost-button:hover:not(:disabled),
+.dark .ghost-button:hover:not(:disabled),
+[data-theme="dark"] .subtle-button:hover:not(:disabled),
+[data-theme="dark"] .text-button:hover:not(:disabled),
+[data-theme="dark"] .btn-ghost:hover:not(:disabled),
+.dark .text-button:hover:not(:disabled),
+.dark .btn-ghost:hover:not(:disabled) {
+	background: rgba(13, 148, 136, 0.22) !important;
+	border-color: var(--teal) !important;
+	color: #2dd4bf !important;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35) !important;
+}
+
+[data-theme="dark"] .danger-button,
+[data-theme="night"] .danger-button,
+[data-theme="oled"] .danger-button,
+[data-theme="ocean"] .danger-button,
+[data-theme="emerald"] .danger-button,
+[data-theme="cyber_xray"] .danger-button,
+.dark .danger-button,
+[data-theme="dark"] .btn-danger,
+.dark .btn-danger {
+	background: rgba(239, 68, 68, 0.15);
+	border-color: rgba(248, 113, 113, 0.35);
+	color: #f87171;
+}
+
+[data-theme="dark"] .danger-button:hover:not(:disabled),
+[data-theme="night"] .danger-button:hover:not(:disabled),
+[data-theme="oled"] .danger-button:hover:not(:disabled),
+[data-theme="ocean"] .danger-button:hover:not(:disabled),
+[data-theme="emerald"] .danger-button:hover:not(:disabled),
+[data-theme="cyber_xray"] .danger-button:hover:not(:disabled),
+.dark .danger-button:hover:not(:disabled),
+[data-theme="dark"] .btn-danger:hover:not(:disabled),
+.dark .btn-danger:hover:not(:disabled) {
+	background: rgba(239, 68, 68, 0.25);
+	border-color: #f87171;
+	color: #f87171;
+	box-shadow: 0 2px 8px rgba(248, 113, 113, 0.25);
+}
+
+[data-theme="dark"] .icon-button,
+[data-theme="night"] .icon-button,
+[data-theme="oled"] .icon-button,
+[data-theme="ocean"] .icon-button,
+[data-theme="emerald"] .icon-button,
+[data-theme="cyber_xray"] .icon-button,
+.dark .icon-button,
+[data-theme="dark"] .btn-icon,
+.dark .btn-icon {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line);
+	color: var(--ink);
+}
+
+[data-theme="dark"] .icon-button:hover:not(:disabled),
+[data-theme="night"] .icon-button:hover:not(:disabled),
+[data-theme="oled"] .icon-button:hover:not(:disabled),
+[data-theme="ocean"] .icon-button:hover:not(:disabled),
+[data-theme="emerald"] .icon-button:hover:not(:disabled),
+[data-theme="cyber_xray"] .icon-button:hover:not(:disabled),
+.dark .icon-button:hover:not(:disabled),
+[data-theme="dark"] .btn-icon:hover:not(:disabled),
+.dark .btn-icon:hover:not(:disabled) {
+	background: var(--paper);
+	border-color: var(--line-strong, var(--line));
+	color: var(--teal, #2dd4bf);
+}
+
+/* ==========================================================================
+   9. TOUCH ERGONOMICS & MOBILE HIG (>= 44x44px for Coarse Pointer / Viewport <= 768px)
+   ========================================================================== */
+
+@media (pointer: coarse), (max-width: 768px) {
+	.primary-button,
+	.secondary-button,
+	.ghost-button,
+	.subtle-button,
+	.text-button,
+	.danger-button,
+	.btn-primary,
+	.btn-primary-cta,
+	.btn-secondary,
+	.btn-ghost,
+	.btn-subtle,
+	.btn-danger,
+	button.primary-button,
+	button.secondary-button,
+	button.ghost-button,
+	button.subtle-button,
+	button.text-button,
+	button.danger-button,
+	button.btn-primary,
+	button.btn-secondary,
+	button.btn-ghost,
+	button.btn-subtle,
+	button.btn-danger,
+	a.primary-button,
+	a.secondary-button,
+	a.ghost-button,
+	a.subtle-button,
+	a.text-button,
+	a.danger-button {
+		height: 44px;
+		min-height: 44px;
+		max-height: 44px;
+		padding: 0 16px;
+		font-size: 14px;
+		border-radius: 10px;
+	}
+
+	.icon-button,
+	.btn-icon,
+	.btn-icon-square,
+	.icon-only-btn,
+	button.icon-button,
+	button.btn-icon,
+	a.icon-button {
+		width: 44px;
+		min-width: 44px;
+		max-width: 44px;
+		height: 44px;
+		min-height: 44px;
+		max-height: 44px;
+		border-radius: 10px;
+	}
+}

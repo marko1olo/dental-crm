@@ -246,7 +246,7 @@ export function AppTopBar(props: AppTopBarProps) {
 							Пройти настройку
 						</button>
 						<button
-							className="text-button banner-btn"
+							className="secondary-button banner-btn"
 							type="button"
 							onClick={() => setDefaultClinicNoticeHidden(true)}
 							aria-label="Скрыть подсказку о названии клиники"
@@ -259,6 +259,9 @@ export function AppTopBar(props: AppTopBarProps) {
 				<DemoModeBanner
 					onExitDemo={() => {
 						disableDemoShowcaseMode();
+						clearOfflineClinicCaches();
+						safeLocalStorageRemoveItem(DENTE_CLINIC_TOKEN_KEY);
+						safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
 						const cleanUrl = window.location.pathname;
 						window.location.href = cleanUrl;
 					}}
@@ -305,6 +308,7 @@ export function AppTopBar(props: AppTopBarProps) {
 				onLockSession={handleLockSession}
 				onOpenDoctorShiftCockpit={openDoctorShiftCockpit}
 				onOpenCbctDemo={() => setIsCbctDirectModalOpen(true)}
+				currentView={currentView as any}
 			/>
 			<LanCitoEmergencyBanner
 				alerts={activeCitoAlerts}
@@ -379,6 +383,7 @@ export function AppTopBar(props: AppTopBarProps) {
 				</section>
 			) : null}
 			{!onboardingDismissed && !showFullOnboardingGuide && !isLocalOnboardingDismissed && !isStripDismissedLocally &&
+			!isDemoShowcaseMode() &&
 			!(typeof window !== "undefined" && window.innerWidth <= 768) &&
 			currentView !== "visit" && currentView !== "shift" && currentView !== "schedule" &&
 			!(typeof window !== "undefined" && (window.location.hash.toLowerCase().includes("visit") || window.location.hash.toLowerCase().includes("shift") || window.location.hash.toLowerCase().includes("schedule"))) ? (
@@ -388,10 +393,7 @@ export function AppTopBar(props: AppTopBarProps) {
 				>
 					<div>
 						<strong>Можно начать прием без мастера</strong>
-						<span>
-							Документы предупредят о реквизитах позже. Сейчас важнее
-							открыть пациента, диктовку и расписание.
-						</span>
+						<span>Реквизиты клиники можно заполнить позже.</span>
 					</div>
 					<span className="onboarding-compact-score">
 						{currentOnboardingIndex + 1}/{onboardingSteps.length} ·

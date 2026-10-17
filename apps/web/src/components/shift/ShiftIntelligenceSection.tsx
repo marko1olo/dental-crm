@@ -312,7 +312,7 @@ export const ShiftIntelligenceSection: React.FC<ShiftIntelligenceSectionProps> =
 						</h3>
 						{(dashboard?.shiftIntelligence?.roleQueues ?? []).length > 1 && (
 							<button
-								className="text-button toggle-queues-btn min-h-[44px] px-3 py-2 flex items-center"
+								className="secondary-button button-sm toggle-queues-btn h-8 px-3 flex items-center"
 								type="button"
 								onClick={() => setShowOtherQueues((v) => !v)}
 							>
