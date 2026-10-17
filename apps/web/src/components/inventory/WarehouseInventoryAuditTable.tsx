@@ -83,62 +83,80 @@ export const WarehouseInventoryAuditTable: React.FC<WarehouseInventoryAuditTable
 
 									<td style={{ textAlign: "center" }}>{it.unitRu}</td>
 
-									<td style={{ textAlign: "right", fontWeight: 600 }}>{it.bookQuantity}</td>
+									<td className="font-mono tabular-nums text-right font-semibold" style={{ textAlign: "right" }}>
+										{it.bookQuantity}
+									</td>
 
 									<td style={{ textAlign: "center" }}>
-										<div className="warehouse-qty-stepper" style={{ margin: "0 auto" }}>
+										<div className="flex items-center justify-center gap-1.5 flex-nowrap">
+											<div className="warehouse-qty-stepper shrink-0">
+												<button
+													type="button"
+													className="warehouse-qty-stepper-btn"
+													onClick={() => onQuantityChange(it.itemId, it.actualQuantity - 1)}
+													aria-label="Уменьшить фактическое количество"
+												>
+													-
+												</button>
+												<input
+													type="number"
+													className="warehouse-qty-input font-mono font-bold"
+													value={it.actualQuantity}
+													min={0}
+													onChange={(e) =>
+														onQuantityChange(it.itemId, Number.parseInt(e.target.value, 10) || 0)
+													}
+													data-testid={`input-audit-actual-${it.itemId}`}
+												/>
+												<button
+													type="button"
+													className="warehouse-qty-stepper-btn"
+													onClick={() => onQuantityChange(it.itemId, it.actualQuantity + 1)}
+													aria-label="Увеличить фактическое количество"
+												>
+													+
+												</button>
+											</div>
 											<button
 												type="button"
-												className="warehouse-qty-stepper-btn"
-												onClick={() => onQuantityChange(it.itemId, it.actualQuantity - 1)}
-												aria-label="Уменьшить фактическое количество"
+												onClick={() => onQuantityChange(it.itemId, it.bookQuantity)}
+												className={`h-7 px-2 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer inline-flex items-center gap-1 shrink-0 ${
+													it.actualQuantity === it.bookQuantity
+														? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+														: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
+												}`}
+												title="Приравнять факт к учету (✓ Совпадает с учётом)"
+												data-testid={`btn-audit-match-${it.itemId}`}
 											>
-												-
-											</button>
-											<input
-												type="number"
-												className="warehouse-qty-input"
-												value={it.actualQuantity}
-												min={0}
-												onChange={(e) =>
-													onQuantityChange(it.itemId, Number.parseInt(e.target.value, 10) || 0)
-												}
-											/>
-											<button
-												type="button"
-												className="warehouse-qty-stepper-btn"
-												onClick={() => onQuantityChange(it.itemId, it.actualQuantity + 1)}
-												aria-label="Увеличить фактическое количество"
-											>
-												+
+												✓ Совпадает
 											</button>
 										</div>
 									</td>
 
 									<td style={{ textAlign: "center" }}>
 										<span
-											className={`discrepancy-pill ${it.discrepancyType}`}
+											className={`discrepancy-pill font-mono tabular-nums ${it.discrepancyType}`}
 										>
 											{it.discrepancyQuantity > 0 ? `+${it.discrepancyQuantity}` : it.discrepancyQuantity}
 										</span>
 									</td>
 
-									<td style={{ textAlign: "right" }}>
+									<td className="font-mono tabular-nums text-right" style={{ textAlign: "right" }}>
 										{kopecksToRubles(it.unitCostKopecks).toFixed(2)}
 									</td>
 
-									<td style={{ textAlign: "right" }}>
+									<td className="font-mono tabular-nums text-right" style={{ textAlign: "right" }}>
 										{kopecksToRubles(it.bookTotalKopecks).toFixed(2)}
 									</td>
 
-									<td style={{ textAlign: "right", fontWeight: 600 }}>
+									<td className="font-mono tabular-nums text-right font-semibold" style={{ textAlign: "right" }}>
 										{kopecksToRubles(it.actualTotalKopecks).toFixed(2)}
 									</td>
 
 									<td
+										className="font-mono tabular-nums text-right font-bold"
 										style={{
 											textAlign: "right",
-											fontWeight: 700,
 											color:
 												it.discrepancyCostKopecks > 0
 													? "var(--ok-fg, #059669)"

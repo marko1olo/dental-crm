@@ -491,10 +491,11 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 							type="button"
 							className={`warehouse-btn ${showMetaDrawer ? "warehouse-btn-primary" : "warehouse-btn-secondary"}`}
 							onClick={() => setShowMetaDrawer((v) => !v)}
-							title="Реквизиты приказа и состав комиссии"
+							title="Реквизиты описи и приказа (опционально для сетевых клиник)"
+							data-testid="btn-toggle-meta-drawer"
 						>
 							<SlidersHorizontal size={14} />
-							<span>Комиссия ({commission.length === 1 ? "Соло 1 чел." : `${commission.length} чел.`}) и приказ</span>
+							<span>Реквизиты описи / приказа</span>
 						</button>
 
 						<button
@@ -649,10 +650,11 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 							type="button"
 							className="warehouse-btn warehouse-btn-secondary"
 							onClick={handleAutofillFactByBook}
-							title="Установить фактическое количество равным книжному учету"
+							title="Приравнять фактическое количество к учетному (все совпадают с учётом)"
+							data-testid="btn-match-all-book-quantities"
 						>
-							<CheckCircle2 size={14} />
-							<span>Факт = Учет</span>
+							<CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />
+							<span>✓ Все совпадают с учётом</span>
 						</button>
 
 						{totals.expiredItemsCount > 0 && (

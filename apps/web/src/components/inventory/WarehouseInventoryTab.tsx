@@ -384,20 +384,21 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 					<button
 						type="button"
 						onClick={handleReconcileAllMatch}
-						className="h-7 px-2.5 rounded-lg border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer shrink-0"
-						title="Приравнять все фактические остатки к учетным"
+						className="h-7 px-2.5 rounded-lg border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold inline-flex items-center gap-1 cursor-pointer shrink-0"
+						title="Приравнять все фактические остатки к учетным (все совпадают с учётом)"
 						data-testid="btn-reconcile-match-all"
 					>
-						Все в норме (=)
+						<CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400" />
+						<span>✓ Все совпадают с учётом</span>
 					</button>
 				</div>
 
 				{/* Действия печати и применения */}
-				<div className="flex items-center gap-1.5 shrink-0">
+				<div className="flex items-center gap-2 shrink-0">
 					<button
 						type="button"
 						onClick={handlePrintInv3}
-						className="h-7 px-2.5 rounded-lg border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1 cursor-pointer"
+						className="h-7 px-2.5 rounded-lg border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0 whitespace-nowrap"
 						data-testid="btn-print-inv3"
 						title="Печать описи фактических остатков"
 					>
@@ -408,7 +409,7 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 					<button
 						type="button"
 						onClick={handlePrintInv19}
-						className="h-7 px-2.5 rounded-lg border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1 cursor-pointer"
+						className="h-7 px-2.5 rounded-lg border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0 whitespace-nowrap"
 						data-testid="btn-print-inv19"
 						title="Печать сличительной ведомости расхождений"
 					>
@@ -420,7 +421,7 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 						<button
 							type="button"
 							onClick={handlePrintTorg16}
-							className="h-7 px-2.5 rounded-lg border border-rose-300 text-rose-700 dark:text-rose-300 hover:bg-rose-50 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+							className="h-7 px-2.5 rounded-lg border border-rose-300 text-rose-700 dark:text-rose-300 hover:bg-rose-50 text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0 whitespace-nowrap"
 							data-testid="btn-print-torg16"
 							title="Сформировать акт списания недостач и боя"
 						>
@@ -433,7 +434,7 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 						type="button"
 						onClick={handleApplyAuditDoc}
 						disabled={isApplying}
-						className="h-7 px-3 rounded-lg bg-teal-600 text-white font-semibold text-xs hover:bg-teal-700 active:scale-98 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+						className="h-7 px-3 rounded-lg bg-teal-600 text-white font-semibold text-xs hover:bg-teal-700 active:scale-98 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0 whitespace-nowrap"
 						data-testid="btn-apply-audit"
 					>
 						<Check size={14} />
@@ -537,26 +538,41 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 
 											{/* Фактическое кол-во (интерактивный ввод) */}
 											<td className="py-2 px-3 text-center">
-												<input
-													type="number"
-													min="0"
-													step="1"
-													value={line.actualQuantity}
-													onChange={(e) =>
-														handleActualQtyChange(
-															line.itemId,
-															Number.parseFloat(e.target.value) || 0,
-														)
-													}
-													className={`w-20 h-7 text-center rounded-md border text-xs font-bold ${
-														isShortage
-															? "border-rose-400 bg-rose-50 text-rose-900"
-															: isSurplus
-																? "border-emerald-400 bg-emerald-50 text-emerald-900"
-																: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)]"
-													}`}
-													data-testid={`input-actual-qty-${line.itemId}`}
-												/>
+												<div className="flex items-center justify-center gap-1.5 flex-nowrap">
+													<input
+														type="number"
+														min="0"
+														step="1"
+														value={line.actualQuantity}
+														onChange={(e) =>
+															handleActualQtyChange(
+																line.itemId,
+																Number.parseFloat(e.target.value) || 0,
+															)
+														}
+														className={`w-16 h-7 text-center rounded-md border text-xs font-bold font-mono tabular-nums ${
+															isShortage
+																? "border-rose-400 bg-rose-50 text-rose-900"
+																: isSurplus
+																	? "border-emerald-400 bg-emerald-50 text-emerald-900"
+																	: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)]"
+														}`}
+														data-testid={`input-actual-qty-${line.itemId}`}
+													/>
+													<button
+														type="button"
+														onClick={() => handleActualQtyChange(line.itemId, line.bookQuantity)}
+														className={`h-7 px-2 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer inline-flex items-center gap-1 shrink-0 ${
+															line.actualQuantity === line.bookQuantity
+																? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+																: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
+														}`}
+														title="Приравнять к учетному остатку (✓ Совпадает с учётом)"
+														data-testid={`btn-match-line-${line.itemId}`}
+													>
+														✓ Совпадает
+													</button>
+												</div>
 											</td>
 
 											{/* Статус расхождения */}

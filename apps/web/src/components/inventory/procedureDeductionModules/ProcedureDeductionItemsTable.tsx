@@ -83,7 +83,7 @@ export const ProcedureDeductionItemsTable: React.FC<
 				<thead>
 					<tr>
 						<th>Материал / Категория</th>
-						<th>Норма 804н</th>
+						<th>Норма расхода</th>
 						<th>Остаток склада</th>
 						<th style={{ textAlign: "center" }}>Списание (кол-во)</th>
 						<th style={{ textAlign: "right" }}>Себестоимость</th>
