@@ -27,8 +27,8 @@ import type { wsBroker } from "../services/websocketBroker.js";
 import { normalizePatientAdministrativeProfile } from "../utils/patientAdministrativeProfile.js";
 
 export const convertLeadSchema = z.object({
-	appointmentStart: z.string().datetime(),
-	appointmentEnd: z.string().datetime(),
+	appointmentStart: z.string().datetime().or(z.literal("")).optional().nullable(),
+	appointmentEnd: z.string().datetime().or(z.literal("")).optional().nullable(),
 	chairId: z.string().optional().nullable(),
 	doctorId: z.string().optional().nullable(),
 	organizationId: z.string().uuid().optional(),
@@ -54,9 +54,12 @@ export function extractUtmAttribution(source?: string | null, notes?: string | n
 	if (!text.trim()) return {};
 
 	const getParam = (param: string): string | undefined => {
-		const regex = new RegExp(`(?:\\b|\\?|&)${param}\\s*[:=]\\s*([^&\\s,;\\n]+)`, "i");
+		const regex = new RegExp(`(?:\\b|\\?|&)${param}\\s*[:=]\\s*([^&\\s,;\\n\\]\\)]+)`, "i");
 		const match = text.match(regex);
-		return match && match[1] ? decodeURIComponent(match[1].trim()) : undefined;
+		if (!match || !match[1]) return undefined;
+		const raw = decodeURIComponent(match[1].trim());
+		const cleaned = raw.replace(/[\]),;]+$/, "").trim();
+		return cleaned || undefined;
 	};
 
 	const utmSource = getParam("utm_source");
@@ -105,6 +108,15 @@ export async function convertLeadToAppointment(params: {
 }) {
 	const { db, wsBroker, organizationId, leadId, payload, req, reply } = params;
 
+	const hasAppointmentDates = Boolean(
+		payload.appointmentStart &&
+		payload.appointmentEnd &&
+		typeof payload.appointmentStart === "string" &&
+		typeof payload.appointmentEnd === "string" &&
+		payload.appointmentStart.trim() !== "" &&
+		payload.appointmentEnd.trim() !== "",
+	);
+
 	const result = await db.transaction(async (tx) => {
 		const [lead] = await tx
 			.select()
@@ -119,129 +131,132 @@ export async function convertLeadToAppointment(params: {
 			return { notFound: true as const };
 		}
 
-		if (lead.status === "consult_booked") {
+		if (lead.status === "consult_booked" || lead.status === "converted") {
 			return { alreadyConverted: true as const };
 		}
 
-		// Doctor resolution: specific ID or active fallback doctor in clinic
 		let doctor: { id: string } | undefined;
-		const candidateDoctorId = payload.doctorId;
-		const isValidDoctorUuid =
-			typeof candidateDoctorId === "string" &&
-			candidateDoctorId !== "default-doctor" &&
-			z.string().uuid().safeParse(candidateDoctorId).success;
-
-		if (isValidDoctorUuid && candidateDoctorId) {
-			const [foundDoctor] = await tx
-				.select({ id: users.id })
-				.from(users)
-				.where(
-					and(
-						eq(users.id, candidateDoctorId),
-						eq(users.organizationId, organizationId),
-						eq(users.isActive, true),
-					),
-				)
-				.limit(1);
-			doctor = foundDoctor;
-		}
-
-		if (!doctor) {
-			const [fallbackDoctor] = await tx
-				.select({ id: users.id })
-				.from(users)
-				.where(
-					and(
-						eq(users.organizationId, organizationId),
-						eq(users.isActive, true),
-					),
-				)
-				.limit(1);
-			doctor = fallbackDoctor;
-		}
-
-		if (!doctor) return { doctorNotFound: true as const };
-
-		// Chair resolution: specific ID or active fallback chair
 		let resolvedChairId: string | undefined;
-		const candidateChairId = payload.chairId;
-		const isValidChairUuid =
-			typeof candidateChairId === "string" &&
-			candidateChairId !== "default-chair" &&
-			z.string().uuid().safeParse(candidateChairId).success;
 
-		if (isValidChairUuid && candidateChairId) {
-			const [foundChair] = await tx
-				.select({ id: clinicChairs.id })
-				.from(clinicChairs)
-				.where(
-					and(
-						eq(clinicChairs.id, candidateChairId),
-						eq(clinicChairs.organizationId, organizationId),
-					),
-				)
-				.limit(1);
-			if (foundChair) {
-				resolvedChairId = foundChair.id;
+		if (hasAppointmentDates) {
+			// Doctor resolution: specific ID or active fallback doctor in clinic
+			const candidateDoctorId = payload.doctorId;
+			const isValidDoctorUuid =
+				typeof candidateDoctorId === "string" &&
+				candidateDoctorId !== "default-doctor" &&
+				z.string().uuid().safeParse(candidateDoctorId).success;
+
+			if (isValidDoctorUuid && candidateDoctorId) {
+				const [foundDoctor] = await tx
+					.select({ id: users.id })
+					.from(users)
+					.where(
+						and(
+							eq(users.id, candidateDoctorId),
+							eq(users.organizationId, organizationId),
+							eq(users.isActive, true),
+						),
+					)
+					.limit(1);
+				doctor = foundDoctor;
 			}
-		}
 
-		if (!resolvedChairId) {
-			const [firstChair] = await tx
-				.select({ id: clinicChairs.id })
-				.from(clinicChairs)
-				.where(eq(clinicChairs.organizationId, organizationId))
-				.limit(1);
-			if (firstChair) {
-				resolvedChairId = firstChair.id;
+			if (!doctor) {
+				const [fallbackDoctor] = await tx
+					.select({ id: users.id })
+					.from(users)
+					.where(
+						and(
+							eq(users.organizationId, organizationId),
+							eq(users.isActive, true),
+						),
+					)
+					.limit(1);
+				doctor = fallbackDoctor;
 			}
-		}
 
-		if (!resolvedChairId && isValidChairUuid && candidateChairId) {
-			const [foundInChairs] = await tx
-				.select({ id: chairs.id })
-				.from(chairs)
-				.where(
-					and(
-						eq(chairs.id, candidateChairId),
-						eq(chairs.organizationId, organizationId),
-					),
-				)
-				.limit(1);
-			if (foundInChairs) {
-				resolvedChairId = foundInChairs.id;
+			if (!doctor) return { doctorNotFound: true as const };
+
+			// Chair resolution: specific ID or active fallback chair
+			const candidateChairId = payload.chairId;
+			const isValidChairUuid =
+				typeof candidateChairId === "string" &&
+				candidateChairId !== "default-chair" &&
+				z.string().uuid().safeParse(candidateChairId).success;
+
+			if (isValidChairUuid && candidateChairId) {
+				const [foundChair] = await tx
+					.select({ id: clinicChairs.id })
+					.from(clinicChairs)
+					.where(
+						and(
+							eq(clinicChairs.id, candidateChairId),
+							eq(clinicChairs.organizationId, organizationId),
+						),
+					)
+					.limit(1);
+				if (foundChair) {
+					resolvedChairId = foundChair.id;
+				}
 			}
-		}
 
-		if (!resolvedChairId) {
-			const [firstInChairs] = await tx
-				.select({ id: chairs.id })
-				.from(chairs)
-				.where(
-					and(
-						eq(chairs.organizationId, organizationId),
-						eq(chairs.isActive, true),
-					),
-				)
-				.limit(1);
-			if (firstInChairs) {
-				resolvedChairId = firstInChairs.id;
+			if (!resolvedChairId) {
+				const [firstChair] = await tx
+					.select({ id: clinicChairs.id })
+					.from(clinicChairs)
+					.where(eq(clinicChairs.organizationId, organizationId))
+					.limit(1);
+				if (firstChair) {
+					resolvedChairId = firstChair.id;
+				}
 			}
-		}
 
-		if (resolvedChairId) {
-			const [existsInChairs] = await tx
-				.select({ id: chairs.id })
-				.from(chairs)
-				.where(
-					and(
-						eq(chairs.id, resolvedChairId),
-						eq(chairs.organizationId, organizationId),
-					),
-				)
-				.limit(1);
-			if (!existsInChairs) {
-				resolvedChairId = undefined;
+			if (!resolvedChairId && isValidChairUuid && candidateChairId) {
+				const [foundInChairs] = await tx
+					.select({ id: chairs.id })
+					.from(chairs)
+					.where(
+						and(
+							eq(chairs.id, candidateChairId),
+							eq(chairs.organizationId, organizationId),
+						),
+					)
+					.limit(1);
+				if (foundInChairs) {
+					resolvedChairId = foundInChairs.id;
+				}
+			}
+
+			if (!resolvedChairId) {
+				const [firstInChairs] = await tx
+					.select({ id: chairs.id })
+					.from(chairs)
+					.where(
+						and(
+							eq(chairs.organizationId, organizationId),
+							eq(chairs.isActive, true),
+						),
+					)
+					.limit(1);
+				if (firstInChairs) {
+					resolvedChairId = firstInChairs.id;
+				}
+			}
+
+			if (resolvedChairId) {
+				const [existsInChairs] = await tx
+					.select({ id: chairs.id })
+					.from(chairs)
+					.where(
+						and(
+							eq(chairs.id, resolvedChairId),
+							eq(chairs.organizationId, organizationId),
+						),
+					)
+					.limit(1);
+				if (!existsInChairs) {
+					resolvedChairId = undefined;
+				}
 			}
 		}
 
@@ -282,6 +297,7 @@ export async function convertLeadToAppointment(params: {
 				Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
 					? `Интерес: ${lead.clinicalTags.join(", ")}`
 					: null,
+				payload.comment ? `Комментарий: ${payload.comment}` : null,
 			].filter(Boolean);
 
 			const [newPatient] = await tx
@@ -294,6 +310,12 @@ export async function convertLeadToAppointment(params: {
 					notes: patientNotesParts.length > 0 ? patientNotesParts.join("\n") : null,
 					administrativeProfile: normalizePatientAdministrativeProfile({
 						preferredAppointmentNote: lead.notes || (leadSource ? `src:${leadSource}` : undefined),
+						utmSource: utmInfo.utmSource ?? null,
+						utmMedium: utmInfo.utmMedium ?? null,
+						utmCampaign: utmInfo.utmCampaign ?? null,
+						utmContent: utmInfo.utmContent ?? null,
+						utmTerm: utmInfo.utmTerm ?? null,
+						leadSource: leadSource ?? null,
 					}),
 				})
 				.returning();
@@ -304,42 +326,6 @@ export async function convertLeadToAppointment(params: {
 			throw new Error("Не удалось разрешить или создать карту пациента из лида");
 		}
 
-		// 2. Create Appointment via protected business logic with full attribution & complaints transfer
-		const resolvedReason =
-			payload.reason ||
-			(Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
-				? `Первичная консультация: ${lead.clinicalTags.join(", ")}`
-				: (lead.notes ? `Первичная консультация: ${lead.notes.slice(0, 100)}` : "Первичная консультация"));
-
-		const commentParts = [
-			payload.comment || null,
-			lead.notes ? `Жалоба: ${lead.notes}` : null,
-			leadSource ? `Канал: ${leadSource}` : null,
-			utmInfo.formattedUtm ? utmInfo.formattedUtm : null,
-			Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
-				? `Теги: ${lead.clinicalTags.join(", ")}`
-				: null,
-			lead.audioRecordUrl ? `Аудио: ${lead.audioRecordUrl}` : null,
-			lead.transcriptionSnippet ? `Транскрипт: ${lead.transcriptionSnippet}` : null,
-		].filter(Boolean);
-		const resolvedComment = commentParts.length > 0 ? commentParts.join(" | ") : null;
-
-		const appointment = await createAppointmentInDb(
-			organizationId,
-			{
-				patientId: patient.id,
-				doctorUserId: doctor.id,
-				chairId: resolvedChairId ?? undefined,
-				startsAt: payload.appointmentStart,
-				endsAt: payload.appointmentEnd,
-				status: "planned",
-				reason: resolvedReason,
-				comment: resolvedComment,
-			},
-			tx,
-		);
-
-		// 3. Mark lead as booked, record stage transition in history and update stageEnteredAt
 		const now = new Date();
 		const fromStage = lead.status;
 		const stageStart = lead.stageEnteredAt || lead.createdAt;
@@ -353,27 +339,88 @@ export async function convertLeadToAppointment(params: {
 				? identity.userId
 				: null;
 
-		await tx.insert(crmLeadStageHistory).values({
-			organizationId,
-			leadId: lead.id,
-			fromStage,
-			toStage: "consult_booked",
-			changedByUserId,
-			durationSeconds,
-			createdAt: now,
-		});
+		let appointment: unknown = null;
 
-		await tx
-			.update(crmLeads)
-			.set({
-				status: "consult_booked",
-				stageEnteredAt: now,
-			})
-			.where(
-				and(eq(crmLeads.id, leadId), eq(crmLeads.organizationId, organizationId)),
+		if (hasAppointmentDates && doctor) {
+			// 2. Create Appointment via protected business logic with full attribution & complaints transfer
+			const resolvedReason =
+				payload.reason ||
+				(Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
+					? `Первичная консультация: ${lead.clinicalTags.join(", ")}`
+					: (lead.notes ? `Первичная консультация: ${lead.notes.slice(0, 100)}` : "Первичная консультация"));
+
+			const commentParts = [
+				payload.comment || null,
+				lead.notes ? `Жалоба: ${lead.notes}` : null,
+				leadSource ? `Канал: ${leadSource}` : null,
+				utmInfo.formattedUtm ? utmInfo.formattedUtm : null,
+				Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
+					? `Теги: ${lead.clinicalTags.join(", ")}`
+					: null,
+				lead.audioRecordUrl ? `Аудио: ${lead.audioRecordUrl}` : null,
+				lead.transcriptionSnippet ? `Транскрипт: ${lead.transcriptionSnippet}` : null,
+			].filter(Boolean);
+			const resolvedComment = commentParts.length > 0 ? commentParts.join(" | ") : null;
+
+			appointment = await createAppointmentInDb(
+				organizationId,
+				{
+					patientId: patient.id,
+					doctorUserId: doctor.id,
+					chairId: resolvedChairId ?? undefined,
+					startsAt: payload.appointmentStart!,
+					endsAt: payload.appointmentEnd!,
+					status: "planned",
+					reason: resolvedReason,
+					comment: resolvedComment,
+				},
+				tx,
 			);
 
-		return { patient, appointment };
+			// 3. Mark lead as booked, record stage transition in history and update stageEnteredAt
+			await tx.insert(crmLeadStageHistory).values({
+				organizationId,
+				leadId: lead.id,
+				fromStage,
+				toStage: "consult_booked",
+				changedByUserId,
+				durationSeconds,
+				createdAt: now,
+			});
+
+			await tx
+				.update(crmLeads)
+				.set({
+					status: "consult_booked",
+					stageEnteredAt: now,
+				})
+				.where(
+					and(eq(crmLeads.id, leadId), eq(crmLeads.organizationId, organizationId)),
+				);
+		} else {
+			// Mark lead as converted (patient card created without appointment slot)
+			await tx.insert(crmLeadStageHistory).values({
+				organizationId,
+				leadId: lead.id,
+				fromStage,
+				toStage: "converted",
+				changedByUserId,
+				durationSeconds,
+				createdAt: now,
+			});
+
+			await tx
+				.update(crmLeads)
+				.set({
+					status: "converted",
+					stageEnteredAt: now,
+				})
+				.where(
+					and(eq(crmLeads.id, leadId), eq(crmLeads.organizationId, organizationId)),
+				);
+		}
+
+		return { patient, appointment, hasAppointmentDates };
 	});
 
 	if ("notFound" in result) {
@@ -382,7 +429,7 @@ export async function convertLeadToAppointment(params: {
 	if ("alreadyConverted" in result) {
 		return reply.status(409).send({
 			error: "LeadAlreadyConverted",
-			message: "Лид уже был сконвертирован в запись другим администратором.",
+			message: "Лид уже был сконвертирован другим администратором.",
 		});
 	}
 	if ("doctorNotFound" in result) {
@@ -392,14 +439,25 @@ export async function convertLeadToAppointment(params: {
 		return reply.code(400).send({ error: "ChairNotFound" });
 	}
 
-	wsBroker.broadcastToOrganization(organizationId, {
-		type: "LEAD_UPDATED",
-		payload: { id: leadId, organizationId, status: "consult_booked" },
-	});
-	wsBroker.broadcastToOrganization(organizationId, {
-		type: "APPOINTMENT_CREATED",
-		payload: result.appointment,
-	});
+	if (result.hasAppointmentDates && result.appointment) {
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "LEAD_UPDATED",
+			payload: { id: leadId, organizationId, status: "consult_booked" },
+		});
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "APPOINTMENT_CREATED",
+			payload: result.appointment,
+		});
+	} else {
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "LEAD_UPDATED",
+			payload: { id: leadId, organizationId, status: "converted" },
+		});
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "PATIENT_CREATED",
+			payload: result.patient,
+		});
+	}
 
 	return result;
 }
@@ -453,6 +511,39 @@ export async function createPatientFromLead(params: {
 			.limit(1);
 
 		if (existingPatient) {
+			const now = new Date();
+			const fromStage = lead.status;
+			const stageStart = lead.stageEnteredAt || lead.createdAt;
+			const durationSeconds = Math.max(
+				0,
+				Math.floor((now.getTime() - stageStart.getTime()) / 1000),
+			);
+
+			await db.insert(crmLeadStageHistory).values({
+				organizationId,
+				leadId: lead.id,
+				fromStage,
+				toStage: "converted",
+				changedByUserId: null,
+				durationSeconds,
+				createdAt: now,
+			});
+
+			await db
+				.update(crmLeads)
+				.set({
+					status: "converted",
+					stageEnteredAt: now,
+				})
+				.where(
+					and(eq(crmLeads.id, leadId), eq(crmLeads.organizationId, organizationId)),
+				);
+
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "LEAD_UPDATED",
+				payload: { id: leadId, organizationId, status: "converted" },
+			});
+
 			return reply.code(200).send({
 				success: true,
 				alreadyExisted: true,
@@ -485,6 +576,12 @@ export async function createPatientFromLead(params: {
 			notes: patientNotesParts.length > 0 ? patientNotesParts.join("\n") : null,
 			administrativeProfile: normalizePatientAdministrativeProfile({
 				preferredAppointmentNote: lead.notes || (leadSource ? `src:${leadSource}` : undefined),
+				utmSource: utmInfo.utmSource ?? null,
+				utmMedium: utmInfo.utmMedium ?? null,
+				utmCampaign: utmInfo.utmCampaign ?? null,
+				utmContent: utmInfo.utmContent ?? null,
+				utmTerm: utmInfo.utmTerm ?? null,
+				leadSource: leadSource ?? null,
 			}),
 		})
 		.returning();
@@ -496,7 +593,39 @@ export async function createPatientFromLead(params: {
 		});
 	}
 
+	const now = new Date();
+	const fromStage = lead.status;
+	const stageStart = lead.stageEnteredAt || lead.createdAt;
+	const durationSeconds = Math.max(
+		0,
+		Math.floor((now.getTime() - stageStart.getTime()) / 1000),
+	);
+
+	await db.insert(crmLeadStageHistory).values({
+		organizationId,
+		leadId: lead.id,
+		fromStage,
+		toStage: "converted",
+		changedByUserId: null,
+		durationSeconds,
+		createdAt: now,
+	});
+
+	await db
+		.update(crmLeads)
+		.set({
+			status: "converted",
+			stageEnteredAt: now,
+		})
+		.where(
+			and(eq(crmLeads.id, leadId), eq(crmLeads.organizationId, organizationId)),
+		);
+
 	// Broadcast real-time websocket notification
+	wsBroker.broadcastToOrganization(organizationId, {
+		type: "LEAD_UPDATED",
+		payload: { id: leadId, organizationId, status: "converted" },
+	});
 	wsBroker.broadcastToOrganization(organizationId, {
 		type: "PATIENT_CREATED",
 		payload: patient,

@@ -7,6 +7,7 @@ export const leadStatusEnum = z.enum([
 	"showed_up",
 	"no_answer",
 	"trash",
+	"converted",
 ]);
 
 export type LeadStatus = z.infer<typeof leadStatusEnum>;
