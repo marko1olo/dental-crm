@@ -19,6 +19,8 @@ import {
 import type React from "react";
 import { createPortal } from "react-dom";
 import "./warrantyPassport.css";
+import "./warrantyPassportRemediation.css";
+import "./warrantyPassportMobile.css";
 import type { CompletedTreatmentStage, WarrantyPassportModalProps } from "./warrantyPassport";
 import {
 	detectCategoryFromServiceTitle,
@@ -52,7 +54,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 						<div className="warranty-header-icon"><ShieldCheck size={22} /></div>
 						<div className="warranty-header-title">
 							<h3>Гарантийный паспорт & Сертификат качества</h3>
-							<p>Гарантия клиники и стандарты качества • Медкарта № {patient?.cardNumber || "б/н"}</p>
+							<p>Гарантия клиники и стандарты качества • Медицинская карта № {patient?.cardNumber || "б/н"}</p>
 						</div>
 					</div>
 					<div className="warranty-header-actions">
@@ -74,7 +76,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 						<Calendar size={16} /> График чекапов ({s.calculation.checkupSchedule.length})
 					</button>
 					<button type="button" className={`warranty-tab-btn ${s.activeTab === "conditions" ? "active" : ""}`} onClick={() => s.setActiveTab("conditions")}>
-						<FileCheck size={16} /> Условия сохранения гарантии (СтАР)
+						<FileCheck size={16} /> Правила ухода и гарантии клиники
 					</button>
 					<button type="button" className={`warranty-tab-btn warranty-tab-remediation ${s.activeTab === "remediation" ? "active" : ""}`} onClick={() => s.setActiveTab("remediation")}>
 						<Sparkles size={16} /> Гарантийная переделка (0 ₽) {s.remediations.length > 0 ? `(${s.remediations.length})` : ""}
@@ -84,7 +86,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 				{/* Body */}
 				<div className="warranty-modal-body">
 					{s.activeTab === "editor" && <WarrantyItemsStep completedStages={completedStages} {...s.itemsStepProps} />}
-					{s.activeTab === "preview" && <WarrantyPreviewPrint certificateHtml={s.certificateHtml} />}
+					{s.activeTab === "preview" && <WarrantyPreviewPrint certificateHtml={s.certificateHtml} onPrint={s.handlePrint} />}
 					{s.activeTab === "schedule" && <WarrantyConditionsStep mode="schedule" calculation={s.calculation} />}
 					{s.activeTab === "conditions" && <WarrantyConditionsStep mode="conditions" calculation={s.calculation} />}
 					{s.activeTab === "remediation" && <WarrantySignatureStep {...s.signatureStepProps} />}
@@ -102,11 +104,11 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 					<div className="warranty-footer-right">
 						<WarrantyShareMenu phone={patient?.phone} {...s.shareMenuProps} />
 						<button type="button" className="warranty-btn-secondary" onClick={s.handlePrint}>
-							<Printer size={16} /> Печать (A4 / A5)
+							<Printer size={16} /> Распечатать сертификат (Enter)
 						</button>
-						<button type="button" className="warranty-btn-primary" onClick={s.handleAttachTo043u} title="Внести гарантийный паспорт в медкарту">
+						<button type="button" className="warranty-btn-primary" onClick={s.handleAttachTo043u} title="Выдать гарантийный паспорт и сохранить в медицинскую карту">
 							{s.attachedStatus ? <CheckCircle2 size={16} /> : <FileCheck size={16} />}
-							{s.attachedStatus ? "Обновить в карте" : "Выдать паспорт & В карту"}
+							{s.attachedStatus ? "Обновлено в карте" : "Выдать гарантийный паспорт"}
 						</button>
 					</div>
 				</div>

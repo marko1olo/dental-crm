@@ -21,8 +21,8 @@ import { patients } from "../../db/schema/patients.js";
 import { invoiceListQuerySchema } from "./types.js";
 
 export async function registerInvoiceCrudRoutes(app: FastifyInstance) {
-	// GET /api/invoices — List invoices / work orders
-	app.get("/api/invoices", async (request: FastifyRequest, reply: FastifyReply) => {
+	// List invoices / work orders handler
+	const handleListInvoices = async (request: FastifyRequest, reply: FastifyReply) => {
 		if (reply.sent) return reply;
 		const context = await requireClinicalReadContext(request, reply, "invoices list");
 		if (!context) return reply;
@@ -126,7 +126,7 @@ export async function registerInvoiceCrudRoutes(app: FastifyInstance) {
 			invoices,
 			items,
 		});
-	});
+	};
 
 	// GET /api/invoices/pending — Hot queue of unpaid invoices for cashbox 54-FZ
 	app.get("/api/invoices/pending", async (request: FastifyRequest, reply: FastifyReply) => {
@@ -198,10 +198,12 @@ export async function registerInvoiceCrudRoutes(app: FastifyInstance) {
 		});
 	});
 
-	// GET /api/invoices/:id — Get invoice details / payment status
-	app.get(
-		"/api/invoices/:id",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	for (const path of ["/api/invoices", "/api/v1/billing/invoices"]) {
+		app.get(path, handleListInvoices);
+	}
+
+	// Get invoice details / payment status handler
+	const handleGetInvoiceById = async (request: FastifyRequest, reply: FastifyReply) => {
 			if (reply.sent) return reply;
 			const context = await requireClinicalReadContext(request, reply, "get invoice");
 			if (!context) return reply;
@@ -330,6 +332,9 @@ export async function registerInvoiceCrudRoutes(app: FastifyInstance) {
 				error: "InvoiceNotFound",
 				message: `Счёт с идентификатором '${id}' не найден.`,
 			});
-		},
-	);
+	};
+
+	for (const path of ["/api/invoices/:id", "/api/v1/billing/invoices/:id"]) {
+		app.get(path, handleGetInvoiceById);
+	}
 }

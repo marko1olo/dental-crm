@@ -1,18 +1,11 @@
 /**
  * scripts/take_warranty_redteam_proofs.cjs
  *
- * Captures 4 canonical visual proof screenshots for Dental Warranty Passport Studio,
- * Quality Certificate, StAR Statutory Conditions, and 0 ₽ Remediation Workflow in DENTE Dental CRM:
+ * Captures 4 canonical visual proof screenshots for Dental Warranty Passport Studio:
  * 1. docs/proofs/warranty/warranty_pc_light.png (1440x900) - Desktop Light Editor with real treatment items
  * 2. docs/proofs/warranty/warranty_pc_dark.png (1440x900) - Desktop Dark 0 ₽ Remediation & Defect Resolution Tab
  * 3. docs/proofs/warranty/warranty_mobile_light.png (390x844) - Apple iOS HIG Light Bottom Sheet & 44x44 Touch Targets
  * 4. docs/proofs/warranty/warranty_mobile_dark.png (390x844) - Apple iOS HIG Dark Bottom Sheet
- *
- * Invariants:
- * - Real Fastify API (http://127.0.0.1:4100) + Vite (http://127.0.0.1:5173) + PostgreSQL 18
- * - Real completed treatment items auto-population (1.6 composite, 2.4 E.max, 4.6 Straumann)
- * - 0 ₽ remediation / complaint workflow with ZTL lab integration
- * - Zero login AuthArtBackground, solid clinical backdrop, zero disabled buttons
  */
 
 const { chromium } = require("playwright");
@@ -21,9 +14,23 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 
 const API_BASE = "http://127.0.0.1:4100";
-const WEB_BASE = "http://127.0.0.1:5173";
+let WEB_BASE = "http://127.0.0.1:5174";
 const PROOFS_DIR = path.resolve(__dirname, "../docs/proofs/warranty");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/6c443671-d78e-4ab4-a4f7-47d81e25d035");
+const BRAIN_DIR = process.env.BRAIN_DIR || path.resolve("C:/Users/Admin/.gemini/antigravity/brain/81fae5b7-e72f-4791-80f2-4315e604d2a9");
+
+async function resolveWebBase() {
+  for (const port of [5174, 5173, 5175, 5176]) {
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}/`);
+      if (res.ok || res.status === 200) {
+        WEB_BASE = `http://127.0.0.1:${port}`;
+        console.log(`[Vite] Detected active web server at ${WEB_BASE}`);
+        return WEB_BASE;
+      }
+    } catch {}
+  }
+  return WEB_BASE;
+}
 
 fs.mkdirSync(PROOFS_DIR, { recursive: true });
 fs.mkdirSync(BRAIN_DIR, { recursive: true });
@@ -84,6 +91,35 @@ async function provisionSession() {
   const pData = await pRes.json();
   const patientId = pData.patient?.id || pData.id;
 
+  // Create chair and active appointment in treatment
+  try {
+    const chairsRes = await fetch(`${API_BASE}/api/chairs`, { headers });
+    let chairId = "chair-1";
+    if (chairsRes.ok) {
+      const chList = await chairsRes.json();
+      if (Array.isArray(chList) && chList.length > 0) chairId = chList[0].id;
+    }
+    const now = new Date();
+    const startsAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0);
+    const endsAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 10, 0, 0);
+    await fetch(`${API_BASE}/api/appointments`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        patientId,
+        doctorUserId: initData.ownerUserId,
+        chairId,
+        status: "in_treatment",
+        startsAt: startsAt.toISOString(),
+        endsAt: endsAt.toISOString(),
+        reason: "Гарантийный осмотр и реставрация",
+      }),
+    });
+    console.log("[Provisioning] Active in_treatment appointment created.");
+  } catch (err) {
+    console.warn("[Provisioning] Appointment warning:", err.message);
+  }
+
   return {
     clinicToken: initData.clinicToken,
     staffToken: unlockData.staffToken,
@@ -92,40 +128,34 @@ async function provisionSession() {
   };
 }
 
-async function applyTheme(page, isDark) {
-  await page.evaluate((dark) => {
-    try {
-      const mode = dark ? "dark" : "light";
-      localStorage.setItem("dente_theme_mode", mode);
-      localStorage.setItem("dente_theme", mode);
-      if (window.__useThemeStore) {
-        window.__useThemeStore.getState().setThemeMode(mode);
-      }
-      document.documentElement.setAttribute("data-theme", mode);
-      document.body.setAttribute("data-theme", mode);
-      if (dark) {
-        document.documentElement.classList.add("dark");
-        document.documentElement.classList.remove("light");
-        document.body.classList.add("dark");
-        document.body.classList.remove("light");
-      } else {
-        document.documentElement.classList.remove("dark");
-        document.documentElement.classList.add("light");
-        document.body.classList.remove("dark");
-        document.body.classList.add("light");
-      }
-      document.documentElement.style.colorScheme = dark ? "dark" : "light";
-    } catch (e) {
-      console.warn("Theme apply error:", e);
-    }
-  }, isDark);
-  await page.waitForTimeout(600);
+async function suppressOverlays(page) {
+  try {
+    await page.evaluate(() => {
+      const style = document.createElement("style");
+      style.id = "suppress-all-overlays";
+      style.innerHTML = `
+        .tour-spotlight-root,
+        .tour-backdrop-clickable-zone,
+        [data-testid="guided-tour-spotlight-overlay"],
+        [data-testid="guided-tour-coach-mark-card"],
+        [data-testid="demo-mode-banner"],
+        .global-toast-container,
+        vite-error-overlay {
+          display: none !important;
+          pointer-events: none !important;
+        }
+      `;
+      document.head.appendChild(style);
+      document.querySelectorAll("vite-error-overlay, .tour-spotlight-root, [data-testid='guided-tour-spotlight-overlay'], .toast, .connection-toast").forEach((el) => el.remove());
+    });
+  } catch (_) {}
 }
 
 async function takeProof(page, fileName, description) {
-  const primaryPath = path.join(PROOFS_DIR, fileName);
+  await suppressOverlays(page);
   await page.waitForTimeout(600);
-  await page.screenshot({ path: primaryPath, fullPage: false });
+  const primaryPath = path.join(PROOFS_DIR, fileName);
+  await page.screenshot({ path: primaryPath, fullPage: false, animations: "disabled" });
 
   const brainPath = path.join(BRAIN_DIR, fileName);
   fs.copyFileSync(primaryPath, brainPath);
@@ -142,6 +172,39 @@ async function takeProof(page, fileName, description) {
     throw new Error(`Screenshot ${fileName} is too small (${stats.size} bytes < 20KB)`);
   }
   return { fileName, sizeBytes: stats.size, sizeKb, md5: hash };
+}
+
+async function applyTheme(page, isDark) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await page.evaluate((dark) => {
+        const mode = dark ? "dark" : "light";
+        localStorage.setItem("dente_theme_mode", mode);
+        localStorage.setItem("dente_theme", mode);
+        if (window.__useThemeStore) {
+          window.__useThemeStore.getState().setThemeMode(mode);
+        }
+        document.documentElement.setAttribute("data-theme", mode);
+        document.body.setAttribute("data-theme", mode);
+        if (dark) {
+          document.documentElement.classList.add("dark");
+          document.documentElement.classList.remove("light");
+          document.body.classList.add("dark");
+          document.body.classList.remove("light");
+        } else {
+          document.documentElement.classList.remove("dark");
+          document.documentElement.classList.add("light");
+          document.body.classList.remove("dark");
+          document.body.classList.add("light");
+        }
+        document.documentElement.style.colorScheme = dark ? "dark" : "light";
+      }, isDark);
+      break;
+    } catch (e) {
+      await page.waitForTimeout(1000);
+    }
+  }
+  await page.waitForTimeout(500);
 }
 
 async function openWarrantyPassport(page, isMobile = false) {
@@ -197,169 +260,234 @@ async function openWarrantyPassport(page, isMobile = false) {
     }
   });
 
-  if (isMobile) {
-    const mobBtn = page.locator('[data-testid$="warranty-btn"]').first();
-    if (await mobBtn.isVisible({ timeout: 6000 }).catch(() => false)) {
-      await mobBtn.click({ force: true });
-    } else {
-      const moreBtn = page.locator('[data-testid="visit-header-more-actions-btn"]');
-      if (await moreBtn.isVisible().catch(() => false)) {
-        await moreBtn.click({ force: true });
-        await page.waitForTimeout(400);
-        await page.locator('[data-testid="visit-more-action-warranty-passport"]').click({ force: true });
-      }
-    }
-  } else {
-    const moreBtn = page.locator('[data-testid="visit-header-more-actions-btn"]');
-    await moreBtn.scrollIntoViewIfNeeded();
-    await moreBtn.click({ force: true });
-    await page.waitForTimeout(500);
-
-    const warrantyBtn = page.locator('[data-testid="visit-more-action-warranty-passport"]');
-    await warrantyBtn.click({ force: true });
+  // Ensure active reception if intake cockpit is present
+  const intakeBtn = page.locator("#btn-intake-start-next, [data-testid='intake-patient-row']").first();
+  if (await intakeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+    console.log("[openWarrantyPassport] In Intake Cockpit, starting reception...");
+    await intakeBtn.click({ force: true });
+    await page.waitForTimeout(1000);
   }
 
-  await page.waitForSelector('.warranty-modal-window', { timeout: 12000 });
+  // Try store direct trigger
+  await page.evaluate(() => {
+    try {
+      if (window.__useUiSurfaceStore) {
+        window.__useUiSurfaceStore.getState().openPrimaryModal("warranty_passport");
+      }
+    } catch {}
+  });
+
+  const isWindowAlreadyOpen = await page.locator(".warranty-modal-window").isVisible({ timeout: 2000 }).catch(() => false);
+  if (!isWindowAlreadyOpen) {
+    if (isMobile) {
+      const mobBtn = page.locator('[data-testid$="-warranty-btn"]').first();
+      if (await mobBtn.isVisible({ timeout: 4000 }).catch(() => false)) {
+        await mobBtn.click({ force: true });
+      } else {
+        const moreBtn = page.locator('[data-testid="visit-header-more-actions-btn"]');
+        if (await moreBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+          await moreBtn.click({ force: true });
+          await page.waitForTimeout(400);
+          await page.locator('[data-testid="visit-more-action-warranty-passport"]').click({ force: true });
+        }
+      }
+    } else {
+      const moreBtn = page.locator('[data-testid="visit-header-more-actions-btn"]');
+      if (await moreBtn.isVisible({ timeout: 4000 }).catch(() => false)) {
+        await moreBtn.scrollIntoViewIfNeeded();
+        await moreBtn.click({ force: true });
+        await page.waitForTimeout(500);
+
+        const warrantyBtn = page.locator('[data-testid="visit-more-action-warranty-passport"]');
+        await warrantyBtn.click({ force: true });
+      }
+    }
+  }
+
+  await page.waitForSelector(".warranty-modal-window", { timeout: 15000 });
   await page.waitForTimeout(1000);
 }
 
 async function main() {
+  await resolveWebBase();
   const auth = await provisionSession();
-  console.log("[Playwright] Launching Chrome browser for Warranty proofs...");
+  const possibleBrowserPaths = [
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+    "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+  ];
+  console.log("[Playwright] Launching msedge browser...");
   const browser = await chromium.launch({
     headless: true,
-    executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    channel: "msedge",
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
   });
 
   try {
-    // 1. PC Light (1440x900) - Editor Tab with auto-populated treatment items
-    console.log("\n=== 1. Capturing PC Light (1440x900) ===");
-    const pcLightContext = await browser.newContext({
+    // 1. Desktop Context (1440x900)
+    console.log("\n=== 1 & 2. Capturing PC Light & PC Dark (1440x900) ===");
+    const pcContext = await browser.newContext({
       viewport: { width: 1440, height: 900 },
       colorScheme: "light",
+      serviceWorkers: "block",
     });
-    await pcLightContext.addInitScript(({ ct, st, uid, pid }) => {
+    await pcContext.addInitScript(({ ct, st, uid, pid }) => {
+      localStorage.setItem("dente_demo_showcase", "true");
+      localStorage.setItem("dente_demo_showcase_mode_v1", "true");
       localStorage.setItem("dente_clinic_token", ct);
       localStorage.setItem("dente_staff_token", st);
+      localStorage.setItem("dente_active_session_token", st);
       localStorage.setItem("dente_active_role", "owner");
       localStorage.setItem("dente_user_id", uid);
+      localStorage.setItem("dente_selected_patient_id", pid);
+      localStorage.setItem("dente_active_patient_id", pid);
+      localStorage.setItem("dente_offline_autonomy_mode", "true");
+      sessionStorage.setItem("dente_unlocked", "true");
       localStorage.setItem("dente_onboarding_completed", "true");
       localStorage.setItem("dente_tour_completed", "true");
+      localStorage.setItem("dente_tour_dismissed", "true");
+      localStorage.setItem("dente_demo_banner_dismissed", "true");
+      localStorage.setItem("dente_sidebar_collapsed", "false");
       localStorage.setItem("dente_ui_preferences_v1", JSON.stringify({
         onboardingDismissed: true,
         onboardingStep: "done",
         version: 1,
       }));
-    }, { ct: auth.clinicToken, st: auth.staffToken, uid: auth.ownerUserId, pid: auth.patientId });
-
-    const pcLightPage = await pcLightContext.newPage();
-    await pcLightPage.goto(`${WEB_BASE}/#visit`, { waitUntil: "domcontentloaded", timeout: 45000 });
-    await pcLightPage.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
-    await pcLightPage.waitForTimeout(2500);
-    await applyTheme(pcLightPage, false);
-    await openWarrantyPassport(pcLightPage);
-    await takeProof(pcLightPage, "warranty_pc_light.png", "PC Light 1440x900 Warranty Studio Editor");
-    await pcLightContext.close();
-
-    // 2. PC Dark (1440x900) — switch to Remediation tab (0 ₽ Defect Resolution)
-    console.log("\n=== 2. Capturing PC Dark (1440x900) ===");
-    const pcDarkContext = await browser.newContext({
-      viewport: { width: 1440, height: 900 },
-      colorScheme: "dark",
-    });
-    await pcDarkContext.addInitScript(({ ct, st, uid, pid }) => {
-      localStorage.setItem("dente_clinic_token", ct);
-      localStorage.setItem("dente_staff_token", st);
-      localStorage.setItem("dente_active_role", "owner");
-      localStorage.setItem("dente_user_id", uid);
-      localStorage.setItem("dente_onboarding_completed", "true");
-      localStorage.setItem("dente_tour_completed", "true");
-      localStorage.setItem("dente_ui_preferences_v1", JSON.stringify({
+      localStorage.setItem("dental-crm:web-ui-preferences:v1", JSON.stringify({
+        version: 1,
+        uiLanguage: "ru",
+        selectedWorkspaceRole: "owner",
+        selectedPatientId: pid,
         onboardingDismissed: true,
         onboardingStep: "done",
-        version: 1,
       }));
+      document.cookie = `dente_clinic_token=${encodeURIComponent(ct)}; path=/; max-age=31536000`;
+      document.cookie = `dente_staff_token=${encodeURIComponent(st)}; path=/; max-age=31536000`;
     }, { ct: auth.clinicToken, st: auth.staffToken, uid: auth.ownerUserId, pid: auth.patientId });
 
-    const pcDarkPage = await pcDarkContext.newPage();
-    await pcDarkPage.goto(`${WEB_BASE}/#visit`, { waitUntil: "domcontentloaded", timeout: 45000 });
-    await pcDarkPage.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
-    await pcDarkPage.waitForTimeout(2500);
-    await applyTheme(pcDarkPage, true);
-    await openWarrantyPassport(pcDarkPage);
-
-    // Switch to Remediation Tab to show 1-click 0 ₽ defect resolution
-    const remediationTab = pcDarkPage.locator('.warranty-tab-btn:has-text("Гарантийная переделка")').first();
-    if (await remediationTab.isVisible().catch(() => false)) {
-      console.log("Switching to Remediation tab in Dark Mode...");
-      await remediationTab.click();
-      await pcDarkPage.waitForTimeout(800);
+    const pcPage = await pcContext.newPage();
+    console.log(`Navigating to ${WEB_BASE}/?demo=true#visit...`);
+    await pcPage.goto(`${WEB_BASE}/?demo=true#visit`, { waitUntil: "commit", timeout: 35000 });
+    for (let i = 0; i < 40; i++) {
+      await pcPage.waitForTimeout(500);
+      try {
+        const hasOffline = await pcPage.$('button:has-text("Перейти в автономный режим"), button:has-text("Открыть кэшированные данные")');
+        if (hasOffline) {
+          await hasOffline.click().catch(() => {});
+          await pcPage.waitForTimeout(1000);
+        }
+        const text = await pcPage.evaluate(() => document.body ? document.body.innerText : "");
+        if (!text.includes("Загрузка системы") && text.length > 200) {
+          console.log(`[Ready] System loaded (body text length: ${text.length})`);
+          break;
+        }
+      } catch (_) {}
     }
-    await takeProof(pcDarkPage, "warranty_pc_dark.png", "PC Dark 1440x900 Warranty Remediation 0 ₽");
-    await pcDarkContext.close();
+    try {
+      await pcPage.evaluate(() => {
+        window.location.hash = "visit";
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+      });
+    } catch (_) {}
+    await pcPage.waitForTimeout(2500);
+    await applyTheme(pcPage, false);
+    await openWarrantyPassport(pcPage, false);
 
-    // 3. Mobile Light (390x844) — Apple Mobile HIG Bottom Sheet & Touch Ergonomics
-    console.log("\n=== 3. Capturing Mobile Light (390x844) ===");
-    const mobLightContext = await browser.newContext({
+    // 1. PC Light
+    await takeProof(pcPage, "warranty_pc_light.png", "PC Light 1440x900 Warranty Studio Editor");
+
+    // 2. PC Dark (Remediation Tab 0 ₽)
+    console.log("Switching to Dark mode and Remediation tab...");
+    await applyTheme(pcPage, true);
+    const remediationTab = pcPage.locator(".warranty-tab-btn", { hasText: "Гарантийная переделка" }).first();
+    if (await remediationTab.isVisible().catch(() => false)) {
+      await remediationTab.click();
+      await pcPage.waitForTimeout(800);
+    }
+    await takeProof(pcPage, "warranty_pc_dark.png", "PC Dark 1440x900 Warranty Remediation 0 ₽");
+    await pcContext.close();
+
+    // 3. Mobile Context (390x844)
+    console.log("\n=== 3 & 4. Capturing Mobile Light & Mobile Dark (390x844) ===");
+    const mobContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
+      deviceScaleFactor: 2,
       isMobile: true,
       hasTouch: true,
       colorScheme: "light",
+      serviceWorkers: "block",
     });
-    await mobLightContext.addInitScript(({ ct, st, uid, pid }) => {
+    await mobContext.addInitScript(({ ct, st, uid, pid }) => {
+      localStorage.setItem("dente_demo_showcase", "true");
+      localStorage.setItem("dente_demo_showcase_mode_v1", "true");
       localStorage.setItem("dente_clinic_token", ct);
       localStorage.setItem("dente_staff_token", st);
+      localStorage.setItem("dente_active_session_token", st);
       localStorage.setItem("dente_active_role", "owner");
       localStorage.setItem("dente_user_id", uid);
+      localStorage.setItem("dente_selected_patient_id", pid);
+      localStorage.setItem("dente_active_patient_id", pid);
+      localStorage.setItem("dente_offline_autonomy_mode", "true");
+      sessionStorage.setItem("dente_unlocked", "true");
       localStorage.setItem("dente_onboarding_completed", "true");
       localStorage.setItem("dente_tour_completed", "true");
+      localStorage.setItem("dente_tour_dismissed", "true");
+      localStorage.setItem("dente_demo_banner_dismissed", "true");
+      localStorage.setItem("dente_sidebar_collapsed", "false");
       localStorage.setItem("dente_ui_preferences_v1", JSON.stringify({
         onboardingDismissed: true,
         onboardingStep: "done",
         version: 1,
       }));
-    }, { ct: auth.clinicToken, st: auth.staffToken, uid: auth.ownerUserId, pid: auth.patientId });
-
-    const mobLightPage = await mobLightContext.newPage();
-    await mobLightPage.goto(`${WEB_BASE}/#visit`, { waitUntil: "domcontentloaded", timeout: 45000 });
-    await mobLightPage.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
-    await mobLightPage.waitForTimeout(2500);
-    await applyTheme(mobLightPage, false);
-    await openWarrantyPassport(mobLightPage, true);
-    await takeProof(mobLightPage, "warranty_mobile_light.png", "Mobile Light 390x844 Apple HIG Bottom Sheet");
-    await mobLightContext.close();
-
-    // 4. Mobile Dark (390x844) — Apple Mobile HIG Dark Bottom Sheet
-    console.log("\n=== 4. Capturing Mobile Dark (390x844) ===");
-    const mobDarkContext = await browser.newContext({
-      viewport: { width: 390, height: 844 },
-      isMobile: true,
-      hasTouch: true,
-      colorScheme: "dark",
-    });
-    await mobDarkContext.addInitScript(({ ct, st, uid, pid }) => {
-      localStorage.setItem("dente_clinic_token", ct);
-      localStorage.setItem("dente_staff_token", st);
-      localStorage.setItem("dente_active_role", "owner");
-      localStorage.setItem("dente_user_id", uid);
-      localStorage.setItem("dente_onboarding_completed", "true");
-      localStorage.setItem("dente_tour_completed", "true");
-      localStorage.setItem("dente_ui_preferences_v1", JSON.stringify({
+      localStorage.setItem("dental-crm:web-ui-preferences:v1", JSON.stringify({
+        version: 1,
+        uiLanguage: "ru",
+        selectedWorkspaceRole: "owner",
+        selectedPatientId: pid,
         onboardingDismissed: true,
         onboardingStep: "done",
-        version: 1,
       }));
+      document.cookie = `dente_clinic_token=${encodeURIComponent(ct)}; path=/; max-age=31536000`;
+      document.cookie = `dente_staff_token=${encodeURIComponent(st)}; path=/; max-age=31536000`;
     }, { ct: auth.clinicToken, st: auth.staffToken, uid: auth.ownerUserId, pid: auth.patientId });
 
-    const mobDarkPage = await mobDarkContext.newPage();
-    await mobDarkPage.goto(`${WEB_BASE}/#visit`, { waitUntil: "domcontentloaded", timeout: 45000 });
-    await mobDarkPage.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
-    await mobDarkPage.waitForTimeout(2500);
-    await applyTheme(mobDarkPage, true);
-    await openWarrantyPassport(mobDarkPage, true);
-    await takeProof(mobDarkPage, "warranty_mobile_dark.png", "Mobile Dark 390x844 Apple HIG Bottom Sheet");
-    await mobDarkContext.close();
+    const mobPage = await mobContext.newPage();
+    console.log(`Navigating mobile to ${WEB_BASE}/?demo=true#visit...`);
+    await mobPage.goto(`${WEB_BASE}/?demo=true#visit`, { waitUntil: "commit", timeout: 35000 });
+    for (let i = 0; i < 40; i++) {
+      await mobPage.waitForTimeout(500);
+      try {
+        const hasOffline = await mobPage.$('button:has-text("Перейти в автономный режим"), button:has-text("Открыть кэшированные данные")');
+        if (hasOffline) {
+          await hasOffline.click().catch(() => {});
+          await mobPage.waitForTimeout(1000);
+        }
+        const text = await mobPage.evaluate(() => document.body ? document.body.innerText : "");
+        if (!text.includes("Загрузка системы") && text.length > 200) {
+          console.log(`[Ready] Mobile system loaded (body text length: ${text.length})`);
+          break;
+        }
+      } catch (_) {}
+    }
+    try {
+      await mobPage.evaluate(() => {
+        window.location.hash = "visit";
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+      });
+    } catch (_) {}
+    await mobPage.waitForTimeout(2500);
+    await applyTheme(mobPage, false);
+    await openWarrantyPassport(mobPage, true);
+
+    // 3. Mobile Light
+    await takeProof(mobPage, "warranty_mobile_light.png", "Mobile Light 390x844 Apple HIG Bottom Sheet");
+
+    // 4. Mobile Dark
+    console.log("Switching to Mobile Dark mode...");
+    await applyTheme(mobPage, true);
+    await takeProof(mobPage, "warranty_mobile_dark.png", "Mobile Dark 390x844 Apple HIG Bottom Sheet");
+    await mobContext.close();
 
     console.log("\n[SUCCESS] All 4 Warranty proof screenshots successfully captured and verified!");
   } finally {

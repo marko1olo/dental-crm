@@ -124,14 +124,14 @@ test("Mandatory Warranty Maintenance Conditions: All 9 statutory clinical condit
 
 	const titles = MANDATORY_WARRANTY_CONDITIONS.map((c) => c.title);
 	assert.ok(titles.some((t) => t.includes("профгигиена раз в 6 месяцев")));
-	assert.ok(titles.some((t) => t.includes("индивидуальной гигиены")));
-	assert.ok(titles.some((t) => t.includes("вмешательство сторонних врачей")));
-	assert.ok(titles.some((t) => t.includes("жевательной диеты")));
-	assert.ok(titles.some((t) => t.includes("капп при бруксизме")));
-	assert.ok(titles.some((t) => t.includes("депульпирования")));
+	assert.ok(titles.some((t) => t.includes("гигиена полости рта")));
+	assert.ok(titles.some((t) => t.includes("специалистов клиники")));
+	assert.ok(titles.some((t) => t.includes("Бережное отношение")));
+	assert.ok(titles.some((t) => t.includes("Защитная каппа")));
+	assert.ok(titles.some((t) => t.includes("депульпированных зубов")));
 	assert.ok(titles.some((t) => t.includes("Своевременное обращение")));
-	assert.ok(titles.some((t) => t.includes("перебазировка съемных протезов")));
-	assert.ok(titles.some((t) => t.includes("ретенционного режима")));
+	assert.ok(titles.some((t) => t.includes("съёмных протезов") || t.includes("съемных протезов")));
+	assert.ok(titles.some((t) => t.includes("ретейнеров")));
 
 	for (const cond of MANDATORY_WARRANTY_CONDITIONS) {
 		assert.ok(cond.statutoryRef.length > 5);
@@ -404,12 +404,12 @@ test("Warranty Certificate HTML Generator (A4 / A5): Full document rendering & s
 	assert.ok(html.includes("ЗТЛ-2026-0842"), "Certificate HTML must include ZTL lab order number badge");
 	assert.ok(html.includes("A2"), "Certificate HTML must include VITA shade");
 	assert.ok(html.includes("36 мес."));
-	assert.ok(html.includes("Закон РФ № 2300-1"));
+	assert.ok(html.includes("Официальный сертификат качества и правил сохранения гарантии клиники") || html.includes("Гарантийный паспорт"));
 	assert.ok(html.includes("<svg"));
 	assert.ok(html.includes(certData.integrityHash));
 });
 
-test("WarrantyPassportModal: Component export and atmospheric background verification", () => {
+test("WarrantyPassportModal: Component export and clinical overlay verification", () => {
 	assert.equal(typeof WarrantyPassportModal, "function");
 	const html = renderToString(
 		React.createElement(WarrantyPassportModal, {
@@ -418,7 +418,8 @@ test("WarrantyPassportModal: Component export and atmospheric background verific
 		}),
 	);
 	assert.ok(html.includes("warranty-modal-overlay"), "Should render warranty modal overlay");
-	assert.ok(html.includes("auth-art-background"), "Should render atmospheric AuthArtBackground");
+	assert.ok(html.includes("warranty-mobile-drag-handle"), "Should render Apple HIG drag handle");
+	assert.ok(!html.includes("auth-art-background"), "Should NOT render login AuthArtBackground");
 	assert.ok(html.includes("warranty-modal-window"), "Should render opaque warranty modal window");
 });
 

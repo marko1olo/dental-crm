@@ -66,17 +66,13 @@ export function generateWarrantyCertificateHtml(data: WarrantyCertificateData): 
 		})
 		.join("\n");
 
-	const conditionsList = MANDATORY_WARRANTY_CONDITIONS.map((cond) => {
-		return `
+	const conditionsList = MANDATORY_WARRANTY_CONDITIONS.slice(0, 4)
+		.map((cond) => `
       <li class="condition-item">
-        <div class="cond-head">
-          <span class="cond-num">${cond.number}.</span>
-          <strong class="cond-title">${cond.title}</strong>
-        </div>
+        <div class="cond-head"><span class="cond-num">${cond.number}.</span> <strong class="cond-title">${cond.title}</strong></div>
         <div class="cond-desc">${cond.description}</div>
-      </li>
-    `;
-	}).join("\n");
+      </li>`)
+		.join("\n");
 
 	const checkupRows = calculation.checkupSchedule
 		.slice(0, 6)
@@ -85,7 +81,7 @@ export function generateWarrantyCertificateHtml(data: WarrantyCertificateData): 
       <div class="checkup-pill">
         <span class="chk-num">Визит #${chk.index}</span>
         <strong class="chk-date">${chk.formattedDate}</strong>
-        <span class="chk-status">Обязательный</span>
+        <span class="chk-status">Бесплатный осмотр</span>
       </div>
     `;
 		})
@@ -420,8 +416,8 @@ export function generateWarrantyCertificateHtml(data: WarrantyCertificateData): 
     </div>
 
     <div class="cert-main-title">
-      <h2>Гарантийный паспорт стоматологического лечения</h2>
-      <p>Официальный сертификат качества и условий сохранения гарантийных обязательств (Закон РФ № 2300-1)</p>
+      <h2>Гарантийный паспорт & Сертификат качества</h2>
+      <p>Официальный сертификат качества и правил сохранения гарантии клиники</p>
     </div>
 
     <div class="patient-card-strip">
@@ -461,21 +457,21 @@ export function generateWarrantyCertificateHtml(data: WarrantyCertificateData): 
         <span>Статус: ${calculation.warrantyStatus === "full" ? "Полная гарантия" : calculation.warrantyStatus === "reduced" ? "Скорректированная гарантия" : "Условная гарантия"} (${riskMultiplierPercent}%)</span>
       </div>
       <div>
-        Базовый гарантийный срок скорректирован с учетом индекса гигиены (OHI-S), анатомической окклюзии и соматических факторов. Следующий обязательный контрольный осмотр назначен на <strong>${formatRussianDate(calculation.nextCheckupDueDate)}</strong>.
+        Базовый гарантийный срок рассчитан с учётом клинической картины и рекомендаций лечащего врача. Следующий бесплатный контрольный осмотр назначен на <strong>${formatRussianDate(calculation.nextCheckupDueDate)}</strong>.
       </div>
     </div>
 
     <div class="checkups-section">
-      <h4>График обязательных контрольных осмотров и профгигиены:</h4>
+      <h4>График бесплатных контрольных осмотров и профгигиены:</h4>
       <div class="checkup-grid">
         ${checkupRows}
       </div>
     </div>
 
     <div class="conditions-section">
-      <h4>Ключевые условия сохранения гарантийных обязательств клиники:</h4>
+      <h4>Правила ухода и гарантии клиники:</h4>
       <ul class="conditions-list">
-        ${conditionsList.slice(0, 5)}
+        ${conditionsList}
       </ul>
     </div>
 
@@ -531,13 +527,13 @@ export function generateWarrantyCertificateHtml(data: WarrantyCertificateData): 
         <div class="sign-name">${doctorFullName}</div>
       </div>
       <div class="sign-col">
-        <div class="sign-title">Пациент (с условиями ознакомлен):</div>
+        <div class="sign-title">Пациент (с правилами ознакомлен):</div>
         <div class="sign-line"></div>
         <div class="sign-name">${patientFullName}</div>
       </div>
       <div class="qr-col">
         ${qrCodeSvg}
-        <div class="qr-note">Проверка статуса гарантии на портале пациента</div>
+        <div class="qr-note">Верификация подлинности гарантийного паспорта</div>
       </div>
     </div>
 
