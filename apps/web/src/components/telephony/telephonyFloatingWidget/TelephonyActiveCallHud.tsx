@@ -4,22 +4,12 @@
  * Features call duration timer, line toggles, Hold, Mute, Transfer panel, and End call CTA.
  */
 
-import {
-	Mic,
-	MicOff,
-	Pause,
-	PhoneForwarded,
-	PhoneOff,
-	Play,
-} from "lucide-react";
-import React, { useRef, useState } from "react";
-import { formatDurationTimer } from "../../../store/telephonyStore";
-import { showToast } from "../../GlobalToast";
+import { Mic, MicOff, Pause, PhoneForwarded, PhoneOff, Play } from "lucide-react";
+import React from "react";
+import { TelephonyActiveCallHudTransfer } from "./TelephonyActiveCallHudTransfer";
 import type { TelephonyActiveCallHudProps } from "./types";
 
 export function TelephonyActiveCallHud({
-	isCallAnswered,
-	elapsedSeconds,
 	isHeld,
 	onToggleHold,
 	isMuted,
@@ -30,24 +20,7 @@ export function TelephonyActiveCallHud({
 	onSetTransferType,
 	onStartTransfer,
 	onEndCall,
-	activeLineId,
-	onSwitchLine,
-	line1,
-	line2,
 }: TelephonyActiveCallHudProps) {
-	const [transferExt, setTransferExt] = useState("");
-	const transferInputRef = useRef<HTMLInputElement | null>(null);
-
-	const handleConfirmTransfer = () => {
-		if (!transferExt.trim()) {
-			transferInputRef.current?.focus();
-			showToast("Укажите добавочный номер врача (например, 101)", "warning");
-			return;
-		}
-		onStartTransfer(transferExt.trim(), transferType);
-		setTransferExt("");
-	};
-
 	return (
 		<div className="dnt-hud-card" data-testid="telephony-active-call-hud">
 			{/* Action Control Buttons (Hold, Mute, Transfer, Hangup) */}
@@ -95,47 +68,11 @@ export function TelephonyActiveCallHud({
 
 			{/* Call Transfer Slide-down Drawer Panel */}
 			{showTransferPanel && (
-				<div className="dnt-transfer-drawer">
-					<div className="dnt-segmented-group">
-						<button
-							type="button"
-							onClick={() => onSetTransferType("blind")}
-							className={`dnt-status-chip ${
-								transferType === "blind" ? "dnt-status-chip--active" : ""
-							}`}
-						>
-							Прямой перевод
-						</button>
-						<button
-							type="button"
-							onClick={() => onSetTransferType("attended")}
-							className={`dnt-status-chip ${
-								transferType === "attended" ? "dnt-status-chip--active" : ""
-							}`}
-						>
-							С консультацией
-						</button>
-					</div>
-
-					<div className="flex items-center gap-2 mt-2">
-						<input
-							ref={transferInputRef}
-							type="text"
-							value={transferExt}
-							onChange={(e) => setTransferExt(e.target.value)}
-							placeholder="Внутренний номер (101, 102...)"
-							className="dnt-text-input flex-1"
-						/>
-						<button
-							type="button"
-							onClick={handleConfirmTransfer}
-							className="dnt-cta-primary"
-						>
-							<PhoneForwarded size={14} />
-							<span>Перевести</span>
-						</button>
-					</div>
-				</div>
+				<TelephonyActiveCallHudTransfer
+					transferType={transferType}
+					onSetTransferType={onSetTransferType}
+					onStartTransfer={onStartTransfer}
+				/>
 			)}
 		</div>
 	);

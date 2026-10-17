@@ -301,6 +301,7 @@ export interface PatientSomaticAlert {
 	readonly severity: "high" | "medium" | "info";
 	readonly icon: string;
 }
+export type SomaticAlertItem = PatientSomaticAlert;
 
 export interface PatientFinancialSummary {
 	readonly balanceRub: number;
@@ -312,6 +313,7 @@ export interface PatientFinancialSummary {
 	readonly insuranceName: string | null;
 	readonly policyNumber: string | null;
 }
+export type PatientFinancialStatus = PatientFinancialSummary;
 
 export interface PatientLastVisitSummary {
 	lastVisitDate: string | null;

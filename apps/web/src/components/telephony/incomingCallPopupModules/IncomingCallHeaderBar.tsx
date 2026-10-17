@@ -34,26 +34,30 @@ export function IncomingCallHeaderBar({ ctrl }: IncomingCallHeaderBarProps): Rea
 				</div>
 				{!isCallAnswered ? (
 					<>
-						<button type="button" onClick={handleAnswerCall} className="min-h-[32px] px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer" title="Принять входящий звонок" data-testid="badge-header-answer-btn">
-							<PhoneCall size={12} className="animate-pulse" /><span>Ответить</span>
+						<button type="button" onClick={handleAnswerCall} className="min-h-[32px] px-2 sm:px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer shrink-0" title="Принять входящий звонок" data-testid="badge-header-answer-btn">
+							<PhoneCall size={12} className="animate-pulse" />
+							<span className="hidden sm:inline">Ответить</span>
 						</button>
-						<button type="button" onClick={handleReject} className="min-h-[32px] px-2 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50 text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer" title="Отклонить звонок" data-testid="badge-header-reject-btn">
-							<PhoneOff size={12} /><span>Сброс</span>
+						<button type="button" onClick={handleReject} className="min-h-[32px] px-1.5 sm:px-2 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50 text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shrink-0" title="Отклонить звонок" data-testid="badge-header-reject-btn">
+							<PhoneOff size={12} />
+							<span className="hidden sm:inline">Сброс</span>
 						</button>
 					</>
 				) : isCallEnded ? (
-					<button type="button" onClick={dismissCall} className="min-h-[32px] px-2.5 rounded-lg bg-[var(--paper-soft,#f1f5f9)] hover:bg-[var(--paper-subtle,#e2e8f0)] text-[var(--ink,#0f172a)] text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer" title="Закрыть карточку завершённого звонке" data-testid="badge-header-close-ended-btn">
-						<Check size={12} className="text-emerald-600" /><span>Закрыть</span>
+					<button type="button" onClick={dismissCall} className="min-h-[32px] px-2.5 rounded-lg bg-[var(--paper-soft,#f1f5f9)] hover:bg-[var(--paper-subtle,#e2e8f0)] text-[var(--ink,#0f172a)] text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer shrink-0" title="Закрыть карточку завершённого звонке" data-testid="badge-header-close-ended-btn">
+						<Check size={12} className="text-emerald-600" />
+						<span className="hidden sm:inline">Закрыть</span>
 					</button>
 				) : (
-					<button type="button" onClick={handleEndCall} className="min-h-[32px] px-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer" title="Завершить разговор" data-testid="badge-header-hangup-btn">
-						<PhoneOff size={12} /><span>Завершить</span>
+					<button type="button" onClick={handleEndCall} className="min-h-[32px] px-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer shrink-0" title="Завершить разговор" data-testid="badge-header-hangup-btn">
+						<PhoneOff size={12} />
+						<span className="hidden sm:inline">Завершить</span>
 					</button>
 				)}
-				<button type="button" onClick={() => setIsExpanded(false)} className="min-h-[32px] min-w-[32px] rounded-lg flex items-center justify-center hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-all cursor-pointer" title="Свернуть в компактную капсулу" aria-label="Свернуть в капсулу" data-testid="badge-collapse-btn">
+				<button type="button" onClick={() => setIsExpanded(false)} className="min-h-[32px] min-w-[32px] rounded-lg flex items-center justify-center hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-all cursor-pointer shrink-0" title="Свернуть в компактную капсулу" aria-label="Свернуть в капсулу" data-testid="badge-collapse-btn">
 					<ChevronUp size={15} />
 				</button>
-				<button type="button" onClick={dismissCall} className="min-h-[32px] min-w-[32px] rounded-lg flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-950 text-[var(--muted,#64748b)] hover:text-rose-600 transition-all cursor-pointer" title="Свернуть бейдж звонка" aria-label="Закрыть уведомление">
+				<button type="button" onClick={dismissCall} className="min-h-[32px] min-w-[32px] rounded-lg flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-950 text-[var(--muted,#64748b)] hover:text-rose-600 transition-all cursor-pointer shrink-0" title="Свернуть бейдж звонка" aria-label="Закрыть уведомление">
 					<X size={15} />
 				</button>
 			</div>

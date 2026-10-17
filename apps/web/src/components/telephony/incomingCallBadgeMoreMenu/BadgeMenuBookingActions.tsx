@@ -11,7 +11,7 @@ export interface BadgeMenuBookingActionsProps {
 	isCapturingLead: boolean;
 	onCaptureLead: () => void;
 	onQuickBook: (slot: QuickSlotType) => void;
-	quickSlots?: readonly QuickSlotOption[];
+	quickSlots?: readonly QuickSlotOption[] | undefined;
 	upcomingAppointment: PatientUpcomingAppointmentSummary | { doctorName: string | null; startsAt: string } | null;
 	onSendWhatsApp: () => void;
 	onCopySms: () => void;

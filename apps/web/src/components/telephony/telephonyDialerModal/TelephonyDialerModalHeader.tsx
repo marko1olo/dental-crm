@@ -33,14 +33,14 @@ export const TelephonyDialerModalHeader: React.FC<TelephonyDialerModalHeaderProp
 				</div>
 			</div>
 
-			<div className="flex items-center gap-1">
-				<div className="flex items-center bg-[var(--paper-strong)] rounded-lg p-0.5 border border-[var(--line)] text-[10px]">
+			<div className="flex items-center gap-2 shrink-0">
+				<div className="flex items-center bg-[var(--paper-strong)] rounded-lg p-0.5 border border-[var(--line)] text-[10px] gap-1">
 					<button
 						type="button"
 						onClick={() => onSetAgentState("online")}
 						className={`px-2 py-1 rounded font-bold transition-all ${
-							agentState === "online"
-								? "bg-emerald-500 text-white shadow-xs"
+							agentState === "online" || !agentState || agentState === "offline"
+								? "bg-emerald-600 text-white shadow-xs"
 								: "text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 						title="Онлайн"
@@ -52,7 +52,7 @@ export const TelephonyDialerModalHeader: React.FC<TelephonyDialerModalHeaderProp
 						onClick={() => onSetAgentState("dnd")}
 						className={`px-2 py-1 rounded font-bold transition-all ${
 							agentState === "dnd"
-								? "bg-rose-500 text-white shadow-xs"
+								? "bg-rose-600 text-white shadow-xs"
 								: "text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 						title="Не беспокоить"
@@ -64,7 +64,7 @@ export const TelephonyDialerModalHeader: React.FC<TelephonyDialerModalHeaderProp
 				<button
 					type="button"
 					onClick={onClose}
-					className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] rounded-lg hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer"
+					className="min-h-[36px] min-w-[36px] rounded-lg hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer shrink-0"
 					title="Закрыть номеронабиратель (Esc)"
 					aria-label="Закрыть"
 				>

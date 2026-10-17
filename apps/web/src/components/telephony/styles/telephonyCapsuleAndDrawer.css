@@ -35,6 +35,23 @@
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.dnt-telephony-island-expanded {
+	width: 100%;
+	max-width: 480px;
+	box-sizing: border-box;
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
+	border-radius: 20px;
+	box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.35);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 @keyframes dnt-badge-drop {
 	0% { opacity: 0; transform: translateY(-16px) scale(0.96); }
 	100% { opacity: 1; transform: translateY(0) scale(1); }
@@ -64,7 +81,6 @@
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Prevent telephony patient drawer collision with modals */
 body:has([data-testid="appointment-modal"]) .dnt-telephony-patient-drawer,
 body:has([data-testid="quick-booking-drawer"]) .dnt-telephony-patient-drawer,
 body:has([data-testid="waitlist-drawer"]) .dnt-telephony-patient-drawer,
@@ -84,5 +100,11 @@ body:has([data-testid="preventive-inspection-modal"]) .dnt-telephony-patient-dra
 	.dnt-telephony-patient-drawer {
 		width: 100%;
 		border-left: none;
+	}
+	.dnt-telephony-island-expanded {
+		width: 100%;
+		max-width: 374px;
+		margin: 0 auto;
+		border-radius: 16px;
 	}
 }

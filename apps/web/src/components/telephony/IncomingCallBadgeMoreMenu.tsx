@@ -35,7 +35,7 @@ export interface IncomingCallBadgeMoreMenuProps {
 	onToggleOutcomePanel: () => void;
 	onOpenFullPatientView: () => void;
 	onClose: () => void;
-	onRecordOutcome?: (outcome: CallOutcome) => void;
+	onRecordOutcome?: ((outcome: CallOutcome) => void) | undefined;
 }
 
 export function IncomingCallBadgeMoreMenu(props: IncomingCallBadgeMoreMenuProps) {

@@ -41,28 +41,30 @@ export function IncomingCallActionFooter({
 			<button
 				type="button"
 				onClick={() => handleQuickBook("today_standard")}
-				className="primary-button flex-1 min-h-[44px] px-3.5 py-2 text-xs font-bold"
+				className="primary-button flex-1 min-h-[44px] px-2 sm:px-3.5 py-2 text-xs font-bold whitespace-nowrap"
 				title={isKnownPatient ? "Записать пациента на приём" : "+ Быстрая запись лида / пациента"}
 				data-testid="badge-action-book"
 			>
 				<CalendarCheck size={16} className="shrink-0" />
-				<span>{isKnownPatient ? "Записать на приём" : "+ Быстрая запись"}</span>
+				<span className="hidden sm:inline">{isKnownPatient ? "Записать на приём" : "+ Быстрая запись"}</span>
+				<span className="sm:hidden">{isKnownPatient ? "Записать" : "+ Запись"}</span>
 			</button>
 
 			<button
 				type="button"
 				onClick={handleToggleCardDrawer}
-				className="secondary-button flex-1 min-h-[44px] px-3.5 py-2 text-xs font-bold"
+				className="secondary-button flex-1 min-h-[44px] px-2 sm:px-3.5 py-2 text-xs font-bold whitespace-nowrap"
 				title={isKnownPatient ? "Открыть карту пациента" : "Создать карту пациента"}
 				aria-label={isKnownPatient ? "Открыть карту пациента" : "Создать карту пациента"}
 				data-testid="badge-action-card"
 			>
 				<UserCheck size={16} className="text-[var(--teal)] shrink-0" />
-				<span>{isKnownPatient ? "Открыть карту" : "+ Создать карту"}</span>
+				<span className="hidden sm:inline">{isKnownPatient ? "Открыть карту" : "+ Создать карту"}</span>
+				<span className="sm:hidden">{isKnownPatient ? "Карта" : "+ Карта"}</span>
 			</button>
 
 			{/* Menu ... (Consolidated Secondary Actions) */}
-			<div className="relative" data-badge-more-container="true">
+			<div className="relative shrink-0" data-badge-more-container="true">
 				<button
 					type="button"
 					onClick={() => setShowBadgeMoreMenu((prev) => !prev)}

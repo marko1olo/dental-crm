@@ -1,29 +1,33 @@
 import React, { useEffect, useState } from "react";
-import { PhoneCall, Headphones, CalendarCheck, User, Volume2 } from "lucide-react";
-import { TelephonyFloatingWidget } from "./TelephonyFloatingWidget";
+import { Headphones, PhoneCall, Volume2 } from "lucide-react";
+import { useTelephonyStore } from "../../store/telephonyStore";
+import { CallAudioPlayer } from "./CallAudioPlayer";
 import { IncomingCallPopup } from "./IncomingCallPopup";
 import { TelephonyDialerModal } from "./TelephonyDialerModal";
-import { CallAudioPlayer } from "./CallAudioPlayer";
-import { useTelephonyStore } from "../../store/telephonyStore";
+import { TelephonyFloatingWidget } from "./TelephonyFloatingWidget";
 import "./telephonyFloatingWidget.css";
 
 /**
  * TelephonyStandaloneWorkspace: Dedicated visual workbench & proof harness for Telephony.
- * Mounts full production IncomingCallPopup, TelephonyFloatingWidget, Dialer Modal, and CallAudioPlayer.
  */
 export function TelephonyStandaloneWorkspace() {
 	const triggerIncomingCall = useTelephonyStore((s) => s.triggerIncomingCall);
 	const [isDialerModalOpen, setIsDialerModalOpen] = useState(false);
+	const [isMobile, setIsMobile] = useState(false);
 
 	useEffect(() => {
+		const updateMobile = () => {
+			if (typeof window !== "undefined") {
+				setIsMobile(window.innerWidth <= 768);
+			}
+		};
+		updateMobile();
+		window.addEventListener("resize", updateMobile);
 		const search = typeof window !== "undefined" ? window.location.search : "";
-		const isDialerMode = search.includes("dialer=1") || search.includes("dialer=modal");
-
-		if (isDialerMode) {
+		if (search.includes("dialer=1") || search.includes("dialer=modal")) {
 			setIsDialerModalOpen(true);
 		}
 
-		// Trigger incoming call with authentic clinical caller context
 		triggerIncomingCall({
 			phone: "+7 (916) 123-45-67",
 			patientName: "Смирнова Елена Сергеевна",
@@ -32,6 +36,8 @@ export function TelephonyStandaloneWorkspace() {
 			status: "ringing",
 			callStartedAt: Date.now(),
 		});
+
+		return () => window.removeEventListener("resize", updateMobile);
 	}, [triggerIncomingCall]);
 
 	return (
@@ -39,7 +45,6 @@ export function TelephonyStandaloneWorkspace() {
 			className="w-full min-h-screen bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] p-4 sm:p-6 flex flex-col gap-6"
 			data-testid="telephony-standalone-workspace"
 		>
-			{/* Simulated TopBar strip with real IncomingCallPopup */}
 			<header className="h-12 px-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between shadow-xs">
 				<div className="flex items-center gap-2.5">
 					<div className="w-8 h-8 rounded-lg bg-[var(--teal,#0d9488)] text-white flex items-center justify-center font-bold text-sm">
@@ -52,20 +57,14 @@ export function TelephonyStandaloneWorkspace() {
 				</div>
 
 				<div className="flex items-center gap-2">
-					<button
-						type="button"
-						onClick={() => setIsDialerModalOpen(true)}
-						className="secondary-button text-xs"
-					>
+					<button type="button" onClick={() => setIsDialerModalOpen(true)} className="secondary-button text-xs">
 						<PhoneCall size={14} className="text-[var(--teal,#0d9488)]" />
 						<span>Номеронабиратель</span>
 					</button>
 				</div>
 			</header>
 
-			{/* Main Workspace Stage */}
 			<div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-				{/* Audio Player Showcase */}
 				<div className="p-4 rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,#ffffff)] shadow-sm space-y-4">
 					<div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
 						<Volume2 size={16} className="text-[var(--teal,#0d9488)]" />
@@ -88,7 +87,6 @@ export function TelephonyStandaloneWorkspace() {
 					</div>
 				</div>
 
-				{/* Telephony Context & Invariants */}
 				<div className="p-4 rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-3 text-xs">
 					<div className="flex items-center gap-2 font-bold text-[var(--ink,#0f172a)]">
 						<Headphones size={16} className="text-[var(--teal,#0d9488)]" />
@@ -103,11 +101,9 @@ export function TelephonyStandaloneWorkspace() {
 				</div>
 			</div>
 
-			{/* Full Live Production Telephony Overlay Layer */}
 			<IncomingCallPopup defaultExpanded={true} />
-			<TelephonyFloatingWidget defaultExpanded={true} />
+			<TelephonyFloatingWidget defaultExpanded={!isMobile} />
 
-			{/* Softphone Dialer Modal */}
 			<TelephonyDialerModal
 				isOpen={isDialerModalOpen}
 				onClose={() => setIsDialerModalOpen(false)}

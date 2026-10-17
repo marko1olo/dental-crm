@@ -10,6 +10,7 @@
 @import "./styles/telephonyThemesAndTokens.css";
 @import "./styles/telephonyWidgetHeaderAndTabs.css";
 @import "./styles/telephonyHudAndCallControls.css";
+@import "./styles/telephonyCoexistence.css";
 
 /* Top Dynamic Island / Call Banner Container (Centered Dynamic Island / Non-occluding) */
 .dnt-telephony-island-container,
@@ -28,6 +29,13 @@
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	width: auto;
 	max-width: 100%;
+}
+
+@media (max-width: 768px) {
+	.dnt-telephony-island-container {
+		width: calc(100vw - 16px);
+		max-width: 374px;
+	}
 }
 
 /* Incoming Call Popup Badge Container: Desktop bottom-right, Mobile top sheet */
@@ -60,32 +68,6 @@
 		width: calc(100vw - 24px);
 		max-width: 480px;
 	}
-}
-
-/* Modal coexistence: centered and accessible without occluding dialogs */
-body:has([role="dialog"]) .dnt-telephony-island-container,
-body:has([role="dialog"]) .telephony-floating-widget,
-body:has([aria-modal="true"]) .dnt-telephony-island-container,
-body:has([aria-modal="true"]) .telephony-floating-widget {
-	top: 12px;
-	left: 50%;
-	right: auto;
-	transform: translateX(-50%);
-	z-index: 9995;
-	align-items: center;
-}
-
-body:has([role="dialog"]) .dnt-incoming-call-badge-container,
-body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
-	bottom: 24px;
-	right: 24px;
-	z-index: 9995;
-}
-
-.dnt-telephony-island-container > *,
-.telephony-floating-widget > *,
-.dnt-incoming-call-badge-container > * {
-	pointer-events: auto;
 }
 
 /* Fallback floating positioning for desktop toast avoidance */

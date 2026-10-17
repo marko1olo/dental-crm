@@ -44,7 +44,7 @@ export function TelephonyFloatingWidget(props: TelephonyFloatingWidgetProps) {
 							{s.activeCall && <span className="dnt-widget-timer-pill">{formatDurationTimer(s.elapsedSeconds)}</span>}
 						</div>
 					</div>
-					<div className="flex items-center gap-1.5 shrink-0">
+					<div className="flex items-center gap-1.5 shrink-0 ml-1">
 						{s.activeCall && !s.isCallAnswered && (
 							<button type="button" onClick={() => { s.answerCall(); showToast("Вызов принят", "success"); }} className="dnt-btn-answer min-h-[32px] sm:min-h-[34px] px-3 rounded-full bg-emerald-600" title="Ответить на звонок">
 								<PhoneCall size={13} /><span>Ответить</span>
