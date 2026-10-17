@@ -18,6 +18,7 @@ export interface PatientCabinetAppointmentsTabProps {
 	readonly onOpenReceptionQr: () => void;
 	readonly onOpenReschedule: (apt: PatientAppointment) => void;
 	readonly onOpenBooking: () => void;
+	readonly onOpenSelfCheckin?: (() => void) | undefined;
 	readonly onCancelAppointment: (aptId: string, reason: string) => Promise<void> | void;
 	readonly onShowToast: (msg: string) => void;
 }
@@ -27,6 +28,7 @@ export const PatientCabinetAppointmentsTab: React.FC<PatientCabinetAppointmentsT
 	onOpenReceptionQr,
 	onOpenReschedule,
 	onOpenBooking,
+	onOpenSelfCheckin,
 	onCancelAppointment,
 	onShowToast,
 }) => {
@@ -36,6 +38,7 @@ export const PatientCabinetAppointmentsTab: React.FC<PatientCabinetAppointmentsT
 			onOpenReceptionQr={onOpenReceptionQr}
 			onOpenReschedule={onOpenReschedule}
 			onOpenBooking={onOpenBooking}
+			onOpenSelfCheckin={onOpenSelfCheckin}
 			onCancelAppointment={onCancelAppointment}
 			onShowToast={onShowToast}
 		/>

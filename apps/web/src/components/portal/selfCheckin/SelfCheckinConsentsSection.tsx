@@ -10,7 +10,8 @@
  */
 
 import React, { memo } from "react";
-import { ArrowRight, Check, CheckCircle2, ShieldCheck } from "lucide-react";
+import { ArrowRight, Check, CheckCircle2, FileSignature, ShieldCheck } from "lucide-react";
+import { SelfCheckinSignatureCanvas } from "./SelfCheckinSignatureCanvas";
 
 export interface StatutoryConsentItem {
 	id: string;
@@ -21,8 +22,8 @@ export interface StatutoryConsentItem {
 	summaryRu: string;
 	fullTextRu: string;
 	isSigned: boolean;
-	signatureSvg?: string;
-	signedAtIso?: string;
+	signatureSvg?: string | undefined;
+	signedAtIso?: string | undefined;
 }
 
 export const DEFAULT_CONSENTS: StatutoryConsentItem[] = [
@@ -67,9 +68,10 @@ export const DEFAULT_CONSENTS: StatutoryConsentItem[] = [
 export interface SelfCheckinConsentsSectionProps {
 	readonly consents: readonly StatutoryConsentItem[];
 	readonly activeConsentIndex: number;
+	readonly signerPhone?: string | undefined;
 	readonly onSelectConsentIndex: (idx: number) => void;
 	readonly onSignAllConsentsWithPep: () => void;
-	readonly onSignCurrentConsent: () => void;
+	readonly onSignCurrentConsent: (signatureSvgCustom?: string | undefined) => void;
 	readonly onSignCurrentConsentWithPaper: () => void;
 	readonly consentNotice: string | null;
 	readonly allConsentsSigned: boolean;
@@ -79,6 +81,7 @@ export interface SelfCheckinConsentsSectionProps {
 export const SelfCheckinConsentsSection: React.FC<SelfCheckinConsentsSectionProps> = memo(({
 	consents,
 	activeConsentIndex,
+	signerPhone,
 	onSelectConsentIndex,
 	onSignAllConsentsWithPep,
 	onSignCurrentConsent,
@@ -87,6 +90,7 @@ export const SelfCheckinConsentsSection: React.FC<SelfCheckinConsentsSectionProp
 	allConsentsSigned,
 	onProceedToSomatic,
 }) => {
+	const [signMode, setSignMode] = React.useState<"pep" | "canvas">("canvas");
 	const currentConsent = consents[activeConsentIndex];
 	if (!currentConsent) return null;
 
@@ -165,33 +169,106 @@ export const SelfCheckinConsentsSection: React.FC<SelfCheckinConsentsSectionProp
 					</div>
 				) : (
 					<div className="selfcheckin-signature-block">
-						<div className="selfcheckin-legal-pep-badge">
-							<ShieldCheck size={16} />
-							<span>
-								Электронная подпись
-							</span>
-						</div>
-						<div className="flex flex-col gap-2 mt-3">
+						{/* Mode Switcher: Finger Drawing on Screen vs 1-Click PEP vs Reception Paper */}
+						<div
+							style={{
+								display: "flex",
+								gap: "6px",
+								padding: "3px",
+								borderRadius: "10px",
+								backgroundColor: "var(--paper-soft, var(--paper))",
+								border: "1px solid var(--line)",
+								marginBottom: "8px",
+							}}
+						>
 							<button
 								type="button"
-								className="selfcheckin-btn-primary w-full py-3 text-sm font-bold flex items-center justify-center gap-2"
-								onClick={onSignCurrentConsent}
-								data-testid="consent-sign-pep-single-btn"
+								onClick={() => setSignMode("canvas")}
+								data-testid="consent-mode-canvas-btn"
+								style={{
+									flex: 1,
+									minHeight: "36px",
+									padding: "4px 8px",
+									borderRadius: "8px",
+									fontSize: "12px",
+									fontWeight: signMode === "canvas" ? 700 : 500,
+									border: "none",
+									backgroundColor: signMode === "canvas" ? "var(--teal)" : "transparent",
+									color: signMode === "canvas" ? "var(--on-teal, #ffffff)" : "var(--muted)",
+									cursor: "pointer",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									gap: "5px",
+									transition: "all 0.15s ease",
+								}}
 							>
-								<ShieldCheck size={18} />
-								<span>Подтвердить согласие</span>
+								<FileSignature size={14} />
+								<span>Роспись пальцем</span>
 							</button>
+
 							<button
 								type="button"
-								className="w-full py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:underline flex items-center justify-center gap-1.5 cursor-pointer"
-								onClick={onSignCurrentConsentWithPaper}
-								data-testid="consent-sign-paper-desk-btn"
+								onClick={() => setSignMode("pep")}
+								data-testid="consent-mode-pep-btn"
+								style={{
+									flex: 1,
+									minHeight: "36px",
+									padding: "4px 8px",
+									borderRadius: "8px",
+									fontSize: "12px",
+									fontWeight: signMode === "pep" ? 700 : 500,
+									border: "none",
+									backgroundColor: signMode === "pep" ? "var(--teal)" : "transparent",
+									color: signMode === "pep" ? "var(--on-teal, #ffffff)" : "var(--muted)",
+									cursor: "pointer",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									gap: "5px",
+									transition: "all 0.15s ease",
+								}}
 							>
-								<span>Оформить на бумаге на стойке регистрации</span>
+								<ShieldCheck size={14} />
+								<span>ПЭП онлайн</span>
 							</button>
 						</div>
+
+						{signMode === "canvas" ? (
+							<SelfCheckinSignatureCanvas
+								consentTitle={currentConsent.titleRu}
+								signerPhone={signerPhone}
+								onConfirmSignature={(svg) => onSignCurrentConsent(svg)}
+							/>
+						) : (
+							<div className="flex flex-col gap-2 mt-2">
+								<div className="selfcheckin-legal-pep-badge">
+									<ShieldCheck size={16} />
+									<span>Простая электронная подпись (ПЭП)</span>
+								</div>
+								<button
+									type="button"
+									className="selfcheckin-btn-primary w-full py-3 text-sm font-bold flex items-center justify-center gap-2"
+									onClick={() => onSignCurrentConsent()}
+									data-testid="consent-sign-pep-single-btn"
+								>
+									<ShieldCheck size={18} />
+									<span>Подтвердить согласие (ПЭП)</span>
+								</button>
+							</div>
+						)}
+
+						<button
+							type="button"
+							className="w-full py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:underline flex items-center justify-center gap-1.5 cursor-pointer mt-2"
+							onClick={onSignCurrentConsentWithPaper}
+							data-testid="consent-sign-paper-desk-btn"
+						>
+							<span>Оформить на бумаге на стойке регистрации</span>
+						</button>
+
 						{consentNotice && (
-							<div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-medium">
+							<div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-medium mt-2">
 								{consentNotice}
 							</div>
 						)}

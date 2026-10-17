@@ -41,7 +41,7 @@ export interface SelfCheckinPhoneAuthSectionProps {
 	readonly isSubmitting: boolean;
 	readonly onApplyPhysiologicalNorm: () => void;
 	readonly onOneTouchCheckin: () => void;
-	readonly onEmergencyCheckin?: () => void;
+	readonly onEmergencyCheckin?: (() => void) | undefined;
 	readonly onGoToConsents: () => void;
 	readonly onGoToSomatic: () => void;
 }
@@ -87,14 +87,33 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 
 	return (
 		<div className="selfcheckin-step-box">
-			{/* Reception Welcome Banner */}
+			{/* Reception Welcome Banner (152-FZ Protected: masked on public display) */}
 			<div className="selfcheckin-welcome-card">
 				<span className="selfcheckin-welcome-icon">
 					<CheckCircle2 size={28} className="text-teal-600" />
 				</span>
 				<div>
-					<div className="selfcheckin-welcome-name">
-						{patientName ? `Здравствуйте, ${patientName}!` : "Добро пожаловать в клинику ДЕНТЕ"}
+					<div
+						className="selfcheckin-welcome-name"
+						title={patientName ? `Пациент: ${patientName}` : undefined}
+						data-patient-name={patientName}
+					>
+						{patientName ? (
+							<>
+								<span>Здравствуйте, </span>
+								<strong className="text-teal-700 dark:text-teal-300">
+									{(() => {
+										const parts = patientName.trim().split(/\s+/);
+										if (parts.length === 1) return parts[0];
+										if (parts.length === 2) return `${parts[0]} ${parts[1]?.charAt(0)}.`;
+										return `${parts[1] || parts[0]} ${parts[0]?.charAt(0)}.${parts[2] ? ` ${parts[2].charAt(0)}.` : ""}`;
+									})()}
+								</strong>
+								<span>!</span>
+							</>
+						) : (
+							"Добро пожаловать в клинику ДЕНТЕ"
+						)}
 					</div>
 					<div className="selfcheckin-welcome-sub">
 						{appointmentTime && doctorName ? (
@@ -272,11 +291,11 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 				/* Scheduled / Primary Phone Keypad Flow */
 				<div
 					style={{
-						padding: "16px",
+						padding: "12px 14px",
 						borderRadius: "16px",
 						border: "1px solid var(--line)",
 						backgroundColor: "var(--paper-soft, var(--paper))",
-						marginBottom: "12px",
+						marginBottom: "10px",
 					}}
 				>
 					{/* 1-Touch Express Norm Button */}
@@ -396,9 +415,9 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 								data-testid={`keypad-digit-${num}`}
 								style={{
 									minWidth: "64px",
-									minHeight: "56px",
+									minHeight: "48px",
 									borderRadius: "14px",
-									fontSize: "24px",
+									fontSize: "22px",
 									fontWeight: 700,
 									backgroundColor: "var(--paper-card, var(--paper))",
 									border: "1.5px solid var(--line)",
@@ -424,7 +443,7 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 							data-testid="keypad-clear"
 							style={{
 								minWidth: "64px",
-								minHeight: "56px",
+								minHeight: "48px",
 								borderRadius: "14px",
 								fontSize: "15px",
 								fontWeight: 700,
@@ -446,9 +465,9 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 							data-testid="keypad-digit-0"
 							style={{
 								minWidth: "64px",
-								minHeight: "56px",
+								minHeight: "48px",
 								borderRadius: "14px",
-								fontSize: "24px",
+								fontSize: "22px",
 								fontWeight: 700,
 								backgroundColor: "var(--paper-card, var(--paper))",
 								border: "1.5px solid var(--line)",
@@ -469,7 +488,7 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 							data-testid="keypad-backspace"
 							style={{
 								minWidth: "64px",
-								minHeight: "56px",
+								minHeight: "48px",
 								borderRadius: "14px",
 								backgroundColor: "var(--paper-soft, var(--paper))",
 								border: "1.5px solid var(--line)",

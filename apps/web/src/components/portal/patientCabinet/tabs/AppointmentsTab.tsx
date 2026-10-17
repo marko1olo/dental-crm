@@ -44,6 +44,7 @@ export interface AppointmentsTabProps {
 	readonly onOpenReceptionQr?: ((appointment?: PatientAppointment) => void) | undefined;
 	readonly onOpenReschedule?: ((appointment: PatientAppointment) => void) | undefined;
 	readonly onOpenBooking?: (() => void) | undefined;
+	readonly onOpenSelfCheckin?: ((appointment?: PatientAppointment) => void) | undefined;
 	readonly onCancelAppointment?: ((appointmentId: string, reason: string) => void) | undefined;
 	readonly onShowToast?: ((message: string) => void) | undefined;
 }
@@ -72,6 +73,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({
 	onOpenReceptionQr,
 	onOpenReschedule,
 	onOpenBooking,
+	onOpenSelfCheckin,
 	onCancelAppointment,
 	onShowToast,
 }) => {
@@ -318,28 +320,43 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({
 
 								{!isPast && (
 									<div style={{ display: "flex", flexWrap: "wrap", gap: "8px", paddingTop: "6px", borderTop: "1px solid var(--pc-border, #f1f5f9)" }}>
-										{onOpenReceptionQr && (
+										{onOpenSelfCheckin && (
 											<button
 												type="button"
 												className="pc-btn-primary"
-												onClick={() => onOpenReceptionQr(apt)}
-												data-testid={`btn-reception-qr-${apt.id}`}
-												style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", borderRadius: "6px", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer" }}
+												onClick={() => onOpenSelfCheckin(apt)}
+												data-testid={`btn-checkin-${apt.id}`}
+												title="Подтвердить прибытие в клинику и получить талон"
+												style={{
+													display: "inline-flex",
+													alignItems: "center",
+													gap: "6px",
+													padding: "8px 14px",
+													minHeight: "44px",
+													borderRadius: "8px",
+													fontSize: "0.8125rem",
+													fontWeight: 700,
+													backgroundColor: "var(--teal)",
+													color: "var(--on-teal, #ffffff)",
+													border: "none",
+													cursor: "pointer",
+													touchAction: "manipulation",
+												}}
 											>
-												<QrCode size={14} />
-												<span>QR для входа</span>
+												<CheckCircle2 size={15} />
+												<span>Я на месте / Чекин</span>
 											</button>
 										)}
-										{onOpenReschedule && (
+										{onOpenReceptionQr && (
 											<button
 												type="button"
 												className="pc-btn-secondary"
-												onClick={() => onOpenReschedule(apt)}
-												data-testid={`btn-reschedule-${apt.id}`}
-												style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", borderRadius: "6px", fontSize: "0.8125rem", fontWeight: 500, cursor: "pointer" }}
+												onClick={() => onOpenReceptionQr(apt)}
+												data-testid={`btn-reception-qr-${apt.id}`}
+												style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", minHeight: "44px", borderRadius: "8px", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer", touchAction: "manipulation" }}
 											>
-												<Clock size={14} />
-												<span>Перенести приём</span>
+												<QrCode size={14} />
+												<span>QR для входа</span>
 											</button>
 										)}
 										<a
@@ -347,11 +364,24 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({
 											target="_blank"
 											rel="noreferrer"
 											className="pc-btn-secondary"
-											style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", borderRadius: "6px", fontSize: "0.8125rem", fontWeight: 500, textDecoration: "none" }}
+											title="Открыть маршрут в Яндекс.Картах"
+											style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", minHeight: "44px", borderRadius: "8px", fontSize: "0.8125rem", fontWeight: 500, textDecoration: "none", touchAction: "manipulation" }}
 										>
-											<MapPin size={14} />
-											<span>Карта</span>
+											<MapPin size={14} className="pc-icon-warning" />
+											<span>Как добраться / Маршрут</span>
 										</a>
+										{onOpenReschedule && (
+											<button
+												type="button"
+												className="pc-btn-secondary"
+												onClick={() => onOpenReschedule(apt)}
+												data-testid={`btn-reschedule-${apt.id}`}
+												style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", minHeight: "44px", borderRadius: "8px", fontSize: "0.8125rem", fontWeight: 500, cursor: "pointer", touchAction: "manipulation" }}
+											>
+												<Clock size={14} />
+												<span>Перенести приём</span>
+											</button>
+										)}
 										<button
 											type="button"
 											className="pc-btn-secondary"

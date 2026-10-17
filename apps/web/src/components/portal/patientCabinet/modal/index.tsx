@@ -314,6 +314,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = (props) =
 								<PatientCabinetAppointmentsTab
 									data={data}
 									onOpenReceptionQr={() => setIsReceptionQrOpen(true)}
+									onOpenSelfCheckin={() => setIsSelfCheckinOpen(true)}
 									onOpenReschedule={(apt) => setReschedulingApt(apt)}
 									onOpenBooking={() => setIsBookingOpen(true)}
 									onCancelAppointment={handleCancelAppointment}

@@ -27,22 +27,22 @@ export * from "./SelfCheckinTicketSection";
 export interface MobileSelfCheckinModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	patientId?: string;
-	initialPhone?: string;
-	patientName?: string;
-	clinicName?: string;
-	doctorName?: string;
-	appointmentTime?: string;
-	cabinetName?: string;
-	queueTicket?: string;
-	initialStep?: CheckinStep;
-	onCheckinSuccess?: (result: {
+	patientId?: string | undefined;
+	initialPhone?: string | undefined;
+	patientName?: string | undefined;
+	clinicName?: string | undefined;
+	doctorName?: string | undefined;
+	appointmentTime?: string | undefined;
+	cabinetName?: string | undefined;
+	queueTicket?: string | undefined;
+	initialStep?: CheckinStep | undefined;
+	onCheckinSuccess?: ((result: {
 		patientId: string;
 		signedConsents: string[];
 		somaticProfile: ReturnType<typeof evaluateSomaticRisks>;
-		queueTicket?: string;
-		visitStatus?: string;
-	}) => void;
+		queueTicket?: string | undefined;
+		visitStatus?: string | undefined;
+	}) => void) | undefined;
 }
 
 export type CheckinStep = "phone_auth" | "consents" | "somatic" | "completed";
@@ -175,13 +175,15 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 
 	if (!isOpen) return null;
 
-	// Consent Signature Confirm (1-Click Electronic Signature)
-	const handleSignCurrentConsent = () => {
+	// Consent Signature Confirm (1-Click Electronic Signature or Touch Canvas)
+	const handleSignCurrentConsent = (signatureSvgCustom?: string) => {
 		const updated = [...consents];
 		const current = updated[activeConsentIndex];
 		if (current) {
 			current.isSigned = true;
-			current.signatureSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="30" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ПОДПИСАНО ЭЛЕКТРОННО</text><text x="160" y="48" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Код SMS / Киоск • ${phoneDigits ? `***-**-${phoneDigits}` : "+7 (***) ***-**-**"}</text><text x="160" y="65" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#64748b">${new Date().toLocaleString("ru-RU")}</text></svg>`;
+			current.signatureSvg =
+				signatureSvgCustom ||
+				`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="30" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ПОДПИСАНО ЭЛЕКТРОННО</text><text x="160" y="48" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Код SMS / Киоск • ${phoneDigits ? `***-**-${phoneDigits}` : "+7 (***) ***-**-**"}</text><text x="160" y="65" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#64748b">${new Date().toLocaleString("ru-RU")}</text></svg>`;
 			current.signedAtIso = new Date().toISOString();
 		}
 		setConsents(updated);
@@ -505,6 +507,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 						<SelfCheckinConsentsSection
 							consents={consents}
 							activeConsentIndex={activeConsentIndex}
+							signerPhone={effectivePhone}
 							onSelectConsentIndex={(idx) => {
 								setActiveConsentIndex(idx);
 								setConsentNotice(null);
