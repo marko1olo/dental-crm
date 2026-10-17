@@ -7364,7 +7364,7 @@
 
 ### 2.10.422. Волна 326: Устранение блоата стерилизации у кресла, очистка дубликатов, табло очереди смены StomX parity, пакеты 804н «Все включено», соматическая безопасность 0-клик норма, фотопротокол (Мандаты 8b, 8c, 8d, 8e, 8n, 8s, 8t, 8v, 8p)
 - **Функционал**:
-  1. *Табло очереди смены StomX parity (Patient Shift Queue Board & Engine)*: `TodayQueueBoard.tsx`, `patientShiftQueueEngine.ts`, `patientShiftQueueTypes.ts`, тесты `todayQueueBoard.test.tsx` и `patientShiftQueueEngine.test.ts`; визуализация оперативного потока смены («Ожидают в холле», «Приглашены / В кресле», «Ожидают расчет», «Приём завершен», «Не явились»), контроль времени ожидания (пороги warning/critical), фильтрация по креслам и врачам, 1-клик вызов в кресло и переход в кассу 54-ФЗ без диалоговых барьеров;
+  1. *Табло очереди смены StomX parity (Patient Shift Queue Board & Engine) и ТВ-табло холла (QueueBillboardView)*: `TodayQueueBoard.tsx` (624 строки), `QueueBillboardView.tsx` (494 строки), `QueueBillboardView.css` (299 строк), `patientShiftQueueEngine.ts` (746 строк), `patientShiftQueueTypes.ts`, маршруты `#queue` и `#lobby`, тесты `todayQueueBoard.test.tsx`, `QueueBillboardView.test.tsx` и `patientShiftQueueEngine.test.ts` (40 passing tests); визуализация оперативного потока смены («Ожидают в холле», «Приглашены / В кресле», «Ожидают расчет», «Приём завершен», «Не явились»), контроль времени ожидания (пороги warning/critical), фильтрация по креслам и врачам, 1-клик вызов в кресло и переход в кассу 54-ФЗ без диалоговых барьеров; публичное табло холла с анонимизацией по 152-ФЗ («Алексей В.»), крупными талонами 36–54px и природным фоном `/auth-art/`; 4-состояный Red Team визуальный пруф в `docs/proofs/queue/` (PC Light 127.8 KB, PC Dark 129.0 KB, Mobile Light 100.2 KB, Mobile Dark 98.1 KB, Billboard PC Light 348.1 KB, Billboard PC Dark 618.5 KB);
   2. *Комплексные пакеты услуг 804н «Все включено» (All-Inclusive Treatment Plan Bundles)*: `ClinicalServiceBundlesModal.tsx`, `treatmentPlanBundlesPresets.ts`, `treatmentPlanBundlesEngine.ts`, `TreatmentPlanModule.tsx`, тесты `treatmentPlanBundlesEngine.test.ts` и `clinicalServiceBundlesModal.test.tsx`; готовые пакеты услуг 804н «под ключ» (профгигиена комплексная A16.07.051, эндодонтия 1-2-3-канального зуба A16.07.008, имплантация под ключ A16.07.054, коронка ZrO2 A16.07.004, пломбирование кариеса световой композит A16.07.002); автоматическая раскладка этапов плана, пересчет в копейках, автономия скидок врача до 100% без паролей начмеда, 0 disabled кнопок;
   3. *Соматическая безопасность 0-клик норма (Somatic Safety 0-Click Norm & Red Emergency Guard)*: `SomaticSafetyAlertWidget.tsx`, `somaticSafetyEngine.ts`, `somaticSafetyTypes.ts`, тесты `somaticSafetyEngine.test.ts`, `SomaticSafetyAlertWidget.test.tsx`, `patientSomaticGuardWave308.test.ts`, `somaticNorm.test.ts`; автоматический 0-клик коридор нормы («Соматически здоров / норма»), мгновенная детекция критических рисков: аллергия на анестетики/пенициллин/латекс, артериальная гипертензия / криз, кардиостимулятор, антикоагулянты (риск кровотечения), диабет, беременность I и III триместры; рекомендации по подбору анестетика (мепивакаин без вазоконстриктора) без блокировки приёма врача (Мандат 8e);
   4. *Фотопротокол «До / После» (Dental Photography Protocol Parity)*: `BeforeAfterComparisonView.tsx`, тесты `photoProtocolEngine.test.ts` и `photoProtocolHardware.test.ts`; интерактивный Before/After сплит-слайдер для наглядного сравнения результатов лечения; 12 стандартных ракурсов дентального фотопротокола, калибровка зуммирования и выравнивания; устранение блоата и избыточного кода (-149 строк);
@@ -7377,7 +7377,10 @@
 - **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
 - **Задействованные компоненты и модули**:
   - `apps/web/src/components/schedule/TodayQueueBoard.tsx`
+  - `apps/web/src/components/queue/QueueBillboardView.tsx`
+  - `apps/web/src/components/queue/QueueBillboardView.css`
   - `packages/shared/src/schedule/patientShiftQueueEngine.ts`
+  - `packages/shared/src/schedule/patientShiftQueueTypes.ts`
   - `packages/shared/src/schedule/patientShiftQueueTypes.ts`
   - `apps/web/src/components/treatment-plans/ClinicalServiceBundlesModal.tsx`
   - `apps/web/src/components/treatment-plans/treatmentPlanBundlesPresets.ts`
@@ -7456,3 +7459,36 @@
   - `docs/proofs/perio/perio_emk_section_mobile_light_390x844.png`
   - `docs/proofs/perio/perio_emk_section_mobile_dark_390x844.png`
   - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 328)
+
+### 2.10.425. Волна 329: Абсолютная ревизия детской стоматологии (Мандат 8l / THE HAMMER): Экспресс-дозирование анестезии у кресла (1/3, 1/2, 1 карпула), Humanized медицинская карта без советского канцелярита, Диплом за храбрость с Enter-печатью и 4-State Visual Proof
+- **Функционал**:
+  1. *Полное искоренение советского канцелярита*: ликвидированы рудименты «Форма 043/у», «formattedText043» в пользу понятного русского языка: «Медицинская карта приёма», «Дневник визита», `formattedClinicalNote` (с обратной совместимостью);
+  2. *Экспресс-дозирование карпул анестезии у кресла (Chairside Express Anesthesia)*: интуитивные кнопки `[ 1/3 карпулы (0.6 мл) | 1/2 карпулы (0.9 мл) | 1 карпула (1.7 мл) ]` с авто-расчетом миллиграммов (Артикаин 4% / Мепивакаин 3%), проверкой МРД по весу ребенка (22 кг) и неблокирующим внесением в дневник визита «Внести в дневник визита» (Мандаты 8e, 8y);
+  3. *Диплом за храбрость (`PediatricBraveryDiplomaModal`)*: печать по нажатию клавиши Enter, живые реквизиты клиники и врача из кэша сессии, уникальный серийный номер диплома, копирование текста диплома, строгий запрет на мультяшные эмодзи (только чистые векторные иконки Lucide Award, Star, ToothDeciduous);
+  4. *Интеграция протокола детского приёма в ЭМК*: устранена инверсия флага сворачивания в `VisitEmkTab.tsx`, обеспечен корректный проброс `activePatient` в `VisitSpecialtyFocus` и `SpecialtyProtocolDrawer`;
+  5. *100% Green Tests*: 7 сьютов, 96 тестов passing (`apps/web/src/components/pediatric/__tests__/`, `pediatricAndClinicalDocumentsInquisition.test.ts`, `braveryDiplomaAndSimulatorIsolation.test.ts`);
+  6. *4-State Red Team Visual Proof*: эталонные скриншоты в `docs/proofs/pediatric/` (PC Light 1440x900, PC Dark 1440x900, Mobile Light 390x844, Mobile Dark 390x844 > 56 КБ каждый, сенсорный минимум >= 44x44px, Natural Thumb Zone).
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/pediatric/PediatricAnesthesiaCalculator.tsx`
+  - `apps/web/src/components/pediatric/PediatricBraveryDiplomaModal.tsx`
+  - `apps/web/src/components/pediatric/PediatricVisitAdaptationTab.tsx`
+  - `apps/web/src/components/pediatric/protocolWidget/protocolCalculation.ts`
+  - `apps/web/src/components/pediatric/protocolWidget/PediatricProtocolToolbar.tsx`
+  - `apps/web/src/components/pediatric/protocolWidget/PediatricProtocolWidgetContent.tsx`
+  - `apps/web/src/components/visit/VisitEmkTab.tsx`
+  - `apps/web/src/components/pediatric/diploma/PediatricBraveryDiplomaPreview.tsx`
+  - `apps/web/src/components/pediatric/frankl/FranklCompactToolbar.tsx`
+  - `apps/web/src/components/pediatric/teethChart/PediatricTeethHeader.tsx`
+  - `docs/proofs/pediatric/pediatric_diploma_pc_light.png`
+  - `docs/proofs/pediatric/pediatric_diploma_pc_dark.png`
+  - `docs/proofs/pediatric/pediatric_pc_light_1440x900.png`
+  - `docs/proofs/pediatric/pediatric_pc_dark_1440x900.png`
+  - `docs/proofs/pediatric/pediatric_protocol_pc_light.png`
+  - `docs/proofs/pediatric/pediatric_protocol_pc_dark.png`
+  - `docs/proofs/pediatric/pediatric_mobile_light_390x844.png`
+  - `docs/proofs/pediatric/pediatric_mobile_dark_390x844.png`
+  - `docs/proofs/pediatric/pediatric_protocol_mobile_light.png`
+  - `docs/proofs/pediatric/pediatric_protocol_mobile_dark.png`
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 329)
+

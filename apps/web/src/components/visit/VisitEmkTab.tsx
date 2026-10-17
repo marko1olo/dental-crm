@@ -133,8 +133,9 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 
 			<VisitSpecialtyFocus
 				compact
+				activePatient={activePatient}
 				isDrawerOpen={!isSpecialtyCollapsed}
-				onToggleDrawer={setIsSpecialtyCollapsed}
+				onToggleDrawer={(open: boolean) => setIsSpecialtyCollapsed(!open)}
 			/>
 
 			{/* Встроенная интерактивная зубная формула FDI 11-48 с синхронизацией */}

@@ -1,113 +1,20 @@
-/**
- * ═══════════════════════════════════════════════════════════════════════════
- * PEDIATRIC ANESTHESIA SAFETY CALCULATOR (КАЛЬКУЛЯТОР БЕЗОПАСНОСТИ АНЕСТЕЗИИ)
- * Chairside Toxic Overdose Prevention by Child Body Weight (kg)
- * Articaine 4%: max 5.0 mg/kg | Mepivacaine 3%: max 4.4 mg/kg
- * Instant Red Alert & Overdose Blocking | Mandates 8e, 8k, 8n
- * ═══════════════════════════════════════════════════════════════════════════
- */
-
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-	AlertOctagon,
-	AlertTriangle,
-	Check,
-	Droplets,
-	ShieldAlert,
-	ShieldCheck,
-	Zap,
-} from "lucide-react";
+import { Droplets, ShieldAlert, AlertOctagon, ShieldCheck } from "lucide-react";
 import { showToast } from "../GlobalToast";
-import type { SomaticRiskProfile } from "../visit/anesthesiaCalculatorEngine";
 import { estimatePediatricWeightKg } from "@dental/shared";
+import {
+	type PediatricAnestheticDrugId,
+	type PediatricAnesthesiaCalculatorProps,
+	PEDIATRIC_ANESTHETIC_SPECS,
+} from "./anesthesia/pediatricAnesthesiaSpecs";
+import { calculatePediatricAnesthesia } from "./anesthesia/pediatricAnesthesiaCalculation";
+import { PediatricAnesthesiaHeader } from "./anesthesia/PediatricAnesthesiaHeader";
+import { PediatricAnesthesiaDrugSelect } from "./anesthesia/PediatricAnesthesiaDrugSelect";
+import { PediatricAnesthesiaDoseControl } from "./anesthesia/PediatricAnesthesiaDoseControl";
+import { PediatricAnesthesiaAlerts } from "./anesthesia/PediatricAnesthesiaAlerts";
 
-export type PediatricAnestheticDrugId = "articaine_4" | "mepivacaine_3";
-
-export interface PediatricAnestheticSpec {
-	readonly id: PediatricAnestheticDrugId;
-	readonly nameRu: string;
-	readonly shortLabelRu: string;
-	readonly tradeNamesRu: string;
-	readonly concentrationPercent: number;
-	readonly mgPerMl: number;
-	readonly standardCarpuleVolumeMl: number;
-	readonly mgPerCarpule: number;
-	readonly maxDoseMgPerKg: number; // 5.0 for Articaine, 4.4 for Mepivacaine
-	readonly absoluteMaxDoseMg: number;
-	readonly vasoconstrictorRu: string;
-	readonly minAgeYears: number;
-	readonly descriptionRu: string;
-}
-
-export const PEDIATRIC_ANESTHETIC_SPECS: Readonly<Record<PediatricAnestheticDrugId, PediatricAnestheticSpec>> = {
-	articaine_4: {
-		id: "articaine_4",
-		nameRu: "Артикаин 4% с эпинефрином 1:200 000",
-		shortLabelRu: "Артикаин 4% (макс 5 мг/кг)",
-		tradeNamesRu: "Ультракаин Д-С / Септанест / Убистезин",
-		concentrationPercent: 4.0,
-		mgPerMl: 40.0,
-		standardCarpuleVolumeMl: 1.7,
-		mgPerCarpule: 68.0, // 40 mg/ml * 1.7 ml = 68 mg
-		maxDoseMgPerKg: 5.0, // Clinical standard: 5.0 mg/kg for pediatric
-		absoluteMaxDoseMg: 500.0,
-		vasoconstrictorRu: "Эпинефрин 1:200 000 (0.0085 мг/карп)",
-		minAgeYears: 4,
-		descriptionRu: "Препарат выбора для детской инфильтрационной и проводниковой анестезии от 4 лет.",
-	},
-	mepivacaine_3: {
-		id: "mepivacaine_3",
-		nameRu: "Мепивакаин 3% без вазоконстриктора",
-		shortLabelRu: "Мепивакаин 3% (макс 4.4 мг/кг)",
-		tradeNamesRu: "Скандонест 3% / Мепивастезин",
-		concentrationPercent: 3.0,
-		mgPerMl: 30.0,
-		standardCarpuleVolumeMl: 1.7,
-		mgPerCarpule: 51.0, // 30 mg/ml * 1.7 ml = 51 mg
-		maxDoseMgPerKg: 4.4, // Clinical standard: 4.4 mg/kg for pediatric
-		absoluteMaxDoseMg: 300.0,
-		vasoconstrictorRu: "Без вазоконстриктора (Адреналин-free)",
-		minAgeYears: 4,
-		descriptionRu: "Для детей с аллергией на сульфиты, бронхиальной астмой, кардиопатологией и тиреотоксикозом.",
-	},
-};
-
-export interface PediatricAnesthesiaCalculationResult {
-	readonly drug: PediatricAnestheticSpec;
-	readonly patientWeightKg: number;
-	readonly carpulesAdministered: number;
-	readonly totalVolumeMl: number;
-	readonly maxAllowedTotalDoseMg: number;
-	readonly totalDoseAdministeredMg: number;
-	readonly maxSafeCarpulesCount: number;
-	readonly doseUtilizationPercent: number;
-	readonly isSafe: boolean;
-	readonly isOverdose: boolean;
-	readonly isUnderAge: boolean;
-	readonly isContraindicated?: boolean | undefined;
-	readonly contraindicationReasonRu?: string | undefined;
-	readonly alertMessageRu?: string | undefined;
-	readonly formattedClinicalNote: string;
-	/** @deprecated Использовать formattedClinicalNote (Мандат 8x: искоренение советских шифров) */
-	readonly formattedText043: string;
-}
-
-export interface PediatricAnesthesiaCalculatorProps {
-	/** Начальный вес ребенка (кг) */
-	readonly initialWeightKg?: number | undefined;
-	/** Возраст ребенка (лет) */
-	readonly patientAgeYears?: number | undefined;
-	/** Соматический профиль риска ребенка */
-	readonly somaticProfile?: SomaticRiskProfile | undefined;
-	/** Текстовые аллергии из карты ребенка */
-	readonly allergies?: string | undefined;
-	/** Обработчик изменения расчета */
-	readonly onCalculationChange?: ((result: PediatricAnesthesiaCalculationResult) => void) | undefined;
-	/** Обработчик вставки текста анестезии в дневник визита / медицинскую карту приёма */
-	readonly onApplyToProtocol?: ((formattedText: string, result: PediatricAnesthesiaCalculationResult) => void) | undefined;
-	/** Дополнительный CSS класс */
-	readonly className?: string | undefined;
-}
+export * from "./anesthesia/pediatricAnesthesiaSpecs";
+export * from "./anesthesia/pediatricAnesthesiaCalculation";
 
 export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculatorProps> = ({
 	initialWeightKg,
@@ -119,35 +26,20 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 	className = "",
 }) => {
 	const resolvedInitialWeight = useMemo(() => {
-		if (typeof initialWeightKg === "number" && initialWeightKg > 0) {
-			return initialWeightKg;
-		}
+		if (typeof initialWeightKg === "number" && initialWeightKg > 0) return initialWeightKg;
 		return estimatePediatricWeightKg(patientAgeYears);
 	}, [initialWeightKg, patientAgeYears]);
 
 	const articaineContraindicated = useMemo(() => {
-		if (somaticProfile?.hasArticaineAllergy) return true;
-		if (somaticProfile?.hasSulfiteAllergy) return true;
-		if (somaticProfile?.hasBronchialAsthma) return true;
-		if (somaticProfile?.hasThyrotoxicosis) return true;
-		if (somaticProfile?.hasSevereHypertensionStage3) return true;
-		if (allergies) {
-			const lower = allergies.toLowerCase();
-			if (/артикаин|ультракаин|септанест|убистезин|сульфит|метабисульфит|астма/i.test(lower)) {
-				return true;
-			}
-		}
+		if (somaticProfile?.hasArticaineAllergy || somaticProfile?.hasSulfiteAllergy) return true;
+		if (somaticProfile?.hasBronchialAsthma || somaticProfile?.hasThyrotoxicosis) return true;
+		if (allergies && /артикаин|ультракаин|септанест|убистезин|сульфит|метабисульфит|астма/i.test(allergies)) return true;
 		return false;
 	}, [somaticProfile, allergies]);
 
 	const mepivacaineContraindicated = useMemo(() => {
 		if (somaticProfile?.hasMepivacaineAllergy) return true;
-		if (allergies) {
-			const lower = allergies.toLowerCase();
-			if (/мепивакаин|скандонест|мепивастезин/i.test(lower)) {
-				return true;
-			}
-		}
+		if (allergies && /мепивакаин|скандонест|мепивастезин/i.test(allergies)) return true;
 		return false;
 	}, [somaticProfile, allergies]);
 
@@ -162,103 +54,25 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 	}, [articaineContraindicated, mepivacaineContraindicated, selectedDrugId]);
 
 	const [weightKg, setWeightKg] = useState<number>(resolvedInitialWeight);
-
-	useEffect(() => {
-		setWeightKg(resolvedInitialWeight);
-	}, [resolvedInitialWeight]);
+	useEffect(() => setWeightKg(resolvedInitialWeight), [resolvedInitialWeight]);
 
 	const [carpules, setCarpules] = useState<number>(0.5);
-
 	const drug = PEDIATRIC_ANESTHETIC_SPECS[selectedDrugId];
 
-	// ─────────────────────────────────────────────────────────────────────────
-	// ЖЕЛЕЗНЫЙ МАТЕМАТИЧЕСКИЙ РАСЧЕТ БЕЗОПАСНОСТИ (AAPD / МИНЗДРАВ РФ)
-	// ─────────────────────────────────────────────────────────────────────────
-	const calculation = useMemo<PediatricAnesthesiaCalculationResult>(() => {
-		const safeWeight = Math.max(5, Math.min(100, weightKg));
-		const mrdPerKg = drug.maxDoseMgPerKg;
-		const maxAllowedTotalDoseMg = Number(Math.min(drug.absoluteMaxDoseMg, safeWeight * mrdPerKg).toFixed(1));
-
-		const singleCarpuleDoseMg = drug.mgPerCarpule;
-		const totalVolumeMl = Number((carpules * drug.standardCarpuleVolumeMl).toFixed(2));
-		const totalDoseAdministeredMg = Number((carpules * singleCarpuleDoseMg).toFixed(1));
-
-		const maxSafeCarpulesCount = Number((maxAllowedTotalDoseMg / singleCarpuleDoseMg).toFixed(2));
-		const doseUtilizationPercent = Number(((totalDoseAdministeredMg / (maxAllowedTotalDoseMg || 1)) * 100).toFixed(1));
-
-		const isOverdose = totalDoseAdministeredMg > maxAllowedTotalDoseMg;
-		const isUnderAge = patientAgeYears < drug.minAgeYears;
-
-		const isContraindicated =
-			(selectedDrugId === "articaine_4" && articaineContraindicated) ||
-			(selectedDrugId === "mepivacaine_3" && mepivacaineContraindicated);
-
-		const contraindicationReasonRu =
-			selectedDrugId === "articaine_4" && articaineContraindicated
-				? "ПРОТИВОПОКАЗАНИЕ: В анамнезе указана аллергия на артикаин/сульфиты или астма/тиреотоксикоз! Рекомендуется Мепивакаин 3% без вазоконстриктора."
-				: selectedDrugId === "mepivacaine_3" && mepivacaineContraindicated
-					? "ПРОТИВОПОКАЗАНИЕ: В анамнезе указана аллергия на мепивакаин (скандонест)!"
-					: undefined;
-
-		let alertMessageRu: string | undefined;
-		if (isContraindicated) {
-			alertMessageRu = contraindicationReasonRu;
-		} else if (isOverdose) {
-			alertMessageRu = `ВНИМАНИЕ: ТОКСИЧЕСКАЯ ДОЗА! Введено ${totalDoseAdministeredMg} мг при допустимом максимуме ${maxAllowedTotalDoseMg} мг на вес ${safeWeight} кг. Риск системной интоксикации! Превышение заблокировано!`;
-		} else if (isUnderAge) {
-			alertMessageRu = `Препарат противопоказан детям в возрасте до ${drug.minAgeYears} лет.`;
-		}
-
-		const safetyWarningLine = isContraindicated
-			? `\n• ⚠️ ВНИМАНИЕ: Противопоказание по соматическому анамнезу (${contraindicationReasonRu}). Введено по решению лечащего врача под личную ответственность.`
-			: isOverdose
-				? `\n• ⚠️ ВНИМАНИЕ: Превышение расчетной дозы (${totalDoseAdministeredMg} мг > МРД ${maxAllowedTotalDoseMg} мг на ${safeWeight} кг). Введено по клиническим показаниям под личную ответственность врача.`
-				: "";
-
-		const formattedClinicalNote = [
-			`Анестезиологическое пособие: ${drug.nameRu}.`,
-			`• Введено: ${carpules} карп. (${totalVolumeMl} мл / ${totalDoseAdministeredMg} мг активного вещества).`,
-			`• Вес ребенка: ${safeWeight} кг. Предельно допустимая доза (MRD): ${maxAllowedTotalDoseMg} мг (${mrdPerKg} мг/кг).`,
-			`• Расход дозы: ${doseUtilizationPercent}% (макс. ${maxSafeCarpulesCount} карп.) ${isOverdose ? "— ⚠️ ПРЕВЫШЕНИЕ МРД" : "— ДОЗА БЕЗОПАСНА"}.`,
-			`• Вазоконстриктор: ${drug.vasoconstrictorRu}.${safetyWarningLine}`,
-		].join("\n");
-
-		const result: PediatricAnesthesiaCalculationResult = {
-			drug,
-			patientWeightKg: safeWeight,
-			carpulesAdministered: carpules,
-			totalVolumeMl,
-			maxAllowedTotalDoseMg,
-			totalDoseAdministeredMg,
-			maxSafeCarpulesCount,
-			doseUtilizationPercent,
-			isSafe: !isOverdose && !isUnderAge && !isContraindicated,
-			isOverdose,
-			isUnderAge,
-			isContraindicated,
-			contraindicationReasonRu,
-			...(alertMessageRu ? { alertMessageRu } : {}),
-			formattedClinicalNote,
-			formattedText043: formattedClinicalNote,
-		};
-
-		return result;
-	}, [
-		articaineContraindicated,
-		carpules,
+	const calculation = useMemo(() => calculatePediatricAnesthesia({
 		drug,
-		mepivacaineContraindicated,
-		patientAgeYears,
 		selectedDrugId,
 		weightKg,
-	]);
+		carpules,
+		patientAgeYears,
+		articaineContraindicated,
+		mepivacaineContraindicated,
+	}), [articaineContraindicated, carpules, drug, mepivacaineContraindicated, patientAgeYears, selectedDrugId, weightKg]);
 
-	// Уведомление родительского компонента при изменении расчета
-	React.useEffect(() => {
+	useEffect(() => {
 		onCalculationChange?.(calculation);
 	}, [calculation, onCalculationChange]);
 
-	// Mandate 8e: Doctor Autonomy — the CRM NEVER blocks saving or applying anesthesia records
 	const handleApplyAnesthesia = useCallback(() => {
 		onApplyToProtocol?.(calculation.formattedClinicalNote, calculation);
 		if (calculation.isContraindicated) {
@@ -271,8 +85,7 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 	}, [calculation, drug.shortLabelRu, onApplyToProtocol]);
 
 	const handleSetMaxSafeDose = useCallback(() => {
-		// Округление до безопасного шага 0.25 карпулы в меньшую сторону
-		const safeCarpules = Math.floor((calculation.maxSafeCarpulesCount) * 4) / 4;
+		const safeCarpules = Math.floor(calculation.maxSafeCarpulesCount * 4) / 4;
 		const nextCarpules = Math.max(0.25, safeCarpules);
 		setCarpules(nextCarpules);
 		showToast(`Установлена предельная безопасная доза: ${nextCarpules} карп.`, "info", 2000);
@@ -283,371 +96,10 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 			className={`pediatric-anesthesia-calc rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3 sm:p-4 shadow-xs ${className}`.trim()}
 			data-testid="pediatric-anesthesia-calculator"
 		>
-			{/* ═════════════════════════════════════════════════════════════════ */}
-			{/* ШАПКА: НАЗВАНИЕ + ИНДИКАТОР БЕЗОПАСНОСТИ */}
-			{/* ═════════════════════════════════════════════════════════════════ */}
-			<div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line,#e2e8f0)] pb-2.5">
-				<div className="flex items-center gap-2">
-					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 shrink-0">
-						<Droplets className="h-4 w-4" />
-					</div>
-					<div>
-						<h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-[var(--ink,#0f172a)]">
-							Калькулятор безопасности анестетика по весу ребенка
-						</h3>
-						<p className="text-[11px] text-[var(--muted,#64748b)] font-medium">
-							Артикаин 4% (макс 5 мг/кг) &bull; Мепивакаин 3% (макс 4.4 мг/кг) &bull; Защита от передозировки
-						</p>
-					</div>
-				</div>
-
-				<div className="flex items-center gap-1.5 shrink-0">
-					{calculation.isContraindicated ? (
-						<div
-							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600 text-white font-black text-xs animate-pulse shadow-sm"
-							data-testid="anesthesia-contraindicated-badge"
-						>
-							<ShieldAlert className="h-4 w-4" />
-							<span>ПРОТИВОПОКАЗАНО</span>
-						</div>
-					) : calculation.isOverdose ? (
-						<div
-							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600 text-white font-black text-xs animate-pulse shadow-sm"
-							data-testid="anesthesia-overdose-badge"
-						>
-							<AlertOctagon className="h-4 w-4" />
-							<span>ТОКСИЧЕСКАЯ ДОЗА</span>
-						</div>
-					) : (
-						<div
-							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-500/30 font-extrabold text-xs"
-							data-testid="anesthesia-safe-badge"
-						>
-							<ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-							<span>Безопасная доза ({calculation.doseUtilizationPercent}%)</span>
-						</div>
-					)}
-				</div>
-			</div>
-
-			{/* ═════════════════════════════════════════════════════════════════ */}
-			{/* ПРЕДУПРЕЖДЕНИЕ О СОМАТИЧЕСКИХ ПРОТИВОПОКАЗАНИЯХ               */}
-			{/* ═════════════════════════════════════════════════════════════════ */}
-			{calculation.isContraindicated && (
-				<div
-					className="mb-3 p-3 rounded-xl border border-rose-300 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/50 text-rose-900 dark:text-rose-200 text-xs font-semibold flex items-center gap-2"
-					data-testid="anesthesia-contraindication-banner"
-				>
-					<ShieldAlert className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0" />
-					<span>{calculation.contraindicationReasonRu}</span>
-				</div>
-			)}
-
-			{/* ═════════════════════════════════════════════════════════════════ */}
-			{/* ВЫБОР ПРЕПАРАТА (АРТИКАИН 4% VS МЕПИВАКАИН 3%) */}
-			{/* ═════════════════════════════════════════════════════════════════ */}
-			<div className="mb-3">
-				<label className="block text-[11px] font-bold text-[var(--muted,#64748b)] uppercase mb-1.5">
-					Препарат местного анестетика:
-				</label>
-				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2" data-testid="anesthesia-drug-selector">
-					{(["articaine_4", "mepivacaine_3"] as const).map((drugId) => {
-						const d = PEDIATRIC_ANESTHETIC_SPECS[drugId];
-						const isSelected = selectedDrugId === drugId;
-						const isContraindicatedDrug =
-							(drugId === "articaine_4" && articaineContraindicated) ||
-							(drugId === "mepivacaine_3" && mepivacaineContraindicated);
-						return (
-							<button
-								key={drugId}
-								type="button"
-								onClick={() => setSelectedDrugId(drugId)}
-								className={`min-h-[44px] sm:min-h-[38px] p-2.5 rounded-xl border text-left transition cursor-pointer select-none active:scale-[0.99] ${
-									isSelected
-										? "border-teal-600 bg-teal-50/90 text-teal-950 dark:border-teal-400 dark:bg-teal-950/60 dark:text-teal-100 ring-2 ring-teal-500/30 shadow-xs"
-										: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
-								}`}
-								data-testid={`anesthesia-drug-btn-${drugId}`}
-							>
-								<div className="flex items-center justify-between gap-1">
-									<span className="font-extrabold text-xs">{d.nameRu}</span>
-									<div className="flex items-center gap-1">
-										{isContraindicatedDrug && (
-											<span className="text-[10px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 px-1.5 py-0.5 rounded border border-rose-300 dark:border-rose-700/60">
-												Противопоказан
-											</span>
-										)}
-										{isSelected && <Check className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />}
-									</div>
-								</div>
-								<div className="text-[11px] text-[var(--muted,#64748b)] mt-0.5 flex items-center justify-between">
-									<span>{d.tradeNamesRu}</span>
-									<span className="font-bold font-mono text-teal-700 dark:text-teal-400">
-										макс {d.maxDoseMgPerKg} мг/кг
-									</span>
-								</div>
-							</button>
-						);
-					})}
-				</div>
-			</div>
-
-			{/* ═════════════════════════════════════════════════════════════════ */}
-			{/* ВЕС РЕБЕНКА (КГ) И КОЛИЧЕСТВО ВВЕДЕННЫХ КАРПУЛ */}
-			{/* ═════════════════════════════════════════════════════════════════ */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-				{/* Вес ребенка */}
-				<div className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] p-2.5">
-					<div className="flex items-center justify-between mb-1.5">
-						<label htmlFor="pediatric-weight-input" className="text-xs font-bold text-[var(--ink,#0f172a)]">
-							Вес ребенка:
-						</label>
-						<span className="text-xs font-mono font-black text-teal-700 dark:text-teal-400">
-							{weightKg} кг
-						</span>
-					</div>
-					<div className="flex items-center gap-1.5 mb-2">
-						<input
-							id="pediatric-weight-input"
-							type="number"
-							min={5}
-							max={80}
-							step={1}
-							value={weightKg}
-							onChange={(e) => setWeightKg(Math.max(5, Math.min(80, Number(e.target.value) || 20)))}
-							className="h-8 w-20 px-2 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-mono font-extrabold text-[var(--ink,#0f172a)] text-center focus:border-teal-500 focus:outline-hidden"
-							data-testid="input-patient-weight-kg"
-						/>
-						<span className="text-xs text-[var(--muted,#64748b)]">кг</span>
-					</div>
-
-					{/* Быстрые кнопки веса */}
-					<div className="flex flex-wrap gap-1">
-						{[12, 16, 20, 25, 30, 40].map((w) => (
-							<button
-								key={w}
-								type="button"
-								onClick={() => setWeightKg(w)}
-								className={`h-6 px-1.5 rounded text-[11px] font-mono font-bold border transition cursor-pointer ${
-									weightKg === w
-										? "bg-teal-600 text-white border-teal-600"
-										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-strong,#f1f5f9)]"
-								}`}
-								data-testid={`quick-weight-${w}`}
-							>
-								{w} кг
-							</button>
-						))}
-					</div>
-				</div>
-
-				{/* Доза в карпулах */}
-				<div className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] p-2.5">
-					<div className="flex items-center justify-between mb-1.5">
-						<label htmlFor="pediatric-carpules-input" className="text-xs font-bold text-[var(--ink,#0f172a)]">
-							Введено анестетика:
-						</label>
-						<span className="text-xs font-mono font-black text-teal-700 dark:text-teal-400">
-							{carpules} карп. ({calculation.totalDoseAdministeredMg} мг)
-						</span>
-					</div>
-
-					<div className="flex items-center gap-1.5 mb-2">
-						<input
-							id="pediatric-carpules-input"
-							type="number"
-							min={0.1}
-							max={4.0}
-							step={0.1}
-							value={carpules}
-							onChange={(e) => setCarpules(Math.max(0, Math.min(5, Number(e.target.value) || 0)))}
-							className="h-8 w-20 px-2 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-mono font-extrabold text-[var(--ink,#0f172a)] text-center focus:border-teal-500 focus:outline-hidden"
-							data-testid="input-anesthesia-carpules"
-						/>
-						<span className="text-xs text-[var(--muted,#64748b)]">карп. ({calculation.totalVolumeMl} мл)</span>
-					</div>
-
-					{/* Экспресс-анестезия в 1 клик: клинические пресеты долей карпулы (Мандат 8e / 8y) */}
-					<div className="mb-2">
-						<div className="text-[10px] uppercase font-bold text-[var(--muted,#64748b)] mb-1">
-							Экспресс-дозировка в 1 клик:
-						</div>
-						<div className="grid grid-cols-3 gap-1.5" data-testid="pediatric-express-carpule-presets">
-							{[
-								{ label: "1/3 карпулы", volume: "0.6 мл", val: 0.33, id: "third" },
-								{ label: "1/2 карпулы", volume: "0.9 мл", val: 0.5, id: "half" },
-								{ label: "1 карпула", volume: "1.7 мл", val: 1.0, id: "one" },
-							].map((preset) => {
-								const isSelected = carpules === preset.val;
-								return (
-									<button
-										key={preset.id}
-										type="button"
-										onClick={() => setCarpules(preset.val)}
-										className={`min-h-[38px] sm:min-h-[34px] px-2 py-1 rounded-xl text-xs font-bold border transition cursor-pointer flex flex-col items-center justify-center select-none active:scale-95 touch-manipulation ${
-											isSelected
-												? "bg-teal-600 text-white border-teal-600 shadow-xs ring-2 ring-teal-500/20"
-												: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
-										}`}
-										data-testid={`preset-carpule-${preset.id}`}
-										title={`Установить дозу: ${preset.label} (${preset.volume})`}
-									>
-										<span className="leading-tight font-extrabold">{preset.label}</span>
-										<span className="text-[10px] opacity-80 font-mono font-medium">({preset.volume})</span>
-									</button>
-								);
-							})}
-						</div>
-					</div>
-
-					{/* Дополнительные точные шаги дозирования */}
-					<div className="flex flex-wrap items-center gap-1">
-						{[0.25, 0.75, 1.5, 2.0].map((c) => (
-							<button
-								key={c}
-								type="button"
-								onClick={() => setCarpules(c)}
-								className={`h-6 px-1.5 rounded text-[11px] font-mono font-bold border transition cursor-pointer ${
-									carpules === c
-										? "bg-teal-600 text-white border-teal-600"
-										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-strong,#f1f5f9)]"
-								}`}
-								data-testid={`quick-carpule-${c}`}
-							>
-								{c} карп
-							</button>
-						))}
-						<button
-							type="button"
-							onClick={handleSetMaxSafeDose}
-							className="h-6 px-2 rounded text-[10px] font-bold border border-teal-500/40 bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 hover:bg-teal-100 transition cursor-pointer"
-							title={`Установить максимальную безопасную дозу: ${calculation.maxSafeCarpulesCount} карп.`}
-							data-testid="btn-set-max-safe-dose"
-						>
-							Макс: {calculation.maxSafeCarpulesCount} к.
-						</button>
-					</div>
-				</div>
-			</div>
-
-			{/* ═════════════════════════════════════════════════════════════════ */}
-			{/* МГНОВЕННЫЙ АЛЕРТ: ПРЕВЫШЕНИЕ РАСЧЕТНОЙ ДОЗЫ (МРД)             */}
-			{/* ═════════════════════════════════════════════════════════════════ */}
-			{calculation.isOverdose && (
-				<div
-					className="mb-3 rounded-xl border-2 border-rose-500 bg-rose-50 dark:bg-rose-950/60 p-3 text-rose-950 dark:text-rose-100 shadow-md animate-in fade-in duration-200"
-					data-testid="anesthesia-toxic-overdose-alert"
-				>
-					<div className="flex flex-col sm:flex-row items-start justify-between gap-2.5">
-						<div className="flex items-start gap-2.5 min-w-0">
-							<AlertOctagon className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-							<div className="space-y-1 min-w-0">
-								<div className="text-xs sm:text-sm font-black uppercase tracking-wider text-rose-600 dark:text-rose-300">
-									ВНИМАНИЕ: ПРЕВЫШЕНИЕ РАСЧЕТНОЙ ДОЗЫ АНЕСТЕТИКА (МРД)!
-								</div>
-								<p className="text-xs leading-relaxed font-semibold">
-									Введено <span className="underline font-mono">{calculation.totalDoseAdministeredMg} мг</span> ({calculation.carpulesAdministered} карп.) при максимально допустимой дозе <span className="font-mono">{calculation.maxAllowedTotalDoseMg} мг</span> (лимит {drug.maxDoseMgPerKg} мг/кг на вес {weightKg} кг).
-								</p>
-								<div className="text-[11px] font-bold bg-rose-200/60 dark:bg-rose-900/60 px-2 py-1 rounded inline-block">
-									Безопасный расчет для этого ребенка: до {calculation.maxSafeCarpulesCount} карпул(ы)
-								</div>
-							</div>
-						</div>
-						<button
-							type="button"
-							onClick={handleSetMaxSafeDose}
-							className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shrink-0 transition cursor-pointer self-stretch sm:self-auto flex items-center justify-center gap-1 shadow-xs"
-							data-testid="btn-reduce-to-safe-dose"
-							title={`Снизить до максимальной безопасной дозы: ${calculation.maxSafeCarpulesCount} карп.`}
-						>
-							<span>Снизить до {calculation.maxSafeCarpulesCount} карп.</span>
-						</button>
-					</div>
-				</div>
-			)}
-
-			{calculation.isUnderAge && !calculation.isOverdose && (
-				<div
-					className="mb-3 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 p-2.5 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2"
-					data-testid="anesthesia-underage-alert"
-				>
-					<AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-					<span>
-						Внимание: препарат противопоказан детям в возрасте до {drug.minAgeYears} лет (текущий возраст: {patientAgeYears} лет).
-					</span>
-				</div>
-			)}
-
-			{/* ═════════════════════════════════════════════════════════════════ */}
-			{/* ПРОГРЕСС-БАР РАСХОДА ДОЗЫ И ПАНЕЛЬ ДЕЙСТВИЙ */}
-			{/* ═════════════════════════════════════════════════════════════════ */}
-			<div className="mb-3">
-				<div className="flex items-center justify-between text-xs mb-1">
-					<span className="text-[11px] font-bold text-[var(--muted,#64748b)]">Расход допустимой дозы (MRD):</span>
-					<span className="font-mono font-extrabold text-xs">
-						{calculation.totalDoseAdministeredMg} / {calculation.maxAllowedTotalDoseMg} мг ({calculation.doseUtilizationPercent}%)
-					</span>
-				</div>
-				<div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-					<div
-						className={`h-full transition-all duration-300 ${
-							calculation.isOverdose
-								? "bg-rose-600"
-								: calculation.doseUtilizationPercent > 80
-									? "bg-amber-500"
-									: "bg-emerald-500"
-						}`}
-						style={{ width: `${Math.min(100, calculation.doseUtilizationPercent)}%` }}
-						data-testid="anesthesia-utilization-bar"
-					/>
-				</div>
-			</div>
-
-			{/* ═════════════════════════════════════════════════════════════════ */}
-			{/* КНОПКА ПРИМЕНЕНИЯ В ПРОТОКОЛ (ВРАЧЕБНАЯ АВТОНОМИЯ: БЕЗ ДИЗЕЙБЛА)  */}
-			{/* ═════════════════════════════════════════════════════════════════ */}
-			<div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--line,#e2e8f0)]">
-				<div className="text-[11px] text-[var(--muted,#64748b)] min-w-0">
-					MRD {drug.shortLabelRu}: макс. {calculation.maxSafeCarpulesCount} карп. ({calculation.maxAllowedTotalDoseMg} мг)
-				</div>
-
-				<button
-					type="button"
-					onClick={handleApplyAnesthesia}
-					className={`min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer select-none shadow-xs active:scale-95 touch-manipulation ${
-						calculation.isContraindicated
-							? "bg-rose-600 hover:bg-rose-700 text-white"
-							: calculation.isOverdose
-								? "bg-amber-600 hover:bg-amber-700 text-white"
-								: "bg-teal-600 hover:bg-teal-700 text-white"
-					}`}
-					title={
-						calculation.isContraindicated
-							? `Внести в дневник визита (соматический риск: ${calculation.contraindicationReasonRu})`
-							: calculation.isOverdose
-								? `Внести в дневник визита с отметкой о превышении расчетной дозы (${calculation.totalDoseAdministeredMg} мг > ${calculation.maxAllowedTotalDoseMg} мг)`
-								: "Внести расчет дозы анестезии в дневник визита"
-					}
-					data-testid="btn-apply-anesthesia-protocol"
-				>
-					{calculation.isContraindicated ? (
-						<>
-							<ShieldAlert className="h-4 w-4 text-white shrink-0" />
-							<span>Внести с риском (выбор врача)</span>
-						</>
-					) : calculation.isOverdose ? (
-						<>
-							<AlertTriangle className="h-4 w-4 text-white shrink-0" />
-							<span>Внести с превышением МРД</span>
-						</>
-					) : (
-						<>
-							<Check className="h-4 w-4 text-white shrink-0" />
-							<span>Внести в дневник визита</span>
-						</>
-					)}
-				</button>
-			</div>
+			<PediatricAnesthesiaHeader calculation={calculation} />
+			<PediatricAnesthesiaDrugSelect selectedDrugId={selectedDrugId} onSelectDrugId={setSelectedDrugId} articaineContraindicated={articaineContraindicated} mepivacaineContraindicated={mepivacaineContraindicated} />
+			<PediatricAnesthesiaDoseControl weightKg={weightKg} setWeightKg={setWeightKg} carpules={carpules} setCarpules={setCarpules} calculation={calculation} onSetMaxSafeDose={handleSetMaxSafeDose} />
+			<PediatricAnesthesiaAlerts calculation={calculation} onSetMaxSafeDose={handleSetMaxSafeDose} onApplyAnesthesia={handleApplyAnesthesia} />
 		</div>
 	);
 };

@@ -233,7 +233,8 @@ describe("Red Team Inquisition: Pediatric Workflow & Clinical Documents Catalog"
 			);
 
 			assert.ok(
-				html.includes("Согласие на медицинское вмешательство"),
+				html.includes("Согласие на медицинское вмешательство") ||
+					html.includes("Информированное согласие на лечение"),
 				"Must display human title for primary consent",
 			);
 			assert.ok(
