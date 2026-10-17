@@ -58,27 +58,70 @@ export interface ImplantProtocolTabProps {
 	readonly setExpirationDate?: (date: string) => void;
 	readonly isqValue?: number;
 	readonly onApplyStandardProtocol?: () => void;
+	readonly onApplyImmediateProtocol?: () => void;
+	readonly onApplyTwoStageProtocol?: () => void;
+	readonly onApplyGbrProtocol?: () => void;
 }
 
 export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = (props) => {
 	return (
 		<div className="implant-protocol-tab space-y-4" data-testid="tab-content-protocol">
-			<div className="banner-standard-protocol-preset p-3 rounded-xl bg-[var(--teal-surface,rgba(13,148,136,0.08))] border border-[var(--teal-soft,rgba(13,148,136,0.3))] flex items-center justify-between gap-3 flex-wrap">
-				<div className="flex items-center gap-2 min-w-0">
-					<Sparkles size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
-					<div className="text-xs">
-						<strong className="text-[var(--ink)] block">Стандартный хирургический протокол (1 клик):</strong>
-						<span className="text-[var(--muted)]">Ø 4.0×10 мм, 35 Н·см, ФДМ, охлаждение NaCl 0.9%, шов Викрил 4-0, списание со склада</span>
+			<div className="banner-standard-protocol-preset implant-presets-section p-3 rounded-xl bg-[var(--teal-surface,rgba(13,148,136,0.08))] border border-[var(--teal-soft,rgba(13,148,136,0.3))] space-y-2.5">
+				<div className="flex items-center justify-between gap-2 flex-wrap">
+					<div className="flex items-center gap-2 min-w-0">
+						<Sparkles size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
+						<div className="text-xs">
+							<strong className="text-[var(--ink)] block">Стандартный хирургический протокол (1 клик):</strong>
+							<span className="text-[var(--muted)]">Ø 4.0×10 мм, 35 Н·см, ФДМ, охлаждение NaCl 0.9%, шов Викрил 4-0, списание со склада</span>
+						</div>
 					</div>
 				</div>
-				<button
-					type="button"
-					onClick={props.onApplyStandardProtocol}
-					className="primary-button min-h-[44px] px-3.5 text-xs font-bold shrink-0"
-					data-testid="btn-apply-standard-protocol"
-				>
-					Применить стандартный протокол
-				</button>
+
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-1">
+					<button
+						type="button"
+						onClick={props.onApplyStandardProtocol}
+						className="secondary-button min-h-[44px] p-2.5 text-xs text-left flex flex-col justify-between gap-1 w-full"
+						data-testid="btn-apply-standard-protocol"
+						title="Стандарт: 35 Н·см, ISQ 72, формирователь десны ФДМ"
+					>
+						<span className="font-bold text-[var(--ink)] block truncate">Стандартный протокол</span>
+						<span className="text-[11px] text-[var(--muted)] block truncate">35 Н·см · ISQ 72 · ФДМ</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={props.onApplyImmediateProtocol}
+						className="secondary-button min-h-[44px] p-2.5 text-xs text-left flex flex-col justify-between gap-1 w-full"
+						data-testid="btn-apply-immediate-protocol"
+						title="Одномоментная имплантация: лунка удаленного зуба, немедленная нагрузка (45 Н·см, ISQ 75)"
+					>
+						<span className="font-bold text-[var(--teal,#0d9488)] block truncate">Немедленная нагрузка</span>
+						<span className="text-[11px] text-[var(--muted)] block truncate">45 Н·см · ISQ &ge; 70 · Одномоментно</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={props.onApplyTwoStageProtocol}
+						className="secondary-button min-h-[44px] p-2.5 text-xs text-left flex flex-col justify-between gap-1 w-full"
+						data-testid="btn-apply-twostage-protocol"
+						title="Двухэтапная классическая: винт-заглушка с ушиванием раны наглухо (35 Н·см)"
+					>
+						<span className="font-bold text-[var(--ink)] block truncate">Двухэтапная заглушка</span>
+						<span className="text-[11px] text-[var(--muted)] block truncate">35 Н·см · Заглушка наглухо</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={props.onApplyGbrProtocol}
+						className="secondary-button min-h-[44px] p-2.5 text-xs text-left flex flex-col justify-between gap-1 w-full"
+						data-testid="btn-apply-gbr-protocol"
+						title="Имплантация с НКР (GBR): Bio-Oss + Bio-Gide + пины/швы"
+					>
+						<span className="font-bold text-[var(--amber,#f59e0b)] block truncate">Костная пластика (НКР)</span>
+						<span className="text-[11px] text-[var(--muted)] block truncate">Bio-Oss + Bio-Gide + пины</span>
+					</button>
+				</div>
 			</div>
 
 			<ImplantToothPicker toothFdi={props.toothFdi} onSelectTooth={props.handleToothSelect} />
@@ -88,7 +131,7 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = (props) => 
 			<ImplantBarcodeScannerRow scannedBarcode={props.scannedBarcode} setScannedBarcode={props.setScannedBarcode} onApplyBarcode={props.handleApplyBarcode} lotNumber={props.lotNumber} setLotNumber={props.setLotNumber} catalogArticle={props.catalogArticle} setCatalogArticle={props.setCatalogArticle} serialNumber={props.serialNumber} setSerialNumber={props.setSerialNumber} />
 
 			{props.stockItems && (
-				<ImplantWarehouseSelector stockItems={props.stockItems} selectedStockItemId={props.selectedStockItemId} onSelectStockItem={props.onSelectStockItem || (() => {})} isOverdraftActive={props.isOverdraftActive} />
+				<ImplantWarehouseSelector stockItems={props.stockItems} selectedStockItemId={props.selectedStockItemId} onSelectStockItem={props.onSelectStockItem || (() => {})} isOverdraftActive={props.isOverdraftActive} lotNumber={props.lotNumber} catalogArticle={props.catalogArticle} />
 			)}
 
 			<ImplantEconomicsSection operationPriceRub={props.operationPriceRub || 45000} setOperationPriceRub={props.setOperationPriceRub || (() => {})} implantCostRub={props.implantCostRub || 12500} consumablesCostRub={props.consumablesCostRub || 0} doctorGrossMarginRub={props.doctorGrossMarginRub || 32500} />

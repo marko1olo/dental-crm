@@ -15,9 +15,9 @@ export function parseImplantBarcode(barcode: string): ParsedImplantBarcode {
 	const snMatch = raw.match(/\(21\)([a-zA-Z0-9\-]+)/i) || raw.match(/21([a-zA-Z0-9\-]+)/);
 	const refMatch = raw.match(/\(240\)([a-zA-Z0-9\-]+)/i) || raw.match(/REF[:\s]*([a-zA-Z0-9\-]+)/i);
 
-	if (refMatch) {
+	if (refMatch && refMatch[1]) {
 		article = refMatch[1];
-	} else if (gtinMatch) {
+	} else if (gtinMatch && gtinMatch[1]) {
 		article = `REF-${gtinMatch[1].slice(-6)}`;
 	}
 

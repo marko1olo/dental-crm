@@ -7,13 +7,13 @@ export interface ImplantCapAndGbrSelectorProps {
 	readonly setCapType: (c: ImplantCapType) => void;
 	readonly isGbrPerformed: boolean;
 	readonly setIsGbrPerformed: (g: boolean) => void;
-	readonly stockConsumables?: ImplantConsumablesStock;
-	readonly selectedGraftId?: string;
-	readonly onSelectGraftId?: (id: string) => void;
-	readonly selectedMembraneId?: string;
-	readonly onSelectMembraneId?: (id: string) => void;
-	readonly selectedSutureId?: string;
-	readonly onSelectSutureId?: (id: string) => void;
+	readonly stockConsumables?: ImplantConsumablesStock | undefined;
+	readonly selectedGraftId?: string | undefined;
+	readonly onSelectGraftId?: ((id: string) => void) | undefined;
+	readonly selectedMembraneId?: string | undefined;
+	readonly onSelectMembraneId?: ((id: string) => void) | undefined;
+	readonly selectedSutureId?: string | undefined;
+	readonly onSelectSutureId?: ((id: string) => void) | undefined;
 }
 
 export const ImplantCapAndGbrSelector: React.FC<ImplantCapAndGbrSelectorProps> = ({

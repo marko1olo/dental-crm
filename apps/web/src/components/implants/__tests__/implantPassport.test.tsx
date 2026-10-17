@@ -14,6 +14,7 @@ import {
 import { IMPLANT_TORQUE_SPECS } from "../implantTorqueCatalog";
 import { ImplantPassportCard, AnatomicalJawArchSchema } from "../ImplantPassportCard";
 import { ImplantPassportModal } from "../ImplantPassportModal";
+import { ImplantProtocolTab } from "../ImplantProtocolTab";
 import { ImplantEconomicsSection } from "../ImplantEconomicsSection";
 import { ImplantConsumablesSelector } from "../ImplantConsumablesSelector";
 import { ImplantWarehouseSelector } from "../ImplantWarehouseSelector";
@@ -512,5 +513,83 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		assert.equal(record.boneDensity, "D2", "Tooth 46 must default to D2 density");
 		assert.equal(record.capType, "fdm", "Default cap type must be FDM");
 		assert.equal(record.isqDay0, 72, "Default ISQ stability must be 72");
+	});
+
+	it("29. ImplantProtocolTab renders 4 distinct 1-click clinical protocol presets", () => {
+		const html = renderToString(
+			<ImplantProtocolTab
+				toothFdi={46}
+				handleToothSelect={() => {}}
+				boneDensity="D2"
+				setBoneDensity={() => {}}
+				scannedBarcode=""
+				setScannedBarcode={() => {}}
+				handleApplyBarcode={() => {}}
+				isGbrPerformed={false}
+				setIsGbrPerformed={() => {}}
+				capType="fdm"
+				setCapType={() => {}}
+				isIsqEnabled={false}
+				setIsIsqEnabled={() => {}}
+				selectedBrand="Osstem"
+				handleBrandSelect={() => {}}
+				diameterMm={4.0}
+				setDiameterMm={() => {}}
+				lengthMm={10.0}
+				setLengthMm={() => {}}
+				torqueNcm={35}
+				setTorqueNcm={() => {}}
+				lotNumber="24C1208"
+				setLotNumber={() => {}}
+				catalogArticle="TS3S4010S"
+				setCatalogArticle={() => {}}
+				serialNumber="SN-884210"
+				setSerialNumber={() => {}}
+				isOverdraftActive={false}
+			/>,
+		);
+
+		assert.ok(html.includes("btn-apply-standard-protocol"), "Must have standard protocol preset");
+		assert.ok(html.includes("btn-apply-immediate-protocol"), "Must have immediate loading protocol preset");
+		assert.ok(html.includes("btn-apply-twostage-protocol"), "Must have two-stage cover screw protocol preset");
+		assert.ok(html.includes("btn-apply-gbr-protocol"), "Must have GBR bone grafting protocol preset");
+		assert.ok(html.includes("Немедленная нагрузка"), "Must show immediate loading text");
+		assert.ok(html.includes("Двухэтапная заглушка"), "Must show two-stage text");
+		assert.ok(html.includes("Костная пластика (НКР)"), "Must show GBR text");
+	});
+
+	it("30. ImplantIsqControls supports 1..100 scale and 1-click norm preset button 72", () => {
+		const html = renderToString(
+			<ImplantPassportModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+				initialTab="isq"
+			/>,
+		);
+
+		assert.ok(html.includes('min="1"'), "Must allow min ISQ = 1");
+		assert.ok(html.includes('max="100"'), "Must allow max ISQ = 100");
+		assert.ok(html.includes("btn-isq-preset-72"), "Must render 1-click norm preset button for ISQ 72");
+		assert.ok(html.includes("Норма ISQ 72 (Оптимум)"), "Must render norm ISQ text");
+	});
+
+	it("31. GBR bone grafting protocol and passport reflect Bio-Oss and Bio-Gide without emojis", () => {
+		const data = {
+			...createDefaultPassportRecord({
+				toothFdi: 36,
+				brand: "Straumann",
+				patientName: "Александров К. В.",
+			}),
+			boneGraftMaterial: "Костный графт Geistlich Bio-Oss",
+			membraneUsed: "Коллагеновая мембрана Geistlich Bio-Gide",
+			sutureMaterial: "Шовный материал Ethicon Викрил 4-0",
+		};
+
+		const html = renderToString(<ImplantPassportCard data={data} />);
+		assert.ok(html.includes("Straumann"), "Must show Straumann");
+		assert.ok(html.includes("Паспорт имплантата DENTE"), "Must render title");
+		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
+		assert.equal(emojiRegex.test(html), false, "Must contain zero emojis");
 	});
 });

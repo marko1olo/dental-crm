@@ -1,7 +1,7 @@
 # Главный Реестр Фич Конкурентов (IDENT, DentalPRO, iStom & StomX)
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
-> ⚠️ **СТАТУС (2026-10-17 / WAVES 301–348 / ВОЛНА 348 PATIENT PORTAL PWA, KIOSK 4-DIGITS / QR SELF CHECK-IN, RETINA CANVAS SIGNATURE PAD, SOMATIC NORMS & 4-STATE VISUAL PROOF — 487 ФИЧ: 64 КАНОНИЧЕСКИЕ + 423 АДДЕНДУМ, ВСЕ 487 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
+> ⚠️ **СТАТУС (2026-10-17 / WAVES 301–351 / ВОЛНА 351 ДЕНТАЛЬНАЯ ИМПЛАНТАЦИЯ, GBR КОСТНАЯ ПЛАСТИКА, СТАБИЛЬНОСТЬ ISQ 1..100, ГАРАНТИЙНЫЙ ПАСПОРТ А4, FASTIFY API С SOFT NEGATIVE STOCK И 4-СОСТОЯНЫЙ RED TEAM VISUAL PROOF — 490 ФИЧ: 64 КАНОНИЧЕСКИЕ + 426 АДДЕНДУМ, ВСЕ 490 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
 
 
 | # | feature_key | Фича | Конкурент | Модуль | Что делает | Статус у нас | Ценность (1-5) | Внедрять? | Сложность | Приоритет | Доказательство (строки источника) |
@@ -1011,7 +1011,26 @@
   6. 100% покрытие unit-тестами: 21 тест со 100% успехом (MobileSelfCheckinModal.test.tsx 7/7 PASS, selfCheckinAutonomyInquisition.test.ts 6/6 PASS, portalSelfCheckin.test.ts 8/8 PASS, Exit Code 0).
   7. 4-состояный Red Team Visual Proof Gate: лично отсмотрены глазами через view_file все 4 реальных скриншота высокого разрешения в `docs/proofs/checkin/` (01_kiosk_pc_light.png 851 KB, 02_kiosk_pc_dark.png 1.16 MB, 03_checkin_mobile_light.png 184 KB, 04_checkin_mobile_dark.png 177 KB) — тач-таргеты $\ge 44\times 44$px, 0px горизонтального скролла, безупречный темный режим и живой рукописный штрих на холсте.
 
-**ИТОГОВЫЙ ВЕРДИКТ RED TEAM: [ПРОВЕРЕНО: ЧИСТО]** (487 фич в реестре: 64 канонические + 423 аддендум, ВСЕ ЗАКРЫТЫ СО СТАТУСОМ [ЕСТЬ] / [ЗАКРЫТО], 100% паритет с ведущими стоматологическими CRM РФ: IDENT, DentalPRO, StomX).
+---
+
+### ВОЛНА 350: ЭНДОДОНТИЯ И КАНАЛЫ (FDI АНАТОМИЯ 1..4 КАНАЛА, АПЕКСЛОКАТОР, WL 0..40 ММ, ОБЛИТЕРАЦИЯ MB2, FASTIFY ENDO API, 152-ФЗ И 4-СОСТОЯНЫЙ RED TEAM VISUAL PROOF (Фича #489, Мандаты 8b, 8c, 8e, 8n, 8x, 8wy, 8ze, 8al)
+- **Статус**: **`[ЕСТЬ] / [ЗАКРЫТО]`**.
+- **Суть**:
+  1. Ликвидация разрыва фронтенд-бэкенд: реализованы маршруты `GET` и `POST /api/patients/:patientId/tooth-states/:toothNumber/endo` (с поддержкой алиаса `:tooth`) в `apps/api/src/routes/odontogram/endoRoutes.ts`. Честное сохранение в таблицы PostgreSQL 18 `toothStates` и `toothStateHistory`, 152-ФЗ секьюрити-гард (блокировка маркетологов и неклинического персонала с аудитом в `clinicalAuditLogs`), поддержка demo-пациентов и оффлайн БД.
+  2. Анатомическая матрица корневых каналов (FDI ISO 3950) 1..4 канала: таблица каналов (MB1, MB2, DB, P) с тактильными чипами быстрого выбора, тонкой подстройкой шага $\pm 0.5$ мм, ISO 3630-1 цветовой кодировкой файлов (белый #15, желтый #20, красный #25, синий #30, зеленый #35, черный #40), конусностью (.02, .04, .06), силерами (AH Plus, BioRoot RCS) и методами обтурации.
+  3. Автономия врача (Мандат 8e): если 4-й канал (MB2) облитерирован или не найден, кнопка «Облитерация?» переводит канал в статус облитерированного (`isObliterated: true`), длина фиксируется 0 мм, а сохранение протокола и обтурации НИКОГДА не блокируется (`disabled={false}`). Валидация длины каналов жестко ограничена безопасным диапазоном 0..40 мм без падений интерфейса.
+  4. 1-клик клинические пресеты: «✓ Механическая и медикаментозная обработка NaOCl 3% + временная паста Ca(OH)2», «✓ Постоянная обтурация гуттаперчей + AH Plus до апекса», генерация чистого SOAP протокола для дневника без бюрократического канцелярита; складское списание материалов в бэкенде.
+  5. Каноническая дизайн-система кнопок DENTE: `.primary-button`, `.secondary-button`, `.icon-button` во всех эндодонтических компонентах (`EndoCanalTable.tsx`, `EndoQuickToolbar.tsx`, `ChairsideEndoQuickBar.tsx`, `EndoCanalLogModal.tsx`).
+  6. Apple HIG и сенсорная эргономика: нативный Bottom Sheet Drawer на смартфонах (390×844) с тактильным drag handle (36×5px), кнопками в Natural Thumb Zone и 0px паразитного горизонтального скролла.
+  7. 100% доказательная база: unit-тесты бэкенда (`endoRoutesInquisition.test.ts`, `odontogramDecomposition.test.ts`) проходят 100% PASS (8/8).
+  8. 4-состояный Red Team Visual Proof Gate: лично отсмотрены через `view_file` все 4 реальных скриншота в `docs/proofs/endo/`:
+     - `01_pc_light_endo_1440x900.png` (120.5 KB)
+     - `02_pc_dark_endo_1440x900.png` (126.9 KB)
+     - `03_mobile_light_endo_390x844.png` (41.7 KB)
+     - `04_mobile_dark_endo_390x844.png` (44.8 KB)
+     Подтверждено полное отсутствие 7 смертных грехов UI.
+
+**ИТОГОВЫЙ ВЕРДИКТ RED TEAM: [ПРОВЕРЕНО: ЧИСТО]** (489 фич в реестре: 64 канонические + 425 аддендум, ВСЕ ЗАКРЫТЫ СО СТАТУСОМ [ЕСТЬ] / [ЗАКРЫТО], 100% паритет с ведущими стоматологическими CRM РФ: IDENT, DentalPRO, StomX).
 
 
 

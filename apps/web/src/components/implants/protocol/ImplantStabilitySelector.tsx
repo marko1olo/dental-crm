@@ -9,7 +9,7 @@ export interface ImplantStabilitySelectorProps {
 	readonly setTorqueNcm: (t: number) => void;
 	readonly isIsqEnabled: boolean;
 	readonly setIsIsqEnabled: (en: boolean) => void;
-	readonly isqValue?: number;
+	readonly isqValue?: number | undefined;
 }
 
 const TORQUE_PRESETS = [15, 25, 30, 35, 40, 45, 50] as const;

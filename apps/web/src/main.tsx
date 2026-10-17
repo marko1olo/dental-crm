@@ -88,14 +88,19 @@ const ImplantPassportModal = React.lazy(() =>
 		default: m.ImplantPassportModal,
 	})),
 );
-const ClinicalTasksPanel = React.lazy(() =>
-	import("./ClinicalTasksPanel").then((m) => ({
-		default: m.ClinicalTasksPanel,
+const ClinicalTasksStandaloneWorkspace = React.lazy(() =>
+	import("./components/tasks/ClinicalTasksStandaloneWorkspace").then((m) => ({
+		default: m.ClinicalTasksStandaloneWorkspace,
 	})),
 );
 const TaxDeductionCertificateModal = React.lazy(() =>
 	import("./components/finance/TaxDeductionCertificateModal").then((m) => ({
 		default: m.TaxDeductionCertificateModal,
+	})),
+);
+const OrthopedicsChairsidePanel = React.lazy(() =>
+	import("./components/orthopedics/OrthopedicsChairsidePanel").then((m) => ({
+		default: m.OrthopedicsChairsidePanel,
 	})),
 );
 import { TelephonyStandaloneWorkspace } from "./components/telephony/TelephonyStandaloneWorkspace";
@@ -557,6 +562,9 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
+	const implantTabParam = new URLSearchParams(window.location.search).get("tab") as any;
+	const initialTab = (implantTabParam === "passport" || implantTabParam === "isq" || implantTabParam === "diary") ? implantTabParam : "protocol";
+
 	appRoot.render(
 		<React.StrictMode>
 			<BootErrorBoundary audience="clinic">
@@ -575,6 +583,7 @@ if (publicPortalRoute) {
 						doctorName="Д-р Воронов А. В."
 						doctorId="DOC-01"
 						initialTooth={46}
+						initialTab={initialTab}
 					/>
 				</React.Suspense>
 				<GlobalToast />
@@ -608,16 +617,7 @@ if (publicPortalRoute) {
 						</div>
 					}
 				>
-					<div
-						className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6 overflow-y-auto"
-						data-testid="clinical-tasks-standalone-workspace"
-					>
-						<ClinicalTasksPanel
-							patientId="pat-showcase-1"
-							assignedDoctorId="doc-1"
-							treatmentPlanId="plan-1"
-						/>
-					</div>
+					<ClinicalTasksStandaloneWorkspace />
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>
@@ -709,6 +709,47 @@ if (publicPortalRoute) {
 									taxCode: "1",
 								},
 							]}
+						/>
+					</div>
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(new URLSearchParams(window.location.search).has("orthopedics") ||
+		new URLSearchParams(window.location.search).get("standalone") === "orthopedics" ||
+		window.location.hash.toLowerCase().includes("orthopedics"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			(localStorage.getItem("dente_theme") as any) || "auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	console.info("[Orthopedics] Standalone cockpit mounted");
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка ортопедического кокпита...
+						</div>
+					}
+				>
+					<div
+						className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6 overflow-y-auto"
+						data-testid="orthopedics-standalone-workspace"
+					>
+						<OrthopedicsChairsidePanel
+							patientId="pat-showcase-1"
+							activeToothFdi={16}
+							selectedTeeth={[16]}
 						/>
 					</div>
 				</React.Suspense>

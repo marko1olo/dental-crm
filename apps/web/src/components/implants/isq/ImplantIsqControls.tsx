@@ -29,17 +29,25 @@ export const ImplantIsqControls: React.FC<ImplantIsqControlsProps> = ({
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
 				<div className="flex flex-col gap-1">
 					<label htmlFor="input-isq-day0" className="text-xs font-bold text-[var(--ink)]">
-						Числовое значение ISQ (шкала 35–85):
+						Числовое значение ISQ (шкала 1–100):
 					</label>
 					<input
 						id="input-isq-day0"
 						type="number"
-						min="35"
-						max="85"
+						min="1"
+						max="100"
 						value={isqValue}
 						onChange={(e) => {
-							const val = Number(e.target.value);
-							if (!isNaN(val)) setIsqValue(val);
+							const raw = e.target.value;
+							if (raw === "") {
+								setIsqValue(72);
+								return;
+							}
+							const val = Number(raw);
+							if (!isNaN(val)) {
+								const clamped = Math.max(1, Math.min(100, val));
+								setIsqValue(clamped);
+							}
 						}}
 						className="min-h-[48px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-mono font-bold text-[var(--ink)]"
 						data-testid="input-isq-day0"
@@ -54,8 +62,8 @@ export const ImplantIsqControls: React.FC<ImplantIsqControlsProps> = ({
 					<input
 						id="slider-isq-day0"
 						type="range"
-						min="35"
-						max="85"
+						min="1"
+						max="100"
 						step="1"
 						value={isqValue}
 						onChange={(e) => setIsqValue(Number(e.target.value))}
@@ -67,6 +75,17 @@ export const ImplantIsqControls: React.FC<ImplantIsqControlsProps> = ({
 			</div>
 
 			<div className="flex flex-wrap gap-2 pt-1">
+				<button
+					type="button"
+					onClick={() => {
+						setIsqValue(72);
+						setIsIsqEnabled(true);
+					}}
+					className={`secondary-button text-xs ${isqValue === 72 && isIsqEnabled ? "active" : ""}`}
+					data-testid="btn-isq-preset-72"
+				>
+					Норма ISQ 72 (Оптимум)
+				</button>
 				<button
 					type="button"
 					onClick={() => {

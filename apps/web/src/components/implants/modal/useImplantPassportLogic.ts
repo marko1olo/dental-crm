@@ -15,28 +15,28 @@ import { buildAssembledPassportData } from "./assemblePassportData";
 export interface UseImplantPassportLogicParams {
 	readonly isOpen: boolean;
 	readonly initialTooth: number;
-	readonly initialTab?: "protocol" | "isq" | "diary" | "passport";
-	readonly inventoryOverdraftActive?: boolean;
-	readonly patientName?: string;
-	readonly patientId?: string;
-	readonly doctorName?: string;
-	readonly doctorId?: string;
-	readonly onSavePassport?: (data: FastImplantPassportData) => void;
-	readonly onInsertIntoDiary?: (diaryText: string) => void;
+	readonly initialTab?: ("protocol" | "isq" | "diary" | "passport") | undefined;
+	readonly inventoryOverdraftActive?: boolean | undefined;
+	readonly patientName?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly doctorId?: string | undefined;
+	readonly onSavePassport?: ((data: FastImplantPassportData) => void) | undefined;
+	readonly onInsertIntoDiary?: ((diaryText: string) => void) | undefined;
 	readonly onClose: () => void;
 }
 
 export function useImplantPassportLogic(params: {
 	isOpen: boolean;
 	initialTooth: number;
-	initialTab?: "protocol" | "isq" | "diary" | "passport";
-	inventoryOverdraftActive?: boolean;
+	initialTab?: ("protocol" | "isq" | "diary" | "passport") | undefined;
+	inventoryOverdraftActive?: boolean | undefined;
 	patientName: string;
 	patientId: string;
 	doctorName: string;
 	doctorId: string;
-	onSavePassport?: (data: FastImplantPassportData) => void;
-	onInsertIntoDiary?: (diaryText: string) => void;
+	onSavePassport?: ((data: FastImplantPassportData) => void) | undefined;
+	onInsertIntoDiary?: ((diaryText: string) => void) | undefined;
 	onClose: () => void;
 }) {
 	const [toothFdi, setToothFdi] = useState<number>(params.initialTooth);

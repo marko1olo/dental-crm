@@ -8,6 +8,7 @@ export interface ImplantWarehouseSelectorProps {
 	readonly lotNumber: string;
 	readonly catalogArticle: string;
 	readonly onSelectStockItem?: ((item: ImplantWarehouseStockItem) => void) | undefined;
+	readonly isOverdraftActive?: boolean | undefined;
 }
 
 

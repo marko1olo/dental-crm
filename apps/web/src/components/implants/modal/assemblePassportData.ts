@@ -25,9 +25,9 @@ export interface AssemblePassportParams {
 	readonly consumablesCostRub: number;
 	readonly doctorGrossMarginRub: number;
 	readonly isImmediateLoadingFeasible: boolean;
-	readonly boneGraftMaterial?: string;
-	readonly membraneUsed?: string;
-	readonly sutureMaterial?: string;
+	readonly boneGraftMaterial?: string | undefined;
+	readonly membraneUsed?: string | undefined;
+	readonly sutureMaterial?: string | undefined;
 }
 
 export function buildAssembledPassportData(params: AssemblePassportParams): FastImplantPassportData {
