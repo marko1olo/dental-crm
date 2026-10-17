@@ -4,7 +4,6 @@ import {
 	COMMERCEML_VERSION_209,
 	ENTERPRISEDATA_VERSION_113,
 	TAX_EXEMPTION_ARTICLE_149_RU,
-	createRealisticShiftExportPackage,
 	formatKopToRub,
 	formatKopToRubLocale,
 	generateAccountantExecutiveSummary,
@@ -20,6 +19,7 @@ import {
 	validateOneCClinicCredentials,
 	validatePackageIntegrity,
 } from "../oneCCommerceMlEngine";
+import { createRealisticShiftExportPackage } from "./oneCTestPackageFixture.js";
 
 describe("1C:Enterprise CommerceML 2.09 & EnterpriseData 1.13 Engine", () => {
 	const testDateIso = "2026-08-28";

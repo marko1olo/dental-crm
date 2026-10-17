@@ -4,4 +4,3 @@
 
 export * from "./sberPosEngine";
 export * from "./sberPosPresets";
-export * from "./SberPosTerminalModal";
