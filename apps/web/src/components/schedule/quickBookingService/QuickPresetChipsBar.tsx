@@ -102,7 +102,7 @@ export function QuickSegmentedStatusHeader({
                 : "text-rose-600 shrink-0"
             }
           />
-          <span className="truncate">Срочный</span>
+          <span className="truncate">Внеплановый (срочно)</span>
         </button>
         <button
           type="button"
@@ -117,7 +117,7 @@ export function QuickSegmentedStatusHeader({
           data-testid="expo26-status-confirmed"
         >
           <CheckCircle2 size={13} className="shrink-0" />
-          <span className="truncate">Подтверждён</span>
+          <span className="truncate">Утверждённый</span>
         </button>
       </div>
     </div>

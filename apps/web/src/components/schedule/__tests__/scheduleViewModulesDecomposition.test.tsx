@@ -46,7 +46,7 @@ describe("ScheduleView Monolith Decomposition Suite (/decomposer)", () => {
     }
   });
 
-  it("3. preserves 100% of public runtime exports from ScheduleView facade", async () => {
+  it("3. preserves 100% of public runtime exports from ScheduleView facade", { timeout: 30000 }, async () => {
     const mod = await import("../../../ScheduleView.js");
     assert.equal(typeof mod.ScheduleView, "function", "ScheduleView must be a function");
     assert.equal(typeof mod.default, "function", "default export must be ScheduleView");

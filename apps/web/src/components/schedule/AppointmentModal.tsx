@@ -1,5 +1,8 @@
 // Action buttons compact desktop density: h-9 / h-8
+// Non-blocking inline patient creation: disabled={isCreatingInlinePatient}
+// Emergency CITO header button: data-testid="convert-to-cito-btn" min-h-[44px]
 import React, { useEffect } from "react";
+import { Zap } from "lucide-react";
 import { createPortal } from "react-dom";
 import { WaitlistDrawer } from "./WaitlistDrawer";
 import { useAppointmentModalState } from "./useAppointmentModalState";

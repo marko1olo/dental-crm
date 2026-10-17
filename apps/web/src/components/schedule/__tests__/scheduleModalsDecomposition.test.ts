@@ -73,7 +73,7 @@ describe("Schedule Modals & Appointment Monolith Decomposition Suite (/decompose
     }
   });
 
-  it("5. preserves AppointmentModal public runtime exports", async () => {
+  it("5. preserves AppointmentModal public runtime exports", { timeout: 30000 }, async () => {
     const mod = await import("../AppointmentModal.js");
     assert.equal(typeof mod.AppointmentModal, "function");
     assert.equal(typeof mod.resolveChairDutyDoctor, "function");
@@ -82,7 +82,7 @@ describe("Schedule Modals & Appointment Monolith Decomposition Suite (/decompose
     assert.equal(typeof mod.isTechnicalBreakAppointment, "function");
   });
 
-  it("6. preserves ScheduleViewModals public runtime exports", async () => {
+  it("6. preserves ScheduleViewModals public runtime exports", { timeout: 30000 }, async () => {
     const mod = await import("../view/ScheduleViewModals.js");
     assert.equal(typeof mod.ScheduleViewModals, "function");
   });

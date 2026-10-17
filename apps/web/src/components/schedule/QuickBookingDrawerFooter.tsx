@@ -31,7 +31,7 @@ export function QuickBookingDrawerFooter({
         className={`primary-button w-full min-h-[44px] font-semibold text-sm transition-all cursor-pointer select-none active:scale-[0.99] ${
           hasCollision
             ? "!bg-amber-600 hover:!bg-amber-700 !border-amber-600"
-            : ""
+            : "!bg-[var(--teal-dark)] text-white hover:brightness-110"
         }`}
       >
         <Plus size={16} className="shrink-0" />
@@ -40,7 +40,7 @@ export function QuickBookingDrawerFooter({
             ? "Сохраняю запись…"
             : hasCollision
               ? "Записать на это время (острая боль)"
-              : "Записать на приём (Ctrl+Enter)"}
+              : "Записать на приём (Создать запись Ctrl+Enter)"}
         </span>
       </button>
 
@@ -50,7 +50,7 @@ export function QuickBookingDrawerFooter({
           onClick={onRequestClose}
           aria-busy={isSubmitting}
           data-testid="quick-booking-cancel-btn"
-          className="secondary-button min-h-[44px]"
+          className="secondary-button min-h-[44px] bg-[var(--paper)] text-[var(--ink)]"
         >
           Отмена (Esc)
         </button>

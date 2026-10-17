@@ -72,7 +72,7 @@ export const ScheduleMobileTimelineRow: React.FC<ScheduleMobileTimelineRowProps>
       >
         <div className={`schedule-mobile-status-stripe ${statusTheme.stripe}`} />
 
-        <div className="schedule-mobile-card-content">
+        <div className="schedule-mobile-card-content" data-testid={`appointment-card-clickable-${appt.id}`}>
           <div className="schedule-mobile-card-header">
             <div className="schedule-mobile-patient-group">
               <span className="schedule-mobile-patient-name" title={fullPatientName}>{pName}</span>

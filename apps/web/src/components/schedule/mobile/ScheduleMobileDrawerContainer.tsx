@@ -56,7 +56,14 @@ export const ScheduleMobileDrawerContainer: React.FC<ScheduleMobileDrawerContain
       handleShiftAppointmentLateness={handleShiftLateness}
       handleReassignAppointmentChair={handleReassignChair}
       handleReassignAppointmentDoctor={handleReassignDoctor}
-      handleFreeSlotToWaitlist={() => setSelectedMobileAppt(null)}
+      handleFreeSlotToWaitlist={(appt) => {
+        if (onQuickStatusChange) {
+          onQuickStatusChange(appt.id, "cancelled");
+        } else if (props.onAppointmentMove) {
+          props.onAppointmentMove(appt.id, { status: "cancelled" } as any);
+        }
+        setSelectedMobileAppt(null);
+      }}
     />
   );
 };
