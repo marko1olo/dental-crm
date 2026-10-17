@@ -67,9 +67,9 @@ export const PanoramicToolbar: React.FC<PanoramicToolbarProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool?.("select")}
-						className={`px-2 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 transition-all min-h-[30px] ${
+						className={`secondary-button px-2 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 transition-all min-h-[30px] ${
 							activeTool === "select"
-								? "bg-blue-600 text-white shadow-xs"
+								? "bg-[var(--teal,#0d9488)] text-white shadow-xs border-[var(--teal,#0d9488)]"
 								: "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/60"
 						}`}
 						title="Навигация и денситометрия HU"
@@ -82,9 +82,9 @@ export const PanoramicToolbar: React.FC<PanoramicToolbarProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool?.("ruler")}
-						className={`px-2 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 transition-all min-h-[30px] ${
+						className={`secondary-button px-2 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 transition-all min-h-[30px] ${
 							activeTool === "ruler"
-								? "bg-blue-600 text-white shadow-xs"
+								? "bg-[var(--teal,#0d9488)] text-white shadow-xs border-[var(--teal,#0d9488)]"
 								: "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/60"
 						}`}
 						title="Метрическая линейка 1:1 в мм"
@@ -97,9 +97,9 @@ export const PanoramicToolbar: React.FC<PanoramicToolbarProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool?.("angle")}
-						className={`px-2 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 transition-all min-h-[30px] ${
+						className={`secondary-button px-2 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 transition-all min-h-[30px] ${
 							activeTool === "angle"
-								? "bg-blue-600 text-white shadow-xs"
+								? "bg-[var(--teal,#0d9488)] text-white shadow-xs border-[var(--teal,#0d9488)]"
 								: "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/60"
 						}`}
 						title="Угломер оси наклона (°)"
@@ -168,9 +168,9 @@ export const PanoramicToolbar: React.FC<PanoramicToolbarProps> = ({
 							key={preset.id}
 							type="button"
 							onClick={() => onSelectPreset(preset.id)}
-							className={`px-2 py-1 rounded-md text-[11px] font-bold min-h-[30px] transition-all whitespace-nowrap ${
+							className={`secondary-button px-2 py-1 rounded-md text-[11px] font-bold min-h-[30px] transition-all whitespace-nowrap ${
 								activePreset === preset.id
-									? "bg-blue-600 text-white shadow-xs"
+									? "bg-[var(--teal,#0d9488)] text-white shadow-xs border-[var(--teal,#0d9488)]"
 									: "bg-neutral-900/90 text-neutral-300 border border-neutral-800 hover:bg-neutral-800"
 							}`}
 							title={preset.description}

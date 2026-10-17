@@ -151,7 +151,7 @@ export function VisiographReportViewer({ report, capturedAt, onInsertToProtocol 
 					<button
 						type="button"
 						onClick={() => onInsertToProtocol(report)}
-						className="diag-btn-teal shrink-0"
+						className="diag-btn-teal secondary-button shrink-0"
 						style={{
 							height: "28px",
 							minHeight: "28px",
@@ -159,11 +159,11 @@ export function VisiographReportViewer({ report, capturedAt, onInsertToProtocol 
 							fontSize: "12px",
 							marginLeft: "auto",
 						}}
-						title="Перенести отчёт лучевой диагностики в дневник визита (043/у)"
+						title="Перенести отчёт лучевой диагностики в дневник приёма"
 						data-testid="btn-transfer-report-to-protocol"
 					>
 						<FileText size={13} />
-						<span>В дневник (043/у)</span>
+						<span>В дневник приёма</span>
 					</button>
 				)}
 			</div>

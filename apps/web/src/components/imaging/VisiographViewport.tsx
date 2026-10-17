@@ -103,7 +103,7 @@ export function VisiographViewport({
 					filter: filterStyle,
 					transition: "filter 0.15s ease",
 				}}
-				studyTitle={currentScan?.originalFilename}
+				studyTitle={currentScan?.originalFilename ?? undefined}
 				toothCode={currentScan?.toothCode}
 			/>
 

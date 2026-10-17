@@ -105,7 +105,7 @@ export const DicomQuickAccessBar: React.FC<DicomQuickAccessBarProps> = ({
 				<button
 					type="button"
 					onClick={() => onSelectTool("pan")}
-					className={`h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border ${
+					className={`icon-button h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border ${
 						activeTool === "pan"
 							? "bg-teal-900/80 border-[var(--teal)] text-teal-300"
 							: "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
@@ -118,7 +118,7 @@ export const DicomQuickAccessBar: React.FC<DicomQuickAccessBarProps> = ({
 				<button
 					type="button"
 					onClick={() => onSelectTool("ruler")}
-					className={`h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border ${
+					className={`icon-button h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border ${
 						activeTool === "ruler"
 							? "bg-sky-900/80 border-sky-500 text-sky-200"
 							: "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
@@ -134,7 +134,7 @@ export const DicomQuickAccessBar: React.FC<DicomQuickAccessBarProps> = ({
 						onSelectTool("angle");
 						showToast("Инструмент угла: выберите вершину и две точки лучей", "info");
 					}}
-					className={`h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border ${
+					className={`icon-button h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border ${
 						activeTool === "angle"
 							? "bg-amber-900/80 border-amber-500 text-amber-200"
 							: "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
@@ -147,7 +147,7 @@ export const DicomQuickAccessBar: React.FC<DicomQuickAccessBarProps> = ({
 				<button
 					type="button"
 					onClick={() => onSelectTool("root_canal_tracer")}
-					className={`h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border ${
+					className={`icon-button h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border ${
 						activeTool === "root_canal_tracer"
 							? "bg-rose-900/80 border-rose-500 text-rose-200"
 							: "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
@@ -160,7 +160,7 @@ export const DicomQuickAccessBar: React.FC<DicomQuickAccessBarProps> = ({
 				<button
 					type="button"
 					onClick={() => onInstantScreenCapture(true)}
-					className="h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+					className="icon-button h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
 					title="Быстрый снимок экрана в буфер обмена Windows"
 				>
 					<Camera size={15} />
@@ -171,7 +171,7 @@ export const DicomQuickAccessBar: React.FC<DicomQuickAccessBarProps> = ({
 					data-testid="btn-dicom-hu-profile"
 					id="btn-ez3d-hu-profile"
 					onClick={onOpenHuProfile}
-					className="h-8 px-2.5 rounded-lg inline-flex items-center gap-1.5 border border-sky-500/50 bg-sky-600/30 text-sky-200 hover:bg-sky-600/40 text-[13px] font-semibold cursor-pointer transition-colors"
+					className="secondary-button h-8 px-2.5 rounded-lg inline-flex items-center gap-1.5 border border-sky-500/50 bg-sky-600/30 text-sky-200 hover:bg-sky-600/40 text-[13px] font-semibold cursor-pointer transition-colors"
 					title="Профиль плотности кости (HU Хаунсфилд вдоль линии измерения D1..D5)"
 				>
 					<Activity size={14} className="text-sky-400" />
@@ -185,7 +185,7 @@ export const DicomQuickAccessBar: React.FC<DicomQuickAccessBarProps> = ({
 						data-testid="btn-dicom-measurement-dropdown"
 						id="btn-ez3d-measurement-dropdown"
 						onClick={onToggleMeasureMenu}
-						className={`h-8 px-2.5 rounded-lg inline-flex items-center gap-1 border text-[13px] font-medium cursor-pointer transition-colors ${
+						className={`secondary-button h-8 px-2.5 rounded-lg inline-flex items-center gap-1 border text-[13px] font-medium cursor-pointer transition-colors ${
 							isMeasureMenuOpen
 								? "bg-teal-900/80 border-[var(--teal)] text-teal-200"
 								: "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
@@ -304,7 +304,7 @@ export const DicomQuickAccessBar: React.FC<DicomQuickAccessBarProps> = ({
 							onViewportChange(BONE_PRESET);
 							showToast("Пресет «Кость / Периодонт»: WW 2000 / WL 500", "info");
 						}}
-						className={`h-8 px-2.5 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
+						className={`secondary-button h-8 px-2.5 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
 							viewportState.windowWidth === 2000 &&
 							viewportState.windowCenter === 500 &&
 							!viewportState.invert
@@ -322,7 +322,7 @@ export const DicomQuickAccessBar: React.FC<DicomQuickAccessBarProps> = ({
 							onViewportChange(ENAMEL_PRESET);
 							showToast("Пресет «Эмаль / Кариес»: WW 4000 / WL 1500", "info");
 						}}
-						className={`h-8 px-2.5 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
+						className={`secondary-button h-8 px-2.5 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
 							viewportState.windowWidth === 4000 &&
 							viewportState.windowCenter === 1500 &&
 							!viewportState.invert
@@ -340,7 +340,7 @@ export const DicomQuickAccessBar: React.FC<DicomQuickAccessBarProps> = ({
 							onViewportChange(DENTIN_PRESET);
 							showToast("Пресет «Дентин / Эндодонтия»: WW 1500 / WL 300", "info");
 						}}
-						className={`h-8 px-2.5 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
+						className={`secondary-button h-8 px-2.5 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
 							viewportState.windowWidth === 1500 &&
 							viewportState.windowCenter === 300 &&
 							!viewportState.invert
@@ -363,7 +363,7 @@ export const DicomQuickAccessBar: React.FC<DicomQuickAccessBarProps> = ({
 								"info",
 							);
 						}}
-						className={`h-8 px-2 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
+						className={`secondary-button h-8 px-2 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
 							viewportState.invert
 								? "bg-blue-900/80 border-blue-500 text-blue-200"
 								: "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
@@ -380,7 +380,7 @@ export const DicomQuickAccessBar: React.FC<DicomQuickAccessBarProps> = ({
 					id="btn-dicom-window-panel"
 					data-tour="mpr-presets"
 					onClick={onToggleWindowPanel}
-					className={`h-8 px-2.5 rounded-lg inline-flex items-center gap-1.5 border text-[13px] font-medium cursor-pointer transition-colors ${
+					className={`secondary-button h-8 px-2.5 rounded-lg inline-flex items-center gap-1.5 border text-[13px] font-medium cursor-pointer transition-colors ${
 						isWindowPanelOpen
 							? "bg-purple-900/80 border-purple-500 text-purple-200"
 							: "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
@@ -396,7 +396,7 @@ export const DicomQuickAccessBar: React.FC<DicomQuickAccessBarProps> = ({
 					type="button"
 					id="btn-dicom-clipping-panel"
 					onClick={onToggleClippingPanel}
-					className={`h-8 px-2.5 rounded-lg inline-flex items-center gap-1.5 border text-[13px] font-medium cursor-pointer transition-colors ${
+					className={`secondary-button h-8 px-2.5 rounded-lg inline-flex items-center gap-1.5 border text-[13px] font-medium cursor-pointer transition-colors ${
 						isClippingApplied
 							? "bg-emerald-950 border-emerald-500 text-emerald-200"
 							: isClippingPanelOpen
@@ -418,7 +418,7 @@ export const DicomQuickAccessBar: React.FC<DicomQuickAccessBarProps> = ({
 						data-testid="btn-dicom-run-ai"
 						onClick={onAiAnalyze}
 						disabled={isAiAnalyzing}
-						className="h-8 px-3 rounded-lg border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] text-[13px] font-semibold cursor-pointer inline-flex items-center gap-1.5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed hover:opacity-90"
+						className="primary-button h-8 px-3 rounded-lg border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] text-[13px] font-semibold cursor-pointer inline-flex items-center gap-1.5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed hover:opacity-90"
 						title="Запустить ИИ-анализ снимка на кариес, периодонтит и пломбы"
 					>
 						{isAiAnalyzing ? (

@@ -21,6 +21,7 @@ export function VisiographBottomActions({
 		<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
 			<button
 				type="button"
+				className="secondary-button"
 				onClick={onClear}
 				style={{
 					display: "flex",
@@ -41,6 +42,7 @@ export function VisiographBottomActions({
 			{isHistoryView && currentScan && (
 				<button
 					type="button"
+					className="danger-button"
 					data-testid="xray-scan-delete-current"
 					aria-label="Удалить открытый снимок из архива"
 					disabled={deletingScanId === currentScan.id}

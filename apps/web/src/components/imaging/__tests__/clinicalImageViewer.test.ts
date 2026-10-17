@@ -79,8 +79,8 @@ describe("ClinicalImageViewer — Chairside Radiology & Calibrated Measurements"
 				distanceMm: 0,
 			};
 
-			const dxPx = ((measurement.x2Percent - measurement.x1Percent) / 100) * imageNaturalWidth;
-			const dyPx = ((measurement.y2Percent - measurement.y1Percent) / 100) * imageNaturalHeight;
+			const dxPx = (((measurement.x2Percent ?? 0) - (measurement.x1Percent ?? 0)) / 100) * imageNaturalWidth;
+			const dyPx = (((measurement.y2Percent ?? 0) - (measurement.y1Percent ?? 0)) / 100) * imageNaturalHeight;
 			const naturalDistPx = Math.hypot(dxPx, dyPx);
 			const physicalMm = Number((naturalDistPx * pixelSpacingMm).toFixed(2));
 

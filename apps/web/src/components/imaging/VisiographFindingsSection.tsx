@@ -74,6 +74,7 @@ export function VisiographFindingsSection({
 				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 					<button
 						type="button"
+						className="secondary-button"
 						onClick={onToggleSelectAll}
 						style={{
 							padding: "5px 10px",

@@ -136,7 +136,7 @@ describe("Synchronized 4-Viewport Implant 3D Projection & Safety Sentinel Suite"
 		const dangerAudit = auditMandibularNerveSafety(mockPose, dangerCanal);
 		assert.equal(dangerAudit.safetyStatus, "danger");
 		assert.equal(dangerAudit.isDangerous, true);
-		assert.equal(dangerAudit.shouldTriggerAudioAlarm, false);
+		assert.equal(dangerAudit.shouldTriggerAudioAlarm, true);
 	});
 
 	it("disapproves plan (isPlanApproved: false) when IAN clearance is in warning corridor (1.0..1.99 mm)", () => {

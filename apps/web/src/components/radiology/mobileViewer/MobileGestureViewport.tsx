@@ -244,7 +244,7 @@ export const MobileGestureViewport: React.FC<MobileGestureViewportProps> = ({
 						<RefreshCw size={24} />
 					</div>
 					<div className="text-sm font-bold text-white mb-1">
-						ShadowAnalyst ИИ анализирует снимок...
+						Анализ рентгеновского снимка...
 					</div>
 					<div className="text-xs text-slate-400">
 						Выявление кариеса дентина, периапикальных очагов и резорбции

@@ -44,7 +44,7 @@ export const DirectRvgFooter: React.FC<DirectRvgFooterProps> = ({
 					<button
 						type="button"
 						onClick={onRetake}
-						className="rvg-action-btn-secondary"
+						className="secondary-button rvg-action-btn-secondary"
 						title="Повторный захват кадра с датчика (Space)"
 						data-testid="rvg-retake-btn"
 					>
@@ -58,7 +58,7 @@ export const DirectRvgFooter: React.FC<DirectRvgFooterProps> = ({
 					<button
 						type="button"
 						onClick={onSendToPlan}
-						className="rvg-action-btn-secondary"
+						className="secondary-button rvg-action-btn-secondary"
 						title="Прикрепить снимок к активному плану лечения пациента"
 						data-testid="rvg-send-plan-btn"
 					>
@@ -71,7 +71,7 @@ export const DirectRvgFooter: React.FC<DirectRvgFooterProps> = ({
 				<button
 					type="button"
 					onClick={onSendToLab}
-					className="rvg-action-btn-secondary"
+					className="secondary-button rvg-action-btn-secondary"
 					title="Прикрепить снимок к текущему заказу зуботехнической лаборатории"
 					data-testid="rvg-send-lab-btn"
 				>
@@ -83,7 +83,7 @@ export const DirectRvgFooter: React.FC<DirectRvgFooterProps> = ({
 				<button
 					type="button"
 					onClick={onExportDicom}
-					className="rvg-action-btn-secondary"
+					className="secondary-button rvg-action-btn-secondary"
 					title="Экспортировать снимок в DICOM 3.0 / TIFF высокой четкости"
 					data-testid="rvg-export-dicom-btn"
 				>
@@ -96,7 +96,7 @@ export const DirectRvgFooter: React.FC<DirectRvgFooterProps> = ({
 					type="button"
 					onClick={onSaveToEmr}
 					disabled={isSaving}
-					className="rvg-action-btn-primary"
+					className="primary-button rvg-action-btn-primary"
 					title={
 						isSaving
 							? "Сохранение снимка и протокола исследования в медицинскую карту..."

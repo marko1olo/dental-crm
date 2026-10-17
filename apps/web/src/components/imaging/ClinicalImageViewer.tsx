@@ -1,76 +1,19 @@
-import React, {
-	type CSSProperties,
-	useCallback,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
-import { UploadCloud, X, Ruler, RotateCw, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
-import { useSafeObjectUrl } from "../../hooks/useMemoryLeakGuard";
+import React, { type CSSProperties, useEffect, useRef, useState } from "react";
+import { useSafeObjectUrl } from "../../hooks/useMemoryLeakGuard.js";
+import {
+	type ClinicalImageViewerProps,
+	type ViewerRulerMeasurement,
+} from "./clinicalImageViewer/types.js";
+import { extractTransformParams } from "./clinicalImageViewer/transformHelpers.js";
+import { ClinicalRulerOverlay } from "./clinicalImageViewer/ClinicalRulerOverlay.js";
+import { ClinicalEmptyDropzone } from "./clinicalImageViewer/ClinicalEmptyDropzone.js";
+import { useClinicalImageInteractions } from "./clinicalImageViewer/useClinicalImageInteractions.js";
 
-export interface ViewerRulerMeasurement {
-	id: string;
-	startX: number;
-	startY: number;
-	endX: number;
-	endY: number;
-	lengthMm: number;
-	distanceMm?: number | undefined;
-	label?: string | undefined;
-}
+export type { ClinicalImageViewerProps, ViewerRulerMeasurement };
+export { extractTransformParams };
 
-export interface ClinicalImageViewerProps {
-	imageUrl: string | Blob | File;
-	enhanced?: boolean;
-	autoRevokeBlobUrl?: boolean;
-	viewerStyle?: CSSProperties;
-	isRulerActive?: boolean;
-	pixelSpacingMm?: number;
-	measurements?: ViewerRulerMeasurement[];
-	onMeasurementsChange?: (measurements: ViewerRulerMeasurement[]) => void;
-	isPanActive?: boolean;
-	pan?: { x: number; y: number };
-	onPanChange?: (pan: { x: number; y: number }) => void;
-	studyTitle?: string;
-	patientName?: string;
-	toothCode?: string | number | null;
-	onMeasureApexLength?: (lengthMm: number) => void;
-}
-
-export function extractTransformParams(transformStr?: string): {
-	zoom: number;
-	panX: number;
-	panY: number;
-	rotationDeg: number;
-	flipHorizontal: boolean;
-} {
-	if (!transformStr || transformStr === "none") {
-		return { zoom: 1, panX: 0, panY: 0, rotationDeg: 0, flipHorizontal: false };
-	}
-	const scaleMatch = transformStr.match(/scale\(([-0-9.]+)\)/);
-	const zoom = scaleMatch ? Math.max(0.1, Number.parseFloat(scaleMatch[1] ?? "1") || 1) : 1;
-
-	const translateMatch = transformStr.match(/translate\(([-0-9.]+)px,\s*([-0-9.]+)px\)/);
-	const panX = translateMatch ? Number.parseFloat(translateMatch[1] ?? "0") || 0 : 0;
-	const panY = translateMatch ? Number.parseFloat(translateMatch[2] ?? "0") || 0 : 0;
-
-	const rotateMatch = transformStr.match(/rotate\(([-0-9.]+)deg\)/);
-	const rotationDeg = rotateMatch ? Number.parseFloat(rotateMatch[1] ?? "0") || 0 : 0;
-
-	const flipHorizontal = /scaleX\(-1\)/.test(transformStr);
-
-	return { zoom, panX, panY, rotationDeg, flipHorizontal };
-}
-
-/**
- * Профессиональный клинический просмотрщик рентгеновских снимков (SSOT).
- * Обеспечивает прямое отображение без бутафорских сплиттеров и потемкинских деревень.
- * Включает калиброванную линейку эндодонтических измерений рабочей длины канала,
- * трансформации (зум, панорамирование, поворот, инверсия негатива).
- */
 export function ClinicalImageViewer({
 	imageUrl,
-	enhanced = true,
 	viewerStyle,
 	autoRevokeBlobUrl,
 	isRulerActive = false,
@@ -81,359 +24,43 @@ export function ClinicalImageViewer({
 	pan,
 	onPanChange,
 	studyTitle,
-	patientName,
 	toothCode,
 	onMeasureApexLength,
 }: ClinicalImageViewerProps) {
-	const resolvedImageUrl = useSafeObjectUrl(imageUrl, {
-		autoRevokeBlobStrings: autoRevokeBlobUrl,
-	});
-	const [isPanning, setIsPanning] = useState(false);
-	const [internalPan, setInternalPan] = useState({ x: 0, y: 0 });
+	const resolvedImageUrl = useSafeObjectUrl(imageUrl, { autoRevokeBlobStrings: autoRevokeBlobUrl });
 	const [imageLoadError, setImageLoadError] = useState(false);
-	const [internalMeasurements, setInternalMeasurements] = useState<ViewerRulerMeasurement[]>([]);
-	const [drawingRuler, setDrawingRuler] = useState<{
-		startX: number;
-		startY: number;
-		endX: number;
-		endY: number;
-	} | null>(null);
-
-	const activeMeasurements = measurements ?? internalMeasurements;
-	const activePan = pan ?? internalPan;
 	const containerRef = useRef<HTMLDivElement>(null);
-	const lastMousePos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
 	useEffect(() => {
 		setImageLoadError(false);
 	}, [resolvedImageUrl]);
 
-	const getClientToImagePercent = useCallback(
-		(clientX: number, clientY: number) => {
-			if (!containerRef.current) return { x: 50, y: 50 };
-			const rect = containerRef.current.getBoundingClientRect();
-			const cx = rect.left + rect.width / 2;
-			const cy = rect.top + rect.height / 2;
-
-			const transformParams = extractTransformParams(viewerStyle?.transform as string | undefined);
-			const { zoom, panX, panY } = transformParams;
-
-			// Screen offset relative to transformed center (container center + pan)
-			const dxScreen = clientX - (cx + panX);
-			const dyScreen = clientY - (cy + panY);
-
-			// Invert zoom to map into unzoomed image coordinate space
-			const dxUnzoomed = dxScreen / zoom;
-			const dyUnzoomed = dyScreen / zoom;
-
-			// Convert back to container percentage (0% to 100%)
-			const unzoomedX = cx + dxUnzoomed;
-			const unzoomedY = cy + dyUnzoomed;
-
-			let xPct = ((unzoomedX - rect.left) / rect.width) * 100;
-			let yPct = ((unzoomedY - rect.top) / rect.height) * 100;
-
-			xPct = Math.max(0, Math.min(100, xPct));
-			yPct = Math.max(0, Math.min(100, yPct));
-
-			return { x: xPct, y: yPct };
-		},
-		[viewerStyle?.transform]
-	);
-
-	// Global mouse tracking while panning or measuring with calibrated ruler
-	useEffect(() => {
-		if (!isPanning && !drawingRuler) return;
-
-		const onMove = (e: MouseEvent) => {
-			if (isPanning) {
-				const dx = e.clientX - lastMousePos.current.x;
-				const dy = e.clientY - lastMousePos.current.y;
-				lastMousePos.current = { x: e.clientX, y: e.clientY };
-				const nextPan = { x: activePan.x + dx, y: activePan.y + dy };
-				if (onPanChange) {
-					onPanChange(nextPan);
-				} else {
-					setInternalPan(nextPan);
-				}
-			} else if (drawingRuler && containerRef.current) {
-				const { x, y } = getClientToImagePercent(e.clientX, e.clientY);
-				setDrawingRuler((prev) => (prev ? { ...prev, endX: x, endY: y } : null));
-			}
-		};
-
-		const onUp = (e: MouseEvent) => {
-			if (isPanning) {
-				setIsPanning(false);
-			}
-			if (drawingRuler && containerRef.current) {
-				const rect = containerRef.current.getBoundingClientRect();
-				const { x: currentEndX, y: currentEndY } = getClientToImagePercent(e.clientX, e.clientY);
-				const dxPx = ((currentEndX - drawingRuler.startX) / 100) * rect.width;
-				const dyPx = ((currentEndY - drawingRuler.startY) / 100) * rect.height;
-				const distPx = Math.hypot(dxPx, dyPx);
-
-				if (distPx > 8) {
-					const lengthMm = Math.round(distPx * (pixelSpacingMm || 0.04) * 10) / 10;
-					const measurementId =
-						typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-							? `m-${crypto.randomUUID()}`
-							: `m-${Date.now()}-${Math.floor(performance.now() * 1000)}`;
-					const newM: ViewerRulerMeasurement = {
-						id: measurementId,
-						startX: drawingRuler.startX,
-						startY: drawingRuler.startY,
-						endX: currentEndX,
-						endY: currentEndY,
-						lengthMm,
-						distanceMm: lengthMm,
-						label: toothCode ? `Канал #${toothCode}` : "Длина канала",
-					};
-					const next = [...activeMeasurements, newM];
-					if (onMeasurementsChange) {
-						onMeasurementsChange(next);
-					} else {
-						setInternalMeasurements(next);
-					}
-					if (onMeasureApexLength) {
-						onMeasureApexLength(lengthMm);
-					}
-				}
-				setDrawingRuler(null);
-			}
-		};
-
-		window.addEventListener("mousemove", onMove);
-		window.addEventListener("mouseup", onUp);
-		return () => {
-			window.removeEventListener("mousemove", onMove);
-			window.removeEventListener("mouseup", onUp);
-		};
-	}, [
-		isPanning,
-		drawingRuler,
-		getClientToImagePercent,
-		activePan,
-		onPanChange,
+	const {
 		activeMeasurements,
+		drawingRuler,
+		handleMouseDown,
+		deleteMeasurement,
+		isPanning,
+	} = useClinicalImageInteractions({
+		containerRef,
+		transformStr: viewerStyle?.transform as string | undefined,
+		isRulerActive,
+		isPanActive,
+		pan,
+		onPanChange,
+		measurements,
 		onMeasurementsChange,
 		pixelSpacingMm,
 		toothCode,
 		onMeasureApexLength,
-	]);
-
-	const handleMouseDown = (e: React.MouseEvent) => {
-		if (e.button !== 0) return; // Only primary mouse button
-
-		if (isRulerActive) {
-			e.preventDefault();
-			if (!containerRef.current) return;
-			const { x, y } = getClientToImagePercent(e.clientX, e.clientY);
-			setDrawingRuler({ startX: x, startY: y, endX: x, endY: y });
-			return;
-		}
-
-		if (isPanActive) {
-			e.preventDefault();
-			setIsPanning(true);
-			lastMousePos.current = { x: e.clientX, y: e.clientY };
-		}
-	};
-
-	const deleteMeasurement = (id: string) => {
-		const next = activeMeasurements.filter((m) => m.id !== id);
-		if (onMeasurementsChange) {
-			onMeasurementsChange(next);
-		} else {
-			setInternalMeasurements(next);
-		}
-	};
-
-	const viewerFilter = (viewerStyle?.filter as string) || "none";
-	const effectiveChain = viewerFilter === "none" ? "" : viewerFilter;
-	const viewerVariables = {
-		"--clinical-viewer-filter": viewerFilter,
-		"--clinical-viewer-filter-chain": effectiveChain,
-		"--clinical-viewer-transform": (viewerStyle?.transform as string) ?? "none",
-	} as CSSProperties;
-
-	const cursorStyle = isRulerActive
-		? "crosshair"
-		: isPanActive
-			? isPanning
-				? "grabbing"
-				: "grab"
-			: "default";
+	});
 
 	if (!resolvedImageUrl || !resolvedImageUrl.trim() || imageLoadError) {
-		return (
-			<div
-				className="clinical-image-container flex flex-col items-center justify-center p-8 text-center rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] min-h-[400px] h-[480px] max-h-[calc(100vh-280px)] flex-1 w-full"
-				ref={containerRef}
-				data-testid="clinical-image-placeholder"
-			>
-				<UploadCloud size={40} className="mb-2 text-[var(--teal,#0d9488)] opacity-75" />
-				<strong className="text-sm font-bold text-[var(--ink)] mb-1">
-					{imageLoadError
-						? "Снимок недоступен или повреждён"
-						: "Снимок не выбран или ожидает загрузки"}
-				</strong>
-				<p className="text-xs text-[var(--muted)] max-w-sm m-0">
-					{imageLoadError
-						? "Не удалось отобразить графический файл. Выберите другой снимок из списка или загрузите новый."
-						: "Выберите файл DICOM или снимок визиографа из списка или перетащите файл в рабочую область"}
-				</p>
-			</div>
-		);
+		return <ClinicalEmptyDropzone imageLoadError={imageLoadError} containerRef={containerRef} />;
 	}
 
-	const renderRulerOverlay = () => {
-		const transformParams = extractTransformParams(viewerStyle?.transform as string | undefined);
-		const badgeCounterScale = 1 / Math.max(0.2, transformParams.zoom);
-
-		return (
-			<svg
-				className="clinical-ruler-overlay"
-				style={{
-					position: "absolute",
-					top: 0,
-					left: 0,
-					width: "100%",
-					height: "100%",
-					pointerEvents: isRulerActive ? "auto" : "none",
-					zIndex: 25,
-					transform: (viewerStyle?.transform as string) ?? "none",
-					transformOrigin: "center center",
-				}}
-			>
-				<title>Калиброванная линейка эндодонтических измерений</title>
-				{activeMeasurements.map((m) => {
-					const midX = (m.startX + m.endX) / 2;
-					const midY = (m.startY + m.endY) / 2;
-					const dx = m.endX - m.startX;
-					const dy = m.endY - m.startY;
-					const len = Math.hypot(dx, dy) || 1;
-					const perpX = (-dy / len) * 1.5;
-					const perpY = (dx / len) * 1.5;
-
-					return (
-						<g key={m.id} className="clinical-ruler-measurement-group">
-							{/* Темная контрастная подложка */}
-							<line
-								x1={`${m.startX}%`}
-								y1={`${m.startY}%`}
-								x2={`${m.endX}%`}
-								y2={`${m.endY}%`}
-								stroke="rgba(15, 23, 42, 0.92)"
-								strokeWidth="4"
-								strokeLinecap="round"
-							/>
-							{/* Яркая калиброванная линия */}
-							<line
-								x1={`${m.startX}%`}
-								y1={`${m.startY}%`}
-								x2={`${m.endX}%`}
-								y2={`${m.endY}%`}
-								stroke="#06b6d4"
-								strokeWidth="2"
-								strokeLinecap="round"
-							/>
-							{/* Засечки по краям */}
-							<line
-								x1={`${m.startX - perpX}%`}
-								y1={`${m.startY - perpY}%`}
-								x2={`${m.startX + perpX}%`}
-								y2={`${m.startY + perpY}%`}
-								stroke="#06b6d4"
-								strokeWidth="2"
-							/>
-							<line
-								x1={`${m.endX - perpX}%`}
-								y1={`${m.endY - perpY}%`}
-								x2={`${m.endX + perpX}%`}
-								y2={`${m.endY + perpY}%`}
-								stroke="#06b6d4"
-								strokeWidth="2"
-							/>
-							{/* Бейдж расстояния в мм с кнопкой удаления */}
-							<svg
-								x={`${midX}%`}
-								y={`${midY}%`}
-								overflow="visible"
-							>
-								<g
-									transform={`scale(${badgeCounterScale})`}
-									style={{ pointerEvents: "auto", cursor: "pointer" }}
-									onClick={(e) => {
-										e.stopPropagation();
-										deleteMeasurement(m.id);
-									}}
-								>
-									<rect
-										x="-36"
-										y="-11"
-										width="72"
-										height="22"
-										rx="5"
-										fill="rgba(15, 23, 42, 0.94)"
-										stroke="#06b6d4"
-										strokeWidth="1.2"
-									/>
-									<text
-										x="-6"
-										y="4"
-										textAnchor="middle"
-										fill="#f8fafc"
-										fontSize="11"
-										fontFamily="ui-monospace, monospace"
-										fontWeight="700"
-									>
-										{m.lengthMm.toFixed(1)} мм
-									</text>
-									<g>
-										<title>Удалить измерение</title>
-										<text
-											x="24"
-											y="4"
-											textAnchor="middle"
-											fill="#ef4444"
-											fontSize="11"
-											fontWeight="900"
-										>
-											×
-										</text>
-									</g>
-								</g>
-							</svg>
-						</g>
-					);
-				})}
-
-				{drawingRuler && (
-					<g className="clinical-ruler-drawing-group">
-						<line
-							x1={`${drawingRuler.startX}%`}
-							y1={`${drawingRuler.startY}%`}
-							x2={`${drawingRuler.endX}%`}
-							y2={`${drawingRuler.endY}%`}
-							stroke="rgba(15, 23, 42, 0.9)"
-							strokeWidth="3.5"
-							strokeDasharray="4 2"
-						/>
-						<line
-							x1={`${drawingRuler.startX}%`}
-							y1={`${drawingRuler.startY}%`}
-							x2={`${drawingRuler.endX}%`}
-							y2={`${drawingRuler.endY}%`}
-							stroke="#38bdf8"
-							strokeWidth="2"
-							strokeDasharray="4 2"
-						/>
-					</g>
-				)}
-			</svg>
-		);
-	};
+	const viewerFilter = (viewerStyle?.filter as string) || "none";
+	const cursorStyle = isRulerActive ? "crosshair" : isPanActive ? (isPanning ? "grabbing" : "grab") : "default";
 
 	return (
 		<div
@@ -441,36 +68,21 @@ export function ClinicalImageViewer({
 			ref={containerRef}
 			role={isRulerActive || isPanActive ? "region" : "img"}
 			tabIndex={0}
-			aria-label={
-				isRulerActive
-					? "Измерение длины корневого канала на снимке"
-					: isPanActive
-						? "Панорамирование снимка"
-						: "Клинический просмотрщик снимка"
-			}
+			aria-label={isRulerActive ? "Измерение длины корневого канала" : isPanActive ? "Панорамирование снимка" : "Просмотрщик снимка"}
 			onMouseDown={handleMouseDown}
 			style={{
-				...viewerVariables,
+				"--clinical-viewer-filter": viewerFilter,
+				"--clinical-viewer-transform": (viewerStyle?.transform as string) ?? "none",
 				cursor: cursorStyle,
-			}}
+			} as CSSProperties}
 		>
-			{/* Информационный бейдж паспорта снимка */}
 			{(toothCode || studyTitle) && (
-				<div
-					className="absolute top-2 left-2 z-20 pointer-events-none px-2.5 py-1 rounded-md bg-slate-900/85 backdrop-blur-xs border border-teal-500/30 text-white text-xs font-semibold flex items-center gap-2 shadow-xs"
-				>
-					{toothCode && (
-						<span className="text-teal-400 font-mono font-bold">
-							Зуб #{toothCode}
-						</span>
-					)}
-					<span className="text-slate-300 font-normal truncate max-w-[220px]">
-						{studyTitle || "Рентген-снимок"}
-					</span>
+				<div className="absolute top-2 left-2 z-20 pointer-events-none px-2.5 py-1 rounded-md bg-slate-900/85 backdrop-blur-xs border border-teal-500/30 text-white text-xs font-semibold flex items-center gap-2 shadow-xs">
+					{toothCode && <span className="text-teal-400 font-mono font-bold">Зуб #{toothCode}</span>}
+					<span className="text-slate-300 font-normal truncate max-w-[220px]">{studyTitle || "Рентген-снимок"}</span>
 				</div>
 			)}
 
-			{/* Чистое изображение снимка с аппаратным CSS-рендерингом */}
 			<img
 				src={resolvedImageUrl}
 				alt={studyTitle || "Рентгеновский снимок"}
@@ -484,8 +96,13 @@ export function ClinicalImageViewer({
 				onError={() => setImageLoadError(true)}
 			/>
 
-			{/* Калиброванная оверлейная линейка */}
-			{renderRulerOverlay()}
+			<ClinicalRulerOverlay
+				activeMeasurements={activeMeasurements}
+				isRulerActive={isRulerActive}
+				transformStr={viewerStyle?.transform as string | undefined}
+				drawingRuler={drawingRuler}
+				onDeleteMeasurement={deleteMeasurement}
+			/>
 		</div>
 	);
 }

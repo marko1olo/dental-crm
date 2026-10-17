@@ -129,11 +129,11 @@ export function convert16BitToRgbaImageData(
 		return new ImageData(rgbaBytes, width, height);
 	}
 
-	if (typeof globalThis !== "undefined" && (globalThis as any).ImageData) {
+	if (typeof globalThis !== "undefined" && typeof (globalThis as any).ImageData === "function") {
 		return new (globalThis as any).ImageData(rgbaBytes, width, height);
 	}
 
-	return { data: rgbaBytes, width, height } as unknown as ImageData;
+	throw new Error("convert16BitToRgbaImageData requires a browser DOM environment with ImageData constructor");
 }
 
 /**

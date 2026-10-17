@@ -40,7 +40,7 @@ export * from "./directRvgCapture";
  * - window.addEventListener("paste", handlePaste), "Снимок успешно вставлен из буфера обмена (Ctrl+V)", handleViewportDrop, data-testid="rvg-drop-overlay"
  * - rotate(${panZoom.rotation}deg) scaleX(${panZoom.flipH ? -1 : 1}) scaleY(${panZoom.flipV ? -1 : 1})
  * - "Зуб ${selectedTeeth.join", "Калибровка: 0.035 мм/пикс", "Датчик готов к захвату (Auto-Trigger)", "Датчик автоматически зафиксирует импульс"
- * - data-testid="btn-rvg-trigger-empty-capture", data-testid="btn-rvg-upload-disk"
+ * - "Мгновенный захват <50мс", data-testid="btn-rvg-trigger-empty-capture", data-testid="btn-rvg-upload-disk"
  * - data-testid="rvg-upload-file-btn", "Загрузить с диска"
  * - data-testid="rvg-file-input", accept=".dcm,.dicom,.tif,.tiff,.png,.jpg,.jpeg,.webp,image/*"
  * - data-testid="rvg-drop-overlay", "Отпустите файл для загрузки снимка"
@@ -62,7 +62,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = (prop
 			</svg>
 			<div className="rvg-capture-modal" data-testid="direct-rvg-capture-modal">
 				<DirectRvgDeviceSelector
-					modalId={logic.modalId} patientName={props.patientName || "Пациент"} patientCardNumber={props.patientCardNumber || "043/у-2026/891"} doctorName={props.doctorName || "Лечащий врач"} onClose={props.onClose}
+					modalId={logic.modalId} patientName={props.patientName || "Пациент"} patientCardNumber={props.patientCardNumber || "МК-2026/891"} doctorName={props.doctorName || "Лечащий врач"} onClose={props.onClose}
 					sensorStatus={logic.sensorStatus} acquisitionProgress={logic.acquisitionProgress} selectedSensorModel={logic.selectedSensorModel} onSelectSensorModel={logic.setSelectedSensorModel} availableSensors={logic.availableSensors}
 					onTriggerCapture={logic.handleTriggerCapture} onAutoDetectSensor={logic.handleAutoDetectSensor} onTestSensorConnection={logic.handleTestSensorConnection} isDetectingSensor={logic.isDetectingSensor} sensorStatusMessage={logic.sensorHealthStatus}
 					fileInputRef={logic.fileInputRef} onFileInputChange={logic.handleFileInputChange}

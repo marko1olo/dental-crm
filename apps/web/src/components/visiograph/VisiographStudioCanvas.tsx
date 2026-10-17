@@ -141,6 +141,7 @@ export function VisiographStudioCanvas({
 
 	// Export Modal
 	const [showExportModal, setShowExportModal] = useState(false);
+	const [currentToothCode, setCurrentToothCode] = useState<string>(toothCode || "16");
 
 	// Low-Spec & 60 FPS Optimization: Compare params for dirty-checking
 	const areParamsEqual = (
@@ -490,6 +491,22 @@ export function VisiographStudioCanvas({
 				onPrintProtocol={handlePrintProtocol}
 				onOpenExportModal={() => setShowExportModal(true)}
 				onClose={onClose}
+				toothCode={currentToothCode}
+				onToothChange={setCurrentToothCode}
+				onAttachToVisit={async () => {
+					const canvas = canvasRef.current;
+					if (canvas && onSaveToRecord) {
+						const dataUri = canvas.toDataURL("image/jpeg", 0.95);
+						await onSaveToRecord(dataUri, {
+							rulers,
+							angles,
+							lesions,
+							scaleMmPerPx: calibration.scaleMmPerPixel,
+						});
+					} else {
+						handlePrintProtocol();
+					}
+				}}
 			/>
 
 			{/* Main Workspace Area: Sidebar Controls + Canvas */}

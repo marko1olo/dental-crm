@@ -41,7 +41,7 @@ export function VisiographToolbarControls({
 					type="button"
 					data-testid="btn-visiograph-fdi-selector"
 					onClick={() => setIsToothPickerOpen((prev) => !prev)}
-					className="shrink-0"
+					className="secondary-button shrink-0"
 					style={{
 						height: "30px",
 						minHeight: "30px",
@@ -172,7 +172,7 @@ export function VisiographToolbarControls({
 					type="button"
 					data-testid="btn-visiograph-norma-043"
 					onClick={onApplyNormaTo043}
-					className="shrink-0"
+					className="secondary-button shrink-0"
 					style={getNormaButtonStyle(isNormaApplied)}
 				>
 					<CheckCircle2
@@ -187,7 +187,7 @@ export function VisiographToolbarControls({
 					data-testid="btn-run-visiograph-ai"
 					onClick={onRunAiAnalysis}
 					disabled={isAnalyzing}
-					className="shrink-0"
+					className="primary-button shrink-0"
 					style={getAiButtonStyle(isAnalyzing)}
 				>
 					{isAnalyzing ? (

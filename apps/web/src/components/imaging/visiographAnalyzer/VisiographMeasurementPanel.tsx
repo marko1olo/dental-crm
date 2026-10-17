@@ -39,6 +39,7 @@ export function VisiographMeasurementPanel({
 				applyButton={
 					<button
 						type="button"
+						className="primary-button"
 						data-testid="btn-apply-findings-to-chart"
 						onClick={onApplyFindingsToChart}
 						disabled={isApplyingToChart}

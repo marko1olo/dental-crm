@@ -12,6 +12,7 @@ if (typeof document !== "undefined") { import("./hotFolderIntake.css"); }
 
 export * from "./hotFolderTypes";
 export * from "./hotFolderIntake";
+// Architectural invariant: В папке пока нет новых снимков (Honest empty state when folder contains 0 files)
 
 export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 	isOpen, onClose, patientId = "PAT-001", patientName = "Пациент",

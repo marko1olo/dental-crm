@@ -246,7 +246,7 @@ export function auditMandibularNerveSafety(
 		safetyStatus: status,
 		isDangerous: isDanger,
 		isWarning: isWarning,
-		shouldTriggerAudioAlarm: false,
+		shouldTriggerAudioAlarm: isDanger,
 		closestImplantPoint: segResult.closestPoint,
 		closestNervePoint: { x: closestNerveX, y: closestNerveY },
 		clinicalMessageRu: message,

@@ -36,7 +36,7 @@ export const DirectRvgViewportToolbar: React.FC<DirectRvgViewportToolbarProps> =
 				<button
 					type="button"
 					onClick={onZoomIn}
-					className="rvg-tool-btn"
+					className="icon-button rvg-tool-btn"
 					title="Увеличить (+)"
 					data-testid="rvg-zoom-in-btn"
 				>
@@ -45,7 +45,7 @@ export const DirectRvgViewportToolbar: React.FC<DirectRvgViewportToolbarProps> =
 				<button
 					type="button"
 					onClick={onZoomOut}
-					className="rvg-tool-btn"
+					className="icon-button rvg-tool-btn"
 					title="Уменьшить (-)"
 					data-testid="rvg-zoom-out-btn"
 				>
@@ -58,7 +58,7 @@ export const DirectRvgViewportToolbar: React.FC<DirectRvgViewportToolbarProps> =
 				<button
 					type="button"
 					onClick={onRotateCcw ?? onRotate}
-					className="rvg-tool-btn"
+					className="icon-button rvg-tool-btn"
 					title="Повернуть на 90° против часовой (CCW)"
 					data-testid="rvg-rotate-ccw-btn"
 				>
@@ -67,7 +67,7 @@ export const DirectRvgViewportToolbar: React.FC<DirectRvgViewportToolbarProps> =
 				<button
 					type="button"
 					onClick={onRotate}
-					className="rvg-tool-btn"
+					className="icon-button rvg-tool-btn"
 					title="Повернуть на 90° по часовой (CW / R)"
 					data-testid="rvg-rotate-btn"
 				>
@@ -76,7 +76,7 @@ export const DirectRvgViewportToolbar: React.FC<DirectRvgViewportToolbarProps> =
 				<button
 					type="button"
 					onClick={onToggleFlipH}
-					className={`rvg-tool-btn ${flipH ? "active" : ""}`}
+					className={`icon-button rvg-tool-btn ${flipH ? "active" : ""}`}
 					title="Отразить по горизонтали (Mirror X)"
 					data-testid="rvg-flip-btn"
 				>
@@ -86,7 +86,7 @@ export const DirectRvgViewportToolbar: React.FC<DirectRvgViewportToolbarProps> =
 					<button
 						type="button"
 						onClick={onToggleFlipV}
-						className={`rvg-tool-btn ${flipV ? "active" : ""}`}
+						className={`icon-button rvg-tool-btn ${flipV ? "active" : ""}`}
 						title="Отразить по вертикали (Mirror Y)"
 						data-testid="rvg-flip-v-btn"
 					>
@@ -96,7 +96,7 @@ export const DirectRvgViewportToolbar: React.FC<DirectRvgViewportToolbarProps> =
 				<button
 					type="button"
 					onClick={onResetTransform}
-					className="rvg-tool-btn"
+					className="icon-button rvg-tool-btn"
 					title="Сбросить масштаб и положение (0)"
 					data-testid="rvg-reset-transform-btn"
 				>

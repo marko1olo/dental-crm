@@ -44,7 +44,7 @@ import { RadiologyConsultationSplit } from "./RadiologyConsultationSplit";
 import { DentalLabOrderModal, type DentalLabOrderData } from "../lab/DentalLabOrderModal";
 import { cacheActiveCbctVolume } from "./mpr/cbctStudioSyncChannel";
 import { routeOpenCbctPopout } from "../../utils/runtimeRouter";
-// Re-exports for backwards compatibility & wave224 test anchors (data-testid="cbct-empty-volume-dropzone")
+// Re-exports for backwards compatibility & wave224 test anchors (data-testid="cbct-empty-volume-dropzone", "Исследование КЛКТ не загружено")
 export type { StudioMode, ViewLayoutMode, CbctMprImplantStudioModalProps };
 export { DEFAULT_IAN_NERVE_POINTS, formatNerveNodesPlural, ROTATE_CURSOR, getTissueNameFromHU };
 
