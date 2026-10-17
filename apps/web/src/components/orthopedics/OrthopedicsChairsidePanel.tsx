@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useId, useEffect, useRef } from "react";
+import React, { useState, useCallback, useId, useEffect, useRef, useMemo } from "react";
 import { CheckCircle2, ShieldCheck, FileText, ArrowRight, ExternalLink, Check, Send, Camera, RotateCcw, X } from "lucide-react";
 import { DentalCrown, DentalVeneer, DentalBridge } from "../icons/DentalIcons.js";
 import {
@@ -9,7 +9,6 @@ import { showToast } from "../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import { CANONICAL_MANUFACTURING_5_STAGES, type CanonicalManufacturing5StageItem } from "../lab/labMath.js";
 import { formatLabReadinessIndicator } from "@dental/shared";
-import { DentalLabReadyInClinicModal, type ReadyInClinicLabOrder } from "../lab/DentalLabReadyInClinicModal";
 
 export {
 	type StandardZtlPreset, STANDARD_ZTL_ORDER_PRESETS,
@@ -30,6 +29,7 @@ import {
 	OrthopedicPassportA4Modal,
 	type OrthopedicPassportData,
 } from "./OrthopedicPassportA4Modal.js";
+import { DentalLabReadyInClinicModal } from "../lab/DentalLabReadyInClinicModal.js";
 
 export type { LinkedChairsideLabOrderInfo };
 
@@ -117,6 +117,7 @@ export function OrthopedicsChairsidePanel({
 	const [fixationType, setFixationType] = useState<"cement" | "screw" | "clasp">(() => activePreset?.fixationType ?? "cement");
 	const [hasAntagonists, setHasAntagonists] = useState<boolean>(true);
 	const [isPassportModalOpen, setIsPassportModalOpen] = useState<boolean>(false);
+	const [isReadyInClinicModalOpen, setIsReadyInClinicModalOpen] = useState<boolean>(false);
 	const [activeXrayUrl, setActiveXrayUrl] = useState<string | null>(recentToothXrayUrl ?? null);
 	const [isWarrantyRework, setIsWarrantyRework] = useState<boolean>(false);
 	const [warrantyLiabilityType, setWarrantyLiabilityType] = useState<"clinic_warranty" | "lab_defect">("clinic_warranty");
@@ -170,10 +171,6 @@ export function OrthopedicsChairsidePanel({
 		}
 	}, [recentToothXrayUrl]);
 
-	// Ready in clinic prompt modal state (Mandates 8b, 8e, 8n)
-	const [isReadyInClinicModalOpen, setIsReadyInClinicModalOpen] = useState<boolean>(false);
-	const [readyInClinicOrder, setReadyInClinicOrder] = useState<ReadyInClinicLabOrder | null>(null);
-
 	// Клинический оверрайд врача (Мандат 8e п. 7, 8n)
 	const [overrideActive, setOverrideActive] = useState<boolean>(false);
 	const [overrideReason, setOverrideReason] = useState<string>(
@@ -222,19 +219,7 @@ export function OrthopedicsChairsidePanel({
 		}
 
 		if (stage.id === "ready_in_clinic") {
-			const preset = STANDARD_ZTL_ORDER_PRESETS.find((p) => p.id === activeZtlPresetId);
-			setReadyInClinicOrder({
-				id: activeOrderId || undefined,
-				orderNumber: labOrderSentNumber || (activeOrderId ? activeOrderId.slice(0, 8) : "ЗТЛ-1"),
-				patientId: patientId || undefined,
-				patientName: "Пациент",
-				toothFdi: activeTeethInput,
-				material: selectedMaterial,
-				colorVita: selectedShade,
-				constructionType: preset?.name || "Ортопедическая конструкция",
-				clinicName: "DENTE",
-			});
-			setIsReadyInClinicModalOpen(true);
+			showToast("Конструкция поступила в клинику и готова к фиксации", "success");
 		}
 	}, [activeOrderId, activeTeethInput, activeZtlPresetId, labOrderSentNumber, patientId, selectedMaterial, selectedShade]);
 
@@ -519,7 +504,7 @@ export function OrthopedicsChairsidePanel({
 		}
 
 		showToast(
-			"Примерка и фиксация (A16.07.004) подтверждены, атрибуты ЗТЛ внесены в 043/у",
+			"Примерка и фиксация (A16.07.004) подтверждены, атрибуты ЗТЛ внесены в дневник приёма",
 			"success",
 			3000,
 		);
@@ -620,6 +605,12 @@ export function OrthopedicsChairsidePanel({
 				window.dispatchEvent(
 					new CustomEvent("dente-open-lab-order-modal", { detail: draft }),
 				);
+				window.dispatchEvent(
+					new CustomEvent("dente-open-lab-order-drawer", { detail: draft }),
+				);
+				window.dispatchEvent(
+					new CustomEvent("dente-open-lab-order", { detail: draft }),
+				);
 			} catch {
 				// non-blocking
 			}
@@ -664,6 +655,22 @@ export function OrthopedicsChairsidePanel({
 		warrantyMonths: activePreset?.warrantyMonths ?? 60,
 		warrantyLabelRu: activePreset?.warrantyLabelRu ?? "60 месяцев (5 лет)",
 	};
+
+	const readyInClinicOrder = useMemo(() => {
+		if (!initialLabOrder && !labOrderSentNumber) return null;
+		return {
+			id: activeOrderId || undefined,
+			orderNumber: effectiveOrderNumber,
+			patientId: patientId || undefined,
+			patientName: "Пациент",
+			doctorName: "Д-р Смирнов А.В.",
+			toothFdi: activeTeethInput,
+			material: selectedMaterial,
+			colorVita: selectedShade,
+			constructionType: activePreset?.name || "Ортопедическая конструкция",
+			priceRub: grossPriceRub,
+		};
+	}, [activeOrderId, effectiveOrderNumber, initialLabOrder, labOrderSentNumber, patientId, activeTeethInput, selectedMaterial, selectedShade, activePreset?.name, grossPriceRub]);
 
 	return (
 		<div

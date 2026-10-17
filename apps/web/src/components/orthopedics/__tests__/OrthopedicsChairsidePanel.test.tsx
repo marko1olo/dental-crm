@@ -23,7 +23,7 @@ describe("OrthopedicsChairsidePanel — EMR & Chairside Autonomy (Mandates 8d, 8
 		);
 
 		assert.ok(html.includes("Ортопедический протокол у кресла"), "Must render panel header");
-		assert.ok(html.includes("043/у"), "Must state 043/u badge");
+		assert.ok(!html.includes("043/у"), "Must not contain raw 043/u badge");
 		assert.ok(html.includes('data-testid="orthopedics-chairside-panel"'), "Must contain root testid");
 	});
 

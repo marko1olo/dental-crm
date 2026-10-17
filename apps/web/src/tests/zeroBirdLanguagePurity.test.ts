@@ -113,7 +113,10 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 	});
 
 	it("9. ChairsideDiagnosisPackageCard: purged 54-ФЗ and 804н from visible chairside UI", () => {
-		const cardCode = readComponent("components/visit/ChairsideDiagnosisPackageCard.tsx");
+		const cardCode =
+			readComponent("components/visit/ChairsideDiagnosisPackageCard.tsx") +
+			"\n" +
+			readComponent("components/visit/ChairsidePackageHeader.tsx");
 		assert.ok(cardCode.includes("В кассу"), "Button must be clean 'В кассу'");
 		assert.ok(!cardCode.includes("1 клик"), "Button must not contain 1 клик");
 		assert.ok(!cardCode.includes("54-ФЗ"), "Button must not contain 54-ФЗ");
@@ -180,7 +183,12 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		assert.ok(cephReportCode.includes("Вставить в ортодонтическую карту"), "CephalometricReportTab must have clean 'Вставить в ортодонтическую карту'");
 		assert.ok(!cephReportCode.includes("Формы 043/у"), "CephalometricReportTab must not cite 'Формы 043/у'");
 
-		const orthoWidgetCode = readComponent("components/orthodontics/OrthodonticVisitProtocolWidget.tsx");
+		const orthoWidgetCode =
+			readComponent("components/orthodontics/OrthodonticVisitProtocolWidget.tsx") +
+			"\n" +
+			readComponent("components/orthodontics/OrthoProtocolModalHeader.tsx") +
+			"\n" +
+			readComponent("components/orthodontics/OrthoProtocolPreviewSection.tsx");
 		assert.ok(!orthoWidgetCode.includes('"Печать 043/у"'), "OrthodonticVisitProtocolWidget must not have 'Печать 043/у'");
 		assert.ok(!orthoWidgetCode.includes('"Внести в дневник 043/у"'), "OrthodonticVisitProtocolWidget must not have 'Внести в дневник 043/у'");
 		assert.ok(!orthoWidgetCode.includes("Дневник приёма (Форма 043/у)"), "Preview header must not have '(Форма 043/у)'");
@@ -262,6 +270,19 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 
 		const telephonyDrawerCode = readComponent("components/telephony/IncomingCallPatientDrawer.tsx");
 		assert.ok(!telephonyDrawerCode.includes("043/у"), "IncomingCallPatientDrawer must not cite 043/у in badge");
+	});
+
+	it("19. Orthopedics & Hygiene: purged 043/у and 804н from chairside banners & express strips (Mandates 8e, 8x)", () => {
+		const orthoBannerCode = readComponent("components/orthopedics/OrthopedicsChairsideLabOrderBanner.tsx");
+		assert.ok(!orthoBannerCode.includes("043/у"), "OrthopedicsChairsideLabOrderBanner must not contain raw 043/у badge");
+		assert.ok(orthoBannerCode.includes("Ортопедический протокол у кресла"), "Orthopedics header must be clean");
+
+		const hygieneStripCode = readComponent("components/hygiene/HygieneExpressPresetsStrip.tsx");
+		assert.ok(!hygieneStripCode.includes("Процедуры 804н"), "HygieneExpressPresetsStrip must not have 'Процедуры 804н'");
+		assert.ok(!hygieneStripCode.includes(">804н<"), "HygieneExpressPresetsStrip must not have raw '>804н<' text");
+		assert.ok(!hygieneStripCode.includes("(МКБ-10 / Форма 043/у)"), "HygieneExpressPresetsStrip must not cite Form 043/у in diagnoses title");
+		assert.ok(hygieneStripCode.includes("Протоколы гигиены"), "Hygiene button must be labeled 'Протоколы гигиены'");
+		assert.ok(hygieneStripCode.includes("Клинические диагнозы пародонта:"), "Diagnoses header must be clean Russian");
 	});
 });
 

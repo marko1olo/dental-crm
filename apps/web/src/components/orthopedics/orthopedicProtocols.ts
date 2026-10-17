@@ -738,7 +738,7 @@ export function applyOrthopedicProtocolToVisit(
 	// 10. Оповещение врача
 	if (params.showNotification !== false) {
 		showToast(
-			`Протокол «${protocol.shortLabel}» внесен в дневник 043/у, смету и Этап 3 (Ортопедия)`,
+			`Протокол «${protocol.shortLabel}» внесен в дневник приёма, смету и Этап 3 (Ортопедия)`,
 			"success",
 			3500,
 		);

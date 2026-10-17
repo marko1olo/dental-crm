@@ -82,33 +82,31 @@ export function OrthopedicsProtocolsGrid({
 							</div>
 						</div>
 
-						<div className="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60 flex-wrap">
-							<div className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
-								Номенклатура: <span className="font-mono">{proto.order804nServices.map((s) => s.code).join(", ")}</span>
+						<div className="flex items-center justify-between gap-2 pt-1.5 border-t border-[var(--line)] flex-wrap">
+							<div className="text-[11px] font-medium text-[var(--muted)]">
+								Номенклатура: <span className="font-mono text-[var(--ink)]">{proto.order804nServices.map((s) => s.code).join(", ")}</span>
 							</div>
 
 							<button
 								type="button"
 								onClick={() => onApplyProtocol(proto)}
-								className={`min-h-[48px] px-3.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${
+								className={`min-h-[48px] sm:min-h-[36px] px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${
 									isApplied
-										? "bg-emerald-600 text-white"
-										: isMasterPreset
-										? "bg-teal-700 hover:bg-teal-800 text-white font-extrabold ring-1 ring-teal-600"
-										: "bg-teal-600 hover:bg-teal-700 text-white"
+										? "bg-emerald-600 text-white shadow-xs"
+										: "primary-button"
 								}`}
 								data-testid={`apply-ortho-protocol-${proto.id}`}
-								title={`Внести протокол «${proto.shortLabel}» в дневник 043/у, смету визита и Этап 3 (Ортопедия)`}
+								title={`Внести протокол «${proto.shortLabel}» в дневник приёма, смету визита и Этап 3 (Ортопедия)`}
 							>
 								{isApplied ? (
 									<>
 										<Check size={16} />
-										<span>Внесено в 043/у и смету</span>
+										<span>Внесено в дневник и смету</span>
 									</>
 								) : (
 									<>
 										<FileText size={16} />
-										<span>{isMasterPreset ? "Внести полный протокол и смету" : "Внести в 043/у и смету"}</span>
+										<span>{isMasterPreset ? "Внести полный протокол и смету" : "Внести в дневник и смету"}</span>
 										<ArrowRight size={14} />
 									</>
 								)}

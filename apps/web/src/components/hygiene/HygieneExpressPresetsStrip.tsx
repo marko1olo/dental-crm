@@ -137,7 +137,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 					</button>
 				</div>
 
-				{/* Кнопки вызова вторичных меню (Диагнозы пародонта & Процедуры 804н) */}
+				{/* Кнопки вызова вторичных меню (Диагнозы пародонта & Протоколы гигиены) */}
 				<div className="flex items-center gap-1.5 shrink-0">
 					<button
 						type="button"
@@ -147,11 +147,11 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 								? "bg-teal-700 text-white border-teal-800 shadow-xs"
 								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 						}`}
-						title="Клинические диагнозы пародонта МКБ-10"
+						title="Клинические диагнозы пародонта"
 					>
 						<Zap size={13} className="text-amber-500 shrink-0" />
 						<span className="hidden md:inline">Диагнозы пародонта</span>
-						<span className="md:hidden">МКБ-10</span>
+						<span className="md:hidden">Диагнозы</span>
 						{activeSubPanel === "diagnoses" ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
 					</button>
 
@@ -160,24 +160,24 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 						onClick={() => toggleSubPanel("procedures")}
 						className={`h-9 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 border transition-all cursor-pointer ${
 							activeSubPanel === "procedures"
-								? "bg-cyan-700 text-white border-cyan-800 shadow-xs"
+								? "bg-teal-700 text-white border-teal-800 shadow-xs"
 								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 						}`}
-						title="Комплексная гигиена и процедуры 804н со списанием со склада"
+						title="Комплексная гигиена и клинические протоколы со списанием со склада"
 					>
-						<UltrasonicScaler size={13} className="text-cyan-500 shrink-0" />
-						<span className="hidden md:inline">Процедуры 804н</span>
-						<span className="md:hidden">804н</span>
+						<UltrasonicScaler size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<span className="hidden md:inline">Протоколы гигиены</span>
+						<span className="md:hidden">Протоколы</span>
 						{activeSubPanel === "procedures" ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
 					</button>
 				</div>
 			</div>
 
-			{/* ─── ВТОРИЧНАЯ ПАНЕЛЬ: ДИАГНОЗЫ ПАРОДОНТА МКБ-10 (ПО ТРЕБОВАНИЮ) ─── */}
+			{/* ─── ВТОРИЧНАЯ ПАНЕЛЬ: ДИАГНОЗЫ ПАРОДОНТА (ПО ТРЕБОВАНИЮ) ─── */}
 			<div className={activeSubPanel === "diagnoses" ? "flex flex-col gap-1.5 pt-2 border-t border-teal-500/20 animate-in fade-in duration-150" : "hidden"}>
 				<div className="flex items-center gap-1.5 text-xs font-bold text-teal-900 dark:text-teal-300">
 					<Zap size={14} className="text-amber-500 shrink-0" />
-					<span>Клинические диагнозы пародонта (МКБ-10 / Форма 043/у):</span>
+					<span>Клинические диагнозы пародонта:</span>
 				</div>
 				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5">
 					<button
@@ -247,12 +247,12 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 				</div>
 			</div>
 
-			{/* ─── ВТОРИЧНАЯ ПАНЕЛЬ: ПРОЦЕДУРЫ 804н + СКЛАД (ПО ТРЕБОВАНИЮ) ─────── */}
+			{/* ─── ВТОРИЧНАЯ ПАНЕЛЬ: ПРОТОКОЛЫ ГИГИЕНЫ + СКЛАД (ПО ТРЕБОВАНИЮ) ─────── */}
 			<div className={activeSubPanel === "procedures" ? "flex flex-col gap-1.5 pt-2 border-t border-teal-500/20 animate-in fade-in duration-150" : "hidden"}>
 				<div className="flex items-center justify-between text-xs font-bold text-cyan-900 dark:text-cyan-300">
 					<div className="flex items-center gap-1.5">
 						<UltrasonicScaler size={14} className="text-cyan-500 shrink-0" />
-						<span>Процедуры Номенклатуры 804н (1-клик начисление в смету и автосписание со склада):</span>
+						<span>Протоколы гигиены (начисление в смету и автосписание со склада):</span>
 					</div>
 					<span className="text-[10px] text-teal-800 dark:text-teal-300 font-normal">Склад: мягкий овердрафт</span>
 				</div>

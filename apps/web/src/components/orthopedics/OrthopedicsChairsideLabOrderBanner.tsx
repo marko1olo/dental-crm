@@ -51,19 +51,16 @@ export function OrthopedicsChairsideTopBar({
 	onChangeSelectedMaterial,
 }: OrthopedicsChairsideTopBarProps) {
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-2.5 pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
+		<div className="flex flex-wrap items-center justify-between gap-2.5 pb-3 mb-3 border-b border-[var(--line)]">
 			<div className="flex items-center gap-2">
-				<DentalCrown size={20} className="text-teal-600 dark:text-teal-400 shrink-0" />
+				<DentalCrown size={20} className="text-[var(--teal)] shrink-0" />
 				<div className="leading-tight">
 					<div className="flex items-center gap-2">
-						<h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+						<h3 className="text-sm font-bold text-[var(--ink)] tracking-tight">
 							Ортопедический протокол у кресла
 						</h3>
-						<span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300">
-							043/у
-						</span>
 					</div>
-					<p className="text-xs text-slate-600 dark:text-slate-400">
+					<p className="text-xs text-[var(--muted)]">
 						Клинические протоколы · Оттенки VITA · Наряды ЗТЛ
 					</p>
 				</div>
@@ -73,7 +70,7 @@ export function OrthopedicsChairsideTopBar({
 				<div className="flex items-center gap-1.5">
 					<label
 						htmlFor={`${selectId}-teeth`}
-						className="text-xs font-semibold text-slate-700 dark:text-slate-200"
+						className="text-xs font-semibold text-[var(--ink)]"
 					>
 						Зуб(ы):
 					</label>
@@ -84,44 +81,44 @@ export function OrthopedicsChairsideTopBar({
 						onChange={(e) => onChangeActiveTeethInput(e.target.value)}
 						placeholder="16, 21"
 						aria-label="Номера зубов FDI"
-						className="min-h-[48px] w-24 px-3 text-xs font-mono font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-teal-500"
+						className="min-h-[48px] sm:min-h-[36px] w-24 px-3 text-xs font-mono font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-subtle)] text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--teal)]"
 						data-testid="ortho-teeth-input"
 					/>
 				</div>
 
 				<div
-					className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs min-h-[48px]"
+					className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--line)] bg-[var(--paper-subtle)] text-xs min-h-[48px] sm:min-h-[36px]"
 					data-testid="attached-xray-badge"
 				>
 					<Camera
 						size={16}
 						className={
 							activeXrayUrl
-								? "text-teal-600 dark:text-teal-400 shrink-0"
-								: "text-slate-400 shrink-0"
+								? "text-[var(--teal)] shrink-0"
+								: "text-[var(--muted)] shrink-0"
 						}
 					/>
 					{activeXrayUrl ? (
 						<div className="flex items-center gap-1.5">
-							<span className="text-teal-700 dark:text-teal-300 font-bold truncate max-w-[110px]" title="Снимок визита прикреплен к наряду ЗТЛ">
+							<span className="text-[var(--teal)] font-bold truncate max-w-[110px]" title="Снимок визита прикреплен к наряду ЗТЛ">
 								Снимок привязан
 							</span>
 							<button
 								type="button"
 								onClick={onDetachXray}
-								className="text-xs text-slate-400 hover:text-rose-500 cursor-pointer font-bold px-1 inline-flex items-center"
+								className="text-xs text-[var(--muted)] hover:text-rose-500 cursor-pointer font-bold px-1 inline-flex items-center"
 								title="Открепить снимок"
 							>
 								<X className="w-3 h-3" />
 							</button>
 						</div>
 					) : (
-						<span className="text-slate-400 font-medium">Без снимка</span>
+						<span className="text-[var(--muted)] font-medium">Без снимка</span>
 					)}
 				</div>
 
 				<div
-					className="p-1 !bg-slate-200/80 dark:!bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700 inline-flex items-center gap-1 shrink-0"
+					className="p-1 bg-[var(--paper-subtle)] rounded-lg border border-[var(--line)] inline-flex items-center gap-1 shrink-0"
 					data-testid="jaw-scope-selector"
 					role="group"
 					aria-label="Область челюсти"
@@ -129,10 +126,10 @@ export function OrthopedicsChairsideTopBar({
 					<button
 						type="button"
 						onClick={() => onChangeJawScope(jawScope === "upper" ? "none" : "upper")}
-						className={`min-h-[44px] sm:min-h-[36px] px-3 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap ${
+						className={`min-h-[44px] sm:min-h-[32px] px-3 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap ${
 							jawScope === "upper"
-								? "!bg-teal-600 !text-white shadow-xs !border-teal-500/50"
-								: "!bg-white dark:!bg-slate-900 border border-slate-200/80 dark:border-slate-700 !text-slate-700 dark:!text-slate-200 hover:!bg-slate-50 dark:hover:!bg-slate-800"
+								? "bg-[var(--teal)] text-white shadow-xs border border-[var(--teal)]"
+								: "secondary-button"
 						}`}
 						title="Верхняя челюсть (ВЧ)"
 						data-testid="jaw-scope-upper-btn"
@@ -142,10 +139,10 @@ export function OrthopedicsChairsideTopBar({
 					<button
 						type="button"
 						onClick={() => onChangeJawScope(jawScope === "lower" ? "none" : "lower")}
-						className={`min-h-[44px] sm:min-h-[36px] px-3 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap ${
+						className={`min-h-[44px] sm:min-h-[32px] px-3 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap ${
 							jawScope === "lower"
-								? "!bg-teal-600 !text-white shadow-xs !border-teal-500/50"
-								: "!bg-white dark:!bg-slate-900 border border-slate-200/80 dark:border-slate-700 !text-slate-700 dark:text-slate-200 hover:!bg-slate-50 dark:hover:!bg-slate-800"
+								? "bg-[var(--teal)] text-white shadow-xs border border-[var(--teal)]"
+								: "secondary-button"
 						}`}
 						title="Нижняя челюсть (НЧ)"
 						data-testid="jaw-scope-lower-btn"
@@ -155,10 +152,10 @@ export function OrthopedicsChairsideTopBar({
 					<button
 						type="button"
 						onClick={() => onChangeJawScope(jawScope === "both" ? "none" : "both")}
-						className={`min-h-[44px] sm:min-h-[36px] px-3 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap ${
+						className={`min-h-[44px] sm:min-h-[32px] px-3 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap ${
 							jawScope === "both"
-								? "!bg-teal-600 !text-white shadow-xs !border-teal-500/50"
-								: "!bg-white dark:!bg-slate-900 border border-slate-200/80 dark:border-slate-700 !text-slate-700 dark:text-slate-200 hover:!bg-slate-50 dark:hover:!bg-slate-800"
+								? "bg-[var(--teal)] text-white shadow-xs border border-[var(--teal)]"
+								: "secondary-button"
 						}`}
 						title="Обе челюсти"
 						data-testid="jaw-scope-both-btn"
@@ -171,7 +168,7 @@ export function OrthopedicsChairsideTopBar({
 					value={selectedMaterial}
 					onChange={(e) => onChangeSelectedMaterial(e.target.value)}
 					aria-label="Материал конструкции"
-					className="min-h-[48px] px-3 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-teal-500"
+					className="min-h-[48px] sm:min-h-[36px] px-3 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-subtle)] text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--teal)]"
 				>
 					<option value="ZrO2 Multi-Layer">ZrO2 Multi-Layer</option>
 					<option value="IPS e.max Press">IPS e.max Press</option>
@@ -211,36 +208,36 @@ export function OrthopedicsChairsideLabOrderBanner({
 	return (
 		<div
 			data-testid="ortho-chairside-linked-lab-order-banner"
-			className="mb-3 p-3 rounded-lg border border-teal-500/30 bg-teal-500/5 dark:bg-teal-950/25 flex flex-wrap items-center justify-between gap-2.5"
+			className="mb-3 p-3 rounded-lg border border-[var(--teal-border,rgba(20,184,166,0.3))] bg-[var(--teal-subtle,rgba(20,184,166,0.06))] flex flex-wrap items-center justify-between gap-2.5"
 		>
 			<div className="min-w-0 flex-1 space-y-1">
 				<div className="flex items-center gap-2 flex-wrap">
-					<CheckCircle2 size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+					<CheckCircle2 size={16} className="text-[var(--teal)] shrink-0" />
 					<span
 						data-testid="ortho-chairside-readiness-headline"
-						className="text-xs font-bold text-slate-900 dark:text-slate-100"
+						className="text-xs font-bold text-[var(--ink)]"
 					>
 						{readinessHeadline}
 					</span>
-					<span className="px-2 py-0.5 rounded bg-teal-500/15 text-teal-700 dark:text-teal-300 text-[11px] font-mono font-bold">
+					<span className="px-2 py-0.5 rounded bg-[var(--teal-subtle)] text-[var(--teal)] border border-[var(--teal-border)] text-[11px] font-mono font-bold">
 						A16.07.004
 					</span>
 				</div>
 				<div
 					data-testid="ortho-chairside-bound-attributes"
-					className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-slate-600 dark:text-slate-300"
+					className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-[var(--muted)]"
 				>
 					<span>
-						Наряд: <strong className="font-mono text-slate-900 dark:text-slate-100">{orderNumber}</strong>
+						Наряд: <strong className="font-mono text-[var(--ink)]">{orderNumber}</strong>
 					</span>
 					<span>
-						Техник: <strong className="text-slate-900 dark:text-slate-100">{technicianName}</strong>
+						Техник: <strong className="text-[var(--ink)]">{technicianName}</strong>
 					</span>
 					<span>
-						Материал: <strong className="text-slate-900 dark:text-slate-100">{selectedMaterial} ({selectedShade})</strong>
+						Материал: <strong className="text-[var(--ink)]">{selectedMaterial} ({selectedShade})</strong>
 					</span>
 					<span>
-						Гарантийный паспорт: <strong className="font-mono text-slate-900 dark:text-slate-100">{warrantyPassport}</strong>
+						Гарантийный паспорт: <strong className="font-mono text-[var(--ink)]">{warrantyPassport}</strong>
 					</span>
 				</div>
 			</div>
@@ -250,10 +247,10 @@ export function OrthopedicsChairsideLabOrderBanner({
 						type="button"
 						data-testid="banner-orthopedic-passport-btn"
 						onClick={onOpenPassportA4}
-						className="min-h-[48px] px-3.5 py-2 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shrink-0 shadow-2xs"
+						className="secondary-button min-h-[48px] sm:min-h-[36px] px-3.5 py-1.5 text-xs font-bold inline-flex items-center gap-1.5 shrink-0"
 						title="Сформировать Паспорт ортопедической конструкции и Гарантийный талон (А4)"
 					>
-						<FileText size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<FileText size={15} className="text-[var(--teal)] shrink-0" />
 						<span>Паспорт (А4)</span>
 					</button>
 				)}
@@ -261,10 +258,10 @@ export function OrthopedicsChairsideLabOrderBanner({
 					type="button"
 					data-testid="ortho-chairside-confirm-fitting-btn"
 					onClick={onConfirmFitting}
-					className={`min-h-[48px] px-4 py-2 rounded-lg text-xs font-bold inline-flex items-center gap-2 transition-colors cursor-pointer shrink-0 ${
+					className={`min-h-[48px] sm:min-h-[36px] px-4 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-2 transition-colors cursor-pointer shrink-0 ${
 						fittingConfirmed
-							? "bg-emerald-600 text-white"
-							: "bg-teal-600 hover:bg-teal-700 text-white shadow-xs"
+							? "bg-emerald-600 text-white shadow-xs"
+							: "primary-button"
 					}`}
 				>
 					<Check size={16} />
@@ -319,15 +316,15 @@ export function OrthopedicsChairsideFooterBar({
 	onOpenPassportA4,
 }: OrthopedicsChairsideFooterBarProps) {
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+		<div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-[var(--line)]">
 			<div className="flex items-center gap-2 flex-wrap flex-1 min-w-[280px]">
 				<button
 					type="button"
 					onClick={onToggleOverride}
-					className={`min-h-[48px] px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+					className={`min-h-[48px] sm:min-h-[36px] px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
 						overrideActive
 							? "bg-emerald-700 text-white shadow-xs"
-							: "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+							: "secondary-button"
 					}`}
 					data-testid="doctor-clinical-override-toggle"
 					title="Клинический оверрайд врача при авансе < 50% без задержек и согласований"
@@ -347,7 +344,7 @@ export function OrthopedicsChairsideFooterBar({
 						onChange={(e) => onChangeOverrideReason(e.target.value)}
 						placeholder="Причина клинического оверрайда"
 						aria-label="Причина клинического оверрайда"
-						className="min-h-[48px] flex-1 px-3 text-xs rounded-lg border border-emerald-500/40 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-100 focus:outline-hidden"
+						className="min-h-[48px] sm:min-h-[36px] flex-1 px-3 text-xs rounded-lg border border-emerald-500/40 bg-[var(--paper-subtle)] text-[var(--ink)] focus:outline-hidden"
 					/>
 				)}
 			</div>
@@ -356,15 +353,15 @@ export function OrthopedicsChairsideFooterBar({
 				<button
 					type="button"
 					onClick={onToggleWarrantyRework}
-					className={`min-h-[48px] px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
+					className={`min-h-[48px] sm:min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
 						isWarrantyRework
 							? "bg-rose-50 dark:bg-rose-950/40 border-rose-400 text-rose-700 dark:text-rose-300 ring-1 ring-rose-400 shadow-2xs"
-							: "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+							: "secondary-button"
 					}`}
 					data-testid="chairside-warranty-rework-toggle"
 					title="Повторное изготовление по гарантии: пациент 0 ₽, расчет затрат как обязательства клиники или брак ЗТЛ"
 				>
-					<RotateCcw size={15} className={isWarrantyRework ? "text-rose-600 dark:text-rose-400" : "text-slate-500"} />
+					<RotateCcw size={15} className={isWarrantyRework ? "text-rose-600 dark:text-rose-400" : "text-[var(--muted)]"} />
 					<span>{isWarrantyRework ? "Гарантия: 0 ₽ с пациента" : "Гарантийная замена (0 ₽)"}</span>
 				</button>
 
@@ -373,10 +370,10 @@ export function OrthopedicsChairsideFooterBar({
 						<button
 							type="button"
 							onClick={() => onSelectWarrantyLiability("clinic_warranty")}
-							className={`min-h-[48px] px-2.5 font-bold cursor-pointer transition-colors ${
+							className={`min-h-[48px] sm:min-h-[36px] px-2.5 font-bold cursor-pointer transition-colors ${
 								warrantyLiabilityType === "clinic_warranty"
 									? "bg-rose-600 text-white"
-									: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+									: "bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-subtle)]"
 							}`}
 							title="Гарантийные обязательства клиники (клиника оплачивает ЗТЛ)"
 							data-testid="chairside-liability-clinic"
@@ -386,10 +383,10 @@ export function OrthopedicsChairsideFooterBar({
 						<button
 							type="button"
 							onClick={() => onSelectWarrantyLiability("lab_defect")}
-							className={`min-h-[48px] px-2.5 font-bold cursor-pointer transition-colors border-l border-rose-300 dark:border-rose-800 ${
+							className={`min-h-[48px] sm:min-h-[36px] px-2.5 font-bold cursor-pointer transition-colors border-l border-rose-300 dark:border-rose-800 ${
 								warrantyLiabilityType === "lab_defect"
 									? "bg-rose-600 text-white"
-									: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+									: "bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-subtle)]"
 							}`}
 							title="Брак ЗТЛ (лаборатория переделывает бесплатно 0 ₽)"
 							data-testid="chairside-liability-lab"
@@ -402,7 +399,7 @@ export function OrthopedicsChairsideFooterBar({
 
 			<div className="flex items-center gap-2 flex-wrap">
 				{labOrderSentNumber && (
-					<span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold px-2 py-1 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 inline-flex items-center gap-1">
+					<span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold px-2 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 inline-flex items-center gap-1">
 						<CheckCircle2 size={12} className="shrink-0" />
 						<span>Отправлен {labOrderSentNumber}</span>
 					</span>
@@ -412,11 +409,11 @@ export function OrthopedicsChairsideFooterBar({
 					<button
 						type="button"
 						onClick={onOpenPassportA4}
-						className="min-h-[48px] px-3.5 py-2 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+						className="secondary-button min-h-[48px] sm:min-h-[36px] px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5"
 						data-testid="open-orthopedic-passport-btn"
 						title="Сформировать Паспорт ортопедической конструкции и Гарантийный талон (А4)"
 					>
-						<FileText size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<FileText size={15} className="text-[var(--teal)] shrink-0" />
 						<span>Паспорт (А4)</span>
 					</button>
 				)}
@@ -425,7 +422,7 @@ export function OrthopedicsChairsideFooterBar({
 					type="button"
 					onClick={onImmediateSendToLab}
 					disabled={isLabOrderSending}
-					className="min-h-[48px] px-4 py-2 rounded-lg text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500 flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+					className="primary-button min-h-[48px] sm:min-h-[36px] px-4 py-1.5 text-xs font-bold flex items-center gap-2"
 					data-testid="direct-send-lab-order-btn"
 					title="Отправить заказ-наряд в зуботехническую лабораторию"
 				>
@@ -437,7 +434,7 @@ export function OrthopedicsChairsideFooterBar({
 					<button
 						type="button"
 						onClick={onOpenLabOrder}
-						className="min-h-[48px] px-4 py-2 rounded-lg text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/40 border border-teal-200 dark:border-teal-800 flex items-center gap-2 transition-all cursor-pointer"
+						className="secondary-button min-h-[48px] sm:min-h-[36px] px-4 py-1.5 text-xs font-bold text-[var(--teal)] flex items-center gap-2"
 						data-testid="open-lab-order-constructor-btn"
 						title="Открыть конструктор заказ-нарядов зуботехнической лаборатории"
 					>
