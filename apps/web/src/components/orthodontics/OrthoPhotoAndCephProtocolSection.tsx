@@ -46,10 +46,10 @@ export const OrthoPhotoAndCephProtocolSection: React.FC<OrthoPhotoAndCephProtoco
 			{/* Mandate 8e: Doctor Autonomy & Photo Protocol Optionality Banner */}
 			<div
 				data-testid="photo-protocol-optional-badge"
-				className="flex items-center justify-between p-2 rounded-lg bg-teal-500/10 dark:bg-teal-950/30 border border-teal-500/20 text-xs flex-wrap gap-2"
+				className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs flex-wrap gap-2"
 			>
-				<div className="flex items-center gap-1.5 text-teal-800 dark:text-teal-200 font-bold text-[11px]">
-					<CheckCircle2 size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+				<div className="flex items-center gap-1.5 text-[var(--ink)] font-bold text-[11px]">
+					<CheckCircle2 size={14} className="text-[var(--primary)] shrink-0" />
 					<span>Клинический фотопротокол опционален</span>
 				</div>
 				<div className="flex items-center gap-2 flex-wrap">
@@ -57,24 +57,24 @@ export const OrthoPhotoAndCephProtocolSection: React.FC<OrthoPhotoAndCephProtoco
 						type="button"
 						onClick={() => setIsPhotoProtocolOpen(true)}
 						data-testid="ortho-open-photo-protocol-btn"
-						className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-300 border border-teal-300 dark:border-teal-700 hover:bg-teal-50 dark:hover:bg-slate-800 cursor-pointer min-h-[32px] transition-colors"
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer min-h-[36px] transition-colors"
 						title="Открыть фотопротокол ортодонтии (8 ракурсов ABO: анфас, профиль, улыбка, окклюзия)"
 					>
-						<Camera size={13} className="text-teal-600 dark:text-teal-400" />
+						<Camera size={14} className="text-[var(--primary)]" />
 						<span>{isPhotoProtocolCompleted ? "Фотопротокол (8/8)" : "Фотопротокол (8 ракурсов ABO)"}</span>
 					</button>
 					<button
 						type="button"
 						onClick={onTogglePhotoProtocolCompleted}
 						data-testid="ortho-confirm-photos-1click-btn"
-						className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border cursor-pointer min-h-[32px] transition-colors ${
+						className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border cursor-pointer min-h-[36px] transition-colors ${
 							isPhotoProtocolCompleted
-								? "bg-teal-600 text-white border-teal-700"
-								: "bg-teal-50 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800 hover:bg-teal-100"
+								? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 						}`}
 						title="Подтверждение съемки фотопротокола"
 					>
-						<Check size={12} />
+						<Check size={13} />
 						<span>{isPhotoProtocolCompleted ? "Снято" : "Подтвердить"}</span>
 					</button>
 				</div>
@@ -83,35 +83,35 @@ export const OrthoPhotoAndCephProtocolSection: React.FC<OrthoPhotoAndCephProtoco
 			{/* Steiner ANB Sagittal Skeletal Classification Bar (I, II, III) */}
 			<div
 				data-testid="ortho-anb-class-selector"
-				className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2"
+				className="bg-[var(--paper-soft)] p-3 rounded-xl border border-[var(--line)] flex flex-col gap-2"
 			>
 				<div className="flex items-center justify-between flex-wrap gap-1.5">
-					<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
-						<Activity size={14} className="text-indigo-500" />
+					<span className="text-xs font-black uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+						<Activity size={14} className="text-[var(--primary)]" />
 						Скелетный класс по Steiner (угол ANB)
 					</span>
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 flex-wrap">
 						<button
 							type="button"
 							onClick={onSetAnbNorm}
-							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 cursor-pointer min-h-[36px]"
+							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer min-h-[36px]"
 							data-testid="anb-class-norm-1click-btn"
 							title="Скелетный класс I по Steiner (норма ANB 2° ± 2°)"
 						>
-							<CheckCircle2 size={12} />
+							<CheckCircle2 size={13} className="text-[var(--primary)]" />
 							<span>Норма (ANB I: 2.0°)</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setIsCephModalOpen(true)}
-							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-slate-800 cursor-pointer min-h-[36px]"
+							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer min-h-[36px]"
 							data-testid="ortho-open-ceph-analysis-btn"
 							title="Открыть боковую ТРГ цефалометрию (расчет углов Steiner, Tweed, Downs, Ricketts)"
 						>
-							<Sliders size={12} className="text-indigo-600 dark:text-indigo-400" />
+							<Sliders size={13} className="text-[var(--primary)]" />
 							<span>ТРГ-анализ (Steiner)</span>
 						</button>
-						<span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
+						<span className="text-[12px] font-bold text-[var(--primary)]">
 							{ANB_CLASS_OPTIONS.find((a) => a.id === anbClass)?.shortLabel} ({anbAngle.toFixed(1)}°)
 						</span>
 					</div>
@@ -131,13 +131,13 @@ export const OrthoPhotoAndCephProtocolSection: React.FC<OrthoPhotoAndCephProtoco
 								data-testid={`anb-class-${opt.id}-btn`}
 								className={`min-h-[44px] px-2 py-1.5 rounded-xl border text-center flex flex-col items-center justify-center transition-all cursor-pointer ${
 									isSelected
-										? "bg-indigo-600 text-white border-indigo-700 font-black shadow-xs ring-1 ring-indigo-400"
-										: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+										? "bg-[var(--primary)] text-white border-[var(--primary)] font-black shadow-xs"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								title={opt.desc}
 							>
 								<span className="text-xs font-bold leading-tight">{opt.shortLabel}</span>
-								<span className={`text-[10px] truncate w-full ${isSelected ? "text-indigo-100" : "text-slate-400"}`}>
+								<span className={`text-[10px] truncate w-full ${isSelected ? "text-white/80" : "text-[var(--muted)]"}`}>
 									{opt.id === "class_1" ? "Норма 2° (0°..4°)" : opt.id === "class_2" ? "Дистальный >4°" : "Мезиальный <0°"}
 								</span>
 							</button>

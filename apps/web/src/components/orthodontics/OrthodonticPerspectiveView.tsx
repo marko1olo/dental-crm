@@ -47,29 +47,29 @@ export function OrthodonticPerspectiveView() {
 					<button
 						type="button"
 						onClick={() => setIsCephModalOpen(true)}
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-teal-500/40 text-teal-600 dark:text-teal-400 hover:bg-teal-50/50 dark:hover:bg-teal-950/30 transition-colors cursor-pointer min-h-[36px]"
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer min-h-[36px]"
 						data-testid="btn-open-ortho-ceph-modal"
 						title="Телерентгенография черепа (ТРГ) и цефалометрический анализ"
 					>
-						<Compass className="w-3.5 h-3.5" />
+						<Compass className="w-3.5 h-3.5 text-[var(--primary)]" />
 						ТРГ Цефалометрия
 					</button>
 					<button
 						type="button"
 						onClick={() => setIsPhotoModalOpen(true)}
 						data-testid="btn-open-ortho-photo-modal"
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--line)] transition-colors cursor-pointer min-h-[36px]"
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer min-h-[36px]"
 					>
-						<Camera className="w-3.5 h-3.5" />
+						<Camera className="w-3.5 h-3.5 text-[var(--primary)]" />
 						Фотопротокол
 					</button>
 					<button
 						type="button"
 						onClick={() => setIsProtocolOpen(true)}
 						data-testid="btn-open-ortho-protocol-widget"
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--line)] transition-colors cursor-pointer min-h-[36px]"
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer min-h-[36px]"
 					>
-						<BracesBracket className="w-3.5 h-3.5" />
+						<BracesBracket className="w-3.5 h-3.5 text-[var(--primary)]" />
 						Протокол визита
 					</button>
 				</div>
@@ -79,7 +79,7 @@ export function OrthodonticPerspectiveView() {
 
 			<div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
 				<h3 className="text-xs font-bold text-[var(--ink)] mb-2 flex items-center gap-1.5">
-					<BracesBracket className="w-4 h-4 text-teal-600" />
+					<BracesBracket className="w-4 h-4 text-[var(--primary)]" />
 					Быстрый выбор ортодонтических материалов (90% рынка РФ)
 				</h3>
 				<OrthodonticMaterialsQuickSelector

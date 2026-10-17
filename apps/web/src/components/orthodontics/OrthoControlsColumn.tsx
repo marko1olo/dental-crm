@@ -248,7 +248,7 @@ export const OrthoControlsColumn: React.FC<OrthoControlsColumnProps> = ({
 	className = "",
 }) => {
 	return (
-		<div className={`lg:col-span-7 p-4 sm:p-5 flex flex-col gap-4 border-b lg:border-b-0 lg:border-r border-[var(--line,#e2e8f0)] dark:border-slate-800 overflow-y-auto ${className}`}>
+		<div className={`lg:col-span-7 p-4 sm:p-5 flex flex-col gap-4 border-b lg:border-b-0 lg:border-r border-[var(--line)] overflow-y-auto ${className}`}>
 			{/* 0. Stages Filter Bar (DENTE Segmented Bar) */}
 			<div
 				data-testid="ortho-stages-toolbar"

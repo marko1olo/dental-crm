@@ -28,21 +28,21 @@ export const OrthoDentalArchSection: React.FC<OrthoDentalArchSectionProps> = ({
 	return (
 		<div
 			data-testid="ortho-dental-arch-section"
-			className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/50 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800"
+			className="bg-[var(--paper-soft)] p-3 rounded-xl border border-[var(--line)]"
 		>
 			<div className="flex items-center justify-between mb-2">
-				<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
-					<BracesBracket size={14} />
+				<span className="text-xs font-black uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+					<BracesBracket size={14} className="text-[var(--primary)]" />
 					Зубная формула (активация)
 				</span>
-				<div className="flex items-center gap-1">
+				<div className="flex items-center gap-1 flex-wrap">
 					<button
 						type="button"
 						onClick={() => onSelectArch("upper")}
-						className={`px-2 py-1 text-[11px] font-bold rounded-md border transition-all cursor-pointer ${
+						className={`px-2.5 py-1 text-[11px] font-bold rounded-xl border transition-all cursor-pointer ${
 							targetArch === "upper"
-								? "bg-blue-500 text-white border-blue-600"
-								: "bg-white dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 border-slate-300 dark:border-slate-700"
+								? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 						}`}
 					>
 						Вся ВЧ
@@ -50,10 +50,10 @@ export const OrthoDentalArchSection: React.FC<OrthoDentalArchSectionProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectArch("lower")}
-						className={`px-2 py-1 text-[11px] font-bold rounded-md border transition-all cursor-pointer ${
+						className={`px-2.5 py-1 text-[11px] font-bold rounded-xl border transition-all cursor-pointer ${
 							targetArch === "lower"
-								? "bg-blue-500 text-white border-blue-600"
-								: "bg-white dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 border-slate-300 dark:border-slate-700"
+								? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 						}`}
 					>
 						Вся НЧ
@@ -61,10 +61,10 @@ export const OrthoDentalArchSection: React.FC<OrthoDentalArchSectionProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectArch("both")}
-						className={`px-2 py-1 text-[11px] font-bold rounded-md border transition-all cursor-pointer ${
+						className={`px-2.5 py-1 text-[11px] font-bold rounded-xl border transition-all cursor-pointer ${
 							targetArch === "both"
-								? "bg-blue-500 text-white border-blue-600"
-								: "bg-white dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 border-slate-300 dark:border-slate-700"
+								? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 						}`}
 					>
 						Обе челюсти
@@ -72,14 +72,14 @@ export const OrthoDentalArchSection: React.FC<OrthoDentalArchSectionProps> = ({
 					<button
 						type="button"
 						onClick={onSelectAnterior}
-						className="px-2 py-1 text-[11px] font-bold rounded-md border bg-white dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-100 cursor-pointer"
+						className="px-2.5 py-1 text-[11px] font-bold rounded-xl border bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer"
 					>
 						Фронт
 					</button>
 					<button
 						type="button"
 						onClick={onClearTeeth}
-						className="p-1 rounded-md text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
+						className="p-1.5 rounded-lg text-[var(--muted)] hover:text-rose-500 transition-colors cursor-pointer"
 						title="Сбросить выбор"
 					>
 						<RotateCcw size={14} />
@@ -99,16 +99,16 @@ export const OrthoDentalArchSection: React.FC<OrthoDentalArchSectionProps> = ({
 								<button
 									type="button"
 									onClick={() => onToggleTooth(tooth)}
-									className={`min-w-[40px] min-h-[40px] p-1 text-xs font-bold rounded flex items-center justify-center transition-all cursor-pointer ${
+									className={`min-w-[40px] min-h-[40px] p-1 text-xs font-bold rounded-xl flex items-center justify-center transition-all cursor-pointer ${
 										isSelected
-											? "bg-blue-600 text-white shadow-xs font-black"
-											: "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-400"
+											? "bg-[var(--primary)] text-white shadow-xs font-black border border-[var(--primary)]"
+											: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--line-strong,var(--primary))]"
 									}`}
 									title={`Зуб ${tooth}`}
 								>
 									{tooth}
 								</button>
-								{isMidline && <div className="w-1.5 h-7 bg-slate-300 dark:bg-slate-700 mx-0.5" />}
+								{isMidline && <div className="w-1.5 h-8 bg-[var(--line)] mx-0.5 rounded-full" />}
 							</React.Fragment>
 						);
 					})}
@@ -124,16 +124,16 @@ export const OrthoDentalArchSection: React.FC<OrthoDentalArchSectionProps> = ({
 								<button
 									type="button"
 									onClick={() => onToggleTooth(tooth)}
-									className={`min-w-[40px] min-h-[40px] p-1 text-xs font-bold rounded flex items-center justify-center transition-all cursor-pointer ${
+									className={`min-w-[40px] min-h-[40px] p-1 text-xs font-bold rounded-xl flex items-center justify-center transition-all cursor-pointer ${
 										isSelected
-											? "bg-blue-600 text-white shadow-xs font-black"
-											: "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-400"
+											? "bg-[var(--primary)] text-white shadow-xs font-black border border-[var(--primary)]"
+											: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--line-strong,var(--primary))]"
 									}`}
 									title={`Зуб ${tooth}`}
 								>
 									{tooth}
 								</button>
-								{isMidline && <div className="w-1.5 h-7 bg-slate-300 dark:bg-slate-700 mx-0.5" />}
+								{isMidline && <div className="w-1.5 h-8 bg-[var(--line)] mx-0.5 rounded-full" />}
 							</React.Fragment>
 						);
 					})}

@@ -39,14 +39,14 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 	return (
 		<div
 			data-testid="ortho-quick-presets-panel"
-			className="bg-amber-500/10 dark:bg-amber-950/30 p-3 rounded-xl border border-amber-500/30 flex flex-col gap-2.5"
+			className="bg-[var(--paper-soft)] p-3 rounded-xl border border-[var(--line)] flex flex-col gap-2.5"
 		>
 			<div className="flex items-center justify-between flex-wrap gap-1">
-				<span className="text-xs font-black uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
-					<Zap size={14} className="text-amber-600 dark:text-amber-400 fill-amber-500" />
+				<span className="text-xs font-black uppercase tracking-wider text-[var(--ink)] flex items-center gap-1.5">
+					<Zap size={14} className="text-[var(--primary)]" />
 					Клинические пресеты
 				</span>
-				<span className="text-[12px] font-medium text-amber-800/80 dark:text-amber-300/80">
+				<span className="text-[12px] font-medium text-[var(--muted)]">
 					Мгновенное заполнение параметров и дневника приёма
 				</span>
 			</div>
@@ -56,17 +56,17 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 					type="button"
 					onClick={onPresetActivation}
 					data-testid="ortho-preset-routine-activation"
-					className={`h-[44px] px-3 py-1.5 rounded-lg border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+					className={`h-[44px] min-h-[44px] px-3 py-1.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
 						activePreset === "activation"
-							? "bg-[var(--teal,#0d9488)] text-white border-teal-700 shadow-xs font-bold"
-							: "bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-[var(--line,#e2e8f0)] dark:border-slate-800 hover:border-amber-500/50 text-[var(--ink,#0f172a)] dark:text-slate-100 hover:bg-[var(--paper-soft,#f8fafc)]"
+							? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs font-bold"
+							: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--line-strong,var(--primary))] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 					}`}
 				>
 					<div
-						className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+						className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
 							activePreset === "activation"
 								? "bg-white/20 text-white"
-								: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+								: "bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)]"
 						}`}
 					>
 						<RotateCcw size={13} />
@@ -78,8 +78,8 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 						<div
 							className={`text-[11.5px] truncate leading-tight ${
 								activePreset === "activation"
-									? "text-teal-100"
-									: "text-[var(--muted,#64748b)] dark:text-slate-400"
+									? "text-white/80"
+									: "text-[var(--muted)]"
 							}`}
 						>
 							(смена лигатур / эластиков, дуги сохранены)
@@ -92,17 +92,17 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 					onClick={onPresetWireChange}
 					data-testid="ortho-preset-wire-change"
 					title="Замена ортодонтической дуги (NiTi / ТМА / Сталь)"
-					className={`h-[44px] px-3 py-1.5 rounded-lg border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+					className={`h-[44px] min-h-[44px] px-3 py-1.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
 						activePreset === "wire_change"
-							? "bg-[var(--teal,#0d9488)] text-white border-teal-700 shadow-xs font-bold"
-							: "bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-[var(--line,#e2e8f0)] dark:border-slate-800 hover:border-amber-500/50 text-[var(--ink,#0f172a)] dark:text-slate-100 hover:bg-[var(--paper-soft,#f8fafc)]"
+							? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs font-bold"
+							: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--line-strong,var(--primary))] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 					}`}
 				>
 					<div
-						className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+						className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
 							activePreset === "wire_change"
 								? "bg-white/20 text-white"
-								: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+								: "bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)]"
 						}`}
 					>
 						<Zap size={13} />
@@ -114,8 +114,8 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 						<div
 							className={`text-[11.5px] truncate leading-tight ${
 								activePreset === "wire_change"
-									? "text-teal-100"
-									: "text-[var(--muted,#64748b)] dark:text-slate-400"
+									? "text-white/80"
+									: "text-[var(--muted)]"
 							}`}
 						>
 							Смена дуг: NiTi верх 0.016 / низ 0.014, норма
@@ -127,17 +127,17 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 					type="button"
 					onClick={onPresetBonding}
 					data-testid="ortho-preset-bracket-bonding"
-					className={`h-[44px] px-3 py-1.5 rounded-lg border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+					className={`h-[44px] min-h-[44px] px-3 py-1.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
 						activePreset === "bonding"
-							? "bg-[var(--teal,#0d9488)] text-white border-teal-700 shadow-xs font-bold"
-							: "bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-[var(--line,#e2e8f0)] dark:border-slate-800 hover:border-amber-500/50 text-[var(--ink,#0f172a)] dark:text-slate-100 hover:bg-[var(--paper-soft,#f8fafc)]"
+							? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs font-bold"
+							: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--line-strong,var(--primary))] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 					}`}
 				>
 					<div
-						className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+						className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
 							activePreset === "bonding"
 								? "bg-white/20 text-white"
-								: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+								: "bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)]"
 						}`}
 					>
 						<BracesBracket size={13} />
@@ -149,8 +149,8 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 						<div
 							className={`text-[11.5px] truncate leading-tight ${
 								activePreset === "bonding"
-									? "text-teal-100"
-									: "text-[var(--muted,#64748b)] dark:text-slate-400"
+									? "text-white/80"
+									: "text-[var(--muted)]"
 							}`}
 						>
 							(1 челюсть)
@@ -162,17 +162,17 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 					type="button"
 					onClick={onPresetDebonding}
 					data-testid="ortho-preset-debonding-retainer"
-					className={`h-[44px] px-3 py-1.5 rounded-lg border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+					className={`h-[44px] min-h-[44px] px-3 py-1.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
 						activePreset === "debonding"
-							? "bg-[var(--teal,#0d9488)] text-white border-teal-700 shadow-xs font-bold"
-							: "bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-[var(--line,#e2e8f0)] dark:border-slate-800 hover:border-amber-500/50 text-[var(--ink,#0f172a)] dark:text-slate-100 hover:bg-[var(--paper-soft,#f8fafc)]"
+							? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs font-bold"
+							: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--line-strong,var(--primary))] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 					}`}
 				>
 					<div
-						className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+						className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
 							activePreset === "debonding"
 								? "bg-white/20 text-white"
-								: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+								: "bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)]"
 						}`}
 					>
 						<CheckCircle2 size={13} />
@@ -184,8 +184,8 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 						<div
 							className={`text-[11.5px] truncate leading-tight ${
 								activePreset === "debonding"
-									? "text-teal-100"
-									: "text-[var(--muted,#64748b)] dark:text-slate-400"
+									? "text-white/80"
+									: "text-[var(--muted)]"
 							}`}
 						>
 							(+ установка несъемного ретейнера)
@@ -198,17 +198,17 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 					onClick={onPresetLeveling}
 					data-testid="ortho-preset-leveling"
 					title="Смена дуг: плановое нивелирование (NiTi .014 ВЧ + CuNiTi .016x.022 НЧ + эластики Class II)"
-					className={`h-[44px] px-3 py-1.5 rounded-lg border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+					className={`h-[44px] min-h-[44px] px-3 py-1.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
 						activePreset === "leveling"
-							? "bg-[var(--teal,#0d9488)] text-white border-teal-700 shadow-xs font-bold"
-							: "bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-[var(--line,#e2e8f0)] dark:border-slate-800 hover:border-amber-500/50 text-[var(--ink,#0f172a)] dark:text-slate-100 hover:bg-[var(--paper-soft,#f8fafc)]"
+							? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs font-bold"
+							: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--line-strong,var(--primary))] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 					}`}
 				>
 					<div
-						className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+						className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
 							activePreset === "leveling"
 								? "bg-white/20 text-white"
-								: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+								: "bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)]"
 						}`}
 					>
 						<Sparkles size={13} />
@@ -220,8 +220,8 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 						<div
 							className={`text-[11.5px] truncate leading-tight ${
 								activePreset === "leveling"
-									? "text-teal-100"
-									: "text-[var(--muted,#64748b)] dark:text-slate-400"
+									? "text-white/80"
+									: "text-[var(--muted)]"
 							}`}
 						>
 							NiTi .014 + CuNiTi .016x.022 + Class II
@@ -234,17 +234,17 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 					onClick={onPresetSprings}
 					data-testid="ortho-preset-springs"
 					title="Активация пружин (раскрывающие Open-Coil / закрывающие Closed-Coil)"
-					className={`h-[44px] px-3 py-1.5 rounded-lg border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+					className={`h-[44px] min-h-[44px] px-3 py-1.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
 						activePreset === "springs"
-							? "bg-[var(--teal,#0d9488)] text-white border-teal-700 shadow-xs font-bold"
-							: "bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-[var(--line,#e2e8f0)] dark:border-slate-800 hover:border-amber-500/50 text-[var(--ink,#0f172a)] dark:text-slate-100 hover:bg-[var(--paper-soft,#f8fafc)]"
+							? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs font-bold"
+							: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--line-strong,var(--primary))] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 					}`}
 				>
 					<div
-						className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+						className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
 							activePreset === "springs"
 								? "bg-white/20 text-white"
-								: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+								: "bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)]"
 						}`}
 					>
 						<Zap size={13} />
@@ -256,8 +256,8 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 						<div
 							className={`text-[11.5px] truncate leading-tight ${
 								activePreset === "springs"
-									? "text-teal-100"
-									: "text-[var(--muted,#64748b)] dark:text-slate-400"
+									? "text-white/80"
+									: "text-[var(--muted)]"
 							}`}
 						>
 							Open / Closed Coil на дуге SS
@@ -270,17 +270,17 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 					onClick={onPresetSeparationRings}
 					data-testid="ortho-preset-separation-rings"
 					title="Сепарация под бандажные кольца (межзубные сепараторы 16, 26, 36, 46)"
-					className={`h-[44px] px-3 py-1.5 rounded-lg border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+					className={`h-[44px] min-h-[44px] px-3 py-1.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
 						activePreset === "separation"
-							? "bg-[var(--teal,#0d9488)] text-white border-teal-700 shadow-xs font-bold"
-							: "bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-[var(--line,#e2e8f0)] dark:border-slate-800 hover:border-amber-500/50 text-[var(--ink,#0f172a)] dark:text-slate-100 hover:bg-[var(--paper-soft,#f8fafc)]"
+							? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs font-bold"
+							: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--line-strong,var(--primary))] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 					}`}
 				>
 					<div
-						className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+						className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
 							activePreset === "separation"
 								? "bg-white/20 text-white"
-								: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+								: "bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)]"
 						}`}
 					>
 						<Layers size={13} />
@@ -292,8 +292,8 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 						<div
 							className={`text-[11.5px] truncate leading-tight ${
 								activePreset === "separation"
-									? "text-teal-100"
-									: "text-[var(--muted,#64748b)] dark:text-slate-400"
+									? "text-white/80"
+									: "text-[var(--muted)]"
 							}`}
 						>
 							Эластические сепараторы моляров
@@ -305,16 +305,16 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 					type="button"
 					onClick={onPresetAlignerLabOrder}
 					data-testid="ortho-preset-aligner-lab-order"
-					className="h-[44px] px-3 py-1.5 rounded-lg border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-teal-500/40 hover:border-teal-500 text-[var(--ink,#0f172a)] dark:text-slate-100"
+					className="h-[44px] min-h-[44px] px-3 py-1.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-[var(--paper)] border-[var(--line)] hover:border-[var(--line-strong,var(--primary))] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 				>
-					<div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 bg-teal-500/15 text-teal-600 dark:text-teal-400">
+					<div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)]">
 						<AlignerTray size={13} />
 					</div>
 					<div className="min-w-0 flex-1">
-						<div className="text-[12.5px] font-bold leading-tight text-teal-700 dark:text-teal-300">
+						<div className="text-[12.5px] font-bold leading-tight text-[var(--ink)]">
 							Наряд ЗТЛ (Элайнеры / Каппа)
 						</div>
-						<div className="text-[11.5px] truncate leading-tight text-[var(--muted,#64748b)] dark:text-slate-400">
+						<div className="text-[11.5px] truncate leading-tight text-[var(--muted)]">
 							{`(шаг ${alignerStep} из ${alignerTotal}, срок 5-7 дней)`}
 						</div>
 					</div>
@@ -324,16 +324,16 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 					type="button"
 					onClick={onPresetRetainerLabOrder}
 					data-testid="ortho-preset-retainer-lab-order"
-					className="h-[44px] px-3 py-1.5 rounded-lg border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-teal-500/40 hover:border-teal-500 text-[var(--ink,#0f172a)] dark:text-slate-100"
+					className="h-[44px] min-h-[44px] px-3 py-1.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-[var(--paper)] border-[var(--line)] hover:border-[var(--line-strong,var(--primary))] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 				>
-					<div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 bg-teal-500/15 text-teal-600 dark:text-teal-400">
+					<div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)]">
 						<CheckCircle2 size={13} />
 					</div>
 					<div className="min-w-0 flex-1">
-						<div className="text-[12.5px] font-bold leading-tight text-teal-700 dark:text-teal-300">
+						<div className="text-[12.5px] font-bold leading-tight text-[var(--ink)]">
 							Наряд ЗТЛ (Ретейнер / Каппа)
 						</div>
-						<div className="text-[11.5px] truncate leading-tight text-[var(--muted,#64748b)] dark:text-slate-400">
+						<div className="text-[11.5px] truncate leading-tight text-[var(--muted)]">
 							(ретенционная каппа / дуга)
 						</div>
 					</div>
@@ -343,16 +343,16 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 					type="button"
 					onClick={onPresetPlateLabOrder}
 					data-testid="ortho-preset-plate-lab-order"
-					className="h-[44px] px-3 py-1.5 rounded-lg border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-teal-500/40 hover:border-teal-500 text-[var(--ink,#0f172a)] dark:text-slate-100"
+					className="h-[44px] min-h-[44px] px-3 py-1.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-[var(--paper)] border-[var(--line)] hover:border-[var(--line-strong,var(--primary))] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 				>
-					<div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 bg-teal-500/15 text-teal-600 dark:text-teal-400">
+					<div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)]">
 						<Layers size={13} />
 					</div>
 					<div className="min-w-0 flex-1">
-						<div className="text-[12.5px] font-bold leading-tight text-teal-700 dark:text-teal-300">
+						<div className="text-[12.5px] font-bold leading-tight text-[var(--ink)]">
 							Наряд ЗТЛ (Пластинка с винтом)
 						</div>
-						<div className="text-[11.5px] truncate leading-tight text-[var(--muted,#64748b)] dark:text-slate-400">
+						<div className="text-[11.5px] truncate leading-tight text-[var(--muted)]">
 							(расширяющий аппарат Хааса / Бертони)
 						</div>
 					</div>
@@ -362,25 +362,25 @@ export const OrthoClinicalPresetsSection: React.FC<OrthoClinicalPresetsSectionPr
 					type="button"
 					onClick={onPresetSplintLabOrder}
 					data-testid="ortho-preset-splint-lab-order"
-					className="h-[44px] px-3 py-1.5 rounded-lg border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-teal-500/40 hover:border-teal-500 text-[var(--ink,#0f172a)] dark:text-slate-100"
+					className="h-[44px] min-h-[44px] px-3 py-1.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-[var(--paper)] border-[var(--line)] hover:border-[var(--line-strong,var(--primary))] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 				>
-					<div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 bg-teal-500/15 text-teal-600 dark:text-teal-400">
+					<div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)]">
 						<DentalArticulator size={13} />
 					</div>
 					<div className="min-w-0 flex-1">
-						<div className="text-[12.5px] font-bold leading-tight text-teal-700 dark:text-teal-300">
+						<div className="text-[12.5px] font-bold leading-tight text-[var(--ink)]">
 							Наряд ЗТЛ (Окклюзионный сплинт)
 						</div>
-						<div className="text-[11.5px] truncate leading-tight text-[var(--muted,#64748b)] dark:text-slate-400">
+						<div className="text-[11.5px] truncate leading-tight text-[var(--muted)]">
 							(миорелаксирующий / шина ВНЧС)
 						</div>
 					</div>
 				</button>
 			</div>
 
-			<div className="flex items-center gap-2 p-2.5 rounded-lg bg-teal-500/10 dark:bg-teal-950/30 border border-teal-500/20 text-xs">
-				<CheckCircle2 size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-				<span className="text-[12px] font-medium text-teal-900 dark:text-teal-200">
+			<div className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-xs">
+				<CheckCircle2 size={15} className="text-[var(--primary)] shrink-0" />
+				<span className="text-[12px] font-medium text-[var(--ink)]">
 					Клинический регламент: Истечение 30 дней плана не ограничивает ортодонтические манипуляции, заказ капп/элайнеров в лаборатории или оплату.
 				</span>
 			</div>

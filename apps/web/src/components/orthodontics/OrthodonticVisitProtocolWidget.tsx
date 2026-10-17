@@ -31,15 +31,15 @@ export function OrthodonticVisitProtocolWidget(props: OrthodonticVisitProtocolWi
 			aria-labelledby="ortho-protocol-title"
 			data-testid="orthodontic-visit-protocol-widget"
 		>
-			<div className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-t-[24px] sm:rounded-2xl shadow-2xl flex flex-col h-[94vh] sm:h-auto sm:max-h-[94vh] overflow-hidden overflow-x-clip">
+			<div className="relative w-full max-w-5xl bg-[var(--paper)] border border-[var(--line)] rounded-t-[24px] sm:rounded-2xl shadow-2xl flex flex-col h-[94vh] sm:h-auto sm:max-h-[94vh] overflow-hidden overflow-x-clip">
 				{/* Apple Mobile HIG Tactile Drag Handle (≤ 768px) */}
 				<div
 					data-testid="ortho-mobile-drag-handle-container"
-					className="sm:hidden flex justify-center pt-2.5 pb-1 shrink-0 bg-[var(--paper,#ffffff)] dark:bg-slate-900"
+					className="sm:hidden flex justify-center pt-2.5 pb-1 shrink-0 bg-[var(--paper)]"
 				>
 					<div
 						data-testid="ortho-mobile-drag-handle"
-						className="w-9 h-1.2 rounded-full bg-[var(--line,#cbd5e1)] dark:bg-slate-700"
+						className="w-9 h-1.5 rounded-full bg-[var(--line)]"
 					/>
 				</div>
 
@@ -56,16 +56,16 @@ export function OrthodonticVisitProtocolWidget(props: OrthodonticVisitProtocolWi
 				{/* Mobile Segmented View Switcher (Apple iOS HIG) */}
 				<div
 					data-testid="ortho-mobile-segmented-switcher"
-					className="sm:hidden flex items-center p-1.5 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900/80 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 shrink-0 gap-1.5"
+					className="sm:hidden flex items-center p-1.5 bg-[var(--paper-soft)] border-b border-[var(--line)] shrink-0 gap-1.5"
 				>
 					<button
 						type="button"
 						data-testid="ortho-mobile-tab-controls"
 						onClick={() => setMobileTab("controls")}
-						className={`flex-1 h-[44px] min-h-[44px] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+						className={`flex-1 h-[44px] min-h-[44px] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer border ${
 							mobileTab === "controls"
-								? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
-								: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-[var(--paper,#ffffff)]/60"
+								? "primary-button !rounded-xl"
+								: "secondary-button !rounded-xl"
 						}`}
 					>
 						1. Протокол & дуги
@@ -74,10 +74,10 @@ export function OrthodonticVisitProtocolWidget(props: OrthodonticVisitProtocolWi
 						type="button"
 						data-testid="ortho-mobile-tab-preview"
 						onClick={() => setMobileTab("preview")}
-						className={`flex-1 h-[44px] min-h-[44px] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+						className={`flex-1 h-[44px] min-h-[44px] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer border ${
 							mobileTab === "preview"
-								? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
-								: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-[var(--paper,#ffffff)]/60"
+								? "primary-button !rounded-xl"
+								: "secondary-button !rounded-xl"
 						}`}
 					>
 						2. Дневник & чек ({protocol.calculatedServices804n.length})
@@ -102,7 +102,7 @@ export function OrthodonticVisitProtocolWidget(props: OrthodonticVisitProtocolWi
 				{/* Mobile Sticky Bottom CTA Bar (Natural Thumb Zone) */}
 				<div
 					data-testid="ortho-mobile-sticky-cta-bar"
-					className="sm:hidden shrink-0 p-2.5 bg-[var(--paper,#ffffff)]/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 flex items-center gap-2 pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))]"
+					className="sm:hidden shrink-0 p-2.5 bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--line)] flex items-center gap-2 pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))]"
 				>
 					{mobileTab === "controls" ? (
 						<>
@@ -110,7 +110,7 @@ export function OrthodonticVisitProtocolWidget(props: OrthodonticVisitProtocolWi
 								type="button"
 								data-testid="ortho-mobile-btn-to-preview"
 								onClick={() => setMobileTab("preview")}
-								className="h-[46px] min-h-[44px] flex-1 bg-[var(--teal,#0d9488)] hover:bg-teal-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+								className="primary-button h-[46px] min-h-[44px] flex-1 !rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
 							>
 								К дневнику и чеку ({protocol.calculatedServices804n.length})
 							</button>
@@ -118,7 +118,7 @@ export function OrthodonticVisitProtocolWidget(props: OrthodonticVisitProtocolWi
 								type="button"
 								data-testid="ortho-mobile-btn-close"
 								onClick={onClose}
-								className="h-[46px] min-h-[44px] px-3.5 bg-[var(--paper-soft,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 rounded-xl text-xs font-semibold cursor-pointer"
+								className="secondary-button h-[46px] min-h-[44px] px-3.5 !rounded-xl text-xs font-semibold cursor-pointer"
 							>
 								Закрыть
 							</button>
@@ -133,15 +133,15 @@ export function OrthodonticVisitProtocolWidget(props: OrthodonticVisitProtocolWi
 									protocol.handleAddServicesToInvoice();
 									onClose();
 								}}
-								className="h-[46px] min-h-[44px] flex-1 bg-[var(--teal,#0d9488)] hover:bg-teal-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+								className="primary-button h-[46px] min-h-[44px] flex-1 !rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
 							>
-								Внести в ЭМК и чек ({protocol.calculatedServices804n.length})
+								Внести в карту и чек ({protocol.calculatedServices804n.length})
 							</button>
 							<button
 								type="button"
 								data-testid="ortho-mobile-btn-back-controls"
 								onClick={() => setMobileTab("controls")}
-								className="h-[46px] min-h-[44px] px-3.5 bg-[var(--paper-soft,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 rounded-xl text-xs font-semibold cursor-pointer"
+								className="secondary-button h-[46px] min-h-[44px] px-3.5 !rounded-xl text-xs font-semibold cursor-pointer"
 							>
 								Назад
 							</button>

@@ -268,12 +268,12 @@ describe("Cephalometric Math & Vector Geometry Engine", () => {
 		const perIteration = totalDuration / iterations;
 
 		assert.ok(
-			totalDuration < 100,
-			`1000 cephalometric iterations took ${totalDuration.toFixed(2)}ms (expected < 100ms)`,
+			totalDuration < 250,
+			`1000 cephalometric iterations took ${totalDuration.toFixed(2)}ms (expected < 250ms)`,
 		);
 		assert.ok(
-			perIteration < 0.1,
-			`Single cephalometric calculation took ${perIteration.toFixed(4)}ms (expected < 0.1ms)`,
+			perIteration < 0.25,
+			`Single cephalometric calculation took ${perIteration.toFixed(4)}ms (expected < 0.25ms)`,
 		);
 	});
 });

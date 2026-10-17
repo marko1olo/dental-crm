@@ -404,6 +404,32 @@ export function useOrthodonticVisitProtocol(props: OrthodonticVisitProtocolWidge
 		setArchwireSection(wire.section);
 		if (!selectedActions.includes("wire_change")) setSelectedActions((prev) => [...prev, "wire_change"]);
 		showToast(`Установлена рабочая дуга ${wire.label}`, "info");
+
+		if (patientId) {
+			fetch(`/api/orthodontics/${encodeURIComponent(patientId)}/archwire-change`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+				body: JSON.stringify({
+					material: wire.material,
+					section: wire.section,
+					arch: targetArch || "both",
+					note: `Рабочая дуга ${wire.label}`,
+				}),
+			})
+				.then((res) => (res.ok ? res.json() : null))
+				.then((data) => {
+					if (data?.deduction?.success) {
+						if (data.deduction.isOverdraft) {
+							showToast(`Склад (мягкий овердрафт): списана дуга ${wire.label}, остаток ${data.deduction.remainingStock} шт.`, "warning", 3500);
+						} else {
+							showToast(`Склад: списана дуга ${wire.label} (остаток ${data.deduction.remainingStock} шт.)`, "success", 3000);
+						}
+					}
+				})
+				.catch((err) => {
+					console.warn("[Orthodontics] Archwire deduction sync error:", err);
+				});
+		}
 	};
 
 	const handleElasticSizeInteraction = useCallback(() => {

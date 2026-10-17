@@ -50,25 +50,25 @@ export const OrthoDiagnosticsSection: React.FC<OrthoDiagnosticsSectionProps> = (
 			{/* 1. Прикус по Энглю */}
 			<div
 				data-testid="ortho-angle-class-selector"
-				className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2"
+				className="bg-[var(--paper-soft)] p-3 rounded-xl border border-[var(--line)] flex flex-col gap-2"
 			>
 				<div className="flex items-center justify-between flex-wrap gap-1.5">
-					<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
-						<Activity size={14} className="text-blue-500" />
+					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+						<Activity size={14} className="text-[var(--primary)]" />
 						Прикус по Энглю
 					</span>
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
 							onClick={onSetAngleClassNorm}
-							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 cursor-pointer min-h-[36px]"
+							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--primary)] transition shadow-xs cursor-pointer min-h-[36px]"
 							data-testid="angle-class-norm-1click-btn"
 							title="Класс I по Энглю / Физиологический прикус (Норма СтАР)"
 						>
-							<CheckCircle2 size={12} />
+							<CheckCircle2 size={13} />
 							<span>Норма (Класс I)</span>
 						</button>
-						<span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
+						<span className="text-xs font-bold text-[var(--primary)]">
 							{ANGLE_CLASS_OPTIONS.find((a) => a.id === angleClass)?.shortLabel}
 						</span>
 					</div>
@@ -83,15 +83,15 @@ export const OrthoDiagnosticsSection: React.FC<OrthoDiagnosticsSectionProps> = (
 								type="button"
 								onClick={() => setAngleClass(opt.id)}
 								data-testid={`angle-class-${opt.id}-btn`}
-								className={`min-h-[44px] px-2 py-1.5 rounded-xl border text-center flex flex-col items-center justify-center transition-all cursor-pointer ${
+								className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-2 py-1.5 rounded-xl border text-center flex flex-col items-center justify-center transition cursor-pointer ${
 									isSelected
-										? "bg-blue-600 text-white border-blue-700 font-black shadow-xs ring-1 ring-blue-400"
-										: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+										? "bg-[var(--primary)] text-white border-[var(--primary)] font-bold shadow-xs"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								title={opt.desc}
 							>
 								<span className="text-xs font-bold leading-tight">{opt.shortLabel}</span>
-								<span className={`text-[10px] truncate w-full ${isSelected ? "text-blue-100" : "text-slate-400"}`}>
+								<span className={`text-[10px] truncate w-full ${isSelected ? "text-white/80" : "text-[var(--muted)]"}`}>
 									{opt.id === "class_1" ? "Нейтральный" : opt.id === "class_2_div_1" ? "Протрузия" : opt.id === "class_2_div_2" ? "Ретрузия" : "Мезиальный"}
 								</span>
 							</button>
@@ -103,22 +103,22 @@ export const OrthoDiagnosticsSection: React.FC<OrthoDiagnosticsSectionProps> = (
 			{/* 2. Резцовые и окклюзионные соотношения (Sagittal, Vertical, Transversal) */}
 			<div
 				data-testid="ortho-occlusion-anomaly-selector"
-				className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2.5"
+				className="bg-[var(--paper-soft)] p-3 rounded-xl border border-[var(--line)] flex flex-col gap-2.5"
 			>
 				<div className="flex items-center justify-between flex-wrap gap-1.5">
-					<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
-						<Layers size={14} className="text-teal-500" />
+					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+						<Layers size={14} className="text-[var(--primary)]" />
 						Резцовые и окклюзионные соотношения
 					</span>
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
 							onClick={onSetOcclusionNorm}
-							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 dark:hover:bg-teal-900/50 cursor-pointer min-h-[36px]"
+							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--primary)] transition shadow-xs cursor-pointer min-h-[36px]"
 							data-testid="occlusion-norm-1click-btn"
 							title="Физиологическая окклюзия резцов и моляров (Норма)"
 						>
-							<CheckCircle2 size={12} />
+							<CheckCircle2 size={13} />
 							<span>Норма окклюзии</span>
 						</button>
 					</div>
@@ -126,10 +126,10 @@ export const OrthoDiagnosticsSection: React.FC<OrthoDiagnosticsSectionProps> = (
 
 				{/* Сагиттальная щель */}
 				<div className="flex flex-col gap-1">
-					<div className="flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+					<div className="flex items-center justify-between text-xs font-semibold text-[var(--muted)]">
 						<span>Сагиттальная щель (оверджет):</span>
 						{sagittalAnomaly === "overjet" && (
-							<span className="font-bold text-teal-600 dark:text-teal-400">{sagittalGapMm} мм</span>
+							<span className="font-bold text-[var(--primary)]">{sagittalGapMm} мм</span>
 						)}
 					</div>
 					<div className="grid grid-cols-3 gap-1.5">
@@ -140,10 +140,10 @@ export const OrthoDiagnosticsSection: React.FC<OrthoDiagnosticsSectionProps> = (
 								setSagittalGapMm(2);
 							}}
 							data-testid="sagittal-norm-btn"
-							className={`min-h-[40px] px-2 py-1 rounded-lg border text-center text-xs font-bold transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-2 py-1 rounded-xl border text-center text-xs font-bold transition cursor-pointer ${
 								sagittalAnomaly === "norm"
-									? "bg-teal-600 text-white border-teal-700 shadow-xs"
-									: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+									? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+									: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
 							Норма (1–2 мм)
@@ -155,10 +155,10 @@ export const OrthoDiagnosticsSection: React.FC<OrthoDiagnosticsSectionProps> = (
 								setSagittalGapMm(sagittalGapMm <= 2 ? 4 : sagittalGapMm);
 							}}
 							data-testid="sagittal-overjet-btn"
-							className={`min-h-[40px] px-2 py-1 rounded-lg border text-center text-xs font-bold transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-2 py-1 rounded-xl border text-center text-xs font-bold transition cursor-pointer ${
 								sagittalAnomaly === "overjet"
-									? "bg-teal-600 text-white border-teal-700 shadow-xs"
-									: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+									? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+									: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
 							Оверджет (&gt;2 мм)
@@ -167,10 +167,10 @@ export const OrthoDiagnosticsSection: React.FC<OrthoDiagnosticsSectionProps> = (
 							type="button"
 							onClick={() => setSagittalAnomaly("reverse")}
 							data-testid="sagittal-reverse-btn"
-							className={`min-h-[40px] px-2 py-1 rounded-lg border text-center text-xs font-bold transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-2 py-1 rounded-xl border text-center text-xs font-bold transition cursor-pointer ${
 								sagittalAnomaly === "reverse"
-									? "bg-teal-600 text-white border-teal-700 shadow-xs"
-									: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+									? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+									: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
 							Обратный прикус
@@ -181,7 +181,7 @@ export const OrthoDiagnosticsSection: React.FC<OrthoDiagnosticsSectionProps> = (
 				{/* Вертикальное и трансверзальное соотношения */}
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 					<div className="flex flex-col gap-1">
-						<span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+						<span className="text-xs font-semibold text-[var(--muted)]">
 							Вертикальное перекрытие:
 						</span>
 						<div className="grid grid-cols-3 gap-1">
@@ -189,10 +189,10 @@ export const OrthoDiagnosticsSection: React.FC<OrthoDiagnosticsSectionProps> = (
 								type="button"
 								onClick={() => setVerticalAnomaly("norm")}
 								data-testid="vertical-norm-btn"
-								className={`min-h-[38px] px-1.5 py-1 rounded-lg border text-center text-[11px] font-bold transition-all cursor-pointer ${
+								className={`min-h-[40px] sm:min-h-[36px] sm:h-9 px-1.5 py-1 rounded-xl border text-center text-xs font-bold transition cursor-pointer ${
 									verticalAnomaly === "norm"
-										? "bg-teal-600 text-white border-teal-700"
-										: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+										? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 							>
 								Норма (1/3)
@@ -201,10 +201,10 @@ export const OrthoDiagnosticsSection: React.FC<OrthoDiagnosticsSectionProps> = (
 								type="button"
 								onClick={() => setVerticalAnomaly("deep")}
 								data-testid="vertical-deep-btn"
-								className={`min-h-[38px] px-1.5 py-1 rounded-lg border text-center text-[11px] font-bold transition-all cursor-pointer ${
+								className={`min-h-[40px] sm:min-h-[36px] sm:h-9 px-1.5 py-1 rounded-xl border text-center text-xs font-bold transition cursor-pointer ${
 									verticalAnomaly === "deep"
-										? "bg-teal-600 text-white border-teal-700"
-										: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+										? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 							>
 								Глубокий
@@ -213,10 +213,10 @@ export const OrthoDiagnosticsSection: React.FC<OrthoDiagnosticsSectionProps> = (
 								type="button"
 								onClick={() => setVerticalAnomaly("open")}
 								data-testid="vertical-open-btn"
-								className={`min-h-[38px] px-1.5 py-1 rounded-lg border text-center text-[11px] font-bold transition-all cursor-pointer ${
+								className={`min-h-[40px] sm:min-h-[36px] sm:h-9 px-1.5 py-1 rounded-xl border text-center text-xs font-bold transition cursor-pointer ${
 									verticalAnomaly === "open"
-										? "bg-teal-600 text-white border-teal-700"
-										: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+										? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 							>
 								Открытый
@@ -225,7 +225,7 @@ export const OrthoDiagnosticsSection: React.FC<OrthoDiagnosticsSectionProps> = (
 					</div>
 
 					<div className="flex flex-col gap-1">
-						<span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+						<span className="text-xs font-semibold text-[var(--muted)]">
 							Трансверзальное соотношение:
 						</span>
 						<div className="grid grid-cols-2 gap-1">
@@ -233,10 +233,10 @@ export const OrthoDiagnosticsSection: React.FC<OrthoDiagnosticsSectionProps> = (
 								type="button"
 								onClick={() => setTransversalAnomaly("norm")}
 								data-testid="transversal-norm-btn"
-								className={`min-h-[38px] px-2 py-1 rounded-lg border text-center text-[11px] font-bold transition-all cursor-pointer ${
+								className={`min-h-[40px] sm:min-h-[36px] sm:h-9 px-2 py-1 rounded-xl border text-center text-xs font-bold transition cursor-pointer ${
 									transversalAnomaly === "norm"
-										? "bg-teal-600 text-white border-teal-700"
-										: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+										? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 							>
 								Норма
@@ -245,10 +245,10 @@ export const OrthoDiagnosticsSection: React.FC<OrthoDiagnosticsSectionProps> = (
 								type="button"
 								onClick={() => setTransversalAnomaly("crossbite")}
 								data-testid="transversal-crossbite-btn"
-								className={`min-h-[38px] px-2 py-1 rounded-lg border text-center text-[11px] font-bold transition-all cursor-pointer ${
+								className={`min-h-[40px] sm:min-h-[36px] sm:h-9 px-2 py-1 rounded-xl border text-center text-xs font-bold transition cursor-pointer ${
 									transversalAnomaly === "crossbite"
-										? "bg-teal-600 text-white border-teal-700"
-										: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+										? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 							>
 								Перекрестный
@@ -261,25 +261,25 @@ export const OrthoDiagnosticsSection: React.FC<OrthoDiagnosticsSectionProps> = (
 			{/* 3. Гнатология и статус ВНЧС */}
 			<div
 				data-testid="ortho-gnathology-tmj-selector"
-				className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2"
+				className="bg-[var(--paper-soft)] p-3 rounded-xl border border-[var(--line)] flex flex-col gap-2"
 			>
 				<div className="flex items-center justify-between flex-wrap gap-1.5">
-					<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
-						<DentalArticulator size={14} className="text-amber-500" />
+					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+						<DentalArticulator size={14} className="text-[var(--primary)]" />
 						Гнатология и статус ВНЧС
 					</span>
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
 							onClick={onSetTmjNorm}
-							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50 cursor-pointer min-h-[36px]"
+							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--primary)] transition shadow-xs cursor-pointer min-h-[36px]"
 							data-testid="tmj-norm-1click-btn"
 							title="Пальпация безболезненная, девиации нет, шум отсутствует"
 						>
-							<CheckCircle2 size={12} />
+							<CheckCircle2 size={13} />
 							<span>Норма ВНЧС</span>
 						</button>
-						<span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
+						<span className="text-xs font-bold text-[var(--primary)]">
 							{tmjStatus === "norm"
 								? "Норма"
 								: tmjStatus === "clicking"
@@ -308,15 +308,15 @@ export const OrthoDiagnosticsSection: React.FC<OrthoDiagnosticsSectionProps> = (
 								type="button"
 								onClick={() => setTmjStatus(opt.id)}
 								data-testid={`tmj-status-${opt.id}-btn`}
-								className={`min-h-[44px] px-2 py-1.5 rounded-xl border text-center flex flex-col items-center justify-center transition-all cursor-pointer ${
+								className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-2 py-1.5 rounded-xl border text-center flex flex-col items-center justify-center transition cursor-pointer ${
 									isSelected
-										? "bg-amber-600 text-white border-amber-700 font-black shadow-xs ring-1 ring-amber-400"
-										: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+										? "bg-[var(--primary)] text-white border-[var(--primary)] font-bold shadow-xs"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								title={opt.desc}
 							>
 								<span className="text-xs font-bold leading-tight">{opt.label}</span>
-								<span className={`text-[10px] truncate w-full ${isSelected ? "text-amber-100" : "text-slate-400"}`}>
+								<span className={`text-[10px] truncate w-full ${isSelected ? "text-white/80" : "text-[var(--muted)]"}`}>
 									{opt.desc}
 								</span>
 							</button>

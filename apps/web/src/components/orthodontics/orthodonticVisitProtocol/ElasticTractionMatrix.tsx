@@ -34,16 +34,16 @@ export const ElasticTractionMatrix: React.FC<ElasticTractionMatrixProps> = ({
 	return (
 		<div
 			data-testid="ortho-elastic-traction-matrix"
-			className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2.5"
+			className="bg-[var(--paper-soft)] p-3 rounded-xl border border-[var(--line)] flex flex-col gap-2.5"
 		>
-			<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
-				<Zap size={14} className="text-purple-500" />
+			<span className="text-xs font-black uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+				<Zap size={14} className="text-[var(--primary)]" />
 				Межчелюстные эластики (тяга)
 			</span>
 
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 				<div>
-					<label htmlFor="elastic-scheme-select" className="block text-[12px] font-bold text-[var(--muted,#64748b)] dark:text-slate-400 mb-1">
+					<label htmlFor="elastic-scheme-select" className="block text-[12px] font-bold text-[var(--muted)] mb-1">
 						Схема фиксации
 					</label>
 					<select
@@ -51,7 +51,7 @@ export const ElasticTractionMatrix: React.FC<ElasticTractionMatrixProps> = ({
 						aria-label="Схема эластиков"
 						value={elasticScheme}
 						onChange={(e) => setElasticScheme(e.target.value)}
-						className="w-full h-8 px-2.5 bg-[var(--paper,#ffffff)] dark:bg-slate-800 border border-[var(--line,#e2e8f0)] dark:border-slate-700 rounded-lg text-[12.5px] font-medium text-[var(--ink,#0f172a)] dark:text-slate-100 outline-none"
+						className="w-full min-h-[36px] h-9 px-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[12.5px] font-medium text-[var(--ink)] outline-none focus:border-[var(--primary)]"
 					>
 						{ELASTIC_SCHEMES.map((e) => (
 							<option key={e.id} value={e.id}>
@@ -62,7 +62,7 @@ export const ElasticTractionMatrix: React.FC<ElasticTractionMatrixProps> = ({
 				</div>
 
 				<div>
-					<label htmlFor="elastic-size-select" className="block text-[12px] font-bold text-[var(--muted,#64748b)] dark:text-slate-400 mb-1">
+					<label htmlFor="elastic-size-select" className="block text-[12px] font-bold text-[var(--muted)] mb-1">
 						Размер и сила (калибр)
 					</label>
 					<select
@@ -76,7 +76,7 @@ export const ElasticTractionMatrix: React.FC<ElasticTractionMatrixProps> = ({
 							if (onElasticSizeInteraction) onElasticSizeInteraction();
 							setElasticSize(e.target.value);
 						}}
-						className="w-full h-8 px-2.5 bg-[var(--paper,#ffffff)] dark:bg-slate-800 border border-[var(--line,#e2e8f0)] dark:border-slate-700 rounded-lg text-[12.5px] font-medium text-[var(--ink,#0f172a)] dark:text-slate-100 outline-none"
+						className="w-full min-h-[36px] h-9 px-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[12.5px] font-medium text-[var(--ink)] outline-none focus:border-[var(--primary)]"
 					>
 						{ELASTIC_SIZES.map((s) => (
 							<option key={s.id} value={s.id}>

@@ -27,11 +27,11 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 	className = "",
 }) => {
 	return (
-		<div className={`lg:col-span-5 p-4 sm:p-5 flex flex-col gap-3 bg-[var(--surface,#f8fafc)]/60 dark:bg-slate-900/60 overflow-y-auto ${className}`} data-testid="ortho-protocol-preview-section">
+		<div className={`lg:col-span-5 p-4 sm:p-5 flex flex-col gap-3 bg-[var(--paper-soft)] overflow-y-auto ${className}`} data-testid="ortho-protocol-preview-section">
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<FileText size={16} className="text-amber-500" />
-					<span className="text-xs font-black uppercase tracking-wider text-[var(--ink,#0f172a)] dark:text-slate-200">
+					<FileText size={16} className="text-[var(--primary)]" />
+					<span className="text-xs font-black uppercase tracking-wider text-[var(--ink)]">
 						Дневник приёма
 					</span>
 				</div>
@@ -52,7 +52,7 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 					<button
 						type="button"
 						onClick={onCopyClipboard}
-						className="secondary-button shrink-0 min-h-[44px] px-2.5 py-1 text-xs font-bold rounded-lg border"
+						className="secondary-button shrink-0 min-h-[44px] px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)]"
 						title="Скопировать протокол в буфер"
 					>
 						<Copy size={13} />
@@ -62,12 +62,12 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 			</div>
 
 			{/* Preformatted Protocol Text Box */}
-			<div className="flex-1 min-h-[300px] max-h-[460px] p-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-200 overflow-y-auto whitespace-pre-wrap leading-relaxed select-text shadow-inner">
+			<div className="flex-1 min-h-[300px] max-h-[460px] p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] font-mono text-xs text-[var(--ink)] overflow-y-auto whitespace-pre-wrap leading-relaxed select-text shadow-inner">
 				{generatedProtocol}
 			</div>
 
 			{/* 1-Click Action Bar */}
-			<div className="flex flex-col gap-2 pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
+			<div className="flex flex-col gap-2 pt-2 border-t border-[var(--line)]">
 				<div className="grid grid-cols-2 gap-2">
 					<button
 						type="button"
@@ -76,7 +76,7 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 						className="secondary-button min-h-[48px] px-3.5 py-2 rounded-xl w-full justify-center shrink-0"
 						title="Скопировать памятку по эластикам и уходу для отправки пациенту в WhatsApp/Telegram"
 					>
-						<Copy size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<Copy size={15} className="text-[var(--primary)] shrink-0" />
 						<span className="hidden sm:inline">Скопировать для пациента</span>
 						<span className="sm:hidden text-xs">Памятка</span>
 					</button>
@@ -88,7 +88,7 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 						className="secondary-button min-h-[48px] px-3 py-2 rounded-xl w-full justify-center shrink-0"
 						title="Распечатать памятку пациенту (A4)"
 					>
-						<Printer size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<Printer size={15} className="text-[var(--primary)] shrink-0" />
 						<span className="hidden sm:inline">Печать памятки A4</span>
 						<span className="sm:hidden text-xs">Печать A4</span>
 					</button>

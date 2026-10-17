@@ -20,16 +20,16 @@ export const OrthoProtocolModalHeader: React.FC<OrthoProtocolModalHeaderProps> =
 	calculatedServicesCount,
 }) => {
 	return (
-		<div className="flex items-center justify-between px-4 py-2.5 bg-[var(--surface,#f8fafc)] dark:bg-slate-900 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 shrink-0">
+		<div className="flex items-center justify-between px-4 py-2.5 bg-[var(--paper)] border-b border-[var(--line)] shrink-0">
 			<div className="flex items-center gap-2.5 min-w-0 mr-3">
-				<div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center border border-teal-500/30 shrink-0">
+				<div className="w-8 h-8 rounded-xl bg-[var(--paper-soft)] text-[var(--primary)] flex items-center justify-center border border-[var(--line)] shrink-0">
 					<BracesBracket size={18} />
 				</div>
 				<div className="min-w-0">
-					<h2 id="ortho-protocol-title" className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-white m-0 truncate">
+					<h2 id="ortho-protocol-title" className="text-sm font-bold text-[var(--ink)] m-0 truncate">
 						Ортодонтический протокол приёма
 					</h2>
-					<p className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 m-0 truncate">
+					<p className="text-xs text-[var(--muted)] m-0 truncate">
 						Выбор брекетов, дуг, сечений и эластиков · {patientName}
 					</p>
 				</div>
@@ -59,7 +59,7 @@ export const OrthoProtocolModalHeader: React.FC<OrthoProtocolModalHeaderProps> =
 					<Receipt size={15} />
 					<span>Начислить услуги в чек</span>
 					<span
-						className="px-1.5 py-0.2 rounded-full text-[12px] font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 border border-[var(--line,#e2e8f0)] dark:border-slate-600 min-w-[20px] text-center"
+						className="px-1.5 py-0.5 rounded-full text-[12px] font-bold bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] min-w-[20px] text-center"
 						data-testid="ortho-services-count-badge"
 					>
 						{calculatedServicesCount}

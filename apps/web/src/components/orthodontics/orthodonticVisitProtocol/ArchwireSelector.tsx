@@ -64,10 +64,10 @@ export const ArchwireSelector: React.FC<ArchwireSelectorProps> = ({
 		<div className="space-y-4" data-testid="ortho-archwire-selector">
 			{/* 1. Материал ортодонтической дуги (Segmented Bar) */}
 			<div>
-				<span className="block text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 mb-1.5">
+				<span className="block text-xs font-black uppercase tracking-wider text-[var(--muted)] mb-1.5">
 					Материал дуги
 				</span>
-				<div className="bg-[var(--paper-soft,#f1f5f9)] dark:bg-slate-900/80 p-1 rounded-xl border border-[var(--line-subtle,#e2e8f0)] dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-1">
+				<div className="bg-[var(--paper-soft)] p-1 rounded-xl border border-[var(--line)] grid grid-cols-2 sm:grid-cols-4 gap-1">
 					{ARCHWIRE_MATERIALS.map((mat) => {
 						const isSelected = archwireMaterial === mat.id;
 						return (
@@ -75,14 +75,14 @@ export const ArchwireSelector: React.FC<ArchwireSelectorProps> = ({
 								key={mat.id}
 								type="button"
 								onClick={() => setArchwireMaterial(mat.id)}
-								className={`h-9 px-2.5 py-1 rounded-lg text-xs font-medium border flex flex-col items-center justify-center transition-all cursor-pointer ${
+								className={`h-9 px-2.5 py-1 rounded-xl text-xs font-medium border flex flex-col items-center justify-center transition-all cursor-pointer ${
 									isSelected
-										? "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] dark:text-teal-300 font-bold shadow-xs"
-										: "bg-transparent border-transparent text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-[var(--line-subtle,#e2e8f0)]/50"
+										? "bg-[var(--paper)] border-[var(--primary)] text-[var(--primary)] font-bold shadow-xs"
+										: "bg-transparent border-transparent text-[var(--ink)] hover:bg-[var(--paper)]"
 								}`}
 							>
 								<span className="text-[12.5px] font-bold leading-tight">{mat.badge}</span>
-								<span className="text-[11.5px] text-[var(--muted,#64748b)] dark:text-slate-400 truncate w-full text-center leading-tight">
+								<span className={`text-[11.5px] truncate w-full text-center leading-tight ${isSelected ? "text-[var(--primary)]" : "text-[var(--muted)]"}`}>
 									{mat.id === "NiTi" ? "Нивелирование" : mat.id === "CuNiTi" ? "Термо" : mat.id === "SS" ? "Сталь" : "Бета-титан"}
 								</span>
 							</button>
@@ -94,18 +94,18 @@ export const ArchwireSelector: React.FC<ArchwireSelectorProps> = ({
 			{/* 2. Сечение ортодонтической дуги */}
 			<div>
 				<div className="flex items-center justify-between mb-1.5">
-					<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400">
+					<span className="text-xs font-black uppercase tracking-wider text-[var(--muted)]">
 						Сечение дуги
 					</span>
-					<span className="text-[12px] font-bold text-teal-700 dark:text-teal-300">
+					<span className="text-[12px] font-bold text-[var(--primary)]">
 						Выбрано: {archwireSection}"
 					</span>
 				</div>
 
 				<div className="flex flex-col gap-2">
 					{/* Круглые сечения */}
-					<div className="bg-[var(--paper-soft,#f1f5f9)] dark:bg-slate-900/80 p-1 rounded-lg border border-[var(--line-subtle,#e2e8f0)] dark:border-slate-800 flex items-center gap-1 flex-wrap">
-						<span className="text-[12px] font-bold text-[var(--muted,#64748b)] dark:text-slate-400 px-2 shrink-0">Круглые:</span>
+					<div className="bg-[var(--paper-soft)] p-1 rounded-xl border border-[var(--line)] flex items-center gap-1 flex-wrap">
+						<span className="text-[12px] font-bold text-[var(--muted)] px-2 shrink-0">Круглые:</span>
 						{ROUND_SECTIONS.map((sec) => {
 							const isSelected = archwireSection === sec;
 							return (
@@ -113,10 +113,10 @@ export const ArchwireSelector: React.FC<ArchwireSelectorProps> = ({
 									key={sec}
 									type="button"
 									onClick={() => setArchwireSection(sec)}
-									className={`h-7 px-2.5 rounded-md text-[12.5px] font-medium transition-all cursor-pointer ${
+									className={`h-7 px-2.5 rounded-lg text-[12.5px] font-medium transition-all cursor-pointer ${
 										isSelected
-											? "bg-[var(--teal,#0d9488)] text-white font-semibold shadow-xs"
-											: "bg-transparent text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-slate-800"
+											? "bg-[var(--primary)] text-white font-semibold shadow-xs"
+											: "bg-transparent text-[var(--ink)] hover:bg-[var(--paper)]"
 									}`}
 								>
 									{sec}"
@@ -126,8 +126,8 @@ export const ArchwireSelector: React.FC<ArchwireSelectorProps> = ({
 					</div>
 
 					{/* Прямоугольные сечения */}
-					<div className="bg-[var(--paper-soft,#f1f5f9)] dark:bg-slate-900/80 p-1 rounded-lg border border-[var(--line-subtle,#e2e8f0)] dark:border-slate-800 flex items-center gap-1 flex-wrap">
-						<span className="text-[12px] font-bold text-[var(--muted,#64748b)] dark:text-slate-400 px-2 shrink-0">Прямоуг.:</span>
+					<div className="bg-[var(--paper-soft)] p-1 rounded-xl border border-[var(--line)] flex items-center gap-1 flex-wrap">
+						<span className="text-[12px] font-bold text-[var(--muted)] px-2 shrink-0">Прямоуг.:</span>
 						{RECT_SECTIONS.map((sec) => {
 							const isSelected = archwireSection === sec;
 							return (
@@ -135,10 +135,10 @@ export const ArchwireSelector: React.FC<ArchwireSelectorProps> = ({
 									key={sec}
 									type="button"
 									onClick={() => setArchwireSection(sec)}
-									className={`h-7 px-2 rounded-md text-[12px] font-medium transition-all cursor-pointer ${
+									className={`h-7 px-2 rounded-lg text-[12px] font-medium transition-all cursor-pointer ${
 										isSelected
-											? "bg-[var(--teal,#0d9488)] text-white font-semibold shadow-xs"
-											: "bg-transparent text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-slate-800"
+											? "bg-[var(--primary)] text-white font-semibold shadow-xs"
+											: "bg-transparent text-[var(--ink)] hover:bg-[var(--paper)]"
 									}`}
 								>
 									{sec}"
@@ -150,14 +150,14 @@ export const ArchwireSelector: React.FC<ArchwireSelectorProps> = ({
 					{/* Рабочие дуги ортодонта */}
 					<div
 						data-testid="ortho-workhorse-wires-strip"
-						className="mt-1 p-2.5 rounded-xl bg-teal-500/10 dark:bg-teal-950/30 border border-teal-500/30 flex flex-col gap-1.5"
+						className="mt-1 p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-1.5"
 					>
 						<div className="flex items-center justify-between">
-							<span className="text-[12px] font-bold uppercase tracking-wider text-teal-800 dark:text-teal-300 flex items-center gap-1">
-								<Zap size={14} className="text-teal-600 dark:text-teal-400" />
+							<span className="text-[12px] font-bold uppercase tracking-wider text-[var(--ink)] flex items-center gap-1">
+								<Zap size={14} className="text-[var(--primary)]" />
 								Рабочие дуги ортодонта
 							</span>
-							<span className="text-[12px] text-teal-700/90 dark:text-teal-400/90 font-medium">
+							<span className="text-[12px] text-[var(--muted)] font-medium">
 								Мгновенный выбор материала и сечения
 							</span>
 						</div>
@@ -172,15 +172,15 @@ export const ArchwireSelector: React.FC<ArchwireSelectorProps> = ({
 										type="button"
 										onClick={() => onSelectWorkhorseArchwire(wire)}
 										data-testid={`quick-wire-${wire.id}-btn`}
-										className={`h-10 px-2.5 py-1 rounded-lg border text-left flex flex-col justify-center min-w-0 transition-all cursor-pointer ${
+										className={`h-10 px-2.5 py-1 rounded-xl border text-left flex flex-col justify-center min-w-0 transition-all cursor-pointer ${
 											isSelected
-												? "bg-[var(--teal,#0d9488)] text-white border-teal-700 font-bold shadow-xs"
-												: "bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-teal-300/60 dark:border-teal-800/80 hover:border-teal-500 text-[var(--ink,#0f172a)] dark:text-slate-100"
+												? "bg-[var(--primary)] text-white border-[var(--primary)] font-bold shadow-xs"
+												: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--line-strong,var(--primary))] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 										}`}
 										title={wire.desc}
 									>
 										<span className="text-[12.5px] font-bold leading-tight truncate w-full">{wire.label}</span>
-										<span className={`text-[11.5px] truncate w-full ${isSelected ? "text-teal-100" : "text-[var(--muted,#64748b)] dark:text-slate-400"}`}>
+										<span className={`text-[11.5px] truncate w-full ${isSelected ? "text-white/80" : "text-[var(--muted)]"}`}>
 											{wireSubtitle}
 										</span>
 									</button>
@@ -194,14 +194,14 @@ export const ArchwireSelector: React.FC<ArchwireSelectorProps> = ({
 			{/* 3. Расчет торка и ангуляции резцов и клыков */}
 			<div
 				data-testid="ortho-torque-angulation-panel"
-				className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2.5"
+				className="bg-[var(--paper-soft)] p-3 rounded-xl border border-[var(--line)] flex flex-col gap-2.5"
 			>
 				<div className="flex items-center justify-between flex-wrap gap-1.5">
-					<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
-						<Sliders size={14} className="text-teal-600 dark:text-teal-400" />
+					<span className="text-xs font-black uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+						<Sliders size={14} className="text-[var(--primary)]" />
 						Расчет торка и ангуляции
 					</span>
-					<span className="text-[12px] font-bold text-teal-700 dark:text-teal-300">
+					<span className="text-[12px] font-bold text-[var(--primary)]">
 						{TORQUE_PRESETS.find((t) => t.id === torquePreset)?.shortLabel}
 					</span>
 				</div>
@@ -219,15 +219,15 @@ export const ArchwireSelector: React.FC<ArchwireSelectorProps> = ({
 									showToast(`Выбран торк: ${tOpt.label}`, "info");
 								}}
 								data-testid={`torque-preset-${tOpt.id}-btn`}
-								className={`h-10 px-2.5 py-1 rounded-lg border text-left flex flex-col justify-center min-w-0 transition-all cursor-pointer ${
+								className={`h-10 px-2.5 py-1 rounded-xl border text-left flex flex-col justify-center min-w-0 transition-all cursor-pointer ${
 									isSelected
-										? "bg-[var(--teal,#0d9488)] text-white border-teal-700 font-bold shadow-xs"
-										: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-[var(--paper-soft,#f1f5f9)]"
+										? "bg-[var(--primary)] text-white border-[var(--primary)] font-bold shadow-xs"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								title={tOpt.desc}
 							>
 								<span className="text-[12.5px] font-bold leading-tight truncate w-full">{tOpt.shortLabel}</span>
-								<span className={`text-[11.5px] truncate w-full ${isSelected ? "text-teal-100" : "text-[var(--muted,#64748b)] dark:text-slate-400"}`}>
+								<span className={`text-[11.5px] truncate w-full ${isSelected ? "text-white/80" : "text-[var(--muted)]"}`}>
 									ВЧ {tOpt.u1Torque} / НЧ {tOpt.l1Torque}
 								</span>
 							</button>
@@ -236,11 +236,11 @@ export const ArchwireSelector: React.FC<ArchwireSelectorProps> = ({
 				</div>
 
 				{/* Ангуляция резцов и клыков (Segmented Bar) */}
-				<div className="flex items-center justify-between gap-2 pt-1.5 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800/60">
-					<span className="text-[12px] font-bold text-[var(--muted,#64748b)] dark:text-slate-400">
+				<div className="flex items-center justify-between gap-2 pt-1.5 border-t border-[var(--line)]">
+					<span className="text-[12px] font-bold text-[var(--muted)]">
 						Ангуляция резцов/клыков:
 					</span>
-					<div className="bg-[var(--paper-soft,#f1f5f9)] dark:bg-slate-900/80 p-0.5 rounded-lg border border-[var(--line-subtle,#e2e8f0)] dark:border-slate-800 flex items-center gap-1">
+					<div className="bg-[var(--paper)] p-0.5 rounded-xl border border-[var(--line)] flex items-center gap-1">
 						{ANGULATION_PRESETS.map((aOpt) => {
 							const isSelected = angulationPreset === aOpt.id;
 							return (
@@ -249,10 +249,10 @@ export const ArchwireSelector: React.FC<ArchwireSelectorProps> = ({
 									type="button"
 									onClick={() => setAngulationPreset(aOpt.id)}
 									data-testid={`angulation-preset-${aOpt.id}-btn`}
-									className={`h-7 px-2.5 rounded-md text-[12px] font-medium transition-all cursor-pointer ${
+									className={`h-7 px-2.5 rounded-lg text-[12px] font-medium transition-all cursor-pointer ${
 										isSelected
-											? "bg-[var(--teal,#0d9488)] text-white font-semibold shadow-xs"
-											: "bg-transparent text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-slate-800"
+											? "bg-[var(--primary)] text-white font-semibold shadow-xs"
+											: "bg-transparent text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 									}`}
 								>
 									{aOpt.shortLabel}
