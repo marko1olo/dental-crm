@@ -34,7 +34,7 @@ export const WaybillEditorModal: React.FC<WaybillEditorModalProps> = ({
 				<button
 					type="button"
 					onClick={onCancel}
-					className="text-xs text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer"
+					className="secondary-button h-7 px-2.5 text-xs font-medium"
 				>
 					Отмена
 				</button>
@@ -310,7 +310,7 @@ export const ExpressWaybillModal: React.FC<ExpressWaybillModalProps> = ({
 							}}
 							value={waybillNum}
 							onChange={(e) => onWaybillNumChange(e.target.value)}
-							placeholder="например, ТОРГ-2026/10-091"
+							placeholder="например, НАКЛ-2026/10-091"
 							data-testid="express-wb-number"
 						/>
 					</div>

@@ -58,7 +58,7 @@ export const InventoryInboundInvoiceModal: React.FC<InventoryInboundInvoiceModal
 	getHeaders,
 }) => {
 	const [invoiceNumber, setInvoiceNumber] = useState(
-		`ТОРГ12-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-01`,
+		`НАКЛ-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-01`,
 	);
 	const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().slice(0, 10));
 	const [supplierName, setSupplierName] = useState("ООО «Стомторг»");
@@ -312,7 +312,7 @@ export const InventoryInboundInvoiceModal: React.FC<InventoryInboundInvoiceModal
 						<Truck className="text-teal-600 dark:text-teal-400 shrink-0" size={20} />
 						<div>
 							<h2 id="inbound-invoice-title" className="text-sm font-bold text-[var(--ink)] leading-tight">
-								Приходная накладная поставщика (ТОРГ-12 / FEFO)
+								Приходная накладная поставщика (FEFO)
 							</h2>
 							<p className="text-[11px] text-[var(--muted)]">
 								Оприходование партий стоматологических материалов и автоматическое погашение дефицита
@@ -343,7 +343,7 @@ export const InventoryInboundInvoiceModal: React.FC<InventoryInboundInvoiceModal
 								value={invoiceNumber}
 								onChange={(e) => setInvoiceNumber(e.target.value)}
 								className="w-full h-8 px-2.5 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none focus:border-teal-500 font-mono font-medium"
-								placeholder="ТОРГ-12 №..."
+								placeholder="Накладная №..."
 							/>
 						</div>
 
@@ -392,7 +392,7 @@ export const InventoryInboundInvoiceModal: React.FC<InventoryInboundInvoiceModal
 							<button
 								type="button"
 								onClick={handleAddLine}
-								className="h-7 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-teal-600 dark:text-teal-400 border border-[var(--line)] text-xs font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+								className="secondary-button h-7 px-2.5 text-xs font-semibold inline-flex items-center gap-1"
 							>
 								<Plus size={13} />
 								<span>Добавить строку</span>
@@ -533,7 +533,7 @@ export const InventoryInboundInvoiceModal: React.FC<InventoryInboundInvoiceModal
 							<button
 								type="button"
 								onClick={onClose}
-								className="h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold hover:bg-[var(--line)] transition-colors cursor-pointer"
+								className="secondary-button h-8 px-3 text-xs font-semibold"
 							>
 								Отмена
 							</button>
@@ -541,7 +541,7 @@ export const InventoryInboundInvoiceModal: React.FC<InventoryInboundInvoiceModal
 							<button
 								type="submit"
 								disabled={isPosting}
-								className="h-8 px-4 rounded-lg bg-[var(--teal)] text-[var(--on-teal,#ffffff)] text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer hover:opacity-90 disabled:opacity-50 transition-all"
+								className="primary-button h-8 px-4 text-xs font-bold inline-flex items-center gap-1.5 shadow-xs"
 								data-testid="btn-post-inbound-invoice"
 							>
 								<CheckCircle2 size={14} />

@@ -11,7 +11,7 @@
  *    and unparameterized master routes (/deduct, /deduct/visit, /soft-overdraft-deduct, /quick-carpule-disposal).
  */
 
-import type { FastifyInstance, FastifyPluginAsync } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import type { z } from "zod";
 import {
 	requireResolvedOrganizationId,
@@ -28,10 +28,49 @@ import {
 } from "../services/warehouse/warehouseOperations.js";
 import { withTenantCtx } from "../db/rls.js";
 import { TreatmentConsumablesService } from "../services/treatmentConsumablesService.js";
+import { supplierInvoiceRoutes } from "./inventory/supplierInvoiceRoutes.js";
+import { procedureRuleRoutes } from "./inventory/procedureRuleRoutes.js";
 
 export const warehouseRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
 ) => {
+	// Bidirectional parity with /api/inventory (Mandates 8e, 8n)
+	await server.register(supplierInvoiceRoutes);
+	await server.register(procedureRuleRoutes);
+
+	// GET /api/warehouse/:organizationId/items
+	server.get<{ Params: { organizationId: string } }>(
+		"/:organizationId/items",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"warehouse items read",
+			);
+			if (!resolvedOrgId) return;
+
+			const { organizationId } = request.params;
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
+
+			const items = await inventoryQuery.getInventoryItems(organizationId);
+			return reply.send(items);
+		},
+	);
+
+	// GET /api/warehouse/items
+	server.get("/items", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"warehouse items read",
+		);
+		if (!resolvedOrgId) return;
+
+		const items = await inventoryQuery.getInventoryItems(resolvedOrgId);
+		return reply.send(items);
+	});
 	// POST /api/warehouse/:organizationId/quick-carpule-disposal
 	server.post<{
 		Params: { organizationId: string };

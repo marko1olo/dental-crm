@@ -21,6 +21,12 @@ import {
 	handleDeductRequest,
 	handleDeductVisitRequest,
 } from "./writeOffModules/index.js";
+import {
+	executeQuickCarpuleDisposal,
+	executeSoftOverdraftDeduct,
+	quickCarpuleDisposalSchema,
+	softOverdraftDeductSchema,
+} from "../../services/warehouse/warehouseOperations.js";
 
 export const writeOffRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
 	// 1-клик списание базового набора приёма (перчатки, маска, слюноотсос, валики)
@@ -432,5 +438,72 @@ export const writeOffRoutes: FastifyPluginAsync = async (server: FastifyInstance
 			});
 		});
 	});
+
+	// SOFT OVERDRAFT DEDUCT & QUICK CARPULE DISPOSAL (Bidirectional Parity with /api/warehouse)
+	const registerSoftOverdraft = (path: string) => {
+		server.post<{ Params?: { organizationId?: string } }>(path, async (request, reply) => {
+			const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"inventory soft overdraft deduct",
+			);
+			if (!resolvedOrgId) return;
+			const targetOrgId = request.params?.organizationId || (request.body as any)?.organizationId || resolvedOrgId;
+			if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+
+			const parsed = softOverdraftDeductSchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: parsed.error.errors[0]?.message ?? "Неверные параметры списания",
+				});
+			}
+
+			const userId = (request.user as { id?: string } | undefined)?.id ?? null;
+			const result = await executeSoftOverdraftDeduct(targetOrgId, parsed.data, userId);
+			return reply.status(200).send({
+				success: true,
+				itemId: result.item.id,
+				itemName: result.item.name,
+				quantityDeducted: parsed.data.quantity,
+				newStock: result.newStock,
+				isOverdraft: result.isOverdraft,
+				deficit: result.deficit,
+				warning: result.isOverdraft ? "soft_overdraft" : undefined,
+				warningMessage: result.isOverdraft
+					? `Остаток 0: зафиксирован мягкий овердрафт (дефицит: ${result.deficit} ${result.item.unit ?? "ед."}). Задержка оприходования накладной не блокирует проведение приема!`
+					: undefined,
+			});
+		});
+	};
+	registerSoftOverdraft("/:organizationId/soft-overdraft-deduct");
+	registerSoftOverdraft("/soft-overdraft-deduct");
+
+	const registerQuickCarpule = (path: string) => {
+		server.post<{ Params?: { organizationId?: string } }>(path, async (request, reply) => {
+			const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"inventory quick carpule disposal",
+			);
+			if (!resolvedOrgId) return;
+			const targetOrgId = request.params?.organizationId || (request.body as any)?.organizationId || resolvedOrgId;
+			if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+
+			const parsed = quickCarpuleDisposalSchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: parsed.error.errors[0]?.message ?? "Неверные параметры списания",
+				});
+			}
+
+			const userId = (request.user as { id?: string } | undefined)?.id ?? null;
+			const response = await executeQuickCarpuleDisposal(targetOrgId, parsed.data, userId);
+			return reply.status(200).send(response);
+		});
+	};
+	registerQuickCarpule("/:organizationId/quick-carpule-disposal");
+	registerQuickCarpule("/quick-carpule-disposal");
 };
 

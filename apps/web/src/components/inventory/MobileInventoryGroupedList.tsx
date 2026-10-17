@@ -438,21 +438,6 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 								Поз: {items.length}
 							</span>
 						)}
-
-						{/* Quick Carpules Disposal for Nurse */}
-						{onQuickWriteoffCarpules && (
-							<button
-								type="button"
-								className="mobile-inventory-quick-carpule-btn"
-								onClick={onQuickWriteoffCarpules}
-								disabled={isWritingOffCarpules}
-								title="Быстро утилизировать пустую карпулу анестетика"
-								data-testid="mobile-btn-quick-carpules"
-							>
-								<Syringe size={15} className="text-[var(--primary)]" aria-hidden="true" />
-								<span>{isWritingOffCarpules ? "..." : "Карпула"}</span>
-							</button>
-						)}
 					</div>
 				</div>
 

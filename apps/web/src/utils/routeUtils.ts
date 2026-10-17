@@ -173,6 +173,7 @@ export function viewFromHash(customHash?: string): AppView {
 	if (view === "telephony") return "communications";
 	if (view === "lab-orders" || view === "lab_orders") return "lab";
 	if (view === "invoices") return "finance";
+	if (view === "warehouse" || view === "stock") return "inventory";
 	if (view === "radiology" || view === "ct" || view === "cbct") return "imaging";
 	if (
 		view === "recalls" ||

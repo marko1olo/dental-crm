@@ -255,21 +255,6 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 					<button
 						type="button"
 						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-						data-testid="nurse-menu-quick-anesthetic-carpule-btn"
-						onClick={() => {
-							onQuickWriteoffAnestheticCarpule();
-							onClose();
-						}}
-						role="menuitem"
-						title="Быстрое списание пустой карпулы анестетика врачом без комиссии"
-					>
-						<Syringe size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Списать карпулу анестетика</span>
-					</button>
-
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
 						data-testid="nurse-menu-quick-sterilization-kit-btn"
 						onClick={() => {
 							onQuickWriteoffSterilizationKit();
@@ -280,21 +265,6 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 					>
 						<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
 						<span>Набор стерилизации (1 лоток + перчатки)</span>
-					</button>
-
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-						data-testid="nurse-menu-quick-carpules-btn"
-						onClick={() => {
-							onQuickWriteoffCarpules();
-							onClose();
-						}}
-						role="menuitem"
-						title="Быстрое списание пустых карпул анестетиков без комиссии"
-					>
-						<Syringe size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Списать карпулу (без комиссии)</span>
 					</button>
 
 					<button

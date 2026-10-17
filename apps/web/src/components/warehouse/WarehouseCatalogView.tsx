@@ -311,7 +311,7 @@ export const WarehouseCatalogView: React.FC<WarehouseCatalogViewProps> = ({
 						<button
 							type="button"
 							onClick={onOpenReceiptModal}
-							className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 hover:underline flex items-center gap-1 cursor-pointer"
+							className="secondary-button h-7 px-2.5 text-xs font-medium inline-flex items-center gap-1 shrink-0"
 							data-testid="link-resolve-overdraft"
 						>
 							<Truck size={12} />
@@ -464,11 +464,11 @@ export const WarehouseCatalogView: React.FC<WarehouseCatalogViewProps> = ({
 												<button
 													type="button"
 													onClick={onOpenReceiptModal}
-													className="h-8 px-3.5 rounded-lg bg-teal-600 text-white font-semibold text-xs hover:bg-teal-700 active:scale-98 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+													className="primary-button h-8 px-3.5 text-xs font-semibold flex items-center gap-1.5 shadow-xs"
 													data-testid="btn-empty-state-receipt"
 												>
 													<Plus size={14} />
-													<span>+ Оприходовать накладную</span>
+													<span>+ Оприходовать первую накладную</span>
 												</button>
 											)}
 										</div>
@@ -554,7 +554,7 @@ export const WarehouseCatalogView: React.FC<WarehouseCatalogViewProps> = ({
 														title="Расход зафиксирован с дефицитом, прием не блокируется (мягкий овердрафт)"
 													>
 														<ShieldAlert size={12} className="text-amber-600 dark:text-amber-400" />
-														<span>Ожидается поставка (мягкий овердрафт)</span>
+														<span>Ожидает накладной (мягкий овердрафт)</span>
 													</span>
 												) : isLow ? (
 													<span
