@@ -7,185 +7,155 @@ fs.mkdirSync(OUT_DIR, { recursive: true });
 
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 
-const DENTE_CLINIC_TOKEN_KEY = 'dente_clinic_token';
-const DENTE_STAFF_TOKEN_KEY = 'dente_staff_token';
-const MOCK_CLINIC_TOKEN = 'test-clinic-token-insurance-001';
-const MOCK_STAFF_TOKEN = 'test-staff-token-insurance-002';
-
-const MOCK_USER = {
-  id: 'user-doc-1',
-  orgId: 'org-1',
-  name: 'Д-р Смирнов А.П.',
-  role: 'doctor',
-  email: 'doctor@dente.ru',
-  pin: null,
-};
-
-const MOCK_CLINIC_PROFILE = {
-  id: 'org-1',
-  name: 'Стоматология DENTE',
-  address: 'ул. Медицинская, 12',
-  phone: '+7 (495) 123-45-67',
-  mode: 'clinic',
-  features: {
-    hasInventoryModule: true,
-    hasAnalyticsModule: true,
-    hasMarketingModule: true,
-    hasPayrollModule: true,
+const targets = [
+  {
+    id: '01_insurance_pc_light_1440.png',
+    theme: 'light',
+    viewport: { width: 1440, height: 900 },
+    isMobile: false,
   },
-};
-
-const MOCK_DASHBOARD = {
-  clinic: {
-    id: 'org-1',
-    name: 'Стоматология DENTE',
-    mode: 'clinic',
-    hasInventoryModule: true,
-    hasAnalyticsModule: true,
-    hasMarketingModule: true,
-    hasPayrollModule: true,
+  {
+    id: '02_insurance_pc_dark_1440.png',
+    theme: 'dark',
+    viewport: { width: 1440, height: 900 },
+    isMobile: false,
   },
-  staff: [MOCK_USER],
-  shifts: [],
-  scheduleSlots: [],
-  appointments: [],
-  waitlist: [],
-  imagingStudies: [],
-  recentPatients: [],
-  todayStats: { revenue: 3842500, appointments: 812, newPatients: 428 },
-  notifications: [],
-};
+  {
+    id: '03_insurance_mobile_light_390.png',
+    theme: 'light',
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+  },
+  {
+    id: '04_insurance_mobile_dark_390.png',
+    theme: 'dark',
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+  },
+];
 
-async function setupPage(page, theme, viewport) {
-  await page.setViewportSize(viewport);
-  await page.addInitScript(
-    ({ clinicKey, staffKey, clinicToken, staffToken, t }) => {
-      window.localStorage.setItem(clinicKey, clinicToken);
-      window.localStorage.setItem(staffKey, staffToken);
-      window.localStorage.setItem('dente_theme', t);
-      document.documentElement.setAttribute('data-theme', t);
-      if (t === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    },
-    {
-      clinicKey: DENTE_CLINIC_TOKEN_KEY,
-      staffKey: DENTE_STAFF_TOKEN_KEY,
-      clinicToken: MOCK_CLINIC_TOKEN,
-      staffToken: MOCK_STAFF_TOKEN,
-      t: theme,
-    }
-  );
-
-  await page.route('**/api/auth/user/me', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_USER) });
-  });
-  await page.route('**/api/dashboard', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_DASHBOARD) });
-  });
-  await page.route('**/api/settings/clinic/profile**', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_CLINIC_PROFILE) });
-  });
-  await page.route('**/api/settings/preferences**', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ theme, language: 'ru' }) });
-  });
-}
-
-async function run() {
+async function capture() {
+  console.log('Launching browser for 4-state DMS and Insurance verification...');
   const browser = await chromium.launch({
     executablePath: CHROME_PATH,
     headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
-  const targets = [
-    {
-      id: '01_insurance_pc_light_1440.png',
-      theme: 'light',
-      viewport: { width: 1440, height: 900 },
-      isMobile: false,
-    },
-    {
-      id: '02_insurance_pc_dark_1440.png',
-      theme: 'dark',
-      viewport: { width: 1440, height: 900 },
-      isMobile: false,
-    },
-    {
-      id: '03_insurance_mobile_light_390.png',
-      theme: 'light',
-      viewport: { width: 390, height: 844 },
-      isMobile: true,
-    },
-    {
-      id: '04_insurance_mobile_dark_390.png',
-      theme: 'dark',
-      viewport: { width: 390, height: 844 },
-      isMobile: true,
-    },
-  ];
-
   for (const t of targets) {
+    console.log(`\n--- Capturing ${t.id} (${t.theme}, ${t.viewport.width}x${t.viewport.height}) ---`);
     const context = await browser.newContext({
       viewport: t.viewport,
       isMobile: t.isMobile,
       hasTouch: t.isMobile,
     });
     const page = await context.newPage();
-    page.on('console', msg => console.log(`[${t.id}] LOG:`, msg.text()));
-    page.on('pageerror', err => console.log(`[${t.id}] PAGE ERROR:`, err.message));
 
-    await setupPage(page, t.theme, t.viewport);
+    await page.addInitScript(({ theme }) => {
+      window.localStorage.setItem('dente_theme_mode', theme);
+      window.localStorage.setItem('dente_demo_mode', 'true');
+      window.localStorage.setItem('dente_guide_tour_dismissed_v2', 'true');
+      window.localStorage.setItem('dente_active_role', 'doctor');
+    }, { theme: t.theme });
 
-    const baseUrl = 'http://127.0.0.1:5173/?dms=letter';
-    await page.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForTimeout(1500);
-    console.log(`[${t.id}] Current URL after goto:`, page.url());
+    await page.goto('http://127.0.0.1:5173/?demo=true#patients', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.waitForTimeout(1000);
+    // Wait for loading screen to clear
+    await page.waitForFunction(() => !document.body.innerText.includes('Загрузка системы...'), { timeout: 30000 });
 
-    // Apply theme strictly
+    // Apply theme to DOM
     await page.evaluate((theme) => {
       document.documentElement.setAttribute('data-theme', theme);
       if (theme === 'dark') {
         document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+        document.documentElement.style.colorScheme = 'dark';
       } else {
         document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        document.documentElement.style.colorScheme = 'light';
       }
     }, t.theme);
 
-    // Wait for the DMS modal window to be visible
-    const modal = page.locator('.dms-modal-window');
-    await modal.waitFor({ state: 'visible', timeout: 10000 });
-
-    // Scroll modal body so that split calculator and banner are centered in viewport
+    // Open patient card modal
     await page.evaluate(() => {
-      const splitSec = document.querySelector('[data-testid="dms-split-summary-banner"]');
-      if (splitSec) {
-        splitSec.scrollIntoView({ behavior: 'instant', block: 'center' });
-      } else {
-        const body = document.querySelector('.dms-modal-body');
-        if (body) body.scrollTop = 350;
-      }
+      window.dispatchEvent(new CustomEvent('dente-open-patient-card-modal', {
+        detail: { patientId: '01a00000-0000-0000-0000-000000000001' }
+      }));
     });
-    await page.waitForTimeout(500);
+
+    const modal = page.locator('[data-testid="patient-card-modal"]');
+    await modal.waitFor({ state: 'visible', timeout: 15000 });
+
+    // Find and expand the insurance accordion inside modal
+    const modalToggle = modal.locator('[data-testid="accordion-toggle-insurance"]');
+    await modalToggle.waitFor({ state: 'visible', timeout: 10000 });
+    await modalToggle.scrollIntoViewIfNeeded();
+
+    const dmsPolicyInput = modal.locator('[data-testid="input-dms-policy"]');
+    const isInputVisible = await dmsPolicyInput.isVisible().catch(() => false);
+    if (!isInputVisible) {
+      console.log('Expanding insurance accordion in modal...');
+      await modalToggle.click();
+      await page.waitForTimeout(600);
+    }
+
+    await dmsPolicyInput.waitFor({ state: 'visible', timeout: 5000 });
+
+    // Click СОГАЗ chip inside modal
+    const sogazChip = modal.locator('button:has-text("СОГАЗ")').first();
+    if (await sogazChip.isVisible().catch(() => false)) {
+      await sogazChip.click();
+      await page.waitForTimeout(150);
+    }
+
+    // Fill policy details
+    await modal.locator('[data-testid="input-dms-policy"]').fill('ДМС-2026/00123');
+    await modal.locator('[data-testid="input-dms-letter-number"]').fill('ГП-8841/26');
+    await modal.locator('[data-testid="input-dms-coverage-limit"]').fill('50000');
+
+    // Scroll DMS card into view
+    const dmsCompanyInput = modal.locator('[data-testid="input-dms-company"]');
+    await dmsCompanyInput.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(600);
 
     const screenshotPath = path.join(OUT_DIR, t.id);
     await page.screenshot({ path: screenshotPath, fullPage: false });
 
     const stats = fs.statSync(screenshotPath);
-    console.log(`Captured: ${t.id} (${stats.size} bytes)`);
+    console.log(`Saved: ${t.id} (${stats.size} bytes)`);
     if (stats.size < 20000) {
-      throw new Error(`File ${t.id} size (${stats.size}) is under 20KB`);
+      throw new Error(`File ${t.id} size (${stats.size}) is under 20KB threshold!`);
+    }
+
+    // If PC Light, also capture 05_insurance_guarantee_letters_pc_light.png
+    if (t.id === '01_insurance_pc_light_1440.png') {
+      const letterBtn = modal.locator('[data-testid="btn-open-dms-letters-tab"]');
+      if (await letterBtn.isVisible().catch(() => false)) {
+        console.log('Opening Guarantee Letter modal...');
+        await letterBtn.click();
+        const lettersModal = page.locator('[data-testid="dms-guarantee-letters-modal"]');
+        await lettersModal.waitFor({ state: 'visible', timeout: 10000 });
+        await page.waitForTimeout(800);
+
+        const lettersScreenshotPath = path.join(OUT_DIR, '05_insurance_guarantee_letters_pc_light.png');
+        await page.screenshot({ path: lettersScreenshotPath, fullPage: false });
+        const letterStats = fs.statSync(lettersScreenshotPath);
+        console.log(`Saved: 05_insurance_guarantee_letters_pc_light.png (${letterStats.size} bytes)`);
+        if (letterStats.size < 20000) {
+          throw new Error(`05_insurance_guarantee_letters_pc_light.png size (${letterStats.size}) is under 20KB!`);
+        }
+      }
     }
 
     await context.close();
   }
 
   await browser.close();
-  console.log('All 4 insurance screenshots successfully captured and verified!');
+  console.log('\nAll canonical insurance screenshots successfully captured and verified (>20 KB each)!');
 }
 
-run().catch((err) => {
-  console.error(err);
+capture().catch((err) => {
+  console.error('Capture failed:', err);
   process.exit(1);
 });

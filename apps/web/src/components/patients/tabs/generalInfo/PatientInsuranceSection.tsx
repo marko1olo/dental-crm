@@ -168,7 +168,12 @@ export const PatientInsuranceSection: React.FC<PatientInsuranceSectionProps> = R
 										);
 									}
 								}}
-								className="min-h-[44px] sm:min-h-[28px] h-7 px-2.5 rounded-lg text-xs font-bold bg-teal-50 dark:bg-teal-950/40 border border-teal-500/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/60 cursor-pointer flex items-center gap-1.5 transition-colors"
+								className="min-h-[44px] sm:min-h-[28px] h-7 px-2.5 rounded-lg text-xs font-bold hover:opacity-90 cursor-pointer flex items-center gap-1.5 transition-colors shadow-2xs"
+								style={{
+									border: "1px solid var(--teal, #0d9488)",
+									background: "rgba(13, 148, 136, 0.12)",
+									color: "var(--teal, #0d9488)",
+								}}
 								title="Открыть гарантийные письма и согласованные услуги по ДМС"
 								data-testid="btn-open-dms-letters-tab"
 							>
@@ -192,21 +197,28 @@ export const PatientInsuranceSection: React.FC<PatientInsuranceSectionProps> = R
 									disabled={disabled}
 									data-testid="input-dms-company"
 								/>
-								<div className="flex items-center gap-1 flex-wrap">
-									{POPULAR_DMS_COMPANIES.slice(0, 6).map((comp) => (
-										<button
-											key={comp}
-											type="button"
-											className={`min-h-[44px] sm:min-h-[28px] text-[10px] px-2 py-1 rounded-lg font-semibold border transition-colors cursor-pointer ${
-												patient?.dmsInsuranceCompany === comp
-													? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs"
-													: "bg-[var(--paper-strong)] hover:bg-[var(--glass-hover,var(--paper-soft))] hover:border-[var(--teal)] border-[var(--glass-border)] text-[var(--ink)] shadow-2xs"
-											}`}
-											onClick={() => onUpdatePatient?.("dmsInsuranceCompany", comp)}
-										>
-											{comp}
-										</button>
-									))}
+								<div className="flex items-center gap-1.5 flex-wrap">
+									{POPULAR_DMS_COMPANIES.slice(0, 6).map((comp) => {
+										const isSelected = patient?.dmsInsuranceCompany === comp;
+										return (
+											<button
+												key={comp}
+												type="button"
+												className="min-h-[44px] sm:min-h-[28px] h-7 text-xs px-2.5 rounded-lg font-semibold transition-colors cursor-pointer inline-flex items-center justify-center select-none"
+												style={{
+													border: isSelected
+														? "1px solid var(--teal)"
+														: "1px solid var(--line-strong, var(--line, #cbd5e1))",
+													background: isSelected ? "var(--teal)" : "var(--paper-soft, #f1f5f9)",
+													color: isSelected ? "var(--on-teal, #ffffff)" : "var(--ink)",
+													boxShadow: isSelected ? "0 1px 2px rgba(13, 148, 136, 0.25)" : "none",
+												}}
+												onClick={() => onUpdatePatient?.("dmsInsuranceCompany", comp)}
+											>
+												{comp}
+											</button>
+										);
+									})}
 								</div>
 							</div>
 						</div>

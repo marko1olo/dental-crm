@@ -76,6 +76,11 @@ export const patientAdministrativeProfileBaseSchema = z.object({
 	registrationAddress: patientAdministrativeTextSchema,
 	residentialAddress: patientAdministrativeTextSchema,
 	insurancePolicyNumber: z.string().trim().max(120).nullable().default(null),
+	dmsInsuranceCompany: z.string().trim().max(240).nullable().optional(),
+	dmsPolicyNumber: z.string().trim().max(120).nullable().optional(),
+	dmsGuaranteeLetterNumber: z.string().trim().max(120).nullable().optional(),
+	dmsCoverageLimitKopecks: z.number().int().nonnegative().nullable().optional(),
+	dmsCoverageLimitRub: z.number().nonnegative().nullable().optional(),
 	snils: z.string().trim().max(40).nullable().default(null),
 	legalRepresentativeFullName: z
 		.string()
@@ -136,6 +141,12 @@ export const patientAdministrativeProfileBaseSchema = z.object({
 	clinicalSafetyProfile: z.record(z.unknown()).nullable().optional(),
 	gender: z.enum(["male", "female", "other"]).nullable().optional().default(null),
 	insuranceContractId: z.string().uuid().nullable().optional().default(null),
+	utmSource: z.string().trim().max(240).nullable().optional(),
+	utmMedium: z.string().trim().max(240).nullable().optional(),
+	utmCampaign: z.string().trim().max(240).nullable().optional(),
+	utmContent: z.string().trim().max(240).nullable().optional(),
+	utmTerm: z.string().trim().max(240).nullable().optional(),
+	leadSource: z.string().trim().max(240).nullable().optional(),
 });
 
 export const patientAdministrativeProfileSchema =

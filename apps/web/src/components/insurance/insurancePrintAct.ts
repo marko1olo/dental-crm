@@ -330,7 +330,7 @@ export function generateMeeActHtml(params: MeeActParams): string {
 				<th>Пациент (Застрахованный)</th>
 				<th>Полис ДМС</th>
 				<th>Гар. письмо</th>
-				<th>Код 804н</th>
+				<th>Код услуги</th>
 				<th>Наименование услуги</th>
 				<th>МКБ-10</th>
 				<th>Предъявлено (руб)</th>

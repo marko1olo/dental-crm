@@ -80,6 +80,8 @@ export function calculateSplitBalances(
 	};
 }
 
+export const calculateSplitPaymentBalances = calculateSplitBalances;
+
 export function formatDisplayCurrency(
 	amountRub: number,
 	options: { showKopecks?: boolean; suffix?: string } = {},

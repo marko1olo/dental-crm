@@ -65,6 +65,8 @@ export interface SplitPaymentTenderInput {
 	readonly sbpPaymentId?: string | undefined;
 	readonly certificateNumber?: string | undefined;
 	readonly dmsPolicyNumber?: string | undefined;
+	readonly dmsGuaranteeLetterNumber?: string | undefined;
+	readonly dmsInsurerName?: string | undefined;
 }
 
 export interface NormalizedSplitTender {
@@ -699,5 +701,50 @@ export function isSplitBalanced(
 	const totalKop = rubToKopecks(totalDueRub);
 	const allocatedKop = allocatedTendersRub.reduce((acc, rub) => acc + rubToKopecks(rub || 0), 0);
 	return totalKop === allocatedKop;
+}
+
+export interface DmsSplitBillInput {
+	readonly totalBillKopecks?: number | undefined;
+	readonly totalBillRub?: number | undefined;
+	readonly availableCoverageKopecks?: number | undefined;
+	readonly availableCoverageRub?: number | undefined;
+	readonly franchisePercent?: number | undefined;
+}
+
+export interface DmsSplitBillResult {
+	readonly dmsCoveredKopecks: number;
+	readonly dmsCoveredRub: number;
+	readonly patientCoPayKopecks: number;
+	readonly patientCoPayRub: number;
+	readonly isFullyCovered: boolean;
+	readonly franchiseAppliedKopecks: number;
+}
+
+/**
+ * Calculates statutory DMS split bill:
+ * Divides total bill between Insurer (B2B non-fiscal) and Patient co-payment (54-FZ fiscal receipt)
+ * with 0-drift integer kopecks guarantee.
+ */
+export function calculateDmsSplitBill(input: DmsSplitBillInput): DmsSplitBillResult {
+	const totalKop = Math.max(0, resolveKopecks(input.totalBillKopecks, input.totalBillRub));
+	const franchise = Math.max(0, Math.min(100, Math.round(input.franchisePercent ?? 0)));
+
+	const franchiseKop = Math.round((totalKop * franchise) / 100);
+	const initialInsurerKop = totalKop - franchiseKop;
+
+	const hasLimit = input.availableCoverageKopecks !== undefined || input.availableCoverageRub !== undefined;
+	const limitKop = hasLimit ? Math.max(0, resolveKopecks(input.availableCoverageKopecks, input.availableCoverageRub)) : Infinity;
+
+	const dmsCoveredKop = Math.min(initialInsurerKop, limitKop);
+	const patientCoPayKop = totalKop - dmsCoveredKop;
+
+	return {
+		dmsCoveredKopecks: dmsCoveredKop,
+		dmsCoveredRub: kopecksToRub(dmsCoveredKop),
+		patientCoPayKopecks: patientCoPayKop,
+		patientCoPayRub: kopecksToRub(patientCoPayKop),
+		isFullyCovered: patientCoPayKop === 0 && totalKop > 0,
+		franchiseAppliedKopecks: franchiseKop,
+	};
 }
 
