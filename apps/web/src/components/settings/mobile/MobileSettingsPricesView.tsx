@@ -168,7 +168,7 @@ export const MobileSettingsPricesView: React.FC<MobileSettingsPricesViewProps> =
 				<button
 					type="button"
 					onClick={onBackToSettings}
-					className="min-w-[44px] min-h-[44px] -ml-2 px-2 flex items-center gap-1 text-[15px] font-medium text-[var(--teal)] hover:opacity-80 active:scale-95 transition-transform cursor-pointer"
+					className="min-w-[44px] min-h-[44px] -ml-2 px-2 flex items-center gap-1 text-[15px] font-medium text-[var(--teal)] hover:opacity-80 active:scale-95 transition-transform cursor-pointer bg-transparent border-0"
 					aria-label="Назад в настройки"
 					data-testid="btn-mobile-back-to-settings"
 				>
@@ -191,7 +191,7 @@ export const MobileSettingsPricesView: React.FC<MobileSettingsPricesViewProps> =
 						setEditingService(null);
 						setIsDrawerOpen(true);
 					}}
-					className="min-w-[44px] min-h-[44px] -mr-2 w-11 h-11 rounded-full flex items-center justify-center text-[var(--teal)] hover:bg-[var(--teal-soft)] active:scale-95 transition-transform cursor-pointer"
+					className="min-w-[44px] min-h-[44px] -mr-2 w-11 h-11 rounded-full flex items-center justify-center text-[var(--teal)] hover:bg-[var(--teal-soft)] active:scale-95 transition-transform cursor-pointer bg-transparent border-0"
 					aria-label="Добавить услугу"
 					data-testid="btn-mobile-add-price-top"
 				>

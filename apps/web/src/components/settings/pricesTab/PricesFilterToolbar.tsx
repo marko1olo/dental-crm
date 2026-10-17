@@ -125,7 +125,7 @@ export function PricesFilterToolbar({
 								role="menu"
 							>
 								<div className="px-2 py-1 text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-b border-[var(--line)] mb-1">
-									Справочник услуг и процедур
+									Быстрый выбор процедур
 								</div>
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
 									{QUICK_804N_CHIPS.map((chip) => (
@@ -136,14 +136,17 @@ export function PricesFilterToolbar({
 												onSearchChange(chip.code);
 												closeMenu();
 											}}
-											className={`w-full text-left px-2 py-1.5 rounded-lg text-xs font-mono font-medium transition-colors cursor-pointer flex items-center justify-between ${
+											className={`w-full text-left px-2 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center justify-between ${
 												searchQuery === chip.code
 													? "bg-[var(--teal)] text-white font-bold"
 													: "hover:bg-[var(--teal-soft)] text-[var(--ink)]"
 											}`}
 											role="menuitem"
 										>
-											<span>{chip.label}</span>
+											<span className="truncate">{chip.label}</span>
+											<span className="text-[10px] opacity-60 font-mono ml-1.5 shrink-0">
+												{chip.code}
+											</span>
 										</button>
 									))}
 								</div>
@@ -163,7 +166,7 @@ export function PricesFilterToolbar({
 											<span className="font-bold truncate">
 												{isSeedingBaseline
 													? "Наполнение каталога..."
-													: "Стандартный каталог стоматологии (30 услуг)"}
+													: "Базовый прейскурант клиники (30 услуг)"}
 											</span>
 											<span className="text-xs opacity-80 truncate">
 												Добавить недостающие типовые услуги с рекомендованными ценами

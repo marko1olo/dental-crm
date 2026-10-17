@@ -101,6 +101,11 @@ export interface PriceImportModalProps {
 	) => Promise<void>;
 	isCommittingImport: boolean;
 	existingCatalogReferences: readonly ExistingCatalogReference[];
+	onDirectFlatImport?: (opts: {
+		fileBase64?: string;
+		filename?: string;
+		rawContent?: string;
+	}) => Promise<void>;
 }
 
 export interface PricesCatalogTableProps {

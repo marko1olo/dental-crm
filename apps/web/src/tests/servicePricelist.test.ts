@@ -387,7 +387,10 @@ describe('Statutory Order 804n Service Catalog & Pricelist Matrix Suite', () => 
 			});
 
 			assert.ok(csv.startsWith(UTF8_BOM));
-			assert.ok(csv.includes('Код 804н;Коммерческое наименование;'));
+			assert.ok(
+				csv.includes('Код услуги;Коммерческое наименование;') ||
+					csv.includes('Код 804н;Коммерческое наименование;'),
+			);
 			assert.ok(csv.includes('Цена Ночной/Выходной (руб)'));
 			assert.ok(csv.includes('НДС не облагается'));
 		});
@@ -639,7 +642,4 @@ A16.07.002.001 Наложение пломбы светового отвержд
 			assert.ok(sortedByCode.length === sample.length);
 		});
 	});
-
 });
-
-

@@ -9,20 +9,17 @@ import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 import { normalizeRubAmountInput } from "../../../rubAmountInput";
 import { useSettingsDerivations } from "../../../useSettingsDerivations";
 import {
-	detectCategoryFrom804nCode,
-	exportPricelistToCsv,
-	generatePrintablePricelistHtml,
-	importPricelistFromCsv,
-	rublesToKopecks,
-} from "../../catalog/pricelist/servicePricelistEngine";
-import {
 	BASELINE_804N_PRICELIST_SERVICES,
-	STATUTORY_ORDER_804N_PRESETS,
-	STATUTORY_VAT_EXEMPTION_NOTE,
-	type DoctorSpecialty,
-	type Order804nCategory,
 	type ServicePricelistItem,
 } from "../../catalog/pricelist/servicePricelistPresets";
+import {
+	buildExistingCatalogReferences,
+	buildModalInitialItems,
+	exportCatalogToCsvDownload,
+	mapScanItemsToDiffItems,
+	parseAndImportCsvText,
+	printPricelistA4,
+} from "./pricesExportPrintHelpers";
 import { showToast } from "../../GlobalToast";
 import {
 	type ExistingCatalogReference,
@@ -306,44 +303,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 	};
 
 	const modalInitialItems: readonly ServicePricelistItem[] = useMemo(() => {
-		if (!typedServiceCatalog || typedServiceCatalog.length === 0) {
-			return STATUTORY_ORDER_804N_PRESETS;
-		}
-		return typedServiceCatalog.map((s: ServiceCatalogItem) => {
-			const rawPrice =
-				s.basePriceRub ??
-				(s as unknown as { priceRub?: number }).priceRub ??
-				((s as unknown as { priceKopecks?: number }).priceKopecks
-					? (s as unknown as { priceKopecks: number }).priceKopecks / 100
-					: 0);
-			const basePriceRub = Number.isFinite(rawPrice)
-				? Math.round(rawPrice * 100) / 100
-				: 0;
-			const code804n = (s.code || "").trim() || "A16.07.002";
-			const category =
-				(s.category as Order804nCategory) ||
-				detectCategoryFrom804nCode(code804n, s.title);
-			const specialty = (s.specialty as DoctorSpecialty) || "therapist";
-			return {
-				id: s.id,
-				code804n,
-				commercialTitle: s.title,
-				statutoryTitle804n: s.title,
-				category,
-				specialty,
-				basePriceRub,
-				basePriceKopecks: rublesToKopecks(basePriceRub),
-				materialCostRub: 0,
-				labCostRub: 0,
-				estimatedDurationMin: s.durationMinutes || 30,
-				vatRate: 0 as const,
-				vatExemptionArticle: STATUTORY_VAT_EXEMPTION_NOTE,
-				icd10Indications: [],
-				isActive: s.active !== false,
-				isArchived: s.active === false,
-				tags: s.aliases || [],
-			};
-		});
+		return buildModalInitialItems(typedServiceCatalog);
 	}, [typedServiceCatalog]);
 
 	const handleSaveCatalog = async (items: readonly ServicePricelistItem[]) => {
@@ -364,72 +324,11 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 
 	const handleExportCsv = () => {
-		const items: ServicePricelistItem[] = typedServiceCatalog.map(
-			(s: ServiceCatalogItem) => ({
-				id: s.id,
-				code804n: s.code || "",
-				commercialTitle: s.title,
-				statutoryTitle804n: s.title,
-				// biome-ignore lint/suspicious/noExplicitAny: category cast
-				category: (s.category || "therapy") as any,
-				// biome-ignore lint/suspicious/noExplicitAny: specialty cast
-				specialty: (s.specialty || "therapist") as any,
-				basePriceRub: (() => {
-					// biome-ignore lint/suspicious/noExplicitAny: fallback field extraction
-					const raw =
-						s.basePriceRub ??
-						(s as any).priceRub ??
-						((s as any).priceKopecks ? (s as any).priceKopecks / 100 : 0);
-					return Number.isFinite(raw) ? Math.round(raw * 100) / 100 : 0;
-				})(),
-				unitCostRub: 0,
-				labCostRub: 0,
-				durationMinutes: s.durationMinutes || 30,
-				estimatedDurationMin: s.durationMinutes || 30,
-				isActive: s.active !== false,
-				vatRate: "exempt",
-				icd10Codes: [],
-				tags: [],
-			}),
-		);
-		const blob = new Blob([exportPricelistToCsv(items)], {
-			type: "text/csv;charset=utf-8;",
-		});
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = `dente_pricelist_${new Date().toISOString().slice(0, 10)}.csv`;
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
-		URL.revokeObjectURL(url);
-		showToast(
-			`Прайс-лист (${items.length} услуг) экспортирован в CSV`,
-			"success",
-		);
+		exportCatalogToCsvDownload(typedServiceCatalog);
 	};
 
 	const handlePrintPricelist = () => {
-		const printHtml = generatePrintablePricelistHtml(
-			{
-				clinicName: dashboard?.clinicSettings?.name || "Стоматологическая клиника",
-				clinicAddress: dashboard?.clinicSettings?.address,
-				clinicPhone: dashboard?.clinicSettings?.phone,
-				clinicLicense: dashboard?.clinicSettings?.license,
-				chiefDoctorName: dashboard?.clinicSettings?.chiefDoctor,
-				effectiveDateRu: new Date().toLocaleDateString("ru-RU"),
-			},
-			modalInitialItems as any,
-		);
-		const printWin = window.open("", "_blank");
-		if (printWin) {
-			printWin.document.write(printHtml);
-			printWin.document.close();
-			printWin.focus();
-			setTimeout(() => printWin.print(), 250);
-		} else {
-			showToast("Всплывающее окно печати заблокировано браузером", "error");
-		}
+		printPricelistA4(dashboard?.clinicSettings, modalInitialItems);
 	};
 
 	const handleImportCsvFile = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -437,19 +336,8 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		if (!file) return;
 		try {
 			const text = await file.text();
-			const result = importPricelistFromCsv(text);
-			if (result.invalidRows.length > 0 && result.validItems.length === 0) {
-				showToast(
-					`Ошибка импорта CSV: ${result.invalidRows[0]?.error || "Неверный формат"}`,
-					"error",
-				);
-				return;
-			}
-			await handleSaveCatalog(result.validItems);
-			showToast(
-				`Импортировано ${result.validItems.length} услуг из CSV`,
-				"success",
-			);
+			const count = await parseAndImportCsvText(text, handleSaveCatalog);
+			showToast(`Импортировано ${count} услуг из CSV`, "success");
 			if (typeof mergedProps.refreshDashboard === "function") {
 				await mergedProps.refreshDashboard();
 			} else if (typeof appLogic?.refreshDashboard === "function") {
@@ -457,7 +345,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 			}
 		} catch (err) {
 			showToast(
-				`Ошибка чтения CSV: ${err instanceof Error ? err.message : String(err)}`,
+				`Ошибка импорта CSV: ${err instanceof Error ? err.message : String(err)}`,
 				"error",
 			);
 		} finally {
@@ -532,23 +420,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 
 	const existingCatalogReferences: readonly ExistingCatalogReference[] =
 		useMemo(() => {
-			return typedServiceCatalog.map((s: ServiceCatalogItem) => {
-				const rawPrice =
-					s.basePriceRub ??
-					(s as unknown as { priceRub?: number }).priceRub ??
-					((s as unknown as { priceKopecks?: number }).priceKopecks
-						? (s as unknown as { priceKopecks: number }).priceKopecks / 100
-						: 0);
-				const basePriceRub = Number.isFinite(rawPrice)
-					? Math.round(rawPrice * 100) / 100
-					: 0;
-				return {
-					id: s.id,
-					code: s.code || "",
-					title: s.title,
-					basePriceRub,
-				};
-			});
+			return buildExistingCatalogReferences(typedServiceCatalog);
 		}, [typedServiceCatalog]);
 
 	const runScannerRequest = async (opts: {
@@ -593,31 +465,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 			const data = await res.json();
 			const itemsList = data.scanResult?.items || data.items;
 			if (itemsList && itemsList.length > 0) {
-				const diffItems: IngestedMappingItem[] = itemsList.map(
-					// biome-ignore lint/suspicious/noExplicitAny: scanner item conversion
-					(it: any, idx: number) => ({
-						id: it.id || `scan-${idx}-${Date.now()}`,
-						sourceLineNumber: it.sourceLineNumber || idx + 1,
-						rawLine: it.rawLine || it.cleanedTitle,
-						cleanedTitle: it.cleanedTitle,
-						code804n: it.code804n || "A16.07.002",
-						statutoryTitle804n: it.statutoryTitle804n || it.cleanedTitle,
-						category: it.category || "therapy",
-						specialty: it.specialty || "therapist",
-						priceRub: it.priceRub,
-						priceKopecks: it.priceKopecks ?? Math.round(it.priceRub * 100),
-						confidence: it.confidence ?? (it.code804n ? 0.95 : 0.75),
-						confidenceKind:
-							it.confidenceKind ??
-							(it.code804n ? "exact_code" : "medium_keyword"),
-						suggestedAction: it.suggestedAction || "create_new",
-						matchedExistingServiceId: it.matchedExistingServiceId,
-						matchedExistingTitle: it.matchedExistingTitle,
-						matchedExistingPriceRub: it.matchedExistingPriceRub,
-						isApproved: it.isApproved ?? it.validationStatus !== "error",
-					}),
-				);
-
+				const diffItems = mapScanItemsToDiffItems(itemsList);
 				if (diffItems.length === 0) {
 					showToast(
 						"В файле не найдено строк с услугами или ценами",
@@ -724,6 +572,73 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		} catch (err: unknown) {
 			const msg =
 				err instanceof Error ? err.message : "Не удалось сохранить прейскурант";
+			setScannerError(msg);
+			showToast(msg, "error");
+		} finally {
+			setIsCommittingImport(false);
+		}
+	};
+
+	const handleDirectFlatImport = async (opts: {
+		fileBase64?: string;
+		filename?: string;
+		rawContent?: string;
+	}) => {
+		setIsCommittingImport(true);
+		setScannerError(null);
+		try {
+			const headers = staffMutationHeaders(
+				(mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ??
+					(appLogic?.accessHeaders as SettingsAccessHeaders | undefined) ??
+					accessHeaders,
+			);
+
+			const payload = {
+				commit: true,
+				collisionStrategy: scannerCollisionStrategy,
+				filename: opts.filename || "pricelist.csv",
+				...(opts.fileBase64 ? { fileBase64: opts.fileBase64 } : {}),
+				...(opts.rawContent ? { rawContent: opts.rawContent } : {}),
+			};
+
+			const res = await fetch("/api/pricelist/scan-and-import", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...headers,
+				},
+				body: JSON.stringify(payload),
+			});
+
+			if (!res.ok) {
+				const errData = await res.json().catch(() => ({}));
+				throw new Error(
+					errData.message ||
+						`Ошибка импорта прейскуранта (HTTP ${res.status})`,
+				);
+			}
+
+			const data = await res.json();
+			const count = data.committedCount ?? data.scanResult?.items?.length ?? 0;
+			showToast(
+				`Прейскурант успешно импортирован: ${count} услуг в каталоге клиники`,
+				"success",
+			);
+
+			setIsNativeScannerDropzoneOpen(false);
+			setScannerFile(null);
+			setScannerText("");
+
+			if (typeof mergedProps.refreshDashboard === "function") {
+				await mergedProps.refreshDashboard();
+			} else if (typeof appLogic?.refreshDashboard === "function") {
+				await appLogic.refreshDashboard();
+			} else if (typeof appLogic?.loadClinicSettings === "function") {
+				await appLogic.loadClinicSettings();
+			}
+		} catch (err: unknown) {
+			const msg =
+				err instanceof Error ? err.message : "Не удалось импортировать прейскурант";
 			setScannerError(msg);
 			showToast(msg, "error");
 		} finally {
@@ -871,6 +786,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		runScannerRequest,
 		handleProcessScannerFile,
 		handleCommitPricelistDiff,
+		handleDirectFlatImport,
 		openNewServiceModal,
 		openEditServiceModal,
 		resetFilters,

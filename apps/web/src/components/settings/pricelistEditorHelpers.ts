@@ -46,14 +46,108 @@ export const CATEGORY_TABS: Array<{ id: string; label: string }> = [
 	{ id: "other", label: "Прочее" },
 ];
 
-export const QUICK_804N_CHIPS: Array<{ code: string; label: string }> = [
-	{ code: "B01.065.001", label: "Б01.065.001 Осмотр/Прием" },
-	{ code: "A16.07.002", label: "A16.07.002 Кариес" },
-	{ code: "A16.07.008", label: "A16.07.008 Пульпит" },
-	{ code: "A11.07.012", label: "A11.07.012 Анестезия" },
-	{ code: "A06.07.003", label: "A06.07.003 Снимок / ОПТГ" },
-	{ code: "A16.07.054", label: "A16.07.054 Имплантация" },
-	{ code: "A16.07.004", label: "A16.07.004 Коронка" },
-	{ code: "A16.07.001", label: "A16.07.001 Удаление" },
-	{ code: "A16.07.051", label: "A16.07.051 Гигиена" },
+export const QUICK_CLINICAL_CHIPS: Array<{ code: string; label: string; shortLabel: string }> = [
+	{ code: "A16.07.002", label: "Лечение кариеса", shortLabel: "Кариес" },
+	{ code: "A16.07.008", label: "Пульпит / каналы", shortLabel: "Пульпит" },
+	{ code: "A11.07.012", label: "Анестезия", shortLabel: "Анестезия" },
+	{ code: "A06.07.003", label: "Снимок / ОПТГ", shortLabel: "Снимок" },
+	{ code: "A16.07.054", label: "Имплантация", shortLabel: "Имплантация" },
+	{ code: "A16.07.004", label: "Коронка", shortLabel: "Коронка" },
+	{ code: "A16.07.001", label: "Удаление зуба", shortLabel: "Удаление" },
+	{ code: "A16.07.051", label: "Профгигиена / Air-Flow", shortLabel: "Гигиена" },
+	{ code: "B01.065.001", label: "Консультация / Осмотр", shortLabel: "Консультация" },
 ];
+
+/** Алиас для обратной совместимости со старыми тестами */
+export const QUICK_804N_CHIPS = QUICK_CLINICAL_CHIPS;
+
+/**
+ * Интеллектуальный матчинг категории по ключевым словам для быстрого плоского импорта.
+ * Пломба/кариес -> Терапия; Коронка/слепок -> Ортопедия; Удаление/имплант -> Хирургия; Чистка/air-flow -> Гигиена.
+ */
+export function detectCategoryByTitleKeywords(title: string): ServiceCategory {
+	const t = (title || "").toLowerCase();
+	if (
+		t.includes("кариес") ||
+		t.includes("пульпит") ||
+		t.includes("эндодонт") ||
+		t.includes("пломб") ||
+		t.includes("реставрац") ||
+		t.includes("композит") ||
+		t.includes("штифт")
+	) {
+		return "therapy";
+	}
+	if (
+		t.includes("удален") ||
+		t.includes("имплант") ||
+		t.includes("синус") ||
+		t.includes("резекц") ||
+		t.includes("костн") ||
+		t.includes("пластик")
+	) {
+		return "surgery";
+	}
+	if (
+		t.includes("корон") ||
+		t.includes("протез") ||
+		t.includes("винир") ||
+		t.includes("слепк") ||
+		t.includes("оттиск") ||
+		t.includes("вкладк") ||
+		t.includes("бюгел") ||
+		t.includes("абатмент") ||
+		t.includes("мост")
+	) {
+		return "prosthetics";
+	}
+	if (
+		t.includes("чистк") ||
+		t.includes("air-flow") ||
+		t.includes("airflow") ||
+		t.includes("гигиен") ||
+		t.includes("отбел") ||
+		t.includes("ультразвук") ||
+		t.includes("полировк")
+	) {
+		return "hygiene";
+	}
+	if (
+		t.includes("брекет") ||
+		t.includes("элайн") ||
+		t.includes("капп") ||
+		t.includes("капа") ||
+		t.includes("прикус") ||
+		t.includes("ретейнер")
+	) {
+		return "orthodontics";
+	}
+	if (
+		t.includes("пародонт") ||
+		t.includes("десн") ||
+		t.includes("кюретаж") ||
+		t.includes("вектор")
+	) {
+		return "periodontology";
+	}
+	if (
+		t.includes("снимок") ||
+		t.includes("рентген") ||
+		t.includes("кт") ||
+		t.includes("оптг") ||
+		t.includes("визиограф") ||
+		t.includes("диагностик")
+	) {
+		return "imaging";
+	}
+	if (
+		t.includes("консульт") ||
+		t.includes("осмотр") ||
+		t.includes("прием") ||
+		t.includes("приём")
+	) {
+		return "consultation";
+	}
+	return "therapy";
+}
+

@@ -78,7 +78,7 @@ export function PriceItemEditModal({
 					<div className="staff-form-grid">
 						<div className="staff-form-group">
 							<label htmlFor="service-code-input">
-								Код услуги (внутренний или официальный)
+								Код услуги / Артикул
 							</label>
 							<input
 								id="service-code-input"
@@ -91,7 +91,7 @@ export function PriceItemEditModal({
 										order804nCode: editServiceForm.order804nCode || e.target.value,
 									})
 								}
-								placeholder="A16.07.002"
+								placeholder="Например: ТЕР-01 или A16.07.002"
 							/>
 						</div>
 						<div className="staff-form-group">
@@ -140,7 +140,7 @@ export function PriceItemEditModal({
 						</div>
 						<div className="staff-form-group">
 							<label htmlFor="service-order804n-input">
-								Код услуги (МЗ)
+								Номенклатурный шифр (для справок)
 							</label>
 							<input
 								id="service-order804n-input"
@@ -152,7 +152,7 @@ export function PriceItemEditModal({
 										order804nCode: e.target.value,
 									})
 								}
-								placeholder="A16.07.002"
+								placeholder="Опционально"
 							/>
 						</div>
 					</div>
