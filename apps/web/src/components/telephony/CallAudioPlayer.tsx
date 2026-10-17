@@ -1,19 +1,21 @@
-import { VolumeX } from "lucide-react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-	generateWaveformBars,
-	useTelephonyStore,
-} from "../../store/telephonyStore";
+import React, { useEffect } from "react";
+import { CallAudioEmptyState } from "./audioPlayerModules/CallAudioEmptyState";
 import { CallAudioPlaybackControls } from "./audioPlayerModules/CallAudioPlaybackControls";
 import { CallAudioTranscriptDrawer } from "./audioPlayerModules/CallAudioTranscriptDrawer";
 import { CallAudioWaveformBar } from "./audioPlayerModules/CallAudioWaveformBar";
+import { useCallAudioPlayback } from "./audioPlayerModules/useCallAudioPlayback";
 import type { CallAudioPlayerProps } from "./audioPlayerModules/callAudioPlayerTypes";
 
 export * from "./audioPlayerModules/callAudioPlayerTypes";
-export { CallAudioPlaybackControls } from "./audioPlayerModules/CallAudioPlaybackControls"; export { CallAudioWaveformBar } from "./audioPlayerModules/CallAudioWaveformBar"; export { CallAudioTranscriptDrawer } from "./audioPlayerModules/CallAudioTranscriptDrawer";
+export { CallAudioPlaybackControls } from "./audioPlayerModules/CallAudioPlaybackControls";
+export { CallAudioWaveformBar } from "./audioPlayerModules/CallAudioWaveformBar";
+export { CallAudioTranscriptDrawer } from "./audioPlayerModules/CallAudioTranscriptDrawer";
 
 /**
- * Call Audio Recording Player (Layer 5 Facade <= 250 lines).
+ * Call Audio Recording Player (Facade <= 120 lines).
+ * Zero-mock empty state contract:
+ * - data-testid="call-audio-player-empty"
+ * - Запись звонка не подключена или недоступна
  * Desktop Clinical Density invariants:
  * - Play button: min-h-[36px] min-w-[36px] w-9 h-9 sm:w-8 sm:h-8 sm:min-h-[32px] sm:min-w-[32px]
  * - Skip buttons: min-h-[32px] min-w-[32px] h-8 w-8
@@ -25,146 +27,31 @@ export function CallAudioPlayer({
 	seed,
 	transcript,
 }: CallAudioPlayerProps) {
-	const playbackSpeed = useTelephonyStore((s) => s.playbackSpeed);
-	const setPlaybackSpeed = useTelephonyStore((s) => s.setPlaybackSpeed);
-	const isMuted = useTelephonyStore((s) => s.isMuted);
-	const toggleMute = useTelephonyStore((s) => s.toggleMute);
-	const volumeLevel = useTelephonyStore((s) => s.volumeLevel);
-
-	const [isPlaying, setIsPlaying] = useState(false);
-	const [currentTime, setCurrentTime] = useState(0);
-	const [audioDuration, setAudioDuration] = useState(durationSeconds);
-	const [playbackError, setPlaybackError] = useState(false);
-	const [showTranscript, setShowTranscript] = useState(false);
-	const [copiedTranscript, setCopiedTranscript] = useState(false);
-	const audioRef = useRef<HTMLAudioElement | null>(null);
-
-	const waveformBars = useMemo(() => generateWaveformBars(seed || recordingUrl, 44), [seed, recordingUrl]);
-	const transcriptUtterances = useMemo(() => transcript || [], [transcript]);
-
-	useEffect(() => {
-		if (audioRef.current) {
-			audioRef.current.playbackRate = playbackSpeed;
-			audioRef.current.muted = isMuted;
-			audioRef.current.volume = volumeLevel;
-		}
-	}, [playbackSpeed, isMuted, volumeLevel]);
-
-	useEffect(() => {
-		const prevUrl = recordingUrl;
-		if (audioRef.current) {
-			audioRef.current.pause();
-			audioRef.current.currentTime = 0;
-		}
-		setIsPlaying(false);
-		setCurrentTime(0);
-		setAudioDuration(durationSeconds);
-		setPlaybackError(false);
-
-		return () => {
-			if (prevUrl?.startsWith("blob:")) {
-				try { URL.revokeObjectURL(prevUrl); } catch {}
-			}
-		};
-	}, [recordingUrl, durationSeconds]);
+	const p = useCallAudioPlayback(recordingUrl, durationSeconds, seed, transcript);
 
 	useEffect(() => {
 		return () => {
-			if (audioRef.current) {
-				audioRef.current.pause();
-				audioRef.current.currentTime = 0;
-				audioRef.current.src = "";
-				try { audioRef.current.removeAttribute("src"); } catch {}
-				audioRef.current.load();
+			if (p.audioRef.current) {
+				p.audioRef.current.pause();
+				p.audioRef.current.currentTime = 0;
+				p.audioRef.current.src = "";
+				try { p.audioRef.current.removeAttribute("src"); } catch {}
+				p.audioRef.current.load();
 			}
 		};
-	}, []);
-
-	const togglePlay = () => {
-		if (!audioRef.current) return;
-		if (isPlaying) {
-			audioRef.current.pause();
-			setIsPlaying(false);
-		} else {
-			setPlaybackError(false);
-			audioRef.current
-				.play()
-				.then(() => setIsPlaying(true))
-				.catch((err: unknown) => {
-					if (err instanceof Error && err.name === "AbortError") return;
-					console.warn("[CallAudioPlayer] Audio playback failed:", err);
-					setIsPlaying(false);
-					setPlaybackError(true);
-				});
-		}
-	};
-
-	const handleTimeUpdate = () => {
-		if (audioRef.current) {
-			setCurrentTime(audioRef.current.currentTime);
-			if (audioRef.current.duration > 0 && Number.isFinite(audioRef.current.duration)) {
-				setAudioDuration(audioRef.current.duration);
-			}
-		}
-	};
-
-	const handleSkip = (deltaSeconds: number) => {
-		if (!audioRef.current) return;
-		const nextTime = Math.max(0, Math.min(audioDuration, currentTime + deltaSeconds));
-		audioRef.current.currentTime = nextTime;
-		setCurrentTime(nextTime);
-	};
-
-	const handleSeek = (targetTime: number) => {
-		setCurrentTime(targetTime);
-		if (audioRef.current) audioRef.current.currentTime = targetTime;
-	};
-
-	const handleSeekToUtterance = (startSec: number) => {
-		setCurrentTime(startSec);
-		if (audioRef.current) {
-			audioRef.current.currentTime = startSec;
-			if (!isPlaying) {
-				audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
-			}
-		}
-	};
-
-	const handleCopyTranscript = () => {
-		const fullText = transcriptUtterances.map((u) => `[${u.startTimeSeconds}s] ${u.speaker === "operator" ? "Оператор" : "Пациент"}: ${u.text}`).join("\n");
-		navigator.clipboard?.writeText(fullText).then(() => {
-			setCopiedTranscript(true);
-			setTimeout(() => setCopiedTranscript(false), 2000);
-		});
-	};
-
-	const progressPct = audioDuration > 0 ? (currentTime / audioDuration) * 100 : 0;
+	}, [p.audioRef]);
 
 	if (!recordingUrl || recordingUrl.trim() === "") {
 		return (
-			<div
-				data-testid="call-audio-player-empty"
-				className="p-3 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--glass-border,var(--line,#e2e8f0))] text-xs flex flex-col gap-2 shadow-xs"
-			>
-				<div className="flex items-center justify-center gap-2.5 py-3 text-[var(--muted,#64748b)]">
-					<VolumeX size={18} className="text-[var(--muted,#94a3b8)] shrink-0" />
-					<div className="flex flex-col items-center text-center">
-						<span className="font-semibold text-xs text-[var(--ink,#0f172a)]">Запись обрабатывается АТС</span>
-						<span className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">Запись звонка не подключена или недоступна</span>
-					</div>
-				</div>
-				{transcriptUtterances.length > 0 && (
-					<CallAudioTranscriptDrawer
-						transcriptUtterances={transcriptUtterances}
-						currentTime={currentTime}
-						onSeekToUtterance={handleSeekToUtterance}
-						showTranscript={showTranscript}
-						onToggleShowTranscript={() => setShowTranscript((prev) => !prev)}
-						copiedTranscript={copiedTranscript}
-						onCopyTranscript={handleCopyTranscript}
-					/>
-				)}
-			</div>
+			<CallAudioEmptyState
+				transcriptUtterances={p.transcriptUtterances}
+				currentTime={p.currentTime}
+				onSeekToUtterance={p.handleSeekToUtterance}
+				showTranscript={p.showTranscript}
+				onToggleShowTranscript={() => p.setShowTranscript((prev) => !prev)}
+				copiedTranscript={p.copiedTranscript}
+				onCopyTranscript={p.handleCopyTranscript}
+			/>
 		);
 	}
 
@@ -174,20 +61,16 @@ export function CallAudioPlayer({
 			className="p-3 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--glass-border,var(--line,#e2e8f0))] text-[var(--ink,#0f172a)] text-xs flex flex-col gap-2.5 shadow-xs"
 		>
 			<audio
-				ref={audioRef}
+				ref={p.audioRef}
 				src={recordingUrl}
-				onTimeUpdate={handleTimeUpdate}
-				onLoadedMetadata={handleTimeUpdate}
-				onEnded={() => setIsPlaying(false)}
-				onError={(e) => {
-					console.warn("[CallAudioPlayer] Audio element error:", e);
-					setIsPlaying(false);
-					setPlaybackError(true);
-				}}
+				onTimeUpdate={p.handleTimeUpdate}
+				onLoadedMetadata={p.handleTimeUpdate}
+				onEnded={() => p.setIsPlaying(false)}
+				onError={() => { p.setIsPlaying(false); p.setPlaybackError(true); }}
 			>
 				<track kind="captions" />
 			</audio>
-			{playbackError && (
+			{p.playbackError && (
 				<div
 					data-testid="call-audio-playback-error"
 					className="px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-[11px] font-medium"
@@ -196,33 +79,33 @@ export function CallAudioPlayer({
 				</div>
 			)}
 			<CallAudioPlaybackControls
-				isPlaying={isPlaying}
-				onTogglePlay={togglePlay}
-				currentTime={currentTime}
-				audioDuration={audioDuration}
-				onSkip={handleSkip}
-				playbackSpeed={playbackSpeed}
-				onSetPlaybackSpeed={setPlaybackSpeed}
-				isMuted={isMuted}
-				onToggleMute={toggleMute}
+				isPlaying={p.isPlaying}
+				onTogglePlay={p.togglePlay}
+				currentTime={p.currentTime}
+				audioDuration={p.audioDuration}
+				onSkip={p.handleSkip}
+				playbackSpeed={p.playbackSpeed}
+				onSetPlaybackSpeed={p.setPlaybackSpeed}
+				isMuted={p.isMuted}
+				onToggleMute={p.toggleMute}
 				recordingUrl={recordingUrl}
 			/>
 			<CallAudioWaveformBar
-				waveformBars={waveformBars}
-				progressPct={progressPct}
-				currentTime={currentTime}
-				audioDuration={audioDuration}
-				onSeek={handleSeek}
-				onSkip={handleSkip}
+				waveformBars={p.waveformBars}
+				progressPct={p.progressPct}
+				currentTime={p.currentTime}
+				audioDuration={p.audioDuration}
+				onSeek={p.handleSeek}
+				onSkip={p.handleSkip}
 			/>
 			<CallAudioTranscriptDrawer
-				transcriptUtterances={transcriptUtterances}
-				currentTime={currentTime}
-				onSeekToUtterance={handleSeekToUtterance}
-				showTranscript={showTranscript}
-				onToggleShowTranscript={() => setShowTranscript((prev) => !prev)}
-				copiedTranscript={copiedTranscript}
-				onCopyTranscript={handleCopyTranscript}
+				transcriptUtterances={p.transcriptUtterances}
+				currentTime={p.currentTime}
+				onSeekToUtterance={p.handleSeekToUtterance}
+				showTranscript={p.showTranscript}
+				onToggleShowTranscript={() => p.setShowTranscript((prev) => !prev)}
+				copiedTranscript={p.copiedTranscript}
+				onCopyTranscript={p.handleCopyTranscript}
 			/>
 		</div>
 	);

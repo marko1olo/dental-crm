@@ -1,0 +1,88 @@
+/* Compact Incoming Call Capsule (Top Ambient Capsule Bar, Tier 1) */
+.dnt-incoming-call-capsule {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 14px;
+	border-radius: 9999px;
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
+	box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.25), 0 0 16px 2px var(--teal-soft, rgba(13, 148, 136, 0.2));
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	animation: dnt-badge-drop 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
+	user-select: none;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Compact Incoming Call Badge (Expanded State) */
+.dnt-incoming-call-badge {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 12px 14px;
+	border-radius: 16px;
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
+	box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.25), 0 0 20px 2px var(--teal-soft, rgba(13, 148, 136, 0.18));
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	animation: dnt-badge-drop 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes dnt-badge-drop {
+	0% { opacity: 0; transform: translateY(-16px) scale(0.96); }
+	100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-badge-drop { animation: dnt-badge-drop 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Patient Side Drawer (Tier 2 Context Drawer: width strictly 420px, Mandate 8b & 8e) */
+.dnt-telephony-patient-drawer {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	width: 420px;
+	max-width: 100%;
+	z-index: 9995;
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border-left: 1px solid var(--line-strong, var(--line, #e2e8f0));
+	box-shadow: -12px 0 36px -4px rgba(0, 0, 0, 0.3), 0 0 24px 2px var(--teal-soft, rgba(13, 148, 136, 0.15));
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	backdrop-filter: blur(24px);
+	-webkit-backdrop-filter: blur(24px);
+	animation: dnt-slide-in-right 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+	box-sizing: border-box;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Prevent telephony patient drawer collision with modals */
+body:has([data-testid="appointment-modal"]) .dnt-telephony-patient-drawer,
+body:has([data-testid="quick-booking-drawer"]) .dnt-telephony-patient-drawer,
+body:has([data-testid="waitlist-drawer"]) .dnt-telephony-patient-drawer,
+body:has([data-testid="doctor-free-slots-modal"]) .dnt-telephony-patient-drawer,
+body:has([data-testid="patient-search-modal"]) .dnt-telephony-patient-drawer,
+body:has([data-testid="preventive-inspection-modal"]) .dnt-telephony-patient-drawer {
+	display: none !important;
+}
+
+@keyframes dnt-slide-in-right {
+	0% { transform: translateX(100%); }
+	100% { transform: translateX(0); }
+}
+.animate-slide-in-right { animation: dnt-slide-in-right 0.28s cubic-bezier(0.16, 1, 0.3, 1); }
+
+@media (max-width: 768px) {
+	.dnt-telephony-patient-drawer {
+		width: 100%;
+		border-left: none;
+	}
+}

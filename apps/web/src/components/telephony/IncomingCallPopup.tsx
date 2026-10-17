@@ -40,16 +40,13 @@ export function IncomingCallPopup(props?: { defaultExpanded?: boolean }): React.
 	if (typeof document === "undefined") return null;
 
 	// Doctor sterile zone & chairside chart immunity (Mandates 8e, 8n):
-	// const isDoctorMode = selectedWorkspaceRole === "doctor" || currentView === "visit";
-	// if (!activeCall || isDoctorMode || isDndActive) return null;
-	// В режиме врача входящие вызовы не должны прерывать приём врача у кресла
-	// Вместо перекрытия экрана вызов деликатно сворачивается в компактную капсулу
+	if (isDoctorMode) return null;
 	const shouldShowCapsule = isDoctorMode || !isPopupExpanded;
 
 	return createPortal(
 		<>
 			<div
-				className="dnt-incoming-call-badge-container z-[9990] flex flex-col items-center pointer-events-none"
+				className="dnt-incoming-call-badge-container z-[9990] flex flex-col pointer-events-none"
 				style={{ zIndex: 9990 }}
 				data-testid="incoming-call-badge-container"
 			>

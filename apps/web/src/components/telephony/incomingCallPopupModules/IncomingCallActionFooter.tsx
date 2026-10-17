@@ -42,11 +42,11 @@ export function IncomingCallActionFooter({
 				type="button"
 				onClick={() => handleQuickBook("today_standard")}
 				className="primary-button flex-1 min-h-[44px] px-3.5 py-2 text-xs font-bold"
-				title={isKnownPatient ? "Записать пациента на приём" : "+ Записать нового пациента"}
+				title={isKnownPatient ? "Записать пациента на приём" : "+ Быстрая запись лида / пациента"}
 				data-testid="badge-action-book"
 			>
 				<CalendarCheck size={16} className="shrink-0" />
-				<span>{isKnownPatient ? "Записать на приём" : "+ Записать нового пациента"}</span>
+				<span>{isKnownPatient ? "Записать на приём" : "+ Быстрая запись"}</span>
 			</button>
 
 			<button

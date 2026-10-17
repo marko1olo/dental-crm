@@ -167,13 +167,23 @@ export function TelephonyRecentCallsList({
 									</div>
 
 									<div className="min-w-0 flex-1">
-										<div className="flex items-center gap-1.5">
+										<div className="flex items-center gap-1.5 flex-wrap">
 											<span
 												className="font-bold text-[var(--ink,#0f172a)] truncate leading-snug"
 												title={resolvedName}
 											>
 												{resolvedName}
 											</span>
+											{(item.status === "missed" || item.status === "rejected" || item.actionTaken === "dismissed") && (
+												<span
+													className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-800 inline-flex items-center gap-1 shadow-xs shrink-0"
+													data-testid={`call-history-requires-callback-${item.id}`}
+													title="Пропущенный вызов — требуется перезвонить пациенту"
+												>
+													<PhoneMissed size={10} className="text-rose-600 dark:text-rose-400" />
+													<span>Требует перезвона</span>
+												</span>
+											)}
 											{outcomeCfg && (
 												<span
 													className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0"
@@ -242,23 +252,37 @@ export function TelephonyRecentCallsList({
 										</button>
 									)}
 
-									{/* Quick Call Button >= 44x44px */}
-									<button
-										type="button"
-										onClick={() => onRedial(item.phone)}
-										className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-[var(--teal)] hover:bg-[var(--teal-surface)] transition-colors inline-flex items-center justify-center cursor-pointer"
-										title="Перезвонить"
-										aria-label={`Перезвонить ${item.phone}`}
-										data-testid={`call-history-redial-${item.id}`}
-									>
-										<Phone size={14} />
-									</button>
+									{/* Quick Call / 1-Click Callback Button */}
+									{item.status === "missed" || item.status === "rejected" || item.actionTaken === "dismissed" ? (
+										<button
+											type="button"
+											onClick={() => onRedial(item.phone)}
+											className="primary-button text-xs font-bold py-1 px-2.5 min-h-[36px] bg-rose-600 hover:bg-rose-700 text-white shrink-0 inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+											title={`Перезвонить пациенту ${formatPhoneDisplay(item.phone)}`}
+											aria-label={`Перезвонить ${item.phone}`}
+											data-testid={`call-history-redial-${item.id}`}
+										>
+											<Phone size={13} />
+											<span>Перезвонить</span>
+										</button>
+									) : (
+										<button
+											type="button"
+											onClick={() => onRedial(item.phone)}
+											className="icon-button min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-[var(--teal)] hover:bg-[var(--teal-surface)] transition-colors inline-flex items-center justify-center cursor-pointer"
+											title="Перезвонить"
+											aria-label={`Перезвонить ${item.phone}`}
+											data-testid={`call-history-redial-${item.id}`}
+										>
+											<Phone size={14} />
+										</button>
+									)}
 
 									{/* Quick WhatsApp Trigger >= 44x44px */}
 									<button
 										type="button"
 										onClick={() => onSendWhatsApp(item.phone)}
-										className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors inline-flex items-center justify-center cursor-pointer"
+										className="icon-button min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors inline-flex items-center justify-center cursor-pointer"
 										title="Написать в WhatsApp"
 										aria-label={`Написать в WhatsApp ${item.phone}`}
 										data-testid={`call-history-whatsapp-${item.id}`}

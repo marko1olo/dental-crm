@@ -73,6 +73,7 @@ const AnesthesiaStandaloneWorkspace = React.lazy(() =>
 		default: m.AnesthesiaStandaloneWorkspace,
 	})),
 );
+import { TelephonyStandaloneWorkspace } from "./components/telephony/TelephonyStandaloneWorkspace";
 import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
 import { isPatientPresentationRoute } from "./components/photography/presentationSyncProtocol";
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
@@ -424,6 +425,29 @@ if (publicPortalRoute) {
 				>
 					<AnesthesiaStandaloneWorkspace />
 				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(new URLSearchParams(window.location.search).has("telephony") ||
+		window.location.hash.toLowerCase().includes("telephony"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			(localStorage.getItem("dente_theme") as any) || "auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	console.info("[Telephony] Standalone branch mounted");
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<TelephonyStandaloneWorkspace />
 				<GlobalToast />
 			</BootErrorBoundary>
 		</React.StrictMode>,

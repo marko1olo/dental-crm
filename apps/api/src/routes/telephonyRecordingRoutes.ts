@@ -1,7 +1,11 @@
 import * as http from "node:http";
 import * as https from "node:https";
 import { and, eq } from "drizzle-orm";
-import type { FastifyPluginAsync } from "fastify";
+import type {
+	FastifyPluginAsync,
+	FastifyReply,
+	FastifyRequest,
+} from "fastify";
 import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
@@ -18,16 +22,12 @@ import {
  * Secure Call Recording Streaming Proxy (SSRF, Tenant Isolation, and Clinical Read Guard)
  */
 export const telephonyRecordingRoutes: FastifyPluginAsync = async (server) => {
-	server.get<{
-		Params: { eventId: string };
-	}>(
-		"/recordings/:eventId/stream",
-		{
-			config: {
-				tenantTxSelfManaged: true,
-			},
-		},
-		async (request, reply) => {
+	const handleStreamRecording = async (
+		request: FastifyRequest<{
+			Params: { eventId?: string; id?: string };
+		}>,
+		reply: FastifyReply,
+	) => {
 			if (
 				!(await requireClinicalReadAccess(
 					request,
@@ -45,8 +45,8 @@ export const telephonyRecordingRoutes: FastifyPluginAsync = async (server) => {
 			);
 			if (!orgId) return;
 
-			const { eventId } = request.params;
-			if (!UUID_REGEX.test(eventId)) {
+			const eventId = request.params.eventId || request.params.id;
+			if (!eventId || !UUID_REGEX.test(eventId)) {
 				return reply
 					.status(400)
 					.send({ error: "InvalidEventId", message: "Invalid event ID format" });
@@ -188,6 +188,18 @@ export const telephonyRecordingRoutes: FastifyPluginAsync = async (server) => {
 					resolve();
 				});
 			});
-		},
+	};
+
+	server.get<{ Params: { eventId: string } }>(
+		"/recordings/:eventId/stream",
+		{ config: { tenantTxSelfManaged: true } },
+		handleStreamRecording,
+	);
+
+	server.get<{ Params: { eventId: string } }>(
+		"/recordings/:eventId",
+		{ config: { tenantTxSelfManaged: true } },
+		handleStreamRecording,
 	);
 };
+

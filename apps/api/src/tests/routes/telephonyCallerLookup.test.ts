@@ -77,7 +77,6 @@ describe("CTI Telephony /api/telephony/lookup-caller and CallerLookupService", (
 						fullName: "Кузнецов Алексей Петрович",
 						phone: "+79998881122",
 						notes: "Аллергия на лидокаин. Острая боль в области зуба 46.",
-						gender: "male",
 					});
 					const futureDate = new Date(Date.now() + 24 * 3600 * 1000);
 					await db.insert(appointments).values({

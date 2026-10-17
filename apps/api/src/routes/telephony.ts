@@ -1,6 +1,8 @@
+import { randomBytes } from "node:crypto";
 import { and, eq, ilike, or, type SQL, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
@@ -788,6 +790,75 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 
 	server.post<{ Params: { organizationId: string } }>("/:organizationId/sms/webhook", handleSmsWebhook);
 	server.post<{ Params: { organizationId?: string } }>("/sms/webhook", handleSmsWebhook);
+
+	// --------------------------------------------------------------------------
+	// 1-Click Outbound Call Initiation (Mandate 8e: Doctor Autonomy)
+	// --------------------------------------------------------------------------
+	const handleOutboundCall = async (
+		request: FastifyRequest<{
+			Params: { organizationId?: string };
+			Body: { phone: string; patientId?: string; patientName?: string };
+		}>,
+		reply: FastifyReply,
+	) => {
+		const rawOrgId = request.params.organizationId;
+		let resolvedOrgId: string | null = null;
+		if (rawOrgId && UUID_REGEX.test(rawOrgId)) {
+			resolvedOrgId = rawOrgId;
+		} else {
+			resolvedOrgId = await requireResolvedOrganizationId(request, reply, "outbound call");
+		}
+		if (!resolvedOrgId) return;
+
+		const body = request.body || ({} as { phone?: string; patientId?: string; patientName?: string });
+		const callerPhone = normalizePhoneNumber(body.phone);
+		if (!callerPhone.isValid) {
+			return reply.status(400).send({
+				error: "InvalidPhoneNumber",
+				message: "Некорректный номер телефона для исходящего звонка",
+			});
+		}
+
+		const callId = `outbound-${Date.now()}-${randomBytes(4).toString("hex")}`;
+		const patientName = body.patientName || "Пациент";
+
+		await withTenantCtx(resolvedOrgId, async () => {
+			if (body.patientId && UUID_REGEX.test(body.patientId)) {
+				await db.insert(communicationEvents).values({
+					organizationId: resolvedOrgId!,
+					patientId: body.patientId,
+					channel: "phone",
+					direction: "outbound",
+					status: "completed",
+					message: `Исходящий вызов на ${callerPhone.e164} [call_id: ${callId}]`,
+				});
+			}
+		});
+
+		wsBroker.broadcastToOrganization(resolvedOrgId, {
+			type: "TELEPHONY_OUTBOUND_CALL",
+			payload: {
+				callId,
+				phone: callerPhone.e164,
+				patientId: body.patientId || null,
+				patientName,
+				status: "dialing",
+				timestamp: new Date().toISOString(),
+			},
+		});
+
+		return reply.status(200).send({
+			success: true,
+			callId,
+			phone: callerPhone.e164,
+			patientId: body.patientId || null,
+			patientName,
+			status: "dialing",
+		});
+	};
+
+	server.post<{ Params: { organizationId: string }; Body: { phone: string; patientId?: string; patientName?: string } }>("/:organizationId/outbound-call", handleOutboundCall);
+	server.post<{ Params: { organizationId?: string }; Body: { phone: string; patientId?: string; patientName?: string } }>("/outbound-call", handleOutboundCall);
 
 	await server.register(telephonyCallerLookupRoutes);
 };

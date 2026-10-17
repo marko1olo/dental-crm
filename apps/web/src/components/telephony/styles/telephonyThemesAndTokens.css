@@ -1,0 +1,41 @@
+/* Semantic Theme Support (Mandates 8b, 8c, 8e) */
+[data-theme="dark"],
+html.dark {
+	--paper-strong: #0f172a;
+	--paper-subtle: #1e293b;
+	--line: #334155;
+	--line-strong: #475569;
+	--ink: #f8fafc;
+	--muted: #94a3b8;
+}
+
+[data-theme="dark"] .dnt-telephony-patient-drawer, html.dark .dnt-telephony-patient-drawer,
+[data-theme="dark"] .dnt-incoming-call-capsule, html.dark .dnt-incoming-call-capsule,
+[data-theme="dark"] .dnt-incoming-call-badge, html.dark .dnt-incoming-call-badge,
+[data-theme="dark"] .dnt-telephony-card, html.dark .dnt-telephony-card {
+	background: var(--paper-strong, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dnt-dialpad-key, html.dark .dnt-dialpad-key,
+[data-theme="dark"] .dnt-dialpad-input-box, html.dark .dnt-dialpad-input-box,
+[data-theme="dark"] .dnt-patient-metrics-row, html.dark .dnt-patient-metrics-row,
+[data-theme="dark"] .dnt-cta-secondary, html.dark .dnt-cta-secondary,
+[data-theme="dark"] .dnt-btn-more, html.dark .dnt-btn-more {
+	background: #1e293b;
+	border-color: #334155;
+	color: #f8fafc;
+}
+
+[data-theme="dark"] .dnt-dialpad-key:hover, html.dark .dnt-dialpad-key:hover { background: #334155; }
+[data-theme="dark"] .dnt-alert-pill--allergy, html.dark .dnt-alert-pill--allergy {
+	background: rgba(244, 63, 94, 0.15);
+	color: #fb7185;
+	border-color: rgba(244, 63, 94, 0.3);
+}
+[data-theme="dark"] .dnt-alert-pill--pain, html.dark .dnt-alert-pill--pain {
+	background: rgba(239, 68, 68, 0.15);
+	color: #f87171;
+	border-color: rgba(239, 68, 68, 0.3);
+}

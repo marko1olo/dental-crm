@@ -1,0 +1,77 @@
+/* Active Call HUD & Quick In-Call Controls */
+.dnt-hud-card {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 10px 14px;
+	background: var(--paper-subtle, var(--paper-soft, #f8fafc));
+	border-radius: 12px;
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.dnt-hud-controls-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 8px;
+}
+
+.dnt-hud-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 6px 10px;
+	min-height: 34px;
+	border-radius: 8px;
+	font-size: 11.5px;
+	font-weight: 600;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.dnt-hud-btn:hover {
+	background: var(--paper-muted, #f1f5f9);
+	border-color: var(--line-strong, #cbd5e1);
+}
+
+.dnt-hud-btn--active-amber {
+	background: rgba(245, 158, 11, 0.12);
+	color: #d97706;
+	border-color: rgba(245, 158, 11, 0.35);
+}
+
+.dnt-hud-btn--active-rose {
+	background: rgba(244, 63, 94, 0.12);
+	color: #e11d48;
+	border-color: rgba(244, 63, 94, 0.35);
+}
+
+.dnt-hud-btn--hangup {
+	background: rgba(239, 68, 68, 0.1);
+	color: #dc2626;
+	border-color: rgba(239, 68, 68, 0.3);
+}
+
+.dnt-hud-btn--hangup:hover {
+	background: #dc2626;
+	color: #ffffff;
+	border-color: #dc2626;
+}
+
+[data-theme="dark"] .dnt-hud-card, html.dark .dnt-hud-card {
+	background: #1e293b;
+	border-color: #334155;
+}
+
+[data-theme="dark"] .dnt-hud-btn, html.dark .dnt-hud-btn {
+	background: #0f172a;
+	border-color: #334155;
+	color: #f8fafc;
+}
+
+[data-theme="dark"] .dnt-hud-btn:hover, html.dark .dnt-hud-btn:hover {
+	background: #334155;
+}

@@ -1,18 +1,7 @@
-import {
-	Download,
-	Pause,
-	Play,
-	RotateCcw,
-	RotateCw,
-	Volume2,
-	VolumeX,
-} from "lucide-react";
+import { Download, Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX } from "lucide-react";
 import React from "react";
 import { formatDurationTimer } from "../../../store/telephonyStore";
-import type {
-	CallAudioPlaybackControlsProps,
-	PlaybackSpeed,
-} from "./callAudioPlayerTypes";
+import type { CallAudioPlaybackControlsProps, PlaybackSpeed } from "./callAudioPlayerTypes";
 
 const SPEEDS: PlaybackSpeed[] = [1, 1.25, 1.5, 2];
 
@@ -52,14 +41,8 @@ export function CallAudioPlaybackControls({
 					aria-label={isPlaying ? "Пауза" : "Воспроизвести запись"}
 					data-testid="call-audio-player-toggle"
 				>
-					{isPlaying ? (
-						<Pause size={16} className="text-white fill-white" />
-					) : (
-						<Play size={16} className="ml-0.5 text-white fill-white" />
-					)}
+					{isPlaying ? <Pause size={16} className="text-white fill-white" /> : <Play size={16} className="ml-0.5 text-white fill-white" />}
 				</button>
-
-				{/* Skip -10s */}
 				<button
 					type="button"
 					onClick={() => onSkip(-10)}
@@ -69,8 +52,6 @@ export function CallAudioPlaybackControls({
 				>
 					<RotateCcw size={15} />
 				</button>
-
-				{/* Skip +10s */}
 				<button
 					type="button"
 					onClick={() => onSkip(10)}
@@ -80,19 +61,13 @@ export function CallAudioPlaybackControls({
 				>
 					<RotateCw size={15} />
 				</button>
-
 				<span className="font-mono text-xs text-[var(--ink,#0f172a)] font-semibold pl-1">
 					{formatDurationTimer(currentTime)} / {formatDurationTimer(audioDuration)}
 				</span>
 			</div>
 
 			<div className="flex items-center gap-1.5">
-				{/* Speed Toggle Segmented Bar (1x, 1.25x, 1.5x, 2x) */}
-				<div
-					className="dente-segmented-bar"
-					role="group"
-					aria-label="Скорость воспроизведения"
-				>
+				<div className="dente-segmented-bar" role="group" aria-label="Скорость воспроизведения">
 					{SPEEDS.map((s) => (
 						<button
 							key={s}
@@ -107,8 +82,6 @@ export function CallAudioPlaybackControls({
 						</button>
 					))}
 				</div>
-
-				{/* Mute toggle */}
 				<button
 					type="button"
 					onClick={onToggleMute}
@@ -116,14 +89,8 @@ export function CallAudioPlaybackControls({
 					title={isMuted ? "Включить звук" : "Выключить звук"}
 					aria-label={isMuted ? "Включить звук" : "Выключить звук"}
 				>
-					{isMuted ? (
-						<VolumeX size={16} className="text-[var(--danger,#ef4444)]" />
-					) : (
-						<Volume2 size={16} />
-					)}
+					{isMuted ? <VolumeX size={16} className="text-[var(--danger,#ef4444)]" /> : <Volume2 size={16} />}
 				</button>
-
-				{/* Download MP3 button */}
 				{recordingUrl && (
 					<button
 						type="button"
