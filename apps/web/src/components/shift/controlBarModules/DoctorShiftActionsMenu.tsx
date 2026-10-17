@@ -249,7 +249,7 @@ export const DoctorShiftActionsMenu: React.FC<DoctorShiftActionsMenuProps> = Rea
 								data-testid="shift-action-t13"
 							>
 								<Calendar size={13} className="text-[var(--teal)]" />
-								<span>Табель учета времени</span>
+								<span>Учёт отработанного времени и часов</span>
 							</button>
 						)}
 

@@ -147,7 +147,7 @@ describe("Doctor Shift Closure Reconciliation & Executive Reports Dashboard", ()
 			);
 		});
 
-		it("1.4 Renders 54-FZ cash reconciliation block and 1-click Z-report closure CTA", () => {
+		it("1.4 Renders 54-FZ cash reconciliation block and 1-click closure CTA", () => {
 			const html = renderToString(
 				React.createElement(DoctorShiftCloseModal, {
 					isOpen: true,
@@ -164,8 +164,11 @@ describe("Doctor Shift Closure Reconciliation & Executive Reports Dashboard", ()
 			assert.ok(cleanHtml.includes("Сверено без расхождений (0 ₽)"));
 			assert.ok(cleanHtml.includes("Касса 54-ФЗ сходится (0 ₽)"));
 			assert.ok(cleanHtml.includes("Снять фискальный Z-отчёт с гашением (54-ФЗ)"));
-			assert.ok(cleanHtml.includes("Сформировать сменную ведомость ф. Д-1"));
-			assert.ok(cleanHtml.includes("Закрыть смену и снять Z-отчет (1 клик)"));
+			assert.ok(cleanHtml.includes("Сформировать сводку смены врача"));
+			assert.ok(cleanHtml.includes("Завершить смену и рассчитать (1 клик)"));
+			assert.ok(cleanHtml.includes("Сдельщина (% от услуг)"));
+			assert.ok(cleanHtml.includes("Аренда кресла (фикс)"));
+			assert.ok(cleanHtml.includes("Оклад + %"));
 			assert.equal(
 				EMOJI_REGEX.test(html),
 				false,

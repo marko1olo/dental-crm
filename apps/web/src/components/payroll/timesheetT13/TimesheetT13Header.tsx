@@ -49,21 +49,21 @@ export const TimesheetT13Header: React.FC<TimesheetT13HeaderProps> = ({
 					</div>
 					<div>
 						<h2 className="text-base sm:text-lg font-bold text-[var(--ink)] flex items-center gap-2">
-							Табель учета рабочего времени
+							Учёт отработанного времени и часов
 							<span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--teal-soft)] text-[var(--teal)] border border-[var(--teal)]/20">
-								Табель персонала
+								Учёт времени персонала
 							</span>
 						</h2>
 						<p className="text-xs text-[var(--muted)]">
-							{clinicName} • Табель учета рабочего времени персонала клиники
+							{clinicName} • Учёт отработанного времени и часов персонала клиники
 						</p>
 					</div>
 				</div>
 				<button
 					type="button"
 					onClick={onClose}
-					aria-label="Закрыть табель"
-					className="w-11 h-11 sm:w-10 sm:h-10 min-w-[44px] min-h-[44px] rounded-xl border border-[var(--line)] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors cursor-pointer"
+					aria-label="Закрыть окно учёта времени"
+					className="icon-button w-11 h-11 sm:w-9 sm:h-9 min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] rounded-xl text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
 				>
 					<X className="w-5 h-5" />
 				</button>
@@ -154,7 +154,8 @@ export const TimesheetT13Header: React.FC<TimesheetT13HeaderProps> = ({
 					<button
 						type="button"
 						onClick={onExportCsv}
-						className="dente-btn-secondary"
+						className="secondary-button dente-btn-secondary"
+						title="Выгрузить данные учёта отработанного времени в CSV"
 					>
 						<Download className="w-3.5 h-3.5 text-[var(--teal)]" />
 						Экспорт CSV
@@ -162,7 +163,8 @@ export const TimesheetT13Header: React.FC<TimesheetT13HeaderProps> = ({
 					<button
 						type="button"
 						onClick={onPrint}
-						className="dente-btn-primary"
+						className="primary-button dente-btn-primary"
+						title="Печать учёта отработанного времени"
 					>
 						<Printer className="w-3.5 h-3.5" />
 						Печать

@@ -39,7 +39,7 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 							Сотрудники не зарегистрированы в клинике
 						</h3>
 						<p className="text-xs text-[var(--muted)] max-w-sm">
-							Добавьте персонал в разделе «Настройки клиники / Персонал» для формирования и ведения табеля учета рабочего времени.
+							Добавьте персонал в разделе «Настройки клиники / Персонал» для формирования и ведения учёта отработанного времени и часов.
 						</p>
 					</div>
 					<div className="flex items-center gap-2 mt-2">
@@ -50,14 +50,14 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 								useAppStore.getState().setSettingsTab("staff");
 								onClose();
 							}}
-							className="h-9 px-4 rounded-xl bg-[var(--teal)] hover:opacity-90 text-[var(--on-teal)] text-xs font-bold transition-all cursor-pointer"
+							className="primary-button h-9 px-4 text-xs font-bold"
 						>
 							Перейти в Настройки / Персонал
 						</button>
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-9 px-4 rounded-xl border border-[var(--line)] text-xs font-bold text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
+							className="secondary-button h-9 px-4 text-xs font-bold"
 						>
 							Закрыть
 						</button>

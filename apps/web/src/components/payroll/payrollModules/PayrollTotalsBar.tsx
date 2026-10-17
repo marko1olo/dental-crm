@@ -191,7 +191,7 @@ export const PayrollTotalsBar: React.FC<PayrollTotalsBarProps> = ({
 					<button
 						type="button"
 						onClick={() => onSendToMessenger("clipboard")}
-						className="dente-btn-secondary"
+						className="secondary-button dente-btn-secondary h-9 px-3.5 text-xs font-semibold gap-1.5"
 						data-testid="doctor-payroll-send-messenger"
 						title="Скопировать структурированный расчетный листок для WhatsApp или Telegram"
 					>
@@ -201,7 +201,8 @@ export const PayrollTotalsBar: React.FC<PayrollTotalsBarProps> = ({
 					<button
 						type="button"
 						onClick={onDownloadCsv}
-						className="dente-btn-secondary"
+						className="secondary-button dente-btn-secondary h-9 px-3.5 text-xs font-semibold gap-1.5"
+						title="Выгрузить расчетную ведомость в формате CSV"
 					>
 						<Download className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
 						<span>Экспорт зарплаты (CSV)</span>
@@ -209,7 +210,7 @@ export const PayrollTotalsBar: React.FC<PayrollTotalsBarProps> = ({
 					<button
 						type="button"
 						onClick={onPrintPayslip}
-						className="dente-btn-primary"
+						className="primary-button dente-btn-primary h-9 px-4 text-xs font-bold gap-1.5"
 						data-testid="doctor-payroll-print-payslip"
 						title="Сформировать печатный расчетный листок с подписями врача и бухгалтера"
 					>
@@ -225,7 +226,7 @@ export const PayrollTotalsBar: React.FC<PayrollTotalsBarProps> = ({
 					<button
 						type="button"
 						onClick={() => onSendToMessenger("clipboard")}
-						className="payroll-mobile-touch-btn dente-btn-secondary flex-1 justify-center"
+						className="payroll-mobile-touch-btn secondary-button dente-btn-secondary flex-1 justify-center min-h-[44px]"
 						data-testid="doctor-payroll-mobile-messenger-btn"
 					>
 						<Share2 className="w-4 h-4 text-[var(--teal,#0d9488)]" />
@@ -234,7 +235,7 @@ export const PayrollTotalsBar: React.FC<PayrollTotalsBarProps> = ({
 					<button
 						type="button"
 						onClick={onPrintPayslip}
-						className="payroll-mobile-touch-btn dente-btn-primary flex-1 justify-center"
+						className="payroll-mobile-touch-btn primary-button dente-btn-primary flex-1 justify-center min-h-[44px]"
 						data-testid="doctor-payroll-mobile-print-btn"
 					>
 						<FileText className="w-4 h-4" />
@@ -243,7 +244,7 @@ export const PayrollTotalsBar: React.FC<PayrollTotalsBarProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="payroll-mobile-touch-btn dente-btn-secondary px-3"
+						className="payroll-mobile-touch-btn secondary-button dente-btn-secondary px-3 min-h-[44px] min-w-[44px]"
 						aria-label="Закрыть окно"
 					>
 						<X className="w-4 h-4" />

@@ -200,6 +200,7 @@
 }
 
 /* DENTE Standardized Buttons */
+.timesheet-modal-container .primary-button,
 .timesheet-modal-container .dente-btn-primary {
 	height: 32px;
 	min-height: 32px;
@@ -209,7 +210,7 @@
 	font-size: 13px;
 	font-weight: 600;
 	background-color: var(--teal);
-	color: var(--on-teal);
+	color: var(--on-teal) !important;
 	border: 1px solid transparent;
 	display: inline-flex;
 	align-items: center;
@@ -221,11 +222,13 @@
 	white-space: nowrap;
 }
 
+.timesheet-modal-container .primary-button:hover:not(:disabled),
 .timesheet-modal-container .dente-btn-primary:hover:not(:disabled) {
 	opacity: 0.92;
 	transform: translateY(-0.5px);
 }
 
+.timesheet-modal-container .secondary-button,
 .timesheet-modal-container .dente-btn-secondary {
 	height: 32px;
 	min-height: 32px;
@@ -246,6 +249,7 @@
 	white-space: nowrap;
 }
 
+.timesheet-modal-container .secondary-button:hover:not(:disabled),
 .timesheet-modal-container .dente-btn-secondary:hover:not(:disabled) {
 	background-color: var(--paper-soft);
 	border-color: var(--line-strong, var(--line));
