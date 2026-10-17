@@ -4,3 +4,5 @@ export * from "./PriceImportModal";
 export * from "./PricesFilterToolbar";
 export * from "./PricesCatalogTable";
 export * from "./useSettingsPricesLogic";
+
+

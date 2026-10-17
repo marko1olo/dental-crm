@@ -323,8 +323,33 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 			}
 
 			return reply.code(201).send(patientSchema.parse(safeResult.patient));
-		} catch (e) {
+		} catch (e: any) {
 			console.error("[Patients] Create error:", e);
+			const isUniqueViolation =
+				e?.code === "23505" ||
+				e?.cause?.code === "23505" ||
+				String(e?.message ?? "").includes("unique constraint") ||
+				String(e?.message ?? "").includes("duplicate key value");
+
+			if (isUniqueViolation) {
+				try {
+					const dbPatients = await getPatientsFromDb(orgId, { limit: 500 });
+					const duplicate = findPatientDuplicate(dbPatients, inputWithSnils, undefined, {
+						requireDistinguishingData: false,
+					});
+					if (duplicate) {
+						return sendPatientDuplicate(reply, duplicate);
+					}
+				} catch (subErr) {
+					console.error("[Patients] Error looking up duplicate on 23505:", subErr);
+				}
+				return reply.code(409).send({
+					error: "PatientDuplicateError",
+					message:
+						"Пациент с таким номером телефона или данными уже существует в базе данных клиники.",
+				});
+			}
+
 			return reply.code(500).send({
 				error: "DatabaseError",
 				message:

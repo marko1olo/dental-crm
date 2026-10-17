@@ -149,21 +149,28 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 		setIsEditModalOpen(true);
 	};
 
+	const updateAndPersist = (nextItems: readonly ServicePricelistItem[]) => {
+		setItems(nextItems);
+		if (typeof onSaveCatalog === 'function') {
+			onSaveCatalog(nextItems);
+		}
+	};
+
 	const openEditModal = (item: ServicePricelistItem) => {
 		setEditingItem(item);
 		setIsEditModalOpen(true);
 	};
 
 	const handleSaveItem = (savedItem: ServicePricelistItem) => {
-		if (editingItem) {
-			setItems((prev) =>
-				prev.map((it) => (it.id === savedItem.id ? savedItem : it)),
-			);
-			showToast(`Услуга «${savedItem.commercialTitle}» обновлена`);
-		} else {
-			setItems((prev) => [savedItem, ...prev]);
-			showToast(`Услуга «${savedItem.commercialTitle}» добавлена в прейскурант`);
-		}
+		const next = editingItem
+			? items.map((it) => (it.id === savedItem.id ? savedItem : it))
+			: [savedItem, ...items];
+		updateAndPersist(next);
+		showToast(
+			editingItem
+				? `Услуга «${savedItem.commercialTitle}» обновлена`
+				: `Услуга «${savedItem.commercialTitle}» добавлена в прейскурант`,
+		);
 		setIsEditModalOpen(false);
 	};
 
@@ -173,27 +180,28 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 			id: `srv-dup-${Date.now()}`,
 			commercialTitle: `${item.commercialTitle} (копия)`,
 		};
-		setItems((prev) => [dup, ...prev]);
+		const next = [dup, ...items];
+		updateAndPersist(next);
 		showToast(`Создан дубликат: ${dup.commercialTitle}`);
 	};
 
 	const handleSetZeroWarrantyPrice = (itemId: string) => {
-		setItems((prev) =>
-			prev.map((it) => {
-				if (it.id !== itemId) return it;
-				return {
-					...it,
-					basePriceRub: 0,
-					basePriceKopecks: 0,
-					tierPrices: { ...(it.tierPrices || {}), [activeTier]: 0 },
-				};
-			}),
-		);
+		const next = items.map((it) => {
+			if (it.id !== itemId) return it;
+			return {
+				...it,
+				basePriceRub: 0,
+				basePriceKopecks: 0,
+				tierPrices: { ...(it.tierPrices || {}), [activeTier]: 0 },
+			};
+		});
+		updateAndPersist(next);
 		showToast('Установлена гарантийная цена (0 ₽)');
 	};
 
 	const handleDeleteItem = (itemId: string) => {
-		setItems((prev) => prev.filter((it) => it.id !== itemId));
+		const next = items.filter((it) => it.id !== itemId);
+		updateAndPersist(next);
 		showToast('Услуга удалена из прейскуранта');
 	};
 
@@ -220,25 +228,24 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 	// Inline Price Change Handler
 	const handleInlinePriceChange = (itemId: string, newPriceRub: number) => {
 		if (Number.isNaN(newPriceRub) || newPriceRub < 0) return;
-		setItems((prev) =>
-			prev.map((item) => {
-				if (item.id !== itemId) return item;
-				if (activeTier === 'standard') {
-					return {
-						...item,
-						basePriceRub: newPriceRub,
-						basePriceKopecks: rublesToKopecks(newPriceRub),
-					};
-				}
+		const next = items.map((item) => {
+			if (item.id !== itemId) return item;
+			if (activeTier === 'standard') {
 				return {
 					...item,
-					tierPrices: {
-						...(item.tierPrices || {}),
-						[activeTier]: newPriceRub,
-					},
+					basePriceRub: newPriceRub,
+					basePriceKopecks: rublesToKopecks(newPriceRub),
 				};
-			}),
-		);
+			}
+			return {
+				...item,
+				tierPrices: {
+					...(item.tierPrices || {}),
+					[activeTier]: newPriceRub,
+				},
+			};
+		});
+		updateAndPersist(next);
 	};
 
 	// Commit inline text input on blur or Enter
@@ -581,7 +588,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 				onClose={() => setIsImportModalOpen(false)}
 				items={items}
 				onApplyImported={(mergedItems, message) => {
-					setItems(mergedItems);
+					updateAndPersist(mergedItems);
 					showToast(message);
 				}}
 				adminSecret={adminSecret}

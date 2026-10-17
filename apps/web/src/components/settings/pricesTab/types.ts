@@ -12,9 +12,11 @@ import type { ServicePricelistItem } from "../../catalog/pricelist/servicePricel
 export interface ServiceEditFormData {
 	title: string;
 	code: string;
+	order804nCode?: string;
 	category: ServiceCategory;
 	specialty: DentalSpecialty;
 	basePriceRub: number;
+	materialsCostRub?: number;
 	durationMinutes: number;
 	taxDeductible: boolean;
 	vatRate: "vat_exempt" | "vat_0" | "vat_20";
@@ -34,11 +36,15 @@ export interface PricesFilterToolbarProps {
 	onSelectCategoryFilter: (catId: string) => void;
 	searchQuery: string;
 	onSearchChange: (query: string) => void;
-	is804nCodesMenuOpen: boolean;
-	setIs804nCodesMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
-	codes804nMenuRef: React.RefObject<HTMLDivElement | null>;
+	isCodesMenuOpen?: boolean;
+	setIsCodesMenuOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+	codesMenuRef?: React.RefObject<HTMLDivElement | null>;
+	is804nCodesMenuOpen?: boolean;
+	setIs804nCodesMenuOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+	codes804nMenuRef?: React.RefObject<HTMLDivElement | null>;
 	isSeedingBaseline: boolean;
-	onSeedBaseline804n: (replace?: boolean) => void;
+	onSeedStandardCatalog?: (replace?: boolean) => void;
+	onSeedBaseline804n?: (replace?: boolean) => void;
 	onExportCsv: () => void;
 	isNativeScannerDropzoneOpen: boolean;
 	onToggleNativeScannerDropzone: () => void;
@@ -61,6 +67,9 @@ export interface PriceItemEditModalProps {
 	onClose: () => void;
 	onSave: (e: React.FormEvent) => void;
 }
+
+export type PriceItemModalProps = PriceItemEditModalProps;
+
 
 export interface PriceImportModalProps {
 	isDropzoneOpen: boolean;

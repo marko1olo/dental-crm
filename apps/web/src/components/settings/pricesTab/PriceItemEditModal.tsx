@@ -25,7 +25,7 @@ export function PriceItemEditModal({
 			role="dialog"
 			aria-modal="true"
 			tabIndex={-1}
-			className="premium-modal-overlay"
+			className="premium-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
 			onClick={(e) => {
 				if (e.target === e.currentTarget) onClose();
 			}}
@@ -38,26 +38,26 @@ export function PriceItemEditModal({
 				}
 			}}
 		>
-			<div className="premium-modal-content" style={{ maxWidth: "520px" }}>
-				<div className="premium-modal-header">
+			<div className="premium-modal-content w-full max-w-lg rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+				<div className="premium-modal-header px-5 py-4 border-b border-[var(--line)] flex items-center justify-between bg-[var(--paper-soft)]">
 					<div
 						style={{ display: "flex", alignItems: "center", gap: "12px" }}
 					>
-						<ReceiptText size={24} color="var(--teal)" />
-						<h3>
+						<ReceiptText size={22} className="text-[var(--teal)] shrink-0" />
+						<h3 className="text-base font-bold text-[var(--ink)] m-0">
 							{isNew ? "Новая услуга" : "Редактировать услугу"}
 						</h3>
 					</div>
 					<button
 						type="button"
-						className="premium-modal-close"
+						className="premium-modal-close p-1.5 rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors cursor-pointer"
 						onClick={onClose}
 					>
-						<X size={20} />
+						<X size={18} />
 					</button>
 				</div>
 
-				<form onSubmit={onSave} className="premium-modal-body">
+				<form onSubmit={onSave} className="premium-modal-body p-5 space-y-4 overflow-y-auto flex flex-col">
 					<div className="staff-form-group full-width">
 						<label htmlFor="service-title-input">Название услуги</label>
 						<input
@@ -88,6 +88,7 @@ export function PriceItemEditModal({
 									setEditServiceForm({
 										...editServiceForm,
 										code: e.target.value,
+										order804nCode: editServiceForm.order804nCode || e.target.value,
 									})
 								}
 								placeholder="A16.07.002"
@@ -117,6 +118,45 @@ export function PriceItemEditModal({
 						</div>
 					</div>
 
+					<div className="staff-form-grid">
+						<div className="staff-form-group">
+							<label htmlFor="service-materials-cost-input">
+								Себестоимость расходных материалов (₽)
+							</label>
+							<input
+								id="service-materials-cost-input"
+								type="number"
+								min="0"
+								step="0.01"
+								value={editServiceForm.materialsCostRub ?? 0}
+								onChange={(e) =>
+									setEditServiceForm({
+										...editServiceForm,
+										materialsCostRub: Number.parseFloat(e.target.value) || 0,
+									})
+								}
+								placeholder="0"
+							/>
+						</div>
+						<div className="staff-form-group">
+							<label htmlFor="service-order804n-input">
+								Код услуги (МЗ)
+							</label>
+							<input
+								id="service-order804n-input"
+								type="text"
+								value={editServiceForm.order804nCode ?? editServiceForm.code}
+								onChange={(e) =>
+									setEditServiceForm({
+										...editServiceForm,
+										order804nCode: e.target.value,
+									})
+								}
+								placeholder="A16.07.002"
+							/>
+						</div>
+					</div>
+
 					<ServiceFormMetaFields
 						editServiceForm={editServiceForm}
 						setEditServiceForm={setEditServiceForm}
@@ -124,7 +164,7 @@ export function PriceItemEditModal({
 						specialtyLabels={specialtyLabels || {}}
 					/>
 
-					<div className="premium-modal-footer">
+					<div className="premium-modal-footer px-5 py-3.5 border-t border-[var(--line)] flex items-center justify-end gap-2.5 bg-[var(--paper-soft)]">
 						<button
 							type="button"
 							className="secondary-button"
@@ -146,3 +186,5 @@ export function PriceItemEditModal({
 		</div>
 	);
 }
+
+export const PriceItemModal = PriceItemEditModal;

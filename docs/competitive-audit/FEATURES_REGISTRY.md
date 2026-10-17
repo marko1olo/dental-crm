@@ -1,7 +1,7 @@
 # Главный Реестр Фич Конкурентов (IDENT, DentalPRO, iStom & StomX)
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
-> ⚠️ **СТАТУС (2026-10-03 / WAVES 301–335 / ВОЛНА 335 DENTALPRO CONSENTS ENRICHMENT & ZERO SOVIET BIRD-LANGUAGE — 475 ФИЧ: 63 КАНОНИЧЕСКИЕ + 412 АДДЕНДУМ, ВСЕ 475 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
+> ⚠️ **СТАТУС (2026-10-17 / WAVES 301–341 / ВОЛНА 341 PATIENT DIRECTORY CANONICAL SSOT, FAMILY POOLED DEPOSIT WALLET, FAST SEARCH & PG 23505 DUPLICATE GUARD — 481 ФИЧА: 63 КАНОНИЧЕСКИЕ + 418 АДДЕНДУМ, ВСЕ 481 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
 
 
 | # | feature_key | Фича | Конкурент | Модуль | Что делает | Статус у нас | Ценность (1-5) | Внедрять? | Сложность | Приоритет | Доказательство (строки источника) |

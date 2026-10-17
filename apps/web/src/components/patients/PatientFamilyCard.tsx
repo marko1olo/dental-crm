@@ -1,5 +1,5 @@
 import React from "react";
-import { FamilyWalletModal } from "../patient/FamilyWalletModal";
+import { FamilyWalletModal } from "./family/FamilyWalletModal";
 import { useFamilyCardLogic } from "./patientFamilyModules/useFamilyCardLogic";
 import { FamilyCardHeader } from "./patientFamilyModules/FamilyCardHeader";
 import { FamilyMembersView } from "./patientFamilyModules/FamilyMembersView";

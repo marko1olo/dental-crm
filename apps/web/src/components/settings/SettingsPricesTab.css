@@ -928,3 +928,297 @@
 	}
 }
 
+/* ==================================================================== */
+/*  PREMIUM MODAL & FORM STYLES (PriceItemEditModal)                    */
+/* ==================================================================== */
+
+.premium-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 1050;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	background: rgba(0, 0, 0, 0.6);
+	backdrop-filter: blur(4px);
+}
+
+.premium-modal-content {
+	width: 100%;
+	max-width: 520px;
+	max-height: 90vh;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.premium-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	border-bottom: 1px solid var(--line);
+	background: var(--paper-soft);
+}
+
+.premium-modal-header h3 {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.premium-modal-close {
+	background: transparent;
+	border: none;
+	color: var(--ink-muted);
+	cursor: pointer;
+	padding: 4px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.15s ease;
+}
+
+.premium-modal-close:hover {
+	color: var(--ink);
+	background: var(--line);
+}
+
+.premium-modal-body {
+	padding: 20px;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.premium-modal-footer {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 10px;
+	padding: 14px 20px;
+	border-top: 1px solid var(--line);
+	background: var(--paper-soft);
+}
+
+.staff-form-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+}
+
+@media (max-width: 600px) {
+	.staff-form-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.staff-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.staff-form-group.full-width {
+	width: 100%;
+}
+
+.staff-form-group label {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink-muted);
+}
+
+.staff-form-group input,
+.staff-form-group select {
+	height: 36px;
+	padding: 0 12px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: var(--paper-soft);
+	color: var(--ink);
+	font-size: 13px;
+	outline: none;
+	transition: border-color 0.15s ease;
+}
+
+.staff-form-group input:focus,
+.staff-form-group select:focus {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+}
+
+/* Canonical DENTE Buttons (Mandate 8ze, UI_STANDARDS) */
+.pricelist-studio-container .primary-button {
+	height: 36px;
+	min-height: 36px;
+	padding: 0 16px;
+	border-radius: 10px;
+	font-size: 13px;
+	font-weight: 600;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 1px 2px rgba(13, 148, 136, 0.2);
+}
+
+.pricelist-studio-container .primary-button:hover:not(:disabled) {
+	background: var(--teal-dark, #0f766e);
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.3);
+}
+
+.pricelist-studio-container .primary-button:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+.pricelist-studio-container .secondary-button {
+	height: 36px;
+	min-height: 36px;
+	padding: 0 12px;
+	border-radius: 10px;
+	font-size: 13px;
+	font-weight: 500;
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pricelist-studio-container .secondary-button:hover:not(:disabled) {
+	background: var(--paper-hover, var(--paper-soft));
+	border-color: var(--line-strong, var(--line));
+}
+
+.pricelist-studio-container .secondary-button.active {
+	background: var(--teal-soft);
+	border-color: var(--teal);
+	color: var(--teal-dark, var(--teal));
+}
+
+.pricelist-studio-container .icon-button {
+	width: 32px;
+	height: 32px;
+	min-width: 32px;
+	min-height: 32px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--muted);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.pricelist-studio-container .icon-button:hover:not(:disabled) {
+	background: var(--paper-soft);
+	color: var(--teal);
+	border-color: var(--teal);
+}
+
+.pricelist-studio-container .icon-button.danger:hover:not(:disabled) {
+	background: rgba(239, 68, 68, 0.1);
+	color: var(--danger-color, #ef4444);
+	border-color: var(--danger-color, #ef4444);
+}
+
+/* Category Filter Chips — Soft Hover on var(--paper-muted) */
+.dente-filter-chips {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+.dente-filter-chips::-webkit-scrollbar {
+	display: none;
+}
+
+.dente-filter-chip {
+	height: 30px;
+	padding: 0 14px;
+	border-radius: 9999px;
+	font-size: 13px;
+	font-weight: 500;
+	background-color: var(--paper-muted, var(--paper-soft));
+	border: 1px solid var(--line);
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	white-space: nowrap;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	user-select: none;
+}
+
+.dente-filter-chip:hover {
+	background-color: var(--paper);
+	border-color: var(--line-strong, var(--line));
+	color: var(--ink);
+}
+
+.dente-filter-chip.active,
+.dente-filter-chip[data-active="true"] {
+	background-color: var(--teal-soft);
+	border-color: var(--teal);
+	color: var(--teal-dark, var(--teal));
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.15);
+}
+
+/* Apple HIG Grouped List Cards on Mobile Viewports (Mandate 8ze, 8al) */
+@media (max-width: 768px) {
+	.pricelist-studio-container .primary-button {
+		min-height: 44px;
+		height: 44px;
+		border-radius: 12px;
+		font-size: 14px;
+	}
+	.pricelist-studio-container .secondary-button {
+		min-height: 44px;
+		height: 44px;
+		border-radius: 12px;
+	}
+	.catalog-items-grid {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		background: var(--paper);
+		border: 1px solid var(--line);
+		border-radius: 16px;
+		overflow: hidden;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	}
+	.catalog-item-card {
+		border: none;
+		border-radius: 0;
+		border-bottom: 1px solid var(--line-subtle, var(--line));
+		padding: 14px 16px;
+		min-height: 52px;
+	}
+	.catalog-item-card:last-child {
+		border-bottom: none;
+	}
+}
+

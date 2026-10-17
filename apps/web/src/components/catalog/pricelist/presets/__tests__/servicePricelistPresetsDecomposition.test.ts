@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test, { describe } from 'node:test';
+import { describe, it as test } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 

@@ -2,6 +2,7 @@ import {
 	ChevronDown,
 	Download,
 	Plus,
+	Printer,
 	Search,
 	ShieldCheck,
 	Sparkles,
@@ -21,10 +22,14 @@ export function PricesFilterToolbar({
 	onSelectCategoryFilter,
 	searchQuery,
 	onSearchChange,
+	isCodesMenuOpen,
+	setIsCodesMenuOpen,
+	codesMenuRef,
 	is804nCodesMenuOpen,
 	setIs804nCodesMenuOpen,
 	codes804nMenuRef,
 	isSeedingBaseline,
+	onSeedStandardCatalog,
 	onSeedBaseline804n,
 	onExportCsv,
 	isNativeScannerDropzoneOpen,
@@ -32,6 +37,18 @@ export function PricesFilterToolbar({
 	onOpenServicePricelistModal,
 	onOpenNewServiceModal,
 }: PricesFilterToolbarProps) {
+	const isMenuOpen = isCodesMenuOpen ?? is804nCodesMenuOpen ?? false;
+	const toggleMenu = () => {
+		if (setIsCodesMenuOpen) setIsCodesMenuOpen((prev) => !prev);
+		else if (setIs804nCodesMenuOpen) setIs804nCodesMenuOpen((prev) => !prev);
+	};
+	const closeMenu = () => {
+		if (setIsCodesMenuOpen) setIsCodesMenuOpen(false);
+		if (setIs804nCodesMenuOpen) setIs804nCodesMenuOpen(false);
+	};
+	const menuRef = codesMenuRef ?? codes804nMenuRef;
+	const seedCatalog = onSeedStandardCatalog ?? onSeedBaseline804n;
+
 	return (
 		<>
 			{/* Category Quick Filter Strip — Canonical Apple-style Filter Chips (Mandate 8zf) */}
@@ -50,7 +67,7 @@ export function PricesFilterToolbar({
 			</div>
 
 			{/* STRICTLY 1 COMPACT MONOLITHIC 36px TOOLBAR ROW (Mandates 8c, 8d, 8p) */}
-			<div className="pricelist-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-3 overflow-visible sm:overflow-hidden shrink-0 select-none">
+			<div className="pricelist-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-3 overflow-visible shrink-0 select-none">
 				{/* Left: Canonical Dente Search Input (Zero overlap with search icon!) */}
 				<div className="dente-search-wrap pricelist-search-wrapper flex items-center min-w-0 w-full sm:w-auto flex-1 max-w-full sm:max-w-xs relative">
 					<Search size={14} className="dente-search-icon" />
@@ -74,41 +91,41 @@ export function PricesFilterToolbar({
 					)}
 				</div>
 
-				{/* Right Actions & 804n Menu Group (Horizontally scrollable on mobile) */}
+				{/* Right Actions & Codes Menu Group (Horizontally scrollable on mobile) */}
 				<div className="flex items-center gap-1.5 shrink-0 overflow-x-auto sm:overflow-visible pb-0.5 sm:pb-0 scrollbar-none w-full sm:w-auto ml-auto sm:ml-0">
-					{/* Statutory 804n Quick Codes Dropdown Menu */}
+					{/* Standard Codes Dropdown Menu — Mandates 8e, 8x */}
 					<div
 						className="relative inline-flex items-center shrink-0"
-						ref={codes804nMenuRef}
+						ref={menuRef}
 					>
 						<button
 							type="button"
-							onClick={() => setIs804nCodesMenuOpen((prev) => !prev)}
+							onClick={toggleMenu}
 							className={`secondary-button shrink-0 ${
-								is804nCodesMenuOpen ||
+								isMenuOpen ||
 								(searchQuery && searchQuery.startsWith("A"))
 									? "active"
 									: ""
 							}`}
-							title="Выбрать типовую услугу из официального справочника"
-							aria-expanded={is804nCodesMenuOpen}
+							title="Выбрать типовую услугу из справочника услуг и процедур"
+							aria-expanded={isMenuOpen}
 						>
 							<Tag size={13} className="text-[var(--teal)] shrink-0" />
 							<span className="hidden sm:inline">Справочник услуг</span>
 							<span className="sm:hidden">Услуги</span>
 							<ChevronDown
 								size={11}
-								className={`shrink-0 transition-transform ${is804nCodesMenuOpen ? "rotate-180" : ""}`}
+								className={`shrink-0 transition-transform ${isMenuOpen ? "rotate-180" : ""}`}
 							/>
 						</button>
 
-						{is804nCodesMenuOpen && (
+						{isMenuOpen && (
 							<div
 								className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 z-50 flex flex-col gap-1 p-2 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl min-w-[240px] max-w-[340px] animate-in fade-in zoom-in-95 duration-100 text-xs"
 								role="menu"
 							>
 								<div className="px-2 py-1 text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-b border-[var(--line)] mb-1">
-									Официальный справочник услуг
+									Справочник услуг и процедур
 								</div>
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
 									{QUICK_804N_CHIPS.map((chip) => (
@@ -117,7 +134,7 @@ export function PricesFilterToolbar({
 											type="button"
 											onClick={() => {
 												onSearchChange(chip.code);
-												setIs804nCodesMenuOpen(false);
+												closeMenu();
 											}}
 											className={`w-full text-left px-2 py-1.5 rounded-lg text-xs font-mono font-medium transition-colors cursor-pointer flex items-center justify-between ${
 												searchQuery === chip.code
@@ -135,7 +152,7 @@ export function PricesFilterToolbar({
 										type="button"
 										data-testid="pricelist-seed-baseline-804n-btn"
 										disabled={isSeedingBaseline}
-										onClick={() => onSeedBaseline804n(false)}
+										onClick={() => seedCatalog?.(false)}
 										className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-white text-[var(--teal-dark)] transition-all cursor-pointer flex items-center gap-2 group disabled:opacity-50"
 									>
 										<Sparkles
@@ -146,10 +163,10 @@ export function PricesFilterToolbar({
 											<span className="font-bold truncate">
 												{isSeedingBaseline
 													? "Наполнение каталога..."
-													: "Заполнить базовый каталог (30 услуг)"}
+													: "Стандартный каталог стоматологии (30 услуг)"}
 											</span>
 											<span className="text-xs opacity-80 truncate">
-												Добавить недостающие типовые услуги с ценами
+												Добавить недостающие типовые услуги с рекомендованными ценами
 											</span>
 										</div>
 									</button>
@@ -159,7 +176,7 @@ export function PricesFilterToolbar({
 										type="button"
 										onClick={() => {
 											onSearchChange("");
-											setIs804nCodesMenuOpen(false);
+											closeMenu();
 										}}
 										className="w-full text-center px-2 py-1.5 mt-1 rounded-lg text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 cursor-pointer transition-colors border-t border-[var(--line)]"
 									>
@@ -194,10 +211,10 @@ export function PricesFilterToolbar({
 						title="Импорт прейскуранта клиники (Excel / CSV / Текст) со сканером номенклатуры услуг"
 					>
 						<UploadCloud size={13} className="text-[var(--teal)] shrink-0" />
-						<span className="hidden lg:inline">
+						<span className="hidden xl:inline">
 							Импорт прейскуранта (Excel/CSV/Текст)
 						</span>
-						<span className="hidden sm:inline lg:hidden">Импорт прайса</span>
+						<span className="hidden sm:inline xl:hidden">Импорт</span>
 						<span className="sm:hidden">Импорт</span>
 					</button>
 					<button
@@ -205,19 +222,21 @@ export function PricesFilterToolbar({
 						className="secondary-button shrink-0"
 						onClick={onOpenServicePricelistModal}
 						data-testid="open-service-pricelist-modal-btn"
-						title="Справочник услуг и прайс-лист клиники"
+						title="Печать официального прейскуранта клиники (А4, ст. 149 НК РФ)"
 					>
-						<ShieldCheck size={14} className="text-[var(--teal)] shrink-0" />
-						<span className="hidden sm:inline">Прейскурант</span>
-						<span className="sm:hidden">Прайс</span>
+						<Printer size={14} className="text-[var(--teal)] shrink-0" />
+						<span className="hidden sm:inline">Печать А4</span>
+						<span className="sm:hidden">Печать</span>
 					</button>
 					<button
 						type="button"
 						className="primary-button shrink-0"
 						onClick={onOpenNewServiceModal}
+						data-testid="btn-add-service-catalog"
+						title="Добавить услугу в прейскурант клиники"
 					>
 						<Plus size={15} className="shrink-0" />
-						<span className="hidden sm:inline">Новая услуга</span>
+						<span className="hidden sm:inline">Добавить услугу</span>
 						<span className="sm:hidden">Услуга</span>
 					</button>
 				</div>

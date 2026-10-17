@@ -11,6 +11,7 @@ import { useSettingsDerivations } from "../../../useSettingsDerivations";
 import {
 	detectCategoryFrom804nCode,
 	exportPricelistToCsv,
+	generatePrintablePricelistHtml,
 	importPricelistFromCsv,
 	rublesToKopecks,
 } from "../../catalog/pricelist/servicePricelistEngine";
@@ -180,10 +181,6 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 
 	const handleSaveService = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!createServiceCatalogItem || !updateServiceCatalogItem) {
-			mergedProps.setError?.("API недоступно");
-			return;
-		}
 		const basePriceRub = normalizeRubAmountInput(priceRubInput);
 		if (basePriceRub === null) {
 			setPriceProblem(
@@ -196,13 +193,69 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		setPriceProblem(null);
 		setIsSaving(true);
 		try {
-			const servicePayload = { ...editServiceForm, basePriceRub };
-			if (editServiceId === "new") await createServiceCatalogItem(servicePayload);
-			else await updateServiceCatalogItem(editServiceId, servicePayload);
+			const effectiveHeaders = {
+				"Content-Type": "application/json",
+				...staffMutationHeaders(
+					(accessHeaders as SettingsAccessHeaders | undefined) ??
+						(mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ??
+						(appLogic?.accessHeaders as SettingsAccessHeaders | undefined),
+				),
+			};
+			const servicePayload = {
+				...editServiceForm,
+				basePriceRub,
+				materialsCostRub: Number(editServiceForm.materialsCostRub) || 0,
+				order804nCode: editServiceForm.order804nCode || editServiceForm.code || null,
+			};
+
+			if (editServiceId === "new") {
+				if (typeof createServiceCatalogItem === "function") {
+					await createServiceCatalogItem(servicePayload);
+				} else {
+					const res = await fetch("/api/settings/catalog", {
+						method: "POST",
+						headers: effectiveHeaders,
+						body: JSON.stringify(servicePayload),
+					});
+					if (!res.ok) {
+						const errJson = await res.json().catch(() => ({}));
+						throw new Error(errJson.message || `Ошибка сервера ${res.status}`);
+					}
+				}
+			} else {
+				if (typeof updateServiceCatalogItem === "function") {
+					await updateServiceCatalogItem(editServiceId, servicePayload);
+				} else {
+					const res = await fetch(`/api/settings/catalog/${editServiceId}`, {
+						method: "PUT",
+						headers: effectiveHeaders,
+						body: JSON.stringify(servicePayload),
+					});
+					if (!res.ok) {
+						const errJson = await res.json().catch(() => ({}));
+						throw new Error(errJson.message || `Ошибка сервера ${res.status}`);
+					}
+				}
+			}
+
+			if (typeof mergedProps.refreshDashboard === "function") {
+				await mergedProps.refreshDashboard();
+			} else if (typeof appLogic?.refreshDashboard === "function") {
+				await appLogic.refreshDashboard();
+			} else if (typeof appLogic?.loadDashboard === "function") {
+				await appLogic.loadDashboard();
+			}
+
+			showToast(
+				editServiceId === "new" ? "Услуга добавлена в прейскурант" : "Услуга обновлена",
+				"success",
+			);
 			setEditServiceId(null);
 			// biome-ignore lint/suspicious/noExplicitAny: error handling
 		} catch (error: any) {
-			mergedProps.setError?.(error.message || "Ошибка сохранения");
+			const msg = error.message || "Ошибка сохранения";
+			mergedProps.setError?.(msg);
+			showToast(msg, "error");
 		} finally {
 			setIsSaving(false);
 		}
@@ -210,13 +263,43 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 
 	const handleDeleteService = async (id: string) => {
 		if (deletingServiceId === id) return;
-		if (!deleteServiceCatalogItem) return;
 		setDeletingServiceId(id);
 		try {
-			await deleteServiceCatalogItem(id);
+			if (typeof deleteServiceCatalogItem === "function") {
+				await deleteServiceCatalogItem(id);
+			} else {
+				const effectiveHeaders = {
+					"Content-Type": "application/json",
+					...staffMutationHeaders(
+						(accessHeaders as SettingsAccessHeaders | undefined) ??
+							(mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ??
+							(appLogic?.accessHeaders as SettingsAccessHeaders | undefined),
+					),
+				};
+				const res = await fetch(`/api/settings/catalog/${id}`, {
+					method: "DELETE",
+					headers: effectiveHeaders,
+				});
+				if (!res.ok) {
+					const errJson = await res.json().catch(() => ({}));
+					throw new Error(errJson.message || `Ошибка сервера ${res.status}`);
+				}
+			}
+
+			if (typeof mergedProps.refreshDashboard === "function") {
+				await mergedProps.refreshDashboard();
+			} else if (typeof appLogic?.refreshDashboard === "function") {
+				await appLogic.refreshDashboard();
+			} else if (typeof appLogic?.loadDashboard === "function") {
+				await appLogic.loadDashboard();
+			}
+
+			showToast("Услуга отключена в прейскуранте", "success");
 			// biome-ignore lint/suspicious/noExplicitAny: error handling
 		} catch (error: any) {
-			mergedProps.setError?.(error.message || "Ошибка удаления");
+			const msg = error.message || "Ошибка удаления";
+			mergedProps.setError?.(msg);
+			showToast(msg, "error");
 		} finally {
 			setDeletingServiceId(null);
 		}
@@ -324,6 +407,29 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 			`Прайс-лист (${items.length} услуг) экспортирован в CSV`,
 			"success",
 		);
+	};
+
+	const handlePrintPricelist = () => {
+		const printHtml = generatePrintablePricelistHtml(
+			{
+				clinicName: dashboard?.clinicSettings?.name || "Стоматологическая клиника",
+				clinicAddress: dashboard?.clinicSettings?.address,
+				clinicPhone: dashboard?.clinicSettings?.phone,
+				clinicLicense: dashboard?.clinicSettings?.license,
+				chiefDoctorName: dashboard?.clinicSettings?.chiefDoctor,
+				effectiveDateRu: new Date().toLocaleDateString("ru-RU"),
+			},
+			modalInitialItems as any,
+		);
+		const printWin = window.open("", "_blank");
+		if (printWin) {
+			printWin.document.write(printHtml);
+			printWin.document.close();
+			printWin.focus();
+			setTimeout(() => printWin.print(), 250);
+		} else {
+			showToast("Всплывающее окно печати заблокировано браузером", "error");
+		}
 	};
 
 	const handleImportCsvFile = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -626,7 +732,11 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 	};
 
 	const openNewServiceModal = () => {
-		setEditServiceForm(NEW_SERVICE_TEMPLATE);
+		setEditServiceForm({
+			...NEW_SERVICE_TEMPLATE,
+			order804nCode: "",
+			materialsCostRub: 0,
+		});
 		setPriceRubInput("");
 		setPriceProblem(null);
 		setEditServiceId("new");
@@ -636,13 +746,15 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		setEditServiceForm({
 			title: item.title,
 			code: item.code || "",
+			order804nCode: item.order804nCode || item.code || "",
 			category: item.category,
 			specialty: item.specialty,
 			basePriceRub: item.basePriceRub ?? item.priceRub ?? 0,
+			materialsCostRub: item.materialsCostRub ?? 0,
 			durationMinutes: item.durationMinutes || 30,
 			taxDeductible: item.taxDeductible,
 			vatRate: item.vatRate || "vat_exempt",
-			active: item.isActive,
+			active: item.isActive !== false && item.active !== false,
 		});
 		setPriceRubInput(
 			rubToPriceInput(item.basePriceRub ?? item.priceRub ?? 0),
@@ -703,6 +815,9 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		setIsServicePricelistModalOpen,
 		categoryLimits,
 		setCategoryLimits,
+		isCodesMenuOpen: is804nCodesMenuOpen,
+		setIsCodesMenuOpen: setIs804nCodesMenuOpen,
+		codesMenuRef: codes804nMenuRef,
 		is804nCodesMenuOpen,
 		setIs804nCodesMenuOpen,
 		codes804nMenuRef,
@@ -749,7 +864,9 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		handleDeleteService,
 		handleSaveCatalog,
 		handleExportCsv,
+		handlePrintPricelist,
 		handleImportCsvFile,
+		handleSeedStandardCatalog: handleSeedBaseline804n,
 		handleSeedBaseline804n,
 		runScannerRequest,
 		handleProcessScannerFile,

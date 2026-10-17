@@ -439,11 +439,11 @@ export function PatientSearchAutocomplete({
 														? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
 														: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30"
 												}`}
-												title={balance > 0 ? "Аванс" : "Задолженность"}
+												title={balance > 0 ? "Депозит" : "Долг"}
 											>
 												{balance > 0
-													? `+${balance.toLocaleString("ru-RU")} ₽`
-													: `${balance.toLocaleString("ru-RU")} ₽`}
+													? `Депозит: +${balance.toLocaleString("ru-RU")} ₽`
+													: `Долг: ${Math.abs(balance).toLocaleString("ru-RU")} ₽`}
 											</span>
 										)}
 									</div>

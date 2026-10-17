@@ -2,11 +2,11 @@ import { FileSpreadsheet, FolderTree } from "lucide-react";
 import "./SettingsPricesTab.css";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
-import { ServicePricelistManagerModal } from "../catalog/pricelist/ServicePricelistManagerModal";
 import { SettingsPricesAiImportSection } from "./SettingsPricesAiImportSection";
 import {
 	PriceImportModal,
 	PriceItemEditModal,
+	PriceItemModal,
 	PricesCatalogTable,
 	PricesFilterToolbar,
 	useSettingsPricesLogic,
@@ -65,11 +65,14 @@ export function SettingsPricesTab() {
 					<PricesFilterToolbar
 						selectedCategoryFilter={prices.selectedCategoryFilter} onSelectCategoryFilter={prices.setSelectedCategoryFilter}
 						searchQuery={prices.searchQuery} onSearchChange={prices.setSearchQuery}
+						isCodesMenuOpen={prices.isCodesMenuOpen} setIsCodesMenuOpen={prices.setIsCodesMenuOpen}
+						codesMenuRef={prices.codesMenuRef}
 						is804nCodesMenuOpen={prices.is804nCodesMenuOpen} setIs804nCodesMenuOpen={prices.setIs804nCodesMenuOpen}
 						codes804nMenuRef={prices.codes804nMenuRef} isSeedingBaseline={prices.isSeedingBaseline}
+						onSeedStandardCatalog={prices.handleSeedStandardCatalog}
 						onSeedBaseline804n={prices.handleSeedBaseline804n} onExportCsv={prices.handleExportCsv}
 						isNativeScannerDropzoneOpen={prices.isNativeScannerDropzoneOpen} onToggleNativeScannerDropzone={() => prices.setIsNativeScannerDropzoneOpen((p) => !p)}
-						onOpenServicePricelistModal={() => prices.setIsServicePricelistModalOpen(true)} onOpenNewServiceModal={prices.openNewServiceModal}
+						onOpenServicePricelistModal={prices.handlePrintPricelist} onOpenNewServiceModal={prices.openNewServiceModal}
 					/>
 
 					<PriceImportModal
@@ -109,20 +112,13 @@ export function SettingsPricesTab() {
 				/>
 			)}
 
-			<PriceItemEditModal
+			<PriceItemModal
 				isOpen={Boolean(prices.editServiceId)} isNew={prices.editServiceId === "new"}
 				editServiceForm={prices.editServiceForm} setEditServiceForm={prices.setEditServiceForm}
 				priceRubInput={prices.priceRubInput} setPriceRubInput={prices.setPriceRubInput}
 				priceProblem={prices.priceProblem} setPriceProblem={prices.setPriceProblem} isSaving={prices.isSaving}
 				serviceCategoryLabels={serviceCategoryLabels} specialtyLabels={specialtyLabels}
 				onClose={() => prices.setEditServiceId(null)} onSave={prices.handleSaveService}
-			/>
-
-			<ServicePricelistManagerModal
-				isOpen={prices.isServicePricelistModalOpen} onClose={() => prices.setIsServicePricelistModalOpen(false)}
-				initialItems={prices.modalInitialItems} onSaveCatalog={prices.handleSaveCatalog}
-				clinicName={dashboard?.clinicSettings?.name} clinicAddress={dashboard?.clinicSettings?.address}
-				clinicPhone={dashboard?.clinicSettings?.phone} clinicLicense={dashboard?.clinicSettings?.license} chiefDoctorName={dashboard?.clinicSettings?.chiefDoctor}
 			/>
 		</div>
 	);
