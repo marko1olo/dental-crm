@@ -64,7 +64,7 @@ export function AnesthesiaSafetyStopperAlert({
 					className="px-2 py-1 min-h-[36px] rounded-lg text-xs text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
 					onClick={onDismissWarning}
 				>
-					✕
+					&times;
 				</button>
 			</div>
 		</div>
