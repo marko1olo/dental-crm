@@ -99,7 +99,7 @@ export function renderOfficialTaxCertificateKnd1151156Html(params: TaxDeductionC
 <html lang="ru">
 <head>
 	<meta charset="UTF-8">
-	<title>Справка об оплате медицинских услуг по КНД 1151156 № ${params.certificateNumber}</title>
+	<title>Справка об оплате медицинских услуг по КНД 1151158 (КНД 1151156) № ${params.certificateNumber}</title>
 	<style>
 		@page { size: A4; margin: 12mm 15mm; }
 		* { box-sizing: border-box; }
@@ -141,20 +141,20 @@ export function renderOfficialTaxCertificateKnd1151156Html(params: TaxDeductionC
 			<div class="qr-box" title="Проверка подлинности справки в ФНС России">
 				${qrSvg}
 			</div>
-			<div class="qr-label">ФНС РОССИИ • КНД 1151156</div>
+			<div class="qr-label">ФНС РОССИИ • КНД 1151158</div>
 		</div>
 		<div class="header-barcode-block">
 			<div class="barcode-svg-wrap">
 				${barcodeSvg}
 			</div>
-			<div class="barcode-subtext">ФОРМА ПО КНД 1151156 (ПРИКАЗ ФНС № ЕА-7-11/824@)</div>
+			<div class="barcode-subtext">ФОРМА ПО КНД 1151158 / 1151156 (ПРИКАЗ ФНС № ЕА-7-11/824@)</div>
 		</div>
 		<div class="header-right">
 			Приложение № 1 к Приказу ФНС России<br>
 			от 08.11.2023 № ЕА-7-11/824@<br>
 			(в ред. 2024 г., Формат 5.01)<br>
-			<div class="knd-badge">Форма по КНД 1151156</div>
-			<div class="format-badge">Формат реестра: КНД 1184043</div>
+			<div class="knd-badge">Форма по КНД 1151158 (Форма по КНД 1151156)</div>
+			<div class="format-badge">Формат реестра ФНС: КНД 1184043 (Формат 5.01)</div>
 		</div>
 	</div>
 

@@ -1,5 +1,6 @@
 import React from "react";
 import {
+	ClipboardList,
 	FileText,
 	X,
 	FileCode,
@@ -13,6 +14,7 @@ const TABS: readonly { id: TaxDeductionTab; label: string; icon: React.FC<{ size
 	{ id: "checks", label: "Чеки и оказанные услуги", icon: ListOrdered },
 	{ id: "family", label: "Пакетная выгрузка (Семья)", icon: Users },
 	{ id: "xml", label: "Реестр XML 5.01 (ТКС)", icon: FileCode },
+	{ id: "registry", label: "Реестр справок ФНС", icon: ClipboardList },
 ];
 
 export const TaxDeductionHeader: React.FC<TaxDeductionHeaderProps> = ({
@@ -80,8 +82,11 @@ export const TaxDeductionHeader: React.FC<TaxDeductionHeaderProps> = ({
 				</button>
 			</div>
 
-			{/* Navigation Tabs Bar */}
-			<div className="px-5 pt-1 flex gap-2 flex-wrap border-t border-[var(--line,#e2e8f0)]">
+			{/* Navigation Tabs Bar — Single-row horizontally scrollable on mobile (Apple HIG) */}
+			<div
+				className="px-3 sm:px-5 pt-1 flex gap-1 sm:gap-2 overflow-x-auto flex-nowrap border-t border-[var(--line,#e2e8f0)]"
+				style={{ scrollbarWidth: "none" }}
+			>
 				{TABS.map((t) => {
 					const Icon = t.icon;
 					const isActive = activeTab === t.id;
@@ -90,8 +95,9 @@ export const TaxDeductionHeader: React.FC<TaxDeductionHeaderProps> = ({
 						<button
 							key={t.id}
 							type="button"
+							data-testid={`tax-tab-${t.id}`}
 							onClick={() => onTabChange(t.id)}
-							className="min-h-[44px] px-4 py-2 text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer rounded-t-xl"
+							className="min-h-[44px] px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer rounded-t-xl shrink-0 whitespace-nowrap"
 							style={{
 								borderBottom: isActive ? "2px solid #0d9488" : "2px solid transparent",
 								background: isActive ? "var(--paper, #ffffff)" : "transparent",

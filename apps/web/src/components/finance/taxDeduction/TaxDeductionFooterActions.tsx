@@ -42,7 +42,7 @@ export const TaxDeductionFooterActions: React.FC<TaxDeductionFooterActionsProps>
 				>
 					Закрыть
 				</button>
-				{activeTab === "family" ? (
+				{activeTab === "registry" ? null : activeTab === "family" ? (
 					<>
 						<button
 							type="button"

@@ -67,7 +67,7 @@ export function useTaxDeductionCertificate(props: TaxDeductionCertificateModalPr
 			: (clinicProfile as { chiefDoctorName?: string } | undefined)?.chiefDoctorName || "";
 
 	const currentYear = new Date().getFullYear();
-	const [activeTab, setActiveTab] = useState<TaxDeductionTab>("form");
+	const [activeTab, setActiveTab] = useState<TaxDeductionTab>(props.initialTab || "form");
 	const [selectedYear, setSelectedYear] = useState<number>(() => {
 		if (propSelectedYear) return propSelectedYear;
 		if (defaultTaxYear) return defaultTaxYear;
@@ -216,41 +216,108 @@ export function useTaxDeductionCertificate(props: TaxDeductionCertificateModalPr
 		return counts;
 	}, [effectivePayments]);
 
-	const [familyMembers] = useState<FamilyMemberPayerConfig[]>([
-		{
-			id: "spouse",
-			relationship: "spouse",
-			person: {
-				fullName: "Супруг(а) пациента",
-				inn: "",
-				birthDate: "",
-				identityDocumentSeries: "",
-				identityDocumentNumber: "",
-			},
-		},
-		{
-			id: "parent",
-			relationship: "parent",
-			person: {
-				fullName: "Родитель пациента",
-				inn: "",
-				birthDate: "",
-				identityDocumentSeries: "",
-				identityDocumentNumber: "",
-			},
-		},
-		{
-			id: "child",
-			relationship: "child",
-			person: {
-				fullName: "Ребенок / подопечный",
-				inn: "",
-				birthDate: "",
-				identityDocumentSeries: "",
-				identityDocumentNumber: "",
-			},
-		},
-	]);
+	const [isManualAdjustment, setIsManualAdjustment] = useState<boolean>(false);
+	const [manualCode01Rub, setManualCode01Rub] = useState<string>("");
+	const [manualCode02Rub, setManualCode02Rub] = useState<string>("");
+	const [manualAdjustmentReason, setManualAdjustmentReason] = useState<string>("");
+	const [fetchedFamilyMembers, setFetchedFamilyMembers] = useState<FamilyMemberPayerConfig[]>([]);
+
+	useEffect(() => {
+		if (isOpen && patientId) {
+			const headers: Record<string, string> = {
+				...denteAdminSecretRequestHeaders(),
+				...(appLogic?.auth?.denteClinicalReadHeaders?.() ?? {}),
+			};
+			fetch(`/api/finance/family/patient/${encodeURIComponent(patientId)}`, { headers })
+				.then((res) => (res.ok ? res.json() : null))
+				.then((data) => {
+					if (data?.members && Array.isArray(data.members)) {
+						const mapped: FamilyMemberPayerConfig[] = data.members
+							.filter((m: any) => m.id !== patientId)
+							.map((m: any) => {
+								const rel: TaxDeductionRelationship =
+									m.relationship === "child" ? "child" :
+									m.relationship === "parent" ? "parent" : "spouse";
+								return {
+									id: m.id,
+									relationship: rel,
+									person: {
+										fullName: m.fullName || "Член семьи",
+										inn: m.inn || "",
+										birthDate: m.birthDate ? m.birthDate.slice(0, 10) : "",
+										identityDocumentSeries: m.identityDocumentSeries || "",
+										identityDocumentNumber: m.identityDocumentNumber || "",
+									},
+								};
+							});
+						if (mapped.length > 0) setFetchedFamilyMembers(mapped);
+					}
+				})
+				.catch(() => {});
+		}
+	}, [isOpen, patientId, appLogic?.auth]);
+
+	const familyMembers = useMemo<FamilyMemberPayerConfig[]>(() => {
+		if (props.familyMembers && props.familyMembers.length > 0) {
+			return props.familyMembers as FamilyMemberPayerConfig[];
+		}
+		if (fetchedFamilyMembers.length > 0) return fetchedFamilyMembers;
+		const isDemo =
+			typeof window !== "undefined" &&
+			(window.location.search.includes("demo=true") || window.location.hash.includes("demo=true"));
+		if (isDemo || !patientId) {
+			return [
+				{
+					id: "demo-fam-spouse",
+					relationship: "spouse",
+					person: {
+						fullName: "Иванова Анна Петровна",
+						inn: "772345678901",
+						birthDate: "1988-04-12",
+						identityDocumentSeries: "4512",
+						identityDocumentNumber: "876543",
+					},
+				},
+				{
+					id: "demo-fam-parent",
+					relationship: "parent",
+					person: {
+						fullName: "Иванов Пётр Сергеевич",
+						inn: "771890123456",
+						birthDate: "1962-09-24",
+						identityDocumentSeries: "4508",
+						identityDocumentNumber: "123987",
+					},
+				},
+				{
+					id: "demo-fam-child",
+					relationship: "child",
+					person: {
+						fullName: "Иванов Максим Сергеевич",
+						inn: "",
+						birthDate: "2015-11-03",
+						identityDocumentSeries: "II-МЮ",
+						identityDocumentNumber: "456123",
+					},
+				},
+			];
+		}
+		return [];
+	}, [props.familyMembers, fetchedFamilyMembers, patientId]);
+
+	const handleSelectFamilyMember = (member: FamilyMemberPayerConfig | "self") => {
+		if (member === "self") {
+			handleFillFromPatient();
+			return;
+		}
+		setPayerFullName(member.person.fullName);
+		setPayerInn(member.person.inn || "");
+		setPayerBirthDate(member.person.birthDate || "");
+		setPassportSeries(member.person.identityDocumentSeries || "");
+		setPassportNumber(member.person.identityDocumentNumber || "");
+		setPayerRelationship(member.relationship);
+		showToast(`Выбран плательщик: ${member.person.fullName}`, "info");
+	};
 
 	const innValidation = useMemo(() => validateRussianInn(payerInn), [payerInn]);
 	const passportValidation = useMemo(
@@ -299,10 +366,34 @@ export function useTaxDeductionCertificate(props: TaxDeductionCertificateModalPr
 		if (!isOpen) {
 			return emptySummary;
 		}
-		return (
-			calculationResult.yearsSummary.find((y) => y.taxYear === selectedYear) || emptySummary
-		);
-	}, [isOpen, calculationResult, selectedYear]);
+		const base = calculationResult.yearsSummary.find((y) => y.taxYear === selectedYear) || emptySummary;
+		if (!isManualAdjustment) {
+			return base;
+		}
+		const manualC1 = Math.max(0, Number(manualCode01Rub) || 0);
+		const manualC2 = Math.max(0, Number(manualCode02Rub) || 0);
+		const limit = selectedYear >= 2024 ? 150000 : 120000;
+		const eligibleC1 = Math.min(manualC1, limit);
+		const refund13 = Math.round((eligibleC1 + manualC2) * 0.13);
+		const refund15 = Math.round((eligibleC1 + manualC2) * 0.15);
+		const total = manualC1 + manualC2;
+
+		return {
+			...base,
+			code01Rub: manualC1,
+			code01Kopecks: Math.round(manualC1 * 100),
+			code02Rub: manualC2,
+			code02Kopecks: Math.round(manualC2 * 100),
+			totalRub: total,
+			totalKopecks: Math.round(total * 100),
+			code01EligibleRub: eligibleC1,
+			code01EligibleKopecks: Math.round(eligibleC1 * 100),
+			refund13EstimateRub: refund13,
+			refund13EstimateKopecks: Math.round(refund13 * 100),
+			refund15EstimateRub: refund15,
+			refund15EstimateKopecks: Math.round(refund15 * 100),
+		};
+	}, [isOpen, calculationResult, selectedYear, isManualAdjustment, manualCode01Rub, manualCode02Rub]);
 
 	const yearPayments = useMemo(() => {
 		if (!isOpen) return [];
@@ -392,34 +483,8 @@ export function useTaxDeductionCertificate(props: TaxDeductionCertificateModalPr
 	const familyBatchResult = useMemo(() => {
 		if (!isOpen) {
 			return {
-				batch: {
-					taxYear: selectedYear,
-					taxOfficeCode,
-					clinic: {
-						legalName: clinicName,
-						inn: clinicInn,
-						kpp: clinicKpp,
-						ogrn: clinicOgrn,
-						licenseNumber: clinicLicenseNumber,
-						licenseDate: clinicLicenseDate,
-						address: clinicAddress,
-						chiefDoctorName,
-					},
-					certificates: [],
-				},
-				summaries: [],
-				grandTotalRub: 0,
-				grandTotalKopecks: 0,
-				grandTotalCode01Rub: 0,
-				grandTotalCode01Kopecks: 0,
-				grandTotalCode02Rub: 0,
-				grandTotalCode02Kopecks: 0,
-				grandTotalRefund13Rub: 0,
-				grandTotalRefund13Kopecks: 0,
-				grandTotalRefund15Rub: 0,
-				grandTotalRefund15Kopecks: 0,
-				certificatesCount: 0,
-				totalPaymentsCount: 0,
+				batch: { taxYear: selectedYear, taxOfficeCode, clinic: { legalName: clinicName, inn: clinicInn, kpp: clinicKpp, ogrn: clinicOgrn, licenseNumber: clinicLicenseNumber, licenseDate: clinicLicenseDate, address: clinicAddress, chiefDoctorName }, certificates: [] },
+				summaries: [], grandTotalRub: 0, grandTotalKopecks: 0, grandTotalCode01Rub: 0, grandTotalCode01Kopecks: 0, grandTotalCode02Rub: 0, grandTotalCode02Kopecks: 0, grandTotalRefund13Rub: 0, grandTotalRefund13Kopecks: 0, grandTotalRefund15Rub: 0, grandTotalRefund15Kopecks: 0, certificatesCount: 0, totalPaymentsCount: 0,
 			};
 		}
 
@@ -688,6 +753,16 @@ export function useTaxDeductionCertificate(props: TaxDeductionCertificateModalPr
 		xmlRepresentation,
 		isCopiedXml,
 		familyBatchResult,
+		familyMembers,
+		handleSelectFamilyMember,
+		isManualAdjustment,
+		setIsManualAdjustment,
+		manualCode01Rub,
+		setManualCode01Rub,
+		manualCode02Rub,
+		setManualCode02Rub,
+		manualAdjustmentReason,
+		setManualAdjustmentReason,
 		isLoadingPayments,
 		handleFillFromPatient,
 		handlePrint,

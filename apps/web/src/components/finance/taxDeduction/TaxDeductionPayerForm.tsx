@@ -3,7 +3,9 @@ import {
 	AlertCircle,
 	Calendar,
 	CheckCircle2,
+	Sliders,
 	UserCheck,
+	Users,
 } from "lucide-react";
 import { TAX_DEDUCTION_RELATIONSHIP_MAP } from "../taxDeductionEngine";
 import type { TaxDeductionPayerFormProps } from "./types";
@@ -31,6 +33,17 @@ export const TaxDeductionPayerForm: React.FC<TaxDeductionPayerFormProps> = ({
 	setCertificateNumber,
 	taxOfficeCode,
 	setTaxOfficeCode,
+	patientName,
+	familyMembers,
+	onSelectFamilyMember,
+	isManualAdjustment,
+	setIsManualAdjustment,
+	manualCode01Rub,
+	setManualCode01Rub,
+	manualCode02Rub,
+	setManualCode02Rub,
+	manualAdjustmentReason,
+	setManualAdjustmentReason,
 }) => {
 	return (
 		<div className="space-y-4">
@@ -143,6 +156,85 @@ export const TaxDeductionPayerForm: React.FC<TaxDeductionPayerFormProps> = ({
 							);
 						})}
 					</div>
+				</div>
+			</div>
+
+			{/* 1-Click Taxpayer Selector from Family Balance & Patient */}
+			<div
+				className="p-3.5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] space-y-2.5"
+				style={{ backgroundColor: "var(--paper)", borderColor: "var(--line)" }}
+			>
+				<div className="flex items-center justify-between">
+					<span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: "var(--teal, #0d9488)" }}>
+						<Users size={15} className="text-teal-600" />
+						1 клик: Налогоплательщик из семейного баланса:
+					</span>
+					<span className="text-[11px] font-semibold" style={{ color: "var(--muted)" }}>
+						Быстрый выбор плательщика
+					</span>
+				</div>
+				<div className="flex gap-2 flex-wrap" role="group" aria-label="Быстрый выбор плательщика">
+					<button
+						type="button"
+						onClick={() => (onSelectFamilyMember ? onSelectFamilyMember("self") : onFillFromPatient())}
+						className="secondary-button"
+						style={{
+							minHeight: "44px",
+							padding: "6px 12px",
+							borderRadius: "12px",
+							border: payerRelationship === "patient" ? "2px solid #0d9488" : "1px solid var(--line)",
+							backgroundColor: payerRelationship === "patient" ? "rgba(13, 148, 136, 0.12)" : "var(--paper-soft)",
+							color: "var(--ink)",
+							fontSize: "12px",
+							fontWeight: 700,
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "6px",
+						}}
+						data-testid="taxpayer-chip-self"
+						title="Плательщик — сам пациент (лично)"
+					>
+						<UserCheck size={14} className="text-teal-600" />
+						<span>Пациент (лично)</span>
+						{patientName ? <span className="opacity-75 font-normal">({patientName})</span> : null}
+					</button>
+					{(familyMembers ?? []).map((m) => {
+						const relMeta = TAX_DEDUCTION_RELATIONSHIP_MAP[m.relationship];
+						const isMatch = payerFullName === m.person.fullName;
+						return (
+							<button
+								key={m.id}
+								type="button"
+								onClick={() => onSelectFamilyMember?.(m)}
+								className="secondary-button"
+								style={{
+									minHeight: "44px",
+									padding: "6px 12px",
+									borderRadius: "12px",
+									border: isMatch ? "2px solid #0d9488" : "1px solid var(--line)",
+									backgroundColor: isMatch ? "rgba(13, 148, 136, 0.12)" : "var(--paper-soft)",
+									color: "var(--ink)",
+									fontSize: "12px",
+									fontWeight: 700,
+									cursor: "pointer",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "6px",
+								}}
+								data-testid={`taxpayer-chip-${m.id}`}
+								title={`Выбрать плательщиком: ${m.person.fullName} (${relMeta.labelRu})`}
+							>
+								<span className="text-[11px] px-1.5 py-0.5 rounded bg-teal-500/15 text-teal-800 dark:text-teal-200 font-mono">
+									Код {relMeta.code}
+								</span>
+								<span>{m.person.fullName}</span>
+								<span className="text-[11px] opacity-75 font-normal">
+									({relMeta.shortLabelRu}{m.person.inn ? `, ИНН ${m.person.inn}` : ""})
+								</span>
+							</button>
+						);
+					})}
 				</div>
 			</div>
 
@@ -280,6 +372,89 @@ export const TaxDeductionPayerForm: React.FC<TaxDeductionPayerFormProps> = ({
 						/>
 					</div>
 				</div>
+			</div>
+
+			{/* Mandate 8e: Doctor & Staff Autonomy Manual Adjustment Section */}
+			<div
+				className="p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-3"
+				style={{ backgroundColor: "var(--paper-soft)", borderColor: "var(--line)" }}
+			>
+				<div className="flex items-center justify-between">
+					<label className="flex items-center gap-2 cursor-pointer select-none">
+						<input
+							type="checkbox"
+							checked={Boolean(isManualAdjustment)}
+							onChange={(e) => setIsManualAdjustment?.(e.target.checked)}
+							className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500"
+							data-testid="tax-manual-adjustment-toggle"
+						/>
+						<span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: "var(--ink)" }}>
+							<Sliders size={14} className="text-teal-600" />
+							Ручная корректировка сумм вычета (Мандат 8e автономии клиники)
+						</span>
+					</label>
+					{isManualAdjustment && (
+						<span className="text-[11px] px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/30">
+							Включена ручная правка
+						</span>
+					)}
+				</div>
+
+				{isManualAdjustment && (
+					<div className="space-y-3 pt-1 border-t border-[var(--line)]">
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+							<div className="space-y-1">
+								<label htmlFor="manual-code01-input" className="text-xs font-bold" style={{ color: "var(--ink)" }}>
+									Сумма Код 01 (Обычное лечение, руб.):
+								</label>
+								<input
+									id="manual-code01-input"
+									type="number"
+									min="0"
+									step="1"
+									value={manualCode01Rub}
+									onChange={(e) => setManualCode01Rub?.(e.target.value)}
+									placeholder="0"
+									className="w-full min-h-[44px] px-3 rounded-xl border text-xs font-mono font-bold"
+									style={{ backgroundColor: "var(--paper)", borderColor: "var(--line)", color: "var(--ink)" }}
+									data-testid="input-manual-code01"
+								/>
+							</div>
+							<div className="space-y-1">
+								<label htmlFor="manual-code02-input" className="text-xs font-bold" style={{ color: "var(--ink)" }}>
+									Сумма Код 02 (Дорогостоящее лечение, руб.):
+								</label>
+								<input
+									id="manual-code02-input"
+									type="number"
+									min="0"
+									step="1"
+									value={manualCode02Rub}
+									onChange={(e) => setManualCode02Rub?.(e.target.value)}
+									placeholder="0"
+									className="w-full min-h-[44px] px-3 rounded-xl border text-xs font-mono font-bold"
+									style={{ backgroundColor: "var(--paper)", borderColor: "var(--line)", color: "var(--ink)" }}
+									data-testid="input-manual-code02"
+								/>
+							</div>
+						</div>
+						<div className="space-y-1">
+							<label htmlFor="manual-reason-input" className="text-xs font-bold" style={{ color: "var(--ink)" }}>
+								Основание / Причина корректировки (для внутреннего аудита):
+							</label>
+							<input
+								id="manual-reason-input"
+								type="text"
+								value={manualAdjustmentReason}
+								onChange={(e) => setManualAdjustmentReason?.(e.target.value)}
+								placeholder="Например: Перерасчет с учетом платежей за предыдущий период"
+								className="w-full min-h-[44px] px-3 rounded-xl border text-xs"
+								style={{ backgroundColor: "var(--paper)", borderColor: "var(--line)", color: "var(--ink)" }}
+								data-testid="input-manual-reason"
+							/>
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);

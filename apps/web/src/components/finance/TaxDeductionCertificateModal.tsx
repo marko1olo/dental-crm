@@ -1,30 +1,18 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import {
-	useTaxDeductionCertificate,
-	TaxDeductionHeader,
-	TaxDeductionPayerForm,
-	TaxDeductionPaymentsTable,
-	TaxDeductionFooterActions,
-	TaxDeductionChecksTab,
-	TaxDeductionFamilyTab,
-	TaxDeductionXmlTab,
-	TaxDeductionModalFooter,
-	TaxDeductionRequisitesForm,
+	useTaxDeductionCertificate, TaxDeductionHeader, TaxDeductionPayerForm,
+	TaxDeductionPaymentsTable, TaxDeductionFooterActions, TaxDeductionChecksTab,
+	TaxDeductionFamilyTab, TaxDeductionXmlTab, TaxDeductionRegistryView,
+	TaxDeductionModalFooter, TaxDeductionRequisitesForm,
 	type TaxDeductionCertificateModalProps,
 } from "./taxDeduction";
 
 export {
-	TaxDeductionFamilyTab,
-	TaxDeductionChecksTab,
-	TaxDeductionXmlTab,
-	TaxDeductionModalFooter,
-	TaxDeductionRequisitesForm,
-	TaxDeductionHeader,
-	TaxDeductionPayerForm,
-	TaxDeductionPaymentsTable,
-	TaxDeductionFooterActions,
-	useTaxDeductionCertificate,
+	TaxDeductionFamilyTab, TaxDeductionChecksTab, TaxDeductionXmlTab,
+	TaxDeductionModalFooter, TaxDeductionRequisitesForm, TaxDeductionHeader,
+	TaxDeductionPayerForm, TaxDeductionPaymentsTable, TaxDeductionFooterActions,
+	TaxDeductionRegistryView, useTaxDeductionCertificate,
 };
 export type { TaxDeductionCertificateModalProps };
 
@@ -89,6 +77,14 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 							isCopiedXml={s.isCopiedXml}
 							onCopyXml={s.handleCopyXml}
 							onClose={onClose}
+						/>
+					)}
+
+					{s.activeTab === "registry" && (
+						<TaxDeductionRegistryView
+							clinicName={s.clinicName}
+							clinicInn={s.clinicInn}
+							onOpenNewCertificate={() => s.setActiveTab("form")}
 						/>
 					)}
 				</div>

@@ -88,6 +88,16 @@ const ImplantPassportModal = React.lazy(() =>
 		default: m.ImplantPassportModal,
 	})),
 );
+const ClinicalTasksPanel = React.lazy(() =>
+	import("./ClinicalTasksPanel").then((m) => ({
+		default: m.ClinicalTasksPanel,
+	})),
+);
+const TaxDeductionCertificateModal = React.lazy(() =>
+	import("./components/finance/TaxDeductionCertificateModal").then((m) => ({
+		default: m.TaxDeductionCertificateModal,
+	})),
+);
 import { TelephonyStandaloneWorkspace } from "./components/telephony/TelephonyStandaloneWorkspace";
 import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
 import { isPatientPresentationRoute } from "./components/photography/presentationSyncProtocol";
@@ -566,6 +576,141 @@ if (publicPortalRoute) {
 						doctorId="DOC-01"
 						initialTooth={46}
 					/>
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(new URLSearchParams(window.location.search).has("tasks") ||
+		new URLSearchParams(window.location.search).has("clinical_tasks") ||
+		window.location.hash.toLowerCase().includes("tasks") ||
+		window.location.hash.toLowerCase().includes("clinical_tasks"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			(localStorage.getItem("dente_theme") as any) || "auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	console.info("[ClinicalTasks] Standalone branch mounted");
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка клинических задач...
+						</div>
+					}
+				>
+					<div
+						className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6 overflow-y-auto"
+						data-testid="clinical-tasks-standalone-workspace"
+					>
+						<ClinicalTasksPanel
+							patientId="pat-showcase-1"
+							assignedDoctorId="doc-1"
+							treatmentPlanId="plan-1"
+						/>
+					</div>
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(new URLSearchParams(window.location.search).has("tax") ||
+		new URLSearchParams(window.location.search).has("tax_deduction") ||
+		window.location.hash.toLowerCase().includes("tax_deduction") ||
+		window.location.hash.toLowerCase().includes("tax"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			(localStorage.getItem("dente_theme") as any) || "auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	const initialTab = (new URLSearchParams(window.location.search).get("tab") as any) || "form";
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка модуля налогового вычета 13%...
+						</div>
+					}
+				>
+					<div
+						className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] flex items-center justify-center p-2 sm:p-4"
+						data-testid="tax-deduction-standalone-workspace"
+					>
+						<TaxDeductionCertificateModal
+							isOpen={true}
+							onClose={() => {}}
+							initialTab={initialTab}
+							patientName="Воронов Михаил Сергеевич"
+							patientBirthDate="1984-05-12"
+							patientInn="771234567890"
+							clinicName="ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
+							clinicInn="7701234567"
+							clinicKpp="770101001"
+							clinicOgrn="1237700123456"
+							clinicLicenseNumber="ЛО-77-01-012345"
+							clinicLicenseDate="01.01.2020"
+							clinicAddress="г. Москва, ул. Клиническая, д. 10"
+							chiefDoctorName="Д-р Воронов М. С."
+							selectedYear={2025}
+							payments={[
+								{
+									id: "pay-1",
+									dateIso: "2025-03-12T10:00:00.000Z",
+									receiptNumber: "ФЧ-2025-0142",
+									fiscalDocumentNumber: "501",
+									fiscalSign: "88776655",
+									serviceName: "Профессиональная гигиена полости рта и AirFlow",
+									code804n: "A16.07.051",
+									amountRub: 8500,
+									amountKopecks: 850000,
+									taxCode: "1",
+								},
+								{
+									id: "pay-2",
+									dateIso: "2025-05-24T14:30:00.000Z",
+									receiptNumber: "ФЧ-2025-0289",
+									fiscalDocumentNumber: "502",
+									fiscalSign: "99887766",
+									serviceName: "Дентальная имплантация Straumann SLA + остеопластика",
+									code804n: "A16.07.054",
+									amountRub: 65000,
+									amountKopecks: 6500000,
+									taxCode: "2",
+								},
+								{
+									id: "pay-3",
+									dateIso: "2025-08-15T16:00:00.000Z",
+									receiptNumber: "ФЧ-2025-0451",
+									fiscalDocumentNumber: "503",
+									fiscalSign: "77665544",
+									serviceName: "Лечение глубокого кариеса с реставрацией Ceram.X",
+									code804n: "A16.07.002",
+									amountRub: 12400,
+									amountKopecks: 1240000,
+									taxCode: "1",
+								},
+							]}
+						/>
+					</div>
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>

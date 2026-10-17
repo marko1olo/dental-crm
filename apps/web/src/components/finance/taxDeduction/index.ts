@@ -14,3 +14,5 @@ export { TaxDeductionFamilyTab } from "./TaxDeductionFamilyTab";
 export type { TaxDeductionFamilyTabProps } from "./TaxDeductionFamilyTab";
 export { TaxDeductionXmlTab } from "./TaxDeductionXmlTab";
 export type { TaxDeductionXmlTabProps } from "./TaxDeductionXmlTab";
+export { TaxDeductionRegistryView } from "./TaxDeductionRegistryView";
+export type { TaxDeductionRegistryViewProps } from "./TaxDeductionRegistryView";

@@ -28,10 +28,10 @@ export const TaxDeductionXmlTab: React.FC<TaxDeductionXmlTabProps> = ({
 				</div>
 				<div className="space-y-1.5 max-w-md mx-auto">
 					<h4 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)] m-0">
-						Нет данных за {selectedYear} год для генерации реестра XML (КНД 1184043)
+						Нет данных за {selectedYear} год для генерации электронного реестра XML
 					</h4>
 					<p className="text-xs text-[var(--muted,#64748b)] m-0 leading-relaxed">
-						Электронный реестр для ФНС формируется на основании фискальных чеков за выбранный налоговый период.
+						Электронный реестр для налоговой формируется на основании фискальных чеков за выбранный налоговый период.
 					</p>
 				</div>
 				<div className="flex items-center justify-center gap-2 pt-2">
@@ -52,7 +52,7 @@ export const TaxDeductionXmlTab: React.FC<TaxDeductionXmlTabProps> = ({
 			<div className="flex items-center justify-between">
 				<div>
 					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] block">
-						Электронный XML-реестр сведений (КНД 1184043, Формат 5.01)
+						Электронный XML-реестр сведений для налоговой (Формат 5.01)
 					</span>
 					<span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
 						Имя файла: {fileName}

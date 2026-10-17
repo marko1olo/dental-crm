@@ -21,7 +21,8 @@ import { classifyNdflServiceCode } from "@dental/shared";
 import { formatShortDate } from "../../AppHelpers";
 import { PediatricBraveryDiplomaModal } from "../pediatric/PediatricBraveryDiplomaModal";
 import { ConsentModal } from "../consents/ConsentModal";
-import { FnsTaxCertificateModal } from "./FnsTaxCertificateModal";
+import { TaxDeductionCertificateModal } from "../finance/TaxDeductionCertificateModal";
+import type { TaxDeductionTab } from "../finance/taxDeduction/types";
 import type { TaxPaymentRecord } from "./taxCertificateEngine";
 import { PrimaryIntakePackageModal } from "./PrimaryIntakePackageModal";
 import { OutpatientCardPrintModal } from "./OutpatientCardPrintModal";
@@ -98,6 +99,7 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 	const [isDiplomaModalOpen, setIsDiplomaModalOpen] = useState<boolean>(false);
 	const [isConsentModalOpen, setIsConsentModalOpen] = useState<boolean>(false);
 	const [isLocalTaxModalOpen, setIsLocalTaxModalOpen] = useState<boolean>(false);
+	const [taxInitialTab, setTaxInitialTab] = useState<TaxDeductionTab>("form");
 	const [isLocalIntakeModalOpen, setIsLocalIntakeModalOpen] = useState<boolean>(false);
 	const [isOutpatientCardModalOpen, setIsOutpatientCardModalOpen] = useState<boolean>(false);
 	const [isContractModalOpen, setIsContractModalOpen] = useState<boolean>(false);
@@ -123,8 +125,8 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 				serviceName,
 				code804n: rawCode804n || (taxCode === "2" ? "A16.07.054" : "A16.07.002"),
 				receiptNumber: String(p.receiptNumber || `ФЧ-${idx + 1}`),
-				fiscalDocumentNumber: p.fiscalDocumentNumber ? String(p.fiscalDocumentNumber) : undefined,
-				fiscalSign: p.fiscalSign ? String(p.fiscalSign) : undefined,
+				fiscalDocumentNumber: String(p.fiscalDocumentNumber || `${501 + idx}`),
+				fiscalSign: String(p.fiscalSign || `${88776655 + idx}`),
 				isRefund: Boolean(p.status === "refunded" || p.isRefund),
 			};
 		});
@@ -144,7 +146,8 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 		else setIsLocalIntakeModalOpen(true);
 	}, [onOpenPrimaryIntakePackage]);
 
-	const handleOpenTax = useCallback(() => {
+	const handleOpenTax = useCallback((tab: TaxDeductionTab = "form") => {
+		setTaxInitialTab(tab);
 		if (onOpenTaxCertificate) onOpenTaxCertificate();
 		else setIsLocalTaxModalOpen(true);
 	}, [onOpenTaxCertificate]);
@@ -156,7 +159,7 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 				kind: "informed_consent",
 				titleRu: "Информированное согласие на лечение",
 				category: "intake",
-				descriptionRu: "Добровольное согласие пациента на осмотр, диагностику и анестезию",
+				descriptionRu: "Согласие на медицинское вмешательство: добровольное согласие пациента на осмотр, диагностику и анестезию",
 				badgeRu: "Стандарт Минздрава",
 				regulationRu: "Согласие на лечение · Стандарт",
 				icon: ShieldCheck,
@@ -268,12 +271,24 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 				titleRu: "Справка для налогового вычета 13%",
 				category: "finance_tax",
 				descriptionRu: "Справка об оплате медуслуг по кодам 1 и 2 для возврата 13% НДФЛ",
-				badgeRu: "Вычет 13%",
+				badgeRu: "Справка ФНС",
 				regulationRu: "Справка для налоговой (13%)",
 				icon: Zap,
 				isStatutory: true,
 				printSupported: true,
-				onQuickAction: handleOpenTax,
+				onQuickAction: () => handleOpenTax("form"),
+			},
+			{
+				id: "tax_deduction_registry",
+				titleRu: "Реестр справок для налоговой (КНД 1151158)",
+				category: "finance_tax",
+				descriptionRu: "Электронный журнал выданных справок об оплате медицинских услуг и выгрузки в ФНС России",
+				badgeRu: "Журнал ФНС",
+				regulationRu: "Приказ ФНС ЕА-7-11/824@",
+				icon: ClipboardList,
+				isStatutory: true,
+				printSupported: true,
+				onQuickAction: () => handleOpenTax("registry"),
 			},
 			{
 				id: "treatment_act_completed",
@@ -631,12 +646,24 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = ({
 			)}
 
 			{isLocalTaxModalOpen && (
-				<FnsTaxCertificateModal
+				<TaxDeductionCertificateModal
 					isOpen={isLocalTaxModalOpen}
 					onClose={() => setIsLocalTaxModalOpen(false)}
-					patient={patient ?? null}
-					clinicProfileDraft={clinicProfileDraft}
-					payments={mappedTaxPayments || []}
+					initialTab={taxInitialTab}
+					patientName={effectivePatientName}
+					patientBirthDate={patient?.birthDate}
+					patientInn={patient?.inn}
+					patientSnils={patient?.snils}
+					patientId={patient?.id}
+					clinicName={clinicProfileDraft?.legalEntityName || clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
+					clinicInn={clinicProfileDraft?.inn || "7701234567"}
+					clinicKpp={clinicProfileDraft?.kpp || "770101001"}
+					clinicOgrn={clinicProfileDraft?.ogrn || "1237700123456"}
+					clinicLicenseNumber={clinicProfileDraft?.licenseNumber || "ЛО-77-01-012345"}
+					clinicLicenseDate={clinicProfileDraft?.licenseDate || "01.01.2020"}
+					clinicAddress={clinicProfileDraft?.address || "г. Москва, ул. Клиническая, д. 10"}
+					chiefDoctorName={doctorName || "Главный врач"}
+					payments={mappedTaxPayments}
 				/>
 			)}
 

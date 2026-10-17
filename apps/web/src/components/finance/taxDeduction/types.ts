@@ -9,7 +9,7 @@ import type {
 	TaxDeductionYearSummary,
 } from "../taxDeductionEngine";
 
-export type TaxDeductionTab = "form" | "checks" | "family" | "xml";
+export type TaxDeductionTab = "form" | "checks" | "family" | "xml" | "registry";
 
 export type {
 	FamilyMemberPayerConfig,
@@ -42,6 +42,8 @@ export interface TaxDeductionCertificateModalProps {
 	readonly clinicLicenseDate?: string | undefined;
 	readonly clinicAddress?: string | undefined;
 	readonly chiefDoctorName?: string | undefined;
+	readonly initialTab?: TaxDeductionTab | undefined;
+	readonly familyMembers?: readonly FamilyMemberPayerConfig[] | undefined;
 }
 
 export interface TaxDeductionHeaderProps {
@@ -74,6 +76,17 @@ export interface TaxDeductionPayerFormProps {
 	readonly setCertificateNumber: (val: string) => void;
 	readonly taxOfficeCode: string;
 	readonly setTaxOfficeCode: (val: string) => void;
+	readonly patientName?: string | undefined;
+	readonly familyMembers?: readonly FamilyMemberPayerConfig[] | undefined;
+	readonly onSelectFamilyMember?: ((member: FamilyMemberPayerConfig | "self") => void) | undefined;
+	readonly isManualAdjustment?: boolean | undefined;
+	readonly setIsManualAdjustment?: ((val: boolean) => void) | undefined;
+	readonly manualCode01Rub?: string | undefined;
+	readonly setManualCode01Rub?: ((val: string) => void) | undefined;
+	readonly manualCode02Rub?: string | undefined;
+	readonly setManualCode02Rub?: ((val: string) => void) | undefined;
+	readonly manualAdjustmentReason?: string | undefined;
+	readonly setManualAdjustmentReason?: ((val: string) => void) | undefined;
 }
 
 export interface TaxDeductionPaymentsTableProps {

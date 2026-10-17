@@ -36,7 +36,7 @@ export const TaxDeductionFamilyTab: React.FC<TaxDeductionFamilyTabProps> = ({
 					</h4>
 					<p className="text-xs text-[var(--muted,#64748b)] m-0 leading-relaxed">
 						{paymentsCount === 0
-							? "В карточке пациента отсутствуют подтвержденные чеки по 54-ФЗ. Пакет справок на возврат НДФЛ для родственников формируется при наличии оплат."
+							? "В карточке пациента отсутствуют подтвержденные фискальные чеки. Пакет справок на возврат НДФЛ для родственников формируется при наличии оплат."
 							: `За ${selectedYear} год чеков не найдено. Выберите другой налоговый период в переключателе годов.`}
 					</p>
 				</div>
@@ -112,7 +112,7 @@ export const TaxDeductionFamilyTab: React.FC<TaxDeductionFamilyTabProps> = ({
 						{familyBatchResult.totalPaymentsCount} шт.
 					</div>
 					<div className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">
-						54-ФЗ с фискальными номерами и ФПД
+						Чеки с фискальными номерами и ФПД
 					</div>
 				</div>
 			</div>

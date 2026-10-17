@@ -11,6 +11,8 @@ import type { TaxDeductionRelationship } from "./types.js";
  */
 export const FNS_ORDER_824_NAME = "Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@";
 export const KND_CERTIFICATE_FORM = "1151156";
+export const KND_CERTIFICATE_FORM_1151158 = "1151158";
+export const KND_CERTIFICATE_FORMS = ["1151158", "1151156"] as const;
 export const KND_REGISTRY_ELECTRONIC_FORMAT = "1184043";
 export const FNS_FORMAT_VERSION_501 = "5.01";
 
