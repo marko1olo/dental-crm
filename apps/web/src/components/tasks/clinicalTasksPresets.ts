@@ -6,44 +6,46 @@ import type {
 	ClinicalTask,
 	ClinicalTaskPreset,
 	PhaseOption,
+	TaskDeadlineCategory,
+	TaskDeadlineFilter,
 } from "./clinicalTasksTypes";
 
 export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 	{
-		id: "preset-ortho-call",
-		testId: "preset-task-ortho-call",
-		label: "Звонок ортодонта / контроль брекетов",
-		title: "Звонок ортодонта / контроль брекетов",
+		id: "preset-postop-call",
+		testId: "preset-task-postop-call",
+		label: "Контрольный звонок после удаления",
+		title: "Контрольный звонок после сложного удаления/анестезии",
 		defaultDescription:
-			"Контрольный звонок ортодонтического пациента: оценка адаптации, целостности дуг, фиксации брекетов/элайнеров.",
-		taskType: "orthodontics_recall",
+			"Контрольный звонок пациенту: оценка гемостаза, отека, купирования боли, общего самочувствия после сложного удаления/анестезии.",
+		taskType: "postop_call",
 		computeDueAt: () => {
 			const d = new Date();
-			d.setDate(d.getDate() + 21);
+			d.setDate(d.getDate() + 1);
 			return d.toISOString();
 		},
-		hint: "Контроль брекетов/элайнеров через 3 недели",
+		hint: "Контрольный звонок на следующий день после сложного удаления или анестезии",
 	},
 	{
-		id: "preset-implant-check",
-		testId: "preset-task-implant-check",
-		label: "Контрольный осмотр после имплантации",
-		title: "Контрольный осмотр после имплантации",
+		id: "preset-order-implant",
+		testId: "preset-task-order-implant",
+		label: "Заказать имплантат / костный материал",
+		title: "Заказать имплантат / костный материал",
 		defaultDescription:
-			"Осмотр зоны имплантации, контроль заживления слизистой, оценка стабильности формирователя десны / винтов.",
-		taskType: "implant_check",
+			"Заказ дентального имплантата, формирователя десны, мембраны и остеопластического материала под клинический случай.",
+		taskType: "order_implant",
 		computeDueAt: () => {
 			const d = new Date();
-			d.setDate(d.getDate() + 10);
+			d.setDate(d.getDate() + 3);
 			return d.toISOString();
 		},
-		hint: "Контрольный осмотр после имплантации через 10 дней",
+		hint: "Заказать имплантат и костный материал за 3 дня",
 	},
 	{
 		id: "preset-prosthetics-ztl",
 		testId: "preset-task-prosthetics-ztl",
-		label: "Готовность работы ЗТЛ",
-		title: "Готовность работы ЗТЛ",
+		label: "Забрать работу из лаборатории",
+		title: "Забрать работу из зуботехнической лаборатории (ЗТЛ)",
 		defaultDescription:
 			"Припасовка ортопедической конструкции из зуботехнической лаборатории (ЗТЛ), проверка окклюзионных контактов.",
 		taskType: "prosthetics_fitting",
@@ -57,8 +59,8 @@ export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 	{
 		id: "preset-recall-6m",
 		testId: "preset-task-recall-6m",
-		label: "Напоминание о профгигиене через 6 мес",
-		title: "Напоминание о профгигиене через 6 мес",
+		label: "Пригласить на профгигиену (6 мес)",
+		title: "Пригласить на профгигиену (6 месяцев) — Профгигиена",
 		defaultDescription:
 			"Плановый контрольный осмотр и оценка гигиенического статуса через 6 месяцев. Профгигиена полости рта.",
 		taskType: "recall_hygiene",
@@ -72,17 +74,17 @@ export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 	{
 		id: "preset-ct-planning",
 		testId: "preset-task-ct-planning",
-		label: "Снимок КТ / планирование",
+		label: "Проверить готовность КТ/ОПТГ",
 		title: "Снимок КТ / планирование",
 		defaultDescription:
-			"Анализ КЛКТ/визиографии, виртуальная расстановка имплантов, разметка нижнечелюстного канала или заказ хирургического шаблона.",
+			"Анализ КЛКТ/ОПТГ/визиографии, виртуальная расстановка имплантов, разметка нижнечелюстного канала или заказ хирургического шаблона.",
 		taskType: "ct_planning",
 		computeDueAt: () => {
 			const d = new Date();
 			d.setDate(d.getDate() + 3);
 			return d.toISOString();
 		},
-		hint: "Задача на анализ КТ и 3D-планирование за 3 дня",
+		hint: "Проверить готовность снимка КТ/ОПТГ и 3D-планирование за 3 дня",
 	},
 	{
 		id: "preset-suture-removal",
@@ -115,6 +117,36 @@ export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 		hint: "Создать задачу на контрольный снимок визиографа RVG",
 	},
 	{
+		id: "preset-ortho-call",
+		testId: "preset-task-ortho-call",
+		label: "Звонок ортодонта / брекеты",
+		title: "Звонок ортодонта / контроль брекетов",
+		defaultDescription:
+			"Контрольный звонок ортодонтического пациента: оценка адаптации, целостности дуг, фиксации брекетов/элайнеров.",
+		taskType: "orthodontics_recall",
+		computeDueAt: () => {
+			const d = new Date();
+			d.setDate(d.getDate() + 21);
+			return d.toISOString();
+		},
+		hint: "Контроль брекетов/элайнеров через 3 недели",
+	},
+	{
+		id: "preset-implant-check",
+		testId: "preset-task-implant-check",
+		label: "Осмотр после имплантации",
+		title: "Контрольный осмотр после имплантации",
+		defaultDescription:
+			"Осмотр зоны имплантации, контроль заживления слизистой, оценка стабильности формирователя десны / винтов.",
+		taskType: "implant_check",
+		computeDueAt: () => {
+			const d = new Date();
+			d.setDate(d.getDate() + 10);
+			return d.toISOString();
+		},
+		hint: "Контрольный осмотр после имплантации через 10 дней",
+	},
+	{
 		id: "preset-prepare-cast",
 		testId: "preset-task-prepare-cast",
 		label: "Подготовить слепок",
@@ -128,21 +160,6 @@ export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 			return d.toISOString();
 		},
 		hint: "Подготовить диагностический/рабочий слепок за 24 часа",
-	},
-	{
-		id: "preset-order-implant",
-		testId: "preset-task-order-implant",
-		label: "Заказать имплант",
-		title: "Заказать имплант",
-		defaultDescription:
-			"Заказ дентального имплантата, формирователя десны и хирургических компонентов под клинический случай.",
-		taskType: "order_implant",
-		computeDueAt: () => {
-			const d = new Date();
-			d.setDate(d.getDate() + 3);
-			return d.toISOString();
-		},
-		hint: "Заказать имплант и хирургические компоненты за 3 дня",
 	},
 ];
 
@@ -274,4 +291,100 @@ export async function executeClinicalPresetTaskAutonomy(params: {
 	}
 
 	return { task: newTask, dueFormatted: formattedDue };
+}
+
+export function getTaskDeadlineCategory(dueAt: string | null | undefined): TaskDeadlineCategory {
+	if (!dueAt) return "no_due";
+	const due = new Date(dueAt);
+	if (Number.isNaN(due.getTime())) return "no_due";
+
+	const now = new Date();
+	const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+	const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+	const tomorrowEnd = new Date(todayEnd.getTime() + 24 * 60 * 60 * 1000);
+
+	if (due.getTime() < todayStart.getTime()) {
+		return "overdue";
+	}
+	if (due.getTime() <= todayEnd.getTime()) {
+		return "today";
+	}
+	if (due.getTime() <= tomorrowEnd.getTime()) {
+		return "tomorrow";
+	}
+	return "upcoming";
+}
+
+export function getDeadlineBadge(dueAt: string | null | undefined): {
+	label: string;
+	tone: "danger" | "warning" | "info" | "neutral";
+	isOverdue: boolean;
+} {
+	if (!dueAt) {
+		return { label: "Без срока", tone: "neutral", isOverdue: false };
+	}
+	const category = getTaskDeadlineCategory(dueAt);
+	const formatted = formatMoment(dueAt);
+
+	if (category === "overdue") {
+		return {
+			label: `Просрочено (${formatted})`,
+			tone: "danger",
+			isOverdue: true,
+		};
+	}
+	if (category === "today") {
+		return {
+			label: `Сегодня (${formatted})`,
+			tone: "warning",
+			isOverdue: false,
+		};
+	}
+	if (category === "tomorrow") {
+		return {
+			label: `Завтра (${formatted})`,
+			tone: "info",
+			isOverdue: false,
+		};
+	}
+	return {
+		label: `Срок: ${formatted}`,
+		tone: "neutral",
+		isOverdue: false,
+	};
+}
+
+export function filterTasksByDeadline(
+	tasks: readonly ClinicalTask[],
+	filter: TaskDeadlineFilter,
+): ClinicalTask[] {
+	if (filter === "all") return [...tasks];
+	return tasks.filter((t) => {
+		const cat = getTaskDeadlineCategory(t.dueAt);
+		if (filter === "today") return cat === "today";
+		if (filter === "tomorrow") return cat === "tomorrow";
+		if (filter === "overdue") return cat === "overdue";
+		return true;
+	});
+}
+
+export function countTasksByDeadline(
+	tasks: readonly ClinicalTask[],
+): Record<TaskDeadlineFilter, number> {
+	let today = 0;
+	let tomorrow = 0;
+	let overdue = 0;
+	for (const t of tasks) {
+		if (t.status === "completed" || t.status === "cancelled") continue;
+		const cat = getTaskDeadlineCategory(t.dueAt);
+		if (cat === "today") today++;
+		else if (cat === "tomorrow") tomorrow++;
+		else if (cat === "overdue") overdue++;
+	}
+	return {
+		all: tasks.length,
+		today,
+		tomorrow,
+		overdue,
+	};
 }

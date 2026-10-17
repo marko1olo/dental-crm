@@ -1,127 +1,102 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
+import { CheckCircle2 } from "lucide-react";
 import {
-	OPEN_STATUSES,
-	STATUS_LABELS,
-	type ClinicalTask,
+	type ClinicalTasksTableProps,
+	type TaskDeadlineFilter,
 } from "./clinicalTasksTypes";
-import { formatMoment } from "./clinicalTasksPresets";
-
-export interface ClinicalTasksTableProps {
-	readonly visibleTasks: readonly ClinicalTask[];
-	readonly completingTaskId: string | null;
-	readonly onCompleteTask: (taskId: string) => void;
-}
+import {
+	countTasksByDeadline,
+	filterTasksByDeadline,
+} from "./clinicalTasksPresets";
+import { ClinicalTasksToolbar } from "./ClinicalTasksToolbar";
+import { ClinicalTaskCreateDrawer } from "./ClinicalTaskCreateDrawer";
+import { ClinicalTasksDesktopTable } from "./ClinicalTasksDesktopTable";
+import { ClinicalTasksMobileCards } from "./ClinicalTasksMobileCards";
+import "./ClinicalTasksTable.css";
 
 export const ClinicalTasksTable: React.FC<ClinicalTasksTableProps> = ({
 	visibleTasks,
 	completingTaskId,
 	onCompleteTask,
+	onAddTask,
+	patientId,
+	patientName,
+	assignedDoctorId,
 }) => {
-	if (visibleTasks.length === 0) return null;
+	const [deadlineFilter, setDeadlineFilter] = useState<TaskDeadlineFilter>("all");
+	const [isAddingTask, setIsAddingTask] = useState(false);
+
+	// Подсчет счетчиков дедлайнов для чипов
+	const counts = useMemo(
+		() => countTasksByDeadline(visibleTasks),
+		[visibleTasks],
+	);
+
+	// Фильтрация по дедлайну
+	const filteredTasks = useMemo(
+		() => filterTasksByDeadline(visibleTasks, deadlineFilter),
+		[visibleTasks, deadlineFilter],
+	);
 
 	return (
-		<div className="ops-table-wrap">
-			<table className="ops-table">
-				<caption className="sr-only">Задачи передачи между этапами</caption>
-				<thead>
-					<tr>
-						<th scope="col">Задача</th>
-						<th scope="col">Статус</th>
-						<th scope="col">Создана</th>
-						<th scope="col" style={{ textAlign: "right" }}>
-							Действие
-						</th>
-					</tr>
-				</thead>
-				<tbody>
-					{visibleTasks.map((task) => {
-						const isOpen = OPEN_STATUSES.has(task.status);
-						return (
-							<tr key={task.id}>
-								<td
-									className="ops-strong min-w-0"
-									data-label="Задача"
-									style={{ maxWidth: "320px" }}
-								>
-									<span
-										className="truncate block"
-										style={{ fontWeight: 600 }}
-									>
-										{task.title}
-									</span>
-									{task.description ? (
-										<span
-											className="ops-note break-words"
-											style={{
-												display: "block",
-												fontSize: "0.8rem",
-												color: "var(--muted)",
-											}}
-										>
-											{task.description}
-										</span>
-									) : null}
-								</td>
-								<td data-label="Статус">
-									<span
-										className={`ops-state ${isOpen ? "ops-state--warn" : "ops-state--ok"}`}
-									>
-										{STATUS_LABELS[task.status] ?? task.status}
-									</span>
-								</td>
-								<td data-label="Создана">
-									{task.createdAt ? formatMoment(task.createdAt) : "—"}
-									{task.dueAt ? (
-										<span
-											className="ops-note"
-											style={{
-												display: "block",
-												marginTop: "0.2rem",
-												fontSize: "0.8rem",
-												color: "var(--brand-primary, #0284c7)",
-											}}
-										>
-											Срок: {formatMoment(task.dueAt)}
-										</span>
-									) : null}
-								</td>
-								<td data-label="Действие" style={{ textAlign: "right" }}>
-									{isOpen ? (
-										<button
-											type="button"
-											className="primary-button"
-											disabled={false}
-											onClick={() => void onCompleteTask(task.id)}
-											style={{
-												height: "30px",
-												fontSize: "0.75rem",
-												padding: "0 0.6rem",
-												borderRadius: "6px",
-												cursor: "pointer",
-												whiteSpace: "nowrap",
-											}}
-											title="Завершить задачу"
-										>
-											{completingTaskId === task.id
-												? "Завершаю…"
-												: "Завершить задачу"}
-										</button>
-									) : (
-										<span
-											style={{
-												fontSize: "0.8rem",
-												color: "var(--muted)",
-											}}
-										>
-											Выполнена
-										</span>
-									)}
-								</td>
-							</tr>
-						);
-					})}
-				</tbody>
-			</table>
+		<div className="clinical-tasks-hub" data-testid="clinical-tasks-hub">
+			{/* Верхняя панель управления: Фильтры по дедлайну + кнопка «+ Новая задача» */}
+			<ClinicalTasksToolbar
+				deadlineFilter={deadlineFilter}
+				onSelectDeadlineFilter={setDeadlineFilter}
+				counts={counts}
+				isAddingTask={isAddingTask}
+				onToggleAddingTask={() => setIsAddingTask((prev) => !prev)}
+			/>
+
+			{/* Компактная форма 1-клик добавления задачи */}
+			{isAddingTask ? (
+				<ClinicalTaskCreateDrawer
+					patientId={patientId}
+					patientName={patientName}
+					onAddTask={onAddTask}
+					onClose={() => setIsAddingTask(false)}
+				/>
+			) : null}
+
+			{/* Пустое состояние в выбранном фильтре */}
+			{filteredTasks.length === 0 ? (
+				<div
+					className="clinical-tasks-empty"
+					data-testid="clinical-tasks-empty"
+				>
+					<CheckCircle2 size={28} className="clinical-tasks-empty-icon" />
+					<p style={{ margin: 0, fontWeight: 500 }}>
+						{deadlineFilter === "today"
+							? "На сегодня открытых задач нет — все напоминания выполнены."
+							: deadlineFilter === "tomorrow"
+								? "На завтра запланированных задач нет."
+								: deadlineFilter === "overdue"
+									? "Просроченных задач нет — график лечения соблюдается."
+									: "Клинических задач пока нет. Выберите пресет выше или добавьте задачу кнопкой."}
+					</p>
+				</div>
+			) : null}
+
+			{/* ДЕСКТОПНЫЙ ВИД: Таблица задач (>768px) */}
+			{filteredTasks.length > 0 ? (
+				<ClinicalTasksDesktopTable
+					tasks={filteredTasks}
+					completingTaskId={completingTaskId}
+					onCompleteTask={onCompleteTask}
+				/>
+			) : null}
+
+			{/* МОБИЛЬНЫЙ ВИД: Grouped List Cards (Apple HIG, <= 768px) */}
+			{filteredTasks.length > 0 ? (
+				<ClinicalTasksMobileCards
+					tasks={filteredTasks}
+					completingTaskId={completingTaskId}
+					onCompleteTask={onCompleteTask}
+				/>
+			) : null}
 		</div>
 	);
 };
+
+export default ClinicalTasksTable;

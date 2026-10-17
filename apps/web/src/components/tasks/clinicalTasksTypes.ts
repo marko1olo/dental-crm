@@ -11,6 +11,17 @@ export type CustomTaskType = {
 	createdAt: string;
 };
 
+export type TaskDeadlineCategory = "today" | "tomorrow" | "overdue" | "upcoming" | "no_due";
+
+export type TaskDeadlineFilter = "all" | "today" | "tomorrow" | "overdue";
+
+export const DEADLINE_FILTER_LABELS: Record<TaskDeadlineFilter, string> = {
+	all: "Все",
+	today: "Сегодня",
+	tomorrow: "Завтра",
+	overdue: "Просрочено",
+};
+
 export type ClinicalTask = {
 	id: string;
 	organizationId: string;
@@ -23,6 +34,7 @@ export type ClinicalTask = {
 	description: string | null;
 	dueAt: string | null;
 	createdAt: string;
+	patientName?: string | null;
 };
 
 export type ClinicalPhaseCode = "PHASE_1_THERAPY" | "PHASE_2_SURGERY";
@@ -60,4 +72,22 @@ export type ClinicalTasksPanelProps = {
 	/** Врач, которому адресуем задачу передачи (если известен). */
 	assignedDoctorId?: string | null;
 	treatmentPlanId?: string | null;
+	patientName?: string | null;
 };
+
+export interface ClinicalTasksTableProps {
+	readonly visibleTasks: readonly ClinicalTask[];
+	readonly completingTaskId: string | null;
+	readonly onCompleteTask: (taskId: string) => void;
+	readonly onAddTask?:
+		| ((task: {
+				title: string;
+				description?: string | undefined;
+				dueAt?: string | undefined;
+				taskType?: string | undefined;
+		  }) => void | Promise<void>)
+		| undefined;
+	readonly patientId?: string | null | undefined;
+	readonly patientName?: string | null | undefined;
+	readonly assignedDoctorId?: string | null | undefined;
+}
