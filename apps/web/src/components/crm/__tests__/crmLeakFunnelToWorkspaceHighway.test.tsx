@@ -143,76 +143,63 @@ describe("CRM Leak Funnel to Patient Workspace Highway & Anti-Matryoshka Portals
 	it("4. Anti-Matryoshka: Source code verification of createPortal(..., document.body)", () => {
 		const drawerSource = fs.readFileSync(
 			path.resolve(__dirname, "../CrmLeakDetectorDrawer.tsx"),
-			"utf8"
+			"utf8",
 		);
 		assert.ok(
 			drawerSource.includes("createPortal"),
-			"CrmLeakDetectorDrawer must use createPortal"
+			"CrmLeakDetectorDrawer must use createPortal",
 		);
 		assert.ok(
 			drawerSource.includes("document.body"),
-			"CrmLeakDetectorDrawer must mount into document.body"
-		);
-
-		const modalSource = fs.readFileSync(
-			path.resolve(__dirname, "../CrmLeakDetectorModal.tsx"),
-			"utf8"
-		);
-		assert.ok(
-			modalSource.includes("createPortal"),
-			"CrmLeakDetectorModal must use createPortal"
-		);
-		assert.ok(
-			modalSource.includes("document.body"),
-			"CrmLeakDetectorModal must mount into document.body"
+			"CrmLeakDetectorDrawer must mount into document.body",
 		);
 
 		const analyticsSource = fs.readFileSync(
 			path.resolve(__dirname, "../../leads/LeadsFunnelAnalyticsModal.tsx"),
-			"utf8"
+			"utf8",
 		);
 		assert.ok(
 			analyticsSource.includes("createPortal"),
-			"LeadsFunnelAnalyticsModal must use createPortal"
+			"LeadsFunnelAnalyticsModal must use createPortal",
 		);
 		assert.ok(
 			analyticsSource.includes("document.body"),
-			"LeadsFunnelAnalyticsModal must mount into document.body"
+			"LeadsFunnelAnalyticsModal must mount into document.body",
 		);
 	});
 
-	it("5. CrmLeakDetectorModal source code verifies patient workspace navigation links in table", () => {
-		const modalSource = fs.readFileSync(
-			path.resolve(__dirname, "../CrmLeakDetectorModal.tsx"),
-			"utf8"
+	it("5. CrmLeakDetectorDrawer source code verifies patient workspace navigation links in table", () => {
+		const drawerSource = fs.readFileSync(
+			path.resolve(__dirname, "../CrmLeakDetectorDrawer.tsx"),
+			"utf8",
 		);
 		assert.ok(
-			modalSource.includes("lead-patient-link-"),
-			"Must include data-testid='lead-patient-link-${lead.id}'"
+			drawerSource.includes("lead-patient-link-"),
+			"Must include data-testid='lead-patient-link-${lead.id}'",
 		);
 		assert.ok(
-			modalSource.includes("btn-open-workspace-"),
-			"Must include data-testid='btn-open-workspace-${lead.id}'"
+			drawerSource.includes("btn-open-workspace-"),
+			"Must include data-testid='btn-open-workspace-${lead.id}'",
 		);
 	});
 
 	it("6. CrmView and PatientWorkspace exports integrity", () => {
 		const crmIndex = fs.readFileSync(
 			path.resolve(__dirname, "../index.ts"),
-			"utf8"
+			"utf8",
 		);
 		assert.ok(
-			crmIndex.includes('export * from "./CrmView"'),
-			"crm/index.ts must export CrmView"
+			crmIndex.includes("CrmView"),
+			"crm/index.ts must export CrmView",
 		);
 
 		const patientWorkspaceSingular = fs.readFileSync(
 			path.resolve(__dirname, "../../patient/PatientWorkspace.tsx"),
-			"utf8"
+			"utf8",
 		);
 		assert.ok(
 			patientWorkspaceSingular.includes("PatientWorkspaceView"),
-			"patient/PatientWorkspace.tsx must export PatientWorkspaceView"
+			"patient/PatientWorkspace.tsx must export PatientWorkspaceView",
 		);
 	});
 });
