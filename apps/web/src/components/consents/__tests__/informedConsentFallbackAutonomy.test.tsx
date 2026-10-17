@@ -265,8 +265,8 @@ describe("Informed Consent Pure Print-First & Paper Autonomy (Mandates 8e, 8i, 8
 		assert.ok(!html.includes("Отправить код по SMS"));
 
 		// Print and statutory elements are prominent
-		assert.ok(html.includes("323-ФЗ • 1051н"));
-		assert.ok(html.includes("Подписание на бумажном носителе (323-ФЗ ст. 20, Приказ МЗ РФ № 1051н)"));
+		assert.ok(html.includes("Оригинал в карте"));
+		assert.ok(html.includes("Подписание на бумажном носителе"));
 		assert.ok(html.includes('data-testid="checkbox-paper-original-stored"'));
 		assert.ok(html.includes('data-testid="btn-confirm-sign"'));
 		// Mandate 8e: Confirm button is NEVER disabled
@@ -402,13 +402,13 @@ describe("Informed Consent Pure Print-First & Paper Autonomy (Mandates 8e, 8i, 8
 
 		await clickNode(confirmBtn!);
 
-		// PACKAGE_PRIMARY_VISIT has 4 documents (152-FZ, 1051n, Anesthesia, Therapy)
-		assert.strictEqual(onConsentSigned.mock.calls.length, 4);
+		// PACKAGE_PRIMARY_VISIT has 3 documents (Осмотр и рентген, Персональные данные, Местная анестезия) per Mandate 8e
+		assert.strictEqual(onConsentSigned.mock.calls.length, 3);
 		assert.strictEqual(onPackageSigned.mock.calls.length, 1);
 
 		const packagePayloads: SignedConsentPayload[] =
 			onPackageSigned.mock.calls[0]![0];
-		assert.strictEqual(packagePayloads.length, 4);
+		assert.strictEqual(packagePayloads.length, 3);
 		for (const p of packagePayloads) {
 			assert.strictEqual(p.verificationMethod, "paper_physical");
 			assert.strictEqual(p.paperOriginalStored, true);

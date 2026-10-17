@@ -76,15 +76,15 @@ export const CONSENT_PACKAGES: Record<ConsentPackageKey, ConsentPackageDefinitio
 	PACKAGE_PRIMARY_VISIT: {
 		key: "PACKAGE_PRIMARY_VISIT",
 		code: "ПАКЕТ-ПЕРВИЧНЫЙ",
-		title: "Первичный стоматологический пакет",
-		shortTitle: "Первичный пакет",
-		subtitle: "Договор платных услуг (ПП РФ № 736) + Согласие 152-ФЗ + ИДС на осмотр и диагностику (1051н)",
+		title: "Пакет первичного приёма",
+		shortTitle: "Первичный приём",
+		subtitle: "Согласие на медицинское вмешательство + Персональные данные + Местная анестезия",
 		templateKeys: [
-			"CONSENT_PAID_CONTRACT",
-			"CONSENT_PERSONAL_DATA",
 			"CONSENT_INSPECTION_1051N",
+			"CONSENT_PERSONAL_DATA",
+			"CONSENT_ANESTHESIA",
 		],
-		description: "Обязательный первичный юридический комплект при первом визите пациента в клинику (3 документа за 1 подпись)",
+		description: "Единый первичный комплект при первом визите пациента в клинику (3 документа за 1 подпись)",
 	},
 	PACKAGE_SURGERY: {
 		key: "PACKAGE_SURGERY",
@@ -214,7 +214,7 @@ export function getConsentTemplate(key: ConsentTemplateKey): ConsentTemplate {
 }
 
 export const PACKAGE_SHORT_TITLES: Record<ConsentPackageKey, string> = {
-	PACKAGE_PRIMARY_VISIT: "Первичный пакет",
+	PACKAGE_PRIMARY_VISIT: "Первичный приём",
 	PACKAGE_SURGERY: "Хирургический пакет",
 	PACKAGE_IMPLANTOLOGY: "Имплантологический пакет",
 	PACKAGE_ORTHODONTICS: "Ортодонтический пакет",
@@ -228,8 +228,8 @@ export const TEMPLATE_SHORT_TITLES: Record<ConsentTemplateKey, string> = {
 	CONSENT_ORTHOPEDICS: "Ортопедия (Коронки)",
 	CONSENT_HYGIENE_BLEACHING: "Профгигиена и отбеливание",
 	CONSENT_ANESTHESIA: "Местная анестезия",
-	CONSENT_PERSONAL_DATA: "Защита персональных данных",
-	CONSENT_INSPECTION_1051N: "Информированное согласие (ИДС)",
+	CONSENT_PERSONAL_DATA: "Согласие на обработку данных",
+	CONSENT_INSPECTION_1051N: "Согласие на осмотр и рентген",
 	CONSENT_PEDIATRIC: "Детская стоматология (до 15 лет)",
 	CONSENT_EGISZ_REFUSAL: "Отказ от передачи в ЕГИСЗ",
 	CONSENT_TREATMENT_REFUSAL: "Отказ от медицинского вмешательства",

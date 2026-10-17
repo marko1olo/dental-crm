@@ -88,7 +88,7 @@ describe("Red Team Inquisition: Paper-First Sovereignty & Anti-Tablet Coercion (
 			"Must render prominent package print button",
 		);
 		assert.ok(
-			html.includes("Подтвердить подписание пакета (4 док.)"),
+			html.includes("Подтвердить подписание пакета (3 док.)"),
 			"Must render batch paper confirmation button",
 		);
 		assert.ok(

@@ -117,7 +117,7 @@ export const ConsentModalFooter: React.FC<ConsentModalFooterProps> = ({
 								onCopyPatientSummary();
 							}}
 							data-testid="consent-copy-patient-text-btn"
-							className="flex items-center gap-2 w-full px-3 py-1.5 text-[12.5px] rounded-md hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer text-left transition-colors"
+							className="consent-action-btn secondary flex items-center gap-2 w-full px-3 py-2 text-[12.5px] rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer text-left transition-colors min-h-[44px]"
 							title="Скопировать выжимку ИДС и памятку для отправки пациенту в WhatsApp/Telegram"
 						>
 							<Copy size={15} className="text-[var(--teal,#0d9488)] shrink-0" />
@@ -155,16 +155,15 @@ export const ConsentModalFooter: React.FC<ConsentModalFooterProps> = ({
 			<div className="flex items-center gap-3">
 				<button
 					type="button"
-					className="primary-button min-h-[44px] sm:min-h-8 sm:h-8 px-4 text-[13px] font-semibold rounded-lg flex items-center gap-1.5"
+					className="primary-button consent-action-btn primary min-h-[44px] sm:min-h-9 sm:h-9 px-4 text-[13px] font-semibold rounded-xl flex items-center gap-1.5"
 					data-testid="btn-confirm-sign"
 					onClick={onConfirmSign}
 					disabled={isSubmitting}
 					title={
-						isSigningReady
-							? (activeMode === "packages" ? "Подтвердить пакет согласий" : "Подтвердить согласие")
-							: "Подтвердить подписание"
+						activeMode === "packages" ? "Подтвердить пакет согласий" : "Подтвердить согласие"
 					}
 				>
+					<Zap size={15} />
 					<span>
 						{activeMode === "packages"
 							? `Подтвердить пакет (${packageDocsCount} док.) в 1 клик`

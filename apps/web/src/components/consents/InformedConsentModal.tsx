@@ -12,3 +12,4 @@
  */
 
 export * from "./consentModal/index.js";
+export * from "./consentSummaryHelper.js";

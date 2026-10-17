@@ -259,7 +259,7 @@ export function useInformedConsent({
 		});
 	}, [rendered.fullTextContent, substitutionContext, strokes, verificationMethod]);
 
-	// Валидация готовности к подписанию для блокировки CTA кнопок
+	// Валидация готовности к подписанию для блокировки CTA кнопок (Мандат 8e / 8n: бумажный режим всегда готов в 1 клик)
 	const isSigningReady = useMemo(() => {
 		if (verificationMethod === "tablet_stylus") {
 			return strokes.length > 0 || currentPoints.length > 0;
@@ -268,10 +268,10 @@ export function useInformedConsent({
 			return Boolean(smsOtpCode && smsOtpCode.trim().length === 4);
 		}
 		if (verificationMethod === "paper_physical") {
-			return Boolean(paperOriginalConfirmed || paperScanFile);
+			return true;
 		}
-		return false;
-	}, [verificationMethod, strokes.length, currentPoints.length, smsOtpCode, paperOriginalConfirmed, paperScanFile]);
+		return true;
+	}, [verificationMethod, strokes.length, currentPoints.length, smsOtpCode]);
 
 	// 1-клик генерация и скачивание архивного документа ISO 19005-1 (PDF/A-1b)
 	const handleDownloadPdfA = () => {

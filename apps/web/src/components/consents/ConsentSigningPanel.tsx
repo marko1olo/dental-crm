@@ -222,7 +222,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 								Согласен с предложенным планом лечения и возможными рисками
 							</span>
 							<span className="text-[11px] text-muted mt-0.5">
-								Федеральный закон № 323-ФЗ ст. 20 (информированное добровольное согласие)
+								Информированное добровольное согласие на медицинское вмешательство
 							</span>
 						</div>
 					</label>
@@ -269,7 +269,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 					</div>
 
 					<p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.4 }}>
-						Пациент ставит росчерк пальцем прямо в кресле. Штрихи сглаживаются кривыми Безье и фиксируются в карте 043/у.
+						Пациент ставит росчерк пальцем прямо в кресле. Подпись защищена криптографическим отпечатком и фиксируется в медицинской карте.
 					</p>
 
 					{/* ТАКТИЛЬНАЯ ЗОНА РОСПИСИ ПАЛЬЦЕМ (ВЫСОТА >= 190px, СКРУГЛЕНИЕ 16px) */}
@@ -505,7 +505,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 			)}
 
 			{/* =============================================================== */}
-			{/* РЕЖИМ 3: ПОДПИСАНИЕ НА БУМАЖНОМ НОСИТЕЛЕ (323-ФЗ СТ. 20)        */}
+			{/* РЕЖИМ 3: ПОДПИСАНИЕ НА БУМАЖНОМ НОСИТЕЛЕ                        */}
 			{/* =============================================================== */}
 			{verificationMethod === "paper_physical" && (
 				<div className="flex flex-col gap-3">
@@ -513,7 +513,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 						<div className="flex items-center gap-2">
 							<ShieldCheck size={22} className="text-[var(--teal,#0d9488)] shrink-0" />
 							<span className="font-bold text-sm text-[var(--ink)]">
-								Подписание на бумажном носителе (323-ФЗ ст. 20, Приказ МЗ РФ № 1051н)
+								Подписание на бумажном носителе
 							</span>
 						</div>
 						<span className="consent-statutory-badge shrink-0">
@@ -523,7 +523,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 
 					<p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.5 }}>
 						Пациент знакомится с текстом согласия и расписывается шариковой ручкой на бумажном бланке.
-						Бумажный оригинал подшивается в медицинскую карту пациента формы № 043/у (срок хранения 25 лет).
+						Бумажный оригинал хранится в медицинской карте пациента.
 					</p>
 
 					{/* Чекбокс подтверждения наличия бумажного оригинала */}
@@ -535,8 +535,9 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 							data-testid="checkbox-paper-original-stored"
 							style={{ width: "18px", height: "18px", cursor: "pointer", accentColor: "var(--teal, #0d9488)" }}
 						/>
-						<span style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>
-							Оригинал подписан пациентом от руки на бумаге (подшит в карту № 043/у)
+						<span style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+							<Check size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
+							<span>Бумажный оригинал в карте (подписан пациентом от руки)</span>
 						</span>
 					</label>
 
@@ -613,7 +614,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 						{!paperOriginalConfirmed && !paperScanFile ? (
 							<span className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5" data-testid="status-paper-unsigned">
 								<AlertTriangle size={14} className="shrink-0" />
-								<span>Для подтверждения отметьте подшивку оригинала в карту или прикрепите скан</span>
+								<span>Готово к подтверждению бумажного оригинала в карте пациента</span>
 							</span>
 						) : (
 							<span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5" data-testid="status-paper-signed">
@@ -621,7 +622,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 								<span>
 									{paperScanFile
 										? `Скан прикреплен («${paperScanFile.name}») • Готово к архивации`
-										: "Бумажный оригинал подшит в архив карты 043/у (25 лет хранения)"}
+										: "Бумажный оригинал подписан и подшит в медицинскую карту пациента"}
 								</span>
 							</span>
 						)}
@@ -631,7 +632,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 					<div className="flex items-center gap-2 pt-1 flex-wrap">
 						<button
 							type="button"
-							className="primary-button min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-semibold rounded-lg flex items-center gap-1.5"
+							className="primary-button min-h-[44px] sm:min-h-9 sm:h-9 px-3 text-[13px] font-semibold rounded-xl flex items-center gap-1.5"
 							data-testid="btn-confirm-paper-signed"
 							onClick={() => {
 								setPaperOriginalConfirmed(true);

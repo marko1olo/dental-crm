@@ -42,7 +42,7 @@ test("InformedConsentModal: scope mismatch detection and systemic garbage saniti
 		treatmentPlanText: "Удаление ретинированного зуба 3.8, синус-лифтинг и имплантация",
 	});
 	assert.equal(surgeryMismatch.hasMismatch, true);
-	assert.equal(surgeryMismatch.warningTitle, "Внимание: добавлены процедуры, не покрытые текущим ИДС 1051н");
+	assert.equal(surgeryMismatch.warningTitle, "Внимание: добавлены процедуры, не покрытые текущим согласием на лечение");
 	assert.ok(surgeryMismatch.uncoveredTemplateKeys.includes("CONSENT_SURGERY_IMPLANT"));
 	assert.equal(surgeryMismatch.suggestedActionLabel, "Сформировать доп. согласие на новые процедуры");
 

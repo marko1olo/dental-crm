@@ -285,7 +285,7 @@ export function detectConsentScopeMismatch(params: ConsentScopeMismatchParams): 
 
 	const warningTitle = isCito
 		? "Оказание экстренной помощи по острой боли: лечение проводится незамедлительно, оформление согласий допускается параллельно"
-		: "Внимание: добавлены процедуры, не покрытые текущим ИДС 1051н";
+		: "Внимание: добавлены процедуры, не покрытые текущим согласием на лечение";
 
 	const warningMessage = hasMismatch
 		? isCito

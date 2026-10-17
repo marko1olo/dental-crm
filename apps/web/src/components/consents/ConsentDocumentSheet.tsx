@@ -105,7 +105,7 @@ export const ConsentDocumentSheet: React.FC<ConsentDocumentSheetProps> = ({
 				</span>
 				<span className="text-xs text-muted">
 					{isClosedOrSigned
-						? "Документ подписан / подшит в карту 043/у"
+						? "Документ подписан / подшит в медицинскую карту"
 						: "Черновик — печать разрешена в любой момент"}
 				</span>
 			</div>
@@ -237,7 +237,7 @@ export const ConsentDocumentSheet: React.FC<ConsentDocumentSheetProps> = ({
 								}}
 								data-testid="sheet-status-signed"
 							>
-								Статус: Подписан и заверен (подшит в архив карты № 043/у)
+								Статус: Подписан и заверен (подшит в архив медицинской карты)
 							</div>
 						)}
 					</div>
@@ -276,13 +276,13 @@ export const ConsentDocumentSheet: React.FC<ConsentDocumentSheetProps> = ({
 						<div
 							dangerouslySetInnerHTML={{ __html: qrSvg }}
 							style={{ width: 48, height: 48, flexShrink: 0 }}
-							title="QR-код верификации документа в ЕГИСЗ"
+							title="QR-код верификации документа"
 						/>
 						<div style={{ fontSize: "10px", lineHeight: "1.3", color: "var(--muted)" }}>
 							<span style={{ fontWeight: 600, color: "var(--ink)", display: "block" }}>
-								ЕГИСЗ • Приказ МЗ РФ № 1051н / 152-ФЗ
+								Электронный архив клиники • Контроль целостности
 							</span>
-							<span>Контроль целостности медкарты № 043/у</span>
+							<span>Медицинская карта стоматологического пациента</span>
 						</div>
 					</div>
 					<div style={{ textAlign: "right", fontSize: "10px" }}>

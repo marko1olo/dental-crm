@@ -56,13 +56,13 @@ describe("Informed Consent Packages & Batch Signing Suite (Mandates 8e, 8i, 8k, 
 			}
 		});
 
-		it("PACKAGE_PRIMARY_VISIT contains Договор ПП РФ № 736, 152-ФЗ, 1051н (3 documents)", () => {
+		it("PACKAGE_PRIMARY_VISIT contains Осмотр и рентген, ПДН, Местная анестезия (3 documents)", () => {
 			const pkg = getConsentPackage("PACKAGE_PRIMARY_VISIT");
 			assert.equal(pkg.templateKeys.length, 3);
 			assert.deepEqual(pkg.templateKeys, [
-				"CONSENT_PAID_CONTRACT",
-				"CONSENT_PERSONAL_DATA",
 				"CONSENT_INSPECTION_1051N",
+				"CONSENT_PERSONAL_DATA",
+				"CONSENT_ANESTHESIA",
 			]);
 		});
 
@@ -105,14 +105,12 @@ describe("Informed Consent Packages & Batch Signing Suite (Mandates 8e, 8i, 8k, 
 			}
 		});
 
-		it("CONSENT_INSPECTION_1051N conforms to statutory standards (Приказ МЗ РФ № 1051н)", () => {
+		it("CONSENT_INSPECTION_1051N conforms to clinical inspection standards", () => {
 			const tpl = getConsentTemplate("CONSENT_INSPECTION_1051N");
-			assert.equal(tpl.code, "ИДС-1051н");
-			assert.ok(tpl.statutoryBasis.includes("1051н"));
+			assert.equal(tpl.code, "СОГЛ-ОСМОТР");
 			assert.ok(TEMPLATE_SHORT_TITLES.CONSENT_INSPECTION_1051N);
 
 			const rendered = renderConsentTemplate(tpl, mockContext);
-			assert.ok(rendered.fullTextContent.includes("1051н"));
 			assert.ok(rendered.fullTextContent.includes("Иванов Иван Иванович"));
 			assert.ok(rendered.fullTextContent.includes("радиовизиографию"));
 			assert.ok(rendered.fullTextContent.includes("СанПиН 2.6.1.1192-03"));
@@ -144,9 +142,9 @@ describe("Informed Consent Packages & Batch Signing Suite (Mandates 8e, 8i, 8k, 
 
 			assert.ok(html.includes("<!DOCTYPE html>"));
 			assert.ok(html.includes("page-break-after: always;"));
-			assert.ok(html.includes("ДОГ-736-ПМУ"));
-			assert.ok(html.includes("СОГЛ-152-ПДН"));
-			assert.ok(html.includes("ИДС-1051н"));
+			assert.ok(html.includes("СОГЛ-ОСМОТР"));
+			assert.ok(html.includes("СОГЛ-ПДН"));
+			assert.ok(html.includes("ИДС-06-АНЕСТ"));
 			assert.ok(html.includes("________________________________________"));
 		});
 

@@ -325,36 +325,68 @@ async function persistSignedConsentToBackend(params: {
 			document?: { id?: string };
 		};
 		const docId = created.id || created.document?.id;
-		if (!docId) return;
+		if (docId) {
+			await fetch(`/api/documents/${encodeURIComponent(docId)}/issue`, {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					signatureSvg: params.svg || undefined,
+					signatureAttestation: {
+						mode:
+							params.effectiveMethod === "tablet_stylus"
+								? "tablet_stylus"
+								: params.effectiveMethod === "sms_otp"
+									? "sms_otp"
+									: "paper_signed",
+						signedAt: params.payload.signedAt || new Date().toISOString(),
+						recipientFullName:
+							params.effectiveContext.patientName || "Пациент",
+						recipientRole: "patient",
+						staffFullName:
+							params.effectiveContext.doctorName || "Врач-стоматолог",
+						staffRole: "doctor",
+						identityChecked: true,
+						documentOpenedAndChecked: true,
+						recipientSigned: true,
+						clinicRepresentativeSigned: true,
+						note: params.payload.statusText,
+					},
+				}),
+			});
+		}
 
-		await fetch(`/api/documents/${encodeURIComponent(docId)}/issue`, {
+		// Также фиксируем согласие напрямую в карте пациента в БД (PostgreSQL 18)
+		await fetch(`/api/patients/${encodeURIComponent(params.patientId)}/consents`, {
 			method: "POST",
 			headers: denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
 			}),
 			body: JSON.stringify({
-				signatureSvg: params.svg || undefined,
-				signatureAttestation: {
-					mode:
-						params.effectiveMethod === "tablet_stylus"
-							? "tablet_stylus"
-							: params.effectiveMethod === "sms_otp"
-								? "sms_otp"
-								: "paper_signed",
-					signedAt: params.payload.signedAt || new Date().toISOString(),
-					recipientFullName:
-						params.effectiveContext.patientName || "Пациент",
-					recipientRole: "patient",
-					staffFullName:
-						params.effectiveContext.doctorName || "Врач-стоматолог",
-					staffRole: "doctor",
-					identityChecked: true,
-					documentOpenedAndChecked: true,
-					recipientSigned: true,
-					clinicRepresentativeSigned: true,
-					note: params.payload.statusText,
-				},
+				templateKey: params.consentKey,
+				code: params.template.code,
+				title: params.template.title,
+				fullTextContent: params.payload.fullTextContent,
+				patientName: params.effectiveContext.patientName,
+				birthDate: params.effectiveContext.birthDate,
+				passport: params.effectiveContext.passport,
+				doctorName: params.effectiveContext.doctorName,
+				clinicName: params.effectiveContext.clinicName,
+				diagnosisIcd: params.effectiveContext.diagnosisIcd,
+				toothNumbers: params.effectiveContext.toothNumbers,
+				signatureSvg: params.svg || "",
+				signaturePngBase64: params.payload.signaturePngBase64,
+				vectorData: params.payload.vectorData,
+				integrityHash: params.payload.integrityHash,
+				signedAt: params.payload.signedAt,
+				verificationMethod: params.effectiveMethod,
+				smsOtpCode: params.payload.smsOtpCode,
+				attachedToForm043u: true,
+				visitId: params.visitId,
 			}),
+		}).catch((err) => {
+			console.warn("Could not record consent directly to patient timeline:", err);
 		});
 	} catch (err) {
 		console.warn("Could not persist signed consent to backend (offline/mock mode):", err);
@@ -515,7 +547,7 @@ export async function executeSigning({
 				statusText: effectiveMethod === "paper_physical"
 					? (paperScanFile
 						? `Скан бланка прикреплен («${paperScanFile.name}»)`
-						: "Бумажный оригинал пакета подписан пациентом (хранится в архиве карты 043/у)")
+						: "Бумажный оригинал пакета подписан пациентом (хранится в медицинской карте)")
 					: effectiveMethod === "sms_otp"
 					? "Пакет согласий подписан ПЭП по 63-ФЗ ст. 5 через SMS"
 					: "Электронный пакет согласий подписан на планшете (векторная подпись SVG)",
@@ -579,7 +611,7 @@ export async function executeSigning({
 			statusText: effectiveMethod === "paper_physical"
 				? (paperScanFile
 					? `Скан бланка прикреплен («${paperScanFile.name}»)`
-					: "Бумажный оригинал подписан пациентом (хранится в архиве карты 043/у)")
+					: "Бумажный оригинал подписан пациентом (хранится в медицинской карте)")
 				: effectiveMethod === "sms_otp"
 				? "Подписано ПЭП по 63-ФЗ ст. 5 через SMS"
 				: "Электронное согласие подписано на планшете (векторная подпись SVG)",

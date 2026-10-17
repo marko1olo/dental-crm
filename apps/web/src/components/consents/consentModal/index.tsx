@@ -11,9 +11,6 @@ import {
 	getConsentTemplate,
 } from "../consentTemplates.js";
 import { showToast } from "../../GlobalToast.js";
-import {
-	buildPatientConsentSummary,
-} from "../consentSummaryHelper.js";
 import { ConsentToolbarAndBanner } from "../ConsentToolbarAndBanner.js";
 import { ConsentModalFooter } from "../ConsentModalFooter.js";
 import "../informedConsent.css";
@@ -28,7 +25,6 @@ import {
 import { ConsentRiskChecklist } from "./ConsentRiskChecklist.js";
 
 export { PACKAGE_SHORT_TITLES, TEMPLATE_SHORT_TITLES };
-export { buildPatientConsentSummary };
 export * from "./types.js";
 export * from "./useInformedConsent.js";
 export * from "./ConsentDocumentPreview.js";
@@ -135,10 +131,10 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = (props)
 						</div>
 						<h2 id="consent-modal-title" className="consent-title truncate">
 							{isMobile
-								? (activeMode === "packages" ? "Пакет согласий ИДС" : "Согласие на лечение (ИДС)")
+								? (activeMode === "packages" ? "Пакет согласий на лечение" : "Информированное согласие")
 								: (activeMode === "packages"
-									? "Пакет информированных добровольных согласий (ИДС)"
-									: "Информированное добровольное согласие (ИДС)")}
+									? "Пакет информированных добровольных согласий"
+									: "Информированное согласие на лечение")}
 						</h2>
 					</div>
 					<button
@@ -287,9 +283,9 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = (props)
 							<span>
 								{isSigningReady
 									? (activeMode === "packages"
-										? `Подтвердить и подписать пакет (${currentPackage.templateKeys.length} док.)`
-										: "Подтвердить и подписать ИДС")
-									: "Ожидает росписи пальцем / кода / бланка"}
+										? `Подтвердить пакет (${currentPackage.templateKeys.length} док.)`
+										: "Подтвердить согласие")
+									: "Ожидает росписи пальцем / бланка"}
 							</span>
 						</button>
 					</div>
