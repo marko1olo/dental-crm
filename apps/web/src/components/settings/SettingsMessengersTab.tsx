@@ -85,7 +85,7 @@ export function SettingsMessengersTab({
 						<h2>Уведомления и мессенджеры клиники</h2>
 						<p>
 							Настройка цепочек напоминаний пациентам (24ч до визита, 2ч с навигацией, 24ч после операции)
-							и шлюзов доставки через WhatsApp Business, Telegram, MAX (1C) и SMS.
+							и каналов доставки через WhatsApp, Telegram, ВКонтакте и SMS.
 						</p>
 					</div>
 				</div>
@@ -144,7 +144,7 @@ export function SettingsMessengersTab({
 					className={`messenger-channel-tab${activeMessenger === "cadence" ? " active" : ""}`}
 				>
 					<span
-						className="messenger-tab-badge bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200 rounded px-1.5 py-0.5 text-xs font-bold inline-flex items-center gap-0.5"
+						className="messenger-tab-badge cadence-badge"
 						aria-hidden="true"
 					>
 						<BellRing size={11} /> 24h
@@ -199,21 +199,6 @@ export function SettingsMessengersTab({
 
 				<button
 					role="tab"
-					aria-selected={activeMessenger === "max"}
-					aria-controls="messenger-panel-max"
-					id="messenger-tab-max"
-					type="button"
-					onClick={() => setActiveMessenger("max")}
-					className={`messenger-channel-tab${activeMessenger === "max" ? " active" : ""}`}
-				>
-					<span className="messenger-tab-badge max-badge" aria-hidden="true">
-						MAX
-					</span>
-					MAX by 1C
-				</button>
-
-				<button
-					role="tab"
 					aria-selected={activeMessenger === "templates"}
 					aria-controls="messenger-panel-templates"
 					id="messenger-tab-templates"
@@ -222,7 +207,7 @@ export function SettingsMessengersTab({
 					className={`messenger-channel-tab${activeMessenger === "templates" ? " active" : ""}`}
 				>
 					<span
-						className="messenger-tab-badge bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 rounded px-1.5 py-0.5 text-xs font-medium"
+						className="messenger-tab-badge templates-badge"
 						aria-hidden="true"
 					>
 						TXT
