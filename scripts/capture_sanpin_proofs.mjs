@@ -6,8 +6,8 @@ import { fetchJson } from "./lib/fetchJson.mjs";
 import { spawnTracked, stopTracked } from "./lib/processTracking.mjs";
 import { sleep } from "./lib/sleep.mjs";
 
-const OUT_BRAIN = "C:/Users/Admin/.gemini/antigravity/brain/ce4fb2aa-3263-4d87-a77e-45ef6ddc0bba";
-const OUT_DOCS = "C:/Clinic_MVP/dental-crm/docs/screenshots/inquisition_live";
+const OUT_BRAIN = "C:/Users/Admin/.gemini/antigravity/brain/c6d3ec71-0e9b-419a-a1a5-717dd327eb61";
+const OUT_DOCS = "C:/Clinic_MVP/dental-crm/docs/proofs/sanpin";
 const webBaseUrl = "http://127.0.0.1:5173";
 const cdpPort = 9237;
 
@@ -68,7 +68,7 @@ const browserProcess = spawnTracked(
 		"--remote-allow-origins=*",
 		`--remote-debugging-port=${cdpPort}`,
 		`--user-data-dir=${tmpProfile}`,
-		`${webBaseUrl}/#scanner`,
+		`${webBaseUrl}/?demo=true#sanpin`,
 	],
 	{ stdio: ["ignore", "ignore", "pipe"] },
 );
@@ -138,15 +138,29 @@ try {
 	await evaluate(
 		cdp,
 		`
+		localStorage.setItem("dente_clinic_token", "demo-showcase-token-owner");
+		localStorage.setItem("dente_staff_token", "demo-showcase-staff-token-owner");
+		localStorage.setItem("dente_demo_showcase", "true");
 		localStorage.setItem("dental-crm:web-ui-preferences:v1", ${JSON.stringify(prefs)});
 		localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ completed: true, dismissed: true }));
 		localStorage.setItem("dente_tour_completed", "true");
-		localStorage.setItem("dente_demo_showcase", "true");
-		localStorage.setItem("dente_current_view", "scanner");
+		localStorage.setItem("dente_current_view", "sanpin");
+		localStorage.setItem("dente_last_view", "sanpin");
 		localStorage.setItem("dente_clinic_autoclaves_v1", ${JSON.stringify(JSON.stringify(devicesPreset))});
-		window.location.hash = "#scanner";
+		window.location.hash = "#sanpin";
 		location.reload();
 	`,
+	);
+	await sleep(2500);
+
+	// Click "Быстрый вход в Демо-тур (Без пароля)" if login screen appears
+	await evaluate(
+		cdp,
+		`(() => {
+			const buttons = Array.from(document.querySelectorAll('button'));
+			const demoBtn = buttons.find(b => b.textContent && b.textContent.includes('Быстрый вход в Демо-тур'));
+			if (demoBtn) demoBtn.click();
+		})()`,
 	);
 	await sleep(2500);
 
@@ -180,6 +194,18 @@ try {
 		})()`,
 	);
 	await sleep(1500);
+
+	// Navigate to SanPiN registers if not already there
+	await evaluate(
+		cdp,
+		`(() => {
+			window.location.hash = '#sanpin';
+			const btns = Array.from(document.querySelectorAll('button, a'));
+			const sanpinNav = btns.find(b => b.textContent && (b.textContent.includes('СанПиН') || b.textContent.includes('Стерилизация')));
+			if (sanpinNav) sanpinNav.click();
+		})()`,
+	);
+	await sleep(2000);
 
 	// Ensure Autoclave tab is selected
 	await evaluate(
@@ -238,6 +264,7 @@ try {
 	});
 	await evaluate(cdp, `document.documentElement.setAttribute("data-theme", "light")`);
 	await sleep(1500);
+	await shot("sanpin_registers_mobile_light");
 	await shot("proof_sanpin_mobile_light");
 
 	// =========================================================================
@@ -248,6 +275,7 @@ try {
 	});
 	await evaluate(cdp, `document.documentElement.setAttribute("data-theme", "dark")`);
 	await sleep(1500);
+	await shot("sanpin_registers_mobile_dark");
 	await shot("proof_sanpin_mobile_dark");
 
 	// =========================================================================
@@ -262,6 +290,7 @@ try {
 		})()`,
 	);
 	await sleep(1500);
+	await shot("sanpin_registers_mobile_bottom_sheet");
 	await shot("proof_sanpin_mobile_bottom_sheet");
 
 	// Close bottom sheet
@@ -291,6 +320,7 @@ try {
 	});
 	await evaluate(cdp, `document.documentElement.setAttribute("data-theme", "light")`);
 	await sleep(1500);
+	await shot("sanpin_registers_pc_light");
 	await shot("proof_sanpin_pc_light");
 
 	// =========================================================================
@@ -301,6 +331,7 @@ try {
 	});
 	await evaluate(cdp, `document.documentElement.setAttribute("data-theme", "dark")`);
 	await sleep(1500);
+	await shot("sanpin_registers_pc_dark");
 	await shot("proof_sanpin_pc_dark");
 
 	cdp.close();
