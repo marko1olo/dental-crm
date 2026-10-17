@@ -53,10 +53,10 @@ export const LeadCardActionButtons: React.FC<LeadCardActionButtonsProps> = ({
 					onClick={(e) => onOpenPatient(e, lead.existingPatient!.id)}
 					className="secondary-button w-full h-8 min-h-[32px] text-[12.5px] font-bold px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xs hover:border-[var(--teal)] inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 					data-testid={`open-patient-btn-${lead.id}`}
-					title={`Открыть амбулаторную карту пациента ${lead.existingPatient.fullName}`}
+					title={`Открыть карту постоянного пациента ${lead.existingPatient.fullName}`}
 				>
 					<UserCheck size={13} className="shrink-0 text-[var(--teal)]" />
-					<span className="truncate">Карточка пациента</span>
+					<span className="truncate">Открыть карту пациента</span>
 				</button>
 			) : (
 				<button

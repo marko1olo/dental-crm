@@ -39,14 +39,14 @@ export const LeadConvertPatientFields: React.FC<LeadConvertPatientFieldsProps> =
 					{lead.existingPatient && (
 						<div
 							style={{
-								display: "flex", alignItems: "center", gap: 6, padding: "4px 8px",
-								background: "var(--ok-bg, rgba(16, 185, 129, 0.1))", color: "var(--ok-fg, #059669)",
-								border: "1px solid var(--ok-border, var(--line))", borderRadius: 6, fontSize: 11.5, fontWeight: 600,
+								display: "flex", alignItems: "center", gap: 6, padding: "6px 10px",
+								background: "var(--amber-soft, rgba(245, 158, 11, 0.15))", color: "var(--amber-dark, var(--ink))",
+								border: "1px solid var(--amber, #f59e0b)", borderRadius: 8, fontSize: 12, fontWeight: 600,
 							}}
 							data-testid="lead-convert-existing-patient-alert"
 						>
-							<UserCheck size={14} className="shrink-0" />
-							<span>Постоянный пациент: {lead.existingPatient.fullName} (новая карта не создается, приём привяжется к существующей)</span>
+							<UserCheck size={15} className="shrink-0 text-[var(--amber)]" />
+							<span>⚠️ Повторный пациент: {lead.existingPatient.fullName} (новая карта не создается, приём привяжется к существующей)</span>
 						</div>
 					)}
 

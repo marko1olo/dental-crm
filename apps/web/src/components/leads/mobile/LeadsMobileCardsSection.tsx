@@ -14,13 +14,14 @@ interface LeadsMobileCardsSectionProps {
 	onSelect: (id: string) => void;
 	onSchedule: (id: string) => void;
 	onQuickSchedule?: ((id: string) => Promise<void> | void) | undefined;
+	onOpenPatientCard?: ((patientId: string) => void) | undefined;
 	onNewLead: () => void;
 	searchQuery: string;
 	activeTab: LeadStatus | "all";
 }
 
 export const LeadsMobileCardsSection: React.FC<LeadsMobileCardsSectionProps> = ({
-	leads, onSelect, onSchedule, onQuickSchedule, onNewLead, searchQuery, activeTab,
+	leads, onSelect, onSchedule, onQuickSchedule, onOpenPatientCard, onNewLead, searchQuery, activeTab,
 }) => {
 	if (leads.length > 0) {
 		return (
@@ -32,6 +33,7 @@ export const LeadsMobileCardsSection: React.FC<LeadsMobileCardsSectionProps> = (
 						onSelect={onSelect}
 						onSchedule={onSchedule}
 						{...(onQuickSchedule ? { onQuickSchedule } : {})}
+						{...(onOpenPatientCard ? { onOpenPatientCard } : {})}
 					/>
 				))}
 			</div>

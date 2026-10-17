@@ -19,10 +19,11 @@ export interface LeadMobileFeedCardProps {
 	onSelect: (leadId: string) => void;
 	onSchedule: (leadId: string) => void;
 	onQuickSchedule?: ((leadId: string) => Promise<void> | void) | undefined;
+	onOpenPatientCard?: ((patientId: string) => void) | undefined;
 }
 
 export const LeadMobileFeedCard: React.FC<LeadMobileFeedCardProps> = ({
-	lead, onSelect, onSchedule, onQuickSchedule,
+	lead, onSelect, onSchedule, onQuickSchedule, onOpenPatientCard,
 }) => {
 	const controls = useAnimation();
 	const [dragOffset, setDragOffset] = useState(0);
@@ -90,7 +91,10 @@ export const LeadMobileFeedCard: React.FC<LeadMobileFeedCardProps> = ({
 					expectedRevenue={lead.expectedRevenue}
 				/>
 
-				<LeadMobileCardBodyContent lead={lead} />
+				<LeadMobileCardBodyContent
+					lead={lead}
+					onOpenPatientCard={onOpenPatientCard}
+				/>
 
 				<LeadMobileCardActionButtons
 					lead={lead}

@@ -74,14 +74,15 @@ export const LeadsKanbanHeaderToolbar: React.FC<LeadsKanbanHeaderToolbarProps> =
 				</div>
 
 				<button
-					className="primary-button h-9 min-h-[36px] rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white font-medium text-xs sm:text-sm shadow-xs px-3.5 focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] transition-all active:scale-[0.98] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
+					className="primary-button h-9 min-h-[36px] rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white font-medium text-xs sm:text-sm shadow-xs px-3.5 focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] transition-all active:scale-[0.98] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
 					onClick={onNewLead}
 					type="button"
 					data-testid="btn-new-lead"
-					aria-label="Создать новое обращение"
+					aria-label="Создать заявку"
+					title="Быстрое создание заявки за 10 секунд"
 				>
-					<Plus size={14} />
-					<span>Новое обращение</span>
+					<Plus size={15} />
+					<span>+ Заявка</span>
 				</button>
 
 				<LeadsKanbanMoreMenu

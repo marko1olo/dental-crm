@@ -120,4 +120,13 @@ export const DEMO_SHOWCASE_SEED_LEADS = [
 		notes: "Проведена профгигиена AirFlow и лечение кариеса 16 зуба",
 		clinicalTags: ["Санация"],
 	},
+	{
+		name: "Григорьев Сергей Михайлович",
+		phone: "+79037778899",
+		source: "2ГИС",
+		status: "trash" as const,
+		expectedRevenue: "25000",
+		notes: "[Причина срыва]: Нецелевой / ОМС",
+		clinicalTags: ["Консультация"],
+	},
 ] as const;

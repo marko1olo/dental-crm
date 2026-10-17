@@ -113,7 +113,7 @@ export const FunnelChannelsTableSection: React.FC<
 					data-testid="channels-compact-strip"
 				>
 					<span style={{ color: "var(--muted)" }}>
-						Рекламных каналов: <strong style={{ color: "var(--ink)" }}>{channels.length}</strong> • Бюджет: <strong style={{ color: "var(--ink)" }}>{summary.totalMarketingSpendRub.toLocaleString("ru-RU")} ₽</strong> • CAC: <strong style={{ color: "var(--accent)" }}>{summary.cacRub.toLocaleString("ru-RU")} ₽</strong> • Выручка: <strong style={{ color: "var(--ok-fg)" }}>{summary.totalRevenueRub.toLocaleString("ru-RU")} ₽</strong>
+						Рекламных каналов: <strong style={{ color: "var(--ink)" }}>{channels.length}</strong> • Бюджет: <strong style={{ color: "var(--ink)" }}>{summary.totalMarketingSpendRub.toLocaleString("ru-RU")} ₽</strong> • CPL: <strong style={{ color: "var(--teal)" }}>{summary.cplRub.toLocaleString("ru-RU")} ₽</strong> • CAC: <strong style={{ color: "var(--accent)" }}>{summary.cacRub.toLocaleString("ru-RU")} ₽</strong> • Выручка: <strong style={{ color: "var(--ok-fg)" }}>{summary.totalRevenueRub.toLocaleString("ru-RU")} ₽</strong>
 					</span>
 					<button
 						type="button"
@@ -165,6 +165,7 @@ export const FunnelChannelsTableSection: React.FC<
 								<th style={{ padding: "10px 8px" }}>Канал</th>
 								<th style={{ padding: "10px 8px" }}>Расход (₽)</th>
 								<th style={{ padding: "10px 8px" }}>Лиды</th>
+								<th style={{ padding: "10px 8px" }}>CPL (₽)</th>
 								<th style={{ padding: "10px 8px" }}>Записи</th>
 								<th style={{ padding: "10px 8px" }}>Дошли</th>
 								<th style={{ padding: "10px 8px" }}>Оплатили</th>
@@ -210,6 +211,9 @@ export const FunnelChannelsTableSection: React.FC<
 										</td>
 										<td style={{ padding: "10px 8px", fontWeight: 600 }}>
 											{ch.leadsCount}
+										</td>
+										<td style={{ padding: "10px 8px", color: "var(--teal)", fontWeight: 600 }}>
+											{ch.cplRub > 0 ? `${ch.cplRub.toLocaleString("ru-RU")} ₽` : "0 ₽"}
 										</td>
 										<td style={{ padding: "10px 8px" }}>{ch.bookedCount}</td>
 										<td style={{ padding: "10px 8px" }}>{ch.showUpCount}</td>

@@ -23,13 +23,13 @@ export const COLUMNS: readonly [
 ] = [
 	{
 		id: "new",
-		label: "Новые обращения",
+		label: "Новые заявки",
 		color: "var(--teal-soft)",
 		icon: React.createElement(Plus, { size: 15 }),
 	},
 	{
 		id: "contacted",
-		label: "Думают / Перезвонить",
+		label: "В обработке / Звонок",
 		color: "var(--amber-soft)",
 		icon: React.createElement(Phone, { size: 15 }),
 	},
@@ -41,7 +41,7 @@ export const COLUMNS: readonly [
 	},
 	{
 		id: "trash",
-		label: "Не дошли / Архив",
+		label: "Архив / Нецелевой",
 		color: "var(--paper)",
 		icon: React.createElement(Trash2, { size: 15 }),
 	},
@@ -50,13 +50,13 @@ export const COLUMNS: readonly [
 export const CORE_FUNNEL_COLUMNS = COLUMNS;
 
 export const STAGE_DISPLAY_LABELS: Record<LeadStatus, string> = {
-	new: "«Новые обращения»",
-	contacted: "«Думают / Перезвонить»",
+	new: "«Новые заявки»",
+	contacted: "«В обработке / Звонок»",
 	consult_booked: "«Записаны на приём»",
 	showed_up: "«Записаны на приём»",
 	converted: "«Записаны на приём»",
-	no_answer: "«Не дошли / Архив»",
-	trash: "«Не дошли / Архив»",
+	no_answer: "«Архив / Нецелевой»",
+	trash: "«Архив / Нецелевой»",
 };
 
 export const NEXT_STAGE_MAP: Partial<
@@ -67,6 +67,6 @@ export const NEXT_STAGE_MAP: Partial<
 	consult_booked: { status: "trash", label: "В архив →" },
 	showed_up: { status: "trash", label: "В архив →" },
 	converted: { status: "trash", label: "В архив →" },
-	no_answer: { status: "new", label: "Восстановить обращение →" },
-	trash: { status: "new", label: "Восстановить обращение →" },
+	no_answer: { status: "new", label: "Восстановить заявку →" },
+	trash: { status: "new", label: "Восстановить заявку →" },
 };

@@ -10,9 +10,10 @@ import type { Lead } from "../../../store/leadsStore";
 
 interface LeadMobileCardBodyContentProps {
 	lead: Lead;
+	onOpenPatientCard?: ((patientId: string) => void) | undefined;
 }
 
-export const LeadMobileCardBodyContent: React.FC<LeadMobileCardBodyContentProps> = ({ lead }) => {
+export const LeadMobileCardBodyContent: React.FC<LeadMobileCardBodyContentProps> = ({ lead, onOpenPatientCard }) => {
 	return (
 		<div className="leads-mobile-card-body">
 			<div className="flex items-center justify-between gap-2">
@@ -30,17 +31,39 @@ export const LeadMobileCardBodyContent: React.FC<LeadMobileCardBodyContentProps>
 			{Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0 && (
 				<div className="leads-mobile-tags-row">
 					{lead.clinicalTags.map((tag) => (
-						<span key={tag} className="leads-mobile-tag">{tag}</span>
+						<span key={tag} className="leads-mobile-tag">Услуга: {tag}</span>
 					))}
 				</div>
 			)}
 
 			{lead.existingPatient && (
-				<div className="mt-1">
-					<span className="leads-mobile-existing-patient">
-						<UserCheck size={11} />
-						<span>Постоянный пациент: {lead.existingPatient.fullName}</span>
-					</span>
+				<div className="mt-1" onClick={(e) => e.stopPropagation()}>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							if (onOpenPatientCard) onOpenPatientCard(lead.existingPatient!.id);
+						}}
+						className="leads-mobile-existing-patient"
+						style={{
+							cursor: "pointer",
+							background: "var(--amber-soft, rgba(245, 158, 11, 0.15))",
+							color: "var(--amber-dark, var(--ink))",
+							border: "1px solid var(--amber, #f59e0b)",
+							borderRadius: 6,
+							padding: "3px 8px",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: 5,
+							fontSize: 11,
+							fontWeight: 600,
+						}}
+						title={`Открыть карту постоянного пациента: ${lead.existingPatient.fullName}`}
+						data-testid={`mobile-lead-existing-patient-btn-${lead.id}`}
+					>
+						<UserCheck size={12} className="text-[var(--amber)]" />
+						<span>⚠️ Повторный пациент: {lead.existingPatient.fullName}</span>
+					</button>
 				</div>
 			)}
 

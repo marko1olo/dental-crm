@@ -71,6 +71,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 			<LeadsMobileCardsSection
 				leads={visibleLeads} onSelect={(id) => setSelectedLeadId(id)}
 				onSchedule={onSchedule} onQuickSchedule={onQuickSchedule}
+				onOpenPatientCard={onOpenPatientCard}
 				onNewLead={onNewLead} searchQuery={searchQuery} activeTab={activeTab}
 			/>
 

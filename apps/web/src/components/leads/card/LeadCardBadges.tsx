@@ -55,16 +55,26 @@ export const LeadCardBadges: React.FC<LeadCardBadgesProps> = ({
 			{lead.existingPatient && (
 				<div
 					style={{
-						background: "var(--teal-soft)", color: "var(--teal-dark, var(--teal))", border: "1px solid var(--teal)",
-						fontSize: 10.5, fontWeight: 600, padding: "1px 6px", borderRadius: 5, display: "inline-flex",
-						alignItems: "center", gap: 3.5, marginBottom: 6, marginLeft: 4, width: "fit-content", cursor: "pointer",
+						background: "var(--amber-soft, rgba(245, 158, 11, 0.15))",
+						color: "var(--amber-dark, var(--ink))",
+						border: "1px solid var(--amber, #f59e0b)",
+						fontSize: 10.5,
+						fontWeight: 700,
+						padding: "2px 7px",
+						borderRadius: 6,
+						display: "inline-flex",
+						alignItems: "center",
+						gap: 4,
+						marginBottom: 6,
+						width: "fit-content",
+						cursor: "pointer",
 					}}
 					onClick={(e) => onOpenPatient(e, lead.existingPatient!.id)}
-					title={`Номер совпадает с существующей картой: ${lead.existingPatient.fullName}. Нажмите для перехода.`}
+					title={`Номер телефона совпадает с базой пациентов: ${lead.existingPatient.fullName}. Нажмите, чтобы открыть карту пациента в 1 клик.`}
 					data-testid={`lead-existing-patient-badge-${lead.id}`}
 				>
-					<UserCheck size={10} className="shrink-0" />
-					<span>Постоянный пациент: {lead.existingPatient.fullName}</span>
+					<UserCheck size={11} className="shrink-0 text-[var(--amber)]" />
+					<span>⚠️ Повторный пациент: {lead.existingPatient.fullName}</span>
 				</div>
 			)}
 
@@ -85,9 +95,24 @@ export const LeadCardBadges: React.FC<LeadCardBadgesProps> = ({
 			{Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0 && (
 				<div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
 					{lead.clinicalTags.map((tag) => (
-						<span key={tag} style={{ fontSize: 10, fontWeight: 600, background: "var(--teal-soft)", color: "var(--teal-dark, var(--teal))", border: "1px solid var(--teal)", padding: "1px 5px", borderRadius: 4, display: "inline-flex", alignItems: "center", gap: 3 }}>
+						<span
+							key={tag}
+							style={{
+								fontSize: 10.5,
+								fontWeight: 600,
+								background: "var(--teal-soft)",
+								color: "var(--teal-dark, var(--teal))",
+								border: "1px solid var(--teal)",
+								padding: "1px 6px",
+								borderRadius: 4,
+								display: "inline-flex",
+								alignItems: "center",
+								gap: 3.5,
+							}}
+							title={`Желаемая услуга / направление: ${tag}`}
+						>
 							<Tag size={9} />
-							<span>{tag}</span>
+							<span>Услуга: {tag}</span>
 						</span>
 					))}
 				</div>

@@ -27,7 +27,7 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 			);
 			assert.deepEqual(
 				CORE_FUNNEL_COLUMNS.map((c) => c.label),
-				["Новые обращения", "Думают / Перезвонить", "Записаны на приём", "Не дошли / Архив"],
+				["Новые заявки", "В обработке / Звонок", "Записаны на приём", "Архив / Нецелевой"],
 			);
 		});
 

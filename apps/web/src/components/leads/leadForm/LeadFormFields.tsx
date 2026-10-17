@@ -32,25 +32,79 @@ export const LeadFormFields: React.FC<LeadFormFieldsProps> = ({ editForm, setEdi
 			</div>
 			<div style={rowStyle}>
 				<label htmlFor="edit-lead-source" style={{ fontSize: 13, color: "var(--muted)" }}>Источник (Откуда пришел)</label>
-				<input id="edit-lead-source" type="text" value={editForm.source || ""} onChange={(e) => setEditForm({ ...editForm, source: e.target.value })} placeholder="Яндекс.Директ, 2ГИС, Сайт, Рекомендация..." style={fieldStyle} />
+				<input id="edit-lead-source" type="text" value={editForm.source || ""} onChange={(e) => setEditForm({ ...editForm, source: e.target.value })} placeholder="Яндекс Карты, 2ГИС, Сайт, Рекомендация..." style={fieldStyle} />
+				<div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 2 }}>
+					{["Яндекс Карты", "2ГИС", "Сайт", "Рекомендация", "Прямой звонок"].map((src) => (
+						<button
+							key={src}
+							type="button"
+							onClick={() => setEditForm((prev) => ({ ...prev, source: src }))}
+							className="secondary-button"
+							style={{
+								fontSize: 11,
+								padding: "2px 8px",
+								height: 24,
+								minHeight: 24,
+								borderRadius: 6,
+								background: editForm.source === src ? "var(--teal-soft)" : "var(--paper-soft)",
+								color: editForm.source === src ? "var(--teal)" : "var(--muted)",
+								border: `1px solid ${editForm.source === src ? "var(--teal)" : borderColor}`,
+								cursor: "pointer",
+							}}
+						>
+							{src}
+						</button>
+					))}
+				</div>
 			</div>
 			<div style={rowStyle}>
 				<label htmlFor="edit-lead-revenue" style={{ fontSize: 13, color: "var(--muted)" }}>Ожидаемая выручка (₽)</label>
 				<input id="edit-lead-revenue" type="text" value={editForm.expectedRevenue || ""} onChange={(e) => setEditForm({ ...editForm, expectedRevenue: e.target.value })} placeholder="15000" style={fieldStyle} />
 			</div>
 			<div style={rowStyle}>
-				<label htmlFor="edit-lead-notes" style={{ fontSize: 13, color: "var(--muted)" }}>Пожелания / Жалобы / Примечания</label>
-				<textarea id="edit-lead-notes" rows={3} value={editForm.notes || ""} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} placeholder="Например: острая боль, интересует имплантация, запись после 18:00..." style={{ ...fieldStyle, resize: "vertical", fontSize: 13 }} />
+				<label htmlFor="edit-lead-notes" style={{ fontSize: 13, color: "var(--muted)" }}>Желаемая услуга / Жалобы / Примечания</label>
+				<textarea id="edit-lead-notes" rows={2} value={editForm.notes || ""} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} placeholder="Например: острая боль, интересует имплантация, запись после 18:00..." style={{ ...fieldStyle, resize: "vertical", fontSize: 13 }} />
+				<div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 2 }}>
+					{["Острая боль", "Терапия / Кариес", "Профгигиена", "Имплантация", "Ортопедия / Коронки", "Консультация"].map((service) => (
+						<button
+							key={service}
+							type="button"
+							onClick={() => {
+								setEditForm((prev) => {
+									const existingTags = Array.isArray(prev.clinicalTags) ? prev.clinicalTags : [];
+									const nextTags = existingTags.includes(service) ? existingTags : [...existingTags, service];
+									const currentNotes = prev.notes || "";
+									const nextNotes = currentNotes ? `${currentNotes}, ${service}` : service;
+									return { ...prev, clinicalTags: nextTags, notes: nextNotes };
+								});
+							}}
+							className="secondary-button"
+							style={{
+								fontSize: 11,
+								padding: "2px 8px",
+								height: 24,
+								minHeight: 24,
+								borderRadius: 6,
+								background: "var(--paper-soft)",
+								color: "var(--teal)",
+								border: `1px solid ${borderColor}`,
+								cursor: "pointer",
+							}}
+						>
+							+ {service}
+						</button>
+					))}
+				</div>
 			</div>
 			<div style={rowStyle}>
 				<label htmlFor="edit-lead-status" style={{ fontSize: 13, color: "var(--muted)" }}>Статус в воронке</label>
 				<select id="edit-lead-status" value={editForm.status || "new"} onChange={(e) => setEditForm({ ...editForm, status: e.target.value as Lead["status"] })} style={{ ...fieldStyle, cursor: "pointer" }}>
-					<option value="new">Новые обращения</option>
-					<option value="contacted">Думают / Перезвонить</option>
+					<option value="new">Новые заявки</option>
+					<option value="contacted">В обработке / Звонок</option>
 					<option value="consult_booked">Записаны на приём</option>
 					<option value="showed_up">Дошли до клиники</option>
 					<option value="no_answer">Недозвон</option>
-					<option value="trash">Не дошли / Архив</option>
+					<option value="trash">Архив / Нецелевой</option>
 				</select>
 			</div>
 			{editForm.status === "trash" && (
