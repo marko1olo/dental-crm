@@ -94,7 +94,7 @@ export function DocumentsA4PrintPreview({
 						<button
 							type="button"
 							onClick={onPrint}
-							className="secondary-button h-9 px-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+							className="secondary-button h-9 px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
 						>
 							<Printer size={14} aria-hidden="true" />
 							<span>Печать A4</span>
@@ -105,7 +105,7 @@ export function DocumentsA4PrintPreview({
 						<button
 							type="button"
 							onClick={onDownloadPdf}
-							className="secondary-button h-9 px-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+							className="secondary-button h-9 px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
 						>
 							<Download size={14} aria-hidden="true" />
 							<span>Скачать PDF</span>
@@ -113,7 +113,7 @@ export function DocumentsA4PrintPreview({
 					)}
 
 					<button
-						className="primary-button h-9 px-3.5 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-95 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-opacity"
+						className="primary-button h-9 px-3.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
 						type="button"
 						disabled={Boolean(documentCreateSavingKind)}
 						aria-busy={isSelectedDocumentCreating || undefined}

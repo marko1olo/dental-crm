@@ -611,7 +611,7 @@ export const DocumentsTemplateGrid: React.FC<DocumentsTemplateGridProps> = ({
 						type="button"
 						onClick={onOpenPrimaryIntakePackage}
 						data-testid="btn-print-primary-intake-package"
-						className="h-8 sm:h-9 px-3.5 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
+						className="primary-button h-8 sm:h-9 px-3.5 rounded-lg text-xs font-semibold flex items-center gap-2 cursor-pointer"
 						title="Распечатать пакет первичного приёма (Договор + ИДС + Персданные + Анкета)"
 					>
 						<Printer size={15} />
@@ -675,7 +675,7 @@ export const DocumentsTemplateGrid: React.FC<DocumentsTemplateGridProps> = ({
 										}
 										onOpenFocusEditor(template.kind as DocumentKind);
 									}}
-									className="h-7 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper,#ffffff)] text-xs font-medium text-[var(--ink,#0f172a)] flex items-center gap-1.5 cursor-pointer transition-colors"
+									className="secondary-button button-sm h-7 px-2.5 rounded-lg text-xs flex items-center gap-1.5 cursor-pointer"
 									title="Открыть в редакторе"
 								>
 									<Eye size={13} />
@@ -693,7 +693,7 @@ export const DocumentsTemplateGrid: React.FC<DocumentsTemplateGridProps> = ({
 										onSelectDocumentKind(template.kind as DocumentKind);
 										void onCreateDocument(template.kind as DocumentKind);
 									}}
-									className="h-7 px-2.5 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50"
+									className="primary-button button-sm h-7 px-2.5 rounded-lg text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
 									title={
 										template.id === "primary_intake_package_quick"
 											? "Распечатать комплект первичных документов"

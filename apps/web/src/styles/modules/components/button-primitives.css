@@ -13,9 +13,14 @@
    ========================================================================== */
 
 /* ==========================================================================
-   1. BASE BUTTON FOUNDATION
+   1. BASE BUTTON FOUNDATION & UNIVERSAL CANONICAL FALLBACK
    ========================================================================== */
 
+/* Universal fallback: No bare browser 1995 gray buttons or naked text ever! */
+button:not([class]),
+button:where(:not([class])),
+button.btn-default,
+button.btn,
 .primary-button,
 .secondary-button,
 .ghost-button,
@@ -68,6 +73,37 @@ a.danger-button {
 	position: relative;
 	transition: all var(--transition-fast, 0.15s cubic-bezier(0.4, 0, 0.2, 1));
 	-webkit-tap-highlight-color: transparent;
+}
+
+/* Default unclassed button silhouette: Noble secondary paper contour */
+button:not([class]),
+button:where(:not([class])),
+button.btn-default,
+button.btn {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #111827);
+	font-weight: 500;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+button:not([class]):hover:not(:disabled),
+button:where(:not([class])):hover:not(:disabled),
+button.btn-default:hover:not(:disabled),
+button.btn:hover:not(:disabled) {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--line-strong, var(--line));
+	color: var(--teal-dark, var(--teal));
+	transform: translateY(-1px);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+button:not([class]):active:not(:disabled),
+button:where(:not([class])):active:not(:disabled),
+button.btn-default:active:not(:disabled),
+button.btn:active:not(:disabled) {
+	transform: scale(0.98);
+	box-shadow: none;
 }
 
 /* SVG icon alignment inside buttons */
@@ -148,7 +184,7 @@ button.primary-button,
 button.btn-primary,
 button.btn-primary-cta,
 a.primary-button {
-	background: var(--teal, #0d9488);
+	background: linear-gradient(180deg, var(--teal-fill, #0f766e), var(--teal-dark, #0d736b));
 	border: 1px solid var(--teal, #0d9488);
 	color: var(--on-teal, #ffffff) !important;
 	font-weight: 600;
@@ -161,11 +197,11 @@ a.primary-button {
 button.primary-button:hover:not(:disabled),
 button.btn-primary:hover:not(:disabled),
 a.primary-button:hover:not(:disabled) {
-	background: var(--teal-dark, #0f766e);
+	background: linear-gradient(180deg, var(--teal-dark, #0d736b), var(--teal, #0d9488));
 	border-color: var(--teal-dark, #0f766e);
 	color: var(--on-teal, #ffffff) !important;
 	transform: translateY(-1px);
-	box-shadow: 0 4px 12px var(--teal-glow, rgba(13, 148, 136, 0.35));
+	box-shadow: 0 4px 14px var(--teal-glow, rgba(13, 148, 136, 0.38));
 }
 
 .primary-button:active:not(:disabled),
@@ -459,7 +495,14 @@ a.button-lg {
 [data-theme="dark"] .btn-secondary,
 [data-theme="night"] .btn-secondary,
 [data-theme="oled"] .btn-secondary,
-.dark .btn-secondary {
+.dark .btn-secondary,
+[data-theme="dark"] button:not([class]),
+[data-theme="night"] button:not([class]),
+[data-theme="oled"] button:not([class]),
+[data-theme="ocean"] button:not([class]),
+[data-theme="emerald"] button:not([class]),
+[data-theme="cyber_xray"] button:not([class]),
+.dark button:not([class]) {
 	background: var(--paper-strong, #1e293b);
 	border-color: var(--line);
 	color: var(--ink);
@@ -474,7 +517,14 @@ a.button-lg {
 [data-theme="cyber_xray"] .secondary-button:hover:not(:disabled),
 .dark .secondary-button:hover:not(:disabled),
 [data-theme="dark"] .btn-secondary:hover:not(:disabled),
-.dark .btn-secondary:hover:not(:disabled) {
+.dark .btn-secondary:hover:not(:disabled),
+[data-theme="dark"] button:not([class]):hover:not(:disabled),
+[data-theme="night"] button:not([class]):hover:not(:disabled),
+[data-theme="oled"] button:not([class]):hover:not(:disabled),
+[data-theme="ocean"] button:not([class]):hover:not(:disabled),
+[data-theme="emerald"] button:not([class]):hover:not(:disabled),
+[data-theme="cyber_xray"] button:not([class]):hover:not(:disabled),
+.dark button:not([class]):hover:not(:disabled) {
 	background: var(--paper);
 	border-color: var(--line-strong, var(--line));
 	color: var(--ink);

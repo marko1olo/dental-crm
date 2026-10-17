@@ -67,9 +67,8 @@ export function PaymentQuickTenderGrid({
 							{amount ? (
 								<button
 									type="button"
-									style={{ minHeight: "44px" }}
 									onClick={() => onAmountChange("")}
-									className="absolute right-2 top-1/2 -translate-y-1/2 min-h-[44px] text-xs text-[var(--muted)] hover:text-[var(--ink)] px-2 cursor-pointer flex items-center justify-center"
+									className="icon-button absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 min-w-0 min-h-0 border-none bg-transparent hover:bg-[var(--line-subtle)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
 									title="Очистить сумму"
 								>
 									<X size={16} aria-hidden="true" />
@@ -91,7 +90,6 @@ export function PaymentQuickTenderGrid({
 								{remainingDebt > 0 && (
 									<button
 										type="button"
-										style={{ minHeight: "44px" }}
 										className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 font-bold text-xs shrink-0 bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20"
 										onClick={() =>
 											onAmountChange(rubAmountForInput(remainingDebt))
@@ -104,7 +102,6 @@ export function PaymentQuickTenderGrid({
 									<button
 										key={val}
 										type="button"
-										style={{ minHeight: "44px" }}
 										className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 font-bold text-xs shrink-0 ${amount === String(val) ? "active" : ""}`}
 										onClick={() => onAmountChange(String(val))}
 									>
@@ -177,8 +174,7 @@ export function PaymentQuickTenderGrid({
 									<div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5 sm:gap-2">
 										<button
 											type="button"
-											style={{ minHeight: "44px" }}
-											className="col-span-2 sm:col-span-1 min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--teal-dark)] text-white hover:brightness-110 active:brightness-95 shadow-sm cursor-pointer flex items-center justify-center text-center"
+											className="primary-button col-span-2 sm:col-span-1 min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold cursor-pointer flex items-center justify-center text-center"
 											onClick={() => onReceivedCashChange(String(requiredRub))}
 										>
 											Без сдачи ({requiredRub.toLocaleString("ru-RU")} ₽)
@@ -190,8 +186,7 @@ export function PaymentQuickTenderGrid({
 												<button
 													key={preset}
 													type="button"
-													style={{ minHeight: "44px" }}
-													className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-mono font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)] shadow-sm cursor-pointer flex items-center justify-center text-center"
+													className="secondary-button min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-mono font-bold cursor-pointer flex items-center justify-center text-center"
 													onClick={() => onReceivedCashChange(String(preset))}
 												>
 													{preset.toLocaleString("ru-RU")} ₽

@@ -354,20 +354,20 @@ export const TreatmentPlansGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour
 			</div>
 
 			{/* 5. Интерактивная кнопка обучения */}
-			<div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+			<div className="p-3 rounded-lg bg-[var(--teal-soft)] border border-[var(--teal)]/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-[var(--ink)]">
 				<div className="space-y-0.5">
-					<div className="font-semibold text-xs text-blue-800 dark:text-blue-200 flex items-center gap-1.5">
-						<Gamepad2 size={16} className="text-blue-600 dark:text-blue-400" />
+					<div className="font-semibold text-xs flex items-center gap-1.5">
+						<Gamepad2 size={16} className="text-[var(--teal)]" />
 						<span>Интерактивный тренажёр: Планы лечения и сметы</span>
 					</div>
-					<p className="text-[11px] text-blue-700/80 dark:text-blue-300/80">
+					<p className="text-[11px] text-[var(--muted)]">
 						Научитесь составлять наглядные сравнительные сметы и разбивать лечение по этапам.
 					</p>
 				</div>
 				<button
 					type="button"
 					onClick={handleLaunchTour}
-					className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
+					className="primary-button h-8 px-3 rounded-lg text-xs flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-95"
 				>
 					<Zap size={14} />
 					<span>Запустить обучение</span>

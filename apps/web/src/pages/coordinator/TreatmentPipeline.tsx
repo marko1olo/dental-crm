@@ -24,6 +24,7 @@ import {
 } from "./pipeline/types";
 import { PipelineKpiSummary } from "./pipeline/PipelineKpiSummary";
 import { PipelineBoard } from "./pipeline/PipelineBoard";
+import { TreatmentPlanPresenterModal } from "../../components/treatment-plans/TreatmentPlanPresenterModal";
 
 export type { PipelineStage, PipelineCard, PipelineResponse, PipelineStageFilter, PipelineViewMode };
 
@@ -40,6 +41,7 @@ export const TreatmentPipeline: React.FC = () => {
 	const [activeMobileStage, setActiveMobileStage] = useState<PipelineStage>("requires_budget");
 	const [copiedToken, setCopiedToken] = useState<string | null>(null);
 	const [isGeneratingLink, setIsGeneratingLink] = useState<string | null>(null);
+	const [selectedCardForPresenter, setSelectedCardForPresenter] = useState<PipelineCard | null>(null);
 
 	const fetchPipeline = useCallback(async () => {
 		try {
@@ -314,6 +316,7 @@ export const TreatmentPipeline: React.FC = () => {
 							copiedToken={copiedToken}
 							isGeneratingLink={isGeneratingLink}
 							onCopyOrGenerateLink={handleCopyOrGenerateLink}
+							onOpenPlan={(card) => setSelectedCardForPresenter(card)}
 						/>
 					</div>
 				)
@@ -355,15 +358,7 @@ export const TreatmentPipeline: React.FC = () => {
 									type="button"
 									onClick={fetchPipeline}
 									disabled={isLoading}
-									className="min-h-[44px] h-11 px-4 rounded-xl font-bold text-xs shadow-sm active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer shrink-0 transition-all touch-manipulation"
-									style={{
-										backgroundColor: "var(--teal, #0d9488)",
-										color: "#ffffff",
-										borderRadius: "10px",
-										border: "none",
-										padding: "0 16px",
-										height: "44px",
-									}}
+									className="primary-button min-h-[44px] h-11 px-4 font-bold text-xs shadow-sm active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer shrink-0 transition-all touch-manipulation"
 									data-testid="pipeline-mobile-refresh-btn"
 								>
 									<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
@@ -373,6 +368,32 @@ export const TreatmentPipeline: React.FC = () => {
 							document.body,
 						)
 					: null)}
+
+			{selectedCardForPresenter && (
+				<TreatmentPlanPresenterModal
+					isOpen={Boolean(selectedCardForPresenter)}
+					onClose={() => setSelectedCardForPresenter(null)}
+					patientName={selectedCardForPresenter.patientName}
+					patientId={selectedCardForPresenter.patientId}
+					patientPhone={selectedCardForPresenter.patientPhone || ""}
+					doctorFullName={selectedCardForPresenter.doctorName || "Д-р Воронов Алексей Владимирович"}
+					doctorSpecialty="Стоматолог-ортопед, хирург-имплантолог"
+					clinicName="DENTE Стоматология"
+					clinicLegalName="ООО «ДЕНТЕ КЛИНИК»"
+					clinicInn="7701234567"
+					clinicOgrn="1237700123456"
+					clinicAddress="г. Москва, ул. Арбат, д. 24"
+					planId={selectedCardForPresenter.id}
+					planCreatedAtIso={selectedCardForPresenter.createdAt}
+					onConfirmSelection={async () => {
+						await fetchPipeline();
+					}}
+					onApproveAndSign={async () => {
+						await fetchPipeline();
+					}}
+					isDemoMode={false}
+				/>
+			)}
 		</div>
 	);
 };

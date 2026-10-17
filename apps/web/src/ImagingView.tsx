@@ -403,10 +403,10 @@ export function ImagingView(props: ImagingViewProps) {
 										</div>
 									</div>
 									<div className="flex flex-wrap items-center gap-2 w-full lg:w-auto shrink-0">
-										<button type="button" data-testid="btn-open-cbct-studio" onClick={() => setIsCbctStudioOpen(true)} className="h-9 min-h-[36px] px-3.5 text-xs font-semibold rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer flex-1 sm:flex-none" title="Открыть Romexis 3D Студию">
+										<button type="button" data-testid="btn-open-cbct-studio" onClick={() => setIsCbctStudioOpen(true)} className="primary-button flex items-center justify-center gap-2 cursor-pointer flex-1 sm:flex-none" title="Открыть Romexis 3D Студию">
 											<Sparkles size={16} className="shrink-0" /> <span>3D Студия имплантации</span>
 										</button>
-										<button type="button" data-testid="btn-load-dicomweb-pacs" onClick={() => handleLoadFromDicomweb()} disabled={isDicomwebLoading} className="h-9 min-h-[36px] px-3.5 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 flex-1 sm:flex-none shadow-xs" title="Запросить срезы из архива КЛКТ 3D">
+										<button type="button" data-testid="btn-load-dicomweb-pacs" onClick={() => handleLoadFromDicomweb()} disabled={isDicomwebLoading} className="secondary-button flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 flex-1 sm:flex-none" title="Запросить срезы из архива КЛКТ 3D">
 											<RefreshCw size={14} className={`shrink-0 ${isDicomwebLoading ? "animate-spin" : ""}`} /> <span>{isDicomwebLoading ? (dicomwebLoadProgress ?? "Загрузка...") : "Загрузить из PACS"}</span>
 										</button>
 									</div>

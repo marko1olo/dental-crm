@@ -333,7 +333,7 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 						disabled={disabled}
 						className={`px-2.5 py-1 h-8 min-h-[32px] max-h-[34px] rounded-md text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
 							isMeasuring
-								? "bg-blue-600 border-blue-400 text-white shadow-sm"
+								? "bg-teal-600 border-teal-500 text-white shadow-sm"
 								: "bg-slate-800/90 border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 						}`}
 						title="Инструмент измерения (линейка)"

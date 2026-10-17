@@ -105,17 +105,17 @@ export const VisitRecommendationsSection: React.FC<VisitRecommendationsSectionPr
 					<button
 						type="button"
 						onClick={onScheduleNextStage}
-						className="inline-flex items-center justify-center gap-2 px-3.5 py-2 min-h-[44px] rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md transition-all cursor-pointer whitespace-nowrap active:scale-[0.98]"
+						className="secondary-button min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap"
 						title="Записать пациента на следующий этап лечения через 5-7 дней"
 						data-testid="summary-schedule-next-stage-btn"
 					>
-						<Calendar className="w-4 h-4" />
+						<Calendar className="w-4 h-4 text-[var(--teal)]" />
 						<span>След. этап (+5 дней)</span>
 					</button>
 					<button
 						type="button"
 						onClick={onOpenProtocolGenerator}
-						className="inline-flex items-center justify-center gap-2 px-3.5 py-2 min-h-[44px] rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] text-xs font-bold shadow-md transition-all shrink-0 cursor-pointer whitespace-nowrap"
+						className="primary-button min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap"
 						data-testid="summary-synthesize-protocol-btn"
 					>
 						<Sparkles className="w-4 h-4" />
@@ -124,11 +124,11 @@ export const VisitRecommendationsSection: React.FC<VisitRecommendationsSectionPr
 					<button
 						type="button"
 						onClick={onOpenMemoModal}
-						className="inline-flex items-center justify-center gap-2 px-3.5 py-2 min-h-[44px] rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md transition-all shrink-0 cursor-pointer whitespace-nowrap"
+						className="secondary-button min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap"
 						data-testid="summary-quick-memo-btn"
 						title="Открыть памятку пациенту с рекомендациями после приёма"
 					>
-						<FileText className="w-4 h-4" />
+						<FileText className="w-4 h-4 text-[var(--teal)]" />
 						<span>Памятка пациенту</span>
 					</button>
 				</div>

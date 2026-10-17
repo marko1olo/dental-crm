@@ -478,14 +478,14 @@ export function FamilyCombinedBillingModal({
 					{/* ВКЛАДКА 3: Справки для налоговой (ИФНС) */}
 					{activeTab === "tax" && (
 						<div className="space-y-4">
-							<div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 text-xs text-blue-900 dark:text-blue-200 flex items-start justify-between gap-3 flex-wrap">
+							<div className="p-4 rounded-xl bg-[var(--teal-soft)] border border-[var(--teal)]/30 text-xs text-[var(--ink)] flex items-start justify-between gap-3 flex-wrap">
 								<div>
 									<strong>Справка для налогового вычета (Приказ ФНС России № ЕД-7-11/824@):</strong>
 									<div className="mt-1">
 										Справки оформляются на имя плательщика (<strong>{initialPayer.payerFullName}</strong>{initialPayer.payerInn ? `, ИНН: ${initialPayer.payerInn}` : ""}) с автоматическим указанием кода родства:
 										1 = лично, 2 = супруг, 3 = родитель, 4 = ребенок.
 									</div>
-									<div className="mt-1 text-[11px] text-blue-700 dark:text-blue-300 font-medium">
+									<div className="mt-1 text-[11px] text-[var(--muted,#64748b)] font-medium">
 										* ИНН налогоплательщика опционален: при отсутствии ИНН справка в налоговую формируется на основании паспортных данных плательщика.
 									</div>
 								</div>
@@ -493,7 +493,7 @@ export function FamilyCombinedBillingModal({
 								<button
 									type="button"
 									onClick={handlePrintAllTaxCerts}
-									className="min-h-[44px] px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-95 transition-all"
+									className="primary-button min-h-[44px] px-4 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-95 transition-all"
 									data-testid="btn-print-tax-certificates"
 								>
 									<Printer size={14} />

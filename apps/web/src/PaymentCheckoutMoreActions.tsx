@@ -23,8 +23,7 @@ export function PaymentCheckoutMoreActions({
 	return (
 		<div className="relative shrink-0 flex-shrink-0">
 			<button
-				style={{ minHeight: "44px" }}
-				className="secondary-button min-h-[44px] min-w-[44px] sm:min-h-9 sm:h-9 sm:min-w-9 sm:w-9 p-0 flex items-center justify-center rounded-lg shrink-0 flex-shrink-0"
+				className="secondary-button icon-button min-h-[44px] min-w-[44px] sm:min-h-9 sm:h-9 sm:min-w-9 sm:w-9 p-0 flex items-center justify-center rounded-lg shrink-0 flex-shrink-0"
 				type="button"
 				onClick={onToggleMoreActions}
 				aria-expanded={isMoreActionsOpen}
@@ -41,12 +40,11 @@ export function PaymentCheckoutMoreActions({
 				>
 					<button
 						type="button"
-						style={{ minHeight: "44px" }}
 						onClick={() => {
 							onCloseMoreActions();
 							onSberPosClick();
 						}}
-						className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] sm:hidden flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px] disabled:opacity-40 disabled:cursor-not-allowed"
+						className="ghost-button w-full justify-start text-left px-2.5 py-2 text-xs font-medium rounded-lg text-[var(--ink)] sm:hidden flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px] disabled:opacity-40 disabled:cursor-not-allowed"
 						role="menuitem"
 						disabled={isSaving}
 						title={isSaving ? "Операция выполняется..." : "Сбер POS"}
@@ -56,34 +54,32 @@ export function PaymentCheckoutMoreActions({
 					</button>
 					<button
 						type="button"
-						style={{ minHeight: "44px" }}
 						onClick={() => {
 							onCloseMoreActions();
 							onOpenSplitModal();
 						}}
-						className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px] disabled:opacity-40 disabled:cursor-not-allowed"
+						className="ghost-button w-full justify-start text-left px-2.5 py-2 text-xs font-medium rounded-lg text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px] disabled:opacity-40 disabled:cursor-not-allowed"
 						role="menuitem"
 						disabled={isSaving}
 						data-testid="payment-split-modal-button"
 						title={isSaving ? "Операция выполняется..." : "Комбинированная оплата: Нал + Карта + Баланс (Сплит)"}
 					>
-						<Coins size={15} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
+						<Coins size={15} className="shrink-0 text-[var(--teal)]" />
 						<span>Комбо (Сплит)</span>
 					</button>
 					<button
 						type="button"
-						style={{ minHeight: "44px" }}
 						onClick={() => {
 							onCloseMoreActions();
 							onManualCardTerminalSubmit();
 						}}
-						className="w-full text-left px-2.5 py-2 text-xs font-bold rounded-lg hover:bg-[var(--line)] text-blue-700 dark:text-blue-300 flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px] disabled:opacity-40 disabled:cursor-not-allowed"
+						className="ghost-button w-full justify-start text-left px-2.5 py-2 text-xs font-semibold rounded-lg text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px] disabled:opacity-40 disabled:cursor-not-allowed"
 						role="menuitem"
 						disabled={isSaving}
 						title={isSaving ? "Операция выполняется..." : "Зафиксировать оплату в CRM, если карта списана на терминале вручную"}
 						data-testid="payment-manual-card-terminal-button"
 					>
-						<CreditCard size={15} className="shrink-0 text-blue-600 dark:text-blue-400" />
+						<CreditCard size={15} className="shrink-0 text-[var(--teal)]" />
 						<span>Карта подтверждена вручную</span>
 					</button>
 				</div>

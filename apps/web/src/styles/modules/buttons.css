@@ -1,7 +1,7 @@
 /* ==========================================================================
-   DENTE CRM — LEGACY BUTTON COMPONENT STYLES (modules/buttons.css)
+   DENTE CRM — CANONICAL BUTTON COMPONENT STYLES (modules/buttons.css)
    ==========================================================================
-   CSS Layer 3 (Component-Scoped Styles). Authority: decomposer/SKILL.md
+   CSS Layer 3 (Component-Scoped Styles). Authority: THE_HAMMER_MASTER_PROMPT.md
    ========================================================================== */
 .icon-button,
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
@@ -13,66 +13,89 @@
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	display: inline-flex;
-	font-weight: 700;
-	gap: 8px;
+	font-weight: 500;
+	gap: 6px;
 	justify-content: center;
-	min-height: 38px;
+	height: 32px;
+	min-height: 32px;
 	cursor: pointer;
-	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 	font-family: inherit;
-	font-size: 14px;
+	font-size: 13px;
+	line-height: 1;
 	user-select: none;
+	white-space: nowrap;
+	box-sizing: border-box;
 }
 
 .icon-button {
-	background: var(--paper-strong);
+	background: var(--paper);
 	color: var(--ink);
 	padding: 0;
 	text-decoration: none;
-	width: 38px;
-	height: 38px;
+	width: 32px;
+	min-width: 32px;
+	max-width: 32px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .icon-button:hover:not(:disabled) {
-	background: var(--paper-hover, var(--paper-soft));
-	border-color: var(--line-strong);
+	background: var(--paper-soft);
+	border-color: var(--line-strong, var(--line));
+	color: var(--teal, #0d9488);
+	transform: translateY(-1px);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.icon-button:active:not(:disabled) {
+	transform: scale(0.96);
 }
 
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .primary-button {
-	background: var(--teal);
-	border-color: var(--teal);
+	background: linear-gradient(180deg, var(--teal-fill, #0f766e), var(--teal-dark, #0d736b));
+	border-color: var(--teal, #0d9488);
 	color: #ffffff !important;
-	padding: 0 16px;
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	padding: 0 14px;
+	font-weight: 600;
+	box-shadow: 0 1px 3px var(--teal-glow, rgba(13, 148, 136, 0.28)), 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .primary-button:hover:not(:disabled) {
-	background: var(--teal-dark, #0d736b);
-	border-color: var(--teal-dark, #0d736b);
+	background: linear-gradient(180deg, var(--teal-dark, #0d736b), var(--teal, #0d9488));
+	border-color: var(--teal-dark, #0f766e);
+	color: #ffffff !important;
+	transform: translateY(-1px);
+	box-shadow: 0 4px 14px var(--teal-glow, rgba(13, 148, 136, 0.38));
 }
 
 .primary-button:active:not(:disabled) {
-	transform: scale(0.99);
+	transform: scale(0.98);
 }
 
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .secondary-button {
-	background: var(--paper-strong, var(--paper));
-	border-color: var(--line);
-	color: var(--ink);
-	padding: 0 14px;
+	background: var(--paper, #ffffff);
+	border-color: var(--line, #e2e8f0);
+	color: var(--ink, #111827);
+	padding: 0 12px;
 	text-align: center;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .secondary-button:hover:not(:disabled) {
-	background: var(--paper-hover, var(--paper-soft));
-	border-color: var(--line-strong);
-	color: var(--ink-strong, var(--ink));
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--line-strong, var(--line));
+	color: var(--ink);
+	transform: translateY(-1px);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
 .secondary-button:active:not(:disabled) {
-	transform: scale(0.99);
+	transform: scale(0.98);
 }
 
 .text-button {
@@ -82,7 +105,7 @@
 	color: var(--teal-dark, var(--teal));
 	padding: 0 12px;
 	min-height: 32px;
-	font-weight: 600;
+	font-weight: 500;
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
@@ -99,14 +122,15 @@
 .secondary-button:disabled,
 .text-button:disabled {
 	cursor: not-allowed;
-	opacity: 0.55;
+	opacity: 0.45;
 	box-shadow: none;
+	transform: none;
 }
 
 .icon-button svg,
 .primary-button svg,
 .secondary-button svg,
 .text-button svg {
-	height: 18px;
-	width: 18px;
+	height: 15px;
+	width: 15px;
 }

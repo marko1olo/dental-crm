@@ -20,7 +20,7 @@ export const VisitFollowUpSection: React.FC<VisitFollowUpSectionProps> = ({
 				<button
 					type="button"
 					onClick={onScheduleNextStage}
-					className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-xs transition-all cursor-pointer touch-manipulation active:scale-95"
+					className="primary-button min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer touch-manipulation active:scale-95"
 					title="Записать пациента на следующий этап через 5-7 дней"
 					data-testid="ribbon-schedule-next-stage-btn"
 				>

@@ -127,7 +127,7 @@ export const DocumentsToolbar: React.FC<DocumentsToolbarProps> = ({
 						<button
 							type="button"
 							onClick={() => onSearchChange("")}
-							className="absolute right-2 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer"
+							className="icon-button absolute right-2 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer w-6 h-6 min-w-0 min-h-0 border-none bg-transparent"
 							title="Очистить поиск"
 						>
 							<X size={14} />
@@ -140,7 +140,7 @@ export const DocumentsToolbar: React.FC<DocumentsToolbarProps> = ({
 					type="button"
 					onClick={onOpenPrimaryIntakePackage}
 					data-testid="btn-print-primary-intake-package"
-					className="primary-button h-8 px-2.5 rounded-lg border border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/10 hover:bg-[var(--teal,#0d9488)]/20 text-xs font-semibold text-[var(--teal,#0d9488)] flex items-center gap-1.5 cursor-pointer transition-colors"
+					className="primary-button h-8 px-3 rounded-lg text-xs flex items-center gap-1.5 cursor-pointer"
 					title="Распечатать пакет первичного приёма (Договор + ИДС + Персданные + Анкета)"
 				>
 					<Printer size={14} />
@@ -151,7 +151,7 @@ export const DocumentsToolbar: React.FC<DocumentsToolbarProps> = ({
 				<button
 					type="button"
 					onClick={onOpenAutoclaveLog}
-					className="secondary-button documents-open-autoclave-log-257-btn h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5 cursor-pointer transition-colors"
+					className="secondary-button documents-open-autoclave-log-257-btn h-8 px-2.5 rounded-lg text-xs flex items-center gap-1.5 cursor-pointer"
 					data-testid="documents-open-autoclave-log-257-btn"
 					title="Открыть журнал контроля стерилизации и автоклавирования"
 				>

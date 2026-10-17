@@ -151,7 +151,7 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 						<button
 							type="button"
 							onClick={() => setInterruptedFiscalState(null)}
-							className="text-amber-700 dark:text-amber-300 hover:text-amber-900 text-xs font-bold cursor-pointer"
+							className="secondary-button h-7 px-2.5 rounded-md text-xs cursor-pointer"
 						>
 							Скрыть
 						</button>
@@ -162,7 +162,7 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 							onClick={handleManualCardTerminalConfirm}
 							disabled={isSubmittingManualCard}
 							title={isSubmittingManualCard ? "Фиксация..." : "Зафиксировать оплату в CRM без повторного списания с карты"}
-							className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-95"
+							className="primary-button h-8 px-3 rounded-lg text-xs flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
 							data-testid="btn-fiscal-manual-card-confirm"
 						>
 							<CheckCircle2 size={14} />

@@ -186,21 +186,20 @@ export function PaymentFiscalCashierBar({
 			{/* Информативный бейдж очереди офлайн-фискализации 54-ФЗ (Mandates 8e, 8n) */}
 			{pendingCount > 0 && (
 				<div
-					className="offline-fiscal-queue-badge flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-blue-500/15 border border-blue-500/30 text-blue-800 dark:text-blue-300 text-xs font-bold mb-2 select-none"
+					className="offline-fiscal-queue-badge flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-[var(--teal-soft)] border border-[var(--teal)]/30 text-[var(--ink)] text-xs font-bold mb-2 select-none"
 					data-testid="offline-fiscal-queue-badge"
 					role="status"
 				>
 					<div className="flex items-center gap-1.5">
-						<Clock size={14} className="shrink-0 text-blue-600 dark:text-blue-400 animate-pulse" />
+						<Clock size={14} className="shrink-0 text-[var(--teal)] animate-pulse" />
 						<span>Оплата зафиксирована, чек в очереди фискализации ({pendingCount})</span>
 					</div>
 					{isOnline && (
 						<button
 							type="button"
-							style={{ minHeight: "44px" }}
 							onClick={onSyncQueue}
 							disabled={isSyncing}
-							className="min-h-[44px] sm:min-h-0 text-[11px] font-semibold underline hover:no-underline text-blue-700 dark:text-blue-200 cursor-pointer disabled:opacity-50 flex items-center"
+							className="secondary-button button-sm px-2.5 py-1 text-xs cursor-pointer disabled:opacity-50 flex items-center"
 						>
 							{isSyncing ? "Синхронизация..." : "Отправить в ОФД"}
 						</button>

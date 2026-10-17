@@ -101,19 +101,19 @@ export const PediatricQuickProtocols: React.FC<PediatricQuickProtocolsProps> = (
 				<button
 					type="button"
 					onClick={onApplyPermanentNorm}
-					className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-blue-500/40 hover:border-blue-500 hover:bg-blue-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+					className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-[var(--teal)]/40 hover:border-[var(--teal)] hover:bg-[var(--teal-soft)] text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 					title="Установить норму постоянного прикуса (12 лет): 28 постоянных зубов 17..27, 47..37 без 8-ок"
 					data-testid="pediatric-preset-12y-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold text-blue-700 dark:text-blue-400 truncate">
+						<div className="font-extrabold text-[var(--teal-dark,var(--teal))] truncate">
 							12 лет: Постоянный прикус
 						</div>
 						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
 							28 зубов (17..27, 47..37)
 						</div>
 					</div>
-					<Check className="w-4 h-4 text-blue-600 shrink-0" />
+					<Check className="w-4 h-4 text-[var(--teal)] shrink-0" />
 				</button>
 
 				{/* 5. Серебрение Saforide (A16.07.057) */}

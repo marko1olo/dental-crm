@@ -159,10 +159,10 @@ export const TenderQuickPresets: React.FC<TenderQuickPresetsProps> = ({
 						? "Фиксация..."
 						: "Зафиксировать оплату в CRM без повторного списания с карты"
 				}
-				className="h-7 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-blue-500/30 text-blue-700 dark:text-blue-300 hover:bg-blue-50 hover:border-blue-500 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
+				className="dente-filter-chip flex items-center gap-1 cursor-pointer active:scale-95"
 				data-testid="preset-manual-card-confirm"
 			>
-				<CreditCard size={12} className="text-blue-600 shrink-0" />
+				<CreditCard size={12} className="text-[var(--teal)] shrink-0" />
 				<span>Карта вручную</span>
 			</button>
 			{patientDepositRub > 0 && (
@@ -172,10 +172,10 @@ export const TenderQuickPresets: React.FC<TenderQuickPresetsProps> = ({
 						applyCombinedPaymentPreset("advance_card");
 						setPaymentMode("split");
 					}}
-					className="h-7 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-teal-500/30 text-teal-700 dark:text-teal-300 hover:bg-teal-50 hover:border-teal-500 cursor-pointer transition-all shadow-2xs active:scale-95"
+					className="dente-filter-chip flex items-center gap-1 cursor-pointer active:scale-95"
 					title="Зачесть доступный депозит, а остаток списать с карты"
 				>
-					Аванс + Карта
+					<span>Аванс + Карта</span>
 				</button>
 			)}
 			{patientDepositRub > 0 && (
@@ -185,10 +185,10 @@ export const TenderQuickPresets: React.FC<TenderQuickPresetsProps> = ({
 						applyCombinedPaymentPreset("advance_cash");
 						setPaymentMode("split");
 					}}
-					className="h-7 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer transition-all shadow-2xs active:scale-95"
+					className="dente-filter-chip flex items-center gap-1 cursor-pointer active:scale-95"
 					title="Зачесть доступный депозит, а остаток принять наличными"
 				>
-					Аванс + Нал
+					<span>Аванс + Нал</span>
 				</button>
 			)}
 		</div>

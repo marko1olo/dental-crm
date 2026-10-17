@@ -266,7 +266,7 @@ export const TenderMethodList: React.FC<TenderMethodListProps> = ({
 										setCardAmount(totalSumRub - depositAmount);
 										setPaymentMode("split");
 									}}
-									className="h-7 px-2.5 rounded-lg font-bold bg-blue-600 text-white cursor-pointer transition-all active:scale-95"
+									className="primary-button h-7 px-2.5 rounded-lg text-xs cursor-pointer active:scale-95"
 								>
 									+ Доплатить картой
 								</button>
@@ -276,7 +276,7 @@ export const TenderMethodList: React.FC<TenderMethodListProps> = ({
 										setCashAmount(totalSumRub - depositAmount);
 										setPaymentMode("split");
 									}}
-									className="h-7 px-2.5 rounded-lg font-bold bg-emerald-600 text-white cursor-pointer transition-all active:scale-95"
+									className="secondary-button h-7 px-2.5 rounded-lg text-xs cursor-pointer active:scale-95"
 								>
 									+ Доплатить налом
 								</button>
@@ -312,7 +312,7 @@ export const TenderMethodList: React.FC<TenderMethodListProps> = ({
 								<button
 									type="button"
 									onClick={() => handleFillRemaining("card")}
-									className="h-8 px-2.5 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transition-all active:scale-95"
+									className="primary-button h-8 px-2.5 text-xs rounded-lg cursor-pointer active:scale-95"
 									data-testid="btn-fill-remaining-card"
 								>
 									+Остаток
@@ -531,7 +531,7 @@ export const TenderMethodList: React.FC<TenderMethodListProps> = ({
 									<button
 										type="button"
 										onClick={() => handleFillRemaining("insurance")}
-										className="h-8 px-2.5 text-xs font-bold rounded-lg bg-sky-600 hover:bg-sky-700 text-white cursor-pointer transition-all active:scale-95"
+										className="primary-button h-8 px-2.5 text-xs rounded-lg cursor-pointer active:scale-95"
 										data-testid="btn-fill-remaining-insurance"
 									>
 										+Остаток
