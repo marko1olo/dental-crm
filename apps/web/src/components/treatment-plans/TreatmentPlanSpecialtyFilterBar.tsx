@@ -28,23 +28,19 @@ export const TreatmentPlanSpecialtyFilterBar: React.FC<TreatmentPlanSpecialtyFil
 	];
 
 	return (
-		<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] shadow-xs">
-			<div className="flex items-center gap-1.5 flex-wrap" role="tablist" aria-label="Фильтр по специализациям">
+		<div className="tp-filter-bar flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-[var(--paper-strong)] border border-[var(--line)] shadow-xs">
+			<div className="tp-filter-chips flex items-center gap-1.5 flex-wrap" role="tablist" aria-label="Фильтр по специализациям">
 				{tabs.map((tab) => (
 					<button
 						key={tab.id}
 						type="button"
 						onClick={() => onSetSpecialtyFilter(tab.id)}
 						data-testid={`tp-specialty-filter-${tab.id}`}
-						className={`min-h-[44px] sm:min-h-[32px] px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 touch-manipulation ${
-							specialtyFilter === tab.id
-								? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-								: "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))]"
-						}`}
+						className={`tp-filter-chip ${specialtyFilter === tab.id ? "active" : ""}`}
 					>
 						<span>{tab.label}</span>
 						{tab.count > 0 && (
-							<span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${specialtyFilter === tab.id ? "bg-white/20 text-white" : "bg-[var(--paper-strong)] text-[var(--muted)]"}`}>
+							<span className="tp-filter-chip-count">
 								{tab.count}
 							</span>
 						)}
@@ -57,24 +53,26 @@ export const TreatmentPlanSpecialtyFilterBar: React.FC<TreatmentPlanSpecialtyFil
 					type="button"
 					onClick={onOpenAddCatalogService}
 					data-testid="tp-add-catalog-service-btn"
-					className="min-h-[44px] sm:min-h-[32px] px-3 py-1 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft)] border border-[var(--teal)]/30 transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs touch-manipulation"
+					className="secondary-button tp-action-btn tp-action-btn-catalog"
 					title="Добавить любую услугу из утвержденного прейскуранта клиники"
 				>
-					<Plus size={14} />
-					<span>+ Услуга из каталога</span>
+					<Plus size={14} className="shrink-0" />
+					<span>Услуга из каталога</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={onOpenCreateStageModal}
 					data-testid="tp-create-stage-btn"
-					className="min-h-[44px] sm:min-h-[32px] px-3 py-1 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] border border-[var(--line,var(--border,#cbd5e1))] transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs touch-manipulation"
+					className="secondary-button tp-action-btn tp-action-btn-stage"
 					title="Добавить новый этап в план лечения"
 				>
-					<Layers size={14} className="text-[var(--teal,var(--brand-primary))]" />
+					<Layers size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 					<span>+ Добавить этап</span>
 				</button>
 			</div>
 		</div>
 	);
 };
+
+export default TreatmentPlanSpecialtyFilterBar;

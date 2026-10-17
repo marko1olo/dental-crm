@@ -87,49 +87,37 @@ export const TreatmentPlan3TierToolbar: React.FC<TreatmentPlan3TierToolbarProps>
 			<div className="flex items-center gap-1.5 flex-wrap max-w-full py-0.5">
 				{/* Payment Mode Selector: Segmented Control */}
 				<div
-					className="inline-flex items-center p-[3px] rounded-[10px] bg-[var(--paper-soft)] border border-[var(--line-subtle)] shadow-2xs gap-1 shrink-0"
+					className="tp-segmented-bar shrink-0"
 					role="group"
 					aria-label="Режим расчета оплаты"
 				>
 					<button
 						type="button"
 						onClick={() => onPaymentModeChange("installment")}
-						className={`h-7 px-3 rounded-[7px] font-medium text-[12.5px] transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap touch-manipulation ${
-							activePaymentMode === "installment"
-								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-2xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"
-						}`}
+						className={`tp-status-btn status-draft ${activePaymentMode === "installment" ? "active" : ""}`}
 					>
-						Рассрочка 0%
+						<span>Рассрочка 0%</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => onPaymentModeChange("staged")}
-						className={`h-7 px-3 rounded-[7px] font-medium text-[12.5px] transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap touch-manipulation ${
-							activePaymentMode === "staged"
-								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-2xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"
-						}`}
+						className={`tp-status-btn status-draft ${activePaymentMode === "staged" ? "active" : ""}`}
 					>
-						Этапы (30/40/30)
+						<span>Этапы (30/40/30)</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => onPaymentModeChange("discount")}
-						className={`h-7 px-3 rounded-[7px] font-medium text-[12.5px] transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap touch-manipulation ${
-							activePaymentMode === "discount"
-								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-2xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"
-						}`}
+						className={`tp-status-btn status-draft ${activePaymentMode === "discount" ? "active" : ""}`}
 					>
-						Скидка 5% (100%)
+						<span>Скидка 5% (100%)</span>
 					</button>
 				</div>
 
 				{/* Term Selector (Active in installment mode) */}
 				{activePaymentMode === "installment" && (
 					<div
-						className="inline-flex items-center p-[3px] rounded-[10px] bg-[var(--paper-soft)] border border-[var(--line-subtle)] shadow-2xs gap-1"
+						className="tp-segmented-bar shrink-0"
 						role="group"
 						aria-label="Срок рассрочки"
 					>
@@ -138,11 +126,7 @@ export const TreatmentPlan3TierToolbar: React.FC<TreatmentPlan3TierToolbarProps>
 								key={m}
 								type="button"
 								onClick={() => onInstallmentMonthsChange(m as 3 | 6 | 12 | 24)}
-								className={`h-7 w-8 px-1 rounded-[7px] font-mono text-[12.5px] font-medium transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap touch-manipulation ${
-									installmentMonths === m
-										? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-2xs"
-										: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"
-								}`}
+								className={`treatment-3tier-term-btn ${installmentMonths === m ? "active" : ""}`}
 								title={`${m} месяцев рассрочки`}
 							>
 								{m}м
@@ -155,7 +139,7 @@ export const TreatmentPlan3TierToolbar: React.FC<TreatmentPlan3TierToolbarProps>
 				<button
 					type="button"
 					onClick={(e) => onCopyEstimateToMessenger(e, activeTier)}
-					className="h-8 flex items-center gap-1.5 px-3 rounded-lg text-[13px] font-medium text-[var(--ink,#0f172a)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap shadow-2xs touch-manipulation"
+					className="secondary-button h-8 flex items-center gap-1.5 px-3 rounded-lg text-[13px] font-medium text-[var(--ink,#0f172a)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap shadow-2xs touch-manipulation"
 					title="Скопировать смету выбранного тарифа для WhatsApp / Telegram (понятный пациенту формат)"
 					data-testid="top-copy-messenger-btn"
 				>
@@ -177,7 +161,7 @@ export const TreatmentPlan3TierToolbar: React.FC<TreatmentPlan3TierToolbarProps>
 					<button
 						type="button"
 						onClick={() => setIsParamsOpen((prev) => !prev)}
-						className="h-8 px-3 rounded-lg text-[13px] font-medium border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-2xs transition-colors touch-manipulation whitespace-nowrap"
+						className="secondary-button h-8 px-3 rounded-lg text-[13px] font-medium border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-2xs transition-colors touch-manipulation whitespace-nowrap"
 						title="Параметры сметы: налоговый вычет 13%, студия сравнения, эскроу, валидация цен"
 						aria-label="Параметры сметы"
 						aria-expanded={isParamsOpen}
