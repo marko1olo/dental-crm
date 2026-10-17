@@ -1,0 +1,95 @@
+/**
+ * DENTE Dental CRM — Doctor Payroll Interactive Controls
+ * Badges, Segmented Bars, Filter Chips
+ */
+
+.payroll-kpi-badge {
+	background: linear-gradient(135deg, rgba(20, 184, 166, 0.15), rgba(14, 165, 233, 0.15));
+	border: 1px solid var(--teal);
+	color: var(--teal-ink, var(--teal));
+	font-weight: 700;
+	border-radius: 9999px;
+	padding: 0.25rem 0.75rem;
+	font-size: 0.75rem;
+}
+
+/* DENTE Canonical Segmented Bar (Apple HIG / Design System Invariant) */
+.dente-segmented-bar {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 3px;
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line-subtle, var(--line));
+	border-radius: 10px;
+}
+
+.dente-segmented-item {
+	height: 28px;
+	padding: 0 12px;
+	border-radius: 7px;
+	font-size: 12.5px;
+	font-weight: 500;
+	color: var(--muted);
+	border: none;
+	background: transparent;
+	transition: all 0.15s ease;
+	cursor: pointer;
+	white-space: nowrap;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-decoration: none;
+	user-select: none;
+}
+
+.dente-segmented-item:hover {
+	color: var(--ink);
+}
+
+.dente-segmented-item.active {
+	background-color: var(--paper);
+	color: var(--ink);
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* DENTE Canonical Filter Chips */
+.dente-filter-chips {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.dente-filter-chip {
+	height: 28px;
+	padding: 0 12px;
+	border-radius: 20px;
+	font-size: 12.5px;
+	font-weight: 500;
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	user-select: none;
+}
+
+.dente-filter-chip:hover {
+	background-color: var(--paper);
+	border-color: var(--line-strong, var(--line));
+	color: var(--ink);
+}
+
+.dente-filter-chip.active {
+	background-color: var(--teal-soft);
+	border-color: var(--teal);
+	color: var(--teal-dark, var(--teal));
+	font-weight: 600;
+	box-shadow: 0 1px 2px rgba(13, 148, 136, 0.15);
+}

@@ -1,0 +1,53 @@
+/* Form T-13 Statutory Timesheet Grid & Cell Styles */
+
+.timesheet-stat-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	padding: 0.875rem;
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 0.75rem;
+}
+
+.timesheet-grid-cell {
+	min-width: 44px;
+	height: 48px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--line);
+	font-size: 0.75rem;
+	transition: all 0.15s ease;
+	cursor: pointer;
+}
+
+.timesheet-grid-cell:hover {
+	background-color: var(--paper-soft);
+}
+
+.timesheet-cell-work {
+	background-color: var(--teal-soft);
+	border-color: var(--teal);
+}
+
+.timesheet-cell-weekend {
+	background-color: var(--paper-soft);
+	border-color: var(--line);
+}
+
+.timesheet-cell-vacation {
+	background-color: var(--teal-soft);
+	border-color: var(--teal);
+}
+
+.timesheet-cell-sick {
+	background-color: var(--bad-bg);
+	border-color: var(--bad-fg);
+}
+
+.timesheet-cell-overtime {
+	background-color: var(--warn-bg);
+	border-color: var(--warn-fg);
+}

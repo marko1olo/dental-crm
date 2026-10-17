@@ -1,0 +1,14 @@
+/**
+ * DENTE Dental CRM — Price Diff Tablet Responsive Media Queries
+ */
+
+@media (max-width: 900px) {
+	.pricelist-diff-panes {
+		grid-template-columns: 1fr;
+		grid-template-rows: 1fr 1fr;
+	}
+	.pricelist-diff-pane.left-pane {
+		border-right: none;
+		border-bottom: 1px solid var(--line);
+	}
+}

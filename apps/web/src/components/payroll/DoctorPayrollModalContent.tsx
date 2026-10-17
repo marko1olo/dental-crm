@@ -1,0 +1,109 @@
+import React from "react";
+import {
+	PayrollHeader,
+	PayrollRentalSection,
+	PayrollTotalsBar,
+	PayrollServicesTable,
+	PayrollTimesheetTab,
+} from "./payrollModules";
+import type { useDoctorPayrollModalState } from "./useDoctorPayrollModalState";
+
+export interface DoctorPayrollModalContentProps {
+	readonly clinicName: string;
+	readonly doctorsList?: readonly { readonly id: string; readonly name: string; readonly specialtyId: string }[];
+	readonly onClose: () => void;
+	readonly state: ReturnType<typeof useDoctorPayrollModalState>;
+	readonly onSendToMessenger: (platform?: "clipboard" | "whatsapp" | "telegram") => void;
+	readonly onDownloadCsv: () => void;
+	readonly onPrintPayslip: () => void;
+}
+
+export const DoctorPayrollModalContent: React.FC<DoctorPayrollModalContentProps> = ({
+	clinicName,
+	doctorsList = [],
+	onClose,
+	state,
+	onSendToMessenger,
+	onDownloadCsv,
+	onPrintPayslip,
+}) => {
+	const {
+		taxRegime, setTaxRegime, payoutModel, setPayoutModel, periodPreset, setPeriodPreset, handleSelectPeriodPreset,
+		periodStart, setPeriodStart, periodEnd, setPeriodEnd, selectedDoctorId, setSelectedDoctorId,
+		soloSpecialtyId, setSoloSpecialtyId, activeWorkspaceTab, setActiveWorkspaceTab, timesheetState,
+		payrollResult, chairRentalRub, setChairRentalRub, shiftsCount, setShiftsCount, shiftRateRub, setShiftRateRub,
+		advanceRub, setAdvanceRub, isNpdReceiptDone, setIsNpdReceiptDone, copyFeedback, servicesToUse, isLoadingEarnings,
+	} = state;
+
+	return (
+		<div className="payroll-modal-overlay" data-testid="doctor-payroll-modal">
+			<div className="payroll-modal-container">
+				<PayrollHeader
+					clinicName={clinicName}
+					taxRegime={taxRegime}
+					isProgressiveTaxApplied={payrollResult.isProgressiveTaxApplied}
+					payoutModel={payoutModel}
+					periodPreset={periodPreset}
+					periodStart={periodStart}
+					periodEnd={periodEnd}
+					doctorsList={doctorsList}
+					selectedDoctorId={selectedDoctorId}
+					soloSpecialtyId={soloSpecialtyId}
+					activeWorkspaceTab={activeWorkspaceTab}
+					onSelectWorkspaceTab={setActiveWorkspaceTab}
+					onClose={onClose}
+					onSelectPeriodPreset={handleSelectPeriodPreset}
+					onSetTaxRegime={setTaxRegime}
+					onSetPayoutModel={setPayoutModel}
+					onSetPeriodStart={(val) => { setPeriodStart(val); setPeriodPreset("custom"); }}
+					onSetPeriodEnd={(val) => { setPeriodEnd(val); setPeriodPreset("custom"); }}
+					onSelectDoctorId={setSelectedDoctorId}
+					onSelectSoloSpecialtyId={setSoloSpecialtyId}
+				/>
+
+				<div className="p-4 sm:p-5 overflow-y-auto flex flex-col gap-5 flex-1">
+					{activeWorkspaceTab === "payroll" ? (
+						<>
+							<PayrollRentalSection
+								payoutModel={payoutModel}
+								baseCommissionPercent={payrollResult.baseCommissionPercent}
+								chairRentalRub={chairRentalRub}
+								shiftsCount={shiftsCount}
+								shiftRateRub={shiftRateRub}
+								advanceRub={advanceRub}
+								taxRegime={taxRegime}
+								npd6TaxKop={payrollResult.npd6TaxKop}
+								netPayoutToDoctorKop={payrollResult.netPayoutToDoctorKop}
+								isNpdReceiptDone={isNpdReceiptDone}
+								onSetChairRentalRub={setChairRentalRub}
+								onSetShiftsCount={setShiftsCount}
+								onSetShiftRateRub={setShiftRateRub}
+								onSetAdvanceRub={setAdvanceRub}
+								onSetIsNpdReceiptDone={setIsNpdReceiptDone}
+							/>
+
+							<PayrollTotalsBar
+								payrollResult={payrollResult}
+								payoutModel={payoutModel}
+								taxRegime={taxRegime}
+								copyFeedback={copyFeedback}
+								onSendToMessenger={onSendToMessenger}
+								onDownloadCsv={onDownloadCsv}
+								onPrintPayslip={onPrintPayslip}
+								onClose={onClose}
+							/>
+
+							<PayrollServicesTable
+								services={servicesToUse}
+								isLoading={isLoadingEarnings}
+								baseCommissionPercent={payrollResult.baseCommissionPercent}
+							/>
+						</>
+					) : (
+						<PayrollTimesheetTab timesheetState={timesheetState} />
+					)}
+				</div>
+			</div>
+		</div>
+	);
+};

@@ -1,0 +1,58 @@
+/**
+ * DENTE Dental CRM — Doctor Payroll Standardized Buttons
+ */
+
+.dente-btn-primary {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 14px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	background-color: var(--teal);
+	color: var(--on-teal);
+	border: 1px solid transparent;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	white-space: nowrap;
+}
+
+.dente-btn-primary:hover:not(:disabled) {
+	opacity: 0.92;
+	transform: translateY(-0.5px);
+}
+
+.dente-btn-primary:active:not(:disabled) {
+	transform: translateY(0);
+}
+
+.dente-btn-secondary {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 12px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 500;
+	background-color: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.dente-btn-secondary:hover:not(:disabled) {
+	background-color: var(--paper-soft);
+	border-color: var(--line-strong, var(--line));
+}
