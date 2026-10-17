@@ -2,10 +2,10 @@ import React from "react";
 import { IMPRESSION_TYPES } from "../labMath";
 
 export interface RestorationTabImpressionSectionProps {
-	impressionType?: string;
-	setImpressionType?: (type: string) => void;
-	includeImpressionBilling?: boolean;
-	setIncludeImpressionBilling?: (val: boolean) => void;
+	impressionType?: string | undefined;
+	setImpressionType?: ((type: string) => void) | undefined;
+	includeImpressionBilling?: boolean | undefined;
+	setIncludeImpressionBilling?: ((val: boolean) => void) | undefined;
 }
 
 export function RestorationTabImpressionSection({
@@ -33,7 +33,7 @@ export function RestorationTabImpressionSection({
 					</button>
 				))}
 			</div>
-			<div className="pt-2 border-t border-[var(--line)] flex items-center justify-between">
+			<div className="pt-2 border-t border-[var(--line)] flex items-center justify-between" data-testid="lab-order-impression-billing-row">
 				<label className="flex items-center gap-2 cursor-pointer text-xs select-none">
 					<input
 						type="checkbox"
@@ -42,8 +42,9 @@ export function RestorationTabImpressionSection({
 						className="w-4 h-4 rounded text-[var(--primary)]"
 						data-testid="lab-order-include-impression-billing-checkbox"
 					/>
-					<span className="font-medium text-[var(--ink)]">Включить снятие слепка в счёт (2 500 ₽)</span>
+					<span className="font-bold text-[var(--ink)]">Включить снятие слепка (оттиска) в счёт</span>
 				</label>
+				<span className="text-xs font-extrabold text-[var(--teal,#0d9488)]">2 500 ₽</span>
 			</div>
 		</div>
 	);

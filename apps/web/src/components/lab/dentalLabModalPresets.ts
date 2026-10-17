@@ -7,6 +7,8 @@ import {
 	EXPRESS_PRESET_PMMA_TEMPORARY,
 } from "./labMath";
 
+export type { ExpressLabPreset };
+
 export const EXPRESS_PRESET_EMAX_CROWN: ExpressLabPreset = {
 	id: "emax_crown_express",
 	title: "Коронка E.max CAD / Press",

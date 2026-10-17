@@ -21,8 +21,8 @@ export interface KanbanColumnProps {
 	readonly onTechnicianComment: (order: DentalLabWorkflowOrder) => void;
 	readonly onRepeatFitting: (order: DentalLabWorkflowOrder) => void;
 	readonly onRequestWarrantyRework: (order: DentalLabWorkflowOrder) => void;
-	readonly onRescheduleAppointment?: (order: DentalLabWorkflowOrder) => void;
-	readonly onPartialDelivery?: (order: DentalLabWorkflowOrder) => void;
+	readonly onRescheduleAppointment?: ((order: DentalLabWorkflowOrder) => void) | undefined;
+	readonly onPartialDelivery?: ((order: DentalLabWorkflowOrder) => void) | undefined;
 	readonly onDragOver: (e: React.DragEvent) => void;
 	readonly onDragLeave: (e: React.DragEvent) => void;
 	readonly onDrop: (e: React.DragEvent) => void;

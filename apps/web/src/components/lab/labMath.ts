@@ -252,6 +252,14 @@ export const CONSTRUCTION_TYPES = [
 	},
 ] as const;
 
+export const IMPRESSION_TYPES = [
+	{ id: "a_silicone", name: "А-силикон" },
+	{ id: "c_silicone", name: "С-силикон" },
+	{ id: "polyether", name: "Полиэфир" },
+	{ id: "alginate", name: "Альгинат" },
+	{ id: "digital_intraoral_scan", name: "3D-скан" },
+] as const;
+
 export function isJawWideConstruction(constructionId?: string | null): boolean {
 	if (!constructionId) return false;
 	return (

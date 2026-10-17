@@ -6,8 +6,8 @@ export interface DentalLabFdiOdontogramPickerProps {
 	setSelectedTeeth: (teeth: number[]) => void;
 	toggleTooth: (tooth: number) => void;
 	selectQuadrant: (teeth: number[]) => void;
-	jawScope?: JawScope | null;
-	constructionType?: string;
+	jawScope?: JawScope | null | undefined;
+	constructionType?: string | undefined;
 }
 
 const UPPER_ARCH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];

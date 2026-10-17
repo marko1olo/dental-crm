@@ -1,25 +1,25 @@
 import { generateOrthopedicReadyMessage } from "../../../store/telephonyClinical";
 
 export interface ReadyInClinicLabOrder {
-	readonly id?: string;
+	readonly id?: string | undefined;
 	readonly orderNumber: string;
-	readonly patientId?: string;
+	readonly patientId?: string | undefined;
 	readonly patientName: string;
-	readonly patientPhone?: string;
-	readonly doctorName?: string;
-	readonly doctorId?: string;
-	readonly toothFdi?: string | number | readonly (string | number)[];
-	readonly material?: string;
-	readonly colorVita?: string;
-	readonly constructionType?: string;
-	readonly clinicName?: string;
-	readonly clinicPhone?: string;
-	readonly bookingUrl?: string;
-	readonly priceRub?: number;
-	readonly clinicSharePct?: number;
-	readonly doctorSharePct?: number;
-	readonly isPartialDelivery?: boolean;
-	readonly isWarrantyRework?: boolean;
+	readonly patientPhone?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly doctorId?: string | undefined;
+	readonly toothFdi?: string | number | readonly (string | number)[] | undefined;
+	readonly material?: string | undefined;
+	readonly colorVita?: string | undefined;
+	readonly constructionType?: string | undefined;
+	readonly clinicName?: string | undefined;
+	readonly clinicPhone?: string | undefined;
+	readonly bookingUrl?: string | undefined;
+	readonly priceRub?: number | undefined;
+	readonly clinicSharePct?: number | undefined;
+	readonly doctorSharePct?: number | undefined;
+	readonly isPartialDelivery?: boolean | undefined;
+	readonly isWarrantyRework?: boolean | undefined;
 }
 
 export function generateReadyInClinicSmsTemplate(

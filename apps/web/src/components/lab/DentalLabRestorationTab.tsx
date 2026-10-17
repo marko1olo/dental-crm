@@ -1,15 +1,11 @@
 import React from "react";
-import type { JawScope } from "./labMath";
+import { type JawScope, IMPRESSION_TYPES } from "./labMath";
 import { DentalLabFdiOdontogramPicker } from "./DentalLabFdiOdontogramPicker";
 import { DentalLabExpressConfigurator } from "./DentalLabExpressConfigurator";
 import { RestorationTabConstructionGrid } from "./restorationTabModules/RestorationTabConstructionGrid";
+import { RestorationTabImpressionSection } from "./restorationTabModules/RestorationTabImpressionSection";
 
-export { DentalLabFdiOdontogramPicker, DentalLabExpressConfigurator };
-
-const IMPRESSION_TYPES = [
-	{ id: "a_silicone", name: "А-силикон" }, { id: "c_silicone", name: "С-силикон" },
-	{ id: "polyether", name: "Полиэфир" }, { id: "intraoral_scan", name: "Интраоральный скан" },
-];
+export { DentalLabFdiOdontogramPicker, DentalLabExpressConfigurator, RestorationTabImpressionSection };
 
 export interface DentalLabRestorationTabProps {
 	selectedTeeth: number[]; setSelectedTeeth: React.Dispatch<React.SetStateAction<number[]>>;
@@ -18,19 +14,19 @@ export interface DentalLabRestorationTabProps {
 	material: string; setMaterial: (mat: string) => void;
 	dueDate: string; setDueDate: (date: string) => void;
 	clinicalNotes: string; setClinicalNotes: (notes: string) => void;
-	impressionType?: string; setImpressionType?: (type: string) => void;
-	includeImpressionBilling?: boolean; setIncludeImpressionBilling?: (val: boolean) => void;
-	jawScope?: JawScope | null; setJawScope?: (scope: JawScope | null) => void;
-	shadeSystem?: "classical" | "3d_master" | "bleach"; setShadeSystem?: (system: "classical" | "3d_master" | "bleach") => void;
-	shadeClassical?: string; setShadeClassical?: (shade: string) => void;
-	shade3dMaster?: string; setShade3dMaster?: (shade: string) => void;
-	shadeBleach?: string; setShadeBleach?: (shade: string) => void;
-	shadeBody?: string; setShadeBody?: (shade: string) => void;
-	onOpenAdvancedShades?: () => void;
-	occlusalScheme?: string; setOcclusalScheme?: (scheme: string) => void;
-	contactTightness?: string; setContactTightness?: (tightness: string) => void;
-	surfaceTexture?: string; setSurfaceTexture?: (texture: string) => void;
-	cementGapMicrons?: number; setCementGapMicrons?: (gap: number) => void;
+	impressionType?: string | undefined; setImpressionType?: ((type: string) => void) | undefined;
+	includeImpressionBilling?: boolean | undefined; setIncludeImpressionBilling?: ((val: boolean) => void) | undefined;
+	jawScope?: JawScope | null | undefined; setJawScope?: ((scope: JawScope | null) => void) | undefined;
+	shadeSystem?: ("classical" | "3d_master" | "bleach") | undefined; setShadeSystem?: ((system: "classical" | "3d_master" | "bleach") => void) | undefined;
+	shadeClassical?: string | undefined; setShadeClassical?: ((shade: string) => void) | undefined;
+	shade3dMaster?: string | undefined; setShade3dMaster?: ((shade: string) => void) | undefined;
+	shadeBleach?: string | undefined; setShadeBleach?: ((shade: string) => void) | undefined;
+	shadeBody?: string | undefined; setShadeBody?: ((shade: string) => void) | undefined;
+	onOpenAdvancedShades?: (() => void) | undefined;
+	occlusalScheme?: string | undefined; setOcclusalScheme?: ((scheme: string) => void) | undefined;
+	contactTightness?: string | undefined; setContactTightness?: ((tightness: string) => void) | undefined;
+	surfaceTexture?: string | undefined; setSurfaceTexture?: ((texture: string) => void) | undefined;
+	cementGapMicrons?: number | undefined; setCementGapMicrons?: ((gap: number) => void) | undefined;
 }
 
 /**

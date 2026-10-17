@@ -6,8 +6,8 @@ export interface RestorationTabConstructionGridProps {
 	setConstructionType: (type: string) => void;
 	material: string;
 	setMaterial: (mat: string) => void;
-	jawScope?: JawScope | null;
-	setJawScope?: (scope: JawScope | null) => void;
+	jawScope?: JawScope | null | undefined;
+	setJawScope?: ((scope: JawScope | null) => void) | undefined;
 }
 
 export function RestorationTabConstructionGrid({
@@ -31,7 +31,7 @@ export function RestorationTabConstructionGrid({
 								type="button"
 								onClick={() => {
 									setConstructionType(c.id);
-									if (isJawWideConstruction(c.id) && !jawScope) setJawScope?.("upper_jaw");
+									if (isJawWideConstruction(c.id) && !jawScope) setJawScope?.("upper");
 								}}
 								className={`p-2.5 rounded-xl border text-left text-xs transition cursor-pointer min-h-[44px] ${
 									isSel
@@ -39,7 +39,7 @@ export function RestorationTabConstructionGrid({
 										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 							>
-								<div>{c.title}</div>
+								<div>{c.name}</div>
 								<div className="text-[10px] text-[var(--muted)] font-normal">{c.category}</div>
 							</button>
 						);
@@ -63,7 +63,7 @@ export function RestorationTabConstructionGrid({
 										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 							>
-								<div>{m.title}</div>
+								<div>{m.name}</div>
 								<div className="text-[10px] text-[var(--muted)] font-normal">{m.category}</div>
 							</button>
 						);

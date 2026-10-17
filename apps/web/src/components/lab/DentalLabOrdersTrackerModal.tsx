@@ -81,8 +81,8 @@ export function DentalLabOrdersTrackerModal({
 						orders.map((o) => (
 							<div key={o.id} onClick={() => { setSelectedOrder(o); setIsDrawerOpen(true); }} className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] transition cursor-pointer flex items-center justify-between gap-3">
 								<div>
-									<div className="font-bold text-xs text-[var(--ink)]">Наряд #{o.orderNumber || o.id?.slice(0, 8)} · Зуб: {o.toothFdi || o.teethFdi || "челюсть"}</div>
-									<div className="text-[11px] text-[var(--muted)]">{o.material || o.materialRu || "Ортопедическая конструкция"} · Цвет: {o.colorVita || o.vitaShade || "—"}</div>
+									<div className="font-bold text-xs text-[var(--ink)]">Наряд #{o.orderNumber || o.id?.slice(0, 8)} · Зуб: {(o as any).toothFdi || (o as any).teethFdi || "челюсть"}</div>
+									<div className="text-[11px] text-[var(--muted)]">{(o as any).material || (o as any).materialRu || "Ортопедическая конструкция"} · Цвет: {(o as any).colorVita || (o as any).vitaShade || "—"}</div>
 								</div>
 								<div className="text-right">
 									<span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30">{o.status || "в работе"}</span>

@@ -20,8 +20,8 @@ export interface DentalLabKanbanCardProps {
 	readonly onTechnicianComment: (order: DentalLabWorkflowOrder) => void;
 	readonly onRepeatFitting: (order: DentalLabWorkflowOrder) => void;
 	readonly onRequestWarrantyRework: (order: DentalLabWorkflowOrder) => void;
-	readonly onRescheduleAppointment?: (order: DentalLabWorkflowOrder) => void;
-	readonly onPartialDelivery?: (order: DentalLabWorkflowOrder) => void;
+	readonly onRescheduleAppointment?: ((order: DentalLabWorkflowOrder) => void) | undefined;
+	readonly onPartialDelivery?: ((order: DentalLabWorkflowOrder) => void) | undefined;
 }
 
 export interface FittingUrgencyInfo {
