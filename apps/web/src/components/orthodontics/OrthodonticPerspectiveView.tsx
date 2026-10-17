@@ -47,7 +47,7 @@ export function OrthodonticPerspectiveView() {
 					<button
 						type="button"
 						onClick={() => setIsCephModalOpen(true)}
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer min-h-[36px]"
+						className="secondary-button inline-flex items-center gap-1.5 px-3 py-1.5 !rounded-xl text-xs font-semibold cursor-pointer min-h-[36px]"
 						data-testid="btn-open-ortho-ceph-modal"
 						title="Телерентгенография черепа (ТРГ) и цефалометрический анализ"
 					>
@@ -58,7 +58,7 @@ export function OrthodonticPerspectiveView() {
 						type="button"
 						onClick={() => setIsPhotoModalOpen(true)}
 						data-testid="btn-open-ortho-photo-modal"
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer min-h-[36px]"
+						className="secondary-button inline-flex items-center gap-1.5 px-3 py-1.5 !rounded-xl text-xs font-semibold cursor-pointer min-h-[36px]"
 					>
 						<Camera className="w-3.5 h-3.5 text-[var(--primary)]" />
 						Фотопротокол
@@ -67,9 +67,9 @@ export function OrthodonticPerspectiveView() {
 						type="button"
 						onClick={() => setIsProtocolOpen(true)}
 						data-testid="btn-open-ortho-protocol-widget"
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer min-h-[36px]"
+						className="primary-button inline-flex items-center gap-1.5 px-3.5 py-1.5 !rounded-xl text-xs font-bold cursor-pointer min-h-[36px] shadow-xs"
 					>
-						<BracesBracket className="w-3.5 h-3.5 text-[var(--primary)]" />
+						<BracesBracket className="w-3.5 h-3.5 text-white" />
 						Протокол визита
 					</button>
 				</div>

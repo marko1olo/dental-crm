@@ -1,424 +1,101 @@
 import React from "react";
-import {
-	ORTHODONTIC_STAGE_TABS,
-	ANTERIOR_TEETH,
-	type OrthoClinicalPresetId,
-	type OrthodonticStageFilter,
-	type TargetArch,
-} from "./orthoProtocolTypes";
+import { ANTERIOR_TEETH } from "./orthoProtocolTypes";
 import { OrthoPhotoAndCephProtocolSection } from "./OrthoPhotoAndCephProtocolSection";
 import { OrthoClinicalPresetsSection } from "./OrthoClinicalPresetsSection";
 import { OrthoDiagnosticsSection } from "./OrthoDiagnosticsSection";
 import { OrthoDentalArchSection } from "./OrthoDentalArchSection";
-import {
-	OrthoBracketProtocolSection,
-	type BracketSlot,
-} from "./OrthoBracketProtocolSection";
-import {
-	OrthoArchwireSelector,
-	type ArchwireMaterial,
-	type ArchwireSection,
-	type WorkhorseArchwireOption,
-} from "./OrthoArchwireSelector";
-import { OrthoClinicalActionsChecklist } from "./OrthoClinicalActionsChecklist";
-import type {
-	AnbClass,
-	AngleClass,
-	SagittalAnomaly,
-	VerticalAnomaly,
-	TransversalAnomaly,
-	TmjStatus,
-} from "@dental/shared";
+import { StagesToolbar } from "./orthoControls/StagesToolbar";
+import { OrthoAppliancesSubSection } from "./orthoControls/OrthoAppliancesSubSection";
+import type { OrthoControlsColumnProps } from "./orthoControls/types";
 
-export interface OrthoControlsColumnProps {
-	className?: string | undefined;
-	stageFilter: OrthodonticStageFilter;
-	setStageFilter: (filter: OrthodonticStageFilter) => void;
-	setBracketSystem: (system: string) => void;
-	setArchwireMaterial: (mat: ArchwireMaterial) => void;
-	setArchwireSection: (sec: ArchwireSection) => void;
-	selectedActions: string[];
-	setSelectedActions: React.Dispatch<React.SetStateAction<string[]>>;
+export type { OrthoControlsColumnProps };
 
-	// Photo & Ceph
-	isPhotoProtocolOpen: boolean;
-	setIsPhotoProtocolOpen: (open: boolean) => void;
-	isPhotoProtocolCompleted: boolean;
-	onTogglePhotoProtocolCompleted: () => void;
-	isCephModalOpen: boolean;
-	setIsCephModalOpen: (open: boolean) => void;
-	anbClass: AnbClass;
-	setAnbClass: (cls: AnbClass) => void;
-	anbAngle: number;
-	setAnbAngle: (angle: number) => void;
-	onSetAnbNorm: () => void;
-	patientId?: string | undefined;
-	patientName: string;
-	doctorName: string;
-	clinicName: string;
-	onInsertCephToProtocol: (text: string) => void;
+export const OrthoControlsColumn: React.FC<OrthoControlsColumnProps> = (props) => {
+	const { className = "" } = props;
 
-	// Presets
-	activePreset: OrthoClinicalPresetId | null;
-	onPresetActivation: () => void;
-	onPresetWireChange: () => void;
-	onPresetBonding: () => void;
-	onPresetDebonding: () => void;
-	onPresetLeveling: () => void;
-	onPresetSprings: () => void;
-	onPresetSeparationRings: () => void;
-	onPresetAlignerLabOrder: () => void;
-	onPresetRetainerLabOrder: () => void;
-	onPresetPlateLabOrder: () => void;
-	onPresetSplintLabOrder: () => void;
-	alignerStep: number;
-	alignerTotal: number;
-
-	// Diagnostics
-	angleClass: AngleClass;
-	setAngleClass: (cls: AngleClass) => void;
-	onSetAngleClassNorm: () => void;
-	sagittalAnomaly: SagittalAnomaly;
-	setSagittalAnomaly: (anomaly: SagittalAnomaly) => void;
-	sagittalGapMm: number;
-	setSagittalGapMm: (gap: number) => void;
-	verticalAnomaly: VerticalAnomaly;
-	setVerticalAnomaly: (anomaly: VerticalAnomaly) => void;
-	transversalAnomaly: TransversalAnomaly;
-	setTransversalAnomaly: (anomaly: TransversalAnomaly) => void;
-	onSetOcclusionNorm: () => void;
-	tmjStatus: TmjStatus;
-	setTmjStatus: (status: TmjStatus) => void;
-	onSetTmjNorm: () => void;
-
-	// Dental Arch
-	targetArch: TargetArch;
-	onSelectArch: (arch: TargetArch) => void;
-	selectedTeeth: number[];
-	onToggleTooth: (tooth: number) => void;
-	setSelectedTeeth: React.Dispatch<React.SetStateAction<number[]>>;
-
-	// Bracket & Aligner Protocol
-	bracketSlot: BracketSlot;
-	setBracketSlot: (slot: BracketSlot) => void;
-	bracketSystem: string;
-	onSelectBracketSystem: (sys: string) => void;
-	plateActivationTurns: number;
-	setPlateActivationTurns: (turns: number) => void;
-	activeAttachmentPreset: string | null;
-	onSelectAttachmentPreset: (presetId: string) => void;
-	isSplitArchAligners: boolean;
-	setIsSplitArchAligners: React.Dispatch<React.SetStateAction<boolean>>;
-	setAlignerStep: React.Dispatch<React.SetStateAction<number>>;
-	setAlignerTotal: React.Dispatch<React.SetStateAction<number>>;
-	alignerStepUpper: number;
-	setAlignerStepUpper: React.Dispatch<React.SetStateAction<number>>;
-	alignerTotalUpper: number;
-	setAlignerTotalUpper: React.Dispatch<React.SetStateAction<number>>;
-	alignerStepLower: number;
-	setAlignerStepLower: React.Dispatch<React.SetStateAction<number>>;
-	alignerTotalLower: number;
-	setAlignerTotalLower: React.Dispatch<React.SetStateAction<number>>;
-	alignerDaysPerStep: number;
-	setAlignerDaysPerStep: React.Dispatch<React.SetStateAction<number>>;
-	nextAlignerDateStr: string;
-	alignerProgressPercent: number;
-	onSendAlignerReminder: () => void;
-	onIssueAlignerSet: (count: number, days: number) => void;
-	onApplyAttachmentsProtocol: () => void;
-	alignerSetIssuedCount?: number | undefined;
-
-	// Archwire & Elastics
-	archwireMaterial: ArchwireMaterial;
-	archwireSection: ArchwireSection;
-	onSelectWorkhorseArchwire: (wire: WorkhorseArchwireOption) => void;
-	torquePreset: string;
-	setTorquePreset: (preset: string) => void;
-	angulationPreset: string;
-	setAngulationPreset: (preset: string) => void;
-	elasticScheme: string;
-	setElasticScheme: (scheme: string) => void;
-	elasticSize: string;
-	setElasticSize: (size: string) => void;
-	onElasticSizeInteraction: () => void;
-
-	// Actions Checklist
-	onToggleAction: (actionId: string) => void;
-}
-
-export const OrthoControlsColumn: React.FC<OrthoControlsColumnProps> = ({
-	stageFilter,
-	setStageFilter,
-	setBracketSystem,
-	setArchwireMaterial,
-	setArchwireSection,
-	selectedActions,
-	setSelectedActions,
-	isPhotoProtocolOpen,
-	setIsPhotoProtocolOpen,
-	isPhotoProtocolCompleted,
-	onTogglePhotoProtocolCompleted,
-	isCephModalOpen,
-	setIsCephModalOpen,
-	anbClass,
-	setAnbClass,
-	anbAngle,
-	setAnbAngle,
-	onSetAnbNorm,
-	patientId,
-	patientName,
-	doctorName,
-	clinicName,
-	onInsertCephToProtocol,
-	activePreset,
-	onPresetActivation,
-	onPresetWireChange,
-	onPresetBonding,
-	onPresetDebonding,
-	onPresetLeveling,
-	onPresetSprings,
-	onPresetSeparationRings,
-	onPresetAlignerLabOrder,
-	onPresetRetainerLabOrder,
-	onPresetPlateLabOrder,
-	onPresetSplintLabOrder,
-	alignerStep,
-	alignerTotal,
-	angleClass,
-	setAngleClass,
-	onSetAngleClassNorm,
-	sagittalAnomaly,
-	setSagittalAnomaly,
-	sagittalGapMm,
-	setSagittalGapMm,
-	verticalAnomaly,
-	setVerticalAnomaly,
-	transversalAnomaly,
-	setTransversalAnomaly,
-	onSetOcclusionNorm,
-	tmjStatus,
-	setTmjStatus,
-	onSetTmjNorm,
-	targetArch,
-	onSelectArch,
-	selectedTeeth,
-	onToggleTooth,
-	setSelectedTeeth,
-	bracketSlot,
-	setBracketSlot,
-	bracketSystem,
-	onSelectBracketSystem,
-	plateActivationTurns,
-	setPlateActivationTurns,
-	activeAttachmentPreset,
-	onSelectAttachmentPreset,
-	isSplitArchAligners,
-	setIsSplitArchAligners,
-	setAlignerStep,
-	setAlignerTotal,
-	alignerStepUpper,
-	setAlignerStepUpper,
-	alignerTotalUpper,
-	setAlignerTotalUpper,
-	alignerStepLower,
-	setAlignerStepLower,
-	alignerTotalLower,
-	setAlignerTotalLower,
-	alignerDaysPerStep,
-	setAlignerDaysPerStep,
-	nextAlignerDateStr,
-	alignerProgressPercent,
-	onSendAlignerReminder,
-	onIssueAlignerSet,
-	onApplyAttachmentsProtocol,
-	alignerSetIssuedCount,
-	archwireMaterial,
-	archwireSection,
-	onSelectWorkhorseArchwire,
-	torquePreset,
-	setTorquePreset,
-	angulationPreset,
-	setAngulationPreset,
-	elasticScheme,
-	setElasticScheme,
-	elasticSize,
-	setElasticSize,
-	onElasticSizeInteraction,
-	onToggleAction,
-	className = "",
-}) => {
 	return (
 		<div className={`lg:col-span-7 p-4 sm:p-5 flex flex-col gap-4 border-b lg:border-b-0 lg:border-r border-[var(--line)] overflow-y-auto ${className}`}>
-			{/* 0. Stages Filter Bar (DENTE Segmented Bar) */}
-			<div
-				data-testid="ortho-stages-toolbar"
-				className="dente-segmented-bar w-full shrink-0 shadow-2xs"
-			>
-				{ORTHODONTIC_STAGE_TABS.map((stage) => {
-					const isSelected = stageFilter === stage.id;
-					return (
-						<button
-							key={stage.id}
-							type="button"
-							onClick={() => {
-								setStageFilter(stage.id);
-								if (stage.id === "aligners") {
-									setBracketSystem("aligners");
-								} else if (stage.id === "leveling") {
-									setArchwireMaterial("NiTi");
-									setArchwireSection(".014");
-								} else if (stage.id === "working") {
-									setArchwireMaterial("SS");
-									setArchwireSection(".019x.025");
-								} else if (stage.id === "finishing") {
-									setArchwireMaterial("TMA");
-									setArchwireSection(".017x.025");
-								} else if (stage.id === "retention") {
-									if (!selectedActions.includes("debonding")) {
-										setSelectedActions((prev) => [...prev, "debonding"]);
-									}
-								}
-							}}
-							data-testid={`ortho-stage-tab-${stage.id}`}
-							className={`dente-segmented-item ${isSelected ? "active" : ""}`}
-							title={stage.desc}
-						>
-							<span className="hidden xl:inline">{stage.label}</span>
-							<span className="xl:hidden">{stage.shortLabel}</span>
-						</button>
-					);
-				})}
-			</div>
+			<StagesToolbar
+				stageFilter={props.stageFilter}
+				setStageFilter={props.setStageFilter}
+				setBracketSystem={props.setBracketSystem}
+				setArchwireMaterial={props.setArchwireMaterial}
+				setArchwireSection={props.setArchwireSection}
+				selectedActions={props.selectedActions}
+				setSelectedActions={props.setSelectedActions}
+			/>
 
-			{/* Photo Protocol & Cephalometric TRG Section */}
 			<OrthoPhotoAndCephProtocolSection
-				isPhotoProtocolOpen={isPhotoProtocolOpen}
-				setIsPhotoProtocolOpen={setIsPhotoProtocolOpen}
-				isPhotoProtocolCompleted={isPhotoProtocolCompleted}
-				onTogglePhotoProtocolCompleted={onTogglePhotoProtocolCompleted}
-				isCephModalOpen={isCephModalOpen}
-				setIsCephModalOpen={setIsCephModalOpen}
-				anbClass={anbClass}
-				setAnbClass={setAnbClass}
-				anbAngle={anbAngle}
-				setAnbAngle={setAnbAngle}
-				onSetAnbNorm={onSetAnbNorm}
-				patientId={patientId}
-				patientName={patientName}
-				doctorName={doctorName}
-				clinicName={clinicName}
-				onInsertCephToProtocol={onInsertCephToProtocol}
+				isPhotoProtocolOpen={props.isPhotoProtocolOpen}
+				setIsPhotoProtocolOpen={props.setIsPhotoProtocolOpen}
+				isPhotoProtocolCompleted={props.isPhotoProtocolCompleted}
+				onTogglePhotoProtocolCompleted={props.onTogglePhotoProtocolCompleted}
+				isCephModalOpen={props.isCephModalOpen}
+				setIsCephModalOpen={props.setIsCephModalOpen}
+				anbClass={props.anbClass}
+				setAnbClass={props.setAnbClass}
+				anbAngle={props.anbAngle}
+				setAnbAngle={props.setAnbAngle}
+				onSetAnbNorm={props.onSetAnbNorm}
+				patientId={props.patientId}
+				patientName={props.patientName}
+				doctorName={props.doctorName}
+				clinicName={props.clinicName}
+				onInsertCephToProtocol={props.onInsertCephToProtocol}
 			/>
 
-			{/* Clinical Presets & ZTL Lab Orders */}
 			<OrthoClinicalPresetsSection
-				activePreset={activePreset}
-				onPresetActivation={onPresetActivation}
-				onPresetWireChange={onPresetWireChange}
-				onPresetBonding={onPresetBonding}
-				onPresetDebonding={onPresetDebonding}
-				onPresetLeveling={onPresetLeveling}
-				onPresetSprings={onPresetSprings}
-				onPresetSeparationRings={onPresetSeparationRings}
-				onPresetAlignerLabOrder={onPresetAlignerLabOrder}
-				onPresetRetainerLabOrder={onPresetRetainerLabOrder}
-				onPresetPlateLabOrder={onPresetPlateLabOrder}
-				onPresetSplintLabOrder={onPresetSplintLabOrder}
-				alignerStep={alignerStep}
-				alignerTotal={alignerTotal}
+				activePreset={props.activePreset}
+				onPresetActivation={props.onPresetActivation}
+				onPresetWireChange={props.onPresetWireChange}
+				onPresetBonding={props.onPresetBonding}
+				onPresetDebonding={props.onPresetDebonding}
+				onPresetLeveling={props.onPresetLeveling}
+				onPresetSprings={props.onPresetSprings}
+				onPresetSeparationRings={props.onPresetSeparationRings}
+				onPresetAlignerLabOrder={props.onPresetAlignerLabOrder}
+				onPresetRetainerLabOrder={props.onPresetRetainerLabOrder}
+				onPresetPlateLabOrder={props.onPresetPlateLabOrder}
+				onPresetSplintLabOrder={props.onPresetSplintLabOrder}
+				onPresetNiti014Activation={props.onPresetNiti014Activation}
+				onPresetPowerChainChange={props.onPresetPowerChainChange}
+				onPresetBondingBothMbt={props.onPresetBondingBothMbt}
+				onPresetAlignerScan={props.onPresetAlignerScan}
+				onPresetAlignerTrays1To4={props.onPresetAlignerTrays1To4}
+				onPresetAlignerTrays5To8={props.onPresetAlignerTrays5To8}
+				onPresetRebracket={props.onPresetRebracket}
+				alignerStep={props.alignerStep}
+				alignerTotal={props.alignerTotal}
 			/>
 
-			{/* Angle & Occlusal & TMJ Diagnostics */}
 			<OrthoDiagnosticsSection
-				angleClass={angleClass}
-				setAngleClass={setAngleClass}
-				onSetAngleClassNorm={onSetAngleClassNorm}
-				sagittalAnomaly={sagittalAnomaly}
-				setSagittalAnomaly={setSagittalAnomaly}
-				sagittalGapMm={sagittalGapMm}
-				setSagittalGapMm={setSagittalGapMm}
-				verticalAnomaly={verticalAnomaly}
-				setVerticalAnomaly={setVerticalAnomaly}
-				transversalAnomaly={transversalAnomaly}
-				setTransversalAnomaly={setTransversalAnomaly}
-				onSetOcclusionNorm={onSetOcclusionNorm}
-				tmjStatus={tmjStatus}
-				setTmjStatus={setTmjStatus}
-				onSetTmjNorm={onSetTmjNorm}
+				angleClass={props.angleClass}
+				setAngleClass={props.setAngleClass}
+				onSetAngleClassNorm={props.onSetAngleClassNorm}
+				sagittalAnomaly={props.sagittalAnomaly}
+				setSagittalAnomaly={props.setSagittalAnomaly}
+				sagittalGapMm={props.sagittalGapMm}
+				setSagittalGapMm={props.setSagittalGapMm}
+				verticalAnomaly={props.verticalAnomaly}
+				setVerticalAnomaly={props.setVerticalAnomaly}
+				transversalAnomaly={props.transversalAnomaly}
+				setTransversalAnomaly={props.setTransversalAnomaly}
+				onSetOcclusionNorm={props.onSetOcclusionNorm}
+				tmjStatus={props.tmjStatus}
+				setTmjStatus={props.setTmjStatus}
+				onSetTmjNorm={props.onSetTmjNorm}
 			/>
 
-			{/* Dental Arch Formula */}
 			<OrthoDentalArchSection
-				targetArch={targetArch}
-				onSelectArch={onSelectArch}
-				selectedTeeth={selectedTeeth}
-				onToggleTooth={onToggleTooth}
-				onSelectAnterior={() => setSelectedTeeth(ANTERIOR_TEETH)}
-				onClearTeeth={() => setSelectedTeeth([])}
+				targetArch={props.targetArch}
+				onSelectArch={props.onSelectArch}
+				selectedTeeth={props.selectedTeeth}
+				onToggleTooth={props.onToggleTooth}
+				onSelectAnterior={() => props.setSelectedTeeth(ANTERIOR_TEETH)}
+				onClearTeeth={() => props.setSelectedTeeth([])}
 			/>
 
-			{/* Bracket System & Aligner Protocol Section */}
-			<OrthoBracketProtocolSection
-				bracketSlot={bracketSlot}
-				setBracketSlot={setBracketSlot}
-				bracketSystem={bracketSystem}
-				onSelectBracketSystem={onSelectBracketSystem}
-				plateActivationTurns={plateActivationTurns}
-				setPlateActivationTurns={setPlateActivationTurns}
-				onAddExpansionScrewAction={() => {
-					if (!selectedActions.includes("expansion_screw_activation")) {
-						setSelectedActions((prev) => [...prev, "expansion_screw_activation"]);
-					}
-				}}
-				activeAttachmentPreset={activeAttachmentPreset}
-				onSelectAttachmentPreset={onSelectAttachmentPreset}
-				isSplitArchAligners={isSplitArchAligners}
-				setIsSplitArchAligners={setIsSplitArchAligners}
-				alignerStep={alignerStep}
-				setAlignerStep={setAlignerStep}
-				alignerTotal={alignerTotal}
-				setAlignerTotal={setAlignerTotal}
-				alignerStepUpper={alignerStepUpper}
-				setAlignerStepUpper={setAlignerStepUpper}
-				alignerTotalUpper={alignerTotalUpper}
-				setAlignerTotalUpper={setAlignerTotalUpper}
-				alignerStepLower={alignerStepLower}
-				setAlignerStepLower={setAlignerStepLower}
-				alignerTotalLower={alignerTotalLower}
-				setAlignerTotalLower={setAlignerTotalLower}
-				alignerIntervalDays={alignerDaysPerStep}
-				setAlignerIntervalDays={setAlignerDaysPerStep}
-				nextAlignerDateStr={nextAlignerDateStr}
-				alignerProgressPercent={alignerProgressPercent}
-				onSendAlignerReminder={onSendAlignerReminder}
-				onIssueAlignerSet={onIssueAlignerSet}
-				onApplyAttachmentsProtocol={onApplyAttachmentsProtocol}
-				alignerSetIssuedCount={alignerSetIssuedCount}
-			/>
-
-			{/* Archwire, Torque & Elastics Section */}
-			<OrthoArchwireSelector
-				archwireMaterial={archwireMaterial}
-				setArchwireMaterial={setArchwireMaterial}
-				archwireSection={archwireSection}
-				setArchwireSection={setArchwireSection}
-				onSelectWorkhorseArchwire={onSelectWorkhorseArchwire}
-				torquePreset={torquePreset}
-				setTorquePreset={setTorquePreset}
-				angulationPreset={angulationPreset}
-				setAngulationPreset={setAngulationPreset}
-				elasticScheme={elasticScheme}
-				setElasticScheme={setElasticScheme}
-				elasticSize={elasticSize}
-				setElasticSize={setElasticSize}
-				onElasticSizeInteraction={onElasticSizeInteraction}
-			/>
-
-			{/* Clinical Actions Checklist */}
-			<OrthoClinicalActionsChecklist
-				selectedActions={selectedActions}
-				onToggleAction={onToggleAction}
-			/>
+			<OrthoAppliancesSubSection {...props} />
 		</div>
 	);
 };

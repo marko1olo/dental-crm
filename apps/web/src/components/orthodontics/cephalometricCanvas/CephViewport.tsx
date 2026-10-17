@@ -23,7 +23,7 @@ interface CephViewportProps {
 	onHoverKey: (key: LandmarkKey | null) => void;
 	onStartDrag: (key: LandmarkKey) => void;
 	onSelectTargetKey: (key: LandmarkKey | null) => void;
-	onRemoveLandmark?: (key: LandmarkKey) => void;
+	onRemoveLandmark?: ((key: LandmarkKey) => void) | undefined;
 	svgRef: React.RefObject<SVGSVGElement | null>;
 }
 

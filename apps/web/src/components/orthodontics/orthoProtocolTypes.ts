@@ -44,7 +44,18 @@ export type OrthoClinicalPresetId =
 	| "debonding"
 	| "leveling"
 	| "springs"
-	| "separation";
+	| "separation"
+	| "rebracket"
+	| "niti_014_activation"
+	| "power_chain_change"
+	| "bonding_both_mbt"
+	| "aligner_scan"
+	| "aligner_trays_1_4"
+	| "aligner_trays_5_8"
+	| "lab_aligners"
+	| "lab_retainer"
+	| "lab_plate"
+	| "lab_splint";
 
 export const ORTHO_804N_ACTIONS_MAP: Record<string, Array<Omit<OrthodonticService804n, "stageKind">>> = {
 	wire_change: [
@@ -83,6 +94,63 @@ export const ORTHO_804N_ACTIONS_MAP: Record<string, Array<Omit<OrthodonticServic
 			code: "A16.07.048",
 			nameRu: "Плановая активация элементов брекет-системы",
 			priceRub: 1500,
+		},
+	],
+	niti_014_activation: [
+		{
+			code: "A16.07.048.002",
+			nameRu: "Активация дуги 0.14 NiTi",
+			priceRub: 2500,
+		},
+		{
+			code: "A16.07.048",
+			nameRu: "Активация элементов брекет-системы / смена лигатур",
+			priceRub: 1500,
+		},
+	],
+	power_chain_change: [
+		{
+			code: "A16.07.048.003",
+			nameRu: "Смена эластических цепочек (Power Chain)",
+			priceRub: 1500,
+		},
+	],
+	bonding_both_mbt: [
+		{
+			code: "A16.07.047",
+			nameRu: "Фиксация брекет-системы верх/низ Roth/MBT .022",
+			priceRub: 45000,
+		},
+		{
+			code: "A16.07.048.002",
+			nameRu: "Первичная установка нивелирующих дуг NiTi",
+			priceRub: 3000,
+		},
+	],
+	aligner_scan: [
+		{
+			code: "A16.07.046",
+			nameRu: "Снятие слепков / 3D-сканирование под элайнеры",
+			priceRub: 6000,
+		},
+	],
+	aligner_trays_1_4: [
+		{
+			code: "A16.07.046",
+			nameRu: "Выдача капп 1-4 элайнеров",
+			priceRub: 12000,
+		},
+		{
+			code: "A16.07.046.001",
+			nameRu: "Фиксация композитных аттачментов элайнеров",
+			priceRub: 3500,
+		},
+	],
+	aligner_trays_5_8: [
+		{
+			code: "A16.07.046",
+			nameRu: "Выдача капп 5-8 элайнеров",
+			priceRub: 12000,
 		},
 	],
 	power_chain: [

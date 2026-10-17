@@ -317,6 +317,122 @@ export function useOrthoClinicalPresets({
 		showToast("Пресет: Сепарация под бандажные кольца применен", "info");
 	};
 
+	// 5 Канонических 1-клик пресетов у кресла ортодонта (Высшая конституция & Мандаты 8e / 8n)
+	const handlePresetNiti014Activation = () => {
+		setActivePreset("niti_014_activation");
+		setTargetArch("both");
+		setSelectedTeeth([
+			17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27,
+			47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37,
+		]);
+		setBracketSlot("0.022");
+		setBracketSystem("damon_q2");
+		setArchwireMaterial("NiTi");
+		setArchwireSection(".014");
+		setSelectedActions(["niti_014_activation", "ligature_change"]);
+		setElasticScheme("none");
+		setNotes(
+			"Плановый этап нивелирования: произведена активация и установка первичных эластичных никель-титановых дуг NiTi .014\" на верхней и нижней челюстях. Замки брекетов закрыты со щелчком. Эластические лигатуры обновлены. Концы дуг отожжены, подогнуты и зашлифованы. Травмирование слизистой исключено. Расходники списаны.",
+		);
+		showToast("Пресет: Активация дуги 0.14 NiTi применен", "success");
+	};
+
+	const handlePresetPowerChainChange = () => {
+		setActivePreset("power_chain_change");
+		setTargetArch("both");
+		setSelectedTeeth([
+			16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26,
+			46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36,
+		]);
+		setArchwireMaterial("SS");
+		setArchwireSection(".019x.025");
+		setSelectedActions(["power_chain_change", "ligature_change"]);
+		setNotes(
+			"Этап консолидации и закрытия промежутков: выполнена замена эластических цепочек (power chain) с коротким шагом на жестких стальных дугах SS .019x.025\". Произведен контроль торка фронтальных зубов и стабильности окклюзионных контактов. Натяжение равномерное, фиксация надежная.",
+		);
+		showToast("Пресет: Смена эластических цепочек (power chain) применен", "success");
+	};
+
+	const handlePresetBondingBothMbt = () => {
+		setActivePreset("bonding_both_mbt");
+		setTargetArch("both");
+		setSelectedTeeth([
+			17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27,
+			47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37,
+		]);
+		setBracketSlot("0.022");
+		setBracketSystem("empower");
+		setArchwireMaterial("NiTi");
+		setArchwireSection(".014");
+		setSelectedActions(["bonding_both_mbt"]);
+		setElasticScheme("none");
+		setNotes(
+			"Первичная прямая фиксация вестибулярной брекет-системы верх/низ Roth/MBT .022\" на обе челюсти (17-27, 47-37). Кислотное протравливание эмали 37% H3PO4 (30 сек), тщательное промывание, высушивание. Адгезивный протокол, позиционирование брекетов по высоте с фотополимеризацией. Установлены первичные нивелирующие дуги NiTi .014\" ВЧ/НЧ. Выдан защитный воск, пациент проинструктирован.",
+		);
+		showToast("Пресет: Фиксация брекет-системы верх/низ Roth/MBT .022 применен", "success");
+	};
+
+	const handlePresetAlignerScan = () => {
+		setActivePreset("aligner_scan");
+		setTargetArch("both");
+		setBracketSystem("aligners");
+		setSelectedActions(["aligner_scan"]);
+		const orderNumber = `ЗТЛ-СКАН-${Date.now().toString().slice(-6)}`;
+		const labPayload = {
+			orderNumber,
+			createdAt: new Date().toISOString(),
+			teeth: ["17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27", "37", "36", "35", "34", "33", "32", "31", "41", "42", "43", "44", "45", "46", "47"],
+			jawScope: "both",
+			constructionType: "aligner_nightguard",
+			prostheticTypeId: "orthodontic_aligners_set",
+			material: "aligner_polyurethane_duran",
+			doctorNotes: `3D интраоральное сканирование верхнего и нижнего зубных рядов для элайнеров. Пациент: ${patientName}. Регистрат прикуса в центральном соотношении.`,
+			overrideActive: true,
+			overrideReason: "Снятие слепков / 3D-сканирование под элайнеры",
+		};
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(new CustomEvent("dente-lab-order-created", { detail: labPayload }));
+		}
+		setNotes(
+			`Снятие высокоточных оптических слепков / 3D-сканирование зубных рядов верхней и нижней челюстей под комплект элайнеров. Оцифровка окклюзии в центральном соотношении. Сформирован наряд ЗТЛ №${orderNumber} на виртуальный 3D-сетап и печать элайнеров.`,
+		);
+		showToast("Пресет: Снятие слепков / 3D-сканирование под элайнеры применен", "success");
+	};
+
+	const handlePresetAlignerTrays1To4 = () => {
+		setActivePreset("aligner_trays_1_4");
+		setTargetArch("both");
+		setBracketSystem("aligners");
+		setSelectedActions(["aligner_trays_1_4"]);
+		setSelectedTeeth([15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45]);
+		setNotes(
+			"Клинический этап сдачи элайнеров: выполнена выдача капп 1-4 + фиксация композитных аттачментов на клыки и премоляры (15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45) по переносной матрице. Адаптация каппы №1 плотная, ретенция надежная. Пациент обучен правилам ношения (22 ч/сутки, смена каждые 14 дней) и использованию чувисов.",
+		);
+		showToast("Пресет: Выдача капп 1-4 + аттачменты применен", "success");
+	};
+
+	const handlePresetAlignerTrays5To8 = () => {
+		setActivePreset("aligner_trays_5_8");
+		setTargetArch("both");
+		setBracketSystem("aligners");
+		setSelectedActions(["aligner_trays_5_8"]);
+		setNotes(
+			"Контрольный осмотр и прогресс элайнеров: трекинг зубов на каппах 1-4 полный, нестыковок и зазоров между режущим краем и каппой нет, аттачменты сохранны. Выдан следующий сет капп 5-8 (режим 22 ч/сутки, смена каждые 14 дней). Назначен следующий контрольный осмотр.",
+		);
+		showToast("Пресет: Выдача капп 5-8 элайнеров применен", "success");
+	};
+
+	const handlePresetRebracket = () => {
+		setActivePreset("rebracket");
+		if (!selectedActions.includes("rebracket")) {
+			setSelectedActions([...selectedActions, "rebracket"]);
+		}
+		setNotes(
+			"Жалоба на отклейку брекета во время еды. Объективно: отрыв брекета без повреждения эмали. Проведена ультразвуковая очистка эмали зуба от остатков адгезива, протравливание 37% ортофосфорной кислотой 20 сек, смывание, высушивание, нанесение праймера Transbond XT, позиционирование нового брекета, фотополимеризация 20 сек. Дуга установлена в паз, подвязана эластической лигатурой. Окклюзионных контактов с замком нет.",
+		);
+		showToast("Пресет: Повторная фиксация брекета применен (добавлена услуга в смету)", "success");
+	};
+
 	return {
 		handlePresetActivation,
 		handlePresetWireChange,
@@ -329,5 +445,12 @@ export function useOrthoClinicalPresets({
 		handlePresetRetainerLabOrder,
 		handlePresetPlateLabOrder,
 		handlePresetSplintLabOrder,
+		handlePresetNiti014Activation,
+		handlePresetPowerChainChange,
+		handlePresetBondingBothMbt,
+		handlePresetAlignerScan,
+		handlePresetAlignerTrays1To4,
+		handlePresetAlignerTrays5To8,
+		handlePresetRebracket,
 	};
 }

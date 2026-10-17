@@ -100,7 +100,7 @@ describe("OPG Local Browser AI Packaging & 152-ФЗ Security Compliance", () => 
 			);
 		});
 
-		it("verifies abychkov_fdi.onnx exists and matches expected SHA-256", async () => {
+		it("verifies abychkov_fdi.onnx exists and matches expected SHA-256", { timeout: 30_000 }, async () => {
 			const filePath = join(publicDir, "models/opg/abychkov_fdi.onnx");
 			const buffer = await readFile(filePath);
 			assert.ok(buffer.length > 100_000_000, "Abychkov FDI ONNX weights must be > 100MB");

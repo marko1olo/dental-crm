@@ -254,7 +254,15 @@ ${angleText}${anbText}${sagittalText}${verticalText}${transversalText}${tmjText}
 		? "Ортодонтические элайнеры (каппы с аттачментами)"
 		: bracketSystem === "removable_plate"
 			? "Съемный пластиночный аппарат с расширяющим винтом"
-			: `${systemObj?.label || "Брекет-система"} (паз ${bracketSlot}")`
+			: bracketSystem === "marco_rosa"
+				? "Несъемный аппарат Марко Роса с нёбным винтом"
+				: bracketSystem === "haas_rpe"
+					? "Несъемный аппарат Хааса (RPE) с акриловым базисом и винтом"
+					: bracketSystem === "pendulum"
+						? "Несъемный аппарат Pendulum для дистализации моляров"
+						: bracketSystem === "twin_block"
+							? "Функциональный двухчелюстной аппарат Твин-блок (Twin Block)"
+							: `${systemObj?.label || "Брекет-система"} (паз ${bracketSlot}")`
 }.
 • Зона фиксации/активации (зубы): ${teethListStr}.
 ${attachmentText ? `${attachmentText}\n` : ""}${alignerTrackerText ? `${alignerTrackerText}\n` : ""}${alignerSetText ? `${alignerSetText}\n` : ""}${archwireText}${separationText}
@@ -273,10 +281,10 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 • Использование чувисов (жевательных валиков) для плотной посадки капп на зубах.
 • Хранение элайнеров в специальном вентилируемом боксе, промывание прохладной водой.
 • Следующий плановый приём: через ${alignerSetIssued ? `${Math.round(alignerSetIssued.days / 7)} недель` : "4–6 недель"}.`
-	: bracketSystem === "removable_plate"
-		? `• Ношение пластинки строго 20–22 часа в сутки (снимать во время еды и контактного спорта).
+	: bracketSystem === "removable_plate" || bracketSystem === "marco_rosa" || bracketSystem === "haas_rpe" || bracketSystem === "twin_block"
+		? `• Соблюдение протокола ношения / активации аппарата.
 • Активация расширяющего винта ключом строго по схеме (1 раз в 7 дней на 1/4 оборота по стрелке).
-• Хранение в сухом вентилируемом контейнере, ежедневная механическая чистка зубной щеткой и мылом.
+• Тщательная гигиена аппарата (ирригатор, ортодонтическая щетка).
 • Следующий контрольный приём: через 4 недели.`
 		: `• Строгое соблюдение гигиены (ортодонтическая щетка, монопучок, ершики, ирригатор).
 • Использование ортодонтического защитного воска при натирании.

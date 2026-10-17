@@ -72,6 +72,18 @@ export function syncOrthoBackendActions(
 			console.warn("[Orthodontics] Ligatures activation backend sync error:", err);
 		});
 	}
+	if (selectedActions.includes("rebracket")) {
+		fetch(`/api/orthodontics/${encodeURIComponent(patientId)}/rebracket`, {
+			method: "POST",
+			headers,
+			body: JSON.stringify({
+				bracketType: "Damon / Mini Diamond (паз .022)",
+				note: notes || "Повторная фиксация отклеившегося брекета",
+			}),
+		}).catch((err) => {
+			console.warn("[Orthodontics] Rebracket backend sync error:", err);
+		});
+	}
 }
 
 export function useOrthodonticVisitProtocol(props: OrthodonticVisitProtocolWidgetProps) {
@@ -671,6 +683,13 @@ export function useOrthodonticVisitProtocol(props: OrthodonticVisitProtocolWidge
 		onPresetRetainerLabOrder: presets.handlePresetRetainerLabOrder,
 		onPresetPlateLabOrder: presets.handlePresetPlateLabOrder,
 		onPresetSplintLabOrder: presets.handlePresetSplintLabOrder,
+		onPresetNiti014Activation: presets.handlePresetNiti014Activation,
+		onPresetPowerChainChange: presets.handlePresetPowerChainChange,
+		onPresetBondingBothMbt: presets.handlePresetBondingBothMbt,
+		onPresetAlignerScan: presets.handlePresetAlignerScan,
+		onPresetAlignerTrays1To4: presets.handlePresetAlignerTrays1To4,
+		onPresetAlignerTrays5To8: presets.handlePresetAlignerTrays5To8,
+		onPresetRebracket: presets.handlePresetRebracket,
 		alignerStep,
 		alignerTotal,
 		angleClass,
