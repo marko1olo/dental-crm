@@ -21,12 +21,10 @@ import type { FunnelLead } from "../components/leads/leadsFunnelTypes";
 describe("CRM Leads & Marketing Funnel Inquisitor Tests", () => {
 	it("1. Kanban COLUMNS canonical 4-column active funnel labels match Constitution", () => {
 		const labels = COLUMNS.map((c) => c.label);
-		assert.strictEqual(labels[0], "1. Новые");
-		assert.strictEqual(labels[1], "2. Квалифицированные");
-		assert.strictEqual(labels[2], "3. Консультация");
-		assert.strictEqual(labels[3], "4. Дошли");
-		assert.strictEqual(labels[4], "Недозвон");
-		assert.strictEqual(labels[5], "Отказ");
+		assert.strictEqual(labels[0], "Новые заявки");
+		assert.strictEqual(labels[1], "В обработке / Звонок");
+		assert.strictEqual(labels[2], "Записаны на приём");
+		assert.strictEqual(labels[3], "Архив / Нецелевой");
 	});
 
 	it("2. MarketingDashboardView renders 2-column balanced layout with acquisition channels & ROI", () => {

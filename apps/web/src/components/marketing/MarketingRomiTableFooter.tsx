@@ -23,39 +23,39 @@ export function MarketingRomiTableFooter({ summary }: MarketingRomiTableFooterPr
 				<td className="romi-total-title">
 					ИТОГО ПО ВСЕМ КАНАЛАМ:
 				</td>
-				<td className="romi-total-num text-right">
+				<td className="romi-total-num text-right tabular-nums font-mono">
 					{summary.totalSpentFormatted}
 				</td>
-				<td className="romi-total-num text-center font-bold">
+				<td className="romi-total-num text-center font-bold tabular-nums font-mono">
 					{summary.totalLeadsCount} чел.
 				</td>
-				<td className="romi-total-center font-bold text-[var(--teal-dark)]">
+				<td className="romi-total-center font-bold text-[var(--teal-dark)] tabular-nums font-mono">
 					{summary.overallShowUpRatePercent}%
 				</td>
-				<td className="romi-total-num text-center font-bold">
+				<td className="romi-total-num text-center font-bold tabular-nums font-mono">
 					{summary.totalPrimaryPatientsCount} чел.
 				</td>
-				<td className="romi-total-num text-right font-bold text-[var(--teal-dark)]">
+				<td className="romi-total-num text-right font-bold text-[var(--teal-dark)] tabular-nums font-mono">
 					{summary.totalRevenueFormatted}
 				</td>
-				<td className="romi-total-num text-right font-medium">
+				<td className="romi-total-num text-right font-medium tabular-nums font-mono">
 					{summary.overallAverageCheckFormatted}
 				</td>
-				<td className="romi-total-num text-center font-bold">
+				<td className="romi-total-num text-center font-bold tabular-nums font-mono">
 					{summary.totalRepeatVisitsCount} чел.
 				</td>
-				<td className="romi-total-center font-bold text-[var(--teal-dark)]">
+				<td className="romi-total-center font-bold text-[var(--teal-dark)] tabular-nums font-mono">
 					{summary.overallRepeatRatePercent}%
 				</td>
-				<td className="romi-total-num text-right font-bold text-[var(--teal-dark)]">
+				<td className="romi-total-num text-right font-bold text-[var(--teal-dark)] tabular-nums font-mono">
 					{summary.overallLtvFormatted}
 				</td>
 				<td className="romi-total-center">
-					<span className={`romi-badge total ${totalBadgeClass}`}>
+					<span className={`romi-badge total ${totalBadgeClass} tabular-nums font-mono`}>
 						{summary.overallRomiFormatted}
 					</span>
 				</td>
-				<td className="romi-total-num text-right">
+				<td className="romi-total-num text-right tabular-nums font-mono">
 					{summary.overallCacFormatted}
 				</td>
 				<td></td>

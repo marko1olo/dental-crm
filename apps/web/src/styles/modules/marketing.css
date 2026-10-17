@@ -18,9 +18,11 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	gap: 12px;
-	padding-bottom: 12px;
+	min-height: 48px;
+	max-height: 52px;
+	padding-bottom: 10px;
 	border-bottom: 1px solid var(--line);
 }
 
@@ -28,24 +30,29 @@
 	display: flex;
 	align-items: center;
 	gap: 10px;
+	min-width: 0;
+	flex-shrink: 0;
 }
 
 .marketing-header-title {
-	font-size: 1.25rem;
+	font-size: 1.15rem;
 	font-weight: 700;
 	color: var(--ink);
 	margin: 0;
 	letter-spacing: -0.01em;
+	white-space: nowrap;
 }
 
 /* ── Навигационные вкладки маркетинга ───────────────────────────────────────── */
 
 .marketing-top-tabs {
-	display: flex;
+	display: inline-flex;
 	align-items: center;
-	gap: 4px;
-	padding: 3px;
-	border-radius: 10px;
+	gap: 2px;
+	padding: 2px;
+	height: 32px;
+	min-height: 32px;
+	border-radius: 8px;
 	background: var(--paper-soft);
 	border: 1px solid var(--line);
 	overflow-x: auto;
@@ -53,6 +60,7 @@
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: none;
 	max-width: 100%;
+	box-sizing: border-box;
 }
 
 .marketing-top-tabs::-webkit-scrollbar {
@@ -63,16 +71,17 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	padding: 6px 14px;
-	border-radius: 7px;
-	font-size: 13px;
+	padding: 0 12px;
+	height: 26px;
+	min-height: 26px;
+	border-radius: 6px;
+	font-size: 12.5px;
 	font-weight: 600;
-	color: var(--muted);
+	color: var(--ink-muted, var(--muted));
 	border: none;
 	background: transparent;
 	cursor: pointer;
 	transition: all 0.15s ease-out;
-	min-height: 32px;
 	white-space: nowrap;
 	flex-shrink: 0;
 }
@@ -84,7 +93,37 @@
 .marketing-top-tab--active {
 	background: var(--paper);
 	color: var(--ink);
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+@media (max-width: 768px) {
+	.marketing-zone {
+		padding: 12px;
+		max-width: 100%;
+		overflow-x: clip;
+		box-sizing: border-box;
+	}
+
+	.marketing-header-row {
+		flex-wrap: wrap;
+		max-height: none;
+	}
+
+	.marketing-top-tabs {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		width: 100%;
+		height: auto;
+		overflow-x: visible;
+	}
+
+	.marketing-top-tab {
+		justify-content: center;
+		padding: 8px 6px;
+		font-size: 12px;
+		min-height: 40px;
+		height: auto;
+	}
 }
 
 /* ── Двухколоночный каркас дашборда ────────────────────────────────────────── */
@@ -134,12 +173,15 @@
 .marketing-segmented-control {
 	display: flex;
 	align-items: center;
-	background: var(--paper);
+	background: var(--paper-soft);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	padding: 2px;
 	gap: 2px;
+	height: 32px;
+	min-height: 32px;
 	flex: 1;
+	box-sizing: border-box;
 }
 
 .marketing-seg-btn {
@@ -148,16 +190,17 @@
 	justify-content: center;
 	gap: 5px;
 	flex: 1;
-	padding: 5px 8px;
+	padding: 0 8px;
+	height: 26px;
+	min-height: 26px;
 	font-size: 12px;
 	font-weight: 600;
-	color: var(--muted);
+	color: var(--ink-muted, var(--muted));
 	border: none;
 	background: transparent;
 	border-radius: 6px;
 	cursor: pointer;
 	transition: all 0.15s ease-out;
-	min-height: 28px;
 	white-space: nowrap;
 }
 
@@ -166,19 +209,21 @@
 }
 
 .marketing-seg-btn--active {
-	background: var(--teal-surface);
-	color: var(--teal-dark, var(--teal));
-	font-weight: 700;
+	background: var(--paper);
+	color: var(--ink);
+	font-weight: 600;
 }
 
 .marketing-add-btn {
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
-	padding: 5px 10px;
-	font-size: 12px;
+	padding: 0 12px;
+	font-size: 12.5px;
 	font-weight: 600;
-	min-height: 32px;
+	height: 36px;
+	min-height: 36px;
+	border-radius: 12px;
 	white-space: nowrap;
 }
 
@@ -189,12 +234,15 @@
 	display: flex;
 	align-items: center;
 	width: 100%;
+	height: 36px;
+	min-height: 36px;
+	border-radius: 12px;
 }
 
 .marketing-search-icon {
 	position: absolute;
-	left: 10px;
-	color: var(--muted);
+	left: 11px;
+	color: var(--ink-muted, var(--muted));
 	pointer-events: none;
 }
 
@@ -204,15 +252,16 @@
 	font-size: 12.5px;
 	background: var(--paper);
 	border: 1px solid var(--line);
-	border-radius: 8px;
+	border-radius: 12px;
 	color: var(--ink);
-	min-height: 32px;
+	height: 36px;
+	min-height: 36px;
 	transition: border-color 0.15s ease-out;
 }
 
 .marketing-search-input:focus {
 	outline: none;
-	border-color: var(--teal);
+	border-color: var(--primary);
 	box-shadow: 0 0 0 2px var(--focus-ring);
 }
 

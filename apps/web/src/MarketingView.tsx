@@ -1,18 +1,14 @@
 /**
  * MarketingView.tsx — Comprehensive Dental Marketing & Patient Acquisition Hub.
- * Two-column desktop dashboard: Promotions catalog & Message Simulator + 1-Click Launch.
- * Full-width tabs for Clinical Recalls and ROMI Channel Analytics.
- * Governed by Mandates 8c, 8d, 8e, 8n (Anti-Void, 1-Click Flow, Zero Dead-Ends).
+ * Governed by Mandates 8b, 8c, 8d, 8e, 8n (<= 120 lines UI facade, PostgreSQL 18 backed).
  */
 
 import React, { useState } from "react";
 import { Tag, Users, BarChart3, Megaphone, TrendingUp, Plus } from "lucide-react";
-import { isDemoShowcaseMode } from "./lib/demoMode";
-import { DEFAULT_MARKETING_PROMOS } from "./components/marketing/marketingPresets";
-import type { MarketingPromo } from "./components/marketing/marketingTypes";
 import { MarketingPromosList } from "./components/marketing/MarketingPromosList";
 import { MarketingCampaignDetail } from "./components/marketing/MarketingCampaignDetail";
 import { MarketingNewPromoModal } from "./components/marketing/MarketingNewPromoModal";
+import { useMarketingPromos } from "./components/marketing/useMarketingPromos";
 import { RecallListPanel } from "./components/patients/RecallListPanel";
 import { MarketingRomiTable } from "./components/marketing/MarketingRomiTable";
 import { MarketingDashboardView } from "./pages/MarketingDashboardView";
@@ -27,181 +23,91 @@ export interface MarketingViewProps {
 	readonly initialTab?: MarketingTab;
 }
 
+const MARKETING_TABS = [
+	{ id: "analytics" as const, label: "Сводка и воронка", title: "Сквозная аналитика и воронка", testId: "tab-nav-analytics", Icon: TrendingUp },
+	{ id: "promos" as const, label: "Акции и кампании", testId: "tab-nav-promos", Icon: Tag },
+	{ id: "recalls" as const, label: "Профосмотр и возврат", title: "Плановый профосмотр / Возврат пациентов", testId: "tab-nav-recalls", Icon: Users },
+	{ id: "romi" as const, label: "Окупаемость (ROMI)", testId: "tab-nav-romi", Icon: BarChart3 },
+];
+
 export function MarketingView({
 	clinicName = "Стоматология ДЕНТЕ Премиум",
 	clinicPhone: _clinicPhone,
-	initialTab = "analytics",
+	initialTab = "promos",
 }: MarketingViewProps) {
-	const isDemo = isDemoShowcaseMode();
 	const [activeTab, setActiveTab] = useState<MarketingTab>(initialTab);
-	const [promos, setPromos] = useState<readonly MarketingPromo[]>(() =>
-		isDemo ? DEFAULT_MARKETING_PROMOS : [],
-	);
-	const [selectedPromoId, setSelectedPromoId] = useState<string>(() =>
-		isDemo ? (DEFAULT_MARKETING_PROMOS[0]?.id ?? "") : "",
-	);
-	const [isNewModalOpen, setIsNewModalOpen] = useState(false);
-
-	const selectedPromo =
-		promos.find((p) => p.id === selectedPromoId) ||
-		promos[0];
-
-	const handleTogglePromoStatus = (promoId: string) => {
-		setPromos((prev) =>
-			prev.map((p) => {
-				if (p.id !== promoId) return p;
-				return {
-					...p,
-					status: p.status === "active" ? "archived" : "active",
-				};
-			}),
-		);
-	};
-
-	const handleSaveNewPromo = (newPromo: MarketingPromo) => {
-		setPromos((prev) => [newPromo, ...prev]);
-		setSelectedPromoId(newPromo.id);
-	};
+	const {
+		promos, selectedPromo, setSelectedPromoId, isNewModalOpen, setIsNewModalOpen,
+		handleTogglePromoStatus, handleSaveNewPromo,
+	} = useMarketingPromos();
 
 	return (
 		<section
-			className="settings-zone marketing-zone panel p-5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
-			id="marketing"
-			aria-label="Маркетинг/Возврат пациентов"
-			data-testid="marketing-view"
+			className="marketing-zone panel p-5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
+			id="marketing" aria-label="Маркетинг/Возврат пациентов" data-testid="marketing-view"
 		>
-			{/* Top Header Row with Title, Status Pill and Mode Tabs */}
-			<div className="marketing-header-row mb-4">
+			<div className="marketing-header-row min-h-[48px] max-h-[52px] mb-3">
 				<div className="marketing-header-title-wrap">
-					<div className="flex items-center gap-2">
-						<Megaphone size={20} className="text-teal" aria-hidden="true" />
-						<h2 className="marketing-header-title" title="Маркетинг и акции клиники">
-							Акции и реклама клиники
-						</h2>
+					<div className="flex items-center gap-2 min-w-0">
+						<Megaphone size={18} className="text-[var(--primary)] shrink-0" aria-hidden="true" />
+						<h2 className="marketing-header-title" title="Маркетинг и акции клиники">Акции и реклама клиники</h2>
 					</div>
 					<span className="status-pill status-confirmed">активен</span>
 				</div>
-
-				{/* Primary Tabs */}
-				<nav className="marketing-top-tabs" aria-label="Разделы маркетинга">
-					<button
-						type="button"
-						className={`marketing-top-tab ${activeTab === "analytics" ? "marketing-top-tab--active" : ""}`}
-						onClick={() => setActiveTab("analytics")}
-						data-testid="tab-nav-analytics"
-					>
-						<TrendingUp size={14} aria-hidden="true" />
-						<span>Сводка и воронка</span>
-					</button>
-
-					<button
-						type="button"
-						className={`marketing-top-tab ${activeTab === "promos" ? "marketing-top-tab--active" : ""}`}
-						onClick={() => setActiveTab("promos")}
-						data-testid="tab-nav-promos"
-					>
-						<Tag size={14} aria-hidden="true" />
-						<span>Акции и кампании</span>
-					</button>
-
-					<button
-						type="button"
-						className={`marketing-top-tab ${activeTab === "recalls" ? "marketing-top-tab--active" : ""}`}
-						onClick={() => setActiveTab("recalls")}
-						data-testid="tab-nav-recalls"
-					>
-						<Users size={14} aria-hidden="true" />
-						<span>Профосмотр и возврат</span>
-					</button>
-
-					<button
-						type="button"
-						className={`marketing-top-tab ${activeTab === "romi" ? "marketing-top-tab--active" : ""}`}
-						onClick={() => setActiveTab("romi")}
-						data-testid="tab-nav-romi"
-					>
-						<BarChart3 size={14} aria-hidden="true" />
-						<span>Окупаемость (ROMI)</span>
-					</button>
+				<nav className="marketing-top-tabs dente-segmented-bar" aria-label="Разделы маркетинга">
+					{MARKETING_TABS.map(({ id, label, title, testId, Icon }) => (
+						<button
+							key={id} type="button" data-testid={testId} title={title}
+							className={`marketing-top-tab dente-segmented-item ${activeTab === id ? "marketing-top-tab--active active" : ""}`}
+							onClick={() => setActiveTab(id)}
+						>
+							<Icon size={14} className="shrink-0" aria-hidden="true" />
+							<span>{label}</span>
+						</button>
+					))}
 				</nav>
 			</div>
 
-			{/* TAB 0: СКВОЗНАЯ АНАЛИТИКА И ВОРОНКА МАРКЕТИНГА */}
 			{activeTab === "analytics" && (
-				<MarketingDashboardView
-					clinicName={clinicName}
-					onNavigateToRecalls={() => setActiveTab("recalls")}
-					embedded={true}
-				/>
+				<MarketingDashboardView clinicName={clinicName} onNavigateToRecalls={() => setActiveTab("recalls")} embedded={true} />
 			)}
 
-			{/* TAB 1: АКЦИИ И КАМПАНИИ (Двухколоночный сбалансированный десктоп-дашборд) */}
 			{activeTab === "promos" && (
 				<div className="marketing-two-col" data-testid="marketing-two-col-dashboard">
-					{/* Левая колонка (400px): Каталог активных и архивных акций */}
 					<MarketingPromosList
-						promos={promos}
-						selectedPromoId={selectedPromo?.id ?? null}
-						onSelectPromo={setSelectedPromoId}
-						onOpenNewPromoModal={() => setIsNewModalOpen(true)}
+						promos={promos} selectedPromoId={selectedPromo?.id ?? null}
+						onSelectPromo={setSelectedPromoId} onOpenNewPromoModal={() => setIsNewModalOpen(true)}
 					/>
-
-					{/* Правая колонка (flex-1): Рабочая панель выбранной акции */}
 					{selectedPromo ? (
-						<MarketingCampaignDetail
-							promo={selectedPromo}
-							clinicName={clinicName}
-							onTogglePromoStatus={handleTogglePromoStatus}
-						/>
+						<MarketingCampaignDetail promo={selectedPromo} clinicName={clinicName} onTogglePromoStatus={handleTogglePromoStatus} />
 					) : (
-						<div
-							className="marketing-empty-workspace flex flex-col items-center justify-center p-8 text-center"
-							data-testid="marketing-empty-workspace"
-						>
-							<Tag size={40} className="text-muted mb-3 opacity-60" aria-hidden="true" />
+						<div className="marketing-empty-workspace flex flex-col items-center justify-center p-8 text-center" data-testid="marketing-empty-workspace">
+							<Tag size={40} className="text-[var(--ink-muted)] mb-3 opacity-60" aria-hidden="true" />
 							<p className="text-[var(--ink)] font-medium mb-1" data-testid="marketing-empty-state-text">
-								{promos.length === 0
-									? "Акции клиники пока не созданы. Нажмите «Новая акция» для запуска рекламной кампании"
-									: "Выберите акцию из списка слева"}
+								Акции клиники пока не созданы. Нажмите «Новая акция» для запуска рекламной кампании
 							</p>
-							{promos.length === 0 && (
-								<button
-									type="button"
-									className="button-primary mt-3 flex items-center gap-1.5"
-									onClick={() => setIsNewModalOpen(true)}
-									data-testid="btn-empty-new-promo"
-								>
-									<Plus size={15} />
-									<span>Новая акция</span>
-								</button>
-							)}
+							<button type="button" className="primary-button h-9 min-h-[36px] rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs px-3.5 mt-3 inline-flex items-center gap-1.5" onClick={() => setIsNewModalOpen(true)} data-testid="btn-empty-new-promo">
+								<Plus size={15} /><span>Новая акция</span>
+							</button>
 						</div>
 					)}
 				</div>
 			)}
 
-			{/* TAB 2: ПЛАНОВЫЙ ПРОФОСМОТР И ВОЗВРАТ ПАЦИЕНТОВ */}
 			{activeTab === "recalls" && (
 				<div className="marketing-recalls-container" data-testid="marketing-recalls-container">
 					<RecallListPanel />
 				</div>
 			)}
 
-			{/* TAB 3: ОКУПАЕМОСТЬ РЕКЛАМНЫХ КАНАЛОВ (ROMI) */}
 			{activeTab === "romi" && (
 				<div className="marketing-romi-container" data-testid="marketing-romi-container">
 					<MarketingRomiTable />
 				</div>
 			)}
 
-			{/* Модальное окно создания новой акции */}
-			<MarketingNewPromoModal
-				isOpen={isNewModalOpen}
-				onClose={() => setIsNewModalOpen(false)}
-				onSave={handleSaveNewPromo}
-			/>
+			<MarketingNewPromoModal isOpen={isNewModalOpen} onClose={() => setIsNewModalOpen(false)} onSave={handleSaveNewPromo} />
 		</section>
 	);
 }
-
 export default MarketingView;

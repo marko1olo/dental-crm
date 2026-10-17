@@ -473,7 +473,10 @@ export function matchStomxMarketingChannel(rawSource?: string | null): string {
 	if (s.includes("продокторов") || s.includes("prodoctorov")) {
 		return "prodoctorov";
 	}
-	if (s.includes("сарафан") || s.includes("знаком") || s.includes("рекомендац") || s.includes("родствен") || s.includes("семь")) {
+	if (s.includes("напоправку") || s.includes("napopravku") || s.includes("поправку")) {
+		return "napopravku";
+	}
+	if (s.includes("сарафан") || s.includes("знаком") || s.includes("рекомендац") || s.includes("родствен") || s.includes("семь") || s.includes("друг") || s.includes("коллег")) {
 		return "word_of_mouth";
 	}
 	if (s.includes("сбер") || s.includes("docdoc") || s.includes("sber")) {
@@ -482,13 +485,13 @@ export function matchStomxMarketingChannel(rawSource?: string | null): string {
 	if (s.includes("листов") || s.includes("буклет") || s.includes("промо") || s.includes("флаер")) {
 		return "flyers";
 	}
-	if (s.includes("вконтакт") || s.includes("vk") || s.includes("vkontakte") || /\bвк\b/i.test(s) || s === "вк") {
+	if (s.includes("вконтакт") || s.includes("vk") || s.includes("vkontakte") || /\bвк\b/i.test(s) || s === "вк" || s.includes("таргет")) {
 		return "vk";
 	}
-	if (s.includes("наружн") || s.includes("вывеск") || s.includes("щит") || s.includes("мимо")) {
+	if (s.includes("наружн") || s.includes("вывеск") || s.includes("щит") || s.includes("мимо") || s.includes("фасад")) {
 		return "outdoor";
 	}
-	if (s.includes("сайт") || s.includes("site") || s.includes("seo") || s.includes("интернет") || s.includes("онлайн")) {
+	if (s.includes("сайт") || s.includes("site") || s.includes("seo") || s.includes("интернет") || s.includes("онлайн") || s.includes("директ") || s.includes("контекст")) {
 		return "website";
 	}
 	if (s.includes("инста") || s.includes("insta")) {
@@ -524,7 +527,7 @@ export const STOMX_DEFAULT_ADVERTISING_CHANNELS: readonly AdvertisingChannelInpu
 
 /**
  * Агрегирует реальные маркетинговые метрики клиники из живых данных CRM:
- * - Первичные пациенты (у которых есть хотя бы один визит со статусом 'completed')
+ * - Первичные пациенты (у которых есть хотя бы один визит со статусом 'completed' / 'arrived' / 'in_treatment')
  * - Повторные визиты (все последующие завершенные визиты)
  * - Выручка от первичных пациентов и LTV в копейках
  * - Звонки и лиды с коллтрекинга
@@ -532,7 +535,13 @@ export const STOMX_DEFAULT_ADVERTISING_CHANNELS: readonly AdvertisingChannelInpu
 export function aggregateCrmMarketingMetrics(params: {
 	patients: ReadonlyArray<{
 		id: string;
-		administrativeProfile?: { advertisingSource?: string | null; marketingSource?: string | null } | null;
+		source?: string | null;
+		administrativeProfile?: {
+			advertisingSource?: string | null;
+			marketingSource?: string | null;
+			leadSource?: string | null;
+			utmSource?: string | null;
+		} | null;
 		notes?: string | null;
 	}>;
 	appointments: ReadonlyArray<{
@@ -544,7 +553,9 @@ export function aggregateCrmMarketingMetrics(params: {
 	payments: ReadonlyArray<{
 		id: string;
 		patientId: string;
-		amount: number;
+		amount?: number;
+		amountRub?: number;
+		amountKopecks?: number;
 		status?: string;
 	}>;
 	communicationEvents?: ReadonlyArray<{
@@ -567,7 +578,8 @@ export function aggregateCrmMarketingMetrics(params: {
 	// 1. Group completed appointments by patientId
 	const completedApptsByPatient = new Map<string, number>();
 	for (const appt of appointments) {
-		if (appt.status === "completed") {
+		const st = (appt.status || "").toLowerCase();
+		if (st === "completed" || st === "arrived" || st === "in_treatment" || st === "done" || st === "finished") {
 			completedApptsByPatient.set(
 				appt.patientId,
 				(completedApptsByPatient.get(appt.patientId) ?? 0) + 1,
@@ -578,8 +590,10 @@ export function aggregateCrmMarketingMetrics(params: {
 	// 2. Group payments by patientId (in kopecks)
 	const paymentsByPatient = new Map<string, number>();
 	for (const p of payments) {
-		if (p.status !== "refunded" && p.status !== "failed") {
-			const kop = Math.round(Number(p.amount || 0) * 100);
+		const st = (p.status || "").toLowerCase();
+		if (st !== "refunded" && st !== "failed" && st !== "cancelled") {
+			const rawAmount = p.amount ?? p.amountRub ?? (p.amountKopecks ? p.amountKopecks / 100 : 0);
+			const kop = Math.round(Number(rawAmount || 0) * 100);
 			paymentsByPatient.set(
 				p.patientId,
 				(paymentsByPatient.get(p.patientId) ?? 0) + kop,
@@ -587,7 +601,8 @@ export function aggregateCrmMarketingMetrics(params: {
 		}
 	}
 
-	// 3. Accumulate stats per StomX channelKey
+	// 3. Accumulate stats per channelKey
+	const channelMeta = new Map<string, { nameRu: string; categoryRu: string; defaultSpendRub: number; notes: string }>();
 	const channelStats = new Map<
 		string,
 		{
@@ -600,6 +615,12 @@ export function aggregateCrmMarketingMetrics(params: {
 	>();
 
 	for (const source of STOMX_MARKETING_SOURCES) {
+		channelMeta.set(source.channelKey, {
+			nameRu: source.nameRu,
+			categoryRu: source.categoryRu,
+			defaultSpendRub: source.defaultSpendRub,
+			notes: source.descriptionRu,
+		});
 		channelStats.set(source.channelKey, {
 			leadsCount: 0,
 			primaryPatientsCount: 0,
@@ -609,25 +630,52 @@ export function aggregateCrmMarketingMetrics(params: {
 		});
 	}
 
+	channelMeta.set("napopravku", {
+		nameRu: "НаПоправку",
+		categoryRu: "Мед-агрегаторы",
+		defaultSpendRub: 12000,
+		notes: "Медицинский портал и сервис онлайн-записи НаПоправку",
+	});
+
 	// Tally telephony / call tracking events
 	for (const ev of communicationEvents) {
 		const rawKey = ev.source || ev.channel;
 		const channelKey = matchStomxMarketingChannel(rawKey);
-		const stat = channelStats.get(channelKey);
-		if (stat) {
-			stat.leadsCount++;
+		let stat = channelStats.get(channelKey);
+		if (!stat) {
+			stat = {
+				leadsCount: 0,
+				primaryPatientsCount: 0,
+				repeatVisitsCount: 0,
+				revenueKopecks: 0,
+				totalLtvRevenueKopecks: 0,
+			};
+			channelStats.set(channelKey, stat);
 		}
+		stat.leadsCount++;
 	}
 
 	// Tally patient visits and revenue
 	for (const p of patients) {
 		const rawSource =
+			p.source ||
 			p.administrativeProfile?.advertisingSource ||
 			p.administrativeProfile?.marketingSource ||
+			p.administrativeProfile?.leadSource ||
+			p.administrativeProfile?.utmSource ||
 			p.notes;
 		const channelKey = matchStomxMarketingChannel(rawSource);
-		const stat = channelStats.get(channelKey);
-		if (!stat) continue;
+		let stat = channelStats.get(channelKey);
+		if (!stat) {
+			stat = {
+				leadsCount: 0,
+				primaryPatientsCount: 0,
+				repeatVisitsCount: 0,
+				revenueKopecks: 0,
+				totalLtvRevenueKopecks: 0,
+			};
+			channelStats.set(channelKey, stat);
+		}
 
 		const completedCount = completedApptsByPatient.get(p.id) ?? 0;
 		const patientTotalPaid = paymentsByPatient.get(p.id) ?? 0;
@@ -635,10 +683,7 @@ export function aggregateCrmMarketingMetrics(params: {
 		if (completedCount >= 1) {
 			stat.primaryPatientsCount++;
 			stat.repeatVisitsCount += completedCount - 1;
-			// If repeat visits exist, estimate primary revenue vs repeat, or attribute all paid
-			stat.revenueKopecks += completedCount > 1
-				? Math.round(patientTotalPaid / completedCount)
-				: patientTotalPaid;
+			stat.revenueKopecks += patientTotalPaid;
 			stat.totalLtvRevenueKopecks += patientTotalPaid;
 		} else {
 			// Uncompleted lead/inquiry
@@ -646,14 +691,24 @@ export function aggregateCrmMarketingMetrics(params: {
 		}
 	}
 
-	return STOMX_MARKETING_SOURCES.map((source) => {
-		const stat = channelStats.get(source.channelKey)!;
+	// Build result with custom budgets preserved
+	const result: AdvertisingChannelInput[] = [];
+
+	// First output canonical STOMX channels
+	for (const source of STOMX_MARKETING_SOURCES) {
+		const stat = channelStats.get(source.channelKey) ?? {
+			leadsCount: 0,
+			primaryPatientsCount: 0,
+			repeatVisitsCount: 0,
+			revenueKopecks: 0,
+			totalLtvRevenueKopecks: 0,
+		};
 		const spentKopecks =
 			customBudgetsKopecks[source.channelKey] ?? (source.defaultSpendRub * 100);
 
 		const leadsCount = Math.max(stat.leadsCount, stat.primaryPatientsCount);
 
-		return {
+		result.push({
 			id: `ch_stomx_${source.channelKey}`,
 			channelKey: source.channelKey,
 			nameRu: source.nameRu,
@@ -665,6 +720,37 @@ export function aggregateCrmMarketingMetrics(params: {
 			revenueKopecks: stat.revenueKopecks,
 			totalLtvRevenueKopecks: stat.totalLtvRevenueKopecks,
 			notes: source.descriptionRu,
-		};
-	});
+		});
+	}
+
+	// Then append any extra active channels (e.g. napopravku)
+	for (const [key, stat] of channelStats.entries()) {
+		if (STOMX_MARKETING_SOURCES.some((s) => s.channelKey === key)) continue;
+		if (stat.primaryPatientsCount > 0 || stat.revenueKopecks > 0 || stat.leadsCount > 0 || customBudgetsKopecks[key]) {
+			const meta = channelMeta.get(key) || {
+				nameRu: key,
+				categoryRu: "Реклама",
+				defaultSpendRub: 0,
+				notes: "Дополнительный канал",
+			};
+			const spentKopecks = customBudgetsKopecks[key] ?? (meta.defaultSpendRub * 100);
+			const leadsCount = Math.max(stat.leadsCount, stat.primaryPatientsCount);
+
+			result.push({
+				id: `ch_custom_${key}`,
+				channelKey: key,
+				nameRu: meta.nameRu,
+				categoryRu: meta.categoryRu,
+				spentKopecks,
+				leadsCount,
+				primaryPatientsCount: stat.primaryPatientsCount,
+				repeatVisitsCount: stat.repeatVisitsCount,
+				revenueKopecks: stat.revenueKopecks,
+				totalLtvRevenueKopecks: stat.totalLtvRevenueKopecks,
+				notes: meta.notes,
+			});
+		}
+	}
+
+	return result;
 }

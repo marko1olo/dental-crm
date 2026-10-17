@@ -262,4 +262,41 @@ describe("Dental Marketing ROMI & Performance Engine", () => {
 		assert.equal(yandexChannel.primaryPatientsCount, 1);
 		assert.equal(yandexChannel.repeatVisitsCount, 0);
 	});
+
+	it("11. Handles Napopravku, friend recommendations, and zero-denominator safely", () => {
+		assert.equal(matchStomxMarketingChannel("НаПоправку запись онлайн"), "napopravku");
+		assert.equal(matchStomxMarketingChannel("Рекомендация друга"), "word_of_mouth");
+		assert.equal(matchStomxMarketingChannel("Фасадная вывеска"), "outdoor");
+		assert.equal(matchStomxMarketingChannel("Таргетинг VK"), "vk");
+
+		// Test Napopravku dynamic inclusion
+		const patientsWithNapopravku = [
+			{ id: "np1", administrativeProfile: { advertisingSource: "НаПоправку" } },
+		];
+		const appts = [
+			{ id: "npa1", patientId: "np1", status: "completed" },
+		];
+		const payments = [
+			{ id: "npp1", patientId: "np1", amountRub: 18000, status: "completed" },
+		];
+		const res = aggregateCrmMarketingMetrics({
+			patients: patientsWithNapopravku,
+			appointments: appts,
+			payments,
+			customBudgetsKopecks: { napopravku: 1200000 },
+		});
+
+		const npCh = res.find((c) => c.channelKey === "napopravku");
+		assert.ok(npCh, "Napopravku must be included in aggregated channels");
+		assert.equal(npCh.primaryPatientsCount, 1);
+		assert.equal(npCh.revenueKopecks, 1800000);
+		assert.equal(npCh.spentKopecks, 1200000);
+
+		const metric = buildAdvertisingChannelMetric(npCh);
+		assert.equal(metric.romiPercent, 50.0);
+		assert.equal(metric.romiFormatted, "+50.0%");
+		assert.equal(metric.cacFormatted, formatKopecksRu(1200000));
+		assert.equal(metric.averageCheckFormatted, formatKopecksRu(1800000));
+	});
 });
+

@@ -64,7 +64,7 @@ export function MarketingRomiTableRow({
 						onChange={(e) => onInputChange(metric.id, "spentRub", e.target.value)}
 						onBlur={() => onInputBlur(metric.id, "spentRub")}
 						aria-label={`Затраты на ${metric.nameRu}`}
-						className="romi-table-input text-right"
+						className="romi-table-input text-right tabular-nums font-mono"
 					/>
 				</div>
 			</td>
@@ -80,13 +80,13 @@ export function MarketingRomiTableRow({
 						onChange={(e) => onInputChange(metric.id, "leads", e.target.value)}
 						onBlur={() => onInputBlur(metric.id, "leads")}
 						aria-label={`Лиды ${metric.nameRu}`}
-						className="romi-table-input text-center"
+						className="romi-table-input text-center tabular-nums font-mono"
 					/>
 				</div>
 			</td>
 
 			{/* Show-up rate (calculated) */}
-			<td className="romi-cell-center font-bold text-[var(--teal-dark)]">
+			<td className="romi-cell-center font-bold text-[var(--teal-dark)] tabular-nums font-mono">
 				{metric.showUpRatePercent}%
 			</td>
 
@@ -105,7 +105,7 @@ export function MarketingRomiTableRow({
 						onChange={(e) => onInputChange(metric.id, "patients", e.target.value)}
 						onBlur={() => onInputBlur(metric.id, "patients")}
 						aria-label={`Первичные ${metric.nameRu}`}
-						className="romi-table-input text-center"
+						className="romi-table-input text-center tabular-nums font-mono"
 					/>
 				</div>
 			</td>
@@ -121,13 +121,13 @@ export function MarketingRomiTableRow({
 						onChange={(e) => onInputChange(metric.id, "revenueRub", e.target.value)}
 						onBlur={() => onInputBlur(metric.id, "revenueRub")}
 						aria-label={`Выручка ${metric.nameRu}`}
-						className="romi-table-input text-right"
+						className="romi-table-input text-right tabular-nums font-mono"
 					/>
 				</div>
 			</td>
 
 			{/* Average check (calculated) */}
-			<td className="romi-cell-num text-right font-medium">
+			<td className="romi-cell-num text-right font-medium tabular-nums font-mono">
 				{metric.averageCheckFormatted}
 			</td>
 
@@ -148,30 +148,30 @@ export function MarketingRomiTableRow({
 						}
 						onBlur={() => onInputBlur(metric.id, "repeatVisits")}
 						aria-label={`Повторные визиты ${metric.nameRu}`}
-						className="romi-table-input text-center"
+						className="romi-table-input text-center tabular-nums font-mono"
 					/>
 				</div>
 			</td>
 
 			{/* Repeat rate % */}
-			<td className="romi-cell-center text-[var(--muted)]">
+			<td className="romi-cell-center text-[var(--muted)] tabular-nums font-mono">
 				{metric.repeatRatePercent}%
 			</td>
 
 			{/* LTV revenue (calculated) */}
-			<td className="romi-cell-num text-right font-semibold text-[var(--teal-dark)]">
+			<td className="romi-cell-num text-right font-semibold text-[var(--teal-dark)] tabular-nums font-mono">
 				{metric.ltvFormatted}
 			</td>
 
 			{/* ROMI badge */}
 			<td className="romi-cell-center">
-				<span className={`romi-badge ${badgeClass}`}>
+				<span className={`romi-badge ${badgeClass} tabular-nums font-mono`}>
 					{metric.romiFormatted}
 				</span>
 			</td>
 
 			{/* CAC */}
-			<td className="romi-cell-num text-right font-medium text-[var(--muted)]">
+			<td className="romi-cell-num text-right font-medium text-[var(--muted)] tabular-nums font-mono">
 				{metric.cacFormatted}
 			</td>
 
