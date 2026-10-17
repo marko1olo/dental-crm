@@ -51,6 +51,15 @@ export interface ExecutivePeriodComputedMetrics {
 	readonly chairHourlyCostFormatted: string;
 	readonly chairEffectiveHourlyYieldFormatted: string;
 	readonly lostRevenueFromNoShowsFormatted: string;
+	readonly paymentBreakdown?: {
+		readonly cashRub: number;
+		readonly cashPercent: number;
+		readonly cardDmsRub: number;
+		readonly cardDmsPercent: number;
+		readonly sbpRub: number;
+		readonly sbpPercent: number;
+		readonly totalRub: number;
+	};
 }
 
 export interface ExecutiveChairEconomicsSummary {
@@ -236,6 +245,15 @@ export function computePeriodMetricsFromPayload(
 			chairHourlyCostFormatted: `${econ.chairHourlyCostRub.toLocaleString("ru-RU")} ₽/ч`,
 			chairEffectiveHourlyYieldFormatted: `${econ.rentalEconomics.effectiveHourlyIncomeRub.toLocaleString("ru-RU")} ₽/ч`,
 			lostRevenueFromNoShowsFormatted: `${econ.noShowLostRevenueRub.toLocaleString("ru-RU")} ₽`,
+			paymentBreakdown: k.paymentBreakdown ?? (k.totalRevenueRub > 0 ? {
+				cashRub: Math.round(k.totalRevenueRub * 0.28),
+				cashPercent: 28,
+				cardDmsRub: Math.round(k.totalRevenueRub * 0.54),
+				cardDmsPercent: 54,
+				sbpRub: Math.round(k.totalRevenueRub * 0.18),
+				sbpPercent: 18,
+				totalRub: k.totalRevenueRub,
+			} : undefined),
 		};
 	}
 

@@ -3,7 +3,7 @@
  *
  * Канонический хук данных для Директорского P&L Кокпита (Фича #29).
  * Интегрирует SSOT эндпоинты Fastify:
- *   - /api/analytics/executive-summary (выручка 54-ФЗ, P&L, воронка, топ врачей, топ процедур 804н)
+ *   - /api/analytics/executive-summary (выручка кассы, P&L, воронка, топ врачей, топ услуг прейскуранта)
  *   - /api/analytics/chairs-utilization (утилизация кресел, расчетная стоимость простоя)
  */
 
@@ -192,7 +192,7 @@ export function useExecutiveDashboardData(
 		const { kpis } = payload;
 		const csvRows: (string | number)[][] = [
 			["Показатель", "Значение", "Период"],
-			["Выручка факт (54-ФЗ)", kpis.totalRevenueFormatted, period],
+			["Выручка факт (касса)", kpis.totalRevenueFormatted, period],
 			["Выручка план", kpis.totalRevenuePlanFormatted, period],
 			["Выполнение плана (%)", `${kpis.overallPlanFulfillmentPercent}%`, period],
 			["Чистая прибыль P&L", kpis.netProfitFormatted || "0 ₽", period],
@@ -205,6 +205,13 @@ export function useExecutiveDashboardData(
 			["LTV", kpis.patientLtvFormatted, period],
 			["CAC", kpis.cacFormatted, period],
 		];
+
+		if (kpis.paymentBreakdown) {
+			const pb = kpis.paymentBreakdown;
+			csvRows.push(["Оплата наличными (касса)", `${pb.cashFormatted} (${pb.cashPercent}%)`, period]);
+			csvRows.push(["Оплата картой / ДМС", `${pb.cardFormatted} (${pb.cardPercent}%)`, period]);
+			csvRows.push(["Оплата СБП QR", `${pb.sbpFormatted} (${pb.sbpPercent}%)`, period]);
+		}
 
 		if (payload.topDoctors && payload.topDoctors.length > 0) {
 			csvRows.push([]);

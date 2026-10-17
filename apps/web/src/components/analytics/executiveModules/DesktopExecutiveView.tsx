@@ -8,7 +8,7 @@
  *  - P&L сводку и структуру выручки по 5 отделениям
  *  - Загрузку кресел с таблицей tabular-nums и расчетом стоимости 1 часа простоя
  *  - Топ врачей по Net Revenue
- *  - Топ процедур по Номенклатуре 804н
+ *  - Топ услуг прейскуранта
  *  - 8-этапную сквозную воронку первичных пациентов
  *  - Нижнюю телеметрию (Тир 3)
  */
@@ -112,26 +112,26 @@ export const DesktopExecutiveView: React.FC<DesktopExecutiveViewProps> = ({
 	const chairItems = chairsData?.chairUtilizationJson ?? [];
 
 	return (
-		<div className="executive-dashboard" role="main" aria-label="Рабочий стол Генерального директора">
-			{/* ВЕРХНЯЯ ПАНЕЛЬ УПРАВЛЕНИЯ (MACOS HIG 32-36PX) */}
+		<div className="executive-dashboard" role="main" aria-label="Аналитика клиники">
+			{/* ВЕРХНЯЯ ПАНЕЛЬ УПРАВЛЕНИЯ (STRICT 48PX TOOLBAR) */}
 			{!hideHeaderToolbar && (
 				<header className="executive-header">
 					<div className="executive-header-info">
 						<div className="executive-title-row">
-							<h1 className="executive-title">Рабочий стол Генерального директора</h1>
+							<h1 className="executive-title">Аналитика клиники</h1>
 							<span className="executive-badge-feature">P&amp;L Кокпит</span>
 						</div>
 						<p
 							className="executive-subtitle"
 							title="Сквозная конверсия первичных пациентов, план/факт P&L отделений и операционная эффективность"
 						>
-							Сквозная выручка по 54-ФЗ, себестоимость кресло-часа и рентабельность отделений
+							Сквозная выручка кассы, себестоимость кресло-часа и рентабельность отделений
 						</p>
 					</div>
 
 					<div className="executive-controls">
 						<div className="executive-period-toggle" role="group" aria-label="Период отчета">
-							{(["day", "week", "month", "quarter", "year"] as const).map((p) => (
+							{(["day", "week", "month", "quarter"] as const).map((p) => (
 								<button
 									key={p}
 									type="button"
@@ -144,22 +144,10 @@ export const DesktopExecutiveView: React.FC<DesktopExecutiveViewProps> = ({
 											? "Неделя"
 											: p === "month"
 												? "Месяц"
-												: p === "quarter"
-													? "Квартал"
-													: "Год"}
+												: "Квартал"}
 								</button>
 							))}
 						</div>
-
-						<button
-							type="button"
-							className="secondary-button h-8 px-3 rounded-lg text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
-							onClick={handleExportCsv}
-							title="Экспорт аналитического отчета в Excel / CSV"
-						>
-							<Download size={14} />
-							<span>В Excel</span>
-						</button>
 
 						<button
 							type="button"
@@ -167,9 +155,20 @@ export const DesktopExecutiveView: React.FC<DesktopExecutiveViewProps> = ({
 							onClick={reload}
 							disabled={loading}
 							aria-label="Обновить показатели дашборда"
+							title="Обновить показатели дашборда"
 						>
 							<RefreshCw size={15} className={loading ? "animate-spin" : ""} aria-hidden="true" />
 							<span>Обновить</span>
+						</button>
+
+						<button
+							type="button"
+							className="executive-primary-action-btn"
+							onClick={handleExportCsv}
+							title="Экспорт аналитического отчета в Excel / CSV"
+						>
+							<Download size={15} aria-hidden="true" />
+							<span>В Excel</span>
 						</button>
 					</div>
 				</header>
@@ -342,18 +341,18 @@ export const DesktopExecutiveView: React.FC<DesktopExecutiveViewProps> = ({
 						) : (
 							<div className="chair-empty-state">
 								<Users size={24} style={{ color: "var(--teal)", margin: "0 auto 0.5rem" }} />
-								<div>Выработка врачей формируется по закрытым сменам и оплатам 54-ФЗ</div>
+								<div>Выработка врачей формируется по закрытым сменам и оплатам кассы</div>
 							</div>
 						)}
 					</div>
 				</section>
 
-				{/* 2. ТОП ПРОЦЕДУР ПО 804Н */}
-				<section className="executive-panel" aria-label="Топ процедур по номенклатуре 804н">
+				{/* 2. ТОП УСЛУГ ПРЕЙСКУРАНТА */}
+				<section className="executive-panel" aria-label="Топ услуг прейскуранта">
 					<div className="executive-panel-header">
 						<h2 className="executive-panel-title">
 							<FileText size={18} style={{ color: "var(--teal, #0d9488)" }} aria-hidden="true" />
-							Топ процедур Номенклатуры 804н
+							Топ услуг прейскуранта
 						</h2>
 						<span className="executive-panel-badge">{topProcedures.length} услуг</span>
 					</div>
@@ -395,7 +394,7 @@ export const DesktopExecutiveView: React.FC<DesktopExecutiveViewProps> = ({
 						) : (
 							<div className="chair-empty-state">
 								<FileText size={24} style={{ color: "var(--teal)", margin: "0 auto 0.5rem" }} />
-								<div>Топ услуг появится после проведения манипуляций в картах 043/у</div>
+								<div>Топ услуг появится после проведения манипуляций в медицинских картах приёма</div>
 							</div>
 						)}
 					</div>

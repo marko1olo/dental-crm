@@ -66,6 +66,7 @@ const periodBoundarySchema = z.union([
 const periodQuerySchema = z.object({
 	from: periodBoundarySchema.optional(),
 	to: periodBoundarySchema.optional(),
+	period: z.enum(["day", "week", "month", "quarter", "year"]).optional(),
 	granularity: z.enum(["day", "week", "month"]).optional(),
 	minutesPerDay: z.coerce.number().int().min(60).max(1440).optional(),
 	workingDaysPerWeek: z.coerce.number().int().min(1).max(7).optional(),
@@ -166,7 +167,27 @@ function resolvePeriod(
 	query: z.infer<typeof periodQuerySchema>,
 	timeZone: string | null,
 ): { ok: true; from: Date; to: Date } | { ok: false; message: string } {
-	const fallback = currentMonthPeriod(new Date(), timeZone);
+	let fallback = currentMonthPeriod(new Date(), timeZone);
+	if (query.period && query.from === undefined && query.to === undefined) {
+		const now = new Date();
+		if (query.period === "day") {
+			const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+			const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+			fallback = { from: startOfDay, to: endOfDay };
+		} else if (query.period === "week") {
+			const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
+			const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek, 0, 0, 0, 0);
+			fallback = { from: startOfWeek, to: now };
+		} else if (query.period === "quarter") {
+			const currentQuarterMonth = Math.floor(now.getMonth() / 3) * 3;
+			const startOfQuarter = new Date(now.getFullYear(), currentQuarterMonth, 1, 0, 0, 0, 0);
+			fallback = { from: startOfQuarter, to: now };
+		} else if (query.period === "year") {
+			const startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+			fallback = { from: startOfYear, to: now };
+		}
+	}
+
 	const from =
 		query.from === undefined
 			? fallback.from
@@ -289,6 +310,7 @@ export async function registerReportRoutes(app: FastifyInstance) {
 		const report = await doctorPerformance(resolved.scope);
 		return {
 			period: { from: resolved.scope.from, to: resolved.scope.to },
+			doctors: report.rows,
 			...report,
 		};
 	});

@@ -310,6 +310,47 @@ export interface ExecutiveKpis {
 	readonly activeDoctorsCount: number;
 	readonly totalLeadsCount: number;
 	readonly totalSanitationCount: number;
+
+	// Структура оплат (Касса 54-ФЗ / Карты и ДМС / СБП QR)
+	readonly paymentBreakdown?: ExecutivePaymentBreakdown | undefined;
+}
+
+export interface ExecutivePaymentBreakdown {
+	readonly cashRub: number;
+	readonly cashPercent: number;
+	readonly cardDmsRub: number;
+	readonly cardDmsPercent: number;
+	readonly sbpRub: number;
+	readonly sbpPercent: number;
+	readonly totalRub: number;
+}
+
+export interface ExecutiveTopDoctorItem {
+	readonly id: string;
+	readonly doctorUserId?: string;
+	readonly name: string;
+	readonly specialty: string;
+	readonly initials: string;
+	readonly revenueKopecks: number;
+	readonly revenueRub: number;
+	readonly revenueFormatted: string;
+	readonly visitsCount: number;
+	readonly attendancePercent: number;
+	readonly averageCheckKopecks: number;
+	readonly averageCheckFormatted: string;
+	readonly rank: number;
+}
+
+export interface ExecutiveTopProcedureItem {
+	readonly id: string;
+	readonly code804n?: string;
+	readonly name: string;
+	readonly category: string;
+	readonly count: number;
+	readonly revenueKopecks: number;
+	readonly revenueRub: number;
+	readonly revenueFormatted: string;
+	readonly sharePercent: number;
 }
 
 // ─── 4. ПОЛНЫЙ ДАШБОРД ГЕНЕРАЛЬНОГО ДИРЕКТОРА (PAYLOAD) ──────────────────────
@@ -318,6 +359,8 @@ export interface ExecutiveDashboardPayload {
 	readonly kpis: ExecutiveKpis;
 	readonly funnelStages: readonly ExecutiveFunnelStageItem[];
 	readonly departments: readonly ExecutiveDepartmentItem[];
+	readonly topDoctors?: readonly ExecutiveTopDoctorItem[];
+	readonly topProcedures?: readonly ExecutiveTopProcedureItem[];
 	readonly period: ExecutivePeriod;
 	readonly dateRangeStartIso: string;
 	readonly dateRangeEndIso: string;
@@ -538,6 +581,7 @@ export interface CalculateExecutiveKpisParams {
 	readonly cogsKopecks?: number;
 	readonly opexKopecks?: number;
 	readonly netMarginPercent?: number;
+	readonly paymentBreakdown?: ExecutivePaymentBreakdown;
 }
 
 /**
@@ -697,5 +741,6 @@ export function calculateExecutiveKpisSummary(
 		activeDoctorsCount: Math.max(0, params.activeDoctorsCount),
 		totalLeadsCount: leads,
 		totalSanitationCount: sanCount,
+		...(params.paymentBreakdown !== undefined ? { paymentBreakdown: params.paymentBreakdown } : {}),
 	};
 }

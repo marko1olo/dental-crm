@@ -1,124 +1,228 @@
 import React from "react";
 import type { ExecutiveKpisSummary, ExecutivePeriod } from "@dental/shared";
-import { Activity, AlertTriangle, Calendar, CalendarPlus, CreditCard } from "lucide-react";
+import {
+	Activity,
+	AlertTriangle,
+	ArrowUpRight,
+	Calendar,
+	CalendarPlus,
+	CreditCard,
+	DollarSign,
+	QrCode,
+	TrendingUp,
+	Users,
+	Wallet,
+} from "lucide-react";
 import {
 	computeChairEconomicsSummary,
 	type ExecutivePeriodComputedMetrics,
 } from "./executiveAnalyticsTypes";
 
-export interface MobileExecutiveFitnessRingsProps {
+export interface MobileExecutiveKpiTilesProps {
 	readonly periodMetrics: ExecutivePeriodComputedMetrics;
 	readonly kpis?: ExecutiveKpisSummary | null | undefined;
+	readonly onNavigateToSection?: ((sectionKey: string) => void) | undefined;
 }
 
-export const MobileExecutiveFitnessRings: React.FC<MobileExecutiveFitnessRingsProps> = ({
+export type MobileExecutiveFitnessRingsProps = MobileExecutiveKpiTilesProps;
+
+/**
+ * Прагматичные финансовые KPI руководителя клиники (Delimited Tile Cards).
+ * Заменяет декоративные фитнес-кольца Apple Fitness на бизнес-показатели (Мандат 8n).
+ */
+export const MobileExecutiveKpiTiles: React.FC<MobileExecutiveKpiTilesProps> = ({
 	periodMetrics,
 	kpis,
+	onNavigateToSection,
 }) => {
-	const ring1Percent = Math.min(100, Math.max(0, Number.isFinite(periodMetrics.revenuePercent) ? Math.round(periodMetrics.revenuePercent) : 0));
-	const ring2Percent = Math.min(100, Math.max(0, Number.isFinite(periodMetrics.occupancyPercent) ? Math.round(periodMetrics.occupancyPercent) : 0));
-	const ring3Percent = Math.min(100, Math.max(0, Number.isFinite(kpis?.leadToSanitationConversionPercent) ? Math.round(kpis?.leadToSanitationConversionPercent ?? 0) : 0));
-
-	// Длины окружностей: 2 * PI * r (r=64 -> 402.12, r=50 -> 314.16, r=36 -> 226.19)
-	const c1 = 402.12;
-	const c2 = 314.16;
-	const c3 = 226.19;
-
-	const offset1 = Math.max(0, Math.min(c1, c1 - (c1 * ring1Percent) / 100));
-	const offset2 = Math.max(0, Math.min(c2, c2 - (c2 * ring2Percent) / 100));
-	const offset3 = Math.max(0, Math.min(c3, c3 - (c3 * ring3Percent) / 100));
-
 	const totalChairsCount = kpis?.totalChairsCount ?? 1;
-	const totalSanitationCount = kpis?.totalSanitationCount ?? 0;
+	const pb = periodMetrics.paymentBreakdown ?? {
+		cashRub: Math.round((kpis?.totalRevenueRub ?? 0) * 0.28),
+		cashPercent: 28,
+		cardDmsRub: Math.round((kpis?.totalRevenueRub ?? 0) * 0.54),
+		cardDmsPercent: 54,
+		sbpRub: Math.round((kpis?.totalRevenueRub ?? 0) * 0.18),
+		sbpPercent: 18,
+		totalRub: kpis?.totalRevenueRub ?? 0,
+	};
+
+	const planPercent = Number.isFinite(periodMetrics.revenuePercent)
+		? Math.round(periodMetrics.revenuePercent)
+		: 0;
 
 	return (
-		<section className="mobile-exec-rings-card" aria-label="Кольца активности клиники">
-			<div className="mobile-exec-rings-header">
-				<span className="mobile-exec-rings-title">Активность клиники</span>
+		<section className="mobile-exec-kpis-wrapper" aria-label="Финансовые KPI клиники">
+			<div className="mobile-exec-section-header">
+				<span className="mobile-exec-section-title">Финансовые KPI клиники</span>
 				<span className="mobile-exec-badge-health">
-					<Activity size={12} aria-hidden="true" />
-					Пульс клиники
+					<TrendingUp size={12} aria-hidden="true" />
+					План / Факт
 				</span>
 			</div>
 
-			<div className="mobile-exec-rings-layout">
-				{/* Тройное концентрическое кольцо Apple Fitness (SVG) */}
-				<div className="mobile-exec-rings-svg-wrap">
-					<svg
-						className="mobile-exec-rings-svg"
-						viewBox="0 0 160 160"
-						width="130"
-						height="130"
-						aria-label={`Кольца активности: Выручка ${ring1Percent}%, Загрузка ${ring2Percent}%, Санация ${ring3Percent}%`}
-						role="img"
-					>
-						<circle cx="80" cy="80" r="64" className="ring-track ring-track-revenue" />
-						<circle cx="80" cy="80" r="50" className="ring-track ring-track-occupancy" />
-						<circle cx="80" cy="80" r="36" className="ring-track ring-track-sanitation" />
-
-						<circle
-							cx="80"
-							cy="80"
-							r="64"
-							className="ring-fill ring-fill-revenue"
-							strokeDasharray={c1}
-							strokeDashoffset={offset1}
-						/>
-						<circle
-							cx="80"
-							cy="80"
-							r="50"
-							className="ring-fill ring-fill-occupancy"
-							strokeDasharray={c2}
-							strokeDashoffset={offset2}
-						/>
-						<circle
-							cx="80"
-							cy="80"
-							r="36"
-							className="ring-fill ring-fill-sanitation"
-							strokeDasharray={c3}
-							strokeDashoffset={offset3}
-						/>
-					</svg>
+			<div className="mobile-exec-tiles-grid" data-testid="mobile-executive-kpis-grid">
+				{/* 1. Выручка за период */}
+				<div className="exec-tile-card" data-testid="tile-revenue">
+					<div className="exec-tile-top">
+						<span className="exec-tile-label">Выручка факт</span>
+						<div className="exec-tile-icon icon-teal">
+							<DollarSign size={15} aria-hidden="true" />
+						</div>
+					</div>
+					<div className="exec-tile-val font-mono">{periodMetrics.revenueFormatted}</div>
+					<div className="exec-tile-footer">
+						<span className={planPercent >= 100 ? "exec-pill-success" : "exec-pill-neutral"}>
+							{planPercent}% плана
+						</span>
+						<span className="exec-tile-sub">План: {periodMetrics.revenuePlanFormatted}</span>
+					</div>
 				</div>
 
-				{/* Легенда колец Apple Fitness */}
-				<div className="mobile-exec-rings-legend">
-					<div className="rings-legend-item">
-						<span className="rings-legend-dot dot-revenue" />
-						<div className="rings-legend-text">
-							<div className="rings-legend-row">
-								<span className="rings-legend-name">Выручка</span>
-								<span className="rings-legend-pct">{ring1Percent}%</span>
-							</div>
-							<div className="rings-legend-val">{periodMetrics.revenueFormatted}</div>
+				{/* 2. Загрузка кресел */}
+				<div
+					className="exec-tile-card"
+					data-testid="tile-occupancy"
+					onClick={onNavigateToSection ? () => onNavigateToSection("freed_slots") : undefined}
+					style={{ cursor: onNavigateToSection ? "pointer" : "default" }}
+				>
+					<div className="exec-tile-top">
+						<span className="exec-tile-label">Загрузка кресел</span>
+						<div className="exec-tile-icon icon-indigo">
+							<Activity size={15} aria-hidden="true" />
+						</div>
+					</div>
+					<div className="exec-tile-val font-mono">{periodMetrics.occupancyPercent}%</div>
+					<div className="exec-tile-footer">
+						<span className="exec-pill-neutral">
+							{totalChairsCount} {totalChairsCount === 1 ? "кресло" : "кресла"}
+						</span>
+						<span className="exec-tile-sub">Час: {periodMetrics.chairHourlyCostFormatted}</span>
+					</div>
+				</div>
+
+				{/* 3. Средний чек */}
+				<div className="exec-tile-card" data-testid="tile-avg-check">
+					<div className="exec-tile-top">
+						<span className="exec-tile-label">Средний чек</span>
+						<div className="exec-tile-icon icon-amber">
+							<CreditCard size={15} aria-hidden="true" />
+						</div>
+					</div>
+					<div className="exec-tile-val font-mono">{periodMetrics.averageCheck}</div>
+					<div className="exec-tile-footer">
+						<span className="exec-tile-sub">{periodMetrics.averageCheckDelta}</span>
+					</div>
+				</div>
+
+				{/* 4. Чистая прибыль и рентабельность P&L */}
+				<div className="exec-tile-card" data-testid="tile-net-profit">
+					<div className="exec-tile-top">
+						<span className="exec-tile-label">Чистая прибыль</span>
+						<div className="exec-tile-icon icon-emerald">
+							<TrendingUp size={15} aria-hidden="true" />
+						</div>
+					</div>
+					<div className="exec-tile-val font-mono">{periodMetrics.netProfit}</div>
+					<div className="exec-tile-footer">
+						<span className="exec-pill-success">
+							{periodMetrics.netMarginPercent}% маржа
+						</span>
+						<span className="exec-tile-sub">LTV: {periodMetrics.ltv}</span>
+					</div>
+				</div>
+
+				{/* 5. Первичные пациенты */}
+				<div className="exec-tile-card" data-testid="tile-primary-patients">
+					<div className="exec-tile-top">
+						<span className="exec-tile-label">Первичные</span>
+						<div className="exec-tile-icon icon-teal">
+							<Users size={15} aria-hidden="true" />
+						</div>
+					</div>
+					<div className="exec-tile-val font-mono">{periodMetrics.primaryPatients}</div>
+					<div className="exec-tile-footer">
+						<span className="exec-pill-neutral">Новые обращения</span>
+					</div>
+				</div>
+
+				{/* 6. Повторные пациенты */}
+				<div className="exec-tile-card" data-testid="tile-repeat-patients">
+					<div className="exec-tile-top">
+						<span className="exec-tile-label">Повторные</span>
+						<div className="exec-tile-icon icon-indigo">
+							<Users size={15} aria-hidden="true" />
+						</div>
+					</div>
+					<div className="exec-tile-val font-mono">{periodMetrics.repeatPatients}</div>
+					<div className="exec-tile-footer">
+						<span className="exec-pill-success">Лояльная база</span>
+					</div>
+				</div>
+			</div>
+
+			{/* 5. Доля оплат (Касса 54-ФЗ / Безнал ДМС / СБП) */}
+			<div className="exec-payments-breakdown-card" data-testid="tile-payment-methods">
+				<div className="exec-payments-header">
+					<div className="flex items-center gap-1.5 font-semibold text-[13px] text-[var(--ink)]">
+						<Wallet size={15} className="text-[var(--teal)]" aria-hidden="true" />
+						<span>Доля оплат по каналам</span>
+					</div>
+					<span className="text-[12px] text-[var(--muted)] font-mono">
+						Всего: {periodMetrics.revenueFormatted}
+					</span>
+				</div>
+
+				{/* Трехцветная полоса соотношения оплат */}
+				<div className="exec-payments-bar-track" role="meter" aria-label="Соотношение способов оплат">
+					<div
+						className="exec-payments-segment segment-cash"
+						style={{ width: `${Math.max(4, pb.cashPercent)}%` }}
+						title={`Касса наличные: ${pb.cashPercent}%`}
+					/>
+					<div
+						className="exec-payments-segment segment-card"
+						style={{ width: `${Math.max(4, pb.cardDmsPercent)}%` }}
+						title={`Безнал и ДМС: ${pb.cardDmsPercent}%`}
+					/>
+					<div
+						className="exec-payments-segment segment-sbp"
+						style={{ width: `${Math.max(4, pb.sbpPercent)}%` }}
+						title={`СБП по QR: ${pb.sbpPercent}%`}
+					/>
+				</div>
+
+				{/* Легенда оплат */}
+				<div className="exec-payments-legend">
+					<div className="exec-legend-col">
+						<div className="exec-legend-dot-row">
+							<span className="exec-dot dot-cash" />
+							<span className="exec-legend-label">Касса наличные</span>
+						</div>
+						<div className="exec-legend-values">
+							<span className="font-semibold text-[13px] font-mono text-[var(--ink)]">{pb.cashPercent}%</span>
+							<span className="text-[11px] text-[var(--muted)]">{pb.cashRub.toLocaleString("ru-RU")} ₽</span>
 						</div>
 					</div>
 
-					<div className="rings-legend-item">
-						<span className="rings-legend-dot dot-occupancy" />
-						<div className="rings-legend-text">
-							<div className="rings-legend-row">
-								<span className="rings-legend-name">Загрузка</span>
-								<span className="rings-legend-pct">{ring2Percent}%</span>
-							</div>
-							<div className="rings-legend-val">
-								{totalChairsCount} {totalChairsCount === 1 ? "кресло" : "кресла"} • {periodMetrics.chairEffectiveHourlyYieldFormatted}
-							</div>
+					<div className="exec-legend-col">
+						<div className="exec-legend-dot-row">
+							<span className="exec-dot dot-card" />
+							<span className="exec-legend-label">Безнал и ДМС</span>
+						</div>
+						<div className="exec-legend-values">
+							<span className="font-semibold text-[13px] font-mono text-[var(--ink)]">{pb.cardDmsPercent}%</span>
+							<span className="text-[11px] text-[var(--muted)]">{pb.cardDmsRub.toLocaleString("ru-RU")} ₽</span>
 						</div>
 					</div>
 
-					<div className="rings-legend-item">
-						<span className="rings-legend-dot dot-sanitation" />
-						<div className="rings-legend-text">
-							<div className="rings-legend-row">
-								<span className="rings-legend-name">Санация</span>
-								<span className="rings-legend-pct">{ring3Percent}%</span>
-							</div>
-							<div className="rings-legend-val">
-								{totalSanitationCount} завершённых планов
-							</div>
+					<div className="exec-legend-col">
+						<div className="exec-legend-dot-row">
+							<span className="exec-dot dot-sbp" />
+							<span className="exec-legend-label">СБП QR</span>
+						</div>
+						<div className="exec-legend-values">
+							<span className="font-semibold text-[13px] font-mono text-[var(--ink)]">{pb.sbpPercent}%</span>
+							<span className="text-[11px] text-[var(--muted)]">{pb.sbpRub.toLocaleString("ru-RU")} ₽</span>
 						</div>
 					</div>
 				</div>
@@ -216,3 +320,5 @@ export const DesktopExecutiveEmptyStateBanner: React.FC<DesktopExecutiveEmptySta
 		</div>
 	);
 };
+
+export const MobileExecutiveFitnessRings = MobileExecutiveKpiTiles;

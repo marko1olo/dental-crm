@@ -11,7 +11,7 @@ import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { getDemoExecutiveAnalytics, isDemoShowcaseMode } from "../../lib/demoMode";
 import { showToast } from "../GlobalToast";
 import { buildRfc4180Csv, triggerCsvDownload } from "../reports/reportsCsvExport";
-import { MobileExecutiveFitnessRings } from "./executiveModules/ExecutiveChairUtilizationChart";
+import { MobileExecutiveKpiTiles } from "./executiveModules/ExecutiveChairUtilizationChart";
 import {
 	buildTopDoctorsPerformanceRows,
 	MobileExecutiveDoctorsAndFunnels,
@@ -70,7 +70,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
 						Accept: "application/json",
 					},
 				}),
-				fetch("/api/reports/doctors", {
+				fetch(`/api/reports/doctors?period=${apiPeriod}`, {
 					headers: {
 						...denteAdminSecretRequestHeaders(),
 						Accept: "application/json",
@@ -93,6 +93,8 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
 				const docJson = await docRes.json();
 				if (Array.isArray(docJson?.doctors)) {
 					setDoctorsReport(docJson.doctors);
+				} else if (Array.isArray(docJson?.rows)) {
+					setDoctorsReport(docJson.rows);
 				}
 			}
 		} catch (err) {
@@ -117,6 +119,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
 	);
 
 	const handleExportCsv = useCallback(() => {
+		const pb = periodMetrics.paymentBreakdown;
 		const csvRows: (string | number)[][] = [
 			["Показатель", "Значение", "Период"],
 			["Выручка факт", periodMetrics.revenueFormatted, activePeriod],
@@ -129,6 +132,9 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
 			["Средний чек", periodMetrics.averageCheck, activePeriod],
 			["Первичные пациенты", periodMetrics.primaryPatients, activePeriod],
 			["Повторные пациенты", periodMetrics.repeatPatients, activePeriod],
+			["Оплата наличными (касса)", pb ? `${pb.cashFormatted} (${pb.cashPercent}%)` : "—", activePeriod],
+			["Оплата картой / ДМС", pb ? `${pb.cardFormatted} (${pb.cardPercent}%)` : "—", activePeriod],
+			["Оплата СБП QR", pb ? `${pb.sbpFormatted} (${pb.sbpPercent}%)` : "—", activePeriod],
 		];
 
 		const csvContent = buildRfc4180Csv(csvRows);
@@ -145,17 +151,18 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
 		}
 	}, []);
 
-	const topDoctors = useMemo(
-		() => buildTopDoctorsPerformanceRows(doctorsReport, activePeriod, isDemoShowcaseMode()),
-		[doctorsReport, activePeriod],
-	);
+	const topDoctors = useMemo(() => {
+		if (payload?.topDoctors && payload.topDoctors.length > 0) {
+			return payload.topDoctors;
+		}
+		return buildTopDoctorsPerformanceRows(doctorsReport, activePeriod, isDemoShowcaseMode());
+	}, [payload?.topDoctors, doctorsReport, activePeriod]);
 
 	const periodOptions: { key: MobileAnalyticsPeriod; label: string }[] = [
 		{ key: "day", label: "День" },
 		{ key: "week", label: "Неделя" },
 		{ key: "month", label: "Месяц" },
 		{ key: "quarter", label: "Квартал" },
-		{ key: "year", label: "Год" },
 	];
 
 	return (
@@ -184,8 +191,12 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
 				</div>
 			</div>
 
-			{/* 2. APPLE FITNESS КОЛЬЦА АКТИВНОСТИ И ЦЕЛЕВЫЕ ПОКАЗАТЕЛИ */}
-			<MobileExecutiveFitnessRings periodMetrics={periodMetrics} kpis={payload?.kpis} />
+			{/* 2. ПРАГМАТИЧНЫЕ ФИНАНСОВЫЕ KPI И РАСПРЕДЕЛЕНИЕ ОПЛАТ */}
+			<MobileExecutiveKpiTiles
+				periodMetrics={periodMetrics}
+				kpis={payload?.kpis}
+				onNavigateToSection={onNavigateToSection}
+			/>
 
 			{/* 3. 4 ДОМИНАНТНЫЕ KPI-КАРТОЧКИ */}
 			<MobileExecutiveKpiCards

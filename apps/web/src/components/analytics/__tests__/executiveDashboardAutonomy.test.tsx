@@ -79,3 +79,74 @@ test("Prescription 107-1/u and Booking: Series and booking numbers are determini
 	assert.ok(!bookingCode.includes("Math.random()"), "PublicOnlineBookingWidget.tsx must NOT contain Math.random()");
 	assert.ok(!loyaltyCode.includes("Math.random()"), "loyaltyEngine.ts must NOT contain Math.random()");
 });
+
+test("ExecutiveDashboard: Pragmatic KPI tiles eliminate concentric Apple Fitness rings", () => {
+	const chartPath = path.join(webSrcRoot, "components/analytics/executiveModules/ExecutiveChairUtilizationChart.tsx");
+	const chartCode = readFileSync(chartPath, "utf8");
+
+	// concentric rings SVG must NOT exist in ExecutiveChairUtilizationChart
+	assert.ok(
+		!chartCode.includes('className="mobile-exec-rings-svg"'),
+		"Concentric fitness rings SVG must be removed",
+	);
+	assert.ok(
+		!chartCode.includes("ring-track-sanitation"),
+		"Sanitation ring track must be removed",
+	);
+
+	// Pragmatic tiles must exist
+	assert.ok(
+		chartCode.includes('data-testid="tile-revenue"'),
+		"Revenue plan/fact tile card must exist",
+	);
+	assert.ok(
+		chartCode.includes('data-testid="tile-occupancy"'),
+		"Occupancy tile card must exist",
+	);
+	assert.ok(
+		chartCode.includes('data-testid="tile-avg-check"'),
+		"Average check tile card must exist",
+	);
+	assert.ok(
+		chartCode.includes('data-testid="tile-net-profit"'),
+		"Net profit tile card must exist",
+	);
+	assert.ok(
+		chartCode.includes('data-testid="tile-primary-patients"'),
+		"Primary patients tile card must exist",
+	);
+	assert.ok(
+		chartCode.includes('data-testid="tile-repeat-patients"'),
+		"Repeat patients tile card must exist",
+	);
+	assert.ok(
+		chartCode.includes('data-testid="tile-payment-methods"'),
+		"Payment breakdown card must exist",
+	);
+});
+
+test("Executive CSV export: RFC 4180 compliance with UTF-8 BOM, CRLF, and payment breakdown", async () => {
+	const { buildRfc4180Csv } = await import("../../reports/reportsCsvExport.js");
+
+	const sampleRows = [
+		["Показатель", "Значение", "Период"],
+		["Выручка факт", "1 250 000 ₽", "month"],
+		["Оплата наличными (касса)", "350 000 ₽ (28%)", "month"],
+		["Оплата картой / ДМС", "675 000 ₽ (54%)", "month"],
+		["Оплата СБП QR", "225 000 ₽ (18%)", "month"],
+	];
+
+	const csv = buildRfc4180Csv(sampleRows);
+
+	// Must start with UTF-8 BOM (\uFEFF) for Excel
+	assert.ok(csv.startsWith("\uFEFF"), "CSV must start with UTF-8 BOM (\\uFEFF)");
+
+	// Must use CRLF line endings
+	assert.ok(csv.includes("\r\n"), "CSV must use CRLF line endings");
+
+	// Must contain payment channels
+	assert.ok(csv.includes("Оплата наличными (касса)"), "CSV must include cash payment line");
+	assert.ok(csv.includes("Оплата картой / ДМС"), "CSV must include card/DMS payment line");
+	assert.ok(csv.includes("Оплата СБП QR"), "CSV must include SBP QR payment line");
+});
+

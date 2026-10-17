@@ -210,6 +210,49 @@ export async function queryExecutiveKpiAndFunnel(
 	const totalRevenueKopecks = Math.max(0, paidKopecks - refundedKopecks);
 	const payingPatients = Number(paymentsSummary?.payingPatientsCount || 0);
 
+	// 5b. Честное распределение по способам оплат (Касса наличные / Карты и ДМС / СБП QR)
+	const paymentMethodRows = await db
+		.select({
+			method: payments.method,
+			revenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`,
+		})
+		.from(payments)
+		.where(
+			and(
+				eq(payments.organizationId, orgId),
+				gte(payments.createdAt, startDate),
+				inArray(payments.status, ["paid", "refunded"]),
+			),
+		)
+		.groupBy(payments.method);
+
+	let cashRevenueRub = 0;
+	let cardDmsRevenueRub = 0;
+	let sbpRevenueRub = 0;
+
+	for (const pm of paymentMethodRows) {
+		const amt = Math.max(0, Number(pm.revenueRub || 0));
+		const m = (pm.method || "").toLowerCase();
+		if (m === "cash") {
+			cashRevenueRub += amt;
+		} else if (m === "sbp") {
+			sbpRevenueRub += amt;
+		} else {
+			cardDmsRevenueRub += amt;
+		}
+	}
+
+	const totalMethodsRub = cashRevenueRub + cardDmsRevenueRub + sbpRevenueRub;
+	const paymentBreakdown = {
+		cashRub: Math.round(cashRevenueRub),
+		cashPercent: totalMethodsRub > 0 ? Number(((cashRevenueRub / totalMethodsRub) * 100).toFixed(1)) : 0,
+		cardDmsRub: Math.round(cardDmsRevenueRub),
+		cardDmsPercent: totalMethodsRub > 0 ? Number(((cardDmsRevenueRub / totalMethodsRub) * 100).toFixed(1)) : 0,
+		sbpRub: Math.round(sbpRevenueRub),
+		sbpPercent: totalMethodsRub > 0 ? Number(((sbpRevenueRub / totalMethodsRub) * 100).toFixed(1)) : 0,
+		totalRub: Math.round(totalMethodsRub),
+	};
+
 	// 6. Расходы клиники и управленческий P&L (COGS, OPEX, Чистая прибыль)
 	const cashExpenseRows = await db
 		.select({
@@ -389,6 +432,7 @@ export async function queryExecutiveKpiAndFunnel(
 		cogsKopecks: totalCogsKopecks,
 		opexKopecks: totalOpexKopecks,
 		netMarginPercent,
+		paymentBreakdown,
 	});
 
 	return {
