@@ -8,25 +8,18 @@ import { db as database } from "../../db/client.js";
 import { appointments, visits } from "../../db/schema.js";
 import { openVisitForAppointmentInDb } from "../../db/visitsQuery.js";
 import { wsBroker } from "../../services/websocketBroker.js";
-import { sendVisitOpenError } from "./visitErrors.js";
+import { sendVisitOpenError } from "./visitOpenErrors.js";
 
 export function registerVisitOpenRoutes(app: FastifyInstance) {
 	app.register(async (scope) => {
-		scope.addContentTypeParser(
-			"application/json",
-			{ parseAs: "string" },
-			(_req, body, done) => {
-				if (!body || (typeof body === "string" && body.trim() === "")) {
-					done(null, {});
-					return;
-				}
-				try {
-					done(null, JSON.parse(body as string));
-				} catch (err) {
-					done(err as Error, undefined);
-				}
-			},
-		);
+		scope.addContentTypeParser("application/json", { parseAs: "string" }, (_req, body, done) => {
+			if (!body || (typeof body === "string" && body.trim() === "")) return done(null, {});
+			try {
+				done(null, JSON.parse(body as string));
+			} catch (err) {
+				done(err as Error, undefined);
+			}
+		});
 
 		scope.get("/api/appointments/:appointmentId/visit", async (request, reply) => {
 			const context = await requireClinicalReadContext(
@@ -36,8 +29,8 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 			);
 			if (!context) return;
 			const orgId = context.organizationId;
-
 			const { appointmentId } = request.params as { appointmentId?: string };
+
 			if (!appointmentId) {
 				reply.code(400);
 				return {
@@ -58,20 +51,18 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 				.orderBy(visits.createdAt)
 				.limit(1);
 
-			return {
-				success: true,
-				visit: existing
-					? {
-							id: existing.id,
-							organizationId: existing.organizationId,
-							patientId: existing.patientId,
-							appointmentId: existing.appointmentId,
-							status: existing.status,
-							createdAt: existing.createdAt.toISOString(),
-							updatedAt: existing.updatedAt.toISOString(),
-						}
-					: null,
-			};
+			const visit = existing
+				? {
+						id: existing.id,
+						organizationId: existing.organizationId,
+						patientId: existing.patientId,
+						appointmentId: existing.appointmentId,
+						status: existing.status,
+						createdAt: existing.createdAt.toISOString(),
+						updatedAt: existing.updatedAt.toISOString(),
+					}
+				: null;
+			return { success: true, visit };
 		});
 
 		scope.post("/api/appointments/:appointmentId/visit", async (request, reply) => {
@@ -82,8 +73,8 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 			);
 			if (!context) return;
 			const orgId = context.organizationId;
-
 			const { appointmentId } = request.params as { appointmentId?: string };
+
 			if (!appointmentId) {
 				reply.code(400);
 				return {
@@ -95,12 +86,9 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 
 			try {
 				const result = await openVisitForAppointmentInDb(orgId, appointmentId);
-				// Атомарно переводим статус записи в расписании в "in_treatment" в PostgreSQL
 				await database
 					.update(appointments)
-					.set({
-						status: "in_treatment",
-					})
+					.set({ status: "in_treatment" })
 					.where(
 						and(
 							eq(appointments.id, appointmentId),
@@ -117,11 +105,7 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 					},
 				});
 				reply.code(result.created ? 201 : 200);
-				return {
-					success: true,
-					created: result.created,
-					visit: result.visit,
-				};
+				return { success: true, created: result.created, visit: result.visit };
 			} catch (error) {
 				return sendVisitOpenError(error, reply);
 			}

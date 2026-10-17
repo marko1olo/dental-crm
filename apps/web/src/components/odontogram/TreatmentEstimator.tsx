@@ -278,7 +278,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			const { items: nextItems, changed } = reconcileAutoSuggestions(
 				prevItems,
 				currentTeeth,
-				catalog,
+				catalog as unknown as readonly PlanPriceCatalogItem[],
 				dismissedSuggestions,
 			);
 			return changed ? nextItems : prevItems;

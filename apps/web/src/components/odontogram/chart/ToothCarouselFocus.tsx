@@ -58,7 +58,7 @@ export const ToothCarouselFocus: React.FC<ToothCarouselFocusProps> = memo(({
 }) => {
 	const stageRef = useRef<HTMLDivElement>(null);
 
-	const allTeethOrdered = useMemo(() => {
+	const allTeethOrdered: number[] = useMemo(() => {
 		if (isPediatricEffective) {
 			return [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH];
 		}

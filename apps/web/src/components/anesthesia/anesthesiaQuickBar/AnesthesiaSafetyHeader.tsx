@@ -38,7 +38,7 @@ export function AnesthesiaSafetyHeader({
 						data-testid="allergy-passive-badge"
 					>
 						<ShieldAlert size={12} className="text-rose-600 dark:text-rose-400 shrink-0" />
-						<span>⚠️ Аллергия: Лидокаин / амидные анестетики</span>
+						<span>Аллергия: Лидокаин / амидные анестетики</span>
 					</span>
 				)}
 				{hasArticaineAllergy && (
@@ -48,7 +48,7 @@ export function AnesthesiaSafetyHeader({
 						data-testid="allergy-passive-badge-articaine"
 					>
 						<ShieldAlert size={12} className="text-rose-600 dark:text-rose-400 shrink-0" />
-						<span>⚠️ Аллергия: Артикаин / амидные анестетики</span>
+						<span>Аллергия: Артикаин / амидные анестетики</span>
 					</span>
 				)}
 				{isCardioRisk && (

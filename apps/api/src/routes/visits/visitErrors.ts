@@ -1,4 +1,15 @@
 import type { FastifyReply } from "fastify";
+import {
+	visitDraftAcceptClosedMessage,
+	visitDraftAcceptNoActiveVisitMessage,
+	visitDraftAutosaveClosedMessage,
+	visitDraftAutosaveNoActiveVisitMessage,
+	visitDraftMutationRejectedMessage,
+	visitDraftNotFoundMessage,
+} from "./visitErrorMessages.js";
+
+export * from "./visitErrorMessages.js";
+export * from "./visitOpenErrors.js";
 
 export type VisitPayloadSchema<T> = {
 	safeParse: (
@@ -6,34 +17,6 @@ export type VisitPayloadSchema<T> = {
 	) => { success: true; data: T } | { success: false };
 };
 export type VisitDraftMutationOperation = "autosave" | "accept";
-
-export const visitDraftAutosaveValidationMessage =
-	"Черновик приема не сохранен: передайте пациента, специальность, текст приема или заполненные поля черновика.";
-export const visitDraftAcceptValidationMessage =
-	"Черновик приема не принят: передайте текст приема, заполненные поля черновика и данные сохранения врача.";
-export const visitDraftNotFoundMessage =
-	"Прием не найден. Обновите рабочий экран и выберите актуальный прием.";
-
-export const visitDraftSignedNoDraftMessage =
-	"Черновик приема не открыт: этот прием уже подписан, поэтому черновика у него нет. Запись приема осталась в карте пациента — " +
-	"чтобы дописать лечение, откройте новый прием по записи в расписании.";
-export const visitDraftVoidedNoDraftMessage =
-	"Черновик приема не открыт: этот прием аннулирован, поэтому черновика у него нет. Аннулированный прием не дописывают — " +
-	"создайте запись в расписании и откройте по ней новый прием.";
-export const visitDraftAutosaveClosedMessage =
-	"Черновик приема не сохранен: этот прием уже недоступен для изменений.";
-export const visitDraftAcceptClosedMessage =
-	"Черновик приема не принят: этот прием уже недоступен для изменений.";
-export const visitDraftMutationRejectedMessage =
-	"Черновик приема не изменен: обновите прием и повторите действие.";
-
-export const noActiveVisitId = "00000000-0000-0000-0000-000000000000";
-export const visitDraftAutosaveNoActiveVisitMessage =
-	"Черновик приема не сохранен: в клинике сейчас не открыт ни один прием, поэтому записывать некуда. Набранный текст остался на экране — " +
-	"откройте прием по записи в расписании и повторите сохранение.";
-export const visitDraftAcceptNoActiveVisitMessage =
-	"Черновик приема не принят: в клинике сейчас не открыт ни один прием, поэтому подписывать нечего. Набранный текст остался на экране — " +
-	"откройте прием по записи в расписании и повторите сохранение.";
 
 export function sendNoActiveVisitRefusal(
 	reply: FastifyReply,
@@ -49,10 +32,6 @@ export function sendNoActiveVisitRefusal(
 				: visitDraftAutosaveNoActiveVisitMessage,
 	};
 }
-
-export const visitDraftAcceptResponseIncompleteMessage =
-	"Прием подписан и сохранен в карте пациента, но рабочий экран не получил карточку закрытия приема. " +
-	"Повторно подписывать не нужно: обновите рабочий экран, чтобы увидеть подписанный прием.";
 
 export function visitRequestBody(value: unknown): Record<string, unknown> {
 	return value && typeof value === "object" && !Array.isArray(value)
@@ -96,7 +75,10 @@ export function sendVisitDraftMutationError(
 ) {
 	const message = visitDraftDomainMessage(error);
 	const errObj = error as Record<string, unknown> | null;
-	const errCode = (errObj?.code ?? (errObj?.cause as Record<string, unknown> | undefined)?.code) as string | undefined;
+	const errCode = (errObj?.code ??
+		(errObj?.cause as Record<string, unknown> | undefined)?.code) as
+		| string
+		| undefined;
 
 	if (
 		message === "Визит не найден" ||
@@ -122,50 +104,5 @@ export function sendVisitDraftMutationError(
 		error: "VisitDraftMutationRejected",
 		reason: "visit_draft_rejected",
 		message: visitDraftMutationRejectedMessage,
-	});
-}
-
-export const visitOpenAppointmentNotFoundMessage =
-	"Прием не открыт: запись не найдена в этой клинике. Обновите расписание и выберите актуальную строку.";
-export const visitOpenPatientMissingMessage =
-	"Прием не открыт: в записи не указан пациент. Откройте запись в расписании, выберите пациента и повторите.";
-export const visitOpenAppointmentClosedMessage =
-	"Прием не открыт: запись отменена или отмечена как неявка. Создайте новую запись в расписании.";
-export const visitOpenFailedMessage =
-	"Прием не открыт: повторите действие, а если не поможет — обновите рабочий экран.";
-
-export function sendVisitOpenError(error: unknown, reply: FastifyReply) {
-	const message = error instanceof Error ? error.message : "";
-	if (message === "Запись не найдена") {
-		return reply.code(404).send({
-			error: "AppointmentNotFound",
-			reason: "appointment_not_found",
-			message: visitOpenAppointmentNotFoundMessage,
-		});
-	}
-	if (
-		message === "У записи нет пациента" ||
-		message === "В записи не указан пациент"
-	) {
-		return reply.code(409).send({
-			error: "AppointmentWithoutPatient",
-			reason: "appointment_without_patient",
-			message: visitOpenPatientMissingMessage,
-		});
-	}
-	if (
-		message === "Запись отменена" ||
-		message === "Пациент не явился на прием"
-	) {
-		return reply.code(409).send({
-			error: "AppointmentClosed",
-			reason: "appointment_closed",
-			message: visitOpenAppointmentClosedMessage,
-		});
-	}
-	return reply.code(409).send({
-		error: "VisitOpenRejected",
-		reason: "visit_open_rejected",
-		message: visitOpenFailedMessage,
 	});
 }

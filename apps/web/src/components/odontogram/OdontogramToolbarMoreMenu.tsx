@@ -133,19 +133,19 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 							Клинические модули
 						</div>
 						<div className="flex flex-col gap-1">
-							{/* Hotpath 043/u: Sync with visit diary */}
+							{/* Hotpath: Sync with visit diary */}
 							{onSyncAllToDiary && (
 								<button
 									type="button"
 									onClick={() => { onSyncAllToDiary(); setIsMoreMenuOpen(false); }}
-									className="min-h-[44px] sm:min-h-[38px] flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20"
-									title="Перенести клинический статус зубной формулы в дневник приёма (Форма 043/у)"
+									className="min-h-[44px] sm:min-h-[38px] flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-800/60 border-[var(--line,#e2e8f0)] dark:border-zinc-700/60 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-zinc-800 hover:border-teal-500/40"
+									title="Перенести клинический статус зубной формулы в дневник приёма"
 									aria-label="В дневник приёма"
 									data-testid="btn-hotpath-sync-all-to-diary"
 								>
-									<FileText size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+									<FileText size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 									<div className="flex flex-col min-w-0">
-										<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">В дневник приёма (043/у)</span>
+										<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">В дневник приёма</span>
 										<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">Синхронизация формулы с дневником</span>
 									</div>
 								</button>
@@ -159,18 +159,20 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 									setIsMoreMenuOpen(false);
 								}}
 								className={`min-h-[44px] sm:min-h-[38px] flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left ${
-									isVoiceListening ? "bg-rose-500/20 border-rose-500/50" : "bg-purple-500/10 border-purple-500/30 hover:bg-purple-500/20"
+									isVoiceListening
+										? "bg-rose-500/15 border-rose-500/40 text-rose-700 dark:text-rose-300"
+										: "bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-800/60 border-[var(--line,#e2e8f0)] dark:border-zinc-700/60 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-zinc-800 hover:border-teal-500/40"
 								}`}
 								title={isVoiceListening ? "Остановить голосовую диктовку" : "Голосовая диктовка зубной формулы"}
 								aria-pressed={isVoiceListening}
 								data-testid="odontogram-voice-dictation-btn"
 							>
-								<Mic size={16} className={isVoiceListening ? "text-rose-600 dark:text-rose-400" : "text-purple-600 dark:text-purple-400"} />
+								<Mic size={16} className={isVoiceListening ? "text-rose-600 dark:text-rose-400 shrink-0" : "text-teal-600 dark:text-teal-400 shrink-0"} />
 								<div className="flex flex-col min-w-0">
 									<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">
 										{isVoiceListening ? "Остановить диктовку" : "Голосовая диктовка"}
 									</span>
-									<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">Ввод патологий голосом (speech-to-text)</span>
+									<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">Ввод патологий голосом</span>
 								</div>
 							</button>
 
@@ -182,11 +184,11 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 										onOneClickLabOrder(selectedTeeth && selectedTeeth.length > 0 ? selectedTeeth : []);
 										setIsMoreMenuOpen(false);
 									}}
-									className="min-h-[44px] sm:min-h-[38px] flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20"
+									className="min-h-[44px] sm:min-h-[38px] flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-800/60 border-[var(--line,#e2e8f0)] dark:border-zinc-700/60 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-zinc-800 hover:border-teal-500/40"
 									title="Оформить наряд в зуботехническую лабораторию"
 									data-testid="selected-teeth-lab-order-btn"
 								>
-									<FlaskConical size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+									<FlaskConical size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 									<div className="flex flex-col min-w-0">
 										<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">
 											Наряд в ЗТЛ {selectedTeeth && selectedTeeth.length > 0 ? `(${selectedTeeth.length})` : ""}
@@ -202,12 +204,14 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 									type="button"
 									onClick={() => { setIsSmartOpgOpen(true); setIsMoreMenuOpen(false); }}
 									className={`min-h-[44px] sm:min-h-[38px] flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left ${
-										isSmartOpgOpen ? "bg-sky-500/20 border-sky-500/50 shadow-xs" : "bg-sky-500/10 border-sky-500/30 hover:bg-sky-500/20"
+										isSmartOpgOpen
+											? "bg-teal-500/15 border-teal-500/40 shadow-xs"
+											: "bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-800/60 border-[var(--line,#e2e8f0)] dark:border-zinc-700/60 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-zinc-800 hover:border-teal-500/40"
 									}`}
-									title="Умный анализ ОПТГ: топологическая разметка всех 32 зубов, детекция ретенции, очагов периодонтита и автозаполнение Формы 043/у"
+									title="Умный анализ ОПТГ: топологическая разметка всех 32 зубов, детекция ретенции, очагов периодонтита"
 									data-testid="btn-open-smart-opg"
 								>
-									<Sparkles size={16} className="text-sky-600 dark:text-sky-400 shrink-0" />
+									<Sparkles size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 									<div className="flex flex-col min-w-0">
 										<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">Панорама ОПТГ AI</span>
 										<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">ИИ-разметка 32 зубов, детекция патологий</span>
@@ -219,11 +223,11 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 							<button
 								type="button"
 								onClick={() => { setIsMoreMenuOpen(false); window.print(); }}
-								className="min-h-[44px] sm:min-h-[38px] flex items-center gap-2.5 px-2.5 py-1.5 bg-zinc-500/10 border border-zinc-500/20 hover:bg-zinc-500/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none text-left"
+								className="min-h-[44px] sm:min-h-[38px] flex items-center gap-2.5 px-2.5 py-1.5 bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-800/60 border border-[var(--line,#e2e8f0)] dark:border-zinc-700/60 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-zinc-800 hover:border-teal-500/40 rounded-lg transition-colors shrink-0 cursor-pointer select-none text-left"
 								title="Распечатать графическую одонтограмму со всеми патологиями на лист A4 для вклейки в амбулаторную карту"
 								data-testid="print-odontogram-a4-btn"
 							>
-								<Printer size={16} className="text-zinc-600 dark:text-zinc-400 shrink-0" />
+								<Printer size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 								<div className="flex flex-col min-w-0">
 									<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">Печать зубной формулы (А4)</span>
 									<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">Схема для амбулаторной карты</span>
@@ -234,36 +238,36 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 							<button
 								type="button"
 								onClick={() => { setIsPlanWizardOpen(true); setIsMoreMenuOpen(false); }}
-								className="min-h-[44px] sm:min-h-[38px] px-2.5 py-1.5 rounded-lg transition-all cursor-pointer select-none text-left flex items-center gap-2.5 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30"
+								className="min-h-[44px] sm:min-h-[38px] px-2.5 py-1.5 rounded-lg transition-all cursor-pointer select-none text-left flex items-center gap-2.5 bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-800/60 border border-[var(--line,#e2e8f0)] dark:border-zinc-700/60 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-zinc-800 hover:border-teal-500/40"
 								title="Сформировать черновой план лечения по МКБ-10 и каталогу услуг на основе всех патологий"
 								aria-label="План лечения из патологий"
 								data-testid="more-menu-plan-from-pathologies"
 							>
-								<FileText size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+								<FileText size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 								<div className="flex flex-col min-w-0">
 									<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">План лечения из патологий</span>
 									<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">Автогенерация сметы по МКБ-10</span>
 								</div>
 							</button>
 
-							{/* Interactive Treatment Estimator (SSOT 804n) */}
+							{/* Interactive Treatment Estimator */}
 							{onToggleEstimator && (
 								<button
 									type="button"
 									onClick={() => { onToggleEstimator(); setIsMoreMenuOpen(false); }}
 									className={`min-h-[44px] sm:min-h-[38px] flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left ${
 										isEstimatorOpen
-											? "bg-indigo-500/20 border-indigo-500/50 shadow-xs"
-											: "bg-indigo-500/10 border-indigo-500/30 hover:bg-indigo-500/20"
+											? "bg-teal-500/15 border-teal-500/40 shadow-xs"
+											: "bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-800/60 border-[var(--line,#e2e8f0)] dark:border-zinc-700/60 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-zinc-800 hover:border-teal-500/40"
 									}`}
-									title="Смета и калькулятор комплексного плана лечения по клиническим этапам и номенклатуре 804н"
+									title="Смета и калькулятор комплексного плана лечения по клиническим этапам"
 									aria-label="Смета плана лечения"
 									data-testid="btn-toggle-treatment-estimator"
 								>
-									<Calculator size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+									<Calculator size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 									<div className="flex flex-col min-w-0">
 										<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">
-											Смета плана лечения (804н)
+											Смета плана лечения
 										</span>
 										<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">
 											Калькулятор этапов с копеечной точностью
@@ -296,12 +300,14 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 								type="button"
 								onClick={() => { setIsOrthoCephOpen((prev) => !prev); setIsMoreMenuOpen(false); }}
 								className={`min-h-[44px] sm:min-h-[38px] flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left ${
-									isOrthoCephOpen ? "bg-purple-500/20 border-purple-500/50 shadow-xs" : "bg-purple-500/10 border-purple-500/30 hover:bg-purple-500/20"
+									isOrthoCephOpen
+										? "bg-teal-500/15 border-teal-500/40 shadow-xs"
+										: "bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-800/60 border-[var(--line,#e2e8f0)] dark:border-zinc-700/60 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-zinc-800 hover:border-teal-500/40"
 								}`}
 								title="Цефалометрия ТРГ: анализ Штайнера, Твида, Wits-число и углы SNA/SNB/ANB"
 								data-testid="btn-open-ortho-ceph"
 							>
-								<Sparkles size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />
+								<Sparkles size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 								<div className="flex flex-col min-w-0">
 									<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">Цефалометрия ТРГ</span>
 									<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">Углы SNA/SNB/ANB, Wits, Штайнер и Твид</span>
@@ -316,11 +322,11 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 									setContextDrawerTooth(targetTooth);
 									setIsMoreMenuOpen(false);
 								}}
-								className="min-h-[44px] sm:min-h-[38px] px-2.5 py-1.5 rounded-lg transition-all cursor-pointer select-none text-left flex items-center gap-2.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30"
+								className="min-h-[44px] sm:min-h-[38px] px-2.5 py-1.5 rounded-lg transition-all cursor-pointer select-none text-left flex items-center gap-2.5 bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-800/60 border border-[var(--line,#e2e8f0)] dark:border-zinc-700/60 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-zinc-800 hover:border-teal-500/40"
 								title="Открыть подробную карточку зуба с поверхностями и протоколами"
 								data-testid="more-menu-tooth-card"
 							>
-								<Stethoscope size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
+								<Stethoscope size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 								<div className="flex flex-col min-w-0">
 									<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">Детальная карточка зуба</span>
 									<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">Поверхности (MODVL), каналы и протокол</span>
@@ -332,11 +338,11 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 								<button
 									type="button"
 									onClick={() => { onOpenPediatricModal(); setIsMoreMenuOpen(false); }}
-									className="min-h-[44px] sm:min-h-[38px] flex items-center gap-2.5 px-2.5 py-1.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none text-left"
+									className="min-h-[44px] sm:min-h-[38px] flex items-center gap-2.5 px-2.5 py-1.5 bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-800/60 border border-[var(--line,#e2e8f0)] dark:border-zinc-700/60 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-zinc-800 hover:border-teal-500/40 rounded-lg transition-colors shrink-0 cursor-pointer select-none text-left"
 									title="Сменный прикус: сроки прорезывания, стадии резорбции корней и Кариограмма Браттхолла"
 									data-testid="btn-more-menu-pediatric"
 								>
-									<Sparkles size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+									<Sparkles size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 									<div className="flex flex-col min-w-0">
 										<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">Сменный прикус</span>
 										<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">Сроки прорезывания и резорбция корней</span>
@@ -350,11 +356,11 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 									type="button"
 									onClick={() => { onLoadDiagnocat(); setIsMoreMenuOpen(false); }}
 									disabled={diagnocatLoading}
-									className="min-h-[44px] sm:min-h-[38px] flex items-center gap-2.5 px-2.5 py-1.5 bg-[var(--brand-500,#3b82f6)]/10 border border-[var(--brand-500,#3b82f6)]/30 hover:bg-[var(--brand-500,#3b82f6)]/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none text-left"
+									className="min-h-[44px] sm:min-h-[38px] flex items-center gap-2.5 px-2.5 py-1.5 bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-800/60 border border-[var(--line,#e2e8f0)] dark:border-zinc-700/60 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-zinc-800 hover:border-teal-500/40 rounded-lg transition-colors shrink-0 cursor-pointer select-none text-left"
 									title="Загрузить отчёт Diagnocat AI"
 									data-testid="btn-more-menu-diagnocat"
 								>
-									<Stethoscope size={16} className="text-[var(--brand-500,#3b82f6)] shrink-0" />
+									<Stethoscope size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 									<div className="flex flex-col min-w-0">
 										<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">
 											{diagnocatLoading ? "Загрузка отчёта..." : "Diagnocat AI"}

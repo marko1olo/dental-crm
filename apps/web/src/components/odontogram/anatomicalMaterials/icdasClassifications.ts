@@ -1,0 +1,86 @@
+/**
+ * DENTE Dental CRM — ICDAS II Caries Classification Data
+ * Compliant with Mandate 8b (<= 120 lines).
+ */
+
+import type { IcdasClassificationDetail, IcdasCode } from "../anatomicalGeometriesTypes";
+
+export const ICDAS_CLASSIFICATIONS: Record<IcdasCode, IcdasClassificationDetail> = {
+	0: {
+		code: 0,
+		nameRu: "ICDAS 0: Здоровая эмаль",
+		descriptionRu: "Интактная поверхность зуба без признаков кариеса.",
+		histologicalDepthRu: "Эмаль интактна",
+		visualCharacteristics: "Естественный блеск, отсутствие белых пятен и микродефектов",
+		badgeColor: "#10b981",
+		badgeBg: "rgba(16, 185, 129, 0.12)",
+		surfaceFillColor: "transparent",
+		surfaceOpacity: 0,
+	},
+	1: {
+		code: 1,
+		nameRu: "ICDAS 1: Начальные изменения эмали (сухое пятно)",
+		descriptionRu: "Первые визуальные изменения эмали, видимые только после высушивания воздухом.",
+		histologicalDepthRu: "Наружная 1/2 толщины эмали",
+		visualCharacteristics: "Очаговая деминерализация в области фиссур / ямок, меловидный оттенок",
+		badgeColor: "#facc15",
+		badgeBg: "rgba(250, 204, 21, 0.15)",
+		surfaceFillColor: "#fef08a",
+		surfaceOpacity: 0.45,
+	},
+	2: {
+		code: 2,
+		nameRu: "ICDAS 2: Отчётливые изменения эмали (влажное пятно)",
+		descriptionRu: "Отчётливое меловидное или коричневатое пятно, видимое на влажной поверхности.",
+		histologicalDepthRu: "Внутренняя 1/2 эмали до эмалево-дентинной границы",
+		visualCharacteristics: "Широкое белое/желтоватое пятно без нарушения целостности поверхности",
+		badgeColor: "#eab308",
+		badgeBg: "rgba(234, 179, 8, 0.18)",
+		surfaceFillColor: "#fde047",
+		surfaceOpacity: 0.65,
+	},
+	3: {
+		code: 3,
+		nameRu: "ICDAS 3: Микродеструкция эмали (поверхностный кариес)",
+		descriptionRu: "Локальное разрушение эмали без видимого обнажения дентина.",
+		histologicalDepthRu: "Эмалево-дентинное соединение и наружный дентин",
+		visualCharacteristics: "Микрокавитация эмали, потеря гладкости, шероховатость зондом",
+		badgeColor: "#f97316",
+		badgeBg: "rgba(249, 115, 22, 0.18)",
+		surfaceFillColor: "#f59e0b",
+		surfaceOpacity: 0.8,
+	},
+	4: {
+		code: 4,
+		nameRu: "ICDAS 4: Тёмная тень от подлежащего дентина",
+		descriptionRu: "Серая, синяя или коричневая тень деминерализованного дентина под интактной эмалью.",
+		histologicalDepthRu: "Средняя треть дентина",
+		visualCharacteristics: "Тенеобразование при боковом освещении, дентинный кариозный очаг",
+		badgeColor: "#ea580c",
+		badgeBg: "rgba(234, 88, 12, 0.2)",
+		surfaceFillColor: "#d97706",
+		surfaceOpacity: 0.88,
+	},
+	5: {
+		code: 5,
+		nameRu: "ICDAS 5: Отчётливая полость с обнажением дентина",
+		descriptionRu: "Кариозная полость с разрушением эмали и визуализируемым дентином (средний кариес).",
+		histologicalDepthRu: "Глубокая треть дентина",
+		visualCharacteristics: "Дефект твердых тканей, дно заполнено размягченным пигментированным дентином",
+		badgeColor: "#ef4444",
+		badgeBg: "rgba(239, 68, 68, 0.2)",
+		surfaceFillColor: "#dc2626",
+		surfaceOpacity: 0.92,
+	},
+	6: {
+		code: 6,
+		nameRu: "ICDAS 6: Обширная кариозная полость (глубокий кариес)",
+		descriptionRu: "Обширная полость, охватывающая более половины поверхности зуба с риском вскрытия пульпы.",
+		histologicalDepthRu: "Околопульпарный дентин / угроза пульпита",
+		visualCharacteristics: "Широкий кратерообразный дефект, нависающие края эмали, размягчение",
+		badgeColor: "#991b1b",
+		badgeBg: "rgba(153, 27, 27, 0.25)",
+		surfaceFillColor: "#7f1d1d",
+		surfaceOpacity: 0.98,
+	},
+};

@@ -178,7 +178,7 @@ describe("1. 60 FPS Vector Mesh: Parasitic Re-render Elimination & Comparators",
 	});
 
 	it("simulates a 32-tooth arch state mutation and proves strictly 1 tooth re-renders", () => {
-		const initialTeeth: ToothData[] = TOP_TEETH.concat(BOTTOM_TEETH).map((num) => ({
+		const initialTeeth: ToothData[] = [...TOP_TEETH, ...BOTTOM_TEETH].map((num) => ({
 			toothNumber: num,
 			state: "Healthy" as ToothState,
 			surfaces: [],
@@ -195,7 +195,7 @@ describe("1. 60 FPS Vector Mesh: Parasitic Re-render Elimination & Comparators",
 		let reRenderCount = 0;
 		const reRenderedTeeth: number[] = [];
 
-		for (const toothNum of TOP_TEETH.concat(BOTTOM_TEETH)) {
+		for (const toothNum of [...TOP_TEETH, ...BOTTOM_TEETH]) {
 			const prevToothData = initialTeeth.find((t) => t.toothNumber === toothNum)!;
 			const nextToothData = updatedTeeth.find((t) => t.toothNumber === toothNum)!;
 
@@ -317,13 +317,13 @@ describe("3. Fast Quadrant and Dentition Mode Formula Switchers", () => {
 	it("adult formula contains exactly 32 teeth (16 upper, 16 lower)", () => {
 		expect(TOP_TEETH.length).toBe(16);
 		expect(BOTTOM_TEETH.length).toBe(16);
-		expect(TOP_TEETH.concat(BOTTOM_TEETH).length).toBe(32);
+		expect([...TOP_TEETH, ...BOTTOM_TEETH].length).toBe(32);
 	});
 
 	it("pediatric formula contains exactly 20 primary teeth (10 upper, 10 lower)", () => {
 		expect(PEDIATRIC_TOP_TEETH.length).toBe(10);
 		expect(PEDIATRIC_BOTTOM_TEETH.length).toBe(10);
-		expect(PEDIATRIC_TOP_TEETH.concat(PEDIATRIC_BOTTOM_TEETH).length).toBe(20);
+		expect([...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH].length).toBe(20);
 		// Check FDI primary tooth notation: quadrants 5, 6, 7, 8
 		for (const tooth of PEDIATRIC_TOP_TEETH) {
 			expect(tooth >= 51 && tooth <= 65).toBe(true);
@@ -336,7 +336,7 @@ describe("3. Fast Quadrant and Dentition Mode Formula Switchers", () => {
 	it("mixed dentition formula combines permanent molars with primary teeth (24 teeth)", () => {
 		expect(MIXED_TOP_TEETH.length).toBe(12);
 		expect(MIXED_BOTTOM_TEETH.length).toBe(12);
-		expect(MIXED_TOP_TEETH.concat(MIXED_BOTTOM_TEETH).length).toBe(24);
+		expect([...MIXED_TOP_TEETH, ...MIXED_BOTTOM_TEETH].length).toBe(24);
 		// Permanent first molars (16, 26, 46, 36) included in mixed dentition
 		expect(MIXED_TOP_TEETH).toContain(16);
 		expect(MIXED_TOP_TEETH).toContain(26);

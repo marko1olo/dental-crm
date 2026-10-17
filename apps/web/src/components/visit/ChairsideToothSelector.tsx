@@ -1,29 +1,17 @@
-import { ChevronDown, ChevronUp, Layers, Target, X } from "lucide-react";
-import React from "react";
-import { type ToothState, useVisitStore } from "../../store/visitStore";
-import { FDI_LOWER_TEETH, FDI_UPPER_TEETH } from "./completedServicesPlan";
+/**
+ * ChairsideToothSelector.tsx
+ * Chairside Tooth Selector HUD with single/multi-select, quick groups and FDI grid.
+ */
 
-function getToothBadgeColor(state: ToothState | undefined): string | null {
-	switch (state) {
-		case "done":
-			return "#16a34a"; // Зеленый: вылечен / пломба
-		case "crown":
-			return "#ca8a04"; // Золотистый: коронка
-		case "treatment":
-		case "pulpitis":
-			return "#ef4444"; // Красный: лечение / пульпит
-		case "caries":
-			return "#ea580c"; // Оранжевый: кариес
-		case "watch":
-			return "#d97706"; // Янтарный: наблюдение
-		case "missing":
-			return "#64748b"; // Серый: удален
-		case "planned":
-			return "#0284c7"; // Голубой: запланирован
-		default:
-			return null;
-	}
-}
+import React, { useState, useMemo } from "react";
+import { ChevronDown, ChevronUp, Layers, Target, X } from "lucide-react";
+import { useVisitStore } from "../../store/visitStore";
+import { getToothBadgeColor } from "./chairsideToothColors.js";
+import { ChairsideToothQuickGroups } from "./ChairsideToothQuickGroups.js";
+import { ChairsideToothQuickChips } from "./ChairsideToothQuickChips.js";
+import { ChairsideToothFdiGrid } from "./ChairsideToothFdiGrid.js";
+
+export * from "./chairsideToothColors.js";
 
 export interface ChairsideToothSelectorProps {
 	selectedTooth: string | null;
@@ -33,76 +21,30 @@ export interface ChairsideToothSelectorProps {
 }
 
 export const ChairsideToothSelector: React.FC<ChairsideToothSelectorProps> = ({
-	selectedTooth,
-	onSelectTooth,
-	isToothGridOpen,
-	onToggleToothGrid,
+	selectedTooth, onSelectTooth, isToothGridOpen, onToggleToothGrid,
 }) => {
-	const toothStateByCode = useVisitStore(
-		(state) => state.visitToothStateByCode,
-	);
-	const [isMultiSelect, setIsMultiSelect] = React.useState<boolean>(() => {
-		return Boolean(selectedTooth && selectedTooth.includes(","));
-	});
+	const toothStateByCode = useVisitStore((state) => state.visitToothStateByCode);
+	const [isMultiSelect, setIsMultiSelect] = useState<boolean>(() => Boolean(selectedTooth && selectedTooth.includes(",")));
+	const selectedTeethList = useMemo(() => selectedTooth ? selectedTooth.split(",").map((t) => t.trim()).filter(Boolean) : [], [selectedTooth]);
 
-	// Парсинг выбранных зубов в массив строк
-	const selectedTeethList = React.useMemo(() => {
-		if (!selectedTooth) return [];
-		return selectedTooth
-			.split(",")
-			.map((t) => t.trim())
-			.filter(Boolean);
-	}, [selectedTooth]);
-
-	// Выбор / переключение одного зуба
 	const handleToothClick = (t: string | number) => {
 		const str = String(t);
 		if (isMultiSelect) {
-			let next: string[];
-			if (selectedTeethList.includes(str)) {
-				next = selectedTeethList.filter((x) => x !== str);
-			} else {
-				next = [...selectedTeethList, str].sort(
-					(a, b) => Number(a) - Number(b),
-				);
-			}
-			const result = next.length > 0 ? next.join(", ") : null;
-			onSelectTooth(result);
-			if (next.length === 1) {
-				const n = Number(next[0]);
-				if (n) useVisitStore.getState().setActiveToothNumber(n);
-			} else if (next.length === 0) {
-				useVisitStore.getState().setActiveToothNumber(null);
-			}
+			const next = selectedTeethList.includes(str) ? selectedTeethList.filter((x) => x !== str) : [...selectedTeethList, str].sort((a, b) => Number(a) - Number(b));
+			onSelectTooth(next.length > 0 ? next.join(", ") : null);
+			useVisitStore.getState().setActiveToothNumber(next.length === 1 ? Number(next[0]) : null);
 		} else {
-			if (selectedTooth === str) {
-				// 1-клик сброс при повторном клике на выбранный зуб
-				onSelectTooth(null);
-				useVisitStore.getState().setActiveToothNumber(null);
-			} else {
-				onSelectTooth(str);
-				const n = Number(str);
-				if (n) useVisitStore.getState().setActiveToothNumber(n);
-			}
+			const next = selectedTooth === str ? null : str;
+			onSelectTooth(next);
+			useVisitStore.getState().setActiveToothNumber(next ? Number(next) : null);
 		}
 	};
 
-	// Выбор клинической группы зубов
-	const handleSelectGroup = (teeth: readonly number[]) => {
-		const groupStr = teeth.join(", ");
-		onSelectTooth(groupStr);
-		if (teeth.length === 1 && teeth[0] !== undefined) {
-			useVisitStore.getState().setActiveToothNumber(teeth[0]);
-		}
-	};
-
-	// Полный сброс в состояние «Без зуба»
 	const handleClear = () => {
 		onSelectTooth(null);
 		useVisitStore.getState().setActiveToothNumber(null);
 	};
-
-	const firstSelectedTooth = selectedTeethList[0];
+	const firstTooth = selectedTeethList[0];
 
 	return (
 		<div className="mb-3 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80">
@@ -114,246 +56,56 @@ export const ChairsideToothSelector: React.FC<ChairsideToothSelectorProps> = ({
 					</span>
 					{selectedTeethList.length > 0 ? (
 						<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700">
-							{selectedTeethList.length === 1 &&
-							firstSelectedTooth !== undefined ? (
+							{selectedTeethList.length === 1 && firstTooth !== undefined ? (
 								<>
-									<span>Зуб {firstSelectedTooth}</span>
-									{getToothBadgeColor(toothStateByCode[firstSelectedTooth]) && (
-										<span
-											className="w-2 h-2 rounded-full shrink-0"
-											style={{
-												backgroundColor: getToothBadgeColor(
-													toothStateByCode[firstSelectedTooth],
-												)!,
-											}}
-											title={`Клинический статус: ${toothStateByCode[firstSelectedTooth]}`}
-										/>
+									<span>Зуб {firstTooth}</span>
+									{getToothBadgeColor(toothStateByCode[firstTooth]) && (
+										<span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getToothBadgeColor(toothStateByCode[firstTooth])! }} />
 									)}
 								</>
-							) : (
-								<span>
-									Зубы: {selectedTeethList.join(", ")} (
-									{selectedTeethList.length})
-								</span>
-							)}
-							<button
-								type="button"
-								onClick={handleClear}
-								className="hover:text-indigo-950 dark:hover:text-white p-0.5 rounded-full focus:outline-none cursor-pointer min-w-[20px] min-h-[20px] inline-flex items-center justify-center"
-								title="Сбросить (Без зуба)"
-								aria-label="Сбросить привязку к зубу"
-							>
+							) : <span>Зубы: {selectedTeethList.join(", ")} ({selectedTeethList.length})</span>}
+							<button type="button" onClick={handleClear} className="hover:text-indigo-950 dark:hover:text-white p-0.5 rounded-full min-w-[20px] min-h-[20px] inline-flex items-center justify-center cursor-pointer" title="Сбросить">
 								<X className="w-3.5 h-3.5" />
 							</button>
 						</span>
-					) : (
-						<span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-							Без зуба (общая услуга)
-						</span>
-					)}
+					) : <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300">Без зуба (общая услуга)</span>}
 				</div>
 
-				<div
-					className="flex items-center gap-2 flex-wrap"
-					style={{ gap: "8px" }}
-				>
+				<div className="flex items-center gap-2 flex-wrap">
 					<button
 						type="button"
 						onClick={() => setIsMultiSelect(!isMultiSelect)}
-						style={{ padding: "5px 10px", gap: "6px" }}
-						className={`dente-filter-chip text-xs min-h-[34px] py-1.5 px-3 rounded-md font-medium flex items-center gap-1.5 transition-colors cursor-pointer border ${
-							isMultiSelect
-								? "bg-teal-600 text-white border-teal-600 shadow-xs"
-								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-teal-600"
-						}`}
-						title={
-							isMultiSelect
-								? "Режим множественного выбора зубов активен"
-								: "Включить выбор нескольких зубов или группы"
-						}
+						className={`dente-filter-chip text-xs min-h-[34px] py-1.5 px-3 rounded-md font-medium flex items-center gap-1.5 transition-colors cursor-pointer border ${isMultiSelect ? "bg-teal-600 text-white border-teal-600 shadow-xs" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-teal-600"}`}
 					>
 						<Layers className="w-3.5 h-3.5" />
 						<span>{isMultiSelect ? "Группа (вкл.)" : "Выбор группы"}</span>
 					</button>
-
 					<button
 						type="button"
 						onClick={onToggleToothGrid}
-						style={{ padding: "5px 10px", gap: "5px" }}
 						className="dente-filter-chip text-xs text-[var(--ink)] hover:text-teal-600 font-medium flex items-center gap-1 min-h-[34px] py-1.5 px-3 rounded-md bg-[var(--paper)] transition-colors cursor-pointer border border-[var(--line)] hover:border-teal-600"
 					>
-						{isToothGridOpen ? (
-							<>
-								Скрыть формулу <ChevronUp className="w-3.5 h-3.5" />
-							</>
-						) : (
-							<>
-								Все 32 зуба (11–48) <ChevronDown className="w-3.5 h-3.5" />
-							</>
-						)}
+						{isToothGridOpen ? <>Скрыть формулу <ChevronUp className="w-3.5 h-3.5" /></> : <>Все 32 зуба (11–48) <ChevronDown className="w-3.5 h-3.5" /></>}
 					</button>
 				</div>
 			</div>
 
-			{/* Быстрые группы зубов при активном мульти-выборе */}
 			{isMultiSelect && (
-				<div className="mb-2.5 p-2 rounded-md bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/40 flex flex-wrap items-center gap-1.5 text-xs">
-					<span className="text-[11px] font-semibold text-indigo-900 dark:text-indigo-300 mr-1">
-						Быстрые группы:
-					</span>
-					<button
-						type="button"
-						onClick={() => handleSelectGroup([13, 12, 11, 21, 22, 23])}
-						className="min-h-[44px] px-3 py-1.5 rounded-md bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 cursor-pointer text-xs font-medium"
-					>
-						Фронт в/ч (13–23)
-					</button>
-					<button
-						type="button"
-						onClick={() => handleSelectGroup([43, 42, 41, 31, 32, 33])}
-						className="min-h-[44px] px-3 py-1.5 rounded-md bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 cursor-pointer text-xs font-medium"
-					>
-						Фронт н/ч (33–43)
-					</button>
-					<button
-						type="button"
-						onClick={() => handleSelectGroup(FDI_UPPER_TEETH)}
-						className="min-h-[44px] px-3 py-1.5 rounded-md bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 cursor-pointer text-xs font-medium"
-					>
-						Вся в/ч (18–28)
-					</button>
-					<button
-						type="button"
-						onClick={() => handleSelectGroup(FDI_LOWER_TEETH)}
-						className="min-h-[44px] px-3 py-1.5 rounded-md bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 cursor-pointer text-xs font-medium"
-					>
-						Вся н/ч (48–38)
-					</button>
-					{selectedTeethList.length > 0 && (
-						<button
-							type="button"
-							onClick={handleClear}
-							className="min-h-[44px] px-3 py-1.5 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/40 cursor-pointer text-xs font-medium ml-auto"
-						>
-							Сбросить
-						</button>
-					)}
-				</div>
+				<ChairsideToothQuickGroups
+					onSelectGroup={(teeth) => { onSelectTooth(teeth.join(", ")); if (teeth.length === 1 && teeth[0] !== undefined) useVisitStore.getState().setActiveToothNumber(teeth[0]); }}
+					onClear={handleClear}
+					hasSelectedTeeth={selectedTeethList.length > 0}
+				/>
 			)}
 
-			{/* 1-tap quick tooth chips */}
-			<div
-				className="flex flex-wrap items-center gap-1.5"
-				style={{ gap: "6px" }}
-			>
-				<button
-					type="button"
-					onClick={handleClear}
-					style={{ padding: "5px 10px" }}
-					className={`dente-filter-chip min-h-[34px] px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
-						selectedTeethList.length === 0
-							? "bg-teal-600 text-white border-teal-600 shadow-xs font-bold"
-							: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-teal-600"
-					}`}
-				>
-					Без зуба
-				</button>
-				{[11, 16, 21, 26, 31, 36, 41, 46].map((t) => {
-					const active = selectedTeethList.includes(String(t));
-					const state = toothStateByCode[String(t)];
-					const badgeColor = getToothBadgeColor(state);
-					return (
-						<button
-							key={t}
-							type="button"
-							onClick={() => handleToothClick(t)}
-							style={{ padding: "5px 10px", minWidth: "36px", gap: "4px" }}
-							className={`dente-filter-chip min-w-[36px] min-h-[34px] px-2.5 py-1 rounded-md text-xs font-mono font-semibold border transition-all cursor-pointer inline-flex items-center justify-center gap-1 ${
-								active
-									? "bg-teal-600 text-white border-teal-600 shadow-xs font-bold"
-									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-teal-600"
-							}`}
-							title={state ? `Зуб ${t} (${state})` : `Зуб ${t}`}
-						>
-							<span>{t}</span>
-							{badgeColor && (
-								<span
-									className="w-1.5 h-1.5 rounded-full shrink-0"
-									style={{ backgroundColor: badgeColor }}
-								/>
-							)}
-						</button>
-					);
-				})}
-			</div>
+			<ChairsideToothQuickChips
+				selectedTeethList={selectedTeethList}
+				toothStateByCode={toothStateByCode}
+				onClear={handleClear}
+				onToothClick={(t) => handleToothClick(t)}
+			/>
 
-			{/* Разворачиваемая зубная формула FDI */}
-			{isToothGridOpen && (
-				<div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-700/80 space-y-2">
-					<div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-						Верхняя челюсть (18–11, 21–28):
-					</div>
-					<div className="flex flex-wrap gap-1">
-						{FDI_UPPER_TEETH.map((t) => {
-							const active = selectedTeethList.includes(String(t));
-							const state = toothStateByCode[String(t)];
-							const badgeColor = getToothBadgeColor(state);
-							return (
-								<button
-									key={t}
-									type="button"
-									onClick={() => handleToothClick(t)}
-									className={`min-w-[44px] min-h-[44px] p-1 rounded text-xs font-mono font-bold border transition-all cursor-pointer inline-flex flex-col items-center justify-center gap-0.5 ${
-										active
-											? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-											: "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
-									}`}
-									title={state ? `Зуб ${t} (${state})` : `Зуб ${t}`}
-								>
-									<span>{t}</span>
-									{badgeColor && (
-										<span
-											className="w-1.5 h-1.5 rounded-full shrink-0"
-											style={{ backgroundColor: badgeColor }}
-										/>
-									)}
-								</button>
-							);
-						})}
-					</div>
-					<div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium pt-1">
-						Нижняя челюсть (48–41, 31–38):
-					</div>
-					<div className="flex flex-wrap gap-1">
-						{FDI_LOWER_TEETH.map((t) => {
-							const active = selectedTeethList.includes(String(t));
-							const state = toothStateByCode[String(t)];
-							const badgeColor = getToothBadgeColor(state);
-							return (
-								<button
-									key={t}
-									type="button"
-									onClick={() => handleToothClick(t)}
-									className={`min-w-[44px] min-h-[44px] p-1 rounded text-xs font-mono font-bold border transition-all cursor-pointer inline-flex flex-col items-center justify-center gap-0.5 ${
-										active
-											? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-											: "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
-									}`}
-									title={state ? `Зуб ${t} (${state})` : `Зуб ${t}`}
-								>
-									<span>{t}</span>
-									{badgeColor && (
-										<span
-											className="w-1.5 h-1.5 rounded-full shrink-0"
-											style={{ backgroundColor: badgeColor }}
-										/>
-									)}
-								</button>
-							);
-						})}
-					</div>
-				</div>
-			)}
+			{isToothGridOpen && <ChairsideToothFdiGrid selectedTeethList={selectedTeethList} toothStateByCode={toothStateByCode} onToothClick={(t) => handleToothClick(t)} />}
 		</div>
 	);
 };

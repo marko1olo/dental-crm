@@ -159,10 +159,10 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 		}
 		if (onQuickStateChange) {
 			const allTargets = isMixedEffective
-				? MIXED_TOP_TEETH.concat(MIXED_BOTTOM_TEETH)
+				? [...MIXED_TOP_TEETH, ...MIXED_BOTTOM_TEETH]
 				: isPediatricEffective
-				? PEDIATRIC_TOP_TEETH.concat(PEDIATRIC_BOTTOM_TEETH)
-				: TOP_TEETH.concat(BOTTOM_TEETH);
+				? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH]
+				: [...TOP_TEETH, ...BOTTOM_TEETH];
 			onQuickStateChange(allTargets, "Healthy", []);
 			void SoundFeedbackService.getInstance().playActionSuccess();
 			showToast("Вся зубная формула отмечена как санированная (интактная)", "success");
@@ -199,10 +199,10 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 	const handleMarkProHygieneDone = () => {
 		if (onQuickStateChange) {
 			const allTargets = isMixedEffective
-				? MIXED_TOP_TEETH.concat(MIXED_BOTTOM_TEETH)
+				? [...MIXED_TOP_TEETH, ...MIXED_BOTTOM_TEETH]
 				: isPediatricEffective
-				? PEDIATRIC_TOP_TEETH.concat(PEDIATRIC_BOTTOM_TEETH)
-				: TOP_TEETH.concat(BOTTOM_TEETH);
+				? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH]
+				: [...TOP_TEETH, ...BOTTOM_TEETH];
 			onQuickStateChange(allTargets, "Healthy", []);
 		}
 		const protocol = applyFastProHygieneProtocol();

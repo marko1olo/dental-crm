@@ -2,22 +2,33 @@
  * DENTE Dental CRM — Anatomical Tooth Colors & Visual Presets
  */
 
+import {
+	BOTTOM_SURFACE_KEYS,
+	BOTTOM_TEETH,
+	CANONICAL_STAMP_MATRIX,
+	MIXED_BOTTOM_TEETH,
+	MIXED_TOP_TEETH,
+	PEDIATRIC_BOTTOM_TEETH,
+	PEDIATRIC_TOP_TEETH,
+	TOP_SURFACE_KEYS,
+	TOP_TEETH,
+	splitArchAtMidline,
+} from "@dental/shared";
 import type { ToothState, ToothVisualProps } from "./ToothChart";
 import type { RestorativeMaterialKey } from "./anatomicalToothGeometries";
 
-export const TOP_TEETH = [
-	18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,
-];
-export const BOTTOM_TEETH = [
-	48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38,
-];
-export const PEDIATRIC_TOP_TEETH = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
-export const PEDIATRIC_BOTTOM_TEETH = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
-export const MIXED_TOP_TEETH = [16, 55, 54, 53, 52, 51, 61, 62, 63, 64, 65, 26];
-export const MIXED_BOTTOM_TEETH = [46, 85, 84, 83, 82, 81, 71, 72, 73, 74, 75, 36];
-
-export const TOP_SURFACE_KEYS = ["O", "V", "P", "M", "D", "C"] as const;
-export const BOTTOM_SURFACE_KEYS = ["O", "V", "L", "M", "D", "C"] as const;
+export {
+	TOP_TEETH,
+	BOTTOM_TEETH,
+	PEDIATRIC_TOP_TEETH,
+	PEDIATRIC_BOTTOM_TEETH,
+	MIXED_TOP_TEETH,
+	MIXED_BOTTOM_TEETH,
+	TOP_SURFACE_KEYS,
+	BOTTOM_SURFACE_KEYS,
+	CANONICAL_STAMP_MATRIX,
+	splitArchAtMidline,
+};
 
 export const MIN_ARCH_SCALE = 0.28;
 
@@ -48,9 +59,11 @@ export function isLowSpecFilterDisabled(): boolean {
 }
 
 export const getAnatomicalToothColors = (
-	state: ToothState,
-	material?: RestorativeMaterialKey,
+	stateOrOpts: ToothState | { state: ToothState; material?: RestorativeMaterialKey },
+	maybeMaterial?: RestorativeMaterialKey,
 ): ToothVisualProps => {
+	const state = typeof stateOrOpts === "object" && stateOrOpts !== null ? stateOrOpts.state : stateOrOpts;
+	const material = typeof stateOrOpts === "object" && stateOrOpts !== null ? stateOrOpts.material : maybeMaterial;
 	switch (state) {
 		case "Healthy":
 			return {
@@ -192,6 +205,19 @@ export const getAnatomicalToothColors = (
 				badgeBg: "rgba(16, 185, 129, 0.15)",
 				badgeText: "#065f46",
 			};
+		case "Planned_Crown":
+			return {
+				fill: "url(#zirconia-crown-gradient)",
+				crownFill: "url(#zirconia-crown-gradient)",
+				rootFill: "url(#dente-root-dentin)",
+				stroke: "#3b82f6",
+				collarFill: "url(#dente-cervical-collar)",
+				opacity: "0.85",
+				isPulsing: true,
+				badgeColor: "#3b82f6",
+				badgeBg: "rgba(59, 130, 246, 0.15)",
+				badgeText: "#1d4ed8",
+			};
 		case "Implant":
 			return {
 				fill: "url(#gold-crown-gradient)",
@@ -263,23 +289,3 @@ export const getAnatomicalToothColors = (
 	}
 };
 
-export function splitArchAtMidline(teeth: number[] | null | undefined): { left: number[]; right: number[] } {
-	if (!teeth || !Array.isArray(teeth) || typeof (teeth as any).findIndex !== "function" || teeth.length <= 1) {
-		return { left: Array.isArray(teeth) ? [...teeth] : [], right: [] };
-	}
-	let splitIndex = teeth.findIndex((num, i) => {
-		if (i === 0) return false;
-		const prev = teeth[i - 1];
-		if (!prev) return false;
-		const prevQ = Math.floor(prev / 10);
-		const currQ = Math.floor(num / 10);
-		return prevQ !== currQ;
-	});
-	if (splitIndex <= 0) {
-		splitIndex = Math.ceil(teeth.length / 2);
-	}
-	return {
-		left: teeth.slice(0, splitIndex),
-		right: teeth.slice(splitIndex),
-	};
-}

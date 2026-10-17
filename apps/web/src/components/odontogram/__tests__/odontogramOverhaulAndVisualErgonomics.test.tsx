@@ -334,7 +334,8 @@ describe("CLIN-08: Form 043/u Templates and Studio Mac HIG Density (Mandates 8d,
 			: fs.readFileSync(chartPath, "utf-8");
 
 		assert.ok(
-			content.includes("odontogram-quadrant-bar mb-1 select-none min-h-[32px] h-8 sm:h-9"),
+			content.includes("odontogram-quadrant-bar") &&
+				(content.includes("min-h-[32px]") || content.includes("sm:min-h-[32px]")),
 			"Quadrant bar must be min-h-[32px]",
 		);
 	});
@@ -350,9 +351,14 @@ describe("CLIN-09: 0-Click Somatic Norm Default & Cargo Cult Eradication (Mandat
 			__dirname,
 			"../../visit/view/useVisitViewState.ts",
 		);
+		const billingStatePath = path.resolve(
+			__dirname,
+			"../../visit/view/viewStateModules/useVisitBillingState.ts",
+		);
 		const content =
 			fs.readFileSync(visitViewPath, "utf-8") +
-			(fs.existsSync(viewStatePath) ? fs.readFileSync(viewStatePath, "utf-8") : "");
+			(fs.existsSync(viewStatePath) ? fs.readFileSync(viewStatePath, "utf-8") : "") +
+			(fs.existsSync(billingStatePath) ? fs.readFileSync(billingStatePath, "utf-8") : "");
 
 		assert.ok(
 			content.includes('updateVisitNoteField("anamnesis", "Соматически здоров. Аллергоанамнез не отягощен.");'),

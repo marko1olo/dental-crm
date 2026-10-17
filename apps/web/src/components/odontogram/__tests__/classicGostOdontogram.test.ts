@@ -60,6 +60,7 @@ describe("Classic GOST 043/u — Official Abbreviations & Clinical State Mapping
 			Pulpitis: "Пт",
 			Periodontitis: "Pt",
 			Crown: "Кр",
+			Planned_Crown: "Кп",
 			Implant: "И",
 			Planned_Implant: "Ип",
 			Missing: "0",

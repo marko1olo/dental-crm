@@ -8,6 +8,7 @@
  * Оптимизирован для слабых устройств: скомпилированные RegExp, 0 внешних тяжелых NLP библиотек.
  */
 
+import { CLINICAL_CODES_804N, CLINICAL_DEFAULT_PRICES_RUB } from "@dental/shared";
 import type { PlanPriceCatalogItem } from "../treatment-plans/planPricing";
 import type { PlanItem } from "./treatmentEstimatorCatalogMatching";
 
@@ -73,22 +74,22 @@ const RE_ISOLATION_MARKERS =
 const RE_RADIOLOGY_MARKERS =
 	/(?:радиовизиограф\w*|визиограф\w*|визиографи\w*|прицельн\w*\s+снимок\w*|рентген\w*|ортопантомограмм\w*|оптг\w*|клкт\w*|рентгенографи\w*|снимок\s+контрол\w*|рентген-контрол\w*|прицельн\w*\s+рентген\w*)/i;
 
-// Коды Приказа Минздрава РФ № 804н
+// Коды Приказа Минздрава РФ № 804н (из единого канонического SSOT @dental/shared)
 export const CODES_804N = {
-	ANESTHESIA_INFILTRATION: "B01.003.004.005",
-	ANESTHESIA_CONDUCTION: "B01.003.004.004",
-	ANESTHESIA_GENERAL: "A11.07.012",
-	ISOLATION_COFFERDAM: "A16.07.093",
-	ISOLATION_PREPARATION: "A16.07.002.001",
-	RADIOLOGY_INTRAORAL: "A06.07.003",
-	RADIOLOGY_PANORAMIC: "A06.07.004",
+	ANESTHESIA_INFILTRATION: CLINICAL_CODES_804N.ANESTHESIA_INFILTRATION,
+	ANESTHESIA_CONDUCTION: CLINICAL_CODES_804N.ANESTHESIA_CONDUCTION,
+	ANESTHESIA_GENERAL: CLINICAL_CODES_804N.ANESTHESIA_GENERAL,
+	ISOLATION_COFFERDAM: CLINICAL_CODES_804N.ISOLATION_COFFERDAM,
+	ISOLATION_PREPARATION: CLINICAL_CODES_804N.ISOLATION_PREPARATION,
+	RADIOLOGY_INTRAORAL: CLINICAL_CODES_804N.RADIOLOGY_INTRAORAL,
+	RADIOLOGY_PANORAMIC: CLINICAL_CODES_804N.RADIOLOGY_PANORAMIC,
 } as const;
 
-// Мягкие базовые цены справочника (при отсутствии каталога или позиции в прайсе клиники)
+// Мягкие базовые цены справочника (из единого канонического SSOT @dental/shared)
 export const DEFAULT_FALLBACK_PRICES_RUB = {
-	ANESTHESIA: 800,
-	ISOLATION: 600,
-	RADIOLOGY: 500,
+	ANESTHESIA: CLINICAL_DEFAULT_PRICES_RUB.ANESTHESIA,
+	ISOLATION: CLINICAL_DEFAULT_PRICES_RUB.ISOLATION,
+	RADIOLOGY: CLINICAL_DEFAULT_PRICES_RUB.RADIOLOGY,
 } as const;
 
 /**

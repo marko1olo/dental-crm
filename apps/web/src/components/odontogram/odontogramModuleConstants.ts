@@ -16,6 +16,9 @@ import {
 	generateSoapFromOdontogramStates,
 } from "../../lib/clinicalProtocols043";
 
+import { useVisitStore } from "../../store/visitStore";
+import { toVisitToothUiState } from "../visit/useVisitEmkToothSync";
+
 export function getClinicalBundleForToothState(
 	state: ToothState,
 ): ClinicalServiceBundle | null {
@@ -30,6 +33,9 @@ export function getClinicalBundleForToothState(
 			CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "surgery_extraction") ?? null
 		);
 	}
+	if (state === "Crown") {
+		return CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "crown") ?? null;
+	}
 	return null;
 }
 
@@ -42,21 +48,49 @@ export function dispatchOdontogramSoapAndBundle(params: {
 	const { targets, state, findings, patientId } = params;
 	if (findings.length === 0) return;
 	try {
-		const soap =
-			findings.length > 1
-				? generateSoapFromOdontogramStates(findings)
-				: generateSoapFromOdontogramFinding(findings[0]!);
-		window.dispatchEvent(
-			new CustomEvent("dente-apply-soap-protocol", {
-				detail: {
-					finding: findings[0],
-					soap,
-					mode: "smart_append",
-					immediate: true,
-				},
-			}),
-		);
+		// 1. Вся зубная формула санирована / интактна (Мандат 8e / 8k)
+		if (state === "Healthy" && targets.length >= 28) {
+			const sanitizedSoap = {
+				diagnosisIcd10: "Z01.2",
+				diagnosisTooth: "",
+				diagnosisIcd10Label: "Стоматологическое обследование (Здоров / Санирован)",
+				anamnesis:
+					"Жалоб на момент приёма не предъявляет (профилактический осмотр). Соматически здоров. Аллергологический статус без особенностей.",
+				statusLocalis:
+					"Прикус физиологический. Зубные ряды интактны, твердые ткани зубов без кариозных поражений. Десна бледно-розовая, плотная, карманов нет. Полость рта санирована.",
+				treatmentDescription:
+					"Проведён плановый профилактический осмотр, онкоскрининг слизистой оболочки рта. Контролируемая гигиена полости рта, даны индивидуальные рекомендации.",
+				recommendations:
+					"Индивидуальная гигиена полости рта 2 раза в день. Профилактический осмотр через 6 месяцев.",
+			};
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						finding: { toothNumber: 0, state: "Healthy" },
+						soap: sanitizedSoap,
+						mode: "clean_replace",
+						immediate: true,
+					},
+				}),
+			);
+		} else {
+			const soap =
+				findings.length > 1
+					? generateSoapFromOdontogramStates(findings)
+					: generateSoapFromOdontogramFinding(findings[0]!);
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						finding: findings[0],
+						soap,
+						mode: "smart_append",
+						immediate: true,
+					},
+				}),
+			);
+		}
 
+		// 2. Предварительная смета услуг по номенклатуре 804н
 		const bundle = getClinicalBundleForToothState(state);
 		if (bundle) {
 			targets.forEach((tNum) => {
@@ -85,6 +119,63 @@ export function dispatchOdontogramSoapAndBundle(params: {
 					}),
 				);
 			});
+		}
+
+		// 3. Синхронизация с VisitEmbeddedOdontogram и шиной событий
+		targets.forEach((tNum) => {
+			const toothFinding = findings.find((f) => f.toothNumber === tNum) || {
+				toothNumber: tNum,
+				state,
+			};
+			window.dispatchEvent(
+				new CustomEvent("dente-update-tooth-state", {
+					detail: {
+						toothNumber: tNum,
+						state,
+						surfaces: toothFinding.surfaces ? [...toothFinding.surfaces] : undefined,
+					},
+				}),
+			);
+		});
+
+		window.dispatchEvent(
+			new CustomEvent("dente-odontogram-update", {
+				detail: {
+					patientId,
+					states: targets.map((tNum) => {
+						const f = findings.find((finding) => finding.toothNumber === tNum);
+						return {
+							toothNumber: tNum,
+							state,
+							surfaces: f?.surfaces ? [...f.surfaces] : undefined,
+						};
+					}),
+				},
+			}),
+		);
+
+		// 4. Мгновенное обновление useVisitStore (Tooth records & toothStateByCode)
+		try {
+			const uiState = toVisitToothUiState(state);
+			const store = useVisitStore.getState();
+			targets.forEach((tNum) => {
+				const code = String(tNum);
+				store.setToothState(code, uiState);
+				const f = findings.find((finding) => finding.toothNumber === tNum) || {
+					toothNumber: tNum,
+					state,
+				};
+				const singleSoap = generateSoapFromOdontogramFinding(f);
+				store.setVisitToothRecord(code, {
+					toothNumber: tNum,
+					state: uiState,
+					diagnosis: singleSoap.diagnosisIcd10Label || singleSoap.diagnosisTooth,
+					diagnosisIcd10: singleSoap.diagnosisIcd10,
+					treatmentPlan: singleSoap.treatmentDescription,
+				});
+			});
+		} catch {
+			// fallback in test environment without active store
 		}
 	} catch {
 		// Safe event dispatch fallback

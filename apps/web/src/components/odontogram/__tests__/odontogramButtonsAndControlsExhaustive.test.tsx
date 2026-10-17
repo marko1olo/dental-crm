@@ -226,7 +226,7 @@ describe("3. OdontogramToolbar: Controls and Hotpath Actions", () => {
 				PEDIATRIC_Q7={[71, 72, 73, 74, 75]}
 				PEDIATRIC_Q8={[85, 84, 83, 82, 81]}
 				PEDIATRIC_FRONT={[53, 52, 51, 61, 62, 63, 83, 82, 81, 71, 72, 73]}
-				isMoreMenuOpen={false}
+				isMoreMenuOpen={true}
 				setIsMoreMenuOpen={() => {}}
 				isFastExtractMode={false}
 				setIsFastExtractMode={() => {}}
@@ -250,12 +250,11 @@ describe("3. OdontogramToolbar: Controls and Hotpath Actions", () => {
 		assert.ok(html.includes('data-testid="toolbar-dentition-pediatric"'), "Dentition Pediatric");
 		assert.ok(html.includes('data-testid="toolbar-dentition-mixed"'), "Dentition Mixed");
 
-		// Hotpath buttons
+		// Hotpath & Clinical Tools (Anti-Duplicate-Finance-Toolbar Law: zero checkout buttons in odontogram toolbar)
 		assert.ok(html.includes('data-testid="mark-intact-dentition-btn"'), "Sanitation button");
 		assert.ok(html.includes('data-testid="btn-hotpath-sync-all-to-diary"'), "Sync all to diary button");
-		assert.ok(html.includes('data-testid="btn-open-fast-checkout"'), "Fast checkout tender button");
 		assert.ok(html.includes('data-testid="odontogram-voice-dictation-btn"'), "Voice dictation button");
-		assert.ok(/38[\s\u00A0]500/.test(html), "Live gross financial badge");
+		assert.ok(!html.includes('data-testid="btn-open-fast-checkout"'), "Zero duplicate finance checkout buttons in odontogram toolbar");
 	});
 });
 

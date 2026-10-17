@@ -71,13 +71,13 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 				className="odontogram-unified-toolbar mb-0.5 select-none flex items-center justify-between gap-1.5 flex-nowrap overflow-x-auto no-scrollbar min-h-[32px] sm:min-h-[36px] sm:h-9 py-0.5"
 				data-testid="tooth-chart-express-actions"
 			>
-				{/* Desktop Quadrants on the left (hidden on mobile) */}
+				{/* Quadrants on the left with horizontal scroll & ergonomic touch targets (Apple HIG) */}
 				{!hideQuadrantSwitcher && (
-					<div className="odontogram-quadrant-bar mb-1 select-none min-h-[32px] h-8 sm:h-9 hidden sm:flex items-center gap-1 sm:gap-1.5 flex-nowrap shrink-0" data-testid="odontogram-quadrant-bar">
+					<div className="odontogram-quadrant-bar mb-1 select-none min-h-[44px] sm:min-h-[32px] h-11 sm:h-9 flex overflow-x-auto no-scrollbar items-center gap-1 sm:gap-1.5 flex-nowrap shrink-0" data-testid="odontogram-quadrant-bar">
 					<button
 						type="button"
 						onClick={() => handleSelectQuadrant("all")}
-						className={`min-h-[32px] h-8 px-2 sm:px-2.5 rounded-lg text-xs font-bold border transition-all cursor-pointer select-none shrink-0 flex items-center justify-center whitespace-nowrap ${
+						className={`min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-2.5 rounded-lg text-xs font-bold border transition-all cursor-pointer select-none shrink-0 flex items-center justify-center whitespace-nowrap ${
 							currentQuadrant === "all"
 								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black border-[var(--teal-dark,var(--teal))] shadow-xs"
 								: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:text-[var(--teal,#0d9488)] border-[var(--line-strong,#cbd5e1)] dark:border-white/20 hover:bg-[var(--paper-soft)]"
@@ -92,7 +92,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 					<button
 						type="button"
 						onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q5" : "Q1")}
-						className={`quadrant-btn min-h-[32px] h-8 px-2 rounded-lg text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
+						className={`quadrant-btn min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-2.5 sm:px-2 rounded-lg text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 							currentQuadrant === (isPediatricEffective ? "Q5" : "Q1")
 								? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-1 ring-indigo-400/40"
 								: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line-strong,#cbd5e1)] dark:border-white/20 hover:border-indigo-400 hover:bg-[var(--paper-soft)]"
@@ -107,7 +107,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 					<button
 						type="button"
 						onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q6" : "Q2")}
-						className={`quadrant-btn min-h-[32px] h-8 px-2 rounded-lg text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
+						className={`quadrant-btn min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-2.5 sm:px-2 rounded-lg text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 							currentQuadrant === (isPediatricEffective ? "Q6" : "Q2")
 								? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-1 ring-indigo-400/40"
 								: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line-strong,#cbd5e1)] dark:border-white/20 hover:border-indigo-400 hover:bg-[var(--paper-soft)]"
@@ -122,7 +122,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 					<button
 						type="button"
 						onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q8" : "Q4")}
-						className={`quadrant-btn min-h-[32px] h-8 px-2 rounded-lg text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
+						className={`quadrant-btn min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-2.5 sm:px-2 rounded-lg text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 							currentQuadrant === (isPediatricEffective ? "Q8" : "Q4")
 								? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-1 ring-indigo-400/40"
 								: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line-strong,#cbd5e1)] dark:border-white/20 hover:border-indigo-400 hover:bg-[var(--paper-soft)]"
@@ -137,7 +137,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 					<button
 						type="button"
 						onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q7" : "Q3")}
-						className={`quadrant-btn min-h-[32px] h-8 px-2 rounded-lg text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
+						className={`quadrant-btn min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-2.5 sm:px-2 rounded-lg text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 							currentQuadrant === (isPediatricEffective ? "Q7" : "Q3")
 								? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-1 ring-indigo-400/40"
 								: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line-strong,#cbd5e1)] dark:border-white/20 hover:border-indigo-400 hover:bg-[var(--paper-soft)]"

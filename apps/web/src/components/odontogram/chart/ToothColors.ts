@@ -182,6 +182,19 @@ export const getToothColors = (
 				badgeBg: "rgba(245, 158, 11, 0.15)",
 				badgeText: "#b45309",
 			};
+		case "Planned_Crown":
+			return {
+				fill: "url(#zirconia-crown-gradient)",
+				crownFill: "url(#zirconia-crown-gradient)",
+				rootFill: "url(#dente-root-dentin)",
+				stroke: "#3b82f6",
+				collarFill: "url(#dente-cervical-collar)",
+				opacity: "0.85",
+				isPulsing: true,
+				badgeColor: "#3b82f6",
+				badgeBg: "rgba(59, 130, 246, 0.15)",
+				badgeText: "#1d4ed8",
+			};
 		case "watch":
 		case "Watch":
 			return {
