@@ -41,24 +41,24 @@ export function IncomingCallActionFooter({
 			<button
 				type="button"
 				onClick={() => handleQuickBook("today_standard")}
-				className="dnt-telephony-primary-btn flex-1 min-h-[44px] px-3 py-2 rounded-xl text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
-				title={isKnownPatient ? "Создать запись на приём" : "+ Записать нового пациента"}
+				className="primary-button flex-1 min-h-[44px] px-3.5 py-2 text-xs font-bold"
+				title={isKnownPatient ? "Записать пациента на приём" : "+ Записать нового пациента"}
 				data-testid="badge-action-book"
 			>
 				<CalendarCheck size={16} className="shrink-0" />
-				<span>{isKnownPatient ? "Создать запись" : "+ Записать нового пациента"}</span>
+				<span>{isKnownPatient ? "Записать на приём" : "+ Записать нового пациента"}</span>
 			</button>
 
 			<button
 				type="button"
 				onClick={handleToggleCardDrawer}
-				className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
-				title={isKnownPatient ? "Открыть карту пациента" : "Создать нового пациента"}
-				aria-label={isKnownPatient ? "Открыть карту пациента" : "Создать нового пациента"}
+				className="secondary-button flex-1 min-h-[44px] px-3.5 py-2 text-xs font-bold"
+				title={isKnownPatient ? "Открыть карту пациента" : "Создать карту пациента"}
+				aria-label={isKnownPatient ? "Открыть карту пациента" : "Создать карту пациента"}
 				data-testid="badge-action-card"
 			>
-				<UserCheck size={16} className="text-[var(--teal)]" />
-				<span>{isKnownPatient ? "Открыть карту" : "+ Новый пациент"}</span>
+				<UserCheck size={16} className="text-[var(--teal)] shrink-0" />
+				<span>{isKnownPatient ? "Открыть карту" : "+ Создать карту"}</span>
 			</button>
 
 			{/* Menu ... (Consolidated Secondary Actions) */}
@@ -66,7 +66,7 @@ export function IncomingCallActionFooter({
 				<button
 					type="button"
 					onClick={() => setShowBadgeMoreMenu((prev) => !prev)}
-					className="min-h-[44px] min-w-[44px] rounded-xl hover:bg-[var(--paper-soft,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-all cursor-pointer border border-[var(--line,#e2e8f0)]"
+					className="icon-button min-h-[44px] min-w-[44px]"
 					title="Дополнительные действия (слоты записи, WhatsApp, SMS, перевод)"
 					aria-label="Дополнительные действия"
 					data-testid="badge-more-menu-btn"

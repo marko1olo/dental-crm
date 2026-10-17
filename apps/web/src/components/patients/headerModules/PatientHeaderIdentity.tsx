@@ -17,6 +17,7 @@ import {
 import { showToast } from "../../GlobalToast";
 import { PatientLoyaltyHeader } from "../PatientLoyaltyHeader";
 import { PatientSentimentBadge } from "../PatientSentimentBadge";
+import { initiateOutboundCall } from "../../telephony/initiateOutboundCall";
 
 export interface PatientHeaderIdentityProps {
 	// biome-ignore lint/suspicious/noExplicitAny: patient record
@@ -188,8 +189,17 @@ export const PatientHeaderIdentity: React.FC<PatientHeaderIdentityProps> = ({
 					)}
 					{phone ? (
 						<span className="inline-flex items-center gap-1 font-mono font-semibold text-[var(--ink)] shrink-0">
-							<Phone size={11} className="text-[var(--teal,#0d9488)] shrink-0" />
-							<span>{phone}</span>
+							<button
+								type="button"
+								onClick={() => initiateOutboundCall({ phone, patientId: resolvedPatient?.id, patientName: fullName })}
+								className="inline-flex items-center gap-1 text-[var(--teal,#0d9488)] hover:underline cursor-pointer group"
+								title="Позвонить пациенту (IP-телефония АТС)"
+								aria-label={`Позвонить пациенту ${phone}`}
+								data-testid="patient-header-phone-call-btn"
+							>
+								<Phone size={11} className="shrink-0 transition-transform group-hover:scale-110" />
+								<span className="font-mono text-[var(--ink)] group-hover:text-[var(--teal)] transition-colors">{phone}</span>
+							</button>
 							<button
 								type="button"
 								onClick={handleCopyPhone}

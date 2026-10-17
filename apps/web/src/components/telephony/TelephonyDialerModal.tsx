@@ -251,7 +251,7 @@ export function TelephonyDialerModal({
 									<button
 										type="button"
 										onClick={handleDialBackspace}
-										className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-[var(--muted)] hover:text-rose-500 hover:bg-[var(--paper-soft)] transition-colors inline-flex items-center justify-center cursor-pointer"
+										className="icon-button min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-[var(--muted)] hover:text-[var(--danger,#ef4444)] hover:bg-[var(--paper-soft)] transition-colors inline-flex items-center justify-center cursor-pointer"
 										aria-label="Стереть цифру"
 									>
 										<Delete size={18} />
@@ -279,7 +279,7 @@ export function TelephonyDialerModal({
 										key={k.d}
 										type="button"
 										onClick={() => handleDialDigit(k.d)}
-										className="min-h-[48px] min-w-[48px] py-2.5 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--teal-surface)] active:scale-95 border border-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)] transition-all flex flex-col items-center justify-center select-none shadow-xs cursor-pointer"
+										className="icon-button min-h-[48px] min-w-[48px] py-2.5 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--teal-surface)] active:scale-95 border border-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)] transition-all flex flex-col items-center justify-center select-none shadow-xs cursor-pointer"
 									>
 										<span className="text-base font-black leading-none">
 											{k.d}
@@ -297,7 +297,7 @@ export function TelephonyDialerModal({
 							<button
 								type="button"
 								onClick={handleStartCall}
-								className="w-full min-h-[48px] py-3 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-98 text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+								className="primary-button w-full min-h-[48px] py-3 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-98 text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 shadow-lg cursor-pointer"
 								aria-label="Совершить исходящий вызов"
 								data-testid="btn-start-outgoing-call"
 							>

@@ -54,6 +54,13 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
 	app.get("/api/sanpin/sterilization", handleGetSterilizationLogs);
 	app.post("/api/sanpin/sterilization", handleCreateSterilizationLog);
 
+	// Канонический алиас циклов автоклавирования: /api/sanpin/sterilization-cycles
+	app.get("/api/sanpin/sterilization-cycles", handleGetSterilizationLogs);
+	app.post("/api/sanpin/sterilization-cycles", handleCreateSterilizationLog);
+	app.post("/api/sanpin/sterilization-cycles/quick-norm", handleQuickNormCycle);
+	app.post("/api/sanpin/sterilization-cycles/shift-batch", handleSterilizationShiftBatch);
+	app.post("/api/sanpin/sterilization-cycles/batch", handleSterilizationShiftBatch);
+
 	// 1-клик запуск партии автоклава (134°C / 2.15 бар или 121°C / 1.15 бар)
 	app.post("/api/sanpin/sterilization/quick-norm", handleQuickNormCycle);
 
@@ -99,6 +106,8 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
 
 	// 1-клик нормы
 	app.post("/api/sterilization/quick-norm", handleQuickNormCycle);
+	app.post("/api/sanpin/sterilization/quick-norm-cycle", handleQuickNormCycle);
+	app.post("/api/registers/sterilization/quick-norm", handleQuickNormCycle);
 
 	// Сканирование и привязка к 043/у
 	app.post("/api/sterilization/scan", handleScanSterilization);
@@ -110,6 +119,7 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
 	app.get("/api/sterilization/pso-tests", handleGetPsoTests);
 	app.post("/api/sterilization/pso-tests", handleCreatePsoTest);
 	app.post("/api/sterilization/pso/quick-norm", handlePsoQuickNorm);
+	app.post("/api/sanpin/sterilization/pso-quick-norm", handlePsoQuickNorm);
 
 	// Ежедневные тесты
 	app.get("/api/sterilization/daily-tests", handleGetDailyTests);

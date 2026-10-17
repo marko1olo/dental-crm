@@ -117,7 +117,7 @@ export function CallAudioPlaybackControls({
 					aria-label={isMuted ? "Включить звук" : "Выключить звук"}
 				>
 					{isMuted ? (
-						<VolumeX size={16} className="text-rose-500" />
+						<VolumeX size={16} className="text-[var(--danger,#ef4444)]" />
 					) : (
 						<Volume2 size={16} />
 					)}

@@ -235,6 +235,9 @@ export function useFloatingCallQuickActions({
 		}
 
 		acceptCall();
+		if (useAppStore.getState().currentView !== "schedule") {
+			useAppStore.getState().setCurrentView("schedule");
+		}
 		useUiSurfaceStore.getState().openDrawer("quick_booking");
 		showToast(
 			`Создан черновик записи: ${reason} (открыта быстрая запись)`,

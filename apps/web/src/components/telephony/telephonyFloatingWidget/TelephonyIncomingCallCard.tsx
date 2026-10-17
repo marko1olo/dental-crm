@@ -88,7 +88,7 @@ export function TelephonyIncomingCallCard({
 				<button
 					type="button"
 					onClick={onSwitchToDialer}
-					className="dnt-cta-primary mx-auto"
+					className="primary-button dnt-cta-primary mx-auto"
 				>
 					<PhoneOutgoing size={14} />
 					<span>Открыть номеронабиратель</span>
@@ -267,7 +267,7 @@ export function TelephonyIncomingCallCard({
 							<button
 								type="button"
 								onClick={() => setShowNameInput(true)}
-								className="dnt-cta-secondary w-full"
+								className="secondary-button dnt-cta-secondary w-full"
 							>
 								<UserPlus size={14} />
 								<span>Зарегистрировать нового пациента</span>
@@ -288,7 +288,7 @@ export function TelephonyIncomingCallCard({
 										onQuickCreatePatient(customPatientName);
 										setShowNameInput(false);
 									}}
-									className="dnt-cta-primary"
+									className="primary-button dnt-cta-primary"
 								>
 									<Check size={13} />
 									<span>Сохранить</span>
@@ -304,7 +304,7 @@ export function TelephonyIncomingCallCard({
 				<button
 					type="button"
 					onClick={() => onQuickBook("urgent")}
-					className="dnt-cta-primary flex-1"
+					className="primary-button dnt-cta-primary flex-1"
 					data-testid="widget-action-book"
 					title={isKnownPatient ? "Записать пациента на приём в расписание" : "+ Записать нового пациента"}
 				>
@@ -315,7 +315,7 @@ export function TelephonyIncomingCallCard({
 				<button
 					type="button"
 					onClick={onOpenCard}
-					className="dnt-cta-secondary flex-1"
+					className="secondary-button dnt-cta-secondary flex-1"
 					data-testid="widget-action-open-card"
 					title="Открыть электронную медкарту пациента"
 				>
@@ -327,7 +327,7 @@ export function TelephonyIncomingCallCard({
 					<button
 						type="button"
 						onClick={onToggleWidgetMoreMenu}
-						className="dnt-btn-icon dnt-btn-more"
+						className="icon-button dnt-btn-icon dnt-btn-more"
 						data-testid="widget-more-menu-btn"
 						title="Дополнительные действия"
 						aria-label="Дополнительные действия"

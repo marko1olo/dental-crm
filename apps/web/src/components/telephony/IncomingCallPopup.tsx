@@ -20,6 +20,7 @@ import { IncomingCallPatientDrawer } from "./IncomingCallPatientDrawer";
 export * from "./IncomingCallPatientDrawer";
 export * from "./IncomingCallEmptyDrawer";
 export * from "./useIncomingCallData";
+export * from "./initiateOutboundCall";
 export * from "./incomingCallPopupModules";
 export { resolveTelephonyWsUrl } from "../../store/telephonyStore";
 

@@ -409,19 +409,123 @@ body:has([data-testid="preventive-inspection-modal"]) .dnt-telephony-patient-dra
 .dnt-dialpad-key-sub { font-size: 9px; font-weight: 600; color: var(--muted, #64748b); line-height: 1; letter-spacing: 0.05em; }
 .dnt-dialpad-call-btn { min-height: 48px; font-size: 14px; border-radius: 10px; }
 
-/* Bulletproof primary button styling for telephony actions (WCAG AAA 7:1) */
+/* ============================================================
+   Canonical DENTE Button Standards for Telephony (Mandate 8e, Apple HIG)
+   ============================================================ */
+.primary-button,
 .dnt-telephony-primary-btn {
-	background: #0d9488 !important;
-	background-color: #0d9488 !important;
-	color: #ffffff !important;
-	border: 1px solid #14b8a6 !important;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+	min-height: 36px;
+	padding: 0 16px;
+	border-radius: 10px;
+	background: var(--teal, #0d9488);
+	background-color: var(--teal, #0d9488);
+	color: #ffffff;
+	border: 1px solid var(--teal, #0d9488);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16), 0 0 12px -2px var(--teal-soft, rgba(13, 148, 136, 0.3));
+	font-size: 13px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
 }
-.dnt-telephony-primary-btn:hover {
-	background: #0f766e !important;
-	background-color: #0f766e !important;
-	color: #ffffff !important;
-	opacity: 0.95;
+
+.primary-button:hover:not(:disabled),
+.dnt-telephony-primary-btn:hover:not(:disabled) {
+	background: #0f766e;
+	background-color: #0f766e;
+	border-color: #0f766e;
+	color: #ffffff;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.primary-button:active:not(:disabled),
+.dnt-telephony-primary-btn:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+.secondary-button,
+.dnt-cta-secondary {
+	min-height: 36px;
+	padding: 0 14px;
+	border-radius: 10px;
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
+	font-size: 13px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	white-space: nowrap;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
+}
+
+.secondary-button:hover:not(:disabled),
+.dnt-cta-secondary:hover:not(:disabled) {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--line-strong, #cbd5e1);
+	color: var(--teal, #0d9488);
+}
+
+.secondary-button:active:not(:disabled),
+.dnt-cta-secondary:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+.icon-button,
+.dnt-btn-icon {
+	height: 32px;
+	width: 32px;
+	min-height: 32px;
+	min-width: 32px;
+	border-radius: 8px;
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	padding: 0;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
+}
+
+.icon-button:hover:not(:disabled),
+.dnt-btn-icon:hover:not(:disabled) {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--line-strong, #cbd5e1);
+	color: var(--teal, #0d9488);
+}
+
+.icon-button:active:not(:disabled),
+.dnt-btn-icon:active:not(:disabled) {
+	transform: scale(0.96);
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.primary-button,
+	.dnt-telephony-primary-btn,
+	.secondary-button,
+	.dnt-cta-secondary {
+		min-height: 44px;
+		height: 44px;
+		font-size: 14px;
+	}
+	.icon-button,
+	.dnt-btn-icon {
+		min-height: 44px;
+		min-width: 44px;
+	}
 }
 
 /* Bulletproof High-Contrast Play Button for CallAudioPlayer (WCAG AAA) */

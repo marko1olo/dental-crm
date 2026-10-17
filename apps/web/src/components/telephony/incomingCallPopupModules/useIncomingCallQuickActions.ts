@@ -222,6 +222,10 @@ export function useIncomingCallQuickActions({
 			}
 		}
 
+		if (useAppStore.getState().currentView !== "schedule") {
+			useAppStore.getState().setCurrentView("schedule");
+		}
+
 		useUiSurfaceStore.getState().openDrawer("quick_booking");
 		// Keep call drawer context active so administrator can see caller details while scheduling
 		showToast(

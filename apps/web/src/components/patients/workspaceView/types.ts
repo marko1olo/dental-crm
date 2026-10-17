@@ -9,6 +9,7 @@ export interface PatientWorkspaceViewProps {
 	initialTab?: WorkspaceTabKey | undefined;
 	onOpenVisit?: ((visitId: string) => void) | undefined;
 	onOpenPlan?: ((planId: string) => void) | undefined;
+	compactHeader?: boolean | undefined;
 }
 
 export interface ImagingStudyItem {

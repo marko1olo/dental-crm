@@ -3,90 +3,70 @@ import React from "react";
 import type { WorkspaceTabKey } from "./types";
 
 export interface PatientWorkspaceTabsNavProps {
-	activeTab: WorkspaceTabKey;
-	setActiveTab: (tab: WorkspaceTabKey) => void;
-	plansCount: number;
-	visitsCount: number;
-	scansCount: number;
+	readonly activeTab: WorkspaceTabKey;
+	readonly setActiveTab: (tab: WorkspaceTabKey) => void;
+	readonly plansCount: number;
+	readonly visitsCount: number;
+	readonly scansCount: number;
+}
+
+interface TabDef {
+	id: WorkspaceTabKey;
+	label: string;
+	icon: React.ComponentType<{ className?: string }>;
+	count?: number;
+	testId: string;
 }
 
 export const PatientWorkspaceTabsNav: React.FC<PatientWorkspaceTabsNavProps> = React.memo(
-	({
-		activeTab,
-		setActiveTab,
-		plansCount,
-		visitsCount,
-		scansCount,
-	}) => {
+	({ activeTab, setActiveTab, plansCount, visitsCount, scansCount }) => {
+		const tabs: TabDef[] = [
+			{ id: "timeline", label: "Обзор и анамнез", icon: Clock, testId: "patient-tab-overview" },
+			{ id: "visits", label: "Визиты и ЭМК", icon: Calendar, count: visitsCount, testId: "patient-tab-visits" },
+			{ id: "plans", label: "Планы лечения", icon: FileText, count: plansCount, testId: "tab-patient-plans" },
+			{ id: "finance", label: "Счета и оплата", icon: Wallet, testId: "patient-tab-finance" },
+			{ id: "scans", label: "Снимки и КТ", icon: Camera, count: scansCount, testId: "patient-tab-scans" },
+		];
+
 		return (
-			<div className="flex items-center gap-0.5 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)] flex-nowrap overflow-x-auto h-8 sm:h-9 max-w-full">
-				<button
-					type="button"
-					className={`min-h-[36px] sm:min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
-						activeTab === "timeline"
-							? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-xs"
-							: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
-					}`}
-					onClick={() => setActiveTab("timeline")}
-					data-testid="patient-tab-overview"
-				>
-					<Clock className="w-3 h-3 inline mr-1" />
-					Обзор и Анамнез
-				</button>
-				<button
-					type="button"
-					className={`min-h-[36px] sm:min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
-						activeTab === "visits"
-							? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-xs"
-							: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
-					}`}
-					onClick={() => setActiveTab("visits")}
-					data-testid="patient-tab-visits"
-				>
-					<Calendar className="w-3 h-3 inline mr-1" />
-					Визиты и ЭМК ({visitsCount})
-				</button>
-				<button
-					type="button"
-					className={`min-h-[36px] sm:min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
-						activeTab === "plans"
-							? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-xs"
-							: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
-					}`}
-					onClick={() => setActiveTab("plans")}
-					data-testid="tab-patient-plans"
-				>
-					<FileText className="w-3 h-3 inline mr-1" />
-					Планы лечения и Сметы ({plansCount})
-				</button>
-				<button
-					type="button"
-					className={`min-h-[36px] sm:min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
-						activeTab === "finance"
-							? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-xs"
-							: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
-					}`}
-					onClick={() => setActiveTab("finance")}
-					data-testid="patient-tab-finance"
-				>
-					<Wallet className="w-3 h-3 inline mr-1" />
-					Финансы и Семья
-				</button>
-				<button
-					type="button"
-					className={`min-h-[36px] sm:min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
-						activeTab === "scans"
-							? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-xs"
-							: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
-					}`}
-					onClick={() => setActiveTab("scans")}
-					data-testid="patient-tab-scans"
-				>
-					<Camera className="w-3 h-3 inline mr-1" />
-					Снимки и КТ ({scansCount})
-				</button>
-			</div>
+			<nav
+				className="flex items-center gap-1 p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] overflow-x-auto max-w-full scrollbar-none"
+				aria-label="Вкладки клинической карты"
+			>
+				{tabs.map((tab) => {
+					const isActive = activeTab === tab.id;
+					const Icon = tab.icon;
+					return (
+						<button
+							key={tab.id}
+							type="button"
+							onClick={() => setActiveTab(tab.id)}
+							data-testid={tab.testId}
+							className={`min-h-[34px] h-8.5 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+								isActive
+									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-xs"
+									: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+							}`}
+						>
+							<Icon className="w-3.5 h-3.5 shrink-0" />
+							<span>{tab.label}</span>
+							{typeof tab.count === "number" && (
+								<span
+									className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+										isActive
+											? "bg-white/20 text-white"
+											: "bg-[var(--line)] text-[var(--ink)]"
+									}`}
+								>
+									{tab.count}
+								</span>
+							)}
+						</button>
+					);
+				})}
+			</nav>
 		);
 	},
 );
+
 PatientWorkspaceTabsNav.displayName = "PatientWorkspaceTabsNav";

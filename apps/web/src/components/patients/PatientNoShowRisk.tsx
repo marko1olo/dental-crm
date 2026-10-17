@@ -1,63 +1,21 @@
-import {
-	AlertTriangle,
-	CalendarCheck,
-	CalendarClock,
-	CheckCircle,
-	ShieldAlert,
-} from "lucide-react";
-import type React from "react";
-import { useEffect, useState } from "react";
+import { CalendarClock } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
-import type { PanelSubject } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import { NO_SHOW_SUBJECT } from "./noShowRisk/patientNoShowTypes";
+import { PatientNoShowRiskStats } from "./noShowRisk/PatientNoShowRiskStats";
 
 export type PatientNoShowRiskProps = {
-	patientId: string | null;
+	readonly patientId: string | null;
 };
 
-/**
- * Тексты отказа расчёта. Берём общий вид отказа панелей, чтобы на одном экране
- * карточки не появилось второго языка ошибок: рядом стоят рекламации, задачи и
- * блокировка записи, и все они сообщают о непрочитанных данных одинаково.
- */
-const NO_SHOW_SUBJECT: PanelSubject = {
-	notLoadedTitle: "Риск неявки не рассчитан",
-	accusative: "оценку риска неявки",
-	emptyTitle: "Риск неявки не рассчитан",
-	emptyHint:
-		"Расчёт опирается на историю записей пациента: сколько раз приходил, сколько отменял.",
-	failureConsequence:
-		"Расчёт не выполнен, поэтому пациента нельзя считать ни надёжным, ни рискованным. Позвоните и подтвердите запись обычным порядком.",
-};
-
-export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
-	patientId,
-}) => {
+export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({ patientId }) => {
 	const [loading, setLoading] = useState(false);
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [riskData, setRiskData] = useState<any>(null);
-	// Кнопка «Рассчитать AI-риск» перезапускает тот же эффект, а не отдельную
-	// функцию: иначе ручной запрос остался бы без отмены и снова мог бы
-	// показать чужой прогноз.
 	const [reloadToken, setReloadToken] = useState(0);
-	/*
-	 * БЫЛО: отказ сервера не сохранялся нигде. Ветка `if (res.ok)` без `else` и
-	 * `catch` с одним logger.error оставляли riskData равным null, а на null
-	 * виджет рисует приглашение «Рассчитать риск» с кнопкой. Администратор жал
-	 * кнопку, видел «Считаем…», через секунду возвращался тот же экран — и так
-	 * сколько угодно раз: кнопка не делала ничего и не объясняла, почему. Ни
-	 * одного слова о том, что расчёт не выполнен, на экране не было.
-	 */
-	const [failure, setFailure] = useState<{ status: number | null } | null>(
-		null,
-	);
+	const [failure, setFailure] = useState<{ status: number | null } | null>(null);
 
-	// Прогноз запрашивается через POST, поэтому общий хук usePatientResource
-	// (он делает GET) здесь не подходит — отмена сделана вручную.
-	// БЫЛО: состояние сбрасывалось, но устаревший ответ не отбрасывался.
-	// Ответ по ранее выбранному пациенту, пришедший позже, показывал его
-	// риск неявки на карточке текущего.
 	useEffect(() => {
 		if (!patientId) {
 			setRiskData(null);
@@ -76,22 +34,17 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 			try {
 				const res = await fetch("/api/ai/predict-no-show", {
 					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						...denteAdminSecretRequestHeaders(),
-					},
+					headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 					body: JSON.stringify({ patientId }),
 					signal: controller.signal,
 				});
 				if (cancelled) return;
 				if (res.ok) {
-					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 					const data = await res.json().catch((err: any) => {
 						logger.error(err);
 						return null;
 					});
 					if (cancelled) return;
-					// Ответ 200 без разбираемого тела — тоже не расчёт.
 					if (data) setRiskData(data);
 					else setFailure({ status: res.status });
 				} else {
@@ -114,78 +67,21 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 
 	if (!patientId) return null;
 
-	const getRiskClass = (level: string) => {
-		switch (level) {
-			case "high":
-				return "text-red-600 dark:text-red-400";
-			case "medium":
-				return "text-amber-600 dark:text-amber-400";
-			case "low":
-				return "text-emerald-600 dark:text-emerald-400";
-			default:
-				return "text-slate-600 dark:text-slate-400";
-		}
-	};
-
-	/*
-	 * БЫЛО: «Высокий риск (High)», «Средний риск (Medium)», «Низкий риск (Low)» —
-	 * английское слово в скобках рядом с русским. Оно ничего не добавляет тому,
-	 * кто сидит за стойкой, и превращает подпись в надпись для разработчика.
-	 */
-	const getRiskLabel = (level: string, noShows = 0) => {
-		if (noShows === 0) {
-			return "Надёжный пациент: визиты без пропусков";
-		}
-		switch (level) {
-			case "high":
-				return "Повышенное внимание: были неявки в истории";
-			case "medium":
-				return "Умеренная дисциплина: единичные пропуски";
-			case "low":
-				return "Надёжный пациент: регулярная явка";
-			default:
-				return "История визитов формируется";
-		}
-	};
-
-	const getRiskIcon = (level: string, noShows = 0) => {
-		if (noShows === 0) {
-			return <CheckCircle size={16} className="text-emerald-500" />;
-		}
-		switch (level) {
-			case "high":
-				return <ShieldAlert size={16} className="text-red-500" />;
-			case "medium":
-				return <AlertTriangle size={16} className="text-amber-500" />;
-			case "low":
-				return <CheckCircle size={16} className="text-emerald-500" />;
-			default:
-				return <CalendarClock size={16} className="text-slate-400" />;
-		}
-	};
-
 	return (
 		<div
 			data-testid="patient-no-show-risk"
-			className="panel p-4 rounded-xl border mb-5 bg-[var(--paper)] border-[var(--line)] text-[var(--ink)]"
+			className="panel p-3.5 rounded-xl border bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] shadow-2xs"
 		>
 			<h3
-				className="panel-heading compact-heading flex items-center gap-2 mb-4 pb-2 border-b border-[var(--line)]"
+				className="panel-heading compact-heading flex items-center gap-2 mb-3 pb-2 border-b border-[var(--line)]"
 				title="Дисциплина визитов и статистика неявок пациента"
 			>
-				<CalendarClock
-					size={18}
-					className="text-emerald-600 dark:text-emerald-400"
-				/>
-				<span className="text-sm font-semibold">
-					Дисциплина посещений и статистика неявок
-				</span>
+				<CalendarClock size={16} className="text-emerald-600 dark:text-emerald-400" />
+				<span className="text-sm font-semibold">Дисциплина посещений и неявки</span>
 			</h3>
 
 			{loading ? (
-				<div className="text-xs text-[var(--muted)] py-3">
-					Анализируем журнал посещений пациента…
-				</div>
+				<div className="text-xs text-[var(--muted)] py-3">Анализируем журнал посещений пациента…</div>
 			) : failure ? (
 				<PanelLoadFailure
 					subject={NO_SHOW_SUBJECT}
@@ -193,85 +89,15 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 					onRetry={() => setReloadToken((token) => token + 1)}
 				/>
 			) : riskData ? (
-				<div>
-					{/* Фактическая статистика посещений */}
-					{riskData?.history && (
-						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-							<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
-								<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Неявки</div>
-								<div className={`text-base font-black ${riskData.history.noShows > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>
-									{riskData.history.noShows}
-								</div>
-							</div>
-							<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
-								<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Отмены</div>
-								<div className="text-base font-black text-[var(--ink)]">
-									{riskData.history.cancellations}
-								</div>
-							</div>
-							<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
-								<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Приёмов состоялось</div>
-								<div className="text-base font-black text-emerald-600 dark:text-emerald-400">
-									{riskData.history.attended}
-								</div>
-							</div>
-							<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
-								<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Посещаемость</div>
-								<div className="text-base font-black text-[var(--teal,var(--brand-primary))]">
-									{riskData.history.consideredAppointments > 0
-										? `${Math.round((riskData.history.attended / riskData.history.consideredAppointments) * 100)}%`
-										: "100%"}
-								</div>
-							</div>
-						</div>
-					)}
-
-					<div className="flex justify-between items-center mb-3 p-3 rounded-lg border bg-[var(--paper-soft)] border-[var(--line)]">
-						<div className="flex items-center gap-2">
-							{getRiskIcon(riskData?.riskLevel ?? "", riskData?.history?.noShows ?? 0)}
-							<span
-								className={`text-sm font-semibold ${getRiskClass(riskData?.riskLevel ?? "")}`}
-							>
-								{getRiskLabel(riskData?.riskLevel ?? "", riskData?.history?.noShows ?? 0)}
-							</span>
-						</div>
-						<div className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)]">
-							{riskData?.history?.noShows && riskData.history.noShows > 0
-								? `Зафиксировано неявок: ${riskData.history.noShows}`
-								: "Без зафиксированных неявок"}
-						</div>
-					</div>
-
-					{(riskData?.factors ?? []).length > 0 && (
-						<div className="mt-3">
-							<span className="text-xs font-bold text-[var(--ink)]">
-								Факторы надёжности расписания:
-							</span>
-							<ul className="mt-1 space-y-1 text-xs text-[var(--muted)] pl-4 list-disc">
-								{(riskData?.factors ?? []).map((factor: string) => (
-									<li key={factor}>{factor}</li>
-								))}
-							</ul>
-						</div>
-					)}
-
-					{riskData?.recommendedAction && (
-						<div className="mt-3 p-2.5 rounded bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 text-xs text-emerald-800 dark:text-emerald-200">
-							<strong>Рекомендуемое действие администратора:</strong>{" "}
-							{riskData.recommendedAction}
-						</div>
-					)}
-				</div>
+				<PatientNoShowRiskStats riskData={riskData} />
 			) : (
 				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 py-2">
-					<span className="text-xs text-[var(--muted)]">
-						Статистика посещаемости и история неявок по журналу приёмов
-					</span>
+					<span className="text-xs text-[var(--muted)]">Статистика посещаемости по журналу приёмов</span>
 					<button
 						type="button"
 						onClick={() => setReloadToken((token) => token + 1)}
 						disabled={loading}
-						className="px-4 py-2 min-h-[44px] sm:min-h-[32px] text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center cursor-pointer"
+						className="px-3.5 py-1.5 min-h-[34px] text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)] transition-colors shadow-2xs cursor-pointer"
 					>
 						{loading ? "Анализируем…" : "Проверить историю"}
 					</button>

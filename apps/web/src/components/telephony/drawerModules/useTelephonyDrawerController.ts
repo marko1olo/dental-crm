@@ -262,6 +262,9 @@ export function useTelephonyDrawerController(
 		if (activeCall && activeCall.status === "ringing") {
 			answerCall();
 		}
+		if (useAppStore.getState().currentView !== "schedule") {
+			useAppStore.getState().setCurrentView("schedule");
+		}
 		useUiSurfaceStore.getState().openDrawer("quick_booking");
 		showToast(
 			`Создана запись: ${callData.isKnownPatient ? callData.resolvedPatient?.fullName : callData.formattedPhone} (${reason})`,

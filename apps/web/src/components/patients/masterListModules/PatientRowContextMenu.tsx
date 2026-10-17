@@ -4,6 +4,7 @@ import { Calendar, FileText, Phone, Receipt, ShieldCheck, UserCheck } from "luci
 import { showToast } from "../../GlobalToast";
 import { useAppStore } from "../../../store/appStore";
 import { printBlankMedicalConsent, printBlankMedicalContract } from "../blankContractPrint";
+import { initiateOutboundCall } from "../../telephony/initiateOutboundCall";
 
 interface PatientRowContextMenuProps {
 	readonly patient: Patient;
@@ -103,7 +104,11 @@ export const PatientRowContextMenu: React.FC<PatientRowContextMenuProps> = ({
 				type="button"
 				className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 				role="menuitem"
-				onClick={() => { onClose(); window.location.href = `tel:${patient.phone}`; }}
+				onClick={() => {
+					onClose();
+					void initiateOutboundCall({ phone: patient.phone!, patientId: patient.id, patientName: patient.fullName });
+				}}
+				data-testid="row-call-patient-btn"
 			>
 				<Phone size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
 				<span>Позвонить ({patient.phone})</span>

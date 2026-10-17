@@ -10,9 +10,7 @@ import { CallAudioWaveformBar } from "./audioPlayerModules/CallAudioWaveformBar"
 import type { CallAudioPlayerProps } from "./audioPlayerModules/callAudioPlayerTypes";
 
 export * from "./audioPlayerModules/callAudioPlayerTypes";
-export { CallAudioPlaybackControls } from "./audioPlayerModules/CallAudioPlaybackControls";
-export { CallAudioWaveformBar } from "./audioPlayerModules/CallAudioWaveformBar";
-export { CallAudioTranscriptDrawer } from "./audioPlayerModules/CallAudioTranscriptDrawer";
+export { CallAudioPlaybackControls } from "./audioPlayerModules/CallAudioPlaybackControls"; export { CallAudioWaveformBar } from "./audioPlayerModules/CallAudioWaveformBar"; export { CallAudioTranscriptDrawer } from "./audioPlayerModules/CallAudioTranscriptDrawer";
 
 /**
  * Call Audio Recording Player (Layer 5 Facade <= 250 lines).
@@ -148,9 +146,12 @@ export function CallAudioPlayer({
 				data-testid="call-audio-player-empty"
 				className="p-3 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--glass-border,var(--line,#e2e8f0))] text-xs flex flex-col gap-2 shadow-xs"
 			>
-				<div className="flex items-center justify-center gap-2 py-3 text-[var(--muted,#64748b)]">
-					<VolumeX size={18} className="text-[var(--muted,#94a3b8)]" />
-					<span className="font-medium">Запись звонка не подключена или недоступна</span>
+				<div className="flex items-center justify-center gap-2.5 py-3 text-[var(--muted,#64748b)]">
+					<VolumeX size={18} className="text-[var(--muted,#94a3b8)] shrink-0" />
+					<div className="flex flex-col items-center text-center">
+						<span className="font-semibold text-xs text-[var(--ink,#0f172a)]">Запись обрабатывается АТС</span>
+						<span className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">Запись звонка не подключена или недоступна</span>
+					</div>
 				</div>
 				{transcriptUtterances.length > 0 && (
 					<CallAudioTranscriptDrawer

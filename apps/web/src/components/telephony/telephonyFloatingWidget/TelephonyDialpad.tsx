@@ -48,7 +48,7 @@ export function TelephonyDialpad({
 					<button
 						type="button"
 						onClick={onDialBackspace}
-						className="dnt-btn-icon"
+						className="icon-button dnt-btn-icon"
 						aria-label="Стереть цифру"
 						title="Стереть последнюю цифру"
 					>
@@ -64,7 +64,7 @@ export function TelephonyDialpad({
 						key={k.d}
 						type="button"
 						onClick={() => onDialDigit(k.d)}
-						className="dnt-dialpad-key"
+						className="icon-button dnt-dialpad-key"
 						aria-label={`Цифра ${k.d}`}
 					>
 						<span className="dnt-dialpad-key-digit">{k.d}</span>
@@ -77,7 +77,7 @@ export function TelephonyDialpad({
 			<button
 				type="button"
 				onClick={onStartOutgoingCall}
-				className="dnt-cta-primary w-full dnt-dialpad-call-btn"
+				className="primary-button dnt-cta-primary w-full dnt-dialpad-call-btn"
 				aria-label="Совершить исходящий вызов"
 				data-testid="btn-start-outgoing-call"
 			>

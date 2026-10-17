@@ -83,7 +83,7 @@ export function CallAudioWaveformBar({
 
 				{/* Current Playhead Indicator */}
 				<div
-					className="absolute top-0 bottom-0 w-[2px] bg-emerald-500 pointer-events-none transition-all shadow-[0_0_6px_rgba(52,211,153,0.8)]"
+					className="absolute top-0 bottom-0 w-[2px] bg-[var(--teal,#0d9488)] pointer-events-none transition-all shadow-[0_0_6px_var(--teal-soft,rgba(13,148,136,0.5))]"
 					style={{ left: `${progressPct}%` }}
 				/>
 			</div>

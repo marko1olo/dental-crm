@@ -1,148 +1,72 @@
 import React from "react";
-import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
-import { PatientAllergySafetyBanner } from "./PatientAllergySafetyBanner";
-import { PatientFinanceTab } from "./tabs/PatientFinanceTab";
 import {
-	DEFAULT_WORKSPACE_PAGE_SIZE,
 	PatientWorkspaceHeader,
 	PatientWorkspaceModalsWrapper,
-	PatientWorkspacePlansTab,
-	PatientWorkspaceScansTab,
 	PatientWorkspaceTabsNav,
 	PatientWorkspaceToolbar,
-	PatientWorkspaceVisitsTab,
 	usePatientWorkspaceViewLogic,
 	type PatientWorkspaceViewProps,
 } from "./workspaceView";
+import { PatientWorkspaceTabContent } from "./workspaceView/PatientWorkspaceTabContent";
 
 // Subcomponents provide data-testid="patient-tab-scans", data-testid="patient-scans-gallery", width: "200px", height: "200px" (CLS = 0)
 // Карта пациента (043/у) - амбулаторный стандарт стоматологии (Мандаты 8i, 8s)
 export type { PatientWorkspaceViewProps } from "./workspaceView/types";
 
-export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> = React.memo(
-	(props) => {
-		const { patientId, patientName, onOpenPlan } = props;
-		const logic = usePatientWorkspaceViewLogic(props);
+export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> = React.memo((props) => {
+	const { patientId, patientName, onOpenPlan, compactHeader = false } = props;
+	const logic = usePatientWorkspaceViewLogic(props);
 
-		return (
-			<div
-				data-testid="patient-workspace-view"
-				className="patient-workspace-view flex flex-col gap-2 rounded-xl bg-[var(--paper)] p-2.5 sm:p-3 text-[var(--ink)] border border-[var(--line)] shadow-xs pb-6"
-			>
-				<div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-[var(--line)] pb-3">
+	return (
+		<div
+			data-testid="patient-workspace-view"
+			className="patient-workspace-view flex flex-col gap-2 rounded-xl bg-[var(--paper)] p-2.5 sm:p-3 text-[var(--ink)] border border-[var(--line)] shadow-xs pb-6"
+		>
+			<div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-[var(--line)] pb-2.5">
+				{!compactHeader && (
 					<PatientWorkspaceHeader
 						patientId={patientId}
 						patientName={patientName ?? undefined}
 						currentPatient={logic.currentPatient}
 						patientCardNumber={logic.patientCardNumber}
 						patientBalanceRub={logic.patientBalanceRub}
-					/>
-
-					<div className="flex items-center gap-1.5 flex-wrap">
-						<PatientWorkspaceToolbar
-							patientId={patientId}
-							patientName={patientName ?? undefined}
-							dashboard={logic.dashboard}
-							onOpenPlan={onOpenPlan}
-							handleCreateNewPlanCallback={logic.handleCreateNewPlanCallback}
-							setActiveTab={logic.setActiveTab}
-							setIsCbctModalOpen={logic.setIsCbctModalOpen}
-							setIsPhotoProtocolOpen={logic.setIsPhotoProtocolOpen}
-							setIsOrthoPhotoModalOpen={logic.setIsOrthoPhotoModalOpen}
-							setIsLoyaltyModalOpen={logic.setIsLoyaltyModalOpen}
-							setIsDmsLetterOpen={logic.setIsDmsLetterOpen}
-							setIsDmsRegistryOpen={logic.setIsDmsRegistryOpen}
-						/>
-
-						<PatientWorkspaceTabsNav
-							activeTab={logic.activeTab}
-							setActiveTab={logic.setActiveTab}
-							plansCount={logic.patientPlanItems.length}
-							visitsCount={logic.patientAppointments.length}
-							scansCount={logic.patientStudies.length}
-						/>
-					</div>
-				</div>
-
-				{logic.activeTab === "timeline" && (
-					<div className="flex flex-col gap-3">
-						{logic.currentPatient && (
-							<PatientAllergySafetyBanner
-								patientId={patientId}
-								patientName={patientName ?? logic.currentPatient.fullName}
-								profile={(logic.currentPatient as any)?.clinicalSafetyProfile ?? (logic.currentPatient as any)?.safetyProfile ?? null}
-								notes={logic.currentPatient.notes}
-								hideWhenClean={false}
-							/>
-						)}
-						<PatientJourneyTimeline
-							patientId={patientId}
-							dashboard={logic.dashboard}
-						/>
-					</div>
-				)}
-
-				{logic.activeTab === "plans" && (
-					<PatientWorkspacePlansTab
-						patientPlanItems={logic.patientPlanItems}
-						patientAddendums={logic.patientAddendums}
-						plansSlice={logic.plansSlice as any}
-						pageSize={DEFAULT_WORKSPACE_PAGE_SIZE}
-						onShowMore={() => logic.setVisiblePlansLimit((p) => p + DEFAULT_WORKSPACE_PAGE_SIZE)}
-						handleCreateNewPlanCallback={logic.handleCreateNewPlanCallback}
-						handleOpenPlanCallback={logic.handleOpenPlanCallback}
+						compact={compactHeader}
 					/>
 				)}
 
-				{logic.activeTab === "visits" && (
-					<PatientWorkspaceVisitsTab
-						patientAppointments={logic.patientAppointments}
-						visitsSlice={logic.visitsSlice as any}
-						staffMap={logic.staffMap}
-						pageSize={DEFAULT_WORKSPACE_PAGE_SIZE}
-						onShowMore={() => logic.setVisibleVisitsLimit((p) => p + DEFAULT_WORKSPACE_PAGE_SIZE)}
-						handleOpenVisitCallback={logic.handleOpenVisitCallback}
+				<div className="flex items-center justify-between gap-2 flex-wrap w-full">
+					<PatientWorkspaceTabsNav
+						activeTab={logic.activeTab}
+						setActiveTab={logic.setActiveTab}
+						plansCount={logic.patientPlanItems.length}
+						visitsCount={logic.patientAppointments.length}
+						scansCount={logic.patientStudies.length}
 					/>
-				)}
 
-				{logic.activeTab === "finance" && (
-					<div className="p-1 sm:p-2" data-testid="patient-workspace-finance-tab">
-						<PatientFinanceTab
-							patient={logic.currentPatient as any}
-							onUpdateBalance={(_newBal) => {
-								if (typeof window !== "undefined") {
-									window.dispatchEvent(new CustomEvent("dente-patient-balance-changed"));
-								}
-							}}
-							onNewAppointment={logic.handleCreateNewPlanCallback}
-						/>
-					</div>
-				)}
-
-				{logic.activeTab === "scans" && (
-					<PatientWorkspaceScansTab
+					<PatientWorkspaceToolbar
 						patientId={patientId}
-						patientStudies={logic.patientStudies}
-						appLogic={logic.appLogic}
+						patientName={patientName ?? undefined}
+						dashboard={logic.dashboard}
+						onOpenPlan={onOpenPlan}
+						handleCreateNewPlanCallback={logic.handleCreateNewPlanCallback}
+						setActiveTab={logic.setActiveTab}
 						setIsCbctModalOpen={logic.setIsCbctModalOpen}
 						setIsPhotoProtocolOpen={logic.setIsPhotoProtocolOpen}
-						setSelectedScanForDicom={logic.setSelectedScanForDicom}
-						setIsDicomModalOpen={logic.setIsDicomModalOpen}
-						onOpenDirectRvg={() => logic.setIsDirectRvgOpen(true)}
-						onOpenConsultationSplit={() => logic.setIsConsultationSplitOpen(true)}
+						setIsOrthoPhotoModalOpen={logic.setIsOrthoPhotoModalOpen}
+						setIsLoyaltyModalOpen={logic.setIsLoyaltyModalOpen}
+						setIsDmsLetterOpen={logic.setIsDmsLetterOpen}
+						setIsDmsRegistryOpen={logic.setIsDmsRegistryOpen}
 					/>
-				)}
-
-				<PatientWorkspaceModalsWrapper
-					patientId={patientId}
-					patientName={patientName ?? undefined}
-					logic={logic}
-				/>
-
-				<div className="h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />
+				</div>
 			</div>
-		);
-	},
-);
+
+			<PatientWorkspaceTabContent patientId={patientId} logic={logic} />
+
+			<PatientWorkspaceModalsWrapper patientId={patientId} patientName={patientName ?? undefined} logic={logic} />
+
+			<div className="h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />
+		</div>
+	);
+});
 
 PatientWorkspaceView.displayName = "PatientWorkspaceView";

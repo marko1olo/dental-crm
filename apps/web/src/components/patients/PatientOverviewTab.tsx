@@ -1,164 +1,41 @@
-import { ClipboardList, History, Stethoscope } from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { History, Stethoscope, ClipboardList } from "lucide-react";
+import React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { usePatientStore } from "../../store/patientStore";
-import { PatientDuplicateMergeQueuesWidget } from "../crm/PatientDuplicateMergeQueuesWidget";
-import { LabOrdersPanel } from "./LabOrdersPanel";
+import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { PatientWorkspaceView } from "./PatientWorkspaceView";
-import { OrthodonticProgressWidget } from "./OrthodonticProgressWidget";
-import { PatientArchiveAndBlacklistWidget } from "./PatientArchiveAndBlacklistWidget";
-import { PatientAttachmentsPanel } from "./PatientAttachmentsPanel";
-import { PatientCommunicationConsentsPanel } from "./PatientCommunicationConsentsPanel";
-import { PatientCommunicationTimelineWidget } from "./PatientCommunicationTimelineWidget";
 import { PatientFamilyCard } from "./PatientFamilyCard";
 import { PatientNoShowRisk } from "./PatientNoShowRisk";
-import { PatientHeaderCard } from "./PatientHeaderCard";
 import { PatientWhatsappSendPanel } from "./PatientWhatsappSendPanel";
-
-import { actionFailureToast } from "../../lib/panelStateText";
-import { logger } from "../../utils/logger";
-import { showToast } from "../GlobalToast";
+import { usePatientFamilyLoader } from "./overview/usePatientFamilyLoader";
+import { PatientCommunicationTimelineWidget } from "./PatientCommunicationTimelineWidget";
+import { PatientArchiveAndBlacklistWidget } from "./PatientArchiveAndBlacklistWidget";
+import { PatientDuplicateMergeQueuesWidget } from "../crm/PatientDuplicateMergeQueuesWidget";
 
 export interface PatientOverviewTabProps {
 	readonly showHeaderCard?: boolean;
 }
 
-export function PatientOverviewTab({ showHeaderCard = true }: PatientOverviewTabProps = {}) {
+export function PatientOverviewTab(_props: PatientOverviewTabProps = {}) {
 	const appLogic = useAppLogicContext();
 	const { selectedPatientId } = usePatientStore();
 	const workspaceFlags = useWorkspaceProfile();
-	const dashboard = appLogic.dashboard;
-	const { selectedPatient } = appLogic;
+	const { selectedPatient, dashboard } = appLogic;
+	const { familyData, familyLoadFailure, loadFamily } = usePatientFamilyLoader(selectedPatientId, appLogic);
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const [familyData, setFamilyData] = useState<any>(null);
-	/*
-	 * БЫЛО: любой неудачный ответ приравнивался к «семьи нет» — `if (!res.ok)
-	 * throw`, а `catch` ставил familyData в null. Карточка семейного счёта на этот
-	 * null пишет «Пациент не состоит в семейной группе. Вы можете создать новую
-	 * семью или привязать его к существующей» и даёт кнопку «Создать семью».
-	 *
-	 * Что видел администратор: при обрыве связи, слёте смены (401/403) или сбое
-	 * сервера (500) у пациента, который в семье СОСТОИТ, экран уверенно сообщал,
-	 * что он в ней не состоит. Дальше по этому экрану создавалась вторая семья на
-	 * того же человека — и общий счёт родственников расходился на два кошелька,
-	 * а оплата с семейного баланса уходила не туда.
-	 *
-	 * 404 этот маршрут возвращает ровно в двух случаях: у пациента нет
-	 * familyGroupId либо группа не найдена (apps/api/src/routes/finance_family.ts,
-	 * GET /api/finance/family/patient/:patientId). Только он и означает «семьи
-	 * нет»; всё остальное — непрочитанный ответ, и об этом надо сказать вслух.
-	 */
-	const [familyLoadFailure, setFamilyLoadFailure] = useState<{
-		status: number | null;
-	} | null>(null);
-
-	// Ответ по прежнему пациенту не должен перетирать карточку текущего: запросы
-	// возвращаются не в том порядке, в каком уходили.
-	const selectedPatientIdRef = useRef(selectedPatientId);
-	selectedPatientIdRef.current = selectedPatientId;
-
-	/*
-	 * Одна загрузка на два вызова. БЫЛО две дословные копии этого запроса — в
-	 * эффекте и в onFamilyDataChanged; правка обработки отказа в одной из них
-	 * оставила бы вторую врать по-прежнему.
-	 */
-	const loadFamily = useCallback(() => {
-		if (!selectedPatientId) {
-			setFamilyData(null);
-			setFamilyLoadFailure(null);
-			return;
-		}
-		const requestedPatientId = selectedPatientId;
-		const headers = appLogic?.auth
-			? appLogic.auth.denteClinicalReadHeaders()
-			: {};
-		fetch(`/api/finance/family/patient/${requestedPatientId}`, { headers })
-			.then(async (res) => {
-				if (selectedPatientIdRef.current !== requestedPatientId) return;
-				if (res.ok) {
-					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-					const data = await res.json().catch((err: any) => {
-						logger.error(err);
-						showToast(
-							actionFailureToast(
-								"Ошибка чтения ответа",
-								(err as { status?: number })?.status ?? null,
-							),
-							"error",
-						);
-						return null;
-					});
-					setFamilyData(data ?? null);
-					// Ответ 200 без тела — тоже не прочитанные данные, а не «нет семьи».
-					setFamilyLoadFailure(data ? null : { status: res.status });
-					return;
-				}
-				setFamilyData(null);
-				setFamilyLoadFailure(
-					res.status === 404 ? null : { status: res.status },
-				);
-			})
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			.catch((err: any) => {
-				logger.error(err);
-				showToast(
-					actionFailureToast(
-						"Ошибка загрузки семьи",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				if (selectedPatientIdRef.current !== requestedPatientId) return;
-				setFamilyData(null);
-				setFamilyLoadFailure({ status: null });
-			});
-	}, [selectedPatientId, appLogic]);
-
-	useEffect(() => {
-		setFamilyData(null);
-		setFamilyLoadFailure(null);
-		loadFamily();
-	}, [loadFamily]);
+	if (!selectedPatientId) return null;
 
 	return (
-		<div data-testid="patient-overview-tab">
-			{/*
-				ЗДЕСЬ БЫЛА ВТОРАЯ КАРТОЧКА ПАЦИЕНТА — не похожая, а буквально та же.
-				Оба блока правили один и тот же `patientCoreDraft` и вызывали один и
-				тот же `savePatientCore`. На экране «Пациенты» получалось: два поля
-				«ФИО пациента», две даты рождения, два телефона, две кнопки
-				сохранения («Сохранить данные» и «Сохранить карточку»), два значка
-				состояния и два разных набора быстрых пометок, дописывающих в одно и
-				то же поле заметок. Текст, набранный в одном поле, тут же появлялся
-				во втором, и понять, какую из карточек заполнять, было нельзя.
+		<div data-testid="patient-overview-tab" className="flex flex-col gap-3">
+			<PatientWorkspaceView
+				patientId={selectedPatientId}
+				patientName={selectedPatient?.fullName || null}
+				dashboard={dashboard}
+				compactHeader={true}
+			/>
 
-				Оставлена одна форма — в PatientsView. Полезное из этой копии
-				перенесено туда: пропуск повторной пометки и приведение телефона к
-				формату. Уникальные части этого блока (семейный счёт, лояльность,
-				рекламации, лента приёмов, архив) сохранены ниже.
-			*/}
-			{showHeaderCard && selectedPatientId && (
-				<div className="mb-2">
-					<PatientHeaderCard patientId={selectedPatientId} />
-				</div>
-			)}
-
-			<div
-				className="patient-clinical-grid patients-my-0"
-				style={{ marginTop: "8px" }}
-			>
-				<div className="clinical-col-left" style={{ flex: 1 }}>
-					{selectedPatientId && (
-						<PatientWorkspaceView
-							patientId={selectedPatientId}
-							patientName={selectedPatient?.fullName || null}
-							dashboard={dashboard}
-						/>
-					)}
-
+			<div className="patient-clinical-grid grid grid-cols-1 lg:grid-cols-2 gap-3">
+				<div className="flex flex-col gap-3">
 					<PatientFamilyCard
 						patientId={selectedPatientId}
 						patientName={selectedPatient?.fullName || null}
@@ -167,89 +44,34 @@ export function PatientOverviewTab({ showHeaderCard = true }: PatientOverviewTab
 						onRetryLoad={loadFamily}
 						onFamilyDataChanged={loadFamily}
 					/>
+					<PatientNoShowRisk patientId={selectedPatientId} />
 				</div>
-				<div className="clinical-col-right" style={{ flex: 1 }}>
-					{selectedPatientId && (
-						<PatientNoShowRisk patientId={selectedPatientId} />
-					)}
 
-					{selectedPatientId && (
-						<PatientWhatsappSendPanel
-							patientId={selectedPatientId}
-							patientName={selectedPatient?.fullName || null}
-							patientPhone={selectedPatient?.phone || null}
-						/>
-					)}
+				<div className="flex flex-col gap-3">
+					<PatientWhatsappSendPanel
+						patientId={selectedPatientId}
+						patientName={selectedPatient?.fullName || null}
+						patientPhone={selectedPatient?.phone || null}
+					/>
 
-					{/* 1-Click Accordion: Orthodontics & Lab Orders */}
-					{selectedPatientId && (workspaceFlags.hasOrthodontics || true) && (
-						<details className="patient-secondary-accordion">
-							<summary>
-								<span className="flex items-center gap-2">
-									<Stethoscope size={16} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
-									<span>Ортодонтия и наряды ЗТЛ</span>
-								</span>
-								<span className="text-xs text-[var(--muted)] font-normal">
-									Развернуть &darr;
-								</span>
-							</summary>
-							<div className="patient-secondary-accordion__body">
-								{workspaceFlags.hasOrthodontics && (
-									<OrthodonticProgressWidget patientId={selectedPatientId} />
-								)}
-								<LabOrdersPanel patientId={selectedPatientId} />
-							</div>
-						</details>
-					)}
-
-					{/* 1-Click Accordion: Consents & Attachments */}
-					{selectedPatientId && (
-						<details className="patient-secondary-accordion">
-							<summary>
-								<span className="flex items-center gap-2">
-									<ClipboardList size={16} className="text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
-									<span>Файлы и согласия пациента</span>
-								</span>
-								<span className="text-xs text-[var(--muted)] font-normal">
-									Развернуть &darr;
-								</span>
-							</summary>
-							<div className="patient-secondary-accordion__body">
-								<PatientCommunicationConsentsPanel
-									patientId={selectedPatientId}
-								/>
-								<PatientAttachmentsPanel
-									patientId={selectedPatientId}
-									patientName={selectedPatient?.fullName || null}
-								/>
-							</div>
-						</details>
-					)}
-
-					{/* 1-Click Accordion: Timeline & CRM Archive */}
-					{selectedPatientId && (
-						<details className="patient-secondary-accordion">
-							<summary>
-								<span className="flex items-center gap-2">
-									<History size={16} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
-									<span>История коммуникаций и CRM</span>
-								</span>
-								<span className="text-xs text-[var(--muted)] font-normal">
-									Развернуть &darr;
-								</span>
-							</summary>
-							<div className="patient-secondary-accordion__body">
-								<PatientCommunicationTimelineWidget patientId={selectedPatientId} />
-								<PatientArchiveAndBlacklistWidget patientId={selectedPatientId} />
-								<PatientDuplicateMergeQueuesWidget />
-							</div>
-						</details>
-					)}
+					<details className="patient-secondary-accordion rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
+						<summary className="cursor-pointer font-bold text-xs flex items-center justify-between text-[var(--ink)]">
+							<span className="flex items-center gap-2">
+								<History size={15} className="text-[var(--teal)] shrink-0" aria-hidden="true" />
+								<span>История коммуникаций и CRM</span>
+							</span>
+							<span className="text-[11px] text-[var(--muted)] font-normal">Развернуть ▾</span>
+						</summary>
+						<div className="pt-3 flex flex-col gap-2">
+							<PatientCommunicationTimelineWidget patientId={selectedPatientId} />
+							<PatientArchiveAndBlacklistWidget patientId={selectedPatientId} />
+							<PatientDuplicateMergeQueuesWidget />
+						</div>
+					</details>
 				</div>
 			</div>
 
-			{/* FAB clearance bottom spacer */}
-			<div className="h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />
+			<div className="h-12 w-full shrink-0 pointer-events-none" aria-hidden="true" />
 		</div>
 	);
 }

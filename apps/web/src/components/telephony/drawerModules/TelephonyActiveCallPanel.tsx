@@ -131,7 +131,7 @@ export function TelephonyActiveCallPanel({
 				<button
 					type="button"
 					onClick={() => setShowQuickBooking((prev) => !prev)}
-					className="dnt-telephony-primary-btn flex-1 min-h-[44px] px-3.5 py-2 rounded-xl text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+					className="primary-button dnt-telephony-primary-btn flex-1 min-h-[44px] px-3.5 py-2 rounded-xl text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
 					title="Создать запись на приём (быстрые слоты)"
 					data-testid="drawer-action-book"
 				>
@@ -146,7 +146,7 @@ export function TelephonyActiveCallPanel({
 				<button
 					type="button"
 					onClick={handleOpenFullPatientView}
-					className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
+					className="secondary-button flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
 					title={isKnownPatient ? "Открыть карту пациента" : "Создать нового пациента"}
 					data-testid="drawer-action-open-card"
 				>
