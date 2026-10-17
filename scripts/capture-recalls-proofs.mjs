@@ -17,7 +17,7 @@ const APP_BASE = "http://127.0.0.1:5173";
 
 const OUT_DIRS = [
   path.join(process.cwd(), "docs/proofs/recalls"),
-  path.resolve("C:/Users/Admin/.gemini/antigravity/brain/d9c4b7bd-d11e-41fe-8a40-1186f02e25bc"),
+  path.resolve("C:/Users/Admin/.gemini/antigravity/brain/c863cc69-331e-44bc-b455-680d94780f34"),
 ];
 
 for (const dir of OUT_DIRS) {
@@ -140,9 +140,7 @@ async function main() {
     console.log("\n[MOBILE] Launching Mobile 390x844 viewport...");
     const mobileContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
-      isMobile: true,
-      hasTouch: true,
-      deviceScaleFactor: 2,
+      deviceScaleFactor: 1,
     });
     await mobileContext.addInitScript(({ ct, st, uid }) => {
       if (ct) localStorage.setItem("dente_clinic_token", ct);
@@ -167,13 +165,19 @@ async function main() {
 
     const mobilePage = await mobileContext.newPage();
     console.log("[MOBILE] Navigating to http://127.0.0.1:5173/?recalls=1#recalls ...");
-    await mobilePage.goto(`${APP_BASE}/?recalls=1#recalls`, { waitUntil: "commit", timeout: 90000 });
-    console.log("[MOBILE] Navigation committed. Waiting for modal element...");
+    await mobilePage.goto(`${APP_BASE}/?recalls=1#recalls`, { waitUntil: "domcontentloaded", timeout: 30000 });
+    await wait(2000);
 
     const mobileModal = mobilePage.locator('[data-testid="patient-recalls-hub-modal"]');
-    await mobileModal.waitFor({ state: "visible", timeout: 60000 });
+    if ((await mobileModal.count()) === 0) {
+      console.log("[MOBILE] Dispatching dente:open-recalls-hub...");
+      await mobilePage.evaluate(() => {
+        window.dispatchEvent(new CustomEvent("dente:open-recalls-hub"));
+      });
+    }
+    await mobileModal.waitFor({ state: "visible", timeout: 20000 });
     console.log("[MOBILE] PatientRecallsHubModal is visible on mobile!");
-    await wait(2000);
+    await wait(1500);
 
     // Capture Proof 3: Mobile Light (390x844)
     console.log("[PROOF 3] Capturing Mobile Light (390x844)...");

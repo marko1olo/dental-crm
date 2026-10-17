@@ -1,0 +1,47 @@
+/* ==========================================================================
+   Mobile Touch & Anti-Desktop-Squeeze Cards Overrides (DOMAIN: RECALLS)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+	.recall-filters-row {
+		padding: 10px 12px;
+		gap: 8px;
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.recall-search-input-wrap {
+		width: 100%;
+	}
+
+	.recall-cards-stream {
+		padding: 10px 12px;
+		gap: 8px;
+	}
+
+	.recall-patient-card {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 12px;
+		padding: 12px;
+	}
+
+	.recall-patient-card__actions {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 6px;
+		width: 100%;
+	}
+
+	.recall-patient-card__actions .recall-action-btn {
+		width: 100%;
+		min-height: 44px;
+		justify-content: center;
+	}
+
+	.recall-funnel-grid {
+		grid-template-columns: 1fr;
+		padding: 12px;
+		gap: 12px;
+	}
+}

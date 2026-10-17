@@ -1,11 +1,13 @@
 import type React from "react";
-import { Calendar, ChevronRight, Eye, MessageCircle, Phone, PhoneCall, Send } from "lucide-react";
+import { Phone } from "lucide-react";
 import {
 	RECALL_CYCLE_CATALOG,
 	formatHumanRecallBadge,
 	type PatientRecallRecord,
 	type RecallContactStatus,
 } from "./patientRecallEngine";
+import { formatVisitDate, getRecommendedProcedureTitle } from "./RecallPatientRowCardHelpers";
+import { RecallPatientRowCardActions } from "./RecallPatientRowCardActions";
 
 export interface RecallPatientRowCardProps {
 	readonly candidate: PatientRecallRecord;
@@ -19,37 +21,6 @@ export interface RecallPatientRowCardProps {
 	readonly onStatusUpdate: (candidateId: string, status: RecallContactStatus) => void;
 }
 
-function getRecommendedProcedureTitle(cycleType: string): string {
-	switch (cycleType) {
-		case "implant_monitoring":
-		case "prosthetic_check":
-			return "Контроль имплантов и ортопедии";
-		case "orthodontic_braces":
-		case "orthodontic_aligners":
-		case "orthodontic_retention":
-			return "Ортодонтический контроль и активация";
-		case "periodontal_maintenance":
-			return "Пародонтологический осмотр и гигиена";
-		case "pediatric_fluoridation":
-			return "Детский профилактический осмотр";
-		case "endodontic_check":
-			return "Рентген-контроль эндодонтии";
-		default:
-			return "Профгигиена полости рта и осмотр";
-	}
-}
-
-function formatVisitDate(dateStr?: string): string {
-	if (!dateStr) return "не указан";
-	try {
-		const d = new Date(dateStr);
-		if (Number.isNaN(d.getTime())) return dateStr;
-		return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
-	} catch {
-		return dateStr;
-	}
-}
-
 export const RecallPatientRowCard: React.FC<RecallPatientRowCardProps> = ({
 	candidate,
 	isScriptActive = false,
@@ -59,6 +30,7 @@ export const RecallPatientRowCard: React.FC<RecallPatientRowCardProps> = ({
 	onWhatsApp,
 	onTelegram,
 	onCopySms,
+	onStatusUpdate,
 }) => {
 	const cycleDef = RECALL_CYCLE_CATALOG[candidate.cycleType];
 	const badge = formatHumanRecallBadge({
@@ -124,86 +96,17 @@ export const RecallPatientRowCard: React.FC<RecallPatientRowCardProps> = ({
 				</div>
 			</div>
 
-			<div className="recall-patient-card__actions" role="group" aria-label="Действия вызова">
-				<button
-					type="button"
-					className="recall-action-btn recall-action-btn--whatsapp"
-					onClick={() => onWhatsApp(candidate)}
-					data-testid={`recall-whatsapp-btn-${candidate.id}`}
-					title="Пригласить в WhatsApp"
-					style={{ minHeight: "44px", minWidth: "44px" }}
-				>
-					<MessageCircle size={16} />
-					<span>WhatsApp</span>
-				</button>
-
-				<button
-					type="button"
-					className="recall-action-btn recall-action-btn--book"
-					onClick={() => onBook(candidate)}
-					data-testid={`recall-book-btn-${candidate.id}`}
-					title="Записать на приём"
-					style={{ minHeight: "44px", minWidth: "44px" }}
-				>
-					<Calendar size={16} />
-					<span>Записать на приём</span>
-					<ChevronRight size={14} />
-				</button>
-
-				<button
-					type="button"
-					className={`recall-action-btn recall-action-btn--script ${isScriptActive ? "active" : ""}`}
-					onClick={() => onToggleScript(candidate)}
-					data-testid={`recall-script-btn-${candidate.id}`}
-					title="Скрипт звонка"
-					style={{ minHeight: "44px", minWidth: "44px" }}
-				>
-					<PhoneCall size={16} />
-					<span>Скрипт</span>
-				</button>
-
-				{/* Тестовые и вторичные каналы для доступности и обратной совместимости */}
-				<button
-					type="button"
-					className="recall-action-btn recall-action-btn--subtle recall-secondary-channel"
-					onClick={() => onCopySms(candidate)}
-					data-testid={`recall-sms-btn-${candidate.id}`}
-					title="Скопировать СМС"
-					style={{ minHeight: "44px", minWidth: "44px" }}
-				>
-					<Send size={14} />
-					<span>СМС</span>
-				</button>
-
-				<button
-					type="button"
-					className="recall-action-btn recall-action-btn--subtle recall-secondary-channel"
-					onClick={() => onTelegram(candidate)}
-					data-testid={`recall-telegram-btn-${candidate.id}`}
-					title="Telegram"
-					style={{ minHeight: "44px", minWidth: "44px" }}
-				>
-					<Send size={14} />
-					<span>TG</span>
-				</button>
-
-				<div style={{ display: "none" }}>
-					<button
-						type="button"
-						onClick={() => onTogglePreview?.(candidate)}
-						data-testid={`recall-quick-preview-btn-${candidate.id}`}
-					>
-						Превью
-					</button>
-					<button
-						type="button"
-						onClick={() => onTogglePreview?.(candidate)}
-						data-testid={`recall-preview-btn-${candidate.id}`}
-					>
-						Шаблон
-					</button>
-				</div>
-			</div>
+			<RecallPatientRowCardActions
+				candidate={candidate}
+				isScriptActive={isScriptActive}
+				onBook={onBook}
+				onToggleScript={onToggleScript}
+				onTogglePreview={onTogglePreview}
+				onWhatsApp={onWhatsApp}
+				onTelegram={onTelegram}
+				onCopySms={onCopySms}
+				onStatusUpdate={onStatusUpdate}
+			/>
 		</article>
 	);
 };

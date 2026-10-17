@@ -1,0 +1,61 @@
+/* ==========================================================================
+   Patient Recall & Prophylaxis Modal Window & Theme Tokens (DOMAIN: RECALLS)
+   ========================================================================== */
+
+.recall-manager-modal-backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: var(--backdrop, rgba(15, 23, 42, 0.65));
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1000;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.recall-manager-container {
+	--rm-bg: var(--paper);
+	--rm-surface: var(--paper-strong);
+	--rm-surface-hover: var(--paper-soft);
+	--rm-border: var(--line);
+	--rm-border-focus: var(--teal);
+	--rm-text-main: var(--ink);
+	--rm-text-muted: var(--muted);
+	--rm-text-subtle: var(--muted);
+	--rm-primary: var(--teal);
+	--rm-primary-hover: var(--teal-dark);
+	--rm-primary-light: var(--teal-surface);
+	--rm-success: var(--ok-fg);
+	--rm-success-light: var(--ok-bg);
+	--rm-warning: var(--warn-fg);
+	--rm-warning-light: var(--warn-bg);
+	--rm-danger: var(--bad-fg);
+	--rm-danger-light: var(--bad-bg);
+	--rm-info: var(--info-fg);
+	--rm-info-light: var(--info-bg);
+	--rm-accent: var(--teal);
+	--rm-accent-light: var(--teal-surface);
+	--rm-radius-lg: 14px;
+	--rm-radius-md: 10px;
+	--rm-radius-sm: 6px;
+	--rm-shadow: var(--shadow-3);
+
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-lg);
+	box-shadow: var(--rm-shadow);
+	width: 100%;
+	max-width: 1200px;
+	max-height: 94vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
+	font-family: inherit;
+}

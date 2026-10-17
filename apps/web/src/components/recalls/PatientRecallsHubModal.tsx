@@ -7,11 +7,8 @@ import { useRecallHubState } from "./useRecallHubState";
 import { useRecallHubActions } from "./useRecallHubActions";
 import { RecallHubHeader } from "./RecallHubHeader";
 import { RecallCycleSegmentedBar } from "./RecallCycleSegmentedBar";
-import { PatientRecallsRegistryView } from "./PatientRecallsRegistryView";
-import { RecallDispensaryFunnel } from "./RecallDispensaryFunnel";
-import { PatientRecallsTaskCallsTab } from "./PatientRecallsTaskCallsTab";
+import { PatientRecallsHubTabRouter } from "./PatientRecallsHubTabRouter";
 import { RecallCallScriptDrawer } from "./RecallCallScriptDrawer";
-import { Phone, Lightbulb } from "lucide-react";
 import type { PatientRecallRecord, RecallContactStatus } from "./patientRecallEngine";
 import "./recalls.css";
 
@@ -51,58 +48,29 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 				<RecallCycleSegmentedBar selectedCycle={hub.selectedCycle} onSelectedCycleChange={hub.setSelectedCycle} />
 
 				<main className="recall-content-area">
-					{hub.activeTab === "registry" && (
-						<PatientRecallsRegistryView
-							filteredCandidates={hub.filteredCandidates}
-							activeScriptCandidateId={hub.activeScriptCandidate?.id ?? null}
-							uniqueDoctors={hub.uniqueDoctors}
-							selectedDoctorId={hub.selectedDoctorId}
-							onDoctorChange={hub.setSelectedDoctorId}
-							selectedPeriod={hub.selectedPeriod}
-							onPeriodChange={hub.setSelectedPeriod}
-							selectedStatus={hub.selectedWorkflowStatus}
-							onStatusChangeFilter={hub.setSelectedWorkflowStatus}
-							statusCounts={hub.statusCounts}
-							searchQuery={hub.searchQuery}
-							onSearchChange={hub.setSearchQuery}
-							onBook={actions.handleBook}
-							onToggleScript={(c) => hub.setActiveScriptCandidate(hub.activeScriptCandidate?.id === c.id ? null : c)}
-							onTogglePreview={(c) => hub.setActivePreviewCandidate(c)}
-							onWhatsApp={actions.handleWhatsApp}
-							onTelegram={actions.handleTelegram}
-							onCopySms={actions.handleCopySms}
-							onStatusUpdate={actions.handleStatusUpdate}
-						/>
-					)}
-
-					{hub.activeTab === "funnel" && (
-						<RecallDispensaryFunnel
-							candidates={hub.filteredCandidates}
-							activeScriptCandidateId={hub.activeScriptCandidate?.id ?? null}
-							onBook={actions.handleBook}
-							onToggleScript={(c) => hub.setActiveScriptCandidate(hub.activeScriptCandidate?.id === c.id ? null : c)}
-							onWhatsApp={actions.handleWhatsApp}
-							onTelegram={actions.handleTelegram}
-							onCopySms={actions.handleCopySms}
-							onStatusUpdate={actions.handleStatusUpdate}
-						/>
-					)}
-
-					{hub.activeTab === "task_calls" && (
-						<PatientRecallsTaskCallsTab
-							taskCallCandidates={hub.candidates.map((c) => ({ candidate: c, taskType: "preventive_inspection" as const }))}
-							searchQuery={hub.searchQuery}
-							onSearchQueryChange={hub.setSearchQuery}
-							selectedTaskCallType="all"
-							onSelectTaskCallType={() => {}}
-							activeTaskCallScriptType={null}
-							onToggleTaskCallScriptType={() => {}}
-							onWhatsApp={actions.handleWhatsApp}
-							onTelegram={actions.handleTelegram}
-							onBook={actions.handleBook}
-							onStatusUpdate={actions.handleStatusUpdate}
-						/>
-					)}
+					<PatientRecallsHubTabRouter
+						activeTab={hub.activeTab}
+						candidates={hub.candidates}
+						filteredCandidates={hub.filteredCandidates}
+						activeScriptCandidateId={hub.activeScriptCandidate?.id ?? null}
+						uniqueDoctors={hub.uniqueDoctors}
+						selectedDoctorId={hub.selectedDoctorId}
+						onDoctorChange={hub.setSelectedDoctorId}
+						selectedPeriod={hub.selectedPeriod}
+						onPeriodChange={hub.setSelectedPeriod}
+						selectedWorkflowStatus={hub.selectedWorkflowStatus}
+						onStatusChangeFilter={hub.setSelectedWorkflowStatus}
+						statusCounts={hub.statusCounts}
+						searchQuery={hub.searchQuery}
+						onSearchChange={hub.setSearchQuery}
+						onBook={actions.handleBook}
+						onToggleScript={(c) => hub.setActiveScriptCandidate(hub.activeScriptCandidate?.id === c.id ? null : c)}
+						onTogglePreview={(c) => hub.setActivePreviewCandidate(c)}
+						onWhatsApp={actions.handleWhatsApp}
+						onTelegram={actions.handleTelegram}
+						onCopySms={actions.handleCopySms}
+						onStatusUpdate={actions.handleStatusUpdate}
+					/>
 				</main>
 
 				<RecallCallScriptDrawer candidate={hub.activeScriptCandidate} onClose={() => hub.setActiveScriptCandidate(null)} onBook={actions.handleBook} onWhatsApp={actions.handleWhatsApp} />
@@ -110,11 +78,6 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 				{hub.bookingSlot && (
 					<QuickBookingDrawer isOpen={Boolean(hub.bookingSlot)} initialSlot={hub.bookingSlot} dashboard={appLogic?.dashboard} auth={appLogic?.auth} onClose={() => hub.setBookingSlot(null)} onAppointmentCreated={() => { if (hub.bookingSlot?.patientId) actions.handleStatusUpdate(hub.bookingSlot.patientId, "scheduled"); hub.setBookingSlot(null); }} />
 				)}
-
-				<span style={{ display: "none" }} aria-hidden="true">
-					<Phone size={14} />
-					<Lightbulb size={14} />
-				</span>
 			</div>
 		</div>
 	);

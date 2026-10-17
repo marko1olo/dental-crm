@@ -1,0 +1,89 @@
+/* ==========================================================================
+   Objection Script Helper Drawer (DOMAIN: RECALLS)
+   ========================================================================== */
+
+.recall-script-drawer {
+	margin: 16px 24px;
+	border: 1.5px solid var(--teal);
+	border-radius: var(--rm-radius-md);
+	background: var(--rm-surface);
+	padding: 16px;
+	box-shadow: var(--shadow-2);
+}
+
+.recall-script-drawer__header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	margin-bottom: 14px;
+	gap: 12px;
+}
+
+.recall-script-drawer__badge {
+	display: inline-block;
+	font-size: 0.6875rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--teal);
+	background: var(--rm-primary-light);
+	padding: 2px 8px;
+	border-radius: 4px;
+	margin-bottom: 4px;
+}
+
+.recall-script-drawer__name {
+	font-size: 1.0625rem;
+	font-weight: 700;
+	color: var(--rm-text-main);
+	margin: 0;
+}
+
+.recall-script-drawer__sub {
+	font-size: 0.8125rem;
+	color: var(--rm-text-muted);
+	margin: 2px 0 0;
+}
+
+.recall-script-box {
+	background: var(--rm-bg);
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-sm);
+	padding: 14px;
+	margin-bottom: 12px;
+}
+
+.recall-script-box__title {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	color: var(--teal);
+	margin-bottom: 6px;
+}
+
+.recall-script-box__text {
+	font-size: 0.9375rem;
+	font-weight: 500;
+	line-height: 1.5;
+	color: var(--rm-text-main);
+	margin: 0 0 6px;
+}
+
+.recall-script-box__goal {
+	font-size: 0.75rem;
+	color: var(--rm-text-muted);
+	margin: 0;
+	font-style: italic;
+}
+
+.recall-script-drawer__footer {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 14px;
+	padding-top: 10px;
+	border-top: 1px solid var(--rm-border);
+}

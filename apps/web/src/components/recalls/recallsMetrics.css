@@ -1,0 +1,72 @@
+/* ==========================================================================
+   Metrics Dashboard Strip (DOMAIN: RECALLS)
+   ========================================================================== */
+
+.recall-metrics-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 12px;
+	padding: 14px 24px;
+	background: var(--rm-bg);
+	border-bottom: 1px solid var(--rm-border);
+	flex-shrink: 0;
+}
+
+.recall-metric-card {
+	background: var(--rm-surface);
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-md);
+	padding: 12px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-height: 44px;
+	position: relative;
+	overflow: hidden;
+}
+
+.recall-metric-card--primary {
+	border-left: 4px solid var(--rm-primary);
+}
+
+.recall-metric-card--warning {
+	border-left: 4px solid var(--rm-warning);
+}
+
+.recall-metric-card--danger {
+	border-left: 4px solid var(--rm-danger);
+}
+
+.recall-metric-card--success {
+	border-left: 4px solid var(--rm-success);
+}
+
+.recall-metric-card--info {
+	border-left: 4px solid var(--rm-info);
+}
+
+.recall-metric-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--rm-text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.recall-metric-value-row {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+}
+
+.recall-metric-value {
+	font-size: 1.375rem;
+	font-weight: 800;
+	color: var(--rm-text-main);
+	line-height: 1;
+}
+
+.recall-metric-subtext {
+	font-size: 0.75rem;
+	color: var(--rm-text-muted);
+}

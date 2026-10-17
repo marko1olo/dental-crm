@@ -1,0 +1,128 @@
+/* ==========================================================================
+   Mobile Touch & Anti-Desktop-Squeeze Header/Presets Overrides (DOMAIN: RECALLS)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+	.recall-status-chips {
+		padding: 4px 12px 8px 12px;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		flex-wrap: nowrap !important;
+	}
+
+	.recall-status-chips::-webkit-scrollbar {
+		display: none;
+	}
+
+	.recall-chip {
+		flex-shrink: 0;
+		white-space: nowrap;
+	}
+
+	.recall-manager-modal-backdrop {
+		padding: 0 !important;
+		justify-content: flex-start !important;
+		align-items: stretch !important;
+	}
+
+	.recall-manager-container {
+		width: 100vw !important;
+		max-width: 100vw !important;
+		min-width: 0 !important;
+		height: 100vh !important;
+		max-height: 100vh !important;
+		border-radius: 0 !important;
+		border: none !important;
+		overflow-x: hidden !important;
+	}
+
+	.recall-header {
+		padding: 10px 12px;
+		gap: 8px;
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		width: 100%;
+		max-width: 100%;
+		box-sizing: border-box;
+	}
+
+	.recall-header-title-wrap {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		width: 100%;
+		min-width: 0;
+	}
+
+	.recall-header-title-wrap > div {
+		min-width: 0;
+		flex: 1;
+	}
+
+	.recall-header-icon {
+		width: 32px;
+		height: 32px;
+		flex-shrink: 0;
+	}
+
+	.recall-header-title {
+		font-size: 0.9375rem;
+		font-weight: 700;
+		line-height: 1.25;
+		margin: 0;
+		white-space: normal;
+	}
+
+	.recall-header-subtitle {
+		display: none;
+	}
+
+	.recall-header-controls {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		min-width: 0;
+	}
+
+	.recall-view-mode-tabs {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		flex-wrap: nowrap;
+	}
+
+	.recall-view-mode-tabs::-webkit-scrollbar {
+		display: none;
+	}
+
+	.recall-tab-btn {
+		flex-shrink: 0;
+		white-space: nowrap;
+		font-size: 0.8125rem;
+		padding: 6px 10px;
+	}
+
+	.recall-solo-presets {
+		padding: 8px 12px;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		flex-wrap: nowrap !important;
+	}
+
+	.recall-solo-presets::-webkit-scrollbar {
+		display: none;
+	}
+
+	.recall-preset-btn {
+		flex-shrink: 0;
+		white-space: nowrap;
+	}
+}

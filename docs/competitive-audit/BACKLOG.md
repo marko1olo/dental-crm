@@ -11003,3 +11003,46 @@
         - `03_insurance_mobile_light_390.png` (45.5 КБ, Mobile Light 390×844)
         - `04_insurance_mobile_dark_390.png` (44.8 КБ, Mobile Dark 390×844)
         - `05_insurance_guarantee_letters_pc_light.png` (115.6 КБ, PC Light 1440×900).
+
+50. **Волна 339: Профосмотры, Реколлы и Диспансеризация (Recalls & Prophylaxis) без Академического Мусора (Мандаты 8b, 8c, 8d, 8e, 8n, 8x, 8al, 8ze, Apple HIG)**:
+    - **1. Искоренение 42 академических триггеров и псевдо-нейронных неявок**:
+      * Ликвидирован раздутый каталог академических прогнозов и синтетических триггеров;
+      * Стандартизированы 4 фундаментальных клинических цикла российской стоматологической практики:
+        1. Профессиональная гигиена / AirFlow (каждые 6 месяцев);
+        2. Контрольный осмотр имплантата и абатментов (каждые 3–6 месяцев);
+        3. Ортодонтический контроль и активация дуг / ревизия элайнеров (каждые 4 недели);
+        4. Детский осмотр, герметизация фиссур и минерализация эмали (каждые 3–4 месяца).
+    - **2. Мгновенные действия прямого клика (1-Click Actions & Doctor Autonomy)**:
+      * 1-клик отправка персонализированных сообщений через WhatsApp, Telegram и СМС с юридической защитой ПДн;
+      * 1-клик запись в расписание к лечащему врачу через быстрый шлюз `QuickBookingDrawer`;
+      * Экспресс-кнопки фиксации исхода контакта: «✓ Записан на приём», «Отложить на 2 недели», «Отложить на 1 месяц», «Отказ»;
+      * Скрипты обзвона администратора с разбором клинических возражений («Ничего не болит», «Дорого», «Нет времени», «Молочные зубы сами выпадут»).
+    - **3. Тотальный распил монолитов по Мандату 8b (Строго $\le 120$ строк на файл)**:
+      * Распилены все монолитные файлы TypeScript и CSS в `apps/web/src/components/recalls/`:
+        - `patientRecallEngine.ts` (был 618 строк) -> декомпозирован на `recallCycleSuggestion.ts`, `recallProfile.ts`, `recallFilterSort.ts`, `recallActions.ts` + лаконичный фасад;
+        - `recallClinicalTriggers.ts` (был 605 строк) -> декомпозирован на `clinicalTriggerCalculators.ts`, `clinicalTriggerEvaluators.ts`, `clinicalProcedureCheckers.ts` + фасад;
+        - `recallCycleCatalog.ts` (был 467 строк) -> декомпозирован на `recallCycleTypes.ts`, `recallRecordTypes.ts`, `recallCycleCatalogProphylaxis.ts`, `recallCycleCatalogOrtho.ts`, `recallCycleCatalogData.ts`;
+        - `recallDateMath.ts` (был 358 строк) -> декомпозирован на `recallDateUtils.ts`, `recallImplantMilestones.ts`, `recallHumanBadge.ts`;
+        - `recallCohortRetention.ts` (был 305 строк) -> декомпозирован на `recallCohortTypes.ts`, `recallMetricsCalculator.ts`, `recallCohortCalculations.ts`;
+        - `recallSmsAndMessaging.ts` (был 556 строк) -> декомпозирован на `recallSmsSegments.ts`, `recallMessageFormatters.ts`, `recallChannelTemplates.ts`, `recallMessagingApi.ts`;
+        - `recallTemplates.ts` (был 309 строк) -> декомпозирован на `recallCallingScriptTypes.ts`, `recallCallingScriptsProphylaxis.ts`, `recallCallingScriptsSpecialized.ts`, `recallCallingScriptsCatalog.ts`;
+        - `RecallPatientRowCard.tsx` (был 195 строк) -> декомпозирован на `RecallPatientRowCardHelpers.ts`, `RecallPatientRowCardActions.tsx` и `RecallPatientRowCard.tsx`;
+        - `PatientRecallsRegistryView.tsx` (был 180 строк) -> декомпозирован на `PatientRecallsRegistryFilters.tsx`, `PatientRecallsRegistryStatusChips.tsx` и `PatientRecallsRegistryView.tsx`;
+        - `PatientRecallsKanbanCard.tsx` (был 145 строк) -> декомпозирован на `PatientRecallsKanbanDropdownMenu.tsx` и `PatientRecallsKanbanCard.tsx`;
+        - `PatientRecallsHubModal.tsx` (был 126 строк) -> декомпозирован на `PatientRecallsHubTabRouter.tsx` и `PatientRecallsHubModal.tsx`;
+        - `recalls.css` (был 644 строки) -> декомпозирован на `recallsContainer.css`, `recallsModal.css`, `recallsMetrics.css`, `recallsToolbar.css`, `recallsTable.css`, `recallsBadges.css`, `recallsResponsive.css`;
+        - `recallsCards.css` (был 567 строк) -> декомпозирован на `recallsCardsStream.css`, `recallsCardsFunnel.css`, `recallsCardsScripts.css`, `recallsCardsObjections.css`, `recallsCardsMobile.css`, `recallsCardsMobileHeader.css`, `recallsCardsMobileCards.css`;
+        - `recallsKanban.css` (был 310 строк) -> декомпозирован на `recallsKanbanLayout.css`, `recallsKanbanCard.css`, `recallsKanbanMobile.css`;
+      * Итоговая проверка: 0 файлов превышают 120 строк во всей директории `apps/web/src/components/recalls/`.
+    - **4. Стандартизация дизайн-токенов DENTE и Apple HIG эргономика**:
+      * Кнопки оформлены строго по стандарту: `border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors`;
+      * Touch-таргеты $\ge 44\times 44$px, 0px паразитного горизонтального скролла на мобильных устройствах;
+      * 0 нетокенизированных hex/rgb цветов во всех таблицах стилей.
+    - **5. Тесты и 4-State Red Team Visual Proof**:
+      * 88/88 тестов успешно пройдены (`patientRecallEngine.test.ts`, `clinicalRecallTriggers.test.ts`, `patientRecallAutonomy.test.tsx`, `PatientRecallManagerModal.test.ts`, `patientRecallsAutonomyInquisition.test.ts`);
+      * Сняты и верифицированы через `view_file` 4 скриншота в `docs/proofs/recalls/`:
+        - `01_recalls_pc_light_1440x900.png` (121.5 КБ, PC Light 1440×900)
+        - `02_recalls_pc_dark_1440x900.png` (126.6 КБ, PC Dark 1440×900)
+        - `03_recalls_mobile_light_390x844.png` (52.4 КБ, Mobile Light 390×844)
+        - `04_recalls_mobile_dark_390x844.png` (53.8 КБ, Mobile Dark 390×844).
+
