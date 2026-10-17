@@ -14,7 +14,7 @@ import {
 } from "./clinicalProcedures.js";
 
 // ------------------------------------------------------------------------------------------------
-// PEDIATRIC CLINICAL DIARY & DIAGNOSTICS (ФОРМА 043/у)
+// PEDIATRIC CLINICAL DIARY & DIAGNOSTICS (МЕДИЦИНСКАЯ КАРТА / ДНЕВНИК ПРИЁМА)
 // ------------------------------------------------------------------------------------------------
 
 export interface PediatricDiaryTextOptions {
@@ -30,7 +30,7 @@ export interface PediatricDiaryTextOptions {
 }
 
 /**
- * Generates a structured clinical diary text for pediatric patients (Форма 043/у — Детский протокол).
+ * Generates a structured clinical diary text for pediatric patients (Медицинская карта приёма — Детский протокол).
  * Includes primary teeth resorption stages, mixed dentition analysis, Cariogram risk score, Frankl behavior rating, and preventive plan.
  */
 export function generatePediatricCariogramDiaryText(
@@ -44,7 +44,7 @@ export function generatePediatricCariogramDiaryText(
 	const frankl = options?.franklRating ? getFranklDefinition(options.franklRating) : null;
 
 	const lines: string[] = [];
-	lines.push("ПРОТОКОЛ ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ОСМОТРА (ФОРМА 043/у)");
+	lines.push("ПРОТОКОЛ ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ОСМОТРА (МЕДИЦИНСКАЯ КАРТА)");
 	lines.push("────────────────────────────────────────────────────────────");
 
 	// 1. Психоэмоциональный статус по Франклу (если указан)
