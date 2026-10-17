@@ -1,107 +1,19 @@
+import React, { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Calendar, CheckCircle2, ChevronRight, RotateCw, Save, Smile, Sparkles, X, Zap } from "lucide-react";
-import type React from "react";
-import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { actionFailureToast } from "../../lib/panelStateText";
-import { countLabel } from "../../lib/russianPlural";
-import { logger } from "../../utils/logger";
-import { showToast } from "../GlobalToast";
+import {
+	type OrthoData,
+	getTodayString,
+	parseLegacyOrthoNotes,
+	parseOrthoProgress,
+} from "./orthodonticProgressSerialization";
+import { useOrthodonticActions } from "./useOrthodonticActions";
+import { useOrthodonticQuickClinicalActions } from "./useOrthodonticQuickClinicalActions";
+import { OrthodonticEditForm } from "./OrthodonticEditForm";
+import { OrthodonticTrackerDisplay } from "./OrthodonticTrackerDisplay";
+import { OrthodonticQuickActionsBar } from "./OrthodonticQuickActionsBar";
 
-interface OrthoData {
-	currentAligner: number;
-	totalAligners: number;
-	startDate: string;
-}
-
-const getTodayString = (): string => {
-	const parts = new Date().toISOString().split("T");
-	return parts[0] || "";
-};
-
-/*
- * БЫЛО: виджет слал orthodonticProgress объектом { currentAligner, totalAligners,
- * startDate }, а shared Zod — z.string().max(500). PUT всегда 400; toast честно
- * говорил «не сохранён», но трекер капп в карточке не работал никогда.
- * Схему на structured object не трогаем (partial admin form шлёт ту же строку).
- * СТАЛО: на проводе — JSON-строка; при чтении принимаем string | legacy object.
- */
-function serializeOrthoProgress(data: OrthoData): string {
-	return JSON.stringify({
-		currentAligner: data.currentAligner,
-		totalAligners: data.totalAligners,
-		startDate: data.startDate,
-	});
-}
-
-function parseOrthoProgress(raw: unknown): OrthoData | null {
-	if (raw == null || raw === "") return null;
-	let obj: unknown = raw;
-	if (typeof raw === "string") {
-		try {
-			obj = JSON.parse(raw);
-		} catch {
-			return null;
-		}
-	}
-	if (!obj || typeof obj !== "object") return null;
-	const rec = obj as Record<string, unknown>;
-	const currentAligner = Number(rec.currentAligner ?? rec.current);
-	const totalAligners = Number(rec.totalAligners ?? rec.total);
-	const startDate =
-		typeof rec.startDate === "string"
-			? rec.startDate
-			: typeof rec.start === "string"
-				? rec.start
-				: "";
-	if (!Number.isFinite(currentAligner) || currentAligner < 1) return null;
-	if (!Number.isFinite(totalAligners) || totalAligners < 1) return null;
-	return {
-		currentAligner: Math.floor(currentAligner),
-		totalAligners: Math.floor(totalAligners),
-		startDate: startDate || getTodayString(),
-	};
-}
-
-function parseLegacyOrthoNotes(notesText: string | null | undefined): {
-	cleanNotes: string;
-	legacyOrtho: OrthoData | null;
-} {
-	const text = notesText || "";
-	const separator = "\n\n===ORTHO===\n";
-	const parts = text.split(separator);
-
-	if (parts.length < 2) {
-		return { cleanNotes: text, legacyOrtho: null };
-	}
-
-	try {
-		const orthoData = JSON.parse(parts[1] || "{}");
-		return {
-			cleanNotes: parts[0] || "",
-			legacyOrtho: {
-				currentAligner: Number(orthoData.current) || 1,
-				totalAligners: Number(orthoData.total) || 40,
-				startDate: orthoData.start || getTodayString(),
-			},
-		};
-	} catch (_e) {
-		showToast(
-			actionFailureToast(
-				"Ошибка выполнения операции",
-				(_e as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
-		return { cleanNotes: text, legacyOrtho: null };
-	}
-}
-
-export function OrthodonticProgressWidget({
-	patientId,
-}: {
-	patientId: string;
-}) {
+export function OrthodonticProgressWidget({ patientId }: { patientId: string }) {
 	const { dashboard, auth, loadDashboard } = useAppLogicContext();
 	const [isEditing, setIsEditing] = useState(false);
 	const [saving, setSaving] = useState(false);
@@ -110,38 +22,16 @@ export function OrthodonticProgressWidget({
 		(p: { id?: string }) => p?.id === patientId,
 	);
 
-	// Если новое структурированное поле не заполнено, читаем старую запись,
-	// которую раньше складывали в конец заметок.
 	const orthoFromProfile = parseOrthoProgress(
 		patient?.administrativeProfile?.orthodonticProgress,
 	);
 	const { cleanNotes, legacyOrtho } = parseLegacyOrthoNotes(patient?.notes);
-
 	const ortho: OrthoData | null = orthoFromProfile || legacyOrtho || null;
 
-	// Поля формы
 	const [formCurrent, setFormCurrent] = useState(ortho?.currentAligner ?? 1);
 	const [formTotal, setFormTotal] = useState(ortho?.totalAligners ?? 40);
-	const [formStart, setFormStart] = useState(
-		ortho?.startDate ?? getTodayString(),
-	);
+	const [formStart, setFormStart] = useState(ortho?.startDate ?? getTodayString());
 
-	/*
-	 * БЫЛО: номера капп и дата начала брались из пациента ОДИН раз, при первом
-	 * появлении виджета — `useState(ortho?.currentAligner ?? 1)` — и дальше не
-	 * пересчитывались никогда. Виджет не размонтируется при переключении карточки
-	 * (PatientOverviewTab рендерит его без key), а сброс стоял только в
-	 * handleStartEdit, то есть при нажатии «Изменить».
-	 *
-	 * Что видел врач: открыл настройку трекера у пациента с 12-й каппой из 40,
-	 * не закрыл, переключился на другого пациента — и в его карточке стоит форма
-	 * с числами 12 и 40 от первого. «Сохранить» записывало эти числа в
-	 * administrative-profile ВТОРОГО пациента: чужой этап лечения, по которому
-	 * потом считают, когда менять каппу и когда снимать элайнеры.
-	 *
-	 * Сброс в фазе рендера: `ortho` здесь уже относится к новому пациенту, потому
-	 * что поиск идёт по актуальному patientId.
-	 */
 	const [prevPatientId, setPrevPatientId] = useState(patientId);
 	if (patientId !== prevPatientId) {
 		setPrevPatientId(patientId);
@@ -151,322 +41,21 @@ export function OrthodonticProgressWidget({
 		setFormStart(ortho?.startDate ?? getTodayString());
 	}
 
-	/*
-	 * БЫЛО: этот выход стоял ВЫШЕ трёх useState. Пока пациент находился в
-	 * dashboard, компонент вызывал шесть хуков, а на первом же рендере, где его
-	 * там нет (обновление списка пациентов, выбор пациента, ещё не попавшего в
-	 * dashboard), — только три. React такое считает ошибкой и роняет всё дерево:
-	 * «Rendered fewer hooks than expected», то есть у врача гаснет вся карточка
-	 * пациента, а не один виджет. Проверка обязана стоять после всех хуков.
-	 */
 	if (!patient) return null;
 
-	// Reset form states if patient changes or edits are cancelled
+	const { handleSave, handleResetWidget, handleQuickIncrement } = useOrthodonticActions({
+		patientId, patient, ortho, legacyOrtho, cleanNotes, saving, setSaving, setIsEditing, loadDashboard, auth,
+	});
+	const { handleQuickIssueSet, handleQuickWireChange, handleQuickLigatureActivate } =
+		useOrthodonticQuickClinicalActions({
+			patientId, ortho, saving, setSaving, loadDashboard, auth,
+		});
+
 	const handleStartEdit = () => {
 		setFormCurrent(ortho?.currentAligner ?? 1);
 		setFormTotal(ortho?.totalAligners ?? 40);
 		setFormStart(ortho?.startDate ?? getTodayString());
 		setIsEditing(true);
-	};
-
-	const handleSave = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (formCurrent < 1 || formTotal < 1 || formCurrent > formTotal) {
-			showToast("Некорректные значения капп", "error");
-			return;
-		}
-
-		setSaving(true);
-		try {
-			const updatedOrtho: OrthoData = {
-				currentAligner: formCurrent,
-				totalAligners: formTotal,
-				startDate: formStart,
-			};
-
-			const adminProfile = patient.administrativeProfile || {};
-
-			// Migrate: First, update administrative profile with proper structured data
-			const resAdmin = await fetch(
-				`/api/patients/${patientId}/administrative-profile`,
-				{
-					method: "PUT",
-					headers: auth.denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-					}),
-					body: JSON.stringify({
-						...adminProfile,
-						/*
-						 * БЫЛО: orthodonticProgress: updatedOrtho (object) → Zod string → 400.
-						 * СТАЛО: JSON-строка ≤500 символов, парсится обратно parseOrthoProgress.
-						 */
-						orthodonticProgress: serializeOrthoProgress(updatedOrtho),
-					}),
-				},
-			);
-
-			if (!resAdmin.ok) {
-				showToast(
-					`${actionFailureToast("Отсчёт капп не сохранён", resAdmin.status)} Пока запишите этап лечения в заметку к пациенту.`,
-					"error",
-				);
-				return;
-			}
-
-			// Убираем старую техническую запись из заметок, если она там была.
-			// БЫЛО: ответ на этот запрос не проверялся вовсе, и при его отказе врач
-			// всё равно видел зелёное «обновлено», хотя в заметках пациента остался
-			// хвост со служебными данными — он виден в поле заметок карточки.
-			if (legacyOrtho) {
-				const resNotes = await fetch(`/api/patients/${patientId}`, {
-					method: "PUT",
-					headers: auth.denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-					}),
-					body: JSON.stringify({
-						notes: cleanNotes,
-					}),
-				});
-				if (!resNotes.ok) {
-					showToast(
-						"Этап лечения сохранён, но старая служебная запись в заметках не удалена — она осталась видна в поле заметок. Повторите сохранение позже.",
-						"warning",
-					);
-					setIsEditing(false);
-					await loadDashboard();
-					return;
-				}
-			}
-
-			showToast("Ортодонтический этап обновлен", "success");
-			setIsEditing(false);
-			await loadDashboard();
-		} catch (err) {
-			// Сюда попадают только обрывы связи: отказы сервера разобраны выше.
-			logger.error("[OrthodonticProgressWidget save]", err);
-			showToast(
-				`${actionFailureToast("Отсчёт капп не сохранён", null)} Пока запишите этап лечения в заметку к пациенту.`,
-				"error",
-			);
-		} finally {
-			setSaving(false);
-		}
-	};
-
-	const handleResetWidget = async () => {
-		setSaving(true);
-		try {
-			const adminProfile = patient.administrativeProfile || {};
-
-			const resAdmin = await fetch(
-				`/api/patients/${patientId}/administrative-profile`,
-				{
-					method: "PUT",
-					headers: auth.denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-					}),
-					body: JSON.stringify({
-						...adminProfile,
-						orthodonticProgress: null,
-					}),
-				},
-			);
-
-			// Тот же отказ, что и при сохранении, и так же бесполезно повторять.
-			if (!resAdmin.ok) {
-				showToast(
-					`${actionFailureToast("Отсчёт капп не убран", resAdmin.status)} Каппы остались в карточке.`,
-					"error",
-				);
-				return;
-			}
-
-			// Тот же непроверенный ответ, что и при сохранении: «удалено» показывалось
-			// даже когда служебный хвост остался в заметках.
-			if (legacyOrtho) {
-				const resNotes = await fetch(`/api/patients/${patientId}`, {
-					method: "PUT",
-					headers: auth.denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-					}),
-					body: JSON.stringify({
-						notes: cleanNotes,
-					}),
-				});
-				if (!resNotes.ok) {
-					showToast(
-						"Отслеживание капп убрано, но старая служебная запись в заметках не удалена — она осталась видна в поле заметок. Повторите позже.",
-						"warning",
-					);
-					setIsEditing(false);
-					await loadDashboard();
-					return;
-				}
-			}
-
-			showToast("Трекер ортодонтии удален", "success");
-			setIsEditing(false);
-			await loadDashboard();
-		} catch (err) {
-			logger.error("[OrthodonticProgressWidget reset]", err);
-			showToast(
-				`${actionFailureToast("Отсчёт капп не убран", null)} Каппы остались в карточке.`,
-				"error",
-			);
-		} finally {
-			setSaving(false);
-		}
-	};
-
-	const handleQuickIncrement = async (count: number) => {
-		if (!ortho || saving) return;
-		const nextCurrent = Math.min(ortho.totalAligners, ortho.currentAligner + count);
-		if (nextCurrent === ortho.currentAligner) return;
-
-		setSaving(true);
-		try {
-			const updatedOrtho: OrthoData = {
-				...ortho,
-				currentAligner: nextCurrent,
-			};
-			const adminProfile = patient.administrativeProfile || {};
-			const resAdmin = await fetch(
-				`/api/patients/${patientId}/administrative-profile`,
-				{
-					method: "PUT",
-					headers: auth.denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-					}),
-					body: JSON.stringify({
-						...adminProfile,
-						orthodonticProgress: serializeOrthoProgress(updatedOrtho),
-					}),
-				},
-			);
-			if (resAdmin.ok) {
-				showToast(`Каппа №${nextCurrent} зафиксирована (+${count})`, "success");
-				await loadDashboard();
-			} else {
-				showToast("Не удалось обновить номер каппы", "error");
-			}
-		} catch (err) {
-			logger.error("[OrthodonticProgressWidget quickIncrement]", err);
-			showToast("Ошибка сети при смене каппы", "error");
-		} finally {
-			setSaving(false);
-		}
-	};
-
-	const handleQuickIssueSet = async (count: number, days: number) => {
-		if (!ortho || saving) return;
-		const fromAligner = ortho.currentAligner;
-		const nextCurrent = Math.min(ortho.totalAligners, fromAligner + count);
-
-		setSaving(true);
-		try {
-			const res = await fetch(
-				`/api/orthodontics/${patientId}/aligners/issue-set`,
-				{
-					method: "POST",
-					headers: auth.denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-					}),
-					body: JSON.stringify({
-						alignerCount: count,
-						wearDaysPerAligner: days,
-						totalAligners: ortho.totalAligners,
-						note: `Плановая выдача сета капп (+${count})`,
-					}),
-				},
-			);
-			if (res.ok) {
-				showToast(`Выдан сет капп №${fromAligner}–${nextCurrent} на ${days} дней`, "success");
-				await loadDashboard();
-			} else {
-				showToast("Не удалось сохранить выдачу сета", "error");
-			}
-		} catch (err) {
-			logger.error("[OrthodonticProgressWidget quickIssueSet]", err);
-			showToast("Ошибка сети при выдаче сета", "error");
-		} finally {
-			setSaving(false);
-		}
-	};
-
-	const handleQuickWireChange = async () => {
-		if (saving) return;
-		setSaving(true);
-		try {
-			const res = await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
-				method: "POST",
-				headers: auth.denteClinicalMutationHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					material: "CuNiTi",
-					section: ".016",
-					arch: "both",
-					note: "Плановая смена дуги (ВЧ + НЧ)",
-				}),
-			});
-			if (res.ok) {
-				showToast("Смена дуги: CuNiTi .016\" (ВЧ+НЧ) зафиксирована в карте", "success");
-				await loadDashboard();
-			} else {
-				showToast("Не удалось зафиксировать смену дуги", "error");
-			}
-		} catch (err) {
-			logger.error("[OrthodonticProgressWidget quickWireChange]", err);
-			showToast("Ошибка сети при смене дуги", "error");
-		} finally {
-			setSaving(false);
-		}
-	};
-
-	const handleQuickLigatureActivate = async () => {
-		if (saving) return;
-		setSaving(true);
-		try {
-			const res = await fetch(`/api/orthodontics/${patientId}/ligatures-activate`, {
-				method: "POST",
-				headers: auth.denteClinicalMutationHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					powerChain: true,
-					note: "Активация лигатур и эластической цепочки (Power Chain)",
-				}),
-			});
-			if (res.ok) {
-				showToast("Активация лигатур и замков аппаратуры зафиксирована", "success");
-				await loadDashboard();
-			} else {
-				showToast("Не удалось зафиксировать активацию аппаратуры", "error");
-			}
-		} catch (err) {
-			logger.error("[OrthodonticProgressWidget quickLigatureActivate]", err);
-			showToast("Ошибка сети при активации аппаратуры", "error");
-		} finally {
-			setSaving(false);
-		}
-	};
-
-	// Derived metrics
-	const hasActiveTracker = ortho !== null;
-	const currentAligner = ortho?.currentAligner ?? 1;
-	const totalAligners = ortho?.totalAligners ?? 40;
-	const weeksRemaining = Math.max(0, totalAligners - currentAligner);
-	const progressPercent = Math.round((currentAligner / totalAligners) * 100);
-
-	const formatDate = (dateStr: string) => {
-		try {
-			if (typeof dateStr !== "string" || !dateStr) return dateStr || "";
-			const [y, m, d] = (dateStr ?? "").split("-");
-			if (!y || !m || !d) return dateStr;
-			return `${d}.${m}.${y}`;
-		} catch {
-			return dateStr || "";
-		}
 	};
 
 	return (
@@ -478,98 +67,19 @@ export function OrthodonticProgressWidget({
 		>
 			<AnimatePresence mode="wait">
 				{isEditing ? (
-					<motion.form
-						key="edit"
-						onSubmit={handleSave}
-						initial={{ opacity: 0, x: -10 }}
-						animate={{ opacity: 1, x: 0 }}
-						exit={{ opacity: 0, x: 10 }}
-						style={{ display: "flex", flexDirection: "column", gap: "12px" }}
-					>
-						<div className="flex justify-between items-center mb-2">
-							<span className="text-sm font-semibold text-[var(--ink)]">
-								{/* БЫЛО: «Настройка трекера (глубокий JSONB)». JSONB — название типа
-								    столбца в базе данных; на экране врача оно не значит ничего. */}
-								Сколько капп пройдено
-							</span>
-							<button
-								type="button"
-								onClick={() => setIsEditing(false)}
-								className="bg-transparent border-0 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer p-0"
-							>
-								<X size={18} />
-							</button>
-						</div>
-
-						<div className="grid grid-cols-2 gap-3">
-							<label className="flex flex-col gap-1.5 text-xs text-[var(--muted)]">
-								Текущая каппа
-								<input
-									type="number"
-									min={1}
-									max={formTotal}
-									value={formCurrent}
-									onChange={(e) =>
-										setFormCurrent(Math.max(1, Number(e.target.value)))
-									}
-									className="p-2 rounded-lg bg-[var(--paper-strong)] border border-[var(--glass-border)] text-[var(--ink)] text-sm outline-none"
-								/>
-							</label>
-							<label className="flex flex-col gap-1.5 text-xs text-[var(--muted)]">
-								Всего капп
-								<input
-									type="number"
-									min={1}
-									value={formTotal}
-									onChange={(e) =>
-										setFormTotal(Math.max(1, Number(e.target.value)))
-									}
-									className="p-2 rounded-lg bg-[var(--paper-strong)] border border-[var(--glass-border)] text-[var(--ink)] text-sm outline-none"
-								/>
-							</label>
-						</div>
-
-						<label className="flex flex-col gap-1.5 text-xs text-[var(--muted)]">
-							Дата начала
-							<input
-								type="date"
-								value={formStart}
-								onChange={(e) => setFormStart(e.target.value)}
-								className="p-2 rounded-lg bg-[var(--paper-strong)] border border-[var(--glass-border)] text-[var(--ink)] text-sm w-full outline-none"
-							/>
-						</label>
-
-						<div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
-							<button
-								type="submit"
-								disabled={saving}
-								/*
-									Главная кнопка виджета на токенах темы:
-									Пара «фон --teal-dark + текст --on-teal» проходит норму во всех темах.
-									Наведение — яркостью (brightness).
-								*/
-								className="flex-1 min-h-[44px] sm:min-h-[32px] bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] rounded-xl p-2.5 font-semibold text-xs flex justify-center items-center gap-2 border-0 cursor-pointer transition-all"
-							>
-								{saving ? (
-									"Сохранение..."
-								) : (
-									<>
-										<Save size={16} /> Сохранить
-									</>
-								)}
-							</button>
-							{hasActiveTracker && (
-								<button
-									type="button"
-									disabled={saving}
-									onClick={handleResetWidget}
-									className="px-4 py-2.5 min-h-[44px] sm:min-h-[32px] rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-semibold text-xs cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors inline-flex items-center justify-center"
-								>
-									Удалить
-								</button>
-							)}
-						</div>
-					</motion.form>
+					<OrthodonticEditForm
+						formCurrent={formCurrent}
+						setFormCurrent={setFormCurrent}
+						formTotal={formTotal}
+						setFormTotal={setFormTotal}
+						formStart={formStart}
+						setFormStart={setFormStart}
+						saving={saving}
+						hasActiveTracker={ortho !== null}
+						onSubmit={(e) => handleSave(e, formCurrent, formTotal, formStart)}
+						onCancel={() => setIsEditing(false)}
+						onReset={handleResetWidget}
+					/>
 				) : (
 					<motion.div
 						key="view"
@@ -577,144 +87,17 @@ export function OrthodonticProgressWidget({
 						animate={{ opacity: 1, x: 0 }}
 						exit={{ opacity: 0, x: -10 }}
 					>
-						{!hasActiveTracker ? (
-							<div
-								style={{
-									display: "flex",
-									flexDirection: "column",
-									alignItems: "center",
-									gap: "12px",
-									padding: "16px 0",
-								}}
-							>
-								<div className="w-12 h-12 rounded-full bg-[var(--paper-soft)] flex items-center justify-center text-[var(--muted)] border border-[var(--glass-border)]">
-									<Smile size={24} />
-								</div>
-								<p className="m-0 text-sm text-[var(--muted)] text-center">
-									Лечение каппами пока не начато.
-								</p>
-								<button
-									type="button"
-									onClick={handleStartEdit}
-									className="mt-2 min-h-[44px] sm:min-h-[32px] bg-transparent border border-[var(--teal-ring)] text-[var(--teal-dark)] px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer hover:bg-[var(--teal-surface)] transition-colors inline-flex items-center justify-center"
-								>
-									Начать отсчёт капп
-								</button>
-							</div>
-						) : (
-							<div className="flex flex-col gap-4">
-								<div className="flex justify-between items-start">
-									<div className="flex items-center gap-2.5">
-										<div className="w-10 h-10 rounded-xl bg-[var(--teal-soft)] flex items-center justify-center text-[var(--teal-dark)]">
-											<Smile size={20} />
-										</div>
-										<div>
-											<h4 className="m-0 text-sm font-semibold text-[var(--ink)]">
-												Элайнеры
-											</h4>
-											<span className="text-xs text-[var(--muted)] flex items-center gap-1">
-												<Calendar size={12} /> с {formatDate(ortho.startDate)}
-											</span>
-										</div>
-									</div>
-									<button
-										type="button"
-										onClick={handleStartEdit}
-										className="bg-[var(--paper-strong)] border border-[var(--glass-border)] text-[var(--ink)] hover:bg-[var(--paper-soft)] px-3.5 py-2 min-h-[44px] sm:min-h-[32px] rounded-xl text-xs font-semibold cursor-pointer inline-flex items-center justify-center"
-									>
-										Изменить
-									</button>
-								</div>
-
-								<div className="flex flex-col gap-2">
-									<div className="flex justify-between items-end">
-										<span className="text-3xl font-bold text-[var(--ink)] leading-none">
-											{currentAligner}{" "}
-											<span className="text-base font-medium text-[var(--muted)]">
-												/ {totalAligners}
-											</span>
-										</span>
-										<span className="text-xs font-semibold text-[var(--teal-dark)]">
-											{progressPercent}%
-										</span>
-									</div>
-
-									<div className="h-2 bg-[var(--paper-soft)] rounded-full overflow-hidden">
-										<motion.div
-											initial={{ width: 0 }}
-											animate={{ width: `${progressPercent}%` }}
-											transition={{ duration: 1, ease: "easeOut" }}
-											className="h-full bg-[var(--teal)] rounded-full"
-										/>
-									</div>
-								</div>
-
-								{weeksRemaining > 0 ? (
-									<p className="m-0 text-xs text-[var(--muted)]">
-										{/* БЫЛО: «Осталось примерно 1 капп до завершения этапа» —
-										    число подставлялось к неизменяемому слову. Согласование
-										    берём из общей countLabel, а не считаем на месте. */}
-										Осталось примерно{" "}
-										<strong className="text-[var(--ink)]">
-											{countLabel(weeksRemaining, "каппа", "каппы", "капп")}
-										</strong>{" "}
-										до конца этапа.
-									</p>
-								) : (
-									<p className="m-0 text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
-										<CheckCircle2 size={14} className="shrink-0 text-emerald-500" />
-										<span>Все каппы пройдены! Запланируйте контрольный осмотр.</span>
-									</p>
-								)}
-
-								{/* 1-Click Clinical Quick Actions */}
-								<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-[var(--line)]">
-									<button
-										type="button"
-										disabled={saving || currentAligner >= totalAligners}
-										onClick={() => handleQuickIncrement(1)}
-										className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-bold text-xs flex items-center justify-center gap-1 border border-[var(--glass-border)] cursor-pointer active:scale-95 transition-all"
-										title="Выдать следующую 1 каппу"
-									>
-										<ChevronRight size={14} className="text-teal-600 dark:text-teal-400" />
-										<span>+1 каппа</span>
-									</button>
-
-									<button
-										type="button"
-										disabled={saving || currentAligner >= totalAligners}
-										onClick={() => handleQuickIssueSet(2, 14)}
-										className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/40 text-teal-700 dark:text-teal-300 font-bold text-xs flex items-center justify-center gap-1 border border-teal-200 dark:border-teal-800/60 cursor-pointer active:scale-95 transition-all"
-										title="Выдать сет из 2 капп на 14 дней"
-									>
-										<Zap size={14} className="text-teal-600 dark:text-teal-400" />
-										<span>Сет 2 каппы (+14 дн.)</span>
-									</button>
-
-									<button
-										type="button"
-										disabled={saving}
-										onClick={handleQuickWireChange}
-										className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-bold text-xs flex items-center justify-center gap-1 border border-[var(--glass-border)] cursor-pointer active:scale-95 transition-all"
-										title="Зафиксировать смену дуги"
-									>
-										<RotateCw size={14} className="text-blue-600 dark:text-blue-400" />
-										<span>Смена дуги</span>
-									</button>
-
-									<button
-										type="button"
-										disabled={saving}
-										onClick={handleQuickLigatureActivate}
-										className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-bold text-xs flex items-center justify-center gap-1 border border-[var(--glass-border)] cursor-pointer active:scale-95 transition-all shadow-2xs"
-										title="Зафиксировать активацию замков / лигатур"
-									>
-										<Sparkles size={14} className="text-amber-500" />
-										<span>Активация</span>
-									</button>
-								</div>
-							</div>
-						)}
+						<OrthodonticTrackerDisplay ortho={ortho} onStartEdit={handleStartEdit}>
+							<OrthodonticQuickActionsBar
+								saving={saving}
+								currentAligner={ortho?.currentAligner ?? 1}
+								totalAligners={ortho?.totalAligners ?? 40}
+								onQuickIncrement={handleQuickIncrement}
+								onQuickIssueSet={handleQuickIssueSet}
+								onQuickWireChange={handleQuickWireChange}
+								onQuickLigatureActivate={handleQuickLigatureActivate}
+							/>
+						</OrthodonticTrackerDisplay>
 					</motion.div>
 				)}
 			</AnimatePresence>

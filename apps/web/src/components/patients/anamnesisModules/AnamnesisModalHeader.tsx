@@ -23,7 +23,7 @@ export const AnamnesisModalHeader: React.FC<AnamnesisModalHeaderProps> = React.m
 				</div>
 				<div>
 					<h3 className="m-0 text-base font-bold text-[var(--ink)]">
-						Анкета соматического здоровья и стоп-факторов
+						Анкета здоровья и клинические стоп-факторы
 					</h3>
 					<div className="text-xs text-[var(--muted)]">
 						{patientName || "Пациент не выбран"} • {evaluation.hasCriticalStopFlags ? "Выявлены критические стоп-факторы" : "Профиль в норме"}
@@ -35,10 +35,10 @@ export const AnamnesisModalHeader: React.FC<AnamnesisModalHeaderProps> = React.m
 					type="button"
 					onClick={onApplyNorm}
 					className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors inline-flex items-center gap-1.5 text-xs cursor-pointer"
-					data-testid="btn-anamnesis-apply-norm"
+					data-testid="btn-somatic-healthy-norm"
 				>
 					<ShieldCheck size={14} className="text-emerald-500" />
-					<span>✓ Соматически здоров (норма)</span>
+					<span>✓ Соматически здоров / норма</span>
 				</button>
 				<button
 					type="button"

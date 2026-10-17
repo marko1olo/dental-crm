@@ -1,0 +1,59 @@
+/* LabOrderStatusStrip.css — Single-line 4-step status selector */
+
+.lab-status-strip-1line {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 4px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 3px;
+}
+
+.lab-status-step {
+	min-height: 28px;
+	height: 28px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	border-radius: 6px;
+	font-size: 0.725rem;
+	font-weight: 700;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	padding: 0 6px;
+}
+
+.lab-status-step:hover:not(.is-active) {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+.lab-status-step.is-active.status-sent {
+	background: var(--info-bg, rgba(59, 130, 246, 0.15));
+	color: var(--info-fg, #0284c7);
+	border-color: var(--info-fg, rgba(59, 130, 246, 0.3));
+}
+
+.lab-status-step.is-active.status-fitting {
+	background: var(--warn-bg, rgba(234, 179, 8, 0.15));
+	color: var(--warn-fg, #d97706);
+	border-color: var(--warn-fg, rgba(234, 179, 8, 0.3));
+}
+
+.lab-status-step.is-active.status-ready {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.15));
+	color: var(--teal-dark, var(--teal));
+	border-color: var(--teal, rgba(13, 148, 136, 0.3));
+}
+
+.lab-status-step.is-active.status-completed {
+	background: var(--ok-bg, rgba(34, 197, 94, 0.15));
+	color: var(--ok-fg, #15803d);
+	border-color: var(--ok-fg, rgba(34, 197, 94, 0.3));
+}
