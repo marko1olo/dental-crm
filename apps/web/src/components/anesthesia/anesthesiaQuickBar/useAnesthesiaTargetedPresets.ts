@@ -33,102 +33,49 @@ export function useAnesthesiaTargetedPresets(props: UseAnesthesiaTargetedPresets
 		props.patientAgeYears < 18,
 	);
 
-	const handleApplyScandonestCardio = () => {
+	const applyPreset = (drugId: AnestheticDrugId, asaStatus: AsaPhysicalStatus, isCardio: boolean, diary: string, toast: string) => {
 		if (props.disabled) return;
-		props.setSelectedDrugId('mepivacaine_plain');
+		props.setSelectedDrugId(drugId);
 		props.setTechniqueId('infiltration');
 		dispatchAnesthesiaPreset({
 			...props,
 			effectiveWeight,
-			drugId: 'mepivacaine_plain',
+			drugId,
 			techniqueId: 'infiltration',
 			needleType: 'g30_short_21mm',
-			asaStatus: 'asa_2',
-			isCardioRisk: true,
-			hasCardiovascularRisk: true,
-			diaryText:
-				'Анестезия инфильтрационная: Мепивакаин 3% (без адреналина), 1.7 мл. Осложнений нет.',
-			toastText: 'Кардио: Скандонест 3% без адреналина (1.7 мл) внесено в карту',
-		});
-	};
-
-	const handleApplySeptanestInfiltration = () => {
-		if (props.disabled) return;
-		props.setSelectedDrugId('septanest_1_100k');
-		props.setTechniqueId('infiltration');
-		dispatchAnesthesiaPreset({
-			...props,
-			effectiveWeight,
-			drugId: 'septanest_1_100k',
-			techniqueId: 'infiltration',
-			needleType: 'g30_short_21mm',
-			asaStatus: 'asa_1',
-			isCardioRisk: false,
-			diaryText:
-				'Анестезия инфильтрационная: Артикаин 1:100 000, 1.7 мл. Осложнений нет.',
-			toastText: 'Инфильтрационная анестезия Септанест (1.7 мл): протокол сформирован',
-		});
-	};
-
-	const handleApplyUbistesinForte = () => {
-		if (props.disabled) return;
-		props.setSelectedDrugId('articaine_1_100k');
-		props.setTechniqueId('infiltration');
-		dispatchAnesthesiaPreset({
-			...props,
-			effectiveWeight,
-			drugId: 'articaine_1_100k',
-			techniqueId: 'infiltration',
-			needleType: 'g30_short_21mm',
-			asaStatus: 'asa_1',
-			isCardioRisk: false,
-			diaryText:
-				'Анестезия инфильтрационная: Артикаин 1:100 000, 1.7 мл. Осложнений нет.',
-			toastText: 'Убистезин форте 1:100 000 (1.7 мл): внесено в карту',
-		});
-	};
-
-	const handleApplyUbistesin = () => {
-		if (props.disabled) return;
-		props.setSelectedDrugId('articaine_1_200k');
-		props.setTechniqueId('infiltration');
-		dispatchAnesthesiaPreset({
-			...props,
-			effectiveWeight,
-			drugId: 'articaine_1_200k',
-			techniqueId: 'infiltration',
-			needleType: 'g30_short_21mm',
-			asaStatus: 'asa_1',
-			isCardioRisk: false,
-			diaryText:
-				'Анестезия инфильтрационная: Артикаин 1:200 000, 1.7 мл. Осложнений нет.',
-			toastText: 'Убистезин 1:200 000 (1.7 мл): внесено в карту',
-		});
-	};
-
-	const handleApplySeptanest200k = () => {
-		if (props.disabled) return;
-		props.setSelectedDrugId('articaine_1_200k');
-		props.setTechniqueId('infiltration');
-		dispatchAnesthesiaPreset({
-			...props,
-			effectiveWeight,
-			drugId: 'articaine_1_200k',
-			techniqueId: 'infiltration',
-			needleType: 'g30_short_21mm',
-			asaStatus: 'asa_1',
-			isCardioRisk: false,
-			diaryText:
-				'Анестезия инфильтрационная: Артикаин 1:200 000, 1.7 мл. Осложнений нет.',
-			toastText: 'Септанест 1:200 000 (1.7 мл): внесено в карту',
+			asaStatus,
+			isCardioRisk: isCardio,
+			hasCardiovascularRisk: isCardio,
+			diaryText: diary,
+			toastText: toast,
 		});
 	};
 
 	return {
-		handleApplyScandonestCardio,
-		handleApplySeptanestInfiltration,
-		handleApplyUbistesinForte,
-		handleApplyUbistesin,
-		handleApplySeptanest200k,
+		handleApplyScandonestCardio: () => applyPreset(
+			'mepivacaine_plain', 'asa_2', true,
+			'Анестезия инфильтрационная: Мепивакаин 3% (без адреналина), 1.7 мл. Осложнений нет.',
+			'Кардио: Скандонест 3% без адреналина (1.7 мл) внесено в карту'
+		),
+		handleApplySeptanestInfiltration: () => applyPreset(
+			'septanest_1_100k', 'asa_1', false,
+			'Анестезия инфильтрационная: Артикаин 1:100 000, 1.7 мл. Осложнений нет.',
+			'Инфильтрационная анестезия Септанест (1.7 мл): внесено в карту'
+		),
+		handleApplyUbistesinForte: () => applyPreset(
+			'articaine_1_100k', 'asa_1', false,
+			'Анестезия инфильтрационная: Артикаин 1:100 000, 1.7 мл. Осложнений нет.',
+			'Ультракаин Д-С Форте 1:100 000 (1.7 мл): внесено в карту'
+		),
+		handleApplyUbistesin: () => applyPreset(
+			'articaine_1_200k', 'asa_1', false,
+			'Анестезия инфильтрационная: Артикаин 1:200 000, 1.7 мл. Осложнений нет.',
+			'Ультракаин Д-С 1:200 000 (1.7 мл): внесено в карту'
+		),
+		handleApplySeptanest200k: () => applyPreset(
+			'articaine_1_200k', 'asa_1', false,
+			'Анестезия инфильтрационная: Артикаин 1:200 000, 1.7 мл. Осложнений нет.',
+			'Септанест 1:200 000 (1.7 мл): внесено в карту'
+		),
 	};
 }

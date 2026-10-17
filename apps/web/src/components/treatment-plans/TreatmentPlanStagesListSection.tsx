@@ -28,10 +28,11 @@ export interface TreatmentPlanStagesListSectionProps {
 	readonly onOneClickLabOrder?: ((teeth?: number[]) => void) | undefined;
 	readonly onOpenInstallment?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onApplyStageDiscount?: (() => void) | undefined;
+	readonly onExportStageEstimate?: ((stage: TreatmentPlanStage) => void) | undefined;
 }
 
 export const TreatmentPlanStagesListSection: React.FC<TreatmentPlanStagesListSectionProps> = (props) => {
-	const { visibleStages, specialtyFilter, onSetSpecialtyFilter, onApplyClinicalBundle, onOpenCreateStageModal, dashboard, doctorOptions, onAssignDoctorToStage, onAssignDoctorToItem, onUpdateItemQuantity, onUpdateItemPrice, onUpdateItem, onRemoveItem, onAddItemToStage, onDeleteStage, onExecuteWriteOffStage, onStartStage, onChangeStageStatus, onPayStage, onOpenLabOrder, onOneClickLabOrder, onOpenInstallment, onApplyStageDiscount } = props;
+	const { visibleStages, specialtyFilter, onSetSpecialtyFilter, onApplyClinicalBundle, onOpenCreateStageModal, dashboard, doctorOptions, onAssignDoctorToStage, onAssignDoctorToItem, onUpdateItemQuantity, onUpdateItemPrice, onUpdateItem, onRemoveItem, onAddItemToStage, onDeleteStage, onExecuteWriteOffStage, onStartStage, onChangeStageStatus, onPayStage, onOpenLabOrder, onOneClickLabOrder, onOpenInstallment, onApplyStageDiscount, onExportStageEstimate } = props;
 
 	if (visibleStages.length === 0) {
 		return (
@@ -85,6 +86,7 @@ export const TreatmentPlanStagesListSection: React.FC<TreatmentPlanStagesListSec
 					onStartStage={onStartStage}
 					onChangeStageStatus={onChangeStageStatus}
 					onPayStage={onPayStage}
+					onExportStageEstimate={onExportStageEstimate}
 					onApplyStageDiscount={onApplyStageDiscount}
 					onOpenLabOrder={onOpenLabOrder}
 					onOneClickLabOrder={onOneClickLabOrder}

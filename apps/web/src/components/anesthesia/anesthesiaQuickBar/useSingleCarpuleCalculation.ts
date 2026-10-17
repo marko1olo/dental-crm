@@ -25,6 +25,10 @@ export interface UseSingleCarpuleCalculationParams {
 	targetToothNumberFdi?: number | string | undefined;
 }
 
+/**
+ * useSingleCarpuleCalculation — Safe 1-Carpule Clinical Dose Estimator
+ * No warehouse physical simulation; reliable 70 kg standard default.
+ */
 export function useSingleCarpuleCalculation(
 	params: UseSingleCarpuleCalculationParams,
 ): AnesthesiaCalculationResult {

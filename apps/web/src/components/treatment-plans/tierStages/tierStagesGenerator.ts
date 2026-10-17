@@ -12,6 +12,7 @@ import {
 	generateTreatmentPlanStages,
 } from "../treatmentPlanAutoGenerator";
 import {
+	DENTAL_SERVICES_CATALOG,
 	ORDER_804N_DICTIONARY,
 	UPPER_ARCH_TEETH,
 	LOWER_ARCH_TEETH,
@@ -20,7 +21,7 @@ import {
 	getEndoPreparationProcedure,
 	getEndoObturationProcedure,
 	isMolarOrPremolar,
-} from "../treatmentPlanNomenclature804n";
+} from "../treatmentPlanServicesCatalog";
 import { createPlanItem, makeEmptyStage } from "../treatmentPlanItemFactory";
 import { getDefaultClinicalPresetStages } from "./clinicalPresets";
 import { normalizeToothState, hasToothDefect } from "./toothStateHelpers";

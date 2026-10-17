@@ -46,7 +46,7 @@ describe("AnesthesiaDosageCalculator — Clinical Safety & Maximum Recommended D
 		assert.equal(result.isEpinephrineOverdose, false);
 	});
 
-	it("2. Triggers hard overdose blocking (#ef4444) when exceeding Articaine MRD", () => {
+	it("2. Identifies clinical overdose threshold without UI dead-ends when exceeding Articaine MRD", () => {
 		// 8 carpules of Articaine 4% = 544 mg active substance (exceeds 490 mg limit for 70 kg)
 		const result = calculateAnesthesiaSafety({
 			drugId: "articaine_1_100k",

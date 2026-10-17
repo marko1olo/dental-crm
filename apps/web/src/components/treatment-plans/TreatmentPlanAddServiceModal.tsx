@@ -11,7 +11,7 @@ import {
 	romanizeStageNumber,
 } from "./types";
 import type { CatalogServiceLookupItem } from "./treatmentPlanPricingEngine";
-import { ORDER_804N_DICTIONARY } from "./treatmentPlanNomenclature804n";
+import { DENTAL_SERVICES_CATALOG } from "./treatmentPlanServicesCatalog";
 import { showToast } from "../GlobalToast";
 
 export interface TreatmentPlanAddServiceModalProps {
@@ -54,7 +54,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 		if (Array.isArray(catalog) && catalog.length > 0) {
 			return catalog;
 		}
-		return Object.values(ORDER_804N_DICTIONARY).map((proc) => ({
+		return Object.values(DENTAL_SERVICES_CATALOG).map((proc) => ({
 			id: proc.code,
 			title: proc.title,
 			category: proc.category,

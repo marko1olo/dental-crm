@@ -34,7 +34,30 @@ export const TreatmentPlanExportModals: React.FC<TreatmentPlanExportModalsProps>
 			{logic.isFiscalModalOpen && (
 				<Suspense fallback={null}>
 					<FiscalReceipt54FzModal
-						isOpen={logic.isFiscalModalOpen} items={logic.effectiveSignTier.stages.flatMap((s: any) => s.items)} patientId={logic.patientId} patientName={logic.patientName} patientPhone={logic.patientPhone} patientDepositRub={Math.round((logic.dashboard?.activePatient?.balanceKopecks || 0) / 100)} cashierFullName={logic.auth?.currentUser?.name || "Лечащий врач"} clinicName={logic.dashboard?.clinicSettings?.profile?.brandName || "Стоматологическая клиника DENTE"} onClose={() => logic.setIsFiscalModalOpen(false)} onReceiptFiscalized={(r) => showToast(`Чек №${r} сохранен в истории оплат`, "success")}
+						isOpen={logic.isFiscalModalOpen}
+						items={
+							logic.selectedInstallmentStage?.items?.length
+								? logic.selectedInstallmentStage.items
+								: logic.effectiveSignTier.stages.flatMap((s: any) => s.items)
+						}
+						patientId={logic.patientId}
+						patientName={logic.patientName}
+						patientPhone={logic.patientPhone}
+						patientDepositRub={Math.round((logic.dashboard?.activePatient?.balanceKopecks || 0) / 100)}
+						cashierFullName={logic.auth?.currentUser?.name || "Лечащий врач"}
+						clinicName={logic.dashboard?.clinicSettings?.profile?.brandName || "Стоматологическая клиника DENTE"}
+						onClose={() => {
+							logic.setIsFiscalModalOpen(false);
+							if (logic.setSelectedInstallmentStage) {
+								logic.setSelectedInstallmentStage(null);
+							}
+						}}
+						onReceiptFiscalized={(r) => {
+							showToast(`Чек №${r} сохранен в истории оплат`, "success");
+							if (logic.setSelectedInstallmentStage) {
+								logic.setSelectedInstallmentStage(null);
+							}
+						}}
 					/>
 				</Suspense>
 			)}

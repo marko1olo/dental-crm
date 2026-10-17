@@ -13,6 +13,10 @@ import {
 } from './anesthesiaEngineTypes.js';
 import { evaluateSafetyAdvisories } from './anesthesiaSafetyAdvisor.js';
 
+/**
+ * calculateAnesthesiaSafety — Streamlined Clinical MRD & Diary Calculator
+ * Standard 70 kg default, no reality-simulator overhead, Mandate 8e/8b compliant.
+ */
 export function calculateAnesthesiaSafety(input: AnesthesiaCalculationInput): AnesthesiaCalculationResult {
 	const drug = DENTAL_ANESTHETICS[input.drugId] || DENTAL_ANESTHETICS.articaine_1_100k;
 	const ageCategory = determineAgeCategory(input.patientAgeYears);
@@ -27,9 +31,7 @@ export function calculateAnesthesiaSafety(input: AnesthesiaCalculationInput): An
 	const injectedEpinephrineMg = Number((carpules * drug.mgEpiPerCarpule).toFixed(4));
 
 	const effectiveMaxMgPerKg = isPediatric
-		? drug.id.startsWith('articaine')
-			? 5.0
-			: drug.maxDoseMgPerKgAdult
+		? (drug.id.startsWith('articaine') ? 5.0 : drug.maxDoseMgPerKgAdult)
 		: drug.maxDoseMgPerKgAdult;
 
 	const maxActiveByWeight = weight * effectiveMaxMgPerKg * ageFactor;
@@ -38,18 +40,12 @@ export function calculateAnesthesiaSafety(input: AnesthesiaCalculationInput): An
 		: Number(Math.min(drug.absoluteMaxDoseMgAdult * ageFactor, maxActiveByWeight).toFixed(1));
 
 	const initialCardio =
-		input.hasCardiovascularRisk ||
-		Boolean(input.hasIschemicHeartDisease) ||
-		Boolean(input.hasMyocardialInfarctionHistory) ||
-		Boolean(input.hasHypertension) ||
+		Boolean(input.hasCardiovascularRisk || input.hasIschemicHeartDisease || input.hasMyocardialInfarctionHistory) ||
+		Boolean(input.hasHypertension || input.hasCardiacArrhythmia || input.takesBetaBlockers) ||
 		(typeof input.bpSystolic === 'number' && input.bpSystolic >= 140) ||
 		(typeof input.bpDiastolic === 'number' && input.bpDiastolic >= 90) ||
-		Boolean(input.hasCardiacArrhythmia) ||
 		(typeof input.heartRateBpm === 'number' && input.heartRateBpm > 90) ||
-		Boolean(input.takesBetaBlockers) ||
-		Boolean(input.takesTricyclicAntidepressants) ||
-		input.asaStatus === 'asa_3' ||
-		input.asaStatus === 'asa_4';
+		input.asaStatus === 'asa_3' || input.asaStatus === 'asa_4';
 
 	const maxSafeEpinephrineMg = initialCardio
 		? EPINEPHRINE_CEILINGS_MG.cardiovascularRisk
@@ -91,13 +87,6 @@ export function calculateAnesthesiaSafety(input: AnesthesiaCalculationInput): An
 		needleType: input.needleType,
 		targetToothNumberFdi: input.targetToothNumberFdi,
 		aspirationNegativeConfirmed: input.aspirationNegativeConfirmed,
-		carpuleBatch: input.carpuleBatch,
-		nurseFullName: input.nurseFullName,
-		bpSystolic: input.bpSystolic,
-		bpDiastolic: input.bpDiastolic,
-		heartRateBpm: input.heartRateBpm,
-		spo2Percent: input.spo2Percent,
-		overrideReason: input.overrideReason,
 		isOverdose: advisory.isOverdose,
 		isEpinephrineOverdose: advisory.isEpinephrineOverdose,
 	});

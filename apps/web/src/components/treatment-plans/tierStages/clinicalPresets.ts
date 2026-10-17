@@ -6,7 +6,7 @@ import { type Kopecks } from "@dental/shared";
 import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanTierId } from "../types";
 import type { CatalogServiceLookupItem } from "../treatmentPlanPricingEngine";
 import { isDemoShowcaseMode } from "../treatmentPlanAutoGenerator";
-import { ORDER_804N_DICTIONARY } from "../treatmentPlanNomenclature804n";
+import { DENTAL_SERVICES_CATALOG, ORDER_804N_DICTIONARY } from "../treatmentPlanServicesCatalog";
 import { createPlanItem } from "../treatmentPlanItemFactory";
 
 export function getDefaultClinicalPresetStages(

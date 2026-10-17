@@ -31,7 +31,7 @@ export const TreatmentPlanContractFinancialSummary: React.FC<TreatmentPlanContra
 			</div>
 
 			{/* 3-Column Grand Totals Card */}
-			<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+			<div className="grid grid-cols-1 sm:grid-cols-3 print:grid-cols-3 gap-3 text-xs">
 				<div className="p-3 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-1">
 					<span className="text-slate-500 block text-[10.5px]">Общая стоимость без скидок:</span>
 					<div className="text-base font-mono font-bold text-slate-800">{grossTotalRub.toLocaleString("ru-RU")} ₽</div>

@@ -12,6 +12,7 @@ import type { ToothData, ToothState } from "../odontogram/ToothChart";
 import type { TreatmentPlanItem, TreatmentPlanStage } from "./types";
 import type { CatalogServiceLookupItem } from "./treatmentPlanPricingEngine";
 import {
+	DENTAL_SERVICES_CATALOG,
 	ORDER_804N_DICTIONARY,
 	UPPER_ARCH_TEETH,
 	LOWER_ARCH_TEETH,
@@ -20,7 +21,7 @@ import {
 	getEndoPreparationProcedure,
 	getEndoObturationProcedure,
 	isMolarOrPremolar,
-} from "./treatmentPlanNomenclature804n";
+} from "./treatmentPlanServicesCatalog";
 import { createPlanItem, makeEmptyStage } from "./treatmentPlanItemFactory";
 
 export const DEMO_SHOWCASE_TEETH: readonly ToothData[] = [

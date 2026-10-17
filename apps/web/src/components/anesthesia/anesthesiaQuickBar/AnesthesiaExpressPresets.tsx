@@ -16,12 +16,15 @@ export interface AnesthesiaExpressPresetsProps {
 	onApplySeptanestInfiltration?: (() => void) | undefined;
 	onWriteoffAntishockKit?: (() => void) | undefined;
 	onOpenEmergencyProtocol?: (() => void) | undefined;
-	onNurseQuickDisposal?: ((count: number) => void) | undefined;
 }
 
 const PRESET_BTN_CLASS =
-	"secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] text-xs font-semibold text-[var(--ink)] transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98 shrink-0 whitespace-nowrap";
+	"secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] text-xs font-semibold text-[var(--ink)] transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98 shrink-0 whitespace-nowrap";
 
+/**
+ * AnesthesiaExpressPresets — Miller's Law 3 Rapid Presets (1 Click)
+ * 1. Ultracain D-S Forte 1:100 000 | 2. Ultracain D-S 1:200 000 | 3. Scandonest Plain
+ */
 export function AnesthesiaExpressPresets({
 	disabled,
 	selectedCarpulesCount = 1.0,
@@ -33,71 +36,57 @@ export function AnesthesiaExpressPresets({
 	onApplyStandardNormPreset,
 	onApplyUltracainForteCombined,
 	onApplyScandonestCardio,
-	onApplySeptanestInfiltration,
 	onWriteoffAntishockKit,
 	onOpenEmergencyProtocol,
 }: AnesthesiaExpressPresetsProps) {
 	return (
 		<>
-			{/* Preset 1: Убистезин форте (1.7 мл) — Артикаин 1:100 000 */}
+			{/* Preset 1: Ультракаин Д-С Форте 1:100 000 (1.7 мл) */}
 			<button
 				type="button"
 				disabled={disabled}
-				onClick={onApplyUbistesinForte || onApplyStandardNormPreset || onApplyUltracainForteCombined}
+				onClick={onApplyUltracainForteCombined || onApplyUbistesinForte || onApplyStandardNormPreset}
 				className={PRESET_BTN_CLASS}
-				title="Норма: Артикаин 1:100k — Убистезин форте 1:100 000 (1 карпула 1.7 мл), глубокая анестезия"
+				title="Норма: Артикаин 1:100k — Ультракаин Д-С Форте 1:100 000 (1 карпула 1.7 мл)"
 				data-testid="anesthesia-dose-norm-preset"
 			>
 				<CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-				<span>Убистезин форте (1.7 мл)</span>
+				<span>Ультракаин Д-С Форте 1:100 000</span>
 			</button>
 
-			{/* Preset 2: Убистезин (1.7 мл) — Артикаин 1:200 000 */}
+			{/* Preset 2: Ультракаин Д-С 1:200 000 (1.7 мл) */}
 			<button
 				type="button"
 				disabled={disabled}
-				onClick={onApplyUbistesin || onApplyInfiltrationArticaine200k}
+				onClick={onApplyInfiltrationArticaine200k || onApplyUbistesin}
 				className={PRESET_BTN_CLASS}
-				title="Убистезин: Артикаин 4% 1:200 000 (1 карпула 1.7 мл), щадящий адреналин"
+				title="Щадящий адреналин: Артикаин 4% 1:200 000 — Ультракаин Д-С (1 карпула 1.7 мл)"
 				data-testid="anesthesia-preset-infiltration-articaine-200k"
 			>
 				<CheckCircle2 size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-				<span>Убистезин (1.7 мл)</span>
+				<span>Ультракаин Д-С 1:200 000</span>
 			</button>
 
-			{/* Preset 3: Скандонест 3% (без адреналина) */}
+			{/* Preset 3: Скандонест без адреналина (1.7 мл) */}
 			<button
 				type="button"
 				disabled={disabled}
 				onClick={onApplyScandonestCardio}
 				className={PRESET_BTN_CLASS}
-				title="Кардио-защита: Мепивакаин 3% (Скандонест 3% без адреналина, 1.7 мл)"
+				title="Кардио-защита: Мепивакаин 3% — Скандонест без адреналина (1 карпула 1.7 мл)"
 				data-testid="anesthesia-preset-scandonest-cardio"
 			>
 				<CheckCircle2 size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
-				<span>Скандонест 3% (без адреналина)</span>
+				<span>Скандонест без адреналина</span>
 			</button>
 
-			{/* Preset 4: Септанест */}
-			<button
-				type="button"
-				disabled={disabled}
-				onClick={onApplySeptanestInfiltration || onApplyMandibularArticaine100k}
-				className={PRESET_BTN_CLASS}
-				title="Септанест: Артикаин 4% с адреналином 1:100 000 (1 карпула 1.7 мл)"
-				data-testid="anesthesia-preset-mandibular-articaine-100k"
-			>
-				<CheckCircle2 size={14} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
-				<span>Септанест</span>
-			</button>
-
-			{/* Preset 5: Экстренная укладка «🚨 АНТИШОК» */}
+			{/* Preset 4: Экстренная укладка «🚨 АНТИШОК» */}
 			<button
 				type="button"
 				disabled={disabled}
 				onClick={() => { onWriteoffAntishockKit?.(); onOpenEmergencyProtocol?.(); }}
-				className="inline-flex items-center gap-1.5 border border-rose-500/60 bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 font-bold rounded-lg px-2.5 py-1.5 min-h-[44px] sm:min-h-[36px] sm:h-9 text-xs transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
-				title="Экстренная помощь: списание набора первой помощи и открытие протокола 112"
+				className="inline-flex items-center gap-1.5 border border-rose-500/60 bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 font-bold rounded-xl px-2.5 py-1.5 min-h-[44px] sm:min-h-[36px] sm:h-9 text-xs transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
+				title="Экстренная помощь: протокол первой помощи и шок (112)"
 				data-testid="anesthesia-btn-antishock-emergency"
 			>
 				<AlertTriangle size={14} className="shrink-0 text-rose-600 dark:text-rose-400" />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldAlert } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import type { AnestheticDrugId } from '../anesthesiaCatalog';
 import type { SafetyWarningState } from './types';
 
@@ -11,51 +11,60 @@ export interface AnesthesiaSafetyStopperAlertProps {
 	onConfirmWarningOverride: (count: number) => void;
 }
 
+/**
+ * AnesthesiaSafetyStopperAlert — Passive Clinical Advisory
+ * Informs the doctor with zero modal blockage per Mandate 8e/8y.
+ */
 export function AnesthesiaSafetyStopperAlert({
-	disabled,
 	safetyWarning,
 	onSelectDrug,
 	onDismissWarning,
 	onConfirmWarningOverride,
 }: AnesthesiaSafetyStopperAlertProps) {
 	return (
-		<div className="anesthesia-safety-stopper-alert" role="alert">
-			<div className="stopper-alert-content">
-				<ShieldAlert size={20} className="stopper-icon text-amber-500 shrink-0" />
-				<div>
-					<div className="stopper-title">{safetyWarning.title}</div>
-					<div className="stopper-text">{safetyWarning.text}</div>
+		<div
+			className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs shadow-2xs"
+			role="alert"
+		>
+			<div className="flex items-center gap-2 min-w-0">
+				<AlertCircle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+				<div className="truncate">
+					<span className="font-bold">{safetyWarning.title}: </span>
+					<span className="text-[var(--ink-muted)]">{safetyWarning.text}</span>
 				</div>
 			</div>
-			<div className="stopper-actions">
+			<div className="flex items-center gap-1.5 shrink-0">
 				<button
 					type="button"
-					className="stopper-btn-switch min-h-[44px]"
+					className="px-2.5 py-1 min-h-[36px] rounded-lg border border-amber-500/40 bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] cursor-pointer transition-colors"
 					onClick={() => {
 						onDismissWarning();
 						onSelectDrug('mepivacaine_plain');
 						onConfirmWarningOverride(1.0);
 					}}
-					title="Быстро переключиться на безопасный Мепивакаин 3% без вазоконстриктора"
+					title="Переключиться на Мепивакаин 3% без вазоконстриктора"
 				>
-					Ввести Скандонест 3% (безопасно)
+					Скандонест 3%
 				</button>
 				<button
 					type="button"
-					disabled={disabled}
 					data-testid="btn-anesthesia-confirm-override"
-					className="px-3 py-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors cursor-pointer active:scale-98 shadow-xs"
+					className="px-2.5 py-1 min-h-[36px] rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold cursor-pointer transition-colors"
 					onClick={() => {
 						const count = safetyWarning.carpulesCount ?? 1.0;
 						onDismissWarning();
 						onConfirmWarningOverride(count);
 					}}
-					title="Применить клиническое суждение врача и внести препарат в медицинскую карту"
+					title="Подтвердить назначение врача"
 				>
-					Всё равно внести (врачебное решение)
+					Применить
 				</button>
-				<button type="button" className="stopper-btn-dismiss min-h-[44px]" onClick={onDismissWarning}>
-					Закрыть
+				<button
+					type="button"
+					className="px-2 py-1 min-h-[36px] rounded-lg text-xs text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+					onClick={onDismissWarning}
+				>
+					✕
 				</button>
 			</div>
 		</div>

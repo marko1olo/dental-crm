@@ -12,6 +12,7 @@
  * 8. treatmentPlanPersistenceEngine.ts — Гидратация структурированных этапов из БД PostgreSQL 18
  */
 
+export * from "./treatmentPlanServicesCatalog";
 export * from "./treatmentPlanNomenclature804n";
 export * from "./treatmentPlanPricingEngine";
 export * from "./treatmentPlanItemFactory";

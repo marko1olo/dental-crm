@@ -165,9 +165,6 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 								100% гарантия / персонал
 							</span>
 						)}
-						<span className="text-[11px] text-[var(--tp-text-muted)] hidden lg:inline">
-							Инструменты врача: скидки и клинические пакеты
-						</span>
 					</div>
 				</div>
 
