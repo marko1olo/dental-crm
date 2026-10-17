@@ -116,7 +116,8 @@ export const MobilePerioKeypadDial: React.FC<MobilePerioKeypadDialProps> = memo(
 			<div className="grid grid-cols-3 gap-1.5 w-full">
 				{[1, 2, 3, 4, 5, 6, 7, 8, 9].map((numVal) => {
 					const isNorm = numVal <= 3;
-					const isModerate = numVal <= 5;
+					const isBorderline = numVal === 4;
+					const isDeep = numVal > 4;
 					return (
 						<button
 							key={numVal}
@@ -125,10 +126,10 @@ export const MobilePerioKeypadDial: React.FC<MobilePerioKeypadDialProps> = memo(
 							onClick={() => handleDepthTap(numVal)}
 							className={`min-h-[48px] h-12 rounded-xl font-black text-base font-mono flex items-center justify-center gap-1 border transition-all active:scale-95 cursor-pointer touch-manipulation shadow-xs ${
 								isNorm
-									? "bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-300 border-emerald-500/40"
-									: isModerate
-										? "bg-amber-600/20 hover:bg-amber-600/35 text-amber-300 border-amber-500/40"
-										: "bg-rose-600/25 hover:bg-rose-600/45 text-rose-200 border-rose-500/50"
+									? "bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-800 dark:text-emerald-300 border-emerald-500/40"
+									: isBorderline
+										? "bg-amber-600/20 hover:bg-amber-600/35 text-amber-800 dark:text-amber-300 border-amber-500/40"
+										: "bg-rose-600/25 hover:bg-rose-600/45 text-rose-800 dark:text-rose-200 border-rose-500/50 ring-1 ring-rose-500/30 font-black"
 							}`}
 							data-testid={`perio-keypad-depth-${numVal}`}
 							title={`${numVal} мм (ввод и автопереход к следующей точке)`}

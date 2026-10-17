@@ -1,0 +1,100 @@
+/* ==========================================================================
+   Patient-Friendly Estimate Print Styles (Clean Large Blocks / Mandate 8e)
+   ========================================================================== */
+
+.patient-friendly-estimate-doc {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	color: var(--tp-text-main);
+	background: var(--tp-surface);
+	font-size: 10pt;
+	line-height: 1.4;
+}
+
+.patient-estimate-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	border-bottom: 2px solid var(--tp-primary);
+	padding-bottom: 12px;
+	margin-bottom: 16px;
+}
+
+.patient-estimate-title-main {
+	font-size: 14pt;
+	font-weight: 900;
+	letter-spacing: -0.02em;
+	color: var(--tp-primary);
+	margin: 0 0 4px 0;
+	text-transform: uppercase;
+}
+
+.patient-stage-card {
+	border: 1px solid var(--tp-border);
+	border-radius: 12px;
+	padding: 14px 16px;
+	margin-bottom: 14px;
+	background: var(--tp-surface-soft);
+	page-break-inside: avoid;
+}
+
+.patient-stage-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom: 1px solid var(--tp-border);
+	padding-bottom: 8px;
+	margin-bottom: 10px;
+}
+
+.patient-stage-card-title {
+	font-size: 12pt;
+	font-weight: 800;
+	color: var(--tp-text-main);
+}
+
+.patient-stage-pill {
+	font-size: 8.5pt;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: 6px;
+	background: var(--tp-surface);
+	color: var(--tp-text-muted);
+	border: 1px solid var(--tp-border);
+}
+
+.patient-proc-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 8px 0;
+	font-size: 9.5pt;
+}
+
+.patient-proc-table th,
+.patient-proc-table td {
+	padding: 6px 8px;
+	border-bottom: 1px solid var(--tp-border);
+	vertical-align: middle;
+	text-align: left;
+}
+
+.patient-proc-table th {
+	font-size: 8pt;
+	font-weight: 800;
+	text-transform: uppercase;
+	color: var(--tp-text-muted);
+	background: var(--tp-surface);
+}
+
+.patient-proc-tooth-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1px 5px;
+	font-size: 8.5pt;
+	font-weight: 800;
+	font-family: monospace;
+	background: var(--tp-primary-light);
+	color: var(--tp-primary);
+	border-radius: 6px;
+	border: 1px solid var(--tp-border);
+}

@@ -1,0 +1,119 @@
+/* Tier Card */
+.treatment-tier-card {
+	background: var(--tp-surface);
+	border: 2px solid var(--tp-border);
+	border-radius: var(--tp-radius-lg);
+	display: flex;
+	flex-direction: column;
+	position: relative;
+	transition: all 0.2s ease;
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+.treatment-tier-card:hover {
+	border-color: rgba(13, 148, 136, 0.5);
+	transform: translateY(-2px);
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.treatment-tier-card.selected {
+	border-color: var(--tp-primary);
+	box-shadow: 0 0 0 2px var(--tp-primary-light), 0 12px 28px -6px rgba(13, 148, 136, 0.25);
+}
+
+.treatment-tier-card.recommended {
+	border-color: var(--warn-fg);
+}
+
+.treatment-tier-card.recommended.selected {
+	border-color: var(--warn-fg);
+	box-shadow: 0 0 0 2px var(--warn-bg), 0 12px 28px -6px rgba(245, 158, 11, 0.25);
+}
+
+/* Doctor Recommendation Ribbon */
+.treatment-doctor-ribbon {
+	position: absolute;
+	top: 0;
+	right: 0;
+	left: 0;
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	border-bottom: 1px solid var(--warn-fg);
+	font-size: 11px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	padding: 5px 12px;
+	text-align: center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	box-shadow: 0 2px 6px rgba(217, 119, 6, 0.2);
+	z-index: 2;
+}
+
+/* Card Header */
+.treatment-tier-header {
+	padding: 20px 18px 14px 18px;
+	border-bottom: 1px solid var(--tp-border);
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	background: var(--tp-bg);
+}
+
+.treatment-tier-card.recommended .treatment-tier-header {
+	padding-top: 36px;
+}
+
+.treatment-tier-badge-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.treatment-tier-badge {
+	font-size: 10px;
+	font-weight: 800;
+	padding: 3px 8px;
+	border-radius: 9999px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	border: 1px solid currentColor;
+}
+
+.treatment-tier-badge.economy {
+	color: var(--muted);
+	background: var(--paper-soft);
+	border-color: var(--line);
+}
+
+.treatment-tier-badge.standard {
+	color: var(--warn-fg);
+	background: var(--warn-bg);
+	border-color: var(--warn-fg);
+}
+
+.treatment-tier-badge.optimum {
+	color: var(--teal);
+	background: var(--teal-surface);
+	border-color: var(--teal);
+}
+
+.treatment-tier-name {
+	font-size: 16px;
+	font-weight: 800;
+	color: var(--tp-text-main);
+	margin: 0;
+}
+
+.treatment-tier-desc {
+	font-size: 12px;
+	color: var(--tp-text-muted);
+	margin: 0;
+	line-height: 1.4;
+	min-height: 34px;
+}

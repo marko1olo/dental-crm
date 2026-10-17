@@ -186,7 +186,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 						<button
 							type="button"
 							onClick={() => setViewModeOverride("auto")}
-							className="h-7 px-2 text-[12px] text-[var(--muted)] hover:text-[var(--ink)] underline cursor-pointer"
+							className="secondary-button text-xs !min-h-[28px] !h-7 !px-2.5"
 						>
 							Авто
 						</button>
@@ -352,6 +352,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 				onSelectTooth={setSelectedToothNumber}
 				onFocusSite={(toothNumber, siteKey) => {
 					setIsProbeKeyboardEnabled(true);
+					setIsTier3ProbingExpanded(true);
 					setFocusedSite({ toothNumber, siteKey });
 					setSelectedToothNumber(toothNumber);
 					if (typeof requestAnimationFrame !== "undefined") {

@@ -27,6 +27,7 @@ import { useVisitStore } from "../../../store/visitStore";
 import { showToast } from "../../GlobalToast";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
 import {
+	applyHealthyPeriodontiumPreset,
 	applyPeriodontitisModeratePreset,
 	applyPsrSextantCode,
 	type PerioExpressPresetId,
@@ -411,12 +412,12 @@ export function usePerioChartLogic({
 		[readOnly, toothMap, updateToothProperties],
 	);
 
-	// ─── 1-Click Fast Presets ────────────────────────────────────────────────
+	// ─── 1-Click Fast Presets (Mandates 8e, 8k, 8n) ─────────────────────────
 	const handleSetAllIntact = useCallback(() => {
 		if (readOnly) return;
-		setTeeth(createDefaultPerioTeeth(2));
+		setTeeth((prevTeeth) => applyHealthyPeriodontiumPreset(prevTeeth));
 		showToast(
-			"Все 32 зуба установлены как интактные (глубина 2 мм, BOP 0%)",
+			"✓ Пародонт интактен (норма): глубина 1–2 мм, BOP 0%, PMA 0%",
 			"success",
 			4000,
 		);

@@ -11,4 +11,5 @@ export {
 	PerioChartModal,
 	type PerioChartModalProps,
 } from "./PerioChartModal";
+export { PerioStandaloneWorkspace } from "./PerioStandaloneWorkspace";
 

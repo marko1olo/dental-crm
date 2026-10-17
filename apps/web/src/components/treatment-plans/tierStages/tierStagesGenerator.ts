@@ -44,6 +44,13 @@ export function generateTierPlanStages(
 	const hasPathology = (effectiveTeeth || []).some(hasToothDefect);
 
 	if (!hasPathology) {
+		if (options?.isDemoMode === false) {
+			return [
+				makeEmptyStage(1, "stage_1_therapy", "Этап I: Терапия и санация", "Санация полости рта"),
+				makeEmptyStage(2, "stage_2_surgery", "Этап II: Хирургия и имплантация", "Хирургический этап"),
+				makeEmptyStage(3, "stage_3_orthopedics", "Этап III: Ортопедия и протезирование", "Ортопедический этап"),
+			];
+		}
 		return getDefaultClinicalPresetStages(tierId, catalog, validDiscountPct, { isDemoMode: isDemo });
 	}
 

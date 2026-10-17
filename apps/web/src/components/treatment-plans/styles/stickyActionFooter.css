@@ -1,0 +1,118 @@
+.treatment-presenter-footer {
+	padding: 14px 20px;
+	background: var(--tp-surface);
+	border-top: 1px solid var(--tp-border);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	flex-shrink: 0;
+	z-index: 10;
+}
+
+.treatment-footer-summary {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.treatment-footer-price-col {
+	display: flex;
+	flex-direction: column;
+}
+
+.treatment-footer-label {
+	font-size: 12px;
+	color: var(--tp-text-muted);
+}
+
+.treatment-footer-amount {
+	font-size: 18px;
+	font-weight: 900;
+	color: var(--tp-text-main);
+}
+
+.treatment-footer-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.btn-treatment-action {
+	min-height: 32px;
+	height: 32px;
+	padding: 0 14px;
+	border-radius: var(--tp-radius-md, 8px);
+	font-size: 13px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	border: 1px solid var(--tp-border, var(--line));
+	background: var(--tp-bg, var(--paper));
+	color: var(--tp-text-main, var(--ink));
+}
+
+.btn-treatment-action:hover {
+	background: var(--tp-surface-soft, var(--paper-soft));
+}
+
+.btn-patient-choice {
+	background: var(--teal);
+	color: var(--paper-strong, #ffffff);
+	border: none;
+	padding: 0 18px;
+	font-size: 13px;
+	font-weight: 700;
+	box-shadow: 0 2px 8px -2px var(--teal-ring, rgba(13, 148, 136, 0.4));
+}
+
+.btn-patient-choice:hover {
+	background: var(--teal-dark);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.45);
+}
+
+.btn-treatment-print {
+	background: var(--tp-surface-soft, var(--paper-soft));
+	color: var(--tp-text-main, var(--ink));
+	border: 1px solid var(--tp-border, var(--line));
+}
+
+.btn-treatment-print:hover {
+	background: var(--tp-surface, var(--paper));
+	border-color: var(--tp-primary, var(--teal));
+}
+
+.btn-treatment-sign {
+	background: var(--tp-surface-soft, var(--paper-soft));
+	color: var(--tp-text-main, var(--ink));
+	border: 1px solid var(--tp-border, var(--line));
+	padding: 0 16px;
+	font-size: 13px;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.btn-treatment-sign:hover {
+	background: var(--tp-surface, var(--paper));
+	border-color: var(--tp-primary, var(--teal));
+	transform: translateY(-1px);
+}
+@media (max-width: 768px), (pointer: coarse) {
+	.btn-treatment-action,
+	.btn-patient-choice,
+	.btn-treatment-print,
+	.btn-treatment-sign {
+		width: 100%;
+		min-height: 44px;
+		height: 44px;
+	}
+	.btn-treatment-action {
+		font-size: 14px;
+	}
+}

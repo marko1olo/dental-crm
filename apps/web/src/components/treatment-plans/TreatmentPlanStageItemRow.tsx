@@ -201,7 +201,7 @@ export const TreatmentPlanStageItemRow: React.FC<TreatmentPlanStageItemRowProps>
 									data-testid={`item-lab-order-one-click-btn-${item.id}`}
 								>
 									<Zap size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
-									<span>Наряд ЗТЛ</span>
+									<span>Экспресс</span>
 								</button>
 							)}
 						</div>

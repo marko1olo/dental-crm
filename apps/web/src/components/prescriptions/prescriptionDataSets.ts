@@ -75,8 +75,8 @@ export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[]
 	},
 	{
 		id: "amoxiclav_first_line",
-		label: "«Антибиотик первого ряда (Амоксиклав 875+125 мг)»",
-		desc: "Rp: Amoxicillini + Acidi clavulanici 875/125mg, D.t.d. N 14 in tab., S. По 1 таблетке 2 раза в день во время еды 7 дней.",
+		label: "«Антибиотик после удаления» (Амоксиклав / Амоксициллин)",
+		desc: "Амоксиклав 875/125 мг (или Амоксициллин 500 мг) по 1 таб. 2 раза в день во время еды 5–7 дней",
 		drugIds: ["amoxiclav_875_125"],
 	},
 	{
@@ -87,8 +87,8 @@ export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[]
 	},
 	{
 		id: "analgesia_nimesil",
-		label: "«НПВП / Обезболивающее при острой боли (Нимесил 100 мг)»",
-		desc: "Rp: Nimesulidi 100mg, D.t.d. N 10 in gran., S. По 1 пакетику 2 раза в день после еды, растворив в 100 мл воды, до 5 дней.",
+		label: "«Анальгетик / НПВП» (Нимесил / Найз / Кеторол)",
+		desc: "Нимесил 100 мг (или Кеторол 10 мг) по 1 пак./таб. 2 раза в день после еды при болях 3–5 дней",
 		drugIds: ["nimesulide_100"],
 	},
 	{
@@ -105,8 +105,8 @@ export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[]
 	},
 	{
 		id: "chlorhexidine_antiseptic_rinse",
-		label: "«Хлоргексидин 0.05% / Антисептическое полоскание»",
-		desc: "Rp: Sol. Chlorhexidini bigluconatis 0.05% 100ml, D.t.d. N 1, S. Полоскать полость рта 10-15 мл в течение 1 мин 2-3 раза в день 5-7 дней.",
+		label: "«Антисептик» (Хлоргексидин 0.05% / Мирамистин)",
+		desc: "Хлоргексидин 0.05% (или Мирамистин 0.01%) ротовые ванночки 10-15 мл 3 раза в день 5–7 дней",
 		drugIds: ["chlorhexidine_005"],
 	},
 	{
@@ -117,8 +117,8 @@ export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[]
 	},
 	{
 		id: "suprastin_edema_prophylaxis",
-		label: "«Супрастин 25 мг / Противоотечный комплекс»",
-		desc: "Rp: Chloropyramini 25mg, D.t.d. N 20 in tab., S. По 1 таблетке на ночь в течение 3 дней после хирургического вмешательства.",
+		label: "«Антигистаминное» (Цетрин / Супрастин)",
+		desc: "Супрастин 25 мг (или Цетрин 10 мг) по 1 таб. на ночь 3–5 дней для снятия отека",
 		drugIds: ["suprastin_25"],
 	},
 	{

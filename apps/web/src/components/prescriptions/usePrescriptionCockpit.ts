@@ -104,6 +104,7 @@ export function usePrescriptionCockpit(props: PrescriptionPrintModalProps) {
 	const [customSigna, setCustomSigna] = useState<string>("");
 	const [customDrugsList, setCustomDrugsList] = useState<PrescriptionDrugItem[]>([]);
 	const [isMemoCopied, setIsMemoCopied] = useState<boolean>(false);
+	const [activePresetId, setActivePresetId] = useState<string | undefined>(undefined);
 	const [mobileTab, setMobileTab] = useState<"catalog" | "preview">("catalog");
 
 	const prevIsOpenRef = useRef(false);
@@ -327,27 +328,42 @@ export function usePrescriptionCockpit(props: PrescriptionPrintModalProps) {
 
 	const handlePrint = (customHtml?: string | unknown) => {
 		const printHtml = typeof customHtml === "string" ? customHtml : generatePrintHtml();
-		const printFrame = document.createElement("iframe");
-		printFrame.style.position = "fixed";
-		printFrame.style.right = "0";
-		printFrame.style.bottom = "0";
-		printFrame.style.width = "0";
-		printFrame.style.height = "0";
-		printFrame.style.border = "0";
-		document.body.appendChild(printFrame);
+		if (typeof document !== "undefined") {
+			try {
+				const printFrame = document.createElement("iframe");
+				printFrame.style.position = "fixed";
+				printFrame.style.right = "0";
+				printFrame.style.bottom = "0";
+				printFrame.style.width = "0";
+				printFrame.style.height = "0";
+				printFrame.style.border = "0";
+				document.body.appendChild(printFrame);
 
-		const frameDoc = printFrame.contentWindow?.document || printFrame.contentDocument;
-		if (frameDoc) {
-			frameDoc.open();
-			frameDoc.write(printHtml);
-			frameDoc.close();
-			setTimeout(() => {
-				printFrame.contentWindow?.focus();
-				printFrame.contentWindow?.print();
-				setTimeout(() => {
-					document.body.removeChild(printFrame);
-				}, 1000);
-			}, 250);
+				const frameDoc = printFrame.contentWindow?.document || printFrame.contentDocument;
+				if (frameDoc) {
+					frameDoc.open();
+					frameDoc.write(printHtml);
+					frameDoc.close();
+					setTimeout(() => {
+						try {
+							printFrame.contentWindow?.focus();
+							printFrame.contentWindow?.print();
+						} catch (printErr) {
+							console.warn("[PrescriptionPrint] non-blocking print notice:", printErr);
+						} finally {
+							setTimeout(() => {
+								try {
+									if (document.body.contains(printFrame)) {
+										document.body.removeChild(printFrame);
+									}
+								} catch {}
+							}, 1000);
+						}
+					}, 250);
+				}
+			} catch (frameErr) {
+				console.warn("[PrescriptionPrint] iframe setup notice:", frameErr);
+			}
 		}
 		persistPrescriptionToBackend();
 	};
@@ -423,17 +439,21 @@ export function usePrescriptionCockpit(props: PrescriptionPrintModalProps) {
 	const handleSelectExpressPreset = (preset: DentalFastPrescriptionSet) => {
 		setSelectedDrugIds([...preset.drugIds]);
 		setValidityDays("60");
+		setActivePresetId(preset.id);
+		showToast(`Курс ${preset.label} применён`, "info", 2000);
 	};
 
 	const handleApplyAndPrint = (preset: DentalFastPrescriptionSet) => {
 		setSelectedDrugIds([...preset.drugIds]);
 		setValidityDays("60");
+		setActivePresetId(preset.id);
 		showToast(`Печать пакета ${preset.label}`, "info", 2000);
 		handlePrint();
 	};
 
 	const handleApplyAndInsertToDiary = (preset: DentalFastPrescriptionSet) => {
 		setSelectedDrugIds([...preset.drugIds]);
+		setActivePresetId(preset.id);
 		handleInsertToDiary();
 	};
 
@@ -475,6 +495,7 @@ export function usePrescriptionCockpit(props: PrescriptionPrintModalProps) {
 	return {
 		activeForm, setActiveForm,
 		selectedDrugIds, setSelectedDrugIds, toggleDrug,
+		activePresetId, setActivePresetId,
 		customSeriesNumber, setCustomSeriesNumber,
 		prescriptionDate, setPrescriptionDate,
 		validityDays, setValidityDays,

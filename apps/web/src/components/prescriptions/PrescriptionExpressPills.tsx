@@ -85,7 +85,7 @@ export const PrescriptionExpressPills: React.FC<PrescriptionExpressPillsProps> =
 										<button
 											type="button"
 											onClick={() => onApplyAndInsertToDiary(preset)}
-											className="h-7 px-2 text-[11px] font-medium rounded-lg secondary-button flex items-center gap-1 text-[var(--ink)] hover:text-[var(--teal)]"
+											className="secondary-button h-7 px-2 text-[11px] font-semibold rounded-lg flex items-center gap-1 text-[var(--ink)] hover:text-[var(--teal)] cursor-pointer"
 											title="Вставить назначения пакета в дневник"
 										>
 											<PenTool className="w-3 h-3 text-[var(--teal)]" />
@@ -96,10 +96,10 @@ export const PrescriptionExpressPills: React.FC<PrescriptionExpressPillsProps> =
 										<button
 											type="button"
 											onClick={() => onApplyAndPrint(preset)}
-											className="h-7 px-2 text-[11px] font-medium rounded-lg secondary-button flex items-center gap-1 text-[var(--ink)] hover:text-[var(--teal)]"
+											className="primary-button h-7 px-2 text-[11px] font-semibold rounded-lg flex items-center gap-1 cursor-pointer"
 											title="Печать пакета"
 										>
-											<Printer className="w-3 h-3 text-[var(--teal)]" />
+											<Printer className="w-3 h-3" />
 											Печать
 										</button>
 									)}

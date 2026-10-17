@@ -1,0 +1,99 @@
+/* Detailed Accordion Section for Stages */
+.treatment-stages-accordion-wrap {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	background: var(--tp-surface);
+	border: 1px solid var(--tp-border);
+	border-radius: var(--tp-radius-lg);
+	padding: 16px;
+}
+
+.treatment-stages-accordion-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--tp-border);
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.treatment-stage-item {
+	border: 1px solid var(--tp-border);
+	border-radius: var(--tp-radius-md);
+	background: var(--tp-bg);
+	overflow: hidden;
+	transition: all 0.2s ease;
+}
+
+.treatment-stage-header {
+	padding: 14px 18px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	cursor: pointer;
+	background: var(--tp-bg);
+	user-select: none;
+	gap: 12px;
+}
+
+.treatment-stage-header:hover {
+	background: var(--tp-surface-soft);
+}
+
+.treatment-stage-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.treatment-stage-num-badge {
+	width: 28px;
+	height: 28px;
+	border-radius: 9999px;
+	background: var(--tp-primary-light);
+	color: var(--tp-primary);
+	font-size: 12px;
+	font-weight: 900;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.treatment-stage-name {
+	font-size: 13px;
+	font-weight: 800;
+	color: var(--tp-text-main);
+	margin: 0;
+}
+
+.treatment-stage-subtitle {
+	font-size: 11px;
+	color: var(--tp-text-muted);
+	margin: 2px 0 0 0;
+}
+
+.treatment-stage-right-meta {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	flex-shrink: 0;
+}
+
+.treatment-stage-pill {
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--tp-text-muted);
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.treatment-stage-total-badge {
+	font-size: 14px;
+	font-weight: 900;
+	color: var(--tp-text-main);
+}

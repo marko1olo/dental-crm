@@ -1,0 +1,112 @@
+/* Presenter Modal Backdrop & Shell */
+.treatment-presenter-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 10050;
+	background: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.treatment-presenter-modal,
+.treatment-presenter-container {
+	--tp-bg: var(--paper);
+	--tp-surface: var(--paper-strong);
+	--tp-surface-soft: var(--paper-soft);
+	--tp-border: var(--line);
+	--tp-text-main: var(--ink);
+	--tp-text-muted: var(--muted);
+	--tp-primary: var(--teal);
+	--tp-primary-hover: var(--teal-dark);
+	--tp-primary-light: var(--teal-surface);
+	--tp-accent: var(--warn-fg);
+	--tp-accent-light: var(--warn-bg);
+	--tp-success: var(--ok-fg);
+	--tp-success-light: var(--ok-bg);
+	--tp-radius-xl: 24px;
+	--tp-radius-lg: 16px;
+	--tp-radius-md: 10px;
+	--tp-radius-sm: 6px;
+
+	background: var(--tp-bg);
+	color: var(--tp-text-main);
+	border: 1px solid var(--tp-border);
+	border-radius: var(--tp-radius-xl);
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	width: 100%;
+	max-width: 1320px;
+	height: calc(100vh - 40px);
+	max-height: calc(100vh - 40px);
+	margin: auto;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
+	font-family: inherit;
+	overflow-x: clip;
+}
+
+.treatment-presenter-modal.treatment-presenter-fullscreen,
+.treatment-presenter-container.treatment-presenter-fullscreen {
+	background: transparent;
+	position: fixed;
+	inset: 0;
+}
+
+/* Header */
+.treatment-presenter-header {
+	display: flex;
+	flex-direction: column;
+	padding: 12px 20px 10px 20px;
+	background: var(--tp-surface);
+	border-bottom: 1px solid var(--tp-border);
+	gap: 10px;
+	flex-shrink: 0;
+}
+
+.treatment-presenter-header-main {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	width: 100%;
+}
+
+.treatment-presenter-title-group {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+}
+
+.treatment-presenter-icon-badge {
+	width: 36px;
+	height: 36px;
+	border-radius: var(--tp-radius-md);
+	background: var(--tp-primary-light);
+	color: var(--tp-primary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	border: 1px solid rgba(13, 148, 136, 0.25);
+}
+
+.treatment-presenter-header-meta {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	gap: 2px;
+}
+
+.treatment-presenter-main-title {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--tp-text-main);
+	margin: 0;
+	white-space: nowrap;
+}

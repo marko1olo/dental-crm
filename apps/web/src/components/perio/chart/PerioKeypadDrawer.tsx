@@ -118,8 +118,8 @@ export const PerioKeypadDrawer: React.FC<PerioKeypadDrawerProps> = React.memo(({
 				</span>
 				{[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((numVal) => {
 					const isNorm = numVal <= 3;
-					const isMild = numVal <= 5;
-					const isMod = numVal <= 7;
+					const isBorderline = numVal === 4;
+					const isDeep = numVal > 4;
 					return (
 						<button
 							key={numVal}
@@ -128,12 +128,10 @@ export const PerioKeypadDrawer: React.FC<PerioKeypadDrawerProps> = React.memo(({
 							onClick={() => onKeypadDepth(numVal)}
 							className={`min-w-[44px] min-h-[44px] sm:min-w-[34px] sm:min-h-0 sm:h-9 rounded-lg font-black text-xs sm:text-sm transition-all active:scale-95 cursor-pointer flex items-center justify-center border ${
 								isNorm
-									? "bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/30"
-									: isMild
-										? "bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border-amber-500/30"
-										: isMod
-											? "bg-orange-500/20 hover:bg-orange-500/35 text-orange-300 border-orange-500/40"
-											: "bg-red-600/25 hover:bg-red-600/40 text-red-200 border-red-500/50 shadow-xs"
+									? "bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-800 dark:text-emerald-300 border-emerald-500/30"
+									: isBorderline
+										? "bg-amber-500/20 hover:bg-amber-500/35 text-amber-800 dark:text-amber-300 border-amber-500/40"
+										: "bg-red-600/25 hover:bg-red-600/40 text-red-800 dark:text-red-200 border-red-500/50 shadow-xs ring-1 ring-red-500/30 font-black"
 							}`}
 							title={`Ввести глубину кармана ${numVal} мм и перейти к след. точке (хоткей: ${
 								numVal <= 9 ? numVal : numVal === 10 ? "0" : `Shift+${numVal - 10}`

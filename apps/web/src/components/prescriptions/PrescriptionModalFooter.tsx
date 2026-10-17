@@ -85,7 +85,7 @@ export const PrescriptionModalFooter: React.FC<PrescriptionModalFooterProps> = (
 					className="primary-button h-9 min-h-[44px] md:min-h-[36px] px-4 text-xs font-bold rounded-xl inline-flex items-center gap-1.5 shadow-sm cursor-pointer justify-center"
 				>
 					<Printer className="w-4 h-4 shrink-0" />
-					<span>Печать рецепта</span>
+					<span>Печать рецепта А5</span>
 				</button>
 			</div>
 		</div>

@@ -1,0 +1,72 @@
+@media print {
+	/* Patient-Friendly Estimate Print Invariants */
+	.patient-friendly-estimate-doc {
+		color: #000000 !important;
+		background: #ffffff !important;
+	}
+
+	.patient-stage-card {
+		border: 1pt solid #94a3b8 !important;
+		background: #ffffff !important;
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+		margin-bottom: 12px !important;
+		padding: 10px 12px !important;
+	}
+
+	.patient-stage-pill {
+		background: #ffffff !important;
+		color: #334155 !important;
+		border: 0.5pt solid #94a3b8 !important;
+	}
+
+	.patient-proc-table {
+		border-collapse: collapse !important;
+		width: 100% !important;
+	}
+
+	.patient-proc-table th,
+	.patient-proc-table td {
+		border-bottom: 0.5pt solid #cbd5e1 !important;
+		color: #000000 !important;
+		background: #ffffff !important;
+	}
+
+	.patient-proc-tooth-badge {
+		background: #f0fdfa !important;
+		color: #0f766e !important;
+		border: 0.5pt solid #99f6e4 !important;
+	}
+
+	.patient-finance-card {
+		border: 1pt solid #94a3b8 !important;
+		background: #ffffff !important;
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+
+	.patient-finance-card.highlight {
+		border: 1.5pt solid #0d9488 !important;
+		background: #f0fdfa !important;
+	}
+
+	.patient-finance-card-value {
+		color: #0d9488 !important;
+	}
+
+	.treatment-print-signatures,
+	.treatment-print-warranties,
+	.patient-finance-grid {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+
+	.treatment-sig-box {
+		border-top: 1pt solid #000000 !important;
+		color: #000000 !important;
+	}
+
+	.treatment-doc-watermark {
+		color: rgba(0, 0, 0, 0.02) !important;
+	}
+}

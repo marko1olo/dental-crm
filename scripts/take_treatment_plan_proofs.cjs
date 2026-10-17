@@ -6,7 +6,7 @@ const http = require("node:http");
 
 const API_BASE = "http://127.0.0.1:4100";
 const PROOFS_DIR = path.resolve(process.cwd(), "docs/proofs/treatment-plans");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/57c54b80-4c46-4fc2-bf0f-77b93b3e69f0");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/092fcfd7-4e2c-4761-acce-de7ac406bc1a");
 
 fs.mkdirSync(PROOFS_DIR, { recursive: true });
 fs.mkdirSync(BRAIN_DIR, { recursive: true });

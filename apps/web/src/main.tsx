@@ -73,6 +73,21 @@ const AnesthesiaStandaloneWorkspace = React.lazy(() =>
 		default: m.AnesthesiaStandaloneWorkspace,
 	})),
 );
+const PerioStandaloneWorkspace = React.lazy(() =>
+	import("./components/perio/PerioStandaloneWorkspace").then((m) => ({
+		default: m.PerioStandaloneWorkspace,
+	})),
+);
+const PrescriptionsStandaloneWorkspace = React.lazy(() =>
+	import("./components/prescriptions/PrescriptionsStandaloneWorkspace").then((m) => ({
+		default: m.PrescriptionsStandaloneWorkspace,
+	})),
+);
+const ImplantPassportModal = React.lazy(() =>
+	import("./components/implants/ImplantPassportModal").then((m) => ({
+		default: m.ImplantPassportModal,
+	})),
+);
 import { TelephonyStandaloneWorkspace } from "./components/telephony/TelephonyStandaloneWorkspace";
 import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
 import { isPatientPresentationRoute } from "./components/photography/presentationSyncProtocol";
@@ -448,6 +463,110 @@ if (publicPortalRoute) {
 		<React.StrictMode>
 			<BootErrorBoundary audience="clinic">
 				<TelephonyStandaloneWorkspace />
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(new URLSearchParams(window.location.search).has("perio") ||
+		window.location.hash.toLowerCase().includes("perio"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			(localStorage.getItem("dente_theme") as any) || "auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	console.info("[Perio] Standalone branch mounted");
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка пародонтограммы...
+						</div>
+					}
+				>
+					<PerioStandaloneWorkspace />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(new URLSearchParams(window.location.search).has("prescriptions") ||
+		new URLSearchParams(window.location.search).has("rx") ||
+		window.location.hash.toLowerCase().includes("prescriptions") ||
+		window.location.hash.toLowerCase().includes("rx"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			(localStorage.getItem("dente_theme") as any) || "auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	console.info("[Prescriptions] Standalone branch mounted");
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка рецептурного модуля...
+						</div>
+					}
+				>
+					<PrescriptionsStandaloneWorkspace />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(new URLSearchParams(window.location.search).has("implant_passport") ||
+		new URLSearchParams(window.location.search).has("implants") ||
+		window.location.hash.toLowerCase().includes("implants") ||
+		window.location.hash.toLowerCase().includes("implant_passport"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			(localStorage.getItem("dente_theme") as any) || "auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка протокола имплантации...
+						</div>
+					}
+				>
+					<ImplantPassportModal
+						isOpen={true}
+						onClose={() => { window.location.href = "/"; }}
+						patientName="Ковалёв Роман Станиславович"
+						patientId="PAT-2026-088"
+						doctorName="Д-р Воронов А. В."
+						doctorId="DOC-01"
+						initialTooth={46}
+					/>
+				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>
 		</React.StrictMode>,

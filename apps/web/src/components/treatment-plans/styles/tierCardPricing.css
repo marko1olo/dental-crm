@@ -1,0 +1,100 @@
+/* Price Box — Optimized for arm-length chairside readability */
+.treatment-tier-price-box {
+	background: var(--tp-surface-soft);
+	border: 1px solid var(--tp-border);
+	border-radius: var(--tp-radius-md);
+	padding: 14px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.treatment-tier-card.selected .treatment-tier-price-box {
+	background: var(--tp-surface);
+	border-color: rgba(13, 148, 136, 0.4);
+}
+
+.treatment-tier-total-amount {
+	font-size: 28px;
+	font-weight: 900;
+	color: var(--tp-text-main);
+	line-height: 1;
+	display: flex;
+	align-items: baseline;
+	gap: 5px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.treatment-tier-rub-sign {
+	font-size: 18px;
+	font-weight: 800;
+	color: var(--tp-primary);
+}
+
+.treatment-tier-finance-chips {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 8px;
+	font-size: 12px;
+}
+
+.treatment-tier-chip-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	color: var(--tp-text-muted);
+}
+
+.treatment-tier-chip-highlight {
+	font-weight: 700;
+	color: var(--tp-primary);
+}
+
+.treatment-tier-ndfl-calc-btn {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	padding: 8px 10px;
+	border-radius: var(--tp-radius-sm);
+	background: var(--tp-success-light, rgba(16, 185, 129, 0.12));
+	border: 1px solid rgba(16, 185, 129, 0.3);
+	color: inherit;
+	font-size: 11px;
+	transition: all 0.15s ease;
+	box-sizing: border-box;
+	text-align: left;
+	margin-top: 4px;
+	touch-action: manipulation;
+}
+
+.treatment-tier-ndfl-calc-btn:hover {
+	background: rgba(16, 185, 129, 0.2);
+	border-color: rgba(16, 185, 129, 0.5);
+	transform: translateY(-1px);
+}
+
+/* Metric Specs */
+.treatment-tier-metrics {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+	padding: 12px 18px;
+	border-bottom: 1px solid var(--tp-border);
+	font-size: 11px;
+	background: var(--tp-bg);
+}
+
+.treatment-metric-item {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--tp-text-muted);
+}
+
+.treatment-metric-val {
+	font-weight: 700;
+	color: var(--tp-text-main);
+}
+

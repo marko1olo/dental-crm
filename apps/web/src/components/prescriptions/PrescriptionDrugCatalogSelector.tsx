@@ -28,6 +28,8 @@ import {
 
 export interface PrescriptionDrugCatalogSelectorProps {
 	readonly fastPresets: readonly DentalFastPrescriptionSet[];
+	readonly activePresetId?: string | undefined;
+	readonly onSelectPreset?: ((preset: DentalFastPrescriptionSet) => void) | undefined;
 	readonly onApplyAndInsertToDiary: (preset: DentalFastPrescriptionSet) => void;
 	readonly onApplyAndPrint: (preset: DentalFastPrescriptionSet) => void;
 	readonly searchQuery: string;
@@ -71,6 +73,8 @@ export interface PrescriptionDrugCatalogSelectorProps {
 
 export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSelectorProps> = ({
 	fastPresets,
+	activePresetId,
+	onSelectPreset,
 	onApplyAndInsertToDiary,
 	onApplyAndPrint,
 	searchQuery,
@@ -153,7 +157,8 @@ export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSe
 			{/* 1-Click Fast Presets Bar via PrescriptionExpressPills */}
 			<PrescriptionExpressPills
 				presets={fastPresets}
-				onSelectPreset={(p) => onApplyAndInsertToDiary(p)}
+				activePresetId={activePresetId}
+				onSelectPreset={(p) => (onSelectPreset ? onSelectPreset(p) : onApplyAndInsertToDiary(p))}
 				onApplyAndPrint={onApplyAndPrint}
 				onApplyAndInsertToDiary={onApplyAndInsertToDiary}
 				patientAllergies={patientAllergies}
@@ -165,12 +170,12 @@ export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSe
 				<div className="flex items-center justify-between">
 					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
 						<Award className="w-3.5 h-3.5 text-[var(--teal)]" />
-						Формуляр препаратов (Приказ № 1094н):
+						Каталог препаратов
 					</span>
 					<button
 						type="button"
 						onClick={onToggleAddingCustom}
-						className="h-8 px-3 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 inline-flex items-center gap-1.5 transition-colors cursor-pointer select-none"
+						className="secondary-button h-8 px-3 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 transition-colors cursor-pointer select-none"
 					>
 						<Plus className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" />
 						<span>Свой препарат</span>
@@ -293,7 +298,7 @@ export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSe
 					<button
 						type="button"
 						onClick={onAddCustomDrug}
-						className="h-8 px-3 text-xs font-bold rounded-lg bg-[var(--teal)] text-[var(--ink-inverse,#fff)] hover:opacity-90 transition-all cursor-pointer self-end"
+						className="primary-button h-8 px-3.5 text-xs font-bold rounded-lg transition-all cursor-pointer self-end shadow-xs"
 					>
 						Добавить в рецепт
 					</button>

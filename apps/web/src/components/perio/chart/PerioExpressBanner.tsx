@@ -85,11 +85,11 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 						<button
 							type="button"
 							onClick={onInsertToProtocol}
-							className="h-8 px-3 rounded-lg bg-[var(--teal)] hover:brightness-105 active:scale-95 text-white text-[13px] font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+							className="primary-button !min-h-[32px] !h-8 !px-3 text-xs shrink-0"
 							title="Внести текущее заключение пародонтограммы в дневник приёма"
 							data-testid="perio-express-insert-043-btn"
 						>
-							{insertStatus ? <Check size={14} /> : <DentalForm043 size={14} />}
+							{insertStatus ? <Check size={14} className="text-white" /> : <DentalForm043 size={14} className="text-white" />}
 							<span>
 								{insertStatus ? "Внесено в медкарту!" : "Внести в дневник"}
 							</span>
@@ -99,7 +99,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					<button
 						type="button"
 						onClick={onToggleTier3Probing}
-						className="text-[12.5px] text-teal-700 dark:text-teal-400 hover:text-teal-900 dark:hover:text-teal-300 font-semibold flex items-center gap-1 cursor-pointer transition-colors h-8 px-2.5 rounded-lg hover:bg-teal-500/15"
+						className="secondary-button !min-h-[32px] !h-8 !px-3 text-xs shrink-0"
 						data-testid="perio-tier3-toggle-header-btn"
 					>
 						<span>

@@ -1,0 +1,53 @@
+.patient-stage-total-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-top: 8px;
+	border-top: 1px dashed var(--tp-border);
+	font-weight: 800;
+	font-size: 10.5pt;
+	color: var(--tp-primary);
+}
+
+.patient-finance-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
+	margin: 18px 0;
+	page-break-inside: avoid;
+}
+
+.patient-finance-card {
+	border: 1.5px solid var(--tp-border);
+	border-radius: 12px;
+	padding: 12px 14px;
+	background: var(--tp-surface-soft);
+}
+
+.patient-finance-card.highlight {
+	border-color: var(--tp-primary);
+	background: var(--tp-surface);
+}
+
+.patient-finance-card-label {
+	font-size: 8.5pt;
+	font-weight: 700;
+	text-transform: uppercase;
+	color: var(--tp-text-muted);
+	margin-bottom: 4px;
+}
+
+.patient-finance-card-value {
+	font-size: 15pt;
+	font-weight: 900;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	color: var(--tp-primary);
+	line-height: 1.2;
+}
+
+.patient-finance-card-desc {
+	font-size: 8pt;
+	color: var(--tp-text-muted);
+	margin-top: 4px;
+	line-height: 1.3;
+}

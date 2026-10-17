@@ -207,6 +207,7 @@ export interface SextantHygieneCalculationResult {
  */
 export interface HygieneToothAssessment {
 	readonly toothNumber: number;
+	readonly isMissing?: boolean | undefined;
 	/** Зубной налёт DI-S (0: нет, 1: до 1/3, 2: от 1/3 до 2/3, 3: более 2/3) */
 	readonly debrisScore?: number | undefined;
 	/** Зубной камень CI-S (0: нет, 1: наддесневой до 1/3, 2: наддесневой 1/3..2/3 или очаги поддесневого, 3: более 2/3 или сплошной поддесневой) */
@@ -236,7 +237,7 @@ export interface OhiSResult {
  * Gracefully averages over available assessed index teeth (1..6).
  */
 export function calculateOhiSScore(
-	teethMap: Record<number, { debrisScore?: number | undefined; calculusScore?: number | undefined }> | readonly HygieneToothAssessment[],
+	teethMap: Record<number, { debrisScore?: number | undefined; calculusScore?: number | undefined; isMissing?: boolean | undefined }> | readonly HygieneToothAssessment[],
 ): OhiSResult {
 	let totalDebris = 0;
 	let totalCalculus = 0;
@@ -247,6 +248,9 @@ export function calculateOhiSScore(
 		: Object.entries(teethMap).map(([num, val]) => ({ toothNumber: Number(num), ...val }));
 
 	for (const entry of teethEntries) {
+		if ((entry as any).isMissing) {
+			continue;
+		}
 		if (typeof entry.debrisScore === "number" && Number.isFinite(entry.debrisScore)) {
 			totalDebris += Math.max(0, Math.min(3, entry.debrisScore));
 			debrisCount++;
@@ -324,7 +328,7 @@ export interface PmaResult {
  * Formula: PMA = (Σ баллов / (3 × n)) × 100%.
  */
 export function calculatePmaScore(
-	teethMap: Record<number, { pmaScore?: number | undefined }> | readonly HygieneToothAssessment[],
+	teethMap: Record<number, { pmaScore?: number | undefined; isMissing?: boolean | undefined }> | readonly HygieneToothAssessment[],
 ): PmaResult {
 	let totalPoints = 0;
 	let assessedTeethCount = 0;
@@ -334,6 +338,9 @@ export function calculatePmaScore(
 		: Object.entries(teethMap).map(([num, val]) => ({ toothNumber: Number(num), ...val }));
 
 	for (const entry of teethEntries) {
+		if ((entry as any).isMissing) {
+			continue;
+		}
 		if (typeof entry.pmaScore === "number" && Number.isFinite(entry.pmaScore)) {
 			totalPoints += Math.max(0, Math.min(3, entry.pmaScore));
 			assessedTeethCount++;
@@ -401,7 +408,7 @@ export interface KpiResult {
  * Formula: КПИ = Σ баллов / n.
  */
 export function calculateKpiScore(
-	teethMap: Record<number, { kpiScore?: number | undefined }> | readonly HygieneToothAssessment[],
+	teethMap: Record<number, { kpiScore?: number | undefined; isMissing?: boolean | undefined }> | readonly HygieneToothAssessment[],
 ): KpiResult {
 	let totalPoints = 0;
 	let assessedTeethCount = 0;
@@ -411,6 +418,9 @@ export function calculateKpiScore(
 		: Object.entries(teethMap).map(([num, val]) => ({ toothNumber: Number(num), ...val }));
 
 	for (const entry of teethEntries) {
+		if ((entry as any).isMissing) {
+			continue;
+		}
 		if (typeof entry.kpiScore === "number" && Number.isFinite(entry.kpiScore)) {
 			totalPoints += Math.max(0, Math.min(4, entry.kpiScore));
 			assessedTeethCount++;

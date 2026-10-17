@@ -73,28 +73,41 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = (props) => {
 						</div>
 					</div>
 					<div className="flex items-center gap-2">
-						<div className="hidden md:flex p-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] shrink-0 gap-1 text-[11px]">
+						<div className="hidden md:flex p-1 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] shrink-0 gap-1 text-xs">
 							<button
 								type="button"
 								onClick={() => c.setActiveForm("107-1u")}
-								className={`h-6 px-2 rounded-md transition-all ${c.activeForm === "107-1u" ? "bg-[var(--teal-surface)] text-[var(--teal)] font-bold" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
+								data-form="107-1u"
+								data-form-standard="№ 107-1/у"
+								className={`h-7 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+									c.activeForm === "107-1u"
+										? "bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-subtle,var(--line))] font-bold shadow-xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+								}`}
+								title="Обычный рецептурный бланк (№ 107-1/у)"
 							>
-								107-1/у
+								Обычный рецепт
 							</button>
 							<button
 								type="button"
 								onClick={() => c.setActiveForm("148-1u-88")}
-								className={`h-6 px-2 rounded-md transition-all ${c.activeForm === "148-1u-88" ? "bg-[var(--teal-surface)] text-[var(--teal)] font-bold" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
-								title="Специальный рецептурный бланк строгого учета"
+								data-form="148-1u-88"
+								data-form-standard="№ 148-1/у-88"
+								className={`h-7 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+									c.activeForm === "148-1u-88"
+										? "bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-subtle,var(--line))] font-bold shadow-xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+								}`}
+								title="Льготный / Учетный рецепт (№ 148-1/у-88 строгого учета)"
 							>
-								№ 148-1/у-88
+								Льготный / Учетный рецепт
 							</button>
 						</div>
 						<button
 							type="button"
 							onClick={props.onClose}
 							title="Закрыть"
-							className="flex items-center justify-center w-9 h-9 min-h-[44px] sm:min-h-[36px] rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-all cursor-pointer"
+							className="icon-button flex items-center justify-center w-9 h-9 min-h-[44px] sm:min-h-[36px] rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-all cursor-pointer"
 						>
 							<X className="w-5 h-5" />
 						</button>
@@ -136,6 +149,8 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = (props) => {
 					<PrescriptionDrugCatalogSelector
 						className={c.mobileTab === "catalog" ? "flex" : "hidden lg:flex"}
 						fastPresets={DENTAL_FAST_PRESCRIPTION_SETS}
+						activePresetId={c.activePresetId}
+						onSelectPreset={c.handleSelectExpressPreset}
 						onApplyAndInsertToDiary={c.handleApplyAndInsertToDiary}
 						onApplyAndPrint={c.handleApplyAndPrint}
 						searchQuery={c.searchQuery}

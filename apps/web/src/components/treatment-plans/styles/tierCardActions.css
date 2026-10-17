@@ -1,0 +1,70 @@
+/* Stages Summary Strip in Card */
+.treatment-tier-stages-strip {
+	padding: 12px 18px;
+	background: var(--tp-surface-soft);
+	border-top: 1px solid var(--tp-border);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.treatment-tier-stage-line {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 11px;
+	color: var(--tp-text-muted);
+}
+
+.treatment-tier-stage-sum {
+	font-weight: 700;
+	color: var(--tp-text-main);
+}
+
+/* Card Selection Action — Prominent Primary CTA (>= 44px) */
+.treatment-tier-select-btn {
+	margin: 14px 18px;
+	min-height: 46px;
+	height: 46px;
+	padding: 10px 18px;
+	border-radius: var(--tp-radius-md);
+	font-size: 13.5px;
+	font-weight: 800;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	border: 1px solid var(--tp-border);
+	background: var(--tp-surface-soft);
+	color: var(--tp-text-main);
+	touch-action: manipulation;
+	user-select: none;
+}
+
+.treatment-tier-select-btn:hover {
+	background: var(--tp-primary-light);
+	border-color: var(--tp-primary);
+	color: var(--tp-primary);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
+}
+
+.treatment-tier-select-btn:active {
+	transform: translateY(0);
+}
+
+.treatment-tier-card.selected .treatment-tier-select-btn {
+	background: var(--tp-primary);
+	color: #ffffff;
+	border-color: var(--tp-primary);
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+}
+
+.treatment-tier-card.recommended.selected .treatment-tier-select-btn {
+	background: var(--warn-bg);
+	border-color: var(--warn-fg);
+	color: var(--warn-fg);
+	box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+}

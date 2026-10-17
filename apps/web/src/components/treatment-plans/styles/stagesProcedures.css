@@ -1,0 +1,56 @@
+/* Stage Procedures Table */
+.treatment-stage-table-wrap {
+	padding: 0 16px 16px 16px;
+	overflow-x: auto;
+}
+
+.treatment-stage-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12px;
+	text-align: left;
+}
+
+.treatment-stage-table th {
+	padding: 8px 10px;
+	background: var(--tp-surface-soft);
+	color: var(--tp-text-muted);
+	font-weight: 700;
+	font-size: 11px;
+	border-bottom: 1px solid var(--tp-border);
+}
+
+.treatment-stage-table td {
+	padding: 10px;
+	border-bottom: 1px solid var(--tp-border);
+	color: var(--tp-text-main);
+}
+
+.treatment-stage-table tr:last-child td {
+	border-bottom: none;
+}
+
+.code-804n-badge {
+	display: inline-block;
+	font-family: monospace;
+	font-size: 10px;
+	font-weight: 700;
+	padding: 2px 6px;
+	border-radius: var(--tp-radius-sm);
+	background: var(--tp-surface-soft);
+	color: var(--tp-text-muted);
+	border: 1px solid var(--tp-border);
+}
+
+.tooth-fdi-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	border-radius: var(--tp-radius-sm);
+	background: var(--tp-primary-light);
+	color: var(--tp-primary);
+	font-weight: 800;
+	font-size: 12px;
+}

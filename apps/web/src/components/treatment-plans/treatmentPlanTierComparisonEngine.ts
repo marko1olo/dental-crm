@@ -95,9 +95,9 @@ export function generate3TierPlanComparison(
 			? DEMO_SHOWCASE_TEETH
 			: teeth;
 
-	const economyStages = generateTierPlanStages("economy", effectiveTeeth, catalog, validLoyaltyPct, { isDemoMode: isDemo });
-	const standardStages = generateTierPlanStages("standard", effectiveTeeth, catalog, validLoyaltyPct, { isDemoMode: isDemo });
-	const optimumStages = generateTierPlanStages("optimum", effectiveTeeth, catalog, validLoyaltyPct, { isDemoMode: isDemo });
+	const economyStages = generateTierPlanStages("economy", effectiveTeeth, catalog, validLoyaltyPct, options);
+	const standardStages = generateTierPlanStages("standard", effectiveTeeth, catalog, validLoyaltyPct, options);
+	const optimumStages = generateTierPlanStages("optimum", effectiveTeeth, catalog, validLoyaltyPct, options);
 
 	const economyTier = makeTier(
 		"economy",

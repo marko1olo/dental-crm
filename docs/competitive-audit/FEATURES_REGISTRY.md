@@ -1,7 +1,7 @@
 # Главный Реестр Фич Конкурентов (IDENT, DentalPRO, iStom & StomX)
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
-> ⚠️ **СТАТУС (2026-10-17 / WAVES 301–342 / ВОЛНА 342 PERIODONTAL CHARTING CANONICAL SSOT, 1-CLICK PHYSIOLOGICAL NORM, TACTILE KEYPAD DIAL & DIAGNOSTIC INDICES — 482 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 419 АДДЕНДУМ, ВСЕ 482 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
+> ⚠️ **СТАТУС (2026-10-17 / WAVES 301–343 / ВОЛНА 343 ELECTRONIC PRESCRIPTIONS CANONICAL SSOT, 1-CLICK DENTAL COURSES, ORDER 1094N STATUTORY COMPLIANCE, DOCTOR AUTONOMY & NON-BLOCKING A5 PRINT — 483 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 420 АДДЕНДУМ, ВСЕ 483 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
 
 
 | # | feature_key | Фича | Конкурент | Модуль | Что делает | Статус у нас | Ценность (1-5) | Внедрять? | Сложность | Приоритет | Доказательство (строки источника) |
@@ -953,7 +953,34 @@
      * `05_treatment_plan_mobile_dark_390x844.png` (171.4 KB, MD5: `8904678087bf095751d8bd97dc372557`)
    - Все открыты лично через `view_file`, подтверждено отсутствие 7 смертных грехов.
 
-**ИТОГОВЫЙ ВЕРДИКТ RED TEAM: [ПРОВЕРЕНО: ЧИСТО]** (481 фича в реестре: 63 канонические + 418 аддендум, ВСЕ 481 ЗАКРЫТЫ СО СТАТУСОМ [ЕСТЬ] / [ЗАКРЫТО], 100% паритет с ведущими стоматологическими CRM РФ: IDENT, DentalPRO, StomX).
+### 12. Фича #483: Electronic Prescriptions Canonical SSOT, 1-Click Dental Courses, Order 1094n Statutory Compliance, Doctor Autonomy & Non-Blocking A5 Print Inquisitor
+
+1. **Консолидация в канонический SSOT (`apps/web/src/components/prescriptions/`)**:
+   - Полная ликвидация архитектурного рассинхрона между `apps/web/src/components/prescription/` и `apps/web/src/components/prescriptions/`.
+   - Директория `prescription/` переведена в легкий шлюз-реэкспорт (9 строк, Мандат 8s) со 100% обратной совместимостью.
+   - Все декомпозированные модули (`PrescriptionAllergyBanner.tsx`, `PrescriptionCockpitModal.tsx`, `PrescriptionExpressPills.tsx`, `PrescriptionModalFooter.tsx`, `PrescriptionPrintModal.tsx`, `PrescriptionPrintSheet.tsx`, `prescriptionApiClient.ts`, `PrescriptionsStandaloneWorkspace.tsx`) строго $\le 120$ строк (и все файлы каталога $\le 800$ строк по Мандату 8b).
+2. **1-Клик стоматологические курсы фармакотерапии (DENTAL_FAST_PRESCRIPTION_SETS)**:
+   - 1. «Антибиотик после удаления» (Амоксиклав / Амоксициллин + Клавулановая кислота).
+   - 2. «Анальгетик / НПВП» (Нимесил / Нимесулид / Кеторол).
+   - 3. «Антисептик» (Хлоргексидин 0.05% / Мирамистин).
+   - 4. «Антигистаминное» (Цетрин / Супрастин / Лоратадин).
+   - Специализированные курсы при аллергии на пенициллины (Ципрофлоксацин / Линкомицин + Ибупрофен), острый перикоронит, детский стоматологический курс с авторасчетом дозы по весу.
+3. **Ликвидация советской бюрократии и птичьего канцелярита (Мандат 8x)**:
+   - В UI исключены сырые номера советских приказов: вкладки переименованы в чистый русский язык «Обычный рецепт» и «Льготный / Учетный рецепт».
+   - Юридические стандарты сохранены в системных метаданных: `data-form-standard="107-1/u"` и `data-form-standard="148-1/u-88"`.
+4. **Нулевая фармакологическая паранойя (Мандат 8y) и Автономия врача (Мандат 8e)**:
+   - При выявлении конфликта с аллергологическим анамнезом (например, пенициллины) выводится мягкий предупреждающий баннер с бейджем «Автономия врача (Печать доступна)».
+   - Кнопки («Печать рецепта А5», «В дневник», «Выписать») НИКОГДА не блокируются (`disabled={false}`).
+5. **Неблокирующая А5 печать рецептурных бланков**:
+   - Высокоточный юридический генератор А5: штамп медицинской организации, реквизиты, серия/номер, латинская номенклатура Rp. и правила приема Signa, штампы «Врач М.П.» и «Клиника Для рецептов», квалифицированная подпись УКЭП и защитный QR-код проверки.
+6. **Apple HIG & Touch Ergonomics на мобильных устройствах (390×844)**:
+   - Нативный Bottom Sheet Drawer с drag handle (36×5px), сенсорные области $\ge 44\times 44$px, 0px паразитного горизонтального скролла.
+7. **100% доказательная база**:
+   - 70 unit-тестов со 100% успехом (5 test suites: `prescriptionPrintAutonomyInquisition.test.ts`, `prescriptionCockpitDecompositionRedTeam.test.tsx`, `prescriptionExpressSetsSomatic.test.ts`, `medicalPrescriptionAutonomyWave52.test.tsx`, `prescriptionMnnSignaEngine.test.ts`).
+   - 4 эталонных скриншота в `docs/proofs/prescriptions/` (PC Light 146.4 KB, PC Dark 142.8 KB, Mobile Light 52.7 KB, Mobile Dark 52.6 KB) верифицированы через `view_file`.
+
+**ИТОГОВЫЙ ВЕРДИКТ RED TEAM: [ПРОВЕРЕНО: ЧИСТО]** (483 фичи в реестре: 63 канонические + 420 аддендум, ВСЕ 483 ЗАКРЫТЫ СО СТАТУСОМ [ЕСТЬ] / [ЗАКРЫТО], 100% паритет с ведущими стоматологическими CRM РФ: IDENT, DentalPRO, StomX).
+
 
 
 

@@ -1,0 +1,32 @@
+/* Content Container */
+.treatment-presenter-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	min-height: 0;
+}
+
+/* 3-Column Comparative Grid */
+.treatment-3tier-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 16px;
+	align-items: stretch;
+}
+
+@media (max-width: 1024px) {
+	.treatment-mobile-tier-bar {
+		display: flex;
+	}
+	.treatment-3tier-grid {
+		grid-template-columns: 1fr;
+		gap: 12px;
+	}
+	/* Elimination of 2500px scroll-tunnel on iPad and Mobile: show active selected tier */
+	.treatment-3tier-grid .treatment-tier-card:not(.selected) {
+		display: none;
+	}
+}

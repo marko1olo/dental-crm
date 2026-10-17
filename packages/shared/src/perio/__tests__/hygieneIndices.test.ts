@@ -273,4 +273,36 @@ describe("Dental Hygiene Indices Engine (OHI-S, PMA, KPI Leus)", () => {
 		assert.ok(dynamics.summaryRu.includes("Положительная динамика"));
 		assert.ok(dynamics.form043DynamicsTextRu.includes("12.01.2026"));
 	});
+
+	it("excludes missing teeth from denominator and scoring in PMA, KPI, and OHI-S", () => {
+		// 6 index teeth, but 2 are missing
+		const assessmentsWithMissing = [
+			{ toothNumber: 16, debrisScore: 1, calculusScore: 1, pmaScore: 1, kpiScore: 1 },
+			{ toothNumber: 11, isMissing: true, debrisScore: 3, calculusScore: 3, pmaScore: 3, kpiScore: 4 },
+			{ toothNumber: 26, debrisScore: 1, calculusScore: 1, pmaScore: 1, kpiScore: 1 },
+			{ toothNumber: 36, isMissing: true, debrisScore: 3, calculusScore: 3, pmaScore: 3, kpiScore: 4 },
+			{ toothNumber: 31, debrisScore: 0, calculusScore: 0, pmaScore: 0, kpiScore: 0 },
+			{ toothNumber: 46, debrisScore: 0, calculusScore: 0, pmaScore: 0, kpiScore: 0 },
+		];
+
+		const ohi = calculateOhiSScore(assessmentsWithMissing);
+		// Assessed teeth should be 4 (not 6)
+		assert.equal(ohi.assessedTeethCount, 4);
+		// total score should be avg(1,1,0,0) + avg(1,1,0,0) = 0.5 + 0.5 = 1.0
+		assert.equal(ohi.totalScore, 1.0);
+
+		const pma = calculatePmaScore(assessmentsWithMissing);
+		// Assessed teeth = 4. Max possible points = 4 * 3 = 12. Total points = 1 + 1 + 0 + 0 = 2.
+		// pmaPercent = (2 / 12) * 100 = 16.7%
+		assert.equal(pma.assessedTeethCount, 4);
+		assert.equal(pma.totalPoints, 2);
+		assert.equal(pma.maxPossiblePoints, 12);
+		assert.equal(pma.pmaPercent, 16.7);
+
+		const kpi = calculateKpiScore(assessmentsWithMissing);
+		// Assessed teeth = 4. Total points = 1 + 1 + 0 + 0 = 2. kpiScore = 2 / 4 = 0.5
+		assert.equal(kpi.assessedTeethCount, 4);
+		assert.equal(kpi.totalPoints, 2);
+		assert.equal(kpi.kpiScore, 0.5);
+	});
 });
