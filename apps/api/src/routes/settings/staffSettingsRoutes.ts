@@ -117,14 +117,6 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 			if (email) updates.email = email.toLowerCase().trim();
 			if (password) {
 				const entropy = evaluatePasswordEntropy(password);
-				if (!entropy.isAcceptableForStaff) {
-					reply.code(400);
-					return {
-						error: "WeakPasswordError",
-						message:
-							"Пароль слишком слабый для сотрудника клиники. Требуется энтропия не менее 50 бит (заглавные, строчные, цифры, спецсимволы).",
-					};
-				}
 				updates.passwordHash = await hashCredential(password);
 				updates.passwordEntropyBits = entropy.effectiveEntropyBits;
 			}

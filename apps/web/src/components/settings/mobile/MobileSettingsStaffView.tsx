@@ -198,10 +198,10 @@ export const MobileSettingsStaffView: React.FC<MobileSettingsStaffViewProps> = (
 
 				<div className="text-center min-w-0 px-2 flex flex-col items-center">
 					<h2 className="text-[17px] font-semibold text-[var(--ink)] tracking-tight truncate leading-tight">
-						Врачи и персонал
+						Персонал
 					</h2>
 					<span className="text-[11px] font-medium text-[var(--muted)]">
-						{staffList.length} сотрудников в штате
+						{staffList.length} в штате
 					</span>
 				</div>
 
