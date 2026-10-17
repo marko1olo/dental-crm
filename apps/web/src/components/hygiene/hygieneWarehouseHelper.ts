@@ -15,6 +15,7 @@
  */
 
 import { showToast } from "../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export interface HygieneDeductResult {
 	readonly success: boolean;
@@ -34,9 +35,9 @@ export async function deductHygieneConsumables(options?: {
 	try {
 		const response = await fetch(`/api/inventory/${encodeURIComponent(orgId)}/quick-writeoff-visit-bundle`, {
 			method: "POST",
-			headers: {
+			headers: denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
-			},
+			}),
 			body: JSON.stringify({
 				visitType: "hygiene",
 				visitId,
@@ -80,22 +81,34 @@ export async function deductHygieneConsumables(options?: {
 				deductedItemsCount: count,
 				message: data.message || "Расходные материалы успешно списаны со склада",
 			};
+		} else {
+			const errBody = await response.json().catch(() => ({}));
+			console.warn("Склад: ошибка списания комплекта профгигиены", response.status, errBody);
+			showToast(
+				`Склад: списание расходников не выполнено (${response.status}: ${errBody.error || errBody.message || "проверьте права"}). Приём не заблокирован.`,
+				"warning",
+				4000,
+			);
+			return {
+				success: false,
+				isOverdraft: false,
+				deductedItemsCount: 0,
+				message: errBody.message || `Ошибка сервера: ${response.status}`,
+			};
 		}
 	} catch (_err) {
 		// Офлайн-фоллбэк: если сеть временно недоступна, не блокируем врача у кресла (Мандат 8e)
+		showToast(
+			"Склад: списание расходников профгигиены зафиксировано в журнале визита (офлайн-режим)",
+			"info",
+			3500,
+		);
+
+		return {
+			success: true,
+			isOverdraft: false,
+			deductedItemsCount: 6,
+			message: "Расходные материалы зафиксированы к списанию",
+		};
 	}
-
-	// Офлайн-уведомление / оптимистичный успех
-	showToast(
-		"Склад: списание расходников профгигиены зафиксировано в журнале визита (офлайн-режим)",
-		"info",
-		3500,
-	);
-
-	return {
-		success: true,
-		isOverdraft: false,
-		deductedItemsCount: 6,
-		message: "Расходные материалы зафиксированы к списанию",
-	};
 }

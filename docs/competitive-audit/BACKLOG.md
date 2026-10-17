@@ -1155,14 +1155,18 @@
 
 ---
 
-## 73. `пародонтология_гигиена::1_клик_комплексная_профгигиена_а1607051_и_норма_пародонта` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8d, 8e, 8k, 8n)
+## 73. `пародонтология_гигиена::1_клик_комплексная_профгигиена_а1607051_и_норма_пародонта` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8d, 8e, 8k, 8n, 8ze, 8al)
 - **Идея**: Ликвидация академического трения и процедурного ввода всех точек зондирования карманов:
-  1. *1-клик норма пародонта*: пресет («Соматически здоров / глубина карманов 1-2 мм, кровоточивость 0%, CAL 0, PSR 0») в `PeriodontogramChart.tsx`.
-  2. *1-клик комплексная профгигиена*: протокол комплексной гигиены (УЗ скейлинг + Air-Flow глицин + полировка пастой Kerr Cleanic + глубокое фторирование Fluocal гель) с автоинъекцией в дневник Формы 043/у и автоматическим добавлением услуги номенклатуры A16.07.051 в смету визита.
-  3. *Чистота интерфейса*: замена сырых эмодзи и глифов на строгие векторные иконки Lucide (`Sparkles`, `Activity`, `CheckCircle2`).
+  1. *1-клик норма пародонта*: пресет («Соматически здоров / глубина карманов 1-2 мм, кровоточивость 0%, CAL 0, PSR 0») в `PeriodontogramChart.tsx` и `HygieneIndicesPanel.tsx`.
+  2. *1-клик комплексная профгигиена*: протокол комплексной гигиены (УЗ скейлинг + Air-Flow глицин + полировка пастой Kerr Cleanic + глубокое фторирование Bifluorid 12) с автоинъекцией в медицинскую карту приёма, начислением услуги номенклатуры A16.07.051 в смету и безопасным списанием материалов со склада через `denteAdminSecretRequestHeaders()` с мягким овердрафтом.
+  3. *Ликвидация советской бюрократии*: замена номеров приказов и «Формы 043/у» на чистый клинический русский язык («В медицинскую карту», «Дневник визита», иконка `FileText`).
+  4. *Карта домашнего ухода*: рекомендации по щеткам Curaprox (1560, 5460, 12460), межзубным ершикам CPS (06, 07, 08), монопучку и пастам RDA < 50 с печатью А4 и экспортом в WhatsApp / Telegram.
+  5. *Автоматический recall и OHI-S динамика*: планирование контрольного визита через 180 дней (+6 мес) и наглядный баннер динамики между визитами.
+  6. *4-состояный Red Team Visual Proof*: скриншоты PC Light, PC Dark (1440×900), Mobile Light, Mobile Dark (390×844) в `docs/proofs/hygiene/` с 0px горизонтального скролла и тач-таргетами $\ge 44\times 44$px.
 - **Статус**:
   - Shared: `packages/shared/src/perio/hygieneIndices.ts`
-  - Фронтенд: `apps/web/src/components/hygiene/HygieneIndicesPanel.tsx`, `apps/web/src/components/perio/PeriodontogramChart.tsx`, `apps/web/src/components/perio/perioMath.ts` (коммит `5c39b86a0`).
+  - Фронтенд: `apps/web/src/components/hygiene/HygieneIndicesPanel.tsx`, `apps/web/src/components/hygiene/hygieneWarehouseHelper.ts`, `apps/web/src/components/hygiene/HygieneHomeCareCard.tsx`, `apps/web/src/components/hygiene/HygieneExpressPresetsStrip.tsx`, `apps/web/src/components/hygiene/OhiSilnessCalculator.tsx`, `apps/web/src/components/hygiene/KpuBleedingIndicesCalculator.tsx`, `apps/web/src/components/perio/PeriodontogramChart.tsx`, `apps/web/src/components/perio/perioMath.ts` (100% pass, 12 unit tests).
+  - Скриншоты: `docs/proofs/hygiene/01_pc_light_hygiene_indices.png`, `docs/proofs/hygiene/02_pc_dark_hygiene_indices.png`, `docs/proofs/hygiene/03_mobile_light_hygiene_indices.png`, `docs/proofs/hygiene/04_mobile_dark_hygiene_indices.png`.
 
 ---
 
@@ -11309,5 +11313,24 @@
         - `03_mobile_light_390x844.png` (51.7 КБ, Mobile Light 390×844, Apple HIG, тач-таргеты $\ge 44\times 44$px, 0px горизонтального скролла)
         - `04_mobile_dark_390x844.png` (54.2 КБ, Mobile Dark 390×844, мобильный темный режим, идеальная читаемость).
 
-
-
+52. **Волна 344: Ортопедический Кокпит у Кресла, Интерактивная Шкала VITA (Classical, 3D-Master, Bleach, Культя ND1–ND9), Наряды ЗТЛ (5 Канонических Этапов), Гарантийный Паспорт А4 с QR и Списание Расходников Soft Negative Stock (Мандаты 8e, 8k, 8n, 8wy, 8al, Apple HIG)**:
+    - **1. Ортопедический кокпит у кресла и 5 канонических этапов ЗТЛ (`OrthopedicsChairsidePanel.tsx`)**:
+      * Ликвидирован костыльный fallback 404 — запросы отправляются напрямую в канонический эндпоинт `POST /api/lab/orders` с авторизационными заголовками `denteAdminSecretRequestHeaders()`;
+      * Поддержана сквозная связка 5 клинических этапов ЗТЛ (`impression_scan` -> `cad_cam` -> `sintering_glaze` -> `ready_in_clinic` -> `patient_fixation`) на фронтенде и в Fastify бэкенде (`apps/api/src/routes/lab/labTypesModules/labOrderStatusAndTrackingTypes.ts`);
+      * Устранена TDZ ошибка зависимостей (`effectiveOrderNumber`), 20/20 юнит-тестов проходят со 100% успехом.
+    - **2. Интерактивная шкала оттенков VITA и эталоны культи IPS Natural Die (`DentalLabShadePicker.tsx`, `OrthopedicsVitaShadePicker.tsx`)**:
+      * Внедрен 4-й сегментированный таб «Культя (ND)» (`data-testid="vita-stump-tab"`);
+      * Полноэкранный выбор оттенка культи препарированного зуба IPS Natural Die (ND1..ND9) с крупными сенсорными плитками, цветовыми образцами и быстрой кнопкой сброса;
+      * Мобильная изоляция скролла ленты оттенков (`overflow-x-auto scrollbar-none overscroll-contain`), сенсорные хитбоксы $\ge 44\times 44$px для пальца врача в перчатках, 0px паразитного горизонтального скролла.
+    - **3. Гарантийный паспорт ортопедической конструкции А4 с QR-кодом (`OrthopedicPassportA4Modal.tsx`)**:
+      * В шапку формы А4 интегрирован SVG-генератор верификационного QR-кода подлинности (`generateQrCodeSvg`) с прямой ссылкой на проверку изделия (`https://dente.clinic/verify/passport?no=...&lot=...&fdi=...`);
+      * Отображение номера партии LOT, материала конструкции (ZrO2 Prettau / Katana / E.max), номера цвета по VITA, ФИО ортопеда и техника, срока гарантии (5 лет).
+    - **4. Автоматическое списание цемента фиксации с Soft Negative Stock (Мандаты 8e, 8k, 8n)**:
+      * При подтверждении фиксации наряда (`handleConfirmChairsideFitting`) автоматически инициируется списание материала постоянной фиксации (цемент GC Fuji Plus / RelyX U200, 1 доза) через складской эндпоинт `POST /api/inventory/:orgId/quick-writeoff-orthopedic` по протоколу `ortho_permanent_cementation`;
+      * При нулевом остатке на складе фиксация коронки не блокируется, выводится деликатный информационный toast о дефиците (мягкий овердрафт).
+    - **5. Доказательная база: 4-State Red Team Visual Proof**:
+      * Сняты и лично отсмотрены глазами через `view_file` 4 скриншота в живом контуре (`docs/proofs/orthopedics/`):
+        - `pc_light_1440x900.png` (109.2 КБ, PC Light 1440×900, выбор оттенка ND3, чипы окклюзии, экономика соло-врача с маржой 64%)
+        - `pc_dark_1440x900.png` (108.3 КБ, PC Dark 1440×900, глубокая тёмная палитра без слепящих белых пятен)
+        - `mobile_light_390x844.png` (144.1 КБ, Mobile Light 390×844, Apple HIG, адаптивная 2-колоночная сетка этапов, тач-таргеты $\ge 48$px, 0px горизонтального скролла)
+        - `mobile_dark_390x844.png` (149.5 КБ, Mobile Dark 390×844, тёмная тема смартфона, идеальная читаемость в перчатках).

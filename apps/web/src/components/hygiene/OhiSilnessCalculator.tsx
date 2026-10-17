@@ -9,7 +9,8 @@
  * 2. Silness-Löe: толщина зубного налета у десневого края (0..3). Норма: 0.0.
  * 3. Сенсорный минимум: кнопки ввода баллов >= 44x44px (touch-friendly).
  * 4. Контрастность WCAG AAA, дизайн-токены var(--paper-soft), var(--line), var(--ink).
- * 5. Нулевой оверинжиниринг, 0% эмодзи, соответствие стандарту Формы 043/у.
+ * 5. Нулевой оверинжиниринг, 0% эмодзи, соответствие стандарту медицинской карты приёма.
+ * 6. Мандат 8e: поддержка адентии (isMissing) без блокировки расчёта индекса.
  */
 
 import React, { memo } from "react";
@@ -27,8 +28,8 @@ export interface OhiSilnessCalculatorProps {
 	readonly activeTab?: "ohi-s" | "silness-loe" | string | undefined;
 	readonly onUpdateToothScore: (
 		toothNumber: number,
-		field: "debrisScore" | "calculusScore" | "silnessScore",
-		value: number,
+		field: "debrisScore" | "calculusScore" | "silnessScore" | "isMissing",
+		value: number | boolean,
 	) => void;
 	readonly readOnly?: boolean | undefined;
 	readonly compactMode?: boolean | undefined;
@@ -178,6 +179,7 @@ export const OhiSilnessCalculator: React.FC<OhiSilnessCalculatorProps> = memo(({
 					<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
 						{HYGIENE_INDEX_TEETH_CONFIG.map((cfg) => {
 							const item = assessments[cfg.toothNumber] ?? { toothNumber: cfg.toothNumber };
+							const isMissing = Boolean(item.isMissing);
 							const debris = item.debrisScore ?? 0;
 							const calculus = item.calculusScore ?? 0;
 							const silness = item.silnessScore ?? debris;
@@ -185,16 +187,38 @@ export const OhiSilnessCalculator: React.FC<OhiSilnessCalculatorProps> = memo(({
 							return (
 								<div
 									key={cfg.toothNumber}
-									className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-1.5 text-center min-w-0"
+									className={`p-2 rounded-lg border flex flex-col gap-1.5 text-center min-w-0 transition-all ${
+										isMissing
+											? "bg-[var(--paper-soft)]/60 border-dashed border-[var(--line-strong)] opacity-70"
+											: "bg-[var(--paper)] border-[var(--line)]"
+									}`}
 								>
 									<div className="flex items-center justify-between text-xs font-mono font-black text-teal-800 dark:text-teal-300">
 										<span>#{cfg.toothNumber}</span>
-										<span className="text-[10px] font-normal text-[var(--muted)] truncate">
-											{cfg.surfaceAspect === "vestibular" ? "Вест." : "Орал."}
-										</span>
+										<button
+											type="button"
+											disabled={readOnly}
+											onClick={() => onUpdateToothScore(cfg.toothNumber, "isMissing", !isMissing)}
+											className={`text-[10px] px-1 py-0.5 rounded cursor-pointer transition-all border ${
+												isMissing
+													? "bg-rose-500/15 text-rose-700 dark:text-rose-300 font-bold border-rose-500/40"
+													: "text-[var(--muted)] hover:text-[var(--ink)] border-transparent hover:border-[var(--line)]"
+											}`}
+											title={
+												isMissing
+													? "Зуб отсутствует (адентия). Нажмите, чтобы вернуть в расчёт OHI-S"
+													: "Отметить отсутствие зуба (адентия) — исключает из знаменателя OHI-S"
+											}
+										>
+											{isMissing ? "Адентия" : cfg.surfaceAspect === "vestibular" ? "Вест." : "Орал."}
+										</button>
 									</div>
 
-									{activeTab === "ohi-s" ? (
+									{isMissing ? (
+										<div className="py-2.5 text-[11px] text-[var(--muted)] italic">
+											Исключён из OHI-S
+										</div>
+									) : activeTab === "ohi-s" ? (
 										<div className="flex flex-col gap-1">
 											{/* Debris DI-S */}
 											<div className="flex items-center justify-between text-[11px] text-[var(--muted)]">
@@ -206,10 +230,10 @@ export const OhiSilnessCalculator: React.FC<OhiSilnessCalculatorProps> = memo(({
 															type="button"
 															disabled={readOnly}
 															onClick={() => onUpdateToothScore(cfg.toothNumber, "debrisScore", val)}
-															className={`min-h-[28px] min-w-[20px] px-1 rounded text-[11px] font-bold cursor-pointer transition-all ${
+															className={`secondary-button min-h-[28px] min-w-[20px] px-1 rounded text-[11px] font-bold cursor-pointer transition-all ${
 																debris === val
-																	? "bg-amber-500 text-slate-950 font-black"
-																	: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)]"
+																	? "!bg-amber-500 !text-slate-950 font-black shadow-2xs"
+																	: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
 															}`}
 															title={`Налет ${val}`}
 														>
@@ -229,10 +253,10 @@ export const OhiSilnessCalculator: React.FC<OhiSilnessCalculatorProps> = memo(({
 															type="button"
 															disabled={readOnly}
 															onClick={() => onUpdateToothScore(cfg.toothNumber, "calculusScore", val)}
-															className={`min-h-[28px] min-w-[20px] px-1 rounded text-[11px] font-bold cursor-pointer transition-all ${
+															className={`secondary-button min-h-[28px] min-w-[20px] px-1 rounded text-[11px] font-bold cursor-pointer transition-all ${
 																calculus === val
-																	? "bg-orange-500 text-white font-black"
-																	: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)]"
+																	? "!bg-orange-500 !text-white font-black shadow-2xs"
+																	: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
 															}`}
 															title={`Камень ${val}`}
 														>
@@ -251,10 +275,10 @@ export const OhiSilnessCalculator: React.FC<OhiSilnessCalculatorProps> = memo(({
 													type="button"
 													disabled={readOnly}
 													onClick={() => onUpdateToothScore(cfg.toothNumber, "silnessScore", val)}
-													className={`min-h-[32px] min-w-[24px] px-1.5 rounded text-xs font-bold cursor-pointer transition-all ${
+													className={`secondary-button min-h-[32px] min-w-[24px] px-1.5 rounded text-xs font-bold cursor-pointer transition-all ${
 														silness === val
-															? "bg-teal-600 text-white font-black"
-															: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)]"
+															? "!bg-teal-600 !text-white font-black shadow-2xs"
+															: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
 													}`}
 													title={`Silness-Löe ${val}`}
 												>

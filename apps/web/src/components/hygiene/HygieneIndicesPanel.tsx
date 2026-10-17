@@ -1,29 +1,10 @@
 /**
  * HygieneIndicesPanel.tsx — Экспресс-расчет клинических индексов гигиены полости рта (OHI-S, PMA, КПИ Леуса, Silness-Löe, Федорова-Володкиной, PHP).
- *
- * (DOMAIN: CLINICAL HYGIENE INDICES & PERIODONTAL ASSESSMENT)
- *
- * Архитектурная декомпозиция по Мандату 8b (строго <= 800 строк):
- * 1. OhiSilnessCalculator.tsx — калькулятор индексов OHI-S и Silness-Löe (<= 500 строк).
- * 2. KpuBleedingIndicesCalculator.tsx — калькулятор КПУ и кровоточивости десневой борозды SBI (<= 500 строк).
- * 3. HygieneExpressPresetsStrip.tsx — экспресс-пресеты клинических статусов и протоколов 804н.
- * 4. HygieneHomeCareCard.tsx — персональная карта домашнего ухода (Curaprox 5460, монопучок, ершики, ирригатор, паста RDA < 50).
- * 5. HygieneBottomSheetDrawer.tsx — нативная мобильная шторка Bottom Sheet по Apple HIG.
- * 6. hygieneWarehouseHelper.ts — списание расходников профгигиены (AirFlow KaVo/EMS, Cleanic, Fluor Protector) с мягким овердрафтом.
+ * Архитектурная декомпозиция по Мандату 8b (строго <= 800 строк).
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-	Check,
-	Clipboard,
-	ClipboardList,
-	Printer,
-	RotateCcw,
-	ShieldCheck,
-	Sparkles,
-	Smartphone,
-} from "lucide-react";
-import { DentalForm043 } from "../icons/DentalIcons";
+import { Check, Clipboard, ClipboardList, FileText, Printer, RotateCcw, ShieldCheck, Sparkles, Smartphone } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import {
@@ -33,7 +14,6 @@ import {
 	type CombinedHygieneReport, type ExtendedToothAssessment, type FedorovVolodkinaResult,
 	type HygieneToothAssessment, type PerioToothRecord, type PhpResult, type SilnessLoeResult,
 } from "@dental/shared";
-
 import {
 	CATARRHAL_GINGIVITIS_ASSESSMENTS, CLINICAL_DEEP_FLUORIDATION_SUMMARY_RU,
 	CLINICAL_PERIO_ANTISEPTIC_SUMMARY_RU, CLINICAL_PERIO_NORM_SUMMARY_RU,
@@ -247,12 +227,23 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 				| "kpiScore"
 				| "silnessScore"
 				| "fedorovScore"
-				| "phpScore",
-			value: number,
+				| "phpScore"
+				| "isMissing",
+			value: number | boolean,
 		) => {
 			if (readOnly) return;
 			setAssessments((prev) => {
 				const current = prev[toothNumber] ?? { toothNumber };
+				if (field === "isMissing") {
+					return {
+						...prev,
+						[toothNumber]: {
+							...current,
+							isMissing: Boolean(value),
+						},
+					};
+				}
+				const numVal = typeof value === "number" ? value : 0;
 				let debrisScore = current.debrisScore;
 				let calculusScore = current.calculusScore;
 				let pmaScore = current.pmaScore;
@@ -262,31 +253,31 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 				let phpScore = current.phpScore;
 
 				if (field === "debrisScore") {
-					debrisScore = value;
-					silnessScore = value;
-					fedorovScore = value === 0 ? 1 : Math.min(5, value + 1);
-					phpScore = Math.min(5, Math.round(value * 1.67));
+					debrisScore = numVal;
+					silnessScore = numVal;
+					fedorovScore = numVal === 0 ? 1 : Math.min(5, numVal + 1);
+					phpScore = Math.min(5, Math.round(numVal * 1.67));
 				} else if (field === "calculusScore") {
-					calculusScore = value;
+					calculusScore = numVal;
 				} else if (field === "pmaScore") {
-					pmaScore = value;
+					pmaScore = numVal;
 				} else if (field === "kpiScore") {
-					kpiScore = value;
+					kpiScore = numVal;
 				} else if (field === "silnessScore") {
-					silnessScore = value;
-					debrisScore = value;
-					fedorovScore = value === 0 ? 1 : Math.min(5, value + 1);
-					phpScore = Math.min(5, Math.round(value * 1.67));
+					silnessScore = numVal;
+					debrisScore = numVal;
+					fedorovScore = numVal === 0 ? 1 : Math.min(5, numVal + 1);
+					phpScore = Math.min(5, Math.round(numVal * 1.67));
 				} else if (field === "fedorovScore") {
-					fedorovScore = value;
-					const mappedDebris = value === 1 ? 0 : Math.min(3, value - 1);
+					fedorovScore = numVal;
+					const mappedDebris = numVal === 1 ? 0 : Math.min(3, numVal - 1);
 					debrisScore = mappedDebris;
 					silnessScore = mappedDebris;
 					phpScore = Math.min(5, Math.round(mappedDebris * 1.67));
 				} else if (field === "phpScore") {
-					phpScore = value;
+					phpScore = numVal;
 					const mappedDebris =
-						value === 0 ? 0 : value <= 2 ? 1 : value <= 4 ? 2 : 3;
+						numVal === 0 ? 0 : numVal <= 2 ? 1 : numVal <= 4 ? 2 : 3;
 					debrisScore = mappedDebris;
 					silnessScore = mappedDebris;
 					fedorovScore = mappedDebris === 0 ? 1 : mappedDebris + 1;
@@ -473,10 +464,21 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		handlePresetHygieneNorm();
 		const protocolText = createClinicalProHygieneProtocolText();
 		dispatchServiceEvents(PRO_HYGIENE_SERVICE);
-		applyClinicalProtocol(protocolText, `${CLINICAL_PRO_HYGIENE_SUMMARY_RU}. Услуга A16.07.051 начислена в смету!`, "success");
+		applyClinicalProtocol(protocolText, `${CLINICAL_PRO_HYGIENE_SUMMARY_RU}. Услуга A16.07.051 начислена в смету! Реколл через 6 мес сформирован.`, "success");
 
 		// Автоматическое честное списание расходных материалов со склада с soft overdraft
 		void deductHygieneConsumables({ doctorName });
+
+		// Автоматический recall через 6 месяцев (+180 дней)
+		window.dispatchEvent(
+			new CustomEvent("dente-hygiene-recall-scheduled", {
+				detail: {
+					intervalMonths: 6,
+					dueDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+					reason: "Плановый контрольный осмотр и гигиена через 6 месяцев",
+				},
+			}),
+		);
 	}, [readOnly, handlePresetHygieneNorm, dispatchServiceEvents, applyClinicalProtocol, doctorName]);
 
 	// Глубокое фторирование эмали (A11.07.012)
@@ -580,7 +582,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsBottomSheetOpen(true)}
-							className="md:hidden min-h-[44px] h-9 px-3 py-1.5 rounded-lg bg-teal-500/15 hover:bg-teal-500/25 text-teal-850 dark:text-teal-200 border border-teal-500/35 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation"
+							className="secondary-button md:hidden min-h-[44px] h-9 px-3 py-1.5 rounded-lg bg-teal-500/15 hover:bg-teal-500/25 text-teal-850 dark:text-teal-200 border border-teal-500/35 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation"
 							title="Открыть осмотр гигиены в нативной шторке (Apple HIG)"
 							data-testid="hygiene-open-bottom-sheet-btn"
 						>
@@ -592,7 +594,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							<button
 								type="button"
 								onClick={handleSyncFromPerio}
-								className="h-8 sm:h-9 px-3 py-1.5 rounded-lg bg-[var(--paper-soft)] hover:bg-teal-500/15 hover:text-teal-700 dark:hover:text-teal-300 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation truncate"
+								className="secondary-button h-8 sm:h-9 px-3 py-1.5 rounded-lg bg-[var(--paper-soft)] hover:bg-teal-500/15 hover:text-teal-700 dark:hover:text-teal-300 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation truncate"
 								title="Импортировать налет и кровоточивость из пародонтограммы"
 							>
 								<RotateCcw size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
@@ -600,15 +602,15 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							</button>
 						)}
 
-						{/* Внесение в 043/у */}
+						{/* Внесение в медицинскую карту приёма */}
 						<button
 							type="button"
 							onClick={handleInsertTo043}
-							className="h-8 sm:h-9 px-3.5 py-1.5 rounded-lg !bg-teal-600 hover:!bg-teal-700 active:scale-95 !text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer touch-manipulation truncate"
+							className="primary-button h-8 sm:h-9 px-3.5 py-1.5 rounded-lg !bg-teal-600 hover:!bg-teal-700 active:scale-95 !text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer touch-manipulation truncate"
 							title="Вставить сводку индексов гигиены в дневник приёма"
 							data-testid="hygiene-insert-to-043-btn"
 						>
-							{insertStatus ? <Check size={14} className="shrink-0" /> : <DentalForm043 size={14} className="shrink-0" />}
+							{insertStatus ? <Check size={14} className="shrink-0" /> : <FileText size={14} className="shrink-0" />}
 							<span className="truncate">{insertStatus ? "Внесено в карту!" : "В медицинскую карту"}</span>
 						</button>
 
@@ -616,7 +618,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 						<button
 							type="button"
 							onClick={handlePrintProtocol}
-							className="h-8 sm:h-9 px-3 py-1.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation truncate"
+							className="secondary-button h-8 sm:h-9 px-3 py-1.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation truncate"
 							title="Распечатать стандартизированный протокол клинических индексов гигиены"
 							data-testid="hygiene-print-protocol-btn"
 						>
@@ -627,7 +629,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 						<button
 							type="button"
 							onClick={handleCopyText}
-							className="h-8 sm:h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] transition-all cursor-pointer flex items-center justify-center touch-manipulation"
+							className="secondary-button icon-button h-8 sm:h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] transition-all cursor-pointer flex items-center justify-center touch-manipulation"
 							title="Скопировать протокол в буфер обмена"
 							aria-label="Скопировать протокол в буфер"
 							data-testid="hygiene-copy-protocol-btn"
@@ -680,8 +682,8 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 								onClick={() => setActiveTab(tab.id as ActiveHygieneIndexTab)}
 								className={`h-8 px-3.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer truncate shrink-0 ${
 									isActive
-										? "!bg-teal-600 !text-white shadow-xs !border-teal-500/50"
-										: "text-[var(--ink)] hover:text-teal-700 dark:hover:text-teal-300 hover:bg-[var(--paper)]"
+										? "primary-button !bg-teal-600 !text-white shadow-xs !border-teal-500/50"
+										: "secondary-button text-[var(--ink)] hover:text-teal-700 dark:hover:text-teal-300 hover:bg-[var(--paper)]"
 								}`}
 								title={tab.label}
 							>

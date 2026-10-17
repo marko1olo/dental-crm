@@ -97,7 +97,7 @@ export function OrthopedicsChairsidePanel({
 	}, [activeToothFdi, selectedTeeth, initialLabOrder?.toothFdi]);
 
 	// Стандартные наряды ЗТЛ, этапы изготовления и шкала VITA
-	const [shadeSystem, setShadeSystem] = useState<"classical" | "3d_master" | "bleach">("classical");
+	const [shadeSystem, setShadeSystem] = useState<"classical" | "3d_master" | "bleach" | "stump">("classical");
 	const [activeZtlPresetId, setActiveZtlPresetId] = useState<string>("zirconia");
 	const activePreset =
 		STANDARD_ZTL_ORDER_PRESETS.find((p) => p.id === activeZtlPresetId) ??
@@ -317,19 +317,11 @@ export function OrthopedicsChairsidePanel({
 				"Content-Type": "application/json",
 			});
 
-			let res = await fetch("/api/lab/orders", {
+			const res = await fetch("/api/lab/orders", {
 				method: "POST",
 				headers,
 				body: JSON.stringify(labOrderPayload),
 			});
-
-			if (res.status === 404) {
-				res = await fetch("/api/clinical/lab-orders", {
-					method: "POST",
-					headers,
-					body: JSON.stringify(labOrderPayload),
-				});
-			}
 
 			if (res.ok) {
 				const json = await res.json().catch(() => null);
@@ -461,6 +453,14 @@ export function OrthopedicsChairsidePanel({
 		],
 	);
 
+	const effectiveOrderNumber =
+		initialLabOrder?.orderNumber ||
+		labOrderSentNumber ||
+		"ЗТЛ-402";
+	const effectiveTechnicianName =
+		initialLabOrder?.technicianName ||
+		"Смирнов А.В.";
+
 	const handleConfirmChairsideFitting = useCallback(() => {
 		setFittingConfirmed(true);
 		setSelectedStageId("patient_fixation");
@@ -490,6 +490,37 @@ export function OrthopedicsChairsidePanel({
 			}).catch(() => {});
 		}
 
+		// Автоматическое списание материала постоянной фиксации (цемент GC Fuji Plus / RelyX U200, 1 доза)
+		// с поддержкой мягкого овердрафта склада (Soft Negative Stock, Мандаты 8e, 8k, 8n)
+		if (typeof fetch === "function") {
+			const effectiveOrgId = "00000000-0000-0000-0000-000000000001";
+			fetch(`/api/inventory/${effectiveOrgId}/quick-writeoff-orthopedic`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					protocolId: "ortho_permanent_cementation",
+					toothNumber: activeTeethInput,
+					notes: `Фиксация конструкции (цемент Fuji Plus / RelyX U200, наряд ${effectiveOrderNumber})`,
+				}),
+			})
+				.then(async (res) => {
+					if (res.ok) {
+						const data = await res.json().catch(() => null);
+						if (data?.isOverdraft || (data?.warnings && data.warnings.length > 0)) {
+							showToast("Списан цемент фиксации Fuji Plus / RelyX (Soft Negative Stock: дефицит зафиксирован)", "info", 4000);
+						} else {
+							showToast("Списан цемент фиксации Fuji Plus / RelyX (1 доза)", "info", 3000);
+						}
+					}
+				})
+				.catch((err) => {
+					console.warn("[OrthopedicsChairsidePanel] Stock deduction offline:", err);
+				});
+		}
+
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(
 				new CustomEvent("dente-lab-fitting-confirmed", {
@@ -511,6 +542,7 @@ export function OrthopedicsChairsidePanel({
 	}, [
 		activeOrderId,
 		activeTeethInput,
+		effectiveOrderNumber,
 		handleApplyProtocol,
 		initialLabOrder,
 		labOrderSentNumber,
@@ -547,13 +579,6 @@ export function OrthopedicsChairsidePanel({
 		selectedStageId === "patient_fixation",
 	);
 
-	const effectiveOrderNumber =
-		initialLabOrder?.orderNumber ||
-		labOrderSentNumber ||
-		"ЗТЛ-402";
-	const effectiveTechnicianName =
-		initialLabOrder?.technicianName ||
-		"Смирнов А.В.";
 	const effectiveWarrantyPassport =
 		initialLabOrder?.warrantyPassport ||
 		`ГП-${effectiveOrderNumber}`;
@@ -738,12 +763,18 @@ export function OrthopedicsChairsidePanel({
 				onChangeDueDate={setDueDate}
 			/>
 
-			{/* Расцветка VITA Classical & VITA 3D-Master: data-testid="vita-3d-master-tab" */}
+			{/* Расцветка VITA Classical, 3D-Master, Bleach и оттенок культи ND1-ND9: data-testid="vita-3d-master-tab" */}
 			<OrthopedicsVitaShadePicker
 				shadeSystem={shadeSystem}
 				onShadeSystemChange={setShadeSystem}
 				selectedShade={selectedShade}
 				onSelectShade={setSelectedShade}
+				selectedStumpShade={selectedStumpShade}
+				onSelectStumpShade={(shade) => {
+					setSelectedStumpShade(shade);
+					showToast(`Цвет культи: ${shade}`, "info", 1500);
+				}}
+				showStumpSelector={true}
 			/>
 
 			{/* Сетка 4 канонических протоколов (1 клик -> 043/у + Смета + Этап 3) */}

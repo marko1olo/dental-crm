@@ -182,7 +182,17 @@ export const HygieneHomeCareCard: React.FC<HygieneHomeCareCardProps> = memo(({
 		}
 	}, [formattedText]);
 
-	// Печать красивой памятки
+	// Отправка в Telegram
+	const handleSendTelegram = useCallback(() => {
+		const encoded = encodeURIComponent(formattedText);
+		const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(typeof window !== "undefined" ? window.location.origin : "https://dente.clinic")}&text=${encoded}`;
+		if (typeof window !== "undefined") {
+			window.open(tgUrl, "_blank", "noopener,noreferrer");
+			showToast("Открываем Telegram для отправки памятки пациенту", "info", 3500);
+		}
+	}, [formattedText]);
+
+	// Печать красивой памятки А4
 	const handlePrintMemo = useCallback(() => {
 		const printWindow = window.open("", "_blank");
 		if (!printWindow) {
@@ -197,7 +207,7 @@ export const HygieneHomeCareCard: React.FC<HygieneHomeCareCardProps> = memo(({
 				<meta charset="utf-8" />
 				<title>Памятка домашней гигиены — ${patientName}</title>
 				<style>
-					@page { size: A5 portrait; margin: 12mm; }
+					@page { size: A4 portrait; margin: 15mm; }
 					body {
 						font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 						font-size: 11pt;
@@ -334,12 +344,12 @@ export const HygieneHomeCareCard: React.FC<HygieneHomeCareCardProps> = memo(({
 					</div>
 				</div>
 
-				{/* Кнопки экспорта (Miller's Law <= 4 кнопок) */}
+				{/* Кнопки экспорта (Miller's Law <= 5 кнопок) */}
 				<div className="flex items-center gap-1.5 flex-wrap shrink-0">
 					<button
 						type="button"
 						onClick={handleInsertToCard}
-						className="min-h-[36px] sm:h-8 px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation truncate"
+						className="primary-button min-h-[36px] sm:h-8 px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation truncate"
 						title="Вставить рекомендации в дневник приёма"
 						data-testid="hygiene-homecare-insert-btn"
 					>
@@ -350,18 +360,18 @@ export const HygieneHomeCareCard: React.FC<HygieneHomeCareCardProps> = memo(({
 					<button
 						type="button"
 						onClick={handlePrintMemo}
-						className="min-h-[36px] sm:h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation truncate"
-						title="Распечатать памятку пациента формата А5"
+						className="secondary-button min-h-[36px] sm:h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation truncate"
+						title="Распечатать памятку пациента формата А4"
 						data-testid="hygiene-homecare-print-btn"
 					>
 						<Printer size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />
-						<span className="truncate">Печать</span>
+						<span className="truncate">Печать А4</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={handleSendWhatsApp}
-						className="min-h-[36px] sm:h-8 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation truncate"
+						className="secondary-button min-h-[36px] sm:h-8 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation truncate"
 						title="Отправить памятку в WhatsApp"
 						data-testid="hygiene-homecare-whatsapp-btn"
 					>
@@ -371,8 +381,19 @@ export const HygieneHomeCareCard: React.FC<HygieneHomeCareCardProps> = memo(({
 
 					<button
 						type="button"
+						onClick={handleSendTelegram}
+						className="secondary-button min-h-[36px] sm:h-8 px-2.5 rounded-lg bg-sky-600 hover:bg-sky-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation truncate"
+						title="Отправить памятку в Telegram"
+						data-testid="hygiene-homecare-telegram-btn"
+					>
+						<Send size={14} className="shrink-0" />
+						<span className="truncate">Telegram</span>
+					</button>
+
+					<button
+						type="button"
 						onClick={handleCopy}
-						className="min-h-[36px] sm:h-8 w-8 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer touch-manipulation shrink-0"
+						className="secondary-button icon-button min-h-[36px] sm:h-8 w-8 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer touch-manipulation shrink-0"
 						title="Скопировать текст памятки"
 						aria-label="Скопировать"
 						data-testid="hygiene-homecare-copy-btn"
@@ -384,48 +405,135 @@ export const HygieneHomeCareCard: React.FC<HygieneHomeCareCardProps> = memo(({
 
 			{/* Экспресс-пресеты под клиническую картину */}
 			{!readOnly && (
-				<div className="flex items-center gap-1.5 flex-wrap">
-					<span className="text-[11px] font-bold text-[var(--muted)] shrink-0">
-						Пресеты под диагноз:
-					</span>
-					<button
-						type="button"
-						onClick={() => handleSelectPreset("standard")}
-						className={`min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer touch-manipulation truncate ${
-							activePreset === "standard"
-								? "bg-teal-600 text-white font-bold shadow-2xs"
-								: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--line)]/50"
-						}`}
-						data-testid="homecare-preset-standard-btn"
-					>
-						✓ Стандарт (Curaprox 5460 + ершики)
-					</button>
+				<div className="flex flex-col gap-2">
+					<div className="flex items-center gap-1.5 flex-wrap">
+						<span className="text-[11px] font-bold text-[var(--muted)] shrink-0">
+							Пресеты под диагноз:
+						</span>
+						<button
+							type="button"
+							onClick={() => handleSelectPreset("standard")}
+							className={`min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer touch-manipulation truncate ${
+								activePreset === "standard"
+									? "primary-button bg-teal-600 text-white font-bold shadow-2xs"
+									: "secondary-button bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--line)]/50"
+							}`}
+							data-testid="homecare-preset-standard-btn"
+						>
+							✓ Стандарт (Curaprox 5460 + ершики)
+						</button>
 
-					<button
-						type="button"
-						onClick={() => handleSelectPreset("ortho")}
-						className={`min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer touch-manipulation truncate ${
-							activePreset === "ortho"
-								? "bg-teal-600 text-white font-bold shadow-2xs"
-								: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--line)]/50"
-						}`}
-						data-testid="homecare-preset-ortho-btn"
-					>
-						Брекеты / Ретейнеры / Скученность
-					</button>
+						<button
+							type="button"
+							onClick={() => handleSelectPreset("ortho")}
+							className={`min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer touch-manipulation truncate ${
+								activePreset === "ortho"
+									? "primary-button bg-teal-600 text-white font-bold shadow-2xs"
+									: "secondary-button bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--line)]/50"
+							}`}
+							data-testid="homecare-preset-ortho-btn"
+						>
+							Брекеты / Ретейнеры / Скученность
+						</button>
 
-					<button
-						type="button"
-						onClick={() => handleSelectPreset("perio")}
-						className={`min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer touch-manipulation truncate ${
-							activePreset === "perio"
-								? "bg-teal-600 text-white font-bold shadow-2xs"
-								: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--line)]/50"
-						}`}
-						data-testid="homecare-preset-perio-btn"
-					>
-						Пародонтит / Кровоточивость (Velvet + Perio)
-					</button>
+						<button
+							type="button"
+							onClick={() => handleSelectPreset("perio")}
+							className={`min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer touch-manipulation truncate ${
+								activePreset === "perio"
+									? "primary-button bg-teal-600 text-white font-bold shadow-2xs"
+									: "secondary-button bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--line)]/50"
+							}`}
+							data-testid="homecare-preset-perio-btn"
+						>
+							Пародонтит / Кровоточивость (Velvet + Perio)
+						</button>
+					</div>
+
+					{/* 1-клик быстрый подбор щетки Curaprox и ершиков */}
+					<div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-[var(--line)]/50 text-[11px]">
+						<span className="font-bold text-[var(--muted)] shrink-0">Щетка:</span>
+						<button
+							type="button"
+							onClick={() => {
+								setCare((prev) => ({
+									...prev,
+									toothbrush: "Зубная щетка Curaprox Soft 1560 (1560 щетинок Curen толщиной 0.15 мм для адаптации после жестких щеток)",
+								}));
+								showToast("Выбрана щетка Curaprox Soft 1560", "info", 1500);
+							}}
+							className="secondary-button px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--paper-soft)] hover:bg-teal-500/20 text-[var(--ink)] border border-[var(--line)] cursor-pointer"
+						>
+							1560 Soft
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setCare((prev) => ({
+									...prev,
+									toothbrush: "Зубная щетка Curaprox Ultra Soft 5460 (5460 ультратонких щетинок Curen 0.1 мм, бережная атравматичная чистка)",
+								}));
+								showToast("Выбрана щетка Curaprox Ultra Soft 5460", "info", 1500);
+							}}
+							className="secondary-button px-2 py-0.5 rounded text-[11px] font-bold bg-teal-500/15 hover:bg-teal-500/30 text-teal-800 dark:text-teal-300 border border-teal-500/30 cursor-pointer"
+						>
+							★ 5460 Ultra Soft
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setCare((prev) => ({
+									...prev,
+									toothbrush: "Зубная щетка Curaprox Velvet 12460 (12460 бархатных щетинок Curen 0.08 мм, максимум нежности при гиперчувствительности)",
+								}));
+								showToast("Выбрана щетка Curaprox Velvet 12460", "info", 1500);
+							}}
+							className="secondary-button px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--paper-soft)] hover:bg-teal-500/20 text-[var(--ink)] border border-[var(--line)] cursor-pointer"
+						>
+							12460 Velvet
+						</button>
+
+						<span className="font-bold text-[var(--muted)] shrink-0 ml-2">Ёршики:</span>
+						<button
+							type="button"
+							onClick={() => {
+								setCare((prev) => ({
+									...prev,
+									interdentalBrushes: "Межзубные ёршики Curaprox CPS 06 Prime (стержень 0.6 мм, щетина 2.2 мм — узкие межзубные промежутки фронта)",
+								}));
+								showToast("Выбран калибр Curaprox CPS 06", "info", 1500);
+							}}
+							className="secondary-button px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--paper-soft)] hover:bg-teal-500/20 text-[var(--ink)] border border-[var(--line)] cursor-pointer"
+						>
+							CPS 06 (0.6 мм)
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setCare((prev) => ({
+									...prev,
+									interdentalBrushes: "Межзубные ёршики Curaprox CPS 07 Prime (стержень 0.7 мм, щетина 2.5 мм — стандартные промежутки премоляров)",
+								}));
+								showToast("Выбран калибр Curaprox CPS 07", "info", 1500);
+							}}
+							className="secondary-button px-2 py-0.5 rounded text-[11px] font-bold bg-teal-500/15 hover:bg-teal-500/30 text-teal-800 dark:text-teal-300 border border-teal-500/30 cursor-pointer"
+						>
+							★ CPS 07 (0.7 мм)
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setCare((prev) => ({
+									...prev,
+									interdentalBrushes: "Межзубные ёршики Curaprox CPS 08 Prime (стержень 0.8 мм, щетина 3.2 мм — широкие промежутки моляров)",
+								}));
+								showToast("Выбран калибр Curaprox CPS 08", "info", 1500);
+							}}
+							className="secondary-button px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--paper-soft)] hover:bg-teal-500/20 text-[var(--ink)] border border-[var(--line)] cursor-pointer"
+						>
+							CPS 08 (0.8 мм)
+						</button>
+					</div>
 				</div>
 			)}
 

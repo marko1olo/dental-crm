@@ -47,8 +47,10 @@ export function mapStageToLabOrderStatus(stage: string): LabOrderStatus | null {
 			return "sent";
 		case "in_progress":
 		case "model_cad_design":
+		case "cad_cam":
 		case "framework_wax_milling":
 		case "sintering_ceramic_layering":
+		case "sintering_glaze":
 		case "final_glaze":
 		case "framework_fitting":
 		case "framework":
@@ -106,9 +108,11 @@ export function mapStageOrStatusToMilestone(stageOrStatus: string): z.infer<type
 		case "digital_design_cad":
 			return "digital_design_cad";
 		case "framework_wax_milling":
+		case "cad_cam":
 		case "cam_production":
 			return "cam_production";
 		case "sintering_ceramic_layering":
+		case "sintering_glaze":
 		case "sintering_crystallization":
 			return "sintering_crystallization";
 		case "final_glaze":

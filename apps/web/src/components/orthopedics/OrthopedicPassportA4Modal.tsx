@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { DentalCrown, ToothShadeGuide } from "../icons/DentalIcons.js";
 import { showToast } from "../GlobalToast.js";
+import { generateQrCodeSvg, generateBarcodeSvg } from "../lab/labBarcodeQr.js";
 
 export interface OrthopedicPassportData {
 	readonly orderNumber?: string | undefined;
@@ -96,6 +97,11 @@ export function OrthopedicPassportA4Modal({
 	const careNotes = passport.careNotes && passport.careNotes.length > 0
 		? passport.careNotes
 		: defaultCareNotes;
+
+	const qrCodeSvg = generateQrCodeSvg(
+		`https://dente.clinic/verify/passport?no=${encodeURIComponent(passportNumber)}&lot=${encodeURIComponent(batchLot)}&fdi=${encodeURIComponent(passport.toothFdi)}`,
+		{ size: 72, margin: 1 },
+	);
 
 	const handlePrint = () => {
 		if (typeof window !== "undefined") {
@@ -246,9 +252,23 @@ export function OrthopedicPassportA4Modal({
 								</h2>
 							</div>
 
-							<div className="text-left sm:text-right text-xs shrink-0 font-mono text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg p-2 bg-slate-50 dark:bg-slate-800/60">
-								<div>Дата выдачи: <strong className="text-slate-900 dark:text-slate-100">{issueDate}</strong></div>
-								<div>Статус: <strong className="text-emerald-600 dark:text-emerald-400">ПОСТОЯННАЯ ФИКСАЦИЯ</strong></div>
+							<div className="flex items-center gap-2.5 shrink-0">
+								<div className="text-left sm:text-right text-xs shrink-0 font-mono text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg p-2 bg-slate-50 dark:bg-slate-800/60 flex flex-col justify-between">
+									<div>Дата выдачи: <strong className="text-slate-900 dark:text-slate-100">{issueDate}</strong></div>
+									<div>Статус: <strong className="text-emerald-600 dark:text-emerald-400">ПОСТОЯННАЯ ФИКСАЦИЯ</strong></div>
+									<div className="text-[10px] text-slate-500 mt-0.5">LOT: <strong className="font-mono text-slate-700 dark:text-slate-300">{batchLot}</strong></div>
+								</div>
+								<div
+									className="w-[68px] h-[68px] p-1 bg-white border border-slate-300 dark:border-slate-700 rounded-lg flex flex-col items-center justify-center shrink-0 shadow-2xs"
+									title="QR-код проверки подлинности гарантийного сертификата"
+									data-testid="passport-qr-code"
+								>
+									<div
+										className="w-full h-full flex items-center justify-center [&_svg]:w-full [&_svg]:h-full"
+										dangerouslySetInnerHTML={{ __html: qrCodeSvg }}
+										aria-hidden="true"
+									/>
+								</div>
 							</div>
 						</div>
 

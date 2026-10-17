@@ -80,7 +80,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 					<button
 						type="button"
 						onClick={onPresetHygieneNorm || onPresetPeriodontalNorm}
-						className="min-h-[48px] h-9 px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-900 dark:text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center justify-between gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0"
+						className="primary-button min-h-[48px] h-9 px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-900 dark:text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center justify-between gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0"
 						title="Идеальная гигиена: OHI-S = 0.0, десна плотная, налёта и камня нет"
 						data-testid="hygiene-preset-ideal-norm"
 					>
@@ -95,7 +95,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 					<button
 						type="button"
 						onClick={onPresetHygieneFair}
-						className="min-h-[48px] h-9 px-2.5 py-1 rounded-lg bg-teal-600/20 hover:bg-teal-600/35 text-teal-900 dark:text-teal-300 border border-teal-500/40 text-xs font-bold flex items-center justify-between gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0"
+						className="secondary-button min-h-[48px] h-9 px-2.5 py-1 rounded-lg bg-teal-600/20 hover:bg-teal-600/35 text-teal-900 dark:text-teal-300 border border-teal-500/40 text-xs font-bold flex items-center justify-between gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0"
 						title="Удовлетворительная гигиена: OHI-S = 0.8, мягкий зубной налёт до 1/3 коронки"
 						data-testid="hygiene-preset-fair"
 					>
@@ -110,7 +110,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 					<button
 						type="button"
 						onClick={onPresetHygienePoor}
-						className="min-h-[48px] h-9 px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 text-amber-900 dark:text-amber-200 border border-amber-500/40 text-xs font-bold flex items-center justify-between gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0"
+						className="secondary-button min-h-[48px] h-9 px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 text-amber-900 dark:text-amber-200 border border-amber-500/40 text-xs font-bold flex items-center justify-between gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0"
 						title="Неудовлетворительная гигиена: OHI-S = 1.8, наддесневой зубной камень"
 						data-testid="hygiene-preset-poor"
 					>
@@ -125,7 +125,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 					<button
 						type="button"
 						onClick={onPresetHygieneSevere}
-						className="min-h-[48px] h-9 px-2.5 py-1 rounded-lg bg-rose-600/20 hover:bg-rose-600/35 text-rose-900 dark:text-rose-200 border border-rose-500/40 text-xs font-bold flex items-center justify-between gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0"
+						className="secondary-button min-h-[48px] h-9 px-2.5 py-1 rounded-lg bg-rose-600/20 hover:bg-rose-600/35 text-rose-900 dark:text-rose-200 border border-rose-500/40 text-xs font-bold flex items-center justify-between gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0"
 						title="Тяжелая гигиена: OHI-S = 2.6, генерализованный поддесневой камень, BOP+"
 						data-testid="hygiene-preset-severe"
 					>
@@ -142,7 +142,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 					<button
 						type="button"
 						onClick={() => toggleSubPanel("diagnoses")}
-						className={`h-9 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 border transition-all cursor-pointer ${
+						className={`secondary-button h-9 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 border transition-all cursor-pointer ${
 							activeSubPanel === "diagnoses"
 								? "bg-teal-700 text-white border-teal-800 shadow-xs"
 								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
@@ -158,7 +158,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 					<button
 						type="button"
 						onClick={() => toggleSubPanel("procedures")}
-						className={`h-9 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 border transition-all cursor-pointer ${
+						className={`secondary-button h-9 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 border transition-all cursor-pointer ${
 							activeSubPanel === "procedures"
 								? "bg-teal-700 text-white border-teal-800 shadow-xs"
 								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
@@ -183,7 +183,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 					<button
 						type="button"
 						onClick={onPresetPeriodontalNorm}
-						className="min-h-[48px] p-2 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-900 dark:text-emerald-300 border border-emerald-500/35 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
+						className="secondary-button min-h-[48px] p-2 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-900 dark:text-emerald-300 border border-emerald-500/35 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
 						data-testid="hygiene-preset-norm"
 					>
 						<div className="flex items-center gap-1 truncate font-bold">
@@ -196,7 +196,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 					<button
 						type="button"
 						onClick={onPresetCatarrhalGingivitis}
-						className="min-h-[48px] p-2 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 text-amber-900 dark:text-amber-300 border border-amber-500/35 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
+						className="secondary-button min-h-[48px] p-2 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 text-amber-900 dark:text-amber-300 border border-amber-500/35 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
 						data-testid="hygiene-preset-gingivitis"
 					>
 						<div className="flex items-center gap-1 truncate font-bold">
@@ -209,7 +209,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 					<button
 						type="button"
 						onClick={onPresetMildPeriodontitis}
-						className="min-h-[48px] p-2 rounded-lg bg-rose-600/15 hover:bg-rose-600/30 text-rose-900 dark:text-rose-200 border border-rose-500/35 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
+						className="secondary-button min-h-[48px] p-2 rounded-lg bg-rose-600/15 hover:bg-rose-600/30 text-rose-900 dark:text-rose-200 border border-rose-500/35 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
 						data-testid="hygiene-preset-mild-periodontitis"
 					>
 						<div className="flex items-center gap-1 truncate font-bold">
@@ -222,7 +222,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 					<button
 						type="button"
 						onClick={onPresetModeratePeriodontitis}
-						className="min-h-[48px] p-2 rounded-lg bg-orange-600/20 hover:bg-orange-600/35 text-orange-900 dark:text-orange-200 border border-orange-500/40 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
+						className="secondary-button min-h-[48px] p-2 rounded-lg bg-orange-600/20 hover:bg-orange-600/35 text-orange-900 dark:text-orange-200 border border-orange-500/40 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
 						data-testid="hygiene-preset-periodontitis"
 					>
 						<div className="flex items-center gap-1 truncate font-bold">
@@ -235,7 +235,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 					<button
 						type="button"
 						onClick={onPresetSeverePeriodontitis}
-						className="min-h-[48px] p-2 rounded-lg bg-red-700/20 hover:bg-red-700/35 text-red-900 dark:text-red-200 border border-red-600/40 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
+						className="secondary-button min-h-[48px] p-2 rounded-lg bg-red-700/20 hover:bg-red-700/35 text-red-900 dark:text-red-200 border border-red-600/40 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
 						data-testid="hygiene-preset-severe-periodontitis"
 					>
 						<div className="flex items-center gap-1 truncate font-bold">
@@ -260,7 +260,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 					<button
 						type="button"
 						onClick={onPresetProHygieneDone}
-						className="min-h-[48px] p-2 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/35 text-cyan-900 dark:text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
+						className="secondary-button min-h-[48px] p-2 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/35 text-cyan-900 dark:text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
 						data-testid="hygiene-preset-pro-hygiene"
 					>
 						<div className="flex items-center justify-between gap-1 font-bold">
@@ -273,7 +273,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 					<button
 						type="button"
 						onClick={onPresetDeepFluoridation}
-						className="min-h-[48px] p-2 rounded-lg bg-sky-600/20 hover:bg-sky-600/35 text-sky-900 dark:text-sky-300 border border-sky-500/40 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
+						className="secondary-button min-h-[48px] p-2 rounded-lg bg-sky-600/20 hover:bg-sky-600/35 text-sky-900 dark:text-sky-300 border border-sky-500/40 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
 						data-testid="hygiene-preset-deep-fluoridation"
 					>
 						<div className="flex items-center justify-between gap-1 font-bold">
@@ -286,7 +286,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 					<button
 						type="button"
 						onClick={onPresetToothMousse}
-						className="min-h-[48px] p-2 rounded-lg bg-violet-600/20 hover:bg-violet-600/35 text-violet-900 dark:text-violet-300 border border-violet-500/40 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
+						className="secondary-button min-h-[48px] p-2 rounded-lg bg-violet-600/20 hover:bg-violet-600/35 text-violet-900 dark:text-violet-300 border border-violet-500/40 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
 						data-testid="hygiene-preset-tooth-mousse"
 					>
 						<div className="flex items-center justify-between gap-1 font-bold">
@@ -299,7 +299,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 					<button
 						type="button"
 						onClick={onPresetPerioAntiseptic}
-						className="min-h-[48px] p-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-900 dark:text-emerald-300 border border-emerald-500/40 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
+						className="secondary-button min-h-[48px] p-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-900 dark:text-emerald-300 border border-emerald-500/40 text-xs font-semibold flex flex-col justify-center text-left transition-all cursor-pointer"
 						data-testid="hygiene-preset-perio-antiseptic"
 					>
 						<div className="flex items-center justify-between gap-1 font-bold">

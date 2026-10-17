@@ -28,8 +28,7 @@
  */
 
 import React, { memo, useCallback, useMemo, useState } from "react";
-import { Check, Clipboard, Droplets, RotateCcw, ShieldCheck } from "lucide-react";
-import { DentalForm043 } from "../icons/DentalIcons";
+import { Check, Clipboard, Droplets, FileText, RotateCcw, ShieldCheck } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 
@@ -203,7 +202,7 @@ export const KpuBleedingIndicesCalculator: React.FC<KpuBleedingIndicesCalculator
 							Индексы КПУ (кариес) и кровоточивости десневой борозды (SBI / BOP)
 						</h5>
 						<p className="text-[10px] text-[var(--muted)] truncate">
-							Форма 043/у • Оценка интенсивности кариеса и степени воспаления десневой борозды
+							Медицинская карта приёма • Оценка интенсивности кариеса и степени воспаления десневой борозды
 						</p>
 					</div>
 				</div>
@@ -213,16 +212,17 @@ export const KpuBleedingIndicesCalculator: React.FC<KpuBleedingIndicesCalculator
 						<button
 							type="button"
 							onClick={handleInsertTo043}
-							className="h-8 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer touch-manipulation"
+							className="primary-button h-8 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer touch-manipulation"
 							title="Внести КПУ и SBI в медицинскую карту"
+							data-testid="hygiene-kpu-insert-btn"
 						>
-							{insertStatus ? <Check size={14} /> : <DentalForm043 size={14} />}
-							<span>{insertStatus ? "Внесено!" : "В карту 043/у"}</span>
+							{insertStatus ? <Check size={14} /> : <FileText size={14} />}
+							<span>{insertStatus ? "Внесено!" : "В медкарту"}</span>
 						</button>
 						<button
 							type="button"
 							onClick={handleCopy}
-							className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] transition-all cursor-pointer"
+							className="secondary-button icon-button h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] transition-all cursor-pointer"
 							title="Скопировать в буфер"
 							aria-label="Скопировать"
 						>
@@ -252,7 +252,7 @@ export const KpuBleedingIndicesCalculator: React.FC<KpuBleedingIndicesCalculator
 							<button
 								type="button"
 								onClick={handlePresetKpuNorm}
-								className="h-7 px-2 rounded-md bg-[var(--paper)] hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-[var(--line)] text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+								className="secondary-button h-7 px-2 rounded-md bg-[var(--paper)] hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-[var(--line)] text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
 								title="Норма КПУ = 0"
 							>
 								<ShieldCheck size={12} />
@@ -366,7 +366,7 @@ export const KpuBleedingIndicesCalculator: React.FC<KpuBleedingIndicesCalculator
 							<button
 								type="button"
 								onClick={handlePresetBleedingNorm}
-								className="h-7 px-2 rounded-md bg-[var(--paper)] hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-[var(--line)] text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+								className="secondary-button h-7 px-2 rounded-md bg-[var(--paper)] hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-[var(--line)] text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
 								title="Норма: кровоточивость 0 / BOP 0%"
 							>
 								<RotateCcw size={12} />
