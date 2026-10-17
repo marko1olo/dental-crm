@@ -6,6 +6,7 @@
 export * from "./clinicalDdiDrugSafetyEngine.js";
 export * from "./cmoEmkQualityAuditEngine.js";
 export * from "./visitWorkOrder.js";
+export * from "./endo/index.js";
 export * from "./endoProtocolEngine.js";
 export * from "./restorationProtocolEngine.js";
 export * from "./therapyProtocolEngine.js";
@@ -44,6 +45,7 @@ export {
 	filterTimelineEntries,
 } from "./patientTimelineEngine.js";
 export * from "./patientRelationshipsEngine.js";
+export * from "./dentalFormulaSsot.js";
 export * from "./odontogramTreatmentEngine.js";
 export * from "./pediatricDentition.js";
 export * from "./smartClinicalPlaybooksEngine.js";
@@ -79,9 +81,24 @@ export * from "../warehouse/default804nBomCatalog.js";
 export * from "../warehouse/autoVisitBomEngine.js";
 export * from "./photoProtocol.js";
 export * from "./soap/index.js";
-export * from "./somaticSafetyEngine.js";
+export * from "./somaticCatalog.js";
+export {
+	evaluateSomaticSafety,
+	type SomaticSafetyEvaluation,
+	type SomaticSafetyInput,
+	type SomaticStopFactor,
+	type SomaticStopFactorCategory,
+	type SomaticSeverity,
+	extractFullAnamnesisText,
+	createHealthySomaticNormProfile,
+	applySomaticNorm,
+} from "./somaticSafetyEngine.js";
 export * from "./clinicalMarketMaterialsCatalog.js";
+export * from "./clinicalDiagnosesSsot.js";
 export * from "./diagnosisServiceBundles.js";
 export * from "./pricelistBatchImport.js";
 export * from "./informedConsentEngine.js";
 export * from "./prescriptionCatalog.js";
+export * from "./stenographer/index.js";
+export * from "./touchErgonomics.js";
+export * from "../anesthesia/index.js";

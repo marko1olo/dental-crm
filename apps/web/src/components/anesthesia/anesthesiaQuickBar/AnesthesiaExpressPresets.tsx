@@ -5,6 +5,7 @@ import { AnesthesiaSegmentedDoseButtons } from './AnesthesiaSegmentedDoseButtons
 export interface AnesthesiaExpressPresetsProps {
 	disabled: boolean;
 	selectedCarpulesCount?: number | undefined;
+	onChangeSelectedCarpulesCount?: ((count: number) => void) | undefined;
 	onApplyCarpules: (count: number) => void;
 	onApplyUbistesinForte?: (() => void) | undefined;
 	onApplyUbistesin?: (() => void) | undefined;
@@ -28,6 +29,7 @@ const PRESET_BTN_CLASS =
 export function AnesthesiaExpressPresets({
 	disabled,
 	selectedCarpulesCount = 1.0,
+	onChangeSelectedCarpulesCount,
 	onApplyCarpules,
 	onApplyUbistesinForte,
 	onApplyUbistesin,
@@ -93,11 +95,12 @@ export function AnesthesiaExpressPresets({
 				<span>АНТИШОК</span>
 			</button>
 
-			{/* 1 карпула / 2 карпулы segmented selector */}
+			{/* 0.5 - 3.0 карпулы segmented selector */}
 			<AnesthesiaSegmentedDoseButtons
 				disabled={disabled}
 				selectedCarpulesCount={selectedCarpulesCount}
 				onApplyCarpules={onApplyCarpules}
+				onChangeSelectedCarpulesCount={onChangeSelectedCarpulesCount}
 			/>
 		</>
 	);

@@ -135,6 +135,14 @@ export async function deductForVisit(
 				unit: "carpule",
 				defaultCostRub: 145,
 			});
+			// Клинический закон: Карпула анестетика + карпульная игла (G27/G30) списываются автоматически
+			rawRequiredMaterials.push({
+				key: "mat-anes-needle-g30",
+				name: "Иглы карпульные стоматологические стерильные (0.3x21 мм G30 / 0.4x35 мм G27)",
+				quantity: Math.max(1, Math.ceil(params.carpulesCount / 2)),
+				unit: "pcs",
+				defaultCostRub: 18,
+			});
 		}
 	}
 

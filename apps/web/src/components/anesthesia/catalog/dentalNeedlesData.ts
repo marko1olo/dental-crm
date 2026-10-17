@@ -20,7 +20,7 @@ export const DENTAL_NEEDLES: Record<NeedleGaugeType, DentalNeedleInfo> = {
 		diameterMm: 0.4,
 		lengthMm: 35,
 		colorCode: 'var(--ink-muted, #64748b)',
-		nameRu: 'Игла карпульная 27G (0.4 x 35 мм)',
+		nameRu: 'Игла 27G длинная (0.4 x 35 мм)',
 		recommendedTechniques: ['mandibular_torus', 'tuberal'],
 	},
 	g30_ultrashort_12mm: {

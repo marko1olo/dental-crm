@@ -42,6 +42,7 @@ export function AnesthesiaQuickBarActions({
 				<AnesthesiaExpressPresets
 					disabled={disabled}
 					selectedCarpulesCount={selectedCarpulesCount}
+					onChangeSelectedCarpulesCount={onChangeSelectedCarpulesCount}
 					onApplyCarpules={onApplyCarpules}
 					onApplyUbistesinForte={onApplyUbistesinForte}
 					onApplyUbistesin={onApplyUbistesin}

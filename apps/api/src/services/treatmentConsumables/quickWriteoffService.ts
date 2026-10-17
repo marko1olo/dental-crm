@@ -220,7 +220,7 @@ export async function quickWriteoffStandardKit(
 }
 
 /**
- * 1-клик списание пустых карпул анестетиков медсестрой (СанПиН 3.3686-21, отходы Класса Б, без ПКУ наркотиков).
+ * 1-клик списание пустых карпул анестетиков и карпульных игл медсестрой (СанПиН 3.3686-21, отходы Класса Б, без ПКУ наркотиков).
  * Ликвидирует требование комиссии из 3 человек.
  * Реализует мягкий овердрафт склада без блокировки операций.
  */
@@ -229,7 +229,9 @@ export async function quickWriteoffCarpules(
 	params: {
 		organizationId: string;
 		carpulesCount?: number | undefined;
+		needlesCount?: number | undefined;
 		drugName?: string | undefined;
+		needleName?: string | undefined;
 		userId?: string | null | undefined;
 		visitId?: string | null | undefined;
 		notes?: string | null | undefined;
@@ -252,25 +254,32 @@ export async function quickWriteoffCarpules(
 	const {
 		organizationId,
 		carpulesCount = 1,
+		needlesCount,
 		drugName,
+		needleName,
 		userId = null,
 		visitId = null,
 		notes = null,
 	} = params;
 
 	const count = Math.max(1, Math.min(20, carpulesCount));
+	const needleQty =
+		needlesCount !== undefined
+			? Math.max(0, needlesCount)
+			: Math.max(1, Math.ceil(count / 2));
 
-	// 1. Ищем позицию анестетика на складе
+	// 1. Получаем существующую номенклатуру организации
 	const allOrgItems = await tx
 		.select()
 		.from(inventoryItems)
 		.where(eq(inventoryItems.organizationId, organizationId));
 
-	let matched = drugName
+	// Анестетик
+	let matchedDrug = drugName
 		? allOrgItems.find((i) => i.name.toLowerCase().includes(drugName.toLowerCase()))
 		: undefined;
 
-	if (!matched) {
+	if (!matchedDrug) {
 		const searchWords = [
 			"артикаин",
 			"анестетик",
@@ -280,13 +289,13 @@ export async function quickWriteoffCarpules(
 			"ультракаин",
 			"карпул",
 		];
-		matched = allOrgItems.find((i) =>
+		matchedDrug = allOrgItems.find((i) =>
 			searchWords.some((w) => i.name.toLowerCase().includes(w)),
 		);
 	}
 
-	if (!matched) {
-		const [created] = await tx
+	if (!matchedDrug) {
+		const [createdDrug] = await tx
 			.insert(inventoryItems)
 			.values({
 				organizationId,
@@ -299,10 +308,11 @@ export async function quickWriteoffCarpules(
 				unitCostRub: "220",
 			})
 			.returning();
-		matched = created;
+		matchedDrug = createdDrug;
+		if (createdDrug) allOrgItems.push(createdDrug);
 	}
 
-	if (!matched) {
+	if (!matchedDrug) {
 		throw new TreatmentConsumablesServiceError(
 			"Не удалось определить позицию анестетика на складе",
 			500,
@@ -310,75 +320,158 @@ export async function quickWriteoffCarpules(
 		);
 	}
 
-	// 2. Блокируем строку FOR UPDATE
-	const [locked] = await tx
+	// Иглы карпульные (G27/G30)
+	let matchedNeedle: typeof inventoryItems.$inferSelect | undefined;
+	if (needleQty > 0) {
+		matchedNeedle = needleName
+			? allOrgItems.find((i) => i.name.toLowerCase().includes(needleName.toLowerCase()))
+			: undefined;
+
+		if (!matchedNeedle) {
+			const needleWords = ["игл", "needle", "g30", "g27"];
+			matchedNeedle = allOrgItems.find((i) =>
+				needleWords.some((w) => i.name.toLowerCase().includes(w)),
+			);
+		}
+
+		if (!matchedNeedle) {
+			const [createdNeedle] = await tx
+				.insert(inventoryItems)
+				.values({
+					organizationId,
+					name: "Иглы карпульные стоматологические стерильные (0.3x21 мм G30 / 0.4x35 мм G27)",
+					category: "consumables",
+					unit: "шт.",
+					stockQuantity: "0",
+					currentQty: "0",
+					criticalThreshold: "50",
+					unitCostRub: "25",
+				})
+				.returning();
+			matchedNeedle = createdNeedle;
+			if (createdNeedle) allOrgItems.push(createdNeedle);
+		}
+	}
+
+	// 2. Блокируем строки FOR UPDATE в детерминированном порядке ID (deadlock-free)
+	const itemsToDeduct: Array<{
+		item: typeof inventoryItems.$inferSelect;
+		qty: number;
+		type: string;
+		label: string;
+	}> = [
+		{
+			item: matchedDrug,
+			qty: count,
+			type: "carpule_disposal",
+			label: "карпул анестетика",
+		},
+	];
+	if (matchedNeedle && needleQty > 0) {
+		itemsToDeduct.push({
+			item: matchedNeedle,
+			qty: needleQty,
+			type: "needle_disposal",
+			label: "карпульных игл",
+		});
+	}
+
+	const sortedIds = itemsToDeduct.map((it) => it.item.id).sort();
+	const lockedRows = await tx
 		.select()
 		.from(inventoryItems)
 		.where(
 			and(
-				eq(inventoryItems.id, matched.id),
+				inArray(inventoryItems.id, sortedIds),
 				eq(inventoryItems.organizationId, organizationId),
 			),
 		)
 		.for("update");
 
-	const currentStock = Number(locked?.stockQuantity ?? locked?.currentQty ?? 0);
-	const baseStock = Number.isFinite(currentStock) ? currentStock : 0;
-	const newStock = Number((baseStock - count).toFixed(4));
-	const isOverdraft = newStock < 0;
+	const lockedMap = new Map(lockedRows.map((r) => [r.id, r]));
 
-	await tx
-		.update(inventoryItems)
-		.set({
-			stockQuantity: String(newStock),
-			currentQty: String(newStock),
-			updatedAt: new Date(),
-		})
-		.where(
-			and(
-				eq(inventoryItems.id, matched.id),
-				eq(inventoryItems.organizationId, organizationId),
-			),
-		);
-
-	await tx.insert(inventoryTransactions).values({
-		organizationId,
-		visitId,
-		itemId: matched.id,
-		inventoryItemId: matched.id,
-		quantityChanged: String(-count),
-		qty: String(-count),
-		unitCostRub: matched.unitCostRub ?? "0",
-		transactionType: isOverdraft ? "emergency_overdraft" : "carpule_disposal",
-		isOverdraft,
-		userId,
-		notes: isOverdraft
-			? `Списано под операцию, требуется оприходование (списание пустых карпул анестетика медсестрой в 1 клик, без комиссии: дефицит ${Math.abs(newStock)} карп.)`
-			: (notes || "Списание пустых карпул анестетика медсестрой в 1 клик (СанПиН 3.3686-21 Класс Б, без комиссии из 3 человек)"),
-	});
-
+	const deductedItems: Array<{
+		itemId: string;
+		itemName: string;
+		quantity: number;
+		unit: string;
+		remainingStock: number;
+		isOverdraft: boolean;
+	}> = [];
 	const warnings: string[] = [];
-	if (isOverdraft) {
-		warnings.push(
-			`Внимание: списание пустых карпул в дефицит по «${matched.name}» (остаток: ${newStock} карп.). Списано под операцию, требуется оприходование.`,
-		);
+	const txRows: Array<typeof inventoryTransactions.$inferInsert> = [];
+	let hasAnyOverdraft = false;
+
+	for (const { item, qty, type, label } of itemsToDeduct) {
+		const locked = lockedMap.get(item.id) ?? item;
+		const currentStock = Number(locked.stockQuantity ?? locked.currentQty ?? 0);
+		const baseStock = Number.isFinite(currentStock) ? currentStock : 0;
+		const newStock = Number((baseStock - qty).toFixed(4));
+		const isOverdraft = newStock < 0;
+		if (isOverdraft) hasAnyOverdraft = true;
+
+		await tx
+			.update(inventoryItems)
+			.set({
+				stockQuantity: String(newStock),
+				currentQty: String(newStock),
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(inventoryItems.id, locked.id),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			);
+
+		txRows.push({
+			organizationId,
+			visitId,
+			itemId: locked.id,
+			inventoryItemId: locked.id,
+			quantityChanged: String(-qty),
+			qty: String(-qty),
+			unitCostRub: locked.unitCostRub ?? "0",
+			transactionType: isOverdraft ? "emergency_overdraft" : type,
+			isOverdraft,
+			userId,
+			notes: isOverdraft
+				? `Списано под операцию, требуется оприходование (списание ${label} в 1 клик, без комиссии: дефицит ${Math.abs(newStock)} ${locked.unit ?? "ед."})`
+				: (notes ||
+					`Списание ${label} медсестрой в 1 клик (СанПиН 3.3686-21 Класс Б, без комиссии из 3 человек)`),
+		});
+
+		if (isOverdraft) {
+			warnings.push(
+				`Внимание: списание в дефицит по «${locked.name}» (остаток: ${newStock} ${locked.unit ?? "ед."}). Списано под операцию, требуется оприходование.`,
+			);
+		}
+
+		deductedItems.push({
+			itemId: locked.id,
+			itemName: locked.name,
+			quantity: qty,
+			unit: locked.unit ?? "ед.",
+			remainingStock: newStock,
+			isOverdraft,
+		});
 	}
+
+	if (txRows.length > 0) {
+		await tx.insert(inventoryTransactions).values(txRows);
+	}
+
+	const message =
+		needleQty > 0
+			? `Списано пустых карпул анестетика: ${count} шт., карпульных игл: ${needleQty} шт. (СанПиН 3.3686-21 Класс Б, без комиссии из 3 человек).`
+			: `Списано пустых карпул анестетика: ${count} шт. (СанПиН 3.3686-21 Класс Б, без комиссии из 3 человек).`;
 
 	return {
 		success: true,
-		isOverdraft,
-		...(isOverdraft ? { warning: "soft_overdraft" } : {}),
-		deductedItems: [
-			{
-				itemId: matched.id,
-				itemName: matched.name,
-				quantity: count,
-				unit: matched.unit ?? "карп.",
-				remainingStock: newStock,
-				isOverdraft,
-			},
-		],
+		isOverdraft: hasAnyOverdraft,
+		...(hasAnyOverdraft ? { warning: "soft_overdraft" } : {}),
+		deductedItems,
 		warnings,
-		message: `Списано пустых карпул анестетика: ${count} шт. (СанПиН 3.3686-21 Класс Б, без комиссии из 3 человек).`,
+		message,
 	};
 }
