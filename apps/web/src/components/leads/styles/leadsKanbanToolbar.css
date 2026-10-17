@@ -1,0 +1,112 @@
+/**
+ * DENTE Dental CRM — Leads Kanban & Wide Column Focus Workspace Styles
+ *
+ * Mandate 8c (Visual Quality & 10 Themes Parity)
+ * Mandate 8s (Modular Architecture & CSS Isolation)
+ * Mandate 8n (Clinical Ergonomics, Scale Sovereignty & Solo Doctor Autonomy)
+ * UTF-8 without BOM. Strictly <= 800 lines.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* SPEED-TO-LEAD SLA PULSE ANIMATION                                          */
+/* -------------------------------------------------------------------------- */
+
+@keyframes slaBreachPulse {
+	0%, 100% {
+		box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+		transform: scale(1);
+	}
+	50% {
+		box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+		transform: scale(1.02);
+	}
+}
+
+.lead-sla-breached-pulse {
+	animation: slaBreachPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Column Header Expand Focus Button */
+.leads-kanban-column-expand-btn {
+	width: 24px;
+	height: 24px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: transparent;
+	color: var(--muted);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	padding: 0;
+	line-height: 1;
+}
+
+.leads-kanban-column-expand-btn:hover {
+	background: var(--teal-soft);
+	color: var(--teal-dark, var(--teal));
+	border-color: var(--teal);
+}
+
+.leads-column-sla-breach-indicator {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--rust);
+	background: var(--rust-soft);
+	border: 1px solid var(--rust);
+	padding: 1px 6px;
+	border-radius: 4px;
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* LEADS DESKTOP 1-ROW COMPACT TOOLBAR                                        */
+/* -------------------------------------------------------------------------- */
+
+.leads-desktop-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	min-height: 36px;
+}
+
+.leads-desktop-toolbar .dente-search-wrap,
+.leads-desktop-toolbar .dente-search-input,
+.leads-desktop-toolbar select,
+.leads-desktop-toolbar .primary-button,
+.leads-desktop-toolbar .leads-more-menu-btn {
+	height: 36px !important;
+	min-height: 36px !important;
+	border-radius: 12px !important;
+}
+
+.leads-toolbar-left {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-shrink: 0;
+}
+
+.leads-toolbar-right {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.leads-header-count-badge {
+	font-size: 11px;
+	font-weight: 600;
+	padding: 1px 8px;
+	border-radius: 9999px;
+	background: var(--paper-soft);
+	color: var(--primary);
+	border: 1px solid var(--line);
+	display: inline-flex;
+	align-items: center;
+	line-height: 1.2;
+}

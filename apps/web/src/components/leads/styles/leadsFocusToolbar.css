@@ -1,0 +1,100 @@
+
+.expanded-focus-urgency-tabs {
+	display: inline-flex;
+	align-items: center;
+	background: var(--paper-soft);
+	border: 1px solid var(--line-subtle);
+	border-radius: 10px;
+	padding: 3px;
+	gap: 3px;
+	flex-wrap: wrap;
+	box-sizing: border-box;
+}
+
+.expanded-focus-tab {
+	height: 28px;
+	padding: 0 10px;
+	border-radius: 7px;
+	border: 1px solid transparent;
+	background: transparent;
+	font-size: 12.5px;
+	font-weight: 500;
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	line-height: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.expanded-focus-tab:hover {
+	color: var(--ink);
+}
+
+.expanded-focus-tab.is-active,
+.expanded-focus-tab.active {
+	background: var(--paper-strong, var(--paper));
+	color: var(--ink);
+	border-color: var(--line);
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.expanded-focus-tab--fresh.is-active,
+.expanded-focus-tab--fresh.active { color: var(--ok-fg); }
+.expanded-focus-tab--warning.is-active,
+.expanded-focus-tab--warning.active { color: var(--amber-dark, var(--amber)); }
+.expanded-focus-tab--breached.is-active,
+.expanded-focus-tab--breached.active { color: var(--rust); }
+
+.expanded-focus-sort-cluster {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.expanded-focus-select {
+	height: 32px;
+	padding: 0 10px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 12.5px;
+	font-weight: 500;
+	cursor: pointer;
+	outline: none;
+	transition: border-color 0.15s ease;
+}
+
+.expanded-focus-select:focus {
+	border-color: var(--teal);
+}
+
+.expanded-focus-csv-btn {
+	height: 32px;
+	min-height: 32px;
+	padding: 0 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 500;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.expanded-focus-csv-btn:hover {
+	border-color: var(--teal);
+	color: var(--teal-dark, var(--teal));
+	background: var(--paper-soft);
+}
+
+/* 3. Bulk Action Bar */

@@ -1,0 +1,78 @@
+/* DENTE Dental CRM — Leads Mobile Empty State & Floating Bar (Mandate 8b <= 120 lines) */
+
+.leads-mobile-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 40px 16px;
+	text-align: center;
+	background: var(--paper);
+	border-radius: 16px;
+	border: 1px dashed var(--line);
+	gap: 8px;
+	color: var(--muted);
+}
+
+.leads-mobile-empty-title {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--ink);
+	margin: 0;
+}
+
+.leads-mobile-empty-desc {
+	font-size: 13px;
+	margin: 0;
+	max-width: 280px;
+}
+
+/* ── Apple HIG Floating Bottom Bar (Natural Thumb Zone) ────────────────── */
+
+.leads-mobile-floating-bar {
+	position: fixed;
+	bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+	left: 0;
+	right: 0;
+	width: 100%;
+	max-width: 100vw;
+	z-index: 35;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 8px 14px;
+	background: var(--paper-strong);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-top: 1px solid var(--line);
+	box-sizing: border-box;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark) .leads-mobile-floating-bar {
+	background: var(--paper-strong);
+}
+
+.leads-mobile-floating-cta {
+	width: 100%;
+	height: 46px;
+	min-height: 46px;
+	border-radius: 12px;
+	background: var(--primary);
+	color: #ffffff;
+	border: none;
+	font-size: 14px;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	box-shadow: 0 4px 16px rgba(13, 148, 136, 0.24);
+	transition: transform 0.15s ease, opacity 0.15s ease;
+	box-sizing: border-box;
+}
+
+.leads-mobile-floating-cta:active {
+	transform: scale(0.98);
+	opacity: 0.95;
+}

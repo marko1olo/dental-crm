@@ -1,0 +1,110 @@
+
+@media (max-width: 1280px) {
+	.expanded-focus-cards-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+	.expanded-focus-cards-grid { grid-template-columns: 1fr; }
+}
+
+.expanded-focus-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+	transition: all 0.15s ease;
+	cursor: pointer;
+}
+.expanded-focus-card:hover {
+	border-color: var(--teal);
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+.expanded-focus-card.is-selected {
+	border-color: var(--teal);
+	background: var(--teal-soft);
+}
+.expanded-focus-card.has-sla-breach {
+	border-left: 3px solid var(--rust);
+}
+
+.expanded-focus-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.expanded-focus-card-name {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--ink);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.expanded-focus-checkbox-btn {
+	background: none;
+	border: none;
+	padding: 0;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.expanded-focus-sla-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 10.5px;
+	font-weight: 600;
+	padding: 2px 6px;
+	border-radius: 5px;
+	border: 1px solid;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.expanded-focus-card-phone-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.expanded-focus-phone-link {
+	color: inherit;
+	text-decoration: none;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.expanded-focus-phone-link:hover {
+	text-decoration: underline;
+	color: var(--teal);
+}
+
+.expanded-focus-whatsapp-link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--teal-dark, var(--teal));
+	background: var(--teal-soft);
+	border: 1px solid var(--teal);
+	border-radius: 4px;
+	padding: 1px 4px;
+	text-decoration: none;
+	font-size: 11px;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+}
+
+.expanded-focus-whatsapp-link:hover {
+	background: var(--teal);
+	color: var(--paper-strong, #ffffff);
+}

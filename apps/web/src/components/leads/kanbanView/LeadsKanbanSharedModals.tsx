@@ -1,35 +1,20 @@
-import React, { lazy, Suspense } from "react";
+/**
+ * DENTE Dental CRM — Leads Kanban Shared Modals Container
+ * Mandate 8s (Modular Modals), Mandate 8b (<= 120 lines)
+ */
+
+import React from "react";
 import type { Lead } from "../../../store/leadsStore";
 import type { BookableChair, BookableDoctor } from "../leadsKanbanTypes";
-import {
-	LeadConvertModal,
-	type LeadConvertSubmitOptions,
-} from "../LeadConvertModal";
+import { LeadConvertModal, type LeadConvertSubmitOptions } from "../LeadConvertModal";
 import { LeadFormModal } from "../LeadFormModal";
-import {
-	resolveLeadBookingChairs,
-	resolveLeadBookingStaff,
-} from "../leadsKanbanTypes";
-
-const LeadsFunnelAnalyticsModal = lazy(() =>
-	import("../LeadsFunnelAnalyticsModal").then((module) => ({
-		default: module.LeadsFunnelAnalyticsModal,
-	})),
-);
-
-const CrmLeakDetectorModal = lazy(() =>
-	import("../../crm/CrmLeakDetectorModal").then((module) => ({
-		default: module.CrmLeakDetectorModal,
-	})),
-);
+import { resolveLeadBookingChairs, resolveLeadBookingStaff } from "../leadsKanbanTypes";
+import { LeadsKanbanAnalyticsModals } from "./LeadsKanbanAnalyticsModals";
 
 export interface LeadsKanbanSharedModalsProps {
 	isConvertOpen: boolean;
 	onCloseConvert: () => void;
-	onConvertSubmit: (
-		e: React.FormEvent,
-		options?: LeadConvertSubmitOptions,
-	) => Promise<void> | void;
+	onConvertSubmit: (e: React.FormEvent, options?: LeadConvertSubmitOptions) => Promise<void> | void;
 	staff: BookableDoctor[];
 	chairs: BookableChair[];
 	selectedDoctorId: string;
@@ -64,106 +49,40 @@ export interface LeadsKanbanSharedModalsProps {
 }
 
 export const LeadsKanbanSharedModals: React.FC<LeadsKanbanSharedModalsProps> = ({
-	isConvertOpen,
-	onCloseConvert,
-	onConvertSubmit,
-	staff,
-	chairs,
-	selectedDoctorId,
-	setSelectedDoctorId,
-	selectedChairId,
-	setSelectedChairId,
-	appointmentDate,
-	setAppointmentDate,
-	appointmentTime,
-	setAppointmentTime,
-	isBooking,
-	convertingLead,
-	isEditOpen,
-	onCloseEdit,
-	editingLeadId,
-	editForm,
-	setEditForm,
-	onEditSubmit,
-	isDeleting,
-	onDeleteLead,
-	creatingPatientLeadId,
-	onCreatePatient,
-	leads,
-	isAnalyticsOpen,
-	onCloseAnalytics,
-	isLeakDetectorOpen,
-	onCloseLeakDetector,
-	onOpenLeakDetector,
-	cardBg = "var(--paper)",
-	colBg = "var(--paper-soft)",
-	borderColor = "var(--line)",
+	isConvertOpen, onCloseConvert, onConvertSubmit, staff, chairs,
+	selectedDoctorId, setSelectedDoctorId, selectedChairId, setSelectedChairId,
+	appointmentDate, setAppointmentDate, appointmentTime, setAppointmentTime,
+	isBooking, convertingLead, isEditOpen, onCloseEdit, editingLeadId,
+	editForm, setEditForm, onEditSubmit, isDeleting, onDeleteLead,
+	creatingPatientLeadId, onCreatePatient, leads, isAnalyticsOpen,
+	onCloseAnalytics, isLeakDetectorOpen, onCloseLeakDetector, onOpenLeakDetector,
+	cardBg = "var(--paper)", colBg = "var(--paper-soft)", borderColor = "var(--line)",
 }) => {
 	return (
 		<>
-			{/* CONVERT MODAL */}
 			<LeadConvertModal
-				isOpen={isConvertOpen}
-				onClose={onCloseConvert}
-				onSubmit={onConvertSubmit}
-				staff={staff}
-				chairs={chairs}
-				effectiveStaff={resolveLeadBookingStaff(staff)}
-				effectiveChairs={resolveLeadBookingChairs(chairs)}
-				selectedDoctorId={selectedDoctorId}
-				setSelectedDoctorId={setSelectedDoctorId}
-				selectedChairId={selectedChairId}
-				setSelectedChairId={setSelectedChairId}
-				appointmentDate={appointmentDate}
-				setAppointmentDate={setAppointmentDate}
-				appointmentTime={appointmentTime}
-				setAppointmentTime={setAppointmentTime}
-				isBooking={isBooking}
-				lead={convertingLead}
-				cardBg={cardBg}
-				colBg={colBg}
-				borderColor={borderColor}
+				isOpen={isConvertOpen} onClose={onCloseConvert} onSubmit={onConvertSubmit}
+				staff={staff} chairs={chairs} effectiveStaff={resolveLeadBookingStaff(staff)}
+				effectiveChairs={resolveLeadBookingChairs(chairs)} selectedDoctorId={selectedDoctorId}
+				setSelectedDoctorId={setSelectedDoctorId} selectedChairId={selectedChairId}
+				setSelectedChairId={setSelectedChairId} appointmentDate={appointmentDate}
+				setAppointmentDate={setAppointmentDate} appointmentTime={appointmentTime}
+				setAppointmentTime={setAppointmentTime} isBooking={isBooking}
+				lead={convertingLead} cardBg={cardBg} colBg={colBg} borderColor={borderColor}
 			/>
 
-			{/* EDIT / ADD MODAL */}
 			<LeadFormModal
-				isOpen={isEditOpen}
-				onClose={onCloseEdit}
-				editingLeadId={editingLeadId}
-				editForm={editForm}
-				setEditForm={setEditForm}
-				onSubmit={onEditSubmit}
-				isDeleting={isDeleting}
-				onDelete={onDeleteLead}
-				creatingPatientLeadId={creatingPatientLeadId}
-				onCreatePatient={onCreatePatient}
-				leads={leads}
-				cardBg={cardBg}
-				colBg={colBg}
-				borderColor={borderColor}
+				isOpen={isEditOpen} onClose={onCloseEdit} editingLeadId={editingLeadId}
+				editForm={editForm} setEditForm={setEditForm} onSubmit={onEditSubmit}
+				isDeleting={isDeleting} onDelete={onDeleteLead} creatingPatientLeadId={creatingPatientLeadId}
+				onCreatePatient={onCreatePatient} leads={leads} cardBg={cardBg} colBg={colBg} borderColor={borderColor}
 			/>
 
-			{/* ANALYTICS FUNNEL MODAL */}
-			{isAnalyticsOpen && (
-				<Suspense fallback={null}>
-					<LeadsFunnelAnalyticsModal
-						isOpen={isAnalyticsOpen}
-						onClose={onCloseAnalytics}
-						leads={leads}
-						onOpenLeakDetector={onOpenLeakDetector}
-					/>
-				</Suspense>
-			)}
-
-			{/* CRM LEAK DETECTOR MODAL (210 DAYS) */}
-			{isLeakDetectorOpen && (
-				<Suspense fallback={null}>
-					<CrmLeakDetectorModal
-						isOpen={isLeakDetectorOpen}
-						onClose={onCloseLeakDetector}
-					/>
-				</Suspense>
-			)}
+			<LeadsKanbanAnalyticsModals
+				leads={leads} isAnalyticsOpen={isAnalyticsOpen} onCloseAnalytics={onCloseAnalytics}
+				isLeakDetectorOpen={isLeakDetectorOpen} onCloseLeakDetector={onCloseLeakDetector}
+				onOpenLeakDetector={onOpenLeakDetector}
+			/>
 		</>
 	);
 };

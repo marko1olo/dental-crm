@@ -1,0 +1,66 @@
+.expanded-focus-bulk-secondary-btn {
+	height: 32px;
+	min-height: 32px;
+	padding: 0 12px;
+	border-radius: 8px;
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	font-size: 13px;
+	font-weight: 500;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.expanded-focus-bulk-secondary-btn:hover {
+	border-color: var(--teal);
+	color: var(--teal-dark, var(--teal));
+	background: var(--paper-soft);
+}
+
+.expanded-focus-bulk-cancel-btn {
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--muted);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.expanded-focus-bulk-cancel-btn:hover {
+	color: var(--ink);
+	border-color: var(--line-strong, var(--line));
+}
+
+/* 4. Content Scroll */
+.expanded-focus-content-scroll {
+	flex: 1;
+	overflow-y: auto;
+	min-height: 0;
+	padding: 16px 20px;
+	background: var(--paper-soft);
+}
+
+.expanded-focus-empty-state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 300px;
+	text-align: center;
+}
+
+/* VIEW 1: 3-COLUMN WIDE CARDS GRID */
+.expanded-focus-cards-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 14px;
+}

@@ -1,0 +1,37 @@
+.expanded-focus-footer {
+	height: 48px;
+	padding: 0 20px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-top: 1px solid var(--line);
+	background: var(--paper);
+	flex-shrink: 0;
+}
+
+.expanded-focus-footer-close-btn {
+	height: 32px;
+	padding: 0 14px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.expanded-focus-footer-close-btn:hover {
+	border-color: var(--line-strong, var(--line));
+	color: var(--ink);
+	background: var(--paper-strong, var(--paper));
+}
+
+/* Dark theme overrides */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark) .expanded-focus-modal-container {
+	box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
