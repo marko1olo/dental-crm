@@ -194,14 +194,11 @@ export function Imaging2dViewerSection(props: Imaging2dViewerSectionProps) {
 				imagingViewerSaveDetail={imagingViewerSaveDetail ?? ""}
 				imagingViewerNoteReady={Boolean(imagingViewerNoteReady)}
 				imagingViewerSessionReady={Boolean(imagingViewerSessionReady)}
-				imagingViewerNoteMissingId={imagingViewerNoteMissingId}
-				imagingViewerRetryMissingId={imagingViewerRetryMissingId}
 				canRetryImagingViewerSave={canRetryImagingViewerSave}
 				retryImagingViewerSessionSave={retryImagingViewerSessionSave}
 				addImagingViewerNoteAnnotation={addImagingViewerNoteAnnotation}
 				imagingViewerAnnotations={imagingViewerAnnotations}
 				formatShortDate={formatShortDate}
-				isOnline={isOnline}
 				activeAppointment={activeAppointment}
 				{...(onAttachToTooth ? { onAttachToTooth } : {})}
 				{...(onAttachToVisit ? { onAttachToVisit } : {})}

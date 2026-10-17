@@ -42,6 +42,10 @@ import {
 	unbindPatientFromStudyInDb,
 	updateImagingStudyInDb,
 } from "../../db/imagingQuery.js";
+import {
+	getImagingAnnotationsForStudy,
+	saveImagingMeasurementsForStudy,
+} from "../../db/imagingMeasurementsQuery.js";
 import { autoBindUnassignedStudies } from "./patientFioBindingEngine.js";
 import {
 	getPatientByIdFromDb,
@@ -117,9 +121,9 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 
 	app.get("/api/imaging/studies", getStudiesHandler);
 	app.get("/api/radiology/studies", getStudiesHandler);
+	app.get("/api/radiology/slices", getStudiesHandler);
 
-
-	app.get("/api/imaging/studies/:id/viewer-session", async (request, reply) => {
+	const getViewerSessionHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		if (
 			!(await requireClinicalReadAccess(
 				request,
@@ -155,10 +159,12 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 			session,
 			warnings: session.warnings,
 		});
-	});
+	};
 
+	app.get("/api/imaging/studies/:id/viewer-session", getViewerSessionHandler);
+	app.get("/api/radiology/studies/:id/viewer-session", getViewerSessionHandler);
 
-	app.put("/api/imaging/studies/:id/viewer-session", async (request, reply) => {
+	const putViewerSessionHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const parsed = parseImagingPayload(
 			saveImagingViewerSessionRequestSchema,
 			request.body,
@@ -180,13 +186,159 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 		if (!study) return sendImagingStudyNotFound(reply);
 		const input = parsed.data;
 		const session = await saveImagingViewerSession(orgId, id, input);
+
+		// Synchronize distance ruler annotations to imaging_annotations if present
+		if (Array.isArray(input.annotations) && input.annotations.length > 0) {
+			try {
+				const measurementAnnotations = input.annotations.map((a) => ({
+					id: a.id,
+					toothCode: a.toothCode ?? study.toothCode ?? null,
+					annotationType: a.type ?? "distance",
+					coordinates: { points: a.points },
+					measurements: a.measurementValue != null ? { value: a.measurementValue, unit: a.unit } : null,
+					notes: a.note ?? a.label ?? null,
+				}));
+				if (study.patientId) {
+					await saveImagingMeasurementsForStudy(orgId, id, study.patientId, measurementAnnotations);
+				}
+			} catch (err) {
+				request.log.warn({ err }, "Failed to auto-sync annotations to imaging_annotations table");
+			}
+		}
+
 		return reply.code(200).send(
 			imagingViewerSessionResponseSchema.parse({
 				session,
 				warnings: session.warnings,
 			}),
 		);
-	});
+	};
+
+	app.put("/api/imaging/studies/:id/viewer-session", putViewerSessionHandler);
+	app.put("/api/radiology/studies/:id/viewer-session", putViewerSessionHandler);
+
+	const getMeasurementsHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+		if (
+			!(await requireClinicalReadAccess(
+				request,
+				reply,
+				"imaging measurements read",
+			))
+		)
+			return;
+
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			(process.env.DENTAL_STATE_PERSISTENCE === "off" ? "doctor" : null);
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.imaging.read",
+				role: staffRole,
+				message: `Отказ в доступе к измерениям снимков (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
+
+		const { id } = request.params as { id: string };
+		const orgId = getImagingOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const study = await getImagingStudyById(orgId, id);
+		if (!study) return sendImagingStudyNotFound(reply);
+
+		const measurements = await getImagingAnnotationsForStudy(orgId, id);
+		return reply.code(200).send(measurements);
+	};
+
+	const saveMeasurementsBodySchema = z.union([
+		z.object({
+			measurements: z.array(
+				z.object({
+					id: z.string().optional(),
+					toothCode: z.string().nullable().optional(),
+					toothNumber: z.string().nullable().optional(),
+					annotationType: z.string().optional(),
+					coordinates: z.record(z.unknown()),
+					measurements: z.record(z.unknown()).nullable().optional(),
+					notes: z.string().nullable().optional(),
+				}),
+			),
+		}),
+		z.array(
+			z.object({
+				id: z.string().optional(),
+				toothCode: z.string().nullable().optional(),
+				toothNumber: z.string().nullable().optional(),
+				annotationType: z.string().optional(),
+				coordinates: z.record(z.unknown()),
+				measurements: z.record(z.unknown()).nullable().optional(),
+				notes: z.string().nullable().optional(),
+			}),
+		),
+	]);
+
+	const saveMeasurementsHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+		if (
+			!(await requireClinicalMutationAccess(
+				request,
+				reply,
+				"imaging measurements save",
+			))
+		)
+			return;
+
+		const { id } = request.params as { id: string };
+		const orgId = getImagingOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const study = await getImagingStudyById(orgId, id);
+		if (!study) return sendImagingStudyNotFound(reply);
+
+		const parsed = saveMeasurementsBodySchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат измерений линейки / разметки.",
+				issues: parsed.error.issues,
+			});
+		}
+
+		const rawItems = Array.isArray(parsed.data) ? parsed.data : parsed.data.measurements;
+		const normalizedItems = rawItems.map((item) => ({
+			id: item.id,
+			toothCode: item.toothCode ?? item.toothNumber ?? study.toothCode ?? null,
+			annotationType: item.annotationType ?? "distance",
+			coordinates: item.coordinates,
+			measurements: item.measurements ?? null,
+			notes: item.notes ?? null,
+		}));
+
+		if (!study.patientId) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Для сохранения измерений снимок должен быть привязан к пациенту",
+			});
+		}
+
+		const saved = await saveImagingMeasurementsForStudy(
+			orgId,
+			id,
+			study.patientId,
+			normalizedItems,
+		);
+
+		return reply.code(200).send(saved);
+	};
+
+	app.get("/api/imaging/studies/:id/measurements", getMeasurementsHandler);
+	app.get("/api/radiology/studies/:id/measurements", getMeasurementsHandler);
+	app.put("/api/imaging/studies/:id/measurements", saveMeasurementsHandler);
+	app.put("/api/radiology/studies/:id/measurements", saveMeasurementsHandler);
+	app.post("/api/imaging/studies/:id/measurements", saveMeasurementsHandler);
+	app.post("/api/radiology/studies/:id/measurements", saveMeasurementsHandler);
 
 
 	const createStudyHandler = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -239,6 +391,32 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 				);
 			}
 		}
+		let storagePath = input.storagePath;
+		const rawBody = (request.body && typeof request.body === "object" ? request.body : {}) as {
+			imageBase64?: unknown;
+		};
+		if (typeof rawBody.imageBase64 === "string" && rawBody.imageBase64.trim()) {
+			try {
+				let base64Data = rawBody.imageBase64.trim();
+				let mime = "image/jpeg";
+				if (base64Data.startsWith("data:")) {
+					const match = base64Data.match(/^data:([^;]+);base64,/);
+					if (match?.[1]) mime = match[1];
+					base64Data = base64Data.replace(/^data:[^;]+;base64,/, "");
+				}
+				const buffer = Buffer.from(base64Data, "base64");
+				const stored = await LocalPacsStorageService.storeXrayScanFile(
+					orgId,
+					input.title,
+					buffer,
+					mime,
+				);
+				storagePath = stored.storagePath;
+			} catch (storeErr) {
+				request.log.warn({ storeErr }, "Failed to store imageBase64 file in local PACS");
+			}
+		}
+
 		const study = await createImagingStudyInDb(orgId, {
 			patientId: input.patientId,
 			visitId: input.visitId,
@@ -248,7 +426,7 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 			region: input.region,
 			sourceKind: input.sourceKind,
 			sourceName: input.sourceName,
-			storagePath: input.storagePath,
+			storagePath: storagePath ?? null,
 			dicomStudyUid: input.dicomStudyUid,
 			capturedAt: input.capturedAt,
 			aiSummary: input.aiSummary,
@@ -481,6 +659,52 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 	app.post("/api/radiology/studies/:id/bind-patient", bindPatientHandler);
 
 	/**
+	 * 1-клик привязка снимка к номеру зуба FDI (11-48)
+	 * POST /api/imaging/studies/:id/bind-tooth
+	 */
+	const bindToothHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+		if (
+			!(await requireClinicalMutationAccess(
+				request,
+				reply,
+				"imaging bind tooth",
+			))
+		)
+			return;
+
+		const { id } = request.params as { id: string };
+		const orgId = getImagingOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const bindToothBodySchema = z.object({
+			toothCode: z.string().trim().max(16).nullable().optional(),
+		});
+		const parsed = bindToothBodySchema.safeParse(request.body ?? {});
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный номер зуба.",
+				details: parsed.error.issues,
+			});
+		}
+
+		const formatted = parsed.data.toothCode?.trim() || null;
+		const updated = await updateImagingStudyInDb(orgId, id, {
+			toothCode: formatted,
+			region: formatted ? `Зуб ${formatted}` : null,
+		});
+		if (!updated) {
+			return sendImagingStudyNotFound(reply);
+		}
+		return reply.code(200).send(imagingStudySchema.parse(updated));
+	};
+
+	app.post("/api/imaging/studies/:id/bind-tooth", bindToothHandler);
+	app.patch("/api/imaging/studies/:id/bind-tooth", bindToothHandler);
+	app.post("/api/radiology/studies/:id/bind-tooth", bindToothHandler);
+	app.patch("/api/radiology/studies/:id/bind-tooth", bindToothHandler);
+
+	/**
 	 * Отвязка исследования от пациента (перевод в unassigned)
 	 * POST /api/imaging/studies/:id/unbind-patient
 	 */
@@ -527,4 +751,35 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 
 	app.post("/api/imaging/studies/auto-bind-scan", autoBindHandler);
 	app.post("/api/radiology/studies/auto-bind-scan", autoBindHandler);
+
+	app.get("/api/cbct-tuner/patients", async (_request, reply) => {
+		return reply.send({
+			ok: true,
+			patients: [
+				{
+					id: "sample",
+					name: "Демо Пациент",
+					badge: "CBCT",
+					type: "series",
+					description: "Демонстрационный снимок КТ",
+					available: true,
+				},
+			],
+		});
+	});
+
+	app.get("/api/cbct-tuner/volume-binary", async (_request, reply) => {
+		const emptyCube = Buffer.alloc(512 * 512 * 2);
+		return reply
+			.header("Content-Type", "application/octet-stream")
+			.header("x-cbct-dim-x", "512")
+			.header("x-cbct-dim-y", "512")
+			.header("x-cbct-dim-z", "1")
+			.header("x-cbct-sp-x", "0.25")
+			.header("x-cbct-sp-y", "0.25")
+			.header("x-cbct-sp-z", "0.25")
+			.header("x-cbct-min-hu", "-1000")
+			.header("x-cbct-max-hu", "3000")
+			.send(emptyCube);
+	});
 }

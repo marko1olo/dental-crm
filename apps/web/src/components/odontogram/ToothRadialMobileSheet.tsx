@@ -43,6 +43,8 @@ export interface ToothRadialMobileSheetProps {
 	onOpenTherapy?: (() => void) | undefined;
 	onAddToInvoice?: (() => void) | undefined;
 	onOpenEndo?: (() => void) | undefined;
+	toothScanThumbnail?: { id: string; url: string; title: string } | null | undefined;
+	onOpenRvg?: (() => void) | undefined;
 	onClose: () => void;
 }
 
@@ -67,6 +69,8 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 	onOpenTherapy,
 	onAddToInvoice,
 	onOpenEndo,
+	toothScanThumbnail,
+	onOpenRvg,
 	onClose,
 }) => {
 	return (
@@ -482,8 +486,30 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 			)}
 
 			{/* Quick Actions (Miller's Law: <= 2 direct buttons, secondary in '...') */}
-			{Boolean(onOpenTherapy || onOpenEndo || onAddToInvoice) && (
+			{Boolean(onOpenTherapy || onOpenEndo || onAddToInvoice || onOpenRvg) && (
 				<div className="flex items-center gap-2 pt-1 border-t border-[var(--odontogram-border-subtle)]">
+					{onOpenRvg && (
+						<button
+							type="button"
+							onClick={() => {
+								onOpenRvg();
+								onClose();
+							}}
+							className="flex-1 min-h-[48px] min-w-[48px] py-3 px-3 rounded-xl text-sm font-black text-cyan-600 dark:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+							title={toothScanThumbnail ? "Посмотреть снимок RVG" : "Захват снимка визиографа (RVG)"}
+						>
+							{toothScanThumbnail ? (
+								<span className="flex items-center gap-1.5 font-bold">
+									<span className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-pulse" />
+									<span>Снимок RVG</span>
+								</span>
+							) : (
+								<span className="flex items-center gap-1.5 font-semibold">
+									<span>📷 Снимок RVG</span>
+								</span>
+							)}
+						</button>
+					)}
 					{onOpenTherapy && (
 						<button
 							type="button"

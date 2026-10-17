@@ -39,7 +39,7 @@ import { existsSync, promises as fs } from "node:fs";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { xrayScans } from "../db/schema.js";
+import { imagingStudies, xrayScans } from "../db/schema.js";
 import {
 	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
@@ -151,15 +151,17 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 					: null;
 		const createStatus = data.status ?? (hasInlineReport ? "done" : "pending");
 
+		const scanId = crypto.randomUUID();
 		const [inserted] = await db
 			.insert(xrayScans)
 			.values({
+				id: scanId,
 				organizationId,
 				patientId: data.patientId,
 				visitId: data.visitId ?? null,
 				imageDataUri: null, // PostgreSQL WAL и бэкапы чисты от base64 блоата!
 				storagePath: storedFile.storagePath,
-				fileUrl: `/api/xray/scans/file`,
+				fileUrl: `/api/xray/scans/${scanId}/file`,
 				fileSizeBytes: storedFile.fileSizeBytes,
 				sha256: storedFile.sha256,
 				originalFilename: data.originalFilename ?? null,
@@ -181,6 +183,63 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 		if (!inserted) {
 			reply.code(500);
 			return { error: "InsertError", message: "Не удалось сохранить снимок." };
+		}
+
+		// Синхронизация с общим архивом исследований (imaging_studies):
+		// Исключаем разделение данных между снимками с кресла и общим архивом радиологии
+		try {
+			const identity = getRequestIdentity(request);
+			const doctorUserId = identity?.userId ?? null;
+			const studyTitle = data.originalFilename
+				? data.originalFilename
+				: data.toothCode
+					? `Прицельный снимок зуба ${data.toothCode}`
+					: "Прицельный снимок RVG";
+			const kindMapping = (data.kind === "bitewing"
+				? "bitewing"
+				: data.kind === "opg"
+					? "opg"
+					: data.kind === "other"
+						? "other"
+						: "periapical") as "periapical" | "bitewing" | "opg" | "other";
+
+			await db
+				.insert(imagingStudies)
+				.values({
+					id: inserted.id,
+					organizationId,
+					patientId: data.patientId,
+					visitId: data.visitId ?? null,
+					doctorId: doctorUserId,
+					kind: kindMapping,
+					title: studyTitle,
+					toothCode: data.toothCode ?? null,
+					region: data.toothCode ? `Зуб ${data.toothCode}` : null,
+					capturedAt: inserted.capturedAt ?? new Date(),
+					sourceKind: "sensor_bridge",
+					sourceName: "Визиограф (RVG)",
+					status: "available",
+					aiSummary: inlineSummary,
+					storagePath: storedFile.storagePath,
+					modality: data.kind === "opg" ? "PX" : "IO",
+					seriesDescription: data.notes ?? studyTitle,
+					fileSizeBytes: storedFile.fileSizeBytes,
+					bindingStatus: "manual_bound",
+					bindingConfidence: 100,
+				})
+				.onConflictDoUpdate({
+					target: [imagingStudies.id],
+					set: {
+						storagePath: storedFile.storagePath,
+						aiSummary: inlineSummary,
+						fileSizeBytes: storedFile.fileSizeBytes,
+					},
+				});
+		} catch (syncErr) {
+			request.log.warn(
+				{ syncErr, scanId: inserted.id },
+				"Не удалось синхронизировать снимок в imaging_studies",
+			);
 		}
 
 		reply.code(201);
@@ -620,8 +679,97 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 			return { error: "XrayScanNotFound", message: "Снимок не найден." };
 		}
 
+		try {
+			await db
+				.update(imagingStudies)
+				.set({
+					aiSummary: updated.aiSummary,
+					toothCode: updated.toothCode,
+					region: updated.toothCode ? `Зуб ${updated.toothCode}` : null,
+				})
+				.where(
+					and(
+						eq(imagingStudies.id, id),
+						eq(imagingStudies.organizationId, organizationId),
+					),
+				);
+		} catch (syncErr) {
+			request.log.warn(
+				{ syncErr, scanId: id },
+				"Не удалось обновить imaging_studies при обновлении заключения",
+			);
+		}
+
 		return scanToResponse(updated, false);
 	});
+
+	const bindToothSchema = z.object({
+		toothCode: z.string().trim().max(16).nullable().optional(),
+	});
+
+	const bindToothHandler = async (request: any, reply: any) => {
+		if (
+			!(await requireClinicalMutationAccess(
+				request,
+				reply,
+				"bind xray scan to tooth",
+			))
+		)
+			return;
+
+		const organizationId = requireOrganizationId(request, reply);
+		if (!organizationId) return;
+
+		const { id } = request.params as { id: string };
+		const parsed = bindToothSchema.safeParse(request.body ?? {});
+		if (!parsed.success) {
+			reply.code(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректный номер зуба (FDI 11-48).",
+				details: parsed.error.issues,
+			};
+		}
+
+		const formattedTooth = parsed.data.toothCode?.trim() || null;
+		const [updated] = await db
+			.update(xrayScans)
+			.set({
+				toothCode: formattedTooth,
+				updatedAt: new Date(),
+			})
+			.where(
+				and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)),
+			)
+			.returning();
+
+		if (!updated) {
+			reply.code(404);
+			return { error: "XrayScanNotFound", message: "Снимок не найден." };
+		}
+
+		try {
+			await db
+				.update(imagingStudies)
+				.set({
+					toothCode: formattedTooth,
+					region: formattedTooth ? `Зуб ${formattedTooth}` : null,
+				})
+				.where(
+					and(
+						eq(imagingStudies.id, id),
+						eq(imagingStudies.organizationId, organizationId),
+					),
+				);
+		} catch (syncErr) {
+			request.log.warn({ syncErr, scanId: id }, "Не удалось синхронизировать привязку зуба в imaging_studies");
+		}
+
+		return scanToResponse(updated, false);
+	};
+
+	app.post("/api/xray/scans/:id/bind-tooth", bindToothHandler);
+	app.patch("/api/xray/scans/:id/bind-tooth", bindToothHandler);
 
 	app.delete("/api/xray/scans/:id", async (request, reply) => {
 		if (
@@ -667,6 +815,22 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 		if (!deleted) {
 			reply.code(404);
 			return { error: "XrayScanNotFound", message: "Снимок не найден." };
+		}
+
+		try {
+			await db
+				.delete(imagingStudies)
+				.where(
+					and(
+						eq(imagingStudies.id, id),
+						eq(imagingStudies.organizationId, organizationId),
+					),
+				);
+		} catch (syncErr) {
+			request.log.warn(
+				{ syncErr, scanId: id },
+				"Не удалось удалить исследование из imaging_studies",
+			);
 		}
 
 		if (deleted.storagePath && existsSync(deleted.storagePath)) {

@@ -206,8 +206,8 @@ export function ImagingViewport({
 
 	return (
 		<div
-			className="imaging-viewer-stage min-h-[280px] max-h-[380px] h-[350px] flex-1"
-			style={{ position: "relative", minHeight: "280px", maxHeight: "380px", height: "350px" }}
+			className="imaging-viewer-stage min-h-[460px] max-h-[calc(100vh-220px)] flex-1 w-full flex flex-col"
+			style={{ position: "relative", minHeight: "460px" }}
 			onWheel={(e) => {
 				if (isCbctOrLocalArchive) return;
 				e.preventDefault();

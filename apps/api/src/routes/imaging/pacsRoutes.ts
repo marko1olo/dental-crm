@@ -78,6 +78,41 @@ export async function registerPacsRoutes(app: FastifyInstance) {
 		return checkDicomWebConnector(input);
 	});
 
+	app.post("/api/integrations/dicom-server/ping", async (request, reply) => {
+		if (!(await requireClinicalReadAccess(request, reply, "dicom server ping"))) return;
+		const body = (request.body ?? {}) as {
+			endpointUrl?: string;
+			host?: string;
+			port?: number;
+			aeTitle?: string;
+		};
+		const host = (body.host ?? "127.0.0.1").trim() || "127.0.0.1";
+		const port = Number(body.port) || 8042;
+		const endpointUrl =
+			typeof body.endpointUrl === "string" && body.endpointUrl.trim().length > 0
+				? body.endpointUrl.trim()
+				: `http://${host}:${port}/dicom-web`;
+		const checkResult = await checkDicomWebConnector({
+			endpointUrl,
+			qidoRsPath: "/studies",
+			wadoRsPath: "/studies",
+			stowRsPath: "/studies",
+			authMode: "none",
+			timeoutMs: 2500,
+		});
+		return reply.send({
+			ok: checkResult.status === "ready",
+			status: checkResult.status,
+			latencyMs: checkResult.latencyMs,
+			endpointUrl,
+			aeTitle: body.aeTitle ?? "DENTE_PACS",
+			message:
+				checkResult.status === "ready"
+					? `Связь с узлом PACS (${body.aeTitle ?? "DENTE_PACS"} @ ${endpointUrl}) подтверждена (${checkResult.latencyMs} мс)`
+					: `Узел PACS (${endpointUrl}) не ответил: ${checkResult.nextAction}`,
+		});
+	});
+
 	app.post(
 		"/api/imaging/dicom/viewer-launch-manifest",
 		async (request, reply) => {
@@ -255,7 +290,12 @@ export async function registerPacsRoutes(app: FastifyInstance) {
 						dicomDirTarget = path.join(effectiveStudyPath, dName);
 					}
 				}
-			} catch {}
+			} catch (err) {
+				request.log.warn(
+					{ err, effectiveStudyPath },
+					"Failed to inspect study directory for DICOMDIR target",
+				);
+			}
 		}
 
 		const pathToUse = dicomDirTarget || effectiveStudyPath;

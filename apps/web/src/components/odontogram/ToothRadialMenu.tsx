@@ -20,6 +20,8 @@ import { type ToothState, TOOTH_STATE_LABELS } from "./ToothChart";
 import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { isPrimaryTooth } from "@dental/shared";
 import { triggerHaptic } from "../../native/mobileBridge";
+import { usePatientStore } from "../../store/patientStore";
+import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode";
 import { ToothRadialMobileSheet } from "./ToothRadialMobileSheet";
 import { ToothRadialWingMenu } from "./ToothRadialWingMenu";
 import { ToothRadialCircularMenu } from "./ToothRadialCircularMenu";
@@ -87,6 +89,71 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 		window.addEventListener("resize", handleResize);
 		return () => window.removeEventListener("resize", handleResize);
 	}, []);
+
+	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
+	const [toothScanThumbnail, setToothScanThumbnail] = useState<{ id: string; url: string; title: string } | null>(null);
+
+	useEffect(() => {
+		let active = true;
+		const toothStr = String(toothNumber);
+
+		if (isDemoShowcaseMode() || isDemoPatientId(selectedPatientId)) {
+			setToothScanThumbnail({
+				id: `demo-scan-${toothNumber}`,
+				url: `/demo/rvg/tooth_${toothNumber}.jpg`,
+				title: `Снимок RVG (Зуб #${toothNumber})`,
+			});
+			return;
+		}
+
+		if (!selectedPatientId) {
+			setToothScanThumbnail(null);
+			return;
+		}
+
+		fetch(`/api/xray/scans?patientId=${encodeURIComponent(selectedPatientId)}`)
+			.then(async (res) => {
+				if (!res.ok) return [];
+				const data = await res.json();
+				return Array.isArray(data) ? data : [];
+			})
+			.then((scans) => {
+				if (!active) return;
+				const matched = scans.find((s: any) => String(s.toothCode ?? "").trim() === toothStr);
+				if (matched) {
+					setToothScanThumbnail({
+						id: matched.id,
+						url: matched.imageDataUri || matched.fileUrl || `/api/xray/scans/${matched.id}/file`,
+						title: matched.originalFilename || `RVG Зуб #${toothNumber}`,
+					});
+				} else {
+					setToothScanThumbnail(null);
+				}
+			})
+			.catch(() => {
+				if (active) setToothScanThumbnail(null);
+			});
+
+		return () => {
+			active = false;
+		};
+	}, [toothNumber, selectedPatientId]);
+
+	const handleOpenRvg = () => {
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-open-rvg-capture", {
+					detail: {
+						toothFdiCode: String(toothNumber),
+						toothNumber,
+						patientId: selectedPatientId,
+						scanId: toothScanThumbnail?.id,
+					},
+				}),
+			);
+		}
+		onClose();
+	};
 
 	const menuRef = useRef<HTMLDivElement>(null);
 	// Touch swipe-to-dismiss gesture state for bottom sheet drawer
@@ -473,6 +540,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					onOpenTherapy={onOpenTherapy}
 					onAddToInvoice={onAddToInvoice}
 					onOpenEndo={onOpenEndo}
+					toothScanThumbnail={toothScanThumbnail}
+					onOpenRvg={handleOpenRvg}
 					onClose={onClose}
 				/>
 			) : (
@@ -495,6 +564,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 						onOpenTherapy={onOpenTherapy}
 						onAddToInvoice={onAddToInvoice}
 						onOpenEndo={onOpenEndo}
+						toothScanThumbnail={toothScanThumbnail}
+						onOpenRvg={handleOpenRvg}
 						onClose={onClose}
 					/>
 			) : (
@@ -517,6 +588,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					onOpenTherapy={onOpenTherapy}
 					onAddToInvoice={onAddToInvoice}
 					onOpenEndo={onOpenEndo}
+					toothScanThumbnail={toothScanThumbnail}
+					onOpenRvg={handleOpenRvg}
 					onClose={onClose}
 				/>
 			))}

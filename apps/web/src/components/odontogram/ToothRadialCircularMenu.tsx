@@ -35,6 +35,8 @@ export interface ToothRadialCircularMenuProps {
 	onOpenTherapy?: (() => void) | undefined;
 	onAddToInvoice?: (() => void) | undefined;
 	onOpenEndo?: (() => void) | undefined;
+	toothScanThumbnail?: { id: string; url: string; title: string } | null | undefined;
+	onOpenRvg?: (() => void) | undefined;
 	onClose: () => void;
 }
 
@@ -55,6 +57,8 @@ export const ToothRadialCircularMenu: React.FC<ToothRadialCircularMenuProps> = (
 	onOpenTherapy,
 	onAddToInvoice,
 	onOpenEndo,
+	toothScanThumbnail,
+	onOpenRvg,
 	onClose,
 }) => {
 	return (
@@ -464,8 +468,8 @@ export const ToothRadialCircularMenu: React.FC<ToothRadialCircularMenuProps> = (
 				</div>
 			)}
 
-			{/* Bottom Action Bar: Quick Shortcuts (Therapy, Endo, Invoice) */}
-			{Boolean(onOpenTherapy || onOpenEndo || onAddToInvoice) && (
+			{/* Bottom Action Bar: Quick Shortcuts (Therapy, Endo, Invoice, RVG) */}
+			{Boolean(onOpenTherapy || onOpenEndo || onAddToInvoice || onOpenRvg) && (
 				<div
 					className="radial-bottom-actions absolute flex items-center gap-2 pointer-events-auto px-3.5 py-1.5 rounded-full z-20"
 					style={{
@@ -474,6 +478,28 @@ export const ToothRadialCircularMenu: React.FC<ToothRadialCircularMenuProps> = (
 						transform: "translate(-50%, -50%)",
 					}}
 				>
+					{onOpenRvg && (
+						<button
+							type="button"
+							onClick={() => {
+								onOpenRvg();
+								onClose();
+							}}
+							className="min-h-[36px] text-xs font-black text-cyan-600 dark:text-cyan-300 hover:bg-cyan-500/15 dark:hover:bg-cyan-500/25 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0 inline-flex items-center gap-1.5"
+							title={toothScanThumbnail ? "Посмотреть снимок RVG" : "Захват снимка визиографа (RVG)"}
+						>
+							{toothScanThumbnail ? (
+								<span className="flex items-center gap-1.5 font-bold">
+									<span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+									<span>Снимок RVG</span>
+								</span>
+							) : (
+								<span className="flex items-center gap-1 font-semibold">
+									<span>📷 Снимок RVG</span>
+								</span>
+							)}
+						</button>
+					)}
 					{onOpenTherapy && (
 						<button
 							type="button"

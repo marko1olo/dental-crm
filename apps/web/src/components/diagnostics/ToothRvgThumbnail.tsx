@@ -59,7 +59,7 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 		const text = `Визиографический контроль зуба #${toothNumber}: периодонтальная щель прослеживается, деструкции костной ткани в периапикальной области не выявлено. Длина канала: 21.5 мм.`;
 		if (onInsertToProtocol) {
 			onInsertToProtocol(text);
-			showToast(`Заключение визиографа зуба #${toothNumber} вставлено в 043/у!`, "success");
+			showToast(`Заключение визиографа зуба #${toothNumber} внесено в медицинскую карту!`, "success");
 		} else {
 			try {
 				navigator.clipboard.writeText(text);

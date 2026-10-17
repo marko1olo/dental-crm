@@ -167,3 +167,7 @@ export function insertReportTo043Protocol({
 		"success",
 	);
 }
+
+export const applyNormaToMedicalRecord = applyNormaTo043;
+export const insertReportToMedicalProtocol = insertReportTo043Protocol;
+
