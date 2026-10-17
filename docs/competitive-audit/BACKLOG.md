@@ -825,7 +825,14 @@
 - **Статус**: 
   - Shared: `packages/shared/src/orthodontics/types.ts`, `packages/shared/src/orthodontics/orthoEngine.ts`, `packages/shared/src/orthodontics/index.ts` (коммит `5a007a4ab`)
   - Фронтенд: `apps/web/src/components/orthodontics/OrthodonticStudioModal.tsx`, `apps/web/src/components/orthodontics/OrthoPhotoProtocolModal.tsx` (коммит `5a007a4ab`)
-  - Тесты: `packages/shared/src/tests/orthoEngine.test.ts` (14 сценариев, 270 строк тестов, 100% passing).
+  - Волна 340 (Ортодонтические кресельные активации, полный спектр аппаратов и До/После фотопротокол):
+    * Бэкенд: `apps/api/src/routes/orthodontics/stageRoutes.ts` (эндпоинт `POST /api/orthodontics/:patientId/rebracket` со списанием 1 брекета и клея с мягким овердрафтом склада).
+    * Аппаратура: поддержка Damon Q2, Damon Clear, Empower, Mini Diamond, Clarity Advanced, Pitts 21, Lingual Win/Incognito, элайнеров и аппаратов с расширяющим винтом (Марко Роса, Дерихсвайлер, Пендулум, Твин Блок, пластинки) в `bracketProtocol/types.ts` и `OrthoBracketProtocolSection.tsx`.
+    * 1-клик пресеты: «Повторная фиксация брекета», «Выдача капп 5-8 элайнеров», «Смена дуг NiTi / TMA / Сталь» в `CanonicalChairsidePresets.tsx` и `useOrthoClinicalPresets.ts`.
+    * Фотопротокол До/После: интерактивный сплит-слайдер и side-by-side сравнение ключевых ракурсов в `OrthoBeforeAfterComparison.tsx` и `OrthodonticPhotoProtocolModal.tsx`.
+    * Стилистика: канонические классы `primary-button` / `secondary-button`, сенсорный минимум $\ge 44\times 44\text{px}$.
+  - Тесты: 11 сьютов фронтенда (113 passing, 0 failing) + 8 тестов бэкенда (`orthodonticsRoutes.test.ts`, 100% passing).
+  - Скриншот-пруф: 4-состояный Red Team скриншот в `docs/proofs/orthodontics/` (PC Light/Dark 1440x900, Mobile Light/Dark 390x844).
 
 ---
 

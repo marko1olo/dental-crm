@@ -229,4 +229,29 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		assert.equal(body.deduction.success, true);
 		assert.equal(body.deduction.deductedQty, 2);
 	});
+
+	it("8. POST /api/orthodontics/:patientId/rebracket records rebracket and deducts bracket in 1 click", async (t) => {
+		if (!databaseAvailable) return t.skip("Database is unavailable");
+
+		const res = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/rebracket`,
+			headers: ORG_HEADERS,
+			payload: {
+				toothNumber: 24,
+				bracketType: "Damon Q2 (паз .022)",
+				note: "Отрыв брекета после жевания",
+			},
+		});
+
+		assert.equal(res.statusCode, 200);
+		const body = JSON.parse(res.body);
+		assert.equal(body.success, true);
+		assert.equal(body.toothNumber, 24);
+		assert.ok(body.actionSummary.includes("Повторная фиксация брекета (1 шт.) на зубе 24"));
+		assert.ok(body.deduction);
+		assert.equal(body.deduction.success, true);
+		assert.equal(body.deduction.deductedQty, 1);
+		assert.equal(body.progress.lastActionSummary, body.actionSummary);
+	});
 });

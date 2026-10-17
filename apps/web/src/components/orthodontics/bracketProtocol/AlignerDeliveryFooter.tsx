@@ -19,10 +19,10 @@ export const AlignerDeliveryFooter: React.FC<AlignerDeliveryFooterProps> = ({
 					type="button"
 					onClick={() => onIssueAlignerSet(2, 14)}
 					data-testid="widget-issue-set-2-aligners-btn"
-					className={`min-h-[44px] min-w-[44px] px-2.5 py-1 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center gap-1 ${
+					className={`secondary-button min-h-[44px] min-w-[44px] px-2.5 py-1 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center gap-1 ${
 						alignerSetIssuedCount === 2
-							? "bg-[var(--primary)] text-white border-[var(--primary)]"
-							: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+							? "!bg-[var(--primary)] !text-white !border-[var(--primary)]"
+							: ""
 					}`}
 					title="Выдать следующий сет из 2 капп на 14 дней"
 				>
@@ -34,10 +34,10 @@ export const AlignerDeliveryFooter: React.FC<AlignerDeliveryFooterProps> = ({
 					type="button"
 					onClick={() => onIssueAlignerSet(4, 28)}
 					data-testid="widget-issue-set-4-aligners-btn"
-					className={`min-h-[44px] min-w-[44px] px-2.5 py-1 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center gap-1 ${
+					className={`secondary-button min-h-[44px] min-w-[44px] px-2.5 py-1 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center gap-1 ${
 						alignerSetIssuedCount === 4
-							? "bg-[var(--primary)] text-white border-[var(--primary)]"
-							: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+							? "!bg-[var(--primary)] !text-white !border-[var(--primary)]"
+							: ""
 					}`}
 					title="Выдать следующий сет из 4 капп на 28 дней"
 				>
@@ -50,7 +50,7 @@ export const AlignerDeliveryFooter: React.FC<AlignerDeliveryFooterProps> = ({
 				type="button"
 				onClick={onApplyAttachmentsProtocol}
 				data-testid="append-attachments-to-soap-btn"
-				className="min-h-[44px] h-9 md:h-9 px-3.5 py-1.5 rounded-xl bg-[var(--primary)] hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+				className="primary-button min-h-[44px] h-9 md:h-9 px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
 				title="Добавить протокол в дневник визита без стирания ранее набранного текста"
 				aria-label="Внести в дневник приёма"
 			>

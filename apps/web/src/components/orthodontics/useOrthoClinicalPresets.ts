@@ -424,9 +424,9 @@ export function useOrthoClinicalPresets({
 
 	const handlePresetRebracket = () => {
 		setActivePreset("rebracket");
-		if (!selectedActions.includes("rebracket")) {
-			setSelectedActions([...selectedActions, "rebracket"]);
-		}
+		setSelectedActions((prev) =>
+			prev.includes("rebracket") ? prev : [...prev, "rebracket"],
+		);
 		setNotes(
 			"Жалоба на отклейку брекета во время еды. Объективно: отрыв брекета без повреждения эмали. Проведена ультразвуковая очистка эмали зуба от остатков адгезива, протравливание 37% ортофосфорной кислотой 20 сек, смывание, высушивание, нанесение праймера Transbond XT, позиционирование нового брекета, фотополимеризация 20 сек. Дуга установлена в паз, подвязана эластической лигатурой. Окклюзионных контактов с замком нет.",
 		);

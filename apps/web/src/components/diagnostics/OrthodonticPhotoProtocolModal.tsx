@@ -6,6 +6,7 @@ import {
 	Eye,
 	Printer,
 	Copy,
+	Split,
 } from "lucide-react";
 import { BracesBracket, AlignerTray, DentalForm043 } from "../icons/DentalIcons";
 import {
@@ -38,10 +39,12 @@ import {
 } from "./orthodonticPresets";
 import { OrthoFindingsAccordion } from "./OrthoFindingsAccordion";
 import { OrthoPhotoSlotCard } from "./OrthoPhotoSlotCard";
+import { OrthoBeforeAfterComparison } from "./OrthoBeforeAfterComparison";
 
 export * from "./orthodonticPresets";
 export * from "./OrthoFindingsAccordion";
 export * from "./OrthoPhotoSlotCard";
+export * from "./OrthoBeforeAfterComparison";
 
 export interface OrthodonticPhotoProtocolModalProps {
 	isOpen: boolean;
@@ -97,6 +100,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 	const [selectedSlotForZoom, setSelectedSlotForZoom] = useState<OrthodonticAngleId | null>(null);
 	const [dragOverSlotId, setDragOverSlotId] = useState<OrthodonticAngleId | null>(null);
 	const [activeCategoryFilter, setActiveCategoryFilter] = useState<"all" | "extraoral" | "intraoral">("all");
+	const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
 
 	// 1-Click Clinical Presets & 043 Diary State (Mandates 8e, 8k)
 	const [activePreset, setActivePreset] = useState<OrthodonticClinicalPreset | null>(
@@ -553,6 +557,20 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 							</button>
 						</div>
 
+						{/* Compare Before / After in 1 click */}
+						<button
+							type="button"
+							onClick={() => setIsCompareMode((prev) => !prev)}
+							className={`secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 sm:py-1 px-3 py-1.5 inline-flex items-center gap-1.5 text-xs font-semibold rounded-xl cursor-pointer ${
+								isCompareMode ? "!bg-[var(--primary)] !text-white !border-[var(--primary)] shadow-xs" : ""
+							}`}
+							title="Сравнение фотографий До и После в 1 клик"
+							data-testid="toggle-compare-before-after-btn"
+						>
+							<Split size={14} />
+							<span>Сравнение До/После</span>
+						</button>
+
 						{/* Guidelines toggle */}
 						<button
 							type="button"
@@ -569,6 +587,15 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 
 				{/* 3. Modal Body */}
 				<div className="ortho-modal-body">
+					{/* 1-Click Before/After Comparison */}
+					{isCompareMode && (
+						<OrthoBeforeAfterComparison
+							session={session}
+							onUploadAngle={(angleId) => triggerUploadForAngle(angleId)}
+							onCloseCompare={() => setIsCompareMode(false)}
+						/>
+					)}
+
 					{/* Plan ribbon & Completeness Progress */}
 					<div className="ortho-plan-ribbon">
 						<div className="ortho-plan-info">
@@ -601,7 +628,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 					<div className="ortho-presets-bar" role="group" aria-label="Готовые клинические пресеты ортодонтии">
 						<div className="ortho-presets-label">
 							<AlignerTray size={14} className="text-amber-500 shrink-0" />
-							<span>Клинические пресеты:</span>
+							<span data-testid="ortho-presets-title">1-клик пресеты протоколов:</span>
 						</div>
 						<div className="ortho-presets-list">
 							{ORTHODONTIC_CLINICAL_PRESETS.map((preset) => {
@@ -721,7 +748,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 						<button
 							type="button"
 							onClick={() => handleInsertProtocol043()}
-							className="ortho-btn-insert-043 min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 py-2.5 sm:py-1.5 inline-flex items-center gap-2"
+							className="secondary-button ortho-btn-insert-043 min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 py-2 sm:py-1.5 inline-flex items-center gap-2 !rounded-xl text-xs font-bold"
 							title="Вставить структурированный протокол ортодонтии в дневник приёма"
 							data-testid="insert-ortho-protocol-043-btn"
 						>
@@ -731,14 +758,14 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 						<button
 							type="button"
 							onClick={onClose}
-							className="ortho-btn-secondary min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 py-2.5 sm:py-1.5 inline-flex items-center justify-center"
+							className="secondary-button ortho-btn-secondary min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 py-2 sm:py-1.5 inline-flex items-center justify-center !rounded-xl text-xs font-semibold"
 						>
 							Отмена
 						</button>
 						<button
 							type="button"
 							onClick={handleSave}
-							className="ortho-btn-primary min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 py-2.5 sm:py-1.5 inline-flex items-center gap-2"
+							className="primary-button ortho-btn-primary min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 py-2 sm:py-1.5 inline-flex items-center gap-2 !rounded-xl text-xs font-bold"
 							data-testid="save-ortho-protocol-btn"
 						>
 							<CheckCircle size={16} />
