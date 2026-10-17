@@ -8,13 +8,17 @@ export interface PediatricProtocolDetailsAccordionProps {
 	readonly show: boolean;
 	readonly currentTooth: number;
 	readonly onSelectTooth: (tooth: number) => void;
-	readonly fullProtocolText043: string;
+	readonly fullClinicalNoteText?: string | undefined;
+	/** @deprecated Использовать fullClinicalNoteText */
+	readonly fullProtocolText043?: string | undefined;
 }
 
 export const PediatricProtocolDetailsAccordion: React.FC<
 	PediatricProtocolDetailsAccordionProps
-> = ({ show, currentTooth, onSelectTooth, fullProtocolText043 }) => {
+> = ({ show, currentTooth, onSelectTooth, fullClinicalNoteText, fullProtocolText043 }) => {
 	if (!show) return null;
+
+	const displayedText = fullClinicalNoteText || fullProtocolText043 || "";
 
 	return (
 		<div
@@ -56,7 +60,7 @@ export const PediatricProtocolDetailsAccordion: React.FC<
 					Превью записи в медицинскую карту пациента (дневник приёма):
 				</div>
 				<pre className="max-h-48 overflow-y-auto rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3 text-[11px] leading-relaxed text-[var(--ink,#0f172a)] font-mono whitespace-pre-wrap">
-					{fullProtocolText043}
+					{displayedText}
 				</pre>
 			</div>
 		</div>

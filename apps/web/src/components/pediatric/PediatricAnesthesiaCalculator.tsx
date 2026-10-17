@@ -87,6 +87,8 @@ export interface PediatricAnesthesiaCalculationResult {
 	readonly isContraindicated?: boolean | undefined;
 	readonly contraindicationReasonRu?: string | undefined;
 	readonly alertMessageRu?: string | undefined;
+	readonly formattedClinicalNote: string;
+	/** @deprecated Использовать formattedClinicalNote (Мандат 8x: искоренение советских шифров) */
 	readonly formattedText043: string;
 }
 
@@ -101,7 +103,7 @@ export interface PediatricAnesthesiaCalculatorProps {
 	readonly allergies?: string | undefined;
 	/** Обработчик изменения расчета */
 	readonly onCalculationChange?: ((result: PediatricAnesthesiaCalculationResult) => void) | undefined;
-	/** Обработчик вставки текста анестезии в протокол 043/у */
+	/** Обработчик вставки текста анестезии в дневник визита / медицинскую карту приёма */
 	readonly onApplyToProtocol?: ((formattedText: string, result: PediatricAnesthesiaCalculationResult) => void) | undefined;
 	/** Дополнительный CSS класс */
 	readonly className?: string | undefined;
@@ -213,7 +215,7 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 				? `\n• ⚠️ ВНИМАНИЕ: Превышение расчетной дозы (${totalDoseAdministeredMg} мг > МРД ${maxAllowedTotalDoseMg} мг на ${safeWeight} кг). Введено по клиническим показаниям под личную ответственность врача.`
 				: "";
 
-		const formattedText043 = [
+		const formattedClinicalNote = [
 			`Анестезиологическое пособие: ${drug.nameRu}.`,
 			`• Введено: ${carpules} карп. (${totalVolumeMl} мл / ${totalDoseAdministeredMg} мг активного вещества).`,
 			`• Вес ребенка: ${safeWeight} кг. Предельно допустимая доза (MRD): ${maxAllowedTotalDoseMg} мг (${mrdPerKg} мг/кг).`,
@@ -236,7 +238,8 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 			isContraindicated,
 			contraindicationReasonRu,
 			...(alertMessageRu ? { alertMessageRu } : {}),
-			formattedText043,
+			formattedClinicalNote,
+			formattedText043: formattedClinicalNote,
 		};
 
 		return result;
@@ -257,13 +260,13 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 
 	// Mandate 8e: Doctor Autonomy — the CRM NEVER blocks saving or applying anesthesia records
 	const handleApplyAnesthesia = useCallback(() => {
-		onApplyToProtocol?.(calculation.formattedText043, calculation);
+		onApplyToProtocol?.(calculation.formattedClinicalNote, calculation);
 		if (calculation.isContraindicated) {
-			showToast(`Внимание: ${calculation.contraindicationReasonRu} (зафиксировано в протоколе)`, "warning", 4000);
+			showToast(`Внимание: ${calculation.contraindicationReasonRu} (зафиксировано в дневнике визита)`, "warning", 4000);
 		} else if (calculation.isOverdose) {
-			showToast(`Внимание: превышение расчетной дозы МРД (${calculation.totalDoseAdministeredMg} мг > ${calculation.maxAllowedTotalDoseMg} мг). Зафиксировано в медкарте.`, "warning", 4000);
+			showToast(`Внимание: превышение расчетной дозы МРД (${calculation.totalDoseAdministeredMg} мг > ${calculation.maxAllowedTotalDoseMg} мг). Зафиксировано в дневнике визита.`, "warning", 4000);
 		} else {
-			showToast(`Анестезия ${drug.shortLabelRu} (${calculation.carpulesAdministered} карп.) внесена в протокол`, "success", 2500);
+			showToast(`Анестезия ${drug.shortLabelRu} (${calculation.carpulesAdministered} карп.) внесена в дневник визита`, "success", 2500);
 		}
 	}, [calculation, drug.shortLabelRu, onApplyToProtocol]);
 
@@ -464,9 +467,42 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 						<span className="text-xs text-[var(--muted,#64748b)]">карп. ({calculation.totalVolumeMl} мл)</span>
 					</div>
 
-					{/* Быстрые кнопки карпул */}
-					<div className="flex flex-wrap gap-1">
-						{[0.25, 0.5, 1.0, 1.5, 2.0].map((c) => (
+					{/* Экспресс-анестезия в 1 клик: клинические пресеты долей карпулы (Мандат 8e / 8y) */}
+					<div className="mb-2">
+						<div className="text-[10px] uppercase font-bold text-[var(--muted,#64748b)] mb-1">
+							Экспресс-дозировка в 1 клик:
+						</div>
+						<div className="grid grid-cols-3 gap-1.5" data-testid="pediatric-express-carpule-presets">
+							{[
+								{ label: "1/3 карпулы", volume: "0.6 мл", val: 0.33, id: "third" },
+								{ label: "1/2 карпулы", volume: "0.9 мл", val: 0.5, id: "half" },
+								{ label: "1 карпула", volume: "1.7 мл", val: 1.0, id: "one" },
+							].map((preset) => {
+								const isSelected = carpules === preset.val;
+								return (
+									<button
+										key={preset.id}
+										type="button"
+										onClick={() => setCarpules(preset.val)}
+										className={`min-h-[38px] sm:min-h-[34px] px-2 py-1 rounded-xl text-xs font-bold border transition cursor-pointer flex flex-col items-center justify-center select-none active:scale-95 touch-manipulation ${
+											isSelected
+												? "bg-teal-600 text-white border-teal-600 shadow-xs ring-2 ring-teal-500/20"
+												: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
+										}`}
+										data-testid={`preset-carpule-${preset.id}`}
+										title={`Установить дозу: ${preset.label} (${preset.volume})`}
+									>
+										<span className="leading-tight font-extrabold">{preset.label}</span>
+										<span className="text-[10px] opacity-80 font-mono font-medium">({preset.volume})</span>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+
+					{/* Дополнительные точные шаги дозирования */}
+					<div className="flex flex-wrap items-center gap-1">
+						{[0.25, 0.75, 1.5, 2.0].map((c) => (
 							<button
 								key={c}
 								type="button"
@@ -484,7 +520,7 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 						<button
 							type="button"
 							onClick={handleSetMaxSafeDose}
-							className="h-6 px-1.5 rounded text-[10px] font-bold border border-teal-500/40 bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 hover:bg-teal-100 transition cursor-pointer"
+							className="h-6 px-2 rounded text-[10px] font-bold border border-teal-500/40 bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 hover:bg-teal-100 transition cursor-pointer"
 							title={`Установить максимальную безопасную дозу: ${calculation.maxSafeCarpulesCount} карп.`}
 							data-testid="btn-set-max-safe-dose"
 						>
@@ -587,10 +623,10 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 					}`}
 					title={
 						calculation.isContraindicated
-							? `Внести в протокол (соматический риск: ${calculation.contraindicationReasonRu})`
+							? `Внести в дневник визита (соматический риск: ${calculation.contraindicationReasonRu})`
 							: calculation.isOverdose
-								? `Внести в протокол с отметкой о превышении расчетной дозы (${calculation.totalDoseAdministeredMg} мг > ${calculation.maxAllowedTotalDoseMg} мг)`
-								: "Внести расчет дозы анестезии в дневник приёма"
+								? `Внести в дневник визита с отметкой о превышении расчетной дозы (${calculation.totalDoseAdministeredMg} мг > ${calculation.maxAllowedTotalDoseMg} мг)`
+								: "Внести расчет дозы анестезии в дневник визита"
 					}
 					data-testid="btn-apply-anesthesia-protocol"
 				>
@@ -606,8 +642,8 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 						</>
 					) : (
 						<>
-							<Zap className="h-4 w-4 text-white shrink-0" />
-							<span>Внести анестезию в дневник</span>
+							<Check className="h-4 w-4 text-white shrink-0" />
+							<span>Внести в дневник визита</span>
 						</>
 					)}
 				</button>

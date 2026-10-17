@@ -130,8 +130,8 @@ describe("VisitPediatricProtocolWidget (Chairside 30-Second Pediatric Dental Wor
 
 		// 6. 1-клик кнопки действий (Мандат 8e: автономия, кнопки всегда активны)
 		assert.ok(
-			html.includes("Внести в 043/у"),
-			"Has primary 1-click Form 043/u action button",
+			html.includes("Внести в карту") || html.includes("Внести в дневник"),
+			"Has primary 1-click clinical note action button",
 		);
 		assert.ok(
 			html.includes("В смету"),
@@ -375,7 +375,7 @@ describe("VisitPediatricProtocolWidget (Chairside 30-Second Pediatric Dental Wor
 		);
 	});
 
-	it("auto-substitutes legal representative and somatic norm into Form 043/u preview", () => {
+	it("auto-substitutes legal representative and somatic norm into clinical note preview", () => {
 		const html = renderToStaticMarkup(
 			createElement(VisitPediatricProtocolWidget, {
 				activeTooth: 54,

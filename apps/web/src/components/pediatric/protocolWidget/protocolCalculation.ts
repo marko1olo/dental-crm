@@ -38,6 +38,8 @@ export interface ClinicalCalculationResult {
 	readonly treatmentDescription: string;
 	readonly recommendations: string;
 	readonly services804n: readonly PediatricServiceItem[];
+	readonly fullClinicalNoteText: string;
+	/** @deprecated Использовать fullClinicalNoteText (Мандат 8x: искоренение советских шифров) */
 	readonly fullProtocolText043: string;
 	readonly toothFindingState:
 		| "Filled"
@@ -160,7 +162,10 @@ export function calculateClinicalProtocol(
 			code: "B01.003.004.004",
 			nameRu: `Местная анестезия (${anesthesiaCalculation.drug.nameRu}): ${anesthesiaCalculation.carpulesAdministered} карп. (${anesthesiaCalculation.totalDoseAdministeredMg} мг)`,
 		});
-		treatmentDescription += `\nМестная анестезия: ${anesthesiaCalculation.formattedText043}`;
+		const anesthNote =
+			anesthesiaCalculation.formattedClinicalNote ||
+			anesthesiaCalculation.formattedText043;
+		treatmentDescription += `\nМестная анестезия: ${anesthNote}`;
 	} else if (anesthesiaText) {
 		treatmentDescription += `\nМестная анестезия: ${anesthesiaText}`;
 	}
@@ -181,7 +186,7 @@ export function calculateClinicalProtocol(
 		? somaticText
 		: `Соматический статус ребенка: физиологическая норма (соматически здоров).\n   • Физическое развитие: ${somaticStatus.physicalDevelopmentRu}.\n   • Аллергологический анамнез: ${somaticStatus.allergiesRu}.\n   • Хронические заболевания: ${somaticStatus.chronicDiseasesRu}.`;
 
-	const fullProtocolText043 = [
+	const fullClinicalNoteText = [
 		"ДНЕВНИК ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ПРИЁМА (МЕДИЦИНСКАЯ КАРТА)",
 		"────────────────────────────────────────────────────────────",
 		`1. Родитель / Сопровождающий:`,
@@ -222,12 +227,13 @@ export function calculateClinicalProtocol(
 		treatmentDescription,
 		recommendations,
 		services804n: services,
-		fullProtocolText043,
+		fullClinicalNoteText,
+		fullProtocolText043: fullClinicalNoteText,
 		toothFindingState: activePreset.defaultToothFindingState,
 	};
 }
 
-export function buildPhysiologicalNorm043Text(): string {
+export function buildPhysiologicalNormClinicalNoteText(): string {
 	return [
 		"ДНЕВНИК ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ПРИЁМА (МЕДИЦИНСКАЯ КАРТА)",
 		"────────────────────────────────────────────────────────────",
@@ -257,7 +263,10 @@ export function buildPhysiologicalNorm043Text(): string {
 	].join("\n");
 }
 
-export function buildAdaptationVisit043Text(): string {
+/** @deprecated Использовать buildPhysiologicalNormClinicalNoteText */
+export const buildPhysiologicalNorm043Text = buildPhysiologicalNormClinicalNoteText;
+
+export function buildAdaptationVisitClinicalNoteText(): string {
 	return [
 		"ДНЕВНИК ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ПРИЁМА (МЕДИЦИНСКАЯ КАРТА)",
 		"────────────────────────────────────────────────────────────",
@@ -286,3 +295,6 @@ export function buildAdaptationVisit043Text(): string {
 		"Протокол осмотра и лечения в медицинской карте пациента.",
 	].join("\n");
 }
+
+/** @deprecated Использовать buildAdaptationVisitClinicalNoteText */
+export const buildAdaptationVisit043Text = buildAdaptationVisitClinicalNoteText;

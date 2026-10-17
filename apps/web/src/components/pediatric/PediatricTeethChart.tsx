@@ -15,7 +15,7 @@ import {
 	isPrimaryTooth,
 } from "../odontogram/pediatricDentitionEngine";
 
-export type PediatricDentitionMode = "primary" | "mixed";
+export type PediatricDentitionMode = "primary" | "mixed" | "permanent";
 
 export interface PediatricToothItem {
 	readonly toothNumber: number;
@@ -81,6 +81,51 @@ export const PERMANENT_SIX_TEETH: Readonly<Record<number, PediatricToothItem>> =
 	46: { toothNumber: 46, label: "46", anatomicalNameRu: "Нижний правый первый постоянный моляр (шестёрка)", isPrimary: false, quadrant: 4, type: "permanent_molar_1" },
 };
 
+// Permanent full arch definitions for teenagers 12–17 years (32 permanent teeth FDI)
+export const PERMANENT_UPPER_RIGHT: readonly PediatricToothItem[] = [
+	{ toothNumber: 18, label: "18", anatomicalNameRu: "Верхний правый третий постоянный моляр", isPrimary: false, quadrant: 1, type: "permanent_molar_1" },
+	{ toothNumber: 17, label: "17", anatomicalNameRu: "Верхний правый второй постоянный моляр", isPrimary: false, quadrant: 1, type: "permanent_molar_1" },
+	{ toothNumber: 16, label: "16", anatomicalNameRu: "Верхний правый первый постоянный моляр", isPrimary: false, quadrant: 1, type: "permanent_molar_1" },
+	{ toothNumber: 15, label: "15", anatomicalNameRu: "Верхний правый второй премоляр", isPrimary: false, quadrant: 1, type: "molar_2" },
+	{ toothNumber: 14, label: "14", anatomicalNameRu: "Верхний правый первый премоляр", isPrimary: false, quadrant: 1, type: "molar_1" },
+	{ toothNumber: 13, label: "13", anatomicalNameRu: "Верхний правый постоянный клык", isPrimary: false, quadrant: 1, type: "canine" },
+	{ toothNumber: 12, label: "12", anatomicalNameRu: "Верхний правый боковой постоянный резец", isPrimary: false, quadrant: 1, type: "incisor_lateral" },
+	{ toothNumber: 11, label: "11", anatomicalNameRu: "Верхний правый центральный постоянный резец", isPrimary: false, quadrant: 1, type: "incisor_central" },
+];
+
+export const PERMANENT_UPPER_LEFT: readonly PediatricToothItem[] = [
+	{ toothNumber: 21, label: "21", anatomicalNameRu: "Верхний левый центральный постоянный резец", isPrimary: false, quadrant: 2, type: "incisor_central" },
+	{ toothNumber: 22, label: "22", anatomicalNameRu: "Верхний левый боковой постоянный резец", isPrimary: false, quadrant: 2, type: "incisor_lateral" },
+	{ toothNumber: 23, label: "23", anatomicalNameRu: "Верхний левый постоянный клык", isPrimary: false, quadrant: 2, type: "canine" },
+	{ toothNumber: 24, label: "24", anatomicalNameRu: "Верхний левый первый премоляр", isPrimary: false, quadrant: 2, type: "molar_1" },
+	{ toothNumber: 25, label: "25", anatomicalNameRu: "Верхний левый второй премоляр", isPrimary: false, quadrant: 2, type: "molar_2" },
+	{ toothNumber: 26, label: "26", anatomicalNameRu: "Верхний левый первый постоянный моляр", isPrimary: false, quadrant: 2, type: "permanent_molar_1" },
+	{ toothNumber: 27, label: "27", anatomicalNameRu: "Верхний левый второй постоянный моляр", isPrimary: false, quadrant: 2, type: "permanent_molar_1" },
+	{ toothNumber: 28, label: "28", anatomicalNameRu: "Верхний левый третий постоянный моляр", isPrimary: false, quadrant: 2, type: "permanent_molar_1" },
+];
+
+export const PERMANENT_LOWER_RIGHT: readonly PediatricToothItem[] = [
+	{ toothNumber: 48, label: "48", anatomicalNameRu: "Нижний правый третий постоянный моляр", isPrimary: false, quadrant: 4, type: "permanent_molar_1" },
+	{ toothNumber: 47, label: "47", anatomicalNameRu: "Нижний правый второй постоянный моляр", isPrimary: false, quadrant: 4, type: "permanent_molar_1" },
+	{ toothNumber: 46, label: "46", anatomicalNameRu: "Нижний правый первый постоянный моляр", isPrimary: false, quadrant: 4, type: "permanent_molar_1" },
+	{ toothNumber: 45, label: "45", anatomicalNameRu: "Нижний правый второй премоляр", isPrimary: false, quadrant: 4, type: "molar_2" },
+	{ toothNumber: 44, label: "44", anatomicalNameRu: "Нижний правый первый премоляр", isPrimary: false, quadrant: 4, type: "molar_1" },
+	{ toothNumber: 43, label: "43", anatomicalNameRu: "Нижний правый постоянный клык", isPrimary: false, quadrant: 4, type: "canine" },
+	{ toothNumber: 42, label: "42", anatomicalNameRu: "Нижний правый боковой постоянный резец", isPrimary: false, quadrant: 4, type: "incisor_lateral" },
+	{ toothNumber: 41, label: "41", anatomicalNameRu: "Нижний правый центральный постоянный резец", isPrimary: false, quadrant: 4, type: "incisor_central" },
+];
+
+export const PERMANENT_LOWER_LEFT: readonly PediatricToothItem[] = [
+	{ toothNumber: 31, label: "31", anatomicalNameRu: "Нижний левый центральный постоянный резец", isPrimary: false, quadrant: 3, type: "incisor_central" },
+	{ toothNumber: 32, label: "32", anatomicalNameRu: "Нижний левый боковой постоянный резец", isPrimary: false, quadrant: 3, type: "incisor_lateral" },
+	{ toothNumber: 33, label: "33", anatomicalNameRu: "Нижний левый постоянный клык", isPrimary: false, quadrant: 3, type: "canine" },
+	{ toothNumber: 34, label: "34", anatomicalNameRu: "Нижний левый первый премоляр", isPrimary: false, quadrant: 3, type: "molar_1" },
+	{ toothNumber: 35, label: "35", anatomicalNameRu: "Нижний левый второй премоляр", isPrimary: false, quadrant: 3, type: "molar_2" },
+	{ toothNumber: 36, label: "36", anatomicalNameRu: "Нижний левый первый постоянный моляр", isPrimary: false, quadrant: 3, type: "permanent_molar_1" },
+	{ toothNumber: 37, label: "37", anatomicalNameRu: "Нижний левый второй постоянный моляр", isPrimary: false, quadrant: 3, type: "permanent_molar_1" },
+	{ toothNumber: 38, label: "38", anatomicalNameRu: "Нижний левый третий постоянный моляр", isPrimary: false, quadrant: 3, type: "permanent_molar_1" },
+];
+
 export interface PediatricTeethChartProps {
 	/** Активный номер зуба (выделен в карте) */
 	readonly activeTooth?: number | null | undefined;
@@ -126,44 +171,56 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 	className = "",
 }) => {
 	const isMixed = mode === "mixed";
+	const isPermanent = mode === "permanent";
 
 	// Upper row teeth (right to left)
 	const upperRow = useMemo<readonly PediatricToothItem[]>(() => {
+		if (isPermanent) {
+			return [...PERMANENT_UPPER_RIGHT, ...PERMANENT_UPPER_LEFT];
+		}
 		const right = isMixed ? [PERMANENT_SIX_TEETH[16]!, ...PRIMARY_UPPER_RIGHT] : PRIMARY_UPPER_RIGHT;
 		const left = isMixed ? [...PRIMARY_UPPER_LEFT, PERMANENT_SIX_TEETH[26]!] : PRIMARY_UPPER_LEFT;
 		return [...right, ...left];
-	}, [isMixed]);
+	}, [isMixed, isPermanent]);
 
 	// Lower row teeth (right to left)
 	const lowerRow = useMemo<readonly PediatricToothItem[]>(() => {
+		if (isPermanent) {
+			return [...PERMANENT_LOWER_RIGHT, ...PERMANENT_LOWER_LEFT];
+		}
 		const right = isMixed ? [PERMANENT_SIX_TEETH[46]!, ...PRIMARY_LOWER_RIGHT] : PRIMARY_LOWER_RIGHT;
 		const left = isMixed ? [...PRIMARY_LOWER_LEFT, PERMANENT_SIX_TEETH[36]!] : PRIMARY_LOWER_LEFT;
 		return [...right, ...left];
-	}, [isMixed]);
+	}, [isMixed, isPermanent]);
 
 	// Квадранты для суверенного мобильного режима (Apple HIG: Natural Thumb Zone & Anti-Desktop-Squeeze)
 	const quadrant5Teeth = useMemo<readonly PediatricToothItem[]>(() => {
+		if (isPermanent) return PERMANENT_UPPER_RIGHT;
 		return isMixed ? [PERMANENT_SIX_TEETH[16]!, ...PRIMARY_UPPER_RIGHT] : PRIMARY_UPPER_RIGHT;
-	}, [isMixed]);
+	}, [isMixed, isPermanent]);
 
 	const quadrant6Teeth = useMemo<readonly PediatricToothItem[]>(() => {
+		if (isPermanent) return PERMANENT_UPPER_LEFT;
 		return isMixed ? [...PRIMARY_UPPER_LEFT, PERMANENT_SIX_TEETH[26]!] : PRIMARY_UPPER_LEFT;
-	}, [isMixed]);
+	}, [isMixed, isPermanent]);
 
 	const quadrant7Teeth = useMemo<readonly PediatricToothItem[]>(() => {
+		if (isPermanent) return PERMANENT_LOWER_LEFT;
 		return isMixed ? [...PRIMARY_LOWER_LEFT, PERMANENT_SIX_TEETH[36]!] : PRIMARY_LOWER_LEFT;
-	}, [isMixed]);
+	}, [isMixed, isPermanent]);
 
 	const quadrant8Teeth = useMemo<readonly PediatricToothItem[]>(() => {
+		if (isPermanent) return PERMANENT_LOWER_RIGHT;
 		return isMixed ? [PERMANENT_SIX_TEETH[46]!, ...PRIMARY_LOWER_RIGHT] : PRIMARY_LOWER_RIGHT;
-	}, [isMixed]);
+	}, [isMixed, isPermanent]);
 
 	const getQuadrantKeyForTooth = (t: number | null | undefined): "q5" | "q6" | "q7" | "q8" => {
 		if (!t) return "q5";
-		if (t === 16 || (t >= 51 && t <= 55)) return "q5";
-		if (t === 26 || (t >= 61 && t <= 65)) return "q6";
-		if (t === 36 || (t >= 71 && t <= 75)) return "q7";
-		if (t === 46 || (t >= 81 && t <= 85)) return "q8";
+		const q = Math.floor(t / 10);
+		if (q === 1 || q === 5) return "q5";
+		if (q === 2 || q === 6) return "q6";
+		if (q === 3 || q === 7) return "q7";
+		if (q === 4 || q === 8) return "q8";
 		return "q5";
 	};
 
@@ -179,12 +236,12 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 
 	const mobileQuadrantsMeta = useMemo(
 		() => [
-			{ key: "q5" as const, labelRu: "Q5 Верх-Право", shortLabelRu: "Q5 В/П", jawRu: "Верхняя челюсть (справа)", teeth: quadrant5Teeth },
-			{ key: "q6" as const, labelRu: "Q6 Верх-Лево", shortLabelRu: "Q6 В/Л", jawRu: "Верхняя челюсть (слева)", teeth: quadrant6Teeth },
-			{ key: "q7" as const, labelRu: "Q7 Низ-Лево", shortLabelRu: "Q7 Н/Л", jawRu: "Нижняя челюсть (слева)", teeth: quadrant7Teeth },
-			{ key: "q8" as const, labelRu: "Q8 Низ-Право", shortLabelRu: "Q8 Н/П", jawRu: "Нижняя челюсть (справа)", teeth: quadrant8Teeth },
+			{ key: "q5" as const, labelRu: isPermanent ? "Q1 Верх-Право (18–11)" : "Q5 Верх-Право", shortLabelRu: isPermanent ? "Q1 В/П" : "Q5 В/П", jawRu: "Верхняя челюсть (справа)", teeth: quadrant5Teeth },
+			{ key: "q6" as const, labelRu: isPermanent ? "Q2 Верх-Лево (21–28)" : "Q6 Верх-Лево", shortLabelRu: isPermanent ? "Q2 В/Л" : "Q6 В/Л", jawRu: "Верхняя челюсть (слева)", teeth: quadrant6Teeth },
+			{ key: "q7" as const, labelRu: isPermanent ? "Q3 Низ-Лево (31–38)" : "Q7 Низ-Лево", shortLabelRu: isPermanent ? "Q3 Н/Л" : "Q7 Н/Л", jawRu: "Нижняя челюсть (слева)", teeth: quadrant7Teeth },
+			{ key: "q8" as const, labelRu: isPermanent ? "Q4 Низ-Право (48–41)" : "Q8 Низ-Право", shortLabelRu: isPermanent ? "Q4 Н/П" : "Q8 Н/П", jawRu: "Нижняя челюсть (справа)", teeth: quadrant8Teeth },
 		],
-		[quadrant5Teeth, quadrant6Teeth, quadrant7Teeth, quadrant8Teeth],
+		[isPermanent, quadrant5Teeth, quadrant6Teeth, quadrant7Teeth, quadrant8Teeth],
 	);
 
 	const activeQuadrantObj = useMemo(() => {
@@ -305,8 +362,16 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 						<span className="sm:hidden">Зубная формула:</span>
 					</span>
 					<span className="rounded-md bg-teal-500/10 px-2 py-0.5 text-xs font-bold font-mono text-teal-700 dark:text-teal-300">
-						<span className="hidden sm:inline">{isMixed ? "Сменный прикус (24 зуба)" : "Временный молочный прикус (20 зубов)"}</span>
-						<span className="sm:hidden">{isMixed ? "Сменный (24)" : "Молочный (20)"}</span>
+						<span className="hidden sm:inline">
+							{isPermanent
+								? "Постоянный прикус / Подростки (32 зуба)"
+								: isMixed
+									? "Сменный прикус (24 зуба)"
+									: "Временный молочный прикус (20 зубов)"}
+						</span>
+						<span className="sm:hidden">
+							{isPermanent ? "Подростки (32)" : isMixed ? "Сменный (24)" : "Молочный (20)"}
+						</span>
 					</span>
 				</div>
 
@@ -322,13 +387,13 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 							type="button"
 							onClick={() => onModeChange?.("primary")}
 							className={`min-h-[44px] sm:min-h-[32px] sm:h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
-								!isMixed
+								mode === "primary"
 									? "shadow-xs"
 									: "hover:text-[var(--ink,#0f172a)]"
 							}`}
 							style={{
-								backgroundColor: !isMixed ? "var(--accent, #0d9488)" : "transparent",
-								color: !isMixed ? "#ffffff" : "var(--muted, #64748b)",
+								backgroundColor: mode === "primary" ? "var(--accent, #0d9488)" : "transparent",
+								color: mode === "primary" ? "#ffffff" : "var(--muted, #64748b)",
 							}}
 							data-testid="mode-primary-btn"
 							title="Только 20 молочных зубов (51–55, 61–65, 71–75, 81–85)"
@@ -340,19 +405,37 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 							type="button"
 							onClick={() => onModeChange?.("mixed")}
 							className={`min-h-[44px] sm:min-h-[32px] sm:h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
-								isMixed
+								mode === "mixed"
 									? "shadow-xs"
 									: "hover:text-[var(--ink,#0f172a)]"
 							}`}
 							style={{
-								backgroundColor: isMixed ? "#0284c7" : "transparent",
-								color: isMixed ? "#ffffff" : "var(--muted, #64748b)",
+								backgroundColor: mode === "mixed" ? "#0284c7" : "transparent",
+								color: mode === "mixed" ? "#ffffff" : "var(--muted, #64748b)",
 							}}
 							data-testid="mode-mixed-btn"
 							title="Сменный прикус: молочные + постоянные первые моляры 16, 26, 36, 46"
 						>
 							<span className="hidden sm:inline">Сменный (+ 16, 26, 36, 46)</span>
 							<span className="sm:hidden">Сменный (+4)</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => onModeChange?.("permanent")}
+							className={`min-h-[44px] sm:min-h-[32px] sm:h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
+								mode === "permanent"
+									? "shadow-xs"
+									: "hover:text-[var(--ink,#0f172a)]"
+							}`}
+							style={{
+								backgroundColor: mode === "permanent" ? "#6366f1" : "transparent",
+								color: mode === "permanent" ? "#ffffff" : "var(--muted, #64748b)",
+							}}
+							data-testid="mode-permanent-btn"
+							title="Постоянный прикус для подростков 12–17 лет (32 зуба 11–48)"
+						>
+							<span className="hidden sm:inline">Подростки (11–48)</span>
+							<span className="sm:hidden">Подростки (32)</span>
 						</button>
 					</div>
 

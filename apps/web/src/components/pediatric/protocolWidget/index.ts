@@ -26,6 +26,8 @@ export {
 
 export {
 	calculateClinicalProtocol,
+	buildPhysiologicalNormClinicalNoteText,
+	buildAdaptationVisitClinicalNoteText,
 	buildPhysiologicalNorm043Text,
 	buildAdaptationVisit043Text,
 } from "./protocolCalculation";

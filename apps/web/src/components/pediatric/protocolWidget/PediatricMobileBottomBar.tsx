@@ -7,7 +7,9 @@ export interface PediatricMobileBottomBarProps {
 	readonly activePreset: PediatricProtocolDefinition;
 	readonly diagnosisIcd10: string;
 	readonly servicesCount: number;
-	readonly onInsertToForm043: () => void;
+	readonly onInsertToClinicalNote?: () => void;
+	/** @deprecated Использовать onInsertToClinicalNote */
+	readonly onInsertToForm043?: () => void;
 	readonly onAddServicesToInvoice: () => void;
 	readonly onOpenMemoModal: () => void;
 	readonly onOpenDiplomaModal: () => void;
@@ -20,11 +22,14 @@ export const PediatricMobileBottomBar: React.FC<
 	activePreset,
 	diagnosisIcd10,
 	servicesCount,
+	onInsertToClinicalNote,
 	onInsertToForm043,
 	onAddServicesToInvoice,
 	onOpenMemoModal,
 	onOpenDiplomaModal,
 }) => {
+	const handleApply = onInsertToClinicalNote || onInsertToForm043 || (() => {});
+
 	return (
 		<div
 			className="md:hidden fixed bottom-[calc(56px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-[60] max-w-[100vw] overflow-x-clip backdrop-blur-xl bg-[var(--paper-strong,#ffffff)]/95 dark:bg-zinc-900/95 border-t border-[var(--line,#e2e8f0)] p-2.5 pb-2 shadow-[0_-4px_24px_rgba(0,0,0,0.22)] flex flex-col gap-1.5"
@@ -43,7 +48,7 @@ export const PediatricMobileBottomBar: React.FC<
 			{/* Главная кнопка действия (Primary CTA): Внести протокол в карту (высота >= 52px) */}
 			<button
 				type="button"
-				onClick={onInsertToForm043}
+				onClick={handleApply}
 				className="flex h-[52px] min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl px-4 text-sm font-extrabold shadow-md transition active:scale-[0.98] cursor-pointer touch-manipulation select-none"
 				style={{
 					backgroundColor: "var(--accent, #0d9488)",

@@ -38,8 +38,8 @@ import { PediatricRewardsModal } from "./PediatricRewardsModal";
 import { PediatricSedationProtocol } from "./PediatricSedationProtocol";
 import { PediatricTreatmentSteps } from "./PediatricTreatmentSteps";
 import {
-	buildAdaptationVisit043Text,
-	buildPhysiologicalNorm043Text,
+	buildAdaptationVisitClinicalNoteText,
+	buildPhysiologicalNormClinicalNoteText,
 	calculateClinicalProtocol,
 } from "./protocolCalculation";
 import type {
@@ -106,13 +106,13 @@ export const PediatricProtocolWidgetContent: React.FC<
 		setCurrentTooth(effectiveTooth);
 	}, [effectiveTooth]);
 
-	// 2.1 Режим прикуса: молочный (20 зубов) или сменный (с постоянными молярами 16, 26, 36, 46)
+	// 2.1 Режим прикуса: молочный (20 зубов), сменный (24 зуба) или постоянный для подростков (32 зуба)
 	const [dentitionMode, setDentitionMode] = useState<PediatricDentitionMode>(
-		patientAgeYears >= 6 ? "mixed" : "primary",
+		patientAgeYears >= 12 ? "permanent" : patientAgeYears >= 6 ? "mixed" : "primary",
 	);
 
 	useEffect(() => {
-		setDentitionMode(patientAgeYears >= 6 ? "mixed" : "primary");
+		setDentitionMode(patientAgeYears >= 12 ? "permanent" : patientAgeYears >= 6 ? "mixed" : "primary");
 	}, [patientAgeYears]);
 
 	// 2.2 Состояния зубов на карте
@@ -323,18 +323,17 @@ export const PediatricProtocolWidgetContent: React.FC<
 		sedation,
 	]);
 
-	// 10. Внесение в Форму 043/у (Двойной диспатч: useVisitStore + CustomEvent dente-apply-soap-protocol)
-	const handleInsertToForm043 = useCallback(() => {
+	// 10. Внесение в дневник визита / медкарту приёма (Двойной диспатч: useVisitStore + CustomEvent dente-apply-soap-protocol)
+	const handleInsertToClinicalNote = useCallback(() => {
 		if (anesthesiaCalculation?.isOverdose) {
 			showToast(
-				`БЛОКИРОВКА ПЕРЕДОЗИРОВКИ: доза анестетика (${anesthesiaCalculation.totalDoseAdministeredMg} мг) превышает безопасный предел МРД (${anesthesiaCalculation.maxAllowedTotalDoseMg} мг) для веса ${anesthesiaCalculation.patientWeightKg} кг! Снизьте количество карпул.`,
-				"error",
-				6000,
+				`Внимание: доза анестетика (${anesthesiaCalculation.totalDoseAdministeredMg} мг) превышает расчетный предел МРД (${anesthesiaCalculation.maxAllowedTotalDoseMg} мг) для веса ${anesthesiaCalculation.patientWeightKg} кг! Зафиксировано в дневнике визита под ответственность врача.`,
+				"warning",
+				5000,
 			);
-			return;
 		}
 
-		const textToApply = clinicalCalculation.fullProtocolText043;
+		const textToApply = clinicalCalculation.fullClinicalNoteText || clinicalCalculation.fullProtocolText043;
 		onApplyProtocolText?.(textToApply);
 
 		setToothFindings((prev) => ({
@@ -441,7 +440,7 @@ export const PediatricProtocolWidgetContent: React.FC<
 		setOrthoNasalBreathing(true);
 		setOrthoNoHarmfulHabits(true);
 
-		const fullText = buildPhysiologicalNorm043Text();
+		const fullText = buildPhysiologicalNormClinicalNoteText();
 		onApplyProtocolText?.(fullText);
 
 		try {
@@ -501,7 +500,7 @@ export const PediatricProtocolWidgetContent: React.FC<
 		setOrthoNasalBreathing(true);
 		setOrthoNoHarmfulHabits(true);
 
-		const fullText = buildAdaptationVisit043Text();
+		const fullText = buildAdaptationVisitClinicalNoteText();
 		onApplyProtocolText?.(fullText);
 
 		try {
@@ -683,7 +682,7 @@ export const PediatricProtocolWidgetContent: React.FC<
 				}}
 			/>
 
-			{/* СПОЙЛЕР ДЕТАЛЕЙ (БЫСТРЫЙ ВЫБОР ЗУБА, ПРЕВЬЮ 043/у) */}
+			{/* СПОЙЛЕР ДЕТАЛЕЙ (БЫСТРЫЙ ВЫБОР ЗУБА, ПРЕВЬЮ ДНЕВНИКА ВИЗИТА) */}
 			<PediatricProtocolDetailsAccordion
 				show={showDetailsAccordion}
 				currentTooth={currentTooth}
@@ -696,12 +695,14 @@ export const PediatricProtocolWidgetContent: React.FC<
 						1500,
 					);
 				}}
+				fullClinicalNoteText={clinicalCalculation.fullClinicalNoteText}
 				fullProtocolText043={clinicalCalculation.fullProtocolText043}
 			/>
 
 			{/* ДЕСКТОПНЫЙ ПЛАНШЕТ ДЕЙСТВИЙ (md:flex) */}
 			<PediatricProtocolDesktopActionBar
-				onInsertToForm043={handleInsertToForm043}
+				onInsertToClinicalNote={handleInsertToClinicalNote}
+				onInsertToForm043={handleInsertToClinicalNote}
 				onAddServicesToInvoice={handleAddServicesToInvoice}
 				onOpenMemoModal={() => setIsMemoModalOpen(true)}
 				onOpenDiplomaModal={() => setIsDiplomaModalOpen(true)}
@@ -716,7 +717,8 @@ export const PediatricProtocolWidgetContent: React.FC<
 				activePreset={activePreset}
 				diagnosisIcd10={clinicalCalculation.diagnosisIcd10}
 				servicesCount={clinicalCalculation.services804n.length}
-				onInsertToForm043={handleInsertToForm043}
+				onInsertToClinicalNote={handleInsertToClinicalNote}
+				onInsertToForm043={handleInsertToClinicalNote}
 				onAddServicesToInvoice={handleAddServicesToInvoice}
 				onOpenMemoModal={() => setIsMemoModalOpen(true)}
 				onOpenDiplomaModal={() => setIsDiplomaModalOpen(true)}
