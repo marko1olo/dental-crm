@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import {
 	computeChairEconomicsSummary,
+	formatRublesClean,
 	type ExecutivePeriodComputedMetrics,
 } from "./executiveAnalyticsTypes";
 
@@ -151,10 +152,10 @@ export const DesktopExecutiveKpiCards: React.FC<DesktopExecutiveKpiCardsProps> =
 							<Coins size={18} aria-hidden="true" />
 						</div>
 					</div>
-					<div className="executive-kpi-main-val font-mono">{kpis.totalRevenueFormatted || "0 ₽"}</div>
+					<div className="executive-kpi-main-val font-mono">{formatRublesClean(kpis.totalRevenueRub ?? kpis.totalRevenueFormatted)}</div>
 				</div>
 				<div className="executive-kpi-subtext">
-					<span>План: {kpis.totalRevenuePlanFormatted || "0 ₽"}</span>
+					<span>План: {formatRublesClean(kpis.totalRevenuePlanFormatted)}</span>
 					<span
 						className={`executive-pill ${
 							(kpis.overallPlanFulfillmentPercent ?? 0) >= 95
@@ -191,7 +192,7 @@ export const DesktopExecutiveKpiCards: React.FC<DesktopExecutiveKpiCardsProps> =
 						className="executive-kpi-main-val font-mono"
 						style={{ color: (kpis.netProfitKopecks ?? 0) >= 0 ? "var(--ink, #0f172a)" : "var(--err-fg, #ef4444)" }}
 					>
-						{kpis.netProfitFormatted || "0 ₽"}
+						{formatRublesClean(kpis.netProfitFormatted)}
 					</div>
 				</div>
 				<div className="executive-kpi-subtext">
@@ -282,10 +283,10 @@ export const DesktopExecutiveKpiCards: React.FC<DesktopExecutiveKpiCardsProps> =
 							<TrendingUp size={18} aria-hidden="true" />
 						</div>
 					</div>
-					<div className="executive-kpi-main-val font-mono">{kpis.patientLtvFormatted || "0 ₽"}</div>
+					<div className="executive-kpi-main-val font-mono">{formatRublesClean(kpis.patientLtvFormatted)}</div>
 				</div>
 				<div className="executive-kpi-subtext">
-					<span>CAC: {kpis.cacFormatted || "0 ₽"}</span>
+					<span>CAC: {formatRublesClean(kpis.cacFormatted)}</span>
 					<span
 						className={`executive-pill ${
 							(kpis.ltvToCacRatio ?? 0) >= 3

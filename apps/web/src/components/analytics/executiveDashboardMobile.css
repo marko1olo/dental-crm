@@ -305,12 +305,13 @@
 	padding-left: 13px;
 }
 
-/* ─── 4 ДОМИНАНТНЫЕ KPI КАРТОЧКИ СВОДКИ ─────────────────────────────────── */
+/* ─── 4 ДОМИНАНТНЫЕ KPI КАРТОЧКИ СВОДКИ (APPLE HIG: 1 КОЛОНКА) ──────────── */
 
 .mobile-exec-kpi-grid {
-	display: grid;
-	grid-template-columns: repeat(2, 1fr);
+	display: flex;
+	flex-direction: column;
 	gap: 10px;
+	width: 100%;
 	box-sizing: border-box;
 }
 
@@ -318,11 +319,11 @@
 	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 16px;
-	padding: 12px 14px;
+	padding: 14px 16px;
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
-	min-height: 102px;
+	min-height: 108px;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 	box-sizing: border-box;
 	position: relative;
@@ -343,8 +344,8 @@
 }
 
 .kpi-card-label {
-	font-size: 12px;
-	font-weight: 500;
+	font-size: 13px;
+	font-weight: 600;
 	color: var(--muted);
 	white-space: nowrap;
 	overflow: hidden;
@@ -352,8 +353,8 @@
 }
 
 .kpi-card-icon-wrap {
-	width: 26px;
-	height: 26px;
+	width: 28px;
+	height: 28px;
 	border-radius: 8px;
 	display: flex;
 	align-items: center;
@@ -382,12 +383,12 @@
 }
 
 .kpi-card-value {
-	font-size: 1.375rem;
+	font-size: 1.5rem;
 	font-weight: 700;
 	color: var(--ink);
 	letter-spacing: -0.02em;
 	line-height: 1.2;
-	margin: 2px 0 6px;
+	margin: 4px 0 8px;
 }
 
 .kpi-card-row-value {
@@ -400,9 +401,16 @@
 .kpi-card-footer {
 	display: flex;
 	align-items: center;
-	gap: 6px;
+	justify-content: space-between;
+	gap: 8px;
 	flex-wrap: wrap;
 	margin-top: auto;
+	padding-top: 8px;
+	border-top: 1px solid var(--line-subtle, rgba(0, 0, 0, 0.06));
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .kpi-card-footer {
+	border-top-color: var(--line-subtle, rgba(255, 255, 255, 0.08));
 }
 
 .kpi-badge-success {

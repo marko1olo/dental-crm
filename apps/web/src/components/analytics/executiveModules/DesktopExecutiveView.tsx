@@ -36,6 +36,7 @@ import { ExecutivePnlWidget } from "../ExecutivePnlWidget";
 import { DesktopExecutiveEmptyStateBanner } from "./ExecutiveChairUtilizationChart";
 import { DesktopExecutiveTelemetryBar } from "./ExecutiveDoctorPerformanceTable";
 import { DesktopExecutiveKpiCards } from "./ExecutiveKpiSummaryCards";
+import { formatRublesClean } from "./executiveAnalyticsTypes";
 import type { UseExecutiveDashboardDataResult } from "./useExecutiveDashboardData";
 
 const FinancialAnalyticsModal = lazy(() =>
@@ -131,44 +132,57 @@ export const DesktopExecutiveView: React.FC<DesktopExecutiveViewProps> = ({
 
 					<div className="executive-controls">
 						<div className="executive-period-toggle" role="group" aria-label="Период отчета">
-							{(["day", "week", "month", "quarter"] as const).map((p) => (
+							{([
+								{ key: "day", label: "Сегодня" },
+								{ key: "week", label: "Неделя" },
+								{ key: "month", label: "Месяц" },
+								{ key: "quarter", label: "Квартал" },
+								{ key: "year", label: "Год" },
+							] as const).map((opt) => (
 								<button
-									key={p}
+									key={opt.key}
 									type="button"
-									className={`executive-period-btn ${period === p ? "active" : ""}`}
-									onClick={() => setPeriod(p)}
+									className={`secondary-button ${period === opt.key ? "active" : ""}`}
+									onClick={() => setPeriod(opt.key)}
+									data-testid={`desktop-period-${opt.key}`}
 								>
-									{p === "day"
-										? "День"
-										: p === "week"
-											? "Неделя"
-											: p === "month"
-												? "Месяц"
-												: "Квартал"}
+									{opt.label}
 								</button>
 							))}
 						</div>
 
 						<button
 							type="button"
-							className="executive-refresh-btn"
-							onClick={reload}
-							disabled={loading}
-							aria-label="Обновить показатели дашборда"
-							title="Обновить показатели дашборда"
+							className="secondary-button"
+							onClick={handleExportCsv}
+							title="Экспорт аналитического отчета в Excel / CSV"
+							data-testid="desktop-export-btn"
 						>
-							<RefreshCw size={15} className={loading ? "animate-spin" : ""} aria-hidden="true" />
-							<span>Обновить</span>
+							<Download size={14} aria-hidden="true" />
+							<span>Экспорт в Excel / PDF</span>
 						</button>
 
 						<button
 							type="button"
-							className="executive-primary-action-btn"
-							onClick={handleExportCsv}
-							title="Экспорт аналитического отчета в Excel / CSV"
+							className="primary-button"
+							onClick={handleOpenPnl}
+							title="Открыть финансовую аналитику P&amp;L"
+							data-testid="desktop-open-pnl-btn"
 						>
-							<Download size={15} aria-hidden="true" />
-							<span>В Excel</span>
+							<Sparkles size={14} aria-hidden="true" />
+							<span>Финансовый отчет P&amp;L</span>
+						</button>
+
+						<button
+							type="button"
+							className="secondary-button"
+							onClick={reload}
+							disabled={loading}
+							aria-label="Обновить показатели дашборда"
+							title="Обновить показатели дашборда"
+							data-testid="desktop-refresh-btn"
+						>
+							<RefreshCw size={14} className={loading ? "animate-spin" : ""} aria-hidden="true" />
 						</button>
 					</div>
 				</header>
@@ -219,7 +233,7 @@ export const DesktopExecutiveView: React.FC<DesktopExecutiveViewProps> = ({
 							Загрузка кресел и стоимость простоя
 						</h2>
 						<span className="executive-panel-badge">
-							Простой: {chairCostRub.toLocaleString("ru-RU")} ₽/ч
+							Простой: {formatRublesClean(chairCostRub)}/ч
 						</span>
 					</div>
 
@@ -270,7 +284,7 @@ export const DesktopExecutiveView: React.FC<DesktopExecutiveViewProps> = ({
 													</div>
 												</td>
 												<td style={{ textAlign: "right", color: idleLostRub > 0 ? "var(--err-fg, #ef4444)" : "var(--muted)" }}>
-													{idleLostRub.toLocaleString("ru-RU")} ₽
+													{formatRublesClean(idleLostRub)}
 												</td>
 											</tr>
 										);
@@ -327,13 +341,13 @@ export const DesktopExecutiveView: React.FC<DesktopExecutiveViewProps> = ({
 											</td>
 											<td className="text-[12px] text-[var(--muted)]">{doc.specialty}</td>
 											<td style={{ textAlign: "right", fontWeight: 700 }} className="text-[var(--teal)]">
-												{doc.revenueFormatted}
+												{formatRublesClean(doc.revenueFormatted)}
 											</td>
 											<td style={{ textAlign: "center" }}>{doc.visitsCount}</td>
 											<td style={{ textAlign: "center" }}>
 												<span className="kpi-pill-mini kpi-badge-success">{doc.attendancePercent}%</span>
 											</td>
-											<td style={{ textAlign: "right" }}>{doc.averageCheckFormatted}</td>
+											<td style={{ textAlign: "right" }}>{formatRublesClean(doc.averageCheckFormatted)}</td>
 										</tr>
 									))}
 								</tbody>
@@ -382,7 +396,7 @@ export const DesktopExecutiveView: React.FC<DesktopExecutiveViewProps> = ({
 											<td className="text-[12px] text-[var(--muted)]">{proc.category}</td>
 											<td style={{ textAlign: "center" }}>{proc.count} шт.</td>
 											<td style={{ textAlign: "right", fontWeight: 700 }} className="text-[var(--teal)]">
-												{proc.revenueFormatted}
+												{formatRublesClean(proc.revenueFormatted)}
 											</td>
 											<td style={{ textAlign: "right" }}>
 												<span className="kpi-pill-mini kpi-badge-neutral">{proc.sharePercent}%</span>

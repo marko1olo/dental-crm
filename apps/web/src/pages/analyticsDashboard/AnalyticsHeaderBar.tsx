@@ -293,11 +293,12 @@ export function AnalyticsHeaderBar({
 				</div>
 			</div>
 
-			<div
-				className={`analytics-toolbar ${analyticsSection === "executive" ? "analytics-toolbar--executive-mobile-hidden" : ""}`}
-				role="toolbar"
-				aria-label="Фильтры аналитики"
-			>
+			{analyticsSection !== "executive" && analyticsSection !== "clinic" && (
+				<div
+					className="analytics-toolbar"
+					role="toolbar"
+					aria-label="Фильтры аналитики"
+				>
 				{/* Филиал (Compact 32px SegmentedControl) */}
 				<div className="analytics-segmented" role="radiogroup" aria-label="Выбор филиала">
 					{BRANCH_OPTIONS.map((b) => (
@@ -317,7 +318,7 @@ export function AnalyticsHeaderBar({
 
 				{/* Период (Compact 32px SegmentedControl with ... menu for rare ranges) */}
 				<div
-					className={`analytics-segmented ${analyticsSection === "executive" ? "hidden sm:flex" : "flex"}`}
+					className="analytics-segmented flex"
 					role="radiogroup"
 					aria-label="Выбор периода"
 				>
@@ -392,7 +393,7 @@ export function AnalyticsHeaderBar({
 
 				{/* Тактильные кнопки действий тулбара: Экспорт, Печать, Обновление */}
 				<div
-					className={`flex items-center gap-1.5 shrink-0 ${analyticsSection === "executive" ? "hidden sm:flex" : "flex"}`}
+					className="flex items-center gap-1.5 shrink-0"
 					role="group"
 					aria-label="Действия с отчетом"
 				>
@@ -431,6 +432,7 @@ export function AnalyticsHeaderBar({
 					</button>
 				</div>
 			</div>
+			)}
 		</header>
 	);
 }

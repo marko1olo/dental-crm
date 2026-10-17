@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import {
 	computeChairEconomicsSummary,
+	formatRublesClean,
 	type ExecutivePeriodComputedMetrics,
 } from "./executiveAnalyticsTypes";
 
@@ -200,7 +201,7 @@ export const MobileExecutiveKpiTiles: React.FC<MobileExecutiveKpiTilesProps> = (
 						</div>
 						<div className="exec-legend-values">
 							<span className="font-semibold text-[13px] font-mono text-[var(--ink)]">{pb.cashPercent}%</span>
-							<span className="text-[11px] text-[var(--muted)]">{pb.cashRub.toLocaleString("ru-RU")} ₽</span>
+							<span className="text-[11px] text-[var(--muted)]">{pb.cashFormatted || formatRublesClean(pb.cashRub)}</span>
 						</div>
 					</div>
 
@@ -211,7 +212,7 @@ export const MobileExecutiveKpiTiles: React.FC<MobileExecutiveKpiTilesProps> = (
 						</div>
 						<div className="exec-legend-values">
 							<span className="font-semibold text-[13px] font-mono text-[var(--ink)]">{pb.cardDmsPercent}%</span>
-							<span className="text-[11px] text-[var(--muted)]">{pb.cardDmsRub.toLocaleString("ru-RU")} ₽</span>
+							<span className="text-[11px] text-[var(--muted)]">{pb.cardDmsFormatted || formatRublesClean(pb.cardDmsRub)}</span>
 						</div>
 					</div>
 
@@ -222,7 +223,7 @@ export const MobileExecutiveKpiTiles: React.FC<MobileExecutiveKpiTilesProps> = (
 						</div>
 						<div className="exec-legend-values">
 							<span className="font-semibold text-[13px] font-mono text-[var(--ink)]">{pb.sbpPercent}%</span>
-							<span className="text-[11px] text-[var(--muted)]">{pb.sbpRub.toLocaleString("ru-RU")} ₽</span>
+							<span className="text-[11px] text-[var(--muted)]">{pb.sbpFormatted || formatRublesClean(pb.sbpRub)}</span>
 						</div>
 					</div>
 				</div>

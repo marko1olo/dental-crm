@@ -16,6 +16,7 @@
 import React, { useState } from "react";
 import type { ExecutiveFunnelStageItem, ExecutiveFunnelStage } from "@dental/shared";
 import { Sparkles, TrendingDown, CheckCircle2 } from "lucide-react";
+import { formatRublesClean } from "./executiveModules/executiveAnalyticsTypes";
 
 export interface ExecutiveFunnelMetricsProps {
 	readonly stages: readonly ExecutiveFunnelStageItem[];
@@ -116,7 +117,7 @@ export const ExecutiveFunnelMetrics: React.FC<ExecutiveFunnelMetricsProps> = ({
 
 							{st.totalVolumeKopecks > 0 && (
 								<div className="funnel-step-cost" title="Финансовый объем этапа">
-									Объем: <strong>{st.totalVolumeFormatted}</strong>
+									Объем: <strong>{formatRublesClean(st.totalVolumeFormatted)}</strong>
 								</div>
 							)}
 						</div>
@@ -137,7 +138,7 @@ export const ExecutiveFunnelMetrics: React.FC<ExecutiveFunnelMetricsProps> = ({
 							>
 								<div style={{ display: "flex", justifyContent: "space-between" }}>
 									<span>Стоимость единицы этапа (Unit Cost):</span>
-									<strong>{st.unitCostFormatted}</strong>
+									<strong>{formatRublesClean(st.unitCostFormatted)}</strong>
 								</div>
 								<div style={{ display: "flex", justifyContent: "space-between" }}>
 									<span>Доля от исходных обращений:</span>

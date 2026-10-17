@@ -13,6 +13,7 @@
 import React from "react";
 import type { ExecutiveDepartmentItem, DepartmentPerformanceStatus } from "@dental/shared";
 import { ArrowUpRight, ArrowDownRight, AlertCircle, CheckCircle } from "lucide-react";
+import { formatRublesClean } from "./executiveModules/executiveAnalyticsTypes";
 
 export interface ExecutivePnlWidgetProps {
 	readonly departments: readonly ExecutiveDepartmentItem[];
@@ -102,10 +103,10 @@ export const ExecutivePnlWidget: React.FC<ExecutivePnlWidgetProps> = ({
 				<div>
 					<span>Итого по клинике: </span>
 					<strong style={{ fontSize: "1rem", color: "var(--ink, #0f172a)", marginLeft: "0.25rem" }}>
-						{totalRevenueFormatted}
+						{formatRublesClean(totalRevenueFormatted)}
 					</strong>
 					<span style={{ color: "var(--muted, #64748b)", marginLeft: "0.5rem" }}>
-						(план: {totalPlanFormatted})
+						(план: {formatRublesClean(totalPlanFormatted)})
 					</span>
 				</div>
 				<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -136,8 +137,8 @@ export const ExecutivePnlWidget: React.FC<ExecutivePnlWidgetProps> = ({
 
 						<div className="dept-financials">
 							<div>
-								<div className="dept-fact-val">{dept.factRevenueFormatted}</div>
-								<div className="dept-plan-val">План: {dept.planRevenueFormatted}</div>
+								<div className="dept-fact-val">{formatRublesClean(dept.factRevenueFormatted)}</div>
+								<div className="dept-plan-val">План: {formatRublesClean(dept.planRevenueFormatted)}</div>
 							</div>
 							<div style={{ textAlign: "right" }}>
 								<div style={{ fontSize: "1rem", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
@@ -165,7 +166,7 @@ export const ExecutivePnlWidget: React.FC<ExecutivePnlWidgetProps> = ({
 						{/* Дополнительные показатели отделения */}
 						<div className="dept-submetrics">
 							<span>
-								Ср. чек: <strong>{dept.averageCheckFormatted}</strong>
+								Ср. чек: <strong>{formatRublesClean(dept.averageCheckFormatted)}</strong>
 							</span>
 							<span>
 								Визитов: <strong>{dept.completedVisitsCount}</strong>

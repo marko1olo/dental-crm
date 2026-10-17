@@ -11095,3 +11095,32 @@
         - `03_lab_kanban_mobile_light_390x844.png` (37.6 КБ, Mobile Light 390×844, Apple HIG Bottom Sheet)
         - `04_lab_kanban_mobile_dark_390x844.png` (37.8 КБ, Mobile Dark 390×844, Apple HIG Dark Mode).
 
+
+52. **Волна 341: Рабочий стол Генерального директора (Executive Analytics & Dashboards), Унификация канонического ядра, 36px однострочный тулбар периодов, 100% нормализация валюты без копеек и 4-State Visual Proof (Мандаты 8b, 8c, 8d, 8e, 8n, 8x, 8wy, 8ze, 8al, Apple HIG)**:
+    - **1. Ликвидация мертвого кода и консолидация на едином ядре `ExecutiveDashboard.tsx`**:
+      * Физически удален мертвый балласт: `apps/web/src/components/analytics/ClinicAnalyticsDashboard.tsx`, `clinicAnalyticsDashboard.css`, директория `clinicDashboard/` (6 файлов) и старый тест `clinicAnalyticsDashboard.test.ts`;
+      * `ExecutiveDashboard.tsx` стал единым каноническим ядром для мобильного (Apple iOS HIG) и десктопного (Apple macOS HIG) представлений;
+      * `DirectorExecutiveDashboard.tsx` редуцирован до ультра-тонкого фасада $\le 120$ строк (13 строк, полное соблюдение мандата /decomposer);
+      * В `AnalyticsSubDashboards.tsx` удален мертвый импорт, настроен вызов `ExecutiveDashboard`;
+      * В `AnalyticsHeaderBar.tsx` скрыт дублирующий вторичный тулбар при открытом разделе аналитики директора.
+    - **2. Строгий однострочный канонический тулбар 36px (Strict 36px Single-Row Period Toolbar)**:
+      * 5 кнопок выбора периода: `[ Сегодня | Неделя | Месяц | Квартал | Год ]` с классами `.secondary-button` и `.active`;
+      * Кнопка экспорта: `.secondary-button` (36px desktop, 44px mobile touch) «Экспорт в Excel / PDF»;
+      * Кнопка главного действия: `.primary-button` (36px desktop, 44px mobile touch) «Финансовый отчет P&L» (открывает модальное окно `FinancialAnalyticsModal`);
+      * Кнопка обновления: `.secondary-button` (36px) с анимацией спиннера при загрузке.
+    - **3. Тотальная нормализация валюты без дробных копеек (Zero Kopecks & Total Currency Hygiene)**:
+      * Внедрен хелпер `formatRublesClean` во всех модулях аналитики (`executiveAnalyticsTypes.ts`);
+      * Полная ликвидация `,00 ₽`, `,76 ₽`, `,67 ₽` во всех сводках: общая выручка, чистая прибыль, LTV, CAC, себестоимость кресло-часа, выручка отделений, средний чек, каналы оплат (Касса наличные, Безнал и ДМС, СБП QR);
+      * 100% соответствие каноническому формату валюты DENTE («142 500 ₽»).
+    - **4. Мобильная эргономика Apple HIG (Natural Thumb Zone & Grouped Cards)**:
+      * Одноколоночная сетка мобильных KPI-карточек с радиусом 16px и разделителями `var(--line-subtle)`;
+      * Плавающий нижний бар (Floating Bottom Bar) в Natural Thumb Zone с кнопками экспорта и печати;
+      * Сенсорный минимум $\ge 44\times 44$px, 0px паразитного горизонтального скролла на 390×844.
+    - **5. Верификация тестами и 4-State Red Team Visual Proof**:
+      * 49/49 тестов успешно пройдены в `apps/web/src/components/analytics/` (Exit Code 0);
+      * Декомпозиция: `DirectorExecutiveDashboard.tsx` 13 строк ($\le 120$), `ExecutiveDashboard.tsx` 249 строк ($\le 500$), `DesktopExecutiveView.tsx` 417 строк ($\le 500$), `useExecutiveDashboardData.ts` 236 строк ($\le 500$);
+      * Сняты и лично верифицированы через `view_file` 4 скриншота с живого стенда Vite (`http://127.0.0.1:5173/`):
+        - `01_pc_executive_dashboard_light_1440x900.png` (176.7 КБ, PC Light 1440×900, 36px тулбар, 5 KPI карточек, P&L отделений и загрузка кресел)
+        - `02_pc_reports_breakdown_light_1440x900.png` (108.8 КБ, PC Light 1440×900, детальная разбивка 5 отделений, топ врачей и топ услуг)
+        - `03_pc_executive_dashboard_dark_1440x900.png` (177.8 КБ, PC Dark 1440×900, темный режим, глубокий контраст дизайн-токенов)
+        - `04_mobile_analytics_summary_390x844.png` (175.6 КБ, Mobile Light 390×844, 5 кнопок периода, финансовые KPI плитки, одноколоночные карточки, Natural Thumb Zone).

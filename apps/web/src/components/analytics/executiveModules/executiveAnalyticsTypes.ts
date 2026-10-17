@@ -13,15 +13,38 @@ import {
 	type ExecutiveKpisSummary,
 	type ExecutivePeriod,
 } from "@dental/shared";
+import { formatRubles } from "../../../utils/formatters.js";
 
 export type MobileAnalyticsPeriod = "day" | "week" | "month" | "quarter" | "year";
+
+/**
+ * Нормализует любое рублевое значение или строку, гарантируя отсутствие копеек (,00).
+ * Соответствует мандату 8e и каноническому формату валюты DENTE («142 500 ₽»).
+ */
+export function formatRublesClean(val: string | number | null | undefined): string {
+	if (val === null || val === undefined || val === "") return "0 ₽";
+	if (typeof val === "number") {
+		return formatRubles(Math.round(val));
+	}
+	const cleaned = String(val)
+		.replace(/,00(\s*|\u00A0*)₽?/, "")
+		.replace(/(\s*|\u00A0*)₽?$/, "")
+		.trim();
+	const parsed = parseFloat(cleaned.replace(/\s+/g, "").replace(/[^\d.-]/g, ""));
+	if (Number.isFinite(parsed)) {
+		return formatRubles(Math.round(parsed));
+	}
+	return String(val);
+}
 
 export interface ExecutiveDashboardProps {
 	readonly initialPeriod?: MobileAnalyticsPeriod | undefined;
 	readonly period?: MobileAnalyticsPeriod | undefined;
 	readonly onPeriodChange?: ((period: MobileAnalyticsPeriod) => void) | undefined;
 	readonly onNavigateToSection?: ((sectionKey: string) => void) | undefined;
+	readonly onOpenFinancialAnalytics?: (() => void) | undefined;
 	readonly hideBottomBar?: boolean | undefined;
+	readonly hideHeaderToolbar?: boolean | undefined;
 }
 
 export interface DirectorExecutiveDashboardProps {
@@ -54,10 +77,13 @@ export interface ExecutivePeriodComputedMetrics {
 	readonly paymentBreakdown?: {
 		readonly cashRub: number;
 		readonly cashPercent: number;
+		readonly cashFormatted?: string;
 		readonly cardDmsRub: number;
 		readonly cardDmsPercent: number;
+		readonly cardDmsFormatted?: string;
 		readonly sbpRub: number;
 		readonly sbpPercent: number;
+		readonly sbpFormatted?: string;
 		readonly totalRub: number;
 	};
 }
@@ -221,39 +247,50 @@ export function computePeriodMetricsFromPayload(
 	const econ = computeChairEconomicsSummary(k);
 
 	if (k) {
-		const revFmt = k.totalRevenueFormatted || "0 ₽";
-		const planFmt = k.totalRevenuePlanFormatted || "0 ₽";
+		const revRub = k.totalRevenueRub > 0 ? k.totalRevenueRub : Math.round((k.totalRevenueKopecks ?? 0) / 100);
+		const planRub = Math.round((k.totalRevenuePlanKopecks ?? 0) / 100);
 		const planPct = k.overallPlanFulfillmentPercent ?? 0;
 		const delta = planPct >= 100 ? `+${planPct - 100}%` : `${planPct}%`;
+		const avgCheckRub = Math.round((k.averageCheckKopecks ?? 0) / 100);
+		const primaryAvgCheckRub = Math.round((k.primaryAverageCheckKopecks ?? 0) / 100);
+		const netProfitRub = Math.round((k.netProfitKopecks ?? 0) / 100);
+		const ltvRub = Math.round((k.historicalCohortLtvKopecks ?? 0) / 100);
+		const cacRub = Math.round((k.cacKopecks ?? 0) / 100);
+
+		const cashRub = k.paymentBreakdown ? k.paymentBreakdown.cashRub : Math.round(revRub * 0.28);
+		const cardDmsRub = k.paymentBreakdown ? k.paymentBreakdown.cardDmsRub : Math.round(revRub * 0.54);
+		const sbpRub = k.paymentBreakdown ? k.paymentBreakdown.sbpRub : Math.round(revRub * 0.18);
+
 		return {
-			revenueFormatted: revFmt,
-			revenuePlanFormatted: planFmt,
+			revenueFormatted: formatRubles(revRub),
+			revenuePlanFormatted: formatRubles(planRub),
 			revenuePercent: planPct,
 			revenueDelta: delta,
 			occupancyPercent: k.chairOccupancyRatePercent ?? 0,
-			averageCheck: k.averageCheckFormatted || "0 ₽",
-			averageCheckDelta: k.primaryAverageCheckFormatted
-				? `Перв: ${k.primaryAverageCheckFormatted}`
-				: "0 ₽",
+			averageCheck: formatRubles(avgCheckRub),
+			averageCheckDelta: primaryAvgCheckRub > 0 ? `Перв: ${formatRubles(primaryAvgCheckRub)}` : "0 ₽",
 			primaryPatients: k.primaryPatientsCount ?? 0,
 			repeatPatients: k.repeatPatientsCount ?? 0,
 			primaryDelta: `${k.primaryPatientsPercent ?? 0}%`,
-			ltv: k.patientLtvFormatted || "0 ₽",
-			cac: k.cacFormatted || "0 ₽",
-			netProfit: k.netProfitFormatted || "0 ₽",
+			ltv: ltvRub > 0 ? formatRubles(ltvRub) : "0 ₽",
+			cac: cacRub > 0 ? formatRubles(cacRub) : "0 ₽",
+			netProfit: formatRubles(netProfitRub),
 			netMarginPercent: k.netMarginPercent ?? 0,
-			chairHourlyCostFormatted: `${econ.chairHourlyCostRub.toLocaleString("ru-RU")} ₽/ч`,
-			chairEffectiveHourlyYieldFormatted: `${econ.rentalEconomics.effectiveHourlyIncomeRub.toLocaleString("ru-RU")} ₽/ч`,
-			lostRevenueFromNoShowsFormatted: `${econ.noShowLostRevenueRub.toLocaleString("ru-RU")} ₽`,
-			paymentBreakdown: k.paymentBreakdown ?? (k.totalRevenueRub > 0 ? {
-				cashRub: Math.round(k.totalRevenueRub * 0.28),
-				cashPercent: 28,
-				cardDmsRub: Math.round(k.totalRevenueRub * 0.54),
-				cardDmsPercent: 54,
-				sbpRub: Math.round(k.totalRevenueRub * 0.18),
-				sbpPercent: 18,
-				totalRub: k.totalRevenueRub,
-			} : undefined),
+			chairHourlyCostFormatted: `${formatRubles(econ.chairHourlyCostRub)}/ч`,
+			chairEffectiveHourlyYieldFormatted: `${formatRubles(econ.rentalEconomics.effectiveHourlyIncomeRub)}/ч`,
+			lostRevenueFromNoShowsFormatted: formatRubles(econ.noShowLostRevenueRub),
+			paymentBreakdown: revRub > 0 ? {
+				cashRub,
+				cashPercent: k.paymentBreakdown?.cashPercent ?? 28,
+				cashFormatted: formatRubles(cashRub),
+				cardDmsRub,
+				cardDmsPercent: k.paymentBreakdown?.cardDmsPercent ?? 54,
+				cardDmsFormatted: formatRubles(cardDmsRub),
+				sbpRub,
+				sbpPercent: k.paymentBreakdown?.sbpPercent ?? 18,
+				sbpFormatted: formatRubles(sbpRub),
+				totalRub: revRub,
+			} : undefined,
 		};
 	}
 

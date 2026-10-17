@@ -1,7 +1,6 @@
 import { lazy, Suspense } from "react";
-import { ClinicAnalyticsDashboard } from "../../components/analytics/ClinicAnalyticsDashboard";
 import { CuratorDashboard } from "../../components/analytics/CuratorDashboard";
-import { DirectorExecutiveDashboard } from "../../components/analytics/DirectorExecutiveDashboard";
+import { ExecutiveDashboard } from "../../components/analytics/ExecutiveDashboard";
 import { LostPatientsPanel } from "../../components/analytics/LostPatientsPanel";
 import { MarketingAttributionDashboard } from "../../components/analytics/MarketingAttributionDashboard";
 import { RecallListPanel } from "../../components/patients/RecallListPanel";
@@ -33,8 +32,8 @@ export function AnalyticsSubDashboards({
 	return (
 		<>
 			{(analyticsSection === "executive" || analyticsSection === "clinic") && (
-				<DirectorExecutiveDashboard
-					hideHeaderToolbar={true}
+				<ExecutiveDashboard
+					hideHeaderToolbar={false}
 					period={
 						dateRange === "today"
 							? "day"
