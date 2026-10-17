@@ -1,32 +1,8 @@
-/**
- * DentalLabOrdersKanbanBoard.tsx — Каноническая 4-колоночная клиническая канбан-доска ЗТЛ.
- *
- * 4 ЖИЗНЕННЫХ СТАТУСА (SSOT):
- * 1. Слепок снят            (draft)
- * 2. В работе у техника    (sent_to_lab + warranty_rework)
- * 3. Доставлено в клинику   (fitting_scheduled / ready_in_clinic)
- * 4. Зафиксировано пациенту (installed_completed / delivered_to_patient)
- *
- * Оптимизация: DOM-виртуализация sliceDomList, contentVisibility: auto,
- * быстрый 1-клик перевод этапа и открытие единого SSOT-дравера DentalLabOrderDrawer.
- */
-
-import React from "react";
-import {
-	Calendar,
-	CheckCircle2,
-	Truck,
-	FileText,
-} from "lucide-react";
-import type {
-	LabWorkflowStatus,
-	DentalLabWorkflowOrder,
-} from "./dentalLabWorkflowEngine";
-import { sliceDomList } from "../../utils/domVirtualizationHelper";
-import {
-	DentalLabKanbanCard,
-	type CanonicalKanbanStageId,
-} from "./DentalLabKanbanCard";
+import React, { useState, useMemo } from "react";
+import { Calendar, CheckCircle2, FileText, Truck } from "lucide-react";
+import type { LabWorkflowStatus, DentalLabWorkflowOrder } from "./dentalLabWorkflowEngine";
+import type { CanonicalKanbanStageId } from "./DentalLabKanbanCard";
+import { KanbanColumn } from "./kanbanBoardModules/KanbanColumn";
 
 export interface DentalLabOrdersKanbanBoardProps {
 	readonly ordersByStage: Record<LabWorkflowStatus, DentalLabWorkflowOrder[]>;
@@ -41,9 +17,9 @@ export interface DentalLabOrdersKanbanBoardProps {
 	readonly onTechnicianComment: (order: DentalLabWorkflowOrder) => void;
 	readonly onRepeatFitting: (order: DentalLabWorkflowOrder) => void;
 	readonly onRequestWarrantyRework: (order: DentalLabWorkflowOrder) => void;
-	readonly onRescheduleAppointment?: ((order: DentalLabWorkflowOrder) => void) | undefined;
-	readonly onPartialDelivery?: ((order: DentalLabWorkflowOrder) => void) | undefined;
-	readonly onMoveOrderToColumn?: ((orderId: string, targetColumnId: CanonicalKanbanStageId) => void | Promise<void>) | undefined;
+	readonly onRescheduleAppointment?: (order: DentalLabWorkflowOrder) => void;
+	readonly onPartialDelivery?: (order: DentalLabWorkflowOrder) => void;
+	readonly onMoveOrderToColumn?: (orderId: string, targetColumnId: CanonicalKanbanStageId) => void | Promise<void>;
 }
 
 export interface CanonicalKanbanColumnDef {
@@ -55,198 +31,54 @@ export interface CanonicalKanbanColumnDef {
 }
 
 export const CANONICAL_4_KANBAN_COLUMNS: readonly CanonicalKanbanColumnDef[] = [
-	{
-		id: "draft",
-		title: "Отправлен в лабораторию",
-		shortTitle: "Отправлен в лабораторию",
-		icon: <FileText size={16} />,
-		colorHex: "#64748b",
-	},
-	{
-		id: "sent_to_lab",
-		title: "В работе у техника",
-		shortTitle: "В работе у техника",
-		icon: <Truck size={16} />,
-		colorHex: "#3b82f6",
-	},
-	{
-		id: "fitting_scheduled",
-		title: "Готов / Доставка в клинику",
-		shortTitle: "Готов / Доставка в клинику",
-		icon: <Calendar size={16} />,
-		colorHex: "#f59e0b",
-	},
-	{
-		id: "installed_completed",
-		title: "Припасован и зафиксирован",
-		shortTitle: "Припасован и зафиксирован",
-		icon: <CheckCircle2 size={16} />,
-		colorHex: "#10b981",
-	},
+	{ id: "draft", title: "Отправлен", shortTitle: "Отправлен", icon: <FileText size={16} />, colorHex: "#64748b" },
+	{ id: "sent_to_lab", title: "В работе у техника", shortTitle: "В работе", icon: <Truck size={16} />, colorHex: "#3b82f6" },
+	{ id: "fitting_scheduled", title: "В клинике / Готов к сдаче", shortTitle: "В клинике", icon: <Calendar size={16} />, colorHex: "#f59e0b" },
+	{ id: "installed_completed", title: "Сдан пациенту", shortTitle: "Сдан", icon: <CheckCircle2 size={16} />, colorHex: "#10b981" },
 ] as const;
 
-export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProps> = ({
-	ordersByStage,
-	stageLimits,
-	setStageLimits,
-	activeCardMenuOrderId,
-	setActiveCardMenuOrderId,
-	onInspectOrder,
-	onAdvanceStage,
-	onPrintBlank,
-	onAttachBitePhoto,
-	onTechnicianComment,
-	onRepeatFitting,
-	onRequestWarrantyRework,
-	onRescheduleAppointment,
-	onPartialDelivery,
-	onMoveOrderToColumn,
-}) => {
-	const [dragOverColumn, setDragOverColumn] = React.useState<CanonicalKanbanStageId | null>(null);
+/**
+ * 4-колоночная канбан-доска ЗТЛ (Мандат 8b: <= 120 строк).
+ */
+export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProps> = (props) => {
+	const [dragOverCol, setDragOverCol] = useState<CanonicalKanbanStageId | null>(null);
 
-	// Группировка заказов строго по 4 каноническим колонкам
-	const resolvedColumns = React.useMemo(() => {
-		const draftOrders = ordersByStage.draft || [];
-		const inLabOrders = [
-			...(ordersByStage.sent_to_lab || []),
-			...(ordersByStage.warranty_rework || []),
-		];
-		const inClinicOrders = ordersByStage.fitting_scheduled || [];
-		const installedOrders = ordersByStage.installed_completed || [];
-
-		return {
-			draft: draftOrders,
-			sent_to_lab: inLabOrders,
-			fitting_scheduled: inClinicOrders,
-			installed_completed: installedOrders,
-		};
-	}, [ordersByStage]);
+	const resolved = useMemo(() => ({
+		draft: props.ordersByStage.draft || [],
+		sent_to_lab: [...(props.ordersByStage.sent_to_lab || []), ...(props.ordersByStage.warranty_rework || [])],
+		fitting_scheduled: props.ordersByStage.fitting_scheduled || [],
+		installed_completed: props.ordersByStage.installed_completed || [],
+	}), [props.ordersByStage]);
 
 	return (
 		<main className="ztl-kanban-board" data-testid="canonical-4-stage-kanban-board">
 			{CANONICAL_4_KANBAN_COLUMNS.map((col) => {
-				const colOrders = resolvedColumns[col.id] || [];
-				const colLimit = stageLimits[col.id] ?? 40;
-				const stageSlice = sliceDomList(colOrders, colLimit, 0);
-
+				const colOrders = resolved[col.id] || [];
 				return (
-					<div
-						key={col.id}
-						className={`ztl-kanban-column ${dragOverColumn === col.id ? "is-drag-over" : ""}`}
-						data-testid={`kanban-column-${col.id}`}
-						onDragOver={(e) => {
-							e.preventDefault();
-							e.dataTransfer.dropEffect = "move";
-							if (dragOverColumn !== col.id) {
-								setDragOverColumn(col.id);
-							}
-						}}
-						onDragLeave={(e) => {
-							if (e.currentTarget.contains(e.relatedTarget as Node)) return;
-							setDragOverColumn(null);
-						}}
+					<KanbanColumn
+						key={col.id} colId={col.id} colTitle={col.title} colIcon={col.icon} orders={colOrders}
+						isDragOver={dragOverCol === col.id} limit={props.stageLimits[col.id] ?? 40}
+						onIncreaseLimit={() => props.setStageLimits((prev) => ({ ...prev, [col.id]: (prev[col.id] ?? 40) + 40 }))}
+						activeMenuId={props.activeCardMenuOrderId}
+						onToggleMenu={(id, e) => { e.stopPropagation(); props.setActiveCardMenuOrderId((p) => p === id ? null : id); }}
+						onCloseMenu={() => props.setActiveCardMenuOrderId(null)}
+						onInspectOrder={props.onInspectOrder} onAdvanceStage={props.onAdvanceStage}
+						onPrintBlank={props.onPrintBlank} onAttachBitePhoto={props.onAttachBitePhoto}
+						onTechnicianComment={props.onTechnicianComment} onRepeatFitting={props.onRepeatFitting}
+						onRequestWarrantyRework={props.onRequestWarrantyRework}
+						onRescheduleAppointment={props.onRescheduleAppointment} onPartialDelivery={props.onPartialDelivery}
+						onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (dragOverCol !== col.id) setDragOverCol(col.id); }}
+						onDragLeave={(e) => { if (e.currentTarget.contains(e.relatedTarget as Node)) return; setDragOverCol(null); }}
 						onDrop={async (e) => {
-							e.preventDefault();
-							setDragOverColumn(null);
+							e.preventDefault(); setDragOverCol(null);
 							const orderId = e.dataTransfer.getData("text/plain");
-							if (orderId && onMoveOrderToColumn) {
-								await onMoveOrderToColumn(orderId, col.id);
-							}
+							if (orderId && props.onMoveOrderToColumn) await props.onMoveOrderToColumn(orderId, col.id);
 						}}
-					>
-						<div className="ztl-column-header">
-							<div className="ztl-column-title-wrap">
-								<span className="ztl-column-icon">{col.icon}</span>
-								<h3 className="ztl-column-title" title={col.title}>
-									{col.title}
-								</h3>
-							</div>
-							<span
-								className={`ztl-column-count ${colOrders.length > 0 ? "has-items" : ""}`}
-								data-testid={`column-count-${col.id}`}
-							>
-								{colOrders.length}
-							</span>
-						</div>
-
-						<div className="ztl-column-cards">
-							{stageSlice.visibleItems.map((order) => (
-								<DentalLabKanbanCard
-									key={order.id}
-									order={order}
-									columnId={col.id}
-									isMenuOpen={activeCardMenuOrderId === order.id}
-									onToggleMenu={(e) => {
-										e.stopPropagation();
-										setActiveCardMenuOrderId((prev) =>
-											prev === order.id ? null : order.id,
-										);
-									}}
-									onCloseMenu={() => setActiveCardMenuOrderId(null)}
-									onInspectOrder={onInspectOrder}
-									onAdvanceStage={onAdvanceStage}
-									onPrintBlank={onPrintBlank}
-									onAttachBitePhoto={onAttachBitePhoto}
-									onTechnicianComment={onTechnicianComment}
-									onRepeatFitting={onRepeatFitting}
-									onRequestWarrantyRework={onRequestWarrantyRework}
-									onRescheduleAppointment={onRescheduleAppointment}
-									onPartialDelivery={onPartialDelivery}
-								/>
-							))}
-
-							{stageSlice.hasMore && (
-								<div style={{ padding: "8px 4px", textAlign: "center" }}>
-									<button
-										type="button"
-										className="ztl-chip"
-										style={{
-											width: "100%",
-											justifyContent: "center",
-											padding: "6px 10px",
-											fontSize: "11px",
-											fontWeight: 600,
-										}}
-										onClick={() =>
-											setStageLimits((prev) => ({
-												...prev,
-												[col.id]: (prev[col.id] ?? 40) + 40,
-											}))
-										}
-									>
-										Показать ещё 40 нарядов (показано {stageSlice.displayedCount} из{" "}
-										{stageSlice.totalCount})
-									</button>
-								</div>
-							)}
-
-							{colOrders.length === 0 && (
-								<div
-									className="ztl-kanban-empty-column"
-									style={{
-										textAlign: "center",
-										padding: "36px 12px",
-										color: "var(--muted, #94a3b8)",
-										fontSize: "12px",
-										border: "1.5px dashed var(--line, #cbd5e1)",
-										borderRadius: "8px",
-										margin: "8px 0",
-										display: "flex",
-										flexDirection: "column",
-										alignItems: "center",
-										justifyContent: "center",
-										minHeight: "140px",
-										gap: "6px",
-									}}
-									data-testid={`empty-column-${col.id}`}
-								>
-									<span>Нет нарядов в этом статусе</span>
-								</div>
-							)}
-						</div>
-					</div>
+					/>
 				);
 			})}
 		</main>
 	);
 };
+
+export default DentalLabOrdersKanbanBoard;

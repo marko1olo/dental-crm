@@ -139,6 +139,8 @@ describe("dentalLabOrderEngine: Стоматологический трекер 
 
 		it("parseFdiTeethString парсит одиночные зубы, списки и диапазоны", () => {
 			assert.deepEqual(parseFdiTeethString("16"), [16]);
+			assert.deepEqual(parseFdiTeethString("1.6"), [16]); // клиническая запись через точку
+			assert.deepEqual(parseFdiTeethString("1.6, 2.1"), [16, 21]); // мульти-препарирование
 			assert.deepEqual(parseFdiTeethString("11, 21, 22"), [11, 21, 22]);
 			assert.deepEqual(parseFdiTeethString("46; 47 48"), [46, 47, 48]);
 			assert.deepEqual(parseFdiTeethString("11, 11, 21"), [11, 21]); // исключение дубликатов

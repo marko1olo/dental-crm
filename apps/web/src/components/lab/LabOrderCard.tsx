@@ -191,7 +191,7 @@ export function LabOrderCard({
 						<button
 							type="button"
 							onClick={() => handleOpenReadyInClinicPrompt(order)}
-							className="min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+							className="primary-button min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
 							title="Работа готова в клинике! Записать пациента на примерку / фиксацию и отправить SMS / WhatsApp"
 							data-testid={`lab-order-ready-schedule-btn-${order.id}`}
 						>
@@ -202,7 +202,7 @@ export function LabOrderCard({
 						<button
 							type="button"
 							onClick={() => handleOpenPrintOrder(order)}
-							className="min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-[var(--teal)] text-[var(--on-teal,#ffffff)] hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+							className="primary-button min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-[var(--teal)] text-[var(--on-teal,#ffffff)] hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
 							title="Распечатать наряд в зуботехническую лабораторию"
 							data-testid={`lab-order-print-ztl1-btn-${order.id}`}
 						>
@@ -216,7 +216,7 @@ export function LabOrderCard({
 						<button
 							type="button"
 							onClick={() => handleOpenPrintOrder(order)}
-							className="min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+							className="secondary-button min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
 							title="Распечатать наряд в зуботехническую лабораторию"
 							data-testid={`lab-order-print-ztl1-btn-${order.id}`}
 						>
@@ -227,7 +227,7 @@ export function LabOrderCard({
 						<button
 							type="button"
 							onClick={() => handleOpenTracking(order)}
-							className="min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+							className="secondary-button min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
 							title="Сменить этап или статус изготовления"
 							data-testid={`lab-order-stage-status-btn-${order.id}`}
 						>
@@ -241,7 +241,7 @@ export function LabOrderCard({
 						<button
 							type="button"
 							onClick={() => setOpenMenuOrderId(openMenuOrderId === order.id ? null : (order.id || null))}
-							className="w-11 sm:w-8 h-11 sm:h-8 min-w-[44px] sm:min-w-[32px] min-h-[44px] sm:min-h-[32px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
+							className="icon-button w-11 sm:w-8 h-11 sm:h-8 min-w-[44px] sm:min-w-[32px] min-h-[44px] sm:min-h-[32px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
 							aria-label="Вторичные действия с нарядом ЗТЛ"
 							aria-expanded={openMenuOrderId === order.id}
 							title="Вторичные действия: фото прикуса, комментарий технику, повторная примерка, рекламация"

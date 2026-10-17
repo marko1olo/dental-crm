@@ -99,7 +99,7 @@ export const DesktopExecutiveView: React.FC<DesktopExecutiveViewProps> = ({
 					<div style={{ color: "var(--muted, #64748b)", margin: "0.5rem 0 1.5rem" }}>
 						{error || "Проверьте сетевое подключение и обновите страницу"}
 					</div>
-					<button type="button" className="executive-refresh-btn" onClick={reload}>
+					<button type="button" className="secondary-button executive-refresh-btn" onClick={reload}>
 						<RefreshCw size={16} /> Повторить попытку
 					</button>
 				</div>
@@ -134,6 +134,7 @@ export const DesktopExecutiveView: React.FC<DesktopExecutiveViewProps> = ({
 						<div className="executive-period-toggle" role="group" aria-label="Период отчета">
 							{([
 								{ key: "day", label: "Сегодня" },
+								{ key: "yesterday", label: "Вчера" },
 								{ key: "week", label: "Неделя" },
 								{ key: "month", label: "Месяц" },
 								{ key: "quarter", label: "Квартал" },
@@ -246,7 +247,7 @@ export const DesktopExecutiveView: React.FC<DesktopExecutiveViewProps> = ({
 										<th style={{ textAlign: "right" }}>Занято</th>
 										<th style={{ textAlign: "right" }}>Доступно</th>
 										<th style={{ textAlign: "center" }}>Загрузка</th>
-										<th style={{ textAlign: "right" }}>Упущенный простой</th>
+										<th style={{ textAlign: "right" }}>Простой (₽)</th>
 									</tr>
 								</thead>
 								<tbody>

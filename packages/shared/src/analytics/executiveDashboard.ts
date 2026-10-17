@@ -243,7 +243,15 @@ export interface ExecutiveDepartmentItem {
 
 // ─── 3. UNIT-ЭКОНОМИКА И ОПЕРАЦИОННЫЕ KPI РУКОВОДИТЕЛЯ ──────────────────────
 
-export const executivePeriodSchema = z.enum(["day", "week", "month", "quarter", "year"]);
+export const executivePeriodSchema = z.enum([
+	"day",
+	"yesterday",
+	"week",
+	"month",
+	"quarter",
+	"year",
+	"custom",
+]);
 export type ExecutivePeriod = z.infer<typeof executivePeriodSchema>;
 
 export type ExecutiveKpisSummary = ExecutiveKpis;
@@ -270,6 +278,20 @@ export interface ExecutiveKpis {
 	readonly cogsFormatted?: string;
 	readonly opexKopecks?: number;
 	readonly opexFormatted?: string;
+
+	// P&L соло-врача и клиники (Мандат 8n)
+	readonly doctorPayrollKopecks?: number;
+	readonly doctorPayrollRub?: number;
+	readonly doctorPayrollFormatted?: string;
+	readonly doctorNetIncomeKopecks?: number;
+	readonly doctorNetIncomeRub?: number;
+	readonly doctorNetIncomeFormatted?: string;
+	readonly materialsCostKopecks?: number;
+	readonly materialsCostRub?: number;
+	readonly materialsCostFormatted?: string;
+	readonly labCostKopecks?: number;
+	readonly labCostRub?: number;
+	readonly labCostFormatted?: string;
 	
 	// Пациенты и чеки
 	readonly totalPatientsCount: number;
@@ -582,6 +604,10 @@ export interface CalculateExecutiveKpisParams {
 	readonly opexKopecks?: number;
 	readonly netMarginPercent?: number;
 	readonly paymentBreakdown?: ExecutivePaymentBreakdown;
+	readonly doctorPayrollKopecks?: number;
+	readonly doctorNetIncomeKopecks?: number;
+	readonly materialsCostKopecks?: number;
+	readonly labCostKopecks?: number;
 }
 
 /**
@@ -672,11 +698,13 @@ export function calculateExecutiveKpisSummary(
 			: 0.0;
 
 	const PERIOD_LABELS: Record<ExecutivePeriod, string> = {
-		day: "Сегодня (1 день)",
-		week: "Текущая неделя (7 дней)",
+		day: "Сегодня",
+		yesterday: "Вчера",
+		week: "Текущая неделя",
 		month: "Текущий месяц",
 		quarter: "Текущий квартал",
 		year: "Текущий год",
+		custom: "Свой диапазон",
 	};
 
 	// Себестоимость, операционные расходы и чистая прибыль P&L
@@ -691,6 +719,20 @@ export function calculateExecutiveKpisSummary(
 		: revKop > 0
 			? Number(((netProfitKop / revKop) * 100).toFixed(1))
 			: 0.0;
+
+	// P&L соло-врача и начисление врачам (Мандат 8n)
+	const materialsKop = params.materialsCostKopecks !== undefined
+		? Math.max(0, Math.round(params.materialsCostKopecks))
+		: Math.round(cogsKop * 0.35);
+	const labKop = params.labCostKopecks !== undefined
+		? Math.max(0, Math.round(params.labCostKopecks))
+		: Math.round(cogsKop * 0.25);
+	const docPayrollKop = params.doctorPayrollKopecks !== undefined
+		? Math.max(0, Math.round(params.doctorPayrollKopecks))
+		: Math.round(revKop * 0.28);
+	const docNetIncomeKop = params.doctorNetIncomeKopecks !== undefined
+		? Math.max(0, Math.round(params.doctorNetIncomeKopecks))
+		: Math.max(0, docPayrollKop);
 
 	return {
 		period: params.period,
@@ -710,6 +752,18 @@ export function calculateExecutiveKpisSummary(
 		cogsFormatted: formatKopecksRu(cogsKop),
 		opexKopecks: opexKop,
 		opexFormatted: formatKopecksRu(opexKop),
+		doctorPayrollKopecks: docPayrollKop,
+		doctorPayrollRub: Math.round(docPayrollKop / 100),
+		doctorPayrollFormatted: formatKopecksRu(docPayrollKop),
+		doctorNetIncomeKopecks: docNetIncomeKop,
+		doctorNetIncomeRub: Math.round(docNetIncomeKop / 100),
+		doctorNetIncomeFormatted: formatKopecksRu(docNetIncomeKop),
+		materialsCostKopecks: materialsKop,
+		materialsCostRub: Math.round(materialsKop / 100),
+		materialsCostFormatted: formatKopecksRu(materialsKop),
+		labCostKopecks: labKop,
+		labCostRub: Math.round(labKop / 100),
+		labCostFormatted: formatKopecksRu(labKop),
 		totalPatientsCount: totalPatients,
 		primaryPatientsCount: primaryPatients,
 		repeatPatientsCount: repeatPatients,

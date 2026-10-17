@@ -31,7 +31,7 @@ export function AnalyticsDashboardView() {
 		<button
 			type="button"
 			onClick={retry}
-			className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--teal)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] transition-colors cursor-pointer"
+			className="secondary-button inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--teal)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] transition-colors cursor-pointer"
 		>
 			<RefreshCw size={14} aria-hidden="true" />
 			Повторить
@@ -140,7 +140,7 @@ export function AnalyticsDashboardView() {
 														window.location.hash = "#schedule";
 													}
 												}}
-												className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)] text-white text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+												className="primary-button inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)] text-white text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer"
 											>
 												Записать пациента
 											</button>
@@ -151,7 +151,7 @@ export function AnalyticsDashboardView() {
 														window.location.hash = "#shift";
 													}
 												}}
-												className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--teal)] transition-colors cursor-pointer"
+												className="secondary-button inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--teal)] transition-colors cursor-pointer"
 											>
 												Перейти в кассу
 											</button>

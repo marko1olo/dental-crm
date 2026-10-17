@@ -2,17 +2,36 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const CONV_ID = "4fb8f814-897a-4fe7-8548-cbfee23591c9";
+const CONV_ID = "fc1b5632-f014-45e7-a64c-bdf9f9e2e463";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`;
 const OUT_DOCS = "C:/Clinic_MVP/dental-crm/docs/proofs/analytics";
-const WEB_URL = "http://127.0.0.1:5173";
 
 await mkdir(OUT_CONV, { recursive: true });
 await mkdir(OUT_DOCS, { recursive: true });
 
+async function getBaseUrl() {
+	for (const port of [5173, 5174, 5175, 5176]) {
+		try {
+			const res = await fetch(`http://127.0.0.1:${port}/`);
+			if (res.ok) {
+				console.log(`Detected live dev server at port ${port}`);
+				return `http://127.0.0.1:${port}`;
+			}
+		} catch {}
+	}
+	return "http://127.0.0.1:5173";
+}
+
 async function run() {
 	console.log("=== STARTING EXECUTIVE COCKPIT PROOF CAPTURE ===");
-	const browser = await chromium.launch({ channel: "msedge", headless: true });
+	const baseUrl = await getBaseUrl();
+	console.log(`Target URL: ${baseUrl}`);
+
+	const browser = await chromium.launch({
+		channel: "chrome",
+		headless: true,
+		args: ["--no-sandbox", "--disable-setuid-sandbox"],
+	});
 
 	const setupPage = async (page, theme, isMobile = false) => {
 		await page.addInitScript(({ theme, isMobile }) => {
@@ -72,10 +91,16 @@ async function run() {
 			deviceScaleFactor: 1,
 		});
 		const pagePcLight = await contextPcLight.newPage();
+		pagePcLight.on("console", (msg) => console.log(`[PC Console]:`, msg.text()));
+		pagePcLight.on("pageerror", (err) => console.error("[PC Error]:", err));
+
 		await setupPage(pagePcLight, "light", false);
-		await pagePcLight.goto(`${WEB_URL}/#analytics`, { waitUntil: "domcontentloaded" });
-		await pagePcLight.waitForSelector(".boot-state", { state: "detached", timeout: 40000 }).catch(() => {});
-		await pagePcLight.waitForTimeout(3000);
+		await pagePcLight.goto(`${baseUrl}/?demo=true#analytics`, { waitUntil: "commit", timeout: 60000 });
+		console.log("Waiting for boot-state to detach...");
+		await pagePcLight.waitForSelector(".boot-state", { state: "detached", timeout: 60000 }).catch(() => {});
+		console.log("Waiting for .executive-dashboard to be visible...");
+		await pagePcLight.waitForSelector(".executive-dashboard", { state: "visible", timeout: 60000 });
+		await pagePcLight.waitForTimeout(2000);
 		await applyThemeAndClean(pagePcLight, "light");
 		await pagePcLight.waitForTimeout(1000);
 
@@ -84,6 +109,21 @@ async function run() {
 		await pagePcLight.screenshot({ path: path.join(OUT_DOCS, pcLightFile), fullPage: false });
 		await pagePcLight.screenshot({ path: path.join(OUT_CONV, pcLightFile), fullPage: false });
 		console.log(`Saved ${pcLightFile} successfully!`);
+
+		// Capture P&L Modal on PC Light
+		console.log("\n--- Opening P&L Modal on PC Light ---");
+		const pnlBtn = pagePcLight.locator('[data-testid="desktop-open-pnl-btn"]');
+		if (await pnlBtn.count() > 0) {
+			await pnlBtn.click();
+			console.log("Waiting for financial modal...");
+			await pagePcLight.waitForSelector('[data-testid="financial-analytics-modal"]', { state: "visible", timeout: 20000 });
+			await pagePcLight.waitForTimeout(2000);
+			const pnlModalFile = "executive_pnl_modal_pc_light_1440x900.png";
+			console.log(`Saving ${pnlModalFile}...`);
+			await pagePcLight.screenshot({ path: path.join(OUT_DOCS, pnlModalFile), fullPage: false });
+			await pagePcLight.screenshot({ path: path.join(OUT_CONV, pnlModalFile), fullPage: false });
+			console.log(`Saved ${pnlModalFile} successfully!`);
+		}
 		await contextPcLight.close();
 
 		// ==========================================
@@ -95,10 +135,13 @@ async function run() {
 			deviceScaleFactor: 1,
 		});
 		const pagePcDark = await contextPcDark.newPage();
+		pagePcDark.on("pageerror", (err) => console.error("[PC Dark Error]:", err));
+
 		await setupPage(pagePcDark, "dark", false);
-		await pagePcDark.goto(`${WEB_URL}/#analytics`, { waitUntil: "domcontentloaded" });
-		await pagePcDark.waitForSelector(".boot-state", { state: "detached", timeout: 40000 }).catch(() => {});
-		await pagePcDark.waitForTimeout(3000);
+		await pagePcDark.goto(`${baseUrl}/?demo=true#analytics`, { waitUntil: "commit", timeout: 60000 });
+		await pagePcDark.waitForSelector(".boot-state", { state: "detached", timeout: 60000 }).catch(() => {});
+		await pagePcDark.waitForSelector(".executive-dashboard", { state: "visible", timeout: 60000 });
+		await pagePcDark.waitForTimeout(2000);
 		await applyThemeAndClean(pagePcDark, "dark");
 		await pagePcDark.waitForTimeout(1000);
 
@@ -120,10 +163,14 @@ async function run() {
 			deviceScaleFactor: 2,
 		});
 		const pageMobileLight = await contextMobileLight.newPage();
+		pageMobileLight.on("console", (msg) => console.log(`[Mobile Light Console]:`, msg.text()));
+		pageMobileLight.on("pageerror", (err) => console.error("[Mobile Light Error]:", err));
+
 		await setupPage(pageMobileLight, "light", true);
-		await pageMobileLight.goto(`${WEB_URL}/#analytics`, { waitUntil: "domcontentloaded" });
-		await pageMobileLight.waitForSelector(".boot-state", { state: "detached", timeout: 40000 }).catch(() => {});
-		await pageMobileLight.waitForTimeout(3000);
+		await pageMobileLight.goto(`${baseUrl}/?demo=true#analytics`, { waitUntil: "commit", timeout: 60000 });
+		await pageMobileLight.waitForSelector(".boot-state", { state: "detached", timeout: 60000 }).catch(() => {});
+		await pageMobileLight.waitForSelector(".mobile-exec-dashboard, [data-testid='mobile-executive-dashboard']", { state: "visible", timeout: 60000 });
+		await pageMobileLight.waitForTimeout(2000);
 		await applyThemeAndClean(pageMobileLight, "light");
 		await pageMobileLight.waitForTimeout(1000);
 
@@ -145,10 +192,13 @@ async function run() {
 			deviceScaleFactor: 2,
 		});
 		const pageMobileDark = await contextMobileDark.newPage();
+		pageMobileDark.on("pageerror", (err) => console.error("[Mobile Dark Error]:", err));
+
 		await setupPage(pageMobileDark, "dark", true);
-		await pageMobileDark.goto(`${WEB_URL}/#analytics`, { waitUntil: "domcontentloaded" });
-		await pageMobileDark.waitForSelector(".boot-state", { state: "detached", timeout: 40000 }).catch(() => {});
-		await pageMobileDark.waitForTimeout(3000);
+		await pageMobileDark.goto(`${baseUrl}/?demo=true#analytics`, { waitUntil: "commit", timeout: 60000 });
+		await pageMobileDark.waitForSelector(".boot-state", { state: "detached", timeout: 60000 }).catch(() => {});
+		await pageMobileDark.waitForSelector(".mobile-exec-dashboard, [data-testid='mobile-executive-dashboard']", { state: "visible", timeout: 60000 });
+		await pageMobileDark.waitForTimeout(2000);
 		await applyThemeAndClean(pageMobileDark, "dark");
 		await pageMobileDark.waitForTimeout(1000);
 
@@ -159,7 +209,7 @@ async function run() {
 		console.log(`Saved ${mobileDarkFile} successfully!`);
 		await contextMobileDark.close();
 
-		console.log("\n🎉 ALL 4 RED TEAM PROOFS CAPTURED SUCCESSFULLY!");
+		console.log("\n🎉 ALL 4 RED TEAM PROOFS + MODAL CAPTURED SUCCESSFULLY!");
 	} finally {
 		await browser.close();
 	}

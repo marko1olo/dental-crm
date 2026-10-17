@@ -243,7 +243,7 @@ export const FinancialDepartmentsSection: React.FC<FinancialDepartmentsSectionPr
 				<button
 					type="button"
 					onClick={onToggleDepts}
-					className="fin-analytics-toggle-btn"
+					className="secondary-button fin-analytics-toggle-btn"
 					aria-expanded={isDeptsExpanded}
 					data-testid="toggle-depts-btn"
 				>
@@ -261,14 +261,8 @@ export const FinancialDepartmentsSection: React.FC<FinancialDepartmentsSectionPr
 					<button
 						type="button"
 						onClick={onToggleDepts}
-						style={{
-							background: "none",
-							border: "none",
-							color: "var(--teal)",
-							fontWeight: 600,
-							cursor: "pointer",
-							fontSize: 11,
-						}}
+						className="secondary-button fin-analytics-toggle-btn"
+						style={{ fontSize: 11, height: 26, minHeight: 26 }}
 					>
 						Развернуть показатели отделений →
 					</button>
@@ -378,7 +372,7 @@ export const FinancialExpensesSection: React.FC<FinancialExpensesSectionProps> =
 				<button
 					type="button"
 					onClick={onToggleExpenses}
-					className="fin-analytics-toggle-btn"
+					className="secondary-button fin-analytics-toggle-btn"
 					aria-expanded={isExpensesExpanded}
 					data-testid="toggle-expenses-btn"
 				>
@@ -398,14 +392,8 @@ export const FinancialExpensesSection: React.FC<FinancialExpensesSectionProps> =
 					<button
 						type="button"
 						onClick={onToggleExpenses}
-						style={{
-							background: "none",
-							border: "none",
-							color: "var(--teal)",
-							fontWeight: 600,
-							cursor: "pointer",
-							fontSize: 11,
-						}}
+						className="secondary-button fin-analytics-toggle-btn"
+						style={{ fontSize: 11, height: 26, minHeight: 26 }}
 					>
 						Развернуть классификатор статей →
 					</button>

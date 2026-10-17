@@ -213,7 +213,7 @@ export function LabOrdersTable({
 											<button
 												type="button"
 												onClick={() => onOpenReadyInClinicPrompt(order)}
-												className="h-7 min-h-[28px] px-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+												className="primary-button h-7 min-h-[28px] px-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
 												title="Работа готова в клинике! Записать пациента на прием"
 												data-testid={`lab-order-table-schedule-btn-${order.id}`}
 											>
@@ -224,7 +224,7 @@ export function LabOrdersTable({
 											<button
 												type="button"
 												onClick={() => onOpenPrintOrder(order)}
-												className="h-7 min-h-[28px] px-2 rounded-lg border border-teal-600/30 bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-semibold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+												className="secondary-button h-7 min-h-[28px] px-2 rounded-lg border border-teal-600/30 bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-semibold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
 												title="Распечатать наряд в зуботехническую лабораторию"
 												data-testid={`lab-order-table-print-btn-${order.id}`}
 											>
@@ -236,7 +236,7 @@ export function LabOrdersTable({
 										<button
 											type="button"
 											onClick={() => onOpenTracking(order)}
-											className="h-7 min-h-[28px] w-7 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
+											className="icon-button h-7 min-h-[28px] w-7 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
 											title="Этапы изготовления в лаборатории"
 											data-testid={`lab-order-table-track-btn-${order.id}`}
 										>
@@ -247,7 +247,7 @@ export function LabOrdersTable({
 											<button
 												type="button"
 												onClick={() => onView3DScan(order)}
-												className="h-7 min-h-[28px] px-2 rounded-lg border border-teal-500/30 bg-teal-500/15 hover:bg-teal-500/25 text-teal-700 dark:text-teal-300 font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+												className="secondary-button h-7 min-h-[28px] px-2 rounded-lg border border-teal-500/30 bg-teal-500/15 hover:bg-teal-500/25 text-teal-700 dark:text-teal-300 font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
 												title="Открыть прикрепленный 3D-скан (STL/PLY)"
 												data-testid={`lab-order-table-view-scan-btn-${order.id}`}
 											>
@@ -264,7 +264,7 @@ export function LabOrdersTable({
 														openMenuOrderId === order.id ? null : (order.id ?? null),
 													)
 												}
-												className="h-7 min-h-[28px] w-7 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
+												className="icon-button h-7 min-h-[28px] w-7 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
 												aria-label="Вторичные действия"
 												data-testid={`lab-order-table-menu-btn-${order.id}`}
 											>

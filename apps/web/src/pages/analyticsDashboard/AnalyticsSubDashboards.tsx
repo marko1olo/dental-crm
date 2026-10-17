@@ -37,16 +37,19 @@ export function AnalyticsSubDashboards({
 					period={
 						dateRange === "today"
 							? "day"
-							: dateRange === "week"
-								? "week"
-								: dateRange === "quarter"
-									? "quarter"
-									: dateRange === "year"
-										? "year"
-										: "month"
+							: dateRange === "yesterday"
+								? "yesterday"
+								: dateRange === "week"
+									? "week"
+									: dateRange === "quarter"
+										? "quarter"
+										: dateRange === "year"
+											? "year"
+											: "month"
 					}
 					onPeriodChange={(p) => {
 						if (p === "day") setDateRange("today");
+						else if (p === "yesterday") setDateRange("yesterday");
 						else if (p === "week") setDateRange("week");
 						else if (p === "month") setDateRange("month");
 						else if (p === "quarter") setDateRange("quarter");

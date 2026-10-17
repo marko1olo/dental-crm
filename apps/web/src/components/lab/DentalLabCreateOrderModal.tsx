@@ -7,6 +7,7 @@ import React from "react";
 import type { DentalLabCreateOrderModalProps } from "./orderCreateModules/labOrderCreateTypes";
 import { DentalLabOrderDrawer } from "./DentalLabOrderDrawer";
 import type { DentalLabOrderRecord } from "./dentalLabOrderEngine";
+import { checkLabDeadlineAndAlert } from "./dentalLabWorkflowEngine";
 
 export type { DentalLabCreateOrderModalProps };
 
@@ -67,15 +68,10 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 				clinicNetProfitRub: Math.round(((order.patientPriceKopecks - order.ztlCostKopecks) * (1 - (order.doctorSharePercent || 20) / 100)) / 100),
 				isBalanced: true,
 			},
-			delayAlert: {
-				hasAlert: false,
-				isDelayedAlert: false,
-				severity: "OK",
-				badgeTextRu: "В графике",
-				messageRu: "В графике",
-				actionRu: "Действий не требуется",
-				daysUntilDeadline: 5,
-			},
+			delayAlert: checkLabDeadlineAndAlert({
+				expectedLabDate: order.deadlineDate || new Date().toISOString(),
+				scheduledVisitDate: order.scheduledVisitDate,
+			}),
 			isDelayedAlert: false,
 			createdAtIso: new Date().toISOString(),
 			updatedAtIso: new Date().toISOString(),

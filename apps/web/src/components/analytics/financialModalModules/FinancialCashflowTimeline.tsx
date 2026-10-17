@@ -89,7 +89,7 @@ export const FinancialCashflowTimeline: React.FC<FinancialCashflowTimelineProps>
 				<button
 					type="button"
 					onClick={onToggleCashBoxes}
-					className="fin-analytics-toggle-btn"
+					className="secondary-button fin-analytics-toggle-btn"
 					aria-expanded={isCashBoxesExpanded}
 					data-testid="toggle-cashboxes-btn"
 				>
@@ -107,14 +107,8 @@ export const FinancialCashflowTimeline: React.FC<FinancialCashflowTimelineProps>
 					<button
 						type="button"
 						onClick={onToggleCashBoxes}
-						style={{
-							background: "none",
-							border: "none",
-							color: "var(--teal)",
-							fontWeight: 600,
-							cursor: "pointer",
-							fontSize: 11,
-						}}
+						className="secondary-button fin-analytics-toggle-btn"
+						style={{ fontSize: 11, height: 26, minHeight: 26 }}
 					>
 						Развернуть балансы касс →
 					</button>

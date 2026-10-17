@@ -97,8 +97,12 @@ export async function registerExecutiveRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		try {
-			const { period = "month" } = request.query as { period?: string };
-			const range = resolveExecutiveDateRange(period);
+			const { period = "month", from, to } = request.query as {
+				period?: string;
+				from?: string;
+				to?: string;
+			};
+			const range = resolveExecutiveDateRange(period, from, to);
 
 			const { departments, activeDoctorsCount, topDoctors, topProcedures } =
 				await queryExecutiveDepartmentsAndDoctors(orgId, range.startDate);

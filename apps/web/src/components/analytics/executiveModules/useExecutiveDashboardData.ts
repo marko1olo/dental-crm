@@ -206,6 +206,19 @@ export function useExecutiveDashboardData(
 			["CAC", kpis.cacFormatted, period],
 		];
 
+		if (periodMetrics.doctorPayrollFormatted) {
+			csvRows.push(["ФОТ врача к выплате", periodMetrics.doctorPayrollFormatted, period]);
+		}
+		if (periodMetrics.materialsCostFormatted) {
+			csvRows.push(["Расходные материалы", periodMetrics.materialsCostFormatted, period]);
+		}
+		if (periodMetrics.labCostFormatted) {
+			csvRows.push(["Зуботехническая лаборатория (ЗТЛ)", periodMetrics.labCostFormatted, period]);
+		}
+		if (periodMetrics.directCogsFormatted) {
+			csvRows.push(["Прямые клинические расходы (COGS)", periodMetrics.directCogsFormatted, period]);
+		}
+
 		if (kpis.paymentBreakdown) {
 			const pb = kpis.paymentBreakdown;
 			csvRows.push(["Оплата наличными (касса)", `${pb.cashFormatted} (${pb.cashPercent}%)`, period]);
@@ -242,7 +255,7 @@ export function useExecutiveDashboardData(
 			`dente_executive_pnl_${period}_${new Date().toISOString().slice(0, 10)}.csv`,
 		);
 		showToast(`Директорский P&L отчет за «${period}» экспортирован в CSV`, "success");
-	}, [payload, period, chairsData]);
+	}, [payload, period, chairsData, periodMetrics]);
 
 	return {
 		period,

@@ -25,10 +25,13 @@
 	align-items: center;
 	justify-content: space-between;
 	gap: 10px;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	padding-bottom: 6px;
 	border-bottom: 1px solid var(--line);
-	min-height: 32px;
+	min-height: 36px;
+	max-height: 36px;
+	height: 36px;
+	box-sizing: border-box;
 }
 
 /* ─── Вкладки разделов аналитики (Compact 32-36px) ─────────── */
@@ -89,9 +92,16 @@
 
 .analytics-header-title-group {
 	display: flex;
-	align-items: baseline;
+	align-items: center;
 	gap: 12px;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
+	flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+	.analytics-toolbar--executive-mobile-hidden {
+		display: none !important;
+	}
 }
 
 .analytics-title {
@@ -529,26 +539,61 @@
 
 @media (max-width: 640px) {
 	.analytics-dashboard {
-		gap: 10px;
-		padding: 10px 12px;
+		gap: 8px;
+		padding: 8px 10px;
 	}
 
 	.analytics-header {
-		flex-direction: column;
-		align-items: stretch;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
 		gap: 8px;
-		padding-bottom: 8px;
+		padding-bottom: 6px;
+		min-height: 36px;
+		height: auto;
+		flex-wrap: wrap;
+	}
+
+	.analytics-header-title-group {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		flex-wrap: nowrap;
+	}
+
+	.analytics-title {
+		font-size: 1.125rem;
+		white-space: nowrap;
+		flex-shrink: 0;
 	}
 
 	.analytics-section-tabs {
-		gap: 6px;
-		padding-bottom: 6px;
-		margin-bottom: 8px;
+		gap: 4px;
+		padding-bottom: 0;
+		margin-bottom: 0;
+		border-bottom: none;
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		flex-shrink: 1;
+		min-width: 0;
 	}
 
-	.analytics-section-tabs button {
-		min-height: 36px;
-		height: 36px;
+	.analytics-section-tabs button,
+	.analytics-tab-btn {
+		min-height: 32px;
+		height: 32px;
+		max-height: 32px;
+		padding: 0 8px;
+		font-size: 12px;
+		white-space: nowrap;
+		flex-shrink: 0;
+	}
+
+	.analytics-tab-btn--desktop-only {
+		display: none !important;
 	}
 
 	.analytics-toolbar {

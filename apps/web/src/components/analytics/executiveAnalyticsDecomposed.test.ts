@@ -209,11 +209,10 @@ describe("Executive & Financial Analytics SSOT Calculators and Decomposed Module
 	it("enforces /decomposer line limits (facade <= 120 lines, submodules <= 500 lines)", async () => {
 		const fs = await import("node:fs");
 		const path = await import("node:path");
+		const { fileURLToPath } = await import("node:url");
 
-		const facadePath = path.resolve(
-			process.cwd(),
-			"apps/web/src/components/analytics/DirectorExecutiveDashboard.tsx",
-		);
+		const testDir = path.dirname(fileURLToPath(import.meta.url));
+		const facadePath = path.resolve(testDir, "DirectorExecutiveDashboard.tsx");
 		const facadeContent = fs.readFileSync(facadePath, "utf8");
 		const facadeLines = facadeContent.split("\n").length;
 		assert.ok(
@@ -222,8 +221,8 @@ describe("Executive & Financial Analytics SSOT Calculators and Decomposed Module
 		);
 
 		const desktopViewPath = path.resolve(
-			process.cwd(),
-			"apps/web/src/components/analytics/executiveModules/DesktopExecutiveView.tsx",
+			testDir,
+			"executiveModules/DesktopExecutiveView.tsx",
 		);
 		const desktopViewLines = fs.readFileSync(desktopViewPath, "utf8").split("\n").length;
 		assert.ok(
@@ -232,8 +231,8 @@ describe("Executive & Financial Analytics SSOT Calculators and Decomposed Module
 		);
 
 		const hookPath = path.resolve(
-			process.cwd(),
-			"apps/web/src/components/analytics/executiveModules/useExecutiveDashboardData.ts",
+			testDir,
+			"executiveModules/useExecutiveDashboardData.ts",
 		);
 		const hookLines = fs.readFileSync(hookPath, "utf8").split("\n").length;
 		assert.ok(

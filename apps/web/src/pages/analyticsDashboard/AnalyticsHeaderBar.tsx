@@ -399,7 +399,7 @@ export function AnalyticsHeaderBar({
 				>
 					<button
 						type="button"
-						className="analytics-action-btn"
+						className="secondary-button analytics-action-btn"
 						onClick={onExportCsv}
 						title="Экспорт сводного отчета в Excel / CSV"
 						data-testid="analytics-export-csv-btn"
@@ -410,7 +410,7 @@ export function AnalyticsHeaderBar({
 
 					<button
 						type="button"
-						className="analytics-action-btn"
+						className="secondary-button analytics-action-btn"
 						onClick={() => window.print()}
 						title="Распечатать аналитику / Сохранить в PDF"
 						data-testid="analytics-print-btn"
@@ -421,7 +421,7 @@ export function AnalyticsHeaderBar({
 
 					<button
 						type="button"
-						className="analytics-action-btn"
+						className="secondary-button analytics-action-btn"
 						onClick={onRetry}
 						disabled={loading}
 						title="Обновить данные аналитики"

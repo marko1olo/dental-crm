@@ -1,51 +1,21 @@
-/**
- * DentalLabFinancialGate.tsx — UI-компонент финансового шлюза наряд-заказов в ЗТЛ.
- * 
- * Предотвращает кассовые разрывы клиники при заказе дорогостоящих ортопедических конструкций:
- * - Если оплачено < 50% этапа: выводит предупреждение и запрос авторизации Главного врача («Да / Блокировать»).
- * - Предлагает моментальный переход в 1-клик банковскую рассрочку (Сбер / Т-Банк / Подели).
- */
-
 import React from "react";
-import {
-	AlertTriangle,
-	CheckCircle2,
-	CreditCard,
-	DollarSign,
-	Send,
-	ShieldAlert,
-	ShieldCheck,
-	Sparkles,
-	X,
-	XCircle,
-} from "lucide-react";
+import { CheckCircle2, CreditCard, ShieldAlert, ShieldCheck, X } from "lucide-react";
 import { formatKopecksRu } from "@dental/shared";
-import {
-	type DentalLabFinancialGateResult,
-	createDoctorClinicalOverride,
-} from "./dentalLabFinancialGateEngine";
+import { type DentalLabFinancialGateResult, createDoctorClinicalOverride } from "./dentalLabFinancialGateEngine";
 
 export interface DentalLabFinancialGateProps {
 	readonly gateResult: DentalLabFinancialGateResult;
-	readonly isOpen?: boolean;
-	readonly onClose?: () => void;
-	readonly patientName?: string;
-	readonly stageTitle?: string;
-	readonly doctorName?: string;
-	readonly defaultDoctorName?: string;
-	readonly defaultChiefDoctorName?: string;
+	readonly isOpen?: boolean; readonly onClose?: () => void;
+	readonly patientName?: string; readonly stageTitle?: string;
+	readonly doctorName?: string; readonly defaultDoctorName?: string; readonly defaultChiefDoctorName?: string;
 	readonly variant?: "modal" | "inline" | "banner";
-	readonly onConfirmOverride?: (override: {
-		readonly authorized: boolean;
-		readonly doctorName: string;
-		readonly timestampIso: string;
-		readonly reason: string;
-	}) => void;
-	readonly onBlock?: () => void;
-	readonly onOpenInstallmentModal?: () => void;
-	readonly onAcceptAdvancePayment?: () => void;
+	readonly onConfirmOverride?: (override: { authorized: boolean; doctorName: string; timestampIso: string; reason: string }) => void;
+	readonly onBlock?: () => void; readonly onOpenInstallmentModal?: () => void; readonly onAcceptAdvancePayment?: () => void;
 }
 
+/**
+ * Контроль оплаты изделия ЗТЛ (Мандат 8e: врач сам решает, примерять ли коронку, кнопка никогда не блокируется).
+ */
 export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 	gateResult,
 	isOpen = true,
@@ -57,107 +27,42 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 	defaultChiefDoctorName,
 	variant = "modal",
 	onConfirmOverride,
-	onBlock,
 	onOpenInstallmentModal,
-	onAcceptAdvancePayment,
 }) => {
-	const effectiveDoctorName =
-		doctorName ||
-		defaultDoctorName ||
-		(defaultChiefDoctorName && !defaultChiefDoctorName.includes("Смирнов А. В.")
-			? defaultChiefDoctorName
-			: "Лечащий врач");
-
 	if (!isOpen) return null;
-
-	const handleOverrideSubmit = () => {
-		const override = createDoctorClinicalOverride(
-			effectiveDoctorName,
-			"Отправить в работу без аванса (Автономия врача)",
-		);
-		if (onConfirmOverride) {
-			onConfirmOverride(override);
-		}
-		if (onClose) onClose();
+	const doc = doctorName || defaultDoctorName || defaultChiefDoctorName || "Лечащий врач";
+	const handleOverride = () => {
+		onConfirmOverride?.(createDoctorClinicalOverride(doc, "Клиническое решение врача (Автономия)"));
+		onClose?.();
 	};
 
-	// ─── 1. BANNER VARIANT ───────────────────────────────────────────────────────
 	if (variant === "banner") {
-		if (gateResult.gateStatus === "CLEARED") {
+		if (gateResult.isGatePassed) {
 			return (
-				<div
-					className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs"
-					data-testid="lab-gate-banner-cleared"
-				>
+				<div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs" data-testid="lab-gate-banner-cleared">
 					<CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-					<div className="flex-1 min-w-0">
-						<span className="font-bold">Финансовый шлюз пройден ({gateResult.paidPercent}% внесено): </span>
-						<span>{gateResult.detailedReasonRu}</span>
-					</div>
+					<div className="flex-1 truncate"><span className="font-bold">Контроль оплаты изделия: </span>{gateResult.detailedReasonRu}</div>
 				</div>
 			);
 		}
-
-		if (gateResult.gateStatus === "CHIEF_DOCTOR_OVERRIDE" || gateResult.gateStatus === "DOCTOR_OVERRIDE") {
-			return (
-				<div
-					className="flex items-center gap-2 p-3 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-900 dark:text-teal-200 text-xs"
-					data-testid="lab-gate-banner-override"
-				>
-					<ShieldCheck size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-					<div className="flex-1 min-w-0">
-						<span className="font-bold">Клиническое решение лечащего врача: </span>
-						<span>{gateResult.overrideMeta?.doctorName} · {gateResult.overrideMeta?.reason}</span>
-					</div>
-				</div>
-			);
-		}
-
 		return (
-			<div
-				className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs"
-				data-testid="lab-gate-banner-blocked"
-			>
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs" data-testid="lab-gate-banner-blocked">
 				<div className="flex items-start gap-2.5 min-w-0">
 					<ShieldAlert size={18} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
 					<div>
-						<div className="font-bold text-sm text-amber-800 dark:text-amber-300">
-							Предупреждение: Аванс &lt; 50% ({formatKopecksRu(gateResult.totalPaidAndCoveredKopecks)} из {formatKopecksRu(gateResult.requiredAdvanceKopecks)})
-						</div>
-						<p className="text-[11px] text-amber-900/80 dark:text-amber-300/80 mt-0.5">
-							Внесено {gateResult.paidPercent}% от стоимости этапа. Врач вправе отправить наряд в ЗТЛ под личную клиническую ответственность (Автономия врача).
-						</p>
-						{gateResult.isPlanExpiredNotice && (
-							<p className="text-[11px] text-teal-700 dark:text-teal-300 font-bold mt-0.5 flex items-center gap-1">
-								<CheckCircle2 size={13} className="shrink-0 text-teal-600 dark:text-teal-400" />
-								<span>{gateResult.isPlanExpiredNotice}</span>
-							</p>
-						)}
+						<div className="font-bold text-sm text-amber-800 dark:text-amber-300">Контроль оплаты изделия ({gateResult.paidPercent}% внесено)</div>
+						<p className="text-[11px] text-amber-900/80 dark:text-amber-300/80 mt-0.5">Врач сам решает отправлять ли наряд и примерять ли коронку (Автономия врача).</p>
 					</div>
 				</div>
-
-				<div className="flex items-center gap-2 shrink-0 flex-wrap">
+				<div className="flex items-center gap-2 shrink-0">
 					{onConfirmOverride && (
-						<button
-							type="button"
-							onClick={handleOverrideSubmit}
-							className="px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-xs transition cursor-pointer flex items-center gap-1.5"
-							data-testid="btn-lab-override-financial-gate"
-							title="Отправить в работу без аванса (Автономия врача)"
-						>
-							<ShieldCheck size={14} />
-							<span>Отправить в работу без аванса (Автономия врача)</span>
+						<button type="button" onClick={handleOverride} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-xs transition cursor-pointer flex items-center gap-1.5" data-testid="btn-lab-override-financial-gate">
+							<ShieldCheck size={14} /><span>Согласовать примерку (Автономия)</span>
 						</button>
 					)}
 					{onOpenInstallmentModal && (
-						<button
-							type="button"
-							onClick={onOpenInstallmentModal}
-							className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30 hover:bg-[var(--teal-soft)] transition cursor-pointer flex items-center gap-1"
-							data-testid="lab-gate-installment-btn"
-						>
-							<CreditCard size={13} />
-							<span>Рассрочка (Сбер/Т-Банк)</span>
+						<button type="button" onClick={onOpenInstallmentModal} className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper)] transition cursor-pointer flex items-center gap-1" data-testid="lab-gate-installment-btn">
+							<CreditCard size={13} /><span>Рассрочка</span>
 						</button>
 					)}
 				</div>
@@ -165,240 +70,39 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 		);
 	}
 
-	// ─── 2. INLINE CARD VARIANT ──────────────────────────────────────────────────
 	if (variant === "inline") {
 		return (
-			<div
-				className="rounded-2xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] p-4 shadow-sm space-y-3"
-				data-testid="lab-gate-inline-card"
-			>
+			<div className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-4 shadow-sm space-y-3" data-testid="lab-gate-inline-card">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2">
-						<ShieldAlert
-							size={18}
-							className={
-								gateResult.isGatePassed
-									? "text-emerald-600 dark:text-emerald-400"
-									: "text-amber-600 dark:text-amber-400"
-							}
-						/>
-						<h4 className="text-sm font-bold text-[var(--ink,#0f172a)]">
-							Финансовый контроль ЗТЛ (Порог аванса: {gateResult.minAdvancePercent}%)
-						</h4>
+						<ShieldAlert size={18} className={gateResult.isGatePassed ? "text-emerald-600" : "text-amber-600"} />
+						<h4 className="text-sm font-bold text-[var(--ink)]">Контроль оплаты изделия (Рекомендовано: 50%)</h4>
 					</div>
-
-					<span
-						className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
-							gateResult.isGatePassed
-								? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-								: "bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30"
-						}`}
-					>
-						{gateResult.gateStatus === "CLEARED" && "ОДОБРЕНО (>= 50%)"}
-						{(gateResult.gateStatus === "CHIEF_DOCTOR_OVERRIDE" || gateResult.gateStatus === "DOCTOR_OVERRIDE") && "КЛИНИЧЕСКОЕ РЕШЕНИЕ ВРАЧА"}
-						{gateResult.gateStatus === "BLOCKED_REQUIRES_ADVANCE" && "АВАНС < 50%"}
-					</span>
+					<span className="text-xs px-2.5 py-0.5 rounded-full font-bold border border-[var(--line)]">{gateResult.paidPercent}% внесено</span>
 				</div>
-
-				<p className="text-xs text-[var(--muted,#64748b)]">
-					{gateResult.detailedReasonRu}
-				</p>
-
-				{/* Progress Track */}
-				<div className="space-y-1">
-					<div className="flex items-center justify-between text-[11px]">
-						<span className="text-[var(--muted,#64748b)]">
-							Внесено: {formatKopecksRu(gateResult.totalPaidAndCoveredKopecks)} ({gateResult.paidPercent}%)
-						</span>
-						<span className="font-bold text-[var(--ink,#0f172a)]">
-							Мин. аванс 50%: {formatKopecksRu(gateResult.requiredAdvanceKopecks)}
-						</span>
-					</div>
-					<div className="w-full h-2 rounded-full bg-[var(--line)] overflow-hidden">
-						<div
-							className={`h-full rounded-full transition-all ${
-								gateResult.paidPercent >= 50 ? "bg-emerald-500" : "bg-rose-500"
-							}`}
-							style={{ width: `${Math.min(100, gateResult.paidPercent)}%` }}
-						/>
-					</div>
-				</div>
-
-				{!gateResult.isGatePassed && onConfirmOverride && (
-					<div className="pt-2 border-t border-[var(--border,#cbd5e1)]">
-						<button
-							type="button"
-							onClick={handleOverrideSubmit}
-							className="min-h-[44px] w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-xs transition cursor-pointer"
-							data-testid="btn-lab-override-financial-gate"
-							title="Отправить в работу без аванса (Автономия врача)"
-						>
-							<ShieldCheck size={15} />
-							<span>Отправить в работу без аванса (Автономия врача)</span>
-						</button>
-					</div>
+				<p className="text-xs text-[var(--muted)]">{gateResult.detailedReasonRu}</p>
+				{onConfirmOverride && (
+					<button type="button" onClick={handleOverride} className="min-h-[44px] w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-xs transition cursor-pointer" data-testid="btn-lab-override-financial-gate">
+						<ShieldCheck size={15} /><span>Согласовать примерку без блокировок</span>
+					</button>
 				)}
 			</div>
 		);
 	}
 
-	// ─── 3. MODAL CONFIRMATION DIALOG ────────────────────────────────────────────
 	return (
-		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm overflow-y-auto"
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby="lab-financial-gate-title"
-			data-testid="lab-financial-gate-modal"
-		>
-			<div className="relative w-full max-w-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] rounded-3xl shadow-2xl overflow-hidden flex flex-col">
-				{/* Modal Header */}
-				<div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border,#cbd5e1)] bg-amber-500/10">
-					<div className="flex items-center gap-3">
-						<div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/30">
-							<ShieldAlert className="w-5 h-5" />
-						</div>
-						<div>
-							<h3
-								id="lab-financial-gate-title"
-								className="text-base font-bold text-[var(--ink,#0f172a)] m-0"
-							>
-								Финансовый контроль ЗТЛ
-							</h3>
-							<p className="text-xs text-[var(--muted,#64748b)] m-0">
-								{patientName} · {stageTitle}
-							</p>
-						</div>
-					</div>
-
-					{onClose && (
-						<button
-							type="button"
-							onClick={onClose}
-							className="min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)] transition-colors"
-							aria-label="Закрыть"
-							data-testid="lab-gate-close-btn"
-						>
-							<X className="w-5 h-5" />
-						</button>
-					)}
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm" role="dialog" aria-modal="true" data-testid="dental-lab-financial-gate-modal">
+			<div className="relative w-full max-w-lg bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-5 shadow-2xl space-y-4">
+				<div className="flex items-center justify-between">
+					<h3 className="text-base font-bold text-[var(--ink)]">Контроль оплаты изделия</h3>
+					<button type="button" onClick={onClose} className="text-[var(--muted)] hover:text-[var(--ink)]"><X size={16} /></button>
 				</div>
-
-				{/* Modal Body */}
-				<div className="p-6 space-y-5 text-xs text-[var(--ink,#0f172a)]">
-					{/* Warning Card */}
-					<div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
-						<div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-200 text-sm">
-							<AlertTriangle size={17} className="text-amber-600" />
-							<span>Предупреждение: Аванс &lt; 50%</span>
-						</div>
-						<p className="text-amber-900/90 dark:text-amber-200 text-xs leading-relaxed">
-							Рекомендуемый аванс для запуска работ в ЗТЛ: <strong>{gateResult.minAdvancePercent}%</strong> (
-							{formatKopecksRu(gateResult.requiredAdvanceKopecks)}). Врач вправе отправить заказ в лабораторию прямо сейчас по клиническим показаниям.
-						</p>
-						{gateResult.isPlanExpiredNotice && (
-							<div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/30 text-[var(--teal-dark,var(--teal))] text-[11px] font-semibold leading-relaxed flex items-center gap-1.5">
-								<ShieldCheck size={14} className="text-teal-600 shrink-0" />
-								<span>{gateResult.isPlanExpiredNotice}</span>
-							</div>
-						)}
-						<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-amber-500/20 flex items-center justify-between font-mono">
-							<span className="text-[var(--muted,#64748b)]">Недостающий аванс:</span>
-							<strong className="text-amber-700 dark:text-amber-300 text-sm">
-								{formatKopecksRu(gateResult.missingAdvanceKopecks)}
-							</strong>
-						</div>
-					</div>
-
-					{/* Fast Payment Options */}
-					<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-3">
-						<span className="font-bold text-[var(--ink,#0f172a)] block">
-							Быстрое закрытие аванса для пациента:
-						</span>
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-							{onOpenInstallmentModal && (
-								<button
-									type="button"
-									onClick={() => {
-										if (onClose) onClose();
-										onOpenInstallmentModal();
-									}}
-									className="min-h-[44px] flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft)] border border-[var(--teal,var(--brand-primary))]/30 transition cursor-pointer"
-									data-testid="lab-gate-open-installment-btn"
-								>
-									<CreditCard size={15} />
-									<span>Рассрочка (Сбер/Т-Банк)</span>
-								</button>
-							)}
-
-							{onAcceptAdvancePayment && (
-								<button
-									type="button"
-									onClick={() => {
-										if (onClose) onClose();
-										onAcceptAdvancePayment();
-									}}
-									className="min-h-[44px] flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] transition cursor-pointer"
-									data-testid="lab-gate-accept-payment-btn"
-								>
-									<DollarSign size={15} />
-									<span>Принять аванс в кассу</span>
-								</button>
-							)}
-						</div>
-					</div>
-
-					{/* Doctor Clinical Override */}
-					<div className="p-4 rounded-2xl bg-teal-500/10 border border-teal-500/30 space-y-3">
-						<div className="flex items-center justify-between">
-							<div className="flex items-center gap-2 text-teal-900 dark:text-teal-200 font-bold text-xs">
-								<Sparkles size={16} className="text-teal-600" />
-								<span>Клиническая автономия врача: отправка наряда без задержки</span>
-							</div>
-							<span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-800 dark:text-teal-200 font-bold">
-								Решение врача
-							</span>
-						</div>
-						<p className="text-[11px] text-teal-900/80 dark:text-teal-300/80 leading-relaxed m-0">
-							Врач имеет безусловное право направить наряд в ЗТЛ под личную клиническую ответственность (экстренное показание, временная коронка PMMA, примерка моста) без мастер-паролей и согласований.
-						</p>
-						<button
-							type="button"
-							onClick={handleOverrideSubmit}
-							className="min-h-[44px] w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-teal-600 hover:bg-teal-500 active:scale-95 text-white shadow-sm transition cursor-pointer"
-							data-testid="btn-lab-override-financial-gate"
-							title="Отправить в работу без аванса (Автономия врача)"
-						>
-							<ShieldCheck size={16} />
-							<span>Отправить в работу без аванса (Автономия врача)</span>
-						</button>
-					</div>
-				</div>
-
-				{/* Modal Footer */}
-				<div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)]">
-					<button
-						type="button"
-						onClick={() => {
-							if (onBlock) onBlock();
-							if (onClose) onClose();
-						}}
-						className="min-h-[44px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition cursor-pointer"
-						data-testid="lab-gate-block-btn"
-					>
-						<XCircle size={15} />
-						<span>Вернуться к редактированию</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={handleOverrideSubmit}
-						className="min-h-[44px] flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-extrabold text-white bg-[var(--teal-fill,var(--teal,#0d9488))] hover:bg-[var(--teal-dark,#0f766e)] shadow-md transition cursor-pointer active:scale-95"
-						data-testid="lab-gate-direct-send-btn"
-						title="Отправить в работу без аванса (Автономия врача)"
-					>
-						<Send size={15} />
-						<span>Отправить в работу без аванса (Автономия врача)</span>
+				<p className="text-xs text-[var(--muted)]">Пациент: <strong>{patientName}</strong> · Этап: <strong>{stageTitle}</strong></p>
+				<p className="text-xs text-[var(--ink)]">{gateResult.detailedReasonRu}</p>
+				<div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--line)]">
+					<button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-xs font-bold border border-[var(--line)]">Отмена</button>
+					<button type="button" onClick={handleOverride} className="px-4 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white" data-testid="btn-lab-override-financial-gate">
+						Согласовать примерку (Автономия врача)
 					</button>
 				</div>
 			</div>

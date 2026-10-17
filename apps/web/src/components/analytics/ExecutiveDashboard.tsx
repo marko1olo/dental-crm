@@ -33,6 +33,7 @@ export const CANONICAL_PERIOD_OPTIONS: readonly {
 	readonly label: string;
 }[] = [
 	{ key: "day", label: "Сегодня" },
+	{ key: "yesterday", label: "Вчера" },
 	{ key: "week", label: "Неделя" },
 	{ key: "month", label: "Месяц" },
 	{ key: "quarter", label: "Квартал" },
@@ -136,7 +137,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						data-testid="desktop-export-btn"
 					>
 						<Download size={14} aria-hidden="true" />
-						<span className="hidden sm:inline">Экспорт в Excel / PDF</span>
+						<span className="hidden sm:inline">Экспорт в Excel / CSV</span>
 					</button>
 
 					<button
@@ -147,7 +148,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						data-testid="desktop-open-pnl-btn"
 					>
 						<Sparkles size={14} aria-hidden="true" />
-						<span>Финансовый отчет P&amp;L</span>
+						<span>P&amp;L калькулятор</span>
 					</button>
 
 					<button
@@ -180,17 +181,17 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 			>
 				{renderCanonicalToolbar()}
 
+				{/* 3 доминантные KPI-карточки (Выручка, Начислено врачам, Загрузка кресел) */}
+				<MobileExecutiveKpiCards
+					periodMetrics={data.periodMetrics}
+					totalChairsCount={data.payload?.kpis.totalChairsCount ?? 1}
+					onNavigateToSection={onNavigateToSection}
+				/>
+
 				{/* Прагматичные финансовые KPI и распределение оплат */}
 				<MobileExecutiveKpiTiles
 					periodMetrics={data.periodMetrics}
 					kpis={data.payload?.kpis}
-					onNavigateToSection={onNavigateToSection}
-				/>
-
-				{/* 4 доминантные KPI-карточки */}
-				<MobileExecutiveKpiCards
-					periodMetrics={data.periodMetrics}
-					totalChairsCount={data.payload?.kpis.totalChairsCount ?? 1}
 					onNavigateToSection={onNavigateToSection}
 				/>
 
@@ -202,17 +203,17 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 					<nav className="mobile-exec-bottom-bar" aria-label="Действия с отчетом аналитики">
 						<button
 							type="button"
-							className="mobile-exec-btn-primary"
+							className="primary-button mobile-exec-btn-primary"
 							onClick={data.handleExportCsv}
 							data-testid="btn-mobile-export-report"
 						>
 							<Download size={18} aria-hidden="true" />
-							<span>Экспорт отчета (Excel / CSV)</span>
+							<span>Экспорт в Excel / CSV</span>
 						</button>
 
 						<button
 							type="button"
-							className="mobile-exec-btn-secondary"
+							className="secondary-button mobile-exec-btn-secondary"
 							onClick={handlePrintPdf}
 							title="Печать или сохранение в PDF"
 							aria-label="Печать отчета в PDF"
@@ -223,7 +224,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 
 						<button
 							type="button"
-							className="mobile-exec-btn-secondary"
+							className="secondary-button mobile-exec-btn-secondary"
 							onClick={data.reload}
 							disabled={data.loading}
 							title="Обновить показатели"

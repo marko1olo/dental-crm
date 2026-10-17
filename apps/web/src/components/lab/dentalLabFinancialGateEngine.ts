@@ -47,11 +47,14 @@ export interface DentalLabFinancialGateParams {
 	readonly treatmentPlanAgeDays?: number | undefined;
 	/** Флаг истечения срока фиксации цен плана (>30 дней). Не блокирует ЗТЛ! */
 	readonly isPlanExpired?: boolean | undefined;
+	/** Срочная временная работа (PMMA / mock-up / защитная каппа) — отправка без аванса по Мандату 8e */
+	readonly isUrgentTemporary?: boolean | undefined;
 }
 
 export interface DentalLabFinancialGateResult {
 	readonly isGatePassed: boolean;
 	readonly gateStatus: DentalLabGateStatus;
+	readonly isUrgentBypassed?: boolean | undefined;
 	readonly minAdvancePercent: number;
 	readonly stageTotalKopecks: Kopecks;
 	readonly totalPaidAndCoveredKopecks: Kopecks;
@@ -115,13 +118,18 @@ export function checkDentalLabFinancialGate(
 		(params.treatmentPlanAgeDays !== undefined && params.treatmentPlanAgeDays > 30) ||
 		params.isPlanExpired === true;
 	const planExpiredNotice = isPlanOver30Days
-		? "План составлен более 30 дней назад, цены могут быть скорректированы: срок плана НЕ БЛОКИРУЕТ создание наряда ЗТЛ, услуги и оплату."
+		? "План составлен более 30 дней назад, цены могут быть скорректированы: срок плана НЕ БЛОКИРУЕТ (не блокирует) создание наряда ЗТЛ, услуги и оплату."
 		: undefined;
+
+	const isUrgent = Boolean(params.isUrgentTemporary);
 
 	let gateStatus: DentalLabGateStatus;
 	let isGatePassed: boolean;
 
-	if (totalCovered >= requiredAdvanceKopecks || baseAmountKopecks === 0) {
+	if (isUrgent) {
+		gateStatus = "CLEARED";
+		isGatePassed = true;
+	} else if (totalCovered >= requiredAdvanceKopecks || baseAmountKopecks === 0) {
 		gateStatus = "CLEARED";
 		isGatePassed = true;
 	} else if (isOverrideActive) {
@@ -169,6 +177,7 @@ export function checkDentalLabFinancialGate(
 		isPlanExpiredNotice: planExpiredNotice,
 		canSendInOneClick: true,
 		isSoftWarning: gateStatus === "BLOCKED_REQUIRES_ADVANCE",
+		...(isUrgent ? { isUrgentBypassed: true } : {}),
 		...(isOverrideActive && activeOverride
 			? {
 					overrideMeta: {

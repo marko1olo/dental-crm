@@ -49,9 +49,22 @@ export {
 
 export {
 	DentalLabPriceMatrixModal,
+	CANONICAL_LAB_PRICE_MATRIX,
 	type DentalLabPriceMatrixModalProps,
 	type LabPriceMatrixItem,
 } from "./DentalLabPriceMatrixModal";
+
+export {
+	DentalLabOrderModal,
+	DentalLabOrderModal as DentalLabWorkOrderModal,
+	type DentalLabOrderModalProps,
+	type DentalLabOrderModalProps as DentalLabWorkOrderModalProps,
+} from "./DentalLabOrderModal";
+
+export {
+	DentalLabCourierDispatchBar,
+	type DentalLabCourierDispatchBarProps,
+} from "./DentalLabCourierDispatchBar";
 
 export {
 	DentalLabStageTrackingTimeline,

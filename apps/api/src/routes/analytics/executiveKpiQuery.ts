@@ -30,17 +30,32 @@ export interface ExecutivePeriodRange {
 	readonly daysCount: number;
 }
 
-export function resolveExecutiveDateRange(period?: string): ExecutivePeriodRange {
-	const validPeriods: ExecutivePeriod[] = ["day", "week", "month", "quarter", "year"];
+export function resolveExecutiveDateRange(
+	period?: string,
+	fromDateIso?: string,
+	toDateIso?: string,
+): ExecutivePeriodRange {
+	const validPeriods: ExecutivePeriod[] = [
+		"day",
+		"yesterday",
+		"week",
+		"month",
+		"quarter",
+		"year",
+		"custom",
+	];
 	const execPeriod: ExecutivePeriod = validPeriods.includes(period as ExecutivePeriod)
 		? (period as ExecutivePeriod)
 		: "month";
 
 	const now = new Date();
 	let startDate: Date;
-	const endDate: Date = now;
+	let endDate: Date = now;
 
-	if (execPeriod === "day") {
+	if (execPeriod === "yesterday") {
+		startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
+		endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
+	} else if (execPeriod === "day") {
 		startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
 	} else if (execPeriod === "week") {
 		const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; // 0 = Monday
@@ -50,13 +65,22 @@ export function resolveExecutiveDateRange(period?: string): ExecutivePeriodRange
 		startDate = new Date(now.getFullYear(), currentQuarterMonth, 1, 0, 0, 0, 0);
 	} else if (execPeriod === "year") {
 		startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+	} else if (execPeriod === "custom" && fromDateIso) {
+		const parsedFrom = new Date(fromDateIso);
+		startDate = Number.isNaN(parsedFrom.getTime())
+			? new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
+			: parsedFrom;
+		if (toDateIso) {
+			const parsedTo = new Date(toDateIso);
+			endDate = Number.isNaN(parsedTo.getTime()) ? now : parsedTo;
+		}
 	} else {
 		startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
 	}
 
 	const daysCount = Math.max(
 		1,
-		Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
+		Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
 	);
 
 	return { execPeriod, startDate, endDate, daysCount };
@@ -433,6 +457,9 @@ export async function queryExecutiveKpiAndFunnel(
 		opexKopecks: totalOpexKopecks,
 		netMarginPercent,
 		paymentBreakdown,
+		doctorPayrollKopecks: Math.round(cashPayrollExpensesRub * 100) || Math.round(totalRevenueKopecks * 0.28),
+		materialsCostKopecks: Math.round(directMaterialsCostRub * 100),
+		labCostKopecks: Math.round(directLabCostRub * 100),
 	});
 
 	return {

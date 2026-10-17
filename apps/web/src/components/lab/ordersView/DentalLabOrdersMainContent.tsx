@@ -160,29 +160,6 @@ export function DentalLabOrdersMainContent({
 						<div className="text-xs">{error}</div>
 					</div>
 				</div>
-			) : filteredOrders.length === 0 ? (
-				<div className="p-12 text-center bg-[var(--paper)] rounded-2xl border border-dashed border-[var(--line)] text-[var(--muted)] text-xs space-y-3">
-					<FlaskConical className="w-10 h-10 mx-auto text-[var(--primary)]" />
-					<p
-						className="font-bold text-sm text-[var(--ink)]"
-						data-testid="lab-orders-empty-state-title"
-					>
-						Нет нарядов в зуботехническую лабораторию
-					</p>
-					<p className="max-w-md mx-auto text-[var(--muted)]">
-						Оформите новый заказ-наряд на коронки, элайнеры, бюгели или виниры с расцветкой VITA и
-						расчетом удержания с врача.
-					</p>
-					<button
-						type="button"
-						onClick={handleOpenNewOrder}
-						className="min-h-[44px] h-11 px-5 py-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white font-medium inline-flex items-center gap-2 shadow-xs cursor-pointer transition-all active:scale-95 text-xs"
-						data-testid="empty-state-add-first-lab-order-btn"
-					>
-						<Plus className="w-4 h-4" />
-						<span>+ Создать наряд-заказ в лабораторию</span>
-					</button>
-				</div>
 			) : viewMode === "kanban" ? (
 				<div
 					className="w-full max-w-full overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs"
@@ -239,6 +216,29 @@ export function DentalLabOrdersMainContent({
 							}}
 						/>
 					</Suspense>
+				</div>
+			) : filteredOrders.length === 0 ? (
+				<div className="p-12 text-center bg-[var(--paper)] rounded-2xl border border-dashed border-[var(--line)] text-[var(--muted)] text-xs space-y-3">
+					<FlaskConical className="w-10 h-10 mx-auto text-[var(--primary)]" />
+					<p
+						className="font-bold text-sm text-[var(--ink)]"
+						data-testid="lab-orders-empty-state-title"
+					>
+						Нет нарядов в зуботехническую лабораторию
+					</p>
+					<p className="max-w-md mx-auto text-[var(--muted)]">
+						Оформите новый заказ-наряд на коронки, элайнеры, бюгели или виниры с расцветкой VITA и
+						расчетом удержания с врача.
+					</p>
+					<button
+						type="button"
+						onClick={handleOpenNewOrder}
+						className="min-h-[44px] h-11 px-5 py-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white font-medium inline-flex items-center gap-2 shadow-xs cursor-pointer transition-all active:scale-95 text-xs"
+						data-testid="empty-state-add-first-lab-order-btn"
+					>
+						<Plus className="w-4 h-4" />
+						<span>+ Создать наряд-заказ в лабораторию</span>
+					</button>
 				</div>
 			) : viewMode === "table" ? (
 				<LabOrdersTable

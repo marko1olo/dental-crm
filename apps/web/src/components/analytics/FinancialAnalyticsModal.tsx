@@ -153,7 +153,7 @@ export function FinancialAnalyticsModal({
 						<button
 							type="button"
 							onClick={() => exportFinancialPnlCsvReport({ period, ...metrics })}
-							className="fin-analytics-action-btn"
+							className="secondary-button fin-analytics-action-btn"
 							data-testid="export-financial-csv-btn"
 						>
 							<Download size={14} /> <span>Экспорт P&amp;L</span>
@@ -161,7 +161,7 @@ export function FinancialAnalyticsModal({
 						<button
 							type="button"
 							onClick={onClose}
-							className="fin-analytics-close-btn"
+							className="icon-button fin-analytics-close-btn"
 							aria-label="Закрыть окно"
 							data-testid="close-financial-modal-btn"
 						>
@@ -193,7 +193,7 @@ export function FinancialAnalyticsModal({
 					<button
 						type="button"
 						onClick={loadFinancialData}
-						className="fin-analytics-action-btn"
+						className="secondary-button fin-analytics-action-btn"
 						title="Обновить финансовые показатели"
 					>
 						<RefreshCw size={13} className={isLoading ? "animate-spin" : ""} />
@@ -236,7 +236,7 @@ export function FinancialAnalyticsModal({
 					<div style={{ fontSize: 11, color: "var(--muted)" }}>
 						Управленческий учет ДЕНТЕ CRM • Касса и чеки • Расчет в целочисленных копейках
 					</div>
-					<button type="button" onClick={onClose} className="fin-analytics-action-btn primary" data-testid="close-financial-footer-btn">
+					<button type="button" onClick={onClose} className="primary-button fin-analytics-action-btn primary" data-testid="close-financial-footer-btn">
 						Закрыть аналитику
 					</button>
 				</footer>

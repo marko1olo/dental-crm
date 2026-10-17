@@ -36,7 +36,7 @@ export function getDemoExecutiveAnalytics(
 	period: ExecutivePeriod = "month",
 ): ExecutiveDashboardPayload {
 	const scale =
-		period === "day"
+		period === "day" || period === "yesterday"
 			? 1 / 26
 			: period === "week"
 				? 7 / 26
@@ -105,6 +105,21 @@ export function getDemoExecutiveAnalytics(
 	const primaryRevenueKopecks = Math.round(145500000 * scale);
 	const repeatRevenueKopecks = Math.round(339500000 * scale);
 
+	const totalRevenueRub = Math.round(totalRevenueKopecks / 100);
+	const cashRub = Math.round(totalRevenueRub * 0.28);
+	const sbpRub = Math.round(totalRevenueRub * 0.18);
+	const cardDmsRub = totalRevenueRub - cashRub - sbpRub;
+
+	const paymentBreakdown = {
+		cashRub,
+		cashPercent: 28,
+		cardDmsRub,
+		cardDmsPercent: 54,
+		sbpRub,
+		sbpPercent: 18,
+		totalRub: totalRevenueRub,
+	};
+
 	const kpis = calculateExecutiveKpisSummary({
 		period,
 		totalRevenueKopecks,
@@ -127,6 +142,11 @@ export function getDemoExecutiveAnalytics(
 		noShowVisitsCount: Math.max(0, Math.round(4 * scale)),
 		cogsKopecks: Math.round(121250000 * scale),
 		opexKopecks: Math.round(218250000 * scale),
+		doctorPayrollKopecks: Math.round(totalRevenueKopecks * 0.28),
+		doctorNetIncomeKopecks: Math.round(totalRevenueKopecks * 0.28),
+		materialsCostKopecks: Math.round(42437500 * scale),
+		labCostKopecks: Math.round(30312500 * scale),
+		paymentBreakdown,
 	});
 
 	const now = new Date();

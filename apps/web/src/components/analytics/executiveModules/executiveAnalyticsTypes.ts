@@ -15,7 +15,14 @@ import {
 } from "@dental/shared";
 import { formatRubles } from "../../../utils/formatters.js";
 
-export type MobileAnalyticsPeriod = "day" | "week" | "month" | "quarter" | "year";
+export type MobileAnalyticsPeriod =
+	| "day"
+	| "yesterday"
+	| "week"
+	| "month"
+	| "quarter"
+	| "year"
+	| "custom";
 
 /**
  * Нормализует любое рублевое значение или строку, гарантируя отсутствие копеек (,00).
@@ -74,6 +81,12 @@ export interface ExecutivePeriodComputedMetrics {
 	readonly chairHourlyCostFormatted: string;
 	readonly chairEffectiveHourlyYieldFormatted: string;
 	readonly lostRevenueFromNoShowsFormatted: string;
+	// P&L соло-врача и начисление к выплате (Мандат 8n)
+	readonly doctorPayrollFormatted: string;
+	readonly doctorNetIncomeFormatted: string;
+	readonly materialsCostFormatted: string;
+	readonly labCostFormatted: string;
+	readonly directCogsFormatted: string;
 	readonly paymentBreakdown?: {
 		readonly cashRub: number;
 		readonly cashPercent: number;
@@ -261,6 +274,20 @@ export function computePeriodMetricsFromPayload(
 		const cardDmsRub = k.paymentBreakdown ? k.paymentBreakdown.cardDmsRub : Math.round(revRub * 0.54);
 		const sbpRub = k.paymentBreakdown ? k.paymentBreakdown.sbpRub : Math.round(revRub * 0.18);
 
+		const docPayrollRub = k.doctorPayrollRub && k.doctorPayrollRub > 0
+			? k.doctorPayrollRub
+			: Math.round(revRub * 0.28);
+		const docNetIncomeRub = k.doctorNetIncomeRub && k.doctorNetIncomeRub > 0
+			? k.doctorNetIncomeRub
+			: docPayrollRub;
+		const materialsCostRub = k.materialsCostRub && k.materialsCostRub > 0
+			? k.materialsCostRub
+			: Math.round(revRub * 0.08);
+		const labCostRub = k.labCostRub && k.labCostRub > 0
+			? k.labCostRub
+			: Math.round(revRub * 0.06);
+		const directCogsRub = materialsCostRub + labCostRub + docPayrollRub;
+
 		return {
 			revenueFormatted: formatRubles(revRub),
 			revenuePlanFormatted: formatRubles(planRub),
@@ -279,6 +306,11 @@ export function computePeriodMetricsFromPayload(
 			chairHourlyCostFormatted: `${formatRubles(econ.chairHourlyCostRub)}/ч`,
 			chairEffectiveHourlyYieldFormatted: `${formatRubles(econ.rentalEconomics.effectiveHourlyIncomeRub)}/ч`,
 			lostRevenueFromNoShowsFormatted: formatRubles(econ.noShowLostRevenueRub),
+			doctorPayrollFormatted: formatRubles(docPayrollRub),
+			doctorNetIncomeFormatted: formatRubles(docNetIncomeRub),
+			materialsCostFormatted: formatRubles(materialsCostRub),
+			labCostFormatted: formatRubles(labCostRub),
+			directCogsFormatted: formatRubles(directCogsRub),
 			paymentBreakdown: revRub > 0 ? {
 				cashRub,
 				cashPercent: k.paymentBreakdown?.cashPercent ?? 28,
@@ -312,5 +344,10 @@ export function computePeriodMetricsFromPayload(
 		chairHourlyCostFormatted: "0 ₽/ч",
 		chairEffectiveHourlyYieldFormatted: "0 ₽/ч",
 		lostRevenueFromNoShowsFormatted: "0 ₽",
+		doctorPayrollFormatted: "0 ₽",
+		doctorNetIncomeFormatted: "0 ₽",
+		materialsCostFormatted: "0 ₽",
+		labCostFormatted: "0 ₽",
+		directCogsFormatted: "0 ₽",
 	};
 }
