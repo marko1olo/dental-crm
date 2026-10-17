@@ -23,7 +23,12 @@ export function parseFdiTeethString(raw: string | number | undefined | null): nu
 	const parts = str.split(/[\s,;+]+/).filter(Boolean);
 	const result: number[] = [];
 	for (const p of parts) {
-		const n = parseInt(p, 10);
+		let token = p.trim();
+		// Поддержка клинической записи с точкой: 1.6 -> 16, 2.1 -> 21
+		if (/^[1-4]\.[1-8]$/.test(token)) {
+			token = token.replace(".", "");
+		}
+		const n = parseInt(token, 10);
 		if (!isNaN(n) && isValidFdiTooth(n)) {
 			if (!result.includes(n)) result.push(n);
 		}

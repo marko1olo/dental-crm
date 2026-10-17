@@ -57,29 +57,29 @@ export interface CanonicalKanbanColumnDef {
 export const CANONICAL_4_KANBAN_COLUMNS: readonly CanonicalKanbanColumnDef[] = [
 	{
 		id: "draft",
-		title: "1. Черновик / Отправлен",
-		shortTitle: "Черновик",
+		title: "Отправлен в лабораторию",
+		shortTitle: "Отправлен в лабораторию",
 		icon: <FileText size={16} />,
 		colorHex: "#64748b",
 	},
 	{
 		id: "sent_to_lab",
-		title: "2. В работе в лаборатории",
-		shortTitle: "В работе",
+		title: "В работе у техника",
+		shortTitle: "В работе у техника",
 		icon: <Truck size={16} />,
 		colorHex: "#3b82f6",
 	},
 	{
 		id: "fitting_scheduled",
-		title: "3. В клинике (Готов к примерке)",
-		shortTitle: "В клинике",
+		title: "Готов / Доставка в клинику",
+		shortTitle: "Готов / Доставка в клинику",
 		icon: <Calendar size={16} />,
 		colorHex: "#f59e0b",
 	},
 	{
 		id: "installed_completed",
-		title: "4. Зафиксирован у пациента",
-		shortTitle: "Зафиксирован",
+		title: "Припасован и зафиксирован",
+		shortTitle: "Припасован и зафиксирован",
 		icon: <CheckCircle2 size={16} />,
 		colorHex: "#10b981",
 	},
@@ -222,15 +222,25 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 
 							{colOrders.length === 0 && (
 								<div
+									className="ztl-kanban-empty-column"
 									style={{
 										textAlign: "center",
-										padding: "24px 8px",
+										padding: "36px 12px",
 										color: "var(--muted, #94a3b8)",
-										fontSize: "11px",
+										fontSize: "12px",
+										border: "1.5px dashed var(--line, #cbd5e1)",
+										borderRadius: "8px",
+										margin: "8px 0",
+										display: "flex",
+										flexDirection: "column",
+										alignItems: "center",
+										justifyContent: "center",
+										minHeight: "140px",
+										gap: "6px",
 									}}
 									data-testid={`empty-column-${col.id}`}
 								>
-									Нет нарядов в этом статусе
+									<span>Нет нарядов в этом статусе</span>
 								</div>
 							)}
 						</div>

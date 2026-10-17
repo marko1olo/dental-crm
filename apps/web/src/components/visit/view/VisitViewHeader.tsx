@@ -214,16 +214,18 @@ export function VisitViewHeader({
 					</button>
 				</div>
 
-				{/* Скрытые триггеры для тестов автономии */}
+				{/* 1-клик «+ Наряд в ЗТЛ» в тулбаре для ортопеда (Мандат 8e / HIG: 36px, rounded-xl) */}
 				<button
 					type="button"
 					onClick={handleOpenLabOrder}
 					data-testid="btn-visit-lab-order-fast"
-					className="sr-only"
-					aria-hidden="true"
-					tabIndex={-1}
+					className="secondary-button h-9 min-h-[36px] px-2.5 py-0 text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-1.5 shrink-0 cursor-pointer rounded-xl whitespace-nowrap shadow-xs transition-colors"
+					title="Оформить заказ-наряд в зуботехническую лабораторию (ЗТЛ)"
+					aria-label="Наряд в ЗТЛ"
 				>
-					Наряд ЗТЛ
+					<FlaskConical className="w-4 h-4 text-[var(--teal)] shrink-0" aria-hidden="true" />
+					<span className="hidden sm:inline">+ Наряд в ЗТЛ</span>
+					<span className="sm:hidden">+ ЗТЛ</span>
 				</button>
 				<button
 					type="button"
@@ -342,8 +344,8 @@ export function VisitViewHeader({
 							>
 								<AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
 								<div className="flex flex-col">
-									<span className="font-semibold text-rose-700 dark:text-rose-300">Аптечка анти-шок</span>
-									<span className="text-[10px] text-[var(--muted)]">Анафилаксия, коллапс, протокол СМП</span>
+									<span className="font-semibold text-rose-700 dark:text-rose-300">Экстренная помощь у кресла</span>
+									<span className="text-[10px] text-[var(--muted)]">Шпаргалка 112, аптечка первой линии</span>
 								</div>
 							</button>
 							<button

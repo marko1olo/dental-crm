@@ -6,8 +6,10 @@
 
 import React from "react";
 import {
+	AlertTriangle,
 	Calendar,
 	CheckCircle2,
+	Clock,
 	Eye,
 	Building2,
 	RotateCcw,
@@ -50,6 +52,66 @@ export interface DentalLabKanbanCardProps {
 	readonly onPartialDelivery?: ((order: DentalLabWorkflowOrder) => void) | undefined;
 }
 
+export interface FittingUrgencyInfo {
+	readonly text: string;
+	readonly severity: "critical" | "warning" | "normal";
+}
+
+function getPluralDaysRu(count: number): string {
+	const abs = Math.abs(count);
+	const mod10 = abs % 10;
+	const mod100 = abs % 100;
+	if (mod100 >= 11 && mod100 <= 19) return "дней";
+	if (mod10 === 1) return "день";
+	if (mod10 >= 2 && mod10 <= 4) return "дня";
+	return "дней";
+}
+
+export function getFittingUrgencyInfo(order: DentalLabWorkflowOrder): FittingUrgencyInfo | null {
+	const rawDate = order.fittingDate || order.scheduledVisitDateIso;
+	if (!rawDate) return null;
+
+	const targetDate = new Date(rawDate);
+	if (isNaN(targetDate.getTime())) return null;
+
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+	const targetMidnight = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+
+	const diffDays = Math.round((targetMidnight.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+	const dateFormatted = formatRussianDate(rawDate);
+
+	if (diffDays < 0) {
+		const overdueDays = Math.abs(diffDays);
+		return {
+			text: `Примерка просрочена на ${overdueDays} ${getPluralDaysRu(overdueDays)} • ${dateFormatted}`,
+			severity: "critical",
+		};
+	}
+	if (diffDays === 0) {
+		return {
+			text: `Примерка сегодня! • ${dateFormatted}`,
+			severity: "critical",
+		};
+	}
+	if (diffDays === 1) {
+		return {
+			text: `Примерка завтра • ${dateFormatted}`,
+			severity: "warning",
+		};
+	}
+	if (diffDays <= 3) {
+		return {
+			text: `Примерка через ${diffDays} ${getPluralDaysRu(diffDays)} • ${dateFormatted}`,
+			severity: "warning",
+		};
+	}
+	return {
+		text: `Примерка через ${diffDays} ${getPluralDaysRu(diffDays)} • ${dateFormatted}`,
+		severity: "normal",
+	};
+}
+
 export const DentalLabKanbanCard: React.FC<DentalLabKanbanCardProps> = ({
 	order,
 	columnId,
@@ -79,6 +141,8 @@ export const DentalLabKanbanCard: React.FC<DentalLabKanbanCardProps> = ({
 	const preset =
 		ORTHOPEDIC_WORK_TYPES[order.workTypeId] ||
 		ORTHOPEDIC_WORK_TYPES.crown_emax;
+
+	const fittingUrgency = getFittingUrgencyInfo(order);
 
 	let advanceLabel = "Далее";
 	let advanceTitle = "Передвинуть на следующий клинический статус";
@@ -407,7 +471,7 @@ export const DentalLabKanbanCard: React.FC<DentalLabKanbanCardProps> = ({
 					</div>
 					<button
 						type="button"
-						className="ztl-btn-card-action ztl-delay-reschedule-btn"
+						className="secondary-button ztl-btn-card-action ztl-delay-reschedule-btn"
 						style={{
 							alignSelf: "flex-start",
 							backgroundColor: "#d97706",
@@ -460,6 +524,48 @@ export const DentalLabKanbanCard: React.FC<DentalLabKanbanCardProps> = ({
 				</div>
 			)}
 
+			{/* Подсветка срочности примерки: Примерка через N дн. • [Дата] */}
+			{fittingUrgency && (
+				<div
+					className={`ztl-card-urgency-badge ztl-urgency-${fittingUrgency.severity}`}
+					style={{
+						display: "inline-flex",
+						alignItems: "center",
+						gap: "5px",
+						padding: "4px 8px",
+						borderRadius: "6px",
+						fontSize: "10.5px",
+						fontWeight: 700,
+						marginTop: "4px",
+						...(fittingUrgency.severity === "critical"
+							? {
+									background: "var(--bad-bg, rgba(239, 68, 68, 0.1))",
+									color: "var(--bad-fg, #e11d48)",
+									border: "1px solid var(--bad-fg, rgba(239, 68, 68, 0.35))",
+								}
+							: fittingUrgency.severity === "warning"
+								? {
+										background: "rgba(245, 158, 11, 0.12)",
+										color: "var(--amber-fg, #b45309)",
+										border: "1px solid rgba(245, 158, 11, 0.45)",
+									}
+								: {
+										background: "var(--teal-surface, rgba(13, 148, 136, 0.08))",
+										color: "var(--teal, #0d9488)",
+										border: "1px solid var(--teal-soft, rgba(13, 148, 136, 0.3))",
+									}),
+					}}
+					data-testid={`ztl-card-fitting-urgency-${order.id}`}
+				>
+					{fittingUrgency.severity === "critical" ? (
+						<AlertTriangle size={12} className="shrink-0" />
+					) : (
+						<Clock size={12} className="shrink-0" />
+					)}
+					<span className="truncate">{fittingUrgency.text}</span>
+				</div>
+			)}
+
 			{/* Даты готовности и примерки */}
 			<div className="ztl-card-dates-row">
 				<span title="Срок готовности из лаборатории">
@@ -507,7 +613,7 @@ export const DentalLabKanbanCard: React.FC<DentalLabKanbanCardProps> = ({
 			>
 				<button
 					type="button"
-					className="ztl-btn-card-action min-h-[36px] sm:min-h-0"
+					className="secondary-button ztl-btn-card-action min-h-[36px] sm:min-h-0"
 					onClick={(e) => {
 						e.stopPropagation();
 						onInspectOrder(order);
@@ -522,7 +628,7 @@ export const DentalLabKanbanCard: React.FC<DentalLabKanbanCardProps> = ({
 				{columnId === "installed_completed" ? (
 					<button
 						type="button"
-						className="ztl-btn-card-action min-h-[36px] sm:min-h-0"
+						className="secondary-button ztl-btn-card-action min-h-[36px] sm:min-h-0"
 						style={{
 							color: "var(--teal, #059669)",
 							borderColor: "var(--teal-soft, #a7f3d0)",
@@ -542,7 +648,7 @@ export const DentalLabKanbanCard: React.FC<DentalLabKanbanCardProps> = ({
 				) : (
 					<button
 						type="button"
-						className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
+						className="primary-button ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
 						onClick={(e) => {
 							e.stopPropagation();
 							onAdvanceStage(order);
@@ -559,7 +665,7 @@ export const DentalLabKanbanCard: React.FC<DentalLabKanbanCardProps> = ({
 				<div style={{ position: "relative", flexShrink: 0 }}>
 					<button
 						type="button"
-						className="ztl-btn-card-action min-h-[36px] sm:min-h-0 px-2"
+						className="icon-button ztl-btn-card-action min-h-[36px] sm:min-h-0 px-2"
 						style={{ minWidth: "32px", padding: "0 6px", flex: "none" }}
 						onClick={(e) => {
 							e.stopPropagation();

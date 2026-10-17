@@ -385,8 +385,22 @@
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	overflow: hidden;
-	min-height: 100%;
+	min-width: 260px;
+	min-height: 280px;
 	transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ztl-kanban-empty-column {
+	border: 1.5px dashed var(--line, #cbd5e1);
+	background: var(--paper-soft);
+	border-radius: 8px;
+	color: var(--muted, #94a3b8);
+	transition: all 0.2s ease;
+}
+
+.ztl-kanban-column.is-drag-over .ztl-kanban-empty-column {
+	border-color: var(--teal, #0d9488);
+	background: var(--teal-surface, rgba(13, 148, 136, 0.08));
 }
 
 .ztl-kanban-column.is-drag-over {

@@ -60,6 +60,24 @@ export function useDentalLabOrderDrawerForm(props: DentalLabOrderDrawerProps) {
 
 	const handleSelectConstruction = (val: string) => {
 		setConstruction(val as DentalLabConstructionType);
+		if (val === "crown_pmma" || val === "wt_009") {
+			setPatientPriceRub(3500);
+			setZtlCostRub(1200);
+			setDeadlineDate(toIsoDate(addWorkingDaysRu(sentDate, 2)));
+			return;
+		}
+		if (val === "custom_abutment_zirconia" || val === "wt_014") {
+			setPatientPriceRub(35000);
+			setZtlCostRub(12000);
+			setDeadlineDate(toIsoDate(addWorkingDaysRu(sentDate, 7)));
+			return;
+		}
+		if (val === "inlay_onlay" || val === "wt_006") {
+			setPatientPriceRub(18000);
+			setZtlCostRub(6000);
+			setDeadlineDate(toIsoDate(addWorkingDaysRu(sentDate, 4)));
+			return;
+		}
 		const def = DENTAL_LAB_CONSTRUCTIONS[val as DentalLabConstructionType];
 		if (def) {
 			setPatientPriceRub(def.defaultPatientPriceKopecks / 100);
