@@ -19,7 +19,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { showToast } from "./components/GlobalToast";
-import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { useOptionalAppLogicContext } from "./contexts/AppLogicContext";
 import { actionFailureToast } from "./lib/panelStateText";
 import { logger } from "./utils/logger";
 import {
@@ -54,7 +54,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 	assignedDoctorId = null,
 	treatmentPlanId = null,
 }) => {
-	const appLogic = useAppLogicContext();
+	const appLogic = useOptionalAppLogicContext();
 	const auth = appLogic?.auth;
 
 	const isMountedRef = useRef(true);

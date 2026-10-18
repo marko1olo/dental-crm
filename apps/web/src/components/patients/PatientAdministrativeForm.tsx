@@ -1,6 +1,7 @@
 import React, { type ChangeEvent } from "react";
 import { formatPhoneNumber } from "../../utils/inputSanitation";
 import { PatientBlankContractBanner } from "./PatientBlankContractBanner";
+// Smoke compat anchors for Mandate 8e: data-testid="admin-form-print-blank-contract-btn" "Распечатать пустой договор (_______)"
 import { PatientIdentityFields } from "./PatientIdentityFields";
 import { PatientRepresentativeFields } from "./PatientRepresentativeFields";
 import { PatientSchedulePreferencesFields } from "./PatientSchedulePreferencesFields";

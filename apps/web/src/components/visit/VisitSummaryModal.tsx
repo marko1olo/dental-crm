@@ -1,14 +1,12 @@
 import type React from "react";
 import { createPortal } from "react-dom";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { AppointmentModal } from "../schedule/AppointmentModal";
-import { EmrProtocolGeneratorModal, type ToothSurface } from "../emr";
-import { PaymentModal } from "../finance/PaymentModal.js";
 import { PatientMemoPrintModal } from "./PatientMemoPrintModal";
 import {
 	type VisitSummaryModalProps,
 	useVisitSummaryModalState,
 	VisitSummaryModalContent,
+	VisitSummarySequentialFlow,
 } from "./summaryModal";
 
 export {
@@ -25,105 +23,15 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = (props) => {
 	const appLogic = useAppLogicContext() as any;
 	const state = useVisitSummaryModalState(props, appLogic);
 
-	const {
-		isProtocolGeneratorOpen,
-		isNextStageModalOpen,
-		isPaymentModalOpen,
-		isCompleting = false,
-	} = state;
-
 	if (!props.isOpen) return null;
 
 	// Anti-Matryoshka (Sin 6, Mandate 8d): Render sequentially with depth strictly 1.
-	if (isProtocolGeneratorOpen) {
-		return (
-			<EmrProtocolGeneratorModal
-				isOpen={true}
-				onClose={() => state.setIsProtocolGeneratorOpen(false)}
-				patientFullName={state.patientName !== "—" ? state.patientName : undefined}
-				patientBirthDate={state.patientBirth || undefined}
-				medicalCardNumber={state.patientCard || undefined}
-				initialToothNumber={props.diary.diagnosisTooth || (state.abnormalTeeth[0] ? String(state.abnormalTeeth[0].toothNumber) : undefined)}
-				initialIcd10Code={props.diary.diagnosisIcd10 || undefined}
-				initialSurfaces={(state.abnormalTeeth[0]?.surfaces as ToothSurface[]) || undefined}
-				doctorFullName={props.doctorName !== "—" ? (props.doctorName ?? undefined) : undefined}
-				doctorSpecialty={props.doctorSpecialty ?? undefined}
-				odontogramTeeth={state.mappedOdontogramTeeth}
-				onApplyDiary={(synthesized) => {
-					state.setSynthesizedDiaryPreview(synthesized);
-					props.onApplySynthesizedDiary?.(synthesized);
-					state.setIsProtocolGeneratorOpen(false);
-				}}
-			/>
-		);
-	}
-
-	if (isNextStageModalOpen) {
-		return (
-			<AppointmentModal
-				isOpen={true}
-				appointment={state.nextVisitDraft}
-				dashboard={appLogic?.dashboard || { patients: [props.patient].filter(Boolean), clinicSettings: { staff: [], chairs: [] } }}
-				onClose={() => state.setIsNextStageModalOpen(false)}
-				onSave={state.handleSaveNextStageAppointment}
-				patientName={(patients, pid) => (patients || []).find((p: any) => p.id === pid)?.fullName || state.patientName || "Пациент"}
-				formatTime={(iso) => (iso ? iso.slice(11, 16) : "10:00")}
-				toDateTimeLocalValue={(iso) => (iso ? iso.slice(0, 16) : "")}
-				fromDateTimeLocalValue={(val) => (val ? new Date(val).toISOString() : new Date().toISOString())}
-				appointmentLabels={{ planned: "Запланирован", confirmed: "Подтвержден", arrived: "Пришел", in_treatment: "В кресле", completed: "Завершен", cancelled: "Отменен", no_show: "Не явился" }}
-				activeVisitLockedAppointmentStatuses={new Set()}
-			/>
-		);
-	}
-
-	if (isPaymentModalOpen) {
-		const effectiveTooth =
-			props.diary.diagnosisTooth
-				? Number(props.diary.diagnosisTooth)
-				: (state.abnormalTeeth[0]?.toothNumber
-					? Number(state.abnormalTeeth[0].toothNumber)
-					: undefined);
-
-		const enrichedItems: import("../billing/ReceiptPreview.js").ReceiptItem[] = (state.effectiveChairsideServices || []).map((s: any, idx: number) => {
-			const tooth = s.toothNumber ? Number(s.toothNumber) : (s.toothCode ? Number(s.toothCode) : effectiveTooth);
-			const price = Number(s.unitPriceRub ?? s.priceRub ?? s.price ?? 0);
-			const qty = Number(s.quantity ?? 1);
-			const total = Number(s.totalRub ?? price * qty);
-			return {
-				id: s.id || `cs-${idx}`,
-				name: s.title || s.name || s.serviceName || "Стоматологическая услуга",
-				code804n: s.code804n || s.code || "A16.07.002.001",
-				quantity: qty,
-				priceRub: price,
-				discountRub: Number(s.discountRub ?? 0),
-				amountRub: total,
-				toothNumber: tooth,
-			};
-		});
-
-		return (
-			<PaymentModal
-				isOpen={true}
-				onClose={() => state.setIsPaymentModalOpen(false)}
-				patientId={props.patient?.id || appLogic?.activePatientId || "pat-walkin"}
-				patientName={state.patientName !== "—" ? state.patientName : "Пациент"}
-				patientPhone={props.patient?.phone || ""}
-				visitId={appLogic?.activeVisitId}
-				amountRub={state.effectiveTotalDueRub}
-				defaultMethod={state.selectedPaymentMethod}
-				patientDepositRub={state.effectiveDepositRub}
-				patientFamilyBalanceRub={state.effectiveFamilyBalanceRub}
-				cashierName={props.doctorName || "Врач-стоматолог"}
-				doctorName={props.doctorName || appLogic?.activeDoctor?.fullName || "Врач-стоматолог"}
-				clinicLegalName={appLogic?.dashboard?.clinicSettings?.legalName || "ООО «ДЕНТЕ»"}
-				items={enrichedItems}
-				toothNumber={effectiveTooth}
-				onSuccess={state.handlePaymentSuccessCallback}
-			/>
-		);
+	if (state.isProtocolGeneratorOpen || state.isNextStageModalOpen || state.isPaymentModalOpen) {
+		return <VisitSummarySequentialFlow props={props} state={state} appLogic={appLogic} />;
 	}
 
 	const isMemoModalOpen = state.isMemoModalOpen;
+	const isCompleting = state.isCompleting ?? false;
 
 	const content = (
 		<>
@@ -146,7 +54,10 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = (props) => {
 								fullName: state.patientName,
 								birthDate: props.patient.birthDate || props.patient.dateOfBirth,
 								phone: props.patient.phone,
-								cardNumber: props.patient.cardNumber || props.patient.medicalCardNumber || props.patient.chartNumber,
+								cardNumber:
+									props.patient.cardNumber ||
+									props.patient.medicalCardNumber ||
+									props.patient.chartNumber,
 						  }
 						: null
 				}

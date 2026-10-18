@@ -85,10 +85,10 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 					data-testid="btn-express-apical-endo-protocol"
 					onClick={handleApplyExpressApicalPreset}
 					className="primary-button h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-[var(--teal,#0d9488)] hover:brightness-110 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
-					title="✓ Постоянная обтурация гуттаперчей + AH Plus до апекса (Apex 0.0 + RVG + AH Plus)"
+					title="Постоянная обтурация гуттаперчей + AH Plus до апекса (Apex 0.0 + RVG + AH Plus)"
 				>
 					<Check size={13} className="shrink-0" />
-					<span className="truncate">✓ Постоянная обтурация (AH Plus)</span>
+					<span className="truncate">Постоянная обтурация (AH Plus)</span>
 				</button>
 
 				{/* Preset 2: Временная пломбировка Ca(OH)2 */}
@@ -97,10 +97,10 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 					data-testid="btn-caoh2-endo-protocol"
 					onClick={handleApplyCaOh2Protocol}
 					className="secondary-button h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
-					title="✓ Механическая и медикаментозная обработка NaOCl 3% + временная паста Ca(OH)2 (Каласепт)"
+					title="Механическая и медикаментозная обработка NaOCl 3% + временная паста Ca(OH)2 (Каласепт)"
 				>
 					<ShieldCheck size={13} className="shrink-0" />
-					<span className="truncate">✓ NaOCl 3% + Ca(OH)2</span>
+					<span className="truncate">NaOCl 3% + Ca(OH)2</span>
 				</button>
 
 				{/* Preset 3: Эндодонтия пульпита в 1 визит */}
