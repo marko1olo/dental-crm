@@ -1,0 +1,110 @@
+.dente-filter-chips {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+.dente-filter-chips::-webkit-scrollbar {
+	display: none;
+}
+
+.dente-filter-chip {
+	height: 30px;
+	padding: 0 14px;
+	border-radius: 9999px;
+	font-size: 13px;
+	font-weight: 500;
+	background-color: var(--paper-muted, var(--paper-soft));
+	border: 1px solid var(--line);
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	white-space: nowrap;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	user-select: none;
+}
+
+.dente-filter-chip:hover {
+	background-color: var(--paper);
+	border-color: var(--line-strong, var(--line));
+	color: var(--ink);
+}
+
+.dente-filter-chip.active,
+.dente-filter-chip[data-active="true"] {
+	background-color: var(--teal-soft);
+	border-color: var(--teal);
+	color: var(--teal-dark, var(--teal));
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.15);
+}
+
+@media (max-width: 640px) {
+	.pricelist-studio-container {
+		gap: 12px;
+		max-width: 100%;
+		overflow-x: clip;
+	}
+
+	.pricelist-section-card {
+		padding: 12px;
+		gap: 12px;
+		max-width: 100%;
+		overflow-x: clip;
+		box-sizing: border-box;
+	}
+
+	.pricelist-search-wrapper {
+		width: 100%;
+		max-width: 100%;
+	}
+
+	.pricelist-search-wrapper input {
+		width: 100% !important;
+		box-sizing: border-box;
+	}
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.pricelist-tab-btn,
+	.icon-button {
+		min-height: 44px !important;
+	}
+	.icon-button {
+		min-width: 44px !important;
+	}
+	.pricelist-studio-container .primary-button {
+		min-height: 44px;
+		height: 44px;
+		border-radius: 12px;
+		font-size: 14px;
+	}
+	.pricelist-studio-container .secondary-button {
+		min-height: 44px;
+		height: 44px;
+		border-radius: 12px;
+	}
+	.catalog-items-grid {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		background: var(--paper);
+		border: 1px solid var(--line);
+		border-radius: 16px;
+		overflow: hidden;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	}
+	.catalog-item-card {
+		border: none;
+		border-radius: 0;
+		border-bottom: 1px solid var(--line-subtle, var(--line));
+		padding: 14px 16px;
+		min-height: 52px;
+	}
+	.catalog-item-card:last-child {
+		border-bottom: none;
+	}
+}

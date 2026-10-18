@@ -1,0 +1,116 @@
+.pricelist-text-input textarea {
+	width: 100%;
+	padding: 16px;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	background: var(--background);
+	font-family: inherit;
+	font-size: 14px;
+	resize: vertical;
+	margin-bottom: 12px;
+}
+
+.pricelist-text-input textarea:focus {
+	outline: none;
+	border-color: var(--teal);
+}
+
+.pricelist-actions-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+	background: var(--background);
+	padding: 16px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+}
+
+.pricelist-ai-toggle {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.checkbox-label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 15px;
+	cursor: pointer;
+}
+
+.pricelist-ai-toggle p {
+	margin: 0 0 0 24px;
+	font-size: 13px;
+	color: var(--muted);
+}
+
+.pricelist-run-buttons {
+	display: flex;
+	gap: 12px;
+}
+
+.pricelist-stats-header {
+	display: flex;
+	gap: 16px;
+}
+
+.pricelist-stat-box {
+	flex: 1;
+	background: var(--background);
+	padding: 16px;
+	border-radius: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.pricelist-stat-box span {
+	font-size: 13px;
+	color: var(--muted);
+}
+
+.pricelist-stat-box strong {
+	font-size: 18px;
+	color: var(--ink);
+}
+
+.pricelist-items-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.pricelist-item-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 12px 16px;
+	background: var(--background);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+
+.pricelist-item-info strong {
+	font-size: 14px;
+	color: var(--ink);
+	display: block;
+}
+
+.pricelist-item-price span {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--teal);
+	display: block;
+	text-align: right;
+}
+
+.pricelist-save-bar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-top: 16px;
+	padding-top: 16px;
+	border-top: 1px solid var(--line);
+}
