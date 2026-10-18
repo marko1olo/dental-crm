@@ -76,7 +76,7 @@ export const DentalMedicalCardOdontogramTab: React.FC<
 				disabled={effectiveDisabled}
 			/>
 
-			{/* Флагманский 3D анатомический векторный ToothChart вместо убогих div-квадратиков */}
+			{/* Флагманский анатомический векторный ToothChart вместо убогих div-квадратиков */}
 			<div className="odontogram-flagship-wrapper p-3 rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] shadow-xs">
 				<ToothChart
 					teethData={teethData}
@@ -85,7 +85,7 @@ export const DentalMedicalCardOdontogramTab: React.FC<
 					bottomTeeth={PERMANENT_TEETH_LOWER}
 					onToothClick={handleChartToothClick}
 					onQuickStateChange={handleChartQuickStateChange}
-					showPulpAndCanals={false}
+					showPulpAndCanals={true}
 					showPeriapicalHalos={true}
 					showPeriodontalBoneLoss={true}
 					useSurfaces={true}

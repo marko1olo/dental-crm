@@ -1,7 +1,7 @@
 /**
  * DENTE Dental CRM — Odontogram View Container (Modular Master Facade)
  *
- * Coordinates clinical odontogram view modes (3D Anatomical, 6-Surface FDI, Classic GOST 043/u),
+ * Coordinates clinical odontogram view modes (Anatomical Vector, 6-Surface FDI, Classic GOST 043/u),
  * unified clinical toolbar, live financial invoice panel, voice dictation HUD,
  * and secondary clinical drawers/modals.
  */
@@ -15,7 +15,6 @@ import {
 	saveUiPreferences,
 } from "../../utils/preferencesUtils";
 import { useAppStore } from "../../store/appStore";
-import { AnatomicalSvgOdontogram } from "./AnatomicalSvgOdontogram";
 import {
 	ToothChart,
 	type ToothData,
@@ -137,7 +136,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 
 	// 2. Custom toggles for clinical productivity
 	const [showWisdomTeeth, setShowWisdomTeeth] = useState<boolean>(true);
-	const [showPulpAndCanals, setShowPulpAndCanals] = useState<boolean>(false);
+	const [showPulpAndCanals, setShowPulpAndCanals] = useState<boolean>(true);
 	const [useSurfaces] = useState<boolean>(initialUseSurfaces);
 	const [isLiveInvoiceOpen, setIsLiveInvoiceOpen] = useState<boolean>(false);
 	const [isFastExtractMode, setIsFastExtractMode] = useState<boolean>(false);
@@ -673,8 +672,9 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			<div className="flex flex-col lg:flex-row gap-3 w-full items-start">
 				<div className="odontogram-active-view-slot w-full flex-1 min-w-0 flex flex-col gap-2.5">
 					{activeMode === "anatomical_svg" && (
-						<AnatomicalSvgOdontogram
+						<ToothChart
 							{...sharedViewProps}
+							useSurfaces={false}
 							showPulpAndCanals={showPulpAndCanals}
 							showPeriapicalHalos={true}
 							showPeriodontalBoneLoss={true}

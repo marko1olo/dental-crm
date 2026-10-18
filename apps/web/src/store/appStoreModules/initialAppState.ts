@@ -45,7 +45,7 @@ import {
 	getCachedClinicDashboard,
 	isOfflineAutonomyMode,
 } from "../../lib/offlineStorage";
-import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { isDemoShowcaseMode } from "../../utils/demoModeEngine";
 
 export function getInitialNavigationAndThemeState() {
 	const prefs = loadUiPreferences() ?? defaultUiPreferences;

@@ -8,9 +8,10 @@ const OUT_DOCS = "C:/Clinic_MVP/dental-crm/docs/proofs/documents";
 const OUT_ODONTO = "C:/Clinic_MVP/dental-crm/docs/proofs/odontogram";
 const CONV_ID = "c44dee1f-e8b2-4479-94c5-7299ac52d786";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`;
+const SUB_CONV = "C:/Users/Admin/.gemini/antigravity/brain/985f660d-836b-454e-8a98-cd014608676d";
 const browserExecutable = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 
-[OUT_DOCS, OUT_ODONTO, OUT_CONV].forEach((dir) => {
+[OUT_DOCS, OUT_ODONTO, OUT_CONV, SUB_CONV].forEach((dir) => {
 	if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 });
 
@@ -113,8 +114,10 @@ async function captureScreen(page, outDir, filename) {
 	await page.waitForTimeout(600);
 	const p1 = path.join(outDir, filename);
 	const p2 = path.join(OUT_CONV, filename);
+	const p3 = path.join(SUB_CONV, filename);
 	await page.screenshot({ path: p1, fullPage: false, animations: "disabled", timeout: 15000 });
 	copyFileSync(p1, p2);
+	copyFileSync(p1, p3);
 	const size = statSync(p1).size;
 	console.log(`[Captured] ${filename} (${size} bytes) -> OK: ${size >= 20000}`);
 }
@@ -146,17 +149,32 @@ async function openForm043InDocuments(page) {
 	await page.waitForTimeout(1500);
 	await suppressOverlays(page);
 
-	// Select dental_medical_card_043u
-	console.log("[Documents] Selecting 043/u template...");
+	// Select dental_medical_card_043u (Медицинская карта приёма)
+	console.log("[Documents] Selecting Medical Card template...");
 	await page.evaluate(() => {
-		// Try finding and clicking button for dental_medical_card_043u
-		const buttons = Array.from(document.querySelectorAll("button"));
-		const cardBtn = buttons.find((b) => b.innerText.includes("043/у") || b.innerText.includes("Карта 043"));
-		if (cardBtn) {
-			cardBtn.click();
+		const cards = Array.from(document.querySelectorAll("div"));
+		const medCard = cards.find((c) => c.innerText && c.innerText.includes("Медицинская карта приёма"));
+		if (medCard) {
+			const oformitBtn = Array.from(medCard.querySelectorAll("button")).find((b) => b.innerText.includes("Оформить") || b.innerText.includes("Открыть"));
+			if (oformitBtn) {
+				oformitBtn.click();
+				return;
+			}
 		}
+		const buttons = Array.from(document.querySelectorAll("button"));
+		const cardBtn = buttons.find((b) => b.innerText.includes("Медицинская карта") || b.innerText.includes("043/у") || b.innerText.includes("Карта 043"));
+		if (cardBtn) cardBtn.click();
 	});
 	await page.waitForTimeout(1500);
+	await suppressOverlays(page);
+
+	// Select Odontogram / Formula tab inside the medical card
+	await page.evaluate(() => {
+		const tabs = Array.from(document.querySelectorAll("button, [role='tab']"));
+		const fTab = tabs.find((t) => t.innerText.includes("Зубная формула") || t.innerText.includes("Формула") || t.innerText.includes("Одонтограмма"));
+		if (fTab) fTab.click();
+	});
+	await page.waitForTimeout(1000);
 	await suppressOverlays(page);
 }
 

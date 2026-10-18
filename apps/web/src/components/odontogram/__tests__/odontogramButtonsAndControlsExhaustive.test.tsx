@@ -241,7 +241,7 @@ describe("3. OdontogramToolbar: Controls and Hotpath Actions", () => {
 		);
 
 		// View Modes (anatomical_svg, compact_clinical, classic_gost)
-		assert.ok(html.includes('data-testid="odontogram-mode-btn-anatomical_svg"'), "Mode 3D View");
+		assert.ok(html.includes('data-testid="odontogram-mode-btn-anatomical_svg"'), "Mode Anatomical View");
 		assert.ok(html.includes('data-testid="odontogram-mode-btn-compact_clinical"'), "Mode 2D Facets");
 		assert.ok(html.includes('data-testid="odontogram-mode-btn-classic_gost"'), "Mode GOST");
 

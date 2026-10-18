@@ -25,13 +25,13 @@ export interface OdontogramViewOption {
 export const ODONTOGRAM_VIEW_MODES: readonly OdontogramViewOption[] = [
 	{
 		mode: "anatomical_svg",
-		label: "3D Анатомический",
-		shortLabel: "3D",
-		compactLabel: "3D",
-		mobileLabel: "3D",
+		label: "Анатомический",
+		shortLabel: "Анатомия",
+		compactLabel: "Анатомия",
+		mobileLabel: "Анатомия",
 		icon: <Sparkles size={13} className="shrink-0" />,
 		tooltip: "Векторная анатомическая визуализация коронок, корней и каналов",
-		badge: "3D",
+		badge: "Анатомия",
 	},
 	{
 		mode: "compact_clinical",

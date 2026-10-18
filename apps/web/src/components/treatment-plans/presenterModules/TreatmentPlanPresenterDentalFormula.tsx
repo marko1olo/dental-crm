@@ -63,8 +63,8 @@ export const TreatmentPlanPresenterDentalFormula: React.FC<TreatmentPlanPresente
 					onToothClick={handleToothSelect}
 					hideExpressActions={true}
 					hideQuadrantSwitcher={true}
-					showPulpAndCanals={false}
-					showPeriapicalHalos={false}
+					showPulpAndCanals={true}
+					showPeriapicalHalos={true}
 					showPeriodontalBoneLoss={false}
 					className="presenter-tooth-chart"
 				/>

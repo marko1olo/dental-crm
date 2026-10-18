@@ -9,7 +9,7 @@ import { SURFACES } from "./types";
 
 export interface OdontogramToothSurfaceEditorProps {
 	readonly selectedTooth: number;
-	readonly currentToothRecord?: FdiToothRecord;
+	readonly currentToothRecord?: FdiToothRecord | undefined;
 	readonly activeStatus: ToothClinicalStatusCode;
 	readonly effectiveDisabled: boolean;
 	readonly handleToothStatusSet: (

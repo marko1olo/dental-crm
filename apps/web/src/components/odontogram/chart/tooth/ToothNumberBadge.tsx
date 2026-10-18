@@ -81,7 +81,7 @@ export const ToothNumberBadge: React.FC<ToothNumberBadgeProps> = memo(({
 						title={`Физиологическая резорбция корня: ${resorptionVisual.badgeText} (${resorptionVisual.descriptionRu})`}
 						data-testid={`tooth-resorption-badge-${number}`}
 					>
-						R{resorptionVisual.stage}%
+						{`R${resorptionVisual.stage}%`}
 					</span>
 				)}
 				{effectivePocketDepth !== undefined && effectivePocketDepth > 4 && (
@@ -91,7 +91,7 @@ export const ToothNumberBadge: React.FC<ToothNumberBadgeProps> = memo(({
 						}`}
 						title={`Пародонтальный карман ${effectivePocketDepth} мм (Риск пародонтита K05.3)`}
 					>
-						P{effectivePocketDepth}
+						{`P${effectivePocketDepth}`}
 					</span>
 				)}
 			</span>
