@@ -137,7 +137,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 
 	// 2. Custom toggles for clinical productivity
 	const [showWisdomTeeth, setShowWisdomTeeth] = useState<boolean>(true);
-	const [showPulpAndCanals, setShowPulpAndCanals] = useState<boolean>(false);
+	const [showPulpAndCanals, setShowPulpAndCanals] = useState<boolean>(true);
 	const [useSurfaces] = useState<boolean>(initialUseSurfaces);
 	const [isLiveInvoiceOpen, setIsLiveInvoiceOpen] = useState<boolean>(false);
 	const [isFastExtractMode, setIsFastExtractMode] = useState<boolean>(false);
@@ -690,7 +690,15 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 						/>
 					)}
 					{activeMode === "classic_gost" && (
-						<ClassicGostOdontogram {...sharedViewProps} />
+						<div className="flex flex-col gap-3 w-full">
+							<ToothChart
+								{...sharedViewProps}
+								showPulpAndCanals={showPulpAndCanals}
+								showPeriapicalHalos={true}
+								showPeriodontalBoneLoss={true}
+							/>
+							<ClassicGostOdontogram {...sharedViewProps} hideHeader={true} />
+						</div>
 					)}
 
 					{/* Полноценная клиническая панель быстрой разметки (Штампы) под графикой одонтограммы */}
