@@ -9,7 +9,7 @@ import type { ShiftFinancialMode } from "./shiftViewTypes";
 export interface ShiftDesktopRightColumnProps {
 	shiftFinancialMode: ShiftFinancialMode;
 	activeDoctorFullName: string;
-	clinicName?: string;
+	clinicName?: string | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: stats
 	shiftStats: any;
 	chairRentalActTrigger: number;
@@ -17,8 +17,8 @@ export interface ShiftDesktopRightColumnProps {
 	setChairRentalRentExpenseRub: (val: number) => void;
 	setIsShiftCloseModalOpen: (open: boolean) => void;
 	// biome-ignore lint/suspicious/noExplicitAny: actions
-	visibleRecommendedActions?: any[];
-	recommendedActionPriorityLabels?: Record<string, string>;
+	visibleRecommendedActions?: any[] | undefined;
+	recommendedActionPriorityLabels?: Record<string, string> | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: patients
 	patientsById: Map<string, any>;
 	// biome-ignore lint/suspicious/noExplicitAny: action

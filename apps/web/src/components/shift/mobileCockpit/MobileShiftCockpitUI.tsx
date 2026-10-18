@@ -46,7 +46,17 @@ export const MobileShiftCockpitUI: React.FC<MobileShiftCockpitUIProps> = ({
 	};
 
 	return (
-		<>
+		<div
+			className="mobile-shift-ui-container"
+			style={{
+				width: "100%",
+				display: "flex",
+				flexDirection: "column",
+				gap: "12px",
+				paddingBottom: "calc(88px + env(safe-area-inset-bottom, 16px))",
+				boxSizing: "border-box",
+			}}
+		>
 			<MobileShiftSectionTabs
 				mobileSection={mobileSection}
 				onSelectSection={handleSelectSection}
@@ -73,6 +83,6 @@ export const MobileShiftCockpitUI: React.FC<MobileShiftCockpitUIProps> = ({
 					onOpenCashCheckout={onOpenCashCheckout}
 				/>
 			)}
-		</>
+		</div>
 	);
 };

@@ -50,7 +50,7 @@ export const ChairRentalSessionStrip: React.FC<ChairRentalSessionStripProps> = (
 						id={`chair-select-${widgetId}`}
 						value={selectedChairId}
 						onChange={(e) => onSelectChairId(e.target.value)}
-						style={{ height: "38px", padding: "0 10px", borderRadius: "8px", border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)", fontSize: "12.5px", fontWeight: 600, flex: 1 }}
+						style={{ minHeight: "44px", height: "44px", padding: "0 10px", borderRadius: "8px", border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)", fontSize: "12.5px", fontWeight: 600, flex: 1 }}
 					>
 						<option value="chair-01">Кресло №1 (Anthos A5)</option>
 						<option value="chair-02">Кресло №2 (Planmeca Compact)</option>

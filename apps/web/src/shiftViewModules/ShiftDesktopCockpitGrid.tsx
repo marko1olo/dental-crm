@@ -6,7 +6,7 @@ import { ShiftViewVisitsQueue } from "./ShiftViewVisitsQueue";
 import { ShiftDesktopRightColumn } from "./ShiftDesktopRightColumn";
 
 export interface ShiftDesktopCockpitGridProps {
-	dashboard?: Dashboard;
+	dashboard?: Dashboard | undefined;
 	activeDoctorFullName: string;
 	inChairAppointment: any;
 	currentPatient: any;
@@ -27,10 +27,10 @@ export interface ShiftDesktopCockpitGridProps {
 	chairRentalNetIncomeRub: number;
 	chairRentalRentExpenseRub: number;
 	chairRentalActTrigger: number;
-	visibleRecommendedActions?: any[];
-	recommendedActionPriorityLabels?: Record<string, string>;
-	setSelectedPatientId?: (id: string | null) => void;
-	setError?: (err: unknown) => void;
+	visibleRecommendedActions?: any[] | undefined;
+	recommendedActionPriorityLabels?: Record<string, string> | undefined;
+	setSelectedPatientId?: ((id: string | null) => void) | undefined;
+	setError?: ((err: unknown) => void) | undefined;
 	setIsQueueBoardModalOpen: (open: boolean) => void;
 	setIsShiftCloseModalOpen: (open: boolean) => void;
 	setChairRentalNetIncomeRub: (val: number) => void;

@@ -4,6 +4,7 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { ShiftMetricsHeader } from "../mobileCockpit/ShiftMetricsHeader";
 import { ShiftActionsToolbar } from "../mobileCockpit/ShiftActionsToolbar";
+import { MobileShiftCockpitUI } from "../mobileCockpit/MobileShiftCockpitUI";
 
 const EMOJI_REGEX = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 
@@ -105,5 +106,30 @@ describe("MobileShiftCockpit Apple iOS HIG & Anti-Desktop-Squeeze Invariants", (
 			false,
 			"ShiftActionsToolbar must contain zero emojis",
 		);
+	});
+
+	it("3. MobileShiftCockpitUI: renders with safe-area padding-bottom to prevent navbar overlap", () => {
+		const rawHtml = renderToString(
+			React.createElement(MobileShiftCockpitUI, {
+				doctorName: "Д-р Барабаш С.В.",
+				totalRevenueRub: 50000,
+				totalAppointmentsCount: 4,
+				completedCount: 2,
+				inChairCount: 1,
+				consumables: [],
+				handleAdjustConsumable: () => {},
+				activePatientFilter: "all",
+				setActivePatientFilter: () => {},
+				filteredAppointments: [],
+			}),
+		);
+
+		assert.ok(
+			rawHtml.includes("padding-bottom:calc(88px + env(safe-area-inset-bottom, 16px))") ||
+			rawHtml.includes("padding-bottom: calc(88px + env(safe-area-inset-bottom, 16px))"),
+			"MobileShiftCockpitUI must have safe-area padding-bottom to clear mobile tab bar",
+		);
+		assert.ok(rawHtml.includes("mobile-shift-ui-container"));
+		assert.ok(rawHtml.includes("Субаренда"));
 	});
 });

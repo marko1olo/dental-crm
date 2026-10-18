@@ -36,7 +36,13 @@ export const ShiftMobileCockpitWrap: React.FC<ShiftMobileCockpitWrapProps> = ({
 	return (
 		<div
 			className="mobile-shift-cockpit-view-wrapper"
-			style={{ width: "100%", maxWidth: "100vw", overflowX: "clip" }}
+			style={{
+				width: "100%",
+				maxWidth: "100vw",
+				overflowX: "clip",
+				paddingBottom: "calc(88px + env(safe-area-inset-bottom, 16px))",
+				boxSizing: "border-box",
+			}}
 			data-testid="shift-view-mobile"
 		>
 			<MobileShiftCockpit

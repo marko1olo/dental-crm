@@ -63,7 +63,7 @@ export const ChairRentalProfitBreakdown: React.FC<ChairRentalProfitBreakdownProp
 				</div>
 				{economics.sterilizationExpensesRub > 0 && (
 					<div className="chair-rental-breakdown-card">
-						<span className="chair-rental-breakdown-label">Стерилизация (СанПиН)</span>
+						<span className="chair-rental-breakdown-label">Стерилизация инструментов</span>
 						<span className="chair-rental-breakdown-val expense" data-testid="breakdown-sterilization">
 							−{formatRub(economics.sterilizationExpensesRub)}
 						</span>
