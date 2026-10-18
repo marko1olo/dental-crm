@@ -1,39 +1,12 @@
-/**
- * ============================================================================
- * SANPIN 3.3686-21 & MINISTRY OF HEALTH FORM № 257/U STUDIO
- * Единый нормативный центр контроля работы стерилизаторов (Автоклав / Сухожар).
- * ============================================================================
- */
-
-import {
-	Activity,
-	Calendar,
-	CheckCircle2,
-	FileSpreadsheet,
-	FileText,
-	FlaskConical,
-	Layers,
-	Plus,
-	Printer,
-	ShieldCheck,
-	Sparkles,
-	X,
-} from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { createPortal } from "react-dom";
-import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
-import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
 import { AutoclaveJournal257Tab } from "./AutoclaveJournal257Tab.js";
-import "./autoclaveLog.css";
-import {
-	createDefault5ChamberPoints,
-	createForm257Record,
-	DEFAULT_CLINIC_LEGAL_INFO,
-	type BiologicalControlTestRecord,
-	type ClinicLegalInfo,
-	type Form257Record,
-} from "./autoclaveLogEngine.js";
 import { AutoclaveNewCycleTab } from "./AutoclaveNewCycleTab.js";
+import { AutoclaveLogModalHeader } from "./AutoclaveLogModalHeader";
+import { AutoclaveLogModalTabs } from "./AutoclaveLogModalTabs";
+import { useAutoclaveLogModalLogic } from "./useAutoclaveLogModalLogic";
+import { DEFAULT_CLINIC_LEGAL_INFO, type ClinicLegalInfo } from "./autoclaveLogEngine.js";
+import "./autoclaveLog.css";
 
 export interface AutoclaveLog257ModalProps {
 	readonly isOpen: boolean;
@@ -42,341 +15,37 @@ export interface AutoclaveLog257ModalProps {
 	readonly clinicInfo?: ClinicLegalInfo;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// INITIAL SEED STATUTORY FORM 257/U RECORDS
-// ─────────────────────────────────────────────────────────────────────────────
-
-const INITIAL_FORM257_RECORDS: readonly Form257Record[] = [
-	createForm257Record({
-		date: "2026-08-22",
-		cycleNumber: 1,
-		sterilizerId: "autoclave-melag-vacuklav-23b",
-		regimeId: "steam_134_5min",
-		sensors: {
-			actualTemperatureCelsius: 134.5,
-			actualPressureBar: 2.15,
-			actualExposureMinutes: 5.5,
-		},
-		itemsDescriptionRu:
-			"Наконечники турбинные NSK Ti-Max (4 шт), угловые микромоторные (4 шт), смотровые терапевтические лотки (зеркала, зонды, пинцеты - 12 шт)",
-		packsCount: 16,
-		packagingType: "kraft_pouch_sealed",
-		chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
-		operatorStaffFullName: "Сотрудник клиники",
-		operatorStaffPosition: "Сотрудник ЦСО / Врач",
-		headNurseSignatureFullName: "Ответственный по СанПиН",
-		isHeadNurseVerified: true,
-		notes: "Утренний цикл, тест Бови-Дика пройден перед сменой",
-	}),
-	createForm257Record({
-		date: "2026-08-22",
-		cycleNumber: 2,
-		sterilizerId: "autoclave-melag-vacuklav-23b",
-		regimeId: "steam_134_20min_prion",
-		sensors: {
-			actualTemperatureCelsius: 134.2,
-			actualPressureBar: 2.12,
-			actualExposureMinutes: 20.5,
-		},
-		itemsDescriptionRu:
-			"Хирургический набор: элеваторы Бейна, щипцы экстракционные, костные распаторы Лукаса, хирургические ножницы и иглодержатели",
-		packsCount: 8,
-		packagingType: "cassette_bipack",
-		chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
-		operatorStaffFullName: "Сотрудник клиники",
-		operatorStaffPosition: "Сотрудник ЦСО / Врач",
-		headNurseSignatureFullName: "Ответственный по СанПиН",
-		isHeadNurseVerified: true,
-		notes: "Имплантологические кассеты, двойной барьерный шов",
-	}),
-	createForm257Record({
-		date: "2026-08-22",
-		cycleNumber: 3,
-		sterilizerId: "autoclave-euronda-e9-med",
-		regimeId: "steam_121_20min",
-		sensors: {
-			actualTemperatureCelsius: 121.8,
-			actualPressureBar: 1.15,
-			actualExposureMinutes: 20.0,
-		},
-		itemsDescriptionRu:
-			"Ретракторы губ и щек OptraGate (10 шт), силиконовые слепочные ложки, слюноотсосы автоклавируемые",
-		packsCount: 12,
-		packagingType: "kraft_pouch_self_seal",
-		chamberPoints: createDefault5ChamberPoints("steritest_v_121", true),
-		operatorStaffFullName: "Оператор стерилизационной",
-		operatorStaffPosition: "Сотрудник ЦСО / Врач",
-		isHeadNurseVerified: false,
-		notes: "Деликатный режим, термолабильные изделия",
-	}),
-	createForm257Record({
-		date: "2026-08-21",
-		cycleNumber: 4,
-		sterilizerId: "dryheat-gpk-gp20-spu",
-		regimeId: "dry_heat_180_60min",
-		sensors: {
-			actualTemperatureCelsius: 180.5,
-			actualPressureBar: 0,
-			actualExposureMinutes: 60.0,
-		},
-		itemsDescriptionRu:
-			"Цельнометаллические стоматологические шпатели, гладилки-штопферы, лотки металлические без оптики",
-		packsCount: 6,
-		packagingType: "kraft_pouch_sealed",
-		chamberPoints: createDefault5ChamberPoints("medis_180", true),
-		operatorStaffFullName: "Сотрудник клиники",
-		operatorStaffPosition: "Сотрудник ЦСО / Врач",
-		headNurseSignatureFullName: "Ответственный по СанПиН",
-		isHeadNurseVerified: true,
-		notes: "Сухожаровой метод, индикаторы МедИС-180",
-	}),
-];
-
-const INITIAL_BIO_RECORDS: readonly BiologicalControlTestRecord[] = [
-	{
-		id: "BIO-202606-001",
-		sterilizerId: "autoclave-melag-vacuklav-23b",
-		sterilizerCode: "АК-01",
-		datePlaced: "2026-06-15",
-		dateReadout: "2026-06-17",
-		bioIndicatorId: "bio_geobacillus_stearothermophilus",
-		sporeCultureNameRu: "Geobacillus stearothermophilus (штамм ATCC 7953, 10^6 спор)",
-		lotNumber: "LOT-GS-202604",
-		incubationHours: 48,
-		incubationTempCelsius: 55,
-		testPointIndex: 3,
-		result: "sterile_passed",
-		laboratoryName: "ФБУЗ «Центр гигиены и эпидемиологии в г. Москве»",
-		protocolNumber: "ПР-БИО-2026/06-892",
-		responsibleSpecialistFullName: "Сотрудник ЦСО / Врач",
-		notes: "Плановый полугодовой контроль. Рост микроорганизмов отсутствует.",
-	},
-	{
-		id: "BIO-202601-002",
-		sterilizerId: "autoclave-euronda-e9-med",
-		sterilizerCode: "АК-02",
-		datePlaced: "2026-01-20",
-		dateReadout: "2026-01-22",
-		bioIndicatorId: "bio_geobacillus_stearothermophilus",
-		sporeCultureNameRu: "Geobacillus stearothermophilus (штамм ATCC 7953)",
-		lotNumber: "LOT-GS-202511",
-		incubationHours: 48,
-		incubationTempCelsius: 55,
-		testPointIndex: 3,
-		result: "sterile_passed",
-		laboratoryName: "ФБУЗ «Центр гигиены и эпидемиологии в г. Москве»",
-		protocolNumber: "ПР-БИО-2026/01-104",
-		responsibleSpecialistFullName: "Сотрудник ЦСО / Врач",
-		notes: "Ввод в эксплуатацию после планового ТО.",
-	},
-];
-
 export function AutoclaveLog257Modal({
 	isOpen,
 	onClose,
 	initialTab = "journal_257",
 	clinicInfo = DEFAULT_CLINIC_LEGAL_INFO,
 }: AutoclaveLog257ModalProps) {
-	const [activeTab, setActiveTab] = useState<"new_cycle" | "journal_257">(
-		initialTab === "new_cycle" ? "new_cycle" : "journal_257",
-	);
-
-	const isDemo = isDemoShowcaseMode();
-	const [records, setRecords] = useState<Form257Record[]>(() =>
-		isDemo ? [...INITIAL_FORM257_RECORDS] : [],
-	);
-	const [bioRecords, setBioRecords] = useState<BiologicalControlTestRecord[]>(() =>
-		isDemo ? [...INITIAL_BIO_RECORDS] : [],
-	);
-
-	useEffect(() => {
-		if (isDemo || !isOpen) return;
-		let cancelled = false;
-		const fetchLiveRecords = async () => {
-			try {
-				const clinicToken = readDenteClinicToken();
-				const staffToken = readDenteStaffToken();
-				const res = await fetch("/api/registers/sterilization", {
-					headers: {
-						...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-						...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-					},
-				});
-				if (!res.ok) return;
-				const data = await res.json();
-				if (Array.isArray(data) && data.length > 0 && !cancelled) {
-					const mapped: Form257Record[] = data.map((item: any, idx: number) => {
-						const dateStr = item.timestamp ? item.timestamp.split("T")[0] : new Date().toISOString().split("T")[0];
-						return createForm257Record({
-							date: dateStr,
-							cycleNumber: item.cycleNumber || (idx + 1),
-							sterilizerId: item.autoclaveId || "autoclave-melag-vacuklav-23b",
-							regimeId: item.temperatureCelsius >= 180 ? "dry_heat_180_60min" : "steam_134_5min",
-							sensors: {
-								actualTemperatureCelsius: item.temperatureCelsius || 134,
-								actualPressureBar: item.pressureBar || 2.1,
-								actualExposureMinutes: item.durationMin || 5,
-							},
-							itemsDescriptionRu: item.itemsDescription || "Стоматологический инструментарий",
-							packsCount: 1,
-							packagingType: "kraft_pouch_sealed",
-							chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", item.status === "passed"),
-							operatorStaffFullName: item.operatorName || "Сотрудник ЦСО",
-							operatorStaffPosition: "Сотрудник ЦСО / Врач",
-							isHeadNurseVerified: item.status === "passed",
-							notes: item.notes || undefined,
-						});
-					});
-					setRecords(mapped);
-				}
-			} catch (e) {
-				console.error("Failed to load sterilization records for Form 257", e);
-			}
-		};
-		fetchLiveRecords();
-		return () => {
-			cancelled = true;
-		};
-	}, [isOpen, isDemo]);
+	const logic = useAutoclaveLogModalLogic(isOpen, initialTab);
 
 	if (!isOpen) return null;
 
-	const handleSaveNewRecord = async (newRec: Form257Record) => {
-		setRecords((prev) => [newRec, ...prev]);
-		setActiveTab("journal_257");
-		if (!isDemo) {
-			try {
-				const clinicToken = readDenteClinicToken();
-				const staffToken = readDenteStaffToken();
-				await fetch("/api/sanpin/cycles", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-						...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-					},
-					body: JSON.stringify({
-						cycleNumber: newRec.cycleNumber,
-						deviceName: newRec.sterilizerBrandModel || newRec.sterilizerId,
-						autoclaveId: newRec.sterilizerId,
-						temperatureCelsius: newRec.actualTemperatureCelsius,
-						pressureBar: newRec.actualPressureBar,
-						durationMin: newRec.actualExposureMinutes,
-						itemsDescription: newRec.itemsDescriptionRu,
-						packagingType: newRec.packagingType,
-						passedIndicator: newRec.isCyclePassed,
-						status: newRec.isCyclePassed ? "passed" : "failed",
-						barcode: newRec.id,
-					}),
-				});
-			} catch (e) {
-				console.warn("Failed to persist cycle to /api/sanpin/cycles", e);
-			}
-		}
-	};
-
-	const handleDeleteRecord = (id: string) => {
-		setRecords((prev) => prev.filter((r) => r.id !== id));
-	};
-
-	const handleVerifyRecord = (id: string, headNurseName: string) => {
-		setRecords((prev) =>
-			prev.map((r) => {
-				if (r.id === id) {
-					return {
-						...r,
-						isHeadNurseVerified: true,
-						headNurseSignatureFullName: headNurseName,
-						verificationTimestamp: new Date().toISOString(),
-					};
-				}
-				return r;
-			}),
-		);
-	};
-
-	const handleAddBioRecord = (newBio: BiologicalControlTestRecord) => {
-		setBioRecords((prev) => [newBio, ...prev]);
-	};
-
-	const handleBatchAddRecords = (newRecords: Form257Record[]) => {
-		setRecords((prev) => {
-			const existingIds = new Set(prev.map((r) => r.id));
-			const toAdd = newRecords.filter((r) => !existingIds.has(r.id));
-			return [...toAdd, ...prev];
-		});
-	};
-
 	const modalContent = (
-		<div className="autoclave-log-modal-overlay" role="dialog" aria-modal="true" aria-label="Журнал автоклавирования" onClick={onClose}>
+		<div className="autoclave-log-modal-overlay" role="dialog" aria-modal="true" aria-label="Журнал работы автоклава" onClick={onClose}>
 			<div className="autoclave-log-modal-container" onClick={(e) => e.stopPropagation()}>
-				{/* Header */}
-				<div className="autoclave-log-header">
-					<div className="autoclave-log-title-group">
-						<div className="autoclave-log-title-icon">
-							<ShieldCheck size={24} />
-						</div>
-						<div className="autoclave-log-title-text">
-							<h2>Журнал автоклавирования</h2>
-							<p>Стерилизация инструментов • Паровой (Класс B) и воздушный режимы</p>
-						</div>
-					</div>
-
-					<button
-						type="button"
-						onClick={onClose}
-						className="autoclave-log-close-btn"
-						title="Закрыть журнал автоклавирования"
-					>
-						<X size={20} />
-					</button>
-				</div>
-
-				{/* Navigation Tabs */}
-				<div className="px-6 py-2.5 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] flex items-center shrink-0">
-					<div className="dente-segmented-bar" role="tablist" aria-label="Вкладки журнала автоклава">
-						<button
-							type="button"
-							role="tab"
-							aria-selected={activeTab === "new_cycle"}
-							className={`dente-segmented-item ${activeTab === "new_cycle" ? "active" : ""}`}
-							onClick={() => setActiveTab("new_cycle")}
-						>
-							<Plus size={14} className="shrink-0" />
-							<span>Новый цикл</span>
-						</button>
-
-						<button
-							type="button"
-							role="tab"
-							aria-selected={activeTab === "journal_257"}
-							className={`dente-segmented-item ${activeTab === "journal_257" ? "active" : ""}`}
-							onClick={() => setActiveTab("journal_257")}
-						>
-							<FileText size={14} className="shrink-0" />
-							<span>Журнал циклов ({records.length})</span>
-						</button>
-					</div>
-				</div>
-
-				{/* Body Content Area */}
+				<AutoclaveLogModalHeader onClose={onClose} />
+				<AutoclaveLogModalTabs activeTab={logic.activeTab} onSelectTab={logic.setActiveTab} recordsCount={logic.records.length} />
 				<div className="autoclave-log-body">
-					{activeTab === "new_cycle" && (
+					{logic.activeTab === "new_cycle" && (
 						<AutoclaveNewCycleTab
-							onSaveRecord={handleSaveNewRecord}
+							onSaveRecord={logic.handleSaveNewRecord}
 							defaultOperatorName={clinicInfo.headNurse}
 							defaultHeadNurseName={clinicInfo.chiefDoctor}
-							latestCycleNumber={records.length + 1}
+							latestCycleNumber={logic.records.length + 1}
 						/>
 					)}
-
-					{activeTab === "journal_257" && (
+					{logic.activeTab === "journal_257" && (
 						<AutoclaveJournal257Tab
-							records={records}
-							onDeleteRecord={handleDeleteRecord}
-							onVerifyRecord={handleVerifyRecord}
-							onBatchAddRecords={handleBatchAddRecords}
-							onOpenNewCycle={() => setActiveTab("new_cycle")}
+							records={logic.records}
+							onDeleteRecord={logic.handleDeleteRecord}
+							onVerifyRecord={logic.handleVerifyRecord}
+							onBatchAddRecords={logic.handleBatchAddRecords}
+							onOpenNewCycle={() => logic.setActiveTab("new_cycle")}
 							clinicInfo={clinicInfo}
 						/>
 					)}
@@ -385,8 +54,8 @@ export function AutoclaveLog257Modal({
 		</div>
 	);
 
-	if (typeof document === "undefined") {
-		return modalContent;
-	}
+	if (typeof document === "undefined") return modalContent;
 	return createPortal(modalContent, document.body);
 }
+
+export default AutoclaveLog257Modal;

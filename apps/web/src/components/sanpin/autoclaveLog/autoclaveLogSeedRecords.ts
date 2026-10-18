@@ -1,0 +1,92 @@
+import {
+	createDefault5ChamberPoints,
+	createForm257Record,
+	type Form257Record,
+} from "./autoclaveLogEngine.js";
+
+export const INITIAL_FORM257_RECORDS: readonly Form257Record[] = [
+	createForm257Record({
+		date: "2026-08-22",
+		cycleNumber: 1,
+		sterilizerId: "autoclave-melag-vacuklav-23b",
+		regimeId: "steam_134_5min",
+		sensors: {
+			actualTemperatureCelsius: 134.5,
+			actualPressureBar: 2.15,
+			actualExposureMinutes: 5.5,
+		},
+		itemsDescriptionRu:
+			"Наконечники турбинные NSK Ti-Max (4 шт), угловые микромоторные (4 шт), смотровые терапевтические лотки (зеркала, зонды, пинцеты - 12 шт)",
+		packsCount: 16,
+		packagingType: "kraft_pouch_sealed",
+		chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
+		operatorStaffFullName: "Сотрудник клиники",
+		operatorStaffPosition: "Сотрудник ЦСО / Врач",
+		headNurseSignatureFullName: "Ответственный по СанПиН",
+		isHeadNurseVerified: true,
+		notes: "Утренний цикл, тест Бови-Дика пройден перед сменой",
+	}),
+	createForm257Record({
+		date: "2026-08-22",
+		cycleNumber: 2,
+		sterilizerId: "autoclave-melag-vacuklav-23b",
+		regimeId: "steam_134_20min_prion",
+		sensors: {
+			actualTemperatureCelsius: 134.2,
+			actualPressureBar: 2.12,
+			actualExposureMinutes: 20.5,
+		},
+		itemsDescriptionRu:
+			"Хирургический набор: элеваторы Бейна, щипцы экстракционные, костные распаторы Лукаса, хирургические ножницы и иглодержатели",
+		packsCount: 8,
+		packagingType: "cassette_bipack",
+		chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
+		operatorStaffFullName: "Сотрудник клиники",
+		operatorStaffPosition: "Сотрудник ЦСО / Врач",
+		headNurseSignatureFullName: "Ответственный по СанПиН",
+		isHeadNurseVerified: true,
+		notes: "Имплантологические кассеты, двойной барьерный шов",
+	}),
+	createForm257Record({
+		date: "2026-08-22",
+		cycleNumber: 3,
+		sterilizerId: "autoclave-euronda-e9-med",
+		regimeId: "steam_121_20min",
+		sensors: {
+			actualTemperatureCelsius: 121.8,
+			actualPressureBar: 1.15,
+			actualExposureMinutes: 20.0,
+		},
+		itemsDescriptionRu:
+			"Оптика, эндодонтические органайзеры, термолабильные наконечники для ультразвукового скейлинга Woodpecker",
+		packsCount: 12,
+		packagingType: "kraft_pouch_sealed",
+		chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
+		operatorStaffFullName: "Сотрудник клиники",
+		operatorStaffPosition: "Сотрудник ЦСО / Врач",
+		headNurseSignatureFullName: "Ответственный по СанПиН",
+		isHeadNurseVerified: true,
+		notes: "Щадящий низкотемпературный режим стерилизации",
+	}),
+	createForm257Record({
+		date: "2026-08-22",
+		cycleNumber: 4,
+		sterilizerId: "dryheat-panmed-10",
+		regimeId: "dry_heat_180_60min",
+		sensors: {
+			actualTemperatureCelsius: 181.2,
+			actualPressureBar: 0.0,
+			actualExposureMinutes: 60.0,
+		},
+		itemsDescriptionRu:
+			"Боры алмазные и твердосплавные, стальные эндодонтические плаггеры и спредеры, тигели зуботехнические",
+		packsCount: 20,
+		packagingType: "open_tray",
+		chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
+		operatorStaffFullName: "Сотрудник клиники",
+		operatorStaffPosition: "Сотрудник ЦСО / Врач",
+		headNurseSignatureFullName: "Ответственный по СанПиН",
+		isHeadNurseVerified: true,
+		notes: "Сухожаровой стерилизатор, воздушный метод",
+	}),
+];

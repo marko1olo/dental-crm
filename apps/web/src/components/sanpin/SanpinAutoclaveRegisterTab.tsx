@@ -65,7 +65,7 @@ export function SanpinAutoclaveRegisterTab() {
 						style={{ height: 28, padding: "0 12px", borderRadius: 6, border: "none", background: logic.viewSubMode === "journal" ? "var(--paper, #fff)" : "transparent", color: logic.viewSubMode === "journal" ? "var(--ink, #0f172a)" : "var(--muted, #64748b)", fontWeight: logic.viewSubMode === "journal" ? 600 : 500, fontSize: "0.8125rem", cursor: "pointer" }}
 						data-testid="subtab-journal-btn"
 					>
-						Журнал автоклавирования
+						Журнал работы автоклава
 					</button>
 					<button
 						type="button"

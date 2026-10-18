@@ -30,7 +30,7 @@ export const PsoQualityBanner: React.FC<PsoQualityBannerProps> = ({
 				<CheckCircle2 size={18} color="var(--teal, #0d9488)" className="shrink-0" />
 				<div>
 					<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
-						Ежедневный контроль предстерилизационной очистки
+						Проверка качества очистки инструментов (азопирам и фенолфталеин)
 					</div>
 					<div style={{ fontSize: "0.775rem", color: "var(--muted, #64748b)" }}>
 						Азопирамовая проба (скрытая кровь) и фенолфталеиновая (остатки моющих средств): <strong>Отрицательно, 100% норма</strong>
@@ -42,10 +42,9 @@ export const PsoQualityBanner: React.FC<PsoQualityBannerProps> = ({
 				<button
 					type="button"
 					onClick={onPrintJournal}
-					className="sanpin-btn sanpin-btn-secondary touch-manipulation"
-					style={{ height: 36, fontSize: "0.825rem", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6 }}
+					className="secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] px-3 text-[13px] font-medium inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
 					data-testid="pso-print-journal-btn"
-					title="Печать журнала контроля очистки"
+					title="Печать журнала проверки качества очистки"
 				>
 					<Printer size={14} />
 					<span>Печать журнала</span>
@@ -55,8 +54,7 @@ export const PsoQualityBanner: React.FC<PsoQualityBannerProps> = ({
 					type="button"
 					onClick={onQuickMarkNorm}
 					aria-busy={submitting}
-					className="sanpin-btn sanpin-btn-primary touch-manipulation"
-					style={{ height: 36, fontSize: "0.825rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 6 }}
+					className="primary-button h-9 min-h-[36px] rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs px-3.5 text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
 					data-testid="pso-quick-mark-shift-btn"
 					title="Зафиксировать нормативные результаты проб смены в 1 клик"
 				>

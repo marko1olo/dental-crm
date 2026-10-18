@@ -27,20 +27,20 @@ export interface SanpinTabDef {
 export const SANPIN_CANONICAL_TABS: SanpinTabDef[] = [
 	{
 		id: "autoclave",
-		label: "Журнал автоклавирования и стерилизации",
-		shortLabel: "Автоклавирование",
+		label: "Журнал работы автоклава",
+		shortLabel: "Автоклав",
 		icon: Flame,
 	},
 	{
 		id: "pso",
-		label: "Контроль предстерилизационной очистки (азопирамовая проба)",
-		shortLabel: "Контроль очистки (азопирам)",
+		label: "Проверка качества очистки (азопирам)",
+		shortLabel: "Качество очистки",
 		icon: FlaskConical,
 	},
 	{
 		id: "disinfection",
-		label: "Журнал кварцевания и генеральных уборок",
-		shortLabel: "Кварцевание и уборки",
+		label: "Дезинфекция и уборка",
+		shortLabel: "Дезинфекция",
 		icon: Sparkles,
 	},
 ];

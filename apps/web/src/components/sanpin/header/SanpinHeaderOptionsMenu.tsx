@@ -78,7 +78,7 @@ export const SanpinHeaderOptionsMenu: React.FC<SanpinHeaderOptionsMenuProps> = (
 
 			<button type="button" role="menuitem" onClick={() => { onClose(); printConsolidatedBinderAction(exportContext); }} className="sanpin-dropdown-item" data-testid="print-consolidated-binder-btn">
 				<FileBadge size={15} color="var(--teal)" className="shrink-0" />
-				<span>Выгрузка журналов для проверки</span>
+				<span>Отчет для Роспотребнадзора</span>
 			</button>
 
 			<button type="button" role="menuitem" onClick={() => { onClose(); exportConsolidatedCsvAction(exportContext); }} className="sanpin-dropdown-item" data-testid="export-consolidated-csv-btn">
@@ -93,7 +93,7 @@ export const SanpinHeaderOptionsMenu: React.FC<SanpinHeaderOptionsMenuProps> = (
 
 			<button type="button" role="menuitem" onClick={() => { onClose(); onOpenJournal257Modal(); }} className="sanpin-dropdown-item" data-testid="open-journal-257-header-btn">
 				<FileSpreadsheet size={15} color="var(--teal)" className="shrink-0" />
-				<span>Журнал автоклавирования</span>
+				<span>Журнал работы автоклава</span>
 			</button>
 		</div>
 	);

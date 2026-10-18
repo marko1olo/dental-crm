@@ -73,8 +73,8 @@ export const SanPinTableEmptyState: React.FC<SanPinTableEmptyStateProps> = ({
 									opacity: isAutofilling ? 0.7 : 1,
 								}}
 							>
-								<Play size={16} fill="currentColor" />
-								<span>{isAutofilling ? "Запуск цикла..." : "Запустить утренний цикл (134°C, 2.1 бар, 5 мин)"}</span>
+								<CheckCircle2 size={16} />
+								<span>{isAutofilling ? "Запись цикла..." : "Зафиксировать цикл автоклава за смену"}</span>
 							</button>
 						)}
 
