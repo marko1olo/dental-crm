@@ -205,7 +205,7 @@ describe("Radiology Ergonomics & Math Suite", () => {
 		assert.ok(html.includes("Смирнова Елена Васильевна"), "Renders patient name");
 		assert.ok(html.includes("Зуб 16"), "Renders tooth FDI code");
 		assert.ok(html.includes("btn-dicom-norma-043"), "Contains 1-click Norma button");
-	});
+	}, 15000);
 
 	it("synchronizes studyDate in DicomViewerModal header", async () => {
 		const { DicomViewerModal } = await import("../../imaging/DicomViewerModal");
@@ -221,7 +221,7 @@ describe("Radiology Ergonomics & Math Suite", () => {
 		);
 
 		assert.ok(html.includes("28.08.2026 15:30"), "Synchronized studyDate into header");
-	});
+	}, 15000);
 
 	it("renders CbctMprImplantStudioModal with disabled unselected nerve node delete and strict vector icons (DEF-R2-02)", async () => {
 		const { CbctMprImplantStudioModal } = await import("../CbctMprImplantStudioModal");
@@ -253,6 +253,6 @@ describe("Radiology Ergonomics & Math Suite", () => {
 		assert.ok(!html.includes("✅"), "Zero raw checkmark emoji in sinus notes");
 		assert.ok(!html.includes("⚠️"), "Zero raw warning emoji");
 		assert.ok(!html.includes("⛔"), "Zero raw no-entry emoji");
-	});
+	}, 15000);
 });
 

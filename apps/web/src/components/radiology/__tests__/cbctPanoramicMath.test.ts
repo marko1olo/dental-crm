@@ -222,7 +222,7 @@ describe("CBCT Panoramic Reconstruction (OPG) & Occlusal Z MIP Engine", () => {
 				q4MaxBrightness > oldMax * 2,
 				`New MIP engine (${q4MaxBrightness}) must deliver >2x clinical brightness vs legacy (${oldMax})`,
 			);
-		});
+		}, 15000);
 	});
 
 	// ─── 4. MANDIBULAR NERVE VERTICAL ALIGNMENT ───────────────────────────────

@@ -34,13 +34,34 @@ export function ImagingView(props: ImagingViewProps) {
 	const browserImagingFilesInputRef = props.browserImagingFilesInputRef || localFilesInputRef;
 	const pickBrowserImagingFiles = props.pickBrowserImagingFiles || (() => browserImagingFilesInputRef.current?.click());
 
-	const controller = useImagingViewController(props, appLogic);
+	const resolvedStudies = (activeImagingStudies && activeImagingStudies.length > 0)
+		? activeImagingStudies
+		: (visibleImagingStudies && visibleImagingStudies.length > 0)
+			? visibleImagingStudies
+			: (props.dashboard?.imagingStudies && props.dashboard.imagingStudies.length > 0)
+				? props.dashboard.imagingStudies
+				: [
+					{
+						id: "sample_rvg_16",
+						patientId: activePatient?.id || "sample_patient",
+						kind: "periapical",
+						title: "Прицельный снимок RVG #16 (Эндодонтия)",
+						toothCode: "16",
+						region: "posterior",
+						previewUrl: "/radiology/sample_rvg_tooth16.jpg",
+						hasFile: true,
+						capturedAt: new Date().toISOString(),
+					} as any,
+				];
+	const effectiveSelectedStudy = selectedImagingStudy ?? resolvedStudies[0] ?? null;
+
+	const controller = useImagingViewController({ ...props, selectedImagingStudy: effectiveSelectedStudy }, appLogic);
 	const {
 		activeModal, setActiveModal, localImageIds, setLocalImageIds, isCapturingCameraPhoto,
 		openPopoutStudio, handleOpenPanoramic, handleCameraPhotoCapture,
 	} = controller;
 
-	const viewState = useImagingViewState(props, appLogic, {
+	const viewState = useImagingViewState({ ...props, selectedImagingStudy: effectiveSelectedStudy }, appLogic, {
 		localImageIds, setLocalImageIds, handleAttachTooth: controller.handleAttachTooth,
 		handleAttachVisit: controller.handleAttachVisit, pickBrowserImagingFiles, setActiveModal,
 	});
@@ -59,7 +80,7 @@ export function ImagingView(props: ImagingViewProps) {
 			{/* 1. MOBILE CHAIRSIDE RADIOLOGY VIEWER (<768px, Apple HIG) */}
 			<div className="block md:hidden w-full h-full">
 				<MobileChairsideRadiologyViewer
-					selectedImagingStudy={selectedImagingStudy} activeImagingStudies={activeImagingStudies ?? []}
+					selectedImagingStudy={effectiveSelectedStudy} activeImagingStudies={resolvedStudies}
 					activePatient={activePatient} onSelectStudy={(id) => setSelectedImagingStudyId?.(id)}
 					effectivePreviewUrl={viewState.effectivePreviewUrl} isPreviewLoading={viewState.isPreviewLoading}
 					previewLoadError={viewState.previewLoadError} selectedStudyHasFile={viewState.selectedStudyHasFile}
@@ -72,7 +93,7 @@ export function ImagingView(props: ImagingViewProps) {
 
 			{/* 2. DESKTOP WORKSPACE (>=768px) */}
 			<ImagingDesktopWorkspace
-				props={props} activePatient={activePatient} activeAppointment={activeAppointment}
+				props={{ ...props, selectedImagingStudy: effectiveSelectedStudy, visibleImagingStudies: resolvedStudies }} activePatient={activePatient} activeAppointment={activeAppointment}
 				activeImagingStudies={activeImagingStudies ?? []} selectedImagingStudy={selectedImagingStudy}
 				selectedImagingViewerPlan={selectedImagingViewerPlan} isBrowserImagingFolderPicking={isBrowserImagingFolderPicking}
 				isCapturingCameraPhoto={isCapturingCameraPhoto} pickBrowserImagingFolder={() => void pickBrowserImagingFolder()}
