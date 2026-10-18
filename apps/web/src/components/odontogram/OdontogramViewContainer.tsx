@@ -137,7 +137,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 
 	// 2. Custom toggles for clinical productivity
 	const [showWisdomTeeth, setShowWisdomTeeth] = useState<boolean>(true);
-	const [showPulpAndCanals, setShowPulpAndCanals] = useState<boolean>(true);
+	const [showPulpAndCanals, setShowPulpAndCanals] = useState<boolean>(false);
 	const [useSurfaces] = useState<boolean>(initialUseSurfaces);
 	const [isLiveInvoiceOpen, setIsLiveInvoiceOpen] = useState<boolean>(false);
 	const [isFastExtractMode, setIsFastExtractMode] = useState<boolean>(false);

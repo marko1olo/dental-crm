@@ -15,6 +15,7 @@ export interface ToothCanalsLayerProps {
 	isTop: boolean;
 	effectiveCanalObturation: CanalObturationMaterial;
 	effectiveCanalLevel: "full" | "two_thirds" | "half";
+	isPulpitis?: boolean | undefined;
 }
 
 export const ToothCanalsLayer: React.FC<ToothCanalsLayerProps> = ({
@@ -25,6 +26,7 @@ export const ToothCanalsLayer: React.FC<ToothCanalsLayerProps> = ({
 	isTop,
 	effectiveCanalObturation,
 	effectiveCanalLevel,
+	isPulpitis,
 }) => {
 	const obturation = CANAL_OBTURATIONS[effectiveCanalObturation] ?? CANAL_OBTURATIONS.unfilled;
 
@@ -33,10 +35,10 @@ export const ToothCanalsLayer: React.FC<ToothCanalsLayerProps> = ({
 			{pulpChamberPath && (
 				<path
 					d={pulpChamberPath}
-					fill="url(#dente-pulp-healthy)"
-					stroke="#e11d48"
-					strokeWidth="0.8"
-					opacity={0.85}
+					fill={isPulpitis ? "url(#dente-pulpitis-grad)" : "url(#dente-pulp-healthy)"}
+					stroke={isPulpitis ? "#b91c1c" : "#e11d48"}
+					strokeWidth={isPulpitis ? "1.4" : "0.8"}
+					opacity={isPulpitis ? 0.95 : 0.85}
 				/>
 			)}
 			{effectiveCanals.map((c) => {
@@ -47,8 +49,8 @@ export const ToothCanalsLayer: React.FC<ToothCanalsLayerProps> = ({
 						key={c.id}
 						d={c.path}
 						fill="none"
-						stroke={obturation.strokeColor}
-						strokeWidth="2.4"
+						stroke={isPulpitis ? "#ef4444" : obturation.strokeColor}
+						strokeWidth={isPulpitis ? "2.6" : "2.4"}
 						strokeLinecap="round"
 						strokeDasharray={dashArray}
 					/>

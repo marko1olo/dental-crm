@@ -26,3 +26,23 @@ export function getToothBadgeColor(state: ToothState | undefined): string | null
 			return null;
 	}
 }
+
+export function toAnatomicalToothState(state?: ToothState): "Healthy" | "Caries" | "Pulpitis" | "Filled" | "Crown" | "Root_Canal_Treated" | "Missing" {
+	switch (state) {
+		case "done":
+			return "Filled";
+		case "crown":
+			return "Crown";
+		case "treatment":
+			return "Root_Canal_Treated";
+		case "pulpitis":
+			return "Pulpitis";
+		case "caries":
+			return "Caries";
+		case "missing":
+			return "Missing";
+		default:
+			return "Healthy";
+	}
+}
+

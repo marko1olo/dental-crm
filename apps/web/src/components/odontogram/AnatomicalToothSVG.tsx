@@ -29,7 +29,7 @@ export const AnatomicalToothSVG: React.FC<AnatomicalToothSVGProps> = React.memo(
 	const {
 		geom, isTop, effectiveMaterial, isImplantState, colors, scaledWidth, scaledHeight,
 		isLowSpec, resorptionGeom, effectiveRootPath, effectiveCanals, effectiveCanalObturation,
-		shouldRenderCanals, boneLine, resorptionArea, recessionPath, effectiveLesionSize,
+		shouldRenderCanals, boneLine, resorptionArea, recessionPath, effectiveLesionSize, isPulpitis,
 	} = useAnatomicalToothVisuals(props);
 
 	if (isImplantState) {
@@ -60,6 +60,7 @@ export const AnatomicalToothSVG: React.FC<AnatomicalToothSVGProps> = React.memo(
 						pulpChamberPath={geom.pulpChamberPath} effectiveCanals={effectiveCanals}
 						hasPost={hasPost} postType={postType} isTop={isTop}
 						effectiveCanalObturation={effectiveCanalObturation} effectiveCanalLevel={canalObturationLevel}
+						isPulpitis={isPulpitis}
 					/>
 				)}
 				{showPeriodontalBoneLoss && (

@@ -17,6 +17,7 @@ export {
 
 export { useClinicalToothTabsLogic } from "./useClinicalToothTabsLogic";
 export { ToothSurfacesSelector } from "./ToothSurfacesSelector";
+export { ToothSurfacesButtons } from "./ToothSurfacesButtons";
 export { ToothClinicalTestsSection } from "./ToothClinicalTestsSection";
 export { ToothDiagnosisHistorySection } from "./ToothDiagnosisHistorySection";
 export { ToothDiagnosisTab } from "./ToothDiagnosisTab";

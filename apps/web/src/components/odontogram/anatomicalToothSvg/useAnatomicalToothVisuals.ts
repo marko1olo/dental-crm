@@ -49,7 +49,8 @@ export function useAnatomicalToothVisuals(props: AnatomicalToothSVGProps) {
 	const effectiveRootPath = resorptionGeom.isResorbed ? resorptionGeom.rootPath : geom.rootPath;
 	const effectiveCanals = resorptionGeom.showCanals ? resorptionGeom.canals : geom.canals;
 	const effectiveCanalObturation = canalObturation ?? (state === "Root_Canal_Treated" ? "gutta_percha" : "unfilled");
-	const shouldRenderCanals = showPulpAndCanals || Boolean(hasPost || canalObturation || state === "Root_Canal_Treated");
+	const isPulpitis = state === "Pulpitis" || state === "pulpitis" || state === "treatment";
+	const shouldRenderCanals = showPulpAndCanals || isPulpitis || Boolean(hasPost || canalObturation || state === "Root_Canal_Treated");
 
 	const { boneLine, resorptionArea } = useMemo(
 		() => showPeriodontalBoneLoss ? getPeriodontalBoneLevelPath(number, boneLossLevel, boneLossType) : { boneLine: "", resorptionArea: "" },
@@ -66,6 +67,6 @@ export function useAnatomicalToothVisuals(props: AnatomicalToothSVGProps) {
 	return {
 		geom, isTop, effectiveMaterial, isImplantState, colors, scaledWidth, scaledHeight,
 		isLowSpec, resorptionGeom, effectiveRootPath, effectiveCanals, effectiveCanalObturation,
-		shouldRenderCanals, boneLine, resorptionArea, recessionPath, effectiveLesionSize,
+		shouldRenderCanals, boneLine, resorptionArea, recessionPath, effectiveLesionSize, isPulpitis,
 	};
 }

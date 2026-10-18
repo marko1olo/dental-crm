@@ -37,7 +37,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 	selectedTeeth = [],
 	activeStamp,
 	useSurfaces = false,
-	showPulpAndCanals = true,
+	showPulpAndCanals = false,
 	showPeriapicalHalos = false,
 	showPeriodontalBoneLoss = false,
 	onToothClick,
