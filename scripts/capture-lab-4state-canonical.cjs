@@ -3,7 +3,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 
 const PROOFS_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/proofs/lab");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/de420c96-e1ca-493f-afcd-758bc38498ab");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/1b59956f-2e1a-4f02-8a71-b5c48a6a6789");
 
 for (const dir of [PROOFS_DIR, BRAIN_DIR]) {
   if (!fs.existsSync(dir)) {
@@ -40,6 +40,18 @@ async function saveProof(page, filename, description) {
 
   const secondaryPath = path.join(BRAIN_DIR, filename);
   fs.copyFileSync(primaryPath, secondaryPath);
+
+  // Also write canonical alias without prefix
+  const canonicalName = filename.replace("proof_", "").replace(".png", "");
+  const aliasName = canonicalName.includes("1440x900") || canonicalName.includes("390x844")
+    ? `${canonicalName}.png`
+    : canonicalName.includes("pc")
+      ? `${canonicalName}_1440x900.png`
+      : `${canonicalName}_390x844.png`;
+  const aliasPath = path.join(PROOFS_DIR, aliasName);
+  fs.copyFileSync(primaryPath, aliasPath);
+  const aliasBrainPath = path.join(BRAIN_DIR, aliasName);
+  fs.copyFileSync(primaryPath, aliasBrainPath);
 }
 
 async function main() {

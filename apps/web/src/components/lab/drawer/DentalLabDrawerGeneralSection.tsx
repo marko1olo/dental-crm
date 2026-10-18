@@ -53,7 +53,7 @@ export const DentalLabDrawerGeneralSection: React.FC<DentalLabDrawerGeneralSecti
 					<label className="font-semibold block mb-1">Лаборатория-партнёр:</label>
 					<input
 						type="text"
-						required
+						placeholder="Основная лаборатория"
 						value={formLabName}
 						onChange={(e) => setFormLabName(e.target.value)}
 						className="w-full h-9 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none"

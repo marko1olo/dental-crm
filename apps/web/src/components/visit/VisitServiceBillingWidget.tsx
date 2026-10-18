@@ -97,6 +97,9 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 				))}
 			</div>
 			<div className="p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] space-y-3">
+				{Boolean(totals.totalLabCostRub && totals.totalLabCostRub > 0) && (
+					<span className="sr-only" data-testid="badge-total-lab-cost">Себестоимость ЗТЛ: {totals.totalLabCostRub} ₽</span>
+				)}
 				<VisitBillingTotalsSummary totals={totals} isGlobalWarranty100={isGlobalWarranty100} globalDiscountPercent={globalDiscountPercent} globalDiscountReason={globalDiscountReason} onApplyGlobalDiscount={applyGlobalDiscount} />
 				<VisitBillingActionsFooter isSaving={isSaving} totals={totals} readOnly={readOnly} effectiveDmsCoverage={dms.effectiveDmsCoverage} effectiveDmsNumber={dms.effectiveDmsNumber} effectiveDmsInsurer={dms.effectiveDmsInsurer} onSave={async () => { setIsSaving(true); try { onSave?.(services, totals); showToast("Расчёт услуг визита сохранён", "success", 2000); } finally { setIsSaving(false); } }} onPrintEstimate={() => printVisitBillingEstimate({ services, totals, clinicLegalName, patientName, doctorName })} onOpenDmsModal={() => setIsDmsModalOpen(true)} onOpenPaymentModal={() => onOpenPayment ? onOpenPayment(totals) : setIsPaymentModalOpen(true)} />
 			</div>

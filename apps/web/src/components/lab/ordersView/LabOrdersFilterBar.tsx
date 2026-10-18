@@ -66,29 +66,38 @@ export function LabOrdersFilterBar({
 				</select>
 			</div>
 
-			{/* Right: Actions (Прейскурант, Обновить, + Наряд) */}
+			{/* Right: Actions (Прейскурант, Обновить, + Новый наряд) */}
 			<div className="flex items-center gap-1.5 shrink-0">
 				<button
-					type="button" onClick={onOpenPriceMatrix} className="secondary-button"
-					data-testid="btn-open-price-matrix" title="Прейскурант и себестоимость лаборатории"
+					type="button"
+					onClick={onOpenPriceMatrix}
+					className="h-9 min-h-[36px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium text-xs shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer"
+					data-testid="btn-open-price-matrix"
+					title="Прейскурант и себестоимость лаборатории"
 				>
 					<DollarSign className="w-3.5 h-3.5 text-[var(--ink-muted)] shrink-0" />
 					<span className="hidden sm:inline">Прейскурант</span>
 				</button>
 
 				<button
-					type="button" onClick={onRefresh} className="icon-button"
-					title="Обновить список" data-testid="lab-orders-refresh-btn"
+					type="button"
+					onClick={onRefresh}
+					className="h-9 w-9 min-h-[36px] min-w-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] shadow-2xs transition-colors flex items-center justify-center cursor-pointer"
+					title="Обновить список"
+					data-testid="lab-orders-refresh-btn"
 				>
-					<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-[var(--teal)]" : "text-[var(--ink-muted)]"}`} />
+					<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-[var(--primary)]" : ""}`} />
 				</button>
 
 				<button
-					type="button" onClick={onOpenNewOrder} className="primary-button"
+					type="button"
+					onClick={onOpenNewOrder}
+					className="h-9 min-h-[36px] px-3.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white font-medium text-xs shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
 					data-testid="lab-orders-new-order-btn"
+					title="+ Новый наряд"
 				>
 					<Plus className="w-3.5 h-3.5" />
-					<span>Наряд</span>
+					<span>+ Новый наряд</span>
 				</button>
 			</div>
 		</header>

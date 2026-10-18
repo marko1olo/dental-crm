@@ -232,6 +232,9 @@ export async function insertLabOrderInDb(
 	const effectiveNotes = data.clinicalNotes || data.doctorNotes || null;
 	const effectiveStatus = (data.status ? mapStageToLabOrderStatus(data.status) : null) ?? "draft";
 
+	const effectiveLabName = data.laboratoryName || data.labName || "Основная лаборатория";
+	const effectiveLabCost = data.labCostRub != null ? data.labCostRub : (data.costRub != null ? data.costRub : 7500);
+
 	const [createdOrder] = await tx
 		.insert(labOrders)
 		.values({
@@ -244,8 +247,10 @@ export async function insertLabOrderInDb(
 			material: effectiveMaterial,
 			colorVita: normalizedColor,
 			dueDate: parsedDueDate,
-			clinicalNotes: effectiveNotes,
+			clinicalNotes: effectiveNotes ? (effectiveNotes.includes("Лаборатория:") ? effectiveNotes : `* Лаборатория: ${effectiveLabName}\n${effectiveNotes}`) : `* Лаборатория: ${effectiveLabName}`,
 			priceRub: data.priceRub != null ? data.priceRub : 24000,
+			labCostRub: effectiveLabCost,
+			isWarranty: Boolean(data.isWarrantyRework),
 			status: effectiveStatus,
 		})
 		.returning();

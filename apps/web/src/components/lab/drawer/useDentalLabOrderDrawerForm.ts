@@ -17,7 +17,7 @@ export function useDentalLabOrderDrawerForm(props: DentalLabOrderDrawerProps) {
 
 	const [patientName, setPatientName] = useState(resolvedPatient);
 	const [doctorName, setDoctorName] = useState(resolvedDoctor);
-	const [labName, setLabName] = useState("CAD/CAM Центр Дентал-Мастер");
+	const [labName, setLabName] = useState(editingOrder?.labName || "Основная лаборатория");
 	const [technicianName, setTechnicianName] = useState("");
 	const [teethInput, setTeethInput] = useState(String(resolvedTooth));
 	const [construction, setConstruction] = useState<DentalLabConstructionType>("crown_zirconia");
@@ -38,7 +38,7 @@ export function useDentalLabOrderDrawerForm(props: DentalLabOrderDrawerProps) {
 		const now = new Date();
 		setPatientName(editingOrder?.patientName ?? props.patientName ?? props.currentPatientName ?? "");
 		setDoctorName(editingOrder?.doctorName ?? props.doctorName ?? props.currentDoctorName ?? "Д-р Орлов А.В. (Ортопед)");
-		setLabName(editingOrder?.labName ?? "CAD/CAM Центр Дентал-Мастер");
+		setLabName(editingOrder?.labName || "Основная лаборатория");
 		setTechnicianName(editingOrder?.technicianName ?? "");
 		setTeethInput(editingOrder ? (Array.isArray(editingOrder.teethFdi) ? editingOrder.teethFdi.join(", ") : String(editingOrder.teethFdi || "16")) : String(props.currentToothNumber ?? props.initialToothFdi ?? "16"));
 		setConstruction(editingOrder?.constructionType ?? "crown_zirconia");
@@ -61,27 +61,17 @@ export function useDentalLabOrderDrawerForm(props: DentalLabOrderDrawerProps) {
 	const handleSelectConstruction = (val: string) => {
 		setConstruction(val as DentalLabConstructionType);
 		if (val === "crown_pmma" || val === "wt_009") {
-			setPatientPriceRub(3500);
-			setZtlCostRub(1200);
-			setDeadlineDate(toIsoDate(addWorkingDaysRu(sentDate, 2)));
-			return;
+			setPatientPriceRub(3500); setZtlCostRub(1200); setDeadlineDate(toIsoDate(addWorkingDaysRu(sentDate, 2))); return;
 		}
 		if (val === "custom_abutment_zirconia" || val === "wt_014") {
-			setPatientPriceRub(35000);
-			setZtlCostRub(12000);
-			setDeadlineDate(toIsoDate(addWorkingDaysRu(sentDate, 7)));
-			return;
+			setPatientPriceRub(35000); setZtlCostRub(12000); setDeadlineDate(toIsoDate(addWorkingDaysRu(sentDate, 7))); return;
 		}
 		if (val === "inlay_onlay" || val === "wt_006") {
-			setPatientPriceRub(18000);
-			setZtlCostRub(6000);
-			setDeadlineDate(toIsoDate(addWorkingDaysRu(sentDate, 4)));
-			return;
+			setPatientPriceRub(18000); setZtlCostRub(6000); setDeadlineDate(toIsoDate(addWorkingDaysRu(sentDate, 4))); return;
 		}
 		const def = DENTAL_LAB_CONSTRUCTIONS[val as DentalLabConstructionType];
 		if (def) {
-			setPatientPriceRub(def.defaultPatientPriceKopecks / 100);
-			setZtlCostRub(def.defaultZtlCostKopecks / 100);
+			setPatientPriceRub(def.defaultPatientPriceKopecks / 100); setZtlCostRub(def.defaultZtlCostKopecks / 100);
 			setDeadlineDate(toIsoDate(addWorkingDaysRu(sentDate, def.standardTurnaroundDays)));
 		}
 	};
@@ -93,11 +83,11 @@ export function useDentalLabOrderDrawerForm(props: DentalLabOrderDrawerProps) {
 		const def = DENTAL_LAB_CONSTRUCTIONS[construction];
 		const fin = calculateZtlWageFinancials({ unitsCount: teethFinal.length, patientPriceRub, ztlCostRub, doctorSharePercent: doctorPercent });
 		const record = createDentalLabOrderRecord({
-			...(editingOrder || {}), patientName, doctorName, labName, technicianName, teethFdi: teethFinal,
-			constructionType: construction, materialRu: def?.defaultMaterialRu, vitaShade, translucency, stumpShade,
-			sentDate, deadlineDate, scheduledVisitDate: scheduledVisit || undefined, status,
-			patientPriceKopecks: fin.patientPriceKopecks, ztlCostKopecks: fin.ztlCostKopecks, doctorSharePercent: fin.doctorSharePercent,
-			clinicalNotes, attachedScanUrl,
+			...(editingOrder || {}), patientName, doctorName, labName: labName.trim() || "Основная лаборатория",
+			technicianName, teethFdi: teethFinal, constructionType: construction, materialRu: def?.defaultMaterialRu,
+			vitaShade, translucency, stumpShade, sentDate, deadlineDate, scheduledVisitDate: scheduledVisit || undefined,
+			status, patientPriceKopecks: fin.patientPriceKopecks, ztlCostKopecks: fin.ztlCostKopecks,
+			doctorSharePercent: fin.doctorSharePercent, clinicalNotes, attachedScanUrl,
 		});
 		props.onSaveOrder?.(record, Boolean(editingOrder));
 		props.onOrderSaved?.(record);
