@@ -6,57 +6,38 @@ import { printBraveryDiploma } from "./diploma/diplomaPrint";
 import { PediatricBraveryDiplomaPreview } from "./diploma/PediatricBraveryDiplomaPreview";
 
 export interface PediatricBraveryDiplomaModalProps {
-	readonly isOpen: boolean;
-	readonly onClose: () => void;
-	readonly patientName?: string | undefined;
-	readonly patientAgeYears?: number | undefined;
-	readonly doctorName?: string | undefined;
-	readonly clinicName?: string | undefined;
-	readonly visitDate?: string | undefined;
+	readonly isOpen: boolean; readonly onClose: () => void;
+	readonly patientName?: string; readonly patientAgeYears?: number;
+	readonly doctorName?: string; readonly clinicName?: string; readonly visitDate?: string;
 }
 
 export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModalProps> = ({
-	isOpen,
-	onClose,
-	patientName,
-	patientAgeYears = 6,
-	doctorName,
-	clinicName,
-	visitDate,
+	isOpen, onClose, patientName, patientAgeYears = 6, doctorName, clinicName, visitDate,
 }) => {
 	const resolved = useMemo(() => resolveBraveryDiplomaRequisites({ patientName, patientAgeYears, doctorName, clinicName }), [patientName, patientAgeYears, doctorName, clinicName]);
 	const effectiveDoctorName = resolved.doctorName;
 	const effectiveClinicName = resolved.clinicName;
 
-	const effectiveDate = useMemo(() => {
-		if (visitDate) return visitDate;
-		return new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
-	}, [visitDate]);
+	const effectiveDate = useMemo(() => visitDate || new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" }), [visitDate]);
 
 	const [heroName, setHeroName] = useState<string>(patientName?.trim() || resolved.patientName || "Юный пациент");
-	useEffect(() => {
-		if (patientName?.trim()) setHeroName(patientName.trim());
-	}, [patientName]);
+	useEffect(() => { if (patientName?.trim()) setHeroName(patientName.trim()); }, [patientName]);
 
-	const [praiseText, setPraiseText] = useState<string>("Награждается за невероятную храбрость, ослепительную улыбку и дружбу с Зубной Феей на приеме у врача-стоматолога!");
+	const [praiseText] = useState<string>("Награждается за невероятную храбрость, ослепительную улыбку и дружбу с Зубной Феей на приеме у врача-стоматолога!");
 
 	const heroDisplay = useMemo(() => {
 		const t = heroName.trim();
-		if (!t) return "Герой: Юный пациент";
-		return t.startsWith("Герой:") ? t : `Герой: ${t}`;
+		return !t ? "Герой: Юный пациент" : t.startsWith("Герой:") ? t : `Герой: ${t}`;
 	}, [heroName]);
 
 	const doctorDisplay = useMemo(() => {
 		const t = effectiveDoctorName.trim();
-		if (!t) return "Доктор: Врач-стоматолог";
-		return t.startsWith("Доктор:") ? t : `Доктор: ${t}`;
+		return !t ? "Доктор: Врач-стоматолог" : t.startsWith("Доктор:") ? t : `Доктор: ${t}`;
 	}, [effectiveDoctorName]);
 
 	const handleCopyDiplomaText = useCallback(() => {
 		const text = `ДИПЛОМ ЗА ХРАБРОСТЬ № ${resolved.diplomaNumber}\n${heroDisplay}\n${praiseText}\n${doctorDisplay} • ${effectiveClinicName} • ${effectiveDate}`;
-		if (typeof navigator !== "undefined" && navigator.clipboard) {
-			navigator.clipboard.writeText(text).catch(() => {});
-		}
+		if (typeof navigator !== "undefined" && navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
 	}, [resolved.diplomaNumber, heroDisplay, praiseText, doctorDisplay, effectiveClinicName, effectiveDate]);
 
 	const handlePrint = useCallback(() => {

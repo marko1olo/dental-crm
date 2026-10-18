@@ -18,24 +18,17 @@ export interface PediatricProtocolTopBarProps {
 }
 
 export const PediatricProtocolTopBar: React.FC<PediatricProtocolTopBarProps> = ({
-	currentTooth,
-	anatomicalToothName,
-	activeFrankl,
-	showDetailsAccordion,
-	onApplyPhysiologicalNorm,
-	onApplyAdaptationVisit,
-	onOpenDiplomaModal,
-	onCycleFrankl,
-	onToggleDetailsAccordion,
+	currentTooth, anatomicalToothName, activeFrankl, showDetailsAccordion,
+	onApplyPhysiologicalNorm, onApplyAdaptationVisit, onOpenDiplomaModal,
+	onCycleFrankl, onToggleDetailsAccordion,
 }) => {
-	const compactAnatomicalName = React.useMemo(() => {
-		return anatomicalToothName
-			.replace("Верхний правый ", "В/П ").replace("Верхний левый ", "В/Л ")
+	const compactAnatomicalName = React.useMemo(() => (
+		anatomicalToothName.replace("Верхний правый ", "В/П ").replace("Верхний левый ", "В/Л ")
 			.replace("Нижний левый ", "Н/Л ").replace("Нижний правый ", "Н/П ")
 			.replace("первый постоянный моляр", "1-й моляр").replace("второй постоянный моляр", "2-й моляр")
 			.replace("первый моляр", "1-й моляр").replace("второй моляр", "2-й моляр")
-			.replace("центральный резец", "центр. резец").replace("боковой резец", "бок. резец");
-	}, [anatomicalToothName]);
+			.replace("центральный резец", "центр. резец").replace("боковой резец", "бок. резец")
+	), [anatomicalToothName]);
 
 	return (
 		<div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line,#e2e8f0)] pb-2.5 min-h-[36px]">

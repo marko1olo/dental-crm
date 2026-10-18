@@ -94,30 +94,17 @@ export const PediatricAnesthesiaAlerts: React.FC<PediatricAnesthesiaAlertsProps>
 				<button
 					type="button"
 					onClick={onApplyAnesthesia}
-					className={`min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer select-none shadow-xs active:scale-95 touch-manipulation ${
-						calculation.isContraindicated
-							? "bg-rose-600 hover:bg-rose-700 text-white"
-							: calculation.isOverdose
-								? "bg-amber-600 hover:bg-amber-700 text-white"
-								: "bg-teal-600 hover:bg-teal-700 text-white"
+					className={`min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 touch-manipulation ${
+						calculation.isContraindicated ? "bg-rose-600 hover:bg-rose-700 text-white" : calculation.isOverdose ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-teal-600 hover:bg-teal-700 text-white"
 					}`}
 					data-testid="btn-apply-anesthesia-protocol"
 				>
 					{calculation.isContraindicated ? (
-						<>
-							<ShieldAlert className="h-4 w-4 text-white shrink-0" />
-							<span>Внести с риском (выбор врача)</span>
-						</>
+						<><ShieldAlert className="h-4 w-4 text-white shrink-0" /><span>Внести с риском (выбор врача)</span></>
 					) : calculation.isOverdose ? (
-						<>
-							<AlertTriangle className="h-4 w-4 text-white shrink-0" />
-							<span>Внести с превышением МРД</span>
-						</>
+						<><AlertTriangle className="h-4 w-4 text-white shrink-0" /><span>Внести с превышением МРД</span></>
 					) : (
-						<>
-							<Check className="h-4 w-4 text-white shrink-0" />
-							<span>Внести в дневник визита</span>
-						</>
+						<><Check className="h-4 w-4 text-white shrink-0" /><span>Внести в дневник визита</span></>
 					)}
 				</button>
 			</div>

@@ -84,25 +84,17 @@ export const PERMANENT_UPPER_LEFT: readonly PediatricToothItem[] = [
 ];
 
 export const PERMANENT_LOWER_RIGHT: readonly PediatricToothItem[] = [
-	{ toothNumber: 48, label: "48", anatomicalNameRu: "Нижний правый третий моляр", isPrimary: false, quadrant: 4, type: "permanent_molar_1" },
-	{ toothNumber: 47, label: "47", anatomicalNameRu: "Нижний правый второй моляр", isPrimary: false, quadrant: 4, type: "permanent_molar_1" },
-	{ toothNumber: 46, label: "46", anatomicalNameRu: "Нижний правый первый моляр", isPrimary: false, quadrant: 4, type: "permanent_molar_1" },
-	{ toothNumber: 45, label: "45", anatomicalNameRu: "Нижний правый второй премоляр", isPrimary: false, quadrant: 4, type: "molar_2" },
-	{ toothNumber: 44, label: "44", anatomicalNameRu: "Нижний правый первый премоляр", isPrimary: false, quadrant: 4, type: "molar_1" },
-	{ toothNumber: 43, label: "43", anatomicalNameRu: "Нижний правый постоянный клык", isPrimary: false, quadrant: 4, type: "canine" },
-	{ toothNumber: 42, label: "42", anatomicalNameRu: "Нижний правый боковой резец", isPrimary: false, quadrant: 4, type: "incisor_lateral" },
-	{ toothNumber: 41, label: "41", anatomicalNameRu: "Нижний правый центральный резец", isPrimary: false, quadrant: 4, type: "incisor_central" },
+	{ toothNumber: 48, label: "48", anatomicalNameRu: "Нижний правый третий моляр", isPrimary: false, quadrant: 4, type: "permanent_molar_1" }, { toothNumber: 47, label: "47", anatomicalNameRu: "Нижний правый второй моляр", isPrimary: false, quadrant: 4, type: "permanent_molar_1" },
+	{ toothNumber: 46, label: "46", anatomicalNameRu: "Нижний правый первый моляр", isPrimary: false, quadrant: 4, type: "permanent_molar_1" }, { toothNumber: 45, label: "45", anatomicalNameRu: "Нижний правый второй премоляр", isPrimary: false, quadrant: 4, type: "molar_2" },
+	{ toothNumber: 44, label: "44", anatomicalNameRu: "Нижний правый первый премоляр", isPrimary: false, quadrant: 4, type: "molar_1" }, { toothNumber: 43, label: "43", anatomicalNameRu: "Нижний правый постоянный клык", isPrimary: false, quadrant: 4, type: "canine" },
+	{ toothNumber: 42, label: "42", anatomicalNameRu: "Нижний правый боковой резец", isPrimary: false, quadrant: 4, type: "incisor_lateral" }, { toothNumber: 41, label: "41", anatomicalNameRu: "Нижний правый центральный резец", isPrimary: false, quadrant: 4, type: "incisor_central" },
 ];
 
 export const PERMANENT_LOWER_LEFT: readonly PediatricToothItem[] = [
-	{ toothNumber: 31, label: "31", anatomicalNameRu: "Нижний левый центральный резец", isPrimary: false, quadrant: 3, type: "incisor_central" },
-	{ toothNumber: 32, label: "32", anatomicalNameRu: "Нижний левый боковой резец", isPrimary: false, quadrant: 3, type: "incisor_lateral" },
-	{ toothNumber: 33, label: "33", anatomicalNameRu: "Нижний левый постоянный клык", isPrimary: false, quadrant: 3, type: "canine" },
-	{ toothNumber: 34, label: "34", anatomicalNameRu: "Нижний левый первый премоляр", isPrimary: false, quadrant: 3, type: "molar_1" },
-	{ toothNumber: 35, label: "35", anatomicalNameRu: "Нижний левый второй премоляр", isPrimary: false, quadrant: 3, type: "molar_2" },
-	{ toothNumber: 36, label: "36", anatomicalNameRu: "Нижний левый первый моляр", isPrimary: false, quadrant: 3, type: "permanent_molar_1" },
-	{ toothNumber: 37, label: "37", anatomicalNameRu: "Нижний левый второй моляр", isPrimary: false, quadrant: 3, type: "permanent_molar_1" },
-	{ toothNumber: 38, label: "38", anatomicalNameRu: "Нижний левый третий моляр", isPrimary: false, quadrant: 3, type: "permanent_molar_1" },
+	{ toothNumber: 31, label: "31", anatomicalNameRu: "Нижний левый центральный резец", isPrimary: false, quadrant: 3, type: "incisor_central" }, { toothNumber: 32, label: "32", anatomicalNameRu: "Нижний левый боковой резец", isPrimary: false, quadrant: 3, type: "incisor_lateral" },
+	{ toothNumber: 33, label: "33", anatomicalNameRu: "Нижний левый постоянный клык", isPrimary: false, quadrant: 3, type: "canine" }, { toothNumber: 34, label: "34", anatomicalNameRu: "Нижний левый первый премоляр", isPrimary: false, quadrant: 3, type: "molar_1" },
+	{ toothNumber: 35, label: "35", anatomicalNameRu: "Нижний левый второй премоляр", isPrimary: false, quadrant: 3, type: "molar_2" }, { toothNumber: 36, label: "36", anatomicalNameRu: "Нижний левый первый моляр", isPrimary: false, quadrant: 3, type: "permanent_molar_1" },
+	{ toothNumber: 37, label: "37", anatomicalNameRu: "Нижний левый второй моляр", isPrimary: false, quadrant: 3, type: "permanent_molar_1" }, { toothNumber: 38, label: "38", anatomicalNameRu: "Нижний левый третий моляр", isPrimary: false, quadrant: 3, type: "permanent_molar_1" },
 ];
 
 export interface PediatricTeethChartProps {

@@ -35,10 +35,7 @@ export const PediatricTeethMobileQuadrant: React.FC<PediatricTeethMobileQuadrant
 	const [activeQuadrant, setActiveQuadrant] = React.useState<"q5" | "q6" | "q7" | "q8">(() => {
 		if (!activeTooth) return "q5";
 		const q = Math.floor(activeTooth / 10);
-		if (q === 1 || q === 5) return "q5";
-		if (q === 2 || q === 6) return "q6";
-		if (q === 3 || q === 7) return "q7";
-		return "q8";
+		return q === 1 || q === 5 ? "q5" : q === 2 || q === 6 ? "q6" : q === 3 || q === 7 ? "q7" : "q8";
 	});
 
 	const meta = useMemo(() => [

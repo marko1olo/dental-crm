@@ -72,22 +72,23 @@ async function main() {
     await sleep(4000);
     await suppressOverlays(page);
 
-    // Click "Детство" focus preset if present
-    console.log("2. Switching to Pediatric focus...");
+    // Click "Детский" dentition mode button
+    console.log("2. Switching to Pediatric (Детский) dentition...");
     await page.evaluate(() => {
       const btns = Array.from(document.querySelectorAll("button"));
-      const childBtn = btns.find((b) => b.textContent && (b.textContent.includes("Детство") || b.textContent.includes("Пед")));
+      const childBtn = btns.find((b) => b.textContent && b.textContent.trim() === "Детский");
       if (childBtn) childBtn.click();
     });
     await sleep(2000);
 
     // Expand protocol drawer if collapsed
+    console.log("2b. Expanding clinical protocols drawer...");
     await page.evaluate(() => {
       const btns = Array.from(document.querySelectorAll("button"));
-      const expandBtn = btns.find((b) => b.textContent && (b.textContent.includes("Протокол") || b.textContent.includes("Развернуть")));
+      const expandBtn = btns.find((b) => b.textContent && b.textContent.includes("Развернуть"));
       if (expandBtn) expandBtn.click();
     });
-    await sleep(2000);
+    await sleep(2500);
 
     // ─── 1. PC LIGHT (1440x900) ──────────────────────────────────────────────
     console.log("3. Capturing PC Light (1440x900)...");

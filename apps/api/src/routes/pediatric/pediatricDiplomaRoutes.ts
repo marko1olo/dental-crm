@@ -9,17 +9,9 @@ import { generatedDocuments } from "../../db/schema.js";
 const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface BraveryDiplomaRecord {
-	id: string;
-	patientId: string;
-	diplomaNumber: string;
-	patientName: string;
-	patientAgeYears?: number;
-	doctorName: string;
-	clinicName: string;
-	awardReasonRu: string;
-	awardedDateIso: string;
-	issueDateRu: string;
-	createdAt: string;
+	id: string; patientId: string; diplomaNumber: string; patientName: string;
+	patientAgeYears?: number; doctorName: string; clinicName: string;
+	awardReasonRu: string; awardedDateIso: string; issueDateRu: string; createdAt: string;
 }
 
 export const inMemoryDiplomaAudit = new Map<string, BraveryDiplomaRecord[]>();
