@@ -1,9 +1,5 @@
 import type React from "react";
-import type {
-	CanalObturationMaterial,
-	PostCoreType,
-	RestorativeMaterialKey,
-} from "../anatomicalToothGeometries";
+import type { CanalObturationMaterial, PostCoreType, RestorativeMaterialKey } from "../anatomicalToothGeometries";
 import type { ToothState } from "./toothChartTypes";
 import type { ToothVisualProps } from "./ToothColors";
 import { ToothRootsGraphic } from "./standard/ToothRootsGraphic";

@@ -87,26 +87,45 @@ async function capture() {
 
 		const url = "http://127.0.0.1:5173/?demo=true#visit";
 
-		await page.goto(url, {
-			waitUntil: "domcontentloaded",
-			timeout: 60000,
-		});
-		await page.waitForTimeout(3000);
+		let loaded = false;
+		for (let attempt = 1; attempt <= 3; attempt++) {
+			try {
+				await page.goto(url, { waitUntil: "domcontentloaded", timeout: 25000 });
+				loaded = true;
+				break;
+			} catch (e) {
+				console.log(`Goto attempt ${attempt} failed: ${e.message}, retrying in 2s...`);
+				await page.waitForTimeout(2000);
+			}
+		}
+		if (!loaded) {
+			console.error(`Failed to load ${url} after 3 attempts`);
+		}
+		await page.waitForFunction(() => {
+			const text = document.body ? document.body.innerText : "";
+			return text.includes("Зубная формула") || text.includes("Смирнова") || text.includes("Стоматология");
+		}, { timeout: 30000 }).catch(() => {});
+		await page.waitForTimeout(2000);
 
 		if (!state.isMobile) {
 			// Switch to Odontogram tab on PC
 			try {
-				const odontogramTab = await page.$(
-					'button:has-text("Зубная формула"), button:has-text("Формула"), [data-testid="tab-odontogram"], [data-tab="odontogram"]',
+				const odontogramTab = await page.waitForSelector(
+					'button:has-text("1. Зубная формула"), button:has-text("Зубная формула"), [data-testid="tab-odontogram"], [data-tab="odontogram"]',
+					{ timeout: 10000 },
 				);
 				if (odontogramTab) {
 					console.log("Switching to Odontogram tab...");
 					await odontogramTab.click();
-					await page.waitForTimeout(2000);
+					await page.waitForTimeout(2500);
 				}
 			} catch (e) {
 				console.log("Tab switch check passed/bypassed:", e.message);
 			}
+			await page.waitForSelector(
+				'.odontogram-view-container, [data-testid="odontogram-view-container"], svg.tooth-svg-element',
+				{ timeout: 10000 },
+			).catch(() => {});
 		} else {
 			// Switch to Step 2: "2. Осмотр" on Mobile
 			try {
@@ -123,7 +142,7 @@ async function capture() {
 			}
 		}
 
-		await page.waitForTimeout(1500);
+		await page.waitForTimeout(2000);
 
 		const outPath = path.join(PROOF_DIR, state.filename);
 		await page.screenshot({ path: outPath, fullPage: false });
