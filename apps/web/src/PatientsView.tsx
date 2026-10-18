@@ -170,6 +170,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		patientCategoryFilter,
 		setPatientCategoryFilter,
 		countAll,
+		countTreatment,
 		countPrimary,
 		countDebt,
 		countArchive,
@@ -322,11 +323,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 				onOpenCreatePatient={() => setIsCreateModalOpen(true)}
 				categoryFilter={patientCategoryFilter}
 				onCategoryFilterChange={setPatientCategoryFilter}
-				counts={{ countAll, countPrimary, countDebt, countArchive }}
+				counts={{ countAll, countTreatment, countPrimary, countDebt, countArchive }}
 			/>
 
 			{/* Main Patient Grid (Master-Detail) positioned directly below header */}
-			<div className="patients-main-grid max-md:!hidden md:flex">
+			<div className="patients-main-grid max-md:!hidden md:grid">
 				{/* Subcomponent 2: Left Column - Patient Master List with virtualization & row actions */}
 				<PatientsMasterList
 					patients={displayPatients}

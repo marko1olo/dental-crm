@@ -118,7 +118,7 @@ export function usePatientsFilterLogic({
 	};
 
 	const [patientCategoryFilter, setPatientCategoryFilter] = useState<
-		"all" | "primary" | "debt" | "archive"
+		"all" | "treatment" | "primary" | "debt" | "archive"
 	>("all");
 
 	const patientApptCountMap = useMemo(() => {
@@ -131,8 +131,9 @@ export function usePatientsFilterLogic({
 		return map;
 	}, [appointments]);
 
-	const { countAll, countPrimary, countDebt, countArchive } = useMemo(() => {
+	const { countAll, countTreatment, countPrimary, countDebt, countArchive } = useMemo(() => {
 		let all = 0;
+		let treatment = 0;
 		let primary = 0;
 		let debt = 0;
 		let archive = 0;
@@ -144,6 +145,8 @@ export function usePatientsFilterLogic({
 				const appts = patientApptCountMap.get(p.id) || 0;
 				if (appts <= 1) {
 					primary += 1;
+				} else {
+					treatment += 1;
 				}
 				const insight = patientInsightById?.get(p.id);
 				const hasDebt =
@@ -156,6 +159,7 @@ export function usePatientsFilterLogic({
 		}
 		return {
 			countAll: all,
+			countTreatment: treatment,
 			countPrimary: primary,
 			countDebt: debt,
 			countArchive: archive,
@@ -167,7 +171,13 @@ export function usePatientsFilterLogic({
 		if (showLostPatientsOnly && lostPatientIds) {
 			list = list.filter((p) => lostPatientIds.has(p.id));
 		}
-		if (patientCategoryFilter === "primary") {
+		if (patientCategoryFilter === "treatment") {
+			list = list.filter((p) => {
+				if (p.status === "archived") return false;
+				const appts = patientApptCountMap.get(p.id) || 0;
+				return appts > 1;
+			});
+		} else if (patientCategoryFilter === "primary") {
 			list = list.filter((p) => {
 				if (p.status === "archived") return false;
 				const appts = patientApptCountMap.get(p.id) || 0;
@@ -228,6 +238,7 @@ export function usePatientsFilterLogic({
 		patientCategoryFilter,
 		setPatientCategoryFilter,
 		countAll,
+		countTreatment,
 		countPrimary,
 		countDebt,
 		countArchive,

@@ -14,3 +14,5 @@ export * from "./MobilePatientPlansTab";
 export * from "./MobilePatientFinanceTab";
 export * from "./MobilePatientDocumentsTab";
 export * from "./MobilePatientScansTab";
+export * from "./MobileProfileFloatingBar";
+

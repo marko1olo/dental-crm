@@ -1,11 +1,7 @@
 /**
- * DENTE CRM — Dedicated Mobile Patient Profile Workspace & HUD
- * (Apple HIG & Anti-Desktop-Squeeze Mandate, 390x844 Screen Ergonomics)
- *
- * Layer 5: Canonical Ultra-Thin UI Facade (<= 150 lines, 100% backwards compatible).
+ * DENTE CRM — Dedicated Mobile Patient Profile Workspace & HUD (Apple HIG, 390x844).
  */
 
-import { Calendar, Stethoscope } from "lucide-react";
 import React from "react";
 import { TaxDeductionCertificateModal } from "../finance/TaxDeductionCertificateModal";
 import {
@@ -17,6 +13,7 @@ import {
 	MobilePatientPlansTab,
 	MobilePatientScansTab,
 	MobilePatientTabsBar,
+	MobileProfileFloatingBar,
 	type MobilePatientProfileWorkspaceProps,
 	type MobilePatientTab,
 	formatPatientBirthAndAge,
@@ -104,26 +101,7 @@ export const MobilePatientProfileWorkspace: React.FC<MobilePatientProfileWorkspa
 				)}
 				{activeTab === "scans" && <MobilePatientScansTab patientStudies={patientStudies} />}
 			</main>
-			<div className="mobile-profile-floating-bar" data-testid="mobile-profile-floating-bar">
-				<button
-					type="button"
-					onClick={handleStartVisit}
-					className="flex-1 min-h-[48px] h-12 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-sm inline-flex items-center justify-center gap-2 shadow-md active:scale-98 transition-all cursor-pointer"
-					data-testid="mobile-floating-start-visit-btn"
-				>
-					<Stethoscope size={18} />
-					<span>Начать приём</span>
-				</button>
-				<button
-					type="button"
-					onClick={handleBookAppointment}
-					className="min-h-[48px] h-12 px-4 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-bold text-sm inline-flex items-center justify-center gap-1.5 active:scale-98 transition-all cursor-pointer"
-					data-testid="mobile-floating-book-btn"
-				>
-					<Calendar size={18} className="text-teal-600 dark:text-teal-400" />
-					<span>Запись</span>
-				</button>
-			</div>
+			<MobileProfileFloatingBar onStartVisit={handleStartVisit} onBookAppointment={handleBookAppointment} />
 			{isTaxModalOpen && (
 				<TaxDeductionCertificateModal
 					isOpen={isTaxModalOpen}

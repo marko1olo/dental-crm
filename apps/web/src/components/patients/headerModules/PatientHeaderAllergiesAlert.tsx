@@ -22,20 +22,17 @@ export const PatientHeaderAllergiesAlert: React.FC<PatientHeaderAllergiesAlertPr
 
 	return (
 		<>
-			{/* Dedicated Allergy Alert Banner (Мандат безопасности 8e) */}
+			{/* Dedicated Allergy Alert Banner (Мандат безопасности 8e & 8y, пассивная плашка ⚠️) */}
 			{allergyText && (
 				<div
 					className="px-2.5 py-1 rounded-lg bg-rose-500/15 border border-rose-600 text-rose-950 dark:text-rose-100 text-xs font-black flex items-center gap-2 shadow-xs"
 					data-testid="header-allergy-alert"
 					role="alert"
 				>
-					<AlertOctagon
-						size={14}
-						className="text-rose-600 dark:text-rose-400 shrink-0 animate-pulse"
-					/>
+					<span className="text-sm shrink-0" aria-hidden="true">⚠️</span>
 					<div className="flex-1 min-w-0 flex items-center gap-1.5 flex-wrap">
 						<span className="uppercase tracking-wider font-black text-[10px] text-rose-700 dark:text-rose-300 shrink-0">
-							СТОП-ФАКТОР / АЛЛЕРГИЯ:
+							⚠️ СТОП-ФАКТОР / АЛЛЕРГИЯ:
 						</span>
 						<span className="truncate font-semibold">{allergyText}</span>
 					</div>

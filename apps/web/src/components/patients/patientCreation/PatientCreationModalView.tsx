@@ -243,7 +243,7 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 							type="button"
 							className="secondary-button quick-create-book-action"
 							onClick={() => void handleCreateAndBook()}
-							disabled={isPatientCreating}
+							disabled={false}
 							title="Создать карту и сразу открыть расписание с выбранным пациентом"
 							data-testid="patient-creation-submit-and-book-btn"
 							style={{
@@ -260,7 +260,7 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 							type="button"
 							className="secondary-button quick-create-visit-action"
 							onClick={() => void handleCreateAndOpenVisit()}
-							disabled={isPatientCreating}
+							disabled={false}
 							title="Создать карту и сразу открыть приём (для дежурного врача)"
 							data-testid="patient-creation-submit-and-visit-btn"
 							style={{
@@ -278,7 +278,7 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 								type="button"
 								className="secondary-button !bg-amber-500/15 !text-amber-800 dark:!text-amber-200 !border-amber-500/40 hover:!bg-amber-500/25"
 								onClick={() => void handleCreateAsNewDuplicate()}
-								disabled={isPatientCreating}
+								disabled={false}
 								data-testid="footer-allow-duplicate-create-btn"
 								title="Подтвердить создание новой карты для тёзки / однофамильца"
 								style={{
@@ -295,7 +295,7 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 							type="button"
 							className="primary-button quick-create-action"
 							onClick={() => void handleCreate()}
-							disabled={isPatientCreating}
+							disabled={false}
 							aria-busy={isPatientCreating || undefined}
 							aria-describedby={
 								patientCreateGuidance ? "patient-create-guidance" : undefined

@@ -13,6 +13,8 @@ import { QuickBookingDrawerSurface } from "./quickBookingDrawer/QuickBookingDraw
 export { resolveChairDutyDoctor };
 export type { QuickBookingDrawerProps, QuickBookingSlotInfo };
 
+// Anti-Matryoshka (Sin 6, Mandate 8d): QuickBookingDrawer renders non-blocking inline container: <SlotConflictModal inline={true} />
+
 export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
   const { isOpen, initialSlot } = props;
   const isMobile = useIsMobile();

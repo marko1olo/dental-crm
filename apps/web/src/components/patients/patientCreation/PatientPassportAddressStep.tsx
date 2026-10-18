@@ -40,9 +40,7 @@ export function PatientPassportAddressStep({
 				<span>
 					{showDocFields
 						? "Скрыть реквизиты документов"
-						: fieldRequirements.requireSnils
-							? "+ Добавить СНИЛС (ОБЯЗАТЕЛЕН ПО НАСТРОЙКЕ), ОМС или Паспорт"
-							: "+ Добавить СНИЛС, ОМС или Паспорт"}
+						: "+ Добавить СНИЛС, ОМС или Паспорт"}
 				</span>
 			</button>
 
