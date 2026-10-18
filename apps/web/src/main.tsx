@@ -113,6 +113,16 @@ const CommunicationsView = React.lazy(() =>
 		default: m.CommunicationsView,
 	})),
 );
+const TournamentArena = React.lazy(() =>
+	import("./components/odontogram/tournament").then((m) => ({
+		default: m.TournamentArena,
+	})),
+);
+const Tooth46InspectionStand = React.lazy(() =>
+	import("./components/odontogram/gate0").then((m) => ({
+		default: m.Tooth46InspectionStand,
+	})),
+);
 import { TelephonyStandaloneWorkspace } from "./components/telephony/TelephonyStandaloneWorkspace";
 import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
 import { isPatientPresentationRoute } from "./components/photography/presentationSyncProtocol";
@@ -830,6 +840,55 @@ if (publicPortalRoute) {
 					<div className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] p-2 sm:p-4 overflow-y-auto">
 						<CommunicationsView />
 					</div>
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(new URLSearchParams(window.location.search).has("tournament") ||
+		window.location.hash.toLowerCase().includes("tournament"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			(localStorage.getItem("dente_theme") as any) || "auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense fallback={<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">Загрузка турнира одонтограмм...</div>}>
+					<TournamentArena />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(new URLSearchParams(window.location.search).get("stand") === "odontogram-gate0" ||
+		new URLSearchParams(window.location.search).has("odontogram-gate0") ||
+		window.location.hash.toLowerCase().includes("odontogram-gate0"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			(localStorage.getItem("dente_theme") as any) || "auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense fallback={<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">Загрузка стенда одонтограммы Gate 0...</div>}>
+					<Tooth46InspectionStand />
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>
