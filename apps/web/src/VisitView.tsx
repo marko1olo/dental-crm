@@ -29,7 +29,7 @@ export {
 	VisitPlanStageHandoffBanner,
 };
 export * from "./components/visit/visitPlanStageHandoff";
-// Медицинская карта приёма — быстрая печать со штампом ("ЧЕРНОВИК" / "ПОДПИСАНО ВРАЧОМ")
+// Медицинская карта приёма — быстрая печать со штампом ("ЧЕРНОВИК" / "ПОДПИСАНО ВРАЧОМ" / "ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ")
 export { handlePrintMedicalCardFast, handlePrintForm043uFast } from "./components/visit/view";
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {

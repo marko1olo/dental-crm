@@ -387,7 +387,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 									}
 									onConfirmSign("tablet_stylus");
 								}}
-								disabled={isSubmitting || (strokes.length === 0 && currentPoints.length === 0)}
+								disabled={isSubmitting}
 							>
 								<span>
 									{activeMode === "packages"
@@ -495,7 +495,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 								}
 								onConfirmSign("sms_otp");
 							}}
-							disabled={isSubmitting || !smsOtpCode || smsOtpCode.trim().length < 4}
+							disabled={isSubmitting}
 						>
 							<Zap size={14} />
 							<span>Подтвердить согласие по СМС</span>

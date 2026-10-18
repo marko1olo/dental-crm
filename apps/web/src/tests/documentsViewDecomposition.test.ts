@@ -162,9 +162,9 @@ describe("экран не объявляет состояние форм, кот
 			!/const current = \w+\.trim\(\);/.test(documentsView),
 			"в DocumentsView.tsx снова появилась своя копия дописывания формулировки вместо appendChipToText",
 		);
-		const paidContract = read(
-			"components/documents/forms/PaidServiceContractForm.tsx",
-		);
+		const paidContract =
+			read("components/documents/forms/PaidServiceContractForm.tsx") +
+			read("components/documents/forms/paidContract/PaidContractCareReasonSection.tsx");
 		assert.equal(
 			paidContract.match(/appendChipToText\(/g)?.length,
 			1,
@@ -238,7 +238,7 @@ describe("в каталоге документов нет незамеченны
 
 		it(`${file}: ${declaredUnwired ? "заявленный долг, подключения нет" : "его кто-то импортирует"}`, () => {
 			const selfPath = `components/documents/${file}`;
-			const importPattern = new RegExp(`(?:from|import) "[^"]*${moduleName}"`);
+			const importPattern = new RegExp(`(?:from|import)[\\s\\S]*?["'][^"']*${moduleName}(?:\\.[a-zA-Z]+)?["']`);
 			const importers = allWebFiles.filter(
 				(other) => other !== selfPath && importPattern.test(read(other)),
 			);

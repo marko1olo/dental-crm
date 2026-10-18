@@ -58,7 +58,9 @@ const webSrc = join(here, "..");
 const read = (relativePath: string) =>
 	readFileSync(join(webSrc, relativePath), "utf8");
 
-const documentsView = read("DocumentsView.tsx");
+const documentsView =
+	read("DocumentsView.tsx") +
+	read("documentsView/DocumentsA4PrintPreview.tsx");
 const documentFormSwitch = read("components/documents/tabs/DocumentFormSwitch.tsx");
 const redesignCss = read("styles/dente-redesign.css");
 
@@ -157,7 +159,7 @@ describe("вынесенные формы подключены, а не лежа
 	it("DocumentsView подключает DocumentFormSwitch", () => {
 		assert.match(
 			documentsView,
-			/import \{ DocumentFormSwitch \} from "\.\/components\/documents\/tabs\/DocumentFormSwitch"/,
+			/import \{ DocumentFormSwitch \} from "(?:\.\/|\.\.\/)components\/documents\/tabs\/DocumentFormSwitch"/,
 			"DocumentsView.tsx не импортирует DocumentFormSwitch",
 		);
 		assert.match(

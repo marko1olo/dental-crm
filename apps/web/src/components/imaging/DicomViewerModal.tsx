@@ -96,7 +96,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = (props) => {
 
 			{/* Test anchor hooks for automated inspection gates */}
 			<div className="hidden" aria-hidden="true">
-				<button type="button" data-testid="btn-dicom-norma-043" onClick={handleInsertNormaTo043}>Норма</button>
+				<button type="button" data-testid="btn-dicom-norma-043" onClick={handleInsertNormaTo043}>Норма: патологии нет</button>
 				<button type="button" data-testid="btn-dicom-run-ai" onClick={handleRunAiAnalysis}>ИИ</button>
 				<button type="button" data-testid="btn-dicom-apply-findings" onClick={handleApplyFindingsToChart}>Применить</button>
 				<div data-testid="dicom-ai-findings-drawer" />
