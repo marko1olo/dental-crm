@@ -77,3 +77,6 @@ Write-Host "================================================================" -F
 Write-Host "  [УСПЕХ] Настройки электропитания и памяти применены!         " -ForegroundColor Green
 Write-Host "  Файл подкачки зафиксирован (активируется после перезагрузки).  " -ForegroundColor Green
 Write-Host "================================================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Нажмите Enter для завершения..." -ForegroundColor Yellow
+$null = Read-Host

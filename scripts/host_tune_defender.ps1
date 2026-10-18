@@ -73,3 +73,6 @@ Write-Host "================================================================" -F
 Write-Host "  [УСПЕХ] Исключения Защитника Windows успешно применены!       " -ForegroundColor Green
 Write-Host "  Фоновое сканирование диска и микрофризы устранены.             " -ForegroundColor Green
 Write-Host "================================================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Нажмите Enter для завершения..." -ForegroundColor Yellow
+$null = Read-Host

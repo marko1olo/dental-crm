@@ -94,3 +94,6 @@ Write-Host ""
 Write-Host "================================================================" -ForegroundColor Cyan
 Write-Host "  [ГОТОВО] Завершено $killedCount зомби-процессов. Освобождено ~$freedMB МБ RAM." -ForegroundColor Green
 Write-Host "================================================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Нажмите Enter для завершения..." -ForegroundColor Yellow
+$null = Read-Host
