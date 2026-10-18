@@ -1,0 +1,58 @@
+.kpi-card-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-top: auto;
+	padding-top: 8px;
+	border-top: 1px solid var(--line-subtle, rgba(0, 0, 0, 0.06));
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .kpi-card-footer {
+	border-top-color: var(--line-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.kpi-badge-success {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 1px 6px;
+	border-radius: 9999px;
+	background: rgba(16, 185, 129, 0.15);
+	color: var(--ok-fg);
+	font-size: 11px;
+	font-weight: 700;
+}
+
+.kpi-badge-warning {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 1px 6px;
+	border-radius: 9999px;
+	background: rgba(245, 158, 11, 0.15);
+	color: var(--warn-fg);
+	font-size: 11px;
+	font-weight: 700;
+}
+
+.kpi-badge-neutral {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 1px 6px;
+	border-radius: 9999px;
+	background: rgba(100, 116, 139, 0.12);
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.kpi-card-sub {
+	font-size: 10px;
+	color: var(--muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}

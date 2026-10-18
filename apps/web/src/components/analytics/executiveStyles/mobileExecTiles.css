@@ -1,0 +1,112 @@
+.mobile-exec-kpis-wrapper {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	width: 100%;
+	box-sizing: border-box;
+}
+.mobile-exec-tiles-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 10px;
+	width: 100%;
+	box-sizing: border-box;
+}
+.exec-tile-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	padding: 12px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	min-height: 100px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+	box-sizing: border-box;
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.exec-tile-card:active {
+	transform: scale(0.98);
+}
+.exec-tile-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+	margin-bottom: 4px;
+}
+.exec-tile-label {
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.exec-tile-icon {
+	width: 26px;
+	height: 26px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+.exec-tile-icon.icon-teal {
+	background: rgba(13, 148, 136, 0.12);
+	color: var(--teal);
+}
+.exec-tile-icon.icon-indigo {
+	background: rgba(99, 102, 241, 0.12);
+	color: var(--accent, #6366f1);
+}
+.exec-tile-icon.icon-amber {
+	background: rgba(245, 158, 11, 0.12);
+	color: var(--warn-fg, #f59e0b);
+}
+.exec-tile-icon.icon-emerald {
+	background: rgba(16, 185, 129, 0.12);
+	color: var(--ok-fg, #10b981);
+}
+.exec-tile-val {
+	font-size: 1.25rem;
+	font-weight: 700;
+	color: var(--ink);
+	letter-spacing: -0.02em;
+	line-height: 1.2;
+	margin: 2px 0 6px;
+}
+.exec-tile-footer {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	margin-top: auto;
+}
+.exec-pill-success {
+	display: inline-flex;
+	align-items: center;
+	padding: 1px 6px;
+	border-radius: 9999px;
+	background: rgba(16, 185, 129, 0.15);
+	color: var(--ok-fg, #10b981);
+	font-size: 11px;
+	font-weight: 700;
+}
+.exec-pill-neutral {
+	display: inline-flex;
+	align-items: center;
+	padding: 1px 6px;
+	border-radius: 9999px;
+	background: rgba(100, 116, 139, 0.12);
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 600;
+}
+.exec-tile-sub {
+	font-size: 11px;
+	color: var(--muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}

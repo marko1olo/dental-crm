@@ -1,30 +1,20 @@
-/**
- * FINANCIAL ANALYTICS & EXECUTIVE P&L MODAL (ДЕНТЕ CRM — ФАСАД)
- * Desktop Density (32-36px), 152-FZ & 323-FZ Compliant, Zero Mocks.
- */
-
-import React, { useEffect, useMemo, useState } from "react";
-import { DollarSign, Download, RefreshCw, ShieldCheck, X } from "lucide-react";
-import { getDemoExecutiveAnalytics, isDemoShowcaseMode } from "../../lib/demoMode";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import React, { useEffect } from "react";
+import { ShieldCheck } from "lucide-react";
+import "./financialAnalytics.css";
 import {
-	type CashBoxRecord,
-	exportFinancialPnlCsvReport,
 	FinancialCashflowTimeline,
 	type FinancialPeriodChoice,
-	getFinancialPeriodDateRange,
 } from "./financialModalModules/FinancialCashflowTimeline";
+import { FinancialModalHeader } from "./financialModalModules/FinancialModalHeader";
+import { FinancialModalFooter } from "./financialModalModules/FinancialModalFooter";
 import {
-	computeFinancialPnlMetrics,
-	type ExecutiveDepartmentData,
-	type ExecutiveKpisData,
-	type ExpenseReasonRecord,
 	FinancialDepartmentsSection,
 	FinancialExpensesSection,
 	FinancialPnlKpiStrip,
 } from "./financialModalModules/FinancialPnlBreakdownSection";
-import "./financialAnalytics.css";
+import { useFinancialModalData } from "./financialModalModules/useFinancialModalData";
 
+// Contract endpoints: /api/analytics/executive, /api/cash/cash-box, /api/cash/expense-reasons
 export interface FinancialAnalyticsModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -36,18 +26,25 @@ export function FinancialAnalyticsModal({
 	onClose,
 	initialPeriod = "month",
 }: FinancialAnalyticsModalProps) {
-	const [period, setPeriod] = useState<FinancialPeriodChoice>(initialPeriod);
-	const [isLoading, setIsLoading] = useState(false);
-
-	const [isDeptsExpanded, setIsDeptsExpanded] = useState(false);
-	const [isCashBoxesExpanded, setIsCashBoxesExpanded] = useState(false);
-	const [isExpensesExpanded, setIsExpensesExpanded] = useState(false);
-
-	const [executiveKpis, setExecutiveKpis] = useState<ExecutiveKpisData | null>(null);
-	const [departments, setDepartments] = useState<ExecutiveDepartmentData[]>([]);
-	const [cashBoxes, setCashBoxes] = useState<CashBoxRecord[]>([]);
-	const [expenseReasons, setExpenseReasons] = useState<ExpenseReasonRecord[]>([]);
-	const [realPnl, setRealPnl] = useState<any | null>(null);
+	const {
+		period,
+		setPeriod,
+		isLoading,
+		isDeptsExpanded,
+		setIsDeptsExpanded,
+		isCashBoxesExpanded,
+		setIsCashBoxesExpanded,
+		isExpensesExpanded,
+		setIsExpensesExpanded,
+		executiveKpis,
+		departments,
+		cashBoxes,
+		expenseReasons,
+		realPnl,
+		metrics,
+		totalCashRub,
+		loadFinancialData,
+	} = useFinancialModalData(isOpen, initialPeriod);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -57,69 +54,6 @@ export function FinancialAnalyticsModal({
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, onClose]);
-
-	const loadFinancialData = async () => {
-		if (!isOpen) return;
-		setIsLoading(true);
-		try {
-			if (isDemoShowcaseMode()) {
-				const demoPayload = getDemoExecutiveAnalytics(period);
-				if (demoPayload?.kpis) setExecutiveKpis(demoPayload.kpis);
-				if (Array.isArray(demoPayload?.departments)) setDepartments(demoPayload.departments);
-				setCashBoxes([
-					{ id: "box-1", name: "Основная касса (наличные)", code: "cash_main", balanceRub: 345000, isShiftOpen: true },
-					{ id: "box-2", name: "Терминал эквайринга СБП", code: "terminal_sbp", balanceRub: 1890000, isShiftOpen: true },
-					{ id: "box-3", name: "Расчетный счет ДМС", code: "checking_dms", balanceRub: 2615000, isShiftOpen: false },
-				]);
-				return;
-			}
-
-			const headers = denteAdminSecretRequestHeaders();
-			const dates = getFinancialPeriodDateRange(period);
-			const [execRes, cashRes, expRes, pnlRes] = await Promise.all([
-				fetch(`/api/analytics/executive?period=${period}`, { headers }),
-				fetch("/api/cash/cash-box", { headers }),
-				fetch("/api/cash/expense-reasons", { headers }),
-				fetch(`/api/reports/pnl?from=${dates.from}&to=${dates.to}`, { headers }),
-			]);
-
-			if (execRes.ok) {
-				const json = await execRes.json();
-				if (json?.data?.kpis) setExecutiveKpis(json.data.kpis);
-				if (Array.isArray(json?.data?.departments)) setDepartments(json.data.departments);
-			}
-			if (cashRes.ok) {
-				const json = await cashRes.json();
-				if (Array.isArray(json?.data)) setCashBoxes(json.data);
-			}
-			if (expRes.ok) {
-				const json = await expRes.json();
-				if (Array.isArray(json?.data)) setExpenseReasons(json.data);
-			}
-			if (pnlRes.ok) {
-				const json = await pnlRes.json();
-				if (json?.data) setRealPnl(json.data);
-			}
-		} catch {
-			// Graceful fallback
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	useEffect(() => {
-		loadFinancialData();
-	}, [isOpen, period]);
-
-	const metrics = useMemo(
-		() => computeFinancialPnlMetrics(executiveKpis, realPnl),
-		[executiveKpis, realPnl],
-	);
-
-	const totalCashRub = useMemo(
-		() => cashBoxes.reduce((acc, b) => acc + (Number(b.balanceRub) || 0), 0),
-		[cashBoxes],
-	);
 
 	if (!isOpen) return null;
 
@@ -135,71 +69,14 @@ export function FinancialAnalyticsModal({
 			}}
 		>
 			<div className="fin-analytics-modal">
-				<header className="fin-analytics-header">
-					<div className="fin-analytics-title-group">
-						<div className="fin-analytics-header-icon"><DollarSign size={22} /></div>
-						<div>
-							<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-								<h2 className="fin-analytics-title">Финансовая Аналитика и P&amp;L Клиники</h2>
-								<span className="fin-analytics-badge">Касса и управленческий учет</span>
-							</div>
-							<p className="fin-analytics-subtitle">
-								Валовая прибыль • Себестоимость • EBITDA • Чистая рентабельность • Распределение по кассам
-							</p>
-						</div>
-					</div>
-
-					<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-						<button
-							type="button"
-							onClick={() => exportFinancialPnlCsvReport({ period, ...metrics })}
-							className="secondary-button fin-analytics-action-btn"
-							data-testid="export-financial-csv-btn"
-						>
-							<Download size={14} /> <span>Экспорт P&amp;L</span>
-						</button>
-						<button
-							type="button"
-							onClick={onClose}
-							className="icon-button fin-analytics-close-btn"
-							aria-label="Закрыть окно"
-							data-testid="close-financial-modal-btn"
-						>
-							<X size={20} />
-						</button>
-					</div>
-				</header>
-
-				<div className="fin-analytics-controls">
-					<div className="fin-analytics-period-wrapper">
-						<span className="fin-analytics-period-label">Период:</span>
-						<div className="fin-analytics-period-tabs" role="radiogroup" aria-label="Период отчета">
-							{(["month", "quarter", "year"] as const).map((p) => (
-								<button
-									key={p}
-									type="button"
-									className={`fin-analytics-tab-btn ${period === p ? "active" : ""}`}
-									onClick={() => setPeriod(p)}
-									data-testid={`period-${p}-btn`}
-									role="radio"
-									aria-checked={period === p}
-								>
-									{p === "month" ? "Текущий месяц" : p === "quarter" ? "Квартал" : "2026 год"}
-								</button>
-							))}
-						</div>
-					</div>
-
-					<button
-						type="button"
-						onClick={loadFinancialData}
-						className="secondary-button fin-analytics-action-btn"
-						title="Обновить финансовые показатели"
-					>
-						<RefreshCw size={13} className={isLoading ? "animate-spin" : ""} />
-						<span>Обновить</span>
-					</button>
-				</div>
+				<FinancialModalHeader
+					period={period}
+					onPeriodChange={setPeriod}
+					metrics={metrics}
+					isLoading={isLoading}
+					onRefresh={loadFinancialData}
+					onClose={onClose}
+				/>
 
 				<FinancialPnlKpiStrip metrics={metrics} executiveKpis={executiveKpis} realPnl={realPnl} />
 
@@ -223,24 +100,15 @@ export function FinancialAnalyticsModal({
 						realPnl={realPnl}
 						totalOpexRub={metrics.totalOpexRub}
 					/>
-
 					<div className="fin-analytics-privacy-note" data-testid="financial-privacy-note">
 						<ShieldCheck size={16} style={{ color: "var(--teal)", flexShrink: 0 }} />
-						<span>
-							Защита персональных данных и врачебной тайны (152-ФЗ и ст. 13 323-ФЗ): финансовый учет оперирует исключительно агрегированными кассовыми суммами и статьями управленческого учета. Персональные данные пациентов и диагнозы защищены.
-						</span>
+						<span>Защита персональных данных и врачебной тайны (152-ФЗ и ст. 13 323-ФЗ): финансовый учет оперирует исключительно агрегированными кассовыми суммами.</span>
 					</div>
+					<FinancialModalFooter onClose={onClose} />
 				</div>
-
-				<footer className="fin-analytics-footer">
-					<div style={{ fontSize: 11, color: "var(--muted)" }}>
-						Управленческий учет ДЕНТЕ CRM • Касса и чеки • Расчет в целочисленных копейках
-					</div>
-					<button type="button" onClick={onClose} className="primary-button fin-analytics-action-btn primary" data-testid="close-financial-footer-btn">
-						Закрыть аналитику
-					</button>
-				</footer>
 			</div>
 		</div>
 	);
 }
+
+export default FinancialAnalyticsModal;

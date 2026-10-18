@@ -1,0 +1,114 @@
+.curator-dashboard-container {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	width: 100%;
+	max-width: 1400px;
+	margin: 0 auto;
+	padding: 16px;
+	color: var(--ink, #0f172a);
+}
+.curator-dashboard-header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 16px 20px;
+	background-color: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+	border-radius: 16px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+.curator-header-title-group {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+.curator-header-icon {
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: linear-gradient(135deg, var(--primary), var(--teal, #0d9488));
+	color: var(--on-teal);
+	flex-shrink: 0;
+}
+.curator-header-title {
+	font-size: 18px;
+	font-weight: 700;
+	margin: 0;
+	color: var(--ink, #0f172a);
+}
+.curator-header-subtitle {
+	font-size: 13px;
+	color: var(--ink-muted, #64748b);
+	margin: 2px 0 0 0;
+}
+.curator-header-controls {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+.curator-select-input {
+	min-height: 36px;
+	padding: 6px 14px;
+	font-size: 13px;
+	font-weight: 500;
+	background-color: var(--paper, #f8fafc);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+	border-radius: 10px;
+	cursor: pointer;
+	outline: none;
+	transition: border-color 0.2s, box-shadow 0.2s;
+}
+.curator-select-input:focus {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+.curator-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 16px;
+	width: 100%;
+}
+.curator-kpi-card {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	padding: 18px 20px;
+	background-color: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+	border-radius: 16px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+	position: relative;
+	overflow: hidden;
+}
+.curator-kpi-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 8px;
+}
+.curator-kpi-label {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink-muted, #64748b);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+.curator-kpi-value {
+	font-size: 26px;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+	line-height: 1.2;
+}
+.curator-kpi-subtext {
+	font-size: 12px;
+	color: var(--ink-muted, #64748b);
+	margin-top: 6px;
+}

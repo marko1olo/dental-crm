@@ -1,0 +1,115 @@
+@import "./mobileExecFunnelBadge.css";
+
+.mobile-exec-section {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	width: 100%;
+	box-sizing: border-box;
+}
+.mobile-exec-section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 4px;
+}
+.mobile-exec-section-title {
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--muted);
+}
+.mobile-exec-section-count {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--muted);
+}
+.mobile-exec-badge-funnel {
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--teal);
+	background: rgba(13, 148, 136, 0.12);
+	padding: 2px 7px;
+	border-radius: 9999px;
+	border: 1px solid rgba(13, 148, 136, 0.25);
+}
+.mobile-exec-grouped-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 18px;
+	overflow: hidden;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+}
+.mobile-exec-grouped-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 11px 14px;
+	min-height: 52px;
+	border-bottom: 1px solid var(--line-subtle);
+	gap: 10px;
+	box-sizing: border-box;
+	transition: background 0.15s ease;
+}
+.mobile-exec-grouped-row:last-child {
+	border-bottom: none;
+}
+.grouped-row-left {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	flex: 1;
+}
+.mobile-exec-avatar {
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	font-size: 12px;
+	font-weight: 700;
+}
+.grouped-row-meta {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	gap: 1px;
+}
+.grouped-row-name {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--ink);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.grouped-row-sub {
+	font-size: 11px;
+	color: var(--muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.grouped-row-right {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	flex-shrink: 0;
+	gap: 1px;
+}
+.grouped-row-amount {
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--ink);
+}
+.grouped-row-status {
+	font-size: 11px;
+	color: var(--muted);
+}

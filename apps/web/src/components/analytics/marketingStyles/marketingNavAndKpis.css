@@ -1,0 +1,93 @@
+.marketing-roi-close-btn:hover {
+	color: var(--ink);
+	background-color: var(--paper-soft);
+	border-color: var(--line);
+}
+
+.marketing-roi-nav {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 20px;
+	border-bottom: 1px solid var(--line);
+	background-color: var(--paper);
+	overflow-x: auto;
+}
+
+.marketing-roi-tab {
+	height: 34px;
+	min-height: 34px;
+	padding: 0 14px;
+	border-radius: 10px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	cursor: pointer;
+	border: 1px solid var(--line);
+	background-color: var(--paper-soft);
+	color: var(--muted);
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+	transition: all 0.15s ease-in-out;
+	user-select: none;
+}
+
+.marketing-roi-tab:hover:not(.active) {
+	color: var(--ink);
+	background-color: var(--paper);
+	border-color: var(--teal);
+}
+
+.marketing-roi-tab.active {
+	background-color: var(--teal);
+	color: var(--on-teal, #ffffff) !important;
+	border-color: var(--teal);
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.3);
+}
+
+.marketing-roi-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+	gap: 10px;
+	padding: 16px 20px 8px 20px;
+}
+
+.marketing-roi-kpi-card {
+	background-color: var(--paper-soft, #0f172a);
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	border-radius: 14px;
+	padding: 12px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	gap: 6px;
+	position: relative;
+	overflow: hidden;
+}
+
+.marketing-roi-kpi-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 0.72rem;
+	font-weight: 600;
+	color: var(--muted, #94a3b8);
+}
+
+.marketing-roi-kpi-value {
+	font-size: 1.25rem;
+	font-weight: 800;
+	color: var(--ink, #f8fafc);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	line-height: 1.2;
+}
+
+.marketing-roi-kpi-sub {
+	font-size: 0.7rem;
+	color: var(--muted, #94a3b8);
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}

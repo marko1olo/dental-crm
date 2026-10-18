@@ -1,0 +1,98 @@
+.exec-payments-breakdown-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	padding: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+	box-sizing: border-box;
+}
+
+.exec-payments-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.exec-payments-bar-track {
+	width: 100%;
+	height: 10px;
+	border-radius: 9999px;
+	background: var(--line, #e2e8f0);
+	overflow: hidden;
+	display: flex;
+	box-sizing: border-box;
+}
+
+.exec-payments-segment {
+	height: 100%;
+	transition: width 0.3s ease;
+}
+
+.segment-cash {
+	background: var(--teal, #0d9488);
+}
+
+.segment-card {
+	background: var(--accent, #6366f1);
+}
+
+.segment-sbp {
+	background: var(--ok-fg, #10b981);
+}
+
+.exec-payments-legend {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+	padding-top: 4px;
+}
+
+.exec-legend-col {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.exec-legend-dot-row {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.exec-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.dot-cash {
+	background: var(--teal, #0d9488);
+}
+
+.dot-card {
+	background: var(--accent, #6366f1);
+}
+
+.dot-sbp {
+	background: var(--ok-fg, #10b981);
+}
+
+.exec-legend-label {
+	font-size: 11px;
+	font-weight: 500;
+	color: var(--muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.exec-legend-values {
+	display: flex;
+	flex-direction: column;
+	padding-left: 13px;
+}

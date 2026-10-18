@@ -1,0 +1,92 @@
+@import "./mobileExecKpiBadges.css";
+
+.mobile-exec-kpi-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.mobile-exec-kpi-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	padding: 14px 16px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	min-height: 108px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+	box-sizing: border-box;
+	position: relative;
+	overflow: hidden;
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mobile-exec-kpi-card:active {
+	transform: scale(0.98);
+}
+
+.kpi-card-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+	margin-bottom: 4px;
+}
+
+.kpi-card-label {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.kpi-card-icon-wrap {
+	width: 28px;
+	height: 28px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.kpi-card-icon-wrap.icon-teal {
+	background: rgba(13, 148, 136, 0.12);
+	color: var(--teal);
+}
+
+.kpi-card-icon-wrap.icon-ok {
+	background: rgba(16, 185, 129, 0.12);
+	color: var(--ok-fg);
+}
+
+.kpi-card-icon-wrap.icon-accent {
+	background: rgba(99, 102, 241, 0.12);
+	color: var(--accent);
+}
+
+.kpi-card-icon-wrap.icon-warn {
+	background: rgba(245, 158, 11, 0.12);
+	color: var(--warn-fg);
+}
+
+.kpi-card-value {
+	font-size: 1.5rem;
+	font-weight: 700;
+	color: var(--ink);
+	letter-spacing: -0.02em;
+	line-height: 1.2;
+	margin: 4px 0 8px;
+}
+
+.kpi-card-row-value {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}

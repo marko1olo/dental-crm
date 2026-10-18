@@ -1,0 +1,112 @@
+/**
+ * finModalKpiAndPanels.css — KPI cards grid, panels and collapsible strips.
+ * Мандат 8b: Файл строго <= 120 строк.
+ */
+
+.fin-analytics-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 10px;
+	padding: 14px 20px 8px 20px;
+}
+.fin-analytics-kpi-card {
+	background-color: var(--paper-soft, #0f172a);
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	border-radius: 12px;
+	padding: 10px 12px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	gap: 4px;
+}
+.fin-analytics-kpi-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 0.7rem;
+	font-weight: 600;
+	color: var(--muted, #94a3b8);
+}
+.fin-analytics-kpi-value {
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--ink, #f8fafc);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	line-height: 1.2;
+}
+.fin-analytics-kpi-sub {
+	font-size: 0.68rem;
+	color: var(--muted, #94a3b8);
+}
+.fin-analytics-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 10px 20px 20px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+.fin-analytics-panel {
+	background-color: var(--paper-soft, #0f172a);
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	border-radius: 14px;
+	padding: 14px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.fin-analytics-panel-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+.fin-analytics-panel-title {
+	font-size: 0.88rem;
+	font-weight: 700;
+	color: var(--ink, #f8fafc);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+}
+.fin-analytics-toggle-btn {
+	height: 36px;
+	min-height: 36px;
+	padding: 6px 12px;
+	border-radius: 8px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.2));
+	background-color: var(--paper, #1e293b);
+	color: var(--teal, #14b8a6);
+	transition: all 0.15s ease-in-out;
+}
+@media (pointer: coarse), (max-width: 640px) {
+	.fin-analytics-toggle-btn {
+		min-height: 44px;
+		height: auto;
+		padding: 8px 12px;
+	}
+}
+.fin-analytics-toggle-btn:hover {
+	background-color: var(--paper-strong, #334155);
+	color: var(--ink, #f8fafc);
+}
+.fin-analytics-compact-strip {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 0.75rem;
+	padding: 8px 12px;
+	border-radius: 8px;
+	background-color: var(--paper, #1e293b);
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.1));
+	flex-wrap: wrap;
+	gap: 6px;
+}

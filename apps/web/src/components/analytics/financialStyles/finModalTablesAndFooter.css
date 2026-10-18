@@ -1,0 +1,67 @@
+/**
+ * finModalTablesAndFooter.css — Data tables, privacy notes and modal footer.
+ * Мандат 8b: Файл строго <= 120 строк.
+ */
+
+.fin-analytics-table-wrap {
+	width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.12));
+	border-radius: 10px;
+	background-color: var(--paper, #1e293b);
+}
+
+.fin-analytics-table {
+	width: 100%;
+	min-width: 680px;
+	border-collapse: collapse;
+	font-size: 0.76rem;
+	text-align: left;
+	white-space: nowrap;
+}
+
+.fin-analytics-table th {
+	padding: 8px 12px;
+	background-color: var(--paper-strong, #334155);
+	color: var(--muted, #94a3b8);
+	font-weight: 600;
+	font-size: 0.7rem;
+	border-bottom: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.fin-analytics-table td {
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--line, rgba(204, 251, 241, 0.06));
+	color: var(--ink, #f8fafc);
+}
+
+.fin-analytics-table tr:hover td {
+	background-color: var(--paper-strong, #334155);
+}
+
+.fin-analytics-privacy-note {
+	background: rgba(15, 118, 110, 0.06);
+	border: 1px solid rgba(15, 118, 110, 0.2);
+	border-radius: 10px;
+	padding: 10px 14px;
+	font-size: 0.72rem;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--muted, #94a3b8);
+}
+
+.fin-analytics-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 20px;
+	border-top: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	background-color: var(--paper-soft, #0f172a);
+	flex-shrink: 0;
+	flex-wrap: wrap;
+	gap: 10px;
+}

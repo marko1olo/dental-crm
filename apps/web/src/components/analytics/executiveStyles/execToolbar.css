@@ -1,0 +1,96 @@
+.executive-canonical-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	min-height: 36px;
+	height: 36px;
+	box-sizing: border-box;
+	margin-bottom: 0.75rem;
+	width: 100%;
+}
+
+.executive-period-chips {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	height: 36px;
+}
+
+.executive-period-chips .secondary-button {
+	height: 36px;
+	min-height: 36px;
+	padding: 0 12px;
+	font-size: 13px;
+	font-weight: 500;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	white-space: nowrap;
+}
+
+.executive-period-chips .secondary-button:hover:not(.active) {
+	background: var(--paper);
+	color: var(--ink);
+	border-color: var(--line);
+}
+
+.executive-period-chips .secondary-button.active {
+	background: var(--teal) !important;
+	color: var(--on-teal, #ffffff) !important;
+	border-color: var(--teal) !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.3);
+}
+
+.executive-toolbar-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	height: 36px;
+}
+
+.executive-toolbar-actions .secondary-button,
+.executive-toolbar-actions .primary-button {
+	height: 36px;
+	min-height: 36px;
+	padding: 0 14px;
+	font-size: 13px;
+	font-weight: 600;
+	border-radius: 10px;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+.executive-toolbar-actions .primary-button {
+	background: var(--teal);
+	color: var(--on-teal, #ffffff);
+	border: 1px solid var(--teal);
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.3);
+}
+
+.executive-toolbar-actions .primary-button:hover {
+	background: var(--teal-dark, var(--teal));
+	border-color: var(--teal-dark, var(--teal));
+}
+
+.executive-toolbar-actions .secondary-button {
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+}
+
+.executive-toolbar-actions .secondary-button:hover:not(:disabled) {
+	border-color: var(--teal);
+	color: var(--teal);
+}

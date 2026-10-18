@@ -1,22 +1,9 @@
-/**
- * Карточка пациента в зоне риска оттока.
- * Эргономика: 2 первичные кнопки (звонок, WhatsApp), вспомогательные действия в выпадающем меню (...).
- * Без эмодзи, с поддержкой дизайн-токенов темы.
- */
-
-import {
-	Archive,
-	Calendar,
-	MessageSquare,
-	MoreHorizontal,
-	Phone,
-	Sparkles,
-	UserCheck,
-} from "lucide-react";
 import React from "react";
+import { MessageSquare, Phone } from "lucide-react";
 import { formatPhoneNumber } from "../../utils/inputSanitation";
 import { classifyChurnRisk } from "./analyticsWidgetData.js";
-import type { LostPatientRow } from "./LostPatientOfferModal";
+import { LostPatientActionsMenu } from "./lostPatientsModules/LostPatientActionsMenu";
+import type { LostPatientRow } from "./lostPatientsModules/lostPatientTypes";
 
 export interface LostPatientCardProps {
 	readonly patient: LostPatientRow;
@@ -34,8 +21,7 @@ export const LostPatientCard: React.FC<LostPatientCardProps> = ({
 	onGenerateOffer,
 }) => {
 	const days =
-		typeof patient?.daysSinceLastVisit === "number" &&
-		!Number.isNaN(patient.daysSinceLastVisit)
+		typeof patient?.daysSinceLastVisit === "number" && !Number.isNaN(patient.daysSinceLastVisit)
 			? patient.daysSinceLastVisit
 			: 0;
 	const risk = classifyChurnRisk(days, patient.lastTreatmentCategory);
@@ -63,9 +49,7 @@ export const LostPatientCard: React.FC<LostPatientCardProps> = ({
 							? patient.patientName
 							: (patient?.patientName || "Пациент")}
 					</span>
-					<span
-						className={`px-2 py-0.5 rounded border text-xs font-medium ${badgeClass}`}
-					>
+					<span className={`px-2 py-0.5 rounded border text-xs font-medium ${badgeClass}`}>
 						{risk.bandLabel}
 					</span>
 					<span className="px-2 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-xs text-[var(--muted)]">
@@ -79,20 +63,13 @@ export const LostPatientCard: React.FC<LostPatientCardProps> = ({
 						{formatPhoneNumber(patient?.phone)}
 					</span>
 					<span>·</span>
-					<span>
-						{days <= 0
-							? "Визит сегодня или нет записей"
-							: `Без приёма ${days} дн.`}
-					</span>
+					<span>{days <= 0 ? "Визит сегодня или нет записей" : `Без приёма ${days} дн.`}</span>
 					<span>·</span>
-					<span className="text-[var(--teal)] font-medium">
-						{risk.recommendedService}
-					</span>
+					<span className="text-[var(--teal)] font-medium">{risk.recommendedService}</span>
 				</div>
 			</div>
 
 			<div className="flex items-center gap-1.5 flex-shrink-0 relative">
-				{/* Primary Action Button 1: Позвонить */}
 				{patient?.phone ? (
 					<a
 						href={`tel:${patient.phone.replace(/[^\d+]/g, "")}`}
@@ -103,16 +80,12 @@ export const LostPatientCard: React.FC<LostPatientCardProps> = ({
 						<span>Позвонить</span>
 					</a>
 				) : (
-					<span
-						className="secondary-button h-8 px-3 rounded-lg text-[13px] font-medium text-[var(--muted)] inline-flex items-center gap-1.5 cursor-not-allowed opacity-60"
-						title="Номер телефона не указан"
-					>
+					<span className="secondary-button h-8 px-3 rounded-lg text-[13px] font-medium text-[var(--muted)] inline-flex items-center gap-1.5 cursor-not-allowed opacity-60">
 						<Phone className="w-3.5 h-3.5" />
 						<span>Позвонить</span>
 					</span>
 				)}
 
-				{/* Primary Action Button 2: WhatsApp */}
 				{patient?.phone ? (
 					<a
 						href={`https://wa.me/${patient.phone.replace(/\D/g, "")}`}
@@ -125,83 +98,21 @@ export const LostPatientCard: React.FC<LostPatientCardProps> = ({
 						<span>WhatsApp</span>
 					</a>
 				) : (
-					<span
-						className="secondary-button h-8 px-3 rounded-lg text-[13px] font-medium text-[var(--muted)] inline-flex items-center gap-1.5 cursor-not-allowed opacity-60"
-						title="Номер телефона не указан"
-					>
+					<span className="secondary-button h-8 px-3 rounded-lg text-[13px] font-medium text-[var(--muted)] inline-flex items-center gap-1.5 cursor-not-allowed opacity-60">
 						<MessageSquare className="w-3.5 h-3.5" />
 						<span>WhatsApp</span>
 					</span>
 				)}
 
-				{/* Secondary Actions Dropdown Menu (...) - Hick's Law: max 2 direct buttons, 4+ auxiliary actions consolidated */}
-				<div className="relative">
-					<button
-						type="button"
-						onClick={onToggleMenu}
-						className="secondary-button h-8 w-8 min-h-[32px] min-w-[32px] p-0 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] transition-colors flex items-center justify-center cursor-pointer touch-manipulation shadow-xs"
-						title="Дополнительные действия"
-						aria-label="Дополнительные действия"
-					>
-						<MoreHorizontal className="w-4 h-4" />
-					</button>
-
-					{isOpenMenu && (
-						<div
-							className="absolute right-0 top-full mt-1 w-52 rounded-xl border border-[var(--line)] bg-[var(--paper-strong,var(--paper,#ffffff))] shadow-xl z-30 py-1 text-xs divide-y divide-[var(--line)]"
-							style={{ minWidth: "200px" }}
-						>
-							<div className="py-1">
-								<button
-									type="button"
-									onClick={() => {
-										onToggleMenu();
-										onGenerateOffer(patient);
-									}}
-									className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer"
-								>
-									<Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-									<span>Спецпредложение</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										onToggleMenu();
-										onOpenCard(patient.id);
-									}}
-									className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer"
-								>
-									<UserCheck className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-									<span>Открыть медкарту</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										onToggleMenu();
-										window.location.hash = "#schedule";
-									}}
-									className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer"
-								>
-									<Calendar className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-									<span>Записать на приём</span>
-								</button>
-							</div>
-							<div className="py-1">
-								<button
-									type="button"
-									onClick={() => {
-										onToggleMenu();
-									}}
-									className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--muted)] cursor-pointer"
-								>
-									<Archive className="w-3.5 h-3.5 shrink-0" />
-									<span>В архив оттока</span>
-								</button>
-							</div>
-						</div>
-					)}
-				</div>
+				<LostPatientActionsMenu
+					patient={patient}
+					isOpenMenu={isOpenMenu}
+					onToggleMenu={onToggleMenu}
+					onOpenCard={onOpenCard}
+					onGenerateOffer={onGenerateOffer}
+				/>
 			</div>
 		</div>
 	);
 };
+export default LostPatientCard;

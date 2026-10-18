@@ -1,0 +1,106 @@
+.executive-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+	gap: 0.875rem;
+}
+.executive-kpi-card {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	padding: 1rem 1.25rem;
+	background: var(--paper-strong, var(--paper, #ffffff));
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+	position: relative;
+	overflow: hidden;
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.executive-kpi-card:hover {
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+.executive-kpi-card::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	width: 4px;
+	background: var(--card-accent, var(--teal, #0d9488));
+}
+.executive-kpi-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	margin-bottom: 0.5rem;
+}
+.executive-kpi-label {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	min-width: 0;
+	flex: 1;
+}
+.executive-kpi-icon-wrap {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	background: rgba(13, 148, 136, 0.12);
+	color: var(--teal, #0d9488);
+	flex-shrink: 0;
+}
+.executive-kpi-icon-teal,
+.executive-kpi-icon-accent,
+.executive-kpi-icon-ok,
+.executive-kpi-icon-warn {
+	background: rgba(13, 148, 136, 0.12);
+	color: var(--teal, #0d9488);
+}
+.executive-kpi-main-val {
+	font-size: 1.5rem;
+	font-weight: 800;
+	line-height: 1.2;
+	color: var(--ink, #0f172a);
+	margin-bottom: 0.375rem;
+}
+.executive-kpi-subtext {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	font-size: 0.8125rem;
+	color: var(--muted, #64748b);
+	flex-wrap: wrap;
+}
+.executive-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.2rem 0.5rem;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+.executive-pill-success {
+	background: rgba(16, 185, 129, 0.12);
+	color: var(--ok-fg, #10b981);
+}
+.executive-pill-warning {
+	background: rgba(245, 158, 11, 0.12);
+	color: var(--warn-fg, #f59e0b);
+}
+.executive-pill-danger {
+	background: rgba(239, 68, 68, 0.12);
+	color: var(--danger, #ef4444);
+}
+.executive-pill-neutral {
+	background: var(--line, #e2e8f0);
+	color: var(--ink, #334155);
+}

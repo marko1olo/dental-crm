@@ -1,0 +1,109 @@
+.marketing-roi-patient-cards {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.marketing-roi-patient-card {
+	background-color: var(--paper-soft, #0f172a);
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	border-radius: 14px;
+	padding: 14px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+.marketing-roi-patient-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+.marketing-roi-patient-name {
+	font-size: 0.92rem;
+	font-weight: 700;
+	color: var(--ink, #f8fafc);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.marketing-roi-chip {
+	font-size: 0.68rem;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	padding: 2px 7px;
+	border-radius: 6px;
+	background-color: var(--paper-strong, #334155);
+	color: var(--muted, #94a3b8);
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.12));
+}
+.marketing-roi-chip.highlight {
+	background-color: var(--teal-surface, rgba(13, 148, 136, 0.15));
+	color: var(--teal, #14b8a6);
+	border-color: var(--teal, #0d9488);
+}
+.marketing-roi-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	border-top: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	background-color: var(--paper-soft, #0f172a);
+	flex-shrink: 0;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+.marketing-roi-action-btn {
+	height: 36px;
+	min-height: 36px;
+	padding: 6px 14px;
+	border-radius: 8px;
+	font-size: 0.8rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.2));
+	background-color: var(--paper-strong, #334155);
+	color: var(--ink, #f8fafc);
+	transition: all 0.15s ease-in-out;
+}
+@media (pointer: coarse), (max-width: 640px) {
+	.marketing-roi-action-btn,
+	.marketing-roi-toggle-btn {
+		min-height: 44px;
+		height: auto;
+		padding: 8px 16px;
+	}
+}
+.marketing-roi-action-btn:hover {
+	background-color: var(--paper, #1e293b);
+	border-color: var(--teal, #0d9488);
+}
+.marketing-roi-action-btn.primary {
+	background-color: var(--teal, #0d9488);
+	color: var(--on-teal, #ffffff);
+	border-color: var(--teal, #0d9488);
+}
+.marketing-roi-toggle-btn {
+	height: 36px;
+	min-height: 36px;
+	padding: 6px 12px;
+	border-radius: 8px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.2));
+	background-color: var(--paper-soft, #0f172a);
+	color: var(--teal, #14b8a6);
+	transition: all 0.15s ease-in-out;
+}
+.marketing-roi-privacy-banner {
+	background: rgba(15, 118, 110, 0.08);
+	border: 1px solid rgba(15, 118, 110, 0.25);
+	border-radius: 12px;
+	padding: 12px 14px;
+}
