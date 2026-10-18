@@ -29,8 +29,11 @@ export function SanpinUvAndCleaningRegisterTab({
 						borderRadius: "10px",
 						border: "1px solid var(--line-subtle, #e2e8f0)",
 						display: "inline-flex",
-						gap: "2px",
+						gap: "4px",
 						alignItems: "center",
+						overflowX: "auto",
+						maxWidth: "100%",
+						scrollbarWidth: "none",
 					}}
 					role="tablist"
 					aria-label="Разделы готовности кабинетов, обеззараживания и уборок"
@@ -40,9 +43,9 @@ export function SanpinUvAndCleaningRegisterTab({
 						role="tab"
 						aria-selected={activeSubTab === "readiness"}
 						onClick={() => setActiveSubTab("readiness")}
-						className="touch-manipulation"
+						className="touch-manipulation shrink-0"
 						style={{
-							padding: "5px 12px",
+							padding: "6px 12px",
 							borderRadius: "7px",
 							fontSize: "12px",
 							fontWeight: activeSubTab === "readiness" ? 600 : 500,
@@ -55,12 +58,14 @@ export function SanpinUvAndCleaningRegisterTab({
 							display: "inline-flex",
 							alignItems: "center",
 							gap: "6px",
+							flexShrink: 0,
 							transition: "all 0.15s ease",
 						}}
 						data-testid="subtab-readiness-btn"
 					>
 						<ShieldCheck size={14} color={activeSubTab === "readiness" ? "var(--teal, #0d9488)" : "currentColor"} />
-						<span>Готовность кабинетов</span>
+						<span className="hidden md:inline">Готовность кабинетов</span>
+						<span className="inline md:hidden">Готовность</span>
 					</button>
 
 					<button
@@ -68,9 +73,9 @@ export function SanpinUvAndCleaningRegisterTab({
 						role="tab"
 						aria-selected={activeSubTab === "bactericidal"}
 						onClick={() => setActiveSubTab("bactericidal")}
-						className="touch-manipulation"
+						className="touch-manipulation shrink-0"
 						style={{
-							padding: "5px 12px",
+							padding: "6px 12px",
 							borderRadius: "7px",
 							fontSize: "12px",
 							fontWeight: activeSubTab === "bactericidal" ? 600 : 500,
@@ -83,12 +88,14 @@ export function SanpinUvAndCleaningRegisterTab({
 							display: "inline-flex",
 							alignItems: "center",
 							gap: "6px",
+							flexShrink: 0,
 							transition: "all 0.15s ease",
 						}}
 						data-testid="subtab-bactericidal-btn"
 					>
 						<Wind size={14} color={activeSubTab === "bactericidal" ? "var(--teal, #0d9488)" : "currentColor"} />
-						<span>Обеззараживание воздуха (рециркуляторы)</span>
+						<span className="hidden md:inline">Обеззараживание воздуха (рециркуляторы)</span>
+						<span className="inline md:hidden">Дезар / Воздух</span>
 					</button>
 
 					<button
@@ -96,9 +103,9 @@ export function SanpinUvAndCleaningRegisterTab({
 						role="tab"
 						aria-selected={activeSubTab === "cleaning"}
 						onClick={() => setActiveSubTab("cleaning")}
-						className="touch-manipulation"
+						className="touch-manipulation shrink-0"
 						style={{
-							padding: "5px 12px",
+							padding: "6px 12px",
 							borderRadius: "7px",
 							fontSize: "12px",
 							fontWeight: activeSubTab === "cleaning" ? 600 : 500,
@@ -111,12 +118,14 @@ export function SanpinUvAndCleaningRegisterTab({
 							display: "inline-flex",
 							alignItems: "center",
 							gap: "6px",
+							flexShrink: 0,
 							transition: "all 0.15s ease",
 						}}
 						data-testid="subtab-cleaning-btn"
 					>
 						<Sparkles size={14} color={activeSubTab === "cleaning" ? "var(--teal, #0d9488)" : "currentColor"} />
-						<span>Генеральные уборки</span>
+						<span className="hidden md:inline">Генеральные уборки</span>
+						<span className="inline md:hidden">Генуборки</span>
 					</button>
 				</div>
 

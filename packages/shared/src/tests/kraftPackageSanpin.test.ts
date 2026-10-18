@@ -518,7 +518,7 @@ describe("ROLE 2: NURSE & STERILIZATION ASSISTANT — SANPIN 3.3686-21 COMPREHEN
 					isCompleted: true,
 					disinfectantBrand: "Бациллол АФ",
 					exposureMinutes: 3,
-					surfacesCleaned: ["Кресло пациента", "Столики", "Светильник", "Плевательница", "Шланги"],
+					surfacesCleaned: ["Кресло пациента", "Столики", "Светильник", "Гидроблок", "Шланги"],
 				},
 				handpiecesSterility: {
 					isCompleted: true,

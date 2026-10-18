@@ -327,7 +327,7 @@ export function generateSanpinShiftAutopilotBundle(
 			inspectorStaffFullName: headNurseFullName,
 			isInspectorVerified: true,
 			status: "verified_by_inspector",
-			notes: "Двукратное протирание мебели, стоматологической установки, стен на высоту 2 м. Смыв дистиллятом.",
+			notes: "Регламентная санитарная обработка поверхностей кабинета и стоматологической установки по СанПиН 3.3686-21.",
 		},
 	];
 

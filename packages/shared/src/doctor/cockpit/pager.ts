@@ -56,13 +56,13 @@ export const PAGER_EVENT_TYPE_META: Record<
 		descriptionRu: "Требуется помощь ассистента у кресла (аспирация, 4 руки, замешивание).",
 	},
 	sterilization_needed: {
-		labelRu: "Стерилизация / Санитарка",
-		targetRoleRu: "Санитарка / ЦСО",
+		labelRu: "Стерилизация / ЦСО",
+		targetRoleRu: "Медсестра ЦСО",
 		defaultUrgency: "routine",
 		iconName: "sparkles",
 		badgeColor: "teal",
 		audioAlertName: "chime-soft",
-		descriptionRu: "Требуется смена крафт-пакетов, уборка кабинета или дезинфекция столика.",
+		descriptionRu: "Требуется доставка стерильных крафт-пакетов и лотков ЦСО.",
 	},
 	emergency_doctor: {
 		labelRu: "ЭКСТРЕННО: Врач / Реанимация",
