@@ -111,7 +111,7 @@ describe("FastClinicalPrintEngine Vector Print Suite", () => {
 		);
 		assert.ok(html.includes("fast-print-modal-backdrop"));
 		assert.ok(html.includes("fast-print-portal"));
-		assert.ok(html.includes("Печать 043/у (Приказ 834н)"));
+		assert.ok(html.includes("Медицинская карта приёма"));
 		assert.ok(html.includes("data-testid=\"btn-execute-fast-print\""));
 		assert.ok(html.includes("data-testid=\"btn-close-fast-print\""));
 		assert.ok(html.includes("data-testid=\"print-tab-insert043u\""));

@@ -248,7 +248,18 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 			webSrcDir,
 			"components/treatment-plans/TreatmentPlanContractPrint.tsx",
 		);
-		const content = fs.readFileSync(contractPrintPath, "utf-8");
+		const financialSummaryPath = path.join(
+			webSrcDir,
+			"components/treatment-plans/TreatmentPlanContractFinancialSummary.tsx",
+		);
+		const signaturesPath = path.join(
+			webSrcDir,
+			"components/treatment-plans/TreatmentPlanContractSignatures.tsx",
+		);
+		const content =
+			fs.readFileSync(contractPrintPath, "utf-8") +
+			(fs.existsSync(financialSummaryPath) ? fs.readFileSync(financialSummaryPath, "utf-8") : "") +
+			(fs.existsSync(signaturesPath) ? fs.readFileSync(signaturesPath, "utf-8") : "");
 		assert.ok(
 			content.includes("Сумма сметы прописью:"),
 			"TreatmentPlanContractPrint must display official sum in words banner",

@@ -189,7 +189,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 	};
 
 	const handleCreateAndIssueTaxDocument = async () => {
-		if (!patient?.id || aggregated.totalNetRub === 0 || isIssuingDoc) return;
+		if (!patient?.id || isIssuingDoc) return;
 		setIsIssuingDoc(true);
 		try {
 			const paymentIds = effectivePayments
@@ -304,8 +304,8 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 							<button
 								type="button"
 								onClick={handleCreateAndIssueTaxDocument}
-								disabled={isIssuingDoc || aggregated.totalNetRub === 0}
-								className="secondary-button h-8 px-2.5 text-xs inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30 hover:bg-teal-500/20"
+								disabled={isIssuingDoc}
+								className="secondary-button h-9 min-h-[36px] px-3 text-xs inline-flex items-center gap-1.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30 hover:bg-teal-500/20"
 								data-testid="tax-cert-save-registry-btn"
 								title="Зарегистрировать справку в реестре документов клиники"
 							>
@@ -317,12 +317,12 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 						<button
 							type="button"
 							onClick={handlePrint}
-							disabled={isPrinting || aggregated.totalNetRub === 0}
-							className="primary-button h-8 px-3 text-xs inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+							disabled={isPrinting}
+							className="primary-button h-9 min-h-[36px] px-3.5 text-xs inline-flex items-center gap-1.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
 							data-testid="tax-cert-print-btn"
 							title={
 								aggregated.totalNetRub === 0
-									? "Нет фискальных оплат за выбранный год"
+									? "Распечатать бланк справки со строками _______ (Мандат 8e)"
 									: "Распечатать справку для налогового вычета"
 							}
 						>
@@ -333,12 +333,11 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 						<button
 							type="button"
 							onClick={handleDownloadPdf}
-							disabled={aggregated.totalNetRub === 0}
-							className="secondary-button h-8 px-2.5 text-xs inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+							className="secondary-button h-9 min-h-[36px] px-3 text-xs inline-flex items-center gap-1.5 rounded-xl hover:bg-[var(--paper-soft)]"
 							data-testid="tax-cert-pdf-btn"
 							title={
 								aggregated.totalNetRub === 0
-									? "Нет фискальных оплат за выбранный год"
+									? "Экспорт бланка справки в PDF (Мандат 8e)"
 									: "Экспорт в PDF"
 							}
 						>
@@ -349,7 +348,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-w-[32px] min-h-[32px] w-8 h-8 flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] rounded-lg hover:bg-[var(--paper)] transition cursor-pointer"
+							className="icon-button secondary-button min-w-[36px] min-h-[36px] w-9 h-9 flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] rounded-xl hover:bg-[var(--paper)] transition cursor-pointer"
 							data-testid="tax-cert-close-btn"
 							aria-label="Закрыть окно"
 						>
@@ -458,42 +457,41 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 
 				{/* Preview Area */}
 				<main className="p-4 max-h-[60vh] overflow-y-auto bg-[var(--paper)]">
-					{aggregated.totalNetRub === 0 ? (
+					{aggregated.totalNetRub === 0 && (
 						<div
-							className="p-8 text-center text-[var(--muted)] flex flex-col items-center justify-center gap-2.5 rounded-lg border border-dashed border-[var(--line)] bg-[var(--paper-soft)]"
+							className="p-3 mb-3 text-left text-[var(--muted)] flex items-center gap-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)]"
 							data-testid="tax-cert-empty-state"
 						>
-							<div className="w-10 h-10 rounded-full bg-[var(--line)]/40 flex items-center justify-center text-[var(--muted)]">
-								<Receipt size={22} className="opacity-60" />
+							<Receipt size={18} className="opacity-60 text-teal-600 shrink-0" />
+							<div className="text-xs">
+								<span className="font-semibold text-[var(--ink)] block">
+									Нет подтвержденных фискальных оплат за {selectedYear} год
+								</span>
+								<span>
+									Справка формируется в режиме бланка со строками _______ для ручного заполнения или подтверждения бухгалтерией (Мандат 8e).
+								</span>
 							</div>
-							<p className="font-semibold text-[14px] text-[var(--ink)]">
-								Нет подтвержденных фискальных оплат за {selectedYear} год
-							</p>
-							<p className="text-[12px] max-w-[440px] leading-normal text-[var(--muted)]">
-								Справка об оплате медицинских услуг по форме КНД 1151156 может быть сформирована только на основании фискальных чеков. В выбранном налоговом периоде у пациента не найдено фискализированных оплат.
-							</p>
-						</div>
-					) : (
-						<div className="p-4 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[12.5px] leading-relaxed space-y-2 font-mono">
-							<p className="font-bold text-center">
-								СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВЫХ ОРГАНОВ РОССИЙСКОЙ ФЕДЕРАЦИИ
-							</p>
-							<p className="text-center text-[11px] text-[var(--muted)]">
-								Форма по КНД 1151156 · Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@
-							</p>
-							<hr className="border-[var(--line)] my-2" />
-							<p><strong>Медицинская организация:</strong> {clinic.legalName}</p>
-							<p><strong>ИНН / КПП:</strong> {clinic.inn} / {clinic.kpp} · <strong>ОГРН:</strong> {clinic.ogrn}</p>
-							<p><strong>Лицензия:</strong> № {clinic.licenseNumber}</p>
-							<hr className="border-[var(--line)] my-2" />
-							<p><strong>Пациент:</strong> {patient?.fullName || "Пациент клиники"}</p>
-							<p><strong>Налогоплательщик:</strong> {relationship === "patient" ? patient?.fullName : taxpayerFullName || "Указан в заявлении"}</p>
-							<p><strong>ИНН налогоплательщика:</strong> {effectiveInn || "Не указан (паспортные данные в заявлении)"}</p>
-							<p><strong>Код услуги 1 (обычные услуги):</strong> {aggregated.code01Rub.toLocaleString("ru-RU")} руб. 00 коп.</p>
-							<p><strong>Код услуги 2 (дорогостоящее лечение):</strong> {aggregated.code02Rub.toLocaleString("ru-RU")} руб. 00 коп.</p>
-							<p><strong>ИТОГО оплачено за {selectedYear} год:</strong> {aggregated.totalNetRub.toLocaleString("ru-RU")} руб. 00 коп.</p>
 						</div>
 					)}
+					<div className="p-4 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[12.5px] leading-relaxed space-y-2 font-mono">
+						<p className="font-bold text-center">
+							СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВЫХ ОРГАНОВ РОССИЙСКОЙ ФЕДЕРАЦИИ
+						</p>
+						<p className="text-center text-[11px] text-[var(--muted)]">
+							Форма по КНД 1151156 · Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@
+						</p>
+						<hr className="border-[var(--line)] my-2" />
+						<p><strong>Медицинская организация:</strong> {clinic.legalName}</p>
+						<p><strong>ИНН / КПП:</strong> {clinic.inn} / {clinic.kpp} · <strong>ОГРН:</strong> {clinic.ogrn}</p>
+						<p><strong>Лицензия:</strong> № {clinic.licenseNumber}</p>
+						<hr className="border-[var(--line)] my-2" />
+						<p><strong>Пациент:</strong> {patient?.fullName || "Пациент клиники"}</p>
+						<p><strong>Налогоплательщик:</strong> {relationship === "patient" ? patient?.fullName : taxpayerFullName || "Указан в заявлении"}</p>
+						<p><strong>ИНН налогоплательщика:</strong> {effectiveInn || "Не указан (паспортные данные в заявлении)"}</p>
+						<p><strong>Код услуги 1 (обычные услуги):</strong> {aggregated.code01Rub > 0 ? `${aggregated.code01Rub.toLocaleString("ru-RU")} руб. 00 коп.` : "_______________ руб."}</p>
+						<p><strong>Код услуги 2 (дорогостоящее лечение):</strong> {aggregated.code02Rub > 0 ? `${aggregated.code02Rub.toLocaleString("ru-RU")} руб. 00 коп.` : "_______________ руб."}</p>
+						<p><strong>ИТОГО оплачено за {selectedYear} год:</strong> {aggregated.totalNetRub > 0 ? `${aggregated.totalNetRub.toLocaleString("ru-RU")} руб. 00 коп.` : "_______________ руб."}</p>
+					</div>
 				</main>
 			</div>
 		</div>

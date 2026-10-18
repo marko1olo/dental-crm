@@ -1,40 +1,11 @@
 import React from "react";
 import { Printer } from "lucide-react";
 import type { PaidContractRequiredFieldsReview } from "./paidContractRequiredFields";
-import {
-	printBlankMedicalContract,
-	type BlankContractPatientInfo,
-} from "../patients/blankContractPrint";
-
-/**
- * «Чего не хватает договору» — весь перечень до нажатия «Создать».
- *
- * ЧТО ВИДЕЛ АДМИНИСТРАТОР. Раздел «Документы», вид «Договор»: заголовок,
- * описание и свёрнутый блок с полями. На экране ни одной пометки, что поля
- * обязательны, и ни слова о том, чего не хватает. Нажатие «Создать выбранный
- * документ» — «Заполните поле: договор, номер». Вписал, нажал — «Заполните поле:
- * договор, начало оказания услуг». Потом состав услуг, потом стоимость, потом
- * четыре отметки-подтверждения по одной за нажатие. Проверка договора устроена
- * цепочкой `??` и физически отдаёт одну позицию за раз, поэтому на новой клинике
- * это восемь отказов подряд, и каждый следующий человек узнаёт только после
- * очередного нажатия.
- *
- * ЧТО СТАЛО. Перечень показан сразу, целиком, с выполнимой подсказкой по каждой
- * позиции, и пересчитывается по ходу заполнения. Кнопку создания не запираем:
- * решение остаётся за проверкой при нажатии, иначе при расхождении перечня с
- * проверкой человек получил бы мёртвую кнопку без объяснения.
- *
- * Вид рамки взят у формы записи на приём (класс schedule-create-missing): это
- * единственный готовый в приложении вид списка «чего не хватает», а правки в
- * styles/* этой задаче не разрешены. Расхождения в оформлении быть и не должно —
- * администратор видит оба списка в один день.
- */
+import { printBlankMedicalContract, type BlankContractPatientInfo } from "../patients/blankContractPrint";
 
 export interface PaidContractRequiredFieldsPanelProps {
 	review: PaidContractRequiredFieldsReview;
-	/** Подпись свёрнутого блока с полями: куда идти заполнять. */
 	fieldsBlockTitle: string;
-	/** Обработчик печати чистого бланка договора со строками _______ (Мандат 8e) */
 	onPrintBlankContract?: (() => void) | undefined;
 	patient?: BlankContractPatientInfo | null | undefined;
 	doctorName?: string | null | undefined;
@@ -53,86 +24,41 @@ export function PaidContractRequiredFieldsPanel({
 
 	if (missing.length === 0) {
 		return (
-			<p
-				className="document-required-fields-ready"
-				role="status"
-				style={{
-					background: "var(--ok-bg)",
-					borderRadius: "8px",
-					color: "var(--ok-fg)",
-					fontSize: "13px",
-					margin: "12px 0 0",
-					padding: "10px 12px",
-				}}
-			>
-				Обязательные поля договора заполнены, все {requiredCount}. Дату договора
-				и время подписания программа поставит сама при создании.
+			<p className="document-required-fields-ready p-3 my-3 text-xs rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+				Обязательные поля договора заполнены, все {requiredCount}. Дата и время проставятся автоматически.
 			</p>
 		);
 	}
 
 	return (
-		<div
-			className="schedule-create-missing document-required-fields-missing"
-			role="status"
-			aria-live="polite"
-			style={{ marginTop: "12px" }}
-		>
-			<strong>
-				Не хватает {missing.length} из {requiredCount} обязательных полей — без
-				них договор не создастся:
+		<div className="schedule-create-missing document-required-fields-missing my-3 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 text-xs" role="status">
+			<strong className="text-amber-800 dark:text-amber-300 font-semibold block mb-1">
+				Подсказка: не заполнено {missing.length} из {requiredCount} полей:
 			</strong>
-			<ul>
+			<ul className="list-disc pl-4 space-y-0.5 text-slate-700 dark:text-slate-300">
 				{missing.map((entry) => (
 					<li key={entry.field}>
-						{entry.label} — {entry.hint}
+						<span className="font-medium">{entry.label}</span> — {entry.hint}
 					</li>
 				))}
 			</ul>
-			<small>Все эти поля в блоке «{fieldsBlockTitle}» ниже.</small>
-			<div
-				style={{
-					marginTop: "12px",
-					display: "flex",
-					alignItems: "center",
-					gap: "10px",
-					flexWrap: "wrap",
-				}}
-			>
+			<small className="text-slate-500 block mt-1">Поля доступны в блоке «{fieldsBlockTitle}».</small>
+			<div className="mt-3 flex items-center gap-2 flex-wrap">
 				<button
 					type="button"
 					data-testid="btn-missing-fields-print-blank-contract"
-					className="btn-missing-fields-print-blank-contract"
+					style={{ minHeight: "44px" }}
+					className="btn-missing-fields-print-blank-contract inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg bg-[var(--teal,#0d9488)] text-white font-semibold text-xs cursor-pointer shadow-xs"
 					onClick={() => {
-						if (onPrintBlankContract) {
-							onPrintBlankContract();
-						} else {
-							void printBlankMedicalContract(patient, { doctorName });
-						}
+						if (onPrintBlankContract) onPrintBlankContract();
+						else void printBlankMedicalContract(patient, { doctorName });
 					}}
-					style={{
-						minHeight: "44px",
-						minWidth: "44px",
-						padding: "8px 16px",
-						background: "var(--teal, #0d9488)",
-						color: "#fff",
-						borderRadius: "8px",
-						border: "none",
-						fontWeight: 600,
-						fontSize: "13px",
-						cursor: "pointer",
-						display: "inline-flex",
-						alignItems: "center",
-						gap: "8px",
-					}}
-					title="Распечатать пустой бланк договора со строками _______ для ручного заполнения пациентом на стойке (без 403-ошибок)"
+					title="Распечатать пустой бланк договора со строками _______ для ручного заполнения"
 				>
 					<Printer size={16} aria-hidden="true" />
 					<span>Печать договора (бланк со строками _______)</span>
 				</button>
-				<span style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
-					0 ₽ · Ручная подпись до приёма врача
-				</span>
+				<span className="text-xs text-slate-500">0 ₽ · Ручная подпись до приёма</span>
 			</div>
 		</div>
 	);

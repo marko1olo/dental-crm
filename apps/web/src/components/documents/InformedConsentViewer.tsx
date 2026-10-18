@@ -131,7 +131,7 @@ export const InformedConsentViewer: React.FC<InformedConsentViewerProps> = ({
 						</div>
 						<div>
 							<h2 className="text-[14px] font-bold text-[var(--ink)] leading-tight flex items-center gap-2">
-								<span>Информированное добровольное согласие (ИДС 1051н)</span>
+								<span>Информированное добровольное согласие</span>
 								<span
 									className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
 										isSigned

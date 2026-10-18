@@ -123,7 +123,7 @@ export const DailyDentistWorkSheet037uForm: React.FC<DailyDentistWorkSheet037uFo
 						<h4 style={{ margin: 0 }}>Журнал принятых пациентов ({records.length})</h4>
 						<button
 							type="button"
-							className="btn btn-sm btn-primary"
+							className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors inline-flex items-center gap-1.5 text-xs"
 							onClick={addPatientRow}
 							disabled={disabled}
 						>

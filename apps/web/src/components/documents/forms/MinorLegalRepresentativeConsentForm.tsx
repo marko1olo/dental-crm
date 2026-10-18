@@ -543,7 +543,7 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 								setMinorConsentStored(event.target.checked)
 							}
 						/>
-						Согласие подшивается в медицинскую карту формы 043/у
+						Согласие подшивается в медицинскую карту приёма
 					</label>
 					<label className="document-payload-checkbox">
 						<input

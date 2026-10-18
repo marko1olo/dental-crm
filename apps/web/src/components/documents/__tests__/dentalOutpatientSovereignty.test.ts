@@ -14,7 +14,11 @@ describe("Outpatient Dental Domain Sovereignty (Mandate 8i & Mandate 8e - Wave 1
 			webSrcDir,
 			"components/documents/sickLeave/SickLeaveElnModal.tsx",
 		);
-		const modalContent = fs.readFileSync(modalPath, "utf-8");
+		const sectionPath = path.join(
+			webSrcDir,
+			"components/documents/sickLeave/elnModal/ElnDiagnosisAndPeriodSection.tsx",
+		);
+		const modalContent = fs.readFileSync(modalPath, "utf-8") + " " + fs.readFileSync(sectionPath, "utf-8");
 
 		// Должен быть амбулаторный режим
 		assert.ok(

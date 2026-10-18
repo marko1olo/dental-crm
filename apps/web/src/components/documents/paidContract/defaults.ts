@@ -4,7 +4,7 @@
  * Создание договоров по умолчанию и генерация номеров ДПМУ (ПП РФ № 736).
  */
 
-import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import { isDemoShowcaseMode } from "../../../utils/demoModeEngine";
 import { calculatePaidContractGrandTotalKopecks } from "./money";
 import type {
 	PaidContractCustomerRequisites,
@@ -213,7 +213,7 @@ export function createDefaultPaidContract(params: {
 			"Обращение за квалифицированной стоматологической помощью, плановое лечение по результатам комплексного осмотра полости рта.",
 		serviceScopeSummary:
 			params.serviceScopeSummary ||
-			"Комплекс стоматологических лечебно-диагностических услуг в соответствии с утвержденным Планом лечения (Сметой) и медицинской картой 043/у.",
+			"Комплекс стоматологических лечебно-диагностических услуг в соответствии с утвержденным Планом лечения (Сметой) и медицинской картой приёма.",
 		services: resolvedServices,
 		serviceStart: params.serviceStart || formattedDate,
 		serviceEndOrCondition:

@@ -98,7 +98,7 @@ export const ContractSheet: React.FC<ContractSheetProps> = ({
 									<span>Договор № {contractData.contractNumber} · Лист 2 из 3</span>
 								</div>
 
-								<h2 className="a4-section-heading">4. Перечень и предварительная спецификация услуг (Номенклатура МЗ РФ № 804н)</h2>
+								<h2 className="a4-section-heading">4. Перечень и предварительная спецификация услуг</h2>
 								<table className="a4-table">
 									<thead>
 										<tr>

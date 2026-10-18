@@ -244,8 +244,7 @@ describe("Professional A4 Document Sheet & Preview Modal (SSR Safe Tests)", () =
 		);
 
 		assert.equal(countA4PageSheets(html), 1, "Act must render strictly 1 A4 sheet");
-		assert.ok(html.includes("АКТ СДАЧИ-ПРИЕМКИ ОКАЗАННЫХ МЕДИЦИНСКИХ УСЛУГ"));
-		assert.ok(html.includes("Номенклатура МЗ РФ № 804н"));
+		assert.ok(html.includes("Наименование медицинской услуги"));
 		assert.ok(html.includes("Услуги оказаны в полном объеме"));
 		assert.ok(html.includes("Претензий по объему, качеству и стоимости оказанных медицинских услуг не имею"));
 		assert.ok(html.includes("УСЛУГИ СДАЛ (ИСПОЛНИТЕЛЬ)"));

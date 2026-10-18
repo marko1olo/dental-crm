@@ -53,7 +53,7 @@ export const ActSheet: React.FC<ActSheetProps> = ({
 									</tbody>
 								</table>
 
-								<h2 className="a4-section-heading">Перечень фактически оказанных медицинских услуг (Номенклатура МЗ РФ № 804н)</h2>
+								<h2 className="a4-section-heading">Перечень фактически оказанных медицинских услуг</h2>
 								<table className="a4-table">
 									<thead>
 										<tr>

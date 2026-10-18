@@ -29,7 +29,7 @@ export const ProfessionalA4Toolbar: React.FC<ProfessionalA4ToolbarProps> = ({
 						className={`pro-a4-tab-btn ${activeTab === "contract" ? "active" : ""}`}
 						onClick={() => onTabChange?.("contract")}
 						data-testid="a4-tab-contract"
-						title="1. Договор на оказание платных медицинских услуг (ПП РФ № 736) [3 листа]"
+						title="1. Договор на оказание платных медицинских услуг [3 листа]"
 					>
 						1. Договор (3 л.)
 					</button>
@@ -40,7 +40,7 @@ export const ProfessionalA4Toolbar: React.FC<ProfessionalA4ToolbarProps> = ({
 						className={`pro-a4-tab-btn ${activeTab === "act" ? "active" : ""}`}
 						onClick={() => onTabChange?.("act")}
 						data-testid="a4-tab-act"
-						title="2. Акт сдачи-приемки оказанных медицинских услуг (804н) [1 лист]"
+						title="2. Акт сдачи-приемки оказанных медицинских услуг [1 лист]"
 					>
 						2. Акт (1 л.)
 					</button>
@@ -62,7 +62,7 @@ export const ProfessionalA4Toolbar: React.FC<ProfessionalA4ToolbarProps> = ({
 						className={`pro-a4-tab-btn ${isInformedConsentTab ? "active" : ""}`}
 						onClick={() => onTabChange?.("consent_1051n")}
 						data-testid="a4-tab-consent-1051n"
-						title="4. Информированное добровольное согласие (Приказ МЗ РФ № 1051н) [2 листа]"
+						title="4. Информированное добровольное согласие на лечение [2 листа]"
 					>
 						4. ИДС (2 л.)
 					</button>
@@ -73,7 +73,7 @@ export const ProfessionalA4Toolbar: React.FC<ProfessionalA4ToolbarProps> = ({
 						className={`pro-a4-tab-btn ${activeTab === "personal_data" ? "active" : ""}`}
 						onClick={() => onTabChange?.("personal_data")}
 						data-testid="a4-tab-personal-data"
-						title="5. Согласие на обработку персональных данных (152-ФЗ) [1 лист]"
+						title="5. Согласие на обработку персональных данных [1 лист]"
 					>
 						5. ПДн (1 л.)
 					</button>

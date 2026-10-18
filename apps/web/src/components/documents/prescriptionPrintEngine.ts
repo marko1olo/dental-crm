@@ -377,7 +377,7 @@ export function generatePrescriptionForm107Html(
 
       <div class="patient-block">
         Ф.И.О. пациента: <strong>${escapeHtml(patient.fullName)}</strong><br>
-        Дата рождения: ${patient.birthDate ? formatDateRu(patient.birthDate) : "____________________"} | № амбулаторной карты: <strong>${escapeHtml(patient.cardNumber || "043/у")}</strong><br>
+        Дата рождения: ${patient.birthDate ? formatDateRu(patient.birthDate) : "____________________"} | № амбулаторной карты: <strong>${escapeHtml(patient.cardNumber || "б/н")}</strong><br>
         ${patient.address ? `Адрес: ${escapeHtml(patient.address)}<br>` : ""}
         Лечащий врач: <strong>${escapeHtml(doctor.fullName)}</strong>${doctor.specialty ? ` (${escapeHtml(doctor.specialty)})` : ""}
       </div>
