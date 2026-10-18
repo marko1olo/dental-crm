@@ -3,22 +3,54 @@ import React from "react";
 import { describe, it } from "vitest";
 import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
-import { CabinetHandoverModal } from "../CabinetHandoverModal";
 import { ShiftViewChairStatusCard } from "../../../shiftViewModules/ShiftViewChairStatusCard";
+import * as ShiftComponents from "../index";
+import { ShiftActionsToolbar } from "../mobileCockpit/ShiftActionsToolbar";
 
-describe("CabinetHandoverAutonomy — Mandates 8e & 8n (Zero Domestic Chore Simulator)", () => {
-	it("1. CabinetHandoverModal contains ZERO domestic chore checkboxes (no spittoon, yellow bag, saliva ejector)", () => {
+describe("ShiftChairAutonomy & Anti-Handover Purge — Mandates 8e & 8n (Zero Domestic Chore & Zero Carsharing Handover Simulator)", () => {
+	it("1. ShiftViewChairStatusCard renders ONLY clean DoctorShiftHeroCard with ZERO cabinet handover bars", () => {
 		const html = renderToString(
-			<CabinetHandoverModal
-				isOpen={true}
-				onClose={() => {}}
+			<ShiftViewChairStatusCard
+				doctorFullName="Д-р Смирнов К.В."
 				cabinetName="Кабинет №1"
-				doctorFullName="Д-р Иванов И.И."
-				nextDoctorName="Д-р Петрова А.С."
+				inChairAppointment={null}
 			/>,
 		);
 
-		// Proves that simulated domestic chores are purged
+		// Proves the chair status card container and hero card are present
+		assert.ok(
+			html.includes('data-testid="shift-chair-status-card"'),
+			"Must render shift-chair-status-card container",
+		);
+
+		// Proves that simulated carsharing handover bar is completely purged from the main screen
+		assert.strictEqual(
+			html.includes('data-testid="cabinet-handover-bar"'),
+			false,
+			"Must NOT render cabinet-handover-bar",
+		);
+		assert.strictEqual(
+			html.includes("Передача кабинета"),
+			false,
+			"Must NOT contain cabinet handover title",
+		);
+		assert.strictEqual(
+			html.includes("Сдать кабинет"),
+			false,
+			"Must NOT contain cabinet handover button",
+		);
+		assert.strictEqual(
+			html.includes('data-testid="btn-cabinet-handover-instant"'),
+			false,
+			"Must NOT contain instant handover button",
+		);
+		assert.strictEqual(
+			html.includes('data-testid="btn-open-cabinet-handover-modal"'),
+			false,
+			"Must NOT contain handover modal trigger button",
+		);
+
+		// Proves ZERO domestic chore checkboxes exist
 		assert.strictEqual(
 			html.includes("плевательниц"),
 			false,
@@ -44,77 +76,71 @@ describe("CabinetHandoverAutonomy — Mandates 8e & 8n (Zero Domestic Chore Simu
 			false,
 			"Must NOT contain armrest disinfection checkbox",
 		);
+	});
 
-		// Proves automated compliance and 1-click handover CTA
-		assert.ok(
-			html.includes("Автоматическое санитарное актирование"),
-			"Must explain automated SanPiN compliance",
-		);
-		assert.ok(
-			html.includes("Д-р Петрова А.С."),
-			"Must render next doctor name",
-		);
-		assert.ok(
-			html.includes('data-testid="btn-confirm-cabinet-handover"'),
-			"Must provide 1-click confirm CTA button",
+	it("2. CabinetHandoverModal is completely purged from components/shift public exports", () => {
+		// Verify CabinetHandoverModal is not exported by components/shift
+		assert.strictEqual(
+			"CabinetHandoverModal" in ShiftComponents,
+			false,
+			"CabinetHandoverModal must NOT be exported by components/shift",
 		);
 	});
 
-	it("2. CabinetHandoverModal returns null when closed", () => {
+	it("3. Mobile Shift Cockpit renders Cash Ops, Consumables, and Close Shift with ZERO handover sheet", () => {
 		const html = renderToString(
-			<CabinetHandoverModal
-				isOpen={false}
-				onClose={() => {}}
+			<ShiftActionsToolbar
+				isShiftOpen={true}
+				onToggleShift={() => {}}
+				isCashInSheetOpen={false}
+				setIsCashInSheetOpen={() => {}}
+				isCashOutSheetOpen={false}
+				setIsCashOutSheetOpen={() => {}}
+				isConsumablesSheetOpen={false}
+				setIsConsumablesSheetOpen={() => {}}
+				cashInAmount={0}
+				setCashInAmount={() => {}}
+				cashInReason=""
+				setCashInReason={() => {}}
+				isSubmittingCashIn={false}
+				cashOutMode="full"
+				setCashOutMode={() => {}}
+				isSubmittingCashOut={false}
+				handleConfirmCashIn={() => {}}
+				handleConfirmCashOutAndZReport={() => {}}
+				consumables={[]}
 			/>,
 		);
 
-		assert.strictEqual(html, "", "Modal must return empty string when closed");
-	});
-
-	it("3. ShiftViewChairStatusCard renders sleek 1-click handover bar without household checkboxes", () => {
-		const html = renderToString(
-			<ShiftViewChairStatusCard
-				doctorFullName="Д-р Смирнов К.В."
-				nextDoctorName="Д-р Кузнецова М.А."
-				cabinetName="Кабинет №2"
-				inChairAppointment={null}
-			/>,
-		);
-
-		// Verifies presence of 1-click handover bar
+		// Proves presence of Cash Operations, Consumables, and Close Shift buttons
 		assert.ok(
-			html.includes('data-testid="cabinet-handover-bar"'),
-			"Must render cabinet-handover-bar",
+			html.includes("Касса (внесение/выплата)"),
+			"Must render Cash Operations button",
 		);
 		assert.ok(
-			html.includes('data-testid="btn-cabinet-handover-instant"'),
-			"Must provide 1-click instant handover button",
+			html.includes("Расходники"),
+			"Must render Consumables button",
 		);
 		assert.ok(
-			html.includes("Сдать кабинет в 1 клик"),
-			"Must have 1-click handover label",
+			html.includes("Закрыть смену"),
+			"Must render Close Shift primary button",
 		);
 
-		// Verifies 0 household checkboxes in ShiftViewChairStatusCard
+		// Proves ZERO handover sheet or carsharing shift transfer texts
 		assert.strictEqual(
-			html.includes("плевательниц"),
+			html.includes("sheet-shift-handover"),
 			false,
-			"Must not have spittoon cleaning",
+			"Must NOT render sheet-shift-handover",
 		);
 		assert.strictEqual(
-			html.includes("подлокотников"),
+			html.includes("Передать смену следующему"),
 			false,
-			"Must not have armrest wipe",
+			"Must NOT contain handover next doctor prompt",
 		);
 		assert.strictEqual(
-			html.includes("дистиллят"),
+			html.includes("Сдать смену и кассу"),
 			false,
-			"Must not have distilled water",
-		);
-		assert.strictEqual(
-			html.includes("желтый пакет"),
-			false,
-			"Must not have yellow bag",
+			"Must NOT contain 'Сдать смену и кассу'",
 		);
 	});
 });

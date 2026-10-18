@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { showToast } from "../../GlobalToast";
 import type { MobileShiftCockpitProps } from "./types";
 import { useMobileShiftConsumables } from "./useMobileShiftConsumables";
 import { useMobileShiftCashOperations } from "./useMobileShiftCashOperations";
@@ -9,8 +8,6 @@ export function useMobileShiftCockpit(props: MobileShiftCockpitProps) {
 		isShiftOpen,
 		shiftOpenedAtIso,
 		appointments = [],
-		onToggleShift,
-		nextDoctorName,
 		shiftNumber = 1,
 		cashInDrawerRub = 15000,
 	} = props;
@@ -42,7 +39,7 @@ export function useMobileShiftCockpit(props: MobileShiftCockpitProps) {
 
 	const [isCashInSheetOpen, setIsCashInSheetOpen] = useState(false);
 	const [isCashOutSheetOpen, setIsCashOutSheetOpen] = useState(false);
-	const [isHandoverSheetOpen, setIsHandoverSheetOpen] = useState(false);
+	const [isConsumablesSheetOpen, setIsConsumablesSheetOpen] = useState(false);
 
 	const cashOps = useMobileShiftCashOperations({
 		cashInDrawerRub,
@@ -58,12 +55,6 @@ export function useMobileShiftCockpit(props: MobileShiftCockpitProps) {
 		return appointments.filter((apt) => apt.statusKey === activePatientFilter);
 	}, [appointments, activePatientFilter]);
 
-	const handleConfirmHandoverShift = () => {
-		setIsHandoverSheetOpen(false);
-		onToggleShift();
-		showToast(`Смена успешно завершена и передана доктору ${nextDoctorName}`, "success");
-	};
-
 	return {
 		elapsedTimeDisplay,
 		consumables,
@@ -72,8 +63,8 @@ export function useMobileShiftCockpit(props: MobileShiftCockpitProps) {
 		setIsCashInSheetOpen,
 		isCashOutSheetOpen,
 		setIsCashOutSheetOpen,
-		isHandoverSheetOpen,
-		setIsHandoverSheetOpen,
+		isConsumablesSheetOpen,
+		setIsConsumablesSheetOpen,
 		cashInAmount: cashOps.cashInAmount,
 		setCashInAmount: cashOps.setCashInAmount,
 		cashInReason: cashOps.cashInReason,
@@ -87,6 +78,5 @@ export function useMobileShiftCockpit(props: MobileShiftCockpitProps) {
 		filteredAppointments,
 		handleConfirmCashIn: cashOps.handleConfirmCashIn,
 		handleConfirmCashOutAndZReport: cashOps.handleConfirmCashOutAndZReport,
-		handleConfirmHandoverShift,
 	};
 }

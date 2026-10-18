@@ -3,15 +3,15 @@ import type { MobileShiftCockpitProps, MobileShiftConsumableItem } from "./types
 import { MobileShiftBottomBar } from "./MobileShiftBottomBar";
 import { MobileShiftCashInSheet } from "./MobileShiftCashInSheet";
 import { MobileShiftCashOutSheet } from "./MobileShiftCashOutSheet";
-import { MobileShiftHandoverSheet } from "./MobileShiftHandoverSheet";
+import { MobileShiftConsumablesSheet } from "./MobileShiftConsumablesSheet";
 
 export interface ShiftActionsToolbarProps extends MobileShiftCockpitProps {
 	isCashInSheetOpen: boolean;
 	setIsCashInSheetOpen: (val: boolean) => void;
 	isCashOutSheetOpen: boolean;
 	setIsCashOutSheetOpen: (val: boolean) => void;
-	isHandoverSheetOpen: boolean;
-	setIsHandoverSheetOpen: (val: boolean) => void;
+	isConsumablesSheetOpen?: boolean;
+	setIsConsumablesSheetOpen?: (val: boolean) => void;
 	cashInAmount: number;
 	setCashInAmount: (val: number) => void;
 	cashInReason: string;
@@ -22,8 +22,8 @@ export interface ShiftActionsToolbarProps extends MobileShiftCockpitProps {
 	isSubmittingCashOut: boolean;
 	handleConfirmCashIn: () => void;
 	handleConfirmCashOutAndZReport: () => void;
-	handleConfirmHandoverShift: () => void;
 	consumables: MobileShiftConsumableItem[];
+	handleAdjustConsumable?: (id: string, delta: number) => void;
 }
 
 export const ShiftActionsToolbar: React.FC<ShiftActionsToolbarProps> = ({
@@ -33,8 +33,8 @@ export const ShiftActionsToolbar: React.FC<ShiftActionsToolbarProps> = ({
 	setIsCashInSheetOpen,
 	isCashOutSheetOpen,
 	setIsCashOutSheetOpen,
-	isHandoverSheetOpen,
-	setIsHandoverSheetOpen,
+	isConsumablesSheetOpen = false,
+	setIsConsumablesSheetOpen,
 	cashInAmount,
 	setCashInAmount,
 	cashInReason,
@@ -45,25 +45,20 @@ export const ShiftActionsToolbar: React.FC<ShiftActionsToolbarProps> = ({
 	isSubmittingCashOut,
 	handleConfirmCashIn,
 	handleConfirmCashOutAndZReport,
-	handleConfirmHandoverShift,
 	cashInDrawerRub = 15000,
 	cardSumRub = 22500,
 	sbpSumRub = 5000,
-	doctorName = "Д-р Смирнова Е.В.",
-	completedCount = 4,
-	totalAppointmentsCount = 6,
-	totalRevenueRub = 42500,
-	estimatedDoctorPayoutRub = 12750,
 	consumables,
-	nextDoctorName = "Д-р Васильев Д.А.",
+	handleAdjustConsumable = () => {},
 }) => (
 	<>
 		<MobileShiftBottomBar
 			isShiftOpen={isShiftOpen}
 			onToggleShift={onToggleShift}
+			onOpenCashOpsSheet={() => setIsCashInSheetOpen(true)}
 			onOpenCashInSheet={() => setIsCashInSheetOpen(true)}
 			onOpenCashOutSheet={() => setIsCashOutSheetOpen(true)}
-			onOpenHandoverSheet={() => setIsHandoverSheetOpen(true)}
+			onOpenConsumablesSheet={() => setIsConsumablesSheetOpen?.(true)}
 		/>
 
 		<MobileShiftCashInSheet
@@ -89,17 +84,11 @@ export const ShiftActionsToolbar: React.FC<ShiftActionsToolbarProps> = ({
 			handleConfirmCashOutAndZReport={handleConfirmCashOutAndZReport}
 		/>
 
-		<MobileShiftHandoverSheet
-			isOpen={isHandoverSheetOpen}
-			onClose={() => setIsHandoverSheetOpen(false)}
-			doctorName={doctorName}
-			nextDoctorName={nextDoctorName}
-			completedCount={completedCount}
-			totalAppointmentsCount={totalAppointmentsCount}
-			totalRevenueRub={totalRevenueRub}
-			estimatedDoctorPayoutRub={estimatedDoctorPayoutRub}
+		<MobileShiftConsumablesSheet
+			isOpen={isConsumablesSheetOpen}
+			onClose={() => setIsConsumablesSheetOpen?.(false)}
 			consumables={consumables}
-			handleConfirmHandoverShift={handleConfirmHandoverShift}
+			handleAdjustConsumable={handleAdjustConsumable}
 		/>
 	</>
 );

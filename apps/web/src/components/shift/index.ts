@@ -23,9 +23,6 @@ export { DoctorShiftCloseModal } from "./DoctorShiftCloseModal";
 export type { DoctorShiftCashSectionProps } from "./DoctorShiftCashSection";
 export { DoctorShiftCashSection } from "./DoctorShiftCashSection";
 
-export type { CabinetHandoverModalProps } from "./CabinetHandoverModal";
-export { CabinetHandoverModal } from "./CabinetHandoverModal";
-
 export type { DoctorShiftVisitsKpiSectionProps } from "./DoctorShiftVisitsKpiSection";
 export { DoctorShiftVisitsKpiSection } from "./DoctorShiftVisitsKpiSection";
 

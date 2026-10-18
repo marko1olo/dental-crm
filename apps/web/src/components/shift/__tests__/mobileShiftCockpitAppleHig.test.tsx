@@ -68,7 +68,7 @@ describe("MobileShiftCockpit Apple iOS HIG & Anti-Desktop-Squeeze Invariants", (
 		);
 	});
 
-	it("2. ShiftActionsToolbar: renders full-width Natural Thumb Zone button 'Сдать смену и кассу' >= 52px", () => {
+	it("2. ShiftActionsToolbar: renders Natural Thumb Zone buttons 'Касса (внесение/выплата)', 'Расходники', 'Закрыть смену'", () => {
 		const rawHtml = renderToString(
 			React.createElement(ShiftActionsToolbar, {
 				isShiftOpen: true,
@@ -77,8 +77,8 @@ describe("MobileShiftCockpit Apple iOS HIG & Anti-Desktop-Squeeze Invariants", (
 				setIsCashInSheetOpen: () => {},
 				isCashOutSheetOpen: false,
 				setIsCashOutSheetOpen: () => {},
-				isHandoverSheetOpen: false,
-				setIsHandoverSheetOpen: () => {},
+				isConsumablesSheetOpen: false,
+				setIsConsumablesSheetOpen: () => {},
 				cashInAmount: 0,
 				setCashInAmount: () => {},
 				cashInReason: "",
@@ -89,15 +89,14 @@ describe("MobileShiftCockpit Apple iOS HIG & Anti-Desktop-Squeeze Invariants", (
 				isSubmittingCashOut: false,
 				handleConfirmCashIn: () => {},
 				handleConfirmCashOutAndZReport: () => {},
-				handleConfirmHandoverShift: () => {},
 				consumables: [],
 			}),
 		);
 		const html = cleanSsrHtml(rawHtml);
 
-		assert.ok(html.includes("Сдать смену и кассу"));
-		assert.ok(html.includes("Внесение размена"));
-		assert.ok(html.includes("Инкассация"));
+		assert.ok(html.includes("Закрыть смену"));
+		assert.ok(html.includes("Касса (внесение/выплата)"));
+		assert.ok(html.includes("Расходники"));
 		assert.ok(html.includes("mobile-shift-btn-primary-cta"));
 
 		// Zero cartoon emojis
@@ -130,6 +129,7 @@ describe("MobileShiftCockpit Apple iOS HIG & Anti-Desktop-Squeeze Invariants", (
 			"MobileShiftCockpitUI must have safe-area padding-bottom to clear mobile tab bar",
 		);
 		assert.ok(rawHtml.includes("mobile-shift-ui-container"));
-		assert.ok(rawHtml.includes("Субаренда"));
+		assert.strictEqual(rawHtml.includes("Субаренда"), false, "Mobile shift cockpit must NOT contain chair rental");
+		assert.ok(rawHtml.includes("Пациенты смены"), "Must render mobile patient queue directly");
 	});
 });

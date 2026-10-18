@@ -31,7 +31,7 @@ export type PatientCockpitProps = {
 	activeUsableDocuments: readonly unknown[];
 };
 
-export type ShiftFinancialMode = "piece_rate" | "chair_rental";
+export type ShiftFinancialMode = "piece_rate" | "chair_rental" | "standard";
 
 export interface ShiftMetricsHeaderProps {
 	doctorName: string;
@@ -99,4 +99,5 @@ export interface ShiftChairStatusCardProps {
 	onStartNextAppointment?: (patientId: string) => void;
 	onOpenSchedule?: () => void;
 	onConfirmHandover?: ((notes?: string) => void) | undefined;
+	showHandoverBar?: boolean | undefined;
 }

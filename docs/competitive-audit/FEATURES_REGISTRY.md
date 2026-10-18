@@ -1032,17 +1032,17 @@
 
 ---
 
-### ВОЛНА 352: RED TEAM ИНКВИЗИЦИЯ №1 — ЛИКВИДАЦИЯ БЫТОВОГО СИМУЛЯТОРА ПЕРЕДАЧИ КАБИНЕТА, 1-КЛИК АВТОНОМИЯ ВРАЧА И 4-СОСТОЯНЫЙ RED TEAM VISUAL PROOF (Фича #490, Мандаты 8b, 8c, 8e, 8n, 8x, 8wy, 8ze, 8al)
+### ВОЛНА 352: RED TEAM ИНКВИЗИЦИЯ №1 — ПОЛНОЕ ВЫЖИГАНИЕ «ПЕРЕДАЧИ КАБИНЕТА И СМЕНЫ», ЧИСТЫЙ ГЕРОЙ КРЕСЛА И МОБИЛЬНЫЙ КОКПИТ СМЕНЫ (Фича #490, Мандаты 8b, 8c, 8e, 8n, 8x, 8wy, 8ze, 8al)
 - **Статус**: **`[ЕСТЬ] / [ЗАКРЫТО]`**.
 - **Суть**:
   1. **Ликвидация бытового симулятора (CRM != Reality Simulator, Мандат 8e, 8n)**:
      - Полное физическое удаление (`DoctorCabinetHandoverCard.tsx` и папка `apps/web/src/components/shift/cabinetHandover/`: `DoctorCabinetHandoverGrid.tsx`, `DoctorCabinetHandoverHeader.tsx`, `DoctorCabinetHandoverFooter.tsx`, `cabinetHandoverTypes.ts`).
      - Искоренены унизительные чекбоксы протирки плевательниц, промывки слюноотсоса, завязывания жёлтых мусорных пакетов и доливки дистиллята. Врач-стоматолог лечит пациентов, а санитарно-эпидемиологические акты СанПиН 3.3686-21 фиксируются автоматически бэкендом при сдаче смены.
-  2. **1-Клик передача смены и кабинета (`CabinetHandoverModal.tsx`)**:
-     - В `ShiftViewChairStatusCard.tsx` встроена лаконичная плашка `cabinet-handover-bar` с быстрой кнопкой «Сдать кабинет в 1 клик» и возможностью передачи смены следующему коллеге с текстовым примечанием.
-     - Интерактивная модалка `CabinetHandoverModal` с авто-подстановкой следующего врача по расписанию, индикатором фонового санитарного актирования и кнопкой «Передать смену и кабинет».
-  3. **Apple HIG & Touch Ergonomics**:
-     - Сенсорные области $\ge 44\times 44$px, интеграция в мобильную шторку `MobileShiftHandoverSheet` с естественной зоной большого пальца (Natural Thumb Zone) и нулевым горизонтальным скроллом.
+  2. **Выжигание передачи смены и кабинета (`CabinetHandoverModal.tsx`)**:
+     - Из `ShiftViewChairStatusCard.tsx` полностью вырезана плашка `cabinet-handover-bar` и модалка `CabinetHandoverModal`.
+     - Стоматолог не сдает кресло по акту приема-передачи между сменами прямо на главном экране приёма. В карточке кресла оставлен ТОЛЬКО чистый `DoctorShiftHeroCard`.
+  3. **Apple HIG & Touch Ergonomics в мобильном кокпите**:
+     - Удалена шторка передачи смены (`MobileShiftHandoverSheet.tsx`). Мобильный кокпит оснащен кнопками: «Касса (внесение/выплата)», «Расходники» (`MobileShiftConsumablesSheet`), «Закрыть смену» в Natural Thumb Zone.
   4. **100% покрытие тестами**:
      - Все 22 теста в наборе смены (`cabinetHandoverAutonomy.test.tsx`, `chairRentalShiftWidget.test.tsx`, `mobileShiftCockpitAppleHig.test.tsx`, `doctorShiftCloseModalAndReportsDashboard.test.tsx`, `doctorShiftDecomposedTelemetryAndTimer.test.ts`) проходят со 100% успехом (Exit Code 0).
   5. **4-состояный Red Team Visual Proof**:
