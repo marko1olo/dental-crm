@@ -29,7 +29,7 @@ export function WorkspaceTopBarStatusAndSearch({
 			</div>
 
 			{/* Название клиники и дата */}
-			<div className="topbar-clinic flex-1 sm:flex-initial shrink-0 min-w-0 sm:max-w-[260px] max-w-[150px] flex flex-col justify-center leading-tight">
+			<div className="topbar-clinic flex-1 sm:flex-initial shrink-0 min-w-0 sm:max-w-[280px] max-w-[220px] flex flex-col justify-center leading-tight">
 				<p className="eyebrow truncate leading-none text-[10px] m-0 mb-0.5 text-[var(--muted)] hidden sm:block">
 					{formattedDate.replace(" г.", "").replace(",", " ·")}
 				</p>

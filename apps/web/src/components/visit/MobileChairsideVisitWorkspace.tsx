@@ -52,7 +52,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
         billingItemsCount={ws.billingItems.length} testId={testId}
       />
 
-      <main className="mobile-chairside-content" data-testid={`${testId}-main-content`}>
+      <main className="mobile-chairside-content pb-28" data-testid={`${testId}-main-content`}>
         {ws.currentStep !== "checkout" && (
           <>
             <button
