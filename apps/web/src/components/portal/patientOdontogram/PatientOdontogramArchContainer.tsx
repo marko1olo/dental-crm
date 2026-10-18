@@ -1,12 +1,13 @@
 /**
  * DENTE CRM — Patient Odontogram Dual-Arch Container
- * Canonical flagship ToothChart integration compliant with Mandate 8b (<= 120 lines).
+ * Canonical AnatomicalToothSVG integration compliant with Mandate 8b (<= 120 lines).
  */
 
-import React, { memo, useMemo } from "react";
-import { ToothChart, type ToothData } from "../../odontogram/ToothChart";
+import React, { memo } from "react";
+import { DenteToothSvgDefs } from "../../odontogram/ToothChart";
 import type { PatientToothInfo, PatientToothStatus } from "../patientFriendlyOdontogramEngine";
-import { resolveToothAnatomicalVisual } from "./patientOdontogramTypes";
+import { PatientOdontogramQuadrant } from "./PatientOdontogramQuadrant";
+import { PATIENT_ODONTOGRAM_CSS } from "./patientOdontogramStyles";
 
 export interface PatientOdontogramArchContainerProps {
 	readonly upperRight: readonly PatientToothInfo[];
@@ -27,59 +28,27 @@ export const PatientOdontogramArchContainer: React.FC<PatientOdontogramArchConta
 	selectedFdi,
 	statusFilter,
 	onSelectTooth,
-}) => {
-	const allTeeth = useMemo(
-		() => [...upperRight, ...upperLeft, ...lowerRight, ...lowerLeft],
-		[upperRight, upperLeft, lowerRight, lowerLeft],
-	);
-
-	const toothMap = useMemo(
-		() => new Map(allTeeth.map((t) => [t.fdiCode, t])),
-		[allTeeth],
-	);
-
-	const chartTeethData: ToothData[] = useMemo(() => {
-		return allTeeth.map((tooth) => {
-			const num = Number.parseInt(tooth.fdiCode, 10);
-			const visual = resolveToothAnatomicalVisual(tooth);
-			const isFilteredOut = statusFilter !== "all" && tooth.status !== statusFilter;
-			return {
-				toothNumber: num,
-				state: isFilteredOut ? "Healthy" : visual.state,
-				material: isFilteredOut ? undefined : visual.material,
-				notes: tooth.clinicalStateRu,
-			};
-		});
-	}, [allTeeth, statusFilter]);
-
-	const selectedTeeth = useMemo(
-		() => (selectedFdi ? [Number.parseInt(selectedFdi, 10)] : []),
-		[selectedFdi],
-	);
-
-	return (
-		<div className="patient-odontogram-arch-container" data-testid="patient-odontogram-arch-container">
-			<div className="patient-odontogram-quadrants-row sr-only" aria-hidden="true">
-				<div data-testid="quadrant-upper-right" />
-				<div data-testid="quadrant-upper-left" />
-				<div data-testid="quadrant-lower-right" />
-				<div data-testid="quadrant-lower-left" />
+	testIdPrefix = "tooth-btn",
+}) => (
+	<div className="patient-odontogram-arch-container" data-testid="patient-odontogram-arch-container">
+		<DenteToothSvgDefs />
+		<style>{PATIENT_ODONTOGRAM_CSS}</style>
+		<div className="patient-odontogram-arch">
+			<div className="patient-odontogram-jaw-title">ВЕРХНЯЯ ЧЕЛЮСТЬ (ПРАВАЯ И ЛЕВАЯ СТОРОНЫ)</div>
+			<div className="patient-odontogram-quadrants-row">
+				<PatientOdontogramQuadrant testId="quadrant-upper-right" title="Верхний правый (18..11)" teeth={upperRight} selectedFdi={selectedFdi} statusFilter={statusFilter} onSelectTooth={onSelectTooth} testIdPrefix={testIdPrefix} />
+				<PatientOdontogramQuadrant testId="quadrant-upper-left" title="Верхний левый (21..28)" teeth={upperLeft} selectedFdi={selectedFdi} statusFilter={statusFilter} onSelectTooth={onSelectTooth} testIdPrefix={testIdPrefix} />
 			</div>
-			<ToothChart
-				teethData={chartTeethData}
-				selectedTeeth={selectedTeeth}
-				onToothClick={(num) => {
-					const tooth = toothMap.get(String(num));
-					if (tooth) onSelectTooth(tooth);
-				}}
-				showPulpAndCanals={true}
-				showPeriapicalHalos={true}
-				showPeriodontalBoneLoss={true}
-				hideExpressActions={true}
-				className="patient-friendly-tooth-chart"
-			/>
 		</div>
-	);
-});
+		<div className="patient-odontogram-divider" />
+		<div className="patient-odontogram-arch">
+			<div className="patient-odontogram-quadrants-row">
+				<PatientOdontogramQuadrant testId="quadrant-lower-right" title="Нижний правый (48..41)" teeth={lowerRight} selectedFdi={selectedFdi} statusFilter={statusFilter} onSelectTooth={onSelectTooth} testIdPrefix={testIdPrefix} />
+				<PatientOdontogramQuadrant testId="quadrant-lower-left" title="Нижний левый (31..38)" teeth={lowerLeft} selectedFdi={selectedFdi} statusFilter={statusFilter} onSelectTooth={onSelectTooth} testIdPrefix={testIdPrefix} />
+			</div>
+			<div className="patient-odontogram-jaw-title" style={{ marginTop: "6px", marginBottom: 0 }}>НИЖНЯЯ ЧЕЛЮСТЬ (ПРАВАЯ И ЛЕВАЯ СТОРОНЫ)</div>
+		</div>
+	</div>
+));
 
 PatientOdontogramArchContainer.displayName = "PatientOdontogramArchContainer";

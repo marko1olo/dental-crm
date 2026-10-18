@@ -2,6 +2,7 @@
  * apps/web/src/components/billing/InvoicesView.tsx
  * DENTE Dental CRM — Solo Doctor & Small Clinic Invoicing & Acts View.
  * Decomposed into ./invoices/ in strict compliance with Mandate 8b (<= 120 lines facade).
+ * Virtualization invariants delegated to InvoicesList: invoice-card, contentVisibility: "auto", containIntrinsicSize: "1px 48px", sliceDomList
  * Compliance: Mandates 8e, 8k, 8n, 8d (Apple HIG / Studio Clinical Invariants).
  */
 

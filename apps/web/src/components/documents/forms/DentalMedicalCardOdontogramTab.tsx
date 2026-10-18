@@ -85,7 +85,7 @@ export const DentalMedicalCardOdontogramTab: React.FC<
 					bottomTeeth={PERMANENT_TEETH_LOWER}
 					onToothClick={handleChartToothClick}
 					onQuickStateChange={handleChartQuickStateChange}
-					showPulpAndCanals={true}
+					showPulpAndCanals={false}
 					showPeriapicalHalos={true}
 					showPeriodontalBoneLoss={true}
 					useSurfaces={true}

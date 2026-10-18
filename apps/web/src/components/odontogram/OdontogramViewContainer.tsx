@@ -673,7 +673,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			<div className="flex flex-col lg:flex-row gap-3 w-full items-start">
 				<div className="odontogram-active-view-slot w-full flex-1 min-w-0 flex flex-col gap-2.5">
 					{activeMode === "anatomical_svg" && (
-						<ToothChart
+						<AnatomicalSvgOdontogram
 							{...sharedViewProps}
 							showPulpAndCanals={showPulpAndCanals}
 							showPeriapicalHalos={true}
@@ -690,15 +690,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 						/>
 					)}
 					{activeMode === "classic_gost" && (
-						<div className="flex flex-col gap-3 w-full">
-							<ToothChart
-								{...sharedViewProps}
-								showPulpAndCanals={showPulpAndCanals}
-								showPeriapicalHalos={true}
-								showPeriodontalBoneLoss={true}
-							/>
-							<ClassicGostOdontogram {...sharedViewProps} hideHeader={true} />
-						</div>
+						<ClassicGostOdontogram {...sharedViewProps} />
 					)}
 
 					{/* Полноценная клиническая панель быстрой разметки (Штампы) под графикой одонтограммы */}

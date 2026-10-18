@@ -255,6 +255,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 						{effectiveResorption > 0 && (
 							<span
 								className="ml-0.5 px-1 py-0.2 rounded text-xs font-black text-white shadow-2xs leading-none"
+								data-testid={`tooth-resorption-badge-${number}`}
 								style={{
 									backgroundColor:
 										ROOT_RESORPTION_STAGES[effectiveResorption]?.badgeColor ?? "#f59e0b",
@@ -264,7 +265,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 									`${effectiveResorption}%`
 								}`}
 							>
-								R{effectiveResorption}%
+								{`R${effectiveResorption}%`}
 							</span>
 						)}
 					</span>
@@ -280,6 +281,8 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 					isSelected ? "selected ring-2 ring-indigo-500/70" : ""
 				} ${isSelected && isTouchScreen ? "touch-zoomed" : ""}`}
 				data-tooth-id={number}
+				data-testid={`pediatric-tooth-btn-${number}`}
+				id={`plan-tooth-${number}`}
 				aria-label={`Зуб ${number}, ${TOOTH_STATE_LABELS[state]}`}
 				aria-pressed={isSelected ? true : undefined}
 				onClick={(e) => {

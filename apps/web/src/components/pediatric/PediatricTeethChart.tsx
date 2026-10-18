@@ -13,8 +13,8 @@ import {
 	PERMANENT_LOWER_RIGHT,
 	PERMANENT_LOWER_LEFT,
 } from "./teethChart/pediatricTeethTypes";
+import { AnatomicalSvgOdontogram } from "../odontogram/AnatomicalSvgOdontogram";
 import {
-	ToothChart,
 	type ToothData,
 	type ToothState,
 	PEDIATRIC_TOP_TEETH,
@@ -83,7 +83,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 			<PediatricTeethMobileQuadrant activeTooth={activeTooth} onSelectTooth={onSelectTooth} toothFindings={toothFindings} resorptionStages={resorptionStages} toothSurfaces={toothSurfaces} q5Teeth={q5} q6Teeth={q6} q7Teeth={q7} q8Teeth={q8} isPermanent={isPermanent} />
 
 			<div className="hidden sm:block my-2 p-1 overflow-x-auto">
-				<ToothChart
+				<AnatomicalSvgOdontogram
 					pediatricMode={!isPermanent}
 					mixedDentition={isMixed}
 					dentitionMode={dentitionMode}
@@ -91,8 +91,11 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 					selectedTeeth={activeTooth ? [activeTooth] : []}
 					onToothClick={handleToothClick}
 					onQuickStateChange={handleQuickState}
-					onResorptionChange={handleResorption}
-					hideExpressActions={true}
+					hideLegend={true}
+					hideQuadrantSwitcher={true}
+					showWisdomTeeth={false}
+					showPulpAndCanals={false}
+					showPeriapicalHalos={true}
 					className="w-full"
 				/>
 			</div>
