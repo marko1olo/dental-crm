@@ -7492,3 +7492,52 @@
   - `docs/proofs/pediatric/pediatric_protocol_mobile_dark.png`
   - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 329)
 
+### 2.10.426. Волна 330: Канонические 1-клик протоколы ортодонтии у кресла (Мандаты 8e, 8n / THE HAMMER), стандартизация дизайн-токенов кнопок, Apple HIG Bottom Sheet и 4-State Red Team Visual Proof
+- **Функционал**:
+  1. *5 Канонических экспресс-протоколов у кресла (1-клик пресеты с действием «Применить»)*:
+     - «Активация дуги 0.14 NiTi» (`niti_014_activation`): замена лигатур, нивелирующая дуга NiTi .014, контроль фиксации замков, автоматическая запись в дневник приёма и начисление услуги;
+     - «Смена эластических цепочек (power chain)» (`power_chain_change`): консолидация зубного ряда, закрытие трем и диастем, дуга SS .019x.025, эластическая цепочка с шагом;
+     - «Фиксация брекет-системы верх/низ Roth/MBT .022» (`bonding_both_mbt`): прямая фиксация обеих челюстей (17-27, 47-37), первичные нивелирующие дуги NiTi .014, защитный воск и памятка пациенту;
+     - «Снятие слепков / 3D-сканирование под элайнеры» (`aligner_scan`): оптический оттиск ВЧ/НЧ, регистрат прикуса, наряд в ЗТЛ на 3D-сетап и виртуальное планирование;
+     - «Выдача капп 1-4 + аттачменты» (`aligner_trays_1_4`): фиксация композитных аттачментов на клыки/премоляры, выдача капп с инструкцией по ношению (22 ч/сутки);
+  2. *Стандартизация дизайн-токенов кнопок и ликвидация Tailwind-хардкода*:
+     - Приведение всех кнопок в `apps/web/src/components/orthodontics/` к каноническим классам `.primary-button`, `.secondary-button`, `.icon-button`;
+     - Полный отказ от самодельных `bg-sky-600` / `hover:bg-sky-500` в `SmartOpgFooter.tsx`, `BracketSystemPicker.tsx`, `AlignerTrackerSection.tsx`, `AlignerAttachmentsSection.tsx`;
+     - Высота десктопных кнопок 36px, сенсорный минимум на мобильных $\ge 44\times 44\text{px}$;
+  3. *Искоренение советского канцелярита и номеров приказов*:
+     - Ликвидированы сырые регуляторные рудименты: вместо «Форма 043/у» -> «Медицинская карта приёма» / «Дневник приёма»; вместо «Приказ 804н» -> «Прайс-лист услуг»;
+  4. *Apple HIG Bottom Sheet и мобильная эргономика*:
+     - Адаптив ортодонтического протокола на смартфонах ($\le 768\text{px}$) открывается в нативном Bottom Sheet с тактильным Drag Handle, Floating Bottom Bar в нижней трети экрана (Natural Thumb Zone) и строгим `0px` паразитного горизонтального скролла;
+  5. *100% Green Vitest Suite*:
+     - Все 10 сьютов ортодонтии проходят без сбоев: `10 passed (10), 108 passed (108), Exit Code 0` (`vitest run apps/web/src/components/orthodontics/ --fileParallelism=false`);
+  6. *4-State Red Team Visual Proof*:
+     - Реальные скриншоты в боевом окружении CRM (`http://127.0.0.1:5173/?demo=true`, Fastify API `:4100`, PostgreSQL 18 `:5432`) без синтетических песочниц:
+       * `docs/proofs/orthodontics/ortho_pc_light_1440x900.png` (487.7 KB)
+       * `docs/proofs/orthodontics/ortho_pc_dark_1440x900.png` (500.6 KB)
+       * `docs/proofs/orthodontics/ortho_mobile_light_390x844.png` (188.7 KB)
+       * `docs/proofs/orthodontics/ortho_mobile_dark_390x844.png` (204.6 KB)
+     - Каждый снимок лично отсмотрен через `view_file`: подтверждено безупречное отображение пресетов, отсутствие наездов, нулевой клиппинг и идеальный темный режим.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/orthodontics/clinicalPresets/CanonicalChairsidePresets.tsx`
+  - `apps/web/src/components/orthodontics/clinicalPresets/types.ts`
+  - `apps/web/src/components/orthodontics/clinicalPresets/OrthoClinicalPresetsSection.tsx`
+  - `apps/web/src/components/orthodontics/clinicalPresets/RoutinePresets.tsx`
+  - `apps/web/src/components/orthodontics/clinicalPresets/AuxiliaryPresets.tsx`
+  - `apps/web/src/components/orthodontics/useOrthoClinicalPresets.ts`
+  - `apps/web/src/components/orthodontics/orthoProtocolTypes.ts`
+  - `apps/web/src/components/orthodontics/orthoControls/types.ts`
+  - `apps/web/src/components/orthodontics/OrthoControlsColumn.tsx`
+  - `apps/web/src/components/orthodontics/orthodonticVisitProtocol/useOrthodonticVisitProtocol.ts`
+  - `apps/web/src/components/orthodontics/SmartOpgFooter.tsx`
+  - `apps/web/src/components/orthodontics/bracketProtocol/BracketSystemPicker.tsx`
+  - `apps/web/src/components/orthodontics/bracketProtocol/AlignerTrackerSection.tsx`
+  - `apps/web/src/components/orthodontics/bracketProtocol/AlignerAttachmentsSection.tsx`
+  - `scripts/capture-ortho-proofs.mjs`
+  - `docs/proofs/orthodontics/ortho_pc_light_1440x900.png`
+  - `docs/proofs/orthodontics/ortho_pc_dark_1440x900.png`
+  - `docs/proofs/orthodontics/ortho_mobile_light_390x844.png`
+  - `docs/proofs/orthodontics/ortho_mobile_dark_390x844.png`
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 330)
+
+
