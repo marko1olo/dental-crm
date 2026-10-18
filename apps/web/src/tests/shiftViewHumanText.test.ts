@@ -34,7 +34,10 @@ const webSource = path.resolve(
 const repoRoot = path.resolve(webSource, "../../..");
 
 const SHIFT_VIEW = "ShiftView.tsx";
-const HELPERS = "AppHelpers.tsx";
+const PATIENT_COCKPIT = "shiftViewModules/PatientCockpit.tsx";
+const PATIENT_INSIGHT = "shiftViewModules/PatientCockpitInsightPanel.tsx";
+const SHIFT_TYPES = "shiftViewModules/shiftViewTypes.ts";
+const HELPERS = "appHelpers/appointmentHelpers.ts";
 const SHARED_CONTRACT = path.join(repoRoot, "packages/shared/src/patients/patientSchemas.ts");
 
 function readWeb(relativePath: string): string {
@@ -278,16 +281,16 @@ test("сравнения уровня риска собираются во вс�
 test("сравнения уровня риска ссылаются только на значения контракта", () => {
 	// Здесь и жил дефект: сравнение с «medium» при перечислении low | watch | high.
 	const levels = contractRiskLevels();
-	const source = stripComments(readWeb(SHIFT_VIEW));
+	const source = stripComments(readWeb(PATIENT_INSIGHT));
 	const compared = comparedRiskValues(source);
 	assert.ok(
 		compared.length > 0,
-		`${SHIFT_VIEW}: сравнений уровня риска не найдено — проверка ослепла`,
+		`${PATIENT_INSIGHT}: сравнений уровня риска не найдено — проверка ослепла`,
 	);
 	for (const value of compared) {
 		assert.ok(
 			levels.includes(value),
-			`${SHIFT_VIEW}: сравнение с «${value}», которого нет в контракте (${levels.join(" | ")}) — ветка мертва`,
+			`${PATIENT_INSIGHT}: сравнение с «${value}», которого нет в контракте (${levels.join(" | ")}) — ветка мертва`,
 		);
 	}
 });
@@ -295,14 +298,14 @@ test("сравнения уровня риска ссылаются только
 test("средний уровень риска отличается от спокойного на вид", () => {
 	// Недостаточно, чтобы сравнение было корректным: у среднего уровня должно быть
 	// собственное оформление, иначе «контроль» снова сольётся со «спокойно».
-	const source = stripComments(readWeb(SHIFT_VIEW));
+	const source = stripComments(readWeb(PATIENT_INSIGHT));
 	assert.ok(
 		source.includes('riskLevel === "watch"'),
-		`${SHIFT_VIEW}: у среднего уровня риска нет своей ветки оформления`,
+		`${PATIENT_INSIGHT}: у среднего уровня риска нет своей ветки оформления`,
 	);
 	assert.ok(
 		source.includes("var(--warn-bg)") && source.includes("var(--warn-fg)"),
-		`${SHIFT_VIEW}: средний уровень риска не берёт предупреждающие цвета темы`,
+		`${PATIENT_INSIGHT}: средний уровень риска не берёт предупреждающие цвета темы`,
 	);
 });
 
@@ -329,12 +332,13 @@ test("у каждого уровня риска есть русская подп
 test("пропсы карточки пациента типизированы, а не any", () => {
 	// Именно `any` позволил мёртвому сравнению дожить до сдачи: компилятор не
 	// видел, что у riskLevel нет варианта «medium».
-	const source = readWeb(SHIFT_VIEW);
+	const source = readWeb(PATIENT_COCKPIT);
+	const typesSource = readWeb(SHIFT_TYPES);
 	const signature =
 		/export function PatientCockpit\(\{[\s\S]*?\}:\s*([A-Za-z][\w<>[\]"|\s.]*)\)/.exec(
 			source,
 		);
-	assert.ok(signature, `${SHIFT_VIEW}: не разобрана сигнатура PatientCockpit`);
+	assert.ok(signature, `${PATIENT_COCKPIT}: не разобрана сигнатура PatientCockpit`);
 	/*
 	 * Тип пропсов проверяется отдельным утверждением, а не подстановкой пустой
 	 * строки: на пустой строке проверка «нет any» прошла бы всегда, и страж стал
@@ -343,14 +347,14 @@ test("пропсы карточки пациента типизированы, �
 	const signatureType = signature[1];
 	assert.ok(
 		signatureType,
-		`${SHIFT_VIEW}: не разобран тип пропсов PatientCockpit`,
+		`${PATIENT_COCKPIT}: не разобран тип пропсов PatientCockpit`,
 	);
 	assert.ok(
 		!/\bany\b/.test(signatureType),
-		`${SHIFT_VIEW}: пропсы PatientCockpit снова any — расхождение с контрактом станет невидимым`,
+		`${PATIENT_COCKPIT}: пропсы PatientCockpit снова any — расхождение с контрактом станет невидимым`,
 	);
 	assert.ok(
-		source.includes('Dashboard["patientInsights"][number]'),
-		`${SHIFT_VIEW}: тип сводки пациента переписан рядом вместо формы Dashboard — он снова разойдётся с контрактом`,
+		typesSource.includes('Dashboard["patientInsights"][number]'),
+		`${SHIFT_TYPES}: тип сводки пациента переписан рядом вместо формы Dashboard — он снова разойдётся с контрактом`,
 	);
 });

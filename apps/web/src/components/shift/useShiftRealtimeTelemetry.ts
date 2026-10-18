@@ -24,72 +24,48 @@ export interface ShiftRealtimeTelemetry {
 	readonly mobileAppointments: readonly MobileShiftAppointmentSummary[];
 }
 
+function resolveStatus(statusRaw: string): { key: "in_chair" | "waiting" | "payment" | "completed"; label: string } {
+	if (["in_chair", "in_treatment", "in_progress"].includes(statusRaw)) return { key: "in_chair", label: "В кресле" };
+	if (["completed", "done"].includes(statusRaw)) return { key: "completed", label: "Завершён" };
+	if (["payment", "billing", "checkout"].includes(statusRaw)) return { key: "payment", label: "Ожидает оплаты" };
+	return { key: "waiting", label: "Ожидает приёма" };
+}
+
 export function useShiftRealtimeTelemetry({
 	todayAppointments,
-	inChairAppointments,
 	patientsById,
 	currentPatient,
 }: UseShiftRealtimeTelemetryOptions): ShiftRealtimeTelemetry {
-	const completedCount = useMemo(() => {
-		return todayAppointments.filter((app: any) =>
-			["completed", "done"].includes(String(app.status || "").toLowerCase()),
-		).length;
-	}, [todayAppointments]);
+	const completedCount = useMemo(
+		() => todayAppointments.filter((app: any) => ["completed", "done"].includes(String(app.status || "").toLowerCase())).length,
+		[todayAppointments],
+	);
 
-	const inProgressCount = useMemo(() => {
-		return todayAppointments.filter((app: any) =>
-			["in_chair", "in_treatment", "in_progress"].includes(
-				String(app.status || "").toLowerCase(),
-			),
-		).length;
-	}, [todayAppointments]);
+	const inProgressCount = useMemo(
+		() => todayAppointments.filter((app: any) => ["in_chair", "in_treatment", "in_progress"].includes(String(app.status || "").toLowerCase())).length,
+		[todayAppointments],
+	);
 
 	const completedProtocolsCount = useMemo(() => {
 		return todayAppointments.filter((app: any) => {
 			const isDone = ["completed", "done"].includes(String(app.status || "").toLowerCase());
-			const hasProtocol = Boolean(app.protocolCompleted || app.emrSigned || app.diaryRecorded);
-			return isDone || hasProtocol;
+			return isDone || Boolean(app.protocolCompleted || app.emrSigned || app.diaryRecorded);
 		}).length;
 	}, [todayAppointments]);
 
 	const chairOccupancyPct = useMemo(() => {
 		if (todayAppointments.length === 0) return 0;
-		const activeCount = completedCount + inProgressCount;
-		return Math.min(100, Math.round((activeCount / todayAppointments.length) * 100));
+		return Math.min(100, Math.round(((completedCount + inProgressCount) / todayAppointments.length) * 100));
 	}, [todayAppointments.length, completedCount, inProgressCount]);
 
-	const hasActiveOvertime = useMemo(() => {
-		return new Date().getHours() >= 21;
-	}, []);
+	const hasActiveOvertime = useMemo(() => new Date().getHours() >= 21, []);
 
 	const mobileAppointments = useMemo((): readonly MobileShiftAppointmentSummary[] => {
 		return todayAppointments.map((app: any) => {
-			const statusKeyRaw = String(
-				app.status || app.appointmentStatus || app.state || "",
-			).toLowerCase();
-			let statusKey: "in_chair" | "waiting" | "payment" | "completed" = "waiting";
-			let statusLabel = "Ожидает приёма";
-
-			if (["in_chair", "in_treatment", "in_progress"].includes(statusKeyRaw)) {
-				statusKey = "in_chair";
-				statusLabel = "В кресле";
-			} else if (["completed", "done"].includes(statusKeyRaw)) {
-				statusKey = "completed";
-				statusLabel = "Завершён";
-			} else if (["payment", "billing", "checkout"].includes(statusKeyRaw)) {
-				statusKey = "payment";
-				statusLabel = "Ожидает оплаты";
-			}
-
-			const patient =
-				patientsById.get(app.patientId) ??
-				(app.patientId === currentPatient?.id ? currentPatient : null);
-			const patientName =
-				patient?.fullName || app.patientFullName || "Пациент";
-
-			const cost =
-				Number(app.priceRub || app.costRub || app.totalRub || app.amountRub) ||
-				0;
+			const st = resolveStatus(String(app.status || app.appointmentStatus || app.state || "").toLowerCase());
+			const patient = patientsById.get(app.patientId) ?? (app.patientId === currentPatient?.id ? currentPatient : null);
+			const patientName = patient?.fullName || app.patientFullName || "Пациент";
+			const cost = Number(app.priceRub || app.costRub || app.totalRub || app.amountRub) || 0;
 
 			return {
 				id: String(app.id),
@@ -97,14 +73,9 @@ export function useShiftRealtimeTelemetry({
 				patientName,
 				timeStart: formatClockTime(app.startsAt),
 				timeEnd: formatClockTime(app.endsAt ?? app.startsAt),
-				serviceTitle: String(
-					app.reason ||
-						app.treatmentDescription ||
-						app.serviceTitle ||
-						"Приём врача-стоматолога",
-				),
-				statusKey,
-				statusLabel,
+				serviceTitle: String(app.reason || app.treatmentDescription || app.serviceTitle || "Приём врача-стоматолога"),
+				statusKey: st.key,
+				statusLabel: st.label,
 				priceRub: cost,
 			};
 		});
