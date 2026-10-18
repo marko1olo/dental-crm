@@ -98,4 +98,5 @@ export interface ShiftChairStatusCardProps {
 	onCallPatientError?: (msg: string) => void;
 	onStartNextAppointment?: (patientId: string) => void;
 	onOpenSchedule?: () => void;
+	onConfirmHandover?: ((notes?: string) => void) | undefined;
 }
