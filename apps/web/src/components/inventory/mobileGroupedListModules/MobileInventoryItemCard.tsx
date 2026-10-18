@@ -53,12 +53,12 @@ export const MobileInventoryItemCard: React.FC<MobileInventoryItemCardProps> = (
 					{isNegativeStock ? (
 						<span className="mobile-inventory-badge critical-deficit" data-testid="badge-negative-deficit">
 							<AlertTriangle size={11} aria-hidden="true" />
-							<span>Пора заказать (дефицит {item.stockQuantity} {item.unit || "шт."})</span>
+							<span>Ожидает оприходования накладной ({item.stockQuantity} {item.unit || "шт."})</span>
 						</span>
 					) : isZeroStock ? (
 						<span className="mobile-inventory-badge critical-deficit" data-testid="badge-critical-deficit">
 							<AlertTriangle size={11} aria-hidden="true" />
-							<span>Ожидается поставка (мягкий овердрафт)</span>
+							<span>Ожидает оприходования накладной</span>
 						</span>
 					) : isLowStock ? (
 						<span className="mobile-inventory-badge critical-warning" data-testid="badge-critical-warning">

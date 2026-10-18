@@ -170,7 +170,7 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 						data-testid="fefo-filter-expired"
 					>
 						<ShieldAlert size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
-						<span>Истёк срок годности:</span>
+						<span>Просрочено:</span>
 						<strong className="font-mono text-rose-600 dark:text-rose-400">{stats.expiredCount}</strong>
 					</button>
 
@@ -185,7 +185,7 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 						data-testid="fefo-filter-warning"
 					>
 						<Clock size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
-						<span>FEFO отпуск (&lt; 30 дн):</span>
+						<span>1–6 мес (FEFO отпуск):</span>
 						<strong className="font-mono text-amber-600 dark:text-amber-400">{stats.warningCount}</strong>
 					</button>
 
@@ -200,9 +200,31 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 						data-testid="fefo-filter-good"
 					>
 						<CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-						<span>Норма:</span>
+						<span>&gt; 6 мес:</span>
 						<strong className="font-mono text-emerald-600 dark:text-emerald-400">{stats.goodCount}</strong>
 					</button>
+
+					{stats.expiredCount > 0 && (
+						<button
+							type="button"
+							onClick={() => {
+								const expired = itemsWithFefo.filter((e) => e.status === "expired").map((e) => e.item);
+								for (const expItem of expired) {
+									if (onWriteOffExpired) {
+										onWriteOffExpired(expItem);
+									} else {
+										onDeductItem(expItem, Number(expItem.stockQuantity) || 1);
+									}
+								}
+							}}
+							className="h-7 px-2.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 border border-rose-500/40 text-[11px] font-bold cursor-pointer inline-flex items-center gap-1.5 transition-colors shadow-xs"
+							data-testid="btn-fefo-batch-dispose"
+							title="Списать все просроченные партии со склада в 1 клик"
+						>
+							<Trash2 size={12} className="shrink-0" />
+							<span>Списать всю просрочку ({stats.expiredCount})</span>
+						</button>
+					)}
 				</div>
 
 				{/* Поле поиска по партии/материалу */}
@@ -368,7 +390,7 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 															data-testid={`btn-fefo-dispose-${item.id}`}
 														>
 															<Trash2 size={12} className="shrink-0" />
-															<span>Утилизация</span>
+															<span>Списать просрочку</span>
 														</button>
 													) : (
 														<>

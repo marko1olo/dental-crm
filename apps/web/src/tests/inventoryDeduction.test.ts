@@ -32,14 +32,14 @@ import {
 	formatUnitPriceUnitRu,
 	matchMaterialToWarehouse,
 	pluralizeRussian,
-} from "../components/inventory";
-import { Billing1CExportModal } from "../components/finance/Billing1CExportModal";
-import type { InventoryItem } from "../components/inventory/useInventoryLogic";
+} from "../components/inventory/index.js";
+import { Billing1CExportModal } from "../components/finance/Billing1CExportModal.js";
+import type { InventoryItem } from "../components/inventory/useInventoryLogic.js";
 import {
 	ChairsideBillingItemRow,
 	getServiceBomMaterials,
 	type ServiceBomMaterial,
-} from "../components/visit/ChairsideBillingItemRow";
+} from "../components/visit/ChairsideBillingItemRow.js";
 
 describe("Dental Inventory BOM & Procedure Tech Maps", () => {
 	it("Каталог содержит все ключевые стоматологические техкарты", () => {
@@ -542,7 +542,7 @@ describe("SSR-Safety & Component Rendering", () => {
 		);
 
 		assert.ok(html.includes("Автозаказ поставщику при дефиците"));
-		assert.ok(html.includes("Сформировать заказ поставщику"));
+		assert.ok(html.includes("Мандат 8n: Soft Negative Stock"));
 		assert.ok(html.includes("Списать (мягкий овердрафт"));
 		assert.ok(html.includes("inventory-deficit-badge"));
 		// Проверка ликвидации паразитных кнопок +1 и +2

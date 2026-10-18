@@ -95,7 +95,7 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 							<tr key={it.id} className="hover:bg-[var(--paper-soft)] cursor-pointer" onClick={() => onSelectItem?.(it)}>
 								<td className="py-2 px-3 font-medium text-[var(--ink)]">
 									<div>{it.name}</div>
-									{it.stockQuantity <= 0 && <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">[Расход сверх остатка]</span>}
+									{it.stockQuantity <= 0 && <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">[Ожидает оприходования накладной]</span>}
 								</td>
 								<td className="py-2 px-3 text-[var(--muted)]">{formatCategoryRu(it.category)}</td>
 								<td className="py-2 px-3 text-right font-mono font-bold text-[var(--ink)]">{it.stockQuantity} {it.unit || "шт."}</td>
