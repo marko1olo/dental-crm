@@ -2,14 +2,9 @@
  * apps/web/src/components/odontogram/chart/toothChartTypes.ts
  *
  * DENTE Dental CRM — Interactive Odontogram Chart Types & Facade.
- * SSOT compliant (Mandate: <= 250 lines facade).
- * Decomposed into:
- * - ./types/toothPathologyTypes.ts
- * - ./types/toothSurfaceTypes.ts
- * - ./types/toothRendererTypes.ts
+ * Compliant with Mandate 8b (<= 120 lines).
  */
 
-import type { CrmToothState } from "@dental/shared";
 import {
 	getNextFocusedTooth,
 	getToothStateFromHotkey,
@@ -35,51 +30,7 @@ export {
 	splitArchAtMidline,
 };
 
-export type ToothState =
-	| CrmToothState
-	| "Healthy"
-	| "Caries"
-	| "Pulpitis"
-	| "Periodontitis"
-	| "Filled"
-	| "Crown"
-	| "Planned_Crown"
-	| "Implant"
-	| "Planned_Implant"
-	| "Missing"
-	| "Retained"
-	| "Root"
-	| "Temporary_Crown"
-	| "Veneer"
-	| "Inlay"
-	| "Primary"
-	| "Resection"
-	| "Gingivitis"
-	| "Periodontitis_Mild"
-	| "Periodontitis_Moderate"
-	| "Periodontitis_Severe"
-	| "Mobility_1"
-	| "Mobility_2"
-	| "Mobility_3"
-	| "Mobility_I"
-	| "Mobility_II"
-	| "Mobility_III"
-	| "Mobility_IV"
-	| "Furcation_1"
-	| "Furcation_2"
-	| "Furcation_3"
-	| "Furcation_I"
-	| "Furcation_II"
-	| "Furcation_III"
-	| "Root_Canal_Treated"
-	| "Bridge"
-	| "Bridge_Abutment"
-	| "Extracted"
-	| "Impacted"
-	| "Calculus"
-	| "Bleeding"
-	| "Recession"
-	| "Pocket";
+export type { ToothState } from "./types/toothStateUnion";
 
 // Surface types & helpers
 export {

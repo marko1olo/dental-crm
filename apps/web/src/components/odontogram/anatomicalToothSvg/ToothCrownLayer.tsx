@@ -19,6 +19,7 @@ export interface ToothCrownLayerProps {
 	useSurfaces?: boolean | undefined;
 	surfaces?: readonly string[] | undefined;
 	onSurfaceClick?: ((surfaceKey: string) => void) | undefined;
+	number?: number | undefined;
 }
 
 export const ToothCrownLayer: React.FC<ToothCrownLayerProps> = ({
@@ -31,6 +32,7 @@ export const ToothCrownLayer: React.FC<ToothCrownLayerProps> = ({
 	useSurfaces,
 	surfaces,
 	onSurfaceClick,
+	number,
 }) => {
 	return (
 		<g className="tooth-crown-group">
@@ -43,10 +45,10 @@ export const ToothCrownLayer: React.FC<ToothCrownLayerProps> = ({
 				className="tooth-crown-path transition-colors duration-200"
 			/>
 			{geom.cejPath && (
-				<path d={geom.cejPath} fill="none" stroke={colors.cejStroke} strokeWidth="1.2" opacity={0.65} />
+				<path d={geom.cejPath} fill="none" stroke={colors.stroke} strokeWidth="1.2" opacity={0.65} />
 			)}
 			{geom.fissurePath && (
-				<path d={geom.fissurePath} fill="none" stroke={colors.fissureStroke} strokeWidth="1.2" opacity={0.7} />
+				<path d={geom.fissurePath} fill="none" stroke={colors.stroke} strokeWidth="1.2" opacity={0.7} />
 			)}
 			{hasFracture && (
 				<path
@@ -67,16 +69,24 @@ export const ToothCrownLayer: React.FC<ToothCrownLayerProps> = ({
 			/>
 			{useSurfaces ? (
 				<AnatomicalInteractiveSurfaces
-					surfaces={geom.surfaces}
-					activeSurfaces={surfaces}
-					onSurfaceClick={onSurfaceClick}
+					number={number ?? 11}
+					geom={geom}
+					isTop={isTop}
+					surfaces={surfaces}
+					state={state}
+					onClick={(_e, _num, surf) => onSurfaceClick?.(surf ?? "")}
+					useSurfaces={useSurfaces}
 				/>
 			) : (
 				<AnatomicalToothSurfacesLayer
-					surfaces={geom.surfaces}
-					activeSurfaces={surfaces}
-					state={state}
-					material={material}
+					geom={geom}
+					surfaces={surfaces}
+					surfaceShading={{
+						fill: colors.fill,
+						opacity: Number.parseFloat(colors.opacity) || 1,
+						stroke: colors.stroke,
+						strokeWidth: 1.5,
+					}}
 				/>
 			)}
 		</g>

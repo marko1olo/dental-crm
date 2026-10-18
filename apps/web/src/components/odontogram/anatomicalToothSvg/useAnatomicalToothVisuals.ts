@@ -34,13 +34,11 @@ export function useAnatomicalToothVisuals(props: AnatomicalToothSVGProps) {
 	const effectiveResorptionStage = rootResorptionStage || rootResorption || 0;
 
 	const colors = useMemo(() => {
-		return getAnatomicalToothColors(number, state, props.isSelected ?? false, effectiveMaterial, isPontic, {
-			furcation, mobility, boneLossLevel, rootResorption: effectiveResorptionStage,
-		});
-	}, [number, state, props.isSelected, effectiveMaterial, isPontic, furcation, mobility, boneLossLevel, effectiveResorptionStage]);
+		return getAnatomicalToothColors(state, effectiveMaterial);
+	}, [state, effectiveMaterial]);
 
-	const scaledWidth = scaleCssPx(geom.standardWidthPx, scale);
-	const scaledHeight = scaleCssPx(geom.standardHeightPx, scale);
+	const scaledWidth = scaleCssPx(String(geom.standardWidthPx), scale);
+	const scaledHeight = scaleCssPx(String(geom.standardHeightPx), scale);
 	const isLowSpec = useMemo(() => isLowSpecFilterDisabled(), []);
 
 	const resorptionGeom = useMemo(

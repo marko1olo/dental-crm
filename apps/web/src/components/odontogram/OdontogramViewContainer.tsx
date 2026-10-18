@@ -673,10 +673,21 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			<div className="flex flex-col lg:flex-row gap-3 w-full items-start">
 				<div className="odontogram-active-view-slot w-full flex-1 min-w-0 flex flex-col gap-2.5">
 					{activeMode === "anatomical_svg" && (
-						<AnatomicalSvgOdontogram {...sharedViewProps} />
+						<ToothChart
+							{...sharedViewProps}
+							showPulpAndCanals={showPulpAndCanals}
+							showPeriapicalHalos={true}
+							showPeriodontalBoneLoss={true}
+						/>
 					)}
 					{activeMode === "compact_clinical" && (
-						<ToothChart {...sharedViewProps} />
+						<ToothChart
+							{...sharedViewProps}
+							useSurfaces={true}
+							showPulpAndCanals={showPulpAndCanals}
+							showPeriapicalHalos={true}
+							showPeriodontalBoneLoss={true}
+						/>
 					)}
 					{activeMode === "classic_gost" && (
 						<ClassicGostOdontogram {...sharedViewProps} />
