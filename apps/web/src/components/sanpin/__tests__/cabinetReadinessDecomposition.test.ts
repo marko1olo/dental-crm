@@ -169,4 +169,39 @@ describe("CabinetReadinessTab Monolith Decomposition & SanPiN Autonomy (Mandates
 		assert.equal(lampCalc.cumulativeHoursAfterSession, 1420.5);
 		assert.equal(lampCalc.lampStatus, "normal");
 	});
+
+	it("7. Mandates 8e & 8n: Anti-Tamagotchi Law — Cabinet readiness has executive background auto-calculation and zero forced 20-checkbox list", () => {
+		const checklistCode = fs.readFileSync(
+			path.join(DECOMPOSED_DIR, "CabinetSanpinChecklist.tsx"),
+			"utf8",
+		);
+		// Executive status cards present
+		assert.ok(
+			checklistCode.includes("Автоматический санитарный контроль готовности кабинета"),
+			"Checklist must feature executive automated SanPiN control banner",
+		);
+		assert.ok(
+			checklistCode.includes("Фоновый расчет нормативов без симуляции ручного труда"),
+			"Checklist must explicitly declare background norm calculation without manual simulation",
+		);
+
+		// Manual micro-checkpoints are strictly in collapsible exceptions block
+		assert.ok(
+			checklistCode.includes("<details") && checklistCode.includes("<summary"),
+			"Detailed unit checkpoints must be enclosed in collapsible section for exceptions only",
+		);
+		assert.ok(
+			checklistCode.includes("Журнал исключений и ручная корректировка узлов"),
+			"Summary must designate exceptions and repairs",
+		);
+
+		// Unfilled / unstarted checklist defaults to fully ready (norm by default per Mandates 8e & 8n)
+		const unfilledDefault = evaluateCabinetReadiness({
+			appointmentType: "therapy",
+			nurseBypassedPaperLog: true,
+		});
+		assert.equal(unfilledDefault.isFullyReady, true);
+		assert.equal(unfilledDefault.missingItems.length, 0);
+	});
 });
+
