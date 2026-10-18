@@ -3,22 +3,16 @@ import { ChevronDown, MoreHorizontal } from "lucide-react";
 import { DoctorShiftActionsDropdown } from "./DoctorShiftActionsDropdown";
 
 export interface DoctorShiftActionsMenuProps {
-	readonly onHandoverShift?: (() => void) | undefined;
 	readonly onPrintPreliminaryReport?: (() => void) | undefined;
 	readonly onCallAssistant?: (() => void) | undefined;
 	readonly onOpenT13Timesheet?: (() => void) | undefined;
-	readonly onOpenChairRentalAct?: (() => void) | undefined;
-	readonly isChairRental?: boolean | undefined;
 	readonly className?: string | undefined;
 }
 
 export const DoctorShiftActionsMenu: React.FC<DoctorShiftActionsMenuProps> = React.memo(({
-	onHandoverShift,
 	onPrintPreliminaryReport,
 	onCallAssistant,
 	onOpenT13Timesheet,
-	onOpenChairRentalAct,
-	isChairRental = false,
 	className = "",
 }) => {
 	const [isOpen, setIsOpen] = useState(false);
@@ -40,7 +34,7 @@ export const DoctorShiftActionsMenu: React.FC<DoctorShiftActionsMenuProps> = Rea
 		};
 	}, [isOpen]);
 
-	const hasActions = Boolean(onHandoverShift || onPrintPreliminaryReport || onCallAssistant || onOpenT13Timesheet || onOpenChairRentalAct);
+	const hasActions = Boolean(onPrintPreliminaryReport || onCallAssistant || onOpenT13Timesheet);
 	if (!hasActions) return null;
 
 	return (
@@ -76,12 +70,9 @@ export const DoctorShiftActionsMenu: React.FC<DoctorShiftActionsMenuProps> = Rea
 
 			{isOpen && (
 				<DoctorShiftActionsDropdown
-					onHandoverShift={onHandoverShift}
 					onPrintPreliminaryReport={onPrintPreliminaryReport}
 					onCallAssistant={onCallAssistant}
 					onOpenT13Timesheet={onOpenT13Timesheet}
-					onOpenChairRentalAct={onOpenChairRentalAct}
-					isChairRental={isChairRental}
 					onClose={() => setIsOpen(false)}
 				/>
 			)}

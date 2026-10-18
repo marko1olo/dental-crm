@@ -36,7 +36,7 @@ export const MobileShiftBottomBar: React.FC<MobileShiftBottomBarProps> = ({
 					data-testid="btn-mobile-cash-ops"
 				>
 					<Banknote size={15} />
-					<span>Касса (внесение/выплата)</span>
+					<span>Касса</span>
 				</button>
 
 				<button

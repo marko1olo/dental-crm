@@ -1,9 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import type { Dashboard } from "@dental/shared";
-import { safeLocalStorageGetItem, safeLocalStorageSetItem } from "../lib/safeLocalStorage";
+import { safeLocalStorageGetItem, safeLocalStorageSetItem, safeLocalStorageRemoveItem } from "../lib/safeLocalStorage";
 import { staffTelemetryService } from "./../services/logging/staffTelemetryService";
 import type { ShiftFinancialMode } from "./shiftViewTypes";
 import { useShiftFinancialModeState } from "./useShiftFinancialModeState";
+
+export const DEFAULT_MAX_SHIFT_DURATION_HOURS = 12;
+export const DEFAULT_MAX_SHIFT_DURATION_MS = DEFAULT_MAX_SHIFT_DURATION_HOURS * 60 * 60 * 1000;
+export const SHIFT_START_TIME_KEY = "dente_doctor_shift_start_time";
 
 export interface UseShiftViewControllerOptions {
 	dashboard?: Dashboard;
@@ -16,10 +20,11 @@ export interface UseShiftViewControllerOptions {
 	// biome-ignore lint/suspicious/noExplicitAny: generic
 	patientsById: Map<string, any>;
 	setSelectedPatientId?: ((id: string | null) => void) | undefined;
+	maxShiftDurationMs?: number;
 }
 
 export function useShiftViewController({
-	dashboard, inChairAppointment, staffById, shiftStats, patientsById, setSelectedPatientId,
+	dashboard, inChairAppointment, staffById, shiftStats, patientsById, setSelectedPatientId, maxShiftDurationMs,
 }: UseShiftViewControllerOptions) {
 	const [isQueueBoardModalOpen, setIsQueueBoardModalOpen] = useState(false);
 	const [isPayrollModalOpen, setIsPayrollModalOpen] = useState(false);
@@ -38,6 +43,74 @@ export function useShiftViewController({
 	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(() => {
 		try { const s = safeLocalStorageGetItem("dente_doctor_shift_active"); return s !== null ? s === "true" : true; } catch { return true; }
 	});
+
+	const handleAutoCloseShift = async (reason = "auto_close_timeout") => {
+		setIsShiftOpen(false);
+		setIsShiftCloseModalOpen(false);
+		try {
+			safeLocalStorageSetItem("dente_doctor_shift_active", "false");
+			safeLocalStorageRemoveItem(SHIFT_START_TIME_KEY);
+		} catch {}
+		// biome-ignore lint/suspicious/noExplicitAny: runtime prop
+		const dashAny = dashboard as any;
+		staffTelemetryService.logShiftClose("SHIFT-ACTIVE", dashAny?.activeAppointment?.doctorId, dashAny?.activeAppointment?.doctorName, {
+			totalAppointments: shiftStats?.totalAppointments ?? 0,
+			completedCount: shiftStats?.completedCount ?? 0,
+			totalRevenueRub: shiftStats?.totalRevenueRub ?? 0,
+			estimatedDoctorPayoutRub: shiftStats?.estimatedDoctorPayoutRub ?? 0,
+			autoClosedByTimeout: true,
+			reason,
+		});
+		try {
+			await fetch("/api/fiscal/shift/close", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					force: true,
+					closedByUserId: dashAny?.activeAppointment?.doctorId,
+					autoClosedByTimeout: true,
+					reason,
+				}),
+			});
+		} catch {}
+	};
+
+	// Anti-Hang Shift Law: Auto-close shift if limit exceeded or past midnight
+	useEffect(() => {
+		if (!isShiftOpen) return;
+
+		const limitMs = maxShiftDurationMs ?? DEFAULT_MAX_SHIFT_DURATION_MS;
+
+		const checkShiftTimeout = () => {
+			try {
+				const startTimeStr = safeLocalStorageGetItem(SHIFT_START_TIME_KEY);
+				if (!startTimeStr) {
+					safeLocalStorageSetItem(SHIFT_START_TIME_KEY, String(Date.now()));
+					return;
+				}
+				const startTime = Number(startTimeStr);
+				if (!Number.isFinite(startTime)) return;
+
+				const now = Date.now();
+				const elapsed = now - startTime;
+
+				if (elapsed >= limitMs) {
+					void handleAutoCloseShift("auto_close_timeout_duration");
+					return;
+				}
+
+				const startDate = new Date(startTime).toDateString();
+				const currentDate = new Date(now).toDateString();
+				if (startDate !== currentDate && elapsed > 60_000) {
+					void handleAutoCloseShift("auto_close_timeout_midnight");
+				}
+			} catch {}
+		};
+
+		checkShiftTimeout();
+		const intervalId = setInterval(checkShiftTimeout, 10_000);
+		return () => clearInterval(intervalId);
+	}, [isShiftOpen, maxShiftDurationMs]);
 
 	useEffect(() => {
 		let isCancelled = false;
@@ -64,7 +137,11 @@ export function useShiftViewController({
 			setIsShiftCloseModalOpen(true);
 		} else {
 			setIsShiftOpen(true);
-			try { safeLocalStorageSetItem("dente_doctor_shift_active", "true"); } catch {}
+			const now = Date.now();
+			try {
+				safeLocalStorageSetItem("dente_doctor_shift_active", "true");
+				safeLocalStorageSetItem(SHIFT_START_TIME_KEY, String(now));
+			} catch {}
 			// biome-ignore lint/suspicious/noExplicitAny: runtime prop
 			const dashAny = dashboard as any;
 			staffTelemetryService.logShiftOpen("SHIFT-ACTIVE", dashAny?.activeAppointment?.doctorId, dashAny?.activeAppointment?.doctorName);
@@ -80,7 +157,10 @@ export function useShiftViewController({
 	const handleConfirmCloseShift = async () => {
 		setIsShiftOpen(false);
 		setIsShiftCloseModalOpen(false);
-		try { safeLocalStorageSetItem("dente_doctor_shift_active", "false"); } catch {}
+		try {
+			safeLocalStorageSetItem("dente_doctor_shift_active", "false");
+			safeLocalStorageRemoveItem(SHIFT_START_TIME_KEY);
+		} catch {}
 		// biome-ignore lint/suspicious/noExplicitAny: runtime prop
 		const dashAny = dashboard as any;
 		staffTelemetryService.logShiftClose("SHIFT-ACTIVE", dashAny?.activeAppointment?.doctorId, dashAny?.activeAppointment?.doctorName, {
@@ -106,6 +186,6 @@ export function useShiftViewController({
 		isQueueBoardModalOpen, setIsQueueBoardModalOpen, isPayrollModalOpen, setIsPayrollModalOpen,
 		isTimesheetT13ModalOpen, setIsTimesheetT13ModalOpen, isShiftCloseModalOpen, setIsShiftCloseModalOpen,
 		...fin,
-		activeDoctorFullName, isShiftOpen, handleToggleShift, handleConfirmCloseShift, runRecommendedAction,
+		activeDoctorFullName, isShiftOpen, handleToggleShift, handleConfirmCloseShift, handleAutoCloseShift, runRecommendedAction,
 	};
 }

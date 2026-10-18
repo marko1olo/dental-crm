@@ -1,13 +1,10 @@
 import React from "react";
-import { ArrowRightLeft, Bell, Calendar, FileText, Printer } from "lucide-react";
+import { Bell, Calendar, Printer } from "lucide-react";
 
 export interface DoctorShiftActionsDropdownProps {
-	readonly onHandoverShift?: (() => void) | undefined;
 	readonly onPrintPreliminaryReport?: (() => void) | undefined;
 	readonly onCallAssistant?: (() => void) | undefined;
 	readonly onOpenT13Timesheet?: (() => void) | undefined;
-	readonly onOpenChairRentalAct?: (() => void) | undefined;
-	readonly isChairRental?: boolean | undefined;
 	readonly onClose: () => void;
 }
 
@@ -28,12 +25,9 @@ const itemStyle: React.CSSProperties = {
 };
 
 export const DoctorShiftActionsDropdown: React.FC<DoctorShiftActionsDropdownProps> = ({
-	onHandoverShift,
 	onPrintPreliminaryReport,
 	onCallAssistant,
 	onOpenT13Timesheet,
-	onOpenChairRentalAct,
-	isChairRental = false,
 	onClose,
 }) => (
 	<div
@@ -56,12 +50,6 @@ export const DoctorShiftActionsDropdown: React.FC<DoctorShiftActionsDropdownProp
 		}}
 		data-testid="shift-actions-menu-dropdown"
 	>
-		{onHandoverShift && (
-			<button type="button" role="menuitem" onClick={() => { onClose(); onHandoverShift(); }} style={itemStyle} className="hover:bg-[var(--paper-soft)]" data-testid="shift-action-handover">
-				<ArrowRightLeft size={13} className="text-[var(--teal)]" />
-				<span>Передать смену врачу</span>
-			</button>
-		)}
 		{onPrintPreliminaryReport && (
 			<button type="button" role="menuitem" onClick={() => { onClose(); onPrintPreliminaryReport(); }} style={itemStyle} className="hover:bg-[var(--paper-soft)]" data-testid="shift-action-print-report">
 				<Printer size={13} className="text-[var(--muted)]" />
@@ -74,16 +62,10 @@ export const DoctorShiftActionsDropdown: React.FC<DoctorShiftActionsDropdownProp
 				<span>Вызов ассистента</span>
 			</button>
 		)}
-		{onOpenT13Timesheet && !isChairRental && (
+		{onOpenT13Timesheet && (
 			<button type="button" role="menuitem" onClick={() => { onClose(); onOpenT13Timesheet(); }} style={itemStyle} className="hover:bg-[var(--paper-soft)]" data-testid="shift-action-t13">
 				<Calendar size={13} className="text-[var(--teal)]" />
 				<span>Учёт отработанного времени и часов</span>
-			</button>
-		)}
-		{onOpenChairRentalAct && isChairRental && (
-			<button type="button" role="menuitem" onClick={() => { onClose(); onOpenChairRentalAct(); }} style={itemStyle} className="hover:bg-[var(--paper-soft)]" data-testid="shift-action-rental-act">
-				<FileText size={13} className="text-[var(--teal)]" />
-				<span>Акт сверки субаренды</span>
 			</button>
 		)}
 	</div>

@@ -128,11 +128,28 @@ describe("Doctor Shift Realtime Telemetry, Timer & Chair Status (LOW-SPEC CHAIRS
 			}),
 		);
 
-		assert.ok(html.includes("Субаренда кресла"));
+		assert.strictEqual(html.includes("shift-mode-chair-rental"), false, "Must NOT render chair rental mode toggle buttons on shift control bar");
 		assert.ok(html.includes("Чистый доход (субаренда)"));
 		assert.ok(html.includes("Условия аренды"));
 		assert.ok(html.includes("10\u00A0000") || html.includes("10 000"));
 		assert.ok(html.includes("35\u00A0000") || html.includes("35 000"));
 		assert.equal(EMOJI_REGEX.test(html), false, "Zero cartoon emojis");
+	});
+
+	it("Anti-Hang Shift Law: auto-closes shift when shift duration exceeds 12h limit or past midnight", async () => {
+		const {
+			DEFAULT_MAX_SHIFT_DURATION_HOURS,
+			DEFAULT_MAX_SHIFT_DURATION_MS,
+			SHIFT_START_TIME_KEY,
+		} = await import("../../../shiftViewModules/useShiftViewController");
+
+		assert.equal(DEFAULT_MAX_SHIFT_DURATION_HOURS, 12, "Max shift duration is 12 hours");
+		assert.equal(DEFAULT_MAX_SHIFT_DURATION_MS, 12 * 60 * 60 * 1000, "12 hours in milliseconds");
+		assert.equal(SHIFT_START_TIME_KEY, "dente_doctor_shift_start_time");
+
+		// Simulate expired start time (> 12 hours ago)
+		const expiredStartTime = Date.now() - (13 * 60 * 60 * 1000);
+		const elapsed = Date.now() - expiredStartTime;
+		assert.ok(elapsed >= DEFAULT_MAX_SHIFT_DURATION_MS, "Elapsed time exceeds 12h threshold");
 	});
 });

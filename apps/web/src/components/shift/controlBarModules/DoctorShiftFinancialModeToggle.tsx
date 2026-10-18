@@ -54,31 +54,6 @@ export const DoctorShiftFinancialModeToggle: React.FC<DoctorShiftFinancialModeTo
 					<Briefcase size={12} style={{ flexShrink: 0 }} />
 					<span>На проценте</span>
 				</button>
-				<button
-					type="button"
-					role="tab"
-					aria-selected={isChairRental}
-					onClick={() => onChangeFinancialMode("chair_rental")}
-					data-testid="shift-mode-chair-rental"
-					style={{
-						height: "28px",
-						padding: "0 8px",
-						borderRadius: "6px",
-						fontSize: "11.5px",
-						fontWeight: 600,
-						display: "inline-flex",
-						alignItems: "center",
-						gap: "4px",
-						border: isChairRental ? "1px solid var(--line)" : "1px solid transparent",
-						background: isChairRental ? "var(--paper)" : "transparent",
-						color: isChairRental ? "var(--teal)" : "var(--muted)",
-						cursor: "pointer",
-						whiteSpace: "nowrap",
-					}}
-				>
-					<Calculator size={12} style={{ flexShrink: 0 }} />
-					<span>Субаренда кресла</span>
-				</button>
 			</div>
 		);
 	},

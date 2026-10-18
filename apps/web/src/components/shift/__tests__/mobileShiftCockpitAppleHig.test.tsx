@@ -95,7 +95,7 @@ describe("MobileShiftCockpit Apple iOS HIG & Anti-Desktop-Squeeze Invariants", (
 		const html = cleanSsrHtml(rawHtml);
 
 		assert.ok(html.includes("Закрыть смену"));
-		assert.ok(html.includes("Касса (внесение/выплата)"));
+		assert.ok(html.includes("Касса"));
 		assert.ok(html.includes("Расходники"));
 		assert.ok(html.includes("mobile-shift-btn-primary-cta"));
 

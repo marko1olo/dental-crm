@@ -2,7 +2,6 @@ import React from "react";
 import { ChairStatusQuickToggle } from "./controlBarModules/ChairStatusQuickToggle";
 import { DoctorShiftActionsMenu } from "./controlBarModules/DoctorShiftActionsMenu";
 import { ShiftKpiMetricStrip } from "./controlBarModules/ShiftKpiMetricStrip";
-import { DoctorShiftFinancialModeToggle } from "./controlBarModules/DoctorShiftFinancialModeToggle";
 import { DoctorShiftPrimaryButtons } from "./controlBarModules/DoctorShiftPrimaryButtons";
 import { DoctorShiftControlLeft } from "./controlBarModules/DoctorShiftControlLeft";
 import type {
@@ -77,7 +76,6 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = React
 					{onChangeChairStatus && (
 						<ChairStatusQuickToggle currentStatus={chairStatus} onChangeStatus={onChangeChairStatus} />
 					)}
-					<DoctorShiftFinancialModeToggle financialMode={financialMode} onChangeFinancialMode={onChangeFinancialMode} />
 					<DoctorShiftPrimaryButtons
 						isShiftOpen={isShiftOpen}
 						onToggleShift={onToggleShift}
@@ -85,12 +83,9 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = React
 						onOpenPayrollModal={onOpenPayrollModal}
 					/>
 					<DoctorShiftActionsMenu
-						onHandoverShift={onHandoverShift}
 						onPrintPreliminaryReport={onPrintPreliminaryReport}
 						onCallAssistant={onCallAssistant}
 						onOpenT13Timesheet={onOpenT13Timesheet}
-						onOpenChairRentalAct={onOpenChairRentalAct}
-						isChairRental={isChairRental}
 					/>
 				</div>
 			</div>

@@ -114,7 +114,7 @@ describe("ShiftChairAutonomy & Anti-Handover Purge — Mandates 8e & 8n (Zero Do
 
 		// Proves presence of Cash Operations, Consumables, and Close Shift buttons
 		assert.ok(
-			html.includes("Касса (внесение/выплата)"),
+			html.includes("Касса"),
 			"Must render Cash Operations button",
 		);
 		assert.ok(
