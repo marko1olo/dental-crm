@@ -1,4 +1,4 @@
-export type DoctorShiftFinancialMode = "piece_rate" | "chair_rental";
+export type DoctorShiftFinancialMode = "piece_rate" | "chair_rental" | "standard";
 
 export type ShiftOperationalState = "open" | "break" | "emergency" | "closed";
 

@@ -9,7 +9,7 @@ export interface DoctorShiftFinancialModeToggleProps {
 }
 
 export const DoctorShiftFinancialModeToggle: React.FC<DoctorShiftFinancialModeToggleProps> = React.memo(
-	({ financialMode = "chair_rental", onChangeFinancialMode, className = "" }) => {
+	({ financialMode = "piece_rate", onChangeFinancialMode, className = "" }) => {
 		if (!onChangeFinancialMode) return null;
 		const isChairRental = financialMode === "chair_rental";
 

@@ -6,18 +6,20 @@ export function useShiftFinancialModeState() {
 	const [shiftFinancialMode, setShiftFinancialMode] = useState<ShiftFinancialMode>(() => {
 		try {
 			const s = safeLocalStorageGetItem("dente_shift_financial_mode");
-			if (s === "piece_rate" || s === "chair_rental") return s;
+			if (s === "piece_rate" || s === "standard") return "piece_rate";
+			if (s === "chair_rental") return "chair_rental";
 		} catch {}
-		return "chair_rental";
+		return "piece_rate";
 	});
 	const [chairRentalNetIncomeRub, setChairRentalNetIncomeRub] = useState<number>(0);
 	const [chairRentalRentExpenseRub, setChairRentalRentExpenseRub] = useState<number>(0);
 	const [chairRentalActTrigger, setChairRentalActTrigger] = useState<number>(0);
 
 	const handleChangeFinancialMode = (mode: ShiftFinancialMode) => {
-		setShiftFinancialMode(mode);
+		const targetMode = mode === "standard" ? "piece_rate" : mode;
+		setShiftFinancialMode(targetMode);
 		try {
-			safeLocalStorageSetItem("dente_shift_financial_mode", mode);
+			safeLocalStorageSetItem("dente_shift_financial_mode", targetMode);
 		} catch {}
 	};
 

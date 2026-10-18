@@ -1,11 +1,9 @@
-import React, { useState } from "react";
-import { ChairRentalShiftWidget } from "../ChairRentalShiftWidget";
+import React from "react";
 import type {
 	MobileShiftAppointmentSummary,
 	MobileShiftCockpitProps,
 	MobileShiftConsumableItem,
 } from "./types";
-import { MobileShiftSectionTabs } from "./MobileShiftSectionTabs";
 import { MobileShiftQueueSection } from "./MobileShiftQueueSection";
 
 export interface MobileShiftCockpitUIProps extends MobileShiftCockpitProps {
@@ -17,8 +15,6 @@ export interface MobileShiftCockpitUIProps extends MobileShiftCockpitProps {
 }
 
 export const MobileShiftCockpitUI: React.FC<MobileShiftCockpitUIProps> = ({
-	doctorName = "Д-р Смирнова Е.В.",
-	totalRevenueRub = 42500,
 	totalAppointmentsCount = 6,
 	completedCount = 4,
 	inChairCount = 1,
@@ -29,22 +25,6 @@ export const MobileShiftCockpitUI: React.FC<MobileShiftCockpitUIProps> = ({
 	onOpenPatientEmk,
 	onOpenCashCheckout,
 }) => {
-	const [mobileSection, setMobileSection] = useState<"queue" | "rental">(() => {
-		try {
-			const saved = window.localStorage.getItem("dente_mobile_shift_tab");
-			if (saved === "queue" || saved === "rental") return saved;
-		} catch {}
-		return "rental";
-	});
-	const [rentalNetProfitRub, setRentalNetProfitRub] = useState<number>(30200);
-
-	const handleSelectSection = (sec: "queue" | "rental") => {
-		setMobileSection(sec);
-		try {
-			window.localStorage.setItem("dente_mobile_shift_tab", sec);
-		} catch {}
-	};
-
 	return (
 		<div
 			className="mobile-shift-ui-container"
@@ -57,32 +37,17 @@ export const MobileShiftCockpitUI: React.FC<MobileShiftCockpitUIProps> = ({
 				boxSizing: "border-box",
 			}}
 		>
-			<MobileShiftSectionTabs
-				mobileSection={mobileSection}
-				onSelectSection={handleSelectSection}
+			<MobileShiftQueueSection
 				totalAppointmentsCount={totalAppointmentsCount}
-				rentalNetProfitRub={rentalNetProfitRub}
+				completedCount={completedCount}
+				inChairCount={inChairCount}
+				activePatientFilter={activePatientFilter}
+				setActivePatientFilter={setActivePatientFilter}
+				filteredAppointments={filteredAppointments}
+				onSelectAppointment={onSelectAppointment}
+				onOpenPatientEmk={onOpenPatientEmk}
+				onOpenCashCheckout={onOpenCashCheckout}
 			/>
-
-			{mobileSection === "rental" ? (
-				<ChairRentalShiftWidget
-					doctorFullName={doctorName}
-					initialGrossRevenueRub={totalRevenueRub}
-					onEconomicsChange={(econ) => setRentalNetProfitRub(econ.netProfitRub)}
-				/>
-			) : (
-				<MobileShiftQueueSection
-					totalAppointmentsCount={totalAppointmentsCount}
-					completedCount={completedCount}
-					inChairCount={inChairCount}
-					activePatientFilter={activePatientFilter}
-					setActivePatientFilter={setActivePatientFilter}
-					filteredAppointments={filteredAppointments}
-					onSelectAppointment={onSelectAppointment}
-					onOpenPatientEmk={onOpenPatientEmk}
-					onOpenCashCheckout={onOpenCashCheckout}
-				/>
-			)}
 		</div>
 	);
 };

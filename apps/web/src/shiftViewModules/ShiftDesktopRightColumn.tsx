@@ -1,6 +1,5 @@
 import React from "react";
 import {
-	ChairRentalShiftWidget,
 	DoctorShiftCashSection,
 	ShiftTodoListSection,
 } from "../components/shift";
@@ -40,27 +39,14 @@ export const ShiftDesktopRightColumn: React.FC<ShiftDesktopRightColumnProps> = (
 	runRecommendedAction,
 }) => (
 	<div className="space-y-4 min-w-0" data-testid="shift-right-column">
-		{shiftFinancialMode === "chair_rental" ? (
-			<ChairRentalShiftWidget
-				doctorFullName={activeDoctorFullName}
-				clinicName={clinicName || "ООО «Денте Стоматология»"}
-				initialGrossRevenueRub={shiftStats.totalRevenueRub}
-				externalOpenActTrigger={chairRentalActTrigger}
-				onEconomicsChange={(econ) => {
-					setChairRentalNetIncomeRub(econ.netProfitRub);
-					setChairRentalRentExpenseRub(econ.rentExpenseRub);
-				}}
-			/>
-		) : (
-			<DoctorShiftCashSection
-				totalRevenueRub={shiftStats.totalRevenueRub}
-				doctorCommissionPct={shiftStats.doctorCommissionPct}
-				estimatedDoctorPayoutRub={shiftStats.estimatedDoctorPayoutRub}
-				doctorFullName={activeDoctorFullName}
-				clinicName={clinicName ?? ""}
-				onPrintStatement={() => setIsShiftCloseModalOpen(true)}
-			/>
-		)}
+		<DoctorShiftCashSection
+			totalRevenueRub={shiftStats?.totalRevenueRub ?? 0}
+			doctorCommissionPct={shiftStats?.doctorCommissionPct ?? 30}
+			estimatedDoctorPayoutRub={shiftStats?.estimatedDoctorPayoutRub ?? 0}
+			doctorFullName={activeDoctorFullName}
+			clinicName={clinicName ?? ""}
+			onPrintStatement={() => setIsShiftCloseModalOpen(true)}
+		/>
 
 		<ShiftTodoListSection
 			visibleRecommendedActions={visibleRecommendedActions}
