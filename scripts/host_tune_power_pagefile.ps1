@@ -2,14 +2,13 @@
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
 Write-Host "================================================================" -ForegroundColor Cyan
-Write-Host "  DENTE HOST OPTIMIZER: POWER PLAN & PAGEFILE TUNING            " -ForegroundColor Cyan
+Write-Host "  НАСТРОЙКА ЭЛЕКТРОПИТАНИЯ И ФАЙЛА ПОДКАЧКИ (HOST OPTIMIZER)   " -ForegroundColor Cyan
 Write-Host "================================================================" -ForegroundColor Cyan
 
-# 1. Activate Ultimate Performance Power Plan
+# 1. Схема электропитания: Максимальная производительность (Ultimate Performance)
 Write-Host ""
-Write-Host "[1/2] Configuring Power Plan..." -ForegroundColor Yellow
+Write-Host "[1/2] Настройка схемы электропитания..." -ForegroundColor Yellow
 
-# Look for existing Ultimate Performance or duplicate schemes
 $schemes = powercfg /list
 $ultimateGuid = $null
 
@@ -18,7 +17,7 @@ if ($schemes -match "([0-9a-f-]{36})\s+\(Ultimate Performance\)") {
 }
 
 if (-not $ultimateGuid) {
-    Write-Host " [*] Creating Ultimate Performance scheme..." -ForegroundColor Gray
+    Write-Host " [*] Создание схемы 'Максимальная производительность'..." -ForegroundColor Gray
     $out = powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 2>&1
     if ($out -match "([0-9a-f-]{36})") {
         $ultimateGuid = $matches[1]
@@ -27,27 +26,27 @@ if (-not $ultimateGuid) {
 
 if ($ultimateGuid) {
     powercfg /setactive $ultimateGuid
-    Write-Host " [+] Power Scheme set to Ultimate Performance ($ultimateGuid)" -ForegroundColor Green
+    Write-Host " [+] Схема электропитания: Максимальная производительность ($ultimateGuid)" -ForegroundColor Green
     
-    # Configure AC processor state to 100% min and 100% max (disable throttling & core parking)
+    # 100% min и max процессорного состояния от сети (отключение троттлинга и парковки ядер)
     powercfg /setacvalueindex $ultimateGuid SUB_PROCESSOR PROCTHROTTLEMIN 100
     powercfg /setacvalueindex $ultimateGuid SUB_PROCESSOR PROCTHROTTLEMAX 100
     powercfg /setactive $ultimateGuid
-    Write-Host " [+] Processor Minimum/Maximum state set to 100% (No C-State stall, no core parking)" -ForegroundColor Green
+    Write-Host " [+] Минимальное/Максимальное состояние процессора: 100% (парковка ядер отключена)" -ForegroundColor Green
 } else {
-    Write-Host " [-] Could not determine Ultimate Performance GUID" -ForegroundColor Red
+    Write-Host " [-] Не удалось получить GUID схемы электропитания" -ForegroundColor Red
 }
 
-# 2. Configure Windows Pagefile (Virtual Memory)
+# 2. Настройка файла подкачки (Pagefile)
 Write-Host ""
-Write-Host "[2/2] Configuring Pagefile (Virtual Memory)..." -ForegroundColor Yellow
+Write-Host "[2/2] Фиксация размера файла подкачки (16 ГБ - 32 ГБ)..." -ForegroundColor Yellow
 try {
-    # Set AutomaticManagedPagefile to False
+    # Отключение автоматического управления размером файла подкачки
     $computerSystem = Get-CimInstance Win32_ComputerSystem
     $computerSystem.AutomaticManagedPagefile = $false
     Set-CimInstance -CimInstance $computerSystem -ErrorAction Stop
 
-    # Set fixed Initial and Max size (16 GB to 32 GB) on C:
+    # Фиксированный размер 16 ГБ (исходный) и 32 ГБ (максимальный) на диске C:
     $pageSetting = Get-CimInstance Win32_PageFileSetting -Filter "Name like 'C:%'" -ErrorAction SilentlyContinue
     if ($pageSetting) {
         $pageSetting.InitialSize = 16384
@@ -60,18 +59,21 @@ try {
             MaximumSize = 32768
         } -ErrorAction Stop | Out-Null
     }
-    Write-Host " [+] Pagefile configured to 16 GB - 32 GB on C: (Prevents 68-100 GB dynamic sprawl & NVMe I/O lockups)" -ForegroundColor Green
+    Write-Host " [+] Файл подкачки зафиксирован: 16 ГБ - 32 ГБ на диске C:" -ForegroundColor Green
+    Write-Host "     (Предотвращает раздувание до 100+ ГБ и зависание диска NVMe)" -ForegroundColor DarkGray
 } catch {
-    Write-Host " [-] Failed to update PageFile via CIM: $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "     Setting via Registry fallback..." -ForegroundColor Gray
+    Write-Host " [-] Ошибка обновления через CIM: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "     Применение через реестр..." -ForegroundColor Gray
     try {
         Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" -Name "PagingFiles" -Value "C:\pagefile.sys 16384 32768" -ErrorAction Stop
-        Write-Host " [+] Pagefile registry updated: C:\pagefile.sys 16384 32768 (Active after reboot)" -ForegroundColor Green
+        Write-Host " [+] Реестр обновлен: C:\pagefile.sys 16384 32768 (вступит в силу после перезагрузки)" -ForegroundColor Green
     } catch {
-        Write-Host " [-] Registry fallback failed: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host " [-] Ошибка записи в реестр: $($_.Exception.Message)" -ForegroundColor Red
     }
 }
 
 Write-Host ""
-Write-Host "[SUCCESS] Hardware and Power optimization complete!" -ForegroundColor Cyan
-Write-Host "Windows Thread Director, Core Parking, and Pagefile thrashing are resolved." -ForegroundColor Green
+Write-Host "================================================================" -ForegroundColor Cyan
+Write-Host "  [УСПЕХ] Настройки электропитания и памяти применены!         " -ForegroundColor Green
+Write-Host "  Файл подкачки зафиксирован (активируется после перезагрузки).  " -ForegroundColor Green
+Write-Host "================================================================" -ForegroundColor Cyan

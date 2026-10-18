@@ -1,22 +1,31 @@
 @echo off
+chcp 65001 >nul
 setlocal
 cd /d "%~dp0"
-title DENTE HOST OPTIMIZER - DEFENDER EXCLUSIONS
+title ОПТИМИЗАЦИЯ СИСТЕМЫ: ЗАЩИТНИК WINDOWS
 
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [i] Zapros prav administratora (UAC)...
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/k ""%~f0" elevated"' -Verb RunAs"
+    echo [i] Запрос прав администратора (UAC)...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd.exe -ArgumentList '/k chcp 65001 >nul & ""%~f0"" elevated' -Verb RunAs"
     exit /b
 )
 
 echo ==================================================================
-echo   DENTE HOST OPTIMIZER: WINDOWS DEFENDER EXCLUSIONS
+echo   DENTE HOST OPTIMIZER: ИСКЛЮЧЕНИЯ ЗАЩИТНИКА WINDOWS
 echo ==================================================================
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0host_tune_defender.ps1"
+echo.
+
+set SCRIPT_FILE=C:\Clinic_MVP\dental-crm\scripts\host_tune_defender.ps1
+
+if exist "%SCRIPT_FILE%" (
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_FILE%"
+) else (
+    echo [!] Ошибка: Файл %SCRIPT_FILE% не найден.
+)
 
 echo.
 echo ==================================================================
-echo   Nastrojka zavershena. Nazhmite lyubuyu klavishu dlya vyhoda.
+echo   Настройка завершена. Нажмите любую клавишу для закрытия...
 echo ==================================================================
-pause
+pause >nul

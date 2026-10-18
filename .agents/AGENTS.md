@@ -128,7 +128,15 @@ Subagents are a normal tool, parallel fans included. No per-task cap; cost is th
     $busy = Get-Process node -ErrorAction SilentlyContinue | Where-Object { $_.CPU -gt 5 }
     if ($busy) { throw "Активны $($busy.Count) node-процессов с CPU>5%. Дождись завершения." }
     ```
-  - **ZOMBIE CLEANUP после завершения:** `Get-Process node | Where-Object { $_.CPU -lt 1 -and $_.WorkingSet -gt 200MB } | Stop-Process -Force`
+  - **ZOMBIE CLEANUP после завершения:** `Get-Process node | Where-Object { $_.CPU -lt 1 -and $_.WorkingSet -gt 200MB } | Stop-Process -Force` (или `npm run clean:orphans`).
+- **High-Throughput Swarm Pipeline & Host Anti-Freeze Invariants (Регламент потока 10+ субагентов):**
+  - **Волновое квантование (Staggered Wave Execution):** При работе потоком 10+ субагентов запуск выполняется строго волнами: не более **2–3 активных субагентов одновременно**. Переход к следующей волне — только после утилизации (`kill`) завершившихся агентов.
+  - **Single Heavy Compiler Lockout & Heap Ceiling:** Субагентам запрещен параллельный запуск монорепозиторного `typecheck` / `tsc -p`. Проверка кода субагентами — строго точечными тестами (`node --test`). Потолок кучи Node.js — `--max-old-space-size=2048` (для `apps/web` — 3072 МБ).
+  - **Дисциплина консольного вывода (Stdout Truncation <= 100 lines):** Запрещен вывод сырых дампов в консоль. Вывод усекается до 50–100 строк, объемные логи перенаправляются в файлы.
+  - **Anti-Zombie Headless Chromium:** Скрипты скриншотов обязаны вызывать `await browser.close()` в блоке `finally {}`.
+  - **Изоляция файловых вотчеров:** Директории `.data/**`, `scratch/**`, `artifacts/**`, `node_modules/**` исключаются из вотчеров через `server.watch.ignored`.
+  - **Репозиторный запрет Git Fsmonitor:** Параметр `core.fsmonitor` в репозитории отключен (`false`).
+  - **Регламентное техобслуживание:** Периодическое выполнение `PRAGMA wal_checkpoint(TRUNCATE)` и очистка сессий старше 3 дней (`antigravity_maintenance.cjs`).
 - There is no per-agent database. A subagent running migrations, seeding, or destructive SQL needs explicit scope from the lead and must not run while another agent's tests are live.
 - **Concurrent Edits, Sacred Worktree Integrity & Anti-Overwriting Mandate (Священная неприкосновенность чужих правок):** Concurrent edits go through separate worktrees, or through file lists proven disjoint against `git status --short` first. Per-file `git add` strictly; never sweep another agent's unfinished work or debug scratch into your commit. В репозитории параллельно работают другие субагенты, оркестратор и разработчик — категорически ЗАПРЕЩЕНО затирать, откатывать (`git reset --hard`, `git restore .`, `git checkout -- .`) или перезаписывать чужие изменения! Все чужие правки бережно сохраняются.
 - **Mandatory Detailed Commit & Dual-Push Gate (Обязательный подробный коммит и пуш):** Любая выполненная задача или логический шаг ОБЯЗАНЫ быть подробно и аккуратно зафиксированы в коммите (Conventional Commits с подробным описанием: Why, What, Proof, Docs) и запушены в оба ремоута (`origin` и `gitlab`). Оставлять сделанную работу висеть незакоммиченной в рабочей копии запрещено — задача считается несданной без коммита и пуша.

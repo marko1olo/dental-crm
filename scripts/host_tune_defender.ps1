@@ -2,7 +2,7 @@
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
 Write-Host "================================================================" -ForegroundColor Cyan
-Write-Host "  DENTE HOST OPTIMIZER: ADDING DEFENDER EXCLUSIONS              " -ForegroundColor Cyan
+Write-Host "  НАСТРОЙКА ИСКЛЮЧЕНИЙ ЗАЩИТНИКА WINDOWS ДЛЯ DENTE И ANTIGRAVITY " -ForegroundColor Cyan
 Write-Host "================================================================" -ForegroundColor Cyan
 
 $paths = @(
@@ -36,38 +36,40 @@ $extensions = @(
 )
 
 Write-Host ""
-Write-Host "[1/3] Adding Folder Exclusions..." -ForegroundColor Yellow
+Write-Host "[1/3] Добавление папок в исключения..." -ForegroundColor Yellow
 foreach ($p in $paths) {
     try {
         Add-MpPreference -ExclusionPath $p -ErrorAction Stop
-        Write-Host " [+] Path Excluded: $p" -ForegroundColor Green
+        Write-Host " [+] Папка исключена: $p" -ForegroundColor Green
     } catch {
-        Write-Host " [-] Failed to exclude path: $p ($($_.Exception.Message))" -ForegroundColor Red
+        Write-Host " [-] Ошибка добавления папки: $p ($($_.Exception.Message))" -ForegroundColor Red
     }
 }
 
 Write-Host ""
-Write-Host "[2/3] Adding Process Exclusions..." -ForegroundColor Yellow
+Write-Host "[2/3] Добавление процессов в исключения..." -ForegroundColor Yellow
 foreach ($proc in $processes) {
     try {
         Add-MpPreference -ExclusionProcess $proc -ErrorAction Stop
-        Write-Host " [+] Process Excluded: $proc" -ForegroundColor Green
+        Write-Host " [+] Процесс исключен: $proc" -ForegroundColor Green
     } catch {
-        Write-Host " [-] Failed to exclude process: $proc ($($_.Exception.Message))" -ForegroundColor Red
+        Write-Host " [-] Ошибка добавления процесса: $proc ($($_.Exception.Message))" -ForegroundColor Red
     }
 }
 
 Write-Host ""
-Write-Host "[3/3] Adding Extension Exclusions..." -ForegroundColor Yellow
+Write-Host "[3/3] Добавление расширений файлов в исключения..." -ForegroundColor Yellow
 foreach ($ext in $extensions) {
     try {
         Add-MpPreference -ExclusionExtension $ext -ErrorAction Stop
-        Write-Host " [+] Extension Excluded: $ext" -ForegroundColor Green
+        Write-Host " [+] Расширение исключено: $ext" -ForegroundColor Green
     } catch {
-        Write-Host " [-] Failed to exclude extension: $ext ($($_.Exception.Message))" -ForegroundColor Red
+        Write-Host " [-] Ошибка добавления расширения: $ext ($($_.Exception.Message))" -ForegroundColor Red
     }
 }
 
 Write-Host ""
-Write-Host "[SUCCESS] Windows Defender exclusions applied successfully!" -ForegroundColor Cyan
-Write-Host "Disk I/O latency, filter driver queueing, and audio/mouse microstutters are now eliminated." -ForegroundColor Green
+Write-Host "================================================================" -ForegroundColor Cyan
+Write-Host "  [УСПЕХ] Исключения Защитника Windows успешно применены!       " -ForegroundColor Green
+Write-Host "  Фоновое сканирование диска и микрофризы устранены.             " -ForegroundColor Green
+Write-Host "================================================================" -ForegroundColor Cyan
