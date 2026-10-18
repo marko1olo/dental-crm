@@ -1172,6 +1172,12 @@ body:has([data-testid="split-payment-modal"]) [data-testid="modal-finance-cashbo
 		gap: 8px !important;
 	}
 
+	.cash-bill-grid [data-testid="btn-cash-5000"] { order: 1; }
+	.cash-bill-grid [data-testid="btn-cash-2000"] { order: 2; }
+	.cash-bill-grid [data-testid="btn-cash-1000"] { order: 3; }
+	.cash-bill-grid [data-testid="btn-cash-exact"] { order: 4; }
+	.cash-bill-grid [data-testid="btn-cash-10000"] { display: none !important; }
+
 	.cash-add-grid {
 		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 		gap: 8px !important;
@@ -1200,6 +1206,10 @@ body:has([data-testid="split-payment-modal"]) [data-testid="modal-finance-cashbo
 	.payment-method-grid {
 		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 		gap: 8px !important;
+	}
+
+	.payment-method-grid .payment-method-pill:last-child:nth-child(odd) {
+		grid-column: 1 / -1;
 	}
 
 	.payment-method-pill {

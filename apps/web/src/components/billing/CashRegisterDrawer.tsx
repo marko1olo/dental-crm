@@ -1,22 +1,20 @@
 /**
  * CashRegisterDrawer.tsx — Solo Doctor & Small Clinic Cash Register Drawer & Shift Telemetry.
- *
- * Governed by:
- * - Mandate 8e: Doctor & Cashier autonomy (0 friction, no bureaucratic obstacles).
- * - Mandate 8n: Solo Doctor & Small Clinic Sovereignty (1-click cash in/out, X-report, Z-report).
- * - Mandate 8d: Studio Clinical HIG (WCAG AAA contrast, zero emojis, compact desktop density).
+ * Decomposed into ./cashRegisterDrawer/ in strict compliance with Mandate 8b (<= 120 lines facade).
+ * Mandates 8e, 8n, 8d (WCAG AAA contrast, zero emojis, compact desktop density).
  */
 
-import React, { useState, useEffect, useCallback } from "react";
-import {
-	Banknote, CheckCircle2, ChevronRight, CreditCard, DollarSign, FileText, Lock, LogOut,
-	Plus, Printer, QrCode, Receipt, RefreshCw, ShieldCheck, Wallet, X, Zap,
-} from "lucide-react";
-import { showToast } from "../GlobalToast.js";
-import { ReceiptPreview, type ReceiptItem } from "./ReceiptPreview.js";
+import React, { useState, useEffect } from "react";
+import { ReceiptPreview } from "./ReceiptPreview.js";
 import { CashRegisterPaymentPane } from "./CashRegisterPaymentPane.js";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
+import { type ShiftReceiptEntry } from "./cashRegisterDrawerData.js";
+import {
+	useCashRegisterDrawerState, DrawerHeader, DrawerTabs, DrawerShiftTelemetryTab,
+	DrawerReceiptsTab, DrawerCashOperationsTab, DrawerFooter,
+} from "./cashRegisterDrawer/index.js";
 import "./paymentModalStudio.css";
+
+export type { ShiftReceiptEntry };
 
 export interface CashRegisterDrawerProps {
 	readonly isOpen: boolean;
@@ -30,624 +28,86 @@ export interface CashRegisterDrawerProps {
 	readonly initialMethod?: any | undefined;
 }
 
-import {
-	type ShiftReceiptEntry,
-	DEFAULT_RECENT_RECEIPTS,
-} from "./cashRegisterDrawerData.js";
-export type { ShiftReceiptEntry };
-
 export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
-	isOpen,
-	onClose,
-	cashierFullName = "Врач-стоматолог / Кассир",
-	clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-	onOpenPaymentModal,
-	invoices,
-	activeInvoice,
-	onPaymentSuccess,
-	initialMethod,
+	isOpen, onClose, cashierFullName = "Врач-стоматолог / Кассир",
+	clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»", onOpenPaymentModal,
+	invoices, activeInvoice, onPaymentSuccess, initialMethod,
 }) => {
-	const [activeTab, setActiveTab] = useState<"payment" | "shift" | "receipts" | "operations">("payment");
-	const [selectedReceipt, setSelectedReceipt] = useState<ShiftReceiptEntry | null>(null);
-	const [cashInDrawerRub, setCashInDrawerRub] = useState<number>(0);
+	const state = useCashRegisterDrawerState(isOpen, cashierFullName, invoices);
 	const [selectedInvoice, setSelectedInvoice] = useState<any>(
 		activeInvoice || (invoices && invoices.length > 0 ? invoices[0] : null),
 	);
 
 	useEffect(() => {
-		if (activeInvoice) {
-			setSelectedInvoice(activeInvoice);
-		} else if (invoices && invoices.length > 0) {
-			setSelectedInvoice(invoices[0]);
-		}
+		if (activeInvoice) setSelectedInvoice(activeInvoice);
+		else if (invoices && invoices.length > 0) setSelectedInvoice(invoices[0]);
 	}, [activeInvoice, invoices]);
-
-	// Live 54-FZ Shift Telemetry State
-	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(true);
-	const [shiftNumber, setShiftNumber] = useState<number>(14);
-	const [openedAt, setOpenedAt] = useState<string>("09:00");
-	const [cashTotalRub, setCashTotalRub] = useState<number>(0);
-	const [cardTotalRub, setCardTotalRub] = useState<number>(0);
-	const [sbpTotalRub, setSbpTotalRub] = useState<number>(0);
-	const [grandTotalRub, setGrandTotalRub] = useState<number>(0);
-	const [receiptsCount, setReceiptsCount] = useState<number>(DEFAULT_RECENT_RECEIPTS.length);
-	const [recentReceipts, setRecentReceipts] = useState<readonly ShiftReceiptEntry[]>(DEFAULT_RECENT_RECEIPTS);
-
-	const shiftStats = {
-		shiftNumber,
-		isShiftOpen,
-		openedAt,
-		cashTotalRub,
-		cardTotalRub,
-		sbpTotalRub,
-		grandTotalRub,
-		receiptsCount,
-		refundsCount: 0,
-	};
-
-	// Live telemetry synchronizer
-	const fetchShiftTelemetry = useCallback(async () => {
-		try {
-			const authHeaders = denteAdminSecretRequestHeaders();
-			const [xRes, boxesRes] = await Promise.all([
-				fetch("/api/cash/x-report", { headers: authHeaders }).catch(() => null),
-				fetch("/api/cash/cash-box", { headers: authHeaders }).catch(() => null),
-			]);
-
-			if (xRes && xRes.ok) {
-				const xData = await xRes.json();
-				if (typeof xData.shiftNumber === "number") setShiftNumber(xData.shiftNumber);
-				if (typeof xData.status === "string") setIsShiftOpen(xData.status === "open");
-				if (xData.openedAt) {
-					const d = new Date(xData.openedAt);
-					if (!isNaN(d.getTime())) {
-						setOpenedAt(d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }));
-					}
-				}
-				if (typeof xData.totalIncomeRub === "number") {
-					setGrandTotalRub(xData.totalIncomeRub);
-				}
-				if (typeof xData.totalCashInDrawerRub === "number") {
-					setCashInDrawerRub(xData.totalCashInDrawerRub);
-					setCashTotalRub(xData.totalCashInDrawerRub);
-				}
-			}
-
-			if (boxesRes && boxesRes.ok) {
-				const bData = await boxesRes.json();
-				const boxes = Array.isArray(bData.data) ? bData.data : [];
-				const mainBox = boxes.find((b: any) => b.type === "main");
-				if (mainBox && typeof mainBox.balanceRub === "number") {
-					setCashInDrawerRub(mainBox.balanceRub);
-				}
-			}
-		} catch {
-			// Fail-soft: keep current state, zero doctor friction (Mandate 8e)
-		}
-	}, []);
-
-	useEffect(() => {
-		if (isOpen) {
-			fetchShiftTelemetry();
-		}
-	}, [isOpen, fetchShiftTelemetry]);
-
-	// Synchronize receipts from invoices prop if available
-	useEffect(() => {
-		if (invoices && invoices.length > 0) {
-			const mapped: ShiftReceiptEntry[] = invoices
-				.filter((inv: any) => inv.status === "paid" || inv.paidAmountRub > 0)
-				.slice(0, 10)
-				.map((inv: any) => ({
-					id: String(inv.id),
-					number: String(inv.number || inv.id).padStart(4, "0").slice(-4),
-					time: inv.paidAt
-						? new Date(inv.paidAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
-						: "14:30",
-					patientName: inv.patientName || "Пациент клиники",
-					totalRub: inv.paidAmountRub || inv.totalAmountRub || 0,
-					method: (inv.paymentMethod === "cash" ? "cash" : inv.paymentMethod === "sbp" ? "sbp" : "card") as ShiftReceiptEntry["method"],
-					items: (inv.items || []).map((it: any) => ({
-						name: it.name || it.title || "Стоматологическая услуга",
-						quantity: it.quantity || 1,
-						priceRub: it.priceRub || it.price || 0,
-						amountRub: it.amountRub || it.amount || 0,
-						code804n: it.code804n || "A16.07.002",
-					})),
-				}));
-			if (mapped.length > 0) {
-				setRecentReceipts(mapped);
-				setReceiptsCount(mapped.length);
-			}
-		}
-	}, [invoices]);
 
 	if (!isOpen) return null;
 
-	const handleCashDeposit = async (amt: number) => {
-		try {
-			const res = await fetch("/api/cash/cash-introduction", {
-				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify({
-					amountRub: amt,
-					reasonText: "Внесение разменного фонда",
-					cashierFullName,
-				}),
-			});
-			if (res.ok) {
-				const data = await res.json();
-				if (data.cashBox && typeof data.cashBox.balanceRub === "number") {
-					setCashInDrawerRub(data.cashBox.balanceRub);
-				} else {
-					setCashInDrawerRub((prev) => prev + amt);
-				}
-				showToast(`Внесение в кассу: +${amt.toLocaleString("ru-RU")} ₽ зафиксировано в 54-ФЗ`, "success");
-				fetchShiftTelemetry();
-			} else {
-				setCashInDrawerRub((prev) => prev + amt);
-				showToast(`Внесение в кассу: +${amt.toLocaleString("ru-RU")} ₽ зафиксировано`, "success");
-			}
-		} catch {
-			setCashInDrawerRub((prev) => prev + amt);
-			showToast(`Внесение в кассу: +${amt.toLocaleString("ru-RU")} ₽ зафиксировано`, "success");
+	const handleDrawerPayment = (newReceipt: ShiftReceiptEntry) => {
+		state.setRecentReceipts((prev) => [newReceipt, ...prev]);
+		state.setReceiptsCount((prev) => prev + 1);
+		state.setGrandTotalRub((prev) => prev + newReceipt.totalRub);
+		if (newReceipt.method === "sbp") state.setSbpTotalRub((prev) => prev + newReceipt.totalRub);
+		else if (newReceipt.method === "card") state.setCardTotalRub((prev) => prev + newReceipt.totalRub);
+		else if (newReceipt.method === "cash") {
+			state.setCashTotalRub((prev) => prev + newReceipt.totalRub);
+			state.setCashInDrawerRub((prev) => prev + newReceipt.totalRub);
 		}
-	};
-
-	const handleCashEncashment = async () => {
-		const amt = cashInDrawerRub;
-		try {
-			const res = await fetch("/api/cash/cash-withdrawal", {
-				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify({
-					amountRub: amt,
-					reasonText: "Инкассация наличной выручки",
-					cashierFullName,
-				}),
-			});
-			if (res.ok) {
-				setCashInDrawerRub(0);
-				showToast(`Инкассация: ${amt.toLocaleString("ru-RU")} ₽ успешно проведена в 54-ФЗ`, "info");
-				fetchShiftTelemetry();
-			} else {
-				setCashInDrawerRub(0);
-				showToast(`Инкассация: ${amt.toLocaleString("ru-RU")} ₽ изъято из кассы`, "info");
-			}
-		} catch {
-			setCashInDrawerRub(0);
-			showToast(`Инкассация: ${amt.toLocaleString("ru-RU")} ₽ изъято из кассы`, "info");
-		}
-	};
-
-	const handleXReport = async () => {
-		try {
-			const res = await fetch("/api/cash/x-report", {
-				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify({
-					cashierFullName,
-					shiftNumber,
-				}),
-			});
-			if (res.ok) {
-				const data = await res.json();
-				const inc = typeof data.totalIncomeRub === "number" ? data.totalIncomeRub : grandTotalRub;
-				showToast(`Х-отчёт (смена № ${data.shiftNumber || shiftNumber}): выручка ${inc.toLocaleString("ru-RU")} ₽ (без гашения)`, "info");
-			} else {
-				showToast("Х-отчёт (промежуточный без гашения) напечатан", "info");
-			}
-		} catch {
-			showToast("Х-отчёт (промежуточный без гашения) напечатан", "info");
-		}
-	};
-
-	const handleZReport = async () => {
-		try {
-			const res = await fetch("/api/fiscal/shift/close", {
-				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify({
-					cashierFullName,
-					shiftNumber,
-					countedCashRub: cashInDrawerRub,
-					force: true,
-				}),
-			});
-			if (res.ok) {
-				setIsShiftOpen(false);
-				showToast(`Z-отчёт: кассовая смена № ${shiftNumber} успешно закрыта! Данные переданы в ОФД`, "success");
-			} else {
-				setIsShiftOpen(false);
-				showToast(`Z-отчёт: кассовая смена № ${shiftNumber} закрыта`, "success");
-			}
-		} catch {
-			setIsShiftOpen(false);
-			showToast(`Z-отчёт: кассовая смена № ${shiftNumber} закрыта`, "success");
-		}
+		state.setSelectedReceipt(newReceipt);
+		onPaymentSuccess?.(selectedInvoice, newReceipt);
 	};
 
 	return (
-		<div
-			className="fixed inset-0 z-50 flex flex-col justify-end md:justify-end md:flex-row bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby="cash-register-drawer-title"
-			data-testid="cash-register-drawer"
-		>
+		<div className="fixed inset-0 z-50 flex flex-col justify-end md:justify-end md:flex-row bg-black/60 backdrop-blur-xs animate-in fade-in duration-150" role="dialog" aria-modal="true" aria-labelledby="cash-register-drawer-title" data-testid="cash-register-drawer">
 			<div className="bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border-t md:border-t-0 md:border-l border-[var(--line,#cbd5e1)] w-full max-w-full md:max-w-xl rounded-t-[24px] md:rounded-none max-h-[92dvh] md:max-h-full h-full shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom md:slide-in-from-right duration-200">
-				{/* Tactile Drag Handle (Mobile Only) */}
-				<div className="flex md:hidden justify-center pt-2.5 pb-0.5 select-none shrink-0">
-					<div className="mobile-drag-handle-bar" />
-				</div>
+				<DrawerHeader shiftNumber={state.shiftNumber} isShiftOpen={state.isShiftOpen} cashierFullName={cashierFullName} clinicLegalName={clinicLegalName} onClose={onClose} />
+				<DrawerTabs activeTab={state.activeTab} setActiveTab={state.setActiveTab} hasSelectedReceipt={!!state.selectedReceipt} setSelectedReceipt={state.setSelectedReceipt} receiptsCount={state.recentReceipts.length} />
 
-				{/* Drawer Header */}
-				<div className="p-3.5 sm:p-4 border-b border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between shrink-0">
-					<div className="flex items-center gap-2.5">
-						<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 flex items-center justify-center shrink-0">
-							<Wallet size={18} />
-						</div>
-						<div>
-							<h3 id="cash-register-drawer-title" className="text-sm sm:text-base font-extrabold m-0 text-[var(--ink,#0f172a)] flex items-center gap-2">
-								<span>Касса и чеки</span>
-								<span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-									<CheckCircle2 size={12} />
-									<span>{`Смена № ${shiftNumber} ${isShiftOpen ? "открыта" : "закрыта"}`}</span>
-								</span>
-							</h3>
-							<p className="text-xs text-[var(--muted,#64748b)] m-0 truncate max-w-[200px] sm:max-w-none">
-								{cashierFullName} • {clinicLegalName}
-							</p>
-						</div>
-					</div>
-
-					<button
-						type="button"
-						onClick={onClose}
-						className="w-9 h-9 rounded-full border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
-						aria-label="Закрыть шторку кассы"
-						data-testid="btn-close-cash-register-drawer"
-					>
-						<X size={16} />
-					</button>
-				</div>
-
-				{/* Navigation Tabs */}
-				<div className="cash-drawer-tabs">
-					<button
-						type="button"
-						onClick={() => {
-							setActiveTab("payment");
-							setSelectedReceipt(null);
-						}}
-						className={`cash-drawer-tab-btn ${
-							activeTab === "payment" && !selectedReceipt ? "is-active" : ""
-						}`}
-						data-testid="tab-register-payment"
-					>
-						<QrCode size={14} />
-						<span>Касса & СБП</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => {
-							setActiveTab("shift");
-							setSelectedReceipt(null);
-						}}
-						className={`cash-drawer-tab-btn ${
-							activeTab === "shift" && !selectedReceipt ? "is-active" : ""
-						}`}
-						data-testid="tab-register-shift"
-					>
-						<ShieldCheck size={14} />
-						<span>Телеметрия смены</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => setActiveTab("receipts")}
-						className={`cash-drawer-tab-btn ${
-							activeTab === "receipts" || selectedReceipt ? "is-active" : ""
-						}`}
-						data-testid="tab-register-receipts"
-					>
-						<Receipt size={14} />
-						<span>Чеки смены ({recentReceipts.length})</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => {
-							setActiveTab("operations");
-							setSelectedReceipt(null);
-						}}
-						className={`cash-drawer-tab-btn ${
-							activeTab === "operations" ? "is-active" : ""
-						}`}
-						data-testid="tab-register-operations"
-					>
-						<Zap size={14} />
-						<span>Операции с наличностью</span>
-					</button>
-				</div>
-
-				{/* Content Body */}
 				<div className="flex-1 overflow-y-auto p-4 space-y-4">
-					{selectedReceipt ? (
+					{state.selectedReceipt ? (
 						<div className="space-y-3">
-							<button
-								type="button"
-								onClick={() => setSelectedReceipt(null)}
-								className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1 cursor-pointer"
-								data-testid="btn-back-to-receipts-list"
-							>
+							<button type="button" onClick={() => state.setSelectedReceipt(null)} className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1 cursor-pointer" data-testid="btn-back-to-receipts-list">
 								← Назад к списку чеков
 							</button>
 							<ReceiptPreview
-								receiptNumber={selectedReceipt.number}
-								totalDueRub={selectedReceipt.totalRub}
-								patientName={selectedReceipt.patientName}
-								items={selectedReceipt.items}
+								receiptNumber={state.selectedReceipt.number} totalDueRub={state.selectedReceipt.totalRub}
+								patientName={state.selectedReceipt.patientName} items={state.selectedReceipt.items}
 								payments={{
-									cardRub: selectedReceipt.method === "card" ? selectedReceipt.totalRub : 0,
-									sbpRub: selectedReceipt.method === "sbp" ? selectedReceipt.totalRub : 0,
-									cashRub: selectedReceipt.method === "cash" ? selectedReceipt.totalRub : 0,
+									cardRub: state.selectedReceipt.method === "card" ? state.selectedReceipt.totalRub : 0,
+									sbpRub: state.selectedReceipt.method === "sbp" ? state.selectedReceipt.totalRub : 0,
+									cashRub: state.selectedReceipt.method === "cash" ? state.selectedReceipt.totalRub : 0,
 								}}
 							/>
 						</div>
-					) : activeTab === "payment" || activeTab === "shift" ? (
+					) : state.activeTab === "payment" || state.activeTab === "shift" ? (
 						<>
-							<div hidden={activeTab !== "payment"} style={{ display: activeTab === "payment" ? undefined : "none" }}>
+							<div hidden={state.activeTab !== "payment"} style={{ display: state.activeTab === "payment" ? undefined : "none" }}>
 								<CashRegisterPaymentPane
-									defaultAmountRub={
-										selectedInvoice?.totalAmountRub ??
-										selectedInvoice?.amountRub ??
-										(invoices && invoices[0]?.totalAmountRub ? invoices[0].totalAmountRub : 8500)
-									}
-									cashierFullName={cashierFullName}
-									clinicLegalName={clinicLegalName}
-									activeInvoice={selectedInvoice}
-									invoices={invoices}
-									onSelectInvoice={setSelectedInvoice}
-									initialMethod={initialMethod}
-									patientDepositRub={selectedInvoice?.patientDepositRub ?? 0}
-									patientFamilyBalanceRub={selectedInvoice?.patientFamilyBalanceRub ?? 0}
-									onPaymentCompleted={(newReceipt) => {
-										setRecentReceipts((prev) => [newReceipt, ...prev]);
-										setReceiptsCount((prev) => prev + 1);
-										setGrandTotalRub((prev) => prev + newReceipt.totalRub);
-										if (newReceipt.method === "sbp") {
-											setSbpTotalRub((prev) => prev + newReceipt.totalRub);
-										} else if (newReceipt.method === "card") {
-											setCardTotalRub((prev) => prev + newReceipt.totalRub);
-										} else if (newReceipt.method === "cash") {
-											setCashTotalRub((prev) => prev + newReceipt.totalRub);
-											setCashInDrawerRub((prev) => prev + newReceipt.totalRub);
-										}
-										setSelectedReceipt(newReceipt);
-										onPaymentSuccess?.(selectedInvoice, newReceipt);
-									}}
-									onOpenFullSplitModal={onOpenPaymentModal}
+									defaultAmountRub={selectedInvoice?.totalAmountRub ?? selectedInvoice?.amountRub ?? (invoices && invoices[0]?.totalAmountRub ? invoices[0].totalAmountRub : 8500)}
+									cashierFullName={cashierFullName} clinicLegalName={clinicLegalName} activeInvoice={selectedInvoice} invoices={invoices} onSelectInvoice={setSelectedInvoice} initialMethod={initialMethod}
+									patientDepositRub={selectedInvoice?.patientDepositRub ?? 0} patientFamilyBalanceRub={selectedInvoice?.patientFamilyBalanceRub ?? 0}
+									onPaymentCompleted={handleDrawerPayment} onOpenFullSplitModal={onOpenPaymentModal}
 								/>
 							</div>
-							<div hidden={activeTab !== "shift"} style={{ display: activeTab === "shift" ? undefined : "none" }} className="space-y-4">
-							{/* Revenue Overview Card */}
-							<div className="p-4 rounded-2xl bg-gradient-to-br from-teal-500/10 to-emerald-500/10 border border-teal-500/20 space-y-3">
-								<span className="text-xs font-bold text-teal-800 dark:text-teal-300 uppercase tracking-wide block">
-									Выручка за смену (8 чеков)
-								</span>
-								<div className="text-2xl sm:text-3xl font-black font-mono text-[var(--ink,#0f172a)]" data-testid="shift-grand-total">
-									{shiftStats.grandTotalRub.toLocaleString("ru-RU")} ₽
-								</div>
-								<div className="grid grid-cols-3 gap-2 pt-2 border-t border-teal-500/20 text-xs">
-									<div className="space-y-0.5">
-										<span className="text-[11px] text-[var(--muted,#64748b)] block">Карты</span>
-										<strong className="font-mono text-blue-600 dark:text-blue-400">
-											{shiftStats.cardTotalRub.toLocaleString("ru-RU")} ₽
-										</strong>
-									</div>
-									<div className="space-y-0.5">
-										<span className="text-[11px] text-[var(--muted,#64748b)] block">СБП QR</span>
-										<strong className="font-mono text-teal-600 dark:text-teal-400">
-											{shiftStats.sbpTotalRub.toLocaleString("ru-RU")} ₽
-										</strong>
-									</div>
-									<div className="space-y-0.5">
-										<span className="text-[11px] text-[var(--muted,#64748b)] block">Наличные</span>
-										<strong className="font-mono text-emerald-600 dark:text-emerald-400">
-											{shiftStats.cashTotalRub.toLocaleString("ru-RU")} ₽
-										</strong>
-									</div>
-								</div>
+							<div hidden={state.activeTab !== "shift"} style={{ display: state.activeTab === "shift" ? undefined : "none" }}>
+								<DrawerShiftTelemetryTab
+									grandTotalRub={state.grandTotalRub} cardTotalRub={state.cardTotalRub} sbpTotalRub={state.sbpTotalRub}
+									cashTotalRub={state.cashTotalRub} cashInDrawerRub={state.cashInDrawerRub} recentReceipts={state.recentReceipts}
+									onSelectReceipt={state.setSelectedReceipt} onGoToAllReceipts={() => state.setActiveTab("receipts")}
+									onXReport={state.handleXReport} onZReport={state.handleZReport}
+								/>
 							</div>
-
-							{/* Cash in drawer status */}
-							<div className="p-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] flex items-center justify-between">
-								<div className="flex items-center gap-2.5">
-									<Banknote size={20} className="text-emerald-600" />
-									<div>
-										<span className="text-xs font-bold text-[var(--ink,#0f172a)] block">
-											В денежном ящике (нал)
-										</span>
-										<span className="text-[11px] text-[var(--muted,#64748b)]">
-											С учетом размена на начало смены
-										</span>
-									</div>
-								</div>
-								<span className="text-lg font-mono font-black text-emerald-700 dark:text-emerald-400" data-testid="cash-in-drawer-amount">
-									{cashInDrawerRub.toLocaleString("ru-RU")} ₽
-								</span>
-							</div>
-
-							{/* Quick 1-Click Operations */}
-							<div className="space-y-2">
-								<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wide block">
-									Операции кассира (Studio Clinical HIG)
-								</span>
-								<div className="grid grid-cols-2 gap-2">
-									<button
-										type="button"
-										onClick={handleXReport}
-										className="p-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-bold flex items-center gap-2 cursor-pointer transition-all active:scale-98"
-										data-testid="btn-x-report"
-									>
-										<FileText size={16} className="text-teal-600" />
-										<span>Х-отчёт (без гашения)</span>
-									</button>
-									<button
-										type="button"
-										onClick={handleZReport}
-										className="p-3 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50/50 dark:bg-rose-950/30 hover:bg-rose-100 text-rose-800 dark:text-rose-200 text-xs font-bold flex items-center gap-2 cursor-pointer transition-all active:scale-98"
-										data-testid="btn-z-report"
-									>
-										<Lock size={16} className="text-rose-600" />
-										<span>Закрыть смену (Z-отчёт)</span>
-									</button>
-								</div>
-							</div>
-
-							{/* Recent Activity List */}
-							<div className="space-y-2 pt-2">
-								<div className="flex items-center justify-between">
-									<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wide">
-										Последние чеки смены
-									</span>
-									<button
-										type="button"
-										onClick={() => setActiveTab("receipts")}
-										className="text-xs text-teal-600 dark:text-teal-400 font-bold hover:underline cursor-pointer"
-									>
-										Все чеки →
-									</button>
-								</div>
-								<div className="space-y-1.5">
-									{recentReceipts.map((rec) => (
-										<div
-											key={rec.id}
-											onClick={() => setSelectedReceipt(rec)}
-											className="p-2.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-teal-500 flex items-center justify-between text-xs cursor-pointer transition-all"
-											data-testid={`shift-receipt-item-${rec.number}`}
-										>
-											<div className="space-y-0.5">
-												<div className="font-bold text-[var(--ink,#0f172a)] flex items-center gap-2">
-													<span>Чек № {rec.number}</span>
-													<span className="text-[10px] text-[var(--muted,#64748b)] font-normal">{rec.time}</span>
-												</div>
-												<div className="text-[11px] text-[var(--muted,#64748b)] truncate max-w-[220px]">
-													{rec.patientName}
-												</div>
-											</div>
-											<div className="text-right">
-												<div className="font-mono font-bold text-slate-900 dark:text-slate-100">
-													{rec.totalRub.toLocaleString("ru-RU")} ₽
-												</div>
-												<span className="text-[10px] uppercase font-bold text-teal-600 dark:text-teal-400">
-													{rec.method === "card" ? "Карта" : rec.method === "sbp" ? "СБП" : "Наличные"}
-												</span>
-											</div>
-										</div>
-									))}
-								</div>
-							</div>
-						</div>
 						</>
-					) : activeTab === "receipts" ? (
-						<div className="space-y-2">
-							<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wide block">
-								Журнал фискальных чеков смены № 14
-							</span>
-							<div className="space-y-2">
-								{recentReceipts.map((rec) => (
-									<div
-										key={rec.id}
-										onClick={() => setSelectedReceipt(rec)}
-										className="p-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-teal-500 flex items-center justify-between text-xs cursor-pointer transition-all shadow-2xs"
-									>
-										<div className="space-y-1">
-											<div className="font-extrabold text-[var(--ink,#0f172a)] flex items-center gap-2">
-												<span>Чек № {rec.number}</span>
-												<span className="text-teal-600 font-normal">({rec.time})</span>
-											</div>
-											<div className="text-slate-600 dark:text-slate-300 font-medium">
-												{rec.patientName}
-											</div>
-											<div className="text-[11px] text-[var(--muted,#64748b)]">
-												{rec.items.length} услуги • Без НДС (54-ФЗ)
-											</div>
-										</div>
-										<div className="text-right space-y-1">
-											<div className="font-mono font-black text-sm text-emerald-700 dark:text-emerald-400">
-												{rec.totalRub.toLocaleString("ru-RU")} ₽
-											</div>
-											<span className="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20 inline-block">
-												{rec.method === "card" ? "Терминал" : rec.method === "sbp" ? "СБП QR" : "Наличные"}
-											</span>
-										</div>
-									</div>
-								))}
-							</div>
-						</div>
+					) : state.activeTab === "receipts" ? (
+						<DrawerReceiptsTab recentReceipts={state.recentReceipts} onSelectReceipt={state.setSelectedReceipt} />
 					) : (
-						/* Operations Tab */
-						<div className="space-y-4">
-							<div className="p-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] space-y-3">
-								<span className="text-xs font-bold text-[var(--ink,#0f172a)] block">
-									Быстрое внесение размена в кассу:
-								</span>
-								<div className="grid grid-cols-3 gap-2">
-									{[1000, 2000, 5000].map((amt) => (
-										<button
-											key={amt}
-											type="button"
-											onClick={() => handleCashDeposit(amt)}
-											className="h-10 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 text-xs font-extrabold cursor-pointer hover:bg-emerald-100 transition-all font-mono"
-											data-testid={`btn-deposit-${amt}`}
-										>
-											+{amt.toLocaleString("ru-RU")} ₽
-										</button>
-									))}
-								</div>
-							</div>
-
-							<div className="p-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] space-y-3">
-								<span className="text-xs font-bold text-[var(--ink,#0f172a)] block">
-									Инкассация наличных (изъятие):
-								</span>
-								<p className="text-xs text-[var(--muted,#64748b)] m-0">
-									Текущий остаток в ящике: <strong>{cashInDrawerRub.toLocaleString("ru-RU")} ₽</strong>
-								</p>
-								<button
-									type="button"
-									onClick={handleCashEncashment}
-									className="w-full h-10 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-98"
-									data-testid="btn-encash-all"
-								>
-									<LogOut size={15} />
-									<span>Инкассировать всю наличность ({cashInDrawerRub.toLocaleString("ru-RU")} ₽)</span>
-								</button>
-							</div>
-						</div>
+						<DrawerCashOperationsTab cashInDrawerRub={state.cashInDrawerRub} onCashDeposit={state.handleCashDeposit} onCashEncashment={state.handleCashEncashment} />
 					)}
 				</div>
 
-				{/* Fixed Drawer Footer (Natural Thumb Zone) */}
-				<div className="p-3.5 border-t border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] flex items-center justify-between gap-2.5 shrink-0 pb-[max(14px,env(safe-area-inset-bottom))]">
-					<button
-						type="button"
-						onClick={onClose}
-						className="min-h-[46px] px-4 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer"
-					>
-						Закрыть
-					</button>
-
-					<button
-						type="button"
-						onClick={() => { setActiveTab("payment"); setSelectedReceipt(null); }}
-						className="flex-1 min-h-[46px] px-4 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-sm font-extrabold flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98 transition-all"
-						data-testid="btn-drawer-new-payment"
-					>
-						<Plus size={18} />
-						<span>Принять оплату</span>
-					</button>
-				</div>
+				<DrawerFooter onClose={onClose} onNewPayment={() => { state.setActiveTab("payment"); state.setSelectedReceipt(null); }} />
 			</div>
 		</div>
 	);

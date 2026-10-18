@@ -68,8 +68,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 					showReceiptSidePanel={showReceiptSidePanel} setShowReceiptSidePanel={setShowReceiptSidePanel}
 					mobileTab={mobileTab} setMobileTab={setMobileTab} onClose={onClose}
 				/>
-				<div className="flex-1 min-h-0 overflow-y-auto flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-[var(--line,#cbd5e1)]">
-					<div className={`flex-1 min-h-0 p-2.5 sm:p-3 space-y-2.5 overflow-y-auto ${mobileTab === "receipt" ? "hidden md:block" : "block"}`}>
+				<div className="flex-1 min-h-0 overflow-y-auto lg:overflow-y-hidden flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-[var(--line,#cbd5e1)]">
+					<div className={`flex-1 min-h-0 p-2.5 sm:p-3 pb-8 sm:pb-10 space-y-2.5 overflow-y-auto ${mobileTab === "receipt" ? "hidden md:block" : "block"}`}>
 						<PaymentBanners
 							totalDueRub={discountsHook.totalDueRub} rawTotalDueRub={rawTotalDueRub}
 							patientDebtRub={patientDebtRub} patientDepositRub={patientDepositRub}
