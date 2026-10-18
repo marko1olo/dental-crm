@@ -37,7 +37,7 @@ export const PresenterMobileTierBar: React.FC<PresenterMobileTierBarProps> = ({
 							</span>
 							{t.tierId === "standard" && <Sparkles size={12} className="text-amber-400 shrink-0" />}
 						</div>
-						<div className="text-[11px] font-mono opacity-90 font-bold">
+						<div className="text-[11px] font-mono opacity-90 font-bold tier-price">
 							{t.totalRub.toLocaleString("ru-RU")} ₽
 						</div>
 					</button>

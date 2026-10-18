@@ -25,10 +25,10 @@
 }
 
 .treatment-presenter-close-btn {
-	min-width: 32px;
-	min-height: 32px;
-	width: 32px;
-	height: 32px;
+	min-width: 36px;
+	min-height: 36px;
+	width: 36px;
+	height: 36px;
 	border-radius: var(--tp-radius-md, 8px);
 	border: 1px solid var(--tp-border, var(--line));
 	background: var(--tp-bg, var(--paper));

@@ -95,7 +95,7 @@ export const TreatmentPlanPresenterHeader: React.FC<TreatmentPlanPresenterHeader
 					<button
 						type="button"
 						onClick={onCopyTiersSummary}
-						className="secondary-button min-h-[44px] min-w-[44px] sm:min-w-0 sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg text-[13px] font-medium bg-[var(--tp-surface-soft,var(--paper-soft))] hover:bg-[var(--tp-surface,var(--paper))] text-[var(--tp-text-main,var(--ink))] border border-[var(--tp-border,var(--line))] shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all touch-manipulation hover:border-[var(--tp-primary,var(--teal))]"
+						className="secondary-button min-h-[44px] min-w-[44px] sm:min-w-0 sm:min-h-[36px] sm:h-9 px-2.5 sm:px-3 rounded-lg text-[13px] font-medium bg-[var(--tp-surface-soft,var(--paper-soft))] hover:bg-[var(--tp-surface,var(--paper))] text-[var(--tp-text-main,var(--ink))] border border-[var(--tp-border,var(--line))] shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all touch-manipulation hover:border-[var(--tp-primary,var(--teal))]"
 						title="Скопировать смету для пациента (WhatsApp / Telegram)"
 						aria-label="Скопировать смету"
 						data-testid="presenter-copy-tiers-summary-btn"
@@ -107,7 +107,7 @@ export const TreatmentPlanPresenterHeader: React.FC<TreatmentPlanPresenterHeader
 					<button
 						type="button"
 						onClick={onPrintAppendix}
-						className="treatment-presenter-header-print-btn secondary-button hidden md:inline-flex min-h-[32px] h-8 px-2.5 rounded-lg text-[13px] font-medium bg-[var(--tp-surface-soft,var(--paper-soft))] hover:bg-[var(--tp-surface,var(--paper))] text-[var(--tp-text-main,var(--ink))] border border-[var(--tp-border,var(--line))] shadow-xs items-center gap-1.5 cursor-pointer transition-all touch-manipulation hover:border-[var(--tp-primary,var(--teal))]"
+						className="treatment-presenter-header-print-btn secondary-button hidden md:inline-flex min-h-[36px] h-9 px-2.5 rounded-lg text-[13px] font-medium bg-[var(--tp-surface-soft,var(--paper-soft))] hover:bg-[var(--tp-surface,var(--paper))] text-[var(--tp-text-main,var(--ink))] border border-[var(--tp-border,var(--line))] shadow-xs items-center gap-1.5 cursor-pointer transition-all touch-manipulation hover:border-[var(--tp-primary,var(--teal))]"
 						title="Печать сметы плана к договору"
 						data-testid="presenter-header-print-btn"
 					>
@@ -118,7 +118,7 @@ export const TreatmentPlanPresenterHeader: React.FC<TreatmentPlanPresenterHeader
 					<button
 						type="button"
 						onClick={onToggleFullscreen}
-						className="treatment-presenter-fullscreen-btn icon-button hidden sm:inline-flex sm:w-8 sm:h-8 sm:min-w-[32px] sm:min-h-[32px] rounded-lg text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)] hover:bg-[var(--tp-surface-soft)] border border-[var(--tp-border)] bg-[var(--tp-bg)] items-center justify-center cursor-pointer transition-all"
+						className="treatment-presenter-fullscreen-btn icon-button hidden sm:inline-flex sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] rounded-lg text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)] hover:bg-[var(--tp-surface-soft)] border border-[var(--tp-border)] bg-[var(--tp-bg)] items-center justify-center cursor-pointer transition-all"
 						title={isFullscreen ? "Выйти из полноэкранного режима" : "Полноэкранный режим"}
 						aria-label={isFullscreen ? "Выйти из полноэкранного режима" : "Полноэкранный режим"}
 						data-testid="presenter-fullscreen-btn"
@@ -129,7 +129,7 @@ export const TreatmentPlanPresenterHeader: React.FC<TreatmentPlanPresenterHeader
 					<button
 						type="button"
 						onClick={onClose}
-						className="treatment-presenter-close-btn icon-button w-11 h-11 sm:w-8 sm:h-8 sm:min-w-[32px] sm:min-h-[32px] rounded-lg"
+						className="treatment-presenter-close-btn icon-button w-11 h-11 sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] rounded-lg"
 						aria-label="Закрыть модальное окно"
 						data-testid="close-treatment-presenter-btn"
 					>
