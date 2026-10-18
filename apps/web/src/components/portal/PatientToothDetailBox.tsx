@@ -1,27 +1,19 @@
 /**
  * PatientToothDetailBox.tsx
  * (DOMAIN: PATIENT PORTAL & CLINICAL TRANSPARENCY)
- *
- * Detailed card showing patient-friendly clinical status, assigned procedures,
- * active warranty certificates, and anti-anxiety reassurance for a selected tooth.
+ * Compliant with Mandate 8b (<= 120 lines).
  */
 
 import React, { memo } from "react";
 import { Heart, ShieldCheck, X, Zap } from "lucide-react";
-import {
-	type PatientToothInfo,
-	getPatientToothStatusColor,
-} from "./patientFriendlyOdontogramEngine.js";
+import { type PatientToothInfo, getPatientToothStatusColor } from "./patientFriendlyOdontogramEngine";
 
 export interface PatientToothDetailBoxProps {
 	readonly selectedTooth: PatientToothInfo;
 	readonly onClose: () => void;
 }
 
-export const PatientToothDetailBox: React.FC<PatientToothDetailBoxProps> = memo(({
-	selectedTooth,
-	onClose,
-}) => {
+export const PatientToothDetailBox: React.FC<PatientToothDetailBoxProps> = memo(({ selectedTooth, onClose }) => {
 	const color = getPatientToothStatusColor(selectedTooth.status);
 
 	return (
@@ -45,17 +37,7 @@ export const PatientToothDetailBox: React.FC<PatientToothDetailBoxProps> = memo(
 						<strong style={{ fontSize: "15px", color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 							{selectedTooth.humanNameRu}
 						</strong>
-						<span
-							style={{
-								padding: "2px 8px",
-								borderRadius: "12px",
-								fontSize: "12px",
-								fontWeight: 800,
-								backgroundColor: color.light,
-								color: color.border,
-								border: `1px solid ${color.border}`,
-							}}
-						>
+						<span style={{ padding: "2px 8px", borderRadius: "12px", fontSize: "12px", fontWeight: 800, backgroundColor: color.light, color: color.border, border: `1px solid ${color.border}` }}>
 							{color.badgeText}
 						</span>
 					</div>
@@ -86,29 +68,13 @@ export const PatientToothDetailBox: React.FC<PatientToothDetailBoxProps> = memo(
 				</button>
 			</div>
 
-			{/* Assigned Procedures & Treatment Plan Details */}
-			<div
-				style={{
-					backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))",
-					border: "1px solid var(--pc-border, var(--glass-border, #e2e8f0))",
-					borderRadius: "8px",
-					padding: "10px 12px",
-					display: "flex",
-					flexDirection: "column",
-					gap: "4px",
-					fontSize: "12px",
-				}}
-			>
+			<div style={{ backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))", border: "1px solid var(--pc-border, var(--glass-border, #e2e8f0))", borderRadius: "8px", padding: "10px 12px", display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
 				<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--pc-primary, #0d9488)", fontWeight: 700 }}>
 					<Zap size={14} />
 					<span>Назначенные процедуры и план лечения:</span>
 				</div>
 				<div style={{ color: "var(--pc-text-main, var(--ink, #0f172a))", lineHeight: "1.4" }}>
-					{selectedTooth.plannedStageTitleRu ||
-						selectedTooth.procedureDescriptionRu ||
-						(selectedTooth.status === "healthy"
-							? "Контрольный осмотр и поддержание профессиональной гигиены (патологий не выявлено)"
-							: "Плановый лечебный этап по согласованному плану")}
+					{selectedTooth.plannedStageTitleRu || selectedTooth.procedureDescriptionRu || (selectedTooth.status === "healthy" ? "Контрольный осмотр и поддержание профессиональной гигиены (патологий не выявлено)" : "Плановый лечебный этап по согласованному плану")}
 				</div>
 			</div>
 
@@ -119,26 +85,12 @@ export const PatientToothDetailBox: React.FC<PatientToothDetailBoxProps> = memo(
 				</div>
 			)}
 
-			{/* Anti-anxiety reassurance note */}
-			<div
-				style={{
-					backgroundColor: "rgba(13, 148, 136, 0.08)",
-					border: "1px solid rgba(13, 148, 136, 0.2)",
-					borderRadius: "6px",
-					padding: "8px 10px",
-					fontSize: "12px",
-					color: "var(--pc-text-muted, #94a3b8)",
-					display: "flex",
-					alignItems: "center",
-					gap: "6px",
-				}}
-			>
+			<div style={{ backgroundColor: "rgba(13, 148, 136, 0.08)", border: "1px solid rgba(13, 148, 136, 0.2)", borderRadius: "6px", padding: "8px 10px", fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)", display: "flex", alignItems: "center", gap: "6px" }}>
 				<Heart size={14} style={{ color: "var(--pc-primary, #0d9488)", flexShrink: 0 }} />
-				<span>
-					Все манипуляции выполняются под 100% анестезией Septanest с мягкой гелевой премедикацией места укола. <strong>Никакой боли.</strong>
-				</span>
+				<span>Все манипуляции выполняются под 100% анестезией Septanest с мягкой гелевой премедикацией места укола. <strong>Никакой боли.</strong></span>
 			</div>
 		</div>
 	);
 });
+
 PatientToothDetailBox.displayName = "PatientToothDetailBox";

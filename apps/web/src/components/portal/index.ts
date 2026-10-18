@@ -19,6 +19,7 @@ export * from "./PatientBudgetSignView";
 export * from "../booking/BookingConfirmationView";
 export * from "./PatientFriendlyOdontogram.js";
 export * from "./patientFriendlyOdontogramEngine.js";
+export * from "./patientOdontogram";
 export * from "./PatientToothDetailBox.js";
 export * from "./PatientPlanView.js";
 export * from "./PatientPortalTreatmentStageCard.js";

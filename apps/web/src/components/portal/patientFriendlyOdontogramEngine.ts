@@ -363,7 +363,7 @@ export function calculateDentalHealthIndex(
 
 	if (sanitationPercent >= 90) {
 		badgeStatus = "excellent";
-		statusLabelRu = "Отличное здоровье зубов";
+		statusLabelRu = "Отличный уровень санации зубов";
 		encouragingNoteRu = "Зубы полностью здоровы и вылечены! Соблюдайте профгигиену 1 раз в 6 месяцев для сохранения здоровья и гарантии.";
 	} else if (sanitationPercent < 70) {
 		badgeStatus = "needs_attention";
@@ -378,7 +378,7 @@ export function calculateDentalHealthIndex(
 		needsTreatmentCount,
 		missingOrImplantCount,
 		sanitationPercent,
-		formattedIndexRu: `Индекс здоровья зубов: ${sanitationPercent}% • Вылечено ${healthyCount} зубов • Требуют внимания ${needsTreatmentCount} зубов`,
+		formattedIndexRu: `Индекс санации: ${sanitationPercent}% • Вылечено ${healthyCount} зубов • Требуют внимания ${needsTreatmentCount} зубов`,
 		badgeStatus,
 		statusLabelRu,
 		encouragingNoteRu,
