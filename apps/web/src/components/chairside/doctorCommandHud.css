@@ -1,0 +1,334 @@
+/**
+ * @file doctorCommandHud.css
+ * @description Стили командного HUD врача у кресла (Chairside Doctor Command HUD).
+ * Соответствует Apple HIG Spotlight & DENTE Design Tokens (frontend.md).
+ */
+
+.doctor-command-hud-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 99999;
+	background: rgba(0, 0, 0, 0.45);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	padding-top: clamp(40px, 12vh, 120px);
+	padding-inline: 16px;
+	animation: denteHudFadeIn 0.15s ease-out;
+}
+
+@keyframes denteHudFadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+.doctor-command-hud-modal {
+	width: 100%;
+	max-width: 640px;
+	background: var(--paper-strong);
+	border: 1px solid var(--line-strong, var(--line));
+	border-radius: 16px;
+	box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05);
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	animation: denteHudSlideDown 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes denteHudSlideDown {
+	from {
+		opacity: 0;
+		transform: scale(0.97) translateY(-8px);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+}
+
+/* 1-строчный четкий инпут поиска */
+.doctor-command-hud-search-bar {
+	position: relative;
+	display: flex;
+	align-items: center;
+	padding: 8px 16px;
+	border-bottom: 1px solid var(--line);
+	background: var(--paper-strong);
+}
+
+.doctor-command-hud-search-icon {
+	position: absolute;
+	left: 16px;
+	top: 50%;
+	transform: translateY(-50%);
+	color: var(--teal);
+	pointer-events: none;
+}
+
+.doctor-command-hud-input {
+	width: 100%;
+	height: 48px;
+	padding-left: 38px;
+	padding-right: 76px;
+	background: transparent;
+	border: none;
+	outline: none;
+	font-size: 15px;
+	font-weight: 500;
+	color: var(--ink);
+	line-height: 1.4;
+}
+
+.doctor-command-hud-input::placeholder {
+	color: var(--muted);
+	opacity: 0.85;
+}
+
+.doctor-command-hud-clear-btn {
+	position: absolute;
+	right: 48px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 24px;
+	height: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.doctor-command-hud-clear-btn:hover {
+	color: var(--ink);
+	background: var(--paper);
+}
+
+.doctor-command-hud-kbd-badge {
+	position: absolute;
+	right: 14px;
+	top: 50%;
+	transform: translateY(-50%);
+	padding: 3px 7px;
+	font-size: 11px;
+	font-weight: 600;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	color: var(--muted);
+	pointer-events: none;
+}
+
+/* Список подсказок */
+.doctor-command-hud-results {
+	max-height: 380px;
+	overflow-y: auto;
+	padding: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	background: var(--paper-strong);
+}
+
+.doctor-command-hud-results::-webkit-scrollbar {
+	width: 6px;
+}
+
+.doctor-command-hud-results::-webkit-scrollbar-thumb {
+	background: var(--line);
+	border-radius: 3px;
+}
+
+.doctor-command-hud-empty {
+	padding: 32px 16px;
+	text-align: center;
+	color: var(--muted);
+	font-size: 13px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+}
+
+/* Элемент списка */
+.doctor-command-hud-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 14px;
+	border-radius: 10px;
+	background: transparent;
+	border: 1px solid transparent;
+	cursor: pointer;
+	text-align: left;
+	width: 100%;
+	transition: background 0.1s ease, border-color 0.1s ease;
+	user-select: none;
+}
+
+.doctor-command-hud-item:hover {
+	background: var(--paper-soft);
+}
+
+.doctor-command-hud-item.is-selected {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.14));
+	border-color: var(--teal);
+}
+
+.doctor-command-hud-item-left {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+	flex: 1;
+}
+
+.doctor-command-hud-item-icon-wrap {
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--teal);
+	flex-shrink: 0;
+}
+
+.doctor-command-hud-item.is-selected .doctor-command-hud-item-icon-wrap {
+	background: var(--teal);
+	color: #ffffff;
+	border-color: var(--teal);
+}
+
+.doctor-command-hud-item-content {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	gap: 2px;
+}
+
+.doctor-command-hud-item-title {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+	white-space: normal;
+	line-height: 1.3;
+}
+
+.doctor-command-hud-item-subtitle {
+	font-size: 11px;
+	font-weight: 400;
+	color: var(--muted);
+	white-space: normal;
+	line-height: 1.35;
+}
+
+.doctor-command-hud-item-right {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+	margin-left: 12px;
+}
+
+.doctor-command-hud-category-chip {
+	padding: 2px 8px;
+	font-size: 10px;
+	font-weight: 500;
+	border-radius: 6px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--muted);
+}
+
+.doctor-command-hud-action-kbd {
+	padding: 2px 6px;
+	font-size: 10px;
+	font-weight: 600;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 5px;
+	color: var(--ink);
+}
+
+.doctor-command-hud-item.is-selected .doctor-command-hud-action-kbd {
+	background: var(--teal);
+	color: #ffffff;
+	border-color: var(--teal);
+}
+
+/* Нижний статус-бар навигации клавиатуры */
+.doctor-command-hud-footer {
+	padding: 10px 16px;
+	background: var(--paper-soft);
+	border-top: 1px solid var(--line);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 11px;
+	color: var(--muted);
+	user-select: none;
+}
+
+.doctor-command-hud-hints {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.doctor-command-hud-hint-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.doctor-command-hud-hint-item kbd {
+	padding: 1px 5px;
+	font-size: 10px;
+	font-weight: 600;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 4px;
+	color: var(--ink);
+}
+
+.doctor-command-hud-version-tag {
+	font-size: 10px;
+	font-weight: 500;
+	color: var(--muted);
+	opacity: 0.75;
+}
+
+/* Анимация подсветки зуба в одонтограмме при фокусе из HUD */
+.dente-tooth-hud-focus {
+	outline: 3px solid var(--teal) !important;
+	outline-offset: 3px !important;
+	animation: denteToothHudPulse 1.5s ease-in-out !important;
+}
+
+@keyframes denteToothHudPulse {
+	0% {
+		box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.7);
+	}
+	70% {
+		box-shadow: 0 0 0 10px rgba(13, 148, 136, 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(13, 148, 136, 0);
+	}
+}

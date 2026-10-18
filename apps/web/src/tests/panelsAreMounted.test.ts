@@ -252,12 +252,13 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 	 * MarketingAttributionDashboard и OnlineBookingConversionPanel СМОНТИРОВАНЫ
 	 * в AnalyticsDashboardView.tsx (Wave 200).
 	 */
-	{
-		file: "components/chairside/ChairsidePreFlightChecklist.tsx",
-		name: "ChairsidePreFlightChecklist",
-		reason:
-			"Чеклист предполетной подготовки ассистента и стерильности кабинета перед приемом пациента по стандартам СанПиН (components/chairside/ChairsidePreFlightChecklist.tsx:128). Вызывается из мобильного ассистентского терминала.",
-	},
+	/*
+	 * ChairsidePreFlightChecklist и chairsidePreFlight.css УДАЛЕНЫ per Mandate 8e & CRM != Reality Simulator.
+	 * Стоматология — это не кабина Боинга-747, врачи и ассистенты не заполняют ритуальные «предполётные чеклисты»
+	 * с промывкой слюноотсоса OroCup 20-30 сек и протиркой подлокотников Bacillol AF перед каждым приёмом.
+	 * Стерильность инструментов гарантируется по умолчанию (presumedSterile: true), а рабочие места врачей
+	 * и ассистентов сфокусированы на клинических данных (DoctorCommandHud, одонтограмма, протокол, ЭМК), а не на симуляторе уборщицы.
+	 */
 	{
 		file: "components/visit/VisitSoapEditor.tsx",
 		name: "VisitSoapEditor",
@@ -275,12 +276,7 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		name: "VisitEmbeddedOdontogram",
 		reason:
 			"Экспериментальный прототип встроенной зубной формулы, вытесненный каноническим контейнером OdontogramViewContainer.tsx (ГОСТ и анатомический вид). Сохранён для экспорта констант PATHOLOGY_STAMPS в perspectiveOdontogram.test.ts.",
-	},
-	{
-		file: "components/visit/view/VisitOdontogramToothItem.tsx",
-		name: "VisitOdontogramToothItem",
-		reason:
-			"Подкомпонент устаревшей встроенной формулы VisitEmbeddedOdontogram.tsx. В активном интерфейсе заменён каноническими ячейками ClassicGostToothCell.tsx и ToothChart.tsx. Сохранён для тестов perspectiveOdontogram.test.ts.",
+
 	},
 	{
 		file: "components/visit/VisitMainTabs.tsx",
@@ -1514,5 +1510,28 @@ test("устаревших фасадов-дубликатов представ�
 	);
 });
 
+test("авиационно-бытового симулятора предполетной подготовки (ChairsidePreFlight) в дереве больше нет", () => {
+	/*
+	 * Ликвидирован авиационный антипаттерн симуляции быта (Мандат 8e / CRM != Reality Simulator):
+	 * Стоматология — не кабина Боинга-747, врачи и ассистенты не заполняют чеклисты протирки подлокотников Bacillol AF
+	 * и промывки слюноотсоса OroCup перед каждым пациентом.
+	 */
+	for (const removed of [
+		"components/chairside/ChairsidePreFlightChecklist.tsx",
+		"components/chairside/chairsidePreFlight.css",
+		"components/chairside/__tests__/ChairsidePreFlightChecklist.test.tsx",
+	]) {
+		assert.equal(
+			existsSync(path.join(webSrcRoot, removed)),
+			false,
+			`${removed} вернулся в дерево. Симуляторы уборщицы и авиационные предполетные чеклисты ликвидированы per Mandate 8e.`,
+		);
+	}
 
-
+	// Канонический клинический HUD у кресла обязан присутствовать
+	assert.equal(
+		existsSync(path.join(webSrcRoot, "components/chairside/DoctorCommandHud.tsx")),
+		true,
+		"Канонический клинический HUD DoctorCommandHud.tsx обязан присутствовать в дереве",
+	);
+});

@@ -36,12 +36,16 @@ describe("Wave 115: Mocks & Dev Leaks Purification Suite", () => {
 		);
 	});
 
-	it("2. ChairsidePreFlightChecklist.tsx: must NOT contain 'Смирнова Е. В.' or 'Иванова М. А.' in default values", () => {
+	it("2. ChairsidePreFlightChecklist.tsx: purged per Reality Simulator & Mandate 8e purge (no synthetic mock defaults)", () => {
 		const filePath = path.resolve(
 			webSrcRoot,
 			"components/chairside/ChairsidePreFlightChecklist.tsx",
 		);
-		assert.ok(fs.existsSync(filePath), `File must exist at ${filePath}`);
+		if (!fs.existsSync(filePath)) {
+			// Purged per Reality Simulator & Mandate 8e (Boeing-747 pre-flight checklist purge)
+			assert.ok(true, "ChairsidePreFlightChecklist.tsx successfully purged per Mandate 8e");
+			return;
+		}
 		const content = fs.readFileSync(filePath, "utf-8");
 
 		assert.equal(
